@@ -7636,6 +7636,16 @@ class TestMGCStat:
         _, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
         assert_allclose(pvalue, 1/1001)
 
+    @pytest.mark.slow
+    def test_alias(self):
+        np.random.seed(12345678)
+
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=1, sim_type="linear")
+
+        res = stats.multiscale_graphcorr(x, y, random_state=1)
+        assert_equal(res.stat, res.statistic)
+
 
 class TestPageTrendTest:
     # expected statistic and p-values generated using R at

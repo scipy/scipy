@@ -138,6 +138,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     Find a solution to the system of equations:
     ``x0*cos(x1) = 4,  x1*x0 - x1 = 5``.
 
+    >>> import numpy as np
     >>> from scipy.optimize import fsolve
     >>> def func(x):
     ...     return [x[0] * np.cos(x[1]) - 4,
@@ -711,6 +712,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.optimize import curve_fit
 
@@ -976,6 +978,7 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500, method='del2'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import optimize
     >>> def func(x, c1, c2):
     ...    return np.sqrt(c1/(x+c2))

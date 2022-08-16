@@ -16,14 +16,16 @@ Result classes
    TukeyHSDResult
    PearsonRResult
    FitResult
+   OddsRatioResult
 
 """
 
 __all__ = ['BinomTestResult', 'RelativeRiskResult', 'TukeyHSDResult',
-           'PearsonRResult', 'FitResult']
+           'PearsonRResult', 'FitResult', 'OddsRatioResult']
 
 
 from ._binomtest import BinomTestResult
+from ._odds_ratio import OddsRatioResult
 from ._relative_risk import RelativeRiskResult
 from ._hypotests import TukeyHSDResult
 from ._stats_py import PearsonRResult

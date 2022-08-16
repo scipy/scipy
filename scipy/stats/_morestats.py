@@ -2042,9 +2042,10 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
     return A2kN
 
 
-Anderson_ksampResult = namedtuple('Anderson_ksampResult',
-                                  ('statistic', 'critical_values',
-                                   'significance_level'))
+Anderson_ksampResult = _make_tuple_bunch(
+    'Anderson_ksampResult',
+    ['statistic', 'critical_values', 'pvalue'], []
+)
 
 
 def anderson_ksamp(samples, midrank=True):
@@ -2068,15 +2069,17 @@ def anderson_ksamp(samples, midrank=True):
 
     Returns
     -------
-    statistic : float
-        Normalized k-sample Anderson-Darling test statistic.
-    critical_values : array
-        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
-        0.5%, 0.1%.
-    significance_level : float
-        An approximate significance level at which the null hypothesis for the
-        provided samples can be rejected. The value is floored / capped at
-        0.1% / 25%.
+    res : Anderson_ksampResult
+        An object containing attributes:
+
+        statistic : float
+            Normalized k-sample Anderson-Darling test statistic.
+        critical_values : array
+            The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
+            0.5%, 0.1%.
+        pvalue : float
+            The approximate p-value of the test. The value is floored / capped
+            at 0.1% / 25%.
 
     Raises
     ------
@@ -2121,31 +2124,31 @@ def anderson_ksamp(samples, midrank=True):
     >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
+    >>> res = stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(loc=0.5, size=30)])
+    >>> res.statistic, res.pvalue
+    (1.974403288713695, 0.04991293614572478)
+    >>> res.critical_values
+    array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546])
 
     The null hypothesis that the two random samples come from the same
     distribution can be rejected at the 5% level because the returned
     test value is greater than the critical value for 5% (1.961) but
     not at the 2.5% level. The interpolation gives an approximate
-    significance level of 3.2%:
+    p-value of 4.99%.
 
-    >>> stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(loc=0.5, size=30)])
-    (1.974403288713695,
-      array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546]),
-      0.04991293614572478)
-
+    >>> res = stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(size=30), rng.normal(size=20)])
+    >>> res.statistic, res.pvalue
+    (-0.29103725200789504, 0.25)
+    >>> res.critical_values
+    array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
+      4.07210043, 5.56419101])
 
     The null hypothesis cannot be rejected for three samples from an
     identical distribution. The reported p-value (25%) has been capped and
     may not be very accurate (since it corresponds to the value 0.449
-    whereas the statistic is -0.731):
-
-    >>> stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(size=30), rng.normal(size=20)])
-    (-0.29103725200789504,
-      array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
-      4.07210043, 5.56419101]),
-      0.25)
+    whereas the statistic is -0.291).
 
     """
     k = len(samples)
@@ -2204,7 +2207,10 @@ def anderson_ksamp(samples, midrank=True):
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
 
-    return Anderson_ksampResult(A2, critical, p)
+    # create result object with alias for backward compatibility
+    res = Anderson_ksampResult(A2, critical, p)
+    res.significance_level = p
+    return res
 
 
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
@@ -3735,14 +3741,32 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Examples
     --------
+    For simplicity, all angles are printed out in degrees.
+
     >>> import numpy as np
     >>> from scipy.stats import circmean
-    >>> circmean([0.1, 2*np.pi+0.2, 6*np.pi+0.3])
-    0.2
+    >>> import matplotlib.pyplot as plt
+    >>> angles = np.deg2rad(np.array([20, 30, 330]))
+    >>> circmean = circmean(angles)
+    >>> np.rad2deg(circmean)
+    7.294976657784009
 
-    >>> from scipy.stats import circmean
-    >>> circmean([0.2, 1.4, 2.6], high = 1, low = 0)
-    0.4
+    >>> mean = angles.mean()
+    >>> np.rad2deg(mean)
+    126.66666666666666
+
+    Plot and compare the circular mean against the arithmetic mean.
+
+    >>> plt.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...          np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...          c='k')
+    >>> plt.scatter(np.cos(angles), np.sin(angles), c='k')
+    >>> plt.scatter(np.cos(circmean), np.sin(circmean), c='b',
+    ...             label='circmean')
+    >>> plt.scatter(np.cos(mean), np.sin(mean), c='r', label='mean')
+    >>> plt.legend()
+    >>> plt.axis('equal')
+    >>> plt.show()
 
     """
     samples, sin_samp, cos_samp, nmask = _circfuncs_common(samples, high, low,
@@ -3812,15 +3836,35 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     References
     ----------
-    ..[1] Fisher, N.I. *Statistical analysis of circular data*. Cambridge
+    .. [1] Fisher, N.I. *Statistical analysis of circular data*. Cambridge
           University Press, 1993.
 
     Examples
     --------
     >>> import numpy as np
     >>> from scipy.stats import circvar
-    >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
-    0.6666666666666665
+    >>> import matplotlib.pyplot as plt
+    >>> samples_1 = np.array([0.072, -0.158, 0.077, 0.108, 0.286,
+    ...                       0.133, -0.473, -0.001, -0.348, 0.131])
+    >>> samples_2 = np.array([0.111, -0.879, 0.078, 0.733, 0.421,
+    ...                       0.104, -0.136, -0.867,  0.012,  0.105])
+    >>> circvar_1 = circvar(samples_1)
+    >>> circvar_2 = circvar(samples_2)
+
+    Plot the samples.
+
+    >>> fig, (left, right) = plt.subplots(ncols=2)
+    >>> for image in (left, right):
+    ...     image.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...                np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...                c='k')
+    ...     image.axis('equal')
+    ...     image.axis('off')
+    >>> left.scatter(np.cos(samples_1), np.sin(samples_1), c='k', s=15)
+    >>> left.set_title(f"circular variance: {np.round(circvar_1, 2)!r}")
+    >>> right.scatter(np.cos(samples_2), np.sin(samples_2), c='k', s=15)
+    >>> right.set_title(f"circular variance: {np.round(circvar_2, 2)!r}")
+    >>> plt.show()
 
     """
     samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
@@ -3898,11 +3942,31 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     --------
     >>> import numpy as np
     >>> from scipy.stats import circstd
-    >>> small_samples = [0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2]
-    >>> circstd(small_samples)
-    0.06356406330602443
-    >>> np.std(small_samples)
-    0.06355419420577858
+    >>> import matplotlib.pyplot as plt
+    >>> samples_1 = np.array([0.072, -0.158, 0.077, 0.108, 0.286,
+    ...                       0.133, -0.473, -0.001, -0.348, 0.131])
+    >>> samples_2 = np.array([0.111, -0.879, 0.078, 0.733, 0.421,
+    ...                       0.104, -0.136, -0.867,  0.012,  0.105])
+    >>> circstd_1 = circstd(samples_1)
+    >>> circstd_2 = circstd(samples_2)
+
+    Plot the samples.
+
+    >>> fig, (left, right) = plt.subplots(ncols=2)
+    >>> for image in (left, right):
+    ...     image.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...                np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...                c='k')
+    ...     image.axis('equal')
+    ...     image.axis('off')
+    >>> left.scatter(np.cos(samples_1), np.sin(samples_1), c='k', s=15)
+    >>> left.set_title(f"circular std: {np.round(circstd_1, 2)!r}")
+    >>> right.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...            np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...            c='k')
+    >>> right.scatter(np.cos(samples_2), np.sin(samples_2), c='k', s=15)
+    >>> right.set_title(f"circular std: {np.round(circstd_2, 2)!r}")
+    >>> plt.show()
 
     """
     samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,

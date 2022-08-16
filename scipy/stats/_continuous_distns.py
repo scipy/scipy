@@ -31,6 +31,7 @@ from ._constants import (_XMIN, _EULER, _ZETA3,
 import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
 from scipy.stats._warnings_errors import FitError
+import scipy.stats as stats
 
 
 def _remove_optimizer_parameters(kwds):
@@ -4116,6 +4117,26 @@ class invgauss_gen(rv_continuous):
     def _cdf(self, x, mu):
         return np.exp(self._logcdf(x, mu))
 
+    def _ppf(self, x, mu):
+        with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
+            x, mu = np.broadcast_arrays(x, mu)
+            ppf = _boost._invgauss_ppf(x, mu, 1)
+            i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
+            ppf[i_wt] = _boost._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
+            i_nan = np.isnan(ppf)
+            ppf[i_nan] = super()._ppf(x[i_nan], mu[i_nan])
+        return ppf
+
+    def _isf(self, x, mu):
+        with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
+            x, mu = np.broadcast_arrays(x, mu)
+            isf = _boost._invgauss_isf(x, mu, 1)
+            i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
+            isf[i_wt] = _boost._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
+            i_nan = np.isnan(isf)
+            isf[i_nan] = super()._isf(x[i_nan], mu[i_nan])
+        return isf
+
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
@@ -7817,21 +7838,23 @@ class skew_norm_gen(rv_continuous):
             f2=lambda x, a: 2.*_norm_pdf(x)*_norm_cdf(a*x)
         )
 
-    def _cdf_single(self, x, *args):
-        _a, _b = self._get_support(*args)
-        if x <= 0:
-            cdf = integrate.quad(self._pdf, _a, x, args=args)[0]
-        else:
-            t1 = integrate.quad(self._pdf, _a, 0, args=args)[0]
-            t2 = integrate.quad(self._pdf, 0, x, args=args)[0]
-            cdf = t1 + t2
-        if cdf > 1:
-            # Presumably numerical noise, e.g. 1.0000000000000002
-            cdf = 1.0
-        return cdf
+    def _cdf(self, x, a):
+        cdf = _boost._skewnorm_cdf(x, 0, 1, a)
+        # Boost is not accurate in left tail when a > 0
+        i_small_cdf = (cdf < 1e-6) & (a > 0)
+        cdf[i_small_cdf] = super()._cdf(x[i_small_cdf], a[i_small_cdf])
+        return np.clip(cdf, 0, 1)
+
+    def _ppf(self, x, a):
+        return _boost._skewnorm_ppf(x, 0, 1, a)
 
     def _sf(self, x, a):
+        # Boost's SF is implemented this way. Use whatever customizations
+        # we made in the _cdf.
         return self._cdf(-x, -a)
+
+    def _isf(self, x, a):
+        return _boost._skewnorm_isf(x, 0, 1, a)
 
     def _rvs(self, a, size=None, random_state=None):
         u0 = random_state.normal(size=size)
@@ -7854,6 +7877,73 @@ class skew_norm_gen(rv_continuous):
             output[3] = (2*(np.pi - 3)) * (const**4/(1 - const**2)**2)
 
         return output
+
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        If ``method='mm'``, parameters fixed by the user are respected, and the
+        remaining parameters are used to match distribution and sample moments
+        where possible. For example, if the user fixes the location with
+        ``floc``, the parameters will only match the distribution skewness and
+        variance to the sample skewness and variance; no attempt will be made
+        to match the means or minimize a norm of the errors.
+        Note that the maximum possible skewness magnitude of a
+        `scipy.stats.skewnorm` distribution is approximately 0.9952717; if the
+        magnitude of the data's sample skewness exceeds this, the returned
+        shape parameter ``a`` will be infinite.
+        \n\n""")
+    def fit(self, data, *args, **kwds):
+        # this extracts fixed shape, location, and scale however they
+        # are specified, and also leaves them in `kwds`
+        data, fa, floc, fscale = _check_fit_input_parameters(self, data,
+                                                             args, kwds)
+
+        # If method is method of moments, we don't need the user's guesses.
+        # If method is "mle", extract the guesses from args and kwds.
+        method = kwds.get("method", "mle").lower()
+        if method == "mm":
+            a, loc, scale = None, None, None
+        else:
+            a = args[0] if len(args) else None
+            loc = kwds.pop('loc', None)
+            scale = kwds.pop('scale', None)
+
+        # See https://en.wikipedia.org/wiki/Skew_normal_distribution for
+        # moment formulas.
+        def skew_d(d):  # skewness in terms of delta
+            return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
+                                  / (1 - 2*d**2 / np.pi)**(3/2))
+
+        if fa is None and a is None:  # not fixed and no guess: use MoM
+            # Solve for a that matches sample distribution skewness to sample
+            # skewness.
+            s = stats.skew(data)
+            s_max = skew_d(1)
+            s = np.clip(s, -s_max, s_max)
+            d = root_scalar(lambda d: skew_d(d) - s, bracket=[-1, 1]).root
+            a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
+        elif fa is not None:  # fixed: use it
+            a = fa
+        # else: use the user-provided guess
+
+        d = a / np.sqrt(1 + a**2)  # simplifies code to (re)calculate here
+
+        if fscale is None and scale is None:
+            v = np.var(data)
+            scale = np.sqrt(v / (1 - 2*d**2/np.pi))
+        elif fscale is not None:
+            scale = fscale
+
+        if floc is None and loc is None:
+            m = np.mean(data)
+            loc = m - scale*d*np.sqrt(2/np.pi)
+        elif floc is not None:
+            loc = floc
+
+        if method == 'mm':
+            return a, loc, scale
+        else:
+            # At this point, parameter "guesses" may equal the fixed parameters
+            # in kwds. No harm in passing them as guesses, too.
+            return super().fit(data, a, loc=loc, scale=scale, **kwds)
 
 
 skewnorm = skew_norm_gen(name='skewnorm')
@@ -8780,6 +8870,12 @@ class wald_gen(invgauss_gen):
     def _sf(self, x):
         return invgauss._sf(x, 1.0)
 
+    def _ppf(self, x):
+        return invgauss._ppf(x, 1.0)
+
+    def _isf(self, x):
+        return invgauss._isf(x, 1.0)
+
     def _logpdf(self, x):
         return invgauss._logpdf(x, 1.0)
 
@@ -9401,15 +9497,36 @@ class rv_histogram(rv_continuous):
     Parameters
     ----------
     histogram : tuple of array_like
-      Tuple containing two array_like objects
-      The first containing the content of n bins
-      The second containing the (n+1) bin boundaries
-      In particular the return value np.histogram is accepted
+        Tuple containing two array_like objects.
+        The first containing the content of n bins,
+        the second containing the (n+1) bin boundaries.
+        In particular, the return value of `numpy.histogram` is accepted.
+
+    density : bool, optional
+        If False, assumes the histogram is proportional to counts per bin;
+        otherwise, assumes it is proportional to a density.
+        For constant bin widths, these are equivalent, but the distinction
+        is important when bin widths vary (see Notes).
+        If None (default), sets ``density=True`` for backwards compatibility,
+        but warns if the bin widths are variable. Set `density` explicitly
+        to silence the warning.
+
+        .. versionadded:: 1.10.0
 
     Notes
     -----
+    When a histogram has unequal bin widths, there is a distinction between
+    histograms that are proportional to counts per bin and histograms that are
+    proportional to probability density over a bin. If `numpy.histogram` is
+    called with its default ``density=False``, the resulting histogram is the
+    number of counts per bin, so ``density=False`` should be passed to
+    `rv_histogram`. If `numpy.histogram` is called with ``density=True``, the
+    resulting histogram is in terms of probability density, so ``density=True``
+    should be passed to `rv_histogram`. To avoid warnings, always pass
+    ``density`` explicitly when the input histogram has unequal bin widths.
+
     There are no additional shape parameters except for the loc and scale.
-    The pdf is defined as a stepwise function from the provided histogram
+    The pdf is defined as a stepwise function from the provided histogram.
     The cdf is a linear interpolation of the pdf.
 
     .. versionadded:: 0.19.0
@@ -9423,7 +9540,7 @@ class rv_histogram(rv_continuous):
     >>> import numpy as np
     >>> data = scipy.stats.norm.rvs(size=100000, loc=0, scale=1.5, random_state=123)
     >>> hist = np.histogram(data, bins=100)
-    >>> hist_dist = scipy.stats.rv_histogram(hist)
+    >>> hist_dist = scipy.stats.rv_histogram(hist, density=False)
 
     Behaves like an ordinary scipy rv_continuous distribution
 
@@ -9457,19 +9574,27 @@ class rv_histogram(rv_continuous):
     """
     _support_mask = rv_continuous._support_mask
 
-    def __init__(self, histogram, *args, **kwargs):
+    def __init__(self, histogram, *args, density=None, **kwargs):
         """
         Create a new distribution using the given histogram
 
         Parameters
         ----------
         histogram : tuple of array_like
-          Tuple containing two array_like objects
-          The first containing the content of n bins
-          The second containing the (n+1) bin boundaries
-          In particular the return value np.histogram is accepted
+            Tuple containing two array_like objects.
+            The first containing the content of n bins,
+            the second containing the (n+1) bin boundaries.
+            In particular, the return value of np.histogram is accepted.
+        density : bool, optional
+            If False, assumes the histogram is proportional to counts per bin;
+            otherwise, assumes it is proportional to a density.
+            For constant bin widths, these are equivalent.
+            If None (default), sets ``density=True`` for backward
+            compatibility, but warns if the bin widths are variable. Set
+            `density` explicitly to silence the warning.
         """
         self._histogram = histogram
+        self._density = density
         if len(histogram) != 2:
             raise ValueError("Expected length 2 for parameter histogram")
         self._hpdf = np.asarray(histogram[0])
@@ -9479,6 +9604,15 @@ class rv_histogram(rv_continuous):
                              "and histogram boundaries do not match, "
                              "expected n and n+1.")
         self._hbin_widths = self._hbins[1:] - self._hbins[:-1]
+        bins_vary = not np.allclose(self._hbin_widths, self._hbin_widths[0])
+        if density is None and bins_vary:
+            message = ("Bin widths are not constant. Assuming `density=True`."
+                       "Specify `density` explicitly to silence this warning.")
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
+            density = True
+        elif not density:
+            self._hpdf = self._hpdf / self._hbin_widths
+
         self._hpdf = self._hpdf / float(np.sum(self._hpdf * self._hbin_widths))
         self._hcdf = np.cumsum(self._hpdf * self._hbin_widths)
         self._hpdf = np.hstack([0.0, self._hpdf, 0.0])
@@ -9525,6 +9659,7 @@ class rv_histogram(rv_continuous):
         """
         dct = super()._updated_ctor_param()
         dct['histogram'] = self._histogram
+        dct['density'] = self._density
         return dct
 
 

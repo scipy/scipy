@@ -158,7 +158,7 @@ generate_config = custom_target(
   output: '__config__.py',
   input: '../tools/config_utils.py',
   command: [py3, '@INPUT@', '@OUTPUT@'],
-  install_dir: py3.get_install_dir() + '/scipy'
+  install_dir: py3.get_install_dir() / 'scipy'
 )
 
 generate_version = custom_target(
@@ -169,7 +169,7 @@ generate_version = custom_target(
   output: 'version.py',
   input: '../tools/version_utils.py',
   command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
-  install_dir: py3.get_install_dir() + '/scipy'
+  install_dir: py3.get_install_dir() / 'scipy'
 )
 
 python_sources = [
@@ -225,10 +225,19 @@ cython_gen_cpp = generator(cython_cli,
 
 c_undefined_ok = ['-Wno-maybe-uninitialized']
 
+# Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
+# Cython doesn't always get this right itself (see, e.g., gh-16800), so
+# explicitly add the define as a compiler flag for Cython-generated code.
+if is_windows
+  use_math_defines = ['-D_USE_MATH_DEFINES']
+else
+  use_math_defines = []
+endif
+
 # Suppress warning for deprecated Numpy API.
 # (Suppress warning messages emitted by #warning directives).
 # Replace with numpy_nodepr_api after Cython 3.0 is out
-cython_c_args += ['-Wno-cpp']
+cython_c_args += ['-Wno-cpp', use_math_defines]
 cython_cpp_args = cython_c_args
 
 # Ordering of subdirs: special and linalg come first, because other submodules
@@ -251,5 +260,6 @@ subdir('interpolate')
 subdir('ndimage')
 subdir('odr')
 subdir('optimize')
+subdir('datasets')
 subdir('misc')
 subdir('io')
