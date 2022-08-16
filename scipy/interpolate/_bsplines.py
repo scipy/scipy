@@ -437,14 +437,25 @@ class BSpline:
             # Checks from `find_interval` function
             raise ValueError(f'Out of bounds w/ x = {x}.')
 
+        # Compute number of non-zeros of final CSR array in order to determine
+        # the dtype of indices and indptr of the CSR array.
+        n = x.shape[0]
+        nnz = n * (k + 1)
+        if nnz < np.iinfo(np.int32).max:
+            int_dtype = np.int32
+        else:
+            int_dtype = np.int64
+        # Preallocate indptr and indices
+        indices = np.zeros(n * (k + 1), dtype=int_dtype)
+        indptr = np.arange(0, (n + 1) * (k + 1), k + 1, dtype=int_dtype)
+
         data, indices, indptr = _bspl._make_design_matrix(
-            x, t, k, extrapolate
+            x, t, k, extrapolate, indices, indptr
         )
         return csr_array(
             (data, indices, indptr),
             shape=(x.shape[0], t.shape[0] - k - 1)
         )
-        
 
     def __call__(self, x, nu=0, extrapolate=None):
         """

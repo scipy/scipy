@@ -20,6 +20,9 @@ ctypedef fused double_or_complex:
     double
     double complex
 
+ctypedef fused int32_or_int64:
+    cnp.npy_int32
+    cnp.npy_int64
 
 #------------------------------------------------------------------------------
 # B-splines
@@ -417,7 +420,9 @@ def _norm_eq_lsq(const double[::1] x,
 def _make_design_matrix(const double[::1] x,
                         const double[::1] t,
                         int k,
-                        bint extrapolate):
+                        bint extrapolate,
+                        int32_or_int64[::1] indices,
+                        int32_or_int64[::1] indptr):
     """
     Returns a design matrix in CSR format
     
@@ -431,6 +436,10 @@ def _make_design_matrix(const double[::1] x,
         B-spline degree.
     extrapolate : bool, optional
         Whether to extrapolate to ouf-of-bounds points.
+    indices : ndarray, shape (n * (k + 1),)
+        Preallocated indices of the final CSR array.
+    indptr : ndarray, shape (n * (k + 1))
+        Preallocated indptr of the final CSR array.
 
     Returns
     -------
@@ -450,9 +459,6 @@ def _make_design_matrix(const double[::1] x,
         cnp.npy_intp n = x.shape[0]
         double[::1] work = np.empty(2*k+2, dtype=float)
         double[::1] data = np.zeros(n * (k + 1), dtype=float)
-        # TODO: When should we switch to int64?
-        cnp.npy_int32[::1] indptr = np.arange(0, (n + 1) * (k + 1), k + 1, dtype=np.int32)
-        cnp.npy_int32[::1] indices = np.zeros(n * (k + 1), dtype=np.int32)
         double xval
     ind = k
     for i in range(n):
