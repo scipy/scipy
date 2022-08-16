@@ -25,6 +25,7 @@ from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
 from .._lib.deprecation import _deprecated
+from scipy import stats, interpolate
 
 
 __all__ = ['mvsdist',
@@ -1834,28 +1835,22 @@ _Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
 #             Fit for the Three-Parameter Weibull Distribution"
 #             Journal of the Royal Statistical Society.Series B(Methodological)
 #             Vol. 56, No. 3 (1994), pp. 491-500, table 1. Keys are c*100
-_Avals_weibull = {0: array([0.292, 0.395, 0.467, 0.522,
-                            0.617, 0.711, 0.836, 0.931]),
-                  5: array([0.295, 0.399, 0.471, 0.527,
-                            0.623, 0.719, 0.845, 0.941]),
-                  10: array([0.298, 0.403, 0.476, 0.534,
-                             0.631, 0.728, 0.856, 0.954]),
-                  15: array([0.301, 0.408, 0.483, 0.541,
-                             0.640, 0.738, 0.869, 0.969]),
-                  20: array([0.305, 0.414, 0.490, 0.549,
-                             0.650, 0.751, 0.885, 0.986]),
-                  25: array([0.309, 0.421, 0.498, 0.559,
-                             0.662, 0.765, 0.902, 1.007]),
-                  30: array([0.314, 0.429, 0.508, 0.570,
-                             0.676, 0.782, 0.923, 1.030]),
-                  35: array([0.320, 0.438, 0.519, 0.583,
-                             0.692, 0.802, 0.947, 1.057]),
-                  40: array([0.327, 0.448, 0.532, 0.598,
-                             0.711, 0.824, 0.974, 1.089]),
-                  45: array([0.334, 0.469, 0.547, 0.615,
-                             0.732, 0.850, 1.006, 1.125]),
-                  50: array([0.342, 0.472, 0.563, 0.636,
-                             0.757, 0.879, 1.043, 1.167])}
+_Avals_weibull = [[0.292, 0.395, 0.467, 0.522, 0.617, 0.711, 0.836, 0.931],
+                  [0.295, 0.399, 0.471, 0.527, 0.623, 0.719, 0.845, 0.941],
+                  [0.298, 0.403, 0.476, 0.534, 0.631, 0.728, 0.856, 0.954],
+                  [0.301, 0.408, 0.483, 0.541, 0.640, 0.738, 0.869, 0.969],
+                  [0.305, 0.414, 0.490, 0.549, 0.650, 0.751, 0.885, 0.986],
+                  [0.309, 0.421, 0.498, 0.559, 0.662, 0.765, 0.902, 1.007],
+                  [0.314, 0.429, 0.508, 0.570, 0.676, 0.782, 0.923, 1.030],
+                  [0.320, 0.438, 0.519, 0.583, 0.692, 0.802, 0.947, 1.057],
+                  [0.327, 0.448, 0.532, 0.598, 0.711, 0.824, 0.974, 1.089],
+                  [0.334, 0.469, 0.547, 0.615, 0.732, 0.850, 1.006, 1.125],
+                  [0.342, 0.472, 0.563, 0.636, 0.757, 0.879, 1.043, 1.167]]
+_Avals_weibull = np.array(_Avals_weibull)
+_cvals_weibull = np.linspace(0, 0.5, 11)
+_get_As_weibull = interpolate.interp1d(_cvals_weibull, _Avals_weibull.T,
+                                       kind='linear', bounds_error=False,
+                                       fill_value=_Avals_weibull[-1])
 
 
 def _weibull_fit_check(params, x):
@@ -1993,9 +1988,9 @@ def anderson(x, dist='norm'):
         15%, 10%, 5%, 2.5%, 1%
     logistic
         25%, 10%, 5%, 2.5%, 1%, 0.5%
-    Gumbel
+    gumbel_l / gumbel_r
         25%, 10%, 5%, 2.5%, 1%
-    Weibull_min
+    weibull_min
         50%, 25%, 15%, 10%, 5%, 2.5%, 1%, 0.5%
 
     If the returned statistic is larger than these critical values then
@@ -2085,14 +2080,24 @@ def anderson(x, dist='norm'):
         sig = array([25, 10, 5, 2.5, 1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
     elif dist == 'weibull_min':
-        c, loc, scale = distributions.weibull_min.fit(y)
-        c, loc, scale = _weibull_fit_check((c, loc, scale), y)
-        fit_params = c, loc, scale
-        logcdf = distributions.weibull_min.logcdf(x=y, c=c, loc=loc, scale=scale)
-        logsf = distributions.weibull_min.logsf(x=y, c=c, loc=loc, scale=scale)
-        shape_for_critical = min(5 * round(np.round(np.divide(1.0, c) * 100) / 5), 50)
+        message = ("Critical values of the test statistic are given for the "
+                   "asymptotic distribution. These may not be accurate for "
+                   "samples with fewer than 10 observations. Consider using "
+                   "`scipy.stats.monte_carlo_test`.")
+        if N < 10:
+            warnings.warn(message, stacklevel=2)
+        # [7] writes our 'c' as 'm', and they write `c = 1/m`. Use their names.
+        m, loc, scale = distributions.weibull_min.fit(y)
+        m, loc, scale = _weibull_fit_check((m, loc, scale), y)
+        fit_params = m, loc, scale
+        logcdf = stats.weibull_min(*fit_params).logcdf(y)
+        logsf = stats.weibull_min(*fit_params).logsf(y)
+        c = 1 / m  # m and c are as used in [7]
         sig = array([0.5, 0.75, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995])
-        critical = _Avals_weibull[shape_for_critical]
+        critical = _get_As_weibull(c)
+        # Goodness-of-fit tests should only be used to provide evidence
+        # _against_ the null hypothesis. Be conservative and round up.
+        critical = np.round(critical + 0.0004999999, decimals=3)
 
     i = arange(1, N + 1)
     A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
