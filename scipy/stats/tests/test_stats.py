@@ -5173,7 +5173,7 @@ def test_ttest_1samp_new():
     assert_almost_equal(t1[0,0],t3, decimal=14)
     assert_equal(t1.shape, (n2,n3))
 
-    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1,n3)),axis=1)
+    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1, 1, n3)),axis=1)
     t2,p2 = stats.ttest_1samp(rvn1[:,:,:], 1,axis=1)
     t3,p3 = stats.ttest_1samp(rvn1[0,:,0], 1)
     assert_array_almost_equal(t1,t2, decimal=14)
@@ -5232,6 +5232,26 @@ def test_ttest_1samp_new():
     pc = converter(tr, pr, "less")
     assert_allclose(p, pc)
     assert_allclose(t, tr)
+
+def test_ttest_1samp_popmean_array():
+    # when popmean.shape[axis] != 1, raise an error
+    # if the user wants to test multiple null hypotheses simultaneously,
+    # use standard broadcasting rules
+    rng = np.random.default_rng(2913300596553337193)
+    x = rng.random(size=(1, 15, 20))
+
+    message = r"`popmean.shape\[axis\]` must equal 1."
+    popmean = rng.random(size=(5, 2, 20))
+    with pytest.raises(ValueError, match=message):
+        stats.ttest_1samp(x, popmean=popmean, axis=-2)
+
+    popmean = rng.random(size=(5, 1, 20))
+    res = stats.ttest_1samp(x, popmean=popmean, axis=-2)
+    assert res.statistic.shape == (5, 20)
+
+    ci = np.expand_dims(res.confidence_interval(), axis=-2)
+    res = stats.ttest_1samp(x, popmean=ci, axis=-2)
+    assert_allclose(res.pvalue, 0.05)
 
 
 class TestDescribe:

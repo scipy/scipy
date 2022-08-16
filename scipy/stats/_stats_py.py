@@ -6259,7 +6259,11 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     df = n - 1
 
     mean = np.mean(a, axis)
-    d = mean - popmean[..., 0]  # popmean is an array because of decorator
+    try:
+        popmean = np.squeeze(popmean, axis=axis)
+    except ValueError as e:
+        raise ValueError("`popmean.shape[axis]` must equal 1.") from e
+    d = mean - popmean
     v = _var(a, axis, ddof=1)
     denom = np.sqrt(v / n)
 
