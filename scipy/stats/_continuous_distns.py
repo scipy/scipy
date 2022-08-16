@@ -5510,13 +5510,15 @@ class lognorm_gen(rv_continuous):
         `optimizer`, `loc` and `scale` keyword arguments are ignored.
         If the location is free, a likelihood maximum is found by
         setting its partial derivative wrt to location to 0, and
-        solving by substituting the analytical expressions of shape
-        and scale (or provided parameters).
-        See, e.g., equation 3.1 in
-        A. Clifford Cohen & Betty Jones Whitten (1980)
-        Estimation in the Three-Parameter Lognormal Distribution,
-        Journal of the American Statistical Association, 75:370, 399-404
-        https://doi.org/10.2307/2287466
+        solving by substituting the analytical expressions of shape and
+        scale (or provided parameters). See, e.g., equation 3.1 in [1]_.
+
+        References
+        ----------
+        .. [1] Cohen, A.C., & Whitten, B.J. (1980). Estimation in the
+               three-parameter lognormal distribution, Journal of the
+               American Statistical Association, 75(370), 399-404.
+               https://doi.org/10.2307/2287466
         \n\n""")
     def fit(self, data, *args, **kwds):
         parameters = _check_fit_input_parameters(self, data, args, kwds)
