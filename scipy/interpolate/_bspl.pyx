@@ -436,12 +436,12 @@ def _make_design_matrix(const double[::1] x,
     Returns
     -------
     design matrix
-        Design matrix as CSR matrix: in each row all the basis
+        Design matrix as CSR array: in each row all the basis
         elements are evaluated at the certain point (first row - x[0],
         ..., last row - x[-1]).
     """
     cdef:
-        cnp.npy_intp i, j, ind
+        cnp.npy_intp i, j, m, ind
         cnp.npy_intp n = x.shape[0]
         double[::1] work = np.empty(2*k+2, dtype=float)
         double[::1] data = np.zeros(n * (k + 1), dtype=float)
@@ -461,9 +461,10 @@ def _make_design_matrix(const double[::1] x,
 
         # data[(k + 1) * i : (k + 1) * (i + 1)] = work[:k + 1]
         # indices[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k, ind + 1)
-        for j in range((k + 1)):
-            data[(k + 1) * i + j] = work[j]
-            indices[(k + 1) * i + j] = ind - k + j
+        for j in range(k + 1):
+            m = (k + 1) * i + j
+            data[m] = work[j]
+            indices[m] = ind - k + j
 
     return csr_array(
         (np.asarray(data), np.asarray(indices), np.asarray(indptr)),
