@@ -38,7 +38,7 @@ requires = [
     # On Windows we need to avoid 1.21.6, 1.22.0 and 1.22.1 because they were
     # built with vc142. 1.22.3 is the first version that has 32-bit Windows
     # wheels *and* was built with vc141. So use that:
-    "numpy==1.22.3; python_version=='3.10' and platform_machine=='win32' and platform_python_implementation != 'PyPy'",
+    "numpy==1.22.3; python_version=='3.10' and platform_system=='Windows' and platform_python_implementation != 'PyPy'",
 
     # default numpy requirements
     "numpy==1.19.5; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_machine!='loongarch64' and platform_python_implementation != 'PyPy'",
