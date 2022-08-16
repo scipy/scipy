@@ -5531,28 +5531,80 @@ class lognorm_gen(rv_continuous):
             shape = fshape or np.sqrt(np.mean((lndata - np.log(scale))**2))
             return shape, scale
 
-        def dL_dLoc(loc):
+        def loc_mm():
+            # Method of moments estimate for the location.
+            skew_square = _skew(data)**2
+            alp = np.cbrt((skew_square
+                           + np.sqrt(skew_square*(skew_square+4)))/2 + 1)
+            om = alp + 1/alp - 1
+            return data.mean() - data.std() / np.sqrt(om - 1)
+
+        def f(loc):
+            # Partial derivative of the log-likelihood wrt the location,
+            # times shqpe**2. We find the MLE by finding a root.
             shape, scale = get_shape_scale(loc)
             shifted = data - loc
-            return np.sum((1 + np.log(shifted/scale)/shape**2)/shifted)
+            return np.sum((shape**2 + np.log(shifted/scale))/shifted)
 
-        if floc is None:
-            rbrack = np.nextafter(min(data), -np.inf)
-            lbrack = rbrack - 1
+        def root_derivative(x0):
+            def fprime(loc):
+                # Derivative of f wrt the location.
+                shape, scale = get_shape_scale(loc)
+                shifted = data - loc
+                log_norm = np.log(shifted/scale)
+
+                # Derivative of log(scale) wrt the location.
+                dLnScale_dLoc = 0 if fscale else -np.mean(1/shifted)
+                # Derivative of shape**2 wrt the location.
+                dSqShape_dLoc = (0 if fshape
+                                 else -2*np.mean(log_norm
+                                                 * (dLnScale_dLoc+1/shifted)))
+
+                return np.sum(((shape**2 + log_norm - 1)/shifted
+                               + dSqShape_dLoc - dLnScale_dLoc)/shifted)
+
+            return root_scalar(f, fprime=fprime, x0=x0)
+
+        def root_bracketing(rbrack):
+            eps = 1e-8
+            lbrack = rbrack - eps
             i = 0
-
-            while ((lbrack > -np.inf)
-                   and (dL_dLoc(lbrack)*dL_dLoc(rbrack) >= 0)):
+            while (lbrack > -np.inf) and (f(lbrack) <= 0):
                 i += 1
-                lbrack = rbrack - np.power(2., i)
-            if not lbrack > -np.inf:
+                lbrack = rbrack - eps*np.power(2., i)
+            try:
+                res = root_scalar(f, bracket=(lbrack, rbrack))
+            except ValueError:
+                res = None
+            return res
+
+        mn = min(data)
+        if floc is None:
+            loc0 = kwds.pop("loc", None)
+            if loc0 is not None and loc0 < mn:
+                # If the user provided a satisfactory guess, we use it.
+                res = root_derivative(loc0)
+            else:
+                # Otherwise, we use the method of moments estimate
+                # as a first guess.
+                loc0_mm = loc_mm()
+                if loc0_mm < mn:
+                    res = root_derivative(loc0_mm)
+                else:
+                    # Should that fail, we try to bracket the root.
+                    rbrack = np.nextafter(mn, -np.inf)
+                    if f(rbrack) < 0:
+                        res = root_bracketing(rbrack)
+                    else:
+                        res = None
+            if (res is not None and res.converged
+                    and np.isfinite(res.root) and res.root < mn):
+                loc = res.root
+            else:
+                # If none of the above works, we default to the standard fit.
                 return super().fit(data, *args, **kwds)
-            res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
-            if not res.converged:
-                return super().fit(data, *args, **kwds)
-            loc = res.root
         else:
-            if floc >= np.min(data):
+            if floc >= mn:
                 raise FitDataError("lognorm", lower=0., upper=np.inf)
             loc = floc
 
