@@ -86,6 +86,15 @@ help here, because it removes the monkey patching that is now done to enable
 Pythran).
 
 
+Use of venerable Fortran libraries
+``````````````````````````````````
+SciPy owes a lot of its success to relying on wrapping well established
+Fortran libraries (QUADPACK, FITPACK, ODRPACK, ODEPACK etc). Some of these
+libraries are aging well, others less so. We should audit our use of these
+libraries with respect to the maintenance effort, the functionality, and the
+existence of (possibly partial) alternatives, *including those inside SciPy*.
+
+
 Continuous integration
 ``````````````````````
 Continuous integration currently covers 32/64-bit Windows, macOS on x86-64, and
