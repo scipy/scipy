@@ -46,7 +46,7 @@ requires = [
     # Note that 1.21.3 was the first version with a complete set of 3.10 wheels,
     # however macOS was broken and it's safe C API/ABI-wise to build against 1.21.6
     # (see oldest-supported-numpy issues gh-28 and gh-45)
-    "numpy==1.21.6; python_version=='3.10' and (platform_machine!='win32' and platform_machine!='loongarch64') and platform_python_implementation != 'PyPy'",
+    "numpy==1.21.6; python_version=='3.10' and (platform_system!='Windows' and platform_machine!='loongarch64') and platform_python_implementation != 'PyPy'",
     "numpy==1.23.2; python_version=='3.11' and platform_python_implementation != 'PyPy'",
 
     # For Python versions which aren't yet officially supported,
