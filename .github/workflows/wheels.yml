@@ -83,7 +83,7 @@ jobs:
 
         - [windows-2019, win*, AMD64]
 
-        python: [["cp38", "3.8"], ["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11-dev"]] #, "cp39", "cp310", "cp38", "cp310", "pp38" "pp39"]
+        python: [["cp38", "3.8"], ["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11-dev"]]
         # python[0] is used to specify the python versions made by cibuildwheel
         # python[1] is installed by actions/setup-python for the separate
         # macosx_arm64 build. Once cibuildwheel can do the macosx_arm64 cross build
