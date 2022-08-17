@@ -15,10 +15,14 @@ from pytest import raises as assert_raises
 import re
 from scipy import optimize
 from scipy import stats
-from scipy.stats._morestats import _abw_state
+from scipy.stats._morestats import _abw_state, _get_As_weibull, _Avals_weibull
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
+from scipy.stats._distr_params import distcont
+
+
+distcont = dict(distcont)
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -301,19 +305,70 @@ class TestAnderson:
         assert_array_less(A1, crit1[-2:])
         assert_(A2 > crit2[-1])
 
-    def test_weibull_min(self):
-        # From Richard A. Lockhart and Michael A. Stephens "Estimation and Tests of
-        #             Fit for the Three-Parameter Weibull Distribution"
-        #             Journal of the Royal Statistical Society.Series B(Methodological)
-        #             Vol. 56, No. 3 (1994), pp. 491-500
-        x1 = np.array([225, 171, 198, 189, 189, 135, 162, 135, 117, 162])
-        x2 = np.array([74, 57, 48, 29, 502, 12, 70, 21, 29, 386,
-                       59, 27, 153, 26, 326])
-        A1, crit1, sig1 = stats.anderson(x1, 'weibull_min')
-        A2, crit2, sig2 = stats.anderson(x2, 'weibull_min')
+    def test_weibull_min_case_A(self):
+        # data and reference values from `anderson` reference [7]
+        x = np.array([225, 171, 198, 189, 189, 135, 162, 135, 117, 162])
+        res = stats.anderson(x, 'weibull_min')
+        m, loc, scale = res.fit_result.params
+        assert_allclose((m, loc, scale), (2.38, 99.02, 78.23), rtol=2e-3)
+        assert_allclose(res.statistic, 0.260, rtol=1e-3)
+        assert res.statistic < res.critical_values[0]
 
-        assert_(A1 < crit1[0])
-        assert_(A2 > crit2[0])
+        c = 1 / m  # ~0.42
+        assert_allclose(c, 1/2.38, rtol=2e-3)
+        # interpolate between rows for c=0.4 and c=0.45, indices -3 and -2
+        As40 = _Avals_weibull[-3]
+        As45 = _Avals_weibull[-2]
+        As_ref = As40 + (c - 0.4)/(0.45 - 0.4) * (As45 - As40)
+        # atol=1e-3 because results are rounded up to the next third decimal
+        assert np.all(res.critical_values > As_ref)
+        assert_allclose(res.critical_values, As_ref, atol=1e-3)
+
+    def test_weibull_min_case_B(self):
+        # From `anderson` reference [7]
+        x = np.array([74, 57, 48, 29, 502, 12, 70, 21,
+                      29, 386, 59, 27, 153, 26, 326])
+        res = stats.anderson(x, 'weibull_min')
+        assert_allclose(res.fit_result.params, (0.763, 9.313, 93.5), rtol=1e-3)
+        assert_allclose(res.statistic, 0.54, rtol=1e-1)
+        assert res.statistic > res.critical_values[0]
+
+    def test_weibull_error(self):
+        # Check for helpful error message when Anderson test for Weibull fails
+        rng = np.random.default_rng(2044208699473992917)
+        c, loc, scale = 5, 0, 1
+        x = stats.weibull_min.rvs(c, loc, scale, size=100, random_state=rng)
+        message = "An error occured while fitting the Weibull distribution..."
+        with (pytest.raises(ValueError, match=message),
+              pytest.raises(FloatingPointError)):
+            stats.anderson(x, 'weibull_min')
+
+    def test_weibull_warning(self):
+        # Check for warning message when there are too few observations
+        x = [225, 75, 57, 168, 107, 12, 61, 43, 29]
+        message = "Critical values of the test statistic are given for the..."
+        with pytest.warns(UserWarning, match=message):
+            stats.anderson(x, 'weibull_min')
+
+    @pytest.mark.parametrize('distname',
+                             ['norm', 'expon', 'gumbel_l', 'extreme1',
+                              'gumbel', 'gumbel_r', 'logistic', 'weibull_min'])
+    def test_anderson_fit_params(self, distname):
+        # check that anderson now returns a FitResult
+        rng = np.random.default_rng(330691555377792039)
+        real_distname = ('gumbel_l' if distname in {'extreme1', 'gumbel'}
+                         else distname)
+        dist = getattr(stats, real_distname)
+        params = distcont[real_distname]
+        x = dist.rvs(*params, size=1000, random_state=rng)
+        res = stats.anderson(x, distname)
+        assert res.fit_result.success
+
+    def test_anderson_weibull_As(self):
+        m = 1  # "when mi < 2, so that c > 0.5, the last line...should be used"
+        assert_equal(_get_As_weibull(1/m), _Avals_weibull[-1])
+        m = np.inf
+        assert_equal(_get_As_weibull(1/m), _Avals_weibull[0])
 
 
 class TestAndersonKSamp:

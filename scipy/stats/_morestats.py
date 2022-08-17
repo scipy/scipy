@@ -16,6 +16,7 @@ from scipy._lib._util import _rename_parameter
 
 from . import _statlib
 from . import _stats_py
+from ._fit import FitResult
 from ._stats_py import (find_repeats, _contains_nan, _normtest_finish,
                         SignificanceResult)
 from .contingency import chi2_contingency
@@ -24,6 +25,7 @@ from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
 from .._lib.deprecation import _deprecated
+from scipy import stats, interpolate
 
 
 __all__ = ['mvsdist',
@@ -1829,27 +1831,112 @@ _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
 #             on the Empirical Distribution Function.", Biometrika,
 #             Vol. 66, Issue 3, Dec. 1979, pp 591-595.
 _Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
-
 # From Richard A. Lockhart and Michael A. Stephens "Estimation and Tests of
 #             Fit for the Three-Parameter Weibull Distribution"
 #             Journal of the Royal Statistical Society.Series B(Methodological)
 #             Vol. 56, No. 3 (1994), pp. 491-500, table 1. Keys are c*100
-_Avals_weibull = {0: array([0.292, 0.395, 0.467, 0.522, 0.617, 0.711, 0.836, 0.931]),
-                  5: array([0.295, 0.399, 0.471, 0.527, 0.623, 0.719, 0.845, 0.941]),
-                  10: array([0.298, 0.403, 0.476, 0.534, 0.631, 0.728, 0.856, 0.954]),
-                  15: array([0.301, 0.408, 0.483, 0.541, 0.640, 0.738, 0.869, 0.969]),
-                  20: array([0.305, 0.414, 0.490, 0.549, 0.650, 0.751, 0.885, 0.986]),
-                  25: array([0.309, 0.421, 0.498, 0.559, 0.662, 0.765, 0.902, 1.007]),
-                  30: array([0.314, 0.429, 0.508, 0.570, 0.676, 0.782, 0.923, 1.030]),
-                  35: array([0.320, 0.438, 0.519, 0.583, 0.692, 0.802, 0.947, 1.057]),
-                  40: array([0.327, 0.448, 0.532, 0.598, 0.711, 0.824, 0.974, 1.089]),
-                  45: array([0.334, 0.469, 0.547, 0.615, 0.732, 0.850, 1.006, 1.125]),
-                  50: array([0.342, 0.472, 0.563, 0.636, 0.757, 0.879, 1.043, 1.167])}
+_Avals_weibull = [[0.292, 0.395, 0.467, 0.522, 0.617, 0.711, 0.836, 0.931],
+                  [0.295, 0.399, 0.471, 0.527, 0.623, 0.719, 0.845, 0.941],
+                  [0.298, 0.403, 0.476, 0.534, 0.631, 0.728, 0.856, 0.954],
+                  [0.301, 0.408, 0.483, 0.541, 0.640, 0.738, 0.869, 0.969],
+                  [0.305, 0.414, 0.490, 0.549, 0.650, 0.751, 0.885, 0.986],
+                  [0.309, 0.421, 0.498, 0.559, 0.662, 0.765, 0.902, 1.007],
+                  [0.314, 0.429, 0.508, 0.570, 0.676, 0.782, 0.923, 1.030],
+                  [0.320, 0.438, 0.519, 0.583, 0.692, 0.802, 0.947, 1.057],
+                  [0.327, 0.448, 0.532, 0.598, 0.711, 0.824, 0.974, 1.089],
+                  [0.334, 0.469, 0.547, 0.615, 0.732, 0.850, 1.006, 1.125],
+                  [0.342, 0.472, 0.563, 0.636, 0.757, 0.879, 1.043, 1.167]]
+_Avals_weibull = np.array(_Avals_weibull)
+_cvals_weibull = np.linspace(0, 0.5, 11)
+_get_As_weibull = interpolate.interp1d(_cvals_weibull, _Avals_weibull.T,
+                                       kind='linear', bounds_error=False,
+                                       fill_value=_Avals_weibull[-1])
 
 
-AndersonResult = namedtuple('AndersonResult', ('statistic',
-                                               'critical_values',
-                                               'significance_level'))
+def _weibull_fit_check(params, x):
+    # Refine the fit returned by `weibull_min.fit` to ensure that the first
+    # order necessary conditions are satisfied. If not, raise an error.
+
+    n = len(x)
+    c, u, s = params
+    x0 = np.min(x)
+
+    def get_scale(c, u):
+        # partial w.r.t. scale solved in terms of shape and location
+        return ((x-u)**c/n).sum()**(1/c)
+
+    def dnllf_dc(c, u, s):
+        # partial w.r.t. shape c
+        t11 = n/c
+        t12 = -n*math.log(s)
+        t13 = np.log(x - u).sum()
+        t14a = (x - u)/s
+        t14 = -(t14a**c * np.log(t14a)).sum()
+        t1 = -(t11 + t12 + t13 + t14)
+        return t1
+
+    def dnllf_du(c, u, s):
+        # partial w.r.t. location
+        t21 = -((c-1)/(x-u)).sum()
+        t22 = (c*(x-u)**(c-1)/s**c).sum()
+        t2 = -(t21 + t22)
+        return t2
+
+    def dnllf(params):
+        # partial derivatives of the NLLF w.r.t. parameters, i.e.
+        # first order necessary conditions for MLE fit
+        c, u = params
+        s = get_scale(c, u)
+        return [dnllf_dc(c, u, s), dnllf_du(c, u, s)]
+
+    def _weibull_bias_reduction(c, u, s):
+        x0, n = np.min(x), len(x)
+        eps = 1e-10 * max(1, x0)
+        u_last = u
+
+        for i in range(1000):
+            k = 1 / c
+            u = x0 - s / n**k
+            c = optimize.root(dnllf_dc, c, args=(u, s)).x[0]
+            s = get_scale(c, u)
+            if np.abs(u_last - u) < eps:
+                return c, u, s
+            u_last = u
+        else:
+            message = ('Formally, the maximum likelihood estimate of the '
+                       '`weibull_min` parameters from the sample `x` are '
+                       '`c = 0, loc=min(x), scale=1.` '
+                       'This estimate is biased, and the bias reduction '
+                       'procedure failed to converge, so `anderson` cannot '
+                       'continue.')
+            raise ValueError(message)
+
+    if np.allclose(u, x0) and dnllf_du(c, u, s) < 0:
+        return _weibull_bias_reduction(c, u, s)
+    try:
+        with np.errstate(over='raise', invalid='raise'):
+            res = optimize.root(dnllf, params[:-1])
+        if not res.success:
+            message = ("Solution of MLE first-order conditions failed: "
+                       f"{res.message}")
+            raise ValueError(message)
+    except (FloatingPointError, ValueError) as e:
+        message = ("An error occured while fitting the Weibull distribution "
+                   "to the data, so `anderson` cannot continue. "
+                   "Maximum likelihood estimation is known to "
+                   "be challenging for the Weibull distribution because the "
+                   "maximum log-likehood can be infinite. Consider "
+                   "alternative methods for fitting and tests of fit.")
+        raise ValueError(message) from e
+
+    c, u = res.x
+    s = get_scale(c, u)
+    return c, u, s
+
+
+AndersonResult = _make_tuple_bunch('AndersonResult',
+                                   ['statistic', 'critical_values',
+                                    'significance_level'], ['fit_result'])
 
 
 def anderson(x, dist='norm'):
@@ -1873,15 +1960,21 @@ def anderson(x, dist='norm'):
 
     Returns
     -------
-    statistic : float
-        The Anderson-Darling test statistic.
-    critical_values : list
-        The critical values for this distribution.
-    significance_level : list
-        The significance levels for the corresponding critical values
-        in percents.  The function returns critical values for a
-        differing set of significance levels depending on the
-        distribution that is being tested against.
+    result : AndersonResult
+        An object with the following attributes:
+
+        statistic : float
+            The Anderson-Darling test statistic.
+        critical_values : list
+            The critical values for this distribution.
+        significance_level : list
+            The significance levels for the corresponding critical values
+            in percents.  The function returns critical values for a
+            differing set of significance levels depending on the
+            distribution that is being tested against.
+        fit_result : `~scipy.stats._result_classes.FitResult`
+            An object containing the results of fitting the distribution to
+            the data.
 
     See Also
     --------
@@ -1895,9 +1988,9 @@ def anderson(x, dist='norm'):
         15%, 10%, 5%, 2.5%, 1%
     logistic
         25%, 10%, 5%, 2.5%, 1%, 0.5%
-    Gumbel
+    gumbel_l / gumbel_r
         25%, 10%, 5%, 2.5%, 1%
-    Weibull_min
+    weibull_min
         50%, 25%, 15%, 10%, 5%, 2.5%, 1%, 0.5%
 
     If the returned statistic is larger than these critical values then
@@ -1927,24 +2020,28 @@ def anderson(x, dist='norm'):
            Journal of the Royal Statistical Society.Series B(Methodological)
            Vol. 56, No. 3 (1994), pp. 491-500, Table 0. Keys in dict is C*100
 
-    """
-    if dist not in ['norm', 'expon', 'gumbel', 'gumbel_l',
-                    'gumbel_r', 'extreme1', 'logistic', 'weibull_min']:
-        raise ValueError("Invalid distribution; dist must be 'norm', "
-                         "'expon', 'gumbel', 'extreme1', 'weibull_min' "
-                         "or 'logistic'.")
+    """  # noqa
+    dist = dist.lower()
+    if dist in {'extreme1', 'gumbel'}:
+        dist = 'gumbel_l'
+    dists = {'norm', 'expon', 'gumbel_l',
+             'gumbel_r', 'logistic', 'weibull_min'}
+    if dist not in dists:
+        raise ValueError(f"Invalid distribution; dist must be in {dists}.")
     y = sort(x)
     xbar = np.mean(x, axis=0)
     N = len(y)
     if dist == 'norm':
         s = np.std(x, ddof=1, axis=0)
         w = (y - xbar) / s
+        fit_params = xbar, s
         logcdf = distributions.norm.logcdf(w)
         logsf = distributions.norm.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
         critical = around(_Avals_norm / (1.0 + 4.0/N - 25.0/N/N), 3)
     elif dist == 'expon':
         w = y / xbar
+        fit_params = 0, xbar
         logcdf = distributions.expon.logcdf(w)
         logsf = distributions.expon.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
@@ -1961,6 +2058,7 @@ def anderson(x, dist='norm'):
         sol0 = array([xbar, np.std(x, ddof=1, axis=0)])
         sol = optimize.fsolve(rootfunc, sol0, args=(x, N), xtol=1e-5)
         w = (y - sol[0]) / sol[1]
+        fit_params = sol
         logcdf = distributions.logistic.logcdf(w)
         logsf = distributions.logistic.logsf(w)
         sig = array([25, 10, 5, 2.5, 1, 0.5])
@@ -1968,29 +2066,50 @@ def anderson(x, dist='norm'):
     elif dist == 'gumbel_r':
         xbar, s = distributions.gumbel_r.fit(x)
         w = (y - xbar) / s
+        fit_params = xbar, s
         logcdf = distributions.gumbel_r.logcdf(w)
         logsf = distributions.gumbel_r.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
-    elif dist == 'weibull_min':
-        c, loc, scale = distributions.weibull_min.fit(y, loc=0.0)
-        logcdf = distributions.weibull_min.logcdf(x=y, c=c, loc=loc, scale=scale)
-        logsf = distributions.weibull_min.logsf(x=y, c=c, loc=loc, scale=scale)
-        shape_for_critical = min(5 * round(np.round(np.divide(1.0, c) * 100) / 5), 50)
-        sig = array([0.5, 0.75, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995])
-        critical = _Avals_weibull[shape_for_critical]
-    else:  # (dist == 'gumbel') or (dist == 'gumbel_l') or (dist == 'extreme1')
+    elif dist == 'gumbel_l':
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y - xbar) / s
+        fit_params = xbar, s
         logcdf = distributions.gumbel_l.logcdf(w)
         logsf = distributions.gumbel_l.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
+    elif dist == 'weibull_min':
+        message = ("Critical values of the test statistic are given for the "
+                   "asymptotic distribution. These may not be accurate for "
+                   "samples with fewer than 10 observations. Consider using "
+                   "`scipy.stats.monte_carlo_test`.")
+        if N < 10:
+            warnings.warn(message, stacklevel=2)
+        # [7] writes our 'c' as 'm', and they write `c = 1/m`. Use their names.
+        m, loc, scale = distributions.weibull_min.fit(y)
+        m, loc, scale = _weibull_fit_check((m, loc, scale), y)
+        fit_params = m, loc, scale
+        logcdf = stats.weibull_min(*fit_params).logcdf(y)
+        logsf = stats.weibull_min(*fit_params).logsf(y)
+        c = 1 / m  # m and c are as used in [7]
+        sig = array([0.5, 0.75, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995])
+        critical = _get_As_weibull(c)
+        # Goodness-of-fit tests should only be used to provide evidence
+        # _against_ the null hypothesis. Be conservative and round up.
+        critical = np.round(critical + 0.0004999999, decimals=3)
 
     i = arange(1, N + 1)
     A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
 
-    return AndersonResult(A2, critical, sig)
+    # FitResult initializer expects an optimize result, so let's work with it
+    message = '`anderson` successfully fit the distribution to the data.'
+    res = optimize.OptimizeResult(success=True, message=message)
+    res.x = np.array(fit_params)
+    fit_result = FitResult(getattr(distributions, dist), y,
+                           discrete=False, res=res)
+
+    return AndersonResult(A2, critical, sig, fit_result=fit_result)
 
 
 def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):

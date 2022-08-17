@@ -2264,6 +2264,79 @@ class weibull_min_gen(rv_continuous):
     def _entropy(self, c):
         return -_EULER / c - np.log(c) + _EULER + 1
 
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        If ``method='mm'``, parameters fixed by the user are respected, and the
+        remaining parameters are used to match distribution and sample moments
+        where possible. For example, if the user fixes the location with
+        ``floc``, the parameters will only match the distribution skewness and
+        variance to the sample skewness and variance; no attempt will be made
+        to match the means or minimize a norm of the errors.
+        \n\n""")
+    def fit(self, data, *args, **kwds):
+        # this extracts fixed shape, location, and scale however they
+        # are specified, and also leaves them in `kwds`
+        data, fc, floc, fscale = _check_fit_input_parameters(self, data,
+                                                             args, kwds)
+        method = kwds.get("method", "mle").lower()
+
+        # See https://en.wikipedia.org/wiki/Weibull_distribution#Moments for
+        # moment formulas.
+        def skew(c):
+            gamma1 = sc.gamma(1+1/c)
+            gamma2 = sc.gamma(1+2/c)
+            gamma3 = sc.gamma(1+3/c)
+            num = 2 * gamma1**3 - 3*gamma1*gamma2 + gamma3
+            den = (gamma2 - gamma1**2)**(3/2)
+            return num / den
+
+        # For c in [1e2, 3e4], population skewness appears to approach
+        # asymptote near -1.139, but past c > 3e4, skewness begins to vary
+        # wildly, and MoM won't provide a good guess. Get out early.
+        s = stats.skew(data)
+        s_min = skew(1e4)
+        if s < s_min and method == "mle" and fc is None and not args:
+            return super().fit(data, *args, **kwds)
+
+        # If method is method of moments, we don't need the user's guesses.
+        # If method is "mle", extract the guesses from args and kwds.
+        if method == "mm":
+            c, loc, scale = None, None, None
+        else:
+            c = args[0] if len(args) else None
+            loc = kwds.pop('loc', None)
+            scale = kwds.pop('scale', None)
+
+        if fc is None and c is None:  # not fixed and no guess: use MoM
+            # Solve for c that matches sample distribution skewness to sample
+            # skewness.
+            # we start having numerical issues with `weibull_min` with
+            # parameters outside this range - and not just in this method.
+            # We could probably improve the situation by doing everything
+            # in the log space, but that is for another time.
+            c = root_scalar(lambda c: skew(c) - s, bracket=[0.02, 5e5],
+                            method='bisect').root
+        elif fc is not None:  # fixed: use it
+            c = fc
+
+        if fscale is None and scale is None:
+            v = np.var(data)
+            scale = np.sqrt(v / (sc.gamma(1+2/c) - sc.gamma(1+1/c)**2))
+        elif fscale is not None:
+            scale = fscale
+
+        if floc is None and loc is None:
+            m = np.mean(data)
+            loc = m - scale*sc.gamma(1 + 1/c)
+        elif floc is not None:
+            loc = floc
+
+        if method == 'mm':
+            return c, loc, scale
+        else:
+            # At this point, parameter "guesses" may equal the fixed parameters
+            # in kwds. No harm in passing them as guesses, too.
+            return super().fit(data, c, loc=loc, scale=scale, **kwds)
+
 
 weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 
