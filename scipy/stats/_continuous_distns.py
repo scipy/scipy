@@ -7944,16 +7944,7 @@ class skew_norm_gen(rv_continuous):
         # are specified, and also leaves them in `kwds`
         data, fa, floc, fscale = _check_fit_input_parameters(self, data,
                                                              args, kwds)
-
-        # If method is method of moments, we don't need the user's guesses.
-        # If method is "mle", extract the guesses from args and kwds.
         method = kwds.get("method", "mle").lower()
-        if method == "mm":
-            a, loc, scale = None, None, None
-        else:
-            a = args[0] if len(args) else None
-            loc = kwds.pop('loc', None)
-            scale = kwds.pop('scale', None)
 
         # See https://en.wikipedia.org/wiki/Skew_normal_distribution for
         # moment formulas.
@@ -7961,19 +7952,32 @@ class skew_norm_gen(rv_continuous):
             return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
                                   / (1 - 2*d**2 / np.pi)**(3/2))
 
+        # If skewness of data is greater than max possible population skewness,
+        # MoM won't provide a good guess. Get out early.
+        s = stats.skew(data)
+        s_max = skew_d(1)
+        if abs(s) >= s_max and method == "mle" and fa is None and not args:
+            return super().fit(data, *args, **kwds)
+
+        # If method is method of moments, we don't need the user's guesses.
+        # If method is "mle", extract the guesses from args and kwds.
+        if method == "mm":
+            a, loc, scale = None, None, None
+        else:
+            a = args[0] if len(args) else None
+            loc = kwds.pop('loc', None)
+            scale = kwds.pop('scale', None)
+
         if fa is None and a is None:  # not fixed and no guess: use MoM
             # Solve for a that matches sample distribution skewness to sample
             # skewness.
-            s = stats.skew(data)
-            s_max = skew_d(1)
             s = np.clip(s, -s_max, s_max)
             d = root_scalar(lambda d: skew_d(d) - s, bracket=[-1, 1]).root
-            a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
-        elif fa is not None:  # fixed: use it
-            a = fa
-        # else: use the user-provided guess
-
-        d = a / np.sqrt(1 + a**2)  # simplifies code to (re)calculate here
+            with np.errstate(divide='ignore'):
+                a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
+        else:
+            a = fa if fa is not None else a
+            d = a / np.sqrt(1 + a**2)
 
         if fscale is None and scale is None:
             v = np.var(data)
