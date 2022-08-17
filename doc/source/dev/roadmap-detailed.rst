@@ -148,12 +148,31 @@ complex-valued functions and integrating multiple intervals (see `gh-3325
 interpolate
 ```````````
 
-Ideas for new features:
+*Spline fitting*: we need spline fitting routines with better user control. This
+includes 
 
-- Spline fitting routines with better user control.
-- Transparent tensor-product splines.
-- NURBS support.
-- Mesh refinement and coarsening of B-splines and corresponding tensor products.
+- user-selectable alternatives for the smoothing criteria (manual,
+cross-validation etc); gh-16653 makes a start in this direction;
+- several strategies for knot placement, both manual and automatic (using
+algorithms by Dierckx, de Boor, etc). 
+
+Once we have a reasonably feature complete set, we can start taking a long look
+at the future of the venerable FITPACK Fortran library, which currently is the
+only way of constructing smoothing splines in SciPy.
+
+*Tensor-product splines*: `RegularGridInterpolator` provides a minimal
+implementation. We want to evolve it both for new features (e.g. derivatives),
+performance and API (possibly provide a transparent N-dimensional tensor-product
+B-spline object).
+
+*Scalability and performance*: For the FITPACK-based functionality, the data
+size is limited by 32-bit Fortran integer size, thus scaling requires having
+the ILP64 support in the Meson-based build system.
+For N-D scattered interpolators (which are QHull based) and N-D regular grid
+interpolators we need to check performance on large data sets and improve
+where lacking.
+
+*Ideas for new features*: NURBS support could be added.
 
 
 io
