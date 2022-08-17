@@ -446,7 +446,7 @@ class BSpline:
         else:
             int_dtype = np.int64
         # Preallocate indptr and indices
-        indices = np.zeros(n * (k + 1), dtype=int_dtype)
+        indices = np.empty(n * (k + 1), dtype=int_dtype)
         indptr = np.arange(0, (n + 1) * (k + 1), k + 1, dtype=int_dtype)
 
         data, indices, indptr = _bspl._make_design_matrix(
