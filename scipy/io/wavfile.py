@@ -384,6 +384,14 @@ def _read_fmt_chunk(fid, is_big_endian):
     # fmt should always be 16, 18 or 40, but handle it just in case
     _handle_pad_byte(fid, size)
 
+    if format_tag == WAVE_FORMAT.PCM:
+        if bytes_per_second != fs * block_align:
+            raise ValueError("WAV header is invalid: nAvgBytesPerSec must"
+                             " equal product of nSamplesPerSec and"
+                             " nBlockAlign, but file has nSamplesPerSec ="
+                             f" {fs}, nBlockAlign = {block_align}, and"
+                             f" nAvgBytesPerSec = {bytes_per_second}")
+
     return (size, format_tag, channels, fs, bytes_per_second, block_align,
             bit_depth)
 
@@ -458,10 +466,13 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
 
         if dtype == 'V1':
             # Rearrange raw bytes into smallest compatible numpy dtype
-            dt = numpy.int32 if bytes_per_sample == 3 else numpy.int64
-            a = numpy.zeros((len(data) // bytes_per_sample, dt().itemsize),
+            dt = f'{fmt}i4' if bytes_per_sample == 3 else f'{fmt}i8'
+            a = numpy.zeros((len(data) // bytes_per_sample, numpy.dtype(dt).itemsize),
                             dtype='V1')
-            a[:, -bytes_per_sample:] = data.reshape((-1, bytes_per_sample))
+            if is_big_endian:
+                a[:, :bytes_per_sample] = data.reshape((-1, bytes_per_sample))
+            else:
+                a[:, -bytes_per_sample:] = data.reshape((-1, bytes_per_sample))
             data = a.view(dt).reshape(a.shape[:-1])
     else:
         if bytes_per_sample in {1, 2, 4, 8}:
@@ -742,6 +753,7 @@ def write(filename, rate, data):
     Write to 16-bit PCM, Mono.
 
     >>> from scipy.io.wavfile import write
+    >>> import numpy as np
     >>> samplerate = 44100; fs = 100
     >>> t = np.linspace(0., 1., samplerate)
     >>> amplitude = np.iinfo(np.int16).max

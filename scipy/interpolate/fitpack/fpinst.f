@@ -1,4 +1,5 @@
-      subroutine fpinst(iopt,t,n,c,k,x,l,tt,nn,cc,nest)
+      recursive subroutine fpinst(iopt,t,n,c,k,x,l,tt,nn,cc,nest)
+      implicit none
 c  given the b-spline representation (knots t(j),j=1,2,...,n, b-spline
 c  coefficients c(j),j=1,2,...,n-k-1) of a spline of degree k, fpinst
 c  calculates the b-spline representation (knots tt(j),j=1,2,...,nn,

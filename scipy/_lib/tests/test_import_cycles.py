@@ -40,6 +40,7 @@ MODULES = [
     "scipy.stats",
     "scipy.stats.distributions",
     "scipy.stats.mstats",
+    "scipy.stats.contingency"
 ]
 
 

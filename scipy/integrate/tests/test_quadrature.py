@@ -8,7 +8,7 @@ from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              quad, simpson, simps, fixed_quad, AccuracyWarning)
 
 
-class TestFixedQuad(object):
+class TestFixedQuad:
     def test_scalar(self):
         n = 4
         func = lambda x: x**(2*n - 1)
@@ -26,7 +26,7 @@ class TestFixedQuad(object):
         assert_allclose(got, expected, rtol=1e-12)
 
 
-class TestQuadrature(object):
+class TestQuadrature:
     def quad(self, x, a, b, args):
         raise NotImplementedError
 
@@ -153,6 +153,31 @@ class TestQuadrature(object):
         assert_equal(simpson(y, x=x, even='first'), 13.75)
         assert_equal(simpson(y, x=x, even='last'), 14)
 
+        # Tests for checking base case
+        x = np.array([3])
+        y = np.power(x, 2)
+        assert_equal(simpson(y, x=x, axis=0), 0.0)
+        assert_equal(simpson(y, x=x, axis=-1), 0.0)
+
+        x = np.array([3, 3, 3, 3])
+        y = np.power(x, 2)
+        assert_equal(simpson(y, x=x, axis=0), 0.0)
+        assert_equal(simpson(y, x=x, axis=-1), 0.0)
+
+        x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 2, 4, 8]])
+        y = np.power(x, 2)
+        zero_axis = [0.0, 0.0, 0.0, 0.0]
+        default_axis = [175.75, 175.75, 175.75]
+        assert_equal(simpson(y, x=x, axis=0), zero_axis)
+        assert_equal(simpson(y, x=x, axis=-1), default_axis)
+
+        x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 8, 16, 32]])
+        y = np.power(x, 2)
+        zero_axis = [0.0, 136.0, 1088.0, 8704.0]
+        default_axis = [175.75, 175.75, 11292.25]
+        assert_equal(simpson(y, x=x, axis=0), zero_axis)
+        assert_equal(simpson(y, x=x, axis=-1), default_axis)
+
     def test_simps(self):
         # Basic coverage test for the alias
         y = np.arange(4)
@@ -161,7 +186,7 @@ class TestQuadrature(object):
                      simps(y, x=x, dx=0.5, even='first'))
 
 
-class TestCumulative_trapezoid(object):
+class TestCumulative_trapezoid:
     def test_1d(self):
         x = np.linspace(-2, 2, num=5)
         y = x

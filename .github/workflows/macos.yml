@@ -1,93 +1,90 @@
-name: macOS tests
+name: macOS tests (setup.py)
 
 on:
   push:
     branches:
-      - master
+      - main
       - maintenance/**
   pull_request:
     branches:
-      - master
+      - main
       - maintenance/**
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   test_macos:
     name: macOS Test Matrix
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: macos-latest
     strategy:
       max-parallel: 3
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: ["3.8"]
         numpy-version: ['--upgrade numpy']
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: 'environment.yml'
+
+    - name: Setup gfortran
+      run: |
+        # this is taken verbatim from the numpy azure pipeline setup.
+        set -xe
+        # same version of gfortran as the open-libs and numpy-wheel builds
+        curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
+        GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
+        KNOWN_SHA256="d2d5ca5ba8332d63bbe23a07201c4a0a5d7e09ee56f0298a96775f928c3c4b30  gfortran.dmg"
+        if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
+            echo sha256 mismatch
+            exit 1
+        fi
+        hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
+        sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
+        otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
+        # Manually symlink gfortran-4.9 to plain gfortran for f2py.
+        # No longer needed after Feb 13 2020 as gfortran is already present
+        # and the attempted link errors. Keep this for future reference.
+        # ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran
 
     - name: Setup openblas
       run: |
-        # this setup is originally taken from the .travis.yml
+        # this is taken verbatim from the numpy azure pipeline setup.
+        set -xe
+        target=$(python tools/openblas_support.py)
+        ls -lR $target
+        # manually link to appropriate system paths
+        cp $target/lib/lib* /usr/local/lib/
+        cp $target/include/* /usr/local/include/
 
-        # virtualenv needed for the multibuild steps
-        pip install virtualenv
-        brew install libmpc gcc@6 suitesparse swig
-        # The openblas binary used here was built using a gfortran older than 7,
-        # so it needs the older abi libgfortran.
-        export FC=gfortran-6
-        export CC=gcc-6
-        export CXX=g++-6
-        mkdir gcc_aliases
-        pushd gcc_aliases
-        ln -s `which gcc-6` gcc
-        ln -s `which g++-6` g++
-        ln -s `which gfortran-6` gfortran
-        # make gcc aliases in current dir
-        export PATH=$PWD/gcc_aliases:$PATH
-        popd
-        touch config.sh
-        git clone --depth=1 https://github.com/matthew-brett/multibuild.git
+        # otool -L /usr/local/lib/libopenblas*
 
-        # designed for travis, but probably work on github actions
-        source multibuild/common_utils.sh
-        source multibuild/travis_steps.sh
-        before_install
-        export CFLAGS="-arch x86_64"
-        export CXXFLAGS="-arch x86_64"
-        printenv
-
-        # Grab openblas
-        OPENBLAS_PATH=$(python tools/openblas_support.py)
-        # Copy it to the working directory
-        mv $OPENBLAS_PATH ./
-
-        # Modify the openblas dylib so it can be used in its current location
-        # Also make it use the current install location for libgfortran, libquadmath, and libgcc_s.
-        pushd openblas/lib
-        install_name_tool -id $PWD/libopenblasp-r*.dylib libopenblas.dylib
-        install_name_tool -change /usr/local/gfortran/lib/libgfortran.3.dylib /usr/local/Cellar/gcc@6/6.5.0_5/lib/gcc/6/libgfortran.3.dylib libopenblas.dylib
-        install_name_tool -change /usr/local/gfortran/lib/libquadmath.0.dylib /usr/local/Cellar/gcc@6/6.5.0_5/lib/gcc/6/libquadmath.0.dylib libopenblas.dylib
-        install_name_tool -change /usr/local/gfortran/lib/libgcc_s.1.dylib /usr/local/Cellar/gcc@6/6.5.0_5/lib/gcc/6/libgcc_s.1.dylib libopenblas.dylib
-        popd
         echo "[openblas]" > site.cfg
         echo "libraries = openblas" >> site.cfg
-        echo "library_dirs = $PWD/openblas/lib" >> site.cfg
-        echo "include_dirs = $PWD/openblas/include" >> site.cfg
-        echo "runtime_library_dirs = $PWD/openblas/lib" >> site.cfg
-        # remove a spurious gcc/gfortran toolchain install
-        rm -rf /usr/local/Cellar/gcc/9.2.0_2
-        #
-        export PATH="$PATH:$PWD/openblas"
+        echo "library_dirs = /usr/local/lib" >> site.cfg
+        echo "include_dirs = /usr/local/include" >> site.cfg
+        echo "runtime_library_dirs = /usr/local/lib" >> site.cfg
+
+    - name: A few other packages
+      continue-on-error: true
+      run: |
+        brew install libmpc suitesparse swig
+
     - name: Install packages
       run: |
         pip install ${{ matrix.numpy-version }}
-        pip install setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2
+        pip install setuptools==59.8.0 wheel cython pytest pytest-xdist pytest-timeout pybind11 pytest-xdist mpmath gmpy2 pythran pooch
 
     - name: Test SciPy
       run: |
-        export DYLD_LIBRARY_PATH=/usr/local/Cellar/gcc@6/6.5.0_5/lib/gcc/6/:$DYLD_LIBRARY_PATH
-        python -u runtests.py
+        export LIBRARY_PATH="$LIBRARY_PATH:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
+        SCIPY_USE_PYTHRAN=`test ${{ matrix.python-version }} != 3.9; echo $?` python -u runtests.py -- --durations=10 --timeout=60

@@ -8,7 +8,7 @@ with safe_import():
     from scipy.linalg import eigh, orth, cho_factor, cho_solve
     import scipy.sparse
     from scipy.sparse.linalg import lobpcg
-    from scipy.sparse.linalg.interface import LinearOperator
+    from scipy.sparse.linalg._interface import LinearOperator
 
 
 def _sakurai(n):

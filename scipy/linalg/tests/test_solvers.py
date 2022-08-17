@@ -9,7 +9,7 @@ from scipy.linalg import solve_sylvester
 from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
 from scipy.linalg import solve_continuous_are, solve_discrete_are
 from scipy.linalg import block_diag, solve, LinAlgError
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 def _load_data(name):
@@ -23,7 +23,7 @@ def _load_data(name):
         return dict(f.items())
 
 
-class TestSolveLyapunov(object):
+class TestSolveLyapunov:
 
     cases = [
         (np.array([[1, 2], [3, 4]]),
@@ -703,7 +703,7 @@ def test_are_validate_args():
             assert_raises(ValueError, x, sq, sq, sq, sq, sq, nm)
 
 
-class TestSolveSylvester(object):
+class TestSolveSylvester:
 
     cases = [
         # a, b, c all real.

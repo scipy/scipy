@@ -5,10 +5,11 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
+import pytest
 import numpy as np
+from numpy.testing import assert_, assert_equal, assert_allclose
 from scipy.optimize import (minimize, rosen, rosen_der, rosen_hess,
                             rosen_hess_prod)
-from numpy.testing import assert_, assert_equal, assert_allclose
 
 
 class Accumulator:
@@ -25,7 +26,7 @@ class Accumulator:
             self.accum += x
 
 
-class TestTrustRegionSolvers(object):
+class TestTrustRegionSolvers:
 
     def setup_method(self):
         self.x_opt = [1.0, 1.0]
@@ -52,6 +53,13 @@ class TestTrustRegionSolvers(object):
         assert_equal(len(r['allvecs']), maxiter+1)
         assert_allclose(r['x'], r['allvecs'][-1])
         assert_allclose(sum(r['allvecs'][1:]), accumulator.accum)
+
+    def test_dogleg_user_warning(self):
+        with pytest.warns(RuntimeWarning,
+                          match=r'Maximum number of iterations'):
+            minimize(rosen, self.hard_guess, jac=rosen_der,
+                     hess=rosen_hess, method='dogleg',
+                     options={'disp': True, 'maxiter': 1}, )
 
     def test_solver_concordance(self):
         # Assert that dogleg uses fewer iterations than ncg on the Rosenbrock

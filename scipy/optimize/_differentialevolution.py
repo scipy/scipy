@@ -6,15 +6,15 @@ import warnings
 
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
-from scipy.optimize.optimize import _status_message
-from scipy._lib._util import check_random_state, MapWrapper
+from scipy.optimize._optimize import _status_message
+from scipy._lib._util import check_random_state, MapWrapper, _FunctionWrapper
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
 from scipy.sparse import issparse
 
-
 __all__ = ['differential_evolution']
+
 
 _MACHEPS = np.finfo(np.float64).eps
 
@@ -24,30 +24,32 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
-                           workers=1, constraints=()):
+                           workers=1, constraints=(), x0=None, *,
+                           integrality=None, vectorized=False):
     """Finds the global minimum of a multivariate function.
 
-    Differential Evolution is stochastic in nature (does not use gradient
-    methods) to find the minimum, and can search large areas of candidate
-    space, but often requires larger numbers of function evaluations than
-    conventional gradient-based techniques.
+    The differential evolution method [1]_ is stochastic in nature. It does
+    not use gradient methods to find the minimum, and can search large areas
+    of candidate space, but often requires larger numbers of function
+    evaluations than conventional gradient-based techniques.
 
-    The algorithm is due to Storn and Price [1]_.
+    The algorithm is due to Storn and Price [2]_.
 
     Parameters
     ----------
     func : callable
         The objective function to be minimized. Must be in the form
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
-        and ``args`` is a  tuple of any additional fixed parameters needed to
-        completely specify the function.
-    bounds : sequence or `Bounds`, optional
+        and ``args`` is a tuple of any additional fixed parameters needed to
+        completely specify the function. The number of parameters, N, is equal
+        to ``len(x)``.
+    bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:
         1. Instance of `Bounds` class.
         2. ``(min, max)`` pairs for each element in ``x``, defining the finite
-        lower and upper bounds for the optimizing argument of `func`. It is
-        required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
-        to determine the number of parameters in ``x``.
+        lower and upper bounds for the optimizing argument of `func`.
+        The total number of bounds is used to determine the number of
+        parameters, N.
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -71,11 +73,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     maxiter : int, optional
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
-        is: ``(maxiter + 1) * popsize * len(x)``
+        is: ``(maxiter + 1) * popsize * N``
     popsize : int, optional
         A multiplier for setting the total population size. The population has
-        ``popsize * len(x)`` individuals (unless the initial population is
-        supplied via the `init` keyword).
+        ``popsize * N`` individuals. This keyword is overridden if an
+        initial population is supplied via the `init` keyword. When using
+        ``init='sobol'`` the population size is calculated as the next power
+        of 2 after ``popsize * N``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -97,19 +101,19 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-        If `seed` is not specified the `~np.random.RandomState` singleton is
-        used.
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with seed.
-        If `seed` is already a ``RandomState`` or a ``Generator`` instance,
-        then that object is used.
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
     callback : callable, `callback(xk, convergence=val)`, optional
         A function to follow the progress of the minimization. ``xk`` is
-        the current value of ``x0``. ``val`` represents the fractional
+        the best solution found so far. ``val`` represents the fractional
         value of the population convergence.  When ``val`` is greater than one
         the function halts. If callback returns `True`, then the minimization
         is halted (any polishing is still carried out).
@@ -117,23 +121,34 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
         can improve the minimization slightly. If a constrained problem is
-        being studied then the `trust-constr` method is used instead.
+        being studied then the `trust-constr` method is used instead. For large
+        problems with many constraints, polishing can take a long time due to
+        the Jacobian computations.
     init : str or array-like, optional
         Specify which type of population initialization is performed. Should be
         one of:
 
             - 'latinhypercube'
+            - 'sobol'
+            - 'halton'
             - 'random'
             - array specifying the initial population. The array should have
-              shape ``(M, len(x))``, where M is the total population size and
-              len(x) is the number of parameters.
+              shape ``(S, N)``, where S is the total population size and N is
+              the number of parameters.
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
-        maximize coverage of the available parameter space. 'random'
-        initializes the population randomly - this has the drawback that
-        clustering can occur, preventing the whole of parameter space being
-        covered. Use of an array to specify a population subset could be used,
+        maximize coverage of the available parameter space.
+
+        'sobol' and 'halton' are superior alternatives and maximize even more
+        the parameter space. 'sobol' will enforce an initial population
+        size which is calculated as the next power of 2 after
+        ``popsize * N``. 'halton' has no requirements but is a bit less
+        efficient. See `scipy.stats.qmc` for more details.
+
+        'random' initializes the population randomly - this has the drawback
+        that clustering can occur, preventing the whole of parameter space
+        being covered. Use of an array to specify a population could be used,
         for example, to create a tight bunch of initial guesses in an location
         where the solution is known to exist, thereby reducing time for
         convergence.
@@ -148,8 +163,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         trial vectors can take advantage of continuous improvements in the best
         solution.
         With ``'deferred'``, the best solution vector is updated once per
-        generation. Only ``'deferred'`` is compatible with parallelization, and
-        the `workers` keyword can over-ride this option.
+        generation. Only ``'deferred'`` is compatible with parallelization or
+        vectorization, and the `workers` and `vectorized` keywords can
+        over-ride this option.
 
         .. versionadded:: 1.2.0
 
@@ -163,6 +179,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         This evaluation is carried out as ``workers(func, iterable)``.
         This option will override the `updating` keyword to
         ``updating='deferred'`` if ``workers != 1``.
+        This option overrides the `vectorized` keyword if ``workers != 1``.
         Requires that `func` be pickleable.
 
         .. versionadded:: 1.2.0
@@ -172,6 +189,45 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         kwd. Uses the approach by Lampinen [5]_.
 
         .. versionadded:: 1.4.0
+
+    x0 : None or array-like, optional
+        Provides an initial guess to the minimization. Once the population has
+        been initialized this vector replaces the first (best) member. This
+        replacement is done even if `init` is given an initial population.
+        ``x0.shape == (N,)``.
+
+        .. versionadded:: 1.7.0
+
+    integrality : 1-D array, optional
+        For each decision variable, a boolean value indicating whether the
+        decision variable is constrained to integer values. The array is
+        broadcast to ``(N,)``.
+        If any decision variables are constrained to be integral, they will not
+        be changed during polishing.
+        Only integer values lying between the lower and upper bounds are used.
+        If there are no integer values lying between the bounds then a
+        `ValueError` is raised.
+
+        .. versionadded:: 1.9.0
+
+    vectorized : bool, optional
+        If ``vectorized is True``, `func` is sent an `x` array with
+        ``x.shape == (N, S)``, and is expected to return an array of shape
+        ``(S,)``, where `S` is the number of solution vectors to be calculated.
+        If constraints are applied, each of the functions used to construct
+        a `Constraint` object should accept an `x` array with
+        ``x.shape == (N, S)``, and return an array of shape ``(M, S)``, where
+        `M` is the number of constraint components.
+        This option is an alternative to the parallelization offered by
+        `workers`, and may help in optimization speed by reducing interpreter
+        overhead from multiple function calls. This keyword is ignored if
+        ``workers != 1``.
+        This option will override the `updating` keyword to
+        ``updating='deferred'``.
+        See the notes section for further discussion on when to use
+        ``'vectorized'``, and when to use ``'workers'``.
+
+        .. versionadded:: 1.9.0
 
     Returns
     -------
@@ -189,24 +245,24 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     Notes
     -----
     Differential evolution is a stochastic population based method that is
-    useful for global optimization problems. At each pass through the population
-    the algorithm mutates each candidate solution by mixing with other candidate
-    solutions to create a trial candidate. There are several strategies [2]_ for
-    creating trial candidates, which suit some problems more than others. The
-    'best1bin' strategy is a good starting point for many systems. In this
-    strategy two members of the population are randomly chosen. Their difference
-    is used to mutate the best member (the 'best' in 'best1bin'), :math:`b_0`,
-    so far:
+    useful for global optimization problems. At each pass through the
+    population the algorithm mutates each candidate solution by mixing with
+    other candidate solutions to create a trial candidate. There are several
+    strategies [3]_ for creating trial candidates, which suit some problems
+    more than others. The 'best1bin' strategy is a good starting point for
+    many systems. In this strategy two members of the population are randomly
+    chosen. Their difference is used to mutate the best member (the 'best' in
+    'best1bin'), :math:`b_0`, so far:
 
     .. math::
 
         b' = b_0 + mutation * (population[rand0] - population[rand1])
 
     A trial vector is then constructed. Starting with a randomly chosen ith
-    parameter the trial is sequentially filled (in modulo) with parameters from
-    ``b'`` or the original candidate. The choice of whether to use ``b'`` or the
-    original candidate is made with a binomial distribution (the 'bin' in
-    'best1bin') - a random number in [0, 1) is generated. If this number is
+    parameter the trial is sequentially filled (in modulo) with parameters
+    from ``b'`` or the original candidate. The choice of whether to use ``b'``
+    or the original candidate is made with a binomial distribution (the 'bin'
+    in 'best1bin') - a random number in [0, 1) is generated. If this number is
     less than the `recombination` constant then the parameter is loaded from
     ``b'``, otherwise it is loaded from the original candidate. The final
     parameter is always loaded from ``b'``. Once the trial candidate is built
@@ -223,64 +279,31 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     convergence as trial vectors can immediately benefit from improved
     solutions. To use the original Storn and Price behaviour, updating the best
     solution once per iteration, set ``updating='deferred'``.
+    The ``'deferred'`` approach is compatible with both parallelization and
+    vectorization (``'workers'`` and ``'vectorized'`` keywords). These may
+    improve minimization speed by using computer resources more efficiently.
+    The ``'workers'`` distribute calculations over multiple processors. By
+    default the Python `multiprocessing` module is used, but other approaches
+    are also possible, such as the Message Passing Interface (MPI) used on
+    clusters [6]_ [7]_. The overhead from these approaches (creating new
+    Processes, etc) may be significant, meaning that computational speed
+    doesn't necessarily scale with the number of processors used.
+    Parallelization is best suited to computationally expensive objective
+    functions. If the objective function is less expensive, then
+    ``'vectorized'`` may aid by only calling the objective function once per
+    iteration, rather than multiple times for all the population members; the
+    interpreter overhead is reduced.
 
     .. versionadded:: 0.15.0
 
-    Examples
-    --------
-    Let us consider the problem of minimizing the Rosenbrock function. This
-    function is implemented in `rosen` in `scipy.optimize`.
-
-    >>> from scipy.optimize import rosen, differential_evolution
-    >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
-    >>> result = differential_evolution(rosen, bounds)
-    >>> result.x, result.fun
-    (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
-
-    Now repeat, but with parallelization.
-
-    >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
-    >>> result = differential_evolution(rosen, bounds, updating='deferred',
-    ...                                 workers=2)
-    >>> result.x, result.fun
-    (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
-
-    Let's try and do a constrained minimization
-
-    >>> from scipy.optimize import NonlinearConstraint, Bounds
-    >>> def constr_f(x):
-    ...     return np.array(x[0] + x[1])
-    >>>
-    >>> # the sum of x[0] and x[1] must be less than 1.9
-    >>> nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
-    >>> # specify limits using a `Bounds` object.
-    >>> bounds = Bounds([0., 0.], [2., 2.])
-    >>> result = differential_evolution(rosen, bounds, constraints=(nlc),
-    ...                                 seed=1)
-    >>> result.x, result.fun
-    (array([0.96633867, 0.93363577]), 0.0011361355854792312)
-
-    Next find the minimum of the Ackley function
-    (https://en.wikipedia.org/wiki/Test_functions_for_optimization).
-
-    >>> from scipy.optimize import differential_evolution
-    >>> import numpy as np
-    >>> def ackley(x):
-    ...     arg1 = -0.2 * np.sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
-    ...     arg2 = 0.5 * (np.cos(2. * np.pi * x[0]) + np.cos(2. * np.pi * x[1]))
-    ...     return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
-    >>> bounds = [(-5, 5), (-5, 5)]
-    >>> result = differential_evolution(ackley, bounds)
-    >>> result.x, result.fun
-    (array([ 0.,  0.]), 4.4408920985006262e-16)
-
     References
     ----------
-    .. [1] Storn, R and Price, K, Differential Evolution - a Simple and
+    .. [1] Differential evolution, Wikipedia,
+           http://en.wikipedia.org/wiki/Differential_evolution
+    .. [2] Storn, R and Price, K, Differential Evolution - a Simple and
            Efficient Heuristic for Global Optimization over Continuous Spaces,
            Journal of Global Optimization, 1997, 11, 341 - 359.
-    .. [2] http://www1.icsi.berkeley.edu/~storn/code.html
-    .. [3] http://en.wikipedia.org/wiki/Differential_evolution
+    .. [3] http://www1.icsi.berkeley.edu/~storn/code.html
     .. [4] Wormington, M., Panaccione, C., Matney, K. M., Bowen, D. K., -
            Characterization of structures from X-ray scattering data using
            genetic algorithms, Phil. Trans. R. Soc. Lond. A, 1999, 357,
@@ -289,6 +312,69 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
            evolution algorithm. Proceedings of the 2002 Congress on
            Evolutionary Computation. CEC'02 (Cat. No. 02TH8600). Vol. 2. IEEE,
            2002.
+    .. [6] https://mpi4py.readthedocs.io/en/stable/
+    .. [7] https://schwimmbad.readthedocs.io/en/latest/
+
+    Examples
+    --------
+    Let us consider the problem of minimizing the Rosenbrock function. This
+    function is implemented in `rosen` in `scipy.optimize`.
+
+    >>> import numpy as np
+    >>> from scipy.optimize import rosen, differential_evolution
+    >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
+    >>> result = differential_evolution(rosen, bounds)
+    >>> result.x, result.fun
+    (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
+
+    Now repeat, but with parallelization.
+
+    >>> result = differential_evolution(rosen, bounds, updating='deferred',
+    ...                                 workers=2)
+    >>> result.x, result.fun
+    (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
+
+    Let's do a constrained minimization.
+
+    >>> from scipy.optimize import LinearConstraint, Bounds
+
+    We add the constraint that the sum of ``x[0]`` and ``x[1]`` must be less
+    than or equal to 1.9.  This is a linear constraint, which may be written
+    ``A @ x <= 1.9``, where ``A = array([[1, 1]])``.  This can be encoded as
+    a `LinearConstraint` instance:
+
+    >>> lc = LinearConstraint([[1, 1]], -np.inf, 1.9)
+
+    Specify limits using a `Bounds` object.
+
+    >>> bounds = Bounds([0., 0.], [2., 2.])
+    >>> result = differential_evolution(rosen, bounds, constraints=lc,
+    ...                                 seed=1)
+    >>> result.x, result.fun
+    (array([0.96632622, 0.93367155]), 0.0011352416852625719)
+
+    Next find the minimum of the Ackley function
+    (https://en.wikipedia.org/wiki/Test_functions_for_optimization).
+
+    >>> def ackley(x):
+    ...     arg1 = -0.2 * np.sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
+    ...     arg2 = 0.5 * (np.cos(2. * np.pi * x[0]) + np.cos(2. * np.pi * x[1]))
+    ...     return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
+    >>> bounds = [(-5, 5), (-5, 5)]
+    >>> result = differential_evolution(ackley, bounds, seed=1)
+    >>> result.x, result.fun, result.nfev
+    (array([0., 0.]), 4.440892098500626e-16, 3063)
+
+    The Ackley function is written in a vectorized manner, so the
+    ``'vectorized'`` keyword can be employed. Note the reduced number of
+    function evaluations.
+
+    >>> result = differential_evolution(
+    ...     ackley, bounds, vectorized=True, updating='deferred', seed=1
+    ... )
+    >>> result.x, result.fun, result.nfev
+    (array([0., 0.]), 4.440892098500626e-16, 190)
+
     """
 
     # using a context manager means that any created Pool objects are
@@ -304,30 +390,34 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      disp=disp, init=init, atol=atol,
                                      updating=updating,
                                      workers=workers,
-                                     constraints=constraints) as solver:
+                                     constraints=constraints,
+                                     x0=x0,
+                                     integrality=integrality,
+                                     vectorized=vectorized) as solver:
         ret = solver.solve()
 
     return ret
 
 
-class DifferentialEvolutionSolver(object):
+class DifferentialEvolutionSolver:
 
     """This class implements the differential evolution solver
 
     Parameters
     ----------
     func : callable
-        The objective function to be minimized.  Must be in the form
+        The objective function to be minimized. Must be in the form
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
-        and ``args`` is a  tuple of any additional fixed parameters needed to
-        completely specify the function.
-    bounds : sequence or `Bounds`, optional
-        Bounds for variables.  There are two ways to specify the bounds:
+        and ``args`` is a tuple of any additional fixed parameters needed to
+        completely specify the function. The number of parameters, N, is equal
+        to ``len(x)``.
+    bounds : sequence or `Bounds`
+        Bounds for variables. There are two ways to specify the bounds:
         1. Instance of `Bounds` class.
         2. ``(min, max)`` pairs for each element in ``x``, defining the finite
-        lower and upper bounds for the optimizing argument of `func`. It is
-        required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
-        to determine the number of parameters in ``x``.
+        lower and upper bounds for the optimizing argument of `func`.
+        The total number of bounds is used to determine the number of
+        parameters, N.
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -352,11 +442,13 @@ class DifferentialEvolutionSolver(object):
     maxiter : int, optional
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
-        is: ``(maxiter + 1) * popsize * len(x)``
+        is: ``(maxiter + 1) * popsize * N``
     popsize : int, optional
         A multiplier for setting the total population size. The population has
-        ``popsize * len(x)`` individuals (unless the initial population is
-        supplied via the `init` keyword).
+        ``popsize * N`` individuals. This keyword is overridden if an
+        initial population is supplied via the `init` keyword. When using
+        ``init='sobol'`` the population size is calculated as the next power
+        of 2 after ``popsize * N``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -378,13 +470,13 @@ class DifferentialEvolutionSolver(object):
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-        If `seed` is not specified the `~np.random.RandomState` singleton is
-        used.
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with seed.
-        If `seed` is already a ``RandomState`` or a ``Generator`` instance,
-        then that object is used.
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
@@ -398,7 +490,9 @@ class DifferentialEvolutionSolver(object):
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
         can improve the minimization slightly. If a constrained problem is
-        being studied then the `trust-constr` method is used instead.
+        being studied then the `trust-constr` method is used instead. For large
+        problems with many constraints, polishing can take a long time due to
+        the Jacobian computations.
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
@@ -407,18 +501,27 @@ class DifferentialEvolutionSolver(object):
         one of:
 
             - 'latinhypercube'
+            - 'sobol'
+            - 'halton'
             - 'random'
             - array specifying the initial population. The array should have
-              shape ``(M, len(x))``, where M is the total population size and
-              len(x) is the number of parameters.
+              shape ``(S, N)``, where S is the total population size and
+              N is the number of parameters.
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
-        maximize coverage of the available parameter space. 'random'
-        initializes the population randomly - this has the drawback that
-        clustering can occur, preventing the whole of parameter space being
-        covered. Use of an array to specify a population could be used, for
-        example, to create a tight bunch of initial guesses in an location
+        maximize coverage of the available parameter space.
+
+        'sobol' and 'halton' are superior alternatives and maximize even more
+        the parameter space. 'sobol' will enforce an initial population
+        size which is calculated as the next power of 2 after
+        ``popsize * N``. 'halton' has no requirements but is a bit less
+        efficient. See `scipy.stats.qmc` for more details.
+
+        'random' initializes the population randomly - this has the drawback
+        that clustering can occur, preventing the whole of parameter space
+        being covered. Use of an array to specify a population could be used,
+        for example, to create a tight bunch of initial guesses in an location
         where the solution is known to exist, thereby reducing time for
         convergence.
     atol : float, optional
@@ -427,13 +530,14 @@ class DifferentialEvolutionSolver(object):
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
     updating : {'immediate', 'deferred'}, optional
-        If `immediate` the best solution vector is continuously updated within
-        a single generation. This can lead to faster convergence as trial
-        vectors can take advantage of continuous improvements in the best
+        If ``'immediate'``, the best solution vector is continuously updated
+        within a single generation [4]_. This can lead to faster convergence as
+        trial vectors can take advantage of continuous improvements in the best
         solution.
-        With `deferred` the best solution vector is updated once per
-        generation. Only `deferred` is compatible with parallelization, and the
-        `workers` keyword can over-ride this option.
+        With ``'deferred'``, the best solution vector is updated once per
+        generation. Only ``'deferred'`` is compatible with parallelization or
+        vectorization, and the `workers` and `vectorized` keywords can
+        over-ride this option.
     workers : int or map-like callable, optional
         If `workers` is an int the population is subdivided into `workers`
         sections and evaluated in parallel
@@ -448,6 +552,33 @@ class DifferentialEvolutionSolver(object):
     constraints : {NonLinearConstraint, LinearConstraint, Bounds}
         Constraints on the solver, over and above those applied by the `bounds`
         kwd. Uses the approach by Lampinen.
+    x0 : None or array-like, optional
+        Provides an initial guess to the minimization. Once the population has
+        been initialized this vector replaces the first (best) member. This
+        replacement is done even if `init` is given an initial population.
+        ``x0.shape == (N,)``.
+    integrality : 1-D array, optional
+        For each decision variable, a boolean value indicating whether the
+        decision variable is constrained to integer values. The array is
+        broadcast to ``(N,)``.
+        If any decision variables are constrained to be integral, they will not
+        be changed during polishing.
+        Only integer values lying between the lower and upper bounds are used.
+        If there are no integer values lying between the bounds then a
+        `ValueError` is raised.
+    vectorized : bool, optional
+        If ``vectorized is True``, `func` is sent an `x` array with
+        ``x.shape == (N, S)``, and is expected to return an array of shape
+        ``(S,)``, where `S` is the number of solution vectors to be calculated.
+        If constraints are applied, each of the functions used to construct
+        a `Constraint` object should accept an `x` array with
+        ``x.shape == (N, S)``, and return an array of shape ``(M, S)``, where
+        `M` is the number of constraint components.
+        This option is an alternative to the parallelization offered by
+        `workers`, and may help in optimization speed. This keyword is
+        ignored if ``workers != 1``.
+        This option will override the `updating` keyword to
+        ``updating='deferred'``.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -466,14 +597,15 @@ class DifferentialEvolutionSolver(object):
 
     __init_error_msg = ("The population initialization method must be one of "
                         "'latinhypercube' or 'random', or an array of shape "
-                        "(M, N) where N is the number of parameters and M>5")
+                        "(S, N) where N is the number of parameters and S>5")
 
     def __init__(self, func, bounds, args=(),
                  strategy='best1bin', maxiter=1000, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
-                 workers=1, constraints=()):
+                 workers=1, constraints=(), x0=None, *, integrality=None,
+                 vectorized=False):
 
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -490,14 +622,35 @@ class DifferentialEvolutionSolver(object):
         if updating in ['immediate', 'deferred']:
             self._updating = updating
 
+        self.vectorized = vectorized
+
         # want to use parallelisation, but updating is immediate
         if workers != 1 and updating == 'immediate':
             warnings.warn("differential_evolution: the 'workers' keyword has"
                           " overridden updating='immediate' to"
-                          " updating='deferred'", UserWarning)
+                          " updating='deferred'", UserWarning, stacklevel=2)
+            self._updating = 'deferred'
+
+        if vectorized and workers != 1:
+            warnings.warn("differential_evolution: the 'workers' keyword"
+                          " overrides the 'vectorized' keyword", stacklevel=2)
+            self.vectorized = vectorized = False
+
+        if vectorized and updating == 'immediate':
+            warnings.warn("differential_evolution: the 'vectorized' keyword"
+                          " has overridden updating='immediate' to updating"
+                          "='deferred'", UserWarning, stacklevel=2)
             self._updating = 'deferred'
 
         # an object with a map method.
+        if vectorized:
+            def maplike_for_vectorized_func(func, x):
+                # send an array (N, S) to the user func,
+                # expect to receive (S,). Transposition is required because
+                # internally the population is held as (S, N)
+                return np.atleast_1d(func(x.T))
+            workers = maplike_for_vectorized_func
+
         self._mapwrapper = MapWrapper(workers)
 
         # relative and absolute tolerances for convergence
@@ -560,19 +713,57 @@ class DifferentialEvolutionSolver(object):
 
         self.random_number_generator = check_random_state(seed)
 
+        # Which parameters are going to be integers?
+        if np.any(integrality):
+            # # user has provided a truth value for integer constraints
+            integrality = np.broadcast_to(
+                integrality,
+                self.parameter_count
+            )
+            integrality = np.asarray(integrality, bool)
+            # For integrality parameters change the limits to only allow
+            # integer values lying between the limits.
+            lb, ub = np.copy(self.limits)
+
+            lb = np.ceil(lb)
+            ub = np.floor(ub)
+            if not (lb[integrality] <= ub[integrality]).all():
+                # there's a parameter that doesn't have an integer value
+                # lying between the limits
+                raise ValueError("One of the integrality constraints does not"
+                                 " have any possible integer values between"
+                                 " the lower/upper bounds.")
+            nlb = np.nextafter(lb[integrality] - 0.5, np.inf)
+            nub = np.nextafter(ub[integrality] + 0.5, -np.inf)
+
+            self.integrality = integrality
+            self.limits[0, self.integrality] = nlb
+            self.limits[1, self.integrality] = nub
+        else:
+            self.integrality = False
+
         # default population initialization is a latin hypercube design, but
         # there are other population initializations possible.
         # the minimum is 5 because 'best2bin' requires a population that's at
         # least 5 long
         self.num_population_members = max(5, popsize * self.parameter_count)
-
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
 
         self._nfev = 0
+        # check first str otherwise will fail to compare str with array
         if isinstance(init, str):
             if init == 'latinhypercube':
                 self.init_population_lhs()
+            elif init == 'sobol':
+                # must be Ns = 2**m for Sobol'
+                n_s = int(2 ** np.ceil(np.log2(self.num_population_members)))
+                self.num_population_members = n_s
+                self.population_shape = (self.num_population_members,
+                                         self.parameter_count)
+                self.init_population_qmc(qmc_engine='sobol')
+            elif init == 'halton':
+                self.init_population_qmc(qmc_engine='halton')
             elif init == 'random':
                 self.init_population_random()
             else:
@@ -580,11 +771,17 @@ class DifferentialEvolutionSolver(object):
         else:
             self.init_population_array(init)
 
-        # infrastructure for constraints
-        # dummy parameter vector for preparing constraints, this is required so
-        # that the number of constraints is known.
-        x0 = self._scale_parameters(self.population[0])
+        if x0 is not None:
+            # scale to within unit interval and
+            # ensure parameters are within bounds.
+            x0_scaled = self._unscale_parameters(np.asarray(x0))
+            if ((x0_scaled > 1.0) | (x0_scaled < 0.0)).any():
+                raise ValueError(
+                    "Some entries in x0 lay outside the specified bounds"
+                )
+            self.population[0] = x0_scaled
 
+        # infrastructure for constraints
         self.constraints = constraints
         self._wrapped_constraints = []
 
@@ -592,10 +789,16 @@ class DifferentialEvolutionSolver(object):
             # sequence of constraints, this will also deal with default
             # keyword parameter
             for c in constraints:
-                self._wrapped_constraints.append(_ConstraintWrapper(c, x0))
+                self._wrapped_constraints.append(
+                    _ConstraintWrapper(c, self.x)
+                )
         else:
-            self._wrapped_constraints = [_ConstraintWrapper(constraints, x0)]
-
+            self._wrapped_constraints = [
+                _ConstraintWrapper(constraints, self.x)
+            ]
+        self.total_constraints = np.sum(
+            [c.num_constr for c in self._wrapped_constraints]
+        )
         self.constraint_violation = np.zeros((self.num_population_members, 1))
         self.feasible = np.ones(self.num_population_members, bool)
 
@@ -639,6 +842,42 @@ class DifferentialEvolutionSolver(object):
         # reset number of function evaluations counter
         self._nfev = 0
 
+    def init_population_qmc(self, qmc_engine):
+        """Initializes the population with a QMC method.
+
+        QMC methods ensures that each parameter is uniformly
+        sampled over its range.
+
+        Parameters
+        ----------
+        qmc_engine : str
+            The QMC method to use for initialization. Can be one of
+            ``latinhypercube``, ``sobol`` or ``halton``.
+
+        """
+        from scipy.stats import qmc
+
+        rng = self.random_number_generator
+
+        # Create an array for population of candidate solutions.
+        if qmc_engine == 'latinhypercube':
+            sampler = qmc.LatinHypercube(d=self.parameter_count, seed=rng)
+        elif qmc_engine == 'sobol':
+            sampler = qmc.Sobol(d=self.parameter_count, seed=rng)
+        elif qmc_engine == 'halton':
+            sampler = qmc.Halton(d=self.parameter_count, seed=rng)
+        else:
+            raise ValueError(self.__init_error_msg)
+
+        self.population = sampler.random(n=self.num_population_members)
+
+        # reset population energies
+        self.population_energies = np.full(self.num_population_members,
+                                           np.inf)
+
+        # reset number of function evaluations counter
+        self._nfev = 0
+
     def init_population_random(self):
         """
         Initializes the population at random. This type of initialization
@@ -662,7 +901,7 @@ class DifferentialEvolutionSolver(object):
         ----------
         init : np.ndarray
             Array specifying subset of the initial population. The array should
-            have shape (M, len(x)), where len(x) is the number of parameters.
+            have shape (S, N), where N is the number of parameters.
             The population is clipped to the lower and upper bounds.
         """
         # make sure you're using a float array
@@ -672,7 +911,7 @@ class DifferentialEvolutionSolver(object):
                 popn.shape[1] != self.parameter_count or
                 len(popn.shape) != 2):
             raise ValueError("The population supplied needs to have shape"
-                             " (M, len(x)), where M > 4.")
+                             " (S, len(x)), where S > 4.")
 
         # scale values and clip to bounds, assigning to population
         self.population = np.clip(self._unscale_parameters(popn), 0, 1)
@@ -794,7 +1033,15 @@ class DifferentialEvolutionSolver(object):
             message=status_message,
             success=(warning_flag is not True))
 
-        if self.polish:
+        if self.polish and not np.all(self.integrality):
+            # can't polish if all the parameters are integers
+            if np.any(self.integrality):
+                # set the lower/upper bounds equal so that any integrality
+                # constraints work.
+                limits, integrality = self.limits, self.integrality
+                limits[0, integrality] = DE_result.x[integrality]
+                limits[1, integrality] = DE_result.x[integrality]
+
             polish_method = 'L-BFGS-B'
 
             if self._wrapped_constraints:
@@ -806,7 +1053,8 @@ class DifferentialEvolutionSolver(object):
                                   " solution satisfying the constraints,"
                                   " attempting to polish from the least"
                                   " infeasible solution", UserWarning)
-
+            if self.disp:
+                print(f"Polishing solution with '{polish_method}'")
             result = minimize(self.func,
                               np.copy(DE_result.x),
                               method=polish_method,
@@ -839,8 +1087,8 @@ class DifferentialEvolutionSolver(object):
             if DE_result.maxcv > 0:
                 # if the result is infeasible then success must be False
                 DE_result.success = False
-                DE_result.message = ("The solution does not satisfy the"
-                                    " constraints, MAXCV = " % DE_result.maxcv)
+                DE_result.message = ("The solution does not satisfy the "
+                                     f"constraints, MAXCV = {DE_result.maxcv}")
 
         return DE_result
 
@@ -852,7 +1100,7 @@ class DifferentialEvolutionSolver(object):
         ----------
         population : ndarray
             An array of parameter vectors normalised to [0, 1] using lower
-            and upper limits. Has shape ``(np.size(population, 0), len(x))``.
+            and upper limits. Has shape ``(np.size(population, 0), N)``.
 
         Returns
         -------
@@ -863,16 +1111,18 @@ class DifferentialEvolutionSolver(object):
             right-padded with np.inf. Has shape ``(np.size(population, 0),)``
         """
         num_members = np.size(population, 0)
-        nfevs = min(num_members,
-                    self.maxfun - num_members)
+        # S is the number of function evals left to stay under the
+        # maxfun budget
+        S = min(num_members, self.maxfun - self._nfev)
 
         energies = np.full(num_members, np.inf)
 
         parameters_pop = self._scale_parameters(population)
         try:
-            calc_energies = list(self._mapwrapper(self.func,
-                                                  parameters_pop[0:nfevs]))
-            energies[0:nfevs] = np.squeeze(calc_energies)
+            calc_energies = list(
+                self._mapwrapper(self.func, parameters_pop[0:S])
+            )
+            calc_energies = np.squeeze(calc_energies)
         except (TypeError, ValueError) as e:
             # wrong number of arguments for _mapwrapper
             # or wrong length returned from the mapper
@@ -881,7 +1131,19 @@ class DifferentialEvolutionSolver(object):
                 "returning a sequence of numbers the same length as 'iterable'"
             ) from e
 
-        self._nfev += nfevs
+        if calc_energies.size != S:
+            if self.vectorized:
+                raise RuntimeError("The vectorized function must return an"
+                                   " array of shape (S,) when given an array"
+                                   " of shape (len(x), S)")
+            raise RuntimeError("func(x, *args) must return a scalar value")
+
+        energies[0:S] = calc_energies
+
+        if self.vectorized:
+            self._nfev += 1
+        else:
+            self._nfev += S
 
         return energies
 
@@ -907,22 +1169,62 @@ class DifferentialEvolutionSolver(object):
 
     def _constraint_violation_fn(self, x):
         """
-        Calculates total constraint violation for all the constraints, for a given
-        solution.
+        Calculates total constraint violation for all the constraints, for a
+        set of solutions.
 
         Parameters
         ----------
         x : ndarray
-            Solution vector
+            Solution vector(s). Has shape (S, N), or (N,), where S is the
+            number of solutions to investigate and N is the number of
+            parameters.
 
         Returns
         -------
         cv : ndarray
-            Total violation of constraints. Has shape ``(M,)``, where M is the
-            number of constraints (if each constraint function only returns one
-            value)
+            Total violation of constraints. Has shape ``(S, M)``, where M is
+            the total number of constraint components (which is not necessarily
+            equal to len(self._wrapped_constraints)).
         """
-        return np.concatenate([c.violation(x) for c in self._wrapped_constraints])
+        # how many solution vectors you're calculating constraint violations
+        # for
+        S = np.size(x) // self.parameter_count
+        _out = np.zeros((S, self.total_constraints))
+        offset = 0
+        for con in self._wrapped_constraints:
+            # the input/output of the (vectorized) constraint function is
+            # {(N, S), (N,)} --> (M, S)
+            # The input to _constraint_violation_fn is (S, N) or (N,), so
+            # transpose to pass it to the constraint. The output is transposed
+            # from (M, S) to (S, M) for further use.
+            c = con.violation(x.T).T
+
+            # The shape of c should be (M,), (1, M), or (S, M). Check for
+            # those shapes, as an incorrect shape indicates that the
+            # user constraint function didn't return the right thing, and
+            # the reshape operation will fail. Intercept the wrong shape
+            # to give a reasonable error message. I'm not sure what failure
+            # modes an inventive user will come up with.
+            if c.shape[-1] != con.num_constr or (S > 1 and c.shape[0] != S):
+                raise RuntimeError("An array returned from a Constraint has"
+                                   " the wrong shape. If `vectorized is False`"
+                                   " the Constraint should return an array of"
+                                   " shape (M,). If `vectorized is True` then"
+                                   " the Constraint must return an array of"
+                                   " shape (M, S), where S is the number of"
+                                   " solution vectors and M is the number of"
+                                   " constraint components in a given"
+                                   " Constraint object.")
+
+            # the violation function may return a 1D array, but is it a
+            # sequence of constraints for one solution (S=1, M>=1), or the
+            # value of a single constraint for a sequence of solutions
+            # (S>=1, M=1)
+            c = np.reshape(c, (S, con.num_constr))
+            _out[:, offset:offset + con.num_constr] = c
+            offset += con.num_constr
+
+        return _out
 
     def _calculate_population_feasibilities(self, population):
         """
@@ -932,7 +1234,7 @@ class DifferentialEvolutionSolver(object):
         ----------
         population : ndarray
             An array of parameter vectors normalised to [0, 1] using lower
-            and upper limits. Has shape ``(np.size(population, 0), len(x))``.
+            and upper limits. Has shape ``(np.size(population, 0), N)``.
 
         Returns
         -------
@@ -947,10 +1249,24 @@ class DifferentialEvolutionSolver(object):
             # shortcut for no constraints
             return np.ones(num_members, bool), np.zeros((num_members, 1))
 
+        # (S, N)
         parameters_pop = self._scale_parameters(population)
 
-        constraint_violation = np.array([self._constraint_violation_fn(x)
-                                         for x in parameters_pop])
+        if self.vectorized:
+            # (S, M)
+            constraint_violation = np.array(
+                self._constraint_violation_fn(parameters_pop)
+            )
+        else:
+            # (S, 1, M)
+            constraint_violation = np.array([self._constraint_violation_fn(x)
+                                             for x in parameters_pop])
+            # if you use the list comprehension in the line above it will
+            # create an array of shape (S, 1, M), because each iteration
+            # generates an array of (1, M). In comparison the vectorized
+            # version returns (S, M). It's therefore necessary to remove axis 1
+            constraint_violation = constraint_violation[:, 0]
+
         feasible = ~(np.sum(constraint_violation, axis=1) > 0)
 
         return feasible, constraint_violation
@@ -962,14 +1278,7 @@ class DifferentialEvolutionSolver(object):
         return self
 
     def __exit__(self, *args):
-        # to make sure resources are closed down
-        self._mapwrapper.close()
-        self._mapwrapper.terminate()
-
-    def __del__(self):
-        # to make sure resources are closed down
-        self._mapwrapper.close()
-        self._mapwrapper.terminate()
+        return self._mapwrapper.__exit__(*args)
 
     def _accept_trial(self, energy_trial, feasible_trial, cv_trial,
                       energy_orig, feasible_orig, cv_orig):
@@ -1082,7 +1391,7 @@ class DifferentialEvolutionSolver(object):
                                       self.feasible[candidate],
                                       self.constraint_violation[candidate]):
                     self.population[candidate] = trial
-                    self.population_energies[candidate] = energy
+                    self.population_energies[candidate] = np.squeeze(energy)
                     self.feasible[candidate] = feasible
                     self.constraint_violation[candidate] = cv
 
@@ -1140,11 +1449,15 @@ class DifferentialEvolutionSolver(object):
 
         return self.x, self.population_energies[0]
 
-    next = __next__
-
     def _scale_parameters(self, trial):
         """Scale from a number between 0 and 1 to parameters."""
-        return self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
+        # trial either has shape (N, ) or (L, N), where L is the number of
+        # solutions being scaled
+        scaled = self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
+        if np.any(self.integrality):
+            i = np.broadcast_to(self.integrality, scaled.shape)
+            scaled[i] = np.round(scaled[i])
+        return scaled
 
     def _unscale_parameters(self, parameters):
         """Scale from parameters to a number between 0 and 1."""
@@ -1250,19 +1563,7 @@ class DifferentialEvolutionSolver(object):
         return idxs
 
 
-class _FunctionWrapper(object):
-    """
-    Object to wrap user cost function, allowing picklability
-    """
-    def __init__(self, f, args):
-        self.f = f
-        self.args = [] if args is None else args
-
-    def __call__(self, x):
-        return self.f(x, *self.args)
-
-
-class _ConstraintWrapper(object):
+class _ConstraintWrapper:
     """Object to wrap/evaluate user defined constraints.
 
     Very similar in practice to `PreparedConstraint`, except that no evaluation
@@ -1275,7 +1576,7 @@ class _ConstraintWrapper(object):
     constraint : {`NonlinearConstraint`, `LinearConstraint`, `Bounds`}
         Constraint to check and prepare.
     x0 : array_like
-        Initial vector of independent variables.
+        Initial vector of independent variables, shape (N,)
 
     Attributes
     ----------
@@ -1292,6 +1593,7 @@ class _ConstraintWrapper(object):
 
         if isinstance(constraint, NonlinearConstraint):
             def fun(x):
+                x = np.asarray(x)
                 return np.atleast_1d(constraint.fun(x))
         elif isinstance(constraint, LinearConstraint):
             def fun(x):
@@ -1302,7 +1604,7 @@ class _ConstraintWrapper(object):
                 return A.dot(x)
         elif isinstance(constraint, Bounds):
             def fun(x):
-                return x
+                return np.asarray(x)
         else:
             raise ValueError("`constraint` of an unknown type is passed.")
 
@@ -1311,8 +1613,12 @@ class _ConstraintWrapper(object):
         lb = np.asarray(constraint.lb, dtype=float)
         ub = np.asarray(constraint.ub, dtype=float)
 
+        x0 = np.asarray(x0)
+
+        # find out the number of constraints
         f0 = fun(x0)
-        m = f0.size
+        self.num_constr = m = f0.size
+        self.parameter_count = x0.size
 
         if lb.ndim == 0:
             lb = np.resize(lb, m)
@@ -1330,17 +1636,32 @@ class _ConstraintWrapper(object):
         Parameters
         ----------
         x : array-like
-            Vector of independent variables
+            Vector of independent variables, (N, S), where N is number of
+            parameters and S is the number of solutions to be investigated.
 
         Returns
         -------
         excess : array-like
             How much the constraint is exceeded by, for each of the
             constraints specified by `_ConstraintWrapper.fun`.
+            Has shape (M, S) where M is the number of constraint components.
         """
+        # expect ev to have shape (num_constr, S) or (num_constr,)
         ev = self.fun(np.asarray(x))
 
-        excess_lb = np.maximum(self.bounds[0] - ev, 0)
-        excess_ub = np.maximum(ev - self.bounds[1], 0)
+        try:
+            excess_lb = np.maximum(self.bounds[0] - ev.T, 0)
+            excess_ub = np.maximum(ev.T - self.bounds[1], 0)
+        except ValueError as e:
+            raise RuntimeError("An array returned from a Constraint has"
+                               " the wrong shape. If `vectorized is False`"
+                               " the Constraint should return an array of"
+                               " shape (M,). If `vectorized is True` then"
+                               " the Constraint must return an array of"
+                               " shape (M, S), where S is the number of"
+                               " solution vectors and M is the number of"
+                               " constraint components in a given"
+                               " Constraint object.") from e
 
-        return excess_lb + excess_ub
+        v = (excess_lb + excess_ub).T
+        return v

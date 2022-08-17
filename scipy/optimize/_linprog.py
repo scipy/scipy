@@ -1,6 +1,5 @@
 """
-A top-level linear programming interface. Currently this interface solves
-linear programming problems via the Simplex and Interior-Point methods.
+A top-level linear programming interface.
 
 .. versionadded:: 0.15.0
 
@@ -17,12 +16,12 @@ Functions
 
 import numpy as np
 
-from .optimize import OptimizeResult, OptimizeWarning
+from ._optimize import OptimizeResult, OptimizeWarning
 from warnings import warn
+from ._linprog_highs import _linprog_highs
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
-from ._linprog_highs import _linprog_highs
 from ._linprog_doc import (_linprog_highs_doc, _linprog_ip_doc,
                            _linprog_rs_doc, _linprog_simplex_doc,
                            _linprog_highs_ipm_doc, _linprog_highs_ds_doc)
@@ -92,7 +91,7 @@ def linprog_verbose_callback(res):
     np.set_printoptions(linewidth=500,
                         formatter={'float': lambda x: "{0: 12.4f}".format(x)})
     if status:
-        print('--------- Simplex Early Exit -------\n'.format(nit))
+        print('--------- Simplex Early Exit -------\n')
         print('The simplex method exited early with status {0:d}'.format(status))
         print(message)
     elif complete:
@@ -167,8 +166,8 @@ def linprog_terse_callback(res):
 
 
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-            bounds=None, method='interior-point', callback=None,
-            options=None, x0=None):
+            bounds=None, method='highs', callback=None,
+            options=None, x0=None, integrality=None):
     r"""
     Linear programming: minimize a linear objective function subject to linear
     equality and inequality constraints.
@@ -226,13 +225,14 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``max`` will serve as bounds for all decision variables.
     method : str, optional
         The algorithm used to solve the standard form problem.
+        :ref:`'highs' <optimize.linprog-highs>` (default),
         :ref:`'highs-ds' <optimize.linprog-highs-ds>`,
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
-        :ref:`'highs' <optimize.linprog-highs>`,
-        :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
-        :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
-        :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
-        are supported.
+        :ref:`'interior-point' <optimize.linprog-interior-point>` (legacy),
+        :ref:`'revised simplex' <optimize.linprog-revised_simplex>` (legacy),
+        and
+        :ref:`'simplex' <optimize.linprog-simplex>` (legacy) are supported.
+        The legacy methods are deprecated and will be removed in SciPy 1.11.0.
     callback : callable, optional
         If a callback function is provided, it will be called at least once per
         iteration of the algorithm. The callback function must accept a single
@@ -337,11 +337,30 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         'revised simplex' method, and can only be used if `x0` represents a
         basic feasible solution.
 
+    integrality : 1-D array, optional
+        Indicates the type of integrality constraint on each decision variable.
+
+        ``0`` : Continuous variable; no integrality constraint.
+
+        ``1`` : Integer variable; decision variable must be an integer
+        within `bounds`.
+
+        ``2`` : Semi-continuous variable; decision variable must be within
+        `bounds` or take value ``0``.
+
+        ``3`` : Semi-integer variable; decision variable must be an integer
+        within `bounds` or take value ``0``.
+
+        By default, all variables are continuous. This argument is currently
+        used only by the ``'highs'`` method and ignored otherwise.
 
     Returns
     -------
     res : OptimizeResult
-        A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
+        A :class:`scipy.optimize.OptimizeResult` consisting of the fields
+        below. Note that the return types of the fields may depend on whether
+        the optimization was successful, therefore it is recommended to check
+        `OptimizeResult.status` before relying on the other fields:
 
         x : 1-D array
             The values of the decision variables that minimizes the
@@ -387,17 +406,12 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     `'highs-ds'` and
     `'highs-ipm'` are interfaces to the
     HiGHS simplex and interior-point method solvers [13]_, respectively.
-    `'highs'` chooses between
+    `'highs'` (default) chooses between
     the two automatically. These are the fastest linear
     programming solvers in SciPy, especially for large, sparse problems;
     which of these two is faster is problem-dependent.
-    `'interior-point'` is the default
-    as it was the fastest and most robust method before the recent
-    addition of the HiGHS solvers.
-    `'revised simplex'` is more
-    accurate than interior-point for the problems it solves.
-    `'simplex'` is the legacy method and is
-    included for backwards compatibility and educational purposes.
+    The other solvers (`'interior-point'`, `'revised simplex'`, and
+    `'simplex'`) are legacy methods and will be removed in SciPy 1.11.0.
 
     Method *highs-ds* is a wrapper of the C++ high performance dual
     revised simplex implementation (HSOL) [13]_, [14]_. Method *highs-ipm*
@@ -407,7 +421,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     For new code involving `linprog`, we recommend explicitly choosing one of
     these three method values.
 
-    .. versionadded:: 1.5.0
+    .. versionadded:: 1.6.0
 
     Method *interior-point* uses the primal-dual path following algorithm
     as outlined in [4]_. This algorithm supports sparse constraint matrices and
@@ -541,45 +555,52 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     default is for variables to be non-negative. After collecting coeffecients
     into arrays and tuples, the input for this problem is:
 
+    >>> from scipy.optimize import linprog
     >>> c = [-1, 4]
     >>> A = [[-3, 1], [1, 2]]
     >>> b = [6, 4]
     >>> x0_bounds = (None, None)
     >>> x1_bounds = (-3, None)
-    >>> from scipy.optimize import linprog
     >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds])
+    >>> res.fun
+    -22.0
+    >>> res.x
+    array([10., -3.])
+    >>> res.message
+    'Optimization terminated successfully. (HiGHS Status 7: Optimal)'
 
-    Note that the default method for `linprog` is 'interior-point', which is
-    approximate by nature.
+    The marginals (AKA dual values / shadow prices / Lagrange multipliers)
+    and residuals (slacks) are also available.
 
-    >>> print(res)
-         con: array([], dtype=float64)
-         fun: -21.99999984082494 # may vary
-     message: 'Optimization terminated successfully.'
-         nit: 6 # may vary
-       slack: array([3.89999997e+01, 8.46872439e-08] # may vary
-      status: 0
-     success: True
-           x: array([ 9.99999989, -2.99999999]) # may vary
+    >>> res.ineqlin
+     marginals: array([-0., -1.])
+      residual: array([39.,  0.])
 
-    If you need greater accuracy, try 'revised simplex'.
+    For example, because the marginal associated with the second inequality
+    constraint is -1, we expect the optimal value of the objective function
+    to decrease by ``eps`` if we add a small amount ``eps`` to the right hand
+    side of the second inequality constraint:
 
-    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds], method='revised simplex')
-    >>> print(res)
-         con: array([], dtype=float64)
-         fun: -22.0 # may vary
-     message: 'Optimization terminated successfully.'
-         nit: 1 # may vary
-       slack: array([39.,  0.]) # may vary
-      status: 0
-     success: True
-           x: array([10., -3.]) # may vary
+    >>> eps = 0.05
+    >>> b[1] += eps
+    >>> linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds]).fun
+    -22.05
+
+    Also, because the residual on the first inequality constraint is 39, we
+    can decrease the right hand side of the first constraint by 39 without
+    affecting the optimal solution.
+
+    >>> b = [6, 4]  # reset to original values
+    >>> b[0] -= 39
+    >>> linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds]).fun
+    -22.0
 
     """
 
     meth = method.lower()
-    methods = {"simplex", "revised simplex", "interior-point",
-               "highs", "highs-ds", "highs-ipm"}
+    methods = {"highs", "highs-ds", "highs-ipm",
+               "simplex", "revised simplex", "interior-point"}
+
     if meth not in methods:
         raise ValueError(f"Unknown solver '{method}'")
 
@@ -587,8 +608,14 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         warning_message = "x0 is used only when method is 'revised simplex'. "
         warn(warning_message, OptimizeWarning)
 
-    lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
-    lp, solver_options = _parse_linprog(lp, options)
+    if np.any(integrality) and not meth == "highs":
+        integrality = None
+        warning_message = ("Only `method='highs'` supports integer "
+                           "constraints. Ignoring `integrality`.")
+        warn(warning_message, OptimizeWarning)
+
+    lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality)
+    lp, solver_options = _parse_linprog(lp, options, meth)
     tol = solver_options.get('tol', 1e-9)
 
     # Give unmodified problem to HiGHS
@@ -606,6 +633,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                           sol['con'], lp.bounds, tol, sol['message']))
         sol['success'] = sol['status'] == 0
         return OptimizeResult(sol)
+
+    warn(f"`method='{meth}'` is deprecated and will be removed in SciPy "
+         "1.11.0. Please use one of the HiGHS solvers (e.g. "
+         "`method='highs'`) in new code.", DeprecationWarning, stacklevel=2)
 
     iteration = 0
     complete = False  # will become True if solved in presolve

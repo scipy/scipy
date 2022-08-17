@@ -4,7 +4,7 @@
 Arcsine Distribution
 ====================
 
-Defined over :math:`x\in\left[0,1\right]`.  To get the JKB definition put :math:`x=\frac{u+1}{2}.` i.e. :math:`L=-1` and :math:`S=2.`
+Defined over :math:`x\in\left[0,1\right]`.  To get the definition presented in Johnson, Kotz, and Balakrishnan, substitute :math:`x=\frac{u+1}{2}.` i.e. :math:`L=-1` and :math:`S=2.`
 
 .. math::
    :nowrap:
@@ -13,7 +13,7 @@ Defined over :math:`x\in\left[0,1\right]`.  To get the JKB definition put :math:
 
 .. math::
 
-     M\left(t\right)=E^{t/2}I_{0}\left(\frac{t}{2}\right)
+     M\left(t\right)=1 + \sum_{k=1}^\infty \left( \prod_{r=0}^{k-1} \frac{2r + 1}{2r+2} \right) \frac{t^k}{k!}
 
 .. math::
    :nowrap:
@@ -33,5 +33,12 @@ Defined over :math:`x\in\left[0,1\right]`.  To get the JKB definition put :math:
 .. math::
 
      l_{\mathbf{x}}\left(\cdot\right)=N\log\pi+\frac{N}{2}\overline{\log\mathbf{x}}+\frac{N}{2}\overline{\log\left(1-\mathbf{x}\right)}
+
+References
+----------
+
+- Norman Johnson, Samuel Kotz, and N. Balakrishnan, Continuous Univariate Distributions, second edition, Volumes I and II, Wiley & Sons, 1994.
+
+- "Arcsine Distribution", Wikipedia, https://en.wikipedia.org/wiki/Arcsine_distribution
 
 Implementation: `scipy.stats.arcsine`

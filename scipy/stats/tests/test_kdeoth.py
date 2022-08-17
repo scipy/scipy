@@ -1,4 +1,4 @@
-from scipy import stats
+from scipy import stats, linalg
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_allclose)
@@ -215,7 +215,7 @@ class _kde_subclass1(stats.gaussian_kde):
 class _kde_subclass2(stats.gaussian_kde):
     def __init__(self, dataset):
         self.covariance_factor = self.scotts_factor
-        super(_kde_subclass2, self).__init__(dataset)
+        super().__init__(dataset)
 
 
 class _kde_subclass3(stats.gaussian_kde):
@@ -319,14 +319,10 @@ def test_kde_integer_input():
 _ftypes = ['float32', 'float64', 'float96', 'float128', 'int32', 'int64']
 
 @pytest.mark.parametrize("bw_type", _ftypes + ["scott", "silverman"])
-@pytest.mark.parametrize("weights_type", _ftypes)
-@pytest.mark.parametrize("dataset_type", _ftypes)
-@pytest.mark.parametrize("point_type", _ftypes)
-def test_kde_output_dtype(point_type, dataset_type, weights_type, bw_type):
+@pytest.mark.parametrize("dtype", _ftypes)
+def test_kde_output_dtype(dtype, bw_type):
     # Check whether the datatypes are available
-    point_type = getattr(np, point_type, None)
-    dataset_type = getattr(np, weights_type, None)
-    weights_type = getattr(np, weights_type, None)
+    dtype = getattr(np, dtype, None)
 
     if bw_type in ["scott", "silverman"]:
         bw = bw_type
@@ -334,13 +330,13 @@ def test_kde_output_dtype(point_type, dataset_type, weights_type, bw_type):
         bw_type = getattr(np, bw_type, None)
         bw = bw_type(3) if bw_type else None
 
-    if any(dt is None for dt in [point_type, dataset_type, weights_type, bw]):
+    if any(dt is None for dt in [dtype, bw]):
         pytest.skip()
 
-    weights = np.arange(5, dtype=weights_type)
-    dataset = np.arange(5, dtype=dataset_type)
-    k = stats.kde.gaussian_kde(dataset, bw_method=bw, weights=weights)
-    points = np.arange(5, dtype=point_type)
+    weights = np.arange(5, dtype=dtype)
+    dataset = np.arange(5, dtype=dtype)
+    k = stats.gaussian_kde(dataset, bw_method=bw, weights=weights)
+    points = np.arange(5, dtype=dtype)
     result = k(points)
     # weights are always cast to float64
     assert result.dtype == np.result_type(dataset, points, np.float64(weights),
@@ -396,6 +392,7 @@ def test_pdf_logpdf_weighted():
     assert_almost_equal(pdf, pdf2, decimal=12)
 
 
+@pytest.mark.xslow
 def test_logpdf_overflow():
     # regression test for gh-12988; testing against linalg instability for
     # very high dimensionality kde
@@ -485,3 +482,18 @@ def test_seed():
     test_seed_sub(gkde_2d)
     gkde_2d_weighted = stats.gaussian_kde(xn_2d, weights=wn)
     test_seed_sub(gkde_2d_weighted)
+
+
+def test_singular_data_covariance_gh10205():
+    # When the data lie in a lower-dimensional subspace and this causes
+    # and exception, check that the error message is informative.
+    rng = np.random.default_rng(2321583144339784787)
+    mu = np.array([1, 10, 20])
+    sigma = np.array([[4, 10, 0], [10, 25, 0], [0, 0, 100]])
+    data = rng.multivariate_normal(mu, sigma, 1000)
+    try:  # doesn't raise any error on some platforms, and that's OK
+        stats.gaussian_kde(data.T)
+    except linalg.LinAlgError:
+        msg = "The data appears to lie in a lower-dimensional subspace..."
+        with assert_raises(linalg.LinAlgError, match=msg):
+            stats.gaussian_kde(data.T)
