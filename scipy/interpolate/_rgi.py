@@ -276,13 +276,14 @@ class RegularGridInterpolator:
         Returns
         -------
         values_x : ndarray, shape xi.shape[:-1] + values.shape[ndim:]
-            Interpolated values at `xi`.
+            Interpolated values at `xi`. See notes for behaviour when
+            ``xi.ndim == 1``.
 
         Notes
         -----
         In the case that ``xi.ndim == 1`` a new axis is inserted into
-        the 0 position of returned array so the shape is instead
-        ``(1,) + values.shape[ndim:]``.
+        the 0 position of the returned array, values_x, so its shape is
+        instead ``(1,) + values.shape[ndim:]``.
 
         Examples
         --------
@@ -538,7 +539,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     Returns
     -------
     values_x : ndarray, shape xi.shape[:-1] + values.shape[ndim:]
-        Interpolated values at input coordinates.
+        Interpolated values at `xi`. See notes for behaviour when
+        ``xi.ndim == 1``.
 
     Notes
     -----
@@ -546,8 +548,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     .. versionadded:: 0.14
 
     In the case that ``xi.ndim == 1`` a new axis is inserted into
-    the 0 position of returned array so the shape is instead
-    ``(1,) + values.shape[ndim:]``.
+    the 0 position of the returned array, values_x, so its shape is
+    instead ``(1,) + values.shape[ndim:]``.
 
     Examples
     --------
