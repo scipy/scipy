@@ -21,7 +21,7 @@ from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
 
-distcont = dict(distcont)
+distcont = dict(distcont)  # type: ignore
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
