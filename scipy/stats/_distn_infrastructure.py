@@ -3584,7 +3584,7 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
         output = np.full(shape(cond), fill_value=self.badvalue, dtype='d')
         # output type 'd' to handle nin and inf
-        place(output, (q == 0), _a - 1 + loc)
+        place(output, (q == 0)*(cond == cond), _a-1 + loc)
         place(output, cond2, _b + loc)
         if np.any(cond):
             goodargs = argsreduce(cond, *((q,)+args+(loc,)))
