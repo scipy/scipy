@@ -449,8 +449,9 @@ class BSpline:
         indices = np.empty(n * (k + 1), dtype=int_dtype)
         indptr = np.arange(0, (n + 1) * (k + 1), k + 1, dtype=int_dtype)
 
-        data, indices, indptr = _bspl._make_design_matrix(
-            x, t, k, extrapolate, indices, indptr
+        # indptr is not passed to Cython as it is already fully computed
+        data, indices = _bspl._make_design_matrix(
+            x, t, k, extrapolate, indices
         )
         return csr_array(
             (data, indices, indptr),

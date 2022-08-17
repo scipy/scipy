@@ -421,10 +421,12 @@ def _make_design_matrix(const double[::1] x,
                         const double[::1] t,
                         int k,
                         bint extrapolate,
-                        int32_or_int64[::1] indices,
-                        int32_or_int64[::1] indptr):
+                        int32_or_int64[::1] indices):
     """
-    Returns a design matrix in CSR format
+    Returns a design matrix in CSR format.
+
+    Note that only indices is passed, but not indptr because indptr is already
+    precomputed in the calling Python function design_matrix.
     
     Parameters
     ----------
@@ -438,8 +440,6 @@ def _make_design_matrix(const double[::1] x,
         Whether to extrapolate to ouf-of-bounds points.
     indices : ndarray, shape (n * (k + 1),)
         Preallocated indices of the final CSR array.
-    indptr : ndarray, shape (n * (k + 1))
-        Preallocated indptr of the final CSR array.
 
     Returns
     -------
@@ -450,9 +450,6 @@ def _make_design_matrix(const double[::1] x,
     
     indices
         The indices array of a CSR array of the b-spline design matrix.
-
-    indptr
-        The indptr array of a CSR array of the b-spline design matrix.
     """
     cdef:
         cnp.npy_intp i, j, m, ind
@@ -477,4 +474,4 @@ def _make_design_matrix(const double[::1] x,
             data[m] = work[j]
             indices[m] = ind - k + j
 
-    return np.asarray(data), np.asarray(indices), np.asarray(indptr)
+    return np.asarray(data), np.asarray(indices)
