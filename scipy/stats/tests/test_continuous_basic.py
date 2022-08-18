@@ -341,7 +341,7 @@ def test_rvs_broadcast(dist, shape_args):
     shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dweibull',
                           'exponnorm', 'genhyperbolic', 'geninvgauss',
                           'levy_stable', 'nct', 'norminvgauss', 'rice',
-                          'skewnorm', 'semicircular', 'gennorm']
+                          'skewnorm', 'semicircular', 'gennorm', 'loggamma']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)
