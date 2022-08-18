@@ -662,7 +662,8 @@ class BarycentricInterpolator(_Interpolator1D):
             z = c == 0
             c[z] = 1
             c = self.wi/c
-            p = np.dot(c,self.yi)/np.sum(c,axis=-1)[...,np.newaxis]
+            with np.errstate(divide='ignore'):
+                p = np.dot(c,self.yi)/np.sum(c,axis=-1)[...,np.newaxis]
             # Now fix where x==some xi
             r = np.nonzero(z)
             if len(r) == 1:  # evaluation at a scalar
