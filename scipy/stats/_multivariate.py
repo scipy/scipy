@@ -291,7 +291,7 @@ class multivariate_normal_gen(multi_rv_generic):
         Probability density function.
     logpdf(x, mean=None, cov=1, allow_singular=False)
         Log of the probability density function.
-    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
+    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, lower_limit=None)  # noqa
         Cumulative distribution function.
     logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
         Log of the cumulative distribution function.
@@ -547,8 +547,7 @@ class multivariate_normal_gen(multi_rv_generic):
             out[out_of_bounds] = 0.0
         return _squeeze_output(out)
 
-
-    def _cdf(self, x, mean, cov, maxpts, abseps, releps):
+    def _cdf(self, x, mean, cov, maxpts, abseps, releps, lower_limit):
         """Multivariate normal cumulative distribution function.
 
         Parameters
@@ -565,6 +564,9 @@ class multivariate_normal_gen(multi_rv_generic):
             Absolute error tolerance
         releps : float
             Relative error tolerance
+        lower_limit : array_like, optional
+            Lower limit of integration of the cumulative distribution function.
+            Default is negative infinity. Must be broadcastable with `x`.
 
         Notes
         -----
@@ -575,54 +577,19 @@ class multivariate_normal_gen(multi_rv_generic):
         .. versionadded:: 1.0.0
 
         """
-        lower = np.full(mean.shape, -np.inf)
+        lower = (np.full(mean.shape, -np.inf)
+                 if lower_limit is None else lower_limit)
+        x, lower = np.broadcast_arrays(x, lower)
+        n = x.shape[-1]
+        limits = np.concatenate((lower, x), axis=-1)
         # mvnun expects 1-d arguments, so process points sequentially
-        func1d = lambda x_slice: _mvn.mvnun(lower, x_slice, mean, cov,
+        func1d = lambda limits: _mvn.mvnun(limits[:n], limits[n:], mean, cov,
                                            maxpts, abseps, releps)[0]
-        out = np.apply_along_axis(func1d, -1, x)
-        return _squeeze_output(out)
-
-    def _cdf_rect(self, lower, upper, mean, cov, maxpts, abseps, releps):
-        """
-        Cumulative desity function of the multivariate normal distribution 
-        between lower and upper bounds (rectangular integral)
-        
-        Parameters
-        ----------
-        lower : ndarray
-            Lower bounds of rectangular integration.
-        upper : ndarray
-            Upper bounds of rectangular integration.
-        mean : ndarray
-            Mean of the distribution
-        cov : array_like
-            Covariance matrix of the distribution
-        maxpts: integer
-            The maximum number of points to use for integration
-        abseps: float
-            Absolute error tolerance
-        releps: float
-            Relative error tolerance
-
-        Notes
-        -----
-        As this function does no argument checking, it should not be
-        called directly; use 'cdf' instead.
-
-        .. versionadded:: 1.0.0
-
-        """
-        # mvnun expects 1-d arguments, so process points sequentially
-        bounds = np.concatenate([lower, upper], axis=1)  
-        func1d = lambda bound_slice: mvn.mvnun(bound_slice[:upper.shape[1]], bound_slice[upper.shape[1]:], mean, cov)[0]
-        out = np.apply_along_axis(func1d, -1, bounds)
-        #func1d = lambda low_slice, upp_slice: mvn.mvnun(low_slice, upp_slice, mean, cov,
-        #                                                maxpts, abseps, releps)[0]
-        #out = np.apply_along_axis(func1d, -1, lower, upper)
+        out = np.apply_along_axis(func1d, -1, limits)
         return _squeeze_output(out)
 
     def logcdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-               abseps=1e-5, releps=1e-5):
+               abseps=1e-5, releps=1e-5, *, lower_limit=None):
         """Log of the multivariate normal cumulative distribution function.
 
         Parameters
@@ -637,6 +604,9 @@ class multivariate_normal_gen(multi_rv_generic):
             Absolute error tolerance (default 1e-5)
         releps : float, optional
             Relative error tolerance (default 1e-5)
+        lower_limit : array_like, optional
+            Lower limit of integration of the cumulative distribution function.
+            Default is negative infinity. Must be broadcastable with `x`.
 
         Returns
         -------
@@ -656,55 +626,12 @@ class multivariate_normal_gen(multi_rv_generic):
         _PSD(cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
-        out = np.log(self._cdf(x, mean, cov, maxpts, abseps, releps))
-        return out
-
-    def logcdf_rect(self, lower, upper, mean=None, cov=1, allow_singular=False, maxpts=None,
-                      abseps=1e-5, releps=1e-5):
-        """
-        Log of the cumulative desity function of the multivariate normal distribution 
-        between lower and upper bounds (rectangular integral)
-
-        Parameters
-        ----------
-        lower : array_like
-            Lower bounds of rectangular integration.
-        upper : array_like
-            Upper bounds of rectangular integration.
-        %(_mvn_doc_default_callparams)s
-        maxpts: integer, optional
-            The maximum number of points to use for integration
-            (default `1000000*dim`)
-        abseps: float, optional
-            Absolute error tolerance (default 1e-5)
-        releps: float, optional
-            Relative error tolerance (default 1e-5)
-
-        Returns
-        -------
-        cdf : ndarray or scalar
-            Log of the cumulative distribution function evaluated at `x`
-
-        Notes
-        -----
-        %(_mvn_doc_callparams_note)s
-
-        .. versionadded:: 1.0.0
-
-        """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
-        lower = self._process_quantiles(lower, dim)
-        # Use _PSD to check covariance matrix
-        upper = self._process_quantiles(upper, dim)
-        # Use _PSD to check covariance matrix
-        _PSD(cov, allow_singular=allow_singular)
-        if not maxpts:
-            maxpts = 1000000 * dim
-        out = np.log(self._cdf_rect(lower, upper, mean, cov, maxpts, abseps, releps))
+        out = np.log(self._cdf(x, mean, cov, maxpts,
+                               abseps, releps, lower_limit))
         return out
 
     def cdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-            abseps=1e-5, releps=1e-5):
+            abseps=1e-5, releps=1e-5, *, lower_limit=None):
         """Multivariate normal cumulative distribution function.
 
         Parameters
@@ -719,6 +646,9 @@ class multivariate_normal_gen(multi_rv_generic):
             Absolute error tolerance (default 1e-5)
         releps : float, optional
             Relative error tolerance (default 1e-5)
+        lower_limit : array_like, optional
+            Lower limit of integration of the cumulative distribution function.
+            Default is negative infinity. Must be broadcastable with `x`.
 
         Returns
         -------
@@ -738,54 +668,8 @@ class multivariate_normal_gen(multi_rv_generic):
         _PSD(cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
-        out = self._cdf(x, mean, cov, maxpts, abseps, releps)
+        out = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
         return out
-
-    def cdf_rect(self, lower, upper, mean=None, cov=1, allow_singular=False, maxpts=None,
-            abseps=1e-5, releps=1e-5):
-        """
-        Multivariate normal cumulative distribution function between 
-        lower and upper bounds (rectangular integral).
-        
-        Parameters
-        ----------
-        lower : array_like
-            Lower bounds of rectangular integration.
-        upper : array_like
-            Upper bounds of rectangular integration.
-        %(_mvn_doc_default_callparams)s
-        maxpts: integer, optional
-            The maximum number of points to use for integration
-            (default `1000000*dim`)
-        abseps: float, optional
-            Absolute error tolerance (default 1e-5)
-        releps: float, optional
-            Relative error tolerance (default 1e-5)
-
-        Returns
-        -------
-        cdf : ndarray or scalar
-            Cumulative distribution function evaluated at `x`
-
-        Notes
-        -----
-        %(_mvn_doc_callparams_note)s
-
-        .. versionadded:: 1.0.0
-
-        """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
-        lower = self._process_quantiles(lower, dim)
-        # Use _PSD to check covariance matrix
-        upper = self._process_quantiles(upper, dim)
-        # Use _PSD to check covariance matrix
-        
-        _PSD(cov, allow_singular=allow_singular)
-        if not maxpts:
-            maxpts = 1000000 * dim
-        out = self._cdf_rect(lower, upper, mean, cov, maxpts, abseps, releps)
-        return out
-
 
     def rvs(self, mean=None, cov=1, size=1, random_state=None):
         """Draw random samples from a multivariate normal distribution.
@@ -906,23 +790,13 @@ class multivariate_normal_frozen(multi_rv_frozen):
     def pdf(self, x):
         return np.exp(self.logpdf(x))
 
-    def logcdf(self, x):
-        return np.log(self.cdf(x))
+    def logcdf(self, x, *, lower_limit=None):
+        return np.log(self.cdf(x, lower_limit=lower_limit))
 
-    def logcdf_rect(self, lower, upper):
-        return np.log(self.cdf_rect(lower, upper))
-
-    def cdf(self, x):
+    def cdf(self, x, *, lower_limit=None):
         x = self._dist._process_quantiles(x, self.dim)
         out = self._dist._cdf(x, self.mean, self.cov, self.maxpts, self.abseps,
-                              self.releps)
-        return _squeeze_output(out)
-
-    def cdf_rect(self, lower, upper):
-        lower = self._dist._process_quantiles(lower, self.dim)
-        upper = self._dist._process_quantiles(upper, self.dim)
-        out = self._dist._cdf_rect(lower, upper, self.mean, self.cov, self.maxpts, self.abseps,
-                              self.releps)
+                              self.releps, lower_limit)
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
