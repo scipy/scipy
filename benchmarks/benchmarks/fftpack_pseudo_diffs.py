@@ -1,15 +1,10 @@
 """ Benchmark functions for fftpack.pseudo_diffs module
 """
-from __future__ import division, absolute_import, print_function
-
 from numpy import arange, sin, cos, pi, exp, tanh, sign
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     from scipy.fftpack import diff, fft, ifft, tilbert, hilbert, shift, fftfreq
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 def direct_diff(x, k=1, period=None):

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 from scipy.sparse.csgraph import (breadth_first_tree, depth_first_tree,

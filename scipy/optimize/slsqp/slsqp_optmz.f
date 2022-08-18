@@ -35,7 +35,10 @@ C
 ************************************************************************
 
       SUBROUTINE slsqp (m, meq, la, n, x, xl, xu, f, c, g, a,
-     *                  acc, iter, mode, w, l_w, jw, l_jw)
+     *                  acc, iter, mode, w, l_w, jw, l_jw,
+     *                  alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+     *                  iexact, incons, ireset, itermx, line, 
+     *                  n1, n2, n3)
 
 C   SLSQP       S EQUENTIAL  L EAST  SQ UARES  P ROGRAMMING
 C            TO SOLVE GENERAL NONLINEAR OPTIMIZATION PROBLEMS
@@ -214,10 +217,14 @@ C*                                                                     *
 C***********************************************************************
 
       INTEGER          il, im, ir, is, iter, iu, iv, iw, ix, l_w, l_jw,
-     *                 jw(l_jw), la, m, meq, mineq, mode, n, n1
+     *                 jw(l_jw), la, m, meq, mineq, mode, n
 
       DOUBLE PRECISION acc, a(la,n+1), c(la), f, g(n+1),
      *                 x(n), xl(n), xu(n), w(l_w)
+
+      INTEGER          iexact, incons, ireset, itermx, line, n1, n2, n3
+
+      DOUBLE PRECISION alpha, f0, gs, h1, h2, h3, h4, t, t0, tol
 
 c     dim(W) =         N1*(N1+1) + MEQ*(N1+1) + MINEQ*(N1+1)  for LSQ
 c                    +(N1-MEQ+1)*(MINEQ+2) + 2*MINEQ          for LSI
@@ -254,12 +261,18 @@ C   PREPARE DATA FOR CALLING SQPBDY  -  INITIAL ADDRESSES IN W
       iw = iv + n1
 
       CALL slsqpb  (m, meq, la, n, x, xl, xu, f, c, g, a, acc, iter,
-     * mode, w(ir), w(il), w(ix), w(im), w(is), w(iu), w(iv), w(iw), jw)
-
+     * mode, w(ir), w(il), w(ix), w(im), w(is), w(iu), w(iv), w(iw), jw,
+     * alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+     * iexact, incons, ireset, itermx, line, 
+     * n1, n2, n3)
+ 
       END
 
       SUBROUTINE slsqpb (m, meq, la, n, x, xl, xu, f, c, g, a, acc,
-     *                   iter, mode, r, l, x0, mu, s, u, v, w, iw)
+     *                   iter, mode, r, l, x0, mu, s, u, v, w, iw,
+     *                   alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+     *                   iexact, incons, ireset, itermx, line, 
+     *                   n1, n2, n3)
 
 C   NONLINEAR PROGRAMMING BY SOLVING SEQUENTIALLY QUADRATIC PROGRAMS
 
@@ -269,6 +282,7 @@ C                      BODY SUBROUTINE FOR SLSQP
 
       INTEGER          iw(*), i, iexact, incons, ireset, iter, itermx,
      *                 k, j, la, line, m, meq, mode, n, n1, n2, n3
+      LOGICAL          badlin
 
       DOUBLE PRECISION a(la,n+1), c(la), g(n+1), l((n+1)*(n+2)/2),
      *                 mu(la), r(m+n+n+2), s(n+1), u(n+1), v(n+1), w(*),
@@ -282,11 +296,12 @@ c                     +(N1-MEQ+1)*(MINEQ+2) + 2*MINEQ
 c                     +(N1+MINEQ)*(N1-MEQ) + 2*MEQ + N1       for LSEI
 c                      with MINEQ = M - MEQ + 2*N1  &  N1 = N+1
 
-      SAVE             alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-     *                 iexact, incons, ireset, itermx, line, n1, n2, n3
-
       DATA             ZERO /0.0d0/, one /1.0d0/, alfmin /1.0d-1/,
      *                 hun /1.0d+2/, ten /1.0d+1/, two /2.0d0/
+
+C     The badlin flag keeps track whether the SQP problem on the current
+C     iteration was inconsistent or not.
+      badlin = .false.
 
       IF (mode) 260, 100, 220
 
@@ -336,13 +351,19 @@ C   SEARCH DIRECTION AS SOLUTION OF QP - SUBPROBLEM
       CALL lsq (m, meq, n , n3, la, l, g, a, c, u, v, s, r, w, iw, mode)
 
 C   AUGMENTED PROBLEM FOR INCONSISTENT LINEARIZATION
+C
+C   If it turns out that the original SQP problem is inconsistent,
+C   disallow termination with convergence on this iteration,
+C   even if the augmented problem was solved.
 
+      badlin = .false.
       IF (mode.EQ.6) THEN
           IF (n.EQ.meq) THEN
               mode = 4
           ENDIF
       ENDIF
       IF (mode.EQ.4) THEN
+          badlin = .true.
           DO 140 j=1,m
              IF (j.LE.meq) THEN
                  a(j,n1) = -c(j)
@@ -399,7 +420,8 @@ C   UPDATE MULTIPLIERS FOR L1-TEST
 C   CHECK CONVERGENCE
 
       mode = 0
-      IF (h1.LT.acc .AND. h2.LT.acc) GO TO 330
+      IF (h1.LT.acc .AND. h2.LT.acc .AND. .NOT. badlin
+     *     .AND. f .EQ. f) GO TO 330
       h1 = ZERO
       DO 180 j=1,m
          IF (j.LE.meq) THEN
@@ -470,7 +492,8 @@ C   CHECK CONVERGENCE
          ENDIF
          h3 = h3 + MAX(-c(j),h1)
   250 CONTINUE
-      IF ((ABS(f-f0).LT.acc .OR. dnrm2_(n,s,1).LT.acc) .AND. h3.LT.acc)
+      IF ((ABS(f-f0).LT.acc .OR. dnrm2_(n,s,1).LT.acc) .AND. h3.LT.acc
+     *     .AND. .NOT. badlin .AND. f .EQ. f)
      *   THEN
             mode = 0
          ELSE
@@ -481,7 +504,17 @@ C   CHECK CONVERGENCE
 C   CHECK relaxed CONVERGENCE in case of positive directional derivative
 
   255 CONTINUE
-      IF ((ABS(f-f0).LT.tol .OR. dnrm2_(n,s,1).LT.tol) .AND. h3.LT.tol)
+      h3 = ZERO
+      DO 256 j=1,m
+         IF (j.LE.meq) THEN
+             h1 = c(j)
+         ELSE
+             h1 = ZERO
+         ENDIF
+         h3 = h3 + MAX(-c(j),h1)
+  256 CONTINUE
+      IF ((ABS(f-f0).LT.tol .OR. dnrm2_(n,s,1).LT.tol) .AND. h3.LT.tol
+     *     .AND. .NOT. badlin .AND. f .EQ. f)
      *   THEN
             mode = 0
          ELSE
@@ -539,6 +572,10 @@ C   L*D*L'*S
           CALL dscal_sl(n, h4, u, 1)
           CALL daxpy_sl(n, one-h4, v, 1, u, 1)
       ENDIF
+      IF (h1.EQ.0 .or. h2.EQ.0) THEN
+C         Singular update: reset hessian.
+          GO TO 110
+      end if
       CALL ldl(n, l, u, +one/h1, v)
       CALL ldl(n, l, v, -one/h2, u)
 
@@ -947,7 +984,7 @@ C  TRANSFORM G AND H TO GET LEAST DISTANCE PROBLEM
       mode=5
       DO 30 i=1,mg
           DO 20 j=1,n
-              IF (ABS(e(j,j)).LT.epmach) GOTO 50
+              IF (.NOT.(ABS(e(j,j)).GE.epmach)) GOTO 50
    20         g(i,j)=(g(i,j)-ddot_sl(j-1,g(i,1),lg,e(1,j),1))/e(j,j)
    30     h(i)=h(i)-ddot_sl(n,g(i,1),lg,f,1)
 
@@ -1051,7 +1088,7 @@ C  SOLVE DUAL PROBLEM
 C  COMPUTE SOLUTION OF PRIMAL PROBLEM
 
       fac=one-ddot_sl(m,h,1,w(iy),1)
-      IF(diff(one+fac,one).LE.ZERO) GOTO 50
+      IF(.NOT.(diff(one+fac,one).GT.ZERO)) GOTO 50
       mode=1
       fac=one/fac
       DO 40 j=1,n

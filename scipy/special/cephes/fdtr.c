@@ -169,8 +169,8 @@ double fdtrc(double a, double b, double x)
     double w;
 
     if ((a <= 0.0) || (b <= 0.0) || (x < 0.0)) {
-        mtherr("fdtrc", DOMAIN);
-        return NPY_NAN;
+        sf_error("fdtrc", SF_ERROR_DOMAIN, NULL);
+        return NAN;
     }
     w = b / (b + a * x);
     return incbet(0.5 * b, 0.5 * a, w);
@@ -182,8 +182,8 @@ double fdtr(double a, double b, double x)
     double w;
 
     if ((a <= 0.0) || (b <= 0.0) || (x < 0.0)) {
-        mtherr("fdtr", DOMAIN);
-        return NPY_NAN;
+        sf_error("fdtr", SF_ERROR_DOMAIN, NULL);
+        return NAN;
     }
     w = a * x;
     w = w / (b + w);
@@ -196,8 +196,8 @@ double fdtri(double a, double b, double y)
     double w, x;
 
     if ((a <= 0.0) || (b <= 0.0) || (y <= 0.0) || (y > 1.0)) {
-        mtherr("fdtri", DOMAIN);
-        return NPY_NAN;
+        sf_error("fdtri", SF_ERROR_DOMAIN, NULL);
+        return NAN;
     }
     y = 1.0 - y;
     /* Compute probability for x = 0.5.  */

@@ -1,5 +1,5 @@
-# -*- encoding:utf-8 -*-
-"""
+# -*- coding: utf-8 -*-
+u"""
 ==================================
 Input and output (:mod:`scipy.io`)
 ==================================
@@ -9,7 +9,7 @@ Input and output (:mod:`scipy.io`)
 SciPy has many modules, classes, and functions available to read data
 from and write data to a variety of file formats.
 
-.. seealso:: :ref:`numpy-reference.routines.io` (in Numpy)
+.. seealso:: `NumPy IO routines <https://www.numpy.org/devdocs/reference/routines.io.html>`__
 
 MATLAB® files
 =============
@@ -20,6 +20,8 @@ MATLAB® files
    loadmat - Read a MATLAB style mat file (version 4 through 7.1)
    savemat - Write a MATLAB style mat file (version 4 through 7.1)
    whosmat - List contents of a MATLAB style mat file (version 4 through 7.1)
+
+For low-level MATLAB reading and writing utilities, see `scipy.io.matlab`.
 
 IDL® files
 ==========
@@ -46,6 +48,8 @@ Unformatted Fortran files
    :toctree: generated/
 
    FortranFile - A file object for unformatted sequential Fortran files
+   FortranEOFError - Exception indicating the end of a well-formed file
+   FortranFormattingError - Exception indicating an inappropriate end
 
 Netcdf
 ======
@@ -89,22 +93,22 @@ Arff files (:mod:`scipy.io.arff`)
    MetaData
    ArffError
    ParseArffError
-
 """
-from __future__ import division, print_function, absolute_import
-
 # matfile read and write
-from .matlab import loadmat, savemat, whosmat, byteordercodes
+from .matlab import loadmat, savemat, whosmat
 
 # netCDF file support
-from .netcdf import netcdf_file, netcdf_variable
+from ._netcdf import netcdf_file, netcdf_variable
 
 # Fortran file support
-from ._fortran import FortranFile
+from ._fortran import FortranFile, FortranEOFError, FortranFormattingError
 
-from .mmio import mminfo, mmread, mmwrite
-from .idl import readsav
-from .harwell_boeing import hb_read, hb_write
+from ._mmio import mminfo, mmread, mmwrite
+from ._idl import readsav
+from ._harwell_boeing import hb_read, hb_write
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import arff, harwell_boeing, idl, mmio, netcdf, wavfile
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

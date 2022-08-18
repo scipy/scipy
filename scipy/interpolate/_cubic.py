@@ -1,25 +1,162 @@
 """Interpolation algorithms using piecewise cubic polynomials."""
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
-from scipy._lib.six import string_types
-
-from . import BPoly, PPoly
-from .polyint import _isscalar
-from scipy._lib._util import _asarray_validated
+from . import PPoly
+from ._polyint import _isscalar
 from scipy.linalg import solve_banded, solve
 
 
-__all__ = ["PchipInterpolator", "pchip_interpolate", "pchip",
+__all__ = ["CubicHermiteSpline", "PchipInterpolator", "pchip_interpolate",
            "Akima1DInterpolator", "CubicSpline"]
 
 
-class PchipInterpolator(BPoly):
-    r"""PCHIP 1-d monotonic cubic interpolation.
+def prepare_input(x, y, axis, dydx=None):
+    """Prepare input for cubic spline interpolators.
 
-    `x` and `y` are arrays of values used to approximate some function f,
+    All data are converted to numpy arrays and checked for correctness.
+    Axes equal to `axis` of arrays `y` and `dydx` are moved to be the 0th
+    axis. The value of `axis` is converted to lie in
+    [0, number of dimensions of `y`).
+    """
+
+    x, y = map(np.asarray, (x, y))
+    if np.issubdtype(x.dtype, np.complexfloating):
+        raise ValueError("`x` must contain real values.")
+    x = x.astype(float)
+
+    if np.issubdtype(y.dtype, np.complexfloating):
+        dtype = complex
+    else:
+        dtype = float
+
+    if dydx is not None:
+        dydx = np.asarray(dydx)
+        if y.shape != dydx.shape:
+            raise ValueError("The shapes of `y` and `dydx` must be identical.")
+        if np.issubdtype(dydx.dtype, np.complexfloating):
+            dtype = complex
+        dydx = dydx.astype(dtype, copy=False)
+
+    y = y.astype(dtype, copy=False)
+    axis = axis % y.ndim
+    if x.ndim != 1:
+        raise ValueError("`x` must be 1-dimensional.")
+    if x.shape[0] < 2:
+        raise ValueError("`x` must contain at least 2 elements.")
+    if x.shape[0] != y.shape[axis]:
+        raise ValueError("The length of `y` along `axis`={0} doesn't "
+                         "match the length of `x`".format(axis))
+
+    if not np.all(np.isfinite(x)):
+        raise ValueError("`x` must contain only finite values.")
+    if not np.all(np.isfinite(y)):
+        raise ValueError("`y` must contain only finite values.")
+
+    if dydx is not None and not np.all(np.isfinite(dydx)):
+        raise ValueError("`dydx` must contain only finite values.")
+
+    dx = np.diff(x)
+    if np.any(dx <= 0):
+        raise ValueError("`x` must be strictly increasing sequence.")
+
+    y = np.moveaxis(y, axis, 0)
+    if dydx is not None:
+        dydx = np.moveaxis(dydx, axis, 0)
+
+    return x, dx, y, axis, dydx
+
+
+class CubicHermiteSpline(PPoly):
+    """Piecewise-cubic interpolator matching values and first derivatives.
+
+    The result is represented as a `PPoly` instance.
+
+    Parameters
+    ----------
+    x : array_like, shape (n,)
+        1-D array containing values of the independent variable.
+        Values must be real, finite and in strictly increasing order.
+    y : array_like
+        Array containing values of the dependent variable. It can have
+        arbitrary number of dimensions, but the length along ``axis``
+        (see below) must match the length of ``x``. Values must be finite.
+    dydx : array_like
+        Array containing derivatives of the dependent variable. It can have
+        arbitrary number of dimensions, but the length along ``axis``
+        (see below) must match the length of ``x``. Values must be finite.
+    axis : int, optional
+        Axis along which `y` is assumed to be varying. Meaning that for
+        ``x[i]`` the corresponding values are ``np.take(y, i, axis=axis)``.
+        Default is 0.
+    extrapolate : {bool, 'periodic', None}, optional
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. If None (default), it is set to True.
+
+    Attributes
+    ----------
+    x : ndarray, shape (n,)
+        Breakpoints. The same ``x`` which was passed to the constructor.
+    c : ndarray, shape (4, n-1, ...)
+        Coefficients of the polynomials on each segment. The trailing
+        dimensions match the dimensions of `y`, excluding ``axis``.
+        For example, if `y` is 1-D, then ``c[k, i]`` is a coefficient for
+        ``(x-x[i])**(3-k)`` on the segment between ``x[i]`` and ``x[i+1]``.
+    axis : int
+        Interpolation axis. The same axis which was passed to the
+        constructor.
+
+    Methods
+    -------
+    __call__
+    derivative
+    antiderivative
+    integrate
+    roots
+
+    See Also
+    --------
+    Akima1DInterpolator : Akima 1D interpolator.
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
+    CubicSpline : Cubic spline data interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints
+
+    Notes
+    -----
+    If you want to create a higher-order spline matching higher-order
+    derivatives, use `BPoly.from_derivatives`.
+
+    References
+    ----------
+    .. [1] `Cubic Hermite spline
+            <https://en.wikipedia.org/wiki/Cubic_Hermite_spline>`_
+            on Wikipedia.
+    """
+    def __init__(self, x, y, dydx, axis=0, extrapolate=None):
+        if extrapolate is None:
+            extrapolate = True
+
+        x, dx, y, axis, dydx = prepare_input(x, y, axis, dydx)
+
+        dxr = dx.reshape([dx.shape[0]] + [1] * (y.ndim - 1))
+        slope = np.diff(y, axis=0) / dxr
+        t = (dydx[:-1] + dydx[1:] - 2 * slope) / dxr
+
+        c = np.empty((4, len(x) - 1) + y.shape[1:], dtype=t.dtype)
+        c[0] = t / dxr
+        c[1] = (slope - dydx[:-1]) / dxr - t
+        c[2] = dydx[:-1]
+        c[3] = y[:-1]
+
+        super().__init__(c, x, extrapolate=extrapolate)
+        self.axis = axis
+
+
+class PchipInterpolator(CubicHermiteSpline):
+    r"""PCHIP 1-D monotonic cubic interpolation.
+
+    ``x`` and ``y`` are arrays of values used to approximate some function f,
     with ``y = f(x)``. The interpolant uses monotonic cubic splines
     to find the value of new points. (PCHIP stands for Piecewise Cubic
     Hermite Interpolating Polynomial).
@@ -27,11 +164,11 @@ class PchipInterpolator(BPoly):
     Parameters
     ----------
     x : ndarray
-        A 1-D array of monotonically increasing real values.  `x` cannot
+        A 1-D array of monotonically increasing real values. ``x`` cannot
         include duplicate values (otherwise f is overspecified)
     y : ndarray
-        A 1-D array of real values. `y`'s length along the interpolation
-        axis must be equal to the length of `x`. If N-D array, use `axis`
+        A 1-D array of real values. ``y``'s length along the interpolation
+        axis must be equal to the length of ``x``. If N-D array, use ``axis``
         parameter to select correct axis.
     axis : int, optional
         Axis in the y array corresponding to the x-coordinate values.
@@ -48,9 +185,10 @@ class PchipInterpolator(BPoly):
 
     See Also
     --------
-    Akima1DInterpolator
-    CubicSpline
-    BPoly
+    CubicHermiteSpline : Piecewise-cubic interpolator.
+    Akima1DInterpolator : Akima 1D interpolator.
+    CubicSpline : Cubic spline data interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints.
 
     Notes
     -----
@@ -80,36 +218,22 @@ class PchipInterpolator(BPoly):
 
     References
     ----------
-    .. [1] F. N. Fritsch and R. E. Carlson, Monotone Piecewise Cubic Interpolation,
-           SIAM J. Numer. Anal., 17(2), 238 (1980).
-           :doi:`10.1137/0717021`.
+    .. [1] F. N. Fritsch and J. Butland,
+           A method for constructing local
+           monotone piecewise cubic interpolants,
+           SIAM J. Sci. Comput., 5(2), 300-304 (1984).
+           :doi:`10.1137/0905021`.
     .. [2] see, e.g., C. Moler, Numerical Computing with Matlab, 2004.
            :doi:`10.1137/1.9780898717952`
 
 
     """
     def __init__(self, x, y, axis=0, extrapolate=None):
-        x = _asarray_validated(x, check_finite=False, as_inexact=True)
-        y = _asarray_validated(y, check_finite=False, as_inexact=True)
-
-        axis = axis % y.ndim
-
+        x, _, y, axis, _ = prepare_input(x, y, axis)
         xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
-        yp = np.rollaxis(y, axis)
-
-        dk = self._find_derivatives(xp, yp)
-        data = np.hstack((yp[:, None, ...], dk[:, None, ...]))
-
-        _b = BPoly.from_derivatives(x, data, orders=None)
-        super(PchipInterpolator, self).__init__(_b.c, _b.x,
-                                                extrapolate=extrapolate)
+        dk = self._find_derivatives(xp, y)
+        super().__init__(x, y, dk, axis=0, extrapolate=extrapolate)
         self.axis = axis
-
-    def roots(self):
-        """
-        Return the roots of the interpolated function.
-        """
-        return (PPoly.from_bernstein_basis(self)).roots()
 
     @staticmethod
     def _edge_case(h0, h1, m0, m1):
@@ -161,7 +285,7 @@ class PchipInterpolator(BPoly):
 
         # values where division by zero occurs will be excluded
         # by 'condition' afterwards
-        with np.errstate(divide='ignore'):
+        with np.errstate(divide='ignore', invalid='ignore'):
             whmean = (w1/mk[:-1] + w2/mk[1:]) / (w1 + w2)
 
         dk = np.zeros_like(y)
@@ -169,7 +293,7 @@ class PchipInterpolator(BPoly):
         dk[1:-1][~condition] = 1.0 / whmean[~condition]
 
         # special case endpoints, as suggested in
-        # Cleve Moler, Numerical Computing with MATLAB, Chap 3.4
+        # Cleve Moler, Numerical Computing with MATLAB, Chap 3.6 (pchiptx.m)
         dk[0] = PchipInterpolator._edge_case(hk[0], hk[1], mk[0], mk[1])
         dk[-1] = PchipInterpolator._edge_case(hk[-1], hk[-2], mk[-1], mk[-2])
 
@@ -179,36 +303,52 @@ class PchipInterpolator(BPoly):
 def pchip_interpolate(xi, yi, x, der=0, axis=0):
     """
     Convenience function for pchip interpolation.
+
     xi and yi are arrays of values used to approximate some function f,
-    with ``yi = f(xi)``.  The interpolant uses monotonic cubic splines
+    with ``yi = f(xi)``. The interpolant uses monotonic cubic splines
     to find the value of new points x and the derivatives there.
 
-    See `PchipInterpolator` for details.
+    See `scipy.interpolate.PchipInterpolator` for details.
 
     Parameters
     ----------
     xi : array_like
         A sorted list of x-coordinates, of length N.
-    yi :  array_like
-        A 1-D array of real values.  `yi`'s length along the interpolation
+    yi : array_like
+        A 1-D array of real values. `yi`'s length along the interpolation
         axis must be equal to the length of `xi`. If N-D array, use axis
         parameter to select correct axis.
     x : scalar or array_like
         Of length M.
     der : int or list, optional
-        Derivatives to extract.  The 0-th derivative can be included to
+        Derivatives to extract. The 0th derivative can be included to
         return the function value.
     axis : int, optional
         Axis in the yi array corresponding to the x-coordinate values.
 
     See Also
     --------
-    PchipInterpolator
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
 
     Returns
     -------
     y : scalar or array_like
         The result, of length R or length M or M by R,
+
+    Examples
+    --------
+    We can interpolate 2D observed data using pchip interpolation:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import pchip_interpolate
+    >>> x_observed = np.linspace(0.0, 10.0, 11)
+    >>> y_observed = np.sin(x_observed)
+    >>> x = np.linspace(min(x_observed), max(x_observed), num=100)
+    >>> y = pchip_interpolate(x_observed, y_observed, x)
+    >>> plt.plot(x_observed, y_observed, "o", label="observation")
+    >>> plt.plot(x, y, label="pchip interpolation")
+    >>> plt.legend()
+    >>> plt.show()
 
     """
     P = PchipInterpolator(xi, yi, axis=axis)
@@ -221,11 +361,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         return [P.derivative(nu)(x) for nu in der]
 
 
-# Backwards compatibility
-pchip = PchipInterpolator
-
-
-class Akima1DInterpolator(PPoly):
+class Akima1DInterpolator(CubicHermiteSpline):
     """
     Akima interpolator
 
@@ -239,11 +375,11 @@ class Akima1DInterpolator(PPoly):
     x : ndarray, shape (m, )
         1-D array of monotonically increasing real values.
     y : ndarray, shape (m, ...)
-        N-D array of real values. The length of `y` along the first axis must
-        be equal to the length of `x`.
+        N-D array of real values. The length of ``y`` along the first axis
+        must be equal to the length of ``x``.
     axis : int, optional
-        Specifies the axis of `y` along which to interpolate. Interpolation
-        defaults to the first axis of `y`.
+        Specifies the axis of ``y`` along which to interpolate. Interpolation
+        defaults to the first axis of ``y``.
 
     Methods
     -------
@@ -254,9 +390,9 @@ class Akima1DInterpolator(PPoly):
 
     See Also
     --------
-    PchipInterpolator
-    CubicSpline
-    PPoly
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
+    CubicSpline : Cubic spline data interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints
 
     Notes
     -----
@@ -277,24 +413,9 @@ class Akima1DInterpolator(PPoly):
     def __init__(self, x, y, axis=0):
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
         # https://www.mathworks.com/matlabcentral/fileexchange/1814-akima-interpolation
-        x, y = map(np.asarray, (x, y))
-        axis = axis % y.ndim
-
-        if np.any(np.diff(x) < 0.):
-            raise ValueError("x must be strictly ascending")
-        if x.ndim != 1:
-            raise ValueError("x must be 1-dimensional")
-        if x.size < 2:
-            raise ValueError("at least 2 breakpoints are needed")
-        if x.size != y.shape[axis]:
-            raise ValueError("x.shape must equal y.shape[%s]" % axis)
-
-        # move interpolation axis to front
-        y = np.rollaxis(y, axis)
-
+        x, dx, y, axis, _ = prepare_input(x, y, axis)
         # determine slopes between breakpoints
         m = np.empty((x.size + 3, ) + y.shape[1:])
-        dx = np.diff(x)
         dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
         m[2:-2] = np.diff(y, axis=0) / dx
 
@@ -313,27 +434,18 @@ class Akima1DInterpolator(PPoly):
         f1 = dm[2:]
         f2 = dm[:-2]
         f12 = f1 + f2
-        # These are the mask of where the the slope at breakpoint is defined:
+        # These are the mask of where the slope at breakpoint is defined:
         ind = np.nonzero(f12 > 1e-9 * np.max(f12))
         x_ind, y_ind = ind[0], ind[1:]
         # Set the slope at breakpoint
         t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
                   f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
-        # calculate the higher order coefficients
-        c = (3. * m[2:-2] - 2. * t[:-1] - t[1:]) / dx
-        d = (t[:-1] + t[1:] - 2. * m[2:-2]) / dx ** 2
 
-        coeff = np.zeros((4, x.size - 1) + y.shape[1:])
-        coeff[3] = y[:-1]
-        coeff[2] = t[:-1]
-        coeff[1] = c
-        coeff[0] = d
-
-        super(Akima1DInterpolator, self).__init__(coeff, x, extrapolate=False)
+        super().__init__(x, y, t, axis=0, extrapolate=False)
         self.axis = axis
 
     def extend(self, c, x, right=True):
-        raise NotImplementedError("Extending a 1D Akima interpolator is not "
+        raise NotImplementedError("Extending a 1-D Akima interpolator is not "
                                   "yet implemented")
 
     # These are inherited from PPoly, but they do not produce an Akima
@@ -349,7 +461,7 @@ class Akima1DInterpolator(PPoly):
                                   "an Akima interpolator.")
 
 
-class CubicSpline(PPoly):
+class CubicSpline(CubicHermiteSpline):
     """Cubic spline data interpolator.
 
     Interpolate data with a piecewise cubic polynomial which is twice
@@ -359,12 +471,12 @@ class CubicSpline(PPoly):
     Parameters
     ----------
     x : array_like, shape (n,)
-        1-d array containing values of the independent variable.
+        1-D array containing values of the independent variable.
         Values must be real, finite and in strictly increasing order.
     y : array_like
         Array containing values of the dependent variable. It can have
-        arbitrary number of dimensions, but the length along `axis` (see below)
-        must match the length of `x`. Values must be finite.
+        arbitrary number of dimensions, but the length along ``axis``
+        (see below) must match the length of ``x``. Values must be finite.
     axis : int, optional
         Axis along which `y` is assumed to be varying. Meaning that for
         ``x[i]`` the corresponding values are ``np.take(y, i, axis=axis)``.
@@ -397,27 +509,27 @@ class CubicSpline(PPoly):
 
         * `order`: the derivative order, 1 or 2.
         * `deriv_value`: array_like containing derivative values, shape must
-          be the same as `y`, excluding `axis` dimension. For example, if `y`
-          is 1D, then `deriv_value` must be a scalar. If `y` is 3D with the
-          shape (n0, n1, n2) and axis=2, then `deriv_value` must be 2D
+          be the same as `y`, excluding ``axis`` dimension. For example, if
+          `y` is 1-D, then `deriv_value` must be a scalar. If `y` is 3-D with
+          the shape (n0, n1, n2) and axis=2, then `deriv_value` must be 2-D
           and have the shape (n0, n1).
     extrapolate : {bool, 'periodic', None}, optional
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
-        periodic extrapolation is used. If None (default), `extrapolate` is
+        periodic extrapolation is used. If None (default), ``extrapolate`` is
         set to 'periodic' for ``bc_type='periodic'`` and to True otherwise.
 
     Attributes
     ----------
     x : ndarray, shape (n,)
-        Breakpoints. The same `x` which was passed to the constructor.
+        Breakpoints. The same ``x`` which was passed to the constructor.
     c : ndarray, shape (4, n-1, ...)
         Coefficients of the polynomials on each segment. The trailing
-        dimensions match the dimensions of `y`, excluding `axis`. For example,
-        if `y` is 1-d, then ``c[k, i]`` is a coefficient for
+        dimensions match the dimensions of `y`, excluding ``axis``.
+        For example, if `y` is 1-d, then ``c[k, i]`` is a coefficient for
         ``(x-x[i])**(3-k)`` on the segment between ``x[i]`` and ``x[i+1]``.
     axis : int
-        Interpolation axis. The same `axis` which was passed to the
+        Interpolation axis. The same axis which was passed to the
         constructor.
 
     Methods
@@ -430,14 +542,15 @@ class CubicSpline(PPoly):
 
     See Also
     --------
-    Akima1DInterpolator
-    PchipInterpolator
-    PPoly
+    Akima1DInterpolator : Akima 1D interpolator.
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints.
 
     Notes
     -----
-    Parameters `bc_type` and `interpolate` work independently, i.e. the former
-    controls only construction of a spline, and the latter only evaluation.
+    Parameters `bc_type` and ``extrapolate`` work independently, i.e. the
+    former controls only construction of a spline, and the latter only
+    evaluation.
 
     When a boundary condition is 'not-a-knot' and n = 2, it is replaced by
     a condition that the first derivative is equal to the linear interpolant
@@ -463,15 +576,15 @@ class CubicSpline(PPoly):
     >>> y = np.sin(x)
     >>> cs = CubicSpline(x, y)
     >>> xs = np.arange(-0.5, 9.6, 0.1)
-    >>> plt.figure(figsize=(6.5, 4))
-    >>> plt.plot(x, y, 'o', label='data')
-    >>> plt.plot(xs, np.sin(xs), label='true')
-    >>> plt.plot(xs, cs(xs), label="S")
-    >>> plt.plot(xs, cs(xs, 1), label="S'")
-    >>> plt.plot(xs, cs(xs, 2), label="S''")
-    >>> plt.plot(xs, cs(xs, 3), label="S'''")
-    >>> plt.xlim(-0.5, 9.5)
-    >>> plt.legend(loc='lower left', ncol=2)
+    >>> fig, ax = plt.subplots(figsize=(6.5, 4))
+    >>> ax.plot(x, y, 'o', label='data')
+    >>> ax.plot(xs, np.sin(xs), label='true')
+    >>> ax.plot(xs, cs(xs), label="S")
+    >>> ax.plot(xs, cs(xs, 1), label="S'")
+    >>> ax.plot(xs, cs(xs, 2), label="S''")
+    >>> ax.plot(xs, cs(xs, 3), label="S'''")
+    >>> ax.set_xlim(-0.5, 9.5)
+    >>> ax.legend(loc='lower left', ncol=2)
     >>> plt.show()
 
     In the second example, the unit circle is interpolated with a spline. A
@@ -486,12 +599,12 @@ class CubicSpline(PPoly):
     >>> print("ds/dx={:.1f} ds/dy={:.1f}".format(cs(0, 1)[0], cs(0, 1)[1]))
     ds/dx=0.0 ds/dy=1.0
     >>> xs = 2 * np.pi * np.linspace(0, 1, 100)
-    >>> plt.figure(figsize=(6.5, 4))
-    >>> plt.plot(y[:, 0], y[:, 1], 'o', label='data')
-    >>> plt.plot(np.cos(xs), np.sin(xs), label='true')
-    >>> plt.plot(cs(xs)[:, 0], cs(xs)[:, 1], label='spline')
-    >>> plt.axes().set_aspect('equal')
-    >>> plt.legend(loc='center')
+    >>> fig, ax = plt.subplots(figsize=(6.5, 4))
+    >>> ax.plot(y[:, 0], y[:, 1], 'o', label='data')
+    >>> ax.plot(np.cos(xs), np.sin(xs), label='true')
+    >>> ax.plot(cs(xs)[:, 0], cs(xs)[:, 1], label='spline')
+    >>> ax.axes.set_aspect('equal')
+    >>> ax.legend(loc='center')
     >>> plt.show()
 
     The third example is the interpolation of a polynomial y = x**3 on the
@@ -513,37 +626,8 @@ class CubicSpline(PPoly):
     .. [2] Carl de Boor, "A Practical Guide to Splines", Springer-Verlag, 1978.
     """
     def __init__(self, x, y, axis=0, bc_type='not-a-knot', extrapolate=None):
-        x, y = map(np.asarray, (x, y))
-
-        if np.issubdtype(x.dtype, np.complexfloating):
-            raise ValueError("`x` must contain real values.")
-
-        if np.issubdtype(y.dtype, np.complexfloating):
-            dtype = complex
-        else:
-            dtype = float
-        y = y.astype(dtype, copy=False)
-
-        axis = axis % y.ndim
-        if x.ndim != 1:
-            raise ValueError("`x` must be 1-dimensional.")
-        if x.shape[0] < 2:
-            raise ValueError("`x` must contain at least 2 elements.")
-        if x.shape[0] != y.shape[axis]:
-            raise ValueError("The length of `y` along `axis`={0} doesn't "
-                             "match the length of `x`".format(axis))
-
-        if not np.all(np.isfinite(x)):
-            raise ValueError("`x` must contain only finite values.")
-        if not np.all(np.isfinite(y)):
-            raise ValueError("`y` must contain only finite values.")
-
-        dx = np.diff(x)
-        if np.any(dx <= 0):
-            raise ValueError("`x` must be strictly increasing sequence.")
-
-        n = x.shape[0]
-        y = np.rollaxis(y, axis)
+        x, dx, y, axis, _ = prepare_input(x, y, axis)
+        n = len(x)
 
         bc, y = self._validate_bc(bc_type, y, y.shape[1:], axis)
 
@@ -588,6 +672,12 @@ class CubicSpline(PPoly):
 
             s = solve(A, b, overwrite_a=True, overwrite_b=True,
                       check_finite=False)
+        elif n == 3 and bc[0] == 'periodic':
+            # In case when number of points is 3 we should count derivatives
+            # manually
+            s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
+            t = (slope / dxr).sum() / (1. / dxr).sum()
+            s.fill(t)
         else:
             # Find derivative values at each x[i] by solving a tridiagonal
             # system.
@@ -629,7 +719,7 @@ class CubicSpline(PPoly):
                 a_m1_0 = dx[-2]  # lower left corner value: A[-1, 0]
                 a_m1_m2 = dx[-1]
                 a_m1_m1 = 2 * (dx[-1] + dx[-2])
-                a_m2_m1 = dx[-2]
+                a_m2_m1 = dx[-3]
                 a_0_m1 = dx[0]
 
                 b[0] = 3 * (dxr[0] * slope[-1] + dxr[-1] * slope[0])
@@ -691,15 +781,7 @@ class CubicSpline(PPoly):
                 s = solve_banded((1, 1), A, b, overwrite_ab=True,
                                  overwrite_b=True, check_finite=False)
 
-        # Compute coefficients in PPoly form.
-        t = (s[:-1] + s[1:] - 2 * slope) / dxr
-        c = np.empty((4, n - 1) + y.shape[1:], dtype=t.dtype)
-        c[0] = t / dxr
-        c[1] = (slope - s[:-1]) / dxr - t
-        c[2] = s[:-1]
-        c[3] = y[:-1]
-
-        super(CubicSpline, self).__init__(c, x, extrapolate=extrapolate)
+        super().__init__(x, y, s, axis=0, extrapolate=extrapolate)
         self.axis = axis
 
     @staticmethod
@@ -714,7 +796,7 @@ class CubicSpline(PPoly):
             y casted to complex dtype if one of the boundary conditions has
             complex dtype.
         """
-        if isinstance(bc_type, string_types):
+        if isinstance(bc_type, str):
             if bc_type == 'periodic':
                 if not np.allclose(y[0], y[-1], rtol=1e-15, atol=1e-15):
                     raise ValueError(
@@ -736,7 +818,7 @@ class CubicSpline(PPoly):
 
         validated_bc = []
         for bc in bc_type:
-            if isinstance(bc, string_types):
+            if isinstance(bc, str):
                 if bc == 'clamped':
                     validated_bc.append((1, np.zeros(expected_deriv_shape)))
                 elif bc == 'natural':
@@ -748,9 +830,11 @@ class CubicSpline(PPoly):
             else:
                 try:
                     deriv_order, deriv_value = bc
-                except Exception:
-                    raise ValueError("A specified derivative value must be "
-                                     "given in the form (order, value).")
+                except Exception as e:
+                    raise ValueError(
+                        "A specified derivative value must be "
+                        "given in the form (order, value)."
+                    ) from e
 
                 if deriv_order not in [1, 2]:
                     raise ValueError("The specified derivative order must "

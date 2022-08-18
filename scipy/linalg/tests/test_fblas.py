@@ -6,17 +6,15 @@
 # !! Complex calculations really aren't checked that carefully.
 # !! Only real valued complex numbers are used in tests.
 
-from __future__ import division, print_function, absolute_import
-
 from numpy import float32, float64, complex64, complex128, arange, array, \
                   zeros, shape, transpose, newaxis, common_type, conjugate
 
 from scipy.linalg import _fblas as fblas
 
-from scipy._lib.six import xrange
-
 from numpy.testing import assert_array_equal, \
     assert_allclose, assert_array_almost_equal, assert_
+
+import pytest
 
 # decimal accuracy to require between Python and LAPACK/BLAS calculations
 accuracy = 5
@@ -33,10 +31,10 @@ def matrixmultiply(a, b):
         b_is_vector = False
     assert_(a.shape[1] == b.shape[0])
     c = zeros((a.shape[0], b.shape[1]), common_type(a, b))
-    for i in xrange(a.shape[0]):
-        for j in xrange(b.shape[1]):
+    for i in range(a.shape[0]):
+        for j in range(b.shape[1]):
             s = 0
-            for k in xrange(a.shape[1]):
+            for k in range(a.shape[1]):
                 s += a[i, k] * b[k, j]
             c[i, j] = s
     if b_is_vector:
@@ -47,7 +45,7 @@ def matrixmultiply(a, b):
 # Test blas ?axpy
 
 
-class BaseAxpy(object):
+class BaseAxpy:
     ''' Mixin class for axpy tests '''
 
     def test_default_a(self):
@@ -89,22 +87,14 @@ class BaseAxpy(object):
     def test_x_bad_size(self):
         x = arange(12., dtype=self.dtype)
         y = zeros(6, x.dtype)
-        try:
+        with pytest.raises(Exception, match='failed for 1st keyword'):
             self.blas_func(x, y, n=4, incx=5)
-        except:  # what kind of error should be caught?
-            return
-        # should catch error and never get here
-        assert_(0)
 
     def test_y_bad_size(self):
         x = arange(12., dtype=self.dtype)
         y = zeros(6, x.dtype)
-        try:
+        with pytest.raises(Exception, match='failed for 1st keyword'):
             self.blas_func(x, y, n=3, incy=5)
-        except:  # what kind of error should be caught?
-            return
-        # should catch error and never get here
-        assert_(0)
 
 
 try:
@@ -138,7 +128,7 @@ class TestZaxpy(BaseAxpy):
 ##################################################
 # Test blas ?scal
 
-class BaseScal(object):
+class BaseScal:
     ''' Mixin class for scal testing '''
 
     def test_simple(self):
@@ -156,12 +146,8 @@ class BaseScal(object):
 
     def test_x_bad_size(self):
         x = arange(12., dtype=self.dtype)
-        try:
+        with pytest.raises(Exception, match='failed for 1st keyword'):
             self.blas_func(2., x, n=4, incx=5)
-        except:  # what kind of error should be caught?
-            return
-        # should catch error and never get here
-        assert_(0)
 
 
 try:
@@ -195,7 +181,7 @@ class TestZscal(BaseScal):
 ##################################################
 # Test blas ?copy
 
-class BaseCopy(object):
+class BaseCopy:
     ''' Mixin class for copy testing '''
 
     def test_simple(self):
@@ -225,22 +211,14 @@ class BaseCopy(object):
     def test_x_bad_size(self):
         x = arange(12., dtype=self.dtype)
         y = zeros(6, x.dtype)
-        try:
+        with pytest.raises(Exception, match='failed for 1st keyword'):
             self.blas_func(x, y, n=4, incx=5)
-        except:  # what kind of error should be caught?
-            return
-        # should catch error and never get here
-        assert_(0)
 
     def test_y_bad_size(self):
         x = arange(12., dtype=self.dtype)
         y = zeros(6, x.dtype)
-        try:
+        with pytest.raises(Exception, match='failed for 1st keyword'):
             self.blas_func(x, y, n=3, incy=5)
-        except:  # what kind of error should be caught?
-            return
-        # should catch error and never get here
-        assert_(0)
 
     # def test_y_bad_type(self):
     ##   Hmmm. Should this work?  What should be the output.
@@ -281,7 +259,7 @@ class TestZcopy(BaseCopy):
 ##################################################
 # Test blas ?swap
 
-class BaseSwap(object):
+class BaseSwap:
     ''' Mixin class for swap tests '''
 
     def test_simple(self):
@@ -323,22 +301,14 @@ class BaseSwap(object):
     def test_x_bad_size(self):
         x = arange(12., dtype=self.dtype)
         y = zeros(6, x.dtype)
-        try:
+        with pytest.raises(Exception, match='failed for 1st keyword'):
             self.blas_func(x, y, n=4, incx=5)
-        except:  # what kind of error should be caught?
-            return
-        # should catch error and never get here
-        assert_(0)
 
     def test_y_bad_size(self):
         x = arange(12., dtype=self.dtype)
         y = zeros(6, x.dtype)
-        try:
+        with pytest.raises(Exception, match='failed for 1st keyword'):
             self.blas_func(x, y, n=3, incy=5)
-        except:  # what kind of error should be caught?
-            return
-        # should catch error and never get here
-        assert_(0)
 
 
 try:
@@ -373,7 +343,7 @@ class TestZswap(BaseSwap):
 # This will be a mess to test all cases.
 
 
-class BaseGemv(object):
+class BaseGemv:
     ''' Mixin class for gemv tests '''
 
     def get_data(self, x_stride=1, y_stride=1):
@@ -428,16 +398,10 @@ class BaseGemv(object):
     def test_x_stride_assert(self):
         # What is the use of this test?
         alpha, beta, a, x, y = self.get_data(x_stride=2)
-        try:
+        with pytest.raises(Exception, match='failed for 3rd argument'):
             y = self.blas_func(1, a, x, 1, y, trans=0, incx=3)
-            assert_(0)
-        except:
-            pass
-        try:
+        with pytest.raises(Exception, match='failed for 3rd argument'):
             y = self.blas_func(1, a, x, 1, y, trans=1, incx=3)
-            assert_(0)
-        except:
-            pass
 
     def test_y_stride(self):
         alpha, beta, a, x, y = self.get_data(y_stride=2)
@@ -456,16 +420,10 @@ class BaseGemv(object):
     def test_y_stride_assert(self):
         # What is the use of this test?
         alpha, beta, a, x, y = self.get_data(y_stride=2)
-        try:
+        with pytest.raises(Exception, match='failed for 2nd keyword'):
             y = self.blas_func(1, a, x, 1, y, trans=0, incy=3)
-            assert_(0)
-        except:
-            pass
-        try:
+        with pytest.raises(Exception, match='failed for 2nd keyword'):
             y = self.blas_func(1, a, x, 1, y, trans=1, incy=3)
-            assert_(0)
-        except:
-            pass
 
 
 try:
@@ -544,7 +502,7 @@ class TestZgemv(BaseGemv):
 ### Test blas ?ger
 ### This will be a mess to test all cases.
 
-class BaseGer(object):
+class BaseGer:
     def get_data(self,x_stride=1,y_stride=1):
         from numpy.random import normal, seed
         seed(1234)
@@ -566,11 +524,8 @@ class BaseGer(object):
         assert_array_almost_equal(desired_a,a)
     def test_x_stride_assert(self):
         alpha,a,x,y = self.get_data(x_stride=2)
-        try:
+        with pytest.raises(ValueError, match='foo'):
             self.blas_func(x,y,a,incx=3)
-            assert(0)
-        except:
-            pass
     def test_y_stride(self):
         alpha,a,x,y = self.get_data(y_stride=2)
         desired_a = alpha*transpose(x[:,newaxis]*y[::2]) + a
@@ -579,11 +534,8 @@ class BaseGer(object):
 
     def test_y_stride_assert(self):
         alpha,a,x,y = self.get_data(y_stride=2)
-        try:
+        with pytest.raises(ValueError, match='foo'):
             self.blas_func(a,x,y,incy=3)
-            assert(0)
-        except:
-            pass
 
 class TestSger(BaseGer):
     blas_func = fblas.sger

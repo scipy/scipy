@@ -2,17 +2,15 @@
 Matrix functions that use Pade approximation with inverse scaling and squaring.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np
 
 from scipy.linalg._matfuncs_sqrtm import SqrtmError, _sqrtm_triu
-from scipy.linalg.decomp_schur import schur, rsf2csf
-from scipy.linalg.matfuncs import funm
+from scipy.linalg._decomp_schur import schur, rsf2csf
+from scipy.linalg._matfuncs import funm
 from scipy.linalg import svdvals, solve_triangular
-from scipy.sparse.linalg.interface import LinearOperator
+from scipy.sparse.linalg._interface import LinearOperator
 from scipy.sparse.linalg import onenormest
 import scipy.special
 
@@ -72,7 +70,7 @@ class _MatrixM1PowerOperator(LinearOperator):
         return _MatrixM1PowerOperator(self._A.T, self._p)
 
 
-#TODO renovate or move this function when scipy operators are more mature
+#TODO renovate or move this function when SciPy operators are more mature
 def _onenormest_m1_power(A, p,
         t=2, itmax=5, compute_v=False, compute_w=False):
     """
@@ -369,7 +367,7 @@ def _inverse_squaring_helper(T0, theta):
     s0 = 0
     tmp_diag = np.diag(T)
     if np.count_nonzero(tmp_diag) != n:
-        raise Exception('internal inconsistency')
+        raise Exception('Diagonal entries of T must be nonzero')
     while np.max(np.absolute(tmp_diag - 1)) > theta[7]:
         tmp_diag = np.sqrt(tmp_diag)
         s0 += 1
@@ -444,7 +442,7 @@ def _inverse_squaring_helper(T0, theta):
 
     # Return the T-I matrix, the number of square roots, and the Pade degree.
     if not np.array_equal(R, np.triu(R)):
-        raise Exception('internal inconsistency')
+        raise Exception('R is not upper triangular')
     return R, s, m
 
 
@@ -463,7 +461,7 @@ def _fractional_power_pade_constant(i, t):
         j = (i - 1) // 2
         return (-j - t) / (2 * (2*j + 1))
     else:
-        raise Exception('internal error')
+        raise Exception('unnexpected value of i, i = {}'.format(i))
 
 
 def _fractional_power_pade(R, t, m):
@@ -512,7 +510,7 @@ def _fractional_power_pade(R, t, m):
         Y = solve_triangular(ident + Y, rhs)
     U = ident + Y
     if not np.array_equal(U, np.triu(U)):
-        raise Exception('internal inconsistency')
+        raise Exception('U is not upper triangular')
     return U
 
 
@@ -591,7 +589,7 @@ def _remainder_matrix_power_triu(T, t):
                         f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
                         U[j, j+1] = f12
     if not np.array_equal(U, np.triu(U)):
-        raise Exception('internal inconsistency')
+        raise Exception('U is not upper triangular')
     return U
 
 
@@ -815,7 +813,7 @@ def _logm_triu(T):
 
     # Return the logm of the upper triangular matrix.
     if not np.array_equal(U, np.triu(U)):
-        raise Exception('internal inconsistency')
+        raise Exception('U is not upper triangular')
     return U
 
 
@@ -848,12 +846,12 @@ def _logm(A):
     Notes
     -----
     In this function we look at triangular matrices that are similar
-    to the input matrix.  If any diagonal entry of such a triangular matrix
+    to the input matrix. If any diagonal entry of such a triangular matrix
     is exactly zero then the original matrix is singular.
     The matrix logarithm does not exist for such matrices,
     but in such cases we will pretend that the diagonal entries that are zero
     are actually slightly positive by an ad-hoc amount, in the interest
-    of returning something more useful than NaN.  This will cause a warning.
+    of returning something more useful than NaN. This will cause a warning.
 
     """
     A = np.asarray(A)

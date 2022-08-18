@@ -17,9 +17,6 @@ cdef public int wrap_PyUFunc_getfperr() nogil:
     """
     return PyUFunc_getfperr()
 
-cdef extern from "numpy/npy_math.h":
-    double NPY_NAN
-
 from . cimport sf_error
 from . cimport _complexstuff
 cimport scipy.special._ufuncs_cxx

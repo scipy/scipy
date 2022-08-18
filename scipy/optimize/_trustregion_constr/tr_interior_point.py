@@ -12,7 +12,6 @@ References
        Second Edition (2006).
 """
 
-from __future__ import division, print_function, absolute_import
 import scipy.sparse as sps
 import numpy as np
 from .equality_constrained_sqp import equality_constrained_sqp
@@ -108,7 +107,7 @@ class BarrierSubproblem:
         s = self.get_slack(z)
         diag_elements = np.hstack((np.ones(self.n_vars), s))
 
-        # Diagonal Matrix
+        # Diagonal matrix
         def matvec(vec):
             return diag_elements*vec
         return LinearOperator((self.n_vars+self.n_ineq,
@@ -121,7 +120,7 @@ class BarrierSubproblem:
         Return scaled gradient:
             gradient = [             grad(x)             ]
                        [ -barrier_parameter*ones(n_ineq) ]
-        and scaled Jacobian Matrix:
+        and scaled Jacobian matrix:
             jacobian = [  jac_eq(x)  0  ]
                        [ jac_ineq(x) S  ]
         Both of them scaled by the previously defined scaling factor.
@@ -132,7 +131,7 @@ class BarrierSubproblem:
         # Compute first derivatives
         g = self.grad(x)
         J_eq, J_ineq = self.jac(x)
-        # Return gradient and jacobian
+        # Return gradient and Jacobian
         return (self._compute_gradient(g),
                 self._compute_jacobian(J_eq, J_ineq, s))
 
@@ -160,11 +159,11 @@ class BarrierSubproblem:
                 if sps.issparse(J_eq):
                     J_eq = J_eq.toarray()
                 # Concatenate matrices
-                return np.asarray(np.bmat([[J_eq, zeros],
-                                           [J_ineq, S]]))
+                return np.block([[J_eq, zeros],
+                                 [J_ineq, S]])
 
     def _assemble_sparse_jacobian(self, J_eq, J_ineq, s):
-        """Assemble sparse jacobian given its components.
+        """Assemble sparse Jacobian given its components.
 
         Given ``J_eq``, ``J_ineq`` and ``s`` returns:
             jacobian = [ J_eq,     0     ]
@@ -250,7 +249,7 @@ class BarrierSubproblem:
         """
         x = self.get_variables(z)
         if self.global_stop_criteria(state, x,
-                                     last_iteration_failed, 
+                                     last_iteration_failed,
                                      trust_radius, penalty,
                                      cg_info,
                                      self.barrier_parameter,

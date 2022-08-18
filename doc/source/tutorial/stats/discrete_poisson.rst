@@ -5,8 +5,8 @@ Poisson Distribution
 ====================
 
 The Poisson random variable counts the number of successes in :math:`n` independent Bernoulli trials in the limit as :math:`n\rightarrow\infty` and :math:`p\rightarrow0` where the probability of success in each trial is :math:`p` and :math:`np=\lambda\geq0` is a constant. It can be used to approximate the Binomial random
-variable or in it's own right to count the number of events that occur
-in the interval :math:`\left[0,t\right]` for a process satisfying certain "sparsity "constraints. The functions are
+variable or in its own right to count the number of events that occur
+in the interval :math:`\left[0,t\right]` for a process satisfying certain "sparsity" constraints. The functions are:
 
 .. math::
    :nowrap:

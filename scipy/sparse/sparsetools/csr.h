@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <numeric>
 
 #include "util.h"
 #include "dense.h"
@@ -401,11 +402,11 @@ void csr_sort_indices(const I n_row,
  *
  * Output Arguments:
  *   I  Bp[n_col+1] - column pointer
- *   I  Bj[nnz(A)]  - row indices
+ *   I  Bi[nnz(A)]  - row indices
  *   T  Bx[nnz(A)]  - nonzeros
  *
  * Note:
- *   Output arrays Bp, Bj, Bx must be preallocated
+ *   Output arrays Bp, Bi, Bx must be preallocated
  *
  * Note:
  *   Input:  column indices *are not* assumed to be in sorted order
@@ -530,8 +531,9 @@ void csr_toell(const I n_row,
  *   T  Cx[nnz(C)]  - nonzeros
  *
  * Note:
- *   Output arrays Cp, Cj, and Cx must be preallocated
- *   The value of nnz(C) will be stored in Ap[n_row] after the first pass.
+ *   Output arrays Cp, Cj, and Cx must be preallocated.
+ *   In order to find the appropriate type for T, csr_matmat_maxnnz can be used
+ *   to find nnz(C).
  *
  * Note:
  *   Input:  A and B column indices *are not* assumed to be in sorted order
@@ -553,25 +555,22 @@ void csr_toell(const I n_row,
  *
  */
 
-
 /*
- * Pass 1 computes CSR row pointer for the matrix product C = A * B
+ * Compute the number of non-zeroes (nnz) in the result of C = A * B.
  *
  */
 template <class I>
-void csr_matmat_pass1(const I n_row,
-                      const I n_col,
-                      const I Ap[],
-                      const I Aj[],
-                      const I Bp[],
-                      const I Bj[],
-                            I Cp[])
+npy_intp csr_matmat_maxnnz(const I n_row,
+                           const I n_col,
+                           const I Ap[],
+                           const I Aj[],
+                           const I Bp[],
+                           const I Bj[])
 {
     // method that uses O(n) temp storage
     std::vector<I> mask(n_col, -1);
-    Cp[0] = 0;
 
-    I nnz = 0;
+    npy_intp nnz = 0;
     for(I i = 0; i < n_row; i++){
         npy_intp row_nnz = 0;
 
@@ -588,7 +587,7 @@ void csr_matmat_pass1(const I n_row,
 
         npy_intp next_nnz = nnz + row_nnz;
 
-        if (row_nnz > NPY_MAX_INTP - nnz || next_nnz != (I)next_nnz) {
+        if (row_nnz > NPY_MAX_INTP - nnz) {
             /*
              * Index overflowed. Note that row_nnz <= n_col and cannot overflow
              */
@@ -596,27 +595,27 @@ void csr_matmat_pass1(const I n_row,
         }
 
         nnz = next_nnz;
-        Cp[i+1] = nnz;
     }
+
+    return nnz;
 }
 
 /*
- * Pass 2 computes CSR entries for matrix C = A*B using the
- * row pointer Cp[] computed in Pass 1.
+ * Compute CSR entries for matrix C = A*B.
  *
  */
 template <class I, class T>
-void csr_matmat_pass2(const I n_row,
-                      const I n_col,
-                      const I Ap[],
-                      const I Aj[],
-                      const T Ax[],
-                      const I Bp[],
-                      const I Bj[],
-                      const T Bx[],
-                            I Cp[],
-                            I Cj[],
-                            T Cx[])
+void csr_matmat(const I n_row,
+                const I n_col,
+                const I Ap[],
+                const I Aj[],
+                const T Ax[],
+                const I Bp[],
+                const I Bj[],
+                const T Bx[],
+                      I Cp[],
+                      I Cj[],
+                      T Cx[])
 {
     std::vector<I> next(n_col,-1);
     std::vector<T> sums(n_col, 0);
@@ -1233,6 +1232,176 @@ void get_csr_submatrix(const I n_row,
 
 
 /*
+ * Slice rows given as an array of indices.
+ *
+ * Input Arguments:
+ *   I  n_row_idx       - number of row indices
+ *   I  rows[n_row_idx] - row indices for indexing
+ *   I  Ap[n_row+1]     - row pointer
+ *   I  Aj[nnz(A)]      - column indices
+ *   T  Ax[nnz(A)]      - data
+ *
+ * Output Arguments:
+ *   I  Bj - new column indices
+ *   T  Bx - new data
+ *
+ */
+template<class I, class T>
+void csr_row_index(const I n_row_idx,
+                   const I rows[],
+                   const I Ap[],
+                   const I Aj[],
+                   const T Ax[],
+                   I Bj[],
+                   T Bx[])
+{
+    for(I i = 0; i < n_row_idx; i++){
+        const I row = rows[i];
+        const I row_start = Ap[row];
+        const I row_end   = Ap[row+1];
+        Bj = std::copy(Aj + row_start, Aj + row_end, Bj);
+        Bx = std::copy(Ax + row_start, Ax + row_end, Bx);
+    }
+}
+
+
+/*
+ * Slice rows given as a (start, stop, step) tuple.
+ *
+ * Input Arguments:
+ *   I  start
+ *   I  stop
+ *   I  step
+ *   I  Ap[N+1]    - row pointer
+ *   I  Aj[nnz(A)] - column indices
+ *   T  Ax[nnz(A)] - data
+ *
+ * Output Arguments:
+ *   I  Bj - new column indices
+ *   T  Bx - new data
+ *
+ */
+template<class I, class T>
+void csr_row_slice(const I start,
+                   const I stop,
+                   const I step,
+                   const I Ap[],
+                   const I Aj[],
+                   const T Ax[],
+                   I Bj[],
+                   T Bx[])
+{
+    if (step > 0) {
+        for(I row = start; row < stop; row += step){
+            const I row_start = Ap[row];
+            const I row_end   = Ap[row+1];
+            Bj = std::copy(Aj + row_start, Aj + row_end, Bj);
+            Bx = std::copy(Ax + row_start, Ax + row_end, Bx);
+        }
+    } else {
+        for(I row = start; row > stop; row += step){
+            const I row_start = Ap[row];
+            const I row_end   = Ap[row+1];
+            Bj = std::copy(Aj + row_start, Aj + row_end, Bj);
+            Bx = std::copy(Ax + row_start, Ax + row_end, Bx);
+        }
+    }
+}
+
+
+/*
+ * Slice columns given as an array of indices (pass 1).
+ * This pass counts idx entries and computes a new indptr.
+ *
+ * Input Arguments:
+ *   I  n_idx           - number of indices to slice
+ *   I  col_idxs[n_idx] - indices to slice
+ *   I  n_row           - major axis dimension
+ *   I  n_col           - minor axis dimension
+ *   I  Ap[n_row+1]     - indptr
+ *   I  Aj[nnz(A)]      - indices
+ *
+ * Output Arguments:
+ *   I  col_offsets[n_col] - cumsum of index repeats
+ *   I  Bp[n_row+1]        - new indptr
+ *
+ */
+template<class I>
+void csr_column_index1(const I n_idx,
+                       const I col_idxs[],
+                       const I n_row,
+                       const I n_col,
+                       const I Ap[],
+                       const I Aj[],
+                       I col_offsets[],
+                       I Bp[])
+{
+    // bincount(col_idxs)
+    for(I jj = 0; jj < n_idx; jj++){
+        const I j = col_idxs[jj];
+        col_offsets[j]++;
+    }
+
+    // Compute new indptr
+    I new_nnz = 0;
+    Bp[0] = 0;
+    for(I i = 0; i < n_row; i++){
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            new_nnz += col_offsets[Aj[jj]];
+        }
+        Bp[i+1] = new_nnz;
+    }
+
+    // cumsum in-place
+    for(I j = 1; j < n_col; j++){
+        col_offsets[j] += col_offsets[j - 1];
+    }
+}
+
+
+/*
+ * Slice columns given as an array of indices (pass 2).
+ * This pass populates indices/data entries for selected columns.
+ *
+ * Input Arguments:
+ *   I  col_order[n_idx]   - order of col indices
+ *   I  col_offsets[n_col] - cumsum of col index counts
+ *   I  nnz                - nnz(A)
+ *   I  Aj[nnz(A)]         - column indices
+ *   T  Ax[nnz(A)]         - data
+ *
+ * Output Arguments:
+ *   I  Bj[nnz(B)] - new column indices
+ *   T  Bx[nnz(B)] - new data
+ *
+ */
+template<class I, class T>
+void csr_column_index2(const I col_order[],
+                       const I col_offsets[],
+                       const I nnz,
+                       const I Aj[],
+                       const T Ax[],
+                       I Bj[],
+                       T Bx[])
+{
+    I n = 0;
+    for(I jj = 0; jj < nnz; jj++){
+        const I j = Aj[jj];
+        const I offset = col_offsets[j];
+        const I prev_offset = j == 0 ? 0 : col_offsets[j-1];
+        if (offset != prev_offset) {
+            const T v = Ax[jj];
+            for(I k = prev_offset; k < offset; k++){
+                Bj[n] = col_order[k];
+                Bx[n] = v;
+                n++;
+            }
+        }
+    }
+}
+
+
+/*
  * Count the number of occupied diagonals in CSR matrix A
  *
  * Input Arguments:
@@ -1455,12 +1624,113 @@ int csr_sample_offsets(const I n_row,
 }
 
 /*
+ * Stack CSR matrices in A horizontally (column wise)
+ *
+ * Input Arguments:
+ *   I  n_blocks                      - number of matrices in A
+ *   I  n_row                         - number of rows in any matrix in A
+ *   I  n_col_cat[n_blocks]           - number of columns in each matrix in A concatenated
+ *   I  Ap_cat[n_blocks*(n_row + 1)]  - row indices of each matrix in A concatenated
+ *   I  Aj_cat[nnz(A)]                - column indices of each matrix in A concatenated
+ *   T  Ax_cat[nnz(A)]                - nonzeros of each matrix in A concatenated
+ *
+ * Output Arguments:
+ *   I Bp  - row pointer
+ *   I Bj  - column indices
+ *   T Bx  - nonzeros
+ *
+ * Note:
+ *   All output arrays Bp, Bj, Bx must be preallocated
+ *
+ *   Complexity: Linear.  Specifically O(nnz(A) + n_blocks)
+ *
+ */
+template <class I, class T>
+void csr_hstack(const I n_blocks,
+                const I n_row,
+                const I n_col_cat[],
+                const I Ap_cat[],
+                const I Aj_cat[],
+                const T Ax_cat[],
+                      I Bp[],
+                      I Bj[],
+                      T Bx[])
+{
+    // First, mark the blocks in the input data while
+    // computing their column offsets:
+    std::vector<I> col_offset(n_blocks);
+    std::vector<const I*> bAp(n_blocks);
+    std::vector<const I*> bAj(n_blocks);
+    std::vector<const T*> bAx(n_blocks);
+    col_offset[0] = 0;
+    bAp[0] = Ap_cat;
+    bAj[0] = Aj_cat;
+    bAx[0] = Ax_cat;
+    for (I b = 1; b < n_blocks; b++){
+        col_offset[b] = col_offset[b - 1] + n_col_cat[b - 1];
+        bAp[b] = bAp[b - 1] + (n_row + 1);
+        bAj[b] = bAj[b - 1] + bAp[b - 1][n_row];
+        bAx[b] = bAx[b - 1] + bAp[b - 1][n_row];
+    }
+
+    // Next, build the full output matrix:
+    Bp[0] = 0;
+    I s = 0;
+    for(I i = 0; i < n_row; i++){
+        for (I b = 0; b < n_blocks; b++){
+            I jj_start = bAp[b][i];
+            I jj_end = bAp[b][i + 1];
+            I offset = col_offset[b];
+            std::transform(&bAj[b][jj_start], &bAj[b][jj_end],
+                           &Bj[s], [&](I x){return (x + offset);});
+            std::copy(&bAx[b][jj_start], &bAx[b][jj_end], &Bx[s]);
+            s += jj_end - jj_start;
+        }
+        Bp[i + 1] = s;
+    }
+
+}
+
+
+/*
  * A test function checking the error handling
  */
-template <class T>
-int test_throw_error() {
+inline int test_throw_error() {
     throw std::bad_alloc();
     return 1;
 }
+
+#define SPTOOLS_CSR_EXTERN_TEMPLATE(I, T) \
+  extern template void csr_diagonal(const I k, const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], T Yx[]); \
+  extern template void csr_scale_rows(const I n_row, const I n_col, const I Ap[], const I Aj[], T Ax[], const T Xx[]); \
+  extern template void csr_scale_columns(const I n_row, const I n_col, const I Ap[], const I Aj[], T Ax[], const T Xx[]); \
+  extern template void csr_tobsr(const I n_row, const I n_col, const I R, const I C, const I Ap[], const I Aj[], const T Ax[], I Bp[], I Bj[], T Bx[]); \
+  extern template void csr_todense(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], T Bx[]); \
+  extern template void csr_sort_indices(const I n_row, const I Ap[], I Aj[], T Ax[]); \
+  extern template void csr_tocsc(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], I Bp[], I Bi[], T Bx[]); \
+  extern template void csr_toell(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I row_length, I Bj[], T Bx[]); \
+  extern template void csr_matmat(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[]); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::not_equal_to<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::less<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::less_equal<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::greater_equal<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::multiplies<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const safe_divides<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::plus<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::minus<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const maximum<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const minimum<T>& op); \
+  extern template void csr_sum_duplicates(const I n_row, const I n_col, I Ap[], I Aj[], T Ax[]); \
+  extern template void csr_eliminate_zeros(const I n_row, const I n_col, I Ap[], I Aj[], T Ax[]); \
+  extern template void csr_matvec(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const T Xx[], T Yx[]); \
+  extern template void csr_matvecs(const I n_row, const I n_col, const I n_vecs, const I Ap[], const I Aj[], const T Ax[], const T Xx[], T Yx[]); \
+  extern template void get_csr_submatrix(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I ir0, const I ir1, const I ic0, const I ic1, std::vector<I>* Bp, std::vector<I>* Bj, std::vector<T>* Bx); \
+  extern template void csr_row_index(const I n_row_idx, const I rows[], const I Ap[], const I Aj[], const T Ax[], I Bj[], T Bx[]); \
+  extern template void csr_row_slice(const I start, const I stop, const I step, const I Ap[], const I Aj[], const T Ax[], I Bj[], T Bx[]); \
+  extern template void csr_column_index2(const I col_order[], const I col_offsets[], const I nnz, const I Aj[], const T Ax[], I Bj[], T Bx[]); \
+  extern template void csr_sample_values(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I n_samples, const I Bi[], const I Bj[], T Bx[]);
+
+SPTOOLS_FOR_EACH_INDEX_DATA_TYPE_COMBINATION(SPTOOLS_CSR_EXTERN_TEMPLATE)
+#undef SPTOOLS_CSR_EXTERN_TEMPLATE
 
 #endif

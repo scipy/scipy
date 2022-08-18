@@ -1,11 +1,9 @@
-from __future__ import division, print_function, absolute_import
-
 from numpy import zeros, asarray, eye, poly1d, hstack, r_
 from scipy import linalg
 
 __all__ = ["pade"]
 
-def pade(an, m):
+def pade(an, m, n=None):
     """
     Return Pade approximation to a polynomial as the ratio of two polynomials.
 
@@ -14,7 +12,10 @@ def pade(an, m):
     an : (N,) array_like
         Taylor series coefficients.
     m : int
-        The order of the returned approximating polynomials.
+        The order of the returned approximating polynomial `q`.
+    n : int, optional
+        The order of the returned approximating polynomial `p`. By default,
+        the order is ``len(an)-1-m``.
 
     Returns
     -------
@@ -41,12 +42,18 @@ def pade(an, m):
 
     """
     an = asarray(an)
-    N = len(an) - 1
-    n = N - m
+    if n is None:
+        n = len(an) - 1 - m
+        if n < 0:
+            raise ValueError("Order of q <m> must be smaller than len(an)-1.")
     if n < 0:
-        raise ValueError("Order of q <m> must be smaller than len(an)-1.")
-    Akj = eye(N+1, n+1)
-    Bkj = zeros((N+1, m), 'd')
+        raise ValueError("Order of p <n> must be greater than 0.")
+    N = m + n
+    if N > len(an)-1:
+        raise ValueError("Order of q+p <m+n> must be smaller than len(an).")
+    an = an[:N+1]
+    Akj = eye(N+1, n+1, dtype=an.dtype)
+    Bkj = zeros((N+1, m), dtype=an.dtype)
     for row in range(1, m+1):
         Bkj[row,:row] = -(an[:row])[::-1]
     for row in range(m+1, N+1):

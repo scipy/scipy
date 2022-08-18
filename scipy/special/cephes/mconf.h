@@ -12,13 +12,8 @@
  *
  * DESCRIPTION:
  *
- * This file contains definitions for error codes that are
- * passed to the common error handling routine mtherr()
- * (which see).
- *
- * The file also includes a conditional assembly definition
- * for the type of computer arithmetic (IEEE, Motorola
- * IEEE, or UNKnown).
+ * The file includes a conditional assembly definition for the type of
+ * computer arithmetic (IEEE, Motorola IEEE, or UNKnown).
  *
  * For little-endian computers, such as IBM PC, that follow the
  * IEEE Standard for Binary Floating Point Arithmetic (ANSI/IEEE
@@ -60,23 +55,14 @@
 
 #include <Python.h>
 #include <numpy/npy_math.h>
+#include <math.h>
 
 #include "cephes_names.h"
 #include "cephes.h"
 #include "polevl.h"
+#include "sf_error.h"
 
-/* Constant definitions for math error conditions
- */
-
-#define DOMAIN		1	/* argument domain error */
-#define SING		2	/* argument singularity */
-#define OVERFLOW	3	/* overflow range error */
-#define UNDERFLOW	4	/* underflow range error */
-#define TLOSS		5	/* total loss of precision */
-#define PLOSS		6	/* partial loss of precision */
-#define TOOMANY         7	/* too many iterations */
 #define MAXITER        500
-
 #define EDOM		33
 #define ERANGE		34
 
@@ -100,8 +86,6 @@
 
 #define gamma Gamma
 
-extern void mtherr(const char *name, int code);
-
 /*
  * Enable loop unrolling on GCC and use faster isnan et al.
  */
@@ -114,8 +98,8 @@ extern void mtherr(const char *name, int code);
 #endif
 #endif
 #ifndef cephes_isnan
-#define cephes_isnan(x) npy_isnan(x)
-#define cephes_isinf(x) npy_isinf(x)
+#define cephes_isnan(x) isnan(x)
+#define cephes_isinf(x) isinf(x)
 #define cephes_isfinite(x) npy_isfinite(x)
 #endif
 

@@ -1,8 +1,20 @@
 {
+    "_cosine_cdf": {
+        "_cosine.h": {
+            "cosine_cdf": "d->d"
+        }
+    },
+    "_cosine_invcdf": {
+        "_cosine.h": {
+            "cosine_invcdf": "d->d"
+        }
+    },
     "_cospi": {
+	"cephes.h": {
+	    "cospi": "d->d"
+	},
         "_trig.pxd": {
-            "ccospi": "D->D",
-            "dcospi": "d->d"
+            "ccospi": "D->D"
         }
     },
     "_ellip_harm": {
@@ -19,7 +31,7 @@
         }
     },
     "_lambertw": {
-        "lambertw.pxd": {
+        "_lambertw.pxd": {
             "lambertw_scalar": "Dld->D"
         }
     },
@@ -44,9 +56,11 @@
         }
     },
     "_sinpi": {
+	"cephes.h": {
+	    "sinpi": "d->d"
+	},
         "_trig.pxd": {
-            "csinpi": "D->D",
-            "dsinpi": "d->d"
+            "csinpi": "D->D"
         }
     },
     "_spherical_in": {
@@ -98,18 +112,23 @@
         }
     },
     "_struve_asymp_large_z": {
-        "misc.h": {
+        "cephes.h": {
             "struve_asymp_large_z": "ddi*d->d"
         }
     },
     "_struve_bessel_series": {
-        "misc.h": {
+        "cephes.h": {
             "struve_bessel_series": "ddi*d->d"
         }
     },
     "_struve_power_series": {
-        "misc.h": {
+        "cephes.h": {
             "struve_power_series": "ddi*d->d"
+        }
+    },
+    "voigt_profile" : {
+        "_faddeeva.h++" : {
+            "faddeeva_voigt_profile": "ddd->d"
         }
     },
     "_zeta": {
@@ -139,7 +158,7 @@
             "bdtr_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "bdtr": "iid->d"
+            "bdtr": "did->d"
         }
     },
     "bdtrc": {
@@ -147,7 +166,7 @@
             "bdtrc_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "bdtrc": "iid->d"
+            "bdtrc": "did->d"
         }
     },
     "bdtri": {
@@ -155,7 +174,7 @@
             "bdtri_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "bdtri": "iid->d"
+            "bdtri": "did->d"
         }
     },
     "bdtrik": {
@@ -189,7 +208,7 @@
         }
     },
     "besselpoly": {
-        "c_misc/misc.h": {
+        "cephes.h": {
             "besselpoly": "ddd->d"
         }
     },
@@ -339,6 +358,46 @@
             "ellpk": "d->d"
         }
     },
+    "ellipk": {
+	"_ellipk.pxd": {
+	    "ellipk": "d->d"
+	}
+    },
+    "_factorial": {
+	"_factorial.pxd": {
+	    "_factorial": "d->d"
+	}
+    },
+    "elliprc": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RC": "dd->d",
+	    "cellint_RC": "DD->D"
+	}
+    },
+    "elliprd": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RD": "ddd->d",
+	    "cellint_RD": "DDD->D"
+	}
+    },
+    "elliprf": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RF": "ddd->d",
+	    "cellint_RF": "DDD->D"
+	}
+    },
+    "elliprg": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RG": "ddd->d",
+	    "cellint_RG": "DDD->D"
+	}
+    },
+    "elliprj": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RJ": "dddd->d",
+	    "cellint_RJ": "DDDD->D"
+	}
+    },
     "entr": {
         "_convex_analysis.pxd": {
             "entr": "d->d"
@@ -354,7 +413,7 @@
     },
     "erfc": {
         "_faddeeva.h++": {
-            "faddeeva_erfc": "D->D"
+            "faddeeva_erfc_complex": "D->D"
         },
         "cephes.h": {
             "erfc": "d->d"
@@ -370,6 +429,16 @@
         "_faddeeva.h++": {
             "faddeeva_erfi": "d->d",
             "faddeeva_erfi_complex": "D->D"
+        }
+    },
+    "erfinv": {
+        "cephes.h": {
+            "erfinv": "d->d"
+        }
+    },
+    "erfcinv": {
+        "cephes.h": {
+            "erfcinv": "d->d"
         }
     },
     "eval_chebyc": {
@@ -496,7 +565,7 @@
         }
     },
     "expit": {
-        "_logit.h": {
+        "_logit.h++": {
             "expit": "d->d",
             "expitf": "f->f",
             "expitl": "g->g"
@@ -585,7 +654,7 @@
         }
     },
     "gammasgn": {
-        "c_misc/misc.h": {
+        "cephes.h": {
             "gammasgn": "d->d"
         }
     },
@@ -646,40 +715,24 @@
         }
     },
     "hyp1f1": {
+	"_hypergeometric.pxd": {
+	    "hyp1f1": "ddd->d"
+	},
         "specfun_wrappers.h": {
-            "chyp1f1_wrap": "ddD->D",
-            "hyp1f1_wrap": "ddd->d"
-        }
-    },
-    "hyp1f2": {
-        "cephes.h": {
-            "onef2": "dddd*d->d"
-        }
-    },
-    "hyp2f0": {
-        "_legacy.pxd": {
-            "hyp2f0_unsafe": "dddd*d->d"
-        },
-        "cephes.h": {
-            "hyp2f0": "dddi*d->d"
+            "chyp1f1_wrap": "ddD->D"
         }
     },
     "hyp2f1": {
         "cephes.h": {
             "hyp2f1": "dddd->d"
         },
-        "specfun_wrappers.h": {
-            "chyp2f1_wrap": "dddD->D"
-        }
-    },
-    "hyp3f0": {
-        "cephes.h": {
-            "threef0": "dddd*d->d"
+        "_hyp2f1.pxd": {
+            "hyp2f1_complex": "dddD->D"
         }
     },
     "hyperu": {
-        "specfun_wrappers.h": {
-            "hypU_wrap": "ddd->d"
+        "_hypergeometric.pxd": {
+            "hyperu": "ddd->d"
         }
     },
     "i0": {
@@ -846,9 +899,24 @@
             "cbesk_wrap_real_int": "id->d"
         }
     },
+    "_kolmogc": {
+        "cephes.h": {
+            "kolmogc": "d->d"
+        }
+    },
+    "_kolmogci": {
+        "cephes.h": {
+            "kolmogci": "d->d"
+        }
+    },
     "kolmogi": {
         "cephes.h": {
             "kolmogi": "d->d"
+        }
+    },
+    "_kolmogp": {
+        "cephes.h": {
+            "kolmogp": "d->d"
         }
     },
     "kolmogorov": {
@@ -876,12 +944,17 @@
             "log1p": "d->d"
         }
     },
+    "log_expit": {
+        "_logit.h++": {
+            "log_expit": "d->d",
+            "log_expitf": "f->f",
+            "log_expitl": "g->g"
+        }
+    },
     "log_ndtr": {
         "_faddeeva.h++": {
-            "faddeeva_log_ndtr": "D->D"
-        },
-        "cephes.h": {
-            "log_ndtr": "d->d"
+            "faddeeva_log_ndtr": "d->d",
+            "faddeeva_log_ndtr_complex": "D->D"
         }
     },
     "loggamma": {
@@ -891,7 +964,7 @@
         }
     },
     "logit": {
-        "_logit.h": {
+        "_logit.h++": {
             "logit": "d->d",
             "logitf": "f->f",
             "logitl": "g->g"
@@ -953,7 +1026,7 @@
         }
     },
     "modstruve": {
-        "misc.h": {
+        "cephes.h": {
             "struve_l": "dd->d"
         }
     },
@@ -1115,19 +1188,13 @@
         }
     },
     "pdtr": {
-        "_legacy.pxd": {
-            "pdtr_unsafe": "dd->d"
-        },
         "cephes.h": {
-            "pdtr": "id->d"
+            "pdtr": "dd->d"
         }
     },
     "pdtrc": {
-        "_legacy.pxd": {
-            "pdtrc_unsafe": "dd->d"
-        },
         "cephes.h": {
-            "pdtrc": "id->d"
+            "pdtrc": "dd->d"
         }
     },
     "pdtri": {
@@ -1144,7 +1211,7 @@
         }
     },
     "poch": {
-        "c_misc/misc.h": {
+        "cephes.h": {
             "poch": "dd->d"
         }
     },
@@ -1246,12 +1313,36 @@
             "smirnov": "id->d"
         }
     },
+    "_smirnovc": {
+        "_legacy.pxd": {
+            "smirnovc_unsafe": "dd->d"
+        },
+        "cephes.h": {
+            "smirnovc": "id->d"
+        }
+    },
+    "_smirnovci": {
+        "_legacy.pxd": {
+            "smirnovci_unsafe": "dd->d"
+        },
+        "cephes.h": {
+            "smirnovci": "id->d"
+        }
+    },
     "smirnovi": {
         "_legacy.pxd": {
             "smirnovi_unsafe": "dd->d"
         },
         "cephes.h": {
             "smirnovi": "id->d"
+        }
+    },
+    "_smirnovp": {
+        "_legacy.pxd": {
+            "smirnovp_unsafe": "dd->d"
+        },
+        "cephes.h": {
+            "smirnovp": "id->d"
         }
     },
     "spence": {
@@ -1286,7 +1377,7 @@
         }
     },
     "struve": {
-        "misc.h": {
+        "cephes.h": {
             "struve_h": "dd->d"
         }
     },
@@ -1307,7 +1398,8 @@
     },
     "wrightomega": {
         "_wright.h++": {
-            "wrightomega": "D->D"
+            "wrightomega": "D->D",
+            "wrightomega_real": "d->d"
         }
     },
     "xlog1py": {
@@ -1356,5 +1448,20 @@
         "cephes.h": {
             "zetac": "d->d"
         }
+    },
+    "_riemann_zeta": {
+        "cephes.h": {
+            "riemann_zeta": "d->d"
+        }
+    },
+    "wright_bessel": {
+        "_wright_bessel.pxd": {
+            "wright_bessel_scalar": "ddd->d"
+        }
+    },
+    "ndtri_exp": {
+	"_ndtri_exp.pxd": {
+	    "ndtri_exp": "d->d"
+	}
     }
 }

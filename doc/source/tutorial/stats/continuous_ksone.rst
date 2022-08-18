@@ -20,7 +20,9 @@ There is one shape parameter :math:`n`, a positive integer, and the support is :
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} F\left(n, x\right) & = & 1 - \sum_{j=0}^{\lfloor n(1-x)\rfloor} \dbinom{n}{j} x \left(x+\frac{j}{n}\right)^{j-1} \left(1-x-\frac{j}{n}\right)^{n-j}\\ & = & 1 - \textrm{scipy.special.smirnov}(n, x) \\ \lim_{n \rightarrow\infty} F\left(n, \frac{x}{\sqrt n}\right) & = & e^{-2 x^2} \end{eqnarray*}
+    \begin{eqnarray*} F\left(n, x\right) & = & 1 - \sum_{j=0}^{\lfloor n(1-x)\rfloor} \dbinom{n}{j} x \left(x+\frac{j}{n}\right)^{j-1} \left(1-x-\frac{j}{n}\right)^{n-j}\\
+    & = & 1 - \textrm{scipy.special.smirnov}(n, x) \\
+    \lim_{n \rightarrow\infty} F\left(n, \frac{x}{\sqrt n}\right) & = & e^{-2 x^2} \end{eqnarray*}
 
 
 References

@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import time
 import numpy as np
 from scipy.sparse.linalg import LinearOperator
@@ -6,7 +5,7 @@ from .._differentiable_functions import VectorFunction
 from .._constraints import (
     NonlinearConstraint, LinearConstraint, PreparedConstraint, strict_bounds)
 from .._hessian_update_strategy import BFGS
-from ..optimize import OptimizeResult
+from .._optimize import OptimizeResult
 from .._differentiable_functions import ScalarFunction
 from .equality_constrained_sqp import equality_constrained_sqp
 from .canonical_constraint import (CanonicalConstraint,
@@ -19,11 +18,11 @@ TERMINATION_MESSAGES = {
     0: "The maximum number of function evaluations is exceeded.",
     1: "`gtol` termination condition is satisfied.",
     2: "`xtol` termination condition is satisfied.",
-    3: "`callback` function requested termination"
+    3: "`callback` function requested termination."
 }
 
 
-class HessianLinearOperator(object):
+class HessianLinearOperator:
     """Build LinearOperator from hessp"""
     def __init__(self, hessp, n):
         self.hessp = hessp
@@ -36,7 +35,7 @@ class HessianLinearOperator(object):
         return LinearOperator((self.n, self.n), matvec=matvec)
 
 
-class LagrangianHessian(object):
+class LagrangianHessian:
     """The Hessian of the Lagrangian as LinearOperator.
 
     The Lagrangian is computed as the objective function plus all the
@@ -59,7 +58,7 @@ class LagrangianHessian(object):
 
 def update_state_sqp(state, x, last_iteration_failed, objective, prepared_constraints,
                      start_time, tr_radius, constr_penalty, cg_info):
-    state.niter += 1
+    state.nit += 1
     state.nfev = objective.nfev
     state.njev = objective.ngev
     state.nhev = objective.nhev
@@ -130,7 +129,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     ----------
     gtol : float, optional
         Tolerance for termination by the norm of the Lagrangian gradient.
-        The algorithm will terminate when both the infinity norm (i.e. max
+        The algorithm will terminate when both the infinity norm (i.e., max
         abs value) of the Lagrangian gradient and the constraint violation
         are smaller than ``gtol``. Default is 1e-8.
     xtol : float, optional
@@ -140,7 +139,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Default is 1e-8.
     barrier_tol : float, optional
         Threshold on the barrier parameter for the algorithm termination.
-        When inequality constraints are present the algorithm will terminate
+        When inequality constraints are present, the algorithm will terminate
         only when the barrier parameter is less than `barrier_tol`.
         Default is 1e-8.
     sparse_jacobian : {bool, None}, optional
@@ -177,10 +176,12 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         ``c(x) <= 0`` the algorithm introduces slack variables, solving the problem
         ``min_(x,s) f(x) + barrier_parameter*sum(ln(s))`` subject to the equality
         constraints  ``c(x) + s = 0`` instead of the original problem. This subproblem
-        is solved for increasing values of ``barrier_parameter`` and with decreasing
+        is solved for decreasing values of ``barrier_parameter`` and with decreasing
         tolerances for the termination, starting with ``initial_barrier_parameter``
         for the barrier parameter and ``initial_barrier_tolerance`` for the
-        barrier subproblem  barrier. Default is 0.1 for both values (recommended in [1]_ p. 19).
+        barrier tolerance. Default is 0.1 for both values (recommended in [1]_ p. 19).
+        Also note that ``barrier_parameter`` and ``barrier_tolerance`` are updated
+        with the same prefactor.
     factorization_method : string or None, optional
         Method to factorize the Jacobian of the constraints. Use None (default)
         for the auto selection or one of:
@@ -205,7 +206,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         method can cope with Jacobian matrices with deficient row rank and will
         be used whenever other factorization methods fail (which may imply the
         conversion of sparse matrices to a dense format when required).
-        By default 'QRFactorization' is used for dense matrices.
+        By default, 'QRFactorization' is used for dense matrices.
     finite_diff_rel_step : None or array_like, optional
         Relative step size for the finite difference approximation.
     maxiter : int, optional
@@ -219,7 +220,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             * 3 : display progress during iterations (more complete report).
 
     disp : bool, optional
-        If True (default) then `verbose` will be set to 1 if it was 0.
+        If True (default), then `verbose` will be set to 1 if it was 0.
 
     Returns
     -------
@@ -230,7 +231,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
            constraints are put *after* other constraints.
         2. All numbers of function, Jacobian or Hessian evaluations correspond
            to numbers of actual Python function calls. It means, for example,
-           that if a Jacobian is estimated by finite differences then the
+           that if a Jacobian is estimated by finite differences, then the
            number of Jacobian evaluations will be zero and the number of
            function evaluations will be incremented by all calls during the
            finite difference estimation.
@@ -247,18 +248,18 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Gradient of the objective function at the solution.
     lagrangian_grad : ndarray, shape (n,)
         Gradient of the Lagrangian function at the solution.
-    niter : int
+    nit : int
         Total number of iterations.
     nfev : integer
         Number of the objective function evaluations.
-    ngev : integer
+    njev : integer
         Number of the objective function gradient evaluations.
     nhev : integer
         Number of the objective function Hessian evaluations.
     cg_niter : int
         Total number of the conjugate gradient method iterations.
     method : {'equality_constrained_sqp', 'tr_interior_point'}
-        Optimization method used.    
+        Optimization method used.
     constr : list of ndarray
         List of constraint values at the solution.
     jac : list of {ndarray, sparse matrix}
@@ -305,6 +306,11 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             * 2 : Reached the trust-region boundary.
             * 3 : Negative curvature detected.
             * 4 : Tolerance was satisfied.
+
+    References
+    ----------
+    .. [1] Conn, A. R., Gould, N. I., & Toint, P. L.
+           Trust region methods. 2000. Siam. pp. 19.
     """
     x0 = np.atleast_1d(x0).astype(float)
     n_vars = np.size(x0)
@@ -326,7 +332,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     objective = ScalarFunction(fun, x0, args, grad, hess,
                                finite_diff_rel_step, finite_diff_bounds)
 
-    # Put constraints in list format when needed
+    # Put constraints in list format when needed.
     if isinstance(constraints, (NonlinearConstraint, LinearConstraint)):
         constraints = [constraints]
 
@@ -378,7 +384,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     # Construct OptimizeResult
     state = OptimizeResult(
-        niter=0, nfev=0, njev=0, nhev=0,
+        nit=0, nfev=0, njev=0, nhev=0,
         cg_niter=0, cg_stop_cond=0,
         fun=objective.f, grad=objective.g,
         lagrangian_grad=np.copy(objective.g),
@@ -403,7 +409,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                      start_time, tr_radius, constr_penalty,
                                      cg_info)
             if verbose == 2:
-                BasicReport.print_iteration(state.niter,
+                BasicReport.print_iteration(state.nit,
                                             state.nfev,
                                             state.cg_niter,
                                             state.fun,
@@ -411,7 +417,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                             state.optimality,
                                             state.constr_violation)
             elif verbose > 2:
-                SQPReport.print_iteration(state.niter,
+                SQPReport.print_iteration(state.nit,
                                           state.nfev,
                                           state.cg_niter,
                                           state.fun,
@@ -421,13 +427,14 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                           state.constr_penalty,
                                           state.cg_stop_cond)
             state.status = None
+            state.niter = state.nit  # Alias for callback (backward-compatibility)
             if callback is not None and callback(np.copy(state.x), state):
                 state.status = 3
             elif state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
             elif state.tr_radius < xtol:
                 state.status = 2
-            elif state.niter > maxiter:
+            elif state.nit >= maxiter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
@@ -439,7 +446,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                     start_time, tr_radius, constr_penalty,
                                     cg_info, barrier_parameter, barrier_tolerance)
             if verbose == 2:
-                BasicReport.print_iteration(state.niter,
+                BasicReport.print_iteration(state.nit,
                                             state.nfev,
                                             state.cg_niter,
                                             state.fun,
@@ -447,7 +454,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                             state.optimality,
                                             state.constr_violation)
             elif verbose > 2:
-                IPReport.print_iteration(state.niter,
+                IPReport.print_iteration(state.nit,
                                          state.nfev,
                                          state.cg_niter,
                                          state.fun,
@@ -458,6 +465,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                          state.barrier_parameter,
                                          state.cg_stop_cond)
             state.status = None
+            state.niter = state.nit  # Alias for callback (backward compatibility)
             if callback is not None and callback(np.copy(state.x), state):
                 state.status = 3
             elif state.optimality < gtol and state.constr_violation < gtol:
@@ -465,7 +473,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             elif (state.tr_radius < xtol
                   and state.barrier_parameter < barrier_tol):
                 state.status = 2
-            elif state.niter > maxiter:
+            elif state.nit >= maxiter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)
 
@@ -511,7 +519,13 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             initial_constr_penalty, initial_tr_radius,
             factorization_method)
 
+    # Status 3 occurs when the callback function requests termination,
+    # this is assumed to not be a success.
+    result.success = True if result.status in (1, 2) else False
     result.message = TERMINATION_MESSAGES[result.status]
+
+    # Alias (for backward compatibility with 1.1.0)
+    result.niter = result.nit
 
     if verbose == 2:
         BasicReport.print_footer()
@@ -525,7 +539,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         print("Number of iterations: {}, function evaluations: {}, "
               "CG iterations: {}, optimality: {:.2e}, "
               "constraint violation: {:.2e}, execution time: {:4.2} s."
-              .format(result.niter, result.nfev, result.cg_niter,
+              .format(result.nit, result.nfev, result.cg_niter,
                       result.optimality, result.constr_violation,
                       result.execution_time))
     return result

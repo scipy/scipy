@@ -1,7 +1,5 @@
 """The adaptation of Trust Region Reflective algorithm for a linear
 least-squares problem."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import qr, solve_triangular
@@ -21,13 +19,12 @@ def regularized_lsq_with_qr(m, n, R, QTb, perm, diag, copy_R=True):
     """Solve regularized least squares using information from QR-decomposition.
 
     The initial problem is to solve the following system in a least-squares
-    sense:
-    ::
+    sense::
 
         A x = b
         D x = 0
 
-    Where D is diagonal matrix. The method is based on QR decomposition
+    where D is diagonal matrix. The method is based on QR decomposition
     of the form A P = Q R, where P is a column permutation matrix, Q is an
     orthogonal matrix and R is an upper triangular matrix.
 
@@ -40,7 +37,7 @@ def regularized_lsq_with_qr(m, n, R, QTb, perm, diag, copy_R=True):
     QTb : ndarray, shape (n,)
         First n components of Q^T b.
     perm : ndarray, shape (n,)
-        Array defining column permutation of A, such that i-th column of
+        Array defining column permutation of A, such that ith column of
         P is perm[i]-th column of identity matrix.
     diag : ndarray, shape (n,)
         Array containing diagonal elements of D.
@@ -142,8 +139,8 @@ def select_step(x, A_h, g_h, c_h, p, p_h, d, lb, ub, theta):
         return ag
 
 
-def trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol, max_iter,
-               verbose):
+def trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol,
+               max_iter, verbose, *, lsmr_maxiter=None):
     m, n = A.shape
     x, _ = reflective_transformation(x_lsq, lb, ub)
     x = make_strictly_feasible(x, lb, ub, rstep=0.1)
@@ -210,7 +207,8 @@ def trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol, max_iter,
             if auto_lsmr_tol:
                 eta = 1e-2 * min(0.5, g_norm)
                 lsmr_tol = max(EPS, min(0.1, eta * g_norm))
-            p_h = -lsmr(lsmr_op, r_aug, atol=lsmr_tol, btol=lsmr_tol)[0]
+            p_h = -lsmr(lsmr_op, r_aug, maxiter=lsmr_maxiter,
+                        atol=lsmr_tol, btol=lsmr_tol)[0]
 
         p = d * p_h
 
@@ -224,7 +222,7 @@ def trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol, max_iter,
 
         # Perhaps almost never executed, the idea is that `p` is descent
         # direction thus we must find acceptable cost decrease using simple
-        # "backtracking", otherwise algorithm's logic would break.
+        # "backtracking", otherwise the algorithm's logic would break.
         if cost_change < 0:
             x, step, cost_change = backtracking(
                 A, g, x, p, theta, p_dot_g, lb, ub)

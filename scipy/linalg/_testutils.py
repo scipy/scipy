@@ -1,15 +1,13 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 
-class _FakeMatrix(object):
+class _FakeMatrix:
     def __init__(self, data):
         self._data = data
         self.__array_interface__ = data.__array_interface__
 
 
-class _FakeMatrix2(object):
+class _FakeMatrix2:
     def __init__(self, data):
         self._data = data
 

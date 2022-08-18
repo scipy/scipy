@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.integrate import ode
-from .common import validate_tol, warn_extraneous
+from .common import validate_tol, validate_first_step, warn_extraneous
 from .base import OdeSolver, DenseOutput
 
 
@@ -34,18 +34,22 @@ class LSODA(OdeSolver):
         Initial step size. Default is ``None`` which means that the algorithm
         should choose.
     min_step : float, optional
-        Minimum allowed step size. Default is 0.0, i.e. the step size is not
+        Minimum allowed step size. Default is 0.0, i.e., the step size is not
         bounded and determined solely by the solver.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step size is not
+        Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
-        relative accuracy (number of correct digits). But if a component of `y`
-        is approximately below `atol`, the error only needs to fall within
-        the same `atol` threshold, and the number of correct digits is not
-        guaranteed. If components of y have different scales, it might be
+        relative accuracy (number of correct digits), while `atol` controls
+        absolute accuracy (number of correct decimal places). To achieve the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        allowable error. If `atol` is larger than ``rtol * abs(y)`` the
+        number of correct digits is not guaranteed. Conversely, to achieve the
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
+        than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
@@ -106,12 +110,14 @@ class LSODA(OdeSolver):
                  max_step=np.inf, rtol=1e-3, atol=1e-6, jac=None, lband=None,
                  uband=None, vectorized=False, **extraneous):
         warn_extraneous(extraneous)
-        super(LSODA, self).__init__(fun, t0, y0, t_bound, vectorized)
+        super().__init__(fun, t0, y0, t_bound, vectorized)
 
         if first_step is None:
             first_step = 0  # LSODA value for automatic selection.
-        elif first_step <= 0:
-            raise ValueError("`first_step` must be positive or None.")
+        else:
+            first_step = validate_first_step(first_step, t0, t_bound)
+
+        first_step *= self.direction
 
         if max_step == np.inf:
             max_step = 0  # LSODA value for infinity.
@@ -122,10 +128,6 @@ class LSODA(OdeSolver):
             raise ValueError("`min_step` must be nonnegative.")
 
         rtol, atol = validate_tol(rtol, atol, self.n)
-
-        if jac is None:  # No lambda as PEP8 insists.
-            def jac():
-                return None
 
         solver = ode(self.fun, jac)
         solver.set_integrator('lsoda', rtol=rtol, atol=atol, max_step=max_step,
@@ -148,7 +150,7 @@ class LSODA(OdeSolver):
         itask = integrator.call_args[2]
         integrator.call_args[2] = 5
         solver._y, solver.t = integrator.run(
-            solver.f, solver.jac, solver._y, solver.t,
+            solver.f, solver.jac or (lambda: None), solver._y, solver.t,
             self.t_bound, solver.f_params, solver.jac_params)
         integrator.call_args[2] = itask
 
@@ -176,7 +178,7 @@ class LSODA(OdeSolver):
 
 class LsodaDenseOutput(DenseOutput):
     def __init__(self, t_old, t, h, order, yh):
-        super(LsodaDenseOutput, self).__init__(t_old, t)
+        super().__init__(t_old, t)
         self.h = h
         self.yh = yh
         self.p = np.arange(order + 1)

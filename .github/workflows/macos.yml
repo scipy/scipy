@@ -1,0 +1,90 @@
+name: macOS tests (setup.py)
+
+on:
+  push:
+    branches:
+      - main
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test_macos:
+    name: macOS Test Matrix
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: macos-latest
+    strategy:
+      max-parallel: 3
+      matrix:
+        python-version: ["3.8"]
+        numpy-version: ['--upgrade numpy']
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: 'environment.yml'
+
+    - name: Setup gfortran
+      run: |
+        # this is taken verbatim from the numpy azure pipeline setup.
+        set -xe
+        # same version of gfortran as the open-libs and numpy-wheel builds
+        curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
+        GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
+        KNOWN_SHA256="d2d5ca5ba8332d63bbe23a07201c4a0a5d7e09ee56f0298a96775f928c3c4b30  gfortran.dmg"
+        if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
+            echo sha256 mismatch
+            exit 1
+        fi
+        hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
+        sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
+        otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
+        # Manually symlink gfortran-4.9 to plain gfortran for f2py.
+        # No longer needed after Feb 13 2020 as gfortran is already present
+        # and the attempted link errors. Keep this for future reference.
+        # ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran
+
+    - name: Setup openblas
+      run: |
+        # this is taken verbatim from the numpy azure pipeline setup.
+        set -xe
+        target=$(python tools/openblas_support.py)
+        ls -lR $target
+        # manually link to appropriate system paths
+        cp $target/lib/lib* /usr/local/lib/
+        cp $target/include/* /usr/local/include/
+
+        # otool -L /usr/local/lib/libopenblas*
+
+        echo "[openblas]" > site.cfg
+        echo "libraries = openblas" >> site.cfg
+        echo "library_dirs = /usr/local/lib" >> site.cfg
+        echo "include_dirs = /usr/local/include" >> site.cfg
+        echo "runtime_library_dirs = /usr/local/lib" >> site.cfg
+
+    - name: A few other packages
+      continue-on-error: true
+      run: |
+        brew install libmpc suitesparse swig
+
+    - name: Install packages
+      run: |
+        pip install ${{ matrix.numpy-version }}
+        pip install setuptools==59.8.0 wheel cython pytest pytest-xdist pytest-timeout pybind11 pytest-xdist mpmath gmpy2 pythran pooch
+
+    - name: Test SciPy
+      run: |
+        export LIBRARY_PATH="$LIBRARY_PATH:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
+        SCIPY_USE_PYTHRAN=`test ${{ matrix.python-version }} != 3.9; echo $?` python -u runtests.py -- --durations=10 --timeout=60

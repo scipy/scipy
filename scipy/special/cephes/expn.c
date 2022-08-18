@@ -75,12 +75,12 @@ double expn(int n, double x)
     int i, k;
     static double big = BIG;
 
-    if (npy_isnan(x)) {
-	return NPY_NAN;
+    if (isnan(x)) {
+	return NAN;
     }
     else if (n < 0 || x < 0) {
-	mtherr("expn", DOMAIN);
-	return NPY_INFINITY;
+	sf_error("expn", SF_ERROR_DOMAIN, NULL);
+	return NAN;
     }
 
     if (x > MAXLOG) {
@@ -89,8 +89,8 @@ double expn(int n, double x)
 
     if (x == 0.0) {
 	if (n < 2) {
-	    mtherr("expn", SING);
-	    return (NPY_INFINITY);
+	    sf_error("expn", SF_ERROR_SINGULAR, NULL);
+	    return (INFINITY);
 	}
 	else {
 	    return (1.0 / (n - 1.0));
@@ -203,7 +203,7 @@ static double expn_large_n(int n, double x)
 
     expfac = exp(-lambda*p)/(lambda + 1)/p;
     if (expfac == 0) {
-	mtherr("expn", UNDERFLOW);
+	sf_error("expn", SF_ERROR_UNDERFLOW, NULL);
 	return 0;
     }
 

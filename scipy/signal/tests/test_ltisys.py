@@ -1,21 +1,17 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_)
+                           assert_, suppress_warnings)
 from pytest import raises as assert_raises
 
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
                           TransferFunction, StateSpace, ZerosPolesGain)
-from scipy.signal.filter_design import BadCoefficients
+from scipy.signal._filter_design import BadCoefficients
 import scipy.linalg as linalg
-
-import scipy._lib.six as six
+from scipy.sparse._sputils import matrix
 
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
@@ -39,7 +35,7 @@ def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
             raise ValueError("Can't find pole " + str(p1) + " in " + str(P2))
 
 
-class TestPlacePoles(object):
+class TestPlacePoles:
 
     def _check(self, A, B, P, **kwargs):
         """
@@ -48,8 +44,8 @@ class TestPlacePoles(object):
         """
         fsf = place_poles(A, B, P, **kwargs)
         expected, _ = np.linalg.eig(A - np.dot(B, fsf.gain_matrix))
-        _assert_poles_close(expected,fsf.requested_poles)
-        _assert_poles_close(expected,fsf.computed_poles)
+        _assert_poles_close(expected, fsf.requested_poles)
+        _assert_poles_close(expected, fsf.computed_poles)
         _assert_poles_close(P,fsf.requested_poles)
         return fsf
 
@@ -79,18 +75,28 @@ class TestPlacePoles(object):
         # Test complex pole placement on a linearized car model, taken from L.
         # Jaulin, Automatique pour la robotique, Cours et Exercices, iSTE
         # editions p 184/185
-        A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
-        B = np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
+        A = np.array([[0, 7, 0, 0],
+                      [0, 0, 0, 7/3.],
+                      [0, 0, 0, 0],
+                      [0, 0, 0, 0]])
+        B = np.array([[0, 0],
+                      [0, 0],
+                      [1, 0],
+                      [0, 1]])
         # Test complex poles on YT
         P = np.array([-3, -1, -2-1j, -2+1j])
-        self._check(A, B, P)
+        # on macOS arm64 this can lead to a RuntimeWarning invalid
+        # value in divide, so suppress it for now
+        with np.errstate(divide='ignore', invalid='ignore'):
+            self._check(A, B, P)
 
         # Try to reach the specific case in _YT_complex where two singular
         # values are almost equal. This is to improve code coverage but I
         # have no way to be sure this code is really reached
 
         P = [0-1e-6j,0+1e-6j,-10,10]
-        self._check(A, B, P, maxiter=1000)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            self._check(A, B, P, maxiter=1000)
 
         # Try to reach the specific case in _YT_complex where the rank two
         # update yields two null vectors. This test was found via Monte Carlo.
@@ -120,7 +126,8 @@ class TestPlacePoles(object):
         big_B[:6,:5] = B
 
         P = [-10,-20,-30,40,50,60,70,-20-5j,-20+5j,5+3j,5-3j]
-        self._check(big_A, big_B, P)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            self._check(big_A, big_B, P)
 
         #check with only complex poles and only real poles
         P = [-10,-20,-30,-40,-50,-60,-70,-80,-90,-100]
@@ -135,12 +142,14 @@ class TestPlacePoles(object):
                       0,0,0,5,0,0,0,0,9]).reshape(5,5)
         B = np.array([0,0,0,0,1,0,0,1,2,3]).reshape(5,2)
         P = np.array([-2, -3+1j, -3-1j, -1+1j, -1-1j])
-        place_poles(A, B, P)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            place_poles(A, B, P)
 
         # same test with an odd number of real poles > 1
         # this is another specific case of YT
         P = np.array([-2, -3, -4, -1+1j, -1-1j])
-        self._check(A, B, P)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            self._check(A, B, P)
 
     def test_tricky_B(self):
         # check we handle as we should the 1 column B matrices and
@@ -211,7 +220,7 @@ class TestPlacePoles(object):
         assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3,-2.4),
                       maxiter=-42)
 
-        # should fail as rank(B) is two
+        # should fail as ndim(B) is two
         assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2))
 
         #unctrollable system
@@ -331,7 +340,7 @@ class TestSS2TF:
         assert_allclose(num, [[0, 1, 2, 3], [0, 1, 2, 3]], rtol=1e-13)
         assert_allclose(den, [1, 2, 3, 4], rtol=1e-13)
 
-        tf = ([1, [2, 3]], [1, 6])
+        tf = (np.array([1, [2, 3]], dtype=object), [1, 6])
         A, B, C, D = tf2ss(*tf)
         assert_allclose(A, [[-6]], rtol=1e-31)
         assert_allclose(B, [[1]], rtol=1e-31)
@@ -342,7 +351,7 @@ class TestSS2TF:
         assert_allclose(num, [[0, 1], [2, 3]], rtol=1e-13)
         assert_allclose(den, [1, 6], rtol=1e-13)
 
-        tf = ([[1, -3], [1, 2, 3]], [1, 6, 5])
+        tf = (np.array([[1, -3], [1, 2, 3]], dtype=object), [1, 6, 5])
         A, B, C, D = tf2ss(*tf)
         assert_allclose(A, [[-6, -5], [1, 0]], rtol=1e-13)
         assert_allclose(B, [[1], [0]], rtol=1e-13)
@@ -352,6 +361,15 @@ class TestSS2TF:
         num, den = ss2tf(A, B, C, D)
         assert_allclose(num, [[0, 1, -3], [1, 2, 3]], rtol=1e-13)
         assert_allclose(den, [1, 6, 5], rtol=1e-13)
+
+    def test_all_int_arrays(self):
+        A = [[0, 1, 0], [0, 0, 1], [-3, -4, -2]]
+        B = [[0], [0], [1]]
+        C = [[5, 1, 0]]
+        D = [[0]]
+        num, den = ss2tf(A, B, C, D)
+        assert_allclose(num, [[0.0, 0.0, 1.0, 5.0]], rtol=1e-13, atol=1e-14)
+        assert_allclose(den, [1.0, 2.0, 4.0, 3.0], rtol=1e-13)
 
     def test_multioutput(self):
         # Regression test for gh-2669.
@@ -392,7 +410,7 @@ class TestSS2TF:
         assert_allclose(b_all, np.vstack((b0, b1, b2)), rtol=1e-13, atol=1e-14)
 
 
-class TestLsim(object):
+class TestLsim:
     def lti_nowarn(self, *args):
         with suppress_warnings() as sup:
             sup.filter(BadCoefficients)
@@ -422,9 +440,9 @@ class TestLsim(object):
 
     def test_double_integrator(self):
         # double integrator: y'' = 2u
-        A = np.mat("0. 1.; 0. 0.")
-        B = np.mat("0.; 1.")
-        C = np.mat("2. 0.")
+        A = matrix([[0., 1.], [0., 0.]])
+        B = matrix([[0.], [1.]])
+        C = matrix([[2., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.ones_like(t)
@@ -440,9 +458,9 @@ class TestLsim(object):
         #   x2' + x2 = u
         #   y = x1
         # Exact solution with u = 0 is y(t) = t exp(-t)
-        A = np.mat("-1. 1.; 0. -1.")
-        B = np.mat("0.; 1.")
-        C = np.mat("1. 0.")
+        A = matrix([[-1., 1.], [0., -1.]])
+        B = matrix([[0.], [1.]])
+        C = matrix([[1., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.zeros_like(t)
@@ -477,7 +495,7 @@ class TestLsim(object):
         assert_almost_equal(y, expected_y)
 
 
-class Test_lsim2(object):
+class Test_lsim2:
 
     def test_01(self):
         t = np.linspace(0,10,1001)
@@ -520,7 +538,7 @@ class Test_lsim2(object):
 
     def test_05(self):
         # The call to lsim2 triggers a "BadCoefficients" warning from
-        # scipy.signal.filter_design, but the test passes.  I think the warning
+        # scipy.signal._filter_design, but the test passes.  I think the warning
         # is related to the incomplete handling of multi-input systems in
         # scipy.signal.
 
@@ -552,7 +570,7 @@ class Test_lsim2(object):
         assert_almost_equal(x[:,0], expected_x)
 
 
-class _TestImpulseFuncs(object):
+class _TestImpulseFuncs:
     # Common tests for impulse/impulse2 (= self.func)
 
     def test_01(self):
@@ -635,7 +653,7 @@ class TestImpulse(_TestImpulseFuncs):
         self.func = impulse
 
 
-class _TestStepFuncs(object):
+class _TestStepFuncs:
     def test_01(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact step response is x(t) = 1 - exp(-t).
@@ -730,7 +748,7 @@ class TestStep(_TestStepFuncs):
         step(([], [-1], 1+0j))
 
 
-class TestLti(object):
+class TestLti:
     def test_lti_instantiation(self):
         # Test that lti can be instantiated with sequences, scalars.
         # See PR-225.
@@ -758,13 +776,13 @@ class TestLti(object):
         assert_(s.dt is None)
 
 
-class TestStateSpace(object):
+class TestStateSpace:
     def test_initialization(self):
         # Check that all initializations work
-        s = StateSpace(1, 1, 1, 1)
-        s = StateSpace([1], [2], [3], [4])
-        s = StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
-                       np.array([[1, 0]]), np.array([[0]]))
+        StateSpace(1, 1, 1, 1)
+        StateSpace([1], [2], [3], [4])
+        StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
+                   np.array([[1, 0]]), np.array([[0]]))
 
     def test_conversion(self):
         # Check the conversion functions
@@ -790,7 +808,7 @@ class TestStateSpace(object):
     def test_operators(self):
         # Test +/-/* operators on systems
 
-        class BadType(object):
+        class BadType:
             pass
 
         s1 = StateSpace(np.array([[-0.5, 0.7], [0.3, -0.8]]),
@@ -807,6 +825,7 @@ class TestStateSpace(object):
 
         s_discrete = s1.to_discrete(0.1)
         s2_discrete = s2.to_discrete(0.2)
+        s3_discrete = s2.to_discrete(0.1)
 
         # Impulse response
         t = np.linspace(0, 1, 100)
@@ -814,8 +833,7 @@ class TestStateSpace(object):
         u[0] = 1
 
         # Test multiplication
-        for typ in six.integer_types + (float, complex, np.float32,
-                                        np.complex128, np.array):
+        for typ in (int, float, complex, np.float32, np.complex128, np.array):
             assert_allclose(lsim(typ(2) * s1, U=u, T=t)[1],
                             typ(2) * lsim(s1, U=u, T=t)[1])
 
@@ -887,7 +905,7 @@ class TestStateSpace(object):
         assert_allclose(lsim(s1 + s2, U=u, T=t)[1],
                         lsim(s1, U=u, T=t)[1] + lsim(s2, U=u, T=t)[1])
 
-        # Test substraction
+        # Test subtraction
         assert_allclose(lsim(s1 - 2, U=u, T=t)[1],
                         -2 * u + lsim(s1, U=u, T=t)[1])
 
@@ -903,13 +921,24 @@ class TestStateSpace(object):
         with assert_raises(TypeError):
             BadType() - s1
 
+        s = s_discrete + s3_discrete
+        assert_(s.dt == 0.1)
 
-class TestTransferFunction(object):
+        s = s_discrete * s3_discrete
+        assert_(s.dt == 0.1)
+
+        s = 3 * s_discrete
+        assert_(s.dt == 0.1)
+
+        s = -s_discrete
+        assert_(s.dt == 0.1)
+
+class TestTransferFunction:
     def test_initialization(self):
         # Check that all initializations work
-        s = TransferFunction(1, 1)
-        s = TransferFunction([1], [2])
-        s = TransferFunction(np.array([1]), np.array([2]))
+        TransferFunction(1, 1)
+        TransferFunction([1], [2])
+        TransferFunction(np.array([1]), np.array([2]))
 
     def test_conversion(self):
         # Check the conversion functions
@@ -932,12 +961,12 @@ class TestTransferFunction(object):
         assert_equal(s.zeros, [0])
 
 
-class TestZerosPolesGain(object):
+class TestZerosPolesGain:
     def test_initialization(self):
         # Check that all initializations work
-        s = ZerosPolesGain(1, 1, 1)
-        s = ZerosPolesGain([1], [2], 1)
-        s = ZerosPolesGain(np.array([1]), np.array([2]), 1)
+        ZerosPolesGain(1, 1, 1)
+        ZerosPolesGain([1], [2], 1)
+        ZerosPolesGain(np.array([1]), np.array([2]), 1)
 
     def test_conversion(self):
         #Check the conversion functions
@@ -951,7 +980,7 @@ class TestZerosPolesGain(object):
         assert_(s.to_zpk() is not s)
 
 
-class Test_abcd_normalize(object):
+class Test_abcd_normalize:
     def setup_method(self):
         self.A = np.array([[1.0, 2.0], [3.0, 4.0]])
         self.B = np.array([[-1.0], [5.0]])
@@ -1085,7 +1114,7 @@ class Test_abcd_normalize(object):
         assert_raises(ValueError, abcd_normalize, A=self.A, B=self.B)
 
 
-class Test_bode(object):
+class Test_bode:
 
     def test_01(self):
         # Test bode() magnitude calculation (manual sanity check).
@@ -1185,7 +1214,7 @@ class Test_bode(object):
         assert_almost_equal(mag, expected_magnitude)
 
 
-class Test_freqresp(object):
+class Test_freqresp:
 
     def test_output_manual(self):
         # Test freqresp() output calculation (manual sanity check).
@@ -1259,4 +1288,3 @@ class Test_freqresp(object):
         expected = 1 / (s + 1)**4
         assert_almost_equal(H.real, expected.real)
         assert_almost_equal(H.imag, expected.imag)
-

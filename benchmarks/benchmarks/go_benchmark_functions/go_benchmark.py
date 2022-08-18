@@ -1,18 +1,14 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, seterr, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
+from numpy import abs, asarray
 
-try:
+from ..common import safe_import
+
+with safe_import():
     from scipy.special import factorial
-except ImportError:
-    pass
 
 
-class Benchmark(object):
+class Benchmark:
 
     """
     Defines a global optimization benchmark problem.
@@ -53,10 +49,10 @@ class Benchmark(object):
     def __init__(self, dimensions):
         """
         Initialises the problem
-        
+
         Parameters
         ----------
-        
+
         dimensions : int
             The dimensionality of the problem
         """
@@ -176,9 +172,9 @@ class Benchmark(object):
 
     @property
     def N(self):
-        """        
+        """
         The dimensionality of the problem.
-        
+
         Returns
         -------
         N : int

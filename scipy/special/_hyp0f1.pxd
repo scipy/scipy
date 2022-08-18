@@ -2,6 +2,7 @@ from libc.math cimport pow, sqrt, floor, log, log1p, exp, M_PI, fabs
 from numpy.math cimport NAN, isinf
 cimport numpy as np
 
+from ._cephes cimport iv, jv, Gamma, lgam, gammasgn
 from ._xlogy cimport xlogy
 from ._complexstuff cimport (
     zsqrt, zpow, zabs, npy_cdouble_from_double_complex,
@@ -10,10 +11,6 @@ from ._complexstuff cimport (
 cdef extern from "float.h":
     double DBL_MAX, DBL_MIN
 
-from ._cephes cimport iv, jv, Gamma, lgam
-
-cdef extern from "c_misc/misc.h":
-    double gammasgn(double x) nogil
 
 cdef extern from "amos_wrappers.h":
     np.npy_cdouble cbesi_wrap(double v, np.npy_cdouble z) nogil

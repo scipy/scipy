@@ -3,18 +3,16 @@ Routines for evaluating and manipulating B-splines.
 
 """
 
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as cnp
 
 cimport cython
+from libc.math cimport NAN
+
+cnp.import_array()
 
 cdef extern from "src/__fitpack.h":
-    void _deBoor_D(double *t, double x, int k, int ell, int m, double *result) nogil
-
-cdef extern from "numpy/npy_math.h":
-    double nan "NPY_NAN"
+    void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
 
 ctypedef double complex double_complex
 
@@ -29,7 +27,7 @@ ctypedef fused double_or_complex:
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef inline int find_interval(double[::1] t,
+cdef inline int find_interval(const double[::1] t,
                        int k,
                        double xval,
                        int prev_l,
@@ -89,10 +87,10 @@ cdef inline int find_interval(double[::1] t,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def evaluate_spline(double[::1] t,
+def evaluate_spline(const double[::1] t,
              double_or_complex[:, ::1] c,
              int k,
-             double[::1] xp,
+             const double[::1] xp,
              int nu,
              bint extrapolate,
              double_or_complex[:, ::1] out):
@@ -118,7 +116,7 @@ def evaluate_spline(double[::1] t,
     """
 
     cdef int ip, jp, n, a
-    cdef int i, interval
+    cdef int interval
     cdef double xval
 
     # shape checks
@@ -146,11 +144,11 @@ def evaluate_spline(double[::1] t,
             if interval < 0:
                 # xval was nan etc
                 for jp in range(c.shape[1]):
-                    out[ip, jp] = nan
+                    out[ip, jp] = NAN
                 continue
 
             # Evaluate (k+1) b-splines which are non-zero on the interval.
-            # on return, first k+1 elemets of work are B_{m-k},..., B_{m}
+            # on return, first k+1 elements of work are B_{m-k},..., B_{m}
             _deBoor_D(&t[0], xval, k, interval, nu, &work[0])
 
             # Form linear combinations
@@ -160,7 +158,7 @@ def evaluate_spline(double[::1] t,
                     out[ip, jp] = out[ip, jp] + c[interval + a - k, jp] * work[a]
 
 
-def evaluate_all_bspl(double[::1] t, int k, double xval, int m, int nu=0):
+def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     """Evaluate the ``k+1`` B-splines which are non-zero on interval ``m``.
 
     Parameters
@@ -191,15 +189,14 @@ def evaluate_all_bspl(double[::1] t, int k, double xval, int m, int nu=0):
     Consider a cubic spline
 
     >>> k = 3
-    >>> t = [0., 2., 2., 3., 4.]   # internal knots
+    >>> t = [0., 1., 2., 3., 4.]   # internal knots
     >>> a, b = t[0], t[-1]    # base interval is [a, b)
-    >>> t = [a]*k + t + [b]*k  # add boundary knots
+    >>> t = np.array([a]*k + t + [b]*k)  # add boundary knots
 
     >>> import matplotlib.pyplot as plt
     >>> xx = np.linspace(a, b, 100)
-    >>> plt.plot(xx, BSpline.basis_element(k:-k)(xx),
-    ...          'r-', lw=5, alpha=0.5)
-    >>> c = ['b', 'g', 'c', 'k']
+    >>> plt.plot(xx, BSpline.basis_element(t[k:-k])(xx),
+    ...          lw=3, alpha=0.5, label='basis_element')
 
     Now we use slide an interval ``t[m]..t[m+1]`` along the base interval
     ``a..b`` and use `evaluate_all_bspl` to compute the restriction of
@@ -209,7 +206,7 @@ def evaluate_all_bspl(double[::1] t, int k, double xval, int m, int nu=0):
     ...    x1, x2 = t[2*k - i], t[2*k - i + 1]
     ...    xx = np.linspace(x1 - 0.5, x2 + 0.5)
     ...    yy = [evaluate_all_bspl(t, k, x, 2*k - i)[i] for x in xx]
-    ...    plt.plot(xx, yy, c[i] + '--', lw=3, label=str(i))
+    ...    plt.plot(xx, yy, '--', label=str(i))
     ...
     >>> plt.grid(True)
     >>> plt.legend()
@@ -224,7 +221,8 @@ def evaluate_all_bspl(double[::1] t, int k, double xval, int m, int nu=0):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _colloc(double[::1] x, double[::1] t, int k, double[::1, :] ab, int offset=0):
+def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
+            int offset=0):
     """Build the B-spline collocation matrix.
 
     The collocation matrix is defined as :math:`B_{j,l} = B_l(x_j)`,
@@ -285,10 +283,10 @@ def _colloc(double[::1] x, double[::1] t, int k, double[::1, :] ab, int offset=0
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _handle_lhs_derivatives(double[::1]t, int k, double xval,
+def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
                             double[::1, :] ab,
                             int kl, int ku,
-                            cnp.int_t[::1] deriv_ords,
+                            const cnp.int_t[::1] deriv_ords,
                             int offset=0):
     """ Fill in the entries of the collocation matrix corresponding to known
     derivatives at xval.
@@ -336,11 +334,11 @@ def _handle_lhs_derivatives(double[::1]t, int k, double xval,
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _norm_eq_lsq(double[::1] x,
-                 double[::1] t,
+def _norm_eq_lsq(const double[::1] x,
+                 const double[::1] t,
                  int k,
                  double_or_complex[:, ::1] y,
-                 double[::1] w,
+                 const double[::1] w,
                  double[::1, :] ab,
                  double_or_complex[::1, :] rhs):
     """Construct the normal equations for the B-spline LSQ problem.
@@ -413,3 +411,55 @@ def _norm_eq_lsq(double[::1] x,
                 # ... and A.T @ y
                 for ci in range(rhs.shape[1]):
                     rhs[row, ci] = rhs[row, ci] + wrk[r] * y[j, ci] * wval
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _make_design_matrix(const double[::1] x,
+                        const double[::1] t,
+                        int k,
+                        bint extrapolate):
+    """
+    Returns a design matrix in CSR format
+    
+    Parameters
+    ----------
+    x : array_like, shape (n,)
+        Points to evaluate the spline at.
+    t : array_like, shape (nt,)
+        Sorted 1D array of knots.
+    k : int
+        B-spline degree.
+    extrapolate : bool, optional
+        Whether to extrapolate to ouf-of-bounds points.
+
+    Returns
+    -------
+    data, (row_idx, col_idx)
+        Constructor parameters for a CSR matrix: in each row all the basis
+        elements are evaluated at the certain point (first row - x[0],
+        ..., last row - x[-1]).
+    """
+    cdef:
+        cnp.npy_intp i, ind
+        cnp.npy_intp n = x.shape[0]
+        double[::1] work = np.empty(2*k+2, dtype=float)
+        double[::1] data = np.zeros(n * (k + 1), dtype=float)
+        cnp.ndarray[long, ndim=1] row_ind = np.zeros(n * (k + 1), dtype=int)
+        cnp.ndarray[long, ndim=1] col_ind = np.zeros(n * (k + 1), dtype=int)
+        double xval
+    ind = k
+    for i in range(n):
+        xval = x[i]
+
+        # Find correct interval. Note that interval >= 0 always as
+        # extrapolate=False and out of bound values are already dealt with in
+        # design_matrix
+        ind = find_interval(t, k, xval, ind, extrapolate)
+        _deBoor_D(&t[0], xval, k, ind, 0, &work[0])
+
+        data[(k + 1) * i : (k + 1) * (i + 1)] = work[:k + 1]
+        row_ind[(k + 1) * i : (k + 1) * (i + 1)] = i
+        col_ind[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(
+            ind - k, ind + 1, dtype=int)
+
+    return np.asarray(data), (row_ind, col_ind)

@@ -21,7 +21,7 @@
  *             -
  *            | |                 2
  * E(m)  =    |    sqrt( 1 - m sin t ) dt
- *          | |    
+ *          | |
  *           -
  *            0
  *
@@ -57,9 +57,9 @@
  * Cephes Math Library, Release 2.1:  February, 1989
  * Copyright 1984, 1987, 1989 by Stephen L. Moshier
  * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
- * 
+ *
  * Feb, 2002:  altered by Travis Oliphant
- * so that it is called with argument m 
+ * so that it is called with argument m
  * (which gets immediately converted to m1 = 1-m)
  */
 
@@ -99,8 +99,8 @@ double x;
     if (x <= 0.0) {
 	if (x == 0.0)
 	    return (1.0);
-	mtherr("ellpe", DOMAIN);
-	return (NPY_NAN);
+	sf_error("ellpe", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
     }
     if (x > 1.0) {
         return ellpe(1.0 - 1/x) * sqrt(x);

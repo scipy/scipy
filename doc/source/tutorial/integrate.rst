@@ -43,7 +43,7 @@ This could be computed using :obj:`quad`:
     >>> print(abs(result[0]-I))
     1.03761443881e-11
 
-The first argument to quad is a "callable" Python object (*i.e.* a
+The first argument to quad is a "callable" Python object (i.e., a
 function, method, or class instance). Notice the use of a lambda-
 function in this case as the argument. The next two arguments are the
 limits of integration. The return value is a tuple, with the first
@@ -66,7 +66,7 @@ within :math:`1.04\times10^{-11}` of the exact result --- well below the
 reported error bound.
 
 
-If the function to integrate takes additional parameters, the can be provided
+If the function to integrate takes additional parameters, they can be provided
 in the `args` argument. Suppose that the following integral shall be calculated:
 
 .. math::
@@ -97,8 +97,8 @@ value for the exponential integral:
 
 is desired (and the fact that this integral can be computed as
 ``special.expn(n,x)`` is forgotten). The functionality of the function
-:obj:`special.expn` can be replicated by defining a new function
-:obj:`vec_expint` based on the routine :obj:`quad`:
+:obj:`special.expn <scipy.special.expn>` can be replicated by defining a new function
+``vec_expint`` based on the routine :obj:`quad`:
 
     >>> from scipy.integrate import quad
     >>> def integrand(t, n, x):
@@ -203,7 +203,7 @@ can be calculated as
 (0.20000000000002294, 1.2239614263187945e-08)
 
 Note that the order of arguments for `f` must match the order of the
-integration bounds; i.e. the inner integral with respect to :math:`t` is on
+integration bounds; i.e., the inner integral with respect to :math:`t` is on
 the interval :math:`[1, \infty]` and the outer integral with respect to
 :math:`x` is on the interval :math:`[0, \infty]`.
 
@@ -235,15 +235,15 @@ Gaussian quadrature
 -------------------
 
 A few functions are also provided in order to perform simple Gaussian
-quadrature over a fixed interval. The first is :obj:`fixed_quad` which
+quadrature over a fixed interval. The first is :obj:`fixed_quad`, which
 performs fixed-order Gaussian quadrature. The second function is
-:obj:`quadrature` which performs Gaussian quadrature of multiple
+:obj:`quadrature`, which performs Gaussian quadrature of multiple
 orders until the difference in the integral estimate is beneath some
 tolerance supplied by the user. These functions both use the module
-:mod:`special.orthogonal` which can calculate the roots and quadrature
+``scipy.special.orthogonal``, which can calculate the roots and quadrature
 weights of a large variety of orthogonal polynomials (the polynomials
 themselves are available as special functions returning instances of
-the polynomial class --- e.g. :obj:`special.legendre <scipy.special.legendre>`).
+the polynomial class --- e.g., :obj:`special.legendre <scipy.special.legendre>`).
 
 
 Romberg Integration
@@ -262,10 +262,10 @@ integration can be used to obtain high-precision estimates of the
 integral using the available samples. Romberg integration uses the
 trapezoid rule at step-sizes related by a power of two and then
 performs Richardson extrapolation on these estimates to approximate
-the integral with a higher-degree of accuracy.
+the integral with a higher degree of accuracy.
 
-In case of arbitrary spaced samples, the two functions trapz (defined in numpy
-[NPT]_) and :obj:`simps` are available. They are using Newton-Coates formulas
+In case of arbitrary spaced samples, the two functions :obj:`trapezoid`
+and :obj:`simpson` are available. They are using Newton-Coates formulas
 of order 1 and 2 respectively to perform integration. The trapezoidal rule
 approximates the function as a straight line between adjacent points, while
 Simpson's rule approximates the function between three adjacent points as a
@@ -285,8 +285,8 @@ of order 2 or less.
 ...
 >>> x = np.array([1,3,4])
 >>> y1 = f1(x)
->>> from scipy.integrate import simps
->>> I1 = simps(y1, x)
+>>> from scipy import integrate
+>>> I1 = integrate.simpson(y1, x)
 >>> print(I1)
 21.0
 
@@ -300,7 +300,7 @@ This corresponds exactly to
 whereas integrating the second function
 
 >>> y2 = f2(x)
->>> I2 = integrate.simps(y2, x)
+>>> I2 = integrate.simpson(y2, x)
 >>> print(I2)
 61.5
 
@@ -347,16 +347,16 @@ to arbitrary additional data you want to provide.
 
 2.) Now compile this file to a shared/dynamic library (a quick search will help
 with this as it is OS-dependent). The user must link any math libraries,
-etc. used.  On linux this looks like::
+etc., used.  On linux this looks like::
 
     $ gcc -shared -fPIC -o testlib.so testlib.c
 
-The output library will be referred to as ``testlib.so``, but it may have a 
+The output library will be referred to as ``testlib.so``, but it may have a
 different file extension. A library has now been created that can be loaded
 into Python with `ctypes`.
 
 3.) Load shared library into Python using `ctypes` and set ``restypes`` and
-``argtypes`` - this allows Scipy to interpret the function correctly:
+``argtypes`` - this allows SciPy to interpret the function correctly:
 
 .. code:: python
 
@@ -381,16 +381,16 @@ coordinates are passed in as an array of doubles rather than a separate argument
 >>> integrate.nquad(func, [[0, 10], [-10, 0], [-1, 1]])
 (1200.0, 1.1102230246251565e-11)
 
-The Python tuple is returned as expected in a reduced amount of time.  All 
+The Python tuple is returned as expected in a reduced amount of time.  All
 optional parameters can be used with this method including specifying
 singularities, infinite bounds, etc.
 
-Ordinary differential equations (:func:`odeint`)
-------------------------------------------------
+Ordinary differential equations (:func:`solve_ivp`)
+---------------------------------------------------
 
 Integrating a set of ordinary differential equations (ODEs) given
 initial conditions is another useful example. The function
-:obj:`odeint` is available in SciPy for integrating a first-order
+:obj:`solve_ivp` is available in SciPy for integrating a first-order
 vector differential equation:
 
 .. math::
@@ -404,7 +404,7 @@ A higher-order ordinary differential equation can always be reduced to
 a differential equation of this type by introducing intermediate
 derivatives into the :math:`\mathbf{y}` vector.
 
-For example suppose it is desired to find the solution to the
+For example, suppose it is desired to find the solution to the
 following second-order differential equation:
 
 .. math::
@@ -445,49 +445,66 @@ has an exact solution using the matrix exponential:
 
 However, in this case, :math:`\mathbf{A}\left(t\right)` and its integral do not commute.
 
-There are many optional inputs and outputs available when using odeint
-which can help tune the solver. These additional inputs and outputs
-are not needed much of the time, however, and the three required input
-arguments and the output solution suffice. The required inputs are the
-function defining the derivative, *fprime*, the initial conditions
-vector, *y0*, and the time points to obtain a solution, *t*, (with
-the initial value point as the first element of this sequence).  The
-output to :obj:`odeint` is a matrix where each row contains the
-solution vector at each requested time point (thus, the initial
-conditions are given in the first output row).
+This differential equation can be solved using the function :obj:`solve_ivp`.
+It requires the derivative, *fprime*, the time span `[t_start, t_end]`
+and the initial conditions vector, *y0*, as input arguments and returns
+an object whose *y* field is an array with consecutive solution values as
+columns. The initial conditions are therefore given in the first output column.
 
-The following example illustrates the use of odeint including the
-usage of the *Dfun* option which allows the user to specify a gradient
-(with respect to :math:`\mathbf{y}` ) of the function,
-:math:`\mathbf{f}\left(\mathbf{y},t\right)`.
+>>> from scipy.integrate import solve_ivp
+>>> from scipy.special import gamma, airy
+>>> y1_0 = +1 / 3**(2/3) / gamma(2/3)
+>>> y0_0 = -1 / 3**(1/3) / gamma(1/3)
+>>> y0 = [y0_0, y1_0]
+>>> def func(t, y):
+...     return [t*y[1],y[0]]
+...
+>>> t_span = [0, 4]
+>>> sol1 = solve_ivp(func, t_span, y0)
+>>> print("sol1.t: {}".format(sol1.t))
+sol1.t:    [0.         0.10097672 1.04643602 1.91060117 2.49872472 3.08684827
+ 3.62692846 4.        ]
 
-    >>> from scipy.integrate import odeint
-    >>> from scipy.special import gamma, airy
-    >>> y1_0 = 1.0 / 3**(2.0/3.0) / gamma(2.0/3.0)
-    >>> y0_0 = -1.0 / 3**(1.0/3.0) / gamma(1.0/3.0)
-    >>> y0 = [y0_0, y1_0]
-    >>> def func(y, t):
-    ...     return [t*y[1],y[0]]
-    ...
+As it can be seen `solve_ivp` determines its time steps automatically if not
+specified otherwise. To compare the solution of `solve_ivp` with the `airy`
+function the time vector created by `solve_ivp` is passed to the `airy` function.
 
-    >>> def gradient(y, t):
-    ...     return [[0,t], [1,0]]
-    ...
+>>> print("sol1.y[1]: {}".format(sol1.y[1]))
+sol1.y[1]: [0.35502805 0.328952   0.12801343 0.04008508 0.01601291 0.00623879
+ 0.00356316 0.00405982]
+>>> print("airy(sol.t)[0]:  {}".format(airy(sol1.t)[0]))
+airy(sol.t)[0]: [0.35502805 0.328952   0.12804768 0.03995804 0.01575943 0.00562799
+ 0.00201689 0.00095156]
 
-    >>> x = np.arange(0, 4.0, 0.01)
-    >>> t = x
-    >>> ychk = airy(x)[0]
-    >>> y = odeint(func, y0, t)
-    >>> y2 = odeint(func, y0, t, Dfun=gradient)
+The solution of `solve_ivp` with its standard parameters shows a big deviation
+to the airy function. To minimize this deviation, relative and absolute
+tolerances can be used.
 
-    >>> ychk[:36:6]
-    array([0.355028, 0.339511, 0.324068, 0.308763, 0.293658, 0.278806])
+>>> rtol, atol = (1e-8, 1e-8)
+>>> sol2 = solve_ivp(func, t_span, y0, rtol=rtol, atol=atol)
+>>> print("sol2.y[1][::6]: {}".format(sol2.y[1][0::6]))
+sol2.y[1][::6]: [0.35502805 0.19145234 0.06368989 0.0205917  0.00554734 0.00106409]
+>>> print("airy(sol2.t)[0][::6]: {}".format(airy(sol2.t)[0][::6]))
+airy(sol2.t)[0][::6]: [0.35502805 0.19145234 0.06368989 0.0205917  0.00554733 0.00106406]
 
-    >>> y[:36:6,1]
-    array([0.355028, 0.339511, 0.324067, 0.308763, 0.293658, 0.278806])
+To specify user defined time points for the solution of `solve_ivp`, `solve_ivp`
+offers two possibilities that can also be used complementarily. By passing the `t_eval`
+option to the function call `solve_ivp` returns the solutions of these time points
+of `t_eval` in its output.
 
-    >>> y2[:36:6,1]
-    array([0.355028, 0.339511, 0.324067, 0.308763, 0.293658, 0.278806])
+>>> import numpy as np
+>>> t = np.linspace(0, 4, 100)
+>>> sol3 = solve_ivp(func, t_span, y0, t_eval=t)
+
+If the jacobian matrix of function is known, it can be passed to the `solve_ivp`
+to achieve better results. Please be aware however that the default integration method
+`RK45` does not support jacobian matrices and thereby another integration method has
+to be chosen. One of the integration methods that support a jacobian matrix is the for
+example the `Radau` method of following example.
+
+>>> def gradient(t, y):
+...     return [[0,t], [1,0]]
+>>> sol4 = solve_ivp(func, t_span, y0, method='Radau', jac=gradient)
 
 Solving a system with a banded Jacobian matrix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -496,7 +513,7 @@ Solving a system with a banded Jacobian matrix
 system of differential equations that are known to be stiff, this
 can improve performance significantly.
 
-As an example, we'll solve the one-dimensional Gray-Scott partial
+As an example, we'll solve the 1-D Gray-Scott partial
 differential equations using the method of lines [MOL]_.  The Gray-Scott equations
 for the functions :math:`u(x, t)` and :math:`v(x, t)` on the interval
 :math:`x \in [0, L]` are
@@ -513,7 +530,7 @@ components :math:`u` and :math:`v`, respectively, and :math:`f` and :math:`k`
 are constants.  (For more information about the system, see
 http://groups.csail.mit.edu/mac/projects/amorphous/GrayScott/)
 
-We'll assume Neumann (i.e. "no flux") boundary conditions:
+We'll assume Neumann (i.e., "no flux") boundary conditions:
 
 .. math::
 
@@ -659,12 +676,12 @@ terms of the system::
     def H(u, v, f, k):
         return -(f + k) * v + u*v**2
 
-Next we define the function that computes the right-hand-side
+Next, we define the function that computes the right-hand side
 of the system of differential equations::
 
     def grayscott1d(y, t, f, k, Du, Dv, dx):
         """
-        Differential equations for the 1D Gray-Scott equations.
+        Differential equations for the 1-D Gray-Scott equations.
 
         The ODEs are derived using the method of lines.
         """
@@ -701,7 +718,9 @@ following ipython session.
 
 First, we define the required inputs::
 
-    In [31]: y0 = np.random.randn(5000)
+    In [30]: rng = np.random.default_rng()
+
+    In [31]: y0 = rng.standard_normal(5000)
 
     In [32]: t = np.linspace(0, 50, 11)
 
@@ -738,7 +757,5 @@ References
 ~~~~~~~~~~
 
 .. [WPR] https://en.wikipedia.org/wiki/Romberg's_method
-
-.. [NPT] https://docs.scipy.org/doc/numpy/reference/generated/numpy.trapz.html
 
 .. [MOL] https://en.wikipedia.org/wiki/Method_of_lines
