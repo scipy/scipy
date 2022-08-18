@@ -283,11 +283,14 @@ def least_squares(
         (or the exact value) for the Jacobian as an array_like (np.atleast_2d
         is applied), a sparse matrix (csr_matrix preferred for performance) or
         a `scipy.sparse.linalg.LinearOperator`.
-    bounds : 2-tuple of array_like, optional
-        Lower and upper bounds on independent variables. Defaults to no bounds.
-        Each array must match the size of `x0` or be a scalar, in the latter
-        case a bound will be the same for all variables. Use ``np.inf`` with
-        an appropriate sign to disable bounds on all or some variables.
+    bounds : 2-tuple of array_like or `Bounds`, optional
+        There are two ways to specify bounds for methods 'trf' and 'dogbox':
+            1. Instance of `Bounds` class
+            2. Lower and upper bounds on independent variables. Defaults to no
+               bounds. Each array must match the size of `x0` or be a scalar,
+               in the latter case a bound will be the same for all variables.
+               Use ``np.inf`` with an appropriate sign to disable bounds on all
+               or some variables.
     method : {'trf', 'dogbox', 'lm'}, optional
         Algorithm to perform minimization.
 
