@@ -1,16 +1,14 @@
-from __future__ import division, print_function, absolute_import
-
 import pickle
+import re
 
 import numpy as np
 import numpy.testing as npt
 from numpy.testing import assert_allclose, assert_equal
-from scipy._lib._numpy_compat import suppress_warnings
 from pytest import raises as assert_raises
 
 import numpy.ma.testutils as ma_npt
 
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy import stats
 
 
@@ -26,9 +24,7 @@ def check_normalization(distfn, args, distname):
     norm_moment = distfn.moment(0, *args)
     npt.assert_allclose(norm_moment, 1.0)
 
-    # this is a temporary plug: either ncf or expect is problematic;
-    # best be marked as a knownfail, but I've no clue how to do it.
-    if distname == "ncf":
+    if distname == "rv_histogram_instance":
         atol, rtol = 1e-5, 0
     else:
         atol, rtol = 1e-7, 1e-7
@@ -37,7 +33,8 @@ def check_normalization(distfn, args, distname):
     npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
             err_msg=distname, verbose=True)
 
-    normalization_cdf = distfn.cdf(distfn.b, *args)
+    _a, _b = distfn.support(*args)
+    normalization_cdf = distfn.cdf(_b, *args)
     npt.assert_allclose(normalization_cdf, 1.0)
 
 
@@ -67,10 +64,10 @@ def check_mean_expect(distfn, arg, m, msg):
 
 
 def check_var_expect(distfn, arg, m, v, msg):
+    kwargs = {'rtol': 5e-6} if msg == "rv_histogram_instance" else {}
     if np.isfinite(v):
         m2 = distfn.expect(lambda x: x*x, arg)
-        npt.assert_almost_equal(m2, v + m*m, decimal=5, err_msg=msg +
-                            ' - 2st moment (expect)')
+        npt.assert_allclose(m2, v + m*m, **kwargs)
 
 
 def check_skew_expect(distfn, arg, m, v, s, msg):
@@ -120,9 +117,9 @@ def check_entropy_vect_scale(distfn, arg):
 
 def check_edge_support(distfn, args):
     # Make sure that x=self.a and self.b are handled correctly.
-    x = [distfn.a, distfn.b]
+    x = distfn.support(*args)
     if isinstance(distfn, stats.rv_discrete):
-        x = [distfn.a - 1, distfn.b]
+        x = x[0]-1, x[1]
 
     npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
     npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
@@ -144,9 +141,10 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     ## Check calling w/ named arguments.
 
     # check consistency of shapes, numargs and _parse signature
-    signature = _getargspec(distfn._parse_args)
+    signature = _getfullargspec(distfn._parse_args)
     npt.assert_(signature.varargs is None)
-    npt.assert_(signature.keywords is None)
+    npt.assert_(signature.varkw is None)
+    npt.assert_(not signature.kwonlyargs)
     npt.assert_(list(signature.defaults) == list(defaults))
 
     shape_argnames = signature.args[:-len(defaults)]  # a, b, loc=0, scale=1
@@ -198,6 +196,12 @@ def check_random_state_property(distfn, args):
     distfn.random_state = np.random.RandomState(1234)
     r2 = distfn.rvs(*args, size=8)
     npt.assert_equal(r0, r2)
+
+    # check that np.random.Generator can be used (numpy >= 1.17)
+    if hasattr(np.random, 'default_rng'):
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng(1234)
+        distfn.rvs(*args, size=1, random_state=rng)
 
     # can override the instance-level random_state for an individual .rvs call
     distfn.random_state = 2
@@ -260,7 +264,7 @@ def check_cmplx_deriv(distfn, arg):
         assert_allclose(deriv(distfn.sf, x, *arg), -pdf, rtol=1e-5)
         assert_allclose(deriv(distfn.logsf, x, *arg), -pdf/sf, rtol=1e-5)
 
-        assert_allclose(deriv(distfn.logpdf, x, *arg), 
+        assert_allclose(deriv(distfn.logpdf, x, *arg),
                         deriv(distfn.pdf, x, *arg) / distfn.pdf(x, *arg),
                         rtol=1e-5)
 
@@ -272,6 +276,7 @@ def check_pickling(distfn, args):
     # save the random_state (restore later)
     rndm = distfn.random_state
 
+    # check unfrozen
     distfn.random_state = 1234
     distfn.rvs(*args, size=8)
     s = pickle.dumps(distfn)
@@ -287,20 +292,159 @@ def check_pickling(distfn, args):
     npt.assert_equal(distfn.cdf(medians[0], *args),
                      unpickled.cdf(medians[1], *args))
 
+    # check frozen pickling/unpickling with rvs
+    frozen_dist = distfn(*args)
+    pkl = pickle.dumps(frozen_dist)
+    unpickled = pickle.loads(pkl)
+
+    r0 = frozen_dist.rvs(size=8)
+    r1 = unpickled.rvs(size=8)
+    npt.assert_equal(r0, r1)
+
+    # check pickling/unpickling of .fit method
+    if hasattr(distfn, "fit"):
+        fit_function = distfn.fit
+        pickled_fit_function = pickle.dumps(fit_function)
+        unpickled_fit_function = pickle.loads(pickled_fit_function)
+        assert fit_function.__name__ == unpickled_fit_function.__name__ == "fit"
+
     # restore the random_state
     distfn.random_state = rndm
 
 
+def check_freezing(distfn, args):
+    # regression test for gh-11089: freezing a distribution fails
+    # if loc and/or scale are specified
+    if isinstance(distfn, stats.rv_continuous):
+        locscale = {'loc': 1, 'scale': 2}
+    else:
+        locscale = {'loc': 1}
+
+    rv = distfn(*args, **locscale)
+    assert rv.a == distfn(*args).a
+    assert rv.b == distfn(*args).b
+
+
 def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
     np.random.seed(123)
-    with suppress_warnings() as sup:
-        # frechet_l and frechet_r are deprecated, so all their
-        # methods generate DeprecationWarnings.
-        sup.filter(category=DeprecationWarning, message=".*frechet_")
-        sample = distfunc.rvs(*allargs)
-        assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
-        if not shape_only:
-            rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
-            np.random.seed(123)
-            expected = rvs(*allargs)
-            assert_allclose(sample, expected, rtol=1e-15)
+    sample = distfunc.rvs(*allargs)
+    assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
+    if not shape_only:
+        rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
+        np.random.seed(123)
+        expected = rvs(*allargs)
+        assert_allclose(sample, expected, rtol=1e-13)
+
+
+def check_deprecation_warning_gh5982_moment(distfn, arg, distname):
+    # See description of cases that need to be tested in the definition of
+    # scipy.stats.rv_generic.moment
+    shapes = [] if distfn.shapes is None else distfn.shapes.split(", ")
+    kwd_shapes = dict(zip(shapes, arg or []))  # dictionary of shape kwds
+    n = kwd_shapes.pop('n', None)
+
+    message1 = "moment() missing 1 required positional argument"
+    message2 = "_parse_args() missing 1 required positional argument: 'n'"
+    message3 = "moment() got multiple values for first argument"
+
+    if 'n' in shapes:
+        expected = distfn.mean(n=n, **kwd_shapes)
+
+        # A1
+        res = distfn.moment(1, n=n, **kwd_shapes)
+        assert_allclose(res, expected)
+
+        # A2
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.moment(n=n, **kwd_shapes)
+
+        # A3
+        # if `n` is not provided at all
+        with assert_raises(TypeError, match=re.escape(message2)):
+            distfn.moment(1, **kwd_shapes)
+        # if `n` is provided as a positional argument
+        res = distfn.moment(1, *arg)
+        assert_allclose(res, expected)
+
+        # A4
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.moment(**kwd_shapes)
+
+    else:
+        expected = distfn.mean(**kwd_shapes)
+
+        # B1
+        with assert_raises(TypeError, match=re.escape(message3)):
+            res = distfn.moment(1, n=1, **kwd_shapes)
+
+        # B2
+        with np.testing.assert_warns(DeprecationWarning):
+            res = distfn.moment(n=1, **kwd_shapes)
+            assert_allclose(res, expected)
+
+        # B3
+        res = distfn.moment(1, *arg)
+        assert_allclose(res, expected)
+
+        # B4
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.moment(**kwd_shapes)
+
+
+def check_deprecation_warning_gh5982_interval(distfn, arg, distname):
+    # See description of cases that need to be tested in the definition of
+    # scipy.stats.rv_generic.moment
+    shapes = [] if distfn.shapes is None else distfn.shapes.split(", ")
+    kwd_shapes = dict(zip(shapes, arg or []))  # dictionary of shape kwds
+    alpha = kwd_shapes.pop('alpha', None)
+
+    def my_interval(*args, **kwds):
+        return (distfn.ppf(0.25, *args, **kwds),
+                distfn.ppf(0.75, *args, **kwds))
+
+    message1 = "interval() missing 1 required positional argument"
+    message2 = "_parse_args() missing 1 required positional argument: 'alpha'"
+    message3 = "interval() got multiple values for first argument"
+
+    if 'alpha' in shapes:
+        expected = my_interval(alpha=alpha, **kwd_shapes)
+
+        # A1
+        res = distfn.interval(0.5, alpha=alpha, **kwd_shapes)
+        assert_allclose(res, expected)
+
+        # A2
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.interval(alpha=alpha, **kwd_shapes)
+
+        # A3
+        # if `alpha` is not provided at all
+        with assert_raises(TypeError, match=re.escape(message2)):
+            distfn.interval(0.5, **kwd_shapes)
+        # if `alpha` is provided as a positional argument
+        res = distfn.interval(0.5, *arg)
+        assert_allclose(res, expected)
+
+        # A4
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.interval(**kwd_shapes)
+
+    else:
+        expected = my_interval(**kwd_shapes)
+
+        # B1
+        with assert_raises(TypeError, match=re.escape(message3)):
+            res = distfn.interval(0.5, alpha=1, **kwd_shapes)
+
+        # B2
+        with np.testing.assert_warns(DeprecationWarning):
+            res = distfn.interval(alpha=0.5, **kwd_shapes)
+            assert_allclose(res, expected)
+
+        # B3
+        res = distfn.interval(0.5, *arg)
+        assert_allclose(res, expected)
+
+        # B4
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.interval(**kwd_shapes)

@@ -1,11 +1,11 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse import issparse, csc_matrix, eye
 from scipy.sparse.linalg import splu
 from scipy.optimize._numdiff import group_columns
 from .common import (validate_max_step, validate_tol, select_initial_step,
-                     norm, EPS, num_jac, warn_extraneous)
+                     norm, EPS, num_jac, validate_first_step,
+                     warn_extraneous)
 from .base import OdeSolver, DenseOutput
 
 
@@ -99,16 +99,23 @@ class BDF(OdeSolver):
     t_bound : float
         Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
+    first_step : float or None, optional
+        Initial step size. Default is ``None`` which means that the algorithm
+        should choose.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step size is not
+        Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
-        relative accuracy (number of correct digits). But if a component of `y`
-        is approximately below `atol`, the error only needs to fall within
-        the same `atol` threshold, and the number of correct digits is not
-        guaranteed. If components of y have different scales, it might be
+        relative accuracy (number of correct digits), while `atol` controls
+        absolute accuracy (number of correct decimal places). To achieve the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        allowable error. If `atol` is larger than ``rtol * abs(y)`` the
+        number of correct digits is not guaranteed. Conversely, to achieve the
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
+        than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
@@ -180,16 +187,19 @@ class BDF(OdeSolver):
     """
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
-                 vectorized=False, **extraneous):
+                 vectorized=False, first_step=None, **extraneous):
         warn_extraneous(extraneous)
-        super(BDF, self).__init__(fun, t0, y0, t_bound, vectorized,
-                                  support_complex=True)
+        super().__init__(fun, t0, y0, t_bound, vectorized,
+                         support_complex=True)
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
-        self.h_abs = select_initial_step(self.fun, self.t, self.y, f,
-                                         self.direction, 1,
-                                         self.rtol, self.atol)
+        if first_step is None:
+            self.h_abs = select_initial_step(self.fun, self.t, self.y, f,
+                                             self.direction, 1,
+                                             self.rtol, self.atol)
+        else:
+            self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.h_abs_old = None
         self.error_norm_old = None
 
@@ -415,7 +425,8 @@ class BDF(OdeSolver):
             error_p_norm = np.inf
 
         error_norms = np.array([error_m_norm, error_norm, error_p_norm])
-        factors = error_norms ** (-1 / np.arange(order, order + 3))
+        with np.errstate(divide='ignore'):
+            factors = error_norms ** (-1 / np.arange(order, order + 3))
 
         delta_order = np.argmax(factors) - 1
         order += delta_order
@@ -436,7 +447,7 @@ class BDF(OdeSolver):
 
 class BdfDenseOutput(DenseOutput):
     def __init__(self, t_old, t, h, order, D):
-        super(BdfDenseOutput, self).__init__(t_old, t)
+        super().__init__(t_old, t)
         self.order = order
         self.t_shift = self.t - h * np.arange(self.order)
         self.denom = h * (1 + np.arange(self.order))

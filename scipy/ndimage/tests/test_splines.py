@@ -1,6 +1,4 @@
 """Tests for spline filtering."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import pytest
 
@@ -40,7 +38,7 @@ def make_spline_knot_matrix(n, order, mode='mirror'):
         start, step = 1, 1
     elif mode == 'reflect':
         start, step = 0, 1
-    elif mode == 'wrap':
+    elif mode == 'grid-wrap':
         start, step = -1, -1
     else:
         raise ValueError('unsupported mode {}'.format(mode))
@@ -54,11 +52,14 @@ def make_spline_knot_matrix(n, order, mode='mirror'):
 
 
 @pytest.mark.parametrize('order', [0, 1, 2, 3, 4, 5])
-def test_spline_filter_vs_matrix_solution(order):
+@pytest.mark.parametrize('mode', ['mirror', 'grid-wrap', 'reflect'])
+def test_spline_filter_vs_matrix_solution(order, mode):
     n = 100
     eye = np.eye(n, dtype=float)
-    spline_filter_axis_0 = ndimage.spline_filter1d(eye, axis=0, order=order)
-    spline_filter_axis_1 = ndimage.spline_filter1d(eye, axis=1, order=order)
-    matrix = make_spline_knot_matrix(n, order)
+    spline_filter_axis_0 = ndimage.spline_filter1d(eye, axis=0, order=order,
+                                                   mode=mode)
+    spline_filter_axis_1 = ndimage.spline_filter1d(eye, axis=1, order=order,
+                                                   mode=mode)
+    matrix = make_spline_knot_matrix(n, order, mode=mode)
     assert_almost_equal(eye, np.dot(spline_filter_axis_0, matrix))
     assert_almost_equal(eye, np.dot(spline_filter_axis_1, matrix.T))

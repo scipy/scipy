@@ -128,8 +128,8 @@ double beta(double a, double b)
     return (y);
 
 overflow:
-    mtherr("beta", OVERFLOW);
-    return (sign * NPY_INFINITY);
+    sf_error("beta", SF_ERROR_OVERFLOW, NULL);
+    return (sign * INFINITY);
 }
 
 
@@ -191,8 +191,8 @@ double lbeta(double a, double b)
     b = Gamma(b);
     if (y == 0.0) {
       over:
-	mtherr("lbeta", OVERFLOW);
-	return (sign * NPY_INFINITY);
+	sf_error("lbeta", SF_ERROR_OVERFLOW, NULL);
+	return (sign * INFINITY);
     }
 
     if (fabs(fabs(a) - fabs(y)) > fabs(fabs(b) - fabs(y))) {
@@ -239,8 +239,8 @@ static double beta_negint(int a, double b)
         return sgn * beta(1 - a - b, b);
     }
     else {
-	mtherr("lbeta", OVERFLOW);
-        return NPY_INFINITY;
+	sf_error("lbeta", SF_ERROR_OVERFLOW, NULL);
+        return INFINITY;
     }
 }
 
@@ -252,7 +252,7 @@ static double lbeta_negint(int a, double b)
         return r;
     }
     else {
-	mtherr("lbeta", OVERFLOW);
-        return NPY_INFINITY;
+	sf_error("lbeta", SF_ERROR_OVERFLOW, NULL);
+        return INFINITY;
     }
 }

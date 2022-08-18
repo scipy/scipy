@@ -95,14 +95,14 @@ double jv(double n, double x)
     }
 
     if ((x < 0.0) && (y != an)) {
-	mtherr("Jv", DOMAIN);
-	y = NPY_NAN;
+	sf_error("Jv", SF_ERROR_DOMAIN, NULL);
+	y = NAN;
 	goto done;
     }
 
     if (x == 0 && n < 0 && !nint) {
-        mtherr("Jv", OVERFLOW);
-        return NPY_INFINITY / gamma(n + 1);
+        sf_error("Jv", SF_ERROR_OVERFLOW, NULL);
+        return INFINITY / gamma(n + 1);
     }
 
     y = fabs(x);
@@ -209,8 +209,8 @@ double jv(double n, double x)
 	 * Hankel expansion will then work.
 	 */
 	if (n < 0.0) {
-	    mtherr("Jv", TLOSS);
-	    y = NPY_NAN;
+	    sf_error("Jv", SF_ERROR_LOSS, NULL);
+	    y = NAN;
 	    goto done;
 	}
 	t = x / n;
@@ -302,7 +302,7 @@ static double recur(double *n, double x, double *newn, int cancel)
 	}
 
 	if (++ctr > maxiter) {
-	    mtherr("jv", UNDERFLOW);
+	    sf_error("jv", SF_ERROR_UNDERFLOW, NULL);
 	    goto done;
 	}
 	if (t < MACHEP)
@@ -448,8 +448,8 @@ static double jvs(double n, double x)
 	    return (0.0);
 	}
 	if (t > MAXLOG) {
-	    mtherr("Jv", OVERFLOW);
-	    return (NPY_INFINITY);
+	    sf_error("Jv", SF_ERROR_OVERFLOW, NULL);
+	    return (INFINITY);
 	}
 	y = sgngam * exp(t);
     }
@@ -675,8 +675,8 @@ static double jnx(double n, double x)
     /* flags to stop when terms get larger */
     doa = 1;
     dob = 1;
-    akl = NPY_INFINITY;
-    bkl = NPY_INFINITY;
+    akl = INFINITY;
+    bkl = INFINITY;
 
     for (k = 0; k <= 3; k++) {
 	tk = 2 * k;

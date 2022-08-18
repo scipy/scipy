@@ -69,7 +69,6 @@
 
 #include "mconf.h"
 #include <stdlib.h>
-#include "_c99compat.h"
 
 #define EPS 1.0e-13
 #define EPS2 1.0e-10
@@ -256,7 +255,7 @@ double a, b, c, x;
 
   hypdon:
     if (err > ETHRESH) {
-	mtherr("hyp2f1", PLOSS);
+	sf_error("hyp2f1", SF_ERROR_LOSS, NULL);
 	/*      printf( "Estimated err = %.2e\n", err ); */
     }
     return (y);
@@ -270,8 +269,8 @@ double a, b, c, x;
 
     /* The alarm exit */
   hypdiv:
-    mtherr("hyp2f1", OVERFLOW);
-    return NPY_INFINITY;
+    sf_error("hyp2f1", SF_ERROR_OVERFLOW, NULL);
+    return INFINITY;
 }
 
 
@@ -395,9 +394,9 @@ double *loss;
 		p *= (b + t + d1) / (t + 1.0 + e);
 		t += 1.0;
 		if (t > MAX_ITERATIONS) {	/* should never happen */
-		    mtherr("hyp2f1", TOOMANY);
+		    sf_error("hyp2f1", SF_ERROR_SLOW, NULL);
 		    *loss = 1.0;
-		    return NPY_NAN;
+		    return NAN;
 		}
 	    }
 	    while (y == 0 || fabs(q / y) > EPS);
@@ -501,7 +500,7 @@ double *loss;			/* estimates loss of significance */
     do {
 	if (fabs(h) < EPS) {
 	    *loss = 1.0;
-	    return NPY_INFINITY;
+	    return INFINITY;
 	}
 	m = k + 1.0;
 	u = u * ((f + k) * (g + k) * x / ((h + k) * m));
@@ -555,9 +554,9 @@ static double hyp2f1ra(double a, double b, double c, double x,
 
     if (fabs(da) > MAX_ITERATIONS) {
         /* Too expensive to compute this value, so give up */
-        mtherr("hyp2f1", TLOSS);
+        sf_error("hyp2f1", SF_ERROR_NO_RESULT, NULL);
         *loss = 1.0;
-        return NPY_NAN;
+        return NAN;
     }
 
     if (da < 0) {
@@ -604,13 +603,12 @@ static double hyp2f1ra(double a, double b, double c, double x,
 static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
 {
     double k;
-    double err;
     double collector = 1;
     double sum = 1;
     double collector_max = 1;
 
     if (!(fabs(b) < 1e5)) {
-        return NPY_NAN;
+        return NAN;
     }
 
     for (k = 1; k <= -b; k++) {
@@ -620,7 +618,7 @@ static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
     }
 
     if (1e-16 * (1 + collector_max/fabs(sum)) > 1e-7) {
-        return NPY_NAN;
+        return NAN;
     }
 
     return sum;

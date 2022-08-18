@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 from numpy import sum, cos, exp, pi, arange, sin
 from .go_benchmark import Benchmark
 

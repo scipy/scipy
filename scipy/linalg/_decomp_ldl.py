@@ -1,11 +1,9 @@
-from __future__ import division, print_function, absolute_import
-
 from warnings import warn
 
 import numpy as np
 from numpy import (atleast_2d, ComplexWarning, arange, zeros_like, imag, diag,
                    iscomplexobj, tril, triu, argsort, empty_like)
-from .decomp import _asarray_validated
+from ._decomp import _asarray_validated
 from .lapack import get_lapack_funcs, _compute_lwork
 
 __all__ = ['ldl']
@@ -18,33 +16,33 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     This function returns a block diagonal matrix D consisting blocks of size
     at most 2x2 and also a possibly permuted unit lower triangular matrix
     ``L`` such that the factorization ``A = L D L^H`` or ``A = L D L^T``
-    holds. If ``lower`` is False then (again possibly permuted) upper
+    holds. If `lower` is False then (again possibly permuted) upper
     triangular matrices are returned as outer factors.
 
     The permutation array can be used to triangularize the outer factors
     simply by a row shuffle, i.e., ``lu[perm, :]`` is an upper/lower
     triangular matrix. This is also equivalent to multiplication with a
-    permutation matrix ``P.dot(lu)`` where ``P`` is a column-permuted
+    permutation matrix ``P.dot(lu)``, where ``P`` is a column-permuted
     identity matrix ``I[:, perm]``.
 
-    Depending on the value of the boolean ``lower``, only upper or lower
-    triangular part of the input array is referenced. Hence a triangular
+    Depending on the value of the boolean `lower`, only upper or lower
+    triangular part of the input array is referenced. Hence, a triangular
     matrix on entry would give the same result as if the full matrix is
     supplied.
 
     Parameters
     ----------
-    a : array_like
+    A : array_like
         Square input array
     lower : bool, optional
         This switches between the lower and upper triangular outer factors of
         the factorization. Lower triangular (``lower=True``) is the default.
     hermitian : bool, optional
-        For complex-valued arrays, this defines whether ``a = a.conj().T`` or
-        ``a = a.T`` is assumed. For real-valued arrays, this switch has no
+        For complex-valued arrays, this defines whether ``A = A.conj().T`` or
+        ``A = A.T`` is assumed. For real-valued arrays, this switch has no
         effect.
     overwrite_a : bool, optional
-        Allow overwriting data in ``a`` (may enhance performance). The default
+        Allow overwriting data in `A` (may enhance performance). The default
         is False.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
@@ -71,8 +69,8 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
 
     Examples
     --------
-    Given an upper triangular array `a` that represents the full symmetric
-    array with its entries, obtain `l`, 'd' and the permutation vector `perm`:
+    Given an upper triangular array ``a`` that represents the full symmetric
+    array with its entries, obtain ``l``, 'd' and the permutation vector `perm`:
 
     >>> import numpy as np
     >>> from scipy.linalg import ldl
@@ -103,13 +101,13 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     ``?HETRF`` routines for Hermitian matrices from LAPACK. See [1]_ for
     the algorithm details.
 
-    Depending on the ``lower`` keyword value, only lower or upper triangular
+    Depending on the `lower` keyword value, only lower or upper triangular
     part of the input array is referenced. Moreover, this keyword also defines
     the structure of the outer factors of the factorization.
 
     .. versionadded:: 1.1.0
 
-    See also
+    See Also
     --------
     cholesky, lu
 
@@ -117,7 +115,7 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     ----------
     .. [1] J.R. Bunch, L. Kaufman, Some stable methods for calculating
        inertia and solving symmetric linear systems, Math. Comput. Vol.31,
-       1977. DOI: 10.2307/2005787
+       1977. :doi:`10.2307/2005787`
 
     """
     a = atleast_2d(_asarray_validated(A, check_finite=check_finite))
@@ -311,8 +309,8 @@ def _ldl_construct_tri_factor(lu, swap_vec, pivs, lower=True):
         The triangular array that is extracted from LAPACK routine call with
         ones on the diagonals.
     swap_vec : ndarray
-        The array that defines the row swapping indices. If k'th entry is m
-        then rows k,m are swapped. Notice that m'th entry is not necessarily
+        The array that defines the row swapping indices. If the kth entry is m
+        then rows k,m are swapped. Notice that the mth entry is not necessarily
         k to avoid undoing the swapping.
     pivs : ndarray
         The array that defines the block diagonal structure returned by

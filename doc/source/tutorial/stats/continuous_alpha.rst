@@ -4,8 +4,8 @@
 Alpha Distribution
 ==================
 
-One shape parameters :math:`\alpha>0` (parameter :math:`\beta` in DATAPLOT
-is a scale-parameter). Standard form is :math:`x>0:`
+One shape parameter :math:`\alpha>0` (parameter :math:`\beta` in DATAPLOT
+is a scale-parameter). The support for the standard form is :math:`x>0`.
 
 .. math::
    :nowrap:

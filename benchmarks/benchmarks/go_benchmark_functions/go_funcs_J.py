@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 from numpy import sum, asarray, arange, exp
 from .go_benchmark import Benchmark
 
 
 class JennrichSampson(Benchmark):
-
     r"""
     Jennrich-Sampson objective function.
 
@@ -46,8 +43,7 @@ class JennrichSampson(Benchmark):
 
 
 class Judge(Benchmark):
-
-    """
+    r"""
     Judge objective function.
 
     This class defines the Judge [1]_ global optimization problem. This
@@ -55,7 +51,7 @@ class Judge(Benchmark):
 
     .. math::
 
-        f_{\text{Judge}}(x) = \sum_{i=1}^{20} 
+        f_{\text{Judge}}(x) = \sum_{i=1}^{20}
         \left [ \left (x_1 + A_i x_2 + B x_2^2 \right ) - C_i \right ]^2
 
 

@@ -1,4 +1,5 @@
-"""========================================
+"""
+========================================
 Interpolation (:mod:`scipy.interpolate`)
 ========================================
 
@@ -7,7 +8,7 @@ Interpolation (:mod:`scipy.interpolate`)
 Sub-package for objects used in interpolation.
 
 As listed below, this sub-package contains spline functions and classes,
-one-dimensional and multi-dimensional (univariate and multivariate)
+1-D and multidimensional (univariate and multivariate)
 interpolation classes, Lagrange and Taylor polynomial interpolators, and
 wrappers for `FITPACK <http://www.netlib.org/dierckx/>`__
 and DFITPACK functions.
@@ -21,10 +22,11 @@ Univariate interpolation
    interp1d
    BarycentricInterpolator
    KroghInterpolator
-   PchipInterpolator
    barycentric_interpolate
    krogh_interpolate
    pchip_interpolate
+   CubicHermiteSpline
+   PchipInterpolator
    Akima1DInterpolator
    CubicSpline
    PPoly
@@ -43,6 +45,7 @@ Unstructured data:
    LinearNDInterpolator
    NearestNDInterpolator
    CloughTocher2DInterpolator
+   RBFInterpolator
    Rbf
    interp2d
 
@@ -95,7 +98,7 @@ Functional interface to FITPACK routines:
 Object-oriented FITPACK interface:
 
 .. autosummary::
-    :toctree: generated/
+   :toctree: generated/
 
    UnivariateSpline
    InterpolatedUnivariateSpline
@@ -157,41 +160,39 @@ Additional tools
    `scipy.signal.qspline2d`,
    `scipy.signal.cspline2d`.
 
-Functions existing for backward compatibility (should not be used in
-new code):
-
-.. autosummary::
-   :toctree: generated/
-
-   spleval
-   spline
-   splmake
-   spltopp
-   pchip
-
+``pchip`` is an alias of `PchipInterpolator` for backward compatibility
+(should not be used in new code).
 """
-from __future__ import division, print_function, absolute_import
-
-from .interpolate import *
-from .fitpack import *
+from ._interpolate import *
+from ._fitpack_py import *
 
 # New interface to fitpack library:
-from .fitpack2 import *
+from ._fitpack2 import *
 
-from .rbf import Rbf
+from ._rbf import Rbf
 
-from .polyint import *
+from ._rbfinterp import *
+
+from ._polyint import *
 
 from ._cubic import *
 
-from .ndgriddata import *
+from ._ndgriddata import *
 
 from ._bsplines import *
 
 from ._pade import *
+
+from ._rgi import *
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import fitpack, fitpack2, interpolate, ndgriddata, polyint, rbf
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+
+# Backward compatibility
+pchip = PchipInterpolator

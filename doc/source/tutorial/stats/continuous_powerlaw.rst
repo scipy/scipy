@@ -4,11 +4,8 @@
 Power-function Distribution
 ===========================
 
-A special case of the beta distribution with :math:`b=1` : defined for :math:`x\in\left[0,1\right]`
-
-.. math::
-
-     a>0
+A special case of the beta distribution with :math:`b=1`. There is one
+shape parameter :math:`a>0` and support :math:`x\in\left[0,1\right]`.
 
 .. math::
    :nowrap:

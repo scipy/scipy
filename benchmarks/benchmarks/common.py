@@ -1,20 +1,65 @@
 """
 Airspeed Velocity benchmark utilities
 """
-from __future__ import division, absolute_import, print_function
-
 import sys
+import os
 import re
 import time
 import textwrap
 import subprocess
+import itertools
+import random
 
 
-class Benchmark(object):
+class Benchmark:
     """
     Base class with sensible options
     """
-    goal_time = 0.25
+    pass
+
+
+def is_xslow():
+    try:
+        return int(os.environ.get('SCIPY_XSLOW', '0'))
+    except ValueError:
+        return False
+
+
+class LimitedParamBenchmark(Benchmark):
+    """
+    Limits parameter combinations to `max_number` choices, chosen
+    pseudo-randomly with fixed seed.
+    Raises NotImplementedError (skip) if not in active set.
+    """
+    num_param_combinations = 0
+
+    def setup(self, *args, **kwargs):
+        slow = is_xslow()
+
+        if slow:
+            # no need to skip
+            return
+
+        param_seed = kwargs.pop('param_seed', None)
+        if param_seed is None:
+            param_seed = 1
+
+        params = kwargs.pop('params', None)
+        if params is None:
+            params = self.params
+
+        num_param_combinations = kwargs.pop('num_param_combinations', None)
+        if num_param_combinations is None:
+            num_param_combinations = self.num_param_combinations
+
+        all_choices = list(itertools.product(*params))
+
+        rng = random.Random(param_seed)
+        rng.shuffle(all_choices)
+        active_choices = all_choices[:num_param_combinations]
+
+        if args not in active_choices:
+            raise NotImplementedError("skipped")
 
 
 def run_monitored(code):
@@ -46,7 +91,7 @@ def run_monitored(code):
         with open('/proc/%d/status' % process.pid, 'r') as f:
             procdata = f.read()
 
-        m = re.search('VmRSS:\s*(\d+)\s*kB', procdata, re.S | re.I)
+        m = re.search(r'VmRSS:\s*(\d+)\s*kB', procdata, re.S | re.I)
         if m is not None:
             memusage = float(m.group(1)) * 1e3
             peak_memusage = max(memusage, peak_memusage)
@@ -97,3 +142,18 @@ def with_attributes(**attrs):
             setattr(func, key, value)
         return func
     return decorator
+
+
+class safe_import:
+
+    def __enter__(self):
+        self.error = False
+        return self
+
+    def __exit__(self, type_, value, traceback):
+        if type_ is not None:
+            self.error = True
+            suppress = not (
+                os.getenv('SCIPY_ALLOW_BENCH_IMPORT_ERRORS', '1').lower() in
+                ('0', 'false') or not issubclass(type_, ImportError))
+            return suppress

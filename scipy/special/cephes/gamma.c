@@ -63,7 +63,7 @@
  * The cosecant reflection formula is employed for arguments
  * less than -33.
  *
- * Arguments greater than MAXLGM return NPY_INFINITY and an error
+ * Arguments greater than MAXLGM return INFINITY and an error
  * message.  MAXLGM = 2.556348e305 for IEEE arithmetic.
  *
  *
@@ -140,7 +140,7 @@ static double stirf(double x)
     double y, w, v;
 
     if (x >= MAXGAM) {
-	return (NPY_INFINITY);
+	return (INFINITY);
     }
     w = 1.0 / x;
     w = 1.0 + w * polevl(w, STIR, 4);
@@ -173,8 +173,8 @@ double Gamma(double x)
 	    p = floor(q);
 	    if (p == q) {
 	      gamnan:
-		mtherr("Gamma", OVERFLOW);
-		return (NPY_INFINITY);
+		sf_error("Gamma", SF_ERROR_OVERFLOW, NULL);
+		return (INFINITY);
 	    }
 	    i = p;
 	    if ((i & 1) == 0)
@@ -186,7 +186,7 @@ double Gamma(double x)
 	    }
 	    z = q * sin(NPY_PI * z);
 	    if (z == 0.0) {
-		return (sgngam * NPY_INFINITY);
+		return (sgngam * INFINITY);
 	    }
 	    z = fabs(z);
 	    z = NPY_PI / (z * stirf(q));
@@ -294,8 +294,8 @@ double lgam_sgn(double x, int *sign)
 	p = floor(q);
 	if (p == q) {
 	  lgsing:
-	    mtherr("lgam", SING);
-	    return (NPY_INFINITY);
+	    sf_error("lgam", SF_ERROR_SINGULAR, NULL);
+	    return (INFINITY);
 	}
 	i = p;
 	if ((i & 1) == 0)
@@ -346,7 +346,7 @@ double lgam_sgn(double x, int *sign)
     }
 
     if (x > MAXLGM) {
-	return (*sign * NPY_INFINITY);
+	return (*sign * INFINITY);
     }
 
     q = (x - 0.5) * log(x) - x + LS2PI;

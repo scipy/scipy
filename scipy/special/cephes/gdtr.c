@@ -103,8 +103,8 @@ double a, b, x;
 {
 
     if (x < 0.0) {
-	mtherr("gdtr", DOMAIN);
-	return (NPY_NAN);
+	sf_error("gdtr", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
     }
     return (igam(b, a * x));
 }
@@ -115,8 +115,8 @@ double a, b, x;
 {
 
     if (x < 0.0) {
-	mtherr("gdtrc", DOMAIN);
-	return (NPY_NAN);
+	sf_error("gdtrc", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
     }
     return (igamc(b, a * x));
 }
@@ -127,8 +127,8 @@ double a, b, y;
 {
 
     if ((y < 0.0) || (y > 1.0) || (a <= 0.0) || (b < 0.0)) {
-	mtherr("gdtri", DOMAIN);
-	return (NPY_NAN);
+	sf_error("gdtri", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
     }
 
     return (igamci(b, 1.0 - y) / a);

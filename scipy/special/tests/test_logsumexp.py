@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_array_almost_equal, assert_)
@@ -19,7 +17,7 @@ def test_logsumexp():
     assert_almost_equal(logsumexp(b), desired)
 
     n = 1000
-    b = np.ones(n) * 10000
+    b = np.full(n, 10000, dtype='float64')
     desired = 10000.0 + np.log(n)
     assert_almost_equal(logsumexp(b), desired)
 

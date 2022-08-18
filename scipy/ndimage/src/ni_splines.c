@@ -153,73 +153,168 @@ get_filter_poles(int order, int *npoles, double *poles)
 }
 
 
-double
-filter_gain(const double *poles, int npoles)
+typedef void (init_fn)(npy_double*, const npy_intp, const double);
+
+
+static void
+_init_causal_mirror(double *c, const npy_intp n, const double z)
+{
+    npy_intp i;
+    double z_i = z;
+    const double z_n_1 = pow(z, n - 1);
+
+    c[0] = c[0] + z_n_1 * c[n - 1];
+    for (i = 1; i < n - 1; ++i) {
+        c[0] += z_i * (c[i] + z_n_1 * c[n - 1 - i]);
+        z_i *= z;
+    }
+    c[0] /= 1 - z_n_1 * z_n_1;
+}
+
+
+static void
+_init_anticausal_mirror(double *c, const npy_intp n, const double z)
+{
+    c[n - 1] = (z * c[n - 2] + c[n - 1]) * z / (z * z - 1);
+}
+
+
+static void
+_init_causal_wrap(double *c, const npy_intp n, const double z)
+{
+    npy_intp i;
+    double z_i = z;
+
+    for (i = 1; i < n; ++i) {
+        c[0] += z_i * c[n - i];
+        z_i *= z;
+    }
+    c[0] /= 1 - z_i; /* z_i = pow(z, n) */
+}
+
+
+static void
+_init_anticausal_wrap(double *c, const npy_intp n, const double z)
+{
+    npy_intp i;
+    double z_i = z;
+
+    for (i = 0; i < n - 1; ++i) {
+        c[n - 1] += z_i * c[i];
+        z_i *= z;
+    }
+    c[n - 1] *= z / (z_i - 1); /* z_i = pow(z, n) */
+}
+
+
+static void
+_init_causal_reflect(double *c, const npy_intp n, const double z)
+{
+    npy_intp i;
+    double z_i = z;
+    const double z_n = pow(z, n);
+    const double c0 = c[0];
+
+    c[0] = c[0] + z_n * c[n - 1];
+    for (i = 1; i < n; ++i) {
+        c[0] += z_i * (c[i] + z_n * c[n - 1 - i]);
+        z_i *= z;
+    }
+    c[0] *= z / (1 - z_n * z_n);
+    c[0] += c0;
+}
+
+
+void
+_init_anticausal_reflect(double *c, const npy_intp n, const double z)
+{
+    c[n - 1] *= z / (z - 1);
+}
+
+
+/*
+ * The application of the filter is performed in two passes over the
+ * coefficient array, one forward and the other backward. For a
+ * detailed discussion of the method see e.g.:
+ *
+ * Unser, Michael, Akram Aldroubi, and Murray Eden. "Fast B-spline
+ * transforms for continuous image representation and interpolation."
+ * IEEE Transactions on pattern analysis and machine intelligence 13.3
+ * (1991): 277-285.
+ *
+ * A key part of the process is initializing the first coefficient for
+ * each pass, which depends on the boundary conditions chosen to extend
+ * the input image beyond its boundaries. The method to initialize these
+ * values for the NI_EXTEND_MIRROR mode is discussed in the above paper.
+ * For NI_EXTEND_WRAP and NI_EXTEND_REFLECT, the unpublished method was
+ * obtained from a private communication with Dr. Philippe Thévenaz.
+ */
+static void
+_apply_filter(double *c, npy_intp n, double z, init_fn *causal_init,
+              init_fn *anticausal_init)
+{
+    npy_intp i;
+
+    causal_init(c, n, z);
+    for (i = 1; i < n; ++i) {
+        c[i] += z * c[i - 1];
+    }
+    anticausal_init(c, n, z);
+    for (i = n - 2; i >= 0; --i) {
+        c[i] = z * (c[i + 1] - c[i]);
+    }
+}
+
+
+static void
+_apply_filter_gain(double *c, npy_intp n, const double *zs, int nz)
 {
     double gain = 1.0;
 
+    while (nz--) {
+        const double z = *zs++;
+        gain *= (1.0 - z) * (1.0 - 1.0 / z);
+    }
+
+    while (n--) {
+        *c++ *= gain;
+    }
+}
+
+
+void
+apply_filter(double *coefficients, const npy_intp len, const double *poles,
+             int npoles, NI_ExtendMode mode)
+{
+    init_fn *causal = NULL;
+    init_fn *anticausal = NULL;
+
+    //Note: This switch statement should match the settings used for
+	//      the spline_mode variable in NI_GeometricTransform
+    switch(mode) {
+        case NI_EXTEND_GRID_CONSTANT:
+        case NI_EXTEND_CONSTANT:
+        case NI_EXTEND_MIRROR:
+        case NI_EXTEND_WRAP:
+            causal = &_init_causal_mirror;
+            anticausal = &_init_anticausal_mirror;
+            break;
+        case NI_EXTEND_GRID_WRAP:
+            causal = &_init_causal_wrap;
+            anticausal = &_init_anticausal_wrap;
+            break;
+        case NI_EXTEND_NEAREST:
+        case NI_EXTEND_REFLECT:
+            causal = &_init_causal_reflect;
+            anticausal = &_init_anticausal_reflect;
+            break;
+        default:
+            assert(0); /* We should never get here. */
+    }
+
+    _apply_filter_gain(coefficients, len, poles, npoles);
+
     while (npoles--) {
-        const double pole = *poles++;
-        gain *= (1.0 - pole) * (1.0 - 1.0 / pole);
+        _apply_filter(coefficients, len, *poles++, causal, anticausal);
     }
-
-    return gain;
-}
-
-
-void
-apply_gain(double gain, double *coefficients, npy_intp len)
-{
-    while (len--) {
-        *coefficients++ *= gain;
-    }
-}
-
-
-void
-set_initial_causal_coefficient(double *coefficients, npy_intp len,
-                               double pole, double tolerance)
-{
-    int i;
-    int last_coeff = len;
-    double sum = 0.0;
-
-    if (tolerance > 0.0) {
-        last_coeff = ceil(log(tolerance)) / log(fabs(pole));
-    }
-    if (last_coeff < len) {
-        double z_i = pole;
-
-        sum = coefficients[0];
-        for (i = 1; i < last_coeff; ++i) {
-            sum += z_i * coefficients[i];
-            z_i *= pole;
-        }
-    }
-    else {
-        double z_i = pole;
-        const double inv_z = 1.0 / pole;
-        const double z_n_1 = pow(pole, len - 1);
-        double z_2n_2_i = z_n_1 * z_n_1 * inv_z;
-
-        sum = coefficients[0] + coefficients[len - 1] * z_n_1;
-        for (i = 1; i < len - 1; ++i) {
-            sum += (z_i + z_2n_2_i) * coefficients[i];
-            z_i *= pole;
-            z_2n_2_i *= inv_z;
-        }
-        sum /= (1 - z_n_1 * z_n_1);
-    }
-
-    coefficients[0] = sum;
-}
-
-
-void
-set_initial_anticausal_coefficient(double *coefficients, npy_intp len,
-                                   double pole)
-{
-    coefficients[len - 1] = pole / (pole * pole - 1.0) *
-                            (pole * coefficients[len - 2] +
-                             coefficients[len - 1]) ;
 }

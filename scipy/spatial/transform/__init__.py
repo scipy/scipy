@@ -1,5 +1,4 @@
 """
-========================================================
 Spatial Transformations (:mod:`scipy.spatial.transform`)
 ========================================================
 
@@ -11,17 +10,19 @@ only rotations are supported.
 Rotations in 3 dimensions
 -------------------------
 .. autosummary::
-    :toctree: generated/
+   :toctree: generated/
 
-    Rotation
-    Slerp
-
+   Rotation
+   Slerp
+   RotationSpline
 """
-from __future__ import division, print_function, absolute_import
+from ._rotation import Rotation, Slerp
+from ._rotation_spline import RotationSpline
 
-from .rotation import Rotation, Slerp
+# Deprecated namespaces, to be removed in v2.0.0
+from . import rotation
 
-__all__ = ['Rotation', 'Slerp']
+__all__ = ['Rotation', 'Slerp', 'RotationSpline']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

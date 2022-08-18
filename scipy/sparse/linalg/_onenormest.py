@@ -1,8 +1,6 @@
 """Sparse block 1-norm estimator.
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.sparse.linalg import aslinearoperator
 
@@ -72,13 +70,13 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import onenormest
     >>> A = csc_matrix([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
-    >>> A.todense()
-    matrix([[ 1.,  0.,  0.],
-            [ 5.,  8.,  2.],
-            [ 0., -1.,  0.]])
+    >>> A.toarray()
+    array([[ 1.,  0.,  0.],
+           [ 5.,  8.,  2.],
+           [ 0., -1.,  0.]])
     >>> onenormest(A)
     9.0
-    >>> np.linalg.norm(A.todense(), ord=1)
+    >>> np.linalg.norm(A.toarray(), ord=1)
     9.0
     """
 
@@ -253,7 +251,7 @@ def _algorithm_2_2(A, AT, t):
     -----
     This algorithm is mainly for testing.
     It uses the 'ind' array in a way that is similar to
-    its usage in algorithm 2.4.  This algorithm 2.2 may be easier to test,
+    its usage in algorithm 2.4. This algorithm 2.2 may be easier to test,
     so it gives a chance of uncovering bugs related to indexing
     which could have propagated less noticeably to algorithm 2.4.
 

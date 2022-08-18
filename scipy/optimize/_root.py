@@ -5,25 +5,25 @@ Functions
 ---------
 - root : find a root of a vector function.
 """
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['root']
 
 import numpy as np
 
-from scipy._lib.six import callable
+ROOT_METHODS = ['hybr', 'lm', 'broyden1', 'broyden2', 'anderson',
+                'linearmixing', 'diagbroyden', 'excitingmixing', 'krylov',
+                'df-sane']
 
 from warnings import warn
 
-from .optimize import MemoizeJac, OptimizeResult, _check_unknown_options
-from .minpack import _root_hybr, leastsq
+from ._optimize import MemoizeJac, OptimizeResult, _check_unknown_options
+from ._minpack_py import _root_hybr, leastsq
 from ._spectral import _root_df_sane
-from . import nonlin
+from . import _nonlin as nonlin
 
 
 def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
          options=None):
-    """
+    r"""
     Find a root of a vector function.
 
     Parameters
@@ -35,7 +35,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     args : tuple, optional
         Extra arguments passed to the objective function and its Jacobian.
     method : str, optional
-        Type of solver.  Should be one of
+        Type of solver. Should be one of
 
             - 'hybr'             :ref:`(see here) <optimize.root-hybr>`
             - 'lm'               :ref:`(see here) <optimize.root-lm>`
@@ -62,7 +62,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         ``callback(x, f)`` where `x` is the current solution and `f`
         the corresponding residual. For all methods but 'hybr' and 'lm'.
     options : dict, optional
-        A dictionary of solver options. E.g. `xtol` or `maxiter`, see
+        A dictionary of solver options. E.g., `xtol` or `maxiter`, see
         :obj:`show_options()` for details.
 
     Returns
@@ -95,7 +95,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     Methods *broyden1*, *broyden2*, *anderson*, *linearmixing*,
     *diagbroyden*, *excitingmixing*, *krylov* are inexact Newton methods,
     with backtracking or full line searches [2]_. Each method corresponds
-    to a particular Jacobian approximations. See `nonlin` for details.
+    to a particular Jacobian approximations.
 
     - Method *broyden1* uses Broyden's first Jacobian approximation, it is
       known as Broyden's good method.
@@ -132,6 +132,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     The following functions define a system of nonlinear equations and its
     jacobian.
 
+    >>> import numpy as np
     >>> def fun(x):
     ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
     ...             0.5 * (x[1] - x[0])**3 + x[1]]
@@ -149,6 +150,53 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     >>> sol.x
     array([ 0.8411639,  0.1588361])
 
+    **Large problem**
+
+    Suppose that we needed to solve the following integrodifferential
+    equation on the square :math:`[0,1]\times[0,1]`:
+
+    .. math::
+
+       \nabla^2 P = 10 \left(\int_0^1\int_0^1\cosh(P)\,dx\,dy\right)^2
+
+    with :math:`P(x,1) = 1` and :math:`P=0` elsewhere on the boundary of
+    the square.
+
+    The solution can be found using the ``method='krylov'`` solver:
+
+    >>> from scipy import optimize
+    >>> # parameters
+    >>> nx, ny = 75, 75
+    >>> hx, hy = 1./(nx-1), 1./(ny-1)
+
+    >>> P_left, P_right = 0, 0
+    >>> P_top, P_bottom = 1, 0
+
+    >>> def residual(P):
+    ...    d2x = np.zeros_like(P)
+    ...    d2y = np.zeros_like(P)
+    ...
+    ...    d2x[1:-1] = (P[2:]   - 2*P[1:-1] + P[:-2]) / hx/hx
+    ...    d2x[0]    = (P[1]    - 2*P[0]    + P_left)/hx/hx
+    ...    d2x[-1]   = (P_right - 2*P[-1]   + P[-2])/hx/hx
+    ...
+    ...    d2y[:,1:-1] = (P[:,2:] - 2*P[:,1:-1] + P[:,:-2])/hy/hy
+    ...    d2y[:,0]    = (P[:,1]  - 2*P[:,0]    + P_bottom)/hy/hy
+    ...    d2y[:,-1]   = (P_top   - 2*P[:,-1]   + P[:,-2])/hy/hy
+    ...
+    ...    return d2x + d2y - 10*np.cosh(P).mean()**2
+
+    >>> guess = np.zeros((nx, ny), float)
+    >>> sol = optimize.root(residual, guess, method='krylov')
+    >>> print('Residual: %g' % abs(residual(sol.x)).max())
+    Residual: 5.7972e-06  # may vary
+
+    >>> import matplotlib.pyplot as plt
+    >>> x, y = np.mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
+    >>> plt.pcolormesh(x, y, sol.x, shading='gouraud')
+    >>> plt.colorbar()
+    >>> plt.show()
+
     """
     if not isinstance(args, tuple):
         args = (args,)
@@ -161,7 +209,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         warn('Method %s does not accept callback.' % method,
              RuntimeWarning)
 
-    # fun also returns the jacobian
+    # fun also returns the Jacobian
     if not callable(jac) and meth in ('hybr', 'lm'):
         if bool(jac):
             fun = MemoizeJac(fun)
@@ -209,7 +257,7 @@ def _warn_jac_unused(jac, method):
              RuntimeWarning)
 
 
-def _root_leastsq(func, x0, args=(), jac=None,
+def _root_leastsq(fun, x0, args=(), jac=None,
                   col_deriv=0, xtol=1.49012e-08, ftol=1.49012e-08,
                   gtol=0.0, maxiter=0, eps=0.0, factor=100, diag=None,
                   **unknown_options):
@@ -244,7 +292,7 @@ def _root_leastsq(func, x0, args=(), jac=None,
     """
 
     _check_unknown_options(unknown_options)
-    x, cov_x, info, msg, ier = leastsq(func, x0, args=args, Dfun=jac,
+    x, cov_x, info, msg, ier = leastsq(fun, x0, args=args, Dfun=jac,
                                        full_output=True,
                                        col_deriv=col_deriv, xtol=xtol,
                                        ftol=ftol, gtol=gtol,
@@ -257,7 +305,7 @@ def _root_leastsq(func, x0, args=(), jac=None,
     return sol
 
 
-def _root_nonlin_solve(func, x0, args=(), jac=None,
+def _root_nonlin_solve(fun, x0, args=(), jac=None,
                        _callback=None, _method=None,
                        nit=None, disp=False, maxiter=None,
                        ftol=None, fatol=None, xtol=None, xatol=None,
@@ -285,12 +333,12 @@ def _root_nonlin_solve(func, x0, args=(), jac=None,
     if args:
         if jac:
             def f(x):
-                return func(x, *args)[0]
+                return fun(x, *args)[0]
         else:
             def f(x):
-                return func(x, *args)
+                return fun(x, *args)
     else:
-        f = func
+        f = fun
 
     x, info = nonlin.nonlin_solve(f, x0, jacobian=jacobian(**jac_options),
                                   iter=nit, verbose=verbose,
@@ -345,19 +393,40 @@ def _root_broyden1_doc():
                 method and values for additional parameters.
 
                 Methods available:
-                    - ``restart``: drop all matrix columns. Has no
+
+                    - ``restart``
+                        Drop all matrix columns. Has no
                         extra parameters.
-                    - ``simple``: drop oldest matrix column. Has no
+                    - ``simple``
+                        Drop oldest matrix column. Has no
                         extra parameters.
-                    - ``svd``: keep only the most significant SVD
+                    - ``svd``
+                        Keep only the most significant SVD
                         components.
-                      Extra parameters:
-                          - ``to_retain``: number of SVD components to
-                              retain when rank reduction is done.
-                              Default is ``max_rank - 2``.
+
+                        Extra parameters:
+
+                            - ``to_retain``
+                                Number of SVD components to
+                                retain when rank reduction is done.
+                                Default is ``max_rank - 2``.
             max_rank : int, optional
                 Maximum rank for the Broyden matrix.
-                Default is infinity (ie., no rank reduction).
+                Default is infinity (i.e., no rank reduction).
+
+    Examples
+    --------
+    >>> def func(x):
+    ...     return np.cos(x) + x[::-1] - [1, 2, 3, 4]
+    ...
+    >>> from scipy import optimize
+    >>> res = optimize.root(func, [1, 1, 1, 1], method='broyden1', tol=1e-14)
+    >>> x = res.x
+    >>> x
+    array([4.04674914, 3.91158389, 2.71791677, 1.61756251])
+    >>> np.cos(x) + x[::-1]
+    array([1., 2., 3., 4.])
+
     """
     pass
 
@@ -403,19 +472,26 @@ def _root_broyden2_doc():
             method and values for additional parameters.
 
             Methods available:
-                - ``restart``: drop all matrix columns. Has no
+
+                - ``restart``
+                    Drop all matrix columns. Has no
                     extra parameters.
-                - ``simple``: drop oldest matrix column. Has no
+                - ``simple``
+                    Drop oldest matrix column. Has no
                     extra parameters.
-                - ``svd``: keep only the most significant SVD
+                - ``svd``
+                    Keep only the most significant SVD
                     components.
-                  Extra parameters:
-                      - ``to_retain``: number of SVD components to
-                          retain when rank reduction is done.
-                          Default is ``max_rank - 2``.
+
+                    Extra parameters:
+
+                        - ``to_retain``
+                            Number of SVD components to
+                            retain when rank reduction is done.
+                            Default is ``max_rank - 2``.
         max_rank : int, optional
             Maximum rank for the Broyden matrix.
-            Default is infinity (ie., no rank reduction).
+            Default is infinity (i.e., no rank reduction).
     """
     pass
 
@@ -609,11 +685,12 @@ def _root_krylov_doc():
 
         rdiff : float, optional
             Relative step size to use in numerical differentiation.
-        method : {'lgmres', 'gmres', 'bicgstab', 'cgs', 'minres'} or function
-            Krylov method to use to approximate the Jacobian.
-            Can be a string, or a function implementing the same
-            interface as the iterative solvers in
-            `scipy.sparse.linalg`.
+        method : str or callable, optional
+            Krylov method to use to approximate the Jacobian.  Can be a string,
+            or a function implementing the same interface as the iterative
+            solvers in `scipy.sparse.linalg`. If a string, needs to be one of:
+            ``'lgmres'``, ``'gmres'``, ``'bicgstab'``, ``'cgs'``, ``'minres'``,
+            ``'tfqmr'``.
 
             The default is `scipy.sparse.linalg.lgmres`.
         inner_M : LinearOperator or InverseJacobian

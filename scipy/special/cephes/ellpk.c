@@ -99,8 +99,8 @@ double x;
 {
 
     if (x < 0.0) {
-	mtherr("ellpk", DOMAIN);
-	return (NPY_NAN);
+	sf_error("ellpk", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
     }
 
     if (x > 1.0) {
@@ -115,8 +115,8 @@ double x;
     }
     else {
 	if (x == 0.0) {
-	    mtherr("ellpk", SING);
-	    return (NPY_INFINITY);
+	    sf_error("ellpk", SF_ERROR_SINGULAR, NULL);
+	    return (INFINITY);
 	}
 	else {
 	    return (C1 - 0.5 * log(x));

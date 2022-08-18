@@ -1,16 +1,14 @@
-from __future__ import division, print_function, absolute_import
-
 import pickle
 
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
                            assert_allclose,
-                           assert_equal, assert_, assert_array_less)
+                           assert_equal, assert_, assert_array_less,
+                           suppress_warnings)
 from pytest import raises as assert_raises
 
-from scipy._lib._numpy_compat import suppress_warnings
-from scipy import fftpack
+from scipy.fft import fft
 from scipy.signal import windows, get_window, resample, hann as dep_hann
 
 
@@ -24,7 +22,6 @@ window_funcs = [
     ('blackmanharris', ()),
     ('flattop', ()),
     ('bartlett', ()),
-    ('hanning', ()),
     ('barthann', ()),
     ('hamming', ()),
     ('kaiser', (1,)),
@@ -32,15 +29,16 @@ window_funcs = [
     ('gaussian', (0.5,)),
     ('general_gaussian', (1.5, 2)),
     ('chebwin', (1,)),
-    ('slepian', (2,)),
     ('cosine', ()),
     ('hann', ()),
     ('exponential', ()),
+    ('taylor', ()),
     ('tukey', (0.5,)),
+    ('lanczos', ()),
     ]
 
 
-class TestBartHann(object):
+class TestBartHann:
 
     def test_basic(self):
         assert_allclose(windows.barthann(6, sym=True),
@@ -52,7 +50,7 @@ class TestBartHann(object):
                         [0, 0.27, 0.73, 1.0, 0.73, 0.27])
 
 
-class TestBartlett(object):
+class TestBartlett:
 
     def test_basic(self):
         assert_allclose(windows.bartlett(6), [0, 0.4, 0.8, 0.8, 0.4, 0])
@@ -61,7 +59,7 @@ class TestBartlett(object):
                         [0, 1/3, 2/3, 1.0, 2/3, 1/3])
 
 
-class TestBlackman(object):
+class TestBlackman:
 
     def test_basic(self):
         assert_allclose(windows.blackman(6, sym=False),
@@ -78,7 +76,7 @@ class TestBlackman(object):
                         [0, 0.13, 0.63, 1.0, 0.63, 0.13, 0], atol=1e-14)
 
 
-class TestBlackmanHarris(object):
+class TestBlackmanHarris:
 
     def test_basic(self):
         assert_allclose(windows.blackmanharris(6, False),
@@ -95,7 +93,81 @@ class TestBlackmanHarris(object):
                          6.0e-05])
 
 
-class TestBohman(object):
+class TestTaylor:
+
+    def test_normalized(self):
+        """Tests windows of small length that are normalized to 1. See the
+        documentation for the Taylor window for more information on
+        normalization.
+        """
+        assert_allclose(windows.taylor(1, 2, 15), 1.0)
+        assert_allclose(
+            windows.taylor(5, 2, 15),
+            np.array([0.75803341, 0.90757699, 1.0, 0.90757699, 0.75803341])
+        )
+        assert_allclose(
+            windows.taylor(6, 2, 15),
+            np.array([
+                0.7504082, 0.86624416, 0.98208011, 0.98208011, 0.86624416,
+                0.7504082
+            ])
+        )
+
+    def test_non_normalized(self):
+        """Test windows of small length that are not normalized to 1. See
+        the documentation for the Taylor window for more information on
+        normalization.
+        """
+        assert_allclose(
+            windows.taylor(5, 2, 15, norm=False),
+            np.array([
+                0.87508054, 1.04771499, 1.15440894, 1.04771499, 0.87508054
+            ])
+        )
+        assert_allclose(
+            windows.taylor(6, 2, 15, norm=False),
+            np.array([
+                0.86627793, 1.0, 1.13372207, 1.13372207, 1.0, 0.86627793
+            ])
+        )
+
+    def test_correctness(self):
+        """This test ensures the correctness of the implemented Taylor
+        Windowing function. A Taylor Window of 1024 points is created, its FFT
+        is taken, and the Peak Sidelobe Level (PSLL) and 3dB and 18dB bandwidth
+        are found and checked.
+
+        A publication from Sandia National Laboratories was used as reference
+        for the correctness values [1]_.
+
+        References
+        -----
+        .. [1] Armin Doerry, "Catalog of Window Taper Functions for
+               Sidelobe Control", 2017.
+               https://www.researchgate.net/profile/Armin_Doerry/publication/316281181_Catalog_of_Window_Taper_Functions_for_Sidelobe_Control/links/58f92cb2a6fdccb121c9d54d/Catalog-of-Window-Taper-Functions-for-Sidelobe-Control.pdf
+        """
+        M_win = 1024
+        N_fft = 131072
+        # Set norm=False for correctness as the values obtained from the
+        # scientific publication do not normalize the values. Normalizing
+        # changes the sidelobe level from the desired value.
+        w = windows.taylor(M_win, nbar=4, sll=35, norm=False, sym=False)
+        f = fft(w, N_fft)
+        spec = 20 * np.log10(np.abs(f / np.amax(f)))
+
+        first_zero = np.argmax(np.diff(spec) > 0)
+
+        PSLL = np.amax(spec[first_zero:-first_zero])
+
+        BW_3dB = 2*np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
+        BW_18dB = 2*np.argmax(spec <= -18.061799739838872) / N_fft * M_win
+
+        assert_allclose(PSLL, -35.1672, atol=1)
+        assert_allclose(BW_3dB, 1.1822, atol=0.1)
+        assert_allclose(BW_18dB, 2.6112, atol=0.1)
+
+
+class TestBohman:
 
     def test_basic(self):
         assert_allclose(windows.bohman(6),
@@ -109,7 +181,7 @@ class TestBohman(object):
                          0.6089977810442295, 0.1089977810442293])
 
 
-class TestBoxcar(object):
+class TestBoxcar:
 
     def test_basic(self):
         assert_allclose(windows.boxcar(6), [1, 1, 1, 1, 1, 1])
@@ -152,7 +224,7 @@ cheb_even_true = array([0.203894, 0.107279, 0.133904,
                         0.133904, 0.107279, 0.203894])
 
 
-class TestChebWin(object):
+class TestChebWin:
 
     def test_basic(self):
         with suppress_warnings() as sup:
@@ -245,7 +317,7 @@ def test_exponential():
             assert_allclose(win, v, rtol=1e-14)
 
 
-class TestFlatTop(object):
+class TestFlatTop:
 
     def test_basic(self):
         assert_allclose(windows.flattop(6, sym=False),
@@ -265,7 +337,7 @@ class TestFlatTop(object):
                          0.19821053, -0.051263156, -0.000421051])
 
 
-class TestGaussian(object):
+class TestGaussian:
 
     def test_basic(self):
         assert_allclose(windows.gaussian(6, 1.0),
@@ -286,7 +358,7 @@ class TestGaussian(object):
                          0.8007374029168081])
 
 
-class TestGeneralCosine(object):
+class TestGeneralCosine:
 
     def test_basic(self):
         assert_allclose(windows.general_cosine(5, [0.5, 0.3, 0.2]),
@@ -294,7 +366,8 @@ class TestGeneralCosine(object):
         assert_allclose(windows.general_cosine(4, [0.5, 0.3, 0.2], sym=False),
                         [0.4, 0.3, 1, 0.3])
 
-class TestGeneralHamming(object):
+
+class TestGeneralHamming:
 
     def test_basic(self):
         assert_allclose(windows.general_hamming(5, 0.7),
@@ -307,7 +380,7 @@ class TestGeneralHamming(object):
                         0.9522542486, 0.6727457514, 0.5])
 
 
-class TestHamming(object):
+class TestHamming:
 
     def test_basic(self):
         assert_allclose(windows.hamming(6, False),
@@ -323,7 +396,7 @@ class TestHamming(object):
                         [0.08, 0.31, 0.77, 1.0, 0.77, 0.31, 0.08])
 
 
-class TestHann(object):
+class TestHann:
 
     def test_basic(self):
         assert_allclose(windows.hann(6, sym=False),
@@ -339,7 +412,7 @@ class TestHann(object):
                         [0, 0.25, 0.75, 1.0, 0.75, 0.25, 0])
 
 
-class TestKaiser(object):
+class TestKaiser:
 
     def test_basic(self):
         assert_allclose(windows.kaiser(6, 0.5),
@@ -364,7 +437,48 @@ class TestKaiser(object):
                          0.5985765418119844])
 
 
-class TestNuttall(object):
+class TestKaiserBesselDerived:
+
+    def test_basic(self):
+        M = 100
+        w = windows.kaiser_bessel_derived(M, beta=4.0)
+        w2 = windows.get_window(('kaiser bessel derived', 4.0),
+                                M, fftbins=False)
+        assert_allclose(w, w2)
+
+        # Test for Princen-Bradley condition
+        assert_allclose(w[:M // 2] ** 2 + w[-M // 2:] ** 2, 1.)
+
+        # Test actual values from other implementations
+        # M = 2:  sqrt(2) / 2
+        # M = 4:  0.518562710536, 0.855039598640
+        # M = 6:  0.436168993154, 0.707106781187, 0.899864772847
+        # Ref:https://github.com/scipy/scipy/pull/4747#issuecomment-172849418
+        assert_allclose(windows.kaiser_bessel_derived(2, beta=np.pi / 2)[:1],
+                        np.sqrt(2) / 2)
+
+        assert_allclose(windows.kaiser_bessel_derived(4, beta=np.pi / 2)[:2],
+                        [0.518562710536, 0.855039598640])
+
+        assert_allclose(windows.kaiser_bessel_derived(6, beta=np.pi / 2)[:3],
+                        [0.436168993154, 0.707106781187, 0.899864772847])
+
+    def test_exceptions(self):
+        M = 100
+        # Assert ValueError for odd window length
+        msg = ("Kaiser-Bessel Derived windows are only defined for even "
+               "number of points")
+        with assert_raises(ValueError, match=msg):
+            windows.kaiser_bessel_derived(M + 1, beta=4.)
+
+        # Assert ValueError for non-symmetric setting
+        msg = ("Kaiser-Bessel Derived windows are only defined for "
+               "symmetric shapes")
+        with assert_raises(ValueError, match=msg):
+            windows.kaiser_bessel_derived(M + 1, beta=4., sym=False)
+
+
+class TestNuttall:
 
     def test_basic(self):
         assert_allclose(windows.nuttall(6, sym=False),
@@ -382,7 +496,7 @@ class TestNuttall(object):
                          0.0613345, 0.0003628])
 
 
-class TestParzen(object):
+class TestParzen:
 
     def test_basic(self):
         assert_allclose(windows.parzen(6),
@@ -398,7 +512,7 @@ class TestParzen(object):
                          0.1574344023323616])
 
 
-class TestTriang(object):
+class TestTriang:
 
     def test_basic(self):
 
@@ -439,7 +553,7 @@ tukey_data = {
 }
 
 
-class TestTukey(object):
+class TestTukey:
 
     def test_basic(self):
         # Test against hardcoded data
@@ -472,7 +586,7 @@ dpss_data = {
 }
 
 
-class TestDPSS(object):
+class TestDPSS:
 
     def test_basic(self):
         # Test against hardcoded data
@@ -522,7 +636,40 @@ class TestDPSS(object):
         assert_raises(ValueError, windows.dpss, -1, 1, 3)  # negative M
 
 
-class TestGetWindow(object):
+class TestLanczos:
+
+    def test_basic(self):
+        # Analytical results:
+        # sinc(x) = sinc(-x)
+        # sinc(pi) = 0, sinc(0) = 1
+        # Hand computation on WolframAlpha:
+        # sinc(2 pi / 3) = 0.413496672
+        # sinc(pi / 3) = 0.826993343
+        # sinc(3 pi / 5) = 0.504551152
+        # sinc(pi / 5) = 0.935489284
+        assert_allclose(windows.lanczos(6, sym=False),
+                        [0., 0.413496672,
+                         0.826993343, 1., 0.826993343,
+                         0.413496672],
+                        atol=1e-9)
+        assert_allclose(windows.lanczos(6),
+                        [0., 0.504551152,
+                         0.935489284, 0.935489284,
+                         0.504551152, 0.],
+                        atol=1e-9)
+        assert_allclose(windows.lanczos(7, sym=True),
+                        [0., 0.413496672,
+                         0.826993343, 1., 0.826993343,
+                         0.413496672, 0.],
+                        atol=1e-9)
+
+    def test_array_size(self):
+        for n in [0, 10, 11]:
+            assert_equal(len(windows.lanczos(n, sym=False)), n)
+            assert_equal(len(windows.lanczos(n, sym=True)), n)
+
+
+class TestGetWindow:
 
     def test_boxcar(self):
         w = windows.get_window('boxcar', 12)
@@ -544,6 +691,11 @@ class TestGetWindow(object):
             w = windows.get_window(('chebwin', 40), 54, fftbins=False)
         assert_array_almost_equal(w, cheb_even_true, decimal=4)
 
+    def test_dpss(self):
+        win1 = windows.get_window(('dpss', 3), 64, fftbins=False)
+        win2 = windows.dpss(64, 3)
+        assert_array_almost_equal(win1, win2, decimal=4)
+
     def test_kaiser_float(self):
         win1 = windows.get_window(7.2, 64)
         win2 = windows.kaiser(64, 7.2, False)
@@ -562,8 +714,30 @@ class TestGetWindow(object):
         sig = np.arange(128)
 
         win = windows.get_window(('kaiser', 8.0), osfactor // 2)
-        assert_raises(ValueError, resample,
-                      (sig, len(sig) * osfactor), {'window': win})
+        with assert_raises(ValueError, match='must have the same length'):
+            resample(sig, len(sig) * osfactor, window=win)
+
+    def test_general_cosine(self):
+        assert_allclose(get_window(('general_cosine', [0.5, 0.3, 0.2]), 4),
+                        [0.4, 0.3, 1, 0.3])
+        assert_allclose(get_window(('general_cosine', [0.5, 0.3, 0.2]), 4,
+                                   fftbins=False),
+                        [0.4, 0.55, 0.55, 0.4])
+
+    def test_general_hamming(self):
+        assert_allclose(get_window(('general_hamming', 0.7), 5),
+                        [0.4, 0.6072949, 0.9427051, 0.9427051, 0.6072949])
+        assert_allclose(get_window(('general_hamming', 0.7), 5, fftbins=False),
+                        [0.4, 0.7, 1.0, 0.7, 0.4])
+
+    def test_lanczos(self):
+        assert_allclose(get_window('lanczos', 6),
+                        [0., 0.413496672, 0.826993343, 1., 0.826993343,
+                         0.413496672], atol=1e-9)
+        assert_allclose(get_window('lanczos', 6, fftbins=False),
+                        [0., 0.504551152, 0.935489284, 0.935489284,
+                         0.504551152, 0.], atol=1e-9)
+        assert_allclose(get_window('lanczos', 6), get_window('sinc', 6))
 
 
 def test_windowfunc_basics():
@@ -571,8 +745,6 @@ def test_windowfunc_basics():
         window = getattr(windows, window_name)
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
-            if window_name in ('slepian', 'hanning'):
-                sup.filter(DeprecationWarning)
             # Check symmetry for odd and even lengths
             w1 = window(8, *params, sym=True)
             w2 = window(7, *params, sym=False)
@@ -613,20 +785,46 @@ def test_windowfunc_basics():
             assert_array_less(window(9, *params, sym=False), 1.01)
 
             # Check that DFT-even spectrum is purely real for odd and even
-            assert_allclose(fftpack.fft(window(10, *params, sym=False)).imag,
+            assert_allclose(fft(window(10, *params, sym=False)).imag,
                             0, atol=1e-14)
-            assert_allclose(fftpack.fft(window(11, *params, sym=False)).imag,
+            assert_allclose(fft(window(11, *params, sym=False)).imag,
                             0, atol=1e-14)
 
 
 def test_needs_params():
-    for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
+    for winstr in ['kaiser', 'ksr', 'kaiser_bessel_derived', 'kbd',
+                   'gaussian', 'gauss', 'gss',
                    'general gaussian', 'general_gaussian',
                    'general gauss', 'general_gauss', 'ggs',
-                   'slepian', 'optimal', 'slep', 'dss', 'dpss',
-                   'chebwin', 'cheb', 'exponential', 'poisson', 'tukey',
-                   'tuk', 'dpss']:
+                   'dss', 'dpss', 'general cosine', 'general_cosine',
+                   'chebwin', 'cheb', 'general hamming', 'general_hamming',
+                   ]:
         assert_raises(ValueError, get_window, winstr, 7)
+
+
+def test_not_needs_params():
+    for winstr in ['barthann',
+                   'bartlett',
+                   'blackman',
+                   'blackmanharris',
+                   'bohman',
+                   'boxcar',
+                   'cosine',
+                   'flattop',
+                   'hamming',
+                   'nuttall',
+                   'parzen',
+                   'taylor',
+                   'exponential',
+                   'poisson',
+                   'tukey',
+                   'tuk',
+                   'triangle',
+                   'lanczos',
+                   'sinc',
+                   ]:
+        win = get_window(winstr, 7)
+        assert_equal(len(win), 7)
 
 
 def test_deprecation():
@@ -638,3 +836,17 @@ def test_deprecation():
 def test_deprecated_pickleable():
     dep_hann2 = pickle.loads(pickle.dumps(dep_hann))
     assert_(dep_hann2 is dep_hann)
+
+
+def test_symmetric():
+
+    for win in [windows.lanczos]:
+        # Even sampling points
+        w = win(4096)
+        error = np.max(np.abs(w-np.flip(w)))
+        assert_equal(error, 0.0)
+
+        # Odd sampling points
+        w = win(4097)
+        error = np.max(np.abs(w-np.flip(w)))
+        assert_equal(error, 0.0)

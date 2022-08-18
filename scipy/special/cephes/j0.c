@@ -230,12 +230,12 @@ double x;
 
     if (x <= 5.0) {
 	if (x == 0.0) {
-	    mtherr("y0", SING);
-	    return -NPY_INFINITY;
+	    sf_error("y0", SF_ERROR_SINGULAR, NULL);
+	    return -INFINITY;
 	}
 	else if (x < 0.0) {
-	    mtherr("y0", DOMAIN);
-	    return NPY_NAN;
+	    sf_error("y0", SF_ERROR_DOMAIN, NULL);
+	    return NAN;
 	}
 	z = x * x;
 	w = polevl(z, YP, 7) / p1evl(z, YQ, 7);

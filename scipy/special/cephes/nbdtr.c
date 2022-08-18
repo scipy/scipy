@@ -162,8 +162,8 @@ double p;
 	goto domerr;
     if (k < 0) {
       domerr:
-	mtherr("nbdtr", DOMAIN);
-	return (NPY_NAN);
+	sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
     }
 
     dk = k + 1;
@@ -183,8 +183,8 @@ double p;
 	goto domerr;
     if (k < 0) {
       domerr:
-	mtherr("nbdtr", DOMAIN);
-	return (NPY_NAN);
+	sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
     }
     dk = k + 1;
     dn = n;
@@ -203,8 +203,8 @@ double p;
 	goto domerr;
     if (k < 0) {
       domerr:
-	mtherr("nbdtri", DOMAIN);
-	return (NPY_NAN);
+	sf_error("nbdtri", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
     }
     dk = k + 1;
     dn = n;

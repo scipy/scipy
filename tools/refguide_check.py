@@ -22,34 +22,36 @@ docstrings is valid python::
     $ python refguide_check.py --doctests optimize
 
 """
-from __future__ import print_function
-
-import sys
+import copy
+import doctest
+import glob
+import inspect
+import io
 import os
 import re
-import copy
-import inspect
-import warnings
-import doctest
-import tempfile
-import io
-import docutils.core
-from docutils.parsers.rst import directives
 import shutil
-import glob
-from doctest import NORMALIZE_WHITESPACE, ELLIPSIS, IGNORE_EXCEPTION_DETAIL
+import sys
+import tempfile
+import warnings
 from argparse import ArgumentParser
+from contextlib import contextmanager, redirect_stderr
+from doctest import NORMALIZE_WHITESPACE, ELLIPSIS, IGNORE_EXCEPTION_DETAIL
+
+import docutils.core
+import numpy as np
+import sphinx
+from docutils.parsers.rst import directives
 from pkg_resources import parse_version
 
-import sphinx
-import numpy as np
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'doc', 'sphinxext'))
 from numpydoc.docscrape_sphinx import get_doc_object
+from numpydoc.docscrape import NumpyDocString  # noqa
+from scipy.stats._distr_params import distcont, distdiscrete  # noqa
+from scipy import stats  # noqa
+
 
 if parse_version(sphinx.__version__) >= parse_version('1.5'):
     # Enable specific Sphinx directives
-    from sphinx.directives import SeeAlso, Only
+    from sphinx.directives.other import SeeAlso, Only
     directives.register_directive('seealso', SeeAlso)
     directives.register_directive('only', Only)
 else:
@@ -70,12 +72,15 @@ PUBLIC_SUBMODULES = [
     'cluster.hierarchy',
     'cluster.vq',
     'constants',
+    'datasets',
+    'fft',
     'fftpack',
     'fftpack.convolve',
     'integrate',
     'interpolate',
     'io',
     'io.arff',
+    'io.matlab',
     'io.wavfile',
     'linalg',
     'linalg.blas',
@@ -92,9 +97,13 @@ PUBLIC_SUBMODULES = [
     'sparse.linalg',
     'spatial',
     'spatial.distance',
+    'spatial.transform',
     'special',
     'stats',
     'stats.mstats',
+    'stats.contingency',
+    'stats.qmc',
+    'stats.sampling'
 ]
 
 # Docs for these modules are included in the parent module
@@ -107,10 +116,11 @@ OTHER_MODULE_DOCS = {
 # these names are known to fail doctesting and we like to keep it that way
 # e.g. sometimes pseudocode is acceptable etc
 DOCTEST_SKIPLIST = set([
-    'scipy.stats.kstwobign', # inaccurate cdf or ppf
+    'scipy.stats.kstwobign',  # inaccurate cdf or ppf
     'scipy.stats.levy_stable',
-    'scipy.special.sinc', # comes from numpy
-    'scipy.misc.who', # comes from numpy
+    'scipy.special.sinc',  # comes from numpy
+    'scipy.misc.who',  # comes from numpy
+    'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
 
@@ -129,13 +139,28 @@ REFGUIDE_ALL_SKIPLIST = [
 REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
     r'scipy\.special\.jn',  # alias for jv
+    r'scipy\.ndimage\.sum',   # alias for sum_labels
+    r'scipy\.integrate\.simps',   # alias for simpson
+    r'scipy\.integrate\.trapz',   # alias for trapezoid
+    r'scipy\.integrate\.cumtrapz',   # alias for cumulative_trapezoid
     r'scipy\.linalg\.solve_lyapunov',  # deprecated name
+    r'scipy\.stats\.contingency\.chi2_contingency',
+    r'scipy\.stats\.contingency\.expected_freq',
+    r'scipy\.stats\.contingency\.margins',
+    r'scipy\.stats\.reciprocal',  # alias for lognormal
+    r'scipy\.stats\.gilbrat',  # alias for gibrat
+    r'scipy\.stats\.trapz',   # alias for trapezoid
+    r'scipy\.stats\.F_onewayBadInputSizesWarning',  # shouldn't
+    r'scipy\.stats\.F_onewayConstantInputWarning',  # have
+    r'scipy\.stats\.PearsonRConstantInputWarning',  # been
+    r'scipy\.stats\.PearsonRNearConstantInputWarning',  # in
+    r'scipy\.stats\.SpearmanRConstantInputWarning',  # __all__
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
              'boxcar', 'chebwin', 'cosine', 'exponential', 'flattop',
              'gaussian', 'general_gaussian', 'hamming', 'hann', 'hanning',
-             'kaiser', 'nuttall', 'parzen', 'slepian', 'triang', 'tukey'):
+             'kaiser', 'nuttall', 'parzen', 'triang', 'tukey'):
     REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.signal\.' + name)
 
 HAVE_MATPLOTLIB = False
@@ -252,6 +277,7 @@ def compare(all_dict, others, names, module_name):
 
     return only_all, only_ref, missing
 
+
 def is_deprecated(f):
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("error")
@@ -259,9 +285,10 @@ def is_deprecated(f):
             f(**{"not a kwarg":None})
         except DeprecationWarning:
             return True
-        except:
+        except Exception:
             pass
         return False
+
 
 def check_items(all_dict, names, deprecated, others, module_name, dots=True):
     num_all = len(all_dict)
@@ -273,8 +300,8 @@ def check_items(all_dict, names, deprecated, others, module_name, dots=True):
     output += "Objects in refguide: %i\n\n" % num_ref
 
     only_all, only_ref, missing = compare(all_dict, others, names, module_name)
-    dep_in_ref = set(only_ref).intersection(deprecated)
-    only_ref = set(only_ref).difference(deprecated)
+    dep_in_ref = only_ref.intersection(deprecated)
+    only_ref = only_ref.difference(deprecated)
 
     if len(dep_in_ref) > 0:
         output += "Deprecated objects in refguide::\n\n"
@@ -321,8 +348,8 @@ def validate_rst_syntax(text, name, dots=True):
 
     ok_unknown_items = set([
         'mod', 'currentmodule', 'autosummary', 'data',
-        'obj', 'versionadded', 'versionchanged', 'module', 'class',
-        'ref', 'func', 'toctree', 'moduleauthor',
+        'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
+        'ref', 'func', 'toctree', 'moduleauthor', 'deprecated',
         'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
     ])
 
@@ -399,7 +426,6 @@ def check_rest(module, names, dots=True):
         # python 3
         skip_types = (dict, str, float, int)
 
-
     results = []
 
     if module.__name__[6:] not in OTHER_MODULE_DOCS:
@@ -422,17 +448,18 @@ def check_rest(module, names, dots=True):
         else:
             try:
                 text = str(get_doc_object(obj))
-            except:
+            except Exception:
                 import traceback
                 results.append((full_name, False,
                                 "Error in docstring format!\n" +
                                 traceback.format_exc()))
                 continue
 
-        m = re.search("([\x00-\x09\x0b-\x1f])", text)
+        m = re.search(".*?([\x00-\x09\x0b-\x1f]).*", text)
         if m:
-            msg = ("Docstring contains a non-printable character %r! "
-                   "Maybe forgot r\"\"\"?" % (m.group(1),))
+            msg = ("Docstring contains a non-printable character "
+                   f"{m.group(1)!r} in the line\n\n{m.group(0)!r}\n\n"
+                   "Maybe forgot r\"\"\"?")
             results.append((full_name, False, msg))
             continue
 
@@ -464,6 +491,7 @@ CHECK_NAMESPACE = {
       # recognize numpy repr's
       'array': np.array,
       'matrix': np.matrix,
+      'masked_array': np.ma.masked_array,
       'int64': np.int64,
       'uint64': np.uint64,
       'int8': np.int8,
@@ -477,11 +505,28 @@ CHECK_NAMESPACE = {
       'Inf': np.inf,}
 
 
+def try_convert_namedtuple(got):
+    # suppose that "got" is smth like MoodResult(statistic=10, pvalue=0.1).
+    # Then convert it to the tuple (10, 0.1), so that can later compare tuples.
+    num = got.count('=')
+    if num == 0:
+        # not a nameduple, bail out
+        return got
+    regex = (r'[\w\d_]+\(' +
+             ', '.join([r'[\w\d_]+=(.+)']*num) +
+             r'\)')
+    grp = re.findall(regex, " ".join(got.split()))
+    # fold it back to a tuple
+    got_again = '(' + ', '.join(grp[0]) + ')'
+    return got_again
+
+
 class DTRunner(doctest.DocTestRunner):
     DIVIDER = "\n"
 
     def __init__(self, item_name, checker=None, verbose=None, optionflags=0):
         self._item_name = item_name
+        self._had_unexpected_error = False
         doctest.DocTestRunner.__init__(self, checker=checker, verbose=verbose,
                                        optionflags=optionflags)
 
@@ -501,18 +546,24 @@ class DTRunner(doctest.DocTestRunner):
         return doctest.DocTestRunner.report_success(self, out, test, example, got)
 
     def report_unexpected_exception(self, out, test, example, exc_info):
+        # Ignore name errors after failing due to an unexpected exception
+        exception_type = exc_info[0]
+        if self._had_unexpected_error and exception_type is NameError:
+            return
+        self._had_unexpected_error = True
+
         self._report_item_name(out)
-        return doctest.DocTestRunner.report_unexpected_exception(
-            self, out, test, example, exc_info)
+        return super().report_unexpected_exception(
+            out, test, example, exc_info)
 
     def report_failure(self, out, test, example, got):
         self._report_item_name(out)
         return doctest.DocTestRunner.report_failure(self, out, test,
                                                     example, got)
 
+
 class Checker(doctest.OutputChecker):
-    obj_pattern = re.compile('at 0x[0-9a-fA-F]+>')
-    int_pattern = re.compile('^[0-9]+L?$')
+    obj_pattern = re.compile(r'at 0x[0-9a-fA-F]+>')
     vanilla = doctest.OutputChecker()
     rndm_markers = {'# random', '# Random', '#random', '#Random', "# may vary"}
     stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
@@ -550,11 +601,6 @@ class Checker(doctest.OutputChecker):
         if want.lstrip().startswith("#"):
             return True
 
-        # python 2 long integers are equal to python 3 integers
-        if self.int_pattern.match(want) and self.int_pattern.match(got):
-            if want.rstrip("L\r\n") == got.rstrip("L\r\n"):
-                return True
-
         # try the standard doctest
         try:
             if self.vanilla.check_output(want, got, optionflags):
@@ -566,7 +612,37 @@ class Checker(doctest.OutputChecker):
         try:
             a_want = eval(want, dict(self.ns))
             a_got = eval(got, dict(self.ns))
-        except:
+        except Exception:
+            # Maybe we're printing a numpy array? This produces invalid python
+            # code: `print(np.arange(3))` produces "[0 1 2]" w/o commas between
+            # values. So, reinsert commas and retry.
+            # TODO: handle (1) abberivation (`print(np.arange(10000))`), and
+            #              (2) n-dim arrays with n > 1
+            s_want = want.strip()
+            s_got = got.strip()
+            cond = (s_want.startswith("[") and s_want.endswith("]") and
+                    s_got.startswith("[") and s_got.endswith("]"))
+            if cond:
+                s_want = ", ".join(s_want[1:-1].split())
+                s_got = ", ".join(s_got[1:-1].split())
+                return self.check_output(s_want, s_got, optionflags)
+
+            # maybe we are dealing with masked arrays?
+            # their repr uses '--' for masked values and this is invalid syntax
+            # If so, replace '--' by nans (they are masked anyway) and retry
+            if 'masked_array' in want or 'masked_array' in got:
+                s_want = want.replace('--', 'nan')
+                s_got = got.replace('--', 'nan')
+                return self.check_output(s_want, s_got, optionflags)
+
+            if "=" not in want and "=" not in got:
+                # if we're here, want and got cannot be eval-ed (hence cannot
+                # be converted to numpy objects), they are not namedtuples
+                # (those must have at least one '=' sign).
+                # Thus they should have compared equal with vanilla doctest.
+                # Since they did not, it's an error.
+                return False
+
             if not self.parse_namedtuples:
                 return False
             # suppose that "want"  is a tuple, and "got" is smth like
@@ -574,27 +650,21 @@ class Checker(doctest.OutputChecker):
             # Then convert the latter to the tuple (10, 0.1),
             # and then compare the tuples.
             try:
-                num = len(a_want)
-                regex = ('[\w\d_]+\(' +
-                         ', '.join(['[\w\d_]+=(.+)']*num) +
-                         '\)')
-                grp = re.findall(regex, got.replace('\n', ' '))
-                if len(grp) > 1:  # no more than one for now
-                    return False
-                # fold it back to a tuple
-                got_again = '(' + ', '.join(grp[0]) + ')'
-                return self.check_output(want, got_again, optionflags)
+                got_again = try_convert_namedtuple(got)
+                want_again = try_convert_namedtuple(want)
             except Exception:
                 return False
+            else:
+                return self.check_output(want_again, got_again, optionflags)
 
         # ... and defer to numpy
         try:
             return self._do_check(a_want, a_got)
         except Exception:
             # heterog tuple, eg (1, np.array([1., 2.]))
-           try:
+            try:
                 return all(self._do_check(w, g) for w, g in zip(a_want, a_got))
-           except (TypeError, ValueError):
+            except (TypeError, ValueError):
                 return False
 
     def _do_check(self, want, got):
@@ -617,45 +687,39 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
     runner = DTRunner(full_name, checker=Checker(), optionflags=flags,
                       verbose=verbose)
 
-    output = []
+    output = io.StringIO(newline='')
     success = True
-    def out(msg):
-        output.append(msg)
+    # Redirect stderr to the stdout or output
+    tmp_stderr = sys.stdout if doctest_warnings else output
+    from scipy._lib._util import _fixed_default_rng
 
-    class MyStderr(object):
-        """Redirect stderr to the current stdout"""
-        def write(self, msg):
-            if doctest_warnings:
-                sys.stdout.write(msg)
-            else:
-                out(msg)
+    @contextmanager
+    def temp_cwd():
+        cwd = os.getcwd()
+        tmpdir = tempfile.mkdtemp()
+        try:
+            os.chdir(tmpdir)
+            yield tmpdir
+        finally:
+            os.chdir(cwd)
+            shutil.rmtree(tmpdir)
 
     # Run tests, trying to restore global state afterward
-    old_printoptions = np.get_printoptions()
-    old_errstate = np.seterr()
-    old_stderr = sys.stderr
     cwd = os.getcwd()
-    tmpdir = tempfile.mkdtemp()
-    sys.stderr = MyStderr()
-    try:
-        os.chdir(tmpdir)
-
+    with np.errstate(), np.printoptions(), temp_cwd(), \
+            redirect_stderr(tmp_stderr), \
+            _fixed_default_rng():
         # try to ensure random seed is NOT reproducible
         np.random.seed(None)
 
         for t in tests:
             t.filename = short_path(t.filename, cwd)
-            fails, successes = runner.run(t, out=out)
+            fails, successes = runner.run(t, out=output.write)
             if fails > 0:
                 success = False
-    finally:
-        sys.stderr = old_stderr
-        os.chdir(cwd)
-        shutil.rmtree(tmpdir)
-        np.set_printoptions(**old_printoptions)
-        np.seterr(**old_errstate)
 
-    return success, output
+    output.seek(0)
+    return success, output.read()
 
 
 def check_doctests(module, verbose, ns=None,
@@ -688,7 +752,7 @@ def check_doctests(module, verbose, ns=None,
         finder = doctest.DocTestFinder()
         try:
             tests = finder.find(obj, name, globs=dict(ns))
-        except:
+        except Exception:
             import traceback
             results.append((full_name, False,
                             "Failed to get doctests!\n" +
@@ -701,7 +765,7 @@ def check_doctests(module, verbose, ns=None,
         if dots:
             output_dot('.' if success else 'F')
 
-        results.append((full_name, success, "".join(output)))
+        results.append((full_name, success, output))
 
         if HAVE_MATPLOTLIB:
             import matplotlib.pyplot as plt
@@ -722,6 +786,14 @@ def check_doctests_testfile(fname, verbose, ns=None,
 
     Notes
     -----
+
+    refguide can be signalled to skip testing code by adding
+    ``#doctest: +SKIP`` to the end of the line. If the output varies or is
+    random, add ``# may vary`` or ``# random`` to the comment. for example
+
+    >>> plt.plot(...)  # doctest: +SKIP
+    >>> random.randint(0,10)
+    5 # random
 
     We also try to weed out pseudocode:
     * We maintain a list of exceptions which signal pseudocode,
@@ -755,17 +827,13 @@ def check_doctests_testfile(fname, verbose, ns=None,
         return results
 
     full_name = fname
-    if sys.version_info.major <= 2:
-        with open(fname) as f:
-            text = f.read()
-    else:
-        with open(fname, encoding='utf-8') as f:
-            text = f.read()
+    with open(fname, encoding='utf-8') as f:
+        text = f.read()
 
     PSEUDOCODE = set(['some_function', 'some_module', 'import example',
                       'ctypes.CDLL',     # likely need compiling, skip it
                       'integrate.nquad(func,'  # ctypes integrate tutotial
-    ])
+                      ])
 
     # split the text into "blocks" and try to detect and omit pseudocode blocks.
     parser = doctest.DocTestParser()
@@ -789,7 +857,7 @@ def check_doctests_testfile(fname, verbose, ns=None,
     if dots:
         output_dot('.' if success else 'F')
 
-    results.append((full_name, success, "".join(output)))
+    results.append((full_name, success, output))
 
     if HAVE_MATPLOTLIB:
         import matplotlib.pyplot as plt
@@ -807,6 +875,58 @@ def init_matplotlib():
         HAVE_MATPLOTLIB = True
     except ImportError:
         HAVE_MATPLOTLIB = False
+
+
+def check_dist_keyword_names():
+    # Look for collisions between names of distribution shape parameters and
+    # keywords of distribution methods. See gh-5982.
+    distnames = set(distdata[0] for distdata in distcont + distdiscrete)
+    mod_results = []
+    for distname in distnames:
+        dist = getattr(stats, distname)
+
+        method_members = inspect.getmembers(dist, predicate=inspect.ismethod)
+        method_names = [method[0] for method in method_members
+                        if not method[0].startswith('_')]
+        for methodname in method_names:
+            method = getattr(dist, methodname)
+            try:
+                params = NumpyDocString(method.__doc__)['Parameters']
+            except TypeError:
+                result = (f'stats.{distname}.{methodname}', False,
+                          "Method parameters are not documented properly.")
+                mod_results.append(result)
+                continue
+
+            if not dist.shapes:  # can't have collision if there are no shapes
+                continue
+            shape_names = dist.shapes.split(', ')
+
+            param_names1 = set(param.name for param in params)
+            param_names2 = set(inspect.signature(method).parameters)
+            param_names = param_names1.union(param_names2)
+
+            # # Disabling this check in this PR;
+            # # these discrepancies are a separate issue.
+            # no_doc_params = {'args', 'kwds', 'kwargs'}  # no need to document
+            # undoc_params = param_names2 - param_names1 - no_doc_params
+            # if un_doc_params:
+            #     result = (f'stats.{distname}.{methodname}', False,
+            #               f'Parameter(s) {undoc_params} are not documented.')
+            #     mod_results.append(result)
+            #     continue
+
+            intersection = param_names.intersection(shape_names)
+
+            if intersection:
+                message = ("Distribution/method keyword collision: "
+                           f"{intersection} ")
+                result = (f'stats.{distname}.{methodname}', False, message)
+            else:
+                result = (f'stats.{distname}.{methodname}', True, '')
+            mod_results.append(result)
+
+    return mod_results
 
 
 def main(argv):
@@ -839,7 +959,12 @@ def main(argv):
                 module_names.append(name)
 
     for submodule_name in module_names:
-        module_name = BASE_MODULE + '.' + submodule_name
+        prefix = BASE_MODULE + '.'
+        if not submodule_name.startswith(prefix):
+            module_name = prefix + submodule_name
+        else:
+            module_name = submodule_name
+
         __import__(module_name)
         module = sys.modules[module_name]
 
@@ -875,6 +1000,8 @@ def main(argv):
         if args.doctests:
             mod_results += check_doctests(module, (args.verbose >= 2), dots=dots,
                                           doctest_warnings=args.doctest_warnings)
+        if module.__name__ == 'scipy.stats':
+            mod_results += check_dist_keyword_names()
 
         for v in mod_results:
             assert isinstance(v, tuple), v
@@ -898,7 +1025,8 @@ def main(argv):
             tut_results = check_doctests_testfile(filename, (args.verbose >= 2),
                     dots=dots, doctest_warnings=args.doctest_warnings)
 
-            def scratch(): pass        # stub out a "module", see below
+            def scratch():
+                pass        # stub out a "module", see below
             scratch.__name__ = filename
             results.append((scratch, tut_results))
 

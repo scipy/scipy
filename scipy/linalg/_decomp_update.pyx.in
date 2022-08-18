@@ -1,7 +1,7 @@
 """
 Routines for updating QR decompositions
 
-.. versionadded: 0.16.0
+.. versionadded:: 0.16.0
 
 """
 #
@@ -32,8 +32,6 @@ Routines for updating QR decompositions
 #    Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 3693-77 (1990).
 #
 
-from __future__ import absolute_import
-
 __all__ = ['qr_delete', 'qr_insert', 'qr_update']
 
 {{py:
@@ -49,19 +47,16 @@ cimport cython
 cimport libc.stdlib
 cimport libc.limits
 cimport libc.float
-from libc.math cimport sqrt, fabs, hypot
+from libc.math cimport sqrt, fabs, hypot, M_SQRT1_2
 from libc.string cimport memset
 
 cimport numpy as cnp
-
-cdef extern from "numpy/npy_math.h":
-    double NPY_SQRT1_2
 
 from numpy.linalg import LinAlgError
 
 # This is used in place of, e.g., cnp.NPY_C_CONTIGUOUS, to indicate that a C
 # F or non contiguous array is acceptable.
-cdef int ARRAY_ANYORDER = 0
+DEF ARRAY_ANYORDER = 0
 
 cdef int MEMORY_ERROR = libc.limits.INT_MAX
 
@@ -268,6 +263,12 @@ cdef bint blas_t_less_than(blas_t x, blas_t y) nogil:
     else:
         return x.real < y.real
 
+cdef bint blas_t_less_equal(blas_t x, blas_t y) nogil:
+    if blas_t is float or blas_t is double:
+        return x <= y
+    else:
+        return x.real <= y.real
+
 cdef int to_lwork(blas_t a, blas_t b) nogil:
     cdef int ai, bi
     if blas_t is float or blas_t is double:
@@ -292,7 +293,7 @@ cdef bint reorthx(int m, int n, blas_t* q, int* qs, bint qisF, int j, blas_t* u,
     cdef char* N = 'N'
     cdef char* C = 'C'
     cdef int ss = 1
-    cdef blas_t inv_root2 = NPY_SQRT1_2
+    cdef blas_t inv_root2 = M_SQRT1_2
 
     # u starts out as the jth basis vector.
     u[j] = 1
@@ -1060,7 +1061,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
     cdef char* N = 'N'
     cdef char* C = 'C'
     cdef int ss = 1
-    cdef blas_t inv_root2 = NPY_SQRT1_2
+    cdef blas_t inv_root2 = M_SQRT1_2
 
     # normalize u
     unorm = nrm2(m, u, us[0])
@@ -1133,7 +1134,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
 
     wpnorm = nrm2(m, u, us[0])
 
-    if blas_t_less_than(wpnorm, wnorm*inv_root2): # u lies in span(q)
+    if blas_t_less_equal(wpnorm, wnorm*inv_root2): # u lies in span(q)
         scal(m, 0, u, us[0])
         axpy(n, 1, s, 1, s+n, 1)
         scal(n, unorm, s, 1)
@@ -1201,7 +1202,7 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
     cdef void* uvoid
     cdef int qs[2]
     cdef int us[2]
-    cdef int ldu
+    cdef int ldu, p
 
     if cnp.PyArray_CHKFLAGS(q, cnp.NPY_F_CONTIGUOUS):
         qvoid = extract(q, qs)
@@ -1462,6 +1463,7 @@ def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -9.,  -3.],
@@ -1688,6 +1690,7 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_fi
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -7.,   4.],
@@ -1938,7 +1941,7 @@ cdef qr_insert_col(Q, R, u, int k, rcond, bint overwrite_qru, bint check_finite)
     # special case 1xN
     # if m == 1, Q is always 1x1 and abs(Q[0,0]) == 1.0
     if m == 1:
-        rnew = np.insert(r1, k*np.ones(p, np.intp), q1.conjugate()*u1, 1)
+        rnew = np.insert(r1, np.full(p, k, np.intp), q1.conjugate()*u1, 1)
         return q1.copy(), rnew
 
     if economic:
@@ -2089,6 +2092,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -9.,  -3.],

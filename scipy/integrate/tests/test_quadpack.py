@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import sys
 import math
 import numpy as np
@@ -7,10 +5,9 @@ from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
-from pytest import raises as assert_raises
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
-from scipy._lib.six import xrange
+from scipy.special import erf, erfc
 from scipy._lib._ccallback import LowLevelCallable
 
 import ctypes
@@ -20,11 +17,11 @@ from scipy._lib._ccallback_c import sine_ctypes
 import scipy.integrate._test_multivariate as clib_test
 
 
-def assert_quad(value_and_err, tabled_value, errTol=1.5e-8):
+def assert_quad(value_and_err, tabled_value, error_tolerance=1.5e-8):
     value, err = value_and_err
     assert_allclose(value, tabled_value, atol=err, rtol=0)
-    if errTol is not None:
-        assert_array_less(err, errTol)
+    if error_tolerance is not None:
+        assert_array_less(err, error_tolerance)
 
 
 def get_clib_test_routine(name, restype, *argtypes):
@@ -32,13 +29,10 @@ def get_clib_test_routine(name, restype, *argtypes):
     return ctypes.cast(ptr, ctypes.CFUNCTYPE(restype, *argtypes))
 
 
-class TestCtypesQuad(object):
+class TestCtypesQuad:
     def setup_method(self):
         if sys.platform == 'win32':
-            if sys.version_info < (3, 5):
-                files = [ctypes.util.find_msvcrt()]
-            else:
-                files = ['api-ms-win-crt-math-l1-1-0.dll']
+            files = ['api-ms-win-crt-math-l1-1-0.dll']
         elif sys.platform == 'darwin':
             files = ['libm.dylib']
         else:
@@ -53,7 +47,7 @@ class TestCtypesQuad(object):
         else:
             # This test doesn't work on some Linux platforms (Fedora for
             # example) that put an ld script in libm.so - see gh-5370
-            self.skipTest("Ctypes can't import libm.so")
+            pytest.skip("Ctypes can't import libm.so")
 
         restype = ctypes.c_double
         argtypes = (ctypes.c_double,)
@@ -95,7 +89,7 @@ class TestCtypesQuad(object):
         for j, func in enumerate(all_sigs):
             callback = LowLevelCallable(func)
             if func in legacy_only_sigs:
-                assert_raises(ValueError, quad, callback, 0, pi)
+                pytest.raises(ValueError, quad, callback, 0, pi)
             else:
                 assert_allclose(quad(callback, 0, pi)[0], 2.0)
 
@@ -104,10 +98,10 @@ class TestCtypesQuad(object):
             if func in legacy_sigs:
                 assert_allclose(quad(func, 0, pi)[0], 2.0)
             else:
-                assert_raises(ValueError, quad, func, 0, pi)
+                pytest.raises(ValueError, quad, func, 0, pi)
 
 
-class TestMultivariateCtypesQuad(object):
+class TestMultivariateCtypesQuad:
     def setup_method(self):
         restype = ctypes.c_double
         argtypes = (ctypes.c_int, ctypes.c_double)
@@ -133,7 +127,7 @@ class TestMultivariateCtypesQuad(object):
         assert_quad(quad(threadsafety, 0, 1), 0.9596976941318602)
 
 
-class TestQuad(object):
+class TestQuad:
     def test_typical(self):
         # 1) Typical function with two extra arguments:
         def myfunc(x, n, z):       # Bessel function integrand
@@ -210,7 +204,7 @@ class TestQuad(object):
                         arctan(2.0**a)) /
                        (4.0**(-a) + 1))
         assert_quad(quad(myfunc, 0, 5, args=0.4, weight='cauchy', wvar=2.0),
-                    tabledValue, errTol=1.9e-8)
+                    tabledValue, error_tolerance=1.9e-8)
 
     def test_b_less_than_a(self):
         def f(x, p, q):
@@ -266,7 +260,74 @@ class TestQuad(object):
         def func(x0, x1):
             return x0 + x1 + 1 + 2
         assert_quad(dblquad(func, 1, 2, 1, 2),6.)
-        
+
+    @pytest.mark.parametrize(
+        "x_lower, x_upper, y_lower, y_upper, expected",
+        [
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-inf, 0] for all n.
+            (-np.inf, 0, -np.inf, 0, np.pi / 4),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-inf, -1] for each n (one at a time).
+            (-np.inf, -1, -np.inf, 0, np.pi / 4 * erfc(1)),
+            (-np.inf, 0, -np.inf, -1, np.pi / 4 * erfc(1)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-inf, -1] for all n.
+            (-np.inf, -1, -np.inf, -1, np.pi / 4 * (erfc(1) ** 2)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-inf, 1] for each n (one at a time).
+            (-np.inf, 1, -np.inf, 0, np.pi / 4 * (erf(1) + 1)),
+            (-np.inf, 0, -np.inf, 1, np.pi / 4 * (erf(1) + 1)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-inf, 1] for all n.
+            (-np.inf, 1, -np.inf, 1, np.pi / 4 * ((erf(1) + 1) ** 2)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain Dx = [-inf, -1] and Dy = [-inf, 1].
+            (-np.inf, -1, -np.inf, 1, np.pi / 4 * ((erf(1) + 1) * erfc(1))),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain Dx = [-inf, 1] and Dy = [-inf, -1].
+            (-np.inf, 1, -np.inf, -1, np.pi / 4 * ((erf(1) + 1) * erfc(1))),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [0, inf] for all n.
+            (0, np.inf, 0, np.inf, np.pi / 4),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [1, inf] for each n (one at a time).
+            (1, np.inf, 0, np.inf, np.pi / 4 * erfc(1)),
+            (0, np.inf, 1, np.inf, np.pi / 4 * erfc(1)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [1, inf] for all n.
+            (1, np.inf, 1, np.inf, np.pi / 4 * (erfc(1) ** 2)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-1, inf] for each n (one at a time).
+            (-1, np.inf, 0, np.inf, np.pi / 4 * (erf(1) + 1)),
+            (0, np.inf, -1, np.inf, np.pi / 4 * (erf(1) + 1)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-1, inf] for all n.
+            (-1, np.inf, -1, np.inf, np.pi / 4 * ((erf(1) + 1) ** 2)),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain Dx = [-1, inf] and Dy = [1, inf].
+            (-1, np.inf, 1, np.inf, np.pi / 4 * ((erf(1) + 1) * erfc(1))),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain Dx = [1, inf] and Dy = [-1, inf].
+            (1, np.inf, -1, np.inf, np.pi / 4 * ((erf(1) + 1) * erfc(1))),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [-inf, inf] for all n.
+            (-np.inf, np.inf, -np.inf, np.inf, np.pi)
+        ]
+    )
+    def test_double_integral_improper(
+            self, x_lower, x_upper, y_lower, y_upper, expected
+    ):
+        # The Gaussian Integral.
+        def f(x, y):
+            return np.exp(-x ** 2 - y ** 2)
+
+        assert_quad(
+            dblquad(f, x_lower, x_upper, y_lower, y_upper),
+            expected,
+            error_tolerance=3e-8
+        )
+
     def test_triple_integral(self):
         # 9) Triple Integral test
         def simpfunc(z, y, x, t):      # Note order of arguments.
@@ -279,8 +340,171 @@ class TestQuad(object):
                             (2.,)),
                      2*8/3.0 * (b**4.0 - a**4.0))
 
+    @pytest.mark.parametrize(
+        "x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, expected",
+        [
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, 0] for all n.
+            (-np.inf, 0, -np.inf, 0, -np.inf, 0, (np.pi ** (3 / 2)) / 8),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, -1] for each n (one at a time).
+            (-np.inf, -1, -np.inf, 0, -np.inf, 0,
+             (np.pi ** (3 / 2)) / 8 * erfc(1)),
+            (-np.inf, 0, -np.inf, -1, -np.inf, 0,
+             (np.pi ** (3 / 2)) / 8 * erfc(1)),
+            (-np.inf, 0, -np.inf, 0, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * erfc(1)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, -1] for each n (two at a time).
+            (-np.inf, -1, -np.inf, -1, -np.inf, 0,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 2)),
+            (-np.inf, -1, -np.inf, 0, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 2)),
+            (-np.inf, 0, -np.inf, -1, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 2)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, -1] for all n.
+            (-np.inf, -1, -np.inf, -1, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 3)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = [-inf, -1] and Dy = Dz = [-inf, 1].
+            (-np.inf, -1, -np.inf, 1, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * (((erf(1) + 1) ** 2) * erfc(1))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dy = [-inf, -1] and Dz = [-inf, 1].
+            (-np.inf, -1, -np.inf, -1, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) * (erfc(1) ** 2))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dz = [-inf, -1] and Dy = [-inf, 1].
+            (-np.inf, -1, -np.inf, 1, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) * (erfc(1) ** 2))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = [-inf, 1] and Dy = Dz = [-inf, -1].
+            (-np.inf, 1, -np.inf, -1, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) * (erfc(1) ** 2))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dy = [-inf, 1] and Dz = [-inf, -1].
+            (-np.inf, 1, -np.inf, 1, -np.inf, -1,
+             (np.pi ** (3 / 2)) / 8 * (((erf(1) + 1) ** 2) * erfc(1))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dz = [-inf, 1] and Dy = [-inf, -1].
+            (-np.inf, 1, -np.inf, -1, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * (((erf(1) + 1) ** 2) * erfc(1))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, 1] for each n (one at a time).
+            (-np.inf, 1, -np.inf, 0, -np.inf, 0,
+             (np.pi ** (3 / 2)) / 8 * (erf(1) + 1)),
+            (-np.inf, 0, -np.inf, 1, -np.inf, 0,
+             (np.pi ** (3 / 2)) / 8 * (erf(1) + 1)),
+            (-np.inf, 0, -np.inf, 0, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * (erf(1) + 1)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, 1] for each n (two at a time).
+            (-np.inf, 1, -np.inf, 1, -np.inf, 0,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 2)),
+            (-np.inf, 1, -np.inf, 0, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 2)),
+            (-np.inf, 0, -np.inf, 1, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 2)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, 1] for all n.
+            (-np.inf, 1, -np.inf, 1, -np.inf, 1,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 3)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [0, inf] for all n.
+            (0, np.inf, 0, np.inf, 0, np.inf, (np.pi ** (3 / 2)) / 8),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [1, inf] for each n (one at a time).
+            (1, np.inf, 0, np.inf, 0, np.inf,
+             (np.pi ** (3 / 2)) / 8 * erfc(1)),
+            (0, np.inf, 1, np.inf, 0, np.inf,
+             (np.pi ** (3 / 2)) / 8 * erfc(1)),
+            (0, np.inf, 0, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * erfc(1)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [1, inf] for each n (two at a time).
+            (1, np.inf, 1, np.inf, 0, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 2)),
+            (1, np.inf, 0, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 2)),
+            (0, np.inf, 1, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 2)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [1, inf] for all n.
+            (1, np.inf, 1, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erfc(1) ** 3)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-1, inf] for each n (one at a time).
+            (-1, np.inf, 0, np.inf, 0, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erf(1) + 1)),
+            (0, np.inf, -1, np.inf, 0, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erf(1) + 1)),
+            (0, np.inf, 0, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (erf(1) + 1)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-1, inf] for each n (two at a time).
+            (-1, np.inf, -1, np.inf, 0, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 2)),
+            (-1, np.inf, 0, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 2)),
+            (0, np.inf, -1, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 2)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-1, inf] for all n.
+            (-1, np.inf, -1, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) ** 3)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = [1, inf] and Dy = Dz = [-1, inf].
+            (1, np.inf, -1, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (((erf(1) + 1) ** 2) * erfc(1))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dy = [1, inf] and Dz = [-1, inf].
+            (1, np.inf, 1, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) * (erfc(1) ** 2))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dz = [1, inf] and Dy = [-1, inf].
+            (1, np.inf, -1, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) * (erfc(1) ** 2))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = [-1, inf] and Dy = Dz = [1, inf].
+            (-1, np.inf, 1, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * ((erf(1) + 1) * (erfc(1) ** 2))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dy = [-1, inf] and Dz = [1, inf].
+            (-1, np.inf, -1, np.inf, 1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (((erf(1) + 1) ** 2) * erfc(1))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain Dx = Dz = [-1, inf] and Dy = [1, inf].
+            (-1, np.inf, 1, np.inf, -1, np.inf,
+             (np.pi ** (3 / 2)) / 8 * (((erf(1) + 1) ** 2) * erfc(1))),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [-inf, inf] for all n.
+            (-np.inf, np.inf, -np.inf, np.inf, -np.inf, np.inf,
+             np.pi ** (3 / 2)),
+        ],
+    )
+    def test_triple_integral_improper(
+            self,
+            x_lower,
+            x_upper,
+            y_lower,
+            y_upper,
+            z_lower,
+            z_upper,
+            expected
+    ):
+        # The Gaussian Integral.
+        def f(x, y, z):
+            return np.exp(-x ** 2 - y ** 2 - z ** 2)
 
-class TestNQuad(object):
+        assert_quad(
+            tplquad(f, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper),
+            expected,
+            error_tolerance=6e-8
+        )
+
+
+class TestNQuad:
     def test_fixed_limits(self):
         def func1(x0, x1, x2, x3):
             val = (x0**2 + x1*x2 - x3**3 + np.sin(x0) +
@@ -412,7 +636,7 @@ class TestNQuad(object):
 
     def test_dict_as_opts(self):
         try:
-            out = nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
+            nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
         except(TypeError):
             assert False
 

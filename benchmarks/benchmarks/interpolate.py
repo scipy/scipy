@@ -1,18 +1,12 @@
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
 
-from .common import run_monitored, set_mem_rlimit, Benchmark
+from .common import run_monitored, set_mem_rlimit, Benchmark, safe_import
 
-try:
+with safe_import():
     from scipy.stats import spearmanr
-except ImportError:
-    pass
 
-try:
+with safe_import():
     import scipy.interpolate as interpolate
-except ImportError:
-    pass
 
 
 class Leaks(Benchmark):
@@ -60,10 +54,10 @@ class Leaks(Benchmark):
 class BenchPPoly(Benchmark):
 
     def setup(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         m, k = 55, 3
-        x = np.sort(np.random.random(m+1))
-        c = np.random.random((3, m))
+        x = np.sort(rng.random(m+1))
+        c = rng.random((k, m))
         self.pp = interpolate.PPoly(c, x)
 
         npts = 100
@@ -79,7 +73,7 @@ class GridData(Benchmark):
         [10j, 100j, 1000j],
         ['nearest', 'linear', 'cubic']
     ]
-    
+
     def setup(self, n_grids, method):
         self.func = lambda x, y: x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
         self.grid_x, self.grid_y = np.mgrid[0:1:n_grids, 0:1:n_grids]
@@ -150,6 +144,32 @@ class Rbf(Benchmark):
 
     def time_rbf_2d(self, n_samples, function):
         interpolate.Rbf(self.X, self.Y, self.z, function=function)
+
+
+class RBFInterpolator(Benchmark):
+    param_names = ['neighbors', 'n_samples', 'kernel']
+    params = [
+        [None, 50],
+        [10, 100, 1000],
+        ['linear', 'thin_plate_spline', 'cubic', 'quintic', 'multiquadric',
+         'inverse_multiquadric', 'inverse_quadratic', 'gaussian']
+    ]
+
+    def setup(self, neighbors, n_samples, kernel):
+        rng = np.random.RandomState(0)
+        self.y = rng.uniform(-1, 1, (n_samples, 2))
+        self.x = rng.uniform(-1, 1, (n_samples, 2))
+        self.d = np.sum(self.y, axis=1)*np.exp(-6*np.sum(self.y**2, axis=1))
+
+    def time_rbf_interpolator(self, neighbors, n_samples, kernel):
+        interp = interpolate.RBFInterpolator(
+            self.y,
+            self.d,
+            neighbors=neighbors,
+            epsilon=5.0,
+            kernel=kernel
+            )
+        interp(self.x)
 
 
 class UnivariateSpline(Benchmark):
@@ -223,3 +243,36 @@ class Interpolate(Benchmark):
             interpolate.interp1d(self.x, self.y, kind="linear")
         else:
             np.interp(self.z, self.x, self.y)
+
+
+class RegularGridInterpolator(Benchmark):
+    """
+    Benchmark RegularGridInterpolator with method="linear".
+    """
+    param_names = ['ndim', 'max_coord_size', 'n_samples']
+    params = [
+        [2, 3, 4],
+        [10, 40, 200],
+        [10, 100, 1000, 10000],
+    ]
+
+    def setup(self, ndim, max_coord_size, n_samples):
+        rng = np.random.default_rng(314159)
+
+        # coordinates halve in size over the dimensions
+        coord_sizes = [max_coord_size // 2**i for i in range(ndim)]
+        self.points = [np.sort(rng.random(size=s)) for s in coord_sizes]
+        self.values = rng.random(size=coord_sizes)
+
+        # choose in-bounds sample points xi
+        bounds = [(p[0], p[-1]) for p in self.points]
+        xi = [rng.uniform(low, high, size=n_samples) for low, high in bounds]
+        self.xi = np.array(xi).T
+
+        self.interp = interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+        )
+
+    def time_rgi(self, ndim, max_coord_size, n_samples):
+        self.interp(self.xi)

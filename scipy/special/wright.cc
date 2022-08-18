@@ -74,9 +74,8 @@
 
 #include <Python.h>
 extern "C" {
-#include <numpy/npy_math.h>
+#include <math.h>
 #include "sf_error.h"
-#include "_c99compat.h"
 #include "_round.h"
 }
 
@@ -85,7 +84,6 @@ extern "C" {
 
 using std::complex;
 
-#define NaN NPY_NAN
 #define TWOITERTOL DBL_EPSILON
 
 const complex<double> I(0.0, 1.0);
@@ -95,7 +93,7 @@ int
 wright::wrightomega_ext(complex<double> z, complex<double> *w,
 			complex<double> *cond)
 {
-  double pi = NPY_PI, s = 1.0;
+  double pi = M_PI, s = 1.0;
   double x, y, ympi, yppi, near;
   complex<double> e, r, pz, wp1, t, fac;
 
@@ -103,7 +101,7 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   /* extract real and imaginary parts of z */
   x=real(z);
   y=imag(z);
-  
+
   /* compute if we are near the branch cuts */
   ympi=y-pi;
   yppi=y+pi;
@@ -113,15 +111,15 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   /*****************************/
   /* NaN output for NaN input  */
   /*****************************/
-  if(sc_isnan(x) || sc_isnan(y))
+  if(isnan(x) || isnan(y))
     {
-      *w = complex<double>(NaN, NaN);
+      *w = complex<double>(NAN, NAN);
       return 0;
     }
   /*********************************/
   /* Signed zeros between branches */
   /*********************************/
-  else if(sc_isinf(x) && (x < 0.0) && (-pi < y) && (y<= pi))
+  else if(isinf(x) && (x < 0.0) && (-pi < y) && (y<= pi))
     {
       if (fabs(y) <= pi/2.0)
         {
@@ -150,7 +148,7 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   /**************************/
   /* Asymptotic for large z */
   /**************************/
-  else if(sc_isinf(x) || sc_isinf(y))
+  else if(isinf(x) || isinf(y))
     {
       *w = complex<double>(x, y);
       return 0;
@@ -292,35 +290,35 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   /**********************************/
   /* Regularize if near branch cuts */
   /**********************************/
-  if (x <= -0.1e1 + near && (fabs(ympi) <= near || fabs(yppi) <= near)) 
-    { 
+  if (x <= -0.1e1 + near && (fabs(ympi) <= near || fabs(yppi) <= near))
+    {
       s = -1.0;
       if (fabs(ympi) <= near)
         {
           /* Recompute ympi with directed rounding */
           ympi = add_round_up(y, -pi);
-          
+
           if( ympi <= 0.0)
             {
               ympi = add_round_down(y, -pi);
             }
-          
+
           z = x + I*ympi;
         }
       else
         {
           /* Recompute yppi with directed rounding */
           yppi = add_round_up(y, pi);
-          
+
           if( yppi <= 0.0)
             {
               yppi = add_round_down(y, pi);
             }
-          
+
           z = x + I*yppi;
         }
     }
-  
+
   /*****************/
   /* Iteration one */
   /*****************/
@@ -329,7 +327,7 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   wp1=s**w+1.0;
   e=r/wp1*(2.0*wp1*(wp1+2.0/3.0*r)-r)/(2.0*wp1*(wp1+2.0/3.0*r)-2.0*r);
   *w=*w*(1.0+e);
-  
+
   /*****************/
   /* Iteration two */
   /*****************/
@@ -353,7 +351,7 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
     {
       *cond = z/(1.0+*w);
     }
-      
+
   return 0;
 }
 
@@ -362,5 +360,89 @@ wright::wrightomega(complex<double> z)
 {
   complex<double> w;
   wrightomega_ext(z,&w,NULL);
+  return w;
+}
+
+
+double
+wright::wrightomega_real(double x)
+{
+  double w, wp1, e, r;
+
+  /* NaN output for NaN input  */
+  if (isnan(x))
+    {
+      return x;
+    }
+
+  /* Positive infinity is asymptotically x */
+  /* Negative infinity is zero */
+  if (isinf(x))
+    {
+      if (x > 0.0)
+	{
+	  return x;
+	}
+      else
+	{
+	  return 0.0;
+	}
+    }
+
+  if (x < -50.0)
+    {
+      /*
+       * Skip the iterative scheme because it exp(x) is already
+       * accurate to double precision.
+       */
+      w = exp(x);
+      if (w == 0.0)
+        {
+          sf_error("wrightomega", SF_ERROR_UNDERFLOW, "underflow in exponential series");
+        }
+      return w;
+    }
+  if (x > 1e20)
+    {
+      /*
+       * Skip the iterative scheme because the result is just x to
+       * double precision
+       */
+      return x;
+    }
+
+  /* Split int three distinct intervals (-inf,-2), [-2,1), [1,inf) */
+  if (x < -2.0)
+    {
+      /* exponential is approx < 1.3e-1 accurate */
+      w = exp(x);
+    }
+  else if (x < 1)
+    {
+      /* on [-2,1) approx < 1.5e-1 accurate */
+      w = exp(2.0*(x-1.0)/3.0);
+    }
+  else
+    {
+      /* infinite series with 2 terms approx <1.7e-1 accurate */
+      w = log(x);
+      w = x - w + w/x;
+    }
+
+  /* Iteration one of Fritsch, Shafer, and Crowley (FSC) iteration */
+  r = x - w - log(w);
+  wp1 = w + 1.0;
+  e = r/wp1*(2.0*wp1*(wp1+2.0/3.0*r)-r)/(2.0*wp1*(wp1+2.0/3.0*r)-2.0*r);
+  w = w*(1.0+e);
+
+  /* Iteration two (if needed based on the condition number) */
+  if (fabs((2.0*w*w-8.0*w-1.0)*pow(fabs(r),4.0)) >= TWOITERTOL*72.0*pow(fabs(wp1),6.0))
+    {
+      r = x - w - log(w);
+      wp1 = w+1.0;
+      e = r/wp1*(2.0*wp1*(wp1+2.0/3.0*r)-r)/(2.0*wp1*(wp1+2.0/3.0*r)-2.0*r);
+      w = w*(1.0+e);
+    }
+
   return w;
 }

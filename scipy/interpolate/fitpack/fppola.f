@@ -1,7 +1,8 @@
-      subroutine fppola(iopt1,iopt2,iopt3,m,u,v,z,w,rad,s,nuest,nvest,
-     * eta,tol,maxit,ib1,ib3,nc,ncc,intest,nrest,nu,tu,nv,tv,c,fp,sup,
-     * fpint,coord,f,ff,row,cs,cosi,a,q,bu,bv,spu,spv,h,index,nummer,
-     * wrk,lwrk,ier)
+      recursive subroutine fppola(iopt1,iopt2,iopt3,m,u,v,z,w,rad,s,
+     * nuest,nvest,eta,tol,maxit,ib1,ib3,nc,ncc,intest,nrest,nu,tu,nv,
+     * tv,c,fp,sup,fpint,coord,f,ff,row,cs,cosi,a,q,bu,bv,spu,spv,h,
+     * index,nummer,wrk,lwrk,ier)
+      implicit none
 c  ..scalar arguments..
       integer iopt1,iopt2,iopt3,m,nuest,nvest,maxit,ib1,ib3,nc,ncc,
      * intest,nrest,nu,nv,lwrk,ier
@@ -22,7 +23,7 @@ c  ..local scalars..
       integer i,iband,iband3,iband4,ich1,ich3,ii,il,in,ipar,ipar1,irot,
      * iter,i1,i2,i3,j,jrot,j1,j2,k,l,la,lf,lh,ll,lu,lv,lwest,l1,l2,
      * l3,l4,ncof,ncoff,nvv,nv4,nreg,nrint,nrr,nr1,nuu,nu4,num,num1,
-     * numin,nvmin,rank,iband1
+     * numin,nvmin,rank,iband1, jlu
 c  ..local arrays..
       real*8 hu(4),hv(4)
 c  ..function references..

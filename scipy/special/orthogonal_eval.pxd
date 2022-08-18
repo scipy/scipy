@@ -23,24 +23,23 @@ References
 # Direct evaluation of polynomials
 #------------------------------------------------------------------------------
 cimport cython
-from libc.math cimport sqrt, exp, floor, fabs, log, sin, M_PI as pi
+from libc.math cimport sqrt, exp, floor, fabs, log, sin, isnan, NAN, M_PI as pi
 
 from numpy cimport npy_cdouble
 from ._complexstuff cimport (
-    nan, inf, number_t, npy_cdouble_from_double_complex,
-    double_complex_from_npy_cdouble)
+    number_t,
+    npy_cdouble_from_double_complex,
+    double_complex_from_npy_cdouble
+)
 
 from . cimport sf_error
-from ._cephes cimport Gamma, lgam, beta, lbeta
+from ._cephes cimport Gamma, lgam, beta, lbeta, gammasgn
 from ._cephes cimport hyp2f1 as hyp2f1_wrap
 
 cdef extern from "specfun_wrappers.h":
     double hyp1f1_wrap(double a, double b, double x) nogil
     npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) nogil
     npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z) nogil
-
-cdef extern from "c_misc/misc.h":
-    double gammasgn(double x) nogil
 
 # Fused type wrappers
 
@@ -60,6 +59,7 @@ cdef inline number_t hyp1f1(double a, double b, number_t z) nogil:
         r = chyp1f1_wrap(a, b, npy_cdouble_from_double_complex(z))
         return double_complex_from_npy_cdouble(r)
 
+
 #-----------------------------------------------------------------------------
 # Binomial coefficient
 #-----------------------------------------------------------------------------
@@ -73,7 +73,7 @@ cdef inline double binom(double n, double k) nogil:
         nx = floor(n)
         if n == nx:
             # undefined
-            return nan
+            return NAN
 
     kx = floor(k)
     if k == kx and (fabs(n) > 1e-8 or n == 0):
@@ -196,6 +196,9 @@ cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
     cdef long a, b
     cdef double p, d
     cdef double k
+
+    if isnan(alpha) or isnan(x):
+        return NAN
 
     if n < 0:
         return 0.0
@@ -432,7 +435,7 @@ cdef inline number_t eval_genlaguerre(double n, double alpha, number_t x) nogil:
     if alpha <= -1:
         sf_error.error("eval_genlaguerre", sf_error.DOMAIN,
                        "polynomial defined only for alpha > -1")
-        return nan
+        return NAN
 
     d = binom(n+alpha, n)
     a = -n
@@ -449,7 +452,10 @@ cdef inline double eval_genlaguerre_l(long n, double alpha, double x) nogil:
     if alpha <= -1:
         sf_error.error("eval_genlaguerre", sf_error.DOMAIN,
                        "polynomial defined only for alpha > -1")
-        return nan
+        return NAN
+
+    if isnan(alpha) or isnan(x):
+        return NAN
 
     if n < 0:
         return 0.0
@@ -484,8 +490,16 @@ cdef inline double eval_hermitenorm(long n, double x) nogil:
     cdef long k
     cdef double y1, y2, y3
 
+    if isnan(x):
+        return x
+
     if n < 0:
-        return 0.0
+        sf_error.error(
+            "eval_hermitenorm",
+            sf_error.DOMAIN,
+            "polynomial only defined for nonnegative n",
+        )
+        return NAN
     elif n == 0:
         return 1.0
     elif n == 1:
@@ -505,4 +519,11 @@ cdef inline double eval_hermitenorm(long n, double x) nogil:
 
 @cython.cdivision(True)
 cdef inline double eval_hermite(long n, double x) nogil:
+    if n < 0:
+        sf_error.error(
+            "eval_hermite",
+            sf_error.DOMAIN,
+            "polynomial only defined for nonnegative n",
+        )
+        return NAN
     return eval_hermitenorm(n, sqrt(2)*x) * 2**(n/2.0)

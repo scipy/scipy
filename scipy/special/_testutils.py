@@ -1,10 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
 import os
-
-from distutils.version import LooseVersion
-
 import functools
+import operator
+from scipy._lib import _pep440
 
 import numpy as np
 from numpy.testing import assert_
@@ -19,7 +16,7 @@ __all__ = ['with_special_errors', 'assert_func_equal', 'FuncData']
 # Check if a module is present to be used in tests
 #------------------------------------------------------------------------------
 
-class MissingModule(object):
+class MissingModule:
     def __init__(self, name):
         self.name = name
 
@@ -27,7 +24,7 @@ class MissingModule(object):
 def check_version(module, min_ver):
     if type(module) == MissingModule:
         return pytest.mark.skip(reason="{} is not installed".format(module.name))
-    return pytest.mark.skipif(LooseVersion(module.__version__) < LooseVersion(min_ver),
+    return pytest.mark.skipif(_pep440.parse(module.__version__) < _pep440.Version(min_ver),
                               reason="{} version >= {} required".format(module.__name__, min_ver))
 
 
@@ -86,7 +83,7 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
     fdata.check()
 
 
-class FuncData(object):
+class FuncData:
     """
     Data set for checking a special function.
 
@@ -94,8 +91,8 @@ class FuncData(object):
     ----------
     func : function
         Function to test
-    filename : str
-        Input file name
+    data : numpy array
+        columnar data to use for testing
     param_columns : int or tuple of ints
         Columns indices in which the parameters to `func` lie.
         Can be imaginary integers to indicate that the parameter
@@ -172,8 +169,11 @@ class FuncData(object):
             atol = 5*info.tiny
         return rtol, atol
 
-    def check(self, data=None, dtype=None):
+    def check(self, data=None, dtype=None, dtypes=None):
         """Check the special function against the data."""
+        __tracebackhide__ = operator.methodcaller(
+            'errisinstance', AssertionError
+        )
 
         if self.knownfailure:
             pytest.xfail(reason=self.knownfailure)
@@ -198,10 +198,12 @@ class FuncData(object):
 
         # Pick parameters from the correct columns
         params = []
-        for j in self.param_columns:
+        for idx, j in enumerate(self.param_columns):
             if np.iscomplexobj(j):
                 j = int(j.imag)
                 params.append(data[:,j].astype(complex))
+            elif dtypes and idx < len(dtypes):
+                params.append(data[:, j].astype(dtypes[idx]))
             else:
                 params.append(data[:,j])
 
@@ -253,8 +255,7 @@ class FuncData(object):
             nan_x = np.isnan(x)
             nan_y = np.isnan(y)
 
-            olderr = np.seterr(all='ignore')
-            try:
+            with np.errstate(all='ignore'):
                 abs_y = np.absolute(y)
                 abs_y[~np.isfinite(abs_y)] = 0
                 diff = np.absolute(x - y)
@@ -262,8 +263,6 @@ class FuncData(object):
 
                 rdiff = diff / np.absolute(y)
                 rdiff[~np.isfinite(rdiff)] = 0
-            finally:
-                np.seterr(**olderr)
 
             tol_mask = (diff <= atol + rtol*abs_y)
             pinf_mask = (pinf_x == pinf_y)
@@ -290,8 +289,8 @@ class FuncData(object):
             if np.any(bad_j):
                 # Some bad results: inform what, where, and how bad
                 msg = [""]
-                msg.append("Max |adiff|: %g" % diff.max())
-                msg.append("Max |rdiff|: %g" % rdiff.max())
+                msg.append("Max |adiff|: %g" % diff[bad_j].max())
+                msg.append("Max |rdiff|: %g" % rdiff[bad_j].max())
                 msg.append("Bad results (%d out of %d) for the following points (in output %d):"
                            % (np.sum(bad_j), point_count, output_num,))
                 for j in np.nonzero(bad_j)[0]:
