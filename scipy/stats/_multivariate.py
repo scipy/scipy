@@ -626,8 +626,11 @@ class multivariate_normal_gen(multi_rv_generic):
         _PSD(cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
-        out = np.log(self._cdf(x, mean, cov, maxpts,
-                               abseps, releps, lower_limit))
+        cdf = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
+        # the log of a negative real is complex, and cdf can be negative
+        # if lower limit is greater than upper limit
+        cdf = cdf + 0j if np.any(cdf < 0) else cdf
+        out = np.log(cdf)
         return out
 
     def cdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
@@ -791,7 +794,12 @@ class multivariate_normal_frozen(multi_rv_frozen):
         return np.exp(self.logpdf(x))
 
     def logcdf(self, x, *, lower_limit=None):
-        return np.log(self.cdf(x, lower_limit=lower_limit))
+        cdf = self.cdf(x, lower_limit=lower_limit)
+        # the log of a negative real is complex, and cdf can be negative
+        # if lower limit is greater than upper limit
+        cdf = cdf + 0j if np.any(cdf < 0) else cdf
+        out = np.log(cdf)
+        return out
 
     def cdf(self, x, *, lower_limit=None):
         x = self._dist._process_quantiles(x, self.dim)
