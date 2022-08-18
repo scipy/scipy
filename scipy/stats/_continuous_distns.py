@@ -5355,13 +5355,17 @@ class loggamma_gen(rv_continuous):
     %(example)s
 
     """
+
     def _shape_info(self):
         return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
 
     def _rvs(self, c, size=None, random_state=None):
         # Use the property of the gamma distribution Gamma(c)
         #    Gamma(c) ~ Gamma(c + 1)*U**(1/c),
-        # where U is uniform on [0, 1], so
+        # where U is uniform on [0, 1]. (See, e.g.,
+        # G. Marsaglia and W.W. Tsang, "A simple method for generating gamma
+        # variables", https://doi.org/10.1145/358407.358414)
+        # So
         #    log(Gamma(c)) ~ log(Gamma(c + 1)) + log(U)/c
         # Generating a sample with this formulation is a bit slower
         # than the more obvious log(Gamma(c)), but it avoids loss
