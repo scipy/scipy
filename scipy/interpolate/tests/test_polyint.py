@@ -6,6 +6,7 @@ from numpy.testing import (
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
     assert_allclose, assert_equal, assert_)
 from pytest import raises as assert_raises
+import pytest
 
 from scipy.interpolate import (
     KroghInterpolator, krogh_interpolate,
@@ -152,7 +153,7 @@ def test_complex():
     assert_allclose(dydx, p(x, 1))
 
 
-class TestKrogh(object):
+class TestKrogh:
     def setup_method(self):
         self.true_poly = np.poly1d([-2,3,1,5,-4])
         self.test_xs = np.linspace(-1,1,100)
@@ -206,7 +207,7 @@ class TestKrogh(object):
         Pi = [KroghInterpolator(xs,ys[:,i]) for i in range(ys.shape[1])]
         test_xs = np.linspace(-1,3,100)
         assert_almost_equal(P(test_xs),
-                np.rollaxis(np.asarray([p(test_xs) for p in Pi]),-1))
+                            np.asarray([p(test_xs) for p in Pi]).T)
         assert_almost_equal(P.derivatives(test_xs),
                 np.transpose(np.asarray([p.derivatives(test_xs) for p in Pi]),
                     (1,2,0)))
@@ -281,8 +282,12 @@ class TestKrogh(object):
                   1j*KroghInterpolator(x, y.imag).derivatives(0))
         assert_allclose(cmplx, cmplx2, atol=1e-15)
 
+    def test_high_degree_warning(self):
+        with pytest.warns(UserWarning, match="40 degrees provided,"):
+            KroghInterpolator(np.arange(40), np.ones(40))
 
-class TestTaylor(object):
+
+class TestTaylor:
     def test_exponential(self):
         degree = 5
         p = approximate_taylor_polynomial(np.exp, 0, degree, 1, 15)
@@ -292,7 +297,7 @@ class TestTaylor(object):
         assert_almost_equal(p(0),0)
 
 
-class TestBarycentric(object):
+class TestBarycentric:
     def setup_method(self):
         self.true_poly = np.poly1d([-2, 3, 1, 5, -4])
         self.test_xs = np.linspace(-1, 1, 100)
@@ -326,7 +331,7 @@ class TestBarycentric(object):
         Pi = [BI(xs, ys[:, i]) for i in range(ys.shape[1])]
         test_xs = np.linspace(-1, 3, 100)
         assert_almost_equal(P(test_xs),
-                np.rollaxis(np.asarray([p(test_xs) for p in Pi]), -1))
+                            np.asarray([p(test_xs) for p in Pi]).T)
 
     def test_shapes_scalarvalue(self):
         P = BarycentricInterpolator(self.xs, self.ys)
@@ -358,8 +363,33 @@ class TestBarycentric(object):
         value = barycentric_interpolate(x, y, 1000 * 9.5)
         assert_almost_equal(value, 9.5)
 
+    def test_large_chebyshev(self):
+        # The weights for Chebyshev points of the second kind have analytically
+        # solvable weights. Naive calculation of barycentric weights will fail
+        # for large N because of numerical underflow and overflow. We test
+        # correctness for large N against analytical Chebyshev weights.
 
-class TestPCHIP(object):
+        # Without capacity scaling or permutation, n=800 fails,
+        # With just capacity scaling, n=1097 fails
+        # With both capacity scaling and random permutation, n=30000 succeeds
+        n = 800
+        j = np.arange(n + 1).astype(np.float64)
+        x = np.cos(j * np.pi / n)
+
+        # See page 506 of Berrut and Trefethen 2004 for this formula
+        w = (-1) ** j
+        w[0] *= 0.5
+        w[-1] *= 0.5
+
+        P = BarycentricInterpolator(x)
+
+        # It's okay to have a constant scaling factor in the weights because it
+        # cancels out in the evaluation of the polynomial.
+        factor = P.wi[0]
+        assert_almost_equal(P.wi / (2 * factor), w)
+
+
+class TestPCHIP:
     def _make_random(self, npts=20):
         np.random.seed(1234)
         xi = np.sort(np.random.random(npts))
@@ -486,7 +516,7 @@ class TestPCHIP(object):
         assert_allclose(r, 0.5)
 
 
-class TestCubicSpline(object):
+class TestCubicSpline:
     @staticmethod
     def check_correctness(S, bc_start='not-a-knot', bc_end='not-a-knot',
                           tol=1e-14):

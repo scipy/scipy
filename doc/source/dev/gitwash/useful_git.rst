@@ -4,10 +4,10 @@
 Git tips
 ========
 
-.. _rebasing-on-master:
+.. _rebasing-on-main:
 
-Rebasing on master
-------------------
+Rebasing on main
+----------------
 
 This updates your feature branch with changes from the upstream `SciPy
 github`_ repo. If you do not absolutely need to do this, try to avoid doing
@@ -22,8 +22,8 @@ Next, you need to update the feature branch::
    git checkout my-new-feature
    # make a backup in case you mess up
    git branch tmp my-new-feature
-   # rebase on upstream master branch
-   git rebase upstream/master
+   # rebase on upstream main branch
+   git rebase upstream/main
 
 If you have made changes to files that have changed also upstream,
 this may generate merge conflicts that you need to resolve. See
@@ -36,7 +36,7 @@ Finally, remove the backup branch upon a successful rebase::
 
 .. note::
 
-   Rebasing on master is preferred over merging upstream back to your
+   Rebasing on main is preferred over merging upstream back to your
    branch. Using ``git merge`` and ``git pull`` is discouraged when
    working on feature branches.
 
@@ -99,7 +99,7 @@ Suppose that the commit history looks like this::
     29001ed Add pre-nep for a copule of structured_array_extensions.
     ...
 
-and ``6ad92e5`` is the last commit in the ``master`` branch. Suppose we
+and ``6ad92e5`` is the last commit in the ``main`` branch. Suppose we
 want to make the following changes:
 
 * Rewrite the commit message for ``13d7934`` to something more sensible.
@@ -166,7 +166,7 @@ Deleting a branch on github_
 
 ::
 
-   git checkout master
+   git checkout main
    # delete branch locally
    git branch -D my-unwanted-branch
    # delete branch on github
@@ -225,25 +225,25 @@ Backporting
 -----------
 
 Backporting is the process of copying new feature/fixes committed in
-`scipy/master`_ back to stable release branches. To do this you make a branch
+`scipy/main`_ back to stable release branches. To do this you make a branch
 off the branch you are backporting to, cherry pick the commits you want from
-``scipy/master``, and then submit a pull request for the branch containing the
+``scipy/main``, and then submit a pull request for the branch containing the
 backport.
 
 1. First, you need to make the branch you will work on. This needs to be
-   based on the older version of SciPy (not master)::
+   based on the older version of SciPy (not main)::
 
     # Make a new branch based on scipy/maintenance/1.8.x,
     # backport-3324 is our new name for the branch.
     git checkout -b backport-3324 upstream/maintenance/1.8.x
 
-2. Now you need to apply the changes from master to this branch using
+2. Now you need to apply the changes from main to this branch using
    `git cherry-pick`_::
 
     # Update remote
     git fetch upstream
     # Check the commit log for commits to cherry pick
-    git log upstream/master
+    git log upstream/main
     # This pull request included commits aa7a047 to c098283 (inclusive)
     # so you use the .. syntax (for a range of commits), the ^ makes the
     # range inclusive.
@@ -254,7 +254,7 @@ backport.
 
 3. You might run into some conflicts cherry picking here. These are
    resolved the same way as merge/rebase conflicts. Except here you can
-   use `git blame`_ to see the difference between master and the
+   use `git blame`_ to see the difference between main and the
    backported branch to make sure nothing gets screwed up.
 
 4. Push the new branch to your Github repository::
@@ -262,8 +262,8 @@ backport.
     git push -u origin backport-3324
 
 5. Finally make a pull request using Github. Make sure it is against the
-   maintenance branch and not master, Github will usually suggest you
-   make the pull request against master.
+   maintenance branch and not main, Github will usually suggest you
+   make the pull request against main.
 
 .. _pushing-to-main:
 
@@ -273,7 +273,7 @@ Pushing changes to the main repo
 *This is only relevant if you have commit rights to the main SciPy repo.*
 
 When you have a set of "ready" changes in a feature branch ready for
-SciPy's ``master`` or ``maintenance`` branches, you can push
+SciPy's ``main`` or ``maintenance`` branches, you can push
 them to ``upstream`` as follows:
 
 1. First, merge or rebase on the target branch.
@@ -281,23 +281,23 @@ them to ``upstream`` as follows:
    a) Only a few, unrelated commits then prefer rebasing::
 
         git fetch upstream
-        git rebase upstream/master
+        git rebase upstream/main
 
-      See :ref:`rebasing-on-master`.
+      See :ref:`rebasing-on-main`.
 
    b) If all of the commits are related, create a merge commit::
 
         git fetch upstream
-        git merge --no-ff upstream/master
+        git merge --no-ff upstream/main
 
 2. Check that what you are going to push looks sensible::
 
-        git log -p upstream/master..
+        git log -p upstream/main..
         git log --oneline --graph
 
 3. Push to upstream::
 
-        git push upstream my-feature-branch:master
+        git push upstream my-feature-branch:main
 
 .. note::
 
@@ -305,6 +305,6 @@ them to ``upstream`` as follows:
     first that you're about to push the changes you want to the place you
     want.
 
-.. _scipy/master: https://github.com/scipy/scipy
+.. _scipy/main: https://github.com/scipy/scipy
 
 .. include:: git_links.inc

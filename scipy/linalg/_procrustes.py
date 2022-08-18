@@ -3,7 +3,7 @@ Solve the orthogonal Procrustes problem.
 
 """
 import numpy as np
-from .decomp_svd import svd
+from ._decomp_svd import svd
 
 
 __all__ = ['orthogonal_procrustes']
@@ -61,7 +61,7 @@ def orthogonal_procrustes(A, B, check_finite=True):
     >>> A = np.array([[ 2,  0,  1], [-2,  0,  0]])
 
     Flip the order of columns and check for the anti-diagonal mapping
-    
+
     >>> R, sca = orthogonal_procrustes(A, np.fliplr(A))
     >>> R
     array([[-5.34384992e-17,  0.00000000e+00,  1.00000000e+00],

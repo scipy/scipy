@@ -56,7 +56,7 @@ def upfirdn_naive(x, h, up=1, down=1):
     return out
 
 
-class UpFIRDnCase(object):
+class UpFIRDnCase:
     """Test _UpFIRDn object"""
     def __init__(self, up, down, h, x_dtype):
         self.up = up
@@ -113,7 +113,7 @@ class UpFIRDnCase(object):
 _UPFIRDN_TYPES = (int, np.float32, np.complex64, float, complex)
 
 
-class TestUpfirdn(object):
+class TestUpfirdn:
 
     def test_valid_input(self):
         assert_raises(ValueError, upfirdn, [1], [1], 1, 0)  # up or down < 1

@@ -5,7 +5,7 @@ May 2007
 from numpy.testing import assert_
 import pytest
 
-from scipy.optimize import nonlin, root
+from scipy.optimize import _nonlin as nonlin, root
 from numpy import diag, dot
 from numpy.linalg import inv
 import numpy as np
@@ -34,6 +34,8 @@ def F(x):
 
 F.xin = [1,1,1,1,1]
 F.KNOWN_BAD = {}
+F.JAC_KSP_BAD = {}
+F.ROOT_JAC_KSP_BAD = {}
 
 
 def F2(x):
@@ -43,6 +45,8 @@ def F2(x):
 F2.xin = [1,2,3,4,5,6]
 F2.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
                 'excitingmixing': nonlin.excitingmixing}
+F2.JAC_KSP_BAD = {}
+F2.ROOT_JAC_KSP_BAD = {}
 
 
 def F2_lucky(x):
@@ -51,6 +55,8 @@ def F2_lucky(x):
 
 F2_lucky.xin = [0,0,0,0,0,0]
 F2_lucky.KNOWN_BAD = {}
+F2_lucky.JAC_KSP_BAD = {}
+F2_lucky.ROOT_JAC_KSP_BAD = {}
 
 
 def F3(x):
@@ -61,6 +67,8 @@ def F3(x):
 
 F3.xin = [1,2,3]
 F3.KNOWN_BAD = {}
+F3.JAC_KSP_BAD = {}
+F3.ROOT_JAC_KSP_BAD = {}
 
 
 def F4_powell(x):
@@ -72,6 +80,11 @@ F4_powell.xin = [-1, -2]
 F4_powell.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
                        'excitingmixing': nonlin.excitingmixing,
                        'diagbroyden': nonlin.diagbroyden}
+# In the extreme case, it does not converge for nolinear problem solved by
+# MINRES and root problem solved by GMRES/BiCGStab/CGS/MINRES/TFQMR when using
+# Krylov method to approximate Jacobian
+F4_powell.JAC_KSP_BAD = {'minres'}
+F4_powell.ROOT_JAC_KSP_BAD = {'gmres', 'bicgstab', 'cgs', 'minres', 'tfqmr'}
 
 
 def F5(x):
@@ -82,6 +95,11 @@ F5.xin = [2., 0, 2, 0]
 F5.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
                 'linearmixing': nonlin.linearmixing,
                 'diagbroyden': nonlin.diagbroyden}
+# In the extreme case, the Jacobian inversion yielded zero vector for nonlinear
+# problem solved by CGS/MINRES and it does not converge for root problem solved
+# by MINRES and when using Krylov method to approximate Jacobian
+F5.JAC_KSP_BAD = {'cgs', 'minres'}
+F5.ROOT_JAC_KSP_BAD = {'minres'}
 
 
 def F6(x):
@@ -97,6 +115,8 @@ F6.xin = [-0.5, 1.4]
 F6.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
                 'linearmixing': nonlin.linearmixing,
                 'diagbroyden': nonlin.diagbroyden}
+F6.JAC_KSP_BAD = {}
+F6.ROOT_JAC_KSP_BAD = {}
 
 
 #-------------------------------------------------------------------------------
@@ -104,7 +124,7 @@ F6.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
 #-------------------------------------------------------------------------------
 
 
-class TestNonlin(object):
+class TestNonlin:
     """
     Check the Broyden methods for a few test problems.
 
@@ -114,10 +134,32 @@ class TestNonlin(object):
     """
 
     def _check_nonlin_func(self, f, func, f_tol=1e-2):
+        # Test all methods mentioned in the class `KrylovJacobian`
+        if func == SOLVERS['krylov']:
+            for method in ['gmres', 'bicgstab', 'cgs', 'minres', 'tfqmr']:
+                if method in f.JAC_KSP_BAD:
+                    continue
+
+                x = func(f, f.xin, method=method, line_search=None,
+                         f_tol=f_tol, maxiter=200, verbose=0)
+                assert_(np.absolute(f(x)).max() < f_tol)
+
         x = func(f, f.xin, f_tol=f_tol, maxiter=200, verbose=0)
         assert_(np.absolute(f(x)).max() < f_tol)
 
     def _check_root(self, f, method, f_tol=1e-2):
+        # Test Krylov methods
+        if method == 'krylov':
+            for jac_method in ['gmres', 'bicgstab', 'cgs', 'minres', 'tfqmr']:
+                if jac_method in f.ROOT_JAC_KSP_BAD:
+                    continue
+
+                res = root(f, f.xin, method=method,
+                           options={'ftol': f_tol, 'maxiter': 200,
+                                    'disp': 0,
+                                    'jac_options': {'method': jac_method}})
+                assert_(np.absolute(res.fun).max() < f_tol)
+
         res = root(f, f.xin, method=method,
                    options={'ftol': f_tol, 'maxiter': 200, 'disp': 0})
         assert_(np.absolute(res.fun).max() < f_tol)
@@ -135,7 +177,9 @@ class TestNonlin(object):
                     continue
                 self._check_nonlin_func(f, func)
 
-    def test_tol_norm_called(self):
+    @pytest.mark.parametrize("method", ['lgmres', 'gmres', 'bicgstab', 'cgs',
+                                        'minres', 'tfqmr'])
+    def test_tol_norm_called(self, method):
         # Check that supplying tol_norm keyword to nonlin_solve works
         self._tol_norm_used = False
 
@@ -143,8 +187,9 @@ class TestNonlin(object):
             self._tol_norm_used = True
             return np.absolute(x).max()
 
-        nonlin.newton_krylov(F, F.xin, f_tol=1e-2, maxiter=200, verbose=0,
-             tol_norm=local_norm_func)
+        nonlin.newton_krylov(F, F.xin, method=method, f_tol=1e-2,
+                             maxiter=200, verbose=0,
+                             tol_norm=local_norm_func)
         assert_(self._tol_norm_used)
 
     def test_problem_root(self):
@@ -157,7 +202,7 @@ class TestNonlin(object):
                 self._check_root(f, meth)
 
 
-class TestSecant(object):
+class TestSecant:
     """Check that some Jacobian approximations satisfy the secant condition"""
 
     xs = [np.array([1,2,3,4,5], float),
@@ -233,7 +278,7 @@ class TestSecant(object):
         self._check_secant(nonlin.Anderson, M=3, w0=0, npoints=3)
 
 
-class TestLinear(object):
+class TestLinear:
     """Solve a linear equation;
     some methods find the exact solution in a finite number of steps"""
 
@@ -275,7 +320,7 @@ class TestLinear(object):
         self._check(nonlin.KrylovJacobian, 20, 2, True, inner_m=10)
 
 
-class TestJacobianDotSolve(object):
+class TestJacobianDotSolve:
     """Check that solve/dot methods in Jacobian approximations are consistent"""
 
     def _func(self, x):
@@ -370,7 +415,7 @@ class TestJacobianDotSolve(object):
         self._check_dot(nonlin.KrylovJacobian, complex=True, tol=1e-3)
 
 
-class TestNonlinOldTests(object):
+class TestNonlinOldTests:
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)

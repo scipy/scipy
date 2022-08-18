@@ -10,7 +10,7 @@ import numpy as np
 from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint
 
 
-class MyCallBack(object):
+class MyCallBack:
     """pass a custom callback function
 
     This makes sure it's being used.
@@ -24,7 +24,7 @@ class MyCallBack(object):
         self.ncalls += 1
 
 
-class TestSLSQP(object):
+class TestSLSQP:
     """
     Test SLSQP algorithm using Example 14.4 from Numerical Methods for
     Engineers by Steven Chapra and Raymond Canale.
