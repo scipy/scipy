@@ -1306,6 +1306,20 @@ class TestLoggamma:
             assert_array_almost_equal(computed, [mean, var, skew, kurt],
                                       decimal=4)
 
+    @pytest.mark.parametrize('c', [0.1, 0.001])
+    def test_rvs(self, c):
+        # Regression test for gh-11094.
+        x = stats.loggamma.rvs(c, size=100000)
+        # Before gh-11094 was fixed, the case with c=0.001 would
+        # generate many -inf values.
+        assert np.isfinite(x).all()
+        # Crude statistical test.  About half the values should be
+        # less than the median and half greater than the median.
+        med = stats.loggamma.median(c)
+        btest = stats.binomtest(np.count_nonzero(x < med), len(x))
+        ci = btest.proportion_ci(confidence_level=0.999)
+        assert ci.low < 0.5 < ci.high
+
 
 class TestLogistic:
     # gh-6226

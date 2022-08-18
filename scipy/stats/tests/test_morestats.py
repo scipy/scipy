@@ -44,6 +44,12 @@ g9 = [1.002, 0.998, 0.996, 0.995, 0.996, 1.004, 1.004, 0.998, 0.999, 0.991]
 g10 = [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
 
 
+# The loggamma RVS stream is changing due to gh-13349; this version
+# preserves the old stream so that tests don't change.
+def _old_loggamma_rvs(*args, **kwargs):
+    return np.log(stats.gamma.rvs(*args, **kwargs))
+
+
 class TestBayes_mvs:
     def test_basic(self):
         # Expected values in this test simply taken from the function.  For
@@ -1571,7 +1577,7 @@ class TestKstatVar:
 
 class TestPpccPlot:
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
+        self.x = _old_loggamma_rvs(5, size=500, random_state=7654321) + 5
 
     def test_basic(self):
         N = 5
@@ -1753,7 +1759,7 @@ _boxcox_data = [
 class TestBoxcox:
 
     def test_fixed_lmbda(self):
-        x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
+        x = _old_loggamma_rvs(5, size=50, random_state=12345) + 5
         xt = stats.boxcox(x, lmbda=1)
         assert_allclose(xt, x - 1)
         xt = stats.boxcox(x, lmbda=-1)
@@ -1782,7 +1788,7 @@ class TestBoxcox:
 
     def test_alpha(self):
         rng = np.random.RandomState(1234)
-        x = stats.loggamma.rvs(5, size=50, random_state=rng) + 5
+        x = _old_loggamma_rvs(5, size=50, random_state=rng) + 5
 
         # Some regular values for alpha, on a small sample size
         _, _, interval = stats.boxcox(x, alpha=0.75)
@@ -1791,7 +1797,7 @@ class TestBoxcox:
         assert_allclose(interval, [1.2138178554857557, 8.209033272375663])
 
         # Try some extreme values, see we don't hit the N=500 limit
-        x = stats.loggamma.rvs(7, size=500, random_state=rng) + 15
+        x = _old_loggamma_rvs(7, size=500, random_state=rng) + 15
         _, _, interval = stats.boxcox(x, alpha=0.001)
         assert_allclose(interval, [0.3988867, 11.40553131])
         _, _, interval = stats.boxcox(x, alpha=0.999)
@@ -1869,7 +1875,7 @@ class TestBoxcox:
 
 class TestBoxcoxNormmax:
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
+        self.x = _old_loggamma_rvs(5, size=50, random_state=12345) + 5
 
     def test_pearsonr(self):
         maxlog = stats.boxcox_normmax(self.x)
@@ -1941,7 +1947,7 @@ class TestBoxcoxNormmax:
 
 class TestBoxcoxNormplot:
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
+        self.x = _old_loggamma_rvs(5, size=500, random_state=7654321) + 5
 
     def test_basic(self):
         N = 5
@@ -2000,7 +2006,7 @@ class TestYeojohnson:
         rng = np.random.RandomState(12345)
 
         # Test positive input
-        x = stats.loggamma.rvs(5, size=50, random_state=rng) + 5
+        x = _old_loggamma_rvs(5, size=50, random_state=rng) + 5
         assert np.all(x > 0)
         xt = stats.yeojohnson(x, lmbda=1)
         assert_allclose(xt, x)
@@ -2012,7 +2018,7 @@ class TestYeojohnson:
         assert_allclose(xt, x)
 
         # Test negative input
-        x = stats.loggamma.rvs(5, size=50, random_state=rng) - 5
+        x = _old_loggamma_rvs(5, size=50, random_state=rng) - 5
         assert np.all(x < 0)
         xt = stats.yeojohnson(x, lmbda=2)
         assert_allclose(xt, -np.log(-x + 1))
@@ -2022,7 +2028,7 @@ class TestYeojohnson:
         assert_allclose(xt, 1 / (-x + 1) - 1)
 
         # test both positive and negative input
-        x = stats.loggamma.rvs(5, size=50, random_state=rng) - 2
+        x = _old_loggamma_rvs(5, size=50, random_state=rng) - 2
         assert not np.all(x < 0)
         assert not np.all(x >= 0)
         pos = x >= 0
@@ -2123,7 +2129,7 @@ class TestYeojohnson:
 
 class TestYeojohnsonNormmax:
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
+        self.x = _old_loggamma_rvs(5, size=50, random_state=12345) + 5
 
     def test_mle(self):
         maxlog = stats.yeojohnson_normmax(self.x)
