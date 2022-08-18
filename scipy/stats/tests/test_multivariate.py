@@ -28,7 +28,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          hypergeom, multivariate_t, cauchy, normaltest)
 
 from scipy.integrate import romb
-from scipy.special import multigammaln
+from scipy.special import multigammaln, logsumexp
 
 from .common_tests import check_random_state_property
 
@@ -496,6 +496,27 @@ class TestMultivariateNormal:
         desired = .5  # e^lnB = 1/2 for [1, 1, 1]
 
         assert_almost_equal(np.exp(_lnB(alpha)), desired)
+
+    def test_cdf_with_lower_limit(self):
+        # test CDF with lower limit in several dimensions
+        rng = np.random.default_rng(2408071309372769818)
+        mean = [0, 0]
+        cov = np.eye(2)
+        a = rng.random((4, 3, 2))-0.5
+        b = rng.random((4, 3, 2))-0.5
+
+        cdf1 = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+
+        cdf2a = multivariate_normal.cdf(b, mean, cov)
+        cdf2b = multivariate_normal.cdf(a, mean, cov)
+        ab1 = np.concatenate((a[..., 0:1], b[..., 1:2]), axis=-1)
+        ab2 = np.concatenate((a[..., 1:2], b[..., 0:1]), axis=-1)
+        cdf2ab1 = multivariate_normal.cdf(ab1, mean, cov)
+        cdf2ab2 = multivariate_normal.cdf(ab2, mean, cov)
+        cdf2 = cdf2a + cdf2b - cdf2ab1 - cdf2ab2
+
+        assert_allclose(cdf1, cdf2)
+
 
 class TestMatrixNormal:
 
