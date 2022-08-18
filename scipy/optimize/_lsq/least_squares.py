@@ -4,10 +4,11 @@ from warnings import warn
 import numpy as np
 from numpy.linalg import norm
 
-from scipy.sparse import issparse, csr_matrix
+from scipy.sparse import issparse
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize import _minpack, OptimizeResult
 from scipy.optimize._numdiff import approx_derivative, group_columns
+from scipy.optimize._minimize import Bounds
 
 from .trf import trf
 from .dogbox import dogbox
@@ -779,12 +780,6 @@ def least_squares(
     if verbose not in [0, 1, 2]:
         raise ValueError("`verbose` must be in [0, 1, 2].")
 
-    if len(bounds) != 2:
-        raise ValueError("`bounds` must contain 2 elements.")
-
-    if max_nfev is not None and max_nfev <= 0:
-        raise ValueError("`max_nfev` must be None or positive integer.")
-
     if np.iscomplexobj(x0):
         raise ValueError("`x0` must be real.")
 
@@ -793,7 +788,17 @@ def least_squares(
     if x0.ndim > 1:
         raise ValueError("`x0` must have at most 1 dimension.")
 
-    lb, ub = prepare_bounds(bounds, x0.shape[0])
+    if isinstance(bounds, Bounds):
+        lb, ub = bounds.lb, bounds.ub
+        bounds = (lb, ub)
+    else:
+        if len(bounds) == 2:
+            lb, ub = prepare_bounds(bounds, x0.shape[0])
+        else:
+            raise ValueError("`bounds` must contain 2 elements.")
+
+    if max_nfev is not None and max_nfev <= 0:
+        raise ValueError("`max_nfev` must be None or positive integer.")
 
     if method == 'lm' and not np.all((lb == -np.inf) & (ub == np.inf)):
         raise ValueError("Method 'lm' doesn't support bounds.")
