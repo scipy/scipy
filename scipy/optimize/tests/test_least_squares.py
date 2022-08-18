@@ -8,7 +8,7 @@ from pytest import raises as assert_raises
 from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
 
-from scipy.optimize import least_squares
+from scipy.optimize import least_squares, Bounds
 from scipy.optimize._lsq.least_squares import IMPLEMENTED_LOSSES
 from scipy.optimize._lsq.common import EPS, make_strictly_feasible
 
@@ -429,6 +429,27 @@ class BoundsMixin:
                 fun_2d_trivial, x0, jac=jac, bounds=([-1, 0.5], [1.0, 3.0]),
                 method=self.method)
             assert_allclose(res.x, [0.0, 0.5], atol=1e-5)
+
+    def test_bound_instances(self):
+        res = least_squares(fun_trivial, 0.5, bounds=Bounds())
+        assert_allclose(res.x, 0.0, atol=1e-4)
+
+        res = least_squares(fun_trivial, 3.0, bounds=Bounds(lb=1.0))
+        assert_allclose(res.x, 1.0, atol=1e-4)
+
+        res = least_squares(fun_trivial, 0.5, bounds=Bounds(lb=-1.0, ub=1.0))
+        assert_allclose(res.x, 0.0, atol=1e-4)
+
+        res = least_squares(fun_trivial, -3.0, bounds=Bounds(ub=-1.0))
+        assert_allclose(res.x, -1.0, atol=1e-4)
+
+        res = least_squares(fun_2d_trivial, [0.5, 0.5],
+                            bounds=Bounds(lb=[-1.0, -1.0], ub=1.0))
+        assert_allclose(res.x, [0.0, 0.0], atol=1e-5)
+
+        res = least_squares(fun_2d_trivial, [0.5, 0.5],
+                            bounds=Bounds(lb=[0.1, 0.1]))
+        assert_allclose(res.x, [0.1, 0.1], atol=1e-5)
 
     def test_rosenbrock_bounds(self):
         x0_1 = np.array([-2.0, 1.0])
