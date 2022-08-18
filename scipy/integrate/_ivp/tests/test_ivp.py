@@ -137,7 +137,7 @@ def sol_complex(t):
 
 def compute_error(y, y_true, rtol, atol):
     e = (y - y_true) / (atol + rtol * np.abs(y_true))
-    return np.sqrt(np.sum(np.real(e * e.conj()), axis=0) / e.shape[0])
+    return np.linalg.norm(e, axis=0) / np.sqrt(e.shape[0])
 
 
 def test_integration():
@@ -230,26 +230,26 @@ def test_integration_complex():
         assert_equal(res.status, 0)
 
         if method == 'DOP853':
-            assert_(res.nfev < 35)
+            assert res.nfev < 35
         else:
-            assert_(res.nfev < 25)
+            assert res.nfev < 25
 
         if method == 'BDF':
             assert_equal(res.njev, 1)
-            assert_(res.nlu < 6)
+            assert res.nlu < 6
         else:
-            assert_equal(res.njev, 0)
-            assert_equal(res.nlu, 0)
+            assert res.njev == 0
+            assert res.nlu == 0
 
         y_true = sol_complex(res.t)
         e = compute_error(res.y, y_true, rtol, atol)
-        assert_(np.all(e < 5))
+        assert np.all(e < 5)
 
         yc_true = sol_complex(tc)
         yc = res.sol(tc)
         e = compute_error(yc, yc_true, rtol, atol)
 
-        assert_(np.all(e < 5))
+        assert np.all(e < 5)
 
 
 def test_integration_sparse_difference():
@@ -683,6 +683,34 @@ def test_t_eval_dense_output():
     assert_(np.all(e < 5))
 
 
+def test_t_eval_early_event():
+    def early_event(t, y):
+        return t - 7
+
+    early_event.terminal = True
+
+    rtol = 1e-3
+    atol = 1e-6
+    y0 = [1/3, 2/9]
+    t_span = [5, 9]
+    t_eval = np.linspace(7.5, 9, 16)
+    for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "The following arguments have no effect for a chosen "
+                       "solver: `jac`")
+            res = solve_ivp(fun_rational, t_span, y0, rtol=rtol, atol=atol,
+                            method=method, t_eval=t_eval, events=early_event,
+                            jac=jac_rational)
+        assert res.success
+        assert res.message == 'A termination event occurred.'
+        assert res.status == 1
+        assert not res.t and not res.y
+        assert len(res.t_events) == 1
+        assert res.t_events[0].size == 1
+        assert res.t_events[0][0] == 7
+
+
 def test_no_integration():
     for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
         sol = solve_ivp(lambda t, y: -y, [4, 4], [2, 3],
@@ -974,9 +1002,39 @@ def test_args():
     assert_allclose(zfinalevents[2], [zfinal])
 
 
+def test_array_rtol():
+    # solve_ivp had a bug with array_like `rtol`; see gh-15482
+    # check that it's fixed
+    def f(t, y):
+        return y[0], y[1]
+
+    # no warning (or error) when `rtol` is array_like
+    sol = solve_ivp(f, (0, 1), [1., 1.], rtol=[1e-1, 1e-1])
+    err1 = np.abs(np.linalg.norm(sol.y[:, -1] - np.exp(1)))
+
+    # warning when an element of `rtol` is too small
+    with pytest.warns(UserWarning, match="At least one element..."):
+        sol = solve_ivp(f, (0, 1), [1., 1.], rtol=[1e-1, 1e-16])
+        err2 = np.abs(np.linalg.norm(sol.y[:, -1] - np.exp(1)))
+
+    # tighter rtol improves the error
+    assert err2 < err1
+
 @pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'])
 def test_integration_zero_rhs(method):
     result = solve_ivp(fun_zero, [0, 10], np.ones(3), method=method)
     assert_(result.success)
     assert_equal(result.status, 0)
     assert_allclose(result.y, 1.0, rtol=1e-15)
+
+
+def test_args_single_value():
+    def fun_with_arg(t, y, a):
+        return a*y
+
+    message = "Supplied 'args' cannot be unpacked."
+    with pytest.raises(TypeError, match=message):
+        solve_ivp(fun_with_arg, (0, 0.1), [1], args=-1)
+
+    sol = solve_ivp(fun_with_arg, (0, 0.1), [1], args=(-1,))
+    assert_allclose(sol.y[0, -1], np.exp(-0.1))

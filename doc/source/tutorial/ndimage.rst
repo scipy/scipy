@@ -134,14 +134,39 @@ boundary condition. The following boundary conditions are currently
 supported:
 
  ==========   ====================================   ====================
+  **mode**              **description**                  **example**
+ ==========   ====================================   ====================
  "nearest"    use the value at the boundary          [1 2 3]->[1 1 2 3 3]
  "wrap"       periodically replicate the array       [1 2 3]->[3 1 2 3 1]
  "reflect"    reflect the array at the boundary      [1 2 3]->[1 1 2 3 3]
+ "mirror"     mirror the array at the boundary       [1 2 3]->[2 1 2 3 2]
  "constant"   use a constant value, default is 0.0   [1 2 3]->[0 1 2 3 0]
  ==========   ====================================   ====================
 
-The "constant" mode is special since it needs an additional
-parameter to specify the constant value that should be used.
+The following synonyms are also supported for consistency with the
+interpolation routines:
+
+ ===============   =========================
+     **mode**           **description**
+ ===============   =========================
+ "grid-constant"   equivalent to "constant"*
+ "grid-mirror"     equivalent to "reflect"
+ "grid-wrap"       equivalent to "wrap"
+ ===============   =========================
+
+\* "grid-constant" and "constant" are equivalent for filtering operations, but
+have different behavior in interpolation functions. For API consistency, the
+filtering functions accept either name.
+
+The "constant" mode is special since it needs an additional parameter to
+specify the constant value that should be used.
+
+Note that modes mirror and reflect differ only in whether the sample at the
+boundary is repeated upon reflection. For mode mirror, the point of symmetry is
+exactly at the final sample, so that value is not repeated. This mode is also
+known as whole-sample symmetric since the point of symmetry falls on the final
+sample. Similarly, reflect is often referred to as half-sample symmetric as the
+point of symmetry is half a sample beyond the array boundary.
 
 .. note::
 
@@ -189,7 +214,9 @@ Smoothing filters
   corresponds to convolution with a Gaussian kernel. An order of 1, 2,
   or 3 corresponds to convolution with the first, second, or third
   derivatives of a Gaussian. Higher-order derivatives are not
-  implemented.
+  implemented. 
+
+
 
 - The :func:`gaussian_filter` function implements a multidimensional
   Gaussian filter. The standard deviations of the Gaussian filter
@@ -202,7 +229,14 @@ Smoothing filters
   first, second, or third derivatives of a Gaussian. Higher-order
   derivatives are not implemented. The *order* parameter must be a
   number, to specify the same order for all axes, or a sequence of
-  numbers to specify a different order for each axis.
+  numbers to specify a different order for each axis. The example below
+  shows the filter applied on test data with different values of *sigma*.
+  The *order* parameter is kept at 0. 
+
+  .. plot:: tutorial/examples/gaussian_filter_plot1.py
+      :align: center
+      :alt: " "
+      :include-source: 0
 
   .. note::
 
@@ -259,7 +293,7 @@ Filters based on order statistics
   shape of the kernel by its non-zero elements.
 
 - The :func:`rank_filter` function calculates a multidimensional rank
-  filter. The *rank* may be less then zero, i.e., *rank* = -1
+  filter. The *rank* may be less than zero, i.e., *rank* = -1
   indicates the largest element. Either the sizes of a rectangular
   kernel or the footprint of the kernel must be provided. The *size*
   parameter, if provided, must be a sequence of sizes or a single
@@ -268,7 +302,7 @@ Filters based on order statistics
   defines the shape of the kernel by its non-zero elements.
 
 - The :func:`percentile_filter` function calculates a multidimensional
-  percentile filter. The *percentile* may be less then zero, i.e.,
+  percentile filter. The *percentile* may be less than zero, i.e.,
   *percentile* = -20 equals *percentile* = 80. Either the sizes of a
   rectangular kernel or the footprint of the kernel must be provided.
   The *size* parameter, if provided, must be a sequence of sizes or a
@@ -725,7 +759,7 @@ Interpolation functions
 
 This section describes various interpolation functions that are based
 on B-spline theory. A good introduction to B-splines can be found
-in [1]_.
+in [1]_ with detailed algorithms for image interpolation given in [5]_.
 
 Spline pre-filters
 ^^^^^^^^^^^^^^^^^^
@@ -758,10 +792,12 @@ following two functions implement the pre-filtering:
      insufficient precision. This can be prevented by specifying a
      output type of high precision.
 
-Interpolation functions
-^^^^^^^^^^^^^^^^^^^^^^^
+.. _ndimage-interpolation-modes:
 
-The following functions all employ spline interpolation to effect some
+Interpolation boundary handling
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The interpolation functions all employ spline interpolation to effect some
 type of geometric transformation of the input array. This requires a
 mapping of the output coordinates to the input coordinates, and
 therefore, the possibility arises that input values outside the
@@ -770,7 +806,32 @@ described in :ref:`ndimage-filter-functions` for the multidimensional
 filter functions. Therefore, these functions all support a *mode*
 parameter that determines how the boundaries are handled, and a *cval*
 parameter that gives a constant value in case that the 'constant' mode
-is used.
+is used. The behavior of all modes, including at non-integer locations is
+illustrated below. Note the boundaries are not handled the same for all modes;
+`reflect` (aka `grid-mirror`) and `grid-wrap` involve symmetry or repetition
+about a point that is half way between image samples (dashed vertical lines)
+while modes `mirror` and `wrap` treat the image as if it's extent ends exactly
+at the first and last sample point rather than 0.5 samples past it.
+
+.. plot:: tutorial/examples/plot_boundary_modes.py
+   :alt: " "
+   :include-source: False
+
+The coordinates of image samples fall on integer sampling locations
+in the range from 0 to ``shape[i] - 1`` along each axis, ``i``. The figure
+below illustrates the interpolation of a point at location ``(3.7, 3.3)``
+within an image of shape ``(7, 7)``. For an interpolation of order ``n``,
+``n + 1`` samples are involved along each axis. The filled circles
+illustrate the sampling locations involved in the interpolation of the value at
+the location of the red x.
+
+.. plot:: tutorial/examples/plot_interp_grid.py
+   :alt: " "
+   :include-source: False
+
+
+Interpolation functions
+^^^^^^^^^^^^^^^^^^^^^^^
 
 - The :func:`geometric_transform` function applies an arbitrary
   geometric transform to the input. The given *mapping* function is
@@ -912,8 +973,20 @@ Binary morphology
 	    [ True,  True,  True],
             [ True,  True,  True]], dtype=bool)
 
+This is a viusal presentation of `generate_binary_structure` in 3D:
+
+  .. plot:: tutorial/examples/ndimage/3D_binary_structure.py
+      :align: center
+      :alt: " "
+      :include-source: 0
+
 Most binary morphology functions can be expressed in terms of the
-basic operations erosion and dilation.
+basic operations erosion and dilation, which can be seen here:
+
+  .. plot:: tutorial/examples/morphology_binary_dilation_erosion.py
+      :align: center
+      :alt: " "
+      :include-source: 0
 
 - The :func:`binary_erosion` function implements binary erosion of
   arrays of arbitrary rank with the given structuring element. The
@@ -1302,7 +1375,7 @@ gradient magnitude filter. It uses an array containing initial markers
 for the objects:
 
 - The :func:`watershed_ift` function applies a watershed from markers
-  algorithm, using an Iterative Forest Transform, as described in
+  algorithm, using Image Foresting Transform, as described in
   [4]_.
 
 - The inputs of this function are the array to which the transform is
@@ -1946,9 +2019,13 @@ References
 
 .. [3] C. R. Maurer, Jr., R. Qi, and V. Raghavan, "A linear time
        algorithm for computing exact euclidean distance transforms of
-       binary images in arbitrary dimensions. IEEE Trans. PAMI 25,
+       binary images in arbitrary dimensions." IEEE Trans. PAMI 25,
        265-270, 2003.
 
-.. [4] P. Felkel, R. Wegenkittl, and M. Bruckschwaiger,
-       "Implementation and Complexity of the Watershed-from-Markers Algorithm
-       Computed as a Minimal Cost Forest.", Eurographics 2001, pp. C:26-35.
+.. [4] A. X. Falcão, J. Stolfi, and R. A. Lotufo. "The image foresting
+       transform: Theory, algorithms, and applications." IEEE Trans.
+       PAMI 26, 19-29. 2004.
+
+.. [5] T. Briand and P. Monasse, "Theory and Practice of Image B-Spline
+       Interpolation", Image Processing On Line, 8, pp. 99–141, 2018.
+       https://doi.org/10.5201/ipol.2018.221

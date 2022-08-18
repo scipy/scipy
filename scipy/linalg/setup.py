@@ -1,4 +1,5 @@
 from os.path import join
+import os
 
 
 def configuration(parent_package='', top_path=None):
@@ -44,9 +45,6 @@ def configuration(parent_package='', top_path=None):
     # flapack:
     sources = ['flapack.pyf.src']
     sources += get_g77_abi_wrappers(lapack_opt)
-    dep_pfx = join('src', 'lapack_deprecations')
-    deprecated_lapack_routines = [join(dep_pfx, c + 'gegv.f') for c in 'cdsz']
-    sources += deprecated_lapack_routines
     depends = ['flapack_gen.pyf.src',
                'flapack_gen_banded.pyf.src',
                'flapack_gen_tri.pyf.src',
@@ -105,6 +103,19 @@ def configuration(parent_package='', top_path=None):
                          sources=[('_solve_toeplitz.c')],
                          include_dirs=[get_numpy_include_dirs()])
 
+    # _matfuncs_sqrtm_triu:
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
+        import pythran
+        ext = pythran.dist.PythranExtension(
+            'scipy.linalg._matfuncs_sqrtm_triu',
+            sources=["scipy/linalg/_matfuncs_sqrtm_triu.py"],
+            config=['compiler.blas=none'])
+        config.ext_modules.append(ext)
+    else:
+        config.add_extension('_matfuncs_sqrtm_triu',
+                             sources=[('_matfuncs_sqrtm_triu.c')],
+                             include_dirs=[get_numpy_include_dirs()])
+
     config.add_data_dir('tests')
 
     # Cython BLAS/LAPACK
@@ -135,9 +146,24 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_decomp_update',
                          sources=['_decomp_update.c'])
 
+    config.add_data_files('_cythonized_array_utils.pxd')
+
+    config.add_extension('_cythonized_array_utils',
+                         sources=['_cythonized_array_utils.c'],
+                         depends=['_cythonized_array_utils.pyx',
+                                  '_cythonized_array_utils.pxd'],
+                         include_dirs=['.']
+                         )
+
+    config.add_extension('_matfuncs_expm',
+                         sources=['_matfuncs_expm.c'])
+
     # Add any license files
     config.add_data_files('src/id_dist/doc/doc.tex')
     config.add_data_files('src/lapack_deprecations/LICENSE')
+
+    # Type stubs
+    config.add_data_files('*.pyi')
 
     return config
 

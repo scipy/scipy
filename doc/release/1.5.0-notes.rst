@@ -26,7 +26,7 @@ Highlights of this release
   in `scipy.linalg.lapack`
 - Improved support for leveraging 64-bit integer size from linear algebra
   backends
-- addition of the probability distribution for two-sided one-sample 
+- addition of the probability distribution for two-sided one-sample
   Kolmogorov-Smirnov tests
 
 
@@ -35,8 +35,8 @@ New features
 
 `scipy.cluster` improvements
 ------------------------------
-Initialization of `scipy.cluster.vq.kmeans2` using ``minit="++"`` had a 
-quadratic complexity in the number of samples. It has been improved, resulting 
+Initialization of `scipy.cluster.vq.kmeans2` using ``minit="++"`` had a
+quadratic complexity in the number of samples. It has been improved, resulting
 in a much faster initialization with quasi-linear complexity.
 
 `scipy.cluster.hierarchy.dendrogram` now respects the ``matplotlib`` color
@@ -44,9 +44,9 @@ palette
 
 `scipy.fft` improvements
 ------------------------------
-A new keyword-only argument ``plan`` is added to all FFT functions in this 
-module. It is reserved for passing in a precomputed plan from libraries 
-providing a FFT backend (such as ``PyFFTW`` and ``mkl-fft``), and it is 
+A new keyword-only argument ``plan`` is added to all FFT functions in this
+module. It is reserved for passing in a precomputed plan from libraries
+providing a FFT backend (such as ``PyFFTW`` and ``mkl-fft``), and it is
 currently not used in SciPy.
 
 `scipy.integrate` improvements
@@ -58,12 +58,12 @@ currently not used in SciPy.
 
 `scipy.io` improvements
 -----------------------
-`scipy.io.wavfile` error messages are more explicit about what's wrong, and 
-extraneous bytes at the ends of files are ignored instead of raising an error 
+`scipy.io.wavfile` error messages are more explicit about what's wrong, and
+extraneous bytes at the ends of files are ignored instead of raising an error
 when the data has successfully been read.
 
-`scipy.io.loadmat` gained a ``simplify_cells`` parameter, which if set to 
-``True`` simplifies the structure of the return value if the ``.mat`` file 
+`scipy.io.loadmat` gained a ``simplify_cells`` parameter, which if set to
+``True`` simplifies the structure of the return value if the ``.mat`` file
 contains cell arrays.
 
 ``pathlib.Path`` objects are now supported in `scipy.io` Matrix Market I/O
@@ -71,50 +71,50 @@ functions
 
 `scipy.linalg` improvements
 ---------------------------
-`scipy.linalg.eigh` has been improved. Now various ``LAPACK`` drivers can be 
-selected at will and also subsets of eigenvalues can be requested via 
+`scipy.linalg.eigh` has been improved. Now various ``LAPACK`` drivers can be
+selected at will and also subsets of eigenvalues can be requested via
 ``subset_by_value`` keyword. Another keyword ``subset_by_index`` is introduced.
 Keywords ``turbo`` and ``eigvals`` are deprecated.
 
-Similarly, standard and generalized Hermitian eigenvalue ``LAPACK`` routines 
+Similarly, standard and generalized Hermitian eigenvalue ``LAPACK`` routines
 ``?<sy/he>evx`` are added and existing ones now have full ``_lwork``
 counterparts.
 
-Wrappers for the following ``LAPACK`` routines have been added to 
+Wrappers for the following ``LAPACK`` routines have been added to
 `scipy.linalg.lapack`:
 
-- ``?getc2``: computes the LU factorization of a general matrix with complete 
+- ``?getc2``: computes the LU factorization of a general matrix with complete
     pivoting
 - ``?gesc2``: solves a linear system given an LU factorization from ``?getc2``
-- ``?gejsv``: computes the singular value decomposition of a general matrix 
-    with higher accuracy calculation of tiny singular values and their 
+- ``?gejsv``: computes the singular value decomposition of a general matrix
+    with higher accuracy calculation of tiny singular values and their
     corresponding singular vectors
-- ``?geqrfp``: computes the QR factorization of a general matrix with 
+- ``?geqrfp``: computes the QR factorization of a general matrix with
     non-negative elements on the diagonal of R
 - ``?gtsvx``: solves a linear system with general tridiagonal matrix
 - ``?gttrf``: computes the LU factorization of a tridiagonal matrix
 - ``?gttrs``: solves a linear system given an LU factorization from ``?gttrf``
-- ``?ptsvx``: solves a linear system with symmetric positive definite 
+- ``?ptsvx``: solves a linear system with symmetric positive definite
     tridiagonal matrix
-- ``?pttrf``: computes the LU factorization of a symmetric positive definite 
+- ``?pttrf``: computes the LU factorization of a symmetric positive definite
     tridiagonal matrix
 - ``?pttrs``: solves a linear system given an LU factorization from ``?pttrf``
-- ``?pteqr``: computes the eigenvectors and eigenvalues of a positive definite 
+- ``?pteqr``: computes the eigenvectors and eigenvalues of a positive definite
     tridiagonal matrix
 - ``?tbtrs``: solves a linear system with a triangular banded matrix
-- ``?csd``: computes the Cosine Sine decomposition of an orthogonal/unitary 
+- ``?csd``: computes the Cosine Sine decomposition of an orthogonal/unitary
     matrix
 
-Generalized QR factorization routines (``?geqrf``) now have full ``_lwork`` 
+Generalized QR factorization routines (``?geqrf``) now have full ``_lwork``
 counterparts.
 
-`scipy.linalg.cossin` Cosine Sine decomposition of unitary matrices has been 
+`scipy.linalg.cossin` Cosine Sine decomposition of unitary matrices has been
 added.
 
 The function `scipy.linalg.khatri_rao`, which computes the Khatri-Rao product,
 was added.
 
-The new function `scipy.linalg.convolution_matrix` constructs the Toeplitz 
+The new function `scipy.linalg.convolution_matrix` constructs the Toeplitz
 matrix representing one-dimensional convolution.
 
 `scipy.ndimage` improvements
@@ -126,42 +126,42 @@ matrix representing one-dimensional convolution.
 The finite difference numerical differentiation used in various ``minimize``
 methods that use gradients has several new features:
 
-- 2-point, 3-point, or complex step finite differences can be used. Previously 
+- 2-point, 3-point, or complex step finite differences can be used. Previously
   only a 2-step finite difference was available.
 - There is now the possibility to use a relative step size, previously only an
   absolute step size was available.
-- If the ``minimize`` method uses bounds the numerical differentiation strictly 
+- If the ``minimize`` method uses bounds the numerical differentiation strictly
   obeys those limits.
-- The numerical differentiation machinery now makes use of a simple cache, 
+- The numerical differentiation machinery now makes use of a simple cache,
   which in some cases can reduce the number of function evaluations.
 - ``minimize``'s ``method= 'powell'`` now supports simple bound constraints
 
 There have been several improvements to `scipy.optimize.linprog`:
 
 - The ``linprog`` benchmark suite has been expanded considerably.
-- ``linprog``'s dense pivot-based redundancy removal routine and sparse 
+- ``linprog``'s dense pivot-based redundancy removal routine and sparse
   presolve are faster
-- When ``scikit-sparse`` is available, solving sparse problems with 
+- When ``scikit-sparse`` is available, solving sparse problems with
   ``method='interior-point'`` is faster
 
-The caching of values when optimizing a function returning both value and 
-gradient together has been improved, avoiding repeated function evaluations 
+The caching of values when optimizing a function returning both value and
+gradient together has been improved, avoiding repeated function evaluations
 when using a ``HessianApproximation`` such as ``BFGS``.
 
-``differential_evolution`` can now use the modern ``np.random.Generator`` as 
+``differential_evolution`` can now use the modern ``np.random.Generator`` as
 well as the legacy ``np.random.RandomState`` as a seed.
 
 `scipy.signal` improvements
 ---------------------------
-A new optional argument ``include_nyquist`` is added to ``freqz`` functions in 
+A new optional argument ``include_nyquist`` is added to ``freqz`` functions in
 this module. It is used for including the last frequency (Nyquist frequency).
 
-`scipy.signal.find_peaks_cwt` now accepts a ``window_size`` parameter for the 
+`scipy.signal.find_peaks_cwt` now accepts a ``window_size`` parameter for the
 size of the window used to calculate the noise floor.
 
 `scipy.sparse` improvements
 ---------------------------
-Outer indexing is now faster when using a 2d column vector to select column 
+Outer indexing is now faster when using a 2d column vector to select column
 indices.
 
 `scipy.sparse.lil.tocsr` is faster
@@ -175,10 +175,10 @@ attribute
 
 `scipy.spatial` improvements
 ----------------------------
-`scipy.spatial.geometric_slerp` has been added to enable geometric 
+`scipy.spatial.geometric_slerp` has been added to enable geometric
 spherical linear interpolation on an n-sphere
 
-`scipy.spatial.SphericalVoronoi` now supports calculation of region areas in 2D 
+`scipy.spatial.SphericalVoronoi` now supports calculation of region areas in 2D
 and 3D cases
 
 The tree building algorithm used by ``cKDTree`` has improved from quadratic
@@ -196,64 +196,64 @@ The following functions now have Cython interfaces in `cython_special`:
 - `scipy.special.spherical_in`
 - `scipy.special.spherical_kn`
 
-`scipy.special.log_softmax` has been added to calculate the logarithm of softmax 
-function. It provides better accuracy than ``log(scipy.special.softmax(x))`` for 
+`scipy.special.log_softmax` has been added to calculate the logarithm of softmax
+function. It provides better accuracy than ``log(scipy.special.softmax(x))`` for
 inputs that make softmax saturate.
 
 `scipy.stats` improvements
 --------------------------
-The function for generating random samples in `scipy.stats.dlaplace` has been 
+The function for generating random samples in `scipy.stats.dlaplace` has been
 improved. The new function is approximately twice as fast with a memory
 footprint reduction between 25 % and 60 % (see gh-11069).
 
-`scipy.stats` functions that accept a seed for reproducible calculations using 
-random number generation (e.g. random variates from distributions) can now use 
-the modern ``np.random.Generator`` as well as the legacy 
+`scipy.stats` functions that accept a seed for reproducible calculations using
+random number generation (e.g. random variates from distributions) can now use
+the modern ``np.random.Generator`` as well as the legacy
 ``np.random.RandomState`` as a seed.
 
-The ``axis`` parameter was added to `scipy.stats.rankdata`. This allows slices 
+The ``axis`` parameter was added to `scipy.stats.rankdata`. This allows slices
 of an array along the given axis to be ranked independently.
 
 The ``axis`` parameter was added to `scipy.stats.f_oneway`, allowing it to
 compute multiple one-way ANOVA tests for data stored in n-dimensional
 arrays.  The performance of ``f_oneway`` was also improved for some cases.
 
-The PDF and CDF methods for ``stats.geninvgauss`` are now significantly faster 
-as  the numerical integration to calculate the CDF uses a Cython based 
+The PDF and CDF methods for ``stats.geninvgauss`` are now significantly faster
+as  the numerical integration to calculate the CDF uses a Cython based
 ``LowLevelCallable``.
 
-Moments of the normal distribution (`scipy.stats.norm`) are now calculated using 
-analytical formulas instead of numerical integration for greater speed and 
+Moments of the normal distribution (`scipy.stats.norm`) are now calculated using
+analytical formulas instead of numerical integration for greater speed and
 accuracy
 
-Moments and entropy trapezoidal distribution (`scipy.stats.trapz`) are now 
-calculated using analytical formulas instead of numerical integration for 
+Moments and entropy trapezoidal distribution (``scipy.stats.trapz``) are now
+calculated using analytical formulas instead of numerical integration for
 greater speed and accuracy
 
-Methods of the truncated normal distribution (`scipy.stats.truncnorm`), 
+Methods of the truncated normal distribution (`scipy.stats.truncnorm`),
 especially ``_rvs``, are significantly faster after a complete rewrite.
 
-The `fit` method of the Laplace distribution,  `scipy.stats.laplace`, now uses 
+The `fit` method of the Laplace distribution,  `scipy.stats.laplace`, now uses
 the analytical formulas for the maximum likelihood estimates of the parameters.
 
-Generation of random variates is now thread safe for all SciPy distributions. 
-3rd-party distributions may need to modify the signature of the ``_rvs()`` 
-method to conform to ``_rvs(self, ..., size=None, random_state=None)``. (A 
-one-time VisibleDeprecationWarning is emitted when using non-conformant 
+Generation of random variates is now thread safe for all SciPy distributions.
+3rd-party distributions may need to modify the signature of the ``_rvs()``
+method to conform to ``_rvs(self, ..., size=None, random_state=None)``. (A
+one-time VisibleDeprecationWarning is emitted when using non-conformant
 distributions.)
 
-The Kolmogorov-Smirnov two-sided test statistic distribution 
-(`scipy.stats.kstwo`) was added. Calculates the distribution of the K-S 
-two-sided statistic ``D_n`` for a sample of size n, using a mixture of exact 
+The Kolmogorov-Smirnov two-sided test statistic distribution
+(`scipy.stats.kstwo`) was added. Calculates the distribution of the K-S
+two-sided statistic ``D_n`` for a sample of size n, using a mixture of exact
 and asymptotic algorithms.
 
-The new function ``median_abs_deviation`` replaces the deprecated 
+The new function ``median_abs_deviation`` replaces the deprecated
 ``median_absolute_deviation``.
 
-The ``wilcoxon`` function now computes the p-value for Wilcoxon's signed rank 
-test using the exact distribution for inputs up to length 25.  The function has 
-a new ``mode`` parameter to specify how the p-value is to be computed.  The 
-default is ``"auto"``, which uses the exact distribution for inputs up to length 
+The ``wilcoxon`` function now computes the p-value for Wilcoxon's signed rank
+test using the exact distribution for inputs up to length 25.  The function has
+a new ``mode`` parameter to specify how the p-value is to be computed.  The
+default is ``"auto"``, which uses the exact distribution for inputs up to length
 25 and the normal approximation for larger inputs.
 
 Added a new Cython-based implementation to evaluate guassian kernel estimates,
@@ -265,19 +265,19 @@ handling of ``nan`` input values.
 The ``binned_statistic_dd`` function with ``statistic="std"`` performance was
 improved by ~4x.
 
-``scipy.stats.kstest(rvs, cdf,...)`` now handles both one-sample and 
-two-sample testing. The one-sample variation uses `scipy.stats.ksone` 
-(or `scipy.stats.kstwo` with back off to `scipy.stats.kstwobign`) to calculate 
-the p-value. The two-sample variation, invoked if ``cdf`` is array_like, uses 
-an algorithm described by Hodges to compute the probability directly, only 
-backing off to `scipy.stats.kstwo` in case of overflow. The result in both 
-cases is more accurate p-values, especially for two-sample testing with 
+``scipy.stats.kstest(rvs, cdf,...)`` now handles both one-sample and
+two-sample testing. The one-sample variation uses `scipy.stats.ksone`
+(or `scipy.stats.kstwo` with back off to `scipy.stats.kstwobign`) to calculate
+the p-value. The two-sample variation, invoked if ``cdf`` is array_like, uses
+an algorithm described by Hodges to compute the probability directly, only
+backing off to `scipy.stats.kstwo` in case of overflow. The result in both
+cases is more accurate p-values, especially for two-sample testing with
 smaller (or quite different) sizes.
 
 `scipy.stats.maxwell` performance improvements include a 20 % speed up for
 `fit()`` and 5 % for ``pdf()``
 
-`scipy.stats.shapiro` and `scipy.stats.jarque_bera` now return a named tuple 
+`scipy.stats.shapiro` and `scipy.stats.jarque_bera` now return a named tuple
 for greater consistency with other ``stats`` functions
 
 Deprecated features
@@ -288,15 +288,15 @@ Deprecated features
 
 `scipy.special` changes
 -----------------------
-The ``bdtr``, ``bdtrc``, and ``bdtri`` functions are deprecating non-negative 
+The ``bdtr``, ``bdtrc``, and ``bdtri`` functions are deprecating non-negative
 non-integral ``n`` arguments.
 
 `scipy.stats` changes
 ---------------------
-The function ``median_absolute_deviation`` is deprecated. Use 
+The function ``median_absolute_deviation`` is deprecated. Use
 ``median_abs_deviation`` instead.
 
-The use of the string ``"raw"`` with the ``scale`` parameter of ``iqr`` is 
+The use of the string ``"raw"`` with the ``scale`` parameter of ``iqr`` is
 deprecated. Use ``scale=1`` instead.
 
 Backwards incompatible changes
@@ -307,16 +307,16 @@ Backwards incompatible changes
 
 `scipy.linalg` changes
 ----------------------
-The output signatures of ``?syevr``, ``?heevr`` have been changed from 
+The output signatures of ``?syevr``, ``?heevr`` have been changed from
 ``w, v, info`` to ``w, v, m, isuppz, info``
 
-The order of output arguments ``w``, ``v`` of ``<sy/he>{gv, gvd, gvx}`` is 
+The order of output arguments ``w``, ``v`` of ``<sy/he>{gv, gvd, gvx}`` is
 swapped.
 
 `scipy.signal` changes
 ----------------------
-The output length of `scipy.signal.upfirdn` has been corrected, resulting 
-outputs may now be shorter for some combinations of up/down ratios and input 
+The output length of `scipy.signal.upfirdn` has been corrected, resulting
+outputs may now be shorter for some combinations of up/down ratios and input
 signal and filter lengths.
 
 `scipy.signal.resample` now supports a ``domain`` keyword argument for
@@ -331,12 +331,12 @@ Other changes
 Improved support for leveraging 64-bit integer size from linear algebra backends
 in several parts of the SciPy codebase.
 
-Shims designed to ensure the compatibility of SciPy with Python 2.7 have now 
+Shims designed to ensure the compatibility of SciPy with Python 2.7 have now
 been removed.
 
 Many warnings due to unused imports and unused assignments have been addressed.
 
-Many usage examples were added to function docstrings, and many input 
+Many usage examples were added to function docstrings, and many input
 validations and intuitive exception messages have been added throughout the
 codebase.
 
@@ -650,7 +650,7 @@ Issues closed for 1.5.0
 * `#12173 <https://github.com/scipy/scipy/issues/12173>`__: Large memory usage when indexing sparse matrices with \`np.ix_\`
 * `#12178 <https://github.com/scipy/scipy/issues/12178>`__: BUG: stats: Some discrete distributions don't accept lists of...
 * `#12220 <https://github.com/scipy/scipy/issues/12220>`__: BUG, REL: gh_lists.py compromised scraping
-* `#12239 <https://github.com/scipy/scipy/issues/12239>`__: BUG: median absolute deviation handling of nan 
+* `#12239 <https://github.com/scipy/scipy/issues/12239>`__: BUG: median absolute deviation handling of nan
 * `#12301 <https://github.com/scipy/scipy/issues/12301>`__: integer overflow in scipy.sparse.sputils.check_shape when matrix size > 2^32
 * `#12314 <https://github.com/scipy/scipy/issues/12314>`__: scipy.spatial.transform.Rotation multiplication does not normalize quaternion
 

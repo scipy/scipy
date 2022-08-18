@@ -5,11 +5,13 @@
 """
 Unit tests for the dual annealing global optimizer
 """
-from scipy.optimize import dual_annealing
-from scipy.optimize._dual_annealing import VisitingDistribution
-from scipy.optimize._dual_annealing import ObjectiveFunWrapper
+from scipy.optimize import dual_annealing, Bounds
+
 from scipy.optimize._dual_annealing import EnergyState
 from scipy.optimize._dual_annealing import LocalSearchWrapper
+from scipy.optimize._dual_annealing import ObjectiveFunWrapper
+from scipy.optimize._dual_annealing import StrategyChain
+from scipy.optimize._dual_annealing import VisitingDistribution
 from scipy.optimize import rosen, rosen_der
 import pytest
 import numpy as np
@@ -59,12 +61,15 @@ class TestDualAnnealing:
         self.ngev += 1
         return rosen_der(x, *args)
 
-    def test_visiting_stepping(self):
+    # FIXME: there are some discontinuities in behaviour as a function of `qv`,
+    #        this needs investigating - see gh-12384
+    @pytest.mark.parametrize('qv', [1.1, 1.41, 2, 2.62, 2.9])
+    def test_visiting_stepping(self, qv):
         lu = list(zip(*self.ld_bounds))
         lower = np.array(lu[0])
         upper = np.array(lu[1])
         dim = lower.size
-        vd = VisitingDistribution(lower, upper, self.qv, self.rs)
+        vd = VisitingDistribution(lower, upper, qv, self.rs)
         values = np.zeros(dim)
         x_step_low = vd.visiting(values, 0, self.high_temperature)
         # Make sure that only the first component is changed
@@ -74,11 +79,12 @@ class TestDualAnnealing:
         # Make sure that component other than at dim has changed
         assert_equal(np.not_equal(x_step_high[0], 0), True)
 
-    def test_visiting_dist_high_temperature(self):
+    @pytest.mark.parametrize('qv', [2.25, 2.62, 2.9])
+    def test_visiting_dist_high_temperature(self, qv):
         lu = list(zip(*self.ld_bounds))
         lower = np.array(lu[0])
         upper = np.array(lu[1])
-        vd = VisitingDistribution(lower, upper, self.qv, self.rs)
+        vd = VisitingDistribution(lower, upper, qv, self.rs)
         # values = np.zeros(self.nbtestvalues)
         # for i in np.arange(self.nbtestvalues):
         #     values[i] = vd.visit_fn(self.high_temperature)
@@ -173,25 +179,31 @@ class TestDualAnnealing:
         assert_raises(ValueError, dual_annealing, self.func,
                       invalid_bounds)
 
-    def test_local_search_option_bounds(self):
+    def test_deprecated_local_search_options_bounds(self):
+        func = lambda x: np.sum((x-5) * (x-1))
+        bounds = list(zip([-6, -5], [6, 5]))
+        # Test bounds can be passed (see gh-10831)
+
+        with pytest.warns(RuntimeWarning, match=r"Method CG cannot handle "):
+            dual_annealing(
+                func,
+                bounds=bounds,
+                minimizer_kwargs={"method": "CG", "bounds": bounds})
+
+    def test_minimizer_kwargs_bounds(self):
         func = lambda x: np.sum((x-5) * (x-1))
         bounds = list(zip([-6, -5], [6, 5]))
         # Test bounds can be passed (see gh-10831)
         dual_annealing(
             func,
             bounds=bounds,
-            local_search_options={"method": "SLSQP", "bounds": bounds})
+            minimizer_kwargs={"method": "SLSQP", "bounds": bounds})
 
-        with np.testing.suppress_warnings() as sup:
-            sup.record(RuntimeWarning, "Method CG cannot handle ")
-
+        with pytest.warns(RuntimeWarning, match=r"Method CG cannot handle "):
             dual_annealing(
                 func,
                 bounds=bounds,
-                local_search_options={"method": "CG", "bounds": bounds})
-
-            # Verify warning happened for Method cannot handle bounds.
-            assert sup.log
+                minimizer_kwargs={"method": "CG", "bounds": bounds})
 
     def test_max_fun_ls(self):
         ret = dual_annealing(self.func, self.ld_bounds, maxfun=100,
@@ -248,7 +260,7 @@ class TestDualAnnealing:
     ])
     def test_multi_ls_minimizer(self, method, atol):
         ret = dual_annealing(self.func, self.ld_bounds,
-                             local_search_options=dict(method=method),
+                             minimizer_kwargs=dict(method=method),
                              seed=self.seed)
         assert_allclose(ret.fun, 0., atol=atol)
 
@@ -263,7 +275,7 @@ class TestDualAnnealing:
             'jac': self.rosen_der_wrapper,
         }
         ret = dual_annealing(rosen, self.ld_bounds,
-                             local_search_options=minimizer_opts,
+                             minimizer_kwargs=minimizer_opts,
                              seed=self.seed)
         assert ret.njev == self.ngev
 
@@ -278,3 +290,73 @@ class TestDualAnnealing:
                          -3.93616815e-09, -6.55623025e-09, -6.05775280e-09,
                          -5.00668935e-09], atol=4e-8)
         assert_allclose(ret.fun, 0.000000, atol=5e-13)
+
+    @pytest.mark.parametrize('new_e, temp_step, accepted, accept_rate', [
+        (0, 100, 1000, 1.0097587941791923),
+        (0, 2, 1000, 1.2599210498948732),
+        (10, 100, 878, 0.8786035869128718),
+        (10, 60, 695, 0.6812920690579612),
+        (2, 100, 990, 0.9897404249173424),
+    ])
+    def test_accept_reject_probabilistic(
+            self, new_e, temp_step, accepted, accept_rate):
+        # Test accepts unconditionally with e < current_energy and
+        # probabilistically with e > current_energy
+
+        rs = check_random_state(123)
+
+        count_accepted = 0
+        iterations = 1000
+
+        accept_param = -5
+        current_energy = 1
+        for _ in range(iterations):
+            energy_state = EnergyState(lower=None, upper=None)
+            # Set energy state with current_energy, any location.
+            energy_state.update_current(current_energy, [0])
+
+            chain = StrategyChain(
+                accept_param, None, None, None, rs, energy_state)
+            # Normally this is set in run()
+            chain.temperature_step = temp_step
+
+            # Check if update is accepted.
+            chain.accept_reject(j=1, e=new_e, x_visit=[2])
+            if energy_state.current_energy == new_e:
+                count_accepted += 1
+
+        assert count_accepted == accepted
+
+        # Check accept rate
+        pqv = 1 - (1 - accept_param) * (new_e - current_energy) / temp_step
+        rate = 0 if pqv <= 0 else np.exp(np.log(pqv) / (1 - accept_param))
+
+        assert_allclose(rate, accept_rate)
+
+    def test_bounds_class(self):
+        # test that result does not depend on the bounds type
+        def func(x):
+            f = np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
+            return f
+        lw = [-5.12] * 5
+        up = [5.12] * 5
+
+        # Unbounded global minimum is all zeros. Most bounds below will force
+        # a DV away from unbounded minimum and be active at solution.
+        up[0] = -2.0
+        up[1] = -1.0
+        lw[3] = 1.0
+        lw[4] = 2.0
+
+        # run optimizations
+        bounds = Bounds(lw, up)
+        ret_bounds_class = dual_annealing(func, bounds=bounds, seed=1234)
+
+        bounds_old = list(zip(lw, up))
+        ret_bounds_list = dual_annealing(func, bounds=bounds_old, seed=1234)
+
+        # test that found minima, function evaluations and iterations match
+        assert_allclose(ret_bounds_class.x, ret_bounds_list.x, atol=1e-8)
+        assert_allclose(ret_bounds_class.x, np.arange(-2, 3), atol=1e-7)
+        assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-9)
+        assert ret_bounds_list.nfev == ret_bounds_class.nfev

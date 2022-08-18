@@ -103,11 +103,11 @@ Global optimization
 
    basinhopping - Basinhopping stochastic optimizer.
    brute - Brute force searching optimizer.
-   differential_evolution - stochastic minimization using differential evolution.
+   differential_evolution - Stochastic optimizer using differential evolution.
 
-   shgo - simplicial homology global optimisation
+   shgo - Simplicial homology global optimizer.
    dual_annealing - Dual annealing stochastic optimizer.
-
+   direct - DIRECT (Dividing Rectangles) optimizer.
 
 Least-squares and curve fitting
 ===============================
@@ -232,12 +232,13 @@ The `root` function supports the following methods:
    optimize.root-krylov
    optimize.root-dfsane
 
-Linear programming
-==================
+Linear programming / MILP
+=========================
 
 .. autosummary::
    :toctree: generated/
 
+   milp -- Mixed integer linear programming.
    linprog -- Unified interface for minimizers of linear programming problems.
 
 The `linprog` function supports the following methods:
@@ -247,20 +248,33 @@ The `linprog` function supports the following methods:
    optimize.linprog-simplex
    optimize.linprog-interior-point
    optimize.linprog-revised_simplex
+   optimize.linprog-highs-ipm
+   optimize.linprog-highs-ds
+   optimize.linprog-highs
 
-The simplex method supports callback functions, such as:
+The simplex, interior-point, and revised simplex methods support callback
+functions, such as:
 
 .. autosummary::
    :toctree: generated/
 
    linprog_verbose_callback -- Sample callback function for linprog (simplex).
 
-Assignment problems:
+Assignment problems
+===================
 
 .. autosummary::
    :toctree: generated/
 
    linear_sum_assignment -- Solves the linear-sum assignment problem.
+   quadratic_assignment -- Solves the quadratic assignment problem.
+
+The `quadratic_assignment` function supports the following methods:
+
+.. toctree::
+
+   optimize.qap-faq
+   optimize.qap-2opt
 
 Utilities
 =========
@@ -381,20 +395,19 @@ Simple iteration solvers:
    linearmixing
    diagbroyden
 
-:mod:`Additional information on the nonlinear solvers <scipy.optimize.nonlin>`
 """
 
-from .optimize import *
+from ._optimize import *
 from ._minimize import *
 from ._root import *
 from ._root_scalar import *
-from .minpack import *
-from .zeros import *
-from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct
-from .tnc import fmin_tnc
-from .cobyla import fmin_cobyla
-from .nonlin import *
-from .slsqp import fmin_slsqp
+from ._minpack_py import *
+from ._zeros_py import *
+from ._lbfgsb_py import fmin_l_bfgs_b, LbfgsInvHessProduct
+from ._tnc import fmin_tnc
+from ._cobyla_py import fmin_cobyla
+from ._nonlin import *
+from ._slsqp_py import fmin_slsqp
 from ._nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
@@ -407,6 +420,15 @@ from ._constraints import (NonlinearConstraint,
 from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 from ._shgo import shgo
 from ._dual_annealing import dual_annealing
+from ._qap import quadratic_assignment
+from ._direct_py import direct
+from ._milp import milp
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import (
+    cobyla, lbfgsb, linesearch, minpack, minpack2, moduleTNC, nonlin, optimize,
+    slsqp, tnc, zeros
+)
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

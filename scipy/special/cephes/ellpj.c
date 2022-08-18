@@ -77,10 +77,10 @@ int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
     /* Check for special cases */
     if (m < 0.0 || m > 1.0 || cephes_isnan(m)) {
         sf_error("ellpj", SF_ERROR_DOMAIN, NULL);
-        *sn = NPY_NAN;
-        *cn = NPY_NAN;
-        *ph = NPY_NAN;
-        *dn = NPY_NAN;
+        *sn = NAN;
+        *cn = NAN;
+        *ph = NAN;
+        *dn = NAN;
         return (-1);
     }
     if (m < 1.0e-9) {

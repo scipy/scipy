@@ -40,7 +40,7 @@ from random import random
 
 import numpy as np
 
-from scipy.optimize import zeros as cc
+from scipy.optimize import _zeros_py as cc
 
 # "description" refers to the original functions
 description = """

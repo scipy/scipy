@@ -32,6 +32,7 @@ Fast Fourier Transforms (FFTs)
 
 Discrete Sin and Cosine Transforms (DST and DCT)
 ================================================
+
 .. autosummary::
    :toctree: generated/
 
@@ -44,6 +45,15 @@ Discrete Sin and Cosine Transforms (DST and DCT)
    dstn - N-D Discrete sine transform
    idstn - N-D Inverse discrete sine transform
 
+Fast Hankel Transforms
+======================
+
+.. autosummary::
+   :toctree: generated/
+
+   fht - Fast Hankel transform
+   ifht - Inverse of fht
+
 Helper functions
 ================
 
@@ -54,6 +64,7 @@ Helper functions
    ifftshift - The inverse of `fftshift`
    fftfreq - Return the Discrete Fourier Transform sample frequencies
    rfftfreq - DFT sample frequencies (for usage with rfft, irfft)
+   fhtoffset - Compute an optimal offset for the Fast Hankel Transform
    next_fast_len - Find the optimal length to zero-pad an FFT for speed
    set_workers - Context manager to set default number of workers
    get_workers - Get the current default number of workers
@@ -76,6 +87,8 @@ from ._basic import (
     rfft, irfft, rfft2, irfft2, rfftn, irfftn,
     hfft, ihfft, hfft2, ihfft2, hfftn, ihfftn)
 from ._realtransforms import dct, idct, dst, idst, dctn, idctn, dstn, idstn
+from ._fftlog import fhtoffset
+from ._fftlog_multimethods import fht, ifht
 from ._helper import next_fast_len
 from ._backend import (set_backend, skip_backend, set_global_backend,
                        register_backend)
@@ -83,12 +96,14 @@ from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
 from ._pocketfft.helper import set_workers, get_workers
 
 __all__ = [
-    'fft', 'ifft', 'fft2','ifft2', 'fftn', 'ifftn',
+    'fft', 'ifft', 'fft2', 'ifft2', 'fftn', 'ifftn',
     'rfft', 'irfft', 'rfft2', 'irfft2', 'rfftn', 'irfftn',
     'hfft', 'ihfft', 'hfft2', 'ihfft2', 'hfftn', 'ihfftn',
     'fftfreq', 'rfftfreq', 'fftshift', 'ifftshift',
     'next_fast_len',
     'dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn',
+    'fht', 'ifht',
+    'fhtoffset',
     'set_backend', 'skip_backend', 'set_global_backend', 'register_backend',
     'get_workers', 'set_workers']
 
@@ -96,20 +111,3 @@ __all__ = [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
-
-
-# Hack to allow numpy.fft.fft to be called as scipy.fft
-import sys
-class _FFTModule(sys.modules[__name__].__class__):
-    @staticmethod
-    def __call__(*args, **kwargs):
-        from scipy import _dep_fft
-        return _dep_fft(*args, **kwargs)
-
-
-import os
-if os.environ.get('_SCIPY_BUILDING_DOC') != 'True':
-    sys.modules[__name__].__class__ = _FFTModule
-del os
-del _FFTModule
-del sys

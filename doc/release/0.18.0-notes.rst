@@ -128,7 +128,7 @@ versions and so is more likely to reach convergence. See issue gh-5966.
 `scipy.stats` improvements
 --------------------------
 
-Trapezoidal distribution has been implemented as `scipy.stats.trapz`.
+Trapezoidal distribution has been implemented as ``scipy.stats.trapz``.
 Skew normal distribution has been implemented as `scipy.stats.skewnorm`.
 Burr type XII distribution has been implemented as `scipy.stats.burr12`.
 Three- and four-parameter kappa distributions have been implemented as

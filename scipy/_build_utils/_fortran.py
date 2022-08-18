@@ -127,7 +127,7 @@ def gfortran_legacy_flag_hook(cmd, ext):
     Pre-build hook to add dd gfortran legacy flag -fallow-argument-mismatch
     """
     from .compiler_helper import try_add_flag
-    from distutils.version import LooseVersion
+    from scipy._lib import _pep440
 
     if isinstance(ext, dict):
         # build_clib
@@ -142,7 +142,8 @@ def gfortran_legacy_flag_hook(cmd, ext):
         if compiler is None:
             continue
 
-        if compiler.compiler_type == "gnu95" and compiler.version >= LooseVersion("10"):
+        if (compiler.compiler_type == "gnu95" and
+        _pep440.parse(str(compiler.version)) >= _pep440.Version("10")):
             try_add_flag(args, compiler, "-fallow-argument-mismatch")
 
 
@@ -312,9 +313,11 @@ def generic_pre_build_hook(cmd, ext, fcompiler_flags, patch_source_func=None,
 
         try:
             flags = fcompiler_flags[compiler.compiler_type]
-        except KeyError:
-            raise RuntimeError("Compiler {!r} is not supported in this "
-                               "configuration.".format(compiler.compiler_type))
+        except KeyError as e:
+            raise RuntimeError(
+                "Compiler {!r} is not supported in this "
+                "configuration.".format(compiler.compiler_type)
+            ) from e
 
         args.extend(flag for flag in flags if flag not in args)
 

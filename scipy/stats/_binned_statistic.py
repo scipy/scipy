@@ -95,6 +95,7 @@ def binned_statistic(x, values, statistic='mean',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -127,8 +128,9 @@ def binned_statistic(x, values, statistic='mean',
     as a function of wind speed, and then determine how fast our boat is for
     certain wind speeds:
 
-    >>> windspeed = 8 * np.random.rand(500)
-    >>> boatspeed = .3 * windspeed**.5 + .2 * np.random.rand(500)
+    >>> rng = np.random.default_rng()
+    >>> windspeed = 8 * rng.random(500)
+    >>> boatspeed = .3 * windspeed**.5 + .2 * rng.random(500)
     >>> bin_means, bin_edges, binnumber = stats.binned_statistic(windspeed,
     ...                 boatspeed, statistic='median', bins=[1,2,3,4,5,6,7])
     >>> plt.figure()
@@ -293,6 +295,9 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     `expand_binnumbers` argument. If 'False' (default): The returned
     `binnumber` is a shape (N,) array of linearized indices mapping each
     element of `sample` to its corresponding bin (using row-major ordering).
+    Note that the returned linearized bin indices are used for an array with
+    extra bins on the outer binedges to capture values outside of the defined
+    bin bounds.
     If 'True': The returned `binnumber` is a shape (2,N) ndarray where
     each row indicates bin placements for each dimension respectively.  In each
     dimension, a binnumber of `i` means the corresponding value is between
@@ -470,6 +475,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.mplot3d import Axes3D
@@ -582,16 +588,14 @@ def binned_statistic_dd(sample, values, statistic='mean',
             flatsum = np.bincount(binnumbers, values[vv])
             result[vv, a] = flatsum[a] / flatcount[a]
     elif statistic == 'std':
-        result.fill(0)
+        result.fill(np.nan)
         flatcount = np.bincount(binnumbers, None)
         a = flatcount.nonzero()
         for vv in builtins.range(Vdim):
-            for i in np.unique(binnumbers):
-                # NOTE: take std dev by bin, np.std() is 2-pass and stable
-                binned_data = values[vv, binnumbers == i]
-                # calc std only when binned data is 2 or more for speed up.
-                if len(binned_data) >= 2:
-                    result[vv, i] = np.std(binned_data)
+            flatsum = np.bincount(binnumbers, values[vv])
+            delta = values[vv] - flatsum[binnumbers] / flatcount[binnumbers]
+            std = np.sqrt(np.bincount(binnumbers, delta**2)[a] / flatcount[a])
+            result[vv, a] = std
     elif statistic == 'count':
         result.fill(0)
         flatcount = np.bincount(binnumbers, None)
@@ -605,19 +609,25 @@ def binned_statistic_dd(sample, values, statistic='mean',
             result[vv, a] = flatsum
     elif statistic == 'median':
         result.fill(np.nan)
-        for i in np.unique(binnumbers):
-            for vv in builtins.range(Vdim):
-                result[vv, i] = np.median(values[vv, binnumbers == i])
+        for vv in builtins.range(Vdim):
+            i = np.lexsort((values[vv], binnumbers))
+            _, j, counts = np.unique(binnumbers[i],
+                                     return_index=True, return_counts=True)
+            mid = j + (counts - 1) / 2
+            mid_a = values[vv, i][np.floor(mid).astype(int)]
+            mid_b = values[vv, i][np.ceil(mid).astype(int)]
+            medians = (mid_a + mid_b) / 2
+            result[vv, binnumbers[i][j]] = medians
     elif statistic == 'min':
         result.fill(np.nan)
-        for i in np.unique(binnumbers):
-            for vv in builtins.range(Vdim):
-                result[vv, i] = np.min(values[vv, binnumbers == i])
+        for vv in builtins.range(Vdim):
+            i = np.argsort(values[vv])[::-1]  # Reversed so the min is last
+            result[vv, binnumbers[i]] = values[vv, i]
     elif statistic == 'max':
         result.fill(np.nan)
-        for i in np.unique(binnumbers):
-            for vv in builtins.range(Vdim):
-                result[vv, i] = np.max(values[vv, binnumbers == i])
+        for vv in builtins.range(Vdim):
+            i = np.argsort(values[vv])
+            result[vv, binnumbers[i]] = values[vv, i]
     elif callable(statistic):
         with np.errstate(invalid='ignore'), suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
@@ -626,9 +636,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
             except Exception:
                 null = np.nan
         result.fill(null)
-        for i in np.unique(binnumbers):
-            for vv in builtins.range(Vdim):
-                result[vv, i] = statistic(values[vv, binnumbers == i])
+        _calc_binned_statistic(Vdim, binnumbers, result, values, statistic)
 
     # Shape into a proper matrix
     result = result.reshape(np.append(Vdim, nbin))
@@ -650,6 +658,28 @@ def binned_statistic_dd(sample, values, statistic='mean',
     return BinnedStatisticddResult(result, edges, binnumbers)
 
 
+def _calc_binned_statistic(Vdim, bin_numbers, result, values, stat_func):
+    unique_bin_numbers = np.unique(bin_numbers)
+    for vv in builtins.range(Vdim):
+        bin_map = _create_binned_data(bin_numbers, unique_bin_numbers,
+                                      values, vv)
+        for i in unique_bin_numbers:
+            result[vv, i] = stat_func(np.array(bin_map[i]))
+
+
+def _create_binned_data(bin_numbers, unique_bin_numbers, values, vv):
+    """ Create hashmap of bin ids to values in bins
+    key: bin number
+    value: list of binned data
+    """
+    bin_map = dict()
+    for i in unique_bin_numbers:
+        bin_map[i] = []
+    for i in builtins.range(len(bin_numbers)):
+        bin_map[bin_numbers[i]].append(values[vv, i])
+    return bin_map
+
+
 def _bin_edges(sample, bins=None, range=None):
     """ Create edge arrays
     """
@@ -665,9 +695,16 @@ def _bin_edges(sample, bins=None, range=None):
         smin = np.atleast_1d(np.array(sample.min(axis=0), float))
         smax = np.atleast_1d(np.array(sample.max(axis=0), float))
     else:
-        smin = np.zeros(Ndim)
-        smax = np.zeros(Ndim)
+        if len(range) != Ndim:
+            raise ValueError(
+                f"range given for {len(range)} dimensions; {Ndim} required")
+        smin = np.empty(Ndim)
+        smax = np.empty(Ndim)
         for i in builtins.range(Ndim):
+            if range[i][1] < range[i][0]:
+                raise ValueError(
+                    "In {}range, start must be <= stop".format(
+                        f"dimension {i + 1} of " if Ndim > 1 else ""))
             smin[i], smax[i] = range[i]
 
     # Make sure the bins have a finite width.
@@ -676,13 +713,18 @@ def _bin_edges(sample, bins=None, range=None):
             smin[i] = smin[i] - .5
             smax[i] = smax[i] + .5
 
+    # Preserve sample floating point precision in bin edges
+    edges_dtype = (sample.dtype if np.issubdtype(sample.dtype, np.floating)
+                   else float)
+
     # Create edge arrays
     for i in builtins.range(Ndim):
         if np.isscalar(bins[i]):
             nbin[i] = bins[i] + 2  # +2 for outlier bins
-            edges[i] = np.linspace(smin[i], smax[i], nbin[i] - 1)
+            edges[i] = np.linspace(smin[i], smax[i], nbin[i] - 1,
+                                   dtype=edges_dtype)
         else:
-            edges[i] = np.asarray(bins[i], float)
+            edges[i] = np.asarray(bins[i], edges_dtype)
             nbin[i] = len(edges[i]) + 1  # +1 for outlier bins
         dedges[i] = np.diff(edges[i])
 
@@ -711,8 +753,9 @@ def _bin_numbers(sample, nbin, edges, dedges):
             raise ValueError('The smallest edge difference is numerically 0.')
         decimal = int(-np.log10(dedges_min)) + 6
         # Find which points are on the rightmost edge.
-        on_edge = np.where(np.around(sample[:, i], decimal) ==
-                           np.around(edges[i][-1], decimal))[0]
+        on_edge = np.where((sample[:, i] >= edges[i][-1]) &
+                           (np.around(sample[:, i], decimal) ==
+                            np.around(edges[i][-1], decimal)))[0]
         # Shift these points one bin to the left.
         sampBin[i][on_edge] -= 1
 

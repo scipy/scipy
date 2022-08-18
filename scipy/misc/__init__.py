@@ -14,18 +14,20 @@ Various utilities that don't have another home.
    central_diff_weights - Weights for an n-point central mth derivative
    derivative - Find the nth derivative of a function at a point
    face - Get example image for processing
-   electrocardiogram - Load an example of a 1-D signal.
+   electrocardiogram - Load an example of a 1-D signal
 
 """
 
-from . import doccer
-from .common import *
 
-__all__ = ['doccer']
+from ._common import *
+from . import _common
 
-from . import common
-__all__ += common.__all__
-del common
+# Deprecated namespaces, to be removed in v2.0.0
+from . import common, doccer
+
+__all__ = _common.__all__
+
+del _common
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

@@ -31,11 +31,11 @@ Basics
    solve_circulant - Solve a circulant system
    solve_triangular - Solve a triangular matrix
    solve_toeplitz - Solve a toeplitz matrix
+   matmul_toeplitz - Multiply a Toeplitz matrix with an array.
    det - Find the determinant of a square matrix
    norm - Matrix and vector norm
    lstsq - Solve a linear least-squares problem
    pinv - Pseudo-inverse (Moore-Penrose) using lstsq
-   pinv2 - Pseudo-inverse using svd
    pinvh - Pseudo-inverse of hermitian matrix
    kron - Kronecker product of two arrays
    khatri_rao - Khatri-Rao product of two arrays
@@ -44,6 +44,9 @@ Basics
    orthogonal_procrustes - Solve an orthogonal Procrustes problem
    matrix_balance - Balance matrix entries with a similarity transformation
    subspace_angles - Compute the subspace angles between two matrices
+   bandwidth - Return the lower and upper bandwidth of an array
+   issymmetric - Check if a square 2D array is symmetric
+   ishermitian - Check if a square 2D array is Hermitian
    LinAlgError
    LinAlgWarning
 
@@ -191,26 +194,33 @@ Low-level routines
 
 """  # noqa: E501
 
-from .misc import *
-from .basic import *
-from .decomp import *
-from .decomp_lu import *
+from ._misc import *
+from ._cythonized_array_utils import *
+from ._basic import *
+from ._decomp import *
+from ._decomp_lu import *
 from ._decomp_ldl import *
-from .decomp_cholesky import *
-from .decomp_qr import *
+from ._decomp_cholesky import *
+from ._decomp_qr import *
 from ._decomp_qz import *
-from .decomp_svd import *
-from .decomp_schur import *
+from ._decomp_svd import *
+from ._decomp_schur import *
 from ._decomp_polar import *
-from .matfuncs import *
+from ._matfuncs import *
 from .blas import *
 from .lapack import *
-from .special_matrices import *
+from ._special_matrices import *
 from ._solvers import *
 from ._procrustes import *
 from ._decomp_update import *
 from ._sketches import *
 from ._decomp_cossin import *
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import (
+    decomp, decomp_cholesky, decomp_lu, decomp_qr, decomp_svd, decomp_schur,
+    basic, misc, special_matrices, flinalg, matfuncs
+)
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

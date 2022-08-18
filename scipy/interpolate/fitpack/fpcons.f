@@ -1,5 +1,6 @@
-      subroutine fpcons(iopt,idim,m,u,mx,x,w,ib,ie,k,s,nest,tol,maxit,
-     * k1,k2,n,t,nc,c,fp,fpint,z,a,b,g,q,nrdata,ier)
+      recursive subroutine fpcons(iopt,idim,m,u,mx,x,w,ib,ie,k,s,nest,
+     *  tol,maxit,k1,k2,n,t,nc,c,fp,fpint,z,a,b,g,q,nrdata,ier)
+ccc      implicit none   c XXX: mmnin/nmin variables on line 61
 c  ..
 c  ..scalar arguments..
       real*8 s,tol,fp

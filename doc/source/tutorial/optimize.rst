@@ -34,7 +34,11 @@ The minimum value of this function is 0 which is achieved when
 Note that the Rosenbrock function and its derivatives are included in
 `scipy.optimize`. The implementations shown in the following sections
 provide examples of how to define an objective function as well as its
-jacobian and hessian functions.
+jacobian and hessian functions. Objective functions in `scipy.optimize` 
+expect a numpy array as their first parameter which is to be optimized 
+and must return a float value. The exact calling signature must be
+``f(x, *args)`` where ``x`` represents a numpy array and ``args`` 
+a tuple of additional arguments supplied to the objective function.
 
 Nelder-Mead Simplex algorithm (``method='Nelder-Mead'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -70,6 +74,31 @@ Another optimization algorithm that needs only function calls to find
 the minimum is *Powell*'s method available by setting ``method='powell'`` in
 :func:`minimize`.
 
+To demonstrate how to supply additional arguments to an objective function, 
+let us minimize the Rosenbrock function with an additional scaling factor `a` 
+and an offset `b`:
+
+.. math::
+
+    f\left(\mathbf{x}, a, b\right)=\sum_{i=1}^{N-1}a\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2} + b.
+
+Again using the :func:`minimize` routine this can be solved by the following 
+code block for the example parameters `a=0.5` and `b=1`. 
+
+    >>> def rosen_with_args(x, a, b):
+    ...     """The Rosenbrock function with additional arguments"""
+    ...     return sum(a*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0) + b
+
+    >>> x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+    >>> res = minimize(rosen_with_args, x0, method='nelder-mead', 
+    ...		       args=(0.5, 1.), options={'xatol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 1.000000
+             Iterations: 319
+             Function evaluations: 525
+
+    >>> print(res.x)
+    [1.         1.         1.         1.         0.99999999]
 
 Broyden-Fletcher-Goldfarb-Shanno algorithm (``method='BFGS'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -118,12 +147,39 @@ through the ``jac`` parameter as illustrated below.
     ...                options={'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 51                     # may vary
-             Function evaluations: 63
-             Gradient evaluations: 63
+             Iterations: 25                     # may vary
+             Function evaluations: 30
+             Gradient evaluations: 30
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
+Another way to supply gradient information is to write a single 
+function which returns both the objective and the gradient: this is 
+indicated by setting ``jac=True``. In this case, the Python function 
+to be optimized must return a tuple whose first value is the objective 
+and whose second value represents the gradient. For this example, the 
+objective can be specified in the following way:
+
+    >>> def rosen_and_der(x):
+    ...	    objective = sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
+    ...     xm = x[1:-1]
+    ...     xm_m1 = x[:-2]
+    ...     xm_p1 = x[2:]
+    ...     der = np.zeros_like(x)
+    ...     der[1:-1] = 200*(xm-xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1-xm)
+    ...     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
+    ...     der[-1] = 200*(x[-1]-x[-2]**2)
+    ...     return objective, der
+
+    >>> res = minimize(rosen_and_der, x0, method='BFGS', jac=True,
+    ...                options={'disp': True})
+             Current function value: 0.000000
+             Iterations: 25                     # may vary
+             Function evaluations: 30
+             Gradient evaluations: 30    
+
+Supplying objective and gradient in a single function can help to avoid 
+redundant computations and therefore speed up the optimization significantly.
 
 Newton-Conjugate-Gradient algorithm (``method='Newton-CG'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -369,12 +425,12 @@ Hessian product example:
 
 .. [TRLIB] F. Lenders, C. Kirches, A. Potschka: "trlib: A vector-free
            implementation of the GLTR method for iterative solution of
-           the trust region problem", https://arxiv.org/abs/1611.04718
+           the trust region problem", :arxiv:`1611.04718`
 
 .. [GLTR]  N. Gould, S. Lucidi, M. Roma, P. Toint: "Solving the
            Trust-Region Subproblem using the Lanczos Method",
            SIAM J. Optim., 9(2), 504--525, (1999).
-           https://doi.org/10.1137/S1052623497322735
+           :doi:`10.1137/S1052623497322735`
 
 
 Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
@@ -720,6 +776,7 @@ This function looks like an egg carton::
    >>> plt.show()
 
 .. plot:: tutorial/examples/optimize_global_2.py
+   :alt: "A 3-D plot shown from a three-quarter view. The function is very noisy with dozens of valleys and peaks. There is no clear min or max discernable from this view and it's not possible to see all the local peaks and valleys from this view." 
    :align: center
    :include-source: 0
 
@@ -759,7 +816,6 @@ optimization was successful, and more.  For brevity, we won't show the full
 output of the other optimizers::
 
    >>> results['DE'] = optimize.differential_evolution(eggholder, bounds)
-   >>> results['BH'] = optimize.basinhopping(eggholder, bounds)
 
 :func:`shgo` has a second method, which returns all local minima rather than
 only what it thinks is the global minimum::
@@ -779,7 +835,6 @@ We'll now plot all found minima on a heatmap of the function::
    >>> def plot_point(res, marker='o', color=None):
    ...     ax.plot(512+res.x[0], 512+res.x[1], marker=marker, color=color, ms=10)
 
-   >>> plot_point(results['BH'], color='y')  # basinhopping           - yellow
    >>> plot_point(results['DE'], color='c')  # differential_evolution - cyan
    >>> plot_point(results['DA'], color='w')  # dual_annealing.        - white
 
@@ -797,6 +852,7 @@ We'll now plot all found minima on a heatmap of the function::
 
 .. plot:: tutorial/examples/optimize_global_1.py
    :align: center
+   :alt: "This X-Y plot is a heatmap with the Z value denoted with the lowest points as black and the highest values as white. The image resembles a chess board rotated 45 degrees but heavily smoothed. A red dot is located at many of the minima on the grid resulting from the SHGO optimizer. SHGO shows the global minima as a red X in the top right. A local minima found with dual annealing is a white circle marker in the top left. A different local minima found with basinhopping is a yellow marker in the top center. The code is plotting the differential evolution result as a cyan circle, but it is not visible on the plot. At a glance it's not clear which of these valleys is the true global minima."
    :include-source: 0
 
 Least-squares minimization (:func:`least_squares`)
@@ -866,6 +922,7 @@ The code below implements least-squares estimation of :math:`\mathbf{x}` and
 finally plots the original data and the fitted model function:
 
 .. plot::
+    :alt: "This code plots an X-Y time-series. The series starts in the lower left at (0, 0) and rapidly trends up to the maximum of 0.2 then flattens out. The fitted model is shown as a smooth orange trace and is well fit to the data."
 
     >>> from scipy.optimize import least_squares
 
@@ -1197,6 +1254,7 @@ exactly, forms an approximation for it.
 The problem we have can now be solved as follows:
 
 .. plot::
+    :alt: "This code generates a 2-D heatmap with Z values from 0 to 1. The graph resembles a smooth, dark blue-green, U shape, with an open yellow top. The right, bottom, and left edges have a value near zero and the top has a value close to 1. The center of the solution space has a value close to 0.8."
 
     import numpy as np
     from scipy.optimize import root
@@ -1541,6 +1599,102 @@ If we need greater accuracy, typically at the expense of speed, we can solve usi
     success: True
           x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
 
+Assignment problems
+-------------------
+
+Linear sum assignment problem example
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Consider the problem of selecting students for a swimming medley relay team.
+We have a table showing times for each swimming style of five students:
+
+==========  ===========  ============  ===========  ===============================
+ Student    backstroke   breaststroke  butterfly    freestyle
+==========  ===========  ============  ===========  ===============================
+ A          43.5           47.1         48.4        38.2
+ B          45.5           42.1         49.6        36.8
+ C          43.4           39.1         42.1        43.2
+ D          46.5           44.1         44.5        41.2
+ E          46.3           47.8         50.4        37.2
+==========  ===========  ============  ===========  ===============================
+
+We need to choose a student for each of the four swimming styles such that 
+the total relay time is minimized.
+This is a typical linear sum assignment problem. We can use :func:`linear_sum_assignment` to solve it.
+
+The linear sum assignment problem is one of the most famous combinatorial optimization problems.
+Given a "cost matrix" :math:`C`, the problem is to choose
+
+- exactly one element from each row 
+- without choosing more than one element from any column 
+- such that the sum of the chosen elements is minimized
+
+In other words, we need to assign each row to one column such that the sum of 
+the corresponding entries is minimized.
+
+Formally, let :math:`X` be a boolean matrix where :math:`X[i,j] = 1` iff row  :math:`i` is assigned to column :math:`j`.
+Then the optimal assignment has cost
+
+.. math::
+
+    \min \sum_i \sum_j C_{i,j} X_{i,j}
+
+The first step is to define the cost matrix.
+In this example, we want to assign each swimming style to a student.
+:func:`linear_sum_assignment` is able to assign each row of a cost matrix to a column.
+Therefore, to form the cost matrix, the table above needs to be transposed so that the rows
+correspond with swimming styles and the columns correspond with students:
+
+::
+
+    >>> import numpy as np
+    >>> cost = np.array([[43.5, 45.5, 43.4, 46.5, 46.3],
+    ...                  [47.1, 42.1, 39.1, 44.1, 47.8],
+    ...                  [48.4, 49.6, 42.1, 44.5, 50.4],
+    ...                  [38.2, 36.8, 43.2, 41.2, 37.2]])
+
+We can solve the assignment problem with :func:`linear_sum_assignment`:
+
+::
+
+    >>> from scipy.optimize import linear_sum_assignment
+    >>> row_ind, col_ind = linear_sum_assignment(cost)
+
+The ``row_ind`` and ``col_ind`` are optimal assigned matrix indexes of the cost matrix:
+
+::
+
+    >>> row_ind
+    array([0, 1, 2, 3])
+    >>> col_ind
+    array([0, 2, 3, 1])
+
+The optimal assignment is:
+
+::
+
+    >>> styles = np.array(["backstroke", "breaststroke", "butterfly", "freestyle"])[row_ind]
+    >>> students = np.array(["A", "B", "C", "D", "E"])[col_ind]
+    >>> dict(zip(styles, students))
+    {'backstroke': 'A', 'breaststroke': 'C', 'butterfly': 'D', 'freestyle': 'B'}
+
+The optimal total medley time is:
+
+::
+
+    >>> cost[row_ind, col_ind].sum()
+    163.89999999999998
+
+Note that this result is not the same as the sum of the minimum times for each swimming style:
+
+::
+
+    >>> np.min(cost, axis=1).sum()
+    161.39999999999998
+
+because student "C" is the best swimmer in both "breaststroke" and "butterfly" style.
+We cannot assign student "C" to both styles, so we assigned student C to the "breaststroke" style
+and D to the "butterfly" style to minimize the total time.
 
 .. rubric:: References
 
@@ -1548,7 +1702,7 @@ Some further reading and related software, such as Newton-Krylov [KK]_,
 PETSc [PP]_, and PyAMG [AMG]_:
 
 .. [KK] D.A. Knoll and D.E. Keyes, "Jacobian-free Newton-Krylov methods",
-        J. Comp. Phys. 193, 357 (2004). doi:10.1016/j.jcp.2003.08.010
+        J. Comp. Phys. 193, 357 (2004). :doi:`10.1016/j.jcp.2003.08.010`
 
 .. [PP] PETSc https://www.mcs.anl.gov/petsc/ and its Python bindings
         https://bitbucket.org/petsc/petsc4py/

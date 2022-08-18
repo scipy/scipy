@@ -79,17 +79,15 @@ an alternative to ode with the zvode solver, sometimes performing better.
 #     IntegratorBase.integrator_classes.append(myodeint)
 
 __all__ = ['ode', 'complex_ode']
-__version__ = "$Id$"
-__docformat__ = "restructuredtext en"
 
 import re
 import warnings
 
 from numpy import asarray, array, zeros, isscalar, real, imag, vstack
 
-from . import vode as _vode
+from . import _vode
 from . import _dop
-from . import lsoda as _lsoda
+from . import _lsoda
 
 
 _dop_int_dtype = _dop.types.intvar.dtype
@@ -102,7 +100,7 @@ _lsoda_int_dtype = _lsoda.types.intvar.dtype
 # ------------------------------------------------------------------------------
 
 
-class ode(object):
+class ode:
     """
     A generic interface class to numeric integrators.
 
@@ -379,7 +377,7 @@ class ode(object):
         ----------
         name : str
             Name of the integrator.
-        integrator_params
+        **integrator_params
             Additional parameters for the integrator.
         """
         integrator = find_integrator(name)
@@ -433,9 +431,11 @@ class ode(object):
             self._y, self.t = mth(self.f, self.jac or (lambda: None),
                                   self._y, self.t, t,
                                   self.f_params, self.jac_params)
-        except SystemError:
+        except SystemError as e:
             # f2py issue with tuple returns, see ticket 1187.
-            raise ValueError('Function to integrate must not return a tuple.')
+            raise ValueError(
+                'Function to integrate must not return a tuple.'
+            ) from e
 
         return self._y
 
@@ -670,7 +670,7 @@ class complex_ode(ode):
         ----------
         name : str
             Name of the integrator
-        integrator_params
+        **integrator_params
             Additional parameters for the integrator.
         """
         if name == 'zvode':
@@ -772,7 +772,7 @@ class IntegratorConcurrencyError(RuntimeError):
         RuntimeError.__init__(self, msg)
 
 
-class IntegratorBase(object):
+class IntegratorBase:
     runner = None  # runner is None => integrator is not available
     success = None  # success==1 if integrator was called successfully
     istate = None  # istate > 0 means success, istate < 0 means failure
@@ -1210,10 +1210,8 @@ class dop853(dopri5):
                  method=None,
                  verbosity=-1,  # no messages if negative
                  ):
-        super(self.__class__, self).__init__(rtol, atol, nsteps, max_step,
-                                             first_step, safety, ifactor,
-                                             dfactor, beta, method,
-                                             verbosity)
+        super().__init__(rtol, atol, nsteps, max_step, first_step, safety,
+                         ifactor, dfactor, beta, method, verbosity)
 
     def reset(self, n, has_jac):
         work = zeros((11 * n + 21,), float)

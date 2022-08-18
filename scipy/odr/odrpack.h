@@ -9,16 +9,12 @@
 
 #if NPY_BITSOF_SHORT == 64
 #define F_INT_PYFMT   "h"
-#define F_INT_FMT "%h"
 #elif NPY_BITSOF_INT == 64
 #define F_INT_PYFMT   "i"
-#define F_INT_FMT "%d"
 #elif NPY_BITSOF_LONG == 64
 #define F_INT_PYFMT   "l"
-#define F_INT_FMT "%ld"
 #elif NPY_BITSOF_LONGLONG == 64
 #define F_INT_PYFMT   "L"
-#define F_INT_FMT "%lld"
 #else
 #error No compatible 64-bit integer size. \
        Please contact NumPy maintainers and give detailed information about your \
@@ -29,7 +25,6 @@
 
 #define F_INT int
 #define F_INT_NPY NPY_INT
-#define F_INT_FMT NPY_INT_FMT
 #define F_INT_PYFMT   "i"
 
 #endif
