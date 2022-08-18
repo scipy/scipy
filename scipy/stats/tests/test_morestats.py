@@ -19,6 +19,9 @@ from scipy.stats._morestats import _abw_state
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
+from scipy.stats._distr_params import distcont
+
+distcont = dict(distcont)  # type: ignore
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -300,6 +303,20 @@ class TestAnderson:
 
         assert_array_less(A1, crit1[-2:])
         assert_(A2 > crit2[-1])
+
+    @pytest.mark.parametrize('distname',
+                             ['norm', 'expon', 'gumbel_l', 'extreme1',
+                              'gumbel', 'gumbel_r', 'logistic'])
+    def test_anderson_fit_params(self, distname):
+        # check that anderson now returns a FitResult
+        rng = np.random.default_rng(330691555377792039)
+        real_distname = ('gumbel_l' if distname in {'extreme1', 'gumbel'}
+                         else distname)
+        dist = getattr(stats, real_distname)
+        params = distcont[real_distname]
+        x = dist.rvs(*params, size=1000, random_state=rng)
+        res = stats.anderson(x, distname)
+        assert res.fit_result.success
 
 
 class TestAndersonKSamp:

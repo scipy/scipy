@@ -298,6 +298,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     that the problem be expressed as a minimization problem, the objective
     function coefficients on the decision variables are:
 
+    >>> import numpy as np
     >>> c = -np.array([0, 1])
 
     Note the negative sign: we maximize the original objective function

@@ -310,8 +310,8 @@ class BSpline:
         Construct a quadratic B-spline on ``[0, 1, 1, 2]``, and compare
         to its explicit form:
 
-        >>> t = [-1, 0, 1, 1, 2]
-        >>> b = BSpline.basis_element(t[1:])
+        >>> t = [0, 1, 1, 2]
+        >>> b = BSpline.basis_element(t)
         >>> def f(x):
         ...     return np.where(x < 1, x*x, (2. - x)**2)
 
@@ -1123,21 +1123,21 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     y : array_like, shape (n, ...)
         Ordinates.
     k : int, optional
-        B-spline degree. Default is cubic, k=3.
+        B-spline degree. Default is cubic, ``k`` =3.
     t : array_like, shape (nt + k + 1,), optional.
         Knots.
-        The number of knots needs to agree with the number of datapoints and
+        The number of knots needs to agree with the number of data points and
         the number of derivatives at the edges. Specifically, ``nt - n`` must
         equal ``len(deriv_l) + len(deriv_r)``.
     bc_type : 2-tuple or None
         Boundary conditions.
         Default is None, which means choosing the boundary conditions
         automatically. Otherwise, it must be a length-two tuple where the first
-        element sets the boundary conditions at ``x[0]`` and the second
-        element sets the boundary conditions at ``x[-1]``. Each of these must
-        be an iterable of pairs ``(order, value)`` which gives the values of
-        derivatives of specified orders at the given edge of the interpolation
-        interval.
+        element (``deriv_l``) sets the boundary conditions at ``x[0]`` and
+        the second element (``deriv_r``) sets the boundary conditions at
+        ``x[-1]``. Each of these must be an iterable of pairs
+        ``(order, value)`` which gives the values of derivatives of specified
+        orders at the given edge of the interpolation interval.
         Alternatively, the following string aliases are recognized:
 
         * ``"clamped"``: The first derivatives at the ends are zero. This is
@@ -1165,7 +1165,9 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     --------
 
     Use cubic interpolation on Chebyshev nodes:
+
     >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
     >>> def cheb_nodes(N):
     ...     jj = 2.*np.arange(N) + 1
     ...     x = np.cos(np.pi * jj / 2 / N)[::-1]
@@ -1203,7 +1205,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Build an interpolating curve, parameterizing it by the angle
 
-    >>> from scipy.interpolate import make_interp_spline
     >>> spl = make_interp_spline(phi, np.c_[x, y])
 
     Evaluate the interpolant on a finer grid (note that we transpose the result
@@ -1214,7 +1215,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Plot the result
 
-    >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, y, 'o')
     >>> plt.plot(x_new, y_new, '-')
     >>> plt.show()

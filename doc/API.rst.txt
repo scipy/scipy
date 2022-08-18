@@ -95,6 +95,8 @@ change is made.
 
 * `scipy.constants`
 
+* `scipy.datasets`
+
 * `scipy.fft`
 
 * `scipy.fftpack`
@@ -157,6 +159,7 @@ change is made.
 
    cluster
    constants
+   datasets
    fft
    fftpack
    integrate

@@ -5,10 +5,11 @@
 #
 import warnings
 from collections.abc import Iterable
-from functools import wraps
+from functools import wraps, cached_property
 import ctypes
 
 import numpy as np
+from numpy.polynomial import Polynomial
 from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring,
                                inherit_docstring_from)
@@ -26,7 +27,7 @@ from ._distn_infrastructure import (
     get_distribution_names, _kurtosis,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
-from ._constants import (_XMIN, _EULER, _ZETA3,
+from ._constants import (_XMIN, _EULER, _ZETA3, _SQRT_PI,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
@@ -4117,6 +4118,26 @@ class invgauss_gen(rv_continuous):
     def _cdf(self, x, mu):
         return np.exp(self._logcdf(x, mu))
 
+    def _ppf(self, x, mu):
+        with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
+            x, mu = np.broadcast_arrays(x, mu)
+            ppf = _boost._invgauss_ppf(x, mu, 1)
+            i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
+            ppf[i_wt] = _boost._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
+            i_nan = np.isnan(ppf)
+            ppf[i_nan] = super()._ppf(x[i_nan], mu[i_nan])
+        return ppf
+
+    def _isf(self, x, mu):
+        with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
+            x, mu = np.broadcast_arrays(x, mu)
+            isf = _boost._invgauss_isf(x, mu, 1)
+            i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
+            isf[i_wt] = _boost._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
+            i_nan = np.isnan(isf)
+            isf[i_nan] = super()._isf(x[i_nan], mu[i_nan])
+        return isf
+
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
@@ -7801,9 +7822,9 @@ class skew_norm_gen(rv_continuous):
 
     References
     ----------
-    .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the
-        multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
-        :arxiv:`0911.2093`
+    .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of
+        the multivariate skew-normal distribution. J. Roy. Statist. Soc.,
+        B 61, 579-602. :arxiv:`0911.2093`
 
     """
     def _argcheck(self, a):
@@ -7858,6 +7879,54 @@ class skew_norm_gen(rv_continuous):
 
         return output
 
+    # For odd order, the each noncentral moment of the skew-normal distribution
+    # with location 0 and scale 1 can be expressed as a polynomial in delta,
+    # where delta = a/sqrt(1 + a**2) and `a` is the skew-normal shape
+    # parameter.  The dictionary _skewnorm_odd_moments defines those
+    # polynomials for orders up to 19.  The dict is implemented as a cached
+    # property to reduce the impact of the creation of the dict on import time.
+    @cached_property
+    def _skewnorm_odd_moments(self):
+        skewnorm_odd_moments = {
+            1: Polynomial([1]),
+            3: Polynomial([3, -1]),
+            5: Polynomial([15, -10, 3]),
+            7: Polynomial([105, -105, 63, -15]),
+            9: Polynomial([945, -1260, 1134, -540, 105]),
+            11: Polynomial([10395, -17325, 20790, -14850, 5775, -945]),
+            13: Polynomial([135135, -270270, 405405, -386100, 225225, -73710,
+                            10395]),
+            15: Polynomial([2027025, -4729725, 8513505, -10135125, 7882875,
+                            -3869775, 1091475, -135135]),
+            17: Polynomial([34459425, -91891800, 192972780, -275675400,
+                            268017750, -175429800, 74220300, -18378360,
+                            2027025]),
+            19: Polynomial([654729075, -1964187225, 4714049340, -7856748900,
+                            9166207050, -7499623950, 4230557100, -1571349780,
+                            346621275, -34459425]),
+        }
+        return skewnorm_odd_moments
+
+    def _munp(self, order, a):
+        if order & 1:
+            if order > 19:
+                raise NotImplementedError("skewnorm noncentral moments not "
+                                          "implemented for odd orders greater "
+                                          "than 19.")
+            # Use the precomputed polynomials that were derived from the
+            # moment generating function.
+            delta = a/np.sqrt(1 + a**2)
+            return (delta * self._skewnorm_odd_moments[order](delta**2)
+                    * _SQRT_2_OVER_PI)
+        else:
+            # For even order, the moment is just (order-1)!!, where !! is the
+            # notation for the double factorial; for an odd integer m, m!! is
+            # m*(m-2)*...*3*1.
+            # We could use special.factorial2, but we know the argument is odd,
+            # so avoid the overhead of that function and compute the result
+            # directly here.
+            return sc.gamma((order + 1)/2) * 2**(order/2) / _SQRT_PI
+
     @extend_notes_in_docstring(rv_continuous, notes="""\
         If ``method='mm'``, parameters fixed by the user are respected, and the
         remaining parameters are used to match distribution and sample moments
@@ -7875,16 +7944,7 @@ class skew_norm_gen(rv_continuous):
         # are specified, and also leaves them in `kwds`
         data, fa, floc, fscale = _check_fit_input_parameters(self, data,
                                                              args, kwds)
-
-        # If method is method of moments, we don't need the user's guesses.
-        # If method is "mle", extract the guesses from args and kwds.
         method = kwds.get("method", "mle").lower()
-        if method == "mm":
-            a, loc, scale = None, None, None
-        else:
-            a = args[0] if len(args) else None
-            loc = kwds.pop('loc', None)
-            scale = kwds.pop('scale', None)
 
         # See https://en.wikipedia.org/wiki/Skew_normal_distribution for
         # moment formulas.
@@ -7892,19 +7952,32 @@ class skew_norm_gen(rv_continuous):
             return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
                                   / (1 - 2*d**2 / np.pi)**(3/2))
 
+        # If skewness of data is greater than max possible population skewness,
+        # MoM won't provide a good guess. Get out early.
+        s = stats.skew(data)
+        s_max = skew_d(1)
+        if abs(s) >= s_max and method == "mle" and fa is None and not args:
+            return super().fit(data, *args, **kwds)
+
+        # If method is method of moments, we don't need the user's guesses.
+        # If method is "mle", extract the guesses from args and kwds.
+        if method == "mm":
+            a, loc, scale = None, None, None
+        else:
+            a = args[0] if len(args) else None
+            loc = kwds.pop('loc', None)
+            scale = kwds.pop('scale', None)
+
         if fa is None and a is None:  # not fixed and no guess: use MoM
             # Solve for a that matches sample distribution skewness to sample
             # skewness.
-            s = stats.skew(data)
-            s_max = skew_d(1)
             s = np.clip(s, -s_max, s_max)
             d = root_scalar(lambda d: skew_d(d) - s, bracket=[-1, 1]).root
-            a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
-        elif fa is not None:  # fixed: use it
-            a = fa
-        # else: use the user-provided guess
-
-        d = a / np.sqrt(1 + a**2)  # simplifies code to (re)calculate here
+            with np.errstate(divide='ignore'):
+                a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
+        else:
+            a = fa if fa is not None else a
+            d = a / np.sqrt(1 + a**2)
 
         if fscale is None and scale is None:
             v = np.var(data)
@@ -8849,6 +8922,12 @@ class wald_gen(invgauss_gen):
 
     def _sf(self, x):
         return invgauss._sf(x, 1.0)
+
+    def _ppf(self, x):
+        return invgauss._ppf(x, 1.0)
+
+    def _isf(self, x):
+        return invgauss._isf(x, 1.0)
 
     def _logpdf(self, x):
         return invgauss._logpdf(x, 1.0)
