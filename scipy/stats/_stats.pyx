@@ -8,9 +8,6 @@ from numpy.math cimport NAN
 from numpy cimport ndarray, int64_t, float64_t, intp_t
 import warnings
 import numpy as np
-from scipy.linalg import LinAlgError
-from scipy.linalg.cython_blas cimport dtrmm 
-from scipy.linalg.cython_lapack cimport dpotrf
 import scipy.stats, scipy.special
 cimport scipy.special.cython_special as cs
 
@@ -772,66 +769,3 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
                 estimate[j, k] += values_[i, k] * arg
 
     return np.asarray(estimate)
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cpdef int _matrix_normal_rvs_helper(double[::1, :] rowchol,
-                                    double[::1, :] colchol,
-                                    double[::1, :, :] std_norm) except -1:
-    """
-    Assists the `rvs` method of a `matrix_normal` distribution by performing
-    Cholesky decompositions of the covariances and transforming white noise.
-
-    Parameters
-    ----------
-    rowchol : array_like with shape (n, n)
-        Fortran contiguous copy of the among-row covariance matrix.
-    colchol : array_like with shape (p, p)
-        Fortran contiguous copy of the among-row covariance matrix.
-    std_norm : array_like with shape (size, n, p)
-        Fortran contiguous matrix whose elements are drawn from a standard
-        normal distribution.
-
-    Returns
-    -------
-    int
-        -1 indicates an error occured, 0 indicates success.
-    """
-
-    cdef:
-        int n_rows = std_norm.shape[0]
-        int n_cols = std_norm.shape[1]
-        int n_samples = std_norm.shape[2]
-        int row_info, col_info, i
-        double one = 1.0
-
-    dpotrf("L", &n_rows, &rowchol[0, 0], &n_rows, &row_info)
-    dpotrf("U", &n_cols, &colchol[0, 0], &n_cols, &col_info)
-
-    cdef str not_psd_msg = \
-        ("The leading minor of order {} "
-         "is not positive definite and the Cholesky factorization "
-         "of the {} covariance could not be completed.")
-    cdef str illegal_val_msg = \
-        ("While computing the Cholesky factorization of the {} covariance, "
-         "the {}-th argument had an illegal value.")
-
-    if row_info > 0:
-        raise LinAlgError(not_psd_msg.format(row_info, "among-row"))
-    elif row_info < 0:
-        raise ValueError(illegal_val_msg.format("among-row", -row_info))
-    if col_info > 0:
-        raise LinAlgError(not_psd_msg.format(col_info, "among-column"))
-    elif col_info < 0:
-        raise ValueError(illegal_val_msg.format("among-column", -col_info))
-
-    for i in range(n_samples):
-        dtrmm("L", "L", "N", "N",
-              &n_rows, &n_cols, &one, &rowchol[0, 0], &n_rows,
-              &std_norm[0, 0, i], &n_rows)
-        dtrmm("R", "U", "N", "N",
-              &n_rows, &n_cols, &one, &colchol[0, 0], &n_cols,
-              &std_norm[0, 0, i], &n_rows)
-
-    return 0

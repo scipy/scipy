@@ -14,9 +14,7 @@ from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom
-from ._stats import _matrix_normal_rvs_helper
 from . import _mvn
-
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -1150,17 +1148,16 @@ class matrix_normal_gen(multi_rv_generic):
 
         """
         size = int(size)
-        dims, mean, rowcov, colcov = self._process_parameters(
-                mean, rowcov, colcov)
+        dims, mean, rowcov, colcov = self._process_parameters(mean, rowcov,
+                                                              colcov)
+        rowchol = scipy.linalg.cholesky(rowcov, lower=True)
+        colchol = scipy.linalg.cholesky(colcov, lower=True)
         random_state = self._get_random_state(random_state)
-        # Cholesky factorization and white noise transformations are handed
-        # off to Cython; these require Fortran-contiguous arrays.
-        std_norm = np.asfortranarray(
-            random_state.standard_normal(size=(dims[0], dims[1], size)))
-        rowcov_f = rowcov.copy(order='F')
-        colcov_f = colcov.copy(order='F')
-        _matrix_normal_rvs_helper(rowcov_f, colcov_f, std_norm)
-        out = mean + std_norm.transpose(2, 0, 1)
+        std_norm = random_state.standard_normal(size=(size, dims[0], dims[1]))
+        out = np.einsum('jp,ipq,kq->ijk',
+                        rowchol, std_norm, colchol,
+                        optimize=True)
+        out += mean[np.newaxis, :, :]
         if size == 1:
             out = out.reshape(mean.shape)
         return out
