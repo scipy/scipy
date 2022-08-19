@@ -627,8 +627,8 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         2-sequence specifying the boundary of the approximation interval. If
         None (default), ``bbox=[x[0], x[-1]]``.
     k : int, optional
-        Degree of the smoothing spline.  Must be 1 <= `k` <= 5. Default is
-        `k` = 3, a cubic spline.
+        Degree of the smoothing spline.  Must be ``1 <= k <= 5``. Default is
+        ``k = 3`, a cubic spline.
     ext : int or str, optional
         Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
