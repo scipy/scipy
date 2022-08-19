@@ -3093,7 +3093,6 @@ class TestLognorm:
     @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
                              [e for e in product((False, True), repeat=3)
                               if False in e])
-    @np.errstate(invalid="ignore")
     def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
                                     fix_shape, fix_loc, fix_scale, rng):
         data = stats.lognorm.rvs(size=100, s=rvs_shape, scale=rvs_scale,

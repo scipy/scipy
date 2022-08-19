@@ -5541,37 +5541,22 @@ class lognorm_gen(rv_continuous):
 
         def f(loc):
             # Partial derivative of the log-likelihood wrt the location,
-            # times shqpe**2. We find the MLE by finding a root.
+            # times shape**2.
             shape, scale = get_shape_scale(loc)
             shifted = data - loc
             return np.sum((shape**2 + np.log(shifted/scale))/shifted)
 
-        def root_derivative(x0):
-            def fprime(loc):
-                # Derivative of f wrt the location.
-                shape, scale = get_shape_scale(loc)
-                shifted = data - loc
-                log_norm = np.log(shifted/scale)
-
-                # Derivative of log(scale) wrt the location.
-                dLnScale_dLoc = 0 if fscale else -np.mean(1/shifted)
-                # Derivative of shape**2 wrt the location.
-                dSqShape_dLoc = (0 if fshape
-                                 else -2*np.mean(log_norm
-                                                 * (dLnScale_dLoc+1/shifted)))
-
-                return np.sum(((shape**2 + log_norm - 1)/shifted
-                               + dSqShape_dLoc - dLnScale_dLoc)/shifted)
-
-            return root_scalar(f, fprime=fprime, x0=x0)
-
-        def root_bracketing(rbrack):
-            eps = 1e-8
-            lbrack = rbrack - eps
-            i = 0
-            while (lbrack > -np.inf) and (f(lbrack) <= 0):
-                i += 1
-                lbrack = rbrack - eps*np.power(2., i)
+        def root_bracketing(loc0, mn):
+            # Search for an admissible bracketing interval iteratively,
+            # starting from the initial loc0.
+            # mn := min(data) is an upper bound on the root we look for;
+            # it is often not strict enough, so we do not use it directly.
+            lbrack = 2*loc0 - mn
+            rbrack = (loc0 + mn)/2
+            while ((lbrack > -np.inf) and (rbrack < mn)
+                   and (f(lbrack)*f(rbrack) >= 0)):
+                lbrack = 2*lbrack - mn  # double the distance between l and mn
+                rbrack = (rbrack + mn)/2  # halve the distance between r and mn
             try:
                 res = root_scalar(f, bracket=(lbrack, rbrack))
             except ValueError:
@@ -5580,31 +5565,25 @@ class lognorm_gen(rv_continuous):
 
         mn = min(data)
         if floc is None:
+            # If a valid initial guess is provided, it is used. Otherwise, the
+            # method of moment is used to determine one.
+            # If that is not valid (small-sized or negatively-skewed samples),
+            # default to shifting min(data).
             loc0 = kwds.pop("loc", None)
             if loc0 is not None and loc0 < mn:
-                # If the user provided a satisfactory guess, we use it.
-                res = root_derivative(loc0)
+                pass
             else:
-                # Otherwise, we use the method of moments estimate
-                # as a first guess.
-                loc0_mm = loc_mm()
-                if loc0_mm < mn:
-                    res = root_derivative(loc0_mm)
-                else:
-                    # Should that fail, we try to bracket the root.
-                    rbrack = np.nextafter(mn, -np.inf)
-                    if f(rbrack) < 0:
-                        res = root_bracketing(rbrack)
-                    else:
-                        res = None
+                loc0 = loc_mm()
+                if loc0 >= mn:
+                    loc0 = mn - 1
+            res = root_bracketing(loc0, mn)
             if (res is not None and res.converged
                     and np.isfinite(res.root) and res.root < mn):
                 loc = res.root
             else:
-                # If none of the above works, we default to the standard fit.
                 return super().fit(data, *args, **kwds)
         else:
-            if floc >= mn:
+            if floc >= np.min(data):
                 raise FitDataError("lognorm", lower=0., upper=np.inf)
             loc = floc
 
