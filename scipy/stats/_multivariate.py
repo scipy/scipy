@@ -579,13 +579,21 @@ class multivariate_normal_gen(multi_rv_generic):
         """
         lower = (np.full(mean.shape, -np.inf)
                  if lower_limit is None else lower_limit)
-        x, lower = np.broadcast_arrays(x, lower)
+        # In 2d, _mvn.mvnun accepts input in which `lower` bound elements
+        # are greater than `x`. Not so in other dimensions. Fix this by
+        # ensuring that lower bounds are indeed lower when passed, then
+        # set signs of resulting CDF manually.
+        b, a = np.broadcast_arrays(x, lower)
+        i_swap = b < a
+        signs = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
+        a, b = a.copy(), b.copy()
+        a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
         n = x.shape[-1]
-        limits = np.concatenate((lower, x), axis=-1)
+        limits = np.concatenate((a, b), axis=-1)
         # mvnun expects 1-d arguments, so process points sequentially
         func1d = lambda limits: _mvn.mvnun(limits[:n], limits[n:], mean, cov,
                                            maxpts, abseps, releps)[0]
-        out = np.apply_along_axis(func1d, -1, limits)
+        out = np.apply_along_axis(func1d, -1, limits) * signs
         return _squeeze_output(out)
 
     def logcdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
@@ -787,7 +795,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
                                  self.cov_info.log_pdet, self.cov_info.rank)
         if self.allow_singular and (self.cov_info.rank < self.dim):
             out_of_bounds = ~self.cov_info._support_mask(x-self.mean)
-            out[out_of_bounds] = -np.inf
+            out[out_of_bounds] = -np._wnf
         return _squeeze_output(out)
 
     def pdf(self, x):
@@ -822,6 +830,8 @@ class multivariate_normal_frozen(multi_rv_frozen):
         log_pdet = self.cov_info.log_pdet
         rank = self.cov_info.rank
         return 0.5 * (rank * (_LOG_2PI + 1) + log_pdet)
+
+
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
 for name in ['logpdf', 'pdf', 'logcdf', 'cdf', 'rvs']:

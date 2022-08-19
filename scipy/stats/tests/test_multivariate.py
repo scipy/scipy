@@ -520,19 +520,31 @@ class TestMultivariateNormal:
     def test_cdf_with_lower_limit_consistency(self):
         # check that multivariate normal CDF functions are consistent
         rng = np.random.default_rng(2408071309372769818)
-        mean = [0, 0]
-        cov = np.eye(2)
-        a = rng.random((3, 2))*6 - 3
-        b = rng.random((3, 2))*6 - 3
+        mean = rng.random(3)
+        cov = rng.random((3, 3))
+        cov = cov @ cov.T
+        a = rng.random((2, 3))*6 - 3
+        b = rng.random((2, 3))*6 - 3
 
         cdf1 = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
         cdf2 = multivariate_normal(mean, cov).cdf(b, lower_limit=a)
         cdf3 = np.exp(multivariate_normal.logcdf(b, mean, cov, lower_limit=a))
         cdf4 = np.exp(multivariate_normal(mean, cov).logcdf(b, lower_limit=a))
 
-        assert_allclose(cdf2, cdf1)
-        assert_allclose(cdf3, cdf1)
-        assert_allclose(cdf4, cdf1)
+        assert_allclose(cdf2, cdf1, rtol=1e-4)
+        assert_allclose(cdf3, cdf1, rtol=1e-4)
+        assert_allclose(cdf4, cdf1, rtol=1e-4)
+
+    def test_cdf_signs(self):
+        # check that sign of output is correct when np.any(lower > x)
+        mean = np.zeros(3)
+        cov = np.eye(3)
+        b = [[1, 1, 1], [0, 0, 0], [1, 0, 1], [0, 1, 0]]
+        a = [[0, 0, 0], [1, 1, 1], [0, 1, 0], [1, 0, 1]]
+        # when odd number of elements of b < a, output is negative
+        expected_signs = np.array([1, -1, -1, 1])
+        cdf = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+        assert_allclose(cdf, cdf[0]*expected_signs)
 
 
 class TestMatrixNormal:
