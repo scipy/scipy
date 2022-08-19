@@ -160,10 +160,11 @@ interpolate
 *Spline fitting*: we need spline fitting routines with better user control. This
 includes 
 
-- user-selectable alternatives for the smoothing criteria (manual,
-cross-validation etc); gh-16653 makes a start in this direction;
-- several strategies for knot placement, both manual and automatic (using
-algorithms by Dierckx, de Boor, etc). 
+    - user-selectable alternatives for the smoothing criteria (manual,
+      cross-validation etc); gh-16653 makes a start in this direction;
+
+    - several strategies for knot placement, both manual and automatic (using
+      algorithms by Dierckx, de Boor, possibly other). 
 
 Once we have a reasonably feature complete set, we can start taking a long look
 at the future of the venerable FITPACK Fortran library, which currently is the
@@ -175,11 +176,10 @@ performance and API (possibly provide a transparent N-dimensional tensor-product
 B-spline object).
 
 *Scalability and performance*: For the FITPACK-based functionality, the data
-size is limited by 32-bit Fortran integer size, thus scaling requires having
-the ILP64 support in the Meson-based build system.
+size is limited by 32-bit Fortran integer size (for non-ILP64 builds).
 For N-D scattered interpolators (which are QHull based) and N-D regular grid
 interpolators we need to check performance on large data sets and improve
-where lacking.
+where lacking (gh-16483 makes progress in this direction).
 
 *Ideas for new features*: NURBS support could be added.
 
