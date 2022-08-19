@@ -261,6 +261,16 @@ np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
 
 autosummary_generate = True
 
+# maps functions with a name same as a class name that is indistinguishable
+# Ex: scipy.signal.czt and scipy.signal.CZT or scipy.odr.odr and scipy.odr.ODR
+# Otherwise, the stubs are overwritten when the name is same for
+# OS (like MacOS) which has a filesystem that ignores the case
+# See https://github.com/sphinx-doc/sphinx/pull/7927
+autosummary_filename_map = {
+    "scipy.odr.odr": "odr-function",
+    "scipy.signal.czt": "czt-function",
+}
+
 
 # -----------------------------------------------------------------------------
 # Autodoc
