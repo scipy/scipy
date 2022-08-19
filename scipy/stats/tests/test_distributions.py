@@ -1324,6 +1324,20 @@ class TestLoggamma:
             assert_array_almost_equal(computed, [mean, var, skew, kurt],
                                       decimal=4)
 
+    @pytest.mark.parametrize('c', [0.1, 0.001])
+    def test_rvs(self, c):
+        # Regression test for gh-11094.
+        x = stats.loggamma.rvs(c, size=100000)
+        # Before gh-11094 was fixed, the case with c=0.001 would
+        # generate many -inf values.
+        assert np.isfinite(x).all()
+        # Crude statistical test.  About half the values should be
+        # less than the median and half greater than the median.
+        med = stats.loggamma.median(c)
+        btest = stats.binomtest(np.count_nonzero(x < med), len(x))
+        ci = btest.proportion_ci(confidence_level=0.999)
+        assert ci.low < 0.5 < ci.high
+
 
 class TestLogistic:
     # gh-6226
@@ -2741,6 +2755,49 @@ class TestSkewCauchy:
         assert_allclose(stats.skewcauchy.ppf(cdf, a), x)
 
 
+# Test data for TestSkewNorm.test_noncentral_moments()
+# The expected noncentral moments were computed by Wolfram Alpha.
+# In Wolfram Alpha, enter
+#    SkewNormalDistribution[0, 1, a] moment
+# with `a` replaced by the desired shape parameter.  In the results, there
+# should be a table of the first four moments. Click on "More" to get more
+# moments.  The expected moments start with the first moment (order = 1).
+_skewnorm_noncentral_moments = [
+    (2, [2*np.sqrt(2/(5*np.pi)),
+         1,
+         22/5*np.sqrt(2/(5*np.pi)),
+         3,
+         446/25*np.sqrt(2/(5*np.pi)),
+         15,
+         2682/25*np.sqrt(2/(5*np.pi)),
+         105,
+         107322/125*np.sqrt(2/(5*np.pi))]),
+    (0.1, [np.sqrt(2/(101*np.pi)),
+           1,
+           302/101*np.sqrt(2/(101*np.pi)),
+           3,
+           (152008*np.sqrt(2/(101*np.pi)))/10201,
+           15,
+           (107116848*np.sqrt(2/(101*np.pi)))/1030301,
+           105,
+           (97050413184*np.sqrt(2/(101*np.pi)))/104060401]),
+    (-3, [-3/np.sqrt(5*np.pi),
+          1,
+          -63/(10*np.sqrt(5*np.pi)),
+          3,
+          -2529/(100*np.sqrt(5*np.pi)),
+          15,
+          -30357/(200*np.sqrt(5*np.pi)),
+          105,
+          -2428623/(2000*np.sqrt(5*np.pi)),
+          945,
+          -242862867/(20000*np.sqrt(5*np.pi)),
+          10395,
+          -29143550277/(200000*np.sqrt(5*np.pi)),
+          135135]),
+]
+
+
 class TestSkewNorm:
     def setup_method(self):
         self.rng = check_random_state(1234)
@@ -2798,6 +2855,12 @@ class TestSkewNorm:
             p = stats.skewnorm.sf(-x, -a)
             assert_allclose(p, cdfval, rtol=1e-8)
 
+    @pytest.mark.parametrize('a, moments', _skewnorm_noncentral_moments)
+    def test_noncentral_moments(self, a, moments):
+        for order, expected in enumerate(moments, start=1):
+            mom = stats.skewnorm.moment(order, a)
+            assert_allclose(mom, expected, rtol=1e-14)
+
     def test_fit(self):
         rng = np.random.default_rng(4609813989115202851)
 
@@ -2820,6 +2883,23 @@ class TestSkewNorm:
         res = dist4.stats(moments='ms')
         ref = np.mean(rvs), stats.skew(rvs)
         assert_allclose(res, ref)
+
+        # Test behavior when skew of data is beyond maximum of skewnorm
+        rvs = stats.pareto.rvs(1, size=100, random_state=rng)
+
+        # MLE still works
+        res = stats.skewnorm.fit(rvs)
+        assert np.all(np.isfinite(res))
+
+        # MoM fits variance and skewness
+        a5, loc5, scale5 = stats.skewnorm.fit(rvs, method='mm')
+        assert np.isinf(a5)
+        # distribution infrastruction doesn't allow infinite shape parameters
+        # into _stats; it just bypasses it and produces NaNs. Calculate
+        # moments manually.
+        m, v = np.mean(rvs), np.var(rvs)
+        assert_allclose(m, loc5 + scale5 * np.sqrt(2/np.pi))
+        assert_allclose(v, scale5**2 * (1 - 2 / np.pi))
 
 
 class TestExpon:
@@ -7258,7 +7338,6 @@ def test_distr_params_lists():
     assert cont_distnames == invcont_distnames
 
 
-@pytest.mark.xslow
 def test_moment_order_4():
     # gh-13655 reported that if a distribution has a `_stats` method that
     # accepts the `moments` parameter, then if the distribution's `moment`
@@ -7271,6 +7350,9 @@ def test_moment_order_4():
     # When `moment` is called, `_stats` is used, so the moment is very accurate
     # (exactly equal to Pearson's kurtosis of the normal distribution, 3)
     assert stats.skewnorm.moment(order=4, a=0) == 3.0
-    # Had the moment been calculated using `_munp`, the result would have been
-    # less accurate:
-    assert stats.skewnorm._munp(4, 0) != 3.0
+    # At the time of gh-13655, skewnorm._munp() used the generic method
+    # to compute its result, which was inefficient and not very accurate.
+    # At that time, the following assertion would fail.  skewnorm._munp()
+    # has since been made more accurate and efficient, so now this test
+    # is expected to pass.
+    assert stats.skewnorm._munp(4, 0) == 3.0

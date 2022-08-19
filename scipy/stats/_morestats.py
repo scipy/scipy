@@ -16,6 +16,7 @@ from scipy._lib._util import _rename_parameter
 
 from . import _statlib
 from . import _stats_py
+from ._fit import FitResult
 from ._stats_py import (find_repeats, _contains_nan, _normtest_finish,
                         SignificanceResult)
 from .contingency import chi2_contingency
@@ -1181,11 +1182,11 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     >>> lmax_pearsonr = stats.boxcox_normmax(x)
 
     >>> lmax_mle
-    1.4613865614008015
+    2.217563431465757
     >>> lmax_pearsonr
-    1.6685004886804342
+    2.238318660200961
     >>> stats.boxcox_normmax(x, method='all')
-    array([1.66850049, 1.46138656])
+    array([2.23831866, 2.21756343])
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -1831,9 +1832,9 @@ _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
 _Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
 
 
-AndersonResult = namedtuple('AndersonResult', ('statistic',
-                                               'critical_values',
-                                               'significance_level'))
+AndersonResult = _make_tuple_bunch('AndersonResult',
+                                   ['statistic', 'critical_values',
+                                    'significance_level'], ['fit_result'])
 
 
 def anderson(x, dist='norm'):
@@ -1857,15 +1858,21 @@ def anderson(x, dist='norm'):
 
     Returns
     -------
-    statistic : float
-        The Anderson-Darling test statistic.
-    critical_values : list
-        The critical values for this distribution.
-    significance_level : list
-        The significance levels for the corresponding critical values
-        in percents.  The function returns critical values for a
-        differing set of significance levels depending on the
-        distribution that is being tested against.
+    result : AndersonResult
+        An object with the following attributes:
+
+        statistic : float
+            The Anderson-Darling test statistic.
+        critical_values : list
+            The critical values for this distribution.
+        significance_level : list
+            The significance levels for the corresponding critical values
+            in percents.  The function returns critical values for a
+            differing set of significance levels depending on the
+            distribution that is being tested against.
+        fit_result : `~scipy.stats._result_classes.FitResult`
+            An object containing the results of fitting the distribution to
+            the data.
 
     See Also
     --------
@@ -1904,24 +1911,27 @@ def anderson(x, dist='norm'):
     .. [6] Stephens, M. A. (1979). Tests of Fit for the Logistic Distribution
            Based on the Empirical Distribution Function, Biometrika, Vol. 66,
            pp. 591-595.
-
-    """
-    if dist not in ['norm', 'expon', 'gumbel', 'gumbel_l',
-                    'gumbel_r', 'extreme1', 'logistic']:
-        raise ValueError("Invalid distribution; dist must be 'norm', "
-                         "'expon', 'gumbel', 'extreme1' or 'logistic'.")
+    """  # noqa
+    dist = dist.lower()
+    if dist in {'extreme1', 'gumbel'}:
+        dist = 'gumbel_l'
+    dists = {'norm', 'expon', 'gumbel_l', 'gumbel_r', 'logistic'}
+    if dist not in dists:
+        raise ValueError(f"Invalid distribution; dist must be in {dists}.")
     y = sort(x)
     xbar = np.mean(x, axis=0)
     N = len(y)
     if dist == 'norm':
         s = np.std(x, ddof=1, axis=0)
         w = (y - xbar) / s
+        fit_params = xbar, s
         logcdf = distributions.norm.logcdf(w)
         logsf = distributions.norm.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
         critical = around(_Avals_norm / (1.0 + 4.0/N - 25.0/N/N), 3)
     elif dist == 'expon':
         w = y / xbar
+        fit_params = 0, xbar
         logcdf = distributions.expon.logcdf(w)
         logsf = distributions.expon.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
@@ -1938,6 +1948,7 @@ def anderson(x, dist='norm'):
         sol0 = array([xbar, np.std(x, ddof=1, axis=0)])
         sol = optimize.fsolve(rootfunc, sol0, args=(x, N), xtol=1e-5)
         w = (y - sol[0]) / sol[1]
+        fit_params = sol
         logcdf = distributions.logistic.logcdf(w)
         logsf = distributions.logistic.logsf(w)
         sig = array([25, 10, 5, 2.5, 1, 0.5])
@@ -1945,13 +1956,15 @@ def anderson(x, dist='norm'):
     elif dist == 'gumbel_r':
         xbar, s = distributions.gumbel_r.fit(x)
         w = (y - xbar) / s
+        fit_params = xbar, s
         logcdf = distributions.gumbel_r.logcdf(w)
         logsf = distributions.gumbel_r.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
-    else:  # (dist == 'gumbel') or (dist == 'gumbel_l') or (dist == 'extreme1')
+    elif dist == 'gumbel_l':
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y - xbar) / s
+        fit_params = xbar, s
         logcdf = distributions.gumbel_l.logcdf(w)
         logsf = distributions.gumbel_l.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
@@ -1960,7 +1973,14 @@ def anderson(x, dist='norm'):
     i = arange(1, N + 1)
     A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
 
-    return AndersonResult(A2, critical, sig)
+    # FitResult initializer expects an optimize result, so let's work with it
+    message = '`anderson` successfully fit the distribution to the data.'
+    res = optimize.OptimizeResult(success=True, message=message)
+    res.x = np.array(fit_params)
+    fit_result = FitResult(getattr(distributions, dist), y,
+                           discrete=False, res=res)
+
+    return AndersonResult(A2, critical, sig, fit_result=fit_result)
 
 
 def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
