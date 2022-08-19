@@ -9,8 +9,8 @@ from . import _bspl
 from . import _fitpack_impl
 from . import _fitpack as _dierckx
 from scipy._lib._util import prod
-from scipy.special import poch
 from scipy.sparse import csr_array
+from scipy.special import poch
 from itertools import combinations
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline"]
@@ -437,9 +437,26 @@ class BSpline:
             # Checks from `find_interval` function
             raise ValueError(f'Out of bounds w/ x = {x}.')
 
-        n, nt = x.shape[0], t.shape[0]
-        data, idx = _bspl._make_design_matrix(x, t, k, extrapolate)
-        return csr_array((data, idx), (n, nt - k - 1))
+        # Compute number of non-zeros of final CSR array in order to determine
+        # the dtype of indices and indptr of the CSR array.
+        n = x.shape[0]
+        nnz = n * (k + 1)
+        if nnz < np.iinfo(np.int32).max:
+            int_dtype = np.int32
+        else:
+            int_dtype = np.int64
+        # Preallocate indptr and indices
+        indices = np.empty(n * (k + 1), dtype=int_dtype)
+        indptr = np.arange(0, (n + 1) * (k + 1), k + 1, dtype=int_dtype)
+
+        # indptr is not passed to Cython as it is already fully computed
+        data, indices = _bspl._make_design_matrix(
+            x, t, k, extrapolate, indices
+        )
+        return csr_array(
+            (data, indices, indptr),
+            shape=(x.shape[0], t.shape[0] - k - 1)
+        )
 
     def __call__(self, x, nu=0, extrapolate=None):
         """
