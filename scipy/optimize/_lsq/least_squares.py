@@ -784,6 +784,9 @@ def least_squares(
     if verbose not in [0, 1, 2]:
         raise ValueError("`verbose` must be in [0, 1, 2].")
 
+    if max_nfev is not None and max_nfev <= 0:
+        raise ValueError("`max_nfev` must be None or positive integer.")
+
     if np.iscomplexobj(x0):
         raise ValueError("`x0` must be real.")
 
@@ -800,9 +803,6 @@ def least_squares(
             lb, ub = prepare_bounds(bounds, x0.shape[0])
         else:
             raise ValueError("`bounds` must contain 2 elements.")
-
-    if max_nfev is not None and max_nfev <= 0:
-        raise ValueError("`max_nfev` must be None or positive integer.")
 
     if method == 'lm' and not np.all((lb == -np.inf) & (ub == np.inf)):
         raise ValueError("Method 'lm' doesn't support bounds.")
