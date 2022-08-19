@@ -28,7 +28,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          hypergeom, multivariate_t, cauchy, normaltest)
 
 from scipy.integrate import romb
-from scipy.special import multigammaln, logsumexp
+from scipy.special import multigammaln
 
 from .common_tests import check_random_state_property
 
