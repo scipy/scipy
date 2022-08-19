@@ -39,7 +39,7 @@ for interpolation with missing data. Two popular ways of representing missing
 data are using masked arrays of the `numpy.ma` library, and encoding missing
 values as not-a-number, ``NaN``. 
 
-Neither of these two approaches is directly suppored in `scipy.interpolate`.
+Neither of these two approaches are directly suppored in `scipy.interpolate`.
 Individual routines may offer partial support, and/or workarounds, but in
 general the library firmly adheres to the IEEE 754 semantics where a ``NaN``
 means *not-a-number*, i.e. a result of an illegal mathematical operation
@@ -89,7 +89,7 @@ Of course, piecewise linear interpolation produces corners at data points,
 where linear pieces join. To produce a smoother curve, you can use cubic
 splines, where the interpolating curve is made of cubic pieces with matching
 first and second derivatives. In code, these objects are represented via the
-`CubicSpline`` class instances. An instance is constructed with the ``x`` and
+``CubicSpline`` class instances. An instance is constructed with the ``x`` and
 ``y`` arrays of data, and then it can be evaluated using the target ``xnew``
 values:
 
@@ -136,7 +136,7 @@ data points. In these situations, an alternative is to use the so-called
 continuously differentiable, and attempt to preserve the local shape implied
 by the data. There are two objects of this class in `scipy.interpolate` :
 `PchipInterpolator` and `Akima1DInterpolator` . To illustrate, let's consider
-a data with an outlier:
+data with an outlier:
 
 .. plot::
 
@@ -362,7 +362,7 @@ B-splines are piecewise polynomials, represented as linear combinations of
 *b-spline basis elements* --- which themselves are certain linear combinations
 of usual monomials, :math:`x^m` with :math:`m=0, 1, \dots, k`.
 
-The b-spline basis generally more computationally stable then the power basis
+The b-spline basis are generally more computationally stable then the power basis
 and is useful for variety of applications which include interpolation, regression
 and curve representation. The main feature is that these basis elements are
 *localized* and equal zero outside of an interval defined by the *knot array*.
