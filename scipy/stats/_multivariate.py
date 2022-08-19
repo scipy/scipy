@@ -590,9 +590,12 @@ class multivariate_normal_gen(multi_rv_generic):
         a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
         n = x.shape[-1]
         limits = np.concatenate((a, b), axis=-1)
+
         # mvnun expects 1-d arguments, so process points sequentially
-        func1d = lambda limits: _mvn.mvnun(limits[:n], limits[n:], mean, cov,
-                                           maxpts, abseps, releps)[0]
+        def func1d(limits):
+            return _mvn.mvnun(limits[:n], limits[n:], mean, cov,
+                              maxpts, abseps, releps)[0]
+
         out = np.apply_along_axis(func1d, -1, limits) * signs
         return _squeeze_output(out)
 
