@@ -795,7 +795,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
                                  self.cov_info.log_pdet, self.cov_info.rank)
         if self.allow_singular and (self.cov_info.rank < self.dim):
             out_of_bounds = ~self.cov_info._support_mask(x-self.mean)
-            out[out_of_bounds] = -np._wnf
+            out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
 
     def pdf(self, x):
