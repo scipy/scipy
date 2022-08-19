@@ -311,7 +311,7 @@ def kstat(data, n=2):
     elif n == 4:
         return ((-6*S[1]**4 + 12*N*S[1]**2 * S[2] - 3*N*(N-1.0)*S[2]**2 -
                  4*N*(N+1)*S[1]*S[3] + N*N*(N+1)*S[4]) /
-                 (N*(N-1.0)*(N-2.0)*(N-3.0)))
+                (N*(N-1.0)*(N-2.0)*(N-3.0)))
     else:
         raise ValueError("Should not be here.")
 
@@ -3759,6 +3759,11 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     circmean : float
         Circular mean.
 
+    See Also
+    --------
+    circstd : Circular standard deviation.
+    circvar : Circular variance.
+
     Examples
     --------
     For simplicity, all angles are printed out in degrees.
@@ -3845,6 +3850,11 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     -------
     circvar : float
         Circular variance.
+
+    See Also
+    --------
+    circmean : Circular mean.
+    circstd : Circular standard deviation.
 
     Notes
     -----
@@ -3935,6 +3945,11 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     -------
     circstd : float
         Circular standard deviation.
+
+    See Also
+    --------
+    circmean : Circular mean.
+    circvar : Circular variance.
 
     Notes
     -----

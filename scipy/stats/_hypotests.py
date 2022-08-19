@@ -1902,6 +1902,7 @@ def tukey_hsd(*args):
     Here are some data comparing the time to relief of three brands of
     headache medicine, reported in minutes. Data adapted from [3]_.
 
+    >>> import numpy as np
     >>> from scipy.stats import tukey_hsd
     >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
     >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
