@@ -9,7 +9,7 @@ from numpy cimport ndarray, int64_t, float64_t, intp_t
 import warnings
 import numpy as np
 import scipy.stats, scipy.special
-import scipy.linalg as linalg
+from scipy.linalg import solve_triangular
 cimport scipy.special.cython_special as cs
 
 np.import_array()
@@ -738,10 +738,10 @@ def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
         raise ValueError("Covariance matrix must match data dims")
 
     # Rescale the data
-    points_ = linalg.solve_triangular(cho_cov, points.T, lower=False).T
-    points_ = np.asarray(points_).astype(dtype, copy=False)
-    xi_ = linalg.solve_triangular(cho_cov, xi.T, lower=False).T
-    xi_ = np.asarray(xi_).astype(dtype, copy=False)
+    points_ = np.asarray(solve_triangular(cho_cov, points.T, lower=False).T,
+                         dtype=dtype)
+    xi_ = np.asarray(solve_triangular(cho_cov, xi.T, lower=False).T,
+                     dtype=dtype)
     values_ = values.astype(dtype, copy=False)
     cho_cov = cho_cov.astype(dtype, copy=False)
 
