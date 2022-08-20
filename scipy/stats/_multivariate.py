@@ -1160,10 +1160,9 @@ class matrix_normal_gen(multi_rv_generic):
         std_norm = random_state.standard_normal(
             size=(dims[1], size, dims[0])
         ).transpose(1, 2, 0)
-        out = np.einsum('jp,ipq,kq->ijk',
-                        rowchol, std_norm, colchol,
-                        optimize=True)
-        out += mean[np.newaxis, :, :]
+        out = mean + np.einsum('jp,ipq,kq->ijk',
+                               rowchol, std_norm, colchol,
+                               optimize=True)
         if size == 1:
             out = out.reshape(mean.shape)
         return out
