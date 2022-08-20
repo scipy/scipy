@@ -2701,7 +2701,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     is `p`.
 
     .. deprecated:: 1.10.0
-        'binom_test' is deprecated in favour of 'binomtest' and will
+        `binom_test` is deprecated in favour of `binomtest` and will
         be removed in Scipy 1.12.0.
 
     Parameters
