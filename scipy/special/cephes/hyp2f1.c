@@ -69,7 +69,6 @@
 
 #include "mconf.h"
 #include <stdlib.h>
-#include "_c99compat.h"
 
 #define EPS 1.0e-13
 #define EPS2 1.0e-10
@@ -271,7 +270,7 @@ double a, b, c, x;
     /* The alarm exit */
   hypdiv:
     sf_error("hyp2f1", SF_ERROR_OVERFLOW, NULL);
-    return NPY_INFINITY;
+    return INFINITY;
 }
 
 
@@ -397,7 +396,7 @@ double *loss;
 		if (t > MAX_ITERATIONS) {	/* should never happen */
 		    sf_error("hyp2f1", SF_ERROR_SLOW, NULL);
 		    *loss = 1.0;
-		    return NPY_NAN;
+		    return NAN;
 		}
 	    }
 	    while (y == 0 || fabs(q / y) > EPS);
@@ -501,7 +500,7 @@ double *loss;			/* estimates loss of significance */
     do {
 	if (fabs(h) < EPS) {
 	    *loss = 1.0;
-	    return NPY_INFINITY;
+	    return INFINITY;
 	}
 	m = k + 1.0;
 	u = u * ((f + k) * (g + k) * x / ((h + k) * m));
@@ -557,7 +556,7 @@ static double hyp2f1ra(double a, double b, double c, double x,
         /* Too expensive to compute this value, so give up */
         sf_error("hyp2f1", SF_ERROR_NO_RESULT, NULL);
         *loss = 1.0;
-        return NPY_NAN;
+        return NAN;
     }
 
     if (da < 0) {
@@ -609,7 +608,7 @@ static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
     double collector_max = 1;
 
     if (!(fabs(b) < 1e5)) {
-        return NPY_NAN;
+        return NAN;
     }
 
     for (k = 1; k <= -b; k++) {
@@ -619,7 +618,7 @@ static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
     }
 
     if (1e-16 * (1 + collector_max/fabs(sum)) > 1e-7) {
-        return NPY_NAN;
+        return NAN;
     }
 
     return sum;

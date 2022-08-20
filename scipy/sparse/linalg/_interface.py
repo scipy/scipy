@@ -598,7 +598,7 @@ def _get_dtype(operators, dtypes=None):
     for obj in operators:
         if obj is not None and hasattr(obj, 'dtype'):
             dtypes.append(obj.dtype)
-    return np.find_common_type(dtypes, [])
+    return np.result_type(*dtypes)
 
 
 class _SumLinearOperator(LinearOperator):

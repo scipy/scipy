@@ -4,7 +4,7 @@ thread_dep = dependency('threads', required: false)
 win_gcc = is_windows and meson.get_compiler('cpp').get_id() == 'gcc'
 
 pocketfft_threads = []
-fft_deps = [py3_dep]
+fft_deps = []
 if not win_gcc
   if thread_dep.found()
     pocketfft_threads += ['-DPOCKETFFT_PTHREADS']
@@ -16,7 +16,6 @@ else
   pocketfft_threads += ['-DPOCKETFFT_NO_MULTITHREADING']
 endif
 
-#TODO: add the equivalent of set_cxx_flags_hook
 py3.extension_module('pypocketfft',
   'pypocketfft.cxx',
   cpp_args: pocketfft_threads,
@@ -32,6 +31,7 @@ python_sources = [
   '__init__.py',
   'basic.py',
   'helper.py',
+  'LICENSE.md',
   'realtransforms.py'
 ]
 

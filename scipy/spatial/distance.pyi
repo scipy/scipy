@@ -39,7 +39,7 @@ _MetricKind = Literal[
     'cosine', 'cos',
     'dice',
     'euclidean', 'euclid', 'eu', 'e',
-    'matching', 'hamming', 'hamm', 'ha', 'h',
+    'hamming', 'hamm', 'ha', 'h',
     'minkowski', 'mi', 'm', 'pnorm',
     'jaccard', 'jacc', 'ja', 'j',
     'jensenshannon', 'js',
@@ -51,8 +51,6 @@ _MetricKind = Literal[
     'sokalmichener',
     'sokalsneath',
     'sqeuclidean', 'sqe', 'sqeuclid',
-    # NOTE: deprecated
-    # 'wminkowski', 'wmi', 'wm', 'wpnorm',
     'yule',
 ]
 
@@ -161,9 +159,6 @@ def mahalanobis(
     u: ArrayLike, v: ArrayLike, VI: ArrayLike
 ) -> np.float64: ...
 
-# NOTE: deprecated
-# def matching(u, v, w=None): ...
-
 def minkowski(
     u: ArrayLike, v: ArrayLike, p: float = ..., w: Optional[ArrayLike] = ...
 ) -> float: ...
@@ -222,9 +217,6 @@ def rogerstanimoto(
 def russellrao(
     u: ArrayLike, v: ArrayLike, w: Optional[ArrayLike] = ...
 ) -> float: ...
-
-# NOTE: deprecated
-# def wminkowski(u, v, p, w): ...
 
 def yule(
     u: ArrayLike, v: ArrayLike, w: Optional[ArrayLike] = ...

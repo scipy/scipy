@@ -194,7 +194,7 @@
 * the methods for calculating and sampling from these.
 *
 * Copyright 2004-2013 by Agner Fog. 
-* GNU General Public License http://www.gnu.org/licenses/gpl.html
+* Released under SciPy's license with permission of Agner Fog; see license.txt
 *******************************************************************************/
 
 #ifndef STOCC_H

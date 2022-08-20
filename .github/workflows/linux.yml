@@ -18,15 +18,15 @@ jobs:
   Python-38-dbg:
     name: Python 3.8-dbg
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
-          sudo apt install python3.8-dbg python3.8-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache swig libmpc-dev
+          sudo apt install python3.8-dbg python3.8-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev ccache swig libmpc-dev
           free -m
           python3.8-dbg --version # just to check
           export NPY_NUM_BUILD_JOBS=2
@@ -40,8 +40,8 @@ jobs:
         run: |
           python3.8-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
           python3.8-dbg -m pip install --upgrade pip "setuptools<60.0" wheel
-          python3.8-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pybind11
-          python3.8-dbg -m pip install --upgrade mpmath gmpy2 pythran threadpoolctl
+          python3.8-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pytest-timeout pybind11
+          python3.8-dbg -m pip install --upgrade mpmath gmpy2 pythran threadpoolctl pooch
           python3.8-dbg -m pip uninstall -y nose
           cd ..
       - name: Building SciPy
@@ -49,61 +49,8 @@ jobs:
       - name: Testing SciPy
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          python3.8-dbg -u runtests.py -n -g -j2 -m fast -- -rfEX --durations=10 2>&1 | tee runtests.log
+          python3.8-dbg -u runtests.py -n -g -j2 -m fast -- -rfEX --durations=10 --timeout=60 2>&1 | tee runtests.log
           python3.8-dbg tools/validate_runtests_log.py fast < runtests.log
       - name: Dynamic symbol hiding check on Linux
         if: ${{ github.event_name == 'pull_request' }}
         run: ./tools/check_pyext_symbol_hiding.sh build
-
-  test_numpy_main:
-    name: NumPy main ${{ matrix.python-version }}
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')"
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10"]
-
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: x64
-
-# Keeping this for later 3.11. Might not be needed as GH seems to provide
-# pre-released versions of 3.11
-#    - name: Install Python 3.11
-#      if: matrix.python-version == '3.11'
-#      run: |
-#        sudo add-apt-repository ppa:deadsnakes/ppa
-#        sudo apt-get update
-#        sudo apt install -y --no-install-recommends python3.11-dev python3.11-distutils python3.11-venv
-#        # GitHub doesn't provide a pip interface with py3.11 yet. Therefore, install it manually :
-#        curl -O https://bootstrap.pypa.io/get-pip.py && python3.11 get-pip.py && rm get-pip.py
-#        python3.11 -m pip install --upgrade pip setuptools
-
-    - name: Install other build dependencies
-      run: |
-        sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
-
-    - name: Install packages
-      run: |
-        pip install --user git+https://github.com/numpy/numpy.git
-        python -m pip install --user "setuptools<60.0" wheel cython pytest pybind11 pytest-xdist
-        pip install --user git+https://github.com/serge-sans-paille/pythran.git
-        python -m pip install -r mypy_requirements.txt
-
-        # Packages that are only needed for their annotations
-        python -m pip install --user types-psutil pybind11 sphinx
-
-    - name: Mypy
-      run: |
-        python -u runtests.py --mypy
-
-    - name: Test SciPy
-      run: |
-        python -u runtests.py -n -m fast
