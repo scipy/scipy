@@ -1153,7 +1153,13 @@ class matrix_normal_gen(multi_rv_generic):
         rowchol = scipy.linalg.cholesky(rowcov, lower=True)
         colchol = scipy.linalg.cholesky(colcov, lower=True)
         random_state = self._get_random_state(random_state)
-        std_norm = random_state.standard_normal(size=(size, dims[0], dims[1]))
+        # We aren't generating standard normal variates with size=(size,
+        # dims[0], dims[1]) directly to ensure random variates remain backwards
+        # compatible. See https://github.com/scipy/scipy/pull/12312 for more
+        # details.
+        std_norm = random_state.standard_normal(
+            size=(dims[1], size, dims[0])
+        ).transpose(1, 2, 0)
         out = np.einsum('jp,ipq,kq->ijk',
                         rowchol, std_norm, colchol,
                         optimize=True)
