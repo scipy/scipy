@@ -119,7 +119,6 @@ DOCTEST_SKIPLIST = set([
     'scipy.stats.kstwobign',  # inaccurate cdf or ppf
     'scipy.stats.levy_stable',
     'scipy.special.sinc',  # comes from numpy
-    'scipy.misc.who',  # comes from numpy
     'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
@@ -129,7 +128,6 @@ DOCTEST_SKIPLIST = set([
 REFGUIDE_ALL_SKIPLIST = [
     r'scipy\.sparse\.csgraph',
     r'scipy\.sparse\.linalg',
-    r'scipy\.spatial\.distance',
     r'scipy\.linalg\.blas\.[sdczi].*',
     r'scipy\.linalg\.lapack\.[sdczi].*',
 ]
