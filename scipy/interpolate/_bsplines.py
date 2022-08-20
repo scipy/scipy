@@ -1476,6 +1476,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     For comparison, we also construct an interpolating spline for the same
     set of data:
 
+    >>> from scipy.interpolate import make_interp_spline
     >>> spl_i = make_interp_spline(x, y)
 
     Plot both:
