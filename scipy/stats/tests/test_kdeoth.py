@@ -242,7 +242,7 @@ def test_gaussian_kde_subclassing():
     assert_array_almost_equal_nulp(ys, y2, nulp=10)
 
     # subclass 3 was removed because we have no obligation to maintain support
-    # for manual invocation of private methods
+    # for user invocation of private methods
 
     # subclass 4
     kde4 = _kde_subclass4(x1)
