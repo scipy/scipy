@@ -743,6 +743,7 @@ def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
     xi_ = linalg.solve_triangular(cho_cov, xi.T, lower=False).T
     xi_ = np.asarray(xi_).astype(dtype, copy=False)
     values_ = values.astype(dtype, copy=False)
+    cho_cov = cho_cov.astype(dtype, copy=False)
 
     # Evaluate the normalisation
     norm = math.pow((2 * PI) ,(- d / 2))

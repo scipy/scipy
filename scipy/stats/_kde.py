@@ -588,7 +588,7 @@ class gaussian_kde:
                 self._data_covariance[::-1, ::-1]).T[::-1, ::-1]
 
         self.covariance = self._data_covariance * self.factor**2
-        self.cho_cov = self._data_cho_cov * self.factor
+        self.cho_cov = (self._data_cho_cov * self.factor).astype(np.float64)
         self.log_det = 2*np.log(np.diag(self.cho_cov
                                         * np.sqrt(2*pi))).sum()
 
