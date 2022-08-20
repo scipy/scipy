@@ -1,4 +1,5 @@
-      subroutine pardtc(tx,nx,ty,ny,c,kx,ky,nux,nuy,newc,ier)
+      recursive subroutine pardtc(tx,nx,ty,ny,c,kx,ky,nux,nuy,
+     *   newc,ier)
       implicit none
 c  subroutine pardtc takes the knots and coefficients of a bivariate
 c  spline, and returns the coefficients for a new bivariate spline that

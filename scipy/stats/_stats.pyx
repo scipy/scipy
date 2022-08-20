@@ -171,6 +171,11 @@ def _toint64(x):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool additive):
+    # y_local and rank_local (declared below) are a work-around for a Cython
+    # bug; see gh-16718.  When we can require Cython 3.0, y_local and
+    # rank_local can be removed, and the closure weigh() can refer directly
+    # to y and rank.
+    cdef ordered[:] y_local = y
     cdef intp_t i, first
     cdef float64_t t, u, v, w, s, sq
     cdef int64_t n = np.int64(len(x))
@@ -188,6 +193,8 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
         rank = np.empty(n, dtype=np.intp)
         rank[...] = perm[::-1]
         _invert_in_place(rank)
+
+    cdef intp_t[:] rank_local = rank
 
     # weigh joint ties
     first = 0
@@ -237,28 +244,28 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
         cdef float64_t weight, residual
 
         if length == 1:
-            return weigher(rank[perm[offset]])
+            return weigher(rank_local[perm[offset]])
         length0 = length // 2
         length1 = length - length0
         middle = offset + length0
         residual = weigh(offset, length0)
         weight = weigh(middle, length1) + residual
-        if y[perm[middle - 1]] < y[perm[middle]]:
+        if y_local[perm[middle - 1]] < y_local[perm[middle]]:
             return weight
 
         # merging
         i = j = k = 0
 
         while j < length0 and k < length1:
-            if y[perm[offset + j]] <= y[perm[middle + k]]:
+            if y_local[perm[offset + j]] <= y_local[perm[middle + k]]:
                 temp[i] = perm[offset + j]
-                residual -= weigher(rank[temp[i]])
+                residual -= weigher(rank_local[temp[i]])
                 j += 1
             else:
                 temp[i] = perm[middle + k]
-                exchanges_weight[0] += weigher(rank[temp[i]]) * (
+                exchanges_weight[0] += weigher(rank_local[temp[i]]) * (
                     length0 - j) + residual if additive else weigher(
-                    rank[temp[i]]) * residual
+                    rank_local[temp[i]]) * residual
                 k += 1
             i += 1
 
@@ -600,6 +607,15 @@ cdef double _studentized_range_pdf(int n, double[2] integration_var,
 
     # multiply remaining term outside of log because it can be 0
     return math.exp(log_terms) * math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
+
+
+cdef double _studentized_range_pdf_asymptotic(double z, void *user_data) nogil:
+    # evaluates the integrand of equation (2) by Lund, Lund, page 205. [4]
+    # destined to be used in a LowLevelCallable
+    q = (<double *> user_data)[0]
+    k = (<double *> user_data)[1]
+
+    return k * (k - 1) * _phi(z) * _phi(z + q) * math.pow(_Phi(z + q) - _Phi(z), k - 2)
 
 
 cdef double _studentized_range_moment(int n, double[3] integration_var,

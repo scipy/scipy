@@ -44,11 +44,10 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.intersphinx',
     'numpydoc',
-    'sphinx_panels',
+    'sphinx_design',
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
-    'sphinx_tabs.tabs',
 ]
 
 # Determine if the matplotlib has a recent enough version of the
@@ -62,10 +61,6 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 plt.ioff()
-
-# sphinx-panels shouldn't add bootstrap css since the pydata-sphinx-theme
-# already loads it
-panels_add_bootstrap_css = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -185,9 +180,9 @@ html_logo = '_static/logo.svg'
 html_favicon = '_static/favicon.ico'
 
 html_theme_options = {
-  "logo_link": "index",
   "github_url": "https://github.com/scipy/scipy",
-  "navbar_end": ["version-switcher", "navbar-icon-links"],
+  "twitter_url": "https://twitter.com/SciPy_team",
+  "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
   "switcher": {
       "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
       "version_match": version,
@@ -260,6 +255,16 @@ np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
 # -----------------------------------------------------------------------------
 
 autosummary_generate = True
+
+# maps functions with a name same as a class name that is indistinguishable
+# Ex: scipy.signal.czt and scipy.signal.CZT or scipy.odr.odr and scipy.odr.ODR
+# Otherwise, the stubs are overwritten when the name is same for
+# OS (like MacOS) which has a filesystem that ignores the case
+# See https://github.com/sphinx-doc/sphinx/pull/7927
+autosummary_filename_map = {
+    "scipy.odr.odr": "odr-function",
+    "scipy.signal.czt": "czt-function",
+}
 
 
 # -----------------------------------------------------------------------------

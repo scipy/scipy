@@ -95,6 +95,7 @@ def binned_statistic(x, values, statistic='mean',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -474,6 +475,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.mplot3d import Axes3D

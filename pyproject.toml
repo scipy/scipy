@@ -8,50 +8,61 @@
 #     "pybind11>=2.4.3,<2.5.0",
 
 [build-system]
+build-backend = 'mesonpy'
 requires = [
-    "wheel",
-    "setuptools<60.0",  # do not increase, 60.0 enables vendored distutils
-    "Cython>=0.29.18",
+    "meson-python>=0.8.0",
+    "Cython>=0.29.21",
     "pybind11>=2.4.3",
-    "pythran>=0.9.12",
+    "pythran>=0.11.0",
+    # `wheel` is needed for non-isolated builds, given that `meson-python`
+    # doesn't list it as a runtime requirement (at least in 0.5.0)
+    "wheel",
 
     # NumPy dependencies - to update these, sync from
     # https://github.com/scipy/oldest-supported-numpy/, and then
     # update minimum version to match our install_requires min version
     # ----------------------------------------------------------------
 
-    # numpy 1.19 was the first minor release to provide aarch64 wheels, but
-    # wheels require fixes contained in numpy 1.19.2
-    "numpy==1.19.2; python_version=='3.8' and platform_machine=='aarch64' and platform_python_implementation != 'PyPy'",
-    # aarch64 for py39 is covered by default requirement below
+    # now matches minimum supported version, keep here as separate requirement
+    # to be able to sync more easily with oldest-supported-numpy
+    "numpy==1.19.5; python_version=='3.8' and platform_machine=='aarch64' and platform_python_implementation != 'PyPy'",
 
-    # arm64 on Darwin supports Python 3.8 and above requires numpy>=1.20.0
-    "numpy==1.20.0; python_version=='3.8' and platform_machine=='arm64' and platform_system=='Darwin'",
-    "numpy==1.20.0; python_version=='3.9' and platform_machine=='arm64' and platform_system=='Darwin'",
+    # arm64 on Darwin supports Python 3.8 and above requires numpy>=1.21.0
+    # (first version with arm64 wheels available)
+    "numpy==1.21.0; python_version=='3.8' and platform_machine=='arm64' and platform_system=='Darwin'",
+    "numpy==1.21.0; python_version=='3.9' and platform_machine=='arm64' and platform_system=='Darwin'",
+
+    # loongarch64 requires numpy>=1.22.0
+    "numpy==1.22.0; platform_machine=='loongarch64'",
+
+    # On Windows we need to avoid 1.21.6, 1.22.0 and 1.22.1 because they were
+    # built with vc142. 1.22.3 is the first version that has 32-bit Windows
+    # wheels *and* was built with vc141. So use that:
+    "numpy==1.22.3; python_version=='3.10' and platform_machine=='win32' and platform_python_implementation != 'PyPy'",
 
     # default numpy requirements
-    "numpy==1.18.5; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
-    "numpy==1.19.3; python_version=='3.9' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
-    "numpy==1.21.4; python_version=='3.10' and platform_python_implementation != 'PyPy'",
+    "numpy==1.19.5; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_machine!='loongarch64' and platform_python_implementation != 'PyPy'",
+    "numpy==1.19.5; python_version=='3.9' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='loongarch64' and platform_python_implementation != 'PyPy'",
+    # Note that 1.21.3 was the first version with a complete set of 3.10 wheels,
+    # however macOS was broken and it's safe C API/ABI-wise to build against 1.21.6
+    # (see oldest-supported-numpy issues gh-28 and gh-45)
+    "numpy==1.21.6; python_version=='3.10' and (platform_machine!='win32' and platform_machine!='loongarch64') and platform_python_implementation != 'PyPy'",
+    "numpy==1.23.2; python_version=='3.11' and platform_python_implementation != 'PyPy'",
 
     # For Python versions which aren't yet officially supported,
     # we specify an unpinned NumPy which allows source distributions
     # to be used and allows wheels to be used as soon as they
     # become available.
-    "numpy; python_version>='3.11'",
+    "numpy; python_version>='3.12'",
     "numpy; python_version>='3.8' and platform_python_implementation=='PyPy'",
 ]
 
 [project]
 name = "SciPy"
+# TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
+#       at that point, no longer include them in `py3.install_sources()`
 license = {file = "LICENSE.txt"}
-description = """
-SciPy (pronounced "Sigh Pie") is an open-source software for mathematics,
-science, and engineering. It includes modules for statistics, optimization,
-integration, linear algebra, Fourier transforms, signal and image processing,
-ODE solvers, and more.
-"""
-
+description = "Fundamental algorithms for scientific computing in Python"
 maintainers = [
     {name = "SciPy Developers", email = "scipy-dev@python.org"},
 ]
@@ -60,7 +71,9 @@ maintainers = [
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
 requires-python = ">=3.8"
 dependencies = [
-    "numpy>=1.18.5",
+    # TODO: update to "pin-compatible" once possible, see
+    # https://github.com/FFY00/meson-python/issues/29
+    "numpy>=1.19.5",
 ]
 readme = "README.rst"
 classifiers = [
@@ -88,26 +101,31 @@ dynamic = ['version']
 test = [
     "pytest",
     "pytest-cov",
+    "pytest-timeout",
     "pytest-xdist",
     "asv",
     "mpmath",
     "gmpy2",
     "threadpoolctl",
     "scikit-umfpack",
+    "pooch",
 ]
 doc = [
-    "sphinx!=3.1.0, !=4.1.0",
-    "pydata-sphinx-theme>=0.8.1",
-    "sphinx-panels>=0.5.2",
+    "sphinx!=4.1.0",
+    "pydata-sphinx-theme>=0.9.0",
+    "sphinx-design>=0.2.0",
     "matplotlib>2",
     "numpydoc",
-    "sphinx-tabs",
 ]
 dev = [
     "mypy",
     "typing_extensions",
     "pycodestyle",
     "flake8",
+    "rich-click",
+    "click",
+    "doit>=0.36.0",
+    "pydevtool",
 ]
 
 [project.urls]
@@ -119,5 +137,4 @@ tracker = "https://github.com/scipy/scipy/issues"
 
 
 [tool.doit]
-dodoFile = "do.py"
-
+dodoFile = "dev.py"

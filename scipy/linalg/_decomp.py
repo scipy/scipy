@@ -181,6 +181,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[0., -1.], [1., 0.]])
     >>> linalg.eigvals(a)
@@ -405,6 +406,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import eigh
     >>> A = np.array([[6, 3, 1, 5], [3, 0, 5, 1], [1, 5, 6, 2], [5, 1, 2, 2]])
     >>> w, v = eigh(A)
@@ -733,6 +735,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import eig_banded
     >>> A = np.array([[1, 5, 2, 0], [5, 2, 5, 2], [2, 5, 3, 5], [0, 2, 5, 4]])
     >>> Ab = np.array([[1, 2, 3, 4], [5, 5, 5, 0], [2, 2, 0, 0]])
@@ -862,6 +865,7 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[0., -1.], [1., 0.]])
     >>> linalg.eigvals(a)
@@ -1000,6 +1004,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     --------
     For more examples see `scipy.linalg.eigh`.
 
+    >>> import numpy as np
     >>> from scipy.linalg import eigvalsh
     >>> A = np.array([[6, 3, 1, 5], [3, 0, 5, 1], [1, 5, 6, 2], [5, 1, 2, 2]])
     >>> w = eigvalsh(A)
@@ -1094,6 +1099,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import eigvals_banded
     >>> A = np.array([[1, 5, 2, 0], [5, 2, 5, 2], [2, 5, 3, 5], [0, 2, 5, 4]])
     >>> Ab = np.array([[1, 2, 3, 4], [5, 5, 5, 0], [2, 2, 0, 0]])
@@ -1172,6 +1178,7 @@ def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import eigvalsh_tridiagonal, eigvalsh
     >>> d = 3*np.ones(4)
     >>> e = -1*np.ones(3)
@@ -1266,6 +1273,7 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import eigh_tridiagonal
     >>> d = 3*np.ones(4)
     >>> e = -1*np.ones(3)
@@ -1391,6 +1399,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import hessenberg
     >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
     >>> H, Q = hessenberg(A, calc_q=True)
@@ -1484,6 +1493,7 @@ def cdf2rdf(w, v):
 
     Examples
     --------
+    >>> import numpy as np
     >>> X = np.array([[1, 2, 3], [0, 4, 5], [0, -5, 4]])
     >>> X
     array([[ 1,  2,  3],

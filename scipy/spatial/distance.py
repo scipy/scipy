@@ -60,7 +60,6 @@ computing the distances between all pairs.
    dice             -- the Dice dissimilarity.
    hamming          -- the Hamming distance.
    jaccard          -- the Jaccard distance.
-   kulsinski        -- the Kulsinski distance.
    kulczynski1      -- the Kulczynski 1 distance.
    rogerstanimoto   -- the Rogers-Tanimoto dissimilarity.
    russellrao       -- the Russell-Rao dissimilarity.
@@ -123,6 +122,7 @@ from ..special import rel_entr
 
 from . import _distance_pybind
 
+from .._lib.deprecation import _deprecated
 
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
@@ -155,7 +155,7 @@ def _nbool_correspond_all(u, v, w=None):
         ntf = (u & not_v).sum()
         ntt = (u & v).sum()
     else:
-        dtype = np.find_common_type([int], [u.dtype, v.dtype])
+        dtype = np.result_type(int, u.dtype, v.dtype)
         u = u.astype(dtype)
         v = v.astype(dtype)
         not_u = 1.0 - u
@@ -177,7 +177,7 @@ def _nbool_correspond_ft_tf(u, v, w=None):
         nft = (not_u & v).sum()
         ntf = (u & not_v).sum()
     else:
-        dtype = np.find_common_type([int], [u.dtype, v.dtype])
+        dtype = np.result_type(int, u.dtype, v.dtype)
         u = u.astype(dtype)
         v = v.astype(dtype)
         not_u = 1.0 - u
@@ -796,6 +796,9 @@ def jaccard(u, v, w=None):
     return (a / b) if b != 0 else 0
 
 
+@_deprecated("Kulsinski has been deprecated from scipy.spatial.distance"
+             " in SciPy 1.9.0 and it will be removed in SciPy 1.11.0."
+             " It is superseded by scipy.spatial.distance.kulczynski1.")
 def kulsinski(u, v, w=None):
     """
     Compute the Kulsinski dissimilarity between two boolean 1-D arrays.
@@ -811,6 +814,11 @@ def kulsinski(u, v, w=None):
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n`.
+
+    .. deprecated:: 0.12.0
+        Kulsinski has been deprecated from `scipy.spatial.distance` in
+        SciPy 1.9.0 and it will be removed in SciPy 1.11.0. It is superseded
+        by scipy.spatial.distance.kulczynski1.
 
     Parameters
     ----------
@@ -882,11 +890,6 @@ def kulczynski1(u, v, *, w=None):
     -------
     kulczynski1 : float
         The Kulczynski 1 distance between vectors `u` and `v`.
-
-    See Also
-    --------
-
-    kulsinski
 
     Notes
     -----
@@ -1392,7 +1395,7 @@ def dice(u, v, w=None):
     if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum()
     else:
-        dtype = np.find_common_type([int], [u.dtype, v.dtype])
+        dtype = np.result_type(int, u.dtype, v.dtype)
         u = u.astype(dtype)
         v = v.astype(dtype)
         if w is None:
@@ -1952,7 +1955,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         The distance metric to use. The distance function can
         be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
         'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-        'jaccard', 'jensenshannon', 'kulsinski', 'kulczynski1',
+        'jaccard', 'jensenshannon', 'kulczynski1',
         'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
         'sqeuclidean', 'yule'.
@@ -2144,10 +2147,10 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         Computes the Dice distance between each pair of boolean
         vectors. (see dice function documentation)
 
-    18. ``Y = pdist(X, 'kulsinski')``
+    18. ``Y = pdist(X, 'kulczynski1')``
 
-        Computes the Kulsinski distance between each pair of
-        boolean vectors. (see kulsinski function documentation)
+        Computes the kulczynski1 distance between each pair of
+        boolean vectors. (see kulczynski1 function documentation)
 
     19. ``Y = pdist(X, 'rogerstanimoto')``
 
@@ -2613,7 +2616,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         The distance metric to use. If a string, the distance function can be
         'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
         'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'jensenshannon',
-        'kulsinski', 'kulczynski1', 'mahalanobis', 'matching', 'minkowski',
+        'kulczynski1', 'mahalanobis', 'matching', 'minkowski',
         'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener',
         'sokalsneath', 'sqeuclidean', 'yule'.
     **kwargs : dict, optional
@@ -2801,10 +2804,10 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         Computes the Dice distance between the boolean vectors. (see
         `dice` function documentation)
 
-    18. ``Y = cdist(XA, XB, 'kulsinski')``
+    18. ``Y = cdist(XA, XB, 'kulczynski1')``
 
-        Computes the Kulsinski distance between the boolean
-        vectors. (see `kulsinski` function documentation)
+        Computes the kulczynski distance between the boolean
+        vectors. (see `kulczynski1` function documentation)
 
     19. ``Y = cdist(XA, XB, 'rogerstanimoto')``
 

@@ -3,7 +3,6 @@ basinhopping: The basinhopping global optimization algorithm
 """
 import numpy as np
 import math
-from numpy import cos, sin
 import scipy.optimize
 from scipy._lib._util import check_random_state
 
@@ -422,8 +421,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     niter_success : integer, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
 
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -491,13 +489,13 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     This global minimization method has been shown to be extremely efficient
     for a wide variety of problems in physics and chemistry. It is
     particularly useful when the function has many minima separated by large
-    barriers. See the Cambridge Cluster Database
-    http://www-wales.ch.cam.ac.uk/CCD.html for databases of molecular systems
-    that have been optimized primarily using basin-hopping. This database
-    includes minimization problems exceeding 300 degrees of freedom.
+    barriers. See the `Cambridge Cluster Database
+    <https://www-wales.ch.cam.ac.uk/CCD.html>`_ for databases of molecular
+    systems that have been optimized primarily using basin-hopping. This
+    database includes minimization problems exceeding 300 degrees of freedom.
 
-    See the free software program GMIN (http://www-wales.ch.cam.ac.uk/GMIN) for
-    a Fortran implementation of basin-hopping. This implementation has many
+    See the free software program `GMIN <https://www-wales.ch.cam.ac.uk/GMIN>`_
+    for a Fortran implementation of basin-hopping. This implementation has many
     different variations of the procedure described above, including more
     advanced step taking algorithms and alternate acceptance criterion.
 
@@ -557,6 +555,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     The following example is a 1-D minimization problem, with many
     local minima superimposed on a parabola.
 
+    >>> import numpy as np
     >>> from scipy.optimize import basinhopping
     >>> func = lambda x: np.cos(14.5 * x - 0.3) + (x + 0.2) * x
     >>> x0=[1.]
@@ -759,38 +758,3 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     res.nit = i + 1
     res.success = res.lowest_optimization_result.success
     return res
-
-
-def _test_func2d_nograd(x):
-    f = (cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0]
-         + 1.010876184442655)
-    return f
-
-
-def _test_func2d(x):
-    f = (cos(14.5 * x[0] - 0.3) + (x[0] + 0.2) * x[0] + cos(14.5 * x[1] -
-         0.3) + (x[1] + 0.2) * x[1] + x[0] * x[1] + 1.963879482144252)
-    df = np.zeros(2)
-    df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2 + x[1]
-    df[1] = -14.5 * sin(14.5 * x[1] - 0.3) + 2. * x[1] + 0.2 + x[0]
-    return f, df
-
-
-if __name__ == "__main__":
-    print("\n\nminimize a 2-D function without gradient")
-    # minimum expected at ~[-0.195, -0.1]
-    kwargs = {"method": "L-BFGS-B"}
-    x0 = np.array([1.0, 1.])
-    scipy.optimize.minimize(_test_func2d_nograd, x0, **kwargs)
-    ret = basinhopping(_test_func2d_nograd, x0, minimizer_kwargs=kwargs,
-                       niter=200, disp=False)
-    print("minimum expected at  func([-0.195, -0.1]) = 0.0")
-    print(ret)
-
-    print("\n\ntry a harder 2-D problem")
-    kwargs = {"method": "L-BFGS-B", "jac": True}
-    x0 = np.array([1.0, 1.0])
-    ret = basinhopping(_test_func2d, x0, minimizer_kwargs=kwargs, niter=200,
-                       disp=False)
-    print("minimum expected at ~, func([-0.19415263, -0.19415263]) = 0")
-    print(ret)

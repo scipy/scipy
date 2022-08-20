@@ -112,8 +112,8 @@ class interp2d:
 
     If `z` is a vector value, consider using `interpn`.
 
-    Note that calling `interp2d` with NaNs present in input values results in
-    undefined behaviour.
+    Note that calling `interp2d` with NaNs present in input values, or with
+    decreasing values in `x` an `y` results in undefined behaviour.
 
     Methods
     -------
@@ -123,6 +123,7 @@ class interp2d:
     ----------
     x, y : array_like
         Arrays defining the data point coordinates.
+        The data point coordinates need to be sorted by increasing order.
 
         If the points lie on a regular grid, `x` can specify the column
         coordinates and `y` the row coordinates, for example::
@@ -164,6 +165,10 @@ class interp2d:
         Spline interpolation based on FITPACK
     BivariateSpline : a more recent wrapper of the FITPACK routines
     interp1d : 1-D version of this function
+    RegularGridInterpolator : interpolation on a regular or rectilinear grid
+        in arbitrary dimensions.
+    interpn : Multidimensional interpolation on regular grids (wraps
+        `RegularGridInterpolator` and `RectBivariateSpline`).
 
     Notes
     -----
@@ -174,6 +179,12 @@ class interp2d:
     The interpolator is constructed by `bisplrep`, with a smoothing factor
     of 0. If more control over smoothing is needed, `bisplrep` should be
     used directly.
+
+    The coordinates of the data points to interpolate `xnew` and `ynew`
+    have to be sorted by ascending order.
+    `interp2d` is legacy and is not
+    recommended for use in new code. New code should use
+    `RegularGridInterpolator` instead.
 
     Examples
     --------
@@ -519,7 +530,8 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_previousnext
                 if _do_extrapolate(fill_value):
                     self._check_and_update_bounds_error_for_extrapolation()
-                    fill_value = (np.nan, self.y.max(axis=axis))
+                    # assume y is sorted by x ascending order here.
+                    fill_value = (np.nan, np.take(self.y, -1, axis))
             elif kind == 'next':
                 self._side = 'right'
                 self._ind = 1
@@ -528,7 +540,8 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_previousnext
                 if _do_extrapolate(fill_value):
                     self._check_and_update_bounds_error_for_extrapolation()
-                    fill_value = (self.y.min(axis=axis), np.nan)
+                    # assume y is sorted by x ascending order here.
+                    fill_value = (np.take(self.y, 0, axis), np.nan)
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
                 np_types = (np.float_, np.int_)
@@ -729,13 +742,16 @@ class interp1d(_Interpolator1D):
         below_bounds = x_new < self.x[0]
         above_bounds = x_new > self.x[-1]
 
-        # !! Could provide more information about which values are out of bounds
         if self.bounds_error and below_bounds.any():
-            raise ValueError("A value in x_new is below the interpolation "
-                             "range.")
+            below_bounds_value = x_new[np.argmax(below_bounds)]
+            raise ValueError("A value ({}) in x_new is below "
+                             "the interpolation range's minimum value ({})."
+                             .format(below_bounds_value, self.x[0]))
         if self.bounds_error and above_bounds.any():
-            raise ValueError("A value in x_new is above the interpolation "
-                             "range.")
+            above_bounds_value = x_new[np.argmax(above_bounds)]
+            raise ValueError("A value ({}) in x_new is above "
+                             "the interpolation range's maximum value ({})."
+                             .format(above_bounds_value, self.x[-1]))
 
         # !! Should we emit a warning if some values are out of bounds?
         # !! matlab does not.
@@ -1319,6 +1335,58 @@ class PPoly(_PPolyBase):
             If bool, determines whether to extrapolate to out-of-bounds points
             based on first and last intervals, or to return NaNs.
             If 'periodic', periodic extrapolation is used. Default is True.
+
+        Examples
+        --------
+        Construct an interpolating spline and convert it to a `PPoly` instance 
+
+        >>> from scipy.interpolate import splrep, PPoly
+        >>> x = np.linspace(0, 1, 11)
+        >>> y = np.sin(2*np.pi*x)
+        >>> tck = splrep(x, y, s=0)
+        >>> p = PPoly.from_spline(tck)
+        >>> isinstance(p, PPoly)
+        True
+
+        Note that this function only supports 1D splines out of the box.
+
+        If the ``tck`` object represents a parametric spline (e.g. constructed
+        by `splprep` or a `BSpline` with ``c.ndim > 1``), you will need to loop
+        over the dimensions manually.
+
+        >>> from scipy.interpolate import splprep, splev
+        >>> t = np.linspace(0, 1, 11)
+        >>> x = np.sin(2*np.pi*t)
+        >>> y = np.cos(2*np.pi*t)
+        >>> (t, c, k), u = splprep([x, y], s=0)
+
+        Note that ``c`` is a list of two arrays of length 11.
+
+        >>> unew = np.arange(0, 1.01, 0.01)
+        >>> out = splev(unew, (t, c, k))
+
+        To convert this spline to the power basis, we convert each
+        component of the list of b-spline coefficients, ``c``, into the
+        corresponding cubic polynomial.
+
+        >>> polys = [PPoly.from_spline((t, cj, k)) for cj in c]
+        >>> polys[0].c.shape
+        (4, 14)
+
+        Note that the coefficients of the polynomials `polys` are in the
+        power basis and their dimensions reflect just that: here 4 is the order
+        (degree+1), and 14 is the number of intervals---which is nothing but
+        the length of the knot array of the original `tck` minus one.
+
+        Optionally, we can stack the components into a single `PPoly` along
+        the third dimension:
+
+        >>> cc = np.dstack([p.c for p in polys])    # has shape = (4, 14, 2)
+        >>> poly = PPoly(cc, polys[0].x)
+        >>> np.allclose(poly(unew).T,     # note the transpose to match `splev`
+        ...             out, atol=1e-15)
+        True
+
         """
         if isinstance(tck, BSpline):
             t, c, k = tck.tck

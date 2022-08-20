@@ -1413,12 +1413,16 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC
 PyInit__sigtools(void)
 {
-    PyObject *m;
+    PyObject *module;
 
-    m = PyModule_Create(&moduledef);
     import_array();
+
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return NULL;
+    }
 
     scipy_signal__sigtools_linear_filter_module_init();
 
-    return m;
+    return module;
 }

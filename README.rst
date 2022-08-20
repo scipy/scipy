@@ -1,11 +1,8 @@
-.. raw:: html
-
-    <p>
-      <h1>
-        <a href="https://docs.scipy.org/doc/scipy/reference/"><img valign="middle" src="doc/source/_static/logo.svg" height="50" height="50" alt="SciPy logo"/></a>
-        SciPy
-      </h1>
-    </p>
+.. image:: doc/source/_static/logo.svg
+  :target: https://scipy.org
+  :width: 100
+  :height: 100
+  :align: left 
 
 .. image:: https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
   :target: https://numfocus.org
@@ -28,7 +25,8 @@ integration, linear algebra, Fourier transforms, signal and image processing,
 ODE solvers, and more.
 
 - **Website:** https://scipy.org
-- **Documentation:** https://docs.scipy.org/
+- **Documentation:** https://docs.scipy.org/doc/scipy/
+- **Development version of the documentation:** https://scipy.github.io/devdocs
 - **Mailing list:** https://mail.python.org/mailman3/lists/scipy-dev.python.org/
 - **Source code:** https://github.com/scipy/scipy
 - **Contributing:** https://scipy.github.io/devdocs/dev/index.html
@@ -55,7 +53,7 @@ Call for Contributions
 
 We appreciate and welcome contributions. Small improvements or fixes are always appreciated; issues labeled as "good
 first issue" may be a good starting point. Have a look at `our contributing
-guide <http://scipy.github.io/devdocs/dev/hacking.html>`__.
+guide <https://scipy.github.io/devdocs/dev/index.html>`__.
 
 Writing code isn’t the only way to contribute to SciPy. You can also:
 

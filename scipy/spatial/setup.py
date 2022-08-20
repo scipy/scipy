@@ -19,7 +19,6 @@ def pre_build_hook(build_ext, ext):
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    from numpy.distutils.misc_util import get_info as get_misc_info
     from scipy._build_utils.system_info import get_info
     from scipy._build_utils import combine_dict, uses_blas64, numpy_nodepr_api
     from scipy._build_utils.compiler_helper import set_cxx_flags_hook

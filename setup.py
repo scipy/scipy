@@ -143,9 +143,9 @@ def get_build_ext_override():
         else:
             BaseBuildExt = PythranBuildExt[npy_build_ext]
             _pep440 = importlib.import_module('scipy._lib._pep440')
-            if _pep440.parse(pythran.__version__) < _pep440.Version('0.9.12'):
+            if _pep440.parse(pythran.__version__) < _pep440.Version('0.11.0'):
                 raise RuntimeError("The installed `pythran` is too old, >= "
-                                   "0.9.12 is needed, {} detected. Please "
+                                   "0.11.0 is needed, {} detected. Please "
                                    "upgrade Pythran, or use `export "
                                    "SCIPY_USE_PYTHRAN=0`.".format(
                                    pythran.__version__))
@@ -449,7 +449,7 @@ def setup_package():
     # Rationale: SciPy builds without deprecation warnings with N; deprecations
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
-    np_minversion = '1.18.5'
+    np_minversion = '1.19.5'
     np_maxversion = '9.9.99'
     python_minversion = '3.8'
     python_maxversion = '3.10'

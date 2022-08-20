@@ -6,7 +6,7 @@ from typing import (
 import numpy as np
 from scipy.optimize import OptimizeResult
 from ._constraints import old_bound_to_new, Bounds
-from ._directmodule import direct as _direct  # type: ignore
+from ._direct import direct as _direct  # type: ignore
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -253,7 +253,8 @@ def direct(
             f = func(x)
         else:
             f = func(x, *args)
-        return f
+        # always return a float
+        return np.asarray(f).item()
 
     # TODO: fix disp argument
     x, fun, ret_code, nfev, nit = _direct(

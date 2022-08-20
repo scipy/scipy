@@ -163,12 +163,14 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
         betacdf = beta.cdf
 
         for (i,p) in enumerate(prob):
-            _w = betacdf(vv, (n+1)*p, (n+1)*(1-p))
+            _w = betacdf(vv, n*p, n*(1-p))
             w = _w[1:] - _w[:-1]
-            mx_ = np.fromiter([w[:k] @ xsorted[:k] + w[k:] @ xsorted[k+1:]
-                               for k in range(n)], dtype=float_)
-            # mx_var = np.array(mx_.var(), copy=False, ndmin=1) * n / (n - 1)
-            # hdsd[i] = (n - 1) * np.sqrt(mx_var / n)
+            # cumulative sum of weights and data points if
+            # ith point is left out for jackknife
+            mx_ = np.zeros_like(xsorted)
+            mx_[1:] = np.cumsum(w * xsorted[:-1])
+            # similar but from the right
+            mx_[:-1] += np.cumsum(w[::-1] * xsorted[:0:-1])[::-1]
             hdsd[i] = np.sqrt(mx_.var() * (n - 1))
         return hdsd
 
