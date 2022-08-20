@@ -745,12 +745,12 @@ def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
         raise ValueError("Covariance matrix must match data dims")
 
     # Rescale the data
+    cho_cov = cho_cov.astype(dtype, copy=False)
     points_ = np.asarray(solve_triangular(cho_cov, points.T, lower=False).T,
                          dtype=dtype)
     xi_ = np.asarray(solve_triangular(cho_cov, xi.T, lower=False).T,
                      dtype=dtype)
     values_ = values.astype(dtype, copy=False)
-    cho_cov = cho_cov.astype(dtype, copy=False)
 
     # Evaluate the normalisation
     norm = math.pow((2 * PI) ,(- d / 2))
