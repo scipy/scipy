@@ -291,7 +291,7 @@ class multivariate_normal_gen(multi_rv_generic):
         Probability density function.
     logpdf(x, mean=None, cov=1, allow_singular=False)
         Log of the probability density function.
-    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
+    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, lower_limit=None)  # noqa
         Cumulative distribution function.
     logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
         Log of the cumulative distribution function.
@@ -547,7 +547,7 @@ class multivariate_normal_gen(multi_rv_generic):
             out[out_of_bounds] = 0.0
         return _squeeze_output(out)
 
-    def _cdf(self, x, mean, cov, maxpts, abseps, releps):
+    def _cdf(self, x, mean, cov, maxpts, abseps, releps, lower_limit):
         """Multivariate normal cumulative distribution function.
 
         Parameters
@@ -564,24 +564,43 @@ class multivariate_normal_gen(multi_rv_generic):
             Absolute error tolerance
         releps : float
             Relative error tolerance
+        lower_limit : array_like, optional
+            Lower limit of integration of the cumulative distribution function.
+            Default is negative infinity. Must be broadcastable with `x`.
 
         Notes
         -----
         As this function does no argument checking, it should not be
         called directly; use 'cdf' instead.
 
+
         .. versionadded:: 1.0.0
 
         """
-        lower = np.full(mean.shape, -np.inf)
+        lower = (np.full(mean.shape, -np.inf)
+                 if lower_limit is None else lower_limit)
+        # In 2d, _mvn.mvnun accepts input in which `lower` bound elements
+        # are greater than `x`. Not so in other dimensions. Fix this by
+        # ensuring that lower bounds are indeed lower when passed, then
+        # set signs of resulting CDF manually.
+        b, a = np.broadcast_arrays(x, lower)
+        i_swap = b < a
+        signs = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
+        a, b = a.copy(), b.copy()
+        a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
+        n = x.shape[-1]
+        limits = np.concatenate((a, b), axis=-1)
+
         # mvnun expects 1-d arguments, so process points sequentially
-        func1d = lambda x_slice: _mvn.mvnun(lower, x_slice, mean, cov,
-                                           maxpts, abseps, releps)[0]
-        out = np.apply_along_axis(func1d, -1, x)
+        def func1d(limits):
+            return _mvn.mvnun(limits[:n], limits[n:], mean, cov,
+                              maxpts, abseps, releps)[0]
+
+        out = np.apply_along_axis(func1d, -1, limits) * signs
         return _squeeze_output(out)
 
     def logcdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-               abseps=1e-5, releps=1e-5):
+               abseps=1e-5, releps=1e-5, *, lower_limit=None):
         """Log of the multivariate normal cumulative distribution function.
 
         Parameters
@@ -596,6 +615,9 @@ class multivariate_normal_gen(multi_rv_generic):
             Absolute error tolerance (default 1e-5)
         releps : float, optional
             Relative error tolerance (default 1e-5)
+        lower_limit : array_like, optional
+            Lower limit of integration of the cumulative distribution function.
+            Default is negative infinity. Must be broadcastable with `x`.
 
         Returns
         -------
@@ -615,11 +637,15 @@ class multivariate_normal_gen(multi_rv_generic):
         _PSD(cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
-        out = np.log(self._cdf(x, mean, cov, maxpts, abseps, releps))
+        cdf = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
+        # the log of a negative real is complex, and cdf can be negative
+        # if lower limit is greater than upper limit
+        cdf = cdf + 0j if np.any(cdf < 0) else cdf
+        out = np.log(cdf)
         return out
 
     def cdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-            abseps=1e-5, releps=1e-5):
+            abseps=1e-5, releps=1e-5, *, lower_limit=None):
         """Multivariate normal cumulative distribution function.
 
         Parameters
@@ -634,6 +660,9 @@ class multivariate_normal_gen(multi_rv_generic):
             Absolute error tolerance (default 1e-5)
         releps : float, optional
             Relative error tolerance (default 1e-5)
+        lower_limit : array_like, optional
+            Lower limit of integration of the cumulative distribution function.
+            Default is negative infinity. Must be broadcastable with `x`.
 
         Returns
         -------
@@ -653,7 +682,7 @@ class multivariate_normal_gen(multi_rv_generic):
         _PSD(cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
-        out = self._cdf(x, mean, cov, maxpts, abseps, releps)
+        out = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
         return out
 
     def rvs(self, mean=None, cov=1, size=1, random_state=None):
@@ -722,9 +751,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
             distribution.
         allow_singular : bool, default: ``False``
             Whether to allow a singular covariance matrix.
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
-
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -777,13 +804,18 @@ class multivariate_normal_frozen(multi_rv_frozen):
     def pdf(self, x):
         return np.exp(self.logpdf(x))
 
-    def logcdf(self, x):
-        return np.log(self.cdf(x))
+    def logcdf(self, x, *, lower_limit=None):
+        cdf = self.cdf(x, lower_limit=lower_limit)
+        # the log of a negative real is complex, and cdf can be negative
+        # if lower limit is greater than upper limit
+        cdf = cdf + 0j if np.any(cdf < 0) else cdf
+        out = np.log(cdf)
+        return out
 
-    def cdf(self, x):
+    def cdf(self, x, *, lower_limit=None):
         x = self._dist._process_quantiles(x, self.dim)
         out = self._dist._cdf(x, self.mean, self.cov, self.maxpts, self.abseps,
-                              self.releps)
+                              self.releps, lower_limit)
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
@@ -1173,9 +1205,7 @@ class matrix_normal_frozen(multi_rv_frozen):
     Parameters
     ----------
     %(_matnorm_doc_default_callparams)s
-    seed : {None, int, `numpy.random.Generator`,
-        `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is `None` the `~np.random.RandomState` singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used, seeded
         with seed.
@@ -2276,9 +2306,7 @@ class wishart_frozen(multi_rv_frozen):
         Degrees of freedom of the distribution
     scale : array_like
         Scale matrix of the distribution
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3267,9 +3295,7 @@ class multinomial_frozen(multi_rv_frozen):
         number of trials
     p: array_like
         probability of a trial falling into each category; should sum to 1
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3429,26 +3455,52 @@ class special_ortho_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1:
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
+        size = (size,) if size > 1 else ()
 
         dim = self._process_parameters(dim)
 
-        H = np.eye(dim)
-        D = np.empty((dim,))
+        # H represents a (dim, dim) matrix, while D represents the diagonal of
+        # a (dim, dim) diagonal matrix. The algorithm that follows is
+        # broadcasted on the leading shape in `size` to vectorize along
+        # samples.
+        H = np.empty(size + (dim, dim))
+        H[..., :, :] = np.eye(dim)
+        D = np.empty(size + (dim,))
+
         for n in range(dim-1):
-            x = random_state.normal(size=(dim-n,))
-            norm2 = np.dot(x, x)
-            x0 = x[0].item()
-            D[n] = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D[n]*np.sqrt(norm2)
-            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
-            # Householder transformation
-            H[:, n:] -= np.outer(np.dot(H[:, n:], x), x)
-        D[-1] = (-1)**(dim-1)*D[:-1].prod()
-        # Equivalent to np.dot(np.diag(D), H) but faster, apparently
-        H = (D*H.T).T
+
+            # x is a vector with length dim-n, xrow and xcol are views of it as
+            # a row vector and column vector respectively. It's important they
+            # are views and not copies because we are going to modify x
+            # in-place.
+            x = random_state.normal(size=size + (dim-n,))
+            xrow = x[..., None, :]
+            xcol = x[..., :, None]
+
+            # This is the squared norm of x, without vectorization it would be
+            # dot(x, x), to have proper broadcasting we use matmul and squeeze
+            # out (convert to scalar) the resulting 1x1 matrix
+            norm2 = np.matmul(xrow, xcol).squeeze((-2, -1))
+
+            x0 = x[..., 0].copy()
+            D[..., n] = np.where(x0 != 0, np.sign(x0), 1)
+            x[..., 0] += D[..., n]*np.sqrt(norm2)
+
+            # In renormalizing x we have to append an additional axis with
+            # [..., None] to broadcast the scalar against the vector x
+            x /= np.sqrt((norm2 - x0**2 + x[..., 0]**2) / 2.)[..., None]
+
+            # Householder transformation, without vectorization the RHS can be
+            # written as outer(H @ x, x) (apart from the slicing)
+            H[..., :, n:] -= np.matmul(H[..., :, n:], xcol) * xrow
+
+        D[..., -1] = (-1)**(dim-1)*D[..., :-1].prod(axis=-1)
+
+        # Without vectorization this could be written as H = diag(D) @ H,
+        # left-multiplication by a diagonal matrix amounts to multiplying each
+        # row of H by an element of the diagonal, so we add a dummy axis for
+        # the column index
+        H *= D[..., :, None]
         return H
 
 
@@ -3463,9 +3515,7 @@ class special_ortho_group_frozen(multi_rv_frozen):
         ----------
         dim : scalar
             Dimension of matrices
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
-
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3621,9 +3671,7 @@ class ortho_group_frozen(multi_rv_frozen):
         ----------
         dim : scalar
             Dimension of matrices
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
-
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3662,9 +3710,7 @@ class random_correlation_gen(multi_rv_generic):
     ----------
     eigs : 1d ndarray
         Eigenvalues of correlation matrix
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3878,9 +3924,7 @@ class random_correlation_frozen(multi_rv_frozen):
         ----------
         eigs : 1d ndarray
             Eigenvalues of correlation matrix
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
-
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -4043,8 +4087,7 @@ class unitary_group_frozen(multi_rv_frozen):
         ----------
         dim : scalar
             Dimension of matrices
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,

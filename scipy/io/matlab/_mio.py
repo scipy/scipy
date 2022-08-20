@@ -274,6 +274,7 @@ def savemat(file_name, mdict,
     Examples
     --------
     >>> from scipy.io import savemat
+    >>> import numpy as np
     >>> a = np.arange(20)
     >>> mdic = {"a": a, "label": "experiment"}
     >>> mdic

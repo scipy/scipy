@@ -30,7 +30,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9]
+        python-version: ['3.9', '3.11-dev']
+        maintenance-branch:
+          - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
+        exclude:
+          - maintenance-branch: true
+            python-version: '3.11-dev'
 
     steps:
     - uses: actions/checkout@v3
@@ -51,8 +56,17 @@ jobs:
         sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
     - name: Install Python packages
+      if: matrix.python-version == '3.9'
       run: |
-        python -m pip install numpy setuptools==59.8.0 wheel cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch
+
+    - name: Install Python packages from repositories
+      if: matrix.python-version == '3.11-dev'
+      run: |
+        python -m pip install git+https://github.com/numpy/numpy.git
+        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git
+        python -m pip install git+https://github.com/mesonbuild/meson.git
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -93,11 +107,19 @@ jobs:
         python check_installation.py ${{ env.INSTALLDIR }}
         popd
 
+    - name: Mypy
+      if: matrix.python-version == '3.11-dev'
+      run: |
+        # Packages that are only needed for their annotations
+        python -m pip install -r mypy_requirements.txt
+        python -m pip install types-psutil pybind11 sphinx
+
+        python -u dev.py mypy
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
         export SCIPY_USE_PROPACK=1
-        python dev.py --no-build test -j 2 --durations 10
+        python dev.py --no-build test -j 2 -- --durations 10 --timeout=60
 
   test_venv_install:
     name: Pip install into venv

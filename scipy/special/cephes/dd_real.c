@@ -93,7 +93,7 @@ get_double_expn(double x)
     if (x == 0.0) {
         return INT_MIN;
     }
-    if (DD_ISINF(x) || DD_ISNAN(x)) {
+    if (isinf(x) || isnan(x)) {
         return INT_MAX;
     }
 

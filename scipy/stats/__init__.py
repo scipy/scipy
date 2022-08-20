@@ -302,6 +302,7 @@ Statistical tests
    jarque_bera
    page_trend_test
    tukey_hsd
+   poisson_means_test
 
 .. autosummary::
    :toctree: generated/
@@ -404,12 +405,13 @@ Distribution Fitting
 
    fit
 
-Circular statistical functions
-------------------------------
+Directional statistical functions
+---------------------------------
 
 .. autosummary::
    :toctree: generated/
 
+   directionalmean
    circmean
    circvar
    circstd
@@ -426,6 +428,7 @@ Contingency table functions
    contingency.margins
    contingency.relative_risk
    contingency.association
+   contingency.odds_ratio
    fisher_exact
    barnard_exact
    boschloo_exact

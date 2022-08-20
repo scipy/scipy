@@ -1,11 +1,16 @@
 [
     {
-        "name": "1.9.0 (dev)",
+        "name": "dev",
         "version": "dev",
         "url": "https://scipy.github.io/devdocs/"
     },
     {
-        "name": "1.8.1 (stable)",
+        "name": "1.9.0 (stable)",
+        "version":"1.9.0",
+        "url": "https://docs.scipy.org/doc/scipy-1.9.0/"
+    },
+    {
+        "name": "1.8.1",
         "version":"1.8.1",
         "url": "https://docs.scipy.org/doc/scipy-1.8.1/"
     },
