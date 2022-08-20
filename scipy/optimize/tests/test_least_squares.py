@@ -430,7 +430,7 @@ class BoundsMixin:
                 method=self.method)
             assert_allclose(res.x, [0.0, 0.5], atol=1e-5)
 
-    def test_bound_instances(self):
+    def test_bounds_instances(self):
         res = least_squares(fun_trivial, 0.5, bounds=Bounds())
         assert_allclose(res.x, 0.0, atol=1e-4)
 
