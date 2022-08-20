@@ -5668,6 +5668,14 @@ deprmsg = ("`gilbrat` is a misspelling of the correct name for the `gibrat` "
 class gilbrat_gen(gibrat_gen):
     # override __call__ protocol from rv_generic to also
     # deprecate instantiation of frozen distributions
+    r"""
+
+    .. deprecated:: 1.9.0
+        `gilbrat` is deprecated, use `gibrat` instead!
+        `gilbrat` is a misspelling of the correct name for the `gibrat`
+        distribution, and will be removed in SciPy 1.11.
+
+    """
     def __call__(self, *args, **kwds):
         # align with warning text from np.deprecated that's used for methods
         msg = "`gilbrat` is deprecated, use `gibrat` instead!\n" + deprmsg
