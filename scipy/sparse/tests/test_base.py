@@ -3536,7 +3536,7 @@ class _TestMinMax:
         ])
         D2 = D1.transpose()
 
-        for D in [D1, D2]:
+        for D in [D2, D1]:
             mat = csr_matrix(D)
 
             assert_equal(mat.argmax(), np.argmax(D))
@@ -3551,11 +3551,6 @@ class _TestMinMax:
                          asmatrix(np.argmax(D, axis=1).reshape(-1, 1)))
             assert_equal(mat.argmin(axis=1),
                          asmatrix(np.argmin(D, axis=1).reshape(-1, 1)))
-
-        mat = csr_matrix(D1)
-
-        assert_equal(mat.argmin(explicit=True), np.argmin(mat.data))
-        assert_equal(mat.argmax(explicit=True), np.argmax(mat.data))
 
         assert_array_equal(mat.argmax(axis=0, explicit=True).A,
                            np.array([[3, 0, 3, 3]]))

@@ -154,6 +154,14 @@ def _find_missing_index(ind, n):
         return -1
 
 
+def groupby(values):
+    diff = np.concatenate(([1], np.diff(values)))
+    idx = np.concatenate((np.where(diff)[0], [len(values)]))
+    index = np.empty(len(idx)-1, dtype='u4,u2')
+    index['f0'] = values[idx[:-1]]
+    index['f1'] = np.diff(idx)
+    return index
+
 class _minmax_mixin:
     """Mixin for min and max methods.
 
