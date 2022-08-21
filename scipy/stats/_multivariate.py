@@ -1187,9 +1187,16 @@ class matrix_normal_gen(multi_rv_generic):
         rowchol = scipy.linalg.cholesky(rowcov, lower=True)
         colchol = scipy.linalg.cholesky(colcov, lower=True)
         random_state = self._get_random_state(random_state)
-        std_norm = random_state.standard_normal(size=(dims[1], size, dims[0]))
-        roll_rvs = np.tensordot(colchol, np.dot(std_norm, rowchol.T), 1)
-        out = np.moveaxis(roll_rvs.T, 1, 0) + mean[np.newaxis, :, :]
+        # We aren't generating standard normal variates with size=(size,
+        # dims[0], dims[1]) directly to ensure random variates remain backwards
+        # compatible. See https://github.com/scipy/scipy/pull/12312 for more
+        # details.
+        std_norm = random_state.standard_normal(
+            size=(dims[1], size, dims[0])
+        ).transpose(1, 2, 0)
+        out = mean + np.einsum('jp,ipq,kq->ijk',
+                               rowchol, std_norm, colchol,
+                               optimize=True)
         if size == 1:
             out = out.reshape(mean.shape)
         return out

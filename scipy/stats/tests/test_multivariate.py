@@ -565,8 +565,13 @@ class TestMatrixNormal:
         assert_raises(ValueError, matrix_normal, M, V, V)
         assert_raises(ValueError, matrix_normal, M.T, U, V)
 
-        # Singular covariance
         e = np.linalg.LinAlgError
+        # Singular covariance for the rvs method of a non-frozen instance
+        assert_raises(e, matrix_normal.rvs,
+                      M, U, np.ones((num_cols, num_cols)))
+        assert_raises(e, matrix_normal.rvs,
+                      M, np.ones((num_rows, num_rows)), V)
+        # Singular covariance for a frozen instance
         assert_raises(e, matrix_normal, M, U, np.ones((num_cols, num_cols)))
         assert_raises(e, matrix_normal, M, np.ones((num_rows, num_rows)), V)
 
@@ -722,6 +727,24 @@ class TestMatrixNormal:
         sample_rowcov = np.cov(np.swapaxes(X,1,2).reshape(
                                                         N*num_cols,num_rows).T)
         assert_allclose(sample_rowcov, U, atol=0.1)
+
+    def test_samples(self):
+        # Regression test to ensure that we always generate the same stream of
+        # random variates.
+        actual = matrix_normal.rvs(
+            mean=np.array([[1, 2], [3, 4]]),
+            rowcov=np.array([[4, -1], [-1, 2]]),
+            colcov=np.array([[5, 1], [1, 10]]),
+            random_state=np.random.default_rng(0),
+            size=2
+        )
+        expected = np.array(
+            [[[1.56228264238181, -1.24136424071189],
+              [2.46865788392114, 6.22964440489445]],
+             [[3.86405716144353, 10.73714311429529],
+              [2.59428444080606, 5.79987854490876]]]
+        )
+        assert_allclose(actual, expected)
 
 
 class TestDirichlet:
