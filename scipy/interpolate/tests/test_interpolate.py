@@ -878,6 +878,12 @@ class TestInterp1D:
                 vals = f(xnew)
                 assert_(np.isfinite(vals).all())
 
+    @pytest.mark.parametrize('kind', ('linear', 'nearest', 'zero', 'slinear',
+                                      'quadratic', 'cubic'))
+    def test_single_value(self, kind):
+        f = interp1d([1.5], [6], kind=kind)
+        assert_array_equal(f(1.5), [6])
+
 
 class TestLagrange:
 
