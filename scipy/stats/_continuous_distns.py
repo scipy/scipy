@@ -7203,7 +7203,8 @@ class powerlaw_gen(rv_continuous):
         4a) If the shape is less than one, there are formulas for shape,
             location, and scale.
         4b) If the shape is greater than one, there are formulas for shape
-            and location, but there is an equation to be solved numerically.
+            and scale, but there is a condition for location to be solved
+            numerically.
 
         If the shape is fixed and less than one, we use 4a.
         If the shape is fixed and greater than one, we use 4b.
@@ -7213,10 +7214,16 @@ class powerlaw_gen(rv_continuous):
         In many cases, the use of `np.nextafter` is used to avoid numerical
         issues.
         '''
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        if len(np.unique(data)) == 1:
+            return super().fit(data, *args, **kwds)
+
         data, fshape, floc, fscale = _check_fit_input_parameters(self, data,
                                                                  args, kwds)
-        args = [data, (self._fitstart(data),)]
-        penalized_nllf = self._reduce_func(args, {})[1]
+        penalized_nllf_args = [data, (self._fitstart(data),)]
+        penalized_nllf = self._reduce_func(penalized_nllf_args, {})[1]
 
         # ensure that any fixed parameters don't violate constraints of the
         # distribution before continuing. The support of the distribution
@@ -7295,13 +7302,20 @@ class powerlaw_gen(rv_continuous):
 
         def dL_dScale(data, shape, scale):
             # The partial derivative of the log-likelihood function w.r.t.
-            # the location le
-            return - data.shape[0] * shape / scale
+            # the scale.
+            return -data.shape[0] * shape / scale
 
         def dL_dLocation(data, shape, loc):
             # The partial derivative of the log-likelihood function w.r.t.
             # the location.
-            return (shape - 1) * np.sum(1 / (loc - data))
+            return (shape - 1) * np.sum(1 / (loc - data))  # -1/(data-loc)
+
+        def dL_dLocation_star(loc):
+            # The derivative of the log-likelihood function w.r.t.
+            # the location, given optimal shape and scale
+            scale = np.nextafter(get_scale(data, loc), -np.inf)
+            shape = fshape or get_shape(data, loc, scale)
+            return dL_dLocation(data, shape, loc)
 
         def fun_to_solve(loc):
             # optimize the location by setting the partial derivatives
@@ -7314,12 +7328,22 @@ class powerlaw_gen(rv_continuous):
         def fit_loc_scale_w_shape_gt_1():
             # set brackets for `root_scalar` to use when optimizing over the
             # location such that a root is likely between them.
-            lbrack, rbrack = data.min() - 1, np.nextafter(data.min(), -np.inf)
+            rbrack = np.nextafter(data.min(), -np.inf)
+
+            # if the sign of `dL_dLocation_star` is positive at rbrack,
+            # we're not going to find the root we're looking for
+            i = 1
+            delta = (data.min() - rbrack)
+            while dL_dLocation_star(rbrack) > 0:
+                rbrack = data.min() - i * delta
+                i *= 2
 
             def interval_contains_root(lbrack, rbrack):
                 # Check if the interval (lbrack, rbrack) contains the root.
                 return (np.sign(fun_to_solve(lbrack))
                         != np.sign(fun_to_solve(rbrack)))
+
+            lbrack = rbrack - 1
 
             # if the sign doesn't change between the brackets, move the left
             # bracket until it does. (The right bracket remains fixed at the
@@ -7354,7 +7378,7 @@ class powerlaw_gen(rv_continuous):
             return fit_shape_lt1
         elif ll_lt1 > ll_gt1 and fit_shape_gt1[0] > 1:
             return fit_shape_gt1
-        else:  # haven't seen this happen
+        else:
             return super().fit(data, *args, **kwds)
 
 
