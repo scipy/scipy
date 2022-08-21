@@ -26,27 +26,30 @@ if [[ $RUNNER_OS == "macOS" && $PLATFORM == "macosx-arm64" ]]; then
   cp $basedir/include/* /opt/arm64-builds/include
 fi
 
+#########################################################################################
 # Install GFortran
 
-#GFORTRAN=$(type -p gfortran-9)
-#sudo ln -s $GFORTRAN /usr/local/bin/gfortran
-# same version of gfortran as the openblas-libs and scipy-wheel builds
-curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
-GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
-KNOWN_SHA256="d2d5ca5ba8332d63bbe23a07201c4a0a5d7e09ee56f0298a96775f928c3c4b30  gfortran.dmg"
-if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
-    echo sha256 mismatch
-    exit 1
-fi
+if [[ $PLATFORM == "macosx-x86_64" ]]; then
+  #GFORTRAN=$(type -p gfortran-9)
+  #sudo ln -s $GFORTRAN /usr/local/bin/gfortran
+  # same version of gfortran as the openblas-libs and scipy-wheel builds
+  curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
+  GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
+  KNOWN_SHA256="d2d5ca5ba8332d63bbe23a07201c4a0a5d7e09ee56f0298a96775f928c3c4b30  gfortran.dmg"
+  if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
+      echo sha256 mismatch
+      exit 1
+  fi
 
-hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
-sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
-otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
+  hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
+  sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
+  otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
+fi
 
 # arm64 stuff from gfortran_utils
 if [[ $PLATFORM == "macosx-arm64" ]]; then
     source $PROJECT_DIR/tools/wheels/gfortran_utils.sh
-    export MACOSX_DEPLOYMENT_TARGET=11.0
+    export MACOSX_DEPLOYMENT_TARGET=12.0
 
     # The install script requires the PLAT variable in order to set
     # the FC variable
@@ -58,7 +61,7 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
     rm /opt/arm64-builds/lib/*.a
 
     # required so that gfortran knows where to find the linking libraries.
-    export SDKROOT=/Applications/Xcode_12.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk
+    export SDKROOT=/Applications/Xcode_13.2.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk
     #    export SDKROOT=$(xcrun --show-sdk-path)
     export FFLAGS=" -arch arm64 $FFLAGS"
     export LDFLAGS=" $FC_ARM64_LDFLAGS $LDFLAGS -L/opt/arm64-builds/lib -arch arm64"
