@@ -1295,6 +1295,20 @@ class TestMultinomial:
         assert_allclose(mn_frozen.logpmf(x), multinomial.logpmf(x, n, pvals))
         assert_allclose(mn_frozen.entropy(), multinomial.entropy(n, pvals))
 
+    def test_gh_11860(self):
+        # gh-11860 reported cases in which the adjustments made by multinomial
+        # to the last element of `p` can cause `nan`s even when the input is
+        # essentially valid. Check that a pathological case returns a finite,
+        # nonzero result. (This would fail in main before the PR.)
+        n = 88
+        rng = np.random.default_rng(8879715917488330089)
+        p = rng.random(n)
+        p[-1] = 1e-30
+        p /= np.sum(p)
+        x = np.ones(n)
+        logpmf = multinomial.logpmf(x, n, p)
+        assert np.isfinite(logpmf)
+
 class TestInvwishart:
     def test_frozen(self):
         # Test that the frozen and non-frozen inverse Wishart gives the same
