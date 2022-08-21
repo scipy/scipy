@@ -2402,7 +2402,7 @@ class TestPowerlaw(object):
                              [p for p in product([True, False], repeat=3)
                               if False in p])
     def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
-                                   fix_shape, fix_loc, fix_scale, rng):
+                                    fix_shape, fix_loc, fix_scale, rng):
         data = stats.powerlaw.rvs(size=250, a=rvs_shape, loc=rvs_loc,
                                   scale=rvs_scale, random_state=rng)
 
