@@ -79,8 +79,7 @@ jobs:
         # create macos_arm64 outside cibuildwheel until it's possible to pass
         # configuration details to the build frontend.
         - [macos-10.15, macosx*, x86_64]
-        - [macos-11, macosx*, arm64]
-
+        - [macos-12, macosx*, arm64]
         - [windows-2019, win*, AMD64]
 
         python: [["cp38", "3.8"], ["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11-dev"]]
@@ -112,20 +111,20 @@ jobs:
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
         if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'false' }}
 
-      - name: win32 - configure mingw for 32-bit builds
-        run: |
-          # taken from numpy wheels.yml script
-          # Force 32-bit mingw. v 8.1.0 is the current version used to build
-          # the 32 bit openBLAS library (not sure if that matters)
-          choco uninstall mingw
-          choco install -y mingw --forcex86 --force --version=8.1.0
-          echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw32\bin;" >> $env:GITHUB_PATH
-          echo $(gfortran --version)
-          echo $(gcc --version)
-        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'true' }}
+#      - name: win32 - configure mingw for 32-bit builds
+#        run: |
+#          # taken from numpy wheels.yml script
+#          # Force 32-bit mingw. v 8.1.0 is the current version used to build
+#          # the 32 bit openBLAS library (not sure if that matters)
+#          choco uninstall mingw
+#          choco install -y mingw --forcex86 --force --version=8.1.0
+#          echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw32\bin;" >> $env:GITHUB_PATH
+#          echo $(gfortran --version)
+#          echo $(gcc --version)
+#        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'true' }}
 
       - name: Set up QEMU
-        if: runner.os == 'Linux'
+        if: ${{ runner.os == 'Linux' && matrix.buildplat[2] == 'aarch64' }}
         uses: docker/setup-qemu-action@v1
         with:
           platforms: all
@@ -147,19 +146,19 @@ jobs:
         if: ${{ matrix.buildplat[1] == 'macosx*' && matrix.buildplat[2] == 'arm64' }}
         run: |
           export PLAT="arm64"
-          export _PYTHON_HOST_PLATFORM="macosx-11.0-arm64"
+          export _PYTHON_HOST_PLATFORM="macosx-12.0-arm64"
           export CROSS_COMPILE=1
 
-          # Need macOS >= 11 for arm compilation.
-          export MACOSX_DEPLOYMENT_TARGET=11.0
+          # Need macOS >= 12 for arm compilation.
+          export MACOSX_DEPLOYMENT_TARGET=12.0
 
           # SDK root needs to be set early, installation of gfortran/openblas
           # needs to go in the correct location.
-          export SDKROOT=/Applications/Xcode_12.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk
+          export SDKROOT=/Applications/Xcode_13.2.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk
           export ARCHFLAGS=" -arch arm64 "
 
           # install dependencies for the build machine
-          pip install meson cython pybind11 pythran ninja oldest-supported-numpy numpy build delocate meson-python
+          pip install meson cython pybind11 pythran ninja oldest-supported-numpy build delocate meson-python
 
           # sets up gfortran compiler/openblas, sets compiler flags.
           bash tools/wheels/cibw_before_build_macos.sh $(pwd)

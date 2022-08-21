@@ -152,8 +152,6 @@ before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}
 test-skip = "*_aarch64"
 
 [tool.cibuildwheel.macos]
-# If universal2 wheels are wanted use delocate-fuse
-# TODO figure out arm64 cross compilation
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
 test-skip = "*_arm64 *_universal2:arm64"
 
@@ -163,13 +161,12 @@ repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}
 
 [[tool.cibuildwheel.overrides]]
 select = "*-win32"
-# don't use double backslash for path separators, they don't get passed
-# to the build correctly
-# use cmake detection for openBLAS because the built-in pkg-config is defective
-environment = { CXXFLAGS="-m32", CFLAGS="-m32", LDFLAGS="-m32", CMAKE_PREFIX_PATH="c:/opt/openblas/if_32/32" }
 
 [[tool.cibuildwheel.overrides]]
 select = "*-win_amd64"
 # can use pkg-config detection for win_amd64 because the installed rtools
-# provide a working pkg-config
+# provide a working pkg-config.
+# An alternative is to set CMAKE_PREFIX_PATH="c:/opt/openblas/if_32/32"
+# Don't use double backslash for path separators, they don't get passed
+# to the build correctly
 environment = { PKG_CONFIG_PATH="c:/opt/openblas/if_32/64/lib/pkgconfig" }

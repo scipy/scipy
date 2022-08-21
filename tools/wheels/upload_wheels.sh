@@ -1,24 +1,7 @@
 # Copied from numpy version
 # https://github.com/numpy/numpy/blob/main/tools/wheels/upload_wheels.sh
 
-set_travis_vars() {
-    # Set env vars
-    echo "TRAVIS_EVENT_TYPE is $TRAVIS_EVENT_TYPE"
-    echo "TRAVIS_TAG is $TRAVIS_TAG"
-    if [[ "$TRAVIS_EVENT_TYPE" == "push" && "$TRAVIS_TAG" == v* ]]; then
-      IS_PUSH="true"
-    else
-      IS_PUSH="false"
-    fi
-    if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
-      IS_SCHEDULE_DISPATCH="true"
-    elif [[ "$TRAVIS_EVENT_TYPE" == "api" ]]; then
-      # Manual CI run, so upload
-      IS_SCHEDULE_DISPATCH="true"
-    else
-      IS_SCHEDULE_DISPATCH="false"
-    fi
-}
+
 set_upload_vars() {
     echo "IS_PUSH is $IS_PUSH"
     echo "IS_SCHEDULE_DISPATCH is $IS_SCHEDULE_DISPATCH"
@@ -45,7 +28,7 @@ upload_wheels() {
         else
             python -m pip install \
             git+https://github.com/Anaconda-Platform/anaconda-client.git@be1e14936a8e947da94d026c990715f0596d7043
-            # sdists are located under dist folder when built through setup.py
+            # sdists are located under dist folder
             if compgen -G "./dist/*.gz"; then
                 echo "Found sdist"
                 anaconda -q -t ${TOKEN} upload --skip -u ${ANACONDA_ORG} ./dist/*.gz

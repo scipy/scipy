@@ -17,9 +17,6 @@ pushd scipy*
 # building with mingw.
 # We therefore find each PYD in the directory structure and strip them.
 
-# An alternative might be to change the build flags:
-# environment = { CXXFLAGS="$CXXFLAGS -strip-all", CFLAGS="$CFLAGS -strip-all"}
-
 for f in $(find ./scipy* -name '*.pyd'); do strip $f; done
 
 
