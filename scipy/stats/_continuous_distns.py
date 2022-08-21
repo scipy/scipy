@@ -5519,6 +5519,10 @@ class lognorm_gen(rv_continuous):
         https://doi.org/10.2307/2287466
         \n\n""")
     def fit(self, data, *args, **kwds):
+
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
 
@@ -5536,6 +5540,13 @@ class lognorm_gen(rv_continuous):
 
         if floc is None:
             rbrack = np.nextafter(min(data), -np.inf)
+
+            i = 1
+            delta = np.min(data) - rbrack
+            while dL_dLoc(rbrack) >= -1e-6:
+                i *= 2
+                rbrack = np.min(data) - delta*i
+
             lbrack = rbrack - 1
             i = 0
 
@@ -5553,6 +5564,9 @@ class lognorm_gen(rv_continuous):
             if floc >= np.min(data):
                 raise FitDataError("lognorm", lower=0., upper=np.inf)
             loc = floc
+
+        if rbrack < -1e6:
+            loc = np.nextafter(min(data), -np.inf)
 
         shape, scale = get_shape_scale(loc)
         if not (self._argcheck(shape) and scale > 0):
