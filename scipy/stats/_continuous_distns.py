@@ -5510,16 +5510,17 @@ class lognorm_gen(rv_continuous):
         `optimizer`, `loc` and `scale` keyword arguments are ignored.
         If the location is free, a likelihood maximum is found by
         setting its partial derivative wrt to location to 0, and
-        solving by substituting the analytical expressions of shape
-        and scale (or provided parameters).
-        See, e.g., equation 3.1 in
-        A. Clifford Cohen & Betty Jones Whitten (1980)
-        Estimation in the Three-Parameter Lognormal Distribution,
-        Journal of the American Statistical Association, 75:370, 399-404
-        https://doi.org/10.2307/2287466
+        solving by substituting the analytical expressions of shape and
+        scale (or provided parameters). See, e.g., equation 3.1 in [1]_.
+
+        References
+        ----------
+        .. [1] Cohen, A.C., & Whitten, B.J. (1980). Estimation in the
+               three-parameter lognormal distribution, Journal of the
+               American Statistical Association, 75(370), 399-404.
+               https://doi.org/10.2307/2287466
         \n\n""")
     def fit(self, data, *args, **kwds):
-
         if kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
 
@@ -5538,35 +5539,38 @@ class lognorm_gen(rv_continuous):
             shifted = data - loc
             return np.sum((1 + np.log(shifted/scale)/shape**2)/shifted)
 
+        mn = min(data)
         if floc is None:
-            rbrack = np.nextafter(min(data), -np.inf)
-
+            rbrack = np.nextafter(mn, -np.inf)
             i = 1
             delta = np.min(data) - rbrack
             while dL_dLoc(rbrack) >= -1e-6:
                 i *= 2
                 rbrack = np.min(data) - delta*i
 
-            lbrack = rbrack - 1
-            i = 0
-
-            while ((lbrack > -np.inf)
-                   and (dL_dLoc(lbrack)*dL_dLoc(rbrack) >= 0)):
-                i += 1
-                lbrack = rbrack - np.power(2., i)
-            if not lbrack > -np.inf:
-                return super().fit(data, *args, **kwds)
-            res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
-            if not res.converged:
-                return super().fit(data, *args, **kwds)
-            loc = res.root
+            tol = 1e3
+            if mn - rbrack > tol*(max(data)-mn):
+                # `loc` should be relatively close to `mn`. If we make it
+                # there, it is likely that we overshot and the root sits close
+                # to `mn`.
+                loc = np.nextafter(mn, -np.inf)
+            else:
+                lbrack = rbrack - 1
+                i = 0
+                while ((lbrack > -np.inf)
+                       and (dL_dLoc(lbrack)*dL_dLoc(rbrack) >= 0)):
+                    i += 1
+                    lbrack = rbrack - np.power(2., i)
+                if not lbrack > -np.inf:
+                    return super().fit(data, *args, **kwds)
+                res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
+                if not res.converged:
+                    return super().fit(data, *args, **kwds)
+                loc = res.root
         else:
-            if floc >= np.min(data):
+            if floc >= mn:
                 raise FitDataError("lognorm", lower=0., upper=np.inf)
             loc = floc
-
-        if rbrack < -1e6:
-            loc = np.nextafter(min(data), -np.inf)
 
         shape, scale = get_shape_scale(loc)
         if not (self._argcheck(shape) and scale > 0):

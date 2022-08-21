@@ -1597,8 +1597,8 @@ class TestPareto:
                              [p for p in product([True, False], repeat=3)
                               if False in p])
     @np.errstate(invalid="ignore")
-    def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
-                                   fix_shape, fix_loc, fix_scale, rng):
+    def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
+                                    fix_shape, fix_loc, fix_scale, rng):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
                                 loc=rvs_loc, random_state=rng)
         args = [data, (stats.pareto._fitstart(data), )]
@@ -2170,7 +2170,7 @@ class TestInvgauss:
 
     @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
                              [(2, 0, 1), (np.random.rand(3)*10)])
-    def test_fit_MLE_comp_optimzer(self, rvs_mu, rvs_loc, rvs_scale):
+    def test_fit_MLE_comp_optimizer(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
 
@@ -2317,7 +2317,7 @@ class TestLaplace:
     @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10, -5),
                                                    (5, 10),
                                                    (.2, .5)])
-    def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale):
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale):
         data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
 
         # the log-likelihood function for laplace is given by
@@ -3093,9 +3093,8 @@ class TestLognorm:
     @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
                              [e for e in product((False, True), repeat=3)
                               if False in e])
-    @np.errstate(invalid="ignore")
-    def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
-                                   fix_shape, fix_loc, fix_scale, rng):
+    def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
+                                    fix_shape, fix_loc, fix_scale, rng):
         data = stats.lognorm.rvs(size=100, s=rvs_shape, scale=rvs_scale,
                                  loc=rvs_loc, random_state=rng)
         args = [data, (stats.lognorm._fitstart(data), )]
