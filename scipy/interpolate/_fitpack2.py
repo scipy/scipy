@@ -433,7 +433,7 @@ class UnivariateSpline:
         0.0
 
         """
-        return dfitpack.splint(*(self._eval_args+(a, b)))
+        return _fitpack_impl.splint(a, b, self._eval_args, full_output=0)
 
     def derivatives(self, x):
         """ Return all derivatives of the spline at the point x.
