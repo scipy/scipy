@@ -685,7 +685,7 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
        real*8 optional :: r1
        real*8 optional,check(0.0<=s) :: s = 0.0
        integer intent(hide),depend(mu),check(nuest>=8) &
-            :: nuest = mu+6
+            :: nuest = mu+6+2
        integer intent(hide),depend(mv),check(nvest>=8) &
             :: nvest = mv+7
        integer intent(out) :: nu
