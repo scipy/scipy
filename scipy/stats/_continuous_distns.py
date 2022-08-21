@@ -5510,15 +5510,13 @@ class lognorm_gen(rv_continuous):
         `optimizer`, `loc` and `scale` keyword arguments are ignored.
         If the location is free, a likelihood maximum is found by
         setting its partial derivative wrt to location to 0, and
-        solving by substituting the analytical expressions of shape and
-        scale (or provided parameters). See, e.g., equation 3.1 in [1]_.
-
-        References
-        ----------
-        .. [1] Cohen, A.C., & Whitten, B.J. (1980). Estimation in the
-               three-parameter lognormal distribution, Journal of the
-               American Statistical Association, 75(370), 399-404.
-               https://doi.org/10.2307/2287466
+        solving by substituting the analytical expressions of shape
+        and scale (or provided parameters).
+        See, e.g., equation 3.1 in
+        A. Clifford Cohen & Betty Jones Whitten (1980)
+        Estimation in the Three-Parameter Lognormal Distribution,
+        Journal of the American Statistical Association, 75:370, 399-404
+        https://doi.org/10.2307/2287466
         \n\n""")
     def fit(self, data, *args, **kwds):
         parameters = _check_fit_input_parameters(self, data, args, kwds)
@@ -5531,57 +5529,26 @@ class lognorm_gen(rv_continuous):
             shape = fshape or np.sqrt(np.mean((lndata - np.log(scale))**2))
             return shape, scale
 
-        def loc_mm():
-            # Method of moments estimate for the location.
-            skew_square = _skew(data)**2
-            alp = np.cbrt((skew_square
-                           + np.sqrt(skew_square*(skew_square+4)))/2 + 1)
-            om = alp + 1/alp - 1
-            return data.mean() - data.std() / np.sqrt(om - 1)
-
-        def f(loc):
-            # Partial derivative of the log-likelihood wrt the location,
-            # times shape**2.
+        def dL_dLoc(loc):
             shape, scale = get_shape_scale(loc)
             shifted = data - loc
-            return np.sum((shape**2 + np.log(shifted/scale))/shifted)
+            return np.sum((1 + np.log(shifted/scale)/shape**2)/shifted)
 
-        def root_bracketing(loc0, mn):
-            # Search for an admissible bracketing interval iteratively,
-            # starting from the initial loc0.
-            # mn := min(data) is an upper bound on the root we look for;
-            # it is often not strict enough, so we do not use it directly.
-            lbrack = 2*loc0 - mn
-            rbrack = (loc0 + mn)/2
-            while ((lbrack > -np.inf) and (rbrack < mn)
-                   and (f(lbrack)*f(rbrack) >= 0)):
-                lbrack = 2*lbrack - mn  # double the distance between l and mn
-                rbrack = (rbrack + mn)/2  # halve the distance between r and mn
-            try:
-                res = root_scalar(f, bracket=(lbrack, rbrack))
-            except ValueError:
-                res = None
-            return res
-
-        mn = min(data)
         if floc is None:
-            # If a valid initial guess is provided, it is used. Otherwise, the
-            # method of moment is used to determine one.
-            # If that is not valid (small-sized or negatively-skewed samples),
-            # default to shifting min(data).
-            loc0 = kwds.pop("loc", None)
-            if loc0 is not None and loc0 < mn:
-                pass
-            else:
-                loc0 = loc_mm()
-                if loc0 >= mn:
-                    loc0 = mn - 1
-            res = root_bracketing(loc0, mn)
-            if (res is not None and res.converged
-                    and np.isfinite(res.root) and res.root < mn):
-                loc = res.root
-            else:
+            rbrack = np.nextafter(min(data), -np.inf)
+            lbrack = rbrack - 1
+            i = 0
+
+            while ((lbrack > -np.inf)
+                   and (dL_dLoc(lbrack)*dL_dLoc(rbrack) >= 0)):
+                i += 1
+                lbrack = rbrack - np.power(2., i)
+            if not lbrack > -np.inf:
                 return super().fit(data, *args, **kwds)
+            res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
+            if not res.converged:
+                return super().fit(data, *args, **kwds)
+            loc = res.root
         else:
             if floc >= np.min(data):
                 raise FitDataError("lognorm", lower=0., upper=np.inf)
