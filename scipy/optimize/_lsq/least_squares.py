@@ -284,7 +284,7 @@ def least_squares(
         is applied), a sparse matrix (csr_matrix preferred for performance) or
         a `scipy.sparse.linalg.LinearOperator`.
     bounds : 2-tuple of array_like or `Bounds`, optional
-        There are two ways to specify bounds for methods 'trf' and 'dogbox':
+        There are two ways to specify bounds:
 
             1. Instance of `Bounds` class
             2. Lower and upper bounds on independent variables. Defaults to no
