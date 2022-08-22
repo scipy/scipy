@@ -146,11 +146,11 @@ jobs:
         if: ${{ matrix.buildplat[1] == 'macosx*' && matrix.buildplat[2] == 'arm64' }}
         run: |
           export PLAT="arm64"
-          export _PYTHON_HOST_PLATFORM="macosx-12.0-arm64"
+          export _PYTHON_HOST_PLATFORM="macosx-11.0-arm64"
           export CROSS_COMPILE=1
 
           # Need macOS >= 12 for arm compilation.
-          export MACOSX_DEPLOYMENT_TARGET=12.0
+          export MACOSX_DEPLOYMENT_TARGET=11.0
 
           # SDK root needs to be set early, installation of gfortran/openblas
           # needs to go in the correct location.
