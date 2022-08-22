@@ -415,25 +415,28 @@ class BoundsMixin:
             assert_(0.5 <= res.x <= 3)
 
     def test_bounds_shape(self):
-        bounds_direkt = lambda x: x
-        bounds_instances = lambda x: Bounds(x[0], x[1])
+        def get_bounds_direct(lb, ub):
+            return lb, ub
+
+        def get_bounds_instances(lb, ub):
+            return Bounds(lb, ub)
 
         for jac in ['2-point', '3-point', 'cs', jac_2d_trivial]:
-            for bounds_func in [bounds_direkt, bounds_instances]:
+            for bounds_func in [get_bounds_direct, get_bounds_instances]:
                 x0 = [1.0, 1.0]
                 res = least_squares(fun_2d_trivial, x0, jac=jac)
                 assert_allclose(res.x, [0.0, 0.0])
                 res = least_squares(fun_2d_trivial, x0, jac=jac,
-                                    bounds=bounds_func((0.5, [2.0, 2.0])),
+                                    bounds=bounds_func(0.5, [2.0, 2.0]),
                                     method=self.method)
                 assert_allclose(res.x, [0.5, 0.5])
                 res = least_squares(fun_2d_trivial, x0, jac=jac,
-                                    bounds=bounds_func(([0.3, 0.2], 3.0)),
+                                    bounds=bounds_func([0.3, 0.2], 3.0),
                                     method=self.method)
                 assert_allclose(res.x, [0.3, 0.2])
                 res = least_squares(
                     fun_2d_trivial, x0, jac=jac, 
-                    bounds=bounds_func(([-1, 0.5], [1.0, 3.0])),
+                    bounds=bounds_func([-1, 0.5], [1.0, 3.0]),
                     method=self.method)
                 assert_allclose(res.x, [0.0, 0.5], atol=1e-5)
 
