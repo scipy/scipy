@@ -3079,14 +3079,16 @@ class multinomial_gen(multi_rv_generic):
         """
         return multinomial_frozen(n, p, seed)
 
-    def _process_parameters(self, n, p):
+    def _process_parameters(self, n, p, eps=1e-15):
         """Returns: n_, p_, npcond.
 
         n_ and p_ are arrays of the correct shape; npcond is a boolean array
         flagging values out of the domain.
         """
         p = np.array(p, dtype=np.float64, copy=True)
-        p[..., -1] = 1. - p[..., :-1].sum(axis=-1)
+        p_adjusted = 1. - p[..., :-1].sum(axis=-1)
+        i_adjusted = np.abs(p_adjusted) > eps
+        p[i_adjusted, -1] = p_adjusted[i_adjusted]
 
         # true for bad p
         pcond = np.any(p < 0, axis=-1)
