@@ -273,7 +273,8 @@ def freqs_zpk(z, p, k, worN=200):
     return w, h
 
 
-def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=False):
+def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
+          include_nyquist=False):
     """
     Compute the frequency response of a digital filter.
 
@@ -323,8 +324,9 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=Fal
 
         .. versionadded:: 1.2.0
     include_nyquist : bool, optional
-        If `whole` is False and `worN` is an integer, setting `include_nyquist` to True
-        will include the last frequency (Nyquist frequency) and is otherwise ignored.
+        If `whole` is False and `worN` is an integer, setting `include_nyquist`
+        to True will include the last frequency (Nyquist frequency) and is
+        otherwise ignored.
 
         .. versionadded:: 1.5.0
 
@@ -443,7 +445,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=Fal
         if N < 0:
             raise ValueError('worN must be nonnegative, got %s' % (N,))
         lastpoint = 2 * pi if whole else pi
-        # if include_nyquist is true and whole is false, w should include end point
+        # if include_nyquist is true and whole is false, w should
+        # include end point
         w = np.linspace(0, lastpoint, N, endpoint=include_nyquist and not whole)
         if (a.size == 1 and N >= b.shape[0] and
                 sp_fft.next_fast_len(N) == N and
@@ -2341,7 +2344,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         if not((ws[0] < wp[0] and wp[1] < ws[1]) or
                (wp[0] < ws[0] and ws[1] < wp[1])):
             raise ValueError("Passband must lie strictly inside stopband"
-                         " or vice versa")
+                             " or vice versa")
 
     band_type = 2 * (len(wp) - 1)
     band_type += 1
@@ -2549,8 +2552,8 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     if not analog:
         if numpy.any(Wn <= 0) or numpy.any(Wn >= 1):
             if fs is not None:
-                raise ValueError("Digital filter critical frequencies "
-                                 "must be 0 < Wn < fs/2 (fs={} -> fs/2={})".format(fs, fs/2))
+                raise ValueError("Digital filter critical frequencies must "
+                                 f"be 0 < Wn < fs/2 (fs={fs} -> fs/2={fs/2})")
             raise ValueError("Digital filter critical frequencies "
                              "must be 0 < Wn < 1")
         fs = 2.0
@@ -2561,7 +2564,8 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     # transform to lowpass, bandpass, highpass, or bandstop
     if btype in ('lowpass', 'highpass'):
         if numpy.size(Wn) != 1:
-            raise ValueError('Must specify a single critical frequency Wn for lowpass or highpass filter')
+            raise ValueError('Must specify a single critical frequency Wn '
+                             'for lowpass or highpass filter')
 
         if btype == 'lowpass':
             z, p, k = lp2lp_zpk(z, p, k, wo=warped)
@@ -2572,8 +2576,8 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
             bw = warped[1] - warped[0]
             wo = sqrt(warped[0] * warped[1])
         except IndexError as e:
-            raise ValueError('Wn must specify start and stop frequencies for bandpass or bandstop '
-                             'filter') from e
+            raise ValueError('Wn must specify start and stop frequencies for '
+                             'bandpass or bandstop filter') from e
 
         if btype == 'bandpass':
             z, p, k = lp2bp_zpk(z, p, k, wo=wo, bw=bw)
@@ -4162,6 +4166,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
 _POW10_LOG10 = np.log(10)
 
+
 def _pow10m1(x):
     """10 ** x - 1 for x near 0"""
     return np.expm1(_POW10_LOG10 * x)
@@ -4413,6 +4418,7 @@ EPSILON = 2e-16
 # number of terms in solving degree equation
 _ELLIPDEG_MMAX = 7
 
+
 def _ellipdeg(n, m1):
     """Solve degree equation using nomes
 
@@ -4446,6 +4452,7 @@ def _ellipdeg(n, m1):
 # sequence.  10 is conservative; unit tests pass with 4, Orfanidis
 # (see _arc_jac_cn [1]) suggests 5.
 _ARC_JAC_SN_MAXITER = 10
+
 
 def _arc_jac_sn(w, m):
     """Inverse Jacobian elliptic sn
@@ -4884,7 +4891,8 @@ def besselap(N, norm='phase'):
            of the ACM, Vol. 10, Issue 2, pp. 107-108, Feb. 1967,
            :DOI:`10.1145/363067.363115`
     .. [6] Miller and Bohn, "A Bessel Filter Crossover, and Its Relation to
-           Others", RaneNote 147, 1998, https://www.ranecommercial.com/legacy/note147.html
+           Others", RaneNote 147, 1998,
+           https://www.ranecommercial.com/legacy/note147.html
 
     """
     if abs(int(N)) != N:
