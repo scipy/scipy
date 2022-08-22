@@ -49,7 +49,7 @@ fi
 # arm64 stuff from gfortran_utils
 if [[ $PLATFORM == "macosx-arm64" ]]; then
     source $PROJECT_DIR/tools/wheels/gfortran_utils.sh
-    export MACOSX_DEPLOYMENT_TARGET=12.0
+    export MACOSX_DEPLOYMENT_TARGET=11.0
 
     # The install script requires the PLAT variable in order to set
     # the FC variable

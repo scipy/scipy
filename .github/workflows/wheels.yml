@@ -68,8 +68,8 @@ jobs:
         # should also be able to do multi-archs on a single entry, e.g.
         # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
-        - [ubuntu-20.04, manylinux*, x86_64]
-        - [ubuntu-20.04, manylinux*, aarch64]
+        # - [ubuntu-20.04, manylinux*, x86_64]
+        # - [ubuntu-20.04, manylinux*, aarch64]
 
         # When the macos-10.15 image is retired the gfortran/openblas chain
         # will have to be reworked because the gfortran compiler currently used
@@ -78,9 +78,9 @@ jobs:
         # will require that the prebuilt openBLAS is updated.
         # create macos_arm64 outside cibuildwheel until it's possible to pass
         # configuration details to the build frontend.
-        - [macos-10.15, macosx*, x86_64]
+        # - [macos-10.15, macosx*, x86_64]
         - [macos-12, macosx*, arm64]
-        - [windows-2019, win*, AMD64]
+        # - [windows-2019, win*, AMD64]
 
         python: [["cp38", "3.8"], ["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11-dev"]]
         # python[0] is used to specify the python versions made by cibuildwheel
