@@ -1680,6 +1680,34 @@ def normalize(b, a):
     Coefficients for both the numerator and denominator should be specified in
     descending exponent order (e.g., ``s^2 + 3s + 5`` would be represented as
     ``[1, 3, 5]``).
+
+    Examples
+    --------
+    >>> from scipy.signal import normalize
+
+    Normalize the coefficients of the transfer function
+    ``(3*s^2 - 2*s + 5) / (2*s^2 + 3*s + 1)``:
+
+    >>> b = [3, -2, 5]
+    >>> a = [2, 3, 1]
+    >>> normalize(b, a)
+    (array([ 1.5, -1. ,  2.5]), array([1. , 1.5, 0.5]))
+
+    A warning is generated if, for example, the first coefficient of
+    `b` is 0.  In the following example, the result is as expected:
+
+    >>> import warnings
+    >>> with warnings.catch_warnings(record=True) as w:
+    ...     num, den = normalize([0, 3, 6], [2, -5, 4])
+
+    >>> num
+    array([1.5, 3. ])
+    >>> den
+    array([ 1. , -2.5,  2. ])
+
+    >>> print(w[0].message)
+    Badly conditioned filter coefficients (numerator): the results may be meaningless
+
     """
     num, den = b, a
 
