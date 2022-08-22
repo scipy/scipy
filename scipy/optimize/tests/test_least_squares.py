@@ -435,7 +435,7 @@ class BoundsMixin:
                                     method=self.method)
                 assert_allclose(res.x, [0.3, 0.2])
                 res = least_squares(
-                    fun_2d_trivial, x0, jac=jac, 
+                    fun_2d_trivial, x0, jac=jac,
                     bounds=bounds_func([-1, 0.5], [1.0, 3.0]),
                     method=self.method)
                 assert_allclose(res.x, [0.0, 0.5], atol=1e-5)
