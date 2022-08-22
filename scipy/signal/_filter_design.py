@@ -237,6 +237,7 @@ def freqs_zpk(z, p, k, worN=200):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import freqs_zpk, iirfilter
 
     >>> z, p, k = iirfilter(4, [1, 10], 1, 60, analog=True, ftype='cheby1',
@@ -543,6 +544,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     Design a 4th-order digital Butterworth filter with cut-off of 100 Hz in a
     system with sample rate of 1000 Hz, and plot the frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> z, p, k = signal.butter(4, 100, output='zpk', fs=1000)
     >>> w, h = signal.freqz_zpk(z, p, k, fs=1000)
@@ -2274,7 +2276,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
     Examples
     --------
-
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> import matplotlib.ticker
@@ -2451,6 +2453,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     Generate a 17th-order Chebyshev II analog bandpass filter from 50 Hz to
     200 Hz and plot the frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -2644,6 +2647,7 @@ def bilinear_zpk(z, p, k, fs):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -5045,6 +5049,7 @@ def iirpeak(w0, Q, fs=2.0):
     Design and plot filter to remove the frequencies other than the 300 Hz
     component from a signal sampled at 1000 Hz, using a quality factor Q = 30
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -5437,7 +5442,6 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
 
     IIR Gammatone filter centered at 440 Hz
 
-    >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
 
