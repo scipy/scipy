@@ -159,23 +159,19 @@ class TestRegularGridInterpolator:
         wanted = np.asarray([1001.1, 846.2, 555.5])
         assert_array_almost_equal(interp(sample), wanted)
 
-    def test_nearest(self):
+    @pytest.mark.parametrize(
+        "sample, wanted",
+        [
+            (np.asarray([0.1, 0.1, 0.9, 0.9]), 1100.0),
+            (np.asarray([0.1, 0.1, 0.1, 0.1]), 0.0),
+            (np.asarray([0.0, 0.0, 0.0, 0.0]), 0.0),
+            (np.asarray([1.0, 1.0, 1.0, 1.0]), 1111.0),
+            (np.asarray([0.1, 0.4, 0.6, 0.9]), 1055.0),
+        ],
+    )
+    def test_nearest(self, sample, wanted):
         points, values = self._get_sample_4d()
         interp = RegularGridInterpolator(points, values, method="nearest")
-        sample = np.asarray([0.1, 0.1, .9, .9])
-        wanted = 1100.
-        assert_array_almost_equal(interp(sample), wanted)
-        sample = np.asarray([0.1, 0.1, 0.1, 0.1])
-        wanted = 0.
-        assert_array_almost_equal(interp(sample), wanted)
-        sample = np.asarray([0., 0., 0., 0.])
-        wanted = 0.
-        assert_array_almost_equal(interp(sample), wanted)
-        sample = np.asarray([1., 1., 1., 1.])
-        wanted = 1111.
-        assert_array_almost_equal(interp(sample), wanted)
-        sample = np.asarray([0.1, 0.4, 0.6, 0.9])
-        wanted = 1055.
         assert_array_almost_equal(interp(sample), wanted)
 
     def test_linear_edges(self):
