@@ -2,26 +2,38 @@ from numpy import array, frombuffer, load
 from ._registry import registry, registry_urls
 import warnings
 
-# https://github.com/scipy/scipy/pull/15607#issuecomment-1176457275
-# TODO: Remove warning filter after next certifi release
-with warnings.catch_warnings():
-    warnings.filterwarnings('ignore', category=DeprecationWarning)
-    import pooch
+try:
+    # https://github.com/scipy/scipy/pull/15607#issuecomment-1176457275
+    # TODO: Remove warning filter after next certifi release
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=DeprecationWarning)
+        import pooch
+except ImportError:
+    pooch = None
+    data_fetcher = None
+else:
+    data_fetcher = pooch.create(
+        # Use the default cache folder for the operating system
+        # Pooch uses appdirs (https://github.com/ActiveState/appdirs) to
+        # select an appropriate directory for the cache on each platform.
+        path=pooch.os_cache("scipy-data"),
+
+        # The remote data is on Github
+        # base_url is a required param, even though we override this
+        # using individual urls in the registry.
+        base_url="https://github.com/scipy/",
+        registry=registry,
+        urls=registry_urls
+    )
 
 
-data = pooch.create(
-    # Use the default cache folder for the operating system
-    # Pooch uses appdirs (https://github.com/ActiveState/appdirs) to
-    # select an appropriate directory for the cache on each platform.
-    path=pooch.os_cache("scipy-data"),
-
-    # The remote data is on Github
-    # base_url is a required param, even though we override this
-    # using individual urls in the registry.
-    base_url="https://github.com/scipy/",
-    registry=registry,
-    urls=registry_urls
-)
+def fetch_data(dataset_name, data_fetcher=data_fetcher):
+    if data_fetcher is None:
+        raise ImportError("Missing optional dependency 'pooch' required "
+                          "for scipy.datasets module. Please use pip or "
+                          "conda to install 'pooch'.")
+    # The "fetch" method returns the full path to the downloaded data file.
+    return data_fetcher.fetch(dataset_name)
 
 
 def ascent():
@@ -58,11 +70,10 @@ def ascent():
     """
     import pickle
 
-    # The file will be downloaded automatically the first time this is run
-    # returns the file path to the downloaded file. Afterwards, Pooch finds
+    # The file will be downloaded automatically the first time this is run,
+    # returning the path to the downloaded file. Afterwards, Pooch finds
     # it in the local cache and doesn't repeat the download.
-    fname = data.fetch("ascent.dat")
-    # The "fetch" method returns the full path to the downloaded data file.
+    fname = fetch_data("ascent.dat")
     # Now we just need to load it with our standard Python tools.
     with open(fname, 'rb') as f:
         ascent = array(pickle.load(f))
@@ -159,7 +170,7 @@ def electrocardiogram():
     >>> plt.xlim(f[[0, -1]])
     >>> plt.show()
     """
-    fname = data.fetch("ecg.dat")
+    fname = fetch_data("ecg.dat")
     with load(fname) as file:
         ecg = file["ecg"].astype(int)  # np.uint16 -> int
     # Convert raw output of ADC to mV: (ecg - adc_zero) / adc_gain
@@ -201,7 +212,7 @@ def face(gray=False):
 
     """
     import bz2
-    fname = data.fetch("face.dat")
+    fname = fetch_data("face.dat")
     with open(fname, 'rb') as f:
         rawdata = f.read()
     face_data = bz2.decompress(rawdata)
