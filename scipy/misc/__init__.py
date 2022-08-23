@@ -5,7 +5,7 @@ Miscellaneous routines (:mod:`scipy.misc`)
 
 .. currentmodule:: scipy.misc
 
-.. note::
+.. deprecated:: 1.10.0
 
    This module is deprecated and will be completely
    removed in SciPy v2.0.0.
