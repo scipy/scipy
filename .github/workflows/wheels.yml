@@ -81,7 +81,7 @@ jobs:
         - [macos-12, macosx, arm64]
         - [windows-2019, win, AMD64]
 
-        python: [["cp38", "3.8"], ["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11-dev"]]
+        python: [["cp38", "3.8"], ["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11.0-alpha - 3.11.0"]]
         # python[0] is used to specify the python versions made by cibuildwheel
         # python[1] is installed by actions/setup-python for the separate
         # macosx_arm64 build. Once cibuildwheel can do the macosx_arm64 cross build
@@ -99,7 +99,7 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4.2.0
         with:
           python-version: ${{ matrix.python[1]}}
 
@@ -202,7 +202,7 @@ jobs:
       #  shell: bash
       #  env:
       #    SCIPY_STAGING_UPLOAD_TOKEN: ${{ secrets.SCIPY_STAGING_UPLOAD_TOKEN }}
-      #    SCIPY_NIGHTLY_UPLOAD_TOKEN: ${{ secrets.SCIPY_STAGING_UPLOAD_TOKEN }}
+      #    SCIPY_NIGHTLY_UPLOAD_TOKEN: ${{ secrets.SCIPY_NIGHTLY_UPLOAD_TOKEN }}
       #  run: |
       #    source tools/wheels/upload_wheels.sh
       #    set_upload_vars
