@@ -96,7 +96,7 @@ class TestRegularGridInterpolator:
             interp(sample, method=method)
 
     @pytest.mark.parametrize(
-        "sample, xi",
+        "points_values, sample",
         [
             (
                 _get_sample_4d,
@@ -109,12 +109,12 @@ class TestRegularGridInterpolator:
             (_get_sample_4d_2, np.asarray([0.1, 0.1, 10.0, 9.0])),
         ],
     )
-    def _assert_linear_and_slinear_close(self, sample, xi):
-        points, values = sample()
+    def _assert_linear_and_slinear_close(self, points_values, sample):
+        points, values = points_values()
         interp = RegularGridInterpolator(points, values, method="linear")
-        v1 = interp(xi)
+        v1 = interp(sample)
         interp = RegularGridInterpolator(points, values, method="slinear")
-        v2 = interp(xi)
+        v2 = interp(sample)
         assert_allclose(v1, v2)
 
     @parametrize_rgi_interp_methods
