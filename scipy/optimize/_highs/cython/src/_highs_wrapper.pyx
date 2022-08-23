@@ -7,15 +7,10 @@ from scipy.optimize import OptimizeWarning
 from warnings import warn
 import numbers
 
-from libc.stdio cimport stdout
 from libcpp.string cimport string
-from libcpp.memory cimport unique_ptr
 from libcpp.map cimport map as cppmap
 from libcpp.cast cimport reinterpret_cast
 
-from .HighsIO cimport (
-    kWarning,
-)
 from .HConst cimport (
     HIGHS_CONST_INF,
 
@@ -141,6 +136,7 @@ cdef apply_options(dict options, Highs & highs):
             'ipm_iteration_limit',
             'keep_n_rows',
             'max_threads',
+            'mip_max_nodes',
             'highs_debug_level',
             'min_threads',
             'simplex_crash_strategy',

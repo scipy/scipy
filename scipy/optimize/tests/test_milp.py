@@ -274,7 +274,8 @@ def test_infeasible_prob_16609():
 
 
 @pytest.mark.slow
-def test_milp_timeout_16545():
+@pytest.mark.parametrize("options", [{"time_limit": 1}, {"mip_max_nodes": 1000}])
+def test_milp_timeout_16545(options):
     # Ensure solution is not thrown away if MILP solver times out
     # -- see gh-16545
     rng = np.random.default_rng(5123833489170494244)
@@ -292,10 +293,11 @@ def test_milp_timeout_16545():
         integrality=integrality,
         bounds=variable_bounds,
         constraints=constraints,
-        options={"time_limit": 1}
+        options=options,
     )
-    msg = "Time limit reached. (HiGHS Status 13:"
-    assert res.message.startswith(msg)
+    msg_time = "Time limit reached. (HiGHS Status 13:"
+    msg_it = "Iteration limit reached. (HiGHS Status 14:"
+    assert res.message.startswith(msg_time) or res.message.startswith(msg_it)
     assert res["x"] is not None
 
     # ensure solution is feasible
