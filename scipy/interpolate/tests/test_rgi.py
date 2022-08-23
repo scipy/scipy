@@ -79,22 +79,21 @@ class TestRegularGridInterpolator:
         v2 = interp(sample)
         assert_allclose(v1, v2)
 
-    def test_spline_dim_error(self):
+    @pytest.mark.parametrize('method', ['cubic', 'quintic', 'pchip'])
+    def test_spline_dim_error(self, method):
         points, values = self._get_sample_4d_4()
         match = "points in dimension"
 
         # Check error raise when creating interpolator
-        for method in ['cubic', 'quintic', 'pchip']:
-            with pytest.raises(ValueError, match=match):
-                RegularGridInterpolator(points, values, method=method)
+        with pytest.raises(ValueError, match=match):
+            RegularGridInterpolator(points, values, method=method)
 
         # Check error raise when creating interpolator
         interp = RegularGridInterpolator(points, values)
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
-        for method in ['cubic', 'quintic', 'pchip']:
-            with pytest.raises(ValueError, match=match):
-                interp(sample, method=method)
+        with pytest.raises(ValueError, match=match):
+            interp(sample, method=method)
 
     def test_linear_and_slinear_close_1(self):
         points, values = self._get_sample_4d()
