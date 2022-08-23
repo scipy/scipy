@@ -43,7 +43,7 @@ def _constraints_to_components(constraints):
             # argument could be a single tuple representing a LinearConstraint
             try:
                 constraints = [LinearConstraint(*constraints)]
-            except TypeError:
+            except (TypeError, ValueError, np.VisibleDeprecationWarning):
                 # argument was not a tuple representing a LinearConstraint
                 pass
 
