@@ -95,22 +95,26 @@ class TestRegularGridInterpolator:
         with pytest.raises(ValueError, match=match):
             interp(sample, method=method)
 
-    def test_linear_and_slinear_close_1(self):
-        points, values = self._get_sample_4d()
-        sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
-                             [0.5, 0.5, .5, .5]])
-        self._assert_linear_and_slinear_close(points, sample, values)
-
-    def test_linear_and_slinear_close_2(self):
-        points, values = self._get_sample_4d_2()
-        sample = np.asarray([0.1, 0.1, 10., 9.])
-        self._assert_linear_and_slinear_close(points, sample, values)
-
-    def _assert_linear_and_slinear_close(self, points, sample, values):
+    @pytest.mark.parametrize(
+        "sample, xi",
+        [
+            (
+                _get_sample_4d,
+                np.asarray(
+                    [[0.1, 0.1, 1.0, 0.9],
+                     [0.2, 0.1, 0.45, 0.8],
+                     [0.5, 0.5, 0.5, 0.5]]
+                ),
+            ),
+            (_get_sample_4d_2, np.asarray([0.1, 0.1, 10.0, 9.0])),
+        ],
+    )
+    def _assert_linear_and_slinear_close(self, sample, xi):
+        points, values = sample()
         interp = RegularGridInterpolator(points, values, method="linear")
-        v1 = interp(sample)
+        v1 = interp(xi)
         interp = RegularGridInterpolator(points, values, method="slinear")
-        v2 = interp(sample)
+        v2 = interp(xi)
         assert_allclose(v1, v2)
 
     @parametrize_rgi_interp_methods
