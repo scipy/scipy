@@ -274,7 +274,8 @@ def test_infeasible_prob_16609():
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("options", [{"time_limit": 1}, {"mip_max_nodes": 1000}])
+@pytest.mark.parametrize("options", [{"time_limit": 1},
+                                     {"mip_max_nodes": 1000}])
 def test_milp_timeout_16545(options):
     # Ensure solution is not thrown away if MILP solver times out
     # -- see gh-16545
