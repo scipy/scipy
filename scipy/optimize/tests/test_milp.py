@@ -273,10 +273,14 @@ def test_infeasible_prob_16609():
     np.testing.assert_equal(res.status, 2)
 
 
+_msg_time = "Time limit reached. (HiGHS Status 13:"
+_msg_iter = "Iteration limit reached. (HiGHS Status 14:"
+
+
 @pytest.mark.slow
-@pytest.mark.parametrize("options", [{"time_limit": 1},
-                                     {"mip_max_nodes": 1000}])
-def test_milp_timeout_16545(options):
+@pytest.mark.parametrize(["options", "msg"], [({"time_limit": 1}, _msg_time),
+                                              ({"node_limit": 10}, _msg_iter)])
+def test_milp_timeout_16545(options, msg):
     # Ensure solution is not thrown away if MILP solver times out
     # -- see gh-16545
     rng = np.random.default_rng(5123833489170494244)
@@ -296,9 +300,8 @@ def test_milp_timeout_16545(options):
         constraints=constraints,
         options=options,
     )
-    msg_time = "Time limit reached. (HiGHS Status 13:"
-    msg_it = "Iteration limit reached. (HiGHS Status 14:"
-    assert res.message.startswith(msg_time) or res.message.startswith(msg_it)
+
+    assert res.message.startswith(msg)
     assert res["x"] is not None
 
     # ensure solution is feasible
