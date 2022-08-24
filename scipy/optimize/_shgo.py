@@ -394,6 +394,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     ...         {'type': 'eq', 'fun': h1})
     >>> bounds = [(0, 1.0),]*4
     >>> res = shgo(f, bounds, iters=3, constraints=cons)
+    >>> res
      message: Optimization terminated successfully.
      success: True
          fun: 29.894378159142136

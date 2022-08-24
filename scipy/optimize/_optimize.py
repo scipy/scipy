@@ -117,8 +117,8 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
                        _indenter(_dict_formatter(v, m+n+2, 0, sorter), m+2)
                        for k, v in sorter(d)])  # +2 for ': '
     else:
-        # By default, NumPy arrays print with linewidth is 76; `n` is
-        # the indent at which they begin printing, so it is subtracted
+        # By default, NumPy arrays print with linewidth=76. `n` is
+        # the indent at which a line begins printing, so it is subtracted
         # from the default to avoid exceeding 76 characters total.
         # `edgeitems` is the number of elements to include before and after
         # ellipses when arrays are not shown in full.
