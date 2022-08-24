@@ -6272,7 +6272,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     t, prob = _ttest_finish(df, t, alternative)
 
     # when nan_policy='omit', `df` can be different for different axis-slices
-    df = np.broadcast_to(df, t.shape)
+    df = np.broadcast_to(df, t.shape)[()]
     # _axis_nan_policy decorator doesn't play well with strings
     alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
     return Ttest_1sampResult(t, prob, df=df, alternative=alternative_num,
@@ -6298,9 +6298,6 @@ def _t_confidence_interval(df, t, confidence_level, alternative):
         # axis of p must be the zeroth and orthogonal to all the rest
         p = np.reshape(p, [2] + [1]*np.asarray(df).ndim)
         low, high = special.stdtrit(df, p)
-    else:
-        p, nans = np.broadcast_arrays(t, np.nan)
-        low, high = nans, nans
 
     return low[()], high[()]
 
