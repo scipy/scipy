@@ -2281,12 +2281,19 @@ class weibull_min_gen(rv_continuous):
         # See https://en.wikipedia.org/wiki/Weibull_distribution#Moments for
         # moment formulas.
         def skew(c):
-            gamma1 = sc.gamma(1+1/c)
-            gamma2 = sc.gamma(1+2/c)
-            gamma3 = sc.gamma(1+3/c)
-            num = 2 * gamma1**3 - 3*gamma1*gamma2 + gamma3
-            den = (gamma2 - gamma1**2)**(3/2)
-            return num / den
+            # num = 2 * gamma1**3 - 3*gamma1*gamma2 + gamma3
+            # den = (gamma2 - gamma1**2)**(3/2)
+            # Transformed to log scale due to issues on some 32-bit platforms
+            gamma1 = sc.gammaln(1+1/c)
+            gamma2 = sc.gammaln(1+2/c)
+            gamma3 = sc.gammaln(1+3/c)
+            negate = 1j*np.pi  # imaginary component of log of negative real
+            num_terms = [np.log(2) + 3*gamma1, gamma3,
+                         np.log(3) + gamma1+gamma2 + negate]
+            num = sc.logsumexp(num_terms)
+            den_terms = [gamma2, 2*gamma1 + negate]
+            den = 3/2 * sc.logsumexp(den_terms)
+            return np.real(np.exp(num-den))
 
         # For c in [1e2, 3e4], population skewness appears to approach
         # asymptote near -1.139, but past c > 3e4, skewness begins to vary
