@@ -592,6 +592,11 @@ class gaussian_kde:
 
     @property
     def inv_cov(self):
+        # Re-compute from scratch each time because I'm not sure how this is
+        # used in the wild. (Perhaps users change the `dataset`, since it's
+        # not a private attribute?) `_compute_covariance` used to recalculate
+        # all these, so we'll recalculate everything now that this is a
+        # a property.
         self.factor = self.covariance_factor()
         self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
                                            bias=False, aweights=self.weights))
