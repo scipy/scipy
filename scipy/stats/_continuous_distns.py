@@ -2272,6 +2272,9 @@ class weibull_min_gen(rv_continuous):
         to match the means or minimize a norm of the errors.
         \n\n""")
     def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
         # this extracts fixed shape, location, and scale however they
         # are specified, and also leaves them in `kwds`
         data, fc, floc, fscale = _check_fit_input_parameters(self, data,
@@ -2299,7 +2302,8 @@ class weibull_min_gen(rv_continuous):
         # asymptote near -1.139, but past c > 3e4, skewness begins to vary
         # wildly, and MoM won't provide a good guess. Get out early.
         s = stats.skew(data)
-        s_min = skew(1e4)
+        max_c = 1e4
+        s_min = skew(max_c)
         if s < s_min and method == "mle" and fc is None and not args:
             return super().fit(data, *args, **kwds)
 
@@ -2319,7 +2323,7 @@ class weibull_min_gen(rv_continuous):
             # parameters outside this range - and not just in this method.
             # We could probably improve the situation by doing everything
             # in the log space, but that is for another time.
-            c = root_scalar(lambda c: skew(c) - s, bracket=[0.02, 5e5],
+            c = root_scalar(lambda c: skew(c) - s, bracket=[0.02, max_c],
                             method='bisect').root
         elif fc is not None:  # fixed: use it
             c = fc
