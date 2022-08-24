@@ -6298,6 +6298,9 @@ def _t_confidence_interval(df, t, confidence_level, alternative):
         # axis of p must be the zeroth and orthogonal to all the rest
         p = np.reshape(p, [2] + [1]*np.asarray(df).ndim)
         low, high = special.stdtrit(df, p)
+    else:  # alternative is NaN when input is empty (see _axis_nan_policy)
+        p, nans = np.broadcast_arrays(t, np.nan)
+        low, high = nans, nans
 
     return low[()], high[()]
 
