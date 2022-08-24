@@ -103,7 +103,7 @@ def _float_formatter_10(x):
     return np.format_float_scientific(x, precision=3, pad_left=2, unique=False)
 
 
-def _dict_formatter(d, n=0, mplus=1):
+def _dict_formatter(d, n=0, mplus=1, sorter=None):
     """
     Pretty printer for dictionaries
 
@@ -112,10 +112,10 @@ def _dict_formatter(d, n=0, mplus=1):
     `mplus` is additional left padding applied to keys
     """
     if isinstance(d, dict):
-        m = max(map(len, list(d.keys()))) + mplus # width to print keys
+        m = max(map(len, list(d.keys()))) + mplus  # width to print keys
         s = '\n'.join([k.rjust(m) + ': ' +  # right justified, width m
-                       _indenter(_dict_formatter(v, m+n+2, 0), m+2)
-                       for k, v in sorted(d.items())])  # +2 is for ': '
+                       _indenter(_dict_formatter(v, m+n+2, 0, sorter), m+2)
+                       for k, v in sorter(d)])  # +2 for ': '
     else:
         # By default, NumPy arrays print with linewidth is 76; `n` is
         # the indent at which they begin printing, so it is subtracted
@@ -179,8 +179,29 @@ class OptimizeResult(dict):
     __delattr__ = dict.__delitem__
 
     def __repr__(self):
+        order_keys = ['message', 'success', 'status', 'fun', 'x', 'nit',
+                      'lower', 'upper', 'eqlin', 'ineqlin']
+        # 'slack', 'con' are redundant with residuals
+        # 'crossover_nit' is probably not interesting to most users
+        omit_keys = {'slack', 'con', 'crossover_nit'}
+
+        def key(item):
+            try:
+                return order_keys.index(item[0].lower())
+            except ValueError:  # item not in list
+                return np.inf
+
+        def omit_redundant(items):
+            for item in items:
+                if item[0] in omit_keys:
+                    continue
+                yield item
+
+        def item_sorter(d):
+            return sorted(omit_redundant(d.items()), key=key)
+
         if self.keys():
-            return _dict_formatter(self)
+            return _dict_formatter(self, sorter=item_sorter)
         else:
             return self.__class__.__name__ + "()"
 
