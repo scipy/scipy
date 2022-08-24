@@ -9642,6 +9642,7 @@ class rv_histogram(rv_continuous):
     >>> plt.hist(data, density=True, bins=100)
     >>> plt.plot(X, hist_dist.pdf(X), label='PDF')
     >>> plt.plot(X, hist_dist.cdf(X), label='CDF')
+    >>> plt.legend() 
     >>> plt.show()
 
     """
