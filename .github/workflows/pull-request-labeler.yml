@@ -5,6 +5,16 @@ on:
 
 jobs:
 
+  triage_modules:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: thomasjpfan/labeler@v2.5.0
+      continue-on-error: true
+      if: github.repository == 'scipy/scipy'
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        configuration-path: ".github/labeler-modules.yml"
+
   triage_file_extensions:
     runs-on: ubuntu-latest
     steps:
