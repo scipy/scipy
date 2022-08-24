@@ -179,8 +179,8 @@ class OptimizeResult(dict):
     __delattr__ = dict.__delitem__
 
     def __repr__(self):
-        order_keys = ['message', 'success', 'status', 'fun', 'x', 'nit',
-                      'lower', 'upper', 'eqlin', 'ineqlin']
+        order_keys = ['message', 'success', 'status', 'fun', 'funl', 'x', 'xl',
+                      'col_ind', 'nit', 'lower', 'upper', 'eqlin', 'ineqlin']
         # 'slack', 'con' are redundant with residuals
         # 'crossover_nit' is probably not interesting to most users
         omit_keys = {'slack', 'con', 'crossover_nit'}
