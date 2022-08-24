@@ -1549,7 +1549,7 @@ to :math:`0 \leq x_1 \leq 6`. After adjusting our code ``x1_bounds = (0, 6)`` to
     >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
     >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
     >>> print(result.message)
-    'Optimization terminated successfully. (HiGHS Status 7: Optimal)'
+    Optimization terminated successfully. (HiGHS Status 7: Optimal)
 
 The result shows the optimization was successful.
 We can check the objective value (``result.fun``) is same as :math:`c^Tx`:
