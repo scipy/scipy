@@ -5120,6 +5120,7 @@ class TestWeibull:
         ls = stats.weibull_max.logsf(-1e-9, 2, scale=3)
         assert_allclose(ls, np.log(-special.expm1(-1/9000000000000000000)))
 
+    @pytest.mark.xfail_on_32bit("Fit doesn't work well on some platforms.")
     def test_fit_min(self):
         rng = np.random.default_rng(5985959307161735394)
 

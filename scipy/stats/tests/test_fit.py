@@ -197,6 +197,7 @@ def cases_test_fit():
                        'loguniform', 'reciprocal', 'trapezoid', 'nct',
                        'kappa4', 'betabinom', 'exponweib', 'genhalflogistic',
                        'burr', 'triang'}
+    skip_32_bit = {"weibull_min"}
 
     for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
@@ -208,6 +209,10 @@ def cases_test_fit():
         elif dist in xslow_basic_fit:
             reason = "too slow (>= 1.0s)"
             yield pytest.param(dist, marks=pytest.mark.xslow(reason=reason))
+        elif dist in skip_32_bit:
+            reason = "Fit doesn't work well on some platforms."
+            pytest_mark = pytest.mark.xfail_on_32bit(reason=reason)
+            yield pytest.param(dist, marks=pytest_mark)
         else:
             yield dist
 
