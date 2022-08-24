@@ -109,8 +109,8 @@ class TestRegularGridInterpolator:
             (_get_sample_4d_2, np.asarray([0.1, 0.1, 10.0, 9.0])),
         ],
     )
-    def _assert_linear_and_slinear_close(self, points_values, sample):
-        points, values = points_values()
+    def test_linear_and_slinear_close(self, points_values, sample):
+        points, values = points_values(self)
         interp = RegularGridInterpolator(points, values, method="linear")
         v1 = interp(sample)
         interp = RegularGridInterpolator(points, values, method="slinear")
