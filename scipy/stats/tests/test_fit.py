@@ -183,7 +183,7 @@ def cases_test_fit():
                       'exponpow', 'rdist', 'norminvgauss', 'betaprime',
                       'powerlaw', 'pareto', 'johnsonsu', 'loglaplace',
                       'wrapcauchy', 'weibull_max', 'arcsine', 'binom', 'rice',
-                      'uniform', 'f', 'invweibull', 'genpareto',
+                      'uniform', 'f', 'invweibull', 'genpareto', 'weibull_min',
                       'nbinom', 'kappa3', 'lognorm', 'halfgennorm', 'pearson3',
                       'alpha', 't', 'crystalball', 'fatiguelife', 'nakagami',
                       'kstwobign', 'gompertz', 'dweibull', 'lomax', 'invgauss',
