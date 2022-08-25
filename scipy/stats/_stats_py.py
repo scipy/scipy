@@ -6023,9 +6023,81 @@ def _two_sample_transform(u, v):
 #       INFERENTIAL STATISTICS      #
 #####################################
 
-Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
+TTestResultBase = _make_tuple_bunch('TTestResultBase',
+                                    ['statistic', 'pvalue'], ['df'])
 
 
+class Ttest_1sampResult(TTestResultBase):
+    """
+    Result of `ttest_1samp`.
+
+    Attributes
+    ----------
+    statistic : float or array
+        The t-statistic of the sample.
+    pvalue : float or array
+        The p-value associated with the given alternative.
+    df : float or array
+        The number of degrees of freedom used in calculation of the
+        t-statistic; this is one less than the size of the sample
+        (``a.shape[axis]-1`` if there are no masked elements or omitted NaNs).
+
+    Methods
+    -------
+    confidence_interval
+        Computes a confidence interval around the population mean
+        for the given confidence level.
+        The confidence interval is returned in a ``namedtuple`` with
+        fields `low` and `high`.
+
+    """
+
+    def __init__(self, statistic, pvalue, df,  # public
+                 alternative, standard_error, estimate):  # private
+        super().__init__(statistic, pvalue, df=df)
+        self._alternative = alternative
+        self._standard_error = standard_error  # denominator of t-statistic
+        self._estimate = estimate  # point estimate of sample mean
+
+    def confidence_interval(self, confidence_level=0.95):
+        """
+        Parameters
+        ----------
+        confidence_level : float
+            The confidence level for the calculation of the population mean
+            confidence interval. Default is 0.95.
+
+        Returns
+        -------
+        ci : namedtuple
+            The confidence interval is returned in a ``namedtuple`` with
+            fields `low` and `high`.
+
+        """
+        low, high = _t_confidence_interval(self.df, self.statistic,
+                                           confidence_level, self._alternative)
+        low = low * self._standard_error + self._estimate
+        high = high * self._standard_error + self._estimate
+        return ConfidenceInterval(low=low, high=high)
+
+
+def pack_Ttest_Result(statistic, pvalue, df, alternative, standard_error,
+                      estimate):
+    # this could be any number of dimensions (including 0d), but there is
+    # at most one unique value
+    alternative = np.atleast_1d(alternative).ravel()
+    alternative = alternative[0] if alternative.size else np.nan
+    return Ttest_1sampResult(statistic, pvalue, df=df, alternative=alternative,
+                             standard_error=standard_error, estimate=estimate)
+
+
+def unpack_Ttest_Result(res):
+    return (res.statistic, res.pvalue, res.df, res._alternative,
+            res._standard_error, res._estimate)
+
+
+@_axis_nan_policy_factory(pack_Ttest_Result, default_axis=0, n_samples=2,
+                          result_to_tuple=unpack_Ttest_Result, n_outputs=6)
 def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
                 alternative="two-sided"):
     """Calculate the T-test for the mean of ONE group of scores.
@@ -6039,8 +6111,8 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     a : array_like
         Sample observation.
     popmean : float or array_like
-        Expected value in null hypothesis. If array_like, then it must have the
-        same shape as `a` excluding the axis dimension.
+        Expected value in null hypothesis. If array_like, then its length along
+        `axis` must equal 1, and it must otherwise be broadcastable with `a`.
     axis : int or None, optional
         Axis along which to compute test; default is 0. If None, compute over
         the whole array `a`.
@@ -6063,14 +6135,31 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
         * 'greater': the mean of the underlying distribution of the sample is
           greater than the given population mean (`popmean`)
 
-        .. versionadded:: 1.6.0
-
     Returns
     -------
-    statistic : float or array
-        t-statistic.
-    pvalue : float or array
-        Two-sided p-value.
+    result : `~scipy.stats._result_classes.Ttest_1sampResult`
+        An object with the following attributes:
+
+        statistic : float or array
+            The t-statistic.
+        pvalue : float or array
+            The p-value associated with the given alternative.
+        df : float or array
+            The number of degrees of freedom used in calculation of the
+            t-statistic; this is one less than the size of the sample
+            (``a.shape[axis]``).
+
+            .. versionadded:: 1.10.0
+
+        The object also has the following method:
+
+        confidence_interval(confidence_level=0.95)
+            Computes a confidence interval around the population
+            mean for the given confidence level.
+            The confidence interval is returned in a ``namedtuple`` with
+            fields `low` and `high`.
+
+            .. versionadded:: 1.10.0
 
     Notes
     -----
@@ -6095,7 +6184,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     >>> rng = np.random.default_rng()
     >>> rvs = stats.uniform.rvs(size=50, random_state=rng)
     >>> stats.ttest_1samp(rvs, popmean=0.5)
-    Ttest_1sampResult(statistic=2.456308468440, pvalue=0.017628209047638)
+    Ttest_1sampResult(statistic=2.456308468440, pvalue=0.017628209047638, df=49)  # noqa
 
     As expected, the p-value of 0.017 is not below our threshold of 0.01, so
     we cannot reject the null hypothesis.
@@ -6105,7 +6194,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
     >>> rvs = stats.norm.rvs(size=50, random_state=rng)
     >>> stats.ttest_1samp(rvs, popmean=0.5)
-    Ttest_1sampResult(statistic=-7.433605518875, pvalue=1.416760157221e-09)
+    Ttest_1sampResult(statistic=-7.433605518875, pvalue=1.416760157221e-09, df=49)  # noqa
 
     Indeed, the p-value is lower than our threshold of 0.01, so we reject the
     null hypothesis in favor of the default "two-sided" alternative: the mean
@@ -6117,7 +6206,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     expect the null hypothesis to be rejected.
 
     >>> stats.ttest_1samp(rvs, popmean=0.5, alternative='greater')
-    Ttest_1sampResult(statistic=-7.433605518875, pvalue=0.99999999929)
+    Ttest_1sampResult(statistic=-7.433605518875, pvalue=0.99999999929, df=49)  # noqa
 
     Unsurprisingly, with a p-value greater than our threshold, we would not
     reject the null hypothesis.
@@ -6134,19 +6223,47 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     uniform distribution, which *does* have a population mean of 0.5, we would
     mistakenly reject the null hypothesis for one of them.
 
+    `ttest_1samp` can also compute a confidence interval around the population
+    mean.
+
+    >>> rvs = stats.norm.rvs(size=50, random_state=rng)
+    >>> res = stats.ttest_1samp(rvs, popmean=0)
+    >>> ci = res.confidence_interval(confidence_level=0.95)
+    >>> ci
+    ConfidenceInterval(low=-0.3193887540880017, high=0.2898583388980972)
+
+    The bounds of the 95% confidence interval are the
+    minimum and maximum values of the parameter `popmean` for which the
+    p-value of the test would be 0.05.
+
+    >>> res = stats.ttest_1samp(rvs, popmean=ci.low)
+    >>> np.testing.assert_allclose(res.pvalue, 0.05)
+    >>> res = stats.ttest_1samp(rvs, popmean=ci.high)
+    >>> np.testing.assert_allclose(res.pvalue, 0.05)
+
+    Under certain assumptions about the population from which a sample
+    is drawn, the confidence interval with confidence level 95% is expected
+    to contain the true population mean in 95% of sample replications.
+
+    >>> rvs = stats.norm.rvs(size=(50, 1000), loc=1, random_state=rng)
+    >>> res = stats.ttest_1samp(rvs, popmean=0)
+    >>> ci = res.confidence_interval()
+    >>> contains_pop_mean = (ci.low < 1) & (ci.high > 1)
+    >>> contains_pop_mean.sum()
+    953
+
     """
     a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.ttest_1samp(a, popmean, axis, alternative)
 
     n = a.shape[axis]
     df = n - 1
 
-    d = np.mean(a, axis) - popmean
+    mean = np.mean(a, axis)
+    try:
+        popmean = np.squeeze(popmean, axis=axis)
+    except ValueError as e:
+        raise ValueError("`popmean.shape[axis]` must equal 1.") from e
+    d = mean - popmean
     v = _var(a, axis, ddof=1)
     denom = np.sqrt(v / n)
 
@@ -6154,7 +6271,38 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
         t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t, alternative)
 
-    return Ttest_1sampResult(t, prob)
+    # when nan_policy='omit', `df` can be different for different axis-slices
+    df = np.broadcast_to(df, t.shape)[()]
+    # _axis_nan_policy decorator doesn't play well with strings
+    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
+    return Ttest_1sampResult(t, prob, df=df, alternative=alternative_num,
+                             standard_error=denom, estimate=mean)
+
+
+def _t_confidence_interval(df, t, confidence_level, alternative):
+    # Input validation on `alternative` is already done
+    # We just need IV on confidence_level
+    if confidence_level < 0 or confidence_level > 1:
+        message = "`confidence_level` must be a number between 0 and 1."
+        raise ValueError(message)
+
+    if alternative < 0:  # 'less'
+        p = confidence_level
+        low, high = np.broadcast_arrays(-np.inf, special.stdtrit(df, p))
+    elif alternative > 0:  # 'greater'
+        p = 1 - confidence_level
+        low, high = np.broadcast_arrays(special.stdtrit(df, p), np.inf)
+    elif alternative == 0:  # 'two-sided'
+        tail_probability = (1 - confidence_level)/2
+        p = tail_probability, 1-tail_probability
+        # axis of p must be the zeroth and orthogonal to all the rest
+        p = np.reshape(p, [2] + [1]*np.asarray(df).ndim)
+        low, high = special.stdtrit(df, p)
+    else:  # alternative is NaN when input is empty (see _axis_nan_policy)
+        p, nans = np.broadcast_arrays(t, np.nan)
+        low, high = nans, nans
+
+    return low[()], high[()]
 
 
 def _ttest_finish(df, t, alternative):
