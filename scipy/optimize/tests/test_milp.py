@@ -277,7 +277,8 @@ _msg_time = "Time limit reached. (HiGHS Status 13:"
 _msg_iter = "Iteration limit reached. (HiGHS Status 14:"
 
 
-@pytest.mark.skipif(np.intp(0).itemsize < 8, reason="Unhandled 32-bit GCC FP bug")
+@pytest.mark.skipif(np.intp(0).itemsize < 8,
+                    reason="Unhandled 32-bit GCC FP bug")
 @pytest.mark.slow
 @pytest.mark.parametrize(["options", "msg"], [({"time_limit": 1}, _msg_time),
                                               ({"node_limit": 10}, _msg_iter)])
