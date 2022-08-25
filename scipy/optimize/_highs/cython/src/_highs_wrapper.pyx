@@ -152,6 +152,7 @@ cdef apply_options(dict options, Highs & highs):
             'simplex_strategy',
             'simplex_update_limit',
             'small_matrix_value',
+            'threads'
     ]):
         val = options.get(opt, None)
         if val is not None:
