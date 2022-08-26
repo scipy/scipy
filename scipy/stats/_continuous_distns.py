@@ -8830,8 +8830,9 @@ class vonmises_gen(rv_continuous):
         Parameters
         ----------
         func : callable, optional
-            Function for which integral is calculated. Takes only one argument.
-            The default is the identity mapping f(x) = x.
+            Function for which integral is calculated. Takes only one argument,
+            and can return a complex number.
+            The default (`np.exp(1j*x)`) results in the mean direction.
         args : tuple, optional
             Shape parameters of the distribution.
         loc : float, optional
@@ -8920,7 +8921,7 @@ class vonmises_gen(rv_continuous):
         if ub is None:
             ub = loc + _b
         if ub-lb > 2*np.pi:
-            raise ValueError("Interval of Von Mises integral must be 2pi.")
+            raise ValueError("Interval of Von Mises integral must be 2pi or smaller.")
 
         cdf_bounds = self.cdf([lb, ub], *args, **lockwds)
         invfac = cdf_bounds[1] - cdf_bounds[0]
