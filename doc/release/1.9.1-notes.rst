@@ -12,14 +12,15 @@ Authors
 =======
 
 * Anirudh Dagar (1)
-* Ralf Gommers (4)
+* Ralf Gommers (12)
 * Matt Haberland (2)
-* Tyler Reddy (10)
+* Andrew Nelson (1)
+* Tyler Reddy (14)
 * Atsushi Sakai (1)
 * Eli Schwartz (1)
-* Warren Weckesser (1)
+* Warren Weckesser (2)
 
-A total of 7 people contributed to this release.
+A total of 8 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -36,9 +37,11 @@ Issues closed for 1.9.1
 Pull requests for 1.9.1
 -----------------------
 
+* `#16709 <https://github.com/scipy/scipy/pull/16709>`__: BLD: make the way we count commits for version numbering more...
 * `#16736 <https://github.com/scipy/scipy/pull/16736>`__: REL: prep for SciPy 1.9.1
 * `#16749 <https://github.com/scipy/scipy/pull/16749>`__: BLD: install missing \`.pxd\` files, and update TODOs/FIXMEs...
 * `#16750 <https://github.com/scipy/scipy/pull/16750>`__: BLD: make OpenBLAS detection work with CMake
+* `#16755 <https://github.com/scipy/scipy/pull/16755>`__: TST: sparse.linalg: Loosen tolerance for the lobpcg test 'test_tolerance_float32'
 * `#16760 <https://github.com/scipy/scipy/pull/16760>`__: BLD: use a bit more idiomatic approach to constructing paths...
 * `#16768 <https://github.com/scipy/scipy/pull/16768>`__: DOC: stats.skew/kurtosis: returns NaN when input has only one...
 * `#16794 <https://github.com/scipy/scipy/pull/16794>`__: BLD/REL: on Windows use numpy 1.22.3 as the version to build...
@@ -46,3 +49,5 @@ Pull requests for 1.9.1
 * `#16825 <https://github.com/scipy/scipy/pull/16825>`__: BUG: interpolate: fix "previous" and "next" extrapolate logic...
 * `#16862 <https://github.com/scipy/scipy/pull/16862>`__: BUG, DOC: Fix sphinx autosummary generation for \`odr\` and \`czt\`
 * `#16881 <https://github.com/scipy/scipy/pull/16881>`__: MAINT: optimize.milp: fix input validation when three constraints...
+* `#16901 <https://github.com/scipy/scipy/pull/16901>`__: MAINT: 1.9.1 backports
+* `#16904 <https://github.com/scipy/scipy/pull/16904>`__: BLD: update dependency ranges for meson-python and pybind11 for...
