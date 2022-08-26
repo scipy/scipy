@@ -10,10 +10,10 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.7.0,<0.8.0",
+    "meson-python>=0.8.1",  # we need more fixes in meson-python, so no upper bound now
     "meson==0.62.2",  # workaround for wheel build issue, see https://github.com/FFY00/meson-python/issues/95
     "Cython>=0.29.21,<3.0",
-    "pybind11>=2.4.3,<2.10.0",
+    "pybind11>=2.4.3,<2.11.0",
     "pythran>=0.9.12,<0.12.0",
     # `wheel` is needed for non-isolated builds, given that `meson-python`
     # doesn't list it as a runtime requirement (at least in 0.5.0)
