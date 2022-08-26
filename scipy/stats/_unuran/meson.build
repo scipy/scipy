@@ -164,7 +164,7 @@ unuran_include_dirs = [
   '../../_lib/unuran/unuran/src/tests'
 ]
 
-unuran_version = '16:0:0'  # TODO: grab from configure.ac file
+unuran_version = '16:0:0'  # taken from `_lib/unuran/unuran/configure.ac`
 
 unuran_defines = [
   '-DHAVE_ALARM=1',

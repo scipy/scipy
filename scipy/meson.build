@@ -117,8 +117,18 @@ numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
 # For MKL and for auto-detecting one of multiple libs, we'll need a custom
 # dependency in Meson (like is done for scalapack) - see
 # https://github.com/mesonbuild/meson/issues/2835
-blas = dependency(get_option('blas'))
-lapack = dependency(get_option('lapack'))
+blas_name = get_option('blas')
+lapack_name = get_option('lapack')
+# pkg-config uses a lower-case name while CMake uses a capitalized name, so try
+# that too to make the fallback detection with CMake work
+if blas_name == 'openblas'
+  blas_name = ['openblas', 'OpenBLAS']
+endif
+if lapack_name == 'openblas'
+  lapack_name = ['openblas', 'OpenBLAS']
+endif
+blas = dependency(blas_name)
+lapack = dependency(lapack_name)
 
 if blas.name() == 'mkl' or lapack.name() == 'mkl' or get_option('use-g77-abi')
   g77_abi_wrappers = files([
@@ -137,11 +147,9 @@ generate_config = custom_target(
   output: '__config__.py',
   input: '../tools/config_utils.py',
   command: [py3, '@INPUT@', '@OUTPUT@'],
-  install_dir: py3.get_install_dir() + '/scipy'
+  install_dir: py3.get_install_dir() / 'scipy'
 )
 
-#FIXME: the git revision is Unknown; script works when invoked directly, but
-#       not when it's run by Ninja. See https://github.com/rgommers/scipy/pull/57
 generate_version = custom_target(
   'generate-version',
   install: true,
@@ -150,13 +158,16 @@ generate_version = custom_target(
   output: 'version.py',
   input: '../tools/version_utils.py',
   command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
-  install_dir: py3.get_install_dir() + '/scipy'
+  install_dir: py3.get_install_dir() / 'scipy'
 )
 
 python_sources = [
   '__init__.py',
   '_distributor_init.py',
-  'conftest.py'
+  'conftest.py',
+  'linalg.pxd',
+  'optimize.pxd',
+  'special.pxd'
 ]
 
 py3.install_sources(
@@ -176,14 +187,16 @@ _cython_tree = custom_target('_cython_tree',
   output: [
     '__init__.py',
     'linalg.pxd',
+    'optimize.pxd',
     'special.pxd'
   ],
   input: [
     '__init__.py',
     'linalg.pxd',
+    'optimize.pxd',
     'special.pxd'
   ],
-  command: [copier, '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@'],
 )
 cython_tree = declare_dependency(sources: _cython_tree)
 
