@@ -544,8 +544,11 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
           - ``legacy`` (default): same as ``pr_norm``, but also changes the
             meaning of 'maxiter' to count inner iterations instead of restart
             cycles.
-    restrt : int, optional
-        DEPRECATED - use `restart` instead.
+    restrt : int, optional, deprecated
+
+        .. deprecated:: 0.11.0
+           `gmres` keyword argument `restrt` is deprecated infavour of
+           `restart` and will be removed in SciPy 1.12.0.
 
     See Also
     --------
@@ -582,6 +585,10 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     elif restart is not None:
         raise ValueError("Cannot specify both restart and restrt keywords. "
                          "Preferably use 'restart' only.")
+    else:
+        msg = ("'gmres' keyword argument 'restrt' is deprecated infavour of "
+               "'restart' and will be removed in SciPy 1.12.0.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     if callback is not None and callback_type is None:
         # Warn about 'callback_type' semantic changes.

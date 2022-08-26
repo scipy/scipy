@@ -12,12 +12,16 @@ from numpy.testing import (assert_array_equal,
     assert_, assert_allclose, assert_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
+import re
 from scipy import optimize
 from scipy import stats
 from scipy.stats._morestats import _abw_state
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
+from scipy.stats._distr_params import distcont
+
+distcont = dict(distcont)  # type: ignore
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -42,6 +46,12 @@ g7 = [0.990, 1.004, 0.996, 1.001, 0.998, 1.000, 1.018, 1.010, 0.996, 1.002]
 g8 = [0.998, 1.000, 1.006, 1.000, 1.002, 0.996, 0.998, 0.996, 1.002, 1.006]
 g9 = [1.002, 0.998, 0.996, 0.995, 0.996, 1.004, 1.004, 0.998, 0.999, 0.991]
 g10 = [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
+
+
+# The loggamma RVS stream is changing due to gh-13349; this version
+# preserves the old stream so that tests don't change.
+def _old_loggamma_rvs(*args, **kwargs):
+    return np.log(stats.gamma.rvs(*args, **kwargs))
 
 
 class TestBayes_mvs:
@@ -300,6 +310,20 @@ class TestAnderson:
         assert_array_less(A1, crit1[-2:])
         assert_(A2 > crit2[-1])
 
+    @pytest.mark.parametrize('distname',
+                             ['norm', 'expon', 'gumbel_l', 'extreme1',
+                              'gumbel', 'gumbel_r', 'logistic'])
+    def test_anderson_fit_params(self, distname):
+        # check that anderson now returns a FitResult
+        rng = np.random.default_rng(330691555377792039)
+        real_distname = ('gumbel_l' if distname in {'extreme1', 'gumbel'}
+                         else distname)
+        dist = getattr(stats, real_distname)
+        params = distcont[real_distname]
+        x = dist.rvs(*params, size=1000, random_state=rng)
+        res = stats.anderson(x, distname)
+        assert res.fit_result.success
+
 
 class TestAndersonKSamp:
     def test_example1a(self):
@@ -497,6 +521,8 @@ class TestAndersonKSamp:
 
         attributes = ('statistic', 'critical_values', 'significance_level')
         check_named_results(res, attributes)
+
+        assert_equal(res.significance_level, res.pvalue)
 
 
 class TestAnsari:
@@ -728,10 +754,27 @@ class TestLevene:
         assert_raises(ValueError, stats.levene, g1, x)
 
 
-class TestBinomP:
-    """Tests for stats.binom_test."""
+class TestBinomTestP:
+    """
+    Tests for stats.binomtest as a replacement for deprecated stats.binom_test.
+    """
+    @staticmethod
+    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
+        # This processing of x and n is copied from from binom_test.
+        x = np.atleast_1d(x).astype(np.int_)
+        if len(x) == 2:
+            n = x[1] + x[0]
+            x = x[0]
+        elif len(x) == 1:
+            x = x[0]
+            if n is None or n < x:
+                raise ValueError("n must be >= x")
+            n = np.int_(n)
+        else:
+            raise ValueError("Incorrect length for x.")
 
-    binom_test_func = staticmethod(stats.binom_test)
+        result = stats.binomtest(x, n, p=p, alternative=alternative)
+        return result.pvalue
 
     def test_data(self):
         pval = self.binom_test_func(100, 250)
@@ -770,29 +813,6 @@ class TestBinomP:
     def test_boost_overflow_raises(self):
         # Boost.Math error policy should raise exceptions in Python
         assert_raises(OverflowError, self.binom_test_func, 5.0, 6, p=sys.float_info.min)
-
-
-class TestBinomTestP(TestBinomP):
-    """
-    Tests for stats.binomtest as a replacement for stats.binom_test.
-    """
-    @staticmethod
-    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
-        # This processing of x and n is copied from from binom_test.
-        x = np.atleast_1d(x).astype(np.int_)
-        if len(x) == 2:
-            n = x[1] + x[0]
-            x = x[0]
-        elif len(x) == 1:
-            x = x[0]
-            if n is None or n < x:
-                raise ValueError("n must be >= x")
-            n = np.int_(n)
-        else:
-            raise ValueError("Incorrect length for x.")
-
-        result = stats.binomtest(x, n, p=p, alternative=alternative)
-        return result.pvalue
 
 
 class TestBinomTest:
@@ -890,7 +910,7 @@ class TestBinomTest:
     def test_confidence_intervals1(self, alternative, pval, ci_low, ci_high):
         res = stats.binomtest(20, n=100, p=0.25, alternative=alternative)
         assert_allclose(res.pvalue, pval, rtol=1e-12)
-        assert_equal(res.proportion_estimate, 0.2)
+        assert_equal(res.statistic, 0.2)
         ci = res.proportion_ci(confidence_level=0.95)
         assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-12)
 
@@ -905,7 +925,7 @@ class TestBinomTest:
     def test_confidence_intervals2(self, alternative, pval, ci_low, ci_high):
         res = stats.binomtest(3, n=50, p=0.2, alternative=alternative)
         assert_allclose(res.pvalue, pval, rtol=1e-6)
-        assert_equal(res.proportion_estimate, 0.06)
+        assert_equal(res.statistic, 0.06)
         ci = res.proportion_ci(confidence_level=0.99)
         assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
 
@@ -980,7 +1000,7 @@ class TestBinomTest:
         # the hypothesized proportion.  When alternative is 'two-sided',
         # the p-value is 1.
         res = stats.binomtest(4, 16, 0.25)
-        assert_equal(res.proportion_estimate, 0.25)
+        assert_equal(res.statistic, 0.25)
         assert_equal(res.pvalue, 1.0)
 
     @pytest.mark.parametrize('k, n', [(0, 0), (-1, 2)])
@@ -1003,6 +1023,10 @@ class TestBinomTest:
         res = stats.binomtest(3, n=10, p=0.1)
         with pytest.raises(ValueError, match="method must be"):
             res.proportion_ci(method="plate of shrimp")
+
+    def test_alias(self):
+        res = stats.binomtest(3, n=10, p=0.1)
+        assert_equal(res.proportion_estimate, res.statistic)
 
 
 class TestFligner:
@@ -1073,13 +1097,79 @@ class TestFligner:
         assert_equal((np.nan, np.nan), stats.fligner(x, x**2, []))
 
 
+def mood_cases_with_ties():
+    # Generate random `x` and `y` arrays with ties both between and within the
+    # samples. Expected results are (statistic, pvalue) from SAS.
+    expected_results = [(-1.76658511464992, .0386488678399305),
+                        (-.694031428192304, .2438312498647250),
+                        (-1.15093525352151, .1248794365836150)]
+    seeds = [23453254, 1298352315, 987234597]
+    for si, seed in enumerate(seeds):
+        rng = np.random.default_rng(seed)
+        xy = rng.random(100)
+        # Generate random indices to make ties
+        tie_ind = rng.integers(low=0, high=99, size=5)
+        # Generate a random number of ties for each index.
+        num_ties_per_ind = rng.integers(low=1, high=5, size=5)
+        # At each `tie_ind`, mark the next `n` indices equal to that value.
+        for i, n in zip(tie_ind, num_ties_per_ind):
+            for j in range(i + 1, i + n):
+                xy[j] = xy[i]
+        # scramble order of xy before splitting into `x, y`
+        rng.shuffle(xy)
+        x, y = np.split(xy, 2)
+        yield x, y, 'less', *expected_results[si]
+
 class TestMood:
-    def test_mood(self):
-        # numbers from R: mood.test in package stats
-        x1 = np.arange(5)
-        assert_array_almost_equal(stats.mood(x1, x1**2),
-                                  (-1.3830857299399906, 0.16663858066771478),
-                                  11)
+    @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
+                             mood_cases_with_ties())
+    def test_against_SAS(self, x, y, alternative, stat_expect, p_expect):
+        """
+        Example code used to generate SAS output:
+        DATA myData;
+        INPUT X Y;
+        CARDS;
+        1 0
+        1 1
+        1 2
+        1 3
+        1 4
+        2 0
+        2 1
+        2 4
+        2 9
+        2 16
+        ods graphics on;
+        proc npar1way mood data=myData ;
+           class X;
+            ods output  MoodTest=mt;
+        proc contents data=mt;
+        proc print data=mt;
+          format     Prob1 17.16 Prob2 17.16 Statistic 17.16 Z 17.16 ;
+            title "Mood Two-Sample Test";
+        proc print data=myData;
+            title "Data for above results";
+          run;
+        """
+        statistic, pvalue = stats.mood(x, y, alternative=alternative)
+        assert_allclose(stat_expect, statistic, atol=1e-16)
+        assert_allclose(p_expect, pvalue, atol=1e-16)
+
+    @pytest.mark.parametrize("alternative, expected",
+                             [('two-sided', (1.019938533549930,
+                                             .3077576129778760)),
+                              ('less', (1.019938533549930,
+                                        1 - .1538788064889380)),
+                              ('greater', (1.019938533549930,
+                                           .1538788064889380))])
+    def test_against_SAS_2(self, alternative, expected):
+        # Code to run in SAS in above function
+        x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
+             101, 96, 97, 102, 107, 113, 116, 113, 110, 98]
+        y = [107, 108, 106, 98, 105, 103, 110, 105, 104, 100,
+             96, 108, 103, 104, 114, 114, 113, 108, 106, 99]
+        res = stats.mood(x, y, alternative=alternative)
+        assert_allclose(res, expected)
 
     def test_mood_order_of_args(self):
         # z should change sign when the order of arguments changes, pvalue
@@ -1193,26 +1283,14 @@ class TestMood:
         with pytest.raises(ValueError, match="alternative must be..."):
             stats.mood(x, y, alternative='ekki-ekki')
 
-    @pytest.mark.xfail(reason="SciPy needs tie correction like R (gh-13730)")
-    @pytest.mark.parametrize("alternative, expected",
-                             [('two-sided', (1.037127561496, 0.299676411857)),
-                              ('less', (1.0371275614961, 0.8501617940715)),
-                              ('greater', (1.037127561496, 0.1498382059285))])
-    def test_mood_alternative_against_R(self, alternative, expected):
-        ## Test againts R mood.test: https://rdrr.io/r/stats/mood.test.html
-        # options(digits=16)
-        # x <- c(111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
-        #             101, 96, 97, 102, 107, 113, 116, 113, 110, 98)
-        # y <- c(107, 108, 106, 98, 105, 103, 110, 105, 104,
-        #             100, 96, 108, 103, 104, 114, 114, 113, 108, 106, 99)
-        # mood.test(x, y, alternative='less')
-        x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
-             101, 96, 97, 102, 107, 113, 116, 113, 110, 98]
-        y = [107, 108, 106, 98, 105, 103, 110, 105, 104, 100,
-             96, 108, 103, 104, 114, 114, 113, 108, 106, 99]
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_result(self, alternative):
+        rng = np.random.default_rng(265827767938813079281100964083953437622)
+        x1 = rng.standard_normal((10, 1))
+        x2 = rng.standard_normal((15, 1))
 
-        res = stats.mood(x, y, alternative=alternative)
-        assert_allclose(res, expected)
+        res = stats.mood(x1, x2, alternative=alternative)
+        assert_equal((res.statistic, res.pvalue), res)
 
 
 class TestProbplot:
@@ -1394,7 +1472,10 @@ class TestWilcoxon:
         assert_allclose(res.zstatistic, ref)
 
         res = stats.wilcoxon(x, y, mode="exact")
-        assert np.isnan(res.zstatistic)
+        assert not hasattr(res, 'zstatistic')
+
+        res = stats.wilcoxon(x, y)
+        assert not hasattr(res, 'zstatistic')
 
     def test_wilcoxon_tie(self):
         # Regression test for gh-2391.
@@ -1568,7 +1649,7 @@ class TestKstatVar:
 
 class TestPpccPlot:
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
+        self.x = _old_loggamma_rvs(5, size=500, random_state=7654321) + 5
 
     def test_basic(self):
         N = 5
@@ -1750,7 +1831,7 @@ _boxcox_data = [
 class TestBoxcox:
 
     def test_fixed_lmbda(self):
-        x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
+        x = _old_loggamma_rvs(5, size=50, random_state=12345) + 5
         xt = stats.boxcox(x, lmbda=1)
         assert_allclose(xt, x - 1)
         xt = stats.boxcox(x, lmbda=-1)
@@ -1779,7 +1860,7 @@ class TestBoxcox:
 
     def test_alpha(self):
         rng = np.random.RandomState(1234)
-        x = stats.loggamma.rvs(5, size=50, random_state=rng) + 5
+        x = _old_loggamma_rvs(5, size=50, random_state=rng) + 5
 
         # Some regular values for alpha, on a small sample size
         _, _, interval = stats.boxcox(x, alpha=0.75)
@@ -1788,7 +1869,7 @@ class TestBoxcox:
         assert_allclose(interval, [1.2138178554857557, 8.209033272375663])
 
         # Try some extreme values, see we don't hit the N=500 limit
-        x = stats.loggamma.rvs(7, size=500, random_state=rng) + 15
+        x = _old_loggamma_rvs(7, size=500, random_state=rng) + 15
         _, _, interval = stats.boxcox(x, alpha=0.001)
         assert_allclose(interval, [0.3988867, 11.40553131])
         _, _, interval = stats.boxcox(x, alpha=0.999)
@@ -1866,7 +1947,7 @@ class TestBoxcox:
 
 class TestBoxcoxNormmax:
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
+        self.x = _old_loggamma_rvs(5, size=50, random_state=12345) + 5
 
     def test_pearsonr(self):
         maxlog = stats.boxcox_normmax(self.x)
@@ -1938,7 +2019,7 @@ class TestBoxcoxNormmax:
 
 class TestBoxcoxNormplot:
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
+        self.x = _old_loggamma_rvs(5, size=500, random_state=7654321) + 5
 
     def test_basic(self):
         N = 5
@@ -1997,7 +2078,7 @@ class TestYeojohnson:
         rng = np.random.RandomState(12345)
 
         # Test positive input
-        x = stats.loggamma.rvs(5, size=50, random_state=rng) + 5
+        x = _old_loggamma_rvs(5, size=50, random_state=rng) + 5
         assert np.all(x > 0)
         xt = stats.yeojohnson(x, lmbda=1)
         assert_allclose(xt, x)
@@ -2009,7 +2090,7 @@ class TestYeojohnson:
         assert_allclose(xt, x)
 
         # Test negative input
-        x = stats.loggamma.rvs(5, size=50, random_state=rng) - 5
+        x = _old_loggamma_rvs(5, size=50, random_state=rng) - 5
         assert np.all(x < 0)
         xt = stats.yeojohnson(x, lmbda=2)
         assert_allclose(xt, -np.log(-x + 1))
@@ -2019,7 +2100,7 @@ class TestYeojohnson:
         assert_allclose(xt, 1 / (-x + 1) - 1)
 
         # test both positive and negative input
-        x = stats.loggamma.rvs(5, size=50, random_state=rng) - 2
+        x = _old_loggamma_rvs(5, size=50, random_state=rng) - 2
         assert not np.all(x < 0)
         assert not np.all(x >= 0)
         pos = x >= 0
@@ -2120,7 +2201,7 @@ class TestYeojohnson:
 
 class TestYeojohnsonNormmax:
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
+        self.x = _old_loggamma_rvs(5, size=50, random_state=12345) + 5
 
     def test_mle(self):
         maxlog = stats.yeojohnson_normmax(self.x)
@@ -2482,3 +2563,103 @@ class TestMedianTest:
         exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
         assert_allclose(stat, exp_stat)
         assert_allclose(p, exp_p)
+
+    @pytest.mark.parametrize("correction", [False, True])
+    def test_result(self, correction):
+        x = [1, 2, 3]
+        y = [1, 2, 3]
+
+        res = stats.median_test(x, y, correction=correction)
+        assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
+
+
+class TestDirectionalFuncs:
+    # Reference implementations are not available
+    def test_directionalmean_correctness(self):
+        # Data from Fisher: Dispersion on a sphere, 1953 and
+        # Mardia and Jupp, Directional Statistics.
+        # For x coordinate, result for spherical mean does not agree with
+        # Mardia & Jupp, probably due to rounding errors in reference, that's
+        # why the first entry of the spherical mean reference is different
+        # than in the book.
+
+        decl = -np.deg2rad(np.array([343.2, 62., 36.9, 27., 359.,
+                                     5.7, 50.4, 357.6, 44.]))
+        incl = -np.deg2rad(np.array([66.1, 68.7, 70.1, 82.1, 79.5,
+                                     73., 69.3, 58.8, 51.4]))
+        data = np.stack((np.cos(incl) * np.cos(decl),
+                         np.cos(incl) * np.sin(decl),
+                         np.sin(incl)),
+                        axis=1)
+
+        directional_mean = stats.directionalmean(data)
+        mean_rounded = np.round(directional_mean, 3)
+
+        reference_mean = np.array([0.298, -0.135, -0.945])
+        assert_allclose(mean_rounded, reference_mean)
+
+    def test_directionalmean_2d(self):
+        # Test that for circular data directionalmean yields
+        # same result as circmean
+        rng = np.random.default_rng(0xec9a6899d5a2830e0d1af479dbe1fd0c)
+        testdata = 2 * np.pi * rng.random((1000, ))
+        testdata_vector = np.stack((np.cos(testdata),
+                                    np.sin(testdata)),
+                                   axis=1)
+        directional_mean = stats.directionalmean(testdata_vector)
+        directional_mean_angle = np.arctan2(directional_mean[1],
+                                            directional_mean[0])
+        directional_mean_angle = directional_mean_angle % (2*np.pi)
+
+        circmean = stats.circmean(testdata)
+        assert_allclose(circmean, directional_mean_angle)
+
+    def test_directionalmean_higher_dim(self):
+        # test that directionalmean works for higher dimensions
+        # here a 4D array is reduced over axis = 2
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [0.8660254, -0.5, 0.]])
+        full_array = np.tile(data, (2, 2, 2, 1))
+        expected = np.array([[[1., 0., 0.],
+                              [1., 0., 0.]],
+                             [[1., 0., 0.],
+                              [1., 0., 0.]]])
+        directionalmean = stats.directionalmean(full_array, axis=2)
+        assert_allclose(expected, directionalmean)
+
+    def test_directionalmean_list_ndarray_input(self):
+        # test that list and numpy array inputs yield same results
+        data = [[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0]]
+        data_array = np.asarray(data)
+        directional_mean = stats.directionalmean(data)
+        directional_mean_array = stats.directionalmean(data_array)
+        assert_allclose(directional_mean, directional_mean_array)
+
+    def test_directionalmean_1d_error(self):
+        # test that one-dimensional data raises ValueError
+        data = np.ones((5, ))
+        message = (r"samples must at least be two-dimensional. "
+                   r"Instead samples has shape: (5,)")
+        with pytest.raises(ValueError, match=re.escape(message)):
+            stats.directionalmean(data)
+
+    def test_directionalmean_normalize(self):
+        # test that unit vectors get properly normalized before
+        # directionalmean calculation
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [1.7320508, -1., 0.]])
+        expected = np.array([1., 0., 0.])
+        directional_mean = stats.directionalmean(data)
+        assert_allclose(expected, directional_mean)
+
+    def test_directionalmean_normalize_false(self):
+        # test that for already normalized unit vectors
+        # normalize=False returns same result as default
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [0.8660254, -0.5, 0]])
+        expected = np.array([1., 0., 0.])
+        directional_mean_default = stats.directionalmean(data)
+        directional_mean = stats.directionalmean(data,
+                                                 normalize=False)
+        assert_allclose(expected, directional_mean)
+        assert_allclose(directional_mean_default, directional_mean)

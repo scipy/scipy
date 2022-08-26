@@ -17,6 +17,7 @@ cimport cython
 from . cimport _qhull
 from . cimport setlist
 from libc cimport stdlib
+from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
 
 import os
@@ -26,8 +27,6 @@ import warnings
 
 np.import_array()
 
-cdef extern from "numpy/npy_math.h":
-    double nan "NPY_NAN"
 
 __all__ = ['Delaunay', 'ConvexHull', 'QhullError', 'Voronoi', 'HalfspaceIntersection', 'tsearch']
 
@@ -1147,7 +1146,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
             if info != 0:
                 for i in range(ndim+1):
                     for j in range(ndim):
-                        Tinvs[isimplex,i,j] = nan
+                        Tinvs[isimplex,i,j] = NAN
 
     return Tinvs
 
@@ -1723,9 +1722,8 @@ class Delaunay(_QhullUser):
         Same as `simplices`, but deprecated.
 
         .. deprecated:: 0.12.0
-
-        Delaunay attribute `vertices` is deprecated in favour of `simplices`
-        and will be removed in Scipy 1.11.0.
+            Delaunay attribute `vertices` is deprecated in favour of `simplices`
+            and will be removed in Scipy 1.11.0.
     vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
         Neighboring vertices of vertices. The indices of neighboring
         vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.
@@ -1803,7 +1801,7 @@ class Delaunay(_QhullUser):
 
     The returned integers in the array are the indices of the simplex the
     corresponding point is in. If -1 is returned, the point is in no simplex.
-    Be aware that the shortcut in the following example only works corretcly
+    Be aware that the shortcut in the following example only works correctly
     for valid points as invalid points result in -1 which is itself a valid
     index for the last simplex in the list.
 
@@ -1822,7 +1820,7 @@ class Delaunay(_QhullUser):
            [ 0.5       ,  0.5       ,  0.        ]])
 
     The coordinates for the first point are all positive, meaning it
-    is indeed inside the triangle. The third point is on a vertex,
+    is indeed inside the triangle. The third point is on an edge,
     hence its null third coordinate.
 
     """
@@ -2823,8 +2821,9 @@ class HalfspaceIntersection(_QhullUser):
 
         # Run qhull
         mode_option = "H"
-        qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options, required_options=None,
-                       incremental=incremental, interior_point=interior_point)
+        qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options,
+                       required_options=None, incremental=incremental,
+                       interior_point=self.interior_point)
 
         _QhullUser.__init__(self, qhull, incremental=incremental)
 

@@ -1,14 +1,9 @@
-from libc.math cimport fabs, exp, floor, M_PI
+from libc.math cimport fabs, exp, floor, isnan, M_PI, NAN, INFINITY
 
 import cython
 
 from . cimport sf_error
 from ._cephes cimport expm1, poch
-
-cdef extern from "numpy/npy_math.h":
-    double npy_isnan(double x) nogil
-    double NPY_NAN
-    double NPY_INFINITY
 
 cdef extern from 'specfun_wrappers.h':
     double hypU_wrap(double, double, double) nogil
@@ -20,18 +15,18 @@ DEF ACCEPTABLE_RTOL = 1e-7
 
 @cython.cdivision(True)
 cdef inline double hyperu(double a, double b, double x) nogil:
-    if npy_isnan(a) or npy_isnan(b) or npy_isnan(x):
-        return NPY_NAN
+    if isnan(a) or isnan(b) or isnan(x):
+        return NAN
 
     if x < 0.0:
         sf_error.error("hyperu", sf_error.DOMAIN, NULL)
-        return NPY_NAN
+        return NAN
 
     if x == 0.0:
         if b > 1.0:
             # DMLF 13.2.16-18
             sf_error.error("hyperu", sf_error.SINGULAR, NULL)
-            return NPY_INFINITY
+            return INFINITY
         else:
             # DLMF 13.2.14-15 and 13.2.19-21
             return poch(1.0 - b + a, -a)
@@ -41,14 +36,14 @@ cdef inline double hyperu(double a, double b, double x) nogil:
 
 @cython.cdivision(True)
 cdef inline double hyp1f1(double a, double b, double x) nogil:
-    if npy_isnan(a) or npy_isnan(b) or npy_isnan(x):
-        return NPY_NAN
+    if isnan(a) or isnan(b) or isnan(x):
+        return NAN
     if b <= 0 and b == floor(b):
         # There is potentially a pole.
         if b <= a < 0 and a == floor(a):
             # The Pochammer symbol (a)_n cancels the pole.
             return hyp1f1_series_track_convergence(a, b, x)
-        return NPY_INFINITY
+        return INFINITY
     elif a == 0 or x == 0:
         return 1
     elif a == -1:
@@ -105,19 +100,19 @@ cdef inline double hyp1f1_series_track_convergence(
             term = 0
         else:
             # We hit a pole
-            return NPY_NAN
+            return NAN
         abssum += fabs(term)
         result += term
         if fabs(term) <= EPS * fabs(result):
             break
     else:
         sf_error.error("hyp1f1", sf_error.NO_RESULT, NULL)
-        return NPY_NAN
+        return NAN
 
     if k * EPS * abssum <= ACCEPTABLE_RTOL * fabs(result):
         return result
     sf_error.error("hyp1f1", sf_error.NO_RESULT, NULL)
-    return NPY_NAN
+    return NAN
 
 
 @cython.cdivision(True)
@@ -132,5 +127,5 @@ cdef inline double hyp1f1_series(double a, double b, double x) nogil:
             break
     else:
         sf_error.error("hyp1f1", sf_error.NO_RESULT, NULL)
-        result = NPY_NAN
+        result = NAN
     return result

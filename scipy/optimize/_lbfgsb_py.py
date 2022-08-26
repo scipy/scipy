@@ -250,9 +250,6 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         ``iprint = 99``   print details of every iteration except n-vectors;
         ``iprint = 100``  print also the changes of active set and final x;
         ``iprint > 100``  print details of every iteration including x and g.
-    callback : callable, optional
-        Called after each iteration, as ``callback(xk)``, where ``xk`` is the
-        current parameter vector.
     maxls : int, optional
         Maximum number of line search steps (per iteration). Default is 20.
     finite_diff_rel_step : None or array_like, optional

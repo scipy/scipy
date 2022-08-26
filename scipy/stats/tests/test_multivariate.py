@@ -25,8 +25,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          random_correlation, unitary_group, dirichlet,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
-                         hypergeom, multivariate_t, cauchy, normaltest,
-                         multivariate_beta)
+                         hypergeom, multivariate_t, cauchy, normaltest)
 
 from scipy.integrate import romb
 from scipy.special import multigammaln
@@ -34,6 +33,12 @@ from scipy.special import multigammaln
 from .common_tests import check_random_state_property
 
 from unittest.mock import patch
+
+
+def _sample_orthonormal_matrix(n):
+    M = np.random.randn(n, n)
+    u, s, v = scipy.linalg.svd(M)
+    return u
 
 
 class TestMultivariateNormal:
@@ -131,21 +136,20 @@ class TestMultivariateNormal:
 
     def test_degenerate_distributions(self):
 
-        def _sample_orthonormal_matrix(n):
-            M = np.random.randn(n, n)
-            u, s, v = scipy.linalg.svd(M)
-            return u
-
         for n in range(1, 5):
-            x = np.random.randn(n)
-            for k in range(1, n + 1):
+            z = np.random.randn(n)
+            for k in range(1, n):
                 # Sample a small covariance matrix.
                 s = np.random.randn(k, k)
                 cov_kk = np.dot(s, s.T)
 
-                # Embed the small covariance matrix into a larger low rank matrix.
+                # Embed the small covariance matrix into a larger singular one.
                 cov_nn = np.zeros((n, n))
                 cov_nn[:k, :k] = cov_kk
+
+                # Embed part of the vector in the same way
+                x = np.zeros(n)
+                x[:k] = z[:k]
 
                 # Define a rotation of the larger low rank matrix.
                 u = _sample_orthonormal_matrix(n)
@@ -172,6 +176,37 @@ class TestMultivariateNormal:
                 logpdf_rr = distn_rr.logpdf(y)
                 assert_allclose(logpdf_kk, logpdf_nn)
                 assert_allclose(logpdf_kk, logpdf_rr)
+
+                # Add an orthogonal component and find the density
+                y_orth = y + u[:, -1]
+                pdf_rr_orth = distn_rr.pdf(y_orth)
+                logpdf_rr_orth = distn_rr.logpdf(y_orth)
+
+                # Ensure that this has zero probability
+                assert_equal(pdf_rr_orth, 0.0)
+                assert_equal(logpdf_rr_orth, -np.inf)
+
+    def test_degenerate_array(self):
+        # Test that we can generate arrays of random variate from a degenerate
+        # multivariate normal, and that the pdf for these samples is non-zero
+        # (i.e. samples from the distribution lie on the subspace)
+        k = 10
+        for n in range(2, 6):
+            for r in range(1, n):
+                mn = np.zeros(n)
+                u = _sample_orthonormal_matrix(n)[:, :r]
+                vr = np.dot(u, u.T)
+                X = multivariate_normal.rvs(mean=mn, cov=vr, size=k)
+
+                pdf = multivariate_normal.pdf(X, mean=mn, cov=vr,
+                                              allow_singular=True)
+                assert_equal(pdf.size, k)
+                assert np.all(pdf > 0.0)
+
+                logpdf = multivariate_normal.logpdf(X, mean=mn, cov=vr,
+                                                    allow_singular=True)
+                assert_equal(logpdf.size, k)
+                assert np.all(logpdf > -np.inf)
 
     def test_large_pseudo_determinant(self):
         # Check that large pseudo-determinants are handled appropriately.
@@ -462,6 +497,56 @@ class TestMultivariateNormal:
 
         assert_almost_equal(np.exp(_lnB(alpha)), desired)
 
+    def test_cdf_with_lower_limit_arrays(self):
+        # test CDF with lower limit in several dimensions
+        rng = np.random.default_rng(2408071309372769818)
+        mean = [0, 0]
+        cov = np.eye(2)
+        a = rng.random((4, 3, 2))*6 - 3
+        b = rng.random((4, 3, 2))*6 - 3
+
+        cdf1 = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+
+        cdf2a = multivariate_normal.cdf(b, mean, cov)
+        cdf2b = multivariate_normal.cdf(a, mean, cov)
+        ab1 = np.concatenate((a[..., 0:1], b[..., 1:2]), axis=-1)
+        ab2 = np.concatenate((a[..., 1:2], b[..., 0:1]), axis=-1)
+        cdf2ab1 = multivariate_normal.cdf(ab1, mean, cov)
+        cdf2ab2 = multivariate_normal.cdf(ab2, mean, cov)
+        cdf2 = cdf2a + cdf2b - cdf2ab1 - cdf2ab2
+
+        assert_allclose(cdf1, cdf2)
+
+    def test_cdf_with_lower_limit_consistency(self):
+        # check that multivariate normal CDF functions are consistent
+        rng = np.random.default_rng(2408071309372769818)
+        mean = rng.random(3)
+        cov = rng.random((3, 3))
+        cov = cov @ cov.T
+        a = rng.random((2, 3))*6 - 3
+        b = rng.random((2, 3))*6 - 3
+
+        cdf1 = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+        cdf2 = multivariate_normal(mean, cov).cdf(b, lower_limit=a)
+        cdf3 = np.exp(multivariate_normal.logcdf(b, mean, cov, lower_limit=a))
+        cdf4 = np.exp(multivariate_normal(mean, cov).logcdf(b, lower_limit=a))
+
+        assert_allclose(cdf2, cdf1, rtol=1e-4)
+        assert_allclose(cdf3, cdf1, rtol=1e-4)
+        assert_allclose(cdf4, cdf1, rtol=1e-4)
+
+    def test_cdf_signs(self):
+        # check that sign of output is correct when np.any(lower > x)
+        mean = np.zeros(3)
+        cov = np.eye(3)
+        b = [[1, 1, 1], [0, 0, 0], [1, 0, 1], [0, 1, 0]]
+        a = [[0, 0, 0], [1, 1, 1], [0, 1, 0], [1, 0, 1]]
+        # when odd number of elements of b < a, output is negative
+        expected_signs = np.array([1, -1, -1, 1])
+        cdf = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+        assert_allclose(cdf, cdf[0]*expected_signs)
+
+
 class TestMatrixNormal:
 
     def test_bad_input(self):
@@ -480,8 +565,13 @@ class TestMatrixNormal:
         assert_raises(ValueError, matrix_normal, M, V, V)
         assert_raises(ValueError, matrix_normal, M.T, U, V)
 
-        # Singular covariance
         e = np.linalg.LinAlgError
+        # Singular covariance for the rvs method of a non-frozen instance
+        assert_raises(e, matrix_normal.rvs,
+                      M, U, np.ones((num_cols, num_cols)))
+        assert_raises(e, matrix_normal.rvs,
+                      M, np.ones((num_rows, num_rows)), V)
+        # Singular covariance for a frozen instance
         assert_raises(e, matrix_normal, M, U, np.ones((num_cols, num_cols)))
         assert_raises(e, matrix_normal, M, np.ones((num_rows, num_rows)), V)
 
@@ -638,8 +728,26 @@ class TestMatrixNormal:
                                                         N*num_cols,num_rows).T)
         assert_allclose(sample_rowcov, U, atol=0.1)
 
+    def test_samples(self):
+        # Regression test to ensure that we always generate the same stream of
+        # random variates.
+        actual = matrix_normal.rvs(
+            mean=np.array([[1, 2], [3, 4]]),
+            rowcov=np.array([[4, -1], [-1, 2]]),
+            colcov=np.array([[5, 1], [1, 10]]),
+            random_state=np.random.default_rng(0),
+            size=2
+        )
+        expected = np.array(
+            [[[1.56228264238181, -1.24136424071189],
+              [2.46865788392114, 6.22964440489445]],
+             [[3.86405716144353, 10.73714311429529],
+              [2.59428444080606, 5.79987854490876]]]
+        )
+        assert_allclose(actual, expected)
 
-class DirichletTest:
+
+class TestDirichlet:
 
     def test_frozen_dirichlet(self):
         np.random.seed(2846)
@@ -647,116 +755,112 @@ class DirichletTest:
         n = np.random.randint(1, 32)
         alpha = np.random.uniform(10e-10, 100, n)
 
-        d = self.dist(alpha)
+        d = dirichlet(alpha)
 
-        assert_equal(d.var(), self.dist.var(alpha))
-        assert_equal(d.mean(), self.dist.mean(alpha))
-        assert_equal(d.entropy(), self.dist.entropy(alpha))
+        assert_equal(d.var(), dirichlet.var(alpha))
+        assert_equal(d.mean(), dirichlet.mean(alpha))
+        assert_equal(d.entropy(), dirichlet.entropy(alpha))
         num_tests = 10
         for i in range(num_tests):
             x = np.random.uniform(10e-10, 100, n)
             x /= np.sum(x)
-            assert_equal(d.pdf(x[:-1]), self.dist.pdf(x[:-1], alpha))
-            assert_equal(d.logpdf(x[:-1]), self.dist.logpdf(x[:-1], alpha))
+            assert_equal(d.pdf(x[:-1]), dirichlet.pdf(x[:-1], alpha))
+            assert_equal(d.logpdf(x[:-1]), dirichlet.logpdf(x[:-1], alpha))
 
     def test_numpy_rvs_shape_compatibility(self):
         np.random.seed(2846)
         alpha = np.array([1.0, 2.0, 3.0])
         x = np.random.dirichlet(alpha, size=7)
         assert_equal(x.shape, (7, 3))
-        if self.dist == multivariate_beta:
-            x = x.T
-        assert_raises(ValueError, self.dist.pdf, x, alpha)
-        assert_raises(ValueError, self.dist.logpdf, x, alpha)
-        self.dist.pdf(x.T, alpha)
-        self.dist.pdf(x.T[:-1], alpha)
-        self.dist.logpdf(x.T, alpha)
-        self.dist.logpdf(x.T[:-1], alpha)
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
+        dirichlet.pdf(x.T, alpha)
+        dirichlet.pdf(x.T[:-1], alpha)
+        dirichlet.logpdf(x.T, alpha)
+        dirichlet.logpdf(x.T[:-1], alpha)
 
     def test_alpha_with_zeros(self):
         np.random.seed(2846)
         alpha = [1.0, 0.0, 3.0]
         # don't pass invalid alpha to np.random.dirichlet
         x = np.random.dirichlet(np.maximum(1e-9, alpha), size=7).T
-        assert_raises(ValueError, self.dist.pdf, x, alpha)
-        assert_raises(ValueError, self.dist.logpdf, x, alpha)
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_alpha_with_negative_entries(self):
         np.random.seed(2846)
         alpha = [1.0, -2.0, 3.0]
         # don't pass invalid alpha to np.random.dirichlet
         x = np.random.dirichlet(np.maximum(1e-9, alpha), size=7).T
-        assert_raises(ValueError, self.dist.pdf, x, alpha)
-        assert_raises(ValueError, self.dist.logpdf, x, alpha)
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_data_with_zeros(self):
         alpha = np.array([1.0, 2.0, 3.0, 4.0])
         x = np.array([0.1, 0.0, 0.2, 0.7])
-        self.dist.pdf(x, alpha)
-        self.dist.logpdf(x, alpha)
+        dirichlet.pdf(x, alpha)
+        dirichlet.logpdf(x, alpha)
         alpha = np.array([1.0, 1.0, 1.0, 1.0])
-        assert_almost_equal(self.dist.pdf(x, alpha), 6)
-        assert_almost_equal(self.dist.logpdf(x, alpha), np.log(6))
+        assert_almost_equal(dirichlet.pdf(x, alpha), 6)
+        assert_almost_equal(dirichlet.logpdf(x, alpha), np.log(6))
 
     def test_data_with_zeros_and_small_alpha(self):
         alpha = np.array([1.0, 0.5, 3.0, 4.0])
         x = np.array([0.1, 0.0, 0.2, 0.7])
-        assert_raises(ValueError, self.dist.pdf, x, alpha)
-        assert_raises(ValueError, self.dist.logpdf, x, alpha)
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_data_with_negative_entries(self):
         alpha = np.array([1.0, 2.0, 3.0, 4.0])
         x = np.array([0.1, -0.1, 0.3, 0.7])
-        assert_raises(ValueError, self.dist.pdf, x, alpha)
-        assert_raises(ValueError, self.dist.logpdf, x, alpha)
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_data_with_too_large_entries(self):
         alpha = np.array([1.0, 2.0, 3.0, 4.0])
         x = np.array([0.1, 1.1, 0.3, 0.7])
-        assert_raises(ValueError, self.dist.pdf, x, alpha)
-        assert_raises(ValueError, self.dist.logpdf, x, alpha)
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_data_too_deep_c(self):
         alpha = np.array([1.0, 2.0, 3.0])
         x = np.full((2, 7, 7), 1 / 14)
-        assert_raises(ValueError, self.dist.pdf, x, alpha)
-        assert_raises(ValueError, self.dist.logpdf, x, alpha)
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_alpha_too_deep(self):
         alpha = np.array([[1.0, 2.0], [3.0, 4.0]])
         x = np.full((2, 2, 7), 1 / 4)
-        assert_raises(ValueError, self.dist.pdf, x, alpha)
-        assert_raises(ValueError, self.dist.logpdf, x, alpha)
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_alpha_correct_depth(self):
         alpha = np.array([1.0, 2.0, 3.0])
         x = np.full((3, 7), 1 / 3)
-        if self.dist == multivariate_beta:
-            x = x.T
-        self.dist.pdf(x, alpha)
-        self.dist.logpdf(x, alpha)
+        dirichlet.pdf(x, alpha)
+        dirichlet.logpdf(x, alpha)
 
     def test_non_simplex_data(self):
         alpha = np.array([1.0, 2.0, 3.0])
         x = np.full((3, 7), 1 / 2)
-        assert_raises(ValueError, self.dist.pdf, x, alpha)
-        assert_raises(ValueError, self.dist.logpdf, x, alpha)
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_data_vector_too_short(self):
         alpha = np.array([1.0, 2.0, 3.0, 4.0])
         x = np.full((2, 7), 1 / 2)
-        assert_raises(ValueError, self.dist.pdf, x, alpha)
-        assert_raises(ValueError, self.dist.logpdf, x, alpha)
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_data_vector_too_long(self):
         alpha = np.array([1.0, 2.0, 3.0, 4.0])
         x = np.full((5, 7), 1 / 5)
-        assert_raises(ValueError, self.dist.pdf, x, alpha)
-        assert_raises(ValueError, self.dist.logpdf, x, alpha)
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_mean_and_var(self):
         alpha = np.array([1., 0.8, 0.2])
-        d = self.dist(alpha)
+        d = dirichlet(alpha)
 
         expected_var = [1. / 12., 0.08, 0.03]
         expected_mean = [0.5, 0.4, 0.1]
@@ -766,7 +870,7 @@ class DirichletTest:
 
     def test_scalar_values(self):
         alpha = np.array([0.2])
-        d = self.dist(alpha)
+        d = dirichlet(alpha)
 
         # For alpha of length 1, mean and var should be scalar instead of array
         assert_equal(d.mean().ndim, 0)
@@ -783,7 +887,7 @@ class DirichletTest:
         n = np.random.randint(1, 32)
         alpha = np.random.uniform(10e-10, 100, n)
 
-        d = self.dist(alpha)
+        d = dirichlet(alpha)
         num_tests = 10
         for i in range(num_tests):
             x = np.random.uniform(10e-10, 100, n)
@@ -796,7 +900,7 @@ class DirichletTest:
 
         n = np.random.randint(1, 32)
         alpha = np.random.uniform(10e-10, 100, n)
-        d = self.dist(alpha)
+        d = dirichlet(alpha)
 
         num_tests = 10
         num_multiple = 5
@@ -809,10 +913,7 @@ class DirichletTest:
                     xm = np.vstack((xm, x))
                 else:
                     xm = x
-            if self.dist == multivariate_beta:
-                rm = d.pdf(xm)
-            else:
-                rm = d.pdf(xm.T)
+            rm = d.pdf(xm.T)
             rs = None
             for xs in xm:
                 r = d.pdf(xs)
@@ -826,52 +927,17 @@ class DirichletTest:
         np.random.seed(2846)
 
         alpha = np.random.uniform(10e-10, 100, 2)
-        d = self.dist(alpha)
+        d = dirichlet(alpha)
         b = beta(alpha[0], alpha[1])
 
         num_tests = 10
         for i in range(num_tests):
             x = np.random.uniform(10e-10, 100, 2)
             x /= np.sum(x)
-            if self.dist == multivariate_beta:
-                assert_almost_equal(b.pdf(x), d.pdf(x[:, np.newaxis]))
-            else:
-                assert_almost_equal(b.pdf(x), d.pdf([x]))
+            assert_almost_equal(b.pdf(x), d.pdf([x]))
 
         assert_almost_equal(b.mean(), d.mean()[0])
         assert_almost_equal(b.var(), d.var()[0])
-
-
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
-class TestDirichlet(DirichletTest):
-    dist = dirichlet
-
-
-def test_dirichlet_deprecation():
-    with pytest.deprecated_call():
-        dirichlet.rvs([1, 2, 3])
-
-    with pytest.deprecated_call():
-        dirichlet([1, 2, 3])
-
-
-class TestMultivariateBeta(DirichletTest):
-    dist = multivariate_beta
-
-    def test_accepts_random_variates(self):
-        # dirichlet.pdf does not accept output of dirichlet.rvs
-        # multivariate_beta does; see gh-6006
-        alpha = [1, 3, 4]
-        d = self.dist(alpha)
-
-        rvs = d.rvs()
-        pdf = d.pdf(rvs)  # no error
-        assert pdf == self.dist.pdf(rvs, alpha)
-
-        rvs2 = d.rvs(size=10)
-        pdf2 = d.pdf(rvs2)
-        for rvs_i, pdf_i in zip(rvs2, pdf2):
-            assert pdf_i == self.dist.pdf(rvs_i, alpha)
 
 
 def test_multivariate_normal_dimensions_mismatch():
@@ -1229,6 +1295,20 @@ class TestMultinomial:
         assert_allclose(mn_frozen.logpmf(x), multinomial.logpmf(x, n, pvals))
         assert_allclose(mn_frozen.entropy(), multinomial.entropy(n, pvals))
 
+    def test_gh_11860(self):
+        # gh-11860 reported cases in which the adjustments made by multinomial
+        # to the last element of `p` can cause `nan`s even when the input is
+        # essentially valid. Check that a pathological case returns a finite,
+        # nonzero result. (This would fail in main before the PR.)
+        n = 88
+        rng = np.random.default_rng(8879715917488330089)
+        p = rng.random(n)
+        p[-1] = 1e-30
+        p /= np.sum(p)
+        x = np.ones(n)
+        logpmf = multinomial.logpmf(x, n, p)
+        assert np.isfinite(logpmf)
+
 class TestInvwishart:
     def test_frozen(self):
         # Test that the frozen and non-frozen inverse Wishart gives the same
@@ -1464,14 +1544,15 @@ class TestSpecialOrthoGroup:
 
 class TestOrthoGroup:
     def test_reproducibility(self):
-        np.random.seed(515)
+        seed = 514
+        np.random.seed(seed)
         x = ortho_group.rvs(3)
-        x2 = ortho_group.rvs(3, random_state=515)
+        x2 = ortho_group.rvs(3, random_state=seed)
         # Note this matrix has det -1, distinguishing O(N) from SO(N)
         assert_almost_equal(np.linalg.det(x), -1)
-        expected = np.array([[0.94449759, -0.21678569, -0.24683651],
-                             [-0.13147569, -0.93800245, 0.3207266],
-                             [0.30106219, 0.27047251, 0.9144431]])
+        expected = np.array([[0.381686, -0.090374, 0.919863],
+                             [0.905794, -0.161537, -0.391718],
+                             [-0.183993, -0.98272, -0.020204]])
         assert_array_almost_equal(x, expected)
         assert_array_almost_equal(x2, expected)
 
@@ -1573,10 +1654,10 @@ class TestRandomCorrelation:
         eigs = (.5, .8, 1.2, 1.5)
         x = random_correlation.rvs(eigs)
         x2 = random_correlation.rvs(eigs, random_state=514)
-        expected = np.array([[1., -0.20387311, 0.18366501, -0.04953711],
-                             [-0.20387311, 1., -0.24351129, 0.06703474],
-                             [0.18366501, -0.24351129, 1., 0.38530195],
-                             [-0.04953711, 0.06703474, 0.38530195, 1.]])
+        expected = np.array([[1., -0.184851, 0.109017, -0.227494],
+                             [-0.184851, 1., 0.231236, 0.326669],
+                             [0.109017, 0.231236, 1., -0.178912],
+                             [-0.227494, 0.326669, -0.178912, 1.]])
         assert_array_almost_equal(x, expected)
         assert_array_almost_equal(x2, expected)
 
@@ -2220,7 +2301,7 @@ def test_random_state_property():
     scale[1, 0] = 0.5
     dists = [
         [multivariate_normal, ()],
-        [multivariate_beta, (np.array([1.]), )],
+        [dirichlet, (np.array([1.]), )],
         [wishart, (10, scale)],
         [invwishart, (10, scale)],
         [multinomial, (5, [0.5, 0.4, 0.1])],

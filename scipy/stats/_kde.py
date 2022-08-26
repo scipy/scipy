@@ -136,6 +136,11 @@ class gaussian_kde:
 
     as detailed in [5]_.
 
+    `gaussian_kde` does not currently support data that lies in a
+    lower-dimensional subspace of the space in which it is expressed. For such
+    data, consider performing principle component analysis / dimensionality
+    reduction and using `gaussian_kde` with the transformed data.
+
     References
     ----------
     .. [1] D.W. Scott, "Multivariate Density Estimation: Theory, Practice, and
@@ -155,6 +160,7 @@ class gaussian_kde:
     --------
     Generate some random two-dimensional data:
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> def measure(n):
     ...     "Measurement model, return two coupled measurements."
@@ -204,7 +210,17 @@ class gaussian_kde:
                 raise ValueError("`weights` input should be of length n")
             self._neff = 1/sum(self._weights**2)
 
-        self.set_bandwidth(bw_method=bw_method)
+        try:
+            self.set_bandwidth(bw_method=bw_method)
+        except linalg.LinAlgError as e:
+            msg = ("The data appears to lie in a lower-dimensional subspace "
+                   "of the space in which it is expressed. This has resulted "
+                   "in a singular data covariance matrix, which cannot be "
+                   "treated using the algorithms implemented in "
+                   "`gaussian_kde`. Consider performing principle component "
+                   "analysis / dimensionality reduction and using "
+                   "`gaussian_kde` with the transformed data.")
+            raise linalg.LinAlgError(msg) from e
 
     def evaluate(self, points):
         """Evaluate the estimated pdf on a set of points.
@@ -426,9 +442,7 @@ class gaussian_kde:
             The number of samples to draw.  If not provided, then the size is
             the same as the effective number of samples in the underlying
             dataset.
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
-
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -504,6 +518,7 @@ class gaussian_kde:
 
         Examples
         --------
+        >>> import numpy as np
         >>> import scipy.stats as stats
         >>> x1 = np.array([-7, -5, 1, 4, 5.])
         >>> kde = stats.gaussian_kde(x1)
@@ -557,7 +572,7 @@ class gaussian_kde:
             self._data_inv_cov = linalg.inv(self._data_covariance)
 
         self.covariance = self._data_covariance * self.factor**2
-        self.inv_cov = self._data_inv_cov / self.factor**2
+        self.inv_cov = (self._data_inv_cov / self.factor**2).astype(np.float64)
         L = linalg.cholesky(self.covariance*2*pi)
         self.log_det = 2*np.log(np.diag(L)).sum()
 
@@ -596,6 +611,55 @@ class gaussian_kde:
             self.inv_cov, output_dtype
         )
         return result[:, 0]
+
+    def marginal(self, dimensions):
+        """Return a marginal KDE distribution
+
+        Parameters
+        ----------
+        dimensions : int or 1-d array_like
+            The dimensions of the multivariate distribution corresponding
+            with the marginal variables, that is, the indices of the dimensions
+            that are being retained. The other dimensions are marginalized out.
+
+        Returns
+        -------
+        marginal_kde : gaussian_kde
+            An object representing the marginal distribution.
+
+        Notes
+        -----
+        .. versionadded:: 1.10.0
+
+        """
+
+        dims = np.atleast_1d(dimensions)
+
+        if not np.issubdtype(dims.dtype, np.integer):
+            msg = ("Elements of `dimensions` must be integers - the indices "
+                   "of the marginal variables being retained.")
+            raise ValueError(msg)
+
+        n = len(self.dataset)  # number of dimensions
+        original_dims = dims.copy()
+
+        dims[dims < 0] = n + dims[dims < 0]
+
+        if len(np.unique(dims)) != len(dims):
+            msg = ("All elements of `dimensions` must be unique.")
+            raise ValueError(msg)
+
+        i_invalid = (dims < 0) | (dims >= n)
+        if np.any(i_invalid):
+            msg = (f"Dimensions {original_dims[i_invalid]} are invalid "
+                   f"for a distribution in {n} dimensions.")
+            raise ValueError(msg)
+
+        dataset = self.dataset[dims]
+        weights = self.weights
+
+        return gaussian_kde(dataset, bw_method=self.covariance_factor(),
+                            weights=weights)
 
     @property
     def weights(self):

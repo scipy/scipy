@@ -1,3 +1,14 @@
+fs = import('fs')
+if not fs.exists('boost/README.rst')
+  error('Missing the `boost` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('highs/README.md')
+  error('Missing the `highs` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('unuran/README.md')
+  error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
+endif
+
 _lib_pxd = custom_target('_lib_pxd',
   output: [
     '__init__.py',
@@ -25,7 +36,6 @@ py3.extension_module('_ccallback_c',
   lib_cython_gen.process('_ccallback_c.pyx'),
   c_args: ['-Wno-discarded-qualifiers', cython_c_args],
   include_directories: 'src',
-  dependencies: py3_dep,
   install: true,
   subdir: 'scipy/_lib'
 )
@@ -33,7 +43,6 @@ py3.extension_module('_ccallback_c',
 py3.extension_module('_test_ccallback',
   'src/_test_ccallback.c',
   include_directories: 'src',
-  dependencies: py3_dep,
   install: true,
   subdir: 'scipy/_lib'
 )
@@ -41,7 +50,6 @@ py3.extension_module('_test_ccallback',
 py3.extension_module('_fpumode',
   '_fpumode.c',
   include_directories: 'src',
-  dependencies: py3_dep,
   install: true,
   subdir: 'scipy/_lib'
 )
@@ -50,7 +58,6 @@ py3.extension_module('_test_deprecation_call',
   cython_gen.process('_test_deprecation_call.pyx'),
   c_args: cython_c_args,
   include_directories: 'src',
-  dependencies: py3_dep,
   install: true,
   subdir: 'scipy/_lib'
 )
@@ -59,7 +66,6 @@ py3.extension_module('_test_deprecation_def',
   cython_gen.process('_test_deprecation_def.pyx'),
   c_args: cython_c_args,
   include_directories: 'src',
-  dependencies: py3_dep,
   install: true,
   subdir: 'scipy/_lib'
 )
@@ -90,7 +96,6 @@ py3.extension_module('messagestream',
   lib_cython_gen.process('messagestream.pyx'),
   c_args: cython_c_args,
   include_directories: 'src',
-  dependencies: py3_dep,
   install: true,
   subdir: 'scipy/_lib'
 )

@@ -134,9 +134,9 @@ def lombscargle(x,
     >>> plt.show()
 
     """
-    x = np.asarray(x, dtype=np.float64)
-    y = np.asarray(y, dtype=np.float64)
-    freqs = np.asarray(freqs, dtype=np.float64)
+    x = np.ascontiguousarray(x, dtype=np.float64)
+    y = np.ascontiguousarray(y, dtype=np.float64)
+    freqs = np.ascontiguousarray(freqs, dtype=np.float64)
 
     assert x.ndim == 1
     assert y.ndim == 1

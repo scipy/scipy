@@ -259,6 +259,7 @@ def convert_temperature(
     Examples
     --------
     >>> from scipy.constants import convert_temperature
+    >>> import numpy as np
     >>> convert_temperature(np.array([-40, 40]), 'Celsius', 'Kelvin')
     array([ 233.15,  313.15])
 
@@ -318,6 +319,7 @@ def lambda2nu(lambda_: npt.ArrayLike) -> Any:
     Examples
     --------
     >>> from scipy.constants import lambda2nu, speed_of_light
+    >>> import numpy as np
     >>> lambda2nu(np.array((1, speed_of_light)))
     array([  2.99792458e+08,   1.00000000e+00])
 
@@ -347,6 +349,7 @@ def nu2lambda(nu: npt.ArrayLike) -> Any:
     Examples
     --------
     >>> from scipy.constants import nu2lambda, speed_of_light
+    >>> import numpy as np
     >>> nu2lambda(np.array((1, speed_of_light)))
     array([  2.99792458e+08,   1.00000000e+00])
 

@@ -275,6 +275,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     --------
     First consider the problem of minimizing the Rosenbrock function, `rosen`:
 
+    >>> import numpy as np
     >>> from scipy.optimize import rosen, shgo
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = shgo(rosen, bounds)

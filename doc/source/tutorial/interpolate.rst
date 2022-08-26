@@ -46,6 +46,7 @@ specified at instantiation time. The following example demonstrates
 its use, for linear and cubic spline interpolation:
 
 .. plot::
+   :alt: "This code generates an X-Y plot of a time-series with amplitude on the Y axis and time on the X axis. The original time-series is shown as a series of blue markers roughly defining some kind of oscillation. An orange trace showing the linear interpolation is drawn atop the data forming a jagged representation of the original signal. A dotted green cubic interpolation is also drawn that appears to smoothly represent the source data."
 
    >>> from scipy.interpolate import interp1d
 
@@ -72,6 +73,7 @@ interpolating filter. The following example demonstrates their use, using the
 same data as in the previous example:
 
 .. plot::
+   :alt: "This code generates an X-Y plot of a time-series with amplitude on the Y axis and time on the X axis. The original time-series is shown as a series of blue markers roughly defining some kind of oscillation. An orange trace showing the nearest neighbor interpolation is drawn atop the original with a stair-like appearance where the original data is right in the middle of each stair step. A green trace showing the previous neighbor interpolation looks similar to the orange trace but the original data is at the back of each stair step. Similarly a dotted red trace showing the next neighbor interpolation goes through each of the previous points, but it is centered at the front edge of each stair."
 
    >>> from scipy.interpolate import interp1d
 
@@ -102,6 +104,7 @@ function *f(x, y)* you only know the values at points *(x[i], y[i])*
 that do not form a regular grid.
 
 .. plot::
+    :alt: " "
 
     Suppose we want to interpolate the 2-D function
 
@@ -159,6 +162,7 @@ The following example demonstrates its use, and compares the interpolation resul
 using each method.
 
 .. plot::
+   :alt: " "
 
    >>> import matplotlib.pyplot as plt
    >>> from scipy.interpolate import RegularGridInterpolator
@@ -254,6 +258,7 @@ and the integral of the spline between any two points (
 example that follows.
 
 .. plot::
+   :alt: " "
 
    >>> import numpy as np
    >>> import matplotlib.pyplot as plt
@@ -380,6 +385,7 @@ spline.
 
 
 .. plot::
+   :alt: " "
 
    >>> import numpy as np
    >>> import matplotlib.pyplot as plt
@@ -458,6 +464,7 @@ of each argument is determined by the number of indexing objects
 passed in :obj:`mgrid <numpy.mgrid>`.
 
 .. plot::
+   :alt: " "
 
    >>> import numpy as np
    >>> from scipy import interpolate
@@ -519,6 +526,7 @@ This example compares the usage of the `Rbf` and `UnivariateSpline` classes
 from the scipy.interpolate module.
 
 .. plot::
+    :alt: " "
 
     >>> import numpy as np
     >>> from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
@@ -558,6 +566,7 @@ from the scipy.interpolate module.
 This example shows how to interpolate scattered 2-D data:
 
 .. plot::
+    :alt: " "
 
     >>> import numpy as np
     >>> from scipy.interpolate import Rbf
