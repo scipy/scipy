@@ -9151,8 +9151,6 @@ class rv_histogram(rv_continuous):
       The second containing the (n+1) bin boundaries
       In particular the return value np.histogram is accepted
 
-        .. versionadded:: 1.10.0
-
     Notes
     -----
     There are no additional shape parameters except for the loc and scale.
