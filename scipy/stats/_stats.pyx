@@ -773,21 +773,11 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef real logsumexp(real[:] a):
+cdef real logsumexp(real a, real b):
     cdef:
-        real[:] a_
-        real a_max, v
-        int i, n
-    n = a.shape[0]
-    a_max = math.log(0) # Same as -np.inf
-    for i in range(n):
-        if a_max < a[i]:
-            a_max = a[i]
-    v = 0.
-    for i in range(n):
-        v += math.exp(a[i] - a_max)
-    v = math.log(v)
-    return v + a_max
+        real c
+    c = max(a, b)
+    return c + math.log(math.exp(a-c) + math.exp(b-c))
 
 
 @cython.wraparound(False)
@@ -816,8 +806,7 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
         input coordinates.
     """
     cdef:
-        real[:, :] points_, xi_, values_, log_values_, whitening
-        real[:, :, :] estimate
+        real[:, :] points_, xi_, values_, log_values_, estimate, whitening
         int i, j, k
         int n, d, m, p
         real arg, residual, log_norm
@@ -827,13 +816,17 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
     m = xi.shape[0]
     p = values.shape[1]
 
+    if xi.shape[1] != d:
+        raise ValueError("points and xi must have same trailing dim")
+    if precision.shape[0] != d or precision.shape[1] != d:
+        raise ValueError("precision matrix must match data dims")
+
     # Rescale the data
     whitening = np.linalg.cholesky(precision).astype(dtype, copy=False)
     points_ = np.dot(points, whitening).astype(dtype, copy=False)
     xi_ = np.dot(xi, whitening).astype(dtype, copy=False)
     values_ = values.astype(dtype, copy=False)
 
-    # Log transformation of values_. It is faster than np.log(values_).
     log_values_ = np.empty((n, p), dtype)
     for i in range(n):
         for k in range(p):
@@ -845,9 +838,9 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
         log_norm += math.log(whitening[i, i])
 
     # Create the result array and evaluate the weighted sum
-    estimate = np.zeros((m, n, p), dtype)
-    for j in range(m):
-        for i in range(n):
+    estimate = np.full((m, p), fill_value=-np.inf, dtype=dtype)
+    for i in range(n):
+        for j in range(m):
             arg = 0
             for k in range(d):
                 residual = (points_[i, k] - xi_[j, k])
@@ -855,10 +848,7 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
 
             arg = -arg / 2 + log_norm
             for k in range(p):
-                estimate[j, i, k] = log_values_[i, k] + arg
+                estimate[j, k] = logsumexp(estimate[j, k],
+                                           arg + log_values_[i, k])
 
-        for k in range(p):
-            # After logsumexp we no longer use the second dim and want to squeeze
-            estimate[j, 0, k] = logsumexp(estimate[j, :, k])
-
-    return estimate[:, 0, :]
+    return np.asarray(estimate)
