@@ -8806,6 +8806,135 @@ class vonmises_gen(rv_continuous):
         return (-kappa * sc.i1(kappa) / sc.i0(kappa) +
                 np.log(2 * np.pi * sc.i0(kappa)))
 
+    def expect(self, func=None, args=(), loc=0, scale=1, lb=-np.pi, ub=np.pi,
+                conditional=False, **kwds):
+        """Calculate expected value of a function with respect to the
+        distribution by numerical integration.
+
+        The expected value of a function ``f(x)`` with respect to a
+        distribution ``dist`` is defined as::
+
+                    ub
+            E[f(x)] = Integral(f(x) * dist.pdf(x)),
+                    lb
+
+        where ``ub`` and ``lb`` are arguments and ``x`` has the ``dist.pdf(x)``
+        distribution. If the bounds ``lb`` and ``ub`` correspond to the
+        support of the distribution, e.g. ``[-pi, pi]`` (or any interval
+        spanning ``2pi``) in the default
+        case, then the integral is the unrestricted expectation of ``f(x)``.
+        Also, the function ``f(x)`` may be defined such that ``f(x)`` is ``0``
+        outside a finite interval in which case the expectation is
+        calculated within the finite range ``[lb, ub]``.
+
+        Parameters
+        ----------
+        func : callable, optional
+            Function for which integral is calculated. Takes only one argument.
+            The default is the identity mapping f(x) = x.
+        args : tuple, optional
+            Shape parameters of the distribution.
+        loc : float, optional
+            Location parameter (default=0).
+        scale : float, optional
+            Scale parameter (default=1).
+        lb, ub : scalar, optional
+            Lower and upper bound for integration. Default is set [-np.pi,np.pi]
+        conditional : bool, optional
+            If True, the integral is corrected by the conditional probability
+            of the integration interval.  The return value is the expectation
+            of the function, conditional on being in the given interval.
+            Default is False.
+
+        Additional keyword arguments are passed to the integration routine.
+
+        Returns
+        -------
+        expect : float
+            The calculated expected value.
+
+        Notes
+        -----
+        The integration behavior of this function is inherited from
+        `scipy.integrate.quad`. Neither this function nor
+        `scipy.integrate.quad` can verify whether the integral exists or is
+        finite. For example ``cauchy(0).mean()`` returns ``np.nan`` and
+        ``cauchy(0).expect()`` returns ``0.0``.  It is often the case in
+        directional statistics to supply complex expontial functions
+        (e.g. ``np.exp(1j*x)``). In such cases, this method returns a
+        complex number.
+
+        Likewise, the accuracy of results is not verified by the function.
+        `scipy.integrate.quad` is typically reliable for integrals that are
+        numerically favorable, but it is not guaranteed to converge
+        to a correct value for all possible intervals and integrands. This
+        function is provided for convenience; for critical applications,
+        check results against other integration methods.
+
+        The function is not vectorized.
+
+        Examples
+        --------
+
+        To understand the effect of the bounds of integration consider
+
+        >>> from scipy.stats import vonmises
+        >>> vonmises(kappa=11).expect(lambda x: 1, lb=0.0, ub=2.0).real
+        0.43424095588998324
+
+        This is close to
+
+        >>> vonmises(kappa=1).cdf(2.0) - vonmises(kappa=1).cdf(0.0)
+        0.4342409558899928
+
+        If ``conditional=True``
+
+        >>> vonmises(kappa=1).expect(lambda x: 1, lb=0.0, ub=2.0, conditional=True).real
+        0.999999999999978
+
+        The slight deviation from 1 is due to numerical integration.
+
+        The mean direction can be found as
+
+        >>> r = vonmises(kappa=1).expect(lambda x: np.exp(1j*x))
+        >>> np.angle(r)
+        0.0
+
+        """
+        lockwds = {'loc': loc,
+                   'scale': scale}
+        self._argcheck(*args)
+        _a, _b = -np.pi, np.pi
+        if func is None:
+            def fun(x, *args):
+                return np.exp(1j*x) * self.pdf(x, *args, **lockwds)
+        else:
+            def fun(x, *args):
+                return func(x) * self.pdf(x, *args, **lockwds)
+        def refun(x, *args):
+            return np.real(fun(x, *args))
+        def imfun(x, *args):
+            return np.imag(fun(x, *args))
+        if lb is None:
+            lb = loc + _a
+        if ub is None:
+            ub = loc + _b
+        if ub-lb > 2*np.pi:
+            raise ValueError("Interval of Von Mises integral must be 2pi.")
+
+        cdf_bounds = self.cdf([lb, ub], *args, **lockwds)
+        invfac = cdf_bounds[1] - cdf_bounds[0]
+
+        kwds['args'] = args
+
+        alpha = integrate.quad(refun, lb, ub, **kwds)[0]
+        beta = 1j*integrate.quad(imfun, lb, ub, **kwds)[0]
+        vals = alpha + beta
+
+        if conditional:
+            vals /= invfac
+        return np.array(vals)[()]  # make it a numpy scalar like other methods
+
 
 vonmises = vonmises_gen(name='vonmises')
 vonmises_line = vonmises_gen(a=-np.pi, b=np.pi, name='vonmises_line')

@@ -160,6 +160,35 @@ def test_vonmises_logpdf(x, kappa, expected_logpdf):
     logpdf = stats.vonmises.logpdf(x, kappa)
     assert_allclose(logpdf, expected_logpdf, rtol=1e-15)
 
+def test_vonmises_expect():
+    """
+    Test that the vonmises expectation values are
+    computed correctly.  This test checks that the
+    numeric integration estimates the correct normalization
+    (1) and mean angle (loc).  These expectations are
+    independent of the chosen 2pi interval.
+    """
+    # check that expectation values
+    assert np.isclose(
+            stats.vonmises.expect(lambda x: 1, args=(1,)),
+            1)
+    assert np.isclose(
+            stats.vonmises(loc=3, kappa=1).expect(lambda x: 1),
+            1)
+    assert np.isclose(
+            stats.vonmises(loc=3, kappa=1).expect(lambda x: 1, lb=0, ub=2*np.pi),
+            1)
+    assert np.isclose(
+            stats.vonmises(loc=0, kappa=1).expect(lambda x: 1, lb=2*np.pi, ub=4*np.pi),
+            1)
+    r = stats.vonmises(loc=0, kappa=1).expect(lambda x: np.exp(1j*x))
+    assert np.isclose(
+            np.angle(r),
+            0)
+    r = stats.vonmises(loc=0, kappa=1).expect(lambda x: np.exp(1j*x), lb=0, ub=2*np.pi)
+    assert np.isclose(
+            np.angle(r),
+            0)
 
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
     """
