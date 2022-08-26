@@ -7067,6 +7067,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     -------
     result : `~scipy.stats._result_classes.TtestResult`
         An object with the following attributes:
+
         statistic : float or array
             The t-statistic.
         pvalue : float or array
