@@ -1,0 +1,8 @@
+option('blas', type: 'string', value: 'openblas',
+        description: 'option for BLAS library switching')
+option('lapack', type: 'string', value: 'openblas',
+        description: 'option for LAPACK library switching')
+option('use-g77-abi', type: 'boolean', value: 'false',
+        description: 'If set to true, forces using g77 compatibility wrappers ' +
+                     'for LAPACK functions. The default is to use gfortran ' +
+                     'ABI for all LAPACK libraries except MKL.')

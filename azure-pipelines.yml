@@ -3,7 +3,7 @@ trigger:
   batch: False
   branches:
     include:
-      - master
+      - main
       - maintenance/*
   paths:
     include:
@@ -18,10 +18,10 @@ pr:
     include:
     - '*'  # must quote since "*" is a YAML reserved character; we want a string
 
-# the version of OpenBLAS used is currently 0.3.15
+# the version of OpenBLAS used is currently 0.3.18
 # and should be updated to match scipy-wheels as appropriate
 variables:
-    openblas_version: 0.3.17
+    openblas_version: 0.3.18
     pre_wheels: https://pypi.anaconda.org/scipy-wheels-nightly/simple
     CCACHE_DIR: $(Pipeline.Workspace)/ccache
     SCIPY_AVAILABLE_MEM: 3G
@@ -55,10 +55,27 @@ stages:
   variables:
     AZURE_CI: 'true'
   jobs:
-  - job: pre_release_deps_source_dist
-    condition: eq(variables['System.PullRequest.TargetBranch'], 'master')
+  - job: prerelease_deps_coverage_64bit_blas
+    timeoutInMinutes: 90
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.9'
+        addToPath: true
+        architecture: 'x64'
+    - template: ci/azure-travis-template.yaml
+      parameters:
+        test_mode: full
+        coverage: true
+        numpy_spec: "--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
+        other_spec: "--pre --upgrade --timeout=60"
+        use_64bit_blas: true
+  - job: refguide_asv_check
+    timeoutInMinutes: 90
+    pool:
+      vmImage: 'ubuntu-20.04'
     steps:
     - task: UsePythonVersion@0
       inputs:
@@ -68,68 +85,27 @@ stages:
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "--pre --upgrade --timeout=60 -i $(PRE_WHEELS) numpy"
-        other_spec: "--pre --upgrade --timeout=60"
-  - job: coverage_full_tests
-    pool:
-      vmImage: 'ubuntu-18.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.8'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: full
-        coverage: true
-        numpy_spec: "numpy==1.18.5"
-  - job: prerelease_deps_64bit_blas
-    pool:
-      vmImage: 'ubuntu-18.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.8'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: full
-        numpy_spec: "--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
-        other_spec: "--pre --upgrade --timeout=60"
-        use_64bit_blas: true
-  - job: refguide_asv_check
-    pool:
-      vmImage: 'ubuntu-18.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.8'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: fast
-        numpy_spec: "--upgrade numpy"
+        numpy_spec: "numpy==1.21.5"
         refguide_check: true
         asv_check: true
         use_wheel: true
   - job: source_distribution
+    timeoutInMinutes: 90
     pool:
       vmImage: 'ubuntu-20.04'
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.8'
+        versionSpec: '3.9'
         addToPath: true
         architecture: 'x64'
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "numpy==1.17.4"
+        numpy_spec: "numpy==1.19.5"
         use_sdist: true
-  - job: wheel_optimized_gcc48
+  - job: wheel_optimized_gcc6
+    timeoutInMinutes: 90
     pool:
       vmImage: 'ubuntu-18.04'
     variables:
@@ -137,15 +113,15 @@ stages:
       # pytest-xdist plugin for load scheduling its workers don't pick up the
       # flag. This environment variable starts all Py instances in -OO mode.
       PYTHONOPTIMIZE: 2
-      # Use gcc version 4.8
-      CC: gcc-4.8
-      CXX: g++-4.8
+      # Use gcc version 6
+      CC: gcc-6
+      CXX: g++-6
     steps:
     - script: |
         set -euo pipefail
         sudo apt update -y
-        sudo apt install -y g++-4.8 gcc-4.8
-      displayName: 'Install GCC 4.8'
+        sudo apt install -y g++-6 gcc-6
+      displayName: 'Install GCC 6'
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.8'
@@ -154,16 +130,16 @@ stages:
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "numpy==1.17.3"
+        numpy_spec: "numpy==1.19.5"
         use_wheel: true
   - job: Lint
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
       vmImage: 'ubuntu-20.04'
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.8'
+        versionSpec: '3.9'
         addToPath: true
         architecture: 'x64'
     - script: >-
@@ -184,7 +160,8 @@ stages:
       displayName: 'Run Lint Checks'
       failOnStderr: true
   - job: Linux_Python_38_32bit_full
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    timeoutInMinutes: 90
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
       vmImage: 'ubuntu-20.04'
     steps:
@@ -192,6 +169,11 @@ stages:
         git submodule update --init
       displayName: 'Fetch submodules'
     - script: |
+            # For when updating this job to Meson: the `openblas` used here is
+            # missing pkg-config files. Ubunty Jammy (LTS 22.04) has openblas
+            # 3.20, so if that Docker image is available by then, just remove
+            # the unusual install method. For the bug report about missing .pc
+            # files: https://github.com/MacPython/openblas-libs/issues/74
             set -euo pipefail
             docker pull i386/ubuntu:bionic
             docker run -v $(pwd):/scipy i386/ubuntu:bionic /usr/bin/linux32 /bin/bash -c "cd scipy && \
@@ -200,17 +182,17 @@ stages:
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
             python3.8 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools wheel numpy==1.17.3 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 pythran --user && \
-            apt-get -y install gcc-5 g++-5 gfortran-8 wget && \
+            pip3 install setuptools==59.6.0 wheel numpy==1.19.5 cython==0.29.21 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran pooch && \
+            apt-get -y install gcc-8 g++-8 gfortran-8 wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
             target=\$(python3.8 ../scipy/tools/openblas_support.py) && \
             cp -r \$target/lib/* /usr/lib && \
             cp \$target/include/* /usr/include && \
             cd ../scipy && \
-            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.8 setup.py install && \
+            CC=gcc-8 CXX=g++-8 F77=gfortran-8 F90=gfortran-8 python3.8 setup.py install && \
             python3.8 tools/openblas_support.py --check_version $(openblas_version) && \
-            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.8 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
+            python3.8 runtests.py -n --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html --durations=10 --timeout=60"
       displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
     - task: PublishTestResults@2
       condition: succeededOrFailed()
@@ -224,9 +206,10 @@ stages:
         summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
         reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
   - job: Windows
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    timeoutInMinutes: 90
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
-      vmImage: 'VS2017-Win2016'
+      vmImage: 'windows-2019'
     variables:
       # OPENBLAS64_ variable has same value
       # but only needed for ILP64 build below
@@ -246,18 +229,18 @@ stages:
             TEST_MODE: full
             BITS: 64
             SCIPY_USE_PYTHRAN: 0
-          Python38-64bit-full-ilp64:
-            PYTHON_VERSION: '3.8'
+          Python310-64bit-full-ilp64:
+            PYTHON_VERSION: '3.10'
             PYTHON_ARCH: 'x64'
             TEST_MODE: full
             NPY_USE_BLAS_ILP64: 1
             BITS: 64
             OPENBLAS64_: $(OPENBLAS)
             SCIPY_USE_PYTHRAN: 1
-          Python39-64bit-full:
+          Python39-64bit-fast:
             PYTHON_VERSION: '3.9'
             PYTHON_ARCH: 'x64'
-            TEST_MODE: full
+            TEST_MODE: fast
             BITS: 64
             SCIPY_USE_PYTHRAN: 0
     steps:
@@ -270,7 +253,7 @@ stages:
         git submodule update --init
       displayName: 'Fetch submodules'
     - script: |
-        python -m pip install --upgrade pip "setuptools<50.0" wheel
+        python -m pip install --upgrade pip "setuptools==59.6.0" wheel
       displayName: 'Install tools'
     - powershell: |
         $pyversion = python -c "import sys; print(sys.version.split()[0])"
@@ -306,18 +289,20 @@ stages:
       condition: and(succeeded(), eq(variables['BITS'], 32))
     - script: >-
         python -m pip install
-        cython==0.29.18
+        cython==0.29.24
         matplotlib
         mpmath
-        numpy==1.19.5
+        numpy==1.21.4
         Pillow
         pybind11
-        pythran
-        pytest==5.4.3
+        pythran==0.11.0
+        pytest
         pytest-cov
         pytest-env
         pytest-timeout
-        pytest-xdist==1.34.0
+        pytest-xdist
+        threadpoolctl
+        pooch
       displayName: 'Install dependencies'
     # DLL resolution mechanics were changed in
     # Python 3.8: https://bugs.python.org/issue36085
@@ -354,8 +339,9 @@ stages:
         }
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
 
-        mkdir dist
-        pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
+        # Still testing distutils here (`pip wheel --no-use-pep517` cannot be
+        # used, so back to `setup.py` it is ...)
+        python setup.py bdist_wheel
         ls dist -r | Foreach-Object {
             pip install $_.FullName
         }
@@ -363,7 +349,7 @@ stages:
     - powershell: |
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
         $env:SCIPY_USE_PYTHRAN=$(SCIPY_USE_PYTHRAN)
-        python runtests.py -n --mode=$(TEST_MODE) -- -n 2 --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html --durations=10
+        python runtests.py -n --mode=$(TEST_MODE) -- -n 2 --junitxml=junit/test-results.xml --durations=10 --timeout=60
       displayName: 'Run SciPy Test Suite'
     - task: PublishTestResults@2
       condition: succeededOrFailed()
@@ -371,8 +357,3 @@ stages:
         testResultsFiles: '**/test-*.xml'
         failTaskOnFailedTests: true
         testRunTitle: 'Publish test results for Python $(python.version)'
-    - task: PublishCodeCoverageResults@1
-      inputs:
-        codeCoverageTool: Cobertura
-        summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
-        reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'

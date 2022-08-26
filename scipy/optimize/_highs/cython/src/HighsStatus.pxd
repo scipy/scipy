@@ -5,8 +5,9 @@ from libcpp.string cimport string
 
 cdef extern from "HighsStatus.h" nogil:
     ctypedef enum HighsStatus:
-        HighsStatusOK "HighsStatus::OK"
-        HighsStatusWarning "HighsStatus::Warning"
-        HighsStatusError "HighsStatus::Error"
+        HighsStatusError "HighsStatus::kError" = -1
+        HighsStatusOK "HighsStatus::kOk" = 0
+        HighsStatusWarning "HighsStatus::kWarning" = 1
 
-    string HighsStatusToString(HighsStatus status)
+
+    string highsStatusToString(HighsStatus status)

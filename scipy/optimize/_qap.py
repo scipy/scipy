@@ -1,7 +1,7 @@
 import numpy as np
 import operator
 from . import (linear_sum_assignment, OptimizeResult)
-from .optimize import _check_unknown_options
+from ._optimize import _check_unknown_options
 
 from scipy._lib._util import check_random_state
 import itertools
@@ -112,6 +112,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import quadratic_assignment
     >>> A = np.array([[0, 80, 150, 170], [80, 0, 130, 100],
     ...               [150, 130, 0, 120], [170, 100, 120, 0]])

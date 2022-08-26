@@ -10,9 +10,6 @@ import scipy
 import sys
 import pytest
 
-if hasattr(scipy, 'fft'):
-    raise AssertionError("scipy.fft should require an explicit import")
-
 np.random.seed(1234)
 x = np.random.randn(10) + 1j * np.random.randn(10)
 X = np.fft.fft(x)

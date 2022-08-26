@@ -53,7 +53,7 @@ DEFAULT_ROOT = 'scipy'
 def process_pyx(fromfile, tofile, cwd):
     try:
         from Cython.Compiler.Version import version as cython_version
-        from distutils.version import LooseVersion
+        from scipy._lib import _pep440
 
         # Try to find pyproject.toml
         pyproject_toml = join(dirname(__file__), '..', 'pyproject.toml')
@@ -82,9 +82,9 @@ def process_pyx(fromfile, tofile, cwd):
 
         # Note: we only check lower bound, for upper bound we rely on pip
         # respecting pyproject.toml. Reason: we want to be able to build/test
-        # with more recent Cython locally or on master, upper bound is for
+        # with more recent Cython locally or on main, upper bound is for
         # sdist in a release.
-        if LooseVersion(cython_version) < LooseVersion(min_required_version):
+        if _pep440.parse(cython_version) < _pep440.Version(min_required_version):
             raise Exception('Building SciPy requires Cython >= {}, found '
                             '{}'.format(min_required_version, cython_version))
 
@@ -122,14 +122,13 @@ def process_tempita_pyx(fromfile, tofile, cwd):
     except ImportError as e:
         raise Exception('Building SciPy requires Tempita: '
                         'pip install --user Tempita') from e
-    from_filename = tempita.Template.from_filename
-    template = from_filename(os.path.join(cwd, fromfile),
-                             encoding=sys.getdefaultencoding())
-    pyxcontent = template.substitute()
-    assert fromfile.endswith('.pyx.in')
-    pyxfile = fromfile[:-len('.pyx.in')] + '.pyx'
-    with open(os.path.join(cwd, pyxfile), "w") as f:
-        f.write(pyxcontent)
+    with open(os.path.join(cwd, fromfile), mode='r') as f_in:
+        template = f_in.read()
+        pyxcontent = tempita.sub(template)
+        assert fromfile.endswith('.pyx.in')
+        pyxfile = fromfile[:-len('.in')]
+        with open(os.path.join(cwd, pyxfile), "w", encoding='utf8') as f_out:
+            f_out.write(pyxcontent)
     process_pyx(pyxfile, tofile, cwd)
 
 

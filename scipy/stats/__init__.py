@@ -21,7 +21,7 @@ are:
   also covered by ``scipy.stats``.
 - `Pandas <https://pandas.pydata.org/>`__: tabular data, time series
   functionality, interfaces to other statistical languages.
-- `PyMC3 <https://docs.pymc.io/>`__: Bayesian statistical
+- `PyMC <https://docs.pymc.io/>`__: Bayesian statistical
   modeling, probabilistic machine learning.
 - `scikit-learn <https://scikit-learn.org/>`__: classification, regression,
   model selection.
@@ -85,6 +85,7 @@ Continuous distributions
    genhalflogistic   -- Generalized Half Logistic
    genhyperbolic     -- Generalized Hyperbolic
    geninvgauss       -- Generalized Inverse Gaussian
+   gibrat            -- Gibrat
    gilbrat           -- Gilbrat
    gompertz          -- Gompertz (Truncated Gumbel)
    gumbel_r          -- Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
@@ -142,6 +143,8 @@ Continuous distributions
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
+   truncpareto       -- Truncated Pareto
+   truncweibull_min  -- Truncated minimum Weibull distribution
    tukeylambda       -- Tukey-Lambda
    uniform           -- Uniform
    vonmises          -- Von-Mises (Circular)
@@ -221,6 +224,7 @@ Summary statistics
    describe          -- Descriptive statistics
    gmean             -- Geometric mean
    hmean             -- Harmonic mean
+   pmean             -- Power mean
    kurtosis          -- Fisher or Pearson kurtosis
    mode              -- Modal value
    moment            -- Central moment
@@ -243,9 +247,7 @@ Summary statistics
    mvsdist
    entropy
    differential_entropy
-   median_absolute_deviation
    median_abs_deviation
-   bootstrap
 
 Frequency statistics
 ====================
@@ -254,7 +256,6 @@ Frequency statistics
    :toctree: generated/
 
    cumfreq
-   itemfreq
    percentileofscore
    scoreatpercentile
    relfreq
@@ -314,6 +315,8 @@ Statistical tests
    combine_pvalues
    jarque_bera
    page_trend_test
+   tukey_hsd
+   poisson_means_test
 
 .. autosummary::
    :toctree: generated/
@@ -342,6 +345,15 @@ Quasi-Monte Carlo
 
    stats.qmc
 
+Resampling Methods
+==================
+
+.. autosummary::
+   :toctree: generated/
+
+   bootstrap
+   permutation_test
+   monte_carlo_test
 
 Masked statistics functions
 ===========================
@@ -372,6 +384,7 @@ Transformations
    trim1
    zmap
    zscore
+   gzscore
 
 Statistical distances
 ---------------------
@@ -382,24 +395,37 @@ Statistical distances
    wasserstein_distance
    energy_distance
 
+Sampling
+--------
+
+.. toctree::
+   :maxdepth: 4
+
+   stats.sampling
+
 Random variate generation / CDF Inversion
-=========================================
+-----------------------------------------
 
 .. autosummary::
    :toctree: generated/
 
    rvs_ratio_uniforms
-   NumericalInverseHermite
-   NumericalInversePolynomial
-   TransformedDensityRejection
-   DiscreteAliasUrn
 
-Circular statistical functions
-------------------------------
+Distribution Fitting
+--------------------
 
 .. autosummary::
    :toctree: generated/
 
+   fit
+
+Directional statistical functions
+---------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   directionalmean
    circmean
    circvar
    circstd
@@ -416,6 +442,7 @@ Contingency table functions
    contingency.margins
    contingency.relative_risk
    contingency.association
+   contingency.odds_ratio
    fisher_exact
    barnard_exact
    boschloo_exact
@@ -446,34 +473,40 @@ Warnings / Errors used in :mod:`scipy.stats`
 .. autosummary::
    :toctree: generated/
 
-   F_onewayConstantInputWarning
-   F_onewayBadInputSizesWarning
-   PearsonRConstantInputWarning
-   PearsonRNearConstantInputWarning
-   SpearmanRConstantInputWarning
-   UNURANError
+   DegenerateDataWarning
+   ConstantInputWarning
+   NearConstantInputWarning
+   FitError
 
 """
 
-from .stats import *
+from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
+                               DegenerateDataWarning, FitError)
+from ._stats_py import *
+from ._variation import variation
 from .distributions import *
-from .morestats import *
+from ._morestats import *
 from ._binomtest import binomtest
 from ._binned_statistic import *
-from .kde import gaussian_kde
+from ._kde import gaussian_kde
 from . import mstats
 from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
 from ._censored_data import CensoredData  # noqa
-from ._bootstrap import bootstrap
+from ._resampling import bootstrap, monte_carlo_test, permutation_test
 from ._entropy import *
 from ._hypotests import *
-from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite
-from ._unuran import *  # noqa
+from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
+from ._fit import fit
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import (
+    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, statlib, stats
+)
 
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.

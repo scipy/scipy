@@ -37,7 +37,7 @@ if trapezoid.__doc__:
 # Note: alias kept for backwards compatibility. Rename was done
 # because trapz is a slur in colloquial English (see gh-12924).
 def trapz(y, x=None, dx=1.0, axis=-1):
-    """`An alias of `trapezoid`.
+    """An alias of `trapezoid`.
 
     `trapz` is kept for backwards compatibility. For new code, prefer
     `trapezoid` instead.
@@ -109,7 +109,6 @@ def fixed_quad(func, a, b, args=(), n=5):
     none : None
         Statically returned value of None
 
-
     See Also
     --------
     quad : adaptive quadrature using QUADPACK
@@ -126,6 +125,7 @@ def fixed_quad(func, a, b, args=(), n=5):
     Examples
     --------
     >>> from scipy import integrate
+    >>> import numpy as np
     >>> f = lambda x: x**8
     >>> integrate.fixed_quad(f, 0.0, 1.0, n=4)
     (0.1110884353741496, None)
@@ -232,22 +232,23 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     err : float
         Difference between last two estimates of the integral.
 
-    See also
+    See Also
     --------
-    romberg: adaptive Romberg quadrature
-    fixed_quad: fixed-order Gaussian quadrature
-    quad: adaptive quadrature using QUADPACK
-    dblquad: double integrals
-    tplquad: triple integrals
-    romb: integrator for sampled data
-    simpson: integrator for sampled data
-    cumulative_trapezoid: cumulative integration for sampled data
-    ode: ODE integrator
-    odeint: ODE integrator
+    romberg : adaptive Romberg quadrature
+    fixed_quad : fixed-order Gaussian quadrature
+    quad : adaptive quadrature using QUADPACK
+    dblquad : double integrals
+    tplquad : triple integrals
+    romb : integrator for sampled data
+    simpson : integrator for sampled data
+    cumulative_trapezoid : cumulative integration for sampled data
+    ode : ODE integrator
+    odeint : ODE integrator
 
     Examples
     --------
     >>> from scipy import integrate
+    >>> import numpy as np
     >>> f = lambda x: x**8
     >>> integrate.quadrature(f, 0.0, 1.0)
     (0.11111111111111106, 4.163336342344337e-17)
@@ -289,7 +290,7 @@ def tupleset(t, i, value):
 # Note: alias kept for backwards compatibility. Rename was done
 # because cumtrapz is a slur in colloquial English (see gh-12924).
 def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
-    """`An alias of `cumulative_trapezoid`.
+    """An alias of `cumulative_trapezoid`.
 
     `cumtrapz` is kept for backwards compatibility. For new code, prefer
     `cumulative_trapezoid` instead.
@@ -329,19 +330,20 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     See Also
     --------
     numpy.cumsum, numpy.cumprod
-    quad: adaptive quadrature using QUADPACK
-    romberg: adaptive Romberg quadrature
-    quadrature: adaptive Gaussian quadrature
-    fixed_quad: fixed-order Gaussian quadrature
-    dblquad: double integrals
-    tplquad: triple integrals
-    romb: integrators for sampled data
-    ode: ODE integrators
-    odeint: ODE integrators
+    quad : adaptive quadrature using QUADPACK
+    romberg : adaptive Romberg quadrature
+    quadrature : adaptive Gaussian quadrature
+    fixed_quad : fixed-order Gaussian quadrature
+    dblquad : double integrals
+    tplquad : triple integrals
+    romb : integrators for sampled data
+    ode : ODE integrators
+    odeint : ODE integrators
 
     Examples
     --------
     >>> from scipy import integrate
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
 
     >>> x = np.linspace(-2, 2, num=20)
@@ -408,14 +410,20 @@ def _basic_simpson(y, start, stop, x, dx, axis):
         h = np.diff(x, axis=axis)
         sl0 = tupleset(slice_all, axis, slice(start, stop, step))
         sl1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
-        h0 = h[sl0]
-        h1 = h[sl1]
+        h0 = np.float64(h[sl0])
+        h1 = np.float64(h[sl1])
         hsum = h0 + h1
         hprod = h0 * h1
-        h0divh1 = h0 / h1
-        tmp = hsum/6.0 * (y[slice0] * (2 - 1.0/h0divh1) +
-                          y[slice1] * (hsum * hsum / hprod) +
-                          y[slice2] * (2 - h0divh1))
+        h0divh1 = np.true_divide(h0, h1, out=np.zeros_like(h0), where=h1 != 0)
+        tmp = hsum/6.0 * (y[slice0] *
+                          (2.0 - np.true_divide(1.0, h0divh1,
+                                                out=np.zeros_like(h0divh1),
+                                                where=h0divh1 != 0)) +
+                          y[slice1] * (hsum *
+                                       np.true_divide(hsum, hprod,
+                                                      out=np.zeros_like(hsum),
+                                                      where=hprod != 0)) +
+                          y[slice2] * (2.0 - h0divh1))
         result = np.sum(tmp, axis=axis)
     return result
 
@@ -423,7 +431,7 @@ def _basic_simpson(y, start, stop, x, dx, axis):
 # Note: alias kept for backwards compatibility. simps was renamed to simpson
 # because the former is a slur in colloquial English (see gh-12924).
 def simps(y, x=None, dx=1.0, axis=-1, even='avg'):
-    """`An alias of `simpson`.
+    """An alias of `simpson`.
 
     `simps` is kept for backwards compatibility. For new code, prefer
     `simpson` instead.
@@ -464,16 +472,16 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
 
     See Also
     --------
-    quad: adaptive quadrature using QUADPACK
-    romberg: adaptive Romberg quadrature
-    quadrature: adaptive Gaussian quadrature
-    fixed_quad: fixed-order Gaussian quadrature
-    dblquad: double integrals
-    tplquad: triple integrals
-    romb: integrators for sampled data
-    cumulative_trapezoid: cumulative integration for sampled data
-    ode: ODE integrators
-    odeint: ODE integrators
+    quad : adaptive quadrature using QUADPACK
+    romberg : adaptive Romberg quadrature
+    quadrature : adaptive Gaussian quadrature
+    fixed_quad : fixed-order Gaussian quadrature
+    dblquad : double integrals
+    tplquad : triple integrals
+    romb : integrators for sampled data
+    cumulative_trapezoid : cumulative integration for sampled data
+    ode : ODE integrators
+    odeint : ODE integrators
 
     Notes
     -----
@@ -485,6 +493,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
     Examples
     --------
     >>> from scipy import integrate
+    >>> import numpy as np
     >>> x = np.arange(0, 10)
     >>> y = np.arange(0, 10)
 
@@ -578,7 +587,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     romb : ndarray
         The integrated result for `axis`.
 
-    See also
+    See Also
     --------
     quad : adaptive quadrature using QUADPACK
     romberg : adaptive Romberg quadrature
@@ -594,6 +603,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     Examples
     --------
     >>> from scipy import integrate
+    >>> import numpy as np
     >>> x = np.arange(10, 14.25, 0.25)
     >>> y = np.arange(3, 12)
 
@@ -759,7 +769,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
     Returns
     -------
-    results  : float
+    results : float
         Result of the integration.
 
     Other Parameters
@@ -800,6 +810,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
     >>> from scipy import integrate
     >>> from scipy.special import erf
+    >>> import numpy as np
     >>> gaussian = lambda x: 1/np.sqrt(np.pi) * np.exp(-x**2)
     >>> result = integrate.romberg(gaussian, 0, 1, show=True)
     Romberg integration of <function vfunc at ...> from [0, 1]
@@ -956,6 +967,7 @@ def newton_cotes(rn, equal=0):
     Compute the integral of sin(x) in [0, :math:`\pi`]:
 
     >>> from scipy.integrate import newton_cotes
+    >>> import numpy as np
     >>> def f(x):
     ...     return np.sin(x)
     >>> a = 0

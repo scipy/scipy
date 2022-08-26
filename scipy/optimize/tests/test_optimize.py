@@ -10,6 +10,7 @@ To run it in its simplest form::
 
 """
 import itertools
+import platform
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal,
@@ -19,43 +20,44 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import optimize
+from scipy.optimize._minimize import Bounds, NonlinearConstraint
 from scipy.optimize._minimize import MINIMIZE_METHODS, MINIMIZE_SCALAR_METHODS
 from scipy.optimize._linprog import LINPROG_METHODS
 from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
-from scipy.optimize._differentiable_functions import ScalarFunction
-from scipy.optimize.optimize import MemoizeJac, show_options
+from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
+from scipy.optimize._optimize import MemoizeJac, show_options
 
 
 def test_check_grad():
     # Verify if check_grad is able to estimate the derivative of the
-    # logistic function.
+    # expit (logistic sigmoid) function.
 
-    def logit(x):
+    def expit(x):
         return 1 / (1 + np.exp(-x))
 
-    def der_logit(x):
+    def der_expit(x):
         return np.exp(-x) / (1 + np.exp(-x))**2
 
     x0 = np.array([1.5])
 
-    r = optimize.check_grad(logit, der_logit, x0)
+    r = optimize.check_grad(expit, der_expit, x0)
     assert_almost_equal(r, 0)
-    r = optimize.check_grad(logit, der_logit, x0, 
+    r = optimize.check_grad(expit, der_expit, x0,
                             direction='random', seed=1234)
     assert_almost_equal(r, 0)
 
-    r = optimize.check_grad(logit, der_logit, x0, epsilon=1e-6)
+    r = optimize.check_grad(expit, der_expit, x0, epsilon=1e-6)
     assert_almost_equal(r, 0)
-    r = optimize.check_grad(logit, der_logit, x0, epsilon=1e-6,
+    r = optimize.check_grad(expit, der_expit, x0, epsilon=1e-6,
                             direction='random', seed=1234)
     assert_almost_equal(r, 0)
 
     # Check if the epsilon parameter is being considered.
-    r = abs(optimize.check_grad(logit, der_logit, x0, epsilon=1e-1) - 0)
+    r = abs(optimize.check_grad(expit, der_expit, x0, epsilon=1e-1) - 0)
     assert r > 1e-7
-    r = abs(optimize.check_grad(logit, der_logit, x0, epsilon=1e-1,
+    r = abs(optimize.check_grad(expit, der_expit, x0, epsilon=1e-1,
                                 direction='random', seed=1234) - 0)
     assert r > 1e-7
 
@@ -74,6 +76,11 @@ def test_check_grad():
     assert_raises(ValueError, optimize.check_grad,
                   x_sinx, der_x_sinx, x0,
                   direction='random_projection', seed=1234)
+
+    # checking can be done for derivatives of vector valued functions
+    r = optimize.check_grad(himmelblau_grad, himmelblau_hess, himmelblau_x0,
+                            direction='all', seed=1234)
+    assert r < 5e-7
 
 
 class CheckOptimize:
@@ -526,12 +533,61 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6, rtol=1e-7)
 
 
+def test_maxfev_test():
+    rng = np.random.default_rng(271707100830272976862395227613146332411)
+
+    def cost(x):
+        return rng.random(1) * 1000  # never converged problem
+
+    for imaxfev in [1, 10, 50]:
+        # "TNC" and "L-BFGS-B" also supports max function evaluation, but
+        # these may violate the limit because of evaluating gradients
+        # by numerical differentiation. See the discussion in PR #14805.
+        for method in ['Powell', 'Nelder-Mead']:
+            result = optimize.minimize(cost, rng.random(10),
+                                       method=method,
+                                       options={'maxfev': imaxfev})
+            assert result["nfev"] == imaxfev
+
+
+def test_wrap_scalar_function_with_validation():
+
+    def func_(x):
+        return x
+
+    fcalls, func = optimize._optimize.\
+        _wrap_scalar_function_maxfun_validation(func_, np.asarray(1), 5)
+
+    for i in range(5):
+        func(np.asarray(i))
+        assert fcalls[0] == i+1
+
+    msg = "Too many function calls"
+    with assert_raises(optimize._optimize._MaxFuncCallError, match=msg):
+        func(np.asarray(i))  # exceeded maximum function call
+
+    fcalls, func = optimize._optimize.\
+        _wrap_scalar_function_maxfun_validation(func_, np.asarray(1), 5)
+
+    msg = "The user-provided objective function must return a scalar value."
+    with assert_raises(ValueError, match=msg):
+        func(np.array([1, 1]))
+
+
 def test_obj_func_returns_scalar():
     match = ("The user-provided "
              "objective function must "
              "return a scalar value.")
     with assert_raises(ValueError, match=match):
         optimize.minimize(lambda x: x, np.array([1, 1]), method='BFGS')
+
+
+def test_neldermead_iteration_num():
+    x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+    res = optimize._minimize._minimize_neldermead(optimize.rosen, x0,
+                                                  xatol=1e-8)
+    assert res.nit <= 339
+
 
 def test_neldermead_xatol_fatol():
     # gh4484
@@ -540,9 +596,6 @@ def test_neldermead_xatol_fatol():
 
     optimize._minimize._minimize_neldermead(func, [1, 1], maxiter=2,
                                             xatol=1e-3, fatol=1e-3)
-    assert_warns(DeprecationWarning,
-                 optimize._minimize._minimize_neldermead,
-                 func, [1, 1], xtol=1e-3, ftol=1e-3, maxiter=2)
 
 
 def test_neldermead_adaptive():
@@ -768,7 +821,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
 
-    def test_finite_differences(self):
+    def test_finite_differences_jac(self):
         methods = ['BFGS', 'CG', 'TNC']
         jacs = ['2-point', '3-point', None]
         for method, jac in itertools.product(methods, jacs):
@@ -776,6 +829,32 @@ class TestOptimizeSimple(CheckOptimize):
                                        method=method, jac=jac)
             assert_allclose(self.func(result.x), self.func(self.solution),
                             atol=1e-6)
+
+    def test_finite_differences_hess(self):
+        # test that all the methods that require hess can use finite-difference
+        # For Newton-CG, trust-ncg, trust-krylov the FD estimated hessian is
+        # wrapped in a hessp function
+        # dogleg, trust-exact actually require true hessians at the moment, so
+        # they're excluded.
+        methods = ['trust-constr', 'Newton-CG', 'trust-ncg', 'trust-krylov']
+        hesses = FD_METHODS + (optimize.BFGS,)
+        for method, hess in itertools.product(methods, hesses):
+            if hess is optimize.BFGS:
+                hess = hess()
+            result = optimize.minimize(self.func, self.startparams,
+                                       method=method, jac=self.grad,
+                                       hess=hess)
+            assert result.success
+
+        # check that the methods demand some sort of Hessian specification
+        # Newton-CG creates its own hessp, and trust-constr doesn't need a hess
+        # specified either
+        methods = ['trust-ncg', 'trust-krylov', 'dogleg', 'trust-exact']
+        for method in methods:
+            with pytest.raises(ValueError):
+                optimize.minimize(self.func, self.startparams,
+                                  method=method, jac=self.grad,
+                                  hess=None)
 
     def test_bfgs_gh_2169(self):
         def f(x):
@@ -1033,10 +1112,6 @@ class TestOptimizeSimple(CheckOptimize):
         # Check that arrays passed to callbacks are not modified
         # inplace by the optimizer afterward
 
-        # cobyla doesn't have callback
-        if method == 'cobyla':
-            return
-
         if method in ('fmin_tnc', 'fmin_l_bfgs_b'):
             func = lambda x: (optimize.rosen(x), optimize.rosen_der(x))
         else:
@@ -1054,6 +1129,8 @@ class TestOptimizeSimple(CheckOptimize):
                 kwargs['iter'] = 5
             elif method == 'fmin_tnc':
                 kwargs['maxfun'] = 100
+            elif method in ('fmin', 'fmin_powell'):
+                kwargs['maxiter'] = 3500
             else:
                 kwargs['maxiter'] = 5
         else:
@@ -1107,10 +1184,11 @@ class TestOptimizeSimple(CheckOptimize):
         x0 = np.array([2.0])
         f0 = func(x0)
         jac = bad_grad
+        options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
         if method in ['nelder-mead', 'powell', 'cobyla']:
             jac = None
         sol = optimize.minimize(func, x0, jac=jac, method=method,
-                                options=dict(maxiter=20))
+                                options=options)
         assert_equal(func(sol.x), sol.fun)
 
         if method == 'slsqp':
@@ -1164,6 +1242,21 @@ class TestOptimizeSimple(CheckOptimize):
         # method specific tests
         if method == 'SLSQP':
             assert sol.status == 9  # Iteration limit reached
+
+    @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell',
+                                        'fmin', 'fmin_powell'])
+    def test_runtime_warning(self, method):
+        x0 = np.zeros(10)
+        sf = ScalarFunction(optimize.rosen, x0, (), optimize.rosen_der,
+                            optimize.rosen_hess, None, None)
+        options = {"maxiter": 1, "disp": True}
+        with pytest.warns(RuntimeWarning,
+                          match=r'Maximum number of iterations'):
+            if method.startswith('fmin'):
+                routine = getattr(optimize, method)
+                routine(sf.fun, x0, **options)
+            else:
+                optimize.minimize(sf.fun, x0, method=method, options=options)
 
     def test_respect_maxiter_trust_constr_ineq_constraints(self):
         # special case of minimization with trust-constr and inequality
@@ -1311,6 +1404,7 @@ class TestOptimizeSimple(CheckOptimize):
         funcs = [func, func2]
         grads = [grad] if needs_grad else [grad, None]
         hesss = [hess] if needs_hess else [hess, None]
+        options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
 
         with np.errstate(invalid='ignore'), suppress_warnings() as sup:
             sup.filter(UserWarning, "delta_grad == 0.*")
@@ -1320,7 +1414,7 @@ class TestOptimizeSimple(CheckOptimize):
             for f, g, h in itertools.product(funcs, grads, hesss):
                 count = [0]
                 sol = optimize.minimize(f, x0, jac=g, hess=h, method=method,
-                                        options=dict(maxiter=20))
+                                        options=options)
                 assert_equal(sol.success, False)
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'cg', 'bfgs',
@@ -1348,6 +1442,20 @@ class TestOptimizeSimple(CheckOptimize):
             if np.array_equal(self.trace[i - 1], self.trace[i]):
                 raise RuntimeError(
                     "Duplicate evaluations made by {}".format(method))
+
+
+@pytest.mark.parametrize(
+    'method',
+    ['l-bfgs-b', 'tnc', 'Powell', 'Nelder-Mead']
+)
+def test_minimize_with_scalar(method):
+    # checks that minimize works with a scalar being provided to it.
+    def f(x):
+        return np.sum(x ** 2)
+
+    res = optimize.minimize(f, 17, bounds=[(-100, 100)], method=method)
+    assert res.success
+    assert_allclose(res.x, [0.0], atol=1e-5)
 
 
 class TestLBFGSBBounds:
@@ -1432,6 +1540,14 @@ class TestOptimizeScalar:
         x = optimize.brent(self.fun, brack=(-15, -1, 15))
         assert_allclose(x, self.solution, atol=1e-6)
 
+        message = r"\(f\(xb\) < f\(xa\)\) and \(f\(xb\) < f\(xc\)\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.brent(self.fun, brack=(-1, 0, 1))
+
+        message = r"\(xa < xb\) and \(xb < xc\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.brent(self.fun, brack=(0, -1, 1))
+
     def test_golden(self):
         x = optimize.golden(self.fun)
         assert_allclose(x, self.solution, atol=1e-6)
@@ -1454,6 +1570,14 @@ class TestOptimizeScalar:
             x = optimize.golden(self.fun, maxiter=maxiter, full_output=True)
             nfev0, nfev = x0[2], x[2]
             assert_equal(nfev - nfev0, maxiter)
+
+        message = r"\(f\(xb\) < f\(xa\)\) and \(f\(xb\) < f\(xc\)\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.golden(self.fun, brack=(-1, 0, 1))
+
+        message = r"\(xa < xb\) and \(xb < xc\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.golden(self.fun, brack=(0, -1, 1))
 
     def test_fminbound(self):
         x = optimize.fminbound(self.fun, 0, 1)
@@ -1584,6 +1708,17 @@ class TestOptimizeScalar:
             optimize.minimize_scalar(self.fun, options={"disp": disp})
 
     @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
+    def test_result_attributes(self, method):
+        result = optimize.minimize_scalar(self.fun, method=method,
+                                          bounds=[-10, 10])
+        assert hasattr(result, "x")
+        assert hasattr(result, "success")
+        assert hasattr(result, "message")
+        assert hasattr(result, "fun")
+        assert hasattr(result, "nfev")
+        assert hasattr(result, "nit")
+
+    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
     def test_nan_values(self, method):
         # Check nan values result to failed exit status
         np.random.seed(1234)
@@ -1639,13 +1774,33 @@ class TestNewtonCg:
         assert_allclose(sol.x, himmelblau_xopt, rtol=1e-4)
         assert_allclose(sol.fun, himmelblau_min, atol=1e-4)
 
+    def test_finite_difference(self):
+        x0 = np.array([-1.2, 1.0])
+        sol = optimize.minimize(optimize.rosen, x0,
+                                jac=optimize.rosen_der,
+                                hess='2-point',
+                                tol=1e-5,
+                                method='Newton-CG')
+        assert sol.success, sol.message
+        assert_allclose(sol.x, np.array([1, 1]), rtol=1e-4)
+
+    def test_hessian_update_strategy(self):
+        x0 = np.array([-1.2, 1.0])
+        sol = optimize.minimize(optimize.rosen, x0,
+                                jac=optimize.rosen_der,
+                                hess=optimize.BFGS(),
+                                tol=1e-5,
+                                method='Newton-CG')
+        assert sol.success, sol.message
+        assert_allclose(sol.x, np.array([1, 1]), rtol=1e-4)
+
 
 def test_line_for_search():
     # _line_for_search is only used in _linesearch_powell, which is also
     # tested below. Thus there are more tests of _line_for_search in the
     # test_linesearch_powell_bounded function.
 
-    line_for_search = optimize.optimize._line_for_search
+    line_for_search = optimize._optimize._line_for_search
     # args are x0, alpha, lower_bound, upper_bound
     # returns lmin, lmax
 
@@ -1705,7 +1860,7 @@ def test_line_for_search():
 
 def test_linesearch_powell():
     # helper function in optimize.py, not a public function.
-    linesearch_powell = optimize.optimize._linesearch_powell
+    linesearch_powell = optimize._optimize._linesearch_powell
     # args are func, p, xi, fval, lower_bound=None, upper_bound=None, tol=1e-3
     # returns new_fval, p + direction, direction
     func = lambda x: np.sum((x - np.array([-1., 2., 1.5, -.4]))**2)
@@ -1742,7 +1897,7 @@ def test_linesearch_powell():
 
 def test_linesearch_powell_bounded():
     # helper function in optimize.py, not a public function.
-    linesearch_powell = optimize.optimize._linesearch_powell
+    linesearch_powell = optimize._optimize._linesearch_powell
     # args are func, p, xi, fval, lower_bound=None, upper_bound=None, tol=1e-3
     # returns new_fval, p+direction, direction
     func = lambda x: np.sum((x-np.array([-1., 2., 1.5, -.4]))**2)
@@ -2035,6 +2190,24 @@ class TestBrute:
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
 
+    def test_runtime_warning(self):
+        rng = np.random.default_rng(1234)
+
+        def func(z, *params):
+            return rng.random(1) * 1000  # never converged problem
+
+        with pytest.warns(RuntimeWarning,
+                          match=r'Either final optimization did not succeed'):
+            optimize.brute(func, self.rranges, args=self.params, disp=True)
+
+    def test_coerce_args_param(self):
+        # optimize.brute should coerce non-iterable args to a tuple.
+        def f(x, *args):
+            return x ** args[0]
+
+        resbrute = optimize.brute(f, (slice(-4, 4, .25),), args=2)
+        assert_allclose(resbrute, 0)
+
 
 def test_cobyla_threadsafe():
 
@@ -2241,6 +2414,231 @@ def test_gh12696():
             lambda x: np.array([x**2]), -np.pi, np.pi, disp=False)
 
 
+# --- Test minimize with equal upper and lower bounds --- #
+
+def setup_test_equal_bounds():
+
+    np.random.seed(0)
+    x0 = np.random.rand(4)
+    lb = np.array([0, 2, -1, -1.0])
+    ub = np.array([3, 2, 2, -1.0])
+    i_eb = (lb == ub)
+
+    def check_x(x, check_size=True, check_values=True):
+        if check_size:
+            assert x.size == 4
+        if check_values:
+            assert_allclose(x[i_eb], lb[i_eb])
+
+    def func(x):
+        check_x(x)
+        return optimize.rosen(x)
+
+    def grad(x):
+        check_x(x)
+        return optimize.rosen_der(x)
+
+    def callback(x, *args):
+        check_x(x)
+
+    def constraint1(x):
+        check_x(x, check_values=False)
+        return x[0:1] - 1
+
+    def jacobian1(x):
+        check_x(x, check_values=False)
+        dc = np.zeros_like(x)
+        dc[0] = 1
+        return dc
+
+    def constraint2(x):
+        check_x(x, check_values=False)
+        return x[2:3] - 0.5
+
+    def jacobian2(x):
+        check_x(x, check_values=False)
+        dc = np.zeros_like(x)
+        dc[2] = 1
+        return dc
+
+    c1a = NonlinearConstraint(constraint1, -np.inf, 0)
+    c1b = NonlinearConstraint(constraint1, -np.inf, 0, jacobian1)
+    c2a = NonlinearConstraint(constraint2, -np.inf, 0)
+    c2b = NonlinearConstraint(constraint2, -np.inf, 0, jacobian2)
+
+    # test using the three methods that accept bounds, use derivatives, and
+    # have some trouble when bounds fix variables
+    methods = ('L-BFGS-B', 'SLSQP', 'TNC')
+
+    # test w/out gradient, w/ gradient, and w/ combined objective/gradient
+    kwds = ({"fun": func, "jac": False},
+            {"fun": func, "jac": grad},
+            {"fun": (lambda x: (func(x), grad(x))),
+             "jac": True})
+
+    # test with both old- and new-style bounds
+    bound_types = (lambda lb, ub: list(zip(lb, ub)),
+                   Bounds)
+
+    # Test for many combinations of constraints w/ and w/out jacobian
+    # Pairs in format: (test constraints, reference constraints)
+    # (always use analytical jacobian in reference)
+    constraints = ((None, None), ([], []),
+                   (c1a, c1b), (c2b, c2b),
+                   ([c1b], [c1b]), ([c2a], [c2b]),
+                   ([c1a, c2a], [c1b, c2b]),
+                   ([c1a, c2b], [c1b, c2b]),
+                   ([c1b, c2b], [c1b, c2b]))
+
+    # test with and without callback function
+    callbacks = (None, callback)
+
+    data = {"methods": methods, "kwds": kwds, "bound_types": bound_types,
+            "constraints": constraints, "callbacks": callbacks,
+            "lb": lb, "ub": ub, "x0": x0, "i_eb": i_eb}
+
+    return data
+
+
+eb_data = setup_test_equal_bounds()
+
+
+# This test is about handling fixed variables, not the accuracy of the solvers
+@pytest.mark.xfail_on_32bit("Failures due to floating point issues, not logic")
+@pytest.mark.parametrize('method', eb_data["methods"])
+@pytest.mark.parametrize('kwds', eb_data["kwds"])
+@pytest.mark.parametrize('bound_type', eb_data["bound_types"])
+@pytest.mark.parametrize('constraints', eb_data["constraints"])
+@pytest.mark.parametrize('callback', eb_data["callbacks"])
+def test_equal_bounds(method, kwds, bound_type, constraints, callback):
+    """
+    Tests that minimizers still work if (bounds.lb == bounds.ub).any()
+    gh12502 - Divide by zero in Jacobian numerical differentiation when
+    equality bounds constraints are used
+    """
+    # GH-15051; slightly more skips than necessary; hopefully fixed by GH-14882
+    if (platform.machine() == 'aarch64' and method == "TNC"
+            and kwds["jac"] is False and callback is not None):
+        pytest.skip('Tolerance violation on aarch')
+
+    lb, ub = eb_data["lb"], eb_data["ub"]
+    x0, i_eb = eb_data["x0"], eb_data["i_eb"]
+
+    test_constraints, reference_constraints = constraints
+    if test_constraints and not method == 'SLSQP':
+        pytest.skip('Only SLSQP supports nonlinear constraints')
+    # reference constraints always have analytical jacobian
+    # if test constraints are not the same, we'll need finite differences
+    fd_needed = (test_constraints != reference_constraints)
+
+    bounds = bound_type(lb, ub)  # old- or new-style
+
+    kwds.update({"x0": x0, "method": method, "bounds": bounds,
+                 "constraints": test_constraints, "callback": callback})
+    res = optimize.minimize(**kwds)
+
+    expected = optimize.minimize(optimize.rosen, x0, method=method,
+                                 jac=optimize.rosen_der, bounds=bounds,
+                                 constraints=reference_constraints)
+
+    # compare the output of a solution with FD vs that of an analytic grad
+    assert res.success
+    assert_allclose(res.fun, expected.fun, rtol=1e-6)
+    assert_allclose(res.x, expected.x, rtol=5e-4)
+
+    if fd_needed or kwds['jac'] is False:
+        expected.jac[i_eb] = np.nan
+    assert res.jac.shape[0] == 4
+    assert_allclose(res.jac[i_eb], expected.jac[i_eb], rtol=1e-6)
+
+    if not (kwds['jac'] or test_constraints or isinstance(bounds, Bounds)):
+        # compare the output to an equivalent FD minimization that doesn't
+        # need factorization
+        def fun(x):
+            new_x = np.array([np.nan, 2, np.nan, -1])
+            new_x[[0, 2]] = x
+            return optimize.rosen(new_x)
+
+        fd_res = optimize.minimize(fun,
+                                   x0[[0, 2]],
+                                   method=method,
+                                   bounds=bounds[::2])
+        assert_allclose(res.fun, fd_res.fun)
+        # TODO this test should really be equivalent to factorized version
+        # above, down to res.nfev. However, testing found that when TNC is
+        # called with or without a callback the output is different. The two
+        # should be the same! This indicates that the TNC callback may be
+        # mutating something when it should't.
+        assert_allclose(res.x[[0, 2]], fd_res.x, rtol=2e-6)
+
+
+@pytest.mark.parametrize('method', eb_data["methods"])
+def test_all_bounds_equal(method):
+    # this only tests methods that have parameters factored out when lb==ub
+    # it does not test other methods that work with bounds
+    def f(x, p1=1):
+        return np.linalg.norm(x) + p1
+
+    bounds = [(1, 1), (2, 2)]
+    x0 = (1.0, 3.0)
+    res = optimize.minimize(f, x0, bounds=bounds, method=method)
+    assert res.success
+    assert_allclose(res.fun, f([1.0, 2.0]))
+    assert res.nfev == 1
+    assert res.message == 'All independent variables were fixed by bounds.'
+
+    args = (2,)
+    res = optimize.minimize(f, x0, bounds=bounds, method=method, args=args)
+    assert res.success
+    assert_allclose(res.fun, f([1.0, 2.0], 2))
+
+    if method.upper() == 'SLSQP':
+        def con(x):
+            return np.sum(x)
+        nlc = NonlinearConstraint(con, -np.inf, 0.0)
+        res = optimize.minimize(
+            f, x0, bounds=bounds, method=method, constraints=[nlc]
+        )
+        assert res.success is False
+        assert_allclose(res.fun, f([1.0, 2.0]))
+        assert res.nfev == 1
+        message = "All independent variables were fixed by bounds, but"
+        assert res.message.startswith(message)
+
+        nlc = NonlinearConstraint(con, -np.inf, 4)
+        res = optimize.minimize(
+            f, x0, bounds=bounds, method=method, constraints=[nlc]
+        )
+        assert res.success is True
+        assert_allclose(res.fun, f([1.0, 2.0]))
+        assert res.nfev == 1
+        message = "All independent variables were fixed by bounds at values"
+        assert res.message.startswith(message)
+
+
+def test_eb_constraints():
+    # make sure constraint functions aren't overwritten when equal bounds
+    # are employed, and a parameter is factored out. GH14859
+    def f(x):
+        return x[0]**3 + x[1]**2 + x[2]*x[3]
+
+    def cfun(x):
+        return x[0] + x[1] + x[2] + x[3] - 40
+
+    constraints = [{'type': 'ineq', 'fun': cfun}]
+
+    bounds = [(0, 20)] * 4
+    bounds[1] = (5, 5)
+    optimize.minimize(
+        f,
+        x0=[1, 2, 3, 4],
+        method='SLSQP',
+        bounds=bounds,
+        constraints=constraints,
+    )
+    assert constraints[0]['fun'] == cfun
+
+
 def test_show_options():
     solver_methods = {
         'minimize': MINIMIZE_METHODS,
@@ -2310,3 +2708,37 @@ def test_x_overwritten_user_function():
             hess = fquad_hess
         res = optimize.minimize(fquad, x0, method=meth, jac=jac, hess=hess)
         assert_allclose(res.x, np.arange(np.size(x0)), atol=2e-4)
+
+
+class TestGlobalOptimization:
+
+    def test_optimize_result_attributes(self):
+        def func(x):
+            return x ** 2
+
+        # Note that `brute` solver does not return `OptimizeResult`
+        results = [optimize.basinhopping(func, x0=1),
+                   optimize.differential_evolution(func, [(-4, 4)]),
+                   optimize.shgo(func, [(-4, 4)]),
+                   optimize.dual_annealing(func, [(-4, 4)]),
+                   optimize.direct(func, [(-4, 4)]),
+                   ]
+
+        for result in results:
+            assert isinstance(result, optimize.OptimizeResult)
+            assert hasattr(result, "x")
+            assert hasattr(result, "success")
+            assert hasattr(result, "message")
+            assert hasattr(result, "fun")
+            assert hasattr(result, "nfev")
+            assert hasattr(result, "nit")
+
+
+def test_approx_fprime():
+    # check that approx_fprime (serviced by approx_derivative) works for
+    # jac and hess
+    g = optimize.approx_fprime(himmelblau_x0, himmelblau)
+    assert_allclose(g, himmelblau_grad(himmelblau_x0), rtol=5e-6)
+
+    h = optimize.approx_fprime(himmelblau_x0, himmelblau_grad)
+    assert_allclose(h, himmelblau_hess(himmelblau_x0), rtol=5e-6)

@@ -1,18 +1,25 @@
 from collections import namedtuple
 from dataclasses import make_dataclass
+from math import comb
 import numpy as np
 import warnings
 from itertools import combinations
 import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
+from ._common import ConfidenceInterval
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
-from . import _wilcoxon_data
-from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
+from scipy.fft import ifft
+from ._hypotests_pythran import _a_ij_Aij_Dij2
+from ._hypotests_pythran import (
+    _concordant_pairs as _P, _discordant_pairs as _Q
+)
+from scipy.stats import _stats_py
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
-           'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp']
+           'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
+           'tukey_hsd', 'poisson_means_test']
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -139,6 +146,211 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     return Epps_Singleton_2sampResult(w, p)
 
 
+def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
+    r"""
+    Performs the Poisson means test, AKA the "E-test".
+
+    This is a test of the null hypothesis that the difference between means of
+    two Poisson distributions is `diff`. The samples are provided as the
+    number of events `k1` and `k2` observed within measurement intervals
+    (e.g. of time, space, number of observations) of sizes `n1` and `n2`.
+
+    Parameters
+    ----------
+    k1 : int
+        Number of events observed from distribution 1.
+    n1: float
+        Size of sample from distribution 1.
+    k2 : int
+        Number of events observed from distribution 2.
+    n2 : float
+        Size of sample from distribution 2.
+    diff : float, default=0
+        The hypothesized difference in means between the distributions
+        underlying the samples.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided': the difference between distribution means is not
+            equal to `diff`
+          * 'less': the difference between distribution means is less than
+            `diff`
+          * 'greater': the difference between distribution means is greater
+            than `diff`
+
+    Returns
+    -------
+    statistic : float
+        The test statistic (see [1]_ equation 3.3).
+    pvalue : float
+        The probability of achieving such an extreme value of the test
+        statistic under the null hypothesis.
+
+    Notes
+    -----
+
+    Let:
+
+    .. math:: X_1 \sim \mbox{Poisson}(\mathtt{n1}\lambda_1)
+
+    be a random variable independent of
+
+    .. math:: X_2  \sim \mbox{Poisson}(\mathtt{n2}\lambda_2)
+
+    and let ``k1`` and ``k2`` be the observed values of :math:`X_1`
+    and :math:`X_2`, respectively. Then `poisson_means_test` uses the number
+    of observed events ``k1`` and ``k2`` from samples of size ``n1`` and
+    ``n2``, respectively, to test the null hypothesis that
+
+    .. math::
+       H_0: \lambda_1 - \lambda_2 = \mathtt{diff}
+
+    A benefit of the E-test is that it has good power for small sample sizes,
+    which can reduce sampling costs [1]_. It has been evaluated and determined
+    to be more powerful than the comparable C-test, sometimes referred to as
+    the Poisson exact test.
+
+    References
+    ----------
+    .. [1]  Krishnamoorthy, K., & Thomson, J. (2004). A more powerful test for
+       comparing two Poisson means. Journal of Statistical Planning and
+       Inference, 119(1), 23-35.
+
+    .. [2]  Przyborowski, J., & Wilenski, H. (1940). Homogeneity of results in
+       testing samples from Poisson series: With an application to testing
+       clover seed for dodder. Biometrika, 31(3/4), 313-323.
+
+    Examples
+    --------
+
+    Suppose that a gardener wishes to test the number of dodder (weed) seeds
+    in a sack of clover seeds that they buy from a seed company. It has
+    previously been established that the number of dodder seeds in clover
+    follows the Poisson distribution.
+
+    A 100 gram sample is drawn from the sack before being shipped to the
+    gardener. The sample is analyzed, and it is found to contain no dodder
+    seeds; that is, `k1` is 0. However, upon arrival, the gardener draws
+    another 100 gram sample from the sack. This time, three dodder seeds are
+    found in the sample; that is, `k2` is 3. The gardener would like to
+    know if the difference is significant and not due to chance. The
+    null hypothesis is that the difference between the two samples is merely
+    due to chance, or that :math:`\lambda_1 - \lambda_2 = \mathtt{diff}`
+    where :math:`\mathtt{diff} = 0`. The alternative hypothesis is that the
+    difference is not due to chance, or :math:`\lambda_1 - \lambda_2 \ne 0`.
+    The gardener selects a significance level of 5% to reject the null
+    hypothesis in favor of the alternative [2]_.
+
+    >>> import scipy.stats as stats
+    >>> res = stats.poisson_means_test(0, 100, 3, 100)
+    >>> res.statistic, res.pvalue
+    (-1.7320508075688772, 0.08837900929018157)
+
+    The p-value is .088, indicating a near 9% chance of observing a value of
+    the test statistic under the null hypothesis. This exceeds 5%, so the
+    gardener does not reject the null hypothesis as the difference cannot be
+    regarded as significant at this level.
+    """
+
+    _poisson_means_test_iv(k1, n1, k2, n2, diff, alternative)
+
+    # "for a given k_1 and k_2, an estimate of \lambda_2 is given by" [1] (3.4)
+    lmbd_hat2 = ((k1 + k2) / (n1 + n2) - diff * n1 / (n1 + n2))
+
+    # "\hat{\lambda_{2k}} may be less than or equal to zero ... and in this
+    # case the null hypothesis cannot be rejected ... [and] it is not necessary
+    # to compute the p-value". [1] page 26 below eq. (3.6).
+    if lmbd_hat2 <= 0:
+        return _stats_py.SignificanceResult(0, 1)
+
+    # The unbiased variance estimate [1] (3.2)
+    var = k1 / (n1 ** 2) + k2 / (n2 ** 2)
+
+    # The _observed_ pivot statistic from the input. It follows the
+    # unnumbered equation following equation (3.3) This is used later in
+    # comparison with the computed pivot statistics in an indicator function.
+    t_k1k2 = (k1 / n1 - k2 / n2 - diff) / np.sqrt(var)
+
+    # Equation (3.5) of [1] is lengthy, so it is broken into several parts,
+    # beginning here. Note that the probability mass function of poisson is
+    # exp^(-\mu)*\mu^k/k!, so and this is called with shape \mu, here noted
+    # here as nlmbd_hat*. The strategy for evaluating the double summation in
+    # (3.5) is to create two arrays of the values of the two products inside
+    # the summation and then broadcast them together into a matrix, and then
+    # sum across the entire matrix.
+
+    # Compute constants (as seen in the first and second separated products in
+    # (3.5).). (This is the shape (\mu) parameter of the poisson distribution.)
+    nlmbd_hat1 = n1 * (lmbd_hat2 + diff)
+    nlmbd_hat2 = n2 * lmbd_hat2
+
+    # Determine summation bounds for tail ends of distribution rather than
+    # summing to infinity. `x1*` is for the outer sum and `x2*` is the inner
+    # sum.
+    x1_lb, x1_ub = distributions.poisson.ppf([1e-10, 1 - 1e-16], nlmbd_hat1)
+    x2_lb, x2_ub = distributions.poisson.ppf([1e-10, 1 - 1e-16], nlmbd_hat2)
+
+    # Construct arrays to function as the x_1 and x_2 counters on the summation
+    # in (3.5). `x1` is in columns and `x2` is in rows to allow for
+    # broadcasting.
+    x1 = np.arange(x1_lb, x1_ub + 1)
+    x2 = np.arange(x2_lb, x2_ub + 1)[:, None]
+
+    # These are the two products in equation (3.5) with `prob_x1` being the
+    # first (left side) and `prob_x2` being the second (right side). (To
+    # make as clear as possible: the 1st contains a "+ d" term, the 2nd does
+    # not.)
+    prob_x1 = distributions.poisson.pmf(x1, nlmbd_hat1)
+    prob_x2 = distributions.poisson.pmf(x2, nlmbd_hat2)
+
+    # compute constants for use in the the "pivot statistic" per the
+    # unnumbered equation following (3.3).
+    lmbd_x1 = x1 / n1
+    lmbd_x2 = x2 / n2
+    lmbds_diff = lmbd_x1 - lmbd_x2 - diff
+    var_x1x2 = lmbd_x1 / n1 + lmbd_x2 / n2
+
+    # This is the 'pivot statistic' for use in the indicator of the summation
+    # (left side of "I[.]").
+    with np.errstate(invalid='ignore', divide='ignore'):
+        t_x1x2 = lmbds_diff / np.sqrt(var_x1x2)
+
+    # `[indicator]` implements the "I[.] ... the indicator function" per
+    # the paragraph following equation (3.5).
+    if alternative == 'two-sided':
+        indicator = np.abs(t_x1x2) >= np.abs(t_k1k2)
+    elif alternative == 'less':
+        indicator = t_x1x2 <= t_k1k2
+    else:
+        indicator = t_x1x2 >= t_k1k2
+
+    # Multiply all combinations of the products together, exclude terms
+    # based on the `indicator` and then sum. (3.5)
+    pvalue = np.sum((prob_x1 * prob_x2)[indicator])
+    return _stats_py.SignificanceResult(t_k1k2, pvalue)
+
+
+def _poisson_means_test_iv(k1, n1, k2, n2, diff, alternative):
+    # """check for valid types and values of input to `poisson_mean_test`."""
+    if k1 != int(k1) or k2 != int(k2):
+        raise TypeError('`k1` and `k2` must be integers.')
+
+    count_err = '`k1` and `k2` must be greater than or equal to 0.'
+    if k1 < 0 or k2 < 0:
+        raise ValueError(count_err)
+
+    if n1 <= 0 or n2 <= 0:
+        raise ValueError('`n1` and `n2` must be greater than 0.')
+
+    if diff < 0:
+        raise ValueError('diff must be greater than or equal to 0.')
+
+    alternatives = {'two-sided', 'less', 'greater'}
+    if alternative.lower() not in alternatives:
+        raise ValueError(f"Alternative must be one of '{alternatives}'.")
+
+
 class CramerVonMisesResult:
     def __init__(self, statistic, pvalue):
         self.statistic = statistic
@@ -151,7 +363,7 @@ class CramerVonMisesResult:
 
 def _psi1_mod(x):
     """
-    psi1 is defined in equation 1.10 in Csorgo, S. and Faraway, J. (1996).
+    psi1 is defined in equation 1.10 in Csörgő, S. and Faraway, J. (1996).
     This implements a modified version by excluding the term V(x) / 12
     (here: _cdf_cvm_inf(x) / 12) to avoid evaluating _cdf_cvm_inf(x)
     twice in _cdf_cvm.
@@ -203,7 +415,7 @@ def _cdf_cvm_inf(x):
     """
     Calculate the cdf of the Cramér-von Mises statistic (infinite sample size).
 
-    See equation 1.2 in Csorgo, S. and Faraway, J. (1996).
+    See equation 1.2 in Csörgő, S. and Faraway, J. (1996).
 
     Implementation based on MAPLE code of Julian Faraway and R code of the
     function pCvM in the package goftest (v1.1.1), permission granted
@@ -240,12 +452,16 @@ def _cdf_cvm(x, n=None):
     Calculate the cdf of the Cramér-von Mises statistic for a finite sample
     size n. If N is None, use the asymptotic cdf (n=inf).
 
-    See equation 1.8 in Csorgo, S. and Faraway, J. (1996) for finite samples,
+    See equation 1.8 in Csörgő, S. and Faraway, J. (1996) for finite samples,
     1.2 for the asymptotic cdf.
 
     The function is not expected to be accurate for large values of x, say
     x > 2, when the cdf is very close to 1 and it might return values > 1
-    in that case, e.g. _cdf_cvm(2.0, 12) = 1.0000027556716846.
+    in that case, e.g. _cdf_cvm(2.0, 12) = 1.0000027556716846. Moreover, it
+    is not accurate for small values of n, especially close to the bounds of
+    the distribution's domain, [1/(12*n), n/3], where the value jumps to 0
+    and 1, respectively. These are limitations of the approximation by Csörgő
+    and Faraway (1996) implemented in this function.
     """
     x = np.asarray(x)
     if n is None:
@@ -312,7 +528,7 @@ def cramervonmises(rvs, cdf, args=()):
     ----------
     .. [1] Cramér-von Mises criterion, Wikipedia,
            https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion
-    .. [2] Csorgo, S. and Faraway, J. (1996). The Exact and Asymptotic
+    .. [2] Csörgő, S. and Faraway, J. (1996). The Exact and Asymptotic
            Distribution of Cramér-von Mises Statistics. Journal of the
            Royal Statistical Society, pp. 221-234.
 
@@ -323,6 +539,7 @@ def cramervonmises(rvs, cdf, args=()):
     were, in fact, drawn from the standard normal distribution. We choose a
     significance level of alpha=0.05.
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(size=500, random_state=rng)
@@ -382,18 +599,46 @@ def cramervonmises(rvs, cdf, args=()):
 
 def _get_wilcoxon_distr(n):
     """
-    Distribution of counts of the Wilcoxon ranksum statistic r_plus (sum of
-    ranks of positive differences).
-    Returns an array with the counts/frequencies of all the possible ranks
+    Distribution of probability of the Wilcoxon ranksum statistic r_plus (sum
+    of ranks of positive differences).
+    Returns an array with the probabilities of all the possible ranks
     r = 0, ..., n*(n+1)/2
     """
-    cnt = _wilcoxon_data.COUNTS.get(n)
+    c = np.ones(1, dtype=np.double)
+    for k in range(1, n + 1):
+        prev_c = c
+        c = np.zeros(k * (k + 1) // 2 + 1, dtype=np.double)
+        m = len(prev_c)
+        c[:m] = prev_c * 0.5
+        c[-m:] += prev_c * 0.5
+    return c
 
-    if cnt is None:
-        raise ValueError("The exact distribution of the Wilcoxon test "
-                         "statistic is not implemented for n={}".format(n))
 
-    return np.array(cnt, dtype=int)
+def _get_wilcoxon_distr2(n):
+    """
+    Distribution of probability of the Wilcoxon ranksum statistic r_plus (sum
+    of ranks of positive differences).
+    Returns an array with the probabilities of all the possible ranks
+    r = 0, ..., n*(n+1)/2
+    This is a slower reference function
+    References
+    ----------
+    .. [1] 1. Harris T, Hardin JW. Exact Wilcoxon Signed-Rank and Wilcoxon
+        Mann-Whitney Ranksum Tests. The Stata Journal. 2013;13(2):337-343.
+    """
+    ai = np.arange(1, n+1)[:, None]
+    t = n*(n+1)/2
+    q = 2*t
+    j = np.arange(q)
+    theta = 2*np.pi/q*j
+    phi_sp = np.prod(np.cos(theta*ai), axis=0)
+    phi_s = np.exp(1j*theta*t) * phi_sp
+    p = np.real(ifft(phi_s))
+    res = np.zeros(int(t)+1)
+    res[:-1:] = p[::2]
+    res[0] /= 2
+    res[-1] = res[0]
+    return res
 
 
 def _tau_b(A):
@@ -444,7 +689,7 @@ def _somers_d(A, alternative='two-sided'):
     with np.errstate(divide='ignore'):
         Z = (PA - QA)/(4*(S))**0.5
 
-    _, p = scipy.stats.stats._normtest_finish(Z, alternative)
+    _, p = scipy.stats._stats_py._normtest_finish(Z, alternative)
 
     return d, p
 
@@ -484,10 +729,10 @@ def somersd(x, y=None, alternative='two-sided'):
 
     Parameters
     ----------
-    x: array_like
+    x : array_like
         1D array of rankings, treated as the (row) independent variable.
         Alternatively, a 2D contingency table.
-    y: array_like, optional
+    y : array_like, optional
         If `x` is a 1D array of rankings, `y` is a 1D array of rankings of the
         same length, treated as the (column) dependent variable.
         If `x` is 2D, `y` is ignored.
@@ -630,6 +875,7 @@ def somersd(x, y=None, alternative='two-sided'):
     return SomersDResult(d, p, table)
 
 
+# This could be combined with `_all_partitions` in `_resampling.py`
 def _all_partitions(nx, ny):
     """
     Partition a set of indices into two fixed-length sets in all possible ways
@@ -976,11 +1222,15 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     is a uniformly more powerful alternative to Fisher's exact test
     for 2x2 contingency tables.
 
+    Boschloo's exact test uses the p-value of Fisher's exact test as a
+    statistic, and Boschloo's p-value is the probability under the null
+    hypothesis of observing such an extreme value of this statistic.
+
     Let's define :math:`X_0` a 2x2 matrix representing the observed sample,
     where each column stores the binomial experiment, as in the example
     below. Let's also define :math:`p_1, p_2` the theoretical binomial
     probabilities for  :math:`x_{11}` and :math:`x_{12}`. When using
-    Boschloo exact test, we can assert three different null hypotheses :
+    Boschloo exact test, we can assert three different alternative hypotheses:
 
     - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 < p_2`,
       with `alternative` = "less"
@@ -989,14 +1239,15 @@ def boschloo_exact(table, alternative="two-sided", n=32):
       with `alternative` = "greater"
 
     - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 \neq p_2`,
-      with `alternative` = "two-sided" (default one)
+      with `alternative` = "two-sided" (default)
 
-    Boschloo's exact test uses the p-value of Fisher's exact test as a
-    statistic, and Boschloo's p-value is the probability under the null
-    hypothesis of observing such an extreme value of this statistic.
-
-    Boschloo's and Barnard's are both more powerful than Fisher's exact
-    test.
+    There are multiple conventions for computing a two-sided p-value when the
+    null distribution is asymmetric. Here, we apply the convention that the
+    p-value of a two-sided test is twice the minimum of the p-values of the
+    one-sided tests (clipped to 1.0). Note that `fisher_exact` follows a
+    different convention, so for a given `table`, the statistic reported by
+    `boschloo_exact` may differ from the p-value reported by `fisher_exact`
+    when ``alternative='two-sided'``.
 
     .. versionadded:: 1.7.0
 
@@ -1096,7 +1347,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
 
         # Two-sided p-value is defined as twice the minimum of the one-sided
         # p-values
-        pvalue = 2 * res.pvalue
+        pvalue = np.clip(2 * res.pvalue, a_min=0, a_max=1)
         return BoschlooExactResult(res.statistic, pvalue)
     else:
         msg = (
@@ -1222,30 +1473,56 @@ def _get_binomial_log_p_value_with_nuisance_param(
     return -log_pvalue
 
 
-def _pval_cvm_2samp_exact(s, nx, ny):
+def _pval_cvm_2samp_exact(s, m, n):
     """
     Compute the exact p-value of the Cramer-von Mises two-sample test
-    for a given value s (float) of the test statistic by enumerating
-    all possible combinations. nx and ny are the sizes of the samples.
+    for a given value s of the test statistic.
+    m and n are the sizes of the samples.
+
+    [1] Y. Xiao, A. Gordon, and A. Yakovlev, "A C++ Program for
+        the Cramér-Von Mises Two-Sample Test", J. Stat. Soft.,
+        vol. 17, no. 8, pp. 1-15, Dec. 2006.
+    [2] T. W. Anderson "On the Distribution of the Two-Sample Cramer-von Mises
+        Criterion," The Annals of Mathematical Statistics, Ann. Math. Statist.
+        33(3), 1148-1159, (September, 1962)
     """
-    rangex = np.arange(nx)
-    rangey = np.arange(ny)
 
-    us = []
+    # [1, p. 3]
+    lcm = np.lcm(m, n)
+    # [1, p. 4], below eq. 3
+    a = lcm // m
+    b = lcm // n
+    # Combine Eq. 9 in [2] with Eq. 2 in [1] and solve for $\zeta$
+    # Hint: `s` is $U$ in [2], and $T_2$ in [1] is $T$ in [2]
+    mn = m * n
+    zeta = lcm ** 2 * (m + n) * (6 * s - mn * (4 * mn - 1)) // (6 * mn ** 2)
 
-    # x and y are all possible partitions of ranks from 0 to nx + ny - 1
-    # into two sets of length nx and ny
-    # Here, ranks are from 0 to nx + ny - 1 instead of 1 to nx + ny, but
-    # this does not change the value of the statistic.
-    for x, y in _all_partitions(nx, ny):
-        # compute the statistic
-        u = nx * np.sum((x - rangex)**2)
-        u += ny * np.sum((y - rangey)**2)
-        us.append(u)
+    # bound maximum value that may appear in `gs` (remember both rows!)
+    zeta_bound = lcm**2 * (m + n)  # bound elements in row 1
+    combinations = comb(m + n, m)  # sum of row 2
+    max_gs = max(zeta_bound, combinations)
+    dtype = np.min_scalar_type(max_gs)
 
-    # compute the values of u and the frequencies
-    u, cnt = np.unique(us, return_counts=True)
-    return np.sum(cnt[u >= s]) / np.sum(cnt)
+    # the frequency table of $g_{u, v}^+$ defined in [1, p. 6]
+    gs = ([np.array([[0], [1]], dtype=dtype)]
+          + [np.empty((2, 0), dtype=dtype) for _ in range(m)])
+    for u in range(n + 1):
+        next_gs = []
+        tmp = np.empty((2, 0), dtype=dtype)
+        for v, g in enumerate(gs):
+            # Calculate g recursively with eq. 11 in [1]. Even though it
+            # doesn't look like it, this also does 12/13 (all of Algorithm 1).
+            vi, i0, i1 = np.intersect1d(tmp[0], g[0], return_indices=True)
+            tmp = np.concatenate([
+                np.stack([vi, tmp[1, i0] + g[1, i1]]),
+                np.delete(tmp, i0, 1),
+                np.delete(g, i1, 1)
+            ], 1)
+            tmp[0] += (a * v - b * u) ** 2
+            next_gs.append(tmp)
+        gs = next_gs
+    value, freq = gs[m]
+    return np.float64(np.sum(freq[value >= zeta]) / combinations)
 
 
 def cramervonmises_2samp(x, y, method='auto'):
@@ -1290,10 +1567,8 @@ def cramervonmises_2samp(x, y, method='auto'):
     - ``exact``: The exact p-value is computed by enumerating all
       possible combinations of the test statistic, see [2]_.
 
-    The exact calculation will be very slow even for moderate sample
-    sizes as the number of combinations increases rapidly with the
-    size of the samples. If ``method=='auto'``, the exact approach
-    is used if both samples contain less than 10 observations,
+    If ``method=='auto'``, the exact approach is used
+    if both samples contain equal to or less than 20 observations,
     otherwise the asymptotic distribution is used.
 
     If the underlying distribution is not continuous, the p-value is likely to
@@ -1315,6 +1590,7 @@ def cramervonmises_2samp(x, y, method='auto'):
     ``scipy.stats.norm.rvs`` have the same distribution. We choose a
     significance level of alpha=0.05.
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(size=100, random_state=rng)
@@ -1360,7 +1636,7 @@ def cramervonmises_2samp(x, y, method='auto'):
     ny = len(ya)
 
     if method == 'auto':
-        if max(nx, ny) > 10:
+        if max(nx, ny) > 20:
             method = 'asymptotic'
         else:
             method = 'exact'
@@ -1400,3 +1676,327 @@ def cramervonmises_2samp(x, y, method='auto'):
             p = max(0, 1. - _cdf_cvm_inf(tn))
 
     return CramerVonMisesResult(statistic=t, pvalue=p)
+
+
+class TukeyHSDResult:
+    """Result of `scipy.stats.tukey_hsd`.
+
+    Attributes
+    ----------
+    statistic : float ndarray
+        The computed statistic of the test for each comparison. The element
+        at index ``(i, j)`` is the statistic for the comparison between groups
+        ``i`` and ``j``.
+    pvalue : float ndarray
+        The associated p-value from the studentized range distribution. The
+        element at index ``(i, j)`` is the p-value for the comparison
+        between groups ``i`` and ``j``.
+
+    Notes
+    -----
+    The string representation of this object displays the most recently
+    calculated confidence interval, and if none have been previously
+    calculated, it will evaluate ``confidence_interval()``.
+
+    References
+    ----------
+    .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
+           Method."
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
+           28 November 2020.
+    """
+
+    def __init__(self, statistic, pvalue, _nobs, _ntreatments, _stand_err):
+        self.statistic = statistic
+        self.pvalue = pvalue
+        self._ntreatments = _ntreatments
+        self._nobs = _nobs
+        self._stand_err = _stand_err
+        self._ci = None
+        self._ci_cl = None
+
+    def __str__(self):
+        # Note: `__str__` prints the confidence intervals from the most
+        # recent call to `confidence_interval`. If it has not been called,
+        # it will be called with the default CL of .95.
+        if self._ci is None:
+            self.confidence_interval(confidence_level=.95)
+        s = ("Tukey's HSD Pairwise Group Comparisons"
+             f" ({self._ci_cl*100:.1f}% Confidence Interval)\n")
+        s += "Comparison  Statistic  p-value  Lower CI  Upper CI\n"
+        for i in range(self.pvalue.shape[0]):
+            for j in range(self.pvalue.shape[0]):
+                if i != j:
+                    s += (f" ({i} - {j}) {self.statistic[i, j]:>10.3f}"
+                          f"{self.pvalue[i, j]:>10.3f}"
+                          f"{self._ci.low[i, j]:>10.3f}"
+                          f"{self._ci.high[i, j]:>10.3f}\n")
+        return s
+
+    def confidence_interval(self, confidence_level=.95):
+        """Compute the confidence interval for the specified confidence level.
+
+        Parameters
+        ----------
+        confidence_level : float, optional
+            Confidence level for the computed confidence interval
+            of the estimated proportion. Default is .95.
+
+        Returns
+        -------
+        ci : ``ConfidenceInterval`` object
+            The object has attributes ``low`` and ``high`` that hold the
+            lower and upper bounds of the confidence intervals for each
+            comparison. The high and low values are accessible for each
+            comparison at index ``(i, j)`` between groups ``i`` and ``j``.
+
+        References
+        ----------
+        .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1.
+               Tukey's Method."
+               https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
+               28 November 2020.
+
+        Examples
+        --------
+        >>> from scipy.stats import tukey_hsd
+        >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
+        >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
+        >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+        >>> result = tukey_hsd(group0, group1, group2)
+        >>> ci = result.confidence_interval()
+        >>> ci.low
+        array([[-3.649159, -8.249159, -3.909159],
+               [ 0.950841, -3.649159,  0.690841],
+               [-3.389159, -7.989159, -3.649159]])
+        >>> ci.high
+        array([[ 3.649159, -0.950841,  3.389159],
+               [ 8.249159,  3.649159,  7.989159],
+               [ 3.909159, -0.690841,  3.649159]])
+        """
+        # check to see if the supplied confidence level matches that of the
+        # previously computed CI.
+        if (self._ci is not None and self._ci_cl is not None and
+                confidence_level == self._ci_cl):
+            return self._ci
+
+        if not 0 < confidence_level < 1:
+            raise ValueError("Confidence level must be between 0 and 1.")
+        # determine the critical value of the studentized range using the
+        # appropriate confidence level, number of treatments, and degrees
+        # of freedom as determined by the number of data less the number of
+        # treatments. ("Confidence limits for Tukey's method")[1]. Note that
+        # in the cases of unequal sample sizes there will be a criterion for
+        # each group comparison.
+        params = (confidence_level, self._nobs, self._ntreatments - self._nobs)
+        srd = distributions.studentized_range.ppf(*params)
+        # also called maximum critical value, the Tukey criterion is the
+        # studentized range critical value * the square root of mean square
+        # error over the sample size.
+        tukey_criterion = srd * self._stand_err
+        # the confidence levels are determined by the
+        # `mean_differences` +- `tukey_criterion`
+        upper_conf = self.statistic + tukey_criterion
+        lower_conf = self.statistic - tukey_criterion
+        self._ci = ConfidenceInterval(low=lower_conf, high=upper_conf)
+        self._ci_cl = confidence_level
+        return self._ci
+
+
+def _tukey_hsd_iv(args):
+    if (len(args)) < 2:
+        raise ValueError("There must be more than 1 treatment.")
+    args = [np.asarray(arg) for arg in args]
+    for arg in args:
+        if arg.ndim != 1:
+            raise ValueError("Input samples must be one-dimensional.")
+        if arg.size <= 1:
+            raise ValueError("Input sample size must be greater than one.")
+        if np.isinf(arg).any():
+            raise ValueError("Input samples must be finite.")
+    return args
+
+
+def tukey_hsd(*args):
+    """Perform Tukey's HSD test for equality of means over multiple treatments.
+
+    Tukey's honestly significant difference (HSD) test performs pairwise
+    comparison of means for a set of samples. Whereas ANOVA (e.g. `f_oneway`)
+    assesses whether the true means underlying each sample are identical,
+    Tukey's HSD is a post hoc test used to compare the mean of each sample
+    to the mean of each other sample.
+
+    The null hypothesis is that the distributions underlying the samples all
+    have the same mean. The test statistic, which is computed for every
+    possible pairing of samples, is simply the difference between the sample
+    means. For each pair, the p-value is the probability under the null
+    hypothesis (and other assumptions; see notes) of observing such an extreme
+    value of the statistic, considering that many pairwise comparisons are
+    being performed. Confidence intervals for the difference between each pair
+    of means are also available.
+
+    Parameters
+    ----------
+    sample1, sample2, ... : array_like
+        The sample measurements for each group. There must be at least
+        two arguments.
+
+    Returns
+    -------
+    result : `~scipy.stats._result_classes.TukeyHSDResult` instance
+        The return value is an object with the following attributes:
+
+        statistic : float ndarray
+            The computed statistic of the test for each comparison. The element
+            at index ``(i, j)`` is the statistic for the comparison between
+            groups ``i`` and ``j``.
+        pvalue : float ndarray
+            The computed p-value of the test for each comparison. The element
+            at index ``(i, j)`` is the p-value for the comparison between
+            groups ``i`` and ``j``.
+
+        The object has the following methods:
+
+        confidence_interval(confidence_level=0.95):
+            Compute the confidence interval for the specified confidence level.
+
+    Notes
+    -----
+    The use of this test relies on several assumptions.
+
+    1. The observations are independent within and among groups.
+    2. The observations within each group are normally distributed.
+    3. The distributions from which the samples are drawn have the same finite
+       variance.
+
+    The original formulation of the test was for samples of equal size [6]_.
+    In case of unequal sample sizes, the test uses the Tukey-Kramer method
+    [4]_.
+
+    References
+    ----------
+    .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
+           Method."
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
+           28 November 2020.
+    .. [2] Abdi, Herve & Williams, Lynne. (2021). "Tukey's Honestly Significant
+           Difference (HSD) Test."
+           https://personal.utdallas.edu/~herve/abdi-HSD2010-pretty.pdf
+    .. [3] "One-Way ANOVA Using SAS PROC ANOVA & PROC GLM." SAS
+           Tutorials, 2007, www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm.
+    .. [4] Kramer, Clyde Young. "Extension of Multiple Range Tests to Group
+           Means with Unequal Numbers of Replications." Biometrics, vol. 12,
+           no. 3, 1956, pp. 307-310. JSTOR, www.jstor.org/stable/3001469.
+           Accessed 25 May 2021.
+    .. [5] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.3.3.
+           The ANOVA table and tests of hypotheses about means"
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc433.htm,
+           2 June 2021.
+    .. [6] Tukey, John W. "Comparing Individual Means in the Analysis of
+           Variance." Biometrics, vol. 5, no. 2, 1949, pp. 99-114. JSTOR,
+           www.jstor.org/stable/3001913. Accessed 14 June 2021.
+
+
+    Examples
+    --------
+    Here are some data comparing the time to relief of three brands of
+    headache medicine, reported in minutes. Data adapted from [3]_.
+
+    >>> import numpy as np
+    >>> from scipy.stats import tukey_hsd
+    >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
+    >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
+    >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+
+    We would like to see if the means between any of the groups are
+    significantly different. First, visually examine a box and whisker plot.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.boxplot([group0, group1, group2])
+    >>> ax.set_xticklabels(["group0", "group1", "group2"]) # doctest: +SKIP
+    >>> ax.set_ylabel("mean") # doctest: +SKIP
+    >>> plt.show()
+
+    From the box and whisker plot, we can see overlap in the interquartile
+    ranges group 1 to group 2 and group 3, but we can apply the ``tukey_hsd``
+    test to determine if the difference between means is significant. We
+    set a significance level of .05 to reject the null hypothesis.
+
+    >>> res = tukey_hsd(group0, group1, group2)
+    >>> print(res)
+    Tukey's HSD Pairwise Group Comparisons (95.0% Confidence Interval)
+    Comparison  Statistic  p-value   Lower CI   Upper CI
+    (0 - 1)     -4.600      0.014     -8.249     -0.951
+    (0 - 2)     -0.260      0.980     -3.909      3.389
+    (1 - 0)      4.600      0.014      0.951      8.249
+    (1 - 2)      4.340      0.020      0.691      7.989
+    (2 - 0)      0.260      0.980     -3.389      3.909
+    (2 - 1)     -4.340      0.020     -7.989     -0.691
+
+    The null hypothesis is that each group has the same mean. The p-value for
+    comparisons between ``group0`` and ``group1`` as well as ``group1`` and
+    ``group2`` do not exceed .05, so we reject the null hypothesis that they
+    have the same means. The p-value of the comparison between ``group0``
+    and ``group2`` exceeds .05, so we accept the null hypothesis that there
+    is not a significant difference between their means.
+
+    We can also compute the confidence interval associated with our chosen
+    confidence level.
+
+    >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
+    >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
+    >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+    >>> result = tukey_hsd(group0, group1, group2)
+    >>> conf = res.confidence_interval(confidence_level=.99)
+    >>> for ((i, j), l) in np.ndenumerate(conf.low):
+    ...     # filter out self comparisons
+    ...     if i != j:
+    ...         h = conf.high[i,j]
+    ...         print(f"({i} - {j}) {l:>6.3f} {h:>6.3f}")
+    (0 - 1) -9.480  0.280
+    (0 - 2) -5.140  4.620
+    (1 - 0) -0.280  9.480
+    (1 - 2) -0.540  9.220
+    (2 - 0) -4.620  5.140
+    (2 - 1) -9.220  0.540
+    """
+    args = _tukey_hsd_iv(args)
+    ntreatments = len(args)
+    means = np.asarray([np.mean(arg) for arg in args])
+    nsamples_treatments = np.asarray([a.size for a in args])
+    nobs = np.sum(nsamples_treatments)
+
+    # determine mean square error [5]. Note that this is sometimes called
+    # mean square error within.
+    mse = (np.sum([np.var(arg, ddof=1) for arg in args] *
+                  (nsamples_treatments - 1)) / (nobs - ntreatments))
+
+    # The calculation of the standard error differs when treatments differ in
+    # size. See ("Unequal sample sizes")[1].
+    if np.unique(nsamples_treatments).size == 1:
+        # all input groups are the same length, so only one value needs to be
+        # calculated [1].
+        normalize = 2 / nsamples_treatments[0]
+    else:
+        # to compare groups of differing sizes, we must compute a variance
+        # value for each individual comparison. Use broadcasting to get the
+        # resulting matrix. [3], verified against [4] (page 308).
+        normalize = 1 / nsamples_treatments + 1 / nsamples_treatments[None].T
+
+    # the standard error is used in the computation of the tukey criterion and
+    # finding the p-values.
+    stand_err = np.sqrt(normalize * mse / 2)
+
+    # the mean difference is the test statistic.
+    mean_differences = means[None].T - means
+
+    # Calculate the t-statistic to use within the survival function of the
+    # studentized range to get the p-value.
+    t_stat = np.abs(mean_differences) / stand_err
+
+    params = t_stat, ntreatments, nobs - ntreatments
+    pvalues = distributions.studentized_range.sf(*params)
+
+    return TukeyHSDResult(mean_differences, pvalues, ntreatments,
+                          nobs, stand_err)

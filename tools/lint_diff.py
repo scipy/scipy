@@ -41,9 +41,9 @@ def find_branch_point(branch):
 
     """
     branch_commits = rev_list('HEAD', 1000)
-    master_commits = set(rev_list(branch, 1000))
+    main_commits = set(rev_list(branch, 1000))
     for branch_commit in branch_commits:
-        if branch_commit in master_commits:
+        if branch_commit in main_commits:
             return branch_commit
 
     # If a branch split off over 1000 commits ago we will fail to find
@@ -82,7 +82,7 @@ def run_flake8(diff):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--branch", type=str, default='master',
+    parser.add_argument("--branch", type=str, default='main',
                         help="The branch to diff against")
     parser.add_argument("--files", type=str, nargs='+', default=None,
                         help="The files or directories to diff against")

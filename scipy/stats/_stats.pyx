@@ -6,12 +6,13 @@ from numpy.math cimport PI
 from numpy.math cimport INFINITY
 from numpy.math cimport NAN
 from numpy cimport ndarray, int64_t, float64_t, intp_t
-
 import warnings
 import numpy as np
 import scipy.stats, scipy.special
+from scipy.linalg import solve_triangular
 cimport scipy.special.cython_special as cs
 
+np.import_array()
 
 cdef double von_mises_cdf_series(double k, double x, unsigned int p):
     cdef double s, c, sn, cn, R, V
@@ -171,6 +172,11 @@ def _toint64(x):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool additive):
+    # y_local and rank_local (declared below) are a work-around for a Cython
+    # bug; see gh-16718.  When we can require Cython 3.0, y_local and
+    # rank_local can be removed, and the closure weigh() can refer directly
+    # to y and rank.
+    cdef ordered[:] y_local = y
     cdef intp_t i, first
     cdef float64_t t, u, v, w, s, sq
     cdef int64_t n = np.int64(len(x))
@@ -188,6 +194,8 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
         rank = np.empty(n, dtype=np.intp)
         rank[...] = perm[::-1]
         _invert_in_place(rank)
+
+    cdef intp_t[:] rank_local = rank
 
     # weigh joint ties
     first = 0
@@ -237,28 +245,28 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
         cdef float64_t weight, residual
 
         if length == 1:
-            return weigher(rank[perm[offset]])
+            return weigher(rank_local[perm[offset]])
         length0 = length // 2
         length1 = length - length0
         middle = offset + length0
         residual = weigh(offset, length0)
         weight = weigh(middle, length1) + residual
-        if y[perm[middle - 1]] < y[perm[middle]]:
+        if y_local[perm[middle - 1]] < y_local[perm[middle]]:
             return weight
 
         # merging
         i = j = k = 0
 
         while j < length0 and k < length1:
-            if y[perm[offset + j]] <= y[perm[middle + k]]:
+            if y_local[perm[offset + j]] <= y_local[perm[middle + k]]:
                 temp[i] = perm[offset + j]
-                residual -= weigher(rank[temp[i]])
+                residual -= weigher(rank_local[temp[i]])
                 j += 1
             else:
                 temp[i] = perm[middle + k]
-                exchanges_weight[0] += weigher(rank[temp[i]]) * (
+                exchanges_weight[0] += weigher(rank_local[temp[i]]) * (
                     length0 - j) + residual if additive else weigher(
-                    rank[temp[i]]) * residual
+                    rank_local[temp[i]]) * residual
                 k += 1
             i += 1
 
@@ -529,7 +537,7 @@ cdef double _Phi(double z) nogil:
     """evaluates the normal CDF. Used in `studentized_range`"""
     # use a custom function because using cs.ndtr results in incorrect PDF at
     # q=0 on 32bit systems. Use a hardcoded 1/sqrt(2) constant rather than
-    # math constants because they're not availible on all systems.
+    # math constants because they're not available on all systems.
     cdef double inv_sqrt_2 = 0.7071067811865475
     return 0.5 * math.erfc(-z * inv_sqrt_2)
 
@@ -600,6 +608,15 @@ cdef double _studentized_range_pdf(int n, double[2] integration_var,
 
     # multiply remaining term outside of log because it can be 0
     return math.exp(log_terms) * math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
+
+
+cdef double _studentized_range_pdf_asymptotic(double z, void *user_data) nogil:
+    # evaluates the integrand of equation (2) by Lund, Lund, page 205. [4]
+    # destined to be used in a LowLevelCallable
+    q = (<double *> user_data)[0]
+    k = (<double *> user_data)[1]
+
+    return k * (k - 1) * _phi(z) * _phi(z + q) * math.pow(_Phi(z + q) - _Phi(z), k - 2)
 
 
 cdef double _studentized_range_moment(int n, double[3] integration_var,
@@ -690,22 +707,21 @@ ctypedef fused real:
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
+def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
+                             real _=0):
     """
-    def gaussian_kernel_estimate(points, real[:, :] values, xi, precision)
-
     Evaluate a multivariate Gaussian kernel estimate.
 
     Parameters
     ----------
     points : array_like with shape (n, d)
-        Data points to estimate from in d dimenions.
+        Data points to estimate from in d dimensions.
     values : real[:, :] with shape (n, p)
         Multivariate values associated with the data points.
     xi : array_like with shape (m, d)
         Coordinates to evaluate the estimate at in d dimensions.
-    precision : array_like with shape (d, d)
-        Precision matrix for the Gaussian kernel.
+    cho_cov : array_like with shape (d, d)
+        Permuted Cholesky factor of permuted covariance of the data.
 
     Returns
     -------
@@ -713,7 +729,7 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
         Multivariate Gaussian kernel estimate evaluated at the input coordinates.
     """
     cdef:
-        real[:, :] points_, xi_, values_, estimate, whitening
+        real[:, :] points_, xi_, values_, estimate
         int i, j, k
         int n, d, m, p
         real arg, residual, norm
@@ -725,19 +741,21 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
 
     if xi.shape[1] != d:
         raise ValueError("points and xi must have same trailing dim")
-    if precision.shape[0] != d or precision.shape[1] != d:
-        raise ValueError("precision matrix must match data dims")
+    if cho_cov.shape[0] != d or cho_cov.shape[1] != d:
+        raise ValueError("Covariance matrix must match data dims")
 
     # Rescale the data
-    whitening = np.linalg.cholesky(precision).astype(dtype, copy=False)
-    points_ = np.dot(points, whitening).astype(dtype, copy=False)
-    xi_ = np.dot(xi, whitening).astype(dtype, copy=False)
+    cho_cov = cho_cov.astype(dtype, copy=False)
+    points_ = np.asarray(solve_triangular(cho_cov, points.T, lower=False).T,
+                         dtype=dtype)
+    xi_ = np.asarray(solve_triangular(cho_cov, xi.T, lower=False).T,
+                     dtype=dtype)
     values_ = values.astype(dtype, copy=False)
 
     # Evaluate the normalisation
     norm = math.pow((2 * PI) ,(- d / 2))
     for i in range(d):
-        norm *= whitening[i, i]
+        norm /= cho_cov[i, i]
 
     # Create the result array and evaluate the weighted sum
     estimate = np.zeros((m, p), dtype)
