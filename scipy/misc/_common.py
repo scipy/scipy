@@ -14,7 +14,7 @@ __all__ = ['central_diff_weights', 'derivative', 'ascent', 'face',
 
 @_deprecated(msg="scipy.misc.central_diff_weights is deprecated in "
                  "SciPy v1.10.0; and will be completely removed in "
-                 "SciPy v2.0.0. You may consider using "
+                 "SciPy v1.12.0. You may consider using "
                  "findiff: https://github.com/maroba/findiff or "
                  "numdifftools: https://github.com/pbrod/numdifftools")
 def central_diff_weights(Np, ndiv=1):
@@ -29,7 +29,7 @@ def central_diff_weights(Np, ndiv=1):
     .. deprecated:: 1.10.0
         `central_diff_weights` has been deprecated from
         `scipy.misc.central_diff_weights` in SciPy 1.10.0 and
-        it will be completely removed in SciPy 2.0.0.
+        it will be completely removed in SciPy 1.12.0.
         You may consider using
         findiff: https://github.com/maroba/findiff or
         numdifftools: https://github.com/pbrod/numdifftools
@@ -78,7 +78,7 @@ def central_diff_weights(Np, ndiv=1):
 
 @_deprecated(msg="scipy.misc.derivative is deprecated in "
                  "SciPy v1.10.0; and will be completely removed in "
-                 "SciPy v2.0.0. You may consider using "
+                 "SciPy v1.12.0. You may consider using "
                  "findiff: https://github.com/maroba/findiff or "
                  "numdifftools: https://github.com/pbrod/numdifftools")
 def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
@@ -90,7 +90,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
 
     .. deprecated:: 1.10.0
         `derivative` has been deprecated from `scipy.misc.derivative`
-        in SciPy 1.10.0 and it will be completely removed in SciPy 2.0.0.
+        in SciPy 1.10.0 and it will be completely removed in SciPy 1.12.0.
         You may consider using
         findiff: https://github.com/maroba/findiff or
         numdifftools: https://github.com/pbrod/numdifftools
