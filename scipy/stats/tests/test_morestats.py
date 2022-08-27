@@ -358,7 +358,6 @@ class TestAnderson:
     @pytest.mark.parametrize('distname',
                              ['norm', 'expon', 'gumbel_l', 'extreme1',
                               'gumbel', 'gumbel_r', 'logistic', 'weibull_min'])
-
     def test_anderson_fit_params(self, distname):
         # check that anderson now returns a FitResult
         rng = np.random.default_rng(330691555377792039)
