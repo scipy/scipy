@@ -877,13 +877,18 @@ class TestInterp1D:
                 vals = f(xnew)
                 assert_(np.isfinite(vals).all())
 
-    @pytest.mark.parametrize('kind', ('linear', 'nearest'))
+    @pytest.mark.parametrize(
+        "kind", ("linear", "nearest", "nearest-up", "previous", "next")
+    )
     def test_single_value(self, kind):
         # https://github.com/scipy/scipy/issues/4043
-        f = interp1d([1.5], [6], kind=kind)
-        assert_array_equal(f(1.5), [6])
-        f = interp1d([0], [[1,2]], axis=0)
-        assert_array_equal(f(0), [1,2])
+        f = interp1d([1.5], [6], kind=kind, bounds_error=False,
+                     fill_value=(2, 10))
+        assert_array_equal(f([1, 1.5, 2]), [2, 6, 10])
+        # check still error if bounds_error=True
+        f = interp1d([1.5], [6], kind=kind, bounds_error=True)
+        with assert_raises(ValueError, match="x_new is above"):
+            f(2.0)
 
 
 class TestLagrange:
