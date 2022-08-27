@@ -333,26 +333,19 @@ class TestAnderson:
         # From `anderson` reference [7]
         x = np.array([74, 57, 48, 29, 502, 12, 70, 21,
                       29, 386, 59, 27, 153, 26, 326])
-        res = stats.anderson(x, 'weibull_min')
-        assert_allclose(res.fit_result.params, (0.763, 9.313, 93.5), rtol=1e-3)
-        assert_allclose(res.statistic, 0.54, rtol=1e-1)
-        assert res.statistic > res.critical_values[0]
-
-    def test_weibull_error(self):
-        # Check for helpful error message when Anderson test for Weibull fails
-        rng = np.random.default_rng(2044208699473992917)
-        c, loc, scale = 5, 0, 1
-        x = stats.weibull_min.rvs(c, loc, scale, size=100, random_state=rng)
-        message = "An error occured while fitting the Weibull distribution..."
-        with pytest.raises(ValueError, match=message),\
-             pytest.raises(FloatingPointError):
+        message = "The maximum likelihood estimate of the has converged to "
+        with pytest.raises(ValueError, match=message):
             stats.anderson(x, 'weibull_min')
 
-    def test_weibull_warning(self):
+    def test_weibull_warning_error(self):
         # Check for warning message when there are too few observations
-        x = [225, 75, 57, 168, 107, 12, 61, 43, 29]
-        message = "Critical values of the test statistic are given for the..."
-        with pytest.warns(UserWarning, match=message):
+        # This is also an example in which an error occurs during fitting
+        x = -np.array([225, 75, 57, 168, 107, 12, 61, 43, 29])
+        wmessage = "Critical values of the test statistic are given for the..."
+        emessage = "An error occured while fitting the Weibull distribution..."
+        wcontext = pytest.warns(UserWarning, match=wmessage)
+        econtext = pytest.raises(ValueError, match=emessage)
+        with wcontext, econtext:
             stats.anderson(x, 'weibull_min')
 
     @pytest.mark.parametrize('distname',

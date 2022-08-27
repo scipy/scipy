@@ -1856,82 +1856,66 @@ _get_As_weibull = interpolate.interp1d(_cvals_weibull, _Avals_weibull.T,
 def _weibull_fit_check(params, x):
     # Refine the fit returned by `weibull_min.fit` to ensure that the first
     # order necessary conditions are satisfied. If not, raise an error.
-
+    # Here, use `m` for the shape parameter to be consistent with [7]
+    # and avoid confusion with `c` as defined in [7].
     n = len(x)
-    c, u, s = params
-    x0 = np.min(x)
+    m, u, s = params
 
-    def get_scale(c, u):
-        # partial w.r.t. scale solved in terms of shape and location
-        return ((x-u)**c/n).sum()**(1/c)
+    def dnllf_dm(m, u):
+        # Partial w.r.t. shape w/ optimal scale. See [7] Equation 5.
+        xu = x-u
+        return (1/m - (xu**m*np.log(xu)).sum()/(xu**m).sum()
+                + np.log(xu).sum()/n)
 
-    def dnllf_dc(c, u, s):
-        # partial w.r.t. shape c
-        t11 = n/c
-        t12 = -n*math.log(s)
-        t13 = np.log(x - u).sum()
-        t14a = (x - u)/s
-        t14 = -(t14a**c * np.log(t14a)).sum()
-        t1 = -(t11 + t12 + t13 + t14)
-        return t1
+    def dnllf_du(m, u):
+        # Partial w.r.t. loc w/ optimal scale. See [7] Equation 6.
+        xu = x-u
+        return (m-1)/m*(xu**-1).sum() - n*(xu**(m-1)).sum()/(xu**m).sum()
 
-    def dnllf_du(c, u, s):
-        # partial w.r.t. location
-        t21 = -((c-1)/(x-u)).sum()
-        t22 = (c*(x-u)**(c-1)/s**c).sum()
-        t2 = -(t21 + t22)
-        return t2
+    def get_scale(m, u):
+        # Partial w.r.t. scale solved in terms of shape and location.
+        # See [7] Equation 7.
+        return ((x-u)**m/n).sum()**(1/m)
 
     def dnllf(params):
-        # partial derivatives of the NLLF w.r.t. parameters, i.e.
-        # first order necessary conditions for MLE fit
-        c, u = params
-        s = get_scale(c, u)
-        return [dnllf_dc(c, u, s), dnllf_du(c, u, s)]
+        # Partial derivatives of the NLLF w.r.t. parameters, i.e.
+        # first order necessary conditions for MLE fit.
+        return [dnllf_dm(*params), dnllf_du(*params)]
 
-    def _weibull_bias_reduction(c, u, s):
-        x0, n = np.min(x), len(x)
-        eps = 1e-10 * max(1, x0)
-        u_last = u
+    suggestion = ("Maximum likelihood estimation is known to be challenging "
+                  "for the three-parameter Weibull distribution. Consider "
+                  "performing a custom goodness-of-fit test using "
+                  "`scipy.stats.monte_carlo_test`.")
 
-        for i in range(1000):
-            k = 1 / c
-            u = x0 - s / n**k
-            c = optimize.root(dnllf_dc, c, args=(u, s)).x[0]
-            s = get_scale(c, u)
-            if np.abs(u_last - u) < eps:
-                return c, u, s
-            u_last = u
-        else:
-            message = ('Formally, the maximum likelihood estimate of the '
-                       '`weibull_min` parameters from the sample `x` are '
-                       '`c = 0, loc=min(x), scale=1.` '
-                       'This estimate is biased, and the bias reduction '
-                       'procedure failed to converge, so `anderson` cannot '
-                       'continue.')
-            raise ValueError(message)
+    if np.allclose(u, np.min(x)) or m < 1:
+        # The critical values provided by [7] don't seem to control the
+        # Type I error rate in this case. Error out.
+        message = ("The maximum likelihood estimate of the has converged to "
+                   "a solution in which the location is equal to the minimum "
+                   "of the data, the shape parameter is less than 1, or both. "
+                   "The critical values used by `anderson` (see [7]) are "
+                   "known to be too low in this case. " + suggestion)
+        raise ValueError(message)
 
-    if np.allclose(u, x0) and dnllf_du(c, u, s) < 0:
-        return _weibull_bias_reduction(c, u, s)
     try:
+        # Refine the MLE / verify that first-order necessary conditions are
+        # satisfied. If so, the critical values provided in [7] seem reliable.
         with np.errstate(over='raise', invalid='raise'):
             res = optimize.root(dnllf, params[:-1])
+
+        message = ("Solution of MLE first-order conditions failed: "
+                   f"{res.message}. `anderson` cannot continue. " + suggestion)
         if not res.success:
-            message = ("Solution of MLE first-order conditions failed: "
-                       f"{res.message}")
             raise ValueError(message)
+
     except (FloatingPointError, ValueError) as e:
         message = ("An error occured while fitting the Weibull distribution "
-                   "to the data, so `anderson` cannot continue. "
-                   "Maximum likelihood estimation is known to "
-                   "be challenging for the Weibull distribution because the "
-                   "maximum log-likehood can be infinite. Consider "
-                   "alternative methods for fitting and tests of fit.")
+                   "to the data, so `anderson` cannot continue. " + suggestion)
         raise ValueError(message) from e
 
-    c, u = res.x
-    s = get_scale(c, u)
-    return c, u, s
+    m, u = res.x
+    s = get_scale(m, u)
+    return m, u, s
 
 
 AndersonResult = _make_tuple_bunch('AndersonResult',
@@ -1998,6 +1982,16 @@ def anderson(x, dist='norm'):
     the data come from the chosen distribution can be rejected.
     The returned statistic is referred to as 'A2' in the references.
 
+    For `weibull_min`, maximum likelihood estimation is known to be
+    challenging. If the test returns successfully, then the first order
+    conditions for a maximum likehood estimate have been verified and
+    the critical values correspond relatively well to the significance levels,
+    provided that the sample is sufficiently large (>10 observations [7]).
+    However, for some data - especially data with no left tail - `anderson`
+    is likely to result in an error message. In this case, consider
+    performing a custom goodness of fit test using
+    `scipy.stats.monte_carlo_test`.
+
     References
     ----------
     .. [1] https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
@@ -2018,7 +2012,7 @@ def anderson(x, dist='norm'):
     .. [7] Richard A. Lockhart and Michael A. Stephens "Estimation and Tests of
            Fit for the Three-Parameter Weibull Distribution"
            Journal of the Royal Statistical Society.Series B(Methodological)
-           Vol. 56, No. 3 (1994), pp. 491-500, Table 0. Keys in dict is C*100
+           Vol. 56, No. 3 (1994), pp. 491-500, Table 0.
 
     """  # noqa
     dist = dist.lower()
