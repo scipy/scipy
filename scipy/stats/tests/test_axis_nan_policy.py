@@ -15,6 +15,13 @@ from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
 
+
+def unpack_ttest_1samp(res):
+    low, high = res.confidence_interval()
+    return (res.statistic, res.pvalue, res.df, res._standard_error,
+            res._estimate, low, high)
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
@@ -38,6 +45,8 @@ axis_nan_policy_cases = [
     (stats.moment, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.moment, tuple(), dict(moment=[1, 2]), 1, 2, False, None),
     (stats.jarque_bera, tuple(), dict(), 1, 2, False, None),
+    (stats.ttest_1samp, (np.array([0]),), dict(), 1, 7, False,
+     unpack_ttest_1samp)
 ]
 
 # If the message is one of those expected, put nans in

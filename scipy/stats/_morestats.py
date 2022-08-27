@@ -312,7 +312,7 @@ def kstat(data, n=2):
     elif n == 4:
         return ((-6*S[1]**4 + 12*N*S[1]**2 * S[2] - 3*N*(N-1.0)*S[2]**2 -
                  4*N*(N+1)*S[1]*S[3] + N*N*(N+1)*S[4]) /
-                 (N*(N-1.0)*(N-2.0)*(N-3.0)))
+                (N*(N-1.0)*(N-2.0)*(N-3.0)))
     else:
         raise ValueError("Should not be here.")
 
@@ -1183,11 +1183,11 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     >>> lmax_pearsonr = stats.boxcox_normmax(x)
 
     >>> lmax_mle
-    1.4613865614008015
+    2.217563431465757
     >>> lmax_pearsonr
-    1.6685004886804342
+    2.238318660200961
     >>> stats.boxcox_normmax(x, method='all')
-    array([1.66850049, 1.46138656])
+    array([2.23831866, 2.21756343])
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -2026,6 +2026,7 @@ def anderson(x, dist='norm'):
         dist = 'gumbel_l'
     dists = {'norm', 'expon', 'gumbel_l',
              'gumbel_r', 'logistic', 'weibull_min'}
+
     if dist not in dists:
         raise ValueError(f"Invalid distribution; dist must be in {dists}.")
     y = sort(x)
@@ -2830,7 +2831,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     is `p`.
 
     .. deprecated:: 1.10.0
-        'binom_test' is deprecated in favour of 'binomtest' and will
+        `binom_test` is deprecated in favour of `binomtest` and will
         be removed in Scipy 1.12.0.
 
     Parameters
@@ -3888,6 +3889,11 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     circmean : float
         Circular mean.
 
+    See Also
+    --------
+    circstd : Circular standard deviation.
+    circvar : Circular variance.
+
     Examples
     --------
     For simplicity, all angles are printed out in degrees.
@@ -3974,6 +3980,11 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     -------
     circvar : float
         Circular variance.
+
+    See Also
+    --------
+    circmean : Circular mean.
+    circstd : Circular standard deviation.
 
     Notes
     -----
@@ -4064,6 +4075,11 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     -------
     circstd : float
         Circular standard deviation.
+
+    See Also
+    --------
+    circmean : Circular mean.
+    circvar : Circular variance.
 
     Notes
     -----

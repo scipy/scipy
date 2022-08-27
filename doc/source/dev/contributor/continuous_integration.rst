@@ -4,7 +4,7 @@
 Continuous Integration
 ======================
 
-Continuous integration is part of our development process and ensure that
+Continuous integration (CI) is part of our development process and ensure that
 every piece of code or documentation which is contributed to SciPy is working
 and does not have unforeseen effects.
 
@@ -35,8 +35,9 @@ GitHub Actions
 * ``Windows Tests``: test suite runs for Windows (``x86_64``)
 * ``Linux Tests``: test suite runs for Linux (``x86_64``)
 * ``macOS Tests``: test suite runs for macOS (``x86_64``)
+* ``wheels``: builds wheels for SciPy releases as well as *nightly* builds.
 
-Test suite runs on GitHub Actions and other platforms cover a range of
+The test suite runs on GitHub Actions and other platforms cover a range of
 test/environment conditions: Python and NumPy versions
 (lowest-supported to nightly builds), 32-bit vs. 64-bit, different compilers,
 and more - for details, see the ``.yml`` configuration files.
@@ -92,3 +93,54 @@ GitHub Actions' workflows::
     DOC: improve QMCEngine examples.
 
     [skip azp] [skip actions]
+
+Wheel builds
+============
+
+Wheels for SciPy releases and
+`*nightly* <https://anaconda.org/scipy-wheels-nightly/scipy>`_ builds are built
+using cibuildwheel in a
+`Github Action <https://github.com/scipy/scipy/blob/main/.github/workflows/wheels.yml>`_.
+The Action runs:
+
+* when the commit message contains the text ``[wheel build]``
+* on a scheduled basis once a week
+* when it is started manually.
+* when there is a push to the repository with a github reference starting with ``refs/tags/v`` (and not ending with ``dev0``)
+
+The action does not run on forks of the main SciPy repository. The wheels that
+are created are available as artifacts associated with a successful run of the
+Action. When the Action runs on a schedule, or is manually started, the wheels
+are uploaded to the
+`*scipy-wheels-nightly* <https://anaconda.org/scipy-wheels-nightly/scipy>`_
+repository.
+
+It is not advised to use cibuildwheel to build scipy wheels on your own system
+as it will automatically install gfortran compilers and various other
+dependencies. Instead, one could use an isolated Docker container to build
+Linux wheels.
+
+Docker image builds
+===================
+
+Two Docker images are built in CI with GitHub Actions, and made available on
+Docker Hub under the ``scipy`` organisation:
+
+1. ``scipy/scipy-dev`` - contains all the dependencies needed for developing
+   SciPy. This image is only rebuilt when ``environment.yml`` in the root of
+   the repo is updated,
+2. ``scipy/scipy-gitpod`` - builds on top of ``scipy-dev`` and contains a built
+   development version of SciPy and the SciPy docs. It is the image pulled when
+   `a user opens Gitpod <quickstart_gitpod.html>`_.
+
+This diagram explains the CI setup, triggers, and flow of artifacts to Docker
+Hub and Gitpod:
+
+.. image:: ../../_static/gitpod/gitpod_ci_build_flow.png
+    :alt: Diagram of how Docker images are built for Docker Hub and Gitpod in CI
+
+.. warning::
+   These Docker images are intended for SciPy development *only*.
+   These should not be used "as-is" for any production-level applications (they
+   are not updated very frequently, and not audited for known security
+   vulnerabilities for example).

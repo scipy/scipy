@@ -1324,6 +1324,20 @@ class TestLoggamma:
             assert_array_almost_equal(computed, [mean, var, skew, kurt],
                                       decimal=4)
 
+    @pytest.mark.parametrize('c', [0.1, 0.001])
+    def test_rvs(self, c):
+        # Regression test for gh-11094.
+        x = stats.loggamma.rvs(c, size=100000)
+        # Before gh-11094 was fixed, the case with c=0.001 would
+        # generate many -inf values.
+        assert np.isfinite(x).all()
+        # Crude statistical test.  About half the values should be
+        # less than the median and half greater than the median.
+        med = stats.loggamma.median(c)
+        btest = stats.binomtest(np.count_nonzero(x < med), len(x))
+        ci = btest.proportion_ci(confidence_level=0.999)
+        assert ci.low < 0.5 < ci.high
+
 
 class TestLogistic:
     # gh-6226
@@ -2869,6 +2883,23 @@ class TestSkewNorm:
         res = dist4.stats(moments='ms')
         ref = np.mean(rvs), stats.skew(rvs)
         assert_allclose(res, ref)
+
+        # Test behavior when skew of data is beyond maximum of skewnorm
+        rvs = stats.pareto.rvs(1, size=100, random_state=rng)
+
+        # MLE still works
+        res = stats.skewnorm.fit(rvs)
+        assert np.all(np.isfinite(res))
+
+        # MoM fits variance and skewness
+        a5, loc5, scale5 = stats.skewnorm.fit(rvs, method='mm')
+        assert np.isinf(a5)
+        # distribution infrastruction doesn't allow infinite shape parameters
+        # into _stats; it just bypasses it and produces NaNs. Calculate
+        # moments manually.
+        m, v = np.mean(rvs), np.var(rvs)
+        assert_allclose(m, loc5 + scale5 * np.sqrt(2/np.pi))
+        assert_allclose(v, scale5**2 * (1 - 2 / np.pi))
 
 
 class TestExpon:

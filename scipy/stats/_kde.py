@@ -266,8 +266,11 @@ class gaussian_kde:
         else:
             raise TypeError('%s has unexpected item size %d' %
                             (output_dtype, itemsize))
-        result = gaussian_kernel_estimate[spec](self.dataset.T, self.weights[:, None],
-                                                points.T, self.inv_cov, output_dtype)
+
+        result = gaussian_kernel_estimate[spec](
+            self.dataset.T, self.weights[:, None],
+            points.T, self.cho_cov, output_dtype)
+
         return result[:, 0]
 
     __call__ = evaluate
@@ -574,17 +577,30 @@ class gaussian_kde:
         covariance_factor().
         """
         self.factor = self.covariance_factor()
-        # Cache covariance and inverse covariance of the data
-        if not hasattr(self, '_data_inv_cov'):
+        # Cache covariance and permuted cholesky decomp of permuted covariance
+        if not hasattr(self, '_data_cho_cov'):
             self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
                                                bias=False,
                                                aweights=self.weights))
-            self._data_inv_cov = linalg.inv(self._data_covariance)
+            self._data_cho_cov = linalg.cholesky(
+                self._data_covariance[::-1, ::-1]).T[::-1, ::-1]
 
         self.covariance = self._data_covariance * self.factor**2
-        self.inv_cov = (self._data_inv_cov / self.factor**2).astype(np.float64)
-        L = linalg.cholesky(self.covariance*2*pi)
-        self.log_det = 2*np.log(np.diag(L)).sum()
+        self.cho_cov = (self._data_cho_cov * self.factor).astype(np.float64)
+        self.log_det = 2*np.log(np.diag(self.cho_cov
+                                        * np.sqrt(2*pi))).sum()
+
+    @property
+    def inv_cov(self):
+        # Re-compute from scratch each time because I'm not sure how this is
+        # used in the wild. (Perhaps users change the `dataset`, since it's
+        # not a private attribute?) `_compute_covariance` used to recalculate
+        # all these, so we'll recalculate everything now that this is a
+        # a property.
+        self.factor = self.covariance_factor()
+        self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
+                                           bias=False, aweights=self.weights))
+        return linalg.inv(self._data_covariance) / self.factor**2
 
     def pdf(self, x):
         """
@@ -635,6 +651,55 @@ class gaussian_kde:
                 result[i] = logsumexp(0.5 * log_to_sum)
 
         return result
+
+    def marginal(self, dimensions):
+        """Return a marginal KDE distribution
+
+        Parameters
+        ----------
+        dimensions : int or 1-d array_like
+            The dimensions of the multivariate distribution corresponding
+            with the marginal variables, that is, the indices of the dimensions
+            that are being retained. The other dimensions are marginalized out.
+
+        Returns
+        -------
+        marginal_kde : gaussian_kde
+            An object representing the marginal distribution.
+
+        Notes
+        -----
+        .. versionadded:: 1.10.0
+
+        """
+
+        dims = np.atleast_1d(dimensions)
+
+        if not np.issubdtype(dims.dtype, np.integer):
+            msg = ("Elements of `dimensions` must be integers - the indices "
+                   "of the marginal variables being retained.")
+            raise ValueError(msg)
+
+        n = len(self.dataset)  # number of dimensions
+        original_dims = dims.copy()
+
+        dims[dims < 0] = n + dims[dims < 0]
+
+        if len(np.unique(dims)) != len(dims):
+            msg = ("All elements of `dimensions` must be unique.")
+            raise ValueError(msg)
+
+        i_invalid = (dims < 0) | (dims >= n)
+        if np.any(i_invalid):
+            msg = (f"Dimensions {original_dims[i_invalid]} are invalid "
+                   f"for a distribution in {n} dimensions.")
+            raise ValueError(msg)
+
+        dataset = self.dataset[dims]
+        weights = self.weights
+
+        return gaussian_kde(dataset, bw_method=self.covariance_factor(),
+                            weights=weights)
 
     @property
     def weights(self):

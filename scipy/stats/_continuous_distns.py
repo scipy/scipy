@@ -2273,6 +2273,9 @@ class weibull_min_gen(rv_continuous):
         to match the means or minimize a norm of the errors.
         \n\n""")
     def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
         # this extracts fixed shape, location, and scale however they
         # are specified, and also leaves them in `kwds`
         data, fc, floc, fscale = _check_fit_input_parameters(self, data,
@@ -2287,13 +2290,14 @@ class weibull_min_gen(rv_continuous):
             gamma3 = sc.gamma(1+3/c)
             num = 2 * gamma1**3 - 3*gamma1*gamma2 + gamma3
             den = (gamma2 - gamma1**2)**(3/2)
-            return num / den
+            return num/den
 
         # For c in [1e2, 3e4], population skewness appears to approach
         # asymptote near -1.139, but past c > 3e4, skewness begins to vary
         # wildly, and MoM won't provide a good guess. Get out early.
         s = stats.skew(data)
-        s_min = skew(1e4)
+        max_c = 1e4
+        s_min = skew(max_c)
         if s < s_min and method == "mle" and fc is None and not args:
             return super().fit(data, *args, **kwds)
 
@@ -2313,7 +2317,7 @@ class weibull_min_gen(rv_continuous):
             # parameters outside this range - and not just in this method.
             # We could probably improve the situation by doing everything
             # in the log space, but that is for another time.
-            c = root_scalar(lambda c: skew(c) - s, bracket=[0.02, 5e5],
+            c = root_scalar(lambda c: skew(c) - s, bracket=[0.02, max_c],
                             method='bisect').root
         elif fc is not None:  # fixed: use it
             c = fc
@@ -5428,11 +5432,23 @@ class loggamma_gen(rv_continuous):
     %(example)s
 
     """
+
     def _shape_info(self):
         return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
 
     def _rvs(self, c, size=None, random_state=None):
-        return np.log(random_state.gamma(c, size=size))
+        # Use the property of the gamma distribution Gamma(c)
+        #    Gamma(c) ~ Gamma(c + 1)*U**(1/c),
+        # where U is uniform on [0, 1]. (See, e.g.,
+        # G. Marsaglia and W.W. Tsang, "A simple method for generating gamma
+        # variables", https://doi.org/10.1145/358407.358414)
+        # So
+        #    log(Gamma(c)) ~ log(Gamma(c + 1)) + log(U)/c
+        # Generating a sample with this formulation is a bit slower
+        # than the more obvious log(Gamma(c)), but it avoids loss
+        # of precision when c << 1.
+        return (np.log(random_state.gamma(c + 1, size=size))
+                + np.log(random_state.uniform(size=size))/c)
 
     def _pdf(self, x, c):
         # loggamma.pdf(x, c) = exp(c*x-exp(x)) / gamma(c)
@@ -5729,6 +5745,14 @@ deprmsg = ("`gilbrat` is a misspelling of the correct name for the `gibrat` "
 class gilbrat_gen(gibrat_gen):
     # override __call__ protocol from rv_generic to also
     # deprecate instantiation of frozen distributions
+    r"""
+
+    .. deprecated:: 1.9.0
+        `gilbrat` is deprecated, use `gibrat` instead!
+        `gilbrat` is a misspelling of the correct name for the `gibrat`
+        distribution, and will be removed in SciPy 1.11.
+
+    """
     def __call__(self, *args, **kwds):
         # align with warning text from np.deprecated that's used for methods
         msg = "`gilbrat` is deprecated, use `gibrat` instead!\n" + deprmsg
@@ -8017,16 +8041,7 @@ class skew_norm_gen(rv_continuous):
         # are specified, and also leaves them in `kwds`
         data, fa, floc, fscale = _check_fit_input_parameters(self, data,
                                                              args, kwds)
-
-        # If method is method of moments, we don't need the user's guesses.
-        # If method is "mle", extract the guesses from args and kwds.
         method = kwds.get("method", "mle").lower()
-        if method == "mm":
-            a, loc, scale = None, None, None
-        else:
-            a = args[0] if len(args) else None
-            loc = kwds.pop('loc', None)
-            scale = kwds.pop('scale', None)
 
         # See https://en.wikipedia.org/wiki/Skew_normal_distribution for
         # moment formulas.
@@ -8034,19 +8049,32 @@ class skew_norm_gen(rv_continuous):
             return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
                                   / (1 - 2*d**2 / np.pi)**(3/2))
 
+        # If skewness of data is greater than max possible population skewness,
+        # MoM won't provide a good guess. Get out early.
+        s = stats.skew(data)
+        s_max = skew_d(1)
+        if abs(s) >= s_max and method == "mle" and fa is None and not args:
+            return super().fit(data, *args, **kwds)
+
+        # If method is method of moments, we don't need the user's guesses.
+        # If method is "mle", extract the guesses from args and kwds.
+        if method == "mm":
+            a, loc, scale = None, None, None
+        else:
+            a = args[0] if len(args) else None
+            loc = kwds.pop('loc', None)
+            scale = kwds.pop('scale', None)
+
         if fa is None and a is None:  # not fixed and no guess: use MoM
             # Solve for a that matches sample distribution skewness to sample
             # skewness.
-            s = stats.skew(data)
-            s_max = skew_d(1)
             s = np.clip(s, -s_max, s_max)
             d = root_scalar(lambda d: skew_d(d) - s, bracket=[-1, 1]).root
-            a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
-        elif fa is not None:  # fixed: use it
-            a = fa
-        # else: use the user-provided guess
-
-        d = a / np.sqrt(1 + a**2)  # simplifies code to (re)calculate here
+            with np.errstate(divide='ignore'):
+                a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
+        else:
+            a = fa if fa is not None else a
+            d = a / np.sqrt(1 + a**2)
 
         if fscale is None and scale is None:
             v = np.var(data)
@@ -9687,11 +9715,13 @@ class rv_histogram(rv_continuous):
 
     >>> import matplotlib.pyplot as plt
     >>> X = np.linspace(-5.0, 5.0, 100)
-    >>> plt.title("PDF from Template")
-    >>> plt.hist(data, density=True, bins=100)
-    >>> plt.plot(X, hist_dist.pdf(X), label='PDF')
-    >>> plt.plot(X, hist_dist.cdf(X), label='CDF')
-    >>> plt.show()
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_title("PDF from Template")
+    >>> ax.hist(data, density=True, bins=100)
+    >>> ax.plot(X, hist_dist.pdf(X), label='PDF')
+    >>> ax.plot(X, hist_dist.cdf(X), label='CDF')
+    >>> ax.legend()
+    >>> fig.show()
 
     """
     _support_mask = rv_continuous._support_mask
