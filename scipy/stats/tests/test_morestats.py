@@ -344,8 +344,8 @@ class TestAnderson:
         c, loc, scale = 5, 0, 1
         x = stats.weibull_min.rvs(c, loc, scale, size=100, random_state=rng)
         message = "An error occured while fitting the Weibull distribution..."
-        with (pytest.raises(ValueError, match=message),
-              pytest.raises(FloatingPointError)):
+        with pytest.raises(ValueError, match=message),\
+             pytest.raises(FloatingPointError):
             stats.anderson(x, 'weibull_min')
 
     def test_weibull_warning(self):
