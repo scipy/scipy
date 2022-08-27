@@ -68,7 +68,7 @@
 import numpy as np
 import scipy.special
 import scipy.special._ufuncs as scu
-from ._common import _derivative
+from scipy._lib._finite_differences import _derivative
 
 _E128 = 128
 _EP128 = np.ldexp(np.longdouble(1), _E128)
