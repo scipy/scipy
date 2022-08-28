@@ -537,11 +537,7 @@ class TestSmoothBivariateSpline:
         x = [1,1,1,2,2,2,4,4,4]
         y = [1,2,3,1,2,3,1,2,3]
         z = array([0,7,8,3,4,7,1,3,4])
-
-        with suppress_warnings() as sup:
-            # This seems to fail (ier=1, see ticket 1642).
-            sup.filter(UserWarning, "\nThe required storage space")
-            lut = SmoothBivariateSpline(x, y, z, kx=1, ky=1, s=0)
+        lut = SmoothBivariateSpline(x, y, z, kx=1, ky=1, s=0)
 
         tx = [1,2,4]
         ty = [1,2,3]

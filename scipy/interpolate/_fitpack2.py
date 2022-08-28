@@ -1293,6 +1293,27 @@ class SmoothBivariateSpline(BivariateSpline):
                                                                     s=s,
                                                                     eps=eps,
                                                                     lwrk2=ier)
+        if ier == 1:
+            # nxest or nyest was too small, re-run
+            nxest = 2*kx + 2 + len(x)
+            nyest = 2*ky + 2 + len(y)
+            nx, tx, ny, ty, c, fp, wrk1, ier = dfitpack.surfit_smth(x, y, z, w,
+                                                                    xb, xe, yb,
+                                                                    ye, kx, ky,
+                                                                    s=s, eps=eps,
+                                                                    lwrk2=1,
+                                                                    nxest=nxest,
+                                                                    nyest=nyest)
+            if ier > 10:          # lwrk2 was to small, re-run
+                nx, tx, ny, ty, c, fp, wrk1, ier = dfitpack.surfit_smth(x, y, z, w,
+                                                                        xb, xe, yb,
+                                                                        ye, kx, ky,
+                                                                        s=s,
+                                                                        eps=eps,
+                                                                        lwrk2=ier,
+                                                                        nxest=nxest,
+                                                                        nyest=nyest)
+
         if ier in [0, -1, -2]:  # normal return
             pass
         else:
