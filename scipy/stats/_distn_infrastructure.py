@@ -2412,23 +2412,6 @@ class rv_continuous(rv_generic):
             raise ValueError("Not enough input arguments.") from e
         return loc, scale, args
 
-    def nnlf(self, theta, x):
-        """Negative loglikelihood function.
-
-        Notes
-        -----
-        This is ``-sum(log pdf(x, theta), axis=0)`` where `theta` are the
-        parameters (including loc and scale).
-        """
-        loc, scale, args = self._unpack_loc_scale(theta)
-        if not self._argcheck(*args) or scale <= 0:
-            return inf
-        x = asarray((x-loc) / scale)
-        n_log_scale = len(x) * log(scale)
-        if np.any(~self._support_mask(x, *args)):
-            return inf
-        return self._nnlf(x, *args) + n_log_scale
-
     def _nnlf_and_penalty(self, x, args):
         """
         Compute the penalized negative log-likelihood for the
@@ -2736,7 +2719,7 @@ class rv_continuous(rv_generic):
             # Note: `ravel()` is called for backwards compatibility.
             data = np.asarray(data).ravel()
             if not np.isfinite(data).all():
-                raise RuntimeError("The data contains non-finite values.")
+                raise ValueError("The data contains non-finite values.")
 
         start = [None]*2
         if (Narg < self.numargs) or not ('loc' in kwds and

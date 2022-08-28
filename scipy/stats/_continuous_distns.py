@@ -2290,6 +2290,10 @@ class weibull_min_gen(rv_continuous):
         to match the means or minimize a norm of the errors.
         \n\n""")
     def fit(self, data, *args, **kwds):
+        if (isinstance(data, CensoredData)
+                and len(data._x) != len(data._uncensor())):
+            return super().fit(data, *args, **kwds)
+
         if kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
 
@@ -4666,6 +4670,8 @@ class norminvgauss_gen(rv_continuous):
 
     def _fitstart(self, data):
         # Arbitrary, but the default a=b=1 is not valid
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
         return super()._fitstart(data, args=(1, 0.5))
 
     def _pdf(self, x, a, b):
@@ -4679,6 +4685,8 @@ class norminvgauss_gen(rv_continuous):
             # If x is a scalar, then so are a and b.
             return integrate.quad(self._pdf, x, np.inf, args=(a, b))[0]
         else:
+            a = np.atleast_1d(a)
+            b = np.atleast_1d(b)
             result = []
             for (x0, a0, b0) in zip(x, a, b):
                 result.append(integrate.quad(self._pdf, x0, np.inf,
@@ -5087,7 +5095,9 @@ laplace_asymmetric = laplace_asymmetric_gen(name='laplace_asymmetric')
 
 
 def _check_fit_input_parameters(dist, data, args, kwds):
-    data = np.asarray(data)
+    if not isinstance(data, CensoredData):
+        data = np.asarray(data)
+
     floc = kwds.get('floc', None)
     fscale = kwds.get('fscale', None)
 
@@ -5126,7 +5136,8 @@ def _check_fit_input_parameters(dist, data, args, kwds):
         raise RuntimeError("All parameters fixed. There is nothing to "
                            "optimize.")
 
-    if not np.isfinite(data).all():
+    uncensored = data._uncensor() if isinstance(data, CensoredData) else data
+    if not np.isfinite(uncensored).all():
         raise ValueError("The data contains non-finite values.")
 
     return (data, *fshapes, floc, fscale)
@@ -7671,6 +7682,8 @@ class reciprocal_gen(rv_continuous):
 
     @extend_notes_in_docstring(rv_continuous, notes=fit_note)
     def fit(self, data, *args, **kwds):
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
         fscale = kwds.pop('fscale', 1)
         return super().fit(data, *args, fscale=fscale, **kwds)
 
@@ -8075,6 +8088,9 @@ class skewnorm_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         # this extracts fixed shape, location, and scale however they
         # are specified, and also leaves them in `kwds`
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
+
         data, fa, floc, fscale = _check_fit_input_parameters(self, data,
                                                              args, kwds)
         method = kwds.get("method", "mle").lower()
@@ -8463,6 +8479,8 @@ class truncnorm_gen(rv_continuous):
 
     def _fitstart(self, data):
         # Reasonable, since support is [a, b]
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
         return super()._fitstart(data, args=(np.min(data), np.max(data)))
 
     def _get_support(self, a, b):
