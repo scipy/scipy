@@ -258,7 +258,7 @@ class gaussian_kde:
         output_dtype, spec = _get_output_dtype(self.covariance, points)
         result = gaussian_kernel_estimate[spec](
             self.dataset.T, self.weights[:, None],
-            points.T, self.inv_cov, output_dtype)
+            points.T, self.cho_cov, output_dtype)
 
         return result[:, 0]
 
