@@ -13,7 +13,7 @@ replace mathematical analysis with lots of computation.
 
 For example, suppose you and your brother Kyle find yourselves
 hitchhiking down a long and lonesome road. All of a sudden, there shines
-a shiny demon… in the middle… of the road. And he says:
+a shiny demon... in the middle... of the road. And he says:
 
    If you flip a coin with probability of heads :math:`p=0.5` exactly
    :math:`n=100` times, what is the probability that the number of heads
