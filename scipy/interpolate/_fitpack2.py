@@ -97,6 +97,10 @@ class UnivariateSpline:
 
             sum((w[i] * (y[i]-spl(x[i])))**2, axis=0) <= s
 
+        However, because of numerical issues, the actual condition is::
+
+            abs(sum((w[i] * (y[i]-spl(x[i])))**2, axis=0) - s) < 0.001 * s
+
         If `s` is None, `s` will be set as `len(w)` for a smoothing spline
         that uses all data points.
         If 0, spline will interpolate through all data points. This is

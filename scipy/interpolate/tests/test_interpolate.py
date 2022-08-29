@@ -193,7 +193,6 @@ class TestInterp1D:
         # Check for x and y having at least 1 element.
         assert_raises(ValueError, interp1d, self.x1, self.y10)
         assert_raises(ValueError, interp1d, self.x10, self.y1)
-        assert_raises(ValueError, interp1d, self.x1, self.y1)
 
         # Bad fill values
         assert_raises(ValueError, interp1d, self.x10, self.y10, kind='linear',
@@ -877,6 +876,19 @@ class TestInterp1D:
                 f = interp1d(x, y, kind=kind)
                 vals = f(xnew)
                 assert_(np.isfinite(vals).all())
+
+    @pytest.mark.parametrize(
+        "kind", ("linear", "nearest", "nearest-up", "previous", "next")
+    )
+    def test_single_value(self, kind):
+        # https://github.com/scipy/scipy/issues/4043
+        f = interp1d([1.5], [6], kind=kind, bounds_error=False,
+                     fill_value=(2, 10))
+        assert_array_equal(f([1, 1.5, 2]), [2, 6, 10])
+        # check still error if bounds_error=True
+        f = interp1d([1.5], [6], kind=kind, bounds_error=True)
+        with assert_raises(ValueError, match="x_new is above"):
+            f(2.0)
 
 
 class TestLagrange:

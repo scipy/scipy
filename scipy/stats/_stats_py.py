@@ -9283,7 +9283,7 @@ def _square_of_sums(a, axis=0):
         return float(s) * s
 
 
-def rankdata(a, method='average', *, axis=None, nan_policy='omit'):
+def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 
     By default (``axis=None``), the data array is first flattened, and a flat
@@ -9316,23 +9316,23 @@ def rankdata(a, method='average', *, axis=None, nan_policy='omit'):
     axis : {None, int}, optional
         Axis along which to perform the ranking. If ``None``, the data array
         is first flattened.
-    nan_policy : {'omit', 'propagate', 'raise'}, optional
+    nan_policy : {'propagate', 'omit', 'raise'}, optional
         Defines how to handle when input contains nan.
-        The following options are available (default is 'omit'):
+        The following options are available (default is 'propagate'):
 
-          * 'omit': performs the calculations ignoring nan values
           * 'propagate': propagates nans through the rank calculation
+          * 'omit': performs the calculations ignoring nan values
           * 'raise': raises an error
 
         .. note::
 
+            When `nan_policy` is 'propagate', the output is an array of *all*
+            nans because ranks relative to nans in the input are undefined.
             When `nan_policy` is 'omit', nans in `a` are ignored when ranking
             the other values, and the corresponding locations of the output
             are nan. This behavior is the default because it is intuitive and
             compatible with the behavior before the `nan_policy` parameter
             was introduced.
-            When `nan_policy` is 'propagate', the output is an array of *all*
-            nans because ranks relative to nans in the input are undefined.
 
         .. versionadded:: 1.10
 
@@ -9366,10 +9366,10 @@ def rankdata(a, method='average', *, axis=None, nan_policy='omit'):
     >>> rankdata([[0, 2, 2], [3, 2, 5]], axis=1)
     array([[1. , 2.5, 2.5],
            [2. , 1. , 3. ]])
-    >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="omit")
-    array([ 2.,  3.,  4., nan,  1., nan])
     >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="propagate")
     array([nan, nan, nan, nan, nan, nan])
+    >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="omit")
+    array([ 2.,  3.,  4., nan,  1., nan])
 
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):

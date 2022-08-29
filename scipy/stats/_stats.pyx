@@ -9,6 +9,7 @@ from numpy cimport ndarray, int64_t, float64_t, intp_t
 import warnings
 import numpy as np
 import scipy.stats, scipy.special
+from scipy.linalg import solve_triangular
 cimport scipy.special.cython_special as cs
 
 np.import_array()
@@ -706,10 +707,9 @@ ctypedef fused real:
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
+def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
+                             real _=0):
     """
-    def gaussian_kernel_estimate(points, real[:, :] values, xi, precision)
-
     Evaluate a multivariate Gaussian kernel estimate.
 
     Parameters
@@ -720,8 +720,8 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
         Multivariate values associated with the data points.
     xi : array_like with shape (m, d)
         Coordinates to evaluate the estimate at in d dimensions.
-    precision : array_like with shape (d, d)
-        Precision matrix for the Gaussian kernel.
+    cho_cov : array_like with shape (d, d)
+        Permuted Cholesky factor of permuted covariance of the data.
 
     Returns
     -------
@@ -729,7 +729,7 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
         Multivariate Gaussian kernel estimate evaluated at the input coordinates.
     """
     cdef:
-        real[:, :] points_, xi_, values_, estimate, whitening
+        real[:, :] points_, xi_, values_, estimate
         int i, j, k
         int n, d, m, p
         real arg, residual, norm
@@ -741,19 +741,21 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
 
     if xi.shape[1] != d:
         raise ValueError("points and xi must have same trailing dim")
-    if precision.shape[0] != d or precision.shape[1] != d:
-        raise ValueError("precision matrix must match data dims")
+    if cho_cov.shape[0] != d or cho_cov.shape[1] != d:
+        raise ValueError("Covariance matrix must match data dims")
 
     # Rescale the data
-    whitening = np.linalg.cholesky(precision).astype(dtype, copy=False)
-    points_ = np.dot(points, whitening).astype(dtype, copy=False)
-    xi_ = np.dot(xi, whitening).astype(dtype, copy=False)
+    cho_cov = cho_cov.astype(dtype, copy=False)
+    points_ = np.asarray(solve_triangular(cho_cov, points.T, lower=False).T,
+                         dtype=dtype)
+    xi_ = np.asarray(solve_triangular(cho_cov, xi.T, lower=False).T,
+                     dtype=dtype)
     values_ = values.astype(dtype, copy=False)
 
     # Evaluate the normalisation
     norm = math.pow((2 * PI) ,(- d / 2))
     for i in range(d):
-        norm *= whitening[i, i]
+        norm /= cho_cov[i, i]
 
     # Create the result array and evaluate the weighted sum
     estimate = np.zeros((m, p), dtype)
