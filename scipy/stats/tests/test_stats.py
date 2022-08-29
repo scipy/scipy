@@ -7653,65 +7653,72 @@ class TestConfInt:
     """
     np.random.seed(0)
     m = 100                                     # number of tests
-    N = np.random.randint(2,100,size=m)         # num of samples
+    N = np.random.randint(2, 100, size=m)       # num of samples
     quantile = np.random.rand(m)                # quantile in [0,1)
     confidence = 0.25*np.random.rand(m)+0.75    # confidence in [0.75,1)
 
     def test_confint_naive(self):
         # test against a naive implementation
-        m, N, quantile, confidence = self.m, self.N, self.quantile, self.confidence
+        m, N, quantile, confidence = (self.m, self.N, self.quantile,
+                                      self.confidence)
 
-        def confint_naive(N,quantile,confidence):
+        def confint_naive(N, quantile, confidence):
             '''
             Naive implementation for computing the index of one-sided CI
             (lower-bound)
             '''
-            # compute all probabilities from the binomiale distribution for the quantile of interest
-            bd=stats.binom(N,quantile)
-            ppm = [np.maximum(1-x,0.0) for x in np.cumsum([bd.pmf(k) for k in range(N)])]
+            # compute all probabilities from the binomiale distribution for the
+            # quantile of interest
+            bd = stats.binom(N, quantile)
+            ppm = [np.maximum(1-x, 0.0)
+                   for x in np.cumsum([bd.pmf(k) for k in range(N)])]
 
             # search the index defining a lower-bound for p_work
             if ppm[0] < confidence:
                 return np.nan
             else:
                 for k in range(N):
-                    # search for first index reaching below the desired confidence
+                    # search for first index reaching below the desired
+                    # confidence
                     if ppm[k] < confidence:
                         # lower-bound is the previous index
                         return k-1
-                # if we exit the loop, then the last index is the best possible bound
+                # if we exit the loop, then the last index is the best possible
+                # bound
                 return N-1
 
-        ## Test for the one-sided case
-
+        # Test for the one-sided case
         # .. Derive the lower and upper bounds using naive implem
-        tmp = [confint_naive(int(N[i]), quantile[i], confidence[i]) for i in range(m)]
+        tmp = [confint_naive(int(N[i]), quantile[i], confidence[i])
+               for i in range(m)]
         LB = [i if (not np.isnan(i)) else None for i in tmp]
         # .. UB is (N-1-LB(1-q))
-        tmp = [confint_naive(int(N[i]), 1-quantile[i], confidence[i]) for i in range(m)]
-        UB = [int(N[i])-1-tmp[i] if (not np.isnan(tmp[i])) else None for i in range(m)]
+        tmp = [confint_naive(int(N[i]), 1-quantile[i], confidence[i])
+               for i in range(m)]
+        UB = [int(N[i])-1-tmp[i] if (not np.isnan(tmp[i])) else None
+              for i in range(m)]
         test = [(LB[i], UB[i]) for i in range(m)]
         # .. Compare to the public function
-        public = [stats.confint_quantile(int(N[i]), quantile[i], confidence[i]) for i in range(m)]
-        assert_equal(public,test)
+        public = [stats.confint_quantile(int(N[i]), quantile[i], confidence[i])
+                  for i in range(m)]
+        assert_equal(public, test)
 
-        ## Test for the two-sided case
-
+        # Test for the two-sided case
         # .. Two-sided CI are built of two one-sided CIs with larger confidence
         confidence_two_sided = (1 + confidence)/2
-        tmp = [confint_naive(int(N[i]), quantile[i], confidence_two_sided[i]) for i in range(m)]
+        tmp = [confint_naive(int(N[i]), quantile[i], confidence_two_sided[i])
+               for i in range(m)]
         LB = [i if (not np.isnan(i)) else None for i in tmp]
         # .. UB is (N-1-LB(1-q))
-        tmp = [confint_naive(int(N[i]), 1-quantile[i], confidence_two_sided[i]) for i in range(m)]
-        UB = [int(N[i])-1-tmp[i] if (not np.isnan(tmp[i])) else None for i in range(m)]
+        tmp = [confint_naive(int(N[i]), 1-quantile[i], confidence_two_sided[i])
+               for i in range(m)]
+        UB = [int(N[i])-1-tmp[i] if (not np.isnan(tmp[i])) else None
+              for i in range(m)]
         test = [(LB[i], UB[i]) for i in range(m)]
         # .. Compare to the public function
-        public = [stats.confint_quantile(
-                    int(N[i]),
-                    quantile[i],
-                    confidence[i],
-                    type='two-sided') for i in range(m)]
-        assert_equal(public,test)
+        public = [stats.confint_quantile(int(N[i]), quantile[i], confidence[i],
+                                         type='two-sided') for i in range(m)]
+        assert_equal(public, test)
 
 
 class TestPageTrendTest:

@@ -8782,8 +8782,8 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
         \mathbb{P}(x_m \leq q) = 1 - \sum_{k=0}^{m-1} \binom{N}{k}
         q^k(1-q)^{N-k}
 
-    Furthermore, these probabilities are symmetric, which allows to compute both
-    upper and lower bounds from the same computation:
+    Furthermore, these probabilities are symmetric, which allows to compute
+    both upper and lower bounds from the same computation:
 
     .. math::
 
@@ -8802,15 +8802,15 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     If `x` is the set of samples, the return values are the sample values
     corresponding with the bounds of the confidence interval. If `x` is an
     integer, the function considers `x` as the sample size and returns the
-    indexes of the bounds for the confidence interval for this sample size. Note
-    that this is possible because the numerical values of the data are
+    indexes of the bounds for the confidence interval for this sample size.
+    Note that this is possible because the numerical values of the data are
     irrelevant for this computing confidence interval using this method.
 
     A similar function is available in the QuantileNPCI R package [3]_. The
     foundation is the same, but it computes the confidence interval bounds by
     doing interpolations between the sample values, whereas this function uses
-    only sample values as bounds. Thus, `confint_quantile` returns slightly more
-    conservative intervals (i.e., larger).
+    only sample values as bounds. Thus, `confint_quantile` returns slightly
+    more conservative intervals (i.e., larger).
 
     Parameters
     ----------
@@ -8854,10 +8854,11 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
 
     Notes
     -----
-    Two-sided confidence intervals are not guaranteed to be optimal. I.e., there
-    may exist a tighter interval that may contain the quantile of interest with
-    probability larger than the confidence level. These intervals may be found
-    by exhaustive search, which we do not do for efficiency reasons.
+    Two-sided confidence intervals are not guaranteed to be optimal. I.e.,
+    there may exist a tighter interval that may contain the quantile of
+    interest with probability larger than the confidence level. These intervals
+    may be found by exhaustive search, which we do not do for efficiency
+    reasons.
 
     Without further assumption on the samples (eg, the nature of the underlying
     distribution), the one-sided intervals are optimally tight.
@@ -8880,17 +8881,18 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
 
     Examples
     --------
-    >>> from scipy.stats import confint_quantile x = [2, 8, 3, 6, 4, 1, 5, 9, 7]
+    >>> from scipy.stats import confint_quantile
+    >>> x = [2, 8, 3, 6, 4, 1, 5, 9, 7]
     >>> confint_quantile(x, 0.5, 0.95) (2, 8)
 
     To compute a two-sided interval instead, use the `type` parameter.
 
     >>> confint_quantile(x, 0.5, 0.99, type='two-sided') (1, 9)
 
-    You can also pass the number of samples as argument (instead of the samples)
-    themselves. The returned values are then the indexes of the upper and lower
-    bounds for the confidence intervals. We obtain the same result as in the
-    first example.
+    You can also pass the number of samples as argument (instead of the
+    samples) themselves. The returned values are then the indexes of the upper
+    and lower bounds for the confidence intervals. We obtain the same result as
+    in the first example.
 
     >>> N = len(x) lb, ub = confint_quantile(N, 0.75, 0.90)
     >>> # Since we pass an interger to the function, we get the CI indexes
@@ -9001,7 +9003,6 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
         else:
             x_ub = x[UB]
         return x_lb, x_ub
-
 
 
 #####################################
