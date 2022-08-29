@@ -115,8 +115,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    primal_feasibility_tolerance=None,
                    ipm_optimality_tolerance=None,
                    simplex_dual_edge_weight_strategy=None,
-                   parallel=None,
-                   threads=None,
                    mip_rel_gap=None,
                    **unknown_options):
     r"""
@@ -350,9 +348,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'simplex_crash_strategy': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
         'ipm_iteration_limit': maxiter,
         'simplex_iteration_limit': maxiter,
-        'threads': threads,
         'mip_rel_gap': mip_rel_gap,
-        'parallel': parallel
     }
 
     # np.inf doesn't work; use very large constant
