@@ -6,11 +6,11 @@ project(
   # tools/version_utils.py
   version: '1.10.0.dev0',
   license: 'BSD-3',
-  meson_version: '>= 0.62.2',
+  meson_version: '>= 0.63.0',
   default_options: [
     'buildtype=debugoptimized',
     'c_std=c99',
-    'cpp_std=c++14',  # TODO: use c++11 if 14 is not available
+    'cpp_std=c++14',
     # TODO: the below -Wno flags are all needed to silence warnings in
     # f2py-generated code. This should be fixed in f2py itself.
     'c_args=-Wno-unused-function -Wno-conversion -Wno-misleading-indentation -Wno-incompatible-pointer-types',

@@ -133,7 +133,7 @@ struct nodeinfo {
     }
 
     inline void update_side_distance(const int d, const double new_side_distance, const double p) {
-        if (CKDTREE_UNLIKELY(ckdtree_isinf(p))) {
+        if (CKDTREE_UNLIKELY(std::isinf(p))) {
             min_distance = ckdtree_fmax(min_distance, new_side_distance);
         } else {
             min_distance += new_side_distance - side_distances()[d];
@@ -267,7 +267,7 @@ query_single_point(const ckdtree *self,
     }
     else if (eps == 0.)
         epsfac = 1.;
-    else if (ckdtree_isinf(p))
+    else if (std::isinf(p))
         epsfac = 1. / (1. + eps);
     else
         epsfac = 1. / std::pow((1. + eps), p);
@@ -277,7 +277,7 @@ query_single_point(const ckdtree *self,
         double tmp = distance_upper_bound;
         distance_upper_bound = tmp*tmp;
     }
-    else if ((!ckdtree_isinf(p)) && (!isinf(distance_upper_bound)))
+    else if ((!std::isinf(p)) && (!std::isinf(distance_upper_bound)))
         distance_upper_bound = std::pow(distance_upper_bound,p);
 
     for(;;) {
@@ -457,7 +457,7 @@ query_single_point(const ckdtree *self,
             result_indices[i] = neighbor.contents.intdata;
             if (CKDTREE_LIKELY(p == 2.0))
                 result_distances[i] = std::sqrt(-neighbor.priority);
-            else if ((p == 1.) || (ckdtree_isinf(p)))
+            else if ((p == 1.) || (std::isinf(p)))
                 result_distances[i] = -neighbor.priority;
             else
                 result_distances[i] = std::pow((-neighbor.priority),(1./p));
@@ -495,7 +495,7 @@ query_knn(const ckdtree      *self,
             const double *xx_row = xx + (i*m);
             HANDLE(CKDTREE_LIKELY(p == 2), MinkowskiDistP2)
             HANDLE(p == 1, MinkowskiDistP1)
-            HANDLE(ckdtree_isinf(p), MinkowskiDistPinf)
+            HANDLE(std::isinf(p), MinkowskiDistPinf)
             HANDLE(1, MinkowskiDistPp)
             {}
         }
@@ -512,7 +512,7 @@ query_knn(const ckdtree      *self,
             }
             HANDLE(CKDTREE_LIKELY(p == 2), BoxMinkowskiDistP2)
             HANDLE(p == 1, BoxMinkowskiDistP1)
-            HANDLE(ckdtree_isinf(p), BoxMinkowskiDistPinf)
+            HANDLE(std::isinf(p), BoxMinkowskiDistPinf)
             HANDLE(1, BoxMinkowskiDistPp) {}
         }
 

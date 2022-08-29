@@ -129,7 +129,7 @@ double beta(double a, double b)
 
 overflow:
     sf_error("beta", SF_ERROR_OVERFLOW, NULL);
-    return (sign * NPY_INFINITY);
+    return (sign * INFINITY);
 }
 
 
@@ -192,7 +192,7 @@ double lbeta(double a, double b)
     if (y == 0.0) {
       over:
 	sf_error("lbeta", SF_ERROR_OVERFLOW, NULL);
-	return (sign * NPY_INFINITY);
+	return (sign * INFINITY);
     }
 
     if (fabs(fabs(a) - fabs(y)) > fabs(fabs(b) - fabs(y))) {
@@ -240,7 +240,7 @@ static double beta_negint(int a, double b)
     }
     else {
 	sf_error("lbeta", SF_ERROR_OVERFLOW, NULL);
-        return NPY_INFINITY;
+        return INFINITY;
     }
 }
 
@@ -253,6 +253,6 @@ static double lbeta_negint(int a, double b)
     }
     else {
 	sf_error("lbeta", SF_ERROR_OVERFLOW, NULL);
-        return NPY_INFINITY;
+        return INFINITY;
     }
 }

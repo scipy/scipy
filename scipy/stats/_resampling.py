@@ -103,23 +103,44 @@ def _percentile_along_axis(theta_hat_b, alpha):
 
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     """Bias-corrected and accelerated interval."""
-    # closely follows [2] "BCa Bootstrap CIs"
-    sample = data[0]  # only works with 1 sample statistics right now
+    # closely follows [1] 14.3 and 15.4 (Eq. 15.36)
 
     # calculate z0_hat
-    theta_hat = np.asarray(statistic(sample, axis=axis))[..., None]
+    theta_hat = np.asarray(statistic(*data, axis=axis))[..., None]
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1)
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
-    theta_hat_i = []  # would be better to fill pre-allocated array
-    for jackknife_sample in _jackknife_resample(sample, batch):
-        theta_hat_i.append(statistic(jackknife_sample, axis=-1))
-    theta_hat_i = np.concatenate(theta_hat_i, axis=-1)
-    theta_hat_dot = theta_hat_i.mean(axis=-1, keepdims=True)
-    num = ((theta_hat_dot - theta_hat_i)**3).sum(axis=-1)
-    den = 6*((theta_hat_dot - theta_hat_i)**2).sum(axis=-1)**(3/2)
-    a_hat = num / den
+    theta_hat_ji = []  # j is for sample of data, i is for jackknife resample
+    for j, sample in enumerate(data):
+        # _jackknife_resample will add an axis prior to the last axis that
+        # corresponds with the different jackknife resamples. Do the same for
+        # each sample of the data to ensure broadcastability. We need to
+        # create a copy of the list containing the samples anyway, so do this
+        # in the loop to simplify the code. This is not the bottleneck...
+        samples = [np.expand_dims(sample, -2) for sample in data]
+        theta_hat_i = []
+        for jackknife_sample in _jackknife_resample(sample, batch):
+            samples[j] = jackknife_sample
+            broadcasted = _broadcast_arrays(samples, axis=-1)
+            theta_hat_i.append(statistic(*broadcasted, axis=-1))
+        theta_hat_ji.append(theta_hat_i)
+
+    theta_hat_ji = [np.concatenate(theta_hat_i, axis=-1)
+                    for theta_hat_i in theta_hat_ji]
+
+    n_j = [len(theta_hat_i) for theta_hat_i in theta_hat_ji]
+
+    theta_hat_j_dot = [theta_hat_i.mean(axis=-1, keepdims=True)
+                       for theta_hat_i in theta_hat_ji]
+
+    U_ji = [(n - 1) * (theta_hat_dot - theta_hat_i)
+            for theta_hat_dot, theta_hat_i, n
+            in zip(theta_hat_j_dot, theta_hat_ji, n_j)]
+
+    nums = [(U_i**3).sum(axis=-1)/n**3 for U_i, n in zip(U_ji, n_j)]
+    dens = [(U_i**2).sum(axis=-1)/n**2 for U_i, n in zip(U_ji, n_j)]
+    a_hat = 1/6 * sum(nums) / sum(dens)**(3/2)
 
     # calculate alpha_1, alpha_2
     z_alpha = ndtri(alpha)
@@ -128,11 +149,11 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     alpha_1 = ndtr(z0_hat + num1/(1 - a_hat*num1))
     num2 = z0_hat + z_1alpha
     alpha_2 = ndtr(z0_hat + num2/(1 - a_hat*num2))
-    return alpha_1, alpha_2
+    return alpha_1, alpha_2, a_hat  # return a_hat for testing
 
 
 def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
-                  n_resamples, batch, method, random_state):
+                  n_resamples, batch, method, bootstrap_result, random_state):
     """Input validation and standardization for `bootstrap`."""
 
     if vectorized not in {True, False, None}:
@@ -188,8 +209,8 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     confidence_level_float = float(confidence_level)
 
     n_resamples_int = int(n_resamples)
-    if n_resamples != n_resamples_int or n_resamples_int <= 0:
-        raise ValueError("`n_resamples` must be a positive integer.")
+    if n_resamples != n_resamples_int or n_resamples_int < 0:
+        raise ValueError("`n_resamples` must be a non-negative integer.")
 
     if batch is None:
         batch_iv = batch
@@ -203,15 +224,23 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if method not in methods:
         raise ValueError(f"`method` must be in {methods}")
 
-    message = "`method = 'BCa' is only available for one-sample statistics"
-    if not paired and n_samples > 1 and method == 'bca':
+    message = "`bootstrap_result` must have attribute `bootstrap_distribution'"
+    if (bootstrap_result is not None
+            and not hasattr(bootstrap_result, "bootstrap_distribution")):
+        raise ValueError(message)
+
+    message = ("Either `bootstrap_result.bootstrap_distribution.size` or "
+               "`n_resamples` must be positive.")
+    if ((not bootstrap_result or
+         not bootstrap_result.bootstrap_distribution.size)
+            and n_resamples_int == 0):
         raise ValueError(message)
 
     random_state = check_random_state(random_state)
 
     return (data_iv, statistic, vectorized, paired, axis_int,
             confidence_level_float, n_resamples_int, batch_iv,
-            method, random_state)
+            method, bootstrap_result, random_state)
 
 
 fields = ['confidence_interval', 'bootstrap_distribution', 'standard_error']
@@ -220,7 +249,7 @@ BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
-              method='BCa', random_state=None):
+              method='BCa', bootstrap_result=None, random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
@@ -287,10 +316,15 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         The confidence level of the confidence interval.
     method : {'percentile', 'basic', 'bca'}, default: ``'BCa'``
         Whether to return the 'percentile' bootstrap confidence interval
-        (``'percentile'``), the 'reverse' or the bias-corrected and accelerated
-        bootstrap confidence interval (``'BCa'``).
-        Note that only ``'percentile'`` and ``'basic'`` support multi-sample
-        statistics at this time.
+        (``'percentile'``), the 'basic' (AKA 'reverse') bootstrap confidence
+        interval (``'basic'``), or the bias-corrected and accelerated bootstrap
+        confidence interval (``'BCa'``).
+    bootstrap_result : BootstrapResult, optional
+        Provide the result object returned by a previous call to `bootstrap`
+        to include the previous bootstrap distribution in the new bootstrap
+        distribution. This can be used, for example, to change
+        `confidence_level`, change `method`, or see the effect of performing
+        additional resampling without repeating computations.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
 
@@ -506,17 +540,41 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=0.9950085825848624, high=0.9971212407917498)
 
+    The result object can be passed back into `bootstrap` to perform additional
+    resampling:
+
+    >>> len(res.bootstrap_distribution)
+    9999
+    >>> res = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
+    ...                 n_resamples=1001, random_state=rng,
+    ...                 bootstrap_result=res)
+    >>> len(res.bootstrap_distribution)
+    11000
+
+    or to change the confidence interval options:
+
+    >>> res2 = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
+    ...                  n_resamples=0, random_state=rng, bootstrap_result=res,
+    ...                  method='percentile', confidence_level=0.9)
+    >>> np.testing.assert_equal(res2.bootstrap_distribution,
+    ...                         res.bootstrap_distribution)
+    >>> res.confidence_interval
+    ConfidenceInterval(low=0.9950035351407804, high=0.9971170323404578)
+
+    without repeating computation of the original bootstrap distribution.
+
     """
     # Input validation
     args = _bootstrap_iv(data, statistic, vectorized, paired, axis,
                          confidence_level, n_resamples, batch, method,
-                         random_state)
-    data, statistic, vectorized, paired, axis = args[:5]
-    confidence_level, n_resamples, batch, method, random_state = args[5:]
+                         bootstrap_result, random_state)
+    data, statistic, vectorized, paired, axis, confidence_level = args[:6]
+    n_resamples, batch, method, bootstrap_result, random_state = args[6:]
 
-    theta_hat_b = []
+    theta_hat_b = ([] if bootstrap_result is None
+                   else [bootstrap_result.bootstrap_distribution])
 
-    batch_nominal = batch or n_resamples
+    batch_nominal = batch or n_resamples or 1
 
     for k in range(0, n_resamples, batch_nominal):
         batch_actual = min(batch_nominal, n_resamples-k)
@@ -535,7 +593,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     alpha = (1 - confidence_level)/2
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
-                                 theta_hat_b=theta_hat_b, batch=batch)
+                                 theta_hat_b=theta_hat_b, batch=batch)[:2]
         percentile_fun = _percentile_along_axis
     else:
         interval = alpha, 1-alpha
@@ -674,6 +732,13 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
     null_distribution : ndarray
         The values of the test statistic generated under the null hypothesis.
 
+    References
+    ----------
+
+    .. [1] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+       Zero: Calculating Exact P-values When Permutations Are Randomly Drawn."
+       Statistical Applications in Genetics and Molecular Biology 9.1 (2010).
+
     Examples
     --------
 
@@ -709,7 +774,7 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
     >>> print(res.statistic)
     0.12457412450240658
     >>> print(res.pvalue)
-    0.701070107010701
+    0.7012
 
     The probability of obtaining a test statistic less than or equal to the
     observed value under the null hypothesis is ~70%. This is greater than
@@ -762,12 +827,12 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed
-        pvalues = cmps.sum(axis=0) / n_resamples
+        pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
         return pvalues
 
     def greater(null_distribution, observed):
         cmps = null_distribution >= observed
-        pvalues = cmps.sum(axis=0) / n_resamples
+        pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
         return pvalues
 
     def two_sided(null_distribution, observed):
