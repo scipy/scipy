@@ -6,7 +6,7 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy.signal import (lfilter, firwin, decimate, butter, sosfilt,
-                              medfilt2d)
+                              medfilt2d, order_filter)
 
 
 class Decimate(Benchmark):
@@ -102,3 +102,15 @@ class MedFilt2D(Benchmark):
 
     def peakmem_medfilt2d(self, threads):
         self._medfilt2d(threads)
+
+
+class OrderFilter2D(Benchmark):
+    param_names = ['filter_size']
+    params = [[1, 11, 21]]
+
+    def setup(self, filter_size):
+        self.to_filter = np.ones((400, 401), np.float32)
+        self.filter_domain = np.ones((filter_size, filter_size), dtype=np.int8)
+
+    def time_orderfilter(self, filter_size):
+        order_filter(self.to_filter, self.filter_domain, filter_size // 3)
