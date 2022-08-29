@@ -5,10 +5,11 @@
 #
 import warnings
 from collections.abc import Iterable
-from functools import wraps
+from functools import wraps, cached_property
 import ctypes
 
 import numpy as np
+from numpy.polynomial import Polynomial
 from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring,
                                inherit_docstring_from)
@@ -26,7 +27,7 @@ from ._distn_infrastructure import (
     get_distribution_names, _kurtosis,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
-from ._constants import (_XMIN, _EULER, _ZETA3,
+from ._constants import (_XMIN, _EULER, _ZETA3, _SQRT_PI,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
@@ -2263,6 +2264,83 @@ class weibull_min_gen(rv_continuous):
     def _entropy(self, c):
         return -_EULER / c - np.log(c) + _EULER + 1
 
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        If ``method='mm'``, parameters fixed by the user are respected, and the
+        remaining parameters are used to match distribution and sample moments
+        where possible. For example, if the user fixes the location with
+        ``floc``, the parameters will only match the distribution skewness and
+        variance to the sample skewness and variance; no attempt will be made
+        to match the means or minimize a norm of the errors.
+        \n\n""")
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        # this extracts fixed shape, location, and scale however they
+        # are specified, and also leaves them in `kwds`
+        data, fc, floc, fscale = _check_fit_input_parameters(self, data,
+                                                             args, kwds)
+        method = kwds.get("method", "mle").lower()
+
+        # See https://en.wikipedia.org/wiki/Weibull_distribution#Moments for
+        # moment formulas.
+        def skew(c):
+            gamma1 = sc.gamma(1+1/c)
+            gamma2 = sc.gamma(1+2/c)
+            gamma3 = sc.gamma(1+3/c)
+            num = 2 * gamma1**3 - 3*gamma1*gamma2 + gamma3
+            den = (gamma2 - gamma1**2)**(3/2)
+            return num/den
+
+        # For c in [1e2, 3e4], population skewness appears to approach
+        # asymptote near -1.139, but past c > 3e4, skewness begins to vary
+        # wildly, and MoM won't provide a good guess. Get out early.
+        s = stats.skew(data)
+        max_c = 1e4
+        s_min = skew(max_c)
+        if s < s_min and method == "mle" and fc is None and not args:
+            return super().fit(data, *args, **kwds)
+
+        # If method is method of moments, we don't need the user's guesses.
+        # If method is "mle", extract the guesses from args and kwds.
+        if method == "mm":
+            c, loc, scale = None, None, None
+        else:
+            c = args[0] if len(args) else None
+            loc = kwds.pop('loc', None)
+            scale = kwds.pop('scale', None)
+
+        if fc is None and c is None:  # not fixed and no guess: use MoM
+            # Solve for c that matches sample distribution skewness to sample
+            # skewness.
+            # we start having numerical issues with `weibull_min` with
+            # parameters outside this range - and not just in this method.
+            # We could probably improve the situation by doing everything
+            # in the log space, but that is for another time.
+            c = root_scalar(lambda c: skew(c) - s, bracket=[0.02, max_c],
+                            method='bisect').root
+        elif fc is not None:  # fixed: use it
+            c = fc
+
+        if fscale is None and scale is None:
+            v = np.var(data)
+            scale = np.sqrt(v / (sc.gamma(1+2/c) - sc.gamma(1+1/c)**2))
+        elif fscale is not None:
+            scale = fscale
+
+        if floc is None and loc is None:
+            m = np.mean(data)
+            loc = m - scale*sc.gamma(1 + 1/c)
+        elif floc is not None:
+            loc = floc
+
+        if method == 'mm':
+            return c, loc, scale
+        else:
+            # At this point, parameter "guesses" may equal the fixed parameters
+            # in kwds. No harm in passing them as guesses, too.
+            return super().fit(data, c, loc=loc, scale=scale, **kwds)
+
 
 weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 
@@ -4117,6 +4195,26 @@ class invgauss_gen(rv_continuous):
     def _cdf(self, x, mu):
         return np.exp(self._logcdf(x, mu))
 
+    def _ppf(self, x, mu):
+        with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
+            x, mu = np.broadcast_arrays(x, mu)
+            ppf = _boost._invgauss_ppf(x, mu, 1)
+            i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
+            ppf[i_wt] = _boost._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
+            i_nan = np.isnan(ppf)
+            ppf[i_nan] = super()._ppf(x[i_nan], mu[i_nan])
+        return ppf
+
+    def _isf(self, x, mu):
+        with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
+            x, mu = np.broadcast_arrays(x, mu)
+            isf = _boost._invgauss_isf(x, mu, 1)
+            i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
+            isf[i_wt] = _boost._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
+            i_nan = np.isnan(isf)
+            isf[i_nan] = super()._isf(x[i_nan], mu[i_nan])
+        return isf
+
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
@@ -5334,11 +5432,23 @@ class loggamma_gen(rv_continuous):
     %(example)s
 
     """
+
     def _shape_info(self):
         return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
 
     def _rvs(self, c, size=None, random_state=None):
-        return np.log(random_state.gamma(c, size=size))
+        # Use the property of the gamma distribution Gamma(c)
+        #    Gamma(c) ~ Gamma(c + 1)*U**(1/c),
+        # where U is uniform on [0, 1]. (See, e.g.,
+        # G. Marsaglia and W.W. Tsang, "A simple method for generating gamma
+        # variables", https://doi.org/10.1145/358407.358414)
+        # So
+        #    log(Gamma(c)) ~ log(Gamma(c + 1)) + log(U)/c
+        # Generating a sample with this formulation is a bit slower
+        # than the more obvious log(Gamma(c)), but it avoids loss
+        # of precision when c << 1.
+        return (np.log(random_state.gamma(c + 1, size=size))
+                + np.log(random_state.uniform(size=size))/c)
 
     def _pdf(self, x, c):
         # loggamma.pdf(x, c) = exp(c*x-exp(x)) / gamma(c)
@@ -5635,6 +5745,14 @@ deprmsg = ("`gilbrat` is a misspelling of the correct name for the `gibrat` "
 class gilbrat_gen(gibrat_gen):
     # override __call__ protocol from rv_generic to also
     # deprecate instantiation of frozen distributions
+    r"""
+
+    .. deprecated:: 1.9.0
+        `gilbrat` is deprecated, use `gibrat` instead!
+        `gilbrat` is a misspelling of the correct name for the `gibrat`
+        distribution, and will be removed in SciPy 1.11.
+
+    """
     def __call__(self, *args, **kwds):
         # align with warning text from np.deprecated that's used for methods
         msg = "`gilbrat` is deprecated, use `gibrat` instead!\n" + deprmsg
@@ -7801,9 +7919,9 @@ class skew_norm_gen(rv_continuous):
 
     References
     ----------
-    .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the
-        multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
-        :arxiv:`0911.2093`
+    .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of
+        the multivariate skew-normal distribution. J. Roy. Statist. Soc.,
+        B 61, 579-602. :arxiv:`0911.2093`
 
     """
     def _argcheck(self, a):
@@ -7858,6 +7976,54 @@ class skew_norm_gen(rv_continuous):
 
         return output
 
+    # For odd order, the each noncentral moment of the skew-normal distribution
+    # with location 0 and scale 1 can be expressed as a polynomial in delta,
+    # where delta = a/sqrt(1 + a**2) and `a` is the skew-normal shape
+    # parameter.  The dictionary _skewnorm_odd_moments defines those
+    # polynomials for orders up to 19.  The dict is implemented as a cached
+    # property to reduce the impact of the creation of the dict on import time.
+    @cached_property
+    def _skewnorm_odd_moments(self):
+        skewnorm_odd_moments = {
+            1: Polynomial([1]),
+            3: Polynomial([3, -1]),
+            5: Polynomial([15, -10, 3]),
+            7: Polynomial([105, -105, 63, -15]),
+            9: Polynomial([945, -1260, 1134, -540, 105]),
+            11: Polynomial([10395, -17325, 20790, -14850, 5775, -945]),
+            13: Polynomial([135135, -270270, 405405, -386100, 225225, -73710,
+                            10395]),
+            15: Polynomial([2027025, -4729725, 8513505, -10135125, 7882875,
+                            -3869775, 1091475, -135135]),
+            17: Polynomial([34459425, -91891800, 192972780, -275675400,
+                            268017750, -175429800, 74220300, -18378360,
+                            2027025]),
+            19: Polynomial([654729075, -1964187225, 4714049340, -7856748900,
+                            9166207050, -7499623950, 4230557100, -1571349780,
+                            346621275, -34459425]),
+        }
+        return skewnorm_odd_moments
+
+    def _munp(self, order, a):
+        if order & 1:
+            if order > 19:
+                raise NotImplementedError("skewnorm noncentral moments not "
+                                          "implemented for odd orders greater "
+                                          "than 19.")
+            # Use the precomputed polynomials that were derived from the
+            # moment generating function.
+            delta = a/np.sqrt(1 + a**2)
+            return (delta * self._skewnorm_odd_moments[order](delta**2)
+                    * _SQRT_2_OVER_PI)
+        else:
+            # For even order, the moment is just (order-1)!!, where !! is the
+            # notation for the double factorial; for an odd integer m, m!! is
+            # m*(m-2)*...*3*1.
+            # We could use special.factorial2, but we know the argument is odd,
+            # so avoid the overhead of that function and compute the result
+            # directly here.
+            return sc.gamma((order + 1)/2) * 2**(order/2) / _SQRT_PI
+
     @extend_notes_in_docstring(rv_continuous, notes="""\
         If ``method='mm'``, parameters fixed by the user are respected, and the
         remaining parameters are used to match distribution and sample moments
@@ -7875,16 +8041,7 @@ class skew_norm_gen(rv_continuous):
         # are specified, and also leaves them in `kwds`
         data, fa, floc, fscale = _check_fit_input_parameters(self, data,
                                                              args, kwds)
-
-        # If method is method of moments, we don't need the user's guesses.
-        # If method is "mle", extract the guesses from args and kwds.
         method = kwds.get("method", "mle").lower()
-        if method == "mm":
-            a, loc, scale = None, None, None
-        else:
-            a = args[0] if len(args) else None
-            loc = kwds.pop('loc', None)
-            scale = kwds.pop('scale', None)
 
         # See https://en.wikipedia.org/wiki/Skew_normal_distribution for
         # moment formulas.
@@ -7892,19 +8049,32 @@ class skew_norm_gen(rv_continuous):
             return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
                                   / (1 - 2*d**2 / np.pi)**(3/2))
 
+        # If skewness of data is greater than max possible population skewness,
+        # MoM won't provide a good guess. Get out early.
+        s = stats.skew(data)
+        s_max = skew_d(1)
+        if abs(s) >= s_max and method == "mle" and fa is None and not args:
+            return super().fit(data, *args, **kwds)
+
+        # If method is method of moments, we don't need the user's guesses.
+        # If method is "mle", extract the guesses from args and kwds.
+        if method == "mm":
+            a, loc, scale = None, None, None
+        else:
+            a = args[0] if len(args) else None
+            loc = kwds.pop('loc', None)
+            scale = kwds.pop('scale', None)
+
         if fa is None and a is None:  # not fixed and no guess: use MoM
             # Solve for a that matches sample distribution skewness to sample
             # skewness.
-            s = stats.skew(data)
-            s_max = skew_d(1)
             s = np.clip(s, -s_max, s_max)
             d = root_scalar(lambda d: skew_d(d) - s, bracket=[-1, 1]).root
-            a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
-        elif fa is not None:  # fixed: use it
-            a = fa
-        # else: use the user-provided guess
-
-        d = a / np.sqrt(1 + a**2)  # simplifies code to (re)calculate here
+            with np.errstate(divide='ignore'):
+                a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
+        else:
+            a = fa if fa is not None else a
+            d = a / np.sqrt(1 + a**2)
 
         if fscale is None and scale is None:
             v = np.var(data)
@@ -8850,6 +9020,12 @@ class wald_gen(invgauss_gen):
     def _sf(self, x):
         return invgauss._sf(x, 1.0)
 
+    def _ppf(self, x):
+        return invgauss._ppf(x, 1.0)
+
+    def _isf(self, x):
+        return invgauss._isf(x, 1.0)
+
     def _logpdf(self, x):
         return invgauss._logpdf(x, 1.0)
 
@@ -9539,11 +9715,13 @@ class rv_histogram(rv_continuous):
 
     >>> import matplotlib.pyplot as plt
     >>> X = np.linspace(-5.0, 5.0, 100)
-    >>> plt.title("PDF from Template")
-    >>> plt.hist(data, density=True, bins=100)
-    >>> plt.plot(X, hist_dist.pdf(X), label='PDF')
-    >>> plt.plot(X, hist_dist.cdf(X), label='CDF')
-    >>> plt.show()
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_title("PDF from Template")
+    >>> ax.hist(data, density=True, bins=100)
+    >>> ax.plot(X, hist_dist.pdf(X), label='PDF')
+    >>> ax.plot(X, hist_dist.cdf(X), label='CDF')
+    >>> ax.legend()
+    >>> fig.show()
 
     """
     _support_mask = rv_continuous._support_mask
