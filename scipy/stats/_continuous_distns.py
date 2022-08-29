@@ -2290,9 +2290,12 @@ class weibull_min_gen(rv_continuous):
         to match the means or minimize a norm of the errors.
         \n\n""")
     def fit(self, data, *args, **kwds):
-        if (isinstance(data, CensoredData)
-                and len(data._x) != len(data._uncensor())):
-            return super().fit(data, *args, **kwds)
+
+        if isinstance(data, CensoredData):
+            if data.num_censored() == 0:
+                data = data._uncensor()
+            else:
+                return super().fit(data, *args, **kwds)
 
         if kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
@@ -7651,6 +7654,8 @@ class reciprocal_gen(rv_continuous):
         return [ia, ib]
 
     def _fitstart(self, data):
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
         # Reasonable, since support is [a, b]
         return super()._fitstart(data, args=(np.min(data), np.max(data)))
 
@@ -7682,8 +7687,6 @@ class reciprocal_gen(rv_continuous):
 
     @extend_notes_in_docstring(rv_continuous, notes=fit_note)
     def fit(self, data, *args, **kwds):
-        if isinstance(data, CensoredData):
-            data = data._uncensor()
         fscale = kwds.pop('fscale', 1)
         return super().fit(data, *args, fscale=fscale, **kwds)
 
@@ -7986,6 +7989,7 @@ class skewnorm_gen(rv_continuous):
         )
 
     def _cdf(self, x, a):
+        a = np.atleast_1d(a)
         cdf = _boost._skewnorm_cdf(x, 0, 1, a)
         # Boost is not accurate in left tail when a > 0
         i_small_cdf = (cdf < 1e-6) & (a > 0)
@@ -8086,11 +8090,14 @@ class skewnorm_gen(rv_continuous):
         shape parameter ``a`` will be infinite.
         \n\n""")
     def fit(self, data, *args, **kwds):
+        if isinstance(data, CensoredData):
+            if data.num_censored() == 0:
+                data = data._uncensor()
+            else:
+                return super().fit(data, *args, **kwds)
+
         # this extracts fixed shape, location, and scale however they
         # are specified, and also leaves them in `kwds`
-        if isinstance(data, CensoredData):
-            data = data._uncensor()
-
         data, fa, floc, fscale = _check_fit_input_parameters(self, data,
                                                              args, kwds)
         method = kwds.get("method", "mle").lower()
