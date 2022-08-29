@@ -106,10 +106,12 @@ class MedFilt2D(Benchmark):
 
 class OrderFilter2D(Benchmark):
     param_names = ['filter_size']
-    params = [[1, 11, 21]]
+    params = [[1, 11, 101]]
+    sample_time = 10
+    timeout = 300
 
     def setup(self, filter_size):
-        self.to_filter = np.ones((400, 401), np.float32)
+        self.to_filter = np.ones((200, 201), np.float32)
         self.filter_domain = np.ones((filter_size, filter_size), dtype=np.int8)
 
     def time_orderfilter(self, filter_size):
