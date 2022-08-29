@@ -12,8 +12,7 @@ from scipy._lib import _pep440
 
 from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                         _woodbury_algorithm, _periodic_knots,
-                                         _make_interp_per_full_matr,
-                                         _make_smoothing_spline)
+                                         _make_interp_per_full_matr)
 import scipy.interpolate._fitpack_impl as _impl
 from scipy.interpolate._fitpack import _splint
 import os
@@ -1478,11 +1477,21 @@ class TestSmoothingSpline:
         x = np.sort(np.random.random_sample(100) * 4 - 2)
         y = x**2 * np.sin(4 * x) + x**3 + np.random.normal(0., 1.5, n)
 
-        x_dupl = np.copy(x)
-        x_dupl[0] = x_dupl[1]
+        # ``x`` and ``y`` should have same shapes (1-D array)
+        with assert_raises(ValueError):
+            make_smoothing_spline(x, y[1:])
+        with assert_raises(ValueError):
+            make_smoothing_spline(x[1:], y)
+        with assert_raises(ValueError):
+            make_smoothing_spline(x.reshape(1, n), y)
+
         # ``x`` should be an ascending array
         with assert_raises(ValueError):
             make_smoothing_spline(x[::-1], y)
+
+        x_dupl = np.copy(x)
+        x_dupl[0] = x_dupl[1]
+
         with assert_raises(ValueError):
             make_smoothing_spline(x_dupl, y)
             
@@ -1494,16 +1503,38 @@ class TestSmoothingSpline:
         >>> n = 100
         >>> x = np.sort(np.random.random_sample(n) * 4 - 2)
         >>> y = np.sin(x) + np.random.normal(scale=.5, size=n)
+        >>> np.savetxt('x.csv', x)
+        >>> np.savetxt('y.csv', y)
 
-        Notes
-        -----
         We obtain the result of performing the GCV smoothing splines
-        package (by GCVSPL, Woltring) on the sample data points 
+        package (by Woltring, gcvspl) on the sample data points 
         using its version for Octave (https://github.com/srkuberski/gcvspl).
-        In Octave, we load up ``x`` and ``y`` and then perform the following
-        script:
+        In order to use this implementation, one should clone the repository
+        and open the folder in Octave.
+        In Octave, we load up ``x`` and ``y`` (generated from Python code
+        above):
+    
+        >>> x = csvread('x.csv');
+        >>> y = csvread('y.csv');
+
+        Then, in order to access the implementation, we compile gcvspl files in
+        Octave:
+
+        >>> mex gcvsplmex.c gcvspl.c
+        >>> mex spldermex.c gcvspl.c
+
+        The first function computes the vector of unknowns from the dataset 
+        (x, y) while the second one evaluates the spline in certain points
+        with known vector of coefficients.
+
         >>> c = gcvsplmex( x, y, 2 );
         >>> y0 = spldermex( x, c, 2, x, 0 );
+
+        If we want to compare the results of the gcvspl code, we can save
+        ``y0`` in csv file:
+
+        >>> csvwrite('y0.csv', y0);
+
         '''
         # load the data sample
         data = np.load(data_file('gcvspl.npz'))
@@ -1516,7 +1547,7 @@ class TestSmoothingSpline:
         assert_allclose(y_compr, y_GCVSPL, atol=1e-5, rtol=1e-6)
 
 
-    def test_ridge_case(self):
+    def test_non_regularized_case(self):
         '''
         In case the regularization parameter is 0, the resulting spline
         is an interpolation spline with natural boundary conditions.
@@ -1524,12 +1555,10 @@ class TestSmoothingSpline:
         # create data sample
         np.random.seed(1234)
         n = 100
-        x = np.sort(np.random.random_sample(100) * 4 - 2)
+        x = np.sort(np.random.random_sample(n) * 4 - 2)
         y = x**2 * np.sin(4 * x) + x**3 + np.random.normal(0., 1.5, n)
 
-        # in this case, the matrix of weights does not matter
-        # because it is multiplied by :math:`\lambda` which is 0.
-        spline_GCV = _make_smoothing_spline(x, y, 0.)
+        spline_GCV = make_smoothing_spline(x, y, lam=0.)
         spline_interp = make_interp_spline(x, y, 3, bc_type='natural')
 
         grid = np.linspace(x[0], x[-1], 2 * n)
@@ -1552,7 +1581,7 @@ class TestSmoothingSpline:
             w[ind] = 30.
             spl_w = make_smoothing_spline(x, y, w)
             # check that spline with weight in a certain point is closer to the
-            # original point then the one without weights
+            # original point than the one without weights
             orig = abs(spl(x[ind]) - y[ind])
             weighted = abs(spl_w(x[ind]) - y[ind])
 

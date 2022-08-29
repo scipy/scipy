@@ -1529,199 +1529,20 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 #  Smoothing spline helpers #
 #############################
 
-def _smoothing_spline_prepare_input(x, y=None, w=None):
-    r'''
-    Prepares the input for the ``make_smoothing_spline`` algorithm.
+def _compute_optimal_gcv_parameter(X, wE, y, w):
+    '''
+    Returns an optimal regularization parameter from the GCV criteria [1].
 
     Parameters
     ----------
-    x : array_like, shape (n,)
-        Abscissas (sorted).
-    y : array_like, shape (n,), optional
+    X : array, shape (5, n)
+        5 bands of the design matrix ``X`` stored in LAPACK banded storage.
+    wE : array, shape (5, n)
+        5 bands of the penalty matrix :math:`W^{-1} E` stored in LAPACK banded
+        storage.
+    y : array, shape (n,)
         Ordinates.
-    w : array_like, shape (n,), optional
-        Vector of weights.
-
-    Returns
-    -------
-    x : array, shape (n,)
-        Checked and prepared abscissas.
-    y : array, shape (n,), in case y is not None
-        Checked and prepared ordinates.
     w : array, shape (n,)
-        Checked and prepared vector of weights
-    t : array, shape (n + 6,)
-        Vector of knots
-
-    Notes
-    -----
-    Vector of knots constructed from ``x`` in the following way:
-    :math:`t = [x_1, x_1, x_1, x_1, x_2, \dots, x_{n-1}, x_n, x_n, x_n,
-    x_n]`.
-
-    In case ``w`` is None, array of ``1.`` is returned.
-    '''
-    x = np.ascontiguousarray(x, dtype=float)
-
-    if any(x[1:] - x[:-1] <= 0):
-        raise ValueError('``x`` should be an ascending array')
-
-    if w is None:
-        w = np.ones(len(x))
-    else:
-        w = np.ascontiguousarray(w)
-        if any(w <= 0):
-            raise ValueError('Invalid vector of weights')
-
-    t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
-
-    if y is None:
-        return x, w, t
-    else:
-        y = np.ascontiguousarray(y, dtype=float)
-        return x, y, w, t
-
-
-def _smoothing_spline_make_design_matrix(x):
-    '''
-    Returns a design matrix in the basis used by Woltring in
-    the GCVSPL package [1].
-
-    Parameters
-    ----------
-    x : array_like, shape (n,)
-        Abscissas.
-
-    Returns
-    -------
-    Q : array_like, shape (5, n)
-        Design matrix in the basis used by Woltring with the vector 
-        of knots equal to ``x``. Matrix is stored in the diagonal way.
-    
-    Notes
-    -----
-    The matrix is obtained from the design matrix in the B-splines basis
-    using equalities (2.1.7)[2].
-
-    The matrix ``Q`` is tridiagonal and stored in the diagonal way (see
-    scipy.linalg.solve_banded). As far as the penalty matrix contains 5
-    diagonals, we add the first and the last rows of zeros to easily pass
-    then the sum of these two matrices to solve_banded.
-
-    References
-    ----------
-    .. [1] H. J. Woltring, “A Fortran package for generalized, cross-validatory
-        spline smoothing and differentiation,” Advances in Engineering
-        Software, vol. 8, no. 2, pp. 104–113, 1986.
-    .. [2] E. Zemlyanoy, E. Burovski, "Generalized cross-validation smoothing
-        splines", 2022.
-    '''
-
-    x, _, t = _smoothing_spline_prepare_input(x)
-
-    n = x.shape[0]
-    X = BSpline.design_matrix(x, t, 3)
-
-    # central elements
-    ab = np.zeros((5, n))
-    for i in range(1, 4):
-        ab[i, 2:-2] = X[i: -4 + i, 3:-3][np.diag_indices(n - 4)]
-
-    # first elements
-    ab[1, 1] = X[0, 0]
-    ab[2, :2] = ((x[2] + x[1] - 2*x[0]) * X[0, 0], X[1, 1] + X[1, 2])
-    ab[3, :2] = ((x[2] - x[0]) * X[1, 1], X[2, 2])
-
-    # last elements
-    ab[1, -2:] = (X[-3, -3], (x[-1] - x[-3]) * X[-2, -2])
-    ab[2, -2:] = (X[-2, -3] + X[-2, -2], (2 * x[-1] - x[-2] - x[-3]) * X[-1, -1])
-    ab[3, -2] = X[-1, -1]
-
-    return ab
-
-
-def _smoothing_spline_make_penalty_matrix(x, w=None):
-    '''
-    Returns a penalty matrix for the generalized cross-validation
-    smoothing spline.
-
-    Parameters
-    ----------
-    x : array_like, shape (n,)
-        Abscissas.
-    w : array_like, shape (n,), optional
-        Vector of weights.
-    
-    Returns
-    -------
-    E : array_like, shape (5, n)
-        Penalty matrix. Matrix is stored in the diagonal way.
-    
-    Notes
-    -----
-    The penalty matrix is built from the coefficients of the divided
-    differences using formulas discussed in section 1.4.1 (equation
-    (1.4.5))[1].
-
-    References
-    ----------
-    .. [1] E. Zemlyanoy, E. Burovski, "Generalized cross-validation smoothing
-        splines", 2022.
-    '''
-
-    def _coeff_of_divided_diff(x):
-        '''
-        Returns the coefficients of the divided difference.
-
-        Parameters
-        ----------
-        x : array_like, shape (n,)
-            Array which is used for the computation of divided difference.
-
-        Returns
-        -------
-        res : array_like, shape (n,)
-            Coefficients of the divided difference.
-        '''
-        n = x.shape[0]
-        res = np.zeros(n)
-        for i in range(n):
-            pp = 1.
-            for k in range(n):
-                if k != i:
-                    pp *= (x[i] - x[k])
-            res[i] = 1. / pp
-        return res
-
-
-    x, w, _ = _smoothing_spline_prepare_input(x, None, w)
-
-    n = x.shape[0]
-    ab = np.zeros((5, n))
-    ab[2:, 0] = _coeff_of_divided_diff(x[:3]) / w[:3]
-    ab[1:, 1] = _coeff_of_divided_diff(x[:4]) / w[:4]
-    for j in range(2, n - 2):
-        ab[:, j] = (x[j+2]-x[j-2]) * _coeff_of_divided_diff(x[j-2:j+3])\
-                   / w[j-2: j+3]
-
-    ab[:-1, -2] = -_coeff_of_divided_diff(x[-4:]) / w[-4:]
-    ab[:-2, -1] = _coeff_of_divided_diff(x[-3:]) / w[-3:]
-    ab *= 6
-
-    return ab
-
-
-def _compute_optimal_gcv_parameter(x, y, w=None):
-    '''
-    Returns regularization parameter from the GCV criteria
-
-    Parameters
-    ----------
-    x : array_like, shape (n,)
-        Abscissas.
-    y : array_like, shape (n,)
-        Ordinates.
-    w : array_like, shape (n,), optional
         Vector of weights.
 
     Returns
@@ -1729,6 +1550,12 @@ def _compute_optimal_gcv_parameter(x, y, w=None):
     lam : float
         An optimal from the GCV criteria point of view regularization
         parameter.
+
+    References
+    ----------
+    .. [1] G. Wahba, “Estimating the smoothing patameter” in Spline models
+        for observational data, Philadelphia, Pennsylvania: Society for
+        Industrial and Applied Mathematics, 1990, pp. 45–65.
     '''
 
     def compute_banded_symmetric_XT_W_Y(X, w, Y):
@@ -1739,11 +1566,11 @@ def _compute_optimal_gcv_parameter(x, y, w=None):
         Parameters
         ----------
         X : array, shape (5, n)
-            5 bands of the matrix ``X`` stored in the banded way.
+            5 bands of the matrix ``X`` stored in LAPACK banded storage.
         w : array, shape (n,)
             Array of weights
         Y : array, shape (5, n)
-            5 bands of the matrix ``Y`` stored in the banded way.
+            5 bands of the matrix ``Y`` stored in LAPACK banded storage.
 
         Returns
         -------
@@ -1754,7 +1581,7 @@ def _compute_optimal_gcv_parameter(x, y, w=None):
         -----
         As far as the matrices ``X`` and ``Y`` are 5-banded, their product 
         :math:`X^T W Y` is 7-banded. It is also symmetric, so we can store only
-        unique bands.
+        unique diagonals.
         '''
         # compute W Y
         W_Y = np.copy(Y)
@@ -1781,7 +1608,7 @@ def _compute_optimal_gcv_parameter(x, y, w=None):
         Parameters
         ----------
         A : array, shape (4, n)
-            Matrix to inverse.
+            Matrix to inverse stored in LAPACK banded storage.
 
         Returns
         -------
@@ -1795,14 +1622,13 @@ def _compute_optimal_gcv_parameter(x, y, w=None):
         in case matrix ``A`` is close to not positive defined, the function
         raises LinalgError.
 
-        Both matrices ``A`` and ``B`` are stored in the way that ``X[-1]`` is
-        the main diagonal of the matrices, ``X[-2]`` is the second diagonal,
-        etc.
+        Both matrices ``A`` and ``B`` are stored in LAPACK banded storage.
 
         References
         ----------
         .. [1] M. F. Hutchinson and F. R. de Hoog, “Smoothing noisy data with spline 
-            functions,” Numerische Mathematik, vol. 47, no. 1, pp. 99–106, 1985. 
+            functions,” Numerische Mathematik, vol. 47, no. 1, pp. 99–106, 1985.
+
         '''
         U = cholesky_banded(A)
         for i in range(2, 5):
@@ -1816,7 +1642,6 @@ def _compute_optimal_gcv_parameter(x, y, w=None):
             rng_sum = 0.
             if l == 0:
                 # use 2-nd formula from [1]
-                
                 for k in range(1, rng + 1):
                     rng_sum -= U[-k - 1, i + k] * B[-k - 1, i + k]
                 rng_sum += D[i]
@@ -1833,28 +1658,27 @@ def _compute_optimal_gcv_parameter(x, y, w=None):
         for i in range(n - 1, -1, -1):
             for l in range(min(3, n - i - 1), -1, -1):
                 find_b_inv_elem(i, l, U, D, B)
+        # the first row contains garbage and should be removed
         B[0] = [0.] * n
         return B
     
 
-    def _gcv(lam, X, XtX, E, XtE):
+    def _gcv(lam, X, XtWX, wE, XtE):
         r'''
-        Computes the generalized cross-validation criteria.
+        Computes the generalized cross-validation criteria [1].
         
         Parameters
         ----------
         lam : float, (:math:`\lambda \geq 0`)
             Regularization parameter.
         X : array, shape (5, n)
-            Matrix ``X`` stored in the banded way.
-        XtX : array, shape (4, n)
-            Product :math:`X^T X` stored in the banded way. ``XtX[-1]`` is the
-            main diagonal.
-        E : array, shape (5, n)
-            Matrix ``E`` stored in the banded way.
+            Matrix is stored in LAPACK banded storage.
+        XtWX : array, shape (4, n)
+            Product :math:`X^T W X` stored in LAPACK banded storage.
+        wE : array, shape (5, n)
+            Matrix :math:`W^{-1} E` stored in LAPACK banded storage.
         XtE : array, shape (4, n)
-            Product :math:`X^T E` stored in the banded way. ``XtE[-1]`` is the
-            main diagonal.
+            Product :math:`X^T E` stored in LAPACK banded storage.
         
         Returns
         -------
@@ -1864,41 +1688,46 @@ def _compute_optimal_gcv_parameter(x, y, w=None):
         
         Notes
         -----
-        Criteria is computed from the formula (1.3.2)[1]:
+        Criteria is computed from the formula (1.3.2)[3]:
 
         .. math:
 
         GCV(\lambda) = \dfrac{1}{n} \sum\limits_{k = 1}^{n} \dfrac{ \left(
         y_k - f_{\lambda}(x_k) \right)^2}{\left( 1 - \Tr{A}/n\right)^2}$.
-        The criteria is discussed in section 1.3 [1].
+        The criteria is discussed in section 1.3 [3].
 
-        The numerator is computed using (2.2.4)[1] and the denominator is
+        The numerator is computed using (2.2.4)[3] and the denominator is
         computed using an algorithm from [2] (see in the ``compute_b_inv``
         function).
 
         References
         ----------
-        .. [1] E. Zemlyanoy, E. Burovski, "Generalized cross-validation smoothing
-            splines", 2022.
+        .. [1] G. Wahba, “Estimating the smoothing patameter” in Spline models
+            for observational data, Philadelphia, Pennsylvania: Society for
+            Industrial and Applied Mathematics, 1990, pp. 45–65.
         .. [2] M. F. Hutchinson and F. R. de Hoog, “Smoothing noisy data with spline 
             functions,” Numerische Mathematik, vol. 47, no. 1, pp. 99–106, 1985.
+            :doi:`10.1007/BF01389878`
+        .. [3] E. Zemlyanoy, "Generalized cross-validation smoothing splines",
+            2022.
         '''
         # Compute the numerator from (2.2.4)[1]
         n = X.shape[1]
-        c = solve_banded((2, 2), X + lam * E, y)
+        c = solve_banded((2, 2), X + lam * wE, y)
         res = np.zeros(n)
-        tmp = E * c
+        # compute ``W^{-1} E c`` with respect to banded-storage of ``E``
+        tmp = wE * c
         for i in range(n):
             for j in range(max(0, i - n + 3), min(5, i + 3)):
                 res[i] += tmp[j, i + 2 - j]
         numer = np.linalg.norm(lam * res)**2
 
         # compute the denominator
-        lhs = XtX + lam * XtE
+        lhs = XtWX + lam * XtE
         try:
             b_banded = compute_b_inv(lhs)
-            # compute to trace of the product b_banded @ XtX
-            tr = b_banded * XtX
+            # compute the trace of the product b_banded @ XtX
+            tr = b_banded * XtWX
             tr[:-1] *= 2
             # find the denominator
             denom = (1 - sum(sum(tr)) / n)**2
@@ -1910,17 +1739,12 @@ def _compute_optimal_gcv_parameter(x, y, w=None):
         
         return res
 
-    
-    x, y, w, _ = _smoothing_spline_prepare_input(x, y, w)
-    n = x.shape[0]
-    
-    X = _smoothing_spline_make_design_matrix(x)
-    E = _smoothing_spline_make_penalty_matrix(x, w)
+    n = X.shape[1]
 
-    XtX = compute_banded_symmetric_XT_W_Y(X, w, X)
-    XtE = compute_banded_symmetric_XT_W_Y(X, w, E)
+    XtWX = compute_banded_symmetric_XT_W_Y(X, w, X)
+    XtE = compute_banded_symmetric_XT_W_Y(X, w, wE)
 
-    fun = lambda lam: _gcv(lam, X, XtX, E, XtE)
+    fun = lambda lam: _gcv(lam, X, XtWX, wE, XtE)
     gcv_est = minimize_scalar(fun, bounds=(0, n), method='Bounded')
     if gcv_est.success:
         return gcv_est.x
@@ -1928,56 +1752,45 @@ def _compute_optimal_gcv_parameter(x, y, w=None):
                      f"function: {gcv_est.message}")
 
 
-def _make_smoothing_spline(x, y, p, w=None):
+def _coeff_of_divided_diff(x):
     '''
-    Returns a spline function with regularization parameter equal
-    to ``p`` using a matrix representation of the penalty function.
+    Returns the coefficients of the divided difference.
 
     Parameters
     ----------
-    x : array_like, shape (n,)
-        Abscissas.
-    y : array_like, shape (n,)
-        Ordinates.
-    p : float
-        Regularization parameter (``p >= 0``)
-    w : array_like, shape (n,), optional
-        Vector of weights.
+    x : array, shape (n,)
+        Array which is used for the computation of divided difference.
 
     Returns
     -------
-    func : a BSpline object.
-        A callable representing a spline in the B-spline basis 
-        as a solution of the problem of smoothing splines using
-        the GCV criteria.
-
+    res : array_like, shape (n,)
+        Coefficients of the divided difference.
+    
     Notes
     -----
-    If ``p`` is 0 then ``func`` is equal to the interpolation
-    spline with natural boundary conditions.
+    Vector ``x`` should have unique elements, otherwise an error division by
+    zero might be raised.
+
+    No checks are performed.
+
     '''
-    x, y, w, t = _smoothing_spline_prepare_input(x, y, w)
-    
-    if p < 0.:
-        raise ValueError('Regularization parameter should be non-negative')
-
-    X = _smoothing_spline_make_design_matrix(x)
-    E = _smoothing_spline_make_penalty_matrix(x, w)
-
-    c = solve_banded((2, 2), X + p * E, y)
-    c_ = np.r_[ c[0] * (t[5] + t[4] - 2 * t[3]) + c[1],
-                c[0] * (t[5] - t[3]) + c[1],
-                c[1:-1],
-                c[-1] * (t[-4] - t[-6]) + c[-2],
-                c[-1] * (2 * t[-4] - t[-5] - t[-6]) + c[-2]]
-    return BSpline.construct_fast(t, c_, 3)
+    n = x.shape[0]
+    res = np.zeros(n)
+    for i in range(n):
+        pp = 1.
+        for k in range(n):
+            if k != i:
+                pp *= (x[i] - x[k])
+        res[i] = 1. / pp
+    return res
 
 
-def make_smoothing_spline(x, y, w=None):
+def make_smoothing_spline(x, y, w=None, lam=None):
     r'''
-    Returns a smoothing cubic spline function using the GCV criteria.
-    A smoothing spline is found as a solution to the following minimization
-    problem:
+    Returns a smoothing cubic spline function using the GCV criteria [1].
+
+    A smoothing spline is found as a solution to the regularized weighted
+    linear regression problem:
     
     .. math::
 
@@ -1985,9 +1798,11 @@ def make_smoothing_spline(x, y, w=None):
         \lambda\int\limits_{x_1}^{x_n} (f^{(2)}(u))^2 \diff u
 
     where :math:`f` is a spline function, :math:`w` is a vector of weights and
-    :math:`\lambda` is a regularization parameter
-    All the equalities for the implementation are discussed in [1]; the
-    algorithm is based on [2].
+    :math:`\lambda` is a regularization parameter.
+
+    If ``lam`` is None, we use the GCV criteria to find an optimal
+    regularization parameter, otherwise we solve the regularized weighted
+    linear regression problem with given parameter.
 
     Parameters
     ----------
@@ -1996,31 +1811,46 @@ def make_smoothing_spline(x, y, w=None):
     y : array_like, shape (n,)
         Ordinates.
     w : array_like, shape (n,), optional
-        Vector of weights.
+        Vector of weights. Default is ``np.ones_like(x)``.
+    lam : float, (:math:`\lambda \geq 0`), optional
+        Regularization parameter. If ``lam`` is None, then it is found from
+        the GCV criteria. Default is None.
     
     Returns
     -------
     func : a BSpline object.
         A callable representing a spline in the B-spline basis 
         as a solution of the problem of smoothing splines using
-        the GCV criteria.
+        the GCV criteria [1].
     
     Notes
     -----
-    It is known that the solution to the stated minimization problem exists
-    and is a natural cubic spline with vector of knots equal to the unique
-    elements of ``x`` [3].
+    The original implementation was introduced by Woltring in FORTRAN [2], but
+    because of the license issues cannot be used in the SciPy source code.
+
+    If the vector of weights ``w`` is None, we assume that all the points are
+    equal in terms of weights, and vector of weights is vector of ones.
+
+    Note that in weighted residual sum of squares, weights are not squared:
+    :math:`\sum\limits_{i=1}^n w_i\abs{y_i - f(x_i)}^2` while in ``splrep``
+    the sum is built from the squared weights.
+
+    In cases when the initial problem is ill-posed (for example, the product
+    :math:`X^T W X` where :math:`X is a design matrix is not a positive
+    defined matrix) a ValueError is raised.
 
     References
     ----------
-    .. [1] E. Zemlyanoy, E. Burovski, "Generalized cross-validation smoothing
-        splines", 2022.
+    .. [1] G. Wahba, “Estimating the smoothing patameter” in Spline models for
+        observational data, Philadelphia, Pennsylvania: Society for Industrial
+        and Applied Mathematics, 1990, pp. 45–65.
     .. [2] H. J. Woltring, A Fortran package for generalized, cross-validatory
         spline smoothing and differentiation, Advances in Engineering
         Software, vol. 8, no. 2, pp. 104–113, 1986.
-    .. [3] T. Hastie, J. Friedman, and R. Tisbshirani, The elements of
-        Statistical Learning: Data Mining, Inference, and prediction.
-        New York: Springer, 2017.
+        :doi:`10.1016/0141-1195(86)90098-7`
+    .. [3] T. Hastie, J. Friedman, and R. Tisbshirani, “Smoothing Splines” in
+        The elements of Statistical Learning: Data Mining, Inference, and
+        prediction, New York: Springer, 2017, pp. 241–249.
 
     Examples
     --------
@@ -2029,7 +1859,8 @@ def make_smoothing_spline(x, y, w=None):
     >>> import numpy as np
     >>> np.random.seed(1234)
     >>> n = 200
-    >>> func = lambda x: x**3 + x**2 * np.sin(4 * x)
+    >>> def func(x):
+    ...    return x**3 + x**2 * np.sin(4 * x)
     >>> x = np.sort(np.random.random_sample(n) * 4 - 2)
     >>> y = func(x) + np.random.normal(scale=1.5, size=n)
 
@@ -2045,10 +1876,79 @@ def make_smoothing_spline(x, y, w=None):
     >>> plt.plot(grid, func(grid), label='Original function')
     >>> plt.scatter(x, y, marker='.')
     >>> plt.legend(loc='best')
+    >>> plt.show()
 
     '''
-    x, y, w, _ = _smoothing_spline_prepare_input(x, y, w)    
 
-    p = _compute_optimal_gcv_parameter(x, y, w)
-    func = _make_smoothing_spline(x, y, p, w)
-    return func
+    x = np.ascontiguousarray(x, dtype=float)
+    y = np.ascontiguousarray(y, dtype=float)
+
+    if any(x[1:] - x[:-1] <= 0):
+        raise ValueError('``x`` should be an ascending array')
+    
+    if x.ndim != 1 or y.ndim != 1 or x.shape[0] != y.shape[0]:
+        raise ValueError('``x`` and ``y`` should one dimensional and the same'
+                         ' size')
+
+    if w is None:
+        w = np.ones(len(x))
+    else:
+        w = np.ascontiguousarray(w)
+        if any(w <= 0):
+            raise ValueError('Invalid vector of weights')
+
+    t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
+    n = x.shape[0]
+
+    # It is known that the solution to the stated minimization problem exists
+    # and is a natural cubic spline with vector of knots equal to the unique
+    # elements of ``x`` [3], so we will solve the problem in the basis of
+    # natural splines.
+
+    # create design matrix in the B-spline basis
+    X_bspl = BSpline.design_matrix(x, t, 3)
+    # move from B-spline basis to the basis of natural splines 
+    # central elements
+    X = np.zeros((5, n))
+    for i in range(1, 4):
+        X[i, 2: -2] = X_bspl[i: i - 4, 3: -3][np.diag_indices(n - 4)]
+
+    # first elements
+    X[1, 1] = X_bspl[0, 0]
+    X[2, :2] = ((x[2] + x[1] - 2 * x[0]) * X_bspl[0, 0],
+                X_bspl[1, 1] + X_bspl[1, 2])
+    X[3, :2] = ((x[2] - x[0]) * X_bspl[1, 1], X_bspl[2, 2])
+
+    # last elements
+    X[1, -2:] = (X_bspl[-3, -3], (x[-1] - x[-3]) * X_bspl[-2, -2])
+    X[2, -2:] = (X_bspl[-2, -3] + X_bspl[-2, -2],
+                 (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
+    X[3, -2] = X_bspl[-1, -1]
+
+    # create penalty matrix and divide it by vector of weights: W^{-1} E
+    wE = np.zeros((5, n))
+    wE[2:, 0] = _coeff_of_divided_diff(x[:3]) / w[:3]
+    wE[1:, 1] = _coeff_of_divided_diff(x[:4]) / w[:4]
+    for j in range(2, n - 2):
+        wE[:, j] = (x[j+2] - x[j-2]) * _coeff_of_divided_diff(x[j-2:j+3])\
+                   / w[j-2: j+3]
+
+    wE[:-1, -2] = -_coeff_of_divided_diff(x[-4:]) / w[-4:]
+    wE[:-2, -1] = _coeff_of_divided_diff(x[-3:]) / w[-3:]
+    wE *= 6
+
+    if lam is None:
+        lam = _compute_optimal_gcv_parameter(X, wE, y, w)
+    elif lam < 0.:
+        raise ValueError('Regularization parameter should be non-negative')
+
+    # solve the initial problem in the basis of natural splines
+    c = solve_banded((2, 2), X + lam * wE, y)
+    # move back to B-spline basis
+    c_ = np.r_[ c[0] * (t[5] + t[4] - 2 * t[3]) + c[1],
+                c[0] * (t[5] - t[3]) + c[1],
+                c[1: -1],
+                c[-1] * (t[-4] - t[-6]) + c[-2],
+                c[-1] * (2 * t[-4] - t[-5] - t[-6]) + c[-2]]
+
+    return BSpline.construct_fast(t, c_, 3)
