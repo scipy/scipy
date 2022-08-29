@@ -153,8 +153,9 @@ def lombscargle(x,
     return pgram
 
 
-def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
-                return_onesided=True, scaling='density', axis=-1):
+def periodogram(x, fs=1.0, window='boxcar', nperseg=None, nfft=None,
+                detrend='constant', return_onesided=True,
+                scaling='density', axis=-1):
     """
     Estimate power spectral density using a periodogram.
 
@@ -171,6 +172,10 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg. Defaults
         to 'boxcar'.
+    nperseg : int, optional
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
     nfft : int, optional
         Length of the FFT used. If `None` the length of `x` will be
         used.
@@ -268,20 +273,22 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     if window is None:
         window = 'boxcar'
 
+    if nperseg is None:
+        if hasattr(window, 'shape'):
+            nperseg = window.shape[0]
+        elif nfft == x.shape[axis]:
+            nperseg = nfft
+        elif nfft > x.shape[axis]:
+            nperseg = x.shape[axis]
+        elif nfft < x.shape[axis]:
+            nperseg = nfft
+
     if nfft is None:
         nfft = x.shape[axis]
-        if hasattr(window, 'shape'):
-            nfft = window.shape[0]
-
-    if nfft == x.shape[axis]:
-        nperseg = nfft
-    elif nfft > x.shape[axis]:
-        nperseg = x.shape[axis]
     elif nfft < x.shape[axis]:
         s = [np.s_[:]]*len(x.shape)
         s[axis] = np.s_[:nfft]
         x = x[tuple(s)]
-        nperseg = nfft
         nfft = None
 
     return welch(x, fs=fs, window=window, nperseg=nperseg, noverlap=0,
