@@ -8912,8 +8912,10 @@ class vonmises_gen(rv_continuous):
         else:
             def fun(x, *args):
                 return func(x) * self.pdf(x, *args, **lockwds)
+
         def refun(x, *args):
             return np.real(fun(x, *args))
+
         def imfun(x, *args):
             return np.imag(fun(x, *args))
         if lb is None:
