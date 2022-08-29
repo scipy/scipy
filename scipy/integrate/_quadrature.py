@@ -5,6 +5,8 @@ import numpy as np
 import math
 import types
 import warnings
+from collections import namedtuple
+
 
 # trapezoid is a public function for scipy.integrate,
 # even though it's actually a NumPy function.
@@ -12,10 +14,11 @@ from numpy import trapz as trapezoid
 from scipy.special import roots_legendre
 from scipy.special import gammaln
 
+
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
            'trapezoid', 'trapz', 'simps', 'simpson',
            'cumulative_trapezoid', 'cumtrapz', 'newton_cotes',
-           'AccuracyWarning']
+           'qmc_quad', 'AccuracyWarning']
 
 
 # Make See Also linking for our local copy work properly
@@ -1035,3 +1038,131 @@ def newton_cotes(rn, equal=0):
     fac = power*math.log(N) - gammaln(p1)
     fac = math.exp(fac)
     return ai, BN*fac
+
+
+def _qmc_quad_iv(func, ranges, n_points, qmc_engine, args):
+
+    # lazy import to avoid issues with partially-initialized submodule
+    if not hasattr(qmc_quad, 'qmc'):
+        from scipy import stats
+        qmc_quad.stats = stats
+    else:
+        stats = qmc_quad.stats
+
+    if not callable(func):
+        message = "`func` must be callable."
+        raise TypeError(message)
+
+    ranges = np.atleast_2d(ranges)
+    dim = ranges.shape[0]
+
+    if args is None:
+        args = tuple()
+
+    try:
+        len(args)
+    except TypeError:
+        args = (args,)
+
+    try:
+        func(*ranges[:, 0], *args)
+    except Exception as e:
+        message = ("`func` must evaluate the integrand at points within and "
+                   "including the boundaries of the integration range; "
+                   "e.g. `func(*ranges[:, 0])` and `func(*ranges[:, 1])` "
+                   "must return the integrand at the lower and upper "
+                   "integration limits.")
+        raise ValueError(message) from e
+
+    try:
+        func(*ranges, *args)
+        vfunc = func
+    except Exception as e:
+        wmessage = ("Exception encountered when attempting vectorized call to "
+                    f"`func`: {e}. `func` should accept arrays `x0, ..., xn` "
+                    "for better performance.")
+        emessage = ("Exception encountered when attempting vectorized call to "
+                    f"`func`: {e}, and `args` is not `None`. `func` must "
+                    "accept arrays `x0, ..., xn` if `args` is not `None`.")
+        if args != tuple():
+            raise ValueError(emessage)
+        else:
+            warnings.warn(wmessage)
+        vfunc = np.vectorize(func)
+
+    n_points_int = np.int64(n_points)
+    if n_points != n_points_int:
+        message = "`n_points` must be an integer."
+        raise TypeError(message)
+
+    if qmc_engine is None:
+        qmc_engine = stats.qmc.Halton(dim)
+    elif not isinstance(qmc_engine, stats.qmc.QMCEngine):
+        message = "`qrng` must be an instance of scipy.stats.qmc.QMCEngine."
+        raise TypeError(message)
+
+    return vfunc, ranges, n_points_int, qmc_engine, args, stats
+
+
+QMCQuadResult = namedtuple('QMCQuadResult', ['integral', 'standard_error'])
+
+
+def qmc_quad(func, ranges, *, n_points=1024, qrng=None, args=None):
+    """
+    Compute an integral in N-dimensions using Quasi-Monte Carlo quadrature.
+
+    Parameters
+    ----------
+    func : callable
+        The function to be integrated. Must accept separate arguments
+        ``x0, ..., xn`` corresponding with the coordinate in each dimension.
+        May also accept additional positional arguments specified with
+        `args`.
+    ranges : array-like
+        A two-dimensional array specifying the lower and upper integration
+        limits of each variable.
+    n_points : int, default: 1024
+        The number of Quasi-Monte Carlo points at which to evaluate the
+        integrand.
+    qrng : stats.qmc.QMCEngine, optional
+        An instance of the QMCEngine from which to sample QMC points.
+        The QMCEngine must be initialized to a number of dimensions
+        corresponding with the number of variables ``x0, ..., xn`` passed to
+        `func`. If a QMCEngine is not provided, `scipy.stats.qmc.Halton` will
+        be initialized with the number of dimensions determine from `ranges`
+        and the default `seed`.
+    args : sequence, optional
+        Extra arguments to pass to `func`. All extra arguments must be packed
+        into a sequence; the will be unpacked to be passed to `func`, e.g.
+        ``func(x1, x2, *args)``.
+
+    Returns
+    -------
+    result : object
+        The a result object with attributes:
+
+        integral : float
+            The estimate of the integral
+        standard_error :
+            The standard error of the
+
+    """
+    args = _qmc_quad_iv(func, ranges, n_points, qrng, args)
+    func, ranges, n_points, qrng, args, stats = args
+
+    sample = qrng.random(n_points)
+    # Can't check this in input validation or that would burn sampled
+    # points, which would be a problem for Sobol
+    if sample.shape[-1] != ranges.shape[0]:
+        message = ("`qrng` must be initialized with dimensionality equal to "
+                   "the number of variables in `ranges`, i.e., "
+                   "`qrng.random().shape[-1]` must equal `ranges.shape[0]`.")
+        raise ValueError(message)
+
+    x = stats.qmc.scale(sample, *ranges.T)
+    lb, ub = ranges.T
+    A = np.prod(ub - lb)
+    integrands = func(*x.T, *args)
+    integral = np.mean(integrands * A)
+    standard_error = stats.sem(integrands) * A
+    return QMCQuadResult(integral, standard_error)

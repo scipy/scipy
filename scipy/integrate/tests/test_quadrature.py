@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 from numpy import cos, sin, pi
 from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
@@ -5,8 +6,9 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
-                             quad, simpson, simps, fixed_quad, AccuracyWarning)
-
+                             quad, simpson, simps, fixed_quad, AccuracyWarning,
+                             qmc_quad)
+from scipy import stats
 
 class TestFixedQuad:
     def test_scalar(self):
@@ -290,3 +292,66 @@ class TestTrapezoid():
         assert_equal(trapezoid(y, x=x, dx=0.5, axis=0),
                      trapz(y, x=x, dx=0.5, axis=0))
 
+
+class TestQMCQuad():
+    def test_input_validation(self):
+        message = "`func` must be callable."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad("a duck", [[0, 1], [0, 1]])
+
+        message = "`func` must evaluate the integrand at points..."
+        with pytest.raises(ValueError, match=message):
+            qmc_quad(lambda x: 1, [[0, 1], [0, 1]])
+
+        message = "Exception encountered when attempting vectorized call..."
+        # This is OK; function can be vectorized automatically if args is None
+        with pytest.warns(UserWarning, match=message):
+            qmc_quad(lambda x: (x+np.array([1, 2, 3])).sum(), [[0, 1]])
+        # This is not; raise an error
+        message = "Exception encountered when attempting vectorized call..."
+        with pytest.raises(ValueError, match=message):
+            qmc_quad(lambda x, a: x+np.array([1, 2, 3]), [[0, 1]], args=1)
+
+        message = "`n_points` must be an integer."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], n_points=1024.5)
+
+        message = "`qrng` must be an instance of scipy.stats.qmc.QMCEngine."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], qrng="a duck")
+
+        message = "`qrng` must be initialized with dimensionality equal to "
+        with pytest.raises(ValueError, match=message):
+            qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], qrng=stats.qmc.Sobol(1))
+
+    @pytest.mark.parametrize("n_points", [2**10, 2**13, 2**16])
+    def test_basic(self, n_points):
+
+        ndim = 2
+        mean = np.zeros(ndim)
+        cov = np.eye(ndim)
+
+        def func(x, y, mean, cov):
+            z = np.asarray([x, y]).T
+            return stats.multivariate_normal.pdf(z, mean, cov)
+
+        rng = np.random.default_rng(2879434385674690281)
+        qrng = stats.qmc.Sobol(ndim, seed=rng)
+        lb = np.zeros(ndim)
+        ub = np.ones(ndim)
+        ranges = np.asarray([lb, ub]).T
+        res = qmc_quad(func, ranges, args=(mean, cov), qrng=qrng)
+        ref = stats.multivariate_normal.cdf(ub, mean, cov, lower_limit=lb)
+        assert_allclose(res.integral, ref,
+                        rtol=1/n_points, atol=res.standard_error)
+
+    def test_flexible_input(self):
+        # check that qrng is not required
+        # ensure that if args is passed as a scalar, it is packed into a tuple
+        # also checks that for 1d problems, ranges can be 1D
+        def func(x, scale):
+            return stats.norm.pdf(x, scale=scale)
+
+        res = qmc_quad(func, [0, 1], args=2)
+        ref = stats.norm.cdf(1, scale=2) - stats.norm.cdf(0, scale=2)
+        assert_allclose(res.integral, ref, 1e-2)
