@@ -99,11 +99,11 @@ capabilities, and even improve your understanding of statistics.
 The following tutorials will help you get started with the resampling
 and Monte Carlo methods in `scipy.stats.`
 
-1. `Monte Carlo Hypothesis Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_1.ipynb>`_
-2. `Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2.ipynb>`_
+1. `Monte Carlo Hypothesis Tests <https://github.com/scipy/scipy-cookbook/blob/main/ipython/ResamplingAndMonteCarloMethods/resampling_tutorial_1.ipynb>`_
+2. `Permutation Tests <https://github.com/scipy/scipy-cookbook/blob/main/ipython/ResamplingAndMonteCarloMethods/resampling_tutorial_2.ipynb>`_
 
-   a. `Independent-Sample Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2a.ipynb>`_
-   b. `Paired-Sample Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2b.ipynb>`_
-   c. `Correlated-Sample Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2c.ipynb>`_
+   a. `Independent-Sample Permutation Tests <https://github.com/scipy/scipy-cookbook/blob/main/ipython/ResamplingAndMonteCarloMethods/resampling_tutorial_2a.ipynb>`_
+   b. `Paired-Sample Permutation Tests <https://github.com/scipy/scipy-cookbook/blob/main/ipython/ResamplingAndMonteCarloMethods/resampling_tutorial_2b.ipynb>`_
+   c. `Correlated-Sample Permutation Tests <https://github.com/scipy/scipy-cookbook/blob/main/ipython/ResamplingAndMonteCarloMethods/resampling_tutorial_2c.ipynb>`_
 
-3. `The Bootstrap <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_3.ipynb>`_
+3. `The Bootstrap <https://github.com/scipy/scipy-cookbook/blob/main/ipython/ResamplingAndMonteCarloMethods/resampling_tutorial_3.ipynb>`_
