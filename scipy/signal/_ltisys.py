@@ -1885,7 +1885,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     Compute the simulation, and then plot `y`.  As expected, the plot shows
     the curve ``y = 0.5*t**2``.
 
-    
+
     >>> tout, y, x = lsim2(system, u, t)
     >>> plt.plot(t, y)
     >>> plt.grid(alpha=0.3)
