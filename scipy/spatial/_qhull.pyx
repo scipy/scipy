@@ -19,6 +19,7 @@ from . cimport setlist
 from libc cimport stdlib
 from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
+from libc.stdio cimport FILE
 
 import os
 import sys
@@ -184,7 +185,7 @@ cdef extern from "qhull_src/src/io_r.h":
 
     ctypedef void printvridgeT(qhT *, void *fp, vertexT *vertex, vertexT *vertexA,
                                setT *centers, boolT unbounded)
-    int qh_eachvoronoi_all(qhT *, void *fp, void* printvridge,
+    int qh_eachvoronoi_all(qhT *, FILE *fp, void* printvridge,
                            boolT isUpper, qh_RIDGE innerouter,
                            boolT inorder) nogil
 
@@ -829,7 +830,7 @@ cdef class _Qhull:
         self._ridge_points = np.empty((10, 2), np.intc)
         self._ridge_vertices = []
 
-        qh_eachvoronoi_all(self._qh, <void*>self, &_visit_voronoi, self._qh[0].UPPERdelaunay,
+        qh_eachvoronoi_all(self._qh, <FILE*>self, &_visit_voronoi, self._qh[0].UPPERdelaunay,
                            qh_RIDGEall, 1)
 
         self._ridge_points = self._ridge_points[:self._nridges]
@@ -991,7 +992,7 @@ cdef class _Qhull:
         return extremes_arr
 
 
-cdef void _visit_voronoi(qhT *_qh, void *ptr, vertexT *vertex, vertexT *vertexA,
+cdef void _visit_voronoi(qhT *_qh, FILE *ptr, vertexT *vertex, vertexT *vertexA,
                          setT *centers, boolT unbounded):
     cdef _Qhull qh = <_Qhull>ptr
     cdef int point_1, point_2, ix
