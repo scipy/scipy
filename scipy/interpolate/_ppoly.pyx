@@ -19,8 +19,6 @@ ctypedef fused double_or_complex:
     double
     double complex
 
-cdef extern from "numpy/npy_math.h":
-    double nan "NPY_NAN"
 
 DEF MAX_DIMS = 64
 
@@ -94,7 +92,7 @@ def evaluate(double_or_complex[:,:,::1] c,
         if i < 0:
             # xval was nan etc
             for jp in range(c.shape[2]):
-                out[ip, jp] = nan
+                out[ip, jp] = libc.math.NAN
             continue
         else:
             interval = i
@@ -232,7 +230,7 @@ def evaluate_nd(double_or_complex[:,:,::1] c,
         if out_of_range:
             # xval was nan etc
             for jp in range(c.shape[2]):
-                out[ip, jp] = nan
+                out[ip, jp] = libc.math.NAN
             continue
 
         pos = 0
@@ -382,7 +380,7 @@ def integrate(double_or_complex[:,:,::1] c,
 
 
     if start_interval < 0 or end_interval < 0:
-        out[:] = nan
+        out[:] = libc.math.NAN
         return
 
     # evaluate
@@ -465,7 +463,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
 
     workspace = NULL
 
-    last_root = nan
+    last_root = libc.math.NAN
 
     cdef bint ascending = x[x.shape[0] - 1] >= x[0]
 
@@ -500,7 +498,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
                         # A real interval
                         cur_roots.append(x[interval])
                         cur_roots.append(np.nan)
-                        last_root = nan
+                        last_root = libc.math.NAN
                     continue
                 elif k < -1:
                     # An error occurred
@@ -997,7 +995,7 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w, double y=0):
         for i in range(c.shape[1]):
             for j in range(c.shape[2]):
                 for k in range(c.shape[0]):
-                    w[k,i,j] = nan
+                    w[k,i,j] = libc.math.NAN
 
                 nroots = croots_poly1(c, y, i, j, wr, wi, &workspace)
 
@@ -1208,7 +1206,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
         if i < 0:
             # xval was nan etc
             for jp in range(c.shape[2]):
-                out[ip, jp] = nan
+                out[ip, jp] = libc.math.NAN
             continue
         else:
             interval = i

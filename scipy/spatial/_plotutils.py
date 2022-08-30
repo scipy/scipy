@@ -62,6 +62,7 @@ def delaunay_plot_2d(tri, ax=None):
     Examples
     --------
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import Delaunay, delaunay_plot_2d
 
@@ -118,6 +119,7 @@ def convex_hull_plot_2d(hull, ax=None):
     Examples
     --------
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import ConvexHull, convex_hull_plot_2d
 

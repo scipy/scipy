@@ -429,7 +429,11 @@ class DescriptiveStats(Benchmark):
 
 
 class GaussianKDE(Benchmark):
-    def setup(self):
+    param_names = ['points']
+    params = [10, 6400]
+
+    def setup(self, points):
+        self.length = points
         rng = np.random.default_rng(12345678)
         n = 2000
         m1 = rng.normal(size=n)
@@ -440,18 +444,16 @@ class GaussianKDE(Benchmark):
         ymin = m2.min()
         ymax = m2.max()
 
-        X, Y = np.mgrid[xmin:xmax:200j, ymin:ymax:200j]
+        X, Y = np.mgrid[xmin:xmax:80j, ymin:ymax:80j]
         self.positions = np.vstack([X.ravel(), Y.ravel()])
         values = np.vstack([m1, m2])
         self.kernel = stats.gaussian_kde(values)
 
-    def time_gaussian_kde_evaluate_few_points(self):
-        # test gaussian_kde evaluate on a small number of points
-        self.kernel(self.positions[:, :10])
+    def time_gaussian_kde_evaluate(self, length):
+        self.kernel(self.positions[:, :self.length])
 
-    def time_gaussian_kde_evaluate_many_points(self):
-        # test gaussian_kde evaluate on many points
-        self.kernel(self.positions)
+    def time_gaussian_kde_logpdf(self, length):
+        self.kernel.logpdf(self.positions[:, :self.length])
 
 
 class GroupSampling(Benchmark):

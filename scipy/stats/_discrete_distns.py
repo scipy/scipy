@@ -280,9 +280,9 @@ class nbinom_gen(rv_discrete):
 
     for :math:`k \ge 0`, :math:`0 < p \leq 1`
 
-    `nbinom` takes :math:`n` and :math:`p` as shape parameters where n is the
-    number of successes, :math:`p` is the probability of a single success,
-    and :math:`1-p` is the probability of a single failure.
+    `nbinom` takes :math:`n` and :math:`p` as shape parameters where :math:`n`
+    is the number of successes, :math:`p` is the probability of a single
+    success, and :math:`1-p` is the probability of a single failure.
 
     Another common parameterization of the negative binomial distribution is
     in terms of the mean number of failures :math:`\mu` to achieve :math:`n`

@@ -78,7 +78,7 @@ jobs:
             pip install numpy==1.21.5
             pip install -r doc_requirements.txt
             # `asv` pin because of slowdowns reported in gh-15568
-            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson click rich-click doit pydevtool
+            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson click rich-click doit pydevtool pooch
             pip install pybind11
             # extra benchmark deps
             pip install pyfftw cffi pytest
