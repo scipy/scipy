@@ -1,7 +1,8 @@
 import warnings
 from collections import namedtuple
 import numpy as np
-from scipy import optimize
+from scipy import optimize, stats
+from scipy._lib._util import check_random_state
 
 
 def _combine_bounds(name, user_bounds, shape_domain, integral):
@@ -565,3 +566,236 @@ def fit(dist, data, bounds=None, *, guess=None,
         res = optimizer(nllf, **kwds)
 
     return FitResult(dist, data, discrete, res)
+
+
+def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
+                    guessed_params=None, statistic='ad', fit_method='mle',
+                    n_resamples=9999, random_state=None):
+    r"""
+    Perform a goodness of fit test comparing data to a distribution family.
+
+    Given a distribution family and data, perform a test of the null hypothesis
+    that the data was drawn from a distribution in that family. Any parameters
+    of the distribution that are known may be specified. Two statistics
+    (Anderson-Darling and Kolmogorov-Smirnov) for comparing the distribution to
+    data are available.
+
+    Parameters
+    ----------
+    dist : `scipy.stats.rv_continuous`
+        The object representing the distribution family to be fit to the data.
+    data : 1D array_like
+        Finite, uncensored data to which the distribution is to be fit.
+    known_params : dict, optional
+        A dictionary containing distribution name-value pairs of distribution
+        parameters that are known. Data is resampled from the null-hypothesized
+        distribution with these values of the parameters. Before the statistic
+        is evaluated for each resample, only remaining unknown parameters of
+        the  null-hypothesized distribution family are fit to the resampled
+        data; these parameters are held fixed. (If all parameters of the
+        distribution family are known, then the step of fitting the
+        distribution family to each resample is omitted.)
+    fit_params : dict, optional
+        A dictionary containing name-value pairs of distribution parameters
+        that have already been fit to the data, e.g. using `scipy.stats.fit`
+        or the ``fit`` method of `dist`. Data is resampled from the
+        null-hypothesized distribution with these specified values of the
+        parameters, but these and all other unknown parameters of the
+        null-hypothesized distribution family are fit to the resampled data
+        before the statistic is evaluated.
+    guessed_params : dict, optional
+        A dictionary containing name-value pairs of distribution parameters
+        which are guessed. Before resampling from the null-hypothesized
+        distribution, the null-hypothesized distribution family is fit to the
+        data with these parameters free, but the provided values will be used
+        as guesses if needed by the fitting procedure. The null-hypothesized
+        distribution family is fit to the resampled data with these parameters
+        free before the statistic is evaluated.
+    statistic : {"ad", "ks"}, optional
+        The statistic used to compare data to a distribution after fitting
+        unknown parameters of the distribution family to the data. The
+        Anderson-Darling ("ad") [1]_ and Kolmogorov-Smirnov ("ks") [2]_
+        statistics are available.
+    fit_method : {"mle", "mm"}, optional
+        The method used to fit null-hypothesized distribution family to
+        the resampled data. Maximum likelihood estimation ("mle") is the
+        default; method of moments ("mm") is also available
+    n_resamples : int
+        The number of resamples performed to form the null distribution
+        of the statistic.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        Pseudorandom number generator state used to generate permutations.
+
+        If `random_state` is ``None`` (default), the
+        `numpy.random.RandomState` singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance then that instance is used.
+
+    Returns
+    -------
+    res : GoodnessOfFitResult
+        An object with the following attributes.
+
+        fit_result : ~`scipy.stats._result_classes.FitResult`
+            An object representing the fit of the provided `dist` to `data`.
+            These are the parameters of the distribution family that define
+            the specific distribution used to resample data under the null
+            hypothesis.
+        statistic : float
+            The value of the statistic comparing provided `data` to the
+            fitted distribution.
+        null_distribution : ndarray
+            The value of the statistic comparing data resampled under the null
+            hypothesis to the fitted distribution.
+        pvalue : float
+            The proportion of elements in the null distribution with
+            statistic values at least as extreme as the statistic value of the
+            provided `data`.
+
+    Notes
+    -----
+    This is a generalized Monte Carlo goodness-of-fit procedure, special cases
+    of which correspond with various Anderson-Darling tests, Lilliefors' test,
+    etc.
+
+    Traditionally, critical values corresponding with a set a fixed set of
+    signficance levels are pre-calculated using Monte Carlo methods. Users
+    perform the test by calculating the value of the test statistic only for
+    their observed `data` and comparing this value to the tabulated critical
+    values. This practice is not very flexible, as tables are not available for
+    all distributions and combinations of known and unknown parameter values,
+    and results can be inaccurate when critical values are interpolated from
+    limited tabulated data to correspond with the user's sample size and
+    fitted parameter values. To overcome these shortcomings, this function
+    allows the user to perform the Monte Carlo trials adapted to their
+    particular data.
+
+    First, any unknown parameters of the distribution family specified by
+    `dist` are fit to the provided `data`. These values of the parameters
+    specify a particular member of the distribution family referred to as the
+    "null-hypothesized distribution", that is, the distribution from which the
+    data was sampled under the null hypothesis. The `statistic`, which compares
+    data to a distribution, is computed between `data` and the
+    null-hypothesized distribution.
+
+    Next, many (specifically `n_resamples`) new samples, each containing the
+    same number of observations as `data`, are generated from the
+    null-hypothesized distribution. Any unknown parameters of the distribution
+    family `dist` are fit to *each resample*, and the `statistic` is computed
+    between each resample and its corresponding fitted distribution. These
+    values of the statistic form the Monte Carlo null distribution (not to be
+    confused with the "null-hypothesized distribution" above).
+
+    The p-value of the test is the proportion of statistic values in the Monte
+    Carlo null distribution that are at least as extreme as the statistic value
+    of the provided `data`. More precisely, the p-value is given by
+
+    .. math::
+
+        p = \frac{b + 1}
+                 {m + 1}
+
+    where :math:`b` is the number of statistic values in the Monte Carlo null
+    distribution that are greater than or equal to the the statistic value for
+    calculated for `data`, and :math:`m=` is the number of elements in the
+    Monte Carlo null distribution (`n_resamples`). The addition of :math:`1`
+    to the numerator and denominator can be thought of as including the
+    value of the statistic corresponding with `data` in the null distribution,
+    but a more formal explanation is given in [3]_.
+
+    The test can be very slow for some distribution families because unknown
+    parameters of the distribution family must be fit to each of the resamples,
+    and for most distributions in SciPy, distribution fitting is performed via
+    numerical optimization. For this reason, it may be tempting to treat
+    parameters of the distribution pre-fit to `data` (by the user) as though
+    they were `known_params`, as specification of all parameters of the
+    distribution precludes the need to fit the distribution to each resample.
+    (This is essentially how the original Kilmogorov-Smirnov test is
+    performed.) Although such a test can be used to provide evidence against
+    the null hypothesis, the power of the test is low (that is, it is less
+    likely to reject the null hypothesis even when the nully hypoothesis is
+    false) because the resampled data is less likely to agree with the
+    null-hypothesized distribution as well as `data`. This tends to increase
+    the values of the statistic recorded in the null distribution, so that
+    a larger number of them exceed the value of statistic for `data`,
+    inflating the p-value.
+
+    References
+    ----------
+    .. [1] M. A. Stephens (1974). "EDF Statistics for Goodness of Fit and
+           Some Comparisons." Journal of the American Statistical Association,
+           Vol. 69, pp. 730-737.
+    .. [2] F. J. Massey, Jr. (1951). "The Kolmogorov-Smirnov test for goodness
+           of fit." Journal of the American Statistical Association 46.253:
+           68-78.
+    .. [3] B. Phipson and G. K. Smyth (2010). "Permutation P-values Should
+           Never Be Zero: Calculating Exact P-values When Permutations Are
+           Randomly Drawn." Statistical Applications in Genetics and Molecular
+           Biology 9.1.
+
+    """
+    args = gof_iv(dist, data, known_params, fit_params, guessed_params,
+                  statistic, fit_method, n_resamples, random_state)
+    (dist, data, fixed_nhd_params, fixed_rd_params, guessed_rd_params,
+     statistic, fit_method, n_resamples_int, random_state) = args
+
+    pass
+
+def gof_iv(dist, data, known_params, fit_params, guessed_params,
+           statistic, fit_method, n_resamples, random_state):
+
+    if not isinstance(dist, stats.rv_continuous):
+        message = ("`dist` must be a (non-frozen) instance of "
+                   "`stats.rv_continuous`.")
+        raise TypeError(message)
+
+    data = np.asarray(data, dtype=float)
+    if not data.ndim == 1:
+        message = "`data` must be a one-dimensional array of numbers."
+        raise ValueError(message)
+
+    # Leave validation of these key/value pairs to the `fit` method,
+    # but collect these into dictionaries that will be used
+    known_params = known_params or dict()
+    fit_params = fit_params or dict()
+    guessed_params = guessed_params or dict()
+
+    known_params_f = {("f"+key): val for key, val in known_params.items()}
+    fit_params_f = {("f"+key): val for key, val in known_params.items()}
+
+    # These the the values of parameters of the null distribution family
+    # with which resamples are drawn
+    fixed_nhd_params = known_params_f.copy()
+    fixed_nhd_params.update(fit_params_f)
+
+    # These are fixed when fitting the distribution family to resamples
+    fixed_rd_params = known_params_f.copy()
+
+    # These are used as guesses when fitting the distribution family to
+    # resamples
+    guessed_rd_params = fit_params.copy()
+    guessed_rd_params.update(guessed_params)
+
+    statistics = {'ad', 'ks'}
+    if statistic.lower() not in statistics:
+        message = f"`statistic` must be one of {statistics}."
+        raise ValueError(message)
+
+    fit_methods = {'mle', 'mm'}
+    if fit_method.lower() not in fit_methods:
+        message = f"`fit_method` must be one of {fit_methods}."
+        raise ValueError(message)
+
+    n_resamples_int = int(n_resamples)
+    if n_resamples_int != n_resamples:
+        message = "`n_resamples` must be an integer."
+        raise TypeError(message)
+
+    random_state = check_random_state(random_state)
+
+    return (dist, data, fixed_nhd_params, fixed_rd_params, guessed_rd_params,
+            statistic, fit_method, n_resamples_int, random_state)
