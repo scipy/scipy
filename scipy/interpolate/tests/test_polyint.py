@@ -389,8 +389,8 @@ class TestBarycentric:
         assert_almost_equal(P.wi / (2 * factor), w)
 
     def test_warning(self):
-        # Test if the divide-by-zero warning is properly ignored when building
-        # the weights
+        # Test if the divide-by-zero warning is properly ignored when computing
+        # interpolated values equals to interpolation points
         P = BarycentricInterpolator([0, 1], [1, 2])
         with np.errstate(divide='raise'):
             yi = P(P.xi)
