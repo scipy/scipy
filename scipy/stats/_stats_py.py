@@ -56,6 +56,7 @@ from ._stats_pythran import (_compute_outer_prob_inside_method,
                              _compute_prob_outside_square,
                              _count_paths_outside_method)
 from ._resampling import _batch_generator
+# from ._sensitivity_analysis import ...
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
