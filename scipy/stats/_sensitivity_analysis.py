@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import qmc
+from scipy.stats import qmc, bootstrap
 
 
 def f_ishigami(x):
@@ -35,7 +35,7 @@ def sample_A_B_AB(d, n, seed):
 
 
 def sobol_saltelli(f_A, f_B, f_AB):
-    var = np.var(np.vstack([f_A, f_B]), axis=0)
+    var = np.var(np.vstack([f_A, f_B, f_AB.reshape(-1, 1)]))
     # var = np.clip(var, a_min=0, a_max=None)
 
     # Total effect of pairs of factors: generalization of Saltenis
@@ -67,16 +67,24 @@ def sobol_indices(func, *, n, d, l_bounds, u_bounds=None, seed=None):
 
     f_A = func(A)
     f_B = func(B)
-
     f_AB = func(AB)
     f_AB = f_AB.reshape((d, n))
 
-    s, st= sobol_saltelli(f_A, f_B, f_AB)
+    s, st = sobol_saltelli(f_A, f_B, f_AB)
 
-    return s, st
+    def sobol_saltelli_(idx):
+        f_A_ = f_A[idx]
+        f_B_ = f_B[idx]
+        f_AB_ = f_AB[:, idx]
+        return sobol_saltelli(f_A_, f_B_, f_AB_)
 
+    ci = bootstrap(
+        [np.arange(n)], sobol_saltelli_, method="BCa",
+        batch=int(n*0.7), n_resamples=99
+    )
 
-# print(f_ishigami([[0, 1, 3], [2, 4, 2]]))
+    return s, st, ci
+
 
 indices = sobol_indices(
     f_ishigami, n=1024, d=3,
