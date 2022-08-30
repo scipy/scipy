@@ -3,7 +3,7 @@ from collections import namedtuple
 import numpy as np
 from scipy import optimize, stats
 from scipy._lib._util import check_random_state
-
+from scipy.stats import _stats_py
 
 def _combine_bounds(name, user_bounds, shape_domain, integral):
     """Intersection of user-defined bounds and distribution PDF/PMF domain"""
@@ -568,6 +568,23 @@ def fit(dist, data, bounds=None, *, guess=None,
     return FitResult(dist, data, discrete, res)
 
 
+def _anderson_darling(dist, data, axis=-1):
+    x = np.sort(data, axis=axis)
+    n = data.shape[-1]
+    i = np.arange(1, n+1)
+    Si = (2*i - 1)/n * (dist.logcdf(x) + dist.logsf(x[..., ::-1]))
+    S = np.sum(Si, axis=axis)
+    return -n - S
+
+
+def _kolmogorov_smirnov(dist, data, axis=-1):
+    x = np.sort(data, axis=axis)
+    cdfvals = dist.cdf(x)
+    Dplus = _stats_py._compute_dplus(cdfvals, axis=-1)
+    Dminus =_stats_py._compute_dminus(cdfvals, axis=-1)
+    return np.maximum(Dplus, Dminus)
+
+
 def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                     guessed_params=None, statistic='ad', fit_method='mle',
                     n_resamples=9999, random_state=None):
@@ -715,14 +732,10 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     they were `known_params`, as specification of all parameters of the
     distribution precludes the need to fit the distribution to each resample.
     (This is essentially how the original Kilmogorov-Smirnov test is
-    performed.) Although such a test can be used to provide evidence against
-    the null hypothesis, the power of the test is low (that is, it is less
-    likely to reject the null hypothesis even when the nully hypoothesis is
-    false) because the resampled data is less likely to agree with the
-    null-hypothesized distribution as well as `data`. This tends to increase
-    the values of the statistic recorded in the null distribution, so that
-    a larger number of them exceed the value of statistic for `data`,
-    inflating the p-value.
+    performed.) For a valid test, however, parameters should only be passed
+    as `known_params` when they are truly known rather than being fit to the
+    data.
+
 
     References
     ----------
@@ -740,10 +753,50 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     """
     args = gof_iv(dist, data, known_params, fit_params, guessed_params,
                   statistic, fit_method, n_resamples, random_state)
-    (dist, data, fixed_nhd_params, fixed_rd_params, guessed_rd_params,
-     statistic, fit_method, n_resamples_int, random_state) = args
+    (dist, data, fixed_nhd_params, fixed_rfd_params, guessed_nhd_params,
+            guessed_rfd_params, statistic, fit_method, n_resamples_int,
+            random_state) = args
 
-    pass
+    shape_names = [] if dist.shapes is None else dist.names.split(", ")
+    param_names = shape_names + ['loc', 'scale']
+    fparam_names = ['f'+name for name in param_names]
+    all_nhd_fixed = not set(fparam_names).difference(fixed_nhd_params)
+    all_rfd_fixed = not set(fparam_names).difference(fixed_rfd_params)
+
+    # Fit `dist` to data to get null-hypothesized distribution
+    if all_nhd_fixed:
+        nhd_vals = [fixed_nhd_params[name] for name in fparam_names]
+    else:
+        nhd_vals = dist.fit(data, **guessed_nhd_params, **fixed_nhd_params,
+                            method=fit_method)
+    nhd_dist = dist(*nhd_vals)
+
+    # Define statistic, including fitting distribution to data
+    def fit_fun(data, axis=-1):
+        if all_rfd_fixed:
+            return [fixed_rfd_params[name] for name in fparam_names]
+        assert data.ndim == 1
+        return dist.fit(data, **guessed_rfd_params, **fixed_rfd_params,
+                        method=fit_method)
+
+    compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov}
+    compare_fun = compare_dict[statistic]
+
+    def statistic_fun(data, axis=-1):
+        rfd_vals = fit_fun(data, axis)
+        rfd_dist = dist(*rfd_vals)
+        return compare_fun(rfd_dist, data, axis)
+
+    def rvs(size):
+        return nhd_dist.rvs(size=size, random_state=random_state)
+
+    res = stats.monte_carlo_test(data, rvs, statistic_fun,
+                                 vectorized=all_rfd_fixed,
+                                 n_resamples=n_resamples, axis=-1,
+                                 alternative='greater')
+    return res
+
+
 
 def gof_iv(dist, data, known_params, fit_params, guessed_params,
            statistic, fit_method, n_resamples, random_state):
@@ -765,7 +818,7 @@ def gof_iv(dist, data, known_params, fit_params, guessed_params,
     guessed_params = guessed_params or dict()
 
     known_params_f = {("f"+key): val for key, val in known_params.items()}
-    fit_params_f = {("f"+key): val for key, val in known_params.items()}
+    fit_params_f = {("f"+key): val for key, val in fit_params.items()}
 
     # These the the values of parameters of the null distribution family
     # with which resamples are drawn
@@ -773,12 +826,16 @@ def gof_iv(dist, data, known_params, fit_params, guessed_params,
     fixed_nhd_params.update(fit_params_f)
 
     # These are fixed when fitting the distribution family to resamples
-    fixed_rd_params = known_params_f.copy()
+    fixed_rfd_params = known_params_f.copy()
+
+    # These are used as guesses when fitting the distribution family to
+    # the original data
+    guessed_nhd_params = guessed_params.copy()
 
     # These are used as guesses when fitting the distribution family to
     # resamples
-    guessed_rd_params = fit_params.copy()
-    guessed_rd_params.update(guessed_params)
+    guessed_rfd_params = fit_params.copy()
+    guessed_rfd_params.update(guessed_params)
 
     statistics = {'ad', 'ks'}
     if statistic.lower() not in statistics:
@@ -797,5 +854,6 @@ def gof_iv(dist, data, known_params, fit_params, guessed_params,
 
     random_state = check_random_state(random_state)
 
-    return (dist, data, fixed_nhd_params, fixed_rd_params, guessed_rd_params,
-            statistic, fit_method, n_resamples_int, random_state)
+    return (dist, data, fixed_nhd_params, fixed_rfd_params, guessed_nhd_params,
+            guessed_rfd_params, statistic, fit_method, n_resamples_int,
+            random_state)

@@ -7542,7 +7542,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
 
 
-def _compute_dplus(cdfvals):
+def _compute_dplus(cdfvals, axis=-1):
     """Computes D+ as used in the Kolmogorov-Smirnov test.
 
     Parameters
@@ -7554,11 +7554,11 @@ def _compute_dplus(cdfvals):
     -------
       Maximum distance of the CDF values below Uniform(0, 1)
 """
-    n = len(cdfvals)
-    return (np.arange(1.0, n + 1) / n - cdfvals).max()
+    n = cdfvals.shape[axis]
+    return (np.arange(1.0, n + 1) / n - cdfvals).max(axis=axis)
 
 
-def _compute_dminus(cdfvals):
+def _compute_dminus(cdfvals, axis=-1):
     """Computes D- as used in the Kolmogorov-Smirnov test.
 
     Parameters
@@ -7571,8 +7571,8 @@ def _compute_dminus(cdfvals):
       Maximum distance of the CDF values above Uniform(0, 1)
 
     """
-    n = len(cdfvals)
-    return (cdfvals - np.arange(0.0, n)/n).max()
+    n = cdfvals.shape[axis]
+    return (cdfvals - np.arange(0.0, n)/n).max(axis=axis)
 
 
 @_rename_parameter("mode", "method")
