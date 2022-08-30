@@ -13,7 +13,6 @@ from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                         _woodbury_algorithm, _periodic_knots,
                                          _make_interp_per_full_matr)
 import scipy.interpolate._fitpack_impl as _impl
-from scipy.interpolate._fitpack import _splint
 
 
 class TestBSpline:
@@ -343,9 +342,8 @@ class TestBSpline:
         assert_allclose(b.integrate(1, -1, extrapolate=False), -1 * 0.5)
 
         # Test ``_fitpack._splint()``
-        t, c, k = b.tck
         assert_allclose(b.integrate(1, -1, extrapolate=False),
-                        _splint(t, c, k, 1, -1)[0])
+                        _impl.splint(1, -1, b.tck))
 
         # Test ``extrapolate='periodic'``.
         b.extrapolate = 'periodic'
@@ -886,6 +884,10 @@ class TestInterop:
         assert_equal(integr.shape, (3, 2))
         assert_allclose(integr,
                         splint(0, 1, b), atol=1e-14)
+
+        with assert_raises(ValueError, match="t and c are invalid length."):
+            splint(0, 1, (np.ones(10), np.ones(5), 3))
+
 
     def test_splder(self):
         for b in [self.b, self.b2]:
