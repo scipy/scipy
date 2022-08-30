@@ -17,7 +17,9 @@ cimport cython
 from . cimport _qhull
 from . cimport setlist
 from libc cimport stdlib
+from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
+from libc.stdio cimport FILE
 
 import os
 import sys
@@ -26,8 +28,6 @@ import warnings
 
 np.import_array()
 
-cdef extern from "numpy/npy_math.h":
-    double nan "NPY_NAN"
 
 __all__ = ['Delaunay', 'ConvexHull', 'QhullError', 'Voronoi', 'HalfspaceIntersection', 'tsearch']
 
@@ -185,7 +185,7 @@ cdef extern from "qhull_src/src/io_r.h":
 
     ctypedef void printvridgeT(qhT *, void *fp, vertexT *vertex, vertexT *vertexA,
                                setT *centers, boolT unbounded)
-    int qh_eachvoronoi_all(qhT *, void *fp, void* printvridge,
+    int qh_eachvoronoi_all(qhT *, FILE *fp, void* printvridge,
                            boolT isUpper, qh_RIDGE innerouter,
                            boolT inorder) nogil
 
@@ -830,7 +830,7 @@ cdef class _Qhull:
         self._ridge_points = np.empty((10, 2), np.intc)
         self._ridge_vertices = []
 
-        qh_eachvoronoi_all(self._qh, <void*>self, &_visit_voronoi, self._qh[0].UPPERdelaunay,
+        qh_eachvoronoi_all(self._qh, <FILE*>self, &_visit_voronoi, self._qh[0].UPPERdelaunay,
                            qh_RIDGEall, 1)
 
         self._ridge_points = self._ridge_points[:self._nridges]
@@ -992,7 +992,7 @@ cdef class _Qhull:
         return extremes_arr
 
 
-cdef void _visit_voronoi(qhT *_qh, void *ptr, vertexT *vertex, vertexT *vertexA,
+cdef void _visit_voronoi(qhT *_qh, FILE *ptr, vertexT *vertex, vertexT *vertexA,
                          setT *centers, boolT unbounded):
     cdef _Qhull qh = <_Qhull>ptr
     cdef int point_1, point_2, ix
@@ -1147,7 +1147,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
             if info != 0:
                 for i in range(ndim+1):
                     for j in range(ndim):
-                        Tinvs[isimplex,i,j] = nan
+                        Tinvs[isimplex,i,j] = NAN
 
     return Tinvs
 
@@ -1802,7 +1802,7 @@ class Delaunay(_QhullUser):
 
     The returned integers in the array are the indices of the simplex the
     corresponding point is in. If -1 is returned, the point is in no simplex.
-    Be aware that the shortcut in the following example only works corretcly
+    Be aware that the shortcut in the following example only works correctly
     for valid points as invalid points result in -1 which is itself a valid
     index for the last simplex in the list.
 
@@ -1821,7 +1821,7 @@ class Delaunay(_QhullUser):
            [ 0.5       ,  0.5       ,  0.        ]])
 
     The coordinates for the first point are all positive, meaning it
-    is indeed inside the triangle. The third point is on a vertex,
+    is indeed inside the triangle. The third point is on an edge,
     hence its null third coordinate.
 
     """

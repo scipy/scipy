@@ -32,6 +32,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import sys
 import os.path
 
 from functools import wraps, partial
@@ -43,15 +44,13 @@ from numpy.linalg import norm
 from numpy.testing import (verbose, assert_,
                            assert_array_equal, assert_equal,
                            assert_almost_equal, assert_allclose,
-                           suppress_warnings)
+                           break_cycles, IS_PYPY)
 import pytest
 from pytest import raises as assert_raises
 
-import scipy.spatial.distance
-from scipy.spatial import _distance_pybind
 from scipy.spatial.distance import (
     squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y,
-    _validate_vector, _METRICS_NAMES, _METRICS)
+    _validate_vector, _METRICS_NAMES)
 
 # these were missing: chebyshev cityblock kulsinski
 # jensenshannon  and seuclidean are referenced by string name.
@@ -658,6 +657,9 @@ class TestCdist:
             # references, the arrays should be deallocated.
             weak_refs = [weakref.ref(v) for v in (x1, x2, out)]
             del x1, x2, out
+
+            if IS_PYPY:
+                break_cycles()
             assert all(weak_ref() is None for weak_ref in weak_refs)
 
 
@@ -958,7 +960,10 @@ class TestPdist:
 
     @pytest.mark.slow
     def test_pdist_correlation_iris_nonC(self):
-        eps = 1e-7
+        if sys.maxsize > 2**32:
+            eps = 1e-7
+        else:
+            pytest.skip("see gh-16456")
         X = eo['iris']
         Y_right = eo['pdist-correlation-iris']
         Y_test2 = wpdist(X, 'test_correlation')

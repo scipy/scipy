@@ -44,11 +44,10 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.intersphinx',
     'numpydoc',
-    'sphinx_panels',
+    'sphinx_design',
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
-    'sphinx_tabs.tabs',
 ]
 
 # Determine if the matplotlib has a recent enough version of the
@@ -62,10 +61,6 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 plt.ioff()
-
-# sphinx-panels shouldn't add bootstrap css since the pydata-sphinx-theme
-# already loads it
-panels_add_bootstrap_css = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -261,6 +256,16 @@ np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
 
 autosummary_generate = True
 
+# maps functions with a name same as a class name that is indistinguishable
+# Ex: scipy.signal.czt and scipy.signal.CZT or scipy.odr.odr and scipy.odr.ODR
+# Otherwise, the stubs are overwritten when the name is same for
+# OS (like MacOS) which has a filesystem that ignores the case
+# See https://github.com/sphinx-doc/sphinx/pull/7927
+autosummary_filename_map = {
+    "scipy.odr.odr": "odr-function",
+    "scipy.signal.czt": "czt-function",
+}
+
 
 # -----------------------------------------------------------------------------
 # Autodoc
@@ -294,6 +299,12 @@ coverage_ignore_c_items = {}
 #------------------------------------------------------------------------------
 
 plot_pre_code = """
+import warnings
+for key in (
+        'gilbrat'  # misspelling for gibrat and has been deprecated
+        ):
+    warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
+
 import numpy as np
 np.random.seed(123)
 """

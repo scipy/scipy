@@ -166,7 +166,8 @@ rich_click.OPTION_GROUPS = {
     "dev.py test": [
         {
             "name": "Options",
-            "options": ["--help", "--verbose", "--parallel", "--coverage"],
+            "options": ["--help", "--verbose", "--parallel", "--coverage",
+                        "--durations"],
         },
         {
             "name": "Options: test selection",
@@ -263,11 +264,11 @@ class CLI(CliGroup):
 def cli(ctx, **kwargs):
     """Developer Tool for SciPy
 
-    Commands that require a built/installed instance are marked with :wrench:.
+    \bCommands that require a built/installed instance are marked with :wrench:.
 
 
+    \b**python dev.py --build-dir my-build test -s stats**
 
-    **python dev.py --build-dir my-build test -s stats**
     """
     CLI.update_context(ctx, kwargs)
 
@@ -370,7 +371,19 @@ def get_test_runner(project_module):
 
 @cli.cls_cmd('build')
 class Build(Task):
-    """:wrench: build & install package on path"""
+    """:wrench: build & install package on path
+
+    \b
+    ```python
+    Examples:
+
+    $ python dev.py build --asan ;
+        ASAN_OPTIONS=detect_leaks=0:symbolize=1:strict_init_order=true
+        LD_PRELOAD=$(gcc --print-file-name=libasan.so)
+        python dev.py test -v -t
+        ./scipy/ndimage/tests/test_morphology.py -- -s
+    ```
+    """
     ctx = CONTEXT
 
     werror = Option(
@@ -380,10 +393,17 @@ class Build(Task):
         ['--gcov'], default=False, is_flag=True,
         help="enable C code coverage via gcov (requires GCC)."
              "gcov output goes to build/**/*.gc*")
+    asan = Option(
+        ['--asan'], default=False, is_flag=True,
+        help=("Build and run with AddressSanitizer support. "
+              "Note: the build system doesn't check whether "
+              "the project is already compiled with ASan. "
+              "If not, you need to do a clean build (delete "
+              "build and build-install directories)."))
     debug = Option(
         ['--debug', '-d'], default=False, is_flag=True, help="Debug build")
     parallel = Option(
-        ['--parallel', '-j'], default=1, metavar='PARALLEL',
+        ['--parallel', '-j'], default=1, metavar='N_JOBS',
         help="Number of parallel jobs for build and testing")
     show_build_log = Option(
         ['--show-build-log'], default=False, is_flag=True,
@@ -436,6 +456,8 @@ class Build(Task):
             cmd += ["--werror"]
         if args.gcov:
             cmd += ['-Db_coverage=true']
+        if args.asan:
+            cmd += ['-Db_sanitize=address,undefined']
         # Setting up meson build
         cmd_str = ' '.join([str(p) for p in cmd])
         cls.console.print(f"{EMOJI.cmd} [cmd] {cmd_str}")
@@ -600,11 +622,15 @@ class Build(Task):
 class Test(Task):
     """:wrench: Run tests
 
+    \b
+    ```python
     Examples:
 
     $ python dev.py test -s {SAMPLE_SUBMODULE}
     $ python dev.py test -t scipy.optimize.tests.test_minimize_constrained
-    $ python dev.py test -s stats -- --tb=line
+    $ python dev.py test -s cluster -m full --durations 20
+    $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
+    ```
     """
     ctx = CONTEXT
 
@@ -614,11 +640,15 @@ class Test(Task):
     # removed doctests as currently not supported by _lib/_testutils.py
     # doctests = Option(['--doctests'], default=False)
     coverage = Option(
-        ['--coverage'], default=False, is_flag=True,
+        ['--coverage', '-c'], default=False, is_flag=True,
         help=("report coverage of project code. "
               "HTML output goes under build/coverage"))
+    durations = Option(
+        ['--durations', '-d'], default=None, metavar="NUM_TESTS",
+        help="Show timing for the given number of slowest tests"
+    )
     submodule = Option(
-        ['--submodule', '-s'], default=None, metavar='SUBMODULE',
+        ['--submodule', '-s'], default=None, metavar='MODULE_NAME',
         help="Submodule whose tests to run (cluster, constants, ...)")
     tests = Option(
         ['--tests', '-t'], default=None, multiple=True, metavar='TESTS',
@@ -628,11 +658,13 @@ class Test(Task):
         help=("'fast', 'full', or something that could be passed to "
               "`pytest -m` as a marker expression"))
     parallel = Option(
-        ['--parallel', '-j'], default=1, metavar='PARALLEL',
+        ['--parallel', '-j'], default=1, metavar='N_JOBS',
         help="Number of parallel jobs for testing"
     )
+    # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`
     pytest_args = Argument(
-        ['pytest_args'], nargs=-1, metavar='PYTEST-ARGS', required=False)
+        ['pytest_args'], nargs=-1, metavar='PYTEST-ARGS', required=False
+    )
 
     TASK_META = {
         'task_dep': ['build'],
@@ -657,6 +689,9 @@ class Test(Task):
             extra_argv += ['--cov-report=html:' + str(dst_dir)]
             shutil.copyfile(dirs.root / '.coveragerc',
                             dirs.site / '.coveragerc')
+
+        if args.durations:
+            extra_argv += ['--durations', args.durations]
 
         # convert options to test selection
         if args.submodule:
@@ -696,12 +731,14 @@ class Test(Task):
 class Bench(Task):
     """:wrench: Run benchmarks
 
+    \b
+    ```python
      Examples:
 
     $ python dev.py bench -t integrate.SolveBVP
     $ python dev.py bench -t linalg.Norm
     $ python dev.py bench --compare main
-
+    ```
     """
     ctx = CONTEXT
     TASK_META = {
@@ -908,6 +945,7 @@ class Doc(Task):
     """:wrench: Build documentation
 
 TARGETS: Sphinx build targets [default: 'html']
+
 """
     ctx = CONTEXT
 
@@ -917,7 +955,7 @@ TARGETS: Sphinx build targets [default: 'html']
         help='List doc targets',
     )
     parallel = Option(
-        ['--parallel', '-j'], default=1, metavar='PARALLEL',
+        ['--parallel', '-j'], default=1, metavar='N_JOBS',
         help="Number of parallel jobs"
     )
 
@@ -1055,9 +1093,12 @@ class Shell(Python):
 def notes(ctx_obj, version_args):
     """:ledger: Release notes and log generation
 
+    \b
+    ```python
      Example:
 
     $ python dev.py notes v1.7.0 v1.8.0
+    ```
     """
     if version_args:
         sys.argv = version_args
@@ -1077,9 +1118,12 @@ def notes(ctx_obj, version_args):
 def authors(ctx_obj, revision_args):
     """:ledger: Generate list of authors who contributed within revision interval
 
+    \b
+    ```python
     Example:
 
     $ python dev.py authors v1.7.0 v1.8.0
+    ```
     """
     if revision_args:
         sys.argv = revision_args

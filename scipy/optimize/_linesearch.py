@@ -248,6 +248,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import line_search
 
     A objective function and its gradient are defined.

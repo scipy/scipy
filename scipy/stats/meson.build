@@ -46,11 +46,11 @@ statlib_module = custom_target('statlib_module',
 )
 
 statlib = py3.extension_module('_statlib',
-  [statlib_module, fortranobject_c],
+  statlib_module,
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   link_with: statlib_lib,
-  dependencies: [py3_dep],
+  dependencies: [fortranobject_dep],
   include_directories: [inc_np, inc_f2py],
   install: true,
   link_language: 'fortran',
@@ -60,7 +60,6 @@ statlib = py3.extension_module('_statlib',
 _stats = py3.extension_module('_stats',
   stats_special_cython_gen.process('_stats.pyx'),
   c_args: cython_c_args,
-  dependencies: [py3_dep],
   include_directories: [inc_np],
   install: true,
   subdir: 'scipy/stats'
@@ -73,10 +72,10 @@ mvn_module = custom_target('mvn_module',
 )
 
 mvn = py3.extension_module('_mvn',
-  [mvn_module, 'mvndst.f', fortranobject_c],
+  [mvn_module, 'mvndst.f'],
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
-  dependencies: [py3_dep],
+  dependencies: [fortranobject_dep],
   include_directories: [inc_np, inc_f2py],
   install: true,
   link_language: 'fortran',
@@ -86,7 +85,6 @@ mvn = py3.extension_module('_mvn',
 _sobol = py3.extension_module('_sobol',
   cython_gen.process('_sobol.pyx'),
   c_args: cython_c_args,
-  dependencies: [py3_dep],
   include_directories: [inc_np],
   install: true,
   subdir: 'scipy/stats'
@@ -104,7 +102,7 @@ pthread = dependency('threads')
 _qmc_cy = py3.extension_module('_qmc_cy',
   cython_gen_cpp.process('_qmc_cy.pyx'),
   cpp_args: cython_cpp_args,
-  dependencies: [py3_dep, pthread],
+  dependencies: [pthread],
   include_directories: [inc_np],
   install: true,
   subdir: 'scipy/stats'
@@ -120,7 +118,11 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
     'nbinom_ufunc.pyx',  # 5 (S_B)
     'templated_pyufunc.pxd',  # 6 (S_B)
     'unuran_wrapper.pyx',  # 7 (used in stats/_unuran)
-    'ncf_ufunc.pyx'  # 8 (S_B)
+    'ncf_ufunc.pyx',  # 8 (S_B)
+    'ncx2_ufunc.pyx',  # 9 (S_B)
+    'nct_ufunc.pyx',  # 10 (S_B)
+    'skewnorm_ufunc.pyx',  # 11 (S_B)
+    'invgauss_ufunc.pyx',  # 12 (S_B)
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
@@ -139,6 +141,11 @@ binom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[2])
 hypergeom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[4])
 nbinom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[5])
 ncf_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[8])
+ncx2_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[9])
+nct_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[10])
+skewnorm_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[11])
+invgauss_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[12])
+
 # Extra dependency from _lib
 unuran_wrap_pyx = lib_cython_gen.process(_stats_gen_pyx[7])
 
@@ -155,7 +162,7 @@ biasedurn = py3.extension_module('_biasedurn',
   cpp_args: ['-DR_BUILD', cython_cpp_args],
   include_directories: [inc_np],
   # Note that we're not using npymath directly, it is needed to use npyrandom
-  dependencies: [py3_dep, npyrandom_lib, npymath_lib],
+  dependencies: [npyrandom_lib, npymath_lib],
   install: true,
   subdir: 'scipy/stats'
 )
@@ -174,7 +181,6 @@ if use_pythran
       '-Wno-deprecated-declarations', '-Wno-int-in-bool-context'
     ] + cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
-    dependencies: [py3_dep],
     install: true,
     subdir: 'scipy/stats'
   )
@@ -204,6 +210,7 @@ py3.install_sources([
     '_mstats_basic.py',
     '_mstats_extras.py',
     '_multivariate.py',
+    '_odds_ratio.py',
     '_page_trend_test.py',
     '_qmc.py',
     '_relative_risk.py',

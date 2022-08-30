@@ -16,7 +16,9 @@ from scipy._lib._util import _rename_parameter
 
 from . import _statlib
 from . import _stats_py
-from ._stats_py import find_repeats, _contains_nan, _normtest_finish
+from ._fit import FitResult
+from ._stats_py import (find_repeats, _contains_nan, _normtest_finish,
+                        SignificanceResult)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -32,7 +34,7 @@ __all__ = ['mvsdist',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot'
+           'yeojohnson_normplot', 'directionalmean'
            ]
 
 
@@ -309,7 +311,7 @@ def kstat(data, n=2):
     elif n == 4:
         return ((-6*S[1]**4 + 12*N*S[1]**2 * S[2] - 3*N*(N-1.0)*S[2]**2 -
                  4*N*(N+1)*S[1]*S[3] + N*N*(N+1)*S[4]) /
-                 (N*(N-1.0)*(N-2.0)*(N-3.0)))
+                (N*(N-1.0)*(N-2.0)*(N-3.0)))
     else:
         raise ValueError("Should not be here.")
 
@@ -394,6 +396,7 @@ def _calc_uniform_order_statistic_medians(n):
     the interval, but the distributions are skewed in a way that
     pushes the medians slightly towards the endpoints of the unit interval:
 
+    >>> import numpy as np
     >>> n = 4
     >>> k = np.arange(1, n+1)
     >>> from scipy.stats import beta
@@ -552,6 +555,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> nsample = 100
@@ -692,6 +696,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     First we generate some random data from a Weibull distribution
     with shape parameter 2.5:
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -784,6 +789,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     First we generate some random data from a Weibull distribution
     with shape parameter 2.5, and plot the histogram of the data:
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -866,6 +872,7 @@ def boxcox_llf(lmb, data):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -1162,6 +1169,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -1174,11 +1182,11 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     >>> lmax_pearsonr = stats.boxcox_normmax(x)
 
     >>> lmax_mle
-    1.4613865614008015
+    2.217563431465757
     >>> lmax_pearsonr
-    1.6685004886804342
+    2.238318660200961
     >>> stats.boxcox_normmax(x, method='all')
-    array([1.66850049, 1.46138656])
+    array([2.23831866, 2.21756343])
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -1534,6 +1542,7 @@ def yeojohnson_llf(lmb, data):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -1628,6 +1637,7 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -1773,6 +1783,7 @@ def shapiro(x):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(loc=5, scale=3, size=100, random_state=rng)
@@ -1821,9 +1832,9 @@ _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
 _Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
 
 
-AndersonResult = namedtuple('AndersonResult', ('statistic',
-                                               'critical_values',
-                                               'significance_level'))
+AndersonResult = _make_tuple_bunch('AndersonResult',
+                                   ['statistic', 'critical_values',
+                                    'significance_level'], ['fit_result'])
 
 
 def anderson(x, dist='norm'):
@@ -1847,15 +1858,21 @@ def anderson(x, dist='norm'):
 
     Returns
     -------
-    statistic : float
-        The Anderson-Darling test statistic.
-    critical_values : list
-        The critical values for this distribution.
-    significance_level : list
-        The significance levels for the corresponding critical values
-        in percents.  The function returns critical values for a
-        differing set of significance levels depending on the
-        distribution that is being tested against.
+    result : AndersonResult
+        An object with the following attributes:
+
+        statistic : float
+            The Anderson-Darling test statistic.
+        critical_values : list
+            The critical values for this distribution.
+        significance_level : list
+            The significance levels for the corresponding critical values
+            in percents.  The function returns critical values for a
+            differing set of significance levels depending on the
+            distribution that is being tested against.
+        fit_result : `~scipy.stats._result_classes.FitResult`
+            An object containing the results of fitting the distribution to
+            the data.
 
     See Also
     --------
@@ -1894,24 +1911,27 @@ def anderson(x, dist='norm'):
     .. [6] Stephens, M. A. (1979). Tests of Fit for the Logistic Distribution
            Based on the Empirical Distribution Function, Biometrika, Vol. 66,
            pp. 591-595.
-
-    """
-    if dist not in ['norm', 'expon', 'gumbel', 'gumbel_l',
-                    'gumbel_r', 'extreme1', 'logistic']:
-        raise ValueError("Invalid distribution; dist must be 'norm', "
-                         "'expon', 'gumbel', 'extreme1' or 'logistic'.")
+    """  # noqa
+    dist = dist.lower()
+    if dist in {'extreme1', 'gumbel'}:
+        dist = 'gumbel_l'
+    dists = {'norm', 'expon', 'gumbel_l', 'gumbel_r', 'logistic'}
+    if dist not in dists:
+        raise ValueError(f"Invalid distribution; dist must be in {dists}.")
     y = sort(x)
     xbar = np.mean(x, axis=0)
     N = len(y)
     if dist == 'norm':
         s = np.std(x, ddof=1, axis=0)
         w = (y - xbar) / s
+        fit_params = xbar, s
         logcdf = distributions.norm.logcdf(w)
         logsf = distributions.norm.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
         critical = around(_Avals_norm / (1.0 + 4.0/N - 25.0/N/N), 3)
     elif dist == 'expon':
         w = y / xbar
+        fit_params = 0, xbar
         logcdf = distributions.expon.logcdf(w)
         logsf = distributions.expon.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
@@ -1928,6 +1948,7 @@ def anderson(x, dist='norm'):
         sol0 = array([xbar, np.std(x, ddof=1, axis=0)])
         sol = optimize.fsolve(rootfunc, sol0, args=(x, N), xtol=1e-5)
         w = (y - sol[0]) / sol[1]
+        fit_params = sol
         logcdf = distributions.logistic.logcdf(w)
         logsf = distributions.logistic.logsf(w)
         sig = array([25, 10, 5, 2.5, 1, 0.5])
@@ -1935,13 +1956,15 @@ def anderson(x, dist='norm'):
     elif dist == 'gumbel_r':
         xbar, s = distributions.gumbel_r.fit(x)
         w = (y - xbar) / s
+        fit_params = xbar, s
         logcdf = distributions.gumbel_r.logcdf(w)
         logsf = distributions.gumbel_r.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
-    else:  # (dist == 'gumbel') or (dist == 'gumbel_l') or (dist == 'extreme1')
+    elif dist == 'gumbel_l':
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y - xbar) / s
+        fit_params = xbar, s
         logcdf = distributions.gumbel_l.logcdf(w)
         logsf = distributions.gumbel_l.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
@@ -1950,7 +1973,14 @@ def anderson(x, dist='norm'):
     i = arange(1, N + 1)
     A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
 
-    return AndersonResult(A2, critical, sig)
+    # FitResult initializer expects an optimize result, so let's work with it
+    message = '`anderson` successfully fit the distribution to the data.'
+    res = optimize.OptimizeResult(success=True, message=message)
+    res.x = np.array(fit_params)
+    fit_result = FitResult(getattr(distributions, dist), y,
+                           discrete=False, res=res)
+
+    return AndersonResult(A2, critical, sig, fit_result=fit_result)
 
 
 def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
@@ -2032,9 +2062,10 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
     return A2kN
 
 
-Anderson_ksampResult = namedtuple('Anderson_ksampResult',
-                                  ('statistic', 'critical_values',
-                                   'significance_level'))
+Anderson_ksampResult = _make_tuple_bunch(
+    'Anderson_ksampResult',
+    ['statistic', 'critical_values', 'pvalue'], []
+)
 
 
 def anderson_ksamp(samples, midrank=True):
@@ -2058,15 +2089,17 @@ def anderson_ksamp(samples, midrank=True):
 
     Returns
     -------
-    statistic : float
-        Normalized k-sample Anderson-Darling test statistic.
-    critical_values : array
-        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
-        0.5%, 0.1%.
-    significance_level : float
-        An approximate significance level at which the null hypothesis for the
-        provided samples can be rejected. The value is floored / capped at
-        0.1% / 25%.
+    res : Anderson_ksampResult
+        An object containing attributes:
+
+        statistic : float
+            Normalized k-sample Anderson-Darling test statistic.
+        critical_values : array
+            The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
+            0.5%, 0.1%.
+        pvalue : float
+            The approximate p-value of the test. The value is floored / capped
+            at 0.1% / 25%.
 
     Raises
     ------
@@ -2108,33 +2141,34 @@ def anderson_ksamp(samples, midrank=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
+    >>> res = stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(loc=0.5, size=30)])
+    >>> res.statistic, res.pvalue
+    (1.974403288713695, 0.04991293614572478)
+    >>> res.critical_values
+    array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546])
 
     The null hypothesis that the two random samples come from the same
     distribution can be rejected at the 5% level because the returned
     test value is greater than the critical value for 5% (1.961) but
     not at the 2.5% level. The interpolation gives an approximate
-    significance level of 3.2%:
+    p-value of 4.99%.
 
-    >>> stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(loc=0.5, size=30)])
-    (1.974403288713695,
-      array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546]),
-      0.04991293614572478)
-
+    >>> res = stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(size=30), rng.normal(size=20)])
+    >>> res.statistic, res.pvalue
+    (-0.29103725200789504, 0.25)
+    >>> res.critical_values
+    array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
+      4.07210043, 5.56419101])
 
     The null hypothesis cannot be rejected for three samples from an
     identical distribution. The reported p-value (25%) has been capped and
     may not be very accurate (since it corresponds to the value 0.449
-    whereas the statistic is -0.731):
-
-    >>> stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(size=30), rng.normal(size=20)])
-    (-0.29103725200789504,
-      array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
-      4.07210043, 5.56419101]),
-      0.25)
+    whereas the statistic is -0.291).
 
     """
     k = len(samples)
@@ -2193,7 +2227,10 @@ def anderson_ksamp(samples, midrank=True):
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
 
-    return Anderson_ksampResult(A2, critical, p)
+    # create result object with alias for backward compatibility
+    res = Anderson_ksampResult(A2, critical, p)
+    res.significance_level = p
+    return res
 
 
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
@@ -2310,6 +2347,7 @@ def ansari(x, y, alternative='two-sided'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import ansari
     >>> rng = np.random.default_rng()
 
@@ -2474,6 +2512,7 @@ def bartlett(*samples):
     Test whether or not the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
     >>> from scipy.stats import bartlett
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
@@ -2577,6 +2616,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
     Test whether or not the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
     >>> from scipy.stats import levene
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
@@ -2661,7 +2701,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     is `p`.
 
     .. deprecated:: 1.10.0
-        'binom_test' is deprecated in favour of 'binomtest' and will
+        `binom_test` is deprecated in favour of `binomtest` and will
         be removed in Scipy 1.12.0.
 
     Parameters
@@ -2832,6 +2872,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     Test whether or not the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
     >>> from scipy.stats import fligner
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
@@ -2999,11 +3040,14 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     Returns
     -------
-    z : scalar or ndarray
-        The z-score for the hypothesis test.  For 1-D inputs a scalar is
-        returned.
-    p-value : scalar ndarray
-        The p-value for the hypothesis test.
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : scalar or ndarray
+            The z-score for the hypothesis test.  For 1-D inputs a scalar is
+            returned.
+        pvalue : scalar ndarray
+            The p-value for the hypothesis test.
 
     See Also
     --------
@@ -3031,17 +3075,18 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x2 = rng.standard_normal((2, 45, 6, 7))
     >>> x1 = rng.standard_normal((2, 30, 6, 7))
-    >>> z, p = stats.mood(x1, x2, axis=1)
-    >>> p.shape
+    >>> res = stats.mood(x1, x2, axis=1)
+    >>> res.pvalue.shape
     (2, 6, 7)
 
     Find the number of points where the difference in scale is not significant:
 
-    >>> (p > 0.1).sum()
+    >>> (res.pvalue > 0.1).sum()
     78
 
     Perform the test with different scales:
@@ -3049,7 +3094,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
     >>> x1 = rng.standard_normal((2, 30))
     >>> x2 = rng.standard_normal((2, 35)) * 10.0
     >>> stats.mood(x1, x2, axis=1)
-    (array([-5.76174136, -6.12650783]), array([8.32505043e-09, 8.98287869e-10]))
+    SignificanceResult(statistic=array([-5.76174136, -6.12650783]),
+                       pvalue=array([8.32505043e-09, 8.98287869e-10]))
 
     """
     x = np.asarray(x, dtype=float)
@@ -3110,7 +3156,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
     else:
         z.shape = res_shape
         pval.shape = res_shape
-    return z, pval
+    return SignificanceResult(z, pval)
 
 
 WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
@@ -3442,6 +3488,12 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     return res
 
 
+MedianTestResult = _make_tuple_bunch(
+    'MedianTestResult',
+    ['statistic', 'pvalue', 'median', 'table'], []
+)
+
+
 def median_test(*samples, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):
     """Perform a Mood's median test.
@@ -3490,22 +3542,25 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     Returns
     -------
-    stat : float
-        The test statistic.  The statistic that is returned is determined by
-        `lambda_`.  The default is Pearson's chi-squared statistic.
-    p : float
-        The p-value of the test.
-    m : float
-        The grand median.
-    table : ndarray
-        The contingency table.  The shape of the table is (2, n), where
-        n is the number of samples.  The first row holds the counts of the
-        values above the grand median, and the second row holds the counts
-        of the values below the grand median.  The table allows further
-        analysis with, for example, `scipy.stats.chi2_contingency`, or with
-        `scipy.stats.fisher_exact` if there are two samples, without having
-        to recompute the table.  If ``nan_policy`` is "propagate" and there
-        are nans in the input, the return value for ``table`` is ``None``.
+    res : MedianTestResult
+        An object containing attributes:
+
+        statistic : float
+            The test statistic.  The statistic that is returned is determined
+            by `lambda_`.  The default is Pearson's chi-squared statistic.
+        pvalue : float
+            The p-value of the test.
+        median : float
+            The grand median.
+        table : ndarray
+            The contingency table.  The shape of the table is (2, n), where
+            n is the number of samples.  The first row holds the counts of the
+            values above the grand median, and the second row holds the counts
+            of the values below the grand median.  The table allows further
+            analysis with, for example, `scipy.stats.chi2_contingency`, or with
+            `scipy.stats.fisher_exact` if there are two samples, without having
+            to recompute the table.  If ``nan_policy`` is "propagate" and there
+            are nans in the input, the return value for ``table`` is ``None``.
 
     See Also
     --------
@@ -3540,39 +3595,39 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     >>> g2 = [28, 30, 31, 33, 34, 35, 36, 40, 44, 55, 57, 61, 91, 92, 99]
     >>> g3 = [0, 3, 9, 22, 23, 25, 25, 33, 34, 34, 40, 45, 46, 48, 62, 67, 84]
     >>> from scipy.stats import median_test
-    >>> stat, p, med, tbl = median_test(g1, g2, g3)
+    >>> res = median_test(g1, g2, g3)
 
     The median is
 
-    >>> med
+    >>> res.median
     34.0
 
     and the contingency table is
 
-    >>> tbl
+    >>> res.table
     array([[ 5, 10,  7],
            [11,  5, 10]])
 
     `p` is too large to conclude that the medians are not the same:
 
-    >>> p
+    >>> res.pvalue
     0.12609082774093244
 
     The "G-test" can be performed by passing ``lambda_="log-likelihood"`` to
     `median_test`.
 
-    >>> g, p, med, tbl = median_test(g1, g2, g3, lambda_="log-likelihood")
-    >>> p
+    >>> res = median_test(g1, g2, g3, lambda_="log-likelihood")
+    >>> res.pvalue
     0.12224779737117837
 
     The median occurs several times in the data, so we'll get a different
     result if, for example, ``ties="above"`` is used:
 
-    >>> stat, p, med, tbl = median_test(g1, g2, g3, ties="above")
-    >>> p
+    >>> res = median_test(g1, g2, g3, ties="above")
+    >>> res.pvalue
     0.063873276069553273
 
-    >>> tbl
+    >>> res.table
     array([[ 5, 11,  9],
            [11,  4,  8]])
 
@@ -3604,7 +3659,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     cdata = np.concatenate(data)
     contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
     if contains_nan and nan_policy == 'propagate':
-        return np.nan, np.nan, np.nan, None
+        return MedianTestResult(np.nan, np.nan, np.nan, None)
 
     if contains_nan:
         grand_median = np.median(cdata[~np.isnan(cdata)])
@@ -3653,7 +3708,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     stat, p, dof, expected = chi2_contingency(table, lambda_=lambda_,
                                               correction=correction)
-    return stat, p, grand_median, table
+    return MedianTestResult(stat, p, grand_median, table)
 
 
 def _circfuncs_common(samples, high, low, nan_policy='propagate'):
@@ -3704,15 +3759,39 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     circmean : float
         Circular mean.
 
+    See Also
+    --------
+    circstd : Circular standard deviation.
+    circvar : Circular variance.
+
     Examples
     --------
-    >>> from scipy.stats import circmean
-    >>> circmean([0.1, 2*np.pi+0.2, 6*np.pi+0.3])
-    0.2
+    For simplicity, all angles are printed out in degrees.
 
+    >>> import numpy as np
     >>> from scipy.stats import circmean
-    >>> circmean([0.2, 1.4, 2.6], high = 1, low = 0)
-    0.4
+    >>> import matplotlib.pyplot as plt
+    >>> angles = np.deg2rad(np.array([20, 30, 330]))
+    >>> circmean = circmean(angles)
+    >>> np.rad2deg(circmean)
+    7.294976657784009
+
+    >>> mean = angles.mean()
+    >>> np.rad2deg(mean)
+    126.66666666666666
+
+    Plot and compare the circular mean against the arithmetic mean.
+
+    >>> plt.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...          np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...          c='k')
+    >>> plt.scatter(np.cos(angles), np.sin(angles), c='k')
+    >>> plt.scatter(np.cos(circmean), np.sin(circmean), c='b',
+    ...             label='circmean')
+    >>> plt.scatter(np.cos(mean), np.sin(mean), c='r', label='mean')
+    >>> plt.legend()
+    >>> plt.axis('equal')
+    >>> plt.show()
 
     """
     samples, sin_samp, cos_samp, nmask = _circfuncs_common(samples, high, low,
@@ -3772,6 +3851,11 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     circvar : float
         Circular variance.
 
+    See Also
+    --------
+    circmean : Circular mean.
+    circstd : Circular standard deviation.
+
     Notes
     -----
     This uses the following definition of circular variance: ``1-R``, where
@@ -3782,14 +3866,35 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     References
     ----------
-    ..[1] Fisher, N.I. *Statistical analysis of circular data*. Cambridge
+    .. [1] Fisher, N.I. *Statistical analysis of circular data*. Cambridge
           University Press, 1993.
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import circvar
-    >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
-    0.6666666666666665
+    >>> import matplotlib.pyplot as plt
+    >>> samples_1 = np.array([0.072, -0.158, 0.077, 0.108, 0.286,
+    ...                       0.133, -0.473, -0.001, -0.348, 0.131])
+    >>> samples_2 = np.array([0.111, -0.879, 0.078, 0.733, 0.421,
+    ...                       0.104, -0.136, -0.867,  0.012,  0.105])
+    >>> circvar_1 = circvar(samples_1)
+    >>> circvar_2 = circvar(samples_2)
+
+    Plot the samples.
+
+    >>> fig, (left, right) = plt.subplots(ncols=2)
+    >>> for image in (left, right):
+    ...     image.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...                np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...                c='k')
+    ...     image.axis('equal')
+    ...     image.axis('off')
+    >>> left.scatter(np.cos(samples_1), np.sin(samples_1), c='k', s=15)
+    >>> left.set_title(f"circular variance: {np.round(circvar_1, 2)!r}")
+    >>> right.scatter(np.cos(samples_2), np.sin(samples_2), c='k', s=15)
+    >>> right.set_title(f"circular variance: {np.round(circvar_2, 2)!r}")
+    >>> plt.show()
 
     """
     samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
@@ -3841,6 +3946,11 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     circstd : float
         Circular standard deviation.
 
+    See Also
+    --------
+    circmean : Circular mean.
+    circvar : Circular variance.
+
     Notes
     -----
     This uses a definition of circular standard deviation from [1]_.
@@ -3848,6 +3958,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     .. code-block:: python
 
+        import numpy as np
         C = np.cos(samples).mean()
         S = np.sin(samples).mean()
         R = np.sqrt(C**2 + S**2)
@@ -3864,12 +3975,33 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import circstd
-    >>> small_samples = [0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2]
-    >>> circstd(small_samples)
-    0.06356406330602443
-    >>> np.std(small_samples)
-    0.06355419420577858
+    >>> import matplotlib.pyplot as plt
+    >>> samples_1 = np.array([0.072, -0.158, 0.077, 0.108, 0.286,
+    ...                       0.133, -0.473, -0.001, -0.348, 0.131])
+    >>> samples_2 = np.array([0.111, -0.879, 0.078, 0.733, 0.421,
+    ...                       0.104, -0.136, -0.867,  0.012,  0.105])
+    >>> circstd_1 = circstd(samples_1)
+    >>> circstd_2 = circstd(samples_2)
+
+    Plot the samples.
+
+    >>> fig, (left, right) = plt.subplots(ncols=2)
+    >>> for image in (left, right):
+    ...     image.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...                np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...                c='k')
+    ...     image.axis('equal')
+    ...     image.axis('off')
+    >>> left.scatter(np.cos(samples_1), np.sin(samples_1), c='k', s=15)
+    >>> left.set_title(f"circular std: {np.round(circstd_1, 2)!r}")
+    >>> right.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...            np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...            c='k')
+    >>> right.scatter(np.cos(samples_2), np.sin(samples_2), c='k', s=15)
+    >>> right.set_title(f"circular std: {np.round(circstd_2, 2)!r}")
+    >>> plt.show()
 
     """
     samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
@@ -3890,3 +4022,98 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     if not normalize:
         res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
     return res
+
+
+def directionalmean(samples, *, axis=0, normalize=True):
+    """
+    Computes the directional mean of a sample of vectors.
+
+    The directional mean is a measure of "preferred direction" of vector data.
+    It is analogous to the sample mean, but it is for use when the magnitude of
+    the data is irrelevant (e.g. unit vectors).
+
+    Parameters
+    ----------
+    samples : array_like
+        Input array. Must be at least two-dimensional, and the last axis of the
+        input must correspond with the dimensionality of the vector space.
+        When the input is exactly two dimensional, this means that each row
+        of the data is a vector observation.
+    axis : int, default: 0
+        Axis along which the directional mean is computed.
+    normalize: boolean, default: True
+        If True, normalize the input to ensure that each observation is a
+        unit vector. It the observations are already unit vectors, consider
+        setting this to False to avoid unnecessary computation.
+
+    Returns
+    -------
+    directionalmean : ndarray
+        Directional mean.
+
+    See also
+    --------
+    circmean: circular mean; i.e. directional mean for 2D *angles*
+
+    Notes
+    -----
+    This uses a definition of directional mean from [1]_.
+    Assuming the observations are unit vectors, the calculation is as follows.
+
+    .. code-block:: python
+
+        mean=samples.mean(axis=0)
+        directionalmean = mean/np.linalg.norm(mean)
+
+    This definition is appropriate for *directional* data (i.e. vector data
+    for which the magnitude of each observation is irrelevant) but not
+    for *axial* data (i.e. vector data for which the magnitude and *sign* of
+    each observation is irrelevant).
+
+    References
+    ----------
+    .. [1] Mardia, Jupp. (2000). *Directional Statistics*
+       (p. 163). Wiley.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import directionalmean
+    >>> data = np.array([[3, 4],    # first observation, 2D vector space
+    ...                  [6, -8]])  # second observation
+    >>> directionalmean(data)
+    array([1., 0.])
+
+    In contrast, the regular sample mean of the vectors would be influenced
+    by the magnitude of each observation. Furthermore, the result would not be
+    a unit vector.
+
+    >>> data.mean(axis=0)
+    array([4.5, -2.])
+
+    An exemplary use case for `directionalmean` is to find a *meaningful*
+    center for a set of observations on a sphere, e.g. geographical locations.
+
+    >>> data = np.array([[0.8660254, 0.5, 0.],
+    ...                  [0.8660254, -0.5, 0.]])
+    >>> directionalmean(data)
+    array([1., 0., 0.])
+
+    The regular sample mean on the other hand yields a result which does not
+    lie on the surface of the sphere.
+
+    >>> data.mean(axis=0)
+    array([0.8660254, 0., 0.])
+
+    """
+    samples = np.asarray(samples)
+    if samples.ndim < 2:
+        raise ValueError("samples must at least be two-dimensional. "
+                         f"Instead samples has shape: {samples.shape!r}")
+    samples = np.moveaxis(samples, axis, 0)
+    if normalize:
+        vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
+        samples = samples/vectornorms
+    mean = np.mean(samples, axis=0)
+    directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)
+    return directional_mean
