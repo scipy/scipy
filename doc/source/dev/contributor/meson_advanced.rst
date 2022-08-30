@@ -95,7 +95,7 @@ target, there are a number of ways to figure out what the build system is doing
 exactly. Beyond looking at the ``meson.build`` content for the target of
 interest, these include:
 
-1. Reading the generated ``build.ninja`` file in the build directory (available
+1. Reading the generated ``build.ninja`` file in the build directory,
 2. Using ``meson introspect`` to learn more about build options, dependencies
    and flags used for the target,
 3. Reading ``<build-dir>/meson-info/*.json`` for details on discovered
