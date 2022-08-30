@@ -888,7 +888,6 @@ class TestInterop:
         with assert_raises(ValueError, match="t and c are invalid length."):
             splint(0, 1, (np.ones(10), np.ones(5), 3))
 
-
     def test_splder(self):
         for b in [self.b, self.b2]:
             # pad the c array (FITPACK convention)
