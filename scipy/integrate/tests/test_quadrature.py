@@ -362,7 +362,6 @@ class TestQMCQuad():
                           args=(mean, cov), qrng=qrng)
         assert_allclose(np.exp(logres.integral), res.integral, rtol=5e-2)
 
-
     def test_flexible_input(self):
         # check that qrng is not required
         # ensure that if args is passed as a scalar, it is packed into a tuple

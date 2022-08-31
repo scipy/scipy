@@ -1137,7 +1137,7 @@ def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None, log=False,
         The integrand. Must accept separate arguments ``x0, ..., xn``
         corresponding with the coordinate in each dimension. For efficiency,
         the function should be vectorized to compute the integrand for each
-        element of array inputs ``x0, ..., xn`, each of length `n_points`.
+        element of array inputs ``x0, ..., xn``, each of length `n_points`.
         If the function is vectorized, it may also accept additional positional
         arguments specified with `args`.
     ranges : array-like
@@ -1185,20 +1185,20 @@ def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None, log=False,
     generates an estimate of the integral. By applying `n_offsets` random
     offsets to the QMC sample before calculating the integral in this way, we
     draw `n_offsets` i.i.d. random samples from a population of integral
-    estimates. The sample mean $m$ of these integral estimates is an unbiased
-    estimator of the true value of the integral, and the standard error of the
-    mean $s$ of these estimates may be used to generate confidence intervals
-    using the t distribution with ``n_offsets - 1`` degrees of freedom.
-    For details, see [1]_.
+    estimates. The sample mean :math:`m` of these integral estimates is an
+    unbiased estimator of the true value of the integral, and the standard
+    error of the mean :math:`s` of these estimates may be used to generate
+    confidence intervals using the t distribution with ``n_offsets - 1``
+    degrees of freedom. For details, see [1]_.
 
     References
     ----------
-    [1] Joe, Stephen. "Randomization of lattice rules for numerical multiple
-        integration." Journal of Computational and Applied Mathematics 31.2
-        (1990): 299-304.
+    .. [1] Joe, Stephen. "Randomization of lattice rules for numerical multiple
+           integration." Journal of Computational and Applied Mathematics 31.2
+           (1990): 299-304.
 
-    Example
-    -------
+    Examples
+    --------
     QMC quadrature is particularly useful for computing integrals in higher
     dimensions; an example integrand is the probability density function
     of a multivariate normal distribution.
@@ -1251,7 +1251,6 @@ def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None, log=False,
     lb, ub = ranges.T
     A = np.prod(ub - lb)
     dA = A / n_points
-
 
     # Typically, I'd use broadcasting and do this all in one go. I don't
     # think that's the right way to go here. It's bad for memory, for
