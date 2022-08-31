@@ -1040,7 +1040,7 @@ def newton_cotes(rn, equal=0):
     return ai, BN*fac
 
 
-def _qmc_quad_iv(func, ranges, n_points, qmc_engine, args):
+def _qmc_quad_iv(func, ranges, n_points, n_offsets, qrng, args):
 
     # lazy import to avoid issues with partially-initialized submodule
     if not hasattr(qmc_quad, 'qmc'):
@@ -1095,42 +1095,67 @@ def _qmc_quad_iv(func, ranges, n_points, qmc_engine, args):
         message = "`n_points` must be an integer."
         raise TypeError(message)
 
-    if qmc_engine is None:
-        qmc_engine = stats.qmc.Halton(dim)
-    elif not isinstance(qmc_engine, stats.qmc.QMCEngine):
+    n_offsets_int = np.int64(n_offsets)
+    if n_offsets != n_offsets_int:
+        message = "`n_offsets` must be an integer."
+        raise TypeError(message)
+
+    if qrng is None:
+        qrng = stats.qmc.Halton(dim)
+    elif not isinstance(qrng, stats.qmc.QMCEngine):
         message = "`qrng` must be an instance of scipy.stats.qmc.QMCEngine."
         raise TypeError(message)
 
-    return vfunc, ranges, n_points_int, qmc_engine, args, stats
+    if qrng.d != ranges.shape[0]:
+        message = ("`qrng` must be initialized with dimensionality equal to "
+                   "the number of variables in `ranges`, i.e., "
+                   "`qrng.random().shape[-1]` must equal `ranges.shape[0]`.")
+        raise ValueError(message)
+
+    rng_seed = getattr(qrng, 'rng_seed', None)
+    rng = stats._qmc.check_random_state(rng_seed)
+
+    return vfunc, ranges, n_points_int, n_offsets_int, qrng, rng, args, stats
 
 
 QMCQuadResult = namedtuple('QMCQuadResult', ['integral', 'standard_error'])
 
 
-def qmc_quad(func, ranges, *, n_points=1024, qrng=None, args=None):
+def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None,
+             args=None):
     """
     Compute an integral in N-dimensions using Quasi-Monte Carlo quadrature.
 
     Parameters
     ----------
     func : callable
-        The function to be integrated. Must accept separate arguments
-        ``x0, ..., xn`` corresponding with the coordinate in each dimension.
-        May also accept additional positional arguments specified with
-        `args`.
+        The integrand. Must accept separate arguments ``x0, ..., xn``
+        corresponding with the coordinate in each dimension. For efficiency,
+        the function should be vectorized to compute the integrand for each
+        element of array inputs ``x0, ..., xn`, each of length `n_points`.
+        If the function is vectorized, it may also accept additional positional
+        arguments specified with `args`.
     ranges : array-like
-        A two-dimensional array specifying the lower and upper integration
-        limits of each variable.
-    n_points : int, default: 1024
-        The number of Quasi-Monte Carlo points at which to evaluate the
-        integrand.
-    qrng : stats.qmc.QMCEngine, optional
+        An ``n`` x 2 array array specifying the lower and upper integration
+        limits of each of the ``n`` variables.
+    n_points, n_randomizations: int, optional
+        One QMC sample of `n_points` (default: 256) points will be generated
+        by `qrng`, and `n_offsets` (default: 8) pseudorandom offsets
+        will be drawn from `rng`. The total number of points at which the
+        integrand `func` will be evaluated is ``n_points * n_randomizations``.
+        See Notes for details.
+    qrng : scipy.stats.qmc.QMCEngine, optional
         An instance of the QMCEngine from which to sample QMC points.
         The QMCEngine must be initialized to a number of dimensions
         corresponding with the number of variables ``x0, ..., xn`` passed to
-        `func`. If a QMCEngine is not provided, `scipy.stats.qmc.Halton` will
-        be initialized with the number of dimensions determine from `ranges`
-        and the default `seed`.
+        `func`.
+        If the QMCEngine is initialized with scrambling enabled (default), the
+        pseudorandom number generator used for scrambling is also used to
+        generate the pseudorandom offets. If not, the `numpy.random.Generator`
+        singleton is used.
+        If a QMCEngine is not provided, the default `scipy.stats.qmc.Halton`
+        will be initialized with the number of dimensions determine from
+        `ranges`.
     args : sequence, optional
         Extra arguments to pass to `func`. All extra arguments must be packed
         into a sequence; the will be unpacked to be passed to `func`, e.g.
@@ -1139,30 +1164,97 @@ def qmc_quad(func, ranges, *, n_points=1024, qrng=None, args=None):
     Returns
     -------
     result : object
-        The a result object with attributes:
+        A result object with attributes:
 
         integral : float
-            The estimate of the integral
+            The estimate of the integral.
         standard_error :
-            The standard error of the
+            The error estimate. See Notes for interpretation.
+
+    Notes
+    -----
+    Evaluating the integrand at each of the `n_points` points in the QMC sample
+    generates an estimate of the integral. By applying `n_offsets` random
+    offsets to the QMC sample before calculating the integral in this way, we
+    draw `n_offsets` i.i.d. random samples from a population of integral
+    estimates. The sample mean $m$ of these integral estimates is an unbiased
+    estimator of the true value of the integral, and the standard error of the
+    mean $s$ of these estimates may be used to generate confidence intervals
+    using the t distribution with ``n_offsets - 1`` degrees of freedom.
+    For details, see [1]_.
+
+    References
+    ----------
+    [1] Joe, Stephen. "Randomization of lattice rules for numerical multiple
+        integration." Journal of Computational and Applied Mathematics 31.2
+        (1990): 299-304.
+
+    Example
+    -------
+    QMC quadrature is particularly useful for computing integrals in higher
+    dimensions; an example integrand is the probability density function
+    of a multivariate normal distribution.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>>
+    >>> dim = 8
+    >>> mean = np.zeros(dim)
+    >>> cov = np.eye(dim) / 2**8
+    >>>
+    >>> def func(*z):
+    ...     z = np.asarray(z).T
+    ...     return stats.multivariate_normal.pdf(z, mean, cov)
+
+    To compute the integral over the unit hypercube:
+
+    >>> from scipy.integrate import qmc_quad
+    >>> lb = np.zeros(dim)
+    >>> ub = np.ones(dim)
+    >>> ranges = np.asarray([lb, ub]).T
+    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+    >>> qrng = stats.qmc.Halton(d=dim, seed=rng)
+    >>> n_points, n_offsets = 256, 8
+    >>> res = qmc_quad(func, ranges)
+    >>> res.integral, res.standard_error
+    (0.0001842819684617149, 1.3959190979748066e-07)
+
+    A two-sided, 99% confidence interval for the integral may be estimated
+    as:
+
+    >>> t = stats.t(df=n_offsets-1, loc=res.integral, scale=res.standard_error)
+    >>> t.interval(0.99)
+    (0.00018389017561108015, 0.00018461661169997918)
+
+    Indeed, the value reported by `scipy.stats.multivariate_normal.cdf` is
+    within this range.
+
+    >>> stats.multivariate_normal.cdf(ub, mean, cov, lower_limit=lb)
+    0.00018430867675187443  # may vary
 
     """
-    args = _qmc_quad_iv(func, ranges, n_points, qrng, args)
-    func, ranges, n_points, qrng, args, stats = args
+    args = _qmc_quad_iv(func, ranges, n_points, n_offsets, qrng, args)
+    func, ranges, n_points, n_offsets, qrng, rng, args, stats = args
 
-    sample = qrng.random(n_points)
-    # Can't check this in input validation or that would burn sampled
-    # points, which would be a problem for Sobol
-    if sample.shape[-1] != ranges.shape[0]:
-        message = ("`qrng` must be initialized with dimensionality equal to "
-                   "the number of variables in `ranges`, i.e., "
-                   "`qrng.random().shape[-1]` must equal `ranges.shape[0]`.")
-        raise ValueError(message)
-
-    x = stats.qmc.scale(sample, *ranges.T)
+    dim = qrng.d
+    sample = qrng.random(n_points)  # shape is also (n_points, dim)
+    offsets = rng.random(size=(n_offsets, dim))
     lb, ub = ranges.T
     A = np.prod(ub - lb)
-    integrands = func(*x.T, *args)
-    integral = np.mean(integrands * A)
-    standard_error = stats.sem(integrands) * A
+    dA = A / n_points
+
+    # Typically, I'd use broadcasting and do this all in one go. I don't
+    # think that's the right way to go here. It's bad for memory, for
+    # large `n_points` and small `n_offsets` the speed impact is small (or
+    # negative), and `qmc.scale` is only for 2D arrays. Let's keep it simple.
+    estimates = np.zeros(n_offsets)
+    for i, offset in enumerate(offsets):
+        x = (sample + offset) % 1  # offset and wrap
+        x = stats.qmc.scale(x, lb, ub)
+        integrands = func(*x.T, *args)
+        estimate = np.sum(integrands * dA)
+        estimates[i] = estimate
+
+    integral = np.mean(estimates)
+    standard_error = stats.sem(estimates)
     return QMCQuadResult(integral, standard_error)

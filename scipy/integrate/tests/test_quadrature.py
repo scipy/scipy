@@ -8,7 +8,7 @@ from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
                              quad, simpson, simps, fixed_quad, AccuracyWarning,
                              qmc_quad)
-from scipy import stats
+from scipy import stats, special as sc
 
 class TestFixedQuad:
     def test_scalar(self):
@@ -316,6 +316,10 @@ class TestQMCQuad():
         with pytest.raises(TypeError, match=message):
             qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], n_points=1024.5)
 
+        message = "`n_offsets` must be an integer."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], n_offsets=8.5)
+
         message = "`qrng` must be an instance of scipy.stats.qmc.QMCEngine."
         with pytest.raises(TypeError, match=message):
             qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], qrng="a duck")
@@ -324,8 +328,9 @@ class TestQMCQuad():
         with pytest.raises(ValueError, match=message):
             qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], qrng=stats.qmc.Sobol(1))
 
-    @pytest.mark.parametrize("n_points", [2**10, 2**13, 2**16])
-    def test_basic(self, n_points):
+    @pytest.mark.parametrize("n_points", [2**8, 2**10, 2**12])
+    @pytest.mark.parametrize("n_offsets", [8, 16])
+    def test_basic(self, n_points, n_offsets):
 
         ndim = 2
         mean = np.zeros(ndim)
@@ -340,10 +345,11 @@ class TestQMCQuad():
         lb = np.zeros(ndim)
         ub = np.ones(ndim)
         ranges = np.asarray([lb, ub]).T
-        res = qmc_quad(func, ranges, args=(mean, cov), qrng=qrng)
+        res = qmc_quad(func, ranges, n_points=n_points, n_offsets=n_offsets,
+                       args=(mean, cov), qrng=qrng)
         ref = stats.multivariate_normal.cdf(ub, mean, cov, lower_limit=lb)
-        assert_allclose(res.integral, ref,
-                        rtol=1/n_points, atol=res.standard_error)
+        atol = sc.stdtrit(n_offsets-1, 0.995) * res.standard_error  # 99% CI
+        assert_allclose(res.integral, ref, atol=atol)
 
     def test_flexible_input(self):
         # check that qrng is not required
