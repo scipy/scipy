@@ -1,10 +1,4 @@
 include_dirs = [inc_np, '../_lib/src']
-fortran_ignore_warnings = [
-  '-Wno-tabs', '-Wno-conversion',
-  '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
-  '-Wno-maybe-uninitialized', '-Wno-unused-label',
-  '-Wno-unused-variable'
-]
 
 _direct = py3.extension_module('_direct',
   ['_direct/direct_wrap.c',
@@ -140,7 +134,8 @@ cobyla_module = custom_target('cobyla_module',
 
 _cobyla = py3.extension_module('_cobyla',
   [cobyla_module, fortranobject_c, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
-  c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
+  c_args: [numpy_nodepr_api, Wno_unused_variable],
+  [cobyla_module, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
   dependencies: [py3_dep],
@@ -215,11 +210,7 @@ if use_pythran
 
   _group_columns = py3.extension_module('_group_columns',
     [_group_columns],
-    cpp_args: [
-      '-Wno-unused-function', '-Wno-unused-variable',
-      '-Wno-deprecated-declarations',
-      '-Wno-cpp', '-Wno-int-in-bool-context'
-    ] + cpp_args_pythran,
+    cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
     dependencies: [py3_dep],
     install: true,

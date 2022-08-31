@@ -35,11 +35,7 @@ if use_pythran
 
   _max_len_seq_inner = py3.extension_module('_max_len_seq_inner',
     [_max_len_seq_inner],
-    cpp_args: [
-      '-Wno-unused-function', '-Wno-unused-variable',
-      '-Wno-deprecated-declarations', '-Wno-unused-local-typedefs',
-      '-Wno-cpp', '-Wno-int-in-bool-context'
-    ] + cpp_args_pythran,
+    cpp_args: [cpp_args_pythran, _cpp_Wno_unused_local_typedefs],
     include_directories: [incdir_pythran, incdir_numpy],
     dependencies: [py3_dep],
     install: true,
@@ -54,11 +50,7 @@ if use_pythran
 
   _spectral = py3.extension_module('_spectral',
     [_spectral],
-    cpp_args: [
-      '-Wno-unused-function', '-Wno-unused-variable',
-      '-Wno-deprecated-declarations',
-      '-Wno-cpp', '-Wno-int-in-bool-context'
-    ] + cpp_args_pythran,
+    cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
     dependencies: [py3_dep],
     install: true,

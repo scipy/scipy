@@ -1,11 +1,14 @@
+_superlu_lib_c_args = ['-DUSE_VENDOR_BLAS=1']
 if is_windows
-  c_args = ['-DNO_TIMER=1']
-else
-  c_args = []
+  _superlu_lib_c_args += ['-DNO_TIMER=1']
 endif
-
-c_args += ['-DUSE_VENDOR_BLAS=1']
-
+_superlu_lib_c_args += cc.get_supported_arguments( 
+  Wno_unused_variable,
+  Wno_parentheses,
+  Wno_unused_label,
+  Wno_implicit_function_declaration,
+  Wno_switch,
+)
 superlu_lib = static_library('superlu_lib',
   [
     'SuperLU/SRC/ccolumn_bmod.c',
@@ -186,13 +189,7 @@ superlu_lib = static_library('superlu_lib',
     'SuperLU/SRC/zsp_blas3.c',
     'SuperLU/SRC/zutil.c'
   ],
-  c_args: [
-    '-Wno-unused-variable',
-    '-Wno-parentheses',
-    '-Wno-unused-label',
-    '-Wno-implicit-function-declaration',
-    '-Wno-switch'
-  ],
+  c_args: _superlu_lib_c_args,
   include_directories: ['SuperLU/SRC']
 )
 
