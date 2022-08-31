@@ -8402,11 +8402,11 @@ class truncnorm_gen(rv_continuous):
 
     Notes
     -----
-    This distribution is the normal distribution centred on ``loc`` (default 
-    0), with standard deviation ``scale`` (default 1), and clipped at ``a``, 
-    ``b`` standard deviations to the left, right (respectively) from ``loc``. 
-    If ``myclip_a`` and ``myclip_b`` are clip values in the sample space (as 
-    opposed to the number of standard deviations) then they can be converted 
+    This distribution is the normal distribution centred on ``loc`` (default
+    0), with standard deviation ``scale`` (default 1), and clipped at ``a``,
+    ``b`` standard deviations to the left, right (respectively) from ``loc``.
+    If ``myclip_a`` and ``myclip_b`` are clip values in the sample space (as
+    opposed to the number of standard deviations) then they can be converted
     to the required form according to:
 
         a, b = (myclip_a - loc) / scale, (myclip_b - loc) / scale
