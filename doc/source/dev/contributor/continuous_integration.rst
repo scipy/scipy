@@ -66,6 +66,8 @@ Codecov
 * ``patch``: the impact on code coverage due to your changes
 * ``project``: the coverage of the whole project
 
+.. _skip-ci:
+
 Skipping
 ========
 
