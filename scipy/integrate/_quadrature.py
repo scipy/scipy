@@ -1234,7 +1234,7 @@ def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None, log=False,
     >>> t.interval(0.99)
     (0.00018389017561108015, 0.00018461661169997918)
 
-    Indeed, the value reported by `scipy.stats.multivariate_normal.cdf` is
+    Indeed, the value reported by `scipy.stats.multivariate_normal` is
     within this range.
 
     >>> stats.multivariate_normal.cdf(ub, mean, cov, lower_limit=lb)
