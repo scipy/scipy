@@ -236,14 +236,18 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     The singular values match the expected singular values, and the singular
     vectors are as expected up to a difference in sign.
 
-    >>> (np.allclose(s3, s) and
-    ...  np.allclose(np.abs(u3), np.abs(u.toarray())) and
-    ...  np.allclose(np.abs(vT3), np.abs(vT.toarray())))
+    >>> np.allclose(s3, s)
+    True
+    >>> np.allclose(np.abs(u3), np.abs(u.toarray()))
+    True
+    >>> np.allclose(np.abs(vT3), np.abs(vT.toarray()))
     True
 
     The singular vectors are also orthogonal.
-    >>> (np.allclose(u3.T @ u3, np.eye(5)) and
-    ...  np.allclose(vT3 @ vT3.T, np.eye(5)))
+
+    >>> np.allclose(u3.T @ u3, np.eye(5))
+    True
+    >>> np.allclose(vT3 @ vT3.T, np.eye(5))
     True
 
     """
