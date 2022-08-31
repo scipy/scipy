@@ -41,7 +41,7 @@ import warnings
 from collections import namedtuple
 
 from . import distributions
-from scipy._lib._util import _rename_parameter
+from scipy._lib._util import (_rename_parameter, _contains_nan)
 from scipy._lib._bunch import _make_tuple_bunch
 import scipy.special as special
 import scipy.stats._stats_py
@@ -2484,7 +2484,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
                 a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
 
-    contains_nan, nan_policy = scipy.stats._stats_py._contains_nan(a, nan_policy)
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
     # We are going to modify a: better make a copy
     a = ma.array(a, copy=np.logical_not(inplace))
 
