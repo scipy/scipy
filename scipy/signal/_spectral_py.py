@@ -5,6 +5,7 @@ import numpy as np
 from scipy import fft as sp_fft
 from . import _signaltools
 from .windows import get_window
+from ._short_time_fft import FFT_TYP_TYPE, ShortTimeFFT
 from ._spectral import _lombscargle
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
@@ -587,9 +588,15 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> plt.show()
 
     """
-    freqs, _, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
-                                     detrend, return_onesided, scaling, axis,
-                                     mode='psd')
+    # The following function can be used to verify that _spectral_helper() and
+    # ShortTimeFFT, more precisely _spect_helper_csd(), calculate identical
+    # STFTs - only useful for unit testing:
+    freqs, _, Pxy = _csd_test_shim(x, y, fs, window, nperseg, noverlap, nfft,
+                                   detrend, return_onesided, scaling, axis,
+                                   mode='psd')
+    # freqs, _, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
+    #                               detrend, return_onesided, scaling, axis,
+    #                               mode='psd')
 
     # Average over windows.
     if len(Pxy.shape) >= 2 and Pxy.size > 0:
@@ -612,6 +619,140 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
             Pxy = np.reshape(Pxy, Pxy.shape[:-1])
 
     return freqs, Pxy
+
+
+# toggle comparison of _spectral_helper() with the shortTimeFFT ins csd():
+_csd_shortTimeFFT_comparison_enable = False
+
+def _enable_shortTimeFFT_comparison():
+    """Enable comparing output of  _spectral_helper() and ShortTimeFFT.
+
+    This function is call in test_spectral.py for enabling the comparison.
+    """
+    global _csd_shortTimeFFT_comparison_enable
+    _csd_shortTimeFFT_comparison_enable = True
+
+
+def _csd_test_shim(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
+                     nfft=None, detrend='constant', return_onesided=True,
+                     scaling='density', axis=-1, mode='psd', boundary=None,
+                     padded=False):
+    """Compare output of  _spectral_helper() and ShortTimeFFT, more
+    precisely _spect_helper_csd() for used in csd().
+
+   The comparison is only performed if _csd_shortTimeFFT_comparison_enable is
+   set. This function should only be usd by csd() in (unit) testing.
+   """
+    freqs, t, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
+                                     detrend, return_onesided, scaling, axis,
+                                     mode='psd')
+
+    if not _csd_shortTimeFFT_comparison_enable:
+        return freqs, t, Pxy
+
+    freqs1, Pxy1 = _spect_helper_csd(x, y, fs, window, nperseg, noverlap, nfft,
+                                     detrend, return_onesided, scaling, axis)
+
+    np.testing.assert_allclose(freqs1, freqs)
+    amax_Pxy = max(np.abs(Pxy).max(), 1) if Pxy.size else 1
+    atol = np.finfo(Pxy.dtype).resolution * amax_Pxy  # needed for large Pxy
+    # for c_ in range(Pxy.shape[-1]):
+    #    np.testing.assert_allclose(Pxy1[:, c_], Pxy[:, c_], atol=atol)
+    np.testing.assert_allclose(Pxy1, Pxy, atol=atol)
+    return freqs, t, Pxy
+
+
+def _spect_helper_csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
+                      nfft=None, detrend='constant', return_onesided=True,
+                      scaling='density', axis=-1):
+    """Wrapper for replacing _spectral_helper() by using the ShortTimeFFT
+      for use by csd().
+
+    This function should be only used by _csd_test_shim() and is only useful
+    for testing the ShortTimeFFT implementation.
+    """
+
+    # The following lines are taken from the original _spectral_helper():
+    same_data = y is x
+    axis = int(axis)
+
+    # Ensure we have np.arrays, get outdtype
+    x = np.asarray(x)
+    if not same_data:
+        y = np.asarray(y)
+        outdtype = np.result_type(x, y, np.complex64)
+    else:
+        outdtype = np.result_type(x, np.complex64)
+
+    if not same_data:
+        # Check if we can broadcast the outer axes together
+        xouter = list(x.shape)
+        youter = list(y.shape)
+        xouter.pop(axis)
+        youter.pop(axis)
+        try:
+            outershape = np.broadcast(np.empty(xouter), np.empty(youter)).shape
+        except ValueError as e:
+            raise ValueError('x and y cannot be broadcast together.') from e
+
+    if same_data:
+        if x.size == 0:
+            return np.empty(x.shape), np.empty(x.shape)
+    else:
+        if x.size == 0 or y.size == 0:
+            outshape = outershape + (min([x.shape[axis], y.shape[axis]]),)
+            emptyout = np.moveaxis(np.empty(outshape), -1, axis)
+            return emptyout, emptyout
+
+    if nperseg is not None:  # if specified by user
+        nperseg = int(nperseg)
+        if nperseg < 1:
+            raise ValueError('nperseg must be a positive integer')
+
+    # parse window; if array like, then set nperseg = win.shape
+    n = x.shape[axis] if same_data else max(x.shape[axis], y.shape[axis])
+    win, nperseg = _triage_segments(window, nperseg, input_length=n)
+
+    if nfft is None:
+        nfft = nperseg
+    elif nfft < nperseg:
+        raise ValueError('nfft must be greater than or equal to nperseg.')
+    else:
+        nfft = int(nfft)
+
+    if noverlap is None:
+        noverlap = nperseg // 2
+    else:
+        noverlap = int(noverlap)
+    if noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
+    nstep = nperseg - noverlap
+
+    if np.iscomplexobj(x) and return_onesided:
+        return_onesided = False
+
+    # noinspection PyTypeChecker
+    fft_typ: FFT_TYP_TYPE = 'onesided' if return_onesided else 'twosided'
+    scale = {'spectrum': 'magnitude', 'density': 'psd'}[scaling]
+    SFT = ShortTimeFFT(win, nstep, 1 / fs, fft_typ, nfft, scale_to=scale,
+                       phase_shift=None)
+
+    # _spectral_helper() calculates X.conj()*Y instead of X*Y.conj():
+    Pxy = SFT.spectrogram(y, x, detr=None if detrend is False else detrend,
+                          p0=0, p1=(n-noverlap)//SFT.hop, k_offset=nperseg//2,
+                          axis=axis).conj()
+    # Note:
+    # 'onesided2X' scaling of ShortTimeFFT conflicts with the
+    # scaling='spectrum' parameter, since it doubles the squared magnitude,
+    # which in the view of the ShortTimeFFT implementation does not make sense.
+    # Hence, the doubling of the square is implemented here:
+    if return_onesided:
+        f_axis = Pxy.ndim - 1 + axis if axis < 0 else axis
+        Pxy = np.moveaxis(Pxy, f_axis, -1)
+        Pxy[..., 1:-1 if SFT.mfft % 2 == 0 else None] *= 2
+        Pxy = np.moveaxis(Pxy, -1, f_axis)
+
+    return SFT.f, Pxy
 
 
 def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,

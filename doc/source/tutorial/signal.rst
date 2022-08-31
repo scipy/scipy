@@ -1048,8 +1048,382 @@ giving a factor of :math:`\sim 2` speed increase over the straightforward
 implementation.
 
 
+
+.. currentmodule:: scipy.signal.ShortTimeFFT
+.. math::
+    % LaTeX Macros to make the LaTeX formulas more readable:
+    \newcommand{\IC}{{\mathbb{C}}}  % set of complex numbers
+    \newcommand{\IN}{{\mathbb{N}}}  % set of natural numbers
+    \newcommand{\IR}{{\mathbb{R}}}  % set of real numbers
+    \newcommand{\IZ}{{\mathbb{Z}}}  % set of integers
+    \newcommand{\jj}{{\mathbb{j}}}  % imaginary unit
+    \newcommand{\e}{\operatorname{e}}  % Euler's number
+    \newcommand{\dd}{\operatorname{d}} % infinitesimal operator
+    \newcommand{\conj}[1]{\overline{#1}} % complex conjugate
+    \newcommand{\conjT}[1]{\overline{#1^T}} % transposed complex conjugate
+    \newcommand{\inv}[1]{\left(#1\right)^{\!-1}} % inverse
+    % Since the physics package is not loaded, we define the macros ourselves:
+    \newcommand{\vb}[1]{\mathbf{#1}} % vectors and matrices are bold
+
+.. _tutorial_stft:
+
+Short-Time Fourier Transform
+----------------------------
+This section gives some background information on using the
+:class:`ShortTimeFFT <scipy.signal.ShortTimeFFT>` class:
+For a complex valued signal :math:`x: \IR \mapsto\IC` the Short-time Fourier
+transform (STFT) is defined [4]_ as
+
+.. math::
+
+    S(f, t) := \int_\IR x(\xi)\, \conj{w(\xi-t)}\,\e^{-\jj2\pi f \xi}\dd\xi
+
+for a given window function :math:`w: \IR \mapsto\IC` with its complex conjugate
+being :math:`\conj{w(t)}`. It can be interpreted as determining the scalar
+product of :math:`x` with the window :math:`w` which is translated by the
+time :math:`t` and then modulated (i.e., frequency-shifted) by the frequency
+:math:`f`.
+For working with sampled signals :math:`x[k] := x(kT)`, :math:`k\in\IZ` with
+sampling interval :math:`T`, the discrete version, i.e., only evaluating the
+STFT at discrete grid points :math:`S[q, p] := S(q \Delta f, p\Delta t)`,
+:math:`q,p\in\IZ`, needs to be used. It can be formulated as
+
+.. math::
+    :label: eq_dSTFT
+
+    S[q,p] = \sum_{k=0}^{N-1} x[k]\,\conj{w[k-p h]}\, \e^{-\jj2\pi q k / N}\ ,
+              \quad q,p\in\IZ\ ,
+
+with the time interval :math:`\Delta t := h T`, :math:`h\in\IN` (see `delta_t`)
+being expressed as the `hop` size of :math:`h` samples and the frequency interval
+:math:`\Delta f := 1 / (N T)` (see `delta_f`), which makes it FFT compatible.
+:math:`w[m] := w(mT)` , :math:`m\in\IZ` is the sampled window function.
+
+To be more aligned to the implementation of
+:class:`ShortTimeFFT <scipy.signal.ShortTimeFFT>`, it makes sense to
+reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
+
+
+#. Extract the :math:`p`-th slice by windowing with the window :math:`w[m]`
+   made up of :math:`M` samples (see `m_num`) centered
+   at :math:`t[p] :=  p \Delta t = h T` (see `delta_t`).
+   I. e.,
+
+    .. math::
+        :label: eq_STFT_windowing
+
+        x_p[m] = x\!\big[m - \lfloor M/2\rfloor + h p\big]\, \conj{w[m]}\ ,
+                 \quad m = 0, \ldots M-1\ ,
+
+   where the integer :math:`\lfloor M/2\rfloor` represents ``M//2``, i.e, it is
+   the mid point of the window (`m_num_mid`). For notational convenience,
+   :math:`x[k]:=0` for :math:`k\not\in\{0, 1, \ldots, N-1\}` is assumed. In the
+   subsection :ref:`tutorial_stft_sliding_win` the indexing of the slices is
+   discussed in more detail.
+#. Then perform a discrete Fourier transform (i.e., an
+   :ref:`FFT <tutorial_FFT>`) of :math:`x_p[m]`.
+
+   .. math::
+        :label: eq_STFT_DFT
+
+        S[q, p] = \sum_{m=0}^{M-1} x_p[m] \exp\!\big\{%
+                                          -2\jj\pi (q + \phi_m)\, m / M\big\}\ .
+
+   Note that a linear phase :math:`\phi_m` (see `phase_shift`) can be specified,
+   which corresponds to shifting the input by :math:`\phi_m` samples. The
+   default is :math:`\phi_m = \lfloor M/2\rfloor` (corresponds per definition to
+   ``phase_shift = 0``), which suppresses linear phase components for un-shifted
+   signals.
+   Furthermore, the FFT may be oversampled by padding :math:`w[m]` with zeros.
+   This can be achieved by specifying `mfft` to be larger that than the window
+   length `m_num`---this sets :math:`M` to `mfft` (implying that also
+   :math:`w[m]:=0` for :math:`m\not\in\{0, 1, \ldots, M-1\}` holds).
+
+The inverse short-time Fourier transform (`istft`) is implemented by reversing
+these two steps:
+
+#. Perform the inverse discrete Fourier transform, i.e.,
+
+   .. math::
+
+      x_p[m] = \frac{1}{M}\sum_{q=0}^M S[q, p]\, \exp\!\big\{
+                                           2\jj\pi (q + \phi_m)\, m / M\big\}\ .
+
+#. Sum the shifted slices weighted by :math:`w_d[m]` to reconstruct the original
+   signal, i.e.,
+
+   .. math::
+
+        x[k] = \sum_p x_p\!\big[\mu_q(k)\big]\, w_d\!\big[\mu_p(k)\big]\ , \quad
+               \mu_p(k) = k + \lfloor M/2\rfloor - h p
+
+   for :math:`k \in [0, \ldots, n-1]`. :math:`w_d[m]` is the so-called
+   canonical dual window of :math:`w[m]` and is also made up of :math:`M`
+   samples.
+
+Note that not for all windows and hops an inverse STFT exists. For a given
+window :math:`w[m]` the hop size :math:`h` must be small enough to ensure that
+every sample of :math:`x[k]` is touched by a non-zero value of at least one
+window slice. This is sometimes referred as the "non-zero overlap condition"
+(see :func:`check_NOLA <scipy.signal.check_NOLA>`). Some more details are
+given in the subsection :ref:`tutorial_stft_dual_win`:
+
+.. _tutorial_stft_sliding_win:
+
+Sliding Windows
+^^^^^^^^^^^^^^^
+This subsection discusses how the sliding window is indexed in the
+:class:`ShortTimeFFT <scipy.signal.ShortTimeFFT>` by means of an example:
+Consider a window of length 6 with a `hop` interval of two and a sampling
+interval `T` of one, e.g., ``ShortTimeFFT(np.ones(6), 2, T=1)``.
+The following image schematically depicts the first four window positions also
+named time slices:
+
+.. The images ``../_static/tutorial_stft_sliding_win_[start,stop].png are
+   manually exported from ``../_static/tutorial_stft_sliding_win_startstop.svg``
+   which is an SVG file drawn with Inkscape. Unfortunately, using the SVG
+   directly does not display the arrow tips in the browser (tested with
+   Firefox 105). It is not clear how to generate SVGs with Inkscape which do
+   not have that problem.
+
+.. figure:: ../_static/tutorial_stft_sliding_win_start.png
+    :width: 66%
+    :align: center
+
+The x-axis denotes the time :math:`t`, which corresponds to the sample index
+`k` indicated by the bottom row of blue boxes. The y-axis denotes the time slice
+index :math:`p`. The signal :math:`x[k]` starts at index :math:`k=0` and is
+marked by a light blue background. Per definition the zeroth slice
+(:math:`p=0`) is centered at :math:`t=0`. The center of each slice
+(`m_num_mid`), here being the sample ``6//2=3``, is marked by the text "mid".
+By default the `stft` calculates all slices which have some overlap with the
+signal. Hence the first slice is at `p_min` = -1 with the lowest sample index
+being `k_min` = -5. The first sample index unaffected by a slice not sticking
+out to the left of the signal is :math:`p_{lb} = 2` and the first sample index
+unaffected by border effects is :math:`k_{lb} = 5`. The property
+`lower_border_end` returns the tuple :math:`(k_{lb}, p_{lb})`.
+
+The behavior at the end of the signal is depicted for a signal with :math:`n=50`
+samples below, as indicated by the blue background:
+
+.. figure:: ../_static/tutorial_stft_sliding_win_stop.png
+    :width: 66%
+    :align: center
+
+Here the last slice has index :math:`p=26` -- hence, following Python convention
+of the end index being outside the range, `p_max` = 27 indicates the first
+slice not touching the signal. The corresponding sample index is `k_max` = 55.
+The first slice, which sticks out to the left is :math:`p_{ub} = 24` with its
+first sample at :math:`k_{ub}=45`. The function `upper_border_begin` returns the
+tuple :math:`(k_{ub}, p_{ub})`.
+
+.. The unit test ``test_short_time_fft.test_tutorial_stft_sliding_win``verifies
+   that the shown indexes are correct.
+
+
+.. _tutorial_stft_dual_win:
+
+Inverse STFT and Dual Windows
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The term dual window stems from frame theory [5]_ where a frame is a series
+expansion which can represent any function in a given Hilbert space. There the
+expansions :math:`\{g_k\}` and :math:`\{h_k\}` are dual frames if for all
+functions :math:`f` in the given Hilbert space :math:`\mathcal{H}`
+
+.. math::
+
+  f  = \sum_{k\in\IN} \langle f, g_k\rangle h_k
+     =  \sum_{k\in\IN} \langle f, h_k\rangle g_k\ , \quad f \in \mathcal{H}\ ,
+
+holds, where :math:`\langle ., .\rangle` denotes the scalar product of
+:math:`\mathcal{H}`. All frames :math:`\{f_k\}` have dual frames [5]_.
+
+An STFT evaluated only at discrete grid
+points :math:`S(q \Delta f, p\Delta t)` is called  a "Gabor frame" in
+literature [4]_ [5]_.
+Since the support of the window :math:`w[m]` is limited to a finite interval,
+the :class:`ShortTimeFFT <scipy.signal.ShortTimeFFT>` falls into the class of
+the so-called "painless non-orthogonal expansions" [4]_. In this case the dual
+windows always have the same support and can be calculated by means of a
+diagonal matrix. A rough derivation only requiring some understanding of
+manipulating matrices will be sketched out in the following:
+
+Since the STFT given in Eq. :math:numref:`eq_dSTFT` is a linear mapping in
+:math:`x[k]`, it can be expressed in vector-matrix notation. This allows us to
+express the inverse via the formal solution of the linear least squares method
+(as in :func:`lstsq <scipy.linalg.lstsq>`), which leads to a beautiful and
+simple result.
+
+We begin by reformulating the windowing of Eq. :math:numref:`eq_STFT_windowing`
+
+.. math::
+    :label: eq_STFT_WinMatrix
+
+      \vb{x}_p  = \vb{W}_{\!p}\,\vb{x} =
+      \begin{bmatrix}
+        \cdots & 0 & w[0]   & 0 & \cdots&&&\\
+        & \cdots  & 0 & w[1] & 0 & \cdots&&\\
+        &   &   &         & \ddots&&&\\
+        &&\cdots & 0 & 0 & w[M-1] & 0 & \cdots
+      \end{bmatrix}\begin{bmatrix}
+        x[0]\\ x[1]\\ \vdots\\ x[N-1]
+      \end{bmatrix}\ ,
+
+where the :math:`M\times N` matrix :math:`\vb{W}_{\!p}` has only non-zeros
+entries on the :math:`(ph)`-th minor diagonal, i.e.,
+
+.. math::
+    :label: eq_STFT_WinMatrix1
+
+        W_p[m,k] = w[m]\, \delta_{m+ph,k}\ ,\quad
+       \delta_{k,l} &= \begin{cases} 1 & \text{ for } k=l\ ,\\
+                                    0 & \text{ elsewhere ,} \end{cases}
+
+with :math:`\delta_{k,l}` being the Kronecker Delta.
+Eq. :math:numref:`eq_STFT_DFT` can be expressed as
+
+.. math::
+
+    \vb{s}_p = \vb{F}\,\vb{x}_p \quad\text{with}\quad
+    F[q,m] =\exp\!\big\{-2\jj\pi (q + \phi_m)\, m / M\big\}\ ,
+
+which allows the STFT of the :math:`p`-th slice to be written as
+
+.. math::
+    :label: eq_STFT_Slice_p
+
+    \vb{s}_p = \vb{F}\vb{W}_{\!p}\,\vb{x} =: \vb{G}_p\,\vb{x}
+    \quad\text{with}\quad s_p[q] = S[p,q]\ .
+
+Note that :math:`\vb{F}` is unitary, i.e., the inverse equals its conjugate
+transpose meaning :math:`\conjT{\vb{F}}\vb{F} = \vb{I}`.
+
+To obtain a single vector-matrix equation for the STFT, the slices are stacked
+into one vector, i.e.,
+
+.. math::
+
+    \vb{s} := \begin{bmatrix}
+               \vb{s}_0\\ \vb{s}_1\\ \vdots\\ \vb{s}_{P-1}
+              \end{bmatrix}
+          = \begin{bmatrix}
+               \vb{G}_0\\ \vb{G}_1\\ \vdots\\ \vb{G}_{P-1}
+            \end{bmatrix}\, \vb{x}
+          =:  \vb{G}\, \vb{x}\ ,
+
+where :math:`P` is the number of columns of the resulting STFT. To invert this
+equation the Moore-Penrose inverse :math:`\vb{G}^\dagger` can be utilized
+
+.. math::
+    :label: eq_STFT_MoorePenrose
+
+    \vb{x} = \inv{\conjT{\vb{G}}\vb{G}}\, \conjT{\vb{G}} \vb{s}
+           =: \vb{G}^\dagger \vb{s}\ ,
+
+which exists if
+
+.. math::
+
+    \vb{D} := \conjT{\vb{G}}\vb{G} =
+        \begin{bmatrix}
+            \conjT{\vb{G}_0}& \conjT{\vb{G}_1}& \cdots &  \conjT{\vb{G}_{P-1}}
+        \end{bmatrix}^T \begin{bmatrix}
+            \vb{G}_0\\ \vb{G}_1\\ \vdots\\ \vb{G}_{P-1}
+        \end{bmatrix}
+      = \sum_{p=0}^{P-1} \conjT{\vb{G}_p}\vb{G}_p \ .
+
+is invertible. Then :math:`\vb{x} = \vb{G}^\dagger\vb{G}\,\vb{x} =
+\inv{\conjT{\vb{G}}\vb{G}}\,\conjT{\vb{G}}\vb{G}\,\vb{x}` obviously holds.
+:math:`\vb{D}` is always a diagonal matrix with non-negative diagonal entries.
+This becomes clear, when simplifying :math:`\vb{D}` further to
+
+.. math::
+    :label: eq_STFT_DiagM2
+
+    \vb{D} = \sum_{p=0}^{P-1} \conjT{\vb{G}_p}\vb{G}_p
+           = \sum_{p=0}^{P-1} \conjT{(\vb{F}\,\vb{W}_{\!p})}\,
+                              \vb{F}\,\vb{W}_{\!p}
+           = \sum_{p=0}^{P-1} \conjT{\vb{W}_{\!p}}\vb{W}_{\!p}
+           =: \sum_{p=0}^{P-1} \vb{D}_p
+
+due to :math:`\vb{F}` being unitary. Furthermore
+
+.. math::
+    :label: eq_STFT_DiagM3
+
+    D_p[r,s] &= \sum_{m=0}^{M-1} \conj{W_p^T[r,m]}\,W_p[m,s]
+              = \sum_{m=0}^{M-1} \left(\conj{w[m]}\, \delta_{m+ph,r}\right)
+                                 \left(w[m]\, \delta_{m+ph,s}\right)\\
+             &= \sum_{m=0}^{M-1} \big|w[m]\big|^2\,
+                                 \delta_{r,s}\, \delta_{r,m+ph}\ .
+
+shows that :math:`\vb{D}_p` is a diagonal matrix with non-negative entries.
+Hence, summing :math:`\vb{D}_p` preserves that property. This allows to simplify
+Eq. :math:numref:`eq_STFT_MoorePenrose` further, i.e,
+
+.. math::
+    :label: eq_STFT_istftM
+
+    \vb{x} &= \vb{D}^{-1} \conjT{\vb{G}}
+            = \sum_{p=0}^{P-1} \vb{D}^{-1}\conjT{\vb{W}_{\!p}}\,
+                               \conjT{\vb{F}}\vb{s}_p
+            =  \sum_{p=0}^{P-1} (\conj{\vb{W}_{\!p}\vb{D}^{-1}})^T\,
+                                \conjT{\vb{F}}\vb{s}_p\\
+           &=: \sum_{p=0}^{P-1}\conjT{\vb{U}_p}\,\conjT{\vb{F}}\vb{s}_p\ .
+
+Utilizing Eq. :math:numref:`eq_STFT_WinMatrix1`, :math:numref:`eq_STFT_DiagM2`,
+:math:numref:`eq_STFT_DiagM3`, :math:`\vb{U}_p=\vb{W}_{\!p}\vb{D}^{-1}` can be
+expressed as
+
+.. math::
+    :label: eq_STFT_DualWinM
+
+    U_p[m, k] &= W[m,k]\, D^{-1}[k,k]
+               = \left(w[m] \delta_{m+ph,k}\right)
+                 \inv{\sum_{\eta=0}^{P-1}  \vb{D}_\eta[k,k]} \delta_{m+ph,k}\\
+               &= w[m] \inv{\sum_{\eta=0}^{P-1}\sum_{\mu=0}^{M-1}
+                                  \big|w[\mu]\big|^2\,\delta_{m+ph, \mu+\eta h}}
+                       \delta_{m+ph,k}\\
+                &= w[m] \inv{\sum_{\eta=0}^{P-1} \big|w[m+(p-\eta)h]\big|^2}
+                       \delta_{m+ph,k} \ .
+
+This shows :math:`\vb{U}_p` has the identical structure as :math:`\vb{W}_p`
+in Eq. :math:numref:`eq_STFT_WinMatrix1`, i.e., having only non-zero
+entries on the :math:`(ph)`-th minor diagonal. The sum term in the inverse can
+be interpreted as sliding :math:`|w[\mu]|^2` over :math:`w[m]` (with an
+incorporated inversion), so only components overlapping with :math:`w[m]` have
+an effect. Hence, all :math:`U_p[m, k]` far enough from the border are
+identical windows. To circumvent border effects, :math:`x[k]` is padded with
+zeros, enlarging :math:`\vb{U}` so all slices which touch :math:`x[k]` contain
+identical the dual window
+
+.. math::
+
+    w_d[m] = w[m] \inv{\sum_{\eta\in\IZ} \big|w[m + \eta\, h]\big|^2}\ .
+
+Since :math:`w[m] = 0` holds for :math:`m \not\in\{0, \ldots, M-1\}`, it is only
+required to sum over the indexes :math:`\eta` fulfilling :math:`|\eta| < M/h`.
+The name dual window can be justified by inserting Eq.
+:math:numref:`eq_STFT_Slice_p` into Eq. :math:numref:`eq_STFT_istftM`, i.e.,
+
+.. math::
+
+    \vb{x} = \sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\conjT{\vb{F}}\,
+                                                 \vb{F}\,\vb{W}_{\!p}\,\vb{x}
+         = \left(\sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\vb{W}_{\!p}\right)\vb{x}\ ,
+
+showing that :math:`\vb{U}_p` and :math:`\vb{W}_{\!p}` are interchangeable.
+Hence, :math:`w_d[m]` is also a valid window with dual window :math:`w[m]`. Note
+that :math:`w_d[m]` is not a unique dual window, due :math:`\vb{s}` typically
+having more entries than :math:`\vb{x}`. It can be shown, that :math:`w_d[m]`
+has the minimal energy (or :math:`L_2` norm) [4_], which is the reason for being
+named the  "canonical dual window".
+
+
+
 Detrend
 -------
+.. currentmodule:: scipy.signal
 
 SciPy provides the function :func:`detrend` to remove a constant or linear
 trend in a data series in order to see effect of higher order.
@@ -1198,3 +1572,9 @@ Some further reading and related software:
 .. [3] R.H.D. Townsend, "Fast calculation of the Lomb-Scargle
        periodogram using graphics processing units.", The Astrophysical
        Journal Supplement Series, vol 191, pp. 247-253, 2010
+
+.. [4] Karlheinz Gröchenig: "Foundations of Time-Frequency Analysis",
+       Birkhäuser Boston 2001, :doi:`10.1007/978-1-4612-0003-1`
+
+.. [5] Ole Christensen: "An Introduction to Frames and Riesz Bases",
+       Birkhäuser Boston 2016, :doi:`10.1007/978-3-319-25613-9`
