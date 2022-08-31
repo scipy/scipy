@@ -3431,9 +3431,12 @@ class _TestMinMax:
             [1, 2, 0, 0],
         ])
         D2 = D1.transpose()
+        D3 = np.array([[4, 3], [7, 5]])
 
-        for D in [D1, D2]:
-            mat = csr_matrix(D)
+        for D in [D1, D2, D3]:
+            mat = self.spmatrix(D)
+            if not isinstance(mat, _data._minmax_mixin):
+                continue
 
             assert_equal(mat.argmax(), np.argmax(D))
             assert_equal(mat.argmin(), np.argmin(D))
