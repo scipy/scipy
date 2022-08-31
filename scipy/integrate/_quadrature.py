@@ -12,7 +12,7 @@ from collections import namedtuple
 # even though it's actually a NumPy function.
 from numpy import trapz as trapezoid
 from scipy.special import roots_legendre
-from scipy.special import gammaln
+from scipy.special import gammaln, logsumexp
 
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
@@ -1040,7 +1040,7 @@ def newton_cotes(rn, equal=0):
     return ai, BN*fac
 
 
-def _qmc_quad_iv(func, ranges, n_points, n_offsets, qrng, args):
+def _qmc_quad_iv(func, ranges, n_points, n_offsets, qrng, log, args):
 
     # lazy import to avoid issues with partially-initialized submodule
     if not hasattr(qmc_quad, 'qmc'):
@@ -1115,13 +1115,18 @@ def _qmc_quad_iv(func, ranges, n_points, n_offsets, qrng, args):
     rng_seed = getattr(qrng, 'rng_seed', None)
     rng = stats._qmc.check_random_state(rng_seed)
 
-    return vfunc, ranges, n_points_int, n_offsets_int, qrng, rng, args, stats
+    if log not in {True, False}:
+        message = "`log` must be boolean (`True` or `False`)."
+        raise TypeError(message)
+
+    return (vfunc, ranges, n_points_int, n_offsets_int,
+            qrng, rng, log, args, stats)
 
 
 QMCQuadResult = namedtuple('QMCQuadResult', ['integral', 'standard_error'])
 
 
-def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None,
+def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None, log=False,
              args=None):
     """
     Compute an integral in N-dimensions using Quasi-Monte Carlo quadrature.
@@ -1156,6 +1161,9 @@ def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None,
         If a QMCEngine is not provided, the default `scipy.stats.qmc.Halton`
         will be initialized with the number of dimensions determine from
         `ranges`.
+    log : boolean, default: False
+        When set to True, `func` returns the log of the integrand, and
+        the result object contains the log of the integral.
     args : sequence, optional
         Extra arguments to pass to `func`. All extra arguments must be packed
         into a sequence; the will be unpacked to be passed to `func`, e.g.
@@ -1233,15 +1241,17 @@ def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None,
     0.00018430867675187443  # may vary
 
     """
-    args = _qmc_quad_iv(func, ranges, n_points, n_offsets, qrng, args)
-    func, ranges, n_points, n_offsets, qrng, rng, args, stats = args
+    args = _qmc_quad_iv(func, ranges, n_points, n_offsets, qrng, log, args)
+    func, ranges, n_points, n_offsets, qrng, rng, log, args, stats = args
 
     dim = qrng.d
+
     sample = qrng.random(n_points)  # shape is also (n_points, dim)
     offsets = rng.random(size=(n_offsets, dim))
     lb, ub = ranges.T
     A = np.prod(ub - lb)
     dA = A / n_points
+
 
     # Typically, I'd use broadcasting and do this all in one go. I don't
     # think that's the right way to go here. It's bad for memory, for
@@ -1252,7 +1262,10 @@ def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None,
         x = (sample + offset) % 1  # offset and wrap
         x = stats.qmc.scale(x, lb, ub)
         integrands = func(*x.T, *args)
-        estimate = np.sum(integrands * dA)
+        if log:
+            estimate = logsumexp(integrands) + np.log(dA)
+        else:
+            estimate = np.sum(integrands * dA)
         estimates[i] = estimate
 
     integral = np.mean(estimates)

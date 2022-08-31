@@ -328,7 +328,11 @@ class TestQMCQuad():
         with pytest.raises(ValueError, match=message):
             qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], qrng=stats.qmc.Sobol(1))
 
-    @pytest.mark.parametrize("n_points", [2**8, 2**10, 2**12])
+        message = r"`log` must be boolean \(`True` or `False`\)."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], log=10)
+
+    @pytest.mark.parametrize("n_points", [2**8, 2**12])
     @pytest.mark.parametrize("n_offsets", [8, 16])
     def test_basic(self, n_points, n_offsets):
 
@@ -350,6 +354,14 @@ class TestQMCQuad():
         ref = stats.multivariate_normal.cdf(ub, mean, cov, lower_limit=lb)
         atol = sc.stdtrit(n_offsets-1, 0.995) * res.standard_error  # 99% CI
         assert_allclose(res.integral, ref, atol=atol)
+
+        rng = np.random.default_rng(2879434385674690281)
+        qrng = stats.qmc.Sobol(ndim, seed=rng)
+        logres = qmc_quad(lambda *args: np.log(func(*args)), ranges,
+                          n_points=n_points, n_offsets=n_offsets,
+                          args=(mean, cov), qrng=qrng)
+        assert_allclose(np.exp(logres.integral), res.integral, rtol=5e-2)
+
 
     def test_flexible_input(self):
         # check that qrng is not required
