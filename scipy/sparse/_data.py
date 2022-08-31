@@ -259,37 +259,36 @@ class _minmax_mixin:
 
         validateaxis(axis)
 
-        if axis is None:
-            if 0 in self.shape:
-                raise ValueError("Can't apply the operation to "
-                                 "an empty matrix.")
+        if axis is not None:
+            return self._arg_min_or_max_axis(axis, op, compare)
 
-            if self.nnz == 0:
-                return 0
-            else:
-                zero = self.dtype.type(0)
-                mat = self.tocoo()
-                mat.sum_duplicates()
-                am = op(mat.data)
-                m = mat.data[am]
+        if 0 in self.shape:
+            raise ValueError("Can't apply the operation to "
+                             "an empty matrix.")
 
-                if compare(m, zero):
-                    # cast to Python int to avoid overflow
-                    # and RuntimeError
-                    return int(mat.row[am])*mat.shape[1] + int(mat.col[am])
-                else:
-                    size = np.prod(mat.shape)
-                    if size == mat.nnz:
-                        return am
-                    else:
-                        ind = mat.row * mat.shape[1] + mat.col
-                        zero_ind = _find_missing_index(ind, size)
-                        if m == zero:
-                            return min(zero_ind, am)
-                        else:
-                            return zero_ind
+        if self.nnz == 0:
+            return 0
 
-        return self._arg_min_or_max_axis(axis, op, compare)
+        zero = self.dtype.type(0)
+        mat = self.tocoo()
+        mat.sum_duplicates()
+        am = op(mat.data)
+        m = mat.data[am]
+        num_row, num_col = mat.shape
+
+        if compare(m, zero):
+            # cast to Python int to avoid overflow and RuntimeError
+            return int(mat.row[am]) * num_col + int(mat.col[am])
+
+        size = num_row * num_col
+        if size == mat.nnz:
+            return int(mat.row[am]) * num_col + int(mat.col[am])
+
+        ind = mat.row * mat.shape[1] + mat.col
+        zero_ind = _find_missing_index(ind, size)
+        if m == zero:
+            return min(zero_ind, am)
+        return zero_ind
 
     def max(self, axis=None, out=None):
         """
