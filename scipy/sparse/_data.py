@@ -284,7 +284,7 @@ class _minmax_mixin:
         if size == mat.nnz:
             return int(mat.row[am]) * num_col + int(mat.col[am])
 
-        ind = mat.row * mat.shape[1] + mat.col
+        ind = mat.row * num_col + mat.col
         zero_ind = _find_missing_index(ind, size)
         if m == zero:
             return min(zero_ind, am)
