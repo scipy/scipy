@@ -3423,6 +3423,7 @@ class _TestMinMax:
             assert_array_equal(np.max(datsp), np.max(dat))
 
     def test_argmax(self):
+        from scipy.sparse import _data
         D1 = np.array([
             [-1, 5, 2, 3],
             [0, 0, -1, -2],
