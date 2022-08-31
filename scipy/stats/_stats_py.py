@@ -83,7 +83,6 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'brunnermunzel', 'alexandergovern']
 
 
-
 def _chk_asarray(a, axis):
     if axis is None:
         a = np.ravel(a)
