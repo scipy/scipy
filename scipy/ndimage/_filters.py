@@ -29,6 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from collections.abc import Iterable
+import numbers
 import warnings
 import numpy
 import operator
@@ -209,7 +210,7 @@ def _gaussian_kernel1d(sigma, order, radius):
 
 @_ni_docstrings.docfiller
 def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
-                      mode="reflect", cval=0.0, truncate=4.0):
+                      mode="reflect", cval=0.0, truncate=4.0, *, radius=None):
     """1-D Gaussian filter.
 
     Parameters
@@ -228,10 +229,19 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     truncate : float, optional
         Truncate the filter at this many standard deviations.
         Default is 4.0.
+    radius : None or int, optional
+        Radius of the Gaussian kernel. If specified, the size of
+        the kernel will be ``2*radius + 1``, and `truncate` is ignored.
+        Default is None.
 
     Returns
     -------
     gaussian_filter1d : ndarray
+
+    Notes
+    -----
+    The Gaussian kernel will have size ``2*radius + 1`` where
+    ``radius = round(truncate * sigma)``.
 
     Examples
     --------
@@ -257,6 +267,10 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     sd = float(sigma)
     # make the radius of the filter equal to truncate standard deviations
     lw = int(truncate * sd + 0.5)
+    if radius is not None:
+        lw = radius
+    if not isinstance(lw, numbers.Integral) or lw < 0:
+        raise ValueError('Radius must be a nonnegative integer.')
     # Since we are calling correlate, not convolve, revert the kernel
     weights = _gaussian_kernel1d(sigma, order, lw)[::-1]
     return correlate1d(input, weights, axis, output, mode, cval, 0)
@@ -264,7 +278,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
 
 @_ni_docstrings.docfiller
 def gaussian_filter(input, sigma, order=0, output=None,
-                    mode="reflect", cval=0.0, truncate=4.0):
+                    mode="reflect", cval=0.0, truncate=4.0, *, radius=None):
     """Multidimensional Gaussian filter.
 
     Parameters
@@ -283,9 +297,15 @@ def gaussian_filter(input, sigma, order=0, output=None,
     %(output)s
     %(mode_multiple)s
     %(cval)s
-    truncate : float
+    truncate : float, optional
         Truncate the filter at this many standard deviations.
         Default is 4.0.
+    radius : None or int or sequence of ints, optional
+        Radius of the Gaussian kernel. The radius are given for each axis
+        as a sequence, or as a single number, in which case it is equal
+        for all axes. If specified, the size of the kernel along each axis
+        will be ``2*radius + 1``, and `truncate` is ignored.
+        Default is None.
 
     Returns
     -------
@@ -300,6 +320,9 @@ def gaussian_filter(input, sigma, order=0, output=None,
     types with a limited precision, the results may be imprecise
     because intermediate results may be stored with insufficient
     precision.
+
+    The Gaussian kernel will have size ``2*radius + 1`` along each axis
+    where ``radius = round(truncate * sigma)``.
 
     Examples
     --------
@@ -336,13 +359,14 @@ def gaussian_filter(input, sigma, order=0, output=None,
     orders = _ni_support._normalize_sequence(order, input.ndim)
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
+    radiuses = _ni_support._normalize_sequence(radius, input.ndim)
     axes = list(range(input.ndim))
-    axes = [(axes[ii], sigmas[ii], orders[ii], modes[ii])
+    axes = [(axes[ii], sigmas[ii], orders[ii], modes[ii], radiuses[ii])
             for ii in range(len(axes)) if sigmas[ii] > 1e-15]
     if len(axes) > 0:
-        for axis, sigma, order, mode in axes:
+        for axis, sigma, order, mode, radius in axes:
             gaussian_filter1d(input, sigma, axis, order, output,
-                              mode, cval, truncate)
+                              mode, cval, truncate, radius=radius)
             input = output
     else:
         output[...] = input[...]
