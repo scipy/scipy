@@ -153,9 +153,8 @@ def lombscargle(x,
     return pgram
 
 
-def periodogram(x, fs=1.0, window='boxcar', nfft=None,
-                detrend='constant', return_onesided=True,
-                scaling='density', axis=-1):
+def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
+                return_onesided=True, scaling='density', axis=-1):
     """
     Estimate power spectral density using a periodogram.
 
@@ -269,12 +268,6 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None,
 
     if window is None:
         window = 'boxcar'
-    elif hasattr(window, 'size'):
-        axis_size = x.shape[axis]
-        window_size = window.size
-        if window_size != axis_size:
-            raise ValueError('the size of the window must be the same size '
-                             'of the input on the specified axis')
 
     if nfft is None:
         nperseg = x.shape[axis]
@@ -288,6 +281,11 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None,
         x = x[tuple(s)]
         nperseg = nfft
         nfft = None
+
+    if hasattr(window, 'size'):
+        if window.size != nperseg:
+            raise ValueError('the size of the window must be the same size '
+                             'of the input on the specified axis')
 
     return welch(x, fs=fs, window=window, nperseg=nperseg, noverlap=0,
                  nfft=nfft, detrend=detrend, return_onesided=return_onesided,
