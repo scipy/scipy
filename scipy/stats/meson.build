@@ -1,10 +1,3 @@
-fortran_ignore_warnings = [
-  '-Wno-tabs', '-Wno-conversion',
-  '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
-  '-Wno-maybe-uninitialized', '-Wno-unused-label',
-  '-Wno-unused-variable'
-]
-
 _stats_pxd = custom_target('_stats_pxd',
   output: [
     '__init__.py',
@@ -36,7 +29,7 @@ statlib_lib = static_library('statlib_lib',
     'statlib/spearman.f',
     'statlib/swilk.f'
   ],
-  fortran_args: '-Wno-unused-variable'
+  fortran_args: _fflag_Wno_unused_variable
 )
 
 statlib_module = custom_target('statlib_module',
@@ -176,10 +169,7 @@ if use_pythran
 
   _group_columns = py3.extension_module('_hypotests_pythran',
     _hypotests_pythran,
-    cpp_args: [
-      '-Wno-unused-function', '-Wno-unused-variable',
-      '-Wno-deprecated-declarations', '-Wno-int-in-bool-context'
-    ] + cpp_args_pythran,
+    cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
     install: true,
     subdir: 'scipy/stats'
