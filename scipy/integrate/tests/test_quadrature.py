@@ -332,9 +332,7 @@ class TestQMCQuad():
         with pytest.raises(TypeError, match=message):
             qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], log=10)
 
-    @pytest.mark.parametrize("n_points", [2**8, 2**12])
-    @pytest.mark.parametrize("n_estimates", [8, 16])
-    def test_basic(self, n_points, n_estimates):
+    def basic_test(self, n_points=2**8, n_estimates=8, signs=np.ones(2)):
 
         ndim = 2
         mean = np.zeros(ndim)
@@ -347,20 +345,31 @@ class TestQMCQuad():
         rng = np.random.default_rng(2879434385674690281)
         qrng = stats.qmc.Sobol(ndim, seed=rng)
         lb = np.zeros(ndim)
-        ub = np.ones(ndim)
+        ub = np.ones(ndim) * signs
         ranges = np.asarray([lb, ub]).T
         res = qmc_quad(func, ranges, n_points=n_points,
                        n_estimates=n_estimates, args=(mean, cov), qrng=qrng)
         ref = stats.multivariate_normal.cdf(ub, mean, cov, lower_limit=lb)
         atol = sc.stdtrit(n_estimates-1, 0.995) * res.standard_error  # 99% CI
         assert_allclose(res.integral, ref, atol=atol)
+        assert np.prod(signs)*res.integral > 0
 
         rng = np.random.default_rng(2879434385674690281)
         qrng = stats.qmc.Sobol(ndim, seed=rng)
         logres = qmc_quad(lambda *args: np.log(func(*args)), ranges,
                           n_points=n_points, n_estimates=n_estimates,
-                          args=(mean, cov), qrng=qrng)
-        assert_allclose(np.exp(logres.integral), res.integral, rtol=5e-2)
+                          args=(mean, cov), log=True, qrng=qrng)
+        assert_allclose(np.exp(logres.integral), res.integral)
+        assert np.imag(logres.integral) == (np.pi if np.prod(signs) < 0 else 0)
+
+    @pytest.mark.parametrize("n_points", [2**8, 2**12])
+    @pytest.mark.parametrize("n_estimates", [8, 16])
+    def test_basic(self, n_points, n_estimates):
+        self.basic_test(n_points, n_estimates)
+
+    @pytest.mark.parametrize("signs", [[1, 1], [-1, -1], [-1, 1], [1, -1]])
+    def test_sign(self, signs):
+        self.basic_test(signs=signs)
 
     def test_flexible_input(self):
         # check that qrng is not required

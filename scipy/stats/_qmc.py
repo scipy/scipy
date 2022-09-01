@@ -1458,7 +1458,6 @@ class Sobol(QMCEngine):
         # explicit casting to float64
         self._first_point = self._first_point.astype(np.float64)
 
-
     def _scramble(self) -> None:
         """Scramble the sequence using LMS+shift."""
         # Generate shift vector

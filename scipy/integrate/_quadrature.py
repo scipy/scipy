@@ -1054,7 +1054,8 @@ def _qmc_quad_iv(func, ranges, n_points, n_estimates, qrng, log, args):
         message = "`func` must be callable."
         raise TypeError(message)
 
-    ranges = np.atleast_2d(ranges)
+    # Ranges will be modified, so copy. Oh well if it's copied twice.
+    ranges = np.atleast_2d(ranges).copy()
     dim = ranges.shape[0]
 
     if args is None:
@@ -1243,6 +1244,14 @@ def qmc_quad(func, ranges, *, n_points=1024, n_estimates=8, qrng=None,
     func, ranges, n_points, n_estimates, qrng, rng, log, args, stats = args
 
     lb, ub = ranges.T
+
+    # The sign of the integral depends on the order of the limits. Fix this by
+    # ensuring that lower bounds are indeed lower and setting sign of resulting
+    # integral manually
+    i_swap = ub < lb
+    sign = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
+    lb[i_swap], ub[i_swap] = ub[i_swap], lb[i_swap]
+
     A = np.prod(ub - lb)
     dA = A / n_points
 
@@ -1266,5 +1275,6 @@ def qmc_quad(func, ranges, *, n_points=1024, n_estimates=8, qrng=None,
         qrng = type(qrng)(seed=rng, **qrng._init)
 
     integral = np.mean(estimates)
+    integral = integral + np.pi*1j if (log and sign < 0) else integral*sign
     standard_error = stats.sem(estimates)
     return QMCQuadResult(integral, standard_error)
