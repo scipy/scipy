@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 refguide_check.py [OPTIONS] [-- ARGS]
 
@@ -7,7 +7,7 @@ correspond to the objects included in the reference guide.
 
 Example of usage::
 
-    $ python refguide_check.py optimize
+    $ python3 refguide_check.py optimize
 
 Note that this is a helper script to be able to check if things are missing;
 the output of this script does need to be checked manually.  In some cases
@@ -19,7 +19,7 @@ in docstrings. This is different from doctesting [we do not aim to have
 scipy docstrings doctestable!], this is just to make sure that code in
 docstrings is valid python::
 
-    $ python refguide_check.py --doctests optimize
+    $ python3 refguide_check.py --doctests optimize
 
 """
 import copy
