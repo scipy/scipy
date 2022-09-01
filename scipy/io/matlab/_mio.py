@@ -77,8 +77,8 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
     elif mjv == 1:
         return MatFile5Reader(byte_stream, **kwargs), file_opened
     elif mjv == 2:
-        raise NotImplementedError('Please use HDF reader for matlab v7.3 files,'
-                                  ' e.g. h5py')
+        raise NotImplementedError('Please use HDF reader for matlab v7.3 '
+                                  'files, e.g. h5py')
     else:
         raise TypeError('Did not recognize version %s' % mjv)
 
