@@ -985,7 +985,7 @@ class Halton(QMCEngine):
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
-        self._init = {'d': d, 'optimization': optimization}
+        self._init = {'d': d, 'scramble': True, 'optimization': optimization}
         super().__init__(d=d, optimization=optimization, seed=seed)
         self.seed = seed
         self.base = n_primes(d)
@@ -1415,7 +1415,8 @@ class Sobol(QMCEngine):
         bits: Optional[IntNumber] = None, seed: SeedType = None,
         optimization: Optional[Literal["random-cd", "lloyd"]] = None
     ) -> None:
-        self._init = {'d': d, 'bits': bits, 'optimization': optimization}
+        self._init = {'d': d, 'scramble': True, 'bits': bits,
+                      'optimization': optimization,}
 
         super().__init__(d=d, optimization=optimization, seed=seed)
         if d > self.MAXDIM:

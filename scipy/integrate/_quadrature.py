@@ -1256,6 +1256,7 @@ def qmc_quad(func, ranges, *, n_points=1024, n_estimates=8, qrng=None,
     dA = A / n_points
 
     estimates = np.zeros(n_estimates)
+    rngs = _rng_spawn(qrng.rng, n_estimates)
     for i in range(n_estimates):
         # Generate integral estimate
         sample = qrng.random(n_points)
@@ -1268,11 +1269,7 @@ def qmc_quad(func, ranges, *, n_points=1024, n_estimates=8, qrng=None,
         estimates[i] = estimate
 
         # Get a new, independently-scrambled QRNG for next time
-        if hasattr(qrng._init, 'scramble'):
-            qrng._init['scramble'] = True
-        # Halton needs us to either burn RNG samples or spawn a new Generator
-        rng = _rng_spawn(qrng.rng, 1)[0]
-        qrng = type(qrng)(seed=rng, **qrng._init)
+        qrng = type(qrng)(seed=rngs[i], **qrng._init)
 
     integral = np.mean(estimates)
     integral = integral + np.pi*1j if (log and sign < 0) else integral*sign
