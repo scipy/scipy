@@ -985,6 +985,7 @@ class Halton(QMCEngine):
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
+        self._init = {'d': d, 'optimization': optimization}
         super().__init__(d=d, optimization=optimization, seed=seed)
         self.seed = seed
         self.base = n_primes(d)
@@ -1180,6 +1181,8 @@ class LatinHypercube(QMCEngine):
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
+        self._init = {'d': d, 'centered': centered, 'strength': strength,
+                      'optimization': optimization}
         super().__init__(d=d, seed=seed, optimization=optimization)
         self.centered = centered
 
@@ -1412,6 +1415,8 @@ class Sobol(QMCEngine):
         bits: Optional[IntNumber] = None, seed: SeedType = None,
         optimization: Optional[Literal["random-cd", "lloyd"]] = None
     ) -> None:
+        self._init = {'d': d, 'bits': bits, 'optimization': optimization}
+
         super().__init__(d=d, optimization=optimization, seed=seed)
         if d > self.MAXDIM:
             raise ValueError(
@@ -1452,6 +1457,7 @@ class Sobol(QMCEngine):
         self._first_point = (self._quasi * self._scale).reshape(1, -1)
         # explicit casting to float64
         self._first_point = self._first_point.astype(np.float64)
+
 
     def _scramble(self) -> None:
         """Scramble the sequence using LMS+shift."""
@@ -1722,6 +1728,8 @@ class PoissonDisk(QMCEngine):
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
+        self._init = {'d': d, 'radius': radius, 'hypersphere': hypersphere,
+                      'ncandidates': ncandidates, 'optimization': optimization}
         super().__init__(d=d, optimization=optimization, seed=seed)
 
         hypersphere_sample = {

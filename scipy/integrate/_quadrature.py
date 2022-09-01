@@ -13,6 +13,7 @@ from collections import namedtuple
 from numpy import trapz as trapezoid
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
+from scipy._lib._util import _rng_spawn
 
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
@@ -1040,7 +1041,7 @@ def newton_cotes(rn, equal=0):
     return ai, BN*fac
 
 
-def _qmc_quad_iv(func, ranges, n_points, n_offsets, qrng, log, args):
+def _qmc_quad_iv(func, ranges, n_points, n_estimates, qrng, log, args):
 
     # lazy import to avoid issues with partially-initialized submodule
     if not hasattr(qmc_quad, 'qmc'):
@@ -1095,9 +1096,9 @@ def _qmc_quad_iv(func, ranges, n_points, n_offsets, qrng, log, args):
         message = "`n_points` must be an integer."
         raise TypeError(message)
 
-    n_offsets_int = np.int64(n_offsets)
-    if n_offsets != n_offsets_int:
-        message = "`n_offsets` must be an integer."
+    n_estimates_int = np.int64(n_estimates)
+    if n_estimates != n_estimates_int:
+        message = "`n_estimates` must be an integer."
         raise TypeError(message)
 
     if qrng is None:
@@ -1119,15 +1120,15 @@ def _qmc_quad_iv(func, ranges, n_points, n_offsets, qrng, log, args):
         message = "`log` must be boolean (`True` or `False`)."
         raise TypeError(message)
 
-    return (vfunc, ranges, n_points_int, n_offsets_int,
+    return (vfunc, ranges, n_points_int, n_estimates_int,
             qrng, rng, log, args, stats)
 
 
 QMCQuadResult = namedtuple('QMCQuadResult', ['integral', 'standard_error'])
 
 
-def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None, log=False,
-             args=None):
+def qmc_quad(func, ranges, *, n_points=1024, n_estimates=8, qrng=None,
+             log=False, args=None):
     """
     Compute an integral in N-dimensions using Quasi-Monte Carlo quadrature.
 
@@ -1143,12 +1144,12 @@ def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None, log=False,
     ranges : array-like
         An ``n`` x 2 array array specifying the lower and upper integration
         limits of each of the ``n`` variables.
-    n_points, n_randomizations: int, optional
+    n_points, n_estimates: int, optional
         One QMC sample of `n_points` (default: 256) points will be generated
-        by `qrng`, and `n_offsets` (default: 8) pseudorandom offsets
-        will be drawn from `rng`. The total number of points at which the
-        integrand `func` will be evaluated is ``n_points * n_randomizations``.
-        See Notes for details.
+        by `qrng`, and `n_estimates` (default: 8) statistically independent
+        estimates of the integral will be produced. The total number of points
+        at which the integrand `func` will be evaluated is
+        ``n_points * n_estimates``. See Notes for details.
     qrng : scipy.stats.qmc.QMCEngine, optional
         An instance of the QMCEngine from which to sample QMC points.
         The QMCEngine must be initialized to a number of dimensions
@@ -1181,21 +1182,19 @@ def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None, log=False,
 
     Notes
     -----
-    Evaluating the integrand at each of the `n_points` points in the QMC sample
-    generates an estimate of the integral. By applying `n_offsets` random
-    offsets to the QMC sample before calculating the integral in this way, we
-    draw `n_offsets` i.i.d. random samples from a population of integral
-    estimates. The sample mean :math:`m` of these integral estimates is an
+    Values of the integrand at each of the `n_points` points of a QMC sample
+    are used to produce an estimate of the integral. This estimate is drawn
+    from a population of possibile estimates of the integral, the value of
+    which we obtain depends on the particular points at which the integral
+    was evaluated. We perform this process `n_estimates` times, each time
+    evaluating the integrand at different QMC points, effectively drawing
+    i.i.d. random samples from the population of integral estimates.
+    The sample mean :math:`m` of these integral estimates is an
     unbiased estimator of the true value of the integral, and the standard
     error of the mean :math:`s` of these estimates may be used to generate
-    confidence intervals using the t distribution with ``n_offsets - 1``
-    degrees of freedom. For details, see [1]_.
+    confidence intervals using the t distribution with ``n_estimates - 1``
+    degrees of freedom.
 
-    References
-    ----------
-    .. [1] Joe, Stephen. "Randomization of lattice rules for numerical multiple
-           integration." Journal of Computational and Applied Mathematics 31.2
-           (1990): 299-304.
 
     Examples
     --------
@@ -1205,11 +1204,9 @@ def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None, log=False,
 
     >>> import numpy as np
     >>> from scipy import stats
-    >>>
     >>> dim = 8
     >>> mean = np.zeros(dim)
-    >>> cov = np.eye(dim) / 2**8
-    >>>
+    >>> cov = np.eye(dim)
     >>> def func(*z):
     ...     z = np.asarray(z).T
     ...     return stats.multivariate_normal.pdf(z, mean, cov)
@@ -1220,19 +1217,20 @@ def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None, log=False,
     >>> lb = np.zeros(dim)
     >>> ub = np.ones(dim)
     >>> ranges = np.asarray([lb, ub]).T
-    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+    >>> rng = np.random.default_rng()
     >>> qrng = stats.qmc.Halton(d=dim, seed=rng)
-    >>> n_points, n_offsets = 256, 8
-    >>> res = qmc_quad(func, ranges)
+    >>> n_estimates = 8
+    >>> res = qmc_quad(func, ranges, n_estimates=n_estimates, qrng=qrng)
     >>> res.integral, res.standard_error
-    (0.0001842819684617149, 1.3959190979748066e-07)
+    (0.00018443157359780213, 8.95876227122206e-08)
 
     A two-sided, 99% confidence interval for the integral may be estimated
     as:
 
-    >>> t = stats.t(df=n_offsets-1, loc=res.integral, scale=res.standard_error)
+    >>> t = stats.t(df=n_estimates-1, loc=res.integral,
+    ...             scale=res.standard_error)
     >>> t.interval(0.99)
-    (0.00018389017561108015, 0.00018461661169997918)
+    (0.00018411806320847138, 0.0001847450839871329)
 
     Indeed, the value reported by `scipy.stats.multivariate_normal` is
     within this range.
@@ -1241,31 +1239,31 @@ def qmc_quad(func, ranges, *, n_points=1024, n_offsets=8, qrng=None, log=False,
     0.00018430867675187443  # may vary
 
     """
-    args = _qmc_quad_iv(func, ranges, n_points, n_offsets, qrng, log, args)
-    func, ranges, n_points, n_offsets, qrng, rng, log, args, stats = args
+    args = _qmc_quad_iv(func, ranges, n_points, n_estimates, qrng, log, args)
+    func, ranges, n_points, n_estimates, qrng, rng, log, args, stats = args
 
-    dim = qrng.d
-
-    sample = qrng.random(n_points)  # shape is also (n_points, dim)
-    offsets = rng.random(size=(n_offsets, dim))
     lb, ub = ranges.T
     A = np.prod(ub - lb)
     dA = A / n_points
 
-    # Typically, I'd use broadcasting and do this all in one go. I don't
-    # think that's the right way to go here. It's bad for memory, for
-    # large `n_points` and small `n_offsets` the speed impact is small (or
-    # negative), and `qmc.scale` is only for 2D arrays. Let's keep it simple.
-    estimates = np.zeros(n_offsets)
-    for i, offset in enumerate(offsets):
-        x = (sample + offset) % 1  # offset and wrap
-        x = stats.qmc.scale(x, lb, ub)
+    estimates = np.zeros(n_estimates)
+    for i in range(n_estimates):
+        # Generate integral estimate
+        sample = qrng.random(n_points)
+        x = stats.qmc.scale(sample, lb, ub)
         integrands = func(*x.T, *args)
         if log:
             estimate = logsumexp(integrands) + np.log(dA)
         else:
             estimate = np.sum(integrands * dA)
         estimates[i] = estimate
+
+        # Get a new, independently-scrambled QRNG for next time
+        if hasattr(qrng._init, 'scramble'):
+            qrng._init['scramble'] = True
+        # Halton needs us to either burn RNG samples or spawn a new Generator
+        rng = _rng_spawn(qrng.rng, 1)[0]
+        qrng = type(qrng)(seed=rng, **qrng._init)
 
     integral = np.mean(estimates)
     standard_error = stats.sem(estimates)
