@@ -568,6 +568,11 @@ def fit(dist, data, bounds=None, *, guess=None,
     return FitResult(dist, data, discrete, res)
 
 
+GoodnessOfFitResult = namedtuple('GoodnessOfFitResult',
+                                 ('fit_result', 'statistic', 'pvalue',
+                                  'null_distribution'))
+
+
 def _anderson_darling(dist, data, axis=-1):
     x = np.sort(data, axis=axis)
     n = data.shape[-1]
@@ -581,7 +586,7 @@ def _kolmogorov_smirnov(dist, data, axis=-1):
     x = np.sort(data, axis=axis)
     cdfvals = dist.cdf(x)
     Dplus = _stats_py._compute_dplus(cdfvals, axis=-1)
-    Dminus =_stats_py._compute_dminus(cdfvals, axis=-1)
+    Dminus = _stats_py._compute_dminus(cdfvals, axis=-1)
     return np.maximum(Dplus, Dminus)
 
 
@@ -794,8 +799,12 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                                  vectorized=all_rfd_fixed,
                                  n_resamples=n_resamples, axis=-1,
                                  alternative='greater')
-    return res
-
+    opt_res = optimize.OptimizeResult()
+    opt_res.success = True
+    opt_res.message = "The fit was performed successfully."
+    opt_res.x = nhd_vals
+    return GoodnessOfFitResult(FitResult(dist, data, False, opt_res),
+                               res.statistic, res.pvalue, res.null_distribution)
 
 
 def gof_iv(dist, data, known_params, fit_params, guessed_params,
