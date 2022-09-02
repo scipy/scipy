@@ -7344,7 +7344,7 @@ add_newdoc("k1e",
     >>> from scipy.special import k1, k1e
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0., 20., 1000)
-    >>> y = k0e(x)
+    >>> y = k1e(x)
     >>> plt.plot(x, y)
     >>> plt.show()
 
