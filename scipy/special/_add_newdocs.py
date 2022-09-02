@@ -6365,8 +6365,7 @@ add_newdoc("i0e",
     >>> i0(1000.)
     inf
 
-    In this case the exponentially scaled Bessel function still yields a real
-    floating point number:
+    While `i0` returns infinity, `i0e` returns a finite number in this case:
 
     >>> i0e(1000.)
     0.012617240455891257
@@ -6486,8 +6485,7 @@ add_newdoc("i1e",
     >>> i1(1000.)
     inf
 
-    In this case the exponentially scaled Bessel function still yields a real
-    floating point number:
+    While `i1` returns infinity, `i1e` returns a finite number in this case:
 
     >>> i1e(1000.)
     0.01261093025692863
@@ -6979,8 +6977,8 @@ add_newdoc("j1",
 
     See also
     --------
-    jv
-    spherical_jn : spherical Bessel functions.
+    jv: Bessel function of the first kind
+    spherical_jn: spherical Bessel functions.
 
     References
     ----------
@@ -7243,8 +7241,7 @@ add_newdoc("k0e",
     >>> k0(1000.)
     0.
 
-    In this case the exponentially scaled Bessel function still yields a useful
-    floating point number:
+    While `k0` returns zero, `k0e` still yields a useful floating point number:
 
     >>> k0e(1000.)
     0.03962832160075422
