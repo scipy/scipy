@@ -566,6 +566,17 @@ class TestFit:
         assert_allclose(res.params, params, **self.tols)
 
 
+# Data from Matlab: https://www.mathworks.com/help/stats/lillietest.html
+examgrades = [65, 61, 81, 88, 69, 89, 55, 84, 86, 84, 71, 81, 84, 81, 78, 67,
+              96, 66, 73, 75, 59, 71, 69, 63, 79, 76, 63, 85, 87, 88, 80, 71,
+              65, 84, 71, 75, 81, 79, 64, 65, 84, 77, 70, 75, 84, 75, 73, 92,
+              90, 79, 80, 71, 73, 71, 58, 79, 73, 64, 77, 82, 81, 59, 54, 82,
+              57, 79, 79, 73, 74, 82, 63, 64, 73, 69, 87, 68, 81, 73, 83, 73,
+              80, 73, 73, 71, 66, 78, 64, 74, 68, 67, 75, 75, 80, 85, 74, 76,
+              80, 77, 93, 70, 86, 80, 81, 83, 68, 60, 85, 64, 74, 82, 81, 77,
+              66, 85, 75, 81, 69, 60, 83, 72]
+
+
 class TestGoodnessOfFit:
 
     def test_gof_iv(self):
@@ -595,3 +606,96 @@ class TestGoodnessOfFit:
         message = "'herring' cannot be used to seed a"
         with pytest.raises(ValueError, match=message):
             goodness_of_fit(dist, x, random_state='herring')
+
+    def test_against_ks(self):
+        rng = np.random.default_rng(8517426291317196949)
+        x = examgrades
+        known_params = {'loc': np.mean(x), 'scale': np.std(x, ddof=1)}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='ks', random_state=rng)
+        ref = stats.kstest(x, stats.norm(**known_params).cdf, method='exact')
+        assert_allclose(res.statistic, ref.statistic)  # ~0.0848
+        assert_allclose(res.pvalue, ref.pvalue, atol=5e-3)  # ~0.335
+
+    @pytest.mark.slow()
+    def test_against_lilliefors(self):
+        rng = np.random.default_rng(2291803665717442724)
+        x = examgrades
+        known_params = {'loc': np.mean(x), 'scale': np.std(x)}
+        res = goodness_of_fit(stats.norm, x, statistic='ks', random_state=rng)
+        ref = stats.kstest(x, stats.norm(**known_params).cdf, method='exact')
+        assert_allclose(res.statistic, ref.statistic)  # ~0.0854
+        assert_allclose(res.pvalue, 0.0348, atol=5e-3)
+
+    def test_against_cvm(self):
+        rng = np.random.default_rng(3079129753701684031)
+        x = examgrades
+        known_params = {'loc': np.mean(x), 'scale': np.std(x, ddof=1)}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='cvm', random_state=rng)
+        ref = stats.cramervonmises(x, stats.norm(**known_params).cdf)
+        assert_allclose(res.statistic, ref.statistic)  # ~0.090
+        assert_allclose(res.pvalue, ref.pvalue, atol=1e-2)  # ~0.636
+
+    def test_against_anderson_case_0(self):
+        # "Case 0" is where loc and scale are known [1]
+        rng = np.random.default_rng(7384539336846690410)
+        x = np.arange(1, 101)
+        # loc that produced critical value of statistic found w/ root_scalar
+        known_params = {'loc':45.01575354024957, 'scale':30}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='ad', random_state=rng)
+        assert_allclose(res.statistic, 2.492)  # See [1] Table 1A 1.0
+        assert_allclose(res.pvalue, 0.05, atol=5e-3)
+
+    @pytest.mark.slow()
+    def test_against_anderson_case_1(self):
+        # "Case 1" is where scale is known and loc is fit [1]
+        rng = np.random.default_rng(5040212485680146248)
+        x = np.arange(1, 101)
+        # scale that produced critical value of statistic found w/ root_scalar
+        known_params = {'scale': 29.957112639101933}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='ad', random_state=rng)
+        assert_allclose(res.statistic, 0.908)  # See [1] Table 1B 1.1
+        assert_allclose(res.pvalue, 0.1, atol=5e-3)
+
+    @pytest.mark.slow()
+    def test_against_anderson_case_2(self):
+        # "Case 2" is where loc is known and scale is fit [1]
+        rng = np.random.default_rng(726693985720914083)
+        x = np.arange(1, 101)
+        # loc that produced critical value of statistic found w/ root_scalar
+        known_params = {'loc': 44.5680212261933}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='ad', random_state=rng)
+        assert_allclose(res.statistic, 2.904)  # See [1] Table 1B 1.2
+        assert_allclose(res.pvalue, 0.025, atol=5e-3)
+
+    @pytest.mark.slow()
+    def test_against_anderson_case_3(self):
+        # "Case 3" is where both loc and scale are fit [1]
+        rng = np.random.default_rng(6763691329830218206)
+        # c that produced critical value of statistic found w/ root_scalar
+        x = stats.skewnorm.rvs(1.4369701131936174, loc=1, scale=2, size=100,
+                               random_state=rng)
+        res = goodness_of_fit(stats.norm, x, statistic='ad', random_state=rng)
+        assert_allclose(res.statistic, 0.559)  # See [1] Table 1B 1.2
+        # note that our critical value for a given significance level is
+        # expected to be a bit different because we are using strict MLE
+        # whereas [1] fits variance w/ using unbiased estimate.
+        assert_allclose(res.pvalue, 0.15, atol=7e-3)
+
+    @pytest.mark.slow()
+    def test_anderson_weibull(self):
+        # "Case 3" is where both loc and scale are fit [1]
+        rng = np.random.default_rng(9121950977643805391)
+        # c that produced critical value of statistic found w/ root_scalar
+        x = stats.skewnorm.rvs(1.4369701131936174, loc=1, scale=2, size=100,
+                               random_state=rng)
+        res = goodness_of_fit(stats.norm, x, statistic='ad', random_state=rng)
+        assert_allclose(res.statistic, 0.559)  # See [1] Table 1B 1.2
+        # note that our critical value for a given significance level is
+        # expected to be a bit different because we are using strict MLE
+        # whereas [1] fits variance w/ using unbiased estimate.
+        assert_allclose(res.pvalue, 0.15, atol=7e-3)

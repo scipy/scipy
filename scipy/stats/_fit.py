@@ -590,6 +590,15 @@ def _kolmogorov_smirnov(dist, data, axis=-1):
     return np.maximum(Dplus, Dminus)
 
 
+def _cramer_von_mises(dist, data, axis=-1):
+    x = np.sort(data, axis=axis)
+    n = data.shape[-1]
+    cdfvals = dist.cdf(x)
+    u = (2*np.arange(1, n+1) - 1)/(2*n)
+    w = 1 / (12*n) + np.sum((u - cdfvals)**2, axis=-1)
+    return w
+
+
 def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                     guessed_params=None, statistic='ad', fit_method='mle',
                     n_resamples=9999, random_state=None):
@@ -762,7 +771,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
             guessed_rfd_params, statistic, fit_method, n_resamples_int,
             random_state) = args
 
-    shape_names = [] if dist.shapes is None else dist.names.split(", ")
+    shape_names = [] if dist.shapes is None else dist.shapes.split(", ")
     param_names = shape_names + ['loc', 'scale']
     fparam_names = ['f'+name for name in param_names]
     all_nhd_fixed = not set(fparam_names).difference(fixed_nhd_params)
@@ -784,7 +793,8 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         return dist.fit(data, **guessed_rfd_params, **fixed_rfd_params,
                         method=fit_method)
 
-    compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov}
+    compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov,
+                    "cvm": _cramer_von_mises}
     compare_fun = compare_dict[statistic]
 
     def statistic_fun(data, axis=-1):
@@ -846,7 +856,7 @@ def gof_iv(dist, data, known_params, fit_params, guessed_params,
     guessed_rfd_params = fit_params.copy()
     guessed_rfd_params.update(guessed_params)
 
-    statistics = {'ad', 'ks'}
+    statistics = {'ad', 'ks', 'cvm'}
     if statistic.lower() not in statistics:
         message = f"`statistic` must be one of {statistics}."
         raise ValueError(message)
