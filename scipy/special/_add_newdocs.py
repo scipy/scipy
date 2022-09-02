@@ -6301,11 +6301,11 @@ add_newdoc("i0",
     >>> from scipy.special import i0
     >>> import matplotlib.pyplot as plt
 
-    x = np.linspace(-10., 10., 1000)
-    y = i0(x)
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> y = i0(x)
 
-    plt.plot(x, y)
-    plt.show()
+    >>> plt.plot(x, y)
+    >>> plt.show()
 
     """)
 
@@ -6357,11 +6357,11 @@ add_newdoc("i0e",
     >>> from scipy.special import i0, i0e
     >>> import matplotlib.pyplot as plt
 
-    x = np.linspace(-10., 10., 1000)
-    y = i0e(x)
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> y = i0e(x)
 
-    plt.plot(x, y)
-    plt.show()
+    >>> plt.plot(x, y)
+    >>> plt.show()
 
     Exponentially scaled Bessel functions are useful for large arguments for
     which the unscaled Bessel functions overflow or lose precision.
@@ -6426,11 +6426,11 @@ add_newdoc("i1",
     >>> from scipy.special import i1
     >>> import matplotlib.pyplot as plt
 
-    x = np.linspace(-10., 10., 1000)
-    y = i1(x)
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> y = i1(x)
 
-    plt.plot(x, y)
-    plt.show()
+    >>> plt.plot(x, y)
+    >>> plt.show()
 
     """)
 
@@ -6482,11 +6482,11 @@ add_newdoc("i1e",
     >>> from scipy.special import i1, i1e
     >>> import matplotlib.pyplot as plt
 
-    x = np.linspace(-10., 10., 1000)
-    y = i1e(x)
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> y = i1e(x)
 
-    plt.plot(x, y)
-    plt.show()
+    >>> plt.plot(x, y)
+    >>> plt.show()
 
     Exponentially scaled Bessel functions are useful for large arguments for
     which the unscaled Bessel functions overflow or lose precision.
@@ -6950,11 +6950,11 @@ add_newdoc("j0",
     >>> from scipy.special import j0
     >>> import matplotlib.pyplot as plt
 
-    x = np.linspace(-20., 20., 1000)
-    y = j0(x)
+    >>> x = np.linspace(-20., 20., 1000)
+    >>> y = j0(x)
 
-    plt.plot(x, y)
-    plt.show()
+    >>> plt.plot(x, y)
+    >>> plt.show()
 
     """)
 
@@ -7003,11 +7003,11 @@ add_newdoc("j1",
     >>> from scipy.special import j1
     >>> import matplotlib.pyplot as plt
 
-    x = np.linspace(-20., 20., 1000)
-    y = j1(x)
+    >>> x = np.linspace(-20., 20., 1000)
+    >>> y = j1(x)
 
-    plt.plot(x, y)
-    plt.show()
+    >>> plt.plot(x, y)
+    >>> plt.show()
 
     """)
 
@@ -7193,11 +7193,11 @@ add_newdoc("k0",
     >>> from scipy.special import k0
     >>> import matplotlib.pyplot as plt
 
-    x = np.linspace(0., 10., 1000)
-    y = k0(x)
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = k0(x)
 
-    plt.plot(x, y)
-    plt.show()
+    >>> plt.plot(x, y)
+    >>> plt.show()
 
     """)
 
@@ -7247,11 +7247,11 @@ add_newdoc("k0e",
     >>> from scipy.special import k0, k0e
     >>> import matplotlib.pyplot as plt
 
-    x = np.linspace(0., 20., 1000)
-    y = k0e(x)
+    >>> x = np.linspace(0., 20., 1000)
+    >>> y = k0e(x)
 
-    plt.plot(x, y)
-    plt.show()
+    >>> plt.plot(x, y)
+    >>> plt.show()
 
     Exponentially scaled Bessel functions are useful for large arguments for
     which the unscaled Bessel functions are not precise enough.
