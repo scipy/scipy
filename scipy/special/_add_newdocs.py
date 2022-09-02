@@ -6287,13 +6287,26 @@ add_newdoc("i0",
 
     See also
     --------
-    iv
-    i0e
+    iv: Modified Bessel function of any order
+    i0e: Exponentially scaled modified Bessel function of order 0
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import i0
+    >>> import matplotlib.pyplot as plt
+
+    x = np.linspace(-10., 10., 1000)
+    y = i0(x)
+
+    plt.plot(x, y)
+    plt.show()
+
     """)
 
 add_newdoc("i0e",
@@ -6330,13 +6343,38 @@ add_newdoc("i0e",
 
     See also
     --------
-    iv
-    i0
+    iv: Modified Bessel function of the first kind
+    i0: Modified Bessel function of order 0
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import i0, i0e
+    >>> import matplotlib.pyplot as plt
+
+    x = np.linspace(-10., 10., 1000)
+    y = i0e(x)
+
+    plt.plot(x, y)
+    plt.show()
+
+    Exponentially scaled Bessel functions are useful for large arguments for
+    which the unscaled Bessel functions overflow or lose precision.
+
+    >>> i0(1000.)
+    inf
+
+    In this case the exponentially scaled Bessel function still yields a real
+    floating point number:
+
+    >>> i0e(1000.)
+    0.012617240455891257
+
     """)
 
 add_newdoc("i1",
@@ -6374,13 +6412,26 @@ add_newdoc("i1",
 
     See also
     --------
-    iv
-    i1e
+    iv: Modified Bessel function of the first kind
+    i1e: Exponentially scaled modified Bessel function of order 1
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import i1
+    >>> import matplotlib.pyplot as plt
+
+    x = np.linspace(-10., 10., 1000)
+    y = i1(x)
+
+    plt.plot(x, y)
+    plt.show()
+
     """)
 
 add_newdoc("i1e",
@@ -6417,13 +6468,38 @@ add_newdoc("i1e",
 
     See also
     --------
-    iv
-    i1
+    iv: Modified Bessel function of the first kind
+    i1: Modified Bessel function of order 1
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import i1, i1e
+    >>> import matplotlib.pyplot as plt
+
+    x = np.linspace(-10., 10., 1000)
+    y = i1e(x)
+
+    plt.plot(x, y)
+    plt.show()
+
+    Exponentially scaled Bessel functions are useful for large arguments for
+    which the unscaled Bessel functions overflow or lose precision.
+
+    >>> i1(1000.)
+    inf
+
+    In this case the exponentially scaled Bessel function still yields a real
+    floating point number:
+
+    >>> i1e(1000.)
+    0.01261093025692863
+
     """)
 
 add_newdoc("_igam_fac",
@@ -6867,6 +6943,19 @@ add_newdoc("j0",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import j0
+    >>> import matplotlib.pyplot as plt
+
+    x = np.linspace(-20., 20., 1000)
+    y = j0(x)
+
+    plt.plot(x, y)
+    plt.show()
+
     """)
 
 add_newdoc("j1",
@@ -6907,6 +6996,18 @@ add_newdoc("j1",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import j1
+    >>> import matplotlib.pyplot as plt
+
+    x = np.linspace(-20., 20., 1000)
+    y = j1(x)
+
+    plt.plot(x, y)
+    plt.show()
 
     """)
 
@@ -7079,12 +7180,25 @@ add_newdoc("k0",
     See also
     --------
     kv
-    k0e
+    k0e: Exponentially scaled modified Bessel function of the second kind
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import k0
+    >>> import matplotlib.pyplot as plt
+
+    x = np.linspace(0., 10., 1000)
+    y = k0(x)
+
+    plt.plot(x, y)
+    plt.show()
+
     """)
 
 add_newdoc("k0e",
@@ -7126,6 +7240,31 @@ add_newdoc("k0e",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import k0, k0e
+    >>> import matplotlib.pyplot as plt
+
+    x = np.linspace(0., 20., 1000)
+    y = k0e(x)
+
+    plt.plot(x, y)
+    plt.show()
+
+    Exponentially scaled Bessel functions are useful for large arguments for
+    which the unscaled Bessel functions are not precise enough.
+
+    >>> k0(1000.)
+    0.
+
+    In this case the exponentially scaled Bessel function still yields a seful
+    floating point number:
+
+    >>> k0e(1000.)
+    0.03962832160075422
+
     """)
 
 add_newdoc("k1",
@@ -11071,13 +11210,26 @@ add_newdoc("y0",
 
     See also
     --------
-    j0
-    yv
+    j0: Bessel function of the first kind of order 0
+    yv: Bessel function of the first kind
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import y0
+    >>> import matplotlib.pyplot as plt
+
+    x = np.linspace(0., 10., 1000)
+    y = y0(x)
+
+    plt.plot(x, y)
+    plt.show()
+
     """)
 
 add_newdoc("y1",
@@ -11111,14 +11263,27 @@ add_newdoc("y1",
 
     See also
     --------
-    j1
-    yn
-    yv
+    j1: Bessel function of the first kind of order 1
+    yn: Bessel function of the second kind
+    yv: Bessel function of the second kind
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import y1
+    >>> import matplotlib.pyplot as plt
+
+    x = np.linspace(0., 10., 1000)
+    y = y1(x)
+
+    plt.plot(x, y)
+    plt.show()
+
     """)
 
 add_newdoc("yn",
