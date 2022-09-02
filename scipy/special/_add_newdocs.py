@@ -7167,7 +7167,7 @@ add_newdoc("k0",
 
     See also
     --------
-    kv
+    kv: Modified Bessel function of the second kind of any order
     k0e: Exponentially scaled modified Bessel function of the second kind
 
     References
@@ -7278,13 +7278,24 @@ add_newdoc("k1",
 
     See also
     --------
-    kv
-    k1e
+    kv: Modified Bessel function of the second kind of any order
+    k1e: Exponentially scaled modified Bessel function K of order 1
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import k1
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0., 20., 1000)
+    >>> y = k1(x)
+    >>> plt.plot(x, y)
+    >>> plt.show()
+
     """)
 
 add_newdoc("k1e",
@@ -7320,12 +7331,35 @@ add_newdoc("k1e",
     See also
     --------
     kv: Modified Bessel function of the second kind of any order
-    k1
+    k1: Modified Bessel function of the second kind of order 1
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import k1, k1e
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0., 20., 1000)
+    >>> y = k0e(x)
+    >>> plt.plot(x, y)
+    >>> plt.show()
+
+    Exponentially scaled Bessel functions are useful for large arguments for
+    which the unscaled Bessel functions are not precise enough.
+
+    >>> k1(1000.)
+    0.
+
+    In this case the exponentially scaled Bessel function still yields a useful
+    floating point number:
+
+    >>> k1e(1000.)
+    0.03964813081296021
+
     """)
 
 add_newdoc("kei",
