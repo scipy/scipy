@@ -6300,10 +6300,8 @@ add_newdoc("i0",
     >>> import numpy as np
     >>> from scipy.special import i0
     >>> import matplotlib.pyplot as plt
-
     >>> x = np.linspace(-10., 10., 1000)
     >>> y = i0(x)
-
     >>> plt.plot(x, y)
     >>> plt.show()
 
@@ -6356,10 +6354,8 @@ add_newdoc("i0e",
     >>> import numpy as np
     >>> from scipy.special import i0, i0e
     >>> import matplotlib.pyplot as plt
-
     >>> x = np.linspace(-10., 10., 1000)
     >>> y = i0e(x)
-
     >>> plt.plot(x, y)
     >>> plt.show()
 
@@ -6425,10 +6421,8 @@ add_newdoc("i1",
     >>> import numpy as np
     >>> from scipy.special import i1
     >>> import matplotlib.pyplot as plt
-
     >>> x = np.linspace(-10., 10., 1000)
     >>> y = i1(x)
-
     >>> plt.plot(x, y)
     >>> plt.show()
 
@@ -6481,10 +6475,8 @@ add_newdoc("i1e",
     >>> import numpy as np
     >>> from scipy.special import i1, i1e
     >>> import matplotlib.pyplot as plt
-
     >>> x = np.linspace(-10., 10., 1000)
     >>> y = i1e(x)
-
     >>> plt.plot(x, y)
     >>> plt.show()
 
@@ -6949,10 +6941,8 @@ add_newdoc("j0",
     >>> import numpy as np
     >>> from scipy.special import j0
     >>> import matplotlib.pyplot as plt
-
     >>> x = np.linspace(-20., 20., 1000)
     >>> y = j0(x)
-
     >>> plt.plot(x, y)
     >>> plt.show()
 
@@ -7002,10 +6992,8 @@ add_newdoc("j1",
     >>> import numpy as np
     >>> from scipy.special import j1
     >>> import matplotlib.pyplot as plt
-
     >>> x = np.linspace(-20., 20., 1000)
     >>> y = j1(x)
-
     >>> plt.plot(x, y)
     >>> plt.show()
 
@@ -7192,10 +7180,8 @@ add_newdoc("k0",
     >>> import numpy as np
     >>> from scipy.special import k0
     >>> import matplotlib.pyplot as plt
-
     >>> x = np.linspace(0., 10., 1000)
     >>> y = k0(x)
-
     >>> plt.plot(x, y)
     >>> plt.show()
 
@@ -7233,8 +7219,8 @@ add_newdoc("k0e",
 
     See also
     --------
-    kv
-    k0
+    kv: Modified Bessel function of the second kind of any order
+    k0: Modified Bessel function of the second kind
 
     References
     ----------
@@ -7246,10 +7232,8 @@ add_newdoc("k0e",
     >>> import numpy as np
     >>> from scipy.special import k0, k0e
     >>> import matplotlib.pyplot as plt
-
     >>> x = np.linspace(0., 20., 1000)
     >>> y = k0e(x)
-
     >>> plt.plot(x, y)
     >>> plt.show()
 
@@ -7335,7 +7319,7 @@ add_newdoc("k1e",
 
     See also
     --------
-    kv
+    kv: Modified Bessel function of the second kind of any order
     k1
 
     References
@@ -11223,12 +11207,10 @@ add_newdoc("y0",
     >>> import numpy as np
     >>> from scipy.special import y0
     >>> import matplotlib.pyplot as plt
-
-    x = np.linspace(0., 10., 1000)
-    y = y0(x)
-
-    plt.plot(x, y)
-    plt.show()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = y0(x)
+    >>> plt.plot(x, y)
+    >>> plt.show()
 
     """)
 
@@ -11277,12 +11259,10 @@ add_newdoc("y1",
     >>> import numpy as np
     >>> from scipy.special import y1
     >>> import matplotlib.pyplot as plt
-
-    x = np.linspace(0., 10., 1000)
-    y = y1(x)
-
-    plt.plot(x, y)
-    plt.show()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = y1(x)
+    >>> plt.plot(x, y)
+    >>> plt.show()
 
     """)
 
