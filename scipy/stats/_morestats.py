@@ -1890,11 +1890,11 @@ def _weibull_fit_check(params, x):
     if np.allclose(u, np.min(x)) or m < 1:
         # The critical values provided by [7] don't seem to control the
         # Type I error rate in this case. Error out.
-        message = ("The maximum likelihood estimate of the has converged to "
+        message = ("Maximum likelihood estimation has converged to "
                    "a solution in which the location is equal to the minimum "
-                   "of the data, the shape parameter is less than 1, or both. "
-                   "The critical values used by `anderson` (see [7]) are "
-                   "known to be too low in this case. " + suggestion)
+                   "of the data, the shape parameter is less than 2, or both. "
+                   "The table of critical values in [7] does not "
+                   "include this case. " + suggestion)
         raise ValueError(message)
 
     try:
@@ -2092,7 +2092,7 @@ def anderson(x, dist='norm'):
         critical = _get_As_weibull(c)
         # Goodness-of-fit tests should only be used to provide evidence
         # _against_ the null hypothesis. Be conservative and round up.
-        critical = np.round(critical + 0.0004999999, decimals=3)
+        critical = np.round(critical + 0.0005, decimals=3)
 
     i = arange(1, N + 1)
     A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)

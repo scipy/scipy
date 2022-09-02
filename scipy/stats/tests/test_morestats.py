@@ -333,7 +333,7 @@ class TestAnderson:
         # From `anderson` reference [7]
         x = np.array([74, 57, 48, 29, 502, 12, 70, 21,
                       29, 386, 59, 27, 153, 26, 326])
-        message = "The maximum likelihood estimate of the has converged to "
+        message = "Maximum likelihood estimation has converged to "
         with pytest.raises(ValueError, match=message):
             stats.anderson(x, 'weibull_min')
 
