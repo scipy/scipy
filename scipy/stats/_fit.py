@@ -776,13 +776,17 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     fparam_names = ['f'+name for name in param_names]
     all_nhd_fixed = not set(fparam_names).difference(fixed_nhd_params)
     all_rfd_fixed = not set(fparam_names).difference(fixed_rfd_params)
+    guessed_nhd_shapes = [guessed_nhd_params.pop(x, None)
+                          for x in shape_names if x in guessed_nhd_params]
+    guessed_rfd_shapes = [guessed_rfd_params.pop(x, None)
+                          for x in shape_names if x in guessed_rfd_params]
 
     # Fit `dist` to data to get null-hypothesized distribution
     if all_nhd_fixed:
         nhd_vals = [fixed_nhd_params[name] for name in fparam_names]
     else:
-        nhd_vals = dist.fit(data, **guessed_nhd_params, **fixed_nhd_params,
-                            method=fit_method)
+        nhd_vals = dist.fit(data, *guessed_nhd_shapes, **guessed_nhd_params,
+                            **fixed_nhd_params, method=fit_method)
     nhd_dist = dist(*nhd_vals)
 
     # Define statistic, including fitting distribution to data
@@ -790,8 +794,8 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         if all_rfd_fixed:
             return [fixed_rfd_params[name] for name in fparam_names]
         assert data.ndim == 1
-        return dist.fit(data, **guessed_rfd_params, **fixed_rfd_params,
-                        method=fit_method)
+        return dist.fit(data, *guessed_rfd_shapes, **guessed_rfd_params,
+                        **fixed_rfd_params, method=fit_method)
 
     compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov,
                     "cvm": _cramer_von_mises}

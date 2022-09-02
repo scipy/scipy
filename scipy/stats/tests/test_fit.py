@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import numpy.testing as npt
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 import pytest
 from scipy import stats
 from scipy.optimize import differential_evolution
@@ -686,16 +686,49 @@ class TestGoodnessOfFit:
         # whereas [1] fits variance w/ using unbiased estimate.
         assert_allclose(res.pvalue, 0.15, atol=7e-3)
 
-    @pytest.mark.slow()
-    def test_anderson_weibull(self):
-        # "Case 3" is where both loc and scale are fit [1]
+    def test_params_effects(self):
         rng = np.random.default_rng(9121950977643805391)
-        # c that produced critical value of statistic found w/ root_scalar
-        x = stats.skewnorm.rvs(1.4369701131936174, loc=1, scale=2, size=100,
+        x = stats.skewnorm.rvs(-5.044559778383153, loc=1, scale=2, size=50,
                                random_state=rng)
-        res = goodness_of_fit(stats.norm, x, statistic='ad', random_state=rng)
-        assert_allclose(res.statistic, 0.559)  # See [1] Table 1B 1.2
-        # note that our critical value for a given significance level is
-        # expected to be a bit different because we are using strict MLE
-        # whereas [1] fits variance w/ using unbiased estimate.
-        assert_allclose(res.pvalue, 0.15, atol=7e-3)
+
+        # Show that `guessed_params` don't fit to the guess,
+        # but `fit_params` and `known_params` respect the provided fit
+        guessed_params = {'c': 13.4}
+        fit_params = {'scale': 13.73}
+        known_params = {'loc': -13.85}
+        rng = np.random.default_rng(9121950977643805391)
+        res1 = goodness_of_fit(stats.weibull_min, x, n_resamples=2,
+             guessed_params=guessed_params, fit_params=fit_params,
+             known_params=known_params, random_state=rng)
+        assert not np.allclose(res1.fit_result.params.c, 13.4)
+        assert_equal(res1.fit_result.params.scale, 13.73)
+        assert_equal(res1.fit_result.params.loc, -13.85)
+
+        # Show that changing the guess changes the parameter that gets fit,
+        # and it changes the null distribution
+        guessed_params = {'c': 2}
+        rng = np.random.default_rng(9121950977643805391)
+        res2 = goodness_of_fit(stats.weibull_min, x, n_resamples=2,
+             guessed_params=guessed_params, fit_params=fit_params,
+             known_params=known_params, random_state=rng)
+        assert not np.allclose(res2.fit_result.params.c,
+                               res1.fit_result.params.c, rtol=1e-8)
+        assert not np.allclose(res2.null_distribution,
+                               res1.null_distribution, rtol=1e-8)
+        assert_equal(res2.fit_result.params.scale, 13.73)
+        assert_equal(res2.fit_result.params.loc, -13.85)
+
+        # If we set all parameters as fit_params and known_params,
+        # they're all fixed to those values, but the null distribution
+        # varies.
+        fit_params = {'c': 13.4, 'scale': 13.73}
+        rng = np.random.default_rng(9121950977643805391)
+        res3 = goodness_of_fit(stats.weibull_min, x, n_resamples=2,
+             guessed_params=guessed_params, fit_params=fit_params,
+             known_params=known_params, random_state=rng)
+        assert_equal(res3.fit_result.params.c, 13.4)
+        assert_equal(res3.fit_result.params.scale, 13.73)
+        assert_equal(res3.fit_result.params.loc, -13.85)
+        assert not np.allclose(res3.null_distribution, res1.null_distribution)
+
+
