@@ -140,7 +140,9 @@ class FitResult:
         support = self._dist.support(*fit_params)
         lb = support[0] if np.isfinite(support[0]) else min(self._data)
         ub = support[1] if np.isfinite(support[1]) else max(self._data)
+        return self._hist_plot(MaxNLocator, ax, fit_params, lb, ub)
 
+    def _hist_plot(self, MaxNLocator, ax, fit_params, lb, ub):
         if self.discrete:
             x = np.arange(lb, ub + 2)
             y = self.pxf(x, *fit_params)
