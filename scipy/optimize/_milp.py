@@ -43,7 +43,7 @@ def _constraints_to_components(constraints):
             # argument could be a single tuple representing a LinearConstraint
             try:
                 constraints = [LinearConstraint(*constraints)]
-            except TypeError:
+            except (TypeError, ValueError, np.VisibleDeprecationWarning):
                 # argument was not a tuple representing a LinearConstraint
                 pass
 
@@ -298,6 +298,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     that the problem be expressed as a minimization problem, the objective
     function coefficients on the decision variables are:
 
+    >>> import numpy as np
     >>> c = -np.array([0, 1])
 
     Note the negative sign: we maximize the original objective function

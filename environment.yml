@@ -19,6 +19,8 @@ dependencies:
   - pkg-config  # note: not available on Windows
   - libblas=*=*openblas  # helps avoid pulling in MKL
   - pybind11
+  # scipy.datasets dependency
+  - pooch
   - pythran>=0.11.0
   # For testing and benchmarking
   - pytest
@@ -34,7 +36,7 @@ dependencies:
   - numpydoc
   - ipython
   - matplotlib
-  - pydata-sphinx-theme>=0.9.0
+  - pydata-sphinx-theme==0.9.0
   - sphinx-design
   # For linting
   - flake8
@@ -46,4 +48,4 @@ dependencies:
   - rich-click
   - click
   - doit>=0.36.0
-  - pydevtool==0.2.0
+  - pydevtool

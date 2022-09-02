@@ -1,4 +1,5 @@
 #include <complex>
+#include <cmath>
 
 #include "_faddeeva.h"
 
@@ -170,7 +171,7 @@ double faddeeva_voigt_profile(double x, double sigma, double gamma)
             if (std::isnan(x))
                 return x;
             if (x == 0)
-                return NPY_INFINITY;
+                return INFINITY;
             return 0;
         }
         return gamma / NPY_PI / (x*x + gamma*gamma);

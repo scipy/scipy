@@ -171,8 +171,6 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
        returned.  Values of ``y[m-1]`` and ``w[m-1]`` are not used.
     quiet : int, optional
          Non-zero to suppress messages.
-         This parameter is deprecated; use standard Python warning filters
-         instead.
 
     Returns
     -------
@@ -222,7 +220,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     if per:
         for i in range(idim):
             if x[i][0] != x[i][-1]:
-                if quiet < 2:
+                if not quiet:
                     warnings.warn(RuntimeWarning('Setting x[%d][%d]=x[%d][0]' %
                                                  (i, m, i)))
                 x[i][-1] = x[i][0]
@@ -373,8 +371,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         y[m-1] and w[m-1] are not used.
     quiet : bool, optional
         Non-zero to suppress messages.
-        This parameter is deprecated; use standard Python warning filters
-        instead.
 
     Returns
     -------
@@ -846,8 +842,6 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
         ``nyest = max(ky+sqrt(m/2),2*ky+3)``.
     quiet : int, optional
         Non-zero to suppress printing of messages.
-        This parameter is deprecated; use standard Python warning filters
-        instead.
 
     Returns
     -------

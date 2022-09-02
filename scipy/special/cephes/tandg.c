@@ -32,7 +32,7 @@
  *
  *   message         condition          value returned
  * tandg total loss   x > 1.0e14 (IEEE)     0.0
- * tandg singularity  x = 180 k  +  90     NPY_INFINITY
+ * tandg singularity  x = 180 k  +  90     INFINITY
  */
 /*							cotdg.c
  *
@@ -61,7 +61,7 @@
  *
  *   message         condition          value returned
  * cotdg total loss   x > 1.0e14 (IEEE)     0.0
- * cotdg singularity  x = 180 k            NPY_INFINITY
+ * cotdg singularity  x = 180 k            INFINITY
  */
 
 /*
@@ -134,7 +134,7 @@ static double tancot(double xx, int cotflg)
     }
     else if (x == 90.0) {
 	sf_error((cotflg ? "cotdg" : "tandg"), SF_ERROR_SINGULAR, NULL);
-	return NPY_INFINITY;
+	return INFINITY;
     }
     /* x is now transformed into [0, 90) */
     return sign * tan(x * PI180);

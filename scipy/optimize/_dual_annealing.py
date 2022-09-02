@@ -598,6 +598,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     The function involved is called Rastrigin
     (https://en.wikipedia.org/wiki/Rastrigin_function)
 
+    >>> import numpy as np
     >>> from scipy.optimize import dual_annealing
     >>> func = lambda x: np.sum(x*x - 10*np.cos(2*np.pi*x)) + 10*np.size(x)
     >>> lw = [-5.12] * 10
