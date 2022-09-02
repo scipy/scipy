@@ -7241,7 +7241,7 @@ add_newdoc("k0e",
     >>> k0(1000.)
     0.
 
-    While `k0` returns zero, `k0e` still yields a useful floating point number:
+    While `k0` returns zero, `k0e` still returns a finite number:
 
     >>> k0e(1000.)
     0.03962832160075422
