@@ -6360,7 +6360,7 @@ add_newdoc("i0e",
     >>> plt.show()
 
     Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions overflow or loose precision.
+    which the unscaled Bessel functions overflow or lose precision.
 
     >>> i0(1000.)
     inf
@@ -6481,7 +6481,7 @@ add_newdoc("i1e",
     >>> plt.show()
 
     Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions overflow or loose precision.
+    which the unscaled Bessel functions overflow or lose precision.
 
     >>> i1(1000.)
     inf
@@ -8045,7 +8045,7 @@ add_newdoc('log_expit',
     array([-2.54463117e-13,  0.00000000e+00,  0.00000000e+00])
 
     The first value is accurate to only 3 digits, and the larger inputs
-    loose all precision and return 0.
+    lose all precision and return 0.
     """)
 
 add_newdoc('logit',
