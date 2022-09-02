@@ -285,6 +285,7 @@ class _minmax_mixin:
             return int(mat.row[am]) * num_col + int(mat.col[am])
 
         ind = mat.row * num_col + mat.col
+        ind.sort()
         zero_ind = _find_missing_index(ind, size)
         if m == zero:
             return min(zero_ind, am)
