@@ -115,6 +115,11 @@ interpolative_module = custom_target('interpolative_module',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
+# id_dist contains a copy of FFTPACK, which has type mismatch warnings
+# that are hard to fix. This code is terrible and noisy during the build,
+# silence it completely.
+_suppress_all_warnings = ff.get_supported_arguments('-w')
+
 py3.extension_module('_interpolative',
   [
     'src/id_dist/src/dfft.f',
@@ -156,7 +161,7 @@ py3.extension_module('_interpolative',
     interpolative_module,
   ],
   c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
+  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
   include_directories: [inc_np, inc_f2py],
   dependencies: [lapack, fortranobject_dep],
   install: true,
