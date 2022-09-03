@@ -109,10 +109,7 @@ class FitResult:
         return self._dist.nnlf(theta=params, x=data)
 
     def plot(self, ax=None, *, plot_type="histogram"):
-        """Visualize the fit result.
-
-        Superposes the PDF/PMF of the fitted distribution over a normalized
-        histogram of the data.
+        """Visually compare the data against the fitted distribution.
 
         Available only if ``matplotlib`` is installed.
 
@@ -120,6 +117,24 @@ class FitResult:
         ----------
         ax : matplotlib.axes.Axes
             Axes object to draw the plot onto, otherwise uses the current Axes.
+        plot_type : {"histogram", "qq", "pp"}
+            Type of plot to draw. Options include:
+
+            - "histogram": Superposes the PDF/PMF of the fitted distribution
+              over a normalized histogram of the data.
+            - "qq": Scatter plot of theoretical quantiles against the
+              empirical quantiles. Specifically, the x-coordinates are the
+              values of the fitted distribution PPF evaluated at the
+              percentiles ``(np.arange(1, n) - 0.5)/n``, where ``n`` is the
+              number of data points, and the y-coordinates are the sorted
+              data points.
+            - "pp": Scatter plot of theoretical percentiles against the
+              observed percentiles. Specifically, the x-coordinates are the
+              percentiles ``(np.arange(1, n) - 0.5)/n``, where ``n`` is
+              the number of data points, and the y-coordinates are the values
+              of the fitted distribution CDF evaluated at the sorted
+              data points.
+
 
         Returns
         -------
@@ -184,7 +199,10 @@ class FitResult:
     def _qp_plot(self, ax, fit_params, qq):
         data = np.sort(self._data)
         n = len(self._data)
-        ps = np.arange(1, n+1) / (n + 1)
+        a = 0.5  # expose this as a parameter later?
+        # See https://en.wikipedia.org/wiki/Q%E2%80%93Q_plot#Plotting_positions
+        k = np.arange(1, n+1)
+        ps = (k-a) / (n + 1 - 2*a)
 
         if qq:
             qp = "Quantiles"
@@ -197,17 +215,45 @@ class FitResult:
             x = ps
             y = self._dist.cdf(data, *fit_params)
 
-        ax.plot(x, y, '.', label=f'Fit Distribution {plot_type}', color='C0')
+        ax.plot(x, y, '.', label=f'Fit Distribution {plot_type}', color='C0',
+                zorder=1)
         xlim = ax.get_xlim()
         ylim = ax.get_ylim()
         lim = [min(xlim[0], ylim[0]), max(xlim[1], ylim[1])]
-        ax.plot(lim, lim, '-', label='Reference', color='k', alpha=0.25,
-                zorder=1)
+        if not qq:
+            lim = max(lim[0], 0), min(lim[1], 1)
+
+        if self.discrete and qq:
+            q_min, q_max = int(lim[0]), int(lim[1]+1)
+            q_ideal = np.arange(q_min, q_max)
+            # q_ideal = np.unique(self._dist.ppf(ps, *fit_params))
+            ax.plot(q_ideal, q_ideal, 'o', label='Reference', color='k',
+                    alpha=0.25, markerfacecolor='none', clip_on=True)
+        elif self.discrete and not qq:
+            # The intent of this is to match the plot that would be produced
+            # if x were continuous on [0, 1] and y were cdf(ppf(x)).
+            # It can be approximated by letting x = np.linspace(0, 1, 1000),
+            # but this might not look great when zooming in. The vertical
+            # portions are included to indicate where the transition occurs
+            # where the data completely obscures the horizontal portions.
+            p_min, p_max = lim
+            a, b = self._dist.support(*fit_params)
+            p_min = max(p_min, 0 if np.isfinite(a) else 1e-3)
+            p_max = min(p_max, 1 if np.isfinite(b) else 1-1e-3)
+            q_min, q_max = self._dist.ppf([p_min, p_max], *fit_params)
+            qs = np.arange(q_min-1, q_max+1)
+            ps = self._dist.cdf(qs, *fit_params)
+            ax.step(ps, ps, '-', label='Reference', color='k', alpha=0.25,
+                    clip_on=True)
+        else:
+            ax.plot(lim, lim, '-', label='Reference', color='k', alpha=0.25,
+                    clip_on=True)
+
         ax.set_xlim(lim)
         ax.set_ylim(lim)
         ax.set_xlabel(f"Fitted `{self._dist.name}` Theoretical {qp}")
-        ax.set_ylabel(f'Data {qp}')
-        ax.set_title(f"`Fitted `{self._dist.name}` {plot_type} Plot")
+        ax.set_ylabel(f"Data {qp}")
+        ax.set_title(f"Fitted `{self._dist.name}` {plot_type} Plot")
         ax.legend(*ax.get_legend_handles_labels())
         ax.set_aspect('equal')
         return ax
