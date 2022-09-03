@@ -67,7 +67,9 @@ mvn_module = custom_target('mvn_module',
 mvn = py3.extension_module('_mvn',
   [mvn_module, 'mvndst.f'],
   c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
+  # Wno-surprising is to suppress a pointless warning with GCC 10-12
+  # (see GCC bug 98411: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98411)
+  fortran_args: [fortran_ignore_warnings, _fflag_Wno_surprising],
   dependencies: [fortranobject_dep],
   include_directories: [inc_np, inc_f2py],
   install: true,
