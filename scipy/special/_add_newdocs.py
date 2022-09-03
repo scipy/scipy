@@ -6297,8 +6297,20 @@ add_newdoc("i0",
 
     Examples
     --------
-    >>> import numpy as np
+    Calculate the function at one point:
+
     >>> from scipy.special import i0
+    >>> i0(1.)
+    1.2660658777520082
+
+    Calculate at several points:
+
+    >>> import numpy as np
+    >>> i0(np.array([-2., 0., 3.5])
+    array([2.2795853 , 1.        , 7.37820343])
+
+    Plot the function from -10 to 10.
+
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-10., 10., 1000)
     >>> y = i0(x)
@@ -6351,8 +6363,20 @@ add_newdoc("i0e",
 
     Examples
     --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import i0e
+    >>> i0e(1.)
+    0.46575960759364043
+
+    Calculate the function at several points:
+
     >>> import numpy as np
-    >>> from scipy.special import i0, i0e
+    >>> i0e(np.array([-2., 0., 3.])
+    array([0.30850832, 1.        , 0.24300035])
+
+    Plot the function from -10 to 10.
+
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-10., 10., 1000)
     >>> y = i0e(x)
@@ -6362,6 +6386,7 @@ add_newdoc("i0e",
     Exponentially scaled Bessel functions are useful for large arguments for
     which the unscaled Bessel functions overflow or lose precision.
 
+    >>> from scipy.special import i0
     >>> i0(1000.)
     inf
 
@@ -6417,8 +6442,20 @@ add_newdoc("i1",
 
     Examples
     --------
-    >>> import numpy as np
+    Calculate the function at one point:
+
     >>> from scipy.special import i1
+    >>> i1(1.)
+    0.46575960759364043
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> i1(np.array([-2., 0., 6.])
+    array([-1.59063685,  0.        , 61.34193678])
+
+    Plot the function between -10 and 10.
+
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-10., 10., 1000)
     >>> y = i1(x)
@@ -6471,8 +6508,20 @@ add_newdoc("i1e",
 
     Examples
     --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import i1e
+    >>> i1e(1.)
+    0.2079104153497085
+
+    Calculate the function at several points:
+
     >>> import numpy as np
-    >>> from scipy.special import i1, i1e
+    >>> i1e(np.array([-2., 0., 6.])
+    array([-0.21526929,  0.        ,  0.15205146])
+
+    Plot the function between -10 and 10.
+
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-10., 10., 1000)
     >>> y = i1e(x)
@@ -6482,6 +6531,7 @@ add_newdoc("i1e",
     Exponentially scaled Bessel functions are useful for large arguments for
     which the unscaled Bessel functions overflow or lose precision.
 
+    >>> from scipy.special import i1
     >>> i1(1000.)
     inf
 
@@ -6936,8 +6986,20 @@ add_newdoc("j0",
 
     Examples
     --------
-    >>> import numpy as np
+    Calculate the function at one point:
+
     >>> from scipy.special import j0
+    >>> j0(1.)
+    0.7651976865579665
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> j0(np.array([-2., 0., 4.])
+    array([ 0.22389078,  1.        , -0.39714981])
+
+    Plot the function from -20 to 20.
+
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-20., 20., 1000)
     >>> y = j0(x)
@@ -7175,8 +7237,20 @@ add_newdoc("k0",
 
     Examples
     --------
-    >>> import numpy as np
+    Calculate the function at one point:
+
     >>> from scipy.special import k0
+    >>> k0(1.)
+    0.42102443824070823
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> k0(np.array([0.5, 2., 3.])
+    array([0.92441907, 0.11389387, 0.0347395 ])
+
+    Plot the function from 0 to 10.
+
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0., 10., 1000)
     >>> y = k0(x)
@@ -7227,10 +7301,22 @@ add_newdoc("k0e",
 
     Examples
     --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import k0e
+    >>> k0e(1.)
+    1.1444630798068947
+
+    Calculate the function at several points:
+
     >>> import numpy as np
-    >>> from scipy.special import k0, k0e
+    >>> k0e(np.array([0.5, 2., 3.])
+    array([1.52410939, 0.84156822, 0.6977616 ])
+
+    Plot the function from 0 to 10.
+
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(0., 20., 1000)
+    >>> x = np.linspace(0., 10., 1000)
     >>> y = k0e(x)
     >>> plt.plot(x, y)
     >>> plt.show()
@@ -7238,6 +7324,7 @@ add_newdoc("k0e",
     Exponentially scaled Bessel functions are useful for large arguments for
     which the unscaled Bessel functions are not precise enough.
 
+    >>> from scipy.special import k0
     >>> k0(1000.)
     0.
 
@@ -7285,10 +7372,22 @@ add_newdoc("k1",
 
     Examples
     --------
-    >>> import numpy as np
+    Calculate the function at one point:
+
     >>> from scipy.special import k1
+    >>> k1(1.)
+    0.6019072301972346
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> k1(np.array([0.5, 2., 3.])
+    array([1.65644112, 0.13986588, 0.04015643])
+
+    Plot the function from 0 to 10.
+
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(0., 20., 1000)
+    >>> x = np.linspace(0., 10., 1000)
     >>> y = k1(x)
     >>> plt.plot(x, y)
     >>> plt.show()
@@ -7337,10 +7436,22 @@ add_newdoc("k1e",
 
     Examples
     --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import k1e
+    >>> k1e(1.)
+    1.636153486263258
+
+    Calculate the function at several points:
+
     >>> import numpy as np
-    >>> from scipy.special import k1, k1e
+    >>> k1e(np.array([0.5, 2., 3.])
+    array([2.73100971, 1.03347685, 0.80656348])
+
+    Plot the function from 0 to 10.
+
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(0., 20., 1000)
+    >>> x = np.linspace(0., 10., 1000)
     >>> y = k1e(x)
     >>> plt.plot(x, y)
     >>> plt.show()
@@ -7348,6 +7459,7 @@ add_newdoc("k1e",
     Exponentially scaled Bessel functions are useful for large arguments for
     which the unscaled Bessel functions are not precise enough.
 
+    >>> from scipy.special import k1
     >>> k1(1000.)
     0.
 
@@ -11235,8 +11347,20 @@ add_newdoc("y0",
 
     Examples
     --------
-    >>> import numpy as np
+    Calculate the function at one point:
+
     >>> from scipy.special import y0
+    >>> y0(1.)
+    0.08825696421567697
+
+    Calculate at several points:
+
+    >>> import numpy as np
+    >>> y0(np.array([0.5, 2., 3.])
+    array([-0.44451873,  0.51037567,  0.37685001])
+
+    Plot the function from 0 to 10.
+
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0., 10., 1000)
     >>> y = y0(x)
@@ -11287,8 +11411,20 @@ add_newdoc("y1",
 
     Examples
     --------
-    >>> import numpy as np
+    Calculate the function at one point:
+
     >>> from scipy.special import y1
+    >>> y1(1.)
+    -0.7812128213002888
+
+    Calculate at several points:
+
+    >>> import numpy as np
+    >>> y1(np.array([0.5, 2., 3.])
+    array([-1.47147239, -0.10703243,  0.32467442])
+
+    Plot the function from 0 to 10.
+
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0., 10., 1000)
     >>> y = y1(x)
