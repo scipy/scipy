@@ -108,7 +108,7 @@ class FitResult:
         data = data if data is not None else self._data
         return self._dist.nnlf(theta=params, x=data)
 
-    def plot(self, ax=None):
+    def plot(self, ax=None, *, plot_type="histogram"):
         """Visualize the fit result.
 
         Superposes the PDF/PMF of the fitted distribution over a normalized
@@ -127,22 +127,33 @@ class FitResult:
             The matplotlib Axes object on which the plot was drawn.
         """
         try:
-            from matplotlib.ticker import MaxNLocator
+            import matplotlib  # noqa
         except ModuleNotFoundError as exc:
             message = "matplotlib must be installed to use method `plot`."
             raise ValueError(message) from exc
+
+        plots = {'histogram': self._hist_plot, 'qq': self._qq_plot,
+                 'pp': self._pp_plot}
+        if plot_type.lower() not in plots:
+            message = f"`plot_type` must be one of {set(plots.keys())}"
+            raise ValueError(message)
+        plot = plots[plot_type.lower()]
 
         if ax is None:
             import matplotlib.pyplot as plt
             ax = plt.gca()
 
         fit_params = np.atleast_1d(self.params)
+
+        return plot(ax=ax, fit_params=fit_params)
+
+    def _hist_plot(self, ax, fit_params):
+        from matplotlib.ticker import MaxNLocator
+
         support = self._dist.support(*fit_params)
         lb = support[0] if np.isfinite(support[0]) else min(self._data)
         ub = support[1] if np.isfinite(support[1]) else max(self._data)
-        return self._hist_plot(MaxNLocator, ax, fit_params, lb, ub)
 
-    def _hist_plot(self, MaxNLocator, ax, fit_params, lb, ub):
         if self.discrete:
             x = np.arange(lb, ub + 2)
             y = self.pxf(x, *fit_params)
@@ -166,9 +177,46 @@ class FitResult:
             ax.plot(self._data, np.zeros_like(self._data), "*",
                     label='Data', color='C1')
 
-        ax.set_title(f"{self._dist.name} Fit")
+        ax.set_title(f"`{self._dist.name}` Fit Histogram")
         ax.legend(*ax.get_legend_handles_labels())
         return ax
+
+    def _qp_plot(self, ax, fit_params, qq):
+        data = np.sort(self._data)
+        n = len(self._data)
+        ps = np.arange(1, n+1) / (n + 1)
+
+        if qq:
+            qp = "Quantiles"
+            plot_type = 'Q-Q'
+            x = self._dist.ppf(ps, *fit_params)
+            y = data
+        else:
+            qp = "Percentiles"
+            plot_type = 'P-P'
+            x = ps
+            y = self._dist.cdf(data, *fit_params)
+
+        ax.plot(x, y, '.', label=f'Fit Distribution {plot_type}', color='C0')
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+        lim = [min(xlim[0], ylim[0]), max(xlim[1], ylim[1])]
+        ax.plot(lim, lim, '-', label='Reference', color='k', alpha=0.25,
+                zorder=1)
+        ax.set_xlim(lim)
+        ax.set_ylim(lim)
+        ax.set_xlabel(f"Fitted `{self._dist.name}` Theoretical {qp}")
+        ax.set_ylabel(f'Data {qp}')
+        ax.set_title(f"`Fitted `{self._dist.name}` {plot_type} Plot")
+        ax.legend(*ax.get_legend_handles_labels())
+        ax.set_aspect('equal')
+        return ax
+
+    def _qq_plot(self, **kwargs):
+        return self._qp_plot(qq=True, **kwargs)
+
+    def _pp_plot(self, **kwargs):
+        return self._qp_plot(qq=False, **kwargs)
 
 
 def fit(dist, data, bounds=None, *, guess=None,

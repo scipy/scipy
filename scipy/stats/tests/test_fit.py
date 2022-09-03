@@ -563,3 +563,13 @@ class TestFit:
 
         res = stats.fit(dist, data, bounds, guess=params, optimizer=self.opt)
         assert_allclose(res.params, params, **self.tols)
+
+
+class TestFitResult:
+    def test_plot_iv(self):
+        data = stats.norm.rvs(0, 1, size=100)  # random state doesn't matter
+        bounds = [(0, 30), (0, 1)]
+        res = stats.fit(stats.norm, data, bounds)
+        message = r"`plot_type` must be one of \{'histogram',..."
+        with pytest.raises(ValueError, match=message):
+            res.plot(plot_type='llama')
