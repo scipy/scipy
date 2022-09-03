@@ -570,6 +570,12 @@ class TestFitResult:
         data = stats.norm.rvs(0, 1, size=100)  # random state doesn't matter
         bounds = [(0, 30), (0, 1)]
         res = stats.fit(stats.norm, data, bounds)
-        message = r"`plot_type` must be one of \{'..."
-        with pytest.raises(ValueError, match=message):
-            res.plot(plot_type='llama')
+        try:
+            import matplotlib  # noqa
+            message = r"`plot_type` must be one of \{'..."
+            with pytest.raises(ValueError, match=message):
+                res.plot(plot_type='llama')
+        except (ModuleNotFoundError, ImportError):
+            message = r"matplotlib must be installed to use method `plot`."
+            with pytest.raises(ModuleNotFoundError, match=message):
+                res.plot(plot_type='llama')

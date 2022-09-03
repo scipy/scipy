@@ -145,7 +145,7 @@ class FitResult:
             import matplotlib  # noqa
         except ModuleNotFoundError as exc:
             message = "matplotlib must be installed to use method `plot`."
-            raise ValueError(message) from exc
+            raise ModuleNotFoundError(message) from exc
 
         plots = {'histogram': self._hist_plot, 'qq': self._qq_plot,
                  'pp': self._pp_plot}
