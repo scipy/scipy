@@ -6446,7 +6446,7 @@ add_newdoc("i1",
 
     >>> from scipy.special import i1
     >>> i1(1.)
-    0.46575960759364043
+    0.5651591039924851
 
     Calculate the function at several points:
 
