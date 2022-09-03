@@ -11,10 +11,6 @@ project(
     'buildtype=debugoptimized',
     'c_std=c99',
     'cpp_std=c++14',
-    # TODO: the below -Wno flags are all needed to silence warnings in
-    # f2py-generated code. This should be fixed in f2py itself.
-    'c_args=-Wno-unused-function -Wno-conversion -Wno-misleading-indentation -Wno-incompatible-pointer-types',
-    'fortran_args=-Wno-conversion',
     'fortran_std=legacy',
     'blas=openblas',
     'lapack=openblas'
@@ -36,11 +32,16 @@ elif cc.get_id() == 'msvc'
   endif
 endif
 
-# This argument is called -Wno-unused-but-set-variable by GCC, however Clang
-# doesn't recognize that.
-if cc.has_argument('-Wno-unused-but-set-variable')
-  add_global_arguments('-Wno-unused-but-set-variable', language : 'c')
-endif
+# TODO: the below -Wno flags are all needed to silence warnings in
+# f2py-generated code. This should be fixed in f2py itself.
+_global_c_args = cc.get_supported_arguments(
+  '-Wno-unused-but-set-variable',
+  '-Wno-unused-function',
+  '-Wno-conversion',
+  '-Wno-misleading-indentation',
+  '-Wno-incompatible-pointer-types',
+)
+add_project_arguments(_global_c_args, language : 'c')
 
 # We need -lm for all C code (assuming it uses math functions, which is safe to
 # assume for SciPy). For C++ it isn't needed, because libstdc++/libc++ is
@@ -52,6 +53,10 @@ endif
 
 # Adding at project level causes many spurious -lgfortran flags.
 add_languages('fortran', native: false)
+ff = meson.get_compiler('fortran')
+if ff.has_argument('-Wno-conversion')
+  add_project_arguments('-Wno-conversion', language: 'fortran')
+endif
 
 cython = find_program('cython')
 pythran = find_program('pythran')
