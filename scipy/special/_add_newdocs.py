@@ -7049,8 +7049,20 @@ add_newdoc("j1",
 
     Examples
     --------
-    >>> import numpy as np
+    Calculate the function at one point:
+
     >>> from scipy.special import j1
+    >>> j1(1.)
+    0.44005058574493355
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> j1(np.array([-2., 0., 4.])
+    array([-0.57672481,  0.        , -0.06604333])
+
+    Plot the function from -20 to 20.
+
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-20., 20., 1000)
     >>> y = j1(x)
