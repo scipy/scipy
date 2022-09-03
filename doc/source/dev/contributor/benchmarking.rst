@@ -92,9 +92,9 @@ submitting a pull request.
 To run all benchmarks, navigate to the root SciPy directory at the
 command line and execute::
 
-   python dev.py --bench
+   python dev.py bench
 
-where ``--bench`` activates the benchmark suite instead of the test
+where ``bench`` activates the benchmark suite instead of the test
 suite. This builds SciPy and runs the benchmarks. (*Note: this could
 take a while. Benchmarks often take longer to run than unit tests, and
 each benchmark is run multiple times to measure the distribution in
@@ -104,17 +104,17 @@ To run benchmarks from a particular benchmark module, such as
 ``optimize_linprog.py``, simply append the filename without the
 extension::
 
-   python dev.py --bench optimize_linprog
+   python dev.py bench -t optimize_linprog
 
 To run a benchmark defined in a class, such as ``KleeMinty`` from
 ``optimize_linprog.py``::
 
-   python dev.py --bench optimize_linprog.KleeMinty
+   python dev.py bench -t optimize_linprog.KleeMinty
 
 To compare benchmark results between the active branch and another, such
 as ``main``::
 
-   python dev.py --bench-compare main optimize_linprog.KleeMinty
+python dev.py bench -t main
 
 All of the commands above display the results in plain text in the
 console, and the results are not saved for comparison with future

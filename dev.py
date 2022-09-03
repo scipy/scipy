@@ -839,7 +839,7 @@ class Bench(Task):
 
     @classmethod
     def run(cls, **kwargs):
-        """run benchamark"""
+        """run benchmark"""
         kwargs.update(cls.ctx.get())
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
