@@ -6306,7 +6306,7 @@ add_newdoc("i0",
     Calculate at several points:
 
     >>> import numpy as np
-    >>> i0(np.array([-2., 0., 3.5])
+    >>> i0(np.array([-2., 0., 3.5]))
     array([2.2795853 , 1.        , 7.37820343])
 
     Plot the function from -10 to 10.
@@ -6372,7 +6372,7 @@ add_newdoc("i0e",
     Calculate the function at several points:
 
     >>> import numpy as np
-    >>> i0e(np.array([-2., 0., 3.])
+    >>> i0e(np.array([-2., 0., 3.]))
     array([0.30850832, 1.        , 0.24300035])
 
     Plot the function from -10 to 10.
@@ -6451,7 +6451,7 @@ add_newdoc("i1",
     Calculate the function at several points:
 
     >>> import numpy as np
-    >>> i1(np.array([-2., 0., 6.])
+    >>> i1(np.array([-2., 0., 6.]))
     array([-1.59063685,  0.        , 61.34193678])
 
     Plot the function between -10 and 10.
@@ -6517,7 +6517,7 @@ add_newdoc("i1e",
     Calculate the function at several points:
 
     >>> import numpy as np
-    >>> i1e(np.array([-2., 0., 6.])
+    >>> i1e(np.array([-2., 0., 6.]))
     array([-0.21526929,  0.        ,  0.15205146])
 
     Plot the function between -10 and 10.
@@ -6995,7 +6995,7 @@ add_newdoc("j0",
     Calculate the function at several points:
 
     >>> import numpy as np
-    >>> j0(np.array([-2., 0., 4.])
+    >>> j0(np.array([-2., 0., 4.]))
     array([ 0.22389078,  1.        , -0.39714981])
 
     Plot the function from -20 to 20.
@@ -7058,7 +7058,7 @@ add_newdoc("j1",
     Calculate the function at several points:
 
     >>> import numpy as np
-    >>> j1(np.array([-2., 0., 4.])
+    >>> j1(np.array([-2., 0., 4.]))
     array([-0.57672481,  0.        , -0.06604333])
 
     Plot the function from -20 to 20.
@@ -7258,7 +7258,7 @@ add_newdoc("k0",
     Calculate the function at several points:
 
     >>> import numpy as np
-    >>> k0(np.array([0.5, 2., 3.])
+    >>> k0(np.array([0.5, 2., 3.]))
     array([0.92441907, 0.11389387, 0.0347395 ])
 
     Plot the function from 0 to 10.
@@ -7322,7 +7322,7 @@ add_newdoc("k0e",
     Calculate the function at several points:
 
     >>> import numpy as np
-    >>> k0e(np.array([0.5, 2., 3.])
+    >>> k0e(np.array([0.5, 2., 3.]))
     array([1.52410939, 0.84156822, 0.6977616 ])
 
     Plot the function from 0 to 10.
@@ -7393,7 +7393,7 @@ add_newdoc("k1",
     Calculate the function at several points:
 
     >>> import numpy as np
-    >>> k1(np.array([0.5, 2., 3.])
+    >>> k1(np.array([0.5, 2., 3.]))
     array([1.65644112, 0.13986588, 0.04015643])
 
     Plot the function from 0 to 10.
@@ -7457,7 +7457,7 @@ add_newdoc("k1e",
     Calculate the function at several points:
 
     >>> import numpy as np
-    >>> k1e(np.array([0.5, 2., 3.])
+    >>> k1e(np.array([0.5, 2., 3.]))
     array([2.73100971, 1.03347685, 0.80656348])
 
     Plot the function from 0 to 10.
@@ -11368,7 +11368,7 @@ add_newdoc("y0",
     Calculate at several points:
 
     >>> import numpy as np
-    >>> y0(np.array([0.5, 2., 3.])
+    >>> y0(np.array([0.5, 2., 3.]))
     array([-0.44451873,  0.51037567,  0.37685001])
 
     Plot the function from 0 to 10.
@@ -11432,7 +11432,7 @@ add_newdoc("y1",
     Calculate at several points:
 
     >>> import numpy as np
-    >>> y1(np.array([0.5, 2., 3.])
+    >>> y1(np.array([0.5, 2., 3.]))
     array([-1.47147239, -0.10703243,  0.32467442])
 
     Plot the function from 0 to 10.
