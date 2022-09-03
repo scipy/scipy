@@ -340,7 +340,6 @@ def _mode(a, axis=0, keepdims=True):
     else:
         output = ma.apply_along_axis(_mode1D, axis, a)
         if keepdims is None or keepdims:
-            np.moveaxis(a, -1, axis)
             newshape = list(a.shape)
             newshape[axis] = 1
             slices = [slice(None)] * output.ndim
