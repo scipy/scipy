@@ -104,8 +104,8 @@ stages:
         git submodule update --init
       displayName: 'Fetch submodules'
     - script: |
-        python -m pip install --upgrade pip "setuptools==59.6.0" wheel
-      displayName: 'Install tools'
+        python -m pip install --upgrade pip
+      displayName: 'Upgrade pip'
     - powershell: |
         $pyversion = python -c "import sys; print(sys.version.split()[0])"
         Write-Host "Python Version: $pyversion"
@@ -135,33 +135,26 @@ stages:
       displayName: 'clang-cl version'
     - script: >-
         python -m pip install
-        cython==0.29.32
-        build
-        matplotlib
         numpy==1.23.2
-        pybind11
-        pythran==0.11.0
         pytest
         pytest-env
         pytest-timeout
         pytest-xdist
         threadpoolctl
         pooch
-      displayName: 'Install dependencies'
+      displayName: 'Install test dependencies'
     - powershell: |
         # The below lines ensure exit status of every line in this step is checked
         Set-StrictMode -Version Latest
         $global:erroractionpreference = 1
 
-        python -m build --no-isolation --skip-dependency-check .
-        ls dist -r | Foreach-Object {
-            pip install $_.FullName
-        }
+        # Use build isolation; tests all dependencies in pyproject.toml
+        python -m pip install .
       displayName: 'Build SciPy'
     - powershell: |
         cd ..
         python -c "import scipy; scipy.test()"
-      displayName: 'Run SciPy Test Suite'
+      displayName: 'Test SciPy'
     - task: PublishTestResults@2
       condition: succeededOrFailed()
       inputs:
