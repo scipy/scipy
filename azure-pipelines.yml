@@ -21,7 +21,6 @@ pr:
 # the version of OpenBLAS used is currently 0.3.18
 # and should be updated to match scipy-wheels as appropriate
 variables:
-    openblas_version: 0.3.18
     CCACHE_DIR: $(Pipeline.Workspace)/ccache
     SCIPY_AVAILABLE_MEM: 3G
     CCACHE_COMPRESS: 1
@@ -61,9 +60,7 @@ stages:
     pool:
       vmImage: 'windows-2019'
     variables:
-      # OPENBLAS64_ variable has same value
-      # but only needed for ILP64 build below
-      OPENBLAS: '$(Agent.HomeDirectory)\openblaslib'
+      PKG_CONFIG_PATH: 'c:\opt\openblas\if_32\64\lib\pkgconfig'
     strategy:
       maxParallel: 1
       matrix:
@@ -106,25 +103,6 @@ stages:
     - script: |
         python -m pip install --upgrade pip
       displayName: 'Upgrade pip'
-    - powershell: |
-        $pyversion = python -c "import sys; print(sys.version.split()[0])"
-        Write-Host "Python Version: $pyversion"
-        function Download-OpenBLAS($ilp64) {
-            if ($ilp64 -eq '1') { $target_name = "openblas64_.a" } else { $target_name = "openblas.a" }
-            $target = "$(OPENBLAS)\$target_name"
-            Write-Host "target path: $target"
-            $old_value = $env:NPY_USE_BLAS_ILP64
-            $env:NPY_USE_BLAS_ILP64 = $ilp64
-            $openblas = python tools/openblas_support.py
-            $env:NPY_USE_BLAS_ILP64 = $old_value
-            cp $openblas $target
-        }
-        mkdir $(OPENBLAS)
-        Download-OpenBLAS('0')
-        If ($env:NPY_USE_BLAS_ILP64 -eq '1') {
-            Download-OpenBLAS('1')
-        }
-      displayName: 'Download / Install OpenBLAS'
     - script: |
         choco install -y llvm
         set PATH=C:\Program Files\LLVM\bin;%PATH%
@@ -133,6 +111,13 @@ stages:
     - script: |
         clang-cl.exe --version
       displayName: 'clang-cl version'
+    - script: |
+        choco install -y pkgconfiglite
+        choco install -y unzip
+        choco install -y wget
+        wget https://github.com/scipy/scipy-ci-artifacts/raw/main/openblas_32_if.zip
+        unzip -d c:\ openblas_32_if.zip
+      displayName: 'install pkg-config and OpenBLAS'
     - script: >-
         python -m pip install
         numpy==1.23.2
@@ -144,10 +129,6 @@ stages:
         pooch
       displayName: 'Install test dependencies'
     - powershell: |
-        # The below lines ensure exit status of every line in this step is checked
-        Set-StrictMode -Version Latest
-        $global:erroractionpreference = 1
-
         # Use build isolation; tests all dependencies in pyproject.toml
         python -m pip install .
       displayName: 'Build SciPy'
