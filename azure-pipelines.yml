@@ -136,6 +136,7 @@ stages:
     - script: >-
         python -m pip install
         cython==0.29.32
+        build
         matplotlib
         numpy==1.23.2
         pybind11
