@@ -26,7 +26,7 @@ if cc.get_id() == 'gcc'
     error('SciPy requires GCC >= 8.0')
   endif
 elif cc.get_id() == 'msvc'
-  if not cc.version().version_compare('>=1920')
+  if not cc.version().version_compare('>=19.20')
     error('SciPy requires at least vc142 (default with Visual Studio 2019) ' + \
           'when building with MSVC')
   endif
