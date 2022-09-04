@@ -52,6 +52,14 @@ if ff.has_argument('-Wno-conversion')
   add_project_arguments('-Wno-conversion', language: 'fortran')
 endif
 
+is_windows = host_machine.system() == 'windows'
+
+# Intel Fortran on Windows does things differently, so deal with that
+if is_windows and ff.get_id() == 'intel-cl'
+  _ifort_flags = ff.get_supported_arguments('/MD', '/names:lowercase', '/assume:underscore')
+  add_project_arguments(_ifort_flags, language: 'fortran')
+endif
+
 cython = find_program('cython')
 pythran = find_program('pythran')
 generate_f2pymod = files('tools/generate_f2pymod.py')

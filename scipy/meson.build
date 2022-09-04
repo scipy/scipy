@@ -1,5 +1,4 @@
 # Platform detection
-is_windows = host_machine.system() == 'windows'
 is_mingw = is_windows and cc.get_id() == 'gcc'
 
 cython_c_args = []
