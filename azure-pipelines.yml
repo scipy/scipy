@@ -27,6 +27,8 @@ variables:
     CCACHE_COMPRESS: 1
     # Using a single thread can actually speed up some computations
     OPENBLAS_NUM_THREADS: 1
+    WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/18680/w_HPCKit_p_2022.2.0.173_offline.exe
+    WINDOWS_FORTRAN_COMPONENTS: intel.oneapi.win.ifort-compiler
 
 stages:
 
@@ -52,6 +54,7 @@ stages:
   dependsOn: Check
   variables:
     AZURE_CI: 'true'
+  jobs:
   - job: Windows
     timeoutInMinutes: 90
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
@@ -65,12 +68,33 @@ stages:
       maxParallel: 1
       matrix:
           Python39-64bit-fast:
+            ifort: true
             PYTHON_VERSION: '3.9'
             PYTHON_ARCH: 'x64'
             TEST_MODE: fast
             BITS: 64
             SCIPY_USE_PYTHRAN: 0
     steps:
+    - task: Cache@2
+      inputs:
+        path: C:\Program Files (x86)\Intel\oneAPI
+        key: '"install" | "$(WINDOWS_HPCKIT_URL)" | "$(WINDOWS_FORTRAN_COMPONENTS)" | "compiler" | ci/intel-oneapi/cache_exclude_windows.sh'
+        cacheHitVar: CACHE_RESTORED
+      condition: eq(variables.ifort, 'true')
+    - script: ci/intel-oneapi/install_windows.bat $(WINDOWS_HPCKIT_URL) $(WINDOWS_FORTRAN_COMPONENTS)
+      displayName: install ifort
+      condition: and(ne(variables.CACHE_RESTORED, 'true'), eq(variables.ifort, 'true'))
+    - bash: ci/intel-oneapi/cache_exclude_windows.sh
+      displayName: exclude unused files from cache
+      condition: and(ne(variables.CACHE_RESTORED, 'true'), eq(variables.ifort, 'true'))
+    - task: BatchScript@1
+      displayName: insert ifort into environment
+      inputs:
+        filename: ci/intel-oneapi/activate_windows.bat
+        arguments: vs2019
+        modifyEnvironment: True
+      condition: eq(variables.ifort, 'true')
+
     - task: UsePythonVersion@0
       inputs:
         versionSpec: $(PYTHON_VERSION)
