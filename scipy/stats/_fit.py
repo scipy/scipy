@@ -573,32 +573,6 @@ GoodnessOfFitResult = namedtuple('GoodnessOfFitResult',
                                   'null_distribution'))
 
 
-def _anderson_darling(dist, data):
-    x = np.sort(data, axis=-1)
-    n = data.shape[-1]
-    i = np.arange(1, n+1)
-    Si = (2*i - 1)/n * (dist.logcdf(x) + dist.logsf(x[..., ::-1]))
-    S = np.sum(Si, axis=-1)
-    return -n - S
-
-
-def _kolmogorov_smirnov(dist, data):
-    x = np.sort(data, axis=-1)
-    cdfvals = dist.cdf(x)
-    Dplus = _stats_py._compute_dplus(cdfvals, axis=-1)
-    Dminus = _stats_py._compute_dminus(cdfvals, axis=-1)
-    return np.maximum(Dplus, Dminus)
-
-
-def _cramer_von_mises(dist, data):
-    x = np.sort(data, axis=-1)
-    n = data.shape[-1]
-    cdfvals = dist.cdf(x)
-    u = (2*np.arange(1, n+1) - 1)/(2*n)
-    w = 1 / (12*n) + np.sum((u - cdfvals)**2, axis=-1)
-    return w
-
-
 def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                     guessed_params=None, statistic='ad', fit_method='mle',
                     n_resamples=9999, random_state=None):
@@ -771,52 +745,19 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
      guessed_rfd_params, statistic, fit_method, n_resamples_int,
      random_state) = args
 
-    shape_names = [] if dist.shapes is None else dist.shapes.split(", ")
-    param_names = shape_names + ['loc', 'scale']
-    fparam_names = ['f'+name for name in param_names]
-    all_nhd_fixed = not set(fparam_names).difference(fixed_nhd_params)
-    all_rfd_fixed = not set(fparam_names).difference(fixed_rfd_params)
-    guessed_nhd_shapes = [guessed_nhd_params.pop(x, None)
-                          for x in shape_names if x in guessed_nhd_params]
-    guessed_rfd_shapes = [guessed_rfd_params.pop(x, None)
-                          for x in shape_names if x in guessed_rfd_params]
-
-    # Todo: these should use fit function defined below to do fit
-    # Fit `dist` to data to get null-hypothesized distribution
-    if all_nhd_fixed:
-        nhd_vals = [fixed_nhd_params[name] for name in fparam_names]
-    else:
-        nhd_vals = dist.fit(data, *guessed_nhd_shapes, **guessed_nhd_params,
-                            **fixed_nhd_params, method=fit_method)
+    # Fit null hypothesis distribution to data
+    nhd_fit_fun = _get_fit_fun(dist, data, fit_method,
+                               guessed_nhd_params, fixed_nhd_params)
+    nhd_vals = nhd_fit_fun(data)
     nhd_dist = dist(*nhd_vals)
 
-    # Define statistic, including fitting distribution to data
-    fit_funs = {stats.norm: _fit_norm}
-    if dist in fit_funs:
-        def fit_fun(data):
-            params = fit_funs[dist](data, **fixed_rfd_params)
-            params = np.asarray(np.broadcast_arrays(*params))
-            if params.ndim > 1:
-                params = params[..., np.newaxis]
-            return params
+    def rvs(size):
+        return nhd_dist.rvs(size=size, random_state=random_state)
 
-    elif all_rfd_fixed:
-        def fit_fun(data):
-            return [fixed_rfd_params[name] for name in fparam_names]
-
-    else:
-        def _fit_fun_1d(data):
-            return dist.fit(data, *guessed_rfd_shapes, **guessed_rfd_params,
-                            **fixed_rfd_params, method=fit_method)
-        def fit_fun(data):
-            params = np.apply_along_axis(_fit_fun_1d, axis=-1, arr=data)
-            if params.ndim > 1:
-                params = params.T[..., np.newaxis]
-            return params
-
-    compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov,
-                    "cvm": _cramer_von_mises}
-    compare_fun = compare_dict[statistic]
+    # Define statistic
+    fit_fun = _get_fit_fun(dist, data, fit_method,
+                           guessed_rfd_params, fixed_rfd_params)
+    compare_fun = _compare_dict[statistic]
 
     def statistic_fun(data, axis=-1):
         # Make things simple by always working along the last axis.
@@ -825,9 +766,6 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         rfd_dist = dist(*rfd_vals)
         return compare_fun(rfd_dist, data)
 
-    def rvs(size):
-        return nhd_dist.rvs(size=size, random_state=random_state)
-
     res = stats.monte_carlo_test(data, rvs, statistic_fun, vectorized=True,
                                  n_resamples=n_resamples, axis=-1,
                                  alternative='greater')
@@ -835,12 +773,58 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     opt_res.success = True
     opt_res.message = "The fit was performed successfully."
     opt_res.x = nhd_vals
-    return GoodnessOfFitResult(FitResult(dist, data.squeeze(), False, opt_res),
+    # Only continuous distributions for now, hence discrete=False
+    # There's no fundamental limitation; it's just that we're not using
+    # stats.fit, discrete distributions don't have `fit` method, and
+    # we haven't written any vectorized fit functions for a discrete
+    # distribution yet.
+    return GoodnessOfFitResult(FitResult(dist, data, False, opt_res),
                                res.statistic, res.pvalue,
                                res.null_distribution)
 
 
-def _fit_norm(data, floc=None, fscale=None):
+def _get_fit_fun(dist, data, fit_method, guessed_params, fixed_params):
+
+    shape_names = [] if dist.shapes is None else dist.shapes.split(", ")
+    param_names = shape_names + ['loc', 'scale']
+    fparam_names = ['f'+name for name in param_names]
+    all_fixed = not set(fparam_names).difference(fixed_params)
+    guessed_shapes = [guessed_params.pop(x, None)
+                      for x in shape_names if x in guessed_params]
+
+    # Define statistic, including fitting distribution to data
+    if dist in _fit_funs:
+        def fit_fun(data):
+            params = _fit_funs[dist](data, **fixed_params,
+                                     fit_method=fit_method)
+            params = np.asarray(np.broadcast_arrays(*params))
+            if params.ndim > 1:
+                params = params[..., np.newaxis]
+            return params
+
+    elif all_fixed:
+        def fit_fun(data):
+            return [fixed_params[name] for name in fparam_names]
+
+    else:
+        def fit_fun_1d(data):
+            return dist.fit(data, *guessed_shapes, **guessed_params,
+                            **fixed_params, method=fit_method)
+
+        def fit_fun(data):
+            params = np.apply_along_axis(fit_fun_1d, axis=-1, arr=data)
+            if params.ndim > 1:
+                params = params.T[..., np.newaxis]
+            return params
+
+    return fit_fun
+
+
+# Vectorized fitting functions. These are to accept ND `data` in which each
+# row (slice along last axis) is a sample to fit, scalar fixed parameters,
+# and `fit_method`. They return a tuple of shape parameter arrays, each of
+# shape data.shape[:-1].
+def _fit_norm(data, floc=None, fscale=None, fit_method="mle"):
     loc = floc
     scale = fscale
     if loc is None and scale is None:
@@ -851,6 +835,44 @@ def _fit_norm(data, floc=None, fscale=None):
     elif scale is None:
         scale = np.sqrt(((data - loc)**2).mean(axis=-1))
     return loc, scale
+
+
+_fit_funs = {stats.norm: _fit_norm}
+
+
+# Vectorized goodness of fit statistic functions. These accept a frozen
+# distribution object and `data` in which each row (slice along last axis) is
+# a sample.
+
+
+def _anderson_darling(dist, data):
+    x = np.sort(data, axis=-1)
+    n = data.shape[-1]
+    i = np.arange(1, n+1)
+    Si = (2*i - 1)/n * (dist.logcdf(x) + dist.logsf(x[..., ::-1]))
+    S = np.sum(Si, axis=-1)
+    return -n - S
+
+
+def _kolmogorov_smirnov(dist, data):
+    x = np.sort(data, axis=-1)
+    cdfvals = dist.cdf(x)
+    Dplus = _stats_py._compute_dplus(cdfvals, axis=-1)
+    Dminus = _stats_py._compute_dminus(cdfvals, axis=-1)
+    return np.maximum(Dplus, Dminus)
+
+
+def _cramer_von_mises(dist, data):
+    x = np.sort(data, axis=-1)
+    n = data.shape[-1]
+    cdfvals = dist.cdf(x)
+    u = (2*np.arange(1, n+1) - 1)/(2*n)
+    w = 1 / (12*n) + np.sum((u - cdfvals)**2, axis=-1)
+    return w
+
+
+_compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov,
+                 "cvm": _cramer_von_mises}
 
 
 def gof_iv(dist, data, known_params, fit_params, guessed_params,
