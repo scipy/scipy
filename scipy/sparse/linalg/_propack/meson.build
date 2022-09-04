@@ -92,6 +92,7 @@ foreach ele: elements
       fortran_ignore_warnings, 
       _fflag_Wno_intrinsic_shadow,
       _fflag_Wno_uninitialized,
+      _fflag_fpp,
     ],
   )
 

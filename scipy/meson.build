@@ -293,6 +293,17 @@ fortran_ignore_warnings = ff.get_supported_arguments(
  _fflag_Wno_tabs,
 )
 
+# Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
+# code uses preprocessor statements, add this compile flag to it.
+_fflag_fpp = []
+if ff.get_id() == 'intel-cl'
+  if is_windows
+    _fflag_fpp = ff.get_supported_arguments('/fpp')
+  else
+    _fflag_fpp = ff.get_supported_arguments('-fpp')
+  endif
+endif
+
 # Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
 # Cython doesn't always get this right itself (see, e.g., gh-16800), so
 # explicitly add the define as a compiler flag for Cython-generated code.
