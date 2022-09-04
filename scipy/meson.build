@@ -306,7 +306,7 @@ endif
 # Suppress warning for deprecated Numpy API.
 # (Suppress warning messages emitted by #warning directives).
 # Replace with numpy_nodepr_api after Cython 3.0 is out
-cython_c_args += ['-Wno-cpp', use_math_defines]
+cython_c_args += [_cpp_Wno_cpp, use_math_defines]
 cython_cpp_args = cython_c_args
 
 # Ordering of subdirs: special and linalg come first, because other submodules
