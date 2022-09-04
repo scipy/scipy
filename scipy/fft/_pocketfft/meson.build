@@ -7,8 +7,14 @@ pocketfft_threads = []
 fft_deps = []
 if not win_gcc
   if thread_dep.found()
-    pocketfft_threads += ['-DPOCKETFFT_PTHREADS']
     fft_deps += [thread_dep]
+    if not is_windows
+      # `pthreads` probably not installed, and native threading is always
+      # available. Not easy to distinguish this better, Meson builtin
+      # functionality for that in progress (see comment on gh-16957).
+      # The code on `pocketfft_hdronly.h` will include `<threads>` anyway.
+      pocketfft_threads += ['-DPOCKETFFT_PTHREADS']
+    endif
   endif
 else
   # Freezes using threading for mingw-w64 gcc:
