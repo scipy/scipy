@@ -573,25 +573,25 @@ GoodnessOfFitResult = namedtuple('GoodnessOfFitResult',
                                   'null_distribution'))
 
 
-def _anderson_darling(dist, data, axis=-1):
-    x = np.sort(data, axis=axis)
+def _anderson_darling(dist, data):
+    x = np.sort(data, axis=-1)
     n = data.shape[-1]
     i = np.arange(1, n+1)
     Si = (2*i - 1)/n * (dist.logcdf(x) + dist.logsf(x[..., ::-1]))
-    S = np.sum(Si, axis=axis)
+    S = np.sum(Si, axis=-1)
     return -n - S
 
 
-def _kolmogorov_smirnov(dist, data, axis=-1):
-    x = np.sort(data, axis=axis)
+def _kolmogorov_smirnov(dist, data):
+    x = np.sort(data, axis=-1)
     cdfvals = dist.cdf(x)
     Dplus = _stats_py._compute_dplus(cdfvals, axis=-1)
     Dminus = _stats_py._compute_dminus(cdfvals, axis=-1)
     return np.maximum(Dplus, Dminus)
 
 
-def _cramer_von_mises(dist, data, axis=-1):
-    x = np.sort(data, axis=axis)
+def _cramer_von_mises(dist, data):
+    x = np.sort(data, axis=-1)
     n = data.shape[-1]
     cdfvals = dist.cdf(x)
     u = (2*np.arange(1, n+1) - 1)/(2*n)
@@ -768,8 +768,8 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     args = gof_iv(dist, data, known_params, fit_params, guessed_params,
                   statistic, fit_method, n_resamples, random_state)
     (dist, data, fixed_nhd_params, fixed_rfd_params, guessed_nhd_params,
-            guessed_rfd_params, statistic, fit_method, n_resamples_int,
-            random_state) = args
+     guessed_rfd_params, statistic, fit_method, n_resamples_int,
+     random_state) = args
 
     shape_names = [] if dist.shapes is None else dist.shapes.split(", ")
     param_names = shape_names + ['loc', 'scale']
@@ -781,6 +781,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     guessed_rfd_shapes = [guessed_rfd_params.pop(x, None)
                           for x in shape_names if x in guessed_rfd_params]
 
+    # Todo: these should use fit function defined below to do fit
     # Fit `dist` to data to get null-hypothesized distribution
     if all_nhd_fixed:
         nhd_vals = [fixed_nhd_params[name] for name in fparam_names]
@@ -790,35 +791,66 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     nhd_dist = dist(*nhd_vals)
 
     # Define statistic, including fitting distribution to data
-    def fit_fun(data, axis=-1):
-        if all_rfd_fixed:
+    fit_funs = {stats.norm: _fit_norm}
+    if dist in fit_funs:
+        def fit_fun(data):
+            params = fit_funs[dist](data, **fixed_rfd_params)
+            params = np.asarray(np.broadcast_arrays(*params))
+            if params.ndim > 1:
+                params = params[..., np.newaxis]
+            return params
+
+    elif all_rfd_fixed:
+        def fit_fun(data):
             return [fixed_rfd_params[name] for name in fparam_names]
-        assert data.ndim == 1
-        return dist.fit(data, *guessed_rfd_shapes, **guessed_rfd_params,
-                        **fixed_rfd_params, method=fit_method)
+
+    else:
+        def _fit_fun_1d(data):
+            return dist.fit(data, *guessed_rfd_shapes, **guessed_rfd_params,
+                            **fixed_rfd_params, method=fit_method)
+        def fit_fun(data):
+            params = np.apply_along_axis(_fit_fun_1d, axis=-1, arr=data)
+            if params.ndim > 1:
+                params = params.T[..., np.newaxis]
+            return params
 
     compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov,
                     "cvm": _cramer_von_mises}
     compare_fun = compare_dict[statistic]
 
     def statistic_fun(data, axis=-1):
-        rfd_vals = fit_fun(data, axis)
+        # Make things simple by always working along the last axis.
+        data = np.moveaxis(data, axis, -1)
+        rfd_vals = fit_fun(data)
         rfd_dist = dist(*rfd_vals)
-        return compare_fun(rfd_dist, data, axis)
+        return compare_fun(rfd_dist, data)
 
     def rvs(size):
         return nhd_dist.rvs(size=size, random_state=random_state)
 
-    res = stats.monte_carlo_test(data, rvs, statistic_fun,
-                                 vectorized=all_rfd_fixed,
+    res = stats.monte_carlo_test(data, rvs, statistic_fun, vectorized=True,
                                  n_resamples=n_resamples, axis=-1,
                                  alternative='greater')
     opt_res = optimize.OptimizeResult()
     opt_res.success = True
     opt_res.message = "The fit was performed successfully."
     opt_res.x = nhd_vals
-    return GoodnessOfFitResult(FitResult(dist, data, False, opt_res),
-                               res.statistic, res.pvalue, res.null_distribution)
+    return GoodnessOfFitResult(FitResult(dist, data.squeeze(), False, opt_res),
+                               res.statistic, res.pvalue,
+                               res.null_distribution)
+
+
+def _fit_norm(data, floc=None, fscale=None):
+    loc = floc
+    scale = fscale
+    if loc is None and scale is None:
+        loc = np.mean(data, axis=-1)
+        scale = np.std(data, ddof=1, axis=-1)
+    elif loc is None:
+        loc = np.mean(data, axis=-1)
+    elif scale is None:
+        scale = np.sqrt(((data - loc)**2).mean(axis=-1))
+    return loc, scale
 
 
 def gof_iv(dist, data, known_params, fit_params, guessed_params,
