@@ -121,7 +121,7 @@ def crosstab(*args, levels=None, sparse=False):
     If `levels` is given, but an element of `levels` is None, the unique values
     of the corresponding argument are used. For example,
 
-    >>> res.count = crosstab(q1, q2, levels=(None, options))
+    >>> res = crosstab(q1, q2, levels=(None, options))
     >>> res.elements
     [array([2, 3, 4]), [1, 2, 3, 4]]
     >>> res.count
