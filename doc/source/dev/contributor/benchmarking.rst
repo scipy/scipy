@@ -114,7 +114,7 @@ To run a benchmark defined in a class, such as ``KleeMinty`` from
 To compare benchmark results between the active branch and another, such
 as ``main``::
 
-python dev.py bench --compare main  # select again by `-t optimize_linprog`
+   python dev.py bench --compare main  # select again by `-t optimize_linprog`
 
 All of the commands above display the results in plain text in the
 console, and the results are not saved for comparison with future
