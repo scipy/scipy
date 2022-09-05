@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
-from scipy.linalg import hilbert, svd, null_space
+from scipy.linalg import svd, null_space
 from scipy.sparse import csc_matrix, isspmatrix, spdiags, random
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 if os.environ.get("SCIPY_USE_PROPACK"):
@@ -447,7 +447,7 @@ class SVDSCommonTests:
         if self.solver == 'propack':
             if not has_propack:
                 pytest.skip("PROPACK not available")
-        A = hilbert(6)
+        A = np.diag(np.arange(9))
         k = 1
         u, s, vh = sorted_svd(A, k)
 
