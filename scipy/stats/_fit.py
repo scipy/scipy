@@ -572,6 +572,8 @@ GoodnessOfFitResult = namedtuple('GoodnessOfFitResult',
                                  ('fit_result', 'statistic', 'pvalue',
                                   'null_distribution'))
 
+# TODO: add test for distributions other than norm
+# TODO: add other goodness of fit statistics?
 
 def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                     guessed_params=None, statistic='ad', fit_method='mle',

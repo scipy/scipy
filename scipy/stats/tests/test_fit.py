@@ -617,7 +617,6 @@ class TestGoodnessOfFit:
         assert_allclose(res.statistic, ref.statistic)  # ~0.0848
         assert_allclose(res.pvalue, ref.pvalue, atol=5e-3)  # ~0.335
 
-    @pytest.mark.slow()
     def test_against_lilliefors(self):
         rng = np.random.default_rng(2291803665717442724)
         x = examgrades
@@ -648,7 +647,6 @@ class TestGoodnessOfFit:
         assert_allclose(res.statistic, 2.492)  # See [1] Table 1A 1.0
         assert_allclose(res.pvalue, 0.05, atol=5e-3)
 
-    @pytest.mark.slow()
     def test_against_anderson_case_1(self):
         # "Case 1" is where scale is known and loc is fit [1]
         rng = np.random.default_rng(5040212485680146248)
@@ -660,7 +658,6 @@ class TestGoodnessOfFit:
         assert_allclose(res.statistic, 0.908)  # See [1] Table 1B 1.1
         assert_allclose(res.pvalue, 0.1, atol=5e-3)
 
-    @pytest.mark.slow()
     def test_against_anderson_case_2(self):
         # "Case 2" is where loc is known and scale is fit [1]
         rng = np.random.default_rng(726693985720914083)
@@ -672,7 +669,6 @@ class TestGoodnessOfFit:
         assert_allclose(res.statistic, 2.904)  # See [1] Table 1B 1.2
         assert_allclose(res.pvalue, 0.025, atol=5e-3)
 
-    @pytest.mark.slow()
     def test_against_anderson_case_3(self):
         # "Case 3" is where both loc and scale are fit [1]
         rng = np.random.default_rng(6763691329830218206)
@@ -681,12 +677,23 @@ class TestGoodnessOfFit:
                                random_state=rng)
         res = goodness_of_fit(stats.norm, x, statistic='ad', random_state=rng)
         assert_allclose(res.statistic, 0.559)  # See [1] Table 1B 1.2
-        # note that our critical value for a given significance level is
-        # expected to be a bit different because we are using strict MLE
-        # whereas [1] fits variance w/ using unbiased estimate.
         assert_allclose(res.pvalue, 0.15, atol=5e-3)
 
+    @pytest.mark.slow
+    def test_against_anderson_gumbel_r(self):
+        rng = np.random.default_rng(7302761058217743)
+        # c that produced critical value of statistic found w/ root_scalar
+        x = stats.genextreme(0.051896837188595134, loc=0.5,
+                             scale=1.5).rvs(size=1000, random_state=rng)
+        res = goodness_of_fit(stats.gumbel_r, x, statistic='ad',
+                              random_state=rng)
+        ref = stats.anderson(x, dist='gumbel_r')
+        assert_allclose(res.statistic, ref.critical_values[0])
+        assert_allclose(res.pvalue, ref.significance_level[0]/100, atol=5e-3)
+
     def test_params_effects(self):
+        # Ensure that `guessed_params`, `fit_params`, and `known_params` have
+        # the intended effects.
         rng = np.random.default_rng(9121950977643805391)
         x = stats.skewnorm.rvs(-5.044559778383153, loc=1, scale=2, size=50,
                                random_state=rng)
