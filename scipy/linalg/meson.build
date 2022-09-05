@@ -77,15 +77,11 @@ flapack_module = custom_target('flapack_module',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
+# Note that -Wno-empty-body is Clang-specific and comes from `callstatement`s
+# in flapack_other.pyf.src
 py3.extension_module('_flapack',
-  [
-    flapack_module,
-    g77_abi_wrappers,
-  ],
-  c_args: [
-    numpy_nodepr_api,
-    '-Wno-empty-body',  # comes from `callstatement`s in flapack_other.pyf.src
-  ],
+  [flapack_module, g77_abi_wrappers],
+  c_args: [numpy_nodepr_api, Wno_empty_body],
   include_directories: [inc_np, inc_f2py],
   dependencies: [lapack, fortranobject_dep],
   install: true,
@@ -118,6 +114,11 @@ interpolative_module = custom_target('interpolative_module',
   input: 'interpolative.pyf',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
+
+# id_dist contains a copy of FFTPACK, which has type mismatch warnings
+# that are hard to fix. This code is terrible and noisy during the build,
+# silence it completely.
+_suppress_all_warnings = ff.get_supported_arguments('-w')
 
 py3.extension_module('_interpolative',
   [
@@ -160,10 +161,7 @@ py3.extension_module('_interpolative',
     interpolative_module,
   ],
   c_args: numpy_nodepr_api,
-  fortran_args: [
-    '-Wno-tabs', '-Wno-conversion', '-Wno-argument-mismatch',
-    '-Wno-unused-dummy-argument', '-Wno-maybe-uninitialized'
-  ],
+  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
   include_directories: [inc_np, inc_f2py],
   dependencies: [lapack, fortranobject_dep],
   install: true,
@@ -260,7 +258,7 @@ py3.extension_module('_matfuncs_expm',
 
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   linalg_init_utils_cython_gen.process('_cythonized_array_utils.pyx'),
-  c_args: [cython_c_args, c_undefined_ok],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: [inc_np],
   install: true,
   subdir: 'scipy/linalg'

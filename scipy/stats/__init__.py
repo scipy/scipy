@@ -86,6 +86,7 @@ Continuous distributions
    genhyperbolic     -- Generalized Hyperbolic
    geninvgauss       -- Generalized Inverse Gaussian
    gibrat            -- Gibrat
+   gilbrat           -- Gilbrat
    gompertz          -- Gompertz (Truncated Gumbel)
    gumbel_r          -- Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
    gumbel_l          -- Left Sided Gumbel, etc.
@@ -428,6 +429,7 @@ Contingency table functions
    contingency.margins
    contingency.relative_risk
    contingency.association
+   contingency.odds_ratio
    fisher_exact
    barnard_exact
    boschloo_exact

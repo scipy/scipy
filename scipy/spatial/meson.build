@@ -87,7 +87,7 @@ _distance_pybind = py3.extension_module('_distance_pybind',
 
 _voronoi = py3.extension_module('_voronoi',
   [cython_gen.process('_voronoi.pyx')],
-  c_args: [cython_c_args, c_undefined_ok],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: [incdir_numpy],
   install: true,
   subdir: 'scipy/spatial'

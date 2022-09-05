@@ -22,22 +22,22 @@
     do {                                                                \
         if ((double)REAL((z)) == (double)1.0e300) {                     \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
-            REAL((z)) = NPY_INFINITY;                                   \
+            REAL((z)) = INFINITY;                                       \
         }                                                               \
         if ((double)REAL((z)) == (double)-1.0e300) {                    \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
-            REAL((z)) = -NPY_INFINITY;                                  \
+            REAL((z)) = -INFINITY;                                      \
         }                                                               \
     } while (0)
 #define CONVINF(func, x)                                                \
     do {                                                                \
         if ((double)(x) == (double)1.0e300) {                           \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
-            (x)=NPY_INFINITY;                                           \
+            (x)=INFINITY;                                               \
         }                                                               \
         if ((double)(x) == (double)-1.0e300) {                          \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
-            (x)=-NPY_INFINITY;                                          \
+            (x)=-INFINITY;                                              \
         }                                                               \
     } while (0)
 #define ABS(x) ((x)<0 ? -(x) : (x))
@@ -111,15 +111,4 @@ double oblate_segv_wrap(double, double, double);
 int modified_fresnel_plus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
 int modified_fresnel_minus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
 #endif
-
-
-
-
-  
-
-
-
-
-
-
 

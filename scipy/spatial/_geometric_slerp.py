@@ -102,6 +102,7 @@ def geometric_slerp(
     Interpolate four linearly-spaced values on the circumference of
     a circle spanning 90 degrees:
 
+    >>> import numpy as np
     >>> from scipy.spatial import geometric_slerp
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
