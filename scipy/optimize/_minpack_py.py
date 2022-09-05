@@ -8,7 +8,7 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    finfo, inexact, issubdtype, dtype)
 from scipy import linalg
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError, inv
-from scipy._lib._util import _asarray_validated, _lazywhere
+from scipy._lib._util import _asarray_validated, _lazywhere, _contains_nan
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from ._optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
@@ -568,7 +568,8 @@ def _initialize_feasible(lb, ub):
 
 def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
               check_finite=True, bounds=(-np.inf, np.inf), method=None,
-              jac=None, *, full_output=False, **kwargs):
+              jac=None, *, full_output=False, nan_policy='propagate',
+              **kwargs):
     """
     Use non-linear least squares to fit a function, f, to data.
 
@@ -659,6 +660,18 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         `mesg`, and `ier`.
 
         .. versionadded:: 1.9
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': just propagate nan values.
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
+
+        Note that if you want to use `omit` or `propagate` without the finite
+        checks, `check_finite` should be set to False.
+
+        .. versionadded:: 1.10
     **kwargs
         Keyword arguments passed to `leastsq` for ``method='lm'`` or
         `least_squares` otherwise.
@@ -869,6 +882,22 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     if ydata.size == 0:
         raise ValueError("`ydata` must not be empty!")
+
+    # nan handling is needed only if check_finite is False because if True,
+    # the x-y data are already checked, and they don't contain nans.
+    if not check_finite:
+        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy)
+        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy)
+
+        if (x_contains_nan or y_contains_nan) and nan_policy == 'omit':
+            # ignore NaNs for N dimensional arrays
+            has_nan = np.isnan(xdata)
+            for _ in range(xdata.ndim-1):
+                has_nan = has_nan.any(axis=0)
+            has_nan |= np.isnan(ydata)
+
+            xdata = xdata[..., ~has_nan]
+            ydata = ydata[~has_nan]
 
     # Determine type of sigma
     if sigma is not None:

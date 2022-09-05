@@ -551,6 +551,70 @@ class TestCurveFit:
         assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b,
                       xdata, ydata, **{"check_finite": True})
 
+    @staticmethod
+    def _check_nan_policy(f, xdata_with_nan, xdata_without_nan,
+                          ydata_with_nan, ydata_without_nan):
+        # propagate test
+        warning_msg = "Covariance of the parameters could not be estimated"
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", OptimizeWarning)
+
+            with assert_raises(OptimizeWarning, match=warning_msg):
+                curve_fit(f, xdata_with_nan, ydata_with_nan,
+                          check_finite=False, nan_policy="propagate")
+        # raise test
+        with assert_raises(ValueError, match="The input contains nan"):
+            curve_fit(f, xdata_with_nan, ydata_with_nan, check_finite=False,
+                      nan_policy="raise")
+        # omit test
+        result_with_nan, _ = curve_fit(f, xdata_with_nan, ydata_with_nan,
+                                       check_finite=False, nan_policy="omit")
+        result_without_nan, _ = curve_fit(f, xdata_without_nan,
+                                          ydata_without_nan)
+        assert_allclose(result_with_nan, result_without_nan)
+
+    def test_nan_policy_1d(self):
+        def f(x, a, b):
+            return a*x + b
+
+        xdata_with_nan = np.array([2, 3, np.nan, 4, 4, np.nan])
+        ydata_with_nan = np.array([1, 2, 5, 3, np.nan, 7])
+        xdata_without_nan = np.array([2, 3, 4])
+        ydata_without_nan = np.array([1, 2, 3])
+
+        self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
+                               ydata_with_nan, ydata_without_nan)
+
+    def test_nan_policy_2d(self):
+        def f(x, a, b):
+            x1 = x[0, :]
+            x2 = x[1, :]
+            return a*x1 + b + x2
+
+        xdata_with_nan = np.array([[2, 3, np.nan, 4, 4, np.nan, 5],
+                                   [2, 3, np.nan, np.nan, 4, np.nan, 7]])
+        ydata_with_nan = np.array([1, 2, 5, 3, np.nan, 7, 10])
+        xdata_without_nan = np.array([[2, 3, 5], [2, 3, 7]])
+        ydata_without_nan = np.array([1, 2, 10])
+
+        self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
+                               ydata_with_nan, ydata_without_nan)
+
+    def test_nan_policy_3d(self):
+        def f(x, a, b):
+            x1 = x[0, 0, :]
+            x2 = x[0, 1, :]
+            return a*x1 + b + x2
+
+        xdata_with_nan = np.array([[[2, 3, np.nan, 4, 4, np.nan, 5],
+                                   [2, 3, np.nan, np.nan, 4, np.nan, 7]]])
+        ydata_with_nan = np.array([1, 2, 5, 3, np.nan, 7, 10])
+        xdata_without_nan = np.array([[[2, 3, 5], [2, 3, 7]]])
+        ydata_without_nan = np.array([1, 2, 10])
+
+        self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
+                               ydata_with_nan, ydata_without_nan)
+
     def test_empty_inputs(self):
         # Test both with and without bounds (regression test for gh-9864)
         assert_raises(ValueError, curve_fit, lambda x, a: a*x, [], [])
