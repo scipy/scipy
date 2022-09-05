@@ -572,8 +572,6 @@ GoodnessOfFitResult = namedtuple('GoodnessOfFitResult',
                                  ('fit_result', 'statistic', 'pvalue',
                                   'null_distribution'))
 
-# TODO: add test for distributions other than norm
-# TODO: add other goodness of fit statistics?
 
 def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                     guessed_params=None, statistic='ad', fit_method='mle',
@@ -582,10 +580,11 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     Perform a goodness of fit test comparing data to a distribution family.
 
     Given a distribution family and data, perform a test of the null hypothesis
-    that the data was drawn from a distribution in that family. Any parameters
-    of the distribution that are known may be specified. Two statistics
-    (Anderson-Darling and Kolmogorov-Smirnov) for comparing the distribution to
-    data are available.
+    that the data were drawn from a distribution in that family. Any known
+    parameters of the distribution may be specified. Remaining parameters of
+    the distribution will be fit to the data, and the p-value of the test
+    is adjusted accordingly. Several statistics for comparing the distribution
+    to data are available.
 
     Parameters
     ----------
@@ -685,7 +684,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     `dist` are fit to the provided `data`. These values of the parameters
     specify a particular member of the distribution family referred to as the
     "null-hypothesized distribution", that is, the distribution from which the
-    data was sampled under the null hypothesis. The `statistic`, which compares
+    data were sampled under the null hypothesis. The `statistic`, which compares
     data to a distribution, is computed between `data` and the
     null-hypothesized distribution.
 
@@ -722,10 +721,13 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     they were `known_params`, as specification of all parameters of the
     distribution precludes the need to fit the distribution to each resample.
     (This is essentially how the original Kilmogorov-Smirnov test is
-    performed.) For a valid test, however, parameters should only be passed
-    as `known_params` when they are truly known rather than being fit to the
-    data.
-
+    performed.) Although such a test can provide evidence against the null
+    hypothesis, the power of the test is low (that is, it is less likely to
+    reject the null hypothesis even when the null hypoothesis is false) because
+    the resampled data is less likely to agree with the null-hypothesized
+    distribution as well as `data`. This tends to increase the values of the
+    statistic recorded in the null distribution, so that a larger number of
+    them exceed the value of statistic for `data`, inflating the p-value.
 
     References
     ----------
@@ -739,6 +741,152 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
            Never Be Zero: Calculating Exact P-values When Permutations Are
            Randomly Drawn." Statistical Applications in Genetics and Molecular
            Biology 9.1.
+    .. [4] H. W. Lilliefors (1967). "On the Kolmogorov-Smirnov test for
+           normality with mean and variance unknown." Journal of the American
+           statistical Association 62.318: 399-402.
+
+    Example
+    -------
+    A well-known test of the null hypothesis that data were drawn from a
+    given distribution is the Kolmogorov-Smirnov test, available in SciPy
+    as `scipy.stats.ks_1samp`. Suppose we wish to test whether the following
+    data:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+    >>> x = stats.uniform.rvs(size=75, random_state=rng)
+
+    were sampled from a normal distribution. To perform a KS-test, the
+    empirical distribution function of the observed data will be compared
+    against the (theoretical) cumulative distribution function of a normal
+    distribution. Of course, to do this, the normal distribution under the null
+    hypothesis must be fully specified. This is commonly done by first fitting
+    the ``loc`` and ``scale`` parameters of the distribution to the observed
+    data, then performing the test.
+
+    >>> loc, scale = np.mean(x), np.std(x, ddof=1)
+    >>> cdf = stats.norm(loc, scale).cdf
+    >>> stats.ks_1samp(x, cdf)
+    KstestResult(statistic=0.1119257570456813, pvalue=0.2827756409939257)
+
+    An advantage of the KS-test is that the p-value - the probability of
+    obtaining a value of the test statistic under the null hypothesis as
+    extreme as the value obtained from the observed data - can be calculated
+    exactly (and quite quickly). `goodness_of_fit` can only approximate these
+    results.
+
+    >>> known_params = {'loc': loc, 'scale': scale}
+    >>> res = stats.goodness_of_fit(stats.norm, x, known_params=known_params,
+                                    statistic='ks', random_state=rng)
+    >>> res.statistic, res.pvalue
+    (0.1119257570456813, 0.2788)
+
+    The statistic matches exactly, but the p-value is estimated by forming
+    a "Monte Carlo null distribution", that is, by explicitly drawing random
+    samples from `scipy.stats.norm` with the provided parameters and
+    calculating the stastic for each. The fraction of these statistic values
+    at least as extreme as ``res.statistic`` approximates the exact p-value
+    calculated by `scipy.stats.ks_1samp`.
+
+    However, in many cases, we would prefer to test only that the data were
+    sampled from one of *any* member of the normal distribution family, not
+    specifically from the normal distribution with the location and scale
+    fitted to the observed sample. In this case, Lilliefors [4]_ argued that
+    the KS test was far too conservative and thus lacked power - the ability
+    to reject the null hypothesis when the null hypothesis is actually false.
+    Indeed, our p-value above is approximately 0.28, which is far too large
+    to reject the null hypothesis at any common significance level.
+
+    Consider why this might be. Note that in the KS test above, the statistic
+    always compares data against the CDF of a normal distribution fitted to the
+    *observed data*. This tends to reduce the value of the statistic for the
+    observed data, but it is "unfair" when computing the statistic for other
+    samples, such as those we randomly draw to form the Monte Carlo null
+    distribution. It is easy to correct for this: whenever we compute the KS
+    statistic of a sample, we use the CDF of a normal distribution fitted
+    to *that sample*. The null distribution in this case has not been
+    calculated exactly and is tyically approximated using Monte Carlo methods
+    as described above. This is where `goodness_of_fit` shines.
+
+    >>> res = stats.goodness_of_fit(stats.norm, x, statistic='ks',
+    ...                             random_state=rng)
+    >>> res.statistic, res.pvalue
+    (0.1119257570456813, 0.0196)
+
+    Indeed, this p-value is much smaller, and small enough to reject the
+    null hypothesis at common signficance levels, including 5% and 2.5%.
+
+    However, the KS statistic is not very sensitive to all deviations from
+    normality. The original advantage of the KS statistic was the ability
+    to compute the null distribution theoeretically, but a more sensitive
+    statistic can be used if we are willing to approximate the null
+    distribution computationally. The Anderson-Darling statistic [1]_ tends
+    to be more sensitive, and critical values of the this statistic have been
+    tabulated for various significance levels and sample sizes using Monte
+    Carlo methods.
+
+    >>> res = stats.anderson(x, 'norm')
+    >>> print(res.statistic)
+    >>> print(res.critical_values)
+    >>> print(res.significance_level)
+    1.2139573337497467
+    [0.549 0.625 0.75  0.875 1.041]
+    [15.  10.   5.   2.5  1. ]
+
+    Here, the observed value of the statistic exceeds the critical value
+    corresponding with a 1% significance level. This tells us that the p-value
+    of the observed data is less than 1%, but what is it? We could interpolate
+    from these (altready interpolated) values, but `goodness_of_fit` can
+    estimate it directly.
+
+    >>> res = stats.goodness_of_fit(stats.norm, x, statistic='ad',
+    ...                             random_state=rng)
+    >>> res.statistic, res.pvalue
+    (1.2139573337497467, 0.0034)
+
+    A further advantage is that use of `goodness_of_fit` is not limited to
+    a particular set of distributions or conditions on which parameters
+    are known vs which must be estimated from data. Instead, `goodness_of_fit`
+    can estimate p-values relatively quickly for any distribution with
+    a sufficiently fast and reliable ``fit`` method. For instance,
+    perform a goodness of fit test using the Cramer-von Mises statistic
+    against the Rayleigh distribution with known location and unknown
+    scale.
+
+    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+    >>> x = stats.chi(df=2.2, loc=0, scale=2).rvs(size=1000, random_state=rng)
+    >>> res = stats.goodness_of_fit(stats.rayleigh, x, statistic='cvm',
+    ...                             known_params={'loc': 0}, random_state=rng)
+
+    This executes fairly quickly, but to check the reliability of the ``fit``
+    method, we should inspect the fit result.
+
+    >>> import matplotlib.pyplot as plt  # matplotlib must be installed to plot
+    >>> res.fit_result.plot()
+    >>> plt.show()
+
+    If the distribution is not fit to the observed data as well as possible,
+    the test may not control the type I error rate, that is, the chance of
+    rejecting the null hypothesis even when it is true.
+
+    We should also look for extreme outliers in the null distribution that
+    may be caused by unreliable fitting. These do not necessarily invalidate
+    the result, but they tend to reduce the test's power.
+
+    >>> _, ax = plt.subplots()
+    >>> ax.hist(np.log10(res.null_distribution))
+    >>> ax.set_xlabel("log10 of CVM statistic under the null hypothesis")
+    >>> ax.set_ylabel("Frequency")
+    >>> ax.set_title("Histogram of the Monte Carlo null distribution")
+    >>> plt.show()
+
+    If ``fit`` method is working reliably, and if the distribution of the test
+    statistic is not particularly sensitive to the values of the fitted
+    parameters, then the p-value provided by `goodness_of_fit` is expected to
+    be a good approximation.
+    >>> res.statistic, res.pvalue
+    (0.06548669128345683, 0.5759)
 
     """
     args = gof_iv(dist, data, known_params, fit_params, guessed_params,
