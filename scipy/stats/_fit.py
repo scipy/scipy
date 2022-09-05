@@ -684,8 +684,8 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     `dist` are fit to the provided `data`. These values of the parameters
     specify a particular member of the distribution family referred to as the
     "null-hypothesized distribution", that is, the distribution from which the
-    data were sampled under the null hypothesis. The `statistic`, which compares
-    data to a distribution, is computed between `data` and the
+    data were sampled under the null hypothesis. The `statistic`, which
+    compares data to a distribution, is computed between `data` and the
     null-hypothesized distribution.
 
     Next, many (specifically `n_resamples`) new samples, each containing the
@@ -745,8 +745,8 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
            normality with mean and variance unknown." Journal of the American
            statistical Association 62.318: 399-402.
 
-    Example
-    -------
+    Examples
+    --------
     A well-known test of the null hypothesis that data were drawn from a
     given distribution is the Kolmogorov-Smirnov test, available in SciPy
     as `scipy.stats.ks_1samp`. Suppose we wish to test whether the following
@@ -754,7 +754,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
 
     >>> import numpy as np
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+    >>> rng = np.random.default_rng()
     >>> x = stats.uniform.rvs(size=75, random_state=rng)
 
     were sampled from a normal distribution. To perform a KS-test, the
@@ -854,7 +854,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     against the Rayleigh distribution with known location and unknown
     scale.
 
-    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+    >>> rng = np.random.default_rng()
     >>> x = stats.chi(df=2.2, loc=0, scale=2).rvs(size=1000, random_state=rng)
     >>> res = stats.goodness_of_fit(stats.rayleigh, x, statistic='cvm',
     ...                             known_params={'loc': 0}, random_state=rng)
