@@ -302,6 +302,7 @@ plot_pre_code = """
 import warnings
 for key in (
         'gilbrat'  # misspelling for gibrat and has been deprecated
+        'scipy.misc'  # scipy.misc deprecated in v1.10.0; use scipy.datasets
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 
