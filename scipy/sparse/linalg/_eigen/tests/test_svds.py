@@ -468,7 +468,7 @@ class SVDSCommonTests:
         ud, sd, vhd = svds(A, k, solver=self.solver)  # default maxiter
         _check_svds(A, k, ud, sd, vhd)
         assert_allclose(np.abs(ud), np.abs(u), atol=1e-9)
-        assert_allclose(np.abs(vd), np.abs(v), atol=1e-9)
+        assert_allclose(np.abs(vhd), np.abs(vh), atol=1e-9)
         assert_allclose(np.abs(sd), np.abs(s), atol=1e-9)
 
     @pytest.mark.parametrize("rsv", (True, False, 'u', 'vh'))
