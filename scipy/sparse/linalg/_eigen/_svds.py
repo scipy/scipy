@@ -476,7 +476,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         else:
             X = random_state.standard_normal(size=(min(A.shape), k))
 
-        _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
+        _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxit=maxiter,
                            largest=largest)
         # lobpcg does not guarantee exactly orthonormal eigenvectors
         # until after gh-16320 is merged
