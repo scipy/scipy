@@ -459,15 +459,17 @@ class SVDSCommonTests:
             message = "Not equal to tolerance"
             with pytest.raises(AssertionError, match=message):
                 with pytest.warns(UserWarning, match="Exited at iteration"):
-                    u2, s2, vh2 = svds(A, k, maxiter=1, solver=self.solver)
-                assert_allclose(np.abs(u2), np.abs(u))
+                    svds(A, k, maxiter=1, solver=self.solver)
         elif self.solver == 'propack':
             message = "k=1 singular triplets did not converge within"
             with pytest.raises(np.linalg.LinAlgError, match=message):
                 svds(A, k, maxiter=1, solver=self.solver)
 
-        u, s, vh = svds(A, k, solver=self.solver)  # default maxiter
-        _check_svds(A, k, u, s, vh)
+        ud, sd, vhd = svds(A, k, solver=self.solver)  # default maxiter
+        _check_svds(A, k, ud, sd, vhd)
+        assert_allclose(np.abs(ud), np.abs(u))
+        assert_allclose(np.abs(vd), np.abs(v))
+        assert_allclose(np.abs(sd), np.abs(s))
 
     @pytest.mark.parametrize("rsv", (True, False, 'u', 'vh'))
     @pytest.mark.parametrize("shape", ((5, 7), (6, 6), (7, 5)))
