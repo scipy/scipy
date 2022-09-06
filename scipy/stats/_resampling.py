@@ -902,7 +902,15 @@ def _get_batched_perm_generator(n_permutations, n_samples, n_obs_sample, batch,
         batched_perm_generator = _batch_generator(perm_generator, batch=batch)
         return batched_perm_generator
     else:
-        raise NotImplementedError()
+        def batched_perm_generator():
+            indices = np.arange(n_obs_sample)
+            indices = np.tile(indices , (batch, n_samples, 1))
+            for k in range(0, n_permutations, batch):
+                batch_actual = min(batch, n_permutations-k)
+                # Don't permute in place, otherwise results depend on `batch`
+                permuted_indices = random_state.permuted(indices, axis=-1)
+                yield permuted_indices[:batch_actual]
+        return batched_perm_generator()
 
 
 def _calculate_null_both(data, statistic, n_permutations, batch,
