@@ -895,11 +895,14 @@ def _batch_generator(iterable, batch):
 
 def _get_batched_perm_generator(n_permutations, n_samples, n_obs_sample, batch,
                                 random_state):
-    perm_generator = ([random_state.permutation(n_obs_sample)
-                       for i in range(n_samples)]
-                      for j in range(n_permutations))
-    batched_perm_generator = _batch_generator(perm_generator, batch=batch)
-    return batched_perm_generator
+    if isinstance(random_state, np.random.RandomState):
+        perm_generator = ([random_state.permutation(n_obs_sample)
+                           for i in range(n_samples)]
+                          for j in range(n_permutations))
+        batched_perm_generator = _batch_generator(perm_generator, batch=batch)
+        return batched_perm_generator
+    else:
+        raise NotImplementedError()
 
 
 def _calculate_null_both(data, statistic, n_permutations, batch,

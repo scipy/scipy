@@ -940,9 +940,11 @@ class TestPermutationTest:
                              random_state='herring')
 
     # -- Test Parameters -- #
+    @pytest.mark.parametrize('random_state', [np.random.RandomState,
+                                              np.random.default_rng])
     @pytest.mark.parametrize('permutation_type',
                              ['pairings', 'samples', 'independent'])
-    def test_batch(self, permutation_type):
+    def test_batch(self, permutation_type, random_state):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `statistic`
         np.random.seed(0)
@@ -958,29 +960,34 @@ class TestPermutationTest:
         statistic.batch_size = 0
 
         kwds = {'n_resamples': 1000, 'permutation_type': permutation_type,
-                'vectorized': True, 'random_state': 0}
-        res1 = stats.permutation_test((x, y), statistic, batch=1, **kwds)
+                'vectorized': True}
+        res1 = stats.permutation_test((x, y), statistic, batch=1,
+                                      random_state=random_state(0), **kwds)
         assert_equal(statistic.counter, 1001)
         assert_equal(statistic.batch_size, 1)
 
         statistic.counter = 0
-        res2 = stats.permutation_test((x, y), statistic, batch=50, **kwds)
+        res2 = stats.permutation_test((x, y), statistic, batch=50,
+                                      random_state=random_state(0), **kwds)
         assert_equal(statistic.counter, 21)
         assert_equal(statistic.batch_size, 50)
 
         statistic.counter = 0
-        res3 = stats.permutation_test((x, y), statistic, batch=1000, **kwds)
+        res3 = stats.permutation_test((x, y), statistic, batch=1000,
+                                      random_state=random_state(0), **kwds)
         assert_equal(statistic.counter, 2)
         assert_equal(statistic.batch_size, 1000)
 
         assert_equal(res1.pvalue, res3.pvalue)
         assert_equal(res2.pvalue, res3.pvalue)
 
+    @pytest.mark.parametrize('random_state', [np.random.RandomState,
+                                              np.random.default_rng])
     @pytest.mark.parametrize('permutation_type, exact_size',
                              [('pairings', special.factorial(3)**2),
                               ('samples', 2**3),
                               ('independent', special.binom(6, 3))])
-    def test_permutations(self, permutation_type, exact_size):
+    def test_permutations(self, permutation_type, exact_size, random_state):
         # make sure that the `permutations` parameter is respected by checking
         # the size of the null distribution
         np.random.seed(0)
@@ -991,8 +998,9 @@ class TestPermutationTest:
             return np.mean(x, axis=axis) - np.mean(y, axis=axis)
 
         kwds = {'permutation_type': permutation_type,
-                'vectorized': True, 'random_state': 0}
-        res = stats.permutation_test((x, y), statistic, n_resamples=3, **kwds)
+                'vectorized': True}
+        res = stats.permutation_test((x, y), statistic, n_resamples=3,
+                                     random_state=random_state(0), **kwds)
         assert_equal(res.null_distribution.size, 3)
 
         res = stats.permutation_test((x, y), statistic, **kwds)
