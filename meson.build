@@ -66,6 +66,8 @@ copier = find_program(['cp', 'scipy/_build_utils/copyfiles.py'])
 
 # https://mesonbuild.com/Python-module.html
 py_mod = import('python')
+# NOTE: with Meson >=0.64.0 we can add `pure: false` here and remove that line
+# everywhere else, see https://github.com/mesonbuild/meson/pull/10783.
 py3 = py_mod.find_installation()
 py3_dep = py3.dependency()
 
