@@ -893,6 +893,15 @@ def _batch_generator(iterable, batch):
         z = [item for i, item in zip(range(batch), iterator)]
 
 
+def _get_batched_perm_generator(n_permutations, n_samples, n_obs_sample, batch,
+                                random_state):
+    perm_generator = ([random_state.permutation(n_obs_sample)
+                       for i in range(n_samples)]
+                      for j in range(n_permutations))
+    batched_perm_generator = _batch_generator(perm_generator, batch=batch)
+    return batched_perm_generator
+
+
 def _calculate_null_both(data, statistic, n_permutations, batch,
                          random_state=None):
     """
@@ -980,10 +989,8 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
         # Separate random permutations of indices for each sample.
         # Again, it would be nice if RandomState/Generator.permutation
         # could permute each axis-slice separately.
-        perm_generator = ([random_state.permutation(n_obs_sample)
-                           for i in range(n_samples)]
-                          for j in range(n_permutations))
-        batched_perm_generator = _batch_generator(perm_generator, batch=batch)
+        batched_perm_generator = _get_batched_perm_generator(n_permutations,
+            n_samples, n_obs_sample, batch, random_state)
 
     null_distribution = []
 
