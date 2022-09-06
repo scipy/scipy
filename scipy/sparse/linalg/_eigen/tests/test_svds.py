@@ -447,7 +447,7 @@ class SVDSCommonTests:
         if self.solver == 'propack':
             if not has_propack:
                 pytest.skip("PROPACK not available")
-        A = np.diag(np.arange(99)).astype(np.float64)
+        A = np.diag(np.arange(9)).astype(np.float64)
         k = 1
         u, s, vh = sorted_svd(A, k)
 
