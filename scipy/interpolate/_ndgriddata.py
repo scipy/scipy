@@ -172,6 +172,8 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
 
     .. versionadded:: 0.9
 
+    For data on a regular grid use `interpn` instead.
+
     Examples
     --------
 

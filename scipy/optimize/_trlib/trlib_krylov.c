@@ -25,8 +25,6 @@
 #include "trlib_private.h"
 #include "trlib.h"
 
-#include "_c99compat.h"
-
 trlib_int_t trlib_krylov_min_internal(
     trlib_int_t init, trlib_flt_t radius, trlib_int_t equality, trlib_int_t itmax, trlib_int_t itmax_lanczos,
     trlib_flt_t tol_rel_i, trlib_flt_t tol_abs_i,

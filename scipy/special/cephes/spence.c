@@ -82,7 +82,7 @@ double x;
 
     if (x < 0.0) {
 	sf_error("spence", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
 
     if (x == 1.0)

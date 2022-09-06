@@ -497,6 +497,56 @@ class TestMultivariateNormal:
 
         assert_almost_equal(np.exp(_lnB(alpha)), desired)
 
+    def test_cdf_with_lower_limit_arrays(self):
+        # test CDF with lower limit in several dimensions
+        rng = np.random.default_rng(2408071309372769818)
+        mean = [0, 0]
+        cov = np.eye(2)
+        a = rng.random((4, 3, 2))*6 - 3
+        b = rng.random((4, 3, 2))*6 - 3
+
+        cdf1 = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+
+        cdf2a = multivariate_normal.cdf(b, mean, cov)
+        cdf2b = multivariate_normal.cdf(a, mean, cov)
+        ab1 = np.concatenate((a[..., 0:1], b[..., 1:2]), axis=-1)
+        ab2 = np.concatenate((a[..., 1:2], b[..., 0:1]), axis=-1)
+        cdf2ab1 = multivariate_normal.cdf(ab1, mean, cov)
+        cdf2ab2 = multivariate_normal.cdf(ab2, mean, cov)
+        cdf2 = cdf2a + cdf2b - cdf2ab1 - cdf2ab2
+
+        assert_allclose(cdf1, cdf2)
+
+    def test_cdf_with_lower_limit_consistency(self):
+        # check that multivariate normal CDF functions are consistent
+        rng = np.random.default_rng(2408071309372769818)
+        mean = rng.random(3)
+        cov = rng.random((3, 3))
+        cov = cov @ cov.T
+        a = rng.random((2, 3))*6 - 3
+        b = rng.random((2, 3))*6 - 3
+
+        cdf1 = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+        cdf2 = multivariate_normal(mean, cov).cdf(b, lower_limit=a)
+        cdf3 = np.exp(multivariate_normal.logcdf(b, mean, cov, lower_limit=a))
+        cdf4 = np.exp(multivariate_normal(mean, cov).logcdf(b, lower_limit=a))
+
+        assert_allclose(cdf2, cdf1, rtol=1e-4)
+        assert_allclose(cdf3, cdf1, rtol=1e-4)
+        assert_allclose(cdf4, cdf1, rtol=1e-4)
+
+    def test_cdf_signs(self):
+        # check that sign of output is correct when np.any(lower > x)
+        mean = np.zeros(3)
+        cov = np.eye(3)
+        b = [[1, 1, 1], [0, 0, 0], [1, 0, 1], [0, 1, 0]]
+        a = [[0, 0, 0], [1, 1, 1], [0, 1, 0], [1, 0, 1]]
+        # when odd number of elements of b < a, output is negative
+        expected_signs = np.array([1, -1, -1, 1])
+        cdf = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+        assert_allclose(cdf, cdf[0]*expected_signs)
+
+
 class TestMatrixNormal:
 
     def test_bad_input(self):
@@ -515,8 +565,13 @@ class TestMatrixNormal:
         assert_raises(ValueError, matrix_normal, M, V, V)
         assert_raises(ValueError, matrix_normal, M.T, U, V)
 
-        # Singular covariance
         e = np.linalg.LinAlgError
+        # Singular covariance for the rvs method of a non-frozen instance
+        assert_raises(e, matrix_normal.rvs,
+                      M, U, np.ones((num_cols, num_cols)))
+        assert_raises(e, matrix_normal.rvs,
+                      M, np.ones((num_rows, num_rows)), V)
+        # Singular covariance for a frozen instance
         assert_raises(e, matrix_normal, M, U, np.ones((num_cols, num_cols)))
         assert_raises(e, matrix_normal, M, np.ones((num_rows, num_rows)), V)
 
@@ -672,6 +727,24 @@ class TestMatrixNormal:
         sample_rowcov = np.cov(np.swapaxes(X,1,2).reshape(
                                                         N*num_cols,num_rows).T)
         assert_allclose(sample_rowcov, U, atol=0.1)
+
+    def test_samples(self):
+        # Regression test to ensure that we always generate the same stream of
+        # random variates.
+        actual = matrix_normal.rvs(
+            mean=np.array([[1, 2], [3, 4]]),
+            rowcov=np.array([[4, -1], [-1, 2]]),
+            colcov=np.array([[5, 1], [1, 10]]),
+            random_state=np.random.default_rng(0),
+            size=2
+        )
+        expected = np.array(
+            [[[1.56228264238181, -1.24136424071189],
+              [2.46865788392114, 6.22964440489445]],
+             [[3.86405716144353, 10.73714311429529],
+              [2.59428444080606, 5.79987854490876]]]
+        )
+        assert_allclose(actual, expected)
 
 
 class TestDirichlet:
@@ -1221,6 +1294,20 @@ class TestMultinomial:
         assert_allclose(mn_frozen.pmf(x), multinomial.pmf(x, n, pvals))
         assert_allclose(mn_frozen.logpmf(x), multinomial.logpmf(x, n, pvals))
         assert_allclose(mn_frozen.entropy(), multinomial.entropy(n, pvals))
+
+    def test_gh_11860(self):
+        # gh-11860 reported cases in which the adjustments made by multinomial
+        # to the last element of `p` can cause `nan`s even when the input is
+        # essentially valid. Check that a pathological case returns a finite,
+        # nonzero result. (This would fail in main before the PR.)
+        n = 88
+        rng = np.random.default_rng(8879715917488330089)
+        p = rng.random(n)
+        p[-1] = 1e-30
+        p /= np.sum(p)
+        x = np.ones(n)
+        logpmf = multinomial.logpmf(x, n, p)
+        assert np.isfinite(logpmf)
 
 class TestInvwishart:
     def test_frozen(self):

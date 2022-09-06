@@ -291,7 +291,7 @@ class multivariate_normal_gen(multi_rv_generic):
         Probability density function.
     logpdf(x, mean=None, cov=1, allow_singular=False)
         Log of the probability density function.
-    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
+    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, lower_limit=None)  # noqa
         Cumulative distribution function.
     logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
         Log of the cumulative distribution function.
@@ -547,7 +547,7 @@ class multivariate_normal_gen(multi_rv_generic):
             out[out_of_bounds] = 0.0
         return _squeeze_output(out)
 
-    def _cdf(self, x, mean, cov, maxpts, abseps, releps):
+    def _cdf(self, x, mean, cov, maxpts, abseps, releps, lower_limit):
         """Multivariate normal cumulative distribution function.
 
         Parameters
@@ -564,24 +564,43 @@ class multivariate_normal_gen(multi_rv_generic):
             Absolute error tolerance
         releps : float
             Relative error tolerance
+        lower_limit : array_like, optional
+            Lower limit of integration of the cumulative distribution function.
+            Default is negative infinity. Must be broadcastable with `x`.
 
         Notes
         -----
         As this function does no argument checking, it should not be
         called directly; use 'cdf' instead.
 
+
         .. versionadded:: 1.0.0
 
         """
-        lower = np.full(mean.shape, -np.inf)
+        lower = (np.full(mean.shape, -np.inf)
+                 if lower_limit is None else lower_limit)
+        # In 2d, _mvn.mvnun accepts input in which `lower` bound elements
+        # are greater than `x`. Not so in other dimensions. Fix this by
+        # ensuring that lower bounds are indeed lower when passed, then
+        # set signs of resulting CDF manually.
+        b, a = np.broadcast_arrays(x, lower)
+        i_swap = b < a
+        signs = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
+        a, b = a.copy(), b.copy()
+        a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
+        n = x.shape[-1]
+        limits = np.concatenate((a, b), axis=-1)
+
         # mvnun expects 1-d arguments, so process points sequentially
-        func1d = lambda x_slice: _mvn.mvnun(lower, x_slice, mean, cov,
-                                           maxpts, abseps, releps)[0]
-        out = np.apply_along_axis(func1d, -1, x)
+        def func1d(limits):
+            return _mvn.mvnun(limits[:n], limits[n:], mean, cov,
+                              maxpts, abseps, releps)[0]
+
+        out = np.apply_along_axis(func1d, -1, limits) * signs
         return _squeeze_output(out)
 
     def logcdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-               abseps=1e-5, releps=1e-5):
+               abseps=1e-5, releps=1e-5, *, lower_limit=None):
         """Log of the multivariate normal cumulative distribution function.
 
         Parameters
@@ -596,6 +615,9 @@ class multivariate_normal_gen(multi_rv_generic):
             Absolute error tolerance (default 1e-5)
         releps : float, optional
             Relative error tolerance (default 1e-5)
+        lower_limit : array_like, optional
+            Lower limit of integration of the cumulative distribution function.
+            Default is negative infinity. Must be broadcastable with `x`.
 
         Returns
         -------
@@ -615,11 +637,15 @@ class multivariate_normal_gen(multi_rv_generic):
         _PSD(cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
-        out = np.log(self._cdf(x, mean, cov, maxpts, abseps, releps))
+        cdf = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
+        # the log of a negative real is complex, and cdf can be negative
+        # if lower limit is greater than upper limit
+        cdf = cdf + 0j if np.any(cdf < 0) else cdf
+        out = np.log(cdf)
         return out
 
     def cdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-            abseps=1e-5, releps=1e-5):
+            abseps=1e-5, releps=1e-5, *, lower_limit=None):
         """Multivariate normal cumulative distribution function.
 
         Parameters
@@ -634,6 +660,9 @@ class multivariate_normal_gen(multi_rv_generic):
             Absolute error tolerance (default 1e-5)
         releps : float, optional
             Relative error tolerance (default 1e-5)
+        lower_limit : array_like, optional
+            Lower limit of integration of the cumulative distribution function.
+            Default is negative infinity. Must be broadcastable with `x`.
 
         Returns
         -------
@@ -653,7 +682,7 @@ class multivariate_normal_gen(multi_rv_generic):
         _PSD(cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
-        out = self._cdf(x, mean, cov, maxpts, abseps, releps)
+        out = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
         return out
 
     def rvs(self, mean=None, cov=1, size=1, random_state=None):
@@ -775,13 +804,18 @@ class multivariate_normal_frozen(multi_rv_frozen):
     def pdf(self, x):
         return np.exp(self.logpdf(x))
 
-    def logcdf(self, x):
-        return np.log(self.cdf(x))
+    def logcdf(self, x, *, lower_limit=None):
+        cdf = self.cdf(x, lower_limit=lower_limit)
+        # the log of a negative real is complex, and cdf can be negative
+        # if lower limit is greater than upper limit
+        cdf = cdf + 0j if np.any(cdf < 0) else cdf
+        out = np.log(cdf)
+        return out
 
-    def cdf(self, x):
+    def cdf(self, x, *, lower_limit=None):
         x = self._dist._process_quantiles(x, self.dim)
         out = self._dist._cdf(x, self.mean, self.cov, self.maxpts, self.abseps,
-                              self.releps)
+                              self.releps, lower_limit)
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
@@ -1153,9 +1187,16 @@ class matrix_normal_gen(multi_rv_generic):
         rowchol = scipy.linalg.cholesky(rowcov, lower=True)
         colchol = scipy.linalg.cholesky(colcov, lower=True)
         random_state = self._get_random_state(random_state)
-        std_norm = random_state.standard_normal(size=(dims[1], size, dims[0]))
-        roll_rvs = np.tensordot(colchol, np.dot(std_norm, rowchol.T), 1)
-        out = np.moveaxis(roll_rvs.T, 1, 0) + mean[np.newaxis, :, :]
+        # We aren't generating standard normal variates with size=(size,
+        # dims[0], dims[1]) directly to ensure random variates remain backwards
+        # compatible. See https://github.com/scipy/scipy/pull/12312 for more
+        # details.
+        std_norm = random_state.standard_normal(
+            size=(dims[1], size, dims[0])
+        ).transpose(1, 2, 0)
+        out = mean + np.einsum('jp,ipq,kq->ijk',
+                               rowchol, std_norm, colchol,
+                               optimize=True)
         if size == 1:
             out = out.reshape(mean.shape)
         return out
@@ -3038,14 +3079,16 @@ class multinomial_gen(multi_rv_generic):
         """
         return multinomial_frozen(n, p, seed)
 
-    def _process_parameters(self, n, p):
+    def _process_parameters(self, n, p, eps=1e-15):
         """Returns: n_, p_, npcond.
 
         n_ and p_ are arrays of the correct shape; npcond is a boolean array
         flagging values out of the domain.
         """
         p = np.array(p, dtype=np.float64, copy=True)
-        p[..., -1] = 1. - p[..., :-1].sum(axis=-1)
+        p_adjusted = 1. - p[..., :-1].sum(axis=-1)
+        i_adjusted = np.abs(p_adjusted) > eps
+        p[i_adjusted, -1] = p_adjusted[i_adjusted]
 
         # true for bad p
         pcond = np.any(p < 0, axis=-1)

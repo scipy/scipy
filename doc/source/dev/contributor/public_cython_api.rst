@@ -13,12 +13,12 @@ via a public ``cdef`` Cython API declarations:
 - ``scipy.optimize.cython_optimize``
 - ``scipy.special.cython_special``
 
-This uses `Cython's declaration sharing features
-<cython-sharing-declarations>`_, where shared ``cdef`` items are
-declared in ``*.pxd`` files that are distributed together with the
-corresponding DLL/SO files in binary SciPy installations.
+This uses `Cython's declaration sharing features`_, where shared
+``cdef`` items are declared in ``*.pxd`` files that are distributed
+together with the corresponding DLL/SO files in binary SciPy
+installations.
 
-.. _cython-sharing-declarations: https://cython.readthedocs.io/en/latest/src/userguide/sharing_declarations.html
+.. _Cython's declaration sharing features: https://cython.readthedocs.io/en/latest/src/userguide/sharing_declarations.html
 
 
 Application Binary Interface

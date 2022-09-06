@@ -1,10 +1,3 @@
-fortran_ignore_warnings = [
-  '-Wno-tabs', '-Wno-conversion',
-  '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
-  '-Wno-maybe-uninitialized', '-Wno-unused-label',
-  '-Wno-unused-variable'
-]
-
 # Note: 3 source files in iterative/ are unused
 methods = [
   'iterative/BiCGREVCOM.f.src',

@@ -39,8 +39,8 @@
  * ERROR MESSAGES:
  *
  *   message         condition      value returned
- * yn singularity   x = 0              NPY_INFINITY
- * yn overflow                         NPY_INFINITY
+ * yn singularity   x = 0              INFINITY
+ * yn overflow                         INFINITY
  *
  * Spot checked against tables for x, n between 0 and 100.
  *
@@ -80,11 +80,11 @@ double x;
     /* test for overflow */
     if (x == 0.0) {
 	sf_error("yn", SF_ERROR_SINGULAR, NULL);
-	return -NPY_INFINITY * sign;
+	return -INFINITY * sign;
     }
     else if (x < 0.0) {
 	sf_error("yn", SF_ERROR_DOMAIN, NULL);
-	return NPY_NAN;
+	return NAN;
     }
 
     /* forward recurrence on n */
