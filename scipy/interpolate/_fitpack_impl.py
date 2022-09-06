@@ -654,12 +654,6 @@ def splint(a, b, tck, full_output=0):
         return list(map(lambda c, a=a, b=b, t=t, k=k:
                         splint(a, b, [t, c, k]), c))
     else:
-        if t.size != c.size:
-            if c.size >= t.size - k - 1:
-                # If t and c are not the same size, c is padded with zeros.
-                c = np.pad(c, (0, t.size - c.size))
-            else:
-                raise ValueError("t and c are invalid length.")
         aint, wrk = dfitpack.splint(t, c, k, a, b)
         if full_output:
             return aint, wrk
