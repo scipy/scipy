@@ -456,10 +456,8 @@ class SVDSCommonTests:
             with pytest.raises(ArpackNoConvergence, match=message):
                 svds(A, k, ncv=3, maxiter=1, solver=self.solver)
         elif self.solver == 'lobpcg':
-            message = "Not equal to tolerance"
-            with pytest.raises(AssertionError, match=message):
-                with pytest.warns(UserWarning, match="Exited at iteration"):
-                    svds(A, k, maxiter=1, solver=self.solver)
+            with pytest.warns(UserWarning, match="Exited at iteration"):
+                svds(A, k, maxiter=1, solver=self.solver)
         elif self.solver == 'propack':
             message = "k=1 singular triplets did not converge within"
             with pytest.raises(np.linalg.LinAlgError, match=message):
