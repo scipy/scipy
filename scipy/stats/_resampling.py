@@ -969,22 +969,25 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
     if n_permutations >= n_max:
         exact_test = True
         n_permutations = n_max
+        batch = batch or int(n_permutations)
         # cartesian product of the sets of all permutations of indices
         perm_generator = product(*(permutations(range(n_obs_sample))
                                    for i in range(n_samples)))
+        batched_perm_generator = _batch_generator(perm_generator, batch=batch)
     else:
         exact_test = False
+        batch = batch or int(n_permutations)
         # Separate random permutations of indices for each sample.
         # Again, it would be nice if RandomState/Generator.permutation
         # could permute each axis-slice separately.
         perm_generator = ([random_state.permutation(n_obs_sample)
                            for i in range(n_samples)]
                           for j in range(n_permutations))
+        batched_perm_generator = _batch_generator(perm_generator, batch=batch)
 
-    batch = batch or int(n_permutations)
     null_distribution = []
 
-    for indices in _batch_generator(perm_generator, batch=batch):
+    for indices in batched_perm_generator:
         indices = np.array(indices)
 
         # `indices` is 3D: the zeroth axis is for permutations, the next is
