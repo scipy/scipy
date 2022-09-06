@@ -778,7 +778,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
 
     >>> known_params = {'loc': loc, 'scale': scale}
     >>> res = stats.goodness_of_fit(stats.norm, x, known_params=known_params,
-                                    statistic='ks', random_state=rng)
+    ...                             statistic='ks', random_state=rng)
     >>> res.statistic, res.pvalue
     (0.1119257570456813, 0.2788)
 
@@ -987,7 +987,7 @@ def _fit_norm(data, floc=None, fscale=None, fit_method="mle"):
     return loc, scale
 
 
-_fit_funs = {stats.norm: _fit_norm}
+_fit_funs = {stats.norm: _fit_norm}  # type: ignore[attr-defined]
 
 
 # Vectorized goodness of fit statistic functions. These accept a frozen
