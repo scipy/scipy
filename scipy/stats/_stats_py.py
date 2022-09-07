@@ -39,7 +39,7 @@ from numpy.testing import suppress_warnings
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
 from scipy._lib._util import (check_random_state, MapWrapper,
-                              rng_integers, _rename_parameter)
+                              rng_integers, _rename_parameter, _contains_nan)
 
 import scipy.special as special
 from scipy import linalg
@@ -81,38 +81,6 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'alexandergovern']
-
-
-def _contains_nan(a, nan_policy='propagate', use_summation=True):
-    if not isinstance(a, np.ndarray):
-        use_summation = False  # some array_likes ignore nans (e.g. pandas)
-    policies = ['propagate', 'raise', 'omit']
-    if nan_policy not in policies:
-        raise ValueError("nan_policy must be one of {%s}" %
-                         ', '.join("'%s'" % s for s in policies))
-
-    if np.issubdtype(a.dtype, np.inexact):
-        # The summation method avoids creating a (potentially huge) array.
-        if use_summation:
-            with np.errstate(invalid='ignore', over='ignore'):
-                contains_nan = np.isnan(np.sum(a))
-        else:
-            contains_nan = np.isnan(a).any()
-    elif np.issubdtype(a.dtype, object):
-        contains_nan = False
-        for el in a.ravel():
-            # isnan doesn't work on non-numeric elements
-            if np.issubdtype(type(el), np.number) and np.isnan(el):
-                contains_nan = True
-                break
-    else:
-        # Only `object` and `inexact` arrays can have NaNs
-        contains_nan = False
-
-    if contains_nan and nan_policy == 'raise':
-        raise ValueError("The input contains nan values")
-
-    return contains_nan, nan_policy
 
 
 def _chk_asarray(a, axis):

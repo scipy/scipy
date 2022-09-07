@@ -545,10 +545,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         The model function, f(x, ...). It must take the independent
         variable as the first argument and the parameters to fit as
         separate remaining arguments.
-    xdata : array_like or object
+    xdata : array_like
         The independent variable where the data is measured.
         Should usually be an M-length sequence or an (k,M)-shaped array for
-        functions with k predictors, but can actually be any object.
+        functions with k predictors, and each element should be float
+        convertible if it is an array like object.
     ydata : array_like
         The dependent data, a length M array - nominally ``f(xdata, ...)``.
     p0 : array_like, optional

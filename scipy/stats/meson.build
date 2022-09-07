@@ -1,10 +1,3 @@
-fortran_ignore_warnings = [
-  '-Wno-tabs', '-Wno-conversion',
-  '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
-  '-Wno-maybe-uninitialized', '-Wno-unused-label',
-  '-Wno-unused-variable'
-]
-
 _stats_pxd = custom_target('_stats_pxd',
   output: [
     '__init__.py',
@@ -36,7 +29,7 @@ statlib_lib = static_library('statlib_lib',
     'statlib/spearman.f',
     'statlib/swilk.f'
   ],
-  fortran_args: '-Wno-unused-variable'
+  fortran_args: _fflag_Wno_unused_variable
 )
 
 statlib_module = custom_target('statlib_module',
@@ -74,7 +67,9 @@ mvn_module = custom_target('mvn_module',
 mvn = py3.extension_module('_mvn',
   [mvn_module, 'mvndst.f'],
   c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
+  # Wno-surprising is to suppress a pointless warning with GCC 10-12
+  # (see GCC bug 98411: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98411)
+  fortran_args: [fortran_ignore_warnings, _fflag_Wno_surprising],
   dependencies: [fortranobject_dep],
   include_directories: [inc_np, inc_f2py],
   install: true,
@@ -176,10 +171,7 @@ if use_pythran
 
   _group_columns = py3.extension_module('_hypotests_pythran',
     _hypotests_pythran,
-    cpp_args: [
-      '-Wno-unused-function', '-Wno-unused-variable',
-      '-Wno-deprecated-declarations', '-Wno-int-in-bool-context'
-    ] + cpp_args_pythran,
+    cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
     install: true,
     subdir: 'scipy/stats'

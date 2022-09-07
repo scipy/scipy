@@ -103,7 +103,7 @@ cleanup:
 
 static PyMethodDef lsap_methods[] = {
     { "linear_sum_assignment",
-      linear_sum_assignment,
+      (PyCFunction)linear_sum_assignment,
       METH_VARARGS | METH_KEYWORDS,
 "Solve the linear sum assignment problem.\n"
 "\n"
