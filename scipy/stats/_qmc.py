@@ -67,12 +67,11 @@ def check_random_state(seed=None):
 
     Parameters
     ----------
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional  # noqa
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance, then
+        the provided instance is used.
 
     Returns
     -------
@@ -560,11 +559,10 @@ def van_der_corput(
         If True, use Owen scrambling. Otherwise no scrambling is done.
         Default is True.
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
     workers : int, optional
         Number of workers to use for parallel processing. If -1 is
         given all CPU threads are used. Default is 1.
@@ -629,11 +627,10 @@ class QMCEngine(ABC):
 
         .. versionadded:: 1.10.0
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Notes
     -----
@@ -915,11 +912,10 @@ class Halton(QMCEngine):
 
         .. versionadded:: 1.10.0
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Notes
     -----
@@ -1064,11 +1060,10 @@ class LatinHypercube(QMCEngine):
         .. versionadded:: 1.8.0
 
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Notes
     -----
@@ -1307,11 +1302,10 @@ class Sobol(QMCEngine):
 
         .. versionadded:: 1.10.0
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Notes
     -----
@@ -1634,11 +1628,10 @@ class PoissonDisk(QMCEngine):
 
         .. versionadded:: 1.10.0
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Notes
     -----
@@ -1937,11 +1930,11 @@ class MultivariateNormalQMC:
     engine : QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, `Sobol` is used.
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        Used only if `engine` is None.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Examples
     --------
@@ -2089,11 +2082,11 @@ class MultinomialQMC:
     engine : QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, `Sobol` is used.
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        Used only if `engine` is None.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Examples
     --------
