@@ -1416,7 +1416,7 @@ class Sobol(QMCEngine):
         optimization: Optional[Literal["random-cd", "lloyd"]] = None
     ) -> None:
         self._init = {'d': d, 'scramble': True, 'bits': bits,
-                      'optimization': optimization,}
+                      'optimization': optimization}
 
         super().__init__(d=d, optimization=optimization, seed=seed)
         if d > self.MAXDIM:
