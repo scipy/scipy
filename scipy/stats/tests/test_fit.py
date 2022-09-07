@@ -599,9 +599,9 @@ class TestGoodnessOfFit:
         with pytest.raises(ValueError, match=message):
             goodness_of_fit(dist, x, fit_method='ad')
 
-        message = "`n_resamples` must be an integer."
+        message = "`n_mc_samples` must be an integer."
         with pytest.raises(TypeError, match=message):
-            goodness_of_fit(dist, x, n_resamples=1000.5)
+            goodness_of_fit(dist, x, n_mc_samples=1000.5)
 
         message = "'herring' cannot be used to seed a"
         with pytest.raises(ValueError, match=message):
@@ -704,7 +704,7 @@ class TestGoodnessOfFit:
         fit_params = {'scale': 13.73}
         known_params = {'loc': -13.85}
         rng = np.random.default_rng(9121950977643805391)
-        res1 = goodness_of_fit(stats.weibull_min, x, n_resamples=2,
+        res1 = goodness_of_fit(stats.weibull_min, x, n_mc_samples=2,
                                guessed_params=guessed_params,
                                fit_params=fit_params,
                                known_params=known_params, random_state=rng)
@@ -716,7 +716,7 @@ class TestGoodnessOfFit:
         # and it changes the null distribution
         guessed_params = {'c': 2}
         rng = np.random.default_rng(9121950977643805391)
-        res2 = goodness_of_fit(stats.weibull_min, x, n_resamples=2,
+        res2 = goodness_of_fit(stats.weibull_min, x, n_mc_samples=2,
                                guessed_params=guessed_params,
                                fit_params=fit_params,
                                known_params=known_params, random_state=rng)
@@ -732,7 +732,7 @@ class TestGoodnessOfFit:
         # varies.
         fit_params = {'c': 13.4, 'scale': 13.73}
         rng = np.random.default_rng(9121950977643805391)
-        res3 = goodness_of_fit(stats.weibull_min, x, n_resamples=2,
+        res3 = goodness_of_fit(stats.weibull_min, x, n_mc_samples=2,
                                guessed_params=guessed_params,
                                fit_params=fit_params,
                                known_params=known_params, random_state=rng)

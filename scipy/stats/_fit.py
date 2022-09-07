@@ -575,7 +575,7 @@ GoodnessOfFitResult = namedtuple('GoodnessOfFitResult',
 
 def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                     guessed_params=None, statistic='ad', fit_method='mle',
-                    n_resamples=9999, random_state=None):
+                    n_mc_samples=9999, random_state=None):
     r"""
     Perform a goodness of fit test comparing data to a distribution family.
 
@@ -583,52 +583,57 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     that the data were drawn from a distribution in that family. Any known
     parameters of the distribution may be specified. Remaining parameters of
     the distribution will be fit to the data, and the p-value of the test
-    is adjusted accordingly. Several statistics for comparing the distribution
+    is computed accordingly. Several statistics for comparing the distribution
     to data are available.
 
     Parameters
     ----------
     dist : `scipy.stats.rv_continuous`
-        The object representing the distribution family to be fit to the data.
+        The object representing the distribution family under the null
+        hypothesis.
     data : 1D array_like
-        Finite, uncensored data to which the distribution is to be fit.
+        Finite, uncensored data to be tested.
     known_params : dict, optional
-        A dictionary containing distribution name-value pairs of distribution
-        parameters that are known. Data is resampled from the null-hypothesized
-        distribution with these values of the parameters. Before the statistic
-        is evaluated for each resample, only remaining unknown parameters of
-        the  null-hypothesized distribution family are fit to the resampled
-        data; these parameters are held fixed. (If all parameters of the
-        distribution family are known, then the step of fitting the
-        distribution family to each resample is omitted.)
+        A dictionary containing name-value pairs of known distribution
+        parameters. Monte Carlo samples are randomly drawn from the
+        null-hypothesized distribution with these values of the parameters.
+        Before the statistic is evaluated for each Monte Carlo sample, only
+        remaining unknown parameters of the null-hypothesized distribution
+        family are fit to the samples; the known parameters are held fixed.
+        If all parameters of the distribution family are known, then the step
+        of fitting the distribution family to each sample is omitted.
     fit_params : dict, optional
         A dictionary containing name-value pairs of distribution parameters
         that have already been fit to the data, e.g. using `scipy.stats.fit`
-        or the ``fit`` method of `dist`. Data is resampled from the
+        or the ``fit`` method of `dist`. Monte Carlo samples are drawn from the
         null-hypothesized distribution with these specified values of the
         parameters, but these and all other unknown parameters of the
-        null-hypothesized distribution family are fit to the resampled data
+        null-hypothesized distribution family are fit to the random samples
         before the statistic is evaluated.
     guessed_params : dict, optional
         A dictionary containing name-value pairs of distribution parameters
-        which are guessed. Before resampling from the null-hypothesized
-        distribution, the null-hypothesized distribution family is fit to the
-        data with these parameters free, but the provided values will be used
-        as guesses if needed by the fitting procedure. The null-hypothesized
-        distribution family is fit to the resampled data with these parameters
-        free before the statistic is evaluated.
-    statistic : {"ad", "ks"}, optional
+        which have been guessed. These parameters are always left free and
+        fit to the data - both the provided `data` and, later, samples drawn
+        from the null-hypothesized distribtion. However, the `guessed_params`
+        values will be provided as guesses to the fitting procedure.
+    statistic : {"ad", "ks", "cvm"}, optional
         The statistic used to compare data to a distribution after fitting
         unknown parameters of the distribution family to the data. The
-        Anderson-Darling ("ad") [1]_ and Kolmogorov-Smirnov ("ks") [2]_
-        statistics are available.
+        Anderson-Darling ("ad"), Kolmogorov-Smirnov ("ks"), and
+        Cramer-von Mises ("cvm") statistics are available [1]_.
     fit_method : {"mle", "mm"}, optional
-        The method used to fit null-hypothesized distribution family to
-        the resampled data. Maximum likelihood estimation ("mle") is the
-        default; method of moments ("mm") is also available
-    n_resamples : int
-        The number of resamples performed to form the null distribution
-        of the statistic.
+        The method used to fit the null-hypothesized distribution family to
+        the Monte Carlo samples. Maximum likelihood estimation ("mle") is the
+        default; method of moments ("mm") is also available. For some
+        distributions, bias-correction procedures may be employed to improve
+        the quality of the fit. For example, the maximum likelihood estimate
+        of the normal distribution scale parameter is always given by
+        ``np.std(data)``, but the bias-corrected standard deviation
+        ``np.std(data, ddof=1)`` is used when both location and scale
+        are unknown.
+    n_mc_samples : int, default: 9999
+        The number of Monte Carlo samples drawn from the null hypothesized
+        distribution to form the null distribution of the statistic.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
 
@@ -639,28 +644,28 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         If `random_state` is an int, a new ``RandomState`` instance is used,
         seeded with `random_state`.
         If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
+        instance, then the provided instance is used.
 
     Returns
     -------
     res : GoodnessOfFitResult
         An object with the following attributes.
 
-        fit_result : ~`scipy.stats._result_classes.FitResult`
+        fit_result : `~scipy.stats._result_classes.FitResult`
             An object representing the fit of the provided `dist` to `data`.
-            These are the parameters of the distribution family that define
-            the specific distribution used to resample data under the null
-            hypothesis.
+            This  object includes the values of distribution family parameters
+            that fully define the null-hypothesized distribution, that is,
+            the distribution from which Monte Carlo samples are drawn.
         statistic : float
             The value of the statistic comparing provided `data` to the
-            fitted distribution.
-        null_distribution : ndarray
-            The value of the statistic comparing data resampled under the null
-            hypothesis to the fitted distribution.
+            null-hypothesized distribution.
         pvalue : float
             The proportion of elements in the null distribution with
             statistic values at least as extreme as the statistic value of the
             provided `data`.
+        null_distribution : ndarray
+            The value of the statistic for each Monte Carlo sample
+            drawn from the null-hypothesized distribution.
 
     Notes
     -----
@@ -669,12 +674,12 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     etc.
 
     Traditionally, critical values corresponding with a set a fixed set of
-    signficance levels are pre-calculated using Monte Carlo methods. Users
+    significance levels are pre-calculated using Monte Carlo methods. Users
     perform the test by calculating the value of the test statistic only for
-    their observed `data` and comparing this value to the tabulated critical
+    their observed `data` and comparing this value to tabulated critical
     values. This practice is not very flexible, as tables are not available for
-    all distributions and combinations of known and unknown parameter values,
-    and results can be inaccurate when critical values are interpolated from
+    all distributions and combinations of known and unknown parameter values.
+    Also, results can be inaccurate when critical values are interpolated from
     limited tabulated data to correspond with the user's sample size and
     fitted parameter values. To overcome these shortcomings, this function
     allows the user to perform the Monte Carlo trials adapted to their
@@ -688,11 +693,11 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     compares data to a distribution, is computed between `data` and the
     null-hypothesized distribution.
 
-    Next, many (specifically `n_resamples`) new samples, each containing the
-    same number of observations as `data`, are generated from the
+    Next, many (specifically `n_mc_samples`) new samples, each containing the
+    same number of observations as `data`, are drawn from the
     null-hypothesized distribution. Any unknown parameters of the distribution
     family `dist` are fit to *each resample*, and the `statistic` is computed
-    between each resample and its corresponding fitted distribution. These
+    between each sample and its corresponding fitted distribution. These
     values of the statistic form the Monte Carlo null distribution (not to be
     confused with the "null-hypothesized distribution" above).
 
@@ -706,42 +711,40 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                  {m + 1}
 
     where :math:`b` is the number of statistic values in the Monte Carlo null
-    distribution that are greater than or equal to the the statistic value for
+    distribution that are greater than or equal to the the statistic value
     calculated for `data`, and :math:`m=` is the number of elements in the
-    Monte Carlo null distribution (`n_resamples`). The addition of :math:`1`
+    Monte Carlo null distribution (`n_mc_samples`). The addition of :math:`1`
     to the numerator and denominator can be thought of as including the
     value of the statistic corresponding with `data` in the null distribution,
-    but a more formal explanation is given in [3]_.
+    but a more formal explanation is given in [2]_.
 
     The test can be very slow for some distribution families because unknown
-    parameters of the distribution family must be fit to each of the resamples,
-    and for most distributions in SciPy, distribution fitting is performed via
-    numerical optimization. For this reason, it may be tempting to treat
-    parameters of the distribution pre-fit to `data` (by the user) as though
-    they were `known_params`, as specification of all parameters of the
-    distribution precludes the need to fit the distribution to each resample.
-    (This is essentially how the original Kilmogorov-Smirnov test is
-    performed.) Although such a test can provide evidence against the null
-    hypothesis, the power of the test is low (that is, it is less likely to
-    reject the null hypothesis even when the null hypoothesis is false) because
-    the resampled data is less likely to agree with the null-hypothesized
-    distribution as well as `data`. This tends to increase the values of the
-    statistic recorded in the null distribution, so that a larger number of
-    them exceed the value of statistic for `data`, inflating the p-value.
+    parameters of the distribution family must be fit to each of the Monte
+    Carlo samples, and for most distributions in SciPy, distribution fitting
+    performed via numerical optimization. For this reason, it may be tempting
+    to treat parameters of the distribution pre-fit to `data` (by the user)
+    as though they were `known_params`, as specification of all parameters of
+    the distribution precludes the need to fit the distribution to each Monte
+    Carlo sample. (This is essentially how the original Kilmogorov-Smirnov
+    test is performed.) Although such a test can provide evidence against the
+    null hypothesis, the power of the test is low (that is, it is less likely
+    to reject the null hypothesis even when the null hypoothesis is false)
+    because the Monte Carlo samples are less likely to agree with the
+    null-hypothesized distribution as well as `data`. This tends to increase
+    the values of the statistic recorded in the null distribution, so that a
+    larger number of them exceed the value of statistic for `data`, thereby
+    inflating the p-value.
 
     References
     ----------
     .. [1] M. A. Stephens (1974). "EDF Statistics for Goodness of Fit and
            Some Comparisons." Journal of the American Statistical Association,
            Vol. 69, pp. 730-737.
-    .. [2] F. J. Massey, Jr. (1951). "The Kolmogorov-Smirnov test for goodness
-           of fit." Journal of the American Statistical Association 46.253:
-           68-78.
-    .. [3] B. Phipson and G. K. Smyth (2010). "Permutation P-values Should
+    .. [2] B. Phipson and G. K. Smyth (2010). "Permutation P-values Should
            Never Be Zero: Calculating Exact P-values When Permutations Are
            Randomly Drawn." Statistical Applications in Genetics and Molecular
            Biology 9.1.
-    .. [4] H. W. Lilliefors (1967). "On the Kolmogorov-Smirnov test for
+    .. [3] H. W. Lilliefors (1967). "On the Kolmogorov-Smirnov test for
            normality with mean and variance unknown." Journal of the American
            statistical Association 62.318: 399-402.
 
@@ -757,7 +760,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     >>> rng = np.random.default_rng()
     >>> x = stats.uniform.rvs(size=75, random_state=rng)
 
-    were sampled from a normal distribution. To perform a KS-test, the
+    were sampled from a normal distribution. To perform a KS test, the
     empirical distribution function of the observed data will be compared
     against the (theoretical) cumulative distribution function of a normal
     distribution. Of course, to do this, the normal distribution under the null
@@ -773,7 +776,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     An advantage of the KS-test is that the p-value - the probability of
     obtaining a value of the test statistic under the null hypothesis as
     extreme as the value obtained from the observed data - can be calculated
-    exactly (and quite quickly). `goodness_of_fit` can only approximate these
+    exactly and efficiently. `goodness_of_fit` can only approximate these
     results.
 
     >>> known_params = {'loc': loc, 'scale': scale}
@@ -792,7 +795,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     However, in many cases, we would prefer to test only that the data were
     sampled from one of *any* member of the normal distribution family, not
     specifically from the normal distribution with the location and scale
-    fitted to the observed sample. In this case, Lilliefors [4]_ argued that
+    fitted to the observed sample. In this case, Lilliefors [3]_ argued that
     the KS test was far too conservative and thus lacked power - the ability
     to reject the null hypothesis when the null hypothesis is actually false.
     Indeed, our p-value above is approximately 0.28, which is far too large
@@ -807,37 +810,37 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     statistic of a sample, we use the CDF of a normal distribution fitted
     to *that sample*. The null distribution in this case has not been
     calculated exactly and is tyically approximated using Monte Carlo methods
-    as described above. This is where `goodness_of_fit` shines.
+    as described above. This is where `goodness_of_fit` excels.
 
     >>> res = stats.goodness_of_fit(stats.norm, x, statistic='ks',
     ...                             random_state=rng)
     >>> res.statistic, res.pvalue
     (0.1119257570456813, 0.0196)
 
-    Indeed, this p-value is much smaller, and small enough to reject the
-    null hypothesis at common signficance levels, including 5% and 2.5%.
+    Indeed, this p-value is much smaller, and small enough to (correctly)
+    reject the null hypothesis at common signficance levels, including 5% and
+    2.5%.
 
     However, the KS statistic is not very sensitive to all deviations from
     normality. The original advantage of the KS statistic was the ability
     to compute the null distribution theoeretically, but a more sensitive
-    statistic can be used if we are willing to approximate the null
-    distribution computationally. The Anderson-Darling statistic [1]_ tends
-    to be more sensitive, and critical values of the this statistic have been
-    tabulated for various significance levels and sample sizes using Monte
-    Carlo methods.
+    statistic can be used now that we can approximate the null distribution
+    computationally. The Anderson-Darling statistic [1]_ tends to be more
+    sensitive, and critical values of the this statistic have been tabulated
+    for various significance levels and sample sizes using Monte Carlo methods.
 
     >>> res = stats.anderson(x, 'norm')
     >>> print(res.statistic)
-    >>> print(res.critical_values)
-    >>> print(res.significance_level)
     1.2139573337497467
+    >>> print(res.critical_values)
     [0.549 0.625 0.75  0.875 1.041]
+    >>> print(res.significance_level)
     [15.  10.   5.   2.5  1. ]
 
     Here, the observed value of the statistic exceeds the critical value
     corresponding with a 1% significance level. This tells us that the p-value
     of the observed data is less than 1%, but what is it? We could interpolate
-    from these (altready interpolated) values, but `goodness_of_fit` can
+    from these (already-interpolated) values, but `goodness_of_fit` can
     estimate it directly.
 
     >>> res = stats.goodness_of_fit(stats.norm, x, statistic='ad',
@@ -847,11 +850,11 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
 
     A further advantage is that use of `goodness_of_fit` is not limited to
     a particular set of distributions or conditions on which parameters
-    are known vs which must be estimated from data. Instead, `goodness_of_fit`
-    can estimate p-values relatively quickly for any distribution with
-    a sufficiently fast and reliable ``fit`` method. For instance,
-    perform a goodness of fit test using the Cramer-von Mises statistic
-    against the Rayleigh distribution with known location and unknown
+    are known versus which must be estimated from data. Instead,
+    `goodness_of_fit` can estimate p-values relatively quickly for any
+    distribution with a sufficiently fast and reliable ``fit`` method. For
+    instance, here we perform a goodness of fit test using the Cramer-von Mises
+    statistic against the Rayleigh distribution with known location and unknown
     scale.
 
     >>> rng = np.random.default_rng()
@@ -862,6 +865,10 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     This executes fairly quickly, but to check the reliability of the ``fit``
     method, we should inspect the fit result.
 
+    >>> res.fit_result  # location is as specified, and scale is reasonable
+      params: FitParams(loc=0.0, scale=2.1026719844231243)
+     success: True
+     message: 'The fit was performed successfully.'
     >>> import matplotlib.pyplot as plt  # matplotlib must be installed to plot
     >>> res.fit_result.plot()
     >>> plt.show()
@@ -886,13 +893,13 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     parameters, then the p-value provided by `goodness_of_fit` is expected to
     be a good approximation.
     >>> res.statistic, res.pvalue
-    (0.06548669128345683, 0.5759)
+    (0.2231991510248692, 0.0525)
 
     """
     args = gof_iv(dist, data, known_params, fit_params, guessed_params,
-                  statistic, fit_method, n_resamples, random_state)
+                  statistic, fit_method, n_mc_samples, random_state)
     (dist, data, fixed_nhd_params, fixed_rfd_params, guessed_nhd_params,
-     guessed_rfd_params, statistic, fit_method, n_resamples_int,
+     guessed_rfd_params, statistic, fit_method, n_mc_samples_int,
      random_state) = args
 
     # Fit null hypothesis distribution to data
@@ -917,7 +924,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         return compare_fun(rfd_dist, data)
 
     res = stats.monte_carlo_test(data, rvs, statistic_fun, vectorized=True,
-                                 n_resamples=n_resamples, axis=-1,
+                                 n_resamples=n_mc_samples, axis=-1,
                                  alternative='greater')
     opt_res = optimize.OptimizeResult()
     opt_res.success = True
@@ -1026,7 +1033,7 @@ _compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov,
 
 
 def gof_iv(dist, data, known_params, fit_params, guessed_params,
-           statistic, fit_method, n_resamples, random_state):
+           statistic, fit_method, n_mc_samples, random_state):
 
     if not isinstance(dist, stats.rv_continuous):
         message = ("`dist` must be a (non-frozen) instance of "
@@ -1074,13 +1081,13 @@ def gof_iv(dist, data, known_params, fit_params, guessed_params,
         message = f"`fit_method` must be one of {fit_methods}."
         raise ValueError(message)
 
-    n_resamples_int = int(n_resamples)
-    if n_resamples_int != n_resamples:
-        message = "`n_resamples` must be an integer."
+    n_mc_samples_int = int(n_mc_samples)
+    if n_mc_samples_int != n_mc_samples:
+        message = "`n_mc_samples` must be an integer."
         raise TypeError(message)
 
     random_state = check_random_state(random_state)
 
     return (dist, data, fixed_nhd_params, fixed_rfd_params, guessed_nhd_params,
-            guessed_rfd_params, statistic, fit_method, n_resamples_int,
+            guessed_rfd_params, statistic, fit_method, n_mc_samples_int,
             random_state)
