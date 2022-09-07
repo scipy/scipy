@@ -297,40 +297,38 @@ class TestQMCQuad():
     def test_input_validation(self):
         message = "`func` must be callable."
         with pytest.raises(TypeError, match=message):
-            qmc_quad("a duck", [[0, 1], [0, 1]])
+            qmc_quad("a duck", [0, 0], [1, 1])
 
         message = "`func` must evaluate the integrand at points..."
         with pytest.raises(ValueError, match=message):
-            qmc_quad(lambda x: 1, [[0, 1], [0, 1]])
+            qmc_quad(lambda: 1, [0, 0], [1, 1])
 
+        def func(x):
+            assert x.ndim == 1
+            return np.sum(x)
         message = "Exception encountered when attempting vectorized call..."
-        # This is OK; function can be vectorized automatically if args is None
         with pytest.warns(UserWarning, match=message):
-            qmc_quad(lambda x: (x+np.array([1, 2, 3])).sum(), [[0, 1]])
-        # This is not; raise an error
-        message = "Exception encountered when attempting vectorized call..."
-        with pytest.raises(ValueError, match=message):
-            qmc_quad(lambda x, a: x+np.array([1, 2, 3]), [[0, 1]], args=1)
+            qmc_quad(func, [0, 0], [1, 1])
 
         message = "`n_points` must be an integer."
         with pytest.raises(TypeError, match=message):
-            qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], n_points=1024.5)
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], n_points=1024.5)
 
         message = "`n_estimates` must be an integer."
         with pytest.raises(TypeError, match=message):
-            qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], n_estimates=8.5)
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], n_estimates=8.5)
 
         message = "`qrng` must be an instance of scipy.stats.qmc.QMCEngine."
         with pytest.raises(TypeError, match=message):
-            qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], qrng="a duck")
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], qrng="a duck")
 
         message = "`qrng` must be initialized with dimensionality equal to "
         with pytest.raises(ValueError, match=message):
-            qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], qrng=stats.qmc.Sobol(1))
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], qrng=stats.qmc.Sobol(1))
 
         message = r"`log` must be boolean \(`True` or `False`\)."
         with pytest.raises(TypeError, match=message):
-            qmc_quad(lambda x, y: 1, [[0, 1], [0, 1]], log=10)
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], log=10)
 
     def basic_test(self, n_points=2**8, n_estimates=8, signs=np.ones(2)):
 
@@ -338,25 +336,23 @@ class TestQMCQuad():
         mean = np.zeros(ndim)
         cov = np.eye(ndim)
 
-        def func(x, y, mean, cov):
-            z = np.asarray([x, y]).T
-            return stats.multivariate_normal.pdf(z, mean, cov)
+        def func(x):
+            return stats.multivariate_normal.pdf(x, mean, cov)
 
         rng = np.random.default_rng(2879434385674690281)
         qrng = stats.qmc.Sobol(ndim, seed=rng)
-        lb = np.zeros(ndim)
-        ub = np.ones(ndim) * signs
-        ranges = np.asarray([lb, ub]).T
-        res = qmc_quad(func, ranges, n_points=n_points,
+        a = np.zeros(ndim)
+        b = np.ones(ndim) * signs
+        res = qmc_quad(func, a, b, n_points=n_points,
                        n_estimates=n_estimates, args=(mean, cov), qrng=qrng)
-        ref = stats.multivariate_normal.cdf(ub, mean, cov, lower_limit=lb)
+        ref = stats.multivariate_normal.cdf(b, mean, cov, lower_limit=a)
         atol = sc.stdtrit(n_estimates-1, 0.995) * res.standard_error  # 99% CI
         assert_allclose(res.integral, ref, atol=atol)
         assert np.prod(signs)*res.integral > 0
 
         rng = np.random.default_rng(2879434385674690281)
         qrng = stats.qmc.Sobol(ndim, seed=rng)
-        logres = qmc_quad(lambda *args: np.log(func(*args)), ranges,
+        logres = qmc_quad(lambda *args: np.log(func(*args)), a, b,
                           n_points=n_points, n_estimates=n_estimates,
                           args=(mean, cov), log=True, qrng=qrng)
         assert_allclose(np.exp(logres.integral), res.integral)
@@ -371,13 +367,20 @@ class TestQMCQuad():
     def test_sign(self, signs):
         self.basic_test(signs=signs)
 
+    @pytest.mark.parametrize("log", [False, True])
+    def test_zero(self, log):
+        message = "A lower limit was equal to an upper limit, so"
+        with pytest.warns(UserWarning, match=message):
+            res = qmc_quad(lambda x: 1, [0, 0], [0, 1], log=log)
+        assert res.integral == (-np.inf if log else 0)
+        assert res.standard_error == 0
+
     def test_flexible_input(self):
         # check that qrng is not required
-        # ensure that if args is passed as a scalar, it is packed into a tuple
-        # also checks that for 1d problems, ranges can be 1D
-        def func(x, scale):
-            return stats.norm.pdf(x, scale=scale)
+        # also checks that for 1d problems, a and b can be scalars
+        def func(x):
+            return stats.norm.pdf(x, scale=2)
 
-        res = qmc_quad(func, [0, 1], args=2)
+        res = qmc_quad(func, 0, 1)
         ref = stats.norm.cdf(1, scale=2) - stats.norm.cdf(0, scale=2)
         assert_allclose(res.integral, ref, 1e-2)

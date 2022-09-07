@@ -1041,7 +1041,7 @@ def newton_cotes(rn, equal=0):
     return ai, BN*fac
 
 
-def _qmc_quad_iv(func, ranges, n_points, n_estimates, qrng, log, args):
+def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
 
     # lazy import to avoid issues with partially-initialized submodule
     if not hasattr(qmc_quad, 'qmc'):
@@ -1055,42 +1055,33 @@ def _qmc_quad_iv(func, ranges, n_points, n_estimates, qrng, log, args):
         raise TypeError(message)
 
     # Ranges will be modified, so copy. Oh well if it's copied twice.
-    ranges = np.atleast_2d(ranges).copy()
-    dim = ranges.shape[0]
-
-    if args is None:
-        args = tuple()
-
-    try:
-        len(args)
-    except TypeError:
-        args = (args,)
+    a = np.atleast_1d(a).copy()
+    b = np.atleast_1d(b).copy()
+    a, b = np.broadcast_arrays(a, b)
+    dim = a.shape[0]
 
     try:
-        func(*ranges[:, 0], *args)
+        func((a + b) / 2)
     except Exception as e:
-        message = ("`func` must evaluate the integrand at points within and "
-                   "including the boundaries of the integration range; "
-                   "e.g. `func(*ranges[:, 0])` and `func(*ranges[:, 1])` "
-                   "must return the integrand at the lower and upper "
-                   "integration limits.")
+        message = ("`func` must evaluate the integrand at points within "
+                   "the integration range; e.g. `func( (a + b) / 2)` "
+                   "must return the integrand at the centroid of the "
+                   "integration volume.")
         raise ValueError(message) from e
 
     try:
-        func(*ranges, *args)
+        func(np.array([a, b]))
         vfunc = func
     except Exception as e:
-        wmessage = ("Exception encountered when attempting vectorized call to "
-                    f"`func`: {e}. `func` should accept arrays `x0, ..., xn` "
-                    "for better performance.")
-        emessage = ("Exception encountered when attempting vectorized call to "
-                    f"`func`: {e}, and `args` is not `None`. `func` must "
-                    "accept arrays `x0, ..., xn` if `args` is not `None`.")
-        if args != tuple():
-            raise ValueError(emessage)
-        else:
-            warnings.warn(wmessage)
-        vfunc = np.vectorize(func)
+        message = ("Exception encountered when attempting vectorized call to "
+                   f"`func`: {e}. `func` should accept two-dimensional array "
+                   "with shape `(n_points, len(a))` and return an array with "
+                   "the integrand value at each of the `n_points` for better "
+                   "performance.")
+        warnings.warn(message, stacklevel=3)
+
+        def vfunc(x):
+            return np.apply_along_axis(func, axis=-1, arr=x)
 
     n_points_int = np.int64(n_points)
     if n_points != n_points_int:
@@ -1108,10 +1099,10 @@ def _qmc_quad_iv(func, ranges, n_points, n_estimates, qrng, log, args):
         message = "`qrng` must be an instance of scipy.stats.qmc.QMCEngine."
         raise TypeError(message)
 
-    if qrng.d != ranges.shape[0]:
+    if qrng.d != a.shape[0]:
         message = ("`qrng` must be initialized with dimensionality equal to "
-                   "the number of variables in `ranges`, i.e., "
-                   "`qrng.random().shape[-1]` must equal `ranges.shape[0]`.")
+                   "the number of variables in `a`, i.e., "
+                   "`qrng.random().shape[-1]` must equal `a.shape[0]`.")
         raise ValueError(message)
 
     rng_seed = getattr(qrng, 'rng_seed', None)
@@ -1121,14 +1112,13 @@ def _qmc_quad_iv(func, ranges, n_points, n_estimates, qrng, log, args):
         message = "`log` must be boolean (`True` or `False`)."
         raise TypeError(message)
 
-    return (vfunc, ranges, n_points_int, n_estimates_int,
-            qrng, rng, log, args, stats)
+    return (vfunc, a, b, n_points_int, n_estimates_int, qrng, rng, log, stats)
 
 
 QMCQuadResult = namedtuple('QMCQuadResult', ['integral', 'standard_error'])
 
 
-def qmc_quad(func, ranges, *, n_points=1024, n_estimates=8, qrng=None,
+def qmc_quad(func, a, b, *, n_points=1024, n_estimates=8, qrng=None,
              log=False, args=None):
     """
     Compute an integral in N-dimensions using Quasi-Monte Carlo quadrature.
@@ -1136,15 +1126,14 @@ def qmc_quad(func, ranges, *, n_points=1024, n_estimates=8, qrng=None,
     Parameters
     ----------
     func : callable
-        The integrand. Must accept separate arguments ``x0, ..., xn``
-        corresponding with the coordinate in each dimension. For efficiency,
+        The integrand. Must accept a single arguments `x`, an array which
+        specifies the point at which to evaluate the integrand. For efficiency,
         the function should be vectorized to compute the integrand for each
-        element of array inputs ``x0, ..., xn``, each of length `n_points`.
-        If the function is vectorized, it may also accept additional positional
-        arguments specified with `args`.
-    ranges : array-like
-        An ``n`` x 2 array array specifying the lower and upper integration
-        limits of each of the ``n`` variables.
+        element an array of shape ``(n_points, n)``, where ``n`` is number of
+        variables.
+    a, b : array-like
+        One-dimensional arrays specifying the lower and upper integration
+        limits, respectively, of each of the ``n`` variables.
     n_points, n_estimates: int, optional
         One QMC sample of `n_points` (default: 256) points will be generated
         by `qrng`, and `n_estimates` (default: 8) statistically independent
@@ -1166,10 +1155,6 @@ def qmc_quad(func, ranges, *, n_points=1024, n_estimates=8, qrng=None,
     log : boolean, default: False
         When set to True, `func` returns the log of the integrand, and
         the result object contains the log of the integral.
-    args : sequence, optional
-        Extra arguments to pass to `func`. All extra arguments must be packed
-        into a sequence; the will be unpacked to be passed to `func`, e.g.
-        ``func(x1, x2, *args)``.
 
     Returns
     -------
@@ -1188,19 +1173,21 @@ def qmc_quad(func, ranges, *, n_points=1024, n_estimates=8, qrng=None,
     from a population of possibile estimates of the integral, the value of
     which we obtain depends on the particular points at which the integral
     was evaluated. We perform this process `n_estimates` times, each time
-    evaluating the integrand at different QMC points, effectively drawing
-    i.i.d. random samples from the population of integral estimates.
+    evaluating the integrand at different scrambled QMC points, effectively
+    drawing i.i.d. random samples from the population of integral estimates.
     The sample mean :math:`m` of these integral estimates is an
     unbiased estimator of the true value of the integral, and the standard
     error of the mean :math:`s` of these estimates may be used to generate
     confidence intervals using the t distribution with ``n_estimates - 1``
-    degrees of freedom.
-
+    degrees of freedom. Perhaps counter-intuitively, increasing `n_points`
+    while keeping the total number of function evaluation points
+    ``n_points * n_estimates`` fixed tends to reduce the actual error, whereas
+    increasing `n_estimates` tends to decrease the error estimate.
 
     Examples
     --------
     QMC quadrature is particularly useful for computing integrals in higher
-    dimensions; an example integrand is the probability density function
+    dimensions. An example integrand is the probability density function
     of a multivariate normal distribution.
 
     >>> import numpy as np
@@ -1208,20 +1195,18 @@ def qmc_quad(func, ranges, *, n_points=1024, n_estimates=8, qrng=None,
     >>> dim = 8
     >>> mean = np.zeros(dim)
     >>> cov = np.eye(dim)
-    >>> def func(*z):
-    ...     z = np.asarray(z).T
-    ...     return stats.multivariate_normal.pdf(z, mean, cov)
+    >>> def func(x):
+    ...     return stats.multivariate_normal.pdf(x, mean, cov)
 
     To compute the integral over the unit hypercube:
 
     >>> from scipy.integrate import qmc_quad
-    >>> lb = np.zeros(dim)
-    >>> ub = np.ones(dim)
-    >>> ranges = np.asarray([lb, ub]).T
+    >>> a = np.zeros(dim)
+    >>> b = np.ones(dim)
     >>> rng = np.random.default_rng()
     >>> qrng = stats.qmc.Halton(d=dim, seed=rng)
     >>> n_estimates = 8
-    >>> res = qmc_quad(func, ranges, n_estimates=n_estimates, qrng=qrng)
+    >>> res = qmc_quad(func, a, b, n_estimates=n_estimates, qrng=qrng)
     >>> res.integral, res.standard_error
     (0.00018441088533413305, 1.1255608140911588e-07)
 
@@ -1236,23 +1221,27 @@ def qmc_quad(func, ranges, *, n_points=1024, n_estimates=8, qrng=None,
     Indeed, the value reported by `scipy.stats.multivariate_normal` is
     within this range.
 
-    >>> stats.multivariate_normal.cdf(ub, mean, cov, lower_limit=lb)
+    >>> stats.multivariate_normal.cdf(b, mean, cov, lower_limit=a)
     0.00018430867675187443
 
     """
-    args = _qmc_quad_iv(func, ranges, n_points, n_estimates, qrng, log, args)
-    func, ranges, n_points, n_estimates, qrng, rng, log, args, stats = args
-
-    lb, ub = ranges.T
+    args = _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log)
+    func, a, b, n_points, n_estimates, qrng, rng, log, stats = args
 
     # The sign of the integral depends on the order of the limits. Fix this by
     # ensuring that lower bounds are indeed lower and setting sign of resulting
     # integral manually
-    i_swap = ub < lb
-    sign = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
-    lb[i_swap], ub[i_swap] = ub[i_swap], lb[i_swap]
+    if np.any(a == b):
+        message = ("A lower limit was equal to an upper limit, so the value "
+                   "of the integral is zero by definition.")
+        warnings.warn(message, stacklevel=2)
+        return QMCQuadResult(-np.inf if log else 0, 0)
 
-    A = np.prod(ub - lb)
+    i_swap = b < a
+    sign = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
+    a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
+
+    A = np.prod(b - a)
     dA = A / n_points
 
     estimates = np.zeros(n_estimates)
@@ -1260,8 +1249,8 @@ def qmc_quad(func, ranges, *, n_points=1024, n_estimates=8, qrng=None,
     for i in range(n_estimates):
         # Generate integral estimate
         sample = qrng.random(n_points)
-        x = stats.qmc.scale(sample, lb, ub)
-        integrands = func(*x.T, *args)
+        x = stats.qmc.scale(sample, a, b)
+        integrands = func(x)
         if log:
             estimate = logsumexp(integrands) + np.log(dA)
         else:
