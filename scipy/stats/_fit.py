@@ -192,7 +192,7 @@ class FitResult:
             ax.plot(self._data, np.zeros_like(self._data), "*",
                     label='Data', color='C1')
 
-        ax.set_title(f"`{self._dist.name}` Fit Histogram")
+        ax.set_title(rf"$\tt {self._dist.name}$ Fit Histogram")
         ax.legend(*ax.get_legend_handles_labels())
         return ax
 
@@ -251,9 +251,9 @@ class FitResult:
 
         ax.set_xlim(lim)
         ax.set_ylim(lim)
-        ax.set_xlabel(f"Fitted `{self._dist.name}` Theoretical {qp}")
+        ax.set_xlabel(rf"Fitted $\tt {self._dist.name}$ Theoretical {qp}")
         ax.set_ylabel(f"Data {qp}")
-        ax.set_title(f"Fitted `{self._dist.name}` {plot_type} Plot")
+        ax.set_title(rf"Fitted $\tt {self._dist.name}$ {plot_type} Plot")
         ax.legend(*ax.get_legend_handles_labels())
         ax.set_aspect('equal')
         return ax
