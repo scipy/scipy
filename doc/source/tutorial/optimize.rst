@@ -1740,7 +1740,7 @@ each is specified as follows.
     >>> values = np.array([22, 12, 16, 10, 35, 26, 42, 53])
 
 We need to constrain our eight decision variables to be binary. We do so
-by adding a :class:`Bound`: constraint to ensure that they lie between
+by adding a :class:`Bounds`: constraint to ensure that they lie between
 :math:`0` and :math:`1`, and we apply "integrality" constraints to ensure that
 they are *either* :math:`0` *or* :math:`1`.
 
