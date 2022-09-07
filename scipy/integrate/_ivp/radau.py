@@ -46,7 +46,7 @@ MAX_FACTOR = 10  # Maximum allowed increase in a step size.
 
 
 def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
-                             LU_real, LU_complex, solve_lu, mass_matrix=None):
+                             LU_real, LU_complex, solve_lu, mass_matrix):
     """Solve the collocation system.
 
     Parameters
@@ -72,11 +72,10 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
     solve_lu : callable
         Callable which solves a linear system given a LU decomposition. The
         signature is ``solve_lu(LU, b)``.
-    mass_matrix : {None, array_like, sparse_matrix}, optional
-           Defined the constant mass matrix of the system, with shape (n,n).
+    mass_matrix : {None, array_like, sparse_matrix},
+           Defines the constant mass matrix of the system, with shape (n,n).
            It may be singular, thus defining a problem of the differential-
-           algebraic type (DAE). The default value is None (equivalent to
-           an identity mass matrix).
+           algebraic type (DAE).
 
     Returns
     -------
@@ -110,12 +109,8 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
         if not np.all(np.isfinite(F)):
             break
 
-        if mass_matrix is None:
-            f_real = F.T.dot(TI_REAL) - M_real * W[0]
-            f_complex = F.T.dot(TI_COMPLEX) - M_complex * (W[1] + 1j * W[2])
-        else:
-            f_real = F.T.dot(TI_REAL) - M_real * mass_matrix.dot(W[0])
-            f_complex = F.T.dot(TI_COMPLEX) - M_complex * mass_matrix.dot(W[1] + 1j * W[2])
+        f_real = F.T.dot(TI_REAL) - M_real * mass_matrix.dot(W[0])
+        f_complex = F.T.dot(TI_COMPLEX) - M_complex * mass_matrix.dot(W[1] + 1j * W[2])
 
         dW_real = solve_lu(LU_real, f_real)
         dW_complex = solve_lu(LU_complex, f_complex)
@@ -307,7 +302,7 @@ class Radau(OdeSolver):
     """
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
-                 vectorized=False, first_step=None, mass=None, **extraneous):
+                 vectorized=False, first_step=None, mass_matrix=None, **extraneous):
         warn_extraneous(extraneous)
         super().__init__(fun, t0, y0, t_bound, vectorized)
         self.y_old = None
@@ -330,14 +325,14 @@ class Radau(OdeSolver):
 
         self.jac_factor = None
         self.jac, self.J = self._validate_jac(jac, jac_sparsity)
-        self.nlusove = 0
+        self._nlusove = 0
         if issparse(self.J):
             def lu(A):
                 self.nlu += 1
                 return splu(A)
 
             def solve_lu(LU, b):
-                self.nlusove += 1
+                self._nlusove += 1
                 return LU.solve(b)
 
             I = eye(self.n, format='csc')
@@ -347,7 +342,7 @@ class Radau(OdeSolver):
                 return lu_factor(A, overwrite_a=True)
 
             def solve_lu(LU, b):
-                self.nlusove += 1
+                self._nlusove += 1
                 return lu_solve(LU, b, overwrite_b=True)
 
             I = np.identity(self.n)
@@ -356,26 +351,37 @@ class Radau(OdeSolver):
         self.solve_lu = solve_lu
         self.I = I
 
-        if not (mass is None):
-            if issparse(mass):
-                self.mass_matrix = csc_matrix(mass)
-                self.index_algebraic_vars = np.where(
-                  np.all(self.mass_matrix.toarray() == 0, axis=1))[0]
-            else:
-                self.mass_matrix = mass
-                self.index_algebraic_vars = np.where(np.all(
-                  self.mass_matrix == 0, axis=1))[0]
-            self.nvars_algebraic = self.index_algebraic_vars.size
-        else:
-            self.mass_matrix = None
-            self.index_algebraic_vars = None
-            self.nvars_algebraic = 0
+        self.mass_matrix, self.index_algebraic_vars, self.nvars_algebraic = \
+                          self._validate_mass_matrix(mass_matrix)
 
         self.current_jac = True
         self.LU_real = None
         self.LU_complex = None
         self.Z = None
 
+    def _validate_mass_matrix(self, mass_matrix):
+        if mass_matrix is None:
+            M = self.I
+            index_algebraic_vars = None
+            nvars_algebraic = 0
+        elif callable(mass_matrix):
+            raise ValueError("`mass_matrix` should be a constant matrix, but is"
+                             " callable")
+        else:
+            if issparse(mass_matrix):
+                M = csc_matrix(mass_matrix)
+                index_algebraic_vars = np.where(np.all(M.toarray()==0, axis=1))[0]
+            else:
+                M = np.asarray(mass_matrix, dtype=float)
+                index_algebraic_vars = np.where(np.all(M==0, axis=1))[0]
+            if M.shape != (self.n, self.n):
+                raise ValueError("`mass_matrix` is expected to have shape {}, "
+                                 "but actually has {}."
+                                 .format((self.n, self.n), M.shape))
+            nvars_algebraic = index_algebraic_vars.size
+
+        return M, index_algebraic_vars, nvars_algebraic
+      
     def _validate_jac(self, jac, sparsity):
         t0 = self.t
         y0 = self.y
@@ -484,12 +490,8 @@ class Radau(OdeSolver):
             converged = False
             while not converged:
                 if LU_real is None or LU_complex is None:
-                    if self.mass_matrix is None:
-                        LU_real = self.lu(MU_REAL / h * self.I - J)
-                        LU_complex = self.lu(MU_COMPLEX / h * self.I - J)
-                    else:
-                        LU_real = self.lu(MU_REAL / h * self.mass_matrix - J)
-                        LU_complex = self.lu(MU_COMPLEX / h * self.mass_matrix - J)
+                    LU_real = self.lu(MU_REAL / h * self.mass_matrix - J)
+                    LU_complex = self.lu(MU_COMPLEX / h * self.mass_matrix - J)
 
                 converged, n_iter, Z, rate = solve_collocation_system(
                     self.fun, t, y, h, Z0, scale, self.newton_tol,
@@ -514,39 +516,32 @@ class Radau(OdeSolver):
             ZE = Z.T.dot(E) / h
             error = self.solve_lu(LU_real, f + ZE)
             scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
-            if self.mass_matrix is None:
-                error = self.solve_lu(LU_real, f + ZE)
+            # see [1], chapter IV.8, page 127
+            error = self.solve_lu(LU_real, f + self.mass_matrix.dot(ZE))
+            if self.index_algebraic_vars is not None:
+                # correct for the overestimation of the error on
+                # algebraic variables, ideally multiply their errors by
+                # (h ** index)
+                error[self.index_algebraic_vars] = 0.
+                error_norm = np.linalg.norm(error / scale) / (n - self.nvars_algebraic) ** 0.5
+                # we exclude the algebraic components, otherwise
+                # they artificially lower the error norm
+            else:
                 error_norm = norm(error / scale)
-            else:  # see [1], chapter IV.8, page 127
-                error = self.solve_lu(LU_real, f + self.mass_matrix.dot(ZE))
-                if self.index_algebraic_vars is not None:
-                    # correct for the overestimation of the error on
-                    # algebraic variables, ideally multiply their errors by
-                    # (h ** index)
-                    error[self.index_algebraic_vars] = 0.
-                    error_norm = np.linalg.norm(error / scale) / (n - self.nvars_algebraic) ** 0.5
-                    # we exclude the algebraic components, otherwise
-                    # they artificially lower the error norm
-                else:
-                    error_norm = norm(error / scale)
 
             safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (2 * NEWTON_MAXITER
                                                        + n_iter)
 
-            if rejected and error_norm > 1:
-                if self.mass_matrix is None:
-                    error = self.solve_lu(LU_real, self.fun(t, y + error) + ZE)
-                    error_norm = norm(error / scale)
+            if rejected and error_norm > 1: # try with stabilised error estimate
+                error = self.solve_lu(LU_real, self.fun(t, y + error)
+                                      + self.mass_matrix.dot(ZE))
+                if self.index_algebraic_vars is not None:
+                    # ideally error*(h**index)
+                    error[self.index_algebraic_vars] = 0.
+                    error_norm = np.linalg.norm(error / scale) / (n - self.nvars_algebraic) ** 0.5
+                    # again, we exclude the algebraic components
                 else:
-                    error = self.solve_lu(LU_real, self.fun(t, y + error)
-                                          + self.mass_matrix.dot(ZE))
-                    if self.index_algebraic_vars is not None:
-                        # ideally error*(h**index)
-                        error[self.index_algebraic_vars] = 0.
-                        error_norm = np.linalg.norm(error / scale) / (n - self.nvars_algebraic) ** 0.5
-                        # again, we exclude the algebraic components
-                    else:
-                        error_norm = norm(error / scale)
+                    error_norm = norm(error / scale)
             if error_norm > 1:
                 factor = predict_factor(h_abs, h_abs_old,
                                         error_norm, error_norm_old)
