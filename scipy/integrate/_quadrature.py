@@ -1134,7 +1134,7 @@ def qmc_quad(func, a, b, *, n_points=1024, n_estimates=8, qrng=None,
     a, b : array-like
         One-dimensional arrays specifying the lower and upper integration
         limits, respectively, of each of the ``n`` variables.
-    n_points, n_estimates: int, optional
+    n_points, n_estimates : int, optional
         One QMC sample of `n_points` (default: 256) points will be generated
         by `qrng`, and `n_estimates` (default: 8) statistically independent
         estimates of the integral will be produced. The total number of points
@@ -1145,10 +1145,9 @@ def qmc_quad(func, a, b, *, n_points=1024, n_estimates=8, qrng=None,
         The QMCEngine must be initialized to a number of dimensions
         corresponding with the number of variables ``x0, ..., xn`` passed to
         `func`.
-        If the QMCEngine is initialized with scrambling enabled (default), the
-        pseudorandom number generator used for scrambling is also used to
-        generate the pseudorandom offets. If not, the `numpy.random.Generator`
-        singleton is used.
+        The provided QMCEngine is used to produce the first integral estimate.
+        If `n_estimates` is greater than one, additional QMCEngines are
+        spawned from the first (with scrambling enabled, if it is an option.)
         If a QMCEngine is not provided, the default `scipy.stats.qmc.Halton`
         will be initialized with the number of dimensions determine from
         `a`.
@@ -1170,7 +1169,7 @@ def qmc_quad(func, a, b, *, n_points=1024, n_estimates=8, qrng=None,
     -----
     Values of the integrand at each of the `n_points` points of a QMC sample
     are used to produce an estimate of the integral. This estimate is drawn
-    from a population of possibile estimates of the integral, the value of
+    from a population of possible estimates of the integral, the value of
     which we obtain depends on the particular points at which the integral
     was evaluated. We perform this process `n_estimates` times, each time
     evaluating the integrand at different scrambled QMC points, effectively
