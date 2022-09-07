@@ -1,8 +1,8 @@
 
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
-from scipy._lib._util import _nan_allsame
-from ._stats_py import _chk_asarray, _contains_nan
+from scipy._lib._util import _nan_allsame, _contains_nan
+from ._stats_py import _chk_asarray
 
 
 def _nanvariation(a, *, axis=0, ddof=0, keepdims=False):
@@ -163,6 +163,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import variation
     >>> variation([1, 2, 3, 4, 5], ddof=1)
     0.5270462766947299

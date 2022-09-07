@@ -22,8 +22,8 @@ double tukeylambdacdf(double x, double lmbda)
     double pmin, pmid, pmax, plow, phigh, xeval;
     int count;
 
-    if (npy_isnan(x) || npy_isnan(lmbda)) {
-        return NPY_NAN;
+    if (isnan(x) || isnan(lmbda)) {
+        return NAN;
     }
 
     xeval = 1.0 / lmbda;

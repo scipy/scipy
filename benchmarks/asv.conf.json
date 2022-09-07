@@ -38,10 +38,11 @@
     // version.
     "matrix": {
         "numpy": [],
-        "Cython": ["0.29.21"],
+        "Cython": [],
         "pytest": [],
         "pythran": [],
         "pybind11": [],
+        "meson-python": [],
     },
 
     // The directory (relative to the current directory) that benchmarks are

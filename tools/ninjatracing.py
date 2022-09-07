@@ -25,7 +25,6 @@ Then load trace.json into Chrome or into https://ui.perfetto.dev/ to see
 the profiling results.
 """
 
-from __future__ import print_function
 import json
 import os
 import optparse

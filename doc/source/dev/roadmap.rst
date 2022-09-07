@@ -50,13 +50,14 @@ requested in this respect.
 Statistics enhancements
 -----------------------
 
-The `scipy.stats` enhancements listed in the :ref:`scipy-roadmap-detailed` are of
-particularly high importance to the project.
+The following `scipy.stats` enhancements and those listed in the
+:ref:`scipy-roadmap-detailed` are of particularly high importance to the
+project.
 
-- Improve the options for fitting a probability distribution to data.
-- Expand the set of hypothesis tests.  In particular, include all the basic
-  variations of analysis of variance.
-- Add confidence intervals for all statistical tests.
+- Overhaul the univariate distribution infrastructure to address longstanding
+  issues (e.g. see `gh-15928 <https://github.com/scipy/scipy/issues/15928>`_.)
+- Consistently handle ``nan_policy``, ``axis`` arguments, and masked
+  arrays in ``stats`` functions (where appropriate).
 
 
 Support for more hardware platforms

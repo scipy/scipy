@@ -27,7 +27,7 @@
  *     Riemann zeta(x) = zetac(x) + 1.
  *
  * Extension of the function definition for x < 1 is implemented.
- * Zero is returned for x > log2(NPY_INFINITY).
+ * Zero is returned for x > log2(INFINITY).
  *
  * ACCURACY:
  *
@@ -187,11 +187,11 @@ static double zetac_positive(double);
  */
 double zetac(double x)
 {
-    if (npy_isnan(x)) {
+    if (isnan(x)) {
 	return x;
     }
-    else if (x == -NPY_INFINITY) {
-	return NPY_NAN;
+    else if (x == -INFINITY) {
+	return NAN;
     }
     else if (x < 0.0 && x > -0.01) {
 	return zetac_smallneg(x);
@@ -210,11 +210,11 @@ double zetac(double x)
  */
 double riemann_zeta(double x)
 {
-  if (npy_isnan(x)) {
+  if (isnan(x)) {
     return x;
   }
-  else if (x == -NPY_INFINITY) {
-    return NPY_NAN;
+  else if (x == -INFINITY) {
+    return NAN;
   }
   else if (x < 0.0 && x > -0.01) {
     return 1 + zetac_smallneg(x);
@@ -231,13 +231,13 @@ double riemann_zeta(double x)
 /*
  * Compute zetac for positive arguments
  */
-static NPY_INLINE double zetac_positive(double x)
+static inline double zetac_positive(double x)
 {
     int i;
     double a, b, s, w;
 
     if (x == 1.0) {
-        return NPY_INFINITY;
+        return INFINITY;
     }
 
     if (x >= MAXL2) {
@@ -298,7 +298,7 @@ static NPY_INLINE double zetac_positive(double x)
  * Compute zetac for small negative x. We can't use the reflection
  * formula because to double precision 1 - x = 1 and zetac(1) = inf.
  */
-static NPY_INLINE double zetac_smallneg(double x)
+static inline double zetac_smallneg(double x)
 {
     return polevl(x, TAYLOR0, 9);
 }
@@ -308,7 +308,7 @@ static NPY_INLINE double zetac_smallneg(double x)
  * Compute zetac using the reflection formula (see DLMF 25.4.2) plus
  * the Lanczos approximation for Gamma to avoid overflow.
  */
-static NPY_INLINE double zeta_reflection(double x)
+static inline double zeta_reflection(double x)
 {
     double base, large_term, small_term, hx, x_shift;
 

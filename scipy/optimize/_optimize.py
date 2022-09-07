@@ -313,6 +313,7 @@ def rosen(x):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import rosen
     >>> X = 0.1 * np.arange(10)
     >>> rosen(X)
@@ -356,6 +357,7 @@ def rosen_der(x):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import rosen_der
     >>> X = 0.1 * np.arange(9)
     >>> rosen_der(X)
@@ -394,6 +396,7 @@ def rosen_hess(x):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import rosen_hess
     >>> X = 0.1 * np.arange(4)
     >>> rosen_hess(X)
@@ -436,6 +439,7 @@ def rosen_hess_prod(x, p):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import rosen_hess_prod
     >>> X = 0.1 * np.arange(9)
     >>> p = 0.5 * np.arange(9)
@@ -686,27 +690,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
        51:1, pp. 259-277
 
     """
-    if 'ftol' in unknown_options:
-        warnings.warn("ftol is deprecated for Nelder-Mead,"
-                      " use fatol instead. If you specified both, only"
-                      " fatol is used.",
-                      DeprecationWarning)
-        if (np.isclose(fatol, 1e-4) and
-                not np.isclose(unknown_options['ftol'], 1e-4)):
-            # only ftol was probably specified, use it.
-            fatol = unknown_options['ftol']
-        unknown_options.pop('ftol')
-    if 'xtol' in unknown_options:
-        warnings.warn("xtol is deprecated for Nelder-Mead,"
-                      " use xatol instead. If you specified both, only"
-                      " xatol is used.",
-                      DeprecationWarning)
-        if (np.isclose(xatol, 1e-4) and
-                not np.isclose(unknown_options['xtol'], 1e-4)):
-            # only xtol was probably specified, use it.
-            xatol = unknown_options['xtol']
-        unknown_options.pop('xtol')
-
     _check_unknown_options(unknown_options)
     maxfun = maxfev
     retall = return_all
@@ -963,6 +946,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import optimize
     >>> def func(x, c0, c1):
     ...     "Coordinate vector `x` should be an array of size two."
@@ -1007,9 +991,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         using `func`. By default it is ``'all'``, in which case, all
         the one hot direction vectors are considered to check `grad`.
         If `func` is a vector valued function then only ``'all'`` can be used.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -1034,6 +1016,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
 
     Examples
     --------
+    >>> import numpy as np
     >>> def func(x):
     ...     return x[0]**2 - 0.5 * x[1]**3
     >>> def grad(x):
@@ -1209,6 +1192,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import fmin_bfgs
     >>> def quadratic_cost(x, Q):
     ...     return x @ Q @ x
@@ -1509,6 +1493,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     ``a*u**2 + b*u*v + c*v**2 + d*u + e*v + f`` for given values
     of the parameters and an initial guess ``(u, v) = (0, 0)``.
 
+    >>> import numpy as np
     >>> args = (2, 3, 7, 8, 9, 10)  # parameter values
     >>> def f(x, *args):
     ...     u, v = x
@@ -2269,12 +2254,19 @@ class Brent:
             if (xa > xc):  # swap so xa < xc can be assumed
                 xc, xa = xa, xc
             if not ((xa < xb) and (xb < xc)):
-                raise ValueError("Not a bracketing interval.")
+                raise ValueError(
+                    "Bracketing values (xa, xb, xc) do not"
+                    " fulfill this requirement: (xa < xb) and (xb < xc)"
+                )
             fa = func(*((xa,) + args))
             fb = func(*((xb,) + args))
             fc = func(*((xc,) + args))
             if not ((fb < fa) and (fb < fc)):
-                raise ValueError("Not a bracketing interval.")
+                raise ValueError(
+                    "Bracketing values (xa, xb, xc) do not fulfill"
+                    " this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
+                )
+
             funcalls = 3
         else:
             raise ValueError("Bracketing interval must be "
@@ -2634,12 +2626,18 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         if (xa > xc):  # swap so xa < xc can be assumed
             xc, xa = xa, xc
         if not ((xa < xb) and (xb < xc)):
-            raise ValueError("Not a bracketing interval.")
+            raise ValueError(
+                "Bracketing values (xa, xb, xc) do not"
+                " fulfill this requirement: (xa < xb) and (xb < xc)"
+            )
         fa = func(*((xa,) + args))
         fb = func(*((xb,) + args))
         fc = func(*((xc,) + args))
         if not ((fb < fa) and (fb < fc)):
-            raise ValueError("Not a bracketing interval.")
+            raise ValueError(
+                "Bracketing values (xa, xb, xc) do not fulfill"
+                " this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
+            )
         funcalls = 3
     else:
         raise ValueError("Bracketing interval must be length 2 or 3 sequence.")
@@ -2751,6 +2749,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     --------
     This function can find a downward convex region of a function:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.optimize import bracket
     >>> def f(x):
@@ -3440,6 +3439,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     ``(z, *params)``, where ``z = (x, y)``,  and ``params`` and the functions
     are as defined below.
 
+    >>> import numpy as np
     >>> params = (2, 3, 7, 8, 9, 10, 44, -1, 2, 26, 1, -2, 0.5)
     >>> def f1(z, *params):
     ...     x, y = z
@@ -3496,6 +3496,9 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     inpt_shape = grid.shape
     if (N > 1):
         grid = np.reshape(grid, (inpt_shape[0], np.prod(inpt_shape[1:]))).T
+
+    if not np.iterable(args):
+        args = (args,)
 
     wrapped_func = _Brute_Wrapper(func, args)
 
@@ -3797,83 +3800,3 @@ def show_options(solver=None, method=None, disp=True):
         return
     else:
         return text
-
-
-def main():
-    import time
-
-    times = []
-    algor = []
-    x0 = [0.8, 1.2, 0.7]
-    print("Nelder-Mead Simplex")
-    print("===================")
-    start = time.time()
-    x = fmin(rosen, x0)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Nelder-Mead Simplex\t')
-
-    print()
-    print("Powell Direction Set Method")
-    print("===========================")
-    start = time.time()
-    x = fmin_powell(rosen, x0)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Powell Direction Set Method.')
-
-    print()
-    print("Nonlinear CG")
-    print("============")
-    start = time.time()
-    x = fmin_cg(rosen, x0, fprime=rosen_der, maxiter=200)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Nonlinear CG     \t')
-
-    print()
-    print("BFGS Quasi-Newton")
-    print("=================")
-    start = time.time()
-    x = fmin_bfgs(rosen, x0, fprime=rosen_der, maxiter=80)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('BFGS Quasi-Newton\t')
-
-    print()
-    print("BFGS approximate gradient")
-    print("=========================")
-    start = time.time()
-    x = fmin_bfgs(rosen, x0, gtol=1e-4, maxiter=100)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('BFGS without gradient\t')
-
-    print()
-    print("Newton-CG with Hessian product")
-    print("==============================")
-    start = time.time()
-    x = fmin_ncg(rosen, x0, rosen_der, fhess_p=rosen_hess_prod, maxiter=80)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Newton-CG with hessian product')
-
-    print()
-    print("Newton-CG with full Hessian")
-    print("===========================")
-    start = time.time()
-    x = fmin_ncg(rosen, x0, rosen_der, fhess=rosen_hess, maxiter=80)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Newton-CG with full Hessian')
-
-    print()
-    print("\nMinimizing the Rosenbrock function of order 3\n")
-    print(" Algorithm \t\t\t       Seconds")
-    print("===========\t\t\t      =========")
-    for alg, tme in zip(algor, times):
-        print(alg, "\t -- ", tme)
-
-
-if __name__ == "__main__":
-    main()

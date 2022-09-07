@@ -1,17 +1,15 @@
 #
 # Author: Travis Oliphant, March 2002
 #
+from itertools import product
 
-__all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
-           'tanhm','logm','funm','signm','sqrtm',
-           'expm_frechet', 'expm_cond', 'fractional_matrix_power',
-           'khatri_rao']
-
-from numpy import (Inf, dot, diag, prod, logical_not, ravel,
-        transpose, conjugate, absolute, amax, sign, isfinite, single)
 import numpy as np
+from numpy import (Inf, dot, diag, prod, logical_not, ravel, transpose,
+                   conjugate, absolute, amax, sign, isfinite)
+from numpy.lib.scimath import sqrt as csqrt
 
 # Local imports
+from scipy.linalg import LinAlgError, bandwidth
 from ._misc import norm
 from ._basic import solve, inv
 from ._special_matrices import triu
@@ -19,9 +17,14 @@ from ._decomp_svd import svd
 from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
+from ._matfuncs_expm import pick_pade_structure, pade_UV_calc
 
-eps = np.finfo(float).eps
-feps = np.finfo(single).eps
+__all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
+           'funm', 'signm', 'sqrtm', 'fractional_matrix_power', 'expm_frechet',
+           'expm_cond', 'khatri_rao']
+
+eps = np.finfo('d').eps
+feps = np.finfo('f').eps
 
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
 
@@ -208,25 +211,42 @@ def logm(A, disp=True):
 
 
 def expm(A):
-    """
-    Compute the matrix exponential using Pade approximation.
+    """Compute the matrix exponential of an array.
 
     Parameters
     ----------
-    A : (N, N) array_like or sparse matrix
-        Matrix to be exponentiated.
+    A : ndarray
+        Input with last two dimensions are square ``(..., n, n)``.
 
     Returns
     -------
-    expm : (N, N) ndarray
-        Matrix exponential of `A`.
+    eA : ndarray
+        The resulting matrix exponential with the same shape of ``A``
+
+    Notes
+    -----
+    Implements the algorithm given in [1], which is essentially a Pade
+    approximation with a variable order that is decided based on the array
+    data.
+
+    For input with size ``n``, the memory usage is in the worst case in the
+    order of ``8*(n**2)``. If the input data is not of single and double
+    precision of real and complex dtypes, it is copied to a new array.
+
+    For cases ``n >= 400``, the exact 1-norm computation cost, breaks even with
+    1-norm estimation and from that point on the estimation scheme given in
+    [2] is used to decide on the approximation order.
 
     References
     ----------
-    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2009)
-           "A New Scaling and Squaring Algorithm for the Matrix Exponential."
-           SIAM Journal on Matrix Analysis and Applications.
-           31 (3). pp. 970-989. ISSN 1095-7162
+    .. [1] Awad H. Al-Mohy and Nicholas J. Higham, (2009), "A New Scaling
+           and Squaring Algorithm for the Matrix Exponential", SIAM J. Matrix
+           Anal. Appl. 31(3):970-989, :doi:`10.1137/09074721X`
+
+    .. [2] Nicholas J. Higham and Francoise Tisseur (2000), "A Block Algorithm
+           for Matrix 1-Norm Estimation, with an Application to 1-Norm
+           Pseudospectra." SIAM J. Matrix Anal. Appl. 21(4):1185-1201,
+           :doi:`10.1137/S0895479899356080`
 
     Examples
     --------
@@ -234,9 +254,15 @@ def expm(A):
 
     Matrix version of the formula exp(0) = 1:
 
-    >>> expm(np.zeros((2,2)))
-    array([[ 1.,  0.],
-           [ 0.,  1.]])
+    >>> expm(np.zeros((3, 2, 2)))
+    array([[[1., 0.],
+            [0., 1.]],
+    <BLANKLINE>
+           [[1., 0.],
+            [0., 1.]],
+    <BLANKLINE>
+           [[1., 0.],
+            [0., 1.]]])
 
     Euler's identity (exp(i*theta) = cos(theta) + i*sin(theta))
     applied to a matrix:
@@ -250,9 +276,121 @@ def expm(A):
            [ 1.06860742+0.48905626j, -1.71075555+0.91406299j]])
 
     """
-    # Input checking and conversion is provided by sparse.linalg.expm().
-    import scipy.sparse.linalg
-    return scipy.sparse.linalg.expm(A)
+    a = np.asarray(A)
+    if a.size == 1 and a.ndim < 2:
+        return np.array([[np.exp(a.item())]])
+
+    if a.ndim < 2:
+        raise LinAlgError('The input array must be at least two-dimensional')
+    if a.shape[-1] != a.shape[-2]:
+        raise LinAlgError('Last 2 dimensions of the array must be square')
+    n = a.shape[-1]
+    # Empty array
+    if min(*a.shape) == 0:
+        return np.empty_like(a)
+
+    # Scalar case
+    if a.shape[-2:] == (1, 1):
+        return np.exp(a)
+
+    if not np.issubdtype(a.dtype, np.inexact):
+        a = a.astype(float)
+    elif a.dtype == np.float16:
+        a = a.astype(np.float32)
+
+    # Explicit formula for 2x2 case, formula (2.2) in [1]
+    # without Kahan's method numerical instabilities can occur.
+    if a.shape[-2:] == (2, 2):
+        a1, a2, a3, a4 = (a[..., [0], [0]],
+                          a[..., [0], [1]],
+                          a[..., [1], [0]],
+                          a[..., [1], [1]])
+        mu = csqrt((a1-a4)**2 + 4*a2*a3)/2.  # csqrt slow but handles neg.vals
+
+        eApD2 = np.exp((a1+a4)/2.)
+        AmD2 = (a1 - a4)/2.
+        coshMu = np.cosh(mu)
+        sinchMu = np.ones_like(coshMu)
+        mask = mu != 0
+        sinchMu[mask] = np.sinh(mu[mask]) / mu[mask]
+        eA = np.empty((a.shape), dtype=mu.dtype)
+        eA[..., [0], [0]] = eApD2 * (coshMu + AmD2*sinchMu)
+        eA[..., [0], [1]] = eApD2 * a2 * sinchMu
+        eA[..., [1], [0]] = eApD2 * a3 * sinchMu
+        eA[..., [1], [1]] = eApD2 * (coshMu - AmD2*sinchMu)
+        if np.isrealobj(a):
+            return eA.real
+        return eA
+
+    # larger problem with unspecified stacked dimensions.
+    n = a.shape[-1]
+    eA = np.empty(a.shape, dtype=a.dtype)
+    # working memory to hold intermediate arrays
+    Am = np.empty((5, n, n), dtype=a.dtype)
+
+    # Main loop to go through the slices of an ndarray and passing to expm
+    for ind in product(*[range(x) for x in a.shape[:-2]]):
+        aw = a[ind]
+
+        lu = bandwidth(aw)
+        if not any(lu):  # a is diagonal?
+            eA[ind] = np.diag(np.exp(np.diag(aw)))
+            continue
+
+        # Generic/triangular case; copy the slice into scratch and send.
+        # Am will be mutated by pick_pade_structure
+        Am[0, :, :] = aw
+        m, s = pick_pade_structure(Am)
+
+        if s != 0:  # scaling needed
+            Am[:4] *= [[[2**(-s)]], [[4**(-s)]], [[16**(-s)]], [[64**(-s)]]]
+
+        pade_UV_calc(Am, n, m)
+        eAw = Am[0]
+
+        if s != 0:  # squaring needed
+
+            if (lu[1] == 0) or (lu[0] == 0):  # lower/upper triangular
+                # This branch implements Code Fragment 2.1 of [1]
+
+                diag_aw = np.diag(aw)
+                # einsum returns a writable view
+                np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2**(-s))
+                # super/sub diagonal
+                sd = np.diag(aw, k=-1 if lu[1] == 0 else 1)
+
+                for i in range(s-1, -1, -1):
+                    eAw = eAw @ eAw
+
+                    # diagonal
+                    np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2.**(-i))
+                    exp_sd = _exp_sinch(diag_aw * (2.**(-i))) * (sd * 2**(-i))
+                    if lu[1] == 0:  # lower
+                        np.einsum('ii->i', eAw[1:, :-1])[:] = exp_sd
+                    else:  # upper
+                        np.einsum('ii->i', eAw[:-1, 1:])[:] = exp_sd
+
+            else:  # generic
+                for _ in range(s):
+                    eAw = eAw @ eAw
+
+        # Zero out the entries from np.empty in case of triangular input
+        if (lu[0] == 0) or (lu[1] == 0):
+            eA[ind] = np.triu(eAw) if lu[0] == 0 else np.tril(eAw)
+        else:
+            eA[ind] = eAw
+
+    return eA
+
+
+def _exp_sinch(x):
+    # Higham's formula (10.42), might overflow, see GH-11839
+    lexp_diff = np.diff(np.exp(x))
+    l_diff = np.diff(x)
+    mask_z = l_diff == 0.
+    lexp_diff[~mask_z] /= l_diff[~mask_z]
+    lexp_diff[mask_z] = np.exp(x[:-1][mask_z])
+    return lexp_diff
 
 
 def cosm(A):
