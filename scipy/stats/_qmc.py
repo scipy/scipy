@@ -985,7 +985,9 @@ class Halton(QMCEngine):
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
-        self._init = {'d': d, 'scramble': True, 'optimization': optimization}
+        # Used in `scipy.integrate.qmc_quad`
+        self._init_quad = {'d': d, 'scramble': True,
+                           'optimization': optimization}
         super().__init__(d=d, optimization=optimization, seed=seed)
         self.seed = seed
         self.base = n_primes(d)
@@ -1181,8 +1183,9 @@ class LatinHypercube(QMCEngine):
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
-        self._init = {'d': d, 'centered': centered, 'strength': strength,
-                      'optimization': optimization}
+        # Used in `scipy.integrate.qmc_quad`
+        self._init_quad = {'d': d, 'centered': centered, 'strength': strength,
+                           'optimization': optimization}
         super().__init__(d=d, seed=seed, optimization=optimization)
         self.centered = centered
 
@@ -1415,8 +1418,9 @@ class Sobol(QMCEngine):
         bits: Optional[IntNumber] = None, seed: SeedType = None,
         optimization: Optional[Literal["random-cd", "lloyd"]] = None
     ) -> None:
-        self._init = {'d': d, 'scramble': True, 'bits': bits,
-                      'optimization': optimization}
+        # Used in `scipy.integrate.qmc_quad`
+        self._init_quad = {'d': d, 'scramble': True, 'bits': bits,
+                           'optimization': optimization}
 
         super().__init__(d=d, optimization=optimization, seed=seed)
         if d > self.MAXDIM:
@@ -1728,8 +1732,11 @@ class PoissonDisk(QMCEngine):
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
-        self._init = {'d': d, 'radius': radius, 'hypersphere': hypersphere,
-                      'ncandidates': ncandidates, 'optimization': optimization}
+        # Used in `scipy.integrate.qmc_quad`
+        self._init_quad = {'d': d, 'radius': radius,
+                           'hypersphere': hypersphere,
+                           'ncandidates': ncandidates,
+                           'optimization': optimization}
         super().__init__(d=d, optimization=optimization, seed=seed)
 
         hypersphere_sample = {

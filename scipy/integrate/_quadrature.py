@@ -1054,7 +1054,7 @@ def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
         message = "`func` must be callable."
         raise TypeError(message)
 
-    # Ranges will be modified, so copy. Oh well if it's copied twice.
+    # a, b will be modified, so copy. Oh well if it's copied twice.
     a = np.atleast_1d(a).copy()
     b = np.atleast_1d(b).copy()
     a, b = np.broadcast_arrays(a, b)
@@ -1140,7 +1140,7 @@ def qmc_quad(func, a, b, *, n_points=1024, n_estimates=8, qrng=None,
         estimates of the integral will be produced. The total number of points
         at which the integrand `func` will be evaluated is
         ``n_points * n_estimates``. See Notes for details.
-    qrng : scipy.stats.qmc.QMCEngine, optional
+    qrng : `~scipy.stats.qmc.QMCEngine`, optional
         An instance of the QMCEngine from which to sample QMC points.
         The QMCEngine must be initialized to a number of dimensions
         corresponding with the number of variables ``x0, ..., xn`` passed to
@@ -1151,7 +1151,7 @@ def qmc_quad(func, a, b, *, n_points=1024, n_estimates=8, qrng=None,
         singleton is used.
         If a QMCEngine is not provided, the default `scipy.stats.qmc.Halton`
         will be initialized with the number of dimensions determine from
-        `ranges`.
+        `a`.
     log : boolean, default: False
         When set to True, `func` returns the log of the integrand, and
         the result object contains the log of the integral.
@@ -1258,7 +1258,7 @@ def qmc_quad(func, a, b, *, n_points=1024, n_estimates=8, qrng=None,
         estimates[i] = estimate
 
         # Get a new, independently-scrambled QRNG for next time
-        qrng = type(qrng)(seed=rngs[i], **qrng._init)
+        qrng = type(qrng)(seed=rngs[i], **qrng._init_quad)
 
     integral = np.mean(estimates)
     integral = integral + np.pi*1j if (log and sign < 0) else integral*sign
