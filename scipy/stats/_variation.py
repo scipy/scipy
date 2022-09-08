@@ -68,7 +68,7 @@ def _nanvariation(a, *, axis=0, ddof=0, keepdims=False):
     sum_zero = np.nansum(a, axis=axis, keepdims=True) == 0
 
     # Where the sum along the axis is 0, replace mean_a with 1.  This avoids
-    # division by zero.  We'll fix the the corresponding output later.
+    # division by zero.  We'll fix the corresponding output later.
     mean_a[sum_zero] = 1.0
 
     # Here--finally!--is the calculation of the variation.

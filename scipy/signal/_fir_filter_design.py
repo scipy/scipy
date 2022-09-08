@@ -1127,7 +1127,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
                 This method [4]_ [5]_ works best with filters with an
                 odd number of taps, and the resulting minimum phase filter
                 will have a magnitude response that approximates the square
-                root of the the original filter's magnitude response.
+                root of the original filter's magnitude response.
 
             'hilbert'
                 This method [1]_ is designed to be used with equiripple
