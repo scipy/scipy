@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 refguide_check.py [OPTIONS] [-- ARGS]
 
@@ -7,7 +7,7 @@ correspond to the objects included in the reference guide.
 
 Example of usage::
 
-    $ python refguide_check.py optimize
+    $ python3 refguide_check.py optimize
 
 Note that this is a helper script to be able to check if things are missing;
 the output of this script does need to be checked manually.  In some cases
@@ -19,7 +19,7 @@ in docstrings. This is different from doctesting [we do not aim to have
 scipy docstrings doctestable!], this is just to make sure that code in
 docstrings is valid python::
 
-    $ python refguide_check.py --doctests optimize
+    $ python3 refguide_check.py --doctests optimize
 
 """
 import copy
@@ -72,6 +72,7 @@ PUBLIC_SUBMODULES = [
     'cluster.hierarchy',
     'cluster.vq',
     'constants',
+    'datasets',
     'fft',
     'fftpack',
     'fftpack.convolve',
@@ -118,7 +119,6 @@ DOCTEST_SKIPLIST = set([
     'scipy.stats.kstwobign',  # inaccurate cdf or ppf
     'scipy.stats.levy_stable',
     'scipy.special.sinc',  # comes from numpy
-    'scipy.misc.who',  # comes from numpy
     'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
@@ -128,7 +128,6 @@ DOCTEST_SKIPLIST = set([
 REFGUIDE_ALL_SKIPLIST = [
     r'scipy\.sparse\.csgraph',
     r'scipy\.sparse\.linalg',
-    r'scipy\.spatial\.distance',
     r'scipy\.linalg\.blas\.[sdczi].*',
     r'scipy\.linalg\.lapack\.[sdczi].*',
 ]

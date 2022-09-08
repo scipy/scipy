@@ -520,7 +520,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                    'Currently, singleton dimensions will be removed from '
                    '`x0`, but an error will be raised in SciPy 1.11.0.')
         warn(message, DeprecationWarning, stacklevel=2)
-        x0 = np.squeeze(x0)
+        x0 = np.atleast_1d(np.squeeze(x0))
 
     if x0.dtype.kind in np.typecodes["AllInteger"]:
         x0 = np.asarray(x0, dtype=float)

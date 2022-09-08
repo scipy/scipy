@@ -41,7 +41,7 @@ import warnings
 from collections import namedtuple
 
 from . import distributions
-from scipy._lib._util import _rename_parameter
+from scipy._lib._util import _rename_parameter, _contains_nan
 from scipy._lib._bunch import _make_tuple_bunch
 import scipy.special as special
 import scipy.stats._stats_py
@@ -314,12 +314,15 @@ def mode(a, axis=0):
     >>> from scipy import stats
     >>> from scipy.stats import mstats
     >>> m_arr = np.ma.array([1, 1, 0, 0, 0, 0], mask=[0, 0, 1, 1, 1, 0])
-    >>> stats.mode(m_arr)
-    ModeResult(mode=array([0]), count=array([4]))
-    >>> mstats.mode(m_arr)
+    >>> mstats.mode(m_arr)  # note that most zeros are masked
     ModeResult(mode=array([1.]), count=array([2.]))
 
     """
+    return _mode(a, axis=axis, keepdims=True)
+
+
+def _mode(a, axis=0, keepdims=True):
+    # Don't want to expose `keepdims` from the public `mstats.mode`
     a, axis = _chk_asarray(a, axis)
 
     def _mode1D(a):
@@ -336,14 +339,15 @@ def mode(a, axis=0):
         output = (ma.array(output[0]), ma.array(output[1]))
     else:
         output = ma.apply_along_axis(_mode1D, axis, a)
-        newshape = list(a.shape)
-        newshape[axis] = 1
-        slices = [slice(None)] * output.ndim
-        slices[axis] = 0
-        modes = output[tuple(slices)].reshape(newshape)
-        slices[axis] = 1
-        counts = output[tuple(slices)].reshape(newshape)
-        output = (modes, counts)
+        if keepdims is None or keepdims:
+            newshape = list(a.shape)
+            newshape[axis] = 1
+            slices = [slice(None)] * output.ndim
+            slices[axis] = 0
+            modes = output[tuple(slices)].reshape(newshape)
+            slices[axis] = 1
+            counts = output[tuple(slices)].reshape(newshape)
+            output = (modes, counts)
 
     return ModeResult(*output)
 
@@ -2480,7 +2484,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
                 a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
 
-    contains_nan, nan_policy = scipy.stats._stats_py._contains_nan(a, nan_policy)
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
     # We are going to modify a: better make a copy
     a = ma.array(a, copy=np.logical_not(inplace))
 

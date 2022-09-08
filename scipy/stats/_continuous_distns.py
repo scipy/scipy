@@ -5,10 +5,11 @@
 #
 import warnings
 from collections.abc import Iterable
-from functools import wraps
+from functools import wraps, cached_property
 import ctypes
 
 import numpy as np
+from numpy.polynomial import Polynomial
 from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring,
                                inherit_docstring_from)
@@ -26,11 +27,12 @@ from ._distn_infrastructure import (
     get_distribution_names, _kurtosis,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
-from ._constants import (_XMIN, _EULER, _ZETA3,
+from ._constants import (_XMIN, _EULER, _ZETA3, _SQRT_PI,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
 from scipy.stats._warnings_errors import FitError
+import scipy.stats as stats
 
 
 def _remove_optimizer_parameters(kwds):
@@ -1046,7 +1048,7 @@ class burr_gen(rv_continuous):
             nc = 1. * n / c
             return d * sc.beta(1.0 - nc, d + nc)
         n, c, d = np.asarray(n), np.asarray(c), np.asarray(d)
-        return _lazywhere((c > n) & (n == n) & (d == d), (c, d, n),
+        return _lazywhere((c > n) & (d == d), (c, d, n),
                           lambda c, d, n: __munp(n, c, d),
                           np.nan)
 
@@ -2261,6 +2263,83 @@ class weibull_min_gen(rv_continuous):
 
     def _entropy(self, c):
         return -_EULER / c - np.log(c) + _EULER + 1
+
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        If ``method='mm'``, parameters fixed by the user are respected, and the
+        remaining parameters are used to match distribution and sample moments
+        where possible. For example, if the user fixes the location with
+        ``floc``, the parameters will only match the distribution skewness and
+        variance to the sample skewness and variance; no attempt will be made
+        to match the means or minimize a norm of the errors.
+        \n\n""")
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        # this extracts fixed shape, location, and scale however they
+        # are specified, and also leaves them in `kwds`
+        data, fc, floc, fscale = _check_fit_input_parameters(self, data,
+                                                             args, kwds)
+        method = kwds.get("method", "mle").lower()
+
+        # See https://en.wikipedia.org/wiki/Weibull_distribution#Moments for
+        # moment formulas.
+        def skew(c):
+            gamma1 = sc.gamma(1+1/c)
+            gamma2 = sc.gamma(1+2/c)
+            gamma3 = sc.gamma(1+3/c)
+            num = 2 * gamma1**3 - 3*gamma1*gamma2 + gamma3
+            den = (gamma2 - gamma1**2)**(3/2)
+            return num/den
+
+        # For c in [1e2, 3e4], population skewness appears to approach
+        # asymptote near -1.139, but past c > 3e4, skewness begins to vary
+        # wildly, and MoM won't provide a good guess. Get out early.
+        s = stats.skew(data)
+        max_c = 1e4
+        s_min = skew(max_c)
+        if s < s_min and method == "mle" and fc is None and not args:
+            return super().fit(data, *args, **kwds)
+
+        # If method is method of moments, we don't need the user's guesses.
+        # If method is "mle", extract the guesses from args and kwds.
+        if method == "mm":
+            c, loc, scale = None, None, None
+        else:
+            c = args[0] if len(args) else None
+            loc = kwds.pop('loc', None)
+            scale = kwds.pop('scale', None)
+
+        if fc is None and c is None:  # not fixed and no guess: use MoM
+            # Solve for c that matches sample distribution skewness to sample
+            # skewness.
+            # we start having numerical issues with `weibull_min` with
+            # parameters outside this range - and not just in this method.
+            # We could probably improve the situation by doing everything
+            # in the log space, but that is for another time.
+            c = root_scalar(lambda c: skew(c) - s, bracket=[0.02, max_c],
+                            method='bisect').root
+        elif fc is not None:  # fixed: use it
+            c = fc
+
+        if fscale is None and scale is None:
+            v = np.var(data)
+            scale = np.sqrt(v / (sc.gamma(1+2/c) - sc.gamma(1+1/c)**2))
+        elif fscale is not None:
+            scale = fscale
+
+        if floc is None and loc is None:
+            m = np.mean(data)
+            loc = m - scale*sc.gamma(1 + 1/c)
+        elif floc is not None:
+            loc = floc
+
+        if method == 'mm':
+            return c, loc, scale
+        else:
+            # At this point, parameter "guesses" may equal the fixed parameters
+            # in kwds. No harm in passing them as guesses, too.
+            return super().fit(data, c, loc=loc, scale=scale, **kwds)
 
 
 weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
@@ -4116,6 +4195,26 @@ class invgauss_gen(rv_continuous):
     def _cdf(self, x, mu):
         return np.exp(self._logcdf(x, mu))
 
+    def _ppf(self, x, mu):
+        with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
+            x, mu = np.broadcast_arrays(x, mu)
+            ppf = _boost._invgauss_ppf(x, mu, 1)
+            i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
+            ppf[i_wt] = _boost._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
+            i_nan = np.isnan(ppf)
+            ppf[i_nan] = super()._ppf(x[i_nan], mu[i_nan])
+        return ppf
+
+    def _isf(self, x, mu):
+        with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
+            x, mu = np.broadcast_arrays(x, mu)
+            isf = _boost._invgauss_isf(x, mu, 1)
+            i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
+            isf[i_wt] = _boost._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
+            i_nan = np.isnan(isf)
+            isf[i_nan] = super()._isf(x[i_nan], mu[i_nan])
+        return isf
+
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
@@ -4268,7 +4367,7 @@ class geninvgauss_gen(rv_continuous):
             # for each combination of the input arguments.
             numsamples = int(np.prod(shp))
 
-            # `out` is the array to be returned.  It is filled in in the
+            # `out` is the array to be returned.  It is filled in the
             # loop below.
             out = np.empty(size)
 
@@ -5026,7 +5125,53 @@ class levy_gen(rv_continuous):
 
     %(after_notes)s
 
-    %(example)s
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import levy
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+
+    Calculate the first four moments:
+
+    >>> mean, var, skew, kurt = levy.stats(moments='mvsk')
+
+    Display the probability density function (``pdf``):
+
+    >>> # `levy` is very heavy-tailed.
+    >>> # To show a nice plot, let's cut off the upper 40 percent.
+    >>> a, b = levy.ppf(0), levy.ppf(0.6)
+    >>> x = np.linspace(a, b, 100)
+    >>> ax.plot(x, levy.pdf(x),
+    ...        'r-', lw=5, alpha=0.6, label='levy pdf')
+
+    Alternatively, the distribution object can be called (as a function)
+    to fix the shape, location and scale parameters. This returns a "frozen"
+    RV object holding the given parameters fixed.
+
+    Freeze the distribution and display the frozen ``pdf``:
+
+    >>> rv = levy()
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+
+    Check accuracy of ``cdf`` and ``ppf``:
+
+    >>> vals = levy.ppf([0.001, 0.5, 0.999])
+    >>> np.allclose([0.001, 0.5, 0.999], levy.cdf(vals))
+    True
+
+    Generate random numbers:
+
+    >>> r = levy.rvs(size=1000)
+
+    And compare the histogram:
+
+    >>> # manual binning to ignore the tail
+    >>> bins = np.concatenate((np.linspace(a, b, 20), [np.max(r)]))
+    >>> ax.hist(r, bins=bins, density=True, histtype='stepfilled', alpha=0.2)
+    >>> ax.set_xlim([x[0], x[-1]])
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
 
     """
     _support_mask = rv_continuous._open_support_mask
@@ -5049,6 +5194,9 @@ class levy_gen(rv_continuous):
         # Equivalent to 1.0/(norm.isf(q/2)**2) or 0.5/(erfcinv(q)**2)
         val = -sc.ndtri(q/2)
         return 1.0 / (val * val)
+
+    def _isf(self, p):
+        return 1/(2*sc.erfinv(p)**2)
 
     def _stats(self):
         return np.inf, np.inf, np.nan, np.nan
@@ -5080,7 +5228,53 @@ class levy_l_gen(rv_continuous):
 
     %(after_notes)s
 
-    %(example)s
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import levy_l
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+
+    Calculate the first four moments:
+
+    >>> mean, var, skew, kurt = levy_l.stats(moments='mvsk')
+
+    Display the probability density function (``pdf``):
+
+    >>> # `levy_l` is very heavy-tailed.
+    >>> # To show a nice plot, let's cut off the lower 40 percent.
+    >>> a, b = levy_l.ppf(0.4), levy_l.ppf(1)
+    >>> x = np.linspace(a, b, 100)
+    >>> ax.plot(x, levy_l.pdf(x),
+    ...        'r-', lw=5, alpha=0.6, label='levy_l pdf')
+
+    Alternatively, the distribution object can be called (as a function)
+    to fix the shape, location and scale parameters. This returns a "frozen"
+    RV object holding the given parameters fixed.
+
+    Freeze the distribution and display the frozen ``pdf``:
+
+    >>> rv = levy_l()
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+
+    Check accuracy of ``cdf`` and ``ppf``:
+
+    >>> vals = levy_l.ppf([0.001, 0.5, 0.999])
+    >>> np.allclose([0.001, 0.5, 0.999], levy_l.cdf(vals))
+    True
+
+    Generate random numbers:
+
+    >>> r = levy_l.rvs(size=1000)
+
+    And compare the histogram:
+
+    >>> # manual binning to ignore the tail
+    >>> bins = np.concatenate(([np.min(r)], np.linspace(a, b, 20)))
+    >>> ax.hist(r, bins=bins, density=True, histtype='stepfilled', alpha=0.2)
+    >>> ax.set_xlim([x[0], x[-1]])
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
 
     """
     _support_mask = rv_continuous._open_support_mask
@@ -5238,11 +5432,23 @@ class loggamma_gen(rv_continuous):
     %(example)s
 
     """
+
     def _shape_info(self):
         return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
 
     def _rvs(self, c, size=None, random_state=None):
-        return np.log(random_state.gamma(c, size=size))
+        # Use the property of the gamma distribution Gamma(c)
+        #    Gamma(c) ~ Gamma(c + 1)*U**(1/c),
+        # where U is uniform on [0, 1]. (See, e.g.,
+        # G. Marsaglia and W.W. Tsang, "A simple method for generating gamma
+        # variables", https://doi.org/10.1145/358407.358414)
+        # So
+        #    log(Gamma(c)) ~ log(Gamma(c + 1)) + log(U)/c
+        # Generating a sample with this formulation is a bit slower
+        # than the more obvious log(Gamma(c)), but it avoids loss
+        # of precision when c << 1.
+        return (np.log(random_state.gamma(c + 1, size=size))
+                + np.log(random_state.uniform(size=size))/c)
 
     def _pdf(self, x, c):
         # loggamma.pdf(x, c) = exp(c*x-exp(x)) / gamma(c)
@@ -5539,6 +5745,14 @@ deprmsg = ("`gilbrat` is a misspelling of the correct name for the `gibrat` "
 class gilbrat_gen(gibrat_gen):
     # override __call__ protocol from rv_generic to also
     # deprecate instantiation of frozen distributions
+    r"""
+
+    .. deprecated:: 1.9.0
+        `gilbrat` is deprecated, use `gibrat` instead!
+        `gilbrat` is a misspelling of the correct name for the `gibrat`
+        distribution, and will be removed in SciPy 1.11.
+
+    """
     def __call__(self, *args, **kwds):
         # align with warning text from np.deprecated that's used for methods
         msg = "`gilbrat` is deprecated, use `gibrat` instead!\n" + deprmsg
@@ -7705,9 +7919,9 @@ class skew_norm_gen(rv_continuous):
 
     References
     ----------
-    .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the
-        multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
-        :arxiv:`0911.2093`
+    .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of
+        the multivariate skew-normal distribution. J. Roy. Statist. Soc.,
+        B 61, 579-602. :arxiv:`0911.2093`
 
     """
     def _argcheck(self, a):
@@ -7722,21 +7936,23 @@ class skew_norm_gen(rv_continuous):
             f2=lambda x, a: 2.*_norm_pdf(x)*_norm_cdf(a*x)
         )
 
-    def _cdf_single(self, x, *args):
-        _a, _b = self._get_support(*args)
-        if x <= 0:
-            cdf = integrate.quad(self._pdf, _a, x, args=args)[0]
-        else:
-            t1 = integrate.quad(self._pdf, _a, 0, args=args)[0]
-            t2 = integrate.quad(self._pdf, 0, x, args=args)[0]
-            cdf = t1 + t2
-        if cdf > 1:
-            # Presumably numerical noise, e.g. 1.0000000000000002
-            cdf = 1.0
-        return cdf
+    def _cdf(self, x, a):
+        cdf = _boost._skewnorm_cdf(x, 0, 1, a)
+        # Boost is not accurate in left tail when a > 0
+        i_small_cdf = (cdf < 1e-6) & (a > 0)
+        cdf[i_small_cdf] = super()._cdf(x[i_small_cdf], a[i_small_cdf])
+        return np.clip(cdf, 0, 1)
+
+    def _ppf(self, x, a):
+        return _boost._skewnorm_ppf(x, 0, 1, a)
 
     def _sf(self, x, a):
+        # Boost's SF is implemented this way. Use whatever customizations
+        # we made in the _cdf.
         return self._cdf(-x, -a)
+
+    def _isf(self, x, a):
+        return _boost._skewnorm_isf(x, 0, 1, a)
 
     def _rvs(self, a, size=None, random_state=None):
         u0 = random_state.normal(size=size)
@@ -7759,6 +7975,125 @@ class skew_norm_gen(rv_continuous):
             output[3] = (2*(np.pi - 3)) * (const**4/(1 - const**2)**2)
 
         return output
+
+    # For odd order, the each noncentral moment of the skew-normal distribution
+    # with location 0 and scale 1 can be expressed as a polynomial in delta,
+    # where delta = a/sqrt(1 + a**2) and `a` is the skew-normal shape
+    # parameter.  The dictionary _skewnorm_odd_moments defines those
+    # polynomials for orders up to 19.  The dict is implemented as a cached
+    # property to reduce the impact of the creation of the dict on import time.
+    @cached_property
+    def _skewnorm_odd_moments(self):
+        skewnorm_odd_moments = {
+            1: Polynomial([1]),
+            3: Polynomial([3, -1]),
+            5: Polynomial([15, -10, 3]),
+            7: Polynomial([105, -105, 63, -15]),
+            9: Polynomial([945, -1260, 1134, -540, 105]),
+            11: Polynomial([10395, -17325, 20790, -14850, 5775, -945]),
+            13: Polynomial([135135, -270270, 405405, -386100, 225225, -73710,
+                            10395]),
+            15: Polynomial([2027025, -4729725, 8513505, -10135125, 7882875,
+                            -3869775, 1091475, -135135]),
+            17: Polynomial([34459425, -91891800, 192972780, -275675400,
+                            268017750, -175429800, 74220300, -18378360,
+                            2027025]),
+            19: Polynomial([654729075, -1964187225, 4714049340, -7856748900,
+                            9166207050, -7499623950, 4230557100, -1571349780,
+                            346621275, -34459425]),
+        }
+        return skewnorm_odd_moments
+
+    def _munp(self, order, a):
+        if order & 1:
+            if order > 19:
+                raise NotImplementedError("skewnorm noncentral moments not "
+                                          "implemented for odd orders greater "
+                                          "than 19.")
+            # Use the precomputed polynomials that were derived from the
+            # moment generating function.
+            delta = a/np.sqrt(1 + a**2)
+            return (delta * self._skewnorm_odd_moments[order](delta**2)
+                    * _SQRT_2_OVER_PI)
+        else:
+            # For even order, the moment is just (order-1)!!, where !! is the
+            # notation for the double factorial; for an odd integer m, m!! is
+            # m*(m-2)*...*3*1.
+            # We could use special.factorial2, but we know the argument is odd,
+            # so avoid the overhead of that function and compute the result
+            # directly here.
+            return sc.gamma((order + 1)/2) * 2**(order/2) / _SQRT_PI
+
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        If ``method='mm'``, parameters fixed by the user are respected, and the
+        remaining parameters are used to match distribution and sample moments
+        where possible. For example, if the user fixes the location with
+        ``floc``, the parameters will only match the distribution skewness and
+        variance to the sample skewness and variance; no attempt will be made
+        to match the means or minimize a norm of the errors.
+        Note that the maximum possible skewness magnitude of a
+        `scipy.stats.skewnorm` distribution is approximately 0.9952717; if the
+        magnitude of the data's sample skewness exceeds this, the returned
+        shape parameter ``a`` will be infinite.
+        \n\n""")
+    def fit(self, data, *args, **kwds):
+        # this extracts fixed shape, location, and scale however they
+        # are specified, and also leaves them in `kwds`
+        data, fa, floc, fscale = _check_fit_input_parameters(self, data,
+                                                             args, kwds)
+        method = kwds.get("method", "mle").lower()
+
+        # See https://en.wikipedia.org/wiki/Skew_normal_distribution for
+        # moment formulas.
+        def skew_d(d):  # skewness in terms of delta
+            return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
+                                  / (1 - 2*d**2 / np.pi)**(3/2))
+
+        # If skewness of data is greater than max possible population skewness,
+        # MoM won't provide a good guess. Get out early.
+        s = stats.skew(data)
+        s_max = skew_d(1)
+        if abs(s) >= s_max and method == "mle" and fa is None and not args:
+            return super().fit(data, *args, **kwds)
+
+        # If method is method of moments, we don't need the user's guesses.
+        # If method is "mle", extract the guesses from args and kwds.
+        if method == "mm":
+            a, loc, scale = None, None, None
+        else:
+            a = args[0] if len(args) else None
+            loc = kwds.pop('loc', None)
+            scale = kwds.pop('scale', None)
+
+        if fa is None and a is None:  # not fixed and no guess: use MoM
+            # Solve for a that matches sample distribution skewness to sample
+            # skewness.
+            s = np.clip(s, -s_max, s_max)
+            d = root_scalar(lambda d: skew_d(d) - s, bracket=[-1, 1]).root
+            with np.errstate(divide='ignore'):
+                a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
+        else:
+            a = fa if fa is not None else a
+            d = a / np.sqrt(1 + a**2)
+
+        if fscale is None and scale is None:
+            v = np.var(data)
+            scale = np.sqrt(v / (1 - 2*d**2/np.pi))
+        elif fscale is not None:
+            scale = fscale
+
+        if floc is None and loc is None:
+            m = np.mean(data)
+            loc = m - scale*d*np.sqrt(2/np.pi)
+        elif floc is not None:
+            loc = floc
+
+        if method == 'mm':
+            return a, loc, scale
+        else:
+            # At this point, parameter "guesses" may equal the fixed parameters
+            # in kwds. No harm in passing them as guesses, too.
+            return super().fit(data, a, loc=loc, scale=scale, **kwds)
 
 
 skewnorm = skew_norm_gen(name='skewnorm')
@@ -8067,14 +8402,12 @@ class truncnorm_gen(rv_continuous):
 
     Notes
     -----
-    The standard form of this distribution is a standard normal truncated to
-    the range ``[a, b]``, where ``a`` and ``b`` are user-provided shape
-    parameters. The parameter ``loc`` shifts the mean of the underlying normal
-    distribution, and ``scale`` controls the standard deviation of the
-    underlying normal, but ``a`` and ``b`` are still defined with respect to
-    the *standard* normal. If ``myclip_a`` and ``myclip_b`` are clip values
-    defined with respect to a shifted and scaled normal, they can be converted
-    the required form according to::
+    This distribution is the normal distribution centered on ``loc`` (default
+    0), with standard deviation ``scale`` (default 1), and clipped at ``a``,
+    ``b`` standard deviations to the left, right (respectively) from ``loc``.
+    If ``myclip_a`` and ``myclip_b`` are clip values in the sample space (as
+    opposed to the number of standard deviations) then they can be converted
+    to the required form according to::
 
         a, b = (myclip_a - loc) / scale, (myclip_b - loc) / scale
 
@@ -8684,6 +9017,12 @@ class wald_gen(invgauss_gen):
 
     def _sf(self, x):
         return invgauss._sf(x, 1.0)
+
+    def _ppf(self, x):
+        return invgauss._ppf(x, 1.0)
+
+    def _isf(self, x):
+        return invgauss._isf(x, 1.0)
 
     def _logpdf(self, x):
         return invgauss._logpdf(x, 1.0)
@@ -9306,15 +9645,36 @@ class rv_histogram(rv_continuous):
     Parameters
     ----------
     histogram : tuple of array_like
-      Tuple containing two array_like objects
-      The first containing the content of n bins
-      The second containing the (n+1) bin boundaries
-      In particular the return value np.histogram is accepted
+        Tuple containing two array_like objects.
+        The first containing the content of n bins,
+        the second containing the (n+1) bin boundaries.
+        In particular, the return value of `numpy.histogram` is accepted.
+
+    density : bool, optional
+        If False, assumes the histogram is proportional to counts per bin;
+        otherwise, assumes it is proportional to a density.
+        For constant bin widths, these are equivalent, but the distinction
+        is important when bin widths vary (see Notes).
+        If None (default), sets ``density=True`` for backwards compatibility,
+        but warns if the bin widths are variable. Set `density` explicitly
+        to silence the warning.
+
+        .. versionadded:: 1.10.0
 
     Notes
     -----
+    When a histogram has unequal bin widths, there is a distinction between
+    histograms that are proportional to counts per bin and histograms that are
+    proportional to probability density over a bin. If `numpy.histogram` is
+    called with its default ``density=False``, the resulting histogram is the
+    number of counts per bin, so ``density=False`` should be passed to
+    `rv_histogram`. If `numpy.histogram` is called with ``density=True``, the
+    resulting histogram is in terms of probability density, so ``density=True``
+    should be passed to `rv_histogram`. To avoid warnings, always pass
+    ``density`` explicitly when the input histogram has unequal bin widths.
+
     There are no additional shape parameters except for the loc and scale.
-    The pdf is defined as a stepwise function from the provided histogram
+    The pdf is defined as a stepwise function from the provided histogram.
     The cdf is a linear interpolation of the pdf.
 
     .. versionadded:: 0.19.0
@@ -9328,7 +9688,7 @@ class rv_histogram(rv_continuous):
     >>> import numpy as np
     >>> data = scipy.stats.norm.rvs(size=100000, loc=0, scale=1.5, random_state=123)
     >>> hist = np.histogram(data, bins=100)
-    >>> hist_dist = scipy.stats.rv_histogram(hist)
+    >>> hist_dist = scipy.stats.rv_histogram(hist, density=False)
 
     Behaves like an ordinary scipy rv_continuous distribution
 
@@ -9353,28 +9713,38 @@ class rv_histogram(rv_continuous):
 
     >>> import matplotlib.pyplot as plt
     >>> X = np.linspace(-5.0, 5.0, 100)
-    >>> plt.title("PDF from Template")
-    >>> plt.hist(data, density=True, bins=100)
-    >>> plt.plot(X, hist_dist.pdf(X), label='PDF')
-    >>> plt.plot(X, hist_dist.cdf(X), label='CDF')
-    >>> plt.show()
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_title("PDF from Template")
+    >>> ax.hist(data, density=True, bins=100)
+    >>> ax.plot(X, hist_dist.pdf(X), label='PDF')
+    >>> ax.plot(X, hist_dist.cdf(X), label='CDF')
+    >>> ax.legend()
+    >>> fig.show()
 
     """
     _support_mask = rv_continuous._support_mask
 
-    def __init__(self, histogram, *args, **kwargs):
+    def __init__(self, histogram, *args, density=None, **kwargs):
         """
         Create a new distribution using the given histogram
 
         Parameters
         ----------
         histogram : tuple of array_like
-          Tuple containing two array_like objects
-          The first containing the content of n bins
-          The second containing the (n+1) bin boundaries
-          In particular the return value np.histogram is accepted
+            Tuple containing two array_like objects.
+            The first containing the content of n bins,
+            the second containing the (n+1) bin boundaries.
+            In particular, the return value of np.histogram is accepted.
+        density : bool, optional
+            If False, assumes the histogram is proportional to counts per bin;
+            otherwise, assumes it is proportional to a density.
+            For constant bin widths, these are equivalent.
+            If None (default), sets ``density=True`` for backward
+            compatibility, but warns if the bin widths are variable. Set
+            `density` explicitly to silence the warning.
         """
         self._histogram = histogram
+        self._density = density
         if len(histogram) != 2:
             raise ValueError("Expected length 2 for parameter histogram")
         self._hpdf = np.asarray(histogram[0])
@@ -9384,6 +9754,15 @@ class rv_histogram(rv_continuous):
                              "and histogram boundaries do not match, "
                              "expected n and n+1.")
         self._hbin_widths = self._hbins[1:] - self._hbins[:-1]
+        bins_vary = not np.allclose(self._hbin_widths, self._hbin_widths[0])
+        if density is None and bins_vary:
+            message = ("Bin widths are not constant. Assuming `density=True`."
+                       "Specify `density` explicitly to silence this warning.")
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
+            density = True
+        elif not density:
+            self._hpdf = self._hpdf / self._hbin_widths
+
         self._hpdf = self._hpdf / float(np.sum(self._hpdf * self._hbin_widths))
         self._hcdf = np.cumsum(self._hpdf * self._hbin_widths)
         self._hpdf = np.hstack([0.0, self._hpdf, 0.0])
@@ -9430,6 +9809,7 @@ class rv_histogram(rv_continuous):
         """
         dct = super()._updated_ctor_param()
         dct['histogram'] = self._histogram
+        dct['density'] = self._density
         return dct
 
 

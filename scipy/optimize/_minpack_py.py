@@ -138,6 +138,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     Find a solution to the system of equations:
     ``x0*cos(x1) = 4,  x1*x0 - x1 = 5``.
 
+    >>> import numpy as np
     >>> from scipy.optimize import fsolve
     >>> def func(x):
     ...     return [x[0] * np.cos(x[1]) - 4,
@@ -544,10 +545,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         The model function, f(x, ...). It must take the independent
         variable as the first argument and the parameters to fit as
         separate remaining arguments.
-    xdata : array_like or object
+    xdata : array_like
         The independent variable where the data is measured.
         Should usually be an M-length sequence or an (k,M)-shaped array for
-        functions with k predictors, but can actually be any object.
+        functions with k predictors, and each element should be float
+        convertible if it is an array like object.
     ydata : array_like
         The dependent data, a length M array - nominally ``f(xdata, ...)``.
     p0 : array_like, optional
@@ -711,6 +713,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.optimize import curve_fit
 
@@ -976,6 +979,7 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500, method='del2'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import optimize
     >>> def func(x, c1, c2):
     ...    return np.sqrt(c1/(x+c2))

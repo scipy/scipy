@@ -3,14 +3,6 @@ if not fs.exists('PROPACK/README')
   error('Missing the `PROPACK` submodule! Run `git submodule update --init` to fix this.')
 endif
 
-fortran_ignore_warnings = [
-  '-Wno-tabs', '-Wno-conversion',
-  '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
-  '-Wno-maybe-uninitialized', '-Wno-unused-label',
-  '-Wno-unused-variable',
-  '-Wno-uninitialized', '-Wno-intrinsic-shadow'
-]
-
 s_src = [
   'PROPACK/single/printstat.F',
   'PROPACK/single/sblasext.F',
@@ -96,7 +88,11 @@ elements = [
 foreach ele: elements
   propack_lib = static_library('lib_' + ele[0], ele[1],
     c_args: ['_OPENMP'],
-    fortran_args: fortran_ignore_warnings
+    fortran_args: [
+      fortran_ignore_warnings, 
+      _fflag_Wno_intrinsic_shadow,
+      _fflag_Wno_uninitialized,
+    ],
   )
 
   propack_module = custom_target('propack_module' + ele[0],
@@ -108,8 +104,9 @@ foreach ele: elements
   propacklib = py3.extension_module(ele[0],
     propack_module,
     link_with: propack_lib,
-    c_args: ['-U_OPENMP', '-Wno-maybe-uninitialized', '-Wno-cpp'],
-    dependencies: [py3_dep, lapack, fortranobject_dep],
+    c_args: ['-U_OPENMP', _cpp_Wno_cpp],
+    fortran_args: _fflag_Wno_maybe_uninitialized,
+    dependencies: [lapack, fortranobject_dep],
     include_directories: [inc_np, inc_f2py],
     install: true,
     link_language: 'fortran',

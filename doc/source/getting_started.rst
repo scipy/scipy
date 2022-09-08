@@ -7,47 +7,47 @@ Getting started
 Installation
 ------------
 
-.. panels::
-    :card: + install-card
-    :column: col-lg-6 col-md-6 col-sm-12 col-xs-12 p-3
+.. grid:: 2
 
-    Working with conda?
-    ^^^^^^^^^^^^^^^^^^^
+    .. grid-item-card::
 
-    SciPy is part of the `Anaconda <https://docs.continuum.io/anaconda/>`__
-    distribution and can be installed with Anaconda or Miniconda:
+        Working with conda?
+        ^^^^^^^^^^^^^^^^^^^
 
-    ++++++++++++++++++++++
+        SciPy is part of the `Anaconda <https://docs.continuum.io/anaconda/>`__
+        distribution and can be installed with Anaconda or Miniconda:
 
-    .. code-block:: bash
+        ++++++++++++++++++++++
 
-        conda install scipy
+        .. code-block:: bash
 
-    ---
+            conda install scipy
 
-    Prefer pip?
-    ^^^^^^^^^^^
+    .. grid-item-card::
 
-    SciPy can be installed via pip from `PyPI <https://pypi.org/project/scipy>`__.
+        Prefer pip?
+        ^^^^^^^^^^^
 
-    ++++
+        SciPy can be installed via pip from `PyPI <https://pypi.org/project/scipy>`__.
 
-    .. code-block:: bash
+        ++++
 
-        pip install scipy
+        .. code-block:: bash
 
-    ---
-    :column: col-12 p-3
+            pip install scipy
 
-    In-depth instructions?
-    ^^^^^^^^^^^^^^^^^^^^^^
+    .. grid-item-card::
+        :columns: 12
 
-    Installing a specific version? Installing from source? Check the
-    installation page.
+        In-depth instructions?
+        ^^^^^^^^^^^^^^^^^^^^^^
 
-    .. container:: custom-button
+        Installing a specific version? Installing from source? Check the
+        installation page.
 
-        `Learn more <https://scipy.org/install/>`__
+        .. container:: custom-button
+
+            `Learn more <https://scipy.org/install/>`__
 
 Tutorials
 ---------

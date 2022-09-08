@@ -220,7 +220,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     With only three singular values/vectors, the SVD approximates the original
     matrix.
 
-    >>> u2, s2, vT2 = svds(A, k=3)
+    >>> u2, s2, vT2 = svds(A, k=3, random_state=rng)
     >>> A2 = u2 @ np.diag(s2) @ vT2
     >>> np.allclose(A2, A.toarray(), atol=1e-3)
     True
@@ -228,7 +228,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     With all five singular values/vectors, we can reproduce the original
     matrix.
 
-    >>> u3, s3, vT3 = svds(A, k=5)
+    >>> u3, s3, vT3 = svds(A, k=5, random_state=rng)
     >>> A3 = u3 @ np.diag(s3) @ vT3
     >>> np.allclose(A3, A.toarray())
     True
@@ -236,19 +236,21 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     The singular values match the expected singular values, and the singular
     vectors are as expected up to a difference in sign.
 
-    >>> (np.allclose(s3, s) and
-    ...  np.allclose(np.abs(u3), np.abs(u.toarray())) and
-    ...  np.allclose(np.abs(vT3), np.abs(vT.toarray())))
+    >>> np.allclose(s3, s)
+    True
+    >>> np.allclose(np.abs(u3), np.abs(u.toarray()))
+    True
+    >>> np.allclose(np.abs(vT3), np.abs(vT.toarray()))
     True
 
     The singular vectors are also orthogonal.
-    >>> (np.allclose(u3.T @ u3, np.eye(5)) and
-    ...  np.allclose(vT3 @ vT3.T, np.eye(5)))
+
+    >>> np.allclose(u3.T @ u3, np.eye(5))
+    True
+    >>> np.allclose(vT3 @ vT3.T, np.eye(5))
     True
 
     """
-    rs_was_None = random_state is None  # avoid changing v0 for arpack/lobpcg
-
     args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
                solver, random_state)
     (A, k, ncv, tol, which, v0, maxiter,
@@ -291,10 +293,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if k == 1 and v0 is not None:
             X = np.reshape(v0, (-1, 1))
         else:
-            if rs_was_None:
-                X = np.random.RandomState(52).randn(min(A.shape), k)
-            else:
-                X = random_state.uniform(size=(min(A.shape), k))
+            X = random_state.standard_normal(size=(min(A.shape), k))
 
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                            largest=largest)
@@ -334,8 +333,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             return s
 
     elif solver == 'arpack' or solver is None:
-        if v0 is None and not rs_was_None:
-            v0 = random_state.uniform(size=(min(A.shape),))
+        if v0 is None:
+            v0 = random_state.standard_normal(size=(min(A.shape),))
         _, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                           ncv=ncv, which=which, v0=v0)
 
