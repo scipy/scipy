@@ -108,7 +108,7 @@ class FitResult:
         data = data if data is not None else self._data
         return self._dist.nnlf(theta=params, x=data)
 
-    def plot(self, ax=None, *, plot_type="histogram"):
+    def plot(self, ax=None, *, plot_type="hist"):
         """Visually compare the data against the fitted distribution.
 
         Available only if ``matplotlib`` is installed.
@@ -117,10 +117,10 @@ class FitResult:
         ----------
         ax : matplotlib.axes.Axes
             Axes object to draw the plot onto, otherwise uses the current Axes.
-        plot_type : {"histogram", "qq", "pp"}
+        plot_type : {"hist", "qq", "pp", "cdf"}
             Type of plot to draw. Options include:
 
-            - "histogram": Superposes the PDF/PMF of the fitted distribution
+            - "hist": Superposes the PDF/PMF of the fitted distribution
               over a normalized histogram of the data.
             - "qq": Scatter plot of theoretical quantiles against the
               empirical quantiles. Specifically, the x-coordinates are the
@@ -134,7 +134,11 @@ class FitResult:
               the number of data points, and the y-coordinates are the values
               of the fitted distribution CDF evaluated at the sorted
               data points.
-
+            - "cdf": Superposes the CDF of the fitted distribution over the
+              empirical CDF. Specifically, the x-coordinates of the empirical
+              CDF are the sorted data points, and the y-coordinates are the
+              percentiles ``(np.arange(1, n) - 0.5)/n``, where ``n`` is
+              the number of data points.
 
         Returns
         -------
@@ -148,7 +152,8 @@ class FitResult:
             raise ModuleNotFoundError(message) from exc
 
         plots = {'histogram': self._hist_plot, 'qq': self._qq_plot,
-                 'pp': self._pp_plot}
+                 'pp': self._pp_plot, 'cdf': self._cdf_plot,
+                 'hist': self._hist_plot}
         if plot_type.lower() not in plots:
             message = f"`plot_type` must be one of {set(plots.keys())}"
             raise ValueError(message)
@@ -168,11 +173,12 @@ class FitResult:
         support = self._dist.support(*fit_params)
         lb = support[0] if np.isfinite(support[0]) else min(self._data)
         ub = support[1] if np.isfinite(support[1]) else max(self._data)
+        pxf = "PMF" if self.discrete else "PDF"
 
         if self.discrete:
             x = np.arange(lb, ub + 2)
             y = self.pxf(x, *fit_params)
-            ax.vlines(x[:-1], 0, y[:-1], label='Fit Distribution PMF',
+            ax.vlines(x[:-1], 0, y[:-1], label='Fitted Distribution PMF',
                       color='C0')
             options = dict(density=True, bins=x, align='left', color='C1')
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -181,7 +187,7 @@ class FitResult:
         else:
             x = np.linspace(lb, ub, 200)
             y = self.pxf(x, *fit_params)
-            ax.plot(x, y, '--', label='Fit Distribution PDF', color='C0')
+            ax.plot(x, y, '--', label='Fitted Distribution PDF', color='C0')
             options = dict(density=True, bins=50, align='mid', color='C1')
             ax.set_xlabel('x')
             ax.set_ylabel('PDF')
@@ -192,17 +198,13 @@ class FitResult:
             ax.plot(self._data, np.zeros_like(self._data), "*",
                     label='Data', color='C1')
 
-        ax.set_title(rf"$\tt {self._dist.name}$ Fit Histogram")
+        ax.set_title(rf"Fitted $\tt {self._dist.name}$ {pxf} and Histogram")
         ax.legend(*ax.get_legend_handles_labels())
         return ax
 
     def _qp_plot(self, ax, fit_params, qq):
         data = np.sort(self._data)
-        n = len(self._data)
-        a = 0.5  # expose this as a parameter later?
-        # See https://en.wikipedia.org/wiki/Q%E2%80%93Q_plot#Plotting_positions
-        k = np.arange(1, n+1)
-        ps = (k-a) / (n + 1 - 2*a)
+        ps = self._plotting_positions(len(self._data))
 
         if qq:
             qp = "Quantiles"
@@ -215,8 +217,8 @@ class FitResult:
             x = ps
             y = self._dist.cdf(data, *fit_params)
 
-        ax.plot(x, y, '.', label=f'Fit Distribution {plot_type}', color='C0',
-                zorder=1)
+        ax.plot(x, y, '.', label=f'Fitted Distribution {plot_type}',
+                color='C0', zorder=1)
         xlim = ax.get_xlim()
         ylim = ax.get_ylim()
         lim = [min(xlim[0], ylim[0]), max(xlim[1], ylim[1])]
@@ -264,6 +266,31 @@ class FitResult:
     def _pp_plot(self, **kwargs):
         return self._qp_plot(qq=False, **kwargs)
 
+    def _plotting_positions(self, n, a=.5):
+        # See https://en.wikipedia.org/wiki/Q%E2%80%93Q_plot#Plotting_positions
+        k = np.arange(1, n+1)
+        return (k-a) / (n + 1 - 2*a)
+
+    def _cdf_plot(self, ax, fit_params):
+        data = np.sort(self._data)
+        ecdf = self._plotting_positions(len(self._data))
+        ls = '--' if self.discrete else '-'
+        xlabel = 'k' if self.discrete else 'x'
+        ax.step(data, ecdf, ls, label='Empirical CDF', color='C1', zorder=0)
+
+        xlim = ax.get_xlim()
+        q = np.linspace(*xlim, 300)
+        tcdf = self._dist.cdf(q, *fit_params)
+
+        ax.plot(q, tcdf, label='Fitted Distribution CDF', color='C0', zorder=1)
+        ax.set_xlim(xlim)
+        ax.set_ylim(0, 1)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel("CDF")
+        ax.set_title(rf"Fitted $\tt {self._dist.name}$ and Empirical CDF")
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles[::-1], labels[::-1])
+        return ax
 
 def fit(dist, data, bounds=None, *, guess=None,
         optimizer=optimize.differential_evolution):
