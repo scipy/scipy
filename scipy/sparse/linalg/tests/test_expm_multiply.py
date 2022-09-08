@@ -178,7 +178,7 @@ class TestExpmActionSimple:
 
 class TestExpmActionInterval:
 
-    def test_sparse_expm_multiply_interval(self):
+    def _help_test_sparse_expm_multiply_interval(self,renormalize):
         np.random.seed(1234)
         start = 0.1
         stop = 3.2
@@ -191,7 +191,7 @@ class TestExpmActionInterval:
             v = np.random.randn(n)
             for target in (B, v):
                 X = expm_multiply(A, target, start=start, stop=stop,
-                                  num=num, endpoint=endpoint)
+                                  num=num, endpoint=endpoint,renormalize=renormalize)
                 samples = np.linspace(start=start, stop=stop,
                                       num=num, endpoint=endpoint)
                 with suppress_warnings() as sup:
@@ -201,7 +201,18 @@ class TestExpmActionInterval:
                                "spsolve is more efficient when sparse b is in"
                                " the CSC matrix format")
                     for solution, t in zip(X, samples):
-                        assert_allclose(solution, sp_expm(t*A).dot(target))
+                        if renormalize:
+                            expected = sp_expm(t*A).dot(target)
+                            assert_allclose(solution, expected/np.linalg.norm(expected))
+                        else:
+                            assert_allclose(solution, sp_expm(t*A).dot(target))
+
+
+    def test_sparse_expm_multiply_interval(self):
+        self._help_test_sparse_expm_multiply_interval(False)
+
+    def test_sparse_expm_multiply_interval(self):
+        self._help_test_sparse_expm_multiply_interval(True)
 
     def test_expm_multiply_interval_vector(self):
         np.random.seed(1234)

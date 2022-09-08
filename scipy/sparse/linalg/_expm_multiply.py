@@ -104,7 +104,7 @@ def _ident_like(A):
 
 
 def expm_multiply(A, B, start=None, stop=None, num=None,
-                  endpoint=None, traceA=None):
+                  endpoint=None, traceA=None,renormalize = False):
     """
     Compute the action of the matrix exponential of A on B.
 
@@ -131,6 +131,9 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
         `A`, thus an approximate trace is acceptable.
         For linear operators, `traceA` should be provided to ensure performance
         as the estimation is not guaranteed to be reliable for all cases.
+    renormalize : bool
+        If True, `B` is renormalized at each time point. This can be used to
+        avoid overflow errors.
 
         .. versionadded: 1.9.0
 
@@ -203,11 +206,11 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
         X = _expm_multiply_simple(A, B, traceA=traceA)
     else:
         X, status = _expm_multiply_interval(A, B, start, stop, num,
-                                            endpoint, traceA=traceA)
+                                            endpoint, traceA=traceA,renormalize = renormalize)
     return X
 
 
-def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
+def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False, renormalize = False):
     """
     Compute the action of the matrix exponential at a single time point.
 
@@ -225,6 +228,10 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
         `A`, thus an approximate trace is acceptable
     balance : bool
         Indicates whether or not to apply balancing.
+    renormalize : bool
+        If True, `B` is renormalized at each time point. This can be used to
+        avoid overflow errors.
+
 
     Returns
     -------
@@ -273,7 +280,7 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
     return _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol, balance)
 
 
-def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
+def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False,renormalize = False):
     """
     A helper function.
     """
@@ -296,6 +303,8 @@ def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
             c1 = c2
         F = eta * F
         B = F
+    if renormalize:
+        F = F/np.linalg.norm(F)
     return F
 
 
@@ -590,7 +599,7 @@ def _condition_3_13(A_1_norm, n0, m_max, ell):
 
 def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
                             endpoint=None, traceA=None, balance=False,
-                            status_only=False):
+                            status_only=False, renormalize = False):
     """
     Compute the action of the matrix exponential at multiple time points.
 
@@ -619,6 +628,10 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
         Indicates whether or not to apply balancing.
     status_only : bool
         A flag that is set to True for some debugging and testing operations.
+    renormalize : bool
+        If True, `B` is renormalized at each time point. This can be used to
+        avoid overflow errors.
+
 
     Returns
     -------
@@ -696,7 +709,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
 
     # Compute the expm action up to the initial time point.
-    X[0] = _expm_multiply_simple_core(A, B, t_0, mu, m_star, s)
+    X[0] = _expm_multiply_simple_core(A, B, t_0, mu, m_star, s, renormalize = renormalize)
 
     # Compute the expm action at the rest of the time points.
     if q <= s:
@@ -704,24 +717,24 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
             return 0
         else:
             return _expm_multiply_interval_core_0(A, X,
-                    h, mu, q, norm_info, tol, ell,n0)
+                    h, mu, q, norm_info, tol, ell,n0,renormalize)
     elif not (q % s):
         if status_only:
             return 1
         else:
             return _expm_multiply_interval_core_1(A, X,
-                    h, mu, m_star, s, q, tol)
+                    h, mu, m_star, s, q, tol,renormalize)
     elif (q % s):
         if status_only:
             return 2
         else:
             return _expm_multiply_interval_core_2(A, X,
-                    h, mu, m_star, s, q, tol)
+                    h, mu, m_star, s, q, tol, renormalize)
     else:
         raise Exception('internal error')
 
 
-def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
+def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0, renormalize):
     """
     A helper function, for the case q <= s.
     """
@@ -736,11 +749,11 @@ def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
         norm_info.set_scale(1)
 
     for k in range(q):
-        X[k+1] = _expm_multiply_simple_core(A, X[k], h, mu, m_star, s)
+        X[k+1] = _expm_multiply_simple_core(A, X[k], h, mu, m_star, s,renormalize)
     return X, 0
 
 
-def _expm_multiply_interval_core_1(A, X, h, mu, m_star, s, q, tol):
+def _expm_multiply_interval_core_1(A, X, h, mu, m_star, s, q, tol, renormalize):
     """
     A helper function, for the case q > s and q % s == 0.
     """
@@ -766,10 +779,12 @@ def _expm_multiply_interval_core_1(A, X, h, mu, m_star, s, q, tol):
                     break
                 c1 = c2
             X[k + i*d] = np.exp(k*h*mu) * F
+            if renormalize:
+                X[k + i*d] = X[k + i*d] / np.linalg.norm(X[k + i*d])
     return X, 1
 
 
-def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol):
+def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol,renormalize):
     """
     A helper function, for the case q > s and q % s > 0.
     """
@@ -802,4 +817,6 @@ def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol):
                     break
                 c1 = c2
             X[k + i*d] = np.exp(k*h*mu) * F
+            if renormalize:
+                X[k + i*d] = X[k + i*d] / np.linalg.norm(X[k + i*d])
     return X, 2
