@@ -530,7 +530,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
 
         .. warning::
             Unlike other reduction functions (e.g. `skew`, `kurtosis`), the
-            default behavior of `mode` usually retains the the axis it acts
+            default behavior of `mode` usually retains the axis it acts
             along. In SciPy 1.11.0, this behavior will change: the default
             value of `keepdims` will become ``False``, the `axis` over which
             the statistic is taken will be eliminated, and the value ``None``
@@ -6840,7 +6840,7 @@ def _calculate_winsorized_variance(a, g, axis):
     # Determine the variance. In [4], the degrees of freedom is expressed as
     # `h - 1`, where `h = n - 2g` (unnumbered equations in Section 1, end of
     # page 369, beginning of page 370). This is converted to NumPy's format,
-    # `n - ddof` for use with with `np.var`. The result is converted to an
+    # `n - ddof` for use with `np.var`. The result is converted to an
     # array to accommodate indexing later.
     var_win = np.asarray(_var(a_win, ddof=(2 * g + 1), axis=-1))
 

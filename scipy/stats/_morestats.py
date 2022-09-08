@@ -1534,7 +1534,7 @@ def yeojohnson_llf(lmb, data):
         llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
 
-    where :math:`\hat{\sigma}^2` is estimated variance of the the Yeo-Johnson
+    where :math:`\hat{\sigma}^2` is estimated variance of the Yeo-Johnson
     transformed input data ``x``.
 
     .. versionadded:: 1.2.0
@@ -3316,7 +3316,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     >>> d = [6, 8, 14, 16, 23, 24, 28, 29, 41, -48, 49, 56, 60, -67, 75]
 
-    Cross-fertilized plants appear to be be higher. To test the null
+    Cross-fertilized plants appear to be higher. To test the null
     hypothesis that there is no height difference, we can apply the
     two-sided test:
 
