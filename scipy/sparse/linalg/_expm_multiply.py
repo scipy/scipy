@@ -203,7 +203,7 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
     array([ 2.71828183,  1.        ])
     """
     if all(arg is None for arg in (start, stop, num, endpoint)):
-        X = _expm_multiply_simple(A, B, traceA=traceA)
+        X = _expm_multiply_simple(A, B, traceA=traceA,renormalize=renormalize)
     else:
         X, status = _expm_multiply_interval(A, B, start, stop, num,
                                             endpoint, traceA=traceA,renormalize = renormalize)
@@ -277,7 +277,7 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False, renormalize =
         ell = 2
         norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
-    return _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol, balance)
+    return _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol, balance,renormalize=renormalize)
 
 
 def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False,renormalize = False):
@@ -409,6 +409,7 @@ class LazyOperatorNormInfo:
     outside of this module.
 
     """
+
     def __init__(self, A, A_1_norm=None, ell=2, scale=1):
         """
         Provide the operator and some norm-related information.
@@ -712,24 +713,28 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
     X[0] = _expm_multiply_simple_core(A, B, t_0, mu, m_star, s, renormalize = renormalize)
 
     # Compute the expm action at the rest of the time points.
+    print(f"q is {q} and s is {s}")
     if q <= s:
         if status_only:
             return 0
         else:
+            print('core_0')
             return _expm_multiply_interval_core_0(A, X,
-                    h, mu, q, norm_info, tol, ell,n0,renormalize)
+                    h, mu, q, norm_info, tol, ell,n0,renormalize = renormalize)
     elif not (q % s):
         if status_only:
             return 1
         else:
+            print('core1')
             return _expm_multiply_interval_core_1(A, X,
-                    h, mu, m_star, s, q, tol,renormalize)
+                    h, mu, m_star, s, q, tol,renormalize = renormalize)
     elif (q % s):
         if status_only:
             return 2
         else:
+            print('core_2')
             return _expm_multiply_interval_core_2(A, X,
-                    h, mu, m_star, s, q, tol, renormalize)
+                    h, mu, m_star, s, q, tol, renormalize=renormalize)
     else:
         raise Exception('internal error')
 
@@ -749,7 +754,7 @@ def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0, reno
         norm_info.set_scale(1)
 
     for k in range(q):
-        X[k+1] = _expm_multiply_simple_core(A, X[k], h, mu, m_star, s,renormalize)
+        X[k+1] = _expm_multiply_simple_core(A, X[k], h, mu, m_star, s,renormalize=renormalize)
     return X, 0
 
 

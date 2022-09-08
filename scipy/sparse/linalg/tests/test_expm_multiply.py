@@ -1,6 +1,7 @@
 """Test functions for the sparse.linalg._expm_multiply module."""
 from functools import partial
 from itertools import product
+import re
 
 import numpy as np
 import pytest
@@ -142,7 +143,7 @@ class TestExpmActionSimple:
         )
         assert_allclose(observed, expected)
 
-    def test_sparse_expm_multiply(self):
+    def _help_test_sparse_expm_multiply(self,renormalize):
         np.random.seed(1234)
         n = 40
         k = 3
@@ -150,7 +151,7 @@ class TestExpmActionSimple:
         for i in range(nsamples):
             A = scipy.sparse.rand(n, n, density=0.05)
             B = np.random.randn(n, k)
-            observed = expm_multiply(A, B)
+            observed = expm_multiply(A, B,renormalize=renormalize)
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
                            "splu converted its input to CSC format")
@@ -158,9 +159,17 @@ class TestExpmActionSimple:
                            "spsolve is more efficient when sparse b is in the"
                            " CSC matrix format")
                 expected = sp_expm(A).dot(B)
+                if renormalize:
+                    expected = expected/np.linalg.norm(expected)
             assert_allclose(observed, expected)
-            observed = estimated(expm_multiply)(aslinearoperator(A), B)
+            observed = estimated(expm_multiply)(aslinearoperator(A), B,renormalize=renormalize)
             assert_allclose(observed, expected)
+
+    def test_sparse_expm_multiply(self):
+        self._help_test_sparse_expm_multiply(False)
+
+    def test_sparse_expm_multiply_renormalize(self):
+        self._help_test_sparse_expm_multiply(True)
 
     def test_complex(self):
         A = np.array([
@@ -178,10 +187,9 @@ class TestExpmActionSimple:
 
 class TestExpmActionInterval:
 
-    def _help_test_sparse_expm_multiply_interval(self,renormalize):
+    def _help_test_sparse_expm_multiply_interval(self,renormalize,stop):
         np.random.seed(1234)
         start = 0.1
-        stop = 3.2
         n = 40
         k = 3
         endpoint = True
@@ -203,16 +211,17 @@ class TestExpmActionInterval:
                     for solution, t in zip(X, samples):
                         if renormalize:
                             expected = sp_expm(t*A).dot(target)
-                            assert_allclose(solution, expected/np.linalg.norm(expected))
+                            expected = expected/np.linalg.norm(expected)
+                            assert_allclose(solution, expected,rtol = 1e-4)
                         else:
                             assert_allclose(solution, sp_expm(t*A).dot(target))
 
-
     def test_sparse_expm_multiply_interval(self):
-        self._help_test_sparse_expm_multiply_interval(False)
+        self._help_test_sparse_expm_multiply_interval(False,3.2)
 
-    def test_sparse_expm_multiply_interval(self):
-        self._help_test_sparse_expm_multiply_interval(True)
+    def test_sparse_expm_multiply_interval_renormalize(self):
+        self._help_test_sparse_expm_multiply_interval(True,3.2)
+        self._help_test_sparse_expm_multiply_interval(True,32)
 
     def test_expm_multiply_interval_vector(self):
         np.random.seed(1234)
