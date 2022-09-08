@@ -753,7 +753,7 @@ def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
     xi : array_like with shape (m, d)
         Coordinates to evaluate the estimate at in d dimensions.
     cho_cov : array_like with shape (d, d)
-        Permuted Cholesky factor of permuted covariance of the data.
+        (Lower) Cholesky factor of the covariance.
 
     Returns
     -------
@@ -778,9 +778,9 @@ def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
 
     # Rescale the data
     cho_cov_ = cho_cov.astype(dtype, copy=False)
-    points_ = np.asarray(solve_triangular(cho_cov, points.T, lower=False).T,
+    points_ = np.asarray(solve_triangular(cho_cov, points.T, lower=True).T,
                          dtype=dtype)
-    xi_ = np.asarray(solve_triangular(cho_cov, xi.T, lower=False).T,
+    xi_ = np.asarray(solve_triangular(cho_cov, xi.T, lower=True).T,
                      dtype=dtype)
     values_ = values.astype(dtype, copy=False)
 
