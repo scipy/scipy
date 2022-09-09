@@ -409,7 +409,7 @@ py3.extension_module('_ufuncs_cxx',
 
 py3.extension_module('_ellip_harm_2',
   [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.c'],
-  c_args: [cython_c_args, Wno_maybe_uninitialized],
+  c_args: cython_c_args,
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies: [lapack],
   install: true,
