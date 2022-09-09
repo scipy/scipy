@@ -19,7 +19,9 @@ on:
   - cron: "9  9 * * 6"
   # push:
   pull_request:
-      types: [labeled, opened, synchronize, reopened]
+    branches:
+      - main
+      - maintenance/**
   workflow_dispatch:
 
 concurrency:
