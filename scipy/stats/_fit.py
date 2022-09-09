@@ -274,7 +274,7 @@ class FitResult:
     def _cdf_plot(self, ax, fit_params):
         data = np.sort(self._data)
         ecdf = self._plotting_positions(len(self._data))
-        ls = '--' if self.discrete else '-'
+        ls = '--' if len(np.unique(data)) < 30 else '.'
         xlabel = 'k' if self.discrete else 'x'
         ax.step(data, ecdf, ls, label='Empirical CDF', color='C1', zorder=0)
 
