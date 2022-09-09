@@ -152,7 +152,7 @@ def _compute_outer_prob_inside_method(m, n, g, h):
     return A[maxj - minj - 1]
 
 
-#pythran export _compute_prob_outside_square(int64, int64)
+# pythran export _compute_prob_outside_square(int64, int64)
 def _compute_prob_outside_square(n, h):
     """
     Compute the proportion of paths that pass outside the two diagonal lines.
@@ -191,7 +191,7 @@ def _compute_prob_outside_square(n, h):
     return 2 * P
 
 
-#pythran export _count_paths_outside_method(int64, int64, int64, int64)
+# pythran export _count_paths_outside_method(int64, int64, int64, int64)
 def _count_paths_outside_method(m, n, g, h):
     """Count the number of paths that pass outside the specified diagonal.
 
