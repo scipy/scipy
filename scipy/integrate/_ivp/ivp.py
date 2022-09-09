@@ -188,8 +188,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         options is determined by `vectorized` argument (see below). The
         vectorized implementation allows a faster approximation of the Jacobian
         by finite differences (required for stiff solvers).
-    t_span : 2-tuple of floats
-        Interval of integration (t0, tf). The solver starts with t=t0 and
+    t_span : array_like, shape (2,)
+        Interval of integration [t0, tf]. The solver starts with t=t0 and
         integrates until it reaches t=tf.
     y0 : array_like, shape (n,)
         Initial state. For problems in the complex domain, pass `y0` with a
