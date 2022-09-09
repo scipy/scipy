@@ -49,3 +49,5 @@ dependencies:
   - click
   - doit>=0.36.0
   - pydevtool
+  # For importing development version of SciPy
+  - conda-build
