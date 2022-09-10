@@ -6778,7 +6778,7 @@ add_newdoc("iv",
     (1.2660658777520084, 0.565159103992485, 0.2935253263474798)
 
     The evaluation for different orders can be carried out in one call by
-    provinding a list as argument for the `v` parameter:
+    provinding a list or numpy array as argument for the `v` parameter:
     >>> iv([0, 1, 1.5], 1.)
     array([1.26606588, 0.5651591 , 0.29352533])
 
@@ -6791,9 +6791,14 @@ add_newdoc("iv",
     array([2.2795853 , 1.        , 4.88079259])
 
     If `z` is an array, the order parameter `v` must be broadcastable to
-    the correct shape. To calculate the orders 0 and 1:
+    the correct shape if different orders shall be computed in one call.
+    To calculate the orders 0 and 1 for an 1D array:
 
-    >>> iv([[0.], [1.]], points)
+    >>> orders = np.array([[0], [1]])
+    >>> orders.shape
+    (2, 1)
+
+    >>> iv(orders, points)
     array([[ 2.2795853 ,  1.        ,  4.88079259],
            [-1.59063685,  0.        ,  3.95337022]])
 
