@@ -6873,7 +6873,7 @@ add_newdoc("iv",
 
     >>> import numpy as np
     >>> points = np.array([-2., 0., 3.])
-    >>> iv(0, x)
+    >>> iv(0, points)
     array([2.2795853 , 1.        , 4.88079259])
 
     If `z` is an array, the order parameter `v` must be broadcastable to
