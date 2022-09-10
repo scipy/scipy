@@ -2158,7 +2158,7 @@ def anderson_ksamp(samples, midrank=True, n_resamples=0, random_state=None):
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+    >>> rng = np.random.default_rng()
     >>> res = stats.anderson_ksamp([rng.normal(size=50),
     ... rng.normal(loc=0.5, size=30)])
     >>> res.statistic, res.pvalue
