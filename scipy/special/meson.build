@@ -283,26 +283,26 @@ cephes_lib = static_library('cephes',
 
 amos_lib = static_library('amos',
   amos_sources,
-  fortran_args: '-Wno-maybe-uninitialized'
+  fortran_args: _fflag_Wno_maybe_uninitialized
 )
 
 cdflib_lib = static_library('cdflib',
   cdflib_sources,
   fortran_args: [
-    '-Wno-maybe-uninitialized',
-    '-Wno-unused-label',
-    '-Wno-intrinsic-shadow'
+    _fflag_Wno_maybe_uninitialized,
+    _fflag_Wno_unused_label,
+    _fflag_Wno_intrinsic_shadow
   ]
 )
 
 mach_lib = static_library('mach',
   mach_sources,
-  fortran_args: ['-Wno-unused-dummy-argument', '-Wno-maybe-uninitialized']
+  fortran_args: [_fflag_Wno_unused_dummy_argument, _fflag_Wno_maybe_uninitialized]
 )
 
 specfun_lib = static_library('specfun',
   'specfun/specfun.f',
-  fortran_args: '-Wno-maybe-uninitialized'
+  fortran_args: _fflag_Wno_maybe_uninitialized
 )
 
 specfun_module = custom_target('specfun_module',
@@ -341,7 +341,7 @@ cython_special = custom_target('cython_special',
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
   command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
   install: true,
-  install_dir: py3.get_install_dir() / 'scipy/special'
+  install_dir: py3.get_install_dir(pure: false) / 'scipy/special'
 )
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
@@ -360,7 +360,7 @@ py3.extension_module('_ufuncs',
     ufuncs_sources,
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
-  c_args: [cython_c_args, c_undefined_ok],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies: [
     lapack,
@@ -402,14 +402,14 @@ py3.extension_module('_ufuncs_cxx',
     ],
   cpp_args: cython_cpp_args,
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: [npymath_lib, ellint_dep],
+  dependencies: [ellint_dep],
   install: true,
   subdir: 'scipy/special'
 )
 
 py3.extension_module('_ellip_harm_2',
   [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.c'],
-  c_args: [cython_c_args, c_undefined_ok],
+  c_args: cython_c_args,
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies: [lapack],
   install: true,
@@ -425,7 +425,7 @@ py3.extension_module('cython_special',
     'specfun_wrappers.c',
     'sf_error.c'
   ],
-  c_args: [cython_c_args, c_undefined_ok],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: [inc_np, '../_lib', '../_build_utils/src', 'cephes'],
   dependencies: [npymath_lib, lapack],
   link_with: [
@@ -486,7 +486,7 @@ foreach npz_file: npz_files
       '--use-timestamp', npz_file[2], '-o', '@OUTDIR@'
     ],
     install: true,
-    install_dir: py3.get_install_dir() / 'scipy/special/tests/data'
+    install_dir: py3.get_install_dir(pure: false) / 'scipy/special/tests/data'
   )
 endforeach
 

@@ -247,6 +247,18 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     Note: This function was created before `cwt` and is not compatible
     with it.
 
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> M = 100
+    >>> s = 4.0
+    >>> w = 2.0
+    >>> wavelet = signal.morlet(M, s, w)
+    >>> plt.plot(wavelet)
+    >>> plt.show()
+
     """
     x = np.linspace(-s * 2 * np.pi, s * 2 * np.pi, M)
     output = np.exp(1j * w * x)

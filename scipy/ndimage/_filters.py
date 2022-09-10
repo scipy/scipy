@@ -29,6 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from collections.abc import Iterable
+import numbers
 import warnings
 import numpy
 import operator
@@ -209,7 +210,7 @@ def _gaussian_kernel1d(sigma, order, radius):
 
 @_ni_docstrings.docfiller
 def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
-                      mode="reflect", cval=0.0, truncate=4.0):
+                      mode="reflect", cval=0.0, truncate=4.0, *, radius=None):
     """1-D Gaussian filter.
 
     Parameters
@@ -228,10 +229,19 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     truncate : float, optional
         Truncate the filter at this many standard deviations.
         Default is 4.0.
+    radius : None or int, optional
+        Radius of the Gaussian kernel. If specified, the size of
+        the kernel will be ``2*radius + 1``, and `truncate` is ignored.
+        Default is None.
 
     Returns
     -------
     gaussian_filter1d : ndarray
+
+    Notes
+    -----
+    The Gaussian kernel will have size ``2*radius + 1`` where
+    ``radius = round(truncate * sigma)``.
 
     Examples
     --------
@@ -257,6 +267,10 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     sd = float(sigma)
     # make the radius of the filter equal to truncate standard deviations
     lw = int(truncate * sd + 0.5)
+    if radius is not None:
+        lw = radius
+    if not isinstance(lw, numbers.Integral) or lw < 0:
+        raise ValueError('Radius must be a nonnegative integer.')
     # Since we are calling correlate, not convolve, revert the kernel
     weights = _gaussian_kernel1d(sigma, order, lw)[::-1]
     return correlate1d(input, weights, axis, output, mode, cval, 0)
@@ -264,7 +278,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
 
 @_ni_docstrings.docfiller
 def gaussian_filter(input, sigma, order=0, output=None,
-                    mode="reflect", cval=0.0, truncate=4.0):
+                    mode="reflect", cval=0.0, truncate=4.0, *, radius=None):
     """Multidimensional Gaussian filter.
 
     Parameters
@@ -283,9 +297,15 @@ def gaussian_filter(input, sigma, order=0, output=None,
     %(output)s
     %(mode_multiple)s
     %(cval)s
-    truncate : float
+    truncate : float, optional
         Truncate the filter at this many standard deviations.
         Default is 4.0.
+    radius : None or int or sequence of ints, optional
+        Radius of the Gaussian kernel. The radius are given for each axis
+        as a sequence, or as a single number, in which case it is equal
+        for all axes. If specified, the size of the kernel along each axis
+        will be ``2*radius + 1``, and `truncate` is ignored.
+        Default is None.
 
     Returns
     -------
@@ -300,6 +320,9 @@ def gaussian_filter(input, sigma, order=0, output=None,
     types with a limited precision, the results may be imprecise
     because intermediate results may be stored with insufficient
     precision.
+
+    The Gaussian kernel will have size ``2*radius + 1`` along each axis
+    where ``radius = round(truncate * sigma)``.
 
     Examples
     --------
@@ -319,13 +342,13 @@ def gaussian_filter(input, sigma, order=0, output=None,
            [29, 31, 33, 34, 36],
            [35, 37, 39, 40, 42]])
 
-    >>> from scipy import misc
+    >>> from scipy import datasets
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
     >>> ax1 = fig.add_subplot(121)  # left side
     >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> result = gaussian_filter(ascent, sigma=5)
     >>> ax1.imshow(ascent)
     >>> ax2.imshow(result)
@@ -336,13 +359,14 @@ def gaussian_filter(input, sigma, order=0, output=None,
     orders = _ni_support._normalize_sequence(order, input.ndim)
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
+    radiuses = _ni_support._normalize_sequence(radius, input.ndim)
     axes = list(range(input.ndim))
-    axes = [(axes[ii], sigmas[ii], orders[ii], modes[ii])
+    axes = [(axes[ii], sigmas[ii], orders[ii], modes[ii], radiuses[ii])
             for ii in range(len(axes)) if sigmas[ii] > 1e-15]
     if len(axes) > 0:
-        for axis, sigma, order, mode in axes:
+        for axis, sigma, order, mode, radius in axes:
             gaussian_filter1d(input, sigma, axis, order, output,
-                              mode, cval, truncate)
+                              mode, cval, truncate, radius=radius)
             input = output
     else:
         output[...] = input[...]
@@ -363,13 +387,13 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
     >>> ax1 = fig.add_subplot(121)  # left side
     >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> result = ndimage.prewitt(ascent)
     >>> ax1.imshow(ascent)
     >>> ax2.imshow(result)
@@ -400,13 +424,13 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
     >>> ax1 = fig.add_subplot(121)  # left side
     >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> result = ndimage.sobel(ascent)
     >>> ax1.imshow(ascent)
     >>> ax2.imshow(result)
@@ -478,13 +502,13 @@ def laplace(input, output=None, mode="reflect", cval=0.0):
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
     >>> ax1 = fig.add_subplot(121)  # left side
     >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> result = ndimage.laplace(ascent)
     >>> ax1.imshow(ascent)
     >>> ax2.imshow(result)
@@ -514,9 +538,9 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
 
     >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
@@ -614,13 +638,13 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
     >>> ax1 = fig.add_subplot(121)  # left side
     >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> result = ndimage.gaussian_gradient_magnitude(ascent, sigma=5)
     >>> ax1.imshow(ascent)
     >>> ax2.imshow(result)
@@ -945,13 +969,13 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
     >>> ax1 = fig.add_subplot(121)  # left side
     >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> result = ndimage.uniform_filter(ascent, size=20)
     >>> ax1.imshow(ascent)
     >>> ax2.imshow(result)
@@ -1190,13 +1214,13 @@ def minimum_filter(input, size=None, footprint=None, output=None,
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
     >>> ax1 = fig.add_subplot(121)  # left side
     >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> result = ndimage.minimum_filter(ascent, size=20)
     >>> ax1.imshow(ascent)
     >>> ax2.imshow(result)
@@ -1232,13 +1256,13 @@ def maximum_filter(input, size=None, footprint=None, output=None,
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
     >>> ax1 = fig.add_subplot(121)  # left side
     >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> result = ndimage.maximum_filter(ascent, size=20)
     >>> ax1.imshow(ascent)
     >>> ax2.imshow(result)
@@ -1339,13 +1363,13 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
     >>> ax1 = fig.add_subplot(121)  # left side
     >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> result = ndimage.rank_filter(ascent, rank=42, size=20)
     >>> ax1.imshow(ascent)
     >>> ax2.imshow(result)
@@ -1388,13 +1412,13 @@ def median_filter(input, size=None, footprint=None, output=None,
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
     >>> ax1 = fig.add_subplot(121)  # left side
     >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> result = ndimage.median_filter(ascent, size=20)
     >>> ax1.imshow(ascent)
     >>> ax2.imshow(result)
@@ -1428,13 +1452,13 @@ def percentile_filter(input, percentile, size=None, footprint=None,
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
     >>> ax1 = fig.add_subplot(121)  # left side
     >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> result = ndimage.percentile_filter(ascent, percentile=20, size=20)
     >>> ax1.imshow(ascent)
     >>> ax2.imshow(result)

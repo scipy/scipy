@@ -1,9 +1,8 @@
 import cython
 
-from libc.math cimport log, exp, fabs, sqrt, isnan, isinf
+from libc.math cimport log, exp, fabs, sqrt, isnan, isinf, NAN, M_PI
 
 from ._cephes cimport ellpk
-from ._complexstuff cimport pi, nan
 
 
 cdef inline double _agm_iter(double a, double b) nogil:
@@ -36,15 +35,15 @@ cdef inline double agm(double a, double b) nogil:
     cdef int sgn
 
     if isnan(a) or isnan(b):
-        return nan
+        return NAN
 
     if (a < 0 and b > 0) or (a > 0 and b < 0):
         # a and b have opposite sign.
-        return nan
+        return NAN
 
     if (isinf(a) or isinf(b)) and (a == 0 or b == 0):
         # One value is inf and the other is 0.
-        return nan
+        return NAN
 
     if a == 0 or b == 0:
         # At least one of the arguments is 0.
@@ -63,7 +62,7 @@ cdef inline double agm(double a, double b) nogil:
 
     if (invsqrthalfmax < a < sqrthalfmax) and (invsqrthalfmax < b < sqrthalfmax):
         e = 4*a*b/(a + b)**2
-        return sgn*(pi/4)*(a + b)/ellpk(e)
+        return sgn*(M_PI/4)*(a + b)/ellpk(e)
     else:
         # At least one value is "extreme" (very big or very small).
         # Use the iteration to avoid overflow or underflow.

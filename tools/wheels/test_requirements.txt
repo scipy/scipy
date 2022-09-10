@@ -1,0 +1,12 @@
+numpy
+pytest
+pytest-cov
+pytest-xdist
+asv
+mpmath
+threadpoolctl
+pooch
+# these two are currently commented out because there are wheels missing
+# that makes the test script fail
+# gmpy2
+# scikit-umfpack
