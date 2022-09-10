@@ -276,7 +276,7 @@ def check_pickling(distfn, args):
     # save the random_state (restore later)
     rndm = distfn.random_state
 
-    # check unfrozen
+    # check distributions keep an explicitly set random_state
     distfn.random_state = 1234
     distfn.rvs(*args, size=8)
     s = pickle.dumps(distfn)
@@ -286,20 +286,40 @@ def check_pickling(distfn, args):
     r1 = unpickled.rvs(*args, size=8)
     npt.assert_equal(r0, r1)
 
+    # check distributions remain coupled to the global random_state
+    # if no seed is specified
+    distfn.random_state = None
+    distfn.rvs(*args, size=8)
+    s = pickle.dumps(distfn)
+    unpickled = pickle.loads(s)
+    # Note 'is' here: the goal is to check the random state was not copied
+    # (Checking that the rvs are unequal would be fragile, some discrete dists
+    #  in the test stuite draw the same values regardless of what you do)
+    assert distfn.random_state is unpickled.random_state
+
     # also smoke test some methods
     medians = [distfn.ppf(0.5, *args), unpickled.ppf(0.5, *args)]
     npt.assert_equal(medians[0], medians[1])
     npt.assert_equal(distfn.cdf(medians[0], *args),
                      unpickled.cdf(medians[1], *args))
 
-    # check frozen pickling/unpickling with rvs
+    # check frozen distributions keep an explicitly set random_state
+    # Note the random state is not inherited from distfn, see #8053.
     frozen_dist = distfn(*args)
+    frozen_dist.random_state = 1234
     pkl = pickle.dumps(frozen_dist)
     unpickled = pickle.loads(pkl)
 
     r0 = frozen_dist.rvs(size=8)
     r1 = unpickled.rvs(size=8)
     npt.assert_equal(r0, r1)
+
+    # check frozen distributions remain coupled to the global random state
+    # if no seed is specified 
+    frozen_dist = distfn(*args)
+    pkl = pickle.dumps(frozen_dist)
+    unpickled = pickle.loads(pkl)
+    assert frozen_dist.random_state is unpickled.random_state
 
     # check pickling/unpickling of .fit method
     if hasattr(distfn, "fit"):

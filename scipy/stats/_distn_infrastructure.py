@@ -444,11 +444,12 @@ class rv_frozen:
 
     @property
     def random_state(self):
-        return self.dist._random_state
+        return self.dist.random_state
 
     @random_state.setter
     def random_state(self, seed):
-        self.dist._random_state = check_random_state(seed)
+        # setter of self.dist will do check_random_state if needed
+        self.dist.random_state = seed
 
     def cdf(self, x):
         return self.dist.cdf(x, *self.args, **self.kwds)
@@ -614,6 +615,11 @@ class rv_generic:
                                    ('moments' in sig.args) or
                                    ('moments' in sig.kwonlyargs))
         self._random_state = check_random_state(seed)
+        if self._random_state is check_random_state(None):
+            # Using the global random state.
+            # Set _random_state to None to avoid copying/serializing
+            # the numpy RandomState singleton.
+            self._random_state = None
 
     @property
     def random_state(self):
@@ -627,11 +633,18 @@ class rv_generic:
         instance, that instance is used.
 
         """
+        if self._random_state is None:
+            # Use the global random state
+            return check_random_state(None)
         return self._random_state
 
     @random_state.setter
     def random_state(self, seed):
-        self._random_state = check_random_state(seed)
+        if seed is None:
+            # Use the global random state
+            self._random_state = None
+        else:
+            self._random_state = check_random_state(seed)
 
     def __setstate__(self, state):
         try:
@@ -1040,10 +1053,10 @@ class rv_generic:
 
         # extra gymnastics needed for a custom random_state
         if rndm is not None:
-            random_state_saved = self._random_state
+            random_state_saved = self.random_state
             random_state = check_random_state(rndm)
         else:
-            random_state = self._random_state
+            random_state = self.random_state
 
         vals = self._rvs(*args, size=size, random_state=random_state)
 
@@ -1051,7 +1064,7 @@ class rv_generic:
 
         # do not forget to restore the _random_state
         if rndm is not None:
-            self._random_state = random_state_saved
+            self.random_state = random_state_saved
 
         # Cast to int if discrete
         if discrete and not isinstance(self, rv_sample):

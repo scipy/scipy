@@ -204,6 +204,11 @@ class multi_rv_generic:
     def __init__(self, seed=None):
         super().__init__()
         self._random_state = check_random_state(seed)
+        if self._random_state is check_random_state(None):
+            # Using the global random state. 
+            # Set _random_state to None to avoid copying/serializing
+            # the numpy RandomState singleton.
+            self._random_state = None
 
     @property
     def random_state(self):
@@ -217,17 +222,26 @@ class multi_rv_generic:
         that instance is used.
 
         """
+        if self._random_state is None:
+            # Use the global random state
+            return check_random_state(None)
         return self._random_state
 
     @random_state.setter
     def random_state(self, seed):
-        self._random_state = check_random_state(seed)
+        if seed is None:
+            # Use the global random state
+            self._random_state = None
+        else:
+            self._random_state = check_random_state(seed)
 
     def _get_random_state(self, random_state):
-        if random_state is not None:
-            return check_random_state(random_state)
-        else:
-            return self._random_state
+        if random_state is None:
+            # Use the distribution's random state
+            return self.random_state
+        # Use the provided random state
+        return check_random_state(random_state)
+
 
 
 class multi_rv_frozen:
@@ -237,11 +251,12 @@ class multi_rv_frozen:
     """
     @property
     def random_state(self):
-        return self._dist._random_state
+        return self._dist.random_state
 
     @random_state.setter
     def random_state(self, seed):
-        self._dist._random_state = check_random_state(seed)
+        # setter of self._dist will do check_random_state if needed
+        self._dist.random_state = seed
 
 
 _mvn_doc_default_callparams = """\
@@ -4235,7 +4250,7 @@ class multivariate_t_gen(multi_rv_generic):
         """
         super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, mvt_docdict_params)
-        self._random_state = check_random_state(seed)
+        self.random_state = seed
 
     def __call__(self, loc=None, shape=1, df=1, allow_singular=False,
                  seed=None):
@@ -4395,7 +4410,7 @@ class multivariate_t_gen(multi_rv_generic):
         if random_state is not None:
             rng = check_random_state(random_state)
         else:
-            rng = self._random_state
+            rng = self.random_state
 
         if np.isinf(df):
             x = np.ones(size)
