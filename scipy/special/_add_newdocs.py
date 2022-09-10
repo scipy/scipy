@@ -6764,6 +6764,54 @@ add_newdoc("iv",
     .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Evaluate the function of order 0 at one point.
+
+    >>> from scipy.special import iv
+    >>> iv(0, 1.)
+    1.2660658777520084
+
+    Evaluate the function at one point for different orders.
+    >>> iv(0, 1.), iv(1, 1.), iv(1.5, 1.)
+    (1.2660658777520084, 0.565159103992485, 0.2935253263474798)
+
+    The evaluation for different orders can be carried out in one call by
+    provinding a list as argument for the `v` parameter:
+    >>> iv([0, 1, 1.5], 1.)
+    array([1.26606588, 0.5651591 , 0.29352533])
+
+    Evaluate the function at several points for order 0 by providing an
+    array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([-2., 0., 3.])
+    >>> iv(0, x)
+    array([2.2795853 , 1.        , 4.88079259])
+
+    If `z` is an array, the order parameter `v` must be broadcastable to
+    the correct shape. To calculate the orders 0 and 1:
+
+    >>> iv([[0.], [1.]], points)
+    array([[ 2.2795853 ,  1.        ,  4.88079259],
+           [-1.59063685,  0.        ,  3.95337022]])
+
+    Plot the functions of order 0 to 3 from -5 to 5.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-5., 5., 1000)
+    >>> i0 = iv(0, x)
+    >>> i1 = iv(1, x)
+    >>> i2 = iv(2, x)
+    >>> i3 = iv(3, x)
+    >>> plt.plot(x, i0, label='$I_0$')
+    >>> plt.plot(x, i1, label='$I_1$')
+    >>> plt.plot(x, i2, label='$I_2$')
+    >>> plt.plot(x, i3, label='$I_3$')
+    >>> plt.legend()
+    >>> plt.plot()
+
     """)
 
 add_newdoc("ive",
