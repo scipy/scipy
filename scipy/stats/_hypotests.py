@@ -748,7 +748,7 @@ def somersd(x, y=None, alternative='two-sided'):
     res : SomersDResult
         A `SomersDResult` object with the following fields:
 
-            correlation : float
+            statistic : float
                The Somers' :math:`D` statistic.
             pvalue : float
                The p-value for a hypothesis test whose null
