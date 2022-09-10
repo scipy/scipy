@@ -6840,7 +6840,9 @@ add_newdoc("iv",
 
     See also
     --------
-    kve : This function with leading exponential behavior stripped off.
+    ive : This function with leading exponential behavior stripped off.
+    i0 : Faster version of this function for order 0.
+    i1 : Faster version of this function for order 1.
 
     References
     ----------
