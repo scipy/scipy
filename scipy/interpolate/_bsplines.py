@@ -9,8 +9,8 @@ from . import _bspl
 from . import _fitpack_impl
 from . import _fitpack as _dierckx
 from scipy._lib._util import prod
-from scipy.special import poch
 from scipy.sparse import csr_array
+from scipy.special import poch
 from itertools import combinations
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline"]
@@ -310,8 +310,8 @@ class BSpline:
         Construct a quadratic B-spline on ``[0, 1, 1, 2]``, and compare
         to its explicit form:
 
-        >>> t = [-1, 0, 1, 1, 2]
-        >>> b = BSpline.basis_element(t[1:])
+        >>> t = [0, 1, 1, 2]
+        >>> b = BSpline.basis_element(t)
         >>> def f(x):
         ...     return np.where(x < 1, x*x, (2. - x)**2)
 
@@ -437,9 +437,26 @@ class BSpline:
             # Checks from `find_interval` function
             raise ValueError(f'Out of bounds w/ x = {x}.')
 
-        n, nt = x.shape[0], t.shape[0]
-        data, idx = _bspl._make_design_matrix(x, t, k, extrapolate)
-        return csr_array((data, idx), (n, nt - k - 1))
+        # Compute number of non-zeros of final CSR array in order to determine
+        # the dtype of indices and indptr of the CSR array.
+        n = x.shape[0]
+        nnz = n * (k + 1)
+        if nnz < np.iinfo(np.int32).max:
+            int_dtype = np.int32
+        else:
+            int_dtype = np.int64
+        # Preallocate indptr and indices
+        indices = np.empty(n * (k + 1), dtype=int_dtype)
+        indptr = np.arange(0, (n + 1) * (k + 1), k + 1, dtype=int_dtype)
+
+        # indptr is not passed to Cython as it is already fully computed
+        data, indices = _bspl._make_design_matrix(
+            x, t, k, extrapolate, indices
+        )
+        return csr_array(
+            (data, indices, indptr),
+            shape=(x.shape[0], t.shape[0] - k - 1)
+        )
 
     def __call__(self, x, nu=0, extrapolate=None):
         """
@@ -1123,21 +1140,21 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     y : array_like, shape (n, ...)
         Ordinates.
     k : int, optional
-        B-spline degree. Default is cubic, k=3.
+        B-spline degree. Default is cubic, ``k = 3``.
     t : array_like, shape (nt + k + 1,), optional.
         Knots.
-        The number of knots needs to agree with the number of datapoints and
+        The number of knots needs to agree with the number of data points and
         the number of derivatives at the edges. Specifically, ``nt - n`` must
         equal ``len(deriv_l) + len(deriv_r)``.
     bc_type : 2-tuple or None
         Boundary conditions.
         Default is None, which means choosing the boundary conditions
         automatically. Otherwise, it must be a length-two tuple where the first
-        element sets the boundary conditions at ``x[0]`` and the second
-        element sets the boundary conditions at ``x[-1]``. Each of these must
-        be an iterable of pairs ``(order, value)`` which gives the values of
-        derivatives of specified orders at the given edge of the interpolation
-        interval.
+        element (``deriv_l``) sets the boundary conditions at ``x[0]`` and
+        the second element (``deriv_r``) sets the boundary conditions at
+        ``x[-1]``. Each of these must be an iterable of pairs
+        ``(order, value)`` which gives the values of derivatives of specified
+        orders at the given edge of the interpolation interval.
         Alternatively, the following string aliases are recognized:
 
         * ``"clamped"``: The first derivatives at the ends are zero. This is
@@ -1165,7 +1182,9 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     --------
 
     Use cubic interpolation on Chebyshev nodes:
+
     >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
     >>> def cheb_nodes(N):
     ...     jj = 2.*np.arange(N) + 1
     ...     x = np.cos(np.pi * jj / 2 / N)[::-1]
@@ -1203,7 +1222,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Build an interpolating curve, parameterizing it by the angle
 
-    >>> from scipy.interpolate import make_interp_spline
     >>> spl = make_interp_spline(phi, np.c_[x, y])
 
     Evaluate the interpolant on a finer grid (note that we transpose the result
@@ -1214,7 +1232,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Plot the result
 
-    >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, y, 'o')
     >>> plt.plot(x_new, y_new, '-')
     >>> plt.show()
@@ -1385,7 +1402,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
 
 def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
-    r"""Compute the (coefficients of) an LSQ B-spline.
+    r"""Compute the (coefficients of) an LSQ (Least SQuared) based
+    fitting B-spline.
 
     The result is a linear combination
 
@@ -1409,8 +1427,8 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
         Knots.
         Knots and data points must satisfy Schoenberg-Whitney conditions.
     k : int, optional
-        B-spline degree. Default is cubic, k=3.
-    w : array_like, shape (n,), optional
+        B-spline degree. Default is cubic, ``k = 3``.
+    w : array_like, shape (m,), optional
         Weights for spline fitting. Must be positive. If ``None``,
         then weights are all equal.
         Default is ``None``.
@@ -1424,20 +1442,22 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     Returns
     -------
-    b : a BSpline object of the degree `k` with knots `t`.
+    b : a BSpline object of the degree ``k`` with knots ``t``.
 
     Notes
     -----
-    The number of data points must be larger than the spline degree `k`.
+    The number of data points must be larger than the spline degree ``k``.
 
-    Knots `t` must satisfy the Schoenberg-Whitney conditions,
+    Knots ``t`` must satisfy the Schoenberg-Whitney conditions,
     i.e., there must be a subset of data points ``x[j]`` such that
     ``t[j] < x[j] < t[j+k+1]``, for ``j=0, 1,...,n-k-2``.
 
     Examples
     --------
     Generate some noisy data:
+
     >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
     >>> x = np.linspace(-3, 3, 50)
     >>> y = np.exp(-x**2) + 0.1 * rng.standard_normal(50)
@@ -1461,7 +1481,6 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     Plot both:
 
-    >>> import matplotlib.pyplot as plt
     >>> xs = np.linspace(-3, 3, 100)
     >>> plt.plot(x, y, 'ro', ms=5)
     >>> plt.plot(xs, spl(xs), 'g-', lw=3, label='LSQ spline')

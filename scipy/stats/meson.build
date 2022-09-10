@@ -1,10 +1,3 @@
-fortran_ignore_warnings = [
-  '-Wno-tabs', '-Wno-conversion',
-  '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
-  '-Wno-maybe-uninitialized', '-Wno-unused-label',
-  '-Wno-unused-variable'
-]
-
 _stats_pxd = custom_target('_stats_pxd',
   output: [
     '__init__.py',
@@ -36,7 +29,7 @@ statlib_lib = static_library('statlib_lib',
     'statlib/spearman.f',
     'statlib/swilk.f'
   ],
-  fortran_args: '-Wno-unused-variable'
+  fortran_args: _fflag_Wno_unused_variable
 )
 
 statlib_module = custom_target('statlib_module',
@@ -74,7 +67,9 @@ mvn_module = custom_target('mvn_module',
 mvn = py3.extension_module('_mvn',
   [mvn_module, 'mvndst.f'],
   c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
+  # Wno-surprising is to suppress a pointless warning with GCC 10-12
+  # (see GCC bug 98411: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98411)
+  fortran_args: [fortran_ignore_warnings, _fflag_Wno_surprising],
   dependencies: [fortranobject_dep],
   include_directories: [inc_np, inc_f2py],
   install: true,
@@ -122,6 +117,7 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
     'ncx2_ufunc.pyx',  # 9 (S_B)
     'nct_ufunc.pyx',  # 10 (S_B)
     'skewnorm_ufunc.pyx',  # 11 (S_B)
+    'invgauss_ufunc.pyx',  # 12 (S_B)
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
@@ -143,6 +139,7 @@ ncf_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[8])
 ncx2_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[9])
 nct_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[10])
 skewnorm_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[11])
+invgauss_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[12])
 
 # Extra dependency from _lib
 unuran_wrap_pyx = lib_cython_gen.process(_stats_gen_pyx[7])
@@ -174,10 +171,7 @@ if use_pythran
 
   _group_columns = py3.extension_module('_hypotests_pythran',
     _hypotests_pythran,
-    cpp_args: [
-      '-Wno-unused-function', '-Wno-unused-variable',
-      '-Wno-deprecated-declarations', '-Wno-int-in-bool-context'
-    ] + cpp_args_pythran,
+    cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
     install: true,
     subdir: 'scipy/stats'

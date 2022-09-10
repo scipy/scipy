@@ -26,7 +26,6 @@ import numpy as np
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats._mstats_basic as mstats_basic
-from scipy.stats._stats_py import _contains_nan
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
@@ -3263,6 +3262,34 @@ class TestStudentTest:
         assert_allclose(p, self.P1_1_g)
         assert_allclose(t, self.T1_1)
 
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_1samp_ci_1d(self, alternative):
+        # test confidence interval method against reference values
+        rng = np.random.default_rng(8066178009154342972)
+        n = 10
+        x = rng.normal(size=n, loc=1.5, scale=2)
+        popmean = rng.normal()  # this shouldn't affect confidence interval
+        # Reference values generated with R t.test:
+        # options(digits=16)
+        # x = c(2.75532884,  0.93892217,  0.94835861,  1.49489446, -0.62396595,
+        #      -1.88019867, -1.55684465,  4.88777104,  5.15310979,  4.34656348)
+        # t.test(x, conf.level=0.85, alternative='l')
+
+        ref = {'two-sided': [0.3594423211709136, 2.9333455028290860],
+               'greater': [0.7470806207371626, np.inf],
+               'less': [-np.inf, 2.545707203262837]}
+        res = stats.ttest_1samp(x, popmean=popmean, alternative=alternative)
+        ci = res.confidence_interval(confidence_level=0.85)
+        assert_allclose(ci, ref[alternative])
+        assert_equal(res.df, n-1)
+
+    def test_1samp_ci_iv(self):
+        # test `confidence_interval` method input validation
+        res = stats.ttest_1samp(np.arange(10), 0)
+        message = '`confidence_level` must be a number between 0 and 1.'
+        with pytest.raises(ValueError, match=message):
+            res.confidence_interval(confidence_level=10)
+
 
 class TestPercentileOfScore:
 
@@ -5145,14 +5172,14 @@ def test_ttest_1samp_new():
     assert_almost_equal(t1[0,0],t3, decimal=14)
     assert_equal(t1.shape, (n2,n3))
 
-    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1,n3)),axis=1)
+    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1, 1, n3)),axis=1)  # noqa
     t2,p2 = stats.ttest_1samp(rvn1[:,:,:], 1,axis=1)
     t3,p3 = stats.ttest_1samp(rvn1[0,:,0], 1)
     assert_array_almost_equal(t1,t2, decimal=14)
     assert_almost_equal(t1[0,0],t3, decimal=14)
     assert_equal(t1.shape, (n1,n3))
 
-    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1,n2)),axis=2)
+    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1,n2,1)),axis=2)  # noqa
     t2,p2 = stats.ttest_1samp(rvn1[:,:,:], 1,axis=2)
     t3,p3 = stats.ttest_1samp(rvn1[0,0,:], 1)
     assert_array_almost_equal(t1,t2, decimal=14)
@@ -5204,6 +5231,27 @@ def test_ttest_1samp_new():
     pc = converter(tr, pr, "less")
     assert_allclose(p, pc)
     assert_allclose(t, tr)
+
+
+def test_ttest_1samp_popmean_array():
+    # when popmean.shape[axis] != 1, raise an error
+    # if the user wants to test multiple null hypotheses simultaneously,
+    # use standard broadcasting rules
+    rng = np.random.default_rng(2913300596553337193)
+    x = rng.random(size=(1, 15, 20))
+
+    message = r"`popmean.shape\[axis\]` must equal 1."
+    popmean = rng.random(size=(5, 2, 20))
+    with pytest.raises(ValueError, match=message):
+        stats.ttest_1samp(x, popmean=popmean, axis=-2)
+
+    popmean = rng.random(size=(5, 1, 20))
+    res = stats.ttest_1samp(x, popmean=popmean, axis=-2)
+    assert res.statistic.shape == (5, 20)
+
+    ci = np.expand_dims(res.confidence_interval(), axis=-2)
+    res = stats.ttest_1samp(x, popmean=ci, axis=-2)
+    assert_allclose(res.pvalue, 0.05)
 
 
 class TestDescribe:
@@ -7858,53 +7906,3 @@ def test_rename_mode_method(fun, args):
     with pytest.raises(TypeError, match=re.escape(err)):
         fun(*args, method='exact', mode='exact')
 
-
-class TestContainsNaNTest:
-
-    def test_policy(self):
-        data = np.array([1, 2, 3, np.nan])
-
-        contains_nan, nan_policy = _contains_nan(data, nan_policy="propagate")
-        assert contains_nan
-        assert nan_policy == "propagate"
-
-        contains_nan, nan_policy = _contains_nan(data, nan_policy="omit")
-        assert contains_nan
-        assert nan_policy == "omit"
-
-        msg = "The input contains nan values"
-        with pytest.raises(ValueError, match=msg):
-            _contains_nan(data, nan_policy="raise")
-
-        msg = "nan_policy must be one of"
-        with pytest.raises(ValueError, match=msg):
-            _contains_nan(data, nan_policy="nan")
-
-    def test_contains_nan_1d(self):
-        data1 = np.array([1, 2, 3])
-        assert not _contains_nan(data1)[0]
-
-        data2 = np.array([1, 2, 3, np.nan])
-        assert _contains_nan(data2)[0]
-
-        data3 = np.array([np.nan, 2, 3, np.nan])
-        assert _contains_nan(data3)[0]
-
-        data4 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
-        assert not _contains_nan(data4)[0]
-
-        data5 = np.array([1, 2, "3", np.nan], dtype='object')
-        assert _contains_nan(data5)[0]
-
-    def test_contains_nan_2d(self):
-        data1 = np.array([[1, 2], [3, 4]])
-        assert not _contains_nan(data1)[0]
-
-        data2 = np.array([[1, 2], [3, np.nan]])
-        assert _contains_nan(data2)[0]
-
-        data3 = np.array([["1", 2], [3, np.nan]])  # converted to string "nan"
-        assert not _contains_nan(data3)[0]
-
-        data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
-        assert _contains_nan(data4)[0]

@@ -271,9 +271,13 @@ def cases_test_moments():
         cond2 = distname not in fail_higher
 
         marks = list()
-        if distname == 'skewnorm':
-            # takes > 60 sec on Linux 32-bit and ~200 sec on Azure Windows
-            marks.append(pytest.mark.timeout(300))
+        # Currently unused, `marks` can be used to add a timeout to a test of
+        # a specific distribution.  For example, this shows how a timeout could
+        # be added for the 'skewnorm' distribution:
+        #
+        #     marks = list()
+        #     if distname == 'skewnorm':
+        #         marks.append(pytest.mark.timeout(300))
 
         yield pytest.param(distname, arg, cond1, cond2, False, marks=marks)
 
@@ -337,7 +341,7 @@ def test_rvs_broadcast(dist, shape_args):
     shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dweibull',
                           'exponnorm', 'genhyperbolic', 'geninvgauss',
                           'levy_stable', 'nct', 'norminvgauss', 'rice',
-                          'skewnorm', 'semicircular', 'gennorm']
+                          'skewnorm', 'semicircular', 'gennorm', 'loggamma']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)
@@ -618,7 +622,7 @@ def check_distribution_rvs(dist, args, alpha, rvs):
     if (pval < alpha):
         # The rvs passed in failed the K-S test, which _could_ happen
         # but is unlikely if alpha is small enough.
-        # Repeat the the test with a new sample of rvs.
+        # Repeat the test with a new sample of rvs.
         # Generate 1000 rvs, perform a K-S test that the new sample of rvs
         # are distributed according to the distribution.
         D, pval = stats.kstest(dist, dist, args=args, N=1000)

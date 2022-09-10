@@ -499,7 +499,7 @@ class Build(Task):
             if non_empty and not dirs.site.exists():
                 raise RuntimeError("Can't install in non-empty directory: "
                                    f"'{dirs.installed}'")
-        cmd = ["meson", "install", "-C", args.build_dir]
+        cmd = ["meson", "install", "-C", args.build_dir, "--only-changed"]
         log_filename = dirs.root / 'meson-install.log'
         start_time = datetime.datetime.now()
         cmd_str = ' '.join([str(p) for p in cmd])
@@ -850,7 +850,7 @@ class Bench(Task):
 
     @classmethod
     def run(cls, **kwargs):
-        """run benchamark"""
+        """run benchmark"""
         kwargs.update(cls.ctx.get())
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
@@ -1006,7 +1006,9 @@ class RefguideCheck(Task):
         args = Args(**kwargs)
         dirs = Dirs(args)
 
-        cmd = [str(dirs.root / 'tools' / 'refguide_check.py'), '--doctests']
+        cmd = [f'{sys.executable}',
+               str(dirs.root / 'tools' / 'refguide_check.py'),
+               '--doctests']
         if args.verbose:
             cmd += ['-vvv']
         if args.submodule:

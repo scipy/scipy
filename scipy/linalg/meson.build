@@ -28,7 +28,7 @@ cython_linalg = custom_target('cython_linalg',
   # TODO - we only want to install the .pxd files! See comments for
   #        `pxd_files` further down.
   install: true,
-  install_dir: py3.get_install_dir() / 'scipy/linalg'
+  install_dir: py3.get_install_dir(pure: false) / 'scipy/linalg'
 )
 
 # pyx -> c, pyx -> cpp generators, depending on __init__.py here.
@@ -77,15 +77,11 @@ flapack_module = custom_target('flapack_module',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
+# Note that -Wno-empty-body is Clang-specific and comes from `callstatement`s
+# in flapack_other.pyf.src
 py3.extension_module('_flapack',
-  [
-    flapack_module,
-    g77_abi_wrappers,
-  ],
-  c_args: [
-    numpy_nodepr_api,
-    '-Wno-empty-body',  # comes from `callstatement`s in flapack_other.pyf.src
-  ],
+  [flapack_module, g77_abi_wrappers],
+  c_args: [numpy_nodepr_api, Wno_empty_body],
   include_directories: [inc_np, inc_f2py],
   dependencies: [lapack, fortranobject_dep],
   install: true,
@@ -118,6 +114,11 @@ interpolative_module = custom_target('interpolative_module',
   input: 'interpolative.pyf',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
+
+# id_dist contains a copy of FFTPACK, which has type mismatch warnings
+# that are hard to fix. This code is terrible and noisy during the build,
+# silence it completely.
+_suppress_all_warnings = ff.get_supported_arguments('-w')
 
 py3.extension_module('_interpolative',
   [
@@ -160,10 +161,7 @@ py3.extension_module('_interpolative',
     interpolative_module,
   ],
   c_args: numpy_nodepr_api,
-  fortran_args: [
-    '-Wno-tabs', '-Wno-conversion', '-Wno-argument-mismatch',
-    '-Wno-unused-dummy-argument', '-Wno-maybe-uninitialized'
-  ],
+  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
   include_directories: [inc_np, inc_f2py],
   dependencies: [lapack, fortranobject_dep],
   install: true,
@@ -260,7 +258,7 @@ py3.extension_module('_matfuncs_expm',
 
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   linalg_init_utils_cython_gen.process('_cythonized_array_utils.pyx'),
-  c_args: [cython_c_args, c_undefined_ok],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: [inc_np],
   install: true,
   subdir: 'scipy/linalg'
@@ -324,7 +322,7 @@ py3.install_sources(
 #       https://mesonbuild.com/Installing.html says is for build targets to
 #       use:
 #         `custom_target(..., install: true, install_dir: ...)
-#         # should use `py3.get_install_dir() / 'scipy/linalg'` ?
+#         # should use `py3.get_install_dir(pure: false) / 'scipy/linalg'` ?
 #       see https://github.com/mesonbuild/meson/issues/3206
 #
 #       For the below code to work, the script generating the files should use
@@ -342,7 +340,7 @@ py3.install_sources(
 #  output : ['cython_blas2.pxd', 'cython_lapack2.pxd'],
 #  command : ['cp', '@INPUT0@', '@OUTPUT0@', '&&', 'cp', '@INPUT1@', '@OUTPUT1@'],
 #  install : true,
-#  install_dir: py3.get_install_dir() / 'scipy/linalg'
+#  install_dir: py3.get_install_dir(pure: false) / 'scipy/linalg'
 #)
 
 subdir('tests')

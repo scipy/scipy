@@ -573,8 +573,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     and residuals (slacks) are also available.
 
     >>> res.ineqlin
-     marginals: array([-0., -1.])
-      residual: array([39.,  0.])
+      residual: [ 3.900e+01  0.000e+00]
+     marginals: [-0.000e+00 -1.000e+00]
 
     For example, because the marginal associated with the second inequality
     constraint is -1, we expect the optimal value of the objective function

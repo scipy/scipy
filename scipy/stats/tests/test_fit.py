@@ -183,7 +183,7 @@ def cases_test_fit():
                       'exponpow', 'rdist', 'norminvgauss', 'betaprime',
                       'powerlaw', 'pareto', 'johnsonsu', 'loglaplace',
                       'wrapcauchy', 'weibull_max', 'arcsine', 'binom', 'rice',
-                      'uniform', 'f', 'invweibull', 'genpareto', 'weibull_min',
+                      'uniform', 'f', 'invweibull', 'genpareto',
                       'nbinom', 'kappa3', 'lognorm', 'halfgennorm', 'pearson3',
                       'alpha', 't', 'crystalball', 'fatiguelife', 'nakagami',
                       'kstwobign', 'gompertz', 'dweibull', 'lomax', 'invgauss',
@@ -563,3 +563,19 @@ class TestFit:
 
         res = stats.fit(dist, data, bounds, guess=params, optimizer=self.opt)
         assert_allclose(res.params, params, **self.tols)
+
+
+class TestFitResult:
+    def test_plot_iv(self):
+        data = stats.norm.rvs(0, 1, size=100)  # random state doesn't matter
+        bounds = [(0, 30), (0, 1)]
+        res = stats.fit(stats.norm, data, bounds)
+        try:
+            import matplotlib  # noqa
+            message = r"`plot_type` must be one of \{'..."
+            with pytest.raises(ValueError, match=message):
+                res.plot(plot_type='llama')
+        except (ModuleNotFoundError, ImportError):
+            message = r"matplotlib must be installed to use method `plot`."
+            with pytest.raises(ModuleNotFoundError, match=message):
+                res.plot(plot_type='llama')
