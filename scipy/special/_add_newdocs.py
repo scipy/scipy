@@ -6892,16 +6892,10 @@ add_newdoc("iv",
 
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-5., 5., 1000)
-    >>> i0 = iv(0, x)
-    >>> i1 = iv(1, x)
-    >>> i2 = iv(2, x)
-    >>> i3 = iv(3, x)
-    >>> plt.plot(x, i0, label='$I_0$')
-    >>> plt.plot(x, i1, label='$I_1$')
-    >>> plt.plot(x, i2, label='$I_2$')
-    >>> plt.plot(x, i3, label='$I_3$')
+    >>> for i in range(4):
+    ...     plt.plot(x, iv(i, x), label=f'$I_{i!r}$')
     >>> plt.legend()
-    >>> plt.plot()
+    >>> plt.show()
 
     """)
 
@@ -7106,6 +7100,8 @@ add_newdoc("jv",
     --------
     jve : :math:`J_v` with leading exponential behavior stripped off.
     spherical_jn : spherical Bessel functions.
+    j0 : faster version of this function for order 0.
+    j1 : faster version of this function for order 1.
 
     Notes
     -----
@@ -7178,16 +7174,10 @@ add_newdoc("jv",
 
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-10., 10., 1000)
-    >>> j0 = jv(0, x)
-    >>> j1 = jv(1, x)
-    >>> j2 = jv(2, x)
-    >>> j3 = jv(3, x)
-    >>> plt.plot(x, j0, label='$J_0$')
-    >>> plt.plot(x, j1, label='$J_1$')
-    >>> plt.plot(x, j2, label='$J_2$')
-    >>> plt.plot(x, j3, label='$J_3$')
+    >>> for i in range(4):
+    ...     plt.plot(x, jv(i, x), label=f'$J_{i!r}$')
     >>> plt.legend()
-    >>> plt.plot()
+    >>> plt.show()
 
     """)
 
@@ -11482,11 +11472,60 @@ add_newdoc("yn",
     See also
     --------
     yv : For real order and real or complex argument.
+    y0: faster implementation of this function for order 0
+    y1: faster implementation of this function for order 1
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Evaluate the function of order 0 at one point.
+
+    >>> from scipy.special import yn
+    >>> yn(0, 1.)
+    0.08825696421567697
+
+    Evaluate the function at one point for different orders.
+    >>> yn(0, 1.), yn(1, 1.), yn(2, 1.)
+    (0.08825696421567697, -0.7812128213002888, -1.6506826068162546)
+
+    The evaluation for different orders can be carried out in one call by
+    provinding a list or numpy array as argument for the `v` parameter:
+    >>> yn([0, 1, 2], 1.)
+    array([ 0.08825696, -0.78121282, -1.65068261])
+
+    Evaluate the function at several points for order 0 by providing an
+    array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 3., 8.])
+    >>> yn(0, points)
+    array([-0.44451873,  0.37685001,  0.22352149])
+
+    If `z` is an array, the order parameter `v` must be broadcastable to
+    the correct shape if different orders shall be computed in one call.
+    To calculate the orders 0 and 1 for an 1D array:
+
+    >>> orders = np.array([[0], [1]])
+    >>> orders.shape
+    (2, 1)
+
+    >>> yn(orders, points)
+    array([[-0.44451873,  0.37685001,  0.22352149],
+           [-1.47147239,  0.32467442, -0.15806046]])
+
+    Plot the functions of order 0 to 3 from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0., 10., 1000)
+    >>> for i in range(4):
+    ...     plt.plot(x, yn(i, x), label=f'$Y_{i!r}$')
+    >>> plt.ylim(-3, 1)
+    >>> plt.legend()
+    >>> plt.show()
     """)
 
 add_newdoc("yv",
@@ -11529,12 +11568,61 @@ add_newdoc("yv",
     See also
     --------
     yve : :math:`Y_v` with leading exponential behavior stripped off.
+    y0: faster implementation of this function for order 0
+    y1: faster implementation of this function for order 1
 
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Evaluate the function of order 0 at one point.
+
+    >>> from scipy.special import yv
+    >>> yv(0, 1.)
+    0.088256964215677
+
+    Evaluate the function at one point for different orders.
+    >>> yv(0, 1.), yv(1, 1.), yv(1.5, 1.)
+    (0.088256964215677, -0.7812128213002889, -1.102495575160179)
+
+    The evaluation for different orders can be carried out in one call by
+    provinding a list or numpy array as argument for the `v` parameter:
+    >>> yv([0, 1, 1.5], 1.)
+    array([ 0.08825696, -0.78121282, -1.10249558])
+
+    Evaluate the function at several points for order 0 by providing an
+    array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 3., 8.])
+    >>> yv(0, points)
+    array([-0.44451873,  0.37685001,  0.22352149])
+
+    If `z` is an array, the order parameter `v` must be broadcastable to
+    the correct shape if different orders shall be computed in one call.
+    To calculate the orders 0 and 1 for an 1D array:
+
+    >>> orders = np.array([[0], [1]])
+    >>> orders.shape
+    (2, 1)
+
+    >>> yv(orders, points)
+    array([[-0.44451873,  0.37685001,  0.22352149],
+           [-1.47147239,  0.32467442, -0.15806046]])
+
+    Plot the functions of order 0 to 3 from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0., 10., 1000)
+    >>> for i in range(4):
+    ...     plt.plot(x, yv(i, x), label=f'$Y_{i!r}$')
+    >>> plt.ylim(-3, 1)
+    >>> plt.legend()
+    >>> plt.show()
 
     """)
 
