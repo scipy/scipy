@@ -4738,9 +4738,6 @@ def fisher_exact(table, alternative='two-sided'):
     return SignificanceResult(oddsratio, pvalue)
 
 
-SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
-
-
 def spearmanr(a, b=None, axis=0, nan_policy='propagate',
               alternative='two-sided'):
     """Calculate a Spearman correlation coefficient with associated p-value.
@@ -4794,16 +4791,19 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     Returns
     -------
-    correlation : float or ndarray (2-D square)
-        Spearman correlation matrix or correlation coefficient (if only 2
-        variables are given as parameters. Correlation matrix is square with
-        length equal to total number of variables (columns or rows) in ``a``
-        and ``b`` combined.
-    pvalue : float
-        The p-value for a hypothesis test whose null hypotheisis
-        is that two sets of data are uncorrelated. See `alternative` above
-        for alternative hypotheses. `pvalue` has the same
-        shape as `correlation`.
+    res: SignificanceResult
+        An object containing attributes:
+
+        statistic : float or ndarray (2-D square)
+            Spearman correlation matrix or correlation coefficient (if only 2
+            variables are given as parameters). Correlation matrix is square
+            with length equal to total number of variables (columns or rows) in
+            ``a`` and ``b`` combined.
+        pvalue : float
+            The p-value for a hypothesis test whose null hypothesis
+            is that two sets of data are uncorrelated. See `alternative` above
+            for alternative hypotheses. `pvalue` has the same
+            shape as `statistic`.
 
     Warns
     -----
@@ -4822,41 +4822,49 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> stats.spearmanr([1,2,3,4,5], [5,6,7,8,7])
-    SpearmanrResult(correlation=0.82078..., pvalue=0.08858...)
+    >>> res = stats.spearmanr([1,2,3,4,5], [5,6,7,8,7])
+    >>> res.statistic
+    0.8207826816681233
+    >>> res.pvalue
+    0.08858700531354381
     >>> rng = np.random.default_rng()
     >>> x2n = rng.standard_normal((100, 2))
     >>> y2n = rng.standard_normal((100, 2))
-    >>> stats.spearmanr(x2n)
-    SpearmanrResult(correlation=-0.07960396039603959, pvalue=0.4311168705769747)
-    >>> stats.spearmanr(x2n[:,0], x2n[:,1])
-    SpearmanrResult(correlation=-0.07960396039603959, pvalue=0.4311168705769747)
-    >>> rho, pval = stats.spearmanr(x2n, y2n)
-    >>> rho
+    >>> res = stats.spearmanr(x2n)
+    >>> res.statistic, res.pvalue
+    (-0.07960396039603959, 0.4311168705769747)
+    >>> res = stats.spearmanr(x2n[:,0], x2n[:,1])
+    >>> res.statistic, res.pvalue
+    (-0.07960396039603959, 0.4311168705769747)
+    >>> res = stats.spearmanr(x2n, y2n)
+    >>> res.statistic
     array([[ 1.        , -0.07960396, -0.08314431,  0.09662166],
            [-0.07960396,  1.        , -0.14448245,  0.16738074],
            [-0.08314431, -0.14448245,  1.        ,  0.03234323],
            [ 0.09662166,  0.16738074,  0.03234323,  1.        ]])
-    >>> pval
+    >>> res.pvalue
     array([[0.        , 0.43111687, 0.41084066, 0.33891628],
            [0.43111687, 0.        , 0.15151618, 0.09600687],
            [0.41084066, 0.15151618, 0.        , 0.74938561],
            [0.33891628, 0.09600687, 0.74938561, 0.        ]])
-    >>> rho, pval = stats.spearmanr(x2n.T, y2n.T, axis=1)
-    >>> rho
+    >>> res = stats.spearmanr(x2n.T, y2n.T, axis=1)
+    >>> res.statistic
     array([[ 1.        , -0.07960396, -0.08314431,  0.09662166],
            [-0.07960396,  1.        , -0.14448245,  0.16738074],
            [-0.08314431, -0.14448245,  1.        ,  0.03234323],
            [ 0.09662166,  0.16738074,  0.03234323,  1.        ]])
-    >>> stats.spearmanr(x2n, y2n, axis=None)
-    SpearmanrResult(correlation=0.044981624540613524, pvalue=0.5270803651336189)
-    >>> stats.spearmanr(x2n.ravel(), y2n.ravel())
-    SpearmanrResult(correlation=0.044981624540613524, pvalue=0.5270803651336189)
+    >>> res = stats.spearmanr(x2n, y2n, axis=None)
+    >>> res.statistic, res.pvalue
+    (0.044981624540613524, 0.5270803651336189)
+    >>> res = stats.spearmanr(x2n.ravel(), y2n.ravel())
+    >>> res.statistic, res.pvalue
+    (0.044981624540613524, 0.5270803651336189)
 
     >>> rng = np.random.default_rng()
     >>> xint = rng.integers(10, size=(100, 2))
-    >>> stats.spearmanr(xint)
-    SpearmanrResult(correlation=0.09800224850707953, pvalue=0.3320271757932076)
+    >>> res = stats.spearmanr(xint)
+    >>> res.statistic, res.pvalue
+    (0.09800224850707953, 0.3320271757932076)
 
     For small samples, consider performing a permutation test instead of
     relying on the asymptotic p-value. Note that to calculate the null
@@ -4869,7 +4877,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     >>> y = [2.71414076, 0.2488, 0.87551913,
     ...      2.6514917, 2.01160156, 0.47699563]
     >>> def statistic(x):  # permute only `x`
-    ...     return stats.spearmanr(x, y).correlation
+    ...     return stats.spearmanr(x, y).statistic
     >>> res_exact = stats.permutation_test((x,), statistic,
     ...                                    permutation_type='pairings')
     >>> res_asymptotic = stats.spearmanr(x, y)
@@ -4903,7 +4911,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     n_obs = a.shape[axisout]
     if n_obs <= 1:
         # Handle empty arrays or single observations.
-        return SpearmanrResult(np.nan, np.nan)
+        res = SignificanceResult(np.nan, np.nan)
+        res.correlation = np.nan
+        return res
 
     warn_msg = ("An input array is constant; the correlation coefficient "
                 "is not defined.")
@@ -4912,13 +4922,17 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
             # If an input is constant, the correlation coefficient
             # is not defined.
             warnings.warn(stats.ConstantInputWarning(warn_msg))
-            return SpearmanrResult(np.nan, np.nan)
+            res = SignificanceResult(np.nan, np.nan)
+            res.correlation = np.nan
+            return res
     else:  # case when axisout == 1 b/c a is 2 dim only
         if (a[0, :][0] == a[0, :]).all() or (a[1, :][0] == a[1, :]).all():
             # If an input is constant, the correlation coefficient
             # is not defined.
             warnings.warn(stats.ConstantInputWarning(warn_msg))
-            return SpearmanrResult(np.nan, np.nan)
+            res = SignificanceResult(np.nan, np.nan)
+            res.correlation = np.nan
+            return res
 
     a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
     variable_has_nan = np.zeros(n_vars, dtype=bool)
@@ -4928,7 +4942,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
                                           alternative=alternative)
         elif nan_policy == 'propagate':
             if a.ndim == 1 or n_vars <= 2:
-                return SpearmanrResult(np.nan, np.nan)
+                res = SignificanceResult(np.nan, np.nan)
+                res.correlation = np.nan
+                return res
             else:
                 # Keep track of variables with NaNs, set the outputs to NaN
                 # only for those variables
@@ -4948,11 +4964,15 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     # For backwards compatibility, return scalars when comparing 2 columns
     if rs.shape == (2, 2):
-        return SpearmanrResult(rs[1, 0], prob[1, 0])
+        res = SignificanceResult(rs[1, 0], prob[1, 0])
+        res.correlation = rs[1, 0]
+        return res
     else:
         rs[variable_has_nan, :] = np.nan
         rs[:, variable_has_nan] = np.nan
-        return SpearmanrResult(rs, prob)
+        res = SignificanceResult(rs, prob)
+        res.correlation = rs
+        return res
 
 
 PointbiserialrResult = namedtuple('PointbiserialrResult',

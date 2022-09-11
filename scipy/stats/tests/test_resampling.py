@@ -1485,7 +1485,7 @@ class TestPermutationTest:
         expected_statistic = 0.7714285714285715
 
         def statistic1d(x):
-            return stats.spearmanr(x, y).correlation
+            return stats.spearmanr(x, y).statistic
 
         res = permutation_test((x,), statistic1d, permutation_type='pairings',
                                n_resamples=np.inf, alternative=alternative)
