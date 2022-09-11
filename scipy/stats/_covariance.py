@@ -1,41 +1,62 @@
 from functools import cached_property
 
 import numpy as np
+from scipy import linalg
 
 
-__all__ = ["Covariance", "CovViaPrecision", "CovViaPSD"]
-
-
-def _T(A):
-    if A.ndim < 2:
-        return A
-    else:
-        return np.swapaxes(A, -1, -2)
-
-
-def _dot_diag(x, d):
-    # If d were a full diagonal matrix, x @ d would always do what we want
-    # This is for when `d` is compressed to include only the diagonal elements
-    return x * d if x.ndim < 2 else x * np.expand_dims(d, -2)
+__all__ = ["CovViaPrecision"]
 
 
 class Covariance():
     """
-    Representation of a covariance matrix as needed by multivariate_normal
+    Representation of a covariance matrix
     """
-    # The last two axes of matrix-like input represent the dimensionality
-    # In the case of diagonal elements or eigenvalues, in which a diagonal
-    # matrix has been reduced to one dimension, the last dimension
-    # of the input represents the dimensionality. Internally, it
-    # will be expanded in the second to last axis as needed.
-    # Matrix math works, but instead of the fundamental matrix-vector
-    # operation being A@x, think of x are row vectors that pre-multiply A.
 
     def whiten(self, x):
         """
-        Right multiplication by the left square root of the precision matrix.
+        Perform a whitening transformation on data.
+
+        "Whitening" transforms a set of random variables into a new set of
+        random variable with unit-diagonal covariance. When a whitening
+        transform is applied to a sample of points distributed according to
+        a multivariate normal distribution with zero mean, the covariance of
+        the transformed sample is approximately the identity matrix.
+
+        Parameters
+        ----------
+        x : array_like
+            An array of points. The last dimension must correspond with the
+            dimensionality of the space, i.e., the number of columns in the
+            covariance matrix.
+
+        Returns
+        -------
+        x_ : array_like
+            The transformed array of points.
+
+        References
+        ----------
+        .. [1] "Whitening Transformation". Wikipedia.
+               https://en.wikipedia.org/wiki/Whitening_transformation
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> rng = np.random.default_rng()
+        >>> n = 3
+        >>> A = rng.random(size=(n, n))
+        >>> cov_array = A @ A.T
+        >>> cov_object = stats.CovViaPrecision(np.linalg.inv(cov_array))
+        >>> x = rng.multivariate_normal(np.zeros(n), cov_array, size=(10000))
+        >>> x_ = cov_object.whiten(x)
+        >>> np.cov(x_, rowvar=False)  # near-identity covariance
+        array([[0.97862122, 0.00893147, 0.02430451],
+               [0.00893147, 0.96719062, 0.02201312],
+               [0.02430451, 0.02201312, 0.99206881]])
+
         """
-        return self._whiten(x)
+        return self._whiten(np.asarray(x))
 
     @cached_property
     def log_pdet(self):
@@ -52,11 +73,11 @@ class Covariance():
         return np.array(self._rank, dtype=int)[()]
 
     @cached_property
-    def A(self):
+    def covariance(self):
         """
         Explicit representation of the covariance matrix
         """
-        return self._A
+        return self._covariance
 
     @cached_property
     def dimensionality(self):
@@ -89,12 +110,22 @@ class Covariance():
             raise ValueError(message)
         return A
 
+
 class CovViaPrecision(Covariance):
     """
     Representation of a covariance provided via the precision matrix
     """
 
     def __init__(self, precision, covariance=None):
+        """
+        Parameters
+        ----------
+        precision : array_like
+            The inverse of a square, symmetric, positive definite covariance
+            matrix.
+        covariance : array_like, optional
+            The square, symmetric, positive definite covariance matrix.
+        """
         precision = self._validate_matrix(precision, 'precision')
         if covariance is not None:
             covariance = self._validate_matrix(covariance, 'covariance')
@@ -102,22 +133,23 @@ class CovViaPrecision(Covariance):
             if precision.shape != covariance.shape:
                 raise ValueError(message)
 
-        self._LP = np.linalg.cholesky(precision)
-        self._log_pdet = -2*np.log(np.diag(self._LP)).sum(axis=-1)
+        self._chol_P = np.linalg.cholesky(precision)
+        self._log_pdet = -2*np.log(np.diag(self._chol_P)).sum(axis=-1)
         self._rank = precision.shape[-1]  # must be full rank in invertible
         self._precision = precision
-        self._covariance = covariance
+        self._cov_matrix = covariance
         self._dimensionality = self._rank
         self._shape = precision.shape
         self._allow_singular = False
 
     def _whiten(self, x):
-        return x @ self._LP
+        return x @ self._chol_P
 
     @cached_property
-    def _A(self):
-        return (np.linalg.inv(self._precision) if self._covariance is None
-                else self._covariance)
+    def _covariance(self):
+        n = self._dimensionality
+        return (linalg.cho_solve((self._chol_P, True), np.eye(n))
+                if self._cov_matrix is None else self._cov_matrix)
 
 
 class CovViaPSD(Covariance):
@@ -129,7 +161,7 @@ class CovViaPSD(Covariance):
         self._LP = psd.U
         self._log_pdet = psd.log_pdet
         self._rank = psd.rank
-        self._A = psd._M
+        self._covariance = psd._M
         self._dimensionality = psd._M.shape[-1]
         self._shape = psd._M.shape
         self._psd = psd
