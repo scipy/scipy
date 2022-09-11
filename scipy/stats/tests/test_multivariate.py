@@ -26,7 +26,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest)
-from scipy import stats
+from scipy.stats import _covariance
 
 from scipy.integrate import romb
 from scipy.special import multigammaln
@@ -45,11 +45,11 @@ class TestCovariance:
     def test_input_validation(self):
         message = "The input `precision` must be a square, two-dimensional..."
         with pytest.raises(ValueError, match=message):
-            stats.CovViaPrecision(np.ones(2))
+            _covariance.CovViaPrecision(np.ones(2))
 
         message = "`precision.shape` must equal `covariance.shape`."
         with pytest.raises(ValueError, match=message):
-            stats.CovViaPrecision(np.eye(3), covariance=np.eye(2))
+            _covariance.CovViaPrecision(np.eye(3), covariance=np.eye(2))
 
     _covariance_preprocessing = {"CovViaPrecision": np.linalg.inv,
                                  "CovViaPSD": lambda x:
@@ -72,7 +72,7 @@ class TestCovariance:
             pytest.skip(message)
 
         A = self._matrices[matrix_type]
-        cov_type = getattr(stats, cov_type_name)
+        cov_type = getattr(_covariance, cov_type_name)
         preprocessing = self._covariance_preprocessing[cov_type_name]
 
         psd = _PSD(A, allow_singular=True)
@@ -108,7 +108,7 @@ class TestCovariance:
             pytest.skip(message)
 
         A = self._matrices[matrix_type]
-        cov_type = getattr(stats, cov_type_name)
+        cov_type = getattr(_covariance, cov_type_name)
         preprocessing = self._covariance_preprocessing[cov_type_name]
 
         mean = [0.1, 0.2, 0.3]
@@ -142,7 +142,7 @@ class TestCovariance:
         # provide the `covariance` attribute.
         matrix_type = "diagonal full rank"
         A = self._matrices[matrix_type]
-        cov_type = getattr(stats, cov_type_name)
+        cov_type = getattr(_covariance, cov_type_name)
         preprocessing = self._covariance_preprocessing[cov_type_name]
 
         mean = [0.1, 0.2, 0.3]
@@ -674,7 +674,7 @@ class TestMultivariateNormal:
     def test_mean_cov(self):
         # test the interaction between a Covariance object and mean
         P = np.diag(1 / np.array([1, 2, 3]))
-        cov_object = stats.CovViaPrecision(P)
+        cov_object = _covariance.CovViaPrecision(P)
 
         message = "`cov` represents a covariance matrix in 3 dimensions..."
         with pytest.raises(ValueError, match=message):

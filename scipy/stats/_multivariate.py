@@ -250,18 +250,19 @@ class multi_rv_frozen:
 _mvn_doc_default_callparams = """\
 mean : array_like, default: ``[0]``
     Mean of the distribution.
-cov : array_like, default: ``[1]``
+cov : array_like or `Covariance`, default: ``[1]``
     Symmetric positive (semi)definite covariance matrix of the distribution.
 allow_singular : bool, default: ``False``
-    Whether to allow a singular covariance matrix.
+    Whether to allow a singular covariance matrix. This is ignored if `cov` is
+    a `Covariance` object.
 """
 
 _mvn_doc_callparams_note = """\
 Setting the parameter `mean` to `None` is equivalent to having `mean`
 be the zero-vector. The parameter `cov` can be a scalar, in which case
 the covariance matrix is the identity times that value, a vector of
-diagonal entries for the covariance matrix, or a two-dimensional
-array_like.
+diagonal entries for the covariance matrix, a two-dimensional array_like,
+or a `Covariance` object.
 """
 
 _mvn_doc_frozen_callparams = ""
@@ -312,7 +313,11 @@ class multivariate_normal_gen(multi_rv_generic):
     -----
     %(_mvn_doc_callparams_note)s
 
-    The covariance matrix `cov` must be a symmetric positive semidefinite
+    The covariance matrix `cov` may be an instance of a subclass of
+    `Covariance`, e.g. `scipy.stats.CovViaPrecision`. If so, `allow_singular`
+    is ignored.
+
+    Otherwise, `cov` must be a symmetric positive semidefinite
     matrix when `allow_singular` is True; it must be (strictly) positive
     definite when `allow_singular` is False.
     Symmetry is not checked; only the lower triangular portion is used.
@@ -394,15 +399,22 @@ class multivariate_normal_gen(multi_rv_generic):
         mean and covariance are full vector resp. matrix.
         """
         if isinstance(cov, _covariance.Covariance):
-            dim, mean, cov_object = self._process_parameters_new(mean, cov)
-            return dim, mean, cov_object
+            return self._process_parameters_Covariance(mean, cov)
         else:
-            dim, mean, cov = self._process_parameters_old(None, mean, cov)
+            # This is separate because `_process_parameters_psd` was written
+            # before Covariance objects were introduced. The intent is to
+            # maintain (almost) exactly the same behavior when `cov` is an
+            # array, but we don't want to have to branch the logic in every
+            # method depending on whether `cov` is a Covariance object or an
+            # array, so if `cov` is an array we use the original input
+            # validation code and wrap the old `_PSD` object in a light
+            # wrapper to match the Covariance interface.
+            dim, mean, cov = self._process_parameters_psd(None, mean, cov)
             psd = _PSD(cov, allow_singular=allow_singular)
             cov_object = _covariance.CovViaPSD(psd)
             return dim, mean, cov_object
 
-    def _process_parameters_new(self, mean, cov):
+    def _process_parameters_Covariance(self, mean, cov):
         dim = cov.dimensionality
         mean = np.array([0.]) if mean is None else mean
         message = (f"`cov` represents a covariance matrix in {dim} dimensions,"
@@ -413,7 +425,7 @@ class multivariate_normal_gen(multi_rv_generic):
             raise ValueError(message) from e
         return dim, mean, cov
 
-    def _process_parameters_old(self, dim, mean, cov):
+    def _process_parameters_psd(self, dim, mean, cov):
         # Try to infer dimensionality
         if dim is None:
             if mean is None:
@@ -537,8 +549,7 @@ class multivariate_normal_gen(multi_rv_generic):
                                                          allow_singular)
         x = self._process_quantiles(x, dim)
         out = self._logpdf(x, mean, cov_object)
-        allow_singular = allow_singular or cov_object._allow_singular
-        if allow_singular and np.any(cov_object.rank < dim):
+        if np.any(cov_object.rank < dim):
             out_of_bounds = ~cov_object._support_mask(x-mean)
             out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
@@ -566,8 +577,7 @@ class multivariate_normal_gen(multi_rv_generic):
                                                          allow_singular)
         x = self._process_quantiles(x, dim)
         out = np.exp(self._logpdf(x, mean, cov_object))
-        allow_singular = allow_singular or cov_object._allow_singular
-        if allow_singular and np.any((cov_object.rank < dim)):
+        if np.any((cov_object.rank < dim)):
             out_of_bounds = ~cov_object._support_mask(x-mean)
             out[out_of_bounds] = 0.0
         return _squeeze_output(out)
@@ -819,7 +829,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
         out = self._dist._logpdf(x, self.mean, self.cov_object)
-        if self.allow_singular and np.any(self.cov_object.rank < self.dim):
+        if np.any(self.cov_object.rank < self.dim):
             out_of_bounds = ~self.cov_object._support_mask(x-self.mean)
             out[out_of_bounds] = -np.inf
         return _squeeze_output(out)

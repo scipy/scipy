@@ -16,7 +16,8 @@ class Covariance():
         """
         Perform a whitening transformation on data.
 
-        "Whitening" transforms a set of random variables into a new set of
+        "Whitening" ("white" as in "white noise", in which each frequency has
+        equal magnitude) transforms a set of random variables into a new set of
         random variable with unit-diagonal covariance. When a whitening
         transform is applied to a sample of points distributed according to
         a multivariate normal distribution with zero mean, the covariance of
@@ -113,7 +114,21 @@ class Covariance():
 
 class CovViaPrecision(Covariance):
     """
-    Representation of a covariance provided via the precision matrix
+    Representation of a covariance provided via its precision matrix.
+
+    Notes
+    -----
+    Let the covariance matrix be :math:`A`, its precision matrix be
+    :math:`P = A^{-1}`, and :math:`L` be the lower Cholesky factor such that
+    :math:`L L^T = P`.
+    Whitening of a data point :math:`x` is performed by computing
+    :math:`x^T L`. :math:`\log\det{A}` is calculated as :math:`-2tr(\log{P})`,
+    where the :math:`\log` operation is performed element-wise.
+
+    This `Covariance` class does not support singular covariance matrices
+    because the precision matrix does not exist for a singular covariance
+    matrix.
+
     """
 
     def __init__(self, precision, covariance=None):
@@ -121,10 +136,13 @@ class CovViaPrecision(Covariance):
         Parameters
         ----------
         precision : array_like
-            The inverse of a square, symmetric, positive definite covariance
-            matrix.
+            The precision matrix; that is, the inverse of a square, symmetric,
+            positive definite covariance matrix.
         covariance : array_like, optional
-            The square, symmetric, positive definite covariance matrix.
+            The square, symmetric, positive definite covariance matrix. If not
+            provided, this may need to be calculated (e.g. to evaluate the
+            cumulative distribution function of
+            `scipy.stats.multivariate_normal`)
         """
         precision = self._validate_matrix(precision, 'precision')
         if covariance is not None:
