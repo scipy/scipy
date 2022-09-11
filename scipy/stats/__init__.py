@@ -235,7 +235,6 @@ Summary statistics
    entropy
    differential_entropy
    median_abs_deviation
-   confint_quantile
 
 Frequency statistics
 ====================
@@ -293,6 +292,7 @@ Statistical tests
    ks_2samp
    epps_singleton_2samp
    mannwhitneyu
+   quantile_test
    tiecorrect
    rankdata
    ranksums

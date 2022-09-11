@@ -55,7 +55,8 @@ from ._hypotests_pythran import _compute_outer_prob_inside_method
 from ._resampling import _batch_generator
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
-from ._binomtest import _binary_search_for_binom_tst as _binary_search
+from ._binomtest import (_binary_search_for_binom_tst as _binary_search,
+                         binomtest)
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 
@@ -79,7 +80,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'chisquare', 'power_divergence',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata',
-           'combine_pvalues', 'confint_quantile',
+           'combine_pvalues', 'quantile_test',
            'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'alexandergovern']
 
@@ -8919,12 +8920,181 @@ def _confint_lowerbound(n, quantile, confidence):
         return int(lb)
 
 
-def confint_quantile(x, quantile, confidence, type='one-sided'):
-    r"""Compute non-parametric confidence intervals for any quantile.
+QuantileTestResultBase = _make_tuple_bunch('QuantileTestResultBase',
+                                           ['statistic', 'pvalue'], [])
 
-    This function implements a non-parametric approach to compute confidence
-    intervals for quantiles. The approach is attributed to Thompson [1]_ and
-    later proven to be applicable to any set of i.i.d. samples [2]_. The
+
+class QuantileTestResult(QuantileTestResultBase):
+    r"""
+    Result of `scipy.stats.quantile_test`.
+
+    Attributes
+    ----------
+    statistic: float
+        The observed proportion of values less than or equal to the
+        hypothesized quantile.
+    pvalue : float
+        The p-value of the hypothesis test.
+
+
+    """
+    def __init__(self, statistic, pvalue, alternative, x):
+        super().__init__(statistic, pvalue)
+        self._alternative = alternative
+        self._x = np.sort(x)
+
+    def confidence_interval(self, confidence_level=0.95):
+        """
+        Compute the confidence interval for ``statistic``.
+
+        Parameters
+        ----------
+        confidence_level : float, default: 0.95
+            Confidence level for the computed confidence interval
+            of the quantile. Default is 0.95.
+
+        Returns
+        -------
+        ci : ``ConfidenceInterval`` object
+            The object has attributes ``low`` and ``high`` that hold the
+            lower and upper bounds of the confidence interval.
+
+        References
+        ----------
+
+        Examples
+        --------
+
+        """
+        alternative = self._alternative
+        quantile = self.statistic
+        x = np.sort(self._x)
+        n = len(x)
+
+        # Handle the type of intervals (one- or two-sided)
+        if alternative == 'two-sided':
+            conf_working = (1 + confidence_level) / 2
+        else:
+            # type == 'one-sided'
+            conf_working = confidence_level
+
+        # Compute the lower bound
+        LB = _confint_lowerbound(n, quantile, conf_working)
+
+        # Compute the upper bound
+        # -> deduced from the lower bound of (1-quantile)
+        lb = _confint_lowerbound(n, 1-quantile, conf_working)
+        if lb is None:
+            UB = None
+        else:
+            UB = ((n-1) - lb)   # First index is 0 (not 1), hence the -1
+
+        # Handle unfeasible bounds
+        if LB is None:
+            x_lb = None
+        else:
+            x_lb = x[LB]
+        if UB is None:
+            x_ub = None
+        else:
+            x_ub = x[UB]
+
+        return ConfidenceInterval(x_lb, x_ub)
+
+
+def quantile_test_iv(x, q, p, alternative):
+
+    x = np.atleast_1d(x)
+    message = '`x` must be a one-dimensional array of numbers.'
+    if x.ndim != 1 or not np.issubdtype(x.dtype, np.number):
+        raise ValueError(message)
+
+    q = np.array(q)[()]
+    message = '`q` must be a scalar (i.e. a single number).'
+    if q.ndim != 0 or not np.issubdtype(q.dtype, np.number):
+        raise ValueError(message)
+
+    p = np.array(p)[()]
+    message = '`p` must be a float strictly between 0 and 1.'
+    if p.ndim != 0 or p >= 1 or p <= 0:
+        raise ValueError(message)
+
+    # For one-sided test, we need to pass the oppposite alternative into
+    # binomtest because binomtest is a test of the probability value rather
+    # than the quantile value.
+    alternatives = {'two-sided': 'two-sided',
+                    'less': 'greater',
+                    'greater': 'less'}
+    message = f'`alternative` must be one of {set(alternatives.keys())}'
+    qalternative = alternative.lower()
+    if qalternative not in alternatives:
+        raise ValueError(message)
+    palternative = alternatives[qalternative]
+
+    return x, q, p, qalternative, palternative
+
+
+def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
+    r"""
+    Perform a quantile test and compute a confidence interval of the quantile
+
+    This function tests the null hypothesis that the `q` is the value of the
+    `p`th-quantile of the population underlying sample `x`. For example, with
+    default parameters, it tests that the median of the population underlying
+    `x` is zero. The function returns an object including the test statistic,
+    a p-value, and a method for computing the confidence interval around
+    the quantile.
+
+    Parameters
+    ----------
+    x : array_like
+        A one-dimensional sample.
+    q : float, default: 0
+        The hypothesized value of the quantile.
+    p : float, defualt: 0.5
+        The probability associate with the quantile; i.e. the proportion of
+        the population less than `q` is `p`. Must be strictly between 0 and 1.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+
+        The following options are available (default is 'two-sided'):
+
+        * 'two-sided': the `p`th-quantile is not `q`
+        * 'less': the `p`th-quantile is less than `q`
+        * 'greater': the `p`th-quantile is greater than than `q`
+
+    Returns
+    -------
+    result : QuantileTestResult
+        An object with the following attributes:
+
+        statistic : float or array
+            The test statistic: the proportion of samples in `x` that are less
+            than or equal to the hypothesized quantile `q`
+        pvalue : float or array
+            The p-value associated with the given alternative.
+
+        The object also has the following method:
+
+        confidence_interval(confidence_level=0.95)
+            Computes a confidence interval around the the `p`th quantile of the
+            population.
+            The confidence interval is returned in a ``namedtuple`` with
+            fields `low` and `high`.  Values are `nan` when there are not
+            enough samples to compute the confidence interval at the
+            desired confidence.
+
+    Notes
+    -----
+    The implementation of the test follows Conover [1]_. The two-sided test,
+    for example, is performed as::
+
+        k = (x <= q).sum()
+        n = len(x)
+        stats.binomtest(k, n, p)
+
+    The approach for confidence intervals is attributed to Thompson [2]_ and
+    later proven to be applicable to any set of i.i.d. samples [3]_. The
     computation is based on the observation that the probability of a quantile
     :math:`q` to be larger than any sample :math:`x_m (1\leq m \leq N)` can be
     computed as
@@ -8958,54 +9128,12 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     Note that this is possible because the numerical values of the data are
     irrelevant for this computing confidence interval using this method.
 
-    A similar function is available in the QuantileNPCI R package [3]_. The
+    A similar function is available in the QuantileNPCI R package [4]_. The
     foundation is the same, but it computes the confidence interval bounds by
     doing interpolations between the sample values, whereas this function uses
     only sample values as bounds. Thus, `confint_quantile` returns slightly
     more conservative intervals (i.e., larger).
 
-    Parameters
-    ----------
-    x : array_like or int Array of samples, should be one-dimensional. If
-        integer, taken as the number of samples available (strictly positive)
-        quantile : float The quantile for which we want to compute the
-        confidence interval. Must be strictly between 0 and 1. confidence :
-        float The desired confidence level of the confidence interval. Must be
-        strictly between 0 and 1.
-    type : {'one-sided', 'two-sided'}, optional
-        Defines the type of confidence interval computed. Default is
-        'one-sided'.
-
-          * 'one-sided' :
-
-          computes the best possible one-sided confidence intervals
-          (both lower and upper bounds) for the given quantile.
-
-          * 'two-sided' :
-
-          computes a two-sided confidence interval by combination of
-          two one-sided intervals. E.g., a 90% two-sided interval is
-          computed by combining two 95% one-sided intervals.
-
-    Returns
-    -------
-    LB : float or int or `None` value or index of the lower bound of
-
-        * the right-open one-sided confidence interval (default),
-        * a two-sided confidence interval
-
-        `None` is returned when there are not enough samples to compute
-        the confidence interval with the desired level of confidence.
-    UB : float or int  or None value or index of the upper bound of
-
-        * the left-open one-sided confidence interval (default),
-        * a two-sided confidence interval
-
-        `None` is returned when there are not enough samples to compute
-        the confidence interval with the desired level of confidence.
-
-    Notes
-    -----
     Two-sided confidence intervals are not guaranteed to be optimal. I.e.,
     there may exist a tighter interval that may contain the quantile of
     interest with probability larger than the confidence level. These intervals
@@ -9017,144 +9145,41 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
 
     References
     ----------
-    .. [1] W. R. Thompson, "On Confidence Ranges for the Median and Other
+    .. [1] W. J. Conover. Practical Nonparametric Statistics, 3rd Ed. 1999.
+    .. [2] W. R. Thompson, "On Confidence Ranges for the Median and Other
        Expectation Distributions for Populations of Unknown Distribution Form,"
        The Annals of Mathematical Statistics, vol. 7, no. 3, pp. 122-128, 1936,
        Accessed: Sep. 18, 2019. [Online]. Available:
        https://www.jstor.org/stable/2957563.
-    .. [2] H. A. David and H. N. Nagaraja, "Order Statistics in Nonparametric
+    .. [3] H. A. David and H. N. Nagaraja, "Order Statistics in Nonparametric
        Inference" in Order Statistics, John Wiley & Sons, Ltd, 2005, pp.
        159-170. Available:
        https://onlinelibrary.wiley.com/doi/10.1002/0471722162.ch7.
-    .. [3] N. Hutson, A. Hutson, L. Yan, "QuantileNPCI: Nonparametric
+    .. [4] N. Hutson, A. Hutson, L. Yan, "QuantileNPCI: Nonparametric
        Confidence Intervals for Quantiles," R package,
        https://cran.r-project.org/package=QuantileNPCI
 
 
     Examples
     --------
-    >>> from scipy.stats import confint_quantile
-    >>> x = [2, 8, 3, 6, 4, 1, 5, 9, 7]
-    >>> confint_quantile(x, 0.5, 0.95) (2, 8)
 
-    To compute a two-sided interval instead, use the `type` parameter.
 
-    >>> confint_quantile(x, 0.5, 0.99, type='two-sided') (1, 9)
-
-    You can also pass the number of samples as argument (instead of the
-    samples) themselves. The returned values are then the indexes of the upper
-    and lower bounds for the confidence intervals. We obtain the same result as
-    in the first example.
-
-    >>> N = len(x) lb, ub = confint_quantile(N, 0.75, 0.90)
-    >>> # Since we pass an interger to the function, we get the CI indexes
-    >>> print(x[lb], x[ub]) (2, 8)
-
-    Generally, the more samples, the narrower the confidence intervals.
-
-    >>> for N in [5,10,100,1000]:
-    ...     x = np.random.rand(N)
-    ...     lb, ub = confint_quantile(x, 0.5, 0.95)
-    ...     med = np.median(sorted(x))
-    ...     print('N=%i'%N)
-    ...     print('lower-bound  %0.2f' % lb)
-    ...     print('emp. median  %0.2f' % med)
-    ...     print('upper-bound  %0.2f' % ub)
-    N=5
-    lower-bound  0.39  #random
-    emp. median  0.48  #random
-    upper-bound  0.96  #random
-    N=10
-    lower-bound  0.11  #random
-    emp. median  0.35  #random
-    upper-bound  0.71  #random
-    N=100
-    lower-bound  0.46  #random
-    emp. median  0.54  #random
-    upper-bound  0.63  #random
-    N=1000
-    lower-bound  0.47  #random
-    emp. median  0.52  #random
-    upper-bound  0.53  #random
-
-    .. versionadded:: 1.6.4
     """
+    # TODO: Correct one-sided CIs
+    # TODO: Add examples
+    # TODO: Add documentation to QuantileTestResult
+    # TODO: Add input validation unit tests
+    # TODO: Fix existing unit tests
 
-    ##
-    # Checking the inputs
-    #
-    # x can be either an integer or a one-dimensional array-like
-    if isinstance(x, int):
-        if x < 1:
-            raise ValueError(
-                """Invalid data 'x': %s,
-            `x` must be either a strictly positive integer
-            or one-dimensional array-like.""" % repr(x))
-        n = x
-        # The function will returns the confint indexes
-        return_index = True
-    else:
-        x = np.asarray(x)
-        if x.ndim != 1:
-            raise ValueError(
-                """Invalid data 'x': %s,
-            `x` must be either a strictly positive integer
-            or one-dimensional array-like.""" % repr(x))
-        x = np.sort(x, axis=0)
-        n = x.shape[0]
-        # The function returns the confint as values of x
-        return_index = False
-    #
-    # `confidence` and `quantile` must be between 0 and 1
-    if confidence >= 1 or confidence <= 0:
-        raise ValueError(
-            """Invalid `confidence`: %s.
-            Provide a real number strictly between 0 and 1."""
-            % repr(confidence))
-    if quantile >= 1 or quantile <= 0:
-        raise ValueError(
-            """Invalid `quantile`: %s.
-            Provide a real number strictly between 0 and 1."""
-            % repr(quantile))
-    #
-    # `type` can be only `one-sided` or `two-sided`
-    if not (type == 'one-sided' or type == 'two-sided'):
-        raise ValueError(
-            """Invalid parameter: %s.
-            Valid 'type' values: 'one-sided' or 'two-sided'""" % repr(type))
-    ##
+    args = quantile_test_iv(x, q, p, alternative)
+    x, q, p, qalternative, palternative = args
 
-    # Handle the type of intervals (one- or two-sided)
-    if type == 'two-sided':
-        conf_working = (1+confidence)/2
-    else:
-        # type == 'one-sided'
-        conf_working = confidence
+    k = (x <= q).sum()
+    n = len(x)
+    res = binomtest(k, n, p, alternative=palternative)
 
-    # Compute the lower bound
-    LB = _confint_lowerbound(n, quantile, conf_working)
-
-    # Compute the upper bound
-    # -> deduced from the lower bound of (1-quantile)
-    lb = _confint_lowerbound(n, 1-quantile, conf_working)
-    if lb is None:
-        UB = None
-    else:
-        UB = ((n-1) - lb)   # First index is 0 (not 1), hence the -1
-
-    if return_index:
-        return LB, UB
-    else:
-        # Handle unfeasible bounds
-        if LB is None:
-            x_lb = None
-        else:
-            x_lb = x[LB]
-        if UB is None:
-            x_ub = None
-        else:
-            x_ub = x[UB]
-        return x_lb, x_ub
+    return QuantileTestResult(res.statistic, res.pvalue,
+                              alternative=qalternative, x=x)
 
 
 #####################################
