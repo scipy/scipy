@@ -45,7 +45,7 @@ jobs:
         id: commit_message
         run: |
           set -xe
-          COMMIT_MSG=$(git log --no-merges -1 --oneline)
+          COMMIT_MSG=$(git log --no-merges -1)
           echo "::set-output name=message::$COMMIT_MSG"
           echo github.ref ${{ github.ref }}
 
