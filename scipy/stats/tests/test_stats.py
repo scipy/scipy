@@ -323,6 +323,12 @@ class TestCorrPearsonr:
         r = y[0]
         assert_approx_equal(r,1.0)
 
+    def test_pearsonr_result_attributes(self):
+        res = stats.pearsonr(X, X)
+        attributes = ('correlation', 'pvalue')
+        check_named_results(res, attributes)
+        assert_equal(res.correlation, res.statistic)
+
     def test_r_almost_exactly_pos1(self):
         a = arange(3.0)
         r, prob = stats.pearsonr(a, a)
@@ -5700,6 +5706,7 @@ def test_pointbiserial():
     attributes = ('correlation', 'pvalue')
     res = stats.pointbiserialr(x, y)
     check_named_results(res, attributes)
+    assert_equal(res.correlation, res.statistic)
 
 
 def test_obrientransform():
