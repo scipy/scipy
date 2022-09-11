@@ -2,6 +2,7 @@ on: [status]
 jobs:
   circleci_artifacts_redirector_job:
     runs-on: ubuntu-20.04
+    if: github.repository == 'scipy/scipy'
     name: Run CircleCI artifacts redirector
     steps:
       - name: GitHub Action step
