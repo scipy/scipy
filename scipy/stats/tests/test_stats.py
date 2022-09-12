@@ -1572,6 +1572,12 @@ def test_weightedtau():
     assert_approx_equal(tau, -0.47140452079103173)
     assert_equal(np.nan, p_value)
 
+    # test for namedtuple attribute results
+    res = stats.weightedtau(x, y)
+    attributes = ('correlation', 'pvalue')
+    check_named_results(res, attributes)
+    assert_equal(res.correlation, res.statistic)
+
     # Asymmetric, ranked version
     tau, p_value = stats.weightedtau(x, y, rank=None)
     assert_approx_equal(tau, -0.4157652301037516)
@@ -1679,6 +1685,9 @@ def test_weightedtau_vs_quadratic():
                 disc += w
         return (conc - disc) / np.sqrt(tot - u) / np.sqrt(tot - v)
 
+    def weigher(x):
+        return 1. / (x + 1)
+
     np.random.seed(42)
     for s in range(3,10):
         a = []
@@ -1692,8 +1701,8 @@ def test_weightedtau_vs_quadratic():
         rank = np.arange(len(a), dtype=np.intp)
         for _ in range(2):
             for add in [True, False]:
-                expected = wkq(a, b, rank, lambda x: 1./(x+1), add)
-                actual = stats.weightedtau(a, b, rank, lambda x: 1./(x+1), add).correlation
+                expected = wkq(a, b, rank, weigher, add)
+                actual = stats.weightedtau(a, b, rank, weigher, add).statistic
                 assert_approx_equal(expected, actual)
             # Second pass: use a random rank
             np.random.shuffle(rank)
