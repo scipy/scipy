@@ -93,8 +93,55 @@ def sobol_indices(*, func, n, d, dists=None, l_bounds=None, u_bounds=None, seed=
     return s, st, ci
 
 
-indices = sobol_indices(
-    f_ishigami, n=1024, d=3,
-    l_bounds=[-np.pi, -np.pi, -np.pi], u_bounds=[np.pi, np.pi, np.pi]
-)
-print(indices)
+# indices = sobol_indices(
+#     func=f_ishigami, n=1024, d=3,
+#     l_bounds=[-np.pi, -np.pi, -np.pi], u_bounds=[np.pi, np.pi, np.pi]
+# )
+# print(indices[:2])
+
+# aggregated indices
+# sum(Vik)/sum(var(Vk))
+# Vik = Sik*Vk
+
+
+def discrepancy_indices(*, func, n, d, dists=None, l_bounds=None, u_bounds=None, seed=None):
+    rng = np.random.default_rng(seed)
+    sample = qmc.Sobol(d=d, seed=rng, bits=64).random(n)
+
+    if dists is not None:
+        for d_, dist in enumerate(dists):
+            dist_rng = NumericalInversePolynomial(dist, random_state=rng)
+            sample[:, d_] = dist_rng.ppf(sample[:, d_])
+
+    if (l_bounds is not None) or (u_bounds is not None):
+        sample_scaled = qmc.scale(sample, l_bounds=l_bounds, u_bounds=u_bounds)
+    else:
+        sample_scaled = sample
+
+    f_sample = func(sample_scaled)
+
+    f_sample = qmc.scale(
+        f_sample, l_bounds=np.min(f_sample), u_bounds=np.max(f_sample), reverse=True
+    )
+
+    indices = [
+        qmc.discrepancy(
+            np.concatenate([sample[:, i].reshape(-1, 1), f_sample], axis=1)
+        )
+        for i in range(d)
+    ]
+
+    # l_discrepancy = qmc.discrepancy(sample[:, :2])
+    # u_discepancy = qmc.discrepancy(np.concatenate([sample[:, 0].reshape(-1, 1), np.ones((1024, 1))*1], axis=1))
+    # indices_scaled = qmc.scale(np.array(indices).reshape(-1, 1), l_bounds=l_discrepancy, u_bounds=u_discepancy, reverse=True)
+
+    indices = indices / np.sum(indices)
+
+    return indices
+
+
+# indices = discrepancy_indices(
+#     func=f_ishigami, n=1024, d=3,
+#     l_bounds=[-np.pi, -np.pi, -np.pi], u_bounds=[np.pi, np.pi, np.pi]
+# )
+# print(indices)
