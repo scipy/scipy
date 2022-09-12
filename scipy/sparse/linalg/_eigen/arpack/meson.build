@@ -81,9 +81,13 @@ arpack_sources = [
   'ARPACK/UTIL/zvout.f'
 ]
 
+# Building ARPACK yields a ton of rank mismatch (scalar and rank-1) warnings
+# that cannot be suppressed with a more specific flag.
+_suppress_all_warnings = ff.get_supported_arguments('-w')
+
 arpack_lib = static_library('arpack_lib',
   arpack_sources,
-  fortran_args: fortran_ignore_warnings,
+  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
   include_directories: ['ARPACK/SRC']
 )
 

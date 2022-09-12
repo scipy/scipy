@@ -2333,11 +2333,11 @@ cdef class Rotation:
         -------
         estimated_rotation : `Rotation` instance
             Best estimate of the rotation that transforms `b` to `a`.
-        rmsd : float
-            Root mean square distance (weighted) between the given set of
-            vectors after alignment. It is equal to ``sqrt(2 * minimum_loss)``,
-            where ``minimum_loss`` is the loss function evaluated for the
-            found optimal rotation.
+        rssd : float
+            Square root of the weighted sum of the squared distances between
+            the given sets of vectors after alignment. It is equal to
+            ``sqrt(2 * minimum_loss)``, where ``minimum_loss`` is the loss
+            function evaluated for the found optimal rotation.
         sensitivity_matrix : ndarray, shape (3, 3)
             Sensitivity matrix of the estimated rotation estimate as explained
             in Notes. Returned only when `return_sensitivity` is True.
@@ -2413,7 +2413,7 @@ cdef class Rotation:
             warnings.warn("Optimal rotation is not uniquely or poorly defined "
                           "for the given sets of vectors.")
 
-        rmsd = np.sqrt(max(
+        rssd = np.sqrt(max(
             np.sum(weights * np.sum(b ** 2 + a ** 2, axis=1)) - 2 * np.sum(s),
             0))
 
@@ -2423,9 +2423,9 @@ cdef class Rotation:
             with np.errstate(divide='ignore', invalid='ignore'):
                 sensitivity = np.mean(weights) / zeta * (
                         kappa * np.eye(3) + np.dot(B, B.T))
-            return cls.from_matrix(C), rmsd, sensitivity
+            return cls.from_matrix(C), rssd, sensitivity
         else:
-            return cls.from_matrix(C), rmsd
+            return cls.from_matrix(C), rssd
 
 
 class Slerp:

@@ -31,7 +31,7 @@ ODE solvers, and more.
 - **Source code:** https://github.com/scipy/scipy
 - **Contributing:** https://scipy.github.io/devdocs/dev/index.html
 - **Bug reports:** https://github.com/scipy/scipy/issues
-- **Code of Conduct:** https://scipy.github.io/devdocs/dev/conduct/code_of_conduct.html
+- **Code of Conduct:** https://docs.scipy.org/doc/scipy/dev/conduct/code_of_conduct.html
 - **Report a security vulnerability:** https://tidelift.com/docs/security
 - **Citing in your work:** https://www.scipy.org/citing-scipy/
 
@@ -45,7 +45,7 @@ manipulate numbers on a computer and display or publish the results, give
 SciPy a try!
 
 For the installation instructions, see `our install
-guide <https://scipy.github.io/devdocs/getting_started.html#installation>`__.
+guide <https://docs.scipy.org/doc/scipy/getting_started.html#installation>`__.
 
 
 Call for Contributions
