@@ -4791,7 +4791,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     Returns
     -------
-    res: SignificanceResult
+    res : SignificanceResult
         An object containing attributes:
 
         statistic : float or ndarray (2-D square)
