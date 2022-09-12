@@ -775,7 +775,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
 
     Returns
     -------
-    res: SignificanceResult
+    res : SignificanceResult
         An object containing attributes:
 
         statistic : float

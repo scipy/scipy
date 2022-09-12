@@ -5100,7 +5100,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
 
     Returns
     -------
-    res: SignificanceResult
+    res : SignificanceResult
         An object containing attributes:
 
         statistic : float
