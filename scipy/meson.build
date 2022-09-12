@@ -129,7 +129,12 @@ endif
 blas = dependency(blas_name)
 lapack = dependency(lapack_name)
 
-if blas.name() == 'mkl' or lapack.name() == 'mkl' or get_option('use-g77-abi')
+# FIXME: conda-forge sets MKL_INTERFACE_LAYER=LP64,GNU, see gh-11812.
+#        This needs work on gh-16200 to make MKL robust. We should be
+#        requesting `mkl-dynamic-lp64-seq` here. And then there's work needed
+#        in general to enable the ILP64 interface (also for OpenBLAS).
+uses_mkl = blas.name().to_lower().startswith('mkl') or lapack.name().to_lower().startswith('mkl')
+if uses_mkl or get_option('use-g77-abi')
   g77_abi_wrappers = files([
     '_build_utils/src/wrap_g77_abi_f.f',
     '_build_utils/src/wrap_g77_abi_c.c'
