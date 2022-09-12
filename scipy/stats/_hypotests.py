@@ -872,7 +872,11 @@ def somersd(x, y=None, alternative='two-sided'):
     else:
         raise ValueError("x must be either a 1D or 2D array")
     d, p = _somers_d(table, alternative)
-    return SomersDResult(d, p, table)
+
+    # add alias for consistency with other correlation functions
+    res = SomersDResult(d, p, table)
+    res.correlation = d
+    return res
 
 
 # This could be combined with `_all_partitions` in `_resampling.py`
