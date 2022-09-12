@@ -7,32 +7,16 @@ from scipy.optimize import OptimizeWarning
 from warnings import warn
 import numbers
 
-from libc.stdio cimport stdout
 from libcpp.string cimport string
-from libcpp.memory cimport unique_ptr
 from libcpp.map cimport map as cppmap
 from libcpp.cast cimport reinterpret_cast
 
-from .HighsIO cimport (
-    kWarning,
-)
 from .HConst cimport (
     HighsModelStatus,
     HighsModelStatusNOTSET,
-    HighsModelStatusLOAD_ERROR,
     HighsModelStatusMODEL_ERROR,
-    HighsModelStatusMODEL_EMPTY,
-    HighsModelStatusPRESOLVE_ERROR,
-    HighsModelStatusSOLVE_ERROR,
-    HighsModelStatusPOSTSOLVE_ERROR,
-    HighsModelStatusINFEASIBLE,
-    HighsModelStatusUNBOUNDED,
     HighsModelStatusOPTIMAL,
-    HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND,
-    HighsModelStatusREACHED_TIME_LIMIT,
-    HighsModelStatusREACHED_ITERATION_LIMIT,
 
-    PrimalDualStatusSTATUS_FEASIBLE_POINT,
     HighsOptionTypeBOOL,
     HighsOptionTypeINT,
     HighsOptionTypeDOUBLE,
