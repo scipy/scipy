@@ -5326,8 +5326,8 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         statistic : float
            The weighted :math:`\tau` correlation index.
         pvalue : float
-           Presently ``np.nan``, as the null hypothesis is unknown (even in the
-           additive hyperbolic case).
+           Presently ``np.nan``, as the null distribution of the statistic is
+           unknown (even in the additive hyperbolic case).
 
     See Also
     --------
