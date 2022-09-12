@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.stats import qmc, bootstrap
+from scipy.stats.sampling import NumericalInversePolynomial
+import scipy.stats as stats
 
 
 def f_ishigami(x):
@@ -14,12 +16,24 @@ def f_ishigami(x):
                      0.1 * (xi[2]**4) * np.sin(xi[0]) for xi in x]).reshape(-1, 1)
 
 
-def sample_A_B_AB(d, n, seed):
+def sample_A_B(d, n, *, dists=None, seed=None):
     rng = np.random.default_rng(seed)
-
-    # A and B
     A_B = qmc.Sobol(d=2*d, seed=rng, bits=64).random(n)
+
     A, B = A_B[:, :d], A_B[:, d:]
+
+    if dists is not None:
+        for d_, dist in enumerate(dists):
+            dist_rng = NumericalInversePolynomial(dist, random_state=rng)
+            A[:, d_] = dist_rng.ppf(A[:, d_])
+            B[:, d_] = dist_rng.ppf(B[:, d_])
+
+    return A, B
+
+
+def sample_A_B_AB(d, n, *, dists=None, seed=None):
+    # A and B
+    A, B = sample_A_B(d=d, n=n, dists=dists, seed=seed)
 
     # AB: columns of B into A
     AB = np.empty((int(d*n), d))
@@ -41,7 +55,7 @@ def sobol_saltelli(f_A, f_B, f_AB):
     return s, st
 
 
-def sobol_indices(func, *, n, d, l_bounds, u_bounds=None, seed=None):
+def sobol_indices(*, func, n, d, dists=None, l_bounds=None, u_bounds=None, seed=None):
     """Sobol' indices.
 
     The total number of function call is ``d(d+2)``.
@@ -50,7 +64,7 @@ def sobol_indices(func, *, n, d, l_bounds, u_bounds=None, seed=None):
     on both A and B.
 
     """
-    A, B, AB = sample_A_B_AB(d, n, seed)
+    A, B, AB = sample_A_B_AB(d=d, n=n, dists=dists, seed=seed)
 
     if (l_bounds is not None) or (u_bounds is not None):
         A = qmc.scale(A, l_bounds=l_bounds, u_bounds=u_bounds)
@@ -60,6 +74,8 @@ def sobol_indices(func, *, n, d, l_bounds, u_bounds=None, seed=None):
     f_A = func(A)
     f_B = func(B)
     f_AB = func(AB)
+
+    # Y = (Y - Y.mean()) / Y.std()
 
     s, st = sobol_saltelli(f_A, f_B, f_AB)
 
