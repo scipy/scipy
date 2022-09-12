@@ -15,7 +15,7 @@ dependencies:
   - meson-python
   - ninja
   - numpy
-  - openblas=0.3.21=openmp_h2bb6d6c_2  # pinned because of gges issue (gh-16949)
+  - openblas
   - pkg-config  # note: not available on Windows
   - libblas=*=*openblas  # helps avoid pulling in MKL
   - pybind11
