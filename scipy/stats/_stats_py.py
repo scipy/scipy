@@ -4801,9 +4801,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
             ``a`` and ``b`` combined.
         pvalue : float
             The p-value for a hypothesis test whose null hypothesis
-            is that two sets of data are uncorrelated. See `alternative` above
-            for alternative hypotheses. `pvalue` has the same
-            shape as `statistic`.
+            is that two sets of data are linearly uncorrelated. See
+            `alternative` above for alternative hypotheses. `pvalue` has the
+            same shape as `statistic`.
 
     Warns
     -----
@@ -4822,7 +4822,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> res = stats.spearmanr([1,2,3,4,5], [5,6,7,8,7])
+    >>> res = stats.spearmanr([1, 2, 3, 4, 5], [5, 6, 7, 8, 7])
     >>> res.statistic
     0.8207826816681233
     >>> res.pvalue
@@ -4833,7 +4833,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     >>> res = stats.spearmanr(x2n)
     >>> res.statistic, res.pvalue
     (-0.07960396039603959, 0.4311168705769747)
-    >>> res = stats.spearmanr(x2n[:,0], x2n[:,1])
+    >>> res = stats.spearmanr(x2n[:, 0], x2n[:, 1])
     >>> res.statistic, res.pvalue
     (-0.07960396039603959, 0.4311168705769747)
     >>> res = stats.spearmanr(x2n, y2n)
