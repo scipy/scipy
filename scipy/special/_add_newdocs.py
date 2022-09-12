@@ -7514,7 +7514,7 @@ add_newdoc("kl_div",
     This function is non-negative and is jointly convex in `x` and `y`.
 
     The origin of this function is in convex programming; see [1]_ for
-    details. This is why the the function contains the extra :math:`-x
+    details. This is why the function contains the extra :math:`-x
     + y` terms over what might be expected from the Kullback-Leibler
     divergence. For a version of the function without the extra terms,
     see `rel_entr`.
