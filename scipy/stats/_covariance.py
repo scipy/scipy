@@ -113,7 +113,7 @@ class Covariance():
 
 
 class CovViaPrecision(Covariance):
-    """
+    r"""
     Representation of a covariance provided via its precision matrix.
 
     Notes
