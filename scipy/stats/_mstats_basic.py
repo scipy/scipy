@@ -598,9 +598,9 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
             ``a`` and ``b`` combined.
         pvalue : float
             The p-value for a hypothesis test whose null hypothesis
-            is that two sets of data are uncorrelated. See `alternative` above
-            for alternative hypotheses. `pvalue` has the same
-            shape as `statistic`.
+            is that two sets of data are linearly uncorrelated. See
+            `alternative` above for alternative hypotheses. `pvalue` has the
+            same shape as `statistic`.
 
     References
     ----------
