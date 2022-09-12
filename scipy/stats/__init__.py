@@ -173,8 +173,8 @@ Multivariate distributions
    multivariate_t         -- Multivariate t-distribution
    multivariate_hypergeom -- Multivariate hypergeometric distribution
 
-   `scipy.stats.multivariate_normal` methods accept an instance of the
-   any one of the following classes to represent the covariance.
+`scipy.stats.multivariate_normal` methods accept an instance of
+any one of the following classes to represent the covariance.
 
    CovViaPrecision        -- Covariance represented via the precision matrix
 

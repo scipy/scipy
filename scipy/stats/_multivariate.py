@@ -401,15 +401,18 @@ class multivariate_normal_gen(multi_rv_generic):
         if isinstance(cov, _covariance.Covariance):
             return self._process_parameters_Covariance(mean, cov)
         else:
-            # This is separate because `_process_parameters_psd` was written
-            # before Covariance objects were introduced. The intent is to
-            # maintain (almost) exactly the same behavior when `cov` is an
-            # array, but we don't want to have to branch the logic in every
-            # method depending on whether `cov` is a Covariance object or an
-            # array, so if `cov` is an array we use the original input
-            # validation code and wrap the old `_PSD` object in a light
-            # wrapper to match the Covariance interface.
+            # Before `Covariance` classes were introduced,
+            # `multivariate_normal` accepted plain arrays as `cov` and used the
+            # following input validation. To avoid disturbing the behavior of
+            # `multivariate_normal` when plain arrays are used, we use the
+            # original input validation here.
             dim, mean, cov = self._process_parameters_psd(None, mean, cov)
+            # After input validation, some methods then processed the arrays
+            # with a `_PSD` object and used that to perform computation.
+            # To avoid branching statements in each method depending on whether
+            # `cov` is an array or `Covariance` object, we always process the
+            # array with `_PSD`, and then use wrapper that satisfies the
+            # `Covariance` interface, `CovViaPSD`.
             psd = _PSD(cov, allow_singular=allow_singular)
             cov_object = _covariance.CovViaPSD(psd)
             return dim, mean, cov_object
@@ -545,8 +548,8 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        dim, mean, cov_object = self._process_parameters(mean, cov,
-                                                         allow_singular)
+        params = self._process_parameters(mean, cov, allow_singular)
+        dim, mean, cov_object = params
         x = self._process_quantiles(x, dim)
         out = self._logpdf(x, mean, cov_object)
         if np.any(cov_object.rank < dim):
@@ -573,8 +576,8 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        dim, mean, cov_object = self._process_parameters(mean, cov,
-                                                         allow_singular)
+        params = self._process_parameters(mean, cov, allow_singular)
+        dim, mean, cov_object = params
         x = self._process_quantiles(x, dim)
         out = np.exp(self._logpdf(x, mean, cov_object))
         if np.any((cov_object.rank < dim)):
@@ -666,13 +669,13 @@ class multivariate_normal_gen(multi_rv_generic):
         .. versionadded:: 1.0.0
 
         """
-        dim, mean, cov_object = self._process_parameters(mean, cov,
-                                                         allow_singular)
+        params = self._process_parameters(mean, cov, allow_singular)
+        dim, mean, cov_object = params
+        cov = cov_object.covariance
         x = self._process_quantiles(x, dim)
         if not maxpts:
             maxpts = 1000000 * dim
-        cdf = self._cdf(x, mean, cov_object.covariance, maxpts, abseps, releps,
-                        lower_limit)
+        cdf = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
         # the log of a negative real is complex, and cdf can be negative
         # if lower limit is greater than upper limit
         cdf = cdf + 0j if np.any(cdf < 0) else cdf
@@ -711,13 +714,13 @@ class multivariate_normal_gen(multi_rv_generic):
         .. versionadded:: 1.0.0
 
         """
-        dim, mean, cov_object = self._process_parameters(mean, cov,
-                                                         allow_singular)
+        params = self._process_parameters(mean, cov, allow_singular)
+        dim, mean, cov_object = params
+        cov = cov_object.covariance
         x = self._process_quantiles(x, dim)
         if not maxpts:
             maxpts = 1000000 * dim
-        out = self._cdf(x, mean, cov_object.covariance, maxpts, abseps, releps,
-                        lower_limit)
+        out = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
         return out
 
     def rvs(self, mean=None, cov=1, size=1, random_state=None):
@@ -742,10 +745,10 @@ class multivariate_normal_gen(multi_rv_generic):
 
         """
         dim, mean, cov_object = self._process_parameters(mean, cov)
+        cov = cov_object.covariance
 
         random_state = self._get_random_state(random_state)
-        out = random_state.multivariate_normal(mean, cov_object.covariance,
-                                               size)
+        out = random_state.multivariate_normal(mean, cov, size)
         return _squeeze_output(out)
 
     def entropy(self, mean=None, cov=1):
