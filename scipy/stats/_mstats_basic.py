@@ -741,9 +741,6 @@ def _kendall_p_exact(n, c, alternative='two-sided'):
     return prob
 
 
-KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
-
-
 def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
                alternative='two-sided'):
     """
@@ -778,10 +775,14 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
 
     Returns
     -------
-    correlation : float
-        The Kendall tau statistic
-    pvalue : float
-        The p-value
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : float
+           The tau statistic.
+        pvalue : float
+           The p-value for a hypothesis test whose null hypothesis is
+           an absence of association, tau = 0.
 
     References
     ----------
@@ -801,7 +802,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
         n -= int(m.sum())
 
     if n < 2:
-        return KendalltauResult(np.nan, np.nan)
+        res = scipy.stats._stats_py.SignificanceResult(np.nan, np.nan)
+        res.correlation = np.nan
+        return res
 
     rx = ma.masked_equal(rankdata(x, use_missing=use_missing), 0)
     ry = ma.masked_equal(rankdata(y, use_missing=use_missing), 0)
@@ -860,7 +863,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
         raise ValueError("Unknown method "+str(method)+" specified, please "
                          "use auto, exact or asymptotic.")
 
-    return KendalltauResult(tau, prob)
+    res = scipy.stats._stats_py.SignificanceResult(tau, prob)
+    res.correlation = tau
+    return res
 
 
 def kendalltau_seasonal(x):
