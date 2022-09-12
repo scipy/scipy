@@ -107,7 +107,7 @@ on the cloud.
 #. Log in to `GitHub`_.
 #. Log in `CircleCI`_ using your GitHub account.
 #. Back in GitHub, at the bottom of the PR, select “Show all Checks”.
-#. Next to “ci/circleci: build_docs artifact”, select “Details”.
+#. Next to “Check the rendered docs here!”, select “Details”.
 
 .. _docs-guidelines:
 

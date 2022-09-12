@@ -297,7 +297,7 @@ class TestCorr:
     @pytest.mark.skipif(platform.machine() == 'ppc64le',
                         reason="fails/crashes on ppc64le")
     def test_kendalltau(self):
-        # check case with with maximum disorder and p=1
+        # check case with maximum disorder and p=1
         x = ma.array(np.array([9, 2, 5, 6]))
         y = ma.array(np.array([4, 7, 9, 11]))
         # Cross-check with exact result from R:

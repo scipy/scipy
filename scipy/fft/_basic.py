@@ -667,7 +667,7 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     ValueError
         If `s` and `axes` have different length.
     IndexError
-        If an element of `axes` is larger than than the number of axes of `x`.
+        If an element of `axes` is larger than the number of axes of `x`.
 
     See Also
     --------
@@ -780,7 +780,7 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     ValueError
         If `s` and `axes` have different length.
     IndexError
-        If an element of `axes` is larger than than the number of axes of `x`.
+        If an element of `axes` is larger than the number of axes of `x`.
 
     See Also
     --------
@@ -877,7 +877,7 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *
         If `s` and `axes` have different length, or `axes` not given and
         ``len(s) != 2``.
     IndexError
-        If an element of `axes` is larger than than the number of axes of `x`.
+        If an element of `axes` is larger than the number of axes of `x`.
 
     See Also
     --------
@@ -983,7 +983,7 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
         If `s` and `axes` have different length, or `axes` not given and
         ``len(s) != 2``.
     IndexError
-        If an element of `axes` is larger than than the number of axes of `x`.
+        If an element of `axes` is larger than the number of axes of `x`.
 
     See Also
     --------
@@ -1077,7 +1077,7 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     ValueError
         If `s` and `axes` have different length.
     IndexError
-        If an element of `axes` is larger than than the number of axes of `x`.
+        If an element of `axes` is larger than the number of axes of `x`.
 
     See Also
     --------
@@ -1236,7 +1236,7 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     ValueError
         If `s` and `axes` have different length.
     IndexError
-        If an element of `axes` is larger than than the number of axes of `x`.
+        If an element of `axes` is larger than the number of axes of `x`.
 
     See Also
     --------
@@ -1390,7 +1390,7 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     ValueError
         If `s` and `axes` have different length.
     IndexError
-        If an element of `axes` is larger than than the number of axes of `x`.
+        If an element of `axes` is larger than the number of axes of `x`.
 
     See Also
     --------
@@ -1544,7 +1544,7 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     ValueError
         If `s` and `axes` have different length.
     IndexError
-        If an element of `axes` is larger than than the number of axes of `x`.
+        If an element of `axes` is larger than the number of axes of `x`.
 
     See Also
     --------
