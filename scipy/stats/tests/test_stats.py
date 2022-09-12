@@ -26,7 +26,6 @@ import numpy as np
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats._mstats_basic as mstats_basic
-from scipy.stats._stats_py import _contains_nan
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
@@ -4287,12 +4286,14 @@ def test_ttest_rel():
     t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit',
                            alternative='less')
     assert_allclose(t, tr, rtol=1e-14)
-    assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
+    with np.errstate(invalid='ignore'):
+        assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
 
     t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit',
                            alternative='greater')
     assert_allclose(t, tr, rtol=1e-14)
-    assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
+    with np.errstate(invalid='ignore'):
+        assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
 
 
 def test_ttest_rel_nan_2nd_arg():
@@ -4317,10 +4318,10 @@ def test_ttest_rel_nan_2nd_arg():
 
 
 def test_ttest_rel_empty_1d_returns_nan():
-    # Two empty inputs should return a Ttest_relResult containing nan
+    # Two empty inputs should return a TtestResult containing nan
     # for both values.
     result = stats.ttest_rel([], [])
-    assert isinstance(result, stats._stats_py.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     assert_equal(result, (np.nan, np.nan))
 
 
@@ -4333,7 +4334,7 @@ def test_ttest_rel_axis_size_zero(b, expected_shape):
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
     result = stats.ttest_rel(a, b, axis=-1)
-    assert isinstance(result, stats._stats_py.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
     assert_equal(result.pvalue, expected_value)
@@ -4347,9 +4348,44 @@ def test_ttest_rel_nonaxis_size_zero():
     a = np.empty((1, 8, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_rel(a, b, axis=1)
-    assert isinstance(result, stats._stats_py.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
+
+
+@pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+def test_ttest_rel_ci_1d(alternative):
+    # test confidence interval method against reference values
+    rng = np.random.default_rng(3749065329432213059)
+    n = 10
+    x = rng.normal(size=n, loc=1.5, scale=2)
+    y = rng.normal(size=n, loc=2, scale=2)
+    # Reference values generated with R t.test:
+    # options(digits=16)
+    # x = c(1.22825792,  1.63950485,  4.39025641,  0.68609437,  2.03813481,
+    #       -1.20040109,  1.81997937,  1.86854636,  2.94694282,  3.94291373)
+    # y = c(3.49961496, 1.53192536, 5.53620083, 2.91687718, 0.04858043,
+    #       3.78505943, 3.3077496 , 2.30468892, 3.42168074, 0.56797592)
+    # t.test(x, y, paired=TRUE, conf.level=0.85, alternative='l')
+
+    ref = {'two-sided': [-1.912194489914035, 0.400169725914035],
+           'greater': [-1.563944820311475, np.inf],
+           'less': [-np.inf, 0.05192005631147523]}
+    res = stats.ttest_rel(x, y, alternative=alternative)
+    ci = res.confidence_interval(confidence_level=0.85)
+    assert_allclose(ci, ref[alternative])
+    assert_equal(res.df, n-1)
+
+
+@pytest.mark.parametrize("test_fun, args",
+                         [(stats.ttest_1samp, (np.arange(10), 0)),
+                          (stats.ttest_rel, (np.arange(10), np.arange(10)))])
+def test_ttest_ci_iv(test_fun, args):
+    # test `confidence_interval` method input validation
+    res = test_fun(*args)
+    message = '`confidence_level` must be a number between 0 and 1.'
+    with pytest.raises(ValueError, match=message):
+        res.confidence_interval(confidence_level=10)
 
 
 def _desc_stats(x1, x2, axis=0):
@@ -7907,53 +7943,3 @@ def test_rename_mode_method(fun, args):
     with pytest.raises(TypeError, match=re.escape(err)):
         fun(*args, method='exact', mode='exact')
 
-
-class TestContainsNaNTest:
-
-    def test_policy(self):
-        data = np.array([1, 2, 3, np.nan])
-
-        contains_nan, nan_policy = _contains_nan(data, nan_policy="propagate")
-        assert contains_nan
-        assert nan_policy == "propagate"
-
-        contains_nan, nan_policy = _contains_nan(data, nan_policy="omit")
-        assert contains_nan
-        assert nan_policy == "omit"
-
-        msg = "The input contains nan values"
-        with pytest.raises(ValueError, match=msg):
-            _contains_nan(data, nan_policy="raise")
-
-        msg = "nan_policy must be one of"
-        with pytest.raises(ValueError, match=msg):
-            _contains_nan(data, nan_policy="nan")
-
-    def test_contains_nan_1d(self):
-        data1 = np.array([1, 2, 3])
-        assert not _contains_nan(data1)[0]
-
-        data2 = np.array([1, 2, 3, np.nan])
-        assert _contains_nan(data2)[0]
-
-        data3 = np.array([np.nan, 2, 3, np.nan])
-        assert _contains_nan(data3)[0]
-
-        data4 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
-        assert not _contains_nan(data4)[0]
-
-        data5 = np.array([1, 2, "3", np.nan], dtype='object')
-        assert _contains_nan(data5)[0]
-
-    def test_contains_nan_2d(self):
-        data1 = np.array([[1, 2], [3, 4]])
-        assert not _contains_nan(data1)[0]
-
-        data2 = np.array([[1, 2], [3, np.nan]])
-        assert _contains_nan(data2)[0]
-
-        data3 = np.array([["1", 2], [3, np.nan]])  # converted to string "nan"
-        assert not _contains_nan(data3)[0]
-
-        data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
-        assert _contains_nan(data4)[0]

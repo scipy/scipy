@@ -2536,10 +2536,16 @@ class Voronoi(_QhullUser):
     regions : list of list of ints, shape ``(nregions, *)``
         Indices of the Voronoi vertices forming each Voronoi region.
         -1 indicates vertex outside the Voronoi diagram.
-    point_region : list of ints, shape (npoints)
+        When qhull option "Qz" was specified, an empty sublist
+        represents the Voronoi region for a point at infinity that
+        was added internally.
+    point_region : array of ints, shape (npoints)
         Index of the Voronoi region for each input point.
         If qhull option "Qc" was not specified, the list will contain -1
         for points that are not associated with a Voronoi region.
+        If qhull option "Qz" was specified, there will be one less
+        element than the number of regions because an extra point
+        at infinity is added internally to facilitate computation.
     furthest_site
         True if this was a furthest site triangulation and False if not.
 

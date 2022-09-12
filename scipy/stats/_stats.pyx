@@ -706,6 +706,38 @@ ctypedef fused real:
 
 
 @cython.wraparound(False)
+@cython.initializedcheck(False)
+@cython.cdivision(True)
+@cython.boundscheck(False)
+cdef inline int gaussian_kernel_estimate_inner(
+    real[:, :] points_,  real[:, :] values_, real[:, :] xi_,
+    real[:, :] estimate, real[:, :] cho_cov,
+    int n, int m, int d, int p,
+) nogil:
+    cdef:
+        int i, j, k
+        real residual, arg, norm
+
+    # Evaluate the normalisation
+    norm = math.pow((2 * PI), (- d / 2.))
+    for i in range(d):
+        norm /= cho_cov[i, i]
+
+    for i in range(n):
+        for j in range(m):
+            arg = 0
+            for k in range(d):
+                residual = (points_[i, k] - xi_[j, k])
+                arg += residual * residual
+
+            arg = math.exp(-arg / 2.) * norm
+            for k in range(p):
+                estimate[j, k] += values_[i, k] * arg
+
+    return 0
+
+
+@cython.wraparound(False)
 @cython.boundscheck(False)
 def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
                              real _=0):
@@ -729,7 +761,7 @@ def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
         Multivariate Gaussian kernel estimate evaluated at the input coordinates.
     """
     cdef:
-        real[:, :] points_, xi_, values_, estimate
+        real[:, :] points_, xi_, values_, estimate, cho_cov_
         int i, j, k
         int n, d, m, p
         real arg, residual, norm
@@ -745,30 +777,19 @@ def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
         raise ValueError("Covariance matrix must match data dims")
 
     # Rescale the data
-    cho_cov = cho_cov.astype(dtype, copy=False)
+    cho_cov_ = cho_cov.astype(dtype, copy=False)
     points_ = np.asarray(solve_triangular(cho_cov, points.T, lower=False).T,
                          dtype=dtype)
     xi_ = np.asarray(solve_triangular(cho_cov, xi.T, lower=False).T,
                      dtype=dtype)
     values_ = values.astype(dtype, copy=False)
 
-    # Evaluate the normalisation
-    norm = math.pow((2 * PI) ,(- d / 2))
-    for i in range(d):
-        norm /= cho_cov[i, i]
-
     # Create the result array and evaluate the weighted sum
     estimate = np.zeros((m, p), dtype)
-    for i in range(n):
-        for j in range(m):
-            arg = 0
-            for k in range(d):
-                residual = (points_[i, k] - xi_[j, k])
-                arg += residual * residual
 
-            arg = math.exp(-arg / 2) * norm
-            for k in range(p):
-                estimate[j, k] += values_[i, k] * arg
+    with nogil:
+        gaussian_kernel_estimate_inner(points_, values_, xi_,
+                                       estimate, cho_cov_, n, m, d, p)
 
     return np.asarray(estimate)
 

@@ -1048,7 +1048,7 @@ class burr_gen(rv_continuous):
             nc = 1. * n / c
             return d * sc.beta(1.0 - nc, d + nc)
         n, c, d = np.asarray(n), np.asarray(c), np.asarray(d)
-        return _lazywhere((c > n) & (n == n) & (d == d), (c, d, n),
+        return _lazywhere((c > n) & (d == d), (c, d, n),
                           lambda c, d, n: __munp(n, c, d),
                           np.nan)
 
@@ -4367,7 +4367,7 @@ class geninvgauss_gen(rv_continuous):
             # for each combination of the input arguments.
             numsamples = int(np.prod(shp))
 
-            # `out` is the array to be returned.  It is filled in in the
+            # `out` is the array to be returned.  It is filled in the
             # loop below.
             out = np.empty(size)
 
@@ -8402,14 +8402,12 @@ class truncnorm_gen(rv_continuous):
 
     Notes
     -----
-    The standard form of this distribution is a standard normal truncated to
-    the range ``[a, b]``, where ``a`` and ``b`` are user-provided shape
-    parameters. The parameter ``loc`` shifts the mean of the underlying normal
-    distribution, and ``scale`` controls the standard deviation of the
-    underlying normal, but ``a`` and ``b`` are still defined with respect to
-    the *standard* normal. If ``myclip_a`` and ``myclip_b`` are clip values
-    defined with respect to a shifted and scaled normal, they can be converted
-    the required form according to::
+    This distribution is the normal distribution centered on ``loc`` (default
+    0), with standard deviation ``scale`` (default 1), and clipped at ``a``,
+    ``b`` standard deviations to the left, right (respectively) from ``loc``.
+    If ``myclip_a`` and ``myclip_b`` are clip values in the sample space (as
+    opposed to the number of standard deviations) then they can be converted
+    to the required form according to::
 
         a, b = (myclip_a - loc) / scale, (myclip_b - loc) / scale
 

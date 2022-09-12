@@ -39,7 +39,7 @@ from numpy.testing import suppress_warnings
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
 from scipy._lib._util import (check_random_state, MapWrapper,
-                              rng_integers, _rename_parameter)
+                              rng_integers, _rename_parameter, _contains_nan)
 
 import scipy.special as special
 from scipy import linalg
@@ -81,38 +81,6 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'alexandergovern']
-
-
-def _contains_nan(a, nan_policy='propagate', use_summation=True):
-    if not isinstance(a, np.ndarray):
-        use_summation = False  # some array_likes ignore nans (e.g. pandas)
-    policies = ['propagate', 'raise', 'omit']
-    if nan_policy not in policies:
-        raise ValueError("nan_policy must be one of {%s}" %
-                         ', '.join("'%s'" % s for s in policies))
-
-    if np.issubdtype(a.dtype, np.inexact):
-        # The summation method avoids creating a (potentially huge) array.
-        if use_summation:
-            with np.errstate(invalid='ignore', over='ignore'):
-                contains_nan = np.isnan(np.sum(a))
-        else:
-            contains_nan = np.isnan(a).any()
-    elif np.issubdtype(a.dtype, object):
-        contains_nan = False
-        for el in a.ravel():
-            # isnan doesn't work on non-numeric elements
-            if np.issubdtype(type(el), np.number) and np.isnan(el):
-                contains_nan = True
-                break
-    else:
-        # Only `object` and `inexact` arrays can have NaNs
-        contains_nan = False
-
-    if contains_nan and nan_policy == 'raise':
-        raise ValueError("The input contains nan values")
-
-    return contains_nan, nan_policy
 
 
 def _chk_asarray(a, axis):
@@ -562,7 +530,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
 
         .. warning::
             Unlike other reduction functions (e.g. `skew`, `kurtosis`), the
-            default behavior of `mode` usually retains the the axis it acts
+            default behavior of `mode` usually retains the axis it acts
             along. In SciPy 1.11.0, this behavior will change: the default
             value of `keepdims` will become ``False``, the `axis` over which
             the statistic is taken will be eliminated, and the value ``None``
@@ -6023,13 +5991,17 @@ def _two_sample_transform(u, v):
 #       INFERENTIAL STATISTICS      #
 #####################################
 
-TTestResultBase = _make_tuple_bunch('TTestResultBase',
+TtestResultBase = _make_tuple_bunch('TtestResultBase',
                                     ['statistic', 'pvalue'], ['df'])
 
 
-class Ttest_1sampResult(TTestResultBase):
+class TtestResult(TtestResultBase):
     """
-    Result of `ttest_1samp`.
+    Result of a t-test.
+
+    See the documentation of the particular t-test function for more
+    information about the definition of the statistic and meaning of
+    the confidence interval.
 
     Attributes
     ----------
@@ -6045,7 +6017,7 @@ class Ttest_1sampResult(TTestResultBase):
     Methods
     -------
     confidence_interval
-        Computes a confidence interval around the population mean
+        Computes a confidence interval around the population statistic
         for the given confidence level.
         The confidence interval is returned in a ``namedtuple`` with
         fields `low` and `high`.
@@ -6081,23 +6053,23 @@ class Ttest_1sampResult(TTestResultBase):
         return ConfidenceInterval(low=low, high=high)
 
 
-def pack_Ttest_Result(statistic, pvalue, df, alternative, standard_error,
+def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
                       estimate):
     # this could be any number of dimensions (including 0d), but there is
     # at most one unique value
     alternative = np.atleast_1d(alternative).ravel()
     alternative = alternative[0] if alternative.size else np.nan
-    return Ttest_1sampResult(statistic, pvalue, df=df, alternative=alternative,
-                             standard_error=standard_error, estimate=estimate)
+    return TtestResult(statistic, pvalue, df=df, alternative=alternative,
+                       standard_error=standard_error, estimate=estimate)
 
 
-def unpack_Ttest_Result(res):
+def unpack_TtestResult(res):
     return (res.statistic, res.pvalue, res.df, res._alternative,
             res._standard_error, res._estimate)
 
 
-@_axis_nan_policy_factory(pack_Ttest_Result, default_axis=0, n_samples=2,
-                          result_to_tuple=unpack_Ttest_Result, n_outputs=6)
+@_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
+                          result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
                 alternative="two-sided"):
     """Calculate the T-test for the mean of ONE group of scores.
@@ -6137,7 +6109,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
     Returns
     -------
-    result : `~scipy.stats._result_classes.Ttest_1sampResult`
+    result : `~scipy.stats._result_classes.TtestResult`
         An object with the following attributes:
 
         statistic : float or array
@@ -6184,7 +6156,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     >>> rng = np.random.default_rng()
     >>> rvs = stats.uniform.rvs(size=50, random_state=rng)
     >>> stats.ttest_1samp(rvs, popmean=0.5)
-    Ttest_1sampResult(statistic=2.456308468440, pvalue=0.017628209047638, df=49)  # noqa
+    TtestResult(statistic=2.456308468440, pvalue=0.017628209047638, df=49)
 
     As expected, the p-value of 0.017 is not below our threshold of 0.01, so
     we cannot reject the null hypothesis.
@@ -6194,7 +6166,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
     >>> rvs = stats.norm.rvs(size=50, random_state=rng)
     >>> stats.ttest_1samp(rvs, popmean=0.5)
-    Ttest_1sampResult(statistic=-7.433605518875, pvalue=1.416760157221e-09, df=49)  # noqa
+    TtestResult(statistic=-7.433605518875, pvalue=1.416760157221e-09, df=49)
 
     Indeed, the p-value is lower than our threshold of 0.01, so we reject the
     null hypothesis in favor of the default "two-sided" alternative: the mean
@@ -6206,7 +6178,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     expect the null hypothesis to be rejected.
 
     >>> stats.ttest_1samp(rvs, popmean=0.5, alternative='greater')
-    Ttest_1sampResult(statistic=-7.433605518875, pvalue=0.99999999929, df=49)  # noqa
+    TtestResult(statistic=-7.433605518875, pvalue=0.99999999929, df=49)
 
     Unsurprisingly, with a p-value greater than our threshold, we would not
     reject the null hypothesis.
@@ -6275,8 +6247,8 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     df = np.broadcast_to(df, t.shape)[()]
     # _axis_nan_policy decorator doesn't play well with strings
     alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
-    return Ttest_1sampResult(t, prob, df=df, alternative=alternative_num,
-                             standard_error=denom, estimate=mean)
+    return TtestResult(t, prob, df=df, alternative=alternative_num,
+                       standard_error=denom, estimate=mean)
 
 
 def _t_confidence_interval(df, t, confidence_level, alternative):
@@ -6872,7 +6844,7 @@ def _calculate_winsorized_variance(a, g, axis):
     # Determine the variance. In [4], the degrees of freedom is expressed as
     # `h - 1`, where `h = n - 2g` (unnumbered equations in Section 1, end of
     # page 369, beginning of page 370). This is converted to NumPy's format,
-    # `n - ddof` for use with with `np.var`. The result is converted to an
+    # `n - ddof` for use with `np.var`. The result is converted to an
     # array to accommodate indexing later.
     var_win = np.asarray(_var(a_win, ddof=(2 * g + 1), axis=-1))
 
@@ -7021,9 +6993,9 @@ def _get_len(a, axis, msg):
     return n
 
 
-Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
-
-
+@_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
+                          result_to_tuple=unpack_TtestResult, n_outputs=6,
+                          paired=True)
 def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     """Calculate the t-test on TWO RELATED samples of scores, a and b.
 
@@ -7061,10 +7033,29 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
 
     Returns
     -------
-    statistic : float or array
-        t-statistic.
-    pvalue : float or array
-        The p-value.
+    result : `~scipy.stats._result_classes.TtestResult`
+        An object with the following attributes:
+
+        statistic : float or array
+            The t-statistic.
+        pvalue : float or array
+            The p-value associated with the given alternative.
+        df : float or array
+            The number of degrees of freedom used in calculation of the
+            t-statistic; this is one less than the size of the sample
+            (``a.shape[axis]``).
+
+            .. versionadded:: 1.10.0
+
+        The object also has the following method:
+
+        confidence_interval(confidence_level=0.95)
+            Computes a confidence interval around the difference in
+            population means for the given confidence level.
+            The confidence interval is returned in a ``namedtuple`` with
+            fields `low` and `high`.
+
+            .. versionadded:: 1.10.0
 
     Notes
     -----
@@ -7078,8 +7069,8 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     hypothesis of equal averages. Small p-values are associated with
     large t-statistics.
 
-    The statistic is calculated as ``np.mean(a - b)/se``, where ``se`` is the
-    standard error. Therefore, the statistic will be positive when the sample
+    The t-statistic is calculated as ``np.mean(a - b)/se``, where ``se`` is the
+    standard error. Therefore, the t-statistic will be positive when the sample
     mean of ``a - b`` is greater than zero and negative when the sample mean of
     ``a - b`` is less than zero.
 
@@ -7097,36 +7088,24 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     >>> rvs2 = (stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
     ...         + stats.norm.rvs(scale=0.2, size=500, random_state=rng))
     >>> stats.ttest_rel(rvs1, rvs2)
-    Ttest_relResult(statistic=-0.4549717054410304, pvalue=0.6493274702088672)
+    TtestResult(statistic=-0.4549717054410304, pvalue=0.6493274702088672, df=499)  # noqa
     >>> rvs3 = (stats.norm.rvs(loc=8, scale=10, size=500, random_state=rng)
     ...         + stats.norm.rvs(scale=0.2, size=500, random_state=rng))
     >>> stats.ttest_rel(rvs1, rvs3)
-    Ttest_relResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09)
+    TtestResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09, df=499)  # noqa
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
-
-    cna, npa = _contains_nan(a, nan_policy)
-    cnb, npb = _contains_nan(b, nan_policy)
-    contains_nan = cna or cnb
-    if npa == 'omit' or npb == 'omit':
-        nan_policy = 'omit'
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        b = ma.masked_invalid(b)
-        m = ma.mask_or(ma.getmask(a), ma.getmask(b))
-        aa = ma.array(a, mask=m, copy=True)
-        bb = ma.array(b, mask=m, copy=True)
-        return mstats_basic.ttest_rel(aa, bb, axis, alternative)
 
     na = _get_len(a, axis, "first argument")
     nb = _get_len(b, axis, "second argument")
     if na != nb:
         raise ValueError('unequal length arrays')
 
-    if na == 0:
-        return _ttest_nans(a, b, axis, Ttest_relResult)
+    if na == 0 or nb == 0:
+        # _axis_nan_policy decorator ensures this only happens with 1d input
+        return TtestResult(np.nan, np.nan, df=np.nan, alternative=np.nan,
+                           standard_error=np.nan, estimate=np.nan)
 
     n = a.shape[axis]
     df = n - 1
@@ -7140,7 +7119,13 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
         t = np.divide(dm, denom)
     t, prob = _ttest_finish(df, t, alternative)
 
-    return Ttest_relResult(t, prob)
+    # when nan_policy='omit', `df` can be different for different axis-slices
+    df = np.broadcast_to(df, t.shape)[()]
+
+    # _axis_nan_policy decorator doesn't play well with strings
+    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
+    return TtestResult(t, prob, df=df, alternative=alternative_num,
+                       standard_error=denom, estimate=dm)
 
 
 # Map from names to lambda_ values used in power_divergence().

@@ -19,7 +19,9 @@ on:
   - cron: "9  9 * * 6"
   # push:
   pull_request:
-      types: [labeled, opened, synchronize, reopened]
+    branches:
+      - main
+      - maintenance/**
   workflow_dispatch:
 
 concurrency:
@@ -43,7 +45,7 @@ jobs:
         id: commit_message
         run: |
           set -xe
-          COMMIT_MSG=$(git log --no-merges -1 --oneline)
+          COMMIT_MSG=$(git log --no-merges -1)
           echo "::set-output name=message::$COMMIT_MSG"
           echo github.ref ${{ github.ref }}
 
@@ -193,22 +195,19 @@ jobs:
           path: ./wheelhouse/*.whl
           name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
 
-        # TODO uncomment when those responsible for uploading
-        # nightly/release wheels want to make this script live.
-
-      # - name: Upload wheels
-      #  if: success()
-      #  shell: bash
-      #  env:
-      #    SCIPY_STAGING_UPLOAD_TOKEN: ${{ secrets.SCIPY_STAGING_UPLOAD_TOKEN }}
-      #    SCIPY_NIGHTLY_UPLOAD_TOKEN: ${{ secrets.SCIPY_NIGHTLY_UPLOAD_TOKEN }}
-      #  run: |
-      #    source tools/wheels/upload_wheels.sh
-      #    set_upload_vars
-      #    # trigger an upload to
-      #    # https://anaconda.org/scipy-wheels-nightly/scipy
-      #    # for cron jobs or "Run workflow" (restricted to main branch).
-      #    # Tags will upload to
-      #    # https://anaconda.org/multibuild-wheels-staging/scipy
-      #    # The tokens were originally generated at anaconda.org
-      #    upload_wheels
+      - name: Upload wheels
+        if: success()
+        shell: bash
+        env:
+          SCIPY_STAGING_UPLOAD_TOKEN_GHA: ${{ secrets.SCIPY_STAGING_UPLOAD_TOKEN }}
+          SCIPY_NIGHTLY_UPLOAD_TOKEN: ${{ secrets.SCIPY_NIGHTLY_UPLOAD_TOKEN }}
+        run: |
+          source tools/wheels/upload_wheels.sh
+          set_upload_vars
+          # trigger an upload to
+          # https://anaconda.org/scipy-wheels-nightly/scipy
+          # for cron jobs or "Run workflow" (restricted to main branch).
+          # Tags will upload to
+          # https://anaconda.org/multibuild-wheels-staging/scipy
+          # The tokens were originally generated at anaconda.org
+          upload_wheels

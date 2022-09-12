@@ -193,7 +193,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
         The methods 'NormalEquation' and 'AugmentedSystem' can be used only
         with sparse constraints. The projections required by the algorithm
-        will be computed using, respectively, the the normal equation  and the
+        will be computed using, respectively, the normal equation  and the
         augmented system approaches explained in [1]_. 'NormalEquation'
         computes the Cholesky factorization of ``A A.T`` and 'AugmentedSystem'
         performs the LU factorization of an augmented system. They usually
