@@ -8890,36 +8890,6 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     return SignificanceResult(statistic, pval)
 
 
-def _confint_lowerbound(n, quantile, confidence):
-    r"""
-    Compute the lower bound for a one-sided confidence interval
-    for a given
-    - quantile (0<`quantile`<1)
-    - confidence level (0<`confidence`<1)
-    - number of samples `n`.
-
-    Returns the largest index of the sample being a valid lower bound,
-    or `None` if there are not enough samples to derive one.
-
-    Used by the public function confint_quantile().
-
-    .. versionadded:: 1.7.0
-    """
-
-    # compute all probabilities from the binomial distribution for
-    # the quantile of interest
-    bd = stats.binom(n, quantile)
-
-    # the lower bound is the last index before the invert survival
-    # function value for the target confidence level
-    lb = bd.isf(confidence) - 1
-
-    if lb < 0:  # isf returns -1 if there are no matching index
-        return None
-    else:
-        return int(lb)
-
-
 QuantileTestResultBase = _make_tuple_bunch('QuantileTestResultBase',
                                            ['statistic', 'pvalue'], [])
 
@@ -8938,14 +8908,16 @@ class QuantileTestResult(QuantileTestResultBase):
 
 
     """
-    def __init__(self, statistic, pvalue, alternative, x):
+
+    def __init__(self, statistic, pvalue, alternative, x, p):
         super().__init__(statistic, pvalue)
         self._alternative = alternative
         self._x = np.sort(x)
+        self._quantile = p
 
     def confidence_interval(self, confidence_level=0.95):
         """
-        Compute the confidence interval for ``statistic``.
+        Compute the confidence interval of the quantile.
 
         Parameters
         ----------
@@ -8967,39 +8939,33 @@ class QuantileTestResult(QuantileTestResultBase):
 
         """
         alternative = self._alternative
-        quantile = self.statistic
+        quantile = self._quantile
         x = np.sort(self._x)
         n = len(x)
+        bd = stats.binom(n, quantile)
 
-        # Handle the type of intervals (one- or two-sided)
-        if alternative == 'two-sided':
-            conf_working = (1 + confidence_level) / 2
-        else:
-            # type == 'one-sided'
-            conf_working = confidence_level
+        if confidence_level < 0 or confidence_level > 1:
+            message = "`confidence_level` must be a number between 0 and 1."
+            raise ValueError(message)
 
-        # Compute the lower bound
-        LB = _confint_lowerbound(n, quantile, conf_working)
+        if alternative == 'less':
+            p = 1 - confidence_level
+            low = -np.inf
+            high_index = int(bd.isf(p))
+            high = x[high_index] if high_index < n else np.nan
+        elif alternative == 'greater':
+            p = 1 - confidence_level
+            low_index = int(bd.ppf(p)) - 1
+            low = x[low_index] if low_index >= 0 else np.nan
+            high = np.inf
+        elif alternative == 'two-sided':
+            p = (1 - confidence_level) / 2
+            low_index = int(bd.ppf(p)) - 1
+            low = x[low_index] if low_index >= 0 else np.nan
+            high_index = int(bd.isf(p))
+            high = x[high_index] if high_index < n else np.nan
 
-        # Compute the upper bound
-        # -> deduced from the lower bound of (1-quantile)
-        lb = _confint_lowerbound(n, 1-quantile, conf_working)
-        if lb is None:
-            UB = None
-        else:
-            UB = ((n-1) - lb)   # First index is 0 (not 1), hence the -1
-
-        # Handle unfeasible bounds
-        if LB is None:
-            x_lb = None
-        else:
-            x_lb = x[LB]
-        if UB is None:
-            x_ub = None
-        else:
-            x_ub = x[UB]
-
-        return ConfidenceInterval(x_lb, x_ub)
+        return ConfidenceInterval(low, high)
 
 
 def quantile_test_iv(x, q, p, alternative):
@@ -9179,7 +9145,7 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
     res = binomtest(k, n, p, alternative=palternative)
 
     return QuantileTestResult(res.statistic, res.pvalue,
-                              alternative=qalternative, x=x)
+                              alternative=qalternative, x=x, p=p)
 
 
 #####################################
