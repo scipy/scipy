@@ -4173,7 +4173,7 @@ class PearsonRResult(PearsonRResultBase):
     Attributes
     ----------
     statistic : float
-        Pearson product-moment correlation coefficent.
+        Pearson product-moment correlation coefficient.
     pvalue : float
         The p-value associated with the chosen alternative.
 
@@ -4188,6 +4188,9 @@ class PearsonRResult(PearsonRResultBase):
         super().__init__(statistic, pvalue)
         self._alternative = alternative
         self._n = n
+
+        # add alias for consistency with other correlation functions
+        self.correlation = statistic
 
     def confidence_interval(self, confidence_level=0.95):
         """
@@ -4267,7 +4270,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
         An object with the following attributes:
 
         statistic : float
-            Pearson product-moment correlation coefficent.
+            Pearson product-moment correlation coefficient.
         pvalue : float
             The p-value associated with the chosen alternative.
 
@@ -4955,10 +4958,6 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         return SpearmanrResult(rs, prob)
 
 
-PointbiserialrResult = namedtuple('PointbiserialrResult',
-                                  ('correlation', 'pvalue'))
-
-
 def pointbiserialr(x, y):
     r"""Calculate a point biserial correlation coefficient and its p-value.
 
@@ -4968,8 +4967,8 @@ def pointbiserialr(x, y):
     implying no correlation. Correlations of -1 or +1 imply a determinative
     relationship.
 
-    This function uses a shortcut formula but produces the same result as
-    `pearsonr`.
+    This function may be computed using a shortcut formula but produces the
+    same result as `pearsonr`.
 
     Parameters
     ----------
@@ -4980,10 +4979,13 @@ def pointbiserialr(x, y):
 
     Returns
     -------
-    correlation : float
-        R value.
-    pvalue : float
-        Two-sided p-value.
+    res: SignificanceResult
+        An object containing attributes:
+
+        statistic : float
+            The R value.
+        pvalue : float
+            The two-sided p-value.
 
     Notes
     -----
@@ -5043,7 +5045,10 @@ def pointbiserialr(x, y):
 
     """
     rpb, prob = pearsonr(x, y)
-    return PointbiserialrResult(rpb, prob)
+    # create result object with alias for backward compatibility
+    res = SignificanceResult(rpb, prob)
+    res.correlation = rpb
+    return res
 
 
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
