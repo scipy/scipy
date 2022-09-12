@@ -86,8 +86,11 @@ elements = [
 ]
 
 foreach ele: elements
-  propack_lib = static_library('lib_' + ele[0], ele[1],
-    c_args: ['_OPENMP'],
+  # FIXME: this doesn't match `setup.py` for g77 ABI issue. That is pretty much
+  # broken anyway, see for example gh-15108.
+  propack_lib = static_library('lib_' + ele[0],
+    [ele[1], g77_abi_wrappers],
+    c_args: ['-D_OPENMP'],  # FIXME: this is needed now, but not good!
     fortran_args: [
       fortran_ignore_warnings, 
       _fflag_Wno_intrinsic_shadow,
