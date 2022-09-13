@@ -148,7 +148,7 @@ def test_csr_hstack_int64():
     assert X_hs.indices.max() == max_indices_1 + max_indices_2 - 1 > max_int32
     assert X_hs.indices.dtype == X_hs.indptr.dtype == np.int64
 
-    # Even if the matrixes are empty, we must account for their size
+    # Even if the matrices are empty, we must account for their size
     # contribution so that we may safely set the final elements.
     X_1_empty = csr_matrix(X_1.shape)
     X_2_empty = csr_matrix(X_2.shape)
