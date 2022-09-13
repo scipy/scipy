@@ -14,6 +14,7 @@ directed_G = np.array([[0, 3, 3, 0, 0],
                        [1, 0, 0, 0, 0],
                        [2, 0, 0, 2, 0]], dtype=float)
 
+# Undirected version of directed_G
 undirected_G = np.array([[0, 3, 3, 1, 2],
                          [3, 0, 0, 2, 4],
                          [3, 0, 0, 0, 0],
@@ -22,12 +23,42 @@ undirected_G = np.array([[0, 3, 3, 1, 2],
 
 unweighted_G = (directed_G > 0).astype(float)
 
+# Correct shortest path lengths for directed_G and undirected_G
 directed_SP = [[0, 3, 3, 5, 7],
                [3, 0, 6, 2, 4],
                [np.inf, np.inf, 0, np.inf, np.inf],
                [1, 4, 4, 0, 8],
                [2, 5, 5, 2, 0]]
 
+undirected_SP = np.array([[0, 3, 3, 1, 2],
+                          [3, 0, 6, 2, 4],
+                          [3, 6, 0, 4, 5],
+                          [1, 2, 4, 0, 2],
+                          [2, 4, 5, 2, 0]], dtype=float)
+
+undirected_SP_limit_2 = np.array([[0, np.inf, np.inf, 1, 2],
+                                  [np.inf, 0, np.inf, 2, np.inf],
+                                  [np.inf, np.inf, 0, np.inf, np.inf],
+                                  [1, 2, np.inf, 0, 2],
+                                  [2, np.inf, np.inf, 2, 0]], dtype=float)
+
+undirected_SP_limit_0 = np.ones((5, 5), dtype=float) - np.eye(5)
+undirected_SP_limit_0[undirected_SP_limit_0 > 0] = np.inf
+
+# Correct predecessors for directed_G and undirected_G
+directed_pred = np.array([[-9999, 0, 0, 1, 1],
+                          [3, -9999, 0, 1, 1],
+                          [-9999, -9999, -9999, -9999, -9999],
+                          [3, 0, 0, -9999, 1],
+                          [4, 0, 0, 4, -9999]], dtype=float)
+
+undirected_pred = np.array([[-9999, 0, 0, 0, 0],
+                            [1, -9999, 0, 1, 1],
+                            [2, 0, -9999, 0, 0],
+                            [3, 3, 0, -9999, 3],
+                            [4, 4, 0, 4, -9999]], dtype=float)
+
+# Other graphs
 directed_sparse_zero_G = scipy.sparse.csr_matrix(([0, 1, 2, 3, 1], 
                                             ([0, 1, 2, 3, 4], 
                                              [1, 2, 0, 4, 3])), 
@@ -49,33 +80,6 @@ undirected_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
                         [1, 1, 0, np.inf, np.inf],
                         [np.inf, np.inf, np.inf, 0, 1],
                         [np.inf, np.inf, np.inf, 1, 0]]
-
-directed_pred = np.array([[-9999, 0, 0, 1, 1],
-                          [3, -9999, 0, 1, 1],
-                          [-9999, -9999, -9999, -9999, -9999],
-                          [3, 0, 0, -9999, 1],
-                          [4, 0, 0, 4, -9999]], dtype=float)
-
-undirected_SP = np.array([[0, 3, 3, 1, 2],
-                          [3, 0, 6, 2, 4],
-                          [3, 6, 0, 4, 5],
-                          [1, 2, 4, 0, 2],
-                          [2, 4, 5, 2, 0]], dtype=float)
-
-undirected_SP_limit_2 = np.array([[0, np.inf, np.inf, 1, 2],
-                                  [np.inf, 0, np.inf, 2, np.inf],
-                                  [np.inf, np.inf, 0, np.inf, np.inf],
-                                  [1, 2, np.inf, 0, 2],
-                                  [2, np.inf, np.inf, 2, 0]], dtype=float)
-
-undirected_SP_limit_0 = np.ones((5, 5), dtype=float) - np.eye(5)
-undirected_SP_limit_0[undirected_SP_limit_0 > 0] = np.inf
-
-undirected_pred = np.array([[-9999, 0, 0, 0, 0],
-                            [1, -9999, 0, 1, 1],
-                            [2, 0, -9999, 0, 0],
-                            [3, 3, 0, -9999, 3],
-                            [4, 4, 0, 4, -9999]], dtype=float)
 
 methods = ['auto', 'FW', 'D', 'BF', 'J']
 
