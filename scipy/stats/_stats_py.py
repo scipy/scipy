@@ -8898,7 +8898,7 @@ class QuantileTestResult(QuantileTestResultBase):
         super().__init__(statistic, pvalue)
         self._alternative = alternative
         self._x = np.sort(x)
-        self._quantile = p
+        self._p = p
 
     def confidence_interval(self, confidence_level=0.95):
         """
@@ -8924,10 +8924,10 @@ class QuantileTestResult(QuantileTestResultBase):
 
         """
         alternative = self._alternative
-        quantile = self._quantile
+        p = self._p
         x = np.sort(self._x)
         n = len(x)
-        bd = stats.binom(n, quantile)
+        bd = stats.binom(n, p)
 
         if confidence_level < 0 or confidence_level > 1:
             message = "`confidence_level` must be a number between 0 and 1."
@@ -9047,52 +9047,32 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
     The approach for confidence intervals is attributed to Thompson [2]_ and
     later proven to be applicable to any set of i.i.d. samples [3]_. The
     computation is based on the observation that the probability of a quantile
-    :math:`q` to be larger than any sample :math:`x_m (1\leq m \leq N)` can be
-    computed as
+    :math:`q` to be larger than any observations :math:`x_m (1\leq m \leq N)`
+    can be computed as
 
     .. math::
 
         \mathbb{P}(x_m \leq q) = 1 - \sum_{k=0}^{m-1} \binom{N}{k}
         q^k(1-q)^{N-k}
 
-    Furthermore, these probabilities are symmetric, which allows to compute
-    both upper and lower bounds from the same computation:
-
-    .. math::
-
-        \mathbb{P}(x_m \leq q) = \mathbb{P}(x_{N-m+1} \geq 1-q).
-
-    The function computes confidence intervals for a given quantile and
-    confidence level based on `x`, which is either a set of samples
-    (one-dimensional array_like) or the number of samples available. The
-    confidence intervals are valid if and only if the samples are i.i.d.
+    The confidence intervals are valid if and only if the observations are
+    i.i.d.
 
     Both one-sided and two-sided confidence intervals can be obtained (default
-    is one-sided). The function returns two values: either the bounds for the
-    two one-sided confidence intervals, or the lower and upper bounds of a
-    two-sided confidence interval.
-
-    If `x` is the set of samples, the return values are the sample values
-    corresponding with the bounds of the confidence interval. If `x` is an
-    integer, the function considers `x` as the sample size and returns the
-    indexes of the bounds for the confidence interval for this sample size.
-    Note that this is possible because the numerical values of the data are
-    irrelevant for this computing confidence interval using this method.
+    is two-sided). The one-sided confidence interval corresponding with
+    ``alternative='lower'`` has
 
     A similar function is available in the QuantileNPCI R package [4]_. The
     foundation is the same, but it computes the confidence interval bounds by
     doing interpolations between the sample values, whereas this function uses
-    only sample values as bounds. Thus, `confint_quantile` returns slightly
-    more conservative intervals (i.e., larger).
+    only sample values as bounds. Thus, ``quantile_test.confidence_interval``
+    returns more conservative intervals (i.e., larger).
 
-    Two-sided confidence intervals are not guaranteed to be optimal. I.e.,
+    Two-sided confidence intervals are not guaranteed to be optimal; i.e.,
     there may exist a tighter interval that may contain the quantile of
-    interest with probability larger than the confidence level. These intervals
-    may be found by exhaustive search, which we do not do for efficiency
-    reasons.
-
-    Without further assumption on the samples (eg, the nature of the underlying
-    distribution), the one-sided intervals are optimally tight.
+    interest with probability larger than the confidence level.
+    Without further assumption on the samples (e.g., the nature of the
+    underlying distribution), the one-sided intervals are optimally tight.
 
     References
     ----------
