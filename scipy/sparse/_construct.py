@@ -470,16 +470,16 @@ def _stack_along_minor_axis(blocks, axis):
     # post-concatenation for np.int32. We must sum the dimensions
     # along the axis we use to stack since even empty matrices will
     # contribute to a large post-stack index value.
+    # After concatenation, the max value in indptr
+    # is the last one, which is the number of samples + 1.
+    max_output_indptr = sum(b.shape[0] for b in blocks) + 1
     max_output_index = 0
-    max_indptr = 0
     for b in blocks[:-1]:
         max_output_index += b.shape[axis]
-        max_indptr = max(max_indptr, b.indptr.max())
     if blocks[-1].indices.size > 0:
         max_output_index += int(blocks[-1].indices.max())
-        max_indptr = max(max_indptr, b.indptr.max())
     max_int32 = np.iinfo(np.int32).max
-    needs_64bit = max(max_output_index, max_indptr) > max_int32
+    needs_64bit = max(max_output_index, max_output_indptr) > max_int32
     idx_dtype = np.int64 if needs_64bit else np.int32
 
     stack_dim_cat = np.array([b.shape[axis] for b in blocks], dtype=idx_dtype)
