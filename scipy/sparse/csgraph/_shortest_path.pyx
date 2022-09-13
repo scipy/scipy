@@ -601,12 +601,14 @@ def dijkstra(csgraph, directed=True, indices=None,
         else:
             predecessor_matrix = np.empty((len(indices), N), dtype=ITYPE)
             predecessor_matrix.fill(NULL_IDX)
+            source_matrix = np.empty((len(indices), 0), dtype=ITYPE) # unused
     else:
         if min_only:
             predecessor_matrix = np.empty(0, dtype=ITYPE)
-            source_matrix = np.empty(0, dtype=ITYPE)
+            source_matrix = np.empty(0, dtype=ITYPE) # unused
         else:
-            predecessor_matrix = np.empty((0, N), dtype=ITYPE)
+            predecessor_matrix = np.empty((len(indices), 0), dtype=ITYPE)
+            source_matrix = np.empty((len(indices), 0), dtype=ITYPE) # unused
 
     if unweighted:
         csr_data = np.ones(csgraph.data.shape)
@@ -615,15 +617,23 @@ def dijkstra(csgraph, directed=True, indices=None,
     csr_indices, csr_indptr = safely_cast_index_arrays(csgraph, ITYPE, msg="csgraph")
 
     if directed:
+        # for null transposed CSR
+        dummy_double_array = np.empty(0, dtype=DTYPE)
+        dummy_int_array = np.empty(0, dtype=ITYPE)
         if min_only:
-            _dijkstra_directed_multi(indices,
-                                     csr_data, csr_indices, csr_indptr,
-                                     dist_matrix, predecessor_matrix,
-                                     source_matrix, limitf)
+            _dijkstra(indices,
+                      csr_data, csr_indices, csr_indptr,
+                      dummy_double_array, dummy_int_array, dummy_int_array,
+                      dist_matrix, predecessor_matrix, source_matrix,
+                      limitf)
         else:
-            _dijkstra_directed(indices,
-                               csr_data, csr_indices, csr_indptr,
-                               dist_matrix, predecessor_matrix, limitf)
+            _dijkstra_multi_separate(
+                      indices,
+                      csr_data, csr_indices, csr_indptr,
+                      dummy_double_array, dummy_int_array, dummy_int_array,
+                      dist_matrix, predecessor_matrix, source_matrix,
+                      limitf)
+
     else:
         csrT = csgraph.T.tocsr()
         csrT_indices, csrT_indptr = safely_cast_index_arrays(csrT, ITYPE, msg="csgraph")
@@ -632,16 +642,18 @@ def dijkstra(csgraph, directed=True, indices=None,
         else:
             csrT_data = csrT.data
         if min_only:
-            _dijkstra_undirected_multi(indices,
-                                       csr_data, csr_indices, csr_indptr,
-                                       csrT_data, csrT_indices, csrT_indptr,
-                                       dist_matrix, predecessor_matrix,
-                                       source_matrix, limitf)
+            _dijkstra(indices,
+                    csr_data, csr_indices, csr_indptr,
+                    csrT_data, csrT_indices, csrT_indptr,
+                    dist_matrix, predecessor_matrix, source_matrix,
+                    limitf)
         else:
-            _dijkstra_undirected(indices,
+            _dijkstra_multi_separate(
+                                 indices,
                                  csr_data, csr_indices, csr_indptr,
                                  csrT_data, csrT_indices, csrT_indptr,
-                                 dist_matrix, predecessor_matrix, limitf)
+                                 dist_matrix, predecessor_matrix, source_matrix,
+                                 limitf)
 
     if return_predecessors:
         if min_only:
@@ -660,19 +672,20 @@ ctypedef pair[DTYPE_t, uint_t] dist_index_pair_t
 ctypedef priority_queue[dist_index_pair_t] dijkstra_queue_t
 
 @cython.boundscheck(False)
-cdef _dijkstra_scan_heap_multi(dijkstra_queue_t &heap,
+cdef _dijkstra_scan_heap(dijkstra_queue_t &heap,
                          dist_index_pair_t v,
                          const double[:] csr_weights,
                          const int[:] csr_indices,
                          const int[:] csr_indptr,
                          double[:] dist_matrix,
                          int[:] pred,
-                         int[:] sources,
                          int return_pred,
+                         int[:] sources,
+                         int return_source,
                          DTYPE_t limit):
     cdef:
-        unsigned int k, j_source, j_current
         ITYPE_t j
+        unsigned int j_current
         DTYPE_t next_val
 
     # v is a dist_index_pair_t poped from the queue
@@ -684,89 +697,24 @@ cdef _dijkstra_scan_heap_multi(dijkstra_queue_t &heap,
         if next_val <= limit:
             if dist_matrix[j_current] > next_val:
                 dist_matrix[j_current] = next_val
+                # The same vertex may be pushed multiple times to the queue, but
+                # anything with suboptimal distance is ignored when poped
                 heap.push(dist_index_pair_t(-next_val, j_current))
                 if return_pred:
                     pred[j_current] = v.second
+                if return_source:
                     sources[j_current] = sources[v.second]
 
-@cython.boundscheck(False)
-cdef _dijkstra_scan_heap(dijkstra_queue_t &heap,
-                         dist_index_pair_t v,
-                         const double[:] csr_weights,
-                         const int[:] csr_indices,
-                         const int[:] csr_indptr,
-                         double[:, :] dist_matrix,
-                         int[:, :] pred,
-                         int return_pred,
-                         DTYPE_t limit,
-                         int i):
-    cdef:
-        unsigned int j_current
-        ITYPE_t j
-        DTYPE_t next_val
-
-    # v is a dist_index_pair_t poped from the queue
-    # v.first: the distance of the vertex
-    # v.second: index of the vertex
-    for j in range(csr_indptr[v.second], csr_indptr[v.second + 1]):
-        j_current = csr_indices[j]
-        next_val = v.first + csr_weights[j]
-        if next_val <= limit:
-            if dist_matrix[i, j_current] > next_val:
-                dist_matrix[i, j_current] = next_val
-				# The same vertex may be pushed multiple times to the queue, but anything
-                heap.push(dist_index_pair_t(-next_val, j_current))
-                if return_pred:
-                    pred[i, j_current] = v.second
-
 
 @cython.boundscheck(False)
-cdef int _dijkstra_directed(
+cdef int _dijkstra(
             const int[:] source_indices,
             const double[:] csr_weights,
             const int[:] csr_indices,
             const int[:] csr_indptr,
-            double[:, :] dist_matrix,
-            int[:, :] pred,
-            DTYPE_t limit) except -1:
-    cdef:
-        unsigned int Nind = dist_matrix.shape[0]
-        unsigned int N = dist_matrix.shape[1]
-        unsigned int i, k, j_source, j_current
-        DTYPE_t next_val
-        int return_pred = (pred.size > 0)
-        dijkstra_queue_t heap # pairs of {-distance, vertex index} will be pushed to this priority queue
-        dist_index_pair_t v
-    
-    for i in range(Nind):
-        j_source = source_indices[i]
-        
-        dist_matrix[i, j_source] = 0
-        # priority_queue is max-heap, so negate the distance to make it min-heap
-        heap.push(dist_index_pair_t(-dist_matrix[i, j_source], j_source))
-
-        while heap.size():
-            v = heap.top()
-            heap.pop()
-            v.first = -v.first
-            # Do not process v if its distance has been updated
-			# after v was pushed to the queue, in which case
-			# _dijkstra_scan_heap should have already been called with
-			# the vertex v.second
-            # This assures _dijkstra_scan_heap is only called once per vertex
-			# and the total complexity is O(Mlog(M)) per source
-            if dist_matrix[i, v.second] < v.first : continue
-            
-            _dijkstra_scan_heap(heap, v, csr_weights, csr_indices, csr_indptr,
-                                dist_matrix, pred, return_pred, limit, i)
-    return 0
-
-@cython.boundscheck(False)
-cdef int _dijkstra_directed_multi(
-            const int[:] source_indices,
-            const double[:] csr_weights,
-            const int[:] csr_indices,
-            const int[:] csr_indptr,
+            const double[:] csrT_weights,
+            const int[:] csrT_indices,
+            const int[:] csrT_indptr,
             double[:] dist_matrix,
             int[:] pred,
             int[:] sources,
@@ -777,31 +725,51 @@ cdef int _dijkstra_directed_multi(
         unsigned int i, k, j_source, j_current
         DTYPE_t next_val
         int return_pred = (pred.size > 0)
+        int return_sources = (sources.size > 0)
+        int directed = (csrT_weights.size == 0)
 
         # pairs of {-distance, vertex index} will be pushed
         # to treat it as a min-heap instead of max-heap
         dijkstra_queue_t heap = dijkstra_queue_t()
         dist_index_pair_t v
-
+    
     for i in range(Nind):
         j_source = source_indices[i]
         dist_matrix[j_source] = 0
         heap.push(dist_index_pair_t(-dist_matrix[j_source], j_source))
-        if return_pred:
+        if return_sources:
             sources[j_source] = j_source
+    
+    if return_pred:
+        assert pred.size == N
+    if return_sources:
+        assert sources.size == N
     
     while heap.size():
         v = heap.top()
         heap.pop()
         v.first = -v.first
-        if dist_matrix[v.second] < v.first : continue
+        # Do not process v if its distance has been updated
+        # after v was pushed to the queue, in which case
+        # _dijkstra_scan_heap should have already been called with
+        # the vertex v.second
+        # This assures _dijkstra_scan_heap is only called once per vertex
+        # and the total complexity is O(Mlog(M)) per source
+        if dist_matrix[v.second] < v.first :
+            continue
         
-        _dijkstra_scan_heap_multi(heap, v, csr_weights, csr_indices, csr_indptr,
-                                  dist_matrix, pred, sources, return_pred, limit)
+        _dijkstra_scan_heap(heap, v, csr_weights, csr_indices, csr_indptr,
+                            dist_matrix, pred, return_pred,
+                            sources, return_sources, limit)
+        if not directed:
+            _dijkstra_scan_heap(heap, v,
+                                csrT_weights, csrT_indices, csrT_indptr,
+                                dist_matrix, pred, return_pred,
+                                sources, return_sources, limit)
     return 0
 
 @cython.boundscheck(False)
-cdef int _dijkstra_undirected(
+cdef int _dijkstra_multi_separate(
             const int[:] source_indices,
             const double[:] csr_weights,
             const int[:] csr_indices,
@@ -811,77 +779,22 @@ cdef int _dijkstra_undirected(
             const int[:] csrT_indptr,
             double[:, :] dist_matrix,
             int[:, :] pred,
-            DTYPE_t limit) except -1:
-    cdef:
-        unsigned int Nind = dist_matrix.shape[0]
-        unsigned int N = dist_matrix.shape[1]
-        unsigned int i, k, j_source, j_current
-        DTYPE_t next_val
-        int return_pred = (pred.size > 0)
-        dijkstra_queue_t heap
-        dist_index_pair_t v
-    
-    for i in range(Nind):
-        j_source = source_indices[i]
-        
-        dist_matrix[i, j_source] = 0
-        heap.push(dist_index_pair_t(-dist_matrix[i, j_source], j_source))
-
-        while heap.size():
-            v = heap.top()
-            heap.pop()
-            v.first = -v.first
-            if dist_matrix[i, v.second] < v.first : continue
-            
-            _dijkstra_scan_heap(heap, v, csr_weights, csr_indices, csr_indptr,
-                                dist_matrix, pred, return_pred, limit, i)
-            _dijkstra_scan_heap(heap, v, csrT_weights, csrT_indices, csrT_indptr,
-                                dist_matrix, pred, return_pred, limit, i)
-
-    return 0
-
-
-@cython.boundscheck(False)
-cdef int _dijkstra_undirected_multi(
-            const int[:] source_indices,
-            const double[:] csr_weights,
-            const int[:] csr_indices,
-            const int[:] csr_indptr,
-            const double[:] csrT_weights,
-            const int[:] csrT_indices,
-            const int[:] csrT_indptr,
-            double[:] dist_matrix,
-            int[:] pred,
-            int[:] sources,
+            int[:, :] sources,
             DTYPE_t limit) except -1:
     cdef:
         unsigned int Nind = source_indices.shape[0]
-        unsigned int N = dist_matrix.shape[0]
-        unsigned int i, k, j_source, j_current
-        DTYPE_t next_val
-        int return_pred = (pred.size > 0)
-        dijkstra_queue_t heap
-        dist_index_pair_t v
-
+        unsigned int i
+        int source_list[1]
+    
+    assert dist_matrix.shape[0] == Nind
+    assert pred.shape[0] == Nind
+    assert sources.shape[0] == Nind
     for i in range(Nind):
-        j_source = source_indices[i]
-        dist_matrix[j_source] = 0
-        heap.push(dist_index_pair_t(-dist_matrix[j_source], j_source))
-        if return_pred:
-            sources[j_source] = j_source
-    
-    while heap.size():
-        v = heap.top()
-        heap.pop()
-        v.first = -v.first
-        if dist_matrix[v.second] < v.first : continue
-        
-        _dijkstra_scan_heap_multi(heap, v, csr_weights, csr_indices, csr_indptr,
-                                  dist_matrix, pred, sources, return_pred, limit)
-        _dijkstra_scan_heap_multi(heap, v, csrT_weights, csrT_indices, csrT_indptr,
-                                  dist_matrix, pred, sources, return_pred, limit)
-    
-    return 0
+        source_list[0] = source_indices[i]
+        _dijkstra(source_list,
+                  csr_weights, csr_indices, csr_indptr,
+                  csrT_weights, csrT_indices, csrT_indptr,
+                  dist_matrix[i], pred[i], sources[i], limit)
 
 
 def bellman_ford(csgraph, directed=True, indices=None,
@@ -1044,8 +957,7 @@ cdef int _bellman_ford_directed(
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, j, j_source, count
-        int k
+        unsigned int i, j, k, j_source, count
         DTYPE_t d1, d2, w12
         int return_pred = (pred.size > 0)
 
@@ -1254,7 +1166,7 @@ def johnson(csgraph, directed=True, indices=None,
         predecessor_matrix = np.empty((len(indices), N), dtype=ITYPE)
         predecessor_matrix.fill(NULL_IDX)
     else:
-        predecessor_matrix = np.empty((0, N), dtype=ITYPE)
+        predecessor_matrix = np.empty((len(indices), 0), dtype=ITYPE)
 
     #------------------------------
     # initialize distance array
@@ -1278,17 +1190,27 @@ def johnson(csgraph, directed=True, indices=None,
     # add the bellman-ford weights to the data
     _johnson_add_weights(csr_data, csr_indices, csr_indptr, dist_array)
 
+    dummy_source_matrix = np.empty((len(indices), 0), dtype=ITYPE)
     if directed:
-        _dijkstra_directed(indices,
-                           csr_data, csr_indices, csr_indptr,
-                           dist_matrix, predecessor_matrix, np.inf)
+        # for null transposed CSR
+        dummy_double_array = np.empty(0, dtype=DTYPE)
+        dummy_int_array = np.empty(0, dtype=ITYPE)
+        _dijkstra_multi_separate(
+            indices,
+            csr_data, csr_indices, csr_indptr,
+            dummy_double_array, dummy_int_array, dummy_int_array,
+            dist_matrix, predecessor_matrix, dummy_source_matrix, np.inf)
     else:
-        csrT = csr_array((csr_data, csr_indices, csr_indptr), csgraph.shape).T.tocsr()
-        _johnson_add_weights(csrT.data, csrT.indices, csrT.indptr, dist_array)
-        _dijkstra_undirected(indices,
-                             csr_data, csr_indices, csr_indptr,
-                             csrT.data, csrT.indices, csrT.indptr,
-                             dist_matrix, predecessor_matrix, np.inf)
+        csgraphT = csr_array((csr_data, csr_indices, csr_indptr),
+                               csgraph.shape).T.tocsr()
+        _johnson_add_weights(csgraphT.data, csgraphT.indices,
+                             csgraphT.indptr, dist_array)
+        _dijkstra_multi_separate(
+            indices,
+            csr_data,csr_indices, csr_indptr,
+            csgraphT.data, csgraphT.indices, csgraphT.indptr,
+            dist_matrix, predecessor_matrix, dummy_source_matrix,
+            np.inf)
 
     # ------------------------------
     # correct the distance matrix for the bellman-ford weights
@@ -1577,27 +1499,22 @@ cdef void _yen(
 
         # Dijkstra's operands and results arrays
         int[:] indice_node_arr = np.array([source], dtype=ITYPE)
-        int[:, :] predecessor_matrix = np.full((1, N), NULL_IDX, dtype=ITYPE)
-        double[:, :] dist_matrix = np.full((1, N), np.inf, dtype=DTYPE)
-    dist_matrix[0, source] = 0
+        int[:] predecessor_matrix = np.full((N), NULL_IDX, dtype=ITYPE)
+        double[:] dist_matrix = np.full((N), np.inf, dtype=DTYPE)
+        int[:] dummy_source_matrix = np.empty((0), dtype=ITYPE) # unused
+    dist_matrix[source] = 0
 
     # ---------------------------------------------------
     # Compute and store the shortest path
-    if directed:
-        _dijkstra_directed(
-            indice_node_arr,
-            original_weights, csr_indices, csr_indptr,
-            dist_matrix, predecessor_matrix, INFINITY,
-        )
-    else:
-        _dijkstra_undirected(
-            indice_node_arr,
-            original_weights, csr_indices, csr_indptr,
-            originalT_weights, csrT_indices, csrT_indptr,
-            dist_matrix, predecessor_matrix, INFINITY,
-        )
+    _dijkstra(
+        indice_node_arr,
+        original_weights, csr_indices, csr_indptr,
+        originalT_weights, csrT_indices, csrT_indptr,
+        dist_matrix, predecessor_matrix, dummy_source_matrix,
+        INFINITY,
+    )
 
-    shortest_distances[0] = dist_matrix[0, sink]
+    shortest_distances[0] = dist_matrix[sink]
     if shortest_distances[0] == INFINITY:
         # No paths between source and sink
         return
@@ -1624,8 +1541,8 @@ cdef void _yen(
     # Copy shortest path to shortest_paths_predecessors
     node = sink
     while node != NULL_IDX:
-        shortest_paths_predecessors[0, node] = predecessor_matrix[0, node]
-        node = predecessor_matrix[0, node]
+        shortest_paths_predecessors[0, node] = predecessor_matrix[node]
+        node = predecessor_matrix[node]
 
 
     # ---------------------------------------------------
@@ -1712,35 +1629,29 @@ cdef void _yen(
             # Search for the shortest path from spur_node to sink
 
             # Reset the distance and predecessor matrix
-            predecessor_matrix[0, :] = NULL_IDX
-            dist_matrix[0, :] = INFINITY
-            dist_matrix[0, source] = 0
+            predecessor_matrix[:] = NULL_IDX
+            dist_matrix[:] = INFINITY
+            dist_matrix[source] = 0
             # Search only for paths starting for spur_node
             indice_node_arr[0] = spur_node
-            if directed:
-                _dijkstra_directed(
-                    indice_node_arr,
-                    csr_weights, csr_indices, csr_indptr,
-                    dist_matrix, predecessor_matrix, INFINITY,
-                )
-            else:
-                _dijkstra_undirected(
-                    indice_node_arr,
-                    csr_weights, csr_indices, csr_indptr,
-                    csrT_weights, csrT_indices, csrT_indptr,
-                    dist_matrix, predecessor_matrix, INFINITY,
-                )
+            _dijkstra(
+                indice_node_arr,
+                csr_weights, csr_indices, csr_indptr,
+                csrT_weights, csrT_indices, csrT_indptr,
+                dist_matrix, predecessor_matrix, dummy_source_matrix,
+                INFINITY,
+            )
 
             # Compute the total distance of the found path
-            total_distance = dist_matrix[0, sink] + root_path_distance
+            total_distance = dist_matrix[sink] + root_path_distance
 
             # ---------------------------------------------------
             # Add the found path to arrays of candidates
             if (
                 total_distance != INFINITY
                 and _yen_is_path_in_candidates(candidate_predecessors,
-                                               shortest_paths_predecessors[k-1],
-                                               predecessor_matrix[0],
+                                               shortest_paths_predecessors[k-1], 
+                                               predecessor_matrix,
                                                spur_node, sink) == 0
             ):
                 # Find the index to insert the new path
@@ -1772,9 +1683,9 @@ cdef void _yen(
                     node = sink
                     while node != spur_node:
                         candidate_predecessors[short_path_idx, node] = (
-                            predecessor_matrix[0, node]
+                            predecessor_matrix[node]
                         )
-                        node = predecessor_matrix[0, node]
+                        node = predecessor_matrix[node]
 
            # ---------------------------------------------------
             # Restore graph weights
