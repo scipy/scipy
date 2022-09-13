@@ -1,3 +1,5 @@
+# distutils: language = c++
+
 """
 Routines for performing shortest-path graph searches
 
@@ -21,6 +23,9 @@ cimport cython
 
 from libc.stdlib cimport malloc, free
 from numpy.math cimport INFINITY
+
+from libcpp.queue cimport priority_queue
+from libcpp.pair cimport pair
 
 np.import_array()
 
@@ -618,81 +623,48 @@ def dijkstra(csgraph, directed=True, indices=None,
     else:
         return dist_matrix.reshape(return_shape)
 
-@cython.boundscheck(False)
-cdef _dijkstra_setup_heap_multi(FibonacciHeap *heap,
-                                FibonacciNode* nodes,
-                                const int[:] source_indices,
-                                int[:] sources,
-                                double[:] dist_matrix,
-                                int return_pred):
-    cdef:
-        unsigned int Nind = source_indices.shape[0]
-        unsigned int N = dist_matrix.shape[0]
-        unsigned int i, k, j_source
-        FibonacciNode *current_node
 
-    for k in range(N):
-        initialize_node(&nodes[k], k)
-
-    heap.min_node = NULL
-    for i in range(Nind):
-        j_source = source_indices[i]
-        current_node = &nodes[j_source]
-        if current_node.state == SCANNED:
-            continue
-        dist_matrix[j_source] = 0
-        if return_pred:
-            sources[j_source] = j_source
-        current_node.state = SCANNED
-        current_node.source = j_source
-        insert_node(heap, &nodes[j_source])
+ctypedef unsigned int uint_t
+ctypedef pair[DTYPE_t, uint_t] dist_index_pair_t
+ctypedef priority_queue[dist_index_pair_t] dijkstra_queue_t
 
 @cython.boundscheck(False)
-cdef _dijkstra_scan_heap_multi(FibonacciHeap *heap,
-                               FibonacciNode *v,
-                               FibonacciNode* nodes,
-                               const double[:] csr_weights,
-                               const int[:] csr_indices,
-                               const int[:] csr_indptr,
-                               int[:] pred,
-                               int[:] sources,
-                               int return_pred,
-                               DTYPE_t limit):
-    cdef:
-        unsigned int j_current
-        ITYPE_t j
-        DTYPE_t next_val
-        FibonacciNode *current_node
-
-    for j in range(csr_indptr[v.index], csr_indptr[v.index + 1]):
-        j_current = csr_indices[j]
-        current_node = &nodes[j_current]
-        if current_node.state != SCANNED:
-            next_val = v.val + csr_weights[j]
-            if next_val <= limit:
-                if current_node.state == NOT_IN_HEAP:
-                    current_node.state = IN_HEAP
-                    current_node.val = next_val
-                    current_node.source = v.source
-                    insert_node(heap, current_node)
-                    if return_pred:
-                        pred[j_current] = v.index
-                        sources[j_current] = v.source
-                elif current_node.val > next_val:
-                    current_node.source = v.source
-                    decrease_val(heap, current_node,
-                                 next_val)
-                    if return_pred:
-                        pred[j_current] = v.index
-                        sources[j_current] = v.source
-
-@cython.boundscheck(False)
-cdef _dijkstra_scan_heap(FibonacciHeap *heap,
-                         FibonacciNode *v,
-                         FibonacciNode* nodes,
+cdef _dijkstra_scan_heap_multi(dijkstra_queue_t &heap,
+                         dist_index_pair_t v,
                          const double[:] csr_weights,
                          const int[:] csr_indices,
                          const int[:] csr_indptr,
+                         double[:] dist_matrix,
+                         int[:] pred,
+                         int[:] sources,
+                         int return_pred,
+                         DTYPE_t limit):
+    cdef:
+        unsigned int k, j_source, j_current
+        ITYPE_t j
+        DTYPE_t next_val
+
+    # v is a dist_index_pair_t poped from the queue
+    # v.first: the distance of the vertex
+    # v.second: index of the vertex
+    for j in range(csr_indptr[v.second], csr_indptr[v.second + 1]):
+        j_current = csr_indices[j]
+        next_val = v.first + csr_weights[j]
+        if next_val <= limit:
+            if dist_matrix[j_current] > next_val:
+                dist_matrix[j_current] = next_val
+                heap.push(dist_index_pair_t(-next_val, j_current))
+                if return_pred:
+                    pred[j_current] = v.second
+                    sources[j_current] = sources[v.second]
+
+@cython.boundscheck(False)
+cdef _dijkstra_scan_heap(dijkstra_queue_t &heap,
+                         dist_index_pair_t v,
+                         const double[:] csr_weights,
+                         const int[:] csr_indices,
+                         const int[:] csr_indptr,
+                         double[:, :] dist_matrix,
                          int[:, :] pred,
                          int return_pred,
                          DTYPE_t limit,
@@ -701,25 +673,21 @@ cdef _dijkstra_scan_heap(FibonacciHeap *heap,
         unsigned int j_current
         ITYPE_t j
         DTYPE_t next_val
-        FibonacciNode *current_node
 
-    for j in range(csr_indptr[v.index], csr_indptr[v.index + 1]):
+    # v is a dist_index_pair_t poped from the queue
+    # v.first: the distance of the vertex
+    # v.second: index of the vertex
+    for j in range(csr_indptr[v.second], csr_indptr[v.second + 1]):
         j_current = csr_indices[j]
-        current_node = &nodes[j_current]
-        if current_node.state != SCANNED:
-            next_val = v.val + csr_weights[j]
-            if next_val <= limit:
-                if current_node.state == NOT_IN_HEAP:
-                    current_node.state = IN_HEAP
-                    current_node.val = next_val
-                    insert_node(heap, current_node)
-                    if return_pred:
-                        pred[i, j_current] = v.index
-                elif current_node.val > next_val:
-                    decrease_val(heap, current_node,
-                                 next_val)
-                    if return_pred:
-                        pred[i, j_current] = v.index
+        next_val = v.first + csr_weights[j]
+        if next_val <= limit:
+            if dist_matrix[i, j_current] > next_val:
+                dist_matrix[i, j_current] = next_val
+				# The same vertex may be pushed multiple times to the queue, but anything
+                heap.push(dist_index_pair_t(-next_val, j_current))
+                if return_pred:
+                    pred[i, j_current] = v.second
+
 
 @cython.boundscheck(False)
 cdef int _dijkstra_directed(
@@ -733,37 +701,33 @@ cdef int _dijkstra_directed(
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, k, j_source
+        unsigned int i, k, j_source, j_current
+        DTYPE_t next_val
         int return_pred = (pred.size > 0)
-        FibonacciHeap heap
-        FibonacciNode *v
-        FibonacciNode* nodes = <FibonacciNode*> malloc(N *
-                                                       sizeof(FibonacciNode))
-    if nodes == NULL:
-        raise MemoryError("Failed to allocate memory in _dijkstra_directed")
-
+        dijkstra_queue_t heap # pairs of {-distance, vertex index} will be pushed to this priority queue
+        dist_index_pair_t v
+    
     for i in range(Nind):
         j_source = source_indices[i]
-
-        for k in range(N):
-            initialize_node(&nodes[k], k)
-
+        
         dist_matrix[i, j_source] = 0
-        heap.min_node = NULL
-        insert_node(&heap, &nodes[j_source])
+        # priority_queue is max-heap, so negate the distance to make it min-heap
+        heap.push(dist_index_pair_t(-dist_matrix[i, j_source], j_source))
 
-        while heap.min_node:
-            v = remove_min(&heap)
-            v.state = SCANNED
-
-            _dijkstra_scan_heap(&heap, v, nodes,
-                                csr_weights, csr_indices, csr_indptr,
-                                pred, return_pred, limit, i)
-
-            # v has now been scanned: add the distance to the results
-            dist_matrix[i, v.index] = v.val
-
-    free(nodes)
+        while heap.size():
+            v = heap.top()
+            heap.pop()
+            v.first = -v.first
+            # Do not process v if its distance has been updated
+			# after v was pushed to the queue, in which case
+			# _dijkstra_scan_heap should have already been called with
+			# the vertex v.second
+            # This assures _dijkstra_scan_heap is only called once per vertex
+			# and the total complexity is O(Mlog(M)) per source
+            if dist_matrix[i, v.second] < v.first : continue
+            
+            _dijkstra_scan_heap(heap, v, csr_weights, csr_indices, csr_indptr,
+                                dist_matrix, pred, return_pred, limit, i)
     return 0
 
 @cython.boundscheck(False)
@@ -777,37 +741,29 @@ cdef int _dijkstra_directed_multi(
             int[:] sources,
             DTYPE_t limit) except -1:
     cdef:
+        unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
-
+        unsigned int i, k, j_source, j_current
+        DTYPE_t next_val
         int return_pred = (pred.size > 0)
+        dijkstra_queue_t heap
+        dist_index_pair_t v
 
-        FibonacciHeap heap
-        FibonacciNode *v
-        FibonacciNode* nodes = <FibonacciNode*> malloc(N *
-                                                       sizeof(FibonacciNode))
-    if nodes == NULL:
-        raise MemoryError("Failed to allocate memory in "
-                          "_dijkstra_directed_multi")
-
-    # initialize the heap with each of the starting
-    # nodes on the heap and in a scanned state with 0 values
-    # and their entry of the distance matrix = 0
-    # pred will lead back to one of the starting indices
-    _dijkstra_setup_heap_multi(&heap, nodes, source_indices,
-                               sources, dist_matrix, return_pred)
-
-    while heap.min_node:
-        v = remove_min(&heap)
-        v.state = SCANNED
-
-        _dijkstra_scan_heap_multi(&heap, v, nodes,
-                                  csr_weights, csr_indices, csr_indptr,
-                                  pred, sources, return_pred, limit)
-
-        # v has now been scanned: add the distance to the results
-        dist_matrix[v.index] = v.val
-
-    free(nodes)
+    for i in range(Nind):
+        j_source = source_indices[i]
+        dist_matrix[j_source] = 0
+        heap.push(dist_index_pair_t(-dist_matrix[j_source], j_source))
+        if return_pred:
+            sources[j_source] = j_source
+    
+    while heap.size():
+        v = heap.top()
+        heap.pop()
+        v.first = -v.first
+        if dist_matrix[v.second] < v.first : continue
+        
+        _dijkstra_scan_heap_multi(heap, v, csr_weights, csr_indices, csr_indptr,
+                                  dist_matrix, pred, sources, return_pred, limit)
     return 0
 
 @cython.boundscheck(False)
@@ -825,42 +781,31 @@ cdef int _dijkstra_undirected(
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, k, j_source
+        unsigned int i, k, j_source, j_current
+        DTYPE_t next_val
         int return_pred = (pred.size > 0)
-        FibonacciHeap heap
-        FibonacciNode *v
-        FibonacciNode* nodes = <FibonacciNode*> malloc(N *
-                                                       sizeof(FibonacciNode))
-    if nodes == NULL:
-        raise MemoryError("Failed to allocate memory in _dijkstra_undirected")
-
+        dijkstra_queue_t heap
+        dist_index_pair_t v
+    
     for i in range(Nind):
         j_source = source_indices[i]
-
-        for k in range(N):
-            initialize_node(&nodes[k], k)
-
+        
         dist_matrix[i, j_source] = 0
-        heap.min_node = NULL
-        insert_node(&heap, &nodes[j_source])
+        heap.push(dist_index_pair_t(-dist_matrix[i, j_source], j_source))
 
-        while heap.min_node:
-            v = remove_min(&heap)
-            v.state = SCANNED
+        while heap.size():
+            v = heap.top()
+            heap.pop()
+            v.first = -v.first
+            if dist_matrix[i, v.second] < v.first : continue
+            
+            _dijkstra_scan_heap(heap, v, csr_weights, csr_indices, csr_indptr,
+                                dist_matrix, pred, return_pred, limit, i)
+            _dijkstra_scan_heap(heap, v, csrT_weights, csrT_indices, csrT_indptr,
+                                dist_matrix, pred, return_pred, limit, i)
 
-            _dijkstra_scan_heap(&heap, v, nodes,
-                                csr_weights, csr_indices, csr_indptr,
-                                pred, return_pred, limit, i)
-
-            _dijkstra_scan_heap(&heap, v, nodes,
-                                csrT_weights, csrT_indices, csrT_indptr,
-                                pred, return_pred, limit, i)
-
-            # v has now been scanned: add the distance to the results
-            dist_matrix[i, v.index] = v.val
-
-    free(nodes)
     return 0
+
 
 @cython.boundscheck(False)
 cdef int _dijkstra_undirected_multi(
@@ -876,35 +821,32 @@ cdef int _dijkstra_undirected_multi(
             int[:] sources,
             DTYPE_t limit) except -1:
     cdef:
+        unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
+        unsigned int i, k, j_source, j_current
+        DTYPE_t next_val
         int return_pred = (pred.size > 0)
-        FibonacciHeap heap
-        FibonacciNode *v
-        FibonacciNode* nodes = <FibonacciNode*> malloc(N *
-                                                       sizeof(FibonacciNode))
-    if nodes == NULL:
-        raise MemoryError("Failed to allocate memory in "
-                          "_dijkstra_undirected_multi")
+        dijkstra_queue_t heap
+        dist_index_pair_t v
 
-    _dijkstra_setup_heap_multi(&heap, nodes, source_indices,
-                               sources, dist_matrix, return_pred)
-
-    while heap.min_node:
-        v = remove_min(&heap)
-        v.state = SCANNED
-
-        _dijkstra_scan_heap_multi(&heap, v, nodes,
-                                  csr_weights, csr_indices, csr_indptr,
-                                  pred, sources, return_pred, limit)
-
-        _dijkstra_scan_heap_multi(&heap, v, nodes,
-                                  csrT_weights, csrT_indices, csrT_indptr,
-                                  pred, sources, return_pred, limit)
-
-        #v has now been scanned: add the distance to the results
-        dist_matrix[v.index] = v.val
-
-    free(nodes)
+    for i in range(Nind):
+        j_source = source_indices[i]
+        dist_matrix[j_source] = 0
+        heap.push(dist_index_pair_t(-dist_matrix[j_source], j_source))
+        if return_pred:
+            sources[j_source] = j_source
+    
+    while heap.size():
+        v = heap.top()
+        heap.pop()
+        v.first = -v.first
+        if dist_matrix[v.second] < v.first : continue
+        
+        _dijkstra_scan_heap_multi(heap, v, csr_weights, csr_indices, csr_indptr,
+                                  dist_matrix, pred, sources, return_pred, limit)
+        _dijkstra_scan_heap_multi(heap, v, csrT_weights, csrT_indices, csrT_indptr,
+                                  dist_matrix, pred, sources, return_pred, limit)
+    
     return 0
 
 
@@ -1063,7 +1005,8 @@ cdef int _bellman_ford_directed(
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, j, k, j_source, count
+        unsigned int i, j, j_source, count
+        int k
         DTYPE_t d1, d2, w12
         int return_pred = (pred.size > 0)
 
@@ -1406,248 +1349,3 @@ cdef int _johnson_undirected(
 
     return -1
 
-
-######################################################################
-# FibonacciNode structure
-#  This structure and the operations on it are the nodes of the
-#  Fibonacci heap.
-#
-cdef enum FibonacciState:
-    SCANNED
-    NOT_IN_HEAP
-    IN_HEAP
-
-
-cdef struct FibonacciNode:
-    unsigned int index
-    unsigned int rank
-    unsigned int source
-    FibonacciState state
-    DTYPE_t val
-    FibonacciNode* parent
-    FibonacciNode* left_sibling
-    FibonacciNode* right_sibling
-    FibonacciNode* children
-
-
-cdef void initialize_node(FibonacciNode* node,
-                          unsigned int index,
-                          DTYPE_t val=0):
-    # Assumptions: - node is a valid pointer
-    #              - node is not currently part of a heap
-    node.index = index
-    node.source = -9999
-    node.val = val
-    node.rank = 0
-    node.state = NOT_IN_HEAP
-
-    node.parent = NULL
-    node.left_sibling = NULL
-    node.right_sibling = NULL
-    node.children = NULL
-
-
-cdef FibonacciNode* leftmost_sibling(FibonacciNode* node):
-    # Assumptions: - node is a valid pointer
-    cdef FibonacciNode* temp = node
-    while(temp.left_sibling):
-        temp = temp.left_sibling
-    return temp
-
-
-cdef void add_child(FibonacciNode* node, FibonacciNode* new_child):
-    # Assumptions: - node is a valid pointer
-    #              - new_child is a valid pointer
-    #              - new_child is not the sibling or child of another node
-    new_child.parent = node
-
-    if node.children:
-        add_sibling(node.children, new_child)
-    else:
-
-        node.children = new_child
-        new_child.right_sibling = NULL
-        new_child.left_sibling = NULL
-        node.rank = 1
-
-
-cdef void add_sibling(FibonacciNode* node, FibonacciNode* new_sibling):
-    # Assumptions: - node is a valid pointer
-    #              - new_sibling is a valid pointer
-    #              - new_sibling is not the child or sibling of another node
-    
-    # Insert new_sibling between node and node.right_sibling
-    if node.right_sibling:
-        node.right_sibling.left_sibling = new_sibling
-    new_sibling.right_sibling = node.right_sibling
-    new_sibling.left_sibling = node
-    node.right_sibling = new_sibling
-
-    new_sibling.parent = node.parent
-    if new_sibling.parent:
-        new_sibling.parent.rank += 1
-
-
-cdef void remove(FibonacciNode* node):
-    # Assumptions: - node is a valid pointer
-    if node.parent:
-        node.parent.rank -= 1
-        if node.parent.children == node:  # node is the leftmost sibling.
-            node.parent.children = node.right_sibling
-
-    if node.left_sibling:
-        node.left_sibling.right_sibling = node.right_sibling
-    if node.right_sibling:
-        node.right_sibling.left_sibling = node.left_sibling
-
-    node.left_sibling = NULL
-    node.right_sibling = NULL
-    node.parent = NULL
-
-
-######################################################################
-# FibonacciHeap structure
-#  This structure and operations on it use the FibonacciNode
-#  routines to implement a Fibonacci heap
-
-ctypedef FibonacciNode* pFibonacciNode
-
-
-cdef struct FibonacciHeap:
-    # In this representation, min_node is always at the leftmost end
-    # of the linked-list, hence min_node.left_sibling is always NULL.
-    FibonacciNode* min_node
-    pFibonacciNode[100] roots_by_rank  # maximum number of nodes is ~2^100.
-
-
-cdef void insert_node(FibonacciHeap* heap,
-                      FibonacciNode* node):
-    # Assumptions: - heap is a valid pointer
-    #              - node is a valid pointer
-    #              - node is not the child or sibling of another node
-    if heap.min_node:
-        if node.val < heap.min_node.val:
-            # Replace heap.min_node with node, which is always 
-            # at the leftmost end of the roots' linked-list.
-            node.left_sibling = NULL
-            node.right_sibling = heap.min_node
-            heap.min_node.left_sibling = node
-            heap.min_node = node
-        else:
-            add_sibling(heap.min_node, node)
-    else:
-        heap.min_node = node
-
-
-cdef void decrease_val(FibonacciHeap* heap,
-                       FibonacciNode* node,
-                       DTYPE_t newval):
-    # Assumptions: - heap is a valid pointer
-    #              - newval <= node.val
-    #              - node is a valid pointer
-    #              - node is not the child or sibling of another node
-    #              - node is in the heap
-    node.val = newval
-    if node.parent and (node.parent.val >= newval):
-        remove(node)
-        insert_node(heap, node)
-    elif heap.min_node.val > node.val:
-        # Replace heap.min_node with node, which is always 
-        # at the leftmost end of the roots' linked-list.
-        remove(node)
-        node.right_sibling = heap.min_node
-        heap.min_node.left_sibling = node.right_sibling
-        heap.min_node = node
-
-
-cdef void link(FibonacciHeap* heap, FibonacciNode* node):
-    # Assumptions: - heap is a valid pointer
-    #              - node is a valid pointer
-    #              - node is already within heap
-
-    cdef FibonacciNode *linknode
-
-    if heap.roots_by_rank[node.rank] == NULL:
-        heap.roots_by_rank[node.rank] = node
-    else:
-        linknode = heap.roots_by_rank[node.rank]
-        heap.roots_by_rank[node.rank] = NULL
-
-        if node.val < linknode.val or node == heap.min_node:
-            remove(linknode)
-            add_child(node, linknode)
-            link(heap, node)
-        else:
-            remove(node)
-            add_child(linknode, node)
-            link(heap, linknode)
-
-
-cdef FibonacciNode* remove_min(FibonacciHeap* heap):
-    # Assumptions: - heap is a valid pointer
-    #              - heap.min_node is a valid pointer
-    cdef:
-        FibonacciNode *temp
-        FibonacciNode *temp_right
-        FibonacciNode *out
-        unsigned int i
-
-    # make all min_node children into root nodes
-    temp = heap.min_node.children
-
-    while temp:
-        temp_right = temp.right_sibling
-        remove(temp)
-        add_sibling(heap.min_node, temp)
-        temp = temp_right
-
-    # remove min_root and choose another root as a preliminary min_root
-    out = heap.min_node
-    temp = heap.min_node.right_sibling
-    remove(heap.min_node)
-    heap.min_node = temp
-    
-    if temp == NULL:
-        # There is a unique root in the tree, hence a unique node
-        # which is the minimum that we return here.
-        return out
-
-    # re-link the heap
-    for i in range(100):
-        heap.roots_by_rank[i] = NULL
-
-    while temp:
-        if temp.val < heap.min_node.val:
-            heap.min_node = temp
-        temp_right = temp.right_sibling
-        link(heap, temp)
-        temp = temp_right
-    
-    # move heap.min_node to the leftmost end of the linked-list of roots
-    temp = leftmost_sibling(heap.min_node)
-    if heap.min_node != temp:
-        remove(heap.min_node)
-        heap.min_node.right_sibling = temp
-        temp.left_sibling = heap.min_node
-
-    return out
-
-
-######################################################################
-# Debugging: Functions for printing the Fibonacci heap
-#
-#cdef void print_node(FibonacciNode* node, int level=0):
-#    print('%s(%i,%i) %i' % (level*' ', node.index, node.val, node.rank))
-#    if node.children:
-#        print_node(node.children, level+1)
-#    if node.right_sibling:
-#        print_node(node.right_sibling, level)
-#
-#
-#cdef void print_heap(FibonacciHeap* heap):
-#    print("---------------------------------")
-#    if heap.min_node:
-#        print("min node: (%i, %i)" % (heap.min_node.index, heap.min_node.val))
-#        print_node(heap.min_node)
-#    else:
-#        print("[empty heap]")

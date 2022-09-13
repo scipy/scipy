@@ -8,7 +8,7 @@ def configuration(parent_package='', top_path=None):
     config.add_data_dir('tests')
 
     config.add_extension('_shortest_path',
-         sources=['_shortest_path.c'],
+         sources=['_shortest_path.cxx'],
          include_dirs=[numpy.get_include()])
 
     config.add_extension('_traversal',
