@@ -153,7 +153,7 @@ def test_csr_hstack_int64():
     X_1_empty = csr_matrix(X_1.shape)
     X_2_empty = csr_matrix(X_2.shape)
     X_hs_empty = hstack([X_1_empty, X_2_empty], format="csr")
-    
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", SparseEfficiencyWarning)
         X_hs_empty[0, -1] = 1
