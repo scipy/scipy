@@ -1,7 +1,8 @@
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_
 from scipy.sparse import csr_matrix, hstack
-
+from scipy.sparse._base import SparseEfficiencyWarning
+import warnings
 import pytest
 
 
@@ -126,8 +127,8 @@ def test_csr_hstack_int64():
     data = [1.0]
     row = [0]
 
-    max_indices_1 = max_int32
-    max_indices_2 = 2
+    max_indices_1 = max_int32 - 1
+    max_indices_2 = 3
 
     # Individual indices arrays are representable with int32
     col_1 = [max_indices_1 - 1]
@@ -146,3 +147,28 @@ def test_csr_hstack_int64():
 
     assert X_hs.indices.max() == max_indices_1 + max_indices_2 - 1 > max_int32
     assert X_hs.indices.dtype == X_hs.indptr.dtype == np.int64
+
+    # Even if the matrixes are empty, we must account for their size
+    # contribution so that we may safely set the final elements.
+    X_1_empty = csr_matrix(X_1.shape)
+    X_2_empty = csr_matrix(X_2.shape)
+    X_hs_empty = hstack([X_1_empty, X_2_empty], format="csr")
+    
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SparseEfficiencyWarning)
+        X_hs_empty[0, -1] = 1
+    assert X_hs_empty.shape == X_hs.shape
+    assert X_hs_empty.indices.dtype == np.int64
+    assert X_hs_empty.indices.max() == max_indices_1 + max_indices_2 - 1
+
+    # Should be just small enough to stay in int32 after stack. Note that
+    # we theoretically could support indices.max() == max_int32, but due to an
+    # edge-case in the underlying sparsetools code, we require that
+    # max(X_hs_32.shape) < max_int32 as well, hence we can only support
+    # max_int32 - 1.
+    col_3 = [max_int32 - max_indices_1 - 1]
+    X_3 = csr_matrix((data, (row, col_3)))
+    # import pdb; pdb.set_trace()
+    X_hs_32 = hstack([X_1, X_3], format="csr")
+    assert X_hs_32.indices.dtype == np.int32
+    assert X_hs_32.indices.max() == max_int32 - 1

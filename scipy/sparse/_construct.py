@@ -467,21 +467,19 @@ def _stack_along_minor_axis(blocks, axis):
     data_cat = np.concatenate([b.data for b in blocks])
 
     # Need to check if any indices/indptr, would be too large post-
-    # concatenation for np.int32. We must sum the dimensions along the axis we
-    # use to stack since even empty matrices will contribute to a large post-
-    # stack index value. After concatenation, the max value in indptr is the
-    # last one, which is the number of samples + 1.
-    max_output_indptr = sum(b.shape[0] for b in blocks) + 1
-    max_output_index = 0
-    for b in blocks[:-1]:
-        max_output_index += b.shape[axis]
-    if blocks[-1].indices.size > 0:
-        max_output_index += int(blocks[-1].indices.max())
+    # concatenation for np.int32:
+    # - The max value of indices is the output array's stacking-axis length - 1
+    # - The max value in indptr is the number of non-zero entries. This is
+    # exceedingly unlikely to require int64, but is checked out of an abundance
+    # of caution.
     max_int32 = np.iinfo(np.int32).max
-    needs_64bit = max(max_output_index, max_output_indptr) > max_int32
+    sum_dim = sum(b.shape[axis] for b in blocks)
+    nnz = sum(len(b.indices) for b in blocks)
+    needs_64bit = max(sum_dim - 1, nnz) > max_int32
     idx_dtype = np.int64 if needs_64bit else np.int32
 
     stack_dim_cat = np.array([b.shape[axis] for b in blocks], dtype=idx_dtype)
+    sum_dim = stack_dim_cat.sum()
     if data_cat.size > 0:
         indptr_cat = np.concatenate(indptr_list).astype(idx_dtype)
         indices_cat = (np.concatenate([b.indices for b in blocks])
@@ -497,7 +495,6 @@ def _stack_along_minor_axis(blocks, axis):
         indices = np.empty(0, dtype=idx_dtype)
         data = np.empty(0, dtype=data_cat.dtype)
 
-    sum_dim = stack_dim_cat.sum()
     if axis == 0:
         return csc_matrix((data, indices, indptr),
                           shape=(sum_dim, constant_dim))
