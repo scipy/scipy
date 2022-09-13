@@ -176,6 +176,9 @@ Multivariate distributions
 `scipy.stats.multivariate_normal` methods accept an instance of
 any one of the following classes to represent the covariance.
 
+.. autosummary::
+   :toctree: generated/
+
    CovViaPrecision        -- Covariance represented via the precision matrix
 
 Discrete distributions
