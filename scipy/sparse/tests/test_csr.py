@@ -116,8 +116,9 @@ def test_csr_bool_indexing():
 
 def test_csr_hstack_int64():
     """
-    Tests if hstack properly promotes to np.int64 if the output sparse matrix
-    has indices too large for np.int32
+    Tests if hstack properly promotes to indices and intpr arrays to np.int64
+    when using np.int32 during concatenation would result in either array
+    overflowing.
     """
     max_int32 = np.iinfo(np.int32).max
 
@@ -139,8 +140,8 @@ def test_csr_hstack_int64():
     assert X_1.indices.dtype == X_1.indptr.dtype == np.int32
     assert X_2.indices.dtype == X_2.indptr.dtype == np.int32
 
-    # ... but when concatenating their CSR matrices, the resulting
-    # indices array can't and must be promoted to int64.
+    # ... but when concatenating their CSR matrices, the resulting indices
+    # array can't be represented with int32 and must be promoted to int64.
     X_hs = hstack([X_1, X_2], format="csr")
 
     assert X_hs.indices.max() == max_indices_1 + max_indices_2 - 1 > max_int32

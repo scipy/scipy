@@ -466,12 +466,11 @@ def _stack_along_minor_axis(blocks, axis):
     indptr_list = [b.indptr for b in blocks]
     data_cat = np.concatenate([b.data for b in blocks])
 
-    # Need to check if any indices/indptr, would be too large
-    # post-concatenation for np.int32. We must sum the dimensions
-    # along the axis we use to stack since even empty matrices will
-    # contribute to a large post-stack index value.
-    # After concatenation, the max value in indptr
-    # is the last one, which is the number of samples + 1.
+    # Need to check if any indices/indptr, would be too large post-
+    # concatenation for np.int32. We must sum the dimensions along the axis we
+    # use to stack since even empty matrices will contribute to a large post-
+    # stack index value. After concatenation, the max value in indptr is the
+    # last one, which is the number of samples + 1.
     max_output_indptr = sum(b.shape[0] for b in blocks) + 1
     max_output_index = 0
     for b in blocks[:-1]:
