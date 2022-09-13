@@ -693,6 +693,7 @@ cdef int _dijkstra(
         int return_sources = (sources.size > 0)
         int directed = (csrT_weights.size == 0)
         dijkstra_queue_t heap # pairs of {-distance, vertex index} will be pushed
+                              # to treat it as a min-heap instead of max-heap
         dist_index_pair_t v
     
     for i in range(Nind):
