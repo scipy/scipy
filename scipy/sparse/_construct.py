@@ -470,8 +470,8 @@ def _stack_along_minor_axis(blocks, axis):
     # concatenation for np.int32:
     # - The max value of indices is the output array's stacking-axis length - 1
     # - The max value in indptr is the number of non-zero entries. This is
-    #   exceedingly unlikely to require int64, but is checked out of an abundance
-    #   of caution.
+    #   exceedingly unlikely to require int64, but is checked out of an
+    #   abundance of caution.
     max_int32 = np.iinfo(np.int32).max
     sum_dim = sum(b.shape[axis] for b in blocks)
     nnz = sum(len(b.indices) for b in blocks)
