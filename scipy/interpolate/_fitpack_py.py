@@ -1,7 +1,6 @@
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
            'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
 
-import warnings
 
 import numpy as np
 
@@ -78,8 +77,6 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
        returned.  Values of ``y[m-1]`` and ``w[m-1]`` are not used.
     quiet : int, optional
          Non-zero to suppress messages.
-         This parameter is deprecated; use standard Python warning filters
-         instead.
 
     Returns
     -------
@@ -215,8 +212,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         y[m-1] and w[m-1] are not used.
     quiet : bool, optional
         Non-zero to suppress messages.
-        This parameter is deprecated; use standard Python warning filters
-        instead.
 
     Returns
     -------

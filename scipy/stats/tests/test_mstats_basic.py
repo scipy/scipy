@@ -297,7 +297,7 @@ class TestCorr:
     @pytest.mark.skipif(platform.machine() == 'ppc64le',
                         reason="fails/crashes on ppc64le")
     def test_kendalltau(self):
-        # check case with with maximum disorder and p=1
+        # check case with maximum disorder and p=1
         x = ma.array(np.array([9, 2, 5, 6]))
         y = ma.array(np.array([4, 7, 9, 11]))
         # Cross-check with exact result from R:
@@ -732,6 +732,8 @@ class TestMoments:
                                        stats.kurtosis(self.testcase_2d[2, :]),
                                        nulp=4)
 
+
+class TestMode:
     def test_mode(self):
         a1 = [0,0,0,1,1,1,2,3,3,3,3,4,5,6,7]
         a2 = np.reshape(a1, (3,5))
@@ -1378,19 +1380,6 @@ class TestTtest_1samp():
         res1 = stats.ttest_1samp(outcome[:, 0], 1)
         res2 = mstats.ttest_1samp(outcome[:, 0], 1)
         assert_allclose(res1, res2)
-
-        # 2-D inputs
-        res1 = stats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
-        res2 = mstats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
-        assert_allclose(res1, res2)
-
-        res1 = stats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
-        res2 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
-        assert_allclose(res1, res2, atol=1e-15)
-
-        # Check default is axis=0
-        res3 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:])
-        assert_allclose(res2, res3)
 
     def test_fully_masked(self):
         np.random.seed(1234567)

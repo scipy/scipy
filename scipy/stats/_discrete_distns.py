@@ -280,9 +280,9 @@ class nbinom_gen(rv_discrete):
 
     for :math:`k \ge 0`, :math:`0 < p \leq 1`
 
-    `nbinom` takes :math:`n` and :math:`p` as shape parameters where n is the
-    number of successes, :math:`p` is the probability of a single success,
-    and :math:`1-p` is the probability of a single failure.
+    `nbinom` takes :math:`n` and :math:`p` as shape parameters where :math:`n`
+    is the number of successes, :math:`p` is the probability of a single
+    success, and :math:`1-p` is the probability of a single failure.
 
     Another common parameterization of the negative binomial distribution is
     in terms of the mean number of failures :math:`\mu` to achieve :math:`n`
@@ -481,6 +481,7 @@ class hypergeom_gen(rv_discrete):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import hypergeom
     >>> import matplotlib.pyplot as plt
 
@@ -645,6 +646,7 @@ class nhypergeom_gen(rv_discrete):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import nhypergeom
     >>> import matplotlib.pyplot as plt
 
@@ -988,7 +990,7 @@ class boltzmann_gen(rv_discrete):
 
     """
     def _shape_info(self):
-        return [_ShapeInfo("lambda", False, (0, np.inf), (False, False)),
+        return [_ShapeInfo("lambda_", False, (0, np.inf), (False, False)),
                 _ShapeInfo("N", True, (0, np.inf), (False, False))]
 
     def _argcheck(self, lambda_, N):
@@ -1152,6 +1154,7 @@ class zipf_gen(rv_discrete):
 
     Confirm that `zipf` is the large `n` limit of `zipfian`.
 
+    >>> import numpy as np
     >>> from scipy.stats import zipfian
     >>> k = np.arange(11)
     >>> np.allclose(zipf.pmf(k, a), zipfian.pmf(k, a, n=10000000))
@@ -1248,6 +1251,7 @@ class zipfian_gen(rv_discrete):
 
     Confirm that `zipfian` reduces to `zipf` for large `n`, `a > 1`.
 
+    >>> import numpy as np
     >>> from scipy.stats import zipf
     >>> k = np.arange(11)
     >>> np.allclose(zipfian.pmf(k, a=3.5, n=10000000), zipf.pmf(k, a=3.5))

@@ -10,14 +10,12 @@ import re
 import types
 import warnings
 from itertools import zip_longest
-from collections import namedtuple
 
 from scipy._lib import doccer
-from scipy._lib._util import _lazywhere
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
 
-from scipy.special import (comb, chndtr, entr, xlogy, ive)
+from scipy.special import comb, entr
 
 # for root finding for continuous distribution ppf, and max likelihood
 # estimation
@@ -27,7 +25,7 @@ from scipy import optimize
 from scipy import integrate
 
 # to approximate the pdf of a continuous distribution given its cdf
-from scipy.misc import derivative
+from scipy._lib._finite_differences import _derivative
 
 # for scipy.stats.entropy. Attempts to import just that function or file
 # have cause import problems
@@ -162,6 +160,7 @@ rv = %(name)s(%(shapes)s, loc=0, scale=1)
 _doc_default_example = """\
 Examples
 --------
+>>> import numpy as np
 >>> from scipy.stats import %(name)s
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
@@ -199,7 +198,8 @@ Generate random numbers:
 
 And compare the histogram:
 
->>> ax.hist(r, density=True, histtype='stepfilled', alpha=0.2)
+>>> ax.hist(r, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
+>>> ax.set_xlim([x[0], x[-1]])
 >>> ax.legend(loc='best', frameon=False)
 >>> plt.show()
 
@@ -291,6 +291,7 @@ docdict_discrete['frozennote'] = _doc_default_frozen_note
 _doc_default_discrete_example = """\
 Examples
 --------
+>>> import numpy as np
 >>> from scipy.stats import %(name)s
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
@@ -543,6 +544,7 @@ def argsreduce(cond, *args):
 
     Examples
     --------
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> A = rng.random((4, 5))
     >>> B = 2
@@ -1188,6 +1190,7 @@ class rv_generic:
         -----
         Entropy is defined base `e`:
 
+        >>> import numpy as np
         >>> drv = rv_discrete(values=((0, 1), (0.5, 0.5)))
         >>> np.allclose(drv.entropy(), np.log(2.0))
         True
@@ -1715,9 +1718,7 @@ class rv_continuous(rv_generic):
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility and will be removed in SciPy 1.11.0, do not
         use for new subclasses.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -2014,7 +2015,7 @@ class rv_continuous(rv_generic):
         return integrate.quad(self._mom_integ1, 0, 1, args=(m,)+args)[0]
 
     def _pdf(self, x, *args):
-        return derivative(self._cdf, x, dx=1e-5, args=args, order=5)
+        return _derivative(self._cdf, x, dx=1e-5, args=args, order=5)
 
     # Could also define any of these
     def _logpdf(self, x, *args):
@@ -3036,9 +3037,7 @@ class rv_discrete(rv_generic):
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility and will be removed in SciPy 1.11.0, do not
         use for new subclasses.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3110,6 +3109,7 @@ class rv_discrete(rv_generic):
     --------
     Custom made discrete distribution:
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> xk = np.arange(7)
     >>> pk = (0.1, 0.2, 0.3, 0.1, 0.1, 0.0, 0.2)
@@ -3629,8 +3629,8 @@ class rv_discrete(rv_generic):
         # output type 'd' to handle nin and inf
         lower_bound = _a - 1 + loc
         upper_bound = _b + loc
-        place(output, cond2*(cond == cond), lower_bound)
-        place(output, cond3*(cond == cond), upper_bound)
+        place(output, cond2, lower_bound)
+        place(output, cond3, upper_bound)
 
         # call place only if at least 1 valid argument
         if np.any(cond):

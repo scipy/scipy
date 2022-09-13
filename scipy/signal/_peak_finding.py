@@ -869,12 +869,12 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     Examples
     --------
     To demonstrate this function's usage we use a signal `x` supplied with
-    SciPy (see `scipy.misc.electrocardiogram`). Let's find all peaks (local
+    SciPy (see `scipy.datasets.electrocardiogram`). Let's find all peaks (local
     maxima) in `x` whose amplitude lies above 0.
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.misc import electrocardiogram
+    >>> from scipy.datasets import electrocardiogram
     >>> from scipy.signal import find_peaks
     >>> x = electrocardiogram()[2000:4000]
     >>> peaks, _ = find_peaks(x, height=0)
@@ -1049,7 +1049,9 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> data = rng.random((5,5))
-    >>> ridge_lines = _identify_ridge_lines(data, 1, 1)
+    >>> max_dist = 3
+    >>> max_distances = np.full(20, max_dist)
+    >>> ridge_lines = _identify_ridge_lines(data, max_distances, 1)
 
     Notes
     -----

@@ -6,6 +6,7 @@ from numpy.testing import (
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
     assert_allclose, assert_equal, assert_)
 from pytest import raises as assert_raises
+import pytest
 
 from scipy.interpolate import (
     KroghInterpolator, krogh_interpolate,
@@ -281,6 +282,10 @@ class TestKrogh:
                   1j*KroghInterpolator(x, y.imag).derivatives(0))
         assert_allclose(cmplx, cmplx2, atol=1e-15)
 
+    def test_high_degree_warning(self):
+        with pytest.warns(UserWarning, match="40 degrees provided,"):
+            KroghInterpolator(np.arange(40), np.ones(40))
+
 
 class TestTaylor:
     def test_exponential(self):
@@ -382,6 +387,16 @@ class TestBarycentric:
         # cancels out in the evaluation of the polynomial.
         factor = P.wi[0]
         assert_almost_equal(P.wi / (2 * factor), w)
+
+    def test_warning(self):
+        # Test if the divide-by-zero warning is properly ignored when computing
+        # interpolated values equals to interpolation points
+        P = BarycentricInterpolator([0, 1], [1, 2])
+        with np.errstate(divide='raise'):
+            yi = P(P.xi)
+
+        # Additionaly check if the interpolated values are the nodes values
+        assert_almost_equal(yi, P.yi.ravel())
 
 
 class TestPCHIP:

@@ -429,7 +429,11 @@ class DescriptiveStats(Benchmark):
 
 
 class GaussianKDE(Benchmark):
-    def setup(self):
+    param_names = ['points']
+    params = [10, 6400]
+
+    def setup(self, points):
+        self.length = points
         rng = np.random.default_rng(12345678)
         n = 2000
         m1 = rng.normal(size=n)
@@ -440,18 +444,16 @@ class GaussianKDE(Benchmark):
         ymin = m2.min()
         ymax = m2.max()
 
-        X, Y = np.mgrid[xmin:xmax:200j, ymin:ymax:200j]
+        X, Y = np.mgrid[xmin:xmax:80j, ymin:ymax:80j]
         self.positions = np.vstack([X.ravel(), Y.ravel()])
         values = np.vstack([m1, m2])
         self.kernel = stats.gaussian_kde(values)
 
-    def time_gaussian_kde_evaluate_few_points(self):
-        # test gaussian_kde evaluate on a small number of points
-        self.kernel(self.positions[:, :10])
+    def time_gaussian_kde_evaluate(self, length):
+        self.kernel(self.positions[:, :self.length])
 
-    def time_gaussian_kde_evaluate_many_points(self):
-        # test gaussian_kde evaluate on many points
-        self.kernel(self.positions)
+    def time_gaussian_kde_logpdf(self, length):
+        self.kernel.logpdf(self.positions[:, :self.length])
 
 
 class GroupSampling(Benchmark):
@@ -664,3 +666,42 @@ class Somersd(Benchmark):
 
     def time_somersd(self, n_size):
         res = stats.somersd(self.x, self.y)
+
+
+class KolmogorovSmirnov(Benchmark):
+    param_names = ['alternative', 'mode', 'size']
+    # No auto since it defaults to exact for 20 samples
+    params = [
+        ['two-sided', 'less', 'greater'],
+        ['exact', 'approx', 'asymp'],
+        [19, 20, 21]
+    ]
+
+    def setup(self, alternative, mode, size):
+        np.random.seed(12345678)
+        a = stats.norm.rvs(size=20)
+        self.a = a
+
+    def time_ks(self, alternative, mode, size):
+        stats.kstest(self.a, 'norm', alternative=alternative,
+                     mode=mode, N=size)
+
+
+class KolmogorovSmirnovTwoSamples(Benchmark):
+    param_names = ['alternative', 'mode', 'size']
+    # No auto since it defaults to exact for 20 samples
+    params = [
+        ['two-sided', 'less', 'greater'],
+        ['exact', 'asymp'],
+        [(21, 20), (20, 20)]
+    ]
+
+    def setup(self, alternative, mode, size):
+        np.random.seed(12345678)
+        a = stats.norm.rvs(size=size[0])
+        b = stats.norm.rvs(size=size[1])
+        self.a = a
+        self.b = b
+
+    def time_ks2(self, alternative, mode, size):
+        stats.ks_2samp(self.a, self.b, alternative=alternative, mode=mode)

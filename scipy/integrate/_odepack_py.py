@@ -183,6 +183,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     Let `y` be the vector [`theta`, `omega`]. We implement this system
     in Python as:
 
+    >>> import numpy as np
     >>> def pend(y, t, b, c):
     ...     theta, omega = y
     ...     dydt = [omega, -b*omega - c*np.sin(theta)]

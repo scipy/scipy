@@ -1821,6 +1821,40 @@ def test_gaussian_truncate():
     assert_equal(n, 15)
 
 
+def test_gaussian_radius():
+    # Test that Gaussian filters with radius argument produce the same
+    # results as the filters with corresponding truncate argument.
+    # radius = int(truncate * sigma + 0.5)
+    # Test gaussian_filter1d
+    x = numpy.zeros(7)
+    x[3] = 1
+    f1 = ndimage.gaussian_filter1d(x, sigma=2, truncate=1.5)
+    f2 = ndimage.gaussian_filter1d(x, sigma=2, radius=3)
+    assert_equal(f1, f2)
+
+    # Test gaussian_filter when sigma is a number.
+    a = numpy.zeros((9, 9))
+    a[4, 4] = 1
+    f1 = ndimage.gaussian_filter(a, sigma=0.5, truncate=3.5)
+    f2 = ndimage.gaussian_filter(a, sigma=0.5, radius=2)
+    assert_equal(f1, f2)
+
+    # Test gaussian_filter when sigma is a sequence.
+    a = numpy.zeros((50, 50))
+    a[25, 25] = 1
+    f1 = ndimage.gaussian_filter(a, sigma=[0.5, 2.5], truncate=3.5)
+    f2 = ndimage.gaussian_filter(a, sigma=[0.5, 2.5], radius=[2, 9])
+    assert_equal(f1, f2)
+
+
+def test_gaussian_radius_invalid():
+    # radius must be a nonnegative integer
+    with assert_raises(ValueError):
+        ndimage.gaussian_filter1d(numpy.zeros(8), sigma=1, radius=-1)
+    with assert_raises(ValueError):
+        ndimage.gaussian_filter1d(numpy.zeros(8), sigma=1, radius=1.1)
+
+
 class TestThreading:
     def check_func_thread(self, n, fun, args, out):
         from threading import Thread

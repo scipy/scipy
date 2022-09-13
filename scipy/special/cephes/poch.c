@@ -69,7 +69,7 @@ double poch(double a, double m)
 
     /* Check for infinity */
     if (is_nonpos_int(a + m) && !is_nonpos_int(a) && a + m != m) {
-        return NPY_INFINITY;
+        return INFINITY;
     }
 
     /* Check for zero */

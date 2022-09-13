@@ -257,6 +257,7 @@ add_newdoc("wrightomega",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import wrightomega, lambertw
 
     >>> wrightomega([-2, -1, 0, 1, 2])
@@ -319,6 +320,7 @@ add_newdoc("agm",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import agm
     >>> a, b = 24.0, 6.0
     >>> agm(a, b)
@@ -405,6 +407,7 @@ add_newdoc("airy",
     --------
     Compute the Airy functions on the interval [-15, 5].
 
+    >>> import numpy as np
     >>> from scipy import special
     >>> x = np.linspace(-15, 5, 201)
     >>> ai, aip, bi, bip = special.airy(x)
@@ -465,6 +468,7 @@ add_newdoc("airye",
     --------
     We can compute exponentially scaled Airy functions and their derivatives:
 
+    >>> import numpy as np
     >>> from scipy.special import airye
     >>> import matplotlib.pyplot as plt
     >>> z = np.linspace(0, 50, 500)
@@ -987,6 +991,7 @@ add_newdoc("bei",
     --------
     It can be expressed using Bessel functions.
 
+    >>> import numpy as np
     >>> import scipy.special as sc
     >>> x = np.array([1.0, 2.0, 3.0, 4.0])
     >>> sc.jv(0, x * np.exp(3 * np.pi * 1j / 4)).imag
@@ -1067,6 +1072,7 @@ add_newdoc("ber",
     --------
     It can be expressed using Bessel functions.
 
+    >>> import numpy as np
     >>> import scipy.special as sc
     >>> x = np.array([1.0, 2.0, 3.0, 4.0])
     >>> sc.jv(0, x * np.exp(3 * np.pi * 1j / 4)).real
@@ -1373,6 +1379,33 @@ add_newdoc("betaln",
     gamma : the gamma function
     betainc :  the incomplete beta function
     beta : the beta function
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import betaln, beta
+
+    Verify that, for moderate values of ``a`` and ``b``, ``betaln(a, b)``
+    is the same as ``log(beta(a, b))``:
+
+    >>> betaln(3, 4)
+    -4.0943445622221
+
+    >>> np.log(beta(3, 4))
+    -4.0943445622221
+
+    In the following ``beta(a, b)`` underflows to 0, so we can't compute
+    the logarithm of the actual value.
+
+    >>> a = 400
+    >>> b = 900
+    >>> beta(a, b)
+    0.0
+
+    We can compute the logarithm of ``beta(a, b)`` by using `betaln`:
+
+    >>> betaln(a, b)
+    -804.3069951764146
 
     """)
 
@@ -1704,6 +1737,7 @@ add_newdoc("chdtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It can be expressed in terms of the regularized lower incomplete
@@ -1762,6 +1796,7 @@ add_newdoc("chdtrc",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It can be expressed in terms of the regularized upper incomplete
@@ -2028,6 +2063,7 @@ add_newdoc("cosdg",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using cosine directly.
@@ -2064,6 +2100,7 @@ add_newdoc("cosm1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than computing ``cos(x) - 1`` directly for
@@ -2101,6 +2138,7 @@ add_newdoc("cotdg",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using cotangent directly.
@@ -2146,6 +2184,7 @@ add_newdoc("dawsn",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-15, 15, num=1000)
@@ -2229,6 +2268,7 @@ add_newdoc("ellipe",
     This function is used in finding the circumference of an
     ellipse with semi-major axis `a` and semi-minor axis `b`.
 
+    >>> import numpy as np
     >>> from scipy import special
 
     >>> a = 3.5
@@ -2608,6 +2648,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprc
 
     >>> x = 1.2 + 3.4j
@@ -2723,6 +2764,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprd
 
     >>> x = 1.2 + 3.4j
@@ -2814,6 +2856,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprf
 
     >>> x = 1.2 + 3.4j
@@ -2916,6 +2959,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprg
 
     >>> x = 1.2 + 3.4j
@@ -3056,6 +3100,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprj
 
     >>> x = 1.2 + 3.4j
@@ -3177,6 +3222,7 @@ add_newdoc("erf",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
@@ -3216,6 +3262,7 @@ add_newdoc("erfc",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
@@ -3260,6 +3307,7 @@ add_newdoc("erfi",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
@@ -3305,6 +3353,7 @@ add_newdoc("erfcx",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
@@ -3325,7 +3374,7 @@ add_newdoc(
     Computes the inverse of the error function.
 
     In the complex domain, there is no unique complex number w satisfying
-    erf(w)=z. This indicates a true inverse function would have multi-value.
+    erf(w)=z. This indicates a true inverse function would be multivalued.
     When the domain restricts to the real, -1 < x < 1, there is a unique real
     number satisfying erf(erfinv(x)) = x.
 
@@ -3349,19 +3398,27 @@ add_newdoc(
 
     Examples
     --------
-    1) evaluating a float number
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import erfinv
 
-    >>> from scipy import special
-    >>> special.erfinv(0.5)
-    0.4769362762044698
+    >>> erfinv(0.5)
+    0.4769362762044699
 
-    2) evaluating an ndarray
-
-    >>> from scipy import special
     >>> y = np.linspace(-1.0, 1.0, num=10)
-    >>> special.erfinv(y)
+    >>> erfinv(y)
     array([       -inf, -0.86312307, -0.5407314 , -0.30457019, -0.0987901 ,
             0.0987901 ,  0.30457019,  0.5407314 ,  0.86312307,         inf])
+
+    Plot the function:
+
+    >>> y = np.linspace(-1, 1, 200)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(y, erfinv(y))
+    >>> ax.grid(True)
+    >>> ax.set_xlabel('y')
+    >>> ax.set_title('erfinv(y)')
+    >>> plt.show()
 
     """)
 
@@ -3375,7 +3432,7 @@ add_newdoc(
     Computes the inverse of the complementary error function.
 
     In the complex domain, there is no unique complex number w satisfying
-    erfc(w)=z. This indicates a true inverse function would have multi-value.
+    erfc(w)=z. This indicates a true inverse function would be multivalued.
     When the domain restricts to the real, 0 < x < 2, there is a unique real
     number satisfying erfc(erfcinv(x)) = erfcinv(erfc(x)).
 
@@ -3401,20 +3458,28 @@ add_newdoc(
 
     Examples
     --------
-    1) evaluating a float number
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import erfcinv
 
-    >>> from scipy import special
-    >>> special.erfcinv(0.5)
-    0.4769362762044698
+    >>> erfcinv(0.5)
+    0.4769362762044699
 
-    2) evaluating an ndarray
-
-    >>> from scipy import special
     >>> y = np.linspace(0.0, 2.0, num=11)
-    >>> special.erfcinv(y)
+    >>> erfcinv(y)
     array([        inf,  0.9061938 ,  0.59511608,  0.37080716,  0.17914345,
            -0.        , -0.17914345, -0.37080716, -0.59511608, -0.9061938 ,
                   -inf])
+
+    Plot the function:
+
+    >>> y = np.linspace(0, 2, 200)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(y, erfcinv(y))
+    >>> ax.grid(True)
+    >>> ax.set_xlabel('y')
+    >>> ax.set_title('erfcinv(y)')
+    >>> plt.show()
 
     """)
 
@@ -3716,6 +3781,7 @@ add_newdoc("eval_chebys",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     They are a scaled version of the Chebyshev polynomials of the
@@ -3776,6 +3842,7 @@ add_newdoc("eval_chebyc",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     They are a scaled version of the Chebyshev polynomials of the
@@ -3930,6 +3997,7 @@ add_newdoc("eval_legendre",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import eval_legendre
 
     Evaluate the zero-order Legendre polynomial at x = 0
@@ -4253,6 +4321,7 @@ add_newdoc("exp1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It has a pole at 0.
@@ -4304,6 +4373,7 @@ add_newdoc("exp10",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import exp10
 
     >>> exp10(3)
@@ -4335,6 +4405,7 @@ add_newdoc("exp2",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import exp2
 
     >>> exp2(3)
@@ -4399,6 +4470,7 @@ add_newdoc("expi",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is related to `exp1`.
@@ -4470,6 +4542,7 @@ add_newdoc('expit',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import expit, logit
 
     >>> expit([-np.inf, -1.5, 0, 1.5, np.inf])
@@ -4519,6 +4592,7 @@ add_newdoc("expm1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import expm1
 
     >>> expm1(1.0)
@@ -4582,6 +4656,7 @@ add_newdoc("expn",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     Its domain is nonnegative n and x.
@@ -4645,6 +4720,7 @@ add_newdoc("exprel",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import exprel
 
     >>> exprel(0.01)
@@ -4917,6 +4993,7 @@ add_newdoc("fresnel",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     As z goes to infinity along the real axis, S and C converge to 0.5.
@@ -4984,6 +5061,7 @@ add_newdoc("gamma",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import gamma, factorial
 
     >>> gamma([0, 0.5, 1, 5])
@@ -5324,6 +5402,7 @@ add_newdoc("gammaln",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It has two positive zeros.
@@ -5396,6 +5475,7 @@ add_newdoc("gammasgn",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is 1 for `x > 0`.
@@ -5980,6 +6060,7 @@ add_newdoc("hyp0f1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is one when `z` is zero.
@@ -6051,6 +6132,7 @@ add_newdoc("hyp1f1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is one when `x` is zero:
@@ -6143,6 +6225,7 @@ add_newdoc("hyp2f1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It has poles when `c` is a negative integer.
@@ -6229,6 +6312,7 @@ add_newdoc("hyperu",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It has a branch cut along the negative `x` axis.
@@ -7248,6 +7332,7 @@ add_newdoc("kei",
     It can be expressed using the modified Bessel function of the
     second kind.
 
+    >>> import numpy as np
     >>> import scipy.special as sc
     >>> x = np.array([1.0, 2.0, 3.0, 4.0])
     >>> sc.kv(0, x * np.exp(np.pi * 1j / 4)).imag
@@ -7352,6 +7437,7 @@ add_newdoc("ker",
     It can be expressed using the modified Bessel function of the
     second kind.
 
+    >>> import numpy as np
     >>> import scipy.special as sc
     >>> x = np.array([1.0, 2.0, 3.0, 4.0])
     >>> sc.kv(0, x * np.exp(np.pi * 1j / 4)).real
@@ -7428,7 +7514,7 @@ add_newdoc("kl_div",
     This function is non-negative and is jointly convex in `x` and `y`.
 
     The origin of this function is in convex programming; see [1]_ for
-    details. This is why the the function contains the extra :math:`-x
+    details. This is why the function contains the extra :math:`-x
     + y` terms over what might be expected from the Kullback-Leibler
     divergence. For a version of the function without the extra terms,
     see `rel_entr`.
@@ -7491,6 +7577,7 @@ add_newdoc("kn",
     --------
     Plot the function of several orders for real input:
 
+    >>> import numpy as np
     >>> from scipy.special import kn
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 5, 1000)
@@ -7595,6 +7682,7 @@ add_newdoc("kolmogorov",
     --------
     Show the probability of a gap at least as big as 0, 0.5 and 1.0.
 
+    >>> import numpy as np
     >>> from scipy.special import kolmogorov
     >>> from scipy.stats import kstwobign
     >>> kolmogorov([0, 0.5, 1.0])
@@ -7715,6 +7803,7 @@ add_newdoc("kv",
     --------
     Plot the function of several orders for real input:
 
+    >>> import numpy as np
     >>> from scipy.special import kv
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 5, 1000)
@@ -7807,6 +7896,7 @@ add_newdoc("log1p",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using ``log(1 + x)`` directly for ``x``
@@ -7864,6 +7954,7 @@ add_newdoc('log_expit',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import log_expit, expit
 
     >>> log_expit([-3.0, 0.25, 2.5, 5.0])
@@ -7928,6 +8019,7 @@ add_newdoc('logit',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import logit, expit
 
     >>> logit([0, 0.25, 0.5, 0.75, 1])
@@ -8712,6 +8804,7 @@ add_newdoc("ncfdtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
@@ -8989,6 +9082,7 @@ add_newdoc("nctdtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
@@ -9226,6 +9320,7 @@ add_newdoc("log_ndtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import log_ndtr, ndtr
 
     The benefit of ``log_ndtr(x)`` over the naive implementation
@@ -9662,6 +9757,7 @@ add_newdoc("pdtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is a cumulative distribution function, so it converges to 1
@@ -10362,7 +10458,7 @@ add_newdoc("shichi",
       \gamma + \log(x) + \int_0^x \frac{\cosh{t} - 1}{t} dt
 
     where :math:`\gamma` is Euler's constant and :math:`\log` is the
-    principal branch of the logarithm.
+    principal branch of the logarithm [1]_.
 
     Parameters
     ----------
@@ -10379,6 +10475,12 @@ add_newdoc("shichi",
     ci : scalar or ndarray
         Hyperbolic cosine integral at ``x``
 
+    See Also
+    --------
+    sici : Sine and cosine integrals.
+    exp1 : Exponential integral E1.
+    expi : Exponential integral Ei.
+
     Notes
     -----
     For real arguments with ``x < 0``, ``chi`` is the real part of the
@@ -10386,16 +10488,65 @@ add_newdoc("shichi",
     + 0j)`` differ by a factor of ``1j*pi``.
 
     For real arguments the function is computed by calling Cephes'
-    [1]_ *shichi* routine. For complex arguments the algorithm is based
-    on Mpmath's [2]_ *shi* and *chi* routines.
+    [2]_ *shichi* routine. For complex arguments the algorithm is based
+    on Mpmath's [3]_ *shi* and *chi* routines.
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
+    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+           (See Section 5.2.)
+    .. [2] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    .. [2] Fredrik Johansson and others.
-           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
-           (Version 0.19) http://mpmath.org/
+    .. [3] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point
+           arithmetic" (Version 0.19) http://mpmath.org/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import shichi, sici
+
+    `shichi` accepts real or complex input:
+
+    >>> shichi(0.5)
+    (0.5069967498196671, -0.05277684495649357)
+    >>> shichi(0.5 + 2.5j)
+    ((0.11772029666668238+1.831091777729851j),
+     (0.29912435887648825+1.7395351121166562j))
+
+    The hyperbolic sine and cosine integrals Shi(z) and Chi(z) are
+    related to the sine and cosine integrals Si(z) and Ci(z) by
+
+    * Shi(z) = -i*Si(i*z)
+    * Chi(z) = Ci(-i*z) + i*pi/2
+
+    >>> z = 0.25 + 5j
+    >>> shi, chi = shichi(z)
+    >>> shi, -1j*sici(1j*z)[0]            # Should be the same.
+    ((-0.04834719325101729+1.5469354086921228j),
+     (-0.04834719325101729+1.5469354086921228j))
+    >>> chi, sici(-1j*z)[1] + 1j*np.pi/2  # Should be the same.
+    ((-0.19568708973868087+1.556276312103824j),
+     (-0.19568708973868087+1.556276312103824j))
+
+    Plot the functions evaluated on the real axis:
+
+    >>> xp = np.geomspace(1e-8, 4.0, 250)
+    >>> x = np.concatenate((-xp[::-1], xp))
+    >>> shi, chi = shichi(x)
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, shi, label='Shi(x)')
+    >>> ax.plot(x, chi, '--', label='Chi(x)')
+    >>> ax.set_xlabel('x')
+    >>> ax.set_title('Hyperbolic Sine and Cosine Integrals')
+    >>> ax.legend(shadow=True, framealpha=1, loc='lower right')
+    >>> ax.grid(True)
+    >>> plt.show()
+
     """)
 
 add_newdoc("sici",
@@ -10417,7 +10568,7 @@ add_newdoc("sici",
       \gamma + \log(x) + \int_0^x \frac{\cos{t} - 1}{t}dt
 
     where :math:`\gamma` is Euler's constant and :math:`\log` is the
-    principal branch of the logarithm.
+    principal branch of the logarithm [1]_.
 
     Parameters
     ----------
@@ -10434,6 +10585,12 @@ add_newdoc("sici",
     ci : scalar or ndarray
         Cosine integral at ``x``
 
+    See Also
+    --------
+    shichi : Hyperbolic sine and cosine integrals.
+    exp1 : Exponential integral E1.
+    expi : Exponential integral Ei.
+
     Notes
     -----
     For real arguments with ``x < 0``, ``ci`` is the real part of the
@@ -10441,16 +10598,74 @@ add_newdoc("sici",
     differ by a factor of ``1j*pi``.
 
     For real arguments the function is computed by calling Cephes'
-    [1]_ *sici* routine. For complex arguments the algorithm is based
-    on Mpmath's [2]_ *si* and *ci* routines.
+    [2]_ *sici* routine. For complex arguments the algorithm is based
+    on Mpmath's [3]_ *si* and *ci* routines.
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
+    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+           (See Section 5.2.)
+    .. [2] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    .. [2] Fredrik Johansson and others.
-           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
-           (Version 0.19) http://mpmath.org/
+    .. [3] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point
+           arithmetic" (Version 0.19) http://mpmath.org/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import sici, exp1
+
+    `sici` accepts real or complex input:
+
+    >>> sici(2.5)
+    (1.7785201734438267, 0.2858711963653835)
+    >>> sici(2.5 + 3j)
+    ((4.505735874563953+0.06863305018999577j),
+    (0.0793644206906966-2.935510262937543j))
+
+    For z in the right half plane, the sine and cosine integrals are
+    related to the exponential integral E1 (implemented in SciPy as
+    `scipy.special.exp1`) by
+
+    * Si(z) = (E1(i*z) - E1(-i*z))/2i + pi/2
+    * Ci(z) = -(E1(i*z) + E1(-i*z))/2
+
+    See [1]_ (equations 5.2.21 and 5.2.23).
+
+    We can verify these relations:
+
+    >>> z = 2 - 3j
+    >>> sici(z)
+    ((4.54751388956229-1.3991965806460565j),
+    (1.408292501520851+2.9836177420296055j))
+
+    >>> (exp1(1j*z) - exp1(-1j*z))/2j + np.pi/2  # Same as sine integral
+    (4.54751388956229-1.3991965806460565j)
+
+    >>> -(exp1(1j*z) + exp1(-1j*z))/2            # Same as cosine integral
+    (1.408292501520851+2.9836177420296055j)
+
+    Plot the functions evaluated on the real axis; the dotted horizontal
+    lines are at pi/2 and -pi/2:
+
+    >>> x = np.linspace(-16, 16, 150)
+    >>> si, ci = sici(x)
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, si, label='Si(x)')
+    >>> ax.plot(x, ci, '--', label='Ci(x)')
+    >>> ax.legend(shadow=True, framealpha=1, loc='upper left')
+    >>> ax.set_xlabel('x')
+    >>> ax.set_title('Sine and Cosine Integrals')
+    >>> ax.axhline(np.pi/2, linestyle=':', alpha=0.5, color='k')
+    >>> ax.axhline(-np.pi/2, linestyle=':', alpha=0.5, color='k')
+    >>> ax.grid(True)
+    >>> plt.show()
+
     """)
 
 add_newdoc("sindg",
@@ -10477,6 +10692,7 @@ add_newdoc("sindg",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using sine directly.
@@ -10532,6 +10748,7 @@ add_newdoc("smirnov",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import smirnov
 
     Show the probability of a gap at least as big as 0, 0.5 and 1.0 for a sample of size 5
@@ -10684,6 +10901,7 @@ add_newdoc("spence",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import spence
     >>> import matplotlib.pyplot as plt
 
@@ -10900,6 +11118,7 @@ add_newdoc("tandg",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using tangent directly.
@@ -10964,6 +11183,7 @@ add_newdoc("wofz",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
 
@@ -11297,6 +11517,7 @@ add_newdoc("zetac",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import zetac, zeta
 
     Some special values:
@@ -11593,6 +11814,7 @@ add_newdoc("ndtri_exp",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     `ndtri_exp` agrees with the naive implementation when the latter does

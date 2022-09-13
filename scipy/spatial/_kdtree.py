@@ -1,7 +1,6 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 import numpy as np
-import warnings
 from ._ckdtree import cKDTree, cKDTreeNode
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
@@ -511,6 +510,7 @@ class KDTree(cKDTree):
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy import spatial
         >>> x, y = np.mgrid[0:5, 0:5]
         >>> points = np.c_[x.ravel(), y.ravel()]

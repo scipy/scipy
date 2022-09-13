@@ -125,6 +125,7 @@ def fixed_quad(func, a, b, args=(), n=5):
     Examples
     --------
     >>> from scipy import integrate
+    >>> import numpy as np
     >>> f = lambda x: x**8
     >>> integrate.fixed_quad(f, 0.0, 1.0, n=4)
     (0.1110884353741496, None)
@@ -247,6 +248,7 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     Examples
     --------
     >>> from scipy import integrate
+    >>> import numpy as np
     >>> f = lambda x: x**8
     >>> integrate.quadrature(f, 0.0, 1.0)
     (0.11111111111111106, 4.163336342344337e-17)
@@ -341,6 +343,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     Examples
     --------
     >>> from scipy import integrate
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
 
     >>> x = np.linspace(-2, 2, num=20)
@@ -490,6 +493,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
     Examples
     --------
     >>> from scipy import integrate
+    >>> import numpy as np
     >>> x = np.arange(0, 10)
     >>> y = np.arange(0, 10)
 
@@ -599,6 +603,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     Examples
     --------
     >>> from scipy import integrate
+    >>> import numpy as np
     >>> x = np.arange(10, 14.25, 0.25)
     >>> y = np.arange(3, 12)
 
@@ -611,14 +616,15 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
     >>> integrate.romb(y, show=True)
     Richardson Extrapolation Table for Romberg Integration
-    ====================================================================
+    ======================================================
     -0.81576
-    4.63862  6.45674
+     4.63862  6.45674
     -1.10581 -3.02062 -3.65245
     -2.57379 -3.06311 -3.06595 -3.05664
     -1.34093 -0.92997 -0.78776 -0.75160 -0.74256
-    ====================================================================
-    -0.742561336672229
+    ======================================================
+    -0.742561336672229  # may vary
+
     """
     y = np.asarray(y)
     nd = len(y.shape)
@@ -667,13 +673,12 @@ def romb(y, dx=1.0, axis=-1, show=False):
             formstr = "%%%d.%df" % (width, precis)
 
             title = "Richardson Extrapolation Table for Romberg Integration"
-            print("", title.center(68), "=" * 68, sep="\n", end="\n")
+            print(title, "=" * len(title), sep="\n", end="\n")
             for i in range(k+1):
                 for j in range(i+1):
                     print(formstr % R[(i, j)], end=" ")
                 print()
-            print("=" * 68)
-            print()
+            print("=" * len(title))
 
     return R[(k, k)]
 
@@ -805,6 +810,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
     >>> from scipy import integrate
     >>> from scipy.special import erf
+    >>> import numpy as np
     >>> gaussian = lambda x: 1/np.sqrt(np.pi) * np.exp(-x**2)
     >>> result = integrate.romberg(gaussian, 0, 1, show=True)
     Romberg integration of <function vfunc at ...> from [0, 1]
@@ -961,6 +967,7 @@ def newton_cotes(rn, equal=0):
     Compute the integral of sin(x) in [0, :math:`\pi`]:
 
     >>> from scipy.integrate import newton_cotes
+    >>> import numpy as np
     >>> def f(x):
     ...     return np.sin(x)
     >>> a = 0

@@ -4,10 +4,11 @@ from warnings import warn
 import numpy as np
 from numpy.linalg import norm
 
-from scipy.sparse import issparse, csr_matrix
+from scipy.sparse import issparse
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize import _minpack, OptimizeResult
 from scipy.optimize._numdiff import approx_derivative, group_columns
+from scipy.optimize._minimize import Bounds
 
 from .trf import trf
 from .dogbox import dogbox
@@ -282,11 +283,15 @@ def least_squares(
         (or the exact value) for the Jacobian as an array_like (np.atleast_2d
         is applied), a sparse matrix (csr_matrix preferred for performance) or
         a `scipy.sparse.linalg.LinearOperator`.
-    bounds : 2-tuple of array_like, optional
-        Lower and upper bounds on independent variables. Defaults to no bounds.
-        Each array must match the size of `x0` or be a scalar, in the latter
-        case a bound will be the same for all variables. Use ``np.inf`` with
-        an appropriate sign to disable bounds on all or some variables.
+    bounds : 2-tuple of array_like or `Bounds`, optional
+        There are two ways to specify bounds:
+
+            1. Instance of `Bounds` class
+            2. Lower and upper bounds on independent variables. Defaults to no
+               bounds. Each array must match the size of `x0` or be a scalar,
+               in the latter case a bound will be the same for all variables.
+               Use ``np.inf`` with an appropriate sign to disable bounds on all
+               or some variables.
     method : {'trf', 'dogbox', 'lm'}, optional
         Algorithm to perform minimization.
 
@@ -584,6 +589,7 @@ def least_squares(
     In this example we find a minimum of the Rosenbrock function without bounds
     on independent variables.
 
+    >>> import numpy as np
     >>> def fun_rosenbrock(x):
     ...     return np.array([10 * (x[1] - x[0]**2), (1 - x[0])])
 
@@ -778,9 +784,6 @@ def least_squares(
     if verbose not in [0, 1, 2]:
         raise ValueError("`verbose` must be in [0, 1, 2].")
 
-    if len(bounds) != 2:
-        raise ValueError("`bounds` must contain 2 elements.")
-
     if max_nfev is not None and max_nfev <= 0:
         raise ValueError("`max_nfev` must be None or positive integer.")
 
@@ -792,7 +795,14 @@ def least_squares(
     if x0.ndim > 1:
         raise ValueError("`x0` must have at most 1 dimension.")
 
-    lb, ub = prepare_bounds(bounds, x0.shape[0])
+    if isinstance(bounds, Bounds):
+        lb, ub = bounds.lb, bounds.ub
+        bounds = (lb, ub)
+    else:
+        if len(bounds) == 2:
+            lb, ub = prepare_bounds(bounds, x0.shape[0])
+        else:
+            raise ValueError("`bounds` must contain 2 elements.")
 
     if method == 'lm' and not np.all((lb == -np.inf) & (ub == np.inf)):
         raise ValueError("Method 'lm' doesn't support bounds.")

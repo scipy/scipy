@@ -72,13 +72,63 @@ class MemoizeJac:
             self._value = fg[0]
 
     def __call__(self, x, *args):
-        """ returns the the function value """
+        """ returns the function value """
         self._compute_if_needed(x, *args)
         return self._value
 
     def derivative(self, x, *args):
         self._compute_if_needed(x, *args)
         return self.jac
+
+
+def _indenter(s, n=0):
+    """
+    Ensures that lines after the first are indented by the specified amount
+    """
+    split = s.split("\n")
+    indent = " "*n
+    return ("\n" + indent).join(split)
+
+
+def _float_formatter_10(x):
+    """
+    Returns a string representation of a float with exactly ten characters
+    """
+    if np.isposinf(x):
+        return "       inf"
+    elif np.isneginf(x):
+        return "      -inf"
+    elif np.isnan(x):
+        return "       nan"
+    return np.format_float_scientific(x, precision=3, pad_left=2, unique=False)
+
+
+def _dict_formatter(d, n=0, mplus=1, sorter=None):
+    """
+    Pretty printer for dictionaries
+
+    `n` keeps track of the starting indentation;
+    lines are indented by this much after a line break.
+    `mplus` is additional left padding applied to keys
+    """
+    if isinstance(d, dict):
+        m = max(map(len, list(d.keys()))) + mplus  # width to print keys
+        s = '\n'.join([k.rjust(m) + ': ' +  # right justified, width m
+                       _indenter(_dict_formatter(v, m+n+2, 0, sorter), m+2)
+                       for k, v in sorter(d)])  # +2 for ': '
+    else:
+        # By default, NumPy arrays print with linewidth=76. `n` is
+        # the indent at which a line begins printing, so it is subtracted
+        # from the default to avoid exceeding 76 characters total.
+        # `edgeitems` is the number of elements to include before and after
+        # ellipses when arrays are not shown in full.
+        # `threshold` is the maximum number of elements for which an
+        # array is shown in full.
+        # These values tend to work well for use with OptimizeResult.
+        with np.printoptions(linewidth=76-n, edgeitems=2, threshold=12,
+                             formatter={'float_kind': _float_formatter_10}):
+            s = str(d)
+    return s
 
 
 class OptimizeResult(dict):
@@ -129,10 +179,29 @@ class OptimizeResult(dict):
     __delattr__ = dict.__delitem__
 
     def __repr__(self):
+        order_keys = ['message', 'success', 'status', 'fun', 'funl', 'x', 'xl',
+                      'col_ind', 'nit', 'lower', 'upper', 'eqlin', 'ineqlin']
+        # 'slack', 'con' are redundant with residuals
+        # 'crossover_nit' is probably not interesting to most users
+        omit_keys = {'slack', 'con', 'crossover_nit'}
+
+        def key(item):
+            try:
+                return order_keys.index(item[0].lower())
+            except ValueError:  # item not in list
+                return np.inf
+
+        def omit_redundant(items):
+            for item in items:
+                if item[0] in omit_keys:
+                    continue
+                yield item
+
+        def item_sorter(d):
+            return sorted(omit_redundant(d.items()), key=key)
+
         if self.keys():
-            m = max(map(len, list(self.keys()))) + 1
-            return '\n'.join([k.rjust(m) + ': ' + repr(v)
-                              for k, v in sorted(self.items())])
+            return _dict_formatter(self, sorter=item_sorter)
         else:
             return self.__class__.__name__ + "()"
 
@@ -313,6 +382,7 @@ def rosen(x):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import rosen
     >>> X = 0.1 * np.arange(10)
     >>> rosen(X)
@@ -356,6 +426,7 @@ def rosen_der(x):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import rosen_der
     >>> X = 0.1 * np.arange(9)
     >>> rosen_der(X)
@@ -394,6 +465,7 @@ def rosen_hess(x):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import rosen_hess
     >>> X = 0.1 * np.arange(4)
     >>> rosen_hess(X)
@@ -436,6 +508,7 @@ def rosen_hess_prod(x, p):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import rosen_hess_prod
     >>> X = 0.1 * np.arange(9)
     >>> p = 0.5 * np.arange(9)
@@ -942,6 +1015,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import optimize
     >>> def func(x, c0, c1):
     ...     "Coordinate vector `x` should be an array of size two."
@@ -986,9 +1060,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         using `func`. By default it is ``'all'``, in which case, all
         the one hot direction vectors are considered to check `grad`.
         If `func` is a vector valued function then only ``'all'`` can be used.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -1013,6 +1085,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
 
     Examples
     --------
+    >>> import numpy as np
     >>> def func(x):
     ...     return x[0]**2 - 0.5 * x[1]**3
     >>> def grad(x):
@@ -1188,6 +1261,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import fmin_bfgs
     >>> def quadratic_cost(x, Q):
     ...     return x @ Q @ x
@@ -1488,6 +1562,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     ``a*u**2 + b*u*v + c*v**2 + d*u + e*v + f`` for given values
     of the parameters and an initial guess ``(u, v) = (0, 0)``.
 
+    >>> import numpy as np
     >>> args = (2, 3, 7, 8, 9, 10)  # parameter values
     >>> def f(x, *args):
     ...     u, v = x
@@ -2743,6 +2818,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     --------
     This function can find a downward convex region of a function:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.optimize import bracket
     >>> def f(x):
@@ -3432,6 +3508,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     ``(z, *params)``, where ``z = (x, y)``,  and ``params`` and the functions
     are as defined below.
 
+    >>> import numpy as np
     >>> params = (2, 3, 7, 8, 9, 10, 44, -1, 2, 26, 1, -2, 0.5)
     >>> def f1(z, *params):
     ...     x, y = z
@@ -3792,83 +3869,3 @@ def show_options(solver=None, method=None, disp=True):
         return
     else:
         return text
-
-
-def main():
-    import time
-
-    times = []
-    algor = []
-    x0 = [0.8, 1.2, 0.7]
-    print("Nelder-Mead Simplex")
-    print("===================")
-    start = time.time()
-    x = fmin(rosen, x0)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Nelder-Mead Simplex\t')
-
-    print()
-    print("Powell Direction Set Method")
-    print("===========================")
-    start = time.time()
-    x = fmin_powell(rosen, x0)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Powell Direction Set Method.')
-
-    print()
-    print("Nonlinear CG")
-    print("============")
-    start = time.time()
-    x = fmin_cg(rosen, x0, fprime=rosen_der, maxiter=200)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Nonlinear CG     \t')
-
-    print()
-    print("BFGS Quasi-Newton")
-    print("=================")
-    start = time.time()
-    x = fmin_bfgs(rosen, x0, fprime=rosen_der, maxiter=80)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('BFGS Quasi-Newton\t')
-
-    print()
-    print("BFGS approximate gradient")
-    print("=========================")
-    start = time.time()
-    x = fmin_bfgs(rosen, x0, gtol=1e-4, maxiter=100)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('BFGS without gradient\t')
-
-    print()
-    print("Newton-CG with Hessian product")
-    print("==============================")
-    start = time.time()
-    x = fmin_ncg(rosen, x0, rosen_der, fhess_p=rosen_hess_prod, maxiter=80)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Newton-CG with hessian product')
-
-    print()
-    print("Newton-CG with full Hessian")
-    print("===========================")
-    start = time.time()
-    x = fmin_ncg(rosen, x0, rosen_der, fhess=rosen_hess, maxiter=80)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Newton-CG with full Hessian')
-
-    print()
-    print("\nMinimizing the Rosenbrock function of order 3\n")
-    print(" Algorithm \t\t\t       Seconds")
-    print("===========\t\t\t      =========")
-    for alg, tme in zip(algor, times):
-        print(alg, "\t -- ", tme)
-
-
-if __name__ == "__main__":
-    main()

@@ -1,10 +1,4 @@
 include_dirs = [inc_np, '../_lib/src']
-fortran_ignore_warnings = [
-  '-Wno-tabs', '-Wno-conversion',
-  '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
-  '-Wno-maybe-uninitialized', '-Wno-unused-label',
-  '-Wno-unused-variable'
-]
 
 _direct = py3.extension_module('_direct',
   ['_direct/direct_wrap.c',
@@ -17,7 +11,6 @@ _direct = py3.extension_module('_direct',
   ],
   c_args: [numpy_nodepr_api],
   include_directories: include_dirs,
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/optimize'
 )
@@ -54,7 +47,6 @@ _minpack = py3.extension_module('_minpack',
   ['minpack.h', '__minpack.h', '_minpackmodule.c'],
   link_with: minpack_lib,
   c_args: numpy_nodepr_api,
-  dependencies: [py3_dep],
   include_directories: include_dirs,
   install: true,
   link_language: 'fortran',
@@ -72,7 +64,6 @@ py3.extension_module('_lsap',
   ['_lsap.c'],
   link_with: rectangular_lsap,
   c_args: numpy_nodepr_api,
-  dependencies: [py3_dep],
   include_directories: include_dirs,
   install: true,
   subdir: 'scipy/optimize'
@@ -92,7 +83,6 @@ py3.extension_module('_zeros',
   'zeros.c',
   link_with: rootfind_lib,
   c_args: numpy_nodepr_api,
-  dependencies: [py3_dep],
   include_directories: inc_np,
   install: true,
   subdir: 'scipy/optimize'
@@ -114,7 +104,7 @@ _lbfgsb = py3.extension_module('_lbfgsb',
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, lapack, fortranobject_dep],
+  dependencies: [lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'
@@ -126,7 +116,6 @@ moduleTNC = py3.extension_module('_moduleTNC',
     'tnc/tnc.c'],
   c_args: cython_c_args,
   include_directories: [inc_np, inc_f2py, 'tnc'],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/optimize'
 )
@@ -139,10 +128,10 @@ cobyla_module = custom_target('cobyla_module',
 
 _cobyla = py3.extension_module('_cobyla',
   [cobyla_module, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
-  c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
+  c_args: [numpy_nodepr_api, Wno_unused_variable],
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, fortranobject_dep],
+  dependencies: [fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'
@@ -159,7 +148,7 @@ minpack2 = py3.extension_module('_minpack2',
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, fortranobject_dep],
+  dependencies: [fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'
@@ -176,7 +165,7 @@ _slsqp = py3.extension_module('_slsqp',
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, fortranobject_dep],
+  dependencies: [fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'
@@ -199,7 +188,7 @@ __nnls = py3.extension_module('__nnls',
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, fortranobject_dep],
+  dependencies: [fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'
@@ -214,13 +203,8 @@ if use_pythran
 
   _group_columns = py3.extension_module('_group_columns',
     [_group_columns],
-    cpp_args: [
-      '-Wno-unused-function', '-Wno-unused-variable',
-      '-Wno-deprecated-declarations',
-      '-Wno-cpp', '-Wno-int-in-bool-context'
-    ] + cpp_args_pythran,
+    cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
-    dependencies: [py3_dep],
     install: true,
     subdir: 'scipy/optimize'
   )
@@ -229,7 +213,6 @@ else
     cython_gen.process('_group_columns.pyx'),
     c_args: cython_c_args,
     include_directories: [inc_np],
-    dependencies: [py3_dep],
     install: true,
     subdir: 'scipy/optimize'
   )
@@ -254,7 +237,6 @@ py3.extension_module('_bglu_dense',
   _bglu_dense_c,
   c_args: cython_c_args,
   include_directories: [inc_np],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/optimize'
 )
@@ -315,6 +297,7 @@ py3.install_sources([
   '_tstutils.py',
   '_zeros_py.py',
   'cobyla.py',
+  'cython_optimize.pxd',
   'lbfgsb.py',
   'linesearch.py',
   'minpack.py',
