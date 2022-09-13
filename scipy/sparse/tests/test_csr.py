@@ -168,7 +168,6 @@ def test_csr_hstack_int64():
     # max_int32 - 1.
     col_3 = [max_int32 - max_indices_1 - 1]
     X_3 = csr_matrix((data, (row, col_3)))
-    # import pdb; pdb.set_trace()
     X_hs_32 = hstack([X_1, X_3], format="csr")
     assert X_hs_32.indices.dtype == np.int32
     assert X_hs_32.indices.max() == max_int32 - 1
