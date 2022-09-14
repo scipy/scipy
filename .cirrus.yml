@@ -1,0 +1,116 @@
+build_and_store_wheels: &BUILD_AND_STORE_WHEELS
+  install_cibuildwheel_script:
+    - python -m pip install cibuildwheel==2.10.0
+  cibuildwheel_script:
+    - cibuildwheel
+  wheels_artifacts:
+    path: "wheelhouse/*"
+
+
+######################################################################
+# Should wheels be built?
+# Test if the run was triggered by:
+# - a cron job. The cron job is not set in this file, but on the
+#   cirrus-ci repo page
+# - commit message containing [wheel build]
+# - a tag that begins with v, but doesn't end with dev0
+######################################################################
+
+cirrus_wheel_trigger_task:
+  only_if: $CIRRUS_REPO_FULL_NAME == "scipy/scipy"
+  compute_engine_instance:
+    image_project: cirrus-images
+    image: family/docker-builder
+    platform: linux
+    cpu: 2
+    memory: 4G
+
+  script: |
+    set -xe
+    
+    COMMIT_MSG=$(git log --no-merges -1)
+    if [[ "$COMMIT_MSG" == *"[wheel build]"* ]]; then
+      exit 0
+    elif [[ "$CIRRUS_CRON" == "nightly" ]]; then
+      exit 0
+    elif [[ $CIRRUS_TAG =~ ^v.*[^dev0]$ ]]; then
+      exit 0
+    else
+      exit 1
+    fi
+
+######################################################################
+# Build linux_aarch64 natively
+######################################################################
+
+cirrus_wheels_linux_aarch64_task:
+  only_if: $CIRRUS_REPO_FULL_NAME == "scipy/scipy"
+  depends_on: cirrus_wheel_trigger
+  compute_engine_instance:
+    image_project: cirrus-images
+    image: family/docker-builder-arm64
+    architecture: arm64
+    platform: linux
+    cpu: 4
+    memory: 4G
+
+  build_script:
+    - apt install -y python3-venv python-is-python3
+    - which python
+    # needed for submodules
+    - git submodule update --init
+  <<: *BUILD_AND_STORE_WHEELS
+
+
+######################################################################
+# Upload all wheels
+######################################################################
+
+cirrus_wheels_upload_task:
+  # Artifacts don't seem to be persistent from task to task.
+  # Rather than upload wheels at the end of each cibuildwheel run we do a
+  # final upload here. This is because a run may be on different OS for
+  # which bash, etc, may not be present.
+
+  only_if: $CIRRUS_REPO_FULL_NAME == "scipy/scipy"
+  depends_on: cirrus_wheels_linux_aarch64
+  compute_engine_instance:
+    image_project: cirrus-images
+    image: family/docker-builder
+    platform: linux
+    cpu: 2
+    memory: 4G
+
+  env:
+    SCIPY_STAGING_UPLOAD_TOKEN: "NA"
+    SCIPY_NIGHTLY_UPLOAD_TOKEN: "NA"
+  upload_script: |  
+    apt-get install -y python3-venv python-is-python3 curl
+    export IS_SCHEDULE_DISPATCH="false"
+    export IS_PUSH="false"
+
+    # cron job
+    if [[ "$CIRRUS_CRON" == "nightly" ]]; then
+      export IS_SCHEDULE_DISPATCH="true"
+    fi
+    # it's a tag event starting with 'v' and not ending with 'dev0'
+    if [[ $CIRRUS_TAG =~ ^v.*[^dev0]$ ]]; then
+          export IS_PUSH="true"
+    fi
+    
+    # The name of the zip file is derived from the `wheels_artifact` line.
+    # If you change the artifact line to `myfile_artifact` then it would be
+    # called myfile.zip
+    
+    curl https://api.cirrus-ci.com/v1/artifact/build/$CIRRUS_BUILD_ID/wheels.zip --output wheels.zip
+    unzip wheels.zip
+    
+    source tools/wheels/upload_wheels.sh
+    set_upload_vars
+    # trigger an upload to
+    # https://anaconda.org/scipy-wheels-nightly/scipy
+    # for cron jobs or "Run workflow" (restricted to main branch).
+    # Tags will upload to
+    # https://anaconda.org/multibuild-wheels-staging/scipy
+    # The tokens were originally generated at anaconda.org
+    upload_wheels
