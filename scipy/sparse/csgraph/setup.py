@@ -8,31 +8,31 @@ def configuration(parent_package='', top_path=None):
     config.add_data_dir('tests')
 
     config.add_extension('_shortest_path',
-         sources=['_shortest_path.cxx'],
-         include_dirs=[numpy.get_include()])
+                         sources=['_shortest_path.cxx'],
+                         include_dirs=[numpy.get_include()])
 
     config.add_extension('_traversal',
-         sources=['_traversal.c'],
-         include_dirs=[numpy.get_include()])
+                         sources=['_traversal.c'],
+                         include_dirs=[numpy.get_include()])
 
     config.add_extension('_min_spanning_tree',
-         sources=['_min_spanning_tree.c'],
-         include_dirs=[numpy.get_include()])
+                         sources=['_min_spanning_tree.c'],
+                         include_dirs=[numpy.get_include()])
 
     config.add_extension('_matching',
-         sources=['_matching.c'],
-         include_dirs=[numpy.get_include()])
+                         sources=['_matching.c'],
+                         include_dirs=[numpy.get_include()])
     
     config.add_extension('_flow',
-         sources=['_flow.c'],
-         include_dirs=[numpy.get_include()])
+                         sources=['_flow.c'],
+                         include_dirs=[numpy.get_include()])
     
     config.add_extension('_reordering',
-         sources=['_reordering.c'],
-         include_dirs=[numpy.get_include()])
+                         sources=['_reordering.c'],
+                         include_dirs=[numpy.get_include()])
 
     config.add_extension('_tools',
-         sources=['_tools.c'],
-         include_dirs=[numpy.get_include()])
+                         sources=['_tools.c'],
+                         include_dirs=[numpy.get_include()])
 
     return config
