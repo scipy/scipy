@@ -344,7 +344,7 @@ cdef void _floyd_warshall(
     # dist_matrix should be a [N,N] matrix, such that dist_matrix[i, j]
     # is the distance from point i to point j.  Zero-distances imply that
     # the points are not connected.
-    cdef int N = dist_matrix.shape[0]
+    cdef unsigned int N = dist_matrix.shape[0]
     assert dist_matrix.shape[1] == N
 
     cdef unsigned int i, j, k
@@ -687,7 +687,7 @@ cdef int _dijkstra(
     cdef:
         unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
-        unsigned int i, k, j_source, j_current
+        unsigned int i, j_source
         DTYPE_t next_val
         int return_pred = (pred.size > 0)
         int return_sources = (sources.size > 0)
@@ -916,7 +916,8 @@ cdef int _bellman_ford_directed(
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, j, k, j_source, count
+        unsigned int i, j, j_source, count
+        ITYPE_t k
         DTYPE_t d1, d2, w12
         int return_pred = (pred.size > 0)
 
@@ -957,7 +958,8 @@ cdef int _bellman_ford_undirected(
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, j, k, j_source, ind_k, count
+        unsigned int i, j, j_source, ind_k, count
+        ITYPE_t k
         DTYPE_t d1, d2, w12
         int return_pred = (pred.size > 0)
 
@@ -1185,7 +1187,9 @@ cdef void _johnson_add_weights(
             int[:] csr_indptr,
             double[:] dist_array):
     # let w(u, v) = w(u, v) + h(u) - h(v)
-    cdef unsigned int j, k, N = dist_array.shape[0]
+    cdef:
+        unsigned int j, N = dist_array.shape[0]
+        ITYPE_t k
 
     for j in range(N):
         for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1200,14 +1204,15 @@ cdef int _johnson_directed(
             double[:] dist_array):
     cdef:
         unsigned int N = dist_array.shape[0]
-        unsigned int j, k, count
+        unsigned int j, j_source, count
+        ITYPE_t k
         DTYPE_t d1, d2, w12
 
     # relax all edges (N+1) - 1 times
     for count in range(N):
-        for k in range(N):
-            if dist_array[k] < 0:
-                dist_array[k] = 0
+        for j in range(N):
+            if dist_array[j] < 0:
+                dist_array[j] = 0
 
         for j in range(N):
             d1 = dist_array[j]
@@ -1236,14 +1241,15 @@ cdef int _johnson_undirected(
             double[:] dist_array):
     cdef:
         unsigned int N = dist_array.shape[0]
-        unsigned int j, k, ind_k, count
+        unsigned int j, ind_k, j_source, count
+        ITYPE_t k
         DTYPE_t d1, d2, w12
 
     # relax all edges (N+1) - 1 times
     for count in range(N):
-        for k in range(N):
-            if dist_array[k] < 0:
-                dist_array[k] = 0
+        for j in range(N):
+            if dist_array[j] < 0:
+                dist_array[j] = 0
 
         for j in range(N):
             d1 = dist_array[j]
