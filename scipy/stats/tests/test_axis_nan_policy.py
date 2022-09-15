@@ -1048,7 +1048,7 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
         # Would test with a_masked3/b_masked3, but there is a bug in np.average
         # that causes a bug in _no_deco mean with masked weights. Would use
         # np.ma.average, but that causes other problems. See numpy/numpy#7330.
-        if weighted_fun_name not in {'pmean'}:
+        if weighted_fun_name not in {'pmean', 'gmean'}:
             weighted_fun_ma = getattr(stats.mstats, weighted_fun_name)
             res5 = weighted_fun_ma(a_masked4, weights=b_masked4,
                                    axis=axis, _no_deco=True)
@@ -1057,6 +1057,6 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
     np.testing.assert_array_equal(res2, res)
     np.testing.assert_array_equal(res3, res)
     np.testing.assert_array_equal(res4, res)
-    if weighted_fun_name not in {'pmean'}:
+    if weighted_fun_name not in {'pmean', 'gmean'}:
         # _no_deco mean returns masked array, last element was masked
         np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])
