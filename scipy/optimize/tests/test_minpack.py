@@ -13,7 +13,7 @@ from multiprocessing.pool import ThreadPool
 
 from scipy import optimize
 from scipy.special import lambertw
-from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
+from scipy.optimize._minpack_py import leastsq, curve_fit, fixed_point
 from scipy.optimize import OptimizeWarning
 
 
@@ -390,6 +390,15 @@ class TestLeastSq:
     def test_concurrent_with_gradient(self):
         return sequence_parallel([self.test_basic_with_gradient] * 10)
 
+    def test_func_input_output_length_check(self):
+
+        def func(x):
+            return 2 * (x[0] - 3) ** 2 + 1
+
+        with assert_raises(TypeError,
+                           match='Improper input: func input vector length N='):
+            optimize.leastsq(func, x0=[0, 1])
+
 
 class TestCurveFit:
     def setup_method(self):
@@ -566,6 +575,26 @@ class TestCurveFit:
             assert_allclose(popt, [2., 2.])
 
         assert_raises(ValueError, curve_fit, f, xdata, ydata, method='unknown')
+
+    def test_full_output(self):
+        def f(x, a, b):
+            return a * np.exp(-b * x)
+
+        xdata = np.linspace(0, 1, 11)
+        ydata = f(xdata, 2., 2.)
+
+        for method in ['trf', 'dogbox', 'lm', None]:
+            popt, pcov, infodict, errmsg, ier = curve_fit(
+                f, xdata, ydata, method=method, full_output=True)
+            assert_allclose(popt, [2., 2.])
+            assert "nfev" in infodict
+            assert "fvec" in infodict
+            if method == 'lm' or method is None:
+                assert "fjac" in infodict
+                assert "ipvt" in infodict
+                assert "qtf" in infodict
+            assert isinstance(errmsg, str)
+            assert ier in (1, 2, 3, 4)
 
     def test_bounds(self):
         def f(x, a, b):
@@ -802,6 +831,15 @@ class TestCurveFit:
                       ydata=[5, 9, 13, 17],
                       p0=[1],
                       args=(1,))
+
+    def test_data_point_number_validation(self):
+        def func(x, a, b, c, d, e):
+            return a * np.exp(-b * x) + c + d + e
+
+        with assert_raises(TypeError, match="The number of func parameters="):
+            curve_fit(func,
+                      xdata=[1, 2, 3, 4],
+                      ydata=[5, 9, 13, 17])
 
 
 class TestFixedPoint:

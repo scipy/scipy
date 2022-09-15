@@ -75,9 +75,9 @@ def _lombscargle(x, y, freqs):
         s_tau2 = s_tau * s_tau
         cs_tau = 2 * c_tau * s_tau
 
-        pgram[i] = 0.5 * (((c_tau * xc + s_tau * xs)**2 / \
-            (c_tau2 * cc + cs_tau * cs + s_tau2 * ss)) + \
-            ((c_tau * xs - s_tau * xc)**2 / \
-            (c_tau2 * ss - cs_tau * cs + s_tau2 * cc)))
+        pgram[i] = 0.5 * (((c_tau * xc + s_tau * xs)**2 /
+            (c_tau2 * cc + cs_tau * cs + s_tau2 * ss)) +
+            ((c_tau * xs - s_tau * xc)**2 /
+             (c_tau2 * ss - cs_tau * cs + s_tau2 * cc)))
 
     return pgram

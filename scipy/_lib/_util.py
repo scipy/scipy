@@ -1,14 +1,30 @@
 from contextlib import contextmanager
 import functools
 import operator
-import sys
 import warnings
 import numbers
 from collections import namedtuple
 import inspect
 import math
+from typing import (
+    Optional,
+    Union,
+    TYPE_CHECKING,
+    TypeVar,
+)
 
 import numpy as np
+
+IntNumber = Union[int, np.integer]
+DecimalNumber = Union[float, np.floating, np.integer]
+
+# Since Generator was introduced in numpy 1.17, the following condition is needed for
+# backward compatibility
+if TYPE_CHECKING:
+    SeedType = Optional[Union[IntNumber, np.random.Generator,
+                              np.random.RandomState]]
+    GeneratorType = TypeVar("GeneratorType", bound=Union[np.random.Generator,
+                                                         np.random.RandomState])
 
 try:
     from numpy.random import Generator as Generator
@@ -24,6 +40,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
     >>> def f(a, b):
     ...     return a*b
@@ -45,7 +62,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
             raise ValueError("Only one of (fillvalue, f2) can be given.")
 
     args = np.broadcast_arrays(cond, *arrays)
-    cond,  arrays = args[0], args[1:]
+    cond, arrays = args[0], args[1:]
     temp = tuple(np.extract(cond, arr) for arr in arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
     out = np.full(np.shape(arrays[0]), fill_value=fillvalue, dtype=tcode)
@@ -70,6 +87,7 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
 
     Examples
     --------
+    >>> import numpy as np
     >>> x = np.arange(6)
     >>> np.select([x <3, x > 3], [x**2, x**3], default=0)
     array([  0,   1,   4,   0,  64, 125])
@@ -87,8 +105,7 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
     arrays = np.broadcast_arrays(*arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
     out = np.full(np.shape(arrays[0]), fill_value=default, dtype=tcode)
-    for index in range(len(condlist)):
-        func, cond = choicelist[index], condlist[index]
+    for func, cond in zip(choicelist, condlist):
         if np.all(cond is False):
             continue
         cond, _ = np.broadcast_arrays(cond, arrays[0])
@@ -154,40 +171,6 @@ def float_factorial(n: int) -> float:
     return float(math.factorial(n)) if n < 171 else np.inf
 
 
-class DeprecatedImport:
-    """
-    Deprecated import with redirection and warning.
-
-    Examples
-    --------
-    Suppose you previously had in some module::
-
-        from foo import spam
-
-    If this has to be deprecated, do::
-
-        spam = DeprecatedImport("foo.spam", "baz")
-
-    to redirect users to use "baz" module instead.
-
-    """
-
-    def __init__(self, old_module_name, new_module_name):
-        self._old_name = old_module_name
-        self._new_name = new_module_name
-        __import__(self._new_name)
-        self._mod = sys.modules[self._new_name]
-
-    def __dir__(self):
-        return dir(self._mod)
-
-    def __getattr__(self, name):
-        warnings.warn("Module %s is deprecated, use %s instead"
-                      % (self._old_name, self._new_name),
-                      DeprecationWarning)
-        return getattr(self._mod, name)
-
-
 # copy-pasted from scikit-learn utils/validation.py
 # change this to scipy.stats._qmc.check_random_state once numpy 1.16 is dropped
 def check_random_state(seed):
@@ -195,9 +178,7 @@ def check_random_state(seed):
 
     Parameters
     ----------
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -215,14 +196,9 @@ def check_random_state(seed):
         return np.random.mtrand._rand
     if isinstance(seed, (numbers.Integral, np.integer)):
         return np.random.RandomState(seed)
-    if isinstance(seed, np.random.RandomState):
+    if isinstance(seed, (np.random.RandomState, np.random.Generator)):
         return seed
-    try:
-        # Generator is only available in numpy >= 1.17
-        if isinstance(seed, np.random.Generator):
-            return seed
-    except AttributeError:
-        pass
+
     raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
                      ' instance' % seed)
 
@@ -384,6 +360,18 @@ def getfullargspec_no_self(func):
                        kwdefaults or None, annotations)
 
 
+class _FunctionWrapper:
+    """
+    Object to wrap user's function, allowing picklability
+    """
+    def __init__(self, f, args):
+        self.f = f
+        self.args = [] if args is None else args
+
+    def __call__(self, x):
+        return self.f(x, *self.args)
+
+
 class MapWrapper:
     """
     Parallelisation wrapper for working with map-like callables, such as
@@ -483,7 +471,7 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         If provided, one above the largest (signed) integer to be drawn from
         the distribution (see above for behavior if high=None). If array-like,
         must contain integer values.
-    size : None
+    size : array-like of ints, optional
         Output shape. If the given shape is, e.g., (m, n, k), then m * n * k
         samples are drawn. Default is None, in which case a single value is
         returned.
@@ -531,3 +519,193 @@ def _fixed_default_rng(seed=1638083107694713882823079058616272161):
         yield
     finally:
         np.random.default_rng = orig_fun
+
+
+def _argmin(a, keepdims=False, axis=None):
+    """
+    argmin with a `keepdims` parameter.
+
+    See https://github.com/numpy/numpy/issues/8710
+
+    If axis is not None, a.shape[axis] must be greater than 0.
+    """
+    res = np.argmin(a, axis=axis)
+    if keepdims and axis is not None:
+        res = np.expand_dims(res, axis=axis)
+    return res
+
+
+def _first_nonnan(a, axis):
+    """
+    Return the first non-nan value along the given axis.
+
+    If a slice is all nan, nan is returned for that slice.
+
+    The shape of the return value corresponds to ``keepdims=True``.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> nan = np.nan
+    >>> a = np.array([[ 3.,  3., nan,  3.],
+                      [ 1., nan,  2.,  4.],
+                      [nan, nan,  9., -1.],
+                      [nan,  5.,  4.,  3.],
+                      [ 2.,  2.,  2.,  2.],
+                      [nan, nan, nan, nan]])
+    >>> _first_nonnan(a, axis=0)
+    array([[3., 3., 2., 3.]])
+    >>> _first_nonnan(a, axis=1)
+    array([[ 3.],
+           [ 1.],
+           [ 9.],
+           [ 5.],
+           [ 2.],
+           [nan]])
+    """
+    k = _argmin(np.isnan(a), axis=axis, keepdims=True)
+    return np.take_along_axis(a, k, axis=axis)
+
+
+def _nan_allsame(a, axis, keepdims=False):
+    """
+    Determine if the values along an axis are all the same.
+
+    nan values are ignored.
+
+    `a` must be a numpy array.
+
+    `axis` is assumed to be normalized; that is, 0 <= axis < a.ndim.
+
+    For an axis of length 0, the result is True.  That is, we adopt the
+    convention that ``allsame([])`` is True. (There are no values in the
+    input that are different.)
+
+    `True` is returned for slices that are all nan--not because all the
+    values are the same, but because this is equivalent to ``allsame([])``.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> a = np.array([[ 3.,  3., nan,  3.],
+                      [ 1., nan,  2.,  4.],
+                      [nan, nan,  9., -1.],
+                      [nan,  5.,  4.,  3.],
+                      [ 2.,  2.,  2.,  2.],
+                      [nan, nan, nan, nan]])
+    >>> _nan_allsame(a, axis=1, keepdims=True)
+    array([[ True],
+           [False],
+           [False],
+           [False],
+           [ True],
+           [ True]])
+    """
+    if axis is None:
+        if a.size == 0:
+            return True
+        a = a.ravel()
+        axis = 0
+    else:
+        shp = a.shape
+        if shp[axis] == 0:
+            shp = shp[:axis] + (1,)*keepdims + shp[axis + 1:]
+            return np.full(shp, fill_value=True, dtype=bool)
+    a0 = _first_nonnan(a, axis=axis)
+    return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
+
+
+def _contains_nan(a, nan_policy='propagate', use_summation=True):
+    if not isinstance(a, np.ndarray):
+        use_summation = False  # some array_likes ignore nans (e.g. pandas)
+    policies = ['propagate', 'raise', 'omit']
+    if nan_policy not in policies:
+        raise ValueError("nan_policy must be one of {%s}" %
+                         ', '.join("'%s'" % s for s in policies))
+
+    if np.issubdtype(a.dtype, np.inexact):
+        # The summation method avoids creating a (potentially huge) array.
+        if use_summation:
+            with np.errstate(invalid='ignore', over='ignore'):
+                contains_nan = np.isnan(np.sum(a))
+        else:
+            contains_nan = np.isnan(a).any()
+    elif np.issubdtype(a.dtype, object):
+        contains_nan = False
+        for el in a.ravel():
+            # isnan doesn't work on non-numeric elements
+            if np.issubdtype(type(el), np.number) and np.isnan(el):
+                contains_nan = True
+                break
+    else:
+        # Only `object` and `inexact` arrays can have NaNs
+        contains_nan = False
+
+    if contains_nan and nan_policy == 'raise':
+        raise ValueError("The input contains nan values")
+
+    return contains_nan, nan_policy
+
+
+def _rename_parameter(old_name, new_name, dep_version=None):
+    """
+    Generate decorator for backward-compatible keyword renaming.
+
+    Apply the decorator generated by `_rename_parameter` to functions with a
+    recently renamed parameter to maintain backward-compatibility.
+
+    After decoration, the function behaves as follows:
+    If only the new parameter is passed into the function, behave as usual.
+    If only the old parameter is passed into the function (as a keyword), raise
+    a DeprecationWarning if `dep_version` is provided, and behave as usual
+    otherwise.
+    If both old and new parameters are passed into the function, raise a
+    DeprecationWarning if `dep_version` is provided, and raise the appropriate
+    TypeError (function got multiple values for argument).
+
+    Parameters
+    ----------
+    old_name : str
+        Old name of parameter
+    new_name : str
+        New name of parameter
+    dep_version : str, optional
+        Version of SciPy in which old parameter was deprecated in the format
+        'X.Y.Z'. If supplied, the deprecation message will indicate that
+        support for the old parameter will be removed in version 'X.Y+2.Z'
+
+    Notes
+    -----
+    Untested with functions that accept *args. Probably won't work as written.
+
+    """
+    def decorator(fun):
+        @functools.wraps(fun)
+        def wrapper(*args, **kwargs):
+            if old_name in kwargs:
+                if dep_version:
+                    end_version = dep_version.split('.')
+                    end_version[1] = str(int(end_version[1]) + 2)
+                    end_version = '.'.join(end_version)
+                    message = (f"Use of keyword argument `{old_name}` is "
+                               f"deprecated and replaced by `{new_name}`.  "
+                               f"Support for `{old_name}` will be removed "
+                               f"in SciPy {end_version}.")
+                    warnings.warn(message, DeprecationWarning, stacklevel=2)
+                if new_name in kwargs:
+                    message = (f"{fun.__name__}() got multiple values for "
+                               f"argument now known as `{new_name}`")
+                    raise TypeError(message)
+                kwargs[new_name] = kwargs.pop(old_name)
+            return fun(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def _rng_spawn(rng, n_children):
+    # spawns independent RNGs from a parent RNG
+    bg = rng._bit_generator
+    ss = bg._seed_seq
+    child_rngs = [np.random.Generator(type(bg)(child_ss))
+                  for child_ss in ss.spawn(n_children)]
+    return child_rngs

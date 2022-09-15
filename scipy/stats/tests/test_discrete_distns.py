@@ -1,13 +1,41 @@
+import pytest
 from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
-                         boltzmann, skellam, zipf, zipfian, nbinom,
+                         boltzmann, skellam, zipf, zipfian, binom, nbinom,
                          nchypergeom_fisher, nchypergeom_wallenius, randint)
 
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
-from scipy.special import binom
-import pytest
+from numpy.testing import (
+    assert_almost_equal, assert_equal, assert_allclose, suppress_warnings
+)
+from scipy.special import binom as special_binom
 from scipy.optimize import root_scalar
 from scipy.integrate import quad
+
+
+# The expected values were computed with Wolfram Alpha, using
+# the expression CDF[HypergeometricDistribution[N, n, M], k].
+@pytest.mark.parametrize('k, M, n, N, expected, rtol',
+                         [(3, 10, 4, 5,
+                           0.9761904761904762, 1e-15),
+                          (107, 10000, 3000, 215,
+                           0.9999999997226765, 1e-15),
+                          (10, 10000, 3000, 215,
+                           2.681682217692179e-21, 5e-11)])
+def test_hypergeom_cdf(k, M, n, N, expected, rtol):
+    p = hypergeom.cdf(k, M, n, N)
+    assert_allclose(p, expected, rtol=rtol)
+
+
+# The expected values were computed with Wolfram Alpha, using
+# the expression SurvivalFunction[HypergeometricDistribution[N, n, M], k].
+@pytest.mark.parametrize('k, M, n, N, expected, rtol',
+                         [(25, 10000, 3000, 215,
+                           0.9999999999052958, 1e-15),
+                          (125, 10000, 3000, 215,
+                           1.4416781705752128e-18, 5e-11)])
+def test_hypergeom_sf(k, M, n, N, expected, rtol):
+    p = hypergeom.sf(k, M, n, N)
+    assert_allclose(p, expected, rtol=rtol)
 
 
 def test_hypergeom_logpmf():
@@ -66,6 +94,25 @@ def test_nhypergeom_r0():
     assert_allclose(pmf, [[1, 0, 0, 1], [0, 0, 1, 0]], rtol=1e-13)
 
 
+def test_nhypergeom_rvs_shape():
+    # Check that when given a size with more dimensions than the
+    # dimensions of the broadcast parameters, rvs returns an array
+    # with the correct shape.
+    x = nhypergeom.rvs(22, [7, 8, 9], [[12], [13]], size=(5, 1, 2, 3))
+    assert x.shape == (5, 1, 2, 3)
+
+
+def test_nhypergeom_accuracy():
+    # Check that nhypergeom.rvs post-gh-13431 gives the same values as
+    # inverse transform sampling
+    np.random.seed(0)
+    x = nhypergeom.rvs(22, 7, 11, size=100)
+    np.random.seed(0)
+    p = np.random.uniform(size=100)
+    y = nhypergeom.ppf(p, 22, 7, 11)
+    assert_equal(x, y)
+
+
 def test_boltzmann_upper_bound():
     k = np.arange(-3, 5)
 
@@ -105,6 +152,86 @@ def test_betabinom_bernoulli():
     assert_almost_equal(p, expected)
 
 
+def test_issue_10317():
+    alpha, n, p = 0.9, 10, 1
+    assert_equal(nbinom.interval(confidence=alpha, n=n, p=p), (0, 0))
+
+
+def test_issue_11134():
+    alpha, n, p = 0.95, 10, 0
+    assert_equal(binom.interval(confidence=alpha, n=n, p=p), (0, 0))
+
+
+def test_issue_7406():
+    np.random.seed(0)
+    assert_equal(binom.ppf(np.random.rand(10), 0, 0.5), 0)
+
+    # Also check that endpoints (q=0, q=1) are correct
+    assert_equal(binom.ppf(0, 0, 0.5), -1)
+    assert_equal(binom.ppf(1, 0, 0.5), 0)
+
+
+def test_issue_5122():
+    p = 0
+    n = np.random.randint(100, size=10)
+
+    x = 0
+    ppf = binom.ppf(x, n, p)
+    assert_equal(ppf, -1)
+
+    x = np.linspace(0.01, 0.99, 10)
+    ppf = binom.ppf(x, n, p)
+    assert_equal(ppf, 0)
+
+    x = 1
+    ppf = binom.ppf(x, n, p)
+    assert_equal(ppf, n)
+
+
+def test_issue_1603():
+    assert_equal(binom(1000, np.logspace(-3, -100)).ppf(0.01), 0)
+
+
+def test_issue_5503():
+    p = 0.5
+    x = np.logspace(3, 14, 12)
+    assert_allclose(binom.cdf(x, 2*x, p), 0.5, atol=1e-2)
+
+
+@pytest.mark.parametrize('x, n, p, cdf_desired', [
+    (300, 1000, 3/10, 0.51559351981411995636),
+    (3000, 10000, 3/10, 0.50493298381929698016),
+    (30000, 100000, 3/10, 0.50156000591726422864),
+    (300000, 1000000, 3/10, 0.50049331906666960038),
+    (3000000, 10000000, 3/10, 0.50015600124585261196),
+    (30000000, 100000000, 3/10, 0.50004933192735230102),
+    (30010000, 100000000, 3/10, 0.98545384016570790717),
+    (29990000, 100000000, 3/10, 0.01455017177985268670),
+    (29950000, 100000000, 3/10, 5.02250963487432024943e-28),
+])
+def test_issue_5503pt2(x, n, p, cdf_desired):
+    assert_allclose(binom.cdf(x, n, p), cdf_desired)
+
+
+def test_issue_5503pt3():
+    # From Wolfram Alpha: CDF[BinomialDistribution[1e12, 1e-12], 2]
+    assert_allclose(binom.cdf(2, 10**12, 10**-12), 0.91969860292869777384)
+
+
+def test_issue_6682():
+    # Reference value from R:
+    # options(digits=16)
+    # print(pnbinom(250, 50, 32/63, lower.tail=FALSE))
+    assert_allclose(nbinom.sf(250, 50, 32./63.), 1.460458510976452e-35)
+
+
+def test_boost_divide_by_zero_issue_15101():
+    n = 1000
+    p = 0.01
+    k = 996
+    assert_allclose(binom.pmf(k, n, p), 0.0)
+
+
 def test_skellam_gh11474():
     # test issue reported in gh-11474 caused by `cdfchn`
     mu = [1, 10, 100, 1000, 5000, 5050, 5100, 5250, 6000]
@@ -138,11 +265,14 @@ class TestZipfian:
         alt1, agt1 = 0.99999999, 1.00000001
         N = 30
         k = np.arange(1, N + 1)
-        assert_allclose(zipfian.pmf(k, alt1, N), zipfian.pmf(k, agt1, N))
-        assert_allclose(zipfian.cdf(k, alt1, N), zipfian.cdf(k, agt1, N))
-        assert_allclose(zipfian.sf(k, alt1, N), zipfian.sf(k, agt1, N))
+        assert_allclose(zipfian.pmf(k, alt1, N), zipfian.pmf(k, agt1, N),
+                        rtol=5e-7)
+        assert_allclose(zipfian.cdf(k, alt1, N), zipfian.cdf(k, agt1, N),
+                        rtol=5e-7)
+        assert_allclose(zipfian.sf(k, alt1, N), zipfian.sf(k, agt1, N),
+                        rtol=5e-7)
         assert_allclose(zipfian.stats(alt1, N, moments='msvk'),
-                        zipfian.stats(agt1, N, moments='msvk'), rtol=2e-7)
+                        zipfian.stats(agt1, N, moments='msvk'), rtol=5e-7)
 
     def test_zipfian_R(self):
         # test against R VGAM package
@@ -241,8 +371,8 @@ class TestNCH():
             xu = np.minimum(n, m1)
 
             def f(x):
-                t1 = binom(m1, x)
-                t2 = binom(m2, n - x)
+                t1 = special_binom(m1, x)
+                t2 = special_binom(m2, n - x)
                 return t1 * t2 * w**x
 
             def P(k):
@@ -294,8 +424,11 @@ class TestNCH():
 
             return root_scalar(fun, bracket=(xl, xu)).root
 
-        assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
-                        mean(N, m1, n, w), rtol=2e-2)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning,
+                       message="invalid value encountered in mean")
+            assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
+                            mean(N, m1, n, w), rtol=2e-2)
 
         @np.vectorize
         def variance(N, m1, n, w):
@@ -305,8 +438,14 @@ class TestNCH():
             b = (n-u)*(u + m2 - n)
             return N*a*b / ((N-1) * (m1*b + m2*a))
 
-        assert_allclose(nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),
-                        variance(N, m1, n, w), rtol=5e-2)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning,
+                       message="invalid value encountered in mean")
+            assert_allclose(
+                nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),
+                variance(N, m1, n, w),
+                rtol=5e-2
+            )
 
         @np.vectorize
         def pmf(x, N, m1, n, w):
@@ -319,8 +458,8 @@ class TestNCH():
                 return res
 
             def f(x):
-                t1 = binom(m1, x)
-                t2 = binom(m2, n - x)
+                t1 = special_binom(m1, x)
+                t2 = special_binom(m2, n - x)
                 the_integral = quad(integrand, 0, 1,
                                     epsrel=1e-16, epsabs=1e-16)
                 return t1 * t2 * the_integral[0]

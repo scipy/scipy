@@ -108,7 +108,7 @@ standard-deviation equal to :math:`\sigma_{o}=\left(o+1\right)/12` :
 A function to compute this Gaussian for arbitrary :math:`x` and :math:`o` is
 also available ( :func:`gauss_spline` ). The following code and figure use
 spline-filtering to compute an edge-image (the second derivative of a smoothed
-spline) of a raccoon's face, which is an array returned by the command :func:`scipy.misc.face`.
+spline) of a raccoon's face, which is an array returned by the command :func:`scipy.datasets.face`.
 The command :func:`sepfir2d` was used to apply a separable 2-D FIR
 filter with mirror-symmetric boundary conditions to the spline coefficients.
 This function is ideally-suited for reconstructing samples from spline
@@ -117,12 +117,13 @@ coefficients and is faster than :func:`convolve2d`, which convolves arbitrary
 conditions.
 
 .. plot::
+   :alt: "This code displays two plots. The first plot is a normal grayscale photo of a raccoon climbing on a palm plant. The second plot has the 2-D spline filter applied to the photo and is completely grey except the edges of the photo have been emphasized, especially on the raccoon fur and palm fronds."
 
    >>> import numpy as np
-   >>> from scipy import signal, misc
+   >>> from scipy import signal, datasets
    >>> import matplotlib.pyplot as plt
 
-   >>> image = misc.face(gray=True).astype(np.float32)
+   >>> image = datasets.face(gray=True).astype(np.float32)
    >>> derfilt = np.array([1.0, -2, 1.0], dtype=np.float32)
    >>> ck = signal.cspline2d(image, 8.0)
    >>> deriv = (signal.sepfir2d(ck, derfilt, [1]) +
@@ -308,12 +309,13 @@ enhancing, and edge-detection for an image.
 
 
 .. plot::
+   :alt: "This code displays two plots. The first plot is the familiar photo of a raccoon climbing on a palm. The second plot has the FIR filter applied and has the two copies of the photo superimposed due to the twin peaks manually set in the filter kernel definition."
 
    >>> import numpy as np
-   >>> from scipy import signal, misc
+   >>> from scipy import signal, datasets
    >>> import matplotlib.pyplot as plt
 
-   >>> image = misc.face(gray=True)
+   >>> image = datasets.face(gray=True)
    >>> w = np.zeros((50, 50))
    >>> w[0][0] = 1.0
    >>> w[49][25] = 1.0
@@ -354,12 +356,13 @@ example, we consider a Gaussian filter :func:`~scipy.signal.windows.gaussian`
 which is often used for blurring.
 
 .. plot::
+   :alt: "This code displays two plots. The first plot is a grayscale photo of two people climbing a wooden staircase taken from below. The second plot has the 2-D gaussian FIR window applied and appears very blurry. You can still tell it's a photo but the subject is ambiguous."
 
    >>> import numpy as np
-   >>> from scipy import signal, misc
+   >>> from scipy import signal, datasets
    >>> import matplotlib.pyplot as plt
 
-   >>> image = misc.ascent()
+   >>> image = datasets.ascent()
    >>> w = signal.windows.gaussian(51, 10.0)
    >>> image_new = signal.sepfir2d(image, w, w)
 
@@ -525,6 +528,7 @@ types (e.g., low-pass, band-pass...).
 The example below designs a low-pass and a band-stop filter, respectively.
 
 .. plot::
+   :alt: "This code displays an X-Y plot with the amplitude response on the Y axis vs frequency on the X axis. The first (low-pass) trace in blue starts with a pass-band at 0 dB and curves down around halfway through with some ripple in the stop-band about 80 dB down. The second (band-stop) trace in red starts and ends at 0 dB, but the middle third is down about 60 dB from the peak with some ripple where the filter would supress a signal."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -556,6 +560,7 @@ gains, respectively.
 The example below designs a filter with such an arbitrary amplitude response.
 
 .. plot::
+   :alt: "This code displays an X-Y plot with amplitude response on the Y axis vs frequency on the X axis. A single trace forms a shape similar to a heartbeat signal."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -590,6 +595,7 @@ compared with the FIR filters from the examples above in order to reach the same
 stop-band attenuation of :math:`\approx 60` dB.
 
 .. plot::
+   :alt: "This code generates an X-Y plot with amplitude response on the Y axis vs Frequency on the X axis. A single trace shows a smooth low-pass filter with the left third passband near 0 dB. The right two-thirds are about 60 dB down with two sharp narrow valleys dipping down to -100 dB."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -870,6 +876,7 @@ in the amplitude response.
 
 
 .. plot::
+   :alt: "This code displays two plots. The first plot is an IIR filter response as an X-Y plot with amplitude response on the Y axis vs frequency on the X axis. The low-pass filter shown has a passband from 0 to 100 Hz with 0 dB response and a stop-band from about 175 Hz to 1 KHz about 40 dB down. There are two sharp discontinuities in the filter near 175 Hz and 300 Hz. The second plot is an X-Y showing the transfer function in the complex plane. The Y axis is real-valued an the X axis is complex-valued. The filter has four zeros near [300+0j, 175+0j, -175+0j, -300+0j] shown as blue X markers. The filter also has four poles near [50-30j, -50-30j, 100-8j, -100-8j] shown as red dots."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -888,13 +895,13 @@ in the amplitude response.
 
    >>> z, p, k = signal.tf2zpk(b, a)
 
-   >>> plt.plot(np.real(z), np.imag(z), 'xb')
-   >>> plt.plot(np.real(p), np.imag(p), 'or')
+   >>> plt.plot(np.real(z), np.imag(z), 'ob', markerfacecolor='none')
+   >>> plt.plot(np.real(p), np.imag(p), 'xr')
    >>> plt.legend(['Zeros', 'Poles'], loc=2)
 
    >>> plt.title('Pole / Zero Plot')
-   >>> plt.ylabel('Real')
-   >>> plt.xlabel('Imaginary')
+   >>> plt.xlabel('Real')
+   >>> plt.ylabel('Imaginary')
    >>> plt.grid()
    >>> plt.show()
 
@@ -913,6 +920,7 @@ The example below calculates the periodogram of a sine signal in white
 Gaussian noise.
 
 .. plot::
+   :alt: "This code displays a single X-Y log-linear plot with the power spectral density on the Y axis vs frequency on the X axis. A single blue trace shows a noise floor with a power level of 1e-3 with a single peak at 1270 Hz up to a power of 1. The noise floor measurements appear noisy and oscillate down to 1e-7."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -949,6 +957,7 @@ the spectrogram.
 
 
 .. plot::
+   :alt: "This code displays a single X-Y log-linear plot with the power spectral density on the Y axis vs frequency on the X axis. A single blue trace shows a smooth noise floor at a power level of 6e-2 with a single peak up to a power level of 2 at 1270 Hz."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -1051,6 +1060,7 @@ The example below removes the constant and linear trend of a second-order
 polynomial time series and plots the remaining signal components.
 
 .. plot::
+   :alt: "This code generates an X-Y plot with no units. A red trace corresponding to the original signal curves from the bottom left to the top right. A blue trace has the constant detrend applied and is below the red trace with zero Y offset. The last black trace has the linear detrend applied and is almost flat from left to right highlighting the curve of the original signal. This last trace has an average slope of zero and looks very different."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
