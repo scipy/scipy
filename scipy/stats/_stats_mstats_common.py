@@ -3,7 +3,7 @@ import numpy as np
 import scipy.stats._stats_py
 from . import distributions
 from .._lib._bunch import _make_tuple_bunch
-from ._siegelslopes_pythran import siegelslopes as siegelslopes_pythran
+from ._hypotests_pythran import siegelslopes as siegelslopes_pythran
 
 __all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 
