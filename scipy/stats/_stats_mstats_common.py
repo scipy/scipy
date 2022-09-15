@@ -495,5 +495,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
         if len(x) != len(y):
             raise ValueError("Incompatible lengths ! (%s<>%s)" %
                              (len(y), len(x)))
+    dtype = np.result_type(x, y, np.float32)  # use at least float32
+    y, x = y.astype(dtype), x.astype(dtype)
     medslope, medinter = siegelslopes_pythran(y, x, method)
     return SiegelslopesResult(slope=medslope, intercept=medinter)

@@ -151,9 +151,8 @@ def _compute_outer_prob_inside_method(m, n, g, h):
     return A[maxj - minj - 1]
 
 
-# pythran export siegelslopes(int[:] or float[:],
-#                             float[:],
-#                             str)
+# pythran export siegelslopes(float32[:], float32[:], str)
+# pythran export siegelslopes(float64[:], float64[:], str)
 def siegelslopes(y, x, method):
     deltax = np.expand_dims(x, 1) - x
     deltay = np.expand_dims(y, 1) - y
