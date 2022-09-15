@@ -27,20 +27,27 @@ jobs:
     name: Meson build
     # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: [3.9]
+        python-version: ['3.9', '3.11-dev']
+        maintenance-branch:
+          - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
+        exclude:
+          - maintenance-branch: true
+            python-version: '3.11-dev'
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: 'environment.yml'
 
     - name: Install Ubuntu dependencies
       run: |
@@ -48,16 +55,18 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
-    - name: Caching Python dependencies
-      uses: actions/cache@v2
-      id: cache
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip
-
     - name: Install Python packages
+      if: matrix.python-version == '3.9'
       run: |
-        python -m pip install numpy setuptools wheel cython pytest pytest-xdist pybind11 mpmath gmpy2 pythran ninja meson==0.60.3
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch
+
+    - name: Install Python packages from repositories
+      if: matrix.python-version == '3.11-dev'
+      run: |
+        python -m pip install git+https://github.com/numpy/numpy.git
+        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git
+        python -m pip install git+https://github.com/mesonbuild/meson.git
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -69,7 +78,7 @@ jobs:
         echo "::set-output name=timestamp::${NOW}"
 
     - name: Setup compiler cache
-      uses:  actions/cache@v2
+      uses:  actions/cache@v3
       id:    cache-ccache
       # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
       # NOTE: The caching strategy is modeled in a way that it will always have a unique cache key for each workflow run
@@ -86,7 +95,7 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        python dev.py -j 2 --build-only --werror
+        python dev.py build -j 2 --werror
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -98,7 +107,50 @@ jobs:
         python check_installation.py ${{ env.INSTALLDIR }}
         popd
 
+    - name: Mypy
+      if: matrix.python-version == '3.11-dev'
+      run: |
+        # Packages that are only needed for their annotations
+        python -m pip install -r mypy_requirements.txt
+        python -m pip install types-psutil pybind11 sphinx
+
+        python -u dev.py mypy
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
-        python dev.py -n -j 2
+        export SCIPY_USE_PROPACK=1
+        python dev.py --no-build test -j 2 -- --durations 10 --timeout=60
+
+  test_venv_install:
+    name: Pip install into venv
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Install Ubuntu dependencies
+      run: |
+        # We're not running the full test suite here, only testing the install
+        # into a venv is working, so leave out optional dependencies. That's
+        # also why we can get away with an old version of OpenBLAS from Ubuntu
+        sudo apt-get update
+        sudo apt-get install -y python3-dev libopenblas-dev pkg-config gfortran
+
+    - name: Create venv, install SciPy
+      run: |
+        python -m venv ../venvs/scipy-venv
+        source ../venvs/scipy-venv/bin/activate
+        # Note that this uses build isolation. That's why we don't need build
+        # dependencies to be installed in the venv itself.
+        python -m pip install . -vv
+
+    - name: Basic imports and tests
+      run: |
+        source ../venvs/scipy-venv/bin/activate
+        cd ..
+        python -c "import scipy"
+        python -c "import scipy.linalg"
+        python -m pip install pytest
+        python -c "from scipy import cluster; cluster.test()"

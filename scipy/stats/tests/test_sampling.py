@@ -1,4 +1,3 @@
-import math
 import threading
 import pickle
 import pytest
@@ -49,6 +48,12 @@ all_methods = [
     ("SimpleRatioUniforms", {"dist": StandardNormal(), "mode": 0})
 ]
 
+if (sys.implementation.name == 'pypy'
+        and sys.implementation.version < (7, 3, 10)):
+    # changed in PyPy for v7.3.10
+    floaterr = r"unsupported operand type for float\(\): 'list'"
+else:
+    floaterr = r"must be real number, not list"
 # Make sure an internal error occurs in UNU.RAN when invalid callbacks are
 # passed. Moreover, different generators throw different error messages.
 # So, in case of an `UNURANError`, we do not validate the error message.
@@ -56,7 +61,7 @@ bad_pdfs_common = [
     # Negative PDF
     (lambda x: -x, UNURANError, r"..."),
     # Returning wrong type
-    (lambda x: [], TypeError, r"must be real number, not list"),
+    (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
     (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
     # Infinite value returned => Overflow error.
@@ -76,7 +81,7 @@ bad_dpdf_common = [
     # NaN value => internal error in UNU.RAN
     (lambda x: np.nan, UNURANError, r"..."),
     # Returning wrong type
-    (lambda x: [], TypeError, r"must be real number, not list"),
+    (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
     (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
     # signature of dPDF wrong
@@ -778,15 +783,11 @@ class TestNumericalInversePolynomial:
     very_slow_dists = ['studentized_range', 'trapezoid', 'triang', 'vonmises',
                        'levy_stable', 'kappa4', 'ksone', 'kstwo', 'levy_l',
                        'gausshyper', 'anglit']
-    # for some reason, UNU.RAN segmentation faults for the uniform.
-    fatal_fail_dists = ['uniform']
-    # fails for unbounded PDFs
-    unbounded_pdf_fail_dists = ['beta']
     # for these distributions, some assertions fail due to minor
     # numerical differences. They can be avoided either by changing
     # the seed or by increasing the u_resolution.
     fail_dists = ['ncf', 'pareto', 'chi2', 'fatiguelife', 'halfgennorm',
-                  'gilbrat', 'lognorm', 'ncx2', 't']
+                  'gibrat', 'lognorm', 'ncx2', 't']
 
     @pytest.mark.xslow
     @pytest.mark.parametrize("distname, params", distcont)
@@ -795,10 +796,6 @@ class TestNumericalInversePolynomial:
             pytest.skip(f"PINV too slow for {distname}")
         if distname in self.fail_dists:
             pytest.skip(f"PINV fails for {distname}")
-        if distname in self.unbounded_pdf_fail_dists:
-            pytest.skip("PINV fails for unbounded PDFs.")
-        if distname in self.fatal_fail_dists:
-            pytest.xfail(f"PINV segmentation faults for {distname}")
         dist = (getattr(stats, distname)
                 if isinstance(distname, str)
                 else distname)
@@ -1042,10 +1039,6 @@ class TestNumericalInverseHermite:
             NumericalInverseHermite(StandardNormal(),
                                     u_resolution='ekki')
 
-        match = "`max_intervals' must be..."
-        with pytest.raises(ValueError, match=match):
-            NumericalInverseHermite(StandardNormal(), max_intervals=-1)
-
     rngs = [None, 0, np.random.RandomState(0)]
     if NumpyVersion(np.__version__) >= '1.18.0':
         rngs.append(np.random.default_rng(0))  # type: ignore
@@ -1137,12 +1130,6 @@ class TestNumericalInverseHermite:
         max_error, mae = rng.u_error()
         assert max_error < 1e-14
         assert mae <= max_error
-
-    def test_deprecations(self):
-        msg = ("`tol` has been deprecated and replaced with `u_resolution`. "
-               "It will be completely removed in a future release.")
-        with pytest.warns(DeprecationWarning, match=msg):
-            NumericalInverseHermite(StandardNormal(), tol=1e-12)
 
 
 class TestDiscreteGuideTable:

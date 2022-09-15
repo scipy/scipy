@@ -53,6 +53,8 @@ steps:
     sudo apt-get install -y
     libatlas-base-dev
     liblapack-dev
+    libopenblas-dev
+    pkg-config
     gfortran
     libgmp-dev
     libmpfr-dev
@@ -64,25 +66,33 @@ steps:
   displayName: 'Add ccache to path'
 - script: >-
     pip install --upgrade ${{parameters.numpy_spec}} &&
-    pip install --upgrade pip==20.2.4 setuptools==59.6.0 wheel &&
+    pip install --upgrade pip setuptools==59.6.0 wheel build meson meson-python &&
     pip install ${{parameters.other_spec}}
     cython
     gmpy2
     threadpoolctl
     mpmath
+    pooch
     pythran
     pybind11
-    pytest==7.0.1
+    pytest
     pytest-xdist
+    pytest-timeout
   displayName: 'Install common python dependencies'
 - ${{ if eq(parameters.test_mode, 'full') }}:
-  - script: pip install matplotlib scikit-umfpack scikit-sparse
-    displayName: 'Install full mode dependencies'
+  - script: >-
+      pip install matplotlib pooch &&
+      pip install scikit-umfpack scikit-sparse --no-deps --no-build-isolation
+      # The above two scikits both depend on scipy, so use `--no-deps`
+      # Also note that they don't provide wheels, so we build them from
+      # source (only in this job, it's a small optional dependency so test
+      # only in a single place)
+    displayName: 'Install full mode optional dependencies'
 - ${{ if eq(parameters.coverage, true) }}:
   - script: pip install pytest-cov coverage codecov
     displayName: 'Install coverage dependencies'
 - ${{ if eq(parameters.refguide_check, true) }}:
-  - script: pip install matplotlib sphinx==3.1 numpydoc "Jinja2<=3.0.3"
+  - script: pip install matplotlib sphinx numpydoc pooch
     displayName: 'Install documentation dependencies'
   - script: sudo apt-get install -y wamerican-small
     displayName: 'Install word list (for csgraph tutorial)'
@@ -107,15 +117,17 @@ steps:
       # and make more efficient use of ccache
       echo "setup.py build"
       python tools/suppress_output.py python setup.py build
-      echo "pip wheel"
-      python tools/suppress_output.py pip wheel --no-build-isolation .
-      pip install --no-cache-dir scipy*.whl
+      echo "setup.py bdist_wheel"
+      # Still testing distutils here (`pip wheel --no-use-pep517` cannot be
+      # used, so back to `setup.py` it is ...)
+      python tools/suppress_output.py python setup.py bdist_wheel
+      pip install --no-cache-dir dist/scipy*.whl
     displayName: 'Install SciPy from Wheel'
 - ${{ if eq(parameters.use_sdist, true) }}:
   - script: |
       set -euo pipefail
-      echo "setup.py sdist"
-      python tools/suppress_output.py python setup.py sdist
+      echo "Build sdist via `build` (uses pyproject.toml)"
+      python -m build --sdist
       # Move out of source directory to avoid finding local scipy
       cd dist
       echo "pip install"
@@ -123,7 +135,7 @@ steps:
       # Note: don't use a fixed build dir (which would help for ccache), because
       #       --build is partially broken and the workaround in commit b4617dd764
       #       messes with build isolation.
-      pip install $PWD/scipy* -v
+      pip install scipy*.tar.gz -v
     displayName: 'Install SciPy from SDist'
 - script: 'python -u runtests.py -g -j2 --build-only ${COVERAGE:-} ${USE_WHEEL_BUILD:-}'
   env:
@@ -134,7 +146,7 @@ steps:
   displayName: 'Build SciPy'
 - script: |
     set -euo pipefail
-    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} ${COVERAGE:-} ${USE_WHEEL_BUILD:-} -- -rfEX --durations=10 2>&1 | tee runtests.log
+    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} ${COVERAGE:-} ${USE_WHEEL_BUILD:-} -- -rfEX --durations=10 --timeout=60 2>&1 | tee runtests.log
     tools/validate_runtests_log.py ${{ parameters.test_mode }} < runtests.log
   env:
     ${{ if eq(parameters.coverage, true) }}:

@@ -895,6 +895,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         y1' = y2
         y2' = -exp(y1)
 
+    >>> import numpy as np
     >>> def fun(x, y):
     ...     return np.vstack((y[1], -np.exp(y[0])))
 

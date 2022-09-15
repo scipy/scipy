@@ -1,11 +1,10 @@
 highs_define_macros = [
   '-DCMAKE_BUILD_TYPE="RELEASE"',
-  '-DHiGHSRELEASE',
-  '-DIPX_ON="ON"',
+  '-DFAST_BUILD=ON',
   '-DHIGHS_GITHASH="n/a"',
   '-DHIGHS_COMPILATION_DATE="2021-07-09"',  # cannot generate dynamically
   '-DHIGHS_VERSION_MAJOR=1',  # don't care about this, look at CMakelists.txt
-  '-DHIGHS_VERSION_MINOR=0',
+  '-DHIGHS_VERSION_MINOR=2',
   '-DHIGHS_VERSION_PATCH=0',
   '-DHIGHS_DIR=' + meson.current_source_dir() / '..' / '..' / '_lib' / 'highs',
   '-UOPENMP',
@@ -51,29 +50,18 @@ basiclu_lib = static_library('basiclu',
     '../../_lib/highs/src',
     '../../_lib/highs/src/ipm/basiclu/include'
   ],
-  c_args: [
-    '-Wno-unused-variable', highs_define_macros
-  ]
+  c_args: [Wno_unused_variable, highs_define_macros]
 )
 
-# Deal with non-portable (or GCC-specific) compiler flags
-if cc.has_argument('-Wno-unused-but-set-variable')
-  Wno_unused_but_set = ['-Wno-unused-but-set-variable']
-else
-  Wno_unused_but_set = []
-endif
-
 highs_flags = [
-  '-Wno-sign-compare',
-  '-Wno-switch',
-  '-Wno-non-virtual-dtor',
+  _cpp_Wno_class_memaccess,
+  _cpp_Wno_format_truncation,
+  _cpp_Wno_non_virtual_dtor,
+  _cpp_Wno_sign_compare,
+  _cpp_Wno_switch,
+  _cpp_Wno_unused_but_set_variable,
+  _cpp_Wno_unused_variable,
 ]
-if cpp.has_argument('-Wno-format-truncation')
-  highs_flags += '-Wno-format-truncation'
-endif
-if cpp.has_argument('-Wno-class-memaccess')  # added in GCC 8
-  highs_flags += '-Wno-class-memaccess'
-endif
 
 ipx_lib = static_library('ipx',
   [
@@ -116,11 +104,7 @@ ipx_lib = static_library('ipx',
     '../../_lib/highs/extern/',
     'cython/src/'
   ],
-  cpp_args: [
-    '-Wno-unused-variable',
-    highs_flags,
-    highs_define_macros
-  ]
+  cpp_args: [highs_flags, highs_define_macros]
 )
 
 highs_lib = static_library('highs',
@@ -174,24 +158,23 @@ highs_lib = static_library('highs',
     '../../_lib/highs/src/mip/HighsPseudocost.cpp',
     '../../_lib/highs/src/mip/HighsRedcostFixing.cpp',
     '../../_lib/highs/src/mip/HighsNodeQueue.cpp',
+    '../../_lib/highs/src/mip/HighsObjectiveFunction.cpp',
     '../../_lib/highs/src/model/HighsHessian.cpp',
     '../../_lib/highs/src/model/HighsHessianUtils.cpp',
     '../../_lib/highs/src/model/HighsModel.cpp',
     '../../_lib/highs/src/parallel/HighsTaskExecutor.cpp',
+    '../../_lib/highs/src/presolve/ICrash.cpp',
+    '../../_lib/highs/src/presolve/ICrashUtil.cpp',
     '../../_lib/highs/src/presolve/ICrashX.cpp',
-    '../../_lib/highs/src/presolve/HAggregator.cpp',
-    '../../_lib/highs/src/presolve/HighsLpPropagator.cpp',
     '../../_lib/highs/src/presolve/HighsPostsolveStack.cpp',
     '../../_lib/highs/src/presolve/HighsSymmetry.cpp',
-    '../../_lib/highs/src/presolve/HPreData.cpp',
     '../../_lib/highs/src/presolve/HPresolve.cpp',
-    '../../_lib/highs/src/presolve/PresolveAnalysis.cpp',
     '../../_lib/highs/src/presolve/PresolveComponent.cpp',
-    '../../_lib/highs/src/presolve/Presolve.cpp',
-    '../../_lib/highs/src/presolve/PresolveUtils.cpp',
     '../../_lib/highs/src/qpsolver/basis.cpp',
-    '../../_lib/highs/src/qpsolver/solver.cpp',
+    '../../_lib/highs/src/qpsolver/quass.cpp',
     '../../_lib/highs/src/qpsolver/ratiotest.cpp',
+    '../../_lib/highs/src/qpsolver/scaling.cpp',
+    '../../_lib/highs/src/qpsolver/perturbation.cpp',
     '../../_lib/highs/src/simplex/HEkk.cpp',
     '../../_lib/highs/src/simplex/HEkkControl.cpp',
     '../../_lib/highs/src/simplex/HEkkDebug.cpp',
@@ -237,11 +220,7 @@ highs_lib = static_library('highs',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/util/',
   ],
-  cpp_args: [
-    '-Wno-unused-variable',
-    highs_flags,
-    highs_define_macros
-  ]
+  cpp_args: [highs_flags, highs_define_macros]
 )
 
 _highs_wrapper = py3.extension_module('_highs_wrapper',
@@ -256,21 +235,7 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
     '../../_lib/highs/src/util/'
   ],
   link_with: [highs_lib, ipx_lib, basiclu_lib],
-  dependencies: [py3_dep],
-  cpp_args: [
-    '-Wno-unused-variable',
-    '-Wno-sign-compare',
-    '-Wno-switch',
-    '-Wno-format-truncation',
-    '-Wno-non-virtual-dtor',
-    '-Wno-class-memaccess',
-    # Pass despite __STDC_FORMAT_MACROS redefinition warning.
-    # Remove after merge of https://github.com/ERGO-Code/HiGHS/pull/674
-    '-Wp,-w',
-    Wno_unused_but_set,
-    highs_define_macros,
-    cython_c_args,
-  ],
+  cpp_args: [highs_flags, highs_define_macros, cython_c_args],
   install: true,
   subdir: 'scipy/optimize/_highs'
 )
@@ -286,7 +251,6 @@ _highs_constants = py3.extension_module('_highs_constants',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/simplex/'
   ],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/optimize/_highs'
 )

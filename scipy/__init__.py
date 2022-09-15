@@ -18,6 +18,7 @@ Using any of these subpackages requires an explicit import. For example,
 ::
 
  cluster                      --- Vector Quantization / Kmeans
+ datasets                     --- Dataset methods
  fft                          --- Discrete Fourier transforms
  fftpack                      --- Legacy discrete Fourier transforms
  integrate                    --- Integration routines
@@ -134,18 +135,28 @@ else:
     from scipy._lib import _pep440
     # In maintenance branch, change to np_maxversion N+3 if numpy is at N
     # See setup.py for more details
-    np_minversion = '1.18.5'
+    np_minversion = '1.19.5'
     np_maxversion = '9.9.99'
     if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
             _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):
         import warnings
         warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion}"
                       f" is required for this version of SciPy (detected "
-                      f"version {__numpy_version__}",
+                      f"version {__numpy_version__})",
                       UserWarning)
     del _pep440
 
-    from scipy._lib._ccallback import LowLevelCallable
+    # This is the first import of an extension module within SciPy. If there's
+    # a general issue with the install, such that extension modules are missing
+    # or cannot be imported, this is where we'll get a failure - so give an
+    # informative error message.
+    try:
+        from scipy._lib._ccallback import LowLevelCallable
+    except ImportError as e:
+        msg = "The `scipy` install you are using seems to be broken, " + \
+              "(extension modules cannot be imported), " + \
+              "please try reinstalling."
+        raise ImportError(msg) from e
 
     from scipy._lib._testutils import PytestTester
     test = PytestTester(__name__)
@@ -153,6 +164,7 @@ else:
 
     submodules = [
         'cluster',
+        'datasets',
         'fft',
         'fftpack',
         'integrate',

@@ -1,10 +1,3 @@
-fortran_ignore_warnings = [
-  '-Wno-tabs', '-Wno-conversion',
-  '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
-  '-Wno-maybe-uninitialized', '-Wno-unused-label',
-  '-Wno-unused-variable'
-]
-
 # Note: 3 source files in iterative/ are unused
 methods = [
   'iterative/BiCGREVCOM.f.src',
@@ -68,7 +61,6 @@ _iterative_module = custom_target('_iterative_module',
 _iterative = py3.extension_module('_iterative',
   [
     _iterative_module,
-    fortranobject_c,
     g77_abi_wrappers,
     methods_f_0,
     methods_f_1,
@@ -81,7 +73,7 @@ _iterative = py3.extension_module('_iterative',
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, lapack],
+  dependencies: [lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/sparse/linalg/_isolve'
