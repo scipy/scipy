@@ -1048,7 +1048,7 @@ class burr_gen(rv_continuous):
             nc = 1. * n / c
             return d * sc.beta(1.0 - nc, d + nc)
         n, c, d = np.asarray(n), np.asarray(c), np.asarray(d)
-        return _lazywhere((c > n) & (n == n) & (d == d), (c, d, n),
+        return _lazywhere((c > n) & (d == d), (c, d, n),
                           lambda c, d, n: __munp(n, c, d),
                           np.nan)
 
@@ -4367,7 +4367,7 @@ class geninvgauss_gen(rv_continuous):
             # for each combination of the input arguments.
             numsamples = int(np.prod(shp))
 
-            # `out` is the array to be returned.  It is filled in in the
+            # `out` is the array to be returned.  It is filled in the
             # loop below.
             out = np.empty(size)
 

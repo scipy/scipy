@@ -220,7 +220,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     With only three singular values/vectors, the SVD approximates the original
     matrix.
 
-    >>> u2, s2, vT2 = svds(A, k=3)
+    >>> u2, s2, vT2 = svds(A, k=3, random_state=rng)
     >>> A2 = u2 @ np.diag(s2) @ vT2
     >>> np.allclose(A2, A.toarray(), atol=1e-3)
     True
@@ -228,7 +228,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     With all five singular values/vectors, we can reproduce the original
     matrix.
 
-    >>> u3, s3, vT3 = svds(A, k=5)
+    >>> u3, s3, vT3 = svds(A, k=5, random_state=rng)
     >>> A3 = u3 @ np.diag(s3) @ vT3
     >>> np.allclose(A3, A.toarray())
     True

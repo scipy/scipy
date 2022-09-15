@@ -534,9 +534,6 @@ def pearsonr(x, y):
                                       ma.masked_array(y, mask=m).compressed())
 
 
-SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
-
-
 def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
               alternative='two-sided'):
     """
@@ -591,10 +588,19 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
 
     Returns
     -------
-    correlation : float
-        Spearman correlation coefficient
-    pvalue : float
-        2-tailed p-value.
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : float or ndarray (2-D square)
+            Spearman correlation matrix or correlation coefficient (if only 2
+            variables are given as parameters). Correlation matrix is square
+            with length equal to total number of variables (columns or rows) in
+            ``a`` and ``b`` combined.
+        pvalue : float
+            The p-value for a hypothesis test whose null hypothesis
+            is that two sets of data are linearly uncorrelated. See
+            `alternative` above for alternative hypotheses. `pvalue` has the
+            same shape as `statistic`.
 
     References
     ----------
@@ -629,7 +635,9 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
 
         # If either column is entirely NaN or Inf
         if not np.any(x.data):
-            return SpearmanrResult(np.nan, np.nan)
+            res = scipy.stats._stats_py.SignificanceResult(np.nan, np.nan)
+            res.correlation = np.nan
+            return res
 
         m = ma.getmask(x)
         n_obs = x.shape[0]
@@ -651,9 +659,14 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
 
         # For backwards compatibility, return scalars when comparing 2 columns
         if rs.shape == (2, 2):
-            return SpearmanrResult(rs[1, 0], prob[1, 0])
+            res = scipy.stats._stats_py.SignificanceResult(rs[1, 0],
+                                                           prob[1, 0])
+            res.correlation = rs[1, 0]
+            return res
         else:
-            return SpearmanrResult(rs, prob)
+            res = scipy.stats._stats_py.SignificanceResult(rs, prob)
+            res.correlation = rs
+            return res
 
     # Need to do this per pair of variables, otherwise the dropped observations
     # in a third column mess up the result for a pair.
@@ -671,7 +684,9 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
                 prob[var1, var2] = result.pvalue
                 prob[var2, var1] = result.pvalue
 
-        return SpearmanrResult(rs, prob)
+        res = scipy.stats._stats_py.SignificanceResult(rs, prob)
+        res.correlation = rs
+        return res
 
 
 def _kendall_p_exact(n, c, alternative='two-sided'):
@@ -741,9 +756,6 @@ def _kendall_p_exact(n, c, alternative='two-sided'):
     return prob
 
 
-KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
-
-
 def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
                alternative='two-sided'):
     """
@@ -778,10 +790,14 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
 
     Returns
     -------
-    correlation : float
-        The Kendall tau statistic
-    pvalue : float
-        The p-value
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : float
+           The tau statistic.
+        pvalue : float
+           The p-value for a hypothesis test whose null hypothesis is
+           an absence of association, tau = 0.
 
     References
     ----------
@@ -801,7 +817,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
         n -= int(m.sum())
 
     if n < 2:
-        return KendalltauResult(np.nan, np.nan)
+        res = scipy.stats._stats_py.SignificanceResult(np.nan, np.nan)
+        res.correlation = np.nan
+        return res
 
     rx = ma.masked_equal(rankdata(x, use_missing=use_missing), 0)
     ry = ma.masked_equal(rankdata(y, use_missing=use_missing), 0)
@@ -860,7 +878,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
         raise ValueError("Unknown method "+str(method)+" specified, please "
                          "use auto, exact or asymptotic.")
 
-    return KendalltauResult(tau, prob)
+    res = scipy.stats._stats_py.SignificanceResult(tau, prob)
+    res.correlation = tau
+    return res
 
 
 def kendalltau_seasonal(x):
