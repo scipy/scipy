@@ -7731,7 +7731,13 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
                     else:
                         prob = num_paths / bin
 
-    except (FloatingPointError, OverflowError):
+    # Added RuntimeError to this list as part of gh-13957. If/when
+    # serge-sans-paille/pythran#2018 is in Pythran `main` and that version
+    # is used to build SciPy, tests will likely begin to fail. At that time,
+    # we'll need to look for NaNs, either within `_count_paths_outside_method`
+    # or in the value it returns, and we should re-evaluate whether we
+    # should be `except`ing these errors anymore.
+    except (FloatingPointError, OverflowError, RuntimeError):
         saw_fp_error = True
 
     if saw_fp_error:
