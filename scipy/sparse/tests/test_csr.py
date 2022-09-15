@@ -162,7 +162,8 @@ def test_csr_hstack_int64():
 
     # Should be just small enough to stay in int32 after stack. Note that
     # we theoretically could support indices.max() == max_int32, but due to an
-    # edge-case in the underlying sparsetools code (namely the `coo_tocsr` routine),
+    # edge-case in the underlying sparsetools code
+    # (namely the `coo_tocsr` routine),
     # we require that max(X_hs_32.shape) < max_int32 as well.
     # Hence we can only support max_int32 - 1.
     col_3 = [max_int32 - max_indices_1 - 1]
