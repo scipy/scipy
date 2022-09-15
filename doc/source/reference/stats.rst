@@ -7,3 +7,4 @@
    :hidden:
 
    stats._result_classes
+   stats.contingency

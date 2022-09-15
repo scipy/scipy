@@ -185,6 +185,7 @@ def set_workers(workers):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import fft, signal
     >>> rng = np.random.default_rng()
     >>> x = rng.standard_normal((128, 64))

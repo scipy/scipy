@@ -5,12 +5,14 @@ from warnings import warn
 from textwrap import dedent
 from shutil import copyfile
 import pathlib
-import os
+import sys
+import argparse
 
 from gen_func_defs_pxd import (  # type: ignore
     _gen_func_defs_pxd)
 from _info import (  # type: ignore
     _x_funcs, _no_x_funcs, _klass_mapper)
+
 
 class _MethodDef(NamedTuple):
     ufunc_name: str
@@ -20,7 +22,7 @@ class _MethodDef(NamedTuple):
 
 def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
                filename: str, boost_dist: str, x_funcs: list,
-               no_x_funcs: list):
+               no_x_funcs: list, distutils_build: bool):
     '''
     We need methods defined for each rv_continuous/_discrete internal method:
         i.e.: _pdf, _cdf, etc.
@@ -63,6 +65,12 @@ def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
 
     with open(filename, 'w') as fp:
         boost_hdr = f'boost/math/distributions/{boost_hdr_name}.hpp'
+        if distutils_build:
+            # There's no __init__.py here, so no `from .xxx cimport`
+            relimport = ''
+        else:
+            relimport = '.'
+
         fp.write(dedent(f'''\
             # distutils: language = c++
             # cython: language_level=3
@@ -78,8 +86,8 @@ def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
                 PyUFunc_None,
                 {line_joiner.join(types)}
             )
-            from templated_pyufunc cimport PyUFunc_T
-            from func_defs cimport (
+            from {relimport}templated_pyufunc cimport PyUFunc_T
+            from {relimport}func_defs cimport (
                 {func_defs_cimports},
             )
             cdef extern from "{boost_hdr}" namespace "boost::math" nogil:
@@ -149,10 +157,20 @@ func{ii}[{jj}] = <void*>{boost_fun}[{boost_tmpl}]
 
 
 if __name__ == '__main__':
-    # create target directory
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--outdir", type=str,
+                        help="Path to the output directory")
+    parser.add_argument("--distutils-build", type=bool, default=False,
+                        help="Whether or not this is a distutils build")
+    args = parser.parse_args()
+
     _boost_dir = pathlib.Path(__file__).resolve().parent.parent
-    src_dir = _boost_dir / 'src'
-    src_dir.mkdir(exist_ok=True, parents=True)
+    if args.outdir:
+        src_dir = pathlib.Path(args.outdir)
+    else:
+        # We're using setup.py here, not Meson. Create target directory
+        src_dir = _boost_dir / 'src'
+        src_dir.mkdir(exist_ok=True, parents=True)
 
     # copy contents of include into directory to satisfy Cython
     # PXD include conditions
@@ -165,13 +183,18 @@ if __name__ == '__main__':
         f'{src_dir}/func_defs.pxd',
         x_funcs=_x_funcs,
         no_x_funcs=_no_x_funcs)
+    float_types = ['NPY_FLOAT', 'NPY_DOUBLE']
+    # Don't generate the 'long double' ufunc loops on Windows.
+    if sys.platform != 'win32':
+        float_types.append('NPY_LONGDOUBLE')
     for b, s in _klass_mapper.items():
         _ufunc_gen(
             scipy_dist=s.scipy_name,
-            types=['NPY_FLOAT', 'NPY_DOUBLE', 'NPY_LONGDOUBLE'],
+            types=float_types,
             ctor_args=s.ctor_args,
             filename=f'{src_dir}/{s.scipy_name}_ufunc.pyx',
             boost_dist=f'{b}_distribution',
             x_funcs=_x_funcs,
             no_x_funcs=_no_x_funcs,
+            distutils_build=args.distutils_build,
         )

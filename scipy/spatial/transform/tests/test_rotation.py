@@ -695,7 +695,7 @@ def test_as_euler_degenerate_symmetric_axes():
 def test_inv():
     rnd = np.random.RandomState(0)
     n = 10
-    p = Rotation.from_quat(rnd.normal(size=(n, 4)))
+    p = Rotation.random(num=n, random_state=rnd)
     q = p.inv()
 
     p_mat = p.as_matrix()
@@ -712,7 +712,7 @@ def test_inv():
 
 def test_inv_single_rotation():
     rnd = np.random.RandomState(0)
-    p = Rotation.from_quat(rnd.normal(size=(4,)))
+    p = Rotation.random(random_state=rnd)
     q = p.inv()
 
     p_mat = p.as_matrix()
@@ -725,7 +725,7 @@ def test_inv_single_rotation():
     assert_array_almost_equal(res1, eye)
     assert_array_almost_equal(res2, eye)
 
-    x = Rotation.from_quat(rnd.normal(size=(1, 4)))
+    x = Rotation.random(num=1, random_state=rnd)
     y = x.inv()
 
     x_matrix = x.as_matrix()
@@ -847,7 +847,7 @@ def test_reduction_scalar_calculation():
         for j, pj in enumerate(p):
             for k, rk in enumerate(r):
                 scalars[i, j, k] = np.abs((li * pj * rk).as_quat()[3])
-    scalars = np.reshape(np.rollaxis(scalars, 1), (scalars.shape[1], -1))
+    scalars = np.reshape(np.moveaxis(scalars, 1, 0), (scalars.shape[1], -1))
 
     max_ind = np.argmax(np.reshape(scalars, (len(p), -1)), axis=1)
     left_best_check = max_ind // len(r)
@@ -978,6 +978,39 @@ def test_getitem():
     assert_allclose(r[:-1].as_matrix(), np.expand_dims(mat[0], axis=0), atol=1e-15)
 
 
+def test_getitem_single():
+    with pytest.raises(TypeError, match='not subscriptable'):
+        Rotation.identity()[0]
+
+
+def test_setitem_single():
+    r = Rotation.identity()
+    with pytest.raises(TypeError, match='not subscriptable'):
+        r[0] = Rotation.identity()
+
+
+def test_setitem_slice():
+    rng = np.random.RandomState(seed=0)
+    r1 = Rotation.random(10, random_state=rng)
+    r2 = Rotation.random(5, random_state=rng)
+    r1[1:6] = r2
+    assert_equal(r1[1:6].as_quat(), r2.as_quat())
+
+
+def test_setitem_integer():
+    rng = np.random.RandomState(seed=0)
+    r1 = Rotation.random(10, random_state=rng)
+    r2 = Rotation.random(random_state=rng)
+    r1[1] = r2
+    assert_equal(r1[1].as_quat(), r2.as_quat())
+
+
+def test_setitem_wrong_type():
+    r = Rotation.random(10, random_state=0)
+    with pytest.raises(TypeError, match='Rotation object'):
+        r[0] = 1
+
+
 def test_n_rotations():
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
@@ -1007,7 +1040,7 @@ def test_align_vectors_no_rotation():
 
 def test_align_vectors_no_noise():
     rnd = np.random.RandomState(0)
-    c = Rotation.from_quat(rnd.normal(size=4))
+    c = Rotation.random(random_state=rnd)
     b = rnd.normal(size=(5, 3))
     a = c.apply(b)
 
@@ -1045,7 +1078,7 @@ def test_align_vectors_scaled_weights():
 def test_align_vectors_noise():
     rnd = np.random.RandomState(0)
     n_vectors = 100
-    rot = Rotation.from_euler('xyz', rnd.normal(size=3))
+    rot = Rotation.random(random_state=rnd)
     vectors = rnd.normal(size=(n_vectors, 3))
     result = rot.apply(vectors)
 
@@ -1105,6 +1138,10 @@ def test_align_vectors_invalid_input():
     with pytest.raises(ValueError,
                        match="Expected `weights` to have number of values"):
         Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[1, 2])
+
+    with pytest.raises(ValueError,
+                       match="`weights` may not contain negative values"):
+        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[-1])
 
 
 def test_random_rotation_shape():
@@ -1298,3 +1335,36 @@ def test_as_euler_contiguous():
     assert all(i >= 0 for i in e1.strides)
     assert all(i >= 0 for i in e2.strides)
 
+
+def test_concatenate():
+    rotation = Rotation.random(10, random_state=0)
+    sizes = [1, 2, 3, 1, 3]
+    starts = [0] + list(np.cumsum(sizes))
+    split = [rotation[i:i + n] for i, n in zip(starts, sizes)]
+    result = Rotation.concatenate(split)
+    assert_equal(rotation.as_quat(), result.as_quat())
+
+
+def test_concatenate_wrong_type():
+    with pytest.raises(TypeError, match='Rotation objects only'):
+        Rotation.concatenate([Rotation.identity(), 1, None])
+
+
+# Regression test for gh-16663
+def test_len_and_bool():
+    rotation_multi_empty = Rotation(np.empty((0, 4)))
+    rotation_multi_one = Rotation([[0, 0, 0, 1]])
+    rotation_multi = Rotation([[0, 0, 0, 1], [0, 0, 0, 1]])
+    rotation_single = Rotation([0, 0, 0, 1])
+
+    assert len(rotation_multi_empty) == 0
+    assert len(rotation_multi_one) == 1
+    assert len(rotation_multi) == 2
+    with pytest.raises(TypeError, match="Single rotation has no len()."):
+        len(rotation_single)
+
+    # Rotation should always be truthy. See gh-16663
+    assert rotation_multi_empty
+    assert rotation_multi_one
+    assert rotation_multi
+    assert rotation_single

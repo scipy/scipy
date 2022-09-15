@@ -1,4 +1,5 @@
-      subroutine fpcuro(a,b,c,d,x,n)
+      recursive subroutine fpcuro(a,b,c,d,x,n)
+      implicit none
 c  subroutine fpcuro finds the real zeros of a cubic polynomial
 c  p(x) = a*x**3+b*x**2+c*x+d.
 c

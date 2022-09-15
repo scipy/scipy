@@ -6,43 +6,47 @@ from libcpp.string cimport string
 
 cdef extern from "HConst.h" nogil:
 
-    const int HIGHS_CONST_I_INF
-    const double HIGHS_CONST_INF
-    const double HIGHS_CONST_TINY
-    const double HIGHS_CONST_ZERO
-    const int HIGHS_THREAD_LIMIT
-    const bool allow_infinite_costs
-    const string FILENAME_DEFAULT
+    const int HIGHS_CONST_I_INF "kHighsIInf"
+    const double HIGHS_CONST_INF "kHighsInf"
+    const double kHighsTiny
+    const double kHighsZero
+    const int kHighsThreadLimit
+
+    cdef enum HighsDebugLevel:
+      HighsDebugLevel_kHighsDebugLevelNone "kHighsDebugLevelNone" = 0
+      HighsDebugLevel_kHighsDebugLevelCheap "kHighsDebugLevelCheap"
+      HighsDebugLevel_kHighsDebugLevelCostly "kHighsDebugLevelCostly"
+      HighsDebugLevel_kHighsDebugLevelExpensive "kHighsDebugLevelExpensive"
+      HighsDebugLevel_kHighsDebugLevelMin "kHighsDebugLevelMin" = HighsDebugLevel_kHighsDebugLevelNone
+      HighsDebugLevel_kHighsDebugLevelMax "kHighsDebugLevelMax" = HighsDebugLevel_kHighsDebugLevelExpensive
 
     ctypedef enum HighsModelStatus:
-        HighsModelStatusNOTSET "HighsModelStatus::NOTSET" = 0
-        HighsModelStatusHIGHS_MODEL_STATUS_MIN "HighsModelStatus::HIGHS_MODEL_STATUS_MIN" = HighsModelStatusNOTSET
-        HighsModelStatusLOAD_ERROR "HighsModelStatus::LOAD_ERROR"
-        HighsModelStatusMODEL_ERROR "HighsModelStatus::MODEL_ERROR"
-        HighsModelStatusPRESOLVE_ERROR "HighsModelStatus::PRESOLVE_ERROR"
-        HighsModelStatusSOLVE_ERROR "HighsModelStatus::SOLVE_ERROR"
-        HighsModelStatusPOSTSOLVE_ERROR "HighsModelStatus::POSTSOLVE_ERROR"
-        HighsModelStatusMODEL_EMPTY "HighsModelStatus::MODEL_EMPTY"
-        HighsModelStatusPRIMAL_INFEASIBLE "HighsModelStatus::PRIMAL_INFEASIBLE"
-        HighsModelStatusPRIMAL_UNBOUNDED "HighsModelStatus::PRIMAL_UNBOUNDED"
-        HighsModelStatusOPTIMAL "HighsModelStatus::OPTIMAL"
-        HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND "HighsModelStatus::REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND"
-        HighsModelStatusREACHED_TIME_LIMIT "HighsModelStatus::REACHED_TIME_LIMIT"
-        HighsModelStatusREACHED_ITERATION_LIMIT "HighsModelStatus::REACHED_ITERATION_LIMIT"
-        HighsModelStatusPRIMAL_DUAL_INFEASIBLE "HighsModelStatus::PRIMAL_DUAL_INFEASIBLE"
-        HighsModelStatusDUAL_INFEASIBLE "HighsModelStatus::DUAL_INFEASIBLE"
-        HighsModelStatusHIGHS_MODEL_STATUS_MAX "HighsModelStatus::HIGHS_MODEL_STATUS_MAX" = HighsModelStatusDUAL_INFEASIBLE
-
+        HighsModelStatusNOTSET "HighsModelStatus::kNotset" = 0
+        HighsModelStatusLOAD_ERROR "HighsModelStatus::kLoadError"
+        HighsModelStatusMODEL_ERROR "HighsModelStatus::kModelError"
+        HighsModelStatusPRESOLVE_ERROR "HighsModelStatus::kPresolveError"
+        HighsModelStatusSOLVE_ERROR "HighsModelStatus::kSolveError"
+        HighsModelStatusPOSTSOLVE_ERROR "HighsModelStatus::kPostsolveError"
+        HighsModelStatusMODEL_EMPTY "HighsModelStatus::kModelEmpty"
+        HighsModelStatusOPTIMAL "HighsModelStatus::kOptimal"
+        HighsModelStatusINFEASIBLE "HighsModelStatus::kInfeasible"
+        HighsModelStatus_UNBOUNDED_OR_INFEASIBLE "HighsModelStatus::kUnboundedOrInfeasible"
+        HighsModelStatusUNBOUNDED "HighsModelStatus::kUnbounded"
+        HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND "HighsModelStatus::kObjectiveBound"
+        HighsModelStatusREACHED_OBJECTIVE_TARGET "HighsModelStatus::kObjectiveTarget"
+        HighsModelStatusREACHED_TIME_LIMIT "HighsModelStatus::kTimeLimit"
+        HighsModelStatusREACHED_ITERATION_LIMIT "HighsModelStatus::kIterationLimit"
+        HighsModelStatusUNKNOWN "HighsModelStatus::kUnknown"
+        HighsModelStatusHIGHS_MODEL_STATUS_MIN "HighsModelStatus::kMin" = HighsModelStatusNOTSET
+        HighsModelStatusHIGHS_MODEL_STATUS_MAX "HighsModelStatus::kMax" = HighsModelStatusUNKNOWN
 
     cdef enum HighsBasisStatus:
-        HighsBasisStatusLOWER "HighsBasisStatus::LOWER" = 0, # (slack) variable is at its lower bound [including fixed variables]
-        HighsBasisStatusBASIC "HighsBasisStatus::BASIC" # (slack) variable is basic
-        HighsBasisStatusUPPER "HighsBasisStatus::UPPER" # (slack) variable is at its upper bound
-        HighsBasisStatusZERO "HighsBasisStatus::ZERO" # free variable is non-basic and set to zero
-        HighsBasisStatusNONBASIC "HighsBasisStatus::NONBASIC" # nonbasic with no specific bound information - useful for users and postsolve
-        HighsBasisStatusSUPER "HighsBasisStatus::SUPER" # Super-basic variable: non-basic and either free and
-                                                        # nonzero or not at a bound. No SCIP equivalent
-                                        
+        HighsBasisStatusLOWER "HighsBasisStatus::kLower" = 0, # (slack) variable is at its lower bound [including fixed variables]
+        HighsBasisStatusBASIC "HighsBasisStatus::kBasic" # (slack) variable is basic
+        HighsBasisStatusUPPER "HighsBasisStatus::kUpper" # (slack) variable is at its upper bound
+        HighsBasisStatusZERO "HighsBasisStatus::kZero" # free variable is non-basic and set to zero
+        HighsBasisStatusNONBASIC "HighsBasisStatus::kNonbasic" # nonbasic with no specific bound information - useful for users and postsolve
+
     cdef enum SolverOption:
         SOLVER_OPTION_SIMPLEX "SolverOption::SOLVER_OPTION_SIMPLEX" = -1
         SOLVER_OPTION_CHOOSE "SolverOption::SOLVER_OPTION_CHOOSE"
@@ -58,7 +62,46 @@ cdef extern from "HConst.h" nogil:
         PrimalDualStatusSTATUS_MAX "PrimalDualStatus::STATUS_MAX" = PrimalDualStatusSTATUS_FEASIBLE_POINT
 
     cdef enum HighsOptionType:
-        HighsOptionTypeBOOL "HighsOptionType::BOOL" = 0
-        HighsOptionTypeINT "HighsOptionType::INT"
-        HighsOptionTypeDOUBLE "HighsOptionType::DOUBLE"
-        HighsOptionTypeSTRING "HighsOptionType::STRING"
+        HighsOptionTypeBOOL "HighsOptionType::kBool" = 0
+        HighsOptionTypeINT "HighsOptionType::kInt"
+        HighsOptionTypeDOUBLE "HighsOptionType::kDouble"
+        HighsOptionTypeSTRING "HighsOptionType::kString"
+
+    # workaround for lack of enum class support in Cython < 3.x
+    # cdef enum class ObjSense(int):
+    #     ObjSenseMINIMIZE "ObjSense::kMinimize" = 1
+    #     ObjSenseMAXIMIZE "ObjSense::kMaximize" = -1
+
+    cdef cppclass ObjSense:
+        pass
+
+    cdef ObjSense ObjSenseMINIMIZE "ObjSense::kMinimize"
+    cdef ObjSense ObjSenseMAXIMIZE "ObjSense::kMaximize"
+
+    # cdef enum class MatrixFormat(int):
+    #     MatrixFormatkColwise "MatrixFormat::kColwise" = 1
+    #     MatrixFormatkRowwise "MatrixFormat::kRowwise"
+    #     MatrixFormatkRowwisePartitioned "MatrixFormat::kRowwisePartitioned"
+
+    cdef cppclass MatrixFormat:
+        pass
+
+    cdef MatrixFormat MatrixFormatkColwise "MatrixFormat::kColwise"
+    cdef MatrixFormat MatrixFormatkRowwise "MatrixFormat::kRowwise"
+    cdef MatrixFormat MatrixFormatkRowwisePartitioned "MatrixFormat::kRowwisePartitioned"
+
+    # cdef enum class HighsVarType(int):
+    #     kContinuous "HighsVarType::kContinuous"
+    #     kInteger "HighsVarType::kInteger"
+    #     kSemiContinuous "HighsVarType::kSemiContinuous"
+    #     kSemiInteger "HighsVarType::kSemiInteger"
+    #     kImplicitInteger "HighsVarType::kImplicitInteger"
+
+    cdef cppclass HighsVarType:
+        pass
+
+    cdef HighsVarType kContinuous "HighsVarType::kContinuous"
+    cdef HighsVarType kInteger "HighsVarType::kInteger"
+    cdef HighsVarType kSemiContinuous "HighsVarType::kSemiContinuous"
+    cdef HighsVarType kSemiInteger "HighsVarType::kSemiInteger"
+    cdef HighsVarType kImplicitInteger "HighsVarType::kImplicitInteger"

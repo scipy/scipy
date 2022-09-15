@@ -5,31 +5,30 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
 from itertools import product
 from math import gcd
-import warnings
 
 import pytest
 from pytest import raises as assert_raises
 from numpy.testing import (
     assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_warns, assert_array_less,
+    assert_allclose, assert_, assert_array_less,
     suppress_warnings)
 from numpy import array, arange
 import numpy as np
 
 from scipy.fft import fft
-from scipy.ndimage.filters import correlate1d
+from scipy.ndimage import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
 from scipy.signal import (
-    correlate, correlation_lags, convolve, convolve2d,
+    correlate, correlate2d, correlation_lags, convolve, convolve2d,
     fftconvolve, oaconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
     sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
     residuez)
 from scipy.signal.windows import hann
-from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
+from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
@@ -300,30 +299,16 @@ class _TestConvolve2d:
                    [32, 46, 67, 62, 48]])
         assert_array_equal(c, d)
 
-    def test_fillvalue_deprecations(self):
-        # Deprecated 2017-07, scipy version 1.0.0
-        with suppress_warnings() as sup:
-            sup.filter(np.ComplexWarning, "Casting complex values to real")
-            r = sup.record(DeprecationWarning, "could not cast `fillvalue`")
-            convolve2d([[1]], [[1, 2]], fillvalue=1j)
-            assert_(len(r) == 1)
-            warnings.filterwarnings(
-                "error", message="could not cast `fillvalue`",
-                category=DeprecationWarning)
-            assert_raises(DeprecationWarning, convolve2d, [[1]], [[1, 2]],
-                          fillvalue=1j)
+    def test_fillvalue_errors(self):
+        msg = "could not cast `fillvalue` directly to the output "
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(np.ComplexWarning, "Casting complex values")
+            with assert_raises(ValueError, match=msg):
+                convolve2d([[1]], [[1, 2]], fillvalue=1j)
 
-        with suppress_warnings():
-            warnings.filterwarnings(
-                "always", message="`fillvalue` must be scalar or an array ",
-                category=DeprecationWarning)
-            assert_warns(DeprecationWarning, convolve2d, [[1]], [[1, 2]],
-                         fillvalue=[1, 2])
-            warnings.filterwarnings(
-                "error", message="`fillvalue` must be scalar or an array ",
-                category=DeprecationWarning)
-            assert_raises(DeprecationWarning, convolve2d, [[1]], [[1, 2]],
-                          fillvalue=[1, 2])
+        msg = "`fillvalue` must be scalar or an array with "
+        with assert_raises(ValueError, match=msg):
+            convolve2d([[1]], [[1, 2]], fillvalue=[1, 2])
 
     def test_fillvalue_empty(self):
         # Check that fillvalue being empty raises an error:
@@ -347,6 +332,44 @@ class _TestConvolve2d:
                    [52, 48, 62, 80, 84],
                    [82, 78, 92, 110, 114]])
         assert_array_equal(c, d)
+
+    @pytest.mark.parametrize('func', [convolve2d, correlate2d])
+    @pytest.mark.parametrize('boundary, expected',
+                             [('symm', [[37.0, 42.0, 44.0, 45.0]]),
+                              ('wrap', [[43.0, 44.0, 42.0, 39.0]])])
+    def test_same_with_boundary(self, func, boundary, expected):
+        # Test boundary='symm' and boundary='wrap' with a "long" kernel.
+        # The size of the kernel requires that the values in the "image"
+        # be extended more than once to handle the requested boundary method.
+        # This is a regression test for gh-8684 and gh-8814.
+        image = np.array([[2.0, -1.0, 3.0, 4.0]])
+        kernel = np.ones((1, 21))
+        result = func(image, kernel, mode='same', boundary=boundary)
+        # The expected results were calculated "by hand".  Because the
+        # kernel is all ones, the same result is expected for convolve2d
+        # and correlate2d.
+        assert_array_equal(result, expected)
+
+    def test_boundary_extension_same(self):
+        # Regression test for gh-12686.
+        # Use ndimage.convolve with appropriate arguments to create the
+        # expected result.
+        import scipy.ndimage as ndi
+        a = np.arange(1, 10*3+1, dtype=float).reshape(10, 3)
+        b = np.arange(1, 10*10+1, dtype=float).reshape(10, 10)
+        c = convolve2d(a, b, mode='same', boundary='wrap')
+        assert_array_equal(c, ndi.convolve(a, b, mode='wrap', origin=(-1, -1)))
+
+    def test_boundary_extension_full(self):
+        # Regression test for gh-12686.
+        # Use ndimage.convolve with appropriate arguments to create the
+        # expected result.
+        import scipy.ndimage as ndi
+        a = np.arange(1, 3*3+1, dtype=float).reshape(3, 3)
+        b = np.arange(1, 6*6+1, dtype=float).reshape(6, 6)
+        c = convolve2d(a, b, mode='full', boundary='wrap')
+        apad = np.pad(a, ((3, 3), (3, 3)), 'wrap')
+        assert_array_equal(c, ndi.convolve(apad, b, mode='wrap')[:-1, :-1])
 
     def test_invalid_shapes(self):
         # By "invalid," we mean that no one
@@ -748,9 +771,9 @@ class TestFFTConvolve:
         b = b[:, :, None, None, None]
         expected = expected[:, :, None, None, None]
 
-        a = np.rollaxis(a.swapaxes(0, 2), 1, 5)
-        b = np.rollaxis(b.swapaxes(0, 2), 1, 5)
-        expected = np.rollaxis(expected.swapaxes(0, 2), 1, 5)
+        a = np.moveaxis(a.swapaxes(0, 2), 1, 4)
+        b = np.moveaxis(b.swapaxes(0, 2), 1, 4)
+        expected = np.moveaxis(expected.swapaxes(0, 2), 1, 4)
 
         # use 1 for dimension 2 in a and 3 in b to test broadcasting
         a = np.tile(a, [2, 1, 3, 1, 1])
@@ -777,6 +800,17 @@ class TestFFTConvolve:
         out = fftconvolve(a, b, 'full', axes=[0])
         assert_allclose(out, expected, atol=1e-10)
 
+    def test_fft_nan(self):
+        n = 1000
+        rng = np.random.default_rng(43876432987)
+        sig_nan = rng.standard_normal(n)
+
+        for val in [np.nan, np.inf]:
+            sig_nan[100] = val
+            coeffs = signal.firwin(200, 0.2)
+
+            with pytest.warns(RuntimeWarning, match="Use of fft convolution"):
+                signal.convolve(sig_nan, coeffs, mode='same', method='fft')
 
 def fftconvolve_err(*args, **kwargs):
     raise RuntimeError('Fell back to fftconvolve')
@@ -834,7 +868,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode)
 
@@ -863,7 +897,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode, axes=axes)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode, axes=axes)
 
@@ -884,7 +918,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode)
 
@@ -916,7 +950,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode, axes=axes)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode, axes=axes)
 
@@ -1071,7 +1105,6 @@ class TestMedFilt:
 
         with pytest.raises(ValueError, match="order_filterND"):
             signal.medfilt2d(in_typed)
-
 
     def test_none(self):
         # gh-1651, trac #1124. Ensure this does not segfault.
@@ -1258,6 +1291,14 @@ class TestResample:
         h = np.array([1, 1, 1], dtype=np.float32)
         y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
         assert(y.dtype == np.float32)
+
+    @pytest.mark.parametrize('padtype', padtype_options)
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_output_match_dtype(self, padtype, dtype):
+        # Test that the dtype of x is preserved per issue #14733
+        x = np.arange(10, dtype=dtype)
+        y = signal.resample_poly(x, 1, 2, padtype=padtype)
+        assert(y.dtype == x.dtype)
 
     @pytest.mark.parametrize(
         "method, ext, padtype",
@@ -2134,7 +2175,8 @@ class TestCorrelateComplex:
 
         y_r = (correlate(a.real, b.real)
                + correlate(a.imag, b.imag)).astype(dt)
-        y_r += 1j * (-correlate(a.real, b.imag) + correlate(a.imag, b.real))
+        y_r += 1j * np.array(-correlate(a.real, b.imag) +
+                             correlate(a.imag, b.real))
 
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r, decimal=self.decimal(dt) - 1)
@@ -2201,6 +2243,12 @@ class TestLFilterZI:
         zi1 = lfilter_zi(b, a)
         zi2 = lfilter_zi(2*b, 2*a)
         assert_allclose(zi2, zi1, rtol=1e-12)
+
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_types(self, dtype):
+        b = np.zeros((8), dtype=dtype)
+        a = np.array([1], dtype=dtype)
+        assert_equal(np.real(signal.lfilter_zi(b, a)).dtype, dtype)
 
 
 class TestFiltFilt:
@@ -2319,7 +2367,7 @@ def filtfilt_gust_opt(b, a, x):
     An alternative implementation of filtfilt with Gustafsson edges.
 
     This function computes the same result as
-    `scipy.signal.signaltools._filtfilt_gust`, but only 1-d arrays
+    `scipy.signal._signaltools._filtfilt_gust`, but only 1-d arrays
     are accepted.  The problem is solved using `fmin` from `scipy.optimize`.
     `_filtfilt_gust` is significanly faster than this implementation.
     """
@@ -2639,6 +2687,11 @@ class TestHilbert:
                            9.444121133484362e-17 - 0.79252210110103j])
         assert_almost_equal(aan[0], a0hilb, 14, 'N regression')
 
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_hilbert_types(self, dtype):
+        in_typed = np.zeros(8, dtype=dtype)
+        assert_equal(np.real(signal.hilbert(in_typed)).dtype, dtype)
+
 
 class TestHilbert2:
 
@@ -2656,6 +2709,11 @@ class TestHilbert2:
         assert_raises(ValueError, hilbert2, x, N=0)
         assert_raises(ValueError, hilbert2, x, N=(2, 0))
         assert_raises(ValueError, hilbert2, x, N=(2,))
+
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_hilbert2_types(self, dtype):
+        in_typed = np.zeros((2, 32), dtype=dtype)
+        assert_equal(np.real(signal.hilbert2(in_typed)).dtype, dtype)
 
 
 class TestPartialFractionExpansion:
@@ -3402,6 +3460,18 @@ class TestDeconvolve:
         recorded = [0, 2, 1, 0, 2, 3, 1, 0, 0]
         recovered, remainder = signal.deconvolve(recorded, impulse_response)
         assert_allclose(recovered, original)
+
+    def test_n_dimensional_signal(self):
+        recorded = [[0, 0], [0, 0]]
+        impulse_response = [0, 0]
+        with pytest.raises(ValueError, match="signal must be 1-D."):
+            quotient, remainder = signal.deconvolve(recorded, impulse_response)
+
+    def test_n_dimensional_divisor(self):
+        recorded = [0, 0]
+        impulse_response = [[0, 0], [0, 0]]
+        with pytest.raises(ValueError, match="divisor must be 1-D."):
+            quotient, remainder = signal.deconvolve(recorded, impulse_response)
 
 
 class TestDetrend:
