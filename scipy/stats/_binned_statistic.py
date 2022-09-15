@@ -55,10 +55,6 @@ def binned_statistic(x, values, statistic='mean',
             values, and outputs a single numerical statistic. This function
             will be called on the values in each bin.  Empty bins will be
             represented by function([]), or NaN if this returns an error.
-            If the function is `np.mean`, `np.median`, `np.sum`, `np.std`,
-            `np.min`, or `np.max`, code that that is optimized for use with
-            `binned_statistic` will perform the desired operation without
-            calling the NumPy function explicitly.
 
     bins : int or sequence of scalars, optional
         If `bins` is an int, it defines the number of equal-width bins in the
@@ -240,10 +236,6 @@ def binned_statistic_2d(x, y, values, statistic='mean',
             values, and outputs a single numerical statistic. This function
             will be called on the values in each bin.  Empty bins will be
             represented by function([]), or NaN if this returns an error.
-            If the function is `np.mean`, `np.median`, `np.sum`, `np.std`,
-            `np.min`, or `np.max`, code that that is optimized for use with
-            `binned_statistic` will perform the desired operation without
-            calling the NumPy function explicitly.
 
     bins : int or [int, int] or array_like or [array, array], optional
         The bin specification:
@@ -416,10 +408,6 @@ def binned_statistic_dd(sample, values, statistic='mean',
             values, and outputs a single numerical statistic. This function
             will be called on the values in each bin.  Empty bins will be
             represented by function([]), or NaN if this returns an error.
-            If the function is `np.mean`, `np.median`, `np.sum`, `np.std`,
-            `np.min`, or `np.max`, code that that is optimized for use with
-            `binned_statistic` will perform the desired operation without
-            calling the NumPy function explicitly.
 
     bins : sequence or positive int, optional
         The bin specification must be in one of the following forms:
