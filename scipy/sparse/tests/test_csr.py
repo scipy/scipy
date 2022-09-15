@@ -117,7 +117,7 @@ def test_csr_bool_indexing():
 
 def test_csr_hstack_int64():
     """
-    Tests if hstack properly promotes to indices and intpr arrays to np.int64
+    Tests if hstack properly promotes to indices and indptr arrays to np.int64
     when using np.int32 during concatenation would result in either array
     overflowing.
     """
