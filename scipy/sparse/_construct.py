@@ -472,7 +472,6 @@ def _stack_along_minor_axis(blocks, axis):
     # - The max value in indptr is the number of non-zero entries. This is
     #   exceedingly unlikely to require int64, but is checked out of an
     #   abundance of caution.
-    max_int32 = np.iinfo(np.int32).max
     sum_dim = sum(b.shape[axis] for b in blocks)
     nnz = sum(len(b.indices) for b in blocks)
     idx_dtype = get_index_dtype(maxval=max(sum_dim - 1, nnz))
