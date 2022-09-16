@@ -51,9 +51,13 @@ cirrus_wheels_linux_aarch64_task:
     image: family/docker-builder-arm64
     architecture: arm64
     platform: linux
-    cpu: 8
+    cpu: 4
     memory: 8G
-
+  matrix:
+    - env:
+        CIBW_BUILD: cp38-* cp39-*
+    - env:
+        CIBW_BUILD: cp310-* cp311-*
   build_script:
     - apt install -y python3-venv python-is-python3
     - which python
