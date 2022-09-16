@@ -171,8 +171,3 @@ select = "*-win_amd64"
 # Don't use double backslash for path separators, they don't get passed
 # to the build correctly
 environment = { PKG_CONFIG_PATH="c:/opt/openblas/if_32/64/lib/pkgconfig" }
-
-# [[tool.cibuildwheel.overrides]]
-# select = "*-manylinux_aarch64"
-# before-test = ""
-# test-command = "bash {project}/tools/wheels/cibw_test_command_manylinux_aarch64.sh {project}"
