@@ -285,7 +285,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
-        in QAGS is applied.
+        in ``QAGS`` is applied.
     qagpe
         serves the same purposes as QAGS, but also allows the
         user to provide explicit information about the location
@@ -302,14 +302,14 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
         An adaptive subdivision scheme is used in connection
         with an extrapolation procedure, which is a modification
-        of that in QAGS and allows the algorithm to deal with
+        of that in ``QAGS`` and allows the algorithm to deal with
         singularities in :math:`f(x)`.
     qawfe
         calculates the Fourier transform
         :math:`\\int^\\infty_a \\cos(\\omega x)f(x)dx` or
         :math:`\\int^\\infty_a \\sin(\\omega x)f(x)dx`
-        for user-provided :math:`\\omega` and :math:`f`. The procedure of QAWO
-        is applied on successive finite intervals, and convergence
+        for user-provided :math:`\\omega` and :math:`f`. The procedure of
+        ``QAWO`` is applied on successive finite intervals, and convergence
         acceleration by means of the :math:`\\varepsilon`-algorithm is applied
         to the series of integral approximations.
     qawse
@@ -344,6 +344,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     Calculate :math:`\\int^4_0 x^2 dx` and compare with an analytic result
 
     >>> from scipy import integrate
+    >>> import numpy as np
     >>> x2 = lambda x: x**2
     >>> integrate.quad(x2, 0, 4)
     (21.333333333333332, 2.3684757858670003e-13)
@@ -641,12 +642,45 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
 
+
+    Notes
+    -----
+
+    **Details of QUADPACK level routines**
+
+    `quad` calls routines from the FORTRAN library QUADPACK. This section
+    provides details on the conditions for each routine to be called and a
+    short description of each routine. For each level of integration, ``qagse``
+    is used for finite limits or ``qagie`` is used if either limit (or both!)
+    are infinite. The following provides a short description from [1]_ for each
+    routine.
+
+    qagse
+        is an integrator based on globally adaptive interval
+        subdivision in connection with extrapolation, which will
+        eliminate the effects of integrand singularities of
+        several types.
+    qagie
+        handles integration over infinite intervals. The infinite range is
+        mapped onto a finite interval and subsequently the same strategy as
+        in ``QAGS`` is applied.
+
+    References
+    ----------
+
+    .. [1] Piessens, Robert; de Doncker-Kapenga, Elise;
+           Überhuber, Christoph W.; Kahaner, David (1983).
+           QUADPACK: A subroutine package for automatic integration.
+           Springer-Verlag.
+           ISBN 978-3-540-12553-2.
+
     Examples
     --------
     Compute the double integral of ``x * y**2`` over the box
     ``x`` ranging from 0 to 2 and ``y`` ranging from 0 to 1.
     That is, :math:`\\int^{x=2}_{x=0} \\int^{y=1}_{y=0} x y^2 \\,dy \\,dx`.
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> f = lambda y, x: x*y**2
     >>> integrate.dblquad(f, 0, 2, 0, 1)
@@ -667,6 +701,15 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         (0.33333333333333337, 5.551115123125783e-15)
     >>> integrate.dblquad(f, 0, 1, lambda x: x, lambda x: 2-x, args=(3,))
         (0.9999999999999999, 1.6653345369377348e-14)
+
+    Compute the two-dimensional Gaussian Integral, which is the integral of the
+    Gaussian function :math:`f(x,y) = e^{-(x^{2} + y^{2})}`, over
+    :math:`(-\\infty,+\\infty)`. That is, compute the integral
+    :math:`\\iint^{+\\infty}_{-\\infty} e^{-(x^{2} + y^{2})} \\,dy\\,dx`.
+
+    >>> f = lambda x, y: np.exp(-(x ** 2 + y ** 2))
+    >>> integrate.dblquad(f, -np.inf, np.inf, -np.inf, np.inf)
+        (3.141592653589777, 2.5173086737433208e-08)
 
     """
 
@@ -733,6 +776,37 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     odeint : ODE integrators
     scipy.special : For coefficients and roots of orthogonal polynomials
 
+    Notes
+    -----
+
+    **Details of QUADPACK level routines**
+
+    `quad` calls routines from the FORTRAN library QUADPACK. This section
+    provides details on the conditions for each routine to be called and a
+    short description of each routine. For each level of integration, ``qagse``
+    is used for finite limits or ``qagie`` is used, if either limit (or both!)
+    are infinite. The following provides a short description from [1]_ for each
+    routine.
+
+    qagse
+        is an integrator based on globally adaptive interval
+        subdivision in connection with extrapolation, which will
+        eliminate the effects of integrand singularities of
+        several types.
+    qagie
+        handles integration over infinite intervals. The infinite range is
+        mapped onto a finite interval and subsequently the same strategy as
+        in ``QAGS`` is applied.
+
+    References
+    ----------
+
+    .. [1] Piessens, Robert; de Doncker-Kapenga, Elise;
+           Überhuber, Christoph W.; Kahaner, David (1983).
+           QUADPACK: A subroutine package for automatic integration.
+           Springer-Verlag.
+           ISBN 978-3-540-12553-2.
+
     Examples
     --------
     Compute the triple integral of ``x * y * z``, over ``x`` ranging
@@ -740,6 +814,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     That is, :math:`\\int^{x=2}_{x=1} \\int^{y=3}_{y=2} \\int^{z=1}_{z=0} x y z
     \\,dz \\,dy \\,dx`.
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> f = lambda z, y, x: x*y*z
     >>> integrate.tplquad(f, 1, 2, 2, 3, 0, 1)
@@ -762,6 +837,16 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         (0.125, 5.527033708952211e-15)
     >>> integrate.tplquad(f, 0, 1, 0, 1, 0, 1, args=(3,))
         (0.375, 1.6581101126856635e-14)
+
+    Compute the three-dimensional Gaussian Integral, which is the integral of
+    the Gaussian function :math:`f(x,y,z) = e^{-(x^{2} + y^{2} + z^{2})}`, over
+    :math:`(-\\infty,+\\infty)`. That is, compute the integral
+    :math:`\\iiint^{+\\infty}_{-\\infty} e^{-(x^{2} + y^{2} + z^{2})} \\,dz
+    \\,dy\\,dx`.
+
+    >>> f = lambda x, y, z: np.exp(-(x ** 2 + y ** 2 + z ** 2))
+    >>> integrate.tplquad(f, -np.inf, np.inf, -np.inf, np.inf, -np.inf, np.inf)
+        (5.568327996830833, 4.4619078828029765e-08)
 
     """
     # f(z, y, x)
@@ -865,6 +950,93 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     dblquad, tplquad : double and triple integrals
     fixed_quad : fixed-order Gaussian quadrature
     quadrature : adaptive Gaussian quadrature
+
+    Notes
+    -----
+
+    **Details of QUADPACK level routines**
+
+    `nquad` calls routines from the FORTRAN library QUADPACK. This section
+    provides details on the conditions for each routine to be called and a
+    short description of each routine. The routine called depends on
+    `weight`, `points` and the integration limits `a` and `b`.
+
+    ================  ==============  ==========  =====================
+    QUADPACK routine  `weight`        `points`    infinite bounds
+    ================  ==============  ==========  =====================
+    qagse             None            No          No
+    qagie             None            No          Yes
+    qagpe             None            Yes         No
+    qawoe             'sin', 'cos'    No          No
+    qawfe             'sin', 'cos'    No          either `a` or `b`
+    qawse             'alg*'          No          No
+    qawce             'cauchy'        No          No
+    ================  ==============  ==========  =====================
+
+    The following provides a short desciption from [1]_ for each
+    routine.
+
+    qagse
+        is an integrator based on globally adaptive interval
+        subdivision in connection with extrapolation, which will
+        eliminate the effects of integrand singularities of
+        several types.
+    qagie
+        handles integration over infinite intervals. The infinite range is
+        mapped onto a finite interval and subsequently the same strategy as
+        in ``QAGS`` is applied.
+    qagpe
+        serves the same purposes as QAGS, but also allows the
+        user to provide explicit information about the location
+        and type of trouble-spots i.e. the abscissae of internal
+        singularities, discontinuities and other difficulties of
+        the integrand function.
+    qawoe
+        is an integrator for the evaluation of
+        :math:`\int^b_a \cos(\omega x)f(x)dx` or
+        :math:`\int^b_a \sin(\omega x)f(x)dx`
+        over a finite interval [a,b], where :math:`\omega` and :math:`f`
+        are specified by the user. The rule evaluation component is based
+        on the modified Clenshaw-Curtis technique
+
+        An adaptive subdivision scheme is used in connection
+        with an extrapolation procedure, which is a modification
+        of that in ``QAGS`` and allows the algorithm to deal with
+        singularities in :math:`f(x)`.
+    qawfe
+        calculates the Fourier transform
+        :math:`\int^\infty_a \cos(\omega x)f(x)dx` or
+        :math:`\int^\infty_a \sin(\omega x)f(x)dx`
+        for user-provided :math:`\omega` and :math:`f`. The procedure of
+        ``QAWO`` is applied on successive finite intervals, and convergence
+        acceleration by means of the :math:`\varepsilon`-algorithm is applied
+        to the series of integral approximations.
+    qawse
+        approximate :math:`\int^b_a w(x)f(x)dx`, with :math:`a < b` where
+        :math:`w(x) = (x-a)^{\alpha}(b-x)^{\beta}v(x)` with
+        :math:`\alpha,\beta > -1`, where :math:`v(x)` may be one of the
+        following functions: :math:`1`, :math:`\log(x-a)`, :math:`\log(b-x)`,
+        :math:`\log(x-a)\log(b-x)`.
+
+        The user specifies :math:`\alpha`, :math:`\beta` and the type of the
+        function :math:`v`. A globally adaptive subdivision strategy is
+        applied, with modified Clenshaw-Curtis integration on those
+        subintervals which contain `a` or `b`.
+    qawce
+        compute :math:`\int^b_a f(x) / (x-c)dx` where the integral must be
+        interpreted as a Cauchy principal value integral, for user specified
+        :math:`c` and :math:`f`. The strategy is globally adaptive. Modified
+        Clenshaw-Curtis integration is used on those intervals containing the
+        point :math:`x = c`.
+
+    References
+    ----------
+
+    .. [1] Piessens, Robert; de Doncker-Kapenga, Elise;
+           Überhuber, Christoph W.; Kahaner, David (1983).
+           QUADPACK: A subroutine package for automatic integration.
+           Springer-Verlag.
+           ISBN 978-3-540-12553-2.
 
     Examples
     --------

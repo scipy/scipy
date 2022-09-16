@@ -625,8 +625,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     The `convolve2d` function allows for other types of image boundaries,
     but is far slower.
 
-    >>> from scipy import misc
-    >>> face = misc.face(gray=True)
+    >>> from scipy import datasets
+    >>> face = datasets.face(gray=True)
     >>> kernel = np.outer(signal.windows.gaussian(70, 8),
     ...                   signal.windows.gaussian(70, 8))
     >>> blurred = signal.fftconvolve(face, kernel, mode='same')
@@ -1579,7 +1579,7 @@ def wiener(im, mysize=None, noise=None):
     Examples
     --------
 
-    >>> from scipy.misc import face
+    >>> from scipy.datasets import face
     >>> from scipy.signal import wiener
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
@@ -1682,8 +1682,8 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     boundaries.
 
     >>> from scipy import signal
-    >>> from scipy import misc
-    >>> ascent = misc.ascent()
+    >>> from scipy import datasets
+    >>> ascent = datasets.ascent()
     >>> scharr = np.array([[ -3-3j, 0-10j,  +3 -3j],
     ...                    [-10+0j, 0+ 0j, +10 +0j],
     ...                    [ -3+3j, 0+10j,  +3 +3j]]) # Gx + j*Gy
@@ -1774,9 +1774,9 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     image:
 
     >>> from scipy import signal
-    >>> from scipy import misc
+    >>> from scipy import datasets
     >>> rng = np.random.default_rng()
-    >>> face = misc.face(gray=True) - misc.face(gray=True).mean()
+    >>> face = datasets.face(gray=True) - datasets.face(gray=True).mean()
     >>> template = np.copy(face[300:365, 670:750])  # right eye
     >>> template -= template.mean()
     >>> face = face + rng.standard_normal(face.shape) * 50  # add noise
@@ -1852,9 +1852,58 @@ def medfilt2d(input, kernel_size=3):
     -----
     This is faster than `medfilt` when the input dtype is ``uint8``,
     ``float32``, or ``float64``; for other types, this falls back to
-    `medfilt`; you should use `scipy.ndimage.median_filter` instead as it is
-    much faster.  In some situations, `scipy.ndimage.median_filter` may be
+    `medfilt`. In some situations, `scipy.ndimage.median_filter` may be
     faster than this function.
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> x = np.arange(25).reshape(5, 5)
+    >>> x
+    array([[ 0,  1,  2,  3,  4],
+           [ 5,  6,  7,  8,  9],
+           [10, 11, 12, 13, 14],
+           [15, 16, 17, 18, 19],
+           [20, 21, 22, 23, 24]])
+
+    # Replaces i,j with the median out of 5*5 window
+
+    >>> signal.medfilt2d(x, kernel_size=5)
+    array([[ 0,  0,  2,  0,  0],
+           [ 0,  3,  7,  4,  0],
+           [ 2,  8, 12,  9,  4],
+           [ 0,  8, 12,  9,  0],
+           [ 0,  0, 12,  0,  0]])
+
+    # Replaces i,j with the median out of default 3*3 window
+
+    >>> signal.medfilt2d(x)
+    array([[ 0,  1,  2,  3,  0],
+           [ 1,  6,  7,  8,  4],
+           [ 6, 11, 12, 13,  9],
+           [11, 16, 17, 18, 14],
+           [ 0, 16, 17, 18,  0]])
+
+    # Replaces i,j with the median out of default 5*3 window
+
+    >>> signal.medfilt2d(x, kernel_size=[5,3])
+    array([[ 0,  1,  2,  3,  0],
+           [ 0,  6,  7,  8,  3],
+           [ 5, 11, 12, 13,  8],
+           [ 5, 11, 12, 13,  8],
+           [ 0, 11, 12, 13,  0]])
+
+    # Replaces i,j with the median out of default 3*5 window
+
+    >>> signal.medfilt2d(x, kernel_size=[3,5])
+    array([[ 0,  0,  2,  1,  0],
+           [ 1,  5,  7,  6,  3],
+           [ 6, 10, 12, 11,  8],
+           [11, 15, 17, 16, 13],
+           [ 0, 15, 17, 16,  0]])
+
+    # As seen in the examples,
+    # kernel numbers must be odd and not exceed original array dim
 
     """
     image = np.asarray(input)

@@ -78,14 +78,13 @@ class TestGeoMean:
     def test_1d_ma0(self):
         #  Test a 1d masked array with zero element
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
-        desired = 41.4716627439
-        with np.errstate(divide='ignore'):
-            check_equal_gmean(a, desired)
+        desired = 0
+        check_equal_gmean(a, desired)
 
     def test_1d_ma_inf(self):
         #  Test a 1d masked array with negative element
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
-        desired = 41.4716627439
+        desired = np.nan
         with np.errstate(invalid='ignore'):
             check_equal_gmean(a, desired)
 
@@ -297,7 +296,7 @@ class TestCorr:
     @pytest.mark.skipif(platform.machine() == 'ppc64le',
                         reason="fails/crashes on ppc64le")
     def test_kendalltau(self):
-        # check case with with maximum disorder and p=1
+        # check case with maximum disorder and p=1
         x = ma.array(np.array([9, 2, 5, 6]))
         y = ma.array(np.array([4, 7, 9, 11]))
         # Cross-check with exact result from R:
@@ -732,6 +731,8 @@ class TestMoments:
                                        stats.kurtosis(self.testcase_2d[2, :]),
                                        nulp=4)
 
+
+class TestMode:
     def test_mode(self):
         a1 = [0,0,0,1,1,1,2,3,3,3,3,4,5,6,7]
         a2 = np.reshape(a1, (3,5))
@@ -942,6 +943,34 @@ def test_theilslopes():
     assert_almost_equal(lower, 3.71, decimal=2)
 
 
+def test_theilslopes_warnings():
+    # Test `theilslopes` with degenerate input; see gh-15943
+    with pytest.warns(RuntimeWarning, match="All `x` coordinates are..."):
+        res = mstats.theilslopes([0, 1], [0, 0])
+        assert np.all(np.isnan(res))
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "invalid value encountered...")
+        res = mstats.theilslopes([0, 0, 0], [0, 1, 0])
+        assert_allclose(res, (0, 0, np.nan, np.nan))
+
+
+def test_theilslopes_namedtuple_consistency():
+    """
+    Simple test to ensure tuple backwards-compatibility of the returned
+    TheilslopesResult object
+    """
+    y = [1, 2, 4]
+    x = [4, 6, 8]
+    slope, intercept, low_slope, high_slope = mstats.theilslopes(y, x)
+    result = mstats.theilslopes(y, x)
+
+    # note all four returned values are distinct here
+    assert_equal(slope, result.slope)
+    assert_equal(intercept, result.intercept)
+    assert_equal(low_slope, result.low_slope)
+    assert_equal(high_slope, result.high_slope)
+
+
 def test_siegelslopes():
     # method should be exact for straight line
     y = 2 * np.arange(10) + 0.5
@@ -969,6 +998,21 @@ def test_siegelslopes():
     slope, intercept = mstats.siegelslopes(y, x, method='separate')
     assert_allclose(slope, slope_ols, rtol=0.1)
     assert_allclose(intercept, intercept_ols, rtol=0.1)
+
+
+def test_siegelslopes_namedtuple_consistency():
+    """
+    Simple test to ensure tuple backwards-compatibility of the returned
+    SiegelslopesResult object.
+    """
+    y = [1, 2, 4]
+    x = [4, 6, 8]
+    slope, intercept = mstats.siegelslopes(y, x)
+    result = mstats.siegelslopes(y, x)
+
+    # note both returned values are distinct here
+    assert_equal(slope, result.slope)
+    assert_equal(intercept, result.intercept)
 
 
 def test_plotting_positions():
@@ -1335,19 +1379,6 @@ class TestTtest_1samp():
         res1 = stats.ttest_1samp(outcome[:, 0], 1)
         res2 = mstats.ttest_1samp(outcome[:, 0], 1)
         assert_allclose(res1, res2)
-
-        # 2-D inputs
-        res1 = stats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
-        res2 = mstats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
-        assert_allclose(res1, res2)
-
-        res1 = stats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
-        res2 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
-        assert_allclose(res1, res2, atol=1e-15)
-
-        # Check default is axis=0
-        res3 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:])
-        assert_allclose(res2, res3)
 
     def test_fully_masked(self):
         np.random.seed(1234567)

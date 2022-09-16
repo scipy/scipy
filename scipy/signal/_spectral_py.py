@@ -134,9 +134,9 @@ def lombscargle(x,
     >>> plt.show()
 
     """
-    x = np.asarray(x, dtype=np.float64)
-    y = np.asarray(y, dtype=np.float64)
-    freqs = np.asarray(freqs, dtype=np.float64)
+    x = np.ascontiguousarray(x, dtype=np.float64)
+    y = np.ascontiguousarray(y, dtype=np.float64)
+    freqs = np.ascontiguousarray(freqs, dtype=np.float64)
 
     assert x.ndim == 1
     assert y.ndim == 1
@@ -169,7 +169,8 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         passed to `get_window` to generate the window values, which are
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
-        directly as the window and its length must be nperseg. Defaults
+        directly as the window and its length must be equal to the length
+        of the axis over which the periodogram is computed. Defaults
         to 'boxcar'.
     nfft : int, optional
         Length of the FFT used. If `None` the length of `x` will be
@@ -280,6 +281,11 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         x = x[tuple(s)]
         nperseg = nfft
         nfft = None
+
+    if hasattr(window, 'size'):
+        if window.size != nperseg:
+            raise ValueError('the size of the window must be the same size '
+                             'of the input on the specified axis')
 
     return welch(x, fs=fs, window=window, nperseg=nperseg, noverlap=0,
                  nfft=nfft, detrend=detrend, return_onesided=return_onesided,

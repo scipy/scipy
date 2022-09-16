@@ -34,6 +34,7 @@ mle_failing_fits = [
         'pearson3',
         'powerlognorm',
         'truncexpon',
+        'truncpareto',
         'tukeylambda',
         'vonmises',
         'levy_stable',
@@ -50,13 +51,13 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
-                   'skewcauchy', 't', 'trapezoid', 'triang',
+                   'skewcauchy', 't', 'trapezoid', 'triang', 'truncpareto',
                    'truncweibull_min', 'tukeylambda', 'studentized_range']
 
 # not sure if these fail, but they caused my patience to fail
 mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                 'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
-                'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm',
+                'kappa4', 'kstwobign', 'recipinvgauss',
                 'truncexpon', 'vonmises', 'vonmises_line']
 
 failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
@@ -175,21 +176,20 @@ def test_nnlf_and_related_methods(dist, params):
 
 
 def cases_test_fit():
-    # These three fail default test; check separately
-    skip_basic_fit = {'argus', 'foldnorm', 'truncweibull_min'}
-    # status of 'studentized_range', 'ksone', 'kstwo' unknown; all others pass
+    # These fail default test or hang
+    skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
+                      'ksone', 'levy_stable', 'studentized_range', 'kstwo'}
     slow_basic_fit = {'burr12', 'johnsonsb', 'bradford', 'fisk', 'mielke',
                       'exponpow', 'rdist', 'norminvgauss', 'betaprime',
                       'powerlaw', 'pareto', 'johnsonsu', 'loglaplace',
                       'wrapcauchy', 'weibull_max', 'arcsine', 'binom', 'rice',
-                      'uniform', 'f', 'invweibull', 'genpareto', 'weibull_min',
+                      'uniform', 'f', 'invweibull', 'genpareto',
                       'nbinom', 'kappa3', 'lognorm', 'halfgennorm', 'pearson3',
                       'alpha', 't', 'crystalball', 'fatiguelife', 'nakagami',
                       'kstwobign', 'gompertz', 'dweibull', 'lomax', 'invgauss',
                       'recipinvgauss', 'chi', 'foldcauchy', 'powernorm',
-                      'gennorm', 'skewnorm', 'randint', 'genextreme'}
-    xslow_basic_fit = {'studentized_range', 'ksone', 'kstwo', 'levy_stable',
-                       'nchypergeom_fisher', 'nchypergeom_wallenius',
+                      'gennorm', 'randint', 'genextreme'}
+    xslow_basic_fit = {'nchypergeom_fisher', 'nchypergeom_wallenius',
                        'gausshyper', 'genexpon', 'gengamma', 'genhyperbolic',
                        'geninvgauss', 'tukeylambda', 'skellam', 'ncx2',
                        'hypergeom', 'nhypergeom', 'zipfian', 'ncf',
@@ -214,7 +214,8 @@ def cases_test_fit():
 
 def cases_test_fitstart():
     for distname, shapes in dict(distcont).items():
-        if not isinstance(distname, str) or distname in {'studentized_range'}:
+        if (not isinstance(distname, str) or
+                distname in {'studentized_range', 'recipinvgauss'}):  # slow
             continue
         yield distname, shapes
 
@@ -427,6 +428,20 @@ class TestFit:
 
         assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
 
+    def test_truncpareto(self):
+        # Can't guarantee that all distributions will fit all data with
+        # arbitrary bounds. This distribution just happens to fail above.
+        # Try something slightly different.
+        N = 1000
+        rng = np.random.default_rng(self.seed)
+        dist = stats.truncpareto
+        shapes = (1.8, 5.3, 2.3, 4.1)
+        data = dist.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = [(0.1, 10)]*4
+        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
+
+        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
+
     def test_truncweibull_min(self):
         # Can't guarantee that all distributions will fit all data with
         # arbitrary bounds. This distribution just happens to fail above.
@@ -548,3 +563,19 @@ class TestFit:
 
         res = stats.fit(dist, data, bounds, guess=params, optimizer=self.opt)
         assert_allclose(res.params, params, **self.tols)
+
+
+class TestFitResult:
+    def test_plot_iv(self):
+        data = stats.norm.rvs(0, 1, size=100)  # random state doesn't matter
+        bounds = [(0, 30), (0, 1)]
+        res = stats.fit(stats.norm, data, bounds)
+        try:
+            import matplotlib  # noqa
+            message = r"`plot_type` must be one of \{'..."
+            with pytest.raises(ValueError, match=message):
+                res.plot(plot_type='llama')
+        except (ModuleNotFoundError, ImportError):
+            message = r"matplotlib must be installed to use method `plot`."
+            with pytest.raises(ModuleNotFoundError, match=message):
+                res.plot(plot_type='llama')

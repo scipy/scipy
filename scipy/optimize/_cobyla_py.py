@@ -207,9 +207,6 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         Maximum number of function evaluations.
     catol : float
         Tolerance (absolute) for constraint violations
-    callback : callable, optional
-        Called after each iteration, as ``callback(x)``, where ``x`` is the
-        current parameter vector.
 
     """
     _check_unknown_options(unknown_options)

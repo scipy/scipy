@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 refguide_check.py [OPTIONS] [-- ARGS]
 
@@ -7,7 +7,7 @@ correspond to the objects included in the reference guide.
 
 Example of usage::
 
-    $ python refguide_check.py optimize
+    $ python3 refguide_check.py optimize
 
 Note that this is a helper script to be able to check if things are missing;
 the output of this script does need to be checked manually.  In some cases
@@ -19,7 +19,7 @@ in docstrings. This is different from doctesting [we do not aim to have
 scipy docstrings doctestable!], this is just to make sure that code in
 docstrings is valid python::
 
-    $ python refguide_check.py --doctests optimize
+    $ python3 refguide_check.py --doctests optimize
 
 """
 import copy
@@ -72,6 +72,7 @@ PUBLIC_SUBMODULES = [
     'cluster.hierarchy',
     'cluster.vq',
     'constants',
+    'datasets',
     'fft',
     'fftpack',
     'fftpack.convolve',
@@ -118,7 +119,6 @@ DOCTEST_SKIPLIST = set([
     'scipy.stats.kstwobign',  # inaccurate cdf or ppf
     'scipy.stats.levy_stable',
     'scipy.special.sinc',  # comes from numpy
-    'scipy.misc.who',  # comes from numpy
     'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
@@ -128,7 +128,6 @@ DOCTEST_SKIPLIST = set([
 REFGUIDE_ALL_SKIPLIST = [
     r'scipy\.sparse\.csgraph',
     r'scipy\.sparse\.linalg',
-    r'scipy\.spatial\.distance',
     r'scipy\.linalg\.blas\.[sdczi].*',
     r'scipy\.linalg\.lapack\.[sdczi].*',
 ]
@@ -149,6 +148,11 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.stats\.reciprocal',  # alias for lognormal
     r'scipy\.stats\.gilbrat',  # alias for gibrat
     r'scipy\.stats\.trapz',   # alias for trapezoid
+    r'scipy\.stats\.F_onewayBadInputSizesWarning',  # shouldn't
+    r'scipy\.stats\.F_onewayConstantInputWarning',  # have
+    r'scipy\.stats\.PearsonRConstantInputWarning',  # been
+    r'scipy\.stats\.PearsonRNearConstantInputWarning',  # in
+    r'scipy\.stats\.SpearmanRConstantInputWarning',  # __all__
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
@@ -271,6 +275,7 @@ def compare(all_dict, others, names, module_name):
 
     return only_all, only_ref, missing
 
+
 def is_deprecated(f):
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("error")
@@ -281,6 +286,7 @@ def is_deprecated(f):
         except Exception:
             pass
         return False
+
 
 def check_items(all_dict, names, deprecated, others, module_name, dots=True):
     num_all = len(all_dict)
@@ -447,10 +453,11 @@ def check_rest(module, names, dots=True):
                                 traceback.format_exc()))
                 continue
 
-        m = re.search("([\x00-\x09\x0b-\x1f])", text)
+        m = re.search(".*?([\x00-\x09\x0b-\x1f]).*", text)
         if m:
-            msg = ("Docstring contains a non-printable character %r! "
-                   "Maybe forgot r\"\"\"?" % (m.group(1),))
+            msg = ("Docstring contains a non-printable character "
+                   f"{m.group(1)!r} in the line\n\n{m.group(0)!r}\n\n"
+                   "Maybe forgot r\"\"\"?")
             results.append((full_name, False, msg))
             continue
 
@@ -552,6 +559,7 @@ class DTRunner(doctest.DocTestRunner):
         return doctest.DocTestRunner.report_failure(self, out, test,
                                                     example, got)
 
+
 class Checker(doctest.OutputChecker):
     obj_pattern = re.compile(r'at 0x[0-9a-fA-F]+>')
     vanilla = doctest.OutputChecker()
@@ -646,7 +654,6 @@ class Checker(doctest.OutputChecker):
                 return False
             else:
                 return self.check_output(want_again, got_again, optionflags)
-
 
         # ... and defer to numpy
         try:
@@ -950,7 +957,12 @@ def main(argv):
                 module_names.append(name)
 
     for submodule_name in module_names:
-        module_name = BASE_MODULE + '.' + submodule_name
+        prefix = BASE_MODULE + '.'
+        if not submodule_name.startswith(prefix):
+            module_name = prefix + submodule_name
+        else:
+            module_name = submodule_name
+
         __import__(module_name)
         module = sys.modules[module_name]
 

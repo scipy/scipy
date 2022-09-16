@@ -1,6 +1,6 @@
-# -*-cython-*-
+from libc.math cimport log1p
 
-from ._complexstuff cimport zlog, npy_log1p, zisnan, number_t
+from ._complexstuff cimport zlog, zisnan, number_t
 from ._cunity cimport clog1p
 
 cdef inline number_t xlogy(number_t x, number_t y) nogil:
@@ -14,6 +14,6 @@ cdef inline number_t xlog1py(number_t x, number_t y) nogil:
         return 0
     else:
         if number_t is double:
-            return x * npy_log1p(y)
+            return x * log1p(y)
         else:
             return x * clog1p(y)
