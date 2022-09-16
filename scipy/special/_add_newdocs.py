@@ -3399,6 +3399,7 @@ add_newdoc(
     Examples
     --------
     >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
     >>> from scipy.special import erfinv, erf
 
     >>> erfinv(0.5)
@@ -9958,7 +9959,7 @@ add_newdoc("powm1", """
 
     Notes
     -----
-    .. versionadded:: 1.9.0
+    .. versionadded:: 1.10.0
 
     The underlying code is implemented for single precision and double
     precision floats only.  Unlike `numpy.power`, integer inputs to
@@ -9974,7 +9975,9 @@ add_newdoc("powm1", """
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import powm1
+
     >>> x = np.array([1.2, 10.0, 0.9999999975])
     >>> y = np.array([1e-9, 1e-11, 0.1875])
     >>> powm1(x, y)
