@@ -899,8 +899,7 @@ def _pairings_permutations_gen(n_permutations, n_samples, n_obs_sample, batch,
         perm_generator = ([random_state.permutation(n_obs_sample)
                            for i in range(n_samples)]
                           for j in range(n_permutations))
-        batched_perm_generator = _batch_generator(perm_generator, batch=batch)
-        return batched_perm_generator
+        return _batch_generator(perm_generator, batch=batch)
     else:
         def batched_perm_generator():
             indices = np.arange(n_obs_sample)
