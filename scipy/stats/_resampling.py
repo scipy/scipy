@@ -895,12 +895,10 @@ def _batch_generator(iterable, batch):
 
 def _pairings_permutations_gen(n_permutations, n_samples, n_obs_sample, batch,
                                random_state):
-    if isinstance(random_state, np.random.RandomState):
-        perm_generator = ([random_state.permutation(n_obs_sample)
-                           for i in range(n_samples)]
-                          for j in range(n_permutations))
-        return _batch_generator(perm_generator, batch=batch)
-    else:
+
+    batch = min(batch, n_permutations)
+
+    if isinstance(random_state, np.random.Generator):
         def batched_perm_generator():
             indices = np.arange(n_obs_sample)
             indices = np.tile(indices, (batch, n_samples, 1))
@@ -909,8 +907,15 @@ def _pairings_permutations_gen(n_permutations, n_samples, n_obs_sample, batch,
                 # Don't permute in place, otherwise results depend on `batch`
                 permuted_indices = random_state.permuted(indices, axis=-1)
                 yield permuted_indices[:batch_actual]
-        return batched_perm_generator()
+    else:
+        def batched_perm_generator():
+            for k in range(0, n_permutations, batch):
+                batch_actual = min(batch, n_permutations-k)
+                size = (batch_actual, n_samples, n_obs_sample)
+                x = random_state.random(size=size)
+                yield np.argsort(x, axis=-1)[:batch_actual]
 
+    return batched_perm_generator()
 
 def _calculate_null_both(data, statistic, n_permutations, batch,
                          random_state=None):
