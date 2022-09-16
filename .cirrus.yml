@@ -17,7 +17,7 @@ build_and_store_wheels: &BUILD_AND_STORE_WHEELS
 ######################################################################
 
 cirrus_wheel_trigger_task:
-  only_if: $CIRRUS_REPO_FULL_NAME == "andyfaff/scipy"
+  only_if: $CIRRUS_REPO_FULL_NAME == "scipy/scipy"
   compute_engine_instance:
     image_project: cirrus-images
     image: family/docker-builder
@@ -29,7 +29,7 @@ cirrus_wheel_trigger_task:
     set -xe
     
     COMMIT_MSG=$(git log --no-merges -1)
-    if [[ "$COMMIT_MSG" == *"[cirrus wheel build]"* ]]; then
+    if [[ "$COMMIT_MSG" == *"[wheel build]"* ]]; then
       exit 0
     elif [[ "$CIRRUS_CRON" == "nightly" ]]; then
       exit 0
@@ -44,7 +44,7 @@ cirrus_wheel_trigger_task:
 ######################################################################
 
 cirrus_wheels_linux_aarch64_task:
-  only_if: $CIRRUS_REPO_FULL_NAME == "andyfaff/scipy"
+  only_if: $CIRRUS_REPO_FULL_NAME == "scipy/scipy"
   depends_on: cirrus_wheel_trigger
   compute_engine_instance:
     image_project: cirrus-images
@@ -76,7 +76,7 @@ cirrus_wheels_upload_task:
   # final upload here. This is because a run may be on different OS for
   # which bash, etc, may not be present.
 
-  only_if: $CIRRUS_REPO_FULL_NAME == "andyfaff/scipy"
+  only_if: $CIRRUS_REPO_FULL_NAME == "scipy/scipy"
   depends_on: cirrus_wheels_linux_aarch64
   compute_engine_instance:
     image_project: cirrus-images
