@@ -9,6 +9,6 @@ fi
 echo $?
 
 # only run a reduced set of tests for cross-compiled manylinux_aarch64
-pytest --pyargs scipy -n4
+pytest --pyargs scipy -n auto
 # python -c "import sys; import scipy.linalg; import scipy.optimize; sys.exit(not scipy.linalg.test())"
 echo $?
