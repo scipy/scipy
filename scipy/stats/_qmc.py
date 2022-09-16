@@ -49,7 +49,7 @@ from ._qmc_cy import (
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
            'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube', 'PoissonDisk',
-           'MultinomialQMC', 'MultivariateNormalQMC']
+           'MultinomialQMC', 'MultivariateNormalQMC', 'Hammersley']
 
 
 @overload
@@ -1264,6 +1264,159 @@ class LatinHypercube(QMCEngine):
         oa_lhs_sample /= p
 
         return oa_lhs_sample[:, :self.d]  # type: ignore
+
+
+class Hammersley(QMCEngine):
+    """Hammersley sequence.
+
+    The Hammersley sequence is the Halton sequence in dimensions :math:`n-1`
+    with a linear sweep in the last dimension.
+
+    Parameters
+    ----------
+    d : int
+        Dimension of the parameter space.
+    scramble : bool, optional
+        If True, use Owen scrambling for the Halton sequence and subtract
+        random offsets from the last dimension. Otherwise no scrambling is
+        done. Default is True.
+    optimization : {None, "random-cd", "lloyd"}, optional
+        Whether to use an optimization scheme to improve the quality after
+        sampling. Note that this is a post-processing step that does not
+        guarantee that all properties of the sample will be conserved.
+        Default is None.
+
+        * ``random-cd``: random permutations of coordinates to lower the
+          centered discrepancy. The best sample based on the centered
+          discrepancy is constantly updated. Centered discrepancy-based
+          sampling shows better space-filling robustness toward 2D and 3D
+          subprojections compared to using other discrepancy measures.
+        * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
+          The process converges to equally spaced samples.
+
+        .. versionadded:: 1.10.0
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
+
+    Notes
+    -----
+    The underlying Halton sequence has severe striping artifacts for even
+    modestly large dimensions. These can be ameliorated by scrambling.
+    Scrambling also supports replication-based error estimates and extends
+    applicabiltiy to unbounded integrands.
+
+    References
+    ----------
+    .. [1] Halton, "On the efficiency of certain quasi-random sequences of
+       points in evaluating multi-dimensional integrals", Numerische
+       Mathematik, 1960.
+    .. [2] A. B. Owen. "A randomized Halton algorithm in R",
+       :arxiv:`1706.02808`, 2017.
+    .. [3] "Low-Discrepancy sequence - Hammersley set". Wikipedia.
+       https://en.wikipedia.org/wiki/Low-discrepancy_sequence#Hammersley_set
+
+    Examples
+    --------
+    Generate samples from a low discrepancy sequence of Hammersley.
+
+    >>> from scipy.stats import qmc
+    >>> sampler = qmc.Hammersley(d=2, scramble=False)
+    >>> sample = sampler.random(n=5)
+    >>> sample
+    array([[0.   , 0.2  ],
+           [0.5  , 0.4  ],
+           [0.25 , 0.6  ],
+           [0.75 , 0.8  ],
+           [0.125, 1.   ]])
+
+    Compute the quality of the sample using the discrepancy criterion.
+
+    >>> qmc.discrepancy(sample)
+    0.0595017361111112
+
+    `random` may be called again, but because of the way the Hammersley
+    sequence is defined, the last column will still be based on linear sweep.
+
+    >>> sample_continued = sampler.random(n=5)
+    >>> sample_continued
+    array([[0.3125, 0.2   ],
+           [0.8125, 0.4   ],
+           [0.1875, 0.6   ],
+           [0.6875, 0.8   ],
+           [0.4375, 1.    ]])
+
+    Finally, samples can be scaled to bounds.
+
+    >>> l_bounds = [0, 2]
+    >>> u_bounds = [10, 5]
+    >>> qmc.scale(sample_continued, l_bounds, u_bounds)
+    array([[3.125, 2.6  ],
+           [8.125, 3.2  ],
+           [1.875, 3.8  ],
+           [6.875, 4.4  ],
+           [4.375, 5.   ]])
+
+    """
+
+    def __init__(
+        self, d: IntNumber, *, scramble: bool = True,
+        optimization: Optional[Literal["random-cd", "lloyd"]] = None,
+        seed: SeedType = None
+    ) -> None:
+        # Used in `scipy.integrate.qmc_quad`
+        self._init_quad = {'d': d, 'scramble': True,
+                           'optimization': optimization}
+        super().__init__(d=d, optimization=optimization, seed=seed)
+        self.rng = seed
+        self.scramble = scramble
+        self._halton = Halton(max(d-1, 0), scramble=scramble,
+                              seed=copy.deepcopy(seed))
+
+    def _random(
+        self, n: IntNumber = 1, *, workers: IntNumber = 1
+    ) -> np.ndarray:
+        """Draw `n` in the closed interval ``[0, 1]``.
+
+        Parameters
+        ----------
+        n : int, optional
+            Number of samples to generate in the parameter space. Default is 1.
+        workers : int, optional
+            Number of workers to use for parallel processing. If -1 is
+            given all CPU threads are used. Default is 1. It becomes faster
+            than one worker for `n` greater than :math:`10^3`.
+
+        Returns
+        -------
+        sample : array_like (n, d)
+            QMC sample.
+
+        """
+        out = np.empty((n, self.d))
+        if self.d == 0:
+            return out
+
+        out[:, :-1] = self._halton.random(n, workers=workers)
+        out[:, -1] = np.arange(1, n+1) / n
+        if self.scramble:
+            out[:, -1] -= self.rng.random(size=n) / n
+        return out
+
+    def reset(self) -> Hammersley:
+        """Reset the engine to base state.
+
+        Returns
+        -------
+        engine : Hammersley
+            Engine reset to its base state.
+
+        """
+        super().reset()
+        self._halton.reset()
+        return self
 
 
 class Sobol(QMCEngine):

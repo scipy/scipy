@@ -636,6 +636,30 @@ class TestHalton(QMCEngineTests):
         assert_equal(sample, ref_sample)
 
 
+class TestHammersley(QMCEngineTests):
+    qmce = qmc.Hammersley
+    can_scramble = True
+
+    def test_continuing(self, *args):
+        pytest.skip("Not applicable: not a sequence.")
+
+    def test_fast_forward(self, *args):
+        pytest.skip("Not applicable: not a sequence.")
+
+    def reference(self, scramble: bool) -> np.ndarray:
+        if scramble:
+            pytest.skip("Not applicable: the value of reference sample is"
+                        " implementation dependent.")
+        col1 = qmc.Halton(d=1, scramble=False).random(10)
+        col2 = np.linspace(0.1, 1, 10)[:, np.newaxis]
+        return np.concatenate((col1, col2), axis=1)
+
+    def test_optimizers(self):
+        # Lloyd isn't guaranteed to improve discrepancy. It doesn't in the
+        # existing test.
+        return super().test_optimizers("random-CD", qmc.discrepancy)
+
+
 class TestLHS(QMCEngineTests):
     qmce = qmc.LatinHypercube
     can_scramble = False
