@@ -82,7 +82,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'alexandergovern',
-           'expectile',]
+           'expectile', ]
 
 
 def _chk_asarray(a, axis):
@@ -9456,7 +9456,7 @@ def expectile(a, alpha=0.5, axis=0, dtype=None, weights=None):
 
         \alpha \sum_{i=1}^n w_i (y_i - t)_+ =
             (1 - \alpha) \sum_{i=1}^n w_i (t - y_i)_+ \,.
-    
+
     Expectiles are a generalization of the expectation in the same way as
     quantiles are a generalization of the median. The expectile at level
     `alpha = 0.5` is the mean (average).
@@ -9514,7 +9514,7 @@ def expectile(a, alpha=0.5, axis=0, dtype=None, weights=None):
 
     def first_order(t):
         return (alpha * np.average(np.fmax(0, a - t), weights=weights)
-            - (1 - alpha) * np.average(np.fmax(0, t - a), weights=weights))
+        - (1 - alpha) * np.average(np.fmax(0, t - a), weights=weights))
 
     if alpha >= 0.5:
         x0 = np.average(a, weights=weights)

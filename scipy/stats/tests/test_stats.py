@@ -8020,6 +8020,12 @@ class TestExpectile:
         # 3. subadditive
         y = rng.normal(size=n)
         if alpha >= 0.5:
-            assert stats.expectile(x + y, alpha=alpha) <= stats.expectile(y, alpha=alpha) + stats.expectile(y, alpha=alpha)
+            assert (
+                stats.expectile(x + y, alpha=alpha)
+                <= stats.expectile(y, alpha=alpha) + stats.expectile(y, alpha=alpha)
+            )
         else:
-            assert stats.expectile(x + y, alpha=alpha) > stats.expectile(y, alpha=alpha) + stats.expectile(y, alpha=alpha)
+            assert (
+                stats.expectile(x + y, alpha=alpha)
+                > stats.expectile(y, alpha=alpha) + stats.expectile(y, alpha=alpha)
+            )
