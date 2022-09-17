@@ -9513,8 +9513,10 @@ def expectile(a, alpha=0.5, axis=0, dtype=None, weights=None):
         weights = np.asarray(weights, dtype=dtype)
 
     def first_order(t):
-        return (alpha * np.average(np.fmax(0, a - t), weights=weights)
-        - (1 - alpha) * np.average(np.fmax(0, t - a), weights=weights))
+        return (
+            alpha * np.average(np.fmax(0, a - t), weights=weights)
+            - (1 - alpha) * np.average(np.fmax(0, t - a), weights=weights)
+        )
 
     if alpha >= 0.5:
         x0 = np.average(a, weights=weights)

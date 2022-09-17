@@ -8022,10 +8022,12 @@ class TestExpectile:
         if alpha >= 0.5:
             assert (
                 stats.expectile(x + y, alpha=alpha)
-                <= stats.expectile(y, alpha=alpha) + stats.expectile(y, alpha=alpha)
+                <= stats.expectile(y, alpha=alpha)
+                + stats.expectile(y, alpha=alpha)
             )
         else:
             assert (
                 stats.expectile(x + y, alpha=alpha)
-                > stats.expectile(y, alpha=alpha) + stats.expectile(y, alpha=alpha)
+                > stats.expectile(y, alpha=alpha)
+                + stats.expectile(y, alpha=alpha)
             )
