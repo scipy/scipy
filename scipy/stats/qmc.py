@@ -22,6 +22,7 @@ Engines
    QMCEngine
    Sobol
    Halton
+   Hammersley
    LatinHypercube
    PoissonDisk
    MultinomialQMC

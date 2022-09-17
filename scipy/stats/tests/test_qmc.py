@@ -650,8 +650,8 @@ class TestHammersley(QMCEngineTests):
         if scramble:
             pytest.skip("Not applicable: the value of reference sample is"
                         " implementation dependent.")
-        col1 = qmc.Halton(d=1, scramble=False).random(10)
-        col2 = np.linspace(0.1, 1, 10)[:, np.newaxis]
+        col1 = np.linspace(0, 0.9, 10)[:, np.newaxis]
+        col2 = qmc.Halton(d=1, scramble=False).random(10)
         return np.concatenate((col1, col2), axis=1)
 
     def test_optimizers(self):

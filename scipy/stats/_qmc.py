@@ -1272,6 +1272,8 @@ class Hammersley(QMCEngine):
     The Hammersley sequence is the Halton sequence in dimensions :math:`n-1`
     with a linear sweep in the last dimension.
 
+    .. versionadded:: 1.11.0
+
     Parameters
     ----------
     d : int
@@ -1294,7 +1296,6 @@ class Hammersley(QMCEngine):
         * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
           The process converges to equally spaced samples.
 
-        .. versionadded:: 1.10.0
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is an int or None, a new `numpy.random.Generator` is
         created using ``np.random.default_rng(seed)``.
@@ -1307,6 +1308,9 @@ class Hammersley(QMCEngine):
     modestly large dimensions. These can be ameliorated by scrambling.
     Scrambling also supports replication-based error estimates and extends
     applicabiltiy to unbounded integrands.
+    The Hammersley sequence is most appropriate when the number of samples
+    is fixed in advance, in which case Hammersley gives slightly lower
+    discrepancy than Halton [4]_.
 
     References
     ----------
@@ -1317,6 +1321,8 @@ class Hammersley(QMCEngine):
        :arxiv:`1706.02808`, 2017.
     .. [3] "Low-Discrepancy sequence - Hammersley set". Wikipedia.
        https://en.wikipedia.org/wiki/Low-discrepancy_sequence#Hammersley_set
+    .. [4] M. Pharr, W. Jakob, and G. Humphreys. "Physically based rendering:
+        from theory to implementation". https://www.pbr-book.org/3ed-2018/Sampling_and_Reconstruction/The_Halton_Sampler#HammersleyandHaltonSequences  # noqa
 
     Examples
     --------
@@ -1324,40 +1330,40 @@ class Hammersley(QMCEngine):
 
     >>> from scipy.stats import qmc
     >>> sampler = qmc.Hammersley(d=2, scramble=False)
-    >>> sample = sampler.random(n=5)
+    >>> sample = sampler.random(n=4)
     >>> sample
-    array([[0.   , 0.2  ],
-           [0.5  , 0.4  ],
-           [0.25 , 0.6  ],
-           [0.75 , 0.8  ],
-           [0.125, 1.   ]])
+    array([[0.  , 0.  ],
+           [0.25, 0.5 ],
+           [0.5 , 0.25],
+           [0.75, 0.75]])
 
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.0595017361111112
+    0.05593532986111094
 
     `random` may be called again, but because of the way the Hammersley
-    sequence is defined, the last column will still be based on linear sweep.
+    sequence is defined, the last column will still be based on a linear sweep.
 
-    >>> sample_continued = sampler.random(n=5)
+    >>> sample_continued = sampler.random(n=4)
     >>> sample_continued
-    array([[0.3125, 0.2   ],
-           [0.8125, 0.4   ],
-           [0.1875, 0.6   ],
-           [0.6875, 0.8   ],
-           [0.4375, 1.    ]])
+    array([[0.   , 0.125],
+           [0.25 , 0.625],
+           [0.5  , 0.375],
+           [0.75 , 0.875]])
 
+    For this reason, Hammersley is most appropriate when the required number
+    of samples is known in advance and all points can be generated in one call
+    of `random`.
     Finally, samples can be scaled to bounds.
 
     >>> l_bounds = [0, 2]
     >>> u_bounds = [10, 5]
     >>> qmc.scale(sample_continued, l_bounds, u_bounds)
-    array([[3.125, 2.6  ],
-           [8.125, 3.2  ],
-           [1.875, 3.8  ],
-           [6.875, 4.4  ],
-           [4.375, 5.   ]])
+    array([[0.   , 2.375],
+           [2.5  , 3.875],
+           [5.   , 3.125],
+           [7.5  , 4.625]])
 
     """
 
@@ -1370,7 +1376,6 @@ class Hammersley(QMCEngine):
         self._init_quad = {'d': d, 'scramble': True,
                            'optimization': optimization}
         super().__init__(d=d, optimization=optimization, seed=seed)
-        self.rng = seed
         self.scramble = scramble
         self._halton = Halton(max(d-1, 0), scramble=scramble,
                               seed=copy.deepcopy(seed))
@@ -1378,7 +1383,7 @@ class Hammersley(QMCEngine):
     def _random(
         self, n: IntNumber = 1, *, workers: IntNumber = 1
     ) -> np.ndarray:
-        """Draw `n` in the closed interval ``[0, 1]``.
+        """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
@@ -1399,10 +1404,10 @@ class Hammersley(QMCEngine):
         if self.d == 0:
             return out
 
-        out[:, :-1] = self._halton.random(n, workers=workers)
-        out[:, -1] = np.arange(1, n+1) / n
+        out[:, 0] = np.arange(n) / n
+        out[:, 1:] = self._halton.random(n, workers=workers)
         if self.scramble:
-            out[:, -1] -= self.rng.random(size=n) / n
+            out[:, 0] += self.rng.random(size=n) / n
         return out
 
     def reset(self) -> Hammersley:
