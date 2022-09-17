@@ -58,6 +58,7 @@ from ._axis_nan_policy import (_axis_nan_policy_factory,
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
+from scipy.optimize import root_scalar
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -80,7 +81,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'alexandergovern']
+           'brunnermunzel', 'alexandergovern',
+           'expectile',]
 
 
 def _chk_asarray(a, axis):
@@ -9440,3 +9442,86 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         result[nan_indexes] = np.nan
 
     return result
+
+
+# TODO: axis parameter
+# TODO: add _axis_nan_policy_factory decorator
+def expectile(a, alpha=0.5, axis=0, dtype=None, weights=None):
+    r"""Compute the expectile along the specified axis.
+
+    The expectile at level alpha of the array :math:`a_i` associated to
+    weights :math:`w_i` is the unique solution :math:`t` of:
+
+    .. math::
+
+        \alpha \sum_{i=1}^n w_i (y_i - t)_+ =
+            (1 - \alpha) \sum_{i=1}^n w_i (t - y_i)_+ \,.
+    
+    Expectiles are a generalization of the expectation in the same way as
+    quantiles are a generalization of the median. The expectile at level
+    `alpha = 0.5` is the mean (average).
+
+    Parameters
+    ----------
+    a : array_like
+        Input array or object that can be converted to an array.
+    alpha : float
+        The level of the expectile; `alpha=0.5` give the mean.
+    axis : int or None, optional
+        Axis along which the geometric mean is computed. Default is 0.
+        If None, compute over the whole array `a`.
+    dtype : dtype, optional
+        Type to which the input arrays are cast before the calculation is
+        performed.
+    weights : array_like, optional
+        The `weights` array must be broadcastable to the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
+
+    Returns
+    -------
+    expectile : ndarray
+        See `dtype` parameter above.
+
+    See Also
+    --------
+    numpy.mean : Arithmetic average
+    numpy.quantile : Quantile
+
+    References
+    ----------
+    .. [1] W. K. Newey and J. L. Powell (1987), "Asymmetric Least Squares
+           Estimation and Testing," Econometrica, 55, 819-847.
+
+    Examples
+    --------
+    >>> from scipy.stats import gmean
+    >>> gmean([1, 4])
+    2.0
+    >>> gmean([1, 2, 3, 4, 5, 6, 7])
+    3.3800151591412964
+    >>> gmean([1, 4, 7], weights=[3, 1, 3])
+    2.80668351922014
+
+    """
+    if alpha < 0 or alpha > 1:
+        raise ValueError(
+            "The expectile level alpha must be in the range [0, 1]."
+        )
+    a = np.asarray(a, dtype=dtype)
+
+    if weights is not None:
+        weights = np.asarray(weights, dtype=dtype)
+
+    def first_order(t):
+        return (alpha * np.average(np.fmax(0, a - t), weights=weights)
+            - (1 - alpha) * np.average(np.fmax(0, t - a), weights=weights))
+
+    if alpha >= 0.5:
+        x0 = np.average(a, weights=weights)
+        x1 = np.amax(a)
+    else:
+        x1 = np.average(a, weights=weights)
+        x0 = np.amin(a)
+
+    res = root_scalar(first_order, x0=x0, x1=x1)
+    return res.root

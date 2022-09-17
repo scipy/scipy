@@ -7971,3 +7971,55 @@ def test_rename_mode_method(fun, args):
     with pytest.raises(TypeError, match=re.escape(err)):
         fun(*args, method='exact', mode='exact')
 
+
+class TestExpectile:
+    def test_same_as_mean(self):
+        rng = np.random.default_rng(42)
+        x = rng.random(size=20)
+        assert_allclose(stats.expectile(x, alpha=0.5), np.mean(x))
+
+    def test_minimum(self):
+        rng = np.random.default_rng(42)
+        x = rng.random(size=20)
+        assert_allclose(stats.expectile(x, alpha=0), np.amin(x))
+
+    def test_minimum(self):
+        rng = np.random.default_rng(42)
+        x = rng.random(size=20)
+        assert_allclose(stats.expectile(x, alpha=1), np.amax(x))
+
+    @pytest.mark.parametrize("alpha", [0.2, 0.5, 0.8])
+    def test_expectile_properties(self, alpha):
+        """
+        See Section 6 of
+        I. Steinwart, C. Pasin, R.C. Williamson & S. Zhang (2014).
+        "Elicitation and Identification of Properties". COLT.
+        http://proceedings.mlr.press/v35/steinwart14.html
+        """
+        rng = np.random.default_rng(42)
+        n = 20
+        x = rng.normal(size=n)
+
+        # 1. translation equivariant
+        c = rng.exponential()
+        assert_allclose(
+            stats.expectile(x + c, alpha=alpha),
+            stats.expectile(x, alpha=alpha) + c,
+        )
+        assert_allclose(
+            stats.expectile(x - c, alpha=alpha),
+            stats.expectile(x, alpha=alpha) - c,
+        )
+
+        # 2. positively homogeneous
+        assert_allclose(
+            stats.expectile(c * x, alpha=alpha),
+            c * stats.expectile(x, alpha=alpha),
+        )
+
+        # 3. subadditive
+        y = rng.normal(size=n)
+        if alpha >= 0.5:
+            assert stats.expectile(x + y, alpha=alpha) <= stats.expectile(y, alpha=alpha) + stats.expectile(y, alpha=alpha)
+        else:
+            assert stats.expectile(x + y, alpha=alpha) > stats.expectile(y, alpha=alpha) + stats.expectile(y, alpha=alpha)
