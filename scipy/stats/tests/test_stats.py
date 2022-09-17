@@ -7983,7 +7983,7 @@ class TestExpectile:
         x = rng.random(size=20)
         assert_allclose(stats.expectile(x, alpha=0), np.amin(x))
 
-    def test_minimum(self):
+    def test_maximum(self):
         rng = np.random.default_rng(42)
         x = rng.random(size=20)
         assert_allclose(stats.expectile(x, alpha=1), np.amax(x))
