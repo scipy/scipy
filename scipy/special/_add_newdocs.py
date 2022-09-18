@@ -1142,6 +1142,11 @@ add_newdoc("besselpoly",
     scalar or ndarray
         Value of the integral.
 
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
     Examples
     --------
 
@@ -6573,6 +6578,11 @@ add_newdoc("it2i0k0",
     ik0 : scalar or ndarray
         The integral for `k0`
 
+    References
+    ----------
+
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
+
     Examples
     --------
 
@@ -6632,6 +6642,11 @@ add_newdoc("it2j0y0",
         The integral for `j0`
     iy0 : scalar or ndarray
         The integral for `y0`
+
+    References
+    ----------
+
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
 
     Examples
     --------
@@ -6776,6 +6791,11 @@ add_newdoc("iti0k0",
     ik0 : scalar or ndarray
         The integral for `k0`
 
+    References
+    ----------
+
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
+
     Examples
     --------
 
@@ -6834,6 +6854,11 @@ add_newdoc("itj0y0",
         The integral of `j0`
     iy0 : scalar or ndarray
         The integral of `y0`
+
+    References
+    ----------
+
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
 
     Examples
     --------
