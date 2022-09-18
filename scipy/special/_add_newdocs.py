@@ -1167,8 +1167,8 @@ add_newdoc("besselpoly",
     >>> all_combinations = [(order, scale) for order in orders
     ...                     for scale in scales]
     >>> for order, scale in all_combinations:
-    >>> plt.plot(powers, besselpoly(scale, powers, order),
-    ...          label=rf"$\nu={order!r}, a={scale!r}$")
+    ...     plt.plot(powers, besselpoly(scale, powers, order),
+    ...              label=rf"$\nu={order}, a={scale}$")
     >>> plt.legend()
     >>> plt.xlabel(r"$\lambda$")
     >>> plt.ylabel(r"$\int_0^1 x^{\lambda} J_{\nu}(2ax)dx$")
