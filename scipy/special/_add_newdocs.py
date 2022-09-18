@@ -1160,6 +1160,7 @@ add_newdoc("besselpoly",
 
     Plot the function for varying powers, orders and scales.
 
+    >>> import matplotlib.pyplot as plt
     >>> powers = np.linspace(0, 10, 100)
     >>> orders = [1, 2, 3]
     >>> scales = [1, 2]
@@ -6631,6 +6632,9 @@ add_newdoc("it2j0y0",
         The integral for `j0`
     iy0 : scalar or ndarray
         The integral for `y0`
+
+    Examples
+    --------
 
     Evaluate the functions at one point.
 
