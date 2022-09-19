@@ -9447,17 +9447,10 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
 def expectile(a, alpha=0.5, *, dtype=None, weights=None):
     r"""Compute the expectile along the specified axis.
 
-    The expectile at level alpha of the array :math:`a_i` associated to
-    weights :math:`w_i` is the unique solution :math:`t` of:
-
-    .. math::
-
-        \alpha \sum_{i=1}^n w_i (a_i - t)_+ =
-            (1 - \alpha) \sum_{i=1}^n w_i (t - a_i)_+ \,.
 
     Expectiles are a generalization of the expectation in the same way as
     quantiles are a generalization of the median. The expectile at level
-    `alpha = 0.5` is the mean (average).
+    `alpha = 0.5` is the mean (average). See Notes for more details.
 
     Parameters
     ----------
@@ -9481,6 +9474,16 @@ def expectile(a, alpha=0.5, *, dtype=None, weights=None):
     --------
     numpy.mean : Arithmetic average
     numpy.quantile : Quantile
+
+    Notes
+    -----
+    The expectile at level `alpha` of the array :math:`a_i` associated to
+    weights :math:`w_i` is the unique solution :math:`t` of:
+
+    .. math::
+
+        \alpha \sum_{i=1}^n w_i (a_i - t)_+ =
+            (1 - \alpha) \sum_{i=1}^n w_i (t - a_i)_+ \,.
 
     References
     ----------
