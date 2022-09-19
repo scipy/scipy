@@ -1165,17 +1165,18 @@ add_newdoc("besselpoly",
     Plot the function for varying powers, orders and scales.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> powers = np.linspace(0, 10, 100)
     >>> orders = [1, 2, 3]
     >>> scales = [1, 2]
     >>> all_combinations = [(order, scale) for order in orders
     ...                     for scale in scales]
     >>> for order, scale in all_combinations:
-    ...     plt.plot(powers, besselpoly(scale, powers, order),
+    ...     ax.plot(powers, besselpoly(scale, powers, order),
     ...              label=rf"$\nu={order}, a={scale}$")
-    >>> plt.legend()
-    >>> plt.xlabel(r"$\lambda$")
-    >>> plt.ylabel(r"$\int_0^1 x^{\lambda} J_{\nu}(2ax)dx$")
+    >>> ax.legend()
+    >>> ax.set_xlabel(r"$\lambda$")
+    >>> ax.set_ylabel(r"$\int_0^1 x^{\lambda} J_{\nu}(2ax)dx$")
     >>> plt.show()
     """)
 
