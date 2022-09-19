@@ -133,7 +133,7 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.9.0
+        uses: pypa/cibuildwheel@v2.10.1
         # Build all wheels here, but the macosx_arm64 job in its own entry.
         # cibuildwheel is currently unable to pass configuration flags to
         # CIBW_BUILD_FRONTEND https://github.com/pypa/cibuildwheel/issues/1227
