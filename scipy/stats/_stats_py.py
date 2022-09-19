@@ -9444,9 +9444,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     return result
 
 
-# TODO: axis parameter
-# TODO: add _axis_nan_policy_factory decorator
-def expectile(a, alpha=0.5, axis=0, dtype=None, weights=None):
+def expectile(a, alpha=0.5, *, dtype=None, weights=None):
     r"""Compute the expectile along the specified axis.
 
     The expectile at level alpha of the array :math:`a_i` associated to
@@ -9454,8 +9452,8 @@ def expectile(a, alpha=0.5, axis=0, dtype=None, weights=None):
 
     .. math::
 
-        \alpha \sum_{i=1}^n w_i (y_i - t)_+ =
-            (1 - \alpha) \sum_{i=1}^n w_i (t - y_i)_+ \,.
+        \alpha \sum_{i=1}^n w_i (a_i - t)_+ =
+            (1 - \alpha) \sum_{i=1}^n w_i (t - a_i)_+ \,.
 
     Expectiles are a generalization of the expectation in the same way as
     quantiles are a generalization of the median. The expectile at level
@@ -9466,10 +9464,7 @@ def expectile(a, alpha=0.5, axis=0, dtype=None, weights=None):
     a : array_like
         Input array or object that can be converted to an array.
     alpha : float
-        The level of the expectile; `alpha=0.5` give the mean.
-    axis : int or None, optional
-        Axis along which the geometric mean is computed. Default is 0.
-        If None, compute over the whole array `a`.
+        The level of the expectile; `alpha=0.5` gives the mean.
     dtype : dtype, optional
         Type to which the input arrays are cast before the calculation is
         performed.
@@ -9494,13 +9489,15 @@ def expectile(a, alpha=0.5, axis=0, dtype=None, weights=None):
 
     Examples
     --------
-    >>> from scipy.stats import gmean
-    >>> gmean([1, 4])
-    2.0
-    >>> gmean([1, 2, 3, 4, 5, 6, 7])
-    3.3800151591412964
-    >>> gmean([1, 4, 7], weights=[3, 1, 3])
-    2.80668351922014
+    >>> import numpy as np
+    >>> from scipy.stats import expectile
+    >>> a =[1, 4, 2, -1]
+    >>> expectile(a, alpha=0.5) == np.mean(a)
+    True
+    >>> expectile(a, alpha=0.2)
+    0.42857142857142855
+    >>> expectile(a, alpha=0.8)
+    2.5714285714285716
 
     """
     if alpha < 0 or alpha > 1:
@@ -9512,6 +9509,11 @@ def expectile(a, alpha=0.5, axis=0, dtype=None, weights=None):
     if weights is not None:
         weights = np.asarray(weights, dtype=dtype)
 
+    # This is the empirical equivalent of Eq. (13) with identification
+    # function from Table 9 (omitting a factor of 2) in
+    # Gneiting, T. (2009). "Making and Evaluating Point Forecasts".
+    # Journal of the American Statistical Association, 106, 746 - 762.
+    # https://doi.org/10.48550/arXiv.0912.0902
     def first_order(t):
         return (
             alpha * np.average(np.fmax(0, a - t), weights=weights)
