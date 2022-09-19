@@ -2015,7 +2015,7 @@ class rv_continuous(rv_generic):
         return integrate.quad(self._mom_integ1, 0, 1, args=(m,)+args)[0]
 
     def _pdf(self, x, *args):
-        return _derivative(self._cdf, x, dx=1e-5, args=args, order=5)
+        return _derivative(self._cdf, x, dx=1e-5, args=args, n=5)
 
     # Could also define any of these
     def _logpdf(self, x, *args):

@@ -66,7 +66,7 @@ def _central_diff_weights(Np, ndiv=1):
     return w
 
 
-def _derivative(func, x0, dx=1.0, n=1, args=(), order=3):
+def _derivative(func, x0, *, dx=1.0, order=1, args=(), n=3):
     """
     Find the nth derivative of a function at a point.
 
@@ -81,11 +81,11 @@ def _derivative(func, x0, dx=1.0, n=1, args=(), order=3):
         The point at which the nth derivative is found.
     dx : float, optional
         Spacing.
-    n : int, optional
+    order : int, optional
         Order of the derivative. Default is 1.
     args : tuple, optional
         Arguments to be past to func.
-    order : int, optional
+    n : int, optional
         Number of points to use, must be odd.
 
     Notes
@@ -100,46 +100,46 @@ def _derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     4.9999999999217337
 
     """
-    if order < n + 1:
+    if n < order + 1:
         raise ValueError(
-            "'order' (the number of points used to compute the derivative), "
-            "must be at least the derivative order 'n' + 1."
+            "'n' (the number of points used to compute the derivative), "
+            "must be at least the derivative order + 1."
         )
-    if order % 2 == 0:
+    if n % 2 == 0:
         raise ValueError(
-            "'order' (the number of points used to compute the derivative) "
+            "'n' (the number of points used to compute the derivative) "
             "must be odd."
         )
     # pre-computed for n=1 and 2 and low-order for speed.
-    if n == 1:
-        if order == 3:
+    if order == 1:
+        if n == 3:
             weights = array([-1, 0, 1]) / 2.0
-        elif order == 5:
+        elif n == 5:
             weights = array([1, -8, 0, 8, -1]) / 12.0
-        elif order == 7:
+        elif n == 7:
             weights = array([-1, 9, -45, 0, 45, -9, 1]) / 60.0
-        elif order == 9:
+        elif n == 9:
             weights = array([3, -32, 168, -672, 0, 672, -168, 32, -3]) / 840.0
         else:
-            weights = _central_diff_weights(order, 1)
-    elif n == 2:
-        if order == 3:
+            weights = _central_diff_weights(n, 1)
+    elif order == 2:
+        if n == 3:
             weights = array([1, -2.0, 1])
-        elif order == 5:
+        elif n == 5:
             weights = array([-1, 16, -30, 16, -1]) / 12.0
-        elif order == 7:
+        elif n == 7:
             weights = array([2, -27, 270, -490, 270, -27, 2]) / 180.0
-        elif order == 9:
+        elif n == 9:
             weights = (
                 array([-9, 128, -1008, 8064, -14350, 8064, -1008, 128, -9])
                 / 5040.0
             )
         else:
-            weights = _central_diff_weights(order, 2)
+            weights = _central_diff_weights(n, 2)
     else:
-        weights = _central_diff_weights(order, n)
+        weights = _central_diff_weights(n, order)
     val = 0.0
-    ho = order >> 1
-    for k in range(order):
+    ho = n >> 1
+    for k in range(n):
         val += weights[k] * func(x0 + (k - ho) * dx, *args)
-    return val / prod((dx,) * n, axis=0)
+    return val / prod((dx,) * order, axis=0)

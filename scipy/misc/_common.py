@@ -123,7 +123,9 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     4.9999999999217337
 
     """
-    return _derivative(func, x0, dx, n, args, order)
+    # n and order are switched here as the internal version does not need to
+    # maintain backwards compatibility
+    return _derivative(func, x0, dx=dx, order=n, args=args, n=order)
 
 
 @_deprecated(msg="scipy.misc.ascent has been deprecated in SciPy v1.10.0;"

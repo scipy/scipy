@@ -469,7 +469,7 @@ def _kolmogn_p(n, x):
     def _kk(_x):
         return kolmogn(n, _x)
 
-    return _derivative(_kk, x, dx=delta, order=5)
+    return _derivative(_kk, x, dx=delta, n=5)
 
 
 def _kolmogni(n, p, q):
