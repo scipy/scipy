@@ -6312,9 +6312,10 @@ add_newdoc("i0",
     Plot the function from -10 to 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(-10., 10., 1000)
     >>> y = i0(x)
-    >>> plt.plot(x, y)
+    >>> ax.plot(x, y)
     >>> plt.show()
 
     """)
@@ -6378,9 +6379,10 @@ add_newdoc("i0e",
     Plot the function from -10 to 10.
 
     >>> import matplotlib.pyplot as plt
+     >>> fig, ax = plt.subplots()
     >>> x = np.linspace(-10., 10., 1000)
     >>> y = i0e(x)
-    >>> plt.plot(x, y)
+    >>> ax.plot(x, y)
     >>> plt.show()
 
     Exponentially scaled Bessel functions are useful for large arguments for
@@ -6457,9 +6459,10 @@ add_newdoc("i1",
     Plot the function between -10 and 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(-10., 10., 1000)
     >>> y = i1(x)
-    >>> plt.plot(x, y)
+    >>> ax.plot(x, y)
     >>> plt.show()
 
     """)
@@ -6523,9 +6526,10 @@ add_newdoc("i1e",
     Plot the function between -10 and 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(-10., 10., 1000)
     >>> y = i1e(x)
-    >>> plt.plot(x, y)
+    >>> ax.plot(x, y)
     >>> plt.show()
 
     Exponentially scaled Bessel functions are useful for large arguments for
@@ -7001,9 +7005,10 @@ add_newdoc("j0",
     Plot the function from -20 to 20.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(-20., 20., 1000)
     >>> y = j0(x)
-    >>> plt.plot(x, y)
+    >>> ax.plot(x, y)
     >>> plt.show()
 
     """)
@@ -7064,9 +7069,10 @@ add_newdoc("j1",
     Plot the function from -20 to 20.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(-20., 20., 1000)
     >>> y = j1(x)
-    >>> plt.plot(x, y)
+    >>> ax.plot(x, y)
     >>> plt.show()
 
     """)
@@ -7264,9 +7270,10 @@ add_newdoc("k0",
     Plot the function from 0 to 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 10., 1000)
     >>> y = k0(x)
-    >>> plt.plot(x, y)
+    >>> ax.plot(x, y)
     >>> plt.show()
 
     """)
@@ -7328,9 +7335,10 @@ add_newdoc("k0e",
     Plot the function from 0 to 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 10., 1000)
     >>> y = k0e(x)
-    >>> plt.plot(x, y)
+    >>> ax.plot(x, y)
     >>> plt.show()
 
     Exponentially scaled Bessel functions are useful for large arguments for
@@ -7399,9 +7407,10 @@ add_newdoc("k1",
     Plot the function from 0 to 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 10., 1000)
     >>> y = k1(x)
-    >>> plt.plot(x, y)
+    >>> ax.plot(x, y)
     >>> plt.show()
 
     """)
@@ -7463,9 +7472,10 @@ add_newdoc("k1e",
     Plot the function from 0 to 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 10., 1000)
     >>> y = k1e(x)
-    >>> plt.plot(x, y)
+    >>> ax.plot(x, y)
     >>> plt.show()
 
     Exponentially scaled Bessel functions are useful for large arguments for
@@ -11374,9 +11384,10 @@ add_newdoc("y0",
     Plot the function from 0 to 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 10., 1000)
     >>> y = y0(x)
-    >>> plt.plot(x, y)
+    >>> ax.plot(x, y)
     >>> plt.show()
 
     """)
@@ -11438,9 +11449,10 @@ add_newdoc("y1",
     Plot the function from 0 to 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 10., 1000)
     >>> y = y1(x)
-    >>> plt.plot(x, y)
+    >>> ax.plot(x, y)
     >>> plt.show()
 
     """)
