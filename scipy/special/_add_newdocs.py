@@ -6602,12 +6602,13 @@ add_newdoc("it2i0k0",
     Plot the functions from 0 to 5.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 5., 1000)
     >>> int_i, int_k = it2i0k0(x)
-    >>> plt.plot(x, int_i, label=r"$\int_0^x \frac{I_0(t)-1}{t}dt$")
-    >>> plt.plot(x, int_k, label=r"$\int_x^{\infty} \frac{K_0(t)}{t}dt$")
-    >>> plt.legend()
-    >>> plt.ylim(0, 10)
+    >>> ax.plot(x, int_i, label=r"$\int_0^x \frac{I_0(t)-1}{t}dt$")
+    >>> ax.plot(x, int_k, label=r"$\int_x^{\infty} \frac{K_0(t)}{t}dt$")
+    >>> ax.legend()
+    >>> ax.set_ylim(0, 10)
     >>> plt.show()
     """)
 
@@ -6662,17 +6663,17 @@ add_newdoc("it2j0y0",
     (array([0.03100699, 0.26227724, 0.85614669]),
      array([ 0.26968854,  0.29769696, -0.02987272]))
 
-    Plot the functions from 0 to 20.
+    Plot the functions from 0 to 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 10., 1000)
     >>> int_j, int_y = it2j0y0(x)
-    >>> plt.plot(x, int_j, label=r"$\int_0^x \frac{1-J_0(t)}{t}dt$")
-    >>> plt.plot(x, int_y, label=r"$\int_x^{\infty} \frac{Y_0(t)}{t}dt$")
-    >>> plt.legend()
-    >>> plt.ylim(-2.5, 2.5)
+    >>> ax.plot(x, int_j, label=r"$\int_0^x \frac{1-J_0(t)}{t}dt$")
+    >>> ax.plot(x, int_y, label=r"$\int_x^{\infty} \frac{Y_0(t)}{t}dt$")
+    >>> ax.legend()
+    >>> ax.set_ylim(-2.5, 2.5)
     >>> plt.show()
-
     """)
 
 add_newdoc("it2struve0",
@@ -6811,11 +6812,12 @@ add_newdoc("iti0k0",
     Plot the functions from 0 to 5.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 5., 1000)
     >>> int_i, int_k = iti0k0(x)
-    >>> plt.plot(x, int_i, label="$\int_0^x I_0(t)dt$")
-    >>> plt.plot(x, int_k, label="$\int_0^x K_0(t)dt$")
-    >>> plt.legend()
+    >>> ax.plot(x, int_i, label="$\int_0^x I_0(t)dt$")
+    >>> ax.plot(x, int_k, label="$\int_0^x K_0(t)dt$")
+    >>> ax.legend()
     >>> plt.show()
     """)
 
@@ -6873,11 +6875,12 @@ add_newdoc("itj0y0",
     Plot the functions from 0 to 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 10., 1000)
     >>> int_j, int_y = itj0y0(x)
-    >>> plt.plot(x, int_j, label="$\int_0^x J_0(t)dt$")
-    >>> plt.plot(x, int_y, label="$\int_0^x Y_0(t)dt$")
-    >>> plt.legend()
+    >>> ax.plot(x, int_j, label="$\int_0^x J_0(t)dt$")
+    >>> ax.plot(x, int_y, label="$\int_0^x Y_0(t)dt$")
+    >>> ax.legend()
     >>> plt.show()
 
     """)
