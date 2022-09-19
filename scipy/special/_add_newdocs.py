@@ -6379,7 +6379,7 @@ add_newdoc("i0e",
     Plot the function from -10 to 10.
 
     >>> import matplotlib.pyplot as plt
-     >>> fig, ax = plt.subplots()
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(-10., 10., 1000)
     >>> y = i0e(x)
     >>> ax.plot(x, y)
