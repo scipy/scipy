@@ -1149,7 +1149,6 @@ add_newdoc("besselpoly",
 
     Examples
     --------
-
     Evaluate the function for one parameter set.
 
     >>> from scipy.special import besselpoly
@@ -6584,7 +6583,6 @@ add_newdoc("it2i0k0",
 
     Examples
     --------
-
     Evaluate the functions at one point.
 
     >>> from scipy.special import it2i0k0
@@ -6648,7 +6646,6 @@ add_newdoc("it2j0y0",
 
     Examples
     --------
-
     Evaluate the functions at one point.
 
     >>> from scipy.special import it2j0y0
@@ -6795,7 +6792,6 @@ add_newdoc("iti0k0",
 
     Examples
     --------
-
     Evaluate the functions at one point.
 
     >>> from scipy.special import iti0k0
@@ -6858,7 +6854,6 @@ add_newdoc("itj0y0",
 
     Examples
     --------
-
     Evaluate the functions at one point.
 
     >>> from scipy.special import itj0y0
