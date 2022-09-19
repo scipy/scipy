@@ -84,7 +84,7 @@ def _derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     n : int, optional
         Order of the derivative. Default is 1.
     args : tuple, optional
-        Arguments
+        Arguments to be past to func.
     order : int, optional
         Number of points to use, must be odd.
 
