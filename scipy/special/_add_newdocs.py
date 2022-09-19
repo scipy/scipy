@@ -1158,7 +1158,7 @@ add_newdoc("besselpoly",
     Evaluate the function for different scale factors.
 
     >>> import numpy as np
-    >>> factors=np.array([0., 3., 6.])
+    >>> factors = np.array([0., 3., 6.])
     >>> besselpoly(factors, 1, 1)
     array([ 0.        , -0.00549029,  0.00140174])
 
@@ -1173,10 +1173,10 @@ add_newdoc("besselpoly",
     ...                     for scale in scales]
     >>> for order, scale in all_combinations:
     ...     ax.plot(powers, besselpoly(scale, powers, order),
-    ...              label=rf"$\nu={order}, a={scale}$")
+    ...             label=rf"$\nu={order}, a={scale}$")
     >>> ax.legend()
     >>> ax.set_xlabel(r"$\lambda$")
-    >>> ax.set_ylabel(r"$\int_0^1 x^{\lambda} J_{\nu}(2ax)dx$")
+    >>> ax.set_ylabel(r"$\int_0^1 x^{\lambda} J_{\nu}(2ax)\,dx$")
     >>> plt.show()
     """)
 
@@ -6595,7 +6595,7 @@ add_newdoc("it2i0k0",
 
     >>> import numpy as np
     >>> points = np.array([0.5, 1.5, 3.])
-    >>> int_i, int_k  = it2i0k0(points)
+    >>> int_i, int_k = it2i0k0(points)
     >>> int_i, int_k
     (array([0.03149527, 0.30187149, 1.50012461]),
      array([0.66575102, 0.0823715 , 0.00823631]))
@@ -6606,8 +6606,8 @@ add_newdoc("it2i0k0",
     >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 5., 1000)
     >>> int_i, int_k = it2i0k0(x)
-    >>> ax.plot(x, int_i, label=r"$\int_0^x \frac{I_0(t)-1}{t}dt$")
-    >>> ax.plot(x, int_k, label=r"$\int_x^{\infty} \frac{K_0(t)}{t}dt$")
+    >>> ax.plot(x, int_i, label=r"$\int_0^x \frac{I_0(t)-1}{t}\,dt$")
+    >>> ax.plot(x, int_k, label=r"$\int_x^{\infty} \frac{K_0(t)}{t}\,dt$")
     >>> ax.legend()
     >>> ax.set_ylim(0, 10)
     >>> plt.show()
@@ -6670,8 +6670,8 @@ add_newdoc("it2j0y0",
     >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 10., 1000)
     >>> int_j, int_y = it2j0y0(x)
-    >>> ax.plot(x, int_j, label=r"$\int_0^x \frac{1-J_0(t)}{t}dt$")
-    >>> ax.plot(x, int_y, label=r"$\int_x^{\infty} \frac{Y_0(t)}{t}dt$")
+    >>> ax.plot(x, int_j, label=r"$\int_0^x \frac{1-J_0(t)}{t}\,dt$")
+    >>> ax.plot(x, int_y, label=r"$\int_x^{\infty} \frac{Y_0(t)}{t}\,dt$")
     >>> ax.legend()
     >>> ax.set_ylim(-2.5, 2.5)
     >>> plt.show()
@@ -6816,8 +6816,8 @@ add_newdoc("iti0k0",
     >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 5., 1000)
     >>> int_i, int_k = iti0k0(x)
-    >>> ax.plot(x, int_i, label="$\int_0^x I_0(t)dt$")
-    >>> ax.plot(x, int_k, label="$\int_0^x K_0(t)dt$")
+    >>> ax.plot(x, int_i, label="$\int_0^x I_0(t)\,dt$")
+    >>> ax.plot(x, int_k, label="$\int_0^x K_0(t)\,dt$")
     >>> ax.legend()
     >>> plt.show()
     """)
@@ -6879,8 +6879,8 @@ add_newdoc("itj0y0",
     >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 10., 1000)
     >>> int_j, int_y = itj0y0(x)
-    >>> ax.plot(x, int_j, label="$\int_0^x J_0(t)dt$")
-    >>> ax.plot(x, int_y, label="$\int_0^x Y_0(t)dt$")
+    >>> ax.plot(x, int_j, label="$\int_0^x J_0(t)\,dt$")
+    >>> ax.plot(x, int_y, label="$\int_0^x Y_0(t)\,dt$")
     >>> ax.legend()
     >>> plt.show()
 
