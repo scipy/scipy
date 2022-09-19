@@ -22,7 +22,7 @@ class IntegrationWarning(UserWarning):
 
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,
-         limlst=50):
+         limlst=50, real_func=True):
     """
     Compute a definite integral.
 
@@ -61,6 +61,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Non-zero to return a dictionary of integration information.
         If non-zero, warning messages are also suppressed and the
         message is appended to the output tuple.
+    real_func : bool, optional
+        Indicate if the function's return type is real values (true)
+        or complex (false).
 
     Returns
     -------
@@ -408,16 +411,45 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     # check the limits of integration: \int_a^b, expect a < b
     flip, a, b = b < a, min(a, b), max(a, b)
 
+    if not real_func:
+        def imfunc(x, *args):
+            return numpy.imag(func(x, *args))
+
+        def refunc(x, *args):
+            return numpy.real(func(x, *args))
+
     if weight is None:
-        retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
+        if real_func:
+            retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
                        points)
+        else:
+            re_retval = _quad(refunc, a, b, args, full_output, epsabs,
+                          epsrel, limit, points)
+            im_retval = _quad(imfunc, a, b, args, full_output, epsabs,
+                          epsrel, limit, points)
+            retval = (re_retval[0] + 1j*im_retval[0],) + \
+                      tuple([
+                        numpy.max((re_retval[i], im_retval[i])) for i in
+                        range(1,len(re_retval))])
+
+
     else:
         if points is not None:
             msg = ("Break points cannot be specified when using weighted integrand.\n"
                    "Continuing, ignoring specified points.")
             warnings.warn(msg, IntegrationWarning, stacklevel=2)
-        retval = _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
+        if real_func:
+            retval = _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
                               limlst, limit, maxp1, weight, wvar, wopts)
+        else:
+            re_retval = _quad_weight(refunc, a, b, args, full_output, epsabs,
+                          epsrel, limlst, limit, maxp1, weight, wvar, wopts)
+            im_retval = _quad_weight(imfunc, a, b, args, full_output, epsabs,
+                          epsrel, limlst, limit, maxp1, weight, wvar, wopts)
+            retval = (re_retval[0] + 1j*im_retval[0],) + \
+                      tuple([
+                        numpy.max((re_retval[i], im_retval[i])) for i in
+                        range(1,len(re_retval))])
 
     if flip:
         retval = (-retval[0],) + retval[1:]
@@ -426,6 +458,34 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     if ier == 0:
         return retval[:-1]
 
+    ier = (ier,)
+    if not real_func:
+        ier = (re_retval[-1], im_retval[-1])
+
+    rvlst = (retval,) if real_func else (re_retval, im_retval)
+    return _quad_err_msg_comp(retval, rvlst, a, b, args, full_output, epsabs,
+              epsrel, limit, points, weight, wvar, wopts, maxp1,
+              limlst)
+
+
+def _quad_err_msg_comp(retval, rvlst, a, b, args, full_output, epsabs, epsrel,
+                       limit, points, weight, wvar, wopts, maxp1,
+                       limlst):
+
+    sargs = (a, b, args, full_output, epsabs, epsrel,
+             limit, points, weight, wvar, wopts, maxp1,
+             limlst)
+
+    msgs = [_quad_err_msg(rv, *sargs) for rv in rvlst]
+    msg = ' and '.join(msgs)
+
+    return retval[:-1] + (msg,)
+
+
+def _quad_err_msg(retval, a, b, args, full_output, epsabs, epsrel,
+            limit, points, weight, wvar, wopts, maxp1,
+            limlst):
+    ier = retval[-1]
     msgs = {80: "A Python error occurred possibly while calling the function.",
              1: "The maximum number of subdivisions (%d) has been achieved.\n  If increasing the limit yields no improvement it is advised to analyze \n  the integrand in order to determine the difficulties.  If the position of a \n  local difficulty can be determined (singularity, discontinuity) one will \n  probably gain from splitting up the interval and calling the integrator \n  on the subranges.  Perhaps a special-purpose integrator should be used." % limit,
              2: "The occurrence of roundoff error is detected, which prevents \n  the requested tolerance from being achieved.  The error may be \n  underestimated.",
@@ -454,12 +514,12 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     if ier in [1,2,3,4,5,7]:
         if full_output:
             if weight in ['cos', 'sin'] and (b == Inf or a == -Inf):
-                return retval[:-1] + (msg, explain)
+                return ' - '.join((msg, explain))
             else:
-                return retval[:-1] + (msg,)
+                return msg
         else:
             warnings.warn(msg, IntegrationWarning, stacklevel=2)
-            return retval[:-1]
+            return ''
 
     elif ier == 6:  # Forensic decision tree when QUADPACK throws ier=6
         if epsabs <= 0:  # Small error tolerance - applies to all methods
