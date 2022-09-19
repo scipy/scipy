@@ -6580,7 +6580,8 @@ add_newdoc("it2i0k0",
 
     References
     ----------
-    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions",
+           Wiley 1996
 
     Examples
     --------
@@ -6644,7 +6645,8 @@ add_newdoc("it2j0y0",
 
     References
     ----------
-    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions",
+           Wiley 1996
 
     Examples
     --------
@@ -6790,7 +6792,8 @@ add_newdoc("iti0k0",
 
     References
     ----------
-    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions",
+           Wiley 1996
 
     Examples
     --------
@@ -6853,8 +6856,8 @@ add_newdoc("itj0y0",
 
     References
     ----------
-    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
-
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions",
+           Wiley 1996
     Examples
     --------
     Evaluate the functions at one point.
