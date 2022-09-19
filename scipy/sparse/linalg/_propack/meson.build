@@ -111,6 +111,7 @@ foreach ele: elements
     fortran_args: _fflag_Wno_maybe_uninitialized,
     dependencies: [lapack, fortranobject_dep],
     include_directories: [inc_np, inc_f2py],
+    link_args: version_link_args,
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/sparse/linalg/_propack'
