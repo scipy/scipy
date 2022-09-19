@@ -6891,10 +6891,11 @@ add_newdoc("iv",
     Plot the functions of order 0 to 3 from -5 to 5.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(-5., 5., 1000)
     >>> for i in range(4):
-    ...     plt.plot(x, iv(i, x), label=f'$I_{i!r}$')
-    >>> plt.legend()
+    ...     ax.plot(x, iv(i, x), label=f'$I_{i!r}$')
+    >>> ax.legend()
     >>> plt.show()
 
     """)
@@ -7173,10 +7174,11 @@ add_newdoc("jv",
     Plot the functions of order 0 to 3 from -10 to 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(-10., 10., 1000)
     >>> for i in range(4):
-    ...     plt.plot(x, jv(i, x), label=f'$J_{i!r}$')
-    >>> plt.legend()
+    ...     ax.plot(x, jv(i, x), label=f'$J_{i!r}$')
+    >>> ax.legend()
     >>> plt.show()
 
     """)
@@ -11520,11 +11522,12 @@ add_newdoc("yn",
     Plot the functions of order 0 to 3 from 0 to 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 10., 1000)
     >>> for i in range(4):
-    ...     plt.plot(x, yn(i, x), label=f'$Y_{i!r}$')
-    >>> plt.ylim(-3, 1)
-    >>> plt.legend()
+    ...     ax.plot(x, yn(i, x), label=f'$Y_{i!r}$')
+    >>> ax.set_ylim(-3, 1)
+    >>> ax.legend()
     >>> plt.show()
     """)
 
@@ -11617,11 +11620,12 @@ add_newdoc("yv",
     Plot the functions of order 0 to 3 from 0 to 10.
 
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 10., 1000)
     >>> for i in range(4):
-    ...     plt.plot(x, yv(i, x), label=f'$Y_{i!r}$')
-    >>> plt.ylim(-3, 1)
-    >>> plt.legend()
+    ...     ax.plot(x, yv(i, x), label=f'$Y_{i!r}$')
+    >>> ax.set_ylim(-3, 1)
+    >>> ax.legend()
     >>> plt.show()
 
     """)
