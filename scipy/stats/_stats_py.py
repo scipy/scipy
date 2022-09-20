@@ -7549,7 +7549,8 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
                             lambda_="pearson")
 
 
-KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
+KstestResult = _make_tuple_bunch(['statistic', 'pvalue'],
+                                 ['statistic_location', 'statistic_sign'])
 
 
 def _compute_dplus(cdfvals):
@@ -7565,7 +7566,10 @@ def _compute_dplus(cdfvals):
       Maximum distance of the CDF values below Uniform(0, 1)
 """
     n = len(cdfvals)
-    return (np.arange(1.0, n + 1) / n - cdfvals).max()
+    dplus = (np.arange(1.0, n + 1) / n - cdfvals)
+    amax = dplus.argmax()
+    loc_max = cdfvals[amax]
+    return (dplus[amax], loc_max)
 
 
 def _compute_dminus(cdfvals):
@@ -7582,7 +7586,10 @@ def _compute_dminus(cdfvals):
 
     """
     n = len(cdfvals)
-    return (cdfvals - np.arange(0.0, n)/n).max()
+    dminus = (cdfvals - np.arange(0.0, n)/n)
+    amax = dminus.argmax()
+    loc_max = cdfvals[amax]
+    return (dminus[amax], loc_max)
 
 
 @_rename_parameter("mode", "method")
@@ -7617,11 +7624,23 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
 
     Returns
     -------
-    statistic : float
-        KS test statistic, either D, D+ or D- (depending on the value
-        of 'alternative')
-    pvalue : float
-        One-tailed or two-tailed p-value.
+    res: KstestResult
+        An object containing attributes:
+
+        statistic : float
+            KS test statistic, either D, D+ or D- (depending on the value
+            of 'alternative')
+        pvalue : float
+            One-tailed or two-tailed p-value.
+        statistic_location: float
+            Value of the stochastic variable closest to the KS statistic. By
+            definition, the distance between the theoretical and sampled
+            distributions at this value is largest.
+        statistic_sign: str
+            For alternative == 'two-sided', this attribute is set to '-' if the
+            sampled distribution is above the theoretical one at the statistic
+            location, otherwise '+'. For other alternative values, it is an
+            empty string.
 
     See Also
     --------
@@ -7705,18 +7724,32 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     x = np.sort(x)
     cdfvals = cdf(x, *args)
 
+    # TODO: add logic to find the argmax
+
     if alternative == 'greater':
-        Dplus = _compute_dplus(cdfvals)
-        return KstestResult(Dplus, distributions.ksone.sf(Dplus, N))
+        Dplus, d_location = _compute_dplus(cdfvals)
+        return KstestResult(Dplus, distributions.ksone.sf(Dplus, N),
+                            statistic_location=d_location,
+                            statistic_sign='')
 
     if alternative == 'less':
-        Dminus = _compute_dminus(cdfvals)
-        return KstestResult(Dminus, distributions.ksone.sf(Dminus, N))
+        Dminus, d_location = _compute_dminus(cdfvals)
+        return KstestResult(Dminus, distributions.ksone.sf(Dminus, N),
+                            statistic_location=d_location,
+                            statistic_sign='')
 
     # alternative == 'two-sided':
-    Dplus = _compute_dplus(cdfvals)
-    Dminus = _compute_dminus(cdfvals)
-    D = np.max([Dplus, Dminus])
+    Dplus, dplus_location = _compute_dplus(cdfvals)
+    Dminus, dminus_location = _compute_dminus(cdfvals)
+    if Dplus > Dminus:
+        D = Dplus
+        d_location = dplus_location
+        d_sign = '+'
+    else:
+        D = Dminus
+        d_location = dminus_location
+        d_sign = '-'
+
     if mode == 'auto':  # Always select exact
         mode = 'exact'
     if mode == 'exact':
@@ -7727,7 +7760,9 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
         # mode == 'approx'
         prob = 2 * distributions.ksone.sf(D, N)
     prob = np.clip(prob, 0, 1)
-    return KstestResult(D, prob)
+    return KstestResult(D, prob,
+                        statistic_location=d_location,
+                        statistic_sign=d_sign)
 
 
 Ks_2sampResult = KstestResult
@@ -7920,10 +7955,20 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
 
     Returns
     -------
-    statistic : float
-        KS statistic.
-    pvalue : float
-        One-tailed or two-tailed p-value.
+    res: KstestResult
+        An object containing attributes:
+
+        statistic : float
+            KS test statistic.
+        pvalue : float
+            One-tailed or two-tailed p-value.
+        statistic_location: float
+            Value of the stochastic variable closest to the KS statistic. By
+            definition, the distance between the two sampled distributions at
+            this value is largest.
+        statistic_sign: str
+            '-' if the first distribution is above the second at the statistic
+            location, otherwise '+'.
 
     See Also
     --------
@@ -8054,11 +8099,35 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     cdf1 = np.searchsorted(data1, data_all, side='right') / n1
     cdf2 = np.searchsorted(data2, data_all, side='right') / n2
     cddiffs = cdf1 - cdf2
+
+    # Identify the location of the statistic
+    argminS = np.argmin(cddiffs)
+    argmaxS = np.argmax(cddiffs)
+    loc_minS = data_all[argminS]
+    loc_maxS = data_all[argmaxS]
+
     # Ensure sign of minS is not negative.
-    minS = np.clip(-np.min(cddiffs), 0, 1)
-    maxS = np.max(cddiffs)
-    alt2Dvalue = {'less': minS, 'greater': maxS, 'two-sided': max(minS, maxS)}
-    d = alt2Dvalue[alternative]
+    minS = np.clip(-cddiffs[argminS], 0, 1)
+    maxS = cddiffs[argmaxS]
+
+    if alternative == 'less':
+        d = minS
+        d_location = loc_minS
+        d_sign = '-'
+    elif alternative == 'greater':
+        d = maxS
+        d_location = loc_maxS
+        d_sign = '+'
+    else:
+        if minS > maxS:
+            d = minS
+            d_location = loc_minS
+            d_sign = '-'
+        else:
+            d = maxS
+            d_location = loc_maxS
+            d_sign = '+'
+
     g = gcd(n1, n2)
     n1g = n1 // g
     n2g = n2 // g
@@ -8098,7 +8167,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             prob = np.exp(expt)
 
     prob = np.clip(prob, 0, 1)
-    return KstestResult(d, prob)
+    return KstestResult(d, prob, statistic_location=d_location, statistic_sign=d_sign)
 
 
 def _parse_kstest_args(data1, data2, args, N):
@@ -8177,10 +8246,18 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
 
     Returns
     -------
-    statistic : float
-        KS test statistic, either D, D+ or D-.
-    pvalue : float
-        One-tailed or two-tailed p-value.
+    res: KstestResult
+        An object containing attributes:
+
+        statistic : float
+            KS test statistic, either D, D+ or D-.
+        pvalue : float
+            One-tailed or two-tailed p-value.
+
+        statistic_location: float
+            Value of the stochastic variable closest to the KS statistic. By
+            definition, the distance between the two sampled distributions at
+            this value is largest.
 
     See Also
     --------
