@@ -654,7 +654,7 @@ def splint(a, b, tck, full_output=0):
         return list(map(lambda c, a=a, b=b, t=t, k=k:
                         splint(a, b, [t, c, k]), c))
     else:
-        aint, wrk = _fitpack._splint(t, c, k, a, b)
+        aint, wrk = dfitpack.splint(t, c, k, a, b)
         if full_output:
             return aint, wrk
         else:

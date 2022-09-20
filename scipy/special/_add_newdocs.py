@@ -1142,6 +1142,42 @@ add_newdoc("besselpoly",
     scalar or ndarray
         Value of the integral.
 
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Evaluate the function for one parameter set.
+
+    >>> from scipy.special import besselpoly
+    >>> besselpoly(1, 1, 1)
+    0.24449718372863877
+
+    Evaluate the function for different scale factors.
+
+    >>> import numpy as np
+    >>> factors = np.array([0., 3., 6.])
+    >>> besselpoly(factors, 1, 1)
+    array([ 0.        , -0.00549029,  0.00140174])
+
+    Plot the function for varying powers, orders and scales.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> powers = np.linspace(0, 10, 100)
+    >>> orders = [1, 2, 3]
+    >>> scales = [1, 2]
+    >>> all_combinations = [(order, scale) for order in orders
+    ...                     for scale in scales]
+    >>> for order, scale in all_combinations:
+    ...     ax.plot(powers, besselpoly(scale, powers, order),
+    ...             label=rf"$\nu={order}, a={scale}$")
+    >>> ax.legend()
+    >>> ax.set_xlabel(r"$\lambda$")
+    >>> ax.set_ylabel(r"$\int_0^1 x^{\lambda} J_{\nu}(2ax)\,dx$")
+    >>> plt.show()
     """)
 
 add_newdoc("beta",
@@ -6542,6 +6578,40 @@ add_newdoc("it2i0k0",
     ik0 : scalar or ndarray
         The integral for `k0`
 
+    References
+    ----------
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions",
+           Wiley 1996
+
+    Examples
+    --------
+    Evaluate the functions at one point.
+
+    >>> from scipy.special import it2i0k0
+    >>> int_i, int_k = it2i0k0(1.)
+    >>> int_i, int_k
+    (0.12897944249456852, 0.2085182909001295)
+
+    Evaluate the functions at several points.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 1.5, 3.])
+    >>> int_i, int_k = it2i0k0(points)
+    >>> int_i, int_k
+    (array([0.03149527, 0.30187149, 1.50012461]),
+     array([0.66575102, 0.0823715 , 0.00823631]))
+
+    Plot the functions from 0 to 5.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 5., 1000)
+    >>> int_i, int_k = it2i0k0(x)
+    >>> ax.plot(x, int_i, label=r"$\int_0^x \frac{I_0(t)-1}{t}\,dt$")
+    >>> ax.plot(x, int_k, label=r"$\int_x^{\infty} \frac{K_0(t)}{t}\,dt$")
+    >>> ax.legend()
+    >>> ax.set_ylim(0, 10)
+    >>> plt.show()
     """)
 
 add_newdoc("it2j0y0",
@@ -6573,6 +6643,40 @@ add_newdoc("it2j0y0",
     iy0 : scalar or ndarray
         The integral for `y0`
 
+    References
+    ----------
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions",
+           Wiley 1996
+
+    Examples
+    --------
+    Evaluate the functions at one point.
+
+    >>> from scipy.special import it2j0y0
+    >>> int_j, int_y = it2j0y0(1.)
+    >>> int_j, int_y
+    (0.12116524699506871, 0.39527290169929336)
+
+    Evaluate the functions at several points.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 1.5, 3.])
+    >>> int_j, int_y = it2j0y0(points)
+    >>> int_j, int_y
+    (array([0.03100699, 0.26227724, 0.85614669]),
+     array([ 0.26968854,  0.29769696, -0.02987272]))
+
+    Plot the functions from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> int_j, int_y = it2j0y0(x)
+    >>> ax.plot(x, int_j, label=r"$\int_0^x \frac{1-J_0(t)}{t}\,dt$")
+    >>> ax.plot(x, int_y, label=r"$\int_x^{\infty} \frac{Y_0(t)}{t}\,dt$")
+    >>> ax.legend()
+    >>> ax.set_ylim(-2.5, 2.5)
+    >>> plt.show()
     """)
 
 add_newdoc("it2struve0",
@@ -6685,6 +6789,40 @@ add_newdoc("iti0k0",
         The integral for `i0`
     ik0 : scalar or ndarray
         The integral for `k0`
+
+    References
+    ----------
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions",
+           Wiley 1996
+
+    Examples
+    --------
+    Evaluate the functions at one point.
+
+    >>> from scipy.special import iti0k0
+    >>> int_i, int_k = iti0k0(1.)
+    >>> int_i, int_k
+    (1.0865210970235892, 1.2425098486237771)
+
+    Evaluate the functions at several points.
+
+    >>> import numpy as np
+    >>> points = np.array([0., 1.5, 3.])
+    >>> int_i, int_k = iti0k0(points)
+    >>> int_i, int_k
+    (array([0.        , 1.80606937, 6.16096149]),
+     array([0.        , 1.39458246, 1.53994809]))
+
+    Plot the functions from 0 to 5.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 5., 1000)
+    >>> int_i, int_k = iti0k0(x)
+    >>> ax.plot(x, int_i, label="$\int_0^x I_0(t)\,dt$")
+    >>> ax.plot(x, int_k, label="$\int_0^x K_0(t)\,dt$")
+    >>> ax.legend()
+    >>> plt.show()
     """)
 
 add_newdoc("itj0y0",
@@ -6715,6 +6853,40 @@ add_newdoc("itj0y0",
         The integral of `j0`
     iy0 : scalar or ndarray
         The integral of `y0`
+
+    References
+    ----------
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions",
+           Wiley 1996
+
+    Examples
+    --------
+    Evaluate the functions at one point.
+
+    >>> from scipy.special import itj0y0
+    >>> int_j, int_y = itj0y0(1.)
+    >>> int_j, int_y
+    (0.9197304100897596, -0.637069376607422)
+
+    Evaluate the functions at several points.
+
+    >>> import numpy as np
+    >>> points = np.array([0., 1.5, 3.])
+    >>> int_j, int_y = itj0y0(points)
+    >>> int_j, int_y
+    (array([0.        , 1.24144951, 1.38756725]),
+     array([ 0.        , -0.51175903,  0.19765826]))
+
+    Plot the functions from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> int_j, int_y = itj0y0(x)
+    >>> ax.plot(x, int_j, label="$\int_0^x J_0(t)\,dt$")
+    >>> ax.plot(x, int_y, label="$\int_0^x Y_0(t)\,dt$")
+    >>> ax.legend()
+    >>> plt.show()
 
     """)
 
