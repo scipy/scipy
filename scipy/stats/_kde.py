@@ -566,13 +566,13 @@ class gaussian_kde:
         covariance_factor().
         """
         self.factor = self.covariance_factor()
-        # Cache covariance and permuted cholesky decomp of permuted covariance
+        # Cache covariance and Cholesky decomp of covariance
         if not hasattr(self, '_data_cho_cov'):
             self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
                                                bias=False,
                                                aweights=self.weights))
-            self._data_cho_cov = linalg.cholesky(
-                self._data_covariance[::-1, ::-1]).T[::-1, ::-1]
+            self._data_cho_cov = linalg.cholesky(self._data_covariance,
+                                                 lower=True)
 
         self.covariance = self._data_covariance * self.factor**2
         self.cho_cov = (self._data_cho_cov * self.factor).astype(np.float64)
@@ -623,7 +623,7 @@ class gaussian_kde:
         output_dtype, spec = _get_output_dtype(self.covariance, points)
         result = gaussian_kernel_estimate_log[spec](
             self.dataset.T, self.weights[:, None],
-            points.T, self.inv_cov, output_dtype)
+            points.T, self.cho_cov, output_dtype)
 
         return result[:, 0]
 
