@@ -1,3 +1,4 @@
+import numpy as np
 from numpy import arange, newaxis, hstack, prod, array
 
 
@@ -110,18 +111,24 @@ def _derivative(func, x0, *, dx=1.0, order=1, args=(), n=3):
             "'n' (the number of points used to compute the derivative) "
             "must be odd."
         )
+    skip_zero = False
     # pre-computed for n=1 and 2 and low-order for speed.
     if order == 1:
+        # zeros have been removed from pre-computed weights to prevent
+        # unnecessary function calls
+        skip_zero = True
         if n == 3:
-            weights = array([-1, 0, 1]) / 2.0
+            weights = array([-1, 1]) / 2.0
         elif n == 5:
-            weights = array([1, -8, 0, 8, -1]) / 12.0
+            weights = array([1, -8, 8, -1]) / 12.0
         elif n == 7:
-            weights = array([-1, 9, -45, 0, 45, -9, 1]) / 60.0
+            weights = array([-1, 9, -45, 45, -9, 1]) / 60.0
         elif n == 9:
-            weights = array([3, -32, 168, -672, 0, 672, -168, 32, -3]) / 840.0
+            weights = array([3, -32, 168, -672, 672, -168, 32, -3]) / 840.0
         else:
             weights = _central_diff_weights(n, 1)
+            # remove zeros to prevent unnecessary function calls
+            weights = weights[~np.isclose(weights, 0)]
     elif order == 2:
         if n == 3:
             weights = array([1, -2.0, 1])
@@ -138,8 +145,17 @@ def _derivative(func, x0, *, dx=1.0, order=1, args=(), n=3):
             weights = _central_diff_weights(n, 2)
     else:
         weights = _central_diff_weights(n, order)
-    val = 0.0
+        if order % 2 != 0:
+            skip_zero = True
+            # remove zeros to prevent unnecessary function calls
+            weights = weights[~np.isclose(weights, 0)]
     ho = n >> 1
-    for k in range(n):
-        val += weights[k] * func(x0 + (k - ho) * dx, *args)
+    if skip_zero:
+        # generate dxs without a centre point
+        pos_dxs = arange(1, ho + 1)
+        dxs = dx * np.concatenate((-np.flipud(pos_dxs), pos_dxs))
+    else:
+        dxs = dx * arange(-ho, ho + 1)
+    xs = x0 + dxs
+    val = sum(weights[i] * func(x, *args) for i, x in enumerate(xs))
     return val / prod((dx,) * order, axis=0)
