@@ -113,3 +113,25 @@ def test_csr_bool_indexing():
     assert (slice_list2 == slice_array2).all()
     assert (slice_list3 == slice_array3).all()
 
+
+# https://github.com/scipy/scipy/issues/9253
+# error case
+def test_csr_non_monotonic_indptr():
+    with pytest.raises(
+            RuntimeError,
+            match="internal error: index out of bounds: 0, size: 0"):
+        m = csr_matrix(
+            ([33, 44, 55], [0, 1, 2], [0, 3, 0, 0]),
+            dtype=np.int8,
+            shape=(3, 3))
+        m.toarray()
+
+
+# https://github.com/scipy/scipy/issues/9253
+# ok case
+def test_csr_monotonic_indptr():
+    m = csr_matrix(
+        ([33, 44, 55], [0, 1, 2], [0, 3, 3, 3]),
+        dtype=np.int8,
+        shape=(3, 3))
+    assert m.toarray().tolist() == [[33, 44, 55], [0, 0, 0], [0, 0, 0]]

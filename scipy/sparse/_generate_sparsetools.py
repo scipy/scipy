@@ -81,7 +81,7 @@ csr_matmat          v iiIITIIT*I*I*T
 csr_diagonal        v iiiIIT*T
 csr_tocsc           v iiIIT*I*I*T
 csr_tobsr           v iiiiIIT*I*I*T
-csr_todense         v iiIIT*T
+_csr_todense        v iiiiiiIIT*T
 csr_matvec          v iiIITT*T
 csr_matvecs         v iiiIITT*T
 csr_elmul_csr       v iiIITIIT*I*I*T

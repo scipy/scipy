@@ -1,11 +1,14 @@
 #ifndef __CSR_H__
 #define __CSR_H__
 
+#include <sstream>
 #include <set>
 #include <vector>
 #include <algorithm>
 #include <functional>
 #include <numeric>
+
+#include <numpy/npy_common.h>
 
 #include "util.h"
 #include "dense.h"
@@ -254,12 +257,29 @@ void csr_tobsr(const I n_row,
 }
 
 
+template <class I>
+static inline void check_bounds(const I index,
+                                const I size)
+{
+    if NPY_UNLIKELY(index >= size) {
+        std::ostringstream err;
+        err << "internal error: index out of bounds: " << index
+            << ", size: " << size;
+        throw std::runtime_error(err.str());
+    }
+}
+
+
 /*
  * Compute B += A for CSR matrix A, C-contiguous dense matrix B
  *
  * Input Arguments:
  *   I  n_row           - number of rows in A
  *   I  n_col           - number of columns in A
+ *   I  Ap_size         - number of elements in array Ap
+ *   I  Aj_size         - number of elements in array Aj
+ *   I  Ax_size         - number of elements in array Ax
+ *   I  Bx_size         - number of elements in array Bx
  *   I  Ap[n_row+1]     - row pointer
  *   I  Aj[nnz(A)]      - column indices
  *   T  Ax[nnz(A)]      - nonzero values
@@ -267,19 +287,30 @@ void csr_tobsr(const I n_row,
  *
  */
 template <class I, class T>
-void csr_todense(const I n_row,
-                 const I n_col,
-                 const I Ap[],
-                 const I Aj[],
-                 const T Ax[],
-                       T Bx[])
+void _csr_todense(const I n_row,
+                  const I n_col,
+                  const I Ap_size,
+                  const I Aj_size,
+                  const I Ax_size,
+                  const I Bx_size,
+                  const I Ap[],
+                  const I Aj[],
+                  const T Ax[],
+                        T Bx[])
 {
-    T * Bx_row = Bx;
+    I Bx_offset = 0;
     for(I i = 0; i < n_row; i++){
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-            Bx_row[Aj[jj]] += Ax[jj];
+        check_bounds(i + 1, Ap_size);
+        for(I jj = Ap[i]; jj < Ap[i + 1]; jj++){
+            check_bounds(jj, Aj_size);
+            I Bx_index = Bx_offset + Aj[jj];
+
+            check_bounds(Bx_index, Bx_size);
+            check_bounds(jj, Ax_size);
+            Bx[Bx_index] += Ax[jj];
         }
-        Bx_row += (npy_intp)n_col;
+
+        Bx_offset += n_col;
     }
 }
 
@@ -1705,7 +1736,7 @@ inline int test_throw_error() {
   extern template void csr_scale_rows(const I n_row, const I n_col, const I Ap[], const I Aj[], T Ax[], const T Xx[]); \
   extern template void csr_scale_columns(const I n_row, const I n_col, const I Ap[], const I Aj[], T Ax[], const T Xx[]); \
   extern template void csr_tobsr(const I n_row, const I n_col, const I R, const I C, const I Ap[], const I Aj[], const T Ax[], I Bp[], I Bj[], T Bx[]); \
-  extern template void csr_todense(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], T Bx[]); \
+  extern template void _csr_todense(const I n_row, const I n_col, const I Ap_size, const I Aj_size, const I Ax_size, const I Bx_size, const I Ap[], const I Aj[], const T Ax[], T Bx[]); \
   extern template void csr_sort_indices(const I n_row, const I Ap[], I Aj[], T Ax[]); \
   extern template void csr_tocsc(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], I Bp[], I Bi[], T Bx[]); \
   extern template void csr_toell(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I row_length, I Bj[], T Bx[]); \
