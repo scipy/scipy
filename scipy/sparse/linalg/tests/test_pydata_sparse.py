@@ -78,7 +78,7 @@ def test_lsmr(matrices):
 # test issue 17012
 def test_lsmr_output_shape():
     x = splin.lsmr(A=np.ones((10,1)), b=np.zeros(10), x0=np.ones(1))[0]
-    assert_equal(x.shape, x0.shape)
+    assert_equal(x.shape, (1,))
 
 
 def test_eigs(matrices):
