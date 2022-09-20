@@ -27,7 +27,7 @@ class TestDerivative:
          (2, 7, -0.19866908899240918),
          (2, 9, -0.19866885805734644),
          (2, 11, -0.19866834834680008),
-         (3, 5, -1.0130785099704551)]
+         (3, 5, -0.9992007221626407)]
     )
     def test_computation(self, order, n, expected):
         assert_almost_equal(_derivative(sin, 0.2, dx=1e-5, order=order, n=n), expected)
