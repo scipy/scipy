@@ -104,7 +104,7 @@ stages:
         test_mode: fast
         numpy_spec: "numpy==1.19.5"
         use_sdist: true
-  - job: wheel_optimized_gcc6
+  - job: wheel_optimized_gcc8
     timeoutInMinutes: 90
     pool:
       vmImage: 'ubuntu-18.04'
@@ -114,14 +114,15 @@ stages:
       # flag. This environment variable starts all Py instances in -OO mode.
       PYTHONOPTIMIZE: 2
       # Use gcc version 6
-      CC: gcc-6
-      CXX: g++-6
+      CC: gcc-8
+      CXX: g++-8
+      FC: gfortran-8
     steps:
     - script: |
         set -euo pipefail
         sudo apt update -y
-        sudo apt install -y g++-6 gcc-6
-      displayName: 'Install GCC 6'
+        sudo apt install -y g++-8 gcc-8 gfortran-8
+      displayName: 'Install GCC 8'
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.8'
