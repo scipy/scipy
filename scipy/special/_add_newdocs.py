@@ -6860,11 +6860,13 @@ add_newdoc("iv",
     1.2660658777520084
 
     Evaluate the function at one point for different orders.
+
     >>> iv(0, 1.), iv(1, 1.), iv(1.5, 1.)
     (1.2660658777520084, 0.565159103992485, 0.2935253263474798)
 
     The evaluation for different orders can be carried out in one call by
-    provinding a list or numpy array as argument for the `v` parameter:
+    providing a list or NumPy array as argument for the `v` parameter:
+
     >>> iv([0, 1, 1.5], 1.)
     array([1.26606588, 0.5651591 , 0.29352533])
 
@@ -7146,7 +7148,7 @@ add_newdoc("jv",
     (0.7651976865579666, 0.44005058574493355, 0.24029783912342725)
 
     The evaluation for different orders can be carried out in one call by
-    provinding a list or numpy array as argument for the `v` parameter:
+    providing a list or NumPy array as argument for the `v` parameter:
 
     >>> jv([0, 1, 1.5], 1.)
     array([0.76519769, 0.44005059, 0.24029784])
@@ -11491,11 +11493,13 @@ add_newdoc("yn",
     0.08825696421567697
 
     Evaluate the function at one point for different orders.
+
     >>> yn(0, 1.), yn(1, 1.), yn(2, 1.)
     (0.08825696421567697, -0.7812128213002888, -1.6506826068162546)
 
     The evaluation for different orders can be carried out in one call by
-    provinding a list or numpy array as argument for the `v` parameter:
+    providing a list or NumPy array as argument for the `v` parameter:
+
     >>> yn([0, 1, 2], 1.)
     array([ 0.08825696, -0.78121282, -1.65068261])
 
@@ -11589,11 +11593,13 @@ add_newdoc("yv",
     0.088256964215677
 
     Evaluate the function at one point for different orders.
+
     >>> yv(0, 1.), yv(1, 1.), yv(1.5, 1.)
     (0.088256964215677, -0.7812128213002889, -1.102495575160179)
 
     The evaluation for different orders can be carried out in one call by
-    provinding a list or numpy array as argument for the `v` parameter:
+    providing a list or NumPy array as argument for the `v` parameter:
+
     >>> yv([0, 1, 1.5], 1.)
     array([ 0.08825696, -0.78121282, -1.10249558])
 
