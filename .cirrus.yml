@@ -86,9 +86,10 @@ cirrus_wheels_upload_task:
     memory: 4G
 
   env:
-    SCIPY_STAGING_UPLOAD_TOKEN: "NA"
-    SCIPY_NIGHTLY_UPLOAD_TOKEN: "NA"
-  upload_script: |  
+    # created as SCIPY_STAGING_UPLOAD_TOKEN_CIRRUS and SCIPY_NIGHTLY_UPLOAD_TOKEN_CIRRUS
+    SCIPY_STAGING_UPLOAD_TOKEN: ENCRYPTED[92da39a48bc14c0d14f05c057b011e321915337a8e0a664da56be892e3d19c5c991d12bc7ef79470693214620d3e3b1a]
+    SCIPY_NIGHTLY_UPLOAD_TOKEN: ENCRYPTED[3084f2103e33493cfc1992a22ec8e67665f835ab31eec7a84711dc9b2f78ea6d6e189e871214b7e9ba41e240ad4f8af4]
+  upload_script: |
     apt-get install -y python3-venv python-is-python3 curl
     export IS_SCHEDULE_DISPATCH="false"
     export IS_PUSH="false"
