@@ -7549,7 +7549,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
                             lambda_="pearson")
 
 
-KstestResult = _make_tuple_bunch(['statistic', 'pvalue'],
+KstestResult = _make_tuple_bunch('KstestResult', ['statistic', 'pvalue'],
                                  ['statistic_location', 'statistic_sign'])
 
 
@@ -8167,7 +8167,8 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             prob = np.exp(expt)
 
     prob = np.clip(prob, 0, 1)
-    return KstestResult(d, prob, statistic_location=d_location, statistic_sign=d_sign)
+    return KstestResult(d, prob, statistic_location=d_location,
+                        statistic_sign=d_sign)
 
 
 def _parse_kstest_args(data1, data2, args, N):
