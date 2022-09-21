@@ -7991,9 +7991,7 @@ def _log_gauss_mass(a, b):
         return mass_case_left(-b, -a)
 
     def mass_case_central(a, b):
-        left_mass = mass_case_left(a, 0.5)
-        right_mass = mass_case_right(0.5, b)
-        return _log_sum(left_mass, right_mass)
+        return sc.log1p(-sc.ndtr(a) - sc.ndtr(-b))
 
     # _lazyselect not working; don't care to debug it
     out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
