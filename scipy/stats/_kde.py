@@ -22,7 +22,6 @@ import warnings
 
 # SciPy imports.
 from scipy import linalg, special
-from scipy.special import logsumexp
 from scipy._lib._util import check_random_state
 
 from numpy import (asarray, atleast_2d, reshape, zeros, newaxis, exp, pi,

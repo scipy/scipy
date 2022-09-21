@@ -5,7 +5,7 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from scipy._lib.deprecation import _deprecated
 from scipy._lib._finite_differences import _central_diff_weights, _derivative
-from numpy import arange, newaxis, hstack, prod, array, frombuffer, load
+from numpy import array, frombuffer, load
 
 
 __all__ = ['central_diff_weights', 'derivative', 'ascent', 'face',
