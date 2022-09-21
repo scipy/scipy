@@ -105,6 +105,7 @@ jobs:
       run: |
         pushd tools
         python check_installation.py ${{ env.INSTALLDIR }}
+        ./check_pyext_symbol_hiding.sh ../build
         popd
 
     - name: Mypy
