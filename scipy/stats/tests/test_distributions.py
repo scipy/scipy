@@ -1130,6 +1130,15 @@ class TestTruncnorm:
             stats.truncnorm.rvs(-10, -5, size=5,
                                 random_state=np.random.default_rng())
 
+    def test_logcdf_tail(self):
+        a = [-np.inf, -np.inf, -8]
+        b = [np.inf, np.inf, 8]
+        x = [10, 7.5, 7.5]
+        expected = [-7.619853024160525e-24,
+                    -3.190891672910947e-14,
+                    -3.128682067168231e-14]
+        assert_allclose(stats.truncnorm(a, b).logcdf(x), expected)
+
 
 class TestGenLogistic:
 
