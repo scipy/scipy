@@ -6386,17 +6386,13 @@ add_newdoc("i0e",
     >>> plt.show()
 
     Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions overflow or lose precision.
+    which the unscaled Bessel functions overflow or lose precision. In the
+    following example `i0` returns infinity whereas `i0e` still returns
+    a finite number.
 
     >>> from scipy.special import i0
-    >>> i0(1000.)
-    inf
-
-    While `i0` returns infinity, `i0e` returns a finite number in this case:
-
-    >>> i0e(1000.)
-    0.012617240455891257
-
+    >>> i0(1000.), i0e(1000.)
+    (inf, 0.012617240455891257)
     """)
 
 add_newdoc("i1",
@@ -6533,17 +6529,13 @@ add_newdoc("i1e",
     >>> plt.show()
 
     Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions overflow or lose precision.
+    which the unscaled Bessel functions overflow or lose precision. In the
+    following example `i1` returns infinity whereas `i1e` still returns a
+    finite number.
 
     >>> from scipy.special import i1
-    >>> i1(1000.)
-    inf
-
-    While `i1` returns infinity, `i1e` returns a finite number in this case:
-
-    >>> i1e(1000.)
-    0.01261093025692863
-
+    >>> i1(1000.), i1e(1000.)
+    (inf, 0.01261093025692863)
     """)
 
 add_newdoc("_igam_fac",
@@ -7479,18 +7471,13 @@ add_newdoc("k1e",
     >>> plt.show()
 
     Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions are not precise enough.
+    which the unscaled Bessel functions are not precise enough. In the
+    following example `k1` returns zero whereas `k1e` still returns a
+    useful floating point number.
 
     >>> from scipy.special import k1
-    >>> k1(1000.)
-    0.
-
-    In this case the exponentially scaled Bessel function still yields a useful
-    floating point number:
-
-    >>> k1e(1000.)
-    0.03964813081296021
-
+    >>> k1(1000.), k1e(1000.)
+    (0., 0.03964813081296021)
     """)
 
 add_newdoc("kei",
