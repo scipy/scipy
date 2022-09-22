@@ -374,9 +374,12 @@ class TestBinnedStatistic:
 
         sum1, edges1, bc = binned_statistic_dd(X, v, 'sum', bins=3)
         sum2, edges2 = np.histogramdd(X, bins=3, weights=v)
+        sum3, edges3, bc = binned_statistic_dd(X, v, np.sum, bins=3)
 
         assert_allclose(sum1, sum2)
         assert_allclose(edges1, edges2)
+        assert_allclose(sum1, sum3)
+        assert_allclose(edges1, edges3)
 
     def test_dd_mean(self):
         X = self.X

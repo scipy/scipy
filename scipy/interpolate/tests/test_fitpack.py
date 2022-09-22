@@ -308,6 +308,41 @@ class TestSplder:
             assert_equal(k, spl3[2])
 
 
+class TestSplint:
+    def test_len_c(self):
+        n, k = 7, 3
+        x = np.arange(n)
+        y = x**3
+        t, c, k = splrep(x, y, s=0)
+
+        # note that len(c) == len(t) == 11 (== len(x) + 2*(k-1))
+        assert len(t) == len(c) == n + 2*(k-1)
+
+        # integrate directly: $\int_0^6 x^3 dx = 6^4 / 4$
+        res = splint(0, 6, (t, c, k))
+        assert_allclose(res, 6**4 / 4, atol=1e-15)
+
+        # check that the coefficients past len(t) - k - 1 are ignored
+        c0 = c.copy()
+        c0[len(t)-k-1:] = np.nan
+        res0 = splint(0, 6, (t, c0, k))
+        assert_allclose(res0, 6**4 / 4, atol=1e-15)
+
+        # however, all other coefficients *are* used
+        c0[6] = np.nan
+        assert np.isnan(splint(0, 6, (t, c0, k)))
+
+        # check that the coefficient array can have length `len(t) - k - 1`
+        c1 = c[:len(t) - k - 1]
+        res1 = splint(0, 6, (t, c1, k))
+        assert_allclose(res1, 6**4 / 4, atol=1e-15)
+
+        # however shorter c arrays raise. The error from f2py is a
+        # `dftipack.error`, which is an Exception but not ValueError etc.
+        with assert_raises(Exception, match=r">=n-k-1"):
+            splint(0, 1, (np.ones(10), np.ones(5), 3))
+
+
 class TestBisplrep:
     def test_overflow(self):
         from numpy.lib.stride_tricks import as_strided
