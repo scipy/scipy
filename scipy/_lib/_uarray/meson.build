@@ -1,6 +1,7 @@
 py3.extension_module('_uarray',
   ['_uarray_dispatch.cxx', 'vectorcall.cxx'],
   cpp_args: [_cpp_Wno_terminate, _cpp_Wno_unused_function],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib/_uarray'
 )

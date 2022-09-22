@@ -482,7 +482,7 @@ def test_solve_discrete_are():
          np.eye(3),
          1e6 * np.eye(3),
          1e6 * np.eye(3),
-         None),
+         "Issue with OpenBLAS, see gh-16926"),
         # TEST CASE 17 : darex #14
         (np.array([[1 - 1/1e8, 0, 0, 0],
                   [1, 0, 0, 0],

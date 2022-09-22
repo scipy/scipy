@@ -105,10 +105,11 @@ jobs:
       run: |
         pushd tools
         python check_installation.py ${{ env.INSTALLDIR }}
+        ./check_pyext_symbol_hiding.sh ../build
         popd
 
     - name: Mypy
-      if: matrix.python-version == '3.11-dev'
+      if: matrix.python-version == '3.9'
       run: |
         # Packages that are only needed for their annotations
         python -m pip install -r mypy_requirements.txt

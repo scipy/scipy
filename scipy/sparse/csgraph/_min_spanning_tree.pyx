@@ -5,7 +5,7 @@ import numpy as np
 cimport numpy as np
 cimport cython
 
-from scipy.sparse import csr_matrix, isspmatrix_csc, isspmatrix
+from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph._validation import validate_graph
 
 np.import_array()
