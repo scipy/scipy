@@ -17,7 +17,7 @@ build_and_store_wheels: &BUILD_AND_STORE_WHEELS
 ######################################################################
 
 cirrus_wheel_trigger_task:
-  only_if: $CIRRUS_REPO_FULL_NAME == "scipy/scipy"
+  only_if: $CIRRUS_REPO_FULL_NAME == "andyfaff/scipy"
   compute_engine_instance:
     image_project: cirrus-images
     image: family/docker-builder
@@ -29,7 +29,7 @@ cirrus_wheel_trigger_task:
     set -xe
     
     COMMIT_MSG=$(git log --no-merges -1)
-    if [[ "$COMMIT_MSG" == *"[wheel build]"* ]]; then
+    if [[ "$COMMIT_MSG" == *"[cirrus wheel build]"* ]]; then
       exit 0
     elif [[ "$CIRRUS_CRON" == "nightly" ]]; then
       exit 0
@@ -39,12 +39,13 @@ cirrus_wheel_trigger_task:
       exit 1
     fi
 
+
 ######################################################################
 # Build linux_aarch64 natively
 ######################################################################
 
 cirrus_wheels_linux_aarch64_task:
-  only_if: $CIRRUS_REPO_FULL_NAME == "scipy/scipy"
+  only_if: $CIRRUS_REPO_FULL_NAME == "andyfaff/scipy"
   depends_on: cirrus_wheel_trigger
   compute_engine_instance:
     image_project: cirrus-images
@@ -67,6 +68,32 @@ cirrus_wheels_linux_aarch64_task:
 
 
 ######################################################################
+# Build macosx_arm64 natively
+######################################################################
+
+cius_wheels_macos_arm64_task:
+  only_if: $CIRRUS_REPO_FULL_NAME == "andyfaff/scipy"
+  depends_on: cirrus_wheel_trigger
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-monterey-xcode
+  matrix:
+    - env:
+        CIBW_BUILD: cp38-* cp39-*
+    - env:
+        CIBW_BUILD: cp310-* cp311-*
+  env:
+    PATH: /opt/homebrew/opt/python@3.10/bin:$PATH
+  install_pre_requirements_script:
+    - brew install python@3.10
+    - ln -s python3 /opt/homebrew/opt/python@3.10/bin/python
+  build_script:
+    - which python
+    # needed for submodules
+    - git submodule update --init
+  <<: *BUILD_AND_STORE_WHEELS
+
+
+######################################################################
 # Upload all wheels
 ######################################################################
 
@@ -76,7 +103,7 @@ cirrus_wheels_upload_task:
   # final upload here. This is because a run may be on different OS for
   # which bash, etc, may not be present.
 
-  only_if: $CIRRUS_REPO_FULL_NAME == "scipy/scipy"
+  only_if: $CIRRUS_REPO_FULL_NAME == "andyfaff/scipy"
   depends_on: cirrus_wheels_linux_aarch64
   compute_engine_instance:
     image_project: cirrus-images

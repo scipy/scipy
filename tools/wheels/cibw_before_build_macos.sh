@@ -46,31 +46,17 @@ if [[ $PLATFORM == "macosx-x86_64" ]]; then
   otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
 fi
 
-# arm64 stuff from gfortran_utils
 if [[ $PLATFORM == "macosx-arm64" ]]; then
-    source $PROJECT_DIR/tools/wheels/gfortran_utils.sh
+    curl -L https://github.com/fxcoudert/gfortran-for-macOS/releases/download/11.3-monterey/gfortran-ARM-11.3-Monterey.dmg -o gfortran.dmg
+    GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
+    KNOWN_SHA256="d9e58f80943810bad2d72056240cd644d5b165da7982565c3c26735fb588460f  gfortran.dmg"
+
     export MACOSX_DEPLOYMENT_TARGET=11.0
 
-    # The install script requires the PLAT variable in order to set
-    # the FC variable
-    export PLAT=arm64
-    install_arm64_cross_gfortran
-    export FC=$FC_ARM64
-    export PATH=$FC_LOC:$PATH
-    # force a dynamic link, there may be a more elegant way of doing this.
-    rm /opt/arm64-builds/lib/*.a
-
+    hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
+    sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
     # required so that gfortran knows where to find the linking libraries.
-    export SDKROOT=/Applications/Xcode_13.2.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk
+    # export SDKROOT=/Applications/Xcode_13.2.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk
     #    export SDKROOT=$(xcrun --show-sdk-path)
-    export FFLAGS=" -arch arm64 $FFLAGS"
-    export LDFLAGS=" $FC_ARM64_LDFLAGS $LDFLAGS -L/opt/arm64-builds/lib -arch arm64"
-    sudo ln -s $FC $FC_LOC/gfortran
     echo $(type -p gfortran)
-
-    # having a test fortran program has helped in debugging problems with the
-    # compiler environment.
-    $FC $FFLAGS $PROJECT_DIR/tools/wheels/test.f $LDFLAGS
-    ls -al *.out
-    otool -L a.out
 fi

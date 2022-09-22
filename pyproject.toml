@@ -154,7 +154,6 @@ before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}
 
 [tool.cibuildwheel.macos]
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
-test-skip = "*_arm64 *_universal2:arm64"
 
 [tool.cibuildwheel.windows]
 before-build = "bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
