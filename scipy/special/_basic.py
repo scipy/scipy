@@ -801,20 +801,29 @@ def kvp(v, z, n=1):
 
     Examples
     --------
-    Calculate the first derivative at multiple values and order 5:
+    Compute the modified bessel function of the second kind of order 0 and
+    its first two derivatives at 1.
 
     >>> from scipy.special import kvp
-    >>> kvp(5, (1, 2, 3+5j), 1)
-    array([-1.84903536e+03+0.j        , -2.57735387e+01+0.j        ,
-           -3.06627741e-02+0.08750845j])
+    >>> kvp(0, 1, 0), kvp(0, 1, 1), kvp(0, 1, 2)
+    (0.42102443824070834, -0.6019072301972346, 1.0229316684379428)
 
+    Compute the first derivative of the modified Bessel function of the second
+    kind for several orders at 1 by providing an array for `v`.
 
-    Calculate for a single value at multiple orders:
+    >>> kvp([0, 1, 2], 1, 1)
+    array([-0.60190723, -1.02293167, -3.85158503])
 
-    >>> kvp((4, 4.5, 5), 1)
-    array([ -184.0309,  -568.9585, -1849.0354])
+    Compute the first derivative of the modified Bessel function of the
+    second kind of order 0 at several points by providing an array for `z`.
 
-    Plot the modified bessel function and its first three derivatives.
+    >>> import numpy as np
+    >>> points = np.array([0.5, 1.5, 3.])
+    >>> kvp(0, points, 1)
+    array([-1.65644112, -0.2773878 , -0.04015643])
+
+    Plot the modified bessel function of the second kind and its
+    first three derivatives.
 
     >>> x = np.linspace(0, 5, 1000)
     >>> fig, ax = plt.subplots()
