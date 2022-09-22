@@ -140,7 +140,7 @@ def convex_hull_plot_2d(hull, ax=None):
     if hull.points.shape[1] != 2:
         raise ValueError("Convex hull is not 2-D")
 
-    ax.plot(hull.points[:,0], hull.points[:,1], 'o')
+    ax.plot(hull.points[:, 0], hull.points[:, 1], 'o')
     line_segments = [hull.points[simplex] for simplex in hull.simplices]
     ax.add_collection(LineCollection(line_segments,
                                      colors='k',
@@ -221,9 +221,9 @@ def voronoi_plot_2d(vor, ax=None, **kw):
 
     if kw.get('show_points', True):
         point_size = kw.get('point_size', None)
-        ax.plot(vor.points[:,0], vor.points[:,1], '.', markersize=point_size)
+        ax.plot(vor.points[:, 0], vor.points[:, 1], '.', markersize=point_size)
     if kw.get('show_vertices', True):
-        ax.plot(vor.vertices[:,0], vor.vertices[:,1], 'o')
+        ax.plot(vor.vertices[:, 0], vor.vertices[:, 1], 'o')
 
     line_colors = kw.get('line_colors', 'k')
     line_width = kw.get('line_width', 1.0)
