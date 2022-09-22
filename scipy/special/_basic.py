@@ -763,7 +763,7 @@ def yvp(v, z, n=1):
 
 
 def kvp(v, z, n=1):
-    """Compute nth derivative of real-order modified Bessel function Kv(z)
+    """Compute derivatives of real-order modified Bessel function Kv(z)
 
     Kv(z) is the modified Bessel function of the second kind.
     Derivative is calculated with respect to `z`.
@@ -924,7 +924,7 @@ def ivp(v, z, n=1):
 
 
 def h1vp(v, z, n=1):
-    """Compute nth derivative of Hankel function H1v(z) with respect to `z`.
+    """Compute derivatives of Hankel function H1v(z) with respect to `z`.
 
     Parameters
     ----------
@@ -993,7 +993,7 @@ def h1vp(v, z, n=1):
 
 
 def h2vp(v, z, n=1):
-    """Compute nth derivative of Hankel function H2v(z) with respect to `z`.
+    """Compute derivatives of Hankel function H2v(z) with respect to `z`.
 
     Parameters
     ----------
