@@ -825,6 +825,7 @@ def kvp(v, z, n=1):
     Plot the modified bessel function of the second kind and its
     first three derivatives.
 
+    >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 5, 1000)
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, kvp(1, x, 0), label=r"$K_1$")
