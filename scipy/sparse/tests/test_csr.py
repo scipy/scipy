@@ -144,7 +144,8 @@ def test_csr_hstack_int64():
     # array can't be represented with int32 and must be promoted to int64.
     X_hs = hstack([X_1, X_2], format="csr")
 
-    assert X_hs.indices.max() == max_indices_1 + max_indices_2 - 1 > max_int32
+    assert X_hs.indices.max() == max_indices_1 + max_indices_2 - 1
+    assert max_indices_1 + max_indices_2 - 1 > max_int32
     assert X_hs.indices.dtype == X_hs.indptr.dtype == np.int64
 
     # Even if the matrices are empty, we must account for their size
