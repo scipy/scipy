@@ -5,7 +5,7 @@ import warnings
 from functools import partial
 
 from . import _quadpack
-import numpy
+import numpy as np
 from numpy import Inf
 
 __all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]
@@ -413,24 +413,33 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     if not real_func:
         def imfunc(x, *args):
-            return numpy.imag(func(x, *args))
+            return np.imag(func(x, *args))
 
         def refunc(x, *args):
-            return numpy.real(func(x, *args))
+            return np.real(func(x, *args))
+
+        re_retval = quad(refunc, a, b, args, full_output, epsabs,
+                      epsrel, limit, points, weight, wvar, wopts,
+                      maxp1, limlst, real_func=True)
+        im_retval = quad(imfunc, a, b, args, full_output, epsabs,
+                      epsrel, limit, points, weight, wvar, wopts,
+                      maxp1, limlst, real_func=True)
+        retval = (re_retval[0] + 1j*im_retval[0],) + \
+                  tuple([
+                    np.max((re_retval[i], im_retval[i])) for i in
+                    range(1,2)])
+        msgexp = {}
+        if len(re_retval) > 2:
+            msgexp["real message"] = re_retval[2:]
+        if len(im_retval) > 2:
+            msgexp["imag message"] = im_retval[2:]
+        if len(msgexp) > 0:
+            retval = retval + (msgexp,)
+        return retval
 
     if weight is None:
-        if real_func:
-            retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
-                       points)
-        else:
-            re_retval = _quad(refunc, a, b, args, full_output, epsabs,
-                          epsrel, limit, points)
-            im_retval = _quad(imfunc, a, b, args, full_output, epsabs,
-                          epsrel, limit, points)
-            retval = (re_retval[0] + 1j*im_retval[0],) + \
-                      tuple([
-                        numpy.max((re_retval[i], im_retval[i])) for i in
-                        range(1,len(re_retval))])
+        retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
+                   points)
 
 
     else:
@@ -438,18 +447,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             msg = ("Break points cannot be specified when using weighted integrand.\n"
                    "Continuing, ignoring specified points.")
             warnings.warn(msg, IntegrationWarning, stacklevel=2)
-        if real_func:
-            retval = _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
-                              limlst, limit, maxp1, weight, wvar, wopts)
-        else:
-            re_retval = _quad_weight(refunc, a, b, args, full_output, epsabs,
-                          epsrel, limlst, limit, maxp1, weight, wvar, wopts)
-            im_retval = _quad_weight(imfunc, a, b, args, full_output, epsabs,
-                          epsrel, limlst, limit, maxp1, weight, wvar, wopts)
-            retval = (re_retval[0] + 1j*im_retval[0],) + \
-                      tuple([
-                        numpy.max((re_retval[i], im_retval[i])) for i in
-                        range(1,len(re_retval))])
+        retval = _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
+                          limlst, limit, maxp1, weight, wvar, wopts)
 
     if flip:
         retval = (-retval[0],) + retval[1:]
@@ -458,34 +457,6 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     if ier == 0:
         return retval[:-1]
 
-    ier = (ier,)
-    if not real_func:
-        ier = (re_retval[-1], im_retval[-1])
-
-    rvlst = (retval,) if real_func else (re_retval, im_retval)
-    return _quad_err_msg_comp(retval, rvlst, a, b, args, full_output, epsabs,
-              epsrel, limit, points, weight, wvar, wopts, maxp1,
-              limlst)
-
-
-def _quad_err_msg_comp(retval, rvlst, a, b, args, full_output, epsabs, epsrel,
-                       limit, points, weight, wvar, wopts, maxp1,
-                       limlst):
-
-    sargs = (a, b, args, full_output, epsabs, epsrel,
-             limit, points, weight, wvar, wopts, maxp1,
-             limlst)
-
-    msgs = [_quad_err_msg(rv, *sargs) for rv in rvlst]
-    msg = ' and '.join(msgs)
-
-    return retval[:-1] + (msg,)
-
-
-def _quad_err_msg(retval, a, b, args, full_output, epsabs, epsrel,
-            limit, points, weight, wvar, wopts, maxp1,
-            limlst):
-    ier = retval[-1]
     msgs = {80: "A Python error occurred possibly while calling the function.",
              1: "The maximum number of subdivisions (%d) has been achieved.\n  If increasing the limit yields no improvement it is advised to analyze \n  the integrand in order to determine the difficulties.  If the position of a \n  local difficulty can be determined (singularity, discontinuity) one will \n  probably gain from splitting up the interval and calling the integrator \n  on the subranges.  Perhaps a special-purpose integrator should be used." % limit,
              2: "The occurrence of roundoff error is detected, which prevents \n  the requested tolerance from being achieved.  The error may be \n  underestimated.",
@@ -514,12 +485,12 @@ def _quad_err_msg(retval, a, b, args, full_output, epsabs, epsrel,
     if ier in [1,2,3,4,5,7]:
         if full_output:
             if weight in ['cos', 'sin'] and (b == Inf or a == -Inf):
-                return ' - '.join((msg, explain))
+                return retval[:-1] + (msg, explain)
             else:
-                return msg
+                return retval[:-1] + (msg,)
         else:
             warnings.warn(msg, IntegrationWarning, stacklevel=2)
-            return ''
+            return retval[:-1]
 
     elif ier == 6:  # Forensic decision tree when QUADPACK throws ier=6
         if epsabs <= 0:  # Small error tolerance - applies to all methods
@@ -589,10 +560,10 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
             raise ValueError("Infinity inputs cannot be used with break points.")
         else:
             #Duplicates force function evaluation at singular points
-            the_points = numpy.unique(points)
+            the_points = np.unique(points)
             the_points = the_points[a < the_points]
             the_points = the_points[the_points < b]
-            the_points = numpy.concatenate((the_points, (0., 0.)))
+            the_points = np.concatenate((the_points, (0., 0.)))
             return _quadpack._qagpe(func,a,b,the_points,args,full_output,epsabs,epsrel,limit)
 
 
