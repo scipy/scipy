@@ -737,9 +737,9 @@ def yvp(v, z, n=1):
     second kind of order 0 at several points by providing an array for `z`.
 
     >>> import numpy as np
-    >>> points = np.array([0., 1.5, 3.])
+    >>> points = np.array([0.5, 1.5, 3.])
     >>> yvp(0, points, 1)
-    array([ 0.78121282,  0.41230863, -0.32467442])
+    array([ 1.47147239,  0.41230863, -0.32467442])
 
     Plot the Bessel function of the second kind of order 1 and its
     first three derivatives.
@@ -902,7 +902,7 @@ def ivp(v, z, n=1):
     >>> import numpy as np
     >>> points = np.array([0., 1.5, 3.])
     >>> ivp(0, points, 1)
-    array([0.5651591 , 0.98166643, 3.95337022])
+    array([0.        , 0.98166643, 3.95337022])
 
     Plot the modified Bessel function of the first kind of order 1 and its
     first three derivatives.
