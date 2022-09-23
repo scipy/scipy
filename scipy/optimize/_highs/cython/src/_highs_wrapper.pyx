@@ -18,6 +18,8 @@ from .HConst cimport (
     HighsModelStatusNOTSET,
     HighsModelStatusMODEL_ERROR,
     HighsModelStatusOPTIMAL,
+    HighsModelStatusREACHED_TIME_LIMIT,
+    HighsModelStatusREACHED_ITERATION_LIMIT,
 
     HighsOptionTypeBOOL,
     HighsOptionTypeINT,
