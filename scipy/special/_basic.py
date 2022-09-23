@@ -617,7 +617,7 @@ def jvp(v, z, n=1):
         Argument at which to evaluate the derivative; can be real or
         complex.
     n : int, default 1
-        Order of derivative. For 0 returns the Bessel function `jv`.
+        Order of derivative. For 0 returns the Bessel function `jv` itself.
 
     Returns
     -------
@@ -775,7 +775,7 @@ def kvp(v, z, n=1):
     z : array_like of complex
         Argument at which to evaluate the derivative
     n : int, default 1
-        Order of derivative. For 0 returns the Bessel function `kv`.
+        Order of derivative. For 0 returns the Bessel function `kv` itself.
 
     Returns
     -------
@@ -857,7 +857,7 @@ def ivp(v, z, n=1):
         Argument at which to evaluate the derivative; can be real or
         complex.
     n : int, default 1
-        Order of derivative. For 0, `iv` is returned.
+        Order of derivative. For 0, returns the Bessel function `iv` itself.
 
     Returns
     -------
@@ -971,7 +971,7 @@ def h1vp(v, z, n=1):
      (-0.3251471008130329-0.8694697855159659j))
 
     Compute the first derivative of the Hankel function of the first kind
-    of order 0 for several orders at 1 by providing an array for `v`.
+    for several orders at 1 by providing an array for `v`.
 
     >>> h1vp([0, 1, 2], 1, 1)
     array([-0.44005059+0.78121282j,  0.3251471 +0.86946979j,
@@ -1004,12 +1004,16 @@ def h2vp(v, z, n=1):
         Argument at which to evaluate the derivative. Can be real or
         complex.
     n : int, default 1
-        Order of derivative
+        Order of derivative. For 0 returns the Hankel function `h2v` itself.
 
     Returns
     -------
     scalar or ndarray
         Values of the derivative of the Hankel function.
+
+    See Also
+    --------
+    hankel2
 
     Notes
     -----
@@ -1036,7 +1040,7 @@ def h2vp(v, z, n=1):
      (-0.3251471008130329+0.8694697855159659j))
 
     Compute the first derivative of the Hankel function of the second kind
-    of order 0 for several orders at 1 by providing an array for `v`.
+    for several orders at 1 by providing an array for `v`.
 
     >>> h2vp([0, 1, 2], 1, 1)
     array([-0.44005059-0.78121282j,  0.3251471 -0.86946979j,
