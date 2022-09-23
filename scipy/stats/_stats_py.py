@@ -9531,5 +9531,9 @@ def expectile(a, alpha=0.5, *, dtype=None, weights=None):
         x1 = np.average(a, weights=weights)
         x0 = np.amin(a)
 
+    if x0 == x1:
+        # a has a single unique element
+        return x0
+
     res = root_scalar(first_order, x0=x0, x1=x1)
     return res.root
