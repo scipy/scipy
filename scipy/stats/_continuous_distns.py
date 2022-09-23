@@ -7968,8 +7968,6 @@ def _log_sum(log_p, log_q):
 
 # same as above, but using -exp(x) = exp(x + πi)
 def _log_diff(log_p, log_q):
-    # need to broadcast in case a or b is 0.5; logsumexp doesn't
-    log_p, log_q = np.broadcast_arrays(log_p, log_q)
     return sc.logsumexp([log_p, log_q+np.pi*1j], axis=0)
 
 
@@ -7980,8 +7978,8 @@ def _log_gauss_mass(a, b):
 
     # Calculations in right tail are inaccurate, so we'll exploit the
     # symmetry and work only in the left tail
-    case_left = b <= 0.5
-    case_right = a > 0.5
+    case_left = b <= 0
+    case_right = a > 0
     case_central = ~(case_left | case_right)
 
     def mass_case_left(a, b):
@@ -7991,6 +7989,16 @@ def _log_gauss_mass(a, b):
         return mass_case_left(-b, -a)
 
     def mass_case_central(a, b):
+        # Previously, this was implemented as:
+        # left_mass = mass_case_left(a, 0)
+        # right_mass = mass_case_right(0, b)
+        # return _log_sum(left_mass, right_mass)
+        # Catastrophic cancellation occurs as np.exp(log_mass) approaches 1.
+        # Correct for this with an alternative formulation.
+        # We're not concerned with underflow here: if only one term
+        # underflows, it was insignificant; if both terms underflow,
+        # the result can't accurately be represented in logspace anyway
+        # because sc.log1p(x) ~ x for small x.
         return sc.log1p(-sc.ndtr(a) - sc.ndtr(-b))
 
     # _lazyselect not working; don't care to debug it
@@ -8051,13 +8059,23 @@ class truncnorm_gen(rv_continuous):
         return np.exp(self._logcdf(x, a, b))
 
     def _logcdf(self, x, a, b):
-        return _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
+        x, a, b = np.broadcast_arrays(x, a, b)
+        logcdf = _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
+        i = logcdf > -0.1  # avoid catastrophic cancellation
+        if np.any(i):
+            logcdf[i] = np.log1p(-np.exp(self._logsf(x[i], a[i], b[i])))
+        return logcdf
 
     def _sf(self, x, a, b):
         return np.exp(self._logsf(x, a, b))
 
     def _logsf(self, x, a, b):
-        return _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
+        x, a, b = np.broadcast_arrays(x, a, b)
+        logsf = _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
+        i = logsf > -0.1  # avoid catastrophic cancellation
+        if np.any(i):
+            logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
+        return logsf
 
     def _ppf(self, q, a, b):
         q, a, b = np.broadcast_arrays(q, a, b)
