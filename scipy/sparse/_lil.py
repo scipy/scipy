@@ -17,7 +17,7 @@ from . import _csparsetools
 
 
 class lil_matrix(spmatrix, IndexMixin):
-    """Row-based list of lists sparse matrix
+    """Row-based LIst of Lists sparse matrix
 
     This is a structure for constructing sparse matrices incrementally.
     Note that inserting a single item can take linear time in the worst case;
@@ -52,7 +52,6 @@ class lil_matrix(spmatrix, IndexMixin):
 
     Notes
     -----
-
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
 

@@ -39,7 +39,7 @@ from numpy.testing import suppress_warnings
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
 from scipy._lib._util import (check_random_state, MapWrapper,
-                              rng_integers, _rename_parameter)
+                              rng_integers, _rename_parameter, _contains_nan)
 
 import scipy.special as special
 from scipy import linalg
@@ -81,38 +81,6 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'alexandergovern']
-
-
-def _contains_nan(a, nan_policy='propagate', use_summation=True):
-    if not isinstance(a, np.ndarray):
-        use_summation = False  # some array_likes ignore nans (e.g. pandas)
-    policies = ['propagate', 'raise', 'omit']
-    if nan_policy not in policies:
-        raise ValueError("nan_policy must be one of {%s}" %
-                         ', '.join("'%s'" % s for s in policies))
-
-    if np.issubdtype(a.dtype, np.inexact):
-        # The summation method avoids creating a (potentially huge) array.
-        if use_summation:
-            with np.errstate(invalid='ignore', over='ignore'):
-                contains_nan = np.isnan(np.sum(a))
-        else:
-            contains_nan = np.isnan(a).any()
-    elif np.issubdtype(a.dtype, object):
-        contains_nan = False
-        for el in a.ravel():
-            # isnan doesn't work on non-numeric elements
-            if np.issubdtype(type(el), np.number) and np.isnan(el):
-                contains_nan = True
-                break
-    else:
-        # Only `object` and `inexact` arrays can have NaNs
-        contains_nan = False
-
-    if contains_nan and nan_policy == 'raise':
-        raise ValueError("The input contains nan values")
-
-    return contains_nan, nan_policy
 
 
 def _chk_asarray(a, axis):
@@ -254,11 +222,8 @@ def gmean(a, axis=0, dtype=None, weights=None):
         Axis along which the geometric mean is computed. Default is 0.
         If None, compute over the whole array `a`.
     dtype : dtype, optional
-        Type of the returned array and of the accumulator in which the
-        elements are summed. If dtype is not specified, it defaults to the
-        dtype of a, unless a has an integer dtype with a precision less than
-        that of the default platform integer. In that case, the default
-        platform integer is used.
+        Type to which the input arrays are cast before the calculation is
+        performed.
     weights : array_like, optional
         The `weights` array must be broadcastable to the same shape as `a`.
         Default is None, which gives each value a weight of 1.0.
@@ -273,12 +238,6 @@ def gmean(a, axis=0, dtype=None, weights=None):
     numpy.mean : Arithmetic average
     numpy.average : Weighted average
     hmean : Harmonic mean
-
-    Notes
-    -----
-    The geometric average is computed over a single dimension of the input
-    array, axis=0 by default, or all values in the array if axis=None.
-    float64 intermediate and return values are used for integer inputs.
 
     References
     ----------
@@ -296,21 +255,14 @@ def gmean(a, axis=0, dtype=None, weights=None):
     2.80668351922014
 
     """
-    if not isinstance(a, np.ndarray):
-        # if not an ndarray object attempt to convert it
-        a = np.array(a, dtype=dtype)
-    elif dtype:
-        # Must change the default dtype allowing array type
-        if isinstance(a, np.ma.MaskedArray):
-            a = np.ma.asarray(a, dtype=dtype)
-        else:
-            a = np.asarray(a, dtype=dtype)
+
+    a = np.asarray(a, dtype=dtype)
+
+    if weights is not None:
+        weights = np.asarray(weights, dtype=dtype)
 
     with np.errstate(divide='ignore'):
         log_a = np.log(a)
-
-    if weights is not None:
-        weights = np.asanyarray(weights, dtype=dtype)
 
     return np.exp(np.average(log_a, axis=axis, weights=weights))
 
@@ -562,7 +514,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
 
         .. warning::
             Unlike other reduction functions (e.g. `skew`, `kurtosis`), the
-            default behavior of `mode` usually retains the the axis it acts
+            default behavior of `mode` usually retains the axis it acts
             along. In SciPy 1.11.0, this behavior will change: the default
             value of `keepdims` will become ``False``, the `axis` over which
             the statistic is taken will be eliminated, and the value ``None``
@@ -4205,7 +4157,7 @@ class PearsonRResult(PearsonRResultBase):
     Attributes
     ----------
     statistic : float
-        Pearson product-moment correlation coefficent.
+        Pearson product-moment correlation coefficient.
     pvalue : float
         The p-value associated with the chosen alternative.
 
@@ -4220,6 +4172,9 @@ class PearsonRResult(PearsonRResultBase):
         super().__init__(statistic, pvalue)
         self._alternative = alternative
         self._n = n
+
+        # add alias for consistency with other correlation functions
+        self.correlation = statistic
 
     def confidence_interval(self, confidence_level=0.95):
         """
@@ -4299,7 +4254,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
         An object with the following attributes:
 
         statistic : float
-            Pearson product-moment correlation coefficent.
+            Pearson product-moment correlation coefficient.
         pvalue : float
             The p-value associated with the chosen alternative.
 
@@ -4770,9 +4725,6 @@ def fisher_exact(table, alternative='two-sided'):
     return SignificanceResult(oddsratio, pvalue)
 
 
-SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
-
-
 def spearmanr(a, b=None, axis=0, nan_policy='propagate',
               alternative='two-sided'):
     """Calculate a Spearman correlation coefficient with associated p-value.
@@ -4826,16 +4778,19 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     Returns
     -------
-    correlation : float or ndarray (2-D square)
-        Spearman correlation matrix or correlation coefficient (if only 2
-        variables are given as parameters. Correlation matrix is square with
-        length equal to total number of variables (columns or rows) in ``a``
-        and ``b`` combined.
-    pvalue : float
-        The p-value for a hypothesis test whose null hypotheisis
-        is that two sets of data are uncorrelated. See `alternative` above
-        for alternative hypotheses. `pvalue` has the same
-        shape as `correlation`.
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : float or ndarray (2-D square)
+            Spearman correlation matrix or correlation coefficient (if only 2
+            variables are given as parameters). Correlation matrix is square
+            with length equal to total number of variables (columns or rows) in
+            ``a`` and ``b`` combined.
+        pvalue : float
+            The p-value for a hypothesis test whose null hypothesis
+            is that two sets of data are linearly uncorrelated. See
+            `alternative` above for alternative hypotheses. `pvalue` has the
+            same shape as `statistic`.
 
     Warns
     -----
@@ -4854,41 +4809,49 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> stats.spearmanr([1,2,3,4,5], [5,6,7,8,7])
-    SpearmanrResult(correlation=0.82078..., pvalue=0.08858...)
+    >>> res = stats.spearmanr([1, 2, 3, 4, 5], [5, 6, 7, 8, 7])
+    >>> res.statistic
+    0.8207826816681233
+    >>> res.pvalue
+    0.08858700531354381
     >>> rng = np.random.default_rng()
     >>> x2n = rng.standard_normal((100, 2))
     >>> y2n = rng.standard_normal((100, 2))
-    >>> stats.spearmanr(x2n)
-    SpearmanrResult(correlation=-0.07960396039603959, pvalue=0.4311168705769747)
-    >>> stats.spearmanr(x2n[:,0], x2n[:,1])
-    SpearmanrResult(correlation=-0.07960396039603959, pvalue=0.4311168705769747)
-    >>> rho, pval = stats.spearmanr(x2n, y2n)
-    >>> rho
+    >>> res = stats.spearmanr(x2n)
+    >>> res.statistic, res.pvalue
+    (-0.07960396039603959, 0.4311168705769747)
+    >>> res = stats.spearmanr(x2n[:, 0], x2n[:, 1])
+    >>> res.statistic, res.pvalue
+    (-0.07960396039603959, 0.4311168705769747)
+    >>> res = stats.spearmanr(x2n, y2n)
+    >>> res.statistic
     array([[ 1.        , -0.07960396, -0.08314431,  0.09662166],
            [-0.07960396,  1.        , -0.14448245,  0.16738074],
            [-0.08314431, -0.14448245,  1.        ,  0.03234323],
            [ 0.09662166,  0.16738074,  0.03234323,  1.        ]])
-    >>> pval
+    >>> res.pvalue
     array([[0.        , 0.43111687, 0.41084066, 0.33891628],
            [0.43111687, 0.        , 0.15151618, 0.09600687],
            [0.41084066, 0.15151618, 0.        , 0.74938561],
            [0.33891628, 0.09600687, 0.74938561, 0.        ]])
-    >>> rho, pval = stats.spearmanr(x2n.T, y2n.T, axis=1)
-    >>> rho
+    >>> res = stats.spearmanr(x2n.T, y2n.T, axis=1)
+    >>> res.statistic
     array([[ 1.        , -0.07960396, -0.08314431,  0.09662166],
            [-0.07960396,  1.        , -0.14448245,  0.16738074],
            [-0.08314431, -0.14448245,  1.        ,  0.03234323],
            [ 0.09662166,  0.16738074,  0.03234323,  1.        ]])
-    >>> stats.spearmanr(x2n, y2n, axis=None)
-    SpearmanrResult(correlation=0.044981624540613524, pvalue=0.5270803651336189)
-    >>> stats.spearmanr(x2n.ravel(), y2n.ravel())
-    SpearmanrResult(correlation=0.044981624540613524, pvalue=0.5270803651336189)
+    >>> res = stats.spearmanr(x2n, y2n, axis=None)
+    >>> res.statistic, res.pvalue
+    (0.044981624540613524, 0.5270803651336189)
+    >>> res = stats.spearmanr(x2n.ravel(), y2n.ravel())
+    >>> res.statistic, res.pvalue
+    (0.044981624540613524, 0.5270803651336189)
 
     >>> rng = np.random.default_rng()
     >>> xint = rng.integers(10, size=(100, 2))
-    >>> stats.spearmanr(xint)
-    SpearmanrResult(correlation=0.09800224850707953, pvalue=0.3320271757932076)
+    >>> res = stats.spearmanr(xint)
+    >>> res.statistic, res.pvalue
+    (0.09800224850707953, 0.3320271757932076)
 
     For small samples, consider performing a permutation test instead of
     relying on the asymptotic p-value. Note that to calculate the null
@@ -4901,7 +4864,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     >>> y = [2.71414076, 0.2488, 0.87551913,
     ...      2.6514917, 2.01160156, 0.47699563]
     >>> def statistic(x):  # permute only `x`
-    ...     return stats.spearmanr(x, y).correlation
+    ...     return stats.spearmanr(x, y).statistic
     >>> res_exact = stats.permutation_test((x,), statistic,
     ...                                    permutation_type='pairings')
     >>> res_asymptotic = stats.spearmanr(x, y)
@@ -4935,7 +4898,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     n_obs = a.shape[axisout]
     if n_obs <= 1:
         # Handle empty arrays or single observations.
-        return SpearmanrResult(np.nan, np.nan)
+        res = SignificanceResult(np.nan, np.nan)
+        res.correlation = np.nan
+        return res
 
     warn_msg = ("An input array is constant; the correlation coefficient "
                 "is not defined.")
@@ -4944,13 +4909,17 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
             # If an input is constant, the correlation coefficient
             # is not defined.
             warnings.warn(stats.ConstantInputWarning(warn_msg))
-            return SpearmanrResult(np.nan, np.nan)
+            res = SignificanceResult(np.nan, np.nan)
+            res.correlation = np.nan
+            return res
     else:  # case when axisout == 1 b/c a is 2 dim only
         if (a[0, :][0] == a[0, :]).all() or (a[1, :][0] == a[1, :]).all():
             # If an input is constant, the correlation coefficient
             # is not defined.
             warnings.warn(stats.ConstantInputWarning(warn_msg))
-            return SpearmanrResult(np.nan, np.nan)
+            res = SignificanceResult(np.nan, np.nan)
+            res.correlation = np.nan
+            return res
 
     a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
     variable_has_nan = np.zeros(n_vars, dtype=bool)
@@ -4960,7 +4929,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
                                           alternative=alternative)
         elif nan_policy == 'propagate':
             if a.ndim == 1 or n_vars <= 2:
-                return SpearmanrResult(np.nan, np.nan)
+                res = SignificanceResult(np.nan, np.nan)
+                res.correlation = np.nan
+                return res
             else:
                 # Keep track of variables with NaNs, set the outputs to NaN
                 # only for those variables
@@ -4980,15 +4951,15 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     # For backwards compatibility, return scalars when comparing 2 columns
     if rs.shape == (2, 2):
-        return SpearmanrResult(rs[1, 0], prob[1, 0])
+        res = SignificanceResult(rs[1, 0], prob[1, 0])
+        res.correlation = rs[1, 0]
+        return res
     else:
         rs[variable_has_nan, :] = np.nan
         rs[:, variable_has_nan] = np.nan
-        return SpearmanrResult(rs, prob)
-
-
-PointbiserialrResult = namedtuple('PointbiserialrResult',
-                                  ('correlation', 'pvalue'))
+        res = SignificanceResult(rs, prob)
+        res.correlation = rs
+        return res
 
 
 def pointbiserialr(x, y):
@@ -5000,8 +4971,8 @@ def pointbiserialr(x, y):
     implying no correlation. Correlations of -1 or +1 imply a determinative
     relationship.
 
-    This function uses a shortcut formula but produces the same result as
-    `pearsonr`.
+    This function may be computed using a shortcut formula but produces the
+    same result as `pearsonr`.
 
     Parameters
     ----------
@@ -5012,10 +4983,13 @@ def pointbiserialr(x, y):
 
     Returns
     -------
-    correlation : float
-        R value.
-    pvalue : float
-        Two-sided p-value.
+    res: SignificanceResult
+        An object containing attributes:
+
+        statistic : float
+            The R value.
+        pvalue : float
+            The two-sided p-value.
 
     Notes
     -----
@@ -5075,10 +5049,10 @@ def pointbiserialr(x, y):
 
     """
     rpb, prob = pearsonr(x, y)
-    return PointbiserialrResult(rpb, prob)
-
-
-KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
+    # create result object with alias for backward compatibility
+    res = SignificanceResult(rpb, prob)
+    res.correlation = rpb
+    return res
 
 
 def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
@@ -5135,11 +5109,14 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
 
     Returns
     -------
-    correlation : float
-       The tau statistic.
-    pvalue : float
-       The p-value for a hypothesis test whose null hypothesis is
-       an absence of association, tau = 0.
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : float
+           The tau statistic.
+        pvalue : float
+           The p-value for a hypothesis test whose null hypothesis is
+           an absence of association, tau = 0.
 
     See Also
     --------
@@ -5180,10 +5157,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     >>> from scipy import stats
     >>> x1 = [12, 2, 1, 12, 2]
     >>> x2 = [1, 4, 7, 1, 0]
-    >>> tau, p_value = stats.kendalltau(x1, x2)
-    >>> tau
+    >>> res = stats.kendalltau(x1, x2)
+    >>> res.statistic
     -0.47140452079103173
-    >>> p_value
+    >>> res.pvalue
     0.2827454599327748
 
     """
@@ -5200,7 +5177,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
                          f"size, found x-size {x.size} and y-size {y.size}")
     elif not x.size or not y.size:
         # Return NaN if arrays are empty
-        return KendalltauResult(np.nan, np.nan)
+        res = SignificanceResult(np.nan, np.nan)
+        res.correlation = np.nan
+        return res
 
     # check both x and y
     cnx, npx = _contains_nan(x, nan_policy)
@@ -5210,7 +5189,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
         nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'propagate':
-        return KendalltauResult(np.nan, np.nan)
+        res = SignificanceResult(np.nan, np.nan)
+        res.correlation = np.nan
+        return res
 
     elif contains_nan and nan_policy == 'omit':
         x = ma.masked_invalid(x)
@@ -5252,7 +5233,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     tot = (size * (size - 1)) // 2
 
     if xtie == tot or ytie == tot:
-        return KendalltauResult(np.nan, np.nan)
+        res = SignificanceResult(np.nan, np.nan)
+        res.correlation = np.nan
+        return res
 
     # Note that tot = con + dis + (xtie - ntie) + (ytie - ntie) + ntie
     #               = con + dis + xtie + ytie - ntie
@@ -5294,10 +5277,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
         raise ValueError(f"Unknown method {method} specified.  Use 'auto', "
                          "'exact' or 'asymptotic'.")
 
-    return KendalltauResult(tau, pvalue)
-
-
-WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
+    # create result object with alias for backward compatibility
+    res = SignificanceResult(tau, pvalue)
+    res.correlation = tau
+    return res
 
 
 def weightedtau(x, y, rank=True, weigher=None, additive=True):
@@ -5355,11 +5338,14 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
 
     Returns
     -------
-    correlation : float
-       The weighted :math:`\tau` correlation index.
-    pvalue : float
-       Presently ``np.nan``, as the null statistics is unknown (even in the
-       additive hyperbolic case).
+    res: SignificanceResult
+        An object containing attributes:
+
+        statistic : float
+           The weighted :math:`\tau` correlation index.
+        pvalue : float
+           Presently ``np.nan``, as the null distribution of the statistic is
+           unknown (even in the additive hyperbolic case).
 
     See Also
     --------
@@ -5397,37 +5383,37 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     >>> from scipy import stats
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, 0]
-    >>> tau, p_value = stats.weightedtau(x, y)
-    >>> tau
+    >>> res = stats.weightedtau(x, y)
+    >>> res.statistic
     -0.56694968153682723
-    >>> p_value
+    >>> res.pvalue
     nan
-    >>> tau, p_value = stats.weightedtau(x, y, additive=False)
-    >>> tau
+    >>> res = stats.weightedtau(x, y, additive=False)
+    >>> res.statistic
     -0.62205716951801038
 
     NaNs are considered the smallest possible score:
 
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, np.nan]
-    >>> tau, _ = stats.weightedtau(x, y)
-    >>> tau
+    >>> res = stats.weightedtau(x, y)
+    >>> res.statistic
     -0.56694968153682723
 
     This is exactly Kendall's tau:
 
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, 0]
-    >>> tau, _ = stats.weightedtau(x, y, weigher=lambda x: 1)
-    >>> tau
+    >>> res = stats.weightedtau(x, y, weigher=lambda x: 1)
+    >>> res.statistic
     -0.47140452079103173
 
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, 0]
     >>> stats.weightedtau(x, y, rank=None)
-    WeightedTauResult(correlation=-0.4157652301037516, pvalue=nan)
+    SignificanceResult(statistic=-0.4157652301037516, pvalue=nan)
     >>> stats.weightedtau(y, x, rank=None)
-    WeightedTauResult(correlation=-0.7181341329699028, pvalue=nan)
+    SignificanceResult(statistic=-0.7181341329699028, pvalue=nan)
 
     """
     x = np.asarray(x).ravel()
@@ -5439,7 +5425,9 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
                          "found x-size %s and y-size %s" % (x.size, y.size))
     if not x.size:
         # Return NaN if arrays are empty
-        return WeightedTauResult(np.nan, np.nan)
+        res = SignificanceResult(np.nan, np.nan)
+        res.correlation = np.nan
+        return res
 
     # If there are NaNs we apply _toint64()
     if np.isnan(np.sum(x)):
@@ -5459,10 +5447,13 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
             y = _toint64(y)
 
     if rank is True:
-        return WeightedTauResult((
+        tau = (
             _weightedrankedtau(x, y, None, weigher, additive) +
             _weightedrankedtau(y, x, None, weigher, additive)
-        ) / 2, np.nan)
+        ) / 2
+        res = SignificanceResult(tau, np.nan)
+        res.correlation = tau
+        return res
 
     if rank is False:
         rank = np.arange(x.size, dtype=np.intp)
@@ -5474,8 +5465,10 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
                 "found x-size %s and rank-size %s" % (x.size, rank.size)
             )
 
-    return WeightedTauResult(_weightedrankedtau(x, y, rank, weigher, additive),
-                             np.nan)
+    tau = _weightedrankedtau(x, y, rank, weigher, additive)
+    res = SignificanceResult(tau, np.nan)
+    res.correlation = tau
+    return res
 
 
 # FROM MGCPY: https://github.com/neurodata/mgcpy
@@ -6023,9 +6016,85 @@ def _two_sample_transform(u, v):
 #       INFERENTIAL STATISTICS      #
 #####################################
 
-Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
+TtestResultBase = _make_tuple_bunch('TtestResultBase',
+                                    ['statistic', 'pvalue'], ['df'])
 
 
+class TtestResult(TtestResultBase):
+    """
+    Result of a t-test.
+
+    See the documentation of the particular t-test function for more
+    information about the definition of the statistic and meaning of
+    the confidence interval.
+
+    Attributes
+    ----------
+    statistic : float or array
+        The t-statistic of the sample.
+    pvalue : float or array
+        The p-value associated with the given alternative.
+    df : float or array
+        The number of degrees of freedom used in calculation of the
+        t-statistic; this is one less than the size of the sample
+        (``a.shape[axis]-1`` if there are no masked elements or omitted NaNs).
+
+    Methods
+    -------
+    confidence_interval
+        Computes a confidence interval around the population statistic
+        for the given confidence level.
+        The confidence interval is returned in a ``namedtuple`` with
+        fields `low` and `high`.
+
+    """
+
+    def __init__(self, statistic, pvalue, df,  # public
+                 alternative, standard_error, estimate):  # private
+        super().__init__(statistic, pvalue, df=df)
+        self._alternative = alternative
+        self._standard_error = standard_error  # denominator of t-statistic
+        self._estimate = estimate  # point estimate of sample mean
+
+    def confidence_interval(self, confidence_level=0.95):
+        """
+        Parameters
+        ----------
+        confidence_level : float
+            The confidence level for the calculation of the population mean
+            confidence interval. Default is 0.95.
+
+        Returns
+        -------
+        ci : namedtuple
+            The confidence interval is returned in a ``namedtuple`` with
+            fields `low` and `high`.
+
+        """
+        low, high = _t_confidence_interval(self.df, self.statistic,
+                                           confidence_level, self._alternative)
+        low = low * self._standard_error + self._estimate
+        high = high * self._standard_error + self._estimate
+        return ConfidenceInterval(low=low, high=high)
+
+
+def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
+                      estimate):
+    # this could be any number of dimensions (including 0d), but there is
+    # at most one unique value
+    alternative = np.atleast_1d(alternative).ravel()
+    alternative = alternative[0] if alternative.size else np.nan
+    return TtestResult(statistic, pvalue, df=df, alternative=alternative,
+                       standard_error=standard_error, estimate=estimate)
+
+
+def unpack_TtestResult(res):
+    return (res.statistic, res.pvalue, res.df, res._alternative,
+            res._standard_error, res._estimate)
+
+
+@_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
+                          result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
                 alternative="two-sided"):
     """Calculate the T-test for the mean of ONE group of scores.
@@ -6039,8 +6108,8 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     a : array_like
         Sample observation.
     popmean : float or array_like
-        Expected value in null hypothesis. If array_like, then it must have the
-        same shape as `a` excluding the axis dimension.
+        Expected value in null hypothesis. If array_like, then its length along
+        `axis` must equal 1, and it must otherwise be broadcastable with `a`.
     axis : int or None, optional
         Axis along which to compute test; default is 0. If None, compute over
         the whole array `a`.
@@ -6063,14 +6132,31 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
         * 'greater': the mean of the underlying distribution of the sample is
           greater than the given population mean (`popmean`)
 
-        .. versionadded:: 1.6.0
-
     Returns
     -------
-    statistic : float or array
-        t-statistic.
-    pvalue : float or array
-        Two-sided p-value.
+    result : `~scipy.stats._result_classes.TtestResult`
+        An object with the following attributes:
+
+        statistic : float or array
+            The t-statistic.
+        pvalue : float or array
+            The p-value associated with the given alternative.
+        df : float or array
+            The number of degrees of freedom used in calculation of the
+            t-statistic; this is one less than the size of the sample
+            (``a.shape[axis]``).
+
+            .. versionadded:: 1.10.0
+
+        The object also has the following method:
+
+        confidence_interval(confidence_level=0.95)
+            Computes a confidence interval around the population
+            mean for the given confidence level.
+            The confidence interval is returned in a ``namedtuple`` with
+            fields `low` and `high`.
+
+            .. versionadded:: 1.10.0
 
     Notes
     -----
@@ -6095,7 +6181,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     >>> rng = np.random.default_rng()
     >>> rvs = stats.uniform.rvs(size=50, random_state=rng)
     >>> stats.ttest_1samp(rvs, popmean=0.5)
-    Ttest_1sampResult(statistic=2.456308468440, pvalue=0.017628209047638)
+    TtestResult(statistic=2.456308468440, pvalue=0.017628209047638, df=49)
 
     As expected, the p-value of 0.017 is not below our threshold of 0.01, so
     we cannot reject the null hypothesis.
@@ -6105,7 +6191,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
     >>> rvs = stats.norm.rvs(size=50, random_state=rng)
     >>> stats.ttest_1samp(rvs, popmean=0.5)
-    Ttest_1sampResult(statistic=-7.433605518875, pvalue=1.416760157221e-09)
+    TtestResult(statistic=-7.433605518875, pvalue=1.416760157221e-09, df=49)
 
     Indeed, the p-value is lower than our threshold of 0.01, so we reject the
     null hypothesis in favor of the default "two-sided" alternative: the mean
@@ -6117,7 +6203,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     expect the null hypothesis to be rejected.
 
     >>> stats.ttest_1samp(rvs, popmean=0.5, alternative='greater')
-    Ttest_1sampResult(statistic=-7.433605518875, pvalue=0.99999999929)
+    TtestResult(statistic=-7.433605518875, pvalue=0.99999999929, df=49)
 
     Unsurprisingly, with a p-value greater than our threshold, we would not
     reject the null hypothesis.
@@ -6134,19 +6220,47 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     uniform distribution, which *does* have a population mean of 0.5, we would
     mistakenly reject the null hypothesis for one of them.
 
+    `ttest_1samp` can also compute a confidence interval around the population
+    mean.
+
+    >>> rvs = stats.norm.rvs(size=50, random_state=rng)
+    >>> res = stats.ttest_1samp(rvs, popmean=0)
+    >>> ci = res.confidence_interval(confidence_level=0.95)
+    >>> ci
+    ConfidenceInterval(low=-0.3193887540880017, high=0.2898583388980972)
+
+    The bounds of the 95% confidence interval are the
+    minimum and maximum values of the parameter `popmean` for which the
+    p-value of the test would be 0.05.
+
+    >>> res = stats.ttest_1samp(rvs, popmean=ci.low)
+    >>> np.testing.assert_allclose(res.pvalue, 0.05)
+    >>> res = stats.ttest_1samp(rvs, popmean=ci.high)
+    >>> np.testing.assert_allclose(res.pvalue, 0.05)
+
+    Under certain assumptions about the population from which a sample
+    is drawn, the confidence interval with confidence level 95% is expected
+    to contain the true population mean in 95% of sample replications.
+
+    >>> rvs = stats.norm.rvs(size=(50, 1000), loc=1, random_state=rng)
+    >>> res = stats.ttest_1samp(rvs, popmean=0)
+    >>> ci = res.confidence_interval()
+    >>> contains_pop_mean = (ci.low < 1) & (ci.high > 1)
+    >>> contains_pop_mean.sum()
+    953
+
     """
     a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.ttest_1samp(a, popmean, axis, alternative)
 
     n = a.shape[axis]
     df = n - 1
 
-    d = np.mean(a, axis) - popmean
+    mean = np.mean(a, axis)
+    try:
+        popmean = np.squeeze(popmean, axis=axis)
+    except ValueError as e:
+        raise ValueError("`popmean.shape[axis]` must equal 1.") from e
+    d = mean - popmean
     v = _var(a, axis, ddof=1)
     denom = np.sqrt(v / n)
 
@@ -6154,7 +6268,38 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
         t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t, alternative)
 
-    return Ttest_1sampResult(t, prob)
+    # when nan_policy='omit', `df` can be different for different axis-slices
+    df = np.broadcast_to(df, t.shape)[()]
+    # _axis_nan_policy decorator doesn't play well with strings
+    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
+    return TtestResult(t, prob, df=df, alternative=alternative_num,
+                       standard_error=denom, estimate=mean)
+
+
+def _t_confidence_interval(df, t, confidence_level, alternative):
+    # Input validation on `alternative` is already done
+    # We just need IV on confidence_level
+    if confidence_level < 0 or confidence_level > 1:
+        message = "`confidence_level` must be a number between 0 and 1."
+        raise ValueError(message)
+
+    if alternative < 0:  # 'less'
+        p = confidence_level
+        low, high = np.broadcast_arrays(-np.inf, special.stdtrit(df, p))
+    elif alternative > 0:  # 'greater'
+        p = 1 - confidence_level
+        low, high = np.broadcast_arrays(special.stdtrit(df, p), np.inf)
+    elif alternative == 0:  # 'two-sided'
+        tail_probability = (1 - confidence_level)/2
+        p = tail_probability, 1-tail_probability
+        # axis of p must be the zeroth and orthogonal to all the rest
+        p = np.reshape(p, [2] + [1]*np.asarray(df).ndim)
+        low, high = special.stdtrit(df, p)
+    else:  # alternative is NaN when input is empty (see _axis_nan_policy)
+        p, nans = np.broadcast_arrays(t, np.nan)
+        low, high = nans, nans
+
+    return low[()], high[()]
 
 
 def _ttest_finish(df, t, alternative):
@@ -6724,7 +6869,7 @@ def _calculate_winsorized_variance(a, g, axis):
     # Determine the variance. In [4], the degrees of freedom is expressed as
     # `h - 1`, where `h = n - 2g` (unnumbered equations in Section 1, end of
     # page 369, beginning of page 370). This is converted to NumPy's format,
-    # `n - ddof` for use with with `np.var`. The result is converted to an
+    # `n - ddof` for use with `np.var`. The result is converted to an
     # array to accommodate indexing later.
     var_win = np.asarray(_var(a_win, ddof=(2 * g + 1), axis=-1))
 
@@ -6873,9 +7018,9 @@ def _get_len(a, axis, msg):
     return n
 
 
-Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
-
-
+@_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
+                          result_to_tuple=unpack_TtestResult, n_outputs=6,
+                          paired=True)
 def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     """Calculate the t-test on TWO RELATED samples of scores, a and b.
 
@@ -6913,10 +7058,29 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
 
     Returns
     -------
-    statistic : float or array
-        t-statistic.
-    pvalue : float or array
-        The p-value.
+    result : `~scipy.stats._result_classes.TtestResult`
+        An object with the following attributes:
+
+        statistic : float or array
+            The t-statistic.
+        pvalue : float or array
+            The p-value associated with the given alternative.
+        df : float or array
+            The number of degrees of freedom used in calculation of the
+            t-statistic; this is one less than the size of the sample
+            (``a.shape[axis]``).
+
+            .. versionadded:: 1.10.0
+
+        The object also has the following method:
+
+        confidence_interval(confidence_level=0.95)
+            Computes a confidence interval around the difference in
+            population means for the given confidence level.
+            The confidence interval is returned in a ``namedtuple`` with
+            fields `low` and `high`.
+
+            .. versionadded:: 1.10.0
 
     Notes
     -----
@@ -6930,8 +7094,8 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     hypothesis of equal averages. Small p-values are associated with
     large t-statistics.
 
-    The statistic is calculated as ``np.mean(a - b)/se``, where ``se`` is the
-    standard error. Therefore, the statistic will be positive when the sample
+    The t-statistic is calculated as ``np.mean(a - b)/se``, where ``se`` is the
+    standard error. Therefore, the t-statistic will be positive when the sample
     mean of ``a - b`` is greater than zero and negative when the sample mean of
     ``a - b`` is less than zero.
 
@@ -6949,36 +7113,24 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     >>> rvs2 = (stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
     ...         + stats.norm.rvs(scale=0.2, size=500, random_state=rng))
     >>> stats.ttest_rel(rvs1, rvs2)
-    Ttest_relResult(statistic=-0.4549717054410304, pvalue=0.6493274702088672)
+    TtestResult(statistic=-0.4549717054410304, pvalue=0.6493274702088672, df=499)  # noqa
     >>> rvs3 = (stats.norm.rvs(loc=8, scale=10, size=500, random_state=rng)
     ...         + stats.norm.rvs(scale=0.2, size=500, random_state=rng))
     >>> stats.ttest_rel(rvs1, rvs3)
-    Ttest_relResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09)
+    TtestResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09, df=499)  # noqa
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
-
-    cna, npa = _contains_nan(a, nan_policy)
-    cnb, npb = _contains_nan(b, nan_policy)
-    contains_nan = cna or cnb
-    if npa == 'omit' or npb == 'omit':
-        nan_policy = 'omit'
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        b = ma.masked_invalid(b)
-        m = ma.mask_or(ma.getmask(a), ma.getmask(b))
-        aa = ma.array(a, mask=m, copy=True)
-        bb = ma.array(b, mask=m, copy=True)
-        return mstats_basic.ttest_rel(aa, bb, axis, alternative)
 
     na = _get_len(a, axis, "first argument")
     nb = _get_len(b, axis, "second argument")
     if na != nb:
         raise ValueError('unequal length arrays')
 
-    if na == 0:
-        return _ttest_nans(a, b, axis, Ttest_relResult)
+    if na == 0 or nb == 0:
+        # _axis_nan_policy decorator ensures this only happens with 1d input
+        return TtestResult(np.nan, np.nan, df=np.nan, alternative=np.nan,
+                           standard_error=np.nan, estimate=np.nan)
 
     n = a.shape[axis]
     df = n - 1
@@ -6992,7 +7144,13 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
         t = np.divide(dm, denom)
     t, prob = _ttest_finish(df, t, alternative)
 
-    return Ttest_relResult(t, prob)
+    # when nan_policy='omit', `df` can be different for different axis-slices
+    df = np.broadcast_to(df, t.shape)[()]
+
+    # _axis_nan_policy decorator doesn't play well with strings
+    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
+    return TtestResult(t, prob, df=df, alternative=alternative_num,
+                       standard_error=denom, estimate=dm)
 
 
 # Map from names to lambda_ values used in power_divergence().
@@ -9135,7 +9293,7 @@ def _square_of_sums(a, axis=0):
         return float(s) * s
 
 
-def rankdata(a, method='average', *, axis=None, nan_policy='omit'):
+def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 
     By default (``axis=None``), the data array is first flattened, and a flat
@@ -9168,23 +9326,23 @@ def rankdata(a, method='average', *, axis=None, nan_policy='omit'):
     axis : {None, int}, optional
         Axis along which to perform the ranking. If ``None``, the data array
         is first flattened.
-    nan_policy : {'omit', 'propagate', 'raise'}, optional
+    nan_policy : {'propagate', 'omit', 'raise'}, optional
         Defines how to handle when input contains nan.
-        The following options are available (default is 'omit'):
+        The following options are available (default is 'propagate'):
 
-          * 'omit': performs the calculations ignoring nan values
           * 'propagate': propagates nans through the rank calculation
+          * 'omit': performs the calculations ignoring nan values
           * 'raise': raises an error
 
         .. note::
 
+            When `nan_policy` is 'propagate', the output is an array of *all*
+            nans because ranks relative to nans in the input are undefined.
             When `nan_policy` is 'omit', nans in `a` are ignored when ranking
             the other values, and the corresponding locations of the output
             are nan. This behavior is the default because it is intuitive and
             compatible with the behavior before the `nan_policy` parameter
             was introduced.
-            When `nan_policy` is 'propagate', the output is an array of *all*
-            nans because ranks relative to nans in the input are undefined.
 
         .. versionadded:: 1.10
 
@@ -9218,10 +9376,10 @@ def rankdata(a, method='average', *, axis=None, nan_policy='omit'):
     >>> rankdata([[0, 2, 2], [3, 2, 5]], axis=1)
     array([[1. , 2.5, 2.5],
            [2. , 1. , 3. ]])
-    >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="omit")
-    array([ 2.,  3.,  4., nan,  1., nan])
     >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="propagate")
     array([nan, nan, nan, nan, nan, nan])
+    >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="omit")
+    array([ 2.,  3.,  4., nan,  1., nan])
 
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):

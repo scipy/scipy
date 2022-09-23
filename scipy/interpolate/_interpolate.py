@@ -1,9 +1,6 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 
 
-import itertools
-import warnings
-
 import numpy as np
 from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
                    ravel, poly1d, asarray, intp)
@@ -504,7 +501,7 @@ class interp1d(_Interpolator1D):
         if kind in ('linear', 'nearest', 'nearest-up', 'previous', 'next'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
-            minval = 2
+            minval = 1
             if kind == 'nearest':
                 # Do division before addition to prevent possible integer
                 # overflow
@@ -2424,4 +2421,3 @@ class NdPPoly:
             c = out.reshape(c.shape[2:])
 
         return c
-

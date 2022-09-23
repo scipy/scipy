@@ -353,6 +353,8 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     we would not have obtained the correct solution by rounding to the nearest
     integers.
 
+    Other examples are given :ref:`in the tutorial <tutorial-optimize_milp>`.
+
     """
     args_iv = _milp_iv(c, integrality, bounds, constraints, options)
     c, integrality, lb, ub, indptr, indices, data, b_l, b_u, options = args_iv

@@ -401,18 +401,18 @@ def test_nomodify_gh9900_regression():
     # Use the right-half truncated normal
     # Check that the cdf and _cdf return the same result.
     npt.assert_almost_equal(tn.cdf(1, 0, np.inf), 0.6826894921370859)
-    npt.assert_almost_equal(tn._cdf(1, 0, np.inf), 0.6826894921370859)
+    npt.assert_almost_equal(tn._cdf([1], [0], [np.inf]), 0.6826894921370859)
 
     # Now use the left-half truncated normal
     npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0), 0.31731050786291415)
-    npt.assert_almost_equal(tn._cdf(-1, -np.inf, 0), 0.31731050786291415)
+    npt.assert_almost_equal(tn._cdf([-1], [-np.inf], [0]), 0.31731050786291415)
 
     # Check that the right-half truncated normal _cdf hasn't changed
-    npt.assert_almost_equal(tn._cdf(1, 0, np.inf), 0.6826894921370859)  # NOT 1.6826894921370859
+    npt.assert_almost_equal(tn._cdf([1], [0], [np.inf]), 0.6826894921370859)  # noqa, NOT 1.6826894921370859
     npt.assert_almost_equal(tn.cdf(1, 0, np.inf), 0.6826894921370859)
 
     # Check that the left-half truncated normal _cdf hasn't changed
-    npt.assert_almost_equal(tn._cdf(-1, -np.inf, 0), 0.31731050786291415)  # Not -0.6826894921370859
+    npt.assert_almost_equal(tn._cdf([-1], [-np.inf], [0]), 0.31731050786291415)  # noqa, Not -0.6826894921370859
     npt.assert_almost_equal(tn.cdf(1, -np.inf, 0), 1)                     # Not 1.6826894921370859
     npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0), 0.31731050786291415)  # Not -0.6826894921370859
 
@@ -622,7 +622,7 @@ def check_distribution_rvs(dist, args, alpha, rvs):
     if (pval < alpha):
         # The rvs passed in failed the K-S test, which _could_ happen
         # but is unlikely if alpha is small enough.
-        # Repeat the the test with a new sample of rvs.
+        # Repeat the test with a new sample of rvs.
         # Generate 1000 rvs, perform a K-S test that the new sample of rvs
         # are distributed according to the distribution.
         D, pval = stats.kstest(dist, dist, args=args, N=1000)

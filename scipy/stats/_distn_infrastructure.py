@@ -25,7 +25,7 @@ from scipy import optimize
 from scipy import integrate
 
 # to approximate the pdf of a continuous distribution given its cdf
-from scipy.misc import derivative
+from scipy._lib._finite_differences import _derivative
 
 # for scipy.stats.entropy. Attempts to import just that function or file
 # have cause import problems
@@ -2015,7 +2015,7 @@ class rv_continuous(rv_generic):
         return integrate.quad(self._mom_integ1, 0, 1, args=(m,)+args)[0]
 
     def _pdf(self, x, *args):
-        return derivative(self._cdf, x, dx=1e-5, args=args, order=5)
+        return _derivative(self._cdf, x, dx=1e-5, args=args, order=5)
 
     # Could also define any of these
     def _logpdf(self, x, *args):

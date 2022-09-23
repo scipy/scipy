@@ -388,6 +388,16 @@ class TestBarycentric:
         factor = P.wi[0]
         assert_almost_equal(P.wi / (2 * factor), w)
 
+    def test_warning(self):
+        # Test if the divide-by-zero warning is properly ignored when computing
+        # interpolated values equals to interpolation points
+        P = BarycentricInterpolator([0, 1], [1, 2])
+        with np.errstate(divide='raise'):
+            yi = P(P.xi)
+
+        # Additionaly check if the interpolated values are the nodes values
+        assert_almost_equal(yi, P.yi.ravel())
+
 
 class TestPCHIP:
     def _make_random(self, npts=20):
