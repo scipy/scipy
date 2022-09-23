@@ -7991,7 +7991,8 @@ class TestExpectile:
         assert_allclose(stats.expectile(x, alpha=1), np.amax(x))
    
     @pytest.mark.parametrize("alpha", [0.2, 0.5, 0.8])
-    def test_expectile_properties(self, alpha):
+    @pytest.mark.parametrize("n", [20, 2000])
+    def test_expectile_properties(self, alpha, n):
         """
         See Section 6 of
         I. Steinwart, C. Pasin, R.C. Williamson & S. Zhang (2014).
@@ -8006,7 +8007,6 @@ class TestExpectile:
         http://doi.org/10.2139/ssrn.2225751 
         """
         rng = np.random.default_rng(42)
-        n = 20
         x = rng.normal(size=n)
 
         # 0. definite / constancy
