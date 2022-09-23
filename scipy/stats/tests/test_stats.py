@@ -8078,8 +8078,8 @@ class TestExpectile:
 
         # 6. negative argument
         # T_{alpha}(-X) = -T_{1-alpha}(X)
-        assert (
-            stats.expectile(-x, alpha=alpha) ==
+        assert assert_allclose(
+            stats.expectile(-x, alpha=alpha),
             pytest.approx(-stats.expectile(x, alpha=1-alpha))
         )
 
