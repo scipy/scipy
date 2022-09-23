@@ -8082,3 +8082,14 @@ class TestExpectile:
             stats.expectile(-x, alpha=alpha) ==
             pytest.approx(-stats.expectile(x, alpha=1-alpha))
         )
+
+    @pytest.mark.parametrize("n", [20, 2000])
+    def test_monotonicity_in_alpha(self, n):
+        rng = np.random.default_rng(42)
+        x = rng.pareto(a=2, size=n)
+        e_list = []
+        alpha_seq = np.logspace(-15, np.log10(0.5), 100)
+        # sorted list of unique alpha values in interval (0, 1)
+        for alpha in np.r_[0, alpha_seq, 1 - alpha_seq[:-1:-1], 1]:
+            e_list.append(stats.expectile(x, alpha=alpha))
+        assert np.all(np.diff(e_list) > 0)
