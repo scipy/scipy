@@ -8040,7 +8040,7 @@ class TestExpectile:
         # 3. subadditivity
         # Note that subadditivity holds for alpha >= 0.5.
         # T(X + Y) <= T(X) + T(Y)
-        # For alpha = 0.5, i.e. the mean, strict euqality holds.
+        # For alpha = 0.5, i.e. the mean, strict equality holds.
         # For alpha < 0.5, one can use property 6. to show
         # T(X + Y) >= T(X) + T(Y)
         y = rng.logistic(size=n, loc=10)  # different distibution than x
