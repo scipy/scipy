@@ -6,6 +6,7 @@
 
     Additional tests by a host of SciPy developers.
 """
+import operator
 import os
 import re
 import warnings
@@ -7978,6 +7979,7 @@ class TestExpectile:
         x = rng.random(size=20)
         assert_allclose(stats.expectile(x, alpha=0.5), np.mean(x))
 
+
     def test_minimum(self):
         rng = np.random.default_rng(42)
         x = rng.random(size=20)
@@ -7987,7 +7989,7 @@ class TestExpectile:
         rng = np.random.default_rng(42)
         x = rng.random(size=20)
         assert_allclose(stats.expectile(x, alpha=1), np.amax(x))
-
+   
     @pytest.mark.parametrize("alpha", [0.2, 0.5, 0.8])
     def test_expectile_properties(self, alpha):
         """
@@ -7995,12 +7997,29 @@ class TestExpectile:
         I. Steinwart, C. Pasin, R.C. Williamson & S. Zhang (2014).
         "Elicitation and Identification of Properties". COLT.
         http://proceedings.mlr.press/v35/steinwart14.html
+
+        and
+
+        Propositions 5, 6, 7 of
+        F. Bellini, B. Klar, and A. Müller and E. Rosazza Gianin (2013).
+        "Generalized Quantiles as Risk Measures"
+        http://doi.org/10.2139/ssrn.2225751 
         """
         rng = np.random.default_rng(42)
         n = 20
         x = rng.normal(size=n)
 
-        # 1. translation equivariant
+        # 0. definite / constancy
+        # Let T(X) denote the expectile of rv X ~ F.
+        # T(c) = c for constant c
+        for c in [-5, 0, 0.5]:
+            assert_allclose(
+                stats.expectile(np.full(shape=n, fill_value=c), alpha=alpha),
+                c
+            )
+
+        # 1. translation equivariance
+        # T(X + c) = T(X) + c
         c = rng.exponential()
         assert_allclose(
             stats.expectile(x + c, alpha=alpha),
@@ -8011,23 +8030,55 @@ class TestExpectile:
             stats.expectile(x, alpha=alpha) - c,
         )
 
-        # 2. positively homogeneous
+        # 2. positively homogeneity
+        # T(cX) = c * T(X) for c > 0
         assert_allclose(
             stats.expectile(c * x, alpha=alpha),
             c * stats.expectile(x, alpha=alpha),
         )
 
-        # 3. subadditive
-        y = rng.normal(size=n)
-        if alpha >= 0.5:
-            assert (
-                stats.expectile(x + y, alpha=alpha)
-                <= stats.expectile(y, alpha=alpha)
-                + stats.expectile(y, alpha=alpha)
-            )
+        # 3. subadditivity
+        # Note that subadditivity holds for alpha >= 0.5.
+        # T(X + Y) <= T(X) + T(Y)
+        # For alpha = 0.5, i.e. the mean, strict euqality holds.
+        # For alpha < 0.5, one can use property 6. to show
+        # T(X + Y) >= T(X) + T(Y)
+        y = rng.logistic(size=n, loc=10)  # different distibution than x
+        if alpha == 0.5:
+            def op(a, b):
+                return a == pytest.approx(b)
+
         else:
-            assert (
-                stats.expectile(x + y, alpha=alpha)
-                > stats.expectile(y, alpha=alpha)
-                + stats.expectile(y, alpha=alpha)
+            op = operator.le if alpha > 0.5 else operator.gt
+        assert op(
+            stats.expectile(np.r_[x + y], alpha=alpha),
+            stats.expectile(x, alpha=alpha)
+            + stats.expectile(y, alpha=alpha)
+        )
+
+        # 4. monotonicity
+        # This holds for first order stochastic dominance X:
+        # X >= Y whenever P(X <= x) < P(Y <= x)
+        # T(X) <= T(Y) whenever X <= Y
+        y = rng.normal(size=n, loc=5)
+        assert (
+            stats.expectile(x, alpha=alpha) <= stats.expectile(y, alpha=alpha)
+        )
+
+        # 5. convexity for alpha > 0.5, concavity for alpha < 0.5
+        # convexity is
+        # T((1 − c) X + c Y) <= (1 − c) T(X) + c T(Y) for 0 <= c <= 1
+        y = rng.logistic(size=n, loc=10)
+        for c in [0.1, 0.5, 0.8]:
+            assert op(
+                stats.expectile((1-c)*x + c*y, alpha=alpha),
+                (1-c) * stats.expectile(x, alpha=alpha) +
+                c * stats.expectile(y, alpha=alpha)
             )
+
+        # 6. negative argument
+        # T_{alpha}(-X) = -T_{1-alpha}(X)
+        assert (
+            stats.expectile(-x, alpha=alpha) ==
+            pytest.approx(-stats.expectile(x, alpha=1-alpha))
+        )
