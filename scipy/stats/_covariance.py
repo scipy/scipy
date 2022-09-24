@@ -7,7 +7,7 @@ from scipy import linalg
 __all__ = ["CovViaPrecision"]
 
 
-class Covariance():
+class Covariance:
     """
     Representation of a covariance matrix
     """
@@ -18,7 +18,7 @@ class Covariance():
 
         "Whitening" ("white" as in "white noise", in which each frequency has
         equal magnitude) transforms a set of random variables into a new set of
-        random variable with unit-diagonal covariance. When a whitening
+        random variables with unit-diagonal covariance. When a whitening
         transform is applied to a sample of points distributed according to
         a multivariate normal distribution with zero mean, the covariance of
         the transformed sample is approximately the identity matrix.
@@ -47,7 +47,7 @@ class Covariance():
         >>> rng = np.random.default_rng()
         >>> n = 3
         >>> A = rng.random(size=(n, n))
-        >>> cov_array = A @ A.T
+        >>> cov_array = A @ A.T  # make matrix symmetric positive definite
         >>> cov_object = stats.CovViaPrecision(np.linalg.inv(cov_array))
         >>> x = rng.multivariate_normal(np.zeros(n), cov_array, size=(10000))
         >>> x_ = cov_object.whiten(x)
@@ -59,35 +59,35 @@ class Covariance():
         """
         return self._whiten(np.asarray(x))
 
-    @cached_property
+    @property
     def log_pdet(self):
         """
         Log of the pseudo-determinant of the covariance matrix
         """
         return np.array(self._log_pdet, dtype=float)[()]
 
-    @cached_property
+    @property
     def rank(self):
         """
         Rank of the covariance matrix
         """
         return np.array(self._rank, dtype=int)[()]
 
-    @cached_property
+    @property
     def covariance(self):
         """
         Explicit representation of the covariance matrix
         """
         return self._covariance
 
-    @cached_property
+    @property
     def dimensionality(self):
         """
         Dimensionality of the vector space
         """
         return np.array(self._dimensionality, dtype=int)[()]
 
-    @cached_property
+    @property
     def shape(self):
         """
         Shape of the covariance array
@@ -97,17 +97,19 @@ class Covariance():
     def _validate_matrix(self, A, name):
         A = np.atleast_2d(A)
         m, n = A.shape[-2:]
-        if m != n or A.ndim != 2 or not np.issubdtype(A.dtype, np.number):
+        if m != n or A.ndim != 2 or not (np.issubdtype(A.dtype, np.integer) or
+                                         np.issubdtype(A.dtype, np.floating)):
             message = (f"The input `{name}` must be a square, "
-                       "two-dimensional array of numbers.")
+                       "two-dimensional array of real numbers.")
             raise ValueError(message)
         return A
 
     def _validate_vector(self, A, name):
         A = np.atleast_1d(A)
-        if A.ndim != 1 or not np.issubdtype(A.dtype, np.number):
+        if A.ndim != 1 or not (np.issubdtype(A.dtype, np.integer) or
+                               np.issubdtype(A.dtype, np.floating)):
             message = (f"The input `{name}` must be a one-dimensional array "
-                       "of numbers.")
+                       "of real numbers.")
             raise ValueError(message)
         return A
 
