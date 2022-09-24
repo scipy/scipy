@@ -695,7 +695,38 @@ def y1p_zeros(nt, complex=False):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
-    """
+    Examples
+    --------
+    Compute the first four roots of :math:`Y_1'` and the values of
+    :math:`Y_1` at these roots.
+
+    >>> from scipy.special import y1p_zeros
+    >>> y1p_zeros(0, 4)
+    array([ 3.68302286+0.j,  6.94149995+0.j, 10.12340466+0.j, 13.28575816+0.j])
+
+    `y1p_zeros` can be used to calculate the extremal points of :math:`Y_1`
+    directly. Here we plot :math:`Y_1` and the first four extrema.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import y1, yvp, y1p_zeros
+    >>> y1_roots, y1_values = y1p_zeros(4)
+    >>> real_roots = y1_roots.real
+    >>> xmax = 15
+    >>> x = np.linspace(0, xmax, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y1(x), label=r'$Y_1$')
+    >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$") 
+    >>> ax.scatter(real_roots, np.zeros((4, )), s=30, c='r',
+    ...            label=r"Roots of $Y_1'$", zorder=5)
+    >>> ax.scatter(real_roots, y1_values.real, s=30, c='k',
+    ...            label=r"Extrema of $Y_1$", zorder=5)
+    >>> ax.hlines(0, 0, xmax, linestyle='dashed', color='k')
+    >>> ax.set_ylim(-0.5, 0.5)
+    >>> ax.set_xlim(0, xmax)
+    >>> plt.legend(ncol=2)
+    >>> plt.show()
+        """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
     kf = 2
