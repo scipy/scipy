@@ -157,12 +157,6 @@ def test_csr_hstack_int64():
     assert X_hs_empty.shape == X_hs.shape
     assert X_hs_empty.indices.dtype == np.int64
 
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(SparseEfficiencyWarning)
-        X_hs_empty[0, -1] = 1
-
-    assert X_hs_empty.indices.max() == max_indices_1 + max_indices_2 - 1
-
     # Should be just small enough to stay in int32 after stack. Note that
     # we theoretically could support indices.max() == max_int32, but due to an
     # edge-case in the underlying sparsetools code
