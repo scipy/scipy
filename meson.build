@@ -58,6 +58,28 @@ if ff.has_argument('-Wno-conversion')
   add_project_arguments('-Wno-conversion', language: 'fortran')
 endif
 
+is_windows = host_machine.system() == 'windows'
+
+# Intel Fortran on Windows does things differently, so deal with that
+if is_windows and ff.get_id() == 'intel-cl'
+  _ifort_flags = ff.get_supported_arguments('/MD', '/names:lowercase', '/assume:underscore')
+  add_project_arguments(_ifort_flags, language: 'fortran')
+endif
+
+# Hide symbols when building on Linux with GCC. For Python extension modules,
+# we only need `PyInit_*` to be public, anything else may cause problems. So we
+# use a linker script to avoid exporting those symbols (this is in addition to
+# Meson using `-fvisibility=hidden` for C and `-fvisibility-inlines-hidden` for
+# C++ code. See gh-15996 for details.
+_linker_script = meson.project_source_root() / 'scipy/_build_utils/link-version-pyinit.map'
+version_link_args = ['-Wl,--version-script=' + _linker_script]
+# Note that FreeBSD only accepts version scripts when -shared is passed,
+# hence we need to pass that to `cc.links` explicitly (flag is already
+# present for `extension_module` invocations).
+if not cc.links('', name: '-Wl,--version-script', args: ['-shared', version_link_args])
+  version_link_args = []
+endif
+
 cython = find_program('cython')
 pythran = find_program('pythran')
 generate_f2pymod = files('tools/generate_f2pymod.py')

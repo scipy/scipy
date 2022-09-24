@@ -63,7 +63,6 @@ static PyObject *fitpack_error;
 /*  module_methods:
  * {"_curfit", fitpack_curfit, METH_VARARGS, doc_curfit},
  * {"_spl_", fitpack_spl_, METH_VARARGS, doc_spl_},
- * {"_splint", fitpack_splint, METH_VARARGS, doc_splint},
  * {"_sproot", fitpack_sproot, METH_VARARGS, doc_sproot},
  * {"_spalde", fitpack_spalde, METH_VARARGS, doc_spalde},
  * {"_parcur", fitpack_parcur, METH_VARARGS, doc_parcur},
@@ -719,45 +718,6 @@ fitpack_spl_(PyObject *dummy, PyObject *args)
 fail:
     free(wrk);
     Py_XDECREF(ap_x);
-    Py_XDECREF(ap_c);
-    Py_XDECREF(ap_t);
-    return NULL;
-}
-
-static char doc_splint[] = " [aint,wrk] = _splint(t,c,k,a,b)";
-static PyObject *
-fitpack_splint(PyObject *dummy, PyObject *args)
-{
-    F_INT k, n;
-    npy_intp dims[1];
-    double *t, *c, *wrk = NULL, a, b, aint;
-    PyArrayObject *ap_t = NULL, *ap_c = NULL;
-    PyArrayObject *ap_wrk = NULL;
-    PyObject *t_py = NULL, *c_py = NULL;
-
-    if (!PyArg_ParseTuple(args, ("OO" F_INT_PYFMT "dd"),&t_py,&c_py,&k,&a,&b)) {
-        return NULL;
-    }
-    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
-    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, NPY_DOUBLE, 0, 1);
-    if ((ap_t == NULL || ap_c == NULL)) {
-        goto fail;
-    }
-    t = (double *)PyArray_DATA(ap_t);
-    c = (double *)PyArray_DATA(ap_c);
-    n = PyArray_DIMS(ap_t)[0];
-    dims[0] = n;
-    ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
-    if (ap_wrk == NULL) {
-        goto fail;
-    }
-    wrk = (double *)PyArray_DATA(ap_wrk);
-    aint = SPLINT(t,&n,c,&k,&a,&b,wrk);
-    Py_DECREF(ap_c);
-    Py_DECREF(ap_t);
-    return Py_BuildValue("dN", aint, PyArray_Return(ap_wrk));
-
-fail:
     Py_XDECREF(ap_c);
     Py_XDECREF(ap_t);
     return NULL;
@@ -1514,9 +1474,6 @@ static struct PyMethodDef fitpack_module_methods[] = {
 {"_spl_",
     fitpack_spl_,
     METH_VARARGS, doc_spl_},
-{"_splint",
-    fitpack_splint,
-    METH_VARARGS, doc_splint},
 {"_sproot",
     fitpack_sproot,
     METH_VARARGS, doc_sproot},

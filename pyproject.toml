@@ -142,14 +142,15 @@ dodoFile = "dev.py"
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* pp* *_ppc64le *_i686 *_s390x *-musllinux*"
 build-verbosity = "3"
-before-test = "pip install -r {project}/tools/wheels/test_requirements.txt"
+# gmpy2 and scikit-umfpack are usually added for testing. However, there are
+# currently wheels missing that make the test script fail.
+test-requires = ["pytest", "pytest-cov", "pytest-xdist", "asv", "mpmath", "threadpoolctl", "pooch"]
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux2014"
 manylinux-aarch64-image = "manylinux2014"
 before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
-test-skip = "*_aarch64"
 
 [tool.cibuildwheel.macos]
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
@@ -170,3 +171,9 @@ select = "*-win_amd64"
 # Don't use double backslash for path separators, they don't get passed
 # to the build correctly
 environment = { PKG_CONFIG_PATH="c:/opt/openblas/if_32/64/lib/pkgconfig" }
+
+[[tool.cibuildwheel.overrides]]
+select = "*-manylinux_aarch64"
+before-test = ""
+test-requires = ["pytest", "threadpoolctl"]
+test-command = "bash {project}/tools/wheels/cibw_test_command_manylinux_aarch64.sh {project}"

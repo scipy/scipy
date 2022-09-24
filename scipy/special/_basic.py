@@ -611,13 +611,13 @@ def jvp(v, z, n=1):
 
     Parameters
     ----------
-    v : float
+    v : array_like or float
         Order of Bessel function
     z : complex
         Argument at which to evaluate the derivative; can be real or
         complex.
     n : int, default 1
-        Order of derivative
+        Order of derivative. For 0 returns the Bessel function `jv` itself.
 
     Returns
     -------
@@ -633,9 +633,46 @@ def jvp(v, z, n=1):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.6.E7
 
+    Examples
+    --------
+
+    Compute the Bessel function of the first kind of order 0 and
+    its first two derivatives at 1.
+
+    >>> from scipy.special import jvp
+    >>> jvp(0, 1, 0), jvp(0, 1, 1), jvp(0, 1, 2)
+    (0.7651976865579666, -0.44005058574493355, -0.3251471008130331)
+
+    Compute the first derivative of the Bessel function of the first
+    kind for several orders at 1 by providing an array for `v`.
+
+    >>> jvp([0, 1, 2], 1, 1)
+    array([-0.44005059,  0.3251471 ,  0.21024362])
+
+    Compute the first derivative of the Bessel function of the first
+    kind of order 0 at several points by providing an array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0., 1.5, 3.])
+    >>> jvp(0, points, 1)
+    array([-0.        , -0.55793651, -0.33905896])
+
+    Plot the Bessel function of the first kind of order 1 and its
+    first three derivatives.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-10, 10, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, jvp(1, x, 0), label=r"$J_1$")
+    >>> ax.plot(x, jvp(1, x, 1), label=r"$J_1'$")
+    >>> ax.plot(x, jvp(1, x, 2), label=r"$J_1''$")
+    >>> ax.plot(x, jvp(1, x, 3), label=r"$J_1'''$")
+    >>> plt.legend()
+    >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
@@ -652,12 +689,16 @@ def yvp(v, z, n=1):
 
     Parameters
     ----------
-    v : float
+    v : array_like of float
         Order of Bessel function
     z : complex
         Argument at which to evaluate the derivative
     n : int, default 1
-        Order of derivative
+        Order of derivative. For 0 returns the BEssel function `yv`
+
+    See Also
+    --------
+    yv
 
     Returns
     -------
@@ -673,9 +714,46 @@ def yvp(v, z, n=1):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.6.E7
 
+    Examples
+    --------
+    Compute the Bessel function of the second kind of order 0 and
+    its first two derivatives at 1.
+
+    >>> from scipy.special import yvp
+    >>> yvp(0, 1, 0), yvp(0, 1, 1), yvp(0, 1, 2)
+    (0.088256964215677, 0.7812128213002889, -0.8694697855159659)
+
+    Compute the first derivative of the Bessel function of the second
+    kind for several orders at 1 by providing an array for `v`.
+
+    >>> yvp([0, 1, 2], 1, 1)
+    array([0.78121282, 0.86946979, 2.52015239])
+
+    Compute the first derivative of the Bessel function of the
+    second kind of order 0 at several points by providing an array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 1.5, 3.])
+    >>> yvp(0, points, 1)
+    array([ 1.47147239,  0.41230863, -0.32467442])
+
+    Plot the Bessel function of the second kind of order 1 and its
+    first three derivatives.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 5, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, yvp(1, x, 0), label=r"$Y_1$")
+    >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$")
+    >>> ax.plot(x, yvp(1, x, 2), label=r"$Y_1''$")
+    >>> ax.plot(x, yvp(1, x, 3), label=r"$Y_1'''$")
+    >>> ax.set_ylim(-10, 10)
+    >>> plt.legend()
+    >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
@@ -685,7 +763,7 @@ def yvp(v, z, n=1):
 
 
 def kvp(v, z, n=1):
-    """Compute nth derivative of real-order modified Bessel function Kv(z)
+    """Compute derivatives of real-order modified Bessel function Kv(z)
 
     Kv(z) is the modified Bessel function of the second kind.
     Derivative is calculated with respect to `z`.
@@ -696,28 +774,17 @@ def kvp(v, z, n=1):
         Order of Bessel function
     z : array_like of complex
         Argument at which to evaluate the derivative
-    n : int
-        Order of derivative.  Default is first derivative.
+    n : int, default 1
+        Order of derivative. For 0 returns the Bessel function `kv` itself.
 
     Returns
     -------
     out : ndarray
         The results
 
-    Examples
+    See Also
     --------
-    Calculate multiple values at order 5:
-
-    >>> from scipy.special import kvp
-    >>> kvp(5, (1, 2, 3+5j))
-    array([-1.84903536e+03+0.j        , -2.57735387e+01+0.j        ,
-           -3.06627741e-02+0.08750845j])
-
-
-    Calculate for a single value at multiple orders:
-
-    >>> kvp((4, 4.5, 5), 1)
-    array([ -184.0309,  -568.9585, -1849.0354])
+    kv
 
     Notes
     -----
@@ -728,9 +795,46 @@ def kvp(v, z, n=1):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.29.E5
 
+    Examples
+    --------
+    Compute the modified bessel function of the second kind of order 0 and
+    its first two derivatives at 1.
+
+    >>> from scipy.special import kvp
+    >>> kvp(0, 1, 0), kvp(0, 1, 1), kvp(0, 1, 2)
+    (0.42102443824070834, -0.6019072301972346, 1.0229316684379428)
+
+    Compute the first derivative of the modified Bessel function of the second
+    kind for several orders at 1 by providing an array for `v`.
+
+    >>> kvp([0, 1, 2], 1, 1)
+    array([-0.60190723, -1.02293167, -3.85158503])
+
+    Compute the first derivative of the modified Bessel function of the
+    second kind of order 0 at several points by providing an array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 1.5, 3.])
+    >>> kvp(0, points, 1)
+    array([-1.65644112, -0.2773878 , -0.04015643])
+
+    Plot the modified bessel function of the second kind and its
+    first three derivatives.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 5, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, kvp(1, x, 0), label=r"$K_1$")
+    >>> ax.plot(x, kvp(1, x, 1), label=r"$K_1'$")
+    >>> ax.plot(x, kvp(1, x, 2), label=r"$K_1''$")
+    >>> ax.plot(x, kvp(1, x, 3), label=r"$K_1'''$")
+    >>> ax.set_ylim(-2.5, 2.5)
+    >>> plt.legend()
+    >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
@@ -747,13 +851,13 @@ def ivp(v, z, n=1):
 
     Parameters
     ----------
-    v : array_like
+    v : array_like or float
         Order of Bessel function
     z : array_like
         Argument at which to evaluate the derivative; can be real or
         complex.
     n : int, default 1
-        Order of derivative
+        Order of derivative. For 0, returns the Bessel function `iv` itself.
 
     Returns
     -------
@@ -773,9 +877,45 @@ def ivp(v, z, n=1):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.29.E5
 
+    Examples
+    --------
+    Compute the modified Bessel function of the first kind of order 0 and
+    its first two derivatives at 1.
+
+    >>> from scipy.special import ivp
+    >>> ivp(0, 1, 0), ivp(0, 1, 1), ivp(0, 1, 2)
+    (1.2660658777520084, 0.565159103992485, 0.7009067737595233)
+
+    Compute the first derivative of the modified Bessel function of the first
+    kind for several orders at 1 by providing an array for `v`.
+
+    >>> ivp([0, 1, 2], 1, 1)
+    array([0.5651591 , 0.70090677, 0.29366376])
+
+    Compute the first derivative of the modified Bessel function of the
+    first kind of order 0 at several points by providing an array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0., 1.5, 3.])
+    >>> ivp(0, points, 1)
+    array([0.        , 0.98166643, 3.95337022])
+
+    Plot the modified Bessel function of the first kind of order 1 and its
+    first three derivatives.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-5, 5, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, ivp(1, x, 0), label=r"$I_1$")
+    >>> ax.plot(x, ivp(1, x, 1), label=r"$I_1'$")
+    >>> ax.plot(x, ivp(1, x, 2), label=r"$I_1''$")
+    >>> ax.plot(x, ivp(1, x, 3), label=r"$I_1'''$")
+    >>> plt.legend()
+    >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
@@ -785,7 +925,7 @@ def ivp(v, z, n=1):
 
 
 def h1vp(v, z, n=1):
-    """Compute nth derivative of Hankel function H1v(z) with respect to `z`.
+    """Compute derivatives of Hankel function H1v(z) with respect to `z`.
 
     Parameters
     ----------
@@ -795,12 +935,16 @@ def h1vp(v, z, n=1):
         Argument at which to evaluate the derivative. Can be real or
         complex.
     n : int, default 1
-        Order of derivative
+        Order of derivative. For 0 returns the Hankel function `h1v` itself.
 
     Returns
     -------
     scalar or ndarray
         Values of the derivative of the Hankel function.
+
+    See Also
+    --------
+    hankel1
 
     Notes
     -----
@@ -811,9 +955,36 @@ def h1vp(v, z, n=1):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.6.E7
 
+    Examples
+    --------
+    Compute the Hankel function of the first kind of order 0 and
+    its first two derivatives at 1.
+
+    >>> from scipy.special import h1vp
+    >>> h1vp(0, 1, 0), h1vp(0, 1, 1), h1vp(0, 1, 2)
+    ((0.7651976865579664+0.088256964215677j),
+     (-0.44005058574493355+0.7812128213002889j),
+     (-0.3251471008130329-0.8694697855159659j))
+
+    Compute the first derivative of the Hankel function of the first kind
+    for several orders at 1 by providing an array for `v`.
+
+    >>> h1vp([0, 1, 2], 1, 1)
+    array([-0.44005059+0.78121282j,  0.3251471 +0.86946979j,
+           0.21024362+2.52015239j])
+
+    Compute the first derivative of the Hankel function of the first kind
+    of order 0 at several points by providing an array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 1.5, 3.])
+    >>> h1vp(0, points, 1)
+    array([-0.24226846+1.47147239j, -0.55793651+0.41230863j,
+           -0.33905896-0.32467442j])
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
@@ -823,7 +994,7 @@ def h1vp(v, z, n=1):
 
 
 def h2vp(v, z, n=1):
-    """Compute nth derivative of Hankel function H2v(z) with respect to `z`.
+    """Compute derivatives of Hankel function H2v(z) with respect to `z`.
 
     Parameters
     ----------
@@ -833,12 +1004,16 @@ def h2vp(v, z, n=1):
         Argument at which to evaluate the derivative. Can be real or
         complex.
     n : int, default 1
-        Order of derivative
+        Order of derivative. For 0 returns the Hankel function `h2v` itself.
 
     Returns
     -------
     scalar or ndarray
         Values of the derivative of the Hankel function.
+
+    See Also
+    --------
+    hankel2
 
     Notes
     -----
@@ -849,9 +1024,36 @@ def h2vp(v, z, n=1):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.6.E7
 
+    Examples
+    --------
+    Compute the Hankel function of the second kind of order 0 and
+    its first two derivatives at 1.
+
+    >>> from scipy.special import h2vp
+    >>> h2vp(0, 1, 0), h2vp(0, 1, 1), h2vp(0, 1, 2)
+    ((0.7651976865579664-0.088256964215677j),
+     (-0.44005058574493355-0.7812128213002889j),
+     (-0.3251471008130329+0.8694697855159659j))
+
+    Compute the first derivative of the Hankel function of the second kind
+    for several orders at 1 by providing an array for `v`.
+
+    >>> h2vp([0, 1, 2], 1, 1)
+    array([-0.44005059-0.78121282j,  0.3251471 -0.86946979j,
+           0.21024362-2.52015239j])
+
+    Compute the first derivative of the Hankel function of the second kind
+    of order 0 at several points by providing an array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 1.5, 3.])
+    >>> h2vp(0, points, 1)
+    array([-0.24226846-1.47147239j, -0.55793651-0.41230863j,
+           -0.33905896+0.32467442j])
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
