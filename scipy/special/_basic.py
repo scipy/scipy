@@ -509,6 +509,44 @@ def y0_zeros(nt, complex=False):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute the first 4 real roots and the derivatives at the roots of
+    :math:`Y_0`:
+
+    >>> from scipy.special import y0_zeros, y0
+    >>> import numpy as np
+    >>> zeros, grads = y0_zeros(4)
+    >>> zeros, grads
+    (array([ 0.89357697+0.j,  3.95767842+0.j,  7.08605106+0.j, 10.22234504+0.j]),
+     array([-0.8794208 +0.j,  0.40254267+0.j, -0.30009761+0.j,  0.24970124+0.j]))
+
+    Extract the real parts:
+
+    >>> realzeros = zeros.real
+    >>> realzeros
+    array([ 0.89357697,  3.95767842,  7.08605106, 10.22234504])
+
+    Plot :math:`Y_0` and the first four computed roots.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 11, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y0(x), label=r'$Y_0$')
+    >>> ax.scatter(realzeros, np.zeros((4, )), s=30, c='r',
+                   label=r'$Y_0$_zeros')
+    >>> ax.set_ylim(-0.5, 0.6)
+    >>> plt.legend()
+    >>> plt.show()
+
+    Compute the first 4 complex roots and the derivatives at the roots of
+    :math:`Y_0` by setting ``complex=True``:
+
+    >>> y0_zeros(4, True)
+    (array([ -2.40301663+0.53988231j,  -5.5198767 +0.54718001j,
+             -8.6536724 +0.54841207j, -11.79151203+0.54881912j]),
+     array([ 0.10074769-0.88196771j, -0.02924642+0.5871695j ,
+             0.01490806-0.46945875j, -0.00937368+0.40230454j]))
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
@@ -545,6 +583,44 @@ def y1_zeros(nt, complex=False):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute the first 4 real roots and the derivatives at the roots of
+    :math:`Y_1`:
+
+    >>> from scipy.special import y1_zeros, y1
+    >>> import numpy as np
+    >>> zeros, grads = y1_zeros(4)
+    >>> zeros, grads
+    (array([ 2.19714133+0.j,  5.42968104+0.j,  8.59600587+0.j, 11.74915483+0.j]),
+     array([ 0.52078641+0.j, -0.34031805+0.j,  0.27145988+0.j, -0.23246177+0.j]))
+
+    Extract the real parts:
+
+    >>> realzeros = zeros.real
+    >>> realzeros
+    array([ 2.19714133,  5.42968104,  8.59600587, 11.74915483])
+
+    Plot :math:`Y_1` and the first four computed roots.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 13, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y0(x), label=r'$Y_1$')
+    >>> ax.scatter(realzeros, np.zeros((4, )), s=30, c='r',
+                   label=r'$Y_1$_zeros')
+    >>> ax.set_ylim(-0.5, 0.5)
+    >>> plt.legend()
+    >>> plt.show()
+
+    Compute the first 4 complex roots and the derivatives at the roots of
+    :math:`Y_1` by setting ``complex=True``:
+
+    >>> y1_zeros(4, True)
+    (array([ -0.50274327+0.78624371j,  -3.83353519+0.56235654j,
+             -7.01590368+0.55339305j, -10.17357383+0.55127339j]),
+     array([-0.45952768+1.31710194j,  0.04830191-0.69251288j,
+            -0.02012695+0.51864253j,  0.011614  -0.43203296j]))
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
