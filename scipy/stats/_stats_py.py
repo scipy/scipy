@@ -9535,5 +9535,7 @@ def expectile(a, alpha=0.5, *, dtype=None, weights=None):
         # a has a single unique element
         return x0
 
+    # Note that the expectile is the unique solution, so no worries about
+    # finding a wrong root.
     res = root_scalar(first_order, x0=x0, x1=x1)
     return res.root
