@@ -8110,24 +8110,14 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     minS = np.clip(-cddiffs[argminS], 0, 1)
     maxS = cddiffs[argmaxS]
 
-    if alternative == 'less':
+    if alternative == 'less' or minS > maxS:
         d = minS
         d_location = loc_minS
         d_sign = '-'
-    elif alternative == 'greater':
+    elif alternative == 'greater' or minS <= maxS:
         d = maxS
         d_location = loc_maxS
         d_sign = '+'
-    else:
-        if minS > maxS:
-            d = minS
-            d_location = loc_minS
-            d_sign = '-'
-        else:
-            d = maxS
-            d_location = loc_maxS
-            d_sign = '+'
-
     g = gcd(n1, n2)
     n1g = n1 // g
     n2g = n2 // g
