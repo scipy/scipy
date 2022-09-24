@@ -7633,14 +7633,13 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
         pvalue : float
             One-tailed or two-tailed p-value.
         statistic_location: float
-            Value of the stochastic variable closest to the KS statistic. By
+            Value of the stochastic variable at the KS statistic. By
             definition, the distance between the theoretical and sampled
-            distributions at this value is largest.
+            distributions is largest at this location.
         statistic_sign: str
-            For alternative == 'two-sided', this attribute is set to '-' if the
-            sampled distribution is above the theoretical one at the statistic
-            location, otherwise '+'. For other alternative values, it is an
-            empty string.
+            1 if the KS statistic is the maximal positive difference between
+            empirical and theoretical distribution, -1 if the KS statistic is
+            the negative difference.
 
     See Also
     --------
@@ -7724,19 +7723,17 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     x = np.sort(x)
     cdfvals = cdf(x, *args)
 
-    # TODO: add logic to find the argmax
-
     if alternative == 'greater':
         Dplus, d_location = _compute_dplus(cdfvals)
         return KstestResult(Dplus, distributions.ksone.sf(Dplus, N),
                             statistic_location=d_location,
-                            statistic_sign='')
+                            statistic_sign=1)
 
     if alternative == 'less':
         Dminus, d_location = _compute_dminus(cdfvals)
         return KstestResult(Dminus, distributions.ksone.sf(Dminus, N),
                             statistic_location=d_location,
-                            statistic_sign='')
+                            statistic_sign=-1)
 
     # alternative == 'two-sided':
     Dplus, dplus_location = _compute_dplus(cdfvals)
@@ -7744,11 +7741,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     if Dplus > Dminus:
         D = Dplus
         d_location = dplus_location
-        d_sign = '+'
+        d_sign = 1
     else:
         D = Dminus
         d_location = dminus_location
-        d_sign = '-'
+        d_sign = -1
 
     if mode == 'auto':  # Always select exact
         mode = 'exact'
@@ -7967,8 +7964,8 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             definition, the distance between the two sampled distributions at
             this value is largest.
         statistic_sign: str
-            '-' if the first distribution is above the second at the statistic
-            location, otherwise '+'.
+            -1 if the first distribution is above the second at the statistic
+            location, otherwise 1.
 
     See Also
     --------
@@ -8113,11 +8110,11 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     if alternative == 'less' or minS > maxS:
         d = minS
         d_location = loc_minS
-        d_sign = '-'
+        d_sign = -1
     elif alternative == 'greater' or minS <= maxS:
         d = maxS
         d_location = loc_maxS
-        d_sign = '+'
+        d_sign = 1
     g = gcd(n1, n2)
     n1g = n1 // g
     n2g = n2 // g

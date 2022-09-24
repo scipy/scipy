@@ -3890,6 +3890,13 @@ class TestKSTest:
         self._test_kstest_and_ks1samp(x, 'greater', mode='exact')
         self._test_kstest_and_ks1samp(x, 'less', mode='exact')
 
+    def test_unpack_tuple_bunch(self):
+        x = np.linspace(-1, 1, 9)
+        res = stats.ks_1samp(x, stats.norm.cdf, alternative='two-sided')
+        ks_stat, pval = res
+        assert hasattr(res, 'statistic_location')
+        assert hasattr(res, 'statistic_sign')
+
     # missing: no test that uses *args
 
 
