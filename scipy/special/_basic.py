@@ -407,7 +407,8 @@ def yn_zeros(n, nt):
 
     See Also
     --------
-    yn, yv
+    yn: Bessel function of the second kind for integer order
+    yv: Bessel function of the second kind for real order
 
     References
     ----------
@@ -417,18 +418,25 @@ def yn_zeros(n, nt):
 
     Examples
     --------
-    >>> import scipy.special as sc
+    Compute the first four roots of :math:`Y_2`.
 
-    We can check that we are getting approximations of the zeros by
-    evaluating them with `yn`.
+    >>> from scipy.special import yn_zeros
+    >>> yn_zeros(2, 4)
+    array([ 3.38424177,  6.79380751, 10.02347798, 13.20998671])
 
-    >>> n = 2
-    >>> x = sc.yn_zeros(n, 3)
-    >>> x
-    array([ 3.38424177,  6.79380751, 10.02347798])
-    >>> sc.yn(n, x)
-    array([-1.94289029e-16,  8.32667268e-17, -1.52655666e-16])
+    Plot :math:`Y_2` and its first four roots.
 
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import yn, yn_zeros
+    >>> x = np.linspace(0, 15, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, yn(2, x), label=r'$Y_2$')
+    >>> ax.scatter(yn_zeros(2, 4), np.zeros((4, )), s=30, c='r',
+    ...            label='Roots')
+    >>> ax.set_ylim(-0.4, 0.4)
+    >>> plt.legend()
+    >>> plt.show()
     """
     return jnyn_zeros(n, nt)[2]
 
@@ -465,18 +473,37 @@ def ynp_zeros(n, nt):
 
     Examples
     --------
-    >>> import scipy.special as sc
+    Compute the first four roots of the first derivative of the
+    Bessel function of second kind for order 0 :math:`Y_0'`.
 
-    We can check that we are getting approximations of the zeros by
-    evaluating them with `yvp`.
+    >>> from scipy.special import ynp_zeros
+    >>> ynp_zeros(0, 4)
+    array([ 2.19714133,  5.42968104,  8.59600587, 11.74915483])
 
-    >>> n = 2
-    >>> x = sc.ynp_zeros(n, 3)
-    >>> x
-    array([ 5.00258293,  8.3507247 , 11.57419547])
-    >>> sc.yvp(n, x)
-    array([ 2.22044605e-16, -3.33066907e-16,  2.94902991e-16])
+    Plot :math:`Y_0`, :math:`Y_0'` and confirm visually that the roots of
+    :math:`Y_0'` are located at local extrema of :math:`Y_0`.
 
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import yn, ynp_zeros, yvp
+    >>> zeros = ynp_zeros(0, 4)
+    >>> xmax = 13
+    >>> x = np.linspace(0, xmax, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, yn(0, x), label=r'$Y_0$')
+    >>> ax.plot(x, yvp(0, x, 1), label=r"$Y_0'$")
+    >>> ax.scatter(zeros, np.zeros((4, )), s=30, c='r', label=r"Roots of $Y_0'$",
+    ...            zorder=5)
+    >>> for root in zeros:
+    ...     y0_extremum =  yn(0, root)
+    ...     lower = min(0, y0_extremum)
+    ...     upper = max(0, y0_extremum)
+    ...     ax.vlines(root, lower, upper, color='r')
+    >>> ax.hlines(0, 0, xmax, linestyle='dashed', color='k')
+    >>> ax.set_ylim(-0.6, 0.6)
+    >>> ax.set_xlim(0, xmax)
+    >>> plt.legend()
+    >>> plt.show()
     """
     return jnyn_zeros(n, nt)[3]
 
@@ -521,19 +548,13 @@ def y0_zeros(nt, complex=False):
     (array([ 0.89357697+0.j,  3.95767842+0.j,  7.08605106+0.j, 10.22234504+0.j]),
      array([-0.8794208 +0.j,  0.40254267+0.j, -0.30009761+0.j,  0.24970124+0.j]))
 
-    Extract the real parts:
-
-    >>> realzeros = zeros.real
-    >>> realzeros
-    array([ 0.89357697,  3.95767842,  7.08605106, 10.22234504])
-
-    Plot :math:`Y_0` and the first four computed roots.
+    Plot the real part of :math:`Y_0` and the first four computed roots.
 
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 11, 500)
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, y0(x), label=r'$Y_0$')
-    >>> ax.scatter(realzeros, np.zeros((4, )), s=30, c='r',
+    >>> ax.scatter(zeros.real, np.zeros((4, )), s=30, c='r',
                    label=r'$Y_0$_zeros')
     >>> ax.set_ylim(-0.5, 0.6)
     >>> plt.legend()
