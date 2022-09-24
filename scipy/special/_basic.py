@@ -429,12 +429,16 @@ def yn_zeros(n, nt):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.special import yn, yn_zeros
-    >>> x = np.linspace(0, 15, 500)
+    >>> xmin = 2
+    >>> xmax = 15
+    >>> x = np.linspace(xmin, xmax, 500)
     >>> fig, ax = plt.subplots()
+    >>> ax.hlines(0, xmin, xmax, linestyle='dashed', color='k')
     >>> ax.plot(x, yn(2, x), label=r'$Y_2$')
     >>> ax.scatter(yn_zeros(2, 4), np.zeros((4, )), s=30, c='r',
-    ...            label='Roots')
+    ...            label='Roots', zorder=5)
     >>> ax.set_ylim(-0.4, 0.4)
+    >>> ax.set_xlim(xmin, xmax)
     >>> plt.legend()
     >>> plt.show()
     """
@@ -541,7 +545,7 @@ def y0_zeros(nt, complex=False):
     Compute the first 4 real roots and the derivatives at the roots of
     :math:`Y_0`:
 
-    >>> from scipy.special import y0_zeros, y0
+    >>> from scipy.special import y0_zeros
     >>> import numpy as np
     >>> zeros, grads = y0_zeros(4)
     >>> zeros, grads
@@ -550,13 +554,20 @@ def y0_zeros(nt, complex=False):
 
     Plot the real part of :math:`Y_0` and the first four computed roots.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(0, 11, 500)
+    >>> from scipy.special import y0_zeros, y0
+    >>> xmin = 0
+    >>> xmax = 11
+    >>> x = np.linspace(xmin, xmax, 500)
     >>> fig, ax = plt.subplots()
+    >>> ax.hlines(0, xmin, xmax, linestyle='dashed', color='k')
     >>> ax.plot(x, y0(x), label=r'$Y_0$')
+    >>> zeros, grads = y0_zeros(4)
     >>> ax.scatter(zeros.real, np.zeros((4, )), s=30, c='r',
-                   label=r'$Y_0$_zeros')
+                   label=r'$Y_0$_zeros', zorder=5)
     >>> ax.set_ylim(-0.5, 0.6)
+    >>> ax.set_xlim(xmin, xmax)
     >>> plt.legend()
     >>> plt.show()
 
@@ -609,8 +620,7 @@ def y1_zeros(nt, complex=False):
     Compute the first 4 real roots and the derivatives at the roots of
     :math:`Y_1`:
 
-    >>> from scipy.special import y1_zeros, y1
-    >>> import numpy as np
+    >>> from scipy.special import y1_zeros
     >>> zeros, grads = y1_zeros(4)
     >>> zeros, grads
     (array([ 2.19714133+0.j,  5.42968104+0.j,  8.59600587+0.j, 11.74915483+0.j]),
@@ -624,13 +634,20 @@ def y1_zeros(nt, complex=False):
 
     Plot :math:`Y_1` and the first four computed roots.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(0, 13, 500)
+    >>> from scipy.special import y1_zeros, y1
+    >>> xmin = 0
+    >>> xmax = 13
+    >>> x = np.linspace(xmin, xmax, 500)
+    >>> zeros, grads = y1_zeros(4)
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(x, y0(x), label=r'$Y_1$')
-    >>> ax.scatter(realzeros, np.zeros((4, )), s=30, c='r',
-                   label=r'$Y_1$_zeros')
+    >>> ax.hlines(0, xmin, xmax, linestyle='dashed', color='k')
+    >>> ax.plot(x, y1(x), label=r'$Y_1$')
+    >>> ax.scatter(zeros.real, np.zeros((4, )), s=30, c='r',
+                   label=r'$Y_1$_zeros', zorder=5)
     >>> ax.set_ylim(-0.5, 0.5)
+    >>> ax.set_xlim(xmin, xmax)
     >>> plt.legend()
     >>> plt.show()
 
