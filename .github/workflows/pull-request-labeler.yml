@@ -1,16 +1,17 @@
 name: "Pull Request Labeler"
 on:
   pull_request_target:
-    types: [created]
+    types: [opened]
 
 jobs:
 
   label_pull_request:
     runs-on: ubuntu-latest
     steps:
-    - uses: thomasjpfan/labeler@v2.5.0
+    - uses: actions/labeler@v4.0.1
       continue-on-error: true
       if: github.repository == 'scipy/scipy'
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        sync: false
         configuration-path: ".github/label-globs.yml"
