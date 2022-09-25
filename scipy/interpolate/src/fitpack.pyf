@@ -154,12 +154,14 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
        real*8 :: splint
      end function splint
 
-     subroutine sproot(t,n,c,zero,mest,m,ier)
-       ! zero,m,ier = sproot(t,c[,mest])
+     subroutine sproot(t,n,c,nc,k,zero,mest,m,ier)
+       ! zero,m,ier = sproot(t,c,k[,mest])
        threadsafe
        real*8 dimension(n),intent(in) :: t
        integer intent(hide),depend(t),check(n>=8) :: n=len(t)
-       real*8 dimension(n),depend(n),check(len(c)==n) :: c
+       real*8 dimension(nc), intent(in), depend(n,k,t),check(len(c)>=n-k-1) :: c
+       integer intent(hide), depend(c) :: nc=len(c)
+       integer intent(in) :: k
        real*8 dimension(mest),intent(out),depend(mest) :: zero
        integer optional,intent(in),depend(n) :: mest=3*(n-7)
        integer intent(out) :: m
