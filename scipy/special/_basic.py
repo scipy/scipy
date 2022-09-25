@@ -296,10 +296,14 @@ def jnyn_zeros(n, nt):
     >>> ax.plot(x, yn(1, x), label=r"$Y_1$", c='y')
     >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$", c='c')
     >>> zeros = np.zeros((3, ))
-    >>> ax.scatter(jn_roots, zeros, s=30, c='r', zorder=5, label=r"$J_1$ roots")
-    >>> ax.scatter(jnp_roots, zeros, s=30, c='b', zorder=5, label=r"$J_1'$ roots")
-    >>> ax.scatter(yn_roots, zeros, s=30, c='y', zorder=5, label=r"$Y_1$ roots")
-    >>> ax.scatter(ynp_roots, zeros, s=30, c='c', zorder=5, label=r"$Y_1'$ roots")
+    >>> ax.scatter(jn_roots, zeros, s=30, c='r', zorder=5,
+    ...            label=r"$J_1$ roots")
+    >>> ax.scatter(jnp_roots, zeros, s=30, c='b', zorder=5,
+    ...            label=r"$J_1'$ roots")
+    >>> ax.scatter(yn_roots, zeros, s=30, c='y', zorder=5,
+    ...            label=r"$Y_1$ roots")
+    >>> ax.scatter(ynp_roots, zeros, s=30, c='c', zorder=5,
+    ...            label=r"$Y_1'$ roots")
     >>> ax.hlines(0, 0, xmax, color='k')
     >>> ax.set_ylim(-0.6, 0.6)
     >>> ax.set_xlim(0, xmax)
@@ -338,7 +342,7 @@ def jn_zeros(n, nt):
     See Also
     --------
     jv: Real-order Bessel functions of the first kind
-    jn: Integer-order Bessel functions of the first kind 
+    jn: Integer-order Bessel functions of the first kind
     jnp_zeros: Zeros of :math:`Jn'`
 
     References
@@ -356,7 +360,7 @@ def jn_zeros(n, nt):
 
     Plot :math:`J_3` and its first four positive roots. Note
     that the root located at 0 is not returned by `jn_zeros`.
- 
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.special import jn, jn_zeros
@@ -553,8 +557,8 @@ def ynp_zeros(n, nt):
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, yn(0, x), label=r'$Y_0$')
     >>> ax.plot(x, yvp(0, x, 1), label=r"$Y_0'$")
-    >>> ax.scatter(zeros, np.zeros((4, )), s=30, c='r', label=r"Roots of $Y_0'$",
-    ...            zorder=5)
+    >>> ax.scatter(zeros, np.zeros((4, )), s=30, c='r',
+    ...            label=r"Roots of $Y_0'$", zorder=5)
     >>> for root in zeros:
     ...     y0_extremum =  yn(0, root)
     ...     lower = min(0, y0_extremum)
@@ -774,7 +778,7 @@ def y1p_zeros(nt, complex=False):
     >>> x = np.linspace(0, xmax, 500)
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, y1(x), label=r'$Y_1$')
-    >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$") 
+    >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$")
     >>> ax.scatter(real_roots, np.zeros((4, )), s=30, c='r',
     ...            label=r"Roots of $Y_1'$", zorder=5)
     >>> ax.scatter(real_roots, y1_values_at_roots.real, s=30, c='k',
