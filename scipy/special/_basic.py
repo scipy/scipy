@@ -355,6 +355,7 @@ def jn_zeros(n, nt):
     --------
     Compute the first four positive roots of math:`J_3`.
 
+    >>> from scipy.special import jn_zeros
     >>> jn_zeros(3, 4)
     array([ 6.3801619 ,  9.76102313, 13.01520072, 16.22346616])
 
@@ -423,7 +424,7 @@ def jnp_zeros(n, nt):
 
     As `jnp_zeros` yields the roots of math:`J_n'`, it can be used to
     compute the locations of the peaks of math:`J_n`. Plot
-    :math:`J_2`, :math:`J_2'` and the locations of the roots of math:`J_n'`.
+    :math:`J_2`, :math:`J_2'` and the locations of the roots of math:`J_2'`.
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
@@ -437,9 +438,6 @@ def jnp_zeros(n, nt):
     >>> ax.hlines(0, 0, xmax, color='k')
     >>> ax.scatter(j2_roots, np.zeros((4, )), s=30, c='r',
     ...            label=r"Roots of $J_2'$", zorder=5)
-    >>> ax.plot(x, yn(2, x), label=r'$Y_2$')
-    >>> ax.scatter(yn_zeros(2, 4), np.zeros((4, )), s=30, c='r',
-    ...            label='Roots', zorder=5)
     >>> ax.set_ylim(-0.4, 0.4)
     >>> ax.set_xlim(0, xmax)
     >>> plt.legend()
@@ -626,7 +624,7 @@ def y0_zeros(nt, complex=False):
     >>> ax.plot(x, y0(x), label=r'$Y_0$')
     >>> zeros, grads = y0_zeros(4)
     >>> ax.scatter(zeros.real, np.zeros((4, )), s=30, c='r',
-                   label=r'$Y_0$_zeros', zorder=5)
+    ...            label=r'$Y_0$_zeros', zorder=5)
     >>> ax.set_ylim(-0.5, 0.6)
     >>> ax.set_xlim(xmin, xmax)
     >>> plt.legend()
@@ -706,7 +704,7 @@ def y1_zeros(nt, complex=False):
     >>> ax.hlines(0, xmin, xmax, color='k')
     >>> ax.plot(x, y1(x), label=r'$Y_1$')
     >>> ax.scatter(zeros.real, np.zeros((4, )), s=30, c='r',
-                   label=r'$Y_1$_zeros', zorder=5)
+    ...            label=r'$Y_1$_zeros', zorder=5)
     >>> ax.set_ylim(-0.5, 0.5)
     >>> ax.set_xlim(xmin, xmax)
     >>> plt.legend()
