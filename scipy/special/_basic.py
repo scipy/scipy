@@ -681,6 +681,7 @@ def y1_zeros(nt, complex=False):
     Compute the first 4 real roots and the derivatives at the roots of
     :math:`Y_1`:
 
+    >>> import numpy as np
     >>> from scipy.special import y1_zeros
     >>> zeros, grads = y1_zeros(4)
     >>> with np.printoptions(precision=5):
