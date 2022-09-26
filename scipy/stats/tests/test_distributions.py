@@ -6946,6 +6946,8 @@ def test_ncf_ppf_issue_17026():
     par = (0.1, 2, 5, 0, 1)
     with pytest.warns(RuntimeWarning):
         q = stats.ncf.ppf(x, *par)
+        q0 = [stats.ncf.ppf(xi, *par) for xi in x]
+    assert_allclose(q, q0)
 
 
 class TestHistogram:
