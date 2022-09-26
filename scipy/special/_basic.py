@@ -353,7 +353,7 @@ def jn_zeros(n, nt):
 
     Examples
     --------
-    Compute the first four positive roots of math:`J_3`.
+    Compute the first four positive roots of :math:`J_3`.
 
     >>> from scipy.special import jn_zeros
     >>> jn_zeros(3, 4)
@@ -373,8 +373,8 @@ def jn_zeros(n, nt):
     >>> ax.plot(x, jn(3, x), label=r'$J_3$')
     >>> ax.scatter(j3_roots, np.zeros((4, )), s=30, c='r',
     ...            label=r"$J_3$_Zeros", zorder=5)
-    ax.scatter(0, 0, s=30, c='k',
-    ...        label=r"Root at 0", zorder=5)
+    >>> ax.scatter(0, 0, s=30, c='k',
+    ...            label=r"Root at 0", zorder=5)
     >>> ax.hlines(0, 0, xmax, color='k')
     >>> ax.set_xlim(xmin, xmax)
     >>> plt.legend()
@@ -422,9 +422,9 @@ def jnp_zeros(n, nt):
     >>> jnp_zeros(2, 4)
     array([ 3.05423693,  6.70613319,  9.96946782, 13.17037086])
 
-    As `jnp_zeros` yields the roots of math:`J_n'`, it can be used to
-    compute the locations of the peaks of math:`J_n`. Plot
-    :math:`J_2`, :math:`J_2'` and the locations of the roots of math:`J_2'`.
+    As `jnp_zeros` yields the roots of :math:`J_n'`, it can be used to
+    compute the locations of the peaks of :math:`J_n`. Plot
+    :math:`J_2`, :math:`J_2'` and the locations of the roots of :math:`J_2'`.
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
@@ -438,7 +438,7 @@ def jnp_zeros(n, nt):
     >>> ax.hlines(0, 0, xmax, color='k')
     >>> ax.scatter(j2_roots, np.zeros((4, )), s=30, c='r',
     ...            label=r"Roots of $J_2'$", zorder=5)
-    >>> ax.set_ylim(-0.4, 0.4)
+    >>> ax.set_ylim(-0.4, 0.6)
     >>> ax.set_xlim(0, xmax)
     >>> plt.legend()
     >>> plt.show()
@@ -792,7 +792,7 @@ def y1p_zeros(nt, complex=False):
     >>> ax.hlines(0, 0, xmax, color='k')
     >>> ax.set_ylim(-0.5, 0.5)
     >>> ax.set_xlim(0, xmax)
-    >>> plt.legend(ncol=2)
+    >>> ax.legend(ncol=2, bbox_to_anchor=(1., 0.75))
     >>> plt.show()
         """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
