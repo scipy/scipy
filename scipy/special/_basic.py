@@ -604,12 +604,14 @@ def y0_zeros(nt, complex=False):
     Compute the first 4 real roots and the derivatives at the roots of
     :math:`Y_0`:
 
-    >>> from scipy.special import y0_zeros
     >>> import numpy as np
+    >>> from scipy.special import y0_zeros
     >>> zeros, grads = y0_zeros(4)
-    >>> zeros, grads
-    (array([ 0.89357697+0.j,  3.95767842+0.j,  7.08605106+0.j, 10.22234504+0.j]),
-     array([-0.8794208 +0.j,  0.40254267+0.j, -0.30009761+0.j,  0.24970124+0.j]))
+    >>> with np.printoptions(precision=5):
+    ...     print(f"Roots: {zeros}")
+    ...     print(f"Gradients: {grads}")
+    Roots: [ 0.89358+0.j  3.95768+0.j  7.08605+0.j 10.22235+0.j]
+    Gradients: [-0.87942+0.j  0.40254+0.j -0.3001 +0.j  0.2497 +0.j]
 
     Plot the real part of :math:`Y_0` and the first four computed roots.
 
@@ -681,9 +683,11 @@ def y1_zeros(nt, complex=False):
 
     >>> from scipy.special import y1_zeros
     >>> zeros, grads = y1_zeros(4)
-    >>> zeros, grads
-    (array([ 2.19714133+0.j,  5.42968104+0.j,  8.59600587+0.j, 11.74915483+0.j]),
-     array([ 0.52078641+0.j, -0.34031805+0.j,  0.27145988+0.j, -0.23246177+0.j]))
+    >>> with np.printoptions(precision=5):
+    ...     print(f"Roots: {zeros}")
+    ...     print(f"Gradients: {grads}")
+    Roots: [ 2.19714+0.j  5.42968+0.j  8.59601+0.j 11.74915+0.j]
+    Gradients: [ 0.52079+0.j -0.34032+0.j  0.27146+0.j -0.23246+0.j]
 
     Extract the real parts:
 
@@ -759,10 +763,14 @@ def y1p_zeros(nt, complex=False):
     Compute the first four roots of :math:`Y_1'` and the values of
     :math:`Y_1` at these roots.
 
+    >>> import numpy as np
     >>> from scipy.special import y1p_zeros
-    >>> y1p_zeros(4)
-    (array([ 3.68302286+0.j,  6.94149995+0.j, 10.12340466+0.j, 13.28575816+0.j]),
-     array([ 0.41672993+0.j, -0.30317374+0.j,  0.25091254+0.j, -0.21897479+0.j]))
+    >>> y1grad_roots, y1_values = y1p_zeros(4)
+    >>> with np.printoptions(precision=5):
+    ...     print(f"Y1' Roots: {y1grad_roots}")
+    ...     print(f"Y1 values: {y1_values}")
+    Y1' Roots: [ 3.68302+0.j  6.9415 +0.j 10.1234 +0.j 13.28576+0.j]
+    Y1 values: [ 0.41673+0.j -0.30317+0.j  0.25091+0.j -0.21897+0.j]
 
     `y1p_zeros` can be used to calculate the extremal points of :math:`Y_1`
     directly. Here we plot :math:`Y_1` and the first four extrema.
