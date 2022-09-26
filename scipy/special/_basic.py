@@ -308,6 +308,7 @@ def jnyn_zeros(n, nt):
     >>> ax.set_ylim(-0.6, 0.6)
     >>> ax.set_xlim(0, xmax)
     >>> ax.legend(ncol=2, bbox_to_anchor=(1., 0.75))
+    >>> plt.tight_layout()
     >>> plt.show()
     """
     if not (isscalar(nt) and isscalar(n)):
@@ -438,7 +439,7 @@ def jnp_zeros(n, nt):
     >>> ax.hlines(0, 0, xmax, color='k')
     >>> ax.scatter(j2_roots, np.zeros((4, )), s=30, c='r',
     ...            label=r"Roots of $J_2'$", zorder=5)
-    >>> ax.set_ylim(-0.4, 0.6)
+    >>> ax.set_ylim(-0.4, 0.8)
     >>> ax.set_xlim(0, xmax)
     >>> plt.legend()
     >>> plt.show()
@@ -629,7 +630,7 @@ def y0_zeros(nt, complex=False):
     ...            label=r'$Y_0$_zeros', zorder=5)
     >>> ax.set_ylim(-0.5, 0.6)
     >>> ax.set_xlim(xmin, xmax)
-    >>> plt.legend()
+    >>> plt.legend(ncol=2)
     >>> plt.show()
 
     Compute the first 4 complex roots and the derivatives at the roots of
@@ -794,6 +795,7 @@ def y1p_zeros(nt, complex=False):
     >>> ax.set_ylim(-0.5, 0.5)
     >>> ax.set_xlim(0, xmax)
     >>> ax.legend(ncol=2, bbox_to_anchor=(1., 0.75))
+    >>> plt.tight_layout()
     >>> plt.show()
         """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
