@@ -403,17 +403,18 @@ class Build(Task):
     debug = Option(
         ['--debug', '-d'], default=False, is_flag=True, help="Debug build")
     parallel = Option(
-        ['--parallel', '-j'], default=1, metavar='N_JOBS',
-        help="Number of parallel jobs for build and testing")
+        ['--parallel', '-j'], default=None, metavar='N_JOBS',
+        help=("Number of parallel jobs for building. "
+              "This defaults to 2 * n_cpus + 2."))
     show_build_log = Option(
         ['--show-build-log'], default=False, is_flag=True,
         help="Show build output rather than using a log file")
     win_cp_openblas = Option(
         ['--win-cp-openblas'], default=False, is_flag=True,
-        help=("If set, and on Windows, copy OpenBLAS lib to install directory"
+        help=("If set, and on Windows, copy OpenBLAS lib to install directory "
               "after meson install. "
               "Note: this argument may be removed in the future once a "
-              "`site.cfg`-like mechanism to select BLAS/LAPACK libraries is"
+              "`site.cfg`-like mechanism to select BLAS/LAPACK libraries is "
               "implemented for Meson"))
 
     @classmethod
@@ -475,7 +476,7 @@ class Build(Task):
         Build a dev version of the project.
         """
         cmd = ["ninja", "-C", str(dirs.build)]
-        if args.parallel > 1:
+        if args.parallel is not None:
             cmd += ["-j", str(args.parallel)]
 
         # Building with ninja-backend
@@ -499,7 +500,7 @@ class Build(Task):
             if non_empty and not dirs.site.exists():
                 raise RuntimeError("Can't install in non-empty directory: "
                                    f"'{dirs.installed}'")
-        cmd = ["meson", "install", "-C", args.build_dir]
+        cmd = ["meson", "install", "-C", args.build_dir, "--only-changed"]
         log_filename = dirs.root / 'meson-install.log'
         start_time = datetime.datetime.now()
         cmd_str = ' '.join([str(p) for p in cmd])
@@ -850,7 +851,7 @@ class Bench(Task):
 
     @classmethod
     def run(cls, **kwargs):
-        """run benchamark"""
+        """run benchmark"""
         kwargs.update(cls.ctx.get())
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
@@ -1006,7 +1007,9 @@ class RefguideCheck(Task):
         args = Args(**kwargs)
         dirs = Dirs(args)
 
-        cmd = [str(dirs.root / 'tools' / 'refguide_check.py'), '--doctests']
+        cmd = [f'{sys.executable}',
+               str(dirs.root / 'tools' / 'refguide_check.py'),
+               '--doctests']
         if args.verbose:
             cmd += ['-vvv']
         if args.submodule:

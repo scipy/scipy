@@ -331,7 +331,7 @@ class Metropolis:
             #
             # RuntimeWarning: invalid value encountered in multiply
             #
-            # Ignore this warning so so when the algorithm is on a flat plane, it always
+            # Ignore this warning so when the algorithm is on a flat plane, it always
             # accepts the step, to try to move off the plane.
             prod = -(energy_new - energy_old) * self.beta
             w = math.exp(min(0, prod))

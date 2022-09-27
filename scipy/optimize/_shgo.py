@@ -395,17 +395,17 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     >>> bounds = [(0, 1.0),]*4
     >>> res = shgo(f, bounds, iters=3, constraints=cons)
     >>> res
-         fun: 29.894378159142136
-        funl: array([29.89437816])
-     message: 'Optimization terminated successfully.'
-        nfev: 114
-         nit: 3
-       nlfev: 35
-       nlhev: 0
-       nljev: 5
+     message: Optimization terminated successfully.
      success: True
-           x: array([6.35521569e-01, 1.13700270e-13, 3.12701881e-01, 5.17765506e-02])
-          xl: array([[6.35521569e-01, 1.13700270e-13, 3.12701881e-01, 5.17765506e-02]])
+         fun: 29.894378159142136
+        funl: [ 2.989e+01]
+           x: [ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]
+          xl: [[ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]]
+         nit: 3
+        nfev: 114
+       nlfev: 35
+       nljev: 5
+       nlhev: 0
 
     >>> g1(res.x), g2(res.x), h1(res.x)
     (-5.062616992290714e-14, -2.9594104944408173e-12, 0.0)

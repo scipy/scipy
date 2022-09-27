@@ -740,3 +740,23 @@ class TestGoodnessOfFit:
         assert_equal(res3.fit_result.params.scale, 13.73)
         assert_equal(res3.fit_result.params.loc, -13.85)
         assert not np.allclose(res3.null_distribution, res1.null_distribution)
+
+class TestFitResult:
+    def test_plot_iv(self):
+        rng = np.random.default_rng(1769658657308472721)
+        data = stats.norm.rvs(0, 1, size=100, random_state=rng)
+
+        def optimizer(*args, **kwargs):
+            return differential_evolution(*args, **kwargs, seed=rng)
+
+        bounds = [(0, 30), (0, 1)]
+        res = stats.fit(stats.norm, data, bounds, optimizer=optimizer)
+        try:
+            import matplotlib  # noqa
+            message = r"`plot_type` must be one of \{'..."
+            with pytest.raises(ValueError, match=message):
+                res.plot(plot_type='llama')
+        except (ModuleNotFoundError, ImportError):
+            message = r"matplotlib must be installed to use method `plot`."
+            with pytest.raises(ModuleNotFoundError, match=message):
+                res.plot(plot_type='llama')
