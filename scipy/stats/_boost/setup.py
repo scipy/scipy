@@ -1,5 +1,4 @@
 import pathlib
-import sys
 
 
 def pre_build_hook(build_ext, ext):
@@ -21,11 +20,8 @@ def configuration(parent_package='', top_path=None):
         ('BOOST_MATH_DOMAIN_ERROR_POLICY', 'ignore_error'),
         ('BOOST_MATH_EVALUATION_ERROR_POLICY', 'user_error'),
         ('BOOST_MATH_OVERFLOW_ERROR_POLICY', 'user_error'),
+        ('BOOST_MATH_PROMOTE_DOUBLE_POLICY', 'true'),
     ]
-    if sys.maxsize > 2**32:
-        # 32-bit machines lose too much precision with no promotion,
-        # so only set this policy for 64-bit machines
-        DEFINES += [('BOOST_MATH_PROMOTE_DOUBLE_POLICY', 'false')]
     INCLUDES = [
         'include/',
         'src/',

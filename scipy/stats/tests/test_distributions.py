@@ -6944,8 +6944,8 @@ def test_ncf_ppf_issue_17026():
     x = np.linspace(0, 1, 600)
     x[0] = 1e-16
     par = (0.1, 2, 5, 0, 1)
-    with pytest.warns(RuntimeWarning):
-        q = stats.ncf.ppf(x, *par)
+    # just assert that we run without error/warnings
+    stats.ncf.ppf(x, *par)
 
 
 class TestHistogram:
