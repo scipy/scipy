@@ -343,7 +343,6 @@ def jn_zeros(n, nt):
     See Also
     --------
     jv: Real-order Bessel functions of the first kind
-    jn: Integer-order Bessel functions of the first kind
     jnp_zeros: Zeros of :math:`Jn'`
 
     References
