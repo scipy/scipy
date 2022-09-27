@@ -6616,6 +6616,19 @@ def test_ncf_cdf_spotcheck():
     assert_allclose(check_val, np.round(scipy_val, decimals=6))
 
 
+@pytest.mark.skipif(sys.maxsize <= 2**32,
+                    reason="On some 32-bit the warning is not raised")
+def test_ncf_ppf_issue_17026():
+    # Regression test for gh-17026
+    x = np.linspace(0, 1, 600)
+    x[0] = 1e-16
+    par = (0.1, 2, 5, 0, 1)
+    with pytest.warns(RuntimeWarning):
+        q = stats.ncf.ppf(x, *par)
+        q0 = [stats.ncf.ppf(xi, *par) for xi in x]
+    assert_allclose(q, q0)
+
+
 class TestHistogram:
     def setup_method(self):
         np.random.seed(1234)
