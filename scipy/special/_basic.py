@@ -797,7 +797,7 @@ def y1p_zeros(nt, complex=False):
     >>> ax.legend(ncol=2, bbox_to_anchor=(1., 0.75))
     >>> plt.tight_layout()
     >>> plt.show()
-        """
+    """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
     kf = 2
