@@ -681,7 +681,7 @@ class TestMultivariateNormal:
             multivariate_normal.entropy([0, 0], cov_object)
 
         with pytest.raises(ValueError, match=message):
-            multivariate_normal([0, 0], cov_object).cdf([1, 2, 3])
+            multivariate_normal([0, 0], cov_object)
 
         x = [0.5, 0.5, 0.5]
         ref = multivariate_normal.pdf(x, [0, 0, 0], cov_object)
