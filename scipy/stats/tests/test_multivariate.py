@@ -51,7 +51,8 @@ class TestCovariance:
         with pytest.raises(ValueError, match=message):
             _covariance.CovViaPrecision(np.eye(3), covariance=np.eye(2))
 
-    _covariance_preprocessing = {"CovViaPrecision": np.linalg.inv,
+    _covariance_preprocessing = {"CovViaDiagonal": np.diag,
+                                 "CovViaPrecision": np.linalg.inv,
                                  "CovViaPSD": lambda x:
                                      _PSD(x, allow_singular=True)}
     _all_covariance_types = np.array(list(_covariance_preprocessing))
@@ -60,9 +61,9 @@ class TestCovariance:
                  "diagonal rank-deficient": np.diag([1, 0, 3]),
                  "general rank-deficient": [[5, -1, 0], [-1, 5, 0], [0, 0, 0]]}
     _cov_types = {"diagonal full rank": _all_covariance_types,
-                  "general full rank": _all_covariance_types,
-                  "diagonal rank-deficient": _all_covariance_types[[1]],
-                  "general rank-deficient": _all_covariance_types[[1]]}
+                  "general full rank": _all_covariance_types[1:],
+                  "diagonal rank-deficient": _all_covariance_types[[0, 2]],
+                  "general rank-deficient": _all_covariance_types[[2]]}
 
     @pytest.mark.parametrize("matrix_type", list(_matrices))
     @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
@@ -534,7 +535,7 @@ class TestMultivariateNormal:
                           0.1063242573, 0.2501068509])
 
         cdf = multivariate_normal.cdf(r, mean, cov)
-        assert_allclose(cdf, r_cdf, atol=1e-5)
+        assert_allclose(cdf, r_cdf, atol=2e-5)
 
         # Also test bivariate cdf with some values precomputed
         # in R version 3.3.2 (2016-10-31) on Debian GNU/Linux.

@@ -172,6 +172,72 @@ class CovViaPrecision(Covariance):
                 if self._cov_matrix is None else self._cov_matrix)
 
 
+def _dot_diag(x, d):
+    # If d were a full diagonal matrix, x @ d would always do what we want
+    # This is for when `d` is compressed to include only the diagonal elements
+    return x * d if x.ndim < 2 else x * np.expand_dims(d, -2)
+
+
+class CovViaDiagonal(Covariance):
+    r"""
+    Representation of a diagonal covariance provided via its diagonal elements.
+
+    Notes
+    -----
+    Let the diagonal elements of a diagonal covariance matrix :math:`D` be
+    stored in the vector :math:`d`.
+
+    When all elements of :math:`d` are strictly positive, whitening of a data
+    point :math:`x` is performed by computing :math:`x \cdot d^{-1/2}`, where
+    the inverse square root can be taken element-wise.
+    :math:`\log\det{D}` is calculated as :math:`-2 \sum(\log{d})`,
+    where the :math:`\log` operation is performed element-wise.
+
+    This `Covariance` class does supports singular covariance matrices. When
+    computing ``_log_pdet``, non-positive elements of :math:`d` are ignored.
+    Whitening is not well defined when the point to be whitened does not lie
+    in the span of the columns of the covariance matrix. The convention taken
+    here is to treat the inverse square root of non-positive elements of
+    :math:`d` as zeros.
+
+    """
+
+    def __init__(self, diagonal):
+        """
+        Parameters
+        ----------
+        diagonal : array_like
+            The diagonal elements of a diagonal matrix.
+        """
+        diagonal = self._validate_vector(diagonal, 'diagonal')
+
+        i_zero = diagonal <= 0
+        positive_diagonal = np.array(diagonal, dtype=np.float64)
+
+        positive_diagonal[i_zero] = 1  # ones don't affect determinant
+        self._log_pdet = np.sum(np.log(positive_diagonal), axis=-1)
+
+        psuedo_reciprocals = 1 / np.sqrt(positive_diagonal)
+        psuedo_reciprocals[i_zero] = 0
+
+        self._LP = psuedo_reciprocals
+        self._rank = positive_diagonal.shape[-1] - i_zero.sum(axis=-1)
+        self._covariance = np.apply_along_axis(np.diag, -1, diagonal)
+        self._dimensionality = diagonal.shape[-1]
+        self._i_zero = i_zero
+        self._shape = self._covariance.shape
+        self._allow_singular = True
+
+    def _whiten(self, x):
+        return _dot_diag(x, self._LP)
+
+    def _support_mask(self, x):
+        """
+        Check whether x lies in the support of the distribution.
+        """
+        return ~np.any(_dot_diag(x, self._i_zero), axis=-1)
+
+
 class CovViaPSD(Covariance):
     """
     Representation of a covariance provided via an instance of _PSD

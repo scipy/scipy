@@ -179,7 +179,9 @@ any one of the following classes to represent the covariance.
 .. autosummary::
    :toctree: generated/
 
-   CovViaPrecision        -- Covariance represented via the precision matrix
+   CovViaPrecision        -- Covariance represented via its precision matrix
+   CovViaDiagonal         -- Covariance represented via its diagonal elements
+
 
 Discrete distributions
 ----------------------
@@ -496,7 +498,7 @@ from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._fit import fit
-from ._covariance import CovViaPrecision
+from ._covariance import CovViaPrecision, CovViaDiagonal
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
