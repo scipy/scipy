@@ -794,7 +794,12 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     -----
     This is a generalized Monte Carlo goodness-of-fit procedure, special cases
     of which correspond with various Anderson-Darling tests, Lilliefors' test,
-    etc.
+    etc. The test is described in [2]_, [3]_, and [4]_ as a parametric
+    bootstrap test, which is a Monte Carlo test in which parameters that
+    specify the distribution from which samples are drawn have been estimated
+    from the data. We describe the test using "Monte Carlo" rather than
+    "parametric bootstrap" throughout to avoid confusion with the more familiar
+    nonparametric bootstrap, and describe how the test is performed below.
 
     Traditionally, critical values corresponding with a set a fixed set of
     significance levels are pre-calculated using Monte Carlo methods. Users
@@ -839,7 +844,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     Monte Carlo null distribution (`n_mc_samples`). The addition of :math:`1`
     to the numerator and denominator can be thought of as including the
     value of the statistic corresponding with `data` in the null distribution,
-    but a more formal explanation is given in [2]_.
+    but a more formal explanation is given in [5]_.
 
     The test can be very slow for some distribution families because unknown
     parameters of the distribution family must be fit to each of the Monte
@@ -863,11 +868,19 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     .. [1] M. A. Stephens (1974). "EDF Statistics for Goodness of Fit and
            Some Comparisons." Journal of the American Statistical Association,
            Vol. 69, pp. 730-737.
-    .. [2] B. Phipson and G. K. Smyth (2010). "Permutation P-values Should
+    .. [2] W. Stute, W. G. Manteiga, and M. P. Quindimil (1993).
+           "Bootstrap based goodness-of-fit-tests." Metrika 40.1: 243-256.
+    .. [3] C. Genest, & B Rémillard. (2008). "Validity of the parametric
+           bootstrap for goodness-of-fit testing in semiparametric models."
+           Annales de l'IHP Probabilités et statistiques. Vol. 44. No. 6.
+    .. [4] I. Kojadinovic and J. Yan (2012). "Goodness‐of‐fit testing based on
+           a weighted bootstrap: A fast large‐sample alternative to the
+           parametric bootstrap." Canadian Journal of Statistics 40.3: 480-500.
+    .. [5] B. Phipson and G. K. Smyth (2010). "Permutation P-values Should
            Never Be Zero: Calculating Exact P-values When Permutations Are
            Randomly Drawn." Statistical Applications in Genetics and Molecular
            Biology 9.1.
-    .. [3] H. W. Lilliefors (1967). "On the Kolmogorov-Smirnov test for
+    .. [6] H. W. Lilliefors (1967). "On the Kolmogorov-Smirnov test for
            normality with mean and variance unknown." Journal of the American
            statistical Association 62.318: 399-402.
 
@@ -918,7 +931,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     However, in many cases, we would prefer to test only that the data were
     sampled from one of *any* member of the normal distribution family, not
     specifically from the normal distribution with the location and scale
-    fitted to the observed sample. In this case, Lilliefors [3]_ argued that
+    fitted to the observed sample. In this case, Lilliefors [6]_ argued that
     the KS test was far too conservative and thus lacked power - the ability
     to reject the null hypothesis when the null hypothesis is actually false.
     Indeed, our p-value above is approximately 0.28, which is far too large

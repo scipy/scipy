@@ -741,6 +741,7 @@ class TestGoodnessOfFit:
         assert_equal(res3.fit_result.params.loc, -13.85)
         assert not np.allclose(res3.null_distribution, res1.null_distribution)
 
+
 class TestFitResult:
     def test_plot_iv(self):
         rng = np.random.default_rng(1769658657308472721)
