@@ -4,7 +4,7 @@ cpp_args = [
   '-DBOOST_MATH_OVERFLOW_ERROR_POLICY=user_error'
 ]
 if meson.get_compiler('cpp', native: true).sizeof('void*') > 4
-  cpp_args += ['-DBOOST_MATH_PROMOTE_DOUBLE_POLICY=true',
+  cpp_args += ['-DBOOST_MATH_PROMOTE_DOUBLE_POLICY=false',
                 numpy_nodepr_api]
 endif
 
