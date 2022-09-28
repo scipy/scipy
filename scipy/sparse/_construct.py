@@ -52,6 +52,7 @@ def spdiags(data, diags, m=None, n=None, format=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import spdiags
     >>> data = np.array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
     >>> diags = np.array([0, -1, 2])
@@ -246,6 +247,7 @@ def eye(m, n=None, k=0, dtype=float, format=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import sparse
     >>> sparse.eye(3).toarray()
     array([[ 1.,  0.,  0.],
@@ -299,6 +301,7 @@ def kron(A, B, format=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import sparse
     >>> A = sparse.csr_matrix(np.array([[0, 2], [5, 0]]))
     >>> B = sparse.csr_matrix(np.array([[1, 2], [3, 4]]))
