@@ -595,14 +595,15 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
 
-        1. Instance of `Bounds` class.
-        2. 2-tuple of array_like: Each element of the tuple must be either
-        an array with the length equal to the number of parameters, or a
-        scalar (in which case the bound is taken to be the same for all
-        parameters). Use ``np.inf`` with an appropriate sign to disable
-        bounds on all or some parameters.
+            - Instance of `Bounds` class.
 
-        .. versionadded:: 0.17
+            - 2-tuple of array_like: Each element of the tuple must be either
+              an array with the length equal to the number of parameters, or a
+              scalar (in which case the bound is taken to be the same for all
+              parameters). Use ``np.inf`` with an appropriate sign to disable
+              bounds on all or some parameters.
+
+              .. versionadded:: 0.17
     method : {'lm', 'trf', 'dogbox'}, optional
         Method to use for optimization. See `least_squares` for more details.
         Default is 'lm' for unconstrained problems and 'trf' if `bounds` are
