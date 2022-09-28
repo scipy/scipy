@@ -319,6 +319,30 @@ def check_discr_samples(rng, pv, mv_ex):
     assert pval > 0.1
 
 
+def test_warning_center_not_in_domain():
+    # UNURAN will warn if the center provided or the one computed w/o the
+    # domain is outside of the domain
+    msg = "102 : center moved into domain of distribution"
+    with pytest.warns(RuntimeWarning, match=msg):
+        gen = NumericalInversePolynomial(StandardNormal(),
+                                         center=0, domain=(3, 5))
+    with pytest.warns(RuntimeWarning, match=msg):
+        gen = NumericalInversePolynomial(StandardNormal(), domain=(3, 5))
+
+@pytest.mark.parametrize('method', ["SimpleRatioUniforms",
+                                    "NumericalInversePolynomial",
+                                    "TransformedDensityRejection"])
+def test_error_mode_not_in_domain(method):
+    # UNURAN raises an error if the mode is not in the domain
+    # the behavior is different compared to the case that center is not in the
+    # domain. mode is supposed to be the exact value, center can be an
+    # approximate value
+    Method = getattr(stats.sampling, method)
+    msg = "17 : mode not in domain"
+    with pytest.raises(UNURANError, match=msg):
+        gen = Method(StandardNormal(), mode=0, domain=(3, 5))
+
+
 @pytest.mark.parametrize('method', ["NumericalInverseHermite",
                                     "NumericalInversePolynomial"])
 class TestQRVS:
