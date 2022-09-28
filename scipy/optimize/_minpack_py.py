@@ -15,7 +15,6 @@ from ._lsq import least_squares
 from ._lsq.least_squares import prepare_bounds
 from scipy.optimize._minimize import Bounds
 
-
 error = _minpack.error
 
 __all__ = ['fsolve', 'leastsq', 'fixed_point', 'curve_fit']
