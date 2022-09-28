@@ -8047,12 +8047,18 @@ class TestExpectile:
         # T(X + Y) >= T(X) + T(Y)
         y = rng.logistic(size=n, loc=10)  # different distibution than x
         if alpha == 0.5:
-            def op(a, b):
-                return a == pytest.approx(b)
+            def assert_op(a, b):
+                assert_allclose(a, b)
+
+        elif alpha > 0.5:
+            def assert_op(a, b):
+                assert a < b
 
         else:
-            op = operator.le if alpha > 0.5 else operator.gt
-        assert op(
+            def assert_op(a, b):
+                assert a > b
+
+        assert_op(
             stats.expectile(np.r_[x + y], alpha=alpha),
             stats.expectile(x, alpha=alpha)
             + stats.expectile(y, alpha=alpha)
@@ -8072,7 +8078,7 @@ class TestExpectile:
         # T((1 − c) X + c Y) <= (1 − c) T(X) + c T(Y) for 0 <= c <= 1
         y = rng.logistic(size=n, loc=10)
         for c in [0.1, 0.5, 0.8]:
-            assert op(
+            assert_op(
                 stats.expectile((1-c)*x + c*y, alpha=alpha),
                 (1-c) * stats.expectile(x, alpha=alpha) +
                 c * stats.expectile(y, alpha=alpha)
