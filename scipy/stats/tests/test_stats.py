@@ -7990,7 +7990,9 @@ class TestExpectile:
         x = rng.random(size=20)
         assert_allclose(stats.expectile(x, alpha=1), np.amax(x))
    
-    @pytest.mark.parametrize("alpha", [0.2, 0.5, 0.8])
+    @pytest.mark.parametrize(
+        "alpha", [0.2, 0.5 - 1e-12, 0.5, 0.5 + 1e-12, 0.8]
+    )
     @pytest.mark.parametrize("n", [20, 2000])
     def test_expectile_properties(self, alpha, n):
         """
