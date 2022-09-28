@@ -13,6 +13,8 @@ from ._optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
 # from ._lsq.common import make_strictly_feasible
 from ._lsq.least_squares import prepare_bounds
+from scipy.optimize._minimize import Bounds
+
 
 error = _minpack.error
 
@@ -590,12 +592,16 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         and raise a ValueError if they do. Setting this parameter to
         False may silently produce nonsensical results if the input arrays
         do contain nans. Default is True.
-    bounds : 2-tuple of array_like, optional
+    bounds : 2-tuple of array_like or `Bounds`, optional
         Lower and upper bounds on parameters. Defaults to no bounds.
-        Each element of the tuple must be either an array with the length equal
-        to the number of parameters, or a scalar (in which case the bound is
-        taken to be the same for all parameters). Use ``np.inf`` with an
-        appropriate sign to disable bounds on all or some parameters.
+        There are two ways to specify the bounds:
+
+        1. Instance of `Bounds` class.
+        2. 2-tuple of array_like: Each element of the tuple must be either
+        an array with the length equal to the number of parameters, or a
+        scalar (in which case the bound is taken to be the same for all
+        parameters). Use ``np.inf`` with an appropriate sign to disable
+        bounds on all or some parameters.
 
         .. versionadded:: 0.17
     method : {'lm', 'trf', 'dogbox'}, optional
@@ -763,7 +769,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         p0 = np.atleast_1d(p0)
         n = p0.size
 
-    lb, ub = prepare_bounds(bounds, n)
+    if isinstance(bounds, Bounds):
+        lb, ub = bounds.lb, bounds.ub
+    else:
+        lb, ub = prepare_bounds(bounds, n)
     if p0 is None:
         p0 = _initialize_feasible(lb, ub)
 
