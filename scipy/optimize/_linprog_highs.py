@@ -424,7 +424,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            }
 
     if np.any(x) and integrality is not None:
-        res.update({
+        sol.update({
             'mip_node_count': res.get('mip_node_count', 0),
             'mip_dual_bound': res.get('mip_dual_bound', 0.0),
             'mip_gap': res.get('mip_gap', 0.0),

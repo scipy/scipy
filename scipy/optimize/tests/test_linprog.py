@@ -2316,6 +2316,32 @@ class TestLinprogHiGHSMIP():
 
         np.testing.assert_allclose(res.fun, 1854)
 
+    @pytest.mark.slow
+    @pytest.mark.timeout(120)
+    def test_mip_rel_gap_passdown(self):
+        # MIP taken from test_mip6, solved with different values of mip_rel_gap
+        # solve a larger MIP with only equality constraints
+        # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
+        A_eq = np.array([[22, 13, 26, 33, 21, 3, 14, 26],
+                         [39, 16, 22, 28, 26, 30, 23, 24],
+                         [18, 14, 29, 27, 30, 38, 26, 26],
+                         [41, 26, 28, 36, 18, 38, 16, 26]])
+        b_eq = np.array([7872, 10466, 11322, 12058])
+        c = np.array([2, 10, 13, 17, 7, 5, 7, 3])
+
+        bounds = [(0, np.inf)]*8
+        integrality = [1]*8
+        
+        mip_rel_gaps = [0.5, 0.25, 0.01, 0.001]
+        for mip_rel_gap in mip_rel_gaps:
+            res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                          bounds=bounds, method=self.method,
+                          integrality=integrality,
+                          options={"mip_rel_gap": mip_rel_gap})
+            final_mip_gap = res["mip_gap"]
+            assert final_mip_gap <= mip_rel_gap
+
+
 ###########################
 # Autoscale-Specific Tests#
 ###########################
