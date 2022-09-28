@@ -8,7 +8,8 @@ Special functions (:mod:`scipy.special`)
 Almost all of the functions below accept NumPy arrays as input
 arguments as well as single numbers. This means they follow
 broadcasting and automatic array-looping rules. Technically,
-they are `NumPy universal functions <https://numpy.org/doc/stable/user/basics.ufuncs.html#ufuncs-basics>`_ .
+they are `NumPy universal functions
+<https://numpy.org/doc/stable/user/basics.ufuncs.html#ufuncs-basics>`_.
 Functions which do not accept NumPy arrays are marked by a warning
 in the section description.
 
