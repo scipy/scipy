@@ -9,7 +9,7 @@ from scipy.linalg import solve_sylvester
 from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
 from scipy.linalg import solve_continuous_are, solve_discrete_are
 from scipy.linalg import block_diag, solve, LinAlgError
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 def _load_data(name):
@@ -482,7 +482,7 @@ def test_solve_discrete_are():
          np.eye(3),
          1e6 * np.eye(3),
          1e6 * np.eye(3),
-         None),
+         "Issue with OpenBLAS, see gh-16926"),
         # TEST CASE 17 : darex #14
         (np.array([[1 - 1/1e8, 0, 0, 0],
                   [1, 0, 0, 0],

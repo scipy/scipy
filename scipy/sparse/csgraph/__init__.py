@@ -140,7 +140,7 @@ and the two have unequal weights, then the smaller of the two is used.
 
 So for the same graph, when ``directed=False`` we get the graph::
 
-    (0)--1--(1)--2--(2)
+    (0)--1--(1)--3--(2)
 
 Note that a symmetric matrix will represent an undirected graph, regardless
 of whether the 'directed' keyword is set to True or False. In this case,

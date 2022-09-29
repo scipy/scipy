@@ -4,5 +4,5 @@ minimize(method='CG')
 ----------------------------------------
 
 .. scipy-optimize:function:: scipy.optimize.minimize
-   :impl: scipy.optimize.optimize._minimize_cg
+   :impl: scipy.optimize._optimize._minimize_cg
    :method: CG
