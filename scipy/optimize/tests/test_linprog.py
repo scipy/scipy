@@ -2333,13 +2333,47 @@ class TestLinprogHiGHSMIP():
         integrality = [1]*8
         
         mip_rel_gaps = [0.5, 0.25, 0.01, 0.001]
+        sol_mip_gaps = []
         for mip_rel_gap in mip_rel_gaps:
             res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                           bounds=bounds, method=self.method,
                           integrality=integrality,
                           options={"mip_rel_gap": mip_rel_gap})
             final_mip_gap = res["mip_gap"]
+            # assert that the solution actually has mip_gap lower than the required 
+            # mip_rel_gap supplied
             assert final_mip_gap <= mip_rel_gap
+            sol_mip_gaps.append(final_mip_gap)
+        
+        # make sure that the mip_rel_gap parameter is actually doing something - 
+        # check that differences between solution gaps are declining monotonically 
+        # with the mip_rel_gap parameter. np.diff does x[i+1] - x[i], so flip the 
+        # array before differencing to get what should be a positive, monotone 
+        # decreasing series of solution gaps
+        gap_diffs = np.diff(np.flip(sol_mip_gaps))
+        assert np.all(gap_diffs >= 0)
+        assert not np.all(gap_diffs == 0)
+
+    def test_mip_additional_info_in_result(self):
+        # MIP taken from test_mip5, just check that mip_node_count and
+        # mip_dual_bound fields in result objectare populated.
+        # solve MIP with inequality and inequality constraints
+        # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
+        A_ub = np.array([[1, 1, 1]])
+        b_ub = np.array([7])
+        A_eq = np.array([[4, 2, 1]])
+        b_eq = np.array([12])
+        c = np.array([-3, -2, -1])
+
+        bounds = [(0, np.inf), (0, np.inf), (0, 1)]
+        integrality = [0, 1, 0]
+
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method,
+                      integrality=integrality)
+        
+        assert res.get("mip_node_count", None) is not None
+        assert res.get("mip_dual_bound", None) is not None
 
 
 ###########################
