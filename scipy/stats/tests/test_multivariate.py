@@ -73,7 +73,7 @@ class TestCovariance:
 
         cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
         preprocessing = self._covariance_preprocessing[cov_type_name]
-        factory = getattr(_covariance.Covariance, f"from_{cov_type_name.lower()}")
+        factory = getattr(Covariance, f"from_{cov_type_name.lower()}")
 
         res = factory(preprocessing(A))
         ref = cov_type(preprocessing(A))
