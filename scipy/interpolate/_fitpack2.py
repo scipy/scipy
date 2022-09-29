@@ -177,6 +177,7 @@ class UnivariateSpline:
     with ``nan``. A workaround is to use zero weights for not-a-number
     data points:
 
+    >>> import numpy as np
     >>> from scipy.interpolate import UnivariateSpline
     >>> x, y = np.array([1, 2, 3, 4]), np.array([1, np.nan, 3, 4])
     >>> w = np.isnan(y)
@@ -188,6 +189,7 @@ class UnivariateSpline:
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import UnivariateSpline
     >>> rng = np.random.default_rng()
@@ -695,6 +697,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import InterpolatedUnivariateSpline
     >>> rng = np.random.default_rng()
@@ -820,6 +823,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.interpolate import LSQUnivariateSpline, UnivariateSpline
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -843,6 +847,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     Constructing lsq spline using the knots from another spline:
 
+    >>> import numpy as np
     >>> x = np.arange(10)
     >>> s = UnivariateSpline(x, x, s=0)
     >>> s.get_knots()
