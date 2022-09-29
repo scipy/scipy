@@ -7,8 +7,10 @@ from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           solve, solve_banded)
 from . import _bspl
 from . import _fitpack_impl
-from . import _fitpack as _dierckx
 from scipy._lib._util import prod
+from scipy.sparse import csr_array
+from scipy.special import poch
+from itertools import combinations
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline"]
 
@@ -32,6 +34,33 @@ def _as_float_array(x, check_finite=False):
     if check_finite and not np.isfinite(x).all():
         raise ValueError("Array must not contain infs or nans.")
     return x
+
+
+def _dual_poly(j, k, t, y):
+    """
+    Dual polynomial of the B-spline B_{j,k,t} -
+    polynomial which is associated with B_{j,k,t}:
+    $p_{j,k}(y) = (y - t_{j+1})(y - t_{j+2})...(y - t_{j+k})$
+    """
+    if k == 0:
+        return 1
+    return np.prod([(y - t[j + i]) for i in range(1, k + 1)])
+
+
+def _diff_dual_poly(j, k, y, d, t):
+    """
+    d-th derivative of the dual polynomial $p_{j,k}(y)$
+    """
+    if d == 0:
+        return _dual_poly(j, k, t, y)
+    if d == k:
+        return poch(1, k)
+    comb = list(combinations(range(j + 1, j + k + 1), d))
+    res = 0
+    for i in range(len(comb) * len(comb[0])):
+        res += np.prod([(y - t[j + p]) for p in range(1, k + 1)
+                        if (j + p) not in comb[i//d]])
+    return res
 
 
 class BSpline:
@@ -86,6 +115,8 @@ class BSpline:
     antiderivative
     integrate
     construct_fast
+    design_matrix
+    from_power_basis
 
     Notes
     -----
@@ -153,6 +184,7 @@ class BSpline:
     functions active on the base interval.
 
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
     >>> fig, ax = plt.subplots()
     >>> xx = np.linspace(1.5, 4.5, 50)
     >>> ax.plot(xx, [bspline(x, t, c ,k) for x in xx], 'r-', lw=3, label='naive')
@@ -193,7 +225,7 @@ class BSpline:
             # and axis !=0 means that we have c.shape (..., n, ...)
             #                                               ^
             #                                              axis
-            self.c = np.rollaxis(self.c, axis)
+            self.c = np.moveaxis(self.c, axis, 0)
 
         if k < 0:
             raise ValueError("Spline order cannot be negative.")
@@ -241,7 +273,7 @@ class BSpline:
 
         Parameters
         ----------
-        t : ndarray, shape (k+1,)
+        t : ndarray, shape (k+2,)
             internal knots
         extrapolate : bool or 'periodic', optional
             whether to extrapolate beyond the base interval, ``t[0] .. t[k+1]``,
@@ -277,8 +309,8 @@ class BSpline:
         Construct a quadratic B-spline on ``[0, 1, 1, 2]``, and compare
         to its explicit form:
 
-        >>> t = [-1, 0, 1, 1, 2]
-        >>> b = BSpline.basis_element(t[1:])
+        >>> t = [0, 1, 1, 2]
+        >>> b = BSpline.basis_element(t)
         >>> def f(x):
         ...     return np.where(x < 1, x*x, (2. - x)**2)
 
@@ -298,6 +330,133 @@ class BSpline:
         c[k] = 1.
         return cls.construct_fast(t, c, k, extrapolate)
 
+    @classmethod
+    def design_matrix(cls, x, t, k, extrapolate=False):
+        """
+        Returns a design matrix as a CSR format sparse array.
+
+        Parameters
+        ----------
+        x : array_like, shape (n,)
+            Points to evaluate the spline at.
+        t : array_like, shape (nt,)
+            Sorted 1D array of knots.
+        k : int
+            B-spline degree.
+        extrapolate : bool or 'periodic', optional
+            Whether to extrapolate based on the first and last intervals
+            or raise an error. If 'periodic', periodic extrapolation is used.
+            Default is False.
+
+            .. versionadded:: 1.10.0
+
+        Returns
+        -------
+        design_matrix : `csr_array` object
+            Sparse matrix in CSR format where each row contains all the basis
+            elements of the input row (first row = basis elements of x[0],
+            ..., last row = basis elements x[-1]).
+
+        Examples
+        --------
+        Construct a design matrix for a B-spline
+
+        >>> from scipy.interpolate import make_interp_spline, BSpline
+        >>> import numpy as np
+        >>> x = np.linspace(0, np.pi * 2, 4)
+        >>> y = np.sin(x)
+        >>> k = 3
+        >>> bspl = make_interp_spline(x, y, k=k)
+        >>> design_matrix = bspl.design_matrix(x, bspl.t, k)
+        >>> design_matrix.toarray()
+        [[1.        , 0.        , 0.        , 0.        ],
+        [0.2962963 , 0.44444444, 0.22222222, 0.03703704],
+        [0.03703704, 0.22222222, 0.44444444, 0.2962963 ],
+        [0.        , 0.        , 0.        , 1.        ]]
+
+        Construct a design matrix for some vector of knots
+
+        >>> k = 2
+        >>> t = [-1, 0, 1, 2, 3, 4, 5, 6]
+        >>> x = [1, 2, 3, 4]
+        >>> design_matrix = BSpline.design_matrix(x, t, k).toarray()
+        >>> design_matrix
+        [[0.5, 0.5, 0. , 0. , 0. ],
+        [0. , 0.5, 0.5, 0. , 0. ],
+        [0. , 0. , 0.5, 0.5, 0. ],
+        [0. , 0. , 0. , 0.5, 0.5]]
+
+        This result is equivalent to the one created in the sparse format
+
+        >>> c = np.eye(len(t) - k - 1)
+        >>> design_matrix_gh = BSpline(t, c, k)(x)
+        >>> np.allclose(design_matrix, design_matrix_gh, atol=1e-14)
+        True
+
+        Notes
+        -----
+        .. versionadded:: 1.8.0
+
+        In each row of the design matrix all the basis elements are evaluated
+        at the certain point (first row - x[0], ..., last row - x[-1]).
+
+        `nt` is a length of the vector of knots: as far as there are
+        `nt - k - 1` basis elements, `nt` should be not less than `2 * k + 2`
+        to have at least `k + 1` basis element.
+
+        Out of bounds `x` raises a ValueError.
+        """
+        x = _as_float_array(x, True)
+        t = _as_float_array(t, True)
+
+        if extrapolate != 'periodic':
+            extrapolate = bool(extrapolate)
+
+        if k < 0:
+            raise ValueError("Spline order cannot be negative.")
+        if t.ndim != 1 or np.any(t[1:] < t[:-1]):
+            raise ValueError(f"Expect t to be a 1-D sorted array_like, but "
+                             f"got t={t}.")
+        # There are `nt - k - 1` basis elements in a BSpline built on the
+        # vector of knots with length `nt`, so to have at least `k + 1` basis
+        # elements we need to have at least `2 * k + 2` elements in the vector
+        # of knots.
+        if len(t) < 2 * k + 2:
+            raise ValueError(f"Length t is not enough for k={k}.")
+
+        if extrapolate == 'periodic':
+            # With periodic extrapolation we map x to the segment
+            # [t[k], t[n]].
+            n = t.size - k - 1
+            x = t[k] + (x - t[k]) % (t[n] - t[k])
+            extrapolate = False
+        elif not extrapolate and (
+            (min(x) < t[k]) or (max(x) > t[t.shape[0] - k - 1])
+        ):
+            # Checks from `find_interval` function
+            raise ValueError(f'Out of bounds w/ x = {x}.')
+
+        # Compute number of non-zeros of final CSR array in order to determine
+        # the dtype of indices and indptr of the CSR array.
+        n = x.shape[0]
+        nnz = n * (k + 1)
+        if nnz < np.iinfo(np.int32).max:
+            int_dtype = np.int32
+        else:
+            int_dtype = np.int64
+        # Preallocate indptr and indices
+        indices = np.empty(n * (k + 1), dtype=int_dtype)
+        indptr = np.arange(0, (n + 1) * (k + 1), k + 1, dtype=int_dtype)
+
+        # indptr is not passed to Cython as it is already fully computed
+        data, indices = _bspl._make_design_matrix(
+            x, t, k, extrapolate, indices
+        )
+        return csr_array(
+            (data, indices, indptr),
+            shape=(x.shape[0], t.shape[0] - k - 1)
+        )
+
     def __call__(self, x, nu=0, extrapolate=None):
         """
         Evaluate a spline function.
@@ -306,7 +465,7 @@ class BSpline:
         ----------
         x : array_like
             points to evaluate the spline at.
-        nu: int, optional
+        nu : int, optional
             derivative to evaluate (default is 0).
         extrapolate : bool or 'periodic', optional
             whether to extrapolate based on the first and last intervals
@@ -497,8 +656,7 @@ class BSpline:
             if self.c.ndim == 1:
                 # Fast path: use FITPACK's routine
                 # (cf _fitpack_impl.splint).
-                t, c, k = self.tck
-                integral, wrk = _dierckx._splint(t, c, k, a, b)
+                integral = _fitpack_impl.splint(a, b, self.tck)
                 return integral * sign
 
         out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
@@ -560,6 +718,113 @@ class BSpline:
 
         integral *= sign
         return integral.reshape(ca.shape[1:])
+
+    @classmethod
+    def from_power_basis(cls, pp, bc_type='not-a-knot'):
+        r"""
+        Construct a polynomial in the B-spline basis
+        from a piecewise polynomial in the power basis.
+
+        For now, accepts ``CubicSpline`` instances only.
+
+        Parameters
+        ----------
+        pp : CubicSpline
+            A piecewise polynomial in the power basis, as created
+            by ``CubicSpline``
+        bc_type : string, optional
+            Boundary condition type as in ``CubicSpline``: one of the
+            ``not-a-knot``, ``natural``, ``clamped``, or ``periodic``.
+            Necessary for construction an instance of ``BSpline`` class.
+            Default is ``not-a-knot``.
+
+        Returns
+        -------
+        b : BSpline object
+            A new instance representing the initial polynomial
+            in the B-spline basis.
+
+        Notes
+        -----
+        .. versionadded:: 1.8.0
+
+        Accepts only ``CubicSpline`` instances for now.
+
+        The algorithm follows from differentiation
+        the Marsden's identity [1]: each of coefficients of spline
+        interpolation function in the B-spline basis is computed as follows:
+
+        .. math::
+
+            c_j = \sum_{m=0}^{k} \frac{(k-m)!}{k!}
+                       c_{m,i} (-1)^{k-m} D^m p_{j,k}(x_i)
+
+        :math:`c_{m, i}` - a coefficient of CubicSpline,
+        :math:`D^m p_{j, k}(x_i)` - an m-th defivative of a dual polynomial
+        in :math:`x_i`.
+
+        ``k`` always equals 3 for now.
+
+        First ``n - 2`` coefficients are computed in :math:`x_i = x_j`, e.g.
+
+        .. math::
+
+            c_1 = \sum_{m=0}^{k} \frac{(k-1)!}{k!} c_{m,1} D^m p_{j,3}(x_1)
+
+        Last ``nod + 2`` coefficients are computed in ``x[-2]``,
+        ``nod`` - number of derivatives at the ends.
+
+        For example, consider :math:`x = [0, 1, 2, 3, 4]`,
+        :math:`y = [1, 1, 1, 1, 1]` and bc_type = ``natural``
+
+        The coefficients of CubicSpline in the power basis:
+
+        :math:`[[0, 0, 0, 0, 0], [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0], [1, 1, 1, 1, 1]]`
+
+        The knot vector: :math:`t = [0, 0, 0, 0, 1, 2, 3, 4, 4, 4, 4]`
+
+        In this case
+
+        .. math::
+
+            c_j = \frac{0!}{k!} c_{3, i} k! = c_{3, i} = 1,~j = 0, ..., 6
+
+        References
+        ----------
+        .. [1] Tom Lyche and Knut Morken, Spline Methods, 2005, Section 3.1.2
+
+        """
+        from ._cubic import CubicSpline
+        if not isinstance(pp, CubicSpline):
+            raise NotImplementedError("Only CubicSpline objects are accepted"
+                                      "for now. Got %s instead." % type(pp))
+        x = pp.x
+        coef = pp.c
+        k = pp.c.shape[0] - 1
+        n = x.shape[0]
+
+        if bc_type == 'not-a-knot':
+            t = _not_a_knot(x, k)
+        elif bc_type == 'natural' or bc_type == 'clamped':
+            t = _augknt(x, k)
+        elif bc_type == 'periodic':
+            t = _periodic_knots(x, k)
+        else:
+            raise TypeError('Unknown boundary condition: %s' % bc_type)
+
+        nod = t.shape[0] - (n + k + 1)  # number of derivatives at the ends
+        c = np.zeros(n + nod, dtype=pp.c.dtype)
+        for m in range(k + 1):
+            for i in range(n - 2):
+                c[i] += poch(k + 1, -m) * coef[m, i]\
+                        * np.power(-1, k - m)\
+                        * _diff_dual_poly(i, k, x[i], m, t)
+            for j in range(n - 2, n + nod):
+                c[j] += poch(k + 1, -m) * coef[m, n - 2]\
+                        * np.power(-1, k - m)\
+                        * _diff_dual_poly(j, k, x[n - 2], m, t)
+        return cls.construct_fast(t, c, k, pp.extrapolate, pp.axis)
 
 
 #################################
@@ -873,21 +1138,21 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     y : array_like, shape (n, ...)
         Ordinates.
     k : int, optional
-        B-spline degree. Default is cubic, k=3.
+        B-spline degree. Default is cubic, ``k = 3``.
     t : array_like, shape (nt + k + 1,), optional.
         Knots.
-        The number of knots needs to agree with the number of datapoints and
+        The number of knots needs to agree with the number of data points and
         the number of derivatives at the edges. Specifically, ``nt - n`` must
         equal ``len(deriv_l) + len(deriv_r)``.
     bc_type : 2-tuple or None
         Boundary conditions.
         Default is None, which means choosing the boundary conditions
         automatically. Otherwise, it must be a length-two tuple where the first
-        element sets the boundary conditions at ``x[0]`` and the second
-        element sets the boundary conditions at ``x[-1]``. Each of these must
-        be an iterable of pairs ``(order, value)`` which gives the values of
-        derivatives of specified orders at the given edge of the interpolation
-        interval.
+        element (``deriv_l``) sets the boundary conditions at ``x[0]`` and
+        the second element (``deriv_r``) sets the boundary conditions at
+        ``x[-1]``. Each of these must be an iterable of pairs
+        ``(order, value)`` which gives the values of derivatives of specified
+        orders at the given edge of the interpolation interval.
         Alternatively, the following string aliases are recognized:
 
         * ``"clamped"``: The first derivatives at the ends are zero. This is
@@ -916,6 +1181,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Use cubic interpolation on Chebyshev nodes:
 
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
     >>> def cheb_nodes(N):
     ...     jj = 2.*np.arange(N) + 1
     ...     x = np.cos(np.pi * jj / 2 / N)[::-1]
@@ -953,7 +1220,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Build an interpolating curve, parameterizing it by the angle
 
-    >>> from scipy.interpolate import make_interp_spline
     >>> spl = make_interp_spline(phi, np.c_[x, y])
 
     Evaluate the interpolant on a finer grid (note that we transpose the result
@@ -964,7 +1230,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Plot the result
 
-    >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, y, 'o')
     >>> plt.plot(x_new, y_new, '-')
     >>> plt.show()
@@ -1011,11 +1276,19 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
 
-    y = np.rollaxis(y, axis)    # now internally interp axis is zero
+    y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
 
+    # sanity check the input
     if bc_type == 'periodic' and not np.allclose(y[0], y[-1], atol=1e-15):
         raise ValueError("First and last points does not match while "
                          "periodic case expected")
+    if x.size != y.shape[0]:
+        raise ValueError('Shapes of x {} and y {} are incompatible'
+                         .format(x.shape, y.shape))
+    if np.any(x[1:] == x[:-1]):
+        raise ValueError("Expect x to not have duplicates")
+    if x.ndim != 1 or np.any(x[1:] < x[:-1]):
+        raise ValueError("Expect x to be a 1D strictly increasing sequence.")
 
     # special-case k=0 right away
     if k == 0:
@@ -1061,17 +1334,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     t = _as_float_array(t, check_finite)
 
-    if x.ndim != 1 or np.any(x[1:] < x[:-1]):
-        raise ValueError("Expect x to be a 1-D sorted array_like.")
-    if np.any(x[1:] == x[:-1]):
-        raise ValueError("Expect x to not have duplicates")
     if k < 0:
         raise ValueError("Expect non-negative k.")
     if t.ndim != 1 or np.any(t[1:] < t[:-1]):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
-    if x.size != y.shape[0]:
-        raise ValueError('Shapes of x {} and y {} are incompatible'
-                         .format(x.shape, y.shape))
     if t.size < x.size + k + 1:
         raise ValueError('Got %d knots, need at least %d.' %
                          (t.size, x.size + k + 1))
@@ -1134,7 +1400,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
 
 def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
-    r"""Compute the (coefficients of) an LSQ B-spline.
+    r"""Compute the (coefficients of) an LSQ (Least SQuared) based
+    fitting B-spline.
 
     The result is a linear combination
 
@@ -1158,8 +1425,8 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
         Knots.
         Knots and data points must satisfy Schoenberg-Whitney conditions.
     k : int, optional
-        B-spline degree. Default is cubic, k=3.
-    w : array_like, shape (n,), optional
+        B-spline degree. Default is cubic, ``k = 3``.
+    w : array_like, shape (m,), optional
         Weights for spline fitting. Must be positive. If ``None``,
         then weights are all equal.
         Default is ``None``.
@@ -1173,14 +1440,13 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     Returns
     -------
-    b : a BSpline object of the degree `k` with knots `t`.
+    b : a BSpline object of the degree ``k`` with knots ``t``.
 
     Notes
     -----
+    The number of data points must be larger than the spline degree ``k``.
 
-    The number of data points must be larger than the spline degree `k`.
-
-    Knots `t` must satisfy the Schoenberg-Whitney conditions,
+    Knots ``t`` must satisfy the Schoenberg-Whitney conditions,
     i.e., there must be a subset of data points ``x[j]`` such that
     ``t[j] < x[j] < t[j+k+1]``, for ``j=0, 1,...,n-k-2``.
 
@@ -1188,6 +1454,8 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     --------
     Generate some noisy data:
 
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
     >>> x = np.linspace(-3, 3, 50)
     >>> y = np.exp(-x**2) + 0.1 * rng.standard_normal(50)
@@ -1211,7 +1479,6 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     Plot both:
 
-    >>> import matplotlib.pyplot as plt
     >>> xs = np.linspace(-3, 3, 100)
     >>> plt.plot(x, y, 'ro', ms=5)
     >>> plt.plot(xs, spl(xs), 'g-', lw=3, label='LSQ spline')
@@ -1250,7 +1517,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     axis = normalize_axis_index(axis, y.ndim)
 
-    y = np.rollaxis(y, axis)    # now internally interp axis is zero
+    y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
 
     if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
         raise ValueError("Expect x to be a 1-D sorted array_like.")

@@ -19,14 +19,6 @@ class ReportBase:
 
     @classmethod
     def print_iteration(cls, *args):
-        # args[3] is obj func, and args[4] is tr-radius. They should really be
-        # floats. However, trust-constr typically provides a ndarray for these
-        # values. We have to coerce them to floats, otherwise the string
-        # formatting doesn't work.
-        args = list(args)
-        args[3] = float(args[3])
-        args[4] = float(args[4])
-
         iteration_format = ["{{:{}}}".format(x) for x in cls.ITERATION_FORMATS]
         fmt = "|" + "|".join(iteration_format) + "|"
         print(fmt.format(*args))

@@ -68,7 +68,7 @@
 import numpy as np
 import scipy.special
 import scipy.special._ufuncs as scu
-import scipy.misc
+from scipy._lib._finite_differences import _derivative
 
 _E128 = 128
 _EP128 = np.ldexp(np.longdouble(1), _E128)
@@ -469,7 +469,7 @@ def _kolmogn_p(n, x):
     def _kk(_x):
         return kolmogn(n, _x)
 
-    return scipy.misc.derivative(_kk, x, dx=delta, order=5)
+    return _derivative(_kk, x, dx=delta, order=5)
 
 
 def _kolmogni(n, p, q):

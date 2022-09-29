@@ -332,7 +332,7 @@ def initial_constraints_as_canonical(n, prepared_constraints, sparse_jacobian):
 
     The purpose to avoid one additional call to the constraints at the initial
     point. It takes saved values in `PreparedConstraint`, modififies and
-    concatenates them to the the canonical constraint format.
+    concatenates them to the canonical constraint format.
     """
     c_eq = []
     c_ineq = []

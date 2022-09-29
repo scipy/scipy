@@ -4,9 +4,10 @@ from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
                          nchypergeom_fisher, nchypergeom_wallenius, randint)
 
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
+from numpy.testing import (
+    assert_almost_equal, assert_equal, assert_allclose, suppress_warnings
+)
 from scipy.special import binom as special_binom
-import pytest
 from scipy.optimize import root_scalar
 from scipy.integrate import quad
 
@@ -153,12 +154,12 @@ def test_betabinom_bernoulli():
 
 def test_issue_10317():
     alpha, n, p = 0.9, 10, 1
-    assert_equal(nbinom.interval(alpha=alpha, n=n, p=p), (0, 0))
+    assert_equal(nbinom.interval(confidence=alpha, n=n, p=p), (0, 0))
 
 
 def test_issue_11134():
     alpha, n, p = 0.95, 10, 0
-    assert_equal(binom.interval(alpha=alpha, n=n, p=p), (0, 0))
+    assert_equal(binom.interval(confidence=alpha, n=n, p=p), (0, 0))
 
 
 def test_issue_7406():
@@ -224,6 +225,13 @@ def test_issue_6682():
     assert_allclose(nbinom.sf(250, 50, 32./63.), 1.460458510976452e-35)
 
 
+def test_boost_divide_by_zero_issue_15101():
+    n = 1000
+    p = 0.01
+    k = 996
+    assert_allclose(binom.pmf(k, n, p), 0.0)
+
+
 def test_skellam_gh11474():
     # test issue reported in gh-11474 caused by `cdfchn`
     mu = [1, 10, 100, 1000, 5000, 5050, 5100, 5250, 6000]
@@ -257,11 +265,14 @@ class TestZipfian:
         alt1, agt1 = 0.99999999, 1.00000001
         N = 30
         k = np.arange(1, N + 1)
-        assert_allclose(zipfian.pmf(k, alt1, N), zipfian.pmf(k, agt1, N))
-        assert_allclose(zipfian.cdf(k, alt1, N), zipfian.cdf(k, agt1, N))
-        assert_allclose(zipfian.sf(k, alt1, N), zipfian.sf(k, agt1, N))
+        assert_allclose(zipfian.pmf(k, alt1, N), zipfian.pmf(k, agt1, N),
+                        rtol=5e-7)
+        assert_allclose(zipfian.cdf(k, alt1, N), zipfian.cdf(k, agt1, N),
+                        rtol=5e-7)
+        assert_allclose(zipfian.sf(k, alt1, N), zipfian.sf(k, agt1, N),
+                        rtol=5e-7)
         assert_allclose(zipfian.stats(alt1, N, moments='msvk'),
-                        zipfian.stats(agt1, N, moments='msvk'), rtol=2e-7)
+                        zipfian.stats(agt1, N, moments='msvk'), rtol=5e-7)
 
     def test_zipfian_R(self):
         # test against R VGAM package
@@ -413,8 +424,11 @@ class TestNCH():
 
             return root_scalar(fun, bracket=(xl, xu)).root
 
-        assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
-                        mean(N, m1, n, w), rtol=2e-2)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning,
+                       message="invalid value encountered in mean")
+            assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
+                            mean(N, m1, n, w), rtol=2e-2)
 
         @np.vectorize
         def variance(N, m1, n, w):
@@ -424,8 +438,14 @@ class TestNCH():
             b = (n-u)*(u + m2 - n)
             return N*a*b / ((N-1) * (m1*b + m2*a))
 
-        assert_allclose(nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),
-                        variance(N, m1, n, w), rtol=5e-2)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning,
+                       message="invalid value encountered in mean")
+            assert_allclose(
+                nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),
+                variance(N, m1, n, w),
+                rtol=5e-2
+            )
 
         @np.vectorize
         def pmf(x, N, m1, n, w):

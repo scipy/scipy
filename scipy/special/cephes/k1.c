@@ -32,7 +32,7 @@
  * ERROR MESSAGES:
  *
  *   message         condition      value returned
- * k1 domain          x <= 0          NPY_INFINITY
+ * k1 domain          x <= 0          INFINITY
  *
  */
 /*							k1e.c
@@ -137,11 +137,11 @@ double x;
 
     if (x == 0.0) {
 	sf_error("k1", SF_ERROR_SINGULAR, NULL);
-	return NPY_INFINITY;
+	return INFINITY;
     }
     else if (x < 0.0) {
 	sf_error("k1", SF_ERROR_DOMAIN, NULL);
-	return NPY_NAN;
+	return NAN;
     }
     z = 0.5 * x;
 
@@ -164,11 +164,11 @@ double x;
 
     if (x == 0.0) {
 	sf_error("k1e", SF_ERROR_SINGULAR, NULL);
-	return NPY_INFINITY;
+	return INFINITY;
     }
     else if (x < 0.0) {
 	sf_error("k1e", SF_ERROR_DOMAIN, NULL);
-	return NPY_NAN;
+	return NAN;
     }
 
     if (x <= 2.0) {

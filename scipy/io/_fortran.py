@@ -10,7 +10,7 @@ import numpy as np
 __all__ = ['FortranFile', 'FortranEOFError', 'FortranFormattingError']
 
 
-class FortranEOFError(TypeError, IOError):
+class FortranEOFError(TypeError, OSError):
     """Indicates that the file ended properly.
 
     This error descends from TypeError because the code used to raise
@@ -21,7 +21,7 @@ class FortranEOFError(TypeError, IOError):
     pass
 
 
-class FortranFormattingError(TypeError, IOError):
+class FortranFormattingError(TypeError, OSError):
     """Indicates that the file ended mid-record.
 
     Descends from TypeError for backward compatibility.
@@ -131,7 +131,7 @@ class FortranFile:
         elif len(b) < n:
             raise FortranFormattingError(
                 "End of file in the middle of the record size")
-        return int(np.frombuffer(b, dtype=self._header_dtype, count=1))
+        return int(np.frombuffer(b, dtype=self._header_dtype, count=1)[0])
 
     def write_record(self, *items):
         """
@@ -282,8 +282,8 @@ class FortranFile:
 
         second_size = self._read_size()
         if first_size != second_size:
-            raise IOError('Sizes do not agree in the header and footer for '
-                          'this record - check header dtype')
+            raise ValueError('Sizes do not agree in the header and footer for '
+                             'this record - check header dtype')
 
         # Unpack result
         if len(dtypes) == 1:

@@ -7,7 +7,9 @@ import time
 import logging
 import warnings
 from scipy import spatial
-from scipy.optimize import OptimizeResult, minimize
+from scipy.optimize import OptimizeResult, minimize, Bounds
+from scipy.optimize._constraints import new_bounds_to_old
+from ._optimize import _wrap_scalar_function
 from scipy.optimize._shgo_lib.triangulation import Complex
 
 
@@ -29,13 +31,12 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a tuple of any additional fixed parameters needed to
         completely specify the function.
-    bounds : sequence
-        Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
-        defining the lower and upper bounds for the optimizing argument of
-        `func`. It is required to have ``len(bounds) == len(x)``.
-        ``len(bounds)`` is used to determine the number of parameters in ``x``.
-        Use ``None`` for one of min or max when there is no bound in that
-        direction. By default bounds are ``(None, None)``.
+    bounds : sequence or `Bounds`
+        Bounds for variables. There are two ways to specify the bounds:
+
+        1. Instance of `Bounds` class.
+        2. Sequence of ``(min, max)`` pairs for each element in `x`.
+
     args : tuple, optional
         Any additional fixed parameters needed to completely specify the
         objective function.
@@ -274,6 +275,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     --------
     First consider the problem of minimizing the Rosenbrock function, `rosen`:
 
+    >>> import numpy as np
     >>> from scipy.optimize import rosen, shgo
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = shgo(rosen, bounds)
@@ -393,22 +395,27 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     >>> bounds = [(0, 1.0),]*4
     >>> res = shgo(f, bounds, iters=3, constraints=cons)
     >>> res
-         fun: 29.894378159142136
-        funl: array([29.89437816])
-     message: 'Optimization terminated successfully.'
-        nfev: 114
-         nit: 3
-       nlfev: 35
-       nlhev: 0
-       nljev: 5
+     message: Optimization terminated successfully.
      success: True
-           x: array([6.35521569e-01, 1.13700270e-13, 3.12701881e-01, 5.17765506e-02])
-          xl: array([[6.35521569e-01, 1.13700270e-13, 3.12701881e-01, 5.17765506e-02]])
+         fun: 29.894378159142136
+        funl: [ 2.989e+01]
+           x: [ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]
+          xl: [[ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]]
+         nit: 3
+        nfev: 114
+       nlfev: 35
+       nljev: 5
+       nlhev: 0
 
     >>> g1(res.x), g2(res.x), h1(res.x)
     (-5.062616992290714e-14, -2.9594104944408173e-12, 0.0)
 
     """
+
+    # if necessary, convert bounds class to old bounds
+    if isinstance(bounds, Bounds):
+        bounds = new_bounds_to_old(bounds.lb, bounds.ub, len(bounds.lb))
+
     # Initiate SHGO class
     shc = SHGO(func, bounds, args=args, constraints=constraints, n=n,
                iters=iters, callback=callback,
@@ -457,7 +464,7 @@ class SHGO:
                               " Valid methods: {}").format(', '.join(methods)))
 
         # Initiate class
-        self.func = func
+        _, self.func = _wrap_scalar_function(func, args)
         self.bounds = bounds
         self.args = args
         self.callback = callback
@@ -504,8 +511,7 @@ class SHGO:
 
         # Define local minimization keyword arguments
         # Start with defaults
-        self.minimizer_kwargs = {'args': self.args,
-                                 'method': 'SLSQP',
+        self.minimizer_kwargs = {'method': 'SLSQP',
                                  'bounds': self.bounds,
                                  'options': {},
                                  'callback': self.callback
@@ -1358,7 +1364,7 @@ class SHGO:
                         break  # Breaks the g loop
 
             if eval_f:
-                self.F[i] = self.func(self.C[i, :], *self.args)
+                self.F[i] = self.func(self.C[i, :])
                 self.fn += 1
             elif self.infty_cons_sampl:
                 self.F[i] = np.inf

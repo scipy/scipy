@@ -1,7 +1,7 @@
 import os
 import functools
 import operator
-from distutils.version import LooseVersion
+from scipy._lib import _pep440
 
 import numpy as np
 from numpy.testing import assert_
@@ -24,7 +24,7 @@ class MissingModule:
 def check_version(module, min_ver):
     if type(module) == MissingModule:
         return pytest.mark.skip(reason="{} is not installed".format(module.name))
-    return pytest.mark.skipif(LooseVersion(module.__version__) < LooseVersion(min_ver),
+    return pytest.mark.skipif(_pep440.parse(module.__version__) < _pep440.Version(min_ver),
                               reason="{} version >= {} required".format(module.__name__, min_ver))
 
 
@@ -119,7 +119,7 @@ class FuncData:
         Whether to ignore signs of infinities.
         (Doesn't matter for complex-valued functions.)
     distinguish_nan_and_inf : bool, optional
-        If True, treat numbers which contain nans or infs as as
+        If True, treat numbers which contain nans or infs as
         equal. Sets ignore_inf_sign to be True.
 
     """
