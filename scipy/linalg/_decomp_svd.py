@@ -83,6 +83,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     Reconstruct the original matrix from the decomposition:
 
+    >>> import numpy as np
     >>> sigma = np.zeros((m, n))
     >>> for i in range(min(m, n)):
     ...     sigma[i, i] = s[i]
@@ -436,6 +437,7 @@ def subspace_angles(A, B):
     An Hadamard matrix, which has orthogonal columns, so we expect that
     the suspace angle to be :math:`\frac{\pi}{2}`:
 
+    >>> import numpy as np
     >>> from numpy.random import default_rng
     >>> from scipy.linalg import hadamard, subspace_angles
     >>> rng = default_rng()

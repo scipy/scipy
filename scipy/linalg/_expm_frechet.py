@@ -65,6 +65,7 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.linalg
     >>> rng = np.random.default_rng()
     >>> A = rng.standard_normal((3, 3))
@@ -382,6 +383,7 @@ def expm_cond(A, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import expm_cond
     >>> A = np.array([[-0.3, 0.2, 0.6], [0.6, 0.3, -0.1], [-0.7, 1.2, 0.9]])
     >>> k = expm_cond(A)

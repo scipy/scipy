@@ -555,6 +555,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     --------
     Evaluate a simple example function on the points of a regular 3-D grid:
 
+    >>> import numpy as np
     >>> from scipy.interpolate import interpn
     >>> def value_func_3d(x, y, z):
     ...     return 2 * x + 3 * y - z
