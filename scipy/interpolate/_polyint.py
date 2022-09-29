@@ -407,6 +407,7 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
     --------
     We can interpolate 2D observed data using krogh interpolation:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import krogh_interpolate
     >>> x_observed = np.linspace(0.0, 10.0, 11)
@@ -471,6 +472,7 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     We can calculate Taylor approximation polynomials of sin function with
     various degrees:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import approximate_taylor_polynomial
     >>> x = np.linspace(-10.0, 10.0, num=100)
@@ -539,6 +541,7 @@ class BarycentricInterpolator(_Interpolator1D):
     Based on Berrut and Trefethen 2004, "Barycentric Lagrange Interpolation".
 
     """
+
     def __init__(self, xi, yi=None, axis=0):
         _Interpolator1D.__init__(self, xi, yi, axis)
 
@@ -723,6 +726,7 @@ def barycentric_interpolate(xi, yi, x, axis=0):
     --------
     We can interpolate 2D observed data using barycentric interpolation:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import barycentric_interpolate
     >>> x_observed = np.linspace(0.0, 10.0, 11)

@@ -208,6 +208,7 @@ class UnivariateSpline:
     >>> plt.show()
 
     """
+
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None,
                  ext=0, check_finite=False):
 
@@ -418,6 +419,7 @@ class UnivariateSpline:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, 3, 11)
         >>> y = x**2
@@ -454,6 +456,7 @@ class UnivariateSpline:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, 3, 11)
         >>> y = x**2
@@ -545,6 +548,7 @@ class UnivariateSpline:
         --------
         This can be used for finding maxima of a curve:
 
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, 10, 70)
         >>> y = np.sin(x)
@@ -592,6 +596,7 @@ class UnivariateSpline:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, np.pi/2, 70)
         >>> y = 1 / np.sqrt(1 - 0.8*np.sin(x)**2)
@@ -707,6 +712,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     0.0
 
     """
+
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3,
                  ext=0, check_finite=False):
 

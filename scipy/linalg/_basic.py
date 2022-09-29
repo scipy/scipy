@@ -114,6 +114,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     --------
     Given `a` and `b`, solve for `x`:
 
+    >>> import numpy as np
     >>> a = np.array([[3, 2, 0], [1, -1, 0], [0, 5, 1]])
     >>> b = np.array([2, 4, -1])
     >>> from scipy import linalg
