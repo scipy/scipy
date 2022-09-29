@@ -61,9 +61,10 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Non-zero to return a dictionary of integration information.
         If non-zero, warning messages are also suppressed and the
         message is appended to the output tuple.
-    real_func : bool, optional
-        Indicate if the function's return type is real values (true)
-        or complex (false).
+    complex : bool, optional
+        Indicate if the function's (func) return type is real
+        (`complex=false`) or complex (`complex=True`).
+        In both cases, the function's argument is real.
 
     Returns
     -------
@@ -333,6 +334,30 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Clenshaw-Curtis integration is used on those intervals containing the
         point :math:`x = c`.
 
+    ** Integration of Complex Function of a Real Variable **
+
+    This method integrates the real and complex components separately.
+    Doing so makes the further assumption that the integrals of these
+    components exist over the given interval.
+
+    A complex valued function, :math:`f`, of a real variable can be written as 
+    :math:`f = g + ih`.  Similarly, the integral of :math:`f` can be
+    written as
+
+    .. math::
+
+    \int_a^b f(x) dx = \int_a^b g(x) dx + i\int_a^b h(x) dx
+
+    This assumes that the integrals of :math:`g` and :math:`h` exist
+    over the inteval :math:`[a,b]` [2]_.
+
+    For example,
+
+    .. math::
+    \int_0^{\frac{\pi}{2}} e^{it} dt = \int_0^{\frac{\pi}{2}} \cos{t} +
+    i\sin{t} dt
+
+
     References
     ----------
 
@@ -341,6 +366,10 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
            QUADPACK: A subroutine package for automatic integration.
            Springer-Verlag.
            ISBN 978-3-540-12553-2.
+    .. [2] McCullough, Thomas; Phillips, Keith (1973).
+           Foundations of Analysis in the Complex Plane.
+           Holt Rinehart Winston.
+           ISBN 0-03-086370-8
 
     Examples
     --------
@@ -440,8 +469,6 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     if weight is None:
         retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
                    points)
-
-
     else:
         if points is not None:
             msg = ("Break points cannot be specified when using weighted integrand.\n"
