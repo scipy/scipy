@@ -714,7 +714,7 @@ def sproot(tck, mest=10):
     else:
         if len(t) < 8:
             raise TypeError("The number of knots %d>=8" % len(t))
-        z, m, ier = dfitpack.sproot(t, c, k, mest)
+        z, m, ier = dfitpack.sproot(t, c, mest)
         if ier == 10:
             raise TypeError("Invalid input data. "
                             "t1<=..<=t4<t5<..<tn-3<=..<=tn must hold.")
