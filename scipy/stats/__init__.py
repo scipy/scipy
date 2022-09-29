@@ -173,6 +173,14 @@ Multivariate distributions
    multivariate_t         -- Multivariate t-distribution
    multivariate_hypergeom -- Multivariate hypergeometric distribution
 
+`scipy.stats.multivariate_normal` methods accept an instance of
+any one of the following classes to represent the covariance.
+
+.. autosummary::
+   :toctree: generated/
+
+   CovViaPrecision        -- Covariance represented via the precision matrix
+
 Discrete distributions
 ----------------------
 
@@ -488,6 +496,7 @@ from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._fit import fit
+from ._covariance import CovViaPrecision
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
