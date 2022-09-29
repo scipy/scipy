@@ -1,19 +1,10 @@
-from dataclasses import dataclass
 from math import sqrt
 import numpy as np
 from scipy._lib._util import _validate_int
 from scipy.optimize import brentq
 from scipy.special import ndtri
 from ._discrete_distns import binom
-
-
-@dataclass
-class ConfidenceInterval:
-    """
-    Class for confidence intervals.
-    """
-    low: float
-    high: float
+from ._common import ConfidenceInterval
 
 
 class BinomTestResult:
@@ -30,31 +21,34 @@ class BinomTestResult:
         Indicates the alternative hypothesis specified in the input
         to `binomtest`.  It will be one of ``'two-sided'``, ``'greater'``,
         or ``'less'``.
+    statistic: float
+        The estimate of the proportion of successes.
     pvalue : float
         The p-value of the hypothesis test.
-    proportion_estimate : float
-        The estimate of the proportion of successes.
 
     """
-    def __init__(self, k, n, alternative, pvalue, proportion_estimate):
+    def __init__(self, k, n, alternative, statistic, pvalue):
         self.k = k
         self.n = n
         self.alternative = alternative
-        self.proportion_estimate = proportion_estimate
+        self.statistic = statistic
         self.pvalue = pvalue
+
+        # add alias for backward compatibility
+        self.proportion_estimate = statistic
 
     def __repr__(self):
         s = ("BinomTestResult("
              f"k={self.k}, "
              f"n={self.n}, "
              f"alternative={self.alternative!r}, "
-             f"proportion_estimate={self.proportion_estimate}, "
+             f"statistic={self.statistic}, "
              f"pvalue={self.pvalue})")
         return s
 
     def proportion_ci(self, confidence_level=0.95, method='exact'):
         """
-        Compute the confidence interval for the estimated proportion.
+        Compute the confidence interval for ``statistic``.
 
         Parameters
         ----------
@@ -96,10 +90,10 @@ class BinomTestResult:
         --------
         >>> from scipy.stats import binomtest
         >>> result = binomtest(k=7, n=50, p=0.1)
-        >>> result.proportion_estimate
+        >>> result.statistic
         0.14
         >>> result.proportion_ci()
-        ConfidenceInterval(low=0.05819170033997341, high=0.2673960024970084)
+        ConfidenceInterval(low=0.05819170033997342, high=0.26739600249700846)
         """
         if method not in ('exact', 'wilson', 'wilsoncc'):
             raise ValueError("method must be one of 'exact', 'wilson' or "
@@ -231,7 +225,7 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
 
     Returns
     -------
-    result : `BinomTestResult` instance
+    result : `~scipy.stats._result_classes.BinomTestResult` instance
         The return value is an object with the following attributes:
 
         k : int
@@ -242,15 +236,15 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
             Indicates the alternative hypothesis specified in the input
             to `binomtest`.  It will be one of ``'two-sided'``, ``'greater'``,
             or ``'less'``.
+        statistic : float
+            The estimate of the proportion of successes.
         pvalue : float
             The p-value of the hypothesis test.
-        proportion_estimate : float
-            The estimate of the proportion of successes.
 
         The object has the following methods:
 
         proportion_ci(confidence_level=0.95, method='exact') :
-            Compute the confidence interval for ``proportion_estimate``.
+            Compute the confidence interval for ``statistic``.
 
     Notes
     -----
@@ -277,16 +271,17 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     The null hypothesis cannot be rejected at the 5% level of significance
     because the returned p-value is greater than the critical value of 5%.
 
-    The estimated proportion is simply ``3/15``:
+    The test statistic is equal to the estimated proportion, which is simply
+    ``3/15``:
 
-    >>> result.proportion_estimate
+    >>> result.statistic
     0.2
 
     We can use the `proportion_ci()` method of the result to compute the
     confidence interval of the estimate:
 
     >>> result.proportion_ci(confidence_level=0.95)
-    ConfidenceInterval(low=0.056846867590246826, high=1.0)
+    ConfidenceInterval(low=0.05684686759024681, high=1.0)
 
     """
     k = _validate_int(k, 'k', minimum=0)
@@ -300,7 +295,6 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     if alternative not in ('two-sided', 'less', 'greater'):
         raise ValueError("alternative not recognized; \n"
                          "must be 'two-sided', 'less' or 'greater'")
-
     if alternative == 'less':
         pval = binom.cdf(k, n, p)
     elif alternative == 'greater':
@@ -313,16 +307,69 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
             # special case as shortcut, would also be handled by `else` below
             pval = 1.
         elif k < p * n:
-            i = np.arange(np.ceil(p * n), n+1)
-            y = np.sum(binom.pmf(i, n, p) <= d*rerr, axis=0)
+            ix = _binary_search_for_binom_tst(lambda x1: -binom.pmf(x1, n, p),
+                                              -d*rerr, np.ceil(p * n), n)
+            # y is the number of terms between mode and n that are <= d*rerr.
+            # ix gave us the first term where a(ix) <= d*rerr < a(ix-1)
+            # if the first equality doesn't hold, y=n-ix. Otherwise, we
+            # need to include ix as well as the equality holds. Note that
+            # the equality will hold in very very rare situations due to rerr.
+            y = n - ix + int(d*rerr == binom.pmf(ix, n, p))
             pval = binom.cdf(k, n, p) + binom.sf(n - y, n, p)
         else:
-            i = np.arange(np.floor(p*n) + 1)
-            y = np.sum(binom.pmf(i, n, p) <= d*rerr, axis=0)
+            ix = _binary_search_for_binom_tst(lambda x1: binom.pmf(x1, n, p),
+                                              d*rerr, 0, np.floor(p * n))
+            # y is the number of terms between 0 and mode that are <= d*rerr.
+            # we need to add a 1 to account for the 0 index.
+            # For comparing this with old behavior, see
+            # tst_binary_srch_for_binom_tst method in test_morestats.
+            y = ix + 1
             pval = binom.cdf(y-1, n, p) + binom.sf(k-1, n, p)
 
         pval = min(1.0, pval)
 
     result = BinomTestResult(k=k, n=n, alternative=alternative,
-                             proportion_estimate=k/n, pvalue=pval)
+                             statistic=k/n, pvalue=pval)
     return result
+
+
+def _binary_search_for_binom_tst(a, d, lo, hi):
+    """
+    Conducts an implicit binary search on a function specified by `a`.
+
+    Meant to be used on the binomial PMF for the case of two-sided tests
+    to obtain the value on the other side of the mode where the tail
+    probability should be computed. The values on either side of
+    the mode are always in order, meaning binary search is applicable.
+
+    Parameters
+    ----------
+    a : callable
+      The function over which to perform binary search. Its values
+      for inputs lo and hi should be in ascending order.
+    d : float
+      The value to search.
+    lo : int
+      The lower end of range to search.
+    hi : int
+      The higher end of the range to search.
+
+    Returns
+    -------
+    int
+      The index, i between lo and hi
+      such that a(i)<=d<a(i+1)
+    """
+    while lo < hi:
+        mid = lo + (hi-lo)//2
+        midval = a(mid)
+        if midval < d:
+            lo = mid+1
+        elif midval > d:
+            hi = mid-1
+        else:
+            return mid
+    if a(lo) <= d:
+        return lo
+    else:
+        return lo-1

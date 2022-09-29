@@ -24,8 +24,8 @@ from libc.math cimport fabs, sqrt
 
 import numpy as np
 
-import scipy.spatial.qhull as qhull
-cimport scipy.spatial.qhull as qhull
+import scipy.spatial._qhull as qhull
+cimport scipy.spatial._qhull as qhull
 
 import warnings
 
@@ -46,7 +46,7 @@ ctypedef fused double_or_complex:
 # Interpolator base class
 #------------------------------------------------------------------------------
 
-class NDInterpolatorBase(object):
+class NDInterpolatorBase:
     """
     Common routines for interpolators.
 
@@ -242,9 +242,9 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     >>> from scipy.interpolate import LinearNDInterpolator
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(0)
-    >>> x = np.random.random(10) - 0.5
-    >>> y = np.random.random(10) - 0.5
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(10) - 0.5
+    >>> y = rng.random(10) - 0.5
     >>> z = np.hypot(x, y)
     >>> X = np.linspace(min(x), max(x))
     >>> Y = np.linspace(min(y), max(y))
@@ -623,9 +623,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     cdef double_or_complex \
          f1, f2, f3, df12, df13, df21, df23, df31, df32
     cdef double g[3]
-    cdef double \
-         e12x, e12y, e23x, e23y, e31x, e31y, \
-         e14x, e14y, e24x, e24y, e34x, e34y
+    cdef double e12x, e12y, e23x, e23y, e31x, e31y
     cdef double_or_complex w
     cdef double minval
     cdef double b1, b2, b3, b4
@@ -649,15 +647,6 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
             - d.points[0 + 2*d.simplices[3*isimplex + 2]])
     e31y = (+ d.points[1 + 2*d.simplices[3*isimplex + 0]]
             - d.points[1 + 2*d.simplices[3*isimplex + 2]])
-
-    e14x = (e12x - e31x)/3
-    e14y = (e12y - e31y)/3
-
-    e24x = (-e12x + e23x)/3
-    e24y = (-e12y + e23y)/3
-
-    e34x = (e31x - e23x)/3
-    e34y = (e31y - e23y)/3
 
     f1 = f[0]
     f2 = f[1]
@@ -804,8 +793,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     return w
 
 class CloughTocher2DInterpolator(NDInterpolatorBase):
-    """
-    CloughTocher2DInterpolator(points, values, tol=1e-6)
+    """CloughTocher2DInterpolator(points, values, tol=1e-6).
 
     Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
 
@@ -853,9 +841,9 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     >>> from scipy.interpolate import CloughTocher2DInterpolator
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(0)
-    >>> x = np.random.random(10) - 0.5
-    >>> y = np.random.random(10) - 0.5
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(10) - 0.5
+    >>> y = rng.random(10) - 0.5
     >>> z = np.hypot(x, y)
     >>> X = np.linspace(min(x), max(x))
     >>> Y = np.linspace(min(y), max(y))

@@ -4,10 +4,6 @@ Low-level LAPACK functions (:mod:`scipy.linalg.lapack`)
 
 This module contains low-level functions from the LAPACK library.
 
-The `*gegv` family of routines have been removed from LAPACK 3.6.0
-and have been deprecated in SciPy 0.17.0. They will be removed in
-a future release.
-
 .. versionadded:: 0.12.0
 
 .. note::
@@ -97,11 +93,6 @@ All functions
    dgeev_lwork
    cgeev_lwork
    zgeev_lwork
-
-   sgegv
-   dgegv
-   cgegv
-   zgegv
 
    sgehrd
    dgehrd
@@ -699,6 +690,11 @@ All functions
    ctgsen
    ztgsen
 
+   stgsen_lwork
+   dtgsen_lwork
+   ctgsen_lwork
+   ztgsen_lwork
+
    stpttf
    dtpttf
    ctpttf
@@ -708,6 +704,21 @@ All functions
    dtpttr
    ctpttr
    ztpttr
+
+   strexc
+   dtrexc
+   ctrexc
+   ztrexc
+
+   strsen
+   dtrsen
+   ctrsen
+   ztrsen
+
+   strsen_lwork
+   dtrsen_lwork
+   ctrsen_lwork
+   ztrsen_lwork
 
    strsyl
    dtrsyl
@@ -824,10 +835,6 @@ except ImportError:
     HAS_ILP64 = False
     _flapack_64 = None
 
-# Backward compatibility
-from scipy._lib._util import DeprecatedImport as _DeprecatedImport
-clapack = _DeprecatedImport("scipy.linalg.blas.clapack", "scipy.linalg.lapack")
-flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
 empty_module = None
@@ -835,23 +842,6 @@ from scipy.linalg._flapack import *
 del empty_module
 
 __all__ = ['get_lapack_funcs']
-
-_dep_message = """The `*gegv` family of routines has been deprecated in
-LAPACK 3.6.0 in favor of the `*ggev` family of routines.
-The corresponding wrappers will be removed from SciPy in
-a future release."""
-
-cgegv = _np.deprecate(cgegv, old_name='cgegv', message=_dep_message)
-dgegv = _np.deprecate(dgegv, old_name='dgegv', message=_dep_message)
-sgegv = _np.deprecate(sgegv, old_name='sgegv', message=_dep_message)
-zgegv = _np.deprecate(zgegv, old_name='zgegv', message=_dep_message)
-
-# Modify _flapack in this scope so the deprecation warnings apply to
-# functions returned by get_lapack_funcs.
-_flapack.cgegv = cgegv
-_flapack.dgegv = dgegv
-_flapack.sgegv = sgegv
-_flapack.zgegv = zgegv
 
 # some convenience alias for complex functions
 _lapack_alias = {
@@ -936,7 +926,8 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     flavor.
 
     >>> import scipy.linalg as LA
-    >>> a = np.random.rand(3,2)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.random((3,2))
     >>> x_lange = LA.get_lapack_funcs('lange', (a,))
     >>> x_lange.typecode
     'd'
@@ -951,8 +942,9 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     commonly denoted as ``###_lwork``. Below is an example for ``?sysv``
 
     >>> import scipy.linalg as LA
-    >>> a = np.random.rand(1000,1000)
-    >>> b = np.random.rand(1000,1)*1j
+    >>> rng = np.random.default_rng()
+    >>> a = rng.random((1000, 1000))
+    >>> b = rng.random((1000, 1)) * 1j
     >>> # We pick up zsysv and zsysv_lwork due to b array
     ... xsysv, xlwork = LA.get_lapack_funcs(('sysv', 'sysv_lwork'), (a, b))
     >>> opt_lwork, _ = xlwork(a.shape[0])  # returns a complex for 'z' prefix

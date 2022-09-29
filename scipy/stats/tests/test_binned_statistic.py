@@ -8,7 +8,7 @@ from scipy._lib._util import check_random_state
 from .common_tests import check_named_results
 
 
-class TestBinnedStatistic(object):
+class TestBinnedStatistic:
 
     @classmethod
     def setup_class(cls):
@@ -46,6 +46,16 @@ class TestBinnedStatistic(object):
         u = self.u
         stat1, edges1, bc = binned_statistic(x, u, 'std', bins=10)
         stat2, edges2, bc = binned_statistic(x, u, np.std, bins=10)
+
+        assert_allclose(stat1, stat2)
+
+    def test_empty_bins_std(self):
+        # tests that std returns gives nan for empty bins
+        x = self.x
+        u = self.u
+        print(binned_statistic(x, u, 'count', bins=1000))
+        stat1, edges1, bc = binned_statistic(x, u, 'std', bins=1000)
+        stat2, edges2, bc = binned_statistic(x, u, np.std, bins=1000)
 
         assert_allclose(stat1, stat2)
 
@@ -364,9 +374,12 @@ class TestBinnedStatistic(object):
 
         sum1, edges1, bc = binned_statistic_dd(X, v, 'sum', bins=3)
         sum2, edges2 = np.histogramdd(X, bins=3, weights=v)
+        sum3, edges3, bc = binned_statistic_dd(X, v, np.sum, bins=3)
 
         assert_allclose(sum1, sum2)
         assert_allclose(edges1, edges2)
+        assert_allclose(sum1, sum3)
+        assert_allclose(edges1, edges3)
 
     def test_dd_mean(self):
         X = self.X
@@ -487,7 +500,7 @@ class TestBinnedStatistic(object):
         bins = (bins, bins, bins)
         with assert_raises(ValueError, match='difference is numerically 0'):
             binned_statistic_dd(x, v, 'mean', bins=bins)
-    
+
     def test_dd_range_errors(self):
         # Test that descriptive exceptions are raised as appropriate for bad
         # values of the `range` argument. (See gh-12996)
@@ -510,3 +523,23 @@ class TestBinnedStatistic(object):
                 match='range given for 1 dimensions; 2 required'):
             binned_statistic_dd([self.x, self.y], self.v,
                                 range=[[0, 1]])
+
+    def test_binned_statistic_float32(self):
+        X = np.array([0, 0.42358226], dtype=np.float32)
+        stat, _, _ = binned_statistic(X, None, 'count', bins=5)
+        assert_allclose(stat, np.array([1, 0, 0, 0, 1], dtype=np.float64))
+
+    def test_gh14332(self):
+        # Test the wrong output when the `sample` is close to bin edge
+        x = []
+        size = 20
+        for i in range(size):
+            x += [1-0.1**i]
+ 
+        bins = np.linspace(0,1,11)
+        sum1, edges1, bc = binned_statistic_dd(x, np.ones(len(x)),
+                                               bins=[bins], statistic='sum')
+        sum2, edges2 = np.histogram(x, bins=bins)
+
+        assert_allclose(sum1, sum2)
+        assert_allclose(edges1[0], edges2)

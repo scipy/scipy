@@ -40,24 +40,35 @@ pseudocode described in pages 1685-1686 of:
 Author: PM Larsen
 */
 
-#include <algorithm>
 #include <cmath>
-#include "rectangular_lsap.h"
 #include <vector>
+#include <numeric>
+#include <algorithm>
+#include "rectangular_lsap.h"
+
+
+template <typename T> std::vector<intptr_t> argsort_iter(const std::vector<T> &v)
+{
+    std::vector<intptr_t> index(v.size());
+    std::iota(index.begin(), index.end(), 0);
+    std::sort(index.begin(), index.end(), [&v](intptr_t i, intptr_t j)
+              {return v[i] < v[j];});
+    return index;
+}
 
 static intptr_t
-augmenting_path(intptr_t nc, std::vector<double>& cost, std::vector<double>& u,
+augmenting_path(intptr_t nc, double *cost, std::vector<double>& u,
                 std::vector<double>& v, std::vector<intptr_t>& path,
                 std::vector<intptr_t>& row4col,
                 std::vector<double>& shortestPathCosts, intptr_t i,
-                std::vector<bool>& SR, std::vector<bool>& SC, double* p_minVal)
+                std::vector<bool>& SR, std::vector<bool>& SC,
+                std::vector<intptr_t>& remaining, double* p_minVal)
 {
     double minVal = 0;
 
     // Crouse's pseudocode uses set complements to keep track of remaining
     // nodes.  Here we use a vector, as it is more efficient in C++.
     intptr_t num_remaining = nc;
-    std::vector<intptr_t> remaining(nc);
     for (intptr_t it = 0; it < nc; it++) {
         // Filling this up in reverse order ensures that the solution of a
         // constant cost matrix is the identity matrix (c.f. #11602).
@@ -96,11 +107,11 @@ augmenting_path(intptr_t nc, std::vector<double>& cost, std::vector<double>& u,
         }
 
         minVal = lowest;
-        intptr_t j = remaining[index];
         if (minVal == INFINITY) { // infeasible cost matrix
             return -1;
         }
 
+        intptr_t j = remaining[index];
         if (row4col[j] == -1) {
             sink = j;
         } else {
@@ -109,7 +120,6 @@ augmenting_path(intptr_t nc, std::vector<double>& cost, std::vector<double>& u,
 
         SC[j] = true;
         remaining[index] = remaining[--num_remaining];
-        remaining.resize(num_remaining);
     }
 
     *p_minVal = minVal;
@@ -117,14 +127,50 @@ augmenting_path(intptr_t nc, std::vector<double>& cost, std::vector<double>& u,
 }
 
 static int
-solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
+solve(intptr_t nr, intptr_t nc, double* cost, bool maximize,
+      int64_t* a, int64_t* b)
 {
+    // handle trivial inputs
+    if (nr == 0 || nc == 0) {
+        return 0;
+    }
 
-    // build a non-negative cost matrix
-    std::vector<double> cost(nr * nc);
-    double minval = *std::min_element(input_cost, input_cost + nr * nc);
+    // tall rectangular cost matrix must be transposed
+    bool transpose = nc < nr;
+
+    // make a copy of the cost matrix if we need to modify it
+    std::vector<double> temp;
+    if (transpose || maximize) {
+        temp.resize(nr * nc);
+
+        if (transpose) {
+            for (intptr_t i = 0; i < nr; i++) {
+                for (intptr_t j = 0; j < nc; j++) {
+                    temp[j * nr + i] = cost[i * nc + j];
+                }
+            }
+
+            std::swap(nr, nc);
+        }
+        else {
+            std::copy(cost, cost + nr * nc, temp.begin());
+        }
+
+        // negate cost matrix for maximization
+        if (maximize) {
+            for (intptr_t i = 0; i < nr * nc; i++) {
+                temp[i] = -temp[i];
+            }
+        }
+
+        cost = temp.data();
+    }
+
+    // test for NaN and -inf entries
     for (intptr_t i = 0; i < nr * nc; i++) {
-        cost[i] = input_cost[i] - minval;
+        if (cost[i] != cost[i] || cost[i] == -INFINITY) {
+            return RECTANGULAR_LSAP_INVALID;
+        }
     }
 
     // initialize variables
@@ -136,15 +182,17 @@ solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
     std::vector<intptr_t> row4col(nc, -1);
     std::vector<bool> SR(nr);
     std::vector<bool> SC(nc);
+    std::vector<intptr_t> remaining(nc);
 
     // iteratively build the solution
     for (intptr_t curRow = 0; curRow < nr; curRow++) {
 
         double minVal;
         intptr_t sink = augmenting_path(nc, cost, u, v, path, row4col,
-                                        shortestPathCosts, curRow, SR, SC, &minVal);
+                                        shortestPathCosts, curRow, SR, SC,
+                                        remaining, &minVal);
         if (sink < 0) {
-            return -1;
+            return RECTANGULAR_LSAP_INFEASIBLE;
         }
 
         // update dual variables
@@ -173,8 +221,19 @@ solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
         }
     }
 
-    for (intptr_t i = 0; i < nr; i++) {
-        output_col4row[i] = col4row[i];
+    if (transpose) {
+        intptr_t i = 0;
+        for (auto v: argsort_iter(col4row)) {
+            a[i] = col4row[v];
+            b[i] = v;
+            i++;
+        }
+    }
+    else {
+        for (intptr_t i = 0; i < nr; i++) {
+            a[i] = i;
+            b[i] = col4row[i];
+        }
     }
 
     return 0;
@@ -185,10 +244,11 @@ extern "C" {
 #endif
 
 int
-solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc, double* input_cost,
-                                        int64_t* col4row)
+solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc,
+                                        double* input_cost, bool maximize,
+                                        int64_t* a, int64_t* b)
 {
-    return solve(nr, nc, input_cost, col4row);
+    return solve(nr, nc, input_cost, maximize, a, b);
 }
 
 #ifdef __cplusplus

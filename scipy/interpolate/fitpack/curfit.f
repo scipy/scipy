@@ -1,5 +1,6 @@
-      subroutine curfit(iopt,m,x,y,w,xb,xe,k,s,nest,n,t,c,fp,
-     * wrk,lwrk,iwrk,ier)
+      recursive subroutine curfit(iopt,m,x,y,w,xb,xe,k,s,nest,n,
+     *   t,c,fp,wrk,lwrk,iwrk,ier)
+      implicit none
 c  given the set of data points (x(i),y(i)) and the set of positive
 c  numbers w(i),i=1,2,...,m,subroutine curfit determines a smooth spline
 c  approximation of degree k on the interval xb <= x <= xe.

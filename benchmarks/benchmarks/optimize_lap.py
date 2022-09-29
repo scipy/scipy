@@ -31,11 +31,12 @@ def random_spatial(shape):
 class LinearAssignment(Benchmark):
 
     sizes = range(100, 401, 100)
-    param_names = ['shapes', 'cost_type']
-    params = [
-        [(i, i) for i in sizes] + [(i, 2 * i) for i in sizes],
-        ['uniform', 'spatial', 'logarithmic', 'integer', 'binary']
-    ]
+    shapes = [(i, i) for i in sizes]
+    shapes.extend([(i, 2 * i) for i in sizes])
+    shapes.extend([(2 * i, i) for i in sizes])
+    cost_types = ['uniform', 'spatial', 'logarithmic', 'integer', 'binary']
+    param_names = ['shape', 'cost_type']
+    params = [shapes, cost_types]
 
     def setup(self, shape, cost_type):
 

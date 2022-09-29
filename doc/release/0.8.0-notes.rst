@@ -19,7 +19,7 @@ we work toward a SciPy 1.0.0 release.  The 1.0.0 release will mark a
 major milestone in the development of SciPy, after which changing the
 package structure or API will be much more difficult.  Whilst these
 pre-1.0 releases are considered to have "Beta" status, we are
-committed to making them as bug-free as possible.  
+committed to making them as bug-free as possible.
 
 However, until the 1.0 release, we are aggressively reviewing and
 refining the functionality, organization, and interface. This is being
@@ -35,7 +35,7 @@ Python 3
 Python 3 compatibility is planned and is currently technically
 feasible, since Numpy has been ported. However, since the Python 3
 compatible Numpy 1.5 has not been released yet, support for Python 3
-in Scipy is not yet included in Scipy 0.8.  SciPy 0.9, planned for fall 
+in Scipy is not yet included in Scipy 0.8.  SciPy 0.9, planned for fall
 2010, will very likely include experimental support for Python 3.
 
 Major documentation improvements
@@ -162,7 +162,7 @@ ARPACK-based sparse SVD
 -----------------------
 
 A naive implementation of SVD for sparse matrices is available in
-scipy.sparse.linalg.eigen.arpack. It is based on using an symmetric solver on
+scipy.sparse.linalg._eigen.arpack. It is based on using an symmetric solver on
 <A, A>, and as such may not be very precise.
 
 Alternative behavior available for `scipy.constants.find`

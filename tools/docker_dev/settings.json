@@ -1,0 +1,12 @@
+{
+    "python.defaultInterpreterPath": "/opt/conda/envs/scipy-dev/bin/python",
+    // rst related - for the docs
+    "esbonio.sphinx.buildDir": "${workspaceRoot}/doc/build/html",
+    "esbonio.sphinx.confDir"  : "",
+    // will use docutils only
+    "esbonio.server.enabled": false,
+    "restructuredtext.updateOnTextChanged": "true",
+    "restructuredtext.updateDelay": 300,
+    "restructuredtext.linter.disabled": true,
+    "python.pythonPath": "/opt/conda/envs/scipy-dev/bin/python"
+}

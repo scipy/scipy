@@ -25,22 +25,30 @@ static struct PyModuleDef moduledef = {
     NULL,
     NULL
 };
-PyObject *PyInit__minpack(void)
-{
-    PyObject *m, *d, *s;
 
-    m = PyModule_Create(&moduledef);
+PyMODINIT_FUNC
+PyInit__minpack(void)
+{
+    PyObject *module, *mdict;
+
     import_array();
 
-    d = PyModule_GetDict(m);
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return NULL;
+    }
 
-    s = PyUnicode_FromString(" 1.10 ");
-    PyDict_SetItemString(d, "__version__", s);
-    Py_DECREF(s);
-    minpack_error = PyErr_NewException ("minpack.error", NULL, NULL);
-    PyDict_SetItemString(d, "error", minpack_error);
-    if (PyErr_Occurred())
-        Py_FatalError("can't initialize module minpack");
+    mdict = PyModule_GetDict(module);
+    if (mdict == NULL) {
+        return NULL;
+    }
+    minpack_error = PyErr_NewException ("_minpack.error", NULL, NULL);
+    if (minpack_error == NULL) {
+        return NULL;
+    }
+    if (PyDict_SetItemString(mdict, "error", minpack_error)) {
+        return NULL;
+    }
 
-    return m;
+    return module;
 }

@@ -171,8 +171,6 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
        returned.  Values of ``y[m-1]`` and ``w[m-1]`` are not used.
     quiet : int, optional
          Non-zero to suppress messages.
-         This parameter is deprecated; use standard Python warning filters
-         instead.
 
     Returns
     -------
@@ -222,7 +220,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     if per:
         for i in range(idim):
             if x[i][0] != x[i][-1]:
-                if quiet < 2:
+                if not quiet:
                     warnings.warn(RuntimeWarning('Setting x[%d][%d]=x[%d][0]' %
                                                  (i, m, i)))
                 x[i][-1] = x[i][0]
@@ -373,8 +371,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         y[m-1] and w[m-1] are not used.
     quiet : bool, optional
         Non-zero to suppress messages.
-        This parameter is deprecated; use standard Python warning filters
-        instead.
 
     Returns
     -------
@@ -658,7 +654,7 @@ def splint(a, b, tck, full_output=0):
         return list(map(lambda c, a=a, b=b, t=t, k=k:
                         splint(a, b, [t, c, k]), c))
     else:
-        aint, wrk = _fitpack._splint(t, c, k, a, b)
+        aint, wrk = dfitpack.splint(t, c, k, a, b)
         if full_output:
             return aint, wrk
         else:
@@ -687,7 +683,7 @@ def sproot(tck, mest=10):
     zeros : ndarray
         An array giving the roots of the spline.
 
-    See also
+    See Also
     --------
     splprep, splrep, splint, spalde, splev
     bisplrep, bisplev
@@ -846,8 +842,6 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
         ``nyest = max(ky+sqrt(m/2),2*ky+3)``.
     quiet : int, optional
         Non-zero to suppress printing of messages.
-        This parameter is deprecated; use standard Python warning filters
-        instead.
 
     Returns
     -------
@@ -996,7 +990,7 @@ def bisplev(x, y, tck, dx=0, dy=0):
     Return a rank-2 array of spline function values (or spline derivative
     values) at points given by the cross-product of the rank-1 arrays `x` and
     `y`.  In special cases, return an array or just a float if either `x` or
-    `y` or both are floats.  Based on BISPEV from FITPACK.
+    `y` or both are floats.  Based on BISPEV and PARDER from FITPACK.
 
     Parameters
     ----------
