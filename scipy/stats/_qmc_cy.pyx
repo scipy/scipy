@@ -111,8 +111,7 @@ cdef double wrap_around_discrepancy(double[:, ::1] sample_view,
     cdef:
         Py_ssize_t n = sample_view.shape[0]
         Py_ssize_t d = sample_view.shape[1]
-        Py_ssize_t i = 0, j = 0, k = 0
-        double x_kikj, prod = 1, disc
+        double disc
 
     disc = threaded_loops(wrap_around_loop, sample_view,
                           workers)
@@ -146,7 +145,7 @@ cdef double mixture_discrepancy(double[:, ::1] sample_view,
     cdef:
         Py_ssize_t n = sample_view.shape[0]
         Py_ssize_t d = sample_view.shape[1]
-        Py_ssize_t i = 0, j = 0, k = 0
+        Py_ssize_t i = 0, j = 0
         double prod = 1, disc = 0, disc1 = 0
 
     for i in range(n):
@@ -198,7 +197,7 @@ cdef double l2_star_discrepancy(double[:, ::1] sample_view,
     cdef:
         Py_ssize_t n = sample_view.shape[0]
         Py_ssize_t d = sample_view.shape[1]
-        Py_ssize_t i = 0, j = 0, k = 0
+        Py_ssize_t i = 0, j = 0
         double prod = 1, disc1 = 0
 
     for i in range(n):
@@ -252,15 +251,15 @@ cdef double c_update_discrepancy(double[::1] x_new_view,
                                  double initial_disc):
     cdef:
         Py_ssize_t n = sample_view.shape[0] + 1
-        Py_ssize_t xnew_nlines = x_new_view.shape[0]
-        Py_ssize_t i = 0, j = 0, k = 0
-        double prod = 1, tmp_sum= 0
+        Py_ssize_t d = sample_view.shape[1]
+        Py_ssize_t i = 0, j = 0
+        double prod = 1
         double  disc1 = 0, disc2 = 0, disc3 = 0
-        double[::1] abs_ = np.zeros(n, dtype=np.float64)
+        double[::1] abs_ = np.empty(d, dtype=np.float64)
 
 
     # derivation from P.T. Roy (@tupui)
-    for i in range(xnew_nlines):
+    for i in range(d):
         abs_[i] = fabs(x_new_view[i] - 0.5)
         prod *= (
             1 + 0.5 * abs_[i]
@@ -271,7 +270,7 @@ cdef double c_update_discrepancy(double[::1] x_new_view,
 
     prod = 1
     for i in range(n - 1):
-        for j in range(xnew_nlines):
+        for j in range(d):
             prod *= (
                 1 + 0.5 * abs_[j]
                 + 0.5 * fabs(sample_view[i, j] - 0.5)
@@ -282,7 +281,7 @@ cdef double c_update_discrepancy(double[::1] x_new_view,
 
     disc2 *= 2 / pow(n, 2)
 
-    for i in range(xnew_nlines):
+    for i in range(d):
         prod *= 1 + abs_[i]
 
     disc3 = 1 / pow(n, 2) * prod

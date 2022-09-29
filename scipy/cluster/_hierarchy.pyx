@@ -1,16 +1,14 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True
 import numpy as np
 cimport numpy as np
-from libc.math cimport sqrt
+from libc.math cimport sqrt, INFINITY
 from libc.string cimport memset
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 
-cdef extern from "numpy/npy_math.h":
-    cdef enum:
-        NPY_INFINITYF
 
 ctypedef unsigned char uchar
 
+np.import_array()
 
 # _hierarchy_distance_update.pxi includes the definition of linkage_distance_update
 # and the distance update functions for the supported linkage methods.
@@ -712,7 +710,7 @@ def linkage(double[:] dists, np.npy_int64 n, int method):
 
     for k in range(n - 1):
         # find two closest clusters x, y (x < y)
-        current_min = NPY_INFINITYF
+        current_min = INFINITY
         for i in range(n - 1):
             if id_map[i] == -1:
                 continue
@@ -751,12 +749,12 @@ def linkage(double[:] dists, np.npy_int64 n, int method):
                 D[condensed_index(n, i, y)],
                 current_min, nx, ny, ni)
             if i < x:
-                D[condensed_index(n, i, x)] = NPY_INFINITYF
+                D[condensed_index(n, i, x)] = INFINITY
     return Z_arr
 
 
 cdef Pair find_min_dist(int n, double[:] D, int[:] size, int x):
-    cdef double current_min = NPY_INFINITYF
+    cdef double current_min = INFINITY
     cdef int y = -1
     cdef int i
     cdef double dist
@@ -956,7 +954,7 @@ def nn_chain(double[:] dists, int n, int method):
                 y = cluster_chain[chain_length - 2]
                 current_min = D[condensed_index(n, x, y)]
             else:
-                current_min = NPY_INFINITYF
+                current_min = INFINITY
 
             for i in range(n):
                 if size[i] == 0 or x == i:
@@ -1035,14 +1033,14 @@ def mst_single_linkage(double[:] dists, int n):
     cdef int[:] merged = np.zeros(n, dtype=np.intc)
 
     cdef double[:] D = np.empty(n)
-    D[:] = NPY_INFINITYF
+    D[:] = INFINITY
 
     cdef int i, k, x, y = 0
     cdef double dist, current_min
 
     x = 0
     for k in range(n - 1):
-        current_min = NPY_INFINITYF
+        current_min = INFINITY
         merged[x] = 1
         for i in range(n):
             if merged[i] == 1:

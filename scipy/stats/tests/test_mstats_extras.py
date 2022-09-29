@@ -108,8 +108,6 @@ class TestQuantiles:
                             [0.006514031, 0.995309248])
         hdq = ms.hdquantiles(data,[0.25, 0.5, 0.75])
         assert_almost_equal(hdq, [0.253210762, 0.512847491, 0.762232442,])
-        hdq = ms.hdquantiles_sd(data,[0.25, 0.5, 0.75])
-        assert_almost_equal(hdq, [0.03786954, 0.03805389, 0.03800152,], 4)
 
         data = np.array(data).reshape(10,10)
         hdq = ms.hdquantiles(data,[0.25,0.5,0.75],axis=0)
@@ -122,9 +120,27 @@ class TestQuantiles:
                             ms.hdquantiles(data[:,-1],[0.25,0.5,0.75], var=True))
 
     def test_hdquantiles_sd(self):
-        # Only test that code runs, implementation not checked for correctness
-        res = ms.hdquantiles_sd(self.data)
-        assert_(res.size == 3)
+        # Standard deviation is a jackknife estimator, so we can check if
+        # the efficient version (hdquantiles_sd) matches a rudimentary,
+        # but clear version here.
+
+        hd_std_errs = ms.hdquantiles_sd(self.data)
+
+        # jacknnife standard error, Introduction to the Bootstrap Eq. 11.5
+        n = len(self.data)
+        jdata = np.broadcast_to(self.data, (n, n))
+        jselector = np.logical_not(np.eye(n))  # leave out one sample each row
+        jdata = jdata[jselector].reshape(n, n-1)
+        jdist = ms.hdquantiles(jdata, axis=1)
+        jdist_mean = np.mean(jdist, axis=0)
+        jstd = ((n-1)/n * np.sum((jdist - jdist_mean)**2, axis=0))**.5
+
+        assert_almost_equal(hd_std_errs, jstd)
+        # Test actual values for good measure
+        assert_almost_equal(hd_std_errs, [0.0379258, 0.0380656, 0.0380013])
+
+        two_data_points = ms.hdquantiles_sd([1, 2])
+        assert_almost_equal(two_data_points, [0.5, 0.5, 0.5])
 
     def test_mquantiles_cimj(self):
         # Only test that code runs, implementation not checked for correctness

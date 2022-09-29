@@ -22,13 +22,11 @@ def cwt_matrix(n_rows, n_columns, seed=None):
 
     Parameters
     ----------
-    n_rows: int
+    n_rows : int
         Number of rows of S
-    n_columns: int
+    n_columns : int
         Number of columns of S
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -69,13 +67,11 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     Parameters
     ----------
-    input_matrix: array_like
+    input_matrix : array_like
         Input matrix, of shape ``(n, d)``.
-    sketch_size: int
+    sketch_size : int
         Number of rows for the sketch.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,

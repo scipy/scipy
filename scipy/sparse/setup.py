@@ -21,7 +21,7 @@ def configuration(parent_package='',top_path=None):
         # Defer generation of source files
         subprocess.check_call([sys.executable,
                                os.path.join(os.path.dirname(__file__),
-                                            'generate_sparsetools.py'),
+                                            '_generate_sparsetools.py'),
                                '--no-force'])
         return []
 

@@ -118,7 +118,7 @@ def _remove_redundancy_pivot_dense(A, rhs, true_rank=None):
         An array representing the right-hand side of a system of equations
 
     Returns
-    ----------
+    -------
     A : 2-D sparse matrix
         A matrix representing the left-hand side of a system of equations
     rhs : 1-D array

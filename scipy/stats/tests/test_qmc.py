@@ -4,16 +4,17 @@ from itertools import combinations, product
 
 import pytest
 import numpy as np
-from numpy.testing import (assert_allclose, assert_almost_equal,
-                           assert_equal, assert_array_almost_equal,
-                           assert_array_equal)
-from scipy.stats import shapiro
+from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 
+from scipy.spatial import distance
+from scipy.stats import shapiro
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
-from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
-                              update_discrepancy, QMCEngine,
-                              _perturb_discrepancy)  # noqa
+from scipy.stats._qmc import (
+    van_der_corput, n_primes, primes_from_2_to,
+    update_discrepancy, QMCEngine, _l1_norm,
+    _perturb_discrepancy, _lloyd_centroidal_voronoi_tessellation
+)  # noqa
 
 
 class TestUtils:
@@ -48,10 +49,10 @@ class TestUtils:
         assert_allclose(scaled_space, out)
 
     def test_scale_random(self):
-        np.random.seed(0)
-        sample = np.random.rand(30, 10)
-        a = -np.random.rand(10) * 10
-        b = np.random.rand(10) * 10
+        rng = np.random.default_rng(317589836511269190194010915937762468165)
+        sample = rng.random((30, 10))
+        a = -rng.random(10) * 10
+        b = rng.random(10) * 10
         scaled = qmc.scale(sample, a, b, reverse=False)
         unscaled = qmc.scale(scaled, a, b, reverse=True)
         assert_allclose(unscaled, sample)
@@ -61,21 +62,19 @@ class TestUtils:
             space = [0, 1, 0.5]
             qmc.scale(space, l_bounds=-2, u_bounds=6)
 
-        with pytest.raises(ValueError, match=r"Bounds are not consistent"
-                                             r" a < b"):
+        with pytest.raises(ValueError, match=r"Bounds are not consistent"):
             space = [[0, 0], [1, 1], [0.5, 0.5]]
             bounds = np.array([[-2, 6], [6, 5]])
             qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
 
-        with pytest.raises(ValueError, match=r"shape mismatch: objects cannot "
-                                             r"be broadcast to a "
-                                             r"single shape"):
+        with pytest.raises(ValueError, match=r"'l_bounds' and 'u_bounds'"
+                                             r" must be broadcastable"):
             space = [[0, 0], [1, 1], [0.5, 0.5]]
             l_bounds, u_bounds = [-2, 0, 2], [6, 5]
             qmc.scale(space, l_bounds=l_bounds, u_bounds=u_bounds)
 
-        with pytest.raises(ValueError, match=r"Sample dimension is different "
-                                             r"than bounds dimension"):
+        with pytest.raises(ValueError, match=r"'l_bounds' and 'u_bounds'"
+                                             r" must be broadcastable"):
             space = [[0, 0], [1, 1], [0.5, 0.5]]
             bounds = np.array([[-2, 0, 2], [6, 5, 5]])
             qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
@@ -180,14 +179,24 @@ class TestUtils:
             qmc.discrepancy(sample, workers=-2)
 
     def test_update_discrepancy(self):
+        # From Fang et al. Design and modeling for computer experiments, 2006
         space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
         space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)
 
         disc_init = qmc.discrepancy(space_1[:-1], iterative=True)
-        disc_iter = update_discrepancy(space_1[-1], space_1[:-1],
-                                       disc_init)
+        disc_iter = update_discrepancy(space_1[-1], space_1[:-1], disc_init)
 
         assert_allclose(disc_iter, 0.0081, atol=1e-4)
+
+        # n<d
+        rng = np.random.default_rng(241557431858162136881731220526394276199)
+        space_1 = rng.random((4, 10))
+
+        disc_ref = qmc.discrepancy(space_1)
+        disc_init = qmc.discrepancy(space_1[:-1], iterative=True)
+        disc_iter = update_discrepancy(space_1[-1], space_1[:-1], disc_init)
+
+        assert_allclose(disc_iter, disc_ref, atol=1e-4)
 
         # errors
         with pytest.raises(ValueError, match=r"Sample is not in unit "
@@ -212,15 +221,15 @@ class TestUtils:
             update_discrepancy(x_new, space_1[:-1], disc_init)
 
     def test_perm_discrepancy(self):
-        seed = np.random.RandomState(123456)
-        qmc_gen = qmc.LatinHypercube(5, seed=seed)
+        rng = np.random.default_rng(46449423132557934943847369749645759997)
+        qmc_gen = qmc.LatinHypercube(5, seed=rng)
         sample = qmc_gen.random(10)
         disc = qmc.discrepancy(sample)
 
         for i in range(100):
-            row_1 = np.random.randint(10)
-            row_2 = np.random.randint(10)
-            col = np.random.randint(5)
+            row_1 = rng.integers(10)
+            row_2 = rng.integers(10)
+            col = rng.integers(5)
 
             disc = _perturb_discrepancy(sample, row_1, row_2, col, disc)
             sample[row_1, col], sample[row_2, col] = (
@@ -283,8 +292,8 @@ class TestUtils:
                 ]) / n ** 2
             )
 
-        np.random.seed(0)
-        sample = np.random.rand(30, 10)
+        rng = np.random.default_rng(117065081482921065782761407107747179201)
+        sample = rng.random((30, 10))
 
         disc_curr = qmc.discrepancy(sample, method='CD')
         disc_alt = disc_c2(sample)
@@ -320,40 +329,36 @@ class TestUtils:
 
 class TestVDC:
     def test_van_der_corput(self):
-        seed = np.random.RandomState(12345)
-        sample = van_der_corput(10, seed=seed)
+        sample = van_der_corput(10)
         out = [0.0, 0.5, 0.25, 0.75, 0.125, 0.625,
                0.375, 0.875, 0.0625, 0.5625]
-        assert_almost_equal(sample, out)
+        assert_allclose(sample, out)
 
-        sample = van_der_corput(10, seed=seed, workers=4)
-        assert_almost_equal(sample, out)
+        sample = van_der_corput(10, workers=4)
+        assert_allclose(sample, out)
 
-        sample = van_der_corput(10, seed=seed, workers=8)
-        assert_almost_equal(sample, out)
+        sample = van_der_corput(10, workers=8)
+        assert_allclose(sample, out)
 
-        sample = van_der_corput(7, start_index=3, seed=seed)
-        assert_almost_equal(sample, out[3:])
+        sample = van_der_corput(7, start_index=3)
+        assert_allclose(sample, out[3:])
 
     def test_van_der_corput_scramble(self):
-        seed = np.random.RandomState(123456)
+        seed = 338213789010180879520345496831675783177
         out = van_der_corput(10, scramble=True, seed=seed)
 
-        seed = np.random.RandomState(123456)
         sample = van_der_corput(7, start_index=3, scramble=True, seed=seed)
-        assert_almost_equal(sample, out[3:])
+        assert_allclose(sample, out[3:])
 
-        seed = np.random.RandomState(123456)
         sample = van_der_corput(
             7, start_index=3, scramble=True, seed=seed, workers=4
         )
-        assert_almost_equal(sample, out[3:])
+        assert_allclose(sample, out[3:])
 
-        seed = np.random.RandomState(123456)
         sample = van_der_corput(
             7, start_index=3, scramble=True, seed=seed, workers=8
         )
-        assert_almost_equal(sample, out[3:])
+        assert_allclose(sample, out[3:])
 
     def test_invalid_base_error(self):
         with pytest.raises(ValueError, match=r"'base' must be at least 2"):
@@ -361,21 +366,16 @@ class TestVDC:
 
 
 class RandomEngine(qmc.QMCEngine):
-    def __init__(self, d, seed):
-        super().__init__(d=d, seed=seed)
+    def __init__(self, d, optimization=None, seed=None):
+        super().__init__(d=d, optimization=optimization, seed=seed)
 
-    def random(self, n=1):
-        self.num_generated += n
-        try:
-            sample = self.rng.random((n, self.d))
-        except AttributeError:
-            sample = self.rng.random_sample((n, self.d))
+    def _random(self, n=1, *, workers=1):
+        sample = self.rng.random((n, self.d))
         return sample
 
 
 def test_subclassing_QMCEngine():
-    seed = np.random.RandomState(123456)
-    engine = RandomEngine(2, seed=seed)
+    engine = RandomEngine(2, seed=175180605424926556207367152557812293274)
 
     sample_1 = engine.random(n=5)
     sample_2 = engine.random(n=7)
@@ -396,9 +396,66 @@ def test_subclassing_QMCEngine():
     assert_equal(sample_2, sample_2_test)
     assert engine.num_generated == 12
 
+
+def test_raises():
     # input validation
     with pytest.raises(ValueError, match=r"d must be an integer value"):
-        RandomEngine((2,), seed=seed)  # noqa
+        RandomEngine((2,))  # noqa
+
+    msg = r"'u_bounds' and 'l_bounds' must be integers"
+    with pytest.raises(ValueError, match=msg):
+        engine = RandomEngine(1)
+        engine.integers(l_bounds=1, u_bounds=1.1)
+
+
+def test_integers():
+    engine = RandomEngine(1, seed=231195739755290648063853336582377368684)
+
+    # basic tests
+    sample = engine.integers(1, n=10)
+    assert_equal(np.unique(sample), [0])
+
+    assert sample.dtype == np.dtype('int64')
+
+    sample = engine.integers(1, n=10, endpoint=True)
+    assert_equal(np.unique(sample), [0, 1])
+
+    low = -5
+    high = 7
+
+    # scaling logic
+    engine.reset()
+    ref_sample = engine.random(20)
+    ref_sample = ref_sample * (high - low) + low
+    ref_sample = np.floor(ref_sample).astype(np.int64)
+
+    engine.reset()
+    sample = engine.integers(low, u_bounds=high, n=20, endpoint=False)
+
+    assert_equal(sample, ref_sample)
+
+    # up to bounds, no less, no more
+    sample = engine.integers(low, u_bounds=high, n=100, endpoint=False)
+    assert_equal((sample.min(), sample.max()), (low, high-1))
+
+    sample = engine.integers(low, u_bounds=high, n=100, endpoint=True)
+    assert_equal((sample.min(), sample.max()), (low, high))
+
+
+def test_integers_nd():
+    d = 10
+    rng = np.random.default_rng(3716505122102428560615700415287450951)
+    low = rng.integers(low=-5, high=-1, size=d)
+    high = rng.integers(low=1, high=5, size=d, endpoint=True)
+    engine = RandomEngine(d, seed=rng)
+
+    sample = engine.integers(low, u_bounds=high, n=100, endpoint=False)
+    assert_equal(sample.min(axis=0), low)
+    assert_equal(sample.max(axis=0), high-1)
+
+    sample = engine.integers(low, u_bounds=high, n=100, endpoint=True)
+    assert_equal(sample.min(axis=0), low)
+    assert_equal(sample.max(axis=0), high)
 
 
 class QMCEngineTests:
@@ -412,7 +469,7 @@ class QMCEngineTests:
     ids = ["Scrambled", "Unscrambled"]
 
     def engine(self, scramble: bool, **kwargs) -> QMCEngine:
-        seed = np.random.RandomState(123456)
+        seed = np.random.default_rng(170382760648021597650530316304495310428)
         if self.can_scramble:
             return self.qmce(scramble=scramble, seed=seed, **kwargs)
         else:
@@ -455,7 +512,7 @@ class QMCEngineTests:
         engine = self.engine(d=2, scramble=scramble)
         sample = engine.random(n=len(ref_sample))
 
-        assert_almost_equal(sample, ref_sample, decimal=1)
+        assert_allclose(sample, ref_sample, atol=1e-1)
         assert engine.num_generated == len(ref_sample)
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
@@ -469,7 +526,7 @@ class QMCEngineTests:
 
         _ = engine.random(n=n_half)
         sample = engine.random(n=n_half)
-        assert_almost_equal(sample, ref_sample[n_half:], decimal=1)
+        assert_allclose(sample, ref_sample[n_half:], atol=1e-1)
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_reset(self, scramble):
@@ -492,7 +549,7 @@ class QMCEngineTests:
         engine.fast_forward(4)
         sample = engine.random(n=4)
 
-        assert_almost_equal(sample, ref_sample[4:], decimal=1)
+        assert_allclose(sample, ref_sample[4:], atol=1e-1)
 
         # alternate fast forwarding with sampling
         engine.reset()
@@ -502,10 +559,10 @@ class QMCEngineTests:
                 even_draws.append(engine.random())
             else:
                 engine.fast_forward(1)
-        assert_almost_equal(
+        assert_allclose(
             ref_sample[[i for i in range(8) if i % 2 == 0]],
             np.concatenate(even_draws),
-            decimal=5
+            atol=1e-5
         )
 
     @pytest.mark.parametrize("scramble", [True])
@@ -513,15 +570,37 @@ class QMCEngineTests:
         d = 50
         engine = self.engine(d=d, scramble=scramble)
         sample = engine.random(1024)
-        assert_array_almost_equal(
-            np.mean(sample, axis=0), np.repeat(0.5, d), decimal=2
+        assert_allclose(
+            np.mean(sample, axis=0), np.repeat(0.5, d), atol=1e-2
         )
-        assert_array_almost_equal(
-            np.percentile(sample, 25, axis=0), np.repeat(0.25, d), decimal=2
+        assert_allclose(
+            np.percentile(sample, 25, axis=0), np.repeat(0.25, d), atol=1e-2
         )
-        assert_array_almost_equal(
-            np.percentile(sample, 75, axis=0), np.repeat(0.75, d), decimal=2
+        assert_allclose(
+            np.percentile(sample, 75, axis=0), np.repeat(0.75, d), atol=1e-2
         )
+
+    def test_raises_optimizer(self):
+        message = r"'toto' is not a valid optimization method"
+        with pytest.raises(ValueError, match=message):
+            self.engine(d=1, scramble=False, optimization="toto")
+
+    @pytest.mark.parametrize(
+        "optimization,metric",
+        [
+            ("random-CD", qmc.discrepancy),
+            ("lloyd", lambda sample: -_l1_norm(sample))]
+    )
+    def test_optimizers(self, optimization, metric):
+        engine = self.engine(d=2, scramble=False)
+        sample_ref = engine.random(n=64)
+        metric_ref = metric(sample_ref)
+
+        optimal_ = self.engine(d=2, scramble=False, optimization=optimization)
+        sample_ = optimal_.random(n=64)
+        metric_ = metric(sample_)
+
+        assert metric_ < metric_ref
 
 
 class TestHalton(QMCEngineTests):
@@ -533,14 +612,28 @@ class TestHalton(QMCEngineTests):
                               [1 / 8, 4 / 9], [5 / 8, 7 / 9],
                               [3 / 8, 2 / 9], [7 / 8, 5 / 9]])
     # theoretical values unknown: convergence properties checked
-    scramble_nd = np.array([[0.40770429, 0.77219711],
-                            [0.90770429, 0.10553045],
-                            [0.15770429, 0.43886378],
-                            [0.65770429, 0.88330823],
-                            [0.28270429, 0.21664156],
-                            [0.78270429, 0.54997489],
-                            [0.03270429, 0.99441934],
-                            [0.53270429, 0.32775267]])
+    scramble_nd = np.array([[0.50246036, 0.09937553],
+                            [0.00246036, 0.43270887],
+                            [0.75246036, 0.7660422],
+                            [0.25246036, 0.32159776],
+                            [0.62746036, 0.65493109],
+                            [0.12746036, 0.98826442],
+                            [0.87746036, 0.21048664],
+                            [0.37746036, 0.54381998]])
+
+    def test_workers(self):
+        ref_sample = self.reference(scramble=True)
+        engine = self.engine(d=2, scramble=True)
+        sample = engine.random(n=len(ref_sample), workers=8)
+
+        assert_allclose(sample, ref_sample, atol=1e-3)
+
+        # worker + integers
+        engine.reset()
+        ref_sample = engine.integers(10)
+        engine.reset()
+        sample = engine.integers(10, workers=8)
+        assert_equal(sample, ref_sample)
 
 
 class TestLHS(QMCEngineTests):
@@ -561,7 +654,7 @@ class TestLHS(QMCEngineTests):
     @pytest.mark.parametrize("centered", [False, True])
     @pytest.mark.parametrize("optimization", [None, "random-CD"])
     def test_sample_stratified(self, optimization, centered, strength):
-        seed = np.random.RandomState(123456)
+        seed = np.random.default_rng(37511836202578819870665127532742111260)
         p = 5
         n = p**2
         d = 6
@@ -592,43 +685,24 @@ class TestLHS(QMCEngineTests):
                 res_set = set((tuple(row) for row in res))
                 assert_equal(res_set, desired)
 
-    def test_discrepancy_hierarchy(self):
-        seed = np.random.RandomState(123456)
-        lhs = qmc.LatinHypercube(d=2, seed=seed)
-        sample_ref = lhs.random(n=20)
-        disc_ref = qmc.discrepancy(sample_ref)
-
-        seed = np.random.RandomState(123456)
-        optimal_ = qmc.LatinHypercube(d=2, seed=seed, optimization="random-CD")
-        sample_ = optimal_.random(n=20)
-        disc_ = qmc.discrepancy(sample_)
-
-        assert disc_ < disc_ref
-
     def test_raises(self):
-        seed = np.random.RandomState(12345)
-
-        message = r"'toto' is not a valid optimization method"
-        with pytest.raises(ValueError, match=message):
-            qmc.LatinHypercube(1, seed=seed, optimization="toto")
-
         message = r"not a valid strength"
         with pytest.raises(ValueError, match=message):
-            qmc.LatinHypercube(1, strength=3, seed=seed)
+            qmc.LatinHypercube(1, strength=3)
 
         message = r"n is not the square of a prime number"
         with pytest.raises(ValueError, match=message):
-            engine = qmc.LatinHypercube(d=2, strength=2, seed=seed)
+            engine = qmc.LatinHypercube(d=2, strength=2)
             engine.random(16)
 
         message = r"n is not the square of a prime number"
         with pytest.raises(ValueError, match=message):
-            engine = qmc.LatinHypercube(d=2, strength=2, seed=seed)
+            engine = qmc.LatinHypercube(d=2, strength=2)
             engine.random(5)  # because int(sqrt(5)) would result in 2
 
         message = r"n is too small for d"
         with pytest.raises(ValueError, match=message):
-            engine = qmc.LatinHypercube(d=5, strength=2, seed=seed)
+            engine = qmc.LatinHypercube(d=5, strength=2)
             engine.random(9)
 
 
@@ -646,33 +720,29 @@ class TestSobol(QMCEngineTests):
                               [0.125, 0.625]])
 
     # theoretical values unknown: convergence properties checked
-    scramble_nd = np.array([[0.50860737, 0.29320504],
-                            [0.07116939, 0.89594537],
-                            [0.49354145, 0.11524881],
-                            [0.93097717, 0.70244044],
-                            [0.87266153, 0.23887917],
-                            [0.31021884, 0.57600391],
-                            [0.13687253, 0.42054182],
-                            [0.69931293, 0.77336788]])
+    scramble_nd = np.array([[0.25331921, 0.41371179],
+                            [0.8654213, 0.9821167],
+                            [0.70097554, 0.03664616],
+                            [0.18027647, 0.60895735],
+                            [0.10521339, 0.21897069],
+                            [0.53019685, 0.66619033],
+                            [0.91122276, 0.34580743],
+                            [0.45337471, 0.78912079]])
 
     def test_warning(self):
         with pytest.warns(UserWarning, match=r"The balance properties of "
                                              r"Sobol' points"):
-            seed = np.random.RandomState(12345)
-            engine = qmc.Sobol(1, seed=seed)
+            engine = qmc.Sobol(1)
             engine.random(10)
 
     def test_random_base2(self):
-        seed = np.random.RandomState(12345)
-        engine = qmc.Sobol(2, scramble=False, seed=seed)
+        engine = qmc.Sobol(2, scramble=False)
         sample = engine.random_base2(2)
-        assert_array_equal(self.unscramble_nd[:4],
-                           sample)
+        assert_array_equal(self.unscramble_nd[:4], sample)
 
         # resampling still having N=2**n
         sample = engine.random_base2(2)
-        assert_array_equal(self.unscramble_nd[4:8],
-                           sample)
+        assert_array_equal(self.unscramble_nd[4:8], sample)
 
         # resampling again but leading to N!=2**n
         with pytest.raises(ValueError, match=r"The balance properties of "
@@ -680,18 +750,103 @@ class TestSobol(QMCEngineTests):
             engine.random_base2(2)
 
     def test_raise(self):
-        seed = np.random.RandomState(12345)
         with pytest.raises(ValueError, match=r"Maximum supported "
                                              r"dimensionality"):
-            qmc.Sobol(qmc.Sobol.MAXDIM + 1, seed=seed)
+            qmc.Sobol(qmc.Sobol.MAXDIM + 1)
+
+        with pytest.raises(ValueError, match=r"Maximum supported "
+                                             r"'bits' is 64"):
+            qmc.Sobol(1, bits=65)
 
     def test_high_dim(self):
-        seed = np.random.RandomState(12345)
-        engine = qmc.Sobol(1111, scramble=False, seed=seed)
+        engine = qmc.Sobol(1111, scramble=False)
         count1 = Counter(engine.random().flatten().tolist())
         count2 = Counter(engine.random().flatten().tolist())
         assert_equal(count1, Counter({0.0: 1111}))
         assert_equal(count2, Counter({0.5: 1111}))
+
+    @pytest.mark.parametrize("bits", [2, 3])
+    def test_bits(self, bits):
+        engine = qmc.Sobol(2, scramble=False, bits=bits)
+        ns = 2**bits
+        sample = engine.random(ns)
+        assert_array_equal(self.unscramble_nd[:ns], sample)
+
+        with pytest.raises(ValueError, match="increasing `bits`"):
+            engine.random()
+
+    def test_64bits(self):
+        engine = qmc.Sobol(2, scramble=False, bits=64)
+        sample = engine.random(8)
+        assert_array_equal(self.unscramble_nd, sample)
+
+
+class TestPoisson(QMCEngineTests):
+    qmce = qmc.PoissonDisk
+    can_scramble = False
+
+    def test_bounds(self, *args):
+        pytest.skip("Too costly in memory.")
+
+    def test_fast_forward(self, *args):
+        pytest.skip("Not applicable: recursive process.")
+
+    def test_sample(self, *args):
+        pytest.skip("Not applicable: the value of reference sample is"
+                    " implementation dependent.")
+
+    def test_continuing(self, *args):
+        # can continue a sampling, but will not preserve the same order
+        # because candidates are lost, so we will not select the same center
+        radius = 0.05
+        ns = 6
+        engine = self.engine(d=2, radius=radius, scramble=False)
+
+        sample_init = engine.random(n=ns)
+        assert len(sample_init) <= ns
+        assert l2_norm(sample_init) >= radius
+
+        sample_continued = engine.random(n=ns)
+        assert len(sample_continued) <= ns
+        assert l2_norm(sample_continued) >= radius
+
+        sample = np.concatenate([sample_init, sample_continued], axis=0)
+        assert len(sample) <= ns * 2
+        assert l2_norm(sample) >= radius
+
+    def test_mindist(self):
+        rng = np.random.default_rng(132074951149370773672162394161442690287)
+        ns = 50
+
+        low, high = 0.08, 0.2
+        radii = (high - low) * rng.random(5) + low
+
+        dimensions = [1, 3, 4]
+        hypersphere_methods = ["volume", "surface"]
+
+        gen = product(dimensions, radii, hypersphere_methods)
+
+        for d, radius, hypersphere in gen:
+            engine = self.qmce(
+                d=d, radius=radius, hypersphere=hypersphere, seed=rng
+            )
+            sample = engine.random(ns)
+
+            assert len(sample) <= ns
+            assert l2_norm(sample) >= radius
+
+    def test_fill_space(self):
+        radius = 0.2
+        engine = self.qmce(d=2, radius=radius)
+
+        sample = engine.fill_space()
+        # circle packing problem is np complex
+        assert l2_norm(sample) >= radius
+
+    def test_raises(self):
+        message = r"'toto' is not a valid hypersphere sampling"
+        with pytest.raises(ValueError, match=message):
+            qmc.PoissonDisk(1, hypersphere="toto")
 
 
 class TestMultinomialQMC:
@@ -700,38 +855,38 @@ class TestMultinomialQMC:
         p = np.array([0.12, 0.26, -0.05, 0.35, 0.22])
         with pytest.raises(ValueError, match=r"Elements of pvals must "
                                              r"be non-negative."):
-            qmc.MultinomialQMC(p)
+            qmc.MultinomialQMC(p, n_trials=10)
 
         # sum of P too large
         p = np.array([0.12, 0.26, 0.1, 0.35, 0.22])
         message = r"Elements of pvals must sum to 1."
         with pytest.raises(ValueError, match=message):
-            qmc.MultinomialQMC(p)
+            qmc.MultinomialQMC(p, n_trials=10)
 
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        seed = np.random.RandomState(12345)
+
         message = r"Dimension of `engine` must be 1."
         with pytest.raises(ValueError, match=message):
-            qmc.MultinomialQMC(p, engine=qmc.Sobol(d=2, seed=seed))
+            qmc.MultinomialQMC(p, n_trials=10, engine=qmc.Sobol(d=2))
 
         message = r"`engine` must be an instance of..."
         with pytest.raises(ValueError, match=message):
-            qmc.MultinomialQMC(p, engine=np.random.RandomState)
+            qmc.MultinomialQMC(p, n_trials=10, engine=np.random.default_rng())
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_MultinomialBasicDraw(self):
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(6955663962957011631562466584467607969)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([12, 25, 6, 35, 22])
-        engine = qmc.MultinomialQMC(p, seed=seed)
-        assert_array_equal(engine.random(100), expected)
+        expected = np.array([[13, 24, 6, 35, 22]])
+        engine = qmc.MultinomialQMC(p, n_trials=100, seed=seed)
+        assert_array_equal(engine.random(1), expected)
 
     def test_MultinomialDistribution(self):
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(77797854505813727292048130876699859000)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        engine = qmc.MultinomialQMC(p, seed=seed)
-        draws = engine.random(8192)
-        assert_array_almost_equal(draws / np.sum(draws), p, decimal=4)
+        engine = qmc.MultinomialQMC(p, n_trials=8192, seed=seed)
+        draws = engine.random(1)
+        assert_allclose(draws / np.sum(draws), np.atleast_2d(p), atol=1e-4)
 
     def test_FindIndex(self):
         p_cumulative = np.array([0.1, 0.4, 0.45, 0.6, 0.75, 0.9, 0.99, 1.0])
@@ -745,51 +900,25 @@ class TestMultinomialQMC:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_other_engine(self):
         # same as test_MultinomialBasicDraw with different engine
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(283753519042773243071753037669078065412)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([12, 25, 6, 35, 22])
+        expected = np.array([[12, 25, 5, 36, 22]])
         base_engine = qmc.Sobol(1, scramble=True, seed=seed)
-        engine = qmc.MultinomialQMC(p, engine=base_engine, seed=seed)
-        assert_array_equal(engine.random(100), expected)
-
-    def test_reset(self):
-        p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        seed = np.random.RandomState(12345)
-        engine = qmc.MultinomialQMC(p, seed=seed)
-        samples = engine.random(2)
-        engine.reset()
-        samples_reset = engine.random(2)
-        assert_array_equal(samples, samples_reset)
-
-
-def _wrapper_mv_qmc(*args, **kwargs):
-    d = kwargs.pop("d")
-    return qmc.MultivariateNormalQMC(mean=np.zeros(d), **kwargs)
-
-
-class TestMultivariateNormalQMCEngine(QMCEngineTests):
-    qmce = _wrapper_mv_qmc
-    can_scramble = False
-
-    def test_sample(self, *args):
-        pytest.skip("Not applicable: the value of reference sample is"
-                    " implementation dependent.")
-
-    def test_bounds(self, *args):
-        pytest.skip("Not applicable: normal is not bounded.")
+        engine = qmc.MultinomialQMC(p, n_trials=100, engine=base_engine,
+                                    seed=seed)
+        assert_array_equal(engine.random(1), expected)
 
 
 class TestNormalQMC:
     def test_NormalQMC(self):
         # d = 1
-        seed = np.random.RandomState(123456)
-        engine = qmc.MultivariateNormalQMC(mean=np.zeros(1), seed=seed)
+        engine = qmc.MultivariateNormalQMC(mean=np.zeros(1))
         samples = engine.random()
         assert_equal(samples.shape, (1, 1))
         samples = engine.random(n=5)
         assert_equal(samples.shape, (5, 1))
         # d = 2
-        engine = qmc.MultivariateNormalQMC(mean=np.zeros(2), seed=seed)
+        engine = qmc.MultivariateNormalQMC(mean=np.zeros(2))
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))
         samples = engine.random(n=5)
@@ -797,81 +926,82 @@ class TestNormalQMC:
 
     def test_NormalQMCInvTransform(self):
         # d = 1
-        seed = np.random.RandomState(123456)
         engine = qmc.MultivariateNormalQMC(
-            mean=np.zeros(1), inv_transform=True, seed=seed)
+            mean=np.zeros(1), inv_transform=True)
         samples = engine.random()
         assert_equal(samples.shape, (1, 1))
         samples = engine.random(n=5)
         assert_equal(samples.shape, (5, 1))
         # d = 2
         engine = qmc.MultivariateNormalQMC(
-            mean=np.zeros(2), inv_transform=True, seed=seed)
+            mean=np.zeros(2), inv_transform=True)
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))
         samples = engine.random(n=5)
         assert_equal(samples.shape, (5, 2))
 
-    def test_other_engine(self):
-        seed = np.random.RandomState(123456)
-        base_engine = qmc.Sobol(d=2, scramble=False, seed=seed)
-        engine = qmc.MultivariateNormalQMC(mean=np.zeros(2),
-                                           engine=base_engine,
-                                           inv_transform=True, seed=seed)
-        samples = engine.random()
-        assert_equal(samples.shape, (1, 2))
-
     def test_NormalQMCSeeded(self):
         # test even dimension
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(274600237797326520096085022671371676017)
         engine = qmc.MultivariateNormalQMC(
             mean=np.zeros(2), inv_transform=False, seed=seed)
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [[-0.943472, 0.405116], [-0.63099602, -1.32950772]]
-        )
-        assert_array_almost_equal(samples, samples_expected)
+        samples_expected = np.array([[0.446961, -1.243236],
+                                     [-0.230754, 0.21354]])
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
         # test odd dimension
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(274600237797326520096085022671371676017)
         engine = qmc.MultivariateNormalQMC(
             mean=np.zeros(3), inv_transform=False, seed=seed)
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [
-                [-0.943472, 0.405116, 0.268828],
-                [1.83169884, -1.40473647, 0.24334828],
-            ]
+        samples_expected = np.array([[0.446961, -1.243236, 0.324827],
+                                     [-0.997875, 0.399134, 1.032234]])
+        assert_allclose(samples, samples_expected, atol=1e-4)
+
+        # same test with another engine
+        seed = np.random.default_rng(274600237797326520096085022671371676017)
+        base_engine = qmc.Sobol(4, scramble=True, seed=seed)
+        engine = qmc.MultivariateNormalQMC(
+            mean=np.zeros(3), inv_transform=False,
+            engine=base_engine, seed=seed
         )
-        assert_array_almost_equal(samples, samples_expected)
+        samples = engine.random(n=2)
+        samples_expected = np.array([[0.446961, -1.243236, 0.324827],
+                                     [-0.997875, 0.399134, 1.032234]])
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
     def test_NormalQMCSeededInvTransform(self):
         # test even dimension
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(288527772707286126646493545351112463929)
         engine = qmc.MultivariateNormalQMC(
             mean=np.zeros(2), seed=seed, inv_transform=True)
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [[0.228309, -0.162516], [-0.41622922, 0.46622792]]
-        )
-        assert_array_almost_equal(samples, samples_expected)
+        samples_expected = np.array([[-0.804472, 0.384649],
+                                     [0.396424, -0.117676]])
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
         # test odd dimension
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(288527772707286126646493545351112463929)
         engine = qmc.MultivariateNormalQMC(
             mean=np.zeros(3), seed=seed, inv_transform=True)
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [
-                [0.228309, -0.162516, 0.167352],
-                [-1.40525266, 1.37652443, -0.8519666],
-            ]
-        )
-        assert_array_almost_equal(samples, samples_expected)
+        samples_expected = np.array([[-0.804472, 0.384649, 1.583568],
+                                     [0.165333, -2.266828, -1.655572]])
+        assert_allclose(samples, samples_expected, atol=1e-4)
+
+    def test_other_engine(self):
+        for d in (0, 1, 2):
+            base_engine = qmc.Sobol(d=d, scramble=False)
+            engine = qmc.MultivariateNormalQMC(mean=np.zeros(d),
+                                               engine=base_engine,
+                                               inv_transform=True)
+            samples = engine.random()
+            assert_equal(samples.shape, (1, d))
 
     def test_NormalQMCShapiro(self):
-        seed = np.random.RandomState(12345)
-        engine = qmc.MultivariateNormalQMC(mean=np.zeros(2), seed=seed)
+        rng = np.random.default_rng(13242)
+        engine = qmc.MultivariateNormalQMC(mean=np.zeros(2), seed=rng)
         samples = engine.random(n=256)
         assert all(np.abs(samples.mean(axis=0)) < 1e-2)
         assert all(np.abs(samples.std(axis=0) - 1) < 1e-2)
@@ -884,9 +1014,9 @@ class TestNormalQMC:
         assert np.abs(cov[0, 1]) < 1e-2
 
     def test_NormalQMCShapiroInvTransform(self):
-        seed = np.random.RandomState(12345)
+        rng = np.random.default_rng(3234455)
         engine = qmc.MultivariateNormalQMC(
-            mean=np.zeros(2), seed=seed, inv_transform=True)
+            mean=np.zeros(2), inv_transform=True, seed=rng)
         samples = engine.random(n=256)
         assert all(np.abs(samples.mean(axis=0)) < 1e-2)
         assert all(np.abs(samples.std(axis=0) - 1) < 1e-2)
@@ -902,51 +1032,48 @@ class TestNormalQMC:
 class TestMultivariateNormalQMC:
 
     def test_validations(self):
-        seed = np.random.RandomState()
 
         message = r"Dimension of `engine` must be consistent"
         with pytest.raises(ValueError, match=message):
-            qmc.MultivariateNormalQMC([0], engine=qmc.Sobol(d=2, seed=seed),
-                                      seed=seed)
+            qmc.MultivariateNormalQMC([0], engine=qmc.Sobol(d=2))
+
+        message = r"Dimension of `engine` must be consistent"
+        with pytest.raises(ValueError, match=message):
+            qmc.MultivariateNormalQMC([0, 0, 0], engine=qmc.Sobol(d=4))
 
         message = r"`engine` must be an instance of..."
         with pytest.raises(ValueError, match=message):
-            qmc.MultivariateNormalQMC([0, 0], engine=np.random.RandomState,
-                                      seed=seed)
+            qmc.MultivariateNormalQMC([0, 0], engine=np.random.default_rng())
 
         message = r"Covariance matrix not PSD."
         with pytest.raises(ValueError, match=message):
-            qmc.MultivariateNormalQMC([0, 0], [[1, 2], [2, 1]], seed=seed)
+            qmc.MultivariateNormalQMC([0, 0], [[1, 2], [2, 1]])
 
         message = r"Covariance matrix is not symmetric."
         with pytest.raises(ValueError, match=message):
-            qmc.MultivariateNormalQMC([0, 0], [[1, 0], [2, 1]], seed=seed)
+            qmc.MultivariateNormalQMC([0, 0], [[1, 0], [2, 1]])
 
         message = r"Dimension mismatch between mean and covariance."
         with pytest.raises(ValueError, match=message):
-            qmc.MultivariateNormalQMC([0], [[1, 0], [0, 1]], seed=seed)
+            qmc.MultivariateNormalQMC([0], [[1, 0], [0, 1]])
 
     def test_MultivariateNormalQMCNonPD(self):
         # try with non-pd but psd cov; should work
-        seed = np.random.RandomState(123456)
         engine = qmc.MultivariateNormalQMC(
             [0, 0, 0], [[1, 0, 1], [0, 1, 1], [1, 1, 2]],
-            seed=seed
         )
         assert engine._corr_matrix is not None
 
     def test_MultivariateNormalQMC(self):
         # d = 1 scalar
-        seed = np.random.RandomState(123456)
-        engine = qmc.MultivariateNormalQMC(mean=0, cov=5, seed=seed)
+        engine = qmc.MultivariateNormalQMC(mean=0, cov=5)
         samples = engine.random()
         assert_equal(samples.shape, (1, 1))
         samples = engine.random(n=5)
         assert_equal(samples.shape, (5, 1))
 
         # d = 2 list
-        engine = qmc.MultivariateNormalQMC(mean=[0, 1], cov=[[1, 0], [0, 1]],
-                                           seed=seed)
+        engine = qmc.MultivariateNormalQMC(mean=[0, 1], cov=[[1, 0], [0, 1]])
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))
         samples = engine.random(n=5)
@@ -955,7 +1082,7 @@ class TestMultivariateNormalQMC:
         # d = 3 np.array
         mean = np.array([0, 1, 2])
         cov = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        engine = qmc.MultivariateNormalQMC(mean, cov, seed=seed)
+        engine = qmc.MultivariateNormalQMC(mean, cov)
         samples = engine.random()
         assert_equal(samples.shape, (1, 3))
         samples = engine.random(n=5)
@@ -963,9 +1090,7 @@ class TestMultivariateNormalQMC:
 
     def test_MultivariateNormalQMCInvTransform(self):
         # d = 1 scalar
-        seed = np.random.RandomState(123456)
-        engine = qmc.MultivariateNormalQMC(mean=0, cov=5, inv_transform=True,
-                                           seed=seed)
+        engine = qmc.MultivariateNormalQMC(mean=0, cov=5, inv_transform=True)
         samples = engine.random()
         assert_equal(samples.shape, (1, 1))
         samples = engine.random(n=5)
@@ -974,7 +1099,6 @@ class TestMultivariateNormalQMC:
         # d = 2 list
         engine = qmc.MultivariateNormalQMC(
             mean=[0, 1], cov=[[1, 0], [0, 1]], inv_transform=True,
-            seed=seed
         )
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))
@@ -984,8 +1108,7 @@ class TestMultivariateNormalQMC:
         # d = 3 np.array
         mean = np.array([0, 1, 2])
         cov = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        engine = qmc.MultivariateNormalQMC(mean, cov, inv_transform=True,
-                                           seed=seed)
+        engine = qmc.MultivariateNormalQMC(mean, cov, inv_transform=True)
         samples = engine.random()
         assert_equal(samples.shape, (1, 3))
         samples = engine.random(n=5)
@@ -993,69 +1116,55 @@ class TestMultivariateNormalQMC:
 
     def test_MultivariateNormalQMCSeeded(self):
         # test even dimension
-        seed = np.random.RandomState(12345)
-        np.random.seed(54321)
-        a = np.random.randn(2, 2)
-        A = a @ a.transpose() + np.diag(np.random.rand(2))
+        rng = np.random.default_rng(180182791534511062935571481899241825000)
+        a = rng.standard_normal((2, 2))
+        A = a @ a.transpose() + np.diag(rng.random(2))
         engine = qmc.MultivariateNormalQMC(np.array([0, 0]), A,
-                                           inv_transform=False, seed=seed)
+                                           inv_transform=False, seed=rng)
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [[-1.010703, -0.324223], [-0.67595995, -2.27437872]]
-        )
-        assert_array_almost_equal(samples, samples_expected)
+        samples_expected = np.array([[0.479575, 0.934723],
+                                     [1.712571, 0.172699]])
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
         # test odd dimension
-        seed = np.random.RandomState(12345)
-        np.random.seed(54321)
-        a = np.random.randn(3, 3)
-        A = a @ a.transpose() + np.diag(np.random.rand(3))
+        rng = np.random.default_rng(180182791534511062935571481899241825000)
+        a = rng.standard_normal((3, 3))
+        A = a @ a.transpose() + np.diag(rng.random(3))
         engine = qmc.MultivariateNormalQMC(np.array([0, 0, 0]), A,
-                                           inv_transform=False, seed=seed)
+                                           inv_transform=False, seed=rng)
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [
-                [-1.056834, 2.493251, 0.114556],
-                [2.05178452, -6.35744194, 0.67944512],
-            ]
-        )
-        assert_array_almost_equal(samples, samples_expected)
+        samples_expected = np.array([[2.463393, 2.252826, -0.886809],
+                                     [1.252468, 0.029449, -1.126328]])
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
     def test_MultivariateNormalQMCSeededInvTransform(self):
         # test even dimension
-        seed = np.random.RandomState(12345)
-        np.random.seed(54321)
-        a = np.random.randn(2, 2)
-        A = a @ a.transpose() + np.diag(np.random.rand(2))
+        rng = np.random.default_rng(224125808928297329711992996940871155974)
+        a = rng.standard_normal((2, 2))
+        A = a @ a.transpose() + np.diag(rng.random(2))
         engine = qmc.MultivariateNormalQMC(
-            np.array([0, 0]), A, seed=seed, inv_transform=True
+            np.array([0, 0]), A, seed=rng, inv_transform=True
         )
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [[0.244578, -0.004441], [-0.44588916, 0.22657776]]
-        )
-        assert_array_almost_equal(samples, samples_expected)
+        samples_expected = np.array([[-3.095968, -0.566545],
+                                     [0.603154, 0.222434]])
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
         # test odd dimension
-        seed = np.random.RandomState(12345)
-        np.random.seed(54321)
-        a = np.random.randn(3, 3)
-        A = a @ a.transpose() + np.diag(np.random.rand(3))
+        rng = np.random.default_rng(224125808928297329711992996940871155974)
+        a = rng.standard_normal((3, 3))
+        A = a @ a.transpose() + np.diag(rng.random(3))
         engine = qmc.MultivariateNormalQMC(
-            np.array([0, 0, 0]), A, seed=seed, inv_transform=True
+            np.array([0, 0, 0]), A, seed=rng, inv_transform=True
         )
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [
-                [0.255741, -0.761559, 0.234236],
-                [-1.5740992, 5.61057598, -1.28218525],
-            ]
-        )
-        assert_array_almost_equal(samples, samples_expected)
+        samples_expected = np.array([[1.427248, -0.338187, -1.560687],
+                                     [-0.357026, 1.662937, -0.29769]])
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
     def test_MultivariateNormalQMCShapiro(self):
         # test the standard case
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(188960007281846377164494575845971645056)
         engine = qmc.MultivariateNormalQMC(
             mean=[0, 0], cov=[[1, 0], [0, 1]], seed=seed
         )
@@ -1071,7 +1180,6 @@ class TestMultivariateNormalQMC:
         assert np.abs(cov[0, 1]) < 1e-2
 
         # test the correlated, non-zero mean case
-        seed = np.random.RandomState(12345)
         engine = qmc.MultivariateNormalQMC(
             mean=[1.0, 2.0], cov=[[1.5, 0.5], [0.5, 1.5]], seed=seed
         )
@@ -1088,7 +1196,7 @@ class TestMultivariateNormalQMC:
 
     def test_MultivariateNormalQMCShapiroInvTransform(self):
         # test the standard case
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(200089821034563288698994840831440331329)
         engine = qmc.MultivariateNormalQMC(
             mean=[0, 0], cov=[[1, 0], [0, 1]], seed=seed, inv_transform=True
         )
@@ -1104,7 +1212,6 @@ class TestMultivariateNormalQMC:
         assert np.abs(cov[0, 1]) < 1e-2
 
         # test the correlated, non-zero mean case
-        seed = np.random.RandomState(12345)
         engine = qmc.MultivariateNormalQMC(
             mean=[1.0, 2.0],
             cov=[[1.5, 0.5], [0.5, 1.5]],
@@ -1124,7 +1231,7 @@ class TestMultivariateNormalQMC:
 
     def test_MultivariateNormalQMCDegenerate(self):
         # X, Y iid standard Normal and Z = X + Y, random vector (X, Y, Z)
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(163206374175814483578698216542904486209)
         engine = qmc.MultivariateNormalQMC(
             mean=[0.0, 0.0, 0.0],
             cov=[[1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [1.0, 1.0, 2.0]],
@@ -1144,3 +1251,64 @@ class TestMultivariateNormalQMC:
         # check to see if X + Y = Z almost exactly
         assert all(np.abs(samples[:, 0] + samples[:, 1] - samples[:, 2])
                    < 1e-5)
+
+
+class TestLloyd:
+    def test_lloyd(self):
+        # quite sensible seed as it can go up before going further down
+        rng = np.random.RandomState(1809831)
+        sample = rng.uniform(0, 1, size=(128, 2))
+        base_l1 = _l1_norm(sample)
+        base_l2 = l2_norm(sample)
+
+        for _ in range(4):
+            sample_lloyd = _lloyd_centroidal_voronoi_tessellation(
+                    sample, maxiter=1,
+            )
+            curr_l1 = _l1_norm(sample_lloyd)
+            curr_l2 = l2_norm(sample_lloyd)
+
+            # higher is better for the distance measures
+            assert base_l1 < curr_l1
+            assert base_l2 < curr_l2
+
+            base_l1 = curr_l1
+            base_l2 = curr_l2
+
+            sample = sample_lloyd
+
+    def test_lloyd_non_mutating(self):
+        """
+        Verify that the input samples are not mutated in place and that they do
+        not share memory with the output.
+        """
+        sample_orig = np.array([[0.1, 0.1],
+                                [0.1, 0.2],
+                                [0.2, 0.1],
+                                [0.2, 0.2]])
+        sample_copy = sample_orig.copy()
+        new_sample = _lloyd_centroidal_voronoi_tessellation(
+            sample=sample_orig
+        )
+        assert_allclose(sample_orig, sample_copy)
+        assert not np.may_share_memory(sample_orig, new_sample)
+
+    def test_lloyd_errors(self):
+        with pytest.raises(ValueError, match=r"`sample` is not a 2D array"):
+            sample = [0, 1, 0.5]
+            _lloyd_centroidal_voronoi_tessellation(sample)
+
+        msg = r"`sample` dimension is not >= 2"
+        with pytest.raises(ValueError, match=msg):
+            sample = [[0], [0.4], [1]]
+            _lloyd_centroidal_voronoi_tessellation(sample)
+
+        msg = r"`sample` is not in unit hypercube"
+        with pytest.raises(ValueError, match=msg):
+            sample = [[-1.1, 0], [0.1, 0.4], [1, 2]]
+            _lloyd_centroidal_voronoi_tessellation(sample)
+
+
+# mindist
+def l2_norm(sample):
+    return distance.pdist(sample).min()

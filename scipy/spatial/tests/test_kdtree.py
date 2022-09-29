@@ -10,7 +10,7 @@ import pytest
 from platform import python_implementation
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
-from scipy.spatial.ckdtree import cKDTreeNode
+from scipy.spatial._ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance
 
 import itertools
@@ -216,47 +216,10 @@ class Test_vectorization_KDTree:
         assert_(np.all(~np.isfinite(d[:, :, -s:])))
         assert_(np.all(i[:, :, -s:] == self.kdtree.n))
 
-    @pytest.mark.parametrize('r', [0.8, 1.1])
-    def test_single_query_all_neighbors(self, r):
-        np.random.seed(1234)
-        point = np.random.rand(self.kdtree.m)
-        with pytest.warns(DeprecationWarning, match="k=None"):
-            d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
-        assert isinstance(d, list)
-        assert isinstance(i, list)
-
-        assert_array_equal(np.array(d) <= r, True)  # All within bounds
-        # results are sorted by distance
-        assert all(a <= b for a, b in zip(d, d[1:]))
-        assert_allclose(  # Distances are correct
-            d, minkowski_distance(point, self.kdtree.data[i, :]))
-
-        # Compare to brute force
-        dist = minkowski_distance(point, self.kdtree.data)
-        assert_array_equal(sorted(i), (dist <= r).nonzero()[0])
-
-    def test_vectorized_query_all_neighbors(self):
-        query_shape = (2, 4)
-        r = 1.1
-        np.random.seed(1234)
-        points = np.random.rand(*query_shape, self.kdtree.m)
-        with pytest.warns(DeprecationWarning, match="k=None"):
-            d, i = self.kdtree.query(points, k=None, distance_upper_bound=r)
-        assert_equal(np.shape(d), query_shape)
-        assert_equal(np.shape(i), query_shape)
-
-        for idx in np.ndindex(query_shape):
-            dist, ind = d[idx], i[idx]
-            assert isinstance(dist, list)
-            assert isinstance(ind, list)
-
-            assert_array_equal(np.array(dist) <= r, True)  # All within bounds
-            # results are sorted by distance
-            assert all(a <= b for a, b in zip(dist, dist[1:]))
-            assert_allclose(  # Distances are correct
-                dist, minkowski_distance(
-                    points[idx], self.kdtree.data[ind]))
-
+    def test_query_raises_for_k_none(self):
+        x = 1.0
+        with pytest.raises(ValueError, match="k must be an integer or*"):
+            self.kdtree.query(x, k=None)
 
 class Test_vectorization_cKDTree:
     def setup_method(self):
@@ -475,23 +438,6 @@ def test_query_ball_point_multithreading(kdtree_type):
             assert_array_equal(l1[i], l3[i])
 
 
-def test_n_jobs():
-    # Test for the deprecated argument name "n_jobs" aliasing "workers"
-    points = np.random.randn(50, 2)
-    T = cKDTree(points)
-    with pytest.deprecated_call(match="n_jobs argument has been renamed"):
-        T.query_ball_point(points, 0.003, n_jobs=1)
-
-    with pytest.deprecated_call(match="n_jobs argument has been renamed"):
-        T.query(points, 1, n_jobs=1)
-
-    with pytest.raises(TypeError, match="Unexpected keyword argument"):
-        T.query_ball_point(points, 0.003, workers=1, n_jobs=1)
-
-    with pytest.raises(TypeError, match="Unexpected keyword argument"):
-        T.query(points, 1, workers=1, n_jobs=1)
-
-
 class two_trees_consistency:
 
     def distance(self, a, b, p):
@@ -680,7 +626,7 @@ class sparse_distance_matrix_consistency:
         M1 = self.T1.sparse_distance_matrix(self.T2, self.r)
         expected = distance_matrix(self.T1.data, self.T2.data)
         expected[expected > self.r] = 0
-        assert_array_almost_equal(M1.todense(), expected, decimal=14)
+        assert_array_almost_equal(M1.toarray(), expected, decimal=14)
 
     def test_against_logic_error_regression(self):
         # regression test for gh-5077 logic error
@@ -688,7 +634,7 @@ class sparse_distance_matrix_consistency:
         too_many = np.array(np.random.randn(18, 2), dtype=int)
         tree = self.kdtree_type(
             too_many, balanced_tree=False, compact_nodes=False)
-        d = tree.sparse_distance_matrix(tree, 3).todense()
+        d = tree.sparse_distance_matrix(tree, 3).toarray()
         assert_array_almost_equal(d, d.T, decimal=14)
 
     def test_ckdtree_return_types(self):
@@ -719,11 +665,11 @@ class sparse_distance_matrix_consistency:
         # test return type 'dok_matrix'
         r = self.T1.sparse_distance_matrix(self.T2, self.r,
             output_type='dok_matrix')
-        assert_array_almost_equal(ref, r.todense(), decimal=14)
+        assert_array_almost_equal(ref, r.toarray(), decimal=14)
         # test return type 'coo_matrix'
         r = self.T1.sparse_distance_matrix(self.T2, self.r,
             output_type='coo_matrix')
-        assert_array_almost_equal(ref, r.todense(), decimal=14)
+        assert_array_almost_equal(ref, r.toarray(), decimal=14)
 
 
 @KDTreeTest
@@ -836,6 +782,20 @@ def test_kdtree_query_pairs(kdtree_type):
     assert_array_equal(l0, l2)
 
 
+def test_query_pairs_eps(kdtree_type):
+    spacing = np.sqrt(2)
+    # irrational spacing to have potential rounding errors
+    x_range = np.linspace(0, 3 * spacing, 4)
+    y_range = np.linspace(0, 3 * spacing, 4)
+    xy_array = [(xi, yi) for xi in x_range for yi in y_range]
+    tree = kdtree_type(xy_array)
+    pairs_eps = tree.query_pairs(r=spacing, eps=.1)
+    # result: 24 with eps, 16 without due to rounding
+    pairs = tree.query_pairs(r=spacing * 1.01)
+    # result: 24
+    assert_equal(pairs, pairs_eps)
+
+
 def test_ball_point_ints(kdtree_type):
     # Regression test for #1373.
     x, y = np.mgrid[0:4, 0:4]
@@ -872,10 +832,7 @@ def test_kdtree_build_modes(kdtree_type):
 
 def test_kdtree_pickle(kdtree_type):
     # test if it is possible to pickle a KDTree
-    try:
-        import cPickle as pickle  # type: ignore[import]
-    except ImportError:
-        import pickle
+    import pickle
     np.random.seed(0)
     n = 50
     k = 4
@@ -889,10 +846,7 @@ def test_kdtree_pickle(kdtree_type):
 
 def test_kdtree_pickle_boxsize(kdtree_type):
     # test if it is possible to pickle a periodic KDTree
-    try:
-        import cPickle as pickle
-    except ImportError:
-        import pickle
+    import pickle
     np.random.seed(0)
     n = 50
     k = 4
@@ -1504,3 +1458,13 @@ def test_kdtree_count_neighbors_weighted(kdtree_class):
     expect = [np.sum(weights[(prev_radius < dist) & (dist <= radius)])
               for prev_radius, radius in zip(itertools.chain([0], r[:-1]), r)]
     assert_allclose(nAB, expect)
+
+
+def test_kdtree_nan():
+    vals = [1, 5, -10, 7, -4, -16, -6, 6, 3, -11]
+    n = len(vals)
+    data = np.concatenate([vals, np.full(n, np.nan)])[:, None]
+
+    query_with_nans = KDTree(data).query_pairs(2)
+    query_without_nans = KDTree(data[:n]).query_pairs(2)
+    assert query_with_nans == query_without_nans

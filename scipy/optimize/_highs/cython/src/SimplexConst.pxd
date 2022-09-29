@@ -6,66 +6,43 @@ from libcpp cimport bool
 cdef extern from "SimplexConst.h" nogil:
 
     cdef enum SimplexAlgorithm:
-        PRIMAL "SimplexAlgorithm::PRIMAL" = 0
-        DUAL "SimplexAlgorithm::DUAL"
+        PRIMAL "SimplexAlgorithm::kPrimal" = 0
+        DUAL "SimplexAlgorithm::kDual"
 
     cdef enum SimplexStrategy:
-        SIMPLEX_STRATEGY_MIN = 0
-        SIMPLEX_STRATEGY_CHOOSE = SIMPLEX_STRATEGY_MIN
-        SIMPLEX_STRATEGY_DUAL
-        SIMPLEX_STRATEGY_DUAL_PLAIN = SIMPLEX_STRATEGY_DUAL
-        SIMPLEX_STRATEGY_DUAL_TASKS
-        SIMPLEX_STRATEGY_DUAL_MULTI
-        SIMPLEX_STRATEGY_PRIMAL
-        SIMPLEX_STRATEGY_MAX = SIMPLEX_STRATEGY_PRIMAL
-        SIMPLEX_STRATEGY_NUM
-
-    cdef enum DualSimplexCleanupStrategy:
-        DUAL_SIMPLEX_CLEANUP_STRATEGY_MIN = 0
-        DUAL_SIMPLEX_CLEANUP_STRATEGY_NONE = DUAL_SIMPLEX_CLEANUP_STRATEGY_MIN
-        DUAL_SIMPLEX_CLEANUP_STRATEGY_HPRIMAL
-        DUAL_SIMPLEX_CLEANUP_STRATEGY_HQPRIMAL
-        DUAL_SIMPLEX_CLEANUP_STRATEGY_MAX = DUAL_SIMPLEX_CLEANUP_STRATEGY_HQPRIMAL
-
-    cdef enum SimplexScaleStrategy:
-        SIMPLEX_SCALE_STRATEGY_MIN = 0
-        SIMPLEX_SCALE_STRATEGY_OFF = SIMPLEX_SCALE_STRATEGY_MIN
-        SIMPLEX_SCALE_STRATEGY_HIGHS
-        SIMPLEX_SCALE_STRATEGY_HIGHS_FORCED
-        SIMPLEX_SCALE_STRATEGY_015
-        SIMPLEX_SCALE_STRATEGY_0157
-        SIMPLEX_SCALE_STRATEGY_MAX = SIMPLEX_SCALE_STRATEGY_0157
+        SIMPLEX_STRATEGY_MIN "SimplexStrategy::kSimplexStrategyMin" = 0
+        SIMPLEX_STRATEGY_CHOOSE "SimplexStrategy::kSimplexStrategyChoose" = SIMPLEX_STRATEGY_MIN
+        SIMPLEX_STRATEGY_DUAL "SimplexStrategy::kSimplexStrategyDual"
+        SIMPLEX_STRATEGY_DUAL_PLAIN "SimplexStrategy::kSimplexStrategyDualPlain" = SIMPLEX_STRATEGY_DUAL
+        SIMPLEX_STRATEGY_DUAL_TASKS "SimplexStrategy::kSimplexStrategyDualTasks"
+        SIMPLEX_STRATEGY_DUAL_MULTI "SimplexStrategy::kSimplexStrategyDualMulti"
+        SIMPLEX_STRATEGY_PRIMAL "SimplexStrategy::kSimplexStrategyPrimal"
+        SIMPLEX_STRATEGY_MAX "SimplexStrategy::kSimplexStrategyMax" = SIMPLEX_STRATEGY_PRIMAL
+        SIMPLEX_STRATEGY_NUM "SimplexStrategy::kSimplexStrategyNum"
 
     cdef enum SimplexCrashStrategy:
-        SIMPLEX_CRASH_STRATEGY_MIN = 0
-        SIMPLEX_CRASH_STRATEGY_OFF = SIMPLEX_CRASH_STRATEGY_MIN
-        SIMPLEX_CRASH_STRATEGY_LTSSF_K
-        SIMPLEX_CRASH_STRATEGY_LTSSF = SIMPLEX_CRASH_STRATEGY_LTSSF_K
-        SIMPLEX_CRASH_STRATEGY_BIXBY
-        SIMPLEX_CRASH_STRATEGY_LTSSF_PRI
-        SIMPLEX_CRASH_STRATEGY_LTSF_K
-        SIMPLEX_CRASH_STRATEGY_LTSF_PRI
-        SIMPLEX_CRASH_STRATEGY_LTSF
-        SIMPLEX_CRASH_STRATEGY_BIXBY_NO_NONZERO_COL_COSTS
-        SIMPLEX_CRASH_STRATEGY_BASIC
-        SIMPLEX_CRASH_STRATEGY_TEST_SING
-        SIMPLEX_CRASH_STRATEGY_MAX = SIMPLEX_CRASH_STRATEGY_TEST_SING
+        SIMPLEX_CRASH_STRATEGY_MIN "SimplexCrashStrategy::kSimplexCrashStrategyMin" = 0
+        SIMPLEX_CRASH_STRATEGY_OFF "SimplexCrashStrategy::kSimplexCrashStrategyOff" = SIMPLEX_CRASH_STRATEGY_MIN
+        SIMPLEX_CRASH_STRATEGY_LTSSF_K "SimplexCrashStrategy::kSimplexCrashStrategyLtssfK"
+        SIMPLEX_CRASH_STRATEGY_LTSSF "SimplexCrashStrategy::kSimplexCrashStrategyLtssf" = SIMPLEX_CRASH_STRATEGY_LTSSF_K
+        SIMPLEX_CRASH_STRATEGY_BIXBY "SimplexCrashStrategy::kSimplexCrashStrategyBixby"
+        SIMPLEX_CRASH_STRATEGY_LTSSF_PRI "SimplexCrashStrategy::kSimplexCrashStrategyLtssfPri"
+        SIMPLEX_CRASH_STRATEGY_LTSF_K "SimplexCrashStrategy::kSimplexCrashStrategyLtsfK"
+        SIMPLEX_CRASH_STRATEGY_LTSF_PRI "SimplexCrashStrategy::kSimplexCrashStrategyLtsfPri"
+        SIMPLEX_CRASH_STRATEGY_LTSF "SimplexCrashStrategy::kSimplexCrashStrategyLtsf"
+        SIMPLEX_CRASH_STRATEGY_BIXBY_NO_NONZERO_COL_COSTS "SimplexCrashStrategy::kSimplexCrashStrategyBixbyNoNonzeroColCosts"
+        SIMPLEX_CRASH_STRATEGY_BASIC "SimplexCrashStrategy::kSimplexCrashStrategyBasic"
+        SIMPLEX_CRASH_STRATEGY_TEST_SING "SimplexCrashStrategy::kSimplexCrashStrategyTestSing"
+        SIMPLEX_CRASH_STRATEGY_MAX "SimplexCrashStrategy::kSimplexCrashStrategyMax" = SIMPLEX_CRASH_STRATEGY_TEST_SING
 
-    cdef enum SimplexDualEdgeWeightStrategy:
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_MIN = -1
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_CHOOSE = SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_MIN
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_MAX = SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL
-
-    cdef enum SimplexPrimalEdgeWeightStrategy:
-        SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_MIN = -1
-        SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_CHOOSE = SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_MIN
-        SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG
-        SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX
-        SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_MAX = SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX
+    cdef enum SimplexEdgeWeightStrategy:
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_MIN "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategyMin" = -1
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_CHOOSE "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategyChoose" = SIMPLEX_EDGE_WEIGHT_STRATEGY_MIN
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_DANTZIG "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategyDantzig"
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_DEVEX "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategyDevex"
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategySteepestEdge"
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategySteepestEdgeUnitInitial"
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_MAX "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategyMax" = SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL
 
     cdef enum SimplexPriceStrategy:
         SIMPLEX_PRICE_STRATEGY_MIN = 0

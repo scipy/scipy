@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pytest import raises as assert_raises
@@ -118,6 +119,7 @@ def test_undirected():
         for directed_in in (True, False):
             check(method, directed_in)
 
+
 def test_directed_sparse_zero():
     # test directed sparse graph with zero-weight edge and two connected components
     def check(method):
@@ -127,6 +129,7 @@ def test_directed_sparse_zero():
 
     for method in methods:
         check(method)
+
 
 def test_undirected_sparse_zero():
     def check(method, directed_in):
@@ -312,7 +315,7 @@ def test_buffer(method):
 
 
 def test_NaN_warnings():
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         shortest_path(np.array([[0, 1], [np.nan, 0]]))
     for r in record:
         assert r.category is not RuntimeWarning

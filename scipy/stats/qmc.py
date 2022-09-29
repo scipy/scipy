@@ -23,6 +23,7 @@ Engines
    Sobol
    Halton
    LatinHypercube
+   PoissonDisk
    MultinomialQMC
    MultivariateNormalQMC
 
@@ -160,61 +161,61 @@ numbers come from [27]_. It is extensible in dimension up to
 
 References
 ----------
-.. [1] Owen, Art B. "Monte Carlo Book: the Quasi-Monte Carlo parts." (2019).
-.. [2] Niederreiter, Harald. Random number generation and quasi-Monte Carlo
-   methods. Society for Industrial and Applied Mathematics, 1992.
+.. [1] Owen, Art B. "Monte Carlo Book: the Quasi-Monte Carlo parts." 2019.
+.. [2] Niederreiter, Harald. "Random number generation and quasi-Monte Carlo
+   methods." Society for Industrial and Applied Mathematics, 1992.
 .. [3] Dick, Josef, Frances Y. Kuo, and Ian H. Sloan. "High-dimensional
-   integration: the quasi-Monte Carlo way." Acta Numerica 22 (2013): 133.
+   integration: the quasi-Monte Carlo way." Acta Numerica no. 22: 133, 2013.
 .. [4] Aho, A. V., C. Aistleitner, T. Anderson, K. Appel, V. Arnol'd, N.
-   Aronszajn, D. Asotsky et al. "W. Chen et al.(eds.), A Panorama of
-   Discrepancy Theory (2014): 679. Sringer International Publishing,
-   Switzerland.
+   Aronszajn, D. Asotsky et al. "W. Chen et al.(eds.), "A Panorama of
+   Discrepancy Theory", Sringer International Publishing,
+   Switzerland: 679, 2014.
 .. [5] Hickernell, Fred J. "Koksma-Hlawka Inequality." Wiley StatsRef:
-   Statistics Reference Online (2014).
-.. [6] Owen, Art B. "On dropping the first Sobol' point." arXiv preprint
-   arXiv:2008.08051 (2020).
+   Statistics Reference Online, 2014.
+.. [6] Owen, Art B. "On dropping the first Sobol' point." :arxiv:`2008.08051`,
+   2020.
 .. [7] L'Ecuyer, Pierre, and Christiane Lemieux. "Recent advances in randomized
    quasi-Monte Carlo methods." In Modeling uncertainty, pp. 419-474. Springer,
    New York, NY, 2002.
 .. [8] DiCiccio, Thomas J., and Bradley Efron. "Bootstrap confidence
-   intervals." Statistical science (1996): 189-212.
-.. [9] Dimov, Ivan T. Monte Carlo methods for applied scientists. World
+   intervals." Statistical science: 189-212, 1996.
+.. [9] Dimov, Ivan T. "Monte Carlo methods for applied scientists." World
    Scientific, 2008.
-.. [10] Caflisch, Russel E., William J. Morokoff, and Art B. Owen. Valuation of
-   mortgage backed securities using Brownian bridges to reduce effective
-   dimension. Journal of Computational Finance, (1997): 1, no. 1 27-46.
+.. [10] Caflisch, Russel E., William J. Morokoff, and Art B. Owen. "Valuation
+   of mortgage backed securities using Brownian bridges to reduce effective
+   dimension." Journal of Computational Finance: no. 1 27-46, 1997.
 .. [11] Sloan, Ian H., and Henryk Wozniakowski. "When are quasi-Monte Carlo
    algorithms efficient for high dimensional integrals?." Journal of Complexity
    14, no. 1 (1998): 1-33.
-.. [12] Owen, Art B., and Daniel Rudolf "A strong law of large numbers for
+.. [12] Owen, Art B., and Daniel Rudolf, "A strong law of large numbers for
    scrambled net integration." SIAM Review, to appear.
 .. [13] Loh, Wei-Liem. "On the asymptotic distribution of scrambled net
-   quadrature." The Annals of Statistics 31, no. 4 (2003): 1282-1324.
-.. [14] Sloan, Ian H. and S. Joe. Lattice methods for multiple integration.
+   quadrature." The Annals of Statistics 31, no. 4: 1282-1324, 2003.
+.. [14] Sloan, Ian H. and S. Joe. "Lattice methods for multiple integration."
    Oxford University Press, 1994.
-.. [15] Dick, Josef, and Friedrich Pillichshammer. Digital nets and sequences:
-   discrepancy theory and quasi-Monte Carlo integration. Cambridge University
+.. [15] Dick, Josef, and Friedrich Pillichshammer. "Digital nets and sequences:
+   discrepancy theory and quasi-Monte Carlo integration." Cambridge University
    Press, 2010.
 .. [16] Dick, Josef, F. Kuo, Friedrich Pillichshammer, and I. Sloan.
    "Construction algorithms for polynomial lattice rules for multivariate
-   integration." Mathematics of computation 74, no. 252 (2005): 1895-1921.
+   integration." Mathematics of computation 74, no. 252: 1895-1921, 2005.
 .. [17] Sobol', Il'ya Meerovich. "On the distribution of points in a cube and
    the approximate evaluation of integrals." Zhurnal Vychislitel'noi Matematiki
-   i Matematicheskoi Fiziki 7, no. 4 (1967): 784-802.
+   i Matematicheskoi Fiziki 7, no. 4: 784-802, 1967.
 .. [18] Halton, John H. "On the efficiency of certain quasi-random sequences of
    points in evaluating multi-dimensional integrals." Numerische Mathematik 2,
-   no. 1 (1960): 84-90.
+   no. 1: 84-90, 1960.
 .. [19] Faure, Henri. "Discrepance de suites associees a un systeme de
-   numeration (en dimension s)." Acta arithmetica 41, no. 4 (1982): 337-351.
+   numeration (en dimension s)." Acta arithmetica 41, no. 4: 337-351, 1982.
 .. [20] Niederreiter, Harold, and Chaoping Xing. "Low-discrepancy sequences and
    global function fields with many rational places." Finite Fields and their
-   applications 2, no. 3 (1996): 241-273.
+   applications 2, no. 3: 241-273, 1996.
 .. [21] Hong, Hee Sun, and Fred J. Hickernell. "Algorithm 823: Implementing
    scrambled digital sequences." ACM Transactions on Mathematical Software
-   (TOMS) 29, no. 2 (2003): 95-109.
+   (TOMS) 29, no. 2: 95-109, 2003.
 .. [22] Dick, Josef. "Higher order scrambled digital nets achieve the optimal
    rate of the root mean square error for smooth integrands." The Annals of
-   Statistics 39, no. 3 (2011): 1372-1398.
+   Statistics 39, no. 3: 1372-1398, 2011.
 .. [23] Niederreiter, Harald. "Multidimensional numerical integration using
    pseudorandom numbers." In Stochastic Programming 84 Part I, pp. 17-38.
    Springer, Berlin, Heidelberg, 1986.
@@ -222,13 +223,13 @@ References
    Quadrature Rules." In Monte Carlo and Quasi-Monte Carlo Methods 2000,
    pp. 274-289. Springer, Berlin, Heidelberg, 2002.
 .. [25] Owen, Art B., and Seth D. Tribble. "A quasi-Monte Carlo Metropolis
-   algorithm." Proceedings of the National Academy of Sciences 102, no. 25
-   (2005): 8844-8849.
+   algorithm." Proceedings of the National Academy of Sciences 102,
+   no. 25: 8844-8849, 2005.
 .. [26] Chen, Su. "Consistency and convergence rate of Markov chain quasi Monte
    Carlo with examples." PhD diss., Stanford University, 2011.
 .. [27] Joe, Stephen, and Frances Y. Kuo. "Constructing Sobol sequences with
    better two-dimensional projections." SIAM Journal on Scientific Computing
-   30, no. 5 (2008): 2635-2654.
+   30, no. 5: 2635-2654, 2008.
 
 """
 from ._qmc import *

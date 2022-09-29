@@ -82,8 +82,8 @@ double iv(double v, double x)
     int sign;
     double t, ax, res;
 
-    if (npy_isnan(v) || npy_isnan(x)) {
-      return NPY_NAN;
+    if (isnan(v) || isnan(x)) {
+      return NAN;
     }
 
     /* If v is a negative integer, invoke symmetry */
@@ -99,7 +99,7 @@ double iv(double v, double x)
     if (x < 0.0) {
 	if (t != v) {
 	    sf_error("iv", SF_ERROR_DOMAIN, NULL);
-	    return (NPY_NAN);
+	    return (NAN);
 	}
 	if (v != 2.0 * floor(v / 2.0)) {
 	    sign = -1;
@@ -113,7 +113,7 @@ double iv(double v, double x)
 	}
 	if (v < 0.0) {
 	    sf_error("iv", SF_ERROR_OVERFLOW, NULL);
-	    return NPY_INFINITY;
+	    return INFINITY;
 	}
 	else
 	    return 0.0;
@@ -150,7 +150,7 @@ static double iv_asymptotic(double v, double x)
 
     prefactor = exp(x) / sqrt(2 * NPY_PI * x);
 
-    if (prefactor == NPY_INFINITY) {
+    if (prefactor == INFINITY) {
 	return prefactor;
     }
 
@@ -557,9 +557,9 @@ static void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 
     if (x < 0) {
 	if (Iv_p != NULL)
-	    *Iv_p = NPY_NAN;
+	    *Iv_p = NAN;
 	if (Kv_p != NULL)
-	    *Kv_p = NPY_NAN;
+	    *Kv_p = NAN;
 	sf_error("ikv_temme", SF_ERROR_DOMAIN, NULL);
 	return;
     }
@@ -567,17 +567,17 @@ static void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 	Iv = (v == 0) ? 1 : 0;
 	if (kind & need_k) {
 	    sf_error("ikv_temme", SF_ERROR_OVERFLOW, NULL);
-	    Kv = NPY_INFINITY;
+	    Kv = INFINITY;
 	}
 	else {
-	    Kv = NPY_NAN;	/* any value will do */
+	    Kv = NAN;	/* any value will do */
 	}
 
 	if (reflect && (kind & need_i)) {
 	    double z = (u + n % 2);
 
-	    Iv = sin((double)NPY_PI * z) == 0 ? Iv : NPY_INFINITY;
-	    if (Iv == NPY_INFINITY || Iv == -NPY_INFINITY) {
+	    Iv = sin((double)NPY_PI * z) == 0 ? Iv : INFINITY;
+	    if (Iv == INFINITY || Iv == -INFINITY) {
 		sf_error("ikv_temme", SF_ERROR_OVERFLOW, NULL);
 	    }
 	}
@@ -629,7 +629,7 @@ static void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 	}
     }
     else {
-	Iv = NPY_NAN;		/* any value will do */
+	Iv = NAN;		/* any value will do */
     }
 
     if (reflect) {

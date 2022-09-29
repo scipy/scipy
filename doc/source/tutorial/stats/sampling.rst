@@ -4,7 +4,7 @@
 Universal Non-Uniform Random Number Sampling in SciPy
 =====================================================
 
-.. currentmodule:: scipy.stats
+.. currentmodule:: scipy.stats.sampling
 
 SciPy provides an interface to many universal non-uniform random number
 generators to sample random variates from a wide variety of univariate
@@ -51,7 +51,7 @@ Some methods to do that are:
   :class:`~TransformedDensityRejection`.
 * The Ratio-of-Uniforms Method: This is a type of acceptance-rejection
   method which is uses minimal bounding rectangles to construct the hat
-  function. See :func:`~rvs_ratio_uniforms`.
+  function. See `scipy.stats.rvs_ratio_uniforms`.
 * Inversion for Discrete Distributions: The difference compared to the
   continuous case is that :math:`F` is now a step-function. To realize
   this in a computer, a search algorithm is used, the simplest of which
@@ -82,8 +82,10 @@ different methods is shown in the table below.
 =====================================  ===============  ===============  ===========  ==============
 Methods for continuous distributions   Required Inputs  Optional Inputs  Setup Speed  Sampling Speed
 =====================================  ===============  ===============  ===========  ==============
-:class:`~TransformedDensityRejection`  pdf, dpdf        None             slow         fast
+:class:`~TransformedDensityRejection`  pdf, dpdf        none             slow         fast
 :class:`~NumericalInverseHermite`      cdf              pdf, dpdf        (very) slow  (very) fast
+:class:`~NumericalInversePolynomial`   pdf              cdf              (very) slow  (very) fast
+:class:`~SimpleRatioUniforms`          pdf              none             fast         slow
 =====================================  ===============  ===============  ===========  ==============
 
 where
@@ -97,6 +99,7 @@ where
 Methods for discrete distributions     Required Inputs  Optional Inputs  Setup Speed  Sampling Speed
 =====================================  ===============  ===============  ===========  ==============
 :class:`~DiscreteAliasUrn`             pv               pmf              slow         very fast
+:class:`~DiscreteGuideTable`           pv               pmf              slow         very fast
 =====================================  ===============  ===============  ===========  ==============
 
 where
@@ -131,7 +134,7 @@ samples from the given distribution.
 
 An example of this interface is shown below:
 
-    >>> from scipy.stats import TransformedDensityRejection
+    >>> from scipy.stats.sampling import TransformedDensityRejection
     >>> from math import exp
     >>> 
     >>> class StandardNormal:
@@ -155,12 +158,15 @@ which requires a PDF and its derivative w.r.t. ``x`` (i.e. the variate).
           ``dpdf``, etc) need not be vectorized. They should
           accept and return floats.
 
-.. note:: One can also pass the SciPy distributions as arguments but it can
-          be slow due to validations and expensive NumPy operations.
-          Moreover, it doesn't always have all the information required
-          by some generators like derivative of PDF for TDR method. Also,
-          most of the distributions in SciPy provide a ``rvs`` method which
-          can be used instead.
+.. note:: One can also pass the SciPy distributions as arguments. However,
+          note that the object doesn't always have all the information
+          required by some generators like the derivative of PDF for the
+          TDR method. Relying on SciPy distributions might also reduce
+          performance due to the vectorization of the methods like
+          ``pdf`` and ``cdf``. In both cases, one can implement a
+          custom distribution object that contains all the required
+          methods and that is not vectorized as shown in the example
+          above.
 
 In the above example, we have set up an object of the
 :class:`~TransformedDensityRejection` method to sample from a
@@ -180,9 +186,11 @@ We can also check that the samples are drawn from the correct distribution
 by visualizing the histogram of the samples:
 
 .. plot::
+    :alt: "This code generates an X-Y plot with the probability distribution function of X on the Y axis and values of X on the X axis. A red trace showing the true distribution is a typical normal distribution with tails near zero at the edges and a smooth peak around the center near 0.4. A blue bar graph of random variates is shown below the red trace with a distribution similar to the truth, but with clear imperfections."
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.stats import norm, TransformedDensityRejection
+    >>> from scipy.stats import norm
+    >>> from scipy.stats.sampling import TransformedDensityRejection
     >>> from math import exp
     >>> 
     >>> class StandardNormal:
@@ -213,20 +221,20 @@ by visualizing the histogram of the samples:
           independent in a sense that they will generally produce a different
           stream of random numbers than the one produced by the equivalent
           distribution in :mod:`scipy.stats` for any seed. The implementation
-          of `rvs` in :class:`~rv_continuous` usually relies on the NumPy
+          of `rvs` in `scipy.stats.rv_continuous` usually relies on the NumPy
           module `np.random` for well-known distributions (e.g., for the normal
           distribution, the beta distribution) and transformations of other
-          distributions (e.g., normal inverse Gaussian `norminvgauss` and the
-          lognormal `lognorm` distribution). If no specific method is implemented,
-          `rv_continuous` defaults to a numerical inversion method of the CDF
+          distributions (e.g., normal inverse Gaussian `scipy.stats.norminvgauss` and the
+          lognormal `scipy.stats.lognorm` distribution). If no specific method is implemented,
+          `scipy.stats.rv_continuous` defaults to a numerical inversion method of the CDF
           that is very slow. As UNU.RAN transforms uniform random numbers
           differently than SciPy or NumPy, the resulting stream of RVs is
           different even for the same stream of uniform random numbers. For
-          example, the random number stream of SciPy's ``~norm`` and UNU.RAN's
+          example, the random number stream of SciPy's ``scipy.stats.norm`` and UNU.RAN's
           :class:`~TransformedDensityRejection` would not be the same even for
           the same ``random_state``:
 
-          >>> from scipy.stats import norm, TransformedDensityRejection
+          >>> from scipy.stats.sampling import norm, TransformedDensityRejection
           >>> from copy import copy
           >>> dist = StandardNormal()
           >>> urng1 = np.random.default_rng()
@@ -277,13 +285,17 @@ because the PDF was < 0. i.e. negative. This falls under the type
 Warnings thrown by UNU.RAN also follow the same format.
 
 
-Generators in :mod:`scipy.stats`
---------------------------------
+Generators in :mod:`scipy.stats.sampling`
+-----------------------------------------
 .. toctree::
    :maxdepth: 1
 
    sampling_tdr
    sampling_dau
+   sampling_pinv
+   sampling_dgt
+   sampling_hinv
+   sampling_srou
 
 
 References

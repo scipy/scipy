@@ -32,6 +32,7 @@ Fast Fourier Transforms (FFTs)
 
 Discrete Sin and Cosine Transforms (DST and DCT)
 ================================================
+
 .. autosummary::
    :toctree: generated/
 
@@ -86,7 +87,8 @@ from ._basic import (
     rfft, irfft, rfft2, irfft2, rfftn, irfftn,
     hfft, ihfft, hfft2, ihfft2, hfftn, ihfftn)
 from ._realtransforms import dct, idct, dst, idst, dctn, idctn, dstn, idstn
-from ._fftlog import fht, ifht, fhtoffset
+from ._fftlog import fhtoffset
+from ._fftlog_multimethods import fht, ifht
 from ._helper import next_fast_len
 from ._backend import (set_backend, skip_backend, set_global_backend,
                        register_backend)
@@ -94,7 +96,7 @@ from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
 from ._pocketfft.helper import set_workers, get_workers
 
 __all__ = [
-    'fft', 'ifft', 'fft2','ifft2', 'fftn', 'ifftn',
+    'fft', 'ifft', 'fft2', 'ifft2', 'fftn', 'ifftn',
     'rfft', 'irfft', 'rfft2', 'irfft2', 'rfftn', 'irfftn',
     'hfft', 'ihfft', 'hfft2', 'ihfft2', 'hfftn', 'ihfftn',
     'fftfreq', 'rfftfreq', 'fftshift', 'ifftshift',

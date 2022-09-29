@@ -42,12 +42,12 @@
 #pragma GCC optimize("unroll-loops")
 #endif
 #endif
+#include <Python.h>
+#include <numpy/arrayobject.h>
+
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <Python.h>
-#include <numpy/arrayobject.h>
-#include <numpy/npy_math.h>
 
 #include "distance_impl.h"
 
@@ -90,6 +90,7 @@ DEFINE_WRAP_CDIST(sqeuclidean, double)
 DEFINE_WRAP_CDIST(dice, char)
 DEFINE_WRAP_CDIST(jaccard, char)
 DEFINE_WRAP_CDIST(kulsinski, char)
+DEFINE_WRAP_CDIST(kulczynski1, char)
 DEFINE_WRAP_CDIST(rogerstanimoto, char)
 DEFINE_WRAP_CDIST(russellrao, char)
 DEFINE_WRAP_CDIST(sokalmichener, char)
@@ -313,43 +314,6 @@ static PyObject *cdist_weighted_chebyshev_double_wrap(
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_old_weighted_minkowski_double_wrap(
-  PyObject *self, PyObject *args, PyObject *kwargs)
-{
-  PyArrayObject *XA_, *XB_, *dm_, *w_;
-  int mA, mB, n;
-  double *dm;
-  const double *XA, *XB, *w;
-  double p;
-  static char *kwlist[] = {"XA", "XB", "dm", "p", "w", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                   "O!O!O!dO!:cdist_old_weighted_minkowski_double_wrap", kwlist,
-                                   &PyArray_Type, &XA_, &PyArray_Type, &XB_,
-                                   &PyArray_Type, &dm_,
-                                   &p,
-                                   &PyArray_Type, &w_)) {
-    return 0;
-  }
-  else {
-    int res;
-    NPY_BEGIN_ALLOW_THREADS;
-    XA = (const double*)PyArray_DATA(XA_);
-    XB = (const double*)PyArray_DATA(XB_);
-    w = (const double*)PyArray_DATA(w_);
-    dm = (double*)PyArray_DATA(dm_);
-    mA = PyArray_DIMS(XA_)[0];
-    mB = PyArray_DIMS(XB_)[0];
-    n = PyArray_DIMS(XA_)[1];
-    res = cdist_old_weighted_minkowski(XA, XB, dm, mA, mB, n, p, w);
-    NPY_END_ALLOW_THREADS;
-
-    if (res) {
-      return PyErr_NoMemory();
-    }
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
 static PyObject *cdist_weighted_minkowski_double_wrap(
                             PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -419,6 +383,7 @@ DEFINE_WRAP_PDIST(sqeuclidean, double)
 
 DEFINE_WRAP_PDIST(dice, char)
 DEFINE_WRAP_PDIST(kulsinski, char)
+DEFINE_WRAP_PDIST(kulczynski1, char)
 DEFINE_WRAP_PDIST(jaccard, char)
 DEFINE_WRAP_PDIST(rogerstanimoto, char)
 DEFINE_WRAP_PDIST(russellrao, char)
@@ -632,40 +597,6 @@ static PyObject *pdist_weighted_chebyshev_double_wrap(
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_old_weighted_minkowski_double_wrap(
-  PyObject *self, PyObject *args, PyObject *kwargs)
-{
-  PyArrayObject *X_, *dm_, *w_;
-  int m, n;
-  double *dm, *X, *w;
-  double p;
-  static char *kwlist[] = {"X", "dm", "p", "w", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                   "O!O!dO!:pdist_weighted_minkowski_double_wrap", kwlist,
-                                   &PyArray_Type, &X_,
-                                   &PyArray_Type, &dm_,
-                                   &p,
-                                   &PyArray_Type, &w_)) {
-    return 0;
-  }
-  else {
-    int res;
-    NPY_BEGIN_ALLOW_THREADS;
-    X = (double*)PyArray_DATA(X_);
-    dm = (double*)PyArray_DATA(dm_);
-    w = (double*)PyArray_DATA(w_);
-    m = PyArray_DIMS(X_)[0];
-    n = PyArray_DIMS(X_)[1];
-
-    res = pdist_old_weighted_minkowski(X, dm, m, n, p, w);
-    NPY_END_ALLOW_THREADS;
-    if (res) {
-      return PyErr_NoMemory();
-    }
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
 static PyObject *pdist_weighted_minkowski_double_wrap(
                             PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -787,6 +718,9 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"cdist_kulsinski_bool_wrap",
    cdist_kulsinski_char_wrap,
    METH_VARARGS},
+   {"cdist_kulczynski1_bool_wrap",
+   cdist_kulczynski1_char_wrap,
+   METH_VARARGS},
   {"cdist_mahalanobis_double_wrap",
    (PyCFunction) cdist_mahalanobis_double_wrap,
    METH_VARARGS | METH_KEYWORDS},
@@ -795,9 +729,6 @@ static PyMethodDef _distanceWrapMethods[] = {
    METH_VARARGS | METH_KEYWORDS},
   {"cdist_weighted_chebyshev_double_wrap",
    (PyCFunction) cdist_weighted_chebyshev_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"cdist_old_weighted_minkowski_double_wrap",
-   (PyCFunction) cdist_old_weighted_minkowski_double_wrap,
    METH_VARARGS | METH_KEYWORDS},
   {"cdist_weighted_minkowski_double_wrap",
    (PyCFunction) cdist_weighted_minkowski_double_wrap,
@@ -862,6 +793,9 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"pdist_kulsinski_bool_wrap",
    pdist_kulsinski_char_wrap,
    METH_VARARGS},
+   {"pdist_kulczynski1_bool_wrap",
+   pdist_kulczynski1_char_wrap,
+   METH_VARARGS},
   {"pdist_mahalanobis_double_wrap",
    (PyCFunction) pdist_mahalanobis_double_wrap,
    METH_VARARGS | METH_KEYWORDS},
@@ -870,9 +804,6 @@ static PyMethodDef _distanceWrapMethods[] = {
    METH_VARARGS | METH_KEYWORDS},
   {"pdist_weighted_chebyshev_double_wrap",
    (PyCFunction) pdist_weighted_chebyshev_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"pdist_old_weighted_minkowski_double_wrap",
-   (PyCFunction) pdist_old_weighted_minkowski_double_wrap,
    METH_VARARGS | METH_KEYWORDS},
   {"pdist_weighted_minkowski_double_wrap",
    (PyCFunction) pdist_weighted_minkowski_double_wrap,
@@ -916,12 +847,9 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__distance_wrap(void)
+PyMODINIT_FUNC
+PyInit__distance_wrap(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&moduledef);
     import_array();
-
-    return m;
+    return PyModule_Create(&moduledef);
 }
