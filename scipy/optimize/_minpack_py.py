@@ -603,7 +603,6 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
               parameters). Use ``np.inf`` with an appropriate sign to disable
               bounds on all or some parameters.
 
-              .. versionadded:: 0.17
     method : {'lm', 'trf', 'dogbox'}, optional
         Method to use for optimization. See `least_squares` for more details.
         Default is 'lm' for unconstrained problems and 'trf' if `bounds` are
