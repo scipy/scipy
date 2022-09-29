@@ -51,8 +51,8 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     Notes
     -----
     This is a wrapper to the ``*GETRF`` routines from LAPACK. Unlike
-`linalg.lu`, It outputs the L and U factors into a single array,
-and returns pivot indices instead of a permutation matrix.
+    `linalg.lu`, It outputs the L and U factors into a single array,
+    and returns pivot indices instead of a permutation matrix.
 
     Examples
     --------
