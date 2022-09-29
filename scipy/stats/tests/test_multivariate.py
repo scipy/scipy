@@ -26,7 +26,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest)
-from scipy.stats import _covariance
+from scipy.stats import _covariance, Covariance
 
 from scipy.integrate import romb
 from scipy.special import multigammaln
@@ -42,6 +42,7 @@ def assert_close(res, ref, *args, **kwargs):
 
 
 class TestCovariance:
+
     def test_input_validation(self):
         message = "The input `precision` must be a square, two-dimensional..."
         with pytest.raises(ValueError, match=message):
@@ -51,9 +52,9 @@ class TestCovariance:
         with pytest.raises(ValueError, match=message):
             _covariance.CovViaPrecision(np.eye(3), covariance=np.eye(2))
 
-    _covariance_preprocessing = {"CovViaDiagonal": np.diag,
-                                 "CovViaPrecision": np.linalg.inv,
-                                 "CovViaPSD": lambda x:
+    _covariance_preprocessing = {"Diagonal": np.diag,
+                                 "Precision": np.linalg.inv,
+                                 "PSD": lambda x:
                                      _PSD(x, allow_singular=True)}
     _all_covariance_types = np.array(list(_covariance_preprocessing))
     _matrices = {"diagonal full rank": np.diag([1, 2, 3]),
@@ -65,15 +66,30 @@ class TestCovariance:
                   "diagonal rank-deficient": _all_covariance_types[[0, 2]],
                   "general rank-deficient": _all_covariance_types[[2]]}
 
+    @pytest.mark.parametrize("cov_type_name", _all_covariance_types[:-1])
+    def test_factories(self, cov_type_name):
+        A = np.diag([1, 2, 3])
+        x = [-4, 2, 5]
+
+        cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
+        preprocessing = self._covariance_preprocessing[cov_type_name]
+        factory = getattr(_covariance.Covariance, f"from_{cov_type_name.lower()}")
+
+        res = factory(preprocessing(A))
+        ref = cov_type(preprocessing(A))
+        assert type(res) == type(ref)
+        assert_allclose(res.whiten(x), ref.whiten(x))
+
     @pytest.mark.parametrize("matrix_type", list(_matrices))
     @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
     def test_covariance(self, matrix_type, cov_type_name):
-        message = f"{cov_type_name} does not support {matrix_type} matrices"
+        message = (f"CovVia{cov_type_name} does not support {matrix_type} "
+                   "matrices")
         if cov_type_name not in self._cov_types[matrix_type]:
             pytest.skip(message)
 
         A = self._matrices[matrix_type]
-        cov_type = getattr(_covariance, cov_type_name)
+        cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
         preprocessing = self._covariance_preprocessing[cov_type_name]
 
         psd = _PSD(A, allow_singular=True)
@@ -104,12 +120,13 @@ class TestCovariance:
     @pytest.mark.parametrize("matrix_type", list(_matrices))
     @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
     def test_mvn_with_covariance(self, size, matrix_type, cov_type_name):
-        message = f"{cov_type_name} does not support {matrix_type} matrices"
+        message = (f"CovVia{cov_type_name} does not support {matrix_type} "
+                   "matrices")
         if cov_type_name not in self._cov_types[matrix_type]:
             pytest.skip(message)
 
         A = self._matrices[matrix_type]
-        cov_type = getattr(_covariance, cov_type_name)
+        cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
         preprocessing = self._covariance_preprocessing[cov_type_name]
 
         mean = [0.1, 0.2, 0.3]
@@ -143,7 +160,7 @@ class TestCovariance:
         # provide the `covariance` attribute.
         matrix_type = "diagonal full rank"
         A = self._matrices[matrix_type]
-        cov_type = getattr(_covariance, cov_type_name)
+        cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
         preprocessing = self._covariance_preprocessing[cov_type_name]
 
         mean = [0.1, 0.2, 0.3]

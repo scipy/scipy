@@ -4,13 +4,114 @@ import numpy as np
 from scipy import linalg
 
 
-__all__ = ["CovViaPrecision"]
+__all__ = ["Covariance"]
 
 
 class Covariance:
     """
     Representation of a covariance matrix
+
+    Calculations involving covariance matrices (e.g. data whitening,
+    multivariate normal function evaluation) are often performed more
+    efficiently using a decomposition of the covariance matrix instead of the
+    covariance metrix itself. This class allows the user to construct an
+    object representing a covariance matrix using any of several
+    decompositions and perform calculations using a common interface.
+
+    Examples
+    --------
+    The most common use of the `Covariance` class is to call one of the
+    factory methods to create a `Covariance` object, then pass that
+    representation of the `Covariance` matrix as a shape parameter of a
+    multivariate distribution.
+
+    For instance, the multivariate normal distribution can accept an array
+    representing a covariance matrix:
+
+    >>> from scipy import stats
+    >>> d = [1, 2, 3]
+    >>> A = np.diag(d)  # a diagonal covariance matrix
+    >>> x = [4, -2, 5]  # a point of interest
+    >>> dist = stats.multivariate_normal(mean=[0, 0, 0], cov=A)
+    >>> dist.pdf(x)
+    4.9595685102808205e-08
+
+    but the calculations are performed in a very generic way that does not
+    take advantage of any special properties of the covariance matrix. Because
+    our covariance matrix is diagonal, we can use ``Covariance.from_diagonal``
+    to create an object representing the covariance matrix, and
+    `multivariate_normal` can use this to compute the probability density
+    function more efficiently.
+
+    >>> cov = stats.Covariance.from_diagonal(d)
+    >>> dist = stats.multivariate_normal(mean=[0, 0, 0], cov=cov)
+    >>> dist.pdf(x)
+    4.9595685102808205e-08
+
     """
+
+    @staticmethod
+    def from_diagonal(diagonal):
+        r"""
+        Return a representation of a covariance matrix from its diagonal.
+
+        Parameters
+        ----------
+        diagonal : array_like
+            The diagonal elements of a diagonal matrix.
+
+        Notes
+        -----
+        Let the diagonal elements of a diagonal covariance matrix :math:`D` be
+        stored in the vector :math:`d`.
+
+        When all elements of :math:`d` are strictly positive, whitening of a
+        data point :math:`x` is performed by computing
+        :math:`x \cdot d^{-1/2}`, where the inverse square root can be taken
+        element-wise.
+        :math:`\log\det{D}` is calculated as :math:`-2 \sum(\log{d})`,
+        where the :math:`\log` operation is performed element-wise.
+
+        This `Covariance` class supports singular covariance matrices. When
+        computing ``_log_pdet``, non-positive elements of :math:`d` are
+        ignored. Whitening is not well defined when the point to be whitened
+        does not lie in the span of the columns of the covariance matrix. The
+        convention taken here is to treat the inverse square root of
+        non-positive elements of :math:`d` as zeros.
+        """
+        return CovViaDiagonal(diagonal)
+
+    @staticmethod
+    def from_precision(precision, covariance=None):
+        r"""
+        Return a representation of a covariance from its precision matrix.
+
+        Parameters
+        ----------
+        precision : array_like
+            The precision matrix; that is, the inverse of a square, symmetric,
+            positive definite covariance matrix.
+        covariance : array_like, optional
+            The square, symmetric, positive definite covariance matrix. If not
+            provided, this may need to be calculated (e.g. to evaluate the
+            cumulative distribution function of
+            `scipy.stats.multivariate_normal`) by inverting `precision`.
+
+        Notes
+        -----
+        Let the covariance matrix be :math:`A`, its precision matrix be
+        :math:`P = A^{-1}`, and :math:`L` be the lower Cholesky factor such
+        that :math:`L L^T = P`.
+        Whitening of a data point :math:`x` is performed by computing
+        :math:`x^T L`. :math:`\log\det{A}` is calculated as
+        :math:`-2tr(\log{P})`, where the :math:`\log` operation is performed
+        element-wise.
+
+        This `Covariance` class does not support singular covariance matrices
+        because the precision matrix does not exist for a singular covariance
+        matrix.
+        """
+        return CovViaPrecision(precision, covariance)
 
     def whiten(self, x):
         """
@@ -115,37 +216,8 @@ class Covariance:
 
 
 class CovViaPrecision(Covariance):
-    r"""
-    Representation of a covariance provided via its precision matrix.
-
-    Notes
-    -----
-    Let the covariance matrix be :math:`A`, its precision matrix be
-    :math:`P = A^{-1}`, and :math:`L` be the lower Cholesky factor such that
-    :math:`L L^T = P`.
-    Whitening of a data point :math:`x` is performed by computing
-    :math:`x^T L`. :math:`\log\det{A}` is calculated as :math:`-2tr(\log{P})`,
-    where the :math:`\log` operation is performed element-wise.
-
-    This `Covariance` class does not support singular covariance matrices
-    because the precision matrix does not exist for a singular covariance
-    matrix.
-
-    """
 
     def __init__(self, precision, covariance=None):
-        """
-        Parameters
-        ----------
-        precision : array_like
-            The precision matrix; that is, the inverse of a square, symmetric,
-            positive definite covariance matrix.
-        covariance : array_like, optional
-            The square, symmetric, positive definite covariance matrix. If not
-            provided, this may need to be calculated (e.g. to evaluate the
-            cumulative distribution function of
-            `scipy.stats.multivariate_normal`) by inverting `precision`.
-        """
         precision = self._validate_matrix(precision, 'precision')
         if covariance is not None:
             covariance = self._validate_matrix(covariance, 'covariance')
@@ -179,36 +251,8 @@ def _dot_diag(x, d):
 
 
 class CovViaDiagonal(Covariance):
-    r"""
-    Representation of a diagonal covariance provided via its diagonal elements.
-
-    Notes
-    -----
-    Let the diagonal elements of a diagonal covariance matrix :math:`D` be
-    stored in the vector :math:`d`.
-
-    When all elements of :math:`d` are strictly positive, whitening of a data
-    point :math:`x` is performed by computing :math:`x \cdot d^{-1/2}`, where
-    the inverse square root can be taken element-wise.
-    :math:`\log\det{D}` is calculated as :math:`-2 \sum(\log{d})`,
-    where the :math:`\log` operation is performed element-wise.
-
-    This `Covariance` class does supports singular covariance matrices. When
-    computing ``_log_pdet``, non-positive elements of :math:`d` are ignored.
-    Whitening is not well defined when the point to be whitened does not lie
-    in the span of the columns of the covariance matrix. The convention taken
-    here is to treat the inverse square root of non-positive elements of
-    :math:`d` as zeros.
-
-    """
 
     def __init__(self, diagonal):
-        """
-        Parameters
-        ----------
-        diagonal : array_like
-            The diagonal elements of a diagonal matrix.
-        """
         diagonal = self._validate_vector(diagonal, 'diagonal')
 
         i_zero = diagonal <= 0
