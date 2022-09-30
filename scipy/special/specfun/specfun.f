@@ -5401,6 +5401,9 @@ C       DLMF 13.2.39 (cf. above)
                     GO TO 25
                  ENDIF
 15            CONTINUE
+C       DLMF 13.2.39 (cf. above) even if the loop above does not converge
+           IF (X0.LT.0.0D0) HG=HG*EXP(X0)
+           GO TO 25
            ELSE
 C       DLMF 13.7.2 & 13.2.4, SUM2 corresponds to first sum
               Y=0.0D0

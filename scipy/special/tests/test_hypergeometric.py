@@ -105,3 +105,12 @@ class TestHyp1f1:
     def test_gh_11099(self, a, b, x, desired):
         # All desired results computed using Mpmath
         assert sc.hyp1f1(a, b, x) == desired
+
+    def test_gh_17120(self):
+        desired = -4.5954071598133683e-20  # Computed using Mpmath
+        assert_allclose(
+            sc.hyp1f1(9, 8.5, -355),
+            desired,
+            atol=0,
+            rtol=1e-14
+        )
