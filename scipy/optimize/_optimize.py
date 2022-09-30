@@ -2354,7 +2354,7 @@ class Brent:
         #BEGIN CORE ALGORITHM
         #################################
         x = w = v = xb
-        fw = fv = fx = func(*((x,) + self.args))
+        fw = fv = fx = fb
         if (xa < xc):
             a = xa
             b = xc
@@ -2362,7 +2362,6 @@ class Brent:
             a = xc
             b = xa
         deltax = 0.0
-        funcalls += 1
         iter = 0
 
         if self.disp > 2:
