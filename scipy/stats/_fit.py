@@ -855,9 +855,12 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     the distribution precludes the need to fit the distribution to each Monte
     Carlo sample. (This is essentially how the original Kilmogorov-Smirnov
     test is performed.) Although such a test can provide evidence against the
-    null hypothesis, the power of the test is low (that is, it is less likely
-    to reject the null hypothesis even when the null hypoothesis is false)
-    because the Monte Carlo samples are less likely to agree with the
+    null hypothesis, the test is conservative in the sense that small p-values 
+    will tend to (greatly) *overestimate* the probability of making a type I
+    error (that is, rejecting the null hypothesis although it is true), and the 
+    power of the test is low (that is, it is less likely to reject the null 
+    hypothesis even when the null hypothesis is false).
+    This is because the Monte Carlo samples are less likely to agree with the
     null-hypothesized distribution as well as `data`. This tends to increase
     the values of the statistic recorded in the null distribution, so that a
     larger number of them exceed the value of statistic for `data`, thereby
@@ -873,8 +876,8 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     .. [3] C. Genest, & B Rémillard. (2008). "Validity of the parametric
            bootstrap for goodness-of-fit testing in semiparametric models."
            Annales de l'IHP Probabilités et statistiques. Vol. 44. No. 6.
-    .. [4] I. Kojadinovic and J. Yan (2012). "Goodness‐of‐fit testing based on
-           a weighted bootstrap: A fast large‐sample alternative to the
+    .. [4] I. Kojadinovic and J. Yan (2012). "Goodness-of-fit testing based on
+           a weighted bootstrap: A fast large-sample alternative to the
            parametric bootstrap." Canadian Journal of Statistics 40.3: 480-500.
     .. [5] B. Phipson and G. K. Smyth (2010). "Permutation P-values Should
            Never Be Zero: Calculating Exact P-values When Permutations Are
@@ -932,8 +935,10 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     sampled from one of *any* member of the normal distribution family, not
     specifically from the normal distribution with the location and scale
     fitted to the observed sample. In this case, Lilliefors [6]_ argued that
-    the KS test was far too conservative and thus lacked power - the ability
-    to reject the null hypothesis when the null hypothesis is actually false.
+    the KS test is far too conservative (that is, the p-value overstates
+    the actual probability of rejecting a true null hypothesis) and thus lacks 
+    power - the ability to reject the null hypothesis when the null hypothesis
+    is actually false.
     Indeed, our p-value above is approximately 0.28, which is far too large
     to reject the null hypothesis at any common significance level.
 
