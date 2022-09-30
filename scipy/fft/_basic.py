@@ -151,7 +151,6 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     In this example, real input has an FFT which is Hermitian, i.e., symmetric
     in the real part and anti-symmetric in the imaginary part:
 
-    >>> import numpy as np
     >>> from scipy.fft import fft, fftfreq, fftshift
     >>> import matplotlib.pyplot as plt
     >>> t = np.arange(256)
