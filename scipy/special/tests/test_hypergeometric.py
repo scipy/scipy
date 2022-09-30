@@ -114,3 +114,28 @@ class TestHyp1f1:
             atol=0,
             rtol=1e-14
         )
+
+    def test_gh_14149(self):
+        desired = -7.0011903214189369e-5
+        assert_allclose(
+            sc.hyp1f1(1, 0.3, -1 / 0.0001),
+            desired,
+            atol=0,
+            rtol=1e-14
+        )
+
+        desired = 1.00007001190321419
+        assert_allclose(
+            1 - sc.hyp1f1(1, 0.3, -1 / 0.0001),
+            desired,
+            atol=0,
+            rtol=1e-15
+        )
+
+        desired = 1.0007011932249443
+        assert_allclose(
+            1 - sc.hyp1f1(1, 0.3, -1 / 0.001),
+            desired,
+            atol=0,
+            rtol=1e-15
+        )

@@ -5392,18 +5392,38 @@ C       preparing terms for DLMF 13.3.1
            IF (X.LE.30.0D0+DABS(B).OR.A.LT.0.0D0) THEN
               HG=1.0D0
               RG=1.0D0
-              DO 15 J=1,500
-                 RG=RG*(A+J-1.0D0)/(J*(B+J-1.0D0))*X
-                 HG=HG+RG
-                 IF (HG.NE.0D0.AND.DABS(RG/HG).LT.1.0D-15) THEN
+              IF (X .LE. 500.0D0) THEN
+C                use the normal definition (DLMF 13.2.2) and a lot of terms
+                 DO 15 J=1,500
+                    RG=RG*(A+J-1.0D0)/(J*(B+J-1.0D0))*X
+                    HG=HG+RG
+                    IF (HG.NE.0D0.AND.DABS(RG/HG).LT.1.0D-15) THEN
+                       GO TO 15
+                    ENDIF
+15               CONTINUE
 C       DLMF 13.2.39 (cf. above)
-                    IF (X0.LT.0.0D0) HG=HG*EXP(X0)
-                    GO TO 25
-                 ENDIF
-15            CONTINUE
-C       DLMF 13.2.39 (cf. above) even if the loop above does not converge
-           IF (X0.LT.0.0D0) HG=HG*EXP(X0)
-           GO TO 25
+                 IF (X0.LT.0.0D0) HG=HG*EXP(X0)
+                 GO TO 25
+              ELSE
+C                Use the definition for x -> inf (DLMF 13.7.1 and 13.2.3)
+C                FIXME: this is only valid if a != 0, -1, ..
+                 DO 18 J=1,50
+                    RG=RG*(J-A)*(B-A+J-1.0D0)/(J*X)
+                    HG=HG+RG
+                    IF (HG.NE.0D0.AND.DABS(RG/HG).LT.1.0D-15) THEN
+                       GO TO 18
+                    ENDIF
+18               CONTINUE
+C                FIXME: can gamma be complex here?
+                 Y=0.0D0
+                 CALL CGAMA(A,Y,1,TAR,TAI)
+                 Y=0.0D0
+                 CALL CGAMA(B,Y,1,TBR,TBI)
+                 HG=HG * X**(A-B) * TBR/TAR
+C                DLMF 13.2.39 cancels the exp(x) from DLMF 13.7.1 for X0<0
+                 IF (X0.GT.0.0D0) HG=HG*EXP(X0)
+                 GO TO 25
+              ENDIF
            ELSE
 C       DLMF 13.7.2 & 13.2.4, SUM2 corresponds to first sum
               Y=0.0D0
