@@ -578,7 +578,11 @@ def binned_statistic_dd(sample, values, statistic='mean',
         dedges = [np.diff(edges[i]) for i in builtins.range(Ndim)]
         binnumbers = binned_statistic_result.binnumber
 
-    result = np.empty([Vdim, nbin.prod()], float)
+    if np.iscomplexobj(values):
+        result = np.empty([Vdim, nbin.prod()], values.dtype)
+    else:
+        # Use a float64 accumulator to avoid integer overflow
+        result = np.empty([Vdim, nbin.prod()], float)
 
     if statistic in {'mean', np.mean}:
         result.fill(np.nan)
