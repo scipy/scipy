@@ -3134,7 +3134,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 2
-             Function evaluations: 18
+             Function evaluations: 16
     >>> minimum
     array(0.0)
 
