@@ -22,7 +22,7 @@ class IntegrationWarning(UserWarning):
 
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,
-         limlst=50, real_func=True):
+         limlst=50, complex_func=False):
     """
     Compute a definite integral.
 
@@ -61,9 +61,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Non-zero to return a dictionary of integration information.
         If non-zero, warning messages are also suppressed and the
         message is appended to the output tuple.
-    complex : bool, optional
+    complex_func : bool, optional
         Indicate if the function's (func) return type is real
-        (`complex=false`) or complex (`complex=True`).
+        (`complex_func=false`: default) or complex (`complex_func=True`).
         In both cases, the function's argument is real.
 
     Returns
@@ -340,13 +340,12 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     Doing so makes the further assumption that the integrals of these
     components exist over the given interval.
 
-    A complex valued function, :math:`f`, of a real variable can be written as 
+    A complex valued function, :math:`f`, of a real variable can be written as
     :math:`f = g + ih`.  Similarly, the integral of :math:`f` can be
     written as
 
     .. math::
-
-    \int_a^b f(x) dx = \int_a^b g(x) dx + i\int_a^b h(x) dx
+        \\int_a^b f(x) dx = \\int_a^b g(x) dx + i\\int_a^b h(x) dx
 
     This assumes that the integrals of :math:`g` and :math:`h` exist
     over the inteval :math:`[a,b]` [2]_.
@@ -354,8 +353,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     For example,
 
     .. math::
-    \int_0^{\frac{\pi}{2}} e^{it} dt = \int_0^{\frac{\pi}{2}} \cos{t} +
-    i\sin{t} dt
+        \\int_0^{\\frac{\\pi}{2}} e^{it} dt =
+        \\int_0^{\\frac{\\pi}{2}} \\cos{t} + i\\sin{t} dt
 
 
     References
@@ -366,6 +365,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
            QUADPACK: A subroutine package for automatic integration.
            Springer-Verlag.
            ISBN 978-3-540-12553-2.
+
     .. [2] McCullough, Thomas; Phillips, Keith (1973).
            Foundations of Analysis in the Complex Plane.
            Holt Rinehart Winston.
@@ -440,7 +440,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     # check the limits of integration: \int_a^b, expect a < b
     flip, a, b = b < a, min(a, b), max(a, b)
 
-    if not real_func:
+    if complex_func:
         def imfunc(x, *args):
             return np.imag(func(x, *args))
 
@@ -448,15 +448,15 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             return np.real(func(x, *args))
 
         re_retval = quad(refunc, a, b, args, full_output, epsabs,
-                      epsrel, limit, points, weight, wvar, wopts,
-                      maxp1, limlst, real_func=True)
+                         epsrel, limit, points, weight, wvar, wopts,
+                         maxp1, limlst, complex_func=False)
         im_retval = quad(imfunc, a, b, args, full_output, epsabs,
-                      epsrel, limit, points, weight, wvar, wopts,
-                      maxp1, limlst, real_func=True)
+                         epsrel, limit, points, weight, wvar, wopts,
+                         maxp1, limlst, complex_func=False)
         retval = (re_retval[0] + 1j*im_retval[0],) + \
-                  tuple([
+            tuple([
                     np.max((re_retval[i], im_retval[i])) for i in
-                    range(1,2)])
+                    range(1, 2)])
         msgexp = {}
         if len(re_retval) > 2:
             msgexp["real message"] = re_retval[2:]
@@ -468,14 +468,14 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     if weight is None:
         retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
-                   points)
+                       points)
     else:
         if points is not None:
             msg = ("Break points cannot be specified when using weighted integrand.\n"
                    "Continuing, ignoring specified points.")
             warnings.warn(msg, IntegrationWarning, stacklevel=2)
         retval = _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
-                          limlst, limit, maxp1, weight, wvar, wopts)
+                              limlst, limit, maxp1, weight, wvar, wopts)
 
     if flip:
         retval = (-retval[0],) + retval[1:]

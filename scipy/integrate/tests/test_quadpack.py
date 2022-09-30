@@ -507,8 +507,8 @@ class TestQuad:
         def tfunc(x):
             return np.exp(1j*x)
 
-        assert_quad(quad(tfunc, 0, np.pi/2, real_func=False),
-            1+1j, error_tolerance=1e-6)
+        assert_quad(quad(tfunc, 0, np.pi/2, complex_func=True),
+                    1+1j, error_tolerance=1e-6)
 
 
 class TestNQuad:
