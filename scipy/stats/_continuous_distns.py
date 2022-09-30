@@ -5375,34 +5375,48 @@ class logistic_gen(rv_continuous):
     @_call_super_mom
     @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
-
-        # if user has provided `floc` or `fscale`, fall back on super fit
-        # method. This scenario is not suitable for solving a system of
-        # equations
-        if floc is not None or fscale is not None:
-            return super().fit(data, *args, **kwds)
+        n = len(data)
 
         # rv_continuous provided guesses
         loc, scale = self._fitstart(data)
-        # account for user provided guesses
-        loc = kwds.pop('loc', loc)
-        scale = kwds.pop('scale', scale)
+        # these are trumped by user-provided guesses
+        loc, scale = kwds.get('loc', loc), kwds.get('scale', scale)
 
         # the maximum likelihood estimators `a` and `b` of the location and
         # scale parameters are roots of the two equations described in `func`.
         # Source: Statistical Distributions, 3rd Edition. Evans, Hastings, and
         # Peacock (2000), Page 130
-        def func(params, data):
-            a, b = params
-            n = len(data)
-            c = (data - a) / b
-            x1 = np.sum(sc.expit(c)) - n/2
-            x2 = np.sum(c*np.tanh(c/2)) - n
-            return x1, x2
+        def dl_dloc(loc, scale=fscale):
+            c = (data - loc) / scale
+            return np.sum(sc.expit(c)) - n/2
 
-        return tuple(optimize.root(func, (loc, scale), args=(data,)).x)
+        def dl_dscale(scale, loc=floc):
+            c = (data - loc) / scale
+            return np.sum(c*np.tanh(c/2)) - n
+
+        def func(params):
+            loc, scale = params
+            return dl_dloc(loc, scale), dl_dscale(scale, loc)
+
+        if fscale is not None and floc is None:
+            res = optimize.root(dl_dloc, (loc,))
+            loc = res.x[0]
+            scale = fscale
+        elif floc is not None and fscale is None:
+            res = optimize.root(dl_dscale, (scale,))
+            scale = res.x[0]
+            loc = floc
+        else:
+            res = optimize.root(func, (loc, scale))
+            loc, scale = res.x
+
+        return ((loc, scale) if res.success
+                else super().fit(data, *args, **kwds))
 
 
 logistic = logistic_gen(name='logistic')

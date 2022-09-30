@@ -1408,15 +1408,16 @@ class TestLogistic:
         # to this system of equations are equal
         assert_allclose(fit_method, expected_solution, atol=1e-30)
 
-    @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
-    def test_fit_comp_optimizer(self, loc_rvs, scale_rvs):
-        data = stats.logistic.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
+    def test_fit_comp_optimizer(self):
+        data = stats.logistic.rvs(size=100, loc=0.5, scale=2)
 
         # obtain objective function to compare results of the fit methods
         args = [data, (stats.logistic._fitstart(data),)]
         func = stats.logistic._reduce_func(args, {})[1]
 
         _assert_less_or_close_loglike(stats.logistic, data, func)
+        _assert_less_or_close_loglike(stats.logistic, data, func, floc=1)
+        _assert_less_or_close_loglike(stats.logistic, data, func, fscale=1)
 
     @pytest.mark.parametrize('testlogcdf', [True, False])
     def test_logcdfsf_tails(self, testlogcdf):

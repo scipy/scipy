@@ -75,11 +75,16 @@ elif cc.get_id() == 'intel-cl'
 endif
 if ff.get_id() == 'intel'
   _intel_fflags = ff.get_supported_arguments('-fp-model=strict')
+  minus0_arg = ['-assume', 'minus0']
+  if ff.has_multi_arguments(minus0_arg)
+    _intel_fflags += minus0_arg
+  endif
 elif ff.get_id() == 'intel-cl'
   # Intel Fortran on Windows does things differently, so deal with that
   # (also specify dynamic linking and the right name mangling)
   _intel_fflags = ff.get_supported_arguments(
-    '/fp:strict', '/MD', '/names:lowercase', '/assume:underscore'
+    '/fp:strict', '/MD', '/names:lowercase', '/assume:underscore',
+    '/assume:minus0'
   )
 endif
 add_project_arguments(_intel_cflags, language: ['c', 'cpp'])
