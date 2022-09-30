@@ -18,6 +18,9 @@ class Covariance:
     object representing a covariance matrix using any of several
     decompositions and perform calculations using a common interface.
 
+    Note that the `Covariance` class cannot be instantiated directly.
+    Instead, use one of the factory methods (e.g. `Covariance.from_diagonal`).
+
     Examples
     --------
     The most common use of the `Covariance` class is to call one of the
@@ -49,6 +52,11 @@ class Covariance:
     4.9595685102808205e-08
 
     """
+    def __init__(self):
+        message = ("The `Covariance` class cannot be instantiated directly. "
+                   "Please use one of the factory methods "
+                   "(e.g. `Covariance.from_diagonal`).")
+        raise NotImplementedError(message)
 
     @staticmethod
     def from_diagonal(diagonal):
@@ -149,7 +157,8 @@ class Covariance:
         >>> n = 3
         >>> A = rng.random(size=(n, n))
         >>> cov_array = A @ A.T  # make matrix symmetric positive definite
-        >>> cov_object = stats.CovViaPrecision(np.linalg.inv(cov_array))
+        >>> precision = np.linalg.inv(cov_array)
+        >>> cov_object = stats.Covariance.from_precision(precision)
         >>> x = rng.multivariate_normal(np.zeros(n), cov_array, size=(10000))
         >>> x_ = cov_object.whiten(x)
         >>> np.cov(x_, rowvar=False)  # near-identity covariance

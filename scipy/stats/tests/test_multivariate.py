@@ -177,6 +177,11 @@ class TestCovariance:
         assert_close(mvn.logcdf(x, mean, cov_object), dist0.logcdf(x))
         assert_close(dist1.logcdf(x), dist0.logcdf(x))
 
+    def test_covariance_instantiation(self):
+        message = "The `Covariance` class cannot be instantiated directly."
+        with pytest.raises(NotImplementedError, match=message):
+            Covariance()
+
 
 def _sample_orthonormal_matrix(n):
     M = np.random.randn(n, n)
