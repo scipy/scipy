@@ -7,7 +7,6 @@
 
 load("cirrus", "env", "fs", "http")
 
-
 def main(ctx):
     ######################################################################
     # Should wheels be built?
