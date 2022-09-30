@@ -8,44 +8,10 @@ build_and_store_wheels: &BUILD_AND_STORE_WHEELS
 
 
 ######################################################################
-# Should wheels be built?
-# Test if the run was triggered by:
-# - a cron job. The cron job is not set in this file, but on the
-#   cirrus-ci repo page
-# - commit message containing [wheel build]
-# - a tag that begins with v, but doesn't end with dev0
-######################################################################
-
-cirrus_wheel_trigger_task:
-  only_if: $CIRRUS_REPO_FULL_NAME == "scipy/scipy"
-  compute_engine_instance:
-    image_project: cirrus-images
-    image: family/docker-builder
-    platform: linux
-    cpu: 2
-    memory: 4G
-
-  script: |
-    set -xe
-    
-    COMMIT_MSG=$(git log --no-merges -1)
-    if [[ "$COMMIT_MSG" == *"[wheel build]"* ]]; then
-      exit 0
-    elif [[ "$CIRRUS_CRON" == "nightly" ]]; then
-      exit 0
-    elif [[ $CIRRUS_TAG =~ ^v.*[^dev0]$ ]]; then
-      exit 0
-    else
-      exit 1
-    fi
-
-######################################################################
 # Build linux_aarch64 natively
 ######################################################################
 
 cirrus_wheels_linux_aarch64_task:
-  only_if: $CIRRUS_REPO_FULL_NAME == "scipy/scipy"
-  depends_on: cirrus_wheel_trigger
   compute_engine_instance:
     image_project: cirrus-images
     image: family/docker-builder-arm64
@@ -54,15 +20,19 @@ cirrus_wheels_linux_aarch64_task:
     cpu: 4
     memory: 8G
   matrix:
+    # build in a matrix because building and testing all four wheels in a
+    # single task takes longer than 60 mins (the default time limit for a
+    # cirrus-ci task).
     - env:
         CIBW_BUILD: cp38-* cp39-*
     - env:
         CIBW_BUILD: cp310-* cp311-*
-  build_script:
-    - apt install -y python3-venv python-is-python3
-    - which python
+  build_script: |
+    apt install -y python3-venv python-is-python3
+    which python
+    echo $CIRRUS_CHANGE_MESSAGE
     # needed for submodules
-    - git submodule update --init
+    git submodule update --init
   <<: *BUILD_AND_STORE_WHEELS
 
 
@@ -75,15 +45,11 @@ cirrus_wheels_upload_task:
   # Rather than upload wheels at the end of each cibuildwheel run we do a
   # final upload here. This is because a run may be on different OS for
   # which bash, etc, may not be present.
-
-  only_if: $CIRRUS_REPO_FULL_NAME == "scipy/scipy"
   depends_on: cirrus_wheels_linux_aarch64
   compute_engine_instance:
     image_project: cirrus-images
     image: family/docker-builder
     platform: linux
-    cpu: 2
-    memory: 4G
 
   env:
     # created as SCIPY_STAGING_UPLOAD_TOKEN_CIRRUS and SCIPY_NIGHTLY_UPLOAD_TOKEN_CIRRUS
