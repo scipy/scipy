@@ -5385,7 +5385,7 @@ class logistic_gen(rv_continuous):
         # rv_continuous provided guesses
         loc, scale = self._fitstart(data)
         # these are trumped by user-provided guesses
-        loc, scale = kwds.pop('loc', loc), kwds.pop('scale', scale)
+        loc, scale = kwds.get('loc', loc), kwds.get('scale', scale)
 
         # the maximum likelihood estimators `a` and `b` of the location and
         # scale parameters are roots of the two equations described in `func`.
@@ -5404,15 +5404,19 @@ class logistic_gen(rv_continuous):
             return dl_dloc(loc, scale), dl_dscale(scale, loc)
 
         if fscale is not None and floc is None:
-            loc = optimize.root(dl_dloc, (loc,)).x[0]
+            res = optimize.root(dl_dloc, (loc,))
+            loc = res.x[0]
             scale = fscale
         elif floc is not None and fscale is None:
-            scale = optimize.root(dl_dscale, (scale,)).x[0]
+            res = optimize.root(dl_dscale, (scale,))
+            scale = res.x[0]
             loc = floc
         else:
-            loc, scale = optimize.root(func, (loc, scale)).x
+            res = optimize.root(func, (loc, scale))
+            loc, scale = res.x
 
-        return loc, scale
+        return ((loc, scale) if res.success
+                else super().fit(data, *args, **kwds))
 
 
 logistic = logistic_gen(name='logistic')
