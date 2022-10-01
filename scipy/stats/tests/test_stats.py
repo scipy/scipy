@@ -6,7 +6,6 @@
 
     Additional tests by a host of SciPy developers.
 """
-import operator
 import os
 import re
 import warnings
@@ -7988,7 +7987,7 @@ class TestExpectile:
         rng = np.random.default_rng(42)
         x = rng.random(size=20)
         assert_allclose(stats.expectile(x, alpha=1), np.amax(x))
-   
+
     @pytest.mark.parametrize(
         "alpha", [0.2, 0.5 - 1e-12, 0.5, 0.5 + 1e-12, 0.8]
     )
@@ -8005,7 +8004,7 @@ class TestExpectile:
         Propositions 5, 6, 7 of
         F. Bellini, B. Klar, and A. Müller and E. Rosazza Gianin (2013).
         "Generalized Quantiles as Risk Measures"
-        http://doi.org/10.2139/ssrn.2225751 
+        http://doi.org/10.2139/ssrn.2225751
         """
         rng = np.random.default_rng(42)
         x = rng.normal(size=n)
