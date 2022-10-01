@@ -362,6 +362,16 @@ BinnedStatisticddResult = namedtuple('BinnedStatisticddResult',
                                       'binnumber'))
 
 
+def _bincount(x, weights):
+    if np.iscomplexobj(weights):
+        a = np.bincount(x, np.real(weights))
+        b = np.bincount(x, np.imag(weights))
+        z = a + b*1j
+    else:
+        z = np.bincount(x, weights)
+    return z
+
+
 def binned_statistic_dd(sample, values, statistic='mean',
                         bins=10, range=None, expand_binnumbers=False,
                         binned_statistic_result=None):
@@ -586,29 +596,29 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     if statistic in {'mean', np.mean}:
         result.fill(np.nan)
-        flatcount = np.bincount(binnumbers, None)
+        flatcount = _bincount(binnumbers, None)
         a = flatcount.nonzero()
         for vv in builtins.range(Vdim):
-            flatsum = np.bincount(binnumbers, values[vv])
+            flatsum = _bincount(binnumbers, values[vv])
             result[vv, a] = flatsum[a] / flatcount[a]
     elif statistic in {'std', np.std}:
         result.fill(np.nan)
-        flatcount = np.bincount(binnumbers, None)
+        flatcount = _bincount(binnumbers, None)
         a = flatcount.nonzero()
         for vv in builtins.range(Vdim):
-            flatsum = np.bincount(binnumbers, values[vv])
+            flatsum = _bincount(binnumbers, values[vv])
             delta = values[vv] - flatsum[binnumbers] / flatcount[binnumbers]
-            std = np.sqrt(np.bincount(binnumbers, delta**2)[a] / flatcount[a])
+            std = np.sqrt(_bincount(binnumbers, delta*np.conj(delta))[a] / flatcount[a])
             result[vv, a] = std
     elif statistic == 'count':
         result.fill(0)
-        flatcount = np.bincount(binnumbers, None)
+        flatcount = _bincount(binnumbers, None)
         a = np.arange(len(flatcount))
         result[:, a] = flatcount[np.newaxis, :]
     elif statistic in {'sum', np.sum}:
         result.fill(0)
         for vv in builtins.range(Vdim):
-            flatsum = np.bincount(binnumbers, values[vv])
+            flatsum = _bincount(binnumbers, values[vv])
             a = np.arange(len(flatsum))
             result[vv, a] = flatsum
     elif statistic in {'median', np.median}:

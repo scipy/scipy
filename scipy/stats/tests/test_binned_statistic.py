@@ -535,7 +535,7 @@ class TestBinnedStatistic:
         size = 20
         for i in range(size):
             x += [1-0.1**i]
- 
+
         bins = np.linspace(0,1,11)
         sum1, edges1, bc = binned_statistic_dd(x, np.ones(len(x)),
                                                bins=[bins], statistic='sum')
@@ -552,11 +552,12 @@ class TestBinnedStatistic:
             [0.0 + 0.0j, 1.0 + 1.0j, 2.0 + 2.0j, 3.0 + 3.0j],
             dtype=np.complex128
         )
-        with assert_raises(TypeError, match="Cannot cast array"):
-            binned_statistic_dd(x, v, 'sum', bins=2)
+        expected = np.array([1.0 + 1.0j, 5.0 + 5.0j], dtype=np.complex128)
+
+        stat, _, _ = binned_statistic_dd(x, v, 'sum', bins=2)
+        assert_allclose(stat, expected)
 
         def sum_function(x):
             return np.sum(x)
         stat, _, _ = binned_statistic_dd(x, v, sum_function, bins=2)
-        expected = np.array([1.0 + 1.0j, 5.0 + 5.0j], dtype=np.complex128)
         assert_allclose(stat, expected)
