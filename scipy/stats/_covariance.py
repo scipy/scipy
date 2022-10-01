@@ -115,7 +115,7 @@ class Covariance:
         that :math:`L L^T = P`.
         Whitening of a data point :math:`x` is performed by computing
         :math:`x^T L`. :math:`\log\det{A}` is calculated as
-        :math:`-2tr(\log{P})`, where the :math:`\log` operation is performed
+        :math:`-2tr(\log{L})`, where the :math:`\log` operation is performed
         element-wise.
 
         This `Covariance` class does not support singular covariance matrices
@@ -123,6 +123,32 @@ class Covariance:
         matrix.
         """
         return CovViaPrecision(precision, covariance)
+
+    @staticmethod
+    def from_cholesky(L):
+        r"""
+        Representation of a covariance provided via the (lower) Cholesky factor
+
+        Parameters
+        ----------
+        L : array_like
+            The lower triangular Cholesky factor of the covariance matrix.
+
+        Notes
+        -----
+        Let the covariance matrix be :math:`A`and :math:`L` be the lower
+        Cholesky factor such that :math:`L L^T = A`.
+        Whitening of a data point :math:`x` is performed by computing
+        :math:`L^{-1} x`. :math:`\log\det{A}` is calculated as
+        :math:`2tr(\log{L})`, where the :math:`\log` operation is performed
+        element-wise.
+
+        This `Covariance` class does not support singular covariance matrices
+        because the Cholesky decomposition does not exist for a singular
+        covariance matrix.
+
+        """
+        return CovViaCholesky(L)
 
     def whiten(self, x):
         """
@@ -293,6 +319,24 @@ class CovViaDiagonal(Covariance):
         Check whether x lies in the support of the distribution.
         """
         return ~np.any(_dot_diag(x, self._i_zero), axis=-1)
+
+
+class CovViaCholesky(Covariance):
+
+    def __init__(self, L):
+        L = self._validate_matrix(L, 'L')
+
+        self._factor = L
+        self._log_pdet = 2*np.log(np.diag(self._factor)).sum(axis=-1)
+        self._rank = L.shape[-1]  # must be full rank for cholesky
+        self._covariance = L @ L.T
+        self._dimensionality = self._rank
+        self._shape = L.shape
+        self._allow_singular = False
+
+    def _whiten(self, x):
+        res = linalg.solve_triangular(self._factor, x.T, lower=True).T
+        return res
 
 
 class CovViaPSD(Covariance):

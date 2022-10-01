@@ -54,6 +54,7 @@ class TestCovariance:
 
     _covariance_preprocessing = {"Diagonal": np.diag,
                                  "Precision": np.linalg.inv,
+                                 "Cholesky": np.linalg.cholesky,
                                  "PSD": lambda x:
                                      _PSD(x, allow_singular=True)}
     _all_covariance_types = np.array(list(_covariance_preprocessing))
@@ -63,8 +64,8 @@ class TestCovariance:
                  "general rank-deficient": [[5, -1, 0], [-1, 5, 0], [0, 0, 0]]}
     _cov_types = {"diagonal full rank": _all_covariance_types,
                   "general full rank": _all_covariance_types[1:],
-                  "diagonal rank-deficient": _all_covariance_types[[0, 2]],
-                  "general rank-deficient": _all_covariance_types[[2]]}
+                  "diagonal rank-deficient": _all_covariance_types[[0, -1]],
+                  "general rank-deficient": _all_covariance_types[[-1]]}
 
     @pytest.mark.parametrize("cov_type_name", _all_covariance_types[:-1])
     def test_factories(self, cov_type_name):
