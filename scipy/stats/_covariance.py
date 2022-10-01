@@ -34,6 +34,7 @@ class Covariance:
     representing a covariance matrix:
 
     >>> from scipy import stats
+    >>> import numpy as np
     >>> d = [1, 2, 3]
     >>> A = np.diag(d)  # a diagonal covariance matrix
     >>> x = [4, -2, 5]  # a point of interest
