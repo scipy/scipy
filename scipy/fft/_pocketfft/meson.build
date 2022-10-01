@@ -33,7 +33,7 @@ py3.extension_module('pypocketfft',
   cpp_args: pocketfft_threads,
   include_directories: inc_pybind11,
   dependencies: fft_deps,
-  gnu_symbol_visibility: 'hidden',
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/fft/_pocketfft',
 )
