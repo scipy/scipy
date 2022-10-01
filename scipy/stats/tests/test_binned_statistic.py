@@ -559,4 +559,3 @@ class TestBinnedStatistic:
         stat, _, _ = binned_statistic_dd(x, v, sum_function, bins=2)
         expected = np.array([1.0 + 1.0j, 5.0 + 5.0j], dtype=np.complex128)
         assert_allclose(stat, expected)
-    
