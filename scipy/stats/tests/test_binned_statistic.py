@@ -543,3 +543,20 @@ class TestBinnedStatistic:
 
         assert_allclose(sum1, sum2)
         assert_allclose(edges1[0], edges2)
+
+    def test_binned_statistic_dd_complex(self):
+        # Test that binned_statistic_dd works with complex-valued input, but
+        # only if given a callable statistic.
+        x = np.array([0, 0, 1, 1], dtype=np.float64)
+        v = np.array(
+            [0.0 + 0.0j, 1.0 + 1.0j, 2.0 + 2.0j, 3.0 + 3.0j],
+            dtype=np.complex128
+        )
+        with assert_raises(TypeError, match="Cannot cast array"):
+            binned_statistic_dd(x, v, 'sum', bins=2)
+
+        sum_function = lambda x: np.sum(x)
+        stat, _, _ = binned_statistic_dd(x, v, sum_function, bins=2)
+        expected = np.array([1.0 + 1.0j, 5.0 + 5.0j], dtype=np.complex128)
+        assert_allclose(stat, expected)
+    
