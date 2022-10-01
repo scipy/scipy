@@ -18,12 +18,14 @@ class Covariance:
     object representing a covariance matrix using any of several
     decompositions and perform calculations using a common interface.
 
-    Note that the `Covariance` class cannot be instantiated directly.
-    Instead, use one of the factory methods (e.g. `Covariance.from_diagonal`).
+    .. note::
+
+        The `Covariance` class cannot be instantiated directly. Instead, use
+        one of the factory methods (e.g. `Covariance.from_diagonal`).
 
     Examples
     --------
-    The most common use of the `Covariance` class is to call one of the
+    The `Covariance` class is is used by calling one of its
     factory methods to create a `Covariance` object, then pass that
     representation of the `Covariance` matrix as a shape parameter of a
     multivariate distribution.
