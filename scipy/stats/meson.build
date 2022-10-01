@@ -45,6 +45,7 @@ statlib = py3.extension_module('_statlib',
   link_with: statlib_lib,
   dependencies: [fortranobject_dep],
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/stats'
@@ -54,6 +55,7 @@ _stats = py3.extension_module('_stats',
   stats_special_cython_gen.process('_stats.pyx'),
   c_args: cython_c_args,
   include_directories: [inc_np],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats'
 )
@@ -72,6 +74,7 @@ mvn = py3.extension_module('_mvn',
   fortran_args: [fortran_ignore_warnings, _fflag_Wno_surprising],
   dependencies: [fortranobject_dep],
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/stats'
@@ -81,6 +84,7 @@ _sobol = py3.extension_module('_sobol',
   cython_gen.process('_sobol.pyx'),
   c_args: cython_c_args,
   include_directories: [inc_np],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats'
 )
@@ -99,6 +103,7 @@ _qmc_cy = py3.extension_module('_qmc_cy',
   cpp_args: cython_cpp_args,
   dependencies: [pthread],
   include_directories: [inc_np],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats'
 )
@@ -156,6 +161,7 @@ biasedurn = py3.extension_module('_biasedurn',
   ],
   cpp_args: ['-DR_BUILD', cython_cpp_args],
   include_directories: [inc_np],
+  link_args: version_link_args,
   # Note that we're not using npymath directly, it is needed to use npyrandom
   dependencies: [npyrandom_lib, npymath_lib],
   install: true,
@@ -173,6 +179,7 @@ if use_pythran
     _hypotests_pythran,
     cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
+    link_args: version_link_args,
     install: true,
     subdir: 'scipy/stats'
   )
@@ -187,6 +194,7 @@ py3.install_sources([
     '_common.py',
     '_constants.py',
     '_continuous_distns.py',
+    '_covariance.py',
     '_crosstab.py',
     '_discrete_distns.py',
     '_distn_infrastructure.py',

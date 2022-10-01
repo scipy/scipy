@@ -1,6 +1,7 @@
 streams = py3.extension_module('_streams',
   cython_gen.process('_streams.pyx'),
   c_args: cython_c_args,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/io/matlab'
 )
@@ -9,6 +10,7 @@ mio_utils = py3.extension_module('_mio_utils',
   cython_gen.process('_mio_utils.pyx'),
   c_args: cython_c_args,
   include_directories: [incdir_numpy],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/io/matlab'
 )
@@ -17,6 +19,7 @@ mio5_utils = py3.extension_module('_mio5_utils',
   cython_gen.process('_mio5_utils.pyx'),
   c_args: cython_c_args,
   include_directories: [incdir_numpy],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/io/matlab'
 )

@@ -1799,3 +1799,8 @@ If we were to round this solution up to
 capacity constraint, whereas if we were to round down to
 ``array([1., 1., 1., 1., 0., 1., 0., 0.])``, we would have a sub-optimal
 solution.
+
+For more MILP tutorials, see the Jupyter notebooks on SciPy Cookbooks:
+
+- `Compressed Sensing l1 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_1.ipynb>`_
+- `Compressed Sensing l0 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_2.ipynb>`_

@@ -567,9 +567,14 @@ class TestFit:
 
 class TestFitResult:
     def test_plot_iv(self):
-        data = stats.norm.rvs(0, 1, size=100)  # random state doesn't matter
+        rng = np.random.default_rng(1769658657308472721)
+        data = stats.norm.rvs(0, 1, size=100, random_state=rng)
+
+        def optimizer(*args, **kwargs):
+            return differential_evolution(*args, **kwargs, seed=rng)
+
         bounds = [(0, 30), (0, 1)]
-        res = stats.fit(stats.norm, data, bounds)
+        res = stats.fit(stats.norm, data, bounds, optimizer=optimizer)
         try:
             import matplotlib  # noqa
             message = r"`plot_type` must be one of \{'..."

@@ -78,14 +78,13 @@ class TestGeoMean:
     def test_1d_ma0(self):
         #  Test a 1d masked array with zero element
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
-        desired = 41.4716627439
-        with np.errstate(divide='ignore'):
-            check_equal_gmean(a, desired)
+        desired = 0
+        check_equal_gmean(a, desired)
 
     def test_1d_ma_inf(self):
         #  Test a 1d masked array with negative element
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
-        desired = 41.4716627439
+        desired = np.nan
         with np.errstate(invalid='ignore'):
             check_equal_gmean(a, desired)
 
