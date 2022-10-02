@@ -3971,7 +3971,8 @@ class TestKSOneSample:
 class TestKSTwoSamples:
     """Tests 2-samples with K-S various sizes, alternatives, modes."""
 
-    def _testOne(self, x1, x2, alternative, expected_statistic, expected_prob, mode='auto', attrs=None):
+    def _testOne(self, x1, x2, alternative, expected_statistic, expected_prob,
+                 mode='auto', attrs=None):
         result = stats.ks_2samp(x1, x2, alternative, mode=mode)
         expected = [expected_statistic, expected_prob]
         result_list = list(result)
