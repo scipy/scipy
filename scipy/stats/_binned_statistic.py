@@ -361,6 +361,7 @@ BinnedStatisticddResult = namedtuple('BinnedStatisticddResult',
                                      ('statistic', 'bin_edges',
                                       'binnumber'))
 
+
 def _bincount(x, weights):
     if np.iscomplexobj(weights):
         a = np.bincount(x, np.real(weights))
