@@ -126,13 +126,13 @@ class Covariance:
         return CovViaPrecision(precision, covariance)
 
     @staticmethod
-    def from_cholesky(L):
+    def from_cholesky(cholesky):
         r"""
         Representation of a covariance provided via the (lower) Cholesky factor
 
         Parameters
         ----------
-        L : array_like
+        cholesky : array_like
             The lower triangular Cholesky factor of the covariance matrix.
 
         Notes
@@ -149,7 +149,7 @@ class Covariance:
         covariance matrix.
 
         """
-        return CovViaCholesky(L)
+        return CovViaCholesky(cholesky)
 
     @staticmethod
     def from_eigendecomposition(eigendecomposition):
@@ -388,8 +388,8 @@ class CovViaDiagonal(Covariance):
 
 class CovViaCholesky(Covariance):
 
-    def __init__(self, L):
-        L = self._validate_matrix(L, 'L')
+    def __init__(self, cholesky):
+        L = self._validate_matrix(cholesky, 'cholesky')
 
         self._factor = L
         self._log_pdet = 2*np.log(np.diag(self._factor)).sum(axis=-1)

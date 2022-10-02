@@ -53,6 +53,14 @@ class TestCovariance:
         with pytest.raises(ValueError, match=message):
             _covariance.CovViaPrecision(np.eye(3), covariance=np.eye(2))
 
+        message = "The input `diagonal` must be a one-dimensional array..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaDiagonal("alpaca")
+
+        message = "The input `cholesky` must be a square, two-dimensional..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaCholesky(np.ones(2))
+
         message = "The input `eigenvalues` must be a one-dimensional..."
         with pytest.raises(ValueError, match=message):
             _covariance.CovViaEigendecomposition(("alpaca", np.eye(2)))
