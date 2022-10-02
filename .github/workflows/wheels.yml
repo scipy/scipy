@@ -74,7 +74,6 @@ jobs:
         # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
         - [ubuntu-20.04, manylinux, x86_64]
-        - [ubuntu-20.04, manylinux, aarch64]
 
         # When the macos-10.15 image is retired the gfortran/openblas chain
         # may have to be reworked because the gfortran-4.9.0 compiler currently
@@ -126,12 +125,6 @@ jobs:
 #          echo $(gfortran --version)
 #          echo $(gcc --version)
 #        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'true' }}
-
-      - name: Set up QEMU
-        if: ${{ runner.os == 'Linux' && matrix.buildplat[2] == 'aarch64' }}
-        uses: docker/setup-qemu-action@v1
-        with:
-          platforms: all
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.10.1
@@ -203,7 +196,7 @@ jobs:
         if: success()
         shell: bash
         env:
-          SCIPY_STAGING_UPLOAD_TOKEN_GHA: ${{ secrets.SCIPY_STAGING_UPLOAD_TOKEN }}
+          SCIPY_STAGING_UPLOAD_TOKEN: ${{ secrets.SCIPY_STAGING_UPLOAD_TOKEN }}
           SCIPY_NIGHTLY_UPLOAD_TOKEN: ${{ secrets.SCIPY_NIGHTLY_UPLOAD_TOKEN }}
         run: |
           source tools/wheels/upload_wheels.sh
