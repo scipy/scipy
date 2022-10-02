@@ -269,7 +269,7 @@ ufuncs_cxx_sources = [
   '_wright.cxx',
   'ellint_carlson_wrap.cxx',
   'Faddeeva.cc',
-  'sf_error.c',
+  'sf_error.cc',
   'wright.cc'
 ]
 
@@ -403,7 +403,8 @@ py3.extension_module('_ufuncs_cxx',
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
   cpp_args: cython_cpp_args,
-  include_directories: [inc_np, '../_lib', '../_build_utils/src'],
+  include_directories: [inc_np, '../_lib/boost', '../_lib',
+                        '../_build_utils/src'],
   link_args: version_link_args,
   dependencies: [ellint_dep],
   install: true,
