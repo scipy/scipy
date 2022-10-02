@@ -370,6 +370,7 @@ def _bincount(x, weights):
         z = np.bincount(x, weights)
     return z
 
+
 def binned_statistic_dd(sample, values, statistic='mean',
                         bins=10, range=None, expand_binnumbers=False,
                         binned_statistic_result=None):
@@ -605,7 +606,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
         for vv in builtins.range(Vdim):
             flatsum = _bincount(binnumbers, values[vv])
             delta = values[vv] - flatsum[binnumbers] / flatcount[binnumbers]
-            std = np.sqrt(_bincount(binnumbers, delta*np.conj(delta))[a] / flatcount[a])
+            std = np.sqrt(
+                _bincount(binnumbers, delta*np.conj(delta))[a] / flatcount[a]
+            )
             result[vv, a] = std
     elif statistic == 'count':
         result.fill(0)
@@ -649,7 +652,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
             except Exception:
                 null = np.nan
         result.fill(null)
-        result = _calc_binned_statistic(Vdim, binnumbers, result, values, statistic)
+        result = _calc_binned_statistic(
+            Vdim, binnumbers, result, values, statistic
+        )
 
     # Shape into a proper matrix
     result = result.reshape(np.append(Vdim, nbin))

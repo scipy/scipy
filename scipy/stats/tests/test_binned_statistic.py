@@ -566,6 +566,6 @@ class TestBinnedStatistic:
 
         def sum_reals(x):
             return np.sum(np.real(x))
-        
+
         stat, _, _ = binned_statistic_dd(x, v, sum_reals, bins=2)
         assert_allclose(stat, np.array([1.0, 5.0], dtype=np.float64))
