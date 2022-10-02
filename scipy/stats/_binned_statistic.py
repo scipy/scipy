@@ -366,7 +366,8 @@ def _bincount(x, weights):
     if np.iscomplexobj(weights):
         a = np.bincount(x, np.real(weights))
         b = np.bincount(x, np.imag(weights))
-        z = a + b * 1j
+        z = a + b*1j
+
     else:
         z = np.bincount(x, weights)
     return z
@@ -597,8 +598,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
         a = flatcount.nonzero()
         for vv in builtins.range(Vdim):
             flatsum = _bincount(binnumbers, values[vv])
-            if np.iscomplexobj(flatsum) and not np.iscomplexobj(flatcount):
-                result = result.astype(np.complex128)
+
             result[vv, a] = flatsum[a] / flatcount[a]
     elif statistic in {'std', np.std}:
         result.fill(np.nan)
@@ -607,9 +607,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
         for vv in builtins.range(Vdim):
             flatsum = _bincount(binnumbers, values[vv])
             delta = values[vv] - flatsum[binnumbers] / flatcount[binnumbers]
-            std = np.sqrt(
-                _bincount(binnumbers, delta*np.conj(delta))[a] / flatcount[a]
-            )
+
+            std = np.sqrt(_bincount(binnumbers, delta*np.conj(delta))[a] / flatcount[a])
+
             result[vv, a] = std
     elif statistic == 'count':
         result.fill(0)
@@ -620,8 +620,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
         result.fill(0)
         for vv in builtins.range(Vdim):
             flatsum = _bincount(binnumbers, values[vv])
-            if np.iscomplexobj(flatsum) and not np.iscomplexobj(result):
-                result = result.astype(np.complex128)
+
             a = np.arange(len(flatsum))
             result[vv, a] = flatsum
     elif statistic in {'median', np.median}:
