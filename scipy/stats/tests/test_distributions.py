@@ -5699,7 +5699,7 @@ class TestStudentizedRange:
     vs = [1, 3, 10, 20, 120, np.inf]
     ks = [2, 8, 14, 20]
 
-    data = zip(product(ps, vs, ks), qs)
+    data = list(zip(product(ps, vs, ks), qs))
 
     # A small selection of large-v cases generated with R's `ptukey`
     # Each case is in the format (q, k, v, r_result)
@@ -5720,8 +5720,9 @@ class TestStudentizedRange:
     @pytest.mark.slow
     def test_ppf_against_tables(self):
         for pvk, q_expected in self.data:
-            res_q = stats.studentized_range.ppf(*pvk)
-            assert_allclose(res_q, q_expected, rtol=1e-4)
+            p, v, k = pvk
+            res_q = stats.studentized_range.ppf(p, k, v)
+            assert_allclose(res_q, q_expected, rtol=5e-4)
 
     path_prefix = os.path.dirname(__file__)
     relative_path = "data/studentized_range_mpmath_ref.json"
