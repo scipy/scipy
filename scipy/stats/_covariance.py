@@ -90,6 +90,34 @@ class Covariance:
         does not lie in the span of the columns of the covariance matrix. The
         convention taken here is to treat the inverse square root of
         non-positive elements of :math:`d` as zeros.
+
+        Examples
+        --------
+        Prepare a symmetric positive definite covariance matrix ``A`` and a
+        data point ``x``.
+
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> rng = np.random.default_rng()
+        >>> n = 5
+        >>> A = np.diag(rng.random(n))
+        >>> x = rng.random(size=n)
+
+        Extract the diagonal from ``A`` and create the ``Covariance`` object.
+
+        >>> d = np.diag(A)
+        >>> cov = stats.Covariance.from_diagonal(d)
+
+        Compare the functionality of the ``Covariance`` object against a
+        reference implementations.
+
+        >>> res = cov.whiten(x)
+        >>> ref = np.diag(d**-0.5) @ x
+        >>> np.testing.assert_allclose(res, ref)
+        >>> res = cov.log_pdet
+        >>> ref = np.linalg.slogdet(A)[-1]
+        >>> np.testing.assert_allclose(res, ref)
+
         """
         return CovViaDiagonal(diagonal)
 
@@ -122,6 +150,35 @@ class Covariance:
         This `Covariance` class does not support singular covariance matrices
         because the precision matrix does not exist for a singular covariance
         matrix.
+
+        Examples
+        --------
+        Prepare a symmetric positive definite precision matrix ``P`` and a
+        data point ``x``. (If the precision matrix is not already available,
+        consider the other factory methods of the `Covariance` class.)
+
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> rng = np.random.default_rng()
+        >>> n = 5
+        >>> P = rng.random(size=(n, n))
+        >>> P = P @ P.T  # a precision matrix must be positive definite
+        >>> x = rng.random(size=n)
+
+        Create the ``Covariance`` object.
+
+        >>> cov = stats.Covariance.from_precision(P)
+
+        Compare the functionality of the ``Covariance`` object against
+        reference implementations.
+
+        >>> res = cov.whiten(x)
+        >>> ref = x @ np.linalg.cholesky(P)
+        >>> np.testing.assert_allclose(res, ref)
+        >>> res = cov.log_pdet
+        >>> ref = -np.linalg.slogdet(P)[-1]
+        >>> np.testing.assert_allclose(res, ref)
+
         """
         return CovViaPrecision(precision, covariance)
 
@@ -147,6 +204,36 @@ class Covariance:
         This `Covariance` class does not support singular covariance matrices
         because the Cholesky decomposition does not exist for a singular
         covariance matrix.
+
+        Examples
+        --------
+        Prepare a symmetric positive definite covariance matrix ``A`` and a
+        data point ``x``.
+
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> rng = np.random.default_rng()
+        >>> n = 5
+        >>> A = rng.random(size=(n, n))
+        >>> A = A @ A.T  # make the covariance symmetric positive definite
+        >>> x = rng.random(size=n)
+
+        Perform the Cholesky decomposition of ``A`` and create the
+        ``Covariance`` object.
+
+        >>> L = np.linalg.cholesky(A)
+        >>> cov = stats.Covariance.from_cholesky(L)
+
+        Compare the functionality of the ``Covariance`` object against
+        reference implementation.
+
+        >>> from scipy.linalg import solve_triangular
+        >>> res = cov.whiten(x)
+        >>> ref = solve_triangular(L, x, lower=True)
+        >>> np.testing.assert_allclose(res, ref)
+        >>> res = cov.log_pdet
+        >>> ref = np.linalg.slogdet(A)[-1]
+        >>> np.testing.assert_allclose(res, ref)
 
         """
         return CovViaCholesky(cholesky)
