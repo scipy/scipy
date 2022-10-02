@@ -12,12 +12,16 @@ from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy import stats
 
 
-def check_named_results(res, attributes, ma=False):
+def check_named_results(res, attributes, ma=False, additional_attributes=None):
+    """Check named tuples with optional additional attributes"""
     for i, attr in enumerate(attributes):
         if ma:
             ma_npt.assert_equal(res[i], getattr(res, attr))
         else:
             npt.assert_equal(res[i], getattr(res, attr))
+    if additional_attributes is not None:
+        for attr in additional_attributes:
+            assert hasattr(res, attr)
 
 
 def check_normalization(distfn, args, distname):

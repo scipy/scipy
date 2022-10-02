@@ -1875,9 +1875,15 @@ class TestCompareWithStats:
                         assert_equal(np.asarray(res1), np.asarray(res3))
 
     def test_nametuples_agree(self):
+        """Check that the data structure for Ks_2sampResult is intact"""
         result = stats.kstest([1, 2], [3, 4])
         assert_(isinstance(result, stats._stats_py.KstestResult))
-        result2 = stats._stats_py.Ks_2sampResult(result.statistic, result.pvalue)
+        result2 = stats._stats_py.Ks_2sampResult(
+                result.statistic,
+                result.pvalue,
+                statistic_location=result.statistic_location,
+                statistic_sign=result.statistic_sign,
+                )
         assert_(isinstance(result2, stats._stats_py.Ks_2sampResult))
         assert_equal(result, result2)
 

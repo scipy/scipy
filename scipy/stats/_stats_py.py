@@ -7563,8 +7563,11 @@ def _compute_dplus(cdfvals):
 
     Returns
     -------
-      Maximum distance of the CDF values below Uniform(0, 1)
-"""
+    res: Pair with the following elements:
+        - The maximum distance of the CDF values below Uniform(0, 1).
+        - The location at which the maximum is reached.
+
+    """
     n = len(cdfvals)
     dplus = (np.arange(1.0, n + 1) / n - cdfvals)
     amax = dplus.argmax()
@@ -7582,8 +7585,9 @@ def _compute_dminus(cdfvals):
 
     Returns
     -------
-      Maximum distance of the CDF values above Uniform(0, 1)
-
+    res: Pair with the following elements:
+        - Maximum distance of the CDF values above Uniform(0, 1)
+        - The location at which the maximum is reached.
     """
     n = len(cdfvals)
     dminus = (cdfvals - np.arange(0.0, n)/n)
@@ -7931,8 +7935,8 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
 
     This test compares the underlying continuous distributions F(x) and G(x)
-    of two independent samples.  See Notes for a description
-    of the available null and alternative hypotheses.
+    of two independent samples.  See Notes for a description of the available
+    null and alternative hypotheses.
 
     Parameters
     ----------
@@ -7963,9 +7967,9 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             Value of the stochastic variable closest to the KS statistic. By
             definition, the distance between the two sampled distributions at
             this value is largest.
-        statistic_sign: str
-            -1 if the first distribution is above the second at the statistic
-            location, otherwise 1.
+        statistic_sign: int
+            +1 if the first distribution is above the second at the KS
+            statistic location, otherwise -1.
 
     See Also
     --------
@@ -8107,11 +8111,11 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     minS = np.clip(-cddiffs[argminS], 0, 1)
     maxS = cddiffs[argmaxS]
 
-    if alternative == 'less' or minS > maxS:
+    if alternative == 'less' or (alternative == 'two-sided' and minS > maxS):
         d = minS
         d_location = loc_minS
         d_sign = -1
-    elif alternative == 'greater' or minS <= maxS:
+    else:
         d = maxS
         d_location = loc_maxS
         d_sign = 1
