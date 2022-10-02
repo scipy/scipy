@@ -2,6 +2,7 @@ from functools import cached_property
 
 import numpy as np
 from scipy import linalg
+from scipy.stats import _multivariate
 
 
 __all__ = ["Covariance"]
@@ -149,6 +150,70 @@ class Covariance:
 
         """
         return CovViaCholesky(L)
+
+    @staticmethod
+    def from_eigendecomposition(eigendecomposition):
+        r"""
+        Representation of a covariance provided via eigendecomposition
+
+        Parameters
+        ----------
+        eigendecomposition : sequence
+            A sequence (nominally a tuple) containing the eigenvalue and
+            eigenvector arrays as computed by `scipy.linalg.eigh` or
+            `numpy.linalg.eigh`.
+
+        Notes
+        -----
+        Let the covariance matrix be :math:`A`, let :math:`V` be matrix of
+        eigenvectors, and let :math:`W` be the diagonal matrix of eigenvalues
+        such that `V W V^T = A`.
+
+        When all of the eigenvalues are strictly positive, whitening of a
+        data point :math:`x` is performed by computing
+        :math:`x^T (V W^{-1/2})`, where the inverse square root can be taken
+        element-wise.
+        :math:`\log\det{A}` is calculated as  :math:`tr(\log{W})`,
+        where the :math:`\log` operation is performed element-wise.
+
+        This `Covariance` class supports singular covariance matrices. When
+        computing ``_log_pdet``, non-positive eigenvalues are ignored.
+        Whitening is not well defined when the point to be whitened
+        does not lie in the span of the columns of the covariance matrix. The
+        convention taken here is to treat the inverse square root of
+        non-positive eigenvalues as zeros.
+
+        Examples
+        --------
+        Prepare a symmetric positive definite covariance matrix ``A`` and a
+        data point ``x``.
+
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> rng = np.random.default_rng()
+        >>> n = 5
+        >>> A = rng.random(size=(n, n))
+        >>> A = A @ A.T  # make the covariance symmetric positive definite
+        >>> x = rng.random(size=n)
+
+        Perform the eigendecomposition of ``A`` and create the ``Covariance``
+        object.
+
+        >>> w, v = np.linalg.eigh(A)
+        >>> cov = stats.Covariance.from_eigendecomposition((w, v))
+
+        Compare the functionality of the ``Covariance`` object against
+        reference implementations.
+
+        >>> res = cov.whiten(x)
+        >>> ref = x @ (v @ np.diag(w**-0.5))
+        >>> np.testing.assert_allclose(res, ref)
+        >>> res = cov.log_pdet
+        >>> ref = np.linalg.slogdet(A)[-1]
+        >>> np.testing.assert_allclose(res, ref)
+
+        """
+        return CovViaEigendecomposition(eigendecomposition)
 
     def whiten(self, x):
         """
@@ -338,6 +403,58 @@ class CovViaCholesky(Covariance):
         res = linalg.solve_triangular(self._factor, x.T, lower=True).T
         return res
 
+
+class CovViaEigendecomposition(Covariance):
+
+    def __init__(self, eigendecomposition):
+        eigenvalues, eigenvectors = eigendecomposition
+        eigenvalues = self._validate_vector(eigenvalues, 'eigenvalues')
+        eigenvectors = self._validate_matrix(eigenvectors, 'eigenvectors')
+        message = ("The shapes of `eigenvalues` and `eigenvectors` "
+                   "must be compatible.")
+        try:
+            eigenvalues = np.expand_dims(eigenvalues, -2)
+            eigenvectors, eigenvalues = np.broadcast_arrays(eigenvectors,
+                                                            eigenvalues)
+            eigenvalues = eigenvalues[..., 0, :]
+        except ValueError:
+            raise ValueError(message)
+
+        i_zero = eigenvalues <= 0
+        positive_eigenvalues = np.array(eigenvalues, dtype=np.float64)
+
+        positive_eigenvalues[i_zero] = 1  # ones don't affect determinant
+        self._log_pdet = np.sum(np.log(positive_eigenvalues), axis=-1)
+
+        psuedo_reciprocals = 1 / np.sqrt(positive_eigenvalues)
+        psuedo_reciprocals[i_zero] = 0
+
+        self._LP = eigenvectors * psuedo_reciprocals
+        self._rank = positive_eigenvalues.shape[-1] - i_zero.sum(axis=-1)
+        self._w = eigenvalues
+        self._v = eigenvectors
+        self._dimensionality = eigenvalues.shape[-1]
+        self._shape = eigenvectors.shape
+        self._null_basis = eigenvectors * i_zero
+        # This is only used for `_support_mask`, not to decide whether
+        # the covariance is singular or not.
+        self._eps = _multivariate._eigvalsh_to_eps(eigenvalues) * 10**3
+        self._allow_singular = True
+
+    def _whiten(self, x):
+        return x @ self._LP
+
+    @cached_property
+    def _covariance(self):
+        return (self._v * self._w) @ self._v.T
+
+    def _support_mask(self, x):
+        """
+        Check whether x lies in the support of the distribution.
+        """
+        residual = np.linalg.norm(x @ self._null_basis, axis=-1)
+        in_support = residual < self._eps
+        return in_support
 
 class CovViaPSD(Covariance):
     """
