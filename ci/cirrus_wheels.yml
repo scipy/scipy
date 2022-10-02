@@ -41,8 +41,6 @@ cirrus_wheels_linux_aarch64_task:
 ######################################################################
 
 cirrus_wheels_macos_arm64_task:
-  only_if: $CIRRUS_REPO_FULL_NAME == "scipy/scipy"
-  depends_on: cirrus_wheel_trigger
   macos_instance:
     image: ghcr.io/cirruslabs/macos-monterey-xcode:13.3.1
   matrix:
@@ -83,7 +81,9 @@ cirrus_wheels_upload_task:
   # Rather than upload wheels at the end of each cibuildwheel run we do a
   # final upload here. This is because a run may be on different OS for
   # which bash, etc, may not be present.
-  depends_on: cirrus_wheels_linux_aarch64
+  depends_on:
+    - cirrus_wheels_linux_aarch64
+    - cirrus_wheels_macos_arm64
   compute_engine_instance:
     image_project: cirrus-images
     image: family/docker-builder
