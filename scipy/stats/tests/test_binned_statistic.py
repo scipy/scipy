@@ -545,8 +545,7 @@ class TestBinnedStatistic:
         assert_allclose(edges1[0], edges2)
 
     def test_binned_statistic_dd_complex(self):
-        # Test that binned_statistic_dd works with complex-valued input, but
-        # only if given a callable statistic.
+        # Test that binned_statistic_dd works with complex-valued inputs
         x = np.array([0, 0, 1, 1], dtype=np.float64)
         v = np.array(
             [0.0 + 0.0j, 1.0 + 1.0j, 2.0 + 2.0j, 3.0 + 3.0j],
@@ -561,3 +560,9 @@ class TestBinnedStatistic:
             return np.sum(x)
         stat, _, _ = binned_statistic_dd(x, v, sum_function, bins=2)
         assert_allclose(stat, expected)
+
+        def sum_reals(x):
+            return np.sum(np.real(x))
+
+        stat, _, _ = binned_statistic_dd(x, v, sum_reals, bins=2)
+        assert_allclose(stat, np.array([1.0, 5.0], dtype=np.float64))
