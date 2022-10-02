@@ -60,11 +60,35 @@ endif
 
 is_windows = host_machine.system() == 'windows'
 
-# Intel Fortran on Windows does things differently, so deal with that
-if is_windows and ff.get_id() == 'intel-cl'
-  _ifort_flags = ff.get_supported_arguments('/MD', '/names:lowercase', '/assume:underscore')
-  add_project_arguments(_ifort_flags, language: 'fortran')
+# Intel compilers default to fast-math, so disable it if we detect Intel
+# compilers. A word of warning: this may not work with the conda-forge
+# compilers, because those have the annoying habit of including lots of flags
+# that are gcc-specific in CFLAGS/CXXFLAGS/FFLAGS, which throws off the
+# detection logic below. You have to remove the wrong flags (only `-isystem`
+# is actually needed, everything else shouldn't be there).
+_intel_cflags = []
+_intel_fflags = []
+if cc.get_id() == 'intel'
+  _intel_cflags += cc.get_supported_arguments('-fp-model=strict')
+elif cc.get_id() == 'intel-cl'
+  _intel_cflags += cc.get_supported_arguments('/fp:strict')
 endif
+if ff.get_id() == 'intel'
+  _intel_fflags = ff.get_supported_arguments('-fp-model=strict')
+  minus0_arg = ['-assume', 'minus0']
+  if ff.has_multi_arguments(minus0_arg)
+    _intel_fflags += minus0_arg
+  endif
+elif ff.get_id() == 'intel-cl'
+  # Intel Fortran on Windows does things differently, so deal with that
+  # (also specify dynamic linking and the right name mangling)
+  _intel_fflags = ff.get_supported_arguments(
+    '/fp:strict', '/MD', '/names:lowercase', '/assume:underscore',
+    '/assume:minus0'
+  )
+endif
+add_project_arguments(_intel_cflags, language: ['c', 'cpp'])
+add_project_arguments(_intel_fflags, language: 'fortran')
 
 # Hide symbols when building on Linux with GCC. For Python extension modules,
 # we only need `PyInit_*` to be public, anything else may cause problems. So we
