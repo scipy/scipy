@@ -650,10 +650,22 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: the value of reference sample is"
                     " implementation dependent.")
 
+    def test_centering(self):
+        # centering stratifies samples in the middle of equal segments:
+        # * inter-sample distance is constant in 1D sub-projections
+        # * after ordering, columns are equal
+        rng = np.random.default_rng(230848485337593016117637089968181108379)
+        engine = qmc.LatinHypercube(d=3, scramble=False, seed=rng)
+        for _ in range(10):
+            sample = engine.random(100)
+            sorted_sample = np.sort(sample, axis=0)
+            mean_cols = np.mean(sorted_sample, axis=1)
+            assert_allclose(mean_cols, np.linspace(0.005, 0.995, 100))
+
     @pytest.mark.parametrize("strength", [1, 2])
-    @pytest.mark.parametrize("centered", [False, True])
+    @pytest.mark.parametrize("scramble", [False, True])
     @pytest.mark.parametrize("optimization", [None, "random-CD"])
-    def test_sample_stratified(self, optimization, centered, strength):
+    def test_sample_stratified(self, optimization, scramble, strength):
         seed = np.random.default_rng(37511836202578819870665127532742111260)
         p = 5
         n = p**2
@@ -661,7 +673,7 @@ class TestLHS(QMCEngineTests):
         expected1d = (np.arange(n) + 0.5) / n
         expected = np.broadcast_to(expected1d, (d, n)).T
 
-        engine = qmc.LatinHypercube(d=d, centered=centered,
+        engine = qmc.LatinHypercube(d=d, scramble=scramble,
                                     strength=strength,
                                     optimization=optimization,
                                     seed=seed)
@@ -704,6 +716,10 @@ class TestLHS(QMCEngineTests):
         with pytest.raises(ValueError, match=message):
             engine = qmc.LatinHypercube(d=5, strength=2)
             engine.random(9)
+
+        message = r"'centered' is deprecated"
+        with pytest.warns(UserWarning,  match=message):
+            qmc.LatinHypercube(1, centered=True)
 
 
 class TestSobol(QMCEngineTests):
