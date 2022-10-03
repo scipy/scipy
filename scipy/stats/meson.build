@@ -169,14 +169,14 @@ biasedurn = py3.extension_module('_biasedurn',
 )
 
 if use_pythran
-  _hypotests_pythran = custom_target('_hypotests_pythran',
-    output: ['_hypotests_pythran.cpp'],
-    input: '_hypotests_pythran.py',
-    command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_hypotests_pythran.cpp']
+  _stats_pythran = custom_target('_stats_pythran',
+    output: ['_stats_pythran.cpp'],
+    input: '_stats_pythran.py',
+    command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_stats_pythran.cpp']
   )
 
-  _group_columns = py3.extension_module('_hypotests_pythran',
-    _hypotests_pythran,
+  _group_columns = py3.extension_module('_stats_pythran',
+    _stats_pythran,
     cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
     link_args: version_link_args,
