@@ -93,7 +93,11 @@ jobs:
         # The actions/setup-python can only use the form ["3.8'].
         exclude:
           - buildplat: [macos-12, macosx, arm64]
-            python: ["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11.0-alpha - 3.11.0"]
+            python: ["cp39", "3.9"]
+          - buildplat: [macos-12, macosx, arm64]
+            python: ["cp310", "3.10"]
+          - buildplat: [macos-12, macosx, arm64]
+            python: ["cp311", "3.11.0-alpha - 3.11.0"]
     env:
       IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}
       IS_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
