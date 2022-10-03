@@ -1535,7 +1535,7 @@ Finally, we can solve the transformed problem using :func:`linprog`.
     >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
     >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
     >>> print(result.message)
-    The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is b'At lower/fixed bound')
+    The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is At lower/fixed bound)
 
 The result states that our problem is infeasible, meaning that there is no solution vector that satisfies all the
 constraints. That doesn't necessarily mean we did anything wrong; some problems truly are infeasible.
@@ -1684,3 +1684,123 @@ PETSc [PP]_, and PyAMG [AMG]_:
 
 .. [AMG] PyAMG (algebraic multigrid preconditioners/solvers)
          https://github.com/pyamg/pyamg/issues
+
+.. _tutorial-optimize_milp:
+
+Mixed integer linear programming
+---------------------------------
+
+Knapsack problem example
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The knapsack problem is a well known combinatorial optimization problem.
+Given a set of items, each with a size and a value, the problem is to choose
+the items that maximize the total value under the condition that the total size
+is below a certain threshold.
+
+Formally, let
+
+- :math:`x_i` be a boolean variable that indicates whether item :math:`i` is
+  included in the knapsack,
+
+- :math:`n` be the total number of items,
+
+- :math:`v_i` be the value of item :math:`i`,
+
+- :math:`s_i` be the size of item :math:`i`, and
+
+- :math:`C` be the capacity of the knapsack.
+
+Then the problem is:
+
+.. math::
+
+    \max \sum_i^n  v_{i} x_{i}
+
+.. math::
+
+    \text{subject to} \sum_i^n s_{i} x_{i} \leq C,  x_{i} \in {0, 1}
+
+Although the objective function and inequality constraints are linear in the
+*decision variables* :math:`x_i`, this differs from a typical linear
+programming problem in that the decision variables can only assume integer
+values.  Specifically, our decision variables can only be :math:`0` or
+:math:`1`, so this is known as a *binary integer linear program* (BILP). Such
+a problem falls within the larger class of *mixed integer linear programs*
+(MILPs), which we we can solve with :func:`milp`.
+
+In our example, there are 8 items to choose from, and the size and value of
+each is specified as follows.
+
+::
+
+    >>> import numpy as np
+    >>> from scipy import optimize
+    >>> sizes = np.array([21, 11, 15, 9, 34, 25, 41, 52])
+    >>> values = np.array([22, 12, 16, 10, 35, 26, 42, 53])
+
+We need to constrain our eight decision variables to be binary. We do so
+by adding a :class:`Bounds`: constraint to ensure that they lie between
+:math:`0` and :math:`1`, and we apply "integrality" constraints to ensure that
+they are *either* :math:`0` *or* :math:`1`.
+
+::
+
+    >>> bounds = optimize.Bounds(0, 1)  # 0 <= x_i <= 1
+    >>> integrality = np.full_like(values, True)  # x_i are integers
+
+The knapsack capacity constraint is specified using :class:`LinearConstraint`.
+
+::
+
+    >>> capacity = 100
+    >>> constraints = optimize.LinearConstraint(A=sizes, lb=0, ub=capacity)
+
+If we are following the usual rules of linear algebra, the input ``A`` should
+be a  two-dimensional matrix, and the lower and upper bounds ``lb`` and ``ub``
+should be one-dimensional vectors, but :class:`LinearConstraint` is forgiving
+as long as the inputs can be broadcast to consistent shapes.
+
+Using the variables defined above, we can solve the knapsack problem using
+:func:`milp`. Note that :func:`milp` minimizes the objective function, but we
+want to maximize the total value, so we set `c` to be negative of the values.
+
+::
+
+    >>> from scipy.optimize import milp
+    >>> res = milp(c=-values, constraints=constraints,
+    ...            integrality=integrality, bounds=bounds)
+
+Let's check the result:
+
+::
+
+    >>> res.success
+    True
+    >>> res.x
+    array([1., 1., 0., 1., 1., 1., 0., 0.])
+
+This means that we should select the items 1, 2, 4, 5, 6 to optimize the total
+value under the size constraint. Note that this is different from we would have
+obtained had we solved the *linear programming relaxation* (without integrality
+constraints) and attempted to round the decision variables.
+
+::
+
+    >>> from scipy.optimize import milp
+    >>> res = milp(c=-values, constraints=constraints,
+    ...            integrality=False, bounds=bounds)
+    >>> res.x
+    array([1.        , 1.        , 1.        , 1.        ,
+           0.55882353, 1.        , 0.        , 0.        ])
+
+If we were to round this solution up to
+``array([1., 1., 1., 1., 1., 1., 0., 0.])``, our knapsack would be over the
+capacity constraint, whereas if we were to round down to
+``array([1., 1., 1., 1., 0., 1., 0., 0.])``, we would have a sub-optimal
+solution.
+
+For more MILP tutorials, see the Jupyter notebooks on SciPy Cookbooks:
+
+- `Compressed Sensing l1 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_1.ipynb>`_
+- `Compressed Sensing l0 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_2.ipynb>`_

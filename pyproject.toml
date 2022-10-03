@@ -10,10 +10,10 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.8.0",
-    "Cython>=0.29.21",
-    "pybind11>=2.4.3",
-    "pythran>=0.11.0",
+    "meson-python>=0.9.0",
+    "Cython>=0.29.32",
+    "pybind11>=2.10.0",
+    "pythran>=0.12.0",
     # `wheel` is needed for non-isolated builds, given that `meson-python`
     # doesn't list it as a runtime requirement (at least in 0.5.0)
     "wheel",
@@ -112,7 +112,7 @@ test = [
 ]
 doc = [
     "sphinx!=4.1.0",
-    "pydata-sphinx-theme>=0.9.0",
+    "pydata-sphinx-theme==0.9.0",
     "sphinx-design>=0.2.0",
     "matplotlib>2",
     "numpydoc",
@@ -142,14 +142,15 @@ dodoFile = "dev.py"
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* pp* *_ppc64le *_i686 *_s390x *-musllinux*"
 build-verbosity = "3"
-before-test = "pip install -r {project}/tools/wheels/test_requirements.txt"
+# gmpy2 and scikit-umfpack are usually added for testing. However, there are
+# currently wheels missing that make the test script fail.
+test-requires = ["pytest", "pytest-cov", "pytest-xdist", "asv", "mpmath", "threadpoolctl", "pooch"]
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux2014"
 manylinux-aarch64-image = "manylinux2014"
 before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
-test-skip = "*_aarch64"
 
 [tool.cibuildwheel.macos]
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"

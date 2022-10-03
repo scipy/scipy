@@ -81,7 +81,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
         are also available.
-    integrality : 1-D array, optional
+    integrality : 1-D array or int, optional
         Indicates the type of integrality constraint on each decision variable.
 
         ``0`` : Continuous variable; no integrality constraint.
@@ -96,6 +96,13 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         within `bounds` or take value ``0``.
 
         By default, all variables are continuous.
+
+        For mixed integrality constraints, supply an array of shape `c.shape`.
+        To infer a constraint on each decision variable from shorter inputs,
+        the argument will be broadcasted to `c.shape` using `np.broadcast_to`.
+
+        This argument is currently used only by the ``'highs'`` method and
+        ignored otherwise.
 
     Options
     -------

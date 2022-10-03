@@ -218,16 +218,6 @@ class _kde_subclass2(stats.gaussian_kde):
         super().__init__(dataset)
 
 
-class _kde_subclass3(stats.gaussian_kde):
-    def __init__(self, dataset, covariance):
-        self.covariance = covariance
-        stats.gaussian_kde.__init__(self, dataset)
-
-    def _compute_covariance(self):
-        self.inv_cov = np.linalg.inv(self.covariance)
-        self._norm_factor = np.sqrt(np.linalg.det(2 * np.pi * self.covariance))
-
-
 class _kde_subclass4(stats.gaussian_kde):
     def covariance_factor(self):
         return 0.5 * self.silverman_factor()
@@ -251,10 +241,8 @@ def test_gaussian_kde_subclassing():
     y2 = kde2(xs)
     assert_array_almost_equal_nulp(ys, y2, nulp=10)
 
-    # subclass 3
-    kde3 = _kde_subclass3(x1, kde.covariance)
-    y3 = kde3(xs)
-    assert_array_almost_equal_nulp(ys, y3, nulp=10)
+    # subclass 3 was removed because we have no obligation to maintain support
+    # for user invocation of private methods
 
     # subclass 4
     kde4 = _kde_subclass4(x1)
@@ -341,6 +329,17 @@ def test_kde_output_dtype(dtype, bw_type):
     # weights are always cast to float64
     assert result.dtype == np.result_type(dataset, points, np.float64(weights),
                                           k.factor)
+
+
+def test_pdf_logpdf_validation():
+    rng = np.random.default_rng(64202298293133848336925499069837723291)
+    xn = rng.standard_normal((2, 10))
+    gkde = stats.gaussian_kde(xn)
+    xs = rng.standard_normal((3, 10))
+
+    msg = "points have dimension 3, dataset has dimension 2"
+    with pytest.raises(ValueError, match=msg):
+        gkde.logpdf(xs)
 
 
 def test_pdf_logpdf():

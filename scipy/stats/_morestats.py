@@ -12,13 +12,12 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 from scipy import optimize
 from scipy import special
 from scipy._lib._bunch import _make_tuple_bunch
-from scipy._lib._util import _rename_parameter
+from scipy._lib._util import _rename_parameter, _contains_nan
 
 from . import _statlib
 from . import _stats_py
 from ._fit import FitResult
-from ._stats_py import (find_repeats, _contains_nan, _normtest_finish,
-                        SignificanceResult)
+from ._stats_py import find_repeats, _normtest_finish, SignificanceResult
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -1535,7 +1534,7 @@ def yeojohnson_llf(lmb, data):
         llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
 
-    where :math:`\hat{\sigma}^2` is estimated variance of the the Yeo-Johnson
+    where :math:`\hat{\sigma}^2` is estimated variance of the Yeo-Johnson
     transformed input data ``x``.
 
     .. versionadded:: 1.2.0
@@ -3317,7 +3316,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     >>> d = [6, 8, 14, 16, 23, 24, 28, 29, 41, -48, 49, 56, 60, -67, 75]
 
-    Cross-fertilized plants appear to be be higher. To test the null
+    Cross-fertilized plants appear to be higher. To test the null
     hypothesis that there is no height difference, we can apply the
     two-sided test:
 

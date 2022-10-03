@@ -1130,6 +1130,17 @@ class TestTruncnorm:
             stats.truncnorm.rvs(-10, -5, size=5,
                                 random_state=np.random.default_rng())
 
+    def test_logcdf_gh17064(self):
+        # regression test for gh-17064 - avoid roundoff error for logcdfs ~0
+        a = np.array([-np.inf, -np.inf, -8, -np.inf, 10])
+        b = np.array([np.inf, np.inf, 8, 10, np.inf])
+        x = np.array([10, 7.5, 7.5, 9, 20])
+        expected = [-7.619853024160525e-24, -3.190891672910947e-14,
+                    -3.128682067168231e-14, -1.1285122074235991e-19,
+                    -3.61374964828753e-66]
+        assert_allclose(stats.truncnorm(a, b).logcdf(x), expected)
+        assert_allclose(stats.truncnorm(-b, -a).logsf(-x), expected)
+
 
 class TestGenLogistic:
 
@@ -1397,15 +1408,16 @@ class TestLogistic:
         # to this system of equations are equal
         assert_allclose(fit_method, expected_solution, atol=1e-30)
 
-    @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
-    def test_fit_comp_optimizer(self, loc_rvs, scale_rvs):
-        data = stats.logistic.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
+    def test_fit_comp_optimizer(self):
+        data = stats.logistic.rvs(size=100, loc=0.5, scale=2)
 
         # obtain objective function to compare results of the fit methods
         args = [data, (stats.logistic._fitstart(data),)]
         func = stats.logistic._reduce_func(args, {})[1]
 
         _assert_less_or_close_loglike(stats.logistic, data, func)
+        _assert_less_or_close_loglike(stats.logistic, data, func, floc=1)
+        _assert_less_or_close_loglike(stats.logistic, data, func, fscale=1)
 
     @pytest.mark.parametrize('testlogcdf', [True, False])
     def test_logcdfsf_tails(self, testlogcdf):
@@ -1611,8 +1623,8 @@ class TestPareto:
                              [p for p in product([True, False], repeat=3)
                               if False in p])
     @np.errstate(invalid="ignore")
-    def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
-                                   fix_shape, fix_loc, fix_scale, rng):
+    def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
+                                    fix_shape, fix_loc, fix_scale, rng):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
                                 loc=rvs_loc, random_state=rng)
         args = [data, (stats.pareto._fitstart(data), )]
@@ -2184,7 +2196,7 @@ class TestInvgauss:
 
     @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
                              [(2, 0, 1), (np.random.rand(3)*10)])
-    def test_fit_MLE_comp_optimzer(self, rvs_mu, rvs_loc, rvs_scale):
+    def test_fit_MLE_comp_optimizer(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
 
@@ -2331,7 +2343,7 @@ class TestLaplace:
     @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10, -5),
                                                    (5, 10),
                                                    (.2, .5)])
-    def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale):
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale):
         data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
 
         # the log-likelihood function for laplace is given by
@@ -2388,6 +2400,78 @@ class TestLaplace:
         p = 1e-25
         x = stats.laplace.isf(p)
         assert_allclose(x, -np.log(2*p), rtol=1e-13)
+
+
+class TestPowerlaw(object):
+    @pytest.fixture(scope='function')
+    def rng(self):
+        return np.random.default_rng(1234)
+
+    @pytest.mark.parametrize("rvs_shape", [.1, .5, .75, 1, 2])
+    @pytest.mark.parametrize("rvs_loc", [-1, 0, 1])
+    @pytest.mark.parametrize("rvs_scale", [.1, 1, 5])
+    @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
+                             [p for p in product([True, False], repeat=3)
+                              if False in p])
+    def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
+                                    fix_shape, fix_loc, fix_scale, rng):
+        data = stats.powerlaw.rvs(size=250, a=rvs_shape, loc=rvs_loc,
+                                  scale=rvs_scale, random_state=rng)
+
+        args = [data, (stats.powerlaw._fitstart(data), )]
+        func = stats.powerlaw._reduce_func(args, {})[1]
+
+        kwds = dict()
+        if fix_shape:
+            kwds['f0'] = rvs_shape
+        if fix_loc:
+            kwds['floc'] = np.nextafter(data.min(), -np.inf)
+        if fix_scale:
+            kwds['fscale'] = rvs_scale
+        _assert_less_or_close_loglike(stats.powerlaw, data, func, **kwds)
+
+    def test_problem_case(self):
+        # An observed problem with the test method indicated that some fixed
+        # scale values could cause bad results, this is now corrected.
+        a = 2.50002862645130604506
+        location = 0.0
+        scale = 35.249023299873095
+
+        data = stats.powerlaw.rvs(a=a, loc=location, scale=scale, size=100,
+                                  random_state=np.random.default_rng(5))
+
+        kwds = {'fscale': data.ptp() * 2}
+        args = [data, (stats.powerlaw._fitstart(data), )]
+        func = stats.powerlaw._reduce_func(args, {})[1]
+
+        _assert_less_or_close_loglike(stats.powerlaw, data, func, **kwds)
+
+    def test_fit_warnings(self):
+        assert_fit_warnings(stats.powerlaw)
+        # test for error when `fscale + floc <= np.max(data)` is not satisfied
+        msg = r" Maximum likelihood estimation with 'powerlaw' requires"
+        with assert_raises(FitDataError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], floc=0, fscale=3)
+
+        # test for error when `data - floc >= 0`  is not satisfied
+        msg = r" Maximum likelihood estimation with 'powerlaw' requires"
+        with assert_raises(FitDataError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], floc=2)
+
+        # test for fixed location not less than `min(data)`.
+        msg = r" Maximum likelihood estimation with 'powerlaw' requires"
+        with assert_raises(FitDataError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], floc=1)
+
+        # test for when fixed scale is less than or equal to range of data
+        msg = r"Negative or zero `fscale` is outside"
+        with assert_raises(ValueError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], fscale=-3)
+
+        # test for when fixed scale is less than or equal to range of data
+        msg = r"`fscale` must be greater than the range of data."
+        with assert_raises(ValueError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], fscale=3)
 
 
 class TestInvGamma:
@@ -5200,6 +5284,29 @@ class TestWeibull:
         ls = stats.weibull_max.logsf(-1e-9, 2, scale=3)
         assert_allclose(ls, np.log(-special.expm1(-1/9000000000000000000)))
 
+    def test_fit_min(self):
+        rng = np.random.default_rng(5985959307161735394)
+
+        c, loc, scale = 2, 3.5, 0.5  # arbitrary, valid parameters
+        dist = stats.weibull_min(c, loc, scale)
+        rvs = dist.rvs(size=100, random_state=rng)
+
+        # test that MLE still honors guesses and fixed parameters
+        c2, loc2, scale2 = stats.weibull_min.fit(rvs, 1.5, floc=3)
+        c3, loc3, scale3 = stats.weibull_min.fit(rvs, 1.6, floc=3)
+        assert loc2 == loc3 == 3  # fixed parameter is respected
+        assert c2 != c3  # different guess -> (slightly) different outcome
+        # quality of fit is tested elsewhere
+
+        # test that MoM honors fixed parameters, accepts (but ignores) guesses
+        c4, loc4, scale4 = stats.weibull_min.fit(rvs, 3, fscale=3, method='mm')
+        assert scale4 == 3
+        # because scale was fixed, only the mean and skewness will be matched
+        dist4 = stats.weibull_min(c4, loc4, scale4)
+        res = dist4.stats(moments='ms')
+        ref = np.mean(rvs), stats.skew(rvs)
+        assert_allclose(res, ref)
+
 
 class TestTruncWeibull(object):
 
@@ -5592,7 +5699,7 @@ class TestStudentizedRange:
     vs = [1, 3, 10, 20, 120, np.inf]
     ks = [2, 8, 14, 20]
 
-    data = zip(product(ps, vs, ks), qs)
+    data = list(zip(product(ps, vs, ks), qs))
 
     # A small selection of large-v cases generated with R's `ptukey`
     # Each case is in the format (q, k, v, r_result)
@@ -5613,8 +5720,9 @@ class TestStudentizedRange:
     @pytest.mark.slow
     def test_ppf_against_tables(self):
         for pvk, q_expected in self.data:
-            res_q = stats.studentized_range.ppf(*pvk)
-            assert_allclose(res_q, q_expected, rtol=1e-4)
+            p, v, k = pvk
+            res_q = stats.studentized_range.ppf(p, k, v)
+            assert_allclose(res_q, q_expected, rtol=5e-4)
 
     path_prefix = os.path.dirname(__file__)
     relative_path = "data/studentized_range_mpmath_ref.json"
@@ -6831,6 +6939,19 @@ def test_ncf_cdf_spotcheck():
     scipy_val = stats.ncf.cdf(20, 6, 33, 30.4)
     check_val = 0.998921
     assert_allclose(check_val, np.round(scipy_val, decimals=6))
+
+
+@pytest.mark.skipif(sys.maxsize <= 2**32,
+                    reason="On some 32-bit the warning is not raised")
+def test_ncf_ppf_issue_17026():
+    # Regression test for gh-17026
+    x = np.linspace(0, 1, 600)
+    x[0] = 1e-16
+    par = (0.1, 2, 5, 0, 1)
+    with pytest.warns(RuntimeWarning):
+        q = stats.ncf.ppf(x, *par)
+        q0 = [stats.ncf.ppf(xi, *par) for xi in x]
+    assert_allclose(q, q0)
 
 
 class TestHistogram:

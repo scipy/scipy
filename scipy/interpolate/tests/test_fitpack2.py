@@ -1236,6 +1236,20 @@ class TestRectSphereBivariateSpline:
                         [-49.0625, -46.54315]])
         assert_array_almost_equal(data_interp, ans)
 
+    def test_pole_continuity_gh_14591(self):
+        # regression test for https://github.com/scipy/scipy/issues/14591
+        # with pole_continuty=(True, True), the internal work array size
+        # was too small, leading to a FITPACK data validation error.
+
+        # The reproducer in gh-14591 was using a NetCDF4 file with
+        # 361x507 arrays, so here we trivialize array sizes to a minimum
+        # which still demonstrates the issue.
+        u = np.arange(1, 10) * np.pi / 10
+        v = np.arange(1, 10) * np.pi / 10
+        r = np.zeros((9, 9))
+        for p in [(True, True), (True, False), (False, False)]:
+            RectSphereBivariateSpline(u, v, r, s=0, pole_continuity=p)
+
 
 def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
     if dx == 0 and dy == 0:

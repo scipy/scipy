@@ -1314,13 +1314,13 @@ class TestPermutationTest:
         expected = stats.kendalltau(x, y, method='exact')
 
         def statistic1d(x):
-            return stats.kendalltau(x, y, method='asymptotic').correlation
+            return stats.kendalltau(x, y, method='asymptotic').statistic
 
         # kendalltau currently has only one alternative, two-sided
         res = permutation_test((x,), statistic1d, permutation_type='pairings',
                                n_resamples=np.inf)
 
-        assert_allclose(res.statistic, expected.correlation, rtol=self.rtol)
+        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
@@ -1485,7 +1485,7 @@ class TestPermutationTest:
         expected_statistic = 0.7714285714285715
 
         def statistic1d(x):
-            return stats.spearmanr(x, y).correlation
+            return stats.spearmanr(x, y).statistic
 
         res = permutation_test((x,), statistic1d, permutation_type='pairings',
                                n_resamples=np.inf, alternative=alternative)

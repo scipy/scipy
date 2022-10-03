@@ -15,6 +15,13 @@ from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
 
+
+def unpack_ttest_result(res):
+    low, high = res.confidence_interval()
+    return (res.statistic, res.pvalue, res.df, res._standard_error,
+            res._estimate, low, high)
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
@@ -38,6 +45,9 @@ axis_nan_policy_cases = [
     (stats.moment, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.moment, tuple(), dict(moment=[1, 2]), 1, 2, False, None),
     (stats.jarque_bera, tuple(), dict(), 1, 2, False, None),
+    (stats.ttest_1samp, (np.array([0]),), dict(), 1, 7, False,
+     unpack_ttest_result),
+    (stats.ttest_rel, tuple(), dict(), 2, 7, True, unpack_ttest_result)
 ]
 
 # If the message is one of those expected, put nans in
@@ -291,15 +301,11 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                                     "approximation.")
             res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
                                     *args, **kwds))
-
-        if hypotest.__name__ in {"gmean"}:
-            assert_allclose(res[0], statistics, rtol=2e-16)
-        else:
-            assert_equal(res[0], statistics)
-
+        assert_allclose(res[0], statistics, rtol=1e-15)
         assert_equal(res[0].dtype, statistics.dtype)
+
         if len(res) == 2:
-            assert_equal(res[1], pvalues)
+            assert_allclose(res[1], pvalues, rtol=1e-15)
             assert_equal(res[1].dtype, pvalues.dtype)
 
 
@@ -1038,7 +1044,7 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
         # Would test with a_masked3/b_masked3, but there is a bug in np.average
         # that causes a bug in _no_deco mean with masked weights. Would use
         # np.ma.average, but that causes other problems. See numpy/numpy#7330.
-        if weighted_fun_name not in {'pmean'}:
+        if weighted_fun_name not in {'pmean', 'gmean'}:
             weighted_fun_ma = getattr(stats.mstats, weighted_fun_name)
             res5 = weighted_fun_ma(a_masked4, weights=b_masked4,
                                    axis=axis, _no_deco=True)
@@ -1047,6 +1053,6 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
     np.testing.assert_array_equal(res2, res)
     np.testing.assert_array_equal(res3, res)
     np.testing.assert_array_equal(res4, res)
-    if weighted_fun_name not in {'pmean'}:
+    if weighted_fun_name not in {'pmean', 'gmean'}:
         # _no_deco mean returns masked array, last element was masked
         np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])

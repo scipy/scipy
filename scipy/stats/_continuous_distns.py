@@ -2264,6 +2264,83 @@ class weibull_min_gen(rv_continuous):
     def _entropy(self, c):
         return -_EULER / c - np.log(c) + _EULER + 1
 
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        If ``method='mm'``, parameters fixed by the user are respected, and the
+        remaining parameters are used to match distribution and sample moments
+        where possible. For example, if the user fixes the location with
+        ``floc``, the parameters will only match the distribution skewness and
+        variance to the sample skewness and variance; no attempt will be made
+        to match the means or minimize a norm of the errors.
+        \n\n""")
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        # this extracts fixed shape, location, and scale however they
+        # are specified, and also leaves them in `kwds`
+        data, fc, floc, fscale = _check_fit_input_parameters(self, data,
+                                                             args, kwds)
+        method = kwds.get("method", "mle").lower()
+
+        # See https://en.wikipedia.org/wiki/Weibull_distribution#Moments for
+        # moment formulas.
+        def skew(c):
+            gamma1 = sc.gamma(1+1/c)
+            gamma2 = sc.gamma(1+2/c)
+            gamma3 = sc.gamma(1+3/c)
+            num = 2 * gamma1**3 - 3*gamma1*gamma2 + gamma3
+            den = (gamma2 - gamma1**2)**(3/2)
+            return num/den
+
+        # For c in [1e2, 3e4], population skewness appears to approach
+        # asymptote near -1.139, but past c > 3e4, skewness begins to vary
+        # wildly, and MoM won't provide a good guess. Get out early.
+        s = stats.skew(data)
+        max_c = 1e4
+        s_min = skew(max_c)
+        if s < s_min and method == "mle" and fc is None and not args:
+            return super().fit(data, *args, **kwds)
+
+        # If method is method of moments, we don't need the user's guesses.
+        # If method is "mle", extract the guesses from args and kwds.
+        if method == "mm":
+            c, loc, scale = None, None, None
+        else:
+            c = args[0] if len(args) else None
+            loc = kwds.pop('loc', None)
+            scale = kwds.pop('scale', None)
+
+        if fc is None and c is None:  # not fixed and no guess: use MoM
+            # Solve for c that matches sample distribution skewness to sample
+            # skewness.
+            # we start having numerical issues with `weibull_min` with
+            # parameters outside this range - and not just in this method.
+            # We could probably improve the situation by doing everything
+            # in the log space, but that is for another time.
+            c = root_scalar(lambda c: skew(c) - s, bracket=[0.02, max_c],
+                            method='bisect').root
+        elif fc is not None:  # fixed: use it
+            c = fc
+
+        if fscale is None and scale is None:
+            v = np.var(data)
+            scale = np.sqrt(v / (sc.gamma(1+2/c) - sc.gamma(1+1/c)**2))
+        elif fscale is not None:
+            scale = fscale
+
+        if floc is None and loc is None:
+            m = np.mean(data)
+            loc = m - scale*sc.gamma(1 + 1/c)
+        elif floc is not None:
+            loc = floc
+
+        if method == 'mm':
+            return c, loc, scale
+        else:
+            # At this point, parameter "guesses" may equal the fixed parameters
+            # in kwds. No harm in passing them as guesses, too.
+            return super().fit(data, c, loc=loc, scale=scale, **kwds)
+
 
 weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 
@@ -4290,7 +4367,7 @@ class geninvgauss_gen(rv_continuous):
             # for each combination of the input arguments.
             numsamples = int(np.prod(shp))
 
-            # `out` is the array to be returned.  It is filled in in the
+            # `out` is the array to be returned.  It is filled in the
             # loop below.
             out = np.empty(size)
 
@@ -5298,34 +5375,48 @@ class logistic_gen(rv_continuous):
     @_call_super_mom
     @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
-
-        # if user has provided `floc` or `fscale`, fall back on super fit
-        # method. This scenario is not suitable for solving a system of
-        # equations
-        if floc is not None or fscale is not None:
-            return super().fit(data, *args, **kwds)
+        n = len(data)
 
         # rv_continuous provided guesses
         loc, scale = self._fitstart(data)
-        # account for user provided guesses
-        loc = kwds.pop('loc', loc)
-        scale = kwds.pop('scale', scale)
+        # these are trumped by user-provided guesses
+        loc, scale = kwds.get('loc', loc), kwds.get('scale', scale)
 
         # the maximum likelihood estimators `a` and `b` of the location and
         # scale parameters are roots of the two equations described in `func`.
         # Source: Statistical Distributions, 3rd Edition. Evans, Hastings, and
         # Peacock (2000), Page 130
-        def func(params, data):
-            a, b = params
-            n = len(data)
-            c = (data - a) / b
-            x1 = np.sum(sc.expit(c)) - n/2
-            x2 = np.sum(c*np.tanh(c/2)) - n
-            return x1, x2
+        def dl_dloc(loc, scale=fscale):
+            c = (data - loc) / scale
+            return np.sum(sc.expit(c)) - n/2
 
-        return tuple(optimize.root(func, (loc, scale), args=(data,)).x)
+        def dl_dscale(scale, loc=floc):
+            c = (data - loc) / scale
+            return np.sum(c*np.tanh(c/2)) - n
+
+        def func(params):
+            loc, scale = params
+            return dl_dloc(loc, scale), dl_dscale(scale, loc)
+
+        if fscale is not None and floc is None:
+            res = optimize.root(dl_dloc, (loc,))
+            loc = res.x[0]
+            scale = fscale
+        elif floc is not None and fscale is None:
+            res = optimize.root(dl_dscale, (scale,))
+            scale = res.x[0]
+            loc = floc
+        else:
+            res = optimize.root(func, (loc, scale))
+            loc, scale = res.x
+
+        return ((loc, scale) if res.success
+                else super().fit(data, *args, **kwds))
 
 
 logistic = logistic_gen(name='logistic')
@@ -7181,6 +7272,214 @@ class powerlaw_gen(rv_continuous):
     def _entropy(self, a):
         return 1 - 1.0/a - np.log(a)
 
+    def _support_mask(self, x, a):
+        if np.any(a < 1):
+            return (x != 0) & super(powerlaw_gen, self)._support_mask(x, a)
+        else:
+            return super(powerlaw_gen, self)._support_mask(x, a)
+
+    def fit(self, data, *args, **kwds):
+        '''
+        Summary of the strategy:
+
+        1) If the scale and location are fixed, return the shape according
+           to a formula.
+
+        2) If the scale is fixed, there are two possibilities for the other
+           parameters - one corresponding with shape less than one, and another
+           with shape greater than one. Calculate both, and return whichever
+           has the better log-likelihood.
+
+        At this point, the scale is known to be free.
+
+        3) If the location is fixed, return the scale and shape according to
+           formulas (or, if the shape is fixed, the fixed shape).
+
+        At this point, the location and scale are both free. There are separate
+        equations depending on whether the shape is less than one or greater
+        than one.
+
+        4a) If the shape is less than one, there are formulas for shape,
+            location, and scale.
+        4b) If the shape is greater than one, there are formulas for shape
+            and scale, but there is a condition for location to be solved
+            numerically.
+
+        If the shape is fixed and less than one, we use 4a.
+        If the shape is fixed and greater than one, we use 4b.
+        If the shape is also free, we calculate fits using both 4a and 4b
+        and choose the one that results a better log-likelihood.
+
+        In many cases, the use of `np.nextafter` is used to avoid numerical
+        issues.
+        '''
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        if len(np.unique(data)) == 1:
+            return super().fit(data, *args, **kwds)
+
+        data, fshape, floc, fscale = _check_fit_input_parameters(self, data,
+                                                                 args, kwds)
+        penalized_nllf_args = [data, (self._fitstart(data),)]
+        penalized_nllf = self._reduce_func(penalized_nllf_args, {})[1]
+
+        # ensure that any fixed parameters don't violate constraints of the
+        # distribution before continuing. The support of the distribution
+        # is `0 < (x - loc)/scale < 1`.
+        if floc is not None:
+            if not data.min() > floc:
+                raise FitDataError('powerlaw', 0, 1)
+            if fscale is not None and not data.max() <= floc + fscale:
+                raise FitDataError('powerlaw', 0, 1)
+
+        if fscale is not None:
+            if fscale <= 0:
+                raise ValueError("Negative or zero `fscale` is outside the "
+                                 "range allowed by the distribution.")
+            if fscale <= data.ptp():
+                msg = "`fscale` must be greater than the range of data."
+                raise ValueError(msg)
+
+        def get_shape(data, loc, scale):
+            # The first-order necessary condition on `shape` can be solved in
+            # closed form. It can be used no matter the assumption of the
+            # value of the shape.
+            return -len(data) / np.sum(np.log((data - loc)/scale))
+
+        def get_scale(data, loc):
+            # analytical solution for `scale` based on the location.
+            # It can be used no matter the assumption of the value of the
+            # shape.
+            return data.max() - loc
+
+        # 1) The location and scale are both fixed. Analytically determine the
+        # shape.
+        if fscale is not None and floc is not None:
+            return get_shape(data, floc, fscale), floc, fscale
+
+        # 2) The scale is fixed. There are two possibilities for the other
+        # parameters. Choose the option with better log-likelihood.
+        if fscale is not None:
+            # using `data.min()` as the optimal location
+            loc_lt1 = np.nextafter(data.min(), -np.inf)
+            shape_lt1 = fshape or get_shape(data, loc_lt1, fscale)
+            ll_lt1 = penalized_nllf((shape_lt1, loc_lt1, fscale), data)
+
+            # using `data.max() - scale` as the optimal location
+            loc_gt1 = np.nextafter(data.max() - fscale, np.inf)
+            shape_gt1 = fshape or get_shape(data, loc_gt1, fscale)
+            ll_gt1 = penalized_nllf((shape_gt1, loc_gt1, fscale), data)
+
+            if ll_lt1 < ll_gt1:
+                return shape_lt1, loc_lt1, fscale
+            else:
+                return shape_gt1, loc_gt1, fscale
+
+        # 3) The location is fixed. Return the analytical scale and the
+        # analytical (or fixed) shape.
+        if floc is not None:
+            scale = get_scale(data, floc)
+            shape = fshape or get_shape(data, floc, scale)
+            return shape, floc, scale
+
+        # 4) Location and scale are both free
+        # 4a) Use formulas that assume `shape <= 1`.
+
+        def fit_loc_scale_w_shape_lt_1():
+            loc = np.nextafter(data.min(), -np.inf)
+            scale = np.nextafter(get_scale(data, loc), np.inf)
+            shape = fshape or get_shape(data, loc, scale)
+            return shape, loc, scale
+
+        # 4b) Fit under the assumption that `shape > 1`. The support
+        # of the distribution is `(x - loc)/scale <= 1`. The method of Lagrange
+        # multipliers turns this constraint into the condition that
+        # dL_dScale - dL_dLocation must be zero, which is solved numerically.
+        # (Alternatively, substitute the constraint into the objective
+        # function before deriving the likelihood equation for location.)
+
+        def dL_dScale(data, shape, scale):
+            # The partial derivative of the log-likelihood function w.r.t.
+            # the scale.
+            return -data.shape[0] * shape / scale
+
+        def dL_dLocation(data, shape, loc):
+            # The partial derivative of the log-likelihood function w.r.t.
+            # the location.
+            return (shape - 1) * np.sum(1 / (loc - data))  # -1/(data-loc)
+
+        def dL_dLocation_star(loc):
+            # The derivative of the log-likelihood function w.r.t.
+            # the location, given optimal shape and scale
+            scale = np.nextafter(get_scale(data, loc), -np.inf)
+            shape = fshape or get_shape(data, loc, scale)
+            return dL_dLocation(data, shape, loc)
+
+        def fun_to_solve(loc):
+            # optimize the location by setting the partial derivatives
+            # w.r.t. to location and scale equal and solving.
+            scale = np.nextafter(get_scale(data, loc), -np.inf)
+            shape = fshape or get_shape(data, loc, scale)
+            return (dL_dScale(data, shape, scale)
+                    - dL_dLocation(data, shape, loc))
+
+        def fit_loc_scale_w_shape_gt_1():
+            # set brackets for `root_scalar` to use when optimizing over the
+            # location such that a root is likely between them.
+            rbrack = np.nextafter(data.min(), -np.inf)
+
+            # if the sign of `dL_dLocation_star` is positive at rbrack,
+            # we're not going to find the root we're looking for
+            i = 1
+            delta = (data.min() - rbrack)
+            while dL_dLocation_star(rbrack) > 0:
+                rbrack = data.min() - i * delta
+                i *= 2
+
+            def interval_contains_root(lbrack, rbrack):
+                # Check if the interval (lbrack, rbrack) contains the root.
+                return (np.sign(fun_to_solve(lbrack))
+                        != np.sign(fun_to_solve(rbrack)))
+
+            lbrack = rbrack - 1
+
+            # if the sign doesn't change between the brackets, move the left
+            # bracket until it does. (The right bracket remains fixed at the
+            # maximum permissible value.)
+            i = 1.0
+            while (not interval_contains_root(lbrack, rbrack)
+                   and lbrack != -np.inf):
+                lbrack = (data.min() - i)
+                i *= 2
+
+            root = optimize.root_scalar(fun_to_solve, bracket=(lbrack, rbrack))
+
+            loc = np.nextafter(root.root, -np.inf)
+            scale = np.nextafter(get_scale(data, loc), np.inf)
+            shape = fshape or get_shape(data, loc, scale)
+            return shape, loc, scale
+
+        # Shape is fixed - choose 4a or 4b accordingly.
+        if fshape is not None and fshape <= 1:
+            return fit_loc_scale_w_shape_lt_1()
+        elif fshape is not None and fshape > 1:
+            return fit_loc_scale_w_shape_gt_1()
+
+        # Shape is free
+        fit_shape_lt1 = fit_loc_scale_w_shape_lt_1()
+        ll_lt1 = penalized_nllf(fit_shape_lt1, data)
+
+        fit_shape_gt1 = fit_loc_scale_w_shape_gt_1()
+        ll_gt1 = penalized_nllf(fit_shape_gt1, data)
+
+        if ll_lt1 <= ll_gt1 and fit_shape_lt1[0] <= 1:
+            return fit_shape_lt1
+        elif ll_lt1 > ll_gt1 and fit_shape_gt1[0] > 1:
+            return fit_shape_gt1
+        else:
+            return super().fit(data, *args, **kwds)
+
 
 powerlaw = powerlaw_gen(a=0.0, b=1.0, name="powerlaw")
 
@@ -8280,8 +8579,6 @@ def _log_sum(log_p, log_q):
 
 # same as above, but using -exp(x) = exp(x + πi)
 def _log_diff(log_p, log_q):
-    # need to broadcast in case a or b is 0.5; logsumexp doesn't
-    log_p, log_q = np.broadcast_arrays(log_p, log_q)
     return sc.logsumexp([log_p, log_q+np.pi*1j], axis=0)
 
 
@@ -8292,8 +8589,8 @@ def _log_gauss_mass(a, b):
 
     # Calculations in right tail are inaccurate, so we'll exploit the
     # symmetry and work only in the left tail
-    case_left = b <= 0.5
-    case_right = a > 0.5
+    case_left = b <= 0
+    case_right = a > 0
     case_central = ~(case_left | case_right)
 
     def mass_case_left(a, b):
@@ -8303,9 +8600,17 @@ def _log_gauss_mass(a, b):
         return mass_case_left(-b, -a)
 
     def mass_case_central(a, b):
-        left_mass = mass_case_left(a, 0.5)
-        right_mass = mass_case_right(0.5, b)
-        return _log_sum(left_mass, right_mass)
+        # Previously, this was implemented as:
+        # left_mass = mass_case_left(a, 0)
+        # right_mass = mass_case_right(0, b)
+        # return _log_sum(left_mass, right_mass)
+        # Catastrophic cancellation occurs as np.exp(log_mass) approaches 1.
+        # Correct for this with an alternative formulation.
+        # We're not concerned with underflow here: if only one term
+        # underflows, it was insignificant; if both terms underflow,
+        # the result can't accurately be represented in logspace anyway
+        # because sc.log1p(x) ~ x for small x.
+        return sc.log1p(-sc.ndtr(a) - sc.ndtr(-b))
 
     # _lazyselect not working; don't care to debug it
     out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
@@ -8325,14 +8630,12 @@ class truncnorm_gen(rv_continuous):
 
     Notes
     -----
-    The standard form of this distribution is a standard normal truncated to
-    the range ``[a, b]``, where ``a`` and ``b`` are user-provided shape
-    parameters. The parameter ``loc`` shifts the mean of the underlying normal
-    distribution, and ``scale`` controls the standard deviation of the
-    underlying normal, but ``a`` and ``b`` are still defined with respect to
-    the *standard* normal. If ``myclip_a`` and ``myclip_b`` are clip values
-    defined with respect to a shifted and scaled normal, they can be converted
-    the required form according to::
+    This distribution is the normal distribution centered on ``loc`` (default
+    0), with standard deviation ``scale`` (default 1), and clipped at ``a``,
+    ``b`` standard deviations to the left, right (respectively) from ``loc``.
+    If ``myclip_a`` and ``myclip_b`` are clip values in the sample space (as
+    opposed to the number of standard deviations) then they can be converted
+    to the required form according to::
 
         a, b = (myclip_a - loc) / scale, (myclip_b - loc) / scale
 
@@ -8365,13 +8668,23 @@ class truncnorm_gen(rv_continuous):
         return np.exp(self._logcdf(x, a, b))
 
     def _logcdf(self, x, a, b):
-        return _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
+        x, a, b = np.broadcast_arrays(x, a, b)
+        logcdf = _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
+        i = logcdf > -0.1  # avoid catastrophic cancellation
+        if np.any(i):
+            logcdf[i] = np.log1p(-np.exp(self._logsf(x[i], a[i], b[i])))
+        return logcdf
 
     def _sf(self, x, a, b):
         return np.exp(self._logsf(x, a, b))
 
     def _logsf(self, x, a, b):
-        return _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
+        x, a, b = np.broadcast_arrays(x, a, b)
+        logsf = _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
+        i = logsf > -0.1  # avoid catastrophic cancellation
+        if np.any(i):
+            logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
+        return logsf
 
     def _ppf(self, q, a, b):
         q, a, b = np.broadcast_arrays(q, a, b)
@@ -9638,11 +9951,13 @@ class rv_histogram(rv_continuous):
 
     >>> import matplotlib.pyplot as plt
     >>> X = np.linspace(-5.0, 5.0, 100)
-    >>> plt.title("PDF from Template")
-    >>> plt.hist(data, density=True, bins=100)
-    >>> plt.plot(X, hist_dist.pdf(X), label='PDF')
-    >>> plt.plot(X, hist_dist.cdf(X), label='CDF')
-    >>> plt.show()
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_title("PDF from Template")
+    >>> ax.hist(data, density=True, bins=100)
+    >>> ax.plot(X, hist_dist.pdf(X), label='PDF')
+    >>> ax.plot(X, hist_dist.cdf(X), label='CDF')
+    >>> ax.legend()
+    >>> fig.show()
 
     """
     _support_mask = rv_continuous._support_mask

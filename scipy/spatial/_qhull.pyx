@@ -10,7 +10,6 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 # Distributed under the same BSD license as Scipy.
 #
 
-import threading
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -19,10 +18,8 @@ from . cimport setlist
 from libc cimport stdlib
 from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
+from libc.stdio cimport FILE
 
-import os
-import sys
-import tempfile
 import warnings
 
 np.import_array()
@@ -184,7 +181,7 @@ cdef extern from "qhull_src/src/io_r.h":
 
     ctypedef void printvridgeT(qhT *, void *fp, vertexT *vertex, vertexT *vertexA,
                                setT *centers, boolT unbounded)
-    int qh_eachvoronoi_all(qhT *, void *fp, void* printvridge,
+    int qh_eachvoronoi_all(qhT *, FILE *fp, void* printvridge,
                            boolT isUpper, qh_RIDGE innerouter,
                            boolT inorder) nogil
 
@@ -201,7 +198,6 @@ cdef extern from "qhull_src/src/poly_r.h":
 cdef extern from "qhull_src/src/mem_r.h":
     void qh_memfree(qhT *, void *object, int insize)
 
-from libc.string cimport memcpy
 from libc.stdlib cimport qsort
 
 #------------------------------------------------------------------------------
@@ -829,7 +825,7 @@ cdef class _Qhull:
         self._ridge_points = np.empty((10, 2), np.intc)
         self._ridge_vertices = []
 
-        qh_eachvoronoi_all(self._qh, <void*>self, &_visit_voronoi, self._qh[0].UPPERdelaunay,
+        qh_eachvoronoi_all(self._qh, <FILE*>self, &_visit_voronoi, self._qh[0].UPPERdelaunay,
                            qh_RIDGEall, 1)
 
         self._ridge_points = self._ridge_points[:self._nridges]
@@ -991,7 +987,7 @@ cdef class _Qhull:
         return extremes_arr
 
 
-cdef void _visit_voronoi(qhT *_qh, void *ptr, vertexT *vertex, vertexT *vertexA,
+cdef void _visit_voronoi(qhT *_qh, FILE *ptr, vertexT *vertex, vertexT *vertexA,
                          setT *centers, boolT unbounded):
     cdef _Qhull qh = <_Qhull>ptr
     cdef int point_1, point_2, ix
@@ -1272,7 +1268,7 @@ cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
 
     """
     cdef int inside, isimplex
-    cdef int k, m, ineighbor, iself
+    cdef int k, m, ineighbor
     cdef double *transform
 
     if _is_point_fully_outside(d, x, eps):
@@ -1365,7 +1361,6 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
     """
     cdef int k, m, ndim, inside, isimplex, cycle_k
     cdef double *transform
-    cdef double v
 
     ndim = d.ndim
     isimplex = start[0]
@@ -1480,7 +1475,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
     directed search.
 
     """
-    cdef int isimplex, i, j, k, inside, ineigh, neighbor_found
+    cdef int isimplex, k, ineigh
     cdef int ndim
     cdef double z[NPY_MAXDIMS+1]
     cdef double best_dist, dist
@@ -2535,10 +2530,16 @@ class Voronoi(_QhullUser):
     regions : list of list of ints, shape ``(nregions, *)``
         Indices of the Voronoi vertices forming each Voronoi region.
         -1 indicates vertex outside the Voronoi diagram.
-    point_region : list of ints, shape (npoints)
+        When qhull option "Qz" was specified, an empty sublist
+        represents the Voronoi region for a point at infinity that
+        was added internally.
+    point_region : array of ints, shape (npoints)
         Index of the Voronoi region for each input point.
         If qhull option "Qc" was not specified, the list will contain -1
         for points that are not associated with a Voronoi region.
+        If qhull option "Qz" was specified, there will be one less
+        element than the number of regions because an extra point
+        at infinity is added internally to facilitate computation.
     furthest_site
         True if this was a furthest site triangulation and False if not.
 
