@@ -130,13 +130,14 @@ def _milp_iv(c, integrality, bounds, constraints, options):
 
     # options IV
     options = options or {}
-    supported_options = {'disp', 'presolve', 'time_limit'}
+    supported_options = {'disp', 'presolve', 'time_limit', 'node_limit'}
     unsupported_options = set(options).difference(supported_options)
     if unsupported_options:
         message = (f"Unrecognized options detected: {unsupported_options}. "
                    "These will be passed to HiGHS verbatim.")
         warnings.warn(message, RuntimeWarning, stacklevel=3)
-    options_iv = {'log_to_console': options.get("disp", False)}
+    options_iv = {'log_to_console': options.pop("disp", False),
+                  'mip_max_nodes': options.pop("node_limit", None)}
     options_iv.update(options)
 
     return c, integrality, lb, ub, indptr, indices, data, b_l, b_u, options_iv
@@ -225,6 +226,9 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
         disp : bool (default: ``False``)
             Set to ``True`` if indicators of optimization status are to be
             printed to the console during optimization.
+        node_limit : int, optional
+            The maximum number of nodes (linear program relaxations) to solve
+            before stopping. Default is no maximum number of nodes.
         presolve : bool (default: ``True``)
             Presolve attempts to identify trivial infeasibilities,
             identify trivial unboundedness, and simplify the problem before
