@@ -545,38 +545,7 @@ class TestBinnedStatistic:
         assert_allclose(sum1, sum2)
         assert_allclose(edges1[0], edges2)
 
-    def test_binned_statistic_dd_complex(self):
-        # Test that binned_statistic_dd works with complex-valued inputs
-        x = np.array([0, 0, 1, 1], dtype=np.float64)
-        v = np.array(
-            [0.0 + 0.0j, 1.0 + 1.0j, 2.0 + 2.0j, 3.0 + 3.0j],
-            dtype=np.complex128
-        )
-        expected = np.array([1.0 + 1.0j, 5.0 + 5.0j], dtype=np.complex128)
 
-        stat, _, _ = binned_statistic_dd(x, v, 'sum', bins=2)
-        assert_allclose(stat, expected)
-
-        def sum_function(x):
-            return np.sum(x)
-        stat, _, _ = binned_statistic_dd(x, v, sum_function, bins=2)
-        assert_allclose(stat, expected)
-
-        def sum_reals(x):
-            return np.sum(np.real(x))
-        
-        def complex_output(x):
-            res = np.sum(x) + 1j * np.sum(x)
-            if res == 0:
-                return 0
-            return res
-
-        stat, _, _ = binned_statistic_dd(x, v, sum_reals, bins=2)
-        assert_allclose(stat, np.array([1.0, 5.0], dtype=np.float64))
-
-        stat, _, _ = binned_statistic_dd(x, v.real, complex_output, bins=2)
-        assert_allclose(stat, expected)
-    
     @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
     @pytest.mark.parametrize("statistic", [np.mean, np.median, np.sum,
                                         np.std, np.min, np.max,
