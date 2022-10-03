@@ -545,7 +545,6 @@ class TestBinnedStatistic:
         assert_allclose(sum1, sum2)
         assert_allclose(edges1[0], edges2)
 
-
     @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
     @pytest.mark.parametrize("statistic", [np.mean, np.median, np.sum,
                                         np.std, np.min, np.max,
