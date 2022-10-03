@@ -310,6 +310,58 @@ def _lil_fancy_set_{{PYIDX}}_{{PYVALUE}}(cnp.npy_intp M, cnp.npy_intp N,
 {{define_dispatch_map2('_LIL_FANCY_SET_DISPATCH', '_lil_fancy_set', IDX_TYPES, VALUE_TYPES)}}
 
 
+def lil_fancy_linear_set(cnp.npy_intp M, cnp.npy_intp N,
+                  object[:] rows,
+                  object[:] data,
+                  cnp.ndarray i_idx,
+                  cnp.ndarray j_idx,
+                  cnp.ndarray values):
+    """
+    Set multiple items from 1D lists of rows, cols and values to a LIL matrix.
+
+    Checks for zero elements and deletes them.
+
+    Parameters
+    ----------
+    M, N, rows, data
+        LIL matrix data
+    i_idx, j_idx
+        Indices of elements to insert to the new LIL matrix.
+    values
+        Values of items to set.
+
+    """
+    if values.dtype == np.bool_:
+        # Cython doesn't support np.bool_ as a memoryview type
+        values = values.view(dtype=np.uint8)
+
+    assert i_idx.ndim == 1 and j_idx.ndim == 1 and values.ndim == 1
+    assert i_idx.shape[0] == j_idx.shape[0] == values.shape[0]
+    return _LIL_FANCY_LINEAR_SET_DISPATCH[i_idx.dtype, values.dtype](M, N, rows, data, i_idx, j_idx, values)
+
+
+{{for PYIDX, PYVALUE, IDX_T, VALUE_T in get_dispatch2(IDX_TYPES, VALUE_TYPES)}}
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def _lil_fancy_linear_set_{{PYIDX}}_{{PYVALUE}}(cnp.npy_intp M, cnp.npy_intp N,
+                                         object[:] rows,
+                                         object[:] data,
+                                         {{IDX_T}}[:] i_idx,
+                                         {{IDX_T}}[:] j_idx,
+                                         {{VALUE_T}}[:] values):
+    cdef cnp.npy_intp x
+    cdef cnp.npy_intp i, j
+
+    for x in range(i_idx.shape[0]):
+        i = i_idx[x]
+        j = j_idx[x]
+        lil_insert(M, N, rows, data, i, j, values[x])
+{{endfor}}
+
+
+{{define_dispatch_map2('_LIL_FANCY_LINEAR_SET_DISPATCH', '_lil_fancy_linear_set', IDX_TYPES, VALUE_TYPES)}}
+
+
 def lil_get_row_ranges(cnp.npy_intp M, cnp.npy_intp N,
                        object[:] rows, object[:] datas,
                        object[:] new_rows, object[:] new_datas,
