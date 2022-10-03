@@ -115,6 +115,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    primal_feasibility_tolerance=None,
                    ipm_optimality_tolerance=None,
                    simplex_dual_edge_weight_strategy=None,
+                   mip_max_nodes=None,
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
@@ -179,6 +180,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Curently, using ``None`` always selects ``'steepest-devex'``, but this
         may change as new options become available.
 
+    mip_max_nodes : int
+        The maximum number of nodes allotted to solve the problem; default is
+        the largest possible value for a ``HighsInt`` on the platform.
+        Ignored if not using the MIP solver.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing all
@@ -339,6 +344,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'log_to_console': disp,
+        'mip_max_nodes': mip_max_nodes,
         'output_flag': disp,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
         'simplex_dual_edge_weight_strategy':
