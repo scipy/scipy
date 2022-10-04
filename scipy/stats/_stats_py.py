@@ -7637,13 +7637,14 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
         pvalue : float
             One-tailed or two-tailed p-value.
         statistic_location: float
-            Value of the stochastic variable at the KS statistic. By
-            definition, the distance between the theoretical and sampled
-            distributions is largest at this location.
+            Value of `x` corresponding with the KS statistic; i.e., the 
+            distance between the hypothesized cumulative distribution function
+            and the empirical distribution function is greatest at this
+            location.
         statistic_sign: str
             1 if the KS statistic is the maximal positive difference between
-            empirical and theoretical distribution, -1 if the KS statistic is
-            the negative difference.
+            empirical and hypothesized distributions (D+), -1 if the KS
+            statistic is the negative difference (D-).
 
     See Also
     --------
@@ -7964,12 +7965,13 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
         pvalue : float
             One-tailed or two-tailed p-value.
         statistic_location: float
-            Value of the stochastic variable closest to the KS statistic. By
-            definition, the distance between the two sampled distributions at
-            this value is largest.
+            Value from `data1` or `data2` corresponding with the KS statistic;
+            i.e., the distance between the empirical distribution functions is
+            greatest at this observation.
         statistic_sign: int
-            +1 if the first distribution is above the second at the KS
-            statistic location, otherwise -1.
+            +1 if the empirical distribution function of `data1` exceeds
+            the empircal distribution function of `data2` at 
+            `statistic_location`, otherwise -1.
 
     See Also
     --------
