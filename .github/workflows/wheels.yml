@@ -162,7 +162,7 @@ jobs:
           export _PYTHON_HOST_PLATFORM="macosx-12.0-arm64"
           export CROSS_COMPILE=1
           # Need macOS >= 11 for arm compilation.
-          export MACOSX_DEPLOYMENT_TARGET=12.0
+          export MACOSX_DEPLOYMENT_TARGET=11.0
 
           # SDK root needs to be set early, installation of gfortran/openblas
           # needs to go in the correct location.
@@ -170,7 +170,7 @@ jobs:
           export ARCHFLAGS=" -arch arm64 "
 
           source tools/wheels/gfortran_utils.sh
-          export MACOSX_DEPLOYMENT_TARGET=12.0
+          export MACOSX_DEPLOYMENT_TARGET=11.0
 
           # The install script requires the PLAT variable in order to set
           # the FC variable
@@ -213,7 +213,16 @@ jobs:
           # the cross-compile specification is contained in that directory.
           python -m pip wheel -w dist -vvv --config-settings builddir=build .
 
-          rm dist/numpy*.whl
+          # change wheel names from
+          # scipy-1.10.0.dev0-cp38-cp38-macosx_11_0_arm64.whl
+          # to
+          # scipy-1.10.0.dev0-cp38-cp38-macosx_12_0_arm64.whl
+          # so they're only installable on Monterey
+          pushd dist
+          rm numpy*.whl
+          for i in *11_0*.whl; do [[ -e ${i/11_0/12_0} ]] || mv "$i" "${i/11_0/12_0}"; done
+          popd
+
           # The `.so` are all converted to `-rpath/libgfortran` by
           # gfortran/meson, with all absolute paths removed.
           # Enables delocate to find the libopenblas/libgfortran libraries.
