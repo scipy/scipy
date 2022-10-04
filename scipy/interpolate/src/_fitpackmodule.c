@@ -82,7 +82,6 @@ static PyObject *fitpack_error;
 	#else
 		#define CURFIT CURFIT_
 		#define PERCUR PERCUR_
-		#define SPALDE SPALDE_
 		#define SPLDER SPLDER_
 		#define SPLEV  SPLEV_
 		#define SPLINT SPLINT_
@@ -97,7 +96,6 @@ static PyObject *fitpack_error;
 	#if defined(NO_APPEND_FORTRAN)
 		#define CURFIT curfit
 		#define PERCUR percur
-		#define SPALDE spalde
 		#define SPLDER splder
 		#define SPLEV splev
 		#define SPLINT splint
@@ -110,7 +108,6 @@ static PyObject *fitpack_error;
 	#else
 		#define CURFIT curfit_
 		#define PERCUR percur_
-		#define SPALDE spalde_
 		#define SPLDER splder_
 		#define SPLEV splev_
 		#define SPLINT splint_
@@ -129,7 +126,6 @@ void CURFIT(F_INT*,F_INT*,double*,double*,double*,double*,
 void PERCUR(F_INT*,F_INT*,double*,double*,double*,F_INT*,
         double*,F_INT*,F_INT*,double*,double*,double*,
         double*,F_INT*,F_INT*,F_INT*);
-void SPALDE(double*,F_INT*,double*,F_INT*,double*,double*,F_INT*);
 void SPLDER(double*,F_INT*,double*,F_INT*,F_INT*,double*,
         double*,F_INT*,F_INT*,double*,F_INT*);
 void SPLEV(double*,F_INT*,double*,F_INT*,double*,double*,F_INT*,F_INT*,F_INT*);
