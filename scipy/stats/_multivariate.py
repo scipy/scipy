@@ -5067,3 +5067,162 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
         method.__doc__, mhg_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__,
                                       mhg_docdict_params)
+
+
+_ctab_doc_callparams = """\
+row : array_like
+    Sum of table entries in each row.
+col : array_like
+    Sum of table entries in each column.
+"""
+
+_ctab_docdict_params = {
+    "_ctab_doc_callparams": _ctab_doc_callparams,
+    "_doc_random_state": _doc_random_state,
+}
+
+class conditional_table_gen(multi_rv_generic):
+    r"""Distribution of tables with fixed column and row marginals.
+
+    Methods
+    -------
+    TODO
+
+    Parameters
+    ----------
+    %(_ctab_doc_callparams)s
+    %(_doc_random_state)s
+
+    Notes
+    -----
+    This is the distribution of random tables with given row and column vector
+    sums. This can be understood as a subset of the multinominal distribution,
+    which generates arrays of numbers with given frequencies so that the total
+    sum of all numbers is fixed. Here, the row and columnwise sums are
+    additionally fixed. The expected frequency of each table element can be
+    computed from the row and column sums, so that the distribution is
+    completely determined by these two vectors.
+
+    Random elements from the distribution are generated either with a shuffling
+    algorithm or with Patefield's algorithm [1]_. The shuffling algorithm has
+    OO(N) time and space complexity, where N is the total sum of entries in the
+    table. Patefield's algorithm has O(K x log(N)) time complexity, where K is
+    the number of cells in the table and requires only a small constant work
+    space.
+
+    .. versionadded: 0.XY.0
+
+    References
+    ----------
+    .. [1] Patefield's, AS 159 Appl. Statist. (1981) vol. 30, no. 1.
+
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__, _ctab_docdict_params)
+
+    def __call__(self, row, col, seed=None):
+        """Create a frozen distribution of tables with fixed column and row marginals.
+
+        See `conditional_table_frozen` for more information.
+        """
+        return conditional_table_frozen(row, col, seed)
+
+    def _process_parameters(self, row, col):
+        r = np.array(row, dtype=np.int_, copy=True)
+        c = np.array(col, dtype=np.int_, copy=True)
+
+        if np.ndim(r) != 1:
+            raise ValueError("row array must be one-dimensional")
+        if np.ndim(c) != 1:
+            raise ValueError("column array must be one-dimensional")
+
+        if np.any(r < 0):
+            raise ValueError("each element of row array must be non-negative")
+
+        if np.any(c < 0):
+            raise ValueError("each element of column array must be non-negative")
+
+        ntot_row = np.sum(row)
+        ntot_col = np.sum(col)
+        if ntot_row != ntot_col:
+            raise ValueError("Sums over all rows and columns must be equal.")
+
+        return r, c, ntot_row
+
+    def mean(self, row, col):
+        """Mean of distribution of conditional tables with fixed marginals.
+
+        Parameters
+        ----------
+        %(_ctab_doc_callparams)s
+
+        Returns
+        -------
+        mean: ndarray
+            The mean of the distribution
+        """
+        r, c, n = self._process_parameters(self, row, col)
+        return np.outer(r, c) / n
+
+    def rvs(self, row, col, method=None, random_state=None):
+        """Draw random table with fixed column and row marginals.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+        method : str, optional
+            Which method to use, "shuffle" or "patefield". If None (default),
+            an attempt is made to select the fastest method for this input.
+        %(_doc_random_state)s
+
+        Returns
+        -------
+        rvs : ndarray
+            Random 2D table of shape (`len(row)`, `len(col)`)
+
+        Notes
+        %(_doc_callparams_note)s
+        """
+        r, c, n = self._process_parameters(self, row, col)
+        random_state = self._get_random_state(random_state)
+        if method is None:
+            # TODO find optimal empirical threshold
+            method = "patefield" if n > 1000 else "shuffle"
+        if method == "shuffle":
+            return self._rvs_shuffle(r, c, n, random_state)
+        return self._rvs_patefield(r, c, n, random_state)
+
+    def _rvs_shuffle(self, row, col, tot, random_state):
+
+        # this part can be cached in the frozen distribution
+        k = 0
+        c = np.empty(tot, dtype=np.int_)
+        for i, ci in enumerate(col):
+            c[k:k+ci] = i
+            k += ci
+
+        random_state.shuffle(c)
+
+        matrix = np.zeros(len(row), len(col))
+
+        # this is slow in pure Python
+        k = 0
+        for i, ri in enumerate(row):
+            for j in range(ri):
+               matrix[i, c[k:k+j]] += 1
+            k += ri
+
+        return matrix
+
+    def _rvs_patefield(self, row, col, tot, random_state):
+        # TODO call into C code
+        return NotImplemented
+
+
+conditional_table = conditional_table_gen()
+
+
+class conditional_table_frozen:
+    pass
