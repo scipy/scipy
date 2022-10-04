@@ -2983,6 +2983,9 @@ def test_pptrs_pptri_pptrf_ppsv_ppcon(dtype, lower):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgexc(dtype):
+    if dtype == np.float32 and sys.platform == 'darwin':
+        pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
+
     seed(1234)
     atol = np.finfo(dtype).eps*100
 
