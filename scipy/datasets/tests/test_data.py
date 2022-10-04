@@ -6,11 +6,7 @@ import os
 import pytest
 
 try:
-    # https://github.com/scipy/scipy/pull/15607#issuecomment-1176457275
-    # TODO: Remove warning filter after next certifi release
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
-        import pooch
+    import pooch
 except ImportError:
     raise ImportError("Missing optional dependency 'pooch' required "
                       "for scipy.datasets module. Please use pip or "
