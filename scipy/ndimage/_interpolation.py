@@ -874,7 +874,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     >>> ax2.set_axis_off()
     >>> ax3.imshow(full_img_45, cmap='gray')
     >>> ax3.set_axis_off()
-    >>> fig.set_tight_layout(True)
+    >>> fig.set_layout_engine('tight')
     >>> plt.show()
     >>> print(img.shape)
     (512, 512)
