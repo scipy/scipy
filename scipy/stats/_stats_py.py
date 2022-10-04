@@ -9445,7 +9445,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
 
 
 def expectile(a, alpha=0.5, *, dtype=None, weights=None):
-    r"""Compute the expectile along the specified axis.
+    r"""Compute the expectile.
 
 
     Expectiles are a generalization of the expectation in the same way as
@@ -9477,7 +9477,7 @@ def expectile(a, alpha=0.5, *, dtype=None, weights=None):
 
     Notes
     -----
-    The expectile at level `alpha` (:math:`\alpha`) of the array `a`
+    The (empirical) expectile at level `alpha` (:math:`\alpha`) of the array `a`
     (:math:`a_i`) associated to `weights` (:math:`w_i`) is the unique solution
     :math:`t` of:
 
