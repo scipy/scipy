@@ -1611,18 +1611,19 @@ class rv_generic:
     def _nnlf(self, x, *args):
         return -np.sum(self._logpxf(x, *args), axis=0)
 
-    def _nnlf_and_penalty(self, x, args):
+    def _nlff_and_penalty(self, x, args, log_fitfun):
+        # negative log fit function
         cond0 = ~self._support_mask(x, *args)
         n_bad = np.count_nonzero(cond0, axis=0)
         if n_bad > 0:
             x = argsreduce(~cond0, x)[0]
-        logpxf = self._logpxf(x, *args)
-        finite_logpxf = np.isfinite(logpxf)
-        n_bad += np.sum(~finite_logpxf, axis=0)
+        logff = log_fitfun(x, *args)
+        finite_logff = np.isfinite(logff)
+        n_bad += np.sum(~finite_logff, axis=0)
         if n_bad > 0:
             penalty = n_bad * log(_XMAX) * 100
-            return -np.sum(logpxf[finite_logpxf], axis=0) + penalty
-        return -np.sum(logpxf, axis=0)
+            return -np.sum(logff[finite_logff], axis=0) + penalty
+        return -np.sum(logff, axis=0)
 
     def _penalized_nnlf(self, theta, x):
         """Penalized negative loglikelihood function.
@@ -1634,7 +1635,26 @@ class rv_generic:
             return inf
         x = asarray((x-loc) / scale)
         n_log_scale = len(x) * log(scale)
-        return self._nnlf_and_penalty(x, args) + n_log_scale
+        return self._nlff_and_penalty(x, args, self._logpxf) + n_log_scale
+
+    def _penalized_nlpsf(self, theta, x):
+        """Penalized negative log product spacing function.
+        i.e., - sum (log (diff (cdf (x, theta))), axis=0) + penalty
+        where theta are the parameters (including loc and scale)
+        """
+        loc, scale, args = self._unpack_loc_scale(theta)
+        if not self._argcheck(*args) or scale <= 0:
+            return inf
+        x = (np.sort(x) - loc)/scale
+
+        def log_psf(x, *args):
+            # simplest possible implementation for starters
+            # concatenation could be avoided, but it probably doesn't matter
+            cdf = np.concatenate(([0], self._cdf(x, *args), [1]))
+            # here we could use logcdf w/ logsumexp trick
+            return np.log(np.diff(cdf))
+
+        return self._nlff_and_penalty(x, args, log_psf)
 
 
 class _ShapeInfo:
@@ -2427,7 +2447,7 @@ class rv_continuous(rv_generic):
             else:
                 x0.append(args[n])
 
-        methods = {"mle", "mm"}
+        methods = {"mle", "mm", "mps"}
         method = kwds.pop('method', "mle").lower()
         if method == "mm":
             n_params = len(shapes) + 2 - len(fixedn)
@@ -2438,6 +2458,8 @@ class rv_continuous(rv_generic):
                 return self._moment_error(theta, x, data_moments)
         elif method == "mle":
             objective = self._penalized_nnlf
+        elif method == "mps":
+            objective = self._penalized_nlpsf
         else:
             raise ValueError("Method '{0}' not available; must be one of {1}"
                              .format(method, methods))
@@ -2532,8 +2554,8 @@ class rv_continuous(rv_generic):
               output as keyword arguments.
 
             - method : The method to use. The default is "MLE" (Maximum
-              Likelihood Estimate); "MM" (Method of Moments)
-              is also available.
+              Likelihood Estimate); "MPS" (Maximum Product Spacing" and
+              "MM" (Method of Moments) are also available.
 
         Raises
         ------
@@ -2556,6 +2578,10 @@ class rv_continuous(rv_generic):
         the negative log-likelihood function. A large, finite penalty
         (rather than infinite negative log-likelihood) is applied for
         observations beyond the support of the distribution.
+
+        With ``method="MPS"``, the fit is computed by minimizing
+        the negative log-product spacing function. The same penalty is applied
+        for observations beyond the support.
 
         With ``method="MM"``, the fit is computed by minimizing the L2 norm
         of the relative errors between the first *k* raw (about zero) data

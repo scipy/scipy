@@ -60,7 +60,13 @@ mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                 'kappa4', 'kstwobign', 'recipinvgauss',
                 'truncexpon', 'vonmises', 'vonmises_line']
 
-failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
+mps_failing_fits = ['chi2', 'gengamma', 'kappa4', 'ksone', 'kstwo', 'mielke',
+                    'ncf', 'ncx2', 'powerlognorm', 'trapezoid', 'truncpareto',
+                    'tukeylambda', 'vonmises']
+mps_slow_fits = ['gausshyper', 'genexpon', 'geninvgauss', 'levy_stable',
+                 'norminvgauss', 'studentized_range']
+failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits,
+                "MPS": mps_failing_fits + mps_slow_fits}
 
 # Don't run the fit test on these:
 skip_fit = [
@@ -81,7 +87,7 @@ def cases_test_cont_fit():
 
 @pytest.mark.slow
 @pytest.mark.parametrize('distname,arg', cases_test_cont_fit())
-@pytest.mark.parametrize('method', ["MLE", "MM"])
+@pytest.mark.parametrize('method', ["MLE", "MM", "MPS"])
 def test_cont_fit(distname, arg, method):
     if distname in failing_fits[method]:
         # Skip failing fits unless overridden
