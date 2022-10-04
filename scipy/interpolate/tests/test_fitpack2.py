@@ -67,6 +67,13 @@ class TestUnivariateSpline:
         spl = UnivariateSpline(x, y, k=3)
         assert_almost_equal(spl.roots()[0], 1.050290639101332)
 
+    def test_derivatives(self):
+        x = [1, 3, 5, 7, 9]
+        y = [0, 4, 9, 12, 21]
+        spl = UnivariateSpline(x, y, k=3)
+        assert_almost_equal(spl.derivatives(3.5),
+                            [5.5152902, 1.7146577, -0.1830357, 0.3125])
+
     def test_resize_regression(self):
         """Regression test for #1375."""
         x = [-1., -0.65016502, -0.58856235, -0.26903553, -0.17370892,
