@@ -471,7 +471,8 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     Solve equation a x = b. a is Hermitian positive-definite banded matrix.
 
     Uses Thomas' Algorithm, which is more efficient than standard LU
-    factorization, but should not be used for nonpositve matrices.
+    factorization, but should only be used for Hermitian positive-definite
+    matrices.
 
     The matrix ``a`` is stored in `ab` either in lower diagonal or upper
     diagonal ordered form:
@@ -519,9 +520,8 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
 
     Notes
     -----
-    In the case of a nonpositive matrix ``a``, the solver `solve_banded`
-    may be used.
-
+    In the case of a non-positive definite matrix ``a``, the solver
+    `solve_banded` may be used.
 
     Examples
     --------
