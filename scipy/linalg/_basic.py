@@ -473,13 +473,18 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     """
     Solve equation a x = b. a is Hermitian positive-definite banded matrix.
 
-    The matrix a is stored in `ab` either in lower diagonal or upper
+    Uses Thomas' Algorithm, which is more efficient than standard LU
+    factorization, but should only be used for Hermitian positive-definite
+    matrices.
+
+    The matrix ``a`` is stored in `ab` either in lower diagonal or upper
     diagonal ordered form:
 
         ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
 
-    Example of `ab` (shape of a is (6, 6), `u` =2)::
+    Example of `ab` (shape of ``a`` is (6, 6), number of upper diagonals,
+    ``u`` =2)::
 
         upper form:
         *   *   a02 a13 a24 a35
@@ -495,7 +500,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
 
     Parameters
     ----------
-    ab : (`u` + 1, M) array_like
+    ab : (``u`` + 1, M) array_like
         Banded matrix
     b : (M,) or (M, K) array_like
         Right-hand side
@@ -513,12 +518,17 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     Returns
     -------
     x : (M,) or (M, K) ndarray
-        The solution to the system a x = b. Shape of return matches shape
+        The solution to the system ``a x = b``. Shape of return matches shape
         of `b`.
+
+    Notes
+    -----
+    In the case of a non-positive definite matrix ``a``, the solver
+    `solve_banded` may be used.
 
     Examples
     --------
-    Solve the banded system A x = b, where::
+    Solve the banded system ``A x = b``, where::
 
             [ 4  2 -1  0  0  0]       [1]
             [ 2  5  2 -1  0  0]       [2]
@@ -530,7 +540,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     >>> import numpy as np
     >>> from scipy.linalg import solveh_banded
 
-    `ab` contains the main diagonal and the nonzero diagonals below the
+    ``ab`` contains the main diagonal and the nonzero diagonals below the
     main diagonal. That is, we use the lower form:
 
     >>> ab = np.array([[ 4,  5,  6,  7, 8, 9],
@@ -543,14 +553,14 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
             0.34733894])
 
 
-    Solve the Hermitian banded system H x = b, where::
+    Solve the Hermitian banded system ``H x = b``, where::
 
             [ 8   2-1j   0     0  ]        [ 1  ]
         H = [2+1j  5     1j    0  ]    b = [1+1j]
             [ 0   -1j    9   -2-1j]        [1-2j]
             [ 0    0   -2+1j   6  ]        [ 0  ]
 
-    In this example, we put the upper diagonals in the array `hb`:
+    In this example, we put the upper diagonals in the array ``hb``:
 
     >>> hb = np.array([[0, 2-1j, 1j, -2-1j],
     ...                [8,  5,    9,   6  ]])

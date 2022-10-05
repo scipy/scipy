@@ -7192,7 +7192,9 @@ class pearson3_gen(rv_continuous):
         ans, q, _, mask, invmask, beta, alpha, zeta = (
             self._preprocess(q, skew))
         ans[mask] = _norm_ppf(q[mask])
-        ans[invmask] = sc.gammaincinv(alpha, q[invmask])/beta + zeta
+        q = q[invmask]
+        q[beta < 0] = 1 - q[beta < 0]  # for negative skew; see gh-17050
+        ans[invmask] = sc.gammaincinv(alpha, q)/beta + zeta
         return ans
 
     @_call_super_mom
