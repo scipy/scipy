@@ -399,8 +399,11 @@ def test_subclassing_QMCEngine():
 
 def test_raises():
     # input validation
-    with pytest.raises(ValueError, match=r"d must be an integer value"):
+    with pytest.raises(ValueError, match=r"d must be a positive integer"):
         RandomEngine((2,))  # noqa
+
+    with pytest.raises(ValueError, match=r"d must be a positive integer"):
+        RandomEngine(-1)  # noqa
 
     msg = r"'u_bounds' and 'l_bounds' must be integers"
     with pytest.raises(ValueError, match=msg):

@@ -711,8 +711,8 @@ class QMCEngine(ABC):
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
-        if not np.issubdtype(type(d), np.integer):
-            raise ValueError('d must be an integer value')
+        if not np.issubdtype(type(d), np.integer) or d < 0:
+            raise ValueError('d must be a positive integer value')
 
         self.d = d
         self.rng = check_random_state(seed)
