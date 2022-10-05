@@ -292,7 +292,8 @@ class FitResult:
         ax.legend(handles[::-1], labels[::-1])
         return ax
 
-def fit(dist, data, bounds=None, *, guess=None,
+
+def fit(dist, data, bounds=None, *, guess=None, method='mle',
         optimizer=optimize.differential_evolution):
     r"""Fit a discrete or continuous distribution to data
 
@@ -345,6 +346,14 @@ def fit(dist, data, bounds=None, *, guess=None,
         rounded to integral values, and guesses that lie outside the
         intersection of the user-provided bounds and the domain of the
         distribution will be clipped.
+    method : {'mle', 'mpe'}
+        With ``method="mle"`` (default), the fit is computed by minimizing
+        the negative log-likelihood function. A large, finite penalty
+        (rather than infinite negative log-likelihood) is applied for
+        observations beyond the support of the distribution.
+        With ``method="mpe"``, the fit is computed by minimizing
+        the negative log-product spacing function. The same penalty is applied
+        for observations beyond the support.
     optimizer : callable, optional
         `optimizer` is a callable that accepts the following positional
         argument.
@@ -672,10 +681,17 @@ def fit(dist, data, bounds=None, *, guess=None,
     else:
         guess = None
 
-    # --- MLE Fitting --- #
+    # --- Fitting --- #
     def nllf(free_params, data=data):  # bind data NOW
         with np.errstate(invalid='ignore', divide='ignore'):
             return dist._penalized_nnlf(free_params, data)
+
+    def nlpsf(free_params, data=data):  # bind data NOW
+        with np.errstate(invalid='ignore', divide='ignore'):
+            return dist._penalized_nlpsf(free_params, data)
+
+    methods = {'mle': nllf, 'mpe': nlpsf}
+    objective = methods[method.lower()]
 
     with np.errstate(invalid='ignore', divide='ignore'):
         kwds = {}
@@ -685,6 +701,6 @@ def fit(dist, data, bounds=None, *, guess=None,
             kwds['integrality'] = integrality
         if guess is not None:
             kwds['x0'] = guess
-        res = optimizer(nllf, **kwds)
+        res = optimizer(objective, **kwds)
 
     return FitResult(dist, data, discrete, res)

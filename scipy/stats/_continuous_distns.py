@@ -56,7 +56,7 @@ def _remove_optimizer_parameters(kwds):
 
 def _call_super_mom(fun):
     # if fit method is overridden only for MLE and doesn't specify what to do
-    # if method == 'mm' or 'mps', this decorator calls generic implementation
+    # if method == 'mm', this decorator calls generic implementation
     @wraps(fun)
     def wrapper(self, *args, **kwds):
         method = kwds.get('method', 'mle').lower()

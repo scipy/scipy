@@ -2447,7 +2447,7 @@ class rv_continuous(rv_generic):
             else:
                 x0.append(args[n])
 
-        methods = {"mle", "mm", "mps"}
+        methods = {"mle", "mm"}
         method = kwds.pop('method', "mle").lower()
         if method == "mm":
             n_params = len(shapes) + 2 - len(fixedn)
@@ -2458,8 +2458,6 @@ class rv_continuous(rv_generic):
                 return self._moment_error(theta, x, data_moments)
         elif method == "mle":
             objective = self._penalized_nnlf
-        elif method == "mps":
-            objective = self._penalized_nlpsf
         else:
             raise ValueError("Method '{0}' not available; must be one of {1}"
                              .format(method, methods))
@@ -2554,8 +2552,8 @@ class rv_continuous(rv_generic):
               output as keyword arguments.
 
             - method : The method to use. The default is "MLE" (Maximum
-              Likelihood Estimate); "MPS" (Maximum Product Spacing" and
-              "MM" (Method of Moments) are also available.
+              Likelihood Estimate); "MM" (Method of Moments)
+              is also available.
 
         Raises
         ------
@@ -2578,10 +2576,6 @@ class rv_continuous(rv_generic):
         the negative log-likelihood function. A large, finite penalty
         (rather than infinite negative log-likelihood) is applied for
         observations beyond the support of the distribution.
-
-        With ``method="MPS"``, the fit is computed by minimizing
-        the negative log-product spacing function. The same penalty is applied
-        for observations beyond the support.
 
         With ``method="MM"``, the fit is computed by minimizing the L2 norm
         of the relative errors between the first *k* raw (about zero) data
