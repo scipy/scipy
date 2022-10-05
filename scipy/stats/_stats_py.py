@@ -4167,7 +4167,7 @@ class PearsonRResult(PearsonRResultBase):
     Attributes
     ----------
     statistic : float
-        Pearson product-moment correlation coefficent.
+        Pearson product-moment correlation coefficient.
     pvalue : float
         The p-value associated with the chosen alternative.
 
@@ -4261,7 +4261,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
         An object with the following attributes:
 
         statistic : float
-            Pearson product-moment correlation coefficent.
+            Pearson product-moment correlation coefficient.
         pvalue : float
             The p-value associated with the chosen alternative.
 
