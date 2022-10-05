@@ -80,8 +80,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'trust-ncg'   :ref:`(see here) <optimize.minimize-trustncg>`
             - 'trust-exact' :ref:`(see here) <optimize.minimize-trustexact>`
             - 'trust-krylov' :ref:`(see here) <optimize.minimize-trustkrylov>`
-            - custom - a callable object (added in version 0.14.0),
-              see below for description.
+            - custom - a callable object, see below for description.
 
         If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
         depending on whether or not the problem has constraints or bounds.
@@ -398,8 +397,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     arbitrary parameters; the set of parameters accepted by `minimize` may
     expand in future versions and then these parameters will be passed to
     the method.  You can find an example in the scipy.optimize tutorial.
-
-    .. versionadded:: 0.11.0
 
     References
     ----------
