@@ -1,6 +1,5 @@
 from numpy import array, frombuffer, load
 from ._registry import registry, registry_urls
-import warnings
 
 try:
     import pooch
