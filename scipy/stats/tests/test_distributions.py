@@ -1846,6 +1846,25 @@ class TestPearson3:
         assert_equal(moment, 0)
         assert isinstance(moment, np.number)
 
+    def test_ppf_bug_17050(self):
+        # incorrect PPF for negative skews were reported in gh-17050
+        # Check that this is fixed (even in the array case)
+        skews = [-3, -1, 0, 0.5]
+        x_eval = 0.5
+        res = stats.pearson3.ppf(stats.pearson3.cdf(x_eval, skews), skews)
+        assert_allclose(res, x_eval)
+
+        # Negation of the skew flips the distribution about the origin, so
+        # the following should hold
+        skew = np.array([[-0.5], [1.5]])
+        x = np.linspace(-2, 2)
+        assert_allclose(stats.pearson3.pdf(x, skew),
+                        stats.pearson3.pdf(-x, -skew))
+        assert_allclose(stats.pearson3.cdf(x, skew),
+                        stats.pearson3.sf(-x, -skew))
+        assert_allclose(stats.pearson3.ppf(x, skew),
+                        -stats.pearson3.isf(x, -skew))
+
 
 class TestKappa4:
     def test_cdf_genpareto(self):
