@@ -10,6 +10,7 @@ Run tests if scipy is installed:
 
 import itertools
 import platform
+import sys
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
@@ -2031,6 +2032,8 @@ class TestQZ:
     def setup_method(self):
         seed(12345)
 
+    @pytest.mark.xfail(sys.platform == 'darwin',
+        reason="gges[float32] broken for OpenBLAS on macOS, see gh-16949")
     def test_qz_single(self):
         n = 5
         A = random([n, n]).astype(float32)

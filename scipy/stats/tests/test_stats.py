@@ -2349,15 +2349,16 @@ class TestMode:
 
         # test nan_policy='omit'
         a = [[1, np.nan, np.nan, np.nan, 1],
-             [np.nan, np.nan, np.nan, np.nan, 2]]
+             [np.nan, np.nan, np.nan, np.nan, 2],
+             [1, 2, np.nan, 5, 5]]
 
         res = stats.mode(a, axis=1, keepdims=False, nan_policy='omit')
-        assert_array_equal(res.mode, [1, 2])
-        assert_array_equal(res.count, [2, 1])
+        assert_array_equal(res.mode, [1, 2, 5])
+        assert_array_equal(res.count, [2, 1, 2])
 
         res = stats.mode(a, axis=1, keepdims=True, nan_policy='omit')
-        assert_array_equal(res.mode, [[1], [2]])
-        assert_array_equal(res.count, [[2], [1]])
+        assert_array_equal(res.mode, [[1], [2], [5]])
+        assert_array_equal(res.count, [[2], [1], [2]])
 
         a = np.array(a)
         res = stats.mode(a, axis=None, keepdims=False, nan_policy='omit')
@@ -2369,6 +2370,15 @@ class TestMode:
         ref = stats.mode(a.ravel(), keepdims=True, nan_policy='omit')
         assert_array_equal(res, ref)
         assert res.mode.shape == ref.mode.shape == (1,)
+
+    def test_gh16952(self):
+        # Check that bug reported in gh-16952 is resolved
+        shape = (4, 3)
+        data = np.ones(shape)
+        data[0, 0] = np.nan
+        res = stats.mode(a=data, axis=1, keepdims=False, nan_policy="omit")
+        assert_array_equal(res.mode, [1, 1, 1, 1])
+        assert_array_equal(res.count, [2, 3, 3, 3])
 
 
 def test_mode_futurewarning():

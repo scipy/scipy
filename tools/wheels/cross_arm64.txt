@@ -1,0 +1,19 @@
+# meson cross-compile file for macOS x86_64 build --> arm64 host.
+
+[binaries]
+
+# specification of the -arch arm64 options for clang are necessary because
+# I don't think meson pays attention to the CFLAGS when cross-compiling. I
+# found some `.so` were turning up with an x86_64 architecture.
+
+c = ['clang', '-arch', 'arm64']
+cpp = ['clang++', '-arch', 'arm64']
+strip = ['strip']
+fortran = ['/opt/gfortran-darwin-arm64/bin/arm64-apple-darwin20.0.0-gfortran']
+pkg-config = '/usr/local/bin/pkg-config'
+
+[host_machine]
+system = 'Darwin'
+cpu_family = 'aarch64'
+cpu = 'arm64'
+endian = 'little'
