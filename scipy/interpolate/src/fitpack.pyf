@@ -170,17 +170,13 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
 
      subroutine spalde(t,n,c,k,x,d,ier)
        ! d,ier = spalde(t,c,k,x)
-
        threadsafe
-       callprotoargument double*,F_INT*,double*,F_INT*,double*,double*,F_INT*
-       callstatement {int k1=k+1; (*f2py_func)(t,&n,c,&k1,&x,d,&ier); }
-
        real*8 dimension(n) :: t
        integer intent(hide),depend(t) :: n=len(t)
        real*8 dimension(n),depend(n),check(len(c)==n) :: c
        integer intent(in) :: k
        real*8 intent(in) :: x
-       real*8 dimension(k+1),intent(out),depend(k) :: d
+       real*8 dimension(k),intent(out),depend(k) :: d
        integer intent(out) :: ier
      end subroutine spalde
 
