@@ -844,7 +844,6 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     Constructing lsq spline using the knots from another spline:
 
-    >>> import numpy as np
     >>> x = np.arange(10)
     >>> s = UnivariateSpline(x, x, s=0)
     >>> s.get_knots()

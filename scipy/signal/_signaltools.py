@@ -340,8 +340,7 @@ def correlation_lags(in1_len, in2_len, mode='full'):
 
     >>> import numpy as np
     >>> from scipy import signal
-    >>> from np.random import default_rng
-    >>> rng = default_rng()
+    >>> rng = np.random.default_rng()
     >>> x = rng.standard_normal(1000)
     >>> y = np.concatenate([rng.standard_normal(100), x])
     >>> correlation = signal.correlate(x, y, mode="full")
@@ -3516,8 +3515,7 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     --------
     >>> import numpy as np
     >>> from scipy import signal
-    >>> from np.random import default_rng
-    >>> rng = default_rng()
+    >>> rng = np.random.default_rng()
     >>> npoints = 1000
     >>> noise = rng.standard_normal(npoints)
     >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise

@@ -72,9 +72,9 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
-    >>> from numpy.random import default_rng
-    >>> rng = default_rng()
+    >>> rng = np.random.default_rng()
     >>> m, n = 9, 6
     >>> a = rng.standard_normal((m, n)) + 1.j*rng.standard_normal((m, n))
     >>> U, s, Vh = linalg.svd(a)
@@ -83,7 +83,6 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     Reconstruct the original matrix from the decomposition:
 
-    >>> import numpy as np
     >>> sigma = np.zeros((m, n))
     >>> for i in range(min(m, n)):
     ...     sigma[i, i] = s[i]
@@ -438,9 +437,8 @@ def subspace_angles(A, B):
     the suspace angle to be :math:`\frac{\pi}{2}`:
 
     >>> import numpy as np
-    >>> from numpy.random import default_rng
     >>> from scipy.linalg import hadamard, subspace_angles
-    >>> rng = default_rng()
+    >>> rng = np.random.default_rng()
     >>> H = hadamard(4)
     >>> print(H)
     [[ 1  1  1  1]

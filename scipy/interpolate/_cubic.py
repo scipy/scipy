@@ -597,7 +597,6 @@ class CubicSpline(CubicHermiteSpline):
     computed. Note that a circle cannot be exactly represented by a cubic
     spline. To increase precision, more breakpoints would be required.
 
-    >>> import numpy as np
     >>> theta = 2 * np.pi * np.linspace(0, 1, 5)
     >>> y = np.c_[np.cos(theta), np.sin(theta)]
     >>> cs = CubicSpline(theta, y, bc_type='periodic')
@@ -618,7 +617,6 @@ class CubicSpline(CubicHermiteSpline):
     endpoints of the interval. Note that y' = 3 * x**2 and thus y'(0) = 0 and
     y'(1) = 3.
 
-    >>> import numpy as np
     >>> cs = CubicSpline([0, 1], [0, 1], bc_type=((1, 0), (1, 3)))
     >>> x = np.linspace(0, 1)
     >>> np.allclose(x**3, cs(x))
