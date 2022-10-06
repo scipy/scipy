@@ -213,19 +213,16 @@ def cases_test_fit_mle():
 
 
 def cases_test_fit_mse():
-    # gausshyper - IntegrationWarning: The occurrence of roundoff error is detected,
-    # genhyperbolic - IntegrationWarning: The occurrence of roundoff error is detected,
-    # 'norminvgauss' worked once but is really slow, so is 'geninvgauss'
-    # 'kstwo' ValueError: Iteration of zero-sized operands is not enabled
     # 'vonmises'  RuntimeWarning: invalid value encountered in log
-    # argus - Not equal to tolerance; 46038.641604 vs 45517.830818
 
     # the first four are so slow that I'm not sure whether they would pass
     skip_basic_fit = {'levy_stable', 'studentized_range', 'ksone', 'skewnorm',
-                      'norminvgauss', # super slow (~1 hr) but passes
-                      'geninvgauss', # quite slow (~4 minutes) but passes
-                      'gausshyper', 'genhyperbolic',  # integration warning
-                      'argus'}  # does OK, but doesn't meet tolerance
+                      'norminvgauss',  # super slow (~1 hr) but passes
+                      'kstwo',  # very slow (~25 min) but passes
+                      'geninvgauss',  # quite slow (~4 minutes) but passes
+                      'gausshyper', 'genhyperbolic',  # integration warnings
+                      'argus',  # close, but doesn't meet tolerance
+                      'vonmises'}  # invalid value, but not in `stats.fit`
     slow_basic_fit = {'wald', 'genextreme', 'anglit', 'semicircular',
                       'kstwobign', 'arcsine', 'genlogistic', 'truncexpon',
                       'fisk', 'uniform', 'exponnorm', 'maxwell', 'lomax',
@@ -237,14 +234,14 @@ def cases_test_fit_mse():
                       'pareto', 'invweibull', 'alpha', 'erlang', 'dgamma',
                       'chi2', 'crystalball', 'nakagami', 'truncweibull_min',
                       't', 'vonmises_line', 'triang', 'wrapcauchy', 'gamma',
-                      'mielke', 'chi', 'johnsonsb', 'vonmises', 'exponweib',
+                      'mielke', 'chi', 'johnsonsb', 'exponweib',
                       'genhalflogistic'}
     xslow_basic_fit = {'burr', 'halfgennorm', 'invgamma', 'invgauss',
                        'powerlaw', 'burr12', 'trapezoid', 'kappa4', 'f',
                        'powerlognorm', 'ncx2', 'rdist', 'reciprocal',
                        'loguniform', 'betaprime', 'rice', 'gennorm',
                        'gengamma', 'truncnorm', 'ncf', 'nct', 'pearson3',
-                       'kstwo', 'beta', 'genexpon', 'tukeylambda'}
+                       'beta', 'genexpon', 'tukeylambda'}
 
     for dist in dict(distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):

@@ -1650,7 +1650,8 @@ class rv_generic:
         def log_psf(x, *args):
             # simplest possible implementation for starters
             # concatenation could be avoided, but it probably doesn't matter
-            cdf = np.concatenate(([0], self._cdf(x, *args), [1]))
+            cdf_data = self._cdf(x, *args) if x.size else []
+            cdf = np.concatenate(([0], cdf_data, [1]))
             # here we could use logcdf w/ logsumexp trick
             return np.log(np.diff(cdf))
 
