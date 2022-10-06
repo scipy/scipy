@@ -992,8 +992,8 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
     PyObject *nullval;
     int nullIsNone, valueIsNull=0, ndim, j, arrType, minMaxUnset=1;
     NI_Iterator ndiIter;
-    void *arrData, *nullvalData=NULL;
-    npy_uint64 *hist=NULL, *valCtr=NULL;
+    void *arrData;
+    npy_uint64 *hist=NULL, *valCtr=NULL, *nullvalData=NULL;
     npy_intp arrSize, iterIndex, dims[1];
     npy_uint64 ii, numPossibleVals=0;
 
@@ -1013,7 +1013,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
     /* Set up a pointer to the null value, to be used in conjunction
        with VALUEINDICES_NULLVAL macro */
     if (!nullIsNone) {
-        nullvalData = (void *)calloc(1, sizeof(npy_uint64));
+        nullvalData = (npy_uint64 *)calloc(1, sizeof(npy_uint64));
         PyArray_ScalarAsCtype(nullval, nullvalData);
     }
 
