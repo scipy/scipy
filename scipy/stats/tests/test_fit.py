@@ -212,13 +212,39 @@ def cases_test_fit_mle():
             yield dist
 
 
-def cases_test_fit_mpe():
-    # Investigate these further. Some may just be too slow, some may be fixable
-    skip_basic_fit = {'ksone', 'kstwo', 'levy_stable', 'studentized_range',
-                      'skewnorm', 'gausshyper', 'genhyperbolic', 'geninvgauss',
-                      'norminvgauss', 'argus', 'vonmises'}
-    slow_basic_fit = {}
-    xslow_basic_fit = {}
+def cases_test_fit_mse():
+    # gausshyper - IntegrationWarning: The occurrence of roundoff error is detected,
+    # genhyperbolic - IntegrationWarning: The occurrence of roundoff error is detected,
+    # 'norminvgauss' worked once but is really slow, so is 'geninvgauss'
+    # 'kstwo' ValueError: Iteration of zero-sized operands is not enabled
+    # 'vonmises'  RuntimeWarning: invalid value encountered in log
+    # argus - Not equal to tolerance; 46038.641604 vs 45517.830818
+
+    # the first four are so slow that I'm not sure whether they would pass
+    skip_basic_fit = {'levy_stable', 'studentized_range', 'ksone', 'skewnorm',
+                      'norminvgauss', # super slow (~1 hr) but passes
+                      'geninvgauss', # quite slow (~4 minutes) but passes
+                      'gausshyper', 'genhyperbolic',  # integration warning
+                      'argus'}  # does OK, but doesn't meet tolerance
+    slow_basic_fit = {'wald', 'genextreme', 'anglit', 'semicircular',
+                      'kstwobign', 'arcsine', 'genlogistic', 'truncexpon',
+                      'fisk', 'uniform', 'exponnorm', 'maxwell', 'lomax',
+                      'laplace_asymmetric', 'lognorm', 'foldcauchy',
+                      'genpareto', 'powernorm', 'loglaplace', 'foldnorm',
+                      'recipinvgauss', 'exponpow', 'bradford', 'weibull_max',
+                      'gompertz', 'dweibull', 'truncpareto', 'weibull_min',
+                      'johnsonsu', 'loggamma', 'kappa3', 'fatiguelife',
+                      'pareto', 'invweibull', 'alpha', 'erlang', 'dgamma',
+                      'chi2', 'crystalball', 'nakagami', 'truncweibull_min',
+                      't', 'vonmises_line', 'triang', 'wrapcauchy', 'gamma',
+                      'mielke', 'chi', 'johnsonsb', 'vonmises', 'exponweib',
+                      'genhalflogistic'}
+    xslow_basic_fit = {'burr', 'halfgennorm', 'invgamma', 'invgauss',
+                       'powerlaw', 'burr12', 'trapezoid', 'kappa4', 'f',
+                       'powerlognorm', 'ncx2', 'rdist', 'reciprocal',
+                       'loguniform', 'betaprime', 'rice', 'gennorm',
+                       'gengamma', 'truncnorm', 'ncf', 'nct', 'pearson3',
+                       'kstwo', 'beta', 'genexpon', 'tukeylambda'}
 
     for dist in dict(distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
@@ -422,7 +448,7 @@ class TestFit:
             res = stats.fit(dist, data, bounds, method=method,
                             optimizer=self.opt)
 
-        nlff_names = {'mle': 'nnlf', 'mpe': '_penalized_nlpsf'}
+        nlff_names = {'mle': 'nnlf', 'mse': '_penalized_nlpsf'}
         nlff_name = nlff_names[method]
         assert_nlff_less_or_close(dist, data, res.params, ref, **self.tols,
                                   nlff_name=nlff_name)
@@ -431,9 +457,9 @@ class TestFit:
     def test_basic_fit_mle(self, dist_name):
         self.basic_fit_test(dist_name, "mle")
 
-    @pytest.mark.parametrize("dist_name", cases_test_fit_mpe())
-    def test_basic_fit_mpe(self, dist_name):
-        self.basic_fit_test(dist_name, "mpe")
+    @pytest.mark.parametrize("dist_name", cases_test_fit_mse())
+    def test_basic_fit_mse(self, dist_name):
+        self.basic_fit_test(dist_name, "mse")
 
     def test_argus(self):
         # Can't guarantee that all distributions will fit all data with

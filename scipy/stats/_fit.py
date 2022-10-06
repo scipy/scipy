@@ -346,12 +346,12 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
         rounded to integral values, and guesses that lie outside the
         intersection of the user-provided bounds and the domain of the
         distribution will be clipped.
-    method : {'mle', 'mpe'}
+    method : {'mle', 'mse'}
         With ``method="mle"`` (default), the fit is computed by minimizing
         the negative log-likelihood function. A large, finite penalty
         (rather than infinite negative log-likelihood) is applied for
         observations beyond the support of the distribution.
-        With ``method="mpe"``, the fit is computed by minimizing
+        With ``method="mse"``, the fit is computed by minimizing
         the negative log-product spacing function. The same penalty is applied
         for observations beyond the support.
     optimizer : callable, optional
@@ -690,7 +690,7 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
         with np.errstate(invalid='ignore', divide='ignore'):
             return dist._penalized_nlpsf(free_params, data)
 
-    methods = {'mle': nllf, 'mpe': nlpsf}
+    methods = {'mle': nllf, 'mse': nlpsf}
     objective = methods[method.lower()]
 
     with np.errstate(invalid='ignore', divide='ignore'):
