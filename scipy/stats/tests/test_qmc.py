@@ -653,19 +653,6 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: the value of reference sample is"
                     " implementation dependent.")
 
-    def test_centering(self):
-        # centering stratifies samples in the middle of equal segments:
-        # * inter-sample distance is constant in 1D sub-projections
-        # * after ordering, columns are equal
-        rng = np.random.default_rng(230848485337593016117637089968181108379)
-        d, n = 3, 100
-        engine = qmc.LatinHypercube(d=d, scramble=False, seed=rng)
-        ref = np.tile(np.linspace(0.005, 0.995, n), (d, 1)).T
-        for _ in range(5):
-            sample = engine.random(n)
-            sorted_sample = np.sort(sample, axis=0)
-            assert_allclose(sorted_sample, ref)
-
     @pytest.mark.parametrize("strength", [1, 2])
     @pytest.mark.parametrize("scramble", [False, True])
     @pytest.mark.parametrize("optimization", [None, "random-CD"])
@@ -674,8 +661,6 @@ class TestLHS(QMCEngineTests):
         p = 5
         n = p**2
         d = 6
-        expected1d = (np.arange(n) + 0.5) / n
-        expected = np.broadcast_to(expected1d, (d, n)).T
 
         engine = qmc.LatinHypercube(d=d, scramble=scramble,
                                     strength=strength,
@@ -685,11 +670,18 @@ class TestLHS(QMCEngineTests):
         assert sample.shape == (n, d)
         assert engine.num_generated == n
 
-        sorted_sample = np.sort(sample, axis=0)
-
+        # centering stratifies samples in the middle of equal segments:
+        # * inter-sample distance is constant in 1D sub-projections
+        # * after ordering, columns are equal
+        expected1d = (np.arange(n) + 0.5) / n
+        expected = np.broadcast_to(expected1d, (d, n)).T
         assert np.any(sample != expected)
-        assert_allclose(sorted_sample, expected, atol=0.5 / n)
-        assert np.any(sample - expected > 0.5 / n)
+
+        sorted_sample = np.sort(sample, axis=0)
+        tol = 0.5 / n if scramble else 0
+
+        assert_allclose(sorted_sample, expected, atol=tol)
+        assert np.any(sample - expected > tol)
 
         if strength == 2 and optimization is None:
             unique_elements = np.arange(p)

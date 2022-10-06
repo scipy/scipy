@@ -1034,7 +1034,8 @@ class LatinHypercube(QMCEngine):
     d : int
         Dimension of the parameter space.
     centered : bool, optional
-        Center samples within a multi-dimensional grid. Default is False.
+        Center samples within cells of a multi-dimensional grid.
+        Default is False.
 
         .. deprecated:: 1.10.0
             `centered` is deprecated as of SciPy 1.10.0 and will be removed in
@@ -1042,8 +1043,8 @@ class LatinHypercube(QMCEngine):
             ``scramble=False``.
 
     scramble : bool, optional
-        When False, center samples within a multi-dimensional grid.
-        Otherwise, samples are randomly placed within the grid.
+        When False, center samples within cells of a multi-dimensional grid.
+        Otherwise, samples are randomly placed within cells of the grid.
 
         .. note::
             Setting ``scramble=False`` does not ensure deterministic output.
@@ -1101,9 +1102,10 @@ class LatinHypercube(QMCEngine):
     distinct rows occur the same number of times. The elements of :math:`A`
     are in the set :math:`\{0, 1, ..., p-1\}`, also called symbols.
     The constraint that :math:`p` must be a prime number is to allow modular
-    arithmetic. The strength add some symettry in sub-projections to a sample.
-    With strength 2, samples are symettric along the diagonals of
-    2D sub-projections.
+    arithmetic. The strength add some symmetry in sub-projections to a sample.
+    With strength 2, samples are symmetric along the diagonals of
+    2D sub-projections. Which may be undesirable, but on the other hand, the
+    sample dispersion is improved.
 
     Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
     strength 2 is a useful increment over strength 1. Going to strength 3 is
