@@ -1102,9 +1102,9 @@ class LatinHypercube(QMCEngine):
     distinct rows occur the same number of times. The elements of :math:`A`
     are in the set :math:`\{0, 1, ..., p-1\}`, also called symbols.
     The constraint that :math:`p` must be a prime number is to allow modular
-    arithmetic. The strength add some symmetry in sub-projections to a sample.
-    With strength 2, samples are symmetric along the diagonals of
-    2D sub-projections. Which may be undesirable, but on the other hand, the
+    arithmetic. Increasing strength adds some symmetry to the sub-projections
+    of a sample. With strength 2, samples are symmetric along the diagonals of
+    2D sub-projections. This may be undesirable, but on the other hand, the
     sample dispersion is improved.
 
     Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
