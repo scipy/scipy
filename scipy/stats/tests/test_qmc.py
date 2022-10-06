@@ -399,10 +399,10 @@ def test_subclassing_QMCEngine():
 
 def test_raises():
     # input validation
-    with pytest.raises(ValueError, match=r"d must be a positive integer"):
+    with pytest.raises(ValueError, match=r"d must be a non-negative integer"):
         RandomEngine((2,))  # noqa
 
-    with pytest.raises(ValueError, match=r"d must be a positive integer"):
+    with pytest.raises(ValueError, match=r"d must be a non-negative integer"):
         RandomEngine(-1)  # noqa
 
     msg = r"'u_bounds' and 'l_bounds' must be integers"
@@ -658,12 +658,13 @@ class TestLHS(QMCEngineTests):
         # * inter-sample distance is constant in 1D sub-projections
         # * after ordering, columns are equal
         rng = np.random.default_rng(230848485337593016117637089968181108379)
-        engine = qmc.LatinHypercube(d=3, scramble=False, seed=rng)
-        for _ in range(10):
-            sample = engine.random(100)
+        d, n = 3, 100
+        engine = qmc.LatinHypercube(d=d, scramble=False, seed=rng)
+        ref = np.tile(np.linspace(0.005, 0.995, n), (d, 1)).T
+        for _ in range(5):
+            sample = engine.random(n)
             sorted_sample = np.sort(sample, axis=0)
-            mean_cols = np.mean(sorted_sample, axis=1)
-            assert_allclose(mean_cols, np.linspace(0.005, 0.995, 100))
+            assert_allclose(sorted_sample, ref)
 
     @pytest.mark.parametrize("strength", [1, 2])
     @pytest.mark.parametrize("scramble", [False, True])
@@ -721,7 +722,7 @@ class TestLHS(QMCEngineTests):
             engine.random(9)
 
         message = r"'centered' is deprecated"
-        with pytest.warns(UserWarning,  match=message):
+        with pytest.warns(UserWarning, match=message):
             qmc.LatinHypercube(1, centered=True)
 
 

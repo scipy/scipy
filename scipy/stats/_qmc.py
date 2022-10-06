@@ -712,7 +712,7 @@ class QMCEngine(ABC):
         seed: SeedType = None
     ) -> None:
         if not np.issubdtype(type(d), np.integer) or d < 0:
-            raise ValueError('d must be a positive integer value')
+            raise ValueError('d must be a non-negative integer value')
 
         self.d = d
         self.rng = check_random_state(seed)
@@ -1034,19 +1034,20 @@ class LatinHypercube(QMCEngine):
     d : int
         Dimension of the parameter space.
     centered : bool, optional
-        Center the point within the multi-dimensional grid. Default is False.
+        Center samples within a multi-dimensional grid. Default is False.
 
         .. deprecated:: 1.10.0
             `centered` is deprecated as of SciPy 1.10.0 and will be removed in
-            1.11.0. Use `scramble` instead. ``centered=True`` corresponds to
+            1.12.0. Use `scramble` instead. ``centered=True`` corresponds to
             ``scramble=False``.
 
     scramble : bool, optional
-        When False, center the point within the multi-dimensional grid.
+        When False, center samples within a multi-dimensional grid.
+        Otherwise, samples are randomly placed within the grid.
 
         .. note::
-            Not scrambling will not make the sample constant. For that,
-            use the `seed` parameter.
+            Setting ``scramble=False`` does not ensure deterministic output.
+            For that, use the `seed` parameter.
 
         Default is True.
 
@@ -1101,6 +1102,8 @@ class LatinHypercube(QMCEngine):
     are in the set :math:`\{0, 1, ..., p-1\}`, also called symbols.
     The constraint that :math:`p` must be a prime number is to allow modular
     arithmetic. The strength add some symettry in sub-projections to a sample.
+    With strength 2, samples are symettric along the diagonals of
+    2D sub-projections.
 
     Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
     strength 2 is a useful increment over strength 1. Going to strength 3 is
@@ -1199,10 +1202,9 @@ class LatinHypercube(QMCEngine):
         if centered:
             scramble = False
             warnings.warn(
-                "'centered' is deprecated and will be removed in SciPy 1.11."
+                "'centered' is deprecated and will be removed in SciPy 1.12."
                 " Please use 'scramble' instead. 'centered=True' corresponds"
-                " to 'scramble=False'. Hence the value of 'scramble' was"
-                " changed to False.",
+                " to 'scramble=False'.",
                 stacklevel=2
             )
 
