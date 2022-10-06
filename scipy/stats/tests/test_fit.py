@@ -221,8 +221,7 @@ def cases_test_fit_mse():
                       'kstwo',  # very slow (~25 min) but passes
                       'geninvgauss',  # quite slow (~4 minutes) but passes
                       'gausshyper', 'genhyperbolic',  # integration warnings
-                      'argus',  # close, but doesn't meet tolerance
-                      'vonmises'}  # invalid value, but not in `stats.fit`
+                      'argus'}  # close, but doesn't meet tolerance
     slow_basic_fit = {'wald', 'genextreme', 'anglit', 'semicircular',
                       'kstwobign', 'arcsine', 'genlogistic', 'truncexpon',
                       'fisk', 'uniform', 'exponnorm', 'maxwell', 'lomax',
@@ -235,15 +234,17 @@ def cases_test_fit_mse():
                       'chi2', 'crystalball', 'nakagami', 'truncweibull_min',
                       't', 'vonmises_line', 'triang', 'wrapcauchy', 'gamma',
                       'mielke', 'chi', 'johnsonsb', 'exponweib',
-                      'genhalflogistic'}
-    xslow_basic_fit = {'burr', 'halfgennorm', 'invgamma', 'invgauss',
-                       'powerlaw', 'burr12', 'trapezoid', 'kappa4', 'f',
-                       'powerlognorm', 'ncx2', 'rdist', 'reciprocal',
+                      'genhalflogistic', 'randint', 'nhypergeom', 'hypergeom',
+                      'betabinom'}
+    xslow_basic_fit = {'vonmises', 'burr', 'halfgennorm', 'invgamma',
+                       'invgauss', 'powerlaw', 'burr12', 'trapezoid', 'kappa4',
+                       'f', 'powerlognorm', 'ncx2', 'rdist', 'reciprocal',
                        'loguniform', 'betaprime', 'rice', 'gennorm',
                        'gengamma', 'truncnorm', 'ncf', 'nct', 'pearson3',
-                       'beta', 'genexpon', 'tukeylambda'}
+                       'beta', 'genexpon', 'tukeylambda', 'zipfian',
+                       'nchypergeom_wallenius', 'nchypergeom_fisher'}
 
-    for dist in dict(distcont):
+    for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
             reason = "Fails. Oh well."
             yield pytest.param(dist, marks=pytest.mark.skip(reason=reason))
@@ -280,8 +281,9 @@ def test_fitstart(distname, shapes):
 def assert_nlff_less_or_close(dist, data, params1, params0, rtol=1e-7, atol=0,
                               nlff_name='nnlf'):
     nlff = getattr(dist, nlff_name)
-    nlff1 = nlff(params1, data)
-    nlff0 = nlff(params0, data)
+    with np.errstate(invalid='ignore', divide='ignore'):
+        nlff1 = nlff(params1, data)
+        nlff0 = nlff(params0, data)
     if not (nlff1 < nlff0):
         np.testing.assert_allclose(nlff1, nlff0, rtol=rtol, atol=atol)
 

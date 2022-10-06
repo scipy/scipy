@@ -353,7 +353,8 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
         observations beyond the support of the distribution.
         With ``method="mse"``, the fit is computed by minimizing
         the negative log-product spacing function. The same penalty is applied
-        for observations beyond the support.
+        for observations beyond the support. We follow the approach of [1]_,
+        which is generalized for samples with repeated observations.
     optimizer : callable, optional
         `optimizer` is a callable that accepts the following positional
         argument.
@@ -432,6 +433,12 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
     estimate. For example, when fitting a binomial distribution to data, the
     number of experiments underlying each sample may be known, in which case
     the corresponding shape parameter ``n`` can be fixed.
+
+    References
+    ----------
+    [1] Shao, Yongzhao, and Marjorie G. Hahn. "Maximum product of spacings
+        method: a unified formulation with illustration of strong consistency."
+        Illinois Journal of Mathematics 43.3 (1999): 489-499.
 
     Examples
     --------
