@@ -453,6 +453,32 @@ def test_find_objects09():
                        (slice(5, 6, None), slice(3, 5, None))])
 
 
+def test_value_indices01():
+    data = np.array([[1, 0, 0, 0, 0, 0],
+                     [0, 0, 2, 2, 0, 0],
+                     [0, 0, 2, 2, 2, 0],
+                     [0, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 4, 4, 0]])
+    vi = ndimage.value_indices(data, nullval=0)
+    assert_equal(list(vi.keys()), [1, 2, 4])
+
+
+def test_value_indices02():
+    data = np.array([[1, 0, 0, 0, 0, 0],
+                     [0, 0, 2, 2, 0, 0],
+                     [0, 0, 2, 2, 2, 0],
+                     [0, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 4, 4, 0]])
+    truevi = {}
+    for k in [1, 2, 4]:
+        truevi[k] = np.where(data == k)
+
+    vi = ndimage.value_indices(data, nullval=0)
+    assert_equal(vi, truevi)
+
+
 def test_sum01():
     for type in types:
         input = np.array([], type)

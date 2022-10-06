@@ -38,7 +38,7 @@ from . import _morphology
 __all__ = ['label', 'find_objects', 'labeled_comprehension', 'sum', 'mean',
            'variance', 'standard_deviation', 'minimum', 'maximum', 'median',
            'minimum_position', 'maximum_position', 'extrema', 'center_of_mass',
-           'histogram', 'watershed_ift', 'sum_labels']
+           'histogram', 'watershed_ift', 'sum_labels', 'value_indices']
 
 
 def label(input, structure=None, output=None):
@@ -305,6 +305,91 @@ def find_objects(input, max_label=0):
         max_label = input.max()
 
     return _nd_image.find_objects(input, max_label)
+
+
+def value_indices(arr, *, nullval=None):
+    """
+    Find indices of each distinct value in given array.
+
+    Parameters
+    ----------
+    arr : ndarray of ints
+        Array containing integer values.
+    nullval : int, optional
+        This value will be ignored in searching the arr array. If not
+        given, all values found will be included in output.
+
+    Returns
+    -------
+    indices : dictionary
+        A Python dictionary of array indices for each distinct value. The
+        dictionary is keyed by the distinct values, the entries are array
+        index tuples covering all occurrences of the value within the
+        array.
+
+        This dictionary can occupy significant memory, usually several times
+        the size of the input array.
+
+    Notes
+    -----
+        For a small array with few distinct values, one might use numpy.unique()
+        to find all possible values, and (arr == val) to locate each value
+        within that array. However, for large arrays, with many distinct values,
+        this can become extremely inefficient, as locating each value would
+        require a new search through the entire array. Using this function,
+        there is essentially one search, with the indices saved for all
+        distinct values.
+
+        This is useful when matching a categorical image (e.g. a segmentation
+        or classification) to an associated image of other data, allowing
+        any per-class statistic(s) to then be calculated. Provides a
+        more flexible alternative to ndimage functions like mean()
+        and variance().
+
+        Note for IDL users: this provides functionality equivalent to IDL's
+        REVERSE_INDICES option.
+
+        .. versionadded:: 1.9.2
+
+    Examples
+    --------
+    >>> from scipy import ndimage
+    >>> import numpy
+    >>> a = numpy.zeros((6, 6), dtype=int)
+    >>> a[2:4, 2:4] = 1
+    >>> a[4, 4] = 1
+    >>> a[:2, :3] = 2
+    >>> a[0, 5] = 3
+    >>> a
+    array([[2, 2, 2, 0, 0, 3],
+           [2, 2, 2, 0, 0, 0],
+           [0, 0, 1, 1, 0, 0],
+           [0, 0, 1, 1, 0, 0],
+           [0, 0, 0, 0, 1, 0],
+           [0, 0, 0, 0, 0, 0]])
+    >>> val_indices = ndimage.value_indices(a)
+    >>> val_indices.keys()
+    dict_keys([0, 1, 2, 3])
+    >>> val_indices[1]
+    (array([2, 2, 3, 3, 4]), array([2, 3, 2, 3, 4]))
+    >>> a[val_indices[1]]
+    array([1, 1, 1, 1, 1])
+
+    >>> val_indices = ndimage.value_indices(a, nullval=0)
+    >>> val_indices.keys()
+    dict_keys([1, 2, 3])
+
+    """
+    # Cope with nullval being None, without too much extra complexity
+    # in the C code. If not None, the value is passed in as a numpy scalar
+    # with the same dtype as arr.
+    nullval_numpyscalar = arr.dtype.type(0)
+    nullIsNone = (nullval is None)
+    if not nullIsNone:
+        nullval_numpyscalar = arr.dtype.type(nullval)
+
+    val_indices = _nd_image.value_indices(arr, nullIsNone, nullval_numpyscalar)
+    return val_indices
 
 
 def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_positions=False):
