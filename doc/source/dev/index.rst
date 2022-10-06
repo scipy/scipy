@@ -17,6 +17,7 @@ the organization section.
    dev_quickstart
    contributor/development_workflow
    contributor/contributor_toc
+   contributor/triage
 
 .. toctree::
    :maxdepth: 1
