@@ -993,9 +993,7 @@ class TestNumericalInverseHermite:
         with pytest.raises(err, match=msg):
             NumericalInverseHermite(StandardNormal(), domain=domain)
 
-    @pytest.mark.xslow
-    @pytest.mark.parametrize(("distname", "shapes"), distcont)
-    def test_basic_all_scipy_dists(self, distname, shapes):
+    def basic_test_all_scipy_dists(self, distname, shapes):
         slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
         fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
                       'norminvgauss', 'genhyperbolic', 'studentized_range',
@@ -1024,6 +1022,16 @@ class TestNumericalInverseHermite:
 
         assert p_tol < 1e-8
         assert u_tol < 1e-12
+
+    @pytest.mark.xslow
+    @pytest.mark.parametrize(("distname", "shapes"), distcont)
+    def test_basic_all_scipy_dists(self, distname, shapes):
+        # if distname == "truncnorm":
+        #     pytest.skip("Tested separately")
+        self.basic_test_all_scipy_dists(distname, shapes)
+
+    def test_basic_truncnorm_gh17155(self):
+        self.basic_test_all_scipy_dists("truncnorm", (0.1, 2))
 
     def test_input_validation(self):
         match = r"`order` must be either 1, 3, or 5."

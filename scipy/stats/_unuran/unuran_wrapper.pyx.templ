@@ -264,10 +264,10 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                     self.support = dist.support
                 def pdf(self, x):
                     # some distributions require array inputs.
-                    x = np.asarray((x-self.loc)/self.scale)
+                    x = np.atleast_1d((x-self.loc)/self.scale)
                     return max(0, self.dist.dist._pdf(x, *self.args)/self.scale)
                 def cdf(self, x):
-                    x = np.asarray((x-self.loc)/self.scale)
+                    x = np.atleast_1d((x-self.loc)/self.scale)
                     res = self.dist.dist._cdf(x, *self.args)
                     if res < 0:
                         return 0
@@ -284,10 +284,10 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                     self.support = dist.support
                 def pmf(self, x):
                     # some distributions require array inputs.
-                    x = np.asarray(x-self.loc)
+                    x = np.atleast_1d(x-self.loc)
                     return max(0, self.dist.dist._pmf(x, *self.args))
                 def cdf(self, x):
-                    x = np.asarray(x-self.loc)
+                    x = np.atleast_1d(x-self.loc)
                     res = self.dist.dist._cdf(x, *self.args)
                     if res < 0:
                         return 0
@@ -797,7 +797,7 @@ cdef class TransformedDensityRejection(Method):
     ...         return 1-x*x
     ...     def dpdf(self, x):
     ...         return -2*x
-    ... 
+    ...
     >>> dist = MyDist()
     >>> rng = TransformedDensityRejection(dist, domain=(-1, 1),
     ...                                   random_state=urng)
@@ -813,7 +813,7 @@ cdef class TransformedDensityRejection(Method):
     ...         return -2*x
     ...     def support(self):
     ...         return (-1, 1)
-    ... 
+    ...
     >>> dist = MyDist()
     >>> rng = TransformedDensityRejection(dist, random_state=urng)
 
@@ -980,16 +980,16 @@ cdef class TransformedDensityRejection(Method):
         >>> from scipy.stats.sampling import TransformedDensityRejection
         >>> from scipy.stats import norm
         >>> from math import exp
-        >>> 
+        >>>
         >>> class MyDist:
         ...     def pdf(self, x):
         ...         return exp(-0.5 * x**2)
         ...     def dpdf(self, x):
         ...         return -x * exp(-0.5 * x**2)
-        ... 
+        ...
         >>> dist = MyDist()
         >>> rng = TransformedDensityRejection(dist)
-        >>> 
+        >>>
         >>> rng.ppf_hat(0.5)
         -0.00018050266342393984
         >>> norm.ppf(0.5)
@@ -1249,7 +1249,7 @@ cdef class NumericalInversePolynomial(Method):
     * The algorithm has problems when the distribution has heavy tails (as then the
       inverse CDF becomes very steep at 0 or 1) and the requested u-resolution is
       very small. E.g., the Cauchy distribution is likely to show this problem when
-      the requested u-resolution is less then 1.e-12. 
+      the requested u-resolution is less then 1.e-12.
 
 
     Parameters
@@ -1320,7 +1320,7 @@ cdef class NumericalInversePolynomial(Method):
     >>> class StandardNormal:
     ...    def pdf(self, x):
     ...        return np.exp(-0.5 * x*x)
-    ... 
+    ...
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInversePolynomial(dist, random_state=urng)
@@ -1356,7 +1356,7 @@ cdef class NumericalInversePolynomial(Method):
     ...        return np.exp(-0.5 * x*x)
     ...    def cdf(self, x):
     ...        return ndtr(x)
-    ... 
+    ...
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInversePolynomial(dist, random_state=urng)
@@ -1720,7 +1720,7 @@ cdef class NumericalInversePolynomial(Method):
             if d == 1:
                 return qrvs.reshape(tuple_size)
             else:
-                return qrvs.reshape(tuple_size + (d,))    
+                return qrvs.reshape(tuple_size + (d,))
 
 
 cdef class NumericalInverseHermite(Method):
@@ -1851,7 +1851,7 @@ cdef class NumericalInverseHermite(Method):
     ...        return 1/np.sqrt(2*np.pi) * np.exp(-x**2 / 2)
     ...     def cdf(self, x):
     ...        return ndtr(x)
-    ... 
+    ...
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInverseHermite(dist, random_state=urng)
@@ -1905,7 +1905,7 @@ cdef class NumericalInverseHermite(Method):
     ...        return -1/np.sqrt(2*np.pi) * x * np.exp(-x**2 / 2)
     ...     def cdf(self, x):
     ...        return ndtr(x)
-    ... 
+    ...
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInverseHermite(dist, order=5, random_state=urng)
@@ -2346,7 +2346,7 @@ cdef class DiscreteAliasUrn(Method):
     ...         return self.p**x * (1-self.p)**(self.n-x)
     ...     def support(self):
     ...         return (0, self.n)
-    ... 
+    ...
     >>> n, p = 10, 0.2
     >>> dist = Binomial(n, p)
     >>> rng = DiscreteAliasUrn(dist, random_state=urng)
