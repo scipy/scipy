@@ -332,13 +332,13 @@ def value_indices(arr, *, nullval=None):
 
     Notes
     -----
-        For a small array with few distinct values, one might use numpy.unique()
-        to find all possible values, and (arr == val) to locate each value
-        within that array. However, for large arrays, with many distinct values,
-        this can become extremely inefficient, as locating each value would
-        require a new search through the entire array. Using this function,
-        there is essentially one search, with the indices saved for all
-        distinct values.
+        For a small array with few distinct values, one might use
+        numpy.unique() to find all possible values, and (arr == val) to
+        locate each value within that array. However, for large arrays,
+        with many distinct values, this can become extremely inefficient,
+        as locating each value would require a new search through the entire
+        array. Using this function, there is essentially one search, with
+        the indices saved for all distinct values.
 
         This is useful when matching a categorical image (e.g. a segmentation
         or classification) to an associated image of other data, allowing
