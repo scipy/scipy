@@ -161,7 +161,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     mip_rel_gap : double (default: None)
         Termination criterion for MIP solver: solver will terminate when the
         gap between the primal objective value and the dual objective bound,
-        scaled by the primal objective value, is <= mip_rel_gap.        
+        scaled by the primal objective value, is <= mip_rel_gap.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing

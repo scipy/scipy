@@ -286,8 +286,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
             mip_gap : float
                 The difference between the final objective function value
-                and the final dual bound, scaled by the final objective 
-                function value. Only present when `integrality` is not 
+                and the final dual bound, scaled by the final objective
+                function value. Only present when `integrality` is not
                 `None`.
 
     Notes
