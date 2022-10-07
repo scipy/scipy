@@ -7,7 +7,6 @@ This doesn't require a full scipy build.
 Run: python download_all.py <download_dir>
 """
 
-import os
 import argparse
 import pooch
 
@@ -38,7 +37,7 @@ def download_all(path=pooch.os_cache('scipy-data')):
 
 def main():
     parser = argparse.ArgumentParser(description='Download SciPy dataset files.')
-    parser.add_argument("path", type=str, default=os.getcwd(),
+    parser.add_argument("path", type=str, default=pooch.os_cache('scipy-data'),
                         help="Directory path to download all the dataset files.")
     args = parser.parse_args()
     download_all(args.path)
