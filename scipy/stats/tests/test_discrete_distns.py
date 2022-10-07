@@ -551,13 +551,3 @@ def test_nbinom_11465(mu, q, expected):
     # options(digits=16)
     # pnbinom(mu=10, size=20, q=120, log.p=TRUE)
     assert_allclose(nbinom.logcdf(q, n, p), expected)
-
-
-def test_gh_17146():
-    x = np.linspace(0, 1, 11)
-    p = 0.8
-    pmf = bernoulli(p).pmf(x)
-    i = (x % 1 == 0)
-    assert_allclose(pmf[-1], p)
-    assert_allclose(pmf[0], 1-p)
-    assert_equal(pmf[i], 0)
