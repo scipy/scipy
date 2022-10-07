@@ -76,10 +76,11 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
            ``assume_a = 'pos'``. `sym_pos` will be removed in SciPy 1.11.0.
 
     lower : bool, default: False
-        If True, the calculation uses only the data in the lower triangle of
-        `a`; entries above the diagonal are ignored. If False (default), the
+        Ignored if ``assume_a == 'gen'`` (the default). If True, the
+        calculation uses only the data in the lower triangle of `a`;
+        entries above the diagonal are ignored. If False (default), the
         calculation uses only the data in the upper triangle of `a`; entries
-        below the diagonal are ignored. Ignored if ``assume_a == 'gen'``.
+        below the diagonal are ignored.
     overwrite_a : bool, default: False
         Allow overwriting data in `a` (may enhance performance).
     overwrite_b : bool, default: False
