@@ -3903,10 +3903,20 @@ class TestKSTest:
 class TestKSOneSample:
     """Tests kstest and ks_samp 1-samples with K-S various sizes, alternatives, modes."""
 
-    def _testOne(self, x, alternative, expected_statistic, expected_prob, mode='auto', decimal=14):
-        result = stats.ks_1samp(x, stats.norm.cdf, alternative=alternative, mode=mode)
-        expected = np.array([expected_statistic, expected_prob])
-        assert_array_almost_equal(np.array(result), expected, decimal=decimal)
+    def _testOne(self, x, alternative,
+                 expected_statistic, expected_prob,
+                 mode='auto', decimal=14, attrs=None,
+                 theoretical=stats.norm):
+        result = stats.ks_1samp(x, theoretical.cdf, alternative=alternative,
+                                mode=mode)
+        expected = [expected_statistic, expected_prob]
+        result_list = list(result)
+        if attrs is not None:
+            for key, val in attrs.items():
+                expected.append(val)
+                result_list.append(getattr(result, key))
+        assert_array_almost_equal(
+                np.array(result_list), np.array(expected), decimal=decimal)
 
     def test_namedtuple_attributes(self):
         x = np.linspace(-1, 1, 9)
@@ -3964,6 +3974,27 @@ class TestKSOneSample:
             (1600, 1 / 32, False, 0.08603386296651416),  # _kolmogn_PelzGood
         ])
         FuncData(kolmogn, dataset, (0, 1, 2), 3).check(dtypes=[int, float, bool])
+
+    def test_statistic_location_sign(self):
+        '''Test computation of the KS statistic location and sign'''
+        n = 10
+        x = np.arange(1.0, n + 1, dtype=np.float64) / n
+        x[n // 2: 3 * n // 4] = 0.7
+        self._testOne(x, 'less', 0.2, 0.39676169160000013,
+                      attrs={'statistic_location': 0.7, 'statistic_sign': -1},
+                      theoretical=stats.uniform)
+        self._testOne(x, 'two-sided', 0.2, 0.7487190400000002,
+                      attrs={'statistic_location': 0.7, 'statistic_sign': -1},
+                      theoretical=stats.uniform)
+
+        x[n // 2: 3 * n // 4] = 0.5
+        self._testOne(x, 'greater', 0.2, 0.39676169160000013,
+                      attrs={'statistic_location': 0.5, 'statistic_sign': 1},
+                      theoretical=stats.uniform)
+        self._testOne(x, 'two-sided', 0.2, 0.7487190400000002,
+                      attrs={'statistic_location': 0.5, 'statistic_sign': 1},
+                      theoretical=stats.uniform)
+
 
     # missing: no test that uses *args
 
