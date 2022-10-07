@@ -334,7 +334,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Clenshaw-Curtis integration is used on those intervals containing the
         point :math:`x = c`.
 
-    ** Integration of Complex Function of a Real Variable **
+    **Integration of Complex Function of a Real Variable**
 
     This method integrates the real and complex components separately.
     Doing so makes the further assumption that the integrals of these
