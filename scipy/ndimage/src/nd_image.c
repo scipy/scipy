@@ -1012,8 +1012,8 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
     }
     /* Set up a pointer to the null value, to be used in conjunction
        with VALUEINDICES_NULLVAL macro */
+    nullvalData = (npy_uint64 *)calloc(1, sizeof(npy_uint64));
     if (!nullIsNone) {
-        nullvalData = (npy_uint64 *)calloc(1, sizeof(npy_uint64));
         PyArray_ScalarAsCtype(nullval, nullvalData);
     }
 
