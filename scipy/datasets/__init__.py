@@ -77,7 +77,7 @@ the internet connectivity.
 
 
 from ._fetchers import face, ascent, electrocardiogram  # noqa: E402
-from .download_all import download_all
+from ._download_all import download_all
 __all__ = ['ascent', 'electrocardiogram', 'face', 'download_all']
 
 

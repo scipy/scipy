@@ -1,10 +1,10 @@
 #!python3
 """
 Platform independent script to download all the
-`scipy.dataset` module data files.
+`scipy.datasets` module data files.
 This doesn't require a full scipy build.
 
-Run: python download_all.py <download_dir>
+Run: python _download_all.py <download_dir>
 """
 
 import argparse
@@ -46,9 +46,10 @@ def download_all(path=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Download SciPy dataset files.')
-    parser.add_argument("path", type=str, default=pooch.os_cache('scipy-data'),
-                        help="Directory path to download all the dataset files.")
+    parser = argparse.ArgumentParser(description='Download SciPy data files.')
+    parser.add_argument("path", type=str,
+                        default=pooch.os_cache('scipy-data'),
+                        help="Directory path to download all the data files.")
     args = parser.parse_args()
     download_all(args.path)
 
