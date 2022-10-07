@@ -8,7 +8,11 @@ Run: python download_all.py <download_dir>
 """
 
 import argparse
-import pooch
+try:
+    import pooch
+except ImportError:
+    pooch = None
+
 
 if __package__ is None or __package__ == '':
     # Running as python script, use absolute import
@@ -18,7 +22,7 @@ else:
     from . import _registry
 
 
-def download_all(path=pooch.os_cache('scipy-data')):
+def download_all(path=None):
     """
     Utility method to download all the dataset files
     for `scipy.datasets` module.
@@ -27,8 +31,14 @@ def download_all(path=pooch.os_cache('scipy-data')):
     ----------
     path : str
         Directory path to download all the dataset files.
-        Defaults to the system cache_dir detected by pooch.
+        If None, default to the system cache_dir detected by pooch.
     """
+    if pooch is None:
+        raise ImportError("Missing optional dependency 'pooch' required "
+                          "for scipy.datasets module. Please use pip or "
+                          "conda to install 'pooch'.")
+    if path is None:
+        path = pooch.os_cache('scipy-data')
     for dataset_name, dataset_hash in _registry.registry.items():
         pooch.retrieve(url=_registry.registry_urls[dataset_name],
                        known_hash=dataset_hash,
