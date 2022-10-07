@@ -992,7 +992,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
     PyObject *nullval;
     int nullIsNone, valueIsNull=0, ndim, j, arrType, minMaxUnset=1;
     NI_Iterator ndiIter;
-    void *arrData;
+    char *arrData;
     npy_uint64 *hist=NULL, *valCtr=NULL, *nullvalData=NULL;
     npy_intp arrSize, iterIndex, dims[1];
     npy_uint64 ii, numPossibleVals=0;
@@ -1004,7 +1004,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
 
     arrSize = PyArray_SIZE(arr);
     arrType = PyArray_TYPE(arr);
-    arrData = (void *)PyArray_DATA(arr);
+    arrData = (char *)PyArray_DATA(arr);
     ndim = PyArray_NDIM(arr);
     if (!PyTypeNum_ISINTEGER(arrType)) {
         PyErr_SetString(PyExc_ValueError, "Parameter 'arr' must be an integer array");
@@ -1092,7 +1092,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
                 if ((t != NULL) && (valObj != NULL)) {
                     for (j=0; j<ndim; j++) {
                         dims[0] = hist[ii];
-                        ndxArr = PyArray_SimpleNew(1, dims, NPY_INTP);
+                        ndxArr = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_INTP);
                         if (ndxArr == NULL) {
                             PyErr_SetString(PyExc_MemoryError, "Couldn't allocate ndxArr");
                         } else {
@@ -1136,7 +1136,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
                 if (nullIsNone || (!valueIsNull)) {
                     ndxTuple = ndxPtr[ii];
                     for (j=0; j<ndim; j++) {
-                        ndxArr = PyTuple_GetItem(ndxTuple, j);
+                        ndxArr = (PyArrayObject *)PyTuple_GetItem(ndxTuple, j);
                         *(npy_int64 *)PyArray_GETPTR1(ndxArr, valCtr[ii]) =
                             ndiIter.coordinates[j];
                     }
