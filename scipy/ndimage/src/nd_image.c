@@ -1138,7 +1138,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
                     ndxTuple = ndxPtr[ii];
                     for (j=0; j<ndim; j++) {
                         ndxArr = (PyArrayObject *)PyTuple_GetItem(ndxTuple, j);
-                        *(npy_int64 *)PyArray_GETPTR1(ndxArr, valCtr[ii]) =
+                        *(npy_intp *)PyArray_GETPTR1(ndxArr, valCtr[ii]) =
                             ndiIter.coordinates[j];
                     }
                     valCtr[ii] += 1;
