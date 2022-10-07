@@ -3341,7 +3341,7 @@ class rv_discrete(rv_generic):
         _a, _b = self._get_support(*args)
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
-        cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
+        cond1 = (k >= _a) & (k <= _b)
         cond = cond0 & cond1
         if not isinstance(self, rv_sample):
             cond1 = cond1 & self._nonzero(k, *args)
