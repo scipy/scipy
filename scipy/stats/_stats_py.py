@@ -7643,7 +7643,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
         statistic_location: float
             Value of `x` corresponding with the KS statistic; i.e., the 
             distance between the hypothesized cumulative distribution function
-            and the empirical distribution function is greatest at this
+            and the empirical distribution function is measured at this
             location.
         statistic_sign: int
             +1 if the KS statistic is the maximal positive difference between
@@ -7971,7 +7971,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
         statistic_location: float
             Value from `data1` or `data2` corresponding with the KS statistic;
             i.e., the distance between the empirical distribution functions is
-            greatest at this observation.
+            measured at this observation.
         statistic_sign: int
             +1 if the empirical distribution function of `data1` exceeds
             the empircal distribution function of `data2` at
