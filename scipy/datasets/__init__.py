@@ -5,12 +5,23 @@ Datasets (:mod:`scipy.datasets`)
 
 .. currentmodule:: scipy.datasets
 
+Dataset Methods
+=======================================
+
 .. autosummary::
    :toctree: generated/
 
    ascent
    face
    electrocardiogram
+
+Utility Methods
+=======================================
+
+.. autosummary::
+   :toctree: generated/
+
+   download_all    -- Download all the dataset files to specified path.
 
 
 Usage of Datasets
@@ -66,7 +77,8 @@ the internet connectivity.
 
 
 from ._fetchers import face, ascent, electrocardiogram  # noqa: E402
-__all__ = ['ascent', 'electrocardiogram', 'face']
+from .download_all import download_all
+__all__ = ['ascent', 'electrocardiogram', 'face', 'download_all']
 
 
 from scipy._lib._testutils import PytestTester
