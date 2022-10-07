@@ -7259,7 +7259,7 @@ add_newdoc("ive",
     Evaluate the function of order 0 at one point.
 
     >>> import numpy as np
-    >>> from scipy.special import ive
+    >>> from scipy.special import iv, ive
     >>> import matplotlib.pyplot as plt
     >>> ive(0, 1.)
     0.4657596075936404
@@ -7302,7 +7302,6 @@ add_newdoc("ive",
     following example `iv` returns infinity whereas `ive` still returns
     a finite number.
 
-    >>> from scipy.special import iv
     >>> iv(3, 1000.), ive(3, 1000.)
     (inf, 0.01256056218254712)
     """)
