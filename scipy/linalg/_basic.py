@@ -41,7 +41,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a='gen',
           transposed=False):
     """
-    Solves the linear equation set ``a @ x = b`` for the unknown ``x``
+    Solves the linear equation set ``a @ x == b`` for the unknown ``x``
     for square `a` matrix.
 
     If the data matrix is known to be a particular type then supplying the
@@ -91,7 +91,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     assume_a : str, {'gen', 'sym', 'her', 'pos'}
         Valid entries are explained above.
     transposed : bool, default: False
-        If True, solve ``a.T @ x = b``. Raises `NotImplementedError`
+        If True, solve ``a.T @ x == b``. Raises `NotImplementedError`
         for complex `a`.
 
     Returns
