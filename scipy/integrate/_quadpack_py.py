@@ -63,7 +63,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         message is appended to the output tuple.
     complex_func : bool, optional
         Indicate if the function's (func) return type is real
-        (`complex_func=false`: default) or complex (`complex_func=True`).
+        (``complex_func=False``: default) or complex (``complex_func=True``).
         In both cases, the function's argument is real.
 
     Returns
