@@ -3342,9 +3342,9 @@ class rv_discrete(rv_generic):
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k <= _b)
-        cond = cond0 & cond1
         if not isinstance(self, rv_sample):
             cond1 = cond1 & self._nonzero(k, *args)
+        cond = cond0 & cond1
         output = zeros(shape(cond), 'd')
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         if np.any(cond):
