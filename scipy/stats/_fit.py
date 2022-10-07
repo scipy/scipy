@@ -436,9 +436,9 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
 
     References
     ----------
-    [1] Shao, Yongzhao, and Marjorie G. Hahn. "Maximum product of spacings
-        method: a unified formulation with illustration of strong consistency."
-        Illinois Journal of Mathematics 43.3 (1999): 489-499.
+    .. [1] Shao, Yongzhao, and Marjorie G. Hahn. "Maximum product of spacings
+           method: a unified formulation with illustration of strong
+           consistency." Illinois Journal of Mathematics 43.3 (1999): 489-499.
 
     Examples
     --------

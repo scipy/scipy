@@ -1652,9 +1652,8 @@ class rv_generic:
             # simplest possible implementation for starters
             x, lj = np.unique(x, return_counts=True)
             cdf_data = self._cdf(x, *args) if x.size else []
-            cdf = np.concatenate(([0], cdf_data, [1]))
+            cdf = np.concatenate(([0], cdf_data))
             # here we could use logcdf w/ logsumexp trick
-            lj = np.concatenate((lj, [1]))
             return lj * np.log(np.diff(cdf) / lj)
 
         return self._nlff_and_penalty(x, args, log_psf)

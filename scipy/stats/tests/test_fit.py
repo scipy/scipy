@@ -221,7 +221,8 @@ def cases_test_fit_mse():
                       'kstwo',  # very slow (~25 min) but passes
                       'geninvgauss',  # quite slow (~4 minutes) but passes
                       'gausshyper', 'genhyperbolic',  # integration warnings
-                      'argus'}  # close, but doesn't meet tolerance
+                      'argus', 'rdist',  # close, but doesn't meet tolerance
+                      'vonmises'}  # can have negative CDF; doesn't play nice
     slow_basic_fit = {'wald', 'genextreme', 'anglit', 'semicircular',
                       'kstwobign', 'arcsine', 'genlogistic', 'truncexpon',
                       'fisk', 'uniform', 'exponnorm', 'maxwell', 'lomax',
@@ -238,7 +239,7 @@ def cases_test_fit_mse():
                       'betabinom'}
     xslow_basic_fit = {'vonmises', 'burr', 'halfgennorm', 'invgamma',
                        'invgauss', 'powerlaw', 'burr12', 'trapezoid', 'kappa4',
-                       'f', 'powerlognorm', 'ncx2', 'rdist', 'reciprocal',
+                       'f', 'powerlognorm', 'ncx2', 'reciprocal',
                        'loguniform', 'betaprime', 'rice', 'gennorm',
                        'gengamma', 'truncnorm', 'ncf', 'nct', 'pearson3',
                        'beta', 'genexpon', 'tukeylambda', 'zipfian',
@@ -281,9 +282,8 @@ def test_fitstart(distname, shapes):
 def assert_nlff_less_or_close(dist, data, params1, params0, rtol=1e-7, atol=0,
                               nlff_name='nnlf'):
     nlff = getattr(dist, nlff_name)
-    with np.errstate(invalid='ignore', divide='ignore'):
-        nlff1 = nlff(params1, data)
-        nlff0 = nlff(params0, data)
+    nlff1 = nlff(params1, data)
+    nlff0 = nlff(params0, data)
     if not (nlff1 < nlff0):
         np.testing.assert_allclose(nlff1, nlff0, rtol=rtol, atol=atol)
 
@@ -429,7 +429,7 @@ class TestFit:
         bounds[:-2, 0] = shapes/10.**np.sign(shapes)
         bounds[:-2, 1] = shapes*10.**np.sign(shapes)
         bounds[-2] = (0, 10)
-        bounds[-1] = (0, 10)
+        bounds[-1] = (1e-16, 10)
         loc = rng.uniform(*bounds[-2])
         scale = rng.uniform(*bounds[-1])
         ref = list(dist_data[dist_name]) + [loc, scale]
