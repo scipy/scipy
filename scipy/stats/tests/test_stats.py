@@ -3903,10 +3903,20 @@ class TestKSTest:
 class TestKSOneSample:
     """Tests kstest and ks_samp 1-samples with K-S various sizes, alternatives, modes."""
 
-    def _testOne(self, x, alternative, expected_statistic, expected_prob, mode='auto', decimal=14):
-        result = stats.ks_1samp(x, stats.norm.cdf, alternative=alternative, mode=mode)
-        expected = np.array([expected_statistic, expected_prob])
-        assert_array_almost_equal(np.array(result), expected, decimal=decimal)
+    def _testOne(self, x, alternative,
+                 expected_statistic, expected_prob,
+                 mode='auto', decimal=14, attrs=None,
+                 theoretical=stats.norm):
+        result = stats.ks_1samp(x, theoretical.cdf, alternative=alternative,
+                                mode=mode)
+        expected = [expected_statistic, expected_prob]
+        result_list = list(result)
+        if attrs is not None:
+            for key, val in attrs.items():
+                expected.append(val)
+                result_list.append(getattr(result, key))
+        assert_array_almost_equal(
+                np.array(result_list), np.array(expected), decimal=decimal)
 
     def test_namedtuple_attributes(self):
         x = np.linspace(-1, 1, 9)
@@ -3965,6 +3975,27 @@ class TestKSOneSample:
         ])
         FuncData(kolmogn, dataset, (0, 1, 2), 3).check(dtypes=[int, float, bool])
 
+    def test_statistic_location_sign(self):
+        '''Test computation of the KS statistic location and sign'''
+        n = 10
+        x = np.arange(1.0, n + 1, dtype=np.float64) / n
+        x[n // 2: 3 * n // 4] = 0.7
+        self._testOne(x, 'less', 0.2, 0.39676169160000013,
+                      attrs={'statistic_location': 0.7, 'statistic_sign': -1},
+                      theoretical=stats.uniform)
+        self._testOne(x, 'two-sided', 0.2, 0.7487190400000002,
+                      attrs={'statistic_location': 0.7, 'statistic_sign': -1},
+                      theoretical=stats.uniform)
+
+        x[n // 2: 3 * n // 4] = 0.5
+        self._testOne(x, 'greater', 0.2, 0.39676169160000013,
+                      attrs={'statistic_location': 0.5, 'statistic_sign': 1},
+                      theoretical=stats.uniform)
+        self._testOne(x, 'two-sided', 0.2, 0.7487190400000002,
+                      attrs={'statistic_location': 0.5, 'statistic_sign': 1},
+                      theoretical=stats.uniform)
+
+
     # missing: no test that uses *args
 
 
@@ -4005,12 +4036,7 @@ class TestKSTwoSamples:
                       attrs={'statistic_location': 1.99, 'statistic_sign': 1})
         self._testOne(data1m, data2, 'greater', 2.0 / 3, 0.3,
                       attrs={'statistic_location': 1.99, 'statistic_sign': 1})
-        # The distributions never cross, so their max distance is zero which is
-        # true beyond both edges of the union (in practice, 0.99 and 3.0 are
-        # both correct for "statistic_location"). Therefore, we do not check
-        # for statistic_location to avoid future false positive test failures.
-        self._testOne(data1m, data2, 'less', 0, 1.0,
-                      attrs={'statistic_sign': -1})
+        self._testOne(data1m, data2, 'less', 0, 1.0)
 
     def testTwoVsFour(self):
         data1 = np.array([1.0, 2.0])
@@ -4232,6 +4258,24 @@ class TestKSTwoSamples:
         with pytest.warns(RuntimeWarning, match=message):
             res = stats.ks_2samp(data1, data2, alternative='less')
             assert_allclose(res.pvalue, 0, atol=1e-14)
+
+    def test_statistic_location_sign(self):
+        '''Test computation of the KS statistic location and sign'''
+        data1 = np.arange(10, dtype=np.float64)
+        data2m = data1.copy()
+        data2m[6] = 5
+        data2p = data1.copy()
+        data2p[6] = 7
+
+        res = stats.ks_2samp(data1, data2m)
+        self._testOne(data1, data2m, 'less', 0.1, 0.9090909090909,
+                      attrs={'statistic_location': 5.0, 'statistic_sign': -1})
+        self._testOne(data1, data2m, 'two-sided', 0.1, 1.0,
+                      attrs={'statistic_location': 5.0, 'statistic_sign': -1})
+        self._testOne(data1, data2p, 'greater', 0.1, 0.9090909090909,
+                      attrs={'statistic_location': 6.0, 'statistic_sign': 1})
+        self._testOne(data1, data2p, 'two-sided', 0.1, 1.0,
+                      attrs={'statistic_location': 6.0, 'statistic_sign': 1})
 
 
 def test_ttest_rel():

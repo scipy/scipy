@@ -7553,13 +7553,15 @@ KstestResult = _make_tuple_bunch('KstestResult', ['statistic', 'pvalue'],
                                  ['statistic_location', 'statistic_sign'])
 
 
-def _compute_dplus(cdfvals):
+def _compute_dplus(cdfvals, x):
     """Computes D+ as used in the Kolmogorov-Smirnov test.
 
     Parameters
     ----------
     cdfvals : array_like
         Sorted array of CDF values between 0 and 1
+    x: array_like
+        Sorted array of the stochastic variable itself
 
     Returns
     -------
@@ -7571,17 +7573,19 @@ def _compute_dplus(cdfvals):
     n = len(cdfvals)
     dplus = (np.arange(1.0, n + 1) / n - cdfvals)
     amax = dplus.argmax()
-    loc_max = cdfvals[amax]
+    loc_max = x[amax]
     return (dplus[amax], loc_max)
 
 
-def _compute_dminus(cdfvals):
+def _compute_dminus(cdfvals, x):
     """Computes D- as used in the Kolmogorov-Smirnov test.
 
     Parameters
     ----------
     cdfvals : array_like
         Sorted array of CDF values between 0 and 1
+    x: array_like
+        Sorted array of the stochastic variable itself
 
     Returns
     -------
@@ -7592,7 +7596,7 @@ def _compute_dminus(cdfvals):
     n = len(cdfvals)
     dminus = (cdfvals - np.arange(0.0, n)/n)
     amax = dminus.argmax()
-    loc_max = cdfvals[amax]
+    loc_max = x[amax]
     return (dminus[amax], loc_max)
 
 
@@ -7641,8 +7645,8 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
             distance between the hypothesized cumulative distribution function
             and the empirical distribution function is greatest at this
             location.
-        statistic_sign: str
-            1 if the KS statistic is the maximal positive difference between
+        statistic_sign: int
+            +1 if the KS statistic is the maximal positive difference between
             empirical and hypothesized distributions (D+), -1 if the KS
             statistic is the negative difference (D-).
 
@@ -7729,20 +7733,20 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     cdfvals = cdf(x, *args)
 
     if alternative == 'greater':
-        Dplus, d_location = _compute_dplus(cdfvals)
+        Dplus, d_location = _compute_dplus(cdfvals, x)
         return KstestResult(Dplus, distributions.ksone.sf(Dplus, N),
                             statistic_location=d_location,
                             statistic_sign=1)
 
     if alternative == 'less':
-        Dminus, d_location = _compute_dminus(cdfvals)
+        Dminus, d_location = _compute_dminus(cdfvals, x)
         return KstestResult(Dminus, distributions.ksone.sf(Dminus, N),
                             statistic_location=d_location,
                             statistic_sign=-1)
 
     # alternative == 'two-sided':
-    Dplus, dplus_location = _compute_dplus(cdfvals)
-    Dminus, dminus_location = _compute_dminus(cdfvals)
+    Dplus, dplus_location = _compute_dplus(cdfvals, x)
+    Dminus, dminus_location = _compute_dminus(cdfvals, x)
     if Dplus > Dminus:
         D = Dplus
         d_location = dplus_location
@@ -7970,7 +7974,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             greatest at this observation.
         statistic_sign: int
             +1 if the empirical distribution function of `data1` exceeds
-            the empircal distribution function of `data2` at 
+            the empircal distribution function of `data2` at
             `statistic_location`, otherwise -1.
 
     See Also
@@ -8253,9 +8257,16 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
             definition, the distance between the two sampled distributions at
             this value is largest.
 
+        statistic_sign: int
+            1 if the KS statistic is the maximal positive difference between
+            empirical and hypothesized distributions (D+), -1 if the KS
+            statistic is the negative difference (D-). If a 2-sample test is
+            run, the difference is between the first and second empirical
+            distributions.
+
     See Also
     --------
-    ks_2samp
+    ks_1samp, ks_2samp
 
     Notes
     -----
