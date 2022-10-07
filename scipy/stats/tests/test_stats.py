@@ -3974,13 +3974,8 @@ class TestKSTwoSamples:
     def _testOne(self, x1, x2, alternative, expected_statistic, expected_prob,
                  mode='auto', attrs=None):
         result = stats.ks_2samp(x1, x2, alternative, mode=mode)
-        expected = [expected_statistic, expected_prob]
-        result_list = list(result)
-        if attrs is not None:
-            for key, val in attrs.items():
-                expected.append(val)
-                result_list.append(getattr(result, key))
-        assert_array_almost_equal(np.array(result_list), np.array(expected))
+        expected = np.array([expected_statistic, expected_prob])
+        assert_array_almost_equal(np.array(result), expected)
 
     def testSmall(self):
         self._testOne([0], [1], 'two-sided', 1.0/1, 1.0)
@@ -3995,22 +3990,12 @@ class TestKSTwoSamples:
         data1p = data1 + 0.01
         data1m = data1 - 0.01
         data2 = np.array([1.0, 2.0, 3.0])
-        self._testOne(data1p, data2, 'two-sided', 1.0 / 3, 1.0,
-                      attrs={'statistic_location': 2.01, 'statistic_sign': 1})
-        self._testOne(data1p, data2, 'greater', 1.0 / 3, 0.7,
-                      attrs={'statistic_location': 2.01, 'statistic_sign': 1})
-        self._testOne(data1p, data2, 'less', 1.0 / 3, 0.7,
-                      attrs={'statistic_location': 1, 'statistic_sign': -1})
-        self._testOne(data1m, data2, 'two-sided', 2.0 / 3, 0.6,
-                      attrs={'statistic_location': 1.99, 'statistic_sign': 1})
-        self._testOne(data1m, data2, 'greater', 2.0 / 3, 0.3,
-                      attrs={'statistic_location': 1.99, 'statistic_sign': 1})
-        # The distributions never cross, so their max distance is zero which is
-        # true beyond both edges of the union (in practice, 0.99 and 3.0 are
-        # both correct for "statistic_location"). Therefore, we do not check
-        # for statistic_location to avoid future false positive test failures.
-        self._testOne(data1m, data2, 'less', 0, 1.0,
-                      attrs={'statistic_sign': -1})
+        self._testOne(data1p, data2, 'two-sided', 1.0 / 3, 1.0)
+        self._testOne(data1p, data2, 'greater', 1.0 / 3, 0.7)
+        self._testOne(data1p, data2, 'less', 1.0 / 3, 0.7)
+        self._testOne(data1m, data2, 'two-sided', 2.0 / 3, 0.6)
+        self._testOne(data1m, data2, 'greater', 2.0 / 3, 0.3)
+        self._testOne(data1m, data2, 'less', 0, 1.0)
 
     def testTwoVsFour(self):
         data1 = np.array([1.0, 2.0])
@@ -4233,6 +4218,21 @@ class TestKSTwoSamples:
             res = stats.ks_2samp(data1, data2, alternative='less')
             assert_allclose(res.pvalue, 0, atol=1e-14)
 
+    @pytest.mark.parametrize("alternative, x6val, ref_location, ref_sign",
+                             [('greater', 5.9, 5.9, +1),
+                              ('less', 6.1, 6.0, -1),
+                              ('two-sided', 5.9, 5.9, +1),
+                              ('two-sided', 6.1, 6.0, -1)])
+    def test_location_sign(self, alternative, x6val, ref_location, ref_sign):
+        # Test that location and sign corresponding with statistic are as
+        # expected. (Test is designed to be easy to predict.)
+        x = np.arange(10, dtype=np.float64)
+        y = x.copy()
+        x[6] = x6val
+        res = stats.ks_2samp(x, y, alternative=alternative)
+        assert res.statistic == 0.1
+        assert res.statistic_location == ref_location
+        assert res.statistic_sign == ref_sign
 
 def test_ttest_rel():
     # regression test
