@@ -1011,9 +1011,8 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
         return NULL;
     }
     /* Set up a pointer to the null value, to be used in conjunction
-       with VALUEINDICES_NULLVAL macro. Note that we allocate more than required,
-       because I am randomly trying to guard against Windows 32bit weirdness. */
-    nullvalData = (char *)calloc(10, sizeof(npy_uint64));
+       with VALUEINDICES_NULLVAL macro. */
+    nullvalData = (char *)calloc(1, sizeof(npy_uint64));
     if (!nullIsNone) {
         PyArray_ScalarAsCtype(nullval, nullvalData);
     }
@@ -1025,7 +1024,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
     /* We use a small numpy array for the min and max values, as this will
        take the same datatype as the input array */
     dims[0] = 2;
-    minMaxArr = PyArray_SimpleNew(1, dims, arrType);
+    minMaxArr = (PyArrayObject *)PyArray_SimpleNew(1, dims, arrType);
     if (minMaxArr == NULL) return PyErr_NoMemory();
 
     /* First pass. Just set the min & max */
@@ -1097,7 +1096,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
                         if (ndxArr == NULL) {
                             PyErr_SetString(PyExc_MemoryError, "Couldn't allocate ndxArr");
                         } else {
-                            PyTuple_SetItem(t, j, ndxArr);
+                            PyTuple_SetItem(t, j, (PyObject *)ndxArr);
                         }
                     }
                     /* Set the tuple as the dict entry for the value */
