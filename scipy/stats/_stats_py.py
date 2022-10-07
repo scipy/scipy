@@ -7636,17 +7636,16 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
         An object containing attributes:
 
         statistic : float
-            KS test statistic, either D, D+ or D- (depending on the value
-            of 'alternative')
+            KS test statistic, either D+, D-, or D (the maximum of the two)
         pvalue : float
             One-tailed or two-tailed p-value.
         statistic_location: float
-            Value of `x` corresponding with the KS statistic; i.e., the 
+            Value of `x` corresponding with the KS statistic; i.e., the
             distance between the hypothesized cumulative distribution function
             and the empirical distribution function is measured at this
-            location.
-        statistic_sign: int
-            +1 if the KS statistic is the maximal positive difference between
+            observation.
+        statistic_sign: str
+            1 if the KS statistic is the maximal positive difference between
             empirical and hypothesized distributions (D+), -1 if the KS
             statistic is the negative difference (D-).
 
@@ -7974,7 +7973,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             measured at this observation.
         statistic_sign: int
             +1 if the empirical distribution function of `data1` exceeds
-            the empircal distribution function of `data2` at
+            the empirical distribution function of `data2` at
             `statistic_location`, otherwise -1.
 
     See Also
@@ -8248,14 +8247,15 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
         An object containing attributes:
 
         statistic : float
-            KS test statistic, either D, D+ or D-.
+            KS test statistic, either D+, D-, or D (the maximum of the two)
         pvalue : float
             One-tailed or two-tailed p-value.
-
         statistic_location: float
-            Value of the stochastic variable closest to the KS statistic. By
-            definition, the distance between the two sampled distributions at
-            this value is largest.
+            Value of `x` corresponding with the KS statistic; i.e. the
+            observation at which the difference between CDFs is measured.
+        statistic_sign: int
+            1 if the KS statistic is the maximal positive difference between
+            CDFs (D+), -1 if the KS statistic is the negative difference (D-).
 
         statistic_sign: int
             1 if the KS statistic is the maximal positive difference between
