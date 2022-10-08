@@ -2,7 +2,7 @@ import sys
 from typing import overload, Optional, Any, Union, Tuple, SupportsFloat
 
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 
 if sys.version_info >= (3, 8):
     from typing import Literal, Protocol, SupportsIndex
@@ -18,12 +18,12 @@ else:
 
 class _MetricCallback1(Protocol):
     def __call__(
-        self, __XA: np.ndarray, __XB: np.ndarray
+        self, __XA: NDArray[Any], __XB: NDArray[Any]
     ) -> _FloatValue: ...
 
 class _MetricCallback2(Protocol):
     def __call__(
-        self, __XA: np.ndarray, __XB: np.ndarray, **kwargs: Any
+        self, __XA: NDArray[Any], __XB: NDArray[Any], **kwargs: Any
     ) -> _FloatValue: ...
 
 # TODO: Use a single protocol with a parameter specification variable
@@ -39,11 +39,11 @@ _MetricKind = Literal[
     'cosine', 'cos',
     'dice',
     'euclidean', 'euclid', 'eu', 'e',
-    'matching', 'hamming', 'hamm', 'ha', 'h',
+    'hamming', 'hamm', 'ha', 'h',
     'minkowski', 'mi', 'm', 'pnorm',
     'jaccard', 'jacc', 'ja', 'j',
     'jensenshannon', 'js',
-    'kulsinski',
+    'kulsinski', 'kulczynski1',
     'mahalanobis', 'mahal', 'mah',
     'rogerstanimoto',
     'russellrao',
@@ -51,8 +51,6 @@ _MetricKind = Literal[
     'sokalmichener',
     'sokalsneath',
     'sqeuclidean', 'sqe', 'sqeuclid',
-    # NOTE: deprecated
-    # 'wminkowski', 'wmi', 'wm', 'wpnorm',
     'yule',
 ]
 
@@ -67,27 +65,28 @@ def canberra(
 ) -> np.float64: ...
 
 # TODO: Add `metric`-specific overloads
+# Returns a float64 or float128 array, depending on the input dtype
 @overload
 def cdist(
     XA: ArrayLike,
     XB: ArrayLike,
     metric: _MetricKind = ...,
     *,
-    out: Optional[np.ndarray] = ...,
+    out: None | NDArray[np.floating[Any]] = ...,
     p: float = ...,
     w: Optional[ArrayLike] = ...,
     V: Optional[ArrayLike] = ...,
     VI: Optional[ArrayLike] = ...,
-) -> np.ndarray: ...
+) -> NDArray[np.floating[Any]]: ...
 @overload
 def cdist(
     XA: ArrayLike,
     XB: ArrayLike,
     metric: _MetricCallback,
     *,
-    out: Optional[np.ndarray] = ...,
+    out: None | NDArray[np.floating[Any]] = ...,
     **kwargs: Any,
-) -> np.ndarray: ...
+) -> NDArray[np.floating[Any]]: ...
 
 # TODO: Wait for dtype support; the return type is
 # dependent on the input arrays dtype
@@ -152,12 +151,13 @@ def kulsinski(
     u: ArrayLike, v: ArrayLike, w: Optional[ArrayLike] = ...
 ) -> np.float64: ...
 
+def kulczynski1(
+    u: ArrayLike, v: ArrayLike, w: Optional[ArrayLike] = ...
+) -> np.float64: ...
+
 def mahalanobis(
     u: ArrayLike, v: ArrayLike, VI: ArrayLike
 ) -> np.float64: ...
-
-# NOTE: deprecated
-# def matching(u, v, w=None): ...
 
 def minkowski(
     u: ArrayLike, v: ArrayLike, p: float = ..., w: Optional[ArrayLike] = ...
@@ -173,20 +173,20 @@ def pdist(
     X: ArrayLike,
     metric: _MetricKind = ...,
     *,
-    out: Optional[np.ndarray] = ...,
+    out: None | NDArray[np.floating[Any]] = ...,
     p: float = ...,
     w: Optional[ArrayLike] = ...,
     V: Optional[ArrayLike] = ...,
     VI: Optional[ArrayLike] = ...,
-) -> np.ndarray: ...
+) -> NDArray[np.floating[Any]]: ...
 @overload
 def pdist(
     X: ArrayLike,
     metric: _MetricCallback,
     *,
-    out: Optional[np.ndarray] = ...,
+    out: None | NDArray[np.floating[Any]] = ...,
     **kwargs: Any,
-) -> np.ndarray: ...
+) -> NDArray[np.floating[Any]]: ...
 
 def seuclidean(
     u: ArrayLike, v: ArrayLike, V: ArrayLike
@@ -208,7 +208,7 @@ def squareform(
     X: ArrayLike,
     force: Literal["no", "tomatrix", "tovector"] = ...,
     checks: bool = ...,
-) -> np.ndarray: ...
+) -> NDArray[Any]: ...
 
 def rogerstanimoto(
     u: ArrayLike, v: ArrayLike, w: Optional[ArrayLike] = ...
@@ -217,9 +217,6 @@ def rogerstanimoto(
 def russellrao(
     u: ArrayLike, v: ArrayLike, w: Optional[ArrayLike] = ...
 ) -> float: ...
-
-# NOTE: deprecated
-# def wminkowski(u, v, p, w): ...
 
 def yule(
     u: ArrayLike, v: ArrayLike, w: Optional[ArrayLike] = ...

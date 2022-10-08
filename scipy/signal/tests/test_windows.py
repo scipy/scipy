@@ -22,7 +22,6 @@ window_funcs = [
     ('blackmanharris', ()),
     ('flattop', ()),
     ('bartlett', ()),
-    ('hanning', ()),
     ('barthann', ()),
     ('hamming', ()),
     ('kaiser', (1,)),
@@ -35,6 +34,7 @@ window_funcs = [
     ('exponential', ()),
     ('taylor', ()),
     ('tukey', (0.5,)),
+    ('lanczos', ()),
     ]
 
 
@@ -437,6 +437,47 @@ class TestKaiser:
                          0.5985765418119844])
 
 
+class TestKaiserBesselDerived:
+
+    def test_basic(self):
+        M = 100
+        w = windows.kaiser_bessel_derived(M, beta=4.0)
+        w2 = windows.get_window(('kaiser bessel derived', 4.0),
+                                M, fftbins=False)
+        assert_allclose(w, w2)
+
+        # Test for Princen-Bradley condition
+        assert_allclose(w[:M // 2] ** 2 + w[-M // 2:] ** 2, 1.)
+
+        # Test actual values from other implementations
+        # M = 2:  sqrt(2) / 2
+        # M = 4:  0.518562710536, 0.855039598640
+        # M = 6:  0.436168993154, 0.707106781187, 0.899864772847
+        # Ref:https://github.com/scipy/scipy/pull/4747#issuecomment-172849418
+        assert_allclose(windows.kaiser_bessel_derived(2, beta=np.pi / 2)[:1],
+                        np.sqrt(2) / 2)
+
+        assert_allclose(windows.kaiser_bessel_derived(4, beta=np.pi / 2)[:2],
+                        [0.518562710536, 0.855039598640])
+
+        assert_allclose(windows.kaiser_bessel_derived(6, beta=np.pi / 2)[:3],
+                        [0.436168993154, 0.707106781187, 0.899864772847])
+
+    def test_exceptions(self):
+        M = 100
+        # Assert ValueError for odd window length
+        msg = ("Kaiser-Bessel Derived windows are only defined for even "
+               "number of points")
+        with assert_raises(ValueError, match=msg):
+            windows.kaiser_bessel_derived(M + 1, beta=4.)
+
+        # Assert ValueError for non-symmetric setting
+        msg = ("Kaiser-Bessel Derived windows are only defined for "
+               "symmetric shapes")
+        with assert_raises(ValueError, match=msg):
+            windows.kaiser_bessel_derived(M + 1, beta=4., sym=False)
+
+
 class TestNuttall:
 
     def test_basic(self):
@@ -595,6 +636,39 @@ class TestDPSS:
         assert_raises(ValueError, windows.dpss, -1, 1, 3)  # negative M
 
 
+class TestLanczos:
+
+    def test_basic(self):
+        # Analytical results:
+        # sinc(x) = sinc(-x)
+        # sinc(pi) = 0, sinc(0) = 1
+        # Hand computation on WolframAlpha:
+        # sinc(2 pi / 3) = 0.413496672
+        # sinc(pi / 3) = 0.826993343
+        # sinc(3 pi / 5) = 0.504551152
+        # sinc(pi / 5) = 0.935489284
+        assert_allclose(windows.lanczos(6, sym=False),
+                        [0., 0.413496672,
+                         0.826993343, 1., 0.826993343,
+                         0.413496672],
+                        atol=1e-9)
+        assert_allclose(windows.lanczos(6),
+                        [0., 0.504551152,
+                         0.935489284, 0.935489284,
+                         0.504551152, 0.],
+                        atol=1e-9)
+        assert_allclose(windows.lanczos(7, sym=True),
+                        [0., 0.413496672,
+                         0.826993343, 1., 0.826993343,
+                         0.413496672, 0.],
+                        atol=1e-9)
+
+    def test_array_size(self):
+        for n in [0, 10, 11]:
+            assert_equal(len(windows.lanczos(n, sym=False)), n)
+            assert_equal(len(windows.lanczos(n, sym=True)), n)
+
+
 class TestGetWindow:
 
     def test_boxcar(self):
@@ -656,14 +730,21 @@ class TestGetWindow:
         assert_allclose(get_window(('general_hamming', 0.7), 5, fftbins=False),
                         [0.4, 0.7, 1.0, 0.7, 0.4])
 
+    def test_lanczos(self):
+        assert_allclose(get_window('lanczos', 6),
+                        [0., 0.413496672, 0.826993343, 1., 0.826993343,
+                         0.413496672], atol=1e-9)
+        assert_allclose(get_window('lanczos', 6, fftbins=False),
+                        [0., 0.504551152, 0.935489284, 0.935489284,
+                         0.504551152, 0.], atol=1e-9)
+        assert_allclose(get_window('lanczos', 6), get_window('sinc', 6))
+
 
 def test_windowfunc_basics():
     for window_name, params in window_funcs:
         window = getattr(windows, window_name)
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
-            if window_name in ('hanning',):
-                sup.filter(DeprecationWarning)
             # Check symmetry for odd and even lengths
             w1 = window(8, *params, sym=True)
             w2 = window(7, *params, sym=False)
@@ -711,7 +792,8 @@ def test_windowfunc_basics():
 
 
 def test_needs_params():
-    for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
+    for winstr in ['kaiser', 'ksr', 'kaiser_bessel_derived', 'kbd',
+                   'gaussian', 'gauss', 'gss',
                    'general gaussian', 'general_gaussian',
                    'general gauss', 'general_gauss', 'ggs',
                    'dss', 'dpss', 'general cosine', 'general_cosine',
@@ -730,7 +812,6 @@ def test_not_needs_params():
                    'cosine',
                    'flattop',
                    'hamming',
-                   'hanning',
                    'nuttall',
                    'parzen',
                    'taylor',
@@ -738,7 +819,10 @@ def test_not_needs_params():
                    'poisson',
                    'tukey',
                    'tuk',
-                   'triangle']:
+                   'triangle',
+                   'lanczos',
+                   'sinc',
+                   ]:
         win = get_window(winstr, 7)
         assert_equal(len(win), 7)
 
@@ -752,3 +836,17 @@ def test_deprecation():
 def test_deprecated_pickleable():
     dep_hann2 = pickle.loads(pickle.dumps(dep_hann))
     assert_(dep_hann2 is dep_hann)
+
+
+def test_symmetric():
+
+    for win in [windows.lanczos]:
+        # Even sampling points
+        w = win(4096)
+        error = np.max(np.abs(w-np.flip(w)))
+        assert_equal(error, 0.0)
+
+        # Odd sampling points
+        w = win(4097)
+        error = np.max(np.abs(w-np.flip(w)))
+        assert_equal(error, 0.0)

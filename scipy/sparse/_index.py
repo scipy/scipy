@@ -1,7 +1,7 @@
 """Indexing mixin for sparse matrix classes.
 """
 import numpy as np
-from .sputils import isintlike
+from ._sputils import isintlike
 
 try:
     INT_TYPES = (int, long, np.integer)
@@ -29,19 +29,39 @@ class IndexMixin:
     """
     This class provides common dispatching and validation logic for indexing.
     """
+    def _raise_on_1d_array_slice(self):
+        """We do not currently support 1D sparse arrays.
+
+        This function is called each time that a 1D array would
+        result, raising an error instead.
+
+        Once 1D sparse arrays are implemented, it should be removed.
+        """
+        if self._is_array:
+            raise NotImplementedError(
+                'We have not yet implemented 1D sparse slices; '
+                'please index using explicit indices, e.g. `x[:, [0]]`'
+            )
+
     def __getitem__(self, key):
         row, col = self._validate_indices(key)
+
         # Dispatch to specialized methods.
         if isinstance(row, INT_TYPES):
             if isinstance(col, INT_TYPES):
                 return self._get_intXint(row, col)
             elif isinstance(col, slice):
+                self._raise_on_1d_array_slice()
                 return self._get_intXslice(row, col)
             elif col.ndim == 1:
+                self._raise_on_1d_array_slice()
+                return self._get_intXarray(row, col)
+            elif col.ndim == 2:
                 return self._get_intXarray(row, col)
             raise IndexError('index results in >2 dimensions')
         elif isinstance(row, slice):
             if isinstance(col, INT_TYPES):
+                self._raise_on_1d_array_slice()
                 return self._get_sliceXint(row, col)
             elif isinstance(col, slice):
                 if row == slice(None) and row == col:
@@ -52,6 +72,7 @@ class IndexMixin:
             raise IndexError('index results in >2 dimensions')
         elif row.ndim == 1:
             if isinstance(col, INT_TYPES):
+                self._raise_on_1d_array_slice()
                 return self._get_arrayXint(row, col)
             elif isinstance(col, slice):
                 return self._get_arrayXslice(row, col)
@@ -98,7 +119,7 @@ class IndexMixin:
         if i.shape != j.shape:
             raise IndexError('number of row and column indices differ')
 
-        from .base import isspmatrix
+        from ._base import isspmatrix
         if isspmatrix(x):
             if i.ndim == 1:
                 # Inner indexing, so treat them like row vectors.
@@ -159,7 +180,7 @@ class IndexMixin:
             raise IndexError('invalid index') from e
 
         if x.ndim not in (1, 2):
-            raise IndexError('Index dimension must be <= 2')
+            raise IndexError('Index dimension must be 1 or 2')
 
         if x.size == 0:
             return x
@@ -248,7 +269,7 @@ def _unpack_index(index):
     Valid type for row/col is integer, slice, or array of integers.
     """
     # First, check if indexing with single boolean matrix.
-    from .base import spmatrix, isspmatrix
+    from ._base import spmatrix, isspmatrix
     if (isinstance(index, (spmatrix, np.ndarray)) and
             index.ndim == 2 and index.dtype.kind == 'b'):
         return index.nonzero()

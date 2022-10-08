@@ -5,8 +5,13 @@ Special functions (:mod:`scipy.special`)
 
 .. currentmodule:: scipy.special
 
-Nearly all of the functions below are universal functions and follow
-broadcasting and automatic array-looping rules.
+Almost all of the functions below accept NumPy arrays as input
+arguments as well as single numbers. This means they follow
+broadcasting and automatic array-looping rules. Technically,
+they are `NumPy universal functions
+<https://numpy.org/doc/stable/user/basics.ufuncs.html#ufuncs-basics>`_.
+Functions which do not accept NumPy arrays are marked by a warning
+in the section description.
 
 .. seealso::
 
@@ -59,6 +64,11 @@ Elliptic functions and integrals
    ellipkinc -- Incomplete elliptic integral of the first kind.
    ellipe    -- Complete elliptic integral of the second kind.
    ellipeinc -- Incomplete elliptic integral of the second kind.
+   elliprc   -- Degenerate symmetric integral RC.
+   elliprd   -- Symmetric elliptic integral of the second kind.
+   elliprf   -- Completely-symmetric elliptic integral of the first kind.
+   elliprg   -- Completely-symmetric elliptic integral of the second kind.
+   elliprj   -- Symmetric elliptic integral of the third kind.
 
 Bessel functions
 ----------------
@@ -90,7 +100,8 @@ Bessel functions
    hankel2e      -- Exponentially scaled Hankel function of the second kind.
    wright_bessel -- Wright's generalized Bessel function.
 
-The following is not a universal function:
+The following function does not accept NumPy arrays (it is not a
+universal function):
 
 .. autosummary::
    :toctree: generated/
@@ -100,7 +111,8 @@ The following is not a universal function:
 Zeros of Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -173,7 +185,8 @@ Spherical Bessel functions
 Riccati-Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -250,6 +263,7 @@ Raw statistical functions
    ndtr         -- Gaussian cumulative distribution function.
    log_ndtr     -- Logarithm of Gaussian cumulative distribution function.
    ndtri        -- Inverse of `ndtr` vs x.
+   ndtri_exp    -- Inverse of `log_ndtr` vs x.
    chndtr       -- Non-central chi square cumulative distribution function.
    chndtridf    -- Inverse to `chndtr` vs `df`.
    chndtrinc    -- Inverse to `chndtr` vs `nc`.
@@ -260,7 +274,8 @@ Raw statistical functions
    kolmogi      -- Inverse function to `kolmogorov`.
    tklmbda      -- Tukey-Lambda cumulative distribution function.
    logit        -- Logit ufunc for ndarrays.
-   expit        -- Expit ufunc for ndarrays.
+   expit        -- Logistic sigmoid function.
+   log_expit    -- Logarithm of the logistic sigmoid function.
    boxcox       -- Compute the Box-Cox transformation.
    boxcox1p     -- Compute the Box-Cox transformation of 1 + `x`.
    inv_boxcox   -- Compute the inverse of the Box-Cox transformation.
@@ -327,7 +342,8 @@ Error function and Fresnel integrals
    modfresnelm   -- Modified Fresnel negative integrals.
    voigt_profile -- Voigt profile.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -345,7 +361,8 @@ Legendre functions
    lpmv     -- Associated Legendre function of integer order and real degree.
    sph_harm -- Compute spherical harmonics.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -470,7 +487,8 @@ Parabolic cylinder functions
    pbvv -- Parabolic cylinder function V.
    pbwa -- Parabolic cylinder function W.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -488,7 +506,8 @@ Mathieu and related functions
    mathieu_a -- Characteristic value of even Mathieu functions.
    mathieu_b -- Characteristic value of odd Mathieu functions.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -554,7 +573,8 @@ Kelvin functions
    kerp         -- Derivative of the Kelvin function ker.
    keip         -- Derivative of the Kelvin function kei.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -626,8 +646,9 @@ Convenience functions
    tandg     -- Tangent of angle x given in degrees.
    cotdg     -- Cotangent of the angle `x` given in degrees.
    log1p     -- Calculates log(1+x) for use when `x` is near zero.
-   expm1     -- exp(x) - 1 for use when `x` is near zero.
-   cosm1     -- cos(x) - 1 for use when `x` is near zero.
+   expm1     -- ``exp(x) - 1`` for use when `x` is near zero.
+   cosm1     -- ``cos(x) - 1`` for use when `x` is near zero.
+   powm1     -- ``x**y - 1`` for use when `y` is near zero or `x` is near 1.
    round     -- Round to nearest integer.
    xlogy     -- Compute ``x*log(y)`` so that the result is 0 if ``x = 0``.
    xlog1py   -- Compute ``x*log1p(y)`` so that the result is 0 if ``x = 0``.
@@ -637,7 +658,7 @@ Convenience functions
 
 """
 
-from .sf_error import SpecialFunctionWarning, SpecialFunctionError
+from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
 from ._ufuncs import *
@@ -647,10 +668,10 @@ from ._basic import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
-from . import orthogonal
-from .orthogonal import *
+from . import _orthogonal
+from ._orthogonal import *
 
-from .spfun_stats import multigammaln
+from ._spfun_stats import multigammaln
 from ._ellip_harm import (
     ellip_harm,
     ellip_harm_2,
@@ -664,10 +685,12 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
-__all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
+# Deprecated namespaces, to be removed in v2.0.0
+from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
+
+__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
-    'orthogonal',  # Not public, but kept in __all__ for back-compat
     'logsumexp',
     'softmax',
     'log_softmax',

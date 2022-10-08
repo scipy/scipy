@@ -2,44 +2,57 @@
 # License: BSD
 
 from numpy.testing import assert_array_equal
-from pytest import raises as assert_raises
 import pytest
 
 import numpy as np
 
 from scipy.optimize import linear_sum_assignment
 from scipy.sparse import random
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 from scipy.sparse.csgraph import min_weight_full_bipartite_matching
 from scipy.sparse.csgraph.tests.test_matching import (
     linear_sum_assignment_assertions, linear_sum_assignment_test_cases
 )
 
 
-def test_linear_sum_assignment_input_validation():
+def test_linear_sum_assignment_input_shape():
+    with pytest.raises(ValueError, match="expected a matrix"):
+        linear_sum_assignment([1, 2, 3])
 
-    assert_raises(ValueError, linear_sum_assignment, [1, 2, 3])
 
+def test_linear_sum_assignment_input_object():
     C = [[1, 2, 3], [4, 5, 6]]
     assert_array_equal(linear_sum_assignment(C),
                        linear_sum_assignment(np.asarray(C)))
     assert_array_equal(linear_sum_assignment(C),
                        linear_sum_assignment(matrix(C)))
 
+
+def test_linear_sum_assignment_input_bool():
     I = np.identity(3)
     assert_array_equal(linear_sum_assignment(I.astype(np.bool_)),
                        linear_sum_assignment(I))
-    assert_raises(ValueError, linear_sum_assignment, I.astype(str))
 
-    I[0][0] = np.nan
-    with pytest.raises(ValueError, match="contains invalid numeric entries"):
-        linear_sum_assignment(I)
 
+def test_linear_sum_assignment_input_string():
     I = np.identity(3)
-    I[1][1] = -np.inf
+    with pytest.raises(TypeError, match="Cannot cast array data"):
+        linear_sum_assignment(I.astype(str))
+
+
+def test_linear_sum_assignment_input_nan():
+    I = np.diag([np.nan, 1, 1])
     with pytest.raises(ValueError, match="contains invalid numeric entries"):
         linear_sum_assignment(I)
 
+
+def test_linear_sum_assignment_input_neginf():
+    I = np.diag([1, -np.inf, 1])
+    with pytest.raises(ValueError, match="contains invalid numeric entries"):
+        linear_sum_assignment(I)
+
+
+def test_linear_sum_assignment_input_inf():
     I = np.identity(3)
     I[:, 0] = np.inf
     with pytest.raises(ValueError, match="cost matrix is infeasible"):
