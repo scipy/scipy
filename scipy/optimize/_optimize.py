@@ -1438,7 +1438,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         msg = _status_message['success']
 
     if disp:
-        print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
+        _print_success_message_or_warning(warnflag, msg)
         print("         Current function value: %f" % fval)
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
@@ -1451,6 +1451,13 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     if retall:
         result['allvecs'] = allvecs
     return result
+
+
+def _print_success_message_or_warning(warnflag, message):
+    if warnflag == 0:
+        print(message)
+    else:
+        warnings.warn(message, OptimizeWarning, stacklevel=2)
 
 
 def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
@@ -3329,18 +3336,16 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     elif fcalls[0] >= maxfun:
         warnflag = 1
         msg = _status_message['maxfev']
-        if disp:
-            warnings.warn(msg, RuntimeWarning, 3)
     elif iter >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
-        if disp:
-            warnings.warn(msg, RuntimeWarning, 3)
     elif np.isnan(fval) or np.isnan(x).any():
         warnflag = 3
         msg = _status_message['nan']
-        if disp:
-            warnings.warn(msg, RuntimeWarning, 3)
+
+
+    if disp and (1 <= warnflag <= 3):
+        warnings.warn(msg, OptimizeWarning)
     else:
         msg = _status_message['success']
         if disp:
