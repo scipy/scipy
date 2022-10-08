@@ -1,6 +1,6 @@
 Name
 
-      qhull, rbox         2015.2       2016/01/18
+      qhull, rbox         2019.1          2019/06/21
   
 Convex hull, Delaunay triangulation, Voronoi diagrams, Halfspace intersection
  
@@ -11,7 +11,7 @@ Convex hull, Delaunay triangulation, Voronoi diagrams, Halfspace intersection
       Available from:
         <http://www.qhull.org>
         <http://www.qhull.org/download>
-        <https://github.com/qhull/qhull> (git@github.com:qhull/qhull.git)
+        <http://github.com/qhull/qhull/wiki> (git@github.com:qhull/qhull.git)
  
       News and a paper:
         <http://www.qhull.org/news>
@@ -42,8 +42,7 @@ Environment requirements
   self-contained.  It comes with examples and test scripts.
   
   Qhull's C++ interface uses the STL.  The C++ test program uses QTestLib 
-  from the Qt Framework.  Qhull's C++ interface may change without 
-  notice.  Eventually, it will move into the qhull shared library.
+  from the Qt Framework.
   
   Qhull is copyrighted software.  Please read COPYING.txt and REGISTER.txt
   before using or distributing Qhull.
@@ -57,7 +56,7 @@ To cite Qhull, please use
 To modify Qhull, particularly the C++ interface
 
   Qhull is on GitHub 
-     (https://github.com/qhull/qhull, git@github.com:qhull/qhull.git)
+     (http://github.com/qhull/qhull/wiki, git@github.com:qhull/qhull.git)
   
   For internal documentation, see html/qh-code.htm
 
@@ -72,6 +71,24 @@ To install Qhull
   Install and build instructions follow.  
   
   See the end of this document for a list of distributed files.
+
+-----------------
+Index
+
+Installing Qhull on Windows 10, 8, 7 (32- or 64-bit), Windows XP, and Windows NT
+Installing Qhull on Unix with gcc
+Installing Qhull with CMake 2.6 or later
+Installing Qhull with Qt
+Working with Qhull's C++ interface
+Calling Qhull from C programs
+Compiling Qhull with Microsoft Visual C++
+Compiling Qhull with Qt Creator
+Compiling Qhull with mingw on Windows
+Compiling Qhull with cygwin on Windows
+Compiling from Makfile without gcc
+Compiling on other machines and compilers
+Distributed files
+Authors
 
 -----------------
 Installing Qhull on Windows 10, 8, 7 (32- or 64-bit), Windows XP, and Windows NT
@@ -91,6 +108,7 @@ Installing Qhull on Windows 10, 8, 7 (32- or 64-bit), Windows XP, and Windows NT
   
   To learn about Qhull:
   - Execute 'qconvex' for a synopsis and examples.
+    Or 'qconvex --help' or 'qconvex -?'
   - Execute 'rbox 10 | qconvex' to compute the convex hull of 10 random points.
   - Execute 'rbox 10 | qconvex i TO file' to write results to 'file'.
   - Browse the documentation: qhull\html\index.htm
@@ -110,9 +128,15 @@ Installing Qhull on Windows 10, 8, 7 (32- or 64-bit), Windows XP, and Windows NT
   - Click OK
   - Select 'Modify shortcut that started this window', then OK
 
-  If you use qhull a lot, install a bash shell such as
-    MSYS (www.mingw.org/wiki/msys), Road Bash (www.qhull.org/bash), 
-    or Cygwin (www.cygwin.com).
+  If you regularly use qhull on a Windows host, install a bash shell such as
+    https://gitforwindows.org/     # based on MSYS2
+      https://github.com/git-for-windows/git/wiki
+      http://www.msys2.org/
+      https://github.com/msys2/msys2/wiki
+      [mar'19] Git for Windows v2.21 requires 'qhull --help'
+    www.cygwin.com 
+    www.mingw.org/wiki/msys        # for Windows XP
+    Road Bash (www.qhull.org/bash) # based on MSYS
 
 -----------------
 Installing Qhull on Unix with gcc
@@ -149,7 +173,8 @@ Installing Qhull with CMake 2.6 or later
   The ".." is important.  It refers to the parent directory (i.e., qhull/)
 
   On Windows, CMake installs to C:/Program Files/qhull.  64-bit generators
-  have a "Win64" tag.
+  have a "Win64" tag.  Qhull's data structures are substantial larger as
+  64-bit code than as 32-bit code.  This may slow down Qhull.
   
   If creating a qhull package, please include a pkg-config file based on build/qhull*.pc.in
 
@@ -163,6 +188,9 @@ Installing Qhull with Qt
   - Download and extract Qhull (either GitHub, .tgz file, or .zip file)
   - Load src/qhull-all.pro into QtCreator
   - Build
+  - qhulltest depends on shared libraries QtCore.a and QtTest.a.  They may need to be copied 
+    into the bin directory.  On Windows, copy Qt5Core.dll and Qt5Test.dll, e.g., qt/5.11.2/msvc2017_64/bin
+  - If qhulltest fails without an error message, check for missing Q54Core.dll and Qt5Test.dll
 
 -------------------
 Working with Qhull's C++ interface
@@ -177,7 +205,7 @@ Working with Qhull's C++ interface
 
   Qhull's C++ interface is likely to change.  Stay current with GitHub.
 
-  To clone Qhull's next branch from https://github.com/qhull/qhull
+  To clone Qhull's next branch from http://github.com/qhull/qhull/wiki
     git init
     git clone git@github.com:qhull/qhull.git
     cd qhull
@@ -199,7 +227,7 @@ Calling Qhull from C programs
   Warning: You will need to understand Qhull's data structures and read the 
   code.  Most users will find it easier to call Qhull as an external command.
 
-  The new, reentrant 'C' code (src/libqhull_r), passes a pointer to qhT 
+  The reentrant 'C' code (src/libqhull_r), passes a pointer to qhT 
   to most Qhull routines.  This allows multiple instances of Qhull to run 
   at the same time.  It simplifies the C++ interface.
 
@@ -208,39 +236,46 @@ Calling Qhull from C programs
   This allows the same code to use static memory or heap memory. 
   If qh_QHpointer is defined, qh_qh is a pointer to an allocated qhT; 
   otherwise qh_qh is a global static data structure of type qhT.
-
+  
 ------------------
 Compiling Qhull with Microsoft Visual C++
 
   To compile 32-bit Qhull with Microsoft Visual C++ 2010 and later
   - Download and extract Qhull (either GitHub, .tgz file, or .zip file)
-  - Load solution build/qhull-32.sln 
+  - Load solution build/qhull-32.sln
+  - Right-click 'Retarget solution' from toolset v110 to your Platform Toolset
   - Build target 'Win32'
-  - Project qhulltest requires Qt for DevStudio (https://www.qt.io)
+  - Project qhulltest requires Qt for DevStudio (http://www.qt.io)
     Set the QTDIR environment variable to your Qt directory (e.g., c:/qt/5.2.0/5.2.0/msvc2012)
     If QTDIR is incorrect, precompile will fail with 'Can not locate the file specified'
+  - Copy Qt shared libraries, QtCore.dll and QtTest.dll, into the bin directory
 
   To compile 64-bit Qhull with Microsoft Visual C++ 2010 and later
-  - 64-bit Qhull has larger data structures due to 64-bit pointers
+  - 64-bit Qhull has larger data structures due to 64-bit pointers.  This may slow down Qhull.
   - Download and extract Qhull (either GitHub, .tgz file, or .zip file)
   - Load solution build/qhull-64.sln 
-  - Build target 'Win32'
-  - Project qhulltest requires Qt for DevStudio (https://www.qt.io)
+  - Right-click 'Retarget solution' from toolset v110 to your Platform Toolset
+  - Build target 'x64'
+  - Project qhulltest requires Qt for DevStudio (http://www.qt.io)
     Set the QTDIR environment variable to your Qt directory (e.g., c:/qt/5.2.0/5.2.0/msvc2012_64)
     If QTDIR is incorrect, precompile will fail with 'Can not locate the file specified'
   
+  If error -- MSB8020: The build tools for Visual Studio 2012 (Platform Toolset = 'v110') cannot be found.
+  - 'Project > Retarget solution' for both qhull-32.sln and qhull-64.sln
+  - 'Save All' both projects
+
   To compile Qhull with Microsoft Visual C++ 2005 (vcproj files)
   - Download and extract Qhull (either GitHub, .tgz file, or .zip file)
   - Load solution build/qhull.sln 
   - Build target 'win32' (not 'x64')
-  - Project qhulltest requires Qt for DevStudio (https://www.qt.io)
+  - Project qhulltest requires Qt for DevStudio (http://www.qt.io)
     Set the QTDIR environment variable to your Qt directory (e.g., c:/qt/4.7.4)
     If QTDIR is incorrect, precompile will fail with 'Can not locate the file specified'
   
 -----------------
 Compiling Qhull with Qt Creator
 
-  Qt (https://www.qt.io) is a C++ framework for Windows, Linux, and Macintosh
+  Qt (http://www.qt.io) is a C++ framework for Windows, Linux, and Macintosh
 
   Qhull uses QTestLib to test qhull's C++ interface (see src/qhulltest/)
   
@@ -252,22 +287,35 @@ Compiling Qhull with Qt Creator
   - Build
 
 -----------------
-Compiling Qhull with mingw on Windows
+Compiling Qhull with mingw/gcc on Windows
 
   To compile Qhull with MINGW
   - Download and extract Qhull (either GitHub, .tgz file, or .zip file)
-  - Install Road Bash (http://www.qhull.org/bash)
-    or install MSYS (http://www.mingw.org/wiki/msys)
-  - Install MINGW-w64 (http://sourceforge.net/projects/mingw-w64).  
-    Mingw is included with Qt SDK.  
-  - make
+  - Install GitForWindows (https://gitforwindows.org/)
+    or MSYS2 (http://www.msys2.org/)
+  - Install MINGW-w64
+  with gcc (https://mingw-w64.org/)
+    Download installer (https://sourceforge.net/projects/mingw-w64/files/)
+    Select i686/posix/dwarf
+    Install in C:\mingw-w64\... # Not 'Program Files\...'
+    Rename mingw32/bin/mingw32-make.exe to make.exe
+    Add the 'bin' directory to your $PATH environment variable
+  - Compile Qhull from the home directory
+    make help
+    make
+  
+  Notes
+  - Mingw is included with Qt SDK in qt/Tools/mingw53_32
+  - For Windows XP
+    Install Road Bash (http://www.qhull.org/bash) or MSYS (http://www.mingw.org/wiki/msys)
+    Install MINGW (http://mingw.org/)
   
 -----------------
 Compiling Qhull with cygwin on Windows
 
   To compile Qhull with cygwin
   - Download and extract Qhull (either GitHub, .tgz file, or .zip file)
-  - Install cygwin (https://www.cygwin.com)
+  - Install cygwin (http://www.cygwin.com)
   - Include packages for gcc, make, ar, and ln
   - make
 
@@ -351,6 +399,7 @@ Distributed files
   qhull*.md5sum        // md5sum for all files
 
   bin/*                // Qhull executables and dll (.zip only)
+  build/config.cmake.in // extract target variables
   build/qhull*.pc.in   // pkg-config templates for qhull_r, qhull, and qhull_p
   build/qhull-32.sln   // 32-bit DevStudio solution and project files (2010 and later)
   build/*-32.vcxproj
@@ -367,13 +416,19 @@ Distributed files
   src/qhull-all.pro    // Qt project
 
 eg/ 
+  q_benchmark          // shell script for precision and performance benchmark
+  q_benchmark-ok.txt   // reviewed output from q_benchmark
   q_eg                 // shell script for Geomview examples (eg.01.cube)
   q_egtest             // shell script for Geomview test examples
   q_test               // shell script to test qhull
-  q_test-ok.txt        // output from q_test
-  qhulltest-ok.txt     // output from qhulltest (Qt only)
-  make-vcproj.sh       // bash shell script to create vcproj and vcxprog files
-  qhull-zip.sh	       // bash shell script for distribution files
+  q_test.bat           // Windows batch test for QHULL-GO.bat
+                       // cd bin; ..\eg\q_test.bat >q_test.x 2>&1
+  q_test-ok.txt        // reviewed output from q_test
+  qhulltest-ok.txt     // reviewed output from qhulltest (Qt only)
+  make-qhull_qh.sh     // shell script to create non-reentrant qhull_qh from reentrant Qhull
+  make-vcproj.sh       // shell script to create vcproj and vcxprog files
+  qhull-zip.sh         // shell script to create distribution files
+  qtest.sh             // shell script for testing and logging qhull
 
 rbox consists of (bin, html):
   rbox.exe             // Win32 executable (.zip only) 
@@ -403,6 +458,7 @@ qhull consists of (bin, html):
   qh-quick.htm
   qh--*.gif            // images for manual
   normal_voronoi_knauss_oesterle.jpg
+  qh_findbestfacet-drielsma.pdf
   qhull.man            // Unix man page 
   qhull.txt
 
@@ -432,12 +488,14 @@ src/
   testqset_r/testqset_r.c  // Test of reentrant qset_r.c and mem_r.c
   testqset/testqset.c     // Test of non-rentrant qset.c and mem.c
 
-
 src/libqhull
   libqhull.pro         // Qt project for non-rentrant, shared library (qhull.dll)
   index.htm            // design documentation for libqhull
   qh-*.htm
-  qhull-exports.def    // Export Definition file for Visual C++
+  qhull-exports.def    // Export Definition files for Visual C++
+  qhull-nomerge-exports.def
+  qhull_p-exports.def
+  qhull_p-nomerge-exports.def
   Makefile             // Simple gcc Makefile for qhull and libqhullstatic.a
   Mborland             // Makefile for Borland C++ 5.0
 
@@ -475,7 +533,8 @@ src/libqhull_r
   libqhull_r.pro       // Qt project for rentrant, shared library (qhull_r.dll)
   index.htm            // design documentation for libqhull_r
   qh-*_r.htm
-  qhull-exports_r.def  // Export Definition file for Visual C++
+  qhull_r-exports.def  // Export Definition files for Visual C++
+  qhull_r-nomerge-exports.def
   Makefile             // Simple gcc Makefile for qhull and libqhullstatic.a
 
   libqhull_r.h          // header file for qhull
@@ -590,7 +649,7 @@ src/qhulltest/
   RoadTest.h
 
 -----------------
-Authors:
+Authors
 
   C. Bradford Barber                  Hannu Huhdanpaa (Version 1.0)
   bradb@shore.net                     hannu@qhull.org

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 from ._ufuncs import _ellip_harm
@@ -47,7 +45,7 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     Notes
     -----
     The geometric interpretation of the ellipsoidal functions is
-    explained in [2]_, [3]_, [4]_.  The `signm` and `signn` arguments control the
+    explained in [2]_, [3]_, [4]_. The `signm` and `signn` arguments control the
     sign of prefactors for functions according to their type::
 
         K : +1

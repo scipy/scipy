@@ -11,12 +11,10 @@ command, which (i) aborts the py process so that runtests.py does not finish,
 and (ii) the exit code is implementation-defined.
 
 Also check that the number of tests run is larger than some baseline number
-(taken from the state of the master branch at some random point in time.)
+(taken from the state of the main branch at some random point in time.)
 This probably could/should be made less brittle.
 
 """
-from __future__ import print_function
-
 import sys
 import re
 
@@ -27,8 +25,8 @@ if __name__ == "__main__":
         testmode = sys.argv[1]
         if testmode not in ('fast', 'full'):
             raise IndexError
-    except IndexError:
-        raise ValueError("Usage: validate.py {full|fast} < logfile.")
+    except IndexError as e:
+        raise ValueError("Usage: validate.py {full|fast} < logfile.") from e
 
     # fetch the expected number of tests
     # these numbers are for 10d5dfe8b7
@@ -37,8 +35,8 @@ if __name__ == "__main__":
                      'fast': 10000}
 
     # read in the log, parse for the pytest printout
-    r1 = re.compile("(?P<num_failed>\d+) failed, (?P<num_passed>\d+) passed,.* in (?P<time>\d+\S+)")
-    r2 = re.compile("(?P<num_passed>\d+) passed,.* in (?P<time>\d+\S+)")
+    r1 = re.compile(r"(?P<num_failed>\d+) failed, (?P<num_passed>\d+) passed,.* in (?P<time>\d+\S+)")
+    r2 = re.compile(r"(?P<num_passed>\d+) passed,.* in (?P<time>\d+\S+)")
 
     found_it = False
     while True:

@@ -1,5 +1,5 @@
-      subroutine concur(iopt,idim,m,u,mx,x,xx,w,ib,db,nb,ie,de,ne,k,s,
-     * nest,n,t,nc,c,np,cp,fp,wrk,lwrk,iwrk,ier)
+      recursive subroutine concur(iopt,idim,m,u,mx,x,xx,w,ib,db,nb,
+     * ie,de,ne,k,s,nest,n,t,nc,c,np,cp,fp,wrk,lwrk,iwrk,ier)
       implicit none
 c  given the ordered set of m points x(i) in the idim-dimensional space
 c  and given also a corresponding set of strictly increasing values u(i)
@@ -350,7 +350,7 @@ c  with zero derivative constraints.
   50  continue
 c  evaluate the polynomial curve
       call curev(idim,wrk,nmin,cp,np,k,u,m,xx,mxx,ier)
-c  substract from the old data, the values of the polynomial curve
+c  subtract from the old data, the values of the polynomial curve
       do 60 i=1,mxx
         xx(i) = x(i)-xx(i)
   60  continue

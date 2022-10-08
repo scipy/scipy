@@ -162,14 +162,14 @@ _kolmogorov(double x)
     double sf, cdf, pdf;
     ThreeProbs ret;
 
-    if (npy_isnan(x)) {
-        RETURN_3PROBS(NPY_NAN, NPY_NAN, NPY_NAN);
+    if (isnan(x)) {
+        RETURN_3PROBS(NAN, NAN, NAN);
     }
     if (x <= 0) {
         RETURN_3PROBS(1.0, 0.0, 0);
     }
     /* x <= 0.040611972203751713 */
-    if (x <= NPY_PI/sqrt(-MIN_EXPABLE * 8)) {
+    if (x <= (double)NPY_PI/sqrt(-MIN_EXPABLE * 8)) {
         RETURN_3PROBS(1.0, 0.0, 0);
     }
 
@@ -256,26 +256,23 @@ _kolmogi(double psf, double pcdf)
 {
     double x, t;
     double xmin = 0;
-    double xmax = NPY_INFINITY;
-    double fmin = 1 - psf;
-    double fmax = pcdf - 1;
+    double xmax = INFINITY;
     int iterations;
     double a = xmin, b = xmax;
-    double fa = fmin, fb = fmax;
 
     if (!(psf >= 0.0 && pcdf >= 0.0 && pcdf <= 1.0 && psf <= 1.0)) {
-        mtherr("kolmogi", DOMAIN);
-        return (NPY_NAN);
+        sf_error("kolmogi", SF_ERROR_DOMAIN, NULL);
+        return (NAN);
     }
     if (fabs(1.0 - pcdf - psf) >  4* DBL_EPSILON) {
-        mtherr("kolmogi", DOMAIN);
-        return (NPY_NAN);
+        sf_error("kolmogi", SF_ERROR_DOMAIN, NULL);
+        return (NAN);
     }
     if (pcdf == 0.0) {
         return 0.0;
     }
     if (psf == 0.0) {
-        return NPY_INFINITY;
+        return INFINITY;
     }
 
     if (pcdf <= 0.5) {
@@ -337,10 +334,8 @@ _kolmogi(double psf, double pcdf)
         /* Update the bracketing interval */
         if (df > 0 && x > a) {
             a = x;
-            fa = df;
         } else if (df < 0 && x < b) {
             b = x;
-            fb = df;
         }
 
         dfdx = -probs.pdf;
@@ -377,7 +372,7 @@ _kolmogi(double psf, double pcdf)
         }
 
         if (++iterations > MAXITER) {
-            mtherr("kolmogi", TOOMANY);
+            sf_error("kolmogi", SF_ERROR_SLOW, NULL);
             break;
         }
     } while(1);
@@ -388,8 +383,8 @@ _kolmogi(double psf, double pcdf)
 double
 kolmogorov(double x)
 {
-    if (npy_isnan(x)) {
-        return NPY_NAN;
+    if (isnan(x)) {
+        return NAN;
     }
     return _kolmogorov(x).sf;
 }
@@ -397,8 +392,8 @@ kolmogorov(double x)
 double
 kolmogc(double x)
 {
-    if (npy_isnan(x)) {
-        return NPY_NAN;
+    if (isnan(x)) {
+        return NAN;
     }
     return _kolmogorov(x).cdf;
 }
@@ -406,8 +401,8 @@ kolmogc(double x)
 double
 kolmogp(double x)
 {
-    if (npy_isnan(x)) {
-        return NPY_NAN;
+    if (isnan(x)) {
+        return NAN;
     }
     if (x <= 0) {
         return -0.0;
@@ -421,8 +416,8 @@ kolmogp(double x)
 double
 kolmogi(double p)
 {
-    if (npy_isnan(p)) {
-        return NPY_NAN;
+    if (isnan(p)) {
+        return NAN;
     }
     return _kolmogi(p, 1-p);
 }
@@ -433,8 +428,8 @@ kolmogi(double p)
 double
 kolmogci(double p)
 {
-    if (npy_isnan(p)) {
-        return NPY_NAN;
+    if (isnan(p)) {
+        return NAN;
     }
     return _kolmogi(1-p, p);
 }
@@ -725,11 +720,11 @@ _smirnov(int n, double x)
     double cdf, sf, pdf;
 
     int bUseUpperSum;
-    int nxfl, nxceil, n1mxfl, n1mxceil;
+    int nxfl, n1mxfl, n1mxceil;
     ThreeProbs ret;
 
     if (!(n > 0 && x >= 0.0 && x <= 1.0)) {
-        RETURN_3PROBS(NPY_NAN, NPY_NAN, NPY_NAN);
+        RETURN_3PROBS(NAN, NAN, NAN);
     }
     if (n == 1) {
         RETURN_3PROBS(1-x, x, 1.0);
@@ -742,7 +737,6 @@ _smirnov(int n, double x)
     }
 
     alpha = modNX(n, x, &nxfl, &nx);
-    nxceil = nxfl + (alpha == 0 ? 0: 1);
     n1mxfl = n - nxfl - (alpha == 0 ? 0 : 1);
     n1mxceil = n - nxfl;
     /*
@@ -910,17 +904,16 @@ _smirnovi(int n, double psf, double pcdf)
     int iterations = 0;
     int function_calls = 0;
     double a=0, b=1;
-    double fa=pcdf, fb=-psf;
     double maxlogpcdf, psfrootn;
     double dx, dxold;
 
     if (!(n > 0 && psf >= 0.0 && pcdf >= 0.0 && pcdf <= 1.0 && psf <= 1.0)) {
-        mtherr("smirnovi", DOMAIN);
-        return (NPY_NAN);
+        sf_error("smirnovi", SF_ERROR_DOMAIN, NULL);
+        return (NAN);
     }
     if (fabs(1.0 - pcdf - psf) >  4* DBL_EPSILON) {
-        mtherr("smirnovi", DOMAIN);
-        return (NPY_NAN);
+        sf_error("smirnovi", SF_ERROR_DOMAIN, NULL);
+        return (NAN);
     }
     /* STEP 1: Handle psf==0, or pcdf == 0 */
     if (pcdf == 0.0) {
@@ -1000,13 +993,9 @@ _smirnovi(int n, double psf, double pcdf)
     assert (x < 1);
 
     /*
-     * Skip computing fb, fb as that takes cycles and the exact values
-     * are not needed. Instead set
-     *  fa <- f(0.0)=pcdf,   fb <- f(1.0)=psf
-     * so that fa, fb have the correct sign.
+     * Skip computing fa, fb as that takes cycles and the exact values
+     * are not needed.
      */
-    fa = pcdf;
-    fb = -psf;
 
     /* STEP 5 Run N-R.
      * smirnov should be well-enough behaved for NR starting at this location.
@@ -1030,10 +1019,8 @@ _smirnovi(int n, double psf, double pcdf)
         /* Update the bracketing interval */
         if (df > 0 &&  x > a) {
             a = x;
-            fa = df;
         } else if (df < 0 && x < b) {
             b = x;
-            fb = df;
         }
 
         if (dfdx == 0) {
@@ -1074,7 +1061,7 @@ _smirnovi(int n, double psf, double pcdf)
             break;
         }
         if (++iterations > MAXITER) {
-            mtherr("smirnovi", TOOMANY);
+            sf_error("smirnovi", SF_ERROR_SLOW, NULL);
             return (x);
         }
     } while (1);
@@ -1086,8 +1073,8 @@ double
 smirnov(int n, double d)
 {
     ThreeProbs probs;
-    if (npy_isnan(d)) {
-        return NPY_NAN;
+    if (isnan(d)) {
+        return NAN;
     }
     probs = _smirnov(n, d);
     return probs.sf;
@@ -1097,8 +1084,8 @@ double
 smirnovc(int n, double d)
 {
     ThreeProbs probs;
-    if (npy_isnan(d)) {
-        return NPY_NAN;
+    if (isnan(d)) {
+        return NAN;
     }
     probs = _smirnov(n, d);
     return probs.cdf;
@@ -1114,7 +1101,7 @@ smirnovp(int n, double d)
 {
     ThreeProbs probs;
     if (!(n > 0 && d >= 0.0 && d <= 1.0)) {
-        return (NPY_NAN);
+        return (NAN);
     }
     if (n == 1) {
          /* Slope is always -1 for n=1, even at d = 1.0 */
@@ -1138,8 +1125,8 @@ smirnovp(int n, double d)
 double
 smirnovi(int n, double p)
 {
-    if (npy_isnan(p)) {
-        return NPY_NAN;
+    if (isnan(p)) {
+        return NAN;
     }
     return _smirnovi(n, p, 1-p);
 }
@@ -1147,8 +1134,8 @@ smirnovi(int n, double p)
 double
 smirnovci(int n, double p)
 {
-    if (npy_isnan(p)) {
-        return NPY_NAN;
+    if (isnan(p)) {
+        return NAN;
     }
     return _smirnovi(n, 1-p, p);
 }

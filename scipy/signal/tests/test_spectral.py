@@ -1,20 +1,18 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import (assert_, assert_approx_equal,
                            assert_allclose, assert_array_equal, assert_equal,
-                           assert_array_almost_equal_nulp)
+                           assert_array_almost_equal_nulp, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
-from scipy._lib._numpy_compat import suppress_warnings
-from scipy import signal, fftpack
+from scipy import signal
+from scipy.fft import fftfreq
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
                           spectrogram, stft, istft, check_COLA, check_NOLA)
-from scipy.signal.spectral import _spectral_helper
+from scipy.signal._spectral_py import _spectral_helper
 
 
-class TestPeriodogram(object):
+class TestPeriodogram:
     def test_real_onesided_even(self):
         x = np.zeros(16)
         x[0] = 1
@@ -40,8 +38,8 @@ class TestPeriodogram(object):
         x = np.zeros(16)
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(16, 1.0))
-        q = np.ones(16)/16.0
+        assert_allclose(f, fftfreq(16, 1.0))
+        q = np.full(16, 1/16.0)
         q[0] = 0
         assert_allclose(p, q)
 
@@ -78,8 +76,8 @@ class TestPeriodogram(object):
         x = np.zeros(16, dtype=int)
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(16, 1.0))
-        q = np.ones(16)/16.0
+        assert_allclose(f, fftfreq(16, 1.0))
+        q = np.full(16, 1/16.0)
         q[0] = 0
         assert_allclose(p, q)
 
@@ -87,8 +85,8 @@ class TestPeriodogram(object):
         x = np.zeros(16, np.complex128)
         x[0] = 1.0 + 2.0j
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(16, 1.0))
-        q = 5.0*np.ones(16)/16.0
+        assert_allclose(f, fftfreq(16, 1.0))
+        q = np.full(16, 5.0/16.0)
         q[0] = 0
         assert_allclose(p, q)
 
@@ -201,8 +199,8 @@ class TestPeriodogram(object):
         x = np.zeros(16, 'f')
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(16, 1.0))
-        q = np.ones(16, 'f')/16.0
+        assert_allclose(f, fftfreq(16, 1.0))
+        q = np.full(16, 1/16.0, 'f')
         q[0] = 0
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype)
@@ -211,14 +209,23 @@ class TestPeriodogram(object):
         x = np.zeros(16, 'F')
         x[0] = 1.0 + 2.0j
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(16, 1.0))
-        q = 5.0*np.ones(16, 'f')/16.0
+        assert_allclose(f, fftfreq(16, 1.0))
+        q = np.full(16, 5.0/16.0, 'f')
         q[0] = 0
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype)
 
+    def test_shorter_window_error(self):
+        x = np.zeros(16)
+        x[0] = 1
+        win = signal.get_window('hann', 10)
+        expected_msg = ('the size of the window must be the same size '
+                        'of the input on the specified axis')
+        with assert_raises(ValueError, match=expected_msg):
+            periodogram(x, window=win)
 
-class TestWelch(object):
+
+class TestWelch:
     def test_real_onesided_even(self):
         x = np.zeros(16)
         x[0] = 1
@@ -244,7 +251,7 @@ class TestWelch(object):
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -284,7 +291,7 @@ class TestWelch(object):
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -294,7 +301,7 @@ class TestWelch(object):
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556,
                       0.55555556, 0.55555556, 0.55555556, 0.38194444])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -331,7 +338,7 @@ class TestWelch(object):
     def test_detrend_external_nd_0(self):
         x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((2,1,10))
-        x = np.rollaxis(x, 2, 0)
+        x = np.moveaxis(x, 2, 0)
         f, p = welch(x, nperseg=10, axis=0,
                      detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
@@ -447,7 +454,7 @@ class TestWelch(object):
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.11111111,
                       0.07638889], 'f')
@@ -459,7 +466,7 @@ class TestWelch(object):
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552,
                       0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -470,7 +477,7 @@ class TestWelch(object):
         x = np.zeros(12)
 
         nfft = 24
-        f = fftpack.fftfreq(nfft, 1.0)[:nfft//2+1]
+        f = fftfreq(nfft, 1.0)[:nfft//2+1]
         f[-1] *= -1
         fodd, _ = welch(x, nperseg=5, nfft=nfft)
         feven, _ = welch(x, nperseg=6, nfft=nfft)
@@ -478,7 +485,7 @@ class TestWelch(object):
         assert_allclose(f, feven)
 
         nfft = 25
-        f = fftpack.fftfreq(nfft, 1.0)[:(nfft + 1)//2]
+        f = fftfreq(nfft, 1.0)[:(nfft + 1)//2]
         fodd, _ = welch(x, nperseg=5, nfft=nfft)
         feven, _ = welch(x, nperseg=6, nfft=nfft)
         assert_allclose(f, fodd)
@@ -584,7 +591,7 @@ class TestCSD:
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -624,7 +631,7 @@ class TestCSD:
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -634,7 +641,7 @@ class TestCSD:
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556,
                       0.55555556, 0.55555556, 0.55555556, 0.38194444])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -671,7 +678,7 @@ class TestCSD:
     def test_detrend_external_nd_0(self):
         x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((2,1,10))
-        x = np.rollaxis(x, 2, 0)
+        x = np.moveaxis(x, 2, 0)
         f, p = csd(x, x, nperseg=10, axis=0,
                    detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
@@ -812,7 +819,7 @@ class TestCSD:
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.11111111,
                       0.07638889], 'f')
@@ -824,7 +831,7 @@ class TestCSD:
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552,
                       0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -836,7 +843,7 @@ class TestCSD:
         y = np.ones(12)
 
         nfft = 24
-        f = fftpack.fftfreq(nfft, 1.0)[:nfft//2+1]
+        f = fftfreq(nfft, 1.0)[:nfft//2+1]
         f[-1] *= -1
         fodd, _ = csd(x, y, nperseg=5, nfft=nfft)
         feven, _ = csd(x, y, nperseg=6, nfft=nfft)
@@ -844,13 +851,30 @@ class TestCSD:
         assert_allclose(f, feven)
 
         nfft = 25
-        f = fftpack.fftfreq(nfft, 1.0)[:(nfft + 1)//2]
+        f = fftfreq(nfft, 1.0)[:(nfft + 1)//2]
         fodd, _ = csd(x, y, nperseg=5, nfft=nfft)
         feven, _ = csd(x, y, nperseg=6, nfft=nfft)
         assert_allclose(f, fodd)
         assert_allclose(f, feven)
 
-class TestCoherence(object):
+    def test_copied_data(self):
+        x = np.random.randn(64)
+        y = x.copy()
+
+        _, p_same = csd(x, x, nperseg=8, average='mean',
+                        return_onesided=False)
+        _, p_copied = csd(x, y, nperseg=8, average='mean',
+                          return_onesided=False)
+        assert_allclose(p_same, p_copied)
+
+        _, p_same = csd(x, x, nperseg=8, average='median',
+                        return_onesided=False)
+        _, p_copied = csd(x, y, nperseg=8, average='median',
+                          return_onesided=False)
+        assert_allclose(p_same, p_copied)
+
+
+class TestCoherence:
     def test_identical_input(self):
         x = np.random.randn(20)
         y = np.copy(x)  # So `y is x` -> False
@@ -874,7 +898,7 @@ class TestCoherence(object):
         assert_allclose(C, C1)
 
 
-class TestSpectrogram(object):
+class TestSpectrogram:
     def test_average_all_segments(self):
         x = np.random.randn(1024)
 
@@ -926,7 +950,7 @@ class TestSpectrogram(object):
         assert_allclose(f1, f3)
         assert_allclose(p1, p3)
 
-class TestLombscargle(object):
+class TestLombscargle:
     def test_frequency(self):
         """Test if frequency location of peak corresponds to frequency of
         generated input signal.
@@ -1070,45 +1094,91 @@ class TestLombscargle(object):
         t = np.linspace(0, 10, 1000, endpoint=False)
         x = np.sin(4*t)
         f = np.linspace(0, 50, 500, endpoint=False) + 0.1
-        q = lombscargle(t, x, f*2*np.pi)
+        lombscargle(t, x, f*2*np.pi)
 
 
-class TestSTFT(object):
+class TestSTFT:
     def test_input_validation(self):
-        assert_raises(ValueError, check_COLA, 'hann', -10, 0)
-        assert_raises(ValueError, check_COLA, 'hann', 10, 20)
-        assert_raises(ValueError, check_COLA, np.ones((2,2)), 10, 0)
-        assert_raises(ValueError, check_COLA, np.ones(20), 10, 0)
 
-        assert_raises(ValueError, check_NOLA, 'hann', -10, 0)
-        assert_raises(ValueError, check_NOLA, 'hann', 10, 20)
-        assert_raises(ValueError, check_NOLA, np.ones((2,2)), 10, 0)
-        assert_raises(ValueError, check_NOLA, np.ones(20), 10, 0)
-        assert_raises(ValueError, check_NOLA, 'hann', 64, -32)
+        def chk_VE(match):
+            """Assert for a ValueError matching regexp `match`.
+
+            This little wrapper allows a more concise code layout.
+            """
+            return pytest.raises(ValueError, match=match)
+
+        # Checks for check_COLA():
+        with chk_VE('nperseg must be a positive integer'):
+            check_COLA('hann', -10, 0)
+        with chk_VE('noverlap must be less than nperseg.'):
+            check_COLA('hann', 10, 20)
+        with chk_VE('window must be 1-D'):
+            check_COLA(np.ones((2, 2)), 10, 0)
+        with chk_VE('window must have length of nperseg'):
+            check_COLA(np.ones(20), 10, 0)
+
+        # Checks for check_NOLA():
+        with chk_VE('nperseg must be a positive integer'):
+            check_NOLA('hann', -10, 0)
+        with chk_VE('noverlap must be less than nperseg'):
+            check_NOLA('hann', 10, 20)
+        with chk_VE('window must be 1-D'):
+            check_NOLA(np.ones((2, 2)), 10, 0)
+        with chk_VE('window must have length of nperseg'):
+            check_NOLA(np.ones(20), 10, 0)
+        with chk_VE('noverlap must be a nonnegative integer'):
+            check_NOLA('hann', 64, -32)
 
         x = np.zeros(1024)
-        z = stft(x)
+        z = stft(x)[2]
 
-        assert_raises(ValueError, stft, x, window=np.ones((2,2)))
-        assert_raises(ValueError, stft, x, window=np.ones(10), nperseg=256)
-        assert_raises(ValueError, stft, x, nperseg=-256)
-        assert_raises(ValueError, stft, x, nperseg=256, noverlap=1024)
-        assert_raises(ValueError, stft, x, nperseg=256, nfft=8)
+        # Checks for stft():
+        with chk_VE('window must be 1-D'):
+            stft(x, window=np.ones((2, 2)))
+        with chk_VE('value specified for nperseg is different ' +
+                    'from length of window'):
+            stft(x, window=np.ones(10), nperseg=256)
+        with chk_VE('nperseg must be a positive integer'):
+            stft(x, nperseg=-256)
+        with chk_VE('noverlap must be less than nperseg.'):
+            stft(x, nperseg=256, noverlap=1024)
+        with chk_VE('nfft must be greater than or equal to nperseg.'):
+            stft(x, nperseg=256, nfft=8)
 
-        assert_raises(ValueError, istft, x)  # Not 2d
-        assert_raises(ValueError, istft, z, window=np.ones((2,2)))
-        assert_raises(ValueError, istft, z, window=np.ones(10), nperseg=256)
-        assert_raises(ValueError, istft, z, nperseg=-256)
-        assert_raises(ValueError, istft, z, nperseg=256, noverlap=1024)
-        assert_raises(ValueError, istft, z, nperseg=256, nfft=8)
-        assert_raises(ValueError, istft, z, nperseg=256, noverlap=0,
-                      window='hann')  # Doesn't meet COLA
-        assert_raises(ValueError, istft, z, time_axis=0, freq_axis=0)
+        # Checks for istft():
+        with chk_VE('Input stft must be at least 2d!'):
+            istft(x)
+        with chk_VE('window must be 1-D'):
+            istft(z, window=np.ones((2, 2)))
+        with chk_VE('window must have length of 256'):
+            istft(z, window=np.ones(10), nperseg=256)
+        with chk_VE('nperseg must be a positive integer'):
+            istft(z, nperseg=-256)
+        with chk_VE('noverlap must be less than nperseg.'):
+            istft(z, nperseg=256, noverlap=1024)
+        with chk_VE('nfft must be greater than or equal to nperseg.'):
+            istft(z, nperseg=256, nfft=8)
+        with pytest.warns(UserWarning, match="NOLA condition failed, " +
+                          "STFT may not be invertible"):
+            istft(z, nperseg=256, noverlap=0, window='hann')
+        with chk_VE('Must specify differing time and frequency axes!'):
+            istft(z, time_axis=0, freq_axis=0)
 
-        assert_raises(ValueError, _spectral_helper, x, x, mode='foo')
-        assert_raises(ValueError, _spectral_helper, x[:512], x[512:],
-                      mode='stft')
-        assert_raises(ValueError, _spectral_helper, x, x, boundary='foo')
+        # Checks for _spectral_helper():
+        with chk_VE("Unknown value for mode foo, must be one of: " +
+                    r"\{'psd', 'stft'\}"):
+            _spectral_helper(x, x, mode='foo')
+        with chk_VE("x and y must be equal if mode is 'stft'"):
+            _spectral_helper(x[:512], x[512:], mode='stft')
+        with chk_VE("Unknown boundary option 'foo', must be one of: " +
+                    r"\['even', 'odd', 'constant', 'zeros', None\]"):
+            _spectral_helper(x, x, boundary='foo')
+
+        scaling = "not_valid"
+        with chk_VE(fr"Parameter {scaling=} not in \['spectrum', 'psd'\]!"):
+            stft(x, scaling=scaling)
+        with chk_VE(fr"Parameter {scaling=} not in \['spectrum', 'psd'\]!"):
+            istft(z, scaling=scaling)
 
     def test_check_COLA(self):
         settings = [
@@ -1200,7 +1270,8 @@ class TestSTFT(object):
         assert_allclose(Z1, Z2[:, 0, 0, :])
         assert_allclose(x1, x2[:, 0, 0])
 
-    def test_roundtrip_real(self):
+    @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
+    def test_roundtrip_real(self, scaling):
         np.random.seed(1234)
 
         settings = [
@@ -1217,10 +1288,11 @@ class TestSTFT(object):
             x = 10*np.random.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
-                            window=window, detrend=None, padded=False)
+                            window=window, detrend=None, padded=False,
+                            scaling=scaling)
 
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                           window=window)
+                           window=window, scaling=scaling)
 
             msg = '{0}, {1}'.format(window, noverlap)
             assert_allclose(t, tr, err_msg=msg)
@@ -1283,7 +1355,6 @@ class TestSTFT(object):
             assert_allclose(t, tr[:len(t)], err_msg=msg)
             assert_allclose(x, xr[:len(x)], err_msg=msg)
 
-    @pytest.mark.xfail(reason="Needs complex rfft from fftpack, see gh-2487 + gh-6058")
     def test_roundtrip_float32(self):
         np.random.seed(1234)
 
@@ -1302,10 +1373,11 @@ class TestSTFT(object):
 
             msg = '{0}, {1}'.format(window, noverlap)
             assert_allclose(t, t, err_msg=msg)
-            assert_allclose(x, xr, err_msg=msg, rtol=1e-4)
+            assert_allclose(x, xr, err_msg=msg, rtol=1e-4, atol=1e-5)
             assert_(x.dtype == xr.dtype)
 
-    def test_roundtrip_complex(self):
+    @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
+    def test_roundtrip_complex(self, scaling):
         np.random.seed(1234)
 
         settings = [
@@ -1323,10 +1395,11 @@ class TestSTFT(object):
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
-                            return_onesided=False)
+                            return_onesided=False, scaling=scaling)
 
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                           window=window, input_onesided=False)
+                           window=window, input_onesided=False,
+                           scaling=scaling)
 
             msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
             assert_allclose(t, tr, err_msg=msg)
@@ -1338,10 +1411,10 @@ class TestSTFT(object):
                        "Input data is complex, switching to return_onesided=False")
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
-                            return_onesided=True)
+                            return_onesided=True, scaling=scaling)
 
         tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                       window=window, input_onesided=False)
+                       window=window, input_onesided=False, scaling=scaling)
 
         msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
         assert_allclose(t, tr, err_msg=msg)
@@ -1462,3 +1535,68 @@ class TestSTFT(object):
 
         assert_allclose(x_flat, x_transpose_m, err_msg='istft transpose minus')
         assert_allclose(x_flat, x_transpose_p, err_msg='istft transpose plus')
+
+    def test_roundtrip_scaling(self):
+        """Verify behavior of scaling parameter. """
+        # Create 1024 sample cosine signal with amplitude 2:
+        X = np.zeros(513, dtype=complex)
+        X[256] = 1024
+        x = np.fft.irfft(X)
+        power_x = sum(x**2) / len(x)  # power of signal x is 2
+
+        # Calculate magnitude-scaled STFT:
+        Zs = stft(x, boundary='even', scaling='spectrum')[2]
+
+        # Test round trip:
+        x1 = istft(Zs, boundary=True, scaling='spectrum')[1]
+        assert_allclose(x1, x)
+
+        # For a Hann-windowed 256 sample length FFT, we expect a peak at
+        # frequency 64 (since it is 1/4 the length of X) with a height of 1
+        # (half the amplitude). A Hann window of a perfectly centered sine has
+        # the magnitude [..., 0, 0, 0.5, 1, 0.5, 0, 0, ...].
+        # Note that in this case the 'even' padding works for the beginning
+        # but not for the end of the STFT.
+        assert_allclose(abs(Zs[63, :-1]), 0.5)
+        assert_allclose(abs(Zs[64, :-1]), 1)
+        assert_allclose(abs(Zs[65, :-1]), 0.5)
+        # All other values should be zero:
+        Zs[63:66, :-1] = 0
+        # Note since 'rtol' does not have influence here, atol needs to be set:
+        assert_allclose(Zs[:, :-1], 0, atol=np.finfo(Zs.dtype).resolution)
+
+        # Calculate two-sided psd-scaled STFT:
+        #  - using 'even' padding since signal is axis symmetric - this ensures
+        #    stationary behavior on the boundaries
+        #  - using the two-sided transform allows determining the spectral
+        #    power by `sum(abs(Zp[:, k])**2) / len(f)` for the k-th time slot.
+        Zp = stft(x, return_onesided=False, boundary='even', scaling='psd')[2]
+
+        # Calculate spectral power of Zd by summing over the frequency axis:
+        psd_Zp = np.sum(Zp.real**2 + Zp.imag**2, axis=0) / Zp.shape[0]
+        # Spectral power of Zp should be equal to the signal's power:
+        assert_allclose(psd_Zp, power_x)
+
+        # Test round trip:
+        x1 = istft(Zp, input_onesided=False, boundary=True, scaling='psd')[1]
+        assert_allclose(x1, x)
+
+        # The power of the one-sided psd-scaled STFT can be determined
+        # analogously (note that the two sides are not of equal shape):
+        Zp0 = stft(x, return_onesided=True, boundary='even', scaling='psd')[2]
+
+        # Since x is real, its Fourier transform is conjugate symmetric, i.e.,
+        # the missing 'second side' can be expressed through the 'first side':
+        Zp1 = np.conj(Zp0[-2:0:-1, :])  # 'second side' is conjugate reversed
+        assert_allclose(Zp[:129, :], Zp0)
+        assert_allclose(Zp[129:, :], Zp1)
+
+        # Calculate the spectral power:
+        s2 = (np.sum(Zp0.real ** 2 + Zp0.imag ** 2, axis=0) +
+              np.sum(Zp1.real ** 2 + Zp1.imag ** 2, axis=0))
+        psd_Zp01 = s2 / (Zp0.shape[0] + Zp1.shape[0])
+        assert_allclose(psd_Zp01, power_x)
+
+        # Test round trip:
+        x1 = istft(Zp0, input_onesided=True, boundary=True, scaling='psd')[1]
+        assert_allclose(x1, x)

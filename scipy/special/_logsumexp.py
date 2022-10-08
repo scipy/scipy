@@ -1,9 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy._lib._util import _asarray_validated
 
-__all__ = ["logsumexp", "softmax"]
+__all__ = ["logsumexp", "softmax", "log_softmax"]
 
 
 def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
@@ -18,18 +16,18 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         and all elements are summed.
 
         .. versionadded:: 0.11.0
-    keepdims : bool, optional
-        If this is set to True, the axes which are reduced are left in the
-        result as dimensions with size one. With this option, the result
-        will broadcast correctly against the original array.
-
-        .. versionadded:: 0.15.0
     b : array-like, optional
         Scaling factor for exp(`a`) must be of the same shape as `a` or
         broadcastable to `a`. These values may be negative in order to
         implement subtraction.
 
         .. versionadded:: 0.12.0
+    keepdims : bool, optional
+        If this is set to True, the axes which are reduced are left in the
+        result as dimensions with size one. With this option, the result
+        will broadcast correctly against the original array.
+
+        .. versionadded:: 0.15.0
     return_sign : bool, optional
         If this is set to True, the result will be a pair containing sign
         information; if False, results that are negative will be returned
@@ -62,9 +60,9 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     --------
     >>> from scipy.special import logsumexp
     >>> a = np.arange(10)
-    >>> np.log(np.sum(np.exp(a)))
-    9.4586297444267107
     >>> logsumexp(a)
+    9.4586297444267107
+    >>> np.log(np.sum(np.exp(a)))
     9.4586297444267107
 
     With weights
@@ -130,12 +128,11 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
 
 def softmax(x, axis=None):
-    r"""
-    Softmax function
+    r"""Compute the softmax function.
 
     The softmax function transforms each element of a collection by
     computing the exponential of each element divided by the sum of the
-    exponentials of all the elements.  That is, if `x` is a one-dimensional
+    exponentials of all the elements. That is, if `x` is a one-dimensional
     numpy array::
 
         softmax(x) = np.exp(x)/sum(np.exp(x))
@@ -163,7 +160,16 @@ def softmax(x, axis=None):
 
     The `softmax` function is the gradient of `logsumexp`.
 
+    The implementation uses shifting to avoid overflow. See [1]_ for more
+    details.
+
     .. versionadded:: 1.2.0
+
+    References
+    ----------
+    .. [1] P. Blanchard, D.J. Higham, N.J. Higham, "Accurately computing the
+       log-sum-exp and softmax functions", IMA Journal of Numerical Analysis,
+       Vol.41(4), :doi:`10.1093/imanum/draa038`.
 
     Examples
     --------
@@ -184,9 +190,10 @@ def softmax(x, axis=None):
            [  1.21863e-05,   2.68421e-01,   7.29644e-01,   3.31258e-05]])
 
     >>> m.sum()
-    1.0000000000000002
+    1.0
 
-    Compute the softmax transformation along the first axis (i.e. the columns).
+    Compute the softmax transformation along the first axis (i.e., the
+    columns).
 
     >>> m = softmax(x, axis=0)
 
@@ -198,7 +205,7 @@ def softmax(x, axis=None):
     >>> m.sum(axis=0)
     array([ 1.,  1.,  1.,  1.])
 
-    Compute the softmax transformation along the second axis (i.e. the rows).
+    Compute the softmax transformation along the second axis (i.e., the rows).
 
     >>> m = softmax(x, axis=1)
     >>> m
@@ -210,6 +217,79 @@ def softmax(x, axis=None):
     array([ 1.,  1.,  1.])
 
     """
+    x = _asarray_validated(x, check_finite=False)
+    x_max = np.amax(x, axis=axis, keepdims=True)
+    exp_x_shifted = np.exp(x - x_max)
+    return exp_x_shifted / np.sum(exp_x_shifted, axis=axis, keepdims=True)
 
-    # compute in log space for numerical stability
-    return np.exp(x - logsumexp(x, axis=axis, keepdims=True))
+
+def log_softmax(x, axis=None):
+    r"""Compute the logarithm of the softmax function.
+
+    In principle::
+
+        log_softmax(x) = log(softmax(x))
+
+    but using a more accurate implementation.
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    axis : int or tuple of ints, optional
+        Axis to compute values along. Default is None and softmax will be
+        computed over the entire array `x`.
+
+    Returns
+    -------
+    s : ndarray or scalar
+        An array with the same shape as `x`. Exponential of the result will
+        sum to 1 along the specified axis. If `x` is a scalar, a scalar is
+        returned.
+
+    Notes
+    -----
+    `log_softmax` is more accurate than ``np.log(softmax(x))`` with inputs that
+    make `softmax` saturate (see examples below).
+
+    .. versionadded:: 1.5.0
+
+    Examples
+    --------
+    >>> from scipy.special import log_softmax
+    >>> from scipy.special import softmax
+    >>> np.set_printoptions(precision=5)
+
+    >>> x = np.array([1000.0, 1.0])
+
+    >>> y = log_softmax(x)
+    >>> y
+    array([   0., -999.])
+
+    >>> with np.errstate(divide='ignore'):
+    ...   y = np.log(softmax(x))
+    ...
+    >>> y
+    array([  0., -inf])
+
+    """
+
+    x = _asarray_validated(x, check_finite=False)
+
+    x_max = np.amax(x, axis=axis, keepdims=True)
+
+    if x_max.ndim > 0:
+        x_max[~np.isfinite(x_max)] = 0
+    elif not np.isfinite(x_max):
+        x_max = 0
+
+    tmp = x - x_max
+    exp_tmp = np.exp(tmp)
+
+    # suppress warnings about log of zero
+    with np.errstate(divide='ignore'):
+        s = np.sum(exp_tmp, axis=axis, keepdims=True)
+        out = np.log(s)
+
+    out = tmp - out
+    return out

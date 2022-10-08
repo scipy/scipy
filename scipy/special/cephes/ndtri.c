@@ -38,8 +38,8 @@
  * ERROR MESSAGES:
  *
  *   message         condition    value returned
- * ndtri domain       x <= 0        -NPY_INFINITY
- * ndtri domain       x >= 1         NPY_INFINITY
+ * ndtri domain       x < 0        NAN
+ * ndtri domain       x > 1        NAN
  *
  */
 
@@ -137,13 +137,15 @@ double y0;
     double x, y, z, y2, x0, x1;
     int code;
 
-    if (y0 <= 0.0) {
-	mtherr("ndtri", DOMAIN);
-	return (-NPY_INFINITY);
+    if (y0 == 0.0) {
+	return -INFINITY;
     }
-    if (y0 >= 1.0) {
-	mtherr("ndtri", DOMAIN);
-	return (NPY_INFINITY);
+    if (y0 == 1.0) {
+	return INFINITY;
+    }
+    if (y0 < 0.0 || y0 > 1.0) {
+	sf_error("ndtri", SF_ERROR_DOMAIN, NULL);
+	return NAN;
     }
     code = 1;
     y = y0;

@@ -19,6 +19,7 @@ EXTERN_C_START
 #include <numpy/npy_math.h>
 
 npy_cdouble wrightomega(npy_cdouble zp);
+double wrightomega_real(double x);
 
 EXTERN_C_END
 

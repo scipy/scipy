@@ -4,7 +4,7 @@
 Wrapped Cauchy Distribution
 ===========================
 
-Thre is one shape parameter :math:`c\in\left(0,1\right)` with support :math:`x\in\left[0,2\pi\right]`.
+There is one shape parameter :math:`c\in\left(0,1\right)` with support :math:`x\in\left[0,2\pi\right]`.
 
 .. math::
    :nowrap:

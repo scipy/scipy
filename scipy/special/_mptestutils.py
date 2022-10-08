@@ -1,14 +1,12 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 import sys
 import time
+from itertools import zip_longest
 
 import numpy as np
 from numpy.testing import assert_
 import pytest
 
-from scipy._lib.six import reraise
 from scipy.special._testutils import assert_func_equal
 
 try:
@@ -21,7 +19,7 @@ except ImportError:
 # Machinery for systematic tests with mpmath
 # ------------------------------------------------------------------------------
 
-class Arg(object):
+class Arg:
     """Generate a set of numbers on the real axis, concentrating on
     'interesting' regions and covering all orders of magnitude.
 
@@ -132,7 +130,7 @@ class Arg(object):
         return pts
 
 
-class FixedArg(object):
+class FixedArg:
     def __init__(self, values):
         self._values = np.asarray(values)
 
@@ -140,7 +138,7 @@ class FixedArg(object):
         return self._values
 
 
-class ComplexArg(object):
+class ComplexArg:
     def __init__(self, a=complex(-np.inf, -np.inf), b=complex(np.inf, np.inf)):
         self.real = Arg(a.real, b.real)
         self.imag = Arg(a.imag, b.imag)
@@ -152,7 +150,7 @@ class ComplexArg(object):
         return (x[:,None] + 1j*y[None,:]).ravel()
 
 
-class IntArg(object):
+class IntArg:
     def __init__(self, a=-1000, b=1000):
         self.a = a
         self.b = b
@@ -179,7 +177,7 @@ def get_args(argspec, n):
     return args
 
 
-class MpmathData(object):
+class MpmathData:
     def __init__(self, scipy_func, mpmath_func, arg_spec, name=None,
                  dps=None, prec=None, n=None, rtol=1e-7, atol=1e-300,
                  ignore_inf_sign=False, distinguish_nan_and_inf=True,
@@ -270,7 +268,11 @@ class MpmathData(object):
                     break
                 except AssertionError:
                     if j >= len(dps_list)-1:
-                        reraise(*sys.exc_info())
+                        # reraise the Exception
+                        tp, value, tb = sys.exc_info()
+                        if value.__traceback__ is not tb:
+                            raise value.with_traceback(tb)
+                        raise value
         finally:
             mpmath.mp.dps, mpmath.mp.prec = old_dps, old_prec
 
@@ -418,36 +420,28 @@ def mp_assert_allclose(res, std, atol=0, rtol=1e-17):
     """
     Compare lists of mpmath.mpf's or mpmath.mpc's directly so that it
     can be done to higher precision than double.
-
     """
-    try:
-        len(res)
-    except TypeError:
-        res = list(res)
-
-    n = len(std)
-    if len(res) != n:
-        raise AssertionError("Lengths of inputs not equal.")
-
     failures = []
-    for k in range(n):
-        try:
-            assert_(mpmath.fabs(res[k] - std[k]) <= atol + rtol*mpmath.fabs(std[k]))
-        except AssertionError:
-            failures.append(k)
+    for k, (resval, stdval) in enumerate(zip_longest(res, std)):
+        if resval is None or stdval is None:
+            raise ValueError('Lengths of inputs res and std are not equal.')
+        if mpmath.fabs(resval - stdval) > atol + rtol*mpmath.fabs(stdval):
+            failures.append((k, resval, stdval))
 
-    ndigits = int(abs(np.log10(rtol)))
-    msg = [""]
-    msg.append("Bad results ({} out of {}) for the following points:"
-               .format(len(failures), n))
-    for k in failures:
-        resrep = mpmath.nstr(res[k], ndigits, min_fixed=0, max_fixed=0)
-        stdrep = mpmath.nstr(std[k], ndigits, min_fixed=0, max_fixed=0)
-        if std[k] == 0:
-            rdiff = "inf"
-        else:
-            rdiff = mpmath.fabs((res[k] - std[k])/std[k])
-            rdiff = mpmath.nstr(rdiff, 3)
-        msg.append("{}: {} != {} (rdiff {})".format(k, resrep, stdrep, rdiff))
-    if failures:
+    nfail = len(failures)
+    if nfail > 0:
+        ndigits = int(abs(np.log10(rtol)))
+        msg = [""]
+        msg.append("Bad results ({} out of {}) for the following points:"
+                   .format(nfail, k + 1))
+        for k, resval, stdval in failures:
+            resrep = mpmath.nstr(resval, ndigits, min_fixed=0, max_fixed=0)
+            stdrep = mpmath.nstr(stdval, ndigits, min_fixed=0, max_fixed=0)
+            if stdval == 0:
+                rdiff = "inf"
+            else:
+                rdiff = mpmath.fabs((resval - stdval)/stdval)
+                rdiff = mpmath.nstr(rdiff, 3)
+            msg.append("{}: {} != {} (rdiff {})".format(k, resrep, stdrep,
+                                                        rdiff))
         assert_(False, "\n".join(msg))

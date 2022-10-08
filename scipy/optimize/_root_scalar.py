@@ -6,17 +6,17 @@ Functions
 ---------
 - root : find a root of a scalar function.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from scipy._lib.six import callable
 
-from . import zeros as optzeros
+from . import _zeros_py as optzeros
 
 __all__ = ['root_scalar']
 
+ROOT_SCALAR_METHODS = ['bisect', 'brentq', 'brenth', 'ridder', 'toms748',
+                       'newton', 'secant', 'halley']
 
-class MemoizeDer(object):
+
+class MemoizeDer:
     """Decorator that caches the value and derivative(s) of function each
     time it is called.
 
@@ -109,7 +109,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     maxiter : int, optional
         Maximum number of iterations.
     options : dict, optional
-        A dictionary of solver options. E.g. ``k``, see
+        A dictionary of solver options. E.g., ``k``, see
         :obj:`show_options()` for details.
 
     Returns
@@ -138,6 +138,27 @@ def root_scalar(f, args=(), method=None, bracket=None,
     select one of the derivative-based methods.
     If no method is judged applicable, it will raise an Exception.
 
+    Arguments for each method are as follows (x=required, o=optional).
+
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    |                    method                     | f | args | bracket | x0 | x1 | fprime | fprime2 | xtol | rtol | maxiter | options |
+    +===============================================+===+======+=========+====+====+========+=========+======+======+=========+=========+
+    | :ref:`bisect <optimize.root_scalar-bisect>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`brentq <optimize.root_scalar-brentq>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`brenth <optimize.root_scalar-brenth>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`ridder <optimize.root_scalar-ridder>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`toms748 <optimize.root_scalar-toms748>` | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`newton <optimize.root_scalar-newton>`   | x |  o   |         | x  |    |   x    |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`secant <optimize.root_scalar-secant>`   | x |  o   |         | x  | x  |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`halley <optimize.root_scalar-halley>`   | x |  o   |         | x  |    |   x    |    x    |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
 
     Examples
     --------
@@ -157,7 +178,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
     >>> sol.root, sol.iterations, sol.function_calls
     (1.0, 10, 11)
 
-    The `newton` method takes as input a single point and uses the derivative(s)
+    The `newton` method takes as input a single point and uses the
+    derivative(s).
 
     >>> sol = optimize.root_scalar(f, x0=0.2, fprime=fprime, method='newton')
     >>> sol.root, sol.iterations, sol.function_calls
@@ -168,11 +190,15 @@ def root_scalar(f, args=(), method=None, bracket=None,
     >>> def f_p_pp(x):
     ...     return (x**3 - 1), 3*x**2, 6*x
 
-    >>> sol = optimize.root_scalar(f_p_pp, x0=0.2, fprime=True, method='newton')
+    >>> sol = optimize.root_scalar(
+    ...     f_p_pp, x0=0.2, fprime=True, method='newton'
+    ... )
     >>> sol.root, sol.iterations, sol.function_calls
     (1.0, 11, 11)
 
-    >>> sol = optimize.root_scalar(f_p_pp, x0=0.2, fprime=True, fprime2=True, method='halley')
+    >>> sol = optimize.root_scalar(
+    ...     f_p_pp, x0=0.2, fprime=True, fprime2=True, method='halley'
+    ... )
     >>> sol.root, sol.iterations, sol.function_calls
     (1.0, 7, 8)
 
@@ -238,8 +264,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
 
     try:
         methodc = getattr(optzeros, map2underlying.get(meth, meth))
-    except AttributeError:
-        raise ValueError('Unknown solver %s' % meth)
+    except AttributeError as e:
+        raise ValueError('Unknown solver %s' % meth) from e
 
     if meth in ['bisect', 'ridder', 'brentq', 'brenth', 'toms748']:
         if not isinstance(bracket, (list, tuple, np.ndarray)):
@@ -293,6 +319,9 @@ def _root_scalar_brentq_doc():
     -------
     args : tuple, optional
         Extra arguments passed to the objective function.
+    bracket: A sequence of 2 floats, optional
+        An interval bracketing a root.  `f(x, *args)` must have different
+        signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
     rtol : float, optional
@@ -312,6 +341,9 @@ def _root_scalar_brenth_doc():
     -------
     args : tuple, optional
         Extra arguments passed to the objective function.
+    bracket: A sequence of 2 floats, optional
+        An interval bracketing a root.  `f(x, *args)` must have different
+        signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
     rtol : float, optional
@@ -319,7 +351,7 @@ def _root_scalar_brenth_doc():
     maxiter : int, optional
         Maximum number of iterations.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass
@@ -330,6 +362,9 @@ def _root_scalar_toms748_doc():
     -------
     args : tuple, optional
         Extra arguments passed to the objective function.
+    bracket: A sequence of 2 floats, optional
+        An interval bracketing a root.  `f(x, *args)` must have different
+        signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
     rtol : float, optional
@@ -337,7 +372,7 @@ def _root_scalar_toms748_doc():
     maxiter : int, optional
         Maximum number of iterations.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass
@@ -360,7 +395,7 @@ def _root_scalar_secant_doc():
     x1 : float, required
         A second guess.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass
@@ -386,7 +421,7 @@ def _root_scalar_newton_doc():
         `fprime` can also be a callable returning the derivative of `f`. In
         this case, it must accept the same arguments as `f`.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass
@@ -417,7 +452,7 @@ def _root_scalar_halley_doc():
         `fprime2` can also be a callable returning the 2nd derivative of `f`.
         In this case, it must accept the same arguments as `f`.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass
@@ -429,6 +464,9 @@ def _root_scalar_ridder_doc():
     -------
     args : tuple, optional
         Extra arguments passed to the objective function.
+    bracket: A sequence of 2 floats, optional
+        An interval bracketing a root.  `f(x, *args)` must have different
+        signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
     rtol : float, optional
@@ -436,7 +474,7 @@ def _root_scalar_ridder_doc():
     maxiter : int, optional
         Maximum number of iterations.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass
@@ -448,6 +486,9 @@ def _root_scalar_bisect_doc():
     -------
     args : tuple, optional
         Extra arguments passed to the objective function.
+    bracket: A sequence of 2 floats, optional
+        An interval bracketing a root.  `f(x, *args)` must have different
+        signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
     rtol : float, optional
@@ -455,7 +496,7 @@ def _root_scalar_bisect_doc():
     maxiter : int, optional
         Maximum number of iterations.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass

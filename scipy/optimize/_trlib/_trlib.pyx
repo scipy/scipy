@@ -1,17 +1,17 @@
-from scipy.optimize._trustregion import (_minimize_trust_region, BaseQuadraticSubproblem)
+from scipy.optimize._trustregion import BaseQuadraticSubproblem
 import numpy as np
 from . cimport ctrlib
-cimport libc.stdio
 cimport numpy as np
 
 from scipy._lib.messagestream cimport MessageStream
 
+np.import_array()
 
 class TRLIBQuadraticSubproblem(BaseQuadraticSubproblem):
 
     def __init__(self, x, fun, jac, hess, hessp, tol_rel_i=-2.0, tol_rel_b=-3.0,
                  disp=False):
-        super(TRLIBQuadraticSubproblem, self).__init__(x, fun, jac, hess, hessp)
+        super().__init__(x, fun, jac, hess, hessp)
         self.tol_rel_i = tol_rel_i
         self.tol_rel_b = tol_rel_b
         self.disp = disp
@@ -27,7 +27,7 @@ class TRLIBQuadraticSubproblem(BaseQuadraticSubproblem):
         if fwork_view.shape[0] > 0:
             fwork_ptr = &fwork_view[0]
         ctrlib.trlib_krylov_prepare_memory(itmax, fwork_ptr)
-        self.iwork = np.zeros([iwork_size], dtype=np.int)
+        self.iwork = np.zeros([iwork_size], dtype=np.int_)
         self.s  = np.empty(self.jac.shape)
         self.g  = np.empty(self.jac.shape)
         self.v  = np.empty(self.jac.shape)
@@ -36,7 +36,7 @@ class TRLIBQuadraticSubproblem(BaseQuadraticSubproblem):
         self.Hp = np.empty(self.jac.shape)
         self.Q  = np.empty([self.itmax+1, self.jac.shape[0]])
         self.timing = np.zeros([ctrlib.trlib_krylov_timing_size()],
-                               dtype=np.int)
+                               dtype=np.int_)
         self.init = ctrlib._TRLIB_CLS_INIT
 
     def solve(self, double trust_radius):

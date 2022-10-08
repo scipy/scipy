@@ -166,8 +166,8 @@ double df, x;
 {
 
     if ((x < 0.0)) {		/* || (df < 1.0) ) */
-	mtherr("chdtr", DOMAIN);
-	return (NPY_NAN);
+	sf_error("chdtr", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
     }
     return (igam(df / 2.0, x / 2.0));
 }
@@ -180,8 +180,8 @@ double df, y;
     double x;
 
     if ((y < 0.0) || (y > 1.0)) {	/* || (df < 1.0) ) */
-	mtherr("chdtri", DOMAIN);
-	return (NPY_NAN);
+	sf_error("chdtri", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
     }
 
     x = igamci(0.5 * df, y);

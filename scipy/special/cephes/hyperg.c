@@ -66,6 +66,7 @@ extern double MACHEP;
 
 static double hy1f1p(double a, double b, double x, double *acanc);
 static double hy1f1a(double a, double b, double x, double *acanc);
+static double hyp2f0(double a, double b, double x, int type, double *err);
 
 double hyperg(a, b, x)
 double a, b, x;
@@ -101,7 +102,7 @@ double a, b, x;
 
   done:
     if (pcanc > 1.0e-12)
-	mtherr("hyperg", PLOSS);
+	sf_error("hyperg", SF_ERROR_LOSS, NULL);
 
     return (psum);
 }
@@ -136,8 +137,8 @@ double *err;
 
     while (t > MACHEP) {
 	if (bn == 0) {		/* check bn first since if both   */
-	    mtherr("hyperg", SING);
-	    return (NPY_INFINITY);	/* an and bn are zero it is     */
+	    sf_error("hyperg", SF_ERROR_SINGULAR, NULL);
+	    return (INFINITY);	/* an and bn are zero it is     */
 	}
 	if (an == 0)		/* a singularity            */
 	    return (sum);
@@ -191,11 +192,11 @@ double *err;
 /*                                                     hy1f1a()        */
 /* asymptotic formula for hypergeometric function:
  *
- *        (    -a                         
- *  --    ( |z|                           
+ *        (    -a
+ *  --    ( |z|
  * |  (b) ( -------- 2f0( a, 1+a-b, -1/x )
- *        (  --                           
- *        ( |  (b-a)                      
+ *        (  --
+ *        ( |  (b-a)
  *
  *
  *                                x    a-b                     )
@@ -213,7 +214,7 @@ double *err;
 
     if (x == 0) {
 	acanc = 1.0;
-	asum = NPY_INFINITY;
+	asum = INFINITY;
 	goto adone;
     }
     temp = log(fabs(x));
@@ -263,7 +264,7 @@ double *err;
 	/* nan */
 	acanc = 1.0;
 
-    if (asum == NPY_INFINITY || asum == -NPY_INFINITY)
+    if (asum == INFINITY || asum == -INFINITY)
 	/* infinity */
 	acanc = 0;
 
@@ -375,7 +376,7 @@ double *err;
 
     /* series blew up: */
   error:
-    *err = NPY_INFINITY;
-    mtherr("hyperg", TLOSS);
+    *err = INFINITY;
+    sf_error("hyperg", SF_ERROR_NO_RESULT, NULL);
     return (sum);
 }

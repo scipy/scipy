@@ -6,8 +6,6 @@
 Fast snippets for LIL matrices.
 """
 
-from __future__ import absolute_import
-
 {{py:
 
 IDX_TYPES = {
@@ -162,6 +160,41 @@ cpdef int lil_insert(cnp.npy_intp M, cnp.npy_intp N, object[:] rows,
         else:
             data[pos] = x
 
+def lil_get_lengths(object[:] input,
+                    cnp.ndarray output):
+    return _LIL_GET_LENGTHS_DISPATCH[output.dtype](input, output)
+
+{{for NAME, T in get_dispatch(IDX_TYPES)}}
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def _lil_get_lengths_{{NAME}}(object[:] input,
+                    cnp.ndarray[{{T}}] output):
+    for i in range(len(input)):
+        output[i] = len(input[i])
+
+{{endfor}}
+
+{{define_dispatch_map('_LIL_GET_LENGTHS_DISPATCH', '_lil_get_lengths', IDX_TYPES)}}
+
+def lil_flatten_to_array(object[:] input,
+                         cnp.ndarray output):
+    return _LIL_FLATTEN_TO_ARRAY_DISPATCH[output.dtype](input, output)
+
+{{for NAME, T in get_dispatch(VALUE_TYPES)}}
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def _lil_flatten_to_array_{{NAME}}(object[:] input not None, cnp.ndarray[{{T}}] output not None):
+    cdef list row
+    cdef size_t pos = 0
+    for i in range(len(input)):
+        row = input[i]
+        for j in range(len(row)):
+            output[pos] = row[j]
+            pos += 1
+
+{{endfor}}
+
+{{define_dispatch_map('_LIL_FLATTEN_TO_ARRAY_DISPATCH', '_lil_flatten_to_array', VALUE_TYPES)}}
 
 def lil_fancy_get(cnp.npy_intp M, cnp.npy_intp N,
                   object[:] rows,

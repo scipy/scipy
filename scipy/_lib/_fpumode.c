@@ -47,8 +47,6 @@ static struct PyMethodDef methods[] = {
 };
 
 
-#if PY_MAJOR_VERSION >= 3
-
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_fpumode",
@@ -61,16 +59,8 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__fpumode(void)
+PyMODINIT_FUNC
+PyInit__fpumode(void)
 {
     return PyModule_Create(&moduledef);
 }
-
-#else
-
-PyMODINIT_FUNC init_fpumode(void)
-{
-    Py_InitModule("_fpumode", methods);
-}
-
-#endif

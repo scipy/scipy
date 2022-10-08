@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import abs, sin, cos, exp, floor, log, arange, prod, sqrt, sum
 

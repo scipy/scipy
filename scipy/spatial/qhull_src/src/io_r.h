@@ -6,9 +6,9 @@
 
    see README, libqhull_r.h and io_r.c
 
-   Copyright (c) 1993-2015 The Geometry Center.
-   $Id: //main/2015/qhull/src/libqhull_r/io_r.h#2 $$Change: 2042 $
-   $DateTime: 2016/01/03 13:26:21 $$Author: bbarber $
+   Copyright (c) 1993-2019 The Geometry Center.
+   $Id: //main/2019/qhull/src/libqhull_r/io_r.h#2 $$Change: 2671 $
+   $DateTime: 2019/06/06 11:24:01 $$Author: bbarber $
 */
 
 #ifndef qhDEFio
@@ -60,7 +60,7 @@
 */
 typedef enum
 {
-    qh_RIDGEall = 0, qh_RIDGEinner, qh_RIDGEouter
+    qh_RIDGEall= 0, qh_RIDGEinner, qh_RIDGEouter
 }
 qh_RIDGE;
 
@@ -77,12 +77,15 @@ typedef void (*printvridgeT)(qhT *qh, FILE *fp, vertexT *vertex, vertexT *vertex
 
 /*============== -prototypes in alphabetical order =========*/
 
-void    qh_dfacet(qhT *qh, unsigned id);
-void    qh_dvertex(qhT *qh, unsigned id);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void    qh_dfacet(qhT *qh, unsigned int id);
+void    qh_dvertex(qhT *qh, unsigned int id);
 int     qh_compare_facetarea(const void *p1, const void *p2);
-int     qh_compare_facetmerge(const void *p1, const void *p2);
 int     qh_compare_facetvisit(const void *p1, const void *p2);
-/* int  qh_compare_vertexpoint(const void *p1, const void *p2); Not useable since it depends on qh */
+int     qh_compare_nummerge(const void *p1, const void *p2);
 void    qh_copyfilename(qhT *qh, char *filename, int size, const char* source, int length);
 void    qh_countfacets(qhT *qh, facetT *facetlist, setT *facets, boolT printall,
               int *numfacetsp, int *numsimplicialp, int *totneighborsp,
@@ -127,8 +130,8 @@ void    qh_printfacetridges(qhT *qh, FILE *fp, facetT *facet);
 void    qh_printfacets(qhT *qh, FILE *fp, qh_PRINT format, facetT *facetlist, setT *facets, boolT printall);
 void    qh_printhyperplaneintersection(qhT *qh, FILE *fp, facetT *facet1, facetT *facet2,
                    setT *vertices, realT color[3]);
-void    qh_printneighborhood(qhT *qh, FILE *fp, qh_PRINT format, facetT *facetA, facetT *facetB, boolT printall);
 void    qh_printline3geom(qhT *qh, FILE *fp, pointT *pointA, pointT *pointB, realT color[3]);
+void    qh_printneighborhood(qhT *qh, FILE *fp, qh_PRINT format, facetT *facetA, facetT *facetB, boolT printall);
 void    qh_printpoint(qhT *qh, FILE *fp, const char *string, pointT *point);
 void    qh_printpointid(qhT *qh, FILE *fp, const char *string, int dim, pointT *point, int id);
 void    qh_printpoint3(qhT *qh, FILE *fp, pointT *point);
@@ -155,5 +158,9 @@ coordT *qh_readpoints(qhT *qh, int *numpoints, int *dimension, boolT *ismalloc);
 void    qh_setfeasible(qhT *qh, int dim);
 boolT   qh_skipfacet(qhT *qh, facetT *facet);
 char   *qh_skipfilename(qhT *qh, char *filename);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* qhDEFio */

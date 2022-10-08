@@ -1,10 +1,8 @@
-"""Compute a Pade approximation for the principle branch of the
+"""Compute a Pade approximation for the principal branch of the
 Lambert W function around 0 and compare it to various other
 approximations.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 try:

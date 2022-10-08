@@ -1,20 +1,18 @@
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # April 4, 2011
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import (assert_equal,
                            assert_array_almost_equal, assert_array_equal,
-                           assert_allclose, assert_, assert_almost_equal)
+                           assert_allclose, assert_, assert_almost_equal,
+                           suppress_warnings)
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           StateSpace, TransferFunction, ZerosPolesGain,
                           dfreqresp, dbode, BadCoefficients)
 
 
-class TestDLTI(object):
+class TestDLTI:
 
     def test_dlsim(self):
 
@@ -27,8 +25,8 @@ class TestDLTI(object):
         # Create an input matrix with inputs down the columns (3 cols) and its
         # respective time input vector
         u = np.hstack((np.linspace(0, 4.0, num=5)[:, np.newaxis],
-                       0.01 * np.ones((5, 1)),
-                       -0.002 * np.ones((5, 1))))
+                       np.full((5, 1), 0.01),
+                       np.full((5, 1), -0.002)))
         t_in = np.linspace(0, 2.0, num=5)
 
         # Define the known result
@@ -283,7 +281,7 @@ class TestDLTI(object):
         assert_array_equal(y.T, [[0, 1, 0.5]])
 
 
-class TestDlti(object):
+class TestDlti:
     def test_dlti_instantiation(self):
         # Test that lti can be instantiated.
 
@@ -314,15 +312,15 @@ class TestDlti(object):
         assert_raises(ValueError, dlti, 1, 1, 1, 1, 1)
 
 
-class TestStateSpaceDisc(object):
+class TestStateSpaceDisc:
     def test_initialization(self):
         # Check that all initializations work
         dt = 0.05
-        s = StateSpace(1, 1, 1, 1, dt=dt)
-        s = StateSpace([1], [2], [3], [4], dt=dt)
-        s = StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
-                       np.array([[1, 0]]), np.array([[0]]), dt=dt)
-        s = StateSpace(1, 1, 1, 1, dt=True)
+        StateSpace(1, 1, 1, 1, dt=dt)
+        StateSpace([1], [2], [3], [4], dt=dt)
+        StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
+                   np.array([[1, 0]]), np.array([[0]]), dt=dt)
+        StateSpace(1, 1, 1, 1, dt=True)
 
     def test_conversion(self):
         # Check the conversion functions
@@ -345,14 +343,14 @@ class TestStateSpaceDisc(object):
         assert_equal(s.zeros, [0])
 
 
-class TestTransferFunction(object):
+class TestTransferFunction:
     def test_initialization(self):
         # Check that all initializations work
         dt = 0.05
-        s = TransferFunction(1, 1, dt=dt)
-        s = TransferFunction([1], [2], dt=dt)
-        s = TransferFunction(np.array([1]), np.array([2]), dt=dt)
-        s = TransferFunction(1, 1, dt=True)
+        TransferFunction(1, 1, dt=dt)
+        TransferFunction([1], [2], dt=dt)
+        TransferFunction(np.array([1]), np.array([2]), dt=dt)
+        TransferFunction(1, 1, dt=True)
 
     def test_conversion(self):
         # Check the conversion functions
@@ -375,14 +373,14 @@ class TestTransferFunction(object):
         assert_equal(s.zeros, [0])
 
 
-class TestZerosPolesGain(object):
+class TestZerosPolesGain:
     def test_initialization(self):
         # Check that all initializations work
         dt = 0.05
-        s = ZerosPolesGain(1, 1, 1, dt=dt)
-        s = ZerosPolesGain([1], [2], 1, dt=dt)
-        s = ZerosPolesGain(np.array([1]), np.array([2]), 1, dt=dt)
-        s = ZerosPolesGain(1, 1, 1, dt=True)
+        ZerosPolesGain(1, 1, 1, dt=dt)
+        ZerosPolesGain([1], [2], 1, dt=dt)
+        ZerosPolesGain(np.array([1]), np.array([2]), 1, dt=dt)
+        ZerosPolesGain(1, 1, 1, dt=True)
 
     def test_conversion(self):
         # Check the conversion functions
@@ -396,7 +394,7 @@ class TestZerosPolesGain(object):
         assert_(s.to_zpk() is not s)
 
 
-class Test_dfreqresp(object):
+class Test_dfreqresp:
 
     def test_manual(self):
         # Test dfreqresp() real part calculation (manual sanity check).
@@ -487,7 +485,7 @@ class Test_dfreqresp(object):
         assert_almost_equal(H1, H2)
 
 
-class Test_bode(object):
+class Test_bode:
 
     def test_manual(self):
         # Test bode() magnitude calculation (manual sanity check).
@@ -559,7 +557,7 @@ class Test_bode(object):
         assert_raises(AttributeError, dbode, system)
 
 
-class TestTransferFunctionZConversion(object):
+class TestTransferFunctionZConversion:
     """Test private conversions between 'z' and 'z**-1' polynomials."""
 
     def test_full(self):

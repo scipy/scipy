@@ -1,13 +1,10 @@
 ''' Some tests for the documenting decorator and support functions '''
 
-from __future__ import division, print_function, absolute_import
-
 import sys
 import pytest
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, suppress_warnings
 
-from scipy.misc import doccer
-from scipy._lib._numpy_compat import suppress_warnings
+from scipy._lib import doccer
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -111,7 +108,7 @@ def test_inherit_docstring_from():
     with suppress_warnings() as sup:
         sup.filter(category=DeprecationWarning)
 
-        class Foo(object):
+        class Foo:
             def func(self):
                 '''Do something useful.'''
                 return

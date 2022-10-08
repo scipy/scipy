@@ -1,10 +1,36 @@
-from __future__ import division, print_function, absolute_import
-
 import os
+
+
+def check_boost_submodule():
+    from scipy._lib._boost_utils import _boost_dir
+
+    if not os.path.exists(_boost_dir(ret_path=True) / 'README.rst'):
+        raise RuntimeError("Missing the `boost` submodule! Run `git submodule "
+                           "update --init` to fix this.")
+
+
+def check_highs_submodule():
+    from scipy._lib._highs_utils import _highs_dir
+
+    if not os.path.exists(_highs_dir() / 'README.md'):
+        raise RuntimeError("Missing the `highs` submodule! Run `git submodule "
+                           "update --init` to fix this.")
+
+
+def build_clib_pre_build_hook(cmd, ext):
+    from scipy._build_utils.compiler_helper import get_cxx_std_flag
+    std_flag = get_cxx_std_flag(cmd.compiler)
+    ext.setdefault('extra_compiler_args', [])
+    if std_flag is not None:
+        ext['extra_compiler_args'].append(std_flag)
 
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from scipy._lib._boost_utils import _boost_dir
+
+    check_boost_submodule()
+    check_highs_submodule()
 
     config = Configuration('_lib', parent_package, top_path)
     config.add_data_files('tests/*.py')
@@ -42,6 +68,24 @@ def configuration(parent_package='',top_path=None):
                          sources=["messagestream.c"] + [get_messagestream_config],
                          depends=depends,
                          include_dirs=[include_dir])
+
+    config.add_extension("_test_deprecation_call",
+                         sources=["_test_deprecation_call.c"],
+                         include_dirs=[include_dir])
+
+    config.add_extension("_test_deprecation_def",
+                         sources=["_test_deprecation_def.c"],
+                         include_dirs=[include_dir])
+
+    config.add_subpackage('_uarray')
+
+    # ensure Boost was checked out and builds
+    config.add_library(
+        'test_boost_build',
+        sources=['tests/test_boost_build.cpp'],
+        include_dirs=_boost_dir(),
+        language='c++',
+        _pre_build_hook=build_clib_pre_build_hook)
 
     return config
 

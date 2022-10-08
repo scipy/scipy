@@ -2,8 +2,6 @@
 Test functions for multivariate normal distributions.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import pickle
 
 from numpy.testing import (assert_allclose, assert_almost_equal,
@@ -18,25 +16,203 @@ import numpy
 import numpy as np
 
 import scipy.linalg
-from scipy.stats._multivariate import _PSD, _lnB, _cho_inv_batch
-from scipy.stats import multivariate_normal
-from scipy.stats import matrix_normal
-from scipy.stats import special_ortho_group, ortho_group
-from scipy.stats import random_correlation
-from scipy.stats import unitary_group
-from scipy.stats import dirichlet, beta
-from scipy.stats import wishart, multinomial, invwishart, chi2, invgamma
-from scipy.stats import norm, uniform
-from scipy.stats import ks_2samp, kstest
-from scipy.stats import binom
+from scipy.stats._multivariate import (_PSD,
+                                       _lnB,
+                                       _cho_inv_batch,
+                                       multivariate_normal_frozen)
+from scipy.stats import (multivariate_normal, multivariate_hypergeom,
+                         matrix_normal, special_ortho_group, ortho_group,
+                         random_correlation, unitary_group, dirichlet,
+                         beta, wishart, multinomial, invwishart, chi2,
+                         invgamma, norm, uniform, ks_2samp, kstest, binom,
+                         hypergeom, multivariate_t, cauchy, normaltest)
+from scipy.stats import _covariance, Covariance
 
 from scipy.integrate import romb
 from scipy.special import multigammaln
 
 from .common_tests import check_random_state_property
 
+from unittest.mock import patch
 
-class TestMultivariateNormal(object):
+
+def assert_close(res, ref, *args, **kwargs):
+    assert_allclose(res, ref, *args, **kwargs)
+    assert_equal(res.shape, ref.shape)
+
+
+class TestCovariance:
+
+    def test_input_validation(self):
+
+        message = "The input `precision` must be a square, two-dimensional..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaPrecision(np.ones(2))
+
+        message = "`precision.shape` must equal `covariance.shape`."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaPrecision(np.eye(3), covariance=np.eye(2))
+
+        message = "The input `diagonal` must be a one-dimensional array..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaDiagonal("alpaca")
+
+        message = "The input `cholesky` must be a square, two-dimensional..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaCholesky(np.ones(2))
+
+        message = "The input `eigenvalues` must be a one-dimensional..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaEigendecomposition(("alpaca", np.eye(2)))
+
+        message = "The input `eigenvectors` must be a square..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaEigendecomposition((np.ones(2), "alpaca"))
+
+        message = "The shapes of `eigenvalues` and `eigenvectors` must be..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaEigendecomposition(([1, 2, 3], np.eye(2)))
+
+    _covariance_preprocessing = {"Diagonal": np.diag,
+                                 "Precision": np.linalg.inv,
+                                 "Cholesky": np.linalg.cholesky,
+                                 "Eigendecomposition": np.linalg.eigh,
+                                 "PSD": lambda x:
+                                     _PSD(x, allow_singular=True)}
+    _all_covariance_types = np.array(list(_covariance_preprocessing))
+    _matrices = {"diagonal full rank": np.diag([1, 2, 3]),
+                 "general full rank": [[5, 1, 3], [1, 6, 4], [3, 4, 7]],
+                 "diagonal singular": np.diag([1, 0, 3]),
+                 "general singular": [[5, -1, 0], [-1, 5, 0], [0, 0, 0]]}
+    _cov_types = {"diagonal full rank": _all_covariance_types,
+                  "general full rank": _all_covariance_types[1:],
+                  "diagonal singular": _all_covariance_types[[0, -2, -1]],
+                  "general singular": _all_covariance_types[-2:]}
+
+    @pytest.mark.parametrize("cov_type_name", _all_covariance_types[:-1])
+    def test_factories(self, cov_type_name):
+        A = np.diag([1, 2, 3])
+        x = [-4, 2, 5]
+
+        cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
+        preprocessing = self._covariance_preprocessing[cov_type_name]
+        factory = getattr(Covariance, f"from_{cov_type_name.lower()}")
+
+        res = factory(preprocessing(A))
+        ref = cov_type(preprocessing(A))
+        assert type(res) == type(ref)
+        assert_allclose(res.whiten(x), ref.whiten(x))
+
+    @pytest.mark.parametrize("matrix_type", list(_matrices))
+    @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
+    def test_covariance(self, matrix_type, cov_type_name):
+        message = (f"CovVia{cov_type_name} does not support {matrix_type} "
+                   "matrices")
+        if cov_type_name not in self._cov_types[matrix_type]:
+            pytest.skip(message)
+
+        A = self._matrices[matrix_type]
+        cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
+        preprocessing = self._covariance_preprocessing[cov_type_name]
+
+        psd = _PSD(A, allow_singular=True)
+
+        # test properties
+        cov_object = cov_type(preprocessing(A))
+        assert_close(cov_object.log_pdet, psd.log_pdet)
+        assert_close(cov_object.rank, np.int64(psd.rank))
+        assert_close(cov_object.dimensionality,
+                     np.int64(np.array(A).shape[-1]))
+        assert_close(cov_object.covariance, np.asarray(A))
+
+        # test whitening 1D x
+        rng = np.random.default_rng(5292808890472453840)
+        x = rng.random(size=3)
+        res = cov_object.whiten(x)
+        ref = x @ psd.U
+        # res != ref in general; but res @ res == ref @ ref
+        assert_close(res @ res, ref @ ref)
+
+        # test whitening 3D x
+        x = rng.random(size=(2, 4, 3))
+        res = cov_object.whiten(x)
+        ref = x @ psd.U
+        assert_close((res**2).sum(axis=-1), (ref**2).sum(axis=-1))
+
+    @pytest.mark.parametrize("size", [tuple(), (2, 4, 3)])
+    @pytest.mark.parametrize("matrix_type", list(_matrices))
+    @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
+    def test_mvn_with_covariance(self, size, matrix_type, cov_type_name):
+        message = (f"CovVia{cov_type_name} does not support {matrix_type} "
+                   "matrices")
+        if cov_type_name not in self._cov_types[matrix_type]:
+            pytest.skip(message)
+
+        A = self._matrices[matrix_type]
+        cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
+        preprocessing = self._covariance_preprocessing[cov_type_name]
+
+        mean = [0.1, 0.2, 0.3]
+        cov_object = cov_type(preprocessing(A))
+        mvn = multivariate_normal
+        dist0 = multivariate_normal(mean, A, allow_singular=True)
+        dist1 = multivariate_normal(mean, cov_object, allow_singular=True)
+
+        rng = np.random.default_rng(5292808890472453840)
+        x = rng.multivariate_normal(mean, A, size=size)
+        rng = np.random.default_rng(5292808890472453840)
+        x1 = mvn.rvs(mean, cov_object, size=size, random_state=rng)
+        rng = np.random.default_rng(5292808890472453840)
+        x2 = mvn(mean, cov_object, seed=rng).rvs(size=size)
+        assert_close(x1, x)
+        assert_close(x2, x)
+
+        assert_close(mvn.pdf(x, mean, cov_object), dist0.pdf(x))
+        assert_close(dist1.pdf(x), dist0.pdf(x))
+        assert_close(mvn.logpdf(x, mean, cov_object), dist0.logpdf(x))
+        assert_close(dist1.logpdf(x), dist0.logpdf(x))
+        assert_close(mvn.entropy(mean, cov_object), dist0.entropy())
+        assert_close(dist1.entropy(), dist0.entropy())
+
+    @pytest.mark.parametrize("size", [tuple(), (2, 4, 3)])
+    @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
+    def test_mvn_with_covariance_cdf(self, size, cov_type_name):
+        # This is split from the test above because it's slow to be running
+        # with all matrix types, and there's no need because _mvn.mvnun
+        # does the calculation. All Covariance needs to do is pass is
+        # provide the `covariance` attribute.
+        matrix_type = "diagonal full rank"
+        A = self._matrices[matrix_type]
+        cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
+        preprocessing = self._covariance_preprocessing[cov_type_name]
+
+        mean = [0.1, 0.2, 0.3]
+        cov_object = cov_type(preprocessing(A))
+        mvn = multivariate_normal
+        dist0 = multivariate_normal(mean, A, allow_singular=True)
+        dist1 = multivariate_normal(mean, cov_object, allow_singular=True)
+
+        rng = np.random.default_rng(5292808890472453840)
+        x = rng.multivariate_normal(mean, A, size=size)
+
+        assert_close(mvn.cdf(x, mean, cov_object), dist0.cdf(x))
+        assert_close(dist1.cdf(x), dist0.cdf(x))
+        assert_close(mvn.logcdf(x, mean, cov_object), dist0.logcdf(x))
+        assert_close(dist1.logcdf(x), dist0.logcdf(x))
+
+    def test_covariance_instantiation(self):
+        message = "The `Covariance` class cannot be instantiated directly."
+        with pytest.raises(NotImplementedError, match=message):
+            Covariance()
+
+
+def _sample_orthonormal_matrix(n):
+    M = np.random.randn(n, n)
+    u, s, v = scipy.linalg.svd(M)
+    return u
+
+
+class TestMultivariateNormal:
     def test_input_shape(self):
         mu = np.arange(3)
         cov = np.identity(2)
@@ -127,25 +303,24 @@ class TestMultivariateNormal(object):
             s = np.random.randn(n, expected_rank)
             cov = np.dot(s, s.T)
             distn = multivariate_normal(mean, cov, allow_singular=True)
-            assert_equal(distn.cov_info.rank, expected_rank)
+            assert_equal(distn.cov_object.rank, expected_rank)
 
     def test_degenerate_distributions(self):
 
-        def _sample_orthonormal_matrix(n):
-            M = np.random.randn(n, n)
-            u, s, v = scipy.linalg.svd(M)
-            return u
-
         for n in range(1, 5):
-            x = np.random.randn(n)
-            for k in range(1, n + 1):
+            z = np.random.randn(n)
+            for k in range(1, n):
                 # Sample a small covariance matrix.
                 s = np.random.randn(k, k)
                 cov_kk = np.dot(s, s.T)
 
-                # Embed the small covariance matrix into a larger low rank matrix.
+                # Embed the small covariance matrix into a larger singular one.
                 cov_nn = np.zeros((n, n))
                 cov_nn[:k, :k] = cov_kk
+
+                # Embed part of the vector in the same way
+                x = np.zeros(n)
+                x[:k] = z[:k]
 
                 # Define a rotation of the larger low rank matrix.
                 u = _sample_orthonormal_matrix(n)
@@ -159,9 +334,9 @@ class TestMultivariateNormal(object):
                                                allow_singular=True)
                 distn_rr = multivariate_normal(np.zeros(n), cov_rr,
                                                allow_singular=True)
-                assert_equal(distn_kk.cov_info.rank, k)
-                assert_equal(distn_nn.cov_info.rank, k)
-                assert_equal(distn_rr.cov_info.rank, k)
+                assert_equal(distn_kk.cov_object.rank, k)
+                assert_equal(distn_nn.cov_object.rank, k)
+                assert_equal(distn_rr.cov_object.rank, k)
                 pdf_kk = distn_kk.pdf(x[:k])
                 pdf_nn = distn_nn.pdf(x)
                 pdf_rr = distn_rr.pdf(y)
@@ -172,6 +347,37 @@ class TestMultivariateNormal(object):
                 logpdf_rr = distn_rr.logpdf(y)
                 assert_allclose(logpdf_kk, logpdf_nn)
                 assert_allclose(logpdf_kk, logpdf_rr)
+
+                # Add an orthogonal component and find the density
+                y_orth = y + u[:, -1]
+                pdf_rr_orth = distn_rr.pdf(y_orth)
+                logpdf_rr_orth = distn_rr.logpdf(y_orth)
+
+                # Ensure that this has zero probability
+                assert_equal(pdf_rr_orth, 0.0)
+                assert_equal(logpdf_rr_orth, -np.inf)
+
+    def test_degenerate_array(self):
+        # Test that we can generate arrays of random variate from a degenerate
+        # multivariate normal, and that the pdf for these samples is non-zero
+        # (i.e. samples from the distribution lie on the subspace)
+        k = 10
+        for n in range(2, 6):
+            for r in range(1, n):
+                mn = np.zeros(n)
+                u = _sample_orthonormal_matrix(n)[:, :r]
+                vr = np.dot(u, u.T)
+                X = multivariate_normal.rvs(mean=mn, cov=vr, size=k)
+
+                pdf = multivariate_normal.pdf(X, mean=mn, cov=vr,
+                                              allow_singular=True)
+                assert_equal(pdf.size, k)
+                assert np.all(pdf > 0.0)
+
+                logpdf = multivariate_normal.logpdf(X, mean=mn, cov=vr,
+                                                    allow_singular=True)
+                assert_equal(logpdf.size, k)
+                assert np.all(logpdf > -np.inf)
 
     def test_large_pseudo_determinant(self):
         # Check that large pseudo-determinants are handled appropriately.
@@ -283,7 +489,7 @@ class TestMultivariateNormal(object):
         x = np.random.randn(n, n)
         cov = np.dot(x, x.T)
         s, u = scipy.linalg.eigh(cov)
-        s = 0.5 * np.ones(n)
+        s = np.full(n, 0.5)
         s[0] = 1.0
         s[-1] = 1e-7
         cov = np.dot(u, np.dot(np.diag(s), u.T))
@@ -326,6 +532,13 @@ class TestMultivariateNormal(object):
         assert_raises(e, multivariate_normal.cdf, x, mean, cov)
         assert_raises(e, multivariate_normal.logcdf, x, mean, cov)
 
+        # Message used to be "singular matrix", but this is more accurate.
+        # See gh-15508
+        cov = [[1., 0.], [1., 1.]]
+        msg = "When `allow_singular is False`, the input matrix"
+        with pytest.raises(np.linalg.LinAlgError, match=msg):
+            multivariate_normal(cov=cov)
+
     def test_R_values(self):
         # Compare the multivariate pdf with some values precomputed
         # in R version 3.0.1 (2013-05-16) on Mac OS X 10.6.
@@ -367,7 +580,7 @@ class TestMultivariateNormal(object):
                           0.1063242573, 0.2501068509])
 
         cdf = multivariate_normal.cdf(r, mean, cov)
-        assert_allclose(cdf, r_cdf, atol=1e-5)
+        assert_allclose(cdf, r_cdf, atol=2e-5)
 
         # Also test bivariate cdf with some values precomputed
         # in R version 3.3.2 (2016-10-31) on Debian GNU/Linux.
@@ -455,15 +668,84 @@ class TestMultivariateNormal(object):
 
         assert_almost_equal(np.exp(_lnB(alpha)), desired)
 
-class TestMatrixNormal(object):
+    def test_cdf_with_lower_limit_arrays(self):
+        # test CDF with lower limit in several dimensions
+        rng = np.random.default_rng(2408071309372769818)
+        mean = [0, 0]
+        cov = np.eye(2)
+        a = rng.random((4, 3, 2))*6 - 3
+        b = rng.random((4, 3, 2))*6 - 3
+
+        cdf1 = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+
+        cdf2a = multivariate_normal.cdf(b, mean, cov)
+        cdf2b = multivariate_normal.cdf(a, mean, cov)
+        ab1 = np.concatenate((a[..., 0:1], b[..., 1:2]), axis=-1)
+        ab2 = np.concatenate((a[..., 1:2], b[..., 0:1]), axis=-1)
+        cdf2ab1 = multivariate_normal.cdf(ab1, mean, cov)
+        cdf2ab2 = multivariate_normal.cdf(ab2, mean, cov)
+        cdf2 = cdf2a + cdf2b - cdf2ab1 - cdf2ab2
+
+        assert_allclose(cdf1, cdf2)
+
+    def test_cdf_with_lower_limit_consistency(self):
+        # check that multivariate normal CDF functions are consistent
+        rng = np.random.default_rng(2408071309372769818)
+        mean = rng.random(3)
+        cov = rng.random((3, 3))
+        cov = cov @ cov.T
+        a = rng.random((2, 3))*6 - 3
+        b = rng.random((2, 3))*6 - 3
+
+        cdf1 = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+        cdf2 = multivariate_normal(mean, cov).cdf(b, lower_limit=a)
+        cdf3 = np.exp(multivariate_normal.logcdf(b, mean, cov, lower_limit=a))
+        cdf4 = np.exp(multivariate_normal(mean, cov).logcdf(b, lower_limit=a))
+
+        assert_allclose(cdf2, cdf1, rtol=1e-4)
+        assert_allclose(cdf3, cdf1, rtol=1e-4)
+        assert_allclose(cdf4, cdf1, rtol=1e-4)
+
+    def test_cdf_signs(self):
+        # check that sign of output is correct when np.any(lower > x)
+        mean = np.zeros(3)
+        cov = np.eye(3)
+        b = [[1, 1, 1], [0, 0, 0], [1, 0, 1], [0, 1, 0]]
+        a = [[0, 0, 0], [1, 1, 1], [0, 1, 0], [1, 0, 1]]
+        # when odd number of elements of b < a, output is negative
+        expected_signs = np.array([1, -1, -1, 1])
+        cdf = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+        assert_allclose(cdf, cdf[0]*expected_signs)
+
+    def test_mean_cov(self):
+        # test the interaction between a Covariance object and mean
+        P = np.diag(1 / np.array([1, 2, 3]))
+        cov_object = _covariance.CovViaPrecision(P)
+
+        message = "`cov` represents a covariance matrix in 3 dimensions..."
+        with pytest.raises(ValueError, match=message):
+            multivariate_normal.entropy([0, 0], cov_object)
+
+        with pytest.raises(ValueError, match=message):
+            multivariate_normal([0, 0], cov_object)
+
+        x = [0.5, 0.5, 0.5]
+        ref = multivariate_normal.pdf(x, [0, 0, 0], cov_object)
+        assert_equal(multivariate_normal.pdf(x, cov=cov_object), ref)
+
+        ref = multivariate_normal.pdf(x, [1, 1, 1], cov_object)
+        assert_equal(multivariate_normal.pdf(x, 1, cov=cov_object), ref)
+
+
+class TestMatrixNormal:
 
     def test_bad_input(self):
         # Check that bad inputs raise errors
         num_rows = 4
         num_cols = 3
-        M = 0.3 * np.ones((num_rows,num_cols))
-        U = 0.5 * np.identity(num_rows) + 0.5 * np.ones((num_rows, num_rows))
-        V = 0.7 * np.identity(num_cols) + 0.3 * np.ones((num_cols, num_cols))
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
 
         # Incorrect dimensions
         assert_raises(ValueError, matrix_normal, np.zeros((5,4,3)))
@@ -473,8 +755,13 @@ class TestMatrixNormal(object):
         assert_raises(ValueError, matrix_normal, M, V, V)
         assert_raises(ValueError, matrix_normal, M.T, U, V)
 
-        # Singular covariance
         e = np.linalg.LinAlgError
+        # Singular covariance for the rvs method of a non-frozen instance
+        assert_raises(e, matrix_normal.rvs,
+                      M, U, np.ones((num_cols, num_cols)))
+        assert_raises(e, matrix_normal.rvs,
+                      M, np.ones((num_rows, num_rows)), V)
+        # Singular covariance for a frozen instance
         assert_raises(e, matrix_normal, M, U, np.ones((num_cols, num_cols)))
         assert_raises(e, matrix_normal, M, np.ones((num_rows, num_rows)), V)
 
@@ -482,9 +769,9 @@ class TestMatrixNormal(object):
         # Check that default argument handling works
         num_rows = 4
         num_cols = 3
-        M = 0.3 * np.ones((num_rows,num_cols))
-        U = 0.5 * np.identity(num_rows) + 0.5 * np.ones((num_rows, num_rows))
-        V = 0.7 * np.identity(num_cols) + 0.3 * np.ones((num_cols, num_cols))
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
         Z = np.zeros((num_rows, num_cols))
         Zr = np.zeros((num_rows, 1))
         Zc = np.zeros((1, num_cols))
@@ -521,10 +808,10 @@ class TestMatrixNormal(object):
         # Check that covariance can be specified with scalar or vector
         num_rows = 4
         num_cols = 3
-        M = 0.3 * np.ones((num_rows,num_cols))
-        Uv = 0.2*np.ones(num_rows)
+        M = np.full((num_rows, num_cols), 0.3)
+        Uv = np.full(num_rows, 0.2)
         Us = 0.2
-        Vv = 0.1*np.ones(num_cols)
+        Vv = np.full(num_cols, 0.1)
         Vs = 0.1
 
         Ir = np.identity(num_rows)
@@ -542,9 +829,9 @@ class TestMatrixNormal(object):
     def test_frozen_matrix_normal(self):
         for i in range(1,5):
             for j in range(1,5):
-                M = 0.3 * np.ones((i,j))
-                U = 0.5 * np.identity(i) + 0.5 * np.ones((i,i))
-                V = 0.7 * np.identity(j) + 0.3 * np.ones((j,j))
+                M = np.full((i,j), 0.3)
+                U = 0.5 * np.identity(i) + np.full((i,i), 0.5)
+                V = 0.7 * np.identity(j) + np.full((j,j), 0.3)
 
                 frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
 
@@ -568,9 +855,9 @@ class TestMatrixNormal(object):
         # treating as a multivariate normal.
         for i in range(1,5):
             for j in range(1,5):
-                M = 0.3 * np.ones((i,j))
-                U = 0.5 * np.identity(i) + 0.5 * np.ones((i,i))
-                V = 0.7 * np.identity(j) + 0.3 * np.ones((j,j))
+                M = np.full((i,j), 0.3)
+                U = 0.5 * np.identity(i) + np.full((i,i), 0.5)
+                V = 0.7 * np.identity(j) + np.full((j,j), 0.3)
 
                 frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
                 X = frozen.rvs(random_state=1234)
@@ -590,9 +877,9 @@ class TestMatrixNormal(object):
         # Check array of inputs has the same output as the separate entries.
         num_rows = 4
         num_cols = 3
-        M = 0.3 * np.ones((num_rows,num_cols))
-        U = 0.5 * np.identity(num_rows) + 0.5 * np.ones((num_rows, num_rows))
-        V = 0.7 * np.identity(num_cols) + 0.3 * np.ones((num_cols, num_cols))
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
         N = 10
 
         frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
@@ -613,9 +900,9 @@ class TestMatrixNormal(object):
         # Check that the sample moments match the parameters
         num_rows = 4
         num_cols = 3
-        M = 0.3 * np.ones((num_rows,num_cols))
-        U = 0.5 * np.identity(num_rows) + 0.5 * np.ones((num_rows, num_rows))
-        V = 0.7 * np.identity(num_cols) + 0.3 * np.ones((num_cols, num_cols))
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
         N = 1000
 
         frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
@@ -631,7 +918,26 @@ class TestMatrixNormal(object):
                                                         N*num_cols,num_rows).T)
         assert_allclose(sample_rowcov, U, atol=0.1)
 
-class TestDirichlet(object):
+    def test_samples(self):
+        # Regression test to ensure that we always generate the same stream of
+        # random variates.
+        actual = matrix_normal.rvs(
+            mean=np.array([[1, 2], [3, 4]]),
+            rowcov=np.array([[4, -1], [-1, 2]]),
+            colcov=np.array([[5, 1], [1, 10]]),
+            random_state=np.random.default_rng(0),
+            size=2
+        )
+        expected = np.array(
+            [[[1.56228264238181, -1.24136424071189],
+              [2.46865788392114, 6.22964440489445]],
+             [[3.86405716144353, 10.73714311429529],
+              [2.59428444080606, 5.79987854490876]]]
+        )
+        assert_allclose(actual, expected)
+
+
+class TestDirichlet:
 
     def test_frozen_dirichlet(self):
         np.random.seed(2846)
@@ -708,37 +1014,37 @@ class TestDirichlet(object):
 
     def test_data_too_deep_c(self):
         alpha = np.array([1.0, 2.0, 3.0])
-        x = np.ones((2, 7, 7)) / 14
+        x = np.full((2, 7, 7), 1 / 14)
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_alpha_too_deep(self):
         alpha = np.array([[1.0, 2.0], [3.0, 4.0]])
-        x = np.ones((2, 2, 7)) / 4
+        x = np.full((2, 2, 7), 1 / 4)
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_alpha_correct_depth(self):
         alpha = np.array([1.0, 2.0, 3.0])
-        x = np.ones((3, 7)) / 3
+        x = np.full((3, 7), 1 / 3)
         dirichlet.pdf(x, alpha)
         dirichlet.logpdf(x, alpha)
 
     def test_non_simplex_data(self):
         alpha = np.array([1.0, 2.0, 3.0])
-        x = np.ones((3, 7)) / 2
+        x = np.full((3, 7), 1 / 2)
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_data_vector_too_short(self):
         alpha = np.array([1.0, 2.0, 3.0, 4.0])
-        x = np.ones((2, 7)) / 2
+        x = np.full((2, 7), 1 / 2)
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_data_vector_too_long(self):
         alpha = np.array([1.0, 2.0, 3.0, 4.0])
-        x = np.ones((5, 7)) / 5
+        x = np.full((5, 7), 1 / 5)
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
@@ -843,7 +1149,7 @@ def test_multivariate_normal_dimensions_mismatch():
         assert_equal(str(e)[:len(msg)], msg)
 
 
-class TestWishart(object):
+class TestWishart:
     def test_scale_dimensions(self):
         # Test that we can call the Wishart with various scale dimensions
 
@@ -876,8 +1182,12 @@ class TestWishart(object):
             assert_equal(w.scale, true_scale)
             assert_equal(w.scale.shape, true_scale.shape)
 
-        # We cannot call with a df < dim
+        # We cannot call with a df < dim - 1
         assert_raises(ValueError, wishart, 1, np.eye(2))
+
+        # But we can call with dim - 1 < df < dim
+        wishart(1.1, np.eye(2))  # no error
+        # see gh-5562
 
         # We cannot call with a 3-dimension array
         scale = np.array(1, ndmin=3)
@@ -1030,7 +1340,7 @@ class TestWishart(object):
         alpha = 0.01
         check_distribution_rvs('chi2', args, alpha, rvs)
 
-class TestMultinomial(object):
+class TestMultinomial:
     def test_logpmf(self):
         vals1 = multinomial.logpmf((3,4), 7, (0.3, 0.7))
         assert_allclose(vals1, -1.483270127243324, rtol=1e-8)
@@ -1175,7 +1485,21 @@ class TestMultinomial(object):
         assert_allclose(mn_frozen.logpmf(x), multinomial.logpmf(x, n, pvals))
         assert_allclose(mn_frozen.entropy(), multinomial.entropy(n, pvals))
 
-class TestInvwishart(object):
+    def test_gh_11860(self):
+        # gh-11860 reported cases in which the adjustments made by multinomial
+        # to the last element of `p` can cause `nan`s even when the input is
+        # essentially valid. Check that a pathological case returns a finite,
+        # nonzero result. (This would fail in main before the PR.)
+        n = 88
+        rng = np.random.default_rng(8879715917488330089)
+        p = rng.random(n)
+        p[-1] = 1e-30
+        p /= np.sum(p)
+        x = np.ones(n)
+        logpmf = multinomial.logpmf(x, n, p)
+        assert np.isfinite(logpmf)
+
+class TestInvwishart:
     def test_frozen(self):
         # Test that the frozen and non-frozen inverse Wishart gives the same
         # answers
@@ -1339,7 +1663,7 @@ class TestInvwishart(object):
         assert_allclose(prob, expected)
 
 
-class TestSpecialOrthoGroup(object):
+class TestSpecialOrthoGroup:
     def test_reproducibility(self):
         np.random.seed(514)
         x = special_ortho_group.rvs(3)
@@ -1408,16 +1732,17 @@ class TestSpecialOrthoGroup(object):
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
-class TestOrthoGroup(object):
+class TestOrthoGroup:
     def test_reproducibility(self):
-        np.random.seed(515)
+        seed = 514
+        np.random.seed(seed)
         x = ortho_group.rvs(3)
-        x2 = ortho_group.rvs(3, random_state=515)
+        x2 = ortho_group.rvs(3, random_state=seed)
         # Note this matrix has det -1, distinguishing O(N) from SO(N)
         assert_almost_equal(np.linalg.det(x), -1)
-        expected = np.array([[0.94449759, -0.21678569, -0.24683651],
-                             [-0.13147569, -0.93800245, 0.3207266],
-                             [0.30106219, 0.27047251, 0.9144431]])
+        expected = np.array([[0.381686, -0.090374, 0.919863],
+                             [0.905794, -0.161537, -0.391718],
+                             [-0.183993, -0.98272, -0.020204]])
         assert_array_almost_equal(x, expected)
         assert_array_almost_equal(x2, expected)
 
@@ -1426,6 +1751,18 @@ class TestOrthoGroup(object):
         assert_raises(ValueError, ortho_group.rvs, (2, 2))
         assert_raises(ValueError, ortho_group.rvs, 1)
         assert_raises(ValueError, ortho_group.rvs, 2.5)
+
+    def test_frozen_matrix(self):
+        dim = 7
+        frozen = ortho_group(dim)
+        frozen_seed = ortho_group(dim, seed=1234)
+
+        rvs1 = frozen.rvs(random_state=1234)
+        rvs2 = ortho_group.rvs(dim, random_state=1234)
+        rvs3 = frozen_seed.rvs(size=1)
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
 
     def test_det_and_ortho(self):
         xs = [[ortho_group.rvs(dim)
@@ -1501,16 +1838,16 @@ class TestOrthoGroup(object):
 
             assert_array_less(.05, p)
 
-class TestRandomCorrelation(object):
+class TestRandomCorrelation:
     def test_reproducibility(self):
         np.random.seed(514)
         eigs = (.5, .8, 1.2, 1.5)
-        x = random_correlation.rvs((.5, .8, 1.2, 1.5))
-        x2 = random_correlation.rvs((.5, .8, 1.2, 1.5), random_state=514)
-        expected = np.array([[1., -0.20387311, 0.18366501, -0.04953711],
-                             [-0.20387311, 1., -0.24351129, 0.06703474],
-                             [0.18366501, -0.24351129, 1., 0.38530195],
-                             [-0.04953711, 0.06703474, 0.38530195, 1.]])
+        x = random_correlation.rvs(eigs)
+        x2 = random_correlation.rvs(eigs, random_state=514)
+        expected = np.array([[1., -0.184851, 0.109017, -0.227494],
+                             [-0.184851, 1., 0.231236, 0.326669],
+                             [0.109017, 0.231236, 1., -0.178912],
+                             [-0.227494, 0.326669, -0.178912, 1.]])
         assert_array_almost_equal(x, expected)
         assert_array_almost_equal(x2, expected)
 
@@ -1522,6 +1859,18 @@ class TestRandomCorrelation(object):
         assert_raises(ValueError, random_correlation.rvs, [[1,2],[3,4]])
         assert_raises(ValueError, random_correlation.rvs, [2.5, -.5])
         assert_raises(ValueError, random_correlation.rvs, [1, 2, .1])
+
+    def test_frozen_matrix(self):
+        eigs = (.5, .8, 1.2, 1.5)
+        frozen = random_correlation(eigs)
+        frozen_seed = random_correlation(eigs, seed=514)
+
+        rvs1 = random_correlation.rvs(eigs, random_state=514)
+        rvs2 = frozen.rvs(random_state=514)
+        rvs3 = frozen_seed.rvs()
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
 
     def test_definition(self):
         # Test the definition of a correlation matrix in several dimensions:
@@ -1592,7 +1941,7 @@ class TestRandomCorrelation(object):
         assert_allclose(m[0,0], 1)
 
 
-class TestUnitaryGroup(object):
+class TestUnitaryGroup:
     def test_reproducibility(self):
         np.random.seed(514)
         x = unitary_group.rvs(3)
@@ -1610,6 +1959,18 @@ class TestUnitaryGroup(object):
         assert_raises(ValueError, unitary_group.rvs, (2, 2))
         assert_raises(ValueError, unitary_group.rvs, 1)
         assert_raises(ValueError, unitary_group.rvs, 2.5)
+
+    def test_frozen_matrix(self):
+        dim = 7
+        frozen = unitary_group(dim)
+        frozen_seed = unitary_group(dim, seed=514)
+
+        rvs1 = frozen.rvs(random_state=514)
+        rvs2 = unitary_group.rvs(dim, random_state=514)
+        rvs3 = frozen_seed.rvs(size=1)
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
 
     def test_unitarity(self):
         xs = [unitary_group.rvs(dim)
@@ -1636,6 +1997,473 @@ class TestUnitaryGroup(object):
         x = np.arctan2(eigs.imag, eigs.real)
         res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
         assert_(res.pvalue > 0.05)
+
+
+class TestMultivariateT:
+
+    # These tests were created by running vpa(mvtpdf(...)) in MATLAB. The
+    # function takes no `mu` parameter. The tests were run as
+    #
+    # >> ans = vpa(mvtpdf(x - mu, shape, df));
+    #
+    PDF_TESTS = [(
+        # x
+        [
+            [1, 2],
+            [4, 1],
+            [2, 1],
+            [2, 4],
+            [1, 4],
+            [4, 1],
+            [3, 2],
+            [3, 3],
+            [4, 4],
+            [5, 1],
+        ],
+        # loc
+        [0, 0],
+        # shape
+        [
+            [1, 0],
+            [0, 1]
+        ],
+        # df
+        4,
+        # ans
+        [
+            0.013972450422333741737457302178882,
+            0.0010998721906793330026219646100571,
+            0.013972450422333741737457302178882,
+            0.00073682844024025606101402363634634,
+            0.0010998721906793330026219646100571,
+            0.0010998721906793330026219646100571,
+            0.0020732579600816823488240725481546,
+            0.00095660371505271429414668515889275,
+            0.00021831953784896498569831346792114,
+            0.00037725616140301147447000396084604
+        ]
+
+    ), (
+        # x
+        [
+            [0.9718, 0.1298, 0.8134],
+            [0.4922, 0.5522, 0.7185],
+            [0.3010, 0.1491, 0.5008],
+            [0.5971, 0.2585, 0.8940],
+            [0.5434, 0.5287, 0.9507],
+        ],
+        # loc
+        [-1, 1, 50],
+        # shape
+        [
+            [1.0000, 0.5000, 0.2500],
+            [0.5000, 1.0000, -0.1000],
+            [0.2500, -0.1000, 1.0000],
+        ],
+        # df
+        8,
+        # ans
+        [
+            0.00000000000000069609279697467772867405511133763,
+            0.00000000000000073700739052207366474839369535934,
+            0.00000000000000069522909962669171512174435447027,
+            0.00000000000000074212293557998314091880208889767,
+            0.00000000000000077039675154022118593323030449058,
+        ]
+    )]
+
+    @pytest.mark.parametrize("x, loc, shape, df, ans", PDF_TESTS)
+    def test_pdf_correctness(self, x, loc, shape, df, ans):
+        dist = multivariate_t(loc, shape, df, seed=0)
+        val = dist.pdf(x)
+        assert_array_almost_equal(val, ans)
+
+    @pytest.mark.parametrize("x, loc, shape, df, ans", PDF_TESTS)
+    def test_logpdf_correct(self, x, loc, shape, df, ans):
+        dist = multivariate_t(loc, shape, df, seed=0)
+        val1 = dist.pdf(x)
+        val2 = dist.logpdf(x)
+        assert_array_almost_equal(np.log(val1), val2)
+
+    # https://github.com/scipy/scipy/issues/10042#issuecomment-576795195
+    def test_mvt_with_df_one_is_cauchy(self):
+        x = [9, 7, 4, 1, -3, 9, 0, -3, -1, 3]
+        val = multivariate_t.pdf(x, df=1)
+        ans = cauchy.pdf(x)
+        assert_array_almost_equal(val, ans)
+
+    def test_mvt_with_high_df_is_approx_normal(self):
+        # `normaltest` returns the chi-squared statistic and the associated
+        # p-value. The null hypothesis is that `x` came from a normal
+        # distribution, so a low p-value represents rejecting the null, i.e.
+        # that it is unlikely that `x` came a normal distribution.
+        P_VAL_MIN = 0.1
+
+        dist = multivariate_t(0, 1, df=100000, seed=1)
+        samples = dist.rvs(size=100000)
+        _, p = normaltest(samples)
+        assert (p > P_VAL_MIN)
+
+        dist = multivariate_t([-2, 3], [[10, -1], [-1, 10]], df=100000,
+                              seed=42)
+        samples = dist.rvs(size=100000)
+        _, p = normaltest(samples)
+        assert ((p > P_VAL_MIN).all())
+
+    @patch('scipy.stats.multivariate_normal._logpdf')
+    def test_mvt_with_inf_df_calls_normal(self, mock):
+        dist = multivariate_t(0, 1, df=np.inf, seed=7)
+        assert isinstance(dist, multivariate_normal_frozen)
+        multivariate_t.pdf(0, df=np.inf)
+        assert mock.call_count == 1
+        multivariate_t.logpdf(0, df=np.inf)
+        assert mock.call_count == 2
+
+    def test_shape_correctness(self):
+        # pdf and logpdf should return scalar when the
+        # number of samples in x is one.
+        dim = 4
+        loc = np.zeros(dim)
+        shape = np.eye(dim)
+        df = 4.5
+        x = np.zeros(dim)
+        res = multivariate_t(loc, shape, df).pdf(x)
+        assert np.isscalar(res)
+        res = multivariate_t(loc, shape, df).logpdf(x)
+        assert np.isscalar(res)
+
+        # pdf() and logpdf() should return probabilities of shape
+        # (n_samples,) when x has n_samples.
+        n_samples = 7
+        x = np.random.random((n_samples, dim))
+        res = multivariate_t(loc, shape, df).pdf(x)
+        assert (res.shape == (n_samples,))
+        res = multivariate_t(loc, shape, df).logpdf(x)
+        assert (res.shape == (n_samples,))
+
+        # rvs() should return scalar unless a size argument is applied.
+        res = multivariate_t(np.zeros(1), np.eye(1), 1).rvs()
+        assert np.isscalar(res)
+
+        # rvs() should return vector of shape (size,) if size argument
+        # is applied.
+        size = 7
+        res = multivariate_t(np.zeros(1), np.eye(1), 1).rvs(size=size)
+        assert (res.shape == (size,))
+
+    def test_default_arguments(self):
+        dist = multivariate_t()
+        assert_equal(dist.loc, [0])
+        assert_equal(dist.shape, [[1]])
+        assert (dist.df == 1)
+
+    DEFAULT_ARGS_TESTS = [
+        (None, None, None, 0, 1, 1),
+        (None, None, 7, 0, 1, 7),
+        (None, [[7, 0], [0, 7]], None, [0, 0], [[7, 0], [0, 7]], 1),
+        (None, [[7, 0], [0, 7]], 7, [0, 0], [[7, 0], [0, 7]], 7),
+        ([7, 7], None, None, [7, 7], [[1, 0], [0, 1]], 1),
+        ([7, 7], None, 7, [7, 7], [[1, 0], [0, 1]], 7),
+        ([7, 7], [[7, 0], [0, 7]], None, [7, 7], [[7, 0], [0, 7]], 1),
+        ([7, 7], [[7, 0], [0, 7]], 7, [7, 7], [[7, 0], [0, 7]], 7)
+    ]
+
+    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans", DEFAULT_ARGS_TESTS)
+    def test_default_args(self, loc, shape, df, loc_ans, shape_ans, df_ans):
+        dist = multivariate_t(loc=loc, shape=shape, df=df)
+        assert_equal(dist.loc, loc_ans)
+        assert_equal(dist.shape, shape_ans)
+        assert (dist.df == df_ans)
+
+    ARGS_SHAPES_TESTS = [
+        (-1, 2, 3, [-1], [[2]], 3),
+        ([-1], [2], 3, [-1], [[2]], 3),
+        (np.array([-1]), np.array([2]), 3, [-1], [[2]], 3)
+    ]
+
+    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans", ARGS_SHAPES_TESTS)
+    def test_scalar_list_and_ndarray_arguments(self, loc, shape, df, loc_ans, shape_ans, df_ans):
+        dist = multivariate_t(loc, shape, df)
+        assert_equal(dist.loc, loc_ans)
+        assert_equal(dist.shape, shape_ans)
+        assert_equal(dist.df, df_ans)
+
+    def test_argument_error_handling(self):
+        # `loc` should be a one-dimensional vector.
+        loc = [[1, 1]]
+        assert_raises(ValueError,
+                      multivariate_t,
+                      **dict(loc=loc))
+
+        # `shape` should be scalar or square matrix.
+        shape = [[1, 1], [2, 2], [3, 3]]
+        assert_raises(ValueError,
+                      multivariate_t,
+                      **dict(loc=loc, shape=shape))
+
+        # `df` should be greater than zero.
+        loc = np.zeros(2)
+        shape = np.eye(2)
+        df = -1
+        assert_raises(ValueError,
+                      multivariate_t,
+                      **dict(loc=loc, shape=shape, df=df))
+        df = 0
+        assert_raises(ValueError,
+                      multivariate_t,
+                      **dict(loc=loc, shape=shape, df=df))
+
+    def test_reproducibility(self):
+        rng = np.random.RandomState(4)
+        loc = rng.uniform(size=3)
+        shape = np.eye(3)
+        dist1 = multivariate_t(loc, shape, df=3, seed=2)
+        dist2 = multivariate_t(loc, shape, df=3, seed=2)
+        samples1 = dist1.rvs(size=10)
+        samples2 = dist2.rvs(size=10)
+        assert_equal(samples1, samples2)
+
+    def test_allow_singular(self):
+        # Make shape singular and verify error was raised.
+        args = dict(loc=[0,0], shape=[[0,0],[0,1]], df=1, allow_singular=False)
+        assert_raises(np.linalg.LinAlgError, multivariate_t, **args)
+
+    @pytest.mark.parametrize("size", [(10, 3), (5, 6, 4, 3)])
+    @pytest.mark.parametrize("dim", [2, 3, 4, 5])
+    @pytest.mark.parametrize("df", [1., 2., np.inf])
+    def test_rvs(self, size, dim, df):
+        dist = multivariate_t(np.zeros(dim), np.eye(dim), df)
+        rvs = dist.rvs(size=size)
+        assert rvs.shape == size + (dim, )
+
+
+class TestMultivariateHypergeom:
+    @pytest.mark.parametrize(
+        "x, m, n, expected",
+        [
+            # Ground truth value from R dmvhyper
+            ([3, 4], [5, 10], 7, -1.119814),
+            # test for `n=0`
+            ([3, 4], [5, 10], 0, np.NINF),
+            # test for `x < 0`
+            ([-3, 4], [5, 10], 7, np.NINF),
+            # test for `m < 0` (RuntimeWarning issue)
+            ([3, 4], [-5, 10], 7, np.nan),
+            # test for all `m < 0` and `x.sum() != n`
+            ([[1, 2], [3, 4]], [[-4, -6], [-5, -10]],
+             [3, 7], [np.nan, np.nan]),
+            # test for `x < 0` and `m < 0` (RuntimeWarning issue)
+            ([-3, 4], [-5, 10], 1, np.nan),
+            # test for `x > m`
+            ([1, 11], [10, 1], 12, np.nan),
+            # test for `m < 0` (RuntimeWarning issue)
+            ([1, 11], [10, -1], 12, np.nan),
+            # test for `n < 0`
+            ([3, 4], [5, 10], -7, np.nan),
+            # test for `x.sum() != n`
+            ([3, 3], [5, 10], 7, np.NINF)
+        ]
+    )
+    def test_logpmf(self, x, m, n, expected):
+        vals = multivariate_hypergeom.logpmf(x, m, n)
+        assert_allclose(vals, expected, rtol=1e-6)
+
+    def test_reduces_hypergeom(self):
+        # test that the multivariate_hypergeom pmf reduces to the
+        # hypergeom pmf in the 2d case.
+        val1 = multivariate_hypergeom.pmf(x=[3, 1], m=[10, 5], n=4)
+        val2 = hypergeom.pmf(k=3, M=15, n=4, N=10)
+        assert_allclose(val1, val2, rtol=1e-8)
+
+        val1 = multivariate_hypergeom.pmf(x=[7, 3], m=[15, 10], n=10)
+        val2 = hypergeom.pmf(k=7, M=25, n=10, N=15)
+        assert_allclose(val1, val2, rtol=1e-8)
+
+    def test_rvs(self):
+        # test if `rvs` is unbiased and large sample size converges
+        # to the true mean.
+        rv = multivariate_hypergeom(m=[3, 5], n=4)
+        rvs = rv.rvs(size=1000, random_state=123)
+        assert_allclose(rvs.mean(0), rv.mean(), rtol=1e-2)
+
+    def test_rvs_broadcasting(self):
+        rv = multivariate_hypergeom(m=[[3, 5], [5, 10]], n=[4, 9])
+        rvs = rv.rvs(size=(1000, 2), random_state=123)
+        assert_allclose(rvs.mean(0), rv.mean(), rtol=1e-2)
+
+    @pytest.mark.parametrize('m, n', (
+        ([0, 0, 20, 0, 0], 5), ([0, 0, 0, 0, 0], 0),
+        ([0, 0], 0), ([0], 0)
+    ))
+    def test_rvs_gh16171(self, m, n):
+        res = multivariate_hypergeom.rvs(m, n)
+        m = np.asarray(m)
+        res_ex = m.copy()
+        res_ex[m != 0] = n
+        assert_equal(res, res_ex)
+
+    @pytest.mark.parametrize(
+        "x, m, n, expected",
+        [
+            ([5], [5], 5, 1),
+            ([3, 4], [5, 10], 7, 0.3263403),
+            # Ground truth value from R dmvhyper
+            ([[[3, 5], [0, 8]], [[-1, 9], [1, 1]]],
+             [5, 10], [[8, 8], [8, 2]],
+             [[0.3916084, 0.006993007], [0, 0.4761905]]),
+            # test with empty arrays.
+            (np.array([], np.int_), np.array([], np.int_), 0, []),
+            ([1, 2], [4, 5], 5, 0),
+            # Ground truth value from R dmvhyper
+            ([3, 3, 0], [5, 6, 7], 6, 0.01077354)
+        ]
+    )
+    def test_pmf(self, x, m, n, expected):
+        vals = multivariate_hypergeom.pmf(x, m, n)
+        assert_allclose(vals, expected, rtol=1e-7)
+
+    @pytest.mark.parametrize(
+        "x, m, n, expected",
+        [
+            ([3, 4], [[5, 10], [10, 15]], 7, [0.3263403, 0.3407531]),
+            ([[1], [2]], [[3], [4]], [1, 3], [1., 0.]),
+            ([[[1], [2]]], [[3], [4]], [1, 3], [[1., 0.]]),
+            ([[1], [2]], [[[[3]]]], [1, 3], [[[1., 0.]]])
+        ]
+    )
+    def test_pmf_broadcasting(self, x, m, n, expected):
+        vals = multivariate_hypergeom.pmf(x, m, n)
+        assert_allclose(vals, expected, rtol=1e-7)
+
+    def test_cov(self):
+        cov1 = multivariate_hypergeom.cov(m=[3, 7, 10], n=12)
+        cov2 = [[0.64421053, -0.26526316, -0.37894737],
+                [-0.26526316, 1.14947368, -0.88421053],
+                [-0.37894737, -0.88421053, 1.26315789]]
+        assert_allclose(cov1, cov2, rtol=1e-8)
+
+    def test_cov_broadcasting(self):
+        cov1 = multivariate_hypergeom.cov(m=[[7, 9], [10, 15]], n=[8, 12])
+        cov2 = [[[1.05, -1.05], [-1.05, 1.05]],
+                [[1.56, -1.56], [-1.56, 1.56]]]
+        assert_allclose(cov1, cov2, rtol=1e-8)
+
+        cov3 = multivariate_hypergeom.cov(m=[[4], [5]], n=[4, 5])
+        cov4 = [[[0.]], [[0.]]]
+        assert_allclose(cov3, cov4, rtol=1e-8)
+
+        cov5 = multivariate_hypergeom.cov(m=[7, 9], n=[8, 12])
+        cov6 = [[[1.05, -1.05], [-1.05, 1.05]],
+                [[0.7875, -0.7875], [-0.7875, 0.7875]]]
+        assert_allclose(cov5, cov6, rtol=1e-8)
+
+    def test_var(self):
+        # test with hypergeom
+        var0 = multivariate_hypergeom.var(m=[10, 5], n=4)
+        var1 = hypergeom.var(M=15, n=4, N=10)
+        assert_allclose(var0, var1, rtol=1e-8)
+
+    def test_var_broadcasting(self):
+        var0 = multivariate_hypergeom.var(m=[10, 5], n=[4, 8])
+        var1 = multivariate_hypergeom.var(m=[10, 5], n=4)
+        var2 = multivariate_hypergeom.var(m=[10, 5], n=8)
+        assert_allclose(var0[0], var1, rtol=1e-8)
+        assert_allclose(var0[1], var2, rtol=1e-8)
+
+        var3 = multivariate_hypergeom.var(m=[[10, 5], [10, 14]], n=[4, 8])
+        var4 = [[0.6984127, 0.6984127], [1.352657, 1.352657]]
+        assert_allclose(var3, var4, rtol=1e-8)
+
+        var5 = multivariate_hypergeom.var(m=[[5], [10]], n=[5, 10])
+        var6 = [[0.], [0.]]
+        assert_allclose(var5, var6, rtol=1e-8)
+
+    def test_mean(self):
+        # test with hypergeom
+        mean0 = multivariate_hypergeom.mean(m=[10, 5], n=4)
+        mean1 = hypergeom.mean(M=15, n=4, N=10)
+        assert_allclose(mean0[0], mean1, rtol=1e-8)
+
+        mean2 = multivariate_hypergeom.mean(m=[12, 8], n=10)
+        mean3 = [12.*10./20., 8.*10./20.]
+        assert_allclose(mean2, mean3, rtol=1e-8)
+
+    def test_mean_broadcasting(self):
+        mean0 = multivariate_hypergeom.mean(m=[[3, 5], [10, 5]], n=[4, 8])
+        mean1 = [[3.*4./8., 5.*4./8.], [10.*8./15., 5.*8./15.]]
+        assert_allclose(mean0, mean1, rtol=1e-8)
+
+    def test_mean_edge_cases(self):
+        mean0 = multivariate_hypergeom.mean(m=[0, 0, 0], n=0)
+        assert_equal(mean0, [0., 0., 0.])
+
+        mean1 = multivariate_hypergeom.mean(m=[1, 0, 0], n=2)
+        assert_equal(mean1, [np.nan, np.nan, np.nan])
+
+        mean2 = multivariate_hypergeom.mean(m=[[1, 0, 0], [1, 0, 1]], n=2)
+        assert_allclose(mean2, [[np.nan, np.nan, np.nan], [1., 0., 1.]],
+                        rtol=1e-17)
+
+        mean3 = multivariate_hypergeom.mean(m=np.array([], np.int_), n=0)
+        assert_equal(mean3, [])
+        assert_(mean3.shape == (0, ))
+
+    def test_var_edge_cases(self):
+        var0 = multivariate_hypergeom.var(m=[0, 0, 0], n=0)
+        assert_allclose(var0, [0., 0., 0.], rtol=1e-16)
+
+        var1 = multivariate_hypergeom.var(m=[1, 0, 0], n=2)
+        assert_equal(var1, [np.nan, np.nan, np.nan])
+
+        var2 = multivariate_hypergeom.var(m=[[1, 0, 0], [1, 0, 1]], n=2)
+        assert_allclose(var2, [[np.nan, np.nan, np.nan], [0., 0., 0.]],
+                        rtol=1e-17)
+
+        var3 = multivariate_hypergeom.var(m=np.array([], np.int_), n=0)
+        assert_equal(var3, [])
+        assert_(var3.shape == (0, ))
+
+    def test_cov_edge_cases(self):
+        cov0 = multivariate_hypergeom.cov(m=[1, 0, 0], n=1)
+        cov1 = [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]
+        assert_allclose(cov0, cov1, rtol=1e-17)
+
+        cov3 = multivariate_hypergeom.cov(m=[0, 0, 0], n=0)
+        cov4 = [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]
+        assert_equal(cov3, cov4)
+
+        cov5 = multivariate_hypergeom.cov(m=np.array([], np.int_), n=0)
+        cov6 = np.array([], dtype=np.float_).reshape(0, 0)
+        assert_allclose(cov5, cov6, rtol=1e-17)
+        assert_(cov5.shape == (0, 0))
+
+    def test_frozen(self):
+        # The frozen distribution should agree with the regular one
+        np.random.seed(1234)
+        n = 12
+        m = [7, 9, 11, 13]
+        x = [[0, 0, 0, 12], [0, 0, 1, 11], [0, 1, 1, 10],
+             [1, 1, 1, 9], [1, 1, 2, 8]]
+        x = np.asarray(x, dtype=np.int_)
+        mhg_frozen = multivariate_hypergeom(m, n)
+        assert_allclose(mhg_frozen.pmf(x),
+                        multivariate_hypergeom.pmf(x, m, n))
+        assert_allclose(mhg_frozen.logpmf(x),
+                        multivariate_hypergeom.logpmf(x, m, n))
+        assert_allclose(mhg_frozen.var(), multivariate_hypergeom.var(m, n))
+        assert_allclose(mhg_frozen.cov(), multivariate_hypergeom.cov(m, n))
+
+    def test_invalid_params(self):
+        assert_raises(ValueError, multivariate_hypergeom.pmf, 5, 10, 5)
+        assert_raises(ValueError, multivariate_hypergeom.pmf, 5, [10], 5)
+        assert_raises(ValueError, multivariate_hypergeom.pmf, [5, 4], [10], 5)
+        assert_raises(TypeError, multivariate_hypergeom.pmf, [5.5, 4.5],
+                      [10, 15], 5)
+        assert_raises(TypeError, multivariate_hypergeom.pmf, [5, 4],
+                      [10.5, 15.5], 5)
+        assert_raises(TypeError, multivariate_hypergeom.pmf, [5, 4],
+                      [10, 15], 5.5)
+
 
 def check_pickling(distfn, args):
     # check that a distribution instance pickles and unpickles

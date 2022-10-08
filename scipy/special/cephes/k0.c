@@ -34,7 +34,7 @@
  * ERROR MESSAGES:
  *
  *   message         condition      value returned
- *  K0 domain          x <= 0          NPY_INFINITY
+ *  K0 domain          x <= 0          INFINITY
  *
  */
 /*							k0e()
@@ -78,7 +78,7 @@
 /* Chebyshev coefficients for K0(x) + log(x/2) I0(x)
  * in the interval [0,2].  The odd order coefficients are all
  * zero; only the even order coefficients are listed.
- * 
+ *
  * lim(x->0){ K0(x) + log(x/2) I0(x) } = -EUL.
  */
 
@@ -97,7 +97,7 @@ static double A[] = {
 
 /* Chebyshev coefficients for exp(x) sqrt(x) K0(x)
  * in the inverted interval [2,infinity].
- * 
+ *
  * lim(x->inf){ exp(x) sqrt(x) K0(x) } = sqrt(pi/2).
  */
 static double B[] = {
@@ -134,12 +134,12 @@ double x;
     double y, z;
 
     if (x == 0.0) {
-	mtherr("k0", SING);
-	return NPY_INFINITY;
+	sf_error("k0", SF_ERROR_SINGULAR, NULL);
+	return INFINITY;
     }
     else if (x < 0.0) {
-	mtherr("k0", DOMAIN);
-	return NPY_NAN;
+	sf_error("k0", SF_ERROR_DOMAIN, NULL);
+	return NAN;
     }
 
     if (x <= 2.0) {
@@ -161,12 +161,12 @@ double x;
     double y;
 
     if (x == 0.0) {
-	mtherr("k0e", SING);
-	return NPY_INFINITY;
+	sf_error("k0e", SF_ERROR_SINGULAR, NULL);
+	return INFINITY;
     }
     else if (x < 0.0) {
-	mtherr("k0e", DOMAIN);
-	return NPY_NAN;
+	sf_error("k0e", SF_ERROR_DOMAIN, NULL);
+	return NAN;
     }
 
     if (x <= 2.0) {

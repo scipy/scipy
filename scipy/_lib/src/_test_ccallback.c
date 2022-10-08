@@ -4,7 +4,7 @@
  * This also is an internal "best-practices" code example on how to write
  * low-level callback code. (In the examples below, it is assumed the semantics
  * and signatures of the callbacks in test_call_* are fixed by some 3rd party
- * library e.g. implemented in FORTRAN, and they are not necessarily the optimal
+ * library e.g., implemented in FORTRAN, and they are not necessarily the optimal
  * way.)
  *
  * The general structure of callbacks is the following:
@@ -34,8 +34,8 @@
  *
  */
 
-#include <setjmp.h>
 #include <Python.h>
+#include <setjmp.h>
 
 #include "ccallback.h"
 
@@ -387,8 +387,6 @@ static PyMethodDef test_ccallback_methods[] = {
 };
 
 
-#if PY_VERSION_HEX >= 0x03000000
-
 static struct PyModuleDef test_ccallback_module = {
     PyModuleDef_HEAD_INIT,
     "_test_ccallback",
@@ -407,14 +405,3 @@ PyInit__test_ccallback(void)
 {
     return PyModule_Create(&test_ccallback_module);
 }
-
-
-#else
-
-PyMODINIT_FUNC
-init_test_ccallback(void)
-{
-    Py_InitModule("_test_ccallback", test_ccallback_methods);
-}
-
-#endif

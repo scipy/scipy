@@ -2,8 +2,6 @@
 SciPy 1.3.0 Release Notes
 ==========================
 
-.. note:: Scipy 1.3.0 is not released yet!
-
 .. contents::
 
 SciPy 1.3.0 is the culmination of 5 months of hard work. It contains
@@ -22,15 +20,15 @@ This release requires Python 3.5+ and NumPy 1.13.3 or greater.
 For running on PyPy, PyPy3 6.0+ and NumPy 1.15.0 are required.
 
 Highlights of this release
---------------------------
+==========================
 
 - Three new ``stats`` functions, a rewrite of ``pearsonr``, and an exact
-  computation of the Kolmogorov-Smirnov two-sample test
-- A new Cython API for bounded scalar-function root-finders in `scipy.optimize`
+  computation of the Kolmogorov-Smirnov two-sample test.
+- A new Cython API for bounded scalar-function root-finders in `scipy.optimize`.
 - Substantial ``CSR`` and ``CSC`` sparse matrix indexing performance
-  improvements
+  improvements.
 - Added support for interpolation of rotations with continuous angular
-  rate and acceleration in ``RotationSpline``
+  rate and acceleration in ``RotationSpline``.
 
 
 New features
@@ -39,15 +37,15 @@ New features
 `scipy.interpolate` improvements
 --------------------------------
 
-A new class ``CubicHermiteSpline`` is introduced. It is a piecewise-cubic 
-interpolator which matches observed values and first derivatives. Existing 
-cubic interpolators ``CubicSpline``, ``PchipInterpolator`` and 
+A new class ``CubicHermiteSpline`` is introduced. It is a piecewise-cubic
+interpolator which matches observed values and first derivatives. Existing
+cubic interpolators ``CubicSpline``, ``PchipInterpolator`` and
 ``Akima1DInterpolator`` were made subclasses of ``CubicHermiteSpline``.
 
 `scipy.io` improvements
 -----------------------
 
-For the Attribute-Relation File Format (ARFF) `scipy.io.arff.loadarff` 
+For the Attribute-Relation File Format (ARFF) `scipy.io.arff.loadarff`
 now supports relational attributes.
 
 `scipy.io.mmread` can now parse Matrix Market format files with empty lines.
@@ -55,7 +53,7 @@ now supports relational attributes.
 `scipy.linalg` improvements
 ---------------------------
 
-Added wrappers for ``?syconv`` routines, which convert a symmetric matrix 
+Added wrappers for ``?syconv`` routines, which convert a symmetric matrix
 given by a triangular matrix factorization into two matrices and vice versa.
 
 `scipy.linalg.clarkson_woodruff_transform` now uses an algorithm that leverages
@@ -64,7 +62,7 @@ Truly sparse input matrices should also benefit from the improved sketch
 algorithm, which now correctly runs in ``O(nnz(A))`` time.
 
 Added new functions to calculate symmetric Fiedler matrices and
-Fiedler companion matrices, named `scipy.linalg.fiedler` and 
+Fiedler companion matrices, named `scipy.linalg.fiedler` and
 `scipy.linalg.fiedler_companion`, respectively. These may be used
 for root finding.
 
@@ -72,7 +70,7 @@ for root finding.
 ----------------------------
 
 Gaussian filter performances may improve by an order of magnitude in
-some cases, thanks to removal of a dependence on ``np.polynomial``. This
+some cases, thanks to the removal of a dependence on ``np.polynomial``. This
 may impact `scipy.ndimage.gaussian_filter` for example.
 
 `scipy.optimize` improvements
@@ -83,74 +81,74 @@ can be used to parallelize computation.
 
 A Cython API for bounded scalar-function root-finders in `scipy.optimize`
 is available in a new module `scipy.optimize.cython_optimize` via ``cimport``.
-This API may be used with ``nogil`` and ``prange`` to loop 
-over an array of function arguments to solve for an array of roots more 
+This API may be used with ``nogil`` and ``prange`` to loop
+over an array of function arguments to solve for an array of roots more
 quickly than with pure Python.
 
-``'interior-point'`` is now the default method for ``linprog``, and 
-``'interior-point'`` now uses SuiteSparse for sparse problems when the 
-required scikits  (scikit-umfpack and scikit-sparse) are available. 
-On benchmark problems (gh-10026), execution time reductions by factors of 2-3 
-were typical. Also, a new ``method='revised simplex'`` has been added. 
+``'interior-point'`` is now the default method for ``linprog``, and
+``'interior-point'`` now uses SuiteSparse for sparse problems when the
+required scikits  (scikit-umfpack and scikit-sparse) are available.
+On benchmark problems (gh-10026), execution time reductions by factors of 2-3
+were typical. Also, a new ``method='revised simplex'`` has been added.
 It is not as fast or robust as ``method='interior-point'``, but it is a faster,
-more robust, and equally accurate substitute for the legacy 
+more robust, and equally accurate substitute for the legacy
 ``method='simplex'``.
 
 ``differential_evolution`` can now use a ``Bounds`` class to specify the
 bounds for the optimizing argument of a function.
 
 `scipy.optimize.dual_annealing` performance improvements related to
-vectorisation of some internal code.
+vectorization of some internal code.
 
 `scipy.signal` improvements
 ---------------------------
 
-Two additional methods of discretization are now supported by 
+Two additional methods of discretization are now supported by
 `scipy.signal.cont2discrete`: ``impulse`` and ``foh``.
 
-`scipy.signal.firls` now uses faster solvers
+`scipy.signal.firls` now uses faster solvers.
 
 `scipy.signal.detrend` now has a lower physical memory footprint in some
-cases, which may be leveraged using the new ``overwrite_data`` keyword argument
+cases, which may be leveraged using the new ``overwrite_data`` keyword argument.
 
 `scipy.signal.firwin` ``pass_zero`` argument now accepts new string arguments
 that allow specification of the desired filter type: ``'bandpass'``,
-``'lowpass'``, ``'highpass'``, and ``'bandstop'``
+``'lowpass'``, ``'highpass'``, and ``'bandstop'``.
 
 `scipy.signal.sosfilt` may have improved performance due to lower retention
-of the global interpreter lock (GIL) in algorithm
+of the global interpreter lock (GIL) in the algorithm.
 
 `scipy.sparse` improvements
 ---------------------------
 
-A new keyword was added to ``csgraph.dijsktra`` that 
-allows users to query the shortest path to ANY of the passed in indices,
+A new keyword was added to ``csgraph.dijsktra`` that
+allows users to query the shortest path to ANY of the passed-in indices,
 as opposed to the shortest path to EVERY passed index.
 
 `scipy.sparse.linalg.lsmr` performance has been improved by roughly 10 percent
-on large problems
+on large problems.
 
 Improved performance and reduced physical memory footprint of the algorithm
-used by `scipy.sparse.linalg.lobpcg`
+used by `scipy.sparse.linalg.lobpcg`.
 
 ``CSR`` and ``CSC`` sparse matrix fancy indexing performance has been
-improved substantially
+improved substantially.
 
 `scipy.spatial` improvements
 ----------------------------
 
-`scipy.spatial.ConvexHull` now has a ``good`` attribute that can be used 
-alongsize the ``QGn`` Qhull options to determine which external facets of a 
+`scipy.spatial.ConvexHull` now has a ``good`` attribute that can be used
+alongsize the ``QGn`` Qhull options to determine which external facets of a
 convex hull are visible from an external query point.
 
-`scipy.spatial.cKDTree.query_ball_point` has been modernized to use some newer 
-Cython features, including GIL handling and exception translation. An issue 
-with ``return_sorted=True`` and scalar queries was fixed, and a new mode named 
-``return_length`` was added. ``return_length`` only computes the length of the 
+`scipy.spatial.cKDTree.query_ball_point` has been modernized to use some newer
+Cython features, including GIL handling and exception translation. An issue
+with ``return_sorted=True`` and scalar queries was fixed, and a new mode named
+``return_length`` was added. ``return_length`` only computes the length of the
 returned indices list instead of allocating the array every time.
 
 `scipy.spatial.transform.RotationSpline` has been added to enable interpolation
-of rotations with continuous angular rates and acceleration
+of rotations with continuous angular rates and acceleration.
 
 `scipy.stats` improvements
 --------------------------
@@ -160,13 +158,13 @@ Added a new function to compute the Epps-Singleton test statistic,
 discrete distributions.
 
 New functions `scipy.stats.median_absolute_deviation` and `scipy.stats.gstd`
-(geometric standard deviation) were added. The `scipy.stats.combine_pvalues` 
-method now supports ``pearson``,  ``tippett`` and ``mudholkar_george`` pvalue 
+(geometric standard deviation) were added. The `scipy.stats.combine_pvalues`
+method now supports ``pearson``,  ``tippett`` and ``mudholkar_george`` pvalue
 combination methods.
 
-The `scipy.stats.ortho_group` and `scipy.stats.special_ortho_group` 
-``rvs(dim)`` functions' algorithms were updated from a ``O(dim^4)`` 
-implementation to a ``O(dim^3)`` which gives large speed improvements 
+The `scipy.stats.ortho_group` and `scipy.stats.special_ortho_group`
+``rvs(dim)`` functions' algorithms were updated from a ``O(dim^4)``
+implementation to a ``O(dim^3)`` which gives large speed improvements
 for ``dim>100``.
 
 A rewrite of `scipy.stats.pearsonr` to use a more robust algorithm,
@@ -177,10 +175,10 @@ Improved the precision of ``hypergeom.logcdf`` and ``hypergeom.logsf``.
 
 Added exact computation for Kolmogorov-Smirnov (KS) two-sample test, replacing
 the previously approximate computation for the two-sided test `stats.ks_2samp`.
-Also added a one-sided, two-sample KS test, and a keyword ``alternative`` to 
+Also added a one-sided, two-sample KS test, and a keyword ``alternative`` to
 `stats.ks_2samp`.
 
-Backwards incompatible changes
+Backwards-incompatible changes
 ==============================
 
 `scipy.interpolate` changes
@@ -189,11 +187,11 @@ Backwards incompatible changes
 Functions from ``scipy.interpolate`` (``spleval``, ``spline``, ``splmake``,
 and ``spltopp``) and functions from ``scipy.misc`` (``bytescale``,
 ``fromimage``, ``imfilter``, ``imread``, ``imresize``, ``imrotate``,
-``imsave``, ``imshow``, ``toimage``) have been removed. The former set has 
+``imsave``, ``imshow``, ``toimage``) have been removed. The former set has
 been deprecated since v0.19.0 and the latter has been deprecated since v1.0.0.
 Similarly, aliases from ``scipy.misc`` (``comb``, ``factorial``,
 ``factorial2``, ``factorialk``, ``logsumexp``, ``pade``, ``info``, ``source``,
-``who``) which have been deprecated since v1.0.0 are removed. 
+``who``) which have been deprecated since v1.0.0 are removed.
 `SciPy documentation for
 v1.1.0 <https://docs.scipy.org/doc/scipy-1.1.0/reference/misc.html>`__
 can be used to track the new import locations for the relocated functions.
@@ -201,47 +199,55 @@ can be used to track the new import locations for the relocated functions.
 `scipy.linalg` changes
 ----------------------
 
-For ``pinv``, ``pinv2``, and ``pinvh``, the default cutoff values are changed 
+For ``pinv``, ``pinv2``, and ``pinvh``, the default cutoff values are changed
 for consistency (see the docs for the actual values).
+
+`scipy.optimize` changes
+---------------------------
+
+The default method for ``linprog`` is now ``'interior-point'``. The method's
+robustness and speed come at a cost: solutions may not be accurate to
+machine precision or correspond with a vertex of the polytope defined
+by the constraints. To revert to the original simplex method,
+include the argument ``method='simplex'``.
 
 `scipy.stats` changes
 ---------------------
 
-Previously, ``ks_2samp(data1, data2)`` would run a two-sided test and return 
+Previously, ``ks_2samp(data1, data2)`` would run a two-sided test and return
 the approximated p-value. The new signature, ``ks_2samp(data1, data2,
 alternative="two-sided", method="auto")``, still runs the two-sided test by
 default but returns the exact p-value for small samples and the approximated
-value for large samples. ``method="asymp"`` would be equivalent to the 
+value for large samples. ``method="asymp"`` would be equivalent to the
 old version but ``auto`` is the better choice.
 
 Other changes
 =============
 
-Our tutorial has been expanded with a new section on global optimizers
+Our tutorial has been expanded with a new section on global optimizers.
 
 There has been a rework of the ``stats.distributions`` tutorials.
 
-`scipy.optimize` now correctly sets the convergence flag of the result to 
-``CONVERR``, a convergence error, for bounded scalar-function root-finders 
-if the maximum iterations has been exceeded, ``disp`` is false, and 
+`scipy.optimize` now correctly sets the convergence flag of the result to
+``CONVERR``, a convergence error, for bounded scalar-function root-finders
+if the maximum iterations has been exceeded, ``disp`` is false, and
 ``full_output`` is true.
 
-`scipy.optimize.curve_fit` no longer fails if ``xdata`` and ``ydata`` dtypes 
+`scipy.optimize.curve_fit` no longer fails if ``xdata`` and ``ydata`` dtypes
 differ; they are both now automatically cast to ``float64``.
 
-`scipy.ndimage` functions including ``binary_erosion``, ``binary_closing``, and 
+`scipy.ndimage` functions including ``binary_erosion``, ``binary_closing``, and
 ``binary_dilation`` now require an integer value for the number of iterations,
 which alleviates a number of reported issues.
 
-Fixed normal approximation in case ``zero_method == "pratt"`` in 
+Fixed normal approximation in case ``zero_method == "pratt"`` in
 `scipy.stats.wilcoxon`.
 
-Fixes for incorrect probabilities, broadcasting issues and thread-safety 
+Fixes for incorrect probabilities, broadcasting issues and thread-safety
 related to stats distributions setting member variables inside ``_argcheck()``.
 
-`scipy.optimize.newton` now correctly raises a ``RuntimeError``, when default 
-arguments are used, in the case that a derivative of value zero is obtained,
-which is a special case of failing to converge.
+`scipy.optimize.newton` now correctly raises a ``RuntimeError`` in the following cases: when default
+arguments are used and if a derivative of value zero is obtained (which is a special case of failing to converge).
 
 A draft toolchain roadmap is now available, laying out a compatibility plan
 including Python versions, C standards, and NumPy versions.
@@ -600,3 +606,5 @@ Pull requests for 1.3.0
 * `#10090 <https://github.com/scipy/scipy/pull/10090>`__: MAINT: Fix CubicSplinerInterpolator for pandas
 * `#10091 <https://github.com/scipy/scipy/pull/10091>`__: MAINT: improve logcdf and logsf of hypergeometric distribution
 * `#10095 <https://github.com/scipy/scipy/pull/10095>`__: MAINT: Clean \`\`_clean_inputs\`\` in linprog
+* `#10116 <https://github.com/scipy/scipy/pull/10116>`__: MAINT: update scipy-sphinx-theme
+* `#10135 <https://github.com/scipy/scipy/pull/10135>`__: BUG: fix linprog revised simplex docstring problem failure

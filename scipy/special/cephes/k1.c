@@ -32,7 +32,7 @@
  * ERROR MESSAGES:
  *
  *   message         condition      value returned
- * k1 domain          x <= 0          NPY_INFINITY
+ * k1 domain          x <= 0          INFINITY
  *
  */
 /*							k1e.c
@@ -77,7 +77,7 @@
 
 /* Chebyshev coefficients for x(K1(x) - log(x/2) I1(x))
  * in the interval [0,2].
- * 
+ *
  * lim(x->0){ x(K1(x) - log(x/2) I1(x)) } = 1.
  */
 
@@ -136,12 +136,12 @@ double x;
     double y, z;
 
     if (x == 0.0) {
-	mtherr("k1", SING);
-	return NPY_INFINITY;
+	sf_error("k1", SF_ERROR_SINGULAR, NULL);
+	return INFINITY;
     }
     else if (x < 0.0) {
-	mtherr("k1", DOMAIN);
-	return NPY_NAN;
+	sf_error("k1", SF_ERROR_DOMAIN, NULL);
+	return NAN;
     }
     z = 0.5 * x;
 
@@ -163,12 +163,12 @@ double x;
     double y;
 
     if (x == 0.0) {
-	mtherr("k1e", SING);
-	return NPY_INFINITY;
+	sf_error("k1e", SF_ERROR_SINGULAR, NULL);
+	return INFINITY;
     }
     else if (x < 0.0) {
-	mtherr("k1e", DOMAIN);
-	return NPY_NAN;
+	sf_error("k1e", SF_ERROR_DOMAIN, NULL);
+	return NAN;
     }
 
     if (x <= 2.0) {

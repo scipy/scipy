@@ -1,10 +1,11 @@
 #include <complex>
+#include <cmath>
 
 #include "_faddeeva.h"
 
 using namespace std;
 
-EXTERN_C_START
+extern "C" {
 
 npy_cdouble faddeeva_w(npy_cdouble zp)
 {
@@ -20,7 +21,12 @@ npy_cdouble faddeeva_erf(npy_cdouble zp)
     return npy_cpack(real(w), imag(w));
 }
 
-npy_cdouble faddeeva_erfc(npy_cdouble zp)
+double faddeeva_erfc(double x)
+{
+    return Faddeeva::erfc(x);
+}
+
+npy_cdouble faddeeva_erfc_complex(npy_cdouble zp)
 {
     complex<double> z(zp.real, zp.imag);
     complex<double> w = Faddeeva::erfc(z);
@@ -76,16 +82,48 @@ npy_cdouble faddeeva_ndtr(npy_cdouble zp)
 }
 
 /*
+ * Log of the CDF of the normal distribution for double x.
+ *
+ * Let F(x) be the CDF of the standard normal distribution.
+ * This implementation of log(F(x)) is based on the identities
+ *
+ *   F(x) = erfc(-x/√2)/2
+ *        = 1 - erfc(x/√2)/2
+ *
+ * We use the first formula for x < -1, with erfc(z) replaced
+ * by erfcx(z)*exp(-z**2) to ensure high precision for large
+ * negative values when we take the logarithm:
+ *
+ *   log F(x) = log(erfc(-x/√2)/2)
+ *            = log(erfcx(-x/√2)/2)*exp(-x**2/2))
+ *            = log(erfcx(-x/√2)/2) - x**2/2
+ *
+ * For x >= -1, we use the second formula for F(x):
+ *
+ *   log F(x) = log(1 - erfc(x/√2)/2)
+ *            = log1p(-erfc(x/√2)/2)
+ */
+double faddeeva_log_ndtr(double x)
+{
+    double t = x*NPY_SQRT1_2;
+    if (x < -1.0) {
+        return log(faddeeva_erfcx(-t)/2) - t*t;
+    }
+    else {
+        return log1p(-faddeeva_erfc(t)/2);
+    }
+}
+
+/*
  * Log of the normal CDF for complex arguments.
- * 
+ *
  * This is equivalent to log(ndtr(z)), but is more robust to overflow at $z\to\infty$.
  * This implementation uses the Faddeva computation, $\erfc(z) = \exp(-z^2) w(iz)$,
  * taking special care to select the principal branch of the log function
  *           log( exp(-z^2) w(i z) )
  */
-npy_cdouble faddeeva_log_ndtr(npy_cdouble zp)
+npy_cdouble faddeeva_log_ndtr_complex(npy_cdouble zp)
 {
-
     complex<double> z(zp.real, zp.imag);
     if (zp.real > 6) {
         // Underflow. Close to the real axis, expand the log in log(1 - ndtr(-z)).
@@ -100,7 +138,7 @@ npy_cdouble faddeeva_log_ndtr(npy_cdouble zp)
 
     /* Compute the principal branch of $log(exp(-z^2))$, using the fact that
      * $log(e^t) = log|e^t| + i Arg(e^t)$, and that if $t = r + is$, then
-     * $e^t = e^r (\cos(s) + i \sin(s))$. 
+     * $e^t = e^r (\cos(s) + i \sin(s))$.
      */
     double mRe_z2 = (y - x) * (x + y); // Re(-z^2), being careful of overflow
     double mIm_z2 = -2*x*y; // Im(-z^2)
@@ -123,4 +161,30 @@ npy_cdouble faddeeva_log_ndtr(npy_cdouble zp)
     return npy_cpack(real(result), im);
 }
 
-EXTERN_C_END
+double faddeeva_voigt_profile(double x, double sigma, double gamma)
+{
+    const double INV_SQRT_2 = 0.707106781186547524401;
+    const double SQRT_2PI = 2.5066282746310002416123552393401042;
+
+    if(sigma == 0){
+        if (gamma == 0){
+            if (std::isnan(x))
+                return x;
+            if (x == 0)
+                return INFINITY;
+            return 0;
+        }
+        return gamma / NPY_PI / (x*x + gamma*gamma);
+    }
+    if (gamma == 0){
+        return 1 / SQRT_2PI / sigma * exp(-(x/sigma)*(x/sigma) / 2);
+    }
+
+    double zreal = x / sigma * INV_SQRT_2;
+    double zimag = gamma / sigma * INV_SQRT_2;
+    std::complex<double> z(zreal, zimag);
+    std::complex<double> w = Faddeeva::w(z);
+    return real(w) / sigma / SQRT_2PI;
+}
+
+}  // extern "C"

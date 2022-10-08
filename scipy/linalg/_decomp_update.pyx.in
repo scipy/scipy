@@ -1,7 +1,7 @@
 """
 Routines for updating QR decompositions
 
-.. versionadded: 0.16.0
+.. versionadded:: 0.16.0
 
 """
 #
@@ -32,8 +32,6 @@ Routines for updating QR decompositions
 #    Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 3693-77 (1990).
 #
 
-from __future__ import absolute_import
-
 __all__ = ['qr_delete', 'qr_insert', 'qr_update']
 
 {{py:
@@ -49,19 +47,16 @@ cimport cython
 cimport libc.stdlib
 cimport libc.limits
 cimport libc.float
-from libc.math cimport sqrt, fabs, hypot
+from libc.math cimport sqrt, fabs, hypot, M_SQRT1_2
 from libc.string cimport memset
 
 cimport numpy as cnp
-
-cdef extern from "numpy/npy_math.h":
-    double NPY_SQRT1_2
 
 from numpy.linalg import LinAlgError
 
 # This is used in place of, e.g., cnp.NPY_C_CONTIGUOUS, to indicate that a C
 # F or non contiguous array is acceptable.
-cdef int ARRAY_ANYORDER = 0
+DEF ARRAY_ANYORDER = 0
 
 cdef int MEMORY_ERROR = libc.limits.INT_MAX
 
@@ -298,7 +293,7 @@ cdef bint reorthx(int m, int n, blas_t* q, int* qs, bint qisF, int j, blas_t* u,
     cdef char* N = 'N'
     cdef char* C = 'C'
     cdef int ss = 1
-    cdef blas_t inv_root2 = NPY_SQRT1_2
+    cdef blas_t inv_root2 = M_SQRT1_2
 
     # u starts out as the jth basis vector.
     u[j] = 1
@@ -1066,7 +1061,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
     cdef char* N = 'N'
     cdef char* C = 'C'
     cdef int ss = 1
-    cdef blas_t inv_root2 = NPY_SQRT1_2
+    cdef blas_t inv_root2 = M_SQRT1_2
 
     # normalize u
     unorm = nrm2(m, u, us[0])
@@ -1207,7 +1202,7 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
     cdef void* uvoid
     cdef int qs[2]
     cdef int us[2]
-    cdef int ldu
+    cdef int ldu, p
 
     if cnp.PyArray_CHKFLAGS(q, cnp.NPY_F_CONTIGUOUS):
         qvoid = extract(q, qs)
@@ -1468,6 +1463,7 @@ def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -9.,  -3.],
@@ -1694,6 +1690,7 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_fi
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -7.,   4.],
@@ -2095,6 +2092,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -9.,  -3.],

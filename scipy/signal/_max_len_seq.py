@@ -58,7 +58,7 @@ def max_len_seq(nbits, state=None, length=None, taps=None):
     The default values for taps are specifically taken from the first
     option listed for each value of ``nbits`` in:
 
-        http://www.newwaveinstruments.com/resources/articles/m_sequence_linear_feedback_shift_register_lfsr.htm
+        https://web.archive.org/web/20181001062252/http://www.newwaveinstruments.com/resources/articles/m_sequence_linear_feedback_shift_register_lfsr.htm
 
     .. versionadded:: 0.15.0
 
@@ -101,18 +101,19 @@ def max_len_seq(nbits, state=None, length=None, taps=None):
     >>> plt.show()
 
     """
+    taps_dtype = np.int32 if np.intp().itemsize == 4 else np.int64
     if taps is None:
         if nbits not in _mls_taps:
             known_taps = np.array(list(_mls_taps.keys()))
             raise ValueError('nbits must be between %s and %s if taps is None'
                              % (known_taps.min(), known_taps.max()))
-        taps = np.array(_mls_taps[nbits], np.intp)
+        taps = np.array(_mls_taps[nbits], taps_dtype)
     else:
-        taps = np.unique(np.array(taps, np.intp))[::-1]
+        taps = np.unique(np.array(taps, taps_dtype))[::-1]
         if np.any(taps < 0) or np.any(taps > nbits) or taps.size < 1:
             raise ValueError('taps must be non-empty with values between '
                              'zero and nbits (inclusive)')
-        taps = np.ascontiguousarray(taps)  # needed for Cython
+        taps = np.array(taps)  # needed for Cython and Pythran
     n_max = (2**nbits) - 1
     if length is None:
         length = n_max
@@ -120,7 +121,7 @@ def max_len_seq(nbits, state=None, length=None, taps=None):
         length = int(length)
         if length < 0:
             raise ValueError('length must be greater than or equal to 0')
-    # We use int8 instead of bool here because numpy arrays of bools
+    # We use int8 instead of bool here because NumPy arrays of bools
     # don't seem to work nicely with Cython
     if state is None:
         state = np.ones(nbits, dtype=np.int8, order='c')
@@ -128,7 +129,7 @@ def max_len_seq(nbits, state=None, length=None, taps=None):
         # makes a copy if need be, ensuring it's 0's and 1's
         state = np.array(state, dtype=bool, order='c').astype(np.int8)
     if state.ndim != 1 or state.size != nbits:
-        raise ValueError('state must be a 1-dimensional array of size nbits')
+        raise ValueError('state must be a 1-D array of size nbits')
     if np.all(state == 0):
         raise ValueError('state must not be all zeros')
 

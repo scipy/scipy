@@ -1,6 +1,8 @@
-**************
-SciPy Tutorial
-**************
+.. _user_guide:
+
+****************
+SciPy User Guide
+****************
 
 .. sectionauthor:: Travis E. Oliphant
 
@@ -12,12 +14,11 @@ SciPy Tutorial
    :maxdepth: 1
 
    general
-   basic
    special
    integrate
    optimize
    interpolate
-   fftpack
+   fft
    signal
    linalg
    arpack

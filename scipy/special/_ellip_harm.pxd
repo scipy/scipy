@@ -37,10 +37,12 @@ from libc.stdlib cimport malloc, free
 from numpy.math cimport NAN, PI
 
 cdef extern from "lapack_defs.h":
-    void c_dstevr(char *jobz, char *range, int *n, double *d, double *e,
-                  double *vl, double *vu, int *il, int *iu, double *abstol,
-                  int *m, double *w, double *z, int *ldz, int *isuppz,
-                  double *work, int *lwork, int *iwork, int *liwork, int *info) nogil
+    ctypedef int CBLAS_INT  # actual type defined in the header
+    void c_dstevr(char *jobz, char *range, CBLAS_INT *n, double *d, double *e,
+                  double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol,
+                  CBLAS_INT *m, double *w, double *z, CBLAS_INT *ldz, CBLAS_INT *isuppz,
+                  double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork,
+                  CBLAS_INT *info) nogil
 
 
 @cython.wraparound(False)
@@ -49,6 +51,11 @@ cdef extern from "lapack_defs.h":
 cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
                                       void **bufferp, double signm,
                                       double signn) nogil:
+
+    # Ensure that the caller can safely call free(*bufferp) even if an
+    # invalid argument is found in the following validation code.
+    bufferp[0] = NULL
+
     if n < 0:
         sf_error.error("ellip_harm", sf_error.ARG, "invalid value for n")
         return NULL
@@ -62,7 +69,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
         return NULL
 
     cdef double s2, alpha, beta, gamma, lamba_romain, pp, psi, t1, tol, vl, vu
-    cdef int r, tp, j, size, i, info, lwork, liwork, c, iu
+    cdef CBLAS_INT r, tp, j, size, i, info, lwork, liwork, c, iu
     cdef Py_UNICODE t
 
     r = n/2
@@ -78,6 +85,9 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
         t, tp, size = 'M', p - (n - r) - (r + 1), n - r
     elif p - 1 < 2*n + 1:
         t, tp, size = 'N', p - (n - r) - (n - r) - (r + 1), r
+    else:
+        sf_error.error("ellip_harm", sf_error.ARG, "invalid condition on `p - 1`")
+        return NULL
 
     lwork = 60*size
     liwork = 30*size
@@ -86,7 +96,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
     vu = 0
 
     cdef void *buffer = malloc((sizeof(double)*(7*size + lwork))
-                               + (sizeof(int)*(2*size + liwork)))
+                               + (sizeof(CBLAS_INT)*(2*size + liwork)))
     bufferp[0] = buffer
     if not buffer:
         sf_error.error("ellip_harm", sf_error.NO_RESULT, "failed to allocate memory")
@@ -101,8 +111,8 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
     cdef double *eigv = dd + size
     cdef double *work = eigv + size
 
-    cdef int *iwork = <int *>(work + lwork)
-    cdef int *isuppz = iwork + liwork
+    cdef CBLAS_INT *iwork = <CBLAS_INT *>(work + lwork)
+    cdef CBLAS_INT *isuppz = iwork + liwork
 
     if t == 'K':
         for j in range(0, r + 1):
@@ -186,11 +196,15 @@ cdef inline double ellip_harm_eval(double h2, double k2, int n, int p,
         size, psi = n - r, pow(s, 1 - n + 2*r)*signn*sqrt(fabs(s2 - k2))
     elif p - 1 < 2*n + 1:
         size, psi = r, pow(s,  n - 2*r)*signm*signn*sqrt(fabs((s2 - h2)*(s2 - k2)))
+    else:
+        sf_error.error("ellip_harm", sf_error.ARG, "invalid condition on `p - 1`")
+        return NAN
+
     lambda_romain = 1.0 - <double>s2/<double>h2
     pp = eigv[size - 1]
-
     for j in range(size - 2, -1, -1):
         pp = pp*lambda_romain + eigv[j]
+
     pp = pp*psi
     return pp
 
