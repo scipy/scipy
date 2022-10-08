@@ -1272,11 +1272,12 @@ cdef class NumericalInversePolynomial(Method):
           ``def pdf(self, x: float) -> float``, i.e., the PDF should accept a Python
           float and return a Python float. It doesn't need to integrate to 1,
           i.e., the PDF doesn't need to be normalized. This method is optional,
-          but either ``pdf`` or ``logpdf`` need to be specified.
+          but either ``pdf`` or ``logpdf`` need to be specified. If both are given,
+          ``logpdf`` is used.
         * ``logpdf``: The log of the PDF of the distribution. The signature is
-          the same as for ``pdf``. Similarly, normalization constants of the
-          PDF can be ignored. This method is optional, but either ``pdf`` or
-          ``logpdf`` need to be specified.
+          the same as for ``pdf``. Similarly, log of the normalization constant
+          of the PDF can be ignored. This method is optional, but either ``pdf`` or
+          ``logpdf`` need to be specified. If both are given, ``logpdf`` is used.
         * ``cdf``: CDF of the distribution. This method is optional. If provided, it
           enables the calculation of "u-error". See `u_error`. Must have the same
           signature as the PDF.
