@@ -1,18 +1,20 @@
-# SciPy imports.
 import tempfile
 import shutil
 import os
+
 import numpy as np
 from numpy import pi
 from numpy.testing import (assert_array_almost_equal,
                            assert_equal, assert_warns)
+import pytest
 from pytest import raises as assert_raises
+
 from scipy.odr import (Data, Model, ODR, RealData, OdrStop, OdrWarning,
                        multilinear, exponential, unilinear, quadratic,
                        polynomial)
 
 
-class TestODR(object):
+class TestODR:
 
     # Bad Data for 'x'
 
@@ -499,6 +501,8 @@ class TestODR(object):
         assert_array_almost_equal(out.sd_beta,
                                   out.work[sd_ind:sd_ind + len(out.sd_beta)])
 
+    @pytest.mark.skipif(True, reason="Fortran I/O prone to crashing so better "
+                                     "not to run this test, see gh-13127")
     def test_output_file_overwrite(self):
         """
         Verify fix for gh-1892
@@ -520,3 +524,10 @@ class TestODR(object):
             # remove output files for clean up
             shutil.rmtree(tmp_dir)
 
+    def test_odr_model_default_meta(self):
+        def func(b, x):
+            return b[0] + b[1] * x
+
+        p = Model(func)
+        p.set_meta(name='Sample Model Meta', ref='ODRPACK')
+        assert_equal(p.meta, {'name': 'Sample Model Meta', 'ref': 'ODRPACK'})

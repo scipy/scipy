@@ -120,7 +120,7 @@ PyObject *call_odeint_user_function(PyObject *func, npy_intp n, double *x,
     }
 
     /* Call the Python function. */
-    result = PyEval_CallObject(func, arglist);
+    result = PyObject_CallObject(func, arglist);
     if (result == NULL) {
         goto fail;
     }
@@ -513,7 +513,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     long k, ntimes, crit_ind = 0;
     long allocated = 0, full_output = 0, numcrit = 0;
     long t0count;
-    double *yout, *yout_ptr, *tout_ptr, *tcrit;
+    double *yout, *yout_ptr, *tout_ptr, *tcrit = NULL;
     double *wa;
     static char *kwlist[] = {"fun", "y0", "t", "args", "Dfun", "col_deriv",
                              "ml", "mu", "full_output", "rtol", "atol", "tcrit",
@@ -639,9 +639,6 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     }
     rtol = (double *) PyArray_DATA(ap_rtol);
     atol = (double *) PyArray_DATA(ap_atol);
-    if (o_tcrit != NULL) {
-        tcrit = (double *)(PyArray_DATA(ap_tcrit));
-    }
 
     /* Find size of working arrays*/
     if (compute_lrw_liw(&lrw, &liw, neq, jt, ml, mu, mxordn, mxords) < 0) {
@@ -696,15 +693,21 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     if (o_tcrit != NULL) {
         /* There are critical points */
         itask = 4;
+        tcrit = (double *)(PyArray_DATA(ap_tcrit));
         rwork[0] = *tcrit;
     }
     while (k < ntimes && istate > 0) {    /* loop over desired times */
 
         tout_ptr = tout + k;
         /* Use tcrit if relevant */
-        if (itask == 4 && *tout_ptr > *(tcrit + crit_ind)) {
-            crit_ind++;
-            rwork[0] = *(tcrit+crit_ind);
+        if (itask == 4) {
+            if (!tcrit) {
+                PYERR(odepack_error, "Internal error - tcrit must be defined!");
+            }
+            if (*tout_ptr > *(tcrit + crit_ind)) {
+                crit_ind++;
+                rwork[0] = *(tcrit+crit_ind);
+            }
         }
         if (crit_ind >= numcrit) {
             itask = 1;  /* No more critical values */
@@ -819,22 +822,29 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *
+PyMODINIT_FUNC
 PyInit__odepack(void)
 {
-    PyObject *m, *d, *s;
+    PyObject *module, *mdict;
 
-    m = PyModule_Create(&moduledef);
     import_array();
-    d = PyModule_GetDict(m);
 
-    s = PyUnicode_FromString(" 1.9 ");
-    PyDict_SetItemString(d, "__version__", s);
-    odepack_error = PyErr_NewException ("odepack.error", NULL, NULL);
-    Py_DECREF(s);
-    PyDict_SetItemString(d, "error", odepack_error);
-    if (PyErr_Occurred()) {
-        Py_FatalError("can't initialize module odepack");
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return NULL;
     }
-    return m;
+
+    mdict = PyModule_GetDict(module);
+    if (mdict == NULL) {
+        return NULL;
+    }
+    odepack_error = PyErr_NewException("_odepack.error", NULL, NULL);
+    if (odepack_error == NULL) {
+        return NULL;
+    }
+    if (PyDict_SetItemString(mdict, "error", odepack_error)) {
+        return NULL;
+    }
+
+    return module;
 }

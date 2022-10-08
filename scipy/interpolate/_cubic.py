@@ -3,7 +3,7 @@
 import numpy as np
 
 from . import PPoly
-from .polyint import _isscalar
+from ._polyint import _isscalar
 from scipy.linalg import solve_banded, solve
 
 
@@ -15,7 +15,7 @@ def prepare_input(x, y, axis, dydx=None):
     """Prepare input for cubic spline interpolators.
 
     All data are converted to numpy arrays and checked for correctness.
-    Axes equal to `axis` of arrays `y` and `dydx` are rolled to be the 0th
+    Axes equal to `axis` of arrays `y` and `dydx` are moved to be the 0th
     axis. The value of `axis` is converted to lie in
     [0, number of dimensions of `y`).
     """
@@ -60,9 +60,9 @@ def prepare_input(x, y, axis, dydx=None):
     if np.any(dx <= 0):
         raise ValueError("`x` must be strictly increasing sequence.")
 
-    y = np.rollaxis(y, axis)
+    y = np.moveaxis(y, axis, 0)
     if dydx is not None:
-        dydx = np.rollaxis(dydx, axis)
+        dydx = np.moveaxis(dydx, axis, 0)
 
     return x, dx, y, axis, dydx
 
@@ -149,7 +149,7 @@ class CubicHermiteSpline(PPoly):
         c[2] = dydx[:-1]
         c[3] = y[:-1]
 
-        super(CubicHermiteSpline, self).__init__(c, x, extrapolate=extrapolate)
+        super().__init__(c, x, extrapolate=extrapolate)
         self.axis = axis
 
 
@@ -218,9 +218,11 @@ class PchipInterpolator(CubicHermiteSpline):
 
     References
     ----------
-    .. [1] F. N. Fritsch and R. E. Carlson, Monotone Piecewise Cubic Interpolation,
-           SIAM J. Numer. Anal., 17(2), 238 (1980).
-           :doi:`10.1137/0717021`.
+    .. [1] F. N. Fritsch and J. Butland,
+           A method for constructing local
+           monotone piecewise cubic interpolants,
+           SIAM J. Sci. Comput., 5(2), 300-304 (1984).
+           :doi:`10.1137/0905021`.
     .. [2] see, e.g., C. Moler, Numerical Computing with Matlab, 2004.
            :doi:`10.1137/1.9780898717952`
 
@@ -230,8 +232,7 @@ class PchipInterpolator(CubicHermiteSpline):
         x, _, y, axis, _ = prepare_input(x, y, axis)
         xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
         dk = self._find_derivatives(xp, y)
-        super(PchipInterpolator, self).__init__(x, y, dk, axis=0,
-                                                extrapolate=extrapolate)
+        super().__init__(x, y, dk, axis=0, extrapolate=extrapolate)
         self.axis = axis
 
     @staticmethod
@@ -284,7 +285,7 @@ class PchipInterpolator(CubicHermiteSpline):
 
         # values where division by zero occurs will be excluded
         # by 'condition' afterwards
-        with np.errstate(divide='ignore'):
+        with np.errstate(divide='ignore', invalid='ignore'):
             whmean = (w1/mk[:-1] + w2/mk[1:]) / (w1 + w2)
 
         dk = np.zeros_like(y)
@@ -292,7 +293,7 @@ class PchipInterpolator(CubicHermiteSpline):
         dk[1:-1][~condition] = 1.0 / whmean[~condition]
 
         # special case endpoints, as suggested in
-        # Cleve Moler, Numerical Computing with MATLAB, Chap 3.4
+        # Cleve Moler, Numerical Computing with MATLAB, Chap 3.6 (pchiptx.m)
         dk[0] = PchipInterpolator._edge_case(hk[0], hk[1], mk[0], mk[1])
         dk[-1] = PchipInterpolator._edge_case(hk[-1], hk[-2], mk[-1], mk[-2])
 
@@ -313,7 +314,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     ----------
     xi : array_like
         A sorted list of x-coordinates, of length N.
-    yi :  array_like
+    yi : array_like
         A 1-D array of real values. `yi`'s length along the interpolation
         axis must be equal to the length of `xi`. If N-D array, use axis
         parameter to select correct axis.
@@ -433,15 +434,14 @@ class Akima1DInterpolator(CubicHermiteSpline):
         f1 = dm[2:]
         f2 = dm[:-2]
         f12 = f1 + f2
-        # These are the mask of where the the slope at breakpoint is defined:
+        # These are the mask of where the slope at breakpoint is defined:
         ind = np.nonzero(f12 > 1e-9 * np.max(f12))
         x_ind, y_ind = ind[0], ind[1:]
         # Set the slope at breakpoint
         t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
                   f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
 
-        super(Akima1DInterpolator, self).__init__(x, y, t, axis=0,
-                                                  extrapolate=False)
+        super().__init__(x, y, t, axis=0, extrapolate=False)
         self.axis = axis
 
     def extend(self, c, x, right=True):
@@ -548,7 +548,7 @@ class CubicSpline(CubicHermiteSpline):
 
     Notes
     -----
-    Parameters `bc_type` and ``interpolate`` work independently, i.e. the
+    Parameters `bc_type` and ``extrapolate`` work independently, i.e. the
     former controls only construction of a spline, and the latter only
     evaluation.
 
@@ -672,6 +672,12 @@ class CubicSpline(CubicHermiteSpline):
 
             s = solve(A, b, overwrite_a=True, overwrite_b=True,
                       check_finite=False)
+        elif n == 3 and bc[0] == 'periodic':
+            # In case when number of points is 3 we should count derivatives
+            # manually
+            s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
+            t = (slope / dxr).sum() / (1. / dxr).sum()
+            s.fill(t)
         else:
             # Find derivative values at each x[i] by solving a tridiagonal
             # system.
@@ -713,7 +719,7 @@ class CubicSpline(CubicHermiteSpline):
                 a_m1_0 = dx[-2]  # lower left corner value: A[-1, 0]
                 a_m1_m2 = dx[-1]
                 a_m1_m1 = 2 * (dx[-1] + dx[-2])
-                a_m2_m1 = dx[-2]
+                a_m2_m1 = dx[-3]
                 a_0_m1 = dx[0]
 
                 b[0] = 3 * (dxr[0] * slope[-1] + dxr[-1] * slope[0])
@@ -775,8 +781,7 @@ class CubicSpline(CubicHermiteSpline):
                 s = solve_banded((1, 1), A, b, overwrite_ab=True,
                                  overwrite_b=True, check_finite=False)
 
-        super(CubicSpline, self).__init__(x, y, s, axis=0,
-                                          extrapolate=extrapolate)
+        super().__init__(x, y, s, axis=0, extrapolate=extrapolate)
         self.axis = axis
 
     @staticmethod

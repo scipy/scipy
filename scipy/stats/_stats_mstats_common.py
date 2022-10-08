@@ -1,18 +1,25 @@
-from collections import namedtuple
-
+import warnings
 import numpy as np
-
+import scipy.stats._stats_py
 from . import distributions
-
+from .._lib._bunch import _make_tuple_bunch
+from ._stats_pythran import siegelslopes as siegelslopes_pythran
 
 __all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 
-LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
-                                                   'rvalue', 'pvalue',
-                                                   'stderr'))
+# This is not a namedtuple for backwards compatibility. See PR #12983
+LinregressResult = _make_tuple_bunch('LinregressResult',
+                                     ['slope', 'intercept', 'rvalue',
+                                      'pvalue', 'stderr'],
+                                     extra_field_names=['intercept_stderr'])
+TheilslopesResult = _make_tuple_bunch('TheilslopesResult',
+                                      ['slope', 'intercept',
+                                       'low_slope', 'high_slope'])
+SiegelslopesResult = _make_tuple_bunch('SiegelslopesResult',
+                                       ['slope', 'intercept'])
 
 
-def linregress(x, y=None):
+def linregress(x, y=None, alternative='two-sided'):
     """
     Calculate a linear least-squares regression for two sets of measurements.
 
@@ -22,72 +29,110 @@ def linregress(x, y=None):
         Two sets of measurements.  Both arrays should have the same length.  If
         only `x` is given (and ``y=None``), then it must be a two-dimensional
         array where one dimension has length 2.  The two sets of measurements
-        are then found by splitting the array along the length-2 dimension.  In
+        are then found by splitting the array along the length-2 dimension. In
         the case where ``y=None`` and `x` is a 2x2 array, ``linregress(x)`` is
         equivalent to ``linregress(x[0], x[1])``.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the slope of the regression line is nonzero
+        * 'less': the slope of the regression line is less than zero
+        * 'greater':  the slope of the regression line is greater than zero
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
-    slope : float
-        Slope of the regression line.
-    intercept : float
-        Intercept of the regression line.
-    rvalue : float
-        Correlation coefficient.
-    pvalue : float
-        Two-sided p-value for a hypothesis test whose null hypothesis is
-        that the slope is zero, using Wald Test with t-distribution of
-        the test statistic.
-    stderr : float
-        Standard error of the estimated gradient.
+    result : ``LinregressResult`` instance
+        The return value is an object with the following attributes:
 
-    See also
+        slope : float
+            Slope of the regression line.
+        intercept : float
+            Intercept of the regression line.
+        rvalue : float
+            The Pearson correlation coefficient. The square of ``rvalue``
+            is equal to the coefficient of determination.
+        pvalue : float
+            The p-value for a hypothesis test whose null hypothesis is
+            that the slope is zero, using Wald Test with t-distribution of
+            the test statistic. See `alternative` above for alternative
+            hypotheses.
+        stderr : float
+            Standard error of the estimated slope (gradient), under the
+            assumption of residual normality.
+        intercept_stderr : float
+            Standard error of the estimated intercept, under the assumption
+            of residual normality.
+
+    See Also
     --------
-    :func:`scipy.optimize.curve_fit` : Use non-linear
-     least squares to fit a function to data.
-    :func:`scipy.optimize.leastsq` : Minimize the sum of
-     squares of a set of equations.
+    scipy.optimize.curve_fit :
+        Use non-linear least squares to fit a function to data.
+    scipy.optimize.leastsq :
+        Minimize the sum of squares of a set of equations.
 
     Notes
     -----
     Missing values are considered pair-wise: if a value is missing in `x`,
     the corresponding value in `y` is masked.
 
+    For compatibility with older versions of SciPy, the return value acts
+    like a ``namedtuple`` of length 5, with fields ``slope``, ``intercept``,
+    ``rvalue``, ``pvalue`` and ``stderr``, so one can continue to write::
+
+        slope, intercept, r, p, se = linregress(x, y)
+
+    With that style, however, the standard error of the intercept is not
+    available.  To have access to all the computed values, including the
+    standard error of the intercept, use the return value as an object
+    with attributes, e.g.::
+
+        result = linregress(x, y)
+        print(result.intercept, result.intercept_stderr)
+
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
+    >>> rng = np.random.default_rng()
 
     Generate some data:
 
-    >>> np.random.seed(12345678)
-    >>> x = np.random.random(10)
-    >>> y = 1.6*x + np.random.random(10)
+    >>> x = rng.random(10)
+    >>> y = 1.6*x + rng.random(10)
 
     Perform the linear regression:
 
-    >>> slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
-    >>> print("slope: %f    intercept: %f" % (slope, intercept))
-    slope: 1.944864    intercept: 0.268578
+    >>> res = stats.linregress(x, y)
 
-    To get coefficient of determination (R-squared):
+    Coefficient of determination (R-squared):
 
-    >>> print("R-squared: %f" % r_value**2)
-    R-squared: 0.735498
+    >>> print(f"R-squared: {res.rvalue**2:.6f}")
+    R-squared: 0.717533
 
     Plot the data along with the fitted line:
 
     >>> plt.plot(x, y, 'o', label='original data')
-    >>> plt.plot(x, intercept + slope*x, 'r', label='fitted line')
+    >>> plt.plot(x, res.intercept + res.slope*x, 'r', label='fitted line')
     >>> plt.legend()
     >>> plt.show()
 
-    Example for the case where only x is provided as a 2x2 array:
+    Calculate 95% confidence interval on slope and intercept:
 
-    >>> x = np.array([[0, 1], [0, 2]])
-    >>> r = stats.linregress(x)
-    >>> r.slope, r.intercept
-    (2.0, 0.0)
+    >>> # Two-sided inverse Students t-distribution
+    >>> # p - probability, df - degrees of freedom
+    >>> from scipy.stats import t
+    >>> tinv = lambda p, df: abs(t.ppf(p/2, df))
+
+    >>> ts = tinv(0.05, len(x)-2)
+    >>> print(f"slope (95%): {res.slope:.6f} +/- {ts*res.stderr:.6f}")
+    slope (95%): 1.453392 +/- 0.743465
+    >>> print(f"intercept (95%): {res.intercept:.6f}"
+    ...       f" +/- {ts*res.intercept_stderr:.6f}")
+    intercept (95%): 0.616950 +/- 0.544475
 
     """
     TINY = 1.0e-20
@@ -98,9 +143,9 @@ def linregress(x, y=None):
         elif x.shape[1] == 2:
             x, y = x.T
         else:
-            msg = ("If only `x` is given as input, it has to be of shape "
-                   "(2, N) or (N, 2), provided shape was %s" % str(x.shape))
-            raise ValueError(msg)
+            raise ValueError("If only `x` is given as input, it has to "
+                             "be of shape (2, N) or (N, 2); provided shape "
+                             f"was {x.shape}.")
     else:
         x = np.asarray(x)
         y = np.asarray(y)
@@ -108,26 +153,33 @@ def linregress(x, y=None):
     if x.size == 0 or y.size == 0:
         raise ValueError("Inputs must not be empty.")
 
+    if np.amax(x) == np.amin(x) and len(x) > 1:
+        raise ValueError("Cannot calculate a linear regression "
+                         "if all x values are identical")
+
     n = len(x)
     xmean = np.mean(x, None)
     ymean = np.mean(y, None)
 
-    # average sum of squares:
-    ssxm, ssxym, ssyxm, ssym = np.cov(x, y, bias=1).flat
-    r_num = ssxym
-    r_den = np.sqrt(ssxm * ssym)
-    if r_den == 0.0:
+    # Average sums of square differences from the mean
+    #   ssxm = mean( (x-mean(x))^2 )
+    #   ssxym = mean( (x-mean(x)) * (y-mean(y)) )
+    ssxm, ssxym, _, ssym = np.cov(x, y, bias=1).flat
+
+    # R-value
+    #   r = ssxym / sqrt( ssxm * ssym )
+    if ssxm == 0.0 or ssym == 0.0:
+        # If the denominator was going to be 0
         r = 0.0
     else:
-        r = r_num / r_den
-        # test for numerical error propagation
+        r = ssxym / np.sqrt(ssxm * ssym)
+        # Test for numerical error propagation (make sure -1 < r < 1)
         if r > 1.0:
             r = 1.0
         elif r < -1.0:
             r = -1.0
 
-    df = n - 2
-    slope = r_num / ssxm
+    slope = ssxym / ssxm
     intercept = ymean - slope*xmean
     if n == 2:
         # handle case when only two points are passed in
@@ -135,16 +187,30 @@ def linregress(x, y=None):
             prob = 1.0
         else:
             prob = 0.0
-        sterrest = 0.0
+        slope_stderr = 0.0
+        intercept_stderr = 0.0
     else:
+        df = n - 2  # Number of degrees of freedom
+        # n-2 degrees of freedom because 2 has been used up
+        # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-        prob = 2 * distributions.t.sf(np.abs(t), df)
-        sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
+        t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
 
-    return LinregressResult(slope, intercept, r, prob, sterrest)
+        slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
+
+        # Also calculate the standard error of the intercept
+        # The following relationship is used:
+        #   ssxm = mean( (x-mean(x))^2 )
+        #        = ssx - sx*sx
+        #        = mean( x^2 ) - mean(x)^2
+        intercept_stderr = slope_stderr * np.sqrt(ssxm + xmean**2)
+
+    return LinregressResult(slope=slope, intercept=intercept, rvalue=r,
+                            pvalue=prob, stderr=slope_stderr,
+                            intercept_stderr=intercept_stderr)
 
 
-def theilslopes(y, x=None, alpha=0.95):
+def theilslopes(y, x=None, alpha=0.95, method='separate'):
     r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
 
@@ -161,19 +227,33 @@ def theilslopes(y, x=None, alpha=0.95):
         Confidence degree between 0 and 1. Default is 95% confidence.
         Note that `alpha` is symmetric around 0.5, i.e. both 0.1 and 0.9 are
         interpreted as "find the 90% confidence interval".
+    method : {'joint', 'separate'}, optional
+        Method to be used for computing estimate for intercept.
+        Following methods are supported,
+
+            * 'joint': Uses np.median(y - slope * x) as intercept.
+            * 'separate': Uses np.median(y) - slope * np.median(x)
+                          as intercept.
+
+        The default is 'separate'.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
-    medslope : float
-        Theil slope.
-    medintercept : float
-        Intercept of the Theil line, as ``median(y) - medslope*median(x)``.
-    lo_slope : float
-        Lower bound of the confidence interval on `medslope`.
-    up_slope : float
-        Upper bound of the confidence interval on `medslope`.
+    result : ``TheilslopesResult`` instance
+        The return value is an object with the following attributes:
 
-    See also
+        slope : float
+            Theil slope.
+        intercept : float
+            Intercept of the Theil line.
+        low_slope : float
+            Lower bound of the confidence interval on `slope`.
+        high_slope : float
+            Upper bound of the confidence interval on `slope`.
+
+    See Also
     --------
     siegelslopes : a similar technique using repeated medians
 
@@ -181,23 +261,32 @@ def theilslopes(y, x=None, alpha=0.95):
     -----
     The implementation of `theilslopes` follows [1]_. The intercept is
     not defined in [1]_, and here it is defined as ``median(y) -
-    medslope*median(x)``, which is given in [3]_. Other definitions of
-    the intercept exist in the literature. A confidence interval for
-    the intercept is not given as this question is not addressed in
-    [1]_.
+    slope*median(x)``, which is given in [3]_. Other definitions of
+    the intercept exist in the literature such as  ``median(y - slope*x)``
+    in [4]_. The approach to compute the intercept can be determined by the
+    parameter ``method``. A confidence interval for the intercept is not
+    given as this question is not addressed in [1]_.
+
+    For compatibility with older versions of SciPy, the return value acts
+    like a ``namedtuple`` of length 4, with fields ``slope``, ``intercept``,
+    ``low_slope``, and ``high_slope``, so one can continue to write::
+
+        slope, intercept, low_slope, high_slope = theilslopes(y, x)
 
     References
     ----------
-    .. [1] P.K. Sen, "Estimates of the regression coefficient based on Kendall's tau",
-           J. Am. Stat. Assoc., Vol. 63, pp. 1379-1389, 1968.
+    .. [1] P.K. Sen, "Estimates of the regression coefficient based on
+           Kendall's tau", J. Am. Stat. Assoc., Vol. 63, pp. 1379-1389, 1968.
     .. [2] H. Theil, "A rank-invariant method of linear and polynomial
            regression analysis I, II and III",  Nederl. Akad. Wetensch., Proc.
            53:, pp. 386-392, pp. 521-525, pp. 1397-1412, 1950.
     .. [3] W.L. Conover, "Practical nonparametric statistics", 2nd ed.,
            John Wiley and Sons, New York, pp. 493.
+    .. [4] https://en.wikipedia.org/wiki/Theil%E2%80%93Sen_estimator
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -209,7 +298,7 @@ def theilslopes(y, x=None, alpha=0.95):
     Compute the slope, intercept and 90% confidence interval.  For comparison,
     also compute the least-squares fit with `linregress`:
 
-    >>> res = stats.theilslopes(y, x, 0.90)
+    >>> res = stats.theilslopes(y, x, 0.90, method='separate')
     >>> lsq_res = stats.linregress(x, y)
 
     Plot the results. The Theil-Sen regression line is shown in red, with the
@@ -228,6 +317,9 @@ def theilslopes(y, x=None, alpha=0.95):
     >>> plt.show()
 
     """
+    if method not in ['joint', 'separate']:
+        raise ValueError(("method must be either 'joint' or 'separate'."
+                          "'{}' is invalid.".format(method)))
     # We copy both x and y so we can use _find_repeats.
     y = np.array(y).flatten()
     if x is None:
@@ -235,15 +327,22 @@ def theilslopes(y, x=None, alpha=0.95):
     else:
         x = np.array(x, dtype=float).flatten()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+            raise ValueError("Incompatible lengths ! (%s<>%s)" %
+                             (len(y), len(x)))
 
     # Compute sorted slopes only when deltax > 0
     deltax = x[:, np.newaxis] - x
     deltay = y[:, np.newaxis] - y
     slopes = deltay[deltax > 0] / deltax[deltax > 0]
+    if not slopes.size:
+        msg = "All `x` coordinates are identical."
+        warnings.warn(msg, RuntimeWarning, stacklevel=2)
     slopes.sort()
     medslope = np.median(slopes)
-    medinter = np.median(y) - medslope * np.median(x)
+    if method == 'joint':
+        medinter = np.median(y - medslope * x)
+    else:
+        medinter = np.median(y) - medslope * np.median(x)
     # Now compute confidence intervals
     if alpha > 0.5:
         alpha = 1. - alpha
@@ -259,11 +358,16 @@ def theilslopes(y, x=None, alpha=0.95):
                      sum(k * (k-1) * (2*k + 5) for k in nxreps) -
                      sum(k * (k-1) * (2*k + 5) for k in nyreps))
     # Find the confidence interval indices in `slopes`
-    sigma = np.sqrt(sigsq)
-    Ru = min(int(np.round((nt - z*sigma)/2.)), len(slopes)-1)
-    Rl = max(int(np.round((nt + z*sigma)/2.)) - 1, 0)
-    delta = slopes[[Rl, Ru]]
-    return medslope, medinter, delta[0], delta[1]
+    try:
+        sigma = np.sqrt(sigsq)
+        Ru = min(int(np.round((nt - z*sigma)/2.)), len(slopes)-1)
+        Rl = max(int(np.round((nt + z*sigma)/2.)) - 1, 0)
+        delta = slopes[[Rl, Ru]]
+    except (ValueError, IndexError):
+        delta = (np.nan, np.nan)
+
+    return TheilslopesResult(slope=medslope, intercept=medinter,
+                             low_slope=delta[0], high_slope=delta[1])
 
 
 def _find_repeats(arr):
@@ -302,18 +406,21 @@ def siegelslopes(y, x=None, method="hierarchical"):
         Independent variable. If None, use ``arange(len(y))`` instead.
     method : {'hierarchical', 'separate'}
         If 'hierarchical', estimate the intercept using the estimated
-        slope ``medslope`` (default option).
+        slope ``slope`` (default option).
         If 'separate', estimate the intercept independent of the estimated
         slope. See Notes for details.
 
     Returns
     -------
-    medslope : float
-        Estimate of the slope of the regression line.
-    medintercept : float
-        Estimate of the intercept of the regression line.
+    result : ``SiegelslopesResult`` instance
+        The return value is an object with the following attributes:
 
-    See also
+        slope : float
+            Estimate of the slope of the regression line.
+        intercept : float
+            Estimate of the intercept of the regression line.
+
+    See Also
     --------
     theilslopes : a similar technique without repeated medians
 
@@ -321,19 +428,25 @@ def siegelslopes(y, x=None, method="hierarchical"):
     -----
     With ``n = len(y)``, compute ``m_j`` as the median of
     the slopes from the point ``(x[j], y[j])`` to all other `n-1` points.
-    ``medslope`` is then the median of all slopes ``m_j``.
+    ``slope`` is then the median of all slopes ``m_j``.
     Two ways are given to estimate the intercept in [1]_ which can be chosen
     via the parameter ``method``.
-    The hierarchical approach uses the estimated slope ``medslope``
-    and computes ``medintercept`` as the median of ``y - medslope*x``.
+    The hierarchical approach uses the estimated slope ``slope``
+    and computes ``intercept`` as the median of ``y - slope*x``.
     The other approach estimates the intercept separately as follows: for
     each point ``(x[j], y[j])``, compute the intercepts of all the `n-1`
     lines through the remaining points and take the median ``i_j``.
-    ``medintercept`` is the median of the ``i_j``.
+    ``intercept`` is the median of the ``i_j``.
 
     The implementation computes `n` times the median of a vector of size `n`
     which can be slow for large vectors. There are more efficient algorithms
     (see [2]_) which are not implemented here.
+
+    For compatibility with older versions of SciPy, the return value acts
+    like a ``namedtuple`` of length 2, with fields ``slope`` and
+    ``intercept``, so one can continue to write::
+
+        slope, intercept = siegelslopes(y, x)
 
     References
     ----------
@@ -346,6 +459,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -379,26 +493,9 @@ def siegelslopes(y, x=None, method="hierarchical"):
     else:
         x = np.asarray(x, dtype=float).ravel()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
-
-    deltax = x[:, np.newaxis] - x
-    deltay = y[:, np.newaxis] - y
-    slopes, intercepts = [], []
-
-    for j in range(len(x)):
-        id_nonzero = deltax[j, :] != 0
-        slopes_j = deltay[j, id_nonzero] / deltax[j, id_nonzero]
-        medslope_j = np.median(slopes_j)
-        slopes.append(medslope_j)
-        if method == 'separate':
-            z = y*x[j] - y[j]*x
-            medintercept_j = np.median(z[id_nonzero] / deltax[j, id_nonzero])
-            intercepts.append(medintercept_j)
-
-    medslope = np.median(np.asarray(slopes))
-    if method == "separate":
-        medinter = np.median(np.asarray(intercepts))
-    else:
-        medinter = np.median(y - medslope*x)
-
-    return medslope, medinter
+            raise ValueError("Incompatible lengths ! (%s<>%s)" %
+                             (len(y), len(x)))
+    dtype = np.result_type(x, y, np.float32)  # use at least float32
+    y, x = y.astype(dtype), x.astype(dtype)
+    medslope, medinter = siegelslopes_pythran(y, x, method)
+    return SiegelslopesResult(slope=medslope, intercept=medinter)

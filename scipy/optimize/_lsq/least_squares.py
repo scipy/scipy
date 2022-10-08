@@ -4,10 +4,11 @@ from warnings import warn
 import numpy as np
 from numpy.linalg import norm
 
-from scipy.sparse import issparse, csr_matrix
+from scipy.sparse import issparse
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize import _minpack, OptimizeResult
 from scipy.optimize._numdiff import approx_derivative, group_columns
+from scipy.optimize._minimize import Bounds
 
 from .trf import trf
 from .dogbox import dogbox
@@ -282,11 +283,15 @@ def least_squares(
         (or the exact value) for the Jacobian as an array_like (np.atleast_2d
         is applied), a sparse matrix (csr_matrix preferred for performance) or
         a `scipy.sparse.linalg.LinearOperator`.
-    bounds : 2-tuple of array_like, optional
-        Lower and upper bounds on independent variables. Defaults to no bounds.
-        Each array must match the size of `x0` or be a scalar, in the latter
-        case a bound will be the same for all variables. Use ``np.inf`` with
-        an appropriate sign to disable bounds on all or some variables.
+    bounds : 2-tuple of array_like or `Bounds`, optional
+        There are two ways to specify bounds:
+
+            1. Instance of `Bounds` class
+            2. Lower and upper bounds on independent variables. Defaults to no
+               bounds. Each array must match the size of `x0` or be a scalar,
+               in the latter case a bound will be the same for all variables.
+               Use ``np.inf`` with an appropriate sign to disable bounds on all
+               or some variables.
     method : {'trf', 'dogbox', 'lm'}, optional
         Algorithm to perform minimization.
 
@@ -304,8 +309,11 @@ def least_squares(
         Tolerance for termination by the change of the cost function. Default
         is 1e-8. The optimization process is stopped when ``dF < ftol * F``,
         and there was an adequate agreement between a local quadratic model and
-        the true model in the last step. If None, the termination by this
-        condition is disabled.
+        the true model in the last step.
+
+        If None and 'method' is not 'lm', the termination by this condition is
+        disabled. If 'method' is 'lm', this tolerance must be higher than
+        machine epsilon.
     xtol : float or None, optional
         Tolerance for termination by the change of the independent variables.
         Default is 1e-8. The exact condition depends on the `method` used:
@@ -315,7 +323,9 @@ def least_squares(
               a trust-region radius and ``xs`` is the value of ``x``
               scaled according to `x_scale` parameter (see below).
 
-        If None, the termination by this condition is disabled.
+        If None and 'method' is not 'lm', the termination by this condition is
+        disabled. If 'method' is 'lm', this tolerance must be higher than
+        machine epsilon.
     gtol : float or None, optional
         Tolerance for termination by the norm of the gradient. Default is 1e-8.
         The exact condition depends on a `method` used:
@@ -330,7 +340,9 @@ def least_squares(
               between columns of the Jacobian and the residual vector is less
               than `gtol`, or the residual vector is zero.
 
-        If None, the termination by this condition is disabled.
+        If None and 'method' is not 'lm', the termination by this condition is
+        disabled. If 'method' is 'lm', this tolerance must be higher than
+        machine epsilon.
     x_scale : array_like or 'jac', optional
         Characteristic scale of each variable. Setting `x_scale` is equivalent
         to reformulating the problem in scaled variables ``xs = x / x_scale``.
@@ -577,6 +589,7 @@ def least_squares(
     In this example we find a minimum of the Rosenbrock function without bounds
     on independent variables.
 
+    >>> import numpy as np
     >>> def fun_rosenbrock(x):
     ...     return np.array([10 * (x[1] - x[0]**2), (1 - x[0])])
 
@@ -660,12 +673,15 @@ def least_squares(
     First, define the function which generates the data with noise and
     outliers, define the model parameters, and generate data:
 
-    >>> def gen_data(t, a, b, c, noise=0, n_outliers=0, random_state=0):
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
+    >>> def gen_data(t, a, b, c, noise=0., n_outliers=0, seed=None):
+    ...     rng = default_rng(seed)
+    ...
     ...     y = a + b * np.exp(t * c)
     ...
-    ...     rnd = np.random.RandomState(random_state)
-    ...     error = noise * rnd.randn(t.size)
-    ...     outliers = rnd.randint(0, t.size, n_outliers)
+    ...     error = noise * rng.standard_normal(t.size)
+    ...     outliers = rng.integers(0, t.size, n_outliers)
     ...     error[outliers] *= 10
     ...
     ...     return y + error
@@ -768,9 +784,6 @@ def least_squares(
     if verbose not in [0, 1, 2]:
         raise ValueError("`verbose` must be in [0, 1, 2].")
 
-    if len(bounds) != 2:
-        raise ValueError("`bounds` must contain 2 elements.")
-
     if max_nfev is not None and max_nfev <= 0:
         raise ValueError("`max_nfev` must be None or positive integer.")
 
@@ -782,7 +795,14 @@ def least_squares(
     if x0.ndim > 1:
         raise ValueError("`x0` must have at most 1 dimension.")
 
-    lb, ub = prepare_bounds(bounds, x0.shape[0])
+    if isinstance(bounds, Bounds):
+        lb, ub = bounds.lb, bounds.ub
+        bounds = (lb, ub)
+    else:
+        if len(bounds) == 2:
+            lb, ub = prepare_bounds(bounds, x0.shape[0])
+        else:
+            raise ValueError("`bounds` must contain 2 elements.")
 
     if method == 'lm' and not np.all((lb == -np.inf) & (ub == np.inf)):
         raise ValueError("Method 'lm' doesn't support bounds.")

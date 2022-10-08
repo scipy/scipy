@@ -1,14 +1,16 @@
+import pytest
 import numpy as np
 from numpy import cos, sin, pi
 from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
                            assert_, suppress_warnings)
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
-                             cumtrapz, quad, simps, fixed_quad,
-                             AccuracyWarning)
+                             cumulative_trapezoid, cumtrapz, trapz, trapezoid,
+                             quad, simpson, simps, fixed_quad, AccuracyWarning,
+                             qmc_quad)
+from scipy import stats, special as sc
 
-
-class TestFixedQuad(object):
+class TestFixedQuad:
     def test_scalar(self):
         n = 4
         func = lambda x: x**(2*n - 1)
@@ -26,7 +28,7 @@ class TestFixedQuad(object):
         assert_allclose(got, expected, rtol=1e-12)
 
 
-class TestQuadrature(object):
+class TestQuadrature:
     def quad(self, x, a, b, args):
         raise NotImplementedError
 
@@ -141,34 +143,66 @@ class TestQuadrature(object):
         numeric_integral = np.dot(wts, y)
         assert_almost_equal(numeric_integral, exact_integral)
 
-    def test_simps(self):
+    def test_simpson(self):
         y = np.arange(17)
-        assert_equal(simps(y), 128)
-        assert_equal(simps(y, dx=0.5), 64)
-        assert_equal(simps(y, x=np.linspace(0, 4, 17)), 32)
+        assert_equal(simpson(y), 128)
+        assert_equal(simpson(y, dx=0.5), 64)
+        assert_equal(simpson(y, x=np.linspace(0, 4, 17)), 32)
 
         y = np.arange(4)
         x = 2**y
-        assert_equal(simps(y, x=x, even='avg'), 13.875)
-        assert_equal(simps(y, x=x, even='first'), 13.75)
-        assert_equal(simps(y, x=x, even='last'), 14)
+        assert_equal(simpson(y, x=x, even='avg'), 13.875)
+        assert_equal(simpson(y, x=x, even='first'), 13.75)
+        assert_equal(simpson(y, x=x, even='last'), 14)
+
+        # Tests for checking base case
+        x = np.array([3])
+        y = np.power(x, 2)
+        assert_equal(simpson(y, x=x, axis=0), 0.0)
+        assert_equal(simpson(y, x=x, axis=-1), 0.0)
+
+        x = np.array([3, 3, 3, 3])
+        y = np.power(x, 2)
+        assert_equal(simpson(y, x=x, axis=0), 0.0)
+        assert_equal(simpson(y, x=x, axis=-1), 0.0)
+
+        x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 2, 4, 8]])
+        y = np.power(x, 2)
+        zero_axis = [0.0, 0.0, 0.0, 0.0]
+        default_axis = [175.75, 175.75, 175.75]
+        assert_equal(simpson(y, x=x, axis=0), zero_axis)
+        assert_equal(simpson(y, x=x, axis=-1), default_axis)
+
+        x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 8, 16, 32]])
+        y = np.power(x, 2)
+        zero_axis = [0.0, 136.0, 1088.0, 8704.0]
+        default_axis = [175.75, 175.75, 11292.25]
+        assert_equal(simpson(y, x=x, axis=0), zero_axis)
+        assert_equal(simpson(y, x=x, axis=-1), default_axis)
+
+    def test_simps(self):
+        # Basic coverage test for the alias
+        y = np.arange(4)
+        x = 2**y
+        assert_equal(simpson(y, x=x, dx=0.5, even='first'),
+                     simps(y, x=x, dx=0.5, even='first'))
 
 
-class TestCumtrapz(object):
+class TestCumulative_trapezoid:
     def test_1d(self):
         x = np.linspace(-2, 2, num=5)
         y = x
-        y_int = cumtrapz(y, x, initial=0)
+        y_int = cumulative_trapezoid(y, x, initial=0)
         y_expected = [0., -1.5, -2., -1.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumtrapz(y, x, initial=None)
+        y_int = cumulative_trapezoid(y, x, initial=None)
         assert_allclose(y_int, y_expected[1:])
 
     def test_y_nd_x_nd(self):
         x = np.arange(3 * 2 * 4).reshape(3, 2, 4)
         y = x
-        y_int = cumtrapz(y, x, initial=0)
+        y_int = cumulative_trapezoid(y, x, initial=0)
         y_expected = np.array([[[0., 0.5, 2., 4.5],
                                 [0., 4.5, 10., 16.5]],
                                [[0., 8.5, 18., 28.5],
@@ -181,9 +215,9 @@ class TestCumtrapz(object):
         # Try with all axes
         shapes = [(2, 2, 4), (3, 1, 4), (3, 2, 3)]
         for axis, shape in zip([0, 1, 2], shapes):
-            y_int = cumtrapz(y, x, initial=3.45, axis=axis)
+            y_int = cumulative_trapezoid(y, x, initial=3.45, axis=axis)
             assert_equal(y_int.shape, (3, 2, 4))
-            y_int = cumtrapz(y, x, initial=None, axis=axis)
+            y_int = cumulative_trapezoid(y, x, initial=None, axis=axis)
             assert_equal(y_int.shape, shape)
 
     def test_y_nd_x_1d(self):
@@ -206,24 +240,147 @@ class TestCumtrapz(object):
                        [20.5, 85., 197.5]]]))
 
         for axis, y_expected in zip([0, 1, 2], ys_expected):
-            y_int = cumtrapz(y, x=x[:y.shape[axis]], axis=axis, initial=None)
+            y_int = cumulative_trapezoid(y, x=x[:y.shape[axis]], axis=axis,
+                                         initial=None)
             assert_allclose(y_int, y_expected)
 
     def test_x_none(self):
         y = np.linspace(-2, 2, num=5)
 
-        y_int = cumtrapz(y)
+        y_int = cumulative_trapezoid(y)
         y_expected = [-1.5, -2., -1.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumtrapz(y, initial=1.23)
+        y_int = cumulative_trapezoid(y, initial=1.23)
         y_expected = [1.23, -1.5, -2., -1.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumtrapz(y, dx=3)
+        y_int = cumulative_trapezoid(y, dx=3)
         y_expected = [-4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumtrapz(y, dx=3, initial=1.23)
+        y_int = cumulative_trapezoid(y, dx=3, initial=1.23)
         y_expected = [1.23, -4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
+
+    def test_cumtrapz(self):
+        # Basic coverage test for the alias
+        x = np.arange(3 * 2 * 4).reshape(3, 2, 4)
+        y = x
+        assert_allclose(cumulative_trapezoid(y, x, dx=0.5, axis=0, initial=0),
+                        cumtrapz(y, x, dx=0.5, axis=0, initial=0),
+                        rtol=1e-14)
+
+
+class TestTrapezoid():
+    """This function is tested in NumPy more extensive, just do some
+    basic due diligence here."""
+    def test_trapezoid(self):
+        y = np.arange(17)
+        assert_equal(trapezoid(y), 128)
+        assert_equal(trapezoid(y, dx=0.5), 64)
+        assert_equal(trapezoid(y, x=np.linspace(0, 4, 17)), 32)
+
+        y = np.arange(4)
+        x = 2**y
+        assert_equal(trapezoid(y, x=x, dx=0.1), 13.5)
+
+    def test_trapz(self):
+        # Basic coverage test for the alias
+        y = np.arange(4)
+        x = 2**y
+        assert_equal(trapezoid(y, x=x, dx=0.5, axis=0),
+                     trapz(y, x=x, dx=0.5, axis=0))
+
+
+class TestQMCQuad():
+    def test_input_validation(self):
+        message = "`func` must be callable."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad("a duck", [0, 0], [1, 1])
+
+        message = "`func` must evaluate the integrand at points..."
+        with pytest.raises(ValueError, match=message):
+            qmc_quad(lambda: 1, [0, 0], [1, 1])
+
+        def func(x):
+            assert x.ndim == 1
+            return np.sum(x)
+        message = "Exception encountered when attempting vectorized call..."
+        with pytest.warns(UserWarning, match=message):
+            qmc_quad(func, [0, 0], [1, 1])
+
+        message = "`n_points` must be an integer."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], n_points=1024.5)
+
+        message = "`n_estimates` must be an integer."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], n_estimates=8.5)
+
+        message = "`qrng` must be an instance of scipy.stats.qmc.QMCEngine."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], qrng="a duck")
+
+        message = "`qrng` must be initialized with dimensionality equal to "
+        with pytest.raises(ValueError, match=message):
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], qrng=stats.qmc.Sobol(1))
+
+        message = r"`log` must be boolean \(`True` or `False`\)."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], log=10)
+
+    def basic_test(self, n_points=2**8, n_estimates=8, signs=np.ones(2)):
+
+        ndim = 2
+        mean = np.zeros(ndim)
+        cov = np.eye(ndim)
+
+        def func(x):
+            return stats.multivariate_normal.pdf(x, mean, cov)
+
+        rng = np.random.default_rng(2879434385674690281)
+        qrng = stats.qmc.Sobol(ndim, seed=rng)
+        a = np.zeros(ndim)
+        b = np.ones(ndim) * signs
+        res = qmc_quad(func, a, b, n_points=n_points,
+                       n_estimates=n_estimates, args=(mean, cov), qrng=qrng)
+        ref = stats.multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+        atol = sc.stdtrit(n_estimates-1, 0.995) * res.standard_error  # 99% CI
+        assert_allclose(res.integral, ref, atol=atol)
+        assert np.prod(signs)*res.integral > 0
+
+        rng = np.random.default_rng(2879434385674690281)
+        qrng = stats.qmc.Sobol(ndim, seed=rng)
+        logres = qmc_quad(lambda *args: np.log(func(*args)), a, b,
+                          n_points=n_points, n_estimates=n_estimates,
+                          args=(mean, cov), log=True, qrng=qrng)
+        assert_allclose(np.exp(logres.integral), res.integral)
+        assert np.imag(logres.integral) == (np.pi if np.prod(signs) < 0 else 0)
+
+    @pytest.mark.parametrize("n_points", [2**8, 2**12])
+    @pytest.mark.parametrize("n_estimates", [8, 16])
+    def test_basic(self, n_points, n_estimates):
+        self.basic_test(n_points, n_estimates)
+
+    @pytest.mark.parametrize("signs", [[1, 1], [-1, -1], [-1, 1], [1, -1]])
+    def test_sign(self, signs):
+        self.basic_test(signs=signs)
+
+    @pytest.mark.parametrize("log", [False, True])
+    def test_zero(self, log):
+        message = "A lower limit was equal to an upper limit, so"
+        with pytest.warns(UserWarning, match=message):
+            res = qmc_quad(lambda x: 1, [0, 0], [0, 1], log=log)
+        assert res.integral == (-np.inf if log else 0)
+        assert res.standard_error == 0
+
+    def test_flexible_input(self):
+        # check that qrng is not required
+        # also checks that for 1d problems, a and b can be scalars
+        def func(x):
+            return stats.norm.pdf(x, scale=2)
+
+        res = qmc_quad(func, 0, 1)
+        ref = stats.norm.cdf(1, scale=2) - stats.norm.cdf(0, scale=2)
+        assert_allclose(res.integral, ref, 1e-2)

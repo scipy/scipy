@@ -1,13 +1,11 @@
 import numpy as np
 from numpy.testing import suppress_warnings
 
-from .common import Benchmark
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     from scipy.cluster.hierarchy import linkage
     from scipy.cluster.vq import kmeans, kmeans2, vq
-except ImportError:
-    pass
 
 
 class HierarchyLinkage(Benchmark):

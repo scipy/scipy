@@ -130,6 +130,7 @@ def test_cossin_error_partitioning():
 
 @pytest.mark.parametrize("dtype_", DTYPES)
 def test_cossin_separate(dtype_):
+    seed(1234)
     m, p, q = 250, 80, 170
 
     pfx = 'or' if dtype_ in REAL_DTYPES else 'un'

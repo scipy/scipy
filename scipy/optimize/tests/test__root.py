@@ -8,7 +8,7 @@ import numpy as np
 from scipy.optimize import root
 
 
-class TestRoot(object):
+class TestRoot:
     def test_tol_parameter(self):
         # Check that the minimize() tol= argument does something
         def func(z):
@@ -38,6 +38,22 @@ class TestRoot(object):
             assert_(abs(func(sol1.x)).max() < abs(func(sol2.x)).max(),
                     msg)
 
+    def test_tol_norm(self):
+
+        def norm(x):
+            return abs(x[0])
+
+        for method in ['excitingmixing',
+                       'diagbroyden',
+                       'linearmixing',
+                       'anderson',
+                       'broyden1',
+                       'broyden2',
+                       'krylov']:
+
+            root(np.zeros_like, np.zeros(2), method=method,
+                options={"tol_norm": norm})
+
     def test_minimize_scalar_coerce_args_param(self):
         # github issue #3503
         def func(z, f=1):
@@ -49,7 +65,7 @@ class TestRoot(object):
         # gh8320
         # check that decreasing the size of the returned array raises an error
         # and doesn't segfault
-        class fun(object):
+        class fun:
             def __init__(self):
                 self.count = 0
 

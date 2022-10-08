@@ -5,14 +5,16 @@ Method agnostic utility functions for linear progamming
 import numpy as np
 import scipy.sparse as sps
 from warnings import warn
-from .optimize import OptimizeWarning
+from ._optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
-    _remove_redundancy, _remove_redundancy_sparse, _remove_redundancy_dense
+    _remove_redundancy_svd, _remove_redundancy_pivot_sparse,
+    _remove_redundancy_pivot_dense, _remove_redundancy_id
     )
 from collections import namedtuple
 
-_LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
-_LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
+_LPProblem = namedtuple('_LPProblem',
+                        'c A_ub b_ub A_eq b_eq bounds x0 integrality')
+_LPProblem.__new__.__defaults__ = (None,) * 7  # make c the only required arg
 _LPProblem.__doc__ = \
     """ Represents a linear-programming problem.
 
@@ -49,6 +51,28 @@ _LPProblem.__doc__ = \
         the optimization algorithm. This argument is currently used only by the
         'revised simplex' method, and can only be used if `x0` represents a
         basic feasible solution.
+    integrality : 1-D array or int, optional
+        Indicates the type of integrality constraint on each decision variable.
+
+        ``0`` : Continuous variable; no integrality constraint.
+
+        ``1`` : Integer variable; decision variable must be an integer
+        within `bounds`.
+
+        ``2`` : Semi-continuous variable; decision variable must be within
+        `bounds` or take value ``0``.
+
+        ``3`` : Semi-integer variable; decision variable must be an integer
+        within `bounds` or take value ``0``.
+
+        By default, all variables are continuous.
+
+        For mixed integrality constraints, supply an array of shape `c.shape`.
+        To infer a constraint on each decision variable from shorter inputs,
+        the argument will be broadcasted to `c.shape` using `np.broadcast_to`.
+
+        This argument is currently used only by the ``'highs'`` method and
+        ignored otherwise.
 
     Notes
     -----
@@ -64,7 +88,7 @@ _LPProblem.__doc__ = \
     """
 
 
-def _check_sparse_inputs(options, A_ub, A_eq):
+def _check_sparse_inputs(options, meth, A_ub, A_eq):
     """
     Check the provided ``A_ub`` and ``A_eq`` matrices conform to the specified
     optional sparsity variables.
@@ -87,6 +111,8 @@ def _check_sparse_inputs(options, A_ub, A_eq):
                 Set to True to print convergence messages.
 
         For method-specific options, see :func:`show_options('linprog')`.
+    method : str, optional
+        The algorithm used to solve the standard form problem.
 
     Returns
     -------
@@ -114,8 +140,17 @@ def _check_sparse_inputs(options, A_ub, A_eq):
     if _sparse_presolve and A_ub is not None:
         A_ub = sps.coo_matrix(A_ub)
 
+    sparse_constraint = sps.issparse(A_eq) or sps.issparse(A_ub)
+
+    preferred_methods = {"highs", "highs-ds", "highs-ipm"}
+    dense_methods = {"simplex", "revised simplex"}
+    if meth in dense_methods and sparse_constraint:
+        raise ValueError(f"Method '{meth}' does not support sparse "
+                         "constraint matrices. Please consider using one of "
+                         f"{preferred_methods}.")
+
     sparse = options.get('sparse', False)
-    if not sparse and (sps.issparse(A_eq) or sps.issparse(A_ub)):
+    if not sparse and sparse_constraint and meth == 'interior-point':
         options['sparse'] = True
         warn("Sparse constraint matrix detected; setting 'sparse':True.",
              OptimizeWarning, stacklevel=4)
@@ -246,7 +281,7 @@ def _clean_inputs(lp):
             basic feasible solution.
 
     """
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
     if c is None:
         raise TypeError
@@ -335,9 +370,9 @@ def _clean_inputs(lp):
         b_eq = _format_b_constraints(b_eq)
     except ValueError as e:
         raise TypeError(
-            "Invalid input for linprog: b_eq must be a 1-D array of "
-            "numerical values, each representing the upper bound of an "
-            "inequality constraint (row) in A_eq") from e
+            "Invalid input for linprog: b_eq must be a dense, 1-D array of "
+            "numerical values, each representing the right hand side of an "
+            "equality constraint (row) in A_eq") from e
     else:
         if b_eq.shape != (n_eq,):
             raise ValueError(
@@ -436,10 +471,10 @@ def _clean_inputs(lp):
     i_none = np.isnan(bounds_clean[:, 1])
     bounds_clean[i_none, 1] = np.inf
 
-    return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds_clean, x0)
+    return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds_clean, x0, integrality)
 
 
-def _presolve(lp, rr, tol=1e-9):
+def _presolve(lp, rr, rr_method, tol=1e-9):
     """
     Given inputs for a linear programming problem in preferred format,
     presolve the problem: identify trivial infeasibilities, redundancies,
@@ -479,6 +514,9 @@ def _presolve(lp, rr, tol=1e-9):
         If ``True`` attempts to eliminate any redundant rows in ``A_eq``.
         Set False if ``A_eq`` is known to be of full row rank, or if you are
         looking for a potential speedup (at the expense of reliability).
+    rr_method : string
+        Method used to identify and remove redundant rows from the
+        equality constraint matrix after presolve.
     tol : float
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
@@ -557,7 +595,7 @@ def _presolve(lp, rr, tol=1e-9):
     #  * loop presolve until no additional changes are made
     #  * implement additional efficiency improvements in redundancy removal [2]
 
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, _ = lp
 
     revstack = []               # record of variables eliminated from problem
     # constant term in cost function may be added if variables are eliminated
@@ -574,6 +612,13 @@ def _presolve(lp, rr, tol=1e-9):
 
     m_eq, n = A_eq.shape
     m_ub, n = A_ub.shape
+
+    if (rr_method is not None
+            and rr_method.lower() not in {"svd", "pivot", "id"}):
+        message = ("'" + str(rr_method) + "' is not a valid option "
+                   "for redundancy removal. Valid options are 'SVD', "
+                   "'pivot', and 'ID'.")
+        raise ValueError(message)
 
     if sps.issparse(A_eq):
         A_eq = A_eq.tocsr()
@@ -815,7 +860,8 @@ def _presolve(lp, rr, tol=1e-9):
                           "for redundant equality constraints.")
     if (sps.issparse(A_eq)):
         if rr and A_eq.size > 0:  # TODO: Fast sparse rank check?
-            A_eq, b_eq, status, message = _remove_redundancy_sparse(A_eq, b_eq)
+            rr_res = _remove_redundancy_pivot_sparse(A_eq, b_eq)
+            A_eq, b_eq, status, message = rr_res
             if A_eq.shape[0] < n_rows_A:
                 warn(redundancy_warning, OptimizeWarning, stacklevel=1)
             if status != 0:
@@ -827,17 +873,35 @@ def _presolve(lp, rr, tol=1e-9):
     # faster. More testing would be good.
     small_nullspace = 5
     if rr and A_eq.size > 0:
-        try:  # TODO: instead use results of first SVD in _remove_redundancy
+        try:  # TODO: use results of first SVD in _remove_redundancy_svd
             rank = np.linalg.matrix_rank(A_eq)
-        except Exception:  # oh well, we'll have to go with _remove_redundancy_dense
+        # oh well, we'll have to go with _remove_redundancy_pivot_dense
+        except Exception:
             rank = 0
     if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
         warn(redundancy_warning, OptimizeWarning, stacklevel=3)
         dim_row_nullspace = A_eq.shape[0]-rank
-        if dim_row_nullspace <= small_nullspace:
-            A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
-        if dim_row_nullspace > small_nullspace or status == 4:
-            A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
+        if rr_method is None:
+            if dim_row_nullspace <= small_nullspace:
+                rr_res = _remove_redundancy_svd(A_eq, b_eq)
+                A_eq, b_eq, status, message = rr_res
+            if dim_row_nullspace > small_nullspace or status == 4:
+                rr_res = _remove_redundancy_pivot_dense(A_eq, b_eq)
+                A_eq, b_eq, status, message = rr_res
+
+        else:
+            rr_method = rr_method.lower()
+            if rr_method == "svd":
+                rr_res = _remove_redundancy_svd(A_eq, b_eq)
+                A_eq, b_eq, status, message = rr_res
+            elif rr_method == "pivot":
+                rr_res = _remove_redundancy_pivot_dense(A_eq, b_eq)
+                A_eq, b_eq, status, message = rr_res
+            elif rr_method == "id":
+                rr_res = _remove_redundancy_id(A_eq, b_eq, rank)
+                A_eq, b_eq, status, message = rr_res
+            else:  # shouldn't get here; option validity checked above
+                pass
         if A_eq.shape[0] < rank:
             message = ("Due to numerical issues, redundant equality "
                        "constraints could not be removed automatically. "
@@ -852,7 +916,7 @@ def _presolve(lp, rr, tol=1e-9):
             c0, x, revstack, complete, status, message)
 
 
-def _parse_linprog(lp, options):
+def _parse_linprog(lp, options, meth):
     """
     Parse the provided linear programming problem
 
@@ -956,7 +1020,8 @@ def _parse_linprog(lp, options):
         options = {}
 
     solver_options = {k: v for k, v in options.items()}
-    solver_options, A_ub, A_eq = _check_sparse_inputs(solver_options, lp.A_ub, lp.A_eq)
+    solver_options, A_ub, A_eq = _check_sparse_inputs(solver_options, meth,
+                                                      lp.A_ub, lp.A_eq)
     # Convert lists to numpy arrays, etc...
     lp = _clean_inputs(lp._replace(A_ub=A_ub, A_eq=A_eq))
     return lp, solver_options
@@ -1047,7 +1112,7 @@ def _get_Abc(lp, c0):
            programming." Athena Scientific 1 (1997): 997.
 
     """
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
     if sps.issparse(A_eq):
         sparse = True
@@ -1313,7 +1378,8 @@ def _postsolve(x, postsolve_args, complete=False):
     # note that all the inputs are the ORIGINAL, unmodified versions
     # no rows, columns have been removed
 
-    (c, A_ub, b_ub, A_eq, b_eq, bounds, x0), revstack, C, b_scale = postsolve_args
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = postsolve_args[0]
+    revstack, C, b_scale = postsolve_args[1:]
 
     x = _unscale(x, C, b_scale)
 
@@ -1401,8 +1467,16 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
     message : str
         A string descriptor of the exit status of the optimization.
     """
-    # Somewhat arbitrary, but status 5 is very unusual
+    # Somewhat arbitrary
     tol = np.sqrt(tol) * 10
+
+    if x is None:
+        # HiGHS does not provide x if infeasible/unbounded
+        if status == 0:  # Observed with HiGHS Simplex Primal
+            status = 4
+            message = ("The solver did not provide a solution nor did it "
+                       "report a failure. Please submit a bug report.")
+        return status, message
 
     contains_nans = (
         np.isnan(x).any()
@@ -1424,28 +1498,18 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
         message = ("The solution does not satisfy the constraints within the "
                    "required tolerance of " + "{:.2E}".format(tol) + ", yet "
                    "no errors were raised and there is no certificate of "
-                   "infeasibility or unboundedness. This is known to occur "
-                   "if the `presolve` option is False and the problem is "
-                   "infeasible. This can also occur due to the limited "
-                   "accuracy of the `interior-point` method. Check whether "
+                   "infeasibility or unboundedness. Check whether "
                    "the slack and constraint residuals are acceptable; "
-                   "if not, consider enabling presolve, reducing option "
-                   "`tol`, and/or using method `revised simplex`. "
-                   "If you encounter this message under different "
-                   "circumstances, please submit a bug report.")
-    elif status == 0 and contains_nans:
-        status = 4
-        message = ("Numerical difficulties were encountered but no errors "
-                   "were raised. This is known to occur if the 'presolve' "
-                   "option is False, 'sparse' is True, and A_eq includes "
-                   "redundant rows. If you encounter this under different "
-                   "circumstances, please submit a bug report. Otherwise, "
-                   "remove linearly dependent equations from your equality "
-                   "constraints or enable presolve.")
+                   "if not, consider enabling presolve, adjusting the "
+                   "tolerance option(s), and/or using a different method. "
+                   "Please consider submitting a bug report.")
     elif status == 2 and is_feasible:
         # Occurs if the simplex method exits after phase one with a very
         # nearly basic feasible solution. Postsolving can make the solution
         # basic, however, this solution is NOT optimal
-        raise ValueError(message)
+        status = 4
+        message = ("The solution is feasible, but the solver did not report "
+                   "that the solution was optimal. Please try a different "
+                   "method.")
 
     return status, message

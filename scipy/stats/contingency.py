@@ -1,13 +1,38 @@
-"""Some functions for working with contingency tables (i.e. cross tabulations).
+"""
+Contingency table functions (:mod:`scipy.stats.contingency`)
+============================================================
+
+Functions for creating and analyzing contingency tables.
+
+.. currentmodule:: scipy.stats.contingency
+
+.. autosummary::
+   :toctree: generated/
+
+   chi2_contingency
+   relative_risk
+   odds_ratio
+   crosstab
+   association
+
+   expected_freq
+   margins
+
 """
 
 
 from functools import reduce
+import math
 import numpy as np
-from .stats import power_divergence
+from ._stats_py import power_divergence
+from ._relative_risk import relative_risk
+from ._crosstab import crosstab
+from ._odds_ratio import odds_ratio
+from scipy._lib._bunch import _make_tuple_bunch
 
 
-__all__ = ['margins', 'expected_freq', 'chi2_contingency']
+__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab',
+           'association', 'relative_risk', 'odds_ratio']
 
 
 def margins(a):
@@ -28,11 +53,13 @@ def margins(a):
 
     Examples
     --------
+    >>> import numpy as np
+    >>> from scipy.stats.contingency import margins
+
     >>> a = np.arange(12).reshape(2, 6)
     >>> a
     array([[ 0,  1,  2,  3,  4,  5],
            [ 6,  7,  8,  9, 10, 11]])
-    >>> from scipy.stats.contingency import margins
     >>> m0, m1 = margins(a)
     >>> m0
     array([[15],
@@ -84,8 +111,9 @@ def expected_freq(observed):
 
     Examples
     --------
-    >>> observed = np.array([[10, 10, 20],[20, 20, 20]])
+    >>> import numpy as np
     >>> from scipy.stats.contingency import expected_freq
+    >>> observed = np.array([[10, 10, 20],[20, 20, 20]])
     >>> expected_freq(observed)
     array([[ 12.,  12.,  16.],
            [ 18.,  18.,  24.]])
@@ -105,6 +133,12 @@ def expected_freq(observed):
     d = observed.ndim
     expected = reduce(np.multiply, margsums) / observed.sum() ** (d - 1)
     return expected
+
+
+Chi2ContingencyResult = _make_tuple_bunch(
+    'Chi2ContingencyResult',
+    ['statistic', 'pvalue', 'dof', 'expected_freq'], []
+)
 
 
 def chi2_contingency(observed, correction=True, lambda_=None):
@@ -130,29 +164,34 @@ def chi2_contingency(observed, correction=True, lambda_=None):
         If True, *and* the degrees of freedom is 1, apply Yates' correction
         for continuity.  The effect of the correction is to adjust each
         observed value by 0.5 towards the corresponding expected value.
-    lambda_ : float or str, optional.
+    lambda_ : float or str, optional
         By default, the statistic computed in this test is Pearson's
         chi-squared statistic [2]_.  `lambda_` allows a statistic from the
         Cressie-Read power divergence family [3]_ to be used instead.  See
-        `power_divergence` for details.
+        `scipy.stats.power_divergence` for details.
 
     Returns
     -------
-    chi2 : float
-        The test statistic.
-    p : float
-        The p-value of the test
-    dof : int
-        Degrees of freedom
-    expected : ndarray, same shape as `observed`
-        The expected frequencies, based on the marginal sums of the table.
+    res : Chi2ContingencyResult
+        An object containing attributes:
+
+        statistic : float
+            The test statistic.
+        pvalue : float
+            The p-value of the test.
+        dof : int
+            The degrees of freedom.
+        expected_freq : ndarray, same shape as `observed`
+            The expected frequencies, based on the marginal sums of the table.
 
     See Also
     --------
-    contingency.expected_freq
-    fisher_exact
-    chisquare
-    power_divergence
+    scipy.stats.contingency.expected_freq
+    scipy.stats.fisher_exact
+    scipy.stats.chisquare
+    scipy.stats.power_divergence
+    scipy.stats.barnard_exact
+    scipy.stats.boschloo_exact
 
     Notes
     -----
@@ -169,18 +208,19 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     This function does not handle masked arrays, because the calculation
     does not make sense with missing values.
 
-    Like stats.chisquare, this function computes a chi-square statistic;
-    the convenience this function provides is to figure out the expected
-    frequencies and degrees of freedom from the given contingency table.
-    If these were already known, and if the Yates' correction was not
-    required, one could use stats.chisquare.  That is, if one calls::
+    Like `scipy.stats.chisquare`, this function computes a chi-square
+    statistic; the convenience this function provides is to figure out the
+    expected frequencies and degrees of freedom from the given contingency
+    table. If these were already known, and if the Yates' correction was not
+    required, one could use `scipy.stats.chisquare`.  That is, if one calls::
 
-        chi2, p, dof, ex = chi2_contingency(obs, correction=False)
+        res = chi2_contingency(obs, correction=False)
 
     then the following is true::
 
-        (chi2, p) == stats.chisquare(obs.ravel(), f_exp=ex.ravel(),
-                                     ddof=obs.size - 1 - dof)
+        (res.statistic, res.pvalue) == stats.chisquare(obs.ravel(),
+                                                       f_exp=ex.ravel(),
+                                                       ddof=obs.size - 1 - dof)
 
     The `lambda_` argument was added in version 0.13.0 of scipy.
 
@@ -198,21 +238,28 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     --------
     A two-way example (2 x 3):
 
+    >>> import numpy as np
     >>> from scipy.stats import chi2_contingency
     >>> obs = np.array([[10, 10, 20], [20, 20, 20]])
-    >>> chi2_contingency(obs)
-    (2.7777777777777777,
-     0.24935220877729619,
-     2,
-     array([[ 12.,  12.,  16.],
-            [ 18.,  18.,  24.]]))
+    >>> res = chi2_contingency(obs)
+    >>> res.statistic
+    2.7777777777777777
+    >>> res.pvalue
+    0.24935220877729619
+    >>> res.dof
+    2
+    >>> res.expected_freq
+    array([[ 12.,  12.,  16.],
+           [ 18.,  18.,  24.]])
 
     Perform the test using the log-likelihood ratio (i.e. the "G-test")
     instead of Pearson's chi-squared statistic.
 
-    >>> g, p, dof, expctd = chi2_contingency(obs, lambda_="log-likelihood")
-    >>> g, p
-    (2.7688587616781319, 0.25046668010954165)
+    >>> res = chi2_contingency(obs, lambda_="log-likelihood")
+    >>> res.statistic
+    2.7688587616781319
+    >>> res.pvalue
+    0.25046668010954165
 
     A four-way example (2 x 2 x 2 x 2):
 
@@ -225,18 +272,11 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     ...        [30, 22]],
     ...       [[14, 17],
     ...        [15, 16]]]])
-    >>> chi2_contingency(obs)
-    (8.7584514426741897,
-     0.64417725029295503,
-     11,
-     array([[[[ 14.15462386,  14.15462386],
-              [ 16.49423111,  16.49423111]],
-             [[ 11.2461395 ,  11.2461395 ],
-              [ 13.10500554,  13.10500554]]],
-            [[[ 19.5591166 ,  19.5591166 ],
-              [ 22.79202844,  22.79202844]],
-             [[ 15.54012004,  15.54012004],
-              [ 18.10873492,  18.10873492]]]]))
+    >>> res = chi2_contingency(obs)
+    >>> res.statistic
+    8.7584514426741897
+    >>> res.pvalue
+    0.64417725029295503
     """
     observed = np.asarray(observed)
     if np.any(observed < 0):
@@ -264,10 +304,116 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     else:
         if dof == 1 and correction:
             # Adjust `observed` according to Yates' correction for continuity.
-            observed = observed + 0.5 * np.sign(expected - observed)
+            # Magnitude of correction no bigger than difference; see gh-13875
+            diff = expected - observed
+            direction = np.sign(diff)
+            magnitude = np.minimum(0.5, np.abs(diff))
+            observed = observed + magnitude * direction
 
         chi2, p = power_divergence(observed, expected,
                                    ddof=observed.size - 1 - dof, axis=None,
                                    lambda_=lambda_)
 
-    return chi2, p, dof, expected
+    return Chi2ContingencyResult(chi2, p, dof, expected)
+
+
+def association(observed, method="cramer", correction=False, lambda_=None):
+    """Calculates degree of association between two nominal variables.
+
+    The function provides the option for computing one of three measures of
+    association between two nominal variables from the data given in a 2d
+    contingency table: Tschuprow's T, Pearson's Contingency Coefficient
+    and Cramer's V.
+
+    Parameters
+    ----------
+    observed : array-like
+        The array of observed values
+    method : {"cramer", "tschuprow", "pearson"} (default = "cramer")
+        The association test statistic.
+    correction : bool, optional
+        Inherited from `scipy.stats.contingency.chi2_contingency()`
+    lambda_ : float or str, optional
+        Inherited from `scipy.stats.contingency.chi2_contingency()`
+
+    Returns
+    -------
+    statistic : float
+        Value of the test statistic
+
+    Notes
+    -----
+    Cramer's V, Tschuprow's T and Pearson's Contingency Coefficient, all
+    measure the degree to which two nominal or ordinal variables are related,
+    or the level of their association. This differs from correlation, although
+    many often mistakenly consider them equivalent. Correlation measures in
+    what way two variables are related, whereas, association measures how
+    related the variables are. As such, association does not subsume
+    independent variables, and is rather a test of independence. A value of
+    1.0 indicates perfect association, and 0.0 means the variables have no
+    association.
+
+    Both the Cramer's V and Tschuprow's T are extensions of the phi
+    coefficient.  Moreover, due to the close relationship between the
+    Cramer's V and Tschuprow's T the returned values can often be similar
+    or even equivalent.  They are likely to diverge more as the array shape
+    diverges from a 2x2.
+
+    References
+    ----------
+    .. [1] "Tschuprow's T",
+           https://en.wikipedia.org/wiki/Tschuprow's_T
+    .. [2] Tschuprow, A. A. (1939)
+           Principles of the Mathematical Theory of Correlation;
+           translated by M. Kantorowitsch. W. Hodge & Co.
+    .. [3] "Cramer's V", https://en.wikipedia.org/wiki/Cramer's_V
+    .. [4] "Nominal Association: Phi and Cramer's V",
+           http://www.people.vcu.edu/~pdattalo/702SuppRead/MeasAssoc/NominalAssoc.html
+    .. [5] Gingrich, Paul, "Association Between Variables",
+           http://uregina.ca/~gingrich/ch11a.pdf
+
+    Examples
+    --------
+    An example with a 4x2 contingency table:
+
+    >>> import numpy as np
+    >>> from scipy.stats.contingency import association
+    >>> obs4x2 = np.array([[100, 150], [203, 322], [420, 700], [320, 210]])
+
+    Pearson's contingency coefficient
+    >>> association(obs4x2, method="pearson")
+    0.18303298140595667
+
+    Cramer's V
+
+    >>> association(obs4x2, method="cramer")
+    0.18617813077483678
+
+    Tschuprow's T
+
+    >>> association(obs4x2, method="tschuprow")
+    0.14146478765062995
+    """
+    arr = np.asarray(observed)
+    if not np.issubdtype(arr.dtype, np.integer):
+        raise ValueError("`observed` must be an integer array.")
+
+    if len(arr.shape) != 2:
+        raise ValueError("method only accepts 2d arrays")
+
+    chi2_stat = chi2_contingency(arr, correction=correction,
+                                 lambda_=lambda_)
+
+    phi2 = chi2_stat.statistic / arr.sum()
+    n_rows, n_cols = arr.shape
+    if method == "cramer":
+        value = phi2 / min(n_cols - 1, n_rows - 1)
+    elif method == "tschuprow":
+        value = phi2 / math.sqrt((n_rows - 1) * (n_cols - 1))
+    elif method == 'pearson':
+        value = phi2 / (1 + phi2)
+    else:
+        raise ValueError("Invalid argument value: 'method' argument must "
+                         "be 'cramer', 'tschuprow', or 'pearson'")
+
+    return math.sqrt(value)

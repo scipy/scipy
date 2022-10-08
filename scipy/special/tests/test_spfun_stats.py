@@ -6,7 +6,7 @@ from pytest import raises as assert_raises
 from scipy.special import gammaln, multigammaln
 
 
-class TestMultiGammaLn(object):
+class TestMultiGammaLn:
 
     def test1(self):
         # A test of the identity
