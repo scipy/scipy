@@ -164,7 +164,7 @@ def seterr(**kwargs):
     return olderr
 
 
-class errstate(object):
+class errstate:
     """Context manager for special-function error handling.
 
     Using an instance of `errstate` as a context manager allows

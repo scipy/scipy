@@ -4,7 +4,7 @@ Functions for identifying peaks in signals.
 import math
 import numpy as np
 
-from scipy.signal.wavelets import cwt, ricker
+from scipy.signal._wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
 from ._peak_finding_utils import (
@@ -55,6 +55,7 @@ def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> testdata = np.array([1,2,3,2,1])
     >>> _boolrelextrema(testdata, np.greater, axis=0)
     array([False, False,  True, False, False], dtype=bool)
@@ -120,6 +121,7 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import argrelmin
     >>> x = np.array([2, 1, 2, 3, 2, 0, 1, 0])
     >>> argrelmin(x)
@@ -177,6 +179,7 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import argrelmax
     >>> x = np.array([2, 1, 2, 3, 2, 0, 1, 0])
     >>> argrelmax(x)
@@ -230,6 +233,7 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import argrelextrema
     >>> x = np.array([2, 1, 2, 3, 2, 0, 1, 0])
     >>> argrelextrema(x, np.greater)
@@ -283,8 +287,8 @@ def _arg_peaks_as_expected(value):
         # Safely convert to C-contiguous array of type np.intp
         value = value.astype(np.intp, order='C', casting='safe',
                              subok=False, copy=False)
-    except TypeError:
-        raise TypeError("cannot safely cast `peaks` to dtype('intp')")
+    except TypeError as e:
+        raise TypeError("cannot safely cast `peaks` to dtype('intp')") from e
     if value.ndim != 1:
         raise ValueError('`peaks` must be a 1-D array')
     return value
@@ -404,6 +408,7 @@ def peak_prominences(x, peaks, wlen=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import find_peaks, peak_prominences
     >>> import matplotlib.pyplot as plt
 
@@ -548,6 +553,7 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import chirp, find_peaks, peak_widths
     >>> import matplotlib.pyplot as plt
 
@@ -863,11 +869,12 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     Examples
     --------
     To demonstrate this function's usage we use a signal `x` supplied with
-    SciPy (see `scipy.misc.electrocardiogram`). Let's find all peaks (local
+    SciPy (see `scipy.datasets.electrocardiogram`). Let's find all peaks (local
     maxima) in `x` whose amplitude lies above 0.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.misc import electrocardiogram
+    >>> from scipy.datasets import electrocardiogram
     >>> from scipy.signal import find_peaks
     >>> x = electrocardiogram()[2000:4000]
     >>> peaks, _ = find_peaks(x, height=0)
@@ -1034,14 +1041,17 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
 
     References
     ----------
-    Bioinformatics (2006) 22 (17): 2059-2065.
-    :doi:`10.1093/bioinformatics/btl355`
-    http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
+    .. [1] Bioinformatics (2006) 22 (17): 2059-2065.
+       :doi:`10.1093/bioinformatics/btl355`
 
     Examples
     --------
-    >>> data = np.random.rand(5,5)
-    >>> ridge_lines = _identify_ridge_lines(data, 1, 1)
+    >>> import numpy as np
+    >>> rng = np.random.default_rng()
+    >>> data = rng.random((5,5))
+    >>> max_dist = 3
+    >>> max_distances = np.full(20, max_dist)
+    >>> ridge_lines = _identify_ridge_lines(data, max_distances, 1)
 
     Notes
     -----
@@ -1154,8 +1164,8 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 
     References
     ----------
-    Bioinformatics (2006) 22 (17): 2059-2065. :doi:`10.1093/bioinformatics/btl355`
-    http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
+    .. [1] Bioinformatics (2006) 22 (17): 2059-2065.
+       :doi:`10.1093/bioinformatics/btl355`
 
     """
     num_points = cwt.shape[1]
@@ -1169,7 +1179,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 
     # Filter based on SNR
     row_one = cwt[0, :]
-    noises = np.zeros_like(row_one)
+    noises = np.empty_like(row_one)
     for ind, val in enumerate(row_one):
         window_start = max(ind - hf_window, 0)
         window_end = min(ind + hf_window + odd, num_points)
@@ -1202,8 +1212,9 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     ----------
     vector : ndarray
         1-D array in which to find the peaks.
-    widths : sequence
-        1-D array of widths to use for calculating the CWT matrix. In general,
+    widths : float or sequence
+        Single width or 1-D array-like of widths to use for calculating
+        the CWT matrix. In general,
         this range should cover the expected width of peaks of interest.
     wavelet : callable, optional
         Should take two parameters and return a 1-D array to convolve
@@ -1224,10 +1235,9 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
         Minimum length a ridge line needs to be acceptable.
         Default is ``cwt.shape[0] / 4``, ie 1/4-th the number of widths.
     min_snr : float, optional
-        Minimum SNR ratio. Default 1. The signal is the value of
-        the cwt matrix at the shortest length scale (``cwt[0, loc]``), the
-        noise is the `noise_perc`th percentile of datapoints contained within a
-        window of `window_size` around ``cwt[0, loc]``.
+        Minimum SNR ratio. Default 1. The signal is the maximum CWT coefficient
+        on the largest ridge line. The noise is `noise_perc` th percentile of
+        datapoints contained within the same ridge line.
     noise_perc : float, optional
         When calculating the noise floor, percentile of data points
         examined below which to consider noise. Calculated using
@@ -1268,11 +1278,11 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     References
     ----------
     .. [1] Bioinformatics (2006) 22 (17): 2059-2065.
-        :doi:`10.1093/bioinformatics/btl355`
-        http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
+       :doi:`10.1093/bioinformatics/btl355`
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> xs = np.arange(0, np.pi, 0.05)
     >>> data = np.sin(xs)
@@ -1281,7 +1291,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     ([32], array([ 1.6]), array([ 0.9995736]))
 
     """
-    widths = np.asarray(widths)
+    widths = np.array(widths, copy=False, ndmin=1)
 
     if gap_thresh is None:
         gap_thresh = np.ceil(widths[0])

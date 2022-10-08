@@ -67,7 +67,8 @@ code book.
 import warnings
 import numpy as np
 from collections import deque
-from scipy._lib._util import _asarray_validated
+from scipy._lib._util import _asarray_validated, check_random_state,\
+    rng_integers
 from scipy.spatial.distance import cdist
 
 from . import _vq
@@ -86,9 +87,10 @@ def whiten(obs, check_finite=True):
     Normalize a group of observations on a per feature basis.
 
     Before running k-means, it is beneficial to rescale each feature
-    dimension of the observation set with whitening. Each feature is
-    divided by its standard deviation across all observations to give
-    it unit variance.
+    dimension of the observation set by its standard deviation (i.e. "whiten"
+    it - as in "white noise" where each frequency has equal power).
+    Each feature is divided by its standard deviation across all observations
+    to give it unit variance.
 
     Parameters
     ----------
@@ -116,6 +118,7 @@ def whiten(obs, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.cluster.vq import whiten
     >>> features  = np.array([[1.9, 2.3, 1.7],
     ...                       [1.5, 2.5, 2.2],
@@ -184,13 +187,13 @@ def vq(obs, code_book, check_finite=True):
 
     Examples
     --------
-    >>> from numpy import array
+    >>> import numpy as np
     >>> from scipy.cluster.vq import vq
-    >>> code_book = array([[1.,1.,1.],
-    ...                    [2.,2.,2.]])
-    >>> features  = array([[  1.9,2.3,1.7],
-    ...                    [  1.5,2.5,2.2],
-    ...                    [  0.8,0.6,1.7]])
+    >>> code_book = np.array([[1.,1.,1.],
+    ...                       [2.,2.,2.]])
+    >>> features  = np.array([[  1.9,2.3,1.7],
+    ...                       [  1.5,2.5,2.2],
+    ...                       [  0.8,0.6,1.7]])
     >>> vq(features,code_book)
     (array([1, 1, 0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
 
@@ -260,10 +263,6 @@ def py_vq(obs, code_book, check_finite=True):
     return code, min_dist
 
 
-# py_vq2 was equivalent to py_vq
-py_vq2 = np.deprecate(py_vq, old_name='py_vq2', new_name='py_vq')
-
-
 def _kmeans(obs, guess, thresh=1e-5):
     """ "raw" version of k-means.
 
@@ -283,14 +282,14 @@ def _kmeans(obs, guess, thresh=1e-5):
     --------
     Note: not whitened in this example.
 
-    >>> from numpy import array
+    >>> import numpy as np
     >>> from scipy.cluster.vq import _kmeans
-    >>> features  = array([[ 1.9,2.3],
-    ...                    [ 1.5,2.5],
-    ...                    [ 0.8,0.6],
-    ...                    [ 0.4,1.8],
-    ...                    [ 1.0,1.0]])
-    >>> book = array((features[0],features[2]))
+    >>> features  = np.array([[ 1.9,2.3],
+    ...                       [ 1.5,2.5],
+    ...                       [ 0.8,0.6],
+    ...                       [ 0.4,1.8],
+    ...                       [ 1.0,1.0]])
+    >>> book = np.array((features[0],features[2]))
     >>> _kmeans(features,book)
     (array([[ 1.7       ,  2.4       ],
            [ 0.73333333,  1.13333333]]), 0.40563916697728591)
@@ -313,7 +312,8 @@ def _kmeans(obs, guess, thresh=1e-5):
     return code_book, prev_avg_dists[1]
 
 
-def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
+def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
+           *, seed=None):
     """
     Performs k-means on a set of observation vectors forming k clusters.
 
@@ -360,6 +360,16 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default: True
 
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+        Seed for initializing the pseudo-random number generator.
+        If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+        The default is None.
+
     Returns
     -------
     codebook : ndarray
@@ -367,6 +377,9 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
        codebook[i] is represented with the code i. The centroids
        and codes generated represent the lowest distortion seen,
        not necessarily the globally minimal distortion.
+       Note that the number of centroids is not necessarily the same as the
+       ``k_or_guess`` parameter, because centroids assigned to no observations
+       are removed during iterations.
 
     distortion : float
        The mean (non-squared) Euclidean distance between the observations
@@ -383,28 +396,33 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     whiten : must be called prior to passing an observation matrix
        to kmeans.
 
+    Notes
+    -----
+    For more functionalities or optimal performance, you can use
+    `sklearn.cluster.KMeans <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html>`_.
+    `This <https://hdbscan.readthedocs.io/en/latest/performance_and_scalability.html#comparison-of-high-performance-implementations>`_
+    is a benchmark result of several implementations.
+
     Examples
     --------
-    >>> from numpy import array
+    >>> import numpy as np
     >>> from scipy.cluster.vq import vq, kmeans, whiten
     >>> import matplotlib.pyplot as plt
-    >>> features  = array([[ 1.9,2.3],
-    ...                    [ 1.5,2.5],
-    ...                    [ 0.8,0.6],
-    ...                    [ 0.4,1.8],
-    ...                    [ 0.1,0.1],
-    ...                    [ 0.2,1.8],
-    ...                    [ 2.0,0.5],
-    ...                    [ 0.3,1.5],
-    ...                    [ 1.0,1.0]])
+    >>> features  = np.array([[ 1.9,2.3],
+    ...                       [ 1.5,2.5],
+    ...                       [ 0.8,0.6],
+    ...                       [ 0.4,1.8],
+    ...                       [ 0.1,0.1],
+    ...                       [ 0.2,1.8],
+    ...                       [ 2.0,0.5],
+    ...                       [ 0.3,1.5],
+    ...                       [ 1.0,1.0]])
     >>> whitened = whiten(features)
     >>> book = np.array((whitened[0],whitened[2]))
     >>> kmeans(whitened,book)
     (array([[ 2.3110306 ,  2.86287398],    # random
            [ 0.93218041,  1.24398691]]), 0.85684700941625547)
 
-    >>> from numpy import random
-    >>> random.seed((1000,2000))
     >>> codes = 3
     >>> kmeans(whitened,codes)
     (array([[ 2.3110306 ,  2.86287398],    # random
@@ -413,10 +431,11 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
 
     >>> # Create 50 datapoints in two clusters a and b
     >>> pts = 50
-    >>> a = np.random.multivariate_normal([0, 0], [[4, 1], [1, 4]], size=pts)
-    >>> b = np.random.multivariate_normal([30, 10],
-    ...                                   [[10, 2], [2, 1]],
-    ...                                   size=pts)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.multivariate_normal([0, 0], [[4, 1], [1, 4]], size=pts)
+    >>> b = rng.multivariate_normal([30, 10],
+    ...                             [[10, 2], [2, 1]],
+    ...                             size=pts)
     >>> features = np.concatenate((a, b))
     >>> # Whiten data
     >>> whitened = whiten(features)
@@ -426,6 +445,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     >>> plt.scatter(whitened[:, 0], whitened[:, 1])
     >>> plt.scatter(codebook[:, 0], codebook[:, 1], c='r')
     >>> plt.show()
+
     """
     obs = _asarray_validated(obs, check_finite=check_finite)
     if iter < 1:
@@ -446,11 +466,13 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     if k < 1:
         raise ValueError("Asked for %d clusters." % k)
 
+    rng = check_random_state(seed)
+
     # initialize best distance value to a large value
     best_dist = np.inf
     for i in range(iter):
         # the initial code book is randomly selected from observations
-        guess = _kpoints(obs, k)
+        guess = _kpoints(obs, k, rng)
         book, dist = _kmeans(obs, guess, thresh=thresh)
         if dist < best_dist:
             best_book = book
@@ -458,7 +480,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     return best_book, best_dist
 
 
-def _kpoints(data, k):
+def _kpoints(data, k, rng):
     """Pick k points at random in data (one row = one observation).
 
     Parameters
@@ -469,18 +491,20 @@ def _kpoints(data, k):
         row is one observation.
     k : int
         Number of samples to generate.
+    rng : `numpy.random.Generator` or `numpy.random.RandomState`
+        Random number generator.
 
-   Returns
+    Returns
     -------
     x : ndarray
         A 'k' by 'N' containing the initial centroids
 
     """
-    idx = np.random.choice(data.shape[0], size=k, replace=False)
+    idx = rng.choice(data.shape[0], size=k, replace=False)
     return data[idx]
 
 
-def _krandinit(data, k):
+def _krandinit(data, k, rng):
     """Returns k samples of a random variable whose parameters depend on data.
 
     More precisely, it returns k observations sampled from a Gaussian random
@@ -494,6 +518,8 @@ def _krandinit(data, k):
         row is one observation.
     k : int
         Number of samples to generate.
+    rng : `numpy.random.Generator` or `numpy.random.RandomState`
+        Random number generator.
 
     Returns
     -------
@@ -505,12 +531,12 @@ def _krandinit(data, k):
 
     if data.ndim == 1:
         cov = np.cov(data)
-        x = np.random.randn(k)
+        x = rng.standard_normal(size=k)
         x *= np.sqrt(cov)
     elif data.shape[1] > data.shape[0]:
         # initialize when the covariance matrix is rank deficient
         _, s, vh = np.linalg.svd(data - mu, full_matrices=False)
-        x = np.random.randn(k, s.size)
+        x = rng.standard_normal(size=(k, s.size))
         sVh = s[:, None] * vh / np.sqrt(data.shape[0] - 1)
         x = x.dot(sVh)
     else:
@@ -518,14 +544,14 @@ def _krandinit(data, k):
 
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
-        x = np.random.randn(k, mu.size)
+        x = rng.standard_normal(size=(k, mu.size))
         x = x.dot(np.linalg.cholesky(cov).T)
 
     x += mu
     return x
 
 
-def _kpp(data, k):
+def _kpp(data, k, rng):
     """ Picks k points in the data based on the kmeans++ method.
 
     Parameters
@@ -536,6 +562,8 @@ def _kpp(data, k):
         row is one observation.
     k : int
         Number of samples to generate.
+    rng : `numpy.random.Generator` or `numpy.random.RandomState`
+        Random number generator.
 
     Returns
     -------
@@ -554,13 +582,13 @@ def _kpp(data, k):
 
     for i in range(k):
         if i == 0:
-            init[i, :] = data[np.random.randint(dims)]
+            init[i, :] = data[rng_integers(rng, data.shape[0])]
 
         else:
             D2 = cdist(init[:i,:], data, metric='sqeuclidean').min(axis=0)
             probs = D2/D2.sum()
             cumprobs = probs.cumsum()
-            r = np.random.rand()
+            r = rng.uniform()
             init[i, :] = data[np.searchsorted(cumprobs, r)]
 
     return init
@@ -585,7 +613,7 @@ _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
 
 
 def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
-            missing='warn', check_finite=True):
+            missing='warn', check_finite=True, *, seed=None):
     """
     Classify a set of observations into k clusters using the k-means algorithm.
 
@@ -636,6 +664,15 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default: True
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+        Seed for initializing the pseudo-random number generator.
+        If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+        The default is None.
 
     Returns
     -------
@@ -660,30 +697,31 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     --------
     >>> from scipy.cluster.vq import kmeans2
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     Create z, an array with shape (100, 2) containing a mixture of samples
     from three multivariate normal distributions.
 
-    >>> np.random.seed(12345678)
-    >>> a = np.random.multivariate_normal([0, 6], [[2, 1], [1, 1.5]], size=45)
-    >>> b = np.random.multivariate_normal([2, 0], [[1, -1], [-1, 3]], size=30)
-    >>> c = np.random.multivariate_normal([6, 4], [[5, 0], [0, 1.2]], size=25)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.multivariate_normal([0, 6], [[2, 1], [1, 1.5]], size=45)
+    >>> b = rng.multivariate_normal([2, 0], [[1, -1], [-1, 3]], size=30)
+    >>> c = rng.multivariate_normal([6, 4], [[5, 0], [0, 1.2]], size=25)
     >>> z = np.concatenate((a, b, c))
-    >>> np.random.shuffle(z)
+    >>> rng.shuffle(z)
 
     Compute three clusters.
 
     >>> centroid, label = kmeans2(z, 3, minit='points')
     >>> centroid
-    array([[-0.35770296,  5.31342524],
-           [ 2.32210289, -0.50551972],
-           [ 6.17653859,  4.16719247]])
+    array([[ 2.22274463, -0.61666946],  # may vary
+           [ 0.54069047,  5.86541444],
+           [ 6.73846769,  4.01991898]])
 
     How many points are in each cluster?
 
     >>> counts = np.bincount(label)
     >>> counts
-    array([52, 27, 21])
+    array([29, 51, 20])  # may vary
 
     Plot the clusters.
 
@@ -704,8 +742,8 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
                          "must be a positive integer." % iter)
     try:
         miss_meth = _valid_miss_meth[missing]
-    except KeyError:
-        raise ValueError("Unknown missing method %r" % (missing,))
+    except KeyError as e:
+        raise ValueError("Unknown missing method %r" % (missing,)) from e
 
     data = _asarray_validated(data, check_finite=check_finite)
     if data.ndim == 1:
@@ -737,10 +775,11 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
         try:
             init_meth = _valid_init_meth[minit]
-        except KeyError:
-            raise ValueError("Unknown init method %r" % (minit,))
+        except KeyError as e:
+            raise ValueError("Unknown init method %r" % (minit,)) from e
         else:
-            code_book = init_meth(data, k)
+            rng = check_random_state(seed)
+            code_book = init_meth(data, k, rng)
 
     for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book

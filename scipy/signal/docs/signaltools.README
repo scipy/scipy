@@ -1,8 +1,8 @@
-## SIGTOOLS module 
+## SIGTOOLS module
 ##
 #Copyright (c) 2002 Travis Oliphant all rights reserved
 #Oliphant.Travis@altavista.net
-#Permission to use, modify, and distribute this software is given under the 
+#Permission to use, modify, and distribute this software is given under the
 #terms of the SciPy (BSD style) license.  See LICENSE.txt that came with
 #this distribution for specifics.
 
@@ -13,14 +13,14 @@ additional code to be added should probably be written in Python
 unless a specific need for speed is needed.  If you have good routines
 to add to this collection (in Python or in C) please send them to me.
 
-So far this library has 4 C-code routines: 
+So far this library has 4 C-code routines:
    (1) a general purpose N-D correlation.  This is almost like N-D
          convolution but performs no 180 degree flipping of either
 	 input to the routine.  It takes two N-D arrays and returns
 	 the correlation of the two arrays.  It is intended for use in
 	 filtering large arrays with small kernels for blurring,
 	 edge-detection, etc.  Zero-padding is used to handle
-	 edges. 
+	 edges.
 
    (2) a general purpose N-D order-filter routine
          An order-filter takes a data array and a domain kernel with
@@ -28,7 +28,7 @@ So far this library has 4 C-code routines:
          entries.  Each output is the order_th element of a sorted
          list composed of the elements in the data array where the
          kernel window (centered on the output point) is non-zero.
-         Zero-padding is used to handle the edges.  
+         Zero-padding is used to handle the edges.
 
    (3) a 1-D linear filter.
          linear_filter is a replacement for MATLAB's filter function.
@@ -39,7 +39,7 @@ So far this library has 4 C-code routines:
          Direct Form II Transposed system are provided.
 
    (4) a remez exchange algorithm.
-         remez is Python wrapping for code from Erik Kvaleberg (itself a 
+         remez is Python wrapping for code from Erik Kvaleberg (itself a
          conversion to C of original code by Mcclellan) which
 	 implements the Parks-McClellan algorithm for FIR optimal
          filter design.
@@ -51,8 +51,8 @@ wiener      (implements a wiener filter in N-D)
 medfilt     (implements an N-D median filter)
 
 
-All of these methods operate on arbitrary Python sequence objects (even 
-NumPy arrays of objects).  
+All of these methods operate on arbitrary Python sequence objects (even
+NumPy arrays of objects).
 
 Due to popular request I have also included the numpyio module as part of
 this package.  It compiles along with the sigtools code.
@@ -64,7 +64,7 @@ INSTALLATION
 To install, copy Makefile.pre.in from your python installation directory
 (mine is /usr/lib/python1.5/config/Makefile.pre.in) to this directory.
 
-Type 
+Type
 make -f Makefile.pre.in boot
 make
 
@@ -79,18 +79,16 @@ Feb 5, 1999	First release just contains convolveND
 
 Feb 8, 1999	Second release (0.20) added order_filterND
 
-Feb 23, 1999    Third release (0.40) added linear_filter and remez 
+Feb 23, 1999    Third release (0.40) added linear_filter and remez
 		routines.
 
-May  1, 1999    Release 0.5.1 introduces the signaltools.py module which
+May  1, 1999    Release 0.5.1 introduces the _signaltools.py module which
                 has some filtering routines.  Fixed a small bug with complex
                 filters that was preventing them from functioning.
 
 July 10, 1999   Release 0.5.2 is incorporated now with multipack.  Changed
-                the remez.c code to that from Erik Kvaleberg so that it 
+                the remez.c code to that from Erik Kvaleberg so that it
                 could be incorporated into and LGPL package.  Placed remez
-                code directly in sigtoolsmodule.c
+                code directly in _sigtoolsmodule.c
 Travis Oliphant
 oliphant.travis@ieee.org
-
-

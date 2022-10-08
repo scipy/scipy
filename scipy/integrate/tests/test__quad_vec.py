@@ -1,4 +1,3 @@
-import sys
 import pytest
 
 import numpy as np
@@ -6,8 +5,11 @@ from numpy.testing import assert_allclose
 
 from scipy.integrate import quad_vec
 
-quadrature_params = pytest.mark.parametrize('quadrature',
-                                            [None, "gk15", "gk21", "trapz"])
+from multiprocessing.dummy import Pool
+
+
+quadrature_params = pytest.mark.parametrize(
+    'quadrature', [None, "gk15", "gk21", "trapezoid"])
 
 
 @quadrature_params
@@ -15,7 +17,7 @@ def test_quad_vec_simple(quadrature):
     n = np.arange(10)
     f = lambda x: x**n
     for epsabs in [0.1, 1e-3, 1e-6]:
-        if quadrature == 'trapz' and epsabs < 1e-4:
+        if quadrature == 'trapezoid' and epsabs < 1e-4:
             # slow: skip
             continue
 
@@ -45,7 +47,7 @@ def test_quad_vec_simple_inf(quadrature):
     f = lambda x: 1 / (1 + np.float64(x)**2)
 
     for epsabs in [0.1, 1e-3, 1e-6]:
-        if quadrature == 'trapz' and epsabs < 1e-4:
+        if quadrature == 'trapezoid' and epsabs < 1e-4:
             # slow: skip
             continue
 
@@ -88,13 +90,20 @@ def test_quad_vec_simple_inf(quadrature):
     assert_allclose(res, exact, rtol=0, atol=max(epsabs, 1.5 * err))
 
 
+def test_quad_vec_args():
+    f = lambda x, a: x * (x + a) * np.arange(3)
+    a = 2
+    exact = np.array([0, 4/3, 8/3])
+
+    res, err = quad_vec(f, 0, 1, args=(a,))
+    assert_allclose(res, exact, rtol=0, atol=1e-4)
+
+
 def _lorenzian(x):
     return 1 / (1 + x**2)
 
 
 def test_quad_vec_pool():
-    from multiprocessing.dummy import Pool
-
     f = _lorenzian
     res, err = quad_vec(f, -np.inf, np.inf, norm='max', epsabs=1e-4, workers=4)
     assert_allclose(res, np.pi, rtol=0, atol=1e-4)
@@ -103,6 +112,24 @@ def test_quad_vec_pool():
         f = lambda x: 1 / (1 + x**2)
         res, err = quad_vec(f, -np.inf, np.inf, norm='max', epsabs=1e-4, workers=pool.map)
         assert_allclose(res, np.pi, rtol=0, atol=1e-4)
+
+
+def _func_with_args(x, a):
+    return x * (x + a) * np.arange(3)
+
+
+@pytest.mark.parametrize('extra_args', [2, (2,)])
+@pytest.mark.parametrize('workers', [1, 10])
+def test_quad_vec_pool_args(extra_args, workers):
+    f = _func_with_args
+    exact = np.array([0, 4/3, 8/3])
+
+    res, err = quad_vec(f, 0, 1, args=extra_args, workers=workers)
+    assert_allclose(res, exact, rtol=0, atol=1e-4)
+
+    with Pool(workers) as pool:
+        res, err = quad_vec(f, 0, 1, args=extra_args, workers=pool.map)
+        assert_allclose(res, exact, rtol=0, atol=1e-4)
 
 
 @quadrature_params

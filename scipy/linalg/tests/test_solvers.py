@@ -9,7 +9,7 @@ from scipy.linalg import solve_sylvester
 from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
 from scipy.linalg import solve_continuous_are, solve_discrete_are
 from scipy.linalg import block_diag, solve, LinAlgError
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 def _load_data(name):
@@ -23,7 +23,7 @@ def _load_data(name):
         return dict(f.items())
 
 
-class TestSolveLyapunov(object):
+class TestSolveLyapunov:
 
     cases = [
         (np.array([[1, 2], [3, 4]]),
@@ -79,10 +79,10 @@ class TestSolveLyapunov(object):
          np.eye(11)),
         # https://github.com/scipy/scipy/issues/4176
         (matrix([[0, 1], [-1/2, -1]]),
-         (matrix([0, 3]).T * matrix([0, 3]).T.T)),
+         (matrix([0, 3]).T @ matrix([0, 3]).T.T)),
         # https://github.com/scipy/scipy/issues/4176
         (matrix([[0, 1], [-1/2, -1]]),
-         (np.array(matrix([0, 3]).T * matrix([0, 3]).T.T))),
+         (np.array(matrix([0, 3]).T @ matrix([0, 3]).T.T))),
         ]
 
     def test_continuous_squareness_and_shape(self):
@@ -482,7 +482,7 @@ def test_solve_discrete_are():
          np.eye(3),
          1e6 * np.eye(3),
          1e6 * np.eye(3),
-         None),
+         "Issue with OpenBLAS, see gh-16926"),
         # TEST CASE 17 : darex #14
         (np.array([[1 - 1/1e8, 0, 0, 0],
                   [1, 0, 0, 0],
@@ -703,7 +703,7 @@ def test_are_validate_args():
             assert_raises(ValueError, x, sq, sq, sq, sq, sq, nm)
 
 
-class TestSolveSylvester(object):
+class TestSolveSylvester:
 
     cases = [
         # a, b, c all real.

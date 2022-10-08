@@ -5,7 +5,7 @@ from .._differentiable_functions import VectorFunction
 from .._constraints import (
     NonlinearConstraint, LinearConstraint, PreparedConstraint, strict_bounds)
 from .._hessian_update_strategy import BFGS
-from ..optimize import OptimizeResult
+from .._optimize import OptimizeResult
 from .._differentiable_functions import ScalarFunction
 from .equality_constrained_sqp import equality_constrained_sqp
 from .canonical_constraint import (CanonicalConstraint,
@@ -22,7 +22,7 @@ TERMINATION_MESSAGES = {
 }
 
 
-class HessianLinearOperator(object):
+class HessianLinearOperator:
     """Build LinearOperator from hessp"""
     def __init__(self, hessp, n):
         self.hessp = hessp
@@ -35,7 +35,7 @@ class HessianLinearOperator(object):
         return LinearOperator((self.n, self.n), matvec=matvec)
 
 
-class LagrangianHessian(object):
+class LagrangianHessian:
     """The Hessian of the Lagrangian as LinearOperator.
 
     The Lagrangian is computed as the objective function plus all the
@@ -193,7 +193,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
         The methods 'NormalEquation' and 'AugmentedSystem' can be used only
         with sparse constraints. The projections required by the algorithm
-        will be computed using, respectively, the the normal equation  and the
+        will be computed using, respectively, the normal equation  and the
         augmented system approaches explained in [1]_. 'NormalEquation'
         computes the Cholesky factorization of ``A A.T`` and 'AugmentedSystem'
         performs the LU factorization of an augmented system. They usually

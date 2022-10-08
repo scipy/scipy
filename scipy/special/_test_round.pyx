@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.testing import assert_
 
+from libc.math cimport isnan
+
 cdef extern from "_round.h":
     double add_round_up(double, double) nogil
     double add_round_down(double, double) nogil
@@ -8,9 +10,6 @@ cdef extern from "_round.h":
     int fegetround() nogil
     int FE_UPWARD
     int FE_DOWNWARD
-
-cdef extern from "numpy/npy_math.h":
-    int npy_isnan(double) nogil
 
 
 def have_fenv():
@@ -33,10 +32,10 @@ def have_fenv():
 def random_double(size):
     # This code is a little hacky to work around some issues:
     # - randint doesn't have a dtype keyword until 1.11
-    #   and the default type of randint is np.int
+    #   and the default type of randint is np.int_
     # - Something like
-    #   >>> low = np.iinfo(np.int).min
-    #   >>> high = np.iinfo(np.int).max + 1
+    #   >>> low = np.iinfo(np.int_).min
+    #   >>> high = np.iinfo(np.int_).max + 1
     #   >>> np.random.randint(low=low, high=high)
     #   fails in NumPy 1.10.4 (note that the 'high' value in randint
     #   is exclusive); this is fixed in 1.11.
@@ -71,7 +70,7 @@ def test_add_round(size, mode):
             std = sample1[i] + sample2[i]
         finally:
             fesetround(old_round)
-        if npy_isnan(res) and npy_isnan(std):
+        if isnan(res) and isnan(std):
             continue
         if res != std:
             nfail += 1

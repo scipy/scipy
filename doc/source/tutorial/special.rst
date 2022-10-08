@@ -35,6 +35,7 @@ the vibrational modes of a thin drum head.  Here is an example of a circular
 drum head anchored at the edge:
 
 .. plot::
+   :alt: "This code generates a 3-D representation of the vibrational modes on a drum head viewed at a three-quarter angle. A circular region on the X-Y plane is defined with a Z value of 0 around the edge. Within the circle a single smooth valley exists on the -X side and a smooth peak exists on the +X side. The image resembles a yin-yang at this angle."
 
    >>> from scipy import special
    >>> def drumhead_height(n, k, distance, angle, t):
@@ -47,13 +48,13 @@ drum head anchored at the edge:
    >>> z = np.array([drumhead_height(1, 1, r, theta, 0.5) for r in radius])
 
    >>> import matplotlib.pyplot as plt
-   >>> from mpl_toolkits.mplot3d import Axes3D
-   >>> from matplotlib import cm
    >>> fig = plt.figure()
-   >>> ax = Axes3D(fig)
-   >>> ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.jet)
+   >>> ax = fig.add_axes(rect=(0, 0.05, 0.95, 0.95), projection='3d')
+   >>> ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap='RdBu_r', vmin=-0.5, vmax=0.5)
    >>> ax.set_xlabel('X')
    >>> ax.set_ylabel('Y')
+   >>> ax.set_xticks(np.arange(-1, 1.1, 0.5))
+   >>> ax.set_yticks(np.arange(-1, 1.1, 0.5))
    >>> ax.set_zlabel('Z')
    >>> plt.show()
 
