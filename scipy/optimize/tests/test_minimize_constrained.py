@@ -1,3 +1,4 @@
+
 import numpy as np
 import pytest
 from scipy.linalg import block_diag
@@ -677,6 +678,7 @@ def test_bug_11886():
     lin_cons = LinearConstraint(A, -1, np.inf)
     minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors
 
+
 def test_gh11649():
     def obj(x):
         return np.exp(x[0])*(4*x[0]**2 + 2*x[1]**2 + 4*x[0]*x[1] +
@@ -691,3 +693,66 @@ def test_gh11649():
     res = minimize(fun =  obj, x0 = x0, method = 
             'trust-constr',  bounds = bnds, constraints = nlcs)
 
+
+class TestBoundedNelderMead:
+
+    @pytest.mark.parametrize('bounds, x_opt',
+                             [(Bounds(-np.inf, np.inf), Rosenbrock().x_opt),
+                              (Bounds(-np.inf, -0.8), [-0.8, -0.8]),
+                              (Bounds(3.0, np.inf), [3.0, 9.0]),
+                              (Bounds([3.0, 1.0], [4.0, 5.0]), [3., 5.]),
+                              ])
+    def test_rosen_brock_with_bounds(self, bounds, x_opt):
+        prob = Rosenbrock()
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Initial guess is not within "
+                                    "the specified bounds")
+            result = minimize(prob.fun, [-10, -10],
+                              method='Nelder-Mead',
+                              bounds=bounds)
+            assert np.less_equal(bounds.lb, result.x).all()
+            assert np.less_equal(result.x, bounds.ub).all()
+            assert np.allclose(prob.fun(result.x), result.fun)
+            assert np.allclose(result.x, x_opt, atol=1.e-3)
+
+    def test_equal_all_bounds(self):
+        prob = Rosenbrock()
+        bounds = Bounds([4.0, 5.0], [4.0, 5.0])
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Initial guess is not within "
+                                    "the specified bounds")
+            result = minimize(prob.fun, [-10, 8],
+                              method='Nelder-Mead',
+                              bounds=bounds)
+            assert np.allclose(result.x, [4.0, 5.0])
+
+    def test_equal_one_bounds(self):
+        prob = Rosenbrock()
+        bounds = Bounds([4.0, 5.0], [4.0, 20.0])
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Initial guess is not within "
+                                    "the specified bounds")
+            result = minimize(prob.fun, [-10, 8],
+                              method='Nelder-Mead',
+                              bounds=bounds)
+            assert np.allclose(result.x, [4.0, 16.0])
+
+    def test_invalid_bounds(self):
+        prob = Rosenbrock()
+        with raises(ValueError, match=r"one of the lower bounds is greater "
+                                      r"than an upper bound."):
+            bounds = Bounds([-np.inf, 1.0], [4.0, -5.0])
+            minimize(prob.fun, [-10, 3],
+                     method='Nelder-Mead',
+                     bounds=bounds)
+
+    @pytest.mark.xfail(reason="Failing on Azure Linux and macOS builds, "
+                              "see gh-13846")
+    def test_outside_bounds_warning(self):
+        prob = Rosenbrock()
+        with raises(UserWarning, match=r"Initial guess is not within "
+                                       r"the specified bounds"):
+            bounds = Bounds([-np.inf, 1.0], [4.0, 5.0])
+            minimize(prob.fun, [-10, 8],
+                     method='Nelder-Mead',
+                     bounds=bounds)

@@ -86,8 +86,8 @@ class RungeKutta(OdeSolver):
                  rtol=1e-3, atol=1e-6, vectorized=False,
                  first_step=None, **extraneous):
         warn_extraneous(extraneous)
-        super(RungeKutta, self).__init__(fun, t0, y0, t_bound, vectorized,
-                                         support_complex=True)
+        super().__init__(fun, t0, y0, t_bound, vectorized,
+                         support_complex=True)
         self.y_old = None
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
@@ -215,11 +215,15 @@ class RK23(RungeKutta):
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
-        estimates less than ``atol + rtol * abs(y)``. Here, `rtol` controls a
-        relative accuracy (number of correct digits). But if a component of `y`
-        is approximately below `atol`, the error only needs to fall within
-        the same `atol` threshold, and the number of correct digits is not
-        guaranteed. If components of y have different scales, it might be
+        estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
+        relative accuracy (number of correct digits), while `atol` controls
+        absolute accuracy (number of correct decimal places). To achieve the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        allowable error. If `atol` is larger than ``rtol * abs(y)`` the
+        number of correct digits is not guaranteed. Conversely, to achieve the
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
+        than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
@@ -309,10 +313,14 @@ class RK45(RungeKutta):
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
-        relative accuracy (number of correct digits). But if a component of `y`
-        is approximately below `atol`, the error only needs to fall within
-        the same `atol` threshold, and the number of correct digits is not
-        guaranteed. If components of y have different scales, it might be
+        relative accuracy (number of correct digits), while `atol` controls
+        absolute accuracy (number of correct decimal places). To achieve the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        allowable error. If `atol` is larger than ``rtol * abs(y)`` the
+        number of correct digits is not guaranteed. Conversely, to achieve the
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
+        than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
@@ -417,10 +425,14 @@ class DOP853(RungeKutta):
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
-        relative accuracy (number of correct digits). But if a component of `y`
-        is approximately below `atol`, the error only needs to fall within
-        the same `atol` threshold, and the number of correct digits is not
-        guaranteed. If components of y have different scales, it might be
+        relative accuracy (number of correct digits), while `atol` controls
+        absolute accuracy (number of correct decimal places). To achieve the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        allowable error. If `atol` is larger than ``rtol * abs(y)`` the
+        number of correct digits is not guaranteed. Conversely, to achieve the
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
+        than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
@@ -476,9 +488,8 @@ class DOP853(RungeKutta):
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, vectorized=False,
                  first_step=None, **extraneous):
-        super(DOP853, self).__init__(fun, t0, y0, t_bound, max_step,
-                                     rtol, atol, vectorized, first_step,
-                                     **extraneous)
+        super().__init__(fun, t0, y0, t_bound, max_step, rtol, atol,
+                         vectorized, first_step, **extraneous)
         self.K_extended = np.empty((dop853_coefficients.N_STAGES_EXTENDED,
                                     self.n), dtype=self.y.dtype)
         self.K = self.K_extended[:self.n_stages + 1]
@@ -526,7 +537,7 @@ class DOP853(RungeKutta):
 
 class RkDenseOutput(DenseOutput):
     def __init__(self, t_old, t, y_old, Q):
-        super(RkDenseOutput, self).__init__(t_old, t)
+        super().__init__(t_old, t)
         self.h = t - t_old
         self.Q = Q
         self.order = Q.shape[1] - 1
@@ -551,7 +562,7 @@ class RkDenseOutput(DenseOutput):
 
 class Dop853DenseOutput(DenseOutput):
     def __init__(self, t_old, t, y_old, F):
-        super(Dop853DenseOutput, self).__init__(t_old, t)
+        super().__init__(t_old, t)
         self.h = t - t_old
         self.F = F
         self.y_old = y_old

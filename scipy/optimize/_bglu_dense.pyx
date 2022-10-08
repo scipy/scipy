@@ -11,6 +11,8 @@ try:
 except ImportError:
     from time import clock as timer
 
+np.import_array()
+
 __all__ = ['LU', 'BGLU']
 
 @cython.boundscheck(False)
@@ -177,7 +179,7 @@ def _consider_refactor(method):
     return f
 
 
-cdef class LU(object):
+cdef class LU:
     """
     Represents PLU factorization of a basis matrix with naive rank-one updates
     """

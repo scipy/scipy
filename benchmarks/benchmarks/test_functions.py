@@ -5,7 +5,7 @@ from numpy import sin, cos, pi, exp, sqrt, abs
 from scipy.optimize import rosen
 
 
-class SimpleQuadratic(object):
+class SimpleQuadratic:
 
     def fun(self, x):
         return np.dot(x, x)
@@ -17,7 +17,7 @@ class SimpleQuadratic(object):
         return 2. * np.eye(x.size)
 
 
-class AsymmetricQuadratic(object):
+class AsymmetricQuadratic:
 
     def fun(self, x):
         return np.dot(x, x) + x[0]
@@ -31,14 +31,14 @@ class AsymmetricQuadratic(object):
         return 2. * np.eye(x.size)
 
 
-class SlowRosen(object):
+class SlowRosen:
 
     def fun(self, x):
         time.sleep(40e-6)
         return rosen(x)
 
 
-class LJ(object):
+class LJ:
     """
     The Lennard Jones potential
 
@@ -123,7 +123,7 @@ class LJ13(LJ):
     target_E = -44.326801
 
 
-class Booth(object):
+class Booth:
     target_E = 0.
     solution = np.array([1., 3.])
     xmin = np.array([-10., -10.])
@@ -140,7 +140,7 @@ class Booth(object):
         return np.array([dfdx, dfdy])
 
 
-class Beale(object):
+class Beale:
     target_E = 0.
     solution = np.array([3., 0.5])
     xmin = np.array([-4.5, -4.5])
@@ -176,7 +176,7 @@ See also https://mpra.ub.uni-muenchen.de/2718/1/MPRA_paper_2718.pdf
 """
 
 
-class HolderTable(object):
+class HolderTable:
     target_E = -19.2085
     solution = [8.05502, 9.66459]
     xmin = np.array([-10, -10])
@@ -217,7 +217,7 @@ class HolderTable(object):
 #         return np.array([dEdx, dEdy])
 
 
-class Ackley(object):
+class Ackley:
     # note: this function is not smooth at the origin.  the gradient will never
     # converge in the minimizer
     target_E = 0.
@@ -243,7 +243,7 @@ class Ackley(object):
         return np.array([dfdx, dfdy])
 
 
-class Levi(object):
+class Levi:
     target_E = 0.
     solution = [1., 1.]
     xmin = np.array([-10, -10])
@@ -269,7 +269,7 @@ class Levi(object):
         return np.array([dfdx, dfdy])
 
 
-class EggHolder(object):
+class EggHolder:
     target_E = -959.6407
     solution = [512, 404.2319]
     xmin = np.array([-512., -512])
@@ -281,7 +281,7 @@ class EggHolder(object):
         return a + b
 
 
-class CrossInTray(object):
+class CrossInTray:
     target_E = -2.06261
     solution = [1.34941, -1.34941]
     xmin = np.array([-10., -10])
@@ -293,7 +293,7 @@ class CrossInTray(object):
         return -0.0001 * val
 
 
-class Schaffer2(object):
+class Schaffer2:
     target_E = 0
     solution = [0., 0.]
     xmin = np.array([-100., -100])
@@ -305,7 +305,7 @@ class Schaffer2(object):
         return 0.5 + num / den
 
 
-class Schaffer4(object):
+class Schaffer4:
     target_E = 0.292579
     solution = [0, 1.253131828927371]
     xmin = np.array([-100., -100])

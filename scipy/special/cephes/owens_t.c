@@ -12,7 +12,6 @@
  * Journal of Statistical Software, 5 (5), 1-25
  */
 #include "mconf.h"
-#include "_c99compat.h"
 
 static const int SELECT_METHOD[] = {
     0, 0, 1, 12, 12, 12, 12, 12, 12, 12, 12, 15, 15, 15, 8,
@@ -306,7 +305,7 @@ static double owens_t_dispatch(double h, double a, double ah) {
 	result = owensT6(h, a);
 	break;
     default:
-	result = NPY_NAN;
+	result = NAN;
     }
 
     return result;
@@ -317,7 +316,7 @@ double owens_t(double h, double a) {
     double result, fabs_a, fabs_ah, normh, normah;
 
     if (cephes_isnan(h) || cephes_isnan(a)) {
-        return NPY_NAN;
+        return NAN;
     }
 
     /* exploit that T(-h,a) == T(h,a) */
@@ -331,11 +330,11 @@ double owens_t(double h, double a) {
     fabs_a = fabs(a);
     fabs_ah = fabs_a * h;
 
-    if (fabs_a == NPY_INFINITY) {
+    if (fabs_a == INFINITY) {
 	/* See page 13 in the paper */
-	result = owens_t_norm2(h);
+	result = 0.5 * owens_t_norm2(h);
     }
-    else if (h == NPY_INFINITY) {
+    else if (h == INFINITY) {
 	result = 0;
     }
     else if (fabs_a <= 1) {

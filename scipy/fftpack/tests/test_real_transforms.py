@@ -5,7 +5,7 @@ from numpy.testing import assert_array_almost_equal, assert_equal
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.fftpack.realtransforms import (
+from scipy.fftpack._realtransforms import (
     dct, idct, dst, idst, dctn, idctn, dstn, idstn)
 
 # Matlab reference data
@@ -154,7 +154,7 @@ def naive_dst4(x, norm=None):
     return y
 
 
-class TestComplex(object):
+class TestComplex:
     def test_dct_complex64(self):
         y = dct(1j*np.arange(5, dtype=np.complex64))
         x = 1j*dct(np.arange(5))
@@ -186,7 +186,7 @@ class TestComplex(object):
         assert_array_almost_equal(x, y)
 
 
-class _TestDCTBase(object):
+class _TestDCTBase:
     def setup_method(self):
         self.rdt = None
         self.dec = 14
@@ -223,9 +223,9 @@ class _TestDCTBase(object):
 class _TestDCTIBase(_TestDCTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dct(x, norm='ortho', type=1)
             y2 = naive_dct1(x, norm='ortho')
             assert_equal(y.dtype, dt)
@@ -234,11 +234,9 @@ class _TestDCTIBase(_TestDCTBase):
 class _TestDCTIIBase(_TestDCTBase):
     def test_definition_matlab(self):
         # Test correspondence with MATLAB (orthornomal mode).
-        for i in range(len(X)):
-            dt = np.result_type(np.float32, self.rdt)
-            x = np.array(X[i], dtype=dt)
-
-            yr = Y[i]
+        dt = np.result_type(np.float32, self.rdt)
+        for xr, yr in zip(X, Y):
+            x = np.array(xr, dtype=dt)
             y = dct(x, norm="ortho", type=2)
             assert_equal(y.dtype, dt)
             assert_array_almost_equal(y, yr, decimal=self.dec)
@@ -247,9 +245,9 @@ class _TestDCTIIBase(_TestDCTBase):
 class _TestDCTIIIBase(_TestDCTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dct(x, norm='ortho', type=2)
             xi = dct(y, norm="ortho", type=3)
             assert_equal(xi.dtype, dt)
@@ -258,9 +256,9 @@ class _TestDCTIIIBase(_TestDCTBase):
 class _TestDCTIVBase(_TestDCTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dct(x, norm='ortho', type=4)
             y2 = naive_dct4(x, norm='ortho')
             assert_equal(y.dtype, dt)
@@ -351,7 +349,7 @@ class TestDCTIVInt(_TestDCTIVBase):
         self.type = 3
 
 
-class _TestIDCTBase(object):
+class _TestIDCTBase:
     def setup_method(self):
         self.rdt = None
         self.dec = 14
@@ -456,7 +454,7 @@ class TestIDCTIVInt(_TestIDCTBase):
         self.dec = 5
         self.type = 4
 
-class _TestDSTBase(object):
+class _TestDSTBase:
     def setup_method(self):
         self.rdt = None  # dtype
         self.dec = None  # number of decimals to match
@@ -478,9 +476,9 @@ class _TestDSTBase(object):
 class _TestDSTIBase(_TestDSTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dst(x, norm='ortho', type=1)
             y2 = naive_dst1(x, norm='ortho')
             assert_equal(y.dtype, dt)
@@ -489,9 +487,9 @@ class _TestDSTIBase(_TestDSTBase):
 class _TestDSTIVBase(_TestDSTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dst(x, norm='ortho', type=4)
             y2 = naive_dst4(x, norm='ortho')
             assert_equal(y.dtype, dt)
@@ -581,7 +579,7 @@ class TestDSTIVInt(_TestDSTIVBase):
         self.type = 4
 
 
-class _TestIDSTBase(object):
+class _TestIDSTBase:
     def setup_method(self):
         self.rdt = None
         self.dec = None
@@ -688,7 +686,7 @@ class TestIDSTIVnt(_TestIDSTBase):
         self.type = 4
 
 
-class TestOverwrite(object):
+class TestOverwrite:
     """Check input overwrite behavior."""
 
     real_dtypes = [np.float32, np.float64]
@@ -741,7 +739,7 @@ class TestOverwrite(object):
             self._check_1d(idst, dtype, (2, 16), 1)
 
 
-class Test_DCTN_IDCTN(object):
+class Test_DCTN_IDCTN:
     dec = 14
     dct_type = [1, 2, 3, 4]
     norms = [None, 'ortho']
