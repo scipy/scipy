@@ -383,12 +383,12 @@ def value_indices(arr, *, nullval=None):
     # Cope with nullval being None, without too much extra complexity
     # in the C code. If not None, the value is passed in as a numpy scalar
     # with the same dtype as arr.
-    nullval_numpyscalar = arr.dtype.type(0)
+    nullval_arr = numpy.zeros((1,), dtype=arr.dtype)
     nullIsNone = (nullval is None)
     if not nullIsNone:
-        nullval_numpyscalar = arr.dtype.type(nullval)
+        nullval_arr[0] = nullval_arr.dtype.type(nullval)
 
-    val_indices = _nd_image.value_indices(arr, nullIsNone, nullval_numpyscalar)
+    val_indices = _nd_image.value_indices(arr, nullIsNone, nullval_arr)
     return val_indices
 
 

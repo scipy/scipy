@@ -945,7 +945,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
 */
 #define VALUEINDICES_MINVAL(valType) (*((valType *)PyArray_GETPTR1(minMaxArr, 0)))
 #define VALUEINDICES_MAXVAL(valType) (*((valType *)PyArray_GETPTR1(minMaxArr, 1)))
-#define VALUEINDICES_NULLVAL(valType) (*(valType *)(nullvalData))
+#define VALUEINDICES_NULLVAL(valType) (*((valType *)PyArray_GETPTR1(nullvalArr, 0)))
 #define CASE_VALUEINDICES_SET_MINMAX(valType) {\
     valType val = *((valType*)PyArray_GetPtr(arr, ndiIter.coordinates)); \
     if (nullIsNone || (val != VALUEINDICES_NULLVAL(valType))) {\
@@ -989,17 +989,17 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
 {
     PyArrayObject *arr, *ndxArr, *minMaxArr;
     PyObject *t=NULL, *valObj=NULL, **ndxPtr=NULL, *ndxTuple, *valDict;
-    PyObject *nullval;
+    PyObject *nullvalArr;
     int nullIsNone, valueIsNull=0, ndim, j, arrType, minMaxUnset=1;
     NI_Iterator ndiIter;
-    char *arrData, *nullvalData=NULL;
+    char *arrData;
     npy_uint64 *hist=NULL, *valCtr=NULL;
     npy_intp arrSize, iterIndex, dims[1];
     npy_uint64 ii, numPossibleVals=0;
 
     /* Get arguments passed in */
-    if (!PyArg_ParseTuple(args, "O!iO", &PyArray_Type, &arr, &nullIsNone,
-            &nullval))
+    if (!PyArg_ParseTuple(args, "O!iO!", &PyArray_Type, &arr, &nullIsNone,
+            &PyArray_Type, &nullvalArr))
         return NULL;
 
     arrSize = PyArray_SIZE(arr);
@@ -1009,12 +1009,6 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
     if (!PyTypeNum_ISINTEGER(arrType)) {
         PyErr_SetString(PyExc_ValueError, "Parameter 'arr' must be an integer array");
         return NULL;
-    }
-    /* Set up a pointer to the null value, to be used in conjunction
-       with VALUEINDICES_NULLVAL macro. */
-    nullvalData = (char *)calloc(1, sizeof(npy_uint64));
-    if (!nullIsNone) {
-        PyArray_ScalarAsCtype(nullval, nullvalData);
     }
 
     /* This dictionary is the final return value */
@@ -1152,7 +1146,6 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
     if (hist != NULL) free(hist);
     if (valCtr != NULL) free(valCtr);
     if (ndxPtr != NULL) free(ndxPtr);
-    if (nullvalData != NULL) free(nullvalData);
     Py_DECREF(minMaxArr);
 
     if (PyErr_Occurred()) {
