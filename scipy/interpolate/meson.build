@@ -166,6 +166,12 @@ if use_pythran
     install: true,
     subdir: 'scipy/interpolate'
   )
+else
+  py3.install_sources(
+    ['_rbfinterp_pythran.py'],
+    pure: false,
+    subdir: 'scipy/interpolate'
+  )
 endif
 
 py3.install_sources([
@@ -182,7 +188,6 @@ py3.install_sources([
     '_polyint.py',
     '_rbf.py',
     '_rbfinterp.py',
-    '_rbfinterp_pythran.py',
     '_rgi.py',
     'fitpack.py',
     'fitpack2.py',

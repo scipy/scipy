@@ -118,7 +118,6 @@ py3.install_sources([
     '_lti_conversion.py',
     '_ltisys.py',
     '_max_len_seq.py',
-    '_max_len_seq_inner.py',
     '_peak_finding.py',
     '_savitzky_golay.py',
     '_signaltools.py',

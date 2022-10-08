@@ -12,10 +12,14 @@ from libcpp.map cimport map as cppmap
 from libcpp.cast cimport reinterpret_cast
 
 from .HConst cimport (
+    HIGHS_CONST_INF,
+
     HighsModelStatus,
     HighsModelStatusNOTSET,
     HighsModelStatusMODEL_ERROR,
     HighsModelStatusOPTIMAL,
+    HighsModelStatusREACHED_TIME_LIMIT,
+    HighsModelStatusREACHED_ITERATION_LIMIT,
 
     HighsOptionTypeBOOL,
     HighsOptionTypeINT,
@@ -123,6 +127,7 @@ cdef apply_options(dict options, Highs & highs):
             'ipm_iteration_limit',
             'keep_n_rows',
             'max_threads',
+            'mip_max_nodes',
             'highs_debug_level',
             'min_threads',
             'simplex_crash_strategy',
@@ -653,8 +658,6 @@ def _highs_wrapper(
 
     # Extract what we need from the solution
     cdef HighsModelStatus model_status = highs.getModelStatus()
-    cdef HighsModelStatus scaled_model_status = highs.getModelStatus(True)
-    cdef HighsModelStatus unscaled_model_status = model_status
 
     # We might need an info object if we can look up the solution and a place to put solution
     cdef HighsInfo info = highs.getHighsInfo() # it should always be safe to get the info object
@@ -662,12 +665,29 @@ def _highs_wrapper(
     cdef HighsBasis basis
     cdef double[:, ::1] marg_bnds = np.zeros((2, numcol))  # marg_bnds[0, :]: lower
 
-    # If the status is bad, don't look up the solution
-    if model_status != HighsModelStatusOPTIMAL:
+    # Failure modes:
+    #     LP: if we have anything other than an Optimal status, it
+    #         is unsafe (and unhelpful) to read any results
+    #    MIP: has a non-Optimal status or has timed out/reached max iterations
+    #             1) If not Optimal/TimedOut/MaxIter status, there is no solution
+    #             2) If TimedOut/MaxIter status, there may be a feasible solution.
+    #                if the objective function value is not Infinity, then the
+    #                current solution is feasible and can be returned.  Else, there
+    #                is no solution.
+    mipFailCondition = model_status not in {
+        HighsModelStatusOPTIMAL,
+        HighsModelStatusREACHED_TIME_LIMIT,
+        HighsModelStatusREACHED_ITERATION_LIMIT,
+    } or (model_status in {
+        HighsModelStatusREACHED_TIME_LIMIT,
+        HighsModelStatusREACHED_ITERATION_LIMIT,
+    } and (info.objective_function_value == HIGHS_CONST_INF))
+    lpFailCondition = model_status != HighsModelStatusOPTIMAL
+    if (highs.getLp().isMip() and mipFailCondition) or (not highs.getLp().isMip() and lpFailCondition):
         return {
             'status': <int> model_status,
             'message': f'model_status is {highs.modelStatusToString(model_status).decode()}; '
-                       f'primal_status is {utilBasisStatusToString(<HighsBasisStatus> info.primal_solution_status)}',
+                       f'primal_status is {utilBasisStatusToString(<HighsBasisStatus> info.primal_solution_status).decode()}',
             'simplex_nit': info.simplex_iteration_count,
             'ipm_nit': info.ipm_iteration_count,
             'fun': None,
@@ -689,7 +709,6 @@ def _highs_wrapper(
         res = {
             'status': <int> model_status,
             'message': highs.modelStatusToString(model_status).decode(),
-            'unscaled_status': <int> unscaled_model_status,
 
             # Primal solution
             'x': [solution.col_value[ii] for ii in range(numcol)],

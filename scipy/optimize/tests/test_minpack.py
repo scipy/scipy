@@ -16,6 +16,7 @@ from scipy import optimize
 from scipy.special import lambertw
 from scipy.optimize._minpack_py import leastsq, curve_fit, fixed_point
 from scipy.optimize import OptimizeWarning
+from scipy.optimize._minimize import Bounds
 
 
 class ReturnShape:
@@ -606,11 +607,21 @@ class TestCurveFit:
 
         # The minimum w/out bounds is at [2., 2.],
         # and with bounds it's at [1.5, smth].
-        bounds = ([1., 0], [1.5, 3.])
+        lb = [1., 0]
+        ub = [1.5, 3.]
+
+        # Test that both variants of the bounds yield the same result
+        bounds = (lb, ub)
+        bounds_class = Bounds(lb, ub)
         for method in [None, 'trf', 'dogbox']:
             popt, pcov = curve_fit(f, xdata, ydata, bounds=bounds,
                                    method=method)
             assert_allclose(popt[0], 1.5)
+
+            popt_class, pcov_class = curve_fit(f, xdata, ydata,
+                                               bounds=bounds_class,
+                                               method=method)
+            assert_allclose(popt_class, popt)
 
         # With bounds, the starting estimate is feasible.
         popt, pcov = curve_fit(f, xdata, ydata, method='trf',
