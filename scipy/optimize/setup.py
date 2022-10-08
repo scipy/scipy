@@ -1,3 +1,4 @@
+import sys
 import os.path
 from os.path import join
 
@@ -11,7 +12,8 @@ def configuration(parent_package='', top_path=None):
                                     blas_ilp64_pre_build_hook, combine_dict,
                                     uses_blas64, get_f2py_int64_options)
     from scipy._build_utils.compiler_helper import (
-        set_cxx_flags_hook, set_cxx_flags_clib_hook, set_c_flags_hook)
+        set_cxx_flags_clib_hook, set_c_flags_hook)
+    from distutils.sysconfig import get_python_inc
 
     config = Configuration('optimize', parent_package, top_path)
 
@@ -31,8 +33,8 @@ def configuration(parent_package='', top_path=None):
                        headers='rectangular_lsap/rectangular_lsap.h',
                        _pre_build_hook=set_cxx_flags_clib_hook)
     _lsap = config.add_extension(
-        '_lsap_module',
-        sources=['_lsap_module.c'],
+        '_lsap',
+        sources=['_lsap.c'],
         libraries=['rectangular_lsap'],
         depends=(['rectangular_lsap/rectangular_lsap.cpp',
                   'rectangular_lsap/rectangular_lsap.h']),
@@ -71,8 +73,8 @@ def configuration(parent_package='', top_path=None):
                                **lapack)
     ext._pre_build_hook = pre_build_hook
 
-    sources = ['moduleTNC.c', 'tnc.c']
-    config.add_extension('moduleTNC',
+    sources = ['_moduleTNC.c', 'tnc.c']
+    config.add_extension('_moduleTNC',
                          sources=[join('tnc', x) for x in sources],
                          depends=[join('tnc', 'tnc.h')],
                          **numpy_nodepr_api)
@@ -83,7 +85,7 @@ def configuration(parent_package='', top_path=None):
                          **numpy_nodepr_api)
 
     sources = ['minpack2.pyf', 'dcsrch.f', 'dcstep.f']
-    config.add_extension('minpack2',
+    config.add_extension('_minpack2',
                          sources=[join('minpack2', x) for x in sources],
                          **numpy_nodepr_api)
 
@@ -92,11 +94,36 @@ def configuration(parent_package='', top_path=None):
         join('slsqp', x) for x in sources], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
+    sources = [join('_direct', x) for x in
+               ('direct_wrap.c', 'DIRect.c', 'DIRsubrout.c', 'DIRserial.c')]
+    headers = ['_directmodule.h',
+               join('_direct', 'direct-internal.h')]
+    config.add_library('_direct_lib',
+                       sources=sources,
+                       headers=headers,
+                       include_dirs=[get_python_inc()],
+                       **numpy_nodepr_api)
+
+    config.add_extension('_direct',
+                         sources=['_directmodule.c'],
+                         libraries=['_direct_lib'],
+                         depends=(sources + headers),
+                         **numpy_nodepr_api)
+
+    config.add_data_files('__nnls.pyi')
     ext = config.add_extension('__nnls', sources=[
         join('__nnls', x) for x in ["nnls.f", "nnls.pyf"]], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
-    config.add_extension('_group_columns', sources=['_group_columns.c'],)
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
+        import pythran
+        ext = pythran.dist.PythranExtension(
+            'scipy.optimize._group_columns',
+            sources=["scipy/optimize/_group_columns.py"],
+            config=['compiler.blas=none'])
+        config.ext_modules.append(ext)
+    else:
+        config.add_extension('_group_columns', sources=['_group_columns.c'],)
 
     config.add_extension('_bglu_dense', sources=['_bglu_dense.c'])
 
@@ -109,17 +136,15 @@ def configuration(parent_package='', top_path=None):
     # Cython optimize API for zeros functions
     config.add_subpackage('cython_optimize')
     config.add_data_files('cython_optimize.pxd')
-    config.add_data_files(os.path.join('cython_optimize', '*.pxd'))
-    config.add_extension(
-        'cython_optimize._zeros',
-        sources=[os.path.join('cython_optimize', '_zeros.c')])
 
     config.add_subpackage('_shgo_lib')
     config.add_data_dir('_shgo_lib')
 
     # HiGHS linear programming libraries and extensions
-    config.add_subpackage('_highs')
-    config.add_data_files(os.path.join('_highs', 'cython', 'src', '*.pxd'))
+    if 'sdist' not in sys.argv:
+        # Avoid running this during sdist creation - it makes numpy.distutils
+        # create an empty cython/src top-level directory.
+        config.add_subpackage('_highs')
 
     config.add_data_dir('tests')
 

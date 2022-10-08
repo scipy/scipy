@@ -1,9 +1,9 @@
 C------------------------------------------------------------------------ 
 C
       SUBROUTINE COBYLA (CALCFC, N,M,X,RHOBEG,RHOEND,IPRINT,MAXFUN,
-     & W,IACT, DINFO)
+     & W,IACT, DINFO, CALLBACK)
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      EXTERNAL CALCFC
+      EXTERNAL CALCFC,CALLBACK
       DIMENSION X(*),W(*),IACT(*), DINFO(*)
 C
 C     This subroutine minimizes an objective function F(X) subject to M
@@ -74,16 +74,16 @@ C
       IWORK=IDX+N
       CALL COBYLB (CALCFC,N,M,MPP,X,RHOBEG,RHOEND,IPRINT,MAXFUN,W(ICON),
      1  W(ISIM),W(ISIMI),W(IDATM),W(IA),W(IVSIG),W(IVETA),W(ISIGB),
-     2  W(IDX),W(IWORK),IACT,DINFO)
+     2  W(IDX),W(IWORK),IACT,DINFO,CALLBACK)
       RETURN
       END
 C------------------------------------------------------------------------------
       SUBROUTINE COBYLB (CALCFC,N,M,MPP,X,RHOBEG,RHOEND,IPRINT,MAXFUN,
-     1  CON,SIM,SIMI,DATMAT,A,VSIG,VETA,SIGBAR,DX,W,IACT,DINFO)
+     1  CON,SIM,SIMI,DATMAT,A,VSIG,VETA,SIGBAR,DX,W,IACT,DINFO,CALLBACK)
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION X(*),CON(*),SIM(N,*),SIMI(N,*),DATMAT(MPP,*),
      1  A(N,*),VSIG(*),VETA(*),SIGBAR(*),DX(*),W(*),IACT(*),DINFO(*)
-      EXTERNAL CALCFC
+      EXTERNAL CALCFC,CALLBACK
 C
 C     Set the initial values of some parameters. The last column of SIM holds
 C     the optimal vertex of the current simplex, and the preceding N columns
@@ -134,7 +134,10 @@ C     Make the next call of the user-supplied subroutine CALCFC. These
 C     instructions are also used for calling CALCFC during the iterations of
 C     the algorithm.
 C
-   40 IF (NFVALS .GE. MAXFUN .AND. NFVALS .GT. 0) THEN
+   40 IF (NFVALS .GT. 0) THEN
+         CALL CALLBACK(N,M,X)
+      END IF
+      IF (NFVALS .GE. MAXFUN .AND. NFVALS .GT. 0) THEN
          IF (IPRINT .GE. 1) PRINT 50
    50      FORMAT (/3X,'Return from subroutine COBYLA because the ',
      1        'MAXFUN limit has been reached.')
@@ -561,6 +564,7 @@ C
           PRINT 70, NFVALS,F,RESMAX,(X(I),I=1,IPTEM)
           IF (IPTEM .LT. N) PRINT 80, (X(I),I=IPTEMP,N)
       END IF
+      CALL CALLBACK(N,M,X)
       MAXFUN=NFVALS
       DINFO(2)=DBLE(NFVALS)
       DINFO(3)=DBLE(F)

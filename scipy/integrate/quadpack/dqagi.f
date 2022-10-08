@@ -1,5 +1,5 @@
-      subroutine dqagi(f,bound,inf,epsabs,epsrel,result,abserr,neval,
-     *   ier,limit,lenw,last,iwork,work)
+      recursive subroutine dqagi(f,bound,inf,epsabs,epsrel,result,
+     *   abserr,neval,ier,limit,lenw,last,iwork,work)
 c***begin prologue  dqagi
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)

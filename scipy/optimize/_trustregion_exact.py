@@ -33,7 +33,7 @@ def _minimize_trustregion_exact(fun, x0, args=(), jac=None, hess=None,
     if jac is None:
         raise ValueError('Jacobian is required for trust region '
                          'exact minimization.')
-    if hess is None:
+    if not callable(hess):
         raise ValueError('Hessian matrix is required for trust region '
                          'exact minimization.')
     return _minimize_trust_region(fun, x0, args=args, jac=jac, hess=hess,
@@ -213,7 +213,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
     def __init__(self, x, fun, jac, hess, hessp=None,
                  k_easy=0.1, k_hard=0.2):
 
-        super(IterativeSubproblem, self).__init__(x, fun, jac, hess)
+        super().__init__(x, fun, jac, hess)
 
         # When the trust-region shrinks in two consecutive
         # calculations (``tr_radius < previous_tr_radius``)

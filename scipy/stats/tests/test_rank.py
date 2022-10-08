@@ -5,7 +5,7 @@ from scipy.stats import rankdata, tiecorrect
 import pytest
 
 
-class TestTieCorrect(object):
+class TestTieCorrect:
 
     def test_empty(self):
         """An empty array requires no correction, should return 1.0."""
@@ -71,7 +71,7 @@ class TestTieCorrect(object):
         assert_equal(out, 1.0 - k * (ntie**3 - ntie) / float(n**3 - n))
 
 
-class TestRankData(object):
+class TestRankData:
 
     def test_empty(self):
         """stats.rankdata([]) should return an empty array."""
@@ -191,6 +191,74 @@ class TestRankData(object):
         r = rankdata(data, method=method, axis=axis)
         assert_equal(r.shape, shape)
         assert_equal(r.dtype, dtype)
+
+    @pytest.mark.parametrize('axis', range(3))
+    @pytest.mark.parametrize('method', methods)
+    def test_nan_policy_omit_3d(self, axis, method):
+        shape = (20, 21, 22)
+        rng = np.random.default_rng(abs(hash('falafel')))
+
+        a = rng.random(size=shape)
+        i = rng.random(size=shape) < 0.4
+        j = rng.random(size=shape) < 0.1
+        k = rng.random(size=shape) < 0.1
+        a[i] = np.nan
+        a[j] = -np.inf
+        a[k] - np.inf
+
+        def rank_1d_omit(a, method):
+            out = np.zeros_like(a)
+            i = np.isnan(a)
+            a_compressed = a[~i]
+            res = rankdata(a_compressed, method)
+            out[~i] = res
+            out[i] = np.nan
+            return out
+
+        def rank_omit(a, method, axis):
+            return np.apply_along_axis(lambda a: rank_1d_omit(a, method),
+                                       axis, a)
+
+        res = rankdata(a, method, axis=axis, nan_policy='omit')
+        res0 = rank_omit(a, method, axis=axis)
+
+        assert_array_equal(res, res0)
+
+    def test_nan_policy_raise(self):
+        # 1 1d-array test
+        data = [0, 2, 3, -2, np.nan, np.nan]
+        with pytest.raises(ValueError, match="The input contains nan"):
+            rankdata(data, nan_policy='raise')
+
+        # 2 2d-array test
+        data = [[0, np.nan, 3],
+                [4, 2, np.nan],
+                [np.nan, 2, 2]]
+
+        with pytest.raises(ValueError, match="The input contains nan"):
+            rankdata(data, axis=0, nan_policy="raise")
+
+        with pytest.raises(ValueError, match="The input contains nan"):
+            rankdata(data, axis=1, nan_policy="raise")
+
+    def test_nan_policy_propagate(self):
+        # 1 1d-array test
+        data = [0, 2, 3, -2, np.nan, np.nan]
+        assert_array_equal(rankdata(data, nan_policy='propagate'),
+                           [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+
+        # 2 2d-array test
+        data = [[0, np.nan, 3],
+                [4, 2, np.nan],
+                [1, 2, 2]]
+        assert_array_equal(rankdata(data, axis=0, nan_policy='propagate'),
+                           [[1, np.nan, np.nan],
+                            [3, np.nan, np.nan],
+                            [2, np.nan, np.nan]])
+        assert_array_equal(rankdata(data, axis=1, nan_policy='propagate'),
+                           [[np.nan, np.nan, np.nan],
+                            [np.nan, np.nan, np.nan],
+                            [1, 2.5, 2.5]])
 
 
 _cases = (

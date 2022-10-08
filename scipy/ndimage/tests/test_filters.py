@@ -11,7 +11,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import ndimage
-from scipy.ndimage.filters import _gaussian_kernel1d, rank_filter
+from scipy.ndimage._filters import _gaussian_kernel1d
 
 from . import types, float_types, complex_types
 
@@ -1545,7 +1545,7 @@ def test_gh_5430():
     x = numpy.random.normal(size=(256, 256))
     perlin = numpy.zeros_like(x)
     for i in 2**numpy.arange(6):
-        perlin += ndimage.filters.gaussian_filter(x, i, mode="wrap") * i**2
+        perlin += ndimage.gaussian_filter(x, i, mode="wrap") * i**2
     # This also fixes gh-4106, show that the OPs example now runs.
     x = numpy.int64(21)
     ndimage._ni_support._normalize_sequence(x, 0)
@@ -1821,7 +1821,41 @@ def test_gaussian_truncate():
     assert_equal(n, 15)
 
 
-class TestThreading(object):
+def test_gaussian_radius():
+    # Test that Gaussian filters with radius argument produce the same
+    # results as the filters with corresponding truncate argument.
+    # radius = int(truncate * sigma + 0.5)
+    # Test gaussian_filter1d
+    x = numpy.zeros(7)
+    x[3] = 1
+    f1 = ndimage.gaussian_filter1d(x, sigma=2, truncate=1.5)
+    f2 = ndimage.gaussian_filter1d(x, sigma=2, radius=3)
+    assert_equal(f1, f2)
+
+    # Test gaussian_filter when sigma is a number.
+    a = numpy.zeros((9, 9))
+    a[4, 4] = 1
+    f1 = ndimage.gaussian_filter(a, sigma=0.5, truncate=3.5)
+    f2 = ndimage.gaussian_filter(a, sigma=0.5, radius=2)
+    assert_equal(f1, f2)
+
+    # Test gaussian_filter when sigma is a sequence.
+    a = numpy.zeros((50, 50))
+    a[25, 25] = 1
+    f1 = ndimage.gaussian_filter(a, sigma=[0.5, 2.5], truncate=3.5)
+    f2 = ndimage.gaussian_filter(a, sigma=[0.5, 2.5], radius=[2, 9])
+    assert_equal(f1, f2)
+
+
+def test_gaussian_radius_invalid():
+    # radius must be a nonnegative integer
+    with assert_raises(ValueError):
+        ndimage.gaussian_filter1d(numpy.zeros(8), sigma=1, radius=-1)
+    with assert_raises(ValueError):
+        ndimage.gaussian_filter1d(numpy.zeros(8), sigma=1, radius=1.1)
+
+
+class TestThreading:
     def check_func_thread(self, n, fun, args, out):
         from threading import Thread
         thrds = [Thread(target=fun, args=args, kwargs={'output': out[x]})
@@ -1937,7 +1971,7 @@ def test_rank_filter_noninteger_rank():
     # regression test for issue 9388: ValueError for
     # non integer rank when performing rank_filter
     arr = numpy.random.random((10, 20, 30))
-    assert_raises(TypeError, rank_filter, arr, 0.5,
+    assert_raises(TypeError, ndimage.rank_filter, arr, 0.5,
                   footprint=numpy.ones((1, 1, 10), dtype=bool))
 
 
@@ -1948,14 +1982,14 @@ def test_size_footprint_both_set():
         sup.filter(UserWarning,
                    "ignoring size because footprint is set")
         arr = numpy.random.random((10, 20, 30))
-        rank_filter(arr, 5, size=2, footprint=numpy.ones((1, 1, 10),
+        ndimage.rank_filter(arr, 5, size=2, footprint=numpy.ones((1, 1, 10),
                     dtype=bool))
 
 
 def test_byte_order_median():
     """Regression test for #413: median_filter does not handle bytes orders."""
     a = numpy.arange(9, dtype='<f4').reshape(3, 3)
-    ref = ndimage.filters.median_filter(a, (3, 3))
+    ref = ndimage.median_filter(a, (3, 3))
     b = numpy.arange(9, dtype='>f4').reshape(3, 3)
-    t = ndimage.filters.median_filter(b, (3, 3))
+    t = ndimage.median_filter(b, (3, 3))
     assert_array_almost_equal(ref, t)

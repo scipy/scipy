@@ -7,10 +7,10 @@ from pytest import raises as assert_raises
 from scipy import integrate
 import scipy.special as sc
 from scipy.special import gamma
-import scipy.special.orthogonal as orth
+import scipy.special._orthogonal as orth
 
 
-class TestCheby(object):
+class TestCheby:
     def test_chebyc(self):
         C0 = orth.chebyc(0)
         C1 = orth.chebyc(1)
@@ -70,7 +70,7 @@ class TestCheby(object):
         assert_array_almost_equal(U5.c,[32,0,-32,0,6,0],13)
 
 
-class TestGegenbauer(object):
+class TestGegenbauer:
 
     def test_gegenbauer(self):
         a = 5*np.random.random() - 0.5
@@ -94,7 +94,7 @@ class TestGegenbauer(object):
                                                0,15*sc.poch(a,3),0])/15.0,11)
 
 
-class TestHermite(object):
+class TestHermite:
     def test_hermite(self):
         H0 = orth.hermite(0)
         H1 = orth.hermite(1)
@@ -133,7 +133,7 @@ class TestHermite(object):
         assert_array_almost_equal(H5.c,he5.c,13)
 
 
-class _test_sh_legendre(object):
+class _test_sh_legendre:
 
     def test_sh_legendre(self):
         # P*_n(x) = P_n(2x-1)
@@ -158,7 +158,7 @@ class _test_sh_legendre(object):
         assert_array_almost_equal(Ps5.c,pse5.c,12)
 
 
-class _test_sh_chebyt(object):
+class _test_sh_chebyt:
 
     def test_sh_chebyt(self):
         # T*_n(x) = T_n(2x-1)
@@ -183,7 +183,7 @@ class _test_sh_chebyt(object):
         assert_array_almost_equal(Ts5.c,tse5.c,12)
 
 
-class _test_sh_chebyu(object):
+class _test_sh_chebyu:
 
     def test_sh_chebyu(self):
         # U*_n(x) = U_n(2x-1)
@@ -208,7 +208,7 @@ class _test_sh_chebyu(object):
         assert_array_almost_equal(Us5.c,use5.c,11)
 
 
-class _test_sh_jacobi(object):
+class _test_sh_jacobi:
     def test_sh_jacobi(self):
         # G^(p,q)_n(x) = n! gamma(n+p)/gamma(2*n+p) * P^(p-q,q-1)_n(2*x-1)
         conv = lambda n,p: gamma(n+1)*gamma(n+p)/gamma(2*n+p)
@@ -237,7 +237,7 @@ class _test_sh_jacobi(object):
         assert_array_almost_equal(G5.c,ge5.c,13)
 
 
-class TestCall(object):
+class TestCall:
     def test_call(self):
         poly = []
         for n in range(5):
@@ -267,7 +267,7 @@ class TestCall(object):
                                     err_msg=pstr)
 
 
-class TestGenlaguerre(object):
+class TestGenlaguerre:
     def test_regression(self):
         assert_equal(orth.genlaguerre(1, 1, monic=False)(0), 2.)
         assert_equal(orth.genlaguerre(1, 1, monic=True)(0), -2.)
@@ -276,7 +276,7 @@ class TestGenlaguerre(object):
 
 
 def verify_gauss_quad(root_func, eval_func, weight_func, a, b, N,
-                      rtol=1e-15, atol=1e-14):
+                      rtol=1e-15, atol=5e-14):
     # this test is copied from numpy's TestGauss in test_hermite.py
     x, w, mu = root_func(N, True)
 
@@ -332,10 +332,37 @@ def test_roots_jacobi():
     vgq(rf(47.1, -0.2), ef(47.1, -0.2), wf(47.1, -0.2), -1., 1.,
         100, atol=1e-11)
 
+    vgq(rf(1., 658.), ef(1., 658.), wf(1., 658.), -1., 1., 5, atol=2e-13)
+    vgq(rf(1., 658.), ef(1., 658.), wf(1., 658.), -1., 1., 25, atol=1e-12)
+    vgq(rf(1., 658.), ef(1., 658.), wf(1., 658.), -1., 1., 100, atol=1e-11)
+    vgq(rf(1., 658.), ef(1., 658.), wf(1., 658.), -1., 1., 250, atol=1e-11)
+
+    vgq(rf(511., 511.), ef(511., 511.), wf(511., 511.), -1., 1., 5,
+        atol=1e-12)
+    vgq(rf(511., 511.), ef(511., 511.), wf(511., 511.), -1., 1., 25,
+        atol=1e-11)
+    vgq(rf(511., 511.), ef(511., 511.), wf(511., 511.), -1., 1., 100,
+        atol=1e-10)
+
+    vgq(rf(511., 512.), ef(511., 512.), wf(511., 512.), -1., 1., 5,
+        atol=1e-12)
+    vgq(rf(511., 512.), ef(511., 512.), wf(511., 512.), -1., 1., 25,
+        atol=1e-11)
+    vgq(rf(511., 512.), ef(511., 512.), wf(511., 512.), -1., 1., 100,
+        atol=1e-10)
+
+    vgq(rf(1000., 500.), ef(1000., 500.), wf(1000., 500.), -1., 1., 5,
+        atol=1e-12)
+    vgq(rf(1000., 500.), ef(1000., 500.), wf(1000., 500.), -1., 1., 25,
+        atol=1e-11)
+    vgq(rf(1000., 500.), ef(1000., 500.), wf(1000., 500.), -1., 1., 100,
+        atol=1e-10)
+
     vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1., 5)
-    vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1., 25, atol=1e-13)
-    vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1.,
-        100, atol=1e-13)
+    vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1., 25,
+        atol=1e-13)
+    vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1., 100,
+        atol=1e-13)
 
     # when alpha == beta == 0, P_n^{a,b}(x) == P_n(x)
     xj, wj = sc.roots_jacobi(6, 0.0, 0.0)
@@ -517,6 +544,22 @@ def test_roots_gegenbauer():
     vgq(rootf(50), evalf(50), weightf(50), -1., 1., 5, atol=1e-13)
     vgq(rootf(50), evalf(50), weightf(50), -1., 1., 25, atol=1e-12)
     vgq(rootf(50), evalf(50), weightf(50), -1., 1., 100, atol=1e-11)
+
+    # Alpha=170 is where the approximation used in roots_gegenbauer changes
+    vgq(rootf(170), evalf(170), weightf(170), -1., 1., 5, atol=1e-13)
+    vgq(rootf(170), evalf(170), weightf(170), -1., 1., 25, atol=1e-12)
+    vgq(rootf(170), evalf(170), weightf(170), -1., 1., 100, atol=1e-11)
+    vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 5, atol=1e-13)
+    vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 25, atol=1e-12)
+    vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 100, atol=1e-11)
+
+    # Test for failures, e.g. overflows, resulting from large alphas
+    vgq(rootf(238), evalf(238), weightf(238), -1., 1., 5, atol=1e-13)
+    vgq(rootf(238), evalf(238), weightf(238), -1., 1., 25, atol=1e-12)
+    vgq(rootf(238), evalf(238), weightf(238), -1., 1., 100, atol=1e-11)
+    vgq(rootf(512.5), evalf(512.5), weightf(512.5), -1., 1., 5, atol=1e-12)
+    vgq(rootf(512.5), evalf(512.5), weightf(512.5), -1., 1., 25, atol=1e-11)
+    vgq(rootf(512.5), evalf(512.5), weightf(512.5), -1., 1., 100, atol=1e-10)
 
     # this is a special case that the old code supported.
     # when alpha = 0, the gegenbauer polynomial is uniformly 0. but it goes

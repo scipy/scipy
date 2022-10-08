@@ -68,9 +68,9 @@ double ellik(double phi,  double m)
     int d, mod, sign;
 
     if (cephes_isnan(phi) || cephes_isnan(m))
-        return NPY_NAN;
+        return NAN;
     if (m > 1.0)
-        return NPY_NAN;
+        return NAN;
     if (cephes_isinf(phi) || cephes_isinf(m))
     {
         if (cephes_isinf(m) && cephes_isfinite(phi))
@@ -78,7 +78,7 @@ double ellik(double phi,  double m)
         else if (cephes_isinf(phi) && cephes_isfinite(m))
             return phi;
         else
-            return NPY_NAN;
+            return NAN;
     }
     if (m == 0.0)
 	return (phi);
@@ -86,7 +86,7 @@ double ellik(double phi,  double m)
     if (a == 0.0) {
 	if (fabs(phi) >= (double)NPY_PI_2) {
 	    sf_error("ellik", SF_ERROR_SINGULAR, NULL);
-	    return (NPY_INFINITY);
+	    return (INFINITY);
 	}
         /* DLMF 19.6.8, and 4.23.42 */
        return npy_asinh(tan(phi));
