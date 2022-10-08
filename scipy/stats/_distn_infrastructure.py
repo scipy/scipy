@@ -1641,7 +1641,7 @@ class rv_generic:
         """Penalized negative log product spacing function.
         i.e., - sum (log (diff (cdf (x, theta))), axis=0) + penalty
         where theta are the parameters (including loc and scale)
-        Follows [1] of scipy.stats.fit
+        Follows reference [1] of scipy.stats.fit
         """
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
@@ -1649,11 +1649,15 @@ class rv_generic:
         x = (np.sort(x) - loc)/scale
 
         def log_psf(x, *args):
-            # simplest possible implementation for starters
-            x, lj = np.unique(x, return_counts=True)
+            x, lj = np.unique(x, return_counts=True)  # fast for sorted x
             cdf_data = self._cdf(x, *args) if x.size else []
-            cdf = np.concatenate(([0], cdf_data))
-            # here we could use logcdf w/ logsumexp trick
+            if not (x.size and 1 - cdf_data[-1] <= 0):
+                cdf = np.concatenate(([0], cdf_data, [1]))
+                lj = np.concatenate((lj, [1]))
+            else:
+                cdf = np.concatenate(([0], cdf_data))
+            # here we could use logcdf w/ logsumexp trick to take differences,
+            # but in the context of the method, it seems unlikely to matter
             return lj * np.log(np.diff(cdf) / lj)
 
         return self._nlff_and_penalty(x, args, log_psf)

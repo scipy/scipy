@@ -213,15 +213,13 @@ def cases_test_fit_mle():
 
 
 def cases_test_fit_mse():
-    # 'vonmises'  RuntimeWarning: invalid value encountered in log
-
     # the first four are so slow that I'm not sure whether they would pass
     skip_basic_fit = {'levy_stable', 'studentized_range', 'ksone', 'skewnorm',
                       'norminvgauss',  # super slow (~1 hr) but passes
                       'kstwo',  # very slow (~25 min) but passes
                       'geninvgauss',  # quite slow (~4 minutes) but passes
                       'gausshyper', 'genhyperbolic',  # integration warnings
-                      'argus', 'rdist',  # close, but doesn't meet tolerance
+                      'argus',  # close, but doesn't meet tolerance
                       'vonmises'}  # can have negative CDF; doesn't play nice
     slow_basic_fit = {'wald', 'genextreme', 'anglit', 'semicircular',
                       'kstwobign', 'arcsine', 'genlogistic', 'truncexpon',
@@ -237,7 +235,7 @@ def cases_test_fit_mse():
                       'mielke', 'chi', 'johnsonsb', 'exponweib',
                       'genhalflogistic', 'randint', 'nhypergeom', 'hypergeom',
                       'betabinom'}
-    xslow_basic_fit = {'vonmises', 'burr', 'halfgennorm', 'invgamma',
+    xslow_basic_fit = {'burr', 'halfgennorm', 'invgamma',
                        'invgauss', 'powerlaw', 'burr12', 'trapezoid', 'kappa4',
                        'f', 'powerlognorm', 'ncx2', 'reciprocal',
                        'loguniform', 'betaprime', 'rice', 'gennorm',
