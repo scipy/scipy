@@ -12,19 +12,19 @@ from scipy.special import powm1
 #   6.931472045825965e-08
 #
 powm1_test_cases = [
-    (1.25, 0.75, 0.18217701125396976),
-    (2.0, 1e-7, 6.931472045825965e-08),
-    (25.0, 5e-11, 1.6094379125636148e-10),
-    (0.99996, 0.75, -3.0000150002530058e-05),
-    (0.9999999999990905, 20, -1.81898940353014e-11),
-    (-1.25, 751.0, -6.017550852453444e+72)
+    (1.25, 0.75, 0.18217701125396976, 1e-15),
+    (2.0, 1e-7, 6.931472045825965e-08, 1e-15),
+    (25.0, 5e-11, 1.6094379125636148e-10, 1e-15),
+    (0.99996, 0.75, -3.0000150002530058e-05, 1e-15),
+    (0.9999999999990905, 20, -1.81898940353014e-11, 1e-15),
+    (-1.25, 751.0, -6.017550852453444e+72, 2e-15)
 ]
 
 
-@pytest.mark.parametrize('x, y, expected', powm1_test_cases)
-def test_powm1(x, y, expected):
+@pytest.mark.parametrize('x, y, expected, rtol', powm1_test_cases)
+def test_powm1(x, y, expected, rtol):
     p = powm1(x, y)
-    assert_allclose(p, expected, rtol=1e-15)
+    assert_allclose(p, expected, rtol=rtol)
 
 
 @pytest.mark.parametrize('x, y, expected',
