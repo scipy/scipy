@@ -17,7 +17,9 @@ on:
   #        │  │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
   #        │  │ │ │ │
   - cron: "9  9 * * 6"
-  # push:
+  push:
+    branches:
+      - maintenance/**
   pull_request:
     branches:
       - main
