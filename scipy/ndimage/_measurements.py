@@ -381,7 +381,7 @@ def value_indices(arr, *, nullval=None):
 
     """
     # Cope with nullval being None, without too much extra complexity
-    # in the C code. If not None, the value is passed in as a numpy scalar
+    # in the C code. If not None, the value is passed in as a numpy array
     # with the same dtype as arr.
     nullval_arr = numpy.zeros((1,), dtype=arr.dtype)
     nullIsNone = (nullval is None)

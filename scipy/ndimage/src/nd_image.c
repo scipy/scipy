@@ -947,7 +947,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
 #define VALUEINDICES_MAXVAL(valType) (*((valType *)PyArray_GETPTR1(minMaxArr, 1)))
 #define VALUEINDICES_NULLVAL(valType) (*((valType *)PyArray_GETPTR1(nullvalArr, 0)))
 #define CASE_VALUEINDICES_SET_MINMAX(valType) {\
-    valType val = *((valType*)PyArray_GetPtr(arr, ndiIter.coordinates)); \
+    valType val = *((valType*)arrData); \
     if (nullIsNone || (val != VALUEINDICES_NULLVAL(valType))) {\
         if (minMaxUnset) { \
             VALUEINDICES_MINVAL(valType) = val;  \
@@ -964,8 +964,9 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
     hist = (npy_uint64 *)calloc(numPossibleVals, sizeof(npy_uint64)); \
     if (hist != NULL) { \
         NI_InitPointIterator(arr, &ndiIter); \
+        arrData = (char *)PyArray_DATA(arr); \
         for (iterIndex=0; iterIndex<arrSize; iterIndex++) { \
-            valType val = *((valType*)PyArray_GetPtr(arr, ndiIter.coordinates)); \
+            valType val = *((valType*)arrData); \
             if (nullIsNone || (val != VALUEINDICES_NULLVAL(valType))) { \
                 ii = val - VALUEINDICES_MINVAL(valType); \
                 hist[ii] += 1; \
@@ -977,7 +978,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
     } \
 }
 #define CASE_VALUEINDICES_GET_VALUEOFFSET(valType) { \
-    valType val = *((valType*)PyArray_GetPtr(arr, ndiIter.coordinates)); \
+    valType val = *((valType*)arrData); \
     ii = val - VALUEINDICES_MINVAL(valType); \
     valueIsNull = (val == VALUEINDICES_NULLVAL(valType)); \
 }
@@ -1112,6 +1113,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
             /* Third pass. Loop over all array elements, adding indices in the
                right place. */
             NI_InitPointIterator(arr, &ndiIter);
+            arrData = (char *)PyArray_DATA(arr);
 
             for (iterIndex=0; iterIndex<arrSize; iterIndex++) {
                 /* Get the offset <ii> for the current array value. Also
