@@ -346,7 +346,7 @@ class VectorFunction:
                              "strategies.")
 
         if jac is True:
-            from scipy.optimize.optimize import MemoizeJac # no circular import
+            from scipy.optimize.optimize import MemoizeJac  # no circular import
             # constr fun returns (value, jac)
             fun = MemoizeJac(fun)
             jac = fun.derivative
