@@ -308,17 +308,15 @@ class CheckOptimizeParameterized(CheckOptimize):
 
             assert func_calls == self.funccalls
             assert_allclose(self.func(params), self.func(self.solution),
-                            atol=1e-6)
+                            atol=1e-6, rtol=1e-5)
 
-            # Ensure that function call counts are 'known good'.
-            # Generally, this takes 131 function calls. However, on some CI
-            # checks it finds 138 funccalls. This 20 call leeway was also
-            # included in the test_powell function.
             # The exact evaluation count is sensitive to numerical error, and
             # floating-point computations are not bit-for-bit reproducible
             # across machines, and when using e.g. MKL, data alignment etc.
             # affect the rounding error.
-            assert self.funccalls <= 131 + 20
+            # It takes 155 calls on my machine, but we can add the same +20
+            # margin as is used in `test_powell`
+            assert self.funccalls <= 155 + 20
             assert self.gradcalls == 0
 
     def test_neldermead(self):
@@ -2035,6 +2033,18 @@ def test_linesearch_powell_bounded():
         assert_allclose(f, func(p0 + l * xi), atol=1e-6)
         assert_allclose(p, p0 + l * xi, atol=1e-6)
         assert_allclose(direction, l * xi, atol=1e-6)
+
+
+def test_powell_limits():
+    # gh15342 - powell was going outside bounds for some function evaluations.
+    bounds = optimize.Bounds([0, 0], [0.6, 20])
+
+    def fun(x):
+        a, b = x
+        assert (x >= bounds.lb).all() and (x <= bounds.ub).all()
+        return a ** 2 + b ** 2
+
+    optimize.minimize(fun, x0=[0.6, 20], method='Powell', bounds=bounds)
 
 
 class TestRosen:
