@@ -1280,6 +1280,18 @@ class SmoothBivariateSpline(BivariateSpline):
     units and differ by many orders of magnitude, the interpolant may have
     numerical artifacts. Consider rescaling the data before interpolating.
 
+    This routine constructs spline knot vectors automatically via the FITPACK
+    algorithm. The spline knots may be placed away from the data points. For
+    some data sets, this routine may fail to construct an interpolating spline,
+    even if one is requested via ``s=0`` parameter. In such situations, it is
+    recommended to use `bisplrep` / `bisplev` directly instead of this routine
+    and, if needed, increase the values of ``nxest`` and ``nyest`` parameters
+    of `bisplrep`.
+
+    For linear interpolation, prefer `LinearNDInterpolator`.
+    See ``https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff``
+    for discussion.
+
     """
 
     def __init__(self, x, y, z, w=None, bbox=[None] * 4, kx=3, ky=3, s=None,
