@@ -5,7 +5,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
 from itertools import product
 from math import gcd
-import warnings
 
 import pytest
 from pytest import raises as assert_raises
@@ -3290,6 +3289,7 @@ class TestSOSFilt:
         # Test simple IIR
         y_r = np.array([0, 2, 4, 6, 8, 10.]).astype(dt)
         sos = cast_tf2sos(b, a)
+        assert sos.dtype.char == dt
         assert_array_almost_equal(sosfilt(cast_tf2sos(b, a), x), y_r)
 
         # Test simple FIR

@@ -32,32 +32,32 @@ from scipy.optimize._optimize import MemoizeJac, show_options
 
 def test_check_grad():
     # Verify if check_grad is able to estimate the derivative of the
-    # logistic function.
+    # expit (logistic sigmoid) function.
 
-    def logit(x):
+    def expit(x):
         return 1 / (1 + np.exp(-x))
 
-    def der_logit(x):
+    def der_expit(x):
         return np.exp(-x) / (1 + np.exp(-x))**2
 
     x0 = np.array([1.5])
 
-    r = optimize.check_grad(logit, der_logit, x0)
+    r = optimize.check_grad(expit, der_expit, x0)
     assert_almost_equal(r, 0)
-    r = optimize.check_grad(logit, der_logit, x0,
+    r = optimize.check_grad(expit, der_expit, x0,
                             direction='random', seed=1234)
     assert_almost_equal(r, 0)
 
-    r = optimize.check_grad(logit, der_logit, x0, epsilon=1e-6)
+    r = optimize.check_grad(expit, der_expit, x0, epsilon=1e-6)
     assert_almost_equal(r, 0)
-    r = optimize.check_grad(logit, der_logit, x0, epsilon=1e-6,
+    r = optimize.check_grad(expit, der_expit, x0, epsilon=1e-6,
                             direction='random', seed=1234)
     assert_almost_equal(r, 0)
 
     # Check if the epsilon parameter is being considered.
-    r = abs(optimize.check_grad(logit, der_logit, x0, epsilon=1e-1) - 0)
+    r = abs(optimize.check_grad(expit, der_expit, x0, epsilon=1e-1) - 0)
     assert r > 1e-7
-    r = abs(optimize.check_grad(logit, der_logit, x0, epsilon=1e-1,
+    r = abs(optimize.check_grad(expit, der_expit, x0, epsilon=1e-1,
                                 direction='random', seed=1234) - 0)
     assert r > 1e-7
 
@@ -2742,3 +2742,20 @@ def test_approx_fprime():
 
     h = optimize.approx_fprime(himmelblau_x0, himmelblau_grad)
     assert_allclose(h, himmelblau_hess(himmelblau_x0), rtol=5e-6)
+
+
+def test_gh12594():
+    # gh-12594 reported an error in `_linesearch_powell` and
+    # `_line_for_search` when `Bounds` was passed lists instead of arrays.
+    # Check that results are the same whether the inputs are lists or arrays.
+
+    def f(x):
+        return x[0]**2 + (x[1] - 1)**2
+
+    bounds = Bounds(lb=[-10, -10], ub=[10, 10])
+    res = optimize.minimize(f, x0=(0, 0), method='Powell', bounds=bounds)
+    bounds = Bounds(lb=np.array([-10, -10]), ub=np.array([10, 10]))
+    ref = optimize.minimize(f, x0=(0, 0), method='Powell', bounds=bounds)
+
+    assert_allclose(res.fun, ref.fun)
+    assert_allclose(res.x, ref.x)

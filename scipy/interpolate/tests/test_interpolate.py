@@ -1,6 +1,6 @@
 from numpy.testing import (assert_, assert_equal, assert_almost_equal,
-        assert_array_almost_equal, assert_array_equal,
-        assert_allclose, assert_warns)
+                           assert_array_almost_equal, assert_array_equal,
+                           assert_allclose)
 from pytest import raises as assert_raises
 import pytest
 
@@ -122,6 +122,28 @@ class TestInterp1D:
         self.y235 = np.arange(30.).reshape((2, 3, 5))
         self.y325 = np.arange(30.).reshape((3, 2, 5))
 
+        # Edge updated test matrix 1
+        # array([[ 30,   1,   2,   3,   4,   5,   6,   7,   8, -30],
+        #        [ 30,  11,  12,  13,  14,  15,  16,  17,  18, -30]])
+        self.y210_edge_updated = np.arange(20.).reshape((2, 10))
+        self.y210_edge_updated[:, 0] = 30
+        self.y210_edge_updated[:, -1] = -30
+
+        # Edge updated test matrix 2
+        # array([[ 30,  30],
+        #       [  2,   3],
+        #       [  4,   5],
+        #       [  6,   7],
+        #       [  8,   9],
+        #       [ 10,  11],
+        #       [ 12,  13],
+        #       [ 14,  15],
+        #       [ 16,  17],
+        #       [-30, -30]])
+        self.y102_edge_updated = np.arange(20.).reshape((10, 2))
+        self.y102_edge_updated[0, :] = 30
+        self.y102_edge_updated[-1, :] = -30
+
         self.fill_value = -100.0
 
     def test_validation(self):
@@ -171,7 +193,6 @@ class TestInterp1D:
         # Check for x and y having at least 1 element.
         assert_raises(ValueError, interp1d, self.x1, self.y10)
         assert_raises(ValueError, interp1d, self.x10, self.y1)
-        assert_raises(ValueError, interp1d, self.x1, self.y1)
 
         # Bad fill values
         assert_raises(ValueError, interp1d, self.x10, self.y10, kind='linear',
@@ -386,6 +407,36 @@ class TestInterp1D:
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
 
+        # Tests for gh-16813
+        interpolator1D = interp1d([0, 1, 2],
+                                  [0, 1, -1], kind="previous",
+                                  fill_value='extrapolate',
+                                  assume_sorted=True)
+        assert_allclose(interpolator1D([-2, -1, 0, 1, 2, 3, 5]),
+                        [np.nan, np.nan, 0, 1, -1, -1, -1])
+
+        interpolator1D = interp1d([2, 0, 1],  # x is not ascending
+                                  [-1, 0, 1], kind="previous",
+                                  fill_value='extrapolate',
+                                  assume_sorted=False)
+        assert_allclose(interpolator1D([-2, -1, 0, 1, 2, 3, 5]),
+                        [np.nan, np.nan, 0, 1, -1, -1, -1])
+
+        interpolator2D = interp1d(self.x10, self.y210_edge_updated,
+                                  kind="previous",
+                                  fill_value='extrapolate')
+        assert_allclose(interpolator2D([-1, -2, 5, 8, 12, 25]),
+                        [[np.nan, np.nan, 5, 8, -30, -30],
+                         [np.nan, np.nan, 15, 18, -30, -30]])
+
+        interpolator2DAxis0 = interp1d(self.x10, self.y102_edge_updated,
+                                       kind="previous",
+                                       axis=0, fill_value='extrapolate')
+        assert_allclose(interpolator2DAxis0([-2, 5, 12]),
+                        [[np.nan, np.nan],
+                         [10, 11],
+                         [-30, -30]])
+
     def test_next(self):
         # Check the actual implementation of next interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='next')
@@ -424,6 +475,36 @@ class TestInterp1D:
                     fill_value='extrapolate',
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
+
+        # Tests for gh-16813
+        interpolator1D = interp1d([0, 1, 2],
+                                  [0, 1, -1], kind="next",
+                                  fill_value='extrapolate',
+                                  assume_sorted=True)
+        assert_allclose(interpolator1D([-2, -1, 0, 1, 2, 3, 5]),
+                        [0, 0, 0, 1, -1, np.nan, np.nan])
+
+        interpolator1D = interp1d([2, 0, 1],  # x is not ascending
+                                  [-1, 0, 1], kind="next",
+                                  fill_value='extrapolate',
+                                  assume_sorted=False)
+        assert_allclose(interpolator1D([-2, -1, 0, 1, 2, 3, 5]),
+                        [0, 0, 0, 1, -1, np.nan, np.nan])
+
+        interpolator2D = interp1d(self.x10, self.y210_edge_updated,
+                                  kind="next",
+                                  fill_value='extrapolate')
+        assert_allclose(interpolator2D([-1, -2, 5, 8, 12, 25]),
+                        [[30, 30, 5, 8, np.nan, np.nan],
+                         [30, 30, 15, 18, np.nan, np.nan]])
+
+        interpolator2DAxis0 = interp1d(self.x10, self.y102_edge_updated,
+                                       kind="next",
+                                       axis=0, fill_value='extrapolate')
+        assert_allclose(interpolator2DAxis0([-2, 5, 12]),
+                        [[30, 30],
+                         [10, 11],
+                         [np.nan, np.nan]])
 
     def test_zero(self):
         # Check the actual implementation of zero-order spline interpolation.
@@ -795,6 +876,19 @@ class TestInterp1D:
                 f = interp1d(x, y, kind=kind)
                 vals = f(xnew)
                 assert_(np.isfinite(vals).all())
+
+    @pytest.mark.parametrize(
+        "kind", ("linear", "nearest", "nearest-up", "previous", "next")
+    )
+    def test_single_value(self, kind):
+        # https://github.com/scipy/scipy/issues/4043
+        f = interp1d([1.5], [6], kind=kind, bounds_error=False,
+                     fill_value=(2, 10))
+        assert_array_equal(f([1, 1.5, 2]), [2, 6, 10])
+        # check still error if bounds_error=True
+        f = interp1d([1.5], [6], kind=kind, bounds_error=True)
+        with assert_raises(ValueError, match="x_new is above"):
+            f(2.0)
 
 
 class TestLagrange:
@@ -2435,4 +2529,3 @@ def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew, nu=None):
         out[jout] = val
 
     return out
-

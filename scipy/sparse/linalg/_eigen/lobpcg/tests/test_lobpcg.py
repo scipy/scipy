@@ -7,8 +7,7 @@ import sys
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
-                           assert_allclose, assert_array_less,
-                           suppress_warnings)
+                           assert_allclose, assert_array_less)
 
 import pytest
 
@@ -19,6 +18,7 @@ from scipy.sparse.linalg import eigs, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 
 _IS_32BIT = (sys.maxsize < 2**32)
+
 
 def ElasticRod(n):
     """Build the matrices for the generalized eigenvalue problem of the
@@ -351,8 +351,8 @@ def test_tolerance_float32():
     A = A.astype(np.float32)
     X = rnd.standard_normal((n, m))
     X = X.astype(np.float32)
-    eigvals, _ = lobpcg(A, X, tol=1e-5, maxiter=50, verbosityLevel=0)
-    assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1.5e-5)
+    eigvals, _ = lobpcg(A, X, tol=1.25e-5, maxiter=50, verbosityLevel=0)
+    assert_allclose(eigvals, -np.arange(1, 1 + m), atol=2e-5, rtol=1e-5)
 
 
 def test_random_initial_float32():
@@ -390,6 +390,7 @@ def test_maxit():
     with pytest.warns(UserWarning, match="Exited at iteration"):
         _, _, l_h = lobpcg(A, X, tol=1e-8, retLambdaHistory=True)
     assert_allclose(np.shape(l_h)[0], 20+2)
+
 
 @pytest.mark.slow
 def test_diagonal_data_types():

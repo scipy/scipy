@@ -10,6 +10,9 @@ on:
       - main
       - maintenance/**
 
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -26,7 +29,7 @@ jobs:
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
-          sudo apt install python3.8-dbg python3.8-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache swig libmpc-dev
+          sudo apt install python3.8-dbg python3.8-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev ccache swig libmpc-dev
           free -m
           python3.8-dbg --version # just to check
           export NPY_NUM_BUILD_JOBS=2
@@ -41,7 +44,7 @@ jobs:
           python3.8-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
           python3.8-dbg -m pip install --upgrade pip "setuptools<60.0" wheel
           python3.8-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pytest-timeout pybind11
-          python3.8-dbg -m pip install --upgrade mpmath gmpy2 pythran threadpoolctl
+          python3.8-dbg -m pip install --upgrade mpmath gmpy2 pythran threadpoolctl pooch
           python3.8-dbg -m pip uninstall -y nose
           cd ..
       - name: Building SciPy
@@ -54,44 +57,3 @@ jobs:
       - name: Dynamic symbol hiding check on Linux
         if: ${{ github.event_name == 'pull_request' }}
         run: ./tools/check_pyext_symbol_hiding.sh build
-
-  test_numpy_main:
-    name: NumPy main ${{ matrix.python-version }}
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')"
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.11-dev"]
-
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: x64
-
-    - name: Install other build dependencies
-      run: |
-        sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
-
-    - name: Install packages
-      run: |
-        pip install --user git+https://github.com/numpy/numpy.git
-        python -m pip install --user "setuptools<60.0" wheel cython pytest pybind11 pytest-xdist pytest-timeout
-        pip install --user git+https://github.com/serge-sans-paille/pythran.git
-        python -m pip install -r mypy_requirements.txt
-
-        # Packages that are only needed for their annotations
-        python -m pip install --user types-psutil pybind11 sphinx
-
-    - name: Mypy
-      run: |
-        python -u runtests.py --mypy
-
-    - name: Test SciPy
-      run: |
-        python -u runtests.py -n -m fast -- --durations=10 --timeout=60

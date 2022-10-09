@@ -81,9 +81,13 @@ arpack_sources = [
   'ARPACK/UTIL/zvout.f'
 ]
 
+# Building ARPACK yields a ton of rank mismatch (scalar and rank-1) warnings
+# that cannot be suppressed with a more specific flag.
+_suppress_all_warnings = ff.get_supported_arguments('-w')
+
 arpack_lib = static_library('arpack_lib',
   arpack_sources,
-  fortran_args: fortran_ignore_warnings,
+  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
   include_directories: ['ARPACK/SRC']
 )
 
@@ -98,7 +102,8 @@ _arpack = py3.extension_module('_arpack',
   c_args: numpy_nodepr_api,
   link_with: [arpack_lib],
   include_directories: [incdir_numpy, incdir_f2py],
-  dependencies: [py3_dep, lapack, fortranobject_dep],
+  link_args: version_link_args,
+  dependencies: [lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/sparse/linalg/_eigen/arpack'

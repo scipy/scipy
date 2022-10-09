@@ -11,7 +11,6 @@ Spherical Voronoi Code
 # Distributed under the same BSD license as SciPy.
 #
 
-import warnings
 import numpy as np
 import scipy
 from . import _voronoi
@@ -112,6 +111,7 @@ class SphericalVoronoi:
     --------
     Do some imports and take some points on a cube:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import SphericalVoronoi, geometric_slerp
     >>> from mpl_toolkits.mplot3d import proj3d

@@ -7,8 +7,6 @@
 A Dual Annealing global optimization algorithm
 """
 
-import warnings
-
 import numpy as np
 from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize, Bounds
@@ -488,9 +486,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done. Default value is 1e7.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -602,6 +598,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     The function involved is called Rastrigin
     (https://en.wikipedia.org/wiki/Rastrigin_function)
 
+    >>> import numpy as np
     >>> from scipy.optimize import dual_annealing
     >>> func = lambda x: np.sum(x*x - 10*np.cos(2*np.pi*x)) + 10*np.size(x)
     >>> lw = [-5.12] * 10
