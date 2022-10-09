@@ -8522,7 +8522,7 @@ add_newdoc("kve",
     >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 5., 1000)
     >>> for i in range(4):
-    >>>     ax.plot(x, kve(i, x), label=f'$K_{i!r}(z)\cdot e^z$')
+    ...     ax.plot(x, kve(i, x), label=f'$K_{i!r}(z)\cdot e^z$')
     >>> ax.legend()
     >>> ax.set_xlabel(r"$z$")
     >>> ax.set_ylim(0, 4)
