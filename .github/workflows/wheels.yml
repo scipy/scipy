@@ -62,7 +62,7 @@ jobs:
       contains(needs.get_commit_message.outputs.message, '1') ||
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'push' && startsWith(github.ref_name, 'maintenance')))
+      (github.event_name == 'push' && startsWith(github.ref_name, 'maintenance'))
     runs-on: ${{ matrix.buildplat[0] }}
 
     strategy:
