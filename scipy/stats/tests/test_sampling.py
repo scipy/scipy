@@ -48,6 +48,12 @@ all_methods = [
     ("SimpleRatioUniforms", {"dist": StandardNormal(), "mode": 0})
 ]
 
+if (sys.implementation.name == 'pypy'
+        and sys.implementation.version < (7, 3, 10)):
+    # changed in PyPy for v7.3.10
+    floaterr = r"unsupported operand type for float\(\): 'list'"
+else:
+    floaterr = r"must be real number, not list"
 # Make sure an internal error occurs in UNU.RAN when invalid callbacks are
 # passed. Moreover, different generators throw different error messages.
 # So, in case of an `UNURANError`, we do not validate the error message.
@@ -55,7 +61,7 @@ bad_pdfs_common = [
     # Negative PDF
     (lambda x: -x, UNURANError, r"..."),
     # Returning wrong type
-    (lambda x: [], TypeError, r"must be real number, not list"),
+    (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
     (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
     # Infinite value returned => Overflow error.
@@ -75,7 +81,7 @@ bad_dpdf_common = [
     # NaN value => internal error in UNU.RAN
     (lambda x: np.nan, UNURANError, r"..."),
     # Returning wrong type
-    (lambda x: [], TypeError, r"must be real number, not list"),
+    (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
     (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
     # signature of dPDF wrong
@@ -311,6 +317,30 @@ def check_discr_samples(rng, pv, mv_ex):
     obs_freqs[:freqs.size] = freqs
     pval = chisquare(obs_freqs, pv).pvalue
     assert pval > 0.1
+
+
+def test_warning_center_not_in_domain():
+    # UNURAN will warn if the center provided or the one computed w/o the
+    # domain is outside of the domain
+    msg = "102 : center moved into domain of distribution"
+    with pytest.warns(RuntimeWarning, match=msg):
+        NumericalInversePolynomial(StandardNormal(), center=0, domain=(3, 5))
+    with pytest.warns(RuntimeWarning, match=msg):
+        NumericalInversePolynomial(StandardNormal(), domain=(3, 5))
+
+
+@pytest.mark.parametrize('method', ["SimpleRatioUniforms",
+                                    "NumericalInversePolynomial",
+                                    "TransformedDensityRejection"])
+def test_error_mode_not_in_domain(method):
+    # UNURAN raises an error if the mode is not in the domain
+    # the behavior is different compared to the case that center is not in the
+    # domain. mode is supposed to be the exact value, center can be an
+    # approximate value
+    Method = getattr(stats.sampling, method)
+    msg = "17 : mode not in domain"
+    with pytest.raises(UNURANError, match=msg):
+        Method(StandardNormal(), mode=0, domain=(3, 5))
 
 
 @pytest.mark.parametrize('method', ["NumericalInverseHermite",

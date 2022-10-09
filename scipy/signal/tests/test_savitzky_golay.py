@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal, assert_array_equal,
@@ -337,3 +338,21 @@ def test_sg_filter_interp_edges_3d():
 
     dy = savgol_filter(z, 7, 3, axis=0, mode='interp', deriv=1, delta=delta)
     assert_allclose(dy, dz, atol=1e-10)
+
+
+def test_sg_filter_valid_window_length_3d():
+    """Tests that the window_length check is using the correct axis."""
+
+    x = np.ones((10, 20, 30))
+
+    savgol_filter(x, window_length=29, polyorder=3, mode='interp')
+
+    with pytest.raises(ValueError, match='window_length must be less than'):
+        # window_length is more than x.shape[-1].
+        savgol_filter(x, window_length=31, polyorder=3, mode='interp')
+
+    savgol_filter(x, window_length=9, polyorder=3, axis=0, mode='interp')
+
+    with pytest.raises(ValueError, match='window_length must be less than'):
+        # window_length is more than x.shape[0].
+        savgol_filter(x, window_length=11, polyorder=3, axis=0, mode='interp')

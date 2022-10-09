@@ -10,6 +10,9 @@ on:
       - main
       - maintenance/**
 
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
 env:
   INSTALLDIR: "build-install"
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
@@ -100,6 +103,10 @@ jobs:
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
+
+        # optional test dependencies
+        conda install scikit-umfpack scikit-sparse
+
         # Python.org installers still use 10.9, so let's use that too. Note
         # that scikit-learn already changed to 10.13 in Jan 2021, so increasing
         # this number in the future (if needed) should not be a problem.

@@ -393,7 +393,7 @@ def aps15_fpp(x, n):
 # - a function and its two derivatives,
 # - additional arguments,
 # - a bracket enclosing a root,
-# - the order of differentiability of the the function on this interval
+# - the order of differentiability of the function on this interval
 # - a starting value for methods which don't require a bracket
 # - the root (inside the bracket)
 # - an Identifier of the test case
@@ -598,7 +598,7 @@ def cplx02_fpp(z, a):
 # Each "complex" test case has
 # - a function and its two derivatives,
 # - additional arguments,
-# - the order of differentiability of the the function on this interval
+# - the order of differentiability of the function on this interval
 # - two starting values x0 and x1
 # - the root
 # - an Identifier of the test case

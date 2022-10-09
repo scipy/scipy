@@ -100,7 +100,7 @@ double x;
 
     if (x < 0.0) {
 	sf_error("ellpk", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
 
     if (x > 1.0) {
@@ -116,7 +116,7 @@ double x;
     else {
 	if (x == 0.0) {
 	    sf_error("ellpk", SF_ERROR_SINGULAR, NULL);
-	    return (NPY_INFINITY);
+	    return (INFINITY);
 	}
 	else {
 	    return (C1 - 0.5 * log(x));

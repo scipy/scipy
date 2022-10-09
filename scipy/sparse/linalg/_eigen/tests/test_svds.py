@@ -721,6 +721,10 @@ class SVDSCommonTests:
             U, s, VH = svds(A, k, solver=self.solver)
 
         # Check some generic properties of svd.
+        if (self.solver == 'arpack' and dtype is complex):
+            pytest.skip("The ARPACK-based svds does not reliably produce "
+                        "orthogonal vectors in VH when there are repeated "
+                        "singular values")
         _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
 
         # Check that the largest singular value is near sqrt(n*m)
@@ -786,11 +790,15 @@ class SVDSCommonTests:
     @pytest.mark.filterwarnings("ignore:The problem size")
     @pytest.mark.parametrize("dtype", (float, complex, np.float32))
     def test_small_sigma2(self, dtype):
-        if not has_propack:
-            pytest.skip("PROPACK not enabled")
-        # https://github.com/scipy/scipy/issues/11406
-        if dtype == complex and self.solver == 'propack':
-            pytest.skip("PROPACK unsupported for complex dtype")
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not enabled")
+            elif dtype == np.float32:
+                pytest.skip("Test failures in CI, see gh-17004")
+            elif dtype == complex:
+                # https://github.com/scipy/scipy/issues/11406
+                pytest.skip("PROPACK unsupported for complex dtype")
+
         rng = np.random.default_rng(179847540)
         # create a 10x10 singular matrix with a 4-dim null space
         dim = 4

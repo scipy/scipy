@@ -122,6 +122,7 @@ def label(input, structure=None, output=None):
     (cross-shaped) structuring element:
 
     >>> from scipy.ndimage import label, generate_binary_structure
+    >>> import numpy as np
     >>> a = np.array([[0,0,1,1,0,0],
     ...               [0,0,0,1,0,0],
     ...               [1,1,0,0,1,0],
@@ -269,6 +270,7 @@ def find_objects(input, max_label=0):
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.zeros((6,6), dtype=int)
     >>> a[2:4, 2:4] = 1
     >>> a[4, 4] = 1
@@ -344,6 +346,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -663,6 +666,7 @@ def mean(input, labels=None, index=None):
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.arange(25).reshape((5,5))
     >>> labels = np.zeros_like(a)
     >>> labels[3:5,3:5] = 1
@@ -712,6 +716,7 @@ def variance(input, labels=None, index=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -764,6 +769,7 @@ def standard_deviation(input, labels=None, index=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -944,6 +950,7 @@ def minimum(input, labels=None, index=None):
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -1005,6 +1012,7 @@ def maximum(input, labels=None, index=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.arange(16).reshape((4,4))
     >>> a
     array([[ 0,  1,  2,  3],
@@ -1084,6 +1092,7 @@ def median(input, labels=None, index=None):
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 1],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -1145,6 +1154,7 @@ def minimum_position(input, labels=None, index=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array([[10, 20, 30],
     ...               [40, 80, 100],
     ...               [1, 100, 200]])
@@ -1228,6 +1238,7 @@ def maximum_position(input, labels=None, index=None):
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -1297,6 +1308,7 @@ def extrema(input, labels=None, index=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -1365,6 +1377,7 @@ def center_of_mass(input, labels=None, index=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array(([0,0,0,0],
     ...               [0,1,1,0],
     ...               [0,1,1,0],
@@ -1444,6 +1457,7 @@ def histogram(input, min, max, bins, labels=None, index=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array([[ 0.    ,  0.2146,  0.5962,  0.    ],
     ...               [ 0.    ,  0.7778,  0.    ,  0.    ],
     ...               [ 0.    ,  0.    ,  0.    ,  0.    ],

@@ -41,8 +41,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a='gen',
           transposed=False):
     """
-    Solves the linear equation set ``a * x = b`` for the unknown ``x``
-    for square ``a`` matrix.
+    Solves the linear equation set ``a @ x == b`` for the unknown ``x``
+    for square `a` matrix.
 
     If the data matrix is known to be a particular type then supplying the
     corresponding string to ``assume_a`` key chooses the dedicated solver.
@@ -68,31 +68,32 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Square input data
     b : (N, NRHS) array_like
         Input data for the right hand side.
-    sym_pos : bool, optional, deprecated
+    sym_pos : bool, default: False, deprecated
         Assume `a` is symmetric and positive definite.
 
         .. deprecated:: 0.19.0
             This keyword is deprecated and should be replaced by using
            ``assume_a = 'pos'``. `sym_pos` will be removed in SciPy 1.11.0.
 
-    lower : bool, optional
-        If True, only the data contained in the lower triangle of `a`. Default
-        is to use upper triangle. (ignored for ``'gen'``)
-    overwrite_a : bool, optional
+    lower : bool, default: False
+        Ignored if ``assume_a == 'gen'`` (the default). If True, the
+        calculation uses only the data in the lower triangle of `a`;
+        entries above the diagonal are ignored. If False (default), the
+        calculation uses only the data in the upper triangle of `a`; entries
+        below the diagonal are ignored.
+    overwrite_a : bool, default: False
         Allow overwriting data in `a` (may enhance performance).
-        Default is False.
-    overwrite_b : bool, optional
+    overwrite_b : bool, default: False
         Allow overwriting data in `b` (may enhance performance).
-        Default is False.
-    check_finite : bool, optional
+    check_finite : bool, default: True
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    assume_a : str, optional
+    assume_a : str, {'gen', 'sym', 'her', 'pos'}
         Valid entries are explained above.
-    transposed : bool, optional
-        If True, ``a^T x = b`` for real matrices, raises `NotImplementedError`
-        for complex matrices (only for True).
+    transposed : bool, default: False
+        If True, solve ``a.T @ x == b``. Raises `NotImplementedError`
+        for complex `a`.
 
     Returns
     -------
@@ -470,13 +471,18 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     """
     Solve equation a x = b. a is Hermitian positive-definite banded matrix.
 
-    The matrix a is stored in `ab` either in lower diagonal or upper
+    Uses Thomas' Algorithm, which is more efficient than standard LU
+    factorization, but should only be used for Hermitian positive-definite
+    matrices.
+
+    The matrix ``a`` is stored in `ab` either in lower diagonal or upper
     diagonal ordered form:
 
         ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
 
-    Example of `ab` (shape of a is (6, 6), `u` =2)::
+    Example of `ab` (shape of ``a`` is (6, 6), number of upper diagonals,
+    ``u`` =2)::
 
         upper form:
         *   *   a02 a13 a24 a35
@@ -492,7 +498,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
 
     Parameters
     ----------
-    ab : (`u` + 1, M) array_like
+    ab : (``u`` + 1, M) array_like
         Banded matrix
     b : (M,) or (M, K) array_like
         Right-hand side
@@ -510,12 +516,17 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     Returns
     -------
     x : (M,) or (M, K) ndarray
-        The solution to the system a x = b. Shape of return matches shape
+        The solution to the system ``a x = b``. Shape of return matches shape
         of `b`.
+
+    Notes
+    -----
+    In the case of a non-positive definite matrix ``a``, the solver
+    `solve_banded` may be used.
 
     Examples
     --------
-    Solve the banded system A x = b, where::
+    Solve the banded system ``A x = b``, where::
 
             [ 4  2 -1  0  0  0]       [1]
             [ 2  5  2 -1  0  0]       [2]
@@ -526,7 +537,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
 
     >>> from scipy.linalg import solveh_banded
 
-    `ab` contains the main diagonal and the nonzero diagonals below the
+    ``ab`` contains the main diagonal and the nonzero diagonals below the
     main diagonal. That is, we use the lower form:
 
     >>> ab = np.array([[ 4,  5,  6,  7, 8, 9],
@@ -539,14 +550,14 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
             0.34733894])
 
 
-    Solve the Hermitian banded system H x = b, where::
+    Solve the Hermitian banded system ``H x = b``, where::
 
             [ 8   2-1j   0     0  ]        [ 1  ]
         H = [2+1j  5     1j    0  ]    b = [1+1j]
             [ 0   -1j    9   -2-1j]        [1-2j]
             [ 0    0   -2+1j   6  ]        [ 0  ]
 
-    In this example, we put the upper diagonals in the array `hb`:
+    In this example, we put the upper diagonals in the array ``hb``:
 
     >>> hb = np.array([[0, 2-1j, 1j, -2-1j],
     ...                [8,  5,    9,   6  ]])

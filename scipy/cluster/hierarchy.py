@@ -1443,6 +1443,7 @@ def to_tree(Z, rd=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.cluster import hierarchy
     >>> rng = np.random.default_rng()
     >>> x = rng.random((5, 2))
@@ -1524,6 +1525,7 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.cluster import hierarchy
     >>> rng = np.random.default_rng()
     >>> X = rng.standard_normal((10, 10))
@@ -2982,6 +2984,7 @@ def set_link_color_palette(palette):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.cluster import hierarchy
     >>> ytdist = np.array([662., 877., 255., 412., 996., 295., 468., 268.,
     ...                    400., 754., 564., 138., 219., 869., 669.])

@@ -623,9 +623,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     cdef double_or_complex \
          f1, f2, f3, df12, df13, df21, df23, df31, df32
     cdef double g[3]
-    cdef double \
-         e12x, e12y, e23x, e23y, e31x, e31y, \
-         e14x, e14y, e24x, e24y, e34x, e34y
+    cdef double e12x, e12y, e23x, e23y, e31x, e31y
     cdef double_or_complex w
     cdef double minval
     cdef double b1, b2, b3, b4
@@ -649,15 +647,6 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
             - d.points[0 + 2*d.simplices[3*isimplex + 2]])
     e31y = (+ d.points[1 + 2*d.simplices[3*isimplex + 0]]
             - d.points[1 + 2*d.simplices[3*isimplex + 2]])
-
-    e14x = (e12x - e31x)/3
-    e14y = (e12y - e31y)/3
-
-    e24x = (-e12x + e23x)/3
-    e24y = (-e12y + e23y)/3
-
-    e34x = (e31x - e23x)/3
-    e34y = (e31y - e23y)/3
 
     f1 = f[0]
     f2 = f[1]

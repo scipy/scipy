@@ -42,6 +42,7 @@ def nnls(A, b, maxiter=None):
 
      Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import nnls
     ...
     >>> A = np.array([[1, 0], [1, 0], [0, 1]])
