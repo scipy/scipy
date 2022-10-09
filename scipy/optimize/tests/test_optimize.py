@@ -2032,7 +2032,7 @@ def test_powell_limits():
     bounds = optimize.Bounds(lb=[0,], ub=[1,], keep_feasible=[True,])
 
     def func(x):
-        assert x >= 0  and x <= 1
+        assert x >= 0 and x <= 1
         return np.exp(x)
 
     optimize.minimize(fun=func, x0=[0.5], method='powell', bounds=bounds)
