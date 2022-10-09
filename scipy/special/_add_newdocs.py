@@ -9017,6 +9017,53 @@ add_newdoc("modstruve",
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/11
+
+    Examples
+    --------
+    Calculate the modified Struve function of order 1 at 2.
+
+    >>> import numpy as np
+    >>> from scipy.special import modstruve
+    >>> import matplotlib.pyplot as plt
+    >>> modstruve(1, 2.)
+    1.102759787367716
+
+    Calculate the modified Struve function at 2 for orders 1, 2 and 3 by
+    roviding a list for the the order parameter `v`.
+
+    >>> modstruve([1, 2, 3], 2.)
+    array([1.10275979, 0.41026079, 0.11247294])
+
+    Calculate the modified Struve function of oder 1 for several points
+    by providing an array for `x`.
+
+    >>> points = np.array([2., 5., 8.])
+    >>> modstruve(1, points)
+    array([  1.10275979,  23.72821578, 399.24709139])
+
+    Compute the modified Struve function for several orders at several
+    points by providing arrays for `v` and `z`. The arrays have to be
+    broadcastable to the correct shapes.
+
+    >>> orders = np.array([[1], [2], [3]])
+    >>> points.shape, orders.shape
+    ((3,), (3, 1))
+
+    >>> modstruve(orders, points)
+    array([[1.10275979e+00, 2.37282158e+01, 3.99247091e+02],
+           [4.10260789e-01, 1.65535979e+01, 3.25973609e+02],
+           [1.12472937e-01, 9.42430454e+00, 2.33544042e+02]])
+
+    Plot the modified Struve functions of order 0 to 3 from -5 to 5.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-5., 5., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, modstruve(i, x), label=f'$L_{i!r}$')
+    >>> ax.legend()
+    >>> ax.set_xlim(-5, 5)
+    >>> ax.set_title(r"Modified Struve functions $L_{\nu}$")
+    >>> plt.show()
     """)
 
 add_newdoc("nbdtr",
