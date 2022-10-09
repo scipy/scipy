@@ -324,10 +324,10 @@ def test_warning_center_not_in_domain():
     # domain is outside of the domain
     msg = "102 : center moved into domain of distribution"
     with pytest.warns(RuntimeWarning, match=msg):
-        gen = NumericalInversePolynomial(StandardNormal(),
-                                         center=0, domain=(3, 5))
+        NumericalInversePolynomial(StandardNormal(), center=0, domain=(3, 5))
     with pytest.warns(RuntimeWarning, match=msg):
-        gen = NumericalInversePolynomial(StandardNormal(), domain=(3, 5))
+        NumericalInversePolynomial(StandardNormal(), domain=(3, 5))
+
 
 @pytest.mark.parametrize('method', ["SimpleRatioUniforms",
                                     "NumericalInversePolynomial",
@@ -340,7 +340,7 @@ def test_error_mode_not_in_domain(method):
     Method = getattr(stats.sampling, method)
     msg = "17 : mode not in domain"
     with pytest.raises(UNURANError, match=msg):
-        gen = Method(StandardNormal(), mode=0, domain=(3, 5))
+        Method(StandardNormal(), mode=0, domain=(3, 5))
 
 
 @pytest.mark.parametrize('method', ["NumericalInverseHermite",
