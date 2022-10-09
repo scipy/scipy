@@ -205,7 +205,7 @@ double *si, *ci;
 
     if (x == 0.0) {
 	*si = 0.0;
-	*ci = -NPY_INFINITY;
+	*ci = -INFINITY;
 	return (0);
     }
 
@@ -214,7 +214,7 @@ double *si, *ci;
 	if (cephes_isinf(x)) {
 	    if (sign == -1) {
 		*si = -NPY_PI_2;
-		*ci = NPY_NAN;
+		*ci = NAN;
 	    }
 	    else {
 		*si = NPY_PI_2;

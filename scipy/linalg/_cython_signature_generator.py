@@ -106,9 +106,7 @@ void zggesx(char *jobvsl, char *jobvsr, char *sort, zselect2 *selctg, char *sens
 # in the scipy-specific ABI wrappers.
 blas_exclusions = ['scabs1', 'xerbla']
 
-# Exclude all routines that do not have consistent interfaces from
-# LAPACK 3.4.0 through 3.6.0.
-# Also exclude routines with string arguments to avoid
+# Exclude routines with string arguments to avoid
 # compatibility woes with different standards for string arguments.
 lapack_exclusions = [
               # Not included because people should be using the
@@ -174,23 +172,7 @@ lapack_exclusions = [
               'clarscl2', 'dlarscl2', 'slarscl2', 'zlarscl2',
               'clascl2', 'dlascl2', 'slascl2', 'zlascl2',
               'cla_wwaddw', 'dla_wwaddw', 'sla_wwaddw', 'zla_wwaddw',
-              # Removed between 3.3.1 and 3.4.0.
-              'cla_rpvgrw', 'dla_rpvgrw', 'sla_rpvgrw', 'zla_rpvgrw',
-              # Signatures changed between 3.4.0 and 3.4.1.
-              'dlasq5', 'slasq5',
-              # Routines deprecated in LAPACK 3.6.0
-              'cgegs', 'cgegv', 'cgelsx',
-              'cgeqpf', 'cggsvd', 'cggsvp',
-              'clahrd', 'clatzm', 'ctzrqf',
-              'dgegs', 'dgegv', 'dgelsx',
-              'dgeqpf', 'dggsvd', 'dggsvp',
-              'dlahrd', 'dlatzm', 'dtzrqf',
-              'sgegs', 'sgegv', 'sgelsx',
-              'sgeqpf', 'sggsvd', 'sggsvp',
-              'slahrd', 'slatzm', 'stzrqf',
-              'zgegs', 'zgegv', 'zgelsx',
-              'zgeqpf', 'zggsvd', 'zggsvp',
-              'zlahrd', 'zlatzm', 'ztzrqf']
+              ]
 
 
 if __name__ == '__main__':

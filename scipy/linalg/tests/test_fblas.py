@@ -45,7 +45,7 @@ def matrixmultiply(a, b):
 # Test blas ?axpy
 
 
-class BaseAxpy(object):
+class BaseAxpy:
     ''' Mixin class for axpy tests '''
 
     def test_default_a(self):
@@ -128,7 +128,7 @@ class TestZaxpy(BaseAxpy):
 ##################################################
 # Test blas ?scal
 
-class BaseScal(object):
+class BaseScal:
     ''' Mixin class for scal testing '''
 
     def test_simple(self):
@@ -181,7 +181,7 @@ class TestZscal(BaseScal):
 ##################################################
 # Test blas ?copy
 
-class BaseCopy(object):
+class BaseCopy:
     ''' Mixin class for copy testing '''
 
     def test_simple(self):
@@ -259,7 +259,7 @@ class TestZcopy(BaseCopy):
 ##################################################
 # Test blas ?swap
 
-class BaseSwap(object):
+class BaseSwap:
     ''' Mixin class for swap tests '''
 
     def test_simple(self):
@@ -343,7 +343,7 @@ class TestZswap(BaseSwap):
 # This will be a mess to test all cases.
 
 
-class BaseGemv(object):
+class BaseGemv:
     ''' Mixin class for gemv tests '''
 
     def get_data(self, x_stride=1, y_stride=1):
@@ -502,7 +502,7 @@ class TestZgemv(BaseGemv):
 ### Test blas ?ger
 ### This will be a mess to test all cases.
 
-class BaseGer(object):
+class BaseGer:
     def get_data(self,x_stride=1,y_stride=1):
         from numpy.random import normal, seed
         seed(1234)
