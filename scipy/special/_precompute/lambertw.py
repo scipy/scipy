@@ -7,7 +7,7 @@ import numpy as np
 
 try:
     import mpmath
-    import matplotlib.pyplot as plt  # type: ignore[import]
+    import matplotlib.pyplot as plt
 except ImportError:
     pass
 

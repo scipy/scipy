@@ -21,7 +21,7 @@ sigtools = py3.extension_module('_sigtools',
   ],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np],
-  dependencies: [py3_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/signal'
 )
@@ -35,13 +35,9 @@ if use_pythran
 
   _max_len_seq_inner = py3.extension_module('_max_len_seq_inner',
     [_max_len_seq_inner],
-    cpp_args: [
-      '-Wno-unused-function', '-Wno-unused-variable',
-      '-Wno-deprecated-declarations', '-Wno-unused-local-typedefs',
-      '-Wno-cpp', '-Wno-int-in-bool-context'
-    ] + cpp_args_pythran,
+    cpp_args: [cpp_args_pythran, _cpp_Wno_unused_local_typedefs],
     include_directories: [incdir_pythran, incdir_numpy],
-    dependencies: [py3_dep],
+    link_args: version_link_args,
     install: true,
     subdir: 'scipy/signal'
   )
@@ -54,29 +50,27 @@ if use_pythran
 
   _spectral = py3.extension_module('_spectral',
     [_spectral],
-    cpp_args: [
-      '-Wno-unused-function', '-Wno-unused-variable',
-      '-Wno-deprecated-declarations',
-      '-Wno-cpp', '-Wno-int-in-bool-context'
-    ] + cpp_args_pythran,
+    cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
-    dependencies: [py3_dep],
+    link_args: version_link_args,
     install: true,
     subdir: 'scipy/signal'
   )
 else
   _max_len_seq_inner = py3.extension_module('_max_len_seq_inner',
-    ['_max_len_seq_inner.pyx'],
+    [cython_gen.process('_max_len_seq_inner.pyx')],
+    c_args: cython_c_args,
     include_directories: [inc_np],
-    dependencies: [py3_dep],
+    link_args: version_link_args,
     install: true,
     subdir: 'scipy/signal'
   )
 
   _spectral = py3.extension_module('_spectral',
-    ['_spectral.pyx'],
+    [cython_gen.process('_spectral.pyx')],
+    c_args: cython_c_args,
     include_directories: [inc_np],
-    dependencies: [py3_dep],
+    link_args: version_link_args,
     install: true,
     subdir: 'scipy/signal'
   )
@@ -90,9 +84,10 @@ pyx_files = [
 
 foreach pyx_file: pyx_files
   py3.extension_module(pyx_file[0],
-    pyx_file[1],
+    cython_gen.process(pyx_file[1]),
+    c_args: cython_c_args,
     include_directories: [inc_np],
-    dependencies: [py3_dep],
+    link_args: version_link_args,
     install: true,
     subdir: 'scipy/signal'
   )
@@ -108,7 +103,7 @@ spline = py3.extension_module('_spline',
   ['_splinemodule.c', bspline_util],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np],
-  dependencies: [py3_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/signal'
 )
@@ -123,7 +118,6 @@ py3.install_sources([
     '_lti_conversion.py',
     '_ltisys.py',
     '_max_len_seq.py',
-    '_max_len_seq_inner.py',
     '_peak_finding.py',
     '_savitzky_golay.py',
     '_signaltools.py',

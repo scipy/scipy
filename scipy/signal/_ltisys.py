@@ -494,7 +494,7 @@ class TransferFunction(LinearTimeInvariant):
     Represents the system as the continuous-time transfer function
     :math:`H(s)=\sum_{i=0}^N b[N-i] s^i / \sum_{j=0}^M a[M-j] s^j` or the
     discrete-time transfer function
-    :math:`H(s)=\sum_{i=0}^N b[N-i] z^i / \sum_{j=0}^M a[M-j] z^j`, where
+    :math:`H(z)=\sum_{i=0}^N b[N-i] z^i / \sum_{j=0}^M a[M-j] z^j`, where
     :math:`b` are elements of the numerator `num`, :math:`a` are elements of
     the denominator `den`, and ``N == len(b) - 1``, ``M == len(a) - 1``.
     `TransferFunction` systems inherit additional
@@ -865,7 +865,7 @@ class TransferFunctionDiscrete(TransferFunction, dlti):
     >>> num = [1, 3, 3]
     >>> den = [1, 2, 1]
 
-    >>> signal.TransferFunction(num, den, 0.5)
+    >>> signal.TransferFunction(num, den, dt=0.5)
     TransferFunctionDiscrete(
     array([ 1.,  3.,  3.]),
     array([ 1.,  2.,  1.]),
@@ -1152,8 +1152,8 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     Discrete-time Linear Time Invariant system in zeros, poles, gain form.
 
     Represents the system as the discrete-time transfer function
-    :math:`H(s)=k \prod_i (s - z[i]) / \prod_j (s - p[j])`, where :math:`k` is
-    the `gain`, :math:`z` are the `zeros` and :math:`p` are the `poles`.
+    :math:`H(z)=k \prod_i (z - q[i]) / \prod_j (z - p[j])`, where :math:`k` is
+    the `gain`, :math:`q` are the `zeros` and :math:`p` are the `poles`.
     Discrete-time `ZerosPolesGain` systems inherit additional functionality
     from the `dlti` class.
 
@@ -1202,7 +1202,7 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     )
 
     Construct the transfer function
-    :math:`H(s) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
+    :math:`H(z) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
     of 0.1 seconds:
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5, dt=0.1)
@@ -1414,7 +1414,7 @@ class StateSpace(LinearTimeInvariant):
             c = self.C
             d = np.dot(self.D, other)
 
-        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        common_dtype = np.result_type(a.dtype, b.dtype, c.dtype, d.dtype)
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
@@ -1432,7 +1432,7 @@ class StateSpace(LinearTimeInvariant):
         c = np.dot(other, self.C)
         d = np.dot(other, self.D)
 
-        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        common_dtype = np.result_type(a.dtype, b.dtype, c.dtype, d.dtype)
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
@@ -1487,7 +1487,7 @@ class StateSpace(LinearTimeInvariant):
                                  "dimensions ({} and {})"
                                  .format(self.D.shape, other.shape))
 
-        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        common_dtype = np.result_type(a.dtype, b.dtype, c.dtype, d.dtype)
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),

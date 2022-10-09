@@ -20,7 +20,8 @@ See sparsetools.cxx for more details.
 """
 import optparse
 import os
-from distutils.dep_util import newer
+from stat import ST_MTIME
+
 
 #
 # List of all routines and their argument types.
@@ -193,6 +194,24 @@ static int get_thunk_case(int I_typenum, int T_typenum)
 #
 # Code generation
 #
+
+
+def newer(source, target):
+    """
+    Return true if 'source' exists and is more recently modified than
+    'target', or if 'source' exists and 'target' doesn't.  Return false if
+    both exist and 'target' is the same age or younger than 'source'.
+    """
+    if not os.path.exists(source):
+        raise ValueError("file '%s' does not exist" % os.path.abspath(source))
+    if not os.path.exists(target):
+        return 1
+
+    mtime1 = os.stat(source)[ST_MTIME]
+    mtime2 = os.stat(target)[ST_MTIME]
+
+    return mtime1 > mtime2
+
 
 def get_thunk_type_set():
     """

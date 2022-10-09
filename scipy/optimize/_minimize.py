@@ -16,9 +16,9 @@ import numpy as np
 
 # unconstrained minimization
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
-                       _minimize_bfgs, _minimize_newtoncg,
-                       _minimize_scalar_brent, _minimize_scalar_bounded,
-                       _minimize_scalar_golden, MemoizeJac)
+                        _minimize_bfgs, _minimize_newtoncg,
+                        _minimize_scalar_brent, _minimize_scalar_bounded,
+                        _minimize_scalar_golden, MemoizeJac, OptimizeResult)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov
@@ -32,7 +32,8 @@ from ._cobyla_py import _minimize_cobyla
 from ._slsqp_py import _minimize_slsqp
 from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            old_constraint_to_new, new_constraint_to_old,
-                           NonlinearConstraint, LinearConstraint, Bounds)
+                           NonlinearConstraint, LinearConstraint, Bounds,
+                           PreparedConstraint)
 from ._differentiable_functions import FD_METHODS
 
 MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
@@ -53,7 +54,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
             ``fun(x, *args) -> float``
 
-        where ``x`` is an 1-D array with shape (n,) and ``args``
+        where ``x`` is a 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
     x0 : ndarray, shape (n,)
@@ -79,8 +80,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'trust-ncg'   :ref:`(see here) <optimize.minimize-trustncg>`
             - 'trust-exact' :ref:`(see here) <optimize.minimize-trustexact>`
             - 'trust-krylov' :ref:`(see here) <optimize.minimize-trustkrylov>`
-            - custom - a callable object (added in version 0.14.0),
-              see below for description.
+            - custom - a callable object, see below for description.
 
         If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
         depending on whether or not the problem has constraints or bounds.
@@ -398,8 +398,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     expand in future versions and then these parameters will be passed to
     the method.  You can find an example in the scipy.optimize tutorial.
 
-    .. versionadded:: 0.11.0
-
     References
     ----------
     .. [1] Nelder, J A, and R Mead. 1965. A Simplex Method for Function
@@ -513,6 +511,14 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     """
     x0 = np.atleast_1d(np.asarray(x0))
+
+    if x0.ndim != 1:
+        message = ('Use of `minimize` with `x0.ndim != 1` is deprecated. '
+                   'Currently, singleton dimensions will be removed from '
+                   '`x0`, but an error will be raised in SciPy 1.11.0.')
+        warn(message, DeprecationWarning, stacklevel=2)
+        x0 = np.atleast_1d(np.squeeze(x0))
+
     if x0.dtype.kind in np.typecodes["AllInteger"]:
         x0 = np.asarray(x0, dtype=float)
 
@@ -625,12 +631,22 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             # These methods can't take the finite-difference derivatives they
             # need when a variable is fixed by the bounds. To avoid this issue,
             # remove fixed variables from the problem.
+            # NOTE: if this list is expanded, then be sure to update the
+            # accompanying tests and test_optimize.eb_data. Consider also if
+            # default OptimizeResult will need updating.
 
             # convert to new-style bounds so we only have to consider one case
             bounds = standardize_bounds(bounds, x0, 'new')
 
             # determine whether any variables are fixed
             i_fixed = (bounds.lb == bounds.ub)
+
+            if np.all(i_fixed):
+                # all the parameters are fixed, a minimizer is not able to do
+                # anything
+                return _optimize_result_for_equal_bounds(
+                    fun, bounds, meth, args=args, constraints=constraints
+                )
 
             # determine whether finite differences are needed for any grad/jac
             fd_needed = (not callable(jac))
@@ -940,7 +956,7 @@ def standardize_constraints(constraints, x0, meth):
     else:
         constraints = list(constraints)  # ensure it's a mutable sequence
 
-    if meth == 'trust-constr':
+    if meth in ['trust-constr', 'new']:
         for i, con in enumerate(constraints):
             if not isinstance(con, new_constraint_types):
                 constraints[i] = old_constraint_to_new(i, con)
@@ -953,3 +969,45 @@ def standardize_constraints(constraints, x0, meth):
                 constraints.extend(old_constraints[1:])  # appends 1 if present
 
     return constraints
+
+
+def _optimize_result_for_equal_bounds(
+        fun, bounds, method, args=(), constraints=()
+):
+    """
+    Provides a default OptimizeResult for when a bounded minimization method
+    has (lb == ub).all().
+
+    Parameters
+    ----------
+    fun: callable
+    bounds: Bounds
+    method: str
+    constraints: Constraint
+    """
+    success = True
+    message = 'All independent variables were fixed by bounds.'
+
+    # bounds is new-style
+    x0 = bounds.lb
+
+    if constraints:
+        message = ("All independent variables were fixed by bounds at values"
+                   " that satisfy the constraints.")
+        constraints = standardize_constraints(constraints, x0, 'new')
+
+    maxcv = 0
+    for c in constraints:
+        pc = PreparedConstraint(c, x0)
+        violation = pc.violation(x0)
+        if np.sum(violation):
+            maxcv = max(maxcv, np.max(violation))
+            success = False
+            message = (f"All independent variables were fixed by bounds, but "
+                       f"the independent variables do not satisfy the "
+                       f"constraints exactly. (Maximum violation: {maxcv}).")
+
+    return OptimizeResult(
+        x=x0, fun=fun(x0, *args), success=success, message=message, nfev=1,
+        njev=0, nhev=0,
+    )

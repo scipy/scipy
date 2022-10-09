@@ -625,8 +625,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     The `convolve2d` function allows for other types of image boundaries,
     but is far slower.
 
-    >>> from scipy import misc
-    >>> face = misc.face(gray=True)
+    >>> from scipy import datasets
+    >>> face = datasets.face(gray=True)
     >>> kernel = np.outer(signal.windows.gaussian(70, 8),
     ...                   signal.windows.gaussian(70, 8))
     >>> blurred = signal.fftconvolve(face, kernel, mode='same')
@@ -1338,6 +1338,13 @@ def convolve(in1, in2, mode='full', method='auto'):
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
 
+    Warns
+    -----
+    RuntimeWarning
+        Use of the FFT convolution on input containing NAN or INF will lead
+        to the entire output being NAN or INF. Use method='direct' when your
+        input contains NAN or INF values.
+
     See Also
     --------
     numpy.polymul : performs polynomial multiplication (same operation, but
@@ -1402,6 +1409,13 @@ def convolve(in1, in2, mode='full', method='auto'):
         result_type = np.result_type(volume, kernel)
         if result_type.kind in {'u', 'i'}:
             out = np.around(out)
+
+        if np.isnan(out.flat[0]) or np.isinf(out.flat[0]):
+            warnings.warn("Use of fft convolution on input with NAN or inf"
+                          " results in NAN or inf output. Consider using"
+                          " method='direct' instead.",
+                          category=RuntimeWarning, stacklevel=2)
+
         return out.astype(result_type)
     elif method == 'direct':
         # fastpath to faster numpy.convolve for 1d inputs when possible
@@ -1565,7 +1579,7 @@ def wiener(im, mysize=None, noise=None):
     Examples
     --------
 
-    >>> from scipy.misc import face
+    >>> from scipy.datasets import face
     >>> from scipy.signal import wiener
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
@@ -1668,8 +1682,8 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     boundaries.
 
     >>> from scipy import signal
-    >>> from scipy import misc
-    >>> ascent = misc.ascent()
+    >>> from scipy import datasets
+    >>> ascent = datasets.ascent()
     >>> scharr = np.array([[ -3-3j, 0-10j,  +3 -3j],
     ...                    [-10+0j, 0+ 0j, +10 +0j],
     ...                    [ -3+3j, 0+10j,  +3 +3j]]) # Gx + j*Gy
@@ -1760,9 +1774,9 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     image:
 
     >>> from scipy import signal
-    >>> from scipy import misc
+    >>> from scipy import datasets
     >>> rng = np.random.default_rng()
-    >>> face = misc.face(gray=True) - misc.face(gray=True).mean()
+    >>> face = datasets.face(gray=True) - datasets.face(gray=True).mean()
     >>> template = np.copy(face[300:365, 670:750])  # right eye
     >>> template -= template.mean()
     >>> face = face + rng.standard_normal(face.shape) * 50  # add noise
@@ -1838,9 +1852,58 @@ def medfilt2d(input, kernel_size=3):
     -----
     This is faster than `medfilt` when the input dtype is ``uint8``,
     ``float32``, or ``float64``; for other types, this falls back to
-    `medfilt`; you should use `scipy.ndimage.median_filter` instead as it is
-    much faster.  In some situations, `scipy.ndimage.median_filter` may be
+    `medfilt`. In some situations, `scipy.ndimage.median_filter` may be
     faster than this function.
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> x = np.arange(25).reshape(5, 5)
+    >>> x
+    array([[ 0,  1,  2,  3,  4],
+           [ 5,  6,  7,  8,  9],
+           [10, 11, 12, 13, 14],
+           [15, 16, 17, 18, 19],
+           [20, 21, 22, 23, 24]])
+
+    # Replaces i,j with the median out of 5*5 window
+
+    >>> signal.medfilt2d(x, kernel_size=5)
+    array([[ 0,  0,  2,  0,  0],
+           [ 0,  3,  7,  4,  0],
+           [ 2,  8, 12,  9,  4],
+           [ 0,  8, 12,  9,  0],
+           [ 0,  0, 12,  0,  0]])
+
+    # Replaces i,j with the median out of default 3*3 window
+
+    >>> signal.medfilt2d(x)
+    array([[ 0,  1,  2,  3,  0],
+           [ 1,  6,  7,  8,  4],
+           [ 6, 11, 12, 13,  9],
+           [11, 16, 17, 18, 14],
+           [ 0, 16, 17, 18,  0]])
+
+    # Replaces i,j with the median out of default 5*3 window
+
+    >>> signal.medfilt2d(x, kernel_size=[5,3])
+    array([[ 0,  1,  2,  3,  0],
+           [ 0,  6,  7,  8,  3],
+           [ 5, 11, 12, 13,  8],
+           [ 5, 11, 12, 13,  8],
+           [ 0, 11, 12, 13,  0]])
+
+    # Replaces i,j with the median out of default 3*5 window
+
+    >>> signal.medfilt2d(x, kernel_size=[3,5])
+    array([[ 0,  0,  2,  1,  0],
+           [ 1,  5,  7,  6,  3],
+           [ 6, 10, 12, 11,  8],
+           [11, 15, 17, 16, 13],
+           [ 0, 15, 17, 16,  0]])
+
+    # As seen in the examples,
+    # kernel numbers must be odd and not exceed original array dim
 
     """
     image = np.asarray(input)
@@ -1908,7 +1971,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     lfiltic : Construct initial conditions for `lfilter`.
     lfilter_zi : Compute initial state (steady state of step response) for
                  `lfilter`.
-    filtfilt : A forward-backward filter, to obtain a filter with linear phase.
+    filtfilt : A forward-backward filter, to obtain a filter with zero phase.
     savgol_filter : A Savitzky-Golay filter.
     sosfilt: Filter data using cascaded second-order sections.
     sosfiltfilt: A forward-backward filter using second-order sections.
@@ -2143,9 +2206,9 @@ def deconvolve(signal, divisor):
 
     Parameters
     ----------
-    signal : array_like
+    signal : (N,) array_like
         Signal data, typically a recorded signal
-    divisor : array_like
+    divisor : (N,) array_like
         Divisor data, typically an impulse response or filter that was
         applied to the original signal
 
@@ -2178,6 +2241,10 @@ def deconvolve(signal, divisor):
     """
     num = np.atleast_1d(signal)
     den = np.atleast_1d(divisor)
+    if num.ndim > 1:
+        raise ValueError("signal must be 1-D.")
+    if den.ndim > 1:
+        raise ValueError("divisor must be 1-D.")
     N = len(num)
     D = len(den)
     if D > N:
@@ -2285,7 +2352,7 @@ def hilbert(x, N=None, axis=-1):
         raise ValueError("N must be positive.")
 
     Xf = sp_fft.fft(x, N, axis=axis)
-    h = np.zeros(N)
+    h = np.zeros(N, dtype=Xf.dtype)
     if N % 2 == 0:
         h[0] = h[N // 2] = 1
         h[1:N // 2] = 2
@@ -2339,8 +2406,8 @@ def hilbert2(x, N=None):
                          "two positive integers")
 
     Xf = sp_fft.fft2(x, N, axes=(0, 1))
-    h1 = np.zeros(N[0], 'd')
-    h2 = np.zeros(N[1], 'd')
+    h1 = np.zeros(N[0], dtype=Xf.dtype)
+    h2 = np.zeros(N[1], dtype=Xf.dtype)
     for p in range(2):
         h = eval("h%d" % (p + 1))
         N1 = N[p]
@@ -3605,9 +3672,9 @@ def lfilter_zi(b, a):
 
     # Pad a or b with zeros so they are the same length.
     if len(a) < n:
-        a = np.r_[a, np.zeros(n - len(a))]
+        a = np.r_[a, np.zeros(n - len(a), dtype=a.dtype)]
     elif len(b) < n:
-        b = np.r_[b, np.zeros(n - len(b))]
+        b = np.r_[b, np.zeros(n - len(b), dtype=b.dtype)]
 
     IminusA = np.eye(n - 1, dtype=np.result_type(a, b)) - linalg.companion(a).T
     B = b[1:] - a[1:] * b[0]

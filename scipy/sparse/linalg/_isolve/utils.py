@@ -3,8 +3,7 @@ __docformat__ = "restructuredtext en"
 __all__ = []
 
 
-from numpy import asanyarray, asarray, array, matrix, zeros
-from scipy.sparse._sputils import asmatrix
+from numpy import asanyarray, asarray, array, zeros
 
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator, \
      IdentityOperator
@@ -66,23 +65,21 @@ def make_system(A, M, x0, b):
     A = aslinearoperator(A)
 
     if A.shape[0] != A.shape[1]:
-        raise ValueError('expected square matrix, but got shape=%s' % (A.shape,))
+        raise ValueError(f'expected square matrix, but got shape={(A.shape,)}')
 
     N = A.shape[0]
 
     b = asanyarray(b)
 
     if not (b.shape == (N,1) or b.shape == (N,)):
-        raise ValueError('shapes of A {} and b {} are incompatible'
-                         .format(A.shape, b.shape))
+        raise ValueError(f'shapes of A {A.shape} and b {b.shape} are '
+                         'incompatible')
 
     if b.dtype.char not in 'fdFD':
         b = b.astype('d')  # upcast non-FP types to double
 
     def postprocess(x):
-        if isinstance(b,matrix):
-            x = asmatrix(x)
-        return x.reshape(b.shape)
+        return x
 
     if hasattr(A,'dtype'):
         xtype = A.dtype.char

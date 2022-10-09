@@ -83,54 +83,39 @@ fitpack_src = [
   'fitpack/splint.f',
   'fitpack/sproot.f',
   'fitpack/surev.f',
-  'fitpack/surfit.f'
+  'fitpack/surfit.f',
+  'fitpack/pardtc.f'
 ]
 
 # TODO: Add flags for 64 bit ints
 fitpack_lib = static_library('fitpack_lib',
   fitpack_src,
-  fortran_args: '-Wno-maybe-uninitialized'
+  fortran_args: _fflag_Wno_maybe_uninitialized
 )
 
 interpnd = py3.extension_module('interpnd',
-  ['interpnd.pyx'],
-  c_args: numpy_nodepr_api,
+  spt_cython_gen.process('interpnd.pyx'),
+  c_args: [Wno_discarded_qualifiers, cython_c_args],
   include_directories: [incdir_numpy],
-  dependencies: [py3_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/interpolate'
 )
 
-_ppoly_c = custom_target('_ppoly_c',
-  output: '_ppoly.c',
-  input: [
-    '_ppoly.pyx',
-    _cython_tree,
-    # _cython_lapack_pxd
-  ],
-  command: [
-    cython, '-3', '--fast-fail',
-    '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
-  ]
-)
-
-# TODO: Depends on cython_lapack.pxd which cannot
-# be added a dependency here. Once it is possible,
-# uncomment the below part.
 py3.extension_module('_ppoly',
-  _ppoly_c,
-  c_args: numpy_nodepr_api,
+  linalg_cython_gen.process('_ppoly.pyx'),
+  c_args: cython_c_args,
   include_directories: [incdir_numpy],
-  dependencies: [py3_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/interpolate'
 )
 
 _bspl = py3.extension_module('_bspl',
-  ['_bspl.pyx'],
-  c_args: numpy_nodepr_api,
+  cython_gen.process('_bspl.pyx'),
+  c_args: cython_c_args,
   include_directories: ['src/', incdir_numpy],
-  dependencies: [py3_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/interpolate'
 )
@@ -141,7 +126,7 @@ _fitpack = py3.extension_module('_fitpack',
   c_args: numpy_nodepr_api,
   link_with: [fitpack_lib],
   include_directories: ['src/', incdir_numpy],
-  dependencies: [py3_dep],
+  link_args: version_link_args,
   link_language: 'fortran',
   install: true,
   subdir: 'scipy/interpolate'
@@ -155,10 +140,11 @@ dfitpack_module = custom_target('dfitpack_module',
 
 # TODO: Add flags for 64 bit ints
 dfitpack = py3.extension_module('dfitpack',
-  [dfitpack_module, fortranobject_c],
-  c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
+  dfitpack_module,
+  c_args: [numpy_nodepr_api, Wno_unused_variable],
   include_directories: [incdir_numpy, incdir_f2py],
-  dependencies: [py3_dep, lapack],
+  link_args: version_link_args,
+  dependencies: [lapack, fortranobject_dep],
   link_with: [fitpack_lib],
   install: true,
   link_language: 'fortran',
@@ -166,11 +152,6 @@ dfitpack = py3.extension_module('dfitpack',
 )
 
 if use_pythran
-  if cc.has_argument('-Wno-unused-but-set-variable')
-    Wno_unused_but_set = ['-Wno-unused-but-set-variable']
-  else
-    Wno_unused_but_set = []
-  endif
   _rbfinterp_pythran = custom_target('_rbfinterp_pythran',
     output: ['_rbfinterp_pythran.cpp'],
     input: '_rbfinterp_pythran.py',
@@ -178,16 +159,17 @@ if use_pythran
   )
 
   _rbfinterp_pythran = py3.extension_module('_rbfinterp_pythran',
-    [_rbfinterp_pythran],
-    cpp_args: [
-      '-Wno-unused-function', '-Wno-unused-variable',
-      '-Wno-deprecated-declarations',
-      '-Wno-cpp', '-Wno-int-in-bool-context',
-      Wno_unused_but_set
-    ] + cpp_args_pythran,
+    _rbfinterp_pythran,
+    cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
-    dependencies: [py3_dep],
+    link_args: version_link_args,
     install: true,
+    subdir: 'scipy/interpolate'
+  )
+else
+  py3.install_sources(
+    ['_rbfinterp_pythran.py'],
+    pure: false,
     subdir: 'scipy/interpolate'
   )
 endif
@@ -206,7 +188,7 @@ py3.install_sources([
     '_polyint.py',
     '_rbf.py',
     '_rbfinterp.py',
-    '_rbfinterp_pythran.py',
+    '_rgi.py',
     'fitpack.py',
     'fitpack2.py',
     'interpolate.py',

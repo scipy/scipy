@@ -24,20 +24,6 @@ def check_dir(module, module_name=None):
     return results
 
 
-def test_scipy_namespace():
-    # None of these objects are publicly documented to be part of the main
-    # SciPy namespace (some are useful though, others need to be cleaned up)
-    undocumented = {
-        'LowLevelCallable': 'scipy._lib._ccallback.LowLevelCallable'
-    }
-    # We override dir to not show these members
-    allowlist = undocumented
-    bad_results = check_dir(scipy)
-    # pytest gives better error messages with the builtin assert than with
-    # assert_equal
-    assert bad_results == allowlist
-
-
 def test_dir_testing():
     """Assert that output of dir has only one "testing/tester"
     attribute without duplicate"""
@@ -56,6 +42,7 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "cluster.vq",
     "cluster.hierarchy",
     "constants",
+    "datasets",
     "fft",
     "fftpack",
     "integrate",

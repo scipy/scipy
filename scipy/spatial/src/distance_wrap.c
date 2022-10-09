@@ -44,7 +44,6 @@
 #endif
 #include <Python.h>
 #include <numpy/arrayobject.h>
-#include <numpy/npy_math.h>
 
 #include <stdio.h>
 #include <math.h>
@@ -848,12 +847,9 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__distance_wrap(void)
+PyMODINIT_FUNC
+PyInit__distance_wrap(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&moduledef);
     import_array();
-
-    return m;
+    return PyModule_Create(&moduledef);
 }

@@ -35,7 +35,7 @@
 
 double
 brentq(callback_type f, double xa, double xb, double xtol, double rtol,
-       int iter, void *func_data, scipy_zeros_info *solver_stats)
+       int iter, void *func_data_param, scipy_zeros_info *solver_stats)
 {
     double xpre = xa, xcur = xb;
     double xblk = 0., fpre, fcur, fblk = 0., spre = 0., scur = 0., sbis;
@@ -45,8 +45,8 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol,
     int i;
     solver_stats->error_num = INPROGRESS;
 
-    fpre = (*f)(xpre, func_data);
-    fcur = (*f)(xcur, func_data);
+    fpre = (*f)(xpre, func_data_param);
+    fcur = (*f)(xcur, func_data_param);
     solver_stats->funcalls = 2;
     if (fpre*fcur > 0) {
         solver_stats->error_num = SIGNERR;
@@ -123,7 +123,7 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol,
             xcur += (sbis > 0 ? delta : -delta);
         }
 
-        fcur = (*f)(xcur, func_data);
+        fcur = (*f)(xcur, func_data_param);
         solver_stats->funcalls++;
     }
     solver_stats->error_num = CONVERR;
