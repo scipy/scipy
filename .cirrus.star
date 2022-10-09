@@ -16,6 +16,7 @@ def main(ctx):
     #   but on the cirrus-ci repo page
     # - commit message containing [wheel build]
     # - a tag that begins with v, but doesn't end with dev0
+    # - all pushes to a maintenance branch
     ######################################################################
 
     if env.get("CIRRUS_REPO_FULL_NAME") != "scipy/scipy":
@@ -24,21 +25,9 @@ def main(ctx):
     if env.get("CIRRUS_CRON", "") == "nightly":
         return fs.read("ci/cirrus_wheels.yml")
 
-    tag = env.get("CIRRUS_TAG")
-
-    # test if it's a tag?
-    if tag:
-        # if tag name contains "dev", then don't build any wheels
-        # I tried using a regex for this, but I don't think go supports
-        # the particular regex I wanted to use
-        if "dev" in tag:
-            return []
-        elif tag.startswith("v"):
-            # all other tags beginning with 'v' will build. cirrus_wheels.yml
-            # will only upload wheels to staging if the following bash test is
-            # True:
-            # [[ $CIRRUS_TAG =~ ^v.*[^dev0]$ ]]
-            return fs.read("ci/cirrus_wheels.yml")
+    if "maintenance" in env.get("CIRRUS_BRANCH"):
+        # build wheels on all pushes to a maintenance branch
+        return fs.read("ci/cirrus_wheels.yml")
 
     # Obtain commit message for the event. Unfortunately CIRRUS_CHANGE_MESSAGE
     # only contains the actual commit message on a non-PR trigger event.

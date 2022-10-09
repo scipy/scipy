@@ -102,8 +102,8 @@ cirrus_wheels_upload_task:
     if [[ "$CIRRUS_CRON" == "nightly" ]]; then
       export IS_SCHEDULE_DISPATCH="true"
     fi
-    # it's a tag event starting with 'v' and not ending with 'dev0'
-    if [[ $CIRRUS_TAG =~ ^v.*[^dev0]$ ]]; then
+    # it's a push event to a maintenance branch
+    if [[ $CIRRUS_BRANCH == maintenance* ]]; then
           export IS_PUSH="true"
     fi
     
@@ -116,10 +116,15 @@ cirrus_wheels_upload_task:
     
     source tools/wheels/upload_wheels.sh
     set_upload_vars
-    # trigger an upload to
+    # For cron jobs (restricted to main branch)
+    # an upload to:
+    #
     # https://anaconda.org/scipy-wheels-nightly/scipy
-    # for cron jobs or "Run workflow" (restricted to main branch).
-    # Tags will upload to
+    # 
+    # All pushes to a maintenance branch will cause wheels to be built
+    # and uploaded to:
+    #
     # https://anaconda.org/multibuild-wheels-staging/scipy
+    #
     # The tokens were originally generated at anaconda.org
     upload_wheels
