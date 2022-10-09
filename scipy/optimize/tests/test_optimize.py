@@ -310,7 +310,6 @@ class CheckOptimizeParameterized(CheckOptimize):
             assert_allclose(self.func(params), self.func(self.solution),
                             atol=1e-6, rtol=1e-5)
 
-
             # The exact evaluation count is sensitive to numerical error, and
             # floating-point computations are not bit-for-bit reproducible
             # across machines, and when using e.g. MKL, data alignment etc.
