@@ -41,8 +41,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a='gen',
           transposed=False):
     """
-    Solves the linear equation set ``a * x = b`` for the unknown ``x``
-    for square ``a`` matrix.
+    Solves the linear equation set ``a @ x == b`` for the unknown ``x``
+    for square `a` matrix.
 
     If the data matrix is known to be a particular type then supplying the
     corresponding string to ``assume_a`` key chooses the dedicated solver.
@@ -68,31 +68,32 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Square input data
     b : (N, NRHS) array_like
         Input data for the right hand side.
-    sym_pos : bool, optional, deprecated
+    sym_pos : bool, default: False, deprecated
         Assume `a` is symmetric and positive definite.
 
         .. deprecated:: 0.19.0
             This keyword is deprecated and should be replaced by using
            ``assume_a = 'pos'``. `sym_pos` will be removed in SciPy 1.11.0.
 
-    lower : bool, optional
-        If True, only the data contained in the lower triangle of `a`. Default
-        is to use upper triangle. (ignored for ``'gen'``)
-    overwrite_a : bool, optional
+    lower : bool, default: False
+        Ignored if ``assume_a == 'gen'`` (the default). If True, the
+        calculation uses only the data in the lower triangle of `a`;
+        entries above the diagonal are ignored. If False (default), the
+        calculation uses only the data in the upper triangle of `a`; entries
+        below the diagonal are ignored.
+    overwrite_a : bool, default: False
         Allow overwriting data in `a` (may enhance performance).
-        Default is False.
-    overwrite_b : bool, optional
+    overwrite_b : bool, default: False
         Allow overwriting data in `b` (may enhance performance).
-        Default is False.
-    check_finite : bool, optional
+    check_finite : bool, default: True
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    assume_a : str, optional
+    assume_a : str, {'gen', 'sym', 'her', 'pos'}
         Valid entries are explained above.
-    transposed : bool, optional
-        If True, ``a^T x = b`` for real matrices, raises `NotImplementedError`
-        for complex matrices (only for True).
+    transposed : bool, default: False
+        If True, solve ``a.T @ x == b``. Raises `NotImplementedError`
+        for complex `a`.
 
     Returns
     -------
