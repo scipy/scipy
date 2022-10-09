@@ -2028,6 +2028,15 @@ def test_powell_limits():
 
     optimize.minimize(fun, x0=[0.6, 20], method='Powell', bounds=bounds)
 
+    # Another test from the original report - gh-13411
+    bounds = optimize.Bounds(lb=[0,], ub=[1,], keep_feasible=[True,])
+
+    def func(x):
+        assert x >= 0 and x <= 1
+        return np.exp(x)
+
+    optimize.minimize(fun=func, x0=[0.5], method='powell', bounds=bounds)
+
 
 class TestRosen:
 
