@@ -8531,7 +8531,7 @@ add_newdoc("kve",
 
     Exponentially scaled Bessel functions are useful for large arguments for
     which the unscaled Bessel functions over- or underflow. In the
-    following example `kv` returns 0 whereas `ive` still returns
+    following example `kv` returns 0 whereas `kve` still returns
     a useful finite number.
 
     >>> kv(3, 1000.), kve(3, 1000.)
