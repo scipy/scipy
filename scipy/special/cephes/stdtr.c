@@ -98,7 +98,7 @@ double t;
 
     if (k <= 0) {
 	sf_error("stdtr", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
 
     if (t == 0)
@@ -178,7 +178,7 @@ double p;
 
     if (k <= 0 || p <= 0.0 || p >= 1.0) {
 	sf_error("stdtri", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
 
     rk = k;
@@ -201,7 +201,7 @@ double p;
     z = incbi(0.5 * rk, 0.5, 2.0 * p);
 
     if (DBL_MAX * z < rk)
-	return (rflg * NPY_INFINITY);
+	return (rflg * INFINITY);
     t = sqrt(rk / z - rk);
     return (rflg * t);
 }

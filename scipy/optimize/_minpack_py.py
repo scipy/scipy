@@ -13,6 +13,7 @@ from ._optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
 # from ._lsq.common import make_strictly_feasible
 from ._lsq.least_squares import prepare_bounds
+from scipy.optimize._minimize import Bounds
 
 error = _minpack.error
 
@@ -138,6 +139,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     Find a solution to the system of equations:
     ``x0*cos(x1) = 4,  x1*x0 - x1 = 5``.
 
+    >>> import numpy as np
     >>> from scipy.optimize import fsolve
     >>> def func(x):
     ...     return [x[0] * np.cos(x[1]) - 4,
@@ -544,10 +546,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         The model function, f(x, ...). It must take the independent
         variable as the first argument and the parameters to fit as
         separate remaining arguments.
-    xdata : array_like or object
+    xdata : array_like
         The independent variable where the data is measured.
         Should usually be an M-length sequence or an (k,M)-shaped array for
-        functions with k predictors, but can actually be any object.
+        functions with k predictors, and each element should be float
+        convertible if it is an array like object.
     ydata : array_like
         The dependent data, a length M array - nominally ``f(xdata, ...)``.
     p0 : array_like, optional
@@ -588,14 +591,18 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         and raise a ValueError if they do. Setting this parameter to
         False may silently produce nonsensical results if the input arrays
         do contain nans. Default is True.
-    bounds : 2-tuple of array_like, optional
+    bounds : 2-tuple of array_like or `Bounds`, optional
         Lower and upper bounds on parameters. Defaults to no bounds.
-        Each element of the tuple must be either an array with the length equal
-        to the number of parameters, or a scalar (in which case the bound is
-        taken to be the same for all parameters). Use ``np.inf`` with an
-        appropriate sign to disable bounds on all or some parameters.
+        There are two ways to specify the bounds:
 
-        .. versionadded:: 0.17
+            - Instance of `Bounds` class.
+
+            - 2-tuple of array_like: Each element of the tuple must be either
+              an array with the length equal to the number of parameters, or a
+              scalar (in which case the bound is taken to be the same for all
+              parameters). Use ``np.inf`` with an appropriate sign to disable
+              bounds on all or some parameters.
+
     method : {'lm', 'trf', 'dogbox'}, optional
         Method to use for optimization. See `least_squares` for more details.
         Default is 'lm' for unconstrained problems and 'trf' if `bounds` are
@@ -699,6 +706,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     Notes
     -----
+    Users should ensure that inputs `xdata`, `ydata`, and the output of `f`
+    are ``float64``, or else the optimization may return incorrect results.
+    
     With ``method='lm'``, the algorithm uses the Levenberg-Marquardt algorithm
     through `leastsq`. Note that this algorithm can only deal with
     unconstrained problems.
@@ -708,6 +718,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.optimize import curve_fit
 
@@ -757,7 +768,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         p0 = np.atleast_1d(p0)
         n = p0.size
 
-    lb, ub = prepare_bounds(bounds, n)
+    if isinstance(bounds, Bounds):
+        lb, ub = bounds.lb, bounds.ub
+    else:
+        lb, ub = prepare_bounds(bounds, n)
     if p0 is None:
         p0 = _initialize_feasible(lb, ub)
 
@@ -973,6 +987,7 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500, method='del2'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import optimize
     >>> def func(x, c1, c2):
     ...    return np.sqrt(c1/(x+c2))

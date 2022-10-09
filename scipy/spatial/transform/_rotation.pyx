@@ -545,6 +545,14 @@ cdef class Rotation:
         """Whether this instance represents a single rotation."""
         return self._single
 
+    def __bool__(self):
+        """Comply with Python convention for objects to be True.
+
+        Required because `Rotation.__len__()` is defined and not always truthy.
+        """
+        return True
+
+    @cython.embedsignature(True)
     def __len__(self):
         """Number of rotations contained in this object.
 
@@ -564,6 +572,7 @@ cdef class Rotation:
 
         return self._quat.shape[0]
 
+    @cython.embedsignature(True)
     @classmethod
     def from_quat(cls, quat):
         """Initialize from quaternions.
@@ -626,6 +635,7 @@ cdef class Rotation:
         """
         return cls(quat, normalize=True)
 
+    @cython.embedsignature(True)
     @classmethod
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -777,6 +787,7 @@ cdef class Rotation:
         else:
             return cls(quat, normalize=False, copy=False)
 
+    @cython.embedsignature(True)
     @classmethod
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -885,6 +896,7 @@ cdef class Rotation:
         else:
             return cls(quat, normalize=False, copy=False)
 
+    @cython.embedsignature(True)
     @classmethod
     def from_euler(cls, seq, angles, degrees=False):
         """Initialize from Euler angles.
@@ -1042,6 +1054,7 @@ cdef class Rotation:
         else:
             return cls(quat, normalize=False, copy=False)
 
+    @cython.embedsignature(True)
     @classmethod
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -1142,6 +1155,7 @@ cdef class Rotation:
         else:
             return cls(quat, normalize=False, copy=False)
 
+    @cython.embedsignature(True)
     def as_quat(self):
         """Represent as quaternions.
 
@@ -1192,6 +1206,7 @@ cdef class Rotation:
         else:
             return np.array(self._quat, copy=True)
 
+    @cython.embedsignature(True)
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def as_matrix(self):
@@ -1295,6 +1310,7 @@ cdef class Rotation:
         else:
             return ret
 
+    @cython.embedsignature(True)
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def as_rotvec(self, degrees=False):
@@ -1303,13 +1319,18 @@ cdef class Rotation:
         A rotation vector is a 3 dimensional vector which is co-directional to
         the axis of rotation and whose norm gives the angle of rotation [1]_.
 
+        Parameters
+        ----------
+        degrees : boolean, optional
+            Returned magnitudes are in degrees if this flag is True, else they are
+            in radians. Default is False.
+
+            .. versionadded:: 1.7.0
+
         Returns
         -------
         rotvec : ndarray, shape (3,) or (N, 3)
             Shape depends on shape of inputs used for initialization.
-        degrees : boolean, optional
-            Returned magnitudes are in degrees if this flag is True, else they are
-            in radians. Default is False.
 
         References
         ----------
@@ -1388,6 +1409,7 @@ cdef class Rotation:
         else:
             return np.asarray(rotvec)
 
+    @cython.embedsignature(True)
     def as_euler(self, seq, degrees=False):
         """Represent as Euler angles.
 
@@ -1498,6 +1520,7 @@ cdef class Rotation:
 
         return angles[0] if self._single else angles
 
+    @cython.embedsignature(True)
     def as_mrp(self):
         """Represent as Modified Rodrigues Parameters (MRPs).
 
@@ -1575,6 +1598,7 @@ cdef class Rotation:
         else:
             return np.asarray(mrps)
 
+    @cython.embedsignature(True)
     @classmethod
     def concatenate(cls, rotations):
         """Concatenate a sequence of `Rotation` objects.
@@ -1599,6 +1623,7 @@ cdef class Rotation:
         quats = np.concatenate([np.atleast_2d(x.as_quat()) for x in rotations])
         return cls(quats, normalize=False)
 
+    @cython.embedsignature(True)
     def apply(self, vectors, inverse=False):
         """Apply this rotation to a set of vectors.
 
@@ -1749,6 +1774,7 @@ cdef class Rotation:
         else:
             return result
 
+    @cython.embedsignature(True)
     def __mul__(Rotation self, Rotation other):
         """Compose this rotation with the other.
 
@@ -1828,6 +1854,7 @@ cdef class Rotation:
             result = result[0]
         return self.__class__(result, normalize=True, copy=False)
 
+    @cython.embedsignature(True)
     def inv(self):
         """Invert this rotation.
 
@@ -1865,6 +1892,7 @@ cdef class Rotation:
             quat = quat[0]
         return self.__class__(quat, copy=False)
 
+    @cython.embedsignature(True)
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def magnitude(self):
@@ -1900,6 +1928,7 @@ cdef class Rotation:
         else:
             return np.asarray(angles)
 
+    @cython.embedsignature(True)
     def mean(self, weights=None):
         """Get the mean of the rotations.
 
@@ -1953,6 +1982,7 @@ cdef class Rotation:
         l, v = np.linalg.eigh(K)
         return self.__class__(v[:, -1], normalize=False)
 
+    @cython.embedsignature(True)
     def reduce(self, left=None, right=None, return_indices=False):
         """Reduce this rotation with the provided rotation groups.
 
@@ -2049,6 +2079,7 @@ cdef class Rotation:
         else:
             return reduced
 
+    @cython.embedsignature(True)
     @classmethod
     def create_group(cls, group, axis='Z'):
         """Create a 3D rotation group.
@@ -2087,6 +2118,7 @@ cdef class Rotation:
         """
         return create_group(cls, group, axis=axis)
 
+    @cython.embedsignature(True)
     def __getitem__(self, indexer):
         """Extract rotation(s) at given index(es) from object.
 
@@ -2173,6 +2205,7 @@ cdef class Rotation:
         quat[indexer] = value.as_quat()
         self._quat = quat
 
+    @cython.embedsignature(True)
     @classmethod
     def identity(cls, num=None):
         """Get identity rotation(s).
@@ -2197,6 +2230,7 @@ cdef class Rotation:
             q[:, 3] = 1
         return cls(q, normalize=False)
 
+    @cython.embedsignature(True)
     @classmethod
     def random(cls, num=None, random_state=None):
         """Generate uniformly distributed rotations.
@@ -2260,6 +2294,7 @@ cdef class Rotation:
 
         return cls(sample)
 
+    @cython.embedsignature(True)
     @classmethod
     def align_vectors(cls, a, b, weights=None, return_sensitivity=False):
         """Estimate a rotation to optimally align two sets of vectors.
@@ -2298,11 +2333,11 @@ cdef class Rotation:
         -------
         estimated_rotation : `Rotation` instance
             Best estimate of the rotation that transforms `b` to `a`.
-        rmsd : float
-            Root mean square distance (weighted) between the given set of
-            vectors after alignment. It is equal to ``sqrt(2 * minimum_loss)``,
-            where ``minimum_loss`` is the loss function evaluated for the
-            found optimal rotation.
+        rssd : float
+            Square root of the weighted sum of the squared distances between
+            the given sets of vectors after alignment. It is equal to
+            ``sqrt(2 * minimum_loss)``, where ``minimum_loss`` is the loss
+            function evaluated for the found optimal rotation.
         sensitivity_matrix : ndarray, shape (3, 3)
             Sensitivity matrix of the estimated rotation estimate as explained
             in Notes. Returned only when `return_sensitivity` is True.
@@ -2378,7 +2413,7 @@ cdef class Rotation:
             warnings.warn("Optimal rotation is not uniquely or poorly defined "
                           "for the given sets of vectors.")
 
-        rmsd = np.sqrt(max(
+        rssd = np.sqrt(max(
             np.sum(weights * np.sum(b ** 2 + a ** 2, axis=1)) - 2 * np.sum(s),
             0))
 
@@ -2388,9 +2423,9 @@ cdef class Rotation:
             with np.errstate(divide='ignore', invalid='ignore'):
                 sensitivity = np.mean(weights) / zeta * (
                         kappa * np.eye(3) + np.dot(B, B.T))
-            return cls.from_matrix(C), rmsd, sensitivity
+            return cls.from_matrix(C), rssd, sensitivity
         else:
-            return cls.from_matrix(C), rmsd
+            return cls.from_matrix(C), rssd
 
 
 class Slerp:

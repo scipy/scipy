@@ -263,8 +263,8 @@ double x, *ai, *aip, *bi, *bip;
     if (x > MAXAIRY) {
 	*ai = 0;
 	*aip = 0;
-	*bi = NPY_INFINITY;
-	*bip = NPY_INFINITY;
+	*bi = INFINITY;
+	*bip = INFINITY;
 	return (-1);
     }
 

@@ -86,6 +86,7 @@ Continuous distributions
    genhyperbolic     -- Generalized Hyperbolic
    geninvgauss       -- Generalized Inverse Gaussian
    gibrat            -- Gibrat
+   gilbrat           -- Gilbrat
    gompertz          -- Gompertz (Truncated Gumbel)
    gumbel_r          -- Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
    gumbel_l          -- Left Sided Gumbel, etc.
@@ -142,6 +143,7 @@ Continuous distributions
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
+   truncpareto       -- Truncated Pareto
    truncweibull_min  -- Truncated minimum Weibull distribution
    tukeylambda       -- Tukey-Lambda
    uniform           -- Uniform
@@ -170,6 +172,15 @@ Multivariate distributions
    random_correlation     -- random correlation matrices
    multivariate_t         -- Multivariate t-distribution
    multivariate_hypergeom -- Multivariate hypergeometric distribution
+
+`scipy.stats.multivariate_normal` methods accept instances
+of the following class to represent the covariance.
+
+.. autosummary::
+   :toctree: generated/
+
+   Covariance             -- Representation of a covariance matrix
+
 
 Discrete distributions
 ----------------------
@@ -209,6 +220,7 @@ Summary statistics
    describe          -- Descriptive statistics
    gmean             -- Geometric mean
    hmean             -- Harmonic mean
+   pmean             -- Power mean
    kurtosis          -- Fisher or Pearson kurtosis
    mode              -- Modal value
    moment            -- Central moment
@@ -300,6 +312,7 @@ Statistical tests
    jarque_bera
    page_trend_test
    tukey_hsd
+   poisson_means_test
 
 .. autosummary::
    :toctree: generated/
@@ -393,7 +406,6 @@ Random variate generation / CDF Inversion
    :toctree: generated/
 
    rvs_ratio_uniforms
-   NumericalInverseHermite
 
 Distribution Fitting
 --------------------
@@ -403,12 +415,13 @@ Distribution Fitting
 
    fit
 
-Circular statistical functions
-------------------------------
+Directional statistical functions
+---------------------------------
 
 .. autosummary::
    :toctree: generated/
 
+   directionalmean
    circmean
    circvar
    circstd
@@ -425,6 +438,7 @@ Contingency table functions
    contingency.margins
    contingency.relative_risk
    contingency.association
+   contingency.odds_ratio
    fisher_exact
    barnard_exact
    boschloo_exact
@@ -455,15 +469,15 @@ Warnings / Errors used in :mod:`scipy.stats`
 .. autosummary::
    :toctree: generated/
 
-   F_onewayConstantInputWarning
-   F_onewayBadInputSizesWarning
-   PearsonRConstantInputWarning
-   PearsonRNearConstantInputWarning
-   SpearmanRConstantInputWarning
-   BootstrapDegenerateDistributionWarning
+   DegenerateDataWarning
+   ConstantInputWarning
+   NearConstantInputWarning
+   FitError
 
 """
 
+from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
+                               DegenerateDataWarning, FitError)
 from ._stats_py import *
 from ._variation import variation
 from .distributions import *
@@ -476,14 +490,14 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
-from ._resampling import (bootstrap, BootstrapDegenerateDistributionWarning,
-                          monte_carlo_test, permutation_test)
+from ._resampling import bootstrap, monte_carlo_test, permutation_test
 from ._entropy import *
 from ._hypotests import *
-from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite  # noqa
+from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._fit import fit
+from ._covariance import Covariance
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

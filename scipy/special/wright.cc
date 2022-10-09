@@ -74,9 +74,8 @@
 
 #include <Python.h>
 extern "C" {
-#include <numpy/npy_math.h>
+#include <math.h>
 #include "sf_error.h"
-#include "_c99compat.h"
 #include "_round.h"
 }
 
@@ -85,7 +84,6 @@ extern "C" {
 
 using std::complex;
 
-#define NaN NPY_NAN
 #define TWOITERTOL DBL_EPSILON
 
 const complex<double> I(0.0, 1.0);
@@ -95,7 +93,7 @@ int
 wright::wrightomega_ext(complex<double> z, complex<double> *w,
 			complex<double> *cond)
 {
-  double pi = NPY_PI, s = 1.0;
+  double pi = M_PI, s = 1.0;
   double x, y, ympi, yppi, near;
   complex<double> e, r, pz, wp1, t, fac;
 
@@ -113,15 +111,15 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   /*****************************/
   /* NaN output for NaN input  */
   /*****************************/
-  if(sc_isnan(x) || sc_isnan(y))
+  if(isnan(x) || isnan(y))
     {
-      *w = complex<double>(NaN, NaN);
+      *w = complex<double>(NAN, NAN);
       return 0;
     }
   /*********************************/
   /* Signed zeros between branches */
   /*********************************/
-  else if(sc_isinf(x) && (x < 0.0) && (-pi < y) && (y<= pi))
+  else if(isinf(x) && (x < 0.0) && (-pi < y) && (y<= pi))
     {
       if (fabs(y) <= pi/2.0)
         {
@@ -150,7 +148,7 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   /**************************/
   /* Asymptotic for large z */
   /**************************/
-  else if(sc_isinf(x) || sc_isinf(y))
+  else if(isinf(x) || isinf(y))
     {
       *w = complex<double>(x, y);
       return 0;
@@ -372,14 +370,14 @@ wright::wrightomega_real(double x)
   double w, wp1, e, r;
 
   /* NaN output for NaN input  */
-  if (sc_isnan(x))
+  if (isnan(x))
     {
       return x;
     }
 
   /* Positive infinity is asymptotically x */
   /* Negative infinity is zero */
-  if (sc_isinf(x))
+  if (isinf(x))
     {
       if (x > 0.0)
 	{

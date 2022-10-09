@@ -1,6 +1,5 @@
 import numpy as np
-from numpy.testing import (assert_equal, assert_allclose, assert_,
-                           suppress_warnings)
+from numpy.testing import assert_equal, assert_allclose, assert_
 from pytest import raises as assert_raises
 import pytest
 
@@ -14,7 +13,6 @@ from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                         _woodbury_algorithm, _periodic_knots,
                                          _make_interp_per_full_matr)
 import scipy.interpolate._fitpack_impl as _impl
-from scipy.interpolate._fitpack import _splint
 
 
 class TestBSpline:
@@ -344,9 +342,8 @@ class TestBSpline:
         assert_allclose(b.integrate(1, -1, extrapolate=False), -1 * 0.5)
 
         # Test ``_fitpack._splint()``
-        t, c, k = b.tck
         assert_allclose(b.integrate(1, -1, extrapolate=False),
-                        _splint(t, c, k, 1, -1)[0])
+                        _impl.splint(1, -1, b.tck))
 
         # Test ``extrapolate='periodic'``.
         b.extrapolate = 'periodic'
@@ -439,8 +436,7 @@ class TestBSpline:
         '''
         def run_design_matrix_tests(n, k, bc_type):
             '''
-            To avoid repetition of the code the following function is
-            provided.
+            To avoid repetition of code the following function is provided.
             '''
             np.random.seed(1234)
             x = np.sort(np.random.random_sample(n) * 40 - 20)
@@ -472,6 +468,34 @@ class TestBSpline:
         n = 5  # smaller `n` to test `k > n` case
         for k in range(2, 7):
             run_design_matrix_tests(n, k, "periodic")
+
+    @pytest.mark.parametrize('extrapolate', [False, True, 'periodic'])
+    @pytest.mark.parametrize('degree', range(5))
+    def test_design_matrix_same_as_BSpline_call(self, extrapolate, degree):
+        """Test that design_matrix(x) is equivalent to BSpline(..)(x)."""
+        np.random.seed(1234)
+        x = np.random.random_sample(10 * (degree + 1))
+        xmin, xmax = np.amin(x), np.amax(x)
+        k = degree
+        t = np.r_[np.linspace(xmin - 2, xmin - 1, degree),
+                  np.linspace(xmin, xmax, 2 * (degree + 1)),
+                  np.linspace(xmax + 1, xmax + 2, degree)]
+        c = np.eye(len(t) - k - 1)
+        bspline = BSpline(t, c, k, extrapolate)
+        assert_allclose(
+            bspline(x), BSpline.design_matrix(x, t, k, extrapolate).toarray()
+        )
+
+        # extrapolation regime
+        x = np.array([xmin - 10, xmin - 1, xmax + 1.5, xmax + 10])
+        if not extrapolate:
+            with pytest.raises(ValueError):
+                BSpline.design_matrix(x, t, k, extrapolate)
+        else:
+            assert_allclose(
+                bspline(x),
+                BSpline.design_matrix(x, t, k, extrapolate).toarray()
+            )
 
     def test_design_matrix_x_shapes(self):
         # test for different `x` shapes
@@ -942,6 +966,29 @@ class TestInterp:
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         b = make_interp_spline(self.xx, self.yy, k=1, axis=-1)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+
+    @pytest.mark.parametrize('k', [0, 1, 2, 3])
+    def test_incompatible_x_y(self, k):
+        x = [0, 1, 2, 3, 4, 5]
+        y = [0, 1, 2, 3, 4, 5, 6, 7]
+        with assert_raises(ValueError, match="Shapes of x"):
+            make_interp_spline(x, y, k=k)
+
+    @pytest.mark.parametrize('k', [0, 1, 2, 3])
+    def test_broken_x(self, k):
+        x = [0, 1, 1, 2, 3, 4]      # duplicates
+        y = [0, 1, 2, 3, 4, 5]
+        with assert_raises(ValueError, match="x to not have duplicates"):
+            make_interp_spline(x, y, k=k)
+
+        x = [0, 2, 1, 3, 4, 5]      # unsorted
+        with assert_raises(ValueError, match="Expect x to be a 1D strictly"):
+            make_interp_spline(x, y, k=k)
+
+        x = [0, 1, 2, 3, 4, 5]
+        x = np.asarray(x).reshape((1, -1))     # 1D
+        with assert_raises(ValueError, match="Expect x to be a 1D strictly"):
+            make_interp_spline(x, y, k=k)
 
     def test_not_a_knot(self):
         for k in [3, 5]:

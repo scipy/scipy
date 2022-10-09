@@ -109,7 +109,8 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__test_multivariate(void)
+PyMODINIT_FUNC
+PyInit__test_multivariate(void)
 {
     PyObject *m;
     m = PyModule_Create(&moduledef);
