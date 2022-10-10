@@ -1,5 +1,6 @@
 from scipy.datasets._registry import registry
 from scipy.datasets._fetchers import data_fetcher
+from scipy.datasets._utils import _clear_cache
 from scipy.datasets import ascent, face, electrocardiogram, download_all
 from numpy.testing import assert_equal, assert_almost_equal
 import os
@@ -34,15 +35,6 @@ class TestDatasets:
 
         yield
 
-        # test_teardown phase
-
-        # TODO: Clear all cache from test_download_all
-        # and then test downloading all the datasets
-        # individually through test_<dataset-name> methods instead
-
-        # See case 2 for more details in the following gh-comment
-        # https://github.com/scipy/scipy/pull/15607#discussion_r943557161
-
     def test_existence_all(self):
         assert len(os.listdir(data_dir)) >= len(registry)
 
@@ -71,3 +63,32 @@ class TestDatasets:
         # hash check
         assert _has_hash(os.path.join(data_dir, "ecg.dat"),
                          registry["ecg.dat"])
+
+
+def test_clear_cache():
+    # Use Dummy path
+    dummy_basepath = "dummy_cache_dir"
+    os.makedirs(dummy_basepath, exist_ok=True)
+
+    # Create three dummy dataset files
+    dummy_registry = {}
+    for i in range(3):
+        dataset_name = f"data{i}.dat"
+        dummy_registry[dataset_name] = hash(dataset_name)
+        with open(os.path.join(dummy_basepath, dataset_name), 'a'):
+            pass
+
+    # remove single dataset file from cache dir
+    _clear_cache(datasets=["data0.dat"], cache_dir=dummy_basepath,
+                 data_registry=dummy_registry)
+    assert len(os.listdir(dummy_basepath)) == len(dummy_registry) - 1
+
+    # wrong dataset name should raise ValueError
+    with pytest.raises(ValueError):
+        _clear_cache(datasets=["data5.dat"], cache_dir=dummy_basepath,
+                     data_registry=dummy_registry)
+
+    # remove all dataset cache
+    _clear_cache(datasets=None, cache_dir=dummy_basepath,
+                 data_registry=dummy_registry)
+    assert not os.path.exists(dummy_basepath)
