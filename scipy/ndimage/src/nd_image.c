@@ -961,7 +961,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
 }
 #define CASE_VALUEINDICES_MAKEHISTOGRAM(valType) {\
     numPossibleVals = (VALUEINDICES_MAXVAL(valType) - VALUEINDICES_MINVAL(valType) + 1); \
-    hist = (npy_uint64 *)calloc(numPossibleVals, sizeof(npy_uint64)); \
+    hist = (npy_intp *)calloc(numPossibleVals, sizeof(npy_intp)); \
     if (hist != NULL) { \
         NI_InitPointIterator(arr, &ndiIter); \
         arrData = (char *)PyArray_DATA(arr); \
@@ -994,9 +994,8 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
     int nullIsNone, valueIsNull=0, ndim, j, arrType, minMaxUnset=1;
     NI_Iterator ndiIter;
     char *arrData;
-    npy_uint64 *hist=NULL, *valCtr=NULL;
+    npy_intp *hist=NULL, *valCtr=NULL, ii, numPossibleVals=0;
     npy_intp arrSize, iterIndex, dims[1];
-    npy_uint64 ii, numPossibleVals=0;
 
     /* Get arguments passed in */
     if (!PyArg_ParseTuple(args, "O!iO!", &PyArray_Type, &arr, &nullIsNone,
@@ -1056,7 +1055,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
     if (hist != NULL) {
         /* Allocate local data structures to track where we are up to while
            assigning index values */
-        valCtr = (npy_uint64 *)calloc(numPossibleVals, sizeof(npy_intp));
+        valCtr = (npy_intp *)calloc(numPossibleVals, sizeof(npy_intp));
         ndxPtr = (PyObject **)calloc(numPossibleVals, sizeof(PyObject  *));
         if (valCtr == NULL)
             PyErr_SetString(PyExc_MemoryError, "Couldn't allocate valCtr");
