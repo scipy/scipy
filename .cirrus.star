@@ -15,18 +15,12 @@ def main(ctx):
     # - a cron job called "nightly". The cron job is not set in this file,
     #   but on the cirrus-ci repo page
     # - commit message containing [wheel build]
-    # - a tag that begins with v, but doesn't end with dev0
-    # - all pushes to a maintenance branch
     ######################################################################
 
     if env.get("CIRRUS_REPO_FULL_NAME") != "scipy/scipy":
         return []
 
     if env.get("CIRRUS_CRON", "") == "nightly":
-        return fs.read("ci/cirrus_wheels.yml")
-
-    if "maintenance" in env.get("CIRRUS_BRANCH"):
-        # build wheels on all pushes to a maintenance branch
         return fs.read("ci/cirrus_wheels.yml")
 
     # Obtain commit message for the event. Unfortunately CIRRUS_CHANGE_MESSAGE

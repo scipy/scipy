@@ -61,8 +61,7 @@ jobs:
     if: >-
       contains(needs.get_commit_message.outputs.message, '1') ||
       github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'push' && startsWith(github.ref_name, 'maintenance'))
+      github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.buildplat[0] }}
 
     strategy:
@@ -92,7 +91,7 @@ jobs:
         # python[1] is installed by actions/setup-python for the separate
         # macosx_arm64 build. Once cibuildwheel can do the macosx_arm64 cross build
         # we can get rid of this duplication and just have ["cp38", "cp39"].
-        # The actions/setup-python can only use the form ["3.8'].
+        # The actions/setup-python can only use the form ["3.8"].
         exclude:
           - buildplat: [macos-12, macosx, arm64]
             python: ["cp39", "3.9"]
@@ -102,7 +101,9 @@ jobs:
             python: ["cp311", "3.11.0-alpha - 3.11.0"]
     env:
       IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}
-      IS_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/maintenance') }}
+      # upload to staging if it's a push to a maintenance branch and the last
+      # commit message contains '[wheel build]'
+      IS_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/maintenance') && contains(needs.get_commit_message.outputs.message, '1') }}
       IS_SCHEDULE_DISPATCH: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
 
     steps:
@@ -251,8 +252,8 @@ jobs:
           #
           # https://anaconda.org/scipy-wheels-nightly/scipy
           # 
-          # All pushes to a maintenance branch will cause wheels to be built
-          # and uploaded to:
+          # Pushes to a maintenance branch that contain '[wheel build]' will
+          # cause wheels to be built and uploaded to:
           #
           # https://anaconda.org/multibuild-wheels-staging/scipy
           #

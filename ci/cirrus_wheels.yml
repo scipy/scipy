@@ -102,8 +102,11 @@ cirrus_wheels_upload_task:
     if [[ "$CIRRUS_CRON" == "nightly" ]]; then
       export IS_SCHEDULE_DISPATCH="true"
     fi
-    # it's a push event to a maintenance branch
-    if [[ $CIRRUS_BRANCH == maintenance* ]]; then
+
+    # If it's a push event to a maintenance branch, and the commit message contains
+    # '[wheel build]' then upload to staging
+    COMMIT_MSG=$(git log --no-merges -1)
+    if [[ "$COMMIT_MSG" == *"[wheel build]"* ]] && [[ $CIRRUS_BRANCH == maintenance* ]]; then
           export IS_PUSH="true"
     fi
     
@@ -121,8 +124,8 @@ cirrus_wheels_upload_task:
     #
     # https://anaconda.org/scipy-wheels-nightly/scipy
     # 
-    # All pushes to a maintenance branch will cause wheels to be built
-    # and uploaded to:
+    # Pushes to a maintenance branch that contain '[wheel build]' will
+    # cause wheels to be built and uploaded to:
     #
     # https://anaconda.org/multibuild-wheels-staging/scipy
     #
