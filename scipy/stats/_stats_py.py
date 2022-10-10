@@ -51,7 +51,8 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
 from ._hypotests import _all_partitions
-from ._hypotests_pythran import (_compute_outer_prob_inside_method,
+
+from ._stats_pythran import (_compute_outer_prob_inside_method,
                                  _compute_prob_outside_square,
                                  _count_paths_outside_method)
 from ._resampling import _batch_generator

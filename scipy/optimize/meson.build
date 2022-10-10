@@ -205,14 +205,14 @@ __nnls = py3.extension_module('__nnls',
 )
 
 if use_pythran
-  _group_columns = custom_target('_group_columns',
+  _group_columns_cpp = custom_target('_group_columns',
     output: ['_group_columns.cpp'],
     input: '_group_columns.py',
     command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_group_columns.cpp']
   )
 
   _group_columns = py3.extension_module('_group_columns',
-    [_group_columns],
+    [_group_columns_cpp],
     cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
     link_args: version_link_args,
