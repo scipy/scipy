@@ -9477,9 +9477,9 @@ def expectile(a, alpha=0.5, *, dtype=None, weights=None):
 
     Notes
     -----
-    The (empirical) expectile at level `alpha` (:math:`\alpha`) of the array `a`
-    (:math:`a_i`) associated to `weights` (:math:`w_i`) is the unique solution
-    :math:`t` of:
+    The (empirical) expectile at level `alpha` (:math:`\alpha`) of the array
+    `a` (:math:`a_i`) associated to `weights` (:math:`w_i`) is the unique
+    solution :math:`t` of:
 
     .. math::
 
