@@ -349,7 +349,7 @@ def value_indices(arr, *, nullval=None):
         Note for IDL users: this provides functionality equivalent to IDL's
         REVERSE_INDICES option.
 
-        .. versionadded:: 1.9.2
+        .. versionadded:: 1.10.0
 
     Examples
     --------
