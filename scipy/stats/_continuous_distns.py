@@ -8422,15 +8422,16 @@ class truncpareto_gen(rv_continuous):
 
     @_call_super_mom
     @inherit_docstring_from(rv_continuous)
-    def fit(self, data, *args, **kwargs):
+    def fit(self, data, *args, **kwds):
+        if kwds.pop("superfit", False):
+            return super().fit(data, *args, **kwds)
+
         def log_mean(x):
             return np.mean(np.log(x))
 
         def harm_mean(x):
             return 1/np.mean(1/x)
 
-        # These can be determined analytically from the location
-        # when no parameters are provided.
         def get_b(loc):
             c_ = get_c(loc)
             u_ = (data-loc)/get_scale(loc)
@@ -8440,55 +8441,48 @@ class truncpareto_gen(rv_continuous):
 
             return (1 - (quot-1) / (quot - (1 - 1/c_)*harm_m/np.log(c_)))/log_m
 
-        def get_c_std(loc):
+        def get_c(loc):
+            if floc and fscale:
+                return (mx - floc)/fscale
+            elif floc:
+                return (mx - floc)/(mn - floc)
+            elif fscale:
+                return (mx - mn)/fscale + 1
             return (mx - loc)/(mn - loc)
 
-        def get_scale_std(loc):
-            return mn - loc
-
-        # The expressions may change when fixed parameters are provided.
-        # The following are named with a suffix corresponding to the fixed
-        # parameters; e.g. x001: b fixed or free, c and loc free, scale fixed.
-        # b fixed or free, scale fixed
-        def get_c_x001():
-            return (mx - mn)/fscale + 1
-
-        def get_loc_x001():
-            return mn - fscale
-
-        # b fixed or free, loc and scale fixed
-        def get_c_x011():
-            return (mx - floc)/fscale
-
-        # b fixed or free, c fixed
-        def get_loc_x100():
-            return (fshape_c*mn - mx)/(fshape_c - 1)
-
-        def get_scale_x100():
-            return (mx - mn)/(fshape_c - 1)
-
-        # b fixed or free, c and scale fixed
-        def get_loc_x101():
-            gamma = mx - mn - (fshape_c - 1)*fscale
-            if gamma > 0:
+        def get_loc():
+            if fc and fscale:
+                gamma = mx - mn - (fc - 1)*fscale
+                if gamma > 0:
+                    return mn - fscale
+                elif gamma < 0:
+                    return mx - fc*fscale
+                else:
+                    return (mn - mx)/(fc - 1)
+            elif fc:
+                return (fc*mn - mx)/(fc - 1)
+            elif fscale:
                 return mn - fscale
-            elif gamma < 0:
-                return mx - fshape_c*fscale
-            else:
-                return (mn - mx)/(fshape_c - 1)
+            return
 
-        # b fixed or free, c and loc fixed
-        def get_scale_x110():
-            gamma = mx - floc - fshape_c*(mn - floc)
-            if gamma > 0:
+        def get_scale(loc):
+            if fc and floc:
+                gamma = mx - floc - fc*(mn - floc)
+                if gamma > 0:
+                    return mn - floc
+                elif gamma < 0:
+                    return (mx - floc)/fc
+                else:
+                    return (mx - mn)/(fc - 1)
+            elif fc:
+                return (mx - mn)/(fc - 1)
+            elif floc:
                 return mn - floc
-            elif gamma < 0:
-                return (mx - floc)/fshape_c
-            else:
-                return (mx - mn)/(fshape_c - 1)
+            return mn - loc
 
         # Functions used for optimisation; partial derivatives of
         # the Lagrangian, set to equal 0.
+
         def dL_dLoc(loc, b_=None):
             # Partial derivative wrt location.
             # Optimised upon when no parameters, or only b, are fixed.
@@ -8497,35 +8491,29 @@ class truncpareto_gen(rv_continuous):
             harm_m = harm_mean((data - loc)/get_scale(loc))
             return 1 - (1 + (c - 1)/(c**(b+1) - c)) * (1 - 1/(b+1)) * harm_m
 
-        def dL_dB(b, c, std_data):
+        def dL_dB(b, logc, logm):
             # Partial derivative wrt b.
             # Optimised upon whenever at least one parameter but b is fixed,
             # and b is free.
-            logm = log_mean(std_data)
-            logc = np.log(c)
             return b - np.log1p(b*logc / (1 - b*logm)) / logc
 
         def fallback(data, *args, **kwargs):
             # Should any issue arise, default to the general fit method.
             return super(truncpareto_gen, self).fit(data, *args, **kwargs)
 
-        parameters = _check_fit_input_parameters(self, data, args, kwargs)
-        data, fshape_b, fshape_c, floc, fscale = parameters
-
+        parameters = _check_fit_input_parameters(self, data, args, kwds)
+        data, fb, fc, floc, fscale = parameters
         mn, mx = data.min(), data.max()
         mn_inf = np.nextafter(mn, -np.inf)
 
-        if (fshape_b is not None
-                and fshape_c is not None
+        if (fb is not None
+                and fc is not None
                 and floc is not None
                 and fscale is not None):
             raise ValueError("All parameters fixed."
                              "There is nothing to optimize.")
-        elif fshape_c is None and floc is None and fscale is None:
-            get_c = get_c_std
-            get_scale = get_scale_std
-
-            if fshape_b is None:
+        elif fc is None and floc is None and fscale is None:
+            if fb is None:
                 def cond_b(loc):
                     # b is positive only if this function is positive
                     c = get_c(loc)
@@ -8543,10 +8531,10 @@ class truncpareto_gen(rv_continuous):
                     i += 1
                     lbrack = rbrack - np.power(2., i)
                 if not lbrack > -np.inf:
-                    return fallback(data, *args, **kwargs)
+                    return fallback(data, *args, **kwds)
                 res = root_scalar(cond_b, bracket=(lbrack, rbrack))
                 if not res.converged:
-                    return fallback(data, *args, **kwargs)
+                    return fallback(data, *args, **kwds)
 
                 # Determine the MLE for loc.
                 # Iteratively look for a bracket for root_scalar.
@@ -8558,21 +8546,21 @@ class truncpareto_gen(rv_continuous):
                     i += 1
                     lbrack = rbrack - np.power(2., i)
                 if not lbrack > -np.inf:
-                    return fallback(data, *args, **kwargs)
+                    return fallback(data, *args, **kwds)
                 res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
                 if not res.converged:
-                    return fallback(data, *args, **kwargs)
+                    return fallback(data, *args, **kwds)
                 loc = res.root
-                shape_b = get_b(loc)
-                shape_c = get_c(loc)
+                b = get_b(loc)
+                c = get_c(loc)
                 scale = get_scale(loc)
 
                 std_data = (data - loc)/scale
                 # The expression of b relies on b being bounded above.
                 up_bound_b = min(1/log_mean(std_data),
                                  1/(harm_mean(std_data)-1))
-                if not (shape_b < up_bound_b):
-                    return fallback(data, *args, **kwargs)
+                if not (b < up_bound_b):
+                    return fallback(data, *args, **kwds)
             else:
                 # We know b is positive (or a FitError will be triggered)
                 # so we let loc get close to min(data).
@@ -8581,108 +8569,76 @@ class truncpareto_gen(rv_continuous):
                 i = 0
                 # Iteratively look for a bracket for root_scalar.
                 while (lbrack > -np.inf
-                       and (dL_dLoc(lbrack, fshape_b)
-                            * dL_dLoc(rbrack, fshape_b) >= 0)):
+                       and (dL_dLoc(lbrack, fb)
+                            * dL_dLoc(rbrack, fb) >= 0)):
                     i += 1
                     lbrack = rbrack - 2**i
                 if not lbrack > -np.inf:
-                    return fallback(data, *args, **kwargs)
-                res = root_scalar(dL_dLoc, (fshape_b,),
+                    return fallback(data, *args, **kwds)
+                res = root_scalar(dL_dLoc, (fb,),
                                   bracket=(lbrack, rbrack))
                 if not res.converged:
-                    return fallback(data, *args, **kwargs)
+                    return fallback(data, *args, **kwds)
                 loc = res.root
-                shape_c = get_c(loc)
+                c = get_c(loc)
                 scale = get_scale(loc)
-                shape_b = fshape_b
+                b = fb
         else:
             # At least one of the parameters determining the support is fixed;
             # the others then have analytical expressions from the constraints.
-            # Overdetermined cases (fixed c and either loc or scale) behave.
             # The completely determined case (fixed c, loc and scale)
             # has to be checked for not overflowing the support.
             # If not fixed, b has to be determined numerically.
+            loc = floc if floc is not None else get_loc()
+            c = fc or get_c(loc)
+            scale = fscale or get_scale(loc)
 
-            # To make the following switch structure more readable,
-            # the "fixedness" of the parameters is associated an octal digit.
-            bm = (4*(fshape_c is not None)
-                  + 2*(floc is not None)
-                  + 1*(fscale is not None))
-            # 000 has been handled separately.
-            if bm == 0b001:
-                shape_c = get_c_x001()
-                loc = get_loc_x001()
-                scale = fscale
-            elif bm == 0b010:
-                shape_c = get_c_std(floc)
-                loc = floc
-                scale = get_scale_std(floc)
-            elif bm == 0b011:
-                shape_c = get_c_x011()
-                loc = floc
-                scale = fscale
-            elif bm == 0b100:
-                shape_c = fshape_c
-                loc = get_loc_x100()
-                scale = get_scale_x100()
-            elif bm == 0b101:
-                shape_c = fshape_c
-                loc = get_loc_x101()
-                scale = fscale
-            elif bm == 0b110:
-                shape_c = fshape_c
-                loc = floc
-                scale = get_scale_x110()
+            # Unscaled, translated values should be positive when the location
+            # is fixed. If it is not the case, we end up with negative `scale`
+            # and `c`, which would trigger a FitError before exiting the
+            # method.
+            if floc is not None and data.min() - floc < 0:
+                raise FitDataError("truncpareto", lower=1, upper=c)
 
-            # There are two necessary tests.
-            # We cannot test before the switch, as we need an upper value
-            # for raising the exception.
-            # Unscaled, translated values should be positive when
-            # the location is fixed (test1).
             # Standardised values should be within the distribution support
-            # when all parameters controlling it are fixed (bm == 7; test2).
+            # when all parameters controlling it are fixed. If it not the case,
+            # `fc` is overidden by `c` determined from `floc` and `fscale` when
+            # raising the exception.
+            if fc and (floc is not None) and fscale:
+                if data.max() > fc*fscale + floc:
+                    raise FitDataError("truncpareto", lower=1,
+                                       upper=get_c(None))
+
             # The other constraints should be automatically satisfied
             # from the analytical expressions of the parameters.
             # If fc or fscale are respectively less than one or less than 0,
             # a FitError is triggered before exiting the method.
 
-            # test1.
-            # Should it fail, we end up with negative scale and c, which would
-            # trigger a FitError before exiting the method.
-            if floc is not None and data.min() - floc < 0:
-                raise FitDataError("truncpareto", lower=1, upper=shape_c)
-
-            if bm == 0b111:
-                # test2.
-                # Should test1 pass, and test2 fail, we assume floc and fscale
-                # are sensible and override the fixed c when raising the exc.
-                if data.max() > fshape_c*fscale + floc:
-                    raise FitDataError("truncpareto", lower=1,
-                                       upper=get_c_x011())
-                shape_c = fshape_c
-                loc = floc
-                scale = fscale
-
-            if fshape_b is None:
+            if fb is None:
                 std_data = (data - loc)/scale
+                logm = log_mean(std_data)
+                logc = np.log(c)
                 # Condition for a positive root to exist.
-                if not (2*log_mean(std_data) < np.log(shape_c)):
-                    return fallback(data, *args, **kwargs)
+                if not (2*logm < logc):
+                    return fallback(data, *args, **kwds)
 
-                lbrack = 1/log_mean(std_data) + 1/log_mean(std_data/shape_c)
-                rbrack = np.nextafter(1/log_mean(std_data), 0)
-                res = root_scalar(dL_dB, (shape_c, std_data),
-                                  bracket=(lbrack, rbrack))
-                # we should then never get there
-                if not res.converged:
-                    return fallback(data, *args, **kwargs)
-                shape_b = res.root
+                lbrack = 1/logm + 1/(logm - logc)
+                rbrack = np.nextafter(1/logm, 0)
+                try:
+                    res = root_scalar(dL_dB, (logc, logm),
+                                      bracket=(lbrack, rbrack))
+                    # we should then never get there
+                    if not res.converged:
+                        return fallback(data, *args, **kwds)
+                    b = res.root
+                except ValueError:
+                    b = rbrack
             else:
-                shape_b = fshape_b
+                b = fb
 
-        if not (np.all(self._argcheck(shape_b, shape_c)) and (scale > 0)):
-            fallback(data, *args, **kwargs)
-        return shape_b, shape_c, loc, scale
+        if not (np.all(self._argcheck(b, c)) and (scale > 0)):
+            fallback(data, *args, **kwds)
+        return b, c, loc, scale
 
 
 truncpareto = truncpareto_gen(a=1.0, name='truncpareto')
