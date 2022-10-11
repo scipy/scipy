@@ -14,15 +14,11 @@ Functions
 from warnings import warn
 
 from scipy.optimize import _minpack2 as minpack2
-from ._numdiff import approx_derivative
 import numpy as np
-import inspect
 
 __all__ = ['LineSearchWarning', 'line_search_wolfe1', 'line_search_wolfe2',
            'scalar_search_wolfe1', 'scalar_search_wolfe2',
            'line_search_armijo']
-
-_epsilon = np.sqrt(np.finfo(float).eps)
 
 class LineSearchWarning(RuntimeWarning):
     pass
@@ -35,7 +31,7 @@ class LineSearchWarning(RuntimeWarning):
 def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
                        old_fval=None, old_old_fval=None,
                        args=(), c1=1e-4, c2=0.9, amax=50, amin=1e-8,
-                       xtol=1e-14, dfo=False):
+                       xtol=1e-14):
     """
     As `scalar_search_wolfe1` but do a line search to direction `pk`
 
@@ -56,9 +52,6 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
         Value of `f` at point `xk`
     old_old_fval : float, optional
         Value of `f` at point preceding `xk`
-    dfo : bool, optional
-        If True, estimate directional derivatives using
-        finite differencing instead of fprime.
 
     The rest of the parameters are the same as for `scalar_search_wolfe1`.
 
@@ -81,19 +74,10 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
         fc[0] += 1
         return f(xk + s*pk, *args)
 
-    def derphi(s, *, fs=None):
-        if dfo:
-            if fs is not None:
-                fc[0] += 1
-            else:
-                fc[0] += 2
-            return approx_derivative(lambda t: f(xk + t*pk), s,
-                                     method='2-point', abs_step=_epsilon,
-                                     args=args, f0=fs)
-        else:
-            gval[0] = fprime(xk + s*pk, *args)
-            gc[0] += 1
-            return np.dot(gval[0], pk)
+    def derphi(s):
+        gval[0] = fprime(xk + s*pk, *args)
+        gc[0] += 1
+        return np.dot(gval[0], pk)
 
     derphi0 = np.dot(gfk, pk)
 
@@ -101,29 +85,7 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
             phi, derphi, old_fval, old_old_fval, derphi0,
             c1=c1, c2=c2, amax=amax, amin=amin, xtol=xtol)
 
-    if dfo and stp is not None:
-        # gval contains only the component of the gradient in
-        # the line search direction, so it must be recomputed
-        gc[0] += 1
-        gval[0] = fprime(xk + stp*pk, *args)
     return stp, fc[0], gc[0], fval, old_fval, gval[0]
-
-
-# Wrapper around derphi to handle the added input fs
-def _wrapper_func(derphi):
-    sig = inspect.signature(derphi)
-    def wrapped_func1(alpha, fs=None):
-        return derphi(alpha, fs=fs)
-    def wrapped_func2(alpha, fs=None):
-        # silently drop fs for backwards compatibility
-        return derphi(alpha)
-
-    sig = str(sig)[1:-1]
-    sig = sig.split(', ')
-    if len(sig) > 1 and 'fs' in sig[-1]:
-        return wrapped_func1
-    else:
-        return wrapped_func2
 
 
 def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
@@ -140,9 +102,6 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
         Function at point `alpha`
     derphi : callable phi'(alpha)
         Objective function derivative. Returns a scalar.
-        derphi also accepts an optional argument fs, the 
-        current function value phi(alpha), which can be
-        used to reduce computation.
     phi0 : float, optional
         Value of phi at 0
     old_phi0 : float, optional
@@ -172,12 +131,11 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     Uses routine DCSRCH from MINPACK.
 
     """
-    derphi = _wrapper_func(derphi)
 
     if phi0 is None:
         phi0 = phi(0.)
     if derphi0 is None:
-        derphi0 = derphi(0., fs=phi0)
+        derphi0 = derphi(0.)
 
     if old_phi0 is not None and derphi0 != 0:
         alpha1 = min(1.0, 1.01*2*(phi0 - old_phi0)/derphi0)
@@ -200,7 +158,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
         if task[:2] == b'FG':
             alpha1 = stp
             phi1 = phi(stp)
-            derphi1 = derphi(stp, fs=phi1)
+            derphi1 = derphi(stp)
         else:
             break
     else:
@@ -221,8 +179,8 @@ line_search = line_search_wolfe1
 #------------------------------------------------------------------------------
 
 def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
-                       old_old_fval=None, args=(), c1=1e-4, c2=0.9,
-                       amax=None, extra_condition=None, maxiter=10, dfo=False):
+                       old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=None,
+                       extra_condition=None, maxiter=10):
     """Find alpha that satisfies strong Wolfe conditions.
 
     Parameters
@@ -261,9 +219,6 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         satisfying the strong Wolfe conditions.
     maxiter : int, optional
         Maximum number of iterations to perform.
-    dfo : bool, optional
-        If True, estimate directional derivatives using finite
-        differencing instead of fprime.
 
     Returns
     -------
@@ -322,20 +277,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     fprime = myfprime
 
-    def derphi(s, *, fs=None):
-        gval_alpha[0] = s
-        if dfo:
-            if fs is not None:
-                fc[0] += 1
-            else:
-                fc[0] += 2
-            return approx_derivative(lambda t: f(xk + t*pk), s,
-                                     method='2-point', abs_step=_epsilon,
-                                     args=args, f0=fs)
-        else:
-            gval[0] = fprime(xk + s*pk, *args)
-            gc[0] += 1
-            return np.dot(gval[0], pk)
+    def derphi(alpha):
+        gc[0] += 1
+        gval[0] = fprime(xk + alpha * pk, *args)  # store for later use
+        gval_alpha[0] = alpha
+        return np.dot(gval[0], pk)
 
     if gfk is None:
         gfk = fprime(xk, *args)
@@ -363,11 +309,6 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         # calculated gradient used in computing it derphi = gfk*pk
         # this is the gradient at the next step no need to compute it
         # again in the outer loop.
-        if dfo:
-            # gval contains only the component of the gradient in the
-            # line search direction, so it must be recomputed
-            gc[0] += 1
-            gval[0] = fprime(xk + alpha_star*pk, *args)
         derphi_star = gval[0]
 
     return alpha_star, fc[0], gc[0], phi_star, old_fval, derphi_star
@@ -387,9 +328,6 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
         Objective scalar function.
     derphi : callable phi'(alpha)
         Objective function derivative. Returns a scalar.
-        derphi also accepts an optional argument fs, the 
-        current function value phi(alpha), which can be
-        used to reduce computation.
     phi0 : float, optional
         Value of phi at 0.
     old_phi0 : float, optional
@@ -432,13 +370,12 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     1999, pp. 59-61.
 
     """
-    derphi = _wrapper_func(derphi)
 
     if phi0 is None:
         phi0 = phi(0.)
 
     if derphi0 is None:
-        derphi0 = derphi(0., fs=phi0)
+        derphi0 = derphi(0.)
 
     alpha0 = 0
     if old_phi0 is not None and derphi0 != 0:
@@ -488,7 +425,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
                               phi0, derphi0, c1, c2, extra_condition)
             break
 
-        derphi_a1 = derphi(alpha1, fs=phi_a1)
+        derphi_a1 = derphi(alpha1)
         if (abs(derphi_a1) <= -c2*derphi0):
             if extra_condition(alpha1, phi_a1):
                 alpha_star = alpha1
@@ -637,7 +574,7 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
             a_hi = a_j
             phi_hi = phi_aj
         else:
-            derphi_aj = derphi(a_j, fs=phi_aj)
+            derphi_aj = derphi(a_j)
             if abs(derphi_aj) <= -c2*derphi0 and extra_condition(a_j, phi_aj):
                 a_star = a_j
                 val_star = phi_aj
