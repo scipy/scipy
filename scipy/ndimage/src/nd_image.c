@@ -988,9 +988,8 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
 }
 static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
 {
-    PyArrayObject *arr, *ndxArr, *minMaxArr;
+    PyArrayObject *arr, *ndxArr, *minMaxArr, *ignorevalArr;
     PyObject *t=NULL, *valObj=NULL, **ndxPtr=NULL, *ndxTuple, *valDict;
-    PyObject *ignorevalArr;
     int nullIsNone, valueIsNull=0, ndim, j, arrType, minMaxUnset=1;
     NI_Iterator ndiIter;
     char *arrData;
