@@ -6,10 +6,13 @@ from functools import partial
 
 import numpy as np
 
+from numpy.testing import assert_allclose
+
 from scipy import optimize
 from scipy import integrate
 from scipy.integrate._quadrature import _builtincoeffs
 from scipy import interpolate
+from scipy.interpolate import RectBivariateSpline
 import scipy.special as sc
 from scipy._lib._util import _lazywhere
 from .._distn_infrastructure import rv_continuous, _ShapeInfo
@@ -531,6 +534,11 @@ def _fitstart_S1(data):
         [0, 0.064, 0.128, 0.191, 0.330, 0.478, 1.362],
         [0, 0.056, 0.112, 0.167, 0.285, 0.428, 1.274]]
 
+    j = np.argsort(nu_alpha_range)
+    nu_alpha_range_r = np.asarray(nu_alpha_range)[j]
+    alpha_table_r = np.asarray(alpha_table)[j, :]
+    beta_table_r = np.asarray(beta_table)[j, :]
+
     # Table V and VII
     alpha_range = [2, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1,
                    1, 0.9, 0.8, 0.7, 0.6, 0.5]
@@ -575,34 +583,47 @@ def _fitstart_S1(data):
         [0, -0.061, -0.279, -0.659, -1.198]]
     # fmt: on
 
-    psi_1 = interpolate.interp2d(
+    j = np.argsort(alpha_range)
+    alpha_range_r = np.asarray(alpha_range)[j]
+    nu_c_table_r = np.asarray(nu_c_table)[j, :]
+    nu_zeta_table_r = np.asarray(nu_zeta_table)[j, :]
+
+    psi_1_i = interpolate.interp2d(
         nu_beta_range, nu_alpha_range, alpha_table, kind="linear"
     )
+    psi_1 = RectBivariateSpline(nu_beta_range, nu_alpha_range_r, alpha_table_r.T, kx=1, ky=1, s=0)
 
     def psi_1_1(nu_beta, nu_alpha):
+        assert_allclose(psi_1(nu_beta, nu_alpha), psi_1_i(nu_beta, nu_alpha), atol=1e-15)
         return psi_1(nu_beta, nu_alpha) \
             if nu_beta > 0 else psi_1(-nu_beta, nu_alpha)
 
-    psi_2 = interpolate.interp2d(
+    psi_2_i = interpolate.interp2d(
         nu_beta_range, nu_alpha_range, beta_table, kind="linear"
     )
+    psi_2 = RectBivariateSpline(nu_beta_range, nu_alpha_range_r, beta_table_r.T, kx=1, ky=1, s=0)
 
     def psi_2_1(nu_beta, nu_alpha):
+        assert_allclose(psi_2(nu_beta, nu_alpha), psi_2_i(nu_beta, nu_alpha), atol=1e-15)
         return psi_2(nu_beta, nu_alpha) \
             if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
 
-    phi_3 = interpolate.interp2d(
+    phi_3_i = interpolate.interp2d(
         beta_range, alpha_range, nu_c_table, kind="linear"
     )
+    phi_3 = RectBivariateSpline(beta_range, alpha_range_r, nu_c_table_r.T, kx=1, ky=1, s=0)
 
     def phi_3_1(beta, alpha):
+        assert_allclose(phi_3(beta, alpha)[0], phi_3_i(beta, alpha), atol=1e-15)
         return phi_3(beta, alpha) if beta > 0 else phi_3(-beta, alpha)
 
-    phi_5 = interpolate.interp2d(
+    phi_5_i = interpolate.interp2d(
         beta_range, alpha_range, nu_zeta_table, kind="linear"
     )
+    phi_5 = RectBivariateSpline(beta_range, alpha_range_r, nu_zeta_table_r.T, kx=1, ky=1, s=0)
 
     def phi_5_1(beta, alpha):
+        assert_allclose(phi_5(beta, alpha)[0], phi_5_i(beta, alpha), atol=1e-15)
         return phi_5(beta, alpha) if beta > 0 else -phi_5(-beta, alpha)
 
     # quantiles
@@ -616,13 +637,13 @@ def _fitstart_S1(data):
     nu_beta = (p95 + p05 - 2 * p50) / (p95 - p05)
 
     if nu_alpha >= 2.439:
-        alpha = np.clip(psi_1_1(nu_beta, nu_alpha)[0], np.finfo(float).eps, 2.)
-        beta = np.clip(psi_2_1(nu_beta, nu_alpha)[0], -1.0, 1.0)
+        alpha = np.clip(psi_1_1(nu_beta, nu_alpha)[0, 0], np.finfo(float).eps, 2.)
+        beta = np.clip(psi_2_1(nu_beta, nu_alpha)[0, 0], -1.0, 1.0)
     else:
         alpha = 2.0
         beta = np.sign(nu_beta)
-    c = (p75 - p25) / phi_3_1(beta, alpha)[0]
-    zeta = p50 + c * phi_5_1(beta, alpha)[0]
+    c = (p75 - p25) / phi_3_1(beta, alpha)[0, 0]
+    zeta = p50 + c * phi_5_1(beta, alpha)[0, 0]
     delta = zeta-beta*c*np.tan(np.pi*alpha/2.) if alpha != 1. else zeta
 
     return (alpha, beta, delta, c)
