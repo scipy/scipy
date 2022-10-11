@@ -50,6 +50,13 @@ m_dep = cc.find_library('m', required : false)
 if m_dep.found()
   add_project_link_arguments('-lm', language : 'c')
 endif
+if host_machine.system() == 'os400'
+  add_global_arguments('-pthread', language : 'cpp')
+  add_global_arguments('-D__STDC_FORMAT_MACROS', language : 'cpp')
+  add_project_link_arguments('-Wl,-bnotextro', language : 'c')
+  add_project_link_arguments('-Wl,-bnotextro', language : 'cpp')
+  add_project_link_arguments('-Wl,-bnotextro', language : 'fortran')
+endif
 
 # Adding at project level causes many spurious -lgfortran flags.
 add_languages('fortran', native: false)
