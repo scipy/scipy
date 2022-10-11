@@ -552,6 +552,13 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
     axis : int or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': treats nan as it would treat any other value
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
     keepdims : bool, optional
         If set to ``False``, the `axis` over which the statistic is taken
         is consumed (eliminated from the output array) like other reduction
@@ -567,14 +574,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
             value of `keepdims` will become ``False``, the `axis` over which
             the statistic is taken will be eliminated, and the value ``None``
             will no longer be accepted.
-
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-          * 'propagate': treats nan as it would treat any other value
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        .. versionadded:: 1.9.0
 
     Returns
     -------
