@@ -74,7 +74,7 @@ def max_len_seq(nbits, state=None, length=None, taps=None):
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from np.fft import fft, ifft, fftshift, fftfreq
+    >>> from numpy.fft import fft, ifft, fftshift, fftfreq
     >>> seq = max_len_seq(6)[0]*2-1  # +1 and -1
     >>> spec = fft(seq)
     >>> N = len(seq)
