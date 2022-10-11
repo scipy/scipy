@@ -307,7 +307,7 @@ def find_objects(input, max_label=0):
     return _nd_image.find_objects(input, max_label)
 
 
-def value_indices(arr, *, nullval=None):
+def value_indices(arr, *, ignore_value=None):
     """
     Find indices of each distinct value in given array.
 
@@ -315,9 +315,10 @@ def value_indices(arr, *, nullval=None):
     ----------
     arr : ndarray of ints
         Array containing integer values.
-    nullval : int, optional
-        This value will be ignored in searching the arr array. If not
-        given, all values found will be included in output.
+    ignore_value : int, optional
+        This value will be ignored in searching the `arr` array. If not
+        given, all values found will be included in output. Default
+        is None.
 
     Returns
     -------
@@ -332,30 +333,37 @@ def value_indices(arr, *, nullval=None):
 
     Notes
     -----
-        For a small array with few distinct values, one might use
-        numpy.unique() to find all possible values, and (arr == val) to
-        locate each value within that array. However, for large arrays,
-        with many distinct values, this can become extremely inefficient,
-        as locating each value would require a new search through the entire
-        array. Using this function, there is essentially one search, with
-        the indices saved for all distinct values.
+    For a small array with few distinct values, one might use
+    `numpy.unique()` to find all possible values, and ``(arr == val)`` to
+    locate each value within that array. However, for large arrays,
+    with many distinct values, this can become extremely inefficient,
+    as locating each value would require a new search through the entire
+    array. Using this function, there is essentially one search, with
+    the indices saved for all distinct values.
 
-        This is useful when matching a categorical image (e.g. a segmentation
-        or classification) to an associated image of other data, allowing
-        any per-class statistic(s) to then be calculated. Provides a
-        more flexible alternative to ndimage functions like mean()
-        and variance().
+    This is useful when matching a categorical image (e.g. a segmentation
+    or classification) to an associated image of other data, allowing
+    any per-class statistic(s) to then be calculated. Provides a
+    more flexible alternative to functions like ``scipy.ndimage.mean()``
+    and ``scipy.ndimage.variance()``.
 
-        Note for IDL users: this provides functionality equivalent to IDL's
-        REVERSE_INDICES option.
+    Note for IDL users: this provides functionality equivalent to IDL's
+    REVERSE_INDICES option (as per the IDL documentation for the
+    `HISTOGRAM <https://www.l3harrisgeospatial.com/docs/histogram.html>`_
+    function).
 
-        .. versionadded:: 1.10.0
+    .. versionadded:: 1.10.0
+
+    See Also
+    --------
+    label, maximum, median, minimum_position, extrema, sum, mean, variance,
+    standard_deviation, numpy.where, numpy.unique
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import ndimage
-    >>> import numpy
-    >>> a = numpy.zeros((6, 6), dtype=int)
+    >>> a = np.zeros((6, 6), dtype=int)
     >>> a[2:4, 2:4] = 1
     >>> a[4, 4] = 1
     >>> a[:2, :3] = 2
@@ -368,27 +376,43 @@ def value_indices(arr, *, nullval=None):
            [0, 0, 0, 0, 1, 0],
            [0, 0, 0, 0, 0, 0]])
     >>> val_indices = ndimage.value_indices(a)
+
+    The dictionary `val_indices` will have an entry for each distinct
+    value in the input array.
+
     >>> val_indices.keys()
     dict_keys([0, 1, 2, 3])
-    >>> val_indices[1]
+
+    The entry for each value is an index tuple, locating the elements
+    with that value.
+
+    >>> ndx1 = val_indices[1]
+    >>> ndx1
     (array([2, 2, 3, 3, 4]), array([2, 3, 2, 3, 4]))
-    >>> a[val_indices[1]]
+
+    This can be used to index into the original array, or any other
+    array with the same shape.
+
+    >>> a[ndx1]
     array([1, 1, 1, 1, 1])
 
-    >>> val_indices = ndimage.value_indices(a, nullval=0)
+    If the zeros were to be ignored, then the resulting dictionary
+    would no longer have an entry for zero.
+
+    >>> val_indices = ndimage.value_indices(a, ignore_value=0)
     >>> val_indices.keys()
     dict_keys([1, 2, 3])
 
     """
-    # Cope with nullval being None, without too much extra complexity
+    # Cope with ignore_value being None, without too much extra complexity
     # in the C code. If not None, the value is passed in as a numpy array
     # with the same dtype as arr.
-    nullval_arr = numpy.zeros((1,), dtype=arr.dtype)
-    nullIsNone = (nullval is None)
-    if not nullIsNone:
-        nullval_arr[0] = nullval_arr.dtype.type(nullval)
+    ignore_value_arr = numpy.zeros((1,), dtype=arr.dtype)
+    ignoreIsNone = (ignore_value is None)
+    if not ignoreIsNone:
+        ignore_value_arr[0] = ignore_value_arr.dtype.type(ignore_value)
 
-    val_indices = _nd_image.value_indices(arr, nullIsNone, nullval_arr)
+    val_indices = _nd_image.value_indices(arr, ignoreIsNone, ignore_value_arr)
     return val_indices
 
 

@@ -945,10 +945,10 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
 */
 #define VALUEINDICES_MINVAL(valType) (*((valType *)PyArray_GETPTR1(minMaxArr, 0)))
 #define VALUEINDICES_MAXVAL(valType) (*((valType *)PyArray_GETPTR1(minMaxArr, 1)))
-#define VALUEINDICES_NULLVAL(valType) (*((valType *)PyArray_GETPTR1(nullvalArr, 0)))
+#define VALUEINDICES_IGNOREVAL(valType) (*((valType *)PyArray_GETPTR1(ignorevalArr, 0)))
 #define CASE_VALUEINDICES_SET_MINMAX(valType) {\
     valType val = *((valType*)arrData); \
-    if (nullIsNone || (val != VALUEINDICES_NULLVAL(valType))) {\
+    if (nullIsNone || (val != VALUEINDICES_IGNOREVAL(valType))) {\
         if (minMaxUnset) { \
             VALUEINDICES_MINVAL(valType) = val;  \
             VALUEINDICES_MAXVAL(valType) = val; \
@@ -967,7 +967,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
         arrData = (char *)PyArray_DATA(arr); \
         for (iterIndex=0; iterIndex<arrSize; iterIndex++) { \
             valType val = *((valType*)arrData); \
-            if (nullIsNone || (val != VALUEINDICES_NULLVAL(valType))) { \
+            if (nullIsNone || (val != VALUEINDICES_IGNOREVAL(valType))) { \
                 ii = val - VALUEINDICES_MINVAL(valType); \
                 hist[ii] += 1; \
             } \
@@ -980,7 +980,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
 #define CASE_VALUEINDICES_GET_VALUEOFFSET(valType) { \
     valType val = *((valType*)arrData); \
     ii = val - VALUEINDICES_MINVAL(valType); \
-    valueIsNull = (val == VALUEINDICES_NULLVAL(valType)); \
+    valueIsNull = (val == VALUEINDICES_IGNOREVAL(valType)); \
 }
 #define CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(valType, ii) { \
     valType val = ii + VALUEINDICES_MINVAL(valType); \
@@ -990,7 +990,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
 {
     PyArrayObject *arr, *ndxArr, *minMaxArr;
     PyObject *t=NULL, *valObj=NULL, **ndxPtr=NULL, *ndxTuple, *valDict;
-    PyObject *nullvalArr;
+    PyObject *ignorevalArr;
     int nullIsNone, valueIsNull=0, ndim, j, arrType, minMaxUnset=1;
     NI_Iterator ndiIter;
     char *arrData;
@@ -999,7 +999,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
 
     /* Get arguments passed in */
     if (!PyArg_ParseTuple(args, "O!iO!", &PyArray_Type, &arr, &nullIsNone,
-            &PyArray_Type, &nullvalArr))
+            &PyArray_Type, &ignorevalArr))
         return NULL;
 
     arrSize = PyArray_SIZE(arr);
