@@ -2296,6 +2296,11 @@ class TestLinprogHiGHSMIP():
         np.testing.assert_allclose(res.x, [0, 6, 0])
         np.testing.assert_allclose(res.fun, -12)
 
+        # gh-16897: these fields were not present, ensure that they are now
+        assert res.get("mip_node_count", None) is not None
+        assert res.get("mip_dual_bound", None) is not None
+        assert res.get("mip_gap", None) is not None
+
     @pytest.mark.slow
     @pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
     def test_mip6(self):
@@ -2316,8 +2321,7 @@ class TestLinprogHiGHSMIP():
 
         np.testing.assert_allclose(res.fun, 1854)
 
-    @pytest.mark.slow
-    @pytest.mark.timeout(600)
+    @pytest.mark.xslow
     def test_mip_rel_gap_passdown(self):
         # MIP taken from test_mip6, solved with different values of mip_rel_gap
         # solve a larger MIP with only equality constraints
@@ -2354,27 +2358,6 @@ class TestLinprogHiGHSMIP():
         gap_diffs = np.diff(np.flip(sol_mip_gaps))
         assert np.all(gap_diffs >= 0)
         assert not np.all(gap_diffs == 0)
-
-    def test_mip_additional_info_in_result(self):
-        # MIP taken from test_mip5, just check that mip_node_count and
-        # mip_dual_bound fields in result objectare populated.
-        # solve MIP with inequality and inequality constraints
-        # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
-        A_ub = np.array([[1, 1, 1]])
-        b_ub = np.array([7])
-        A_eq = np.array([[4, 2, 1]])
-        b_eq = np.array([12])
-        c = np.array([-3, -2, -1])
-
-        bounds = [(0, np.inf), (0, np.inf), (0, 1)]
-        integrality = [0, 1, 0]
-
-        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-                      bounds=bounds, method=self.method,
-                      integrality=integrality)
- 
-        assert res.get("mip_node_count", None) is not None
-        assert res.get("mip_dual_bound", None) is not None
 
 
 ###########################
