@@ -193,6 +193,7 @@ def kaiserord(ripple, width):
     the gain varies no more than 0.5%, and in the band [187, 500], the
     signal is attenuated by at least 65 dB.
 
+    >>> import numpy as np
     >>> from scipy.signal import kaiserord, firwin, freqz
     >>> import matplotlib.pyplot as plt
     >>> fs = 1000.0
@@ -959,6 +960,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     frequency ranges between our stop bands and pass bands is unspecified,
     and thus may overshoot depending on the parameters of our filter:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> fig, axs = plt.subplots(2)
@@ -1181,6 +1183,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     --------
     Create an optimal linear-phase filter, then convert it to minimum phase:
 
+    >>> import numpy as np
     >>> from scipy.signal import remez, minimum_phase, freqz, group_delay
     >>> import matplotlib.pyplot as plt
     >>> freq = [0, 0.2, 0.3, 1.0]
