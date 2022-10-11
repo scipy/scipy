@@ -143,7 +143,7 @@ class IterativeParams:
 
         # Non-symmetric and Positive Definite
         #
-        # cgs, qmr, and bicg fail to converge on this one
+        # cgs, qmr, bicg and tfqmr fail to converge on this one
         #   -- algorithmic limitation apparently
         data = ones((2,10))
         data[0,:] = 2
@@ -154,7 +154,7 @@ class IterativeParams:
         self.cases.append(Case("nonsymposdef", A.astype('F'),
                                skip=sym_solvers+[cgs, qmr, bicg, tfqmr]))
 
-        # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr breakdown
+        # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr/tfqmr breakdown
         A = np.array([[0, 0, 0, 0, 0, 1, -1, -0, -0, -0, -0],
                       [0, 0, 0, 0, 0, 2, -0, -1, -0, -0, -0],
                       [0, 0, 0, 0, 0, 2, -0, -0, -1, -0, -0],
@@ -195,13 +195,13 @@ def check_maxiter(solver, case):
 
 
 def test_maxiter():
-    case = params.Poisson1D
-    for solver in params.solvers:
-        if solver in case.skip:
-            continue
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
-            check_maxiter(solver, case)
+    for case in params.cases:
+        for solver in params.solvers:
+            if solver in case.skip + case.nonconvergence:
+                continue
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning, ".*called without specifying.*")
+                check_maxiter(solver, case)
 
 
 def assert_normclose(a, b, tol=1e-8):
@@ -253,7 +253,11 @@ def check_precond_dummy(solver, case):
     A = case.A
 
     M,N = A.shape
-    spdiags([1.0/A.diagonal()], [0], M, N)
+    # Ensure the diagonal elements of A are non-zero before calculating
+    # 1.0/A.diagonal()
+    diagOfA = A.diagonal()
+    if np.count_nonzero(diagOfA) == len(diagOfA):
+        spdiags([1.0/diagOfA], [0], M, N)
 
     b = case.b
     x0 = 0*b
@@ -277,13 +281,13 @@ def check_precond_dummy(solver, case):
 
 
 def test_precond_dummy():
-    case = params.Poisson1D
-    for solver in params.solvers:
-        if solver in case.skip:
-            continue
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
-            check_precond_dummy(solver, case)
+    for case in params.cases:
+        for solver in params.solvers:
+            if solver in case.skip + case.nonconvergence:
+                continue
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning, ".*called without specifying.*")
+                check_precond_dummy(solver, case)
 
 
 def check_precond_inverse(solver, case):
@@ -330,8 +334,8 @@ def check_precond_inverse(solver, case):
     assert_(matvec_count[0] <= 3, repr(matvec_count))
 
 
-def test_precond_inverse():
-    case = params.Poisson1D
+@pytest.mark.parametrize("case", [params.Poisson1D, params.Poisson2D])
+def test_precond_inverse(case):
     for solver in params.solvers:
         if solver in case.skip:
             continue
@@ -342,22 +346,9 @@ def test_precond_inverse():
             check_precond_inverse(solver, case)
 
 
-def test_gmres_basic():
-    A = np.vander(np.arange(10) + 1)[:, ::-1]
-    b = np.zeros(10)
-    b[0] = 1
-    np.linalg.solve(A, b)
-
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, ".*called without specifying.*")
-        x_gm, err = gmres(A, b, restart=5, maxiter=1)
-
-    assert_allclose(x_gm[0], 0.359, rtol=1e-2)
-
-
 def test_reentrancy():
     non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
-    reentrant = [lgmres, minres, gcrotmk]
+    reentrant = [lgmres, minres, gcrotmk, tfqmr]
     for solver in reentrant + non_reentrant:
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
@@ -539,6 +530,27 @@ def test_x0_equals_Mb(solver):
             assert_normclose(A.dot(x), b, tol=tol)
 
 
+@pytest.mark.parametrize(('solver', 'solverstring'), [(tfqmr, 'TFQMR')])
+def test_show(solver, solverstring, capsys):
+    def cb(x):
+        count[0] += 1
+
+    for i in [0, 20]:
+        case = params.cases[i]
+        A = case.A
+        b = case.b
+        count = [0]
+        x, info = solver(A, b, callback=cb, show=True)
+        out, err = capsys.readouterr()
+        if i == 20:  # Asymmetric and Positive Definite
+            assert_equal(out, f"{solverstring}: Linear solve not converged "
+                              f"due to reach MAXIT iterations {count[0]}\n")
+        else:  # 1-D Poisson equations
+            assert_equal(out, f"{solverstring}: Linear solve converged due to "
+                              f"reach TOL iterations {count[0]}\n")
+        assert_equal(err, '')
+
+
 #------------------------------------------------------------------------------
 
 class TestQMR:
@@ -558,7 +570,8 @@ class TestQMR:
         U = spdiags([4*dat, -dat], [0,1], n, n)
 
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "splu requires CSC matrix format")
+            sup.filter(SparseEfficiencyWarning,
+                       "splu converted its input to CSC format")
             L_solver = splu(L)
             U_solver = splu(U)
 
@@ -586,6 +599,17 @@ class TestQMR:
 
 
 class TestGMRES:
+    def test_basic(self):
+        A = np.vander(np.arange(10) + 1)[:, ::-1]
+        b = np.zeros(10)
+        b[0] = 1
+
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x_gm, err = gmres(A, b, restart=5, maxiter=1)
+
+        assert_allclose(x_gm[0], 0.359, rtol=1e-2)
+
     def test_callback(self):
 
         def store_residual(r, rvec):
@@ -757,3 +781,10 @@ class TestGMRES:
         assert info == 20
         assert count[0] == 21
         x_cb(x)
+
+    def test_restrt_dep(self):
+        with pytest.warns(
+            DeprecationWarning,
+            match="'gmres' keyword argument 'restrt'"
+        ):
+            gmres(np.array([1]), np.array([1]), restrt=10)

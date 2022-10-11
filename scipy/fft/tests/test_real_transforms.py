@@ -47,7 +47,7 @@ def test_identity_1d(forward, backward, type, n, axis, norm, orthogonalize):
 def test_identity_1d_overwrite(forward, backward, type, dtype, axis, norm,
                                overwrite_x):
     # Test the identity f^-1(f(x)) == x
-    x = np.random.rand(7, 8)
+    x = np.random.rand(7, 8).astype(dtype)
     x_orig = x.copy()
 
     y = forward(x, type, axis=axis, norm=norm, overwrite_x=overwrite_x)

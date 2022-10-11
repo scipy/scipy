@@ -1,7 +1,6 @@
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
            'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
 
-import warnings
 
 import numpy as np
 
@@ -78,8 +77,6 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
        returned.  Values of ``y[m-1]`` and ``w[m-1]`` are not used.
     quiet : int, optional
          Non-zero to suppress messages.
-         This parameter is deprecated; use standard Python warning filters
-         instead.
 
     Returns
     -------
@@ -110,7 +107,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     See `splev` for evaluation of the spline and its derivatives.
     The number of dimensions N must be smaller than 11.
 
-    The number of coefficients in the `c` array is ``k+1`` less then the number
+    The number of coefficients in the `c` array is ``k+1`` less than the number
     of knots, ``len(t)``. This is in contrast with `splrep`, which zero-pads
     the array of coefficients to have the same length as the array of knots.
     These additional coefficients are ignored by evaluation routines, `splev`
@@ -131,6 +128,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     --------
     Generate a discretization of a limacon curve in the polar coordinates:
 
+    >>> import numpy as np
     >>> phi = np.linspace(0, 2.*np.pi, 40)
     >>> r = 0.5 + np.cos(phi)         # polar coords
     >>> x, y = r * np.cos(phi), r * np.sin(phi)    # convert to cartesian
@@ -214,8 +212,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         y[m-1] and w[m-1] are not used.
     quiet : bool, optional
         Non-zero to suppress messages.
-        This parameter is deprecated; use standard Python warning filters
-        instead.
 
     Returns
     -------
@@ -277,6 +273,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     Further examples are given in
     :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import splev, splrep
     >>> x = np.linspace(0, 10, 10)
@@ -359,8 +356,8 @@ def splev(x, tck, der=0, ext=0):
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
             mesg = ("Calling splev() with BSpline objects with c.ndim > 1 is "
-                   "not recommended. Use BSpline.__call__(x) instead.")
-            warnings.warn(mesg, DeprecationWarning)
+                    "not allowed. Use BSpline.__call__(x) instead.")
+            raise ValueError(mesg)
 
         # remap the out-of-bounds behavior
         try:
@@ -427,8 +424,8 @@ def splint(a, b, tck, full_output=0):
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
             mesg = ("Calling splint() with BSpline objects with c.ndim > 1 is "
-                   "not recommended. Use BSpline.integrate() instead.")
-            warnings.warn(mesg, DeprecationWarning)
+                    "not allowed. Use BSpline.integrate() instead.")
+            raise ValueError(mesg)
 
         if full_output != 0:
             mesg = ("full_output = %s is not supported. Proceeding as if "
@@ -467,7 +464,7 @@ def sproot(tck, mest=10):
     Manipulating the tck-tuples directly is not recommended. In new code,
     prefer using the `BSpline` objects.
 
-    See also
+    See Also
     --------
     splprep, splrep, splint, spalde, splev
     bisplrep, bisplev
@@ -485,14 +482,39 @@ def sproot(tck, mest=10):
 
     Examples
     --------
-    Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
+
+    For some data, this method may miss a root. This happens when one of
+    the spline knots (which FITPACK places automatically) happens to
+    coincide with the true root. A workaround is to convert to `PPoly`,
+    which uses a different root-finding algorithm.
+
+    For example,
+
+    >>> x = [1.96, 1.97, 1.98, 1.99, 2.00, 2.01, 2.02, 2.03, 2.04, 2.05]
+    >>> y = [-6.365470e-03, -4.790580e-03, -3.204320e-03, -1.607270e-03,
+    ...      4.440892e-16,  1.616930e-03,  3.243000e-03,  4.877670e-03,
+    ...      6.520430e-03,  8.170770e-03]
+    >>> from scipy.interpolate import splrep, sproot, PPoly
+    >>> tck = splrep(x, y, s=0)
+    >>> sproot(tck)
+    array([], dtype=float64)
+
+    Converting to a PPoly object does find the roots at `x=2`:
+
+    >>> ppoly = PPoly.from_spline(tck)
+    >>> ppoly.roots(extrapolate=False)
+    array([2.])
+
+
+    Further examples are given :ref:`in the tutorial
+    <tutorial-interpolate_splXXX>`.
 
     """
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
             mesg = ("Calling sproot() with BSpline objects with c.ndim > 1 is "
-                    "not recommended.")
-            warnings.warn(mesg, DeprecationWarning)
+                    "not allowed.")
+            raise ValueError(mesg)
 
         t, c, k = tck.tck
 
@@ -605,6 +627,7 @@ def insert(x, tck, m=1, per=0):
     You can insert knots into a B-spline.
 
     >>> from scipy.interpolate import splrep, insert
+    >>> import numpy as np
     >>> x = np.linspace(0, 10, 5)
     >>> y = np.sin(x)
     >>> tck = splrep(x, y)
@@ -676,6 +699,7 @@ def splder(tck, n=1):
     This can be used for finding maxima of a curve:
 
     >>> from scipy.interpolate import splrep, splder, sproot
+    >>> import numpy as np
     >>> x = np.linspace(0, 10, 70)
     >>> y = np.sin(x)
     >>> spl = splrep(x, y, k=4)
@@ -733,6 +757,7 @@ def splantider(tck, n=1):
     Examples
     --------
     >>> from scipy.interpolate import splrep, splder, splantider, splev
+    >>> import numpy as np
     >>> x = np.linspace(0, np.pi/2, 70)
     >>> y = 1 / np.sqrt(1 - 0.8*np.sin(x)**2)
     >>> spl = splrep(x, y)

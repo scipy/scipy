@@ -25,7 +25,7 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
 
     Parameters
     ----------
-    a : (M, M) array_like
+    a : (M, N) array_like
         Matrix to decompose
     overwrite_a : bool, optional
         Whether to overwrite data in A (may increase performance)
@@ -36,23 +36,27 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
 
     Returns
     -------
-    lu : (N, N) ndarray
+    lu : (M, N) ndarray
         Matrix containing U in its upper triangle, and L in its lower triangle.
         The unit diagonal elements of L are not stored.
     piv : (N,) ndarray
         Pivot indices representing the permutation matrix P:
         row i of matrix was interchanged with row piv[i].
 
-    See also
+    See Also
     --------
+    lu : gives lu factorization in more user-friendly format
     lu_solve : solve an equation system using the LU factorization of a matrix
 
     Notes
     -----
-    This is a wrapper to the ``*GETRF`` routines from LAPACK.
+    This is a wrapper to the ``*GETRF`` routines from LAPACK. Unlike
+    :func:`lu`, it outputs the L and U factors into a single array
+    and returns pivot indices instead of a permutation matrix.
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import lu_factor
     >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
     >>> lu, piv = lu_factor(A)
@@ -70,8 +74,6 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
         a1 = asarray_chkfinite(a)
     else:
         a1 = asarray(a)
-    if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
-        raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     getrf, = get_lapack_funcs(('getrf',), (a1,))
     lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
@@ -115,12 +117,13 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
     x : array
         Solution to the system
 
-    See also
+    See Also
     --------
     lu_factor : LU factorize a matrix
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import lu_factor, lu_solve
     >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
     >>> b = np.array([1, 1, 1, 1])
@@ -198,6 +201,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import lu
     >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
     >>> p, l, u = lu(A)

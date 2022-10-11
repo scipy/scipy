@@ -23,11 +23,11 @@ __all__ = ['directed_hausdorff']
 def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
 
     cdef double cmax, cmin, d = 0
-    cdef int N1 = ar1.shape[0]
-    cdef int N2 = ar2.shape[0]
+    cdef Py_ssize_t N1 = ar1.shape[0]
+    cdef Py_ssize_t N2 = ar2.shape[0]
     cdef int data_dims = ar1.shape[1]
-    cdef int i, j, k
-    cdef unsigned int i_store = 0, j_store = 0, i_ret = 0, j_ret = 0
+    cdef Py_ssize_t i, j, k
+    cdef Py_ssize_t i_store = 0, j_store = 0, i_ret = 0, j_ret = 0
     cdef np.ndarray[np.int64_t, ndim=1, mode='c'] resort1, resort2
 
     # shuffling the points in each array generally increases the likelihood of
@@ -58,8 +58,13 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
                 i_store = i
                 j_store = j
 
-        # always true on first iteration of for-j loop, after that only
-        # if d >= cmax
+        # Note: The reference paper by A. A. Taha and A. Hanbury has this line
+        # (Algorithm 2, line 16) as:
+        #
+        # if cmin > cmax:
+        #
+        # That logic is incorrect, as cmin could still be np.inf if breaking early.
+        # The logic here accounts for that case.
         if cmin >= cmax and d >= cmax:
             cmax = cmin
             i_ret = i_store

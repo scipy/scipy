@@ -36,6 +36,7 @@ from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
+from scipy.special import mathieu_odd_coef, mathieu_even_coef
 
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
@@ -1317,15 +1318,46 @@ class TestCombinatorics:
         assert_equal(special.comb(ii, ii-1, exact=True), ii)
 
         expected = 100891344545564193334812497256
-        assert_equal(special.comb(100, 50, exact=True), expected)
+        assert special.comb(100, 50, exact=True) == expected
+
+    @pytest.mark.parametrize("repetition", [True, False])
+    @pytest.mark.parametrize("legacy", [True, False])
+    @pytest.mark.parametrize("k", [3.5, 3])
+    @pytest.mark.parametrize("N", [4.5, 4])
+    def test_comb_legacy(self, N, k, legacy, repetition):
+        # test is only relevant for exact=True
+        if legacy and (N != int(N) or k != int(k)):
+            with pytest.warns(
+                DeprecationWarning,
+                match=r"Non-integer arguments are currently being cast to",
+            ):
+                result = special.comb(N, k, exact=True, legacy=legacy,
+                                      repetition=repetition)
+        else:
+            result = special.comb(N, k, exact=True, legacy=legacy,
+                                  repetition=repetition)
+        if legacy:
+            # for exact=True and legacy=True, cast input arguments, else don't
+            if repetition:
+                # the casting in legacy mode happens AFTER transforming N & k,
+                # so rounding can change (e.g. both floats, but sum to int);
+                # hence we need to emulate the repetition-transformation here
+                N, k = int(N + k - 1), int(k)
+                repetition = False
+            else:
+                N, k = int(N), int(k)
+        # expected result is the same as with exact=False
+        expected = special.comb(N, k, legacy=legacy, repetition=repetition)
+        assert_equal(result, expected)
 
     def test_comb_with_np_int64(self):
         n = 70
         k = 30
         np_n = np.int64(n)
         np_k = np.int64(k)
-        assert_equal(special.comb(np_n, np_k, exact=True),
-                     special.comb(n, k, exact=True))
+        res_np = special.comb(np_n, np_k, exact=True)
+        res_py = special.comb(n, k, exact=True)
+        assert res_np == res_py
 
     def test_comb_zeros(self):
         assert_equal(special.comb(2, 3, exact=True), 0)
@@ -3600,3 +3632,25 @@ def test_pseudo_huber():
     z = np.array(np.random.randn(10, 2).tolist() + [[0, 0.5], [0.5, 0]])
     w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
     assert_func_equal(special.pseudo_huber, w, z, rtol=1e-13, atol=1e-13)
+
+
+def test_pseudo_huber_small_r():
+    delta = 1.0
+    r = 1e-18
+    y = special.pseudo_huber(delta, r)
+    # expected computed with mpmath:
+    #     import mpmath
+    #     mpmath.mp.dps = 200
+    #     r = mpmath.mpf(1e-18)
+    #     expected = float(mpmath.sqrt(1 + r**2) - 1)
+    expected = 5.0000000000000005e-37
+    assert_allclose(y, expected, rtol=1e-13)
+
+
+def test_runtime_warning():
+    with pytest.warns(RuntimeWarning,
+                      match=r'Too many predicted coefficients'):
+        mathieu_odd_coef(1000, 1000)
+    with pytest.warns(RuntimeWarning,
+                      match=r'Too many predicted coefficients'):
+        mathieu_even_coef(1000, 1000)

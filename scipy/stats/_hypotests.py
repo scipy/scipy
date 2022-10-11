@@ -1,5 +1,6 @@
 from collections import namedtuple
 from dataclasses import make_dataclass
+from math import comb
 import numpy as np
 import warnings
 from itertools import combinations
@@ -9,12 +10,16 @@ from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
-from . import _wilcoxon_data
-from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
+from scipy.fft import ifft
+from ._stats_pythran import _a_ij_Aij_Dij2
+from ._stats_pythran import (
+    _concordant_pairs as _P, _discordant_pairs as _Q
+)
+from scipy.stats import _stats_py
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
-           'tukey_hsd']
+           'tukey_hsd', 'poisson_means_test']
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -141,6 +146,211 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     return Epps_Singleton_2sampResult(w, p)
 
 
+def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
+    r"""
+    Performs the Poisson means test, AKA the "E-test".
+
+    This is a test of the null hypothesis that the difference between means of
+    two Poisson distributions is `diff`. The samples are provided as the
+    number of events `k1` and `k2` observed within measurement intervals
+    (e.g. of time, space, number of observations) of sizes `n1` and `n2`.
+
+    Parameters
+    ----------
+    k1 : int
+        Number of events observed from distribution 1.
+    n1: float
+        Size of sample from distribution 1.
+    k2 : int
+        Number of events observed from distribution 2.
+    n2 : float
+        Size of sample from distribution 2.
+    diff : float, default=0
+        The hypothesized difference in means between the distributions
+        underlying the samples.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided': the difference between distribution means is not
+            equal to `diff`
+          * 'less': the difference between distribution means is less than
+            `diff`
+          * 'greater': the difference between distribution means is greater
+            than `diff`
+
+    Returns
+    -------
+    statistic : float
+        The test statistic (see [1]_ equation 3.3).
+    pvalue : float
+        The probability of achieving such an extreme value of the test
+        statistic under the null hypothesis.
+
+    Notes
+    -----
+
+    Let:
+
+    .. math:: X_1 \sim \mbox{Poisson}(\mathtt{n1}\lambda_1)
+
+    be a random variable independent of
+
+    .. math:: X_2  \sim \mbox{Poisson}(\mathtt{n2}\lambda_2)
+
+    and let ``k1`` and ``k2`` be the observed values of :math:`X_1`
+    and :math:`X_2`, respectively. Then `poisson_means_test` uses the number
+    of observed events ``k1`` and ``k2`` from samples of size ``n1`` and
+    ``n2``, respectively, to test the null hypothesis that
+
+    .. math::
+       H_0: \lambda_1 - \lambda_2 = \mathtt{diff}
+
+    A benefit of the E-test is that it has good power for small sample sizes,
+    which can reduce sampling costs [1]_. It has been evaluated and determined
+    to be more powerful than the comparable C-test, sometimes referred to as
+    the Poisson exact test.
+
+    References
+    ----------
+    .. [1]  Krishnamoorthy, K., & Thomson, J. (2004). A more powerful test for
+       comparing two Poisson means. Journal of Statistical Planning and
+       Inference, 119(1), 23-35.
+
+    .. [2]  Przyborowski, J., & Wilenski, H. (1940). Homogeneity of results in
+       testing samples from Poisson series: With an application to testing
+       clover seed for dodder. Biometrika, 31(3/4), 313-323.
+
+    Examples
+    --------
+
+    Suppose that a gardener wishes to test the number of dodder (weed) seeds
+    in a sack of clover seeds that they buy from a seed company. It has
+    previously been established that the number of dodder seeds in clover
+    follows the Poisson distribution.
+
+    A 100 gram sample is drawn from the sack before being shipped to the
+    gardener. The sample is analyzed, and it is found to contain no dodder
+    seeds; that is, `k1` is 0. However, upon arrival, the gardener draws
+    another 100 gram sample from the sack. This time, three dodder seeds are
+    found in the sample; that is, `k2` is 3. The gardener would like to
+    know if the difference is significant and not due to chance. The
+    null hypothesis is that the difference between the two samples is merely
+    due to chance, or that :math:`\lambda_1 - \lambda_2 = \mathtt{diff}`
+    where :math:`\mathtt{diff} = 0`. The alternative hypothesis is that the
+    difference is not due to chance, or :math:`\lambda_1 - \lambda_2 \ne 0`.
+    The gardener selects a significance level of 5% to reject the null
+    hypothesis in favor of the alternative [2]_.
+
+    >>> import scipy.stats as stats
+    >>> res = stats.poisson_means_test(0, 100, 3, 100)
+    >>> res.statistic, res.pvalue
+    (-1.7320508075688772, 0.08837900929018157)
+
+    The p-value is .088, indicating a near 9% chance of observing a value of
+    the test statistic under the null hypothesis. This exceeds 5%, so the
+    gardener does not reject the null hypothesis as the difference cannot be
+    regarded as significant at this level.
+    """
+
+    _poisson_means_test_iv(k1, n1, k2, n2, diff, alternative)
+
+    # "for a given k_1 and k_2, an estimate of \lambda_2 is given by" [1] (3.4)
+    lmbd_hat2 = ((k1 + k2) / (n1 + n2) - diff * n1 / (n1 + n2))
+
+    # "\hat{\lambda_{2k}} may be less than or equal to zero ... and in this
+    # case the null hypothesis cannot be rejected ... [and] it is not necessary
+    # to compute the p-value". [1] page 26 below eq. (3.6).
+    if lmbd_hat2 <= 0:
+        return _stats_py.SignificanceResult(0, 1)
+
+    # The unbiased variance estimate [1] (3.2)
+    var = k1 / (n1 ** 2) + k2 / (n2 ** 2)
+
+    # The _observed_ pivot statistic from the input. It follows the
+    # unnumbered equation following equation (3.3) This is used later in
+    # comparison with the computed pivot statistics in an indicator function.
+    t_k1k2 = (k1 / n1 - k2 / n2 - diff) / np.sqrt(var)
+
+    # Equation (3.5) of [1] is lengthy, so it is broken into several parts,
+    # beginning here. Note that the probability mass function of poisson is
+    # exp^(-\mu)*\mu^k/k!, so and this is called with shape \mu, here noted
+    # here as nlmbd_hat*. The strategy for evaluating the double summation in
+    # (3.5) is to create two arrays of the values of the two products inside
+    # the summation and then broadcast them together into a matrix, and then
+    # sum across the entire matrix.
+
+    # Compute constants (as seen in the first and second separated products in
+    # (3.5).). (This is the shape (\mu) parameter of the poisson distribution.)
+    nlmbd_hat1 = n1 * (lmbd_hat2 + diff)
+    nlmbd_hat2 = n2 * lmbd_hat2
+
+    # Determine summation bounds for tail ends of distribution rather than
+    # summing to infinity. `x1*` is for the outer sum and `x2*` is the inner
+    # sum.
+    x1_lb, x1_ub = distributions.poisson.ppf([1e-10, 1 - 1e-16], nlmbd_hat1)
+    x2_lb, x2_ub = distributions.poisson.ppf([1e-10, 1 - 1e-16], nlmbd_hat2)
+
+    # Construct arrays to function as the x_1 and x_2 counters on the summation
+    # in (3.5). `x1` is in columns and `x2` is in rows to allow for
+    # broadcasting.
+    x1 = np.arange(x1_lb, x1_ub + 1)
+    x2 = np.arange(x2_lb, x2_ub + 1)[:, None]
+
+    # These are the two products in equation (3.5) with `prob_x1` being the
+    # first (left side) and `prob_x2` being the second (right side). (To
+    # make as clear as possible: the 1st contains a "+ d" term, the 2nd does
+    # not.)
+    prob_x1 = distributions.poisson.pmf(x1, nlmbd_hat1)
+    prob_x2 = distributions.poisson.pmf(x2, nlmbd_hat2)
+
+    # compute constants for use in the "pivot statistic" per the
+    # unnumbered equation following (3.3).
+    lmbd_x1 = x1 / n1
+    lmbd_x2 = x2 / n2
+    lmbds_diff = lmbd_x1 - lmbd_x2 - diff
+    var_x1x2 = lmbd_x1 / n1 + lmbd_x2 / n2
+
+    # This is the 'pivot statistic' for use in the indicator of the summation
+    # (left side of "I[.]").
+    with np.errstate(invalid='ignore', divide='ignore'):
+        t_x1x2 = lmbds_diff / np.sqrt(var_x1x2)
+
+    # `[indicator]` implements the "I[.] ... the indicator function" per
+    # the paragraph following equation (3.5).
+    if alternative == 'two-sided':
+        indicator = np.abs(t_x1x2) >= np.abs(t_k1k2)
+    elif alternative == 'less':
+        indicator = t_x1x2 <= t_k1k2
+    else:
+        indicator = t_x1x2 >= t_k1k2
+
+    # Multiply all combinations of the products together, exclude terms
+    # based on the `indicator` and then sum. (3.5)
+    pvalue = np.sum((prob_x1 * prob_x2)[indicator])
+    return _stats_py.SignificanceResult(t_k1k2, pvalue)
+
+
+def _poisson_means_test_iv(k1, n1, k2, n2, diff, alternative):
+    # """check for valid types and values of input to `poisson_mean_test`."""
+    if k1 != int(k1) or k2 != int(k2):
+        raise TypeError('`k1` and `k2` must be integers.')
+
+    count_err = '`k1` and `k2` must be greater than or equal to 0.'
+    if k1 < 0 or k2 < 0:
+        raise ValueError(count_err)
+
+    if n1 <= 0 or n2 <= 0:
+        raise ValueError('`n1` and `n2` must be greater than 0.')
+
+    if diff < 0:
+        raise ValueError('diff must be greater than or equal to 0.')
+
+    alternatives = {'two-sided', 'less', 'greater'}
+    if alternative.lower() not in alternatives:
+        raise ValueError(f"Alternative must be one of '{alternatives}'.")
+
+
 class CramerVonMisesResult:
     def __init__(self, statistic, pvalue):
         self.statistic = statistic
@@ -153,7 +363,7 @@ class CramerVonMisesResult:
 
 def _psi1_mod(x):
     """
-    psi1 is defined in equation 1.10 in Csorgo, S. and Faraway, J. (1996).
+    psi1 is defined in equation 1.10 in Csörgő, S. and Faraway, J. (1996).
     This implements a modified version by excluding the term V(x) / 12
     (here: _cdf_cvm_inf(x) / 12) to avoid evaluating _cdf_cvm_inf(x)
     twice in _cdf_cvm.
@@ -205,7 +415,7 @@ def _cdf_cvm_inf(x):
     """
     Calculate the cdf of the Cramér-von Mises statistic (infinite sample size).
 
-    See equation 1.2 in Csorgo, S. and Faraway, J. (1996).
+    See equation 1.2 in Csörgő, S. and Faraway, J. (1996).
 
     Implementation based on MAPLE code of Julian Faraway and R code of the
     function pCvM in the package goftest (v1.1.1), permission granted
@@ -242,12 +452,16 @@ def _cdf_cvm(x, n=None):
     Calculate the cdf of the Cramér-von Mises statistic for a finite sample
     size n. If N is None, use the asymptotic cdf (n=inf).
 
-    See equation 1.8 in Csorgo, S. and Faraway, J. (1996) for finite samples,
+    See equation 1.8 in Csörgő, S. and Faraway, J. (1996) for finite samples,
     1.2 for the asymptotic cdf.
 
     The function is not expected to be accurate for large values of x, say
     x > 2, when the cdf is very close to 1 and it might return values > 1
-    in that case, e.g. _cdf_cvm(2.0, 12) = 1.0000027556716846.
+    in that case, e.g. _cdf_cvm(2.0, 12) = 1.0000027556716846. Moreover, it
+    is not accurate for small values of n, especially close to the bounds of
+    the distribution's domain, [1/(12*n), n/3], where the value jumps to 0
+    and 1, respectively. These are limitations of the approximation by Csörgő
+    and Faraway (1996) implemented in this function.
     """
     x = np.asarray(x)
     if n is None:
@@ -314,7 +528,7 @@ def cramervonmises(rvs, cdf, args=()):
     ----------
     .. [1] Cramér-von Mises criterion, Wikipedia,
            https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion
-    .. [2] Csorgo, S. and Faraway, J. (1996). The Exact and Asymptotic
+    .. [2] Csörgő, S. and Faraway, J. (1996). The Exact and Asymptotic
            Distribution of Cramér-von Mises Statistics. Journal of the
            Royal Statistical Society, pp. 221-234.
 
@@ -325,6 +539,7 @@ def cramervonmises(rvs, cdf, args=()):
     were, in fact, drawn from the standard normal distribution. We choose a
     significance level of alpha=0.05.
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(size=500, random_state=rng)
@@ -384,18 +599,46 @@ def cramervonmises(rvs, cdf, args=()):
 
 def _get_wilcoxon_distr(n):
     """
-    Distribution of counts of the Wilcoxon ranksum statistic r_plus (sum of
-    ranks of positive differences).
-    Returns an array with the counts/frequencies of all the possible ranks
+    Distribution of probability of the Wilcoxon ranksum statistic r_plus (sum
+    of ranks of positive differences).
+    Returns an array with the probabilities of all the possible ranks
     r = 0, ..., n*(n+1)/2
     """
-    cnt = _wilcoxon_data.COUNTS.get(n)
+    c = np.ones(1, dtype=np.double)
+    for k in range(1, n + 1):
+        prev_c = c
+        c = np.zeros(k * (k + 1) // 2 + 1, dtype=np.double)
+        m = len(prev_c)
+        c[:m] = prev_c * 0.5
+        c[-m:] += prev_c * 0.5
+    return c
 
-    if cnt is None:
-        raise ValueError("The exact distribution of the Wilcoxon test "
-                         "statistic is not implemented for n={}".format(n))
 
-    return np.array(cnt, dtype=int)
+def _get_wilcoxon_distr2(n):
+    """
+    Distribution of probability of the Wilcoxon ranksum statistic r_plus (sum
+    of ranks of positive differences).
+    Returns an array with the probabilities of all the possible ranks
+    r = 0, ..., n*(n+1)/2
+    This is a slower reference function
+    References
+    ----------
+    .. [1] 1. Harris T, Hardin JW. Exact Wilcoxon Signed-Rank and Wilcoxon
+        Mann-Whitney Ranksum Tests. The Stata Journal. 2013;13(2):337-343.
+    """
+    ai = np.arange(1, n+1)[:, None]
+    t = n*(n+1)/2
+    q = 2*t
+    j = np.arange(q)
+    theta = 2*np.pi/q*j
+    phi_sp = np.prod(np.cos(theta*ai), axis=0)
+    phi_s = np.exp(1j*theta*t) * phi_sp
+    p = np.real(ifft(phi_s))
+    res = np.zeros(int(t)+1)
+    res[:-1:] = p[::2]
+    res[0] /= 2
+    res[-1] = res[0]
+    return res
 
 
 def _tau_b(A):
@@ -486,10 +729,10 @@ def somersd(x, y=None, alternative='two-sided'):
 
     Parameters
     ----------
-    x: array_like
+    x : array_like
         1D array of rankings, treated as the (row) independent variable.
         Alternatively, a 2D contingency table.
-    y: array_like, optional
+    y : array_like, optional
         If `x` is a 1D array of rankings, `y` is a 1D array of rankings of the
         same length, treated as the (column) dependent variable.
         If `x` is 2D, `y` is ignored.
@@ -505,7 +748,7 @@ def somersd(x, y=None, alternative='two-sided'):
     res : SomersDResult
         A `SomersDResult` object with the following fields:
 
-            correlation : float
+            statistic : float
                The Somers' :math:`D` statistic.
             pvalue : float
                The p-value for a hypothesis test whose null
@@ -629,9 +872,14 @@ def somersd(x, y=None, alternative='two-sided'):
     else:
         raise ValueError("x must be either a 1D or 2D array")
     d, p = _somers_d(table, alternative)
-    return SomersDResult(d, p, table)
+
+    # add alias for consistency with other correlation functions
+    res = SomersDResult(d, p, table)
+    res.correlation = d
+    return res
 
 
+# This could be combined with `_all_partitions` in `_resampling.py`
 def _all_partitions(nx, ny):
     """
     Partition a set of indices into two fixed-length sets in all possible ways
@@ -978,11 +1226,15 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     is a uniformly more powerful alternative to Fisher's exact test
     for 2x2 contingency tables.
 
+    Boschloo's exact test uses the p-value of Fisher's exact test as a
+    statistic, and Boschloo's p-value is the probability under the null
+    hypothesis of observing such an extreme value of this statistic.
+
     Let's define :math:`X_0` a 2x2 matrix representing the observed sample,
     where each column stores the binomial experiment, as in the example
     below. Let's also define :math:`p_1, p_2` the theoretical binomial
     probabilities for  :math:`x_{11}` and :math:`x_{12}`. When using
-    Boschloo exact test, we can assert three different null hypotheses :
+    Boschloo exact test, we can assert three different alternative hypotheses:
 
     - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 < p_2`,
       with `alternative` = "less"
@@ -991,14 +1243,15 @@ def boschloo_exact(table, alternative="two-sided", n=32):
       with `alternative` = "greater"
 
     - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 \neq p_2`,
-      with `alternative` = "two-sided" (default one)
+      with `alternative` = "two-sided" (default)
 
-    Boschloo's exact test uses the p-value of Fisher's exact test as a
-    statistic, and Boschloo's p-value is the probability under the null
-    hypothesis of observing such an extreme value of this statistic.
-
-    Boschloo's and Barnard's are both more powerful than Fisher's exact
-    test.
+    There are multiple conventions for computing a two-sided p-value when the
+    null distribution is asymmetric. Here, we apply the convention that the
+    p-value of a two-sided test is twice the minimum of the p-values of the
+    one-sided tests (clipped to 1.0). Note that `fisher_exact` follows a
+    different convention, so for a given `table`, the statistic reported by
+    `boschloo_exact` may differ from the p-value reported by `fisher_exact`
+    when ``alternative='two-sided'``.
 
     .. versionadded:: 1.7.0
 
@@ -1098,7 +1351,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
 
         # Two-sided p-value is defined as twice the minimum of the one-sided
         # p-values
-        pvalue = 2 * res.pvalue
+        pvalue = np.clip(2 * res.pvalue, a_min=0, a_max=1)
         return BoschlooExactResult(res.statistic, pvalue)
     else:
         msg = (
@@ -1224,30 +1477,56 @@ def _get_binomial_log_p_value_with_nuisance_param(
     return -log_pvalue
 
 
-def _pval_cvm_2samp_exact(s, nx, ny):
+def _pval_cvm_2samp_exact(s, m, n):
     """
     Compute the exact p-value of the Cramer-von Mises two-sample test
-    for a given value s (float) of the test statistic by enumerating
-    all possible combinations. nx and ny are the sizes of the samples.
+    for a given value s of the test statistic.
+    m and n are the sizes of the samples.
+
+    [1] Y. Xiao, A. Gordon, and A. Yakovlev, "A C++ Program for
+        the Cramér-Von Mises Two-Sample Test", J. Stat. Soft.,
+        vol. 17, no. 8, pp. 1-15, Dec. 2006.
+    [2] T. W. Anderson "On the Distribution of the Two-Sample Cramer-von Mises
+        Criterion," The Annals of Mathematical Statistics, Ann. Math. Statist.
+        33(3), 1148-1159, (September, 1962)
     """
-    rangex = np.arange(nx)
-    rangey = np.arange(ny)
 
-    us = []
+    # [1, p. 3]
+    lcm = np.lcm(m, n)
+    # [1, p. 4], below eq. 3
+    a = lcm // m
+    b = lcm // n
+    # Combine Eq. 9 in [2] with Eq. 2 in [1] and solve for $\zeta$
+    # Hint: `s` is $U$ in [2], and $T_2$ in [1] is $T$ in [2]
+    mn = m * n
+    zeta = lcm ** 2 * (m + n) * (6 * s - mn * (4 * mn - 1)) // (6 * mn ** 2)
 
-    # x and y are all possible partitions of ranks from 0 to nx + ny - 1
-    # into two sets of length nx and ny
-    # Here, ranks are from 0 to nx + ny - 1 instead of 1 to nx + ny, but
-    # this does not change the value of the statistic.
-    for x, y in _all_partitions(nx, ny):
-        # compute the statistic
-        u = nx * np.sum((x - rangex)**2)
-        u += ny * np.sum((y - rangey)**2)
-        us.append(u)
+    # bound maximum value that may appear in `gs` (remember both rows!)
+    zeta_bound = lcm**2 * (m + n)  # bound elements in row 1
+    combinations = comb(m + n, m)  # sum of row 2
+    max_gs = max(zeta_bound, combinations)
+    dtype = np.min_scalar_type(max_gs)
 
-    # compute the values of u and the frequencies
-    u, cnt = np.unique(us, return_counts=True)
-    return np.sum(cnt[u >= s]) / np.sum(cnt)
+    # the frequency table of $g_{u, v}^+$ defined in [1, p. 6]
+    gs = ([np.array([[0], [1]], dtype=dtype)]
+          + [np.empty((2, 0), dtype=dtype) for _ in range(m)])
+    for u in range(n + 1):
+        next_gs = []
+        tmp = np.empty((2, 0), dtype=dtype)
+        for v, g in enumerate(gs):
+            # Calculate g recursively with eq. 11 in [1]. Even though it
+            # doesn't look like it, this also does 12/13 (all of Algorithm 1).
+            vi, i0, i1 = np.intersect1d(tmp[0], g[0], return_indices=True)
+            tmp = np.concatenate([
+                np.stack([vi, tmp[1, i0] + g[1, i1]]),
+                np.delete(tmp, i0, 1),
+                np.delete(g, i1, 1)
+            ], 1)
+            tmp[0] += (a * v - b * u) ** 2
+            next_gs.append(tmp)
+        gs = next_gs
+    value, freq = gs[m]
+    return np.float64(np.sum(freq[value >= zeta]) / combinations)
 
 
 def cramervonmises_2samp(x, y, method='auto'):
@@ -1292,10 +1571,8 @@ def cramervonmises_2samp(x, y, method='auto'):
     - ``exact``: The exact p-value is computed by enumerating all
       possible combinations of the test statistic, see [2]_.
 
-    The exact calculation will be very slow even for moderate sample
-    sizes as the number of combinations increases rapidly with the
-    size of the samples. If ``method=='auto'``, the exact approach
-    is used if both samples contain less than 10 observations,
+    If ``method=='auto'``, the exact approach is used
+    if both samples contain equal to or less than 20 observations,
     otherwise the asymptotic distribution is used.
 
     If the underlying distribution is not continuous, the p-value is likely to
@@ -1317,6 +1594,7 @@ def cramervonmises_2samp(x, y, method='auto'):
     ``scipy.stats.norm.rvs`` have the same distribution. We choose a
     significance level of alpha=0.05.
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(size=100, random_state=rng)
@@ -1362,7 +1640,7 @@ def cramervonmises_2samp(x, y, method='auto'):
     ny = len(ya)
 
     if method == 'auto':
-        if max(nx, ny) > 10:
+        if max(nx, ny) > 20:
             method = 'asymptotic'
         else:
             method = 'exact'
@@ -1628,6 +1906,7 @@ def tukey_hsd(*args):
     Here are some data comparing the time to relief of three brands of
     headache medicine, reported in minutes. Data adapted from [3]_.
 
+    >>> import numpy as np
     >>> from scipy.stats import tukey_hsd
     >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
     >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]

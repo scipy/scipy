@@ -95,6 +95,7 @@ def binned_statistic(x, values, statistic='mean',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -474,6 +475,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.mplot3d import Axes3D
@@ -578,14 +580,14 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     result = np.empty([Vdim, nbin.prod()], float)
 
-    if statistic == 'mean':
+    if statistic in {'mean', np.mean}:
         result.fill(np.nan)
         flatcount = np.bincount(binnumbers, None)
         a = flatcount.nonzero()
         for vv in builtins.range(Vdim):
             flatsum = np.bincount(binnumbers, values[vv])
             result[vv, a] = flatsum[a] / flatcount[a]
-    elif statistic == 'std':
+    elif statistic in {'std', np.std}:
         result.fill(np.nan)
         flatcount = np.bincount(binnumbers, None)
         a = flatcount.nonzero()
@@ -599,13 +601,13 @@ def binned_statistic_dd(sample, values, statistic='mean',
         flatcount = np.bincount(binnumbers, None)
         a = np.arange(len(flatcount))
         result[:, a] = flatcount[np.newaxis, :]
-    elif statistic == 'sum':
+    elif statistic in {'sum', np.sum}:
         result.fill(0)
         for vv in builtins.range(Vdim):
             flatsum = np.bincount(binnumbers, values[vv])
             a = np.arange(len(flatsum))
             result[vv, a] = flatsum
-    elif statistic == 'median':
+    elif statistic in {'median', np.median}:
         result.fill(np.nan)
         for vv in builtins.range(Vdim):
             i = np.lexsort((values[vv], binnumbers))
@@ -616,12 +618,12 @@ def binned_statistic_dd(sample, values, statistic='mean',
             mid_b = values[vv, i][np.ceil(mid).astype(int)]
             medians = (mid_a + mid_b) / 2
             result[vv, binnumbers[i][j]] = medians
-    elif statistic == 'min':
+    elif statistic in {'min', np.min}:
         result.fill(np.nan)
         for vv in builtins.range(Vdim):
             i = np.argsort(values[vv])[::-1]  # Reversed so the min is last
             result[vv, binnumbers[i]] = values[vv, i]
-    elif statistic == 'max':
+    elif statistic in {'max', np.max}:
         result.fill(np.nan)
         for vv in builtins.range(Vdim):
             i = np.argsort(values[vv])

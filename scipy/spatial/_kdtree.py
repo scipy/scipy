@@ -1,7 +1,6 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 import numpy as np
-import warnings
 from ._ckdtree import cKDTree, cKDTreeNode
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
@@ -385,11 +384,10 @@ class KDTree(cKDTree):
             Missing neighbors are indicated with infinite distances.
             Hits are sorted by distance (nearest first).
 
-            .. deprecated:: 1.6.0
-               If ``k=None``, then ``d`` is an object array of shape ``tuple``,
-               containing lists of distances. This behavior is deprecated and
-               will be removed in SciPy 1.8.0, use ``query_ball_point``
-               instead.
+            .. versionchanged:: 1.9.0
+               Previously if ``k=None``, then `d` was an object array of
+               shape ``tuple``, containing lists of distances. This behavior
+               has been removed, use `query_ball_point` instead.
 
         i : integer or array of integers
             The index of each neighbor in ``self.data``.
@@ -454,31 +452,7 @@ class KDTree(cKDTree):
             raise TypeError("KDTree does not work with complex data")
 
         if k is None:
-            # k=None, return all neighbors
-            warnings.warn(
-                "KDTree.query with k=None is deprecated and will be removed "
-                "in SciPy 1.8.0. Use KDTree.query_ball_point instead.",
-                DeprecationWarning)
-
-            # Convert index query to a lists of distance and index,
-            # sorted by distance
-            def inds_to_hits(point, neighbors):
-                dist = minkowski_distance(point, self.data[neighbors], p)
-                hits = sorted([(d, i) for d, i in zip(dist, neighbors)])
-                return [d for d, i in hits], [i for d, i in hits]
-
-            x = np.asarray(x, dtype=np.float64)
-            inds = super().query_ball_point(
-                x, distance_upper_bound, p, eps, workers)
-
-            if isinstance(inds, list):
-                return inds_to_hits(x, inds)
-
-            dists = np.empty_like(inds)
-            for idx in np.ndindex(inds.shape):
-                dists[idx], inds[idx] = inds_to_hits(x[idx], inds[idx])
-
-            return dists, inds
+            raise ValueError("k must be an integer or a sequence of integers")
 
         d, i = super().query(x, k, eps, p, distance_upper_bound, workers)
         if isinstance(i, int):
@@ -515,7 +489,7 @@ class KDTree(cKDTree):
             was added.
 
             .. versionadded:: 1.6.0
-        return_length: bool, optional
+        return_length : bool, optional
             Return the number of points inside the radius instead of a list
             of the indices.
 
@@ -536,6 +510,7 @@ class KDTree(cKDTree):
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy import spatial
         >>> x, y = np.mgrid[0:5, 0:5]
         >>> points = np.c_[x.ravel(), y.ravel()]

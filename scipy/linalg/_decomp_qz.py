@@ -224,6 +224,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> rng = np.random.default_rng()
     >>> A = np.arange(9).reshape((3, 3))
@@ -247,7 +248,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
            [-0.21754047, -0.83009894, -0.51343148],
            [ 0.57458399, -0.53413598,  0.62012256]])
 
-    See also
+    See Also
     --------
     ordqz
     """
@@ -333,12 +334,13 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
 
     .. versionadded:: 0.17.0
 
-    See also
+    See Also
     --------
     qz
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import ordqz
     >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
     >>> B = np.array([[0, 6, 0, 0], [5, 0, 2, 1], [5, 2, 6, 6], [4, 7, 7, 7]])

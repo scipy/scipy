@@ -208,7 +208,7 @@ class MatFile5Reader(MatFileReader):
 
     def guess_byte_order(self):
         ''' Guess byte order.
-        Sets stream pointer to 0 '''
+        Sets stream pointer to 0'''
         self.mat_stream.seek(126)
         mi = self.mat_stream.read(2)
         self.mat_stream.seek(0)

@@ -12,11 +12,13 @@
 .pydevproject
 *.rej
 .settings/
+.spyproject/
 .*.sw[nop]
 .sw[nop]
 *.tmp
 *.vim
 tags
+.venv/
 .theia/
 .vscode/
 
@@ -77,6 +79,15 @@ setup.cfg
 .libs
 .eggs
 pip-wheel-metadata
+# install directory for Meson
+installdir/
+
+# doit
+######
+.doit.db.dat
+.doit.db.dir
+.doit.db.db
+.doit.db
 
 # Paver generated files #
 #########################
@@ -126,6 +137,7 @@ benchmarks/results
 benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
+.mesonpy-native-file.ini
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
 scipy/_lib/messagestream.c
@@ -194,6 +206,9 @@ scipy/linalg/cython_lapack.pxd
 scipy/linalg/cython_lapack.pyx
 scipy/linalg/src/id_dist/src/*_subr_*.f
 scipy/linalg/_matfuncs_sqrtm_triu.c
+scipy/linalg/_matfuncs_sqrtm_triu.cpp
+scipy/linalg/_matfuncs_expm.c
+scipy/linalg/_matfuncs_expm.pyx
 scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
@@ -206,6 +221,8 @@ scipy/optimize/__nnls/__nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
 scipy/optimize/_trlib/_trlib.c
+scipy/optimize/tnc/moduleTNC.c
+scipy/optimize/tnc/_moduleTNC.c
 scipy/signal/_peak_finding_utils.c
 scipy/signal/_spectral.c
 scipy/signal/_spectral.cpp
@@ -281,6 +298,7 @@ scipy/stats/_mvnmodule.c
 scipy/stats/_statlibmodule.c
 scipy/stats/vonmises_cython.c
 scipy/stats/_stats.c
+scipy/stats/_levy_stable/levyst.c
 scipy/stats/_biasedurn.cxx
 scipy/stats/_biasedurn.pyx
 scipy/stats/biasedurn.cxx

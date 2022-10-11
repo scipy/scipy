@@ -65,7 +65,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     LinAlgError
         If SVD computation does not converge.
 
-    See also
+    See Also
     --------
     svdvals : Compute singular values of a matrix.
     diagsvd : Construct the Sigma matrix, given the vector s.
@@ -182,6 +182,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import svdvals
     >>> m = np.array([[1.0, 0.0],
     ...               [2.0, 3.0],
@@ -255,6 +256,7 @@ def diagsvd(s, M, N):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import diagsvd
     >>> vals = np.array([1, 2, 3])  # The array representing the computed svd
     >>> diagsvd(vals, 3, 4)
@@ -300,13 +302,14 @@ def orth(A, rcond=None):
         Orthonormal basis for the range of A.
         K = effective rank of A, as determined by rcond
 
-    See also
+    See Also
     --------
     svd : Singular value decomposition of a matrix
     null_space : Matrix null space
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import orth
     >>> A = np.array([[2, 0, 0], [0, 5, 0]])  # rank 2 array
     >>> orth(A)
@@ -347,7 +350,7 @@ def null_space(A, rcond=None):
         Orthonormal basis for the null space of A.
         K = dimension of effective null space, as determined by rcond
 
-    See also
+    See Also
     --------
     svd : Singular value decomposition of a matrix
     orth : Matrix range
@@ -356,6 +359,7 @@ def null_space(A, rcond=None):
     --------
     1-D null space:
 
+    >>> import numpy as np
     >>> from scipy.linalg import null_space
     >>> A = np.array([[1, 1], [1, 1]])
     >>> ns = null_space(A)

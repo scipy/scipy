@@ -240,7 +240,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         If `jac is None` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
     maxfun : int
-        Maximum number of function evaluations.
+        Maximum number of function evaluations. Note that this function
+        may violate the limit because of evaluating gradients by numerical
+        differentiation.
     maxiter : int
         Maximum number of iterations.
     iprint : int, optional
@@ -250,15 +252,12 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         ``iprint = 99``   print details of every iteration except n-vectors;
         ``iprint = 100``  print also the changes of active set and final x;
         ``iprint > 100``  print details of every iteration including x and g.
-    callback : callable, optional
-        Called after each iteration, as ``callback(xk)``, where ``xk`` is the
-        current parameter vector.
     maxls : int, optional
         Maximum number of line search steps (per iteration). Default is 20.
     finite_diff_rel_step : None or array_like, optional
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
-        size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
+        size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.

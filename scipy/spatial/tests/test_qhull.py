@@ -186,7 +186,7 @@ class TestUtilities:
         # |1 \|
         # +---+
 
-        assert_equal(tri.vertices, [[1, 3, 2], [3, 1, 0]])
+        assert_equal(tri.simplices, [[1, 3, 2], [3, 1, 0]])
 
         for p in [(0.25, 0.25, 1),
                   (0.75, 0.75, 0),
@@ -210,7 +210,7 @@ class TestUtilities:
 
         dist = tri.plane_distance(p)
 
-        for j, v in enumerate(tri.vertices):
+        for j, v in enumerate(tri.simplices):
             x1 = z[v[0]]
             x2 = z[v[1]]
             x3 = z[v[2]]
@@ -288,7 +288,7 @@ class TestUtilities:
                                       unit_cube=False,
                                       unit_cube_tol=0):
         """Check that a triangulation has reasonable barycentric transforms"""
-        vertices = tri.points[tri.vertices]
+        vertices = tri.points[tri.simplices]
         sc = 1/(tri.ndim + 1.0)
         centroids = vertices.sum(axis=1) * sc
 
@@ -439,9 +439,9 @@ class TestDelaunay:
 
             tri = qhull.Delaunay(points)
 
-            tri.vertices.sort()
+            tri.simplices.sort()
 
-            assert_equal(tri.vertices, np.arange(nd+1, dtype=int)[None,:])
+            assert_equal(tri.simplices, np.arange(nd+1, dtype=int)[None, :])
             assert_equal(tri.neighbors, -1 + np.zeros((nd+1), dtype=int)[None,:])
 
     def test_2d_square(self):
@@ -449,7 +449,7 @@ class TestDelaunay:
         points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
         tri = qhull.Delaunay(points)
 
-        assert_equal(tri.vertices, [[1, 3, 2], [3, 1, 0]])
+        assert_equal(tri.simplices, [[1, 3, 2], [3, 1, 0]])
         assert_equal(tri.neighbors, [[-1, -1, 1], [-1, -1, 0]])
 
     def test_duplicate_points(self):
@@ -467,13 +467,13 @@ class TestDelaunay:
         # both should succeed
         points = DATASETS['pathological-1']
         tri = qhull.Delaunay(points)
-        assert_equal(tri.points[tri.vertices].max(), points.max())
-        assert_equal(tri.points[tri.vertices].min(), points.min())
+        assert_equal(tri.points[tri.simplices].max(), points.max())
+        assert_equal(tri.points[tri.simplices].min(), points.min())
 
         points = DATASETS['pathological-2']
         tri = qhull.Delaunay(points)
-        assert_equal(tri.points[tri.vertices].max(), points.max())
-        assert_equal(tri.points[tri.vertices].min(), points.min())
+        assert_equal(tri.points[tri.simplices].max(), points.max())
+        assert_equal(tri.points[tri.simplices].min(), points.min())
 
     def test_joggle(self):
         # Check that the option QJ indeed guarantees that all input points
@@ -542,6 +542,13 @@ class TestDelaunay:
 
         assert_unordered_tuple_list_equal(obj2.simplices, obj3.simplices,
                                           tpl=sorted_tuple)
+
+    def test_vertices_deprecation(self):
+        tri = qhull.Delaunay([(0, 0), (0, 1), (1, 0)])
+        msg = ("Delaunay attribute 'vertices' is deprecated in favour of "
+               "'simplices' and will be removed in Scipy 1.11.0.")
+        with pytest.warns(DeprecationWarning, match=msg):
+            tri.vertices
 
 
 def assert_hulls_equal(points, facets_1, facets_2):
@@ -788,6 +795,41 @@ class TestConvexHull:
         assert_equal(hull.good, expected)
 
 class TestVoronoi:
+
+    @pytest.mark.parametrize("qhull_opts, extra_pts", [
+        # option Qz (default for SciPy) will add
+        # an extra point at infinity
+        ("Qbb Qc Qz", 1),
+        ("Qbb Qc", 0),
+    ])
+    @pytest.mark.parametrize("n_pts", [50, 100])
+    @pytest.mark.parametrize("ndim", [2, 3])
+    def test_point_region_structure(self,
+                                    qhull_opts,
+                                    n_pts,
+                                    extra_pts,
+                                    ndim):
+        # see gh-16773
+        rng = np.random.default_rng(7790)
+        points = rng.random((n_pts, ndim))
+        vor = Voronoi(points, qhull_options=qhull_opts)
+        pt_region = vor.point_region
+        assert pt_region.max() == n_pts - 1 + extra_pts
+        assert pt_region.size == len(vor.regions) - extra_pts
+        assert len(vor.regions) == n_pts + extra_pts
+        assert vor.points.shape[0] == n_pts
+        # if there is an empty sublist in the Voronoi
+        # regions data structure, it should never be
+        # indexed because it corresponds to an internally
+        # added point at infinity and is not a member of the
+        # generators (input points)
+        if extra_pts:
+            sublens = [len(x) for x in vor.regions]
+            # only one point at infinity (empty region)
+            # is allowed
+            assert sublens.count(0) == 1
+            assert sublens.index(0) not in pt_region
+
     def test_masked_array_fails(self):
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.Voronoi, masked_array)
@@ -1001,14 +1043,15 @@ class Test_HalfspaceIntersection:
             truths[indexes[0]] = True
         assert_(truths.all())
 
-    def test_cube_halfspace_intersection(self):
-        halfspaces = np.array([[-1.0, 0.0, 0.0],
-                               [0.0, -1.0, 0.0],
-                               [1.0, 0.0, -1.0],
-                               [0.0, 1.0, -1.0]])
-        feasible_point = np.array([0.5, 0.5])
+    @pytest.mark.parametrize("dt", [np.float64, int])
+    def test_cube_halfspace_intersection(self, dt):
+        halfspaces = np.array([[-1, 0, 0],
+                               [0, -1, 0],
+                               [1, 0, -2],
+                               [0, 1, -2]], dtype=dt)
+        feasible_point = np.array([1, 1], dtype=dt)
 
-        points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+        points = np.array([[0.0, 0.0], [2.0, 0.0], [0.0, 2.0], [2.0, 2.0]])
 
         hull = qhull.HalfspaceIntersection(halfspaces, feasible_point)
 

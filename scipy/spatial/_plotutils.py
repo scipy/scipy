@@ -6,7 +6,7 @@ __all__ = ['delaunay_plot_2d', 'convex_hull_plot_2d', 'voronoi_plot_2d']
 
 @_decorator
 def _held_figure(func, obj, ax=None, **kw):
-    import matplotlib.pyplot as plt  # type: ignore[import]
+    import matplotlib.pyplot as plt
 
     if ax is None:
         fig = plt.figure()
@@ -62,6 +62,7 @@ def delaunay_plot_2d(tri, ax=None):
     Examples
     --------
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import Delaunay, delaunay_plot_2d
 
@@ -118,6 +119,7 @@ def convex_hull_plot_2d(hull, ax=None):
     Examples
     --------
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import ConvexHull, convex_hull_plot_2d
 
@@ -133,12 +135,12 @@ def convex_hull_plot_2d(hull, ax=None):
     >>> plt.show()
 
     """
-    from matplotlib.collections import LineCollection  # type: ignore[import]
+    from matplotlib.collections import LineCollection
 
     if hull.points.shape[1] != 2:
         raise ValueError("Convex hull is not 2-D")
 
-    ax.plot(hull.points[:,0], hull.points[:,1], 'o')
+    ax.plot(hull.points[:, 0], hull.points[:, 1], 'o')
     line_segments = [hull.points[simplex] for simplex in hull.simplices]
     ax.add_collection(LineCollection(line_segments,
                                      colors='k',
@@ -159,7 +161,7 @@ def voronoi_plot_2d(vor, ax=None, **kw):
         Diagram to plot
     ax : matplotlib.axes.Axes instance, optional
         Axes to plot on
-    show_points: bool, optional
+    show_points : bool, optional
         Add the Voronoi points to the plot.
     show_vertices : bool, optional
         Add the Voronoi vertices to the plot.
@@ -167,11 +169,10 @@ def voronoi_plot_2d(vor, ax=None, **kw):
         Specifies the line color for polygon boundaries
     line_width : float, optional
         Specifies the line width for polygon boundaries
-    line_alpha: float, optional
+    line_alpha : float, optional
         Specifies the line alpha for polygon boundaries
-    point_size: float, optional
+    point_size : float, optional
         Specifies the size of points
-
 
     Returns
     -------
@@ -188,25 +189,28 @@ def voronoi_plot_2d(vor, ax=None, **kw):
 
     Examples
     --------
-    Set of point:
-
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
+    >>> from scipy.spatial import Voronoi, voronoi_plot_2d
+
+    Create a set of points for the example:
+
     >>> rng = np.random.default_rng()
     >>> points = rng.random((10,2))
 
-    Voronoi diagram of the points:
+    Generate the Voronoi diagram for the points:
 
-    >>> from scipy.spatial import Voronoi, voronoi_plot_2d
     >>> vor = Voronoi(points)
 
-    using `voronoi_plot_2d` for visualisation:
+    Use `voronoi_plot_2d` to plot the diagram:
 
     >>> fig = voronoi_plot_2d(vor)
 
-    using `voronoi_plot_2d` for visualisation with enhancements:
+    Use `voronoi_plot_2d` to plot the diagram again, with some settings
+    customized:
 
     >>> fig = voronoi_plot_2d(vor, show_vertices=False, line_colors='orange',
-    ...                 line_width=2, line_alpha=0.6, point_size=2)
+    ...                       line_width=2, line_alpha=0.6, point_size=2)
     >>> plt.show()
 
     """
@@ -217,9 +221,9 @@ def voronoi_plot_2d(vor, ax=None, **kw):
 
     if kw.get('show_points', True):
         point_size = kw.get('point_size', None)
-        ax.plot(vor.points[:,0], vor.points[:,1], '.', markersize=point_size)
+        ax.plot(vor.points[:, 0], vor.points[:, 1], '.', markersize=point_size)
     if kw.get('show_vertices', True):
-        ax.plot(vor.vertices[:,0], vor.vertices[:,1], 'o')
+        ax.plot(vor.vertices[:, 0], vor.vertices[:, 1], 'o')
 
     line_colors = kw.get('line_colors', 'k')
     line_width = kw.get('line_width', 1.0)

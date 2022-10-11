@@ -18,7 +18,7 @@ __all__ = ['approx_jacobian', 'fmin_slsqp']
 import numpy as np
 from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
-                   sqrt, vstack, exp, inf, isfinite, atleast_1d)
+                   sqrt, vstack, isfinite, atleast_1d)
 from ._optimize import (OptimizeResult, _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
                         _check_clip_x)
@@ -234,7 +234,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     finite_diff_rel_step : None or array_like, optional
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of `jac`. The absolute step
-        size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
+        size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
@@ -502,58 +502,3 @@ def _eval_con_normals(x, cons, la, n, m, meq, mieq):
     a = concatenate((a, zeros([la, 1])), 1)
 
     return a
-
-
-if __name__ == '__main__':
-
-    # objective function
-    def fun(x, r=[4, 2, 4, 2, 1]):
-        """ Objective function """
-        return exp(x[0]) * (r[0] * x[0]**2 + r[1] * x[1]**2 +
-                            r[2] * x[0] * x[1] + r[3] * x[1] +
-                            r[4])
-
-    # bounds
-    bnds = array([[-inf]*2, [inf]*2]).T
-    bnds[:, 0] = [0.1, 0.2]
-
-    # constraints
-    def feqcon(x, b=1):
-        """ Equality constraint """
-        return array([x[0]**2 + x[1] - b])
-
-    def jeqcon(x, b=1):
-        """ Jacobian of equality constraint """
-        return array([[2*x[0], 1]])
-
-    def fieqcon(x, c=10):
-        """ Inequality constraint """
-        return array([x[0] * x[1] + c])
-
-    def jieqcon(x, c=10):
-        """ Jacobian of inequality constraint """
-        return array([[1, 1]])
-
-    # constraints dictionaries
-    cons = ({'type': 'eq', 'fun': feqcon, 'jac': jeqcon, 'args': (1, )},
-            {'type': 'ineq', 'fun': fieqcon, 'jac': jieqcon, 'args': (10,)})
-
-    # Bounds constraint problem
-    print(' Bounds constraints '.center(72, '-'))
-    print(' * fmin_slsqp')
-    x, f = fmin_slsqp(fun, array([-1, 1]), bounds=bnds, disp=1,
-                      full_output=True)[:2]
-    print(' * _minimize_slsqp')
-    res = _minimize_slsqp(fun, array([-1, 1]), bounds=bnds,
-                          **{'disp': True})
-
-    # Equality and inequality constraints problem
-    print(' Equality and inequality constraints '.center(72, '-'))
-    print(' * fmin_slsqp')
-    x, f = fmin_slsqp(fun, array([-1, 1]),
-                      f_eqcons=feqcon, fprime_eqcons=jeqcon,
-                      f_ieqcons=fieqcon, fprime_ieqcons=jieqcon,
-                      disp=1, full_output=True)[:2]
-    print(' * _minimize_slsqp')
-    res = _minimize_slsqp(fun, array([-1, 1]), constraints=cons,
-                          **{'disp': True})

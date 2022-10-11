@@ -1,12 +1,15 @@
 from os import path
 import warnings
 
-DATA_PATH = path.join(path.dirname(__file__), 'data')
-
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
-    assert_, suppress_warnings)
+                           assert_, suppress_warnings)
+import pytest
+
 from scipy.io import readsav
+from scipy.io import _idl
+
+DATA_PATH = path.join(path.dirname(__file__), 'data')
 
 
 def object_array(*args):
@@ -435,3 +438,13 @@ def test_invalid_pointer():
     assert_(str(w[0].message) == ("Variable referenced by pointer not found in "
                                   "heap: variable will be set to None"))
     assert_identical(s['a'], np.array([None, None]))
+
+
+def test_attrdict():
+    d = _idl.AttrDict({'one': 1})
+    assert d['one'] == 1
+    assert d.one == 1
+    with pytest.raises(KeyError):
+        d['two']
+    with pytest.raises(AttributeError, match='has no attribute'):
+        d.two

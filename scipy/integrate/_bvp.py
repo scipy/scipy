@@ -218,12 +218,12 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
         mesh nodes.
     df_dp : ndarray with shape (n, k, m) or None
         Jacobian of f with respect to p computed at the mesh nodes.
-    df_dp_middle: ndarray with shape (n, k, m - 1) or None
+    df_dp_middle : ndarray with shape (n, k, m - 1) or None
         Jacobian of f with respect to p computed at the middle between the
         mesh nodes.
     dbc_dya, dbc_dyb : ndarray, shape (n, n)
         Jacobian of bc with respect to ya and yb.
-    dbc_dp: ndarray with shape (n, k) or None
+    dbc_dp : ndarray with shape (n, k) or None
         Jacobian of bc with respect to p.
 
     Returns
@@ -895,6 +895,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         y1' = y2
         y2' = -exp(y1)
 
+    >>> import numpy as np
     >>> def fun(x, y):
     ...     return np.vstack((y[1], -np.exp(y[0])))
 

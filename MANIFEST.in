@@ -2,6 +2,7 @@ include MANIFEST.in
 include *.txt
 # Top-level build script
 include setup.py
+include meson.build
 include pyproject.toml
 # All source files
 recursive-include scipy *
@@ -9,10 +10,11 @@ recursive-include benchmarks *
 # All documentation
 recursive-include doc *
 # Add build and testing tools
-include runtests.py
+include runtests.py dev.py
 include .coveragerc
 include site.cfg.example
-include tox.ini pytest.ini
+include tox.ini pytest.ini mypy.ini
+include CITATION.bib
 recursive-include tools *
 # Exclude what we don't want to include
 recursive-exclude scipy/linalg/src/id_dist/src *_subr_*.f

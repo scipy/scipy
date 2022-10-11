@@ -1,24 +1,11 @@
 #include "ellint_carlson_wrap.hh"
-
-
-#undef _BEGIN_EXTERN_C
-#undef _END_EXTERN_C
-#ifdef __cplusplus
-#define _BEGIN_EXTERN_C	extern "C" {
-#define _END_EXTERN_C	}
-#else
-#define _BEGIN_EXTERN_C	/* nothing */
-#define _END_EXTERN_C	/* nothing */
-#endif
-
-
 #include "sf_error.h"
 
 
 static constexpr double ellip_rerr = 5e-16;
 
 
-_BEGIN_EXTERN_C
+extern "C" {
 
 
 double fellint_RC(double x, double y)
@@ -151,8 +138,4 @@ npy_cdouble cellint_RJ(npy_cdouble x, npy_cdouble y, npy_cdouble z, npy_cdouble 
 }
 
 
-_END_EXTERN_C
-
-
-#undef _BEGIN_EXTERN_C
-#undef _END_EXTERN_C
+}  // extern "C"

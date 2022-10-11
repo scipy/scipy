@@ -79,12 +79,13 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         3. If eigenvalue sorting was requested, roundoff errors caused the
            leading eigenvalues to no longer satisfy the sorting condition.
 
-    See also
+    See Also
     --------
     rsf2csf : Convert real Schur form to complex Schur form
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import schur, eigvals
     >>> A = np.array([[0, 2, 2], [0, 1, 2], [1, 0, 1]])
     >>> T, Z = schur(A)
@@ -238,6 +239,7 @@ def rsf2csf(T, Z, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import schur, rsf2csf
     >>> A = np.array([[0, 2, 2], [0, 1, 2], [1, 0, 1]])
     >>> T, Z = schur(A)

@@ -642,6 +642,14 @@ class AttrDict(dict):
         123
         >>> d('VARIABLE')
         123
+        >>> d['missing']
+        Traceback (most recent error last):
+        ...
+        KeyError: 'missing'
+        >>> d.missing
+        Traceback (most recent error last):
+        ...
+        AttributeError: 'AttrDict' object has no attribute 'missing'
     '''
 
     def __init__(self, init={}):
@@ -653,7 +661,13 @@ class AttrDict(dict):
     def __setitem__(self, key, value):
         return super().__setitem__(key.lower(), value)
 
-    __getattr__ = __getitem__
+    def __getattr__(self, name):
+        try:
+            return self.__getitem__(name)
+        except KeyError:
+            raise AttributeError(
+                f"'{type(self)}' object has no attribute '{name}'") from None
+
     __setattr__ = __setitem__
     __call__ = __getitem__
 
@@ -781,8 +795,9 @@ def readsav(file_name, idict=None, python_dict=False,
 
             # Check if the end of the file has been reached
             if RECTYPE_DICT[rectype] == 'END_MARKER':
-                fout.write(struct.pack('>I', int(nextrec) % 2**32))
-                fout.write(struct.pack('>I', int((nextrec - (nextrec % 2**32)) / 2**32)))
+                modval = np.int64(2**32)
+                fout.write(struct.pack('>I', int(nextrec) % modval))
+                fout.write(struct.pack('>I', int((nextrec - (nextrec % modval)) / modval)))
                 fout.write(unknown)
                 break
 

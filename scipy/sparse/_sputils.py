@@ -3,15 +3,17 @@
 
 import sys
 import operator
-import warnings
 import numpy as np
 from scipy._lib._util import prod
+import scipy.sparse as sp
+
 
 __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
 
 supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
-                    np.uintc, np.int_, np.uint, np.longlong, np.ulonglong, np.single, np.double,
+                    np.uintc, np.int_, np.uint, np.longlong, np.ulonglong,
+                    np.single, np.double,
                     np.longdouble, np.csingle, np.cdouble, np.clongdouble]
 
 _upcast_memo = {}
@@ -41,7 +43,7 @@ def upcast(*args):
     if t is not None:
         return t
 
-    upcast = np.find_common_type(args, [])
+    upcast = np.result_type(*args)
 
     for t in supported_dtypes:
         if np.can_cast(upcast, t):
@@ -89,7 +91,19 @@ def downcast_intp_index(arr):
 
 
 def to_native(A):
-    return np.asarray(A, dtype=A.dtype.newbyteorder('native'))
+    """
+    Ensure that the data type of the NumPy array `A` has native byte order.
+
+    `A` must be a NumPy array.  If the data type of `A` does not have native
+    byte order, a copy of `A` with a native byte order is returned. Otherwise
+    `A` is returned.
+    """
+    dt = A.dtype
+    if dt.isnative:
+        # Don't call `asarray()` if A is already native, to avoid unnecessarily
+        # creating a view of the input array.
+        return A
+    return np.asarray(A, dtype=dt.newbyteorder('native'))
 
 
 def getdtype(dtype, a=None, default=None):
@@ -111,7 +125,9 @@ def getdtype(dtype, a=None, default=None):
     else:
         newdtype = np.dtype(dtype)
         if newdtype == np.object_:
-            warnings.warn("object dtype is not supported by sparse matrices")
+            raise ValueError(
+                "object dtype is not supported by sparse matrices"
+            )
 
     return newdtype
 
@@ -150,11 +166,13 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 
     """
 
-    int32min = np.iinfo(np.int32).min
-    int32max = np.iinfo(np.int32).max
+    int32min = np.int32(np.iinfo(np.int32).min)
+    int32max = np.int32(np.iinfo(np.int32).max)
 
-    dtype = np.intc
+    # not using intc directly due to misinteractions with pythran
+    dtype = np.int32 if np.intc().itemsize == 4 else np.int64
     if maxval is not None:
+        maxval = np.int64(maxval)
         if maxval > int32max:
             dtype = np.int64
 
@@ -211,8 +229,8 @@ def isintlike(x):
         except (TypeError, ValueError):
             return False
         if loose_int:
-            warnings.warn("Inexact indices into sparse matrices are deprecated",
-                          DeprecationWarning)
+            msg = "Inexact indices into sparse matrices are not allowed"
+            raise ValueError(msg)
         return loose_int
     return True
 
@@ -355,7 +373,6 @@ def is_pydata_spmatrix(m):
 # Numpy versions of these functions raise deprecation warnings, the
 # ones below do not.
 
-
 def matrix(*args, **kwargs):
     return np.array(*args, **kwargs).view(np.matrix)
 
@@ -364,3 +381,33 @@ def asmatrix(data, dtype=None):
     if isinstance(data, np.matrix) and (dtype is None or data.dtype == dtype):
         return data
     return np.asarray(data, dtype=dtype).view(np.matrix)
+
+###############################################################################
+
+
+def _todata(s: 'sp.spmatrix') -> np.ndarray:
+    """Access nonzero values, possibly after summing duplicates.
+
+    Parameters
+    ----------
+    s : sparse matrix
+        Input sparse matrix.
+
+    Returns
+    -------
+    data: ndarray
+      Nonzero values of the array, with shape (s.nnz,)
+
+    """
+    if isinstance(s, sp._data._data_matrix):
+        return s._deduped_data()
+
+    if isinstance(s, sp.dok_matrix):
+        return np.fromiter(s.values(), dtype=s.dtype, count=s.nnz)
+
+    if isinstance(s, sp.lil_matrix):
+        data = np.empty(s.nnz, dtype=s.dtype)
+        sp._csparsetools.lil_flatten_to_array(s.data, data)
+        return data
+
+    return s.tocoo()._deduped_data()

@@ -14,7 +14,7 @@ __all__ = [  # noqa: F822
     'residuez', 'resample', 'resample_poly', 'detrend',
     'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
     'filtfilt', 'decimate', 'vectorstrength',
-    'timeit', 'cKDTree', 'sigtools', 'dlti', 'upfirdn', 'linalg',
+    'timeit', 'cKDTree', 'dlti', 'upfirdn', 'linalg',
     'sp_fft', 'lambertw', 'get_window', 'axis_slice', 'axis_reverse',
     'odd_ext', 'even_ext', 'const_ext', 'cheby1', 'firwin'
 ]

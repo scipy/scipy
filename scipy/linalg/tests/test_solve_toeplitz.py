@@ -46,8 +46,8 @@ def test_multiple_rhs():
             assert_equal(actual.shape, yshape)
             assert_equal(desired.shape, yshape)
             assert_allclose(actual, desired)
-            
-            
+
+
 def test_native_list_arguments():
     c = [1,2,4,7]
     r = [1,3,9,12]
@@ -79,7 +79,7 @@ def test_wikipedia_counterexample():
 
 
 def test_reflection_coeffs():
-    # check that that the partial solutions are given by the reflection
+    # check that the partial solutions are given by the reflection
     # coefficients
 
     random = np.random.RandomState(1234)

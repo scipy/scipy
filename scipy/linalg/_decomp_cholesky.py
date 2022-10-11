@@ -74,6 +74,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import cholesky
     >>> a = np.array([[1,-2j],[2j,5]])
     >>> L = cholesky(a, lower=True)
@@ -130,13 +131,14 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     LinAlgError
         Raised if decomposition fails.
 
-    See also
+    See Also
     --------
     cho_solve : Solve a linear set equations using the Cholesky factorization
                 of a matrix.
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import cho_factor
     >>> A = np.array([[9, 3, 1, 5], [3, 7, 5, 1], [1, 5, 9, 2], [5, 1, 2, 6]])
     >>> c, low = cho_factor(A)
@@ -175,12 +177,13 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     x : array
         The solution to the system A x = b
 
-    See also
+    See Also
     --------
     cho_factor : Cholesky factorization of a matrix
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import cho_factor, cho_solve
     >>> A = np.array([[9, 3, 1, 5], [3, 7, 5, 1], [1, 5, 9, 2], [5, 1, 2, 6]])
     >>> c, low = cho_factor(A)
@@ -252,13 +255,15 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     c : (u + 1, M) ndarray
         Cholesky factorization of a, in the same banded format as ab
 
-    See also
+    See Also
     --------
-    cho_solve_banded : Solve a linear set equations, given the Cholesky factorization
-                of a banded Hermitian.
+    cho_solve_banded :
+        Solve a linear set equations, given the Cholesky factorization
+        of a banded Hermitian.
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import cholesky_banded
     >>> from numpy import allclose, zeros, diag
     >>> Ab = np.array([[0, 0, 1j, 2, 3j], [0, -1, -2, 3, 4], [9, 8, 7, 6, 9]])
@@ -309,7 +314,7 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     x : array
         The solution to the system A x = b
 
-    See also
+    See Also
     --------
     cholesky_banded : Cholesky factorization of a banded matrix
 
@@ -320,6 +325,7 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import cholesky_banded, cho_solve_banded
     >>> Ab = np.array([[0, 0, 1j, 2, 3j], [0, -1, -2, 3, 4], [9, 8, 7, 6, 9]])
     >>> A = np.diag(Ab[0,2:], k=2) + np.diag(Ab[1,1:], k=1)

@@ -7,8 +7,8 @@ from . import _stats_py
 
 
 __all__ = [  # noqa: F822
-    'find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
-    'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
+    'find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
+    'tmin', 'tmax', 'tstd', 'tsem', 'moment',
     'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
     'normaltest', 'jarque_bera', 'itemfreq',
     'scoreatpercentile', 'percentileofscore',
@@ -30,7 +30,7 @@ __all__ = [  # noqa: F822
     'rankdata',
     'combine_pvalues', 'wasserstein_distance', 'energy_distance',
     'brunnermunzel', 'alexandergovern', 'gcd', 'namedtuple', 'array',
-    'ma', 'cdist', 'measurements', 'check_random_state', 'MapWrapper',
+    'ma', 'cdist', 'check_random_state', 'MapWrapper',
     'rng_integers', 'float_factorial', 'linalg', 'distributions',
     'mstats_basic', 'make_dataclass', 'ModeResult', 'DescribeResult',
     'SkewtestResult', 'KurtosistestResult', 'NormaltestResult',

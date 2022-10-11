@@ -20,7 +20,8 @@ See sparsetools.cxx for more details.
 """
 import optparse
 import os
-from distutils.dep_util import newer
+from stat import ST_MTIME
+
 
 #
 # List of all routines and their argument types.
@@ -194,6 +195,24 @@ static int get_thunk_case(int I_typenum, int T_typenum)
 # Code generation
 #
 
+
+def newer(source, target):
+    """
+    Return true if 'source' exists and is more recently modified than
+    'target', or if 'source' exists and 'target' doesn't.  Return false if
+    both exist and 'target' is the same age or younger than 'source'.
+    """
+    if not os.path.exists(source):
+        raise ValueError("file '%s' does not exist" % os.path.abspath(source))
+    if not os.path.exists(target):
+        return 1
+
+    mtime1 = os.stat(source)[ST_MTIME]
+    mtime2 = os.stat(target)[ST_MTIME]
+
+    return mtime1 > mtime2
+
+
 def get_thunk_type_set():
     """
     Get a list containing cartesian product of data types, plus a getter routine.
@@ -336,6 +355,8 @@ def main():
     p = optparse.OptionParser(usage=(__doc__ or '').strip())
     p.add_option("--no-force", action="store_false",
                  dest="force", default=True)
+    p.add_option("-o", "--outdir", type=str,
+                 help="Relative path to the output directory")
     options, args = p.parse_args()
 
     names = []
@@ -372,11 +393,19 @@ def main():
             methods.append(method)
 
         # Produce output
-        dst = os.path.join(os.path.dirname(__file__),
-                           'sparsetools',
+        if options.outdir:
+            # Used by Meson (options.outdir == scipy/sparse/sparsetools)
+            outdir = os.path.join(os.getcwd(), options.outdir)
+        else:
+            # Used by setup.py
+            outdir = os.path.join(os.path.dirname(__file__), 'sparsetools')
+
+        dst = os.path.join(outdir,
                            unit_name + '_impl.h')
         if newer(__file__, dst) or options.force:
-            print("[generate_sparsetools] generating %r" % (dst,))
+            if not options.outdir:
+                # Be silent if we're using Meson. TODO: add --verbose option
+                print("[generate_sparsetools] generating %r" % (dst,))
             with open(dst, 'w') as f:
                 write_autogen_blurb(f)
                 f.write(getter_code)
@@ -385,7 +414,9 @@ def main():
                 for method in methods:
                     f.write(method)
         else:
-            print("[generate_sparsetools] %r already up-to-date" % (dst,))
+            if not options.outdir:
+                # Be silent if we're using Meson
+                print("[generate_sparsetools] %r already up-to-date" % (dst,))
 
     # Generate code for method struct
     method_defs = ""
@@ -401,18 +432,19 @@ def main():
     };"""
 
     # Produce sparsetools_impl.h
-    dst = os.path.join(os.path.dirname(__file__),
-                       'sparsetools',
-                       'sparsetools_impl.h')
-
+    dst = os.path.join(outdir, 'sparsetools_impl.h')
     if newer(__file__, dst) or options.force:
-        print("[generate_sparsetools] generating %r" % (dst,))
+        if not options.outdir:
+            # Be silent if we're using Meson.
+            print("[generate_sparsetools] generating %r" % (dst,))
         with open(dst, 'w') as f:
             write_autogen_blurb(f)
             f.write(method_defs)
             f.write(method_struct)
     else:
-        print("[generate_sparsetools] %r already up-to-date" % (dst,))
+        if not options.outdir:
+            # Be silent if we're using Meson
+            print("[generate_sparsetools] %r already up-to-date" % (dst,))
 
 
 def write_autogen_blurb(stream):

@@ -122,6 +122,7 @@ def label(input, structure=None, output=None):
     (cross-shaped) structuring element:
 
     >>> from scipy.ndimage import label, generate_binary_structure
+    >>> import numpy as np
     >>> a = np.array([[0,0,1,1,0,0],
     ...               [0,0,0,1,0,0],
     ...               [1,1,0,0,1,0],
@@ -269,6 +270,7 @@ def find_objects(input, max_label=0):
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.zeros((6,6), dtype=int)
     >>> a[2:4, 2:4] = 1
     >>> a[4, 4] = 1
@@ -344,6 +346,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -610,7 +613,7 @@ def sum_labels(input, labels=None, index=None):
         by `labels` with the same shape as `index`. If 'index' is None or scalar,
         a scalar is returned.
 
-    See also
+    See Also
     --------
     mean, median
 
@@ -619,11 +622,11 @@ def sum_labels(input, labels=None, index=None):
     >>> from scipy import ndimage
     >>> input =  [0,1,2,3]
     >>> labels = [1,1,2,2]
-    >>> ndimage.sum(input, labels, index=[1,2])
+    >>> ndimage.sum_labels(input, labels, index=[1,2])
     [1.0, 5.0]
-    >>> ndimage.sum(input, labels, index=1)
+    >>> ndimage.sum_labels(input, labels, index=1)
     1
-    >>> ndimage.sum(input, labels)
+    >>> ndimage.sum_labels(input, labels)
     6
 
 
@@ -656,13 +659,14 @@ def mean(input, labels=None, index=None):
         Sequence of same length as `index`, with the mean of the different
         regions labeled by the labels in `index`.
 
-    See also
+    See Also
     --------
     variance, standard_deviation, minimum, maximum, sum, label
 
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.arange(25).reshape((5,5))
     >>> labels = np.zeros_like(a)
     >>> labels[3:5,3:5] = 1
@@ -712,6 +716,7 @@ def variance(input, labels=None, index=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -764,6 +769,7 @@ def standard_deviation(input, labels=None, index=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -931,7 +937,7 @@ def minimum(input, labels=None, index=None):
         and the minimal value of elements where `labels` is greater than zero
         if `index` is None.
 
-    See also
+    See Also
     --------
     label, maximum, median, minimum_position, extrema, sum, mean, variance,
     standard_deviation
@@ -944,6 +950,7 @@ def minimum(input, labels=None, index=None):
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -993,7 +1000,7 @@ def maximum(input, labels=None, index=None):
         and the maximal value of elements where `labels` is greater than zero
         if `index` is None.
 
-    See also
+    See Also
     --------
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation
@@ -1005,6 +1012,7 @@ def maximum(input, labels=None, index=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.arange(16).reshape((4,4))
     >>> a
     array([[ 0,  1,  2,  3],
@@ -1072,7 +1080,7 @@ def median(input, labels=None, index=None):
         and the median value of elements where `labels` is greater than zero
         if `index` is None.
 
-    See also
+    See Also
     --------
     label, minimum, maximum, extrema, sum, mean, variance, standard_deviation
 
@@ -1084,6 +1092,7 @@ def median(input, labels=None, index=None):
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 1],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -1138,13 +1147,14 @@ def minimum_position(input, labels=None, index=None):
         If `index` or `labels` are not specified, a tuple of ints is
         returned specifying the location of the first minimal value of `input`.
 
-    See also
+    See Also
     --------
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array([[10, 20, 30],
     ...               [40, 80, 100],
     ...               [1, 100, 200]])
@@ -1228,6 +1238,7 @@ def maximum_position(input, labels=None, index=None):
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -1297,6 +1308,7 @@ def extrema(input, labels=None, index=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -1365,6 +1377,7 @@ def center_of_mass(input, labels=None, index=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array(([0,0,0,0],
     ...               [0,1,1,0],
     ...               [0,1,1,0],
@@ -1444,6 +1457,7 @@ def histogram(input, min, max, bins, labels=None, index=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.array([[ 0.    ,  0.2146,  0.5962,  0.    ],
     ...               [ 0.    ,  0.7778,  0.    ,  0.    ],
     ...               [ 0.    ,  0.    ,  0.    ,  0.    ],

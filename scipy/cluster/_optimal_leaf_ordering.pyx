@@ -164,7 +164,7 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
                                             dtype=np.intc)
         int[:] must_swap = np.zeros((len(sorted_Z),), dtype=np.intc)
 
-        int i, v_l, v_r, v_size,
+        int i, v_l, v_r
         int v_l_min, v_l_max, v_r_min, v_r_max
 
         int u_clusters[2]
@@ -185,7 +185,6 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
 
         float min_km_dist
         float cur_min_M, current_M
-        int best_m, best_k
 
         int best_u = 0, best_w = 0
 
@@ -226,7 +225,6 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
 
         v_l = sorted_Z[i, 0]
         v_r = sorted_Z[i, 1]
-        v_size = sorted_Z[i, 2]
 
         v_l_min = cluster_ranges[v_l, 0]; v_l_max = cluster_ranges[v_l, 1]
         v_r_min = cluster_ranges[v_r, 0]; v_r_max = cluster_ranges[v_r, 1]
@@ -337,8 +335,6 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
                                 if current_M < cur_min_M:
                                     # We found a better m, k than previously.
                                     cur_min_M = current_M
-                                    best_m = m
-                                    best_k = k
 
                         # For the chosen (u, w), record the resulting minimal
                         # M[u, w] = M[u, m] + M[k, w] + D[m, k]

@@ -46,8 +46,8 @@
 .. _linux git workflow: https://www.mail-archive.com/dri-devel@lists.sourceforge.net/msg39091.html
 .. _ipython git workflow: https://mail.python.org/pipermail/ipython-dev/2010-October/005632.html
 .. _git parable: http://tom.preston-werner.com/2009/05/19/the-git-parable.html
-.. _git foundation: http://matthew-brett.github.com/pydagogue/foundation.html
-.. _numpy/master: https://github.com/numpy/numpy
+.. _git foundation: https://matthew-brett.github.io/pydagogue/foundation.html
+.. _numpy/main: https://github.com/numpy/numpy
 .. _git cherry-pick: https://www.kernel.org/pub/software/scm/git/docs/git-cherry-pick.html
 .. _git blame: https://www.kernel.org/pub/software/scm/git/docs/git-blame.html
 .. _this blog post: https://github.com/blog/612-introducing-github-compare-view
@@ -64,5 +64,5 @@
 .. _`NumPy mailing list`: https://numpy.org/community/
 .. _SciPy: https://www.scipy.org
 .. _`SciPy github`: https://github.com/scipy/scipy
-.. _`SciPy mailing list`: https://scipy.org/mailing-lists/
+.. _`SciPy mailing list`: https://mail.python.org/mailman3/lists/scipy-dev.python.org/
 .. _`SciPy repository`: https://github.com/scipy/scipy
