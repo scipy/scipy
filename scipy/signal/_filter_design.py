@@ -2263,7 +2263,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -2437,7 +2437,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3030,7 +3030,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3145,7 +3145,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3263,7 +3263,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3378,7 +3378,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3519,7 +3519,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     Notes
     -----
