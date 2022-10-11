@@ -5,7 +5,7 @@
 import numpy as np
 cimport numpy as np
 from warnings import warn
-from scipy.sparse import (csc_matrix, csr_matrix, isspmatrix, isspmatrix_coo,
+from scipy.sparse import (csr_matrix, isspmatrix, isspmatrix_coo,
                           isspmatrix_csc, isspmatrix_csr,
                           SparseEfficiencyWarning)
 from . import maximum_bipartite_matching

@@ -437,7 +437,7 @@ class UnivariateSpline:
         0.0
 
         """
-        return dfitpack.splint(*(self._eval_args+(a, b)))
+        return _fitpack_impl.splint(a, b, self._eval_args)
 
     def derivatives(self, x):
         """ Return all derivatives of the spline at the point x.
@@ -510,10 +510,7 @@ class UnivariateSpline:
         """
         k = self._data[5]
         if k == 3:
-            z, m, ier = dfitpack.sproot(*self._eval_args[:2])
-            if not ier == 0:
-                raise ValueError("Error code returned by spalde: %s" % ier)
-            return z[:m]
+            return _fitpack_impl.sproot(self._eval_args)
         raise NotImplementedError('finding roots unsupported for '
                                   'non-cubic splines')
 

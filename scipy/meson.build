@@ -1,5 +1,4 @@
 # Platform detection
-is_windows = host_machine.system() == 'windows'
 is_mingw = is_windows and cc.get_id() == 'gcc'
 
 cython_c_args = []
@@ -141,7 +140,12 @@ endif
 blas = dependency(blas_name)
 lapack = dependency(lapack_name)
 
-if blas.name() == 'mkl' or lapack.name() == 'mkl' or get_option('use-g77-abi')
+# FIXME: conda-forge sets MKL_INTERFACE_LAYER=LP64,GNU, see gh-11812.
+#        This needs work on gh-16200 to make MKL robust. We should be
+#        requesting `mkl-dynamic-lp64-seq` here. And then there's work needed
+#        in general to enable the ILP64 interface (also for OpenBLAS).
+uses_mkl = blas.name().to_lower().startswith('mkl') or lapack.name().to_lower().startswith('mkl')
+if uses_mkl or get_option('use-g77-abi')
   g77_abi_wrappers = files([
     '_build_utils/src/wrap_g77_abi_f.f',
     '_build_utils/src/wrap_g77_abi_c.c'
@@ -158,7 +162,7 @@ generate_config = custom_target(
   output: '__config__.py',
   input: '../tools/config_utils.py',
   command: [py3, '@INPUT@', '@OUTPUT@'],
-  install_dir: py3.get_install_dir() / 'scipy'
+  install_dir: py3.get_install_dir(pure: false) / 'scipy'
 )
 
 generate_version = custom_target(
@@ -169,7 +173,7 @@ generate_version = custom_target(
   output: 'version.py',
   input: '../tools/version_utils.py',
   command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
-  install_dir: py3.get_install_dir() / 'scipy'
+  install_dir: py3.get_install_dir(pure: false) / 'scipy'
 )
 
 python_sources = [
@@ -306,7 +310,7 @@ endif
 # Suppress warning for deprecated Numpy API.
 # (Suppress warning messages emitted by #warning directives).
 # Replace with numpy_nodepr_api after Cython 3.0 is out
-cython_c_args += ['-Wno-cpp', use_math_defines]
+cython_c_args += [_cpp_Wno_cpp, use_math_defines]
 cython_cpp_args = cython_c_args
 
 # Ordering of subdirs: special and linalg come first, because other submodules

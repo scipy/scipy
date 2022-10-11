@@ -7,7 +7,6 @@ from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           solve, solve_banded)
 from . import _bspl
 from . import _fitpack_impl
-from . import _fitpack as _dierckx
 from scipy._lib._util import prod
 from scipy.sparse import csr_array
 from scipy.special import poch
@@ -657,8 +656,7 @@ class BSpline:
             if self.c.ndim == 1:
                 # Fast path: use FITPACK's routine
                 # (cf _fitpack_impl.splint).
-                t, c, k = self.tck
-                integral, wrk = _dierckx._splint(t, c, k, a, b)
+                integral = _fitpack_impl.splint(a, b, self.tck)
                 return integral * sign
 
         out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
@@ -1393,7 +1391,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
             overwrite_ab=True, overwrite_b=True)
 
     if info > 0:
-        raise LinAlgError("Collocation matix is singular.")
+        raise LinAlgError("Collocation matrix is singular.")
     elif info < 0:
         raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
 

@@ -5,8 +5,13 @@ Special functions (:mod:`scipy.special`)
 
 .. currentmodule:: scipy.special
 
-Nearly all of the functions below are universal functions and follow
-broadcasting and automatic array-looping rules.
+Almost all of the functions below accept NumPy arrays as input
+arguments as well as single numbers. This means they follow
+broadcasting and automatic array-looping rules. Technically,
+they are `NumPy universal functions
+<https://numpy.org/doc/stable/user/basics.ufuncs.html#ufuncs-basics>`_.
+Functions which do not accept NumPy arrays are marked by a warning
+in the section description.
 
 .. seealso::
 
@@ -95,7 +100,8 @@ Bessel functions
    hankel2e      -- Exponentially scaled Hankel function of the second kind.
    wright_bessel -- Wright's generalized Bessel function.
 
-The following is not a universal function:
+The following function does not accept NumPy arrays (it is not a
+universal function):
 
 .. autosummary::
    :toctree: generated/
@@ -105,7 +111,8 @@ The following is not a universal function:
 Zeros of Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -178,7 +185,8 @@ Spherical Bessel functions
 Riccati-Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -334,7 +342,8 @@ Error function and Fresnel integrals
    modfresnelm   -- Modified Fresnel negative integrals.
    voigt_profile -- Voigt profile.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -352,7 +361,8 @@ Legendre functions
    lpmv     -- Associated Legendre function of integer order and real degree.
    sph_harm -- Compute spherical harmonics.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -477,7 +487,8 @@ Parabolic cylinder functions
    pbvv -- Parabolic cylinder function V.
    pbwa -- Parabolic cylinder function W.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -495,7 +506,8 @@ Mathieu and related functions
    mathieu_a -- Characteristic value of even Mathieu functions.
    mathieu_b -- Characteristic value of odd Mathieu functions.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -561,7 +573,8 @@ Kelvin functions
    kerp         -- Derivative of the Kelvin function ker.
    keip         -- Derivative of the Kelvin function kei.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -633,8 +646,9 @@ Convenience functions
    tandg     -- Tangent of angle x given in degrees.
    cotdg     -- Cotangent of the angle `x` given in degrees.
    log1p     -- Calculates log(1+x) for use when `x` is near zero.
-   expm1     -- exp(x) - 1 for use when `x` is near zero.
-   cosm1     -- cos(x) - 1 for use when `x` is near zero.
+   expm1     -- ``exp(x) - 1`` for use when `x` is near zero.
+   cosm1     -- ``cos(x) - 1`` for use when `x` is near zero.
+   powm1     -- ``x**y - 1`` for use when `y` is near zero or `x` is near 1.
    round     -- Round to nearest integer.
    xlogy     -- Compute ``x*log(y)`` so that the result is 0 if ``x = 0``.
    xlog1py   -- Compute ``x*log1p(y)`` so that the result is 0 if ``x = 0``.
