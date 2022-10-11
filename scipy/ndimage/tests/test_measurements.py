@@ -487,7 +487,7 @@ def test_value_indices03():
         a = np.array((12*[1]+12*[2]+12*[3]), dtype=np.int32).reshape(shape)
         trueKeys = np.unique(a)
         vi = ndimage.value_indices(a)
-        assert_equal(list(vi.keys()), trueKeys)
+        assert_equal(list(vi.keys()), list(trueKeys))
         for k in trueKeys:
             trueNdx = np.where(a == k)
             assert_equal(vi[k], trueNdx)
