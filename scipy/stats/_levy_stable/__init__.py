@@ -6,8 +6,6 @@ from functools import partial
 
 import numpy as np
 
-from numpy.testing import assert_allclose
-
 from scipy import optimize
 from scipy import integrate
 from scipy.integrate._quadrature import _builtincoeffs
@@ -588,42 +586,30 @@ def _fitstart_S1(data):
     nu_c_table_r = np.asarray(nu_c_table)[j, :]
     nu_zeta_table_r = np.asarray(nu_zeta_table)[j, :]
 
-    psi_1_i = interpolate.interp2d(
-        nu_beta_range, nu_alpha_range, alpha_table, kind="linear"
-    )
-    psi_1 = RectBivariateSpline(nu_beta_range, nu_alpha_range_r, alpha_table_r.T, kx=1, ky=1, s=0)
+    psi_1 = RectBivariateSpline(nu_beta_range, nu_alpha_range_r,
+                                alpha_table_r.T, kx=1, ky=1, s=0)
 
     def psi_1_1(nu_beta, nu_alpha):
-        assert_allclose(psi_1(nu_beta, nu_alpha), psi_1_i(nu_beta, nu_alpha), atol=1e-15)
         return psi_1(nu_beta, nu_alpha) \
             if nu_beta > 0 else psi_1(-nu_beta, nu_alpha)
 
-    psi_2_i = interpolate.interp2d(
-        nu_beta_range, nu_alpha_range, beta_table, kind="linear"
-    )
-    psi_2 = RectBivariateSpline(nu_beta_range, nu_alpha_range_r, beta_table_r.T, kx=1, ky=1, s=0)
+    psi_2 = RectBivariateSpline(nu_beta_range, nu_alpha_range_r,
+                                beta_table_r.T, kx=1, ky=1, s=0)
 
     def psi_2_1(nu_beta, nu_alpha):
-        assert_allclose(psi_2(nu_beta, nu_alpha), psi_2_i(nu_beta, nu_alpha), atol=1e-15)
         return psi_2(nu_beta, nu_alpha) \
             if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
 
-    phi_3_i = interpolate.interp2d(
-        beta_range, alpha_range, nu_c_table, kind="linear"
-    )
-    phi_3 = RectBivariateSpline(beta_range, alpha_range_r, nu_c_table_r.T, kx=1, ky=1, s=0)
+    phi_3 = RectBivariateSpline(beta_range, alpha_range_r, nu_c_table_r.T,
+                                kx=1, ky=1, s=0)
 
     def phi_3_1(beta, alpha):
-        assert_allclose(phi_3(beta, alpha)[0], phi_3_i(beta, alpha), atol=1e-15)
         return phi_3(beta, alpha) if beta > 0 else phi_3(-beta, alpha)
 
-    phi_5_i = interpolate.interp2d(
-        beta_range, alpha_range, nu_zeta_table, kind="linear"
-    )
-    phi_5 = RectBivariateSpline(beta_range, alpha_range_r, nu_zeta_table_r.T, kx=1, ky=1, s=0)
+    phi_5 = RectBivariateSpline(beta_range, alpha_range_r, nu_zeta_table_r.T,
+                                kx=1, ky=1, s=0)
 
     def phi_5_1(beta, alpha):
-        assert_allclose(phi_5(beta, alpha)[0], phi_5_i(beta, alpha), atol=1e-15)
         return phi_5(beta, alpha) if beta > 0 else -phi_5(-beta, alpha)
 
     # quantiles
@@ -637,7 +623,8 @@ def _fitstart_S1(data):
     nu_beta = (p95 + p05 - 2 * p50) / (p95 - p05)
 
     if nu_alpha >= 2.439:
-        alpha = np.clip(psi_1_1(nu_beta, nu_alpha)[0, 0], np.finfo(float).eps, 2.)
+        eps = np.finfo(float).eps
+        alpha = np.clip(psi_1_1(nu_beta, nu_alpha)[0, 0], eps, 2.)
         beta = np.clip(psi_2_1(nu_beta, nu_alpha)[0, 0], -1.0, 1.0)
     else:
         alpha = 2.0
