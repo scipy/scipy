@@ -94,7 +94,7 @@ def lagrange(x, w):
 
 
 dep_mesg = """\
-`interp2d` is deprecated in SciPy 1.10 and will be removed in a future SciPy version. 
+`interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy 1.12.0. 
 
 For legacy code, nearly bug-for-bug compatible replacements are
 `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
@@ -113,7 +113,8 @@ class interp2d:
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
 
-    %(dep_mesg)s
+    .. deprecated:: 1.10.0
+        %(dep_mesg)s
 
     Interpolate over a 2-D grid.
 
@@ -342,6 +343,7 @@ class interp2d:
         if len(z) == 1:
             z = z[0]
         return array(z)
+
 
 interp2d.__doc__ = interp2d.__doc__ % {"dep_mesg": dep_mesg}
 
