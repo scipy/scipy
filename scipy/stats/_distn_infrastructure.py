@@ -3629,8 +3629,8 @@ class rv_discrete(rv_generic):
         # output type 'd' to handle nin and inf
         lower_bound = _a - 1 + loc
         upper_bound = _b + loc
-        place(output, cond2, lower_bound)
-        place(output, cond3, upper_bound)
+        place(output, cond2*(cond == cond), lower_bound)
+        place(output, cond3*(cond == cond), upper_bound)
 
         # call place only if at least 1 valid argument
         if np.any(cond):

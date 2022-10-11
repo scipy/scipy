@@ -1391,7 +1391,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
             overwrite_ab=True, overwrite_b=True)
 
     if info > 0:
-        raise LinAlgError("Collocation matix is singular.")
+        raise LinAlgError("Collocation matrix is singular.")
     elif info < 0:
         raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
 
