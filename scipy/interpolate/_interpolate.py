@@ -102,7 +102,7 @@ scattered 2D data.
 
 In new code, for regular grids use `RegularGridInterpolator` instead.
 For scattered data, prefer `LinearNDInterpolator` or
-`CloghToucher2DInterpolator`.
+`CloughTocher2DInterpolator`.
 
 For more details see
 `https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff`
