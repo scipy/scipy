@@ -1003,8 +1003,8 @@ class _TestCommon:
     def test_mean(self):
         def check(dtype):
             dat = array([[0, 1, 2],
-                         [3, -4, 5],
-                         [-6, 7, 9]], dtype=dtype)
+                         [3, 4, 5],
+                         [6, 7, 9]], dtype=dtype)
             datsp = self.spmatrix(dat, dtype=dtype)
 
             assert_array_almost_equal(dat.mean(), datsp.mean())
