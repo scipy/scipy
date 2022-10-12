@@ -65,6 +65,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Indicate if the function's (`func`) return type is real
         (``complex_func=False``: default) or complex (``complex_func=True``).
         In both cases, the function's argument is real.
+        If full_output is also non-zero, the `infodict`, `message`, and
+        `explain` for the real and complex components are returned in
+        a dictionary with keys "real output" and "imag output".
 
     Returns
     -------
@@ -453,8 +456,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
                     range(1, 2)])
         if full_output:
             msgexp = {}
-            msgexp["real message"] = re_retval[2:]
-            msgexp["imag message"] = im_retval[2:]
+            msgexp["real output"] = re_retval[2:]
+            msgexp["imag output"] = im_retval[2:]
             retval = retval + (msgexp,)
 
         return retval
