@@ -500,6 +500,7 @@ def setup_package():
     # This import is here because it needs to be done before importing setup()
     # from numpy.distutils, but after the MANIFEST removing and sdist import
     # higher up in this file.
+    import setuptools
     from setuptools import setup
 
     if run_build:
