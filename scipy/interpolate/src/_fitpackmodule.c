@@ -53,7 +53,7 @@ static PyObject *fitpack_error;
  * Return -1 on overflow.
  */
 npy_intp
-_mul_overflow(F_INT mx, F_INT my) {
+_mul_overflow_intp(F_INT mx, F_INT my) {
     npy_intp int_max, mxy;
 
     /* Limit is min of (largest array size, max of Fortran int) */
@@ -66,6 +66,27 @@ _mul_overflow(F_INT mx, F_INT my) {
         return -1;
     }
     mxy = (npy_intp)mx * (npy_intp)my;
+    return mxy;
+}
+
+
+/*
+ * Multiply mx*my, check for integer overflow, where both inputs and
+ * the output are Fortran ints.
+ * Return -1 on overflow.
+ */
+F_INT
+_mul_overflow_f_int(F_INT mx, F_INT my) {
+    F_INT mxy;
+
+    /* v = int_max/my is largest integer multiple of `my` such that
+       v * my <= F_INT_MAX
+    */
+    if (my != 0 && F_INT_MAX/my < mx) {
+        /* Integer overflow */
+        return -1;
+    }
+    mxy = mx * my;
     return mxy;
 }
 
@@ -191,7 +212,7 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     mx = PyArray_DIMS(ap_x)[0];
     my = PyArray_DIMS(ap_y)[0];
 
-    mxy = _mul_overflow(mx, my);
+    mxy = _mul_overflow_intp(mx, my);
     if (mxy < 0) {
         PyErr_Format(PyExc_RuntimeError,
                      "Cannot produce output of size %dx%d (size too large)",
@@ -205,7 +226,15 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     }
     z = (double *) PyArray_DATA(ap_z);
     if (nux || nuy) {
-        lwrk = mx*(kx + 1 - nux) + my*(ky + 1 - nuy) + (nx - kx - 1)*(ny - ky - 1);
+        /* lwrk = mx*(kx + 1 - nux) + my*(ky + 1 - nuy) + (nx - kx - 1)*(ny - ky - 1); */
+        lwrk = _mul_overflow_f_int(nx - kx - 1, ny - ky - 1);
+        if (lwrk < 0) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "Cannot produce output of size %dx%d (size too large)",
+                         nx - kx - 1, ny - ky -1);
+            goto fail;
+        }    
+        lwrk += mx*(kx + 1 - nux) + my*(ky + 1 - nuy);
     }
     else {
         lwrk = mx*(kx + 1) + my*(ky + 1);
