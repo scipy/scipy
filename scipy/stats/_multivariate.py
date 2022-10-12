@@ -7,7 +7,8 @@ from numpy import asarray_chkfinite, asarray
 from numpy.lib import NumpyVersion
 import scipy.linalg
 from scipy._lib import doccer
-from scipy.special import gammaln, psi, multigammaln, xlogy, entr, betaln
+from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
+                           gamma, loggamma)
 from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
 from scipy.linalg._misc import LinAlgError
@@ -19,6 +20,7 @@ from . import _mvn, _covariance, _rcont
 __all__ = ['multivariate_normal',
            'matrix_normal',
            'dirichlet',
+           'dirichlet_multinomial',
            'wishart',
            'invwishart',
            'multinomial',
@@ -5739,3 +5741,301 @@ def _sample_uniform_direction(dim, size, random_state):
     samples = random_state.standard_normal(samples_shape)
     samples /= np.linalg.norm(samples, axis=-1, keepdims=True)
     return samples
+
+
+def _dirichlet_multinomial_check_parameters(alpha):
+    alpha = np.asarray(alpha)
+    if np.min(alpha) <= 0:
+        raise ValueError("All parameters must be greater than 0")
+
+    return alpha
+
+
+class dirichlet_multinomial_gen(multi_rv_generic):
+    r"""A Dirichlet multinomial random variable.
+
+    Methods
+    -------
+    logpmf(alpha, x):
+        Log of the probability mass function.
+    pmf(alpha, x):
+        Probability mass function.
+    mean(alpha, n):
+        Mean of the Dirichlet multinomial distribution.
+    var(alpha, n):
+        Variance of the Dirichlet multinomial distribution.
+    cov(alpha, n):
+        The covariance of the Dirichlet multinomial distribution.
+
+    Parameters
+    ----------
+    %(_dirichlet_doc_default_callparams)s
+    %(_doc_random_state)s
+
+    Notes
+    -----
+    ``x`` should be an array of integers greater than or equal to 0,
+    ``n`` should be equal to the sum of ``x``, and ``alpha`` should be
+    an array of positive numbers.
+
+    Examples
+    --------
+    >>> from scipy.stats import dirichlet_multinomial
+
+    Get the PMF
+
+    >>> alpha = np.array([3, 4, 5])
+    >>> x = np.array([1, 2, 3])
+    >>> dirichlet_multinomial.pmf(alpha, x)
+    0.08484162895927604
+
+    Get the log of the PMF
+
+    >>> alpha = np.array([3, 4, 5])
+    >>> x = np.array([1, 2, 3])
+    >>> dirichlet_multinomial.logpmf(alpha, x)
+    -2.4669689491013327
+
+    Get the mean
+
+    >>> alpha = np.array([3, 4])
+    >>> n = 3
+    >>> dirichlet_multinomial.mean(alpha, n)
+    array([1.28571429, 1.71428571])
+
+    Get the variance
+
+    >>> alpha = np.array([1, 1, 1])
+    >>> n = 9
+    >>> dirichlet_multinomial.var(alpha, n)
+    array([6.0, 6.0, 6.0])
+
+    Get the covariance
+
+    >>> alpha = np.array([1, 1, 1])
+    >>> n = 9
+    >>> dirichlet_multinomial.cov(alpha, n)
+    array([[6.0, -3.0, -3.0],
+           [-3.0, 6.0, -3.0],
+           [-3.0, -3.0, 6.0]])
+
+   The functions support broadcasting, under the convention that the
+   vector parameters are interpreted as if each row along the last
+   axis is a single object. For instance:
+
+   >>> alpha = np.array([[1, 2, 3], [4, 5, 6]])
+   >>> x = np.array([[1, 2, 3], [4, 5, 6]])
+   >>> dirichlet_multinomial.pmf(alpha, x)
+   array([0.06493506, 0.02626937])
+
+   This broadcasting also works for ``cov``, where the output objects are
+   square matrices of size ``m.shape[-1]``. For example:
+    >>> alpha = np.array([1, 1, 1])
+    >>> n = np.array([9, 9])
+    >>> dirichlet_multinomial.cov(alpha, n)
+    array([[[6.0, -3.0, -3.0],
+            [-3.0, 6.0, -3.0],
+            [-3.0, -3.0, 6.0]],
+           [[6.0, -3.0, -3.0],
+            [-3.0, 6.0, -3.0],
+            [-3.0, -3.0, 6.0]]])
+
+    Alternatively, the object may be called (as a function) to fix the `m`
+    and `n` parameters, returning a "frozen" multivariate hypergeometric
+    random variable.
+
+    >>> dm = dirichlet_multinomial(alpha = np.array([3, 4, 5]))
+    >>> dm.pmf(x = [1, 2, 3])
+    0.08484162895927604
+
+    See Also
+    --------
+    scipy.stats.dirichlet : The dirichlet distribution.
+    scipy.stats.multinomial : The multinomial distribution.
+
+    References
+    ----------
+    .. [1] Dirichlet-multinomial distribution,
+     https://www.wikipedia.org/wiki/Dirichlet-multinomial_distribution
+
+     """
+    def __init__(self, seed=None):
+        super().__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__,
+                                        dirichlet_docdict_params)
+
+    def __call__(self, alpha, seed=None):
+        return dirichlet_multinomial_frozen(alpha, seed=seed)
+
+    def logpmf(self, alpha, x):
+        """The log of the probability mass function.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+        x: ndarray
+            A random vector of category counts distributed according to
+            a multinomial distribution.
+
+        Returns
+        -------
+        out: scalar
+            Log of the probability mass function.
+
+        """
+
+        n = np.sum(x, -1)
+
+        if alpha.shape != x.shape:
+            raise ValueError("`x` and `alpha` must have the same shape.")
+
+        if np.less(x, 0).any():
+            raise ValueError("`x` must not contain a non-negative integer.")
+
+        #Checks to make sure that every number in x can be expressed as an int.
+        if not np.equal(np.mod(x, 1), 0).all():
+            raise ValueError("`x` must only contain integers.")
+
+        #Reduces line length
+        A = _dirichlet_multinomial_check_parameters(alpha)
+        B = np.sum(A, -1)
+        C = x + 1
+
+        out = loggamma(B) + loggamma(n + 1) - loggamma(n + B)
+        out += np.sum(loggamma(x + A) - (loggamma(A) + loggamma(C)), -1)
+
+        return out
+
+    def pmf(self, alpha, x):
+        """Probability mass function for a Dirichlet multinomial distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+        x: ndarray
+            A random vector of category counts distributed according to
+            a multinomial distribution.
+
+        Returns
+        -------
+        out: scalar
+            Probability mass function for a Dirichlet multinomial distribution.
+
+        """
+
+        out = np.exp(self.logpmf(alpha, x))
+        return out
+
+    def mean(self, alpha, n):
+        """Mean of a Dirichlet multinomial distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+        n: int
+            Number of trials.
+
+        Returns
+        -------
+        out: ndarray
+            Mean of a Dirichlet multinomial distribution.
+
+        """
+        A = _dirichlet_multinomial_check_parameters(alpha)
+        n = np.asarray(n)
+        B = np.sum(A, -1)
+
+        out = ((n * A.T) / B).T
+        return out
+
+    def var(self, alpha, n):
+        """The variance of the Dirichlet multinomial distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+        n: int
+            Number of trials.
+
+        Returns
+        -------
+        out: array_like
+            The variances of the components of the distribution. This is
+            the diagonal of the covariance matrix of the distribution.
+
+        """
+        alpha = _dirichlet_multinomial_check_parameters(alpha)
+        A = alpha
+        B = sum(A)
+
+        out = (n * (A / B)) * (1 - (A / B)) * ((n + B) / (1 + B))
+        return out
+
+    def cov(self, alpha, n):
+        """Covariance matrix of a Dirichlet multinomial distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+        n: array_like
+            Number of trials.
+
+        Returns
+        -------
+        out : array_like
+            The covariance matrix of the distribution
+
+        """
+        A = _dirichlet_multinomial_check_parameters(alpha)
+        B = np.sum(A, -1)
+
+        out = np.outer(A, A)
+        out = np.outer(-n / (B ** 2) * ((n + B) / (1 + B)), out)
+
+        len_sqrt = int(np.sqrt(out.size / len(n)))
+
+        if min(out.shape) == 1:
+            out = out.reshape(len_sqrt, len_sqrt)
+            np.fill_diagonal(out, dirichlet_multinomial.var(A, n))
+
+        else:
+            out = out.reshape(len(n), len_sqrt, len_sqrt)
+            for i in range(0, len(n)):
+                np.fill_diagonal(out[i], dirichlet_multinomial.var(A, n[i]))
+
+        return out
+
+
+dirichlet_multinomial = dirichlet_multinomial_gen()
+
+
+class dirichlet_multinomial_frozen(multi_rv_frozen):
+    def __init__(self, alpha, seed=None):
+	    self.alpha = alpha
+	    self._dist = dirichlet_multinomial_gen(seed)
+
+    def logpmf(self, x):
+	    return self._dist.logpmf(self.alpha, x)
+
+    def pmf(self, x):
+	    return self._dist.pmf(self.alpha, x)
+
+    def mean(self, n):
+	    return self._dist.mean(self.alpha, n)
+
+    def var(self, n):
+	    return self._dist.var(self.alpha, n)
+
+    def cov(self, n):
+        return self._dist.cov(self.alpha, n)
+
+
+#Set frozen generator docstrings from corresponding docstrings in
+#dirichlet_multinomial and fill in default strings in class docstrings.
+for name in ['logpmf', 'pmf', 'mean', 'var', 'cov']:
+    method = dirichlet_multinomial_gen.__dict__[name]
+    method_frozen = dirichlet_multinomial_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(
+        method.__doc__, dirichlet_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__,
+                                      dirichlet_docdict_params)
