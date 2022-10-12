@@ -350,12 +350,6 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     This assumes that the integrals of :math:`g` and :math:`h` exist
     over the inteval :math:`[a,b]` [2]_.
 
-    For example,
-
-    .. math::
-        \\int_0^{\\frac{\\pi}{2}} e^{it} dt =
-        \\int_0^{\\frac{\\pi}{2}} \\cos{t} + i\\sin{t} dt
-
 
     References
     ----------
@@ -457,13 +451,12 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             tuple([
                     np.max((re_retval[i], im_retval[i])) for i in
                     range(1, 2)])
-        msgexp = {}
-        if len(re_retval) > 2:
+        if full_output:
+            msgexp = {}
             msgexp["real message"] = re_retval[2:]
-        if len(im_retval) > 2:
             msgexp["imag message"] = im_retval[2:]
-        if len(msgexp) > 0:
             retval = retval + (msgexp,)
+
         return retval
 
     if weight is None:

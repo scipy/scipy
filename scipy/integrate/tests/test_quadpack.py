@@ -510,6 +510,10 @@ class TestQuad:
         assert_quad(quad(tfunc, 0, np.pi/2, complex_func=True),
                     1+1j, error_tolerance=1e-6)
 
+        full_res = quad(tfunc, 0, np.pi/2, complex_func=True, full_output=True)
+        assert_quad(full_res[:-1],
+                    1+1j, error_tolerance=1e-6)
+
 
 class TestNQuad:
     def test_fixed_limits(self):
