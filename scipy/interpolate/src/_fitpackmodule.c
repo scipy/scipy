@@ -47,6 +47,30 @@ static PyObject *fitpack_error;
 
 
 /*
+ * Multiply mx*my, check for integer overflow.
+ * Inputs are Fortran ints, and the output is npy_intp, for use
+ * in PyArray_SimpleNew et al.
+ * Return -1 on overflow.
+ */
+npy_intp
+_mul_overflow(F_INT mx, F_INT my) {
+    npy_intp int_max, mxy;
+
+    /* Limit is min of (largest array size, max of Fortran int) */
+    int_max = (F_INT_MAX < NPY_MAX_INTP) ? F_INT_MAX : NPY_MAX_INTP;
+    /* v = int_max/my is largest integer multiple of `my` such that
+       v * my <= int_max
+    */
+    if (my != 0 && int_max/my < mx) {
+        /* Integer overflow */
+        return -1;
+    }
+    mxy = (npy_intp)mx * (npy_intp)my;
+    return mxy;
+}
+
+
+/*
  * Functions moved verbatim from __fitpack.h
  */
 
@@ -135,7 +159,7 @@ static PyObject *
 fitpack_bispev(PyObject *dummy, PyObject *args)
 {
     F_INT nx, ny, kx, ky, mx, my, lwrk, *iwrk, kwrk, ier, lwa, nux, nuy;
-    npy_intp int_max, mxy;
+    npy_intp mxy;
     double *tx, *ty, *c, *x, *y, *z, *wrk, *wa = NULL;
     PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_z = NULL, *ap_tx = NULL;
     PyArrayObject *ap_ty = NULL, *ap_c = NULL;
@@ -166,19 +190,15 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     ny = PyArray_DIMS(ap_ty)[0];
     mx = PyArray_DIMS(ap_x)[0];
     my = PyArray_DIMS(ap_y)[0];
-    /* Limit is min of (largest array size, max of Fortran int) */
-    int_max = (F_INT_MAX < NPY_MAX_INTP) ? F_INT_MAX : NPY_MAX_INTP;
-    /* v = int_max/my is largest integer multiple of `my` such that
-       v * my <= int_max
-    */
-    if (my != 0 && int_max/my < mx) {
-        /* Integer overflow */
+
+    mxy = _mul_overflow(mx, my);
+    if (mxy < 0) {
         PyErr_Format(PyExc_RuntimeError,
                      "Cannot produce output of size %dx%d (size too large)",
                      mx, my);
         goto fail;
     }
-    mxy = (npy_intp)mx * (npy_intp)my;
+
     ap_z = (PyArrayObject *)PyArray_SimpleNew(1,&mxy,NPY_DOUBLE);
     if (ap_z == NULL) {
         goto fail;
