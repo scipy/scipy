@@ -25,9 +25,9 @@ scipy.linalg vs numpy.linalg
 plus some other more advanced ones not contained in ``numpy.linalg``.
 
 Another advantage of using ``scipy.linalg`` over ``numpy.linalg`` is that
-it is always compiled with BLAS/LAPACK support, while for numpy this is
-optional. Therefore, the scipy version might be faster depending on how
-numpy was installed.
+it is always compiled with BLAS/LAPACK support, while for NumPy this is
+optional. Therefore, the SciPy version might be faster depending on how
+NumPy was installed.
 
 Therefore, unless you don't want to add ``scipy`` as a dependency to
 your ``numpy`` program, use ``scipy.linalg`` instead of ``numpy.linalg``.

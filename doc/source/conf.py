@@ -48,6 +48,7 @@ extensions = [
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
+    'myst_nb',
 ]
 
 # Determine if the matplotlib has a recent enough version of the
@@ -334,6 +335,12 @@ plot_rcparams = {
     'figure.subplot.wspace': 0.4,
     'text.usetex': False,
 }
+
+# -----------------------------------------------------------------------------
+# Notebook tutorials with MyST-NB
+# -----------------------------------------------------------------------------
+
+nb_execution_mode = "force"
 
 # -----------------------------------------------------------------------------
 # Source code links
