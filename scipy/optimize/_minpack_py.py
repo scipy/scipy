@@ -181,7 +181,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 
 
 def _root_hybr(func, x0, args=(), jac=None,
-               col_deriv=0, xtol=1.49012e-08, maxfev=0, band=None, eps=None,
+               col_deriv=0, xtol=1.49012e-2, maxfev=0, band=None, eps=None,
                factor=100, diag=None, **unknown_options):
     """
     Find the roots of a multivariate function using MINPACK's hybrd and
@@ -955,7 +955,7 @@ def _fixed_point_helper(func, x0, args, xtol, maxiter, use_accel):
     raise RuntimeError(msg)
 
 
-def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500, method='del2'):
+def fixed_point(func, x0, args=(), xtol=1e-2, maxiter=500, method='del2'):
     """
     Find a fixed point of the function.
 

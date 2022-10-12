@@ -27,6 +27,7 @@ __docformat__ = "restructuredtext en"
 
 import warnings
 import sys
+import numpy
 from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
                    asarray, sqrt, Inf, asfarray)
 import numpy as np
@@ -581,7 +582,7 @@ def _wrap_scalar_function_maxfun_validation(function, args, maxfun):
     return ncalls, function_wrapper
 
 
-def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
+def fmin(func, x0, args=(), xtol=1e-2, ftol=1e-2, maxiter=None, maxfun=None,
          full_output=0, disp=1, retall=0, callback=None, initial_simplex=None):
     """
     Minimize a function using the downhill simplex algorithm.
@@ -1886,7 +1887,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
 
 def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
-                       callback=None, xtol=1e-5, eps=_epsilon, maxiter=None,
+                       callback=None, xtol=1e-1, eps=_epsilon, maxiter=None,
                        disp=False, return_all=False,
                        **unknown_options):
     """
@@ -2547,7 +2548,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
         return res['x']
 
 
-def _minimize_scalar_brent(func, brack=None, args=(), xtol=1.48e-8,
+def _minimize_scalar_brent(func, brack=None, args=(), xtol=1.48e-1,
                            maxiter=500, disp=0,
                            **unknown_options):
     """
