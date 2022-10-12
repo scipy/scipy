@@ -282,7 +282,7 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
 {
     F_INT iopt, m, kx, ky, nxest, nyest, lwrk1, lwrk2, *iwrk, kwrk, ier;
     F_INT lwa, nxo, nyo, i, lcest, nmax, nx, ny, lc;
-    npy_intp dims[1];
+    npy_intp dims[1], lc_intp;
     double *x, *y, *z, *w, xb, xe, yb, ye, s, *tx, *ty, *c, fp;
     double *wrk1, *wrk2, *wa = NULL, eps;
     PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_z, *ap_w = NULL;
@@ -321,7 +321,15 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     if (nmax < nyest) {
         nmax = nyest;
     }
-    lcest = (nxest - kx - 1)*(nyest - ky - 1);
+    /* lcest = (nxest - kx - 1)*(nyest - ky - 1); */
+    lcest = _mul_overflow_f_int(nxest - kx - 1, nyest - ky - 1);
+    if (lcest < 0) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Cannot produce output of size %dx%d (size too large)",
+                     nxest - kx - 1, nyest - ky -1);
+        goto fail;
+    }
+    /* kwrk computation is unlikely to overflow if lcest above did not.*/
     kwrk = m + (nxest - 2*kx - 1)*(nyest - 2*ky - 1);
     lwa = 2*nmax + lcest + lwrk1 + lwrk2 + kwrk;
     if ((wa = malloc(lwa*sizeof(double))) == NULL) {
@@ -351,7 +359,15 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
         memcpy(ty, PyArray_DATA(ap_ty), ny*sizeof(double));
     }
     if (iopt==1) {
-        lc = (nx - kx - 1)*(ny - ky - 1);
+        /* lc = (nx - kx - 1)*(ny - ky - 1); */
+        lc = _mul_overflow_f_int(nx - kx - 1, ny - ky -1);
+        if (lc < 0) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "Cannot produce output of size %dx%d (size too large)",
+                         nx - kx - 1, ny - ky -1);
+            goto fail;
+        }
+
         memcpy(wrk1, PyArray_DATA(ap_wrk), lc*sizeof(double));
         /*memcpy(iwrk,PyArray_DATA(ap_iwrk),n*sizeof(int));*/
     }
@@ -374,14 +390,22 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "Invalid inputs.");
         goto fail;
     }
-    lc = (nx - kx - 1)*(ny - ky - 1);
+
+    lc_intp = _mul_overflow_intp(nx - kx - 1, ny - ky -1);
+    if (lc_intp < 0) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Cannot produce output of size %dx%d (size too large)",
+                     nx - kx - 1, ny - ky -1);
+        goto fail;
+    }
+
     Py_XDECREF(ap_tx);
     Py_XDECREF(ap_ty);
     dims[0] = nx;
     ap_tx = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     dims[0] = ny;
     ap_ty = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
-    dims[0] = lc;
+    dims[0] = lc_intp;
     ap_c = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (ap_tx == NULL
             || ap_ty == NULL
@@ -390,16 +414,16 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     }
     if ((iopt == 0)||(nx > nxo)||(ny > nyo)) {
         Py_XDECREF(ap_wrk);
-        dims[0] = lc;
+        dims[0] = lc_intp;
         ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
         if (ap_wrk == NULL) {
             goto fail;
         }
         /*ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1,&n,F_INT_NPY);*/
     }
-    if (PyArray_DIMS(ap_wrk)[0] < lc) {
+    if (PyArray_DIMS(ap_wrk)[0] < lc_intp) {
         Py_XDECREF(ap_wrk);
-        dims[0] = lc;
+        dims[0] = lc_intp;
         ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
         if (ap_wrk == NULL) {
             goto fail;
@@ -407,8 +431,8 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     }
     memcpy(PyArray_DATA(ap_tx), tx, nx*sizeof(double));
     memcpy(PyArray_DATA(ap_ty), ty, ny*sizeof(double));
-    memcpy(PyArray_DATA(ap_c), c, lc*sizeof(double));
-    memcpy(PyArray_DATA(ap_wrk), wrk1, lc*sizeof(double));
+    memcpy(PyArray_DATA(ap_c), c, lc_intp*sizeof(double));
+    memcpy(PyArray_DATA(ap_wrk), wrk1, lc_intp*sizeof(double));
     /*memcpy(PyArray_DATA(ap_iwrk),iwrk,n*sizeof(int));*/
     free(wa);
     Py_DECREF(ap_x);
