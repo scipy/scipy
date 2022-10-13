@@ -8376,7 +8376,7 @@ class truncpareto_gen(rv_continuous):
         return [ib, ic]
 
     def _argcheck(self, b, c):
-        return (b > 0) & (c > 1)
+        return (b > 0.) & (c > 1.)
 
     def _get_support(self, b, c):
         return self.a, c
@@ -8385,7 +8385,8 @@ class truncpareto_gen(rv_continuous):
         return b * x**-(b+1) / (1 - c**-b)
 
     def _logpdf(self, x, b, c):
-        return np.log(b) - np.log1p(-c**-b) - (b+1)*np.log(x)
+        # return np.log(b) - np.log1p(-c**-b) - (b+1)*np.log(x)
+        return np.log(b) - np.log(-np.expm1(-b*np.log(c))) - (b+1)*np.log(x)
 
     def _cdf(self, x, b, c):
         return (1 - x**-b) / (1 - c**-b)
@@ -8432,52 +8433,25 @@ class truncpareto_gen(rv_continuous):
         def harm_mean(x):
             return 1/np.mean(1/x)
 
-        def get_b(loc):
-            c_ = get_c(loc)
-            u_ = (data-loc)/get_scale(loc)
-            harm_m = harm_mean(u_)
-            log_m = log_mean(u_)
+        def get_b(c, loc, scale):
+            u = (data-loc)/scale
+            harm_m = harm_mean(u)
+            log_m = log_mean(u)
             quot = (harm_m-1)/log_m
+            return (1 - (quot-1) / (quot - (1 - 1/c)*harm_m/np.log(c)))/log_m
 
-            return (1 - (quot-1) / (quot - (1 - 1/c_)*harm_m/np.log(c_)))/log_m
+        def get_c(loc, scale):
+            return (mx - loc)/scale
 
-        def get_c(loc):
-            if floc and fscale:
-                return (mx - floc)/fscale
-            elif floc:
-                return (mx - floc)/(mn - floc)
-            elif fscale:
-                return (mx - mn)/fscale + 1
-            return (mx - loc)/(mn - loc)
-
-        def get_loc():
-            if fc and fscale:
-                gamma = mx - mn - (fc - 1)*fscale
-                if gamma > 0:
-                    return mn - fscale
-                elif gamma < 0:
-                    return mx - fc*fscale
-                else:
-                    return (mn - mx)/(fc - 1)
-            elif fc:
-                return (fc*mn - mx)/(fc - 1)
-            elif fscale:
-                return mn - fscale
-            return
+        def get_loc(fc, fscale):
+            if fscale:  # (fscale and fc) or (fscale and not fc)
+                loc = mn - fscale
+                return loc
+            if fc:
+                loc = (fc*mn - mx)/(fc - 1)
+                return loc
 
         def get_scale(loc):
-            if fc and floc:
-                gamma = mx - floc - fc*(mn - floc)
-                if gamma > 0:
-                    return mn - floc
-                elif gamma < 0:
-                    return (mx - floc)/fc
-                else:
-                    return (mx - mn)/(fc - 1)
-            elif fc:
-                return (mx - mn)/(fc - 1)
-            elif floc:
-                return mn - floc
             return mn - loc
 
         # Functions used for optimisation; partial derivatives of
@@ -8486,9 +8460,10 @@ class truncpareto_gen(rv_continuous):
         def dL_dLoc(loc, b_=None):
             # Partial derivative wrt location.
             # Optimised upon when no parameters, or only b, are fixed.
-            c = get_c(loc)
-            b = get_b(loc) if b_ is None else b_
-            harm_m = harm_mean((data - loc)/get_scale(loc))
+            scale = get_scale(loc)
+            c = get_c(loc, scale)
+            b = get_b(c, loc, scale) if b_ is None else b_
+            harm_m = harm_mean((data - loc)/scale)
             return 1 - (1 + (c - 1)/(c**(b+1) - c)) * (1 - 1/(b+1)) * harm_m
 
         def dL_dB(b, logc, logm):
@@ -8516,8 +8491,9 @@ class truncpareto_gen(rv_continuous):
             if fb is None:
                 def cond_b(loc):
                     # b is positive only if this function is positive
-                    c = get_c(loc)
-                    harm_m = harm_mean((data - loc)/get_scale(loc))
+                    scale = get_scale(loc)
+                    c = get_c(loc, scale)
+                    harm_m = harm_mean((data - loc)/scale)
                     return (1 + 1/(c-1)) * np.log(c) / harm_m - 1
 
                 # This gives an upper bound on loc allowing for a positive b.
@@ -8551,9 +8527,9 @@ class truncpareto_gen(rv_continuous):
                 if not res.converged:
                     return fallback(data, *args, **kwds)
                 loc = res.root
-                b = get_b(loc)
-                c = get_c(loc)
                 scale = get_scale(loc)
+                c = get_c(loc, scale)
+                b = get_b(c, loc, scale)
 
                 std_data = (data - loc)/scale
                 # The expression of b relies on b being bounded above.
@@ -8580,8 +8556,8 @@ class truncpareto_gen(rv_continuous):
                 if not res.converged:
                     return fallback(data, *args, **kwds)
                 loc = res.root
-                c = get_c(loc)
                 scale = get_scale(loc)
+                c = get_c(loc, scale)
                 b = fb
         else:
             # At least one of the parameters determining the support is fixed;
@@ -8589,9 +8565,9 @@ class truncpareto_gen(rv_continuous):
             # The completely determined case (fixed c, loc and scale)
             # has to be checked for not overflowing the support.
             # If not fixed, b has to be determined numerically.
-            loc = floc if floc is not None else get_loc()
-            c = fc or get_c(loc)
+            loc = floc if floc is not None else get_loc(fc, fscale)
             scale = fscale or get_scale(loc)
+            c = fc or get_c(loc, scale)
 
             # Unscaled, translated values should be positive when the location
             # is fixed. If it is not the case, we end up with negative `scale`
@@ -8607,7 +8583,7 @@ class truncpareto_gen(rv_continuous):
             if fc and (floc is not None) and fscale:
                 if data.max() > fc*fscale + floc:
                     raise FitDataError("truncpareto", lower=1,
-                                       upper=get_c(None))
+                                       upper=get_c(loc, scale))
 
             # The other constraints should be automatically satisfied
             # from the analytical expressions of the parameters.
@@ -8635,6 +8611,20 @@ class truncpareto_gen(rv_continuous):
                     b = rbrack
             else:
                 b = fb
+
+        # The distribution requires that `scale+loc <= data <= c*scale+loc`.
+        # To avoid numerical issues, some tuning may be necessary.
+        # We adjust `scale` to satisfy the lower bound, and we adjust
+        # `c` to satisfy the upper bound.
+        if not (scale+loc) < mn:
+            if fscale:
+                loc = np.nextafter(loc, -np.inf)
+            else:
+                scale = get_scale(loc)
+                scale = np.nextafter(scale, 0)
+        if not (c*scale+loc) > mx:
+            c = get_c(loc, scale)
+            c = np.nextafter(c, np.inf)
 
         if not (np.all(self._argcheck(b, c)) and (scale > 0)):
             fallback(data, *args, **kwds)

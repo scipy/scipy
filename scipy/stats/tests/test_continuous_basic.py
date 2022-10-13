@@ -84,7 +84,7 @@ skip_fit_fix_test_mle = ['burr', 'exponpow', 'exponweib', 'gausshyper',
                          'johnsonsu', 'kappa4', 'ksone', 'kstwo', 'kstwobign',
                          'levy_stable', 'mielke', 'ncf', 'ncx2',
                          'powerlognorm', 'powernorm', 'rdist', 'recipinvgauss',
-                         'trapezoid', 'vonmises', 'vonmises_line',
+                         'trapezoid', 'truncpareto', 'vonmises', 'vonmises_line',
                          'studentized_range']
 # the first list fails due to non-finite distribution moments encountered
 # most of the rest fail due to integration warnings
