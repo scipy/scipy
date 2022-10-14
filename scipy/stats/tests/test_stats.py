@@ -8073,7 +8073,7 @@ class TestExpectile:
 
         # 5. convexity for alpha > 0.5, concavity for alpha < 0.5
         # convexity is
-        # T((1 − c) X + c Y) <= (1 − c) T(X) + c T(Y) for 0 <= c <= 1
+        # T((1 - c) X + c Y) <= (1 - c) T(X) + c T(Y) for 0 <= c <= 1
         y = rng.logistic(size=n, loc=10)
         for c in [0.1, 0.5, 0.8]:
             assert_op(
