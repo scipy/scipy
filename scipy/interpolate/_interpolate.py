@@ -114,7 +114,20 @@ class interp2d:
              fill_value=None)
 
     .. deprecated:: 1.10.0
-        %(dep_mesg)s
+
+    `interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy 1.12.0. 
+
+    For legacy code, nearly bug-for-bug compatible replacements are
+    `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
+    scattered 2D data.
+
+    In new code, for regular grids use `RegularGridInterpolator` instead.
+    For scattered data, prefer `LinearNDInterpolator` or
+    `CloughTocher2DInterpolator`.
+
+    For more details see
+    `https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff`
+
 
     Interpolate over a 2-D grid.
 
@@ -343,9 +356,6 @@ class interp2d:
         if len(z) == 1:
             z = z[0]
         return array(z)
-
-
-interp2d.__doc__ = interp2d.__doc__ % {"dep_mesg": dep_mesg}
 
 
 def _check_broadcast_up_to(arr_from, shape_to, name):
