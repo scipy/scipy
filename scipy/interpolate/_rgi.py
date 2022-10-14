@@ -218,13 +218,15 @@ class RegularGridInterpolator:
         self.method = method
         self.bounds_error = bounds_error
         # todo: sort checks in order of complexity and runtime, raising early
-        self._check_dimensionality(points, values)
         values = self._check_values(values)
+        self._check_dimensionality(points, values)
         self._check_fill_value(values, fill_value)
+        self.fill_value = fill_value
         flip = self._check_points(points)
         self.flip = flip
         self.fill_value = fill_value
-        self.grid = tuple([np.flip(p) if i in flip else np.asarray(p) for i, p in enumerate(points)])
+        self.grid = tuple([np.flip(p) if i in flip else np.asarray(p)
+                           for i, p in enumerate(points)])
         self.values = np.flip(values, axis=flip)
 
     def _check_dimensionality(self, points, values):
