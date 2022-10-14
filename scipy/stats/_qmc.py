@@ -711,8 +711,8 @@ class QMCEngine(ABC):
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
-        if not np.issubdtype(type(d), np.integer):
-            raise ValueError('d must be an integer value')
+        if not np.issubdtype(type(d), np.integer) or d < 0:
+            raise ValueError('d must be a non-negative integer value')
 
         self.d = d
         self.rng = check_random_state(seed)
@@ -1034,7 +1034,26 @@ class LatinHypercube(QMCEngine):
     d : int
         Dimension of the parameter space.
     centered : bool, optional
-        Center the point within the multi-dimensional grid. Default is False.
+        Center samples within cells of a multi-dimensional grid.
+        Default is False.
+
+        .. deprecated:: 1.10.0
+            `centered` is deprecated as of SciPy 1.10.0 and will be removed in
+            1.12.0. Use `scramble` instead. ``centered=True`` corresponds to
+            ``scramble=False``.
+
+    scramble : bool, optional
+        When False, center samples within cells of a multi-dimensional grid.
+        Otherwise, samples are randomly placed within cells of the grid.
+
+        .. note::
+            Setting ``scramble=False`` does not ensure deterministic output.
+            For that, use the `seed` parameter.
+
+        Default is True.
+
+        .. versionadded:: 1.10.0
+
     optimization : {None, "random-cd", "lloyd"}, optional
         Whether to use an optimization scheme to improve the quality after
         sampling. Note that this is a post-processing step that does not
@@ -1083,7 +1102,10 @@ class LatinHypercube(QMCEngine):
     distinct rows occur the same number of times. The elements of :math:`A`
     are in the set :math:`\{0, 1, ..., p-1\}`, also called symbols.
     The constraint that :math:`p` must be a prime number is to allow modular
-    arithmetic.
+    arithmetic. Increasing strength adds some symmetry to the sub-projections
+    of a sample. With strength 2, samples are symmetric along the diagonals of
+    2D sub-projections. This may be undesirable, but on the other hand, the
+    sample dispersion is improved.
 
     Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
     strength 2 is a useful increment over strength 1. Going to strength 3 is
@@ -1174,15 +1196,25 @@ class LatinHypercube(QMCEngine):
 
     def __init__(
         self, d: IntNumber, *, centered: bool = False,
+        scramble: bool = True,
         strength: int = 1,
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
+        if centered:
+            scramble = False
+            warnings.warn(
+                "'centered' is deprecated and will be removed in SciPy 1.12."
+                " Please use 'scramble' instead. 'centered=True' corresponds"
+                " to 'scramble=False'.",
+                stacklevel=2
+            )
+
         # Used in `scipy.integrate.qmc_quad`
-        self._init_quad = {'d': d, 'centered': centered, 'strength': strength,
+        self._init_quad = {'d': d, 'scramble': True, 'strength': strength,
                            'optimization': optimization}
         super().__init__(d=d, seed=seed, optimization=optimization)
-        self.centered = centered
+        self.scramble = scramble
 
         lhs_method_strength = {
             1: self._random_lhs,
@@ -1204,7 +1236,7 @@ class LatinHypercube(QMCEngine):
 
     def _random_lhs(self, n: IntNumber = 1) -> np.ndarray:
         """Base LHS algorithm."""
-        if self.centered:
+        if not self.scramble:
             samples: np.ndarray | float = 0.5
         else:
             samples = self.rng.uniform(size=(n, self.d))
@@ -1251,7 +1283,7 @@ class LatinHypercube(QMCEngine):
 
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
-        lhs_engine = LatinHypercube(d=1, centered=self.centered, strength=1,
+        lhs_engine = LatinHypercube(d=1, scramble=self.scramble, strength=1,
                                     seed=self.rng)  # type: QMCEngine
         for j in range(n_col):
             for k in range(p):

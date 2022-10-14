@@ -53,7 +53,7 @@ jobs:
           if [[ "$COMMIT_MSG" == *"[wheel build]"* ]]; then
               RUN="1" 
           fi
-          echo "::set-output name=message::$RUN"
+          echo "message=$RUN" >> $GITHUB_OUTPUT
           echo github.ref ${{ github.ref }}
 
   build_wheels:
