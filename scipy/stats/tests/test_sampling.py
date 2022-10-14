@@ -1005,6 +1005,7 @@ class TestNumericalInverseHermite:
         with pytest.raises(err, match=msg):
             NumericalInverseHermite(StandardNormal(), domain=domain)
 
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     @pytest.mark.xslow
     @pytest.mark.parametrize(("distname", "shapes"), distcont)
     def test_basic_all_scipy_dists(self, distname, shapes):
@@ -1023,12 +1024,7 @@ class TestNumericalInverseHermite:
         np.random.seed(0)
 
         dist = getattr(stats, distname)(*shapes)
-
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "overflow encountered")
-            sup.filter(RuntimeWarning, "divide by zero")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            fni = NumericalInverseHermite(dist)
+        fni = NumericalInverseHermite(dist)
 
         x = np.random.rand(10)
         p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
