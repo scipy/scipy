@@ -8254,15 +8254,11 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
             Value of `x` corresponding with the KS statistic; i.e. the
             observation at which the difference between CDFs is measured.
         statistic_sign: int
-            1 if the KS statistic is the maximal positive difference between
-            CDFs (D+), -1 if the KS statistic is the negative difference (D-).
-
-        statistic_sign: int
-            1 if the KS statistic is the maximal positive difference between
-            empirical and hypothesized distributions (D+), -1 if the KS
-            statistic is the negative difference (D-). If a 2-sample test is
-            run, the difference is between the first and second empirical
-            distributions.
+            If a 1-sample test is run, this is +1 if the KS statistic is the
+            maximal positive difference between empirical and hypothesized
+            distributions (D+), -1 if the KS statistic is the negative
+            difference (D-). If a 2-sample test is run, the difference is
+            between the first and second empirical distributions.
 
     See Also
     --------

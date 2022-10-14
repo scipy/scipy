@@ -3890,33 +3890,16 @@ class TestKSTest:
         self._test_kstest_and_ks1samp(x, 'greater', mode='exact')
         self._test_kstest_and_ks1samp(x, 'less', mode='exact')
 
-    def test_unpack_tuple_bunch(self):
-        x = np.linspace(-1, 1, 9)
-        res = stats.ks_1samp(x, stats.norm.cdf, alternative='two-sided')
-        ks_stat, pval = res
-        assert hasattr(res, 'statistic_location')
-        assert hasattr(res, 'statistic_sign')
-
     # missing: no test that uses *args
 
 
 class TestKSOneSample:
     """Tests kstest and ks_samp 1-samples with K-S various sizes, alternatives, modes."""
 
-    def _testOne(self, x, alternative,
-                 expected_statistic, expected_prob,
-                 mode='auto', decimal=14, attrs=None,
-                 theoretical=stats.norm):
-        result = stats.ks_1samp(x, theoretical.cdf, alternative=alternative,
-                                mode=mode)
-        expected = [expected_statistic, expected_prob]
-        result_list = list(result)
-        if attrs is not None:
-            for key, val in attrs.items():
-                expected.append(val)
-                result_list.append(getattr(result, key))
-        assert_array_almost_equal(
-                np.array(result_list), np.array(expected), decimal=decimal)
+    def _testOne(self, x, alternative, expected_statistic, expected_prob, mode='auto', decimal=14):
+        result = stats.ks_1samp(x, stats.norm.cdf, alternative=alternative, mode=mode)
+        expected = np.array([expected_statistic, expected_prob])
+        assert_array_almost_equal(np.array(result), expected, decimal=decimal)
 
     def test_namedtuple_attributes(self):
         x = np.linspace(-1, 1, 9)
@@ -3975,20 +3958,20 @@ class TestKSOneSample:
         ])
         FuncData(kolmogn, dataset, (0, 1, 2), 3).check(dtypes=[int, float, bool])
 
-    @pytest.mark.parametrize("alternative, x67val, ref_location, ref_sign",
+    @pytest.mark.parametrize("alternative, x56val, ref_location, ref_sign",
                              [('greater', 0.5, 0.5, +1),
                               ('less', 0.7, 0.7, -1),
                               ('two-sided', 0.5, 0.5, +1),
                               ('two-sided', 0.7, 0.7, -1)])
-    def test_location_sign(self, alternative, x67val, ref_location, ref_sign):
+    def test_location_sign(self, alternative, x56val, ref_location, ref_sign):
         # Test that location and sign corresponding with statistic are as
         # expected. (Test is designed to be easy to predict.)
         x = np.arange(1.0, 11, dtype=np.float64) / 10.0
-        x[5:7] = x67val
+        x[5:7] = x56val
         res = stats.ks_1samp(x, stats.uniform.cdf, alternative=alternative)
         res_list = [res.statistic, res.statistic_location, res.statistic_sign]
         expected_list = [0.2, ref_location, ref_sign]
-        assert_array_almost_equal(np.array(res_list), np.array(expected_list))
+        assert_array_almost_equal(res_list, expected_list)
 
     # missing: no test that uses *args
 
@@ -3997,7 +3980,7 @@ class TestKSTwoSamples:
     """Tests 2-samples with K-S various sizes, alternatives, modes."""
 
     def _testOne(self, x1, x2, alternative, expected_statistic, expected_prob,
-                 mode='auto', attrs=None):
+                 mode='auto'):
         result = stats.ks_2samp(x1, x2, alternative, mode=mode)
         expected = np.array([expected_statistic, expected_prob])
         assert_array_almost_equal(np.array(result), expected)
