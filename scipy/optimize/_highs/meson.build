@@ -2,10 +2,10 @@ highs_define_macros = [
   '-DCMAKE_BUILD_TYPE="RELEASE"',
   '-DFAST_BUILD=ON',
   '-DHIGHS_GITHASH="n/a"',
-  '-DHIGHS_COMPILATION_DATE="2021-07-09"',  # cannot generate dynamically
+  '-DHIGHS_COMPILATION_DATE="2022-10-13"',  # cannot generate dynamically
   '-DHIGHS_VERSION_MAJOR=1',  # don't care about this, look at CMakelists.txt
   '-DHIGHS_VERSION_MINOR=2',
-  '-DHIGHS_VERSION_PATCH=0',
+  '-DHIGHS_VERSION_PATCH=2',
   '-DHIGHS_DIR=' + meson.current_source_dir() / '..' / '..' / '_lib' / 'highs',
   '-UOPENMP',
   '-UEXT_PRESOLVE',
@@ -170,6 +170,7 @@ highs_lib = static_library('highs',
     '../../_lib/highs/src/presolve/HighsPostsolveStack.cpp',
     '../../_lib/highs/src/presolve/HighsSymmetry.cpp',
     '../../_lib/highs/src/presolve/HPresolve.cpp',
+    '../../_lib/highs/src/presolve/HPresolveAnalysis.cpp',
     '../../_lib/highs/src/presolve/PresolveComponent.cpp',
     '../../_lib/highs/src/qpsolver/basis.cpp',
     '../../_lib/highs/src/qpsolver/quass.cpp',

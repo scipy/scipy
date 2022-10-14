@@ -15,5 +15,5 @@
 	shallow = true
 [submodule "HiGHS"]
 	path = scipy/_lib/highs
-	url = https://github.com/scipy/highs
+	url = https://github.com/mckib2/highs
 	shallow = true
