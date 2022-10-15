@@ -7061,12 +7061,42 @@ add_newdoc("itmodstruve0",
     Wrapper for a Fortran routine created by Shanjie Zhang and Jianming
     Jin [1]_.
 
+    See also
+    --------
+    modstruve: Modified Struve function which is integrated by this function
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Evaluate the function at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import itmodstruve0
+    >>> itmodstruve0(1.)
+    0.3364726286440384
+
+    Evaluate the function at several points by supplying
+    an array for `x`.
+
+    >>> points = np.array([1., 2., 3.5])
+    >>> itmodstruve0(points)
+    array([0.33647263, 1.588285  , 7.60382578])
+
+    Plot the function from -10 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> itmodstruve0_values = itmodstruve0(x)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, itmodstruve0_values)
+    >>> ax.set_xlabel(r'$x$')
+    >>> ax.set_ylabel(r'$\int_0^xL(t)\,dt$')
+    >>> plt.show()
     """)
 
 add_newdoc("itstruve0",
@@ -7093,8 +7123,6 @@ add_newdoc("itstruve0",
     See also
     --------
     struve: Function which is integrated by this function
-    modstruve: Modified Struve function
-    itmodstruve0: Integral of the modified Struve function
 
     Notes
     -----
