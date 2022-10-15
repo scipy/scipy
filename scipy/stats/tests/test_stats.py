@@ -4172,9 +4172,11 @@ class TestKSTwoSamples:
         _count_paths_outside_method(1000, 1, 1, 1001)
 
         with np.errstate(invalid='raise'):
-            assert_raises(RuntimeError, _count_paths_outside_method,
+            # Exception could be RuntimeError (if executed via Pythran) or
+            # FloatingPointError if run in pure Python
+            assert_raises(Exception, _count_paths_outside_method,
                           1100, 1099, 1, 1)
-            assert_raises(RuntimeError, _count_paths_outside_method,
+            assert_raises(Exception, _count_paths_outside_method,
                           2000, 1000, 1, 1)
 
     def test_argument_checking(self):
