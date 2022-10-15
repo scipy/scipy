@@ -6842,7 +6842,7 @@ add_newdoc("it2struve0",
     Evaluate the function at one point.
 
     >>> import numpy as np
-    >>> from scipy.special import it2truve0
+    >>> from scipy.special import it2struve0
     >>> it2struve0(1.)
     0.9571973506383524
 
@@ -6857,9 +6857,9 @@ add_newdoc("it2struve0",
 
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-10., 10., 1000)
-    >>> it2truve0_values = it2struve0(x)
+    >>> it2struve0_values = it2struve0(x)
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(x, it2truve0_values)
+    >>> ax.plot(x, it2struve0_values)
     >>> ax.set_xlabel(r'$x$')
     >>> ax.set_ylabel(r'$\int_x^{\infty}\frac{H(t)}{t}\,dt$')
     >>> plt.show()
