@@ -7065,7 +7065,9 @@ add_newdoc("itstruve0",
 
     See also
     --------
-    struve
+    struve: Function which is integrated by this function
+    modstruve: Modified Struve function
+    itmodstruve0: Integral of the modified Struve function
 
     Notes
     -----
@@ -7078,6 +7080,32 @@ add_newdoc("itstruve0",
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Evaluate the function at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import itstruve0
+    >>> itstruve0(1.)
+    0.30109042670805547
+
+    Evaluate the function at several points by supplying
+    an array for `x`.
+
+    >>> points = np.array([1., 2., 3.5])
+    >>> itstruve0(points)
+    array([0.30109043, 1.01870116, 1.96804581])
+
+    Plot the function from -20 to 20.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-20., 20., 1000)
+    >>> istruve0_values = itstruve0(x)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, istruve0_values)
+    >>> ax.set_xlabel(r'$x$')
+    >>> ax.set_ylabel(r'$\int_0^{x}H(t)\,dt$')
+    >>> plt.show()
     """)
 
 add_newdoc("iv",
