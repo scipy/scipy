@@ -65,6 +65,29 @@ def _call_super_mom(fun):
     return wrapper
 
 
+def _get_left_bracket(fun, rbrack, lbrack=None):
+    # find left bracket for `root_scalar`. A guess for lbrack may be provided.
+    lbrack = lbrack or rbrack - 1
+    diff = rbrack - lbrack
+
+    # if there is no sign change in `fun` between the brackets, expand
+    # rbrack - lbrack until a sign change occurs
+    def interval_contains_root(lbrack, rbrack):
+        # return true if the signs disagree.
+        return np.sign(fun(lbrack)) != np.sign(fun(rbrack))
+
+    while not interval_contains_root(lbrack, rbrack):
+        diff *= 2
+        lbrack = rbrack - diff
+
+        msg = ("The solver could not find a bracket containing a "
+               "root to an MLE first order condition.")
+        if np.isinf(lbrack):
+            raise FitSolverError(msg)
+
+    return lbrack
+
+
 class ksone_gen(rv_continuous):
     r"""Kolmogorov-Smirnov one-sided test statistic distribution.
 
@@ -7159,13 +7182,6 @@ class rdist_gen(rv_continuous):
 rdist = rdist_gen(a=-1.0, b=1.0, name="rdist")
 
 
-def _rayleigh_fit_check_error(ier, msg):
-    if ier != 1:
-        raise RuntimeError('rayleigh.fit: fsolve failed to find the root of '
-                           'the first-order conditions of the log-likelihood '
-                           f'function: {msg} (ier={ier})')
-
-
 class rayleigh_gen(rv_continuous):
     r"""A Rayleigh continuous random variable.
 
@@ -7238,15 +7254,17 @@ class rayleigh_gen(rv_continuous):
         for the root finder; the `scale` parameter and any other parameters
         for the optimizer are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
-        def scale_mle(loc, data):
+        def scale_mle(loc):
             # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
             # and Peacock (2000), Page 175
             return (np.sum((data - loc) ** 2) / (2 * len(data))) ** .5
 
-        def loc_mle(loc, data):
+        def loc_mle(loc):
             # This implicit equation for `loc` is used when
             # both `loc` and `scale` are free.
             xm = data - loc
@@ -7255,7 +7273,7 @@ class rayleigh_gen(rv_continuous):
             s3 = (1/xm).sum()
             return s1 - s2/(2*len(data))*s3
 
-        def loc_mle_scale_fixed(loc, scale, data):
+        def loc_mle_scale_fixed(loc, scale=fscale):
             # This implicit equation for `loc` is used when
             # `scale` is fixed but `loc` is not.
             xm = data - loc
@@ -7266,7 +7284,7 @@ class rayleigh_gen(rv_continuous):
             if np.any(data - floc <= 0):
                 raise FitDataError("rayleigh", lower=1, upper=np.inf)
             else:
-                return floc, scale_mle(floc, data)
+                return floc, scale_mle(floc)
 
         # Account for user provided guess of `loc`.
         loc0 = kwds.get('loc')
@@ -7274,19 +7292,15 @@ class rayleigh_gen(rv_continuous):
             # Use _fitstart to estimate loc; ignore the returned scale.
             loc0 = self._fitstart(data)[0]
 
-        if fscale is not None:
-            # `scale` is fixed
-            x, info, ier, msg = optimize.fsolve(loc_mle_scale_fixed, x0=loc0,
-                                                args=(fscale, data,),
-                                                xtol=1e-10, full_output=True)
-            _rayleigh_fit_check_error(ier, msg)
-            return x[0], fscale
-        else:
-            # Neither `loc` nor `scale` are fixed.
-            x, info, ier, msg = optimize.fsolve(loc_mle, x0=loc0, args=(data,),
-                                                xtol=1e-10, full_output=True)
-            _rayleigh_fit_check_error(ier, msg)
-            return x[0], scale_mle(x[0], data)
+        fun = loc_mle if fscale is None else loc_mle_scale_fixed
+        rbrack = np.nextafter(np.min(data), -np.inf)
+        lbrack = _get_left_bracket(fun, rbrack)
+        res = optimize.root_scalar(fun, bracket=(lbrack, rbrack))
+        if not res.converged:
+            raise FitSolverError(res.flag)
+        loc = res.root
+        scale = fscale or scale_mle(loc)
+        return loc, scale
 
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
