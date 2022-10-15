@@ -4173,10 +4173,8 @@ class TestKSTwoSamples:
     def testNamedAttributes(self):
         # test for namedtuple attribute results
         attributes = ('statistic', 'pvalue')
-        additional_attributes = ('statistic_location', 'statistic_sign')
         res = stats.ks_2samp([1, 2], [3])
-        check_named_results(res, attributes,
-                            additional_attributes=additional_attributes)
+        check_named_results(res, attributes)
 
     @pytest.mark.slow
     def test_some_code_paths(self):
