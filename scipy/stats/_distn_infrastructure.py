@@ -1054,7 +1054,7 @@ class rv_generic:
             self._random_state = random_state_saved
 
         # Cast to int if discrete
-        if discrete and not isinstance(self, rv_sample):
+        if discrete and not isinstance(self, _rv_sample):
             if size == ():
                 vals = int(vals)
             else:
@@ -3152,13 +3152,11 @@ class rv_discrete(rv_generic):
     >>> R = custm.rvs(size=100)
 
     """
-    def __new__(cls, a=0, b=inf, name=None, badvalue=None,
-                moment_tol=1e-8, values=None, inc=1, longname=None,
-                shapes=None, extradoc=None, seed=None):
-
+    def __new__(cls, *args, **kwds):
+        values = kwds.get('values', None)
         if values is not None:
             # dispatch to a subclass
-            return super(rv_discrete, cls).__new__(rv_sample)
+            return super(rv_discrete, cls).__new__(_rv_sample)
         else:
             # business as usual
             return super(rv_discrete, cls).__new__(cls)
@@ -3368,7 +3366,7 @@ class rv_discrete(rv_generic):
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k <= _b)
-        if not isinstance(self, rv_sample):
+        if not isinstance(self, _rv_sample):
             cond1 = cond1 & self._nonzero(k, *args)
         cond = cond0 & cond1
         output = zeros(shape(cond), 'd')
@@ -3406,7 +3404,7 @@ class rv_discrete(rv_generic):
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k <= _b)
-        if not isinstance(self, rv_sample):
+        if not isinstance(self, _rv_sample):
             cond1 = cond1 & self._nonzero(k, *args)
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
@@ -3757,7 +3755,7 @@ class rv_discrete(rv_generic):
         else:
             invfac = 1.0
 
-        if isinstance(self, rv_sample):
+        if isinstance(self, _rv_sample):
             res = self._expect(fun, lb, ub)
             return res / invfac
 
@@ -3849,7 +3847,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
         yield supp
 
 
-class rv_sample(rv_discrete):
+class _rv_sample(rv_discrete):
     """A 'sample' discrete distribution defined by the support and values.
 
     The ctor ignores most of the arguments, only needs the `values` argument.
@@ -3917,6 +3915,105 @@ class rv_sample(rv_discrete):
         attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs"]
         [dct.pop(attr, None) for attr in attrs]
 
+        return dct
+
+    def _attach_methods(self):
+        """Attaches dynamically created argparser methods."""
+        self._attach_argparser_methods()
+
+    def _get_support(self, *args):
+        """Return the support of the (unscaled, unshifted) distribution.
+
+        Parameters
+        ----------
+        arg1, arg2, ... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+
+        Returns
+        -------
+        a, b : numeric (float, or int or +/-np.inf)
+            end-points of the distribution's support.
+        """
+        return self.a, self.b
+
+    def _pmf(self, x):
+        return rv_sample._pmf(self, x)
+
+    def _cdf(self, x):
+        return rv_sample._cdf(self, x)
+
+    def _ppf(self, q):
+        return rv_sample._ppf(self, q)
+
+    def _rvs(self, size=None, random_state=None):
+        return rv_sample._rvs(self, size, random_state)
+
+    def _entropy(self):
+        return rv_sample._entropy(self)
+
+    def generic_moment(self, n):
+        return rv_sample.generic_moment(self, n)
+
+    def _expect(self, fun, lb, ub, *args, **kwds):
+        return rv_sample._expect(self, fun, lb, ub, *args, **kwds)
+
+
+class rv_sample(rv_discrete):
+    def __init__(self, xk, pk, name=None, longname=None, seed=None):
+        super(rv_discrete, self).__init__(seed)
+
+        # cf generic freeze
+        self._ctor_param = dict(xk=xk, pk=pk, seed=seed,
+                                name=name, longname=longname)
+
+        self.badvalue = np.nan
+        self.vecentropy = self._entropy
+        self.inc = 1
+
+        if np.shape(xk) != np.shape(pk):
+            raise ValueError("xk and pk must have the same shape.")
+        if np.less(pk, 0.0).any():
+            raise ValueError("All elements of pk must be non-negative.")
+        if not np.allclose(np.sum(pk), 1):
+            raise ValueError("The sum of provided pk is not 1.")
+
+        indx = np.argsort(np.ravel(xk))
+        self.xk = np.take(np.ravel(xk), indx, 0)
+        self.pk = np.take(np.ravel(pk), indx, 0)
+        self.a = self.xk[0]
+        self.b = self.xk[-1]
+
+        self.qvals = np.cumsum(self.pk, axis=0)
+
+        self.shapes = ' '   # bypass inspection
+
+        self._construct_argparser(meths_to_inspect=[self._pmf],
+                                  locscale_in='loc=0',
+                                  # scale=1 for discrete RVs
+                                  locscale_out='loc, 1')
+
+        self._attach_methods()
+
+        self._construct_docstrings(name, longname, extradoc=None)
+
+    def __getstate__(self):
+        dct = self.__dict__.copy()
+
+        # these methods will be remade in rv_generic.__setstate__,
+        # which calls rv_generic._attach_methods
+        attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs"]
+        [dct.pop(attr, None) for attr in attrs]
+
+        return dct
+
+    def _updated_ctor_param(self):
+        """Return the current version of _ctor_param, possibly updated by user.
+
+        Used by freezing. Keep this in sync with the signature of __init__.
+        Just copy the _ctor_param for rv_sample.
+        """
+        dct = self._ctor_param.copy()
         return dct
 
     def _attach_methods(self):
