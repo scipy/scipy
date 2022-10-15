@@ -210,9 +210,9 @@ def check_pmf_cdf(distfn, arg, distname):
     npt.assert_allclose(cdfs - cdfs[0], pmfs_cum - pmfs_cum[0],
                         atol=atol, rtol=rtol)
 
-    # also check that pmf at non-integral args is zero
+    # also check that pmf at non-integral k is zero
     k = np.asarray(index)
-    k_shifted = index[:-1] + np.diff(index)/2
+    k_shifted = k[:-1] + np.diff(k)/2
     npt.assert_equal(distfn.pmf(k_shifted, *arg), 0)
 
     # better check frozen distributions, and also when loc != 0
