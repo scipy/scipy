@@ -7766,20 +7766,13 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
                     jrange = np.arange(h)
                     prob = np.prod((n1 - jrange) / (n1 + jrange + 1.0))
                 else:
-                    with np.errstate(over='raise'):
-                        num_paths = _count_paths_outside_method(n1, n2, g, h)
+                    num_paths = _count_paths_outside_method(n1, n2, g, h)
                     bin = special.binom(n1 + n2, n1)
                     if num_paths > bin or np.isinf(bin):
                         saw_fp_error = True
                     else:
                         prob = num_paths / bin
 
-    # Added RuntimeError to this list as part of gh-13957. If/when
-    # serge-sans-paille/pythran#2018 is in Pythran `main` and that version
-    # is used to build SciPy, tests will likely begin to fail. At that time,
-    # we'll need to look for NaNs, either within `_count_paths_outside_method`
-    # or in the value it returns, and we should re-evaluate whether we
-    # should be `except`ing these errors anymore.
     except (FloatingPointError, OverflowError, RuntimeError):
         saw_fp_error = True
 
