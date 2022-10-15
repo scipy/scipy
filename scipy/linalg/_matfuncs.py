@@ -122,6 +122,7 @@ def fractional_matrix_power(A, t):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import fractional_matrix_power
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> b = fractional_matrix_power(a, 0.5)
@@ -183,6 +184,7 @@ def logm(A, disp=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import logm, expm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> b = logm(a)
@@ -250,6 +252,7 @@ def expm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import expm, sinm, cosm
 
     Matrix version of the formula exp(0) = 1:
@@ -411,6 +414,7 @@ def cosm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import expm, sinm, cosm
 
     Euler's identity (exp(i*theta) = cos(theta) + i*sin(theta))
@@ -450,6 +454,7 @@ def sinm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import expm, sinm, cosm
 
     Euler's identity (exp(i*theta) = cos(theta) + i*sin(theta))
@@ -489,6 +494,7 @@ def tanm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import tanm, sinm, cosm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> t = tanm(a)
@@ -527,6 +533,7 @@ def coshm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import tanhm, sinhm, coshm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> c = coshm(a)
@@ -565,6 +572,7 @@ def sinhm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import tanhm, sinhm, coshm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> s = sinhm(a)
@@ -603,6 +611,7 @@ def tanhm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import tanhm, sinhm, coshm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> t = tanhm(a)
@@ -653,6 +662,7 @@ def funm(A, func, disp=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import funm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> funm(a, lambda x: x*x)
@@ -843,6 +853,7 @@ def khatri_rao(a, b):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[1, 2, 3], [4, 5, 6]])
     >>> b = np.array([[3, 4, 5], [6, 7, 8], [2, 3, 9]])

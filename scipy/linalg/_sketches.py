@@ -107,6 +107,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     is in ``scipy.sparse.csc_matrix`` format gives the quickest
     computation time for sparse input.
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> from scipy import sparse
     >>> rng = np.random.default_rng()

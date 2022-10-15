@@ -4588,14 +4588,9 @@ class Test_ttest_ind_permutations():
         (a, b, {'random_state': np.random.RandomState(0), "axis": 1}, p_d),
         (a2, b2, {'equal_var': True}, 1/1001),  # equal variances
         (rvs1, rvs2, {'axis': -1, 'random_state': 0}, p_d_big),  # bigger test
-        (a3, b3, {}, 1/3)  # exact test
+        (a3, b3, {}, 1/3),  # exact test
+        (a, b, {'random_state': np.random.default_rng(0), "axis": 1}, p_d_gen),
         ]
-
-    if NumpyVersion(np.__version__) >= '1.18.0':
-        params.append(
-            (a, b, {'random_state': np.random.default_rng(0), "axis": 1},
-             p_d_gen),
-            )
 
     @pytest.mark.parametrize("a,b,update,p_d", params)
     def test_ttest_ind_permutations(self, a, b, update, p_d):

@@ -794,6 +794,7 @@ class TransferFunctionContinuous(TransferFunction, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `TransferFunction` system.
@@ -1129,6 +1130,7 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `ZerosPolesGain` system.
@@ -1683,6 +1685,7 @@ class StateSpaceContinuous(StateSpace, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `StateSpace` system.
@@ -1823,6 +1826,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     We'll use `lsim2` to simulate an analog Bessel filter applied to
     a signal.
 
+    >>> import numpy as np
     >>> from scipy.signal import bessel, lsim2
     >>> import matplotlib.pyplot as plt
 
@@ -2001,6 +2005,7 @@ def lsim(system, U, T, X0=None, interp=True):
     We'll use `lsim` to simulate an analog Bessel filter applied to
     a signal.
 
+    >>> import numpy as np
     >>> from scipy.signal import bessel, lsim
     >>> import matplotlib.pyplot as plt
 
@@ -3160,6 +3165,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     algorithms.  This is example number 1 from section 4 of the reference KNV
     publication ([1]_):
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -3447,6 +3453,7 @@ def dlsim(system, u, t=None, x0=None):
     A simple integrator transfer function with a discrete time step of 1.0
     could be implemented as:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> tf = ([1.0,], [1.0, -1.0], 1.0)
     >>> t_in = [0.0, 1.0, 2.0, 3.0]
@@ -3554,6 +3561,7 @@ def dimpulse(system, x0=None, t=None, n=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -3640,6 +3648,7 @@ def dstep(system, x0=None, t=None, n=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
