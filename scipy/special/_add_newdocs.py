@@ -6836,6 +6836,33 @@ add_newdoc("it2struve0",
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    Evaluate the function at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import it2truve0
+    >>> it2struve0(1.)
+    0.9571973506383524
+
+    Evaluate the function at several points by supplying
+    an array for `x`.
+
+    >>> points = np.array([1., 2., 3.5])
+    >>> it2struve0(points)
+    array([0.95719735, 0.46909296, 0.10366042])
+
+    Plot the function from -10 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> it2truve0_values = it2struve0(x)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, it2truve0_values)
+    >>> ax.set_xlabel(r'$x$')
+    >>> ax.set_ylabel(r'$\int_x^{\infty}\frac{H(t)}{t}\,dt$')
+    >>> plt.show()
     """)
 
 add_newdoc("itairy",
