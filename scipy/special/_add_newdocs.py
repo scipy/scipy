@@ -6861,7 +6861,7 @@ add_newdoc("it2struve0",
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, it2struve0_values)
     >>> ax.set_xlabel(r'$x$')
-    >>> ax.set_ylabel(r'$\int_x^{\infty}\frac{H(t)}{t}\,dt$')
+    >>> ax.set_ylabel(r'$\int_x^{\infty}\frac{H_0(t)}{t}\,dt$')
     >>> plt.show()
     """)
 
@@ -7095,7 +7095,7 @@ add_newdoc("itmodstruve0",
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, itmodstruve0_values)
     >>> ax.set_xlabel(r'$x$')
-    >>> ax.set_ylabel(r'$\int_0^xL(t)\,dt$')
+    >>> ax.set_ylabel(r'$\int_0^xL_0(t)\,dt$')
     >>> plt.show()
     """)
 
@@ -7159,7 +7159,7 @@ add_newdoc("itstruve0",
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, istruve0_values)
     >>> ax.set_xlabel(r'$x$')
-    >>> ax.set_ylabel(r'$\int_0^{x}H(t)\,dt$')
+    >>> ax.set_ylabel(r'$\int_0^{x}H_0(t)\,dt$')
     >>> plt.show()
     """)
 
@@ -9262,7 +9262,7 @@ add_newdoc("modstruve",
     >>> x = np.linspace(-5., 5., 1000)
     >>> for i in range(4):
     ...     ax.plot(x, modstruve(i, x), label=f'$L_{i!r}$')
-    >>> ax.legend()
+    >>> ax.legend(ncol=2)
     >>> ax.set_xlim(-5, 5)
     >>> ax.set_title(r"Modified Struve functions $L_{\nu}$")
     >>> plt.show()
@@ -12000,7 +12000,7 @@ add_newdoc("struve",
     >>> x = np.linspace(-10., 10., 1000)
     >>> for i in range(4):
     ...     ax.plot(x, struve(i, x), label=f'$H_{i!r}$')
-    >>> ax.legend()
+    >>> ax.legend(ncol=2)
     >>> ax.set_xlim(-10, 10)
     >>> ax.set_title(r"Struve functions $H_{\nu}$")
     >>> plt.show()
