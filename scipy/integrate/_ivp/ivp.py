@@ -667,9 +667,13 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     if dense_output:
         if t_eval is None:
-            sol = OdeSolution(ts, interpolants)
+            sol = OdeSolution(
+                ts, interpolants, alt_segment=True if method in [BDF, LSODA] else False
+            )
         else:
-            sol = OdeSolution(ti, interpolants)
+            sol = OdeSolution(
+                ti, interpolants, alt_segment=True if method in [BDF, LSODA] else False
+            )
     else:
         sol = None
 

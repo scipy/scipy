@@ -144,13 +144,21 @@ class OdeSolution:
     interpolants : list of DenseOutput with n_segments elements
         Local interpolants. An i-th interpolant is assumed to be defined
         between ``ts[i]`` and ``ts[i + 1]``.
+    alt_segment : boolean
+        Requests the alternative interpolant segment selection scheme. At each
+        solver integration point, two interpolant segments are available. The
+        default (False) and alternative (True) behaviours select the segment
+        for which the requested time corresponded to ``t`` and ``t_old``,
+        respectively. This functionality is only relevant for testing the
+        interpolants' accuracy: different integrators use different
+        construction strategies.
 
     Attributes
     ----------
     t_min, t_max : float
         Time range of the interpolation.
     """
-    def __init__(self, ts, interpolants):
+    def __init__(self, ts, interpolants, alt_segment=False):
         ts = np.asarray(ts)
         d = np.diff(ts)
         # The first case covers integration on zero segment.
@@ -169,20 +177,19 @@ class OdeSolution:
             self.t_min = ts[0]
             self.t_max = ts[-1]
             self.ascending = True
+            self.side = "right" if alt_segment else "left"
             self.ts_sorted = ts
         else:
             self.t_min = ts[-1]
             self.t_max = ts[0]
             self.ascending = False
+            self.side = "left" if alt_segment else "right"
             self.ts_sorted = ts[::-1]
 
     def _call_single(self, t):
         # Here we preserve a certain symmetry that when t is in self.ts,
         # then we prioritize a segment with a lower index.
-        if self.ascending:
-            ind = np.searchsorted(self.ts_sorted, t, side='left')
-        else:
-            ind = np.searchsorted(self.ts_sorted, t, side='right')
+        ind = np.searchsorted(self.ts_sorted, t, side=self.side)
 
         segment = min(max(ind - 1, 0), self.n_segments - 1)
         if not self.ascending:
@@ -215,10 +222,7 @@ class OdeSolution:
         t_sorted = t[order]
 
         # See comment in self._call_single.
-        if self.ascending:
-            segments = np.searchsorted(self.ts_sorted, t_sorted, side='left')
-        else:
-            segments = np.searchsorted(self.ts_sorted, t_sorted, side='right')
+        segments = np.searchsorted(self.ts_sorted, t_sorted, side=self.side)
         segments -= 1
         segments[segments < 0] = 0
         segments[segments > self.n_segments - 1] = self.n_segments - 1
