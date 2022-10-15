@@ -1065,6 +1065,7 @@ class TestOptimizeSimple(CheckOptimize):
                                 options=dict(stepsize=0.05))
         assert_allclose(res.x, 1.0, rtol=1e-4, atol=1e-4)
 
+    @pytest.mark.xfail(reason="output not reliable on all platforms")
     def test_gh13321(self, capfd):
         # gh-13321 reported issues with console output in fmin_l_bfgs_b;
         # check that iprint=0 works.
