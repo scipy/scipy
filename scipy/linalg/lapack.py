@@ -925,6 +925,7 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     norm of an array. We pass our array in order to get the correct 'lange'
     flavor.
 
+    >>> import numpy as np
     >>> import scipy.linalg as LA
     >>> rng = np.random.default_rng()
     >>> a = rng.random((3,2))
