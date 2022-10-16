@@ -274,6 +274,7 @@ class ArpackError(RuntimeError):
     """
     ARPACK error
     """
+
     def __init__(self, info, infodict=_NAUPD_ERRORS):
         msg = infodict.get(info, "Unknown error")
         RuntimeError.__init__(self, "ARPACK error %d: %s" % (info, msg))
@@ -291,6 +292,7 @@ class ArpackNoConvergence(ArpackError):
         Partial result. Converged eigenvectors.
 
     """
+
     def __init__(self, msg, eigenvalues, eigenvectors):
         ArpackError.__init__(self, -1, {-1: msg})
         self.eigenvalues = eigenvalues
@@ -908,6 +910,7 @@ class SpLuInv(LinearOperator):
        helper class to repeatedly solve M*x=b
        using a sparse LU-decomposition of M
     """
+
     def __init__(self, M):
         self.M_lu = splu(M)
         self.shape = M.shape
@@ -931,6 +934,7 @@ class LuInv(LinearOperator):
        helper class to repeatedly solve M*x=b
        using an LU-decomposition of M
     """
+
     def __init__(self, M):
         self.M_lu = lu_factor(M)
         self.shape = M.shape
@@ -955,6 +959,7 @@ class IterInv(LinearOperator):
        helper class to repeatedly solve M*x=b
        using an iterative method.
     """
+
     def __init__(self, M, ifunc=gmres_loose, tol=0):
         self.M = M
         if hasattr(M, 'dtype'):
@@ -986,6 +991,7 @@ class IterOpInv(LinearOperator):
        helper class to repeatedly solve [A-sigma*M]*x = b
        using an iterative method
     """
+
     def __init__(self, A, M, sigma, ifunc=gmres_loose, tol=0):
         self.A = A
         self.M = M
@@ -1237,6 +1243,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     --------
     Find 6 eigenvectors of the identity matrix:
 
+    >>> import numpy as np
     >>> from scipy.sparse.linalg import eigs
     >>> id = np.eye(13)
     >>> vals, vecs = eigs(id, k=6)
@@ -1543,6 +1550,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse.linalg import eigsh
     >>> identity = np.eye(13)
     >>> eigenvalues, eigenvectors = eigsh(identity, k=6)

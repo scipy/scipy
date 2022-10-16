@@ -1130,6 +1130,17 @@ class TestTruncnorm:
             stats.truncnorm.rvs(-10, -5, size=5,
                                 random_state=np.random.default_rng())
 
+    def test_logcdf_gh17064(self):
+        # regression test for gh-17064 - avoid roundoff error for logcdfs ~0
+        a = np.array([-np.inf, -np.inf, -8, -np.inf, 10])
+        b = np.array([np.inf, np.inf, 8, 10, np.inf])
+        x = np.array([10, 7.5, 7.5, 9, 20])
+        expected = [-7.619853024160525e-24, -3.190891672910947e-14,
+                    -3.128682067168231e-14, -1.1285122074235991e-19,
+                    -3.61374964828753e-66]
+        assert_allclose(stats.truncnorm(a, b).logcdf(x), expected)
+        assert_allclose(stats.truncnorm(-b, -a).logsf(-x), expected)
+
 
 class TestGenLogistic:
 
@@ -1397,15 +1408,16 @@ class TestLogistic:
         # to this system of equations are equal
         assert_allclose(fit_method, expected_solution, atol=1e-30)
 
-    @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
-    def test_fit_comp_optimizer(self, loc_rvs, scale_rvs):
-        data = stats.logistic.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
+    def test_fit_comp_optimizer(self):
+        data = stats.logistic.rvs(size=100, loc=0.5, scale=2)
 
         # obtain objective function to compare results of the fit methods
         args = [data, (stats.logistic._fitstart(data),)]
         func = stats.logistic._reduce_func(args, {})[1]
 
         _assert_less_or_close_loglike(stats.logistic, data, func)
+        _assert_less_or_close_loglike(stats.logistic, data, func, floc=1)
+        _assert_less_or_close_loglike(stats.logistic, data, func, fscale=1)
 
     @pytest.mark.parametrize('testlogcdf', [True, False])
     def test_logcdfsf_tails(self, testlogcdf):
@@ -1833,6 +1845,25 @@ class TestPearson3:
         moment = stats.pearson3.moment(1, 0.000001)
         assert_equal(moment, 0)
         assert isinstance(moment, np.number)
+
+    def test_ppf_bug_17050(self):
+        # incorrect PPF for negative skews were reported in gh-17050
+        # Check that this is fixed (even in the array case)
+        skews = [-3, -1, 0, 0.5]
+        x_eval = 0.5
+        res = stats.pearson3.ppf(stats.pearson3.cdf(x_eval, skews), skews)
+        assert_allclose(res, x_eval)
+
+        # Negation of the skew flips the distribution about the origin, so
+        # the following should hold
+        skew = np.array([[-0.5], [1.5]])
+        x = np.linspace(-2, 2)
+        assert_allclose(stats.pearson3.pdf(x, skew),
+                        stats.pearson3.pdf(-x, -skew))
+        assert_allclose(stats.pearson3.cdf(x, skew),
+                        stats.pearson3.sf(-x, -skew))
+        assert_allclose(stats.pearson3.ppf(x, skew),
+                        -stats.pearson3.isf(x, -skew))
 
 
 class TestKappa4:
@@ -5113,6 +5144,18 @@ class TestRayleigh:
     def test_fit_warnings(self):
         assert_fit_warnings(stats.rayleigh)
 
+    def test_fit_gh17088(self):
+        # `rayleigh.fit` could return a location that was inconsistent with
+        # the data. See gh-17088.
+        rng = np.random.default_rng(456)
+        loc, scale, size = 50, 600, 500
+        rvs = stats.rayleigh.rvs(loc, scale, size=size, random_state=rng)
+        loc_fit, _ = stats.rayleigh.fit(rvs)
+        assert loc_fit < np.min(rvs)
+        loc_fit, scale_fit = stats.rayleigh.fit(rvs, fscale=scale)
+        assert loc_fit < np.min(rvs)
+        assert scale_fit == scale
+
 
 class TestExponWeib:
 
@@ -5687,7 +5730,7 @@ class TestStudentizedRange:
     vs = [1, 3, 10, 20, 120, np.inf]
     ks = [2, 8, 14, 20]
 
-    data = zip(product(ps, vs, ks), qs)
+    data = list(zip(product(ps, vs, ks), qs))
 
     # A small selection of large-v cases generated with R's `ptukey`
     # Each case is in the format (q, k, v, r_result)
@@ -5708,8 +5751,9 @@ class TestStudentizedRange:
     @pytest.mark.slow
     def test_ppf_against_tables(self):
         for pvk, q_expected in self.data:
-            res_q = stats.studentized_range.ppf(*pvk)
-            assert_allclose(res_q, q_expected, rtol=1e-4)
+            p, v, k = pvk
+            res_q = stats.studentized_range.ppf(p, k, v)
+            assert_allclose(res_q, q_expected, rtol=5e-4)
 
     path_prefix = os.path.dirname(__file__)
     relative_path = "data/studentized_range_mpmath_ref.json"
@@ -6926,6 +6970,19 @@ def test_ncf_cdf_spotcheck():
     scipy_val = stats.ncf.cdf(20, 6, 33, 30.4)
     check_val = 0.998921
     assert_allclose(check_val, np.round(scipy_val, decimals=6))
+
+
+@pytest.mark.skipif(sys.maxsize <= 2**32,
+                    reason="On some 32-bit the warning is not raised")
+def test_ncf_ppf_issue_17026():
+    # Regression test for gh-17026
+    x = np.linspace(0, 1, 600)
+    x[0] = 1e-16
+    par = (0.1, 2, 5, 0, 1)
+    with pytest.warns(RuntimeWarning):
+        q = stats.ncf.ppf(x, *par)
+        q0 = [stats.ncf.ppf(xi, *par) for xi in x]
+    assert_allclose(q, q0)
 
 
 class TestHistogram:

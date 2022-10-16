@@ -67,6 +67,29 @@ def _call_super_mom(fun):
     return wrapper
 
 
+def _get_left_bracket(fun, rbrack, lbrack=None):
+    # find left bracket for `root_scalar`. A guess for lbrack may be provided.
+    lbrack = lbrack or rbrack - 1
+    diff = rbrack - lbrack
+
+    # if there is no sign change in `fun` between the brackets, expand
+    # rbrack - lbrack until a sign change occurs
+    def interval_contains_root(lbrack, rbrack):
+        # return true if the signs disagree.
+        return np.sign(fun(lbrack)) != np.sign(fun(rbrack))
+
+    while not interval_contains_root(lbrack, rbrack):
+        diff *= 2
+        lbrack = rbrack - diff
+
+        msg = ("The solver could not find a bracket containing a "
+               "root to an MLE first order condition.")
+        if np.isinf(lbrack):
+            raise FitSolverError(msg)
+
+    return lbrack
+
+
 class ksone_gen(rv_continuous):
     r"""Kolmogorov-Smirnov one-sided test statistic distribution.
 
@@ -1048,7 +1071,7 @@ class burr_gen(rv_continuous):
             nc = 1. * n / c
             return d * sc.beta(1.0 - nc, d + nc)
         n, c, d = np.asarray(n), np.asarray(c), np.asarray(d)
-        return _lazywhere((c > n) & (d == d), (c, d, n),
+        return _lazywhere((c > n) & (n == n) & (d == d), (c, d, n),
                           lambda c, d, n: __munp(n, c, d),
                           np.nan)
 
@@ -5375,34 +5398,48 @@ class logistic_gen(rv_continuous):
     @_call_super_mom
     @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
-
-        # if user has provided `floc` or `fscale`, fall back on super fit
-        # method. This scenario is not suitable for solving a system of
-        # equations
-        if floc is not None or fscale is not None:
-            return super().fit(data, *args, **kwds)
+        n = len(data)
 
         # rv_continuous provided guesses
         loc, scale = self._fitstart(data)
-        # account for user provided guesses
-        loc = kwds.pop('loc', loc)
-        scale = kwds.pop('scale', scale)
+        # these are trumped by user-provided guesses
+        loc, scale = kwds.get('loc', loc), kwds.get('scale', scale)
 
         # the maximum likelihood estimators `a` and `b` of the location and
         # scale parameters are roots of the two equations described in `func`.
         # Source: Statistical Distributions, 3rd Edition. Evans, Hastings, and
         # Peacock (2000), Page 130
-        def func(params, data):
-            a, b = params
-            n = len(data)
-            c = (data - a) / b
-            x1 = np.sum(sc.expit(c)) - n/2
-            x2 = np.sum(c*np.tanh(c/2)) - n
-            return x1, x2
+        def dl_dloc(loc, scale=fscale):
+            c = (data - loc) / scale
+            return np.sum(sc.expit(c)) - n/2
 
-        return tuple(optimize.root(func, (loc, scale), args=(data,)).x)
+        def dl_dscale(scale, loc=floc):
+            c = (data - loc) / scale
+            return np.sum(c*np.tanh(c/2)) - n
+
+        def func(params):
+            loc, scale = params
+            return dl_dloc(loc, scale), dl_dscale(scale, loc)
+
+        if fscale is not None and floc is None:
+            res = optimize.root(dl_dloc, (loc,))
+            loc = res.x[0]
+            scale = fscale
+        elif floc is not None and fscale is None:
+            res = optimize.root(dl_dscale, (scale,))
+            scale = res.x[0]
+            loc = floc
+        else:
+            res = optimize.root(func, (loc, scale))
+            loc, scale = res.x
+
+        return ((loc, scale) if res.success
+                else super().fit(data, *args, **kwds))
 
 
 logistic = logistic_gen(name='logistic')
@@ -7178,7 +7215,9 @@ class pearson3_gen(rv_continuous):
         ans, q, _, mask, invmask, beta, alpha, zeta = (
             self._preprocess(q, skew))
         ans[mask] = _norm_ppf(q[mask])
-        ans[invmask] = sc.gammaincinv(alpha, q[invmask])/beta + zeta
+        q = q[invmask]
+        q[beta < 0] = 1 - q[beta < 0]  # for negative skew; see gh-17050
+        ans[invmask] = sc.gammaincinv(alpha, q)/beta + zeta
         return ans
 
     @_call_super_mom
@@ -7621,13 +7660,6 @@ class rdist_gen(rv_continuous):
 rdist = rdist_gen(a=-1.0, b=1.0, name="rdist")
 
 
-def _rayleigh_fit_check_error(ier, msg):
-    if ier != 1:
-        raise RuntimeError('rayleigh.fit: fsolve failed to find the root of '
-                           'the first-order conditions of the log-likelihood '
-                           f'function: {msg} (ier={ier})')
-
-
 class rayleigh_gen(rv_continuous):
     r"""A Rayleigh continuous random variable.
 
@@ -7700,15 +7732,17 @@ class rayleigh_gen(rv_continuous):
         for the root finder; the `scale` parameter and any other parameters
         for the optimizer are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
-        def scale_mle(loc, data):
+        def scale_mle(loc):
             # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
             # and Peacock (2000), Page 175
             return (np.sum((data - loc) ** 2) / (2 * len(data))) ** .5
 
-        def loc_mle(loc, data):
+        def loc_mle(loc):
             # This implicit equation for `loc` is used when
             # both `loc` and `scale` are free.
             xm = data - loc
@@ -7717,7 +7751,7 @@ class rayleigh_gen(rv_continuous):
             s3 = (1/xm).sum()
             return s1 - s2/(2*len(data))*s3
 
-        def loc_mle_scale_fixed(loc, scale, data):
+        def loc_mle_scale_fixed(loc, scale=fscale):
             # This implicit equation for `loc` is used when
             # `scale` is fixed but `loc` is not.
             xm = data - loc
@@ -7728,7 +7762,7 @@ class rayleigh_gen(rv_continuous):
             if np.any(data - floc <= 0):
                 raise FitDataError("rayleigh", lower=1, upper=np.inf)
             else:
-                return floc, scale_mle(floc, data)
+                return floc, scale_mle(floc)
 
         # Account for user provided guess of `loc`.
         loc0 = kwds.get('loc')
@@ -7736,19 +7770,15 @@ class rayleigh_gen(rv_continuous):
             # Use _fitstart to estimate loc; ignore the returned scale.
             loc0 = self._fitstart(data)[0]
 
-        if fscale is not None:
-            # `scale` is fixed
-            x, info, ier, msg = optimize.fsolve(loc_mle_scale_fixed, x0=loc0,
-                                                args=(fscale, data,),
-                                                xtol=1e-10, full_output=True)
-            _rayleigh_fit_check_error(ier, msg)
-            return x[0], fscale
-        else:
-            # Neither `loc` nor `scale` are fixed.
-            x, info, ier, msg = optimize.fsolve(loc_mle, x0=loc0, args=(data,),
-                                                xtol=1e-10, full_output=True)
-            _rayleigh_fit_check_error(ier, msg)
-            return x[0], scale_mle(x[0], data)
+        fun = loc_mle if fscale is None else loc_mle_scale_fixed
+        rbrack = np.nextafter(np.min(data), -np.inf)
+        lbrack = _get_left_bracket(fun, rbrack)
+        res = optimize.root_scalar(fun, bracket=(lbrack, rbrack))
+        if not res.converged:
+            raise FitSolverError(res.flag)
+        loc = res.root
+        scale = fscale or scale_mle(loc)
+        return loc, scale
 
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
@@ -8565,8 +8595,6 @@ def _log_sum(log_p, log_q):
 
 # same as above, but using -exp(x) = exp(x + πi)
 def _log_diff(log_p, log_q):
-    # need to broadcast in case a or b is 0.5; logsumexp doesn't
-    log_p, log_q = np.broadcast_arrays(log_p, log_q)
     return sc.logsumexp([log_p, log_q+np.pi*1j], axis=0)
 
 
@@ -8577,8 +8605,8 @@ def _log_gauss_mass(a, b):
 
     # Calculations in right tail are inaccurate, so we'll exploit the
     # symmetry and work only in the left tail
-    case_left = b <= 0.5
-    case_right = a > 0.5
+    case_left = b <= 0
+    case_right = a > 0
     case_central = ~(case_left | case_right)
 
     def mass_case_left(a, b):
@@ -8588,9 +8616,17 @@ def _log_gauss_mass(a, b):
         return mass_case_left(-b, -a)
 
     def mass_case_central(a, b):
-        left_mass = mass_case_left(a, 0.5)
-        right_mass = mass_case_right(0.5, b)
-        return _log_sum(left_mass, right_mass)
+        # Previously, this was implemented as:
+        # left_mass = mass_case_left(a, 0)
+        # right_mass = mass_case_right(0, b)
+        # return _log_sum(left_mass, right_mass)
+        # Catastrophic cancellation occurs as np.exp(log_mass) approaches 1.
+        # Correct for this with an alternative formulation.
+        # We're not concerned with underflow here: if only one term
+        # underflows, it was insignificant; if both terms underflow,
+        # the result can't accurately be represented in logspace anyway
+        # because sc.log1p(x) ~ x for small x.
+        return sc.log1p(-sc.ndtr(a) - sc.ndtr(-b))
 
     # _lazyselect not working; don't care to debug it
     out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
@@ -8648,13 +8684,23 @@ class truncnorm_gen(rv_continuous):
         return np.exp(self._logcdf(x, a, b))
 
     def _logcdf(self, x, a, b):
-        return _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
+        x, a, b = np.broadcast_arrays(x, a, b)
+        logcdf = _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
+        i = logcdf > -0.1  # avoid catastrophic cancellation
+        if np.any(i):
+            logcdf[i] = np.log1p(-np.exp(self._logsf(x[i], a[i], b[i])))
+        return logcdf
 
     def _sf(self, x, a, b):
         return np.exp(self._logsf(x, a, b))
 
     def _logsf(self, x, a, b):
-        return _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
+        x, a, b = np.broadcast_arrays(x, a, b)
+        logsf = _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
+        i = logsf > -0.1  # avoid catastrophic cancellation
+        if np.any(i):
+            logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
+        return logsf
 
     def _ppf(self, q, a, b):
         q, a, b = np.broadcast_arrays(q, a, b)
