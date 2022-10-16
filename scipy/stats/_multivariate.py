@@ -5070,58 +5070,71 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
                                       mhg_docdict_params)
 
 
-_ctab_doc_callparams = """\
-row : array_like
-    Sum of table entries in each row.
-col : array_like
-    Sum of table entries in each column.
-"""
-
-_ctab_docdict_params = {
-    "_ctab_doc_callparams": _ctab_doc_callparams,
-    "_doc_random_state": _doc_random_state,
-}
-
 class conditional_table_gen(multi_rv_generic):
     r"""Distribution of tables with fixed column and row marginals.
 
+    This is the distribution of random tables with given row and column vector
+    sums. This is a subset of the multinominal distribution, which generates
+    arrays of numbers with given frequencies so that the total sum of all
+    numbers is fixed. Here, also the row and columnwise sums are fixed. This
+    distribution represents the null hypothesis that rows and columns are
+    independent. It is used in hypothesis tests that quantify the probability of
+    a potential departure from independence.
+
+    Because of assumed independence, the expected frequency of each table
+    element can be computed from the row and column sums, so that the
+    distribution is completely determined by these two vectors.
+
     Methods
     -------
-    TODO
+    mean(row, col)
+        Mean table.
+    rvs(row, col, size=1, random_state=None)
+        Draw random tables with given row and column vector sums.
 
     Parameters
     ----------
-    %(_ctab_doc_callparams)s
+    %(_doc_callparams)s
     %(_doc_random_state)s
 
     Notes
     -----
-    This is the distribution of random tables with given row and column vector
-    sums. This can be understood as a subset of the multinominal distribution,
-    which generates arrays of numbers with given frequencies so that the total
-    sum of all numbers is fixed. Here, the row and columnwise sums are
-    additionally fixed. The expected frequency of each table element can be
-    computed from the row and column sums, so that the distribution is
-    completely determined by these two vectors.
+    %(_ctab_doc_callparams_note)
 
     Random elements from the distribution are generated either with a shuffling
     algorithm or with Patefield's algorithm [1]_. The shuffling algorithm has
-    OO(N) time and space complexity, where N is the total sum of entries in the
+    O(N) time and space complexity, where N is the total sum of entries in the
     table. Patefield's algorithm has O(K x log(N)) time complexity, where K is
     the number of cells in the table and requires only a small constant work
     space.
 
-    .. versionadded: 0.XY.0
+    .. versionadded: 1.9.3
 
     References
     ----------
     .. [1] Patefield's, AS 159 Appl. Statist. (1981) vol. 30, no. 1.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import conditional_table
+
+    >>> row = [1, 5]
+    >>> col = [2, 3, 1]
+    >>> conditional_table.mean(row, col, size=10, random_state=123)
+    array([])
+
+    Alternatively, the object may be called (as a function) to fix the row
+    and column vector sums, returning a "frozen" distribution.
+    
+    >>> dist = conditional_table(row, col)
+    >>> dist.rvs(size=10, random_state=123)
+    array([])
+
     """
 
     def __init__(self, seed=None):
         super().__init__(seed)
-        self.__doc__ = doccer.docformat(self.__doc__, _ctab_docdict_params)
 
     def __call__(self, row, col, seed=None):
         """Create a frozen distribution of tables with fixed column and row marginals.
@@ -5131,6 +5144,10 @@ class conditional_table_gen(multi_rv_generic):
         return conditional_table_frozen(row, col, seed)
 
     def _process_parameters(self, row, col):
+        """
+        Check that row and column vectors are one-dimensional, that they do not
+        contain negative entries, and that the sums over both vectors are equal.
+        """
         r = np.array(row, dtype=np.int_, copy=True)
         c = np.array(col, dtype=np.int_, copy=True)
 
@@ -5153,7 +5170,7 @@ class conditional_table_gen(multi_rv_generic):
         return r, c, ntot_row
 
     def mean(self, row, col):
-        """Mean of distribution of conditional tables with fixed marginals.
+        """Mean of distribution of conditional tables.
 
         Parameters
         ----------
@@ -5163,16 +5180,22 @@ class conditional_table_gen(multi_rv_generic):
         -------
         mean: ndarray
             The mean of the distribution
+
+        Notes
+        -----
+        %(_doc_callparams_note)
         """
         r, c, n = self._process_parameters(row, col)
         return np.outer(r, c) / n
 
-    def rvs(self, row, col, size=None, method=None, random_state=None):
-        """Draw random table with fixed column and row marginals.
+    def rvs(self, row, col, size=1, method=None, random_state=None):
+        """Draw random tables with fixed column and row marginals.
 
         Parameters
         ----------
         %(_doc_default_callparams)s
+        size : integer, optional
+            Number of samples to draw (default 1).
         method : str, optional
             Which method to use, "shuffle" or "patefield". If None (default),
             an attempt is made to select the fastest method for this input.
@@ -5181,10 +5204,11 @@ class conditional_table_gen(multi_rv_generic):
         Returns
         -------
         rvs : ndarray
-            Random 2D table of shape (`len(row)`, `len(col)`)
+            Random 2D tables of shape (`size`, `len(row)`, `len(col)`)
 
         Notes
-        %(_doc_callparams_note)s
+        -----
+        %(_doc_callparams_note)
         """
         r, c, n = self._process_parameters(row, col)
         random_state = self._get_random_state(random_state)
@@ -5258,3 +5282,41 @@ class conditional_table_frozen(multi_rv_frozen):
             return d._rvs_shuffle(row, col, self._coli, size, random_state)
         else:
             raise NotImplementedError
+
+_ctab_doc_callparams = """\
+row : array_like
+    Sum of table entries in each row.
+col : array_like
+    Sum of table entries in each column.
+"""
+
+_ctab_doc_callparams_note = """\
+The row and column vector sums must be one-dimensional, not empty, and they must
+each sum up to the same value. They cannot contain negative or noninteger
+entries.
+"""
+
+_ctab_docdict_params = {
+    "_doc_callparams": _ctab_doc_callparams,
+    "_doc_callparams_note": _ctab_doc_callparams_note,
+    "_doc_random_state": _doc_random_state,
+}
+
+_ctab_doc_frozen_callparams_note = """\
+See class definition for a detailed description of parameters."""
+
+_ctab_docdict_noparams = {
+    "_doc_callparams": "",
+    "_doc_callparams_note": _ctab_doc_frozen_callparams_note,
+    "_doc_random_state": _doc_random_state,
+}
+
+# Set frozen generator docstrings from corresponding docstrings in
+# conditional_table and fill in default strings in class docstrings
+for name in ['mean', 'rvs']:
+    method = conditional_table_gen.__dict__[name]
+    method_frozen = conditional_table_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(
+        method.__doc__, _ctab_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__,
+                                      _ctab_docdict_params)
