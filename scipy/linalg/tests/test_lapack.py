@@ -2,6 +2,7 @@
 # Created by: Pearu Peterson, September 2002
 #
 
+import sys
 from functools import reduce
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
