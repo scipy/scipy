@@ -111,6 +111,17 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     NotImplementedError
         If transposed is True and input a is a complex matrix.
 
+    Notes
+    -----
+    If the input b matrix is a 1-D array with N elements, when supplied
+    together with an NxN input a, it is assumed as a valid column vector
+    despite the apparent size mismatch. This is compatible with the
+    numpy.dot() behavior and the returned result is still 1-D array.
+
+    The generic, symmetric, Hermitian and positive definite solutions are
+    obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
+    LAPACK respectively.
+
     Examples
     --------
     Given `a` and `b`, solve for `x`:
@@ -125,16 +136,6 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     >>> np.dot(a, x) == b
     array([ True,  True,  True], dtype=bool)
 
-    Notes
-    -----
-    If the input b matrix is a 1-D array with N elements, when supplied
-    together with an NxN input a, it is assumed as a valid column vector
-    despite the apparent size mismatch. This is compatible with the
-    numpy.dot() behavior and the returned result is still 1-D array.
-
-    The generic, symmetric, Hermitian and positive definite solutions are
-    obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
-    LAPACK respectively.
     """
     # Flags for 1-D or N-D right-hand side
     b_is_1D = False
@@ -1510,6 +1511,16 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     .. versionadded:: 0.19.0
 
+    References
+    ----------
+    .. [1] : B.N. Parlett and C. Reinsch, "Balancing a Matrix for
+       Calculation of Eigenvalues and Eigenvectors", Numerische Mathematik,
+       Vol.13(4), 1969, :doi:`10.1007/BF02165404`
+    .. [2] : R. James, J. Langou, B.R. Lowery, "On matrix balancing and
+       eigenvector computation", 2014, :arxiv:`1401.5766`
+    .. [3] :  D.S. Watkins. A case where balancing is harmful.
+       Electron. Trans. Numer. Anal, Vol.23, 2006.
+
     Examples
     --------
     >>> import numpy as np
@@ -1527,18 +1538,6 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     array([[  0.5,   0. ,  0. ],  # may vary
            [  0. ,   1. ,  0. ],
            [  0. ,   0. ,  1. ]])
-
-    References
-    ----------
-    .. [1] : B.N. Parlett and C. Reinsch, "Balancing a Matrix for
-       Calculation of Eigenvalues and Eigenvectors", Numerische Mathematik,
-       Vol.13(4), 1969, :doi:`10.1007/BF02165404`
-
-    .. [2] : R. James, J. Langou, B.R. Lowery, "On matrix balancing and
-       eigenvector computation", 2014, :arxiv:`1401.5766`
-
-    .. [3] :  D.S. Watkins. A case where balancing is harmful.
-       Electron. Trans. Numer. Anal, Vol.23, 2006.
 
     """
 
