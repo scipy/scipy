@@ -5093,13 +5093,12 @@ class conditional_table_gen(multi_rv_generic):
         Draw random tables with given row and column vector sums.
 
     Parameters
-    ----------
-    %(_doc_callparams)s
+    ----------%(_doc_callparams)s
     %(_doc_random_state)s
 
     Notes
     -----
-    %(_ctab_doc_callparams_note)
+    %(_doc_callparams_note)s
 
     Random elements from the distribution are generated either with a shuffling
     algorithm or with Patefield's algorithm [1]_. The shuffling algorithm has
@@ -5107,12 +5106,6 @@ class conditional_table_gen(multi_rv_generic):
     table. Patefield's algorithm has O(K x log(N)) time complexity, where K is
     the number of cells in the table and requires only a small constant work
     space.
-
-    .. versionadded: 1.9.3
-
-    References
-    ----------
-    .. [1] Patefield's, AS 159 Appl. Statist. (1981) vol. 30, no. 1.
 
     Examples
     --------
@@ -5131,6 +5124,11 @@ class conditional_table_gen(multi_rv_generic):
     >>> dist.rvs(size=10, random_state=123)
     array([])
 
+    .. versionadded: 1.9.3
+
+    References
+    ----------
+    .. [1] Patefield's, AS 159 Appl. Statist. (1981) vol. 30, no. 1.
     """
 
     def __init__(self, seed=None):
@@ -5171,11 +5169,7 @@ class conditional_table_gen(multi_rv_generic):
 
     def mean(self, row, col):
         """Mean of distribution of conditional tables.
-
-        Parameters
-        ----------
-        %(_ctab_doc_callparams)s
-
+        %(_doc_mean_callparams)s
         Returns
         -------
         mean: ndarray
@@ -5183,7 +5177,7 @@ class conditional_table_gen(multi_rv_generic):
 
         Notes
         -----
-        %(_doc_callparams_note)
+        %(_doc_callparams_note)s
         """
         r, c, n = self._process_parameters(row, col)
         return np.outer(r, c) / n
@@ -5192,8 +5186,7 @@ class conditional_table_gen(multi_rv_generic):
         """Draw random tables with fixed column and row marginals.
 
         Parameters
-        ----------
-        %(_doc_default_callparams)s
+        ----------%(_doc_callparams)s
         size : integer, optional
             Number of samples to draw (default 1).
         method : str, optional
@@ -5208,49 +5201,58 @@ class conditional_table_gen(multi_rv_generic):
 
         Notes
         -----
-        %(_doc_callparams_note)
+        %(_doc_callparams_note)s
         """
         r, c, n = self._process_parameters(row, col)
         random_state = self._get_random_state(random_state)
-        if method is None:
-            method = self._rvs_select(r, c, n)
-        if method == "shuffle":
-            ci = self._rvs_shuffle_prepare(c, n)
-            return self._rvs_shuffle(r, c, ci, size, random_state)
-        return self._rvs_patefield(r, c, n, size, random_state)
+        meth = self._process_method(method, r, c, n)
+        return meth(r, c, n, size, random_state)
 
-    @staticmethod
-    def _rvs_select(r, c, n):
-        # TODO find optimal empirical threshold,
-        # for now we always return "shuffle"
+    @classmethod
+    def _process_method(cls, method, r, c, n):
+        known_methods = {
+            None: cls._rvs_select(r, c, n),
+            "shuffle": cls._rvs_shuffle, 
+            "patefield" : cls._rvs_patefield,
+        }
+        try:
+            return known_methods[method]
+        except KeyError:
+            raise ValueError(f"{method} not recognized, must be one of {{{', '.join(known_methods.keys())}}}")                
+
+    @classmethod
+    def _rvs_select(cls, r, c, n):
+        # TODO find optimal empirical threshold with benchmarks,
+        # for now we always return "shuffle", because "patefield"
+        # is not yet implemented. Example:
         # if n > 1000:
         #     return "patefield"
-        return "shuffle"
+        return cls._rvs_shuffle
 
-    def _rvs_shuffle_prepare(self, col, tot):
-        # can be cached in the frozen distribution
+    @staticmethod
+    def _rvs_shuffle(row, col, tot, size, random_state):
+        # could be cached in the frozen distribution
         k = 0
-        c = np.empty(tot, dtype=np.int_)
+        ci = np.empty(tot, dtype=np.int_)
         for i, ci in enumerate(col):
-            c[k:k+ci] = i
+            ci[k:k+ci] = i
             k += ci
-        return c
 
-    def _rvs_shuffle(self, row, col, coli, size, random_state):
         matrix = np.zeros((size, len(row), len(col)))
         for o in range(size):
-            random_state.shuffle(coli)
+            random_state.shuffle(ci)
             k = 0
             # slow in pure Python, will be replaced by C code
             for i, ri in enumerate(row):
                 for j in range(ri):
-                    matrix[o, i, coli[k+j]] += 1
+                    matrix[o, i, ci[k+j]] += 1
                 k += ri
         return matrix
 
-    def _rvs_patefield(self, row, col, tot, size, random_state):
+    @staticmethod
+    def _rvs_patefield(row, col, tot, size, random_state):
         # TODO call into C code
-        return NotImplemented
+        raise NotImplementedError
 
 
 conditional_table = conditional_table_gen()
@@ -5260,7 +5262,6 @@ class conditional_table_frozen(multi_rv_frozen):
     def __init__(self, row, col, seed=None):
         self._dist = conditional_table_gen(seed)
         self._params = self._dist._process_parameters(row, col)
-        self._coli = None
 
         # monkey patch self._dist
         def _process_parameters(r, c):
@@ -5268,22 +5269,14 @@ class conditional_table_frozen(multi_rv_frozen):
         self._dist._process_parameters = _process_parameters
 
     def mean(self):
-        return self._dist.mean(*self._params[:2])
+        return self._dist.mean(None, None)
 
     def rvs(self, size=1, method=None, random_state=None):
         d = self._dist
         random_state = d._get_random_state(random_state)
-        row, col, tot = self._params
-        if method is None:
-            method = d._rvs_select(row, col, tot)
-        if method == "shuffle":
-            if self._coli is None:
-                self._coli = d._rvs_shuffle_prepare(col, tot)
-            return d._rvs_shuffle(row, col, self._coli, size, random_state)
-        else:
-            raise NotImplementedError
+        return d.rvs(None, None, size, method, random_state)
 
-_ctab_doc_callparams = """\
+_ctab_doc_callparams = """
 row : array_like
     Sum of table entries in each row.
 col : array_like
@@ -5296,8 +5289,14 @@ each sum up to the same value. They cannot contain negative or noninteger
 entries.
 """
 
+_ctab_doc_mean_callparams = f"""
+Parameters
+----------{_ctab_doc_callparams}
+"""
+
 _ctab_docdict_params = {
     "_doc_callparams": _ctab_doc_callparams,
+    "_doc_mean_callparams": _ctab_doc_mean_callparams,
     "_doc_callparams_note": _ctab_doc_callparams_note,
     "_doc_random_state": _doc_random_state,
 }
@@ -5307,9 +5306,12 @@ See class definition for a detailed description of parameters."""
 
 _ctab_docdict_noparams = {
     "_doc_callparams": "",
+    "_doc_mean_callparams": "\n",
     "_doc_callparams_note": _ctab_doc_frozen_callparams_note,
     "_doc_random_state": _doc_random_state,
 }
+
+conditional_table_gen.__doc__ = doccer.docformat(conditional_table_gen.__doc__, _ctab_docdict_params)
 
 # Set frozen generator docstrings from corresponding docstrings in
 # conditional_table and fill in default strings in class docstrings
