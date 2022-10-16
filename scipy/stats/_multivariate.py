@@ -28,7 +28,8 @@ __all__ = ['multivariate_normal',
            'random_correlation',
            'unitary_group',
            'multivariate_t',
-           'multivariate_hypergeom']
+           'multivariate_hypergeom',
+           'conditional_table']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -5163,10 +5164,10 @@ class conditional_table_gen(multi_rv_generic):
         mean: ndarray
             The mean of the distribution
         """
-        r, c, n = self._process_parameters(self, row, col)
+        r, c, n = self._process_parameters(row, col)
         return np.outer(r, c) / n
 
-    def rvs(self, row, col, method=None, random_state=None):
+    def rvs(self, row, col, size=None, method=None, random_state=None):
         """Draw random table with fixed column and row marginals.
 
         Parameters
@@ -5185,38 +5186,45 @@ class conditional_table_gen(multi_rv_generic):
         Notes
         %(_doc_callparams_note)s
         """
-        r, c, n = self._process_parameters(self, row, col)
+        r, c, n = self._process_parameters(row, col)
         random_state = self._get_random_state(random_state)
         if method is None:
-            # TODO find optimal empirical threshold
-            method = "patefield" if n > 1000 else "shuffle"
+            method = self._rvs_select(r, c, n)
         if method == "shuffle":
-            return self._rvs_shuffle(r, c, n, random_state)
-        return self._rvs_patefield(r, c, n, random_state)
+            ci = self._rvs_shuffle_prepare(c, n)
+            return self._rvs_shuffle(r, c, ci, size, random_state)
+        return self._rvs_patefield(r, c, n, size, random_state)
 
-    def _rvs_shuffle(self, row, col, tot, random_state):
+    @staticmethod
+    def _rvs_select(r, c, n):
+        # TODO find optimal empirical threshold,
+        # for now we always return "shuffle"
+        # if n > 1000:
+        #     return "patefield"
+        return "shuffle"
 
-        # this part can be cached in the frozen distribution
+    def _rvs_shuffle_prepare(self, col, tot):
+        # can be cached in the frozen distribution
         k = 0
         c = np.empty(tot, dtype=np.int_)
         for i, ci in enumerate(col):
             c[k:k+ci] = i
             k += ci
+        return c
 
-        random_state.shuffle(c)
-
-        matrix = np.zeros(len(row), len(col))
-
-        # this is slow in pure Python
-        k = 0
-        for i, ri in enumerate(row):
-            for j in range(ri):
-               matrix[i, c[k:k+j]] += 1
-            k += ri
-
+    def _rvs_shuffle(self, row, col, coli, size, random_state):
+        matrix = np.zeros((size, len(row), len(col)))
+        for o in range(size):
+            random_state.shuffle(coli)
+            k = 0
+            # slow in pure Python, will be replaced by C code
+            for i, ri in enumerate(row):
+                for j in range(ri):
+                    matrix[o, i, coli[k+j]] += 1
+                k += ri
         return matrix
 
-    def _rvs_patefield(self, row, col, tot, random_state):
+    def _rvs_patefield(self, row, col, tot, size, random_state):
         # TODO call into C code
         return NotImplemented
 
@@ -5224,5 +5232,29 @@ class conditional_table_gen(multi_rv_generic):
 conditional_table = conditional_table_gen()
 
 
-class conditional_table_frozen:
-    pass
+class conditional_table_frozen(multi_rv_frozen):
+    def __init__(self, row, col, seed=None):
+        self._dist = conditional_table_gen(seed)
+        self._params = self._dist._process_parameters(row, col)
+        self._coli = None
+
+        # monkey patch self._dist
+        def _process_parameters(r, c):
+            return self._params
+        self._dist._process_parameters = _process_parameters
+
+    def mean(self):
+        return self._dist.mean(*self._params[:2])
+
+    def rvs(self, size=1, method=None, random_state=None):
+        d = self._dist
+        random_state = d._get_random_state(random_state)
+        row, col, tot = self._params
+        if method is None:
+            method = d._rvs_select(row, col, tot)
+        if method == "shuffle":
+            if self._coli is None:
+                self._coli = d._rvs_shuffle_prepare(col, tot)
+            return d._rvs_shuffle(row, col, self._coli, size, random_state)
+        else:
+            raise NotImplementedError

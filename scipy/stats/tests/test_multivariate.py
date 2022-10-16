@@ -25,7 +25,8 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          random_correlation, unitary_group, dirichlet,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
-                         hypergeom, multivariate_t, cauchy, normaltest)
+                         hypergeom, multivariate_t, cauchy, normaltest,
+                         conditional_table)
 from scipy.stats import _covariance, Covariance
 
 from scipy.integrate import romb
@@ -2463,6 +2464,34 @@ class TestMultivariateHypergeom:
                       [10.5, 15.5], 5)
         assert_raises(TypeError, multivariate_hypergeom.pmf, [5, 4],
                       [10, 15], 5.5)
+
+
+class TestConditionalTable:
+    def test_mean(self):
+        row = [2, 6]
+        col = [1, 3, 4]
+        m = conditional_table.mean(row, col)
+        assert_equal(np.sum(m), np.sum(row))
+
+    def test_rvs(self):
+        # test if `rvs` is unbiased and large sample size converges
+        # to the true mean.
+        row = [2, 6]
+        col = [1, 3, 4]
+        rvs = conditional_table.rvs(row, col, size=1000, random_state=123)
+        mean = conditional_table.mean(row, col)
+        assert_allclose(rvs.mean(0), mean, atol=5e-2)
+
+    def test_frozen(self):
+        row = [2, 6]
+        col = [1, 3, 4]
+        d = conditional_table(row, col)
+        expected = conditional_table.mean(row, col)
+        assert_equal(expected, d.mean())
+
+        expected = conditional_table.rvs(row, col, size=10, random_state=123)
+        got = d.rvs(size=10, random_state=123)
+        assert_equal(expected, got)
 
 
 def check_pickling(distfn, args):
