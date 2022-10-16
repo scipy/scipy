@@ -217,17 +217,15 @@ class RegularGridInterpolator:
             self._validate_grid_dimensions(points, method)
         self.method = method
         self.bounds_error = bounds_error
-        # todo: sort checks in order of complexity and runtime, raising early
         values = self._check_values(values)
         self._check_dimensionality(points, values)
         self._check_fill_value(values, fill_value)
         self.fill_value = fill_value
-        flip = self._check_points(points)
-        self.flip = flip
-        self.fill_value = fill_value
-        self.grid = tuple([np.flip(p) if i in flip else np.asarray(p)
+        self._descending_dimensions = self._check_points(points)
+        self.grid = tuple([np.flip(p) if i in self._descending_dimensions
+                           else np.asarray(p)
                            for i, p in enumerate(points)])
-        self.values = np.flip(values, axis=flip)
+        self.values = np.flip(values, axis=self._descending_dimensions)
 
     def _check_dimensionality(self, points, values):
         if len(points) > values.ndim:
@@ -261,19 +259,19 @@ class RegularGridInterpolator:
                                  "of a type compatible with values")
 
     def _check_points(self, points):
-        flip = []
+        descending_dimensions = []
         for i, p in enumerate(points):
             diff_p = np.diff(p)
             if not np.all(diff_p > 0.):
                 if np.all(diff_p < 0.):
                     # input is descending, so make it ascending
-                    flip.append(i)
+                    descending_dimensions.append(i)
                 else:
                     raise ValueError(
                         "The points in dimension %d must be strictly "
                         "ascending or descending" % i)
 
-        return tuple(flip)
+        return tuple(descending_dimensions)
 
     def __call__(self, xi, method=None):
         """
