@@ -168,10 +168,12 @@ class LSODA(OdeSolver):
         iwork = self._lsoda_solver._integrator.iwork
         rwork = self._lsoda_solver._integrator.rwork
 
-        order = iwork[14]
+        order = iwork[13]
         h = rwork[11]
         yh = np.reshape(rwork[20:20 + (order + 1) * self.n],
                         (self.n, order + 1), order='F').copy()
+        if iwork[14] < order:
+            yh[:, -1] *= (h / rwork[10]) ** order
 
         return LsodaDenseOutput(self.t_old, self.t, h, order, yh)
 
