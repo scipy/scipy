@@ -470,6 +470,7 @@ def test_bootstrap_gh15678(method):
     assert_allclose(res.standard_error, ref.standard_error)
     assert isinstance(res.standard_error, np.float64)
 
+
 def test_bootstrap_min():
     # Check that gh-15883 is fixed: percentileofscore should
     # behave according to the 'mean' behavior and not trigger nan for BCa
@@ -487,6 +488,7 @@ def test_bootstrap_min():
                     res2.confidence_interval.high)
     assert_allclose(-res.confidence_interval.high,
                     res2.confidence_interval.low)
+
 
 @pytest.mark.parametrize("additional_resamples", [0, 1000])
 def test_re_boostrap(additional_resamples):
