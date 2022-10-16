@@ -783,7 +783,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
-        label = vq(data, code_book)[0]
+        label = vq(data, code_book, check_finite=check_finite)[0]
         # Update the code book by computing centroids
         new_code_book, has_members = _vq.update_cluster_means(data, label, nc)
         if not has_members.all():
