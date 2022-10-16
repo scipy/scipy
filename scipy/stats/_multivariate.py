@@ -5071,15 +5071,12 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
 
 
 class conditional_table_gen(multi_rv_generic):
-    r"""Distribution of tables with fixed column and row marginals.
+    r"""Distribution of random tables with given marginals.
 
     This is the distribution of random tables with given row and column vector
-    sums. This is a subset of the multinominal distribution, which generates
-    arrays of numbers with given frequencies so that the total sum of all
-    numbers is fixed. Here, also the row and columnwise sums are fixed. This
-    distribution represents the null hypothesis that rows and columns are
-    independent. It is used in hypothesis tests that quantify the probability of
-    a potential departure from independence.
+    sums. This distribution represents the set of random tables under the null
+    hypothesis that rows and columns are independent. It is used in hypothesis
+    tests of independence.
 
     Because of assumed independence, the expected frequency of each table
     element can be computed from the row and column sums, so that the
@@ -5114,15 +5111,17 @@ class conditional_table_gen(multi_rv_generic):
 
     >>> row = [1, 5]
     >>> col = [2, 3, 1]
-    >>> conditional_table.mean(row, col, size=10, random_state=123)
-    array([])
+    >>> conditional_table.mean(row, col)
+    array([[0.33333333, 0.5       , 0.16666667],
+           [1.66666667, 2.5       , 0.83333333]])
 
     Alternatively, the object may be called (as a function) to fix the row
     and column vector sums, returning a "frozen" distribution.
 
     >>> dist = conditional_table(row, col)
-    >>> dist.rvs(size=10, random_state=123)
-    array([])
+    >>> dist.rvs(size=1, random_state=123)
+    array([[[1., 0., 0.],
+            [1., 3., 1.]]])
 
     .. versionadded: 1.9.3
 
@@ -5213,7 +5212,7 @@ class conditional_table_gen(multi_rv_generic):
         known_methods = {
             None: cls._rvs_select(r, c, n),
             "shuffle": cls._rvs_shuffle,
-            "patefield" : cls._rvs_patefield,
+            "patefield": cls._rvs_patefield,
         }
         try:
             return known_methods[method]
@@ -5275,6 +5274,7 @@ class conditional_table_frozen(multi_rv_frozen):
         d = self._dist
         random_state = d._get_random_state(random_state)
         return d.rvs(None, None, size, method, random_state)
+
 
 _ctab_doc_callparams = """
 row : array_like
