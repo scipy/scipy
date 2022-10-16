@@ -785,6 +785,15 @@ class TestOptimizeNoWrapperNoDisp(CheckOptimizeParameterized):
     disp = False
 
 
+def gh12111_cases():
+    xfail = pytest.mark.xfail(reason="not fixed yet")
+    for method in MINIMIZE_METHODS:
+        if method in {'cg', 'bfgs', 'l-bfgs-b', 'slsqp'}:
+            yield pytest.param(method, marks=xfail)
+        else:
+            yield method
+
+
 class TestOptimizeSimple(CheckOptimize):
 
     def test_bfgs_nan(self):
@@ -1449,15 +1458,6 @@ class TestOptimizeSimple(CheckOptimize):
             if np.array_equal(self.trace[i - 1], self.trace[i]):
                 raise RuntimeError(
                     "Duplicate evaluations made by {}".format(method))
-
-    @staticmethod
-    def gh12111_cases():
-        xfail = pytest.mark.xfail(reason="not fixed yet")
-        for method in MINIMIZE_METHODS:
-            if method in {'cg', 'bfgs', 'l-bfgs-b', 'slsqp'}:
-                yield pytest.param(method, marks=xfail)
-            else:
-                yield method
 
     @pytest.mark.parametrize('method', gh12111_cases())
     def test_gh12111(self, method):
