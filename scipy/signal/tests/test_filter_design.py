@@ -1,10 +1,10 @@
 import warnings
 
-from distutils.version import LooseVersion
+from scipy._lib import _pep440
 import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
-                           assert_equal, assert_, assert_approx_equal,
+                           assert_equal, assert_,
                            assert_allclose, assert_warns, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
@@ -14,12 +14,12 @@ from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bili
                           buttap, butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
-                          gammatone, group_delay, iircomb, iirdesign, iirfilter, 
-                          iirnotch, iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize, 
-                          sos2tf, sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos, 
+                          gammatone, group_delay, iircomb, iirdesign, iirfilter,
+                          iirnotch, iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize,
+                          sos2tf, sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos,
                           zpk2tf, bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
-from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
+from scipy.signal._filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
 
 try:
@@ -30,7 +30,7 @@ except ImportError:
 
 def mpmath_check(min_ver):
     return pytest.mark.skipif(mpmath is None or
-                              LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
+                              _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
                               reason="mpmath version >= %s required" % min_ver)
 
 
@@ -285,17 +285,34 @@ class TestTf2Sos:
                 [1.0000, +0.0000, 9.0000, 1.0000, +1.0000, +0.5000]]
         # assert_array_almost_equal(sos, sos2, decimal=4)
 
+    @pytest.mark.parametrize('b, a, analog, sos',
+                             [([1], [1], False, [[1., 0., 0., 1., 0., 0.]]),
+                              ([1], [1], True, [[0., 0., 1., 0., 0., 1.]]),
+                              ([1], [1., 0., -1.01, 0, 0.01], False,
+                               [[1., 0., 0., 1., 0., -0.01],
+                                [1., 0., 0., 1., 0., -1]]),
+                              ([1], [1., 0., -1.01, 0, 0.01], True,
+                               [[0., 0., 1., 1., 0., -1],
+                                [0., 0., 1., 1., 0., -0.01]])])
+    def test_analog(self, b, a, analog, sos):
+        sos2 = tf2sos(b, a, analog=analog)
+        assert_array_almost_equal(sos, sos2, decimal=4)
+
 
 class TestZpk2Sos:
 
     @pytest.mark.parametrize('dt', 'fdgFDG')
-    @pytest.mark.parametrize('pairing', ('nearest', 'keep_odd'))
-    def test_dtypes(self, dt, pairing):
+    @pytest.mark.parametrize('pairing, analog',
+                             [('nearest', False),
+                              ('keep_odd', False),
+                              ('minimal', False),
+                              ('minimal', True)])
+    def test_dtypes(self, dt, pairing, analog):
         z = np.array([-1, -1]).astype(dt)
         ct = dt.upper()  # the poles have to be complex
         p = np.array([0.57149 + 0.29360j, 0.57149 - 0.29360j]).astype(ct)
         k = np.array(1).astype(dt)
-        sos = zpk2sos(z, p, k, pairing=pairing)
+        sos = zpk2sos(z, p, k, pairing=pairing, analog=analog)
         sos2 = [[1, 2, 1, 1, -1.14298, 0.41280]]  # octave & MATLAB
         assert_array_almost_equal(sos, sos2, decimal=4)
 
@@ -432,6 +449,54 @@ class TestZpk2Sos:
                     [1, -1.96962, 1, 1, -1.47821, 0.64],
                     [1, -0.17431, 1, 1, -0.38959, 0.81]]
             assert_array_almost_equal(sos, sos2, decimal=4)
+
+    # these examples are taken from the doc string, and show the
+    # effect of the 'pairing' argument
+    @pytest.mark.parametrize('pairing, sos',
+                             [('nearest',
+                               np.array([[1., 1., 0.5, 1., -0.75, 0.],
+                                         [1., 1., 0., 1., -1.6, 0.65]])),
+                              ('keep_odd',
+                               np.array([[1., 1., 0, 1., -0.75, 0.],
+                                         [1., 1., 0.5, 1., -1.6, 0.65]])),
+                              ('minimal',
+                               np.array([[0., 1., 1., 0., 1., -0.75],
+                                         [1., 1., 0.5, 1., -1.6, 0.65]]))])
+    def test_pairing(self, pairing, sos):
+        z1 = np.array([-1, -0.5-0.5j, -0.5+0.5j])
+        p1 = np.array([0.75, 0.8+0.1j, 0.8-0.1j])
+        sos2 = zpk2sos(z1, p1, 1, pairing=pairing)
+        assert_array_almost_equal(sos, sos2, decimal=4)
+
+    @pytest.mark.parametrize('p, sos_dt',
+                             [([-1, 1, -0.1, 0.1],
+                               [[0., 0., 1., 1., 0., -0.01],
+                                [0., 0., 1., 1., 0., -1]]),
+                              ([-0.7071+0.7071j, -0.7071-0.7071j, -0.1j, 0.1j],
+                               [[0., 0., 1., 1., 0., 0.01],
+                                [0., 0., 1., 1., 1.4142, 1.]])])
+    def test_analog(self, p, sos_dt):
+        # test `analog` argument
+        # for discrete time, poles closest to unit circle should appear last
+        # for cont. time, poles closest to imaginary axis should appear last
+        sos2_dt = zpk2sos([], p, 1, pairing='minimal', analog=False)
+        sos2_ct = zpk2sos([], p, 1, pairing='minimal', analog=True)
+        assert_array_almost_equal(sos_dt, sos2_dt, decimal=4)
+        assert_array_almost_equal(sos_dt[::-1], sos2_ct, decimal=4)
+
+    def test_bad_args(self):
+        with pytest.raises(ValueError, match=r'pairing must be one of'):
+            zpk2sos([1], [2], 1, pairing='no_such_pairing')
+
+        with pytest.raises(ValueError, match=r'.*pairing must be "minimal"'):
+            zpk2sos([1], [2], 1, pairing='keep_odd', analog=True)
+
+        with pytest.raises(ValueError,
+                           match=r'.*must have len\(p\)>=len\(z\)'):
+            zpk2sos([1, 1], [2], 1, analog=True)
+
+        with pytest.raises(ValueError, match=r'k must be real'):
+            zpk2sos([1], [2], k=1j)
 
 
 class TestFreqs:
@@ -921,7 +986,6 @@ class TestSOSFreqz:
         assert_array_less(dB[w >= 0.6], -99.9)
         assert_allclose(dB[(w >= 0.2) & (w <= 0.5)], 0, atol=3.01)
 
-    @pytest.mark.xfail
     def test_sosfreqz_design_ellip(self):
         N, Wn = ellipord(0.3, 0.1, 3, 60)
         sos = ellip(N, 0.3, 60, Wn, 'high', output='sos')
@@ -937,8 +1001,9 @@ class TestSOSFreqz:
         dB = 20*np.log10(np.maximum(np.abs(h), 1e-10))
         w /= np.pi
         assert_allclose(dB[w >= 0.3], 0, atol=.55)
-        # this is not great (147 instead of 150, could be ellip[ord] problem?)
-        assert_array_less(dB[(w > 0) & (w <= 0.25)], -147)
+        # Allow some numerical slop in the upper bound -150, so this is
+        # a check that dB[w <= 0.2] is less than or almost equal to -150.
+        assert dB[w <= 0.2].max() < -150*(1 - 1e-12)
 
     @mpmath_check("0.10")
     def test_sos_freqz_against_mp(self):
@@ -1477,6 +1542,10 @@ class TestButtord:
             buttord([20, 50], [14, 60], 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
 
+    def test_runtime_warnings(self):
+        with pytest.warns(RuntimeWarning, match=r'Order is zero'):
+            buttord(0.0, 1.0, 3, 60)
+
 
 class TestCheb1ord:
 
@@ -1719,6 +1788,19 @@ class TestEllipord:
 
         assert_equal(N, 5)
         assert_allclose(Wn, 0.2, rtol=1e-15)
+
+    def test_lowpass_1000dB(self):
+        # failed when ellipkm1 wasn't used in ellipord and ellipap
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 1000
+        N, Wn = ellipord(wp, ws, rp, rs, False)
+        sos = ellip(N, rp, rs, Wn, 'lp', False, output='sos')
+        w, h = sosfreqz(sos)
+        w /= np.pi
+        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
+        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
 
     def test_highpass(self):
         wp = 0.3
@@ -2779,7 +2861,7 @@ class TestCheby1:
                         sorted(z2, key=np.imag), rtol=1e-13)
         assert_allclose(sorted(p, key=np.imag),
                         sorted(p2, key=np.imag), rtol=1e-13)
-        assert_allclose(k, k2, rtol=1e-15)
+        assert_allclose(k, k2, rtol=0, atol=5e-16)
 
     def test_ba_output(self):
         # with transfer function conversion,  without digital conversion
@@ -3612,7 +3694,7 @@ class TestIIRPeak:
 
 
 class TestIIRComb:
-    # Test erroneus input cases
+    # Test erroneous input cases
     def test_invalid_input(self):
         # w0 is <= 0 or >= fs / 2
         fs = 1000
@@ -3624,6 +3706,15 @@ class TestIIRComb:
         for args in [(120, 30), (157, 35)]:
             with pytest.raises(ValueError, match='fs must be divisible '):
                 iircomb(*args, fs=fs)
+
+        # https://github.com/scipy/scipy/issues/14043#issuecomment-1107349140
+        # Previously, fs=44100, w0=49.999 was rejected, but fs=2,
+        # w0=49.999/int(44100/2) was accepted. Now it is rejected, too.
+        with pytest.raises(ValueError, match='fs must be divisible '):
+            iircomb(w0=49.999/int(44100/2), Q=30)
+
+        with pytest.raises(ValueError, match='fs must be divisible '):
+            iircomb(w0=49.999, Q=30, fs=44100)
 
         # Filter type is not notch or peak
         for args in [(0.2, 30, 'natch'), (0.5, 35, 'comb')]:
@@ -3646,6 +3737,25 @@ class TestIIRComb:
         # Verify that the first notch sits at 1000 Hz
         comb1 = comb_points[0]
         assert_allclose(freqs[comb1], 1000)
+
+    # Verify pass_zero parameter
+    @pytest.mark.parametrize('ftype,pass_zero,peak,notch',
+                             [('peak', True, 123.45, 61.725),
+                              ('peak', False, 61.725, 123.45),
+                              ('peak', None, 61.725, 123.45),
+                              ('notch', None, 61.725, 123.45),
+                              ('notch', True, 123.45, 61.725),
+                              ('notch', False, 61.725, 123.45)])
+    def test_pass_zero(self, ftype, pass_zero, peak, notch):
+        # Create a notching or peaking comb filter
+        b, a = iircomb(123.45, 30, ftype=ftype, fs=1234.5, pass_zero=pass_zero)
+
+        # Compute the frequency response
+        freqs, response = freqz(b, a, [peak, notch], fs=1234.5)
+
+        # Verify that expected notches are notches and peaks are peaks
+        assert abs(response[0]) > 0.99
+        assert abs(response[1]) < 1e-10
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using
@@ -3679,6 +3789,18 @@ class TestIIRComb:
         assert_allclose(b_peak, b_peak2)
         assert_allclose(a_peak, a_peak2)
 
+    # Verify that https://github.com/scipy/scipy/issues/14043 is fixed
+    def test_nearest_divisor(self):
+        # Create a notching comb filter
+        b, a = iircomb(50/int(44100/2), 50.0, ftype='notch')
+
+        # Compute the frequency response at an upper harmonic of 50
+        freqs, response = freqz(b, a, [22000], fs=44100)
+
+        # Before bug fix, this would produce N = 881, so that 22 kHz was ~0 dB.
+        # Now N = 882 correctly and 22 kHz should be a notch <-220 dB
+        assert abs(response[0]) < 1e-10
+
 
 class TestIIRDesign:
 
@@ -3688,10 +3810,105 @@ class TestIIRDesign:
         with pytest.raises(ValueError, match="the same shape"):
             iirdesign(np.array([[0.3, 0.6], [0.3, 0.6]]),
                       np.array([[0.4, 0.5], [0.4, 0.5]]), 1, 40)
-        with pytest.raises(ValueError, match="can't be negative"):
+
+        # discrete filter with non-positive frequency
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign(0, 0.5, 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign(-0.1, 0.5, 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign(0.1, 0, 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign(0.1, -0.5, 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0, 0.3], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([-0.1, 0.3], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, 0], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, -0.3], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, 0.3], [0, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
             iirdesign([0.1, 0.3], [-0.1, 0.5], 1, 40)
-        with pytest.raises(ValueError, match="can't be larger than 1"):
-            iirdesign([0.1, 1.3], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, 0.3], [0.1, 0], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, 0.3], [0.1, -0.5], 1, 40)
+
+        # analog filter with negative frequency
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign(-0.1, 0.5, 1, 40, analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign(0.1, -0.5, 1, 40, analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([-0.1, 0.3], [0.1, 0.5], 1, 40, analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, -0.3], [0.1, 0.5], 1, 40, analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, 0.3], [-0.1, 0.5], 1, 40, analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, 0.3], [0.1, -0.5], 1, 40, analog=True)
+
+        # discrete filter with fs=None, freq > 1
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign(1, 0.5, 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign(1.1, 0.5, 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign(0.1, 1, 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign(0.1, 1.5, 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([1, 0.3], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([1.1, 0.3], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([0.1, 1], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([0.1, 1.1], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([0.1, 0.3], [1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([0.1, 0.3], [1.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([0.1, 0.3], [0.1, 1], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([0.1, 0.3], [0.1, 1.5], 1, 40)
+
+        # discrete filter with fs>2, wp, ws < fs/2 must pass
+        iirdesign(100, 500, 1, 40, fs=2000)
+        iirdesign(500, 100, 1, 40, fs=2000)
+        iirdesign([200, 400], [100, 500], 1, 40, fs=2000)
+        iirdesign([100, 500], [200, 400], 1, 40, fs=2000)
+
+        # discrete filter with fs>2, freq > fs/2: this must raise
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign(1000, 400, 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign(1100, 500, 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign(100, 1000, 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign(100, 1100, 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([1000, 400], [100, 500], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([1100, 400], [100, 500], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([200, 1000], [100, 500], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([200, 1100], [100, 500], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([200, 400], [1000, 500], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([200, 400], [1100, 500], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([200, 400], [100, 1000], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([200, 400], [100, 1100], 1, 40, fs=2000)
+
         with pytest.raises(ValueError, match="strictly inside stopband"):
             iirdesign([0.1, 0.4], [0.5, 0.6], 1, 40)
         with pytest.raises(ValueError, match="strictly inside stopband"):
@@ -3746,6 +3963,35 @@ class TestIIRFilter:
         assert_raises(ValueError, iirfilter, 1, [1, 2], btype='band')
         assert_raises(ValueError, iirfilter, 1, [10, 20], btype='stop')
 
+        # analog=True with non-positive critical frequencies
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirfilter(2, 0, btype='low', analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirfilter(2, -1, btype='low', analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirfilter(2, [0, 100], analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirfilter(2, [-1, 100], analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirfilter(2, [10, 0], analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirfilter(2, [10, -1], analog=True)
+
+    def test_analog_sos(self):
+        # first order Butterworth filter with Wn = 1 has tf 1/(s+1)
+        sos = [[0., 0., 1., 0., 1., 1.]]
+        sos2 = iirfilter(N=1, Wn=1, btype='low', analog=True, output='sos')
+        assert_array_almost_equal(sos, sos2)
+
+    def test_wn1_ge_wn0(self):
+        # gh-15773: should raise error if Wn[0] >= Wn[1]
+        with pytest.raises(ValueError,
+                           match=r"Wn\[0\] must be less than Wn\[1\]"):
+            iirfilter(2, [0.5, 0.5])
+        with pytest.raises(ValueError,
+                           match=r"Wn\[0\] must be less than Wn\[1\]"):
+            iirfilter(2, [0.6, 0.5])
+
 
 class TestGroupDelay:
     def test_identity_filter(self):
@@ -3779,8 +4025,7 @@ class TestGroupDelay:
 
     def test_singular(self):
         # Let's create a filter with zeros and poles on the unit circle and
-        # check if warning is raised and the group delay is set to zero at
-        # these frequencies.
+        # check if warnings are raised at those frequencies.
         z1 = np.exp(1j * 0.1 * pi)
         z2 = np.exp(1j * 0.25 * pi)
         p1 = np.exp(1j * 0.5 * pi)
@@ -3790,7 +4035,6 @@ class TestGroupDelay:
         w = np.array([0.1 * pi, 0.25 * pi, -0.5 * pi, -0.8 * pi])
 
         w, gd = assert_warns(UserWarning, group_delay, (b, a), w=w)
-        assert_allclose(gd, 0)
 
     def test_backward_compat(self):
         # For backward compatibility, test if None act as a wrapper for default

@@ -1,11 +1,15 @@
+# cython: wraparound=False, boundscheck=False
+
 import numpy as np
+import warnings
 
 from scipy.sparse import csr_matrix, isspmatrix_csr
 
-cimport cython
 cimport numpy as np
 
 include 'parameters.pxi'
+
+np.import_array()
 
 
 class MaximumFlowResult:
@@ -15,19 +19,28 @@ class MaximumFlowResult:
     ----------
     flow_value : int
         The value of the maximum flow.
-    residual : csr_matrix
-        The residual graph with respect to the maximum flow.
+    flow : csr_matrix
+        The maximum flow.
     """
 
-    def __init__(self, flow_value, residual):
+    def __init__(self, flow_value, flow):
         self.flow_value = flow_value
-        self.residual = residual
+        self.flow = flow
 
     def __repr__(self):
-        return 'MaximumFlowResult with value of %d' % self.flow_value 
+        return 'MaximumFlowResult with value of %d' % self.flow_value
+
+    @property
+    def residual(self):
+        warnings.warn(
+            "The attribute `residual` has been renamed to `flow`"
+            " and will be removed in SciPy 1.11.",
+            DeprecationWarning, stacklevel=2
+        )
+        return self.flow
 
 
-def maximum_flow(csgraph, source, sink):
+def maximum_flow(csgraph, source, sink, *, method='dinic'):
     r"""
     maximum_flow(csgraph, source, sink)
 
@@ -45,13 +58,23 @@ def maximum_flow(csgraph, source, sink):
         The source vertex from which the flow flows.
     sink : int
         The sink vertex to which the flow flows.
+    method: {'edmonds_karp', 'dinic'}, optional
+        The method/algorithm to be used for computing the maximum flow.
+        Following methods are supported,
+
+            * 'edmonds_karp': Edmonds Karp algorithm in [1]_.
+            * 'dinic': Dinic's algorithm in [4]_.
+
+        Default is 'dinic'.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
     res : MaximumFlowResult
         A maximum flow represented by a ``MaximumFlowResult``
         which includes the value of the flow in ``flow_value``,
-        and the residual graph in ``residual``.
+        and the flow graph in ``flow``.
 
     Raises
     ------
@@ -75,9 +98,13 @@ def maximum_flow(csgraph, source, sink):
     By the max-flow min-cut theorem, the maximal value of the flow is also the
     total weight of the edges in a minimum cut.
 
-    To solve the problem, we use the Edmonds--Karp algorithm. [1]_ This
-    particular implementation strives to exploit sparsity. Its time complexity
-    is :math:`O(VE^2)` and its space complexity is :math:`O(E)`.
+    To solve the problem, we provide Edmonds--Karp [1]_ and Dinic's algorithm
+    [4]_. The implementation of both algorithms strive to exploit sparsity.
+    The time complexity of the former :math:`O(|V|\,|E|^2)` and its space
+    complexity is :math:`O(|E|)`. The latter achieves its performance by
+    building level graphs and finding blocking flows in them. Its time
+    complexity is :math:`O(|V|^2\,|E|)` and its space complexity is
+    :math:`O(|E|)`.
 
     The maximum flow problem is usually defined with real valued capacities,
     but we require that all capacities are integral to ensure convergence. When
@@ -97,6 +124,10 @@ def maximum_flow(csgraph, source, sink):
     .. [2] Cormen, T. H. and Leiserson, C. E. and Rivest, R. L. and Stein C.
            Introduction to Algorithms. Second Edition. 2001. MIT Press.
     .. [3] https://en.wikipedia.org/wiki/Graph_cuts_in_computer_vision
+    .. [4] Dinic, Efim A.
+           Algorithm for solution of a problem of maximum flow in networks with
+           power estimation. In Soviet Math. Doklady, vol. 11, pp. 1277-1280.
+           1970.
 
     Examples
     --------
@@ -107,10 +138,13 @@ def maximum_flow(csgraph, source, sink):
 
     Here, the maximum flow is simply the capacity of the edge:
 
+    >>> import numpy as np
     >>> from scipy.sparse import csr_matrix
     >>> from scipy.sparse.csgraph import maximum_flow
     >>> graph = csr_matrix([[0, 5], [0, 0]])
     >>> maximum_flow(graph, 0, 1).flow_value
+    5
+    >>> maximum_flow(graph, 0, 1, method='edmonds_karp').flow_value
     5
 
     If, on the other hand, there is a bottleneck between source and sink, that
@@ -125,7 +159,7 @@ def maximum_flow(csgraph, source, sink):
     A less trivial example is given in [2]_, Chapter 26.1:
 
     >>> graph = csr_matrix([[0, 16, 13,  0,  0,  0],
-    ...                     [0, 10,  0, 12,  0,  0],
+    ...                     [0,  0, 10, 12,  0,  0],
     ...                     [0,  4,  0,  0, 14,  0],
     ...                     [0,  0,  9,  0,  0, 20],
     ...                     [0,  0,  0,  7,  0,  4],
@@ -178,10 +212,10 @@ def maximum_flow(csgraph, source, sink):
 
     At this point, we can find the maximum flow between the added sink and the
     added source and the desired matching can be obtained by restricting the
-    residual graph to the block corresponding to the original graph:
+    flow function to the block corresponding to the original graph:
 
-    >>> flow = maximum_flow(graph_flow, 0, i+j+1)
-    >>> matching = flow.residual[1:i+1, i+1:i+j+1]
+    >>> result = maximum_flow(graph_flow, 0, i+j+1, method='dinic')
+    >>> matching = result.flow[1:i+1, i+1:i+j+1]
     >>> print(matching.toarray())
     [[0 1 0 0]
      [1 0 0 0]
@@ -208,6 +242,8 @@ def maximum_flow(csgraph, source, sink):
         csgraph = csgraph.astype(ITYPE)
     if source == sink:
         raise ValueError("source and sink vertices must differ")
+    if csgraph.shape[0] != csgraph.shape[1]:
+        raise ValueError("graph must be specified as a square matrix.")
     if source < 0 or source >= csgraph.shape[0]:
         raise ValueError('source value ({}) must be between '.format(source) +
                          '0 and {}'.format(csgraph.shape[0] - 1))
@@ -215,18 +251,30 @@ def maximum_flow(csgraph, source, sink):
         raise ValueError('sink value ({}) must be between '.format(sink) +
                          '0 and {}'.format(csgraph.shape[0] - 1))
 
-    # Our implementation of Edmonds--Karp assumes that edges always exist
+    # Sorted indices are needed by both the _add_reverse_edges() and
+    # the _make_edge_pointers() function.
+    if not csgraph.has_sorted_indices:
+        csgraph = csgraph.sorted_indices()
+
+    # Our maximum flow solvers assume that edges always exist
     # in both directions, so we start by adding the reversed edges whenever
     # they are missing.
     m = _add_reverse_edges(csgraph)
-    rev_edge_ptr, tails = _make_edge_pointers(m)
-    residual = _edmonds_karp(m.indptr, tails, m.indices,
+    rev_edge_ptr = _make_edge_pointers(m)
+    if method == 'edmonds_karp':
+        tails = _make_tails(m)
+        flow = _edmonds_karp(m.indptr, tails, m.indices,
                              m.data, rev_edge_ptr, source, sink)
-    residual_array = np.asarray(residual)
-    residual_matrix = csr_matrix((residual_array, m.indices, m.indptr),
-                                 shape=m.shape)
-    source_flow = residual_array[m.indptr[source]:m.indptr[source + 1]]
-    return MaximumFlowResult(source_flow.sum(), residual_matrix)
+    elif method == 'dinic':
+        flow = _dinic(m.indptr, m.indices, m.data, rev_edge_ptr,
+                      source, sink)
+    else:
+        raise ValueError('{} method is not supported yet.'.format(method))
+    flow_array = np.asarray(flow)
+    flow_matrix = csr_matrix((flow_array, m.indices, m.indptr),
+                             shape=m.shape)
+    source_flow = flow_array[m.indptr[source]:m.indptr[source + 1]]
+    return MaximumFlowResult(source_flow.sum(), flow_matrix)
 
 
 def _add_reverse_edges(a):
@@ -247,58 +295,90 @@ def _add_reverse_edges(a):
         by explicit zeros.
 
     """
-    # This is equivalent to just looping over all (i, j) and letting
-    # the weight of (j, i) be zero if it is not already defined.
-    # Using NumPy to do so is several orders of magnitude faster
-    # than the naive solution. We first create create the sorted
-    # list {i*n + j} for nonzero (i, j), then use binary search
-    # to determine if j*n + i belongs to the list. To ensure that
-    # the haystack below is sorted, we presort the column indices if
-    # necessary.
-    if not a.has_sorted_indices:
-        a = a.sorted_indices()
-    acoo = a.tocoo()
-    rows = acoo.row
-    cols = acoo.col
-    n = a.shape[0]
-    haystack = rows*n + cols
-    needles = cols*n + rows
-    indices = np.searchsorted(haystack, needles)
-    # As searchsorted returns a.nnz when a given needle is
-    # larger than the largest element of the haystack, we
-    # explicitly add an element not in needles at the end.
-    haystack = np.concatenate([haystack, [-1]])
-    indexed = haystack[indices]
-    diff = indexed != needles
-    # At this point, diff contains the indices of the (j, i)
-    # to be added. We make use of the COO initializer for CSR
-    # matrices which ensures that 0s are added explicitly.
-    indices_to_add = np.where(diff)[0]
-    data_to_add = np.zeros((indices_to_add.shape[0],), dtype=ITYPE)
-    acoo.row = np.concatenate([acoo.row, cols[indices_to_add]])
-    acoo.col = np.concatenate([acoo.col, rows[indices_to_add]])
-    acoo.data = np.concatenate([acoo.data, data_to_add])
-    return acoo.tocsr()
+    # Reference arrays of the input matrix.
+    cdef ITYPE_t n = a.shape[0]
+    cdef ITYPE_t[:] a_data_view = a.data
+    cdef ITYPE_t[:] a_indices_view = a.indices
+    cdef ITYPE_t[:] a_indptr_view = a.indptr
+
+    # Create the transpose with the intent of using the resulting index
+    # arrays for the addition of reverse edges with zero capacity. In
+    # particular, we do not actually use the values in the transpose;
+    # only the fact that the indices exist.
+    at = csr_matrix(a.transpose())
+    cdef ITYPE_t[:] at_indices_view = at.indices
+    cdef ITYPE_t[:] at_indptr_view = at.indptr
+
+    # Create arrays for the result matrix with added reverse edges. We
+    # allocate twice the number of non-zeros in `a` for the data, which
+    # will always be enough. It might be too many entries in case `a` has
+    # some reverse edges already; in that case, over-allocating is not
+    # a problem since csr_matrix implicitly truncates elements of data
+    # and indices that go beyond the indices given by indptr.
+    res_data = np.zeros(2 * a.nnz, ITYPE)
+    cdef ITYPE_t[:] res_data_view = res_data
+    res_indices = np.zeros(2 * a.nnz, ITYPE)
+    cdef ITYPE_t[:] res_indices_view = res_indices
+    res_indptr = np.zeros(n + 1, ITYPE)
+    cdef ITYPE_t[:] res_indptr_view = res_indptr
+
+    cdef ITYPE_t i = 0
+    cdef ITYPE_t res_ptr = 0
+    cdef ITYPE_t a_ptr, a_end, at_ptr, at_end
+    cdef bint move_a, move_at
+    # Loop over all rows
+    while i != n:
+        # For each row, to ensure that the resulting matrix has
+        # sorted indices, we loop over the i'th rows in a and a.T
+        # simultaneously, bumping the pointer in one matrix only
+        # if that wouldn't break the sorting.
+        a_ptr, a_end = a_indptr_view[i], a_indptr_view[i + 1]
+        at_ptr, at_end = at_indptr_view[i], at_indptr_view[i + 1]
+        while a_ptr != a_end or at_ptr != at_end:
+            move_a = a_ptr != a_end \
+                and (at_ptr == at_end
+                     or a_indices_view[a_ptr] <= at_indices_view[at_ptr])
+            move_at = at_ptr != at_end \
+                and (a_ptr == a_end
+                     or at_indices_view[at_ptr] <= a_indices_view[a_ptr])
+            if move_a:
+                # Note that it's possible that we move both pointers at once.
+                # In that case, we explicitly want the value from the original
+                # matrix.
+                res_indices_view[res_ptr] = a_indices_view[a_ptr]
+                res_data_view[res_ptr] = a_data_view[a_ptr]
+                a_ptr += 1
+            if move_at:
+                res_indices_view[res_ptr] = at_indices_view[at_ptr]
+                at_ptr += 1
+            res_ptr += 1
+        i += 1
+        res_indptr_view[i] = res_ptr
+    return csr_matrix((res_data, res_indices, res_indptr), shape=(n, n))
 
 
 def _make_edge_pointers(a):
-    """Create for each edge pointers to its reverse and its tail."""
-    # Just as above, one way to match (i, j) with (j, i) is to match
-    # i*n + j with j*n + i, which we can do by ensuring that we
-    # have a sorted collection of {i*n + j} and using binary search
-    # to find j*n + i here.
-    n = a.shape[0]
-    acoo = a.tocoo()
-    rows = acoo.row
-    cols = acoo.col
-    haystack = rows*n + cols
-    needles = cols*n + rows
-    rev_edge_ptr = np.searchsorted(haystack, needles).astype(ITYPE)
-    return rev_edge_ptr, rows
+    """Create for each edge pointers to its reverse."""
+    cdef int n = a.shape[0]
+    b_data = np.arange(a.data.shape[0], dtype=ITYPE)
+    b = csr_matrix(
+        (b_data, a.indices, a.indptr), shape=(n, n), dtype=ITYPE)
+    b = csr_matrix(b.transpose())
+    return b.data
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
+def _make_tails(a):
+    """Create for each edge pointers to its tail."""
+    cdef int n = a.shape[0]
+    cdef ITYPE_t[:] tails = np.empty(a.data.shape[0], dtype=ITYPE)
+    cdef ITYPE_t[:] a_indptr_view = a.indptr
+    cdef ITYPE_t i, j
+    for i in range(n):
+        for j in range(a_indptr_view[i], a_indptr_view[i + 1]):
+            tails[j] = i
+    return tails
+
+
 cdef ITYPE_t[:] _edmonds_karp(
         ITYPE_t[:] edge_ptr,
         ITYPE_t[:] tails,
@@ -320,7 +400,7 @@ cdef ITYPE_t[:] _edmonds_karp(
     tails : memoryview of length :math:`|E|`
         For a given edge ``e``, ``tails[e]`` is the tail vertex of ``e``.
     heads : memoryview of length :math:`|E|`
-        For a given edge ``e``, ``tails[e]`` is the head vertex of ``e``.
+        For a given edge ``e``, ``heads[e]`` is the head vertex of ``e``.
     capacities : memoryview of length :math:`|E|`
         For a given edge ``e``, ``capacities[e]`` is the capacity of ``e``.
     rev_edge_ptr : memoryview of length :math:`|E|`
@@ -334,7 +414,7 @@ cdef ITYPE_t[:] _edmonds_karp(
     Returns
     -------
     flow : memoryview of length :math:`|E|`
-        The residual graph with respect to a maximum flow.
+        The flow graph with respect to a maximum flow.
 
     """
     cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
@@ -353,7 +433,7 @@ cdef ITYPE_t[:] _edmonds_karp(
     cdef ITYPE_t[:] pred_edge = np.empty(n_verts, dtype=ITYPE)
 
     cdef bint path_found
-    cdef ITYPE_t cur, df, t, e, edge, k
+    cdef ITYPE_t cur, df, t, e, k
 
     # While augmenting paths from source to sink exist
     while True:
@@ -369,8 +449,6 @@ cdef ITYPE_t[:] _edmonds_karp(
             # Pop queue
             cur = q[start]
             start += 1
-            if start == n_verts:
-                start = 0
             # Loop over all edges from the current vertex
             for e in range(edge_ptr[cur], edge_ptr[cur + 1]):
                 t = heads[e]
@@ -383,8 +461,6 @@ cdef ITYPE_t[:] _edmonds_karp(
                     # Push to queue
                     q[end] = t
                     end += 1
-                    if end == n_verts:
-                        end = 0
         # Did we find an augmenting path?
         if path_found:
             df = ITYPE_MAX
@@ -407,3 +483,197 @@ cdef ITYPE_t[:] _edmonds_karp(
             # If no augmenting path could be found, we're done.
             break
     return flow
+
+cdef bint _build_level_graph(
+        const ITYPE_t[:] edge_ptr,  # IN
+        const ITYPE_t source,  # IN
+        const ITYPE_t sink,  # IN
+        const ITYPE_t[:] capacities,  # IN
+        const ITYPE_t[:] heads,  # IN
+        ITYPE_t[:] levels,  # IN/OUT
+        ITYPE_t[:] q,  # IN/OUT
+        ) nogil:
+    """Builds layered graph from input graph using breadth first search.
+
+    Parameters
+    ----------
+    edge_ptr : memoryview of length :math:`|V| + 1`
+        For a given vertex ``v``, the edges whose tail is ``v`` are
+        those between ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
+    source : int
+        The source vertex.
+    sink : int
+        The sink vertex.
+    capacities : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``capacities[e]`` is the capacity of ``e``.
+    heads : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``heads[e]`` is the head vertex of ``e``.
+    levels: memoryview of length :math:`|E|`
+        For a given vertex ``v``, ``levels[v]`` is the level of ``v`` in
+        the layered graph of input graph.
+    q : memoryview of length :math:`|E|`
+        Queue to be used in breadth first search. Passed to avoid repeated
+        queue creation inside this function.
+
+    Returns
+    -------
+    bool:
+        ``True`` if the layered graph creation was successful,
+        otherwise ``False``.
+
+    """
+    cdef ITYPE_t cur, start, end, dst_vertex, e
+
+    q[0] = source
+    start = 0
+    end = 1
+    levels[source] = 0
+
+    while start != end:
+        cur = q[start]
+        start += 1
+        if cur == sink:
+            return 1
+        for e in range(edge_ptr[cur], edge_ptr[cur + 1]):
+            dst_vertex = heads[e]
+            if capacities[e] > 0 and levels[dst_vertex] == -1:
+                levels[dst_vertex] = levels[cur] + 1
+                q[end] = dst_vertex
+                end += 1
+    return 0
+
+cdef bint _augment_paths(
+        const ITYPE_t[:] edge_ptr,  # IN
+        const ITYPE_t source,  # IN
+        const ITYPE_t sink,  # IN
+        const ITYPE_t[:] levels,  # IN
+        const ITYPE_t[:] heads,  # IN
+        const ITYPE_t[:] rev_edge_ptr,  # IN
+        ITYPE_t[:] capacities,  # IN/OUT
+        ITYPE_t[:] progress,  # IN
+        ITYPE_t[:] flows,  # OUT
+        ITYPE_t[:, :] stack
+        ) nogil:
+    """Finds augmenting paths in layered graph using depth first search.
+
+    Parameters
+    ----------
+    edge_ptr : memoryview of length :math:`|V| + 1`
+        For a given vertex ``v``, the edges whose tail is ``v`` are
+        those between ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
+    source : int
+        The source vertex.
+    sink : int
+        The sink vertex.
+    levels: memoryview of length :math:`|E|`
+        For a given vertex ``v``, ``levels[v]`` is the level of ``v`` in
+        the layered graph of input graph.
+    heads : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``heads[e]`` is the head vertex of ``e``.
+    rev_edge_ptr : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``rev_edge_ptr[e]`` is the edge obtained by
+        reversing ``e``. In particular, ``rev_edge_ptr[rev_edge_ptr[e]] == e``.
+    capacities : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``capacities[e]`` is the capacity of ``e``.
+    progress: memoryview of length :math:`|E|`
+        For a given vertex ``v``, ``progress[v]`` is the index of the next
+        edge to be visited from ``v``.
+    flows : memoryview of length :math:`|E|`
+        The flow graph with respect to a maximum flow.
+    stack : memoryview of length (:math:`|E|`, 2)
+        Stack used during depth-first search.
+
+    Returns
+    -------
+    bool
+        True if and only if an augmenting path was found.
+
+    """
+    cdef ITYPE_t top, current, e, dst_vertex, current_flow, flow
+    top = 0
+    stack[top][0] = source
+    stack[top][1] = 2147483647  # Max int
+
+    while True:
+        current = stack[top][0]
+        flow = stack[top][1]
+        e = progress[current]
+        dst_vertex = heads[e]
+        if (capacities[e] > 0 and
+                levels[dst_vertex] == levels[current] + 1):
+            current_flow = min(flow, capacities[e])
+            if dst_vertex == sink:
+                while top > -1:
+                    e = progress[stack[top][0]]
+                    capacities[e] -= current_flow
+                    capacities[rev_edge_ptr[e]] += current_flow
+                    flows[e] += current_flow
+                    flows[rev_edge_ptr[e]] -= current_flow
+                    top -= 1
+                return True
+            top += 1
+            stack[top][0] = dst_vertex
+            stack[top][1] = current_flow
+        else:
+            while progress[current] == edge_ptr[current + 1] - 1:
+                top -= 1
+                if top < 0: return False  # Did we pop the source?
+                current = stack[top][0]
+            progress[current] += 1
+
+cdef ITYPE_t[:] _dinic(
+        ITYPE_t[:] edge_ptr,
+        ITYPE_t[:] heads,
+        ITYPE_t[:] capacities,
+        ITYPE_t[:] rev_edge_ptr,
+        ITYPE_t source,
+        ITYPE_t sink):
+    """Solves the maximum flow problem using the Dinic's algorithm.
+
+    This assumes that for every edge in the graph, the edge in the opposite
+    direction is also in the graph (possibly with capacity 0).
+
+    Parameters
+    ----------
+    edge_ptr : memoryview of length :math:`|V| + 1`
+        For a given vertex ``v``, the edges whose tail is ``v`` are
+        those between ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
+    heads : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``heads[e]`` is the head vertex of ``e``.
+    capacities : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``capacities[e]`` is the capacity of ``e``.
+    rev_edge_ptr : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``rev_edge_ptr[e]`` is the edge obtained by
+        reversing ``e``. In particular, ``rev_edge_ptr[rev_edge_ptr[e]] == e``.
+    source : int
+        The source vertex.
+    sink : int
+        The sink vertex.
+
+    Returns
+    -------
+    flows : memoryview of length :math:`|E|`
+        The flow graph with respect to a maximum flow.
+
+    """
+    cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
+    cdef ITYPE_t n_edges = capacities.shape[0]
+
+    cdef ITYPE_t[:] levels = np.empty(n_verts, dtype=ITYPE)
+    cdef ITYPE_t[:] progress = np.empty(n_verts, dtype=ITYPE)
+    cdef ITYPE_t[:] q = np.empty(n_verts, dtype=ITYPE)
+    cdef ITYPE_t[:, :] stack = np.empty((n_verts, 2), dtype=ITYPE)
+    cdef ITYPE_t[:] flows = np.zeros(n_edges, dtype=ITYPE)
+    while True:
+        for i in range(n_verts):
+            levels[i] = -1
+        if not _build_level_graph(edge_ptr, source, sink,
+                                  capacities, heads, levels, q):
+            break
+        for i in range(n_verts):
+            progress[i] = edge_ptr[i]
+        while _augment_paths(edge_ptr, source, sink,
+                             levels, heads, rev_edge_ptr,
+                             capacities, progress, flows, stack):
+            pass
+    return flows

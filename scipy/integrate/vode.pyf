@@ -3,7 +3,7 @@
 !Date:   3 Feb 2002
 !$Revision$
 
-python module dvode__user__routines 
+python module dvode__user__routines
     interface dvode_user_interface
        subroutine f(n,t,y,ydot,rpar,ipar)
          integer intent(hide) :: n
@@ -26,7 +26,7 @@ python module dvode__user__routines
     end interface
 end python module dvode__user__routines
 
-python module zvode__user__routines 
+python module zvode__user__routines
     interface zvode_user_interface
        subroutine f(n,t,y,ydot,rpar,ipar)
          integer intent(hide) :: n
@@ -48,8 +48,8 @@ python module zvode__user__routines
        end subroutine jac
     end interface
 end python module zvode__user__routines
-  
-python module vode
+
+python module _vode
     interface
        subroutine dvode(f,jac,neq,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,mf,rpar,ipar)
          ! y1,t,istate = dvode(f,jac,y0,t0,t1,rtol,atol,itask,istate,rwork,iwork,mf)
@@ -57,7 +57,7 @@ python module vode
          use dvode__user__routines
          external f
          external jac
-         
+
          integer intent(hide),depend(y) :: neq = len(y)
          double precision dimension(neq),intent(in,out,copy) :: y
          double precision intent(in,out):: t
@@ -87,7 +87,7 @@ python module vode
          use zvode__user__routines
          external f
          external jac
-         
+
          integer intent(hide),depend(y) :: neq = len(y)
          double complex dimension(neq),intent(in,out,copy) :: y
          double precision intent(in,out):: t
@@ -115,4 +115,4 @@ python module vode
        integer :: intvar
        common /types/ intvar
     end interface
-end python module vode
+end python module _vode

@@ -6,7 +6,7 @@ from scipy._build_utils import numpy_nodepr_api
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from scipy._build_utils.system_info import get_info
+    from numpy.distutils.system_info import get_info
     from scipy._build_utils import (uses_blas64, blas_ilp64_pre_build_hook,
                                     combine_dict, get_f2py_int64_options)
 
@@ -64,7 +64,7 @@ def configuration(parent_package='',top_path=None):
     # vode
     cfg = combine_dict(lapack_opt,
                        libraries=['vode'])
-    ext = config.add_extension('vode',
+    ext = config.add_extension('_vode',
                                sources=['vode.pyf'],
                                depends=vode_src,
                                f2py_options=f2py_options,
@@ -74,7 +74,7 @@ def configuration(parent_package='',top_path=None):
     # lsoda
     cfg = combine_dict(lapack_opt,
                        libraries=['lsoda', 'mach'])
-    ext = config.add_extension('lsoda',
+    ext = config.add_extension('_lsoda',
                                sources=['lsoda.pyf'],
                                depends=(lsoda_src + mach_src),
                                f2py_options=f2py_options,

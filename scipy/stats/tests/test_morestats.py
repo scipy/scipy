@@ -3,6 +3,7 @@
 # Further enhancements and tests added by numerous SciPy developers.
 #
 import warnings
+import sys
 
 import numpy as np
 from numpy.random import RandomState
@@ -11,18 +12,23 @@ from numpy.testing import (assert_array_equal,
     assert_, assert_allclose, assert_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-
+import re
+from scipy import optimize
 from scipy import stats
+from scipy.stats._morestats import _abw_state
 from .common_tests import check_named_results
-from .._hypotests import _get_wilcoxon_distr
+from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
+from scipy.stats._distr_params import distcont
+
+distcont = dict(distcont)  # type: ignore
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
 try:
-    import matplotlib  # type: ignore[import]
+    import matplotlib
     matplotlib.rcParams['backend'] = 'Agg'
-    import matplotlib.pyplot as plt  # type: ignore[import]
+    import matplotlib.pyplot as plt
     have_matplotlib = True
 except Exception:
     have_matplotlib = False
@@ -40,6 +46,12 @@ g7 = [0.990, 1.004, 0.996, 1.001, 0.998, 1.000, 1.018, 1.010, 0.996, 1.002]
 g8 = [0.998, 1.000, 1.006, 1.000, 1.002, 0.996, 0.998, 0.996, 1.002, 1.006]
 g9 = [1.002, 0.998, 0.996, 0.995, 0.996, 1.004, 1.004, 0.998, 0.999, 0.991]
 g10 = [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
+
+
+# The loggamma RVS stream is changing due to gh-13349; this version
+# preserves the old stream so that tests don't change.
+def _old_loggamma_rvs(*args, **kwargs):
+    return np.log(stats.gamma.rvs(*args, **kwargs))
 
 
 class TestBayes_mvs:
@@ -195,6 +207,23 @@ class TestShapiro:
         assert_almost_equal(pw, 1.0)
         assert_almost_equal(shapiro_test.pvalue, 1.0)
 
+    def test_gh14462(self):
+        # shapiro is theoretically location-invariant, but when the magnitude
+        # of the values is much greater than the variance, there can be
+        # numerical issues. Fixed by subtracting median from the data.
+        # See gh-14462.
+
+        trans_val, maxlog = stats.boxcox([122500, 474400, 110400])
+        res = stats.shapiro(trans_val)
+
+        # Reference from R:
+        # options(digits=16)
+        # x = c(0.00000000e+00, 3.39996924e-08, -6.35166875e-09)
+        # shapiro.test(x)
+        ref = (0.86468431705371, 0.2805581751566)
+
+        assert_allclose(res, ref, rtol=1e-5)
+
 
 class TestAnderson:
     def test_normal(self):
@@ -280,6 +309,20 @@ class TestAnderson:
 
         assert_array_less(A1, crit1[-2:])
         assert_(A2 > crit2[-1])
+
+    @pytest.mark.parametrize('distname',
+                             ['norm', 'expon', 'gumbel_l', 'extreme1',
+                              'gumbel', 'gumbel_r', 'logistic'])
+    def test_anderson_fit_params(self, distname):
+        # check that anderson now returns a FitResult
+        rng = np.random.default_rng(330691555377792039)
+        real_distname = ('gumbel_l' if distname in {'extreme1', 'gumbel'}
+                         else distname)
+        dist = getattr(stats, real_distname)
+        params = distcont[real_distname]
+        x = dist.rvs(*params, size=1000, random_state=rng)
+        res = stats.anderson(x, distname)
+        assert res.fit_result.success
 
 
 class TestAndersonKSamp:
@@ -479,6 +522,8 @@ class TestAndersonKSamp:
         attributes = ('statistic', 'critical_values', 'significance_level')
         check_named_results(res, attributes)
 
+        assert_equal(res.significance_level, res.pvalue)
+
 
 class TestAnsari:
 
@@ -522,6 +567,93 @@ class TestAnsari:
             res = stats.ansari(x, y)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
+
+    def test_bad_alternative(self):
+        # invalid value for alternative must raise a ValueError
+        x1 = [1, 2, 3, 4]
+        x2 = [5, 6, 7, 8]
+        match = "'alternative' must be 'two-sided'"
+        with assert_raises(ValueError, match=match):
+            stats.ansari(x1, x2, alternative='foo')
+
+    def test_alternative_exact(self):
+        x1 = [-5, 1, 5, 10, 15, 20, 25]  # high scale, loc=10
+        x2 = [7.5, 8.5, 9.5, 10.5, 11.5, 12.5]  # low scale, loc=10
+        # ratio of scales is greater than 1. So, the
+        # p-value must be high when `alternative='less'`
+        # and low when `alternative='greater'`.
+        statistic, pval = stats.ansari(x1, x2)
+        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        assert pval_l > 0.95
+        assert pval_g < 0.05  # level of significance.
+        # also check if the p-values sum up to 1 plus the probability
+        # mass under the calculated statistic.
+        prob = _abw_state.pmf(statistic, len(x1), len(x2))
+        assert_allclose(pval_g + pval_l, 1 + prob, atol=1e-12)
+        # also check if one of the one-sided p-value equals half the
+        # two-sided p-value and the other one-sided p-value is its
+        # compliment.
+        assert_allclose(pval_g, pval/2, atol=1e-12)
+        assert_allclose(pval_l, 1+prob-pval/2, atol=1e-12)
+        # sanity check. The result should flip if
+        # we exchange x and y.
+        pval_l_reverse = stats.ansari(x2, x1, alternative='less').pvalue
+        pval_g_reverse = stats.ansari(x2, x1, alternative='greater').pvalue
+        assert pval_l_reverse < 0.05
+        assert pval_g_reverse > 0.95
+
+    @pytest.mark.parametrize(
+        'x, y, alternative, expected',
+        # the tests are designed in such a way that the
+        # if else statement in ansari test for exact
+        # mode is covered.
+        [([1, 2, 3, 4], [5, 6, 7, 8], 'less', 0.6285714285714),
+         ([1, 2, 3, 4], [5, 6, 7, 8], 'greater', 0.6285714285714),
+         ([1, 2, 3], [4, 5, 6, 7, 8], 'less', 0.8928571428571),
+         ([1, 2, 3], [4, 5, 6, 7, 8], 'greater', 0.2857142857143),
+         ([1, 2, 3, 4, 5], [6, 7, 8], 'less', 0.2857142857143),
+         ([1, 2, 3, 4, 5], [6, 7, 8], 'greater', 0.8928571428571)]
+    )
+    def test_alternative_exact_with_R(self, x, y, alternative, expected):
+        # testing with R on arbitrary data
+        # Sample R code used for the third test case above:
+        # ```R
+        # > options(digits=16)
+        # > x <- c(1,2,3)
+        # > y <- c(4,5,6,7,8)
+        # > ansari.test(x, y, alternative='less', exact=TRUE)
+        #
+        #     Ansari-Bradley test
+        #
+        # data:  x and y
+        # AB = 6, p-value = 0.8928571428571
+        # alternative hypothesis: true ratio of scales is less than 1
+        #
+        # ```
+        pval = stats.ansari(x, y, alternative=alternative).pvalue
+        assert_allclose(pval, expected, atol=1e-12)
+
+    def test_alternative_approx(self):
+        # intuitive tests for approximation
+        x1 = stats.norm.rvs(0, 5, size=100, random_state=123)
+        x2 = stats.norm.rvs(0, 2, size=100, random_state=123)
+        # for m > 55 or n > 55, the test should automatically
+        # switch to approximation.
+        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        assert_allclose(pval_l, 1.0, atol=1e-12)
+        assert_allclose(pval_g, 0.0, atol=1e-12)
+        # also check if one of the one-sided p-value equals half the
+        # two-sided p-value and the other one-sided p-value is its
+        # compliment.
+        x1 = stats.norm.rvs(0, 2, size=60, random_state=123)
+        x2 = stats.norm.rvs(0, 1.5, size=60, random_state=123)
+        pval = stats.ansari(x1, x2).pvalue
+        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        assert_allclose(pval_g, pval/2, atol=1e-12)
+        assert_allclose(pval_l, 1-pval/2, atol=1e-12)
 
 
 class TestBartlett:
@@ -622,10 +754,27 @@ class TestLevene:
         assert_raises(ValueError, stats.levene, g1, x)
 
 
-class TestBinomP:
-    """Tests for stats.binom_test."""
+class TestBinomTestP:
+    """
+    Tests for stats.binomtest as a replacement for deprecated stats.binom_test.
+    """
+    @staticmethod
+    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
+        # This processing of x and n is copied from binom_test.
+        x = np.atleast_1d(x).astype(np.int_)
+        if len(x) == 2:
+            n = x[1] + x[0]
+            x = x[0]
+        elif len(x) == 1:
+            x = x[0]
+            if n is None or n < x:
+                raise ValueError("n must be >= x")
+            n = np.int_(n)
+        else:
+            raise ValueError("Incorrect length for x.")
 
-    binom_test_func = staticmethod(stats.binom_test)
+        result = stats.binomtest(x, n, p=p, alternative=alternative)
+        return result.pvalue
 
     def test_data(self):
         pval = self.binom_test_func(100, 250)
@@ -660,84 +809,64 @@ class TestBinomP:
         res = self.binom_test_func(51, 235, p=1/6, alternative='two-sided')
         assert_almost_equal(res, 0.0437479701823997)
 
-
-class TestBinomTestP(TestBinomP):
-    """
-    Tests for stats.binomtest as a replacement for stats.binom_test.
-    """
-    @staticmethod
-    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
-        # This processing of x and n is copied from from binom_test.
-        x = np.atleast_1d(x).astype(np.int_)
-        if len(x) == 2:
-            n = x[1] + x[0]
-            x = x[0]
-        elif len(x) == 1:
-            x = x[0]
-            if n is None or n < x:
-                raise ValueError("n must be >= x")
-            n = np.int_(n)
-        else:
-            raise ValueError("Incorrect length for x.")
-
-        result = stats.binomtest(x, n, p=p, alternative=alternative)
-        return result.pvalue
+    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="32-bit does not overflow")
+    def test_boost_overflow_raises(self):
+        # Boost.Math error policy should raise exceptions in Python
+        assert_raises(OverflowError, self.binom_test_func, 5.0, 6, p=sys.float_info.min)
 
 
 class TestBinomTest:
     """Tests for stats.binomtest."""
 
-    # Expected results here are from old binom_test function.
-    # The alternative will be left unspecified which defaults
-    # it to two-sided.
-    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
-                                "sensitive to machine epsilon level")
+    # Expected results here are from R binom.test, e.g.
+    # options(digits=16)
+    # binom.test(484, 967, p=0.48)
+    #
     def test_two_sided_pvalues1(self):
-        # These tests work on all OS's but fail on
-        # Linux_Python_37_32bit_full due to numerical issues caused
-        # by large inputs.
+        # `tol` could be stricter on most architectures, but the value
+        # here is limited by accuracy of `binom.cdf` for large inputs on
+        # Linux_Python_37_32bit_full and aarch64
+        rtol = 1e-10  # aarch64 observed rtol: 1.5e-11
         res = stats.binomtest(10079999, 21000000, 0.48)
-        assert_allclose(res.pvalue, 0.979042561004596, rtol=1e-15)
+        assert_allclose(res.pvalue, 1.0, rtol=rtol)
         res = stats.binomtest(10079990, 21000000, 0.48)
-        assert_allclose(res.pvalue, 0.9785298857599378, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.9966892187965, rtol=rtol)
         res = stats.binomtest(10080009, 21000000, 0.48)
-        assert_allclose(res.pvalue, 0.9786038762958954, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.9970377203856, rtol=rtol)
         res = stats.binomtest(10080017, 21000000, 0.48)
-        assert_allclose(res.pvalue, 0.9778567637538729, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.9940754817328, rtol=1e-9)
 
-    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
-                                "sensitive to machine epsilon level")
     def test_two_sided_pvalues2(self):
+        rtol = 1e-10  # no aarch64 failure with 1e-15, preemptive bump
         res = stats.binomtest(9, n=21, p=0.48)
-        assert_allclose(res.pvalue, 0.6689672431938848, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.6689672431939, rtol=rtol)
         res = stats.binomtest(4, 21, 0.48)
-        assert_allclose(res.pvalue, 0.008139563452105921, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.008139563452106, rtol=rtol)
         res = stats.binomtest(11, 21, 0.48)
-        assert_allclose(res.pvalue, 0.8278629664608201, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.8278629664608, rtol=rtol)
         res = stats.binomtest(7, 21, 0.48)
-        assert_allclose(res.pvalue, 0.19667729017182273, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.1966772901718, rtol=rtol)
         res = stats.binomtest(3, 10, .5)
-        assert_allclose(res.pvalue, 0.3437499999999999, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.34375, rtol=rtol)
         res = stats.binomtest(2, 2, .4)
-        assert_allclose(res.pvalue, 0.16000000000000003, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.16, rtol=rtol)
         res = stats.binomtest(2, 4, .3)
-        assert_allclose(res.pvalue, 0.5883999999999999, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.5884, rtol=rtol)
 
-    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
-                                "sensitive to machine epsilon level")
     def test_edge_cases(self):
+        rtol = 1e-10  # aarch64 observed rtol: 1.33e-15
         res = stats.binomtest(484, 967, 0.5)
-        assert_allclose(res.pvalue, 0.999999999998212, rtol=1e-15)
+        assert_allclose(res.pvalue, 1, rtol=rtol)
         res = stats.binomtest(3, 47, 3/47)
-        assert_allclose(res.pvalue, 0.9999999999999998, rtol=1e-15)
+        assert_allclose(res.pvalue, 1, rtol=rtol)
         res = stats.binomtest(13, 46, 13/46)
-        assert_allclose(res.pvalue, 0.9999999999999987, rtol=1e-15)
+        assert_allclose(res.pvalue, 1, rtol=rtol)
         res = stats.binomtest(15, 44, 15/44)
-        assert_allclose(res.pvalue, 0.9999999999999989, rtol=1e-15)
+        assert_allclose(res.pvalue, 1, rtol=rtol)
         res = stats.binomtest(7, 13, 0.5)
-        assert_allclose(res.pvalue, 0.9999999999999999, rtol=1e-15)
+        assert_allclose(res.pvalue, 1, rtol=rtol)
         res = stats.binomtest(6, 11, 0.5)
-        assert_allclose(res.pvalue, 0.9999999999999997, rtol=1e-15)
+        assert_allclose(res.pvalue, 1, rtol=rtol)
 
     def test_binary_srch_for_binom_tst(self):
         # Test that old behavior of binomtest is maintained
@@ -772,15 +901,18 @@ class TestBinomTest:
 
     # Expected results here are from R 3.6.2 binom.test
     @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
-                             [('less', 0.1488311, 0.0, 0.2772002),
-                              ('greater', 0.9004696, 0.1366613, 1.0),
-                              ('two-sided', 0.2983721, 0.1266556, 0.2918427)])
+                             [('less', 0.148831050443,
+                               0.0, 0.2772002496709138),
+                              ('greater', 0.9004695898947,
+                               0.1366613252458672, 1.0),
+                              ('two-sided', 0.2983720970096,
+                               0.1266555521019559, 0.2918426890886281)])
     def test_confidence_intervals1(self, alternative, pval, ci_low, ci_high):
         res = stats.binomtest(20, n=100, p=0.25, alternative=alternative)
-        assert_allclose(res.pvalue, pval, rtol=1e-6)
-        assert_equal(res.proportion_estimate, 0.2)
+        assert_allclose(res.pvalue, pval, rtol=1e-12)
+        assert_equal(res.statistic, 0.2)
         ci = res.proportion_ci(confidence_level=0.95)
-        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
+        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-12)
 
     # Expected results here are from R 3.6.2 binom.test.
     @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
@@ -793,7 +925,7 @@ class TestBinomTest:
     def test_confidence_intervals2(self, alternative, pval, ci_low, ci_high):
         res = stats.binomtest(3, n=50, p=0.2, alternative=alternative)
         assert_allclose(res.pvalue, pval, rtol=1e-6)
-        assert_equal(res.proportion_estimate, 0.06)
+        assert_equal(res.statistic, 0.06)
         ci = res.proportion_ci(confidence_level=0.99)
         assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
 
@@ -868,7 +1000,7 @@ class TestBinomTest:
         # the hypothesized proportion.  When alternative is 'two-sided',
         # the p-value is 1.
         res = stats.binomtest(4, 16, 0.25)
-        assert_equal(res.proportion_estimate, 0.25)
+        assert_equal(res.statistic, 0.25)
         assert_equal(res.pvalue, 1.0)
 
     @pytest.mark.parametrize('k, n', [(0, 0), (-1, 2)])
@@ -891,6 +1023,10 @@ class TestBinomTest:
         res = stats.binomtest(3, n=10, p=0.1)
         with pytest.raises(ValueError, match="method must be"):
             res.proportion_ci(method="plate of shrimp")
+
+    def test_alias(self):
+        res = stats.binomtest(3, n=10, p=0.1)
+        assert_equal(res.proportion_estimate, res.statistic)
 
 
 class TestFligner:
@@ -961,13 +1097,79 @@ class TestFligner:
         assert_equal((np.nan, np.nan), stats.fligner(x, x**2, []))
 
 
+def mood_cases_with_ties():
+    # Generate random `x` and `y` arrays with ties both between and within the
+    # samples. Expected results are (statistic, pvalue) from SAS.
+    expected_results = [(-1.76658511464992, .0386488678399305),
+                        (-.694031428192304, .2438312498647250),
+                        (-1.15093525352151, .1248794365836150)]
+    seeds = [23453254, 1298352315, 987234597]
+    for si, seed in enumerate(seeds):
+        rng = np.random.default_rng(seed)
+        xy = rng.random(100)
+        # Generate random indices to make ties
+        tie_ind = rng.integers(low=0, high=99, size=5)
+        # Generate a random number of ties for each index.
+        num_ties_per_ind = rng.integers(low=1, high=5, size=5)
+        # At each `tie_ind`, mark the next `n` indices equal to that value.
+        for i, n in zip(tie_ind, num_ties_per_ind):
+            for j in range(i + 1, i + n):
+                xy[j] = xy[i]
+        # scramble order of xy before splitting into `x, y`
+        rng.shuffle(xy)
+        x, y = np.split(xy, 2)
+        yield x, y, 'less', *expected_results[si]
+
 class TestMood:
-    def test_mood(self):
-        # numbers from R: mood.test in package stats
-        x1 = np.arange(5)
-        assert_array_almost_equal(stats.mood(x1, x1**2),
-                                  (-1.3830857299399906, 0.16663858066771478),
-                                  11)
+    @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
+                             mood_cases_with_ties())
+    def test_against_SAS(self, x, y, alternative, stat_expect, p_expect):
+        """
+        Example code used to generate SAS output:
+        DATA myData;
+        INPUT X Y;
+        CARDS;
+        1 0
+        1 1
+        1 2
+        1 3
+        1 4
+        2 0
+        2 1
+        2 4
+        2 9
+        2 16
+        ods graphics on;
+        proc npar1way mood data=myData ;
+           class X;
+            ods output  MoodTest=mt;
+        proc contents data=mt;
+        proc print data=mt;
+          format     Prob1 17.16 Prob2 17.16 Statistic 17.16 Z 17.16 ;
+            title "Mood Two-Sample Test";
+        proc print data=myData;
+            title "Data for above results";
+          run;
+        """
+        statistic, pvalue = stats.mood(x, y, alternative=alternative)
+        assert_allclose(stat_expect, statistic, atol=1e-16)
+        assert_allclose(p_expect, pvalue, atol=1e-16)
+
+    @pytest.mark.parametrize("alternative, expected",
+                             [('two-sided', (1.019938533549930,
+                                             .3077576129778760)),
+                              ('less', (1.019938533549930,
+                                        1 - .1538788064889380)),
+                              ('greater', (1.019938533549930,
+                                           .1538788064889380))])
+    def test_against_SAS_2(self, alternative, expected):
+        # Code to run in SAS in above function
+        x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
+             101, 96, 97, 102, 107, 113, 116, 113, 110, 98]
+        y = [107, 108, 106, 98, 105, 103, 110, 105, 104, 100,
+             96, 108, 103, 104, 114, 114, 113, 108, 106, 99]
+        res = stats.mood(x, y, alternative=alternative)
+        assert_allclose(res, expected)
 
     def test_mood_order_of_args(self):
         # z should change sign when the order of arguments changes, pvalue
@@ -1062,6 +1264,33 @@ class TestMood:
         # Raise ValueError when the sum of the lengths of the args is
         # less than 3
         assert_raises(ValueError, stats.mood, [1], [])
+
+    def test_mood_alternative(self):
+
+        np.random.seed(0)
+        x = stats.norm.rvs(scale=0.75, size=100)
+        y = stats.norm.rvs(scale=1.25, size=100)
+
+        stat1, p1 = stats.mood(x, y, alternative='two-sided')
+        stat2, p2 = stats.mood(x, y, alternative='less')
+        stat3, p3 = stats.mood(x, y, alternative='greater')
+
+        assert stat1 == stat2 == stat3
+        assert_allclose(p1, 0, atol=1e-7)
+        assert_allclose(p2, p1/2)
+        assert_allclose(p3, 1 - p1/2)
+
+        with pytest.raises(ValueError, match="alternative must be..."):
+            stats.mood(x, y, alternative='ekki-ekki')
+
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_result(self, alternative):
+        rng = np.random.default_rng(265827767938813079281100964083953437622)
+        x1 = rng.standard_normal((10, 1))
+        x2 = rng.standard_normal((15, 1))
+
+        res = stats.mood(x1, x2, alternative=alternative)
+        assert_equal((res.statistic, res.pvalue), res)
 
 
 class TestProbplot:
@@ -1234,6 +1463,20 @@ class TestWilcoxon:
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
+    def test_wilcoxon_has_zstatistic(self):
+        rng = np.random.default_rng(89426135444)
+        x, y = rng.random(15), rng.random(15)
+
+        res = stats.wilcoxon(x, y, mode="approx")
+        ref = stats.norm.ppf(res.pvalue/2)
+        assert_allclose(res.zstatistic, ref)
+
+        res = stats.wilcoxon(x, y, mode="exact")
+        assert not hasattr(res, 'zstatistic')
+
+        res = stats.wilcoxon(x, y)
+        assert not hasattr(res, 'zstatistic')
+
     def test_wilcoxon_tie(self):
         # Regression test for gh-2391.
         # Corresponding R code is:
@@ -1292,10 +1535,12 @@ class TestWilcoxon:
         assert_almost_equal(p, 0.3176447, decimal=6)
 
     def test_exact_basic(self):
-        for n in range(1, 26):
-            cnt = _get_wilcoxon_distr(n)
-            assert_equal(n*(n+1)/2 + 1, len(cnt))
-            assert_equal(sum(cnt), 2**n)
+        for n in range(1, 51):
+            pmf1 = _get_wilcoxon_distr(n)
+            pmf2 = _get_wilcoxon_distr2(n)
+            assert_equal(n*(n+1)/2 + 1, len(pmf1))
+            assert_equal(sum(pmf1), 1)
+            assert_array_almost_equal(pmf1, pmf2)
 
     def test_exact_pval(self):
         # expected values computed with "R version 3.4.1 (2017-06-30)"
@@ -1319,14 +1564,12 @@ class TestWilcoxon:
         _, p = stats.wilcoxon(x, y, alternative="greater", mode="exact")
         assert_almost_equal(p, 0.5795889, decimal=6)
 
-        d = np.arange(26) + 1
-        assert_raises(ValueError, stats.wilcoxon, d, mode="exact")
-
     # These inputs were chosen to give a W statistic that is either the
     # center of the distribution (when the length of the support is odd), or
     # the value to the left of the center (when the length of the support is
     # even).  Also, the numbers are chosen so that the W statistic is the
     # sum of the positive values.
+
     @pytest.mark.parametrize('x', [[-1, -2, 3],
                                    [-1, 2, -3, -4, 5],
                                    [-1, -2, 3, -4, -5, -6, 7, 8]])
@@ -1352,7 +1595,7 @@ class TestWilcoxon:
         assert_equal(stats.wilcoxon(d, mode="approx"), (w, p))
 
         # use approximation for samples > 25
-        d = np.arange(1, 27)
+        d = np.arange(1, 52)
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="approx"))
 
 
@@ -1406,7 +1649,7 @@ class TestKstatVar:
 
 class TestPpccPlot:
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
+        self.x = _old_loggamma_rvs(5, size=500, random_state=7654321) + 5
 
     def test_basic(self):
         N = 5
@@ -1588,7 +1831,7 @@ _boxcox_data = [
 class TestBoxcox:
 
     def test_fixed_lmbda(self):
-        x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
+        x = _old_loggamma_rvs(5, size=50, random_state=12345) + 5
         xt = stats.boxcox(x, lmbda=1)
         assert_allclose(xt, x - 1)
         xt = stats.boxcox(x, lmbda=-1)
@@ -1600,6 +1843,10 @@ class TestBoxcox:
         # Also test that array_like input works
         xt = stats.boxcox(list(x), lmbda=0)
         assert_allclose(xt, np.log(x))
+
+        # test that constant input is accepted; see gh-12225
+        xt = stats.boxcox(np.ones(10), 2)
+        assert_equal(xt, np.zeros(10))
 
     def test_lmbda_None(self):
         # Start from normal rv's, do inverse transform to check that
@@ -1613,7 +1860,7 @@ class TestBoxcox:
 
     def test_alpha(self):
         rng = np.random.RandomState(1234)
-        x = stats.loggamma.rvs(5, size=50, random_state=rng) + 5
+        x = _old_loggamma_rvs(5, size=50, random_state=rng) + 5
 
         # Some regular values for alpha, on a small sample size
         _, _, interval = stats.boxcox(x, alpha=0.75)
@@ -1622,7 +1869,7 @@ class TestBoxcox:
         assert_allclose(interval, [1.2138178554857557, 8.209033272375663])
 
         # Try some extreme values, see we don't hit the N=500 limit
-        x = stats.loggamma.rvs(7, size=500, random_state=rng) + 15
+        x = _old_loggamma_rvs(7, size=500, random_state=rng) + 15
         _, _, interval = stats.boxcox(x, alpha=0.001)
         assert_allclose(interval, [0.3988867, 11.40553131])
         _, _, interval = stats.boxcox(x, alpha=0.999)
@@ -1648,10 +1895,59 @@ class TestBoxcox:
         # to only about five significant digits.
         assert_allclose(lam, -0.051654, rtol=1e-5)
 
+    @pytest.mark.parametrize("bounds", [(-1, 1), (1.1, 2), (-2, -1.1)])
+    def test_bounded_optimizer_within_bounds(self, bounds):
+        # Define custom optimizer with bounds.
+        def optimizer(fun):
+            return optimize.minimize_scalar(fun, bounds=bounds,
+                                            method="bounded")
+
+        _, lmbda = stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
+        assert bounds[0] < lmbda < bounds[1]
+
+    def test_bounded_optimizer_against_unbounded_optimizer(self):
+        # Test whether setting bounds on optimizer excludes solution from
+        # unbounded optimizer.
+
+        # Get unbounded solution.
+        _, lmbda = stats.boxcox(_boxcox_data, lmbda=None)
+
+        # Set tolerance and bounds around solution.
+        bounds = (lmbda + 0.1, lmbda + 1)
+        options = {'xatol': 1e-12}
+
+        def optimizer(fun):
+            return optimize.minimize_scalar(fun, bounds=bounds,
+                                            method="bounded", options=options)
+
+        # Check bounded solution. Lower bound should be active.
+        _, lmbda_bounded = stats.boxcox(_boxcox_data, lmbda=None,
+                                        optimizer=optimizer)
+        assert lmbda_bounded != lmbda
+        assert_allclose(lmbda_bounded, bounds[0])
+
+    @pytest.mark.parametrize("optimizer", ["str", (1, 2), 0.1])
+    def test_bad_optimizer_type_raises_error(self, optimizer):
+        # Check if error is raised if string, tuple or float is passed
+        with pytest.raises(ValueError, match="`optimizer` must be a callable"):
+            stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
+
+    def test_bad_optimizer_value_raises_error(self):
+        # Check if error is raised if `optimizer` function does not return
+        # `OptimizeResult` object
+
+        # Define test function that always returns 1
+        def optimizer(fun):
+            return 1
+
+        message = "`optimizer` must return an object containing the optimal..."
+        with pytest.raises(ValueError, match=message):
+            stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
+
 
 class TestBoxcoxNormmax:
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
+        self.x = _old_loggamma_rvs(5, size=50, random_state=12345) + 5
 
     def test_pearsonr(self):
         maxlog = stats.boxcox_normmax(self.x)
@@ -1669,10 +1965,61 @@ class TestBoxcoxNormmax:
         maxlog_all = stats.boxcox_normmax(self.x, method='all')
         assert_allclose(maxlog_all, [1.804465, 1.758101], rtol=1e-6)
 
+    @pytest.mark.parametrize("method", ["mle", "pearsonr", "all"])
+    @pytest.mark.parametrize("bounds", [(-1, 1), (1.1, 2), (-2, -1.1)])
+    def test_bounded_optimizer_within_bounds(self, method, bounds):
+
+        def optimizer(fun):
+            return optimize.minimize_scalar(fun, bounds=bounds,
+                                            method="bounded")
+
+        maxlog = stats.boxcox_normmax(self.x, method=method,
+                                      optimizer=optimizer)
+        assert np.all(bounds[0] < maxlog)
+        assert np.all(maxlog < bounds[1])
+
+    def test_user_defined_optimizer(self):
+        # tests an optimizer that is not based on scipy.optimize.minimize
+        lmbda = stats.boxcox_normmax(self.x)
+        lmbda_rounded = np.round(lmbda, 5)
+        lmbda_range = np.linspace(lmbda_rounded-0.01, lmbda_rounded+0.01, 1001)
+
+        class MyResult:
+            pass
+
+        def optimizer(fun):
+            # brute force minimum over the range
+            objs = []
+            for lmbda in lmbda_range:
+                objs.append(fun(lmbda))
+            res = MyResult()
+            res.x = lmbda_range[np.argmin(objs)]
+            return res
+
+        lmbda2 = stats.boxcox_normmax(self.x, optimizer=optimizer)
+        assert lmbda2 != lmbda                 # not identical
+        assert_allclose(lmbda2, lmbda, 1e-5)   # but as close as it should be
+
+    def test_user_defined_optimizer_and_brack_raises_error(self):
+        optimizer = optimize.minimize_scalar
+
+        # Using default `brack=None` with user-defined `optimizer` works as
+        # expected.
+        stats.boxcox_normmax(self.x, brack=None, optimizer=optimizer)
+
+        # Using user-defined `brack` with user-defined `optimizer` is expected
+        # to throw an error. Instead, users should specify
+        # optimizer-specific parameters in the optimizer function itself.
+        with pytest.raises(ValueError, match="`brack` must be None if "
+                                             "`optimizer` is given"):
+
+            stats.boxcox_normmax(self.x, brack=(-2.0, 2.0),
+                                 optimizer=optimizer)
+
 
 class TestBoxcoxNormplot:
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
+        self.x = _old_loggamma_rvs(5, size=500, random_state=7654321) + 5
 
     def test_basic(self):
         N = 5
@@ -1731,7 +2078,7 @@ class TestYeojohnson:
         rng = np.random.RandomState(12345)
 
         # Test positive input
-        x = stats.loggamma.rvs(5, size=50, random_state=rng) + 5
+        x = _old_loggamma_rvs(5, size=50, random_state=rng) + 5
         assert np.all(x > 0)
         xt = stats.yeojohnson(x, lmbda=1)
         assert_allclose(xt, x)
@@ -1743,7 +2090,7 @@ class TestYeojohnson:
         assert_allclose(xt, x)
 
         # Test negative input
-        x = stats.loggamma.rvs(5, size=50, random_state=rng) - 5
+        x = _old_loggamma_rvs(5, size=50, random_state=rng) - 5
         assert np.all(x < 0)
         xt = stats.yeojohnson(x, lmbda=2)
         assert_allclose(xt, -np.log(-x + 1))
@@ -1753,7 +2100,7 @@ class TestYeojohnson:
         assert_allclose(xt, 1 / (-x + 1) - 1)
 
         # test both positive and negative input
-        x = stats.loggamma.rvs(5, size=50, random_state=rng) - 2
+        x = _old_loggamma_rvs(5, size=50, random_state=rng) - 2
         assert not np.all(x < 0)
         assert not np.all(x >= 0)
         pos = x >= 0
@@ -1837,10 +2184,24 @@ class TestYeojohnson:
         assert_allclose(xt_int, xt_float, rtol=1e-7)
         assert_allclose(lmbda_int, lmbda_float, rtol=1e-7)
 
+    def test_input_high_variance(self):
+        # non-regression test for gh-10821
+        x = np.array([3251637.22, 620695.44, 11642969.00, 2223468.22,
+                      85307500.00, 16494389.89, 917215.88, 11642969.00,
+                      2145773.87, 4962000.00, 620695.44, 651234.50,
+                      1907876.71, 4053297.88, 3251637.22, 3259103.08,
+                      9547969.00, 20631286.23, 12807072.08, 2383819.84,
+                      90114500.00, 17209575.46, 12852969.00, 2414609.99,
+                      2170368.23])
+        xt_yeo, lam_yeo = stats.yeojohnson(x)
+        xt_box, lam_box = stats.boxcox(x + 1)
+        assert_allclose(xt_yeo, xt_box, rtol=1e-6)
+        assert_allclose(lam_yeo, lam_box, rtol=1e-6)
+
 
 class TestYeojohnsonNormmax:
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
+        self.x = _old_loggamma_rvs(5, size=50, random_state=12345) + 5
 
     def test_mle(self):
         maxlog = stats.yeojohnson_normmax(self.x)
@@ -1856,9 +2217,15 @@ class TestYeojohnsonNormmax:
 
 
 class TestCircFuncs:
+    # In gh-5747, the R package `circular` was used to calculate reference
+    # values for the circular variance, e.g.:
+    # library(circular)
+    # options(digits=16)
+    # x = c(0, 2*pi/3, 5*pi/3)
+    # var.circular(x)
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
-                              (stats.circvar, 42.51955609),
+                              (stats.circvar, 0.006455174270186603),
                               (stats.circstd, 6.520702116)])
     def test_circfuncs(self, test_func, expected):
         x = np.array([355, 5, 2, 359, 10, 350])
@@ -1870,7 +2237,10 @@ class TestCircFuncs:
         M2 = stats.circmean(x, high=360)
         assert_allclose(M2, M1, rtol=1e-5)
 
-        V1 = x.var()
+        V1 = (x*np.pi/180).var()
+        # for small variations, circvar is approximately half the
+        # linear variance
+        V1 = V1 / 2.
         V2 = stats.circvar(x, high=360)
         assert_allclose(V2, V1, rtol=1e-4)
 
@@ -1887,7 +2257,7 @@ class TestCircFuncs:
         x = np.array([0.12675364631578953] * 10 + [0.12675365920187928] * 100)
         circstat = test_func(x)
         normal = numpy_func(x)
-        assert_allclose(circstat, normal, atol=1e-8)
+        assert_allclose(circstat, normal, atol=2e-8)
 
     def test_circmean_axis(self):
         x = np.array([[355, 5, 2, 359, 10, 350],
@@ -1941,7 +2311,7 @@ class TestCircFuncs:
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
-                              (stats.circvar, 42.51955609),
+                              (stats.circvar, 0.006455174270186603),
                               (stats.circstd, 6.520702116)])
     def test_circfuncs_array_like(self, test_func, expected):
         x = [355, 5, 2, 359, 10, 350]
@@ -1962,7 +2332,9 @@ class TestCircFuncs:
                              [(stats.circmean,
                                {None: np.nan, 0: 355.66582264, 1: 0.28725053}),
                               (stats.circvar,
-                               {None: np.nan, 0: 16.89976130, 1: 36.51366669}),
+                               {None: np.nan,
+                                0: 0.002570671054089924,
+                                1: 0.005545914017677123}),
                               (stats.circstd,
                                {None: np.nan, 0: 4.11093193, 1: 6.04265394})])
     def test_nan_propagate_array(self, test_func, expected):
@@ -1984,11 +2356,12 @@ class TestCircFuncs:
                                              349.5]),
                                 1: np.array([0.16769015, 358.66510252])}),
                               (stats.circvar,
-                               {None: 55.362093503276725,
-                                0: np.array([4.00081258, 1.00005077, 1.00005077,
-                                             12.25762620, 0.25000317,
-                                             0.25000317]),
-                                1: np.array([42.51955609, 67.09872148])}),
+                               {None: 0.008396678483192477,
+                                0: np.array([1.9997969, 0.4999873, 0.4999873,
+                                             6.1230956, 0.1249992, 0.1249992]
+                                            )*(np.pi/180)**2,
+                                1: np.array([0.006455174270186603,
+                                             0.01016767581393285])}),
                               (stats.circstd,
                                {None: 7.440570778057074,
                                 0: np.array([2.00020313, 1.00002539, 1.00002539,
@@ -2009,7 +2382,7 @@ class TestCircFuncs:
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
-                              (stats.circvar, 42.51955609),
+                              (stats.circvar, 0.006455174270186603),
                               (stats.circstd, 6.520702116)])
     def test_nan_omit(self, test_func, expected):
         x = [355, 5, 2, 359, 10, 350, np.nan]
@@ -2062,12 +2435,12 @@ class TestCircFuncs:
         assert_(m < np.pi)
         assert_(m > -np.pi)
 
-    def test_circfuncs_unit8(self):
+    def test_circfuncs_uint8(self):
         # regression test for gh-7255: overflow when working with
         # numpy uint8 data type
         x = np.array([150, 10], dtype='uint8')
         assert_equal(stats.circmean(x, high=180), 170.0)
-        assert_allclose(stats.circvar(x, high=180), 437.45871686, rtol=1e-7)
+        assert_allclose(stats.circvar(x, high=180), 0.2339555554617, rtol=1e-7)
         assert_allclose(stats.circstd(x, high=180), 20.91551378, rtol=1e-7)
 
 
@@ -2190,3 +2563,103 @@ class TestMedianTest:
         exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
         assert_allclose(stat, exp_stat)
         assert_allclose(p, exp_p)
+
+    @pytest.mark.parametrize("correction", [False, True])
+    def test_result(self, correction):
+        x = [1, 2, 3]
+        y = [1, 2, 3]
+
+        res = stats.median_test(x, y, correction=correction)
+        assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
+
+
+class TestDirectionalFuncs:
+    # Reference implementations are not available
+    def test_directionalmean_correctness(self):
+        # Data from Fisher: Dispersion on a sphere, 1953 and
+        # Mardia and Jupp, Directional Statistics.
+        # For x coordinate, result for spherical mean does not agree with
+        # Mardia & Jupp, probably due to rounding errors in reference, that's
+        # why the first entry of the spherical mean reference is different
+        # than in the book.
+
+        decl = -np.deg2rad(np.array([343.2, 62., 36.9, 27., 359.,
+                                     5.7, 50.4, 357.6, 44.]))
+        incl = -np.deg2rad(np.array([66.1, 68.7, 70.1, 82.1, 79.5,
+                                     73., 69.3, 58.8, 51.4]))
+        data = np.stack((np.cos(incl) * np.cos(decl),
+                         np.cos(incl) * np.sin(decl),
+                         np.sin(incl)),
+                        axis=1)
+
+        directional_mean = stats.directionalmean(data)
+        mean_rounded = np.round(directional_mean, 3)
+
+        reference_mean = np.array([0.298, -0.135, -0.945])
+        assert_allclose(mean_rounded, reference_mean)
+
+    def test_directionalmean_2d(self):
+        # Test that for circular data directionalmean yields
+        # same result as circmean
+        rng = np.random.default_rng(0xec9a6899d5a2830e0d1af479dbe1fd0c)
+        testdata = 2 * np.pi * rng.random((1000, ))
+        testdata_vector = np.stack((np.cos(testdata),
+                                    np.sin(testdata)),
+                                   axis=1)
+        directional_mean = stats.directionalmean(testdata_vector)
+        directional_mean_angle = np.arctan2(directional_mean[1],
+                                            directional_mean[0])
+        directional_mean_angle = directional_mean_angle % (2*np.pi)
+
+        circmean = stats.circmean(testdata)
+        assert_allclose(circmean, directional_mean_angle)
+
+    def test_directionalmean_higher_dim(self):
+        # test that directionalmean works for higher dimensions
+        # here a 4D array is reduced over axis = 2
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [0.8660254, -0.5, 0.]])
+        full_array = np.tile(data, (2, 2, 2, 1))
+        expected = np.array([[[1., 0., 0.],
+                              [1., 0., 0.]],
+                             [[1., 0., 0.],
+                              [1., 0., 0.]]])
+        directionalmean = stats.directionalmean(full_array, axis=2)
+        assert_allclose(expected, directionalmean)
+
+    def test_directionalmean_list_ndarray_input(self):
+        # test that list and numpy array inputs yield same results
+        data = [[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0]]
+        data_array = np.asarray(data)
+        directional_mean = stats.directionalmean(data)
+        directional_mean_array = stats.directionalmean(data_array)
+        assert_allclose(directional_mean, directional_mean_array)
+
+    def test_directionalmean_1d_error(self):
+        # test that one-dimensional data raises ValueError
+        data = np.ones((5, ))
+        message = (r"samples must at least be two-dimensional. "
+                   r"Instead samples has shape: (5,)")
+        with pytest.raises(ValueError, match=re.escape(message)):
+            stats.directionalmean(data)
+
+    def test_directionalmean_normalize(self):
+        # test that unit vectors get properly normalized before
+        # directionalmean calculation
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [1.7320508, -1., 0.]])
+        expected = np.array([1., 0., 0.])
+        directional_mean = stats.directionalmean(data)
+        assert_allclose(expected, directional_mean)
+
+    def test_directionalmean_normalize_false(self):
+        # test that for already normalized unit vectors
+        # normalize=False returns same result as default
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [0.8660254, -0.5, 0]])
+        expected = np.array([1., 0., 0.])
+        directional_mean_default = stats.directionalmean(data)
+        directional_mean = stats.directionalmean(data,
+                                                 normalize=False)
+        assert_allclose(expected, directional_mean)
+        assert_allclose(directional_mean_default, directional_mean)

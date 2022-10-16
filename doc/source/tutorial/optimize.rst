@@ -34,7 +34,11 @@ The minimum value of this function is 0 which is achieved when
 Note that the Rosenbrock function and its derivatives are included in
 `scipy.optimize`. The implementations shown in the following sections
 provide examples of how to define an objective function as well as its
-jacobian and hessian functions.
+jacobian and hessian functions. Objective functions in `scipy.optimize`
+expect a numpy array as their first parameter which is to be optimized
+and must return a float value. The exact calling signature must be
+``f(x, *args)`` where ``x`` represents a numpy array and ``args``
+a tuple of additional arguments supplied to the objective function.
 
 Nelder-Mead Simplex algorithm (``method='Nelder-Mead'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -70,6 +74,31 @@ Another optimization algorithm that needs only function calls to find
 the minimum is *Powell*'s method available by setting ``method='powell'`` in
 :func:`minimize`.
 
+To demonstrate how to supply additional arguments to an objective function,
+let us minimize the Rosenbrock function with an additional scaling factor `a`
+and an offset `b`:
+
+.. math::
+
+    f\left(\mathbf{x}, a, b\right)=\sum_{i=1}^{N-1}a\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2} + b.
+
+Again using the :func:`minimize` routine this can be solved by the following
+code block for the example parameters `a=0.5` and `b=1`.
+
+    >>> def rosen_with_args(x, a, b):
+    ...     """The Rosenbrock function with additional arguments"""
+    ...     return sum(a*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0) + b
+
+    >>> x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+    >>> res = minimize(rosen_with_args, x0, method='nelder-mead',
+    ...		       args=(0.5, 1.), options={'xatol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 1.000000
+             Iterations: 319
+             Function evaluations: 525
+
+    >>> print(res.x)
+    [1.         1.         1.         1.         0.99999999]
 
 Broyden-Fletcher-Goldfarb-Shanno algorithm (``method='BFGS'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -118,12 +147,39 @@ through the ``jac`` parameter as illustrated below.
     ...                options={'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 51                     # may vary
-             Function evaluations: 63
-             Gradient evaluations: 63
+             Iterations: 25                     # may vary
+             Function evaluations: 30
+             Gradient evaluations: 30
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
+Another way to supply gradient information is to write a single
+function which returns both the objective and the gradient: this is
+indicated by setting ``jac=True``. In this case, the Python function
+to be optimized must return a tuple whose first value is the objective
+and whose second value represents the gradient. For this example, the
+objective can be specified in the following way:
+
+    >>> def rosen_and_der(x):
+    ...	    objective = sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
+    ...     xm = x[1:-1]
+    ...     xm_m1 = x[:-2]
+    ...     xm_p1 = x[2:]
+    ...     der = np.zeros_like(x)
+    ...     der[1:-1] = 200*(xm-xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1-xm)
+    ...     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
+    ...     der[-1] = 200*(x[-1]-x[-2]**2)
+    ...     return objective, der
+
+    >>> res = minimize(rosen_and_der, x0, method='BFGS', jac=True,
+    ...                options={'disp': True})
+             Current function value: 0.000000
+             Iterations: 25                     # may vary
+             Function evaluations: 30
+             Gradient evaluations: 30
+
+Supplying objective and gradient in a single function can help to avoid
+redundant computations and therefore speed up the optimization significantly.
 
 Newton-Conjugate-Gradient algorithm (``method='Newton-CG'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -720,6 +776,7 @@ This function looks like an egg carton::
    >>> plt.show()
 
 .. plot:: tutorial/examples/optimize_global_2.py
+   :alt: "A 3-D plot shown from a three-quarter view. The function is very noisy with dozens of valleys and peaks. There is no clear min or max discernable from this view and it's not possible to see all the local peaks and valleys from this view."
    :align: center
    :include-source: 0
 
@@ -759,7 +816,6 @@ optimization was successful, and more.  For brevity, we won't show the full
 output of the other optimizers::
 
    >>> results['DE'] = optimize.differential_evolution(eggholder, bounds)
-   >>> results['BH'] = optimize.basinhopping(eggholder, bounds)
 
 :func:`shgo` has a second method, which returns all local minima rather than
 only what it thinks is the global minimum::
@@ -779,7 +835,6 @@ We'll now plot all found minima on a heatmap of the function::
    >>> def plot_point(res, marker='o', color=None):
    ...     ax.plot(512+res.x[0], 512+res.x[1], marker=marker, color=color, ms=10)
 
-   >>> plot_point(results['BH'], color='y')  # basinhopping           - yellow
    >>> plot_point(results['DE'], color='c')  # differential_evolution - cyan
    >>> plot_point(results['DA'], color='w')  # dual_annealing.        - white
 
@@ -797,6 +852,7 @@ We'll now plot all found minima on a heatmap of the function::
 
 .. plot:: tutorial/examples/optimize_global_1.py
    :align: center
+   :alt: "This X-Y plot is a heatmap with the Z value denoted with the lowest points as black and the highest values as white. The image resembles a chess board rotated 45 degrees but heavily smoothed. A red dot is located at many of the minima on the grid resulting from the SHGO optimizer. SHGO shows the global minima as a red X in the top right. A local minima found with dual annealing is a white circle marker in the top left. A different local minima found with basinhopping is a yellow marker in the top center. The code is plotting the differential evolution result as a cyan circle, but it is not visible on the plot. At a glance it's not clear which of these valleys is the true global minima."
    :include-source: 0
 
 Least-squares minimization (:func:`least_squares`)
@@ -866,6 +922,7 @@ The code below implements least-squares estimation of :math:`\mathbf{x}` and
 finally plots the original data and the fitted model function:
 
 .. plot::
+    :alt: "This code plots an X-Y time-series. The series starts in the lower left at (0, 0) and rapidly trends up to the maximum of 0.2 then flattens out. The fitted model is shown as a smooth orange trace and is well fit to the data."
 
     >>> from scipy.optimize import least_squares
 
@@ -1197,6 +1254,7 @@ exactly, forms an approximation for it.
 The problem we have can now be solved as follows:
 
 .. plot::
+    :alt: "This code generates a 2-D heatmap with Z values from 0 to 1. The graph resembles a smooth, dark blue-green, U shape, with an open yellow top. The right, bottom, and left edges have a value near zero and the top has a value close to 1. The center of the solution space has a value close to 0.8."
 
     import numpy as np
     from scipy.optimize import root
@@ -1476,15 +1534,8 @@ Finally, we can solve the transformed problem using :func:`linprog`.
     >>> x3_bounds = (-3.0, None)
     >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
     >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
-    >>> print(result)
-         con: array([15.5361242 , 16.61288005])  # may vary
-         fun: -370.2321976308326  # may vary
-     message: 'The algorithm terminated successfully and determined that the problem is infeasible.'
-         nit: 6  # may vary
-       slack: array([ 0.79314989, -1.76308532])  # may vary
-      status: 2
-     success: False
-           x: array([ 6.60059391,  3.97366609, -0.52664076,  1.09007993])  # may vary
+    >>> print(result.message)
+    The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is At lower/fixed bound)
 
 The result states that our problem is infeasible, meaning that there is no solution vector that satisfies all the
 constraints. That doesn't necessarily mean we did anything wrong; some problems truly are infeasible.
@@ -1496,15 +1547,8 @@ to :math:`0 \leq x_1 \leq 6`. After adjusting our code ``x1_bounds = (0, 6)`` to
     >>> x1_bounds = (0, 6)
     >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
     >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
-    >>> print(result)
-        con: array([9.78840831e-09, 1.04662945e-08])  # may vary
-        fun: -505.97435889013434  # may vary
-    message: 'Optimization terminated successfully.'
-        nit: 4  # may vary
-      slack: array([ 6.52747190e-10, -2.26730279e-09])  # may vary
-     status: 0
-    success: True
-          x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
+    >>> print(result.message)
+    Optimization terminated successfully. (HiGHS Status 7: Optimal)
 
 The result shows the optimization was successful.
 We can check the objective value (``result.fun``) is same as :math:`c^Tx`:
@@ -1512,7 +1556,10 @@ We can check the objective value (``result.fun``) is same as :math:`c^Tx`:
 ::
 
     >>> x = np.array(result.x)
+    >>> obj = result.fun
     >>> print(c @ x)
+    -505.97435889013434  # may vary
+    >>> print(obj)
     -505.97435889013434  # may vary
 
 We can also check that all constraints are satisfied within reasonable tolerances:
@@ -1526,20 +1573,6 @@ We can also check that all constraints are satisfied within reasonable tolerance
     >>> print([0 <= result.x[0], 0 <= result.x[1] <= 6.0, result.x[2] <= 0.5, -3.0 <= result.x[3]])
     [True, True, True, True]
 
-If we need greater accuracy, typically at the expense of speed, we can solve using the ``revised simplex`` method:
-
-::
-
-    >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='revised simplex')
-    >>> print(result)
-        con: array([0.00000000e+00, 7.10542736e-15])  # may vary
-        fun: -505.97435897435895    # may vary
-    message: 'Optimization terminated successfully.'
-        nit: 5  # may vary
-      slack: array([ 1.77635684e-15, -3.55271368e-15])  # may vary
-     status: 0
-    success: True
-          x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
 
 Assignment problems
 -------------------
@@ -1560,18 +1593,18 @@ We have a table showing times for each swimming style of five students:
  E          46.3           47.8         50.4        37.2
 ==========  ===========  ============  ===========  ===============================
 
-We need to choose a student for each of the four swimming styles such that 
+We need to choose a student for each of the four swimming styles such that
 the total relay time is minimized.
 This is a typical linear sum assignment problem. We can use :func:`linear_sum_assignment` to solve it.
 
 The linear sum assignment problem is one of the most famous combinatorial optimization problems.
 Given a "cost matrix" :math:`C`, the problem is to choose
 
-- exactly one element from each row 
-- without choosing more than one element from any column 
+- exactly one element from each row
+- without choosing more than one element from any column
 - such that the sum of the chosen elements is minimized
 
-In other words, we need to assign each row to one column such that the sum of 
+In other words, we need to assign each row to one column such that the sum of
 the corresponding entries is minimized.
 
 Formally, let :math:`X` be a boolean matrix where :math:`X[i,j] = 1` iff row  :math:`i` is assigned to column :math:`j`.
@@ -1651,3 +1684,123 @@ PETSc [PP]_, and PyAMG [AMG]_:
 
 .. [AMG] PyAMG (algebraic multigrid preconditioners/solvers)
          https://github.com/pyamg/pyamg/issues
+
+.. _tutorial-optimize_milp:
+
+Mixed integer linear programming
+---------------------------------
+
+Knapsack problem example
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The knapsack problem is a well known combinatorial optimization problem.
+Given a set of items, each with a size and a value, the problem is to choose
+the items that maximize the total value under the condition that the total size
+is below a certain threshold.
+
+Formally, let
+
+- :math:`x_i` be a boolean variable that indicates whether item :math:`i` is
+  included in the knapsack,
+
+- :math:`n` be the total number of items,
+
+- :math:`v_i` be the value of item :math:`i`,
+
+- :math:`s_i` be the size of item :math:`i`, and
+
+- :math:`C` be the capacity of the knapsack.
+
+Then the problem is:
+
+.. math::
+
+    \max \sum_i^n  v_{i} x_{i}
+
+.. math::
+
+    \text{subject to} \sum_i^n s_{i} x_{i} \leq C,  x_{i} \in {0, 1}
+
+Although the objective function and inequality constraints are linear in the
+*decision variables* :math:`x_i`, this differs from a typical linear
+programming problem in that the decision variables can only assume integer
+values.  Specifically, our decision variables can only be :math:`0` or
+:math:`1`, so this is known as a *binary integer linear program* (BILP). Such
+a problem falls within the larger class of *mixed integer linear programs*
+(MILPs), which we we can solve with :func:`milp`.
+
+In our example, there are 8 items to choose from, and the size and value of
+each is specified as follows.
+
+::
+
+    >>> import numpy as np
+    >>> from scipy import optimize
+    >>> sizes = np.array([21, 11, 15, 9, 34, 25, 41, 52])
+    >>> values = np.array([22, 12, 16, 10, 35, 26, 42, 53])
+
+We need to constrain our eight decision variables to be binary. We do so
+by adding a :class:`Bounds`: constraint to ensure that they lie between
+:math:`0` and :math:`1`, and we apply "integrality" constraints to ensure that
+they are *either* :math:`0` *or* :math:`1`.
+
+::
+
+    >>> bounds = optimize.Bounds(0, 1)  # 0 <= x_i <= 1
+    >>> integrality = np.full_like(values, True)  # x_i are integers
+
+The knapsack capacity constraint is specified using :class:`LinearConstraint`.
+
+::
+
+    >>> capacity = 100
+    >>> constraints = optimize.LinearConstraint(A=sizes, lb=0, ub=capacity)
+
+If we are following the usual rules of linear algebra, the input ``A`` should
+be a  two-dimensional matrix, and the lower and upper bounds ``lb`` and ``ub``
+should be one-dimensional vectors, but :class:`LinearConstraint` is forgiving
+as long as the inputs can be broadcast to consistent shapes.
+
+Using the variables defined above, we can solve the knapsack problem using
+:func:`milp`. Note that :func:`milp` minimizes the objective function, but we
+want to maximize the total value, so we set `c` to be negative of the values.
+
+::
+
+    >>> from scipy.optimize import milp
+    >>> res = milp(c=-values, constraints=constraints,
+    ...            integrality=integrality, bounds=bounds)
+
+Let's check the result:
+
+::
+
+    >>> res.success
+    True
+    >>> res.x
+    array([1., 1., 0., 1., 1., 1., 0., 0.])
+
+This means that we should select the items 1, 2, 4, 5, 6 to optimize the total
+value under the size constraint. Note that this is different from we would have
+obtained had we solved the *linear programming relaxation* (without integrality
+constraints) and attempted to round the decision variables.
+
+::
+
+    >>> from scipy.optimize import milp
+    >>> res = milp(c=-values, constraints=constraints,
+    ...            integrality=False, bounds=bounds)
+    >>> res.x
+    array([1.        , 1.        , 1.        , 1.        ,
+           0.55882353, 1.        , 0.        , 0.        ])
+
+If we were to round this solution up to
+``array([1., 1., 1., 1., 1., 1., 0., 0.])``, our knapsack would be over the
+capacity constraint, whereas if we were to round down to
+``array([1., 1., 1., 1., 0., 1., 0., 0.])``, we would have a sub-optimal
+solution.
+
+For more MILP tutorials, see the Jupyter notebooks on SciPy Cookbooks:
+
+- `Compressed Sensing l1 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_1.ipynb>`_
+- `Compressed Sensing l0 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_2.ipynb>`_

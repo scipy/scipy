@@ -1,0 +1,136 @@
+!    -*- f90 -*-
+
+python module __user__routines
+    interface
+        function daprod(transa,m,n,x,y,dparm,iparm)
+           character*1 :: transa
+           integer intent(in) :: m
+           integer intent(in) :: n
+           double precision depend(m,n),check(len(x)>=(transa[0] == 'n' ? n : m)),dimension((transa[0] == 'n' ? n : m)) :: x
+           double precision depend(m,n),check(len(y)>=(transa[0] == 'n' ? m : n)),dimension((transa[0] == 'n' ? m : n)) :: y
+           integer dimension(*) :: iparm
+           double precision dimension(*) :: dparm
+        end function daprod
+    end interface
+end python module __user__routines
+
+
+python module _dpropack ! in
+    interface  ! in :_dpropack
+        subroutine dlansvd(jobu,jobv,m,n,k,kmax,aprod,u,ldu,sigma,bnd,v,ldv,tolin,work,lwork,iwork,liwork,doption,ioption,info,dparm,iparm) ! in :_dpropack:PROPACK/double/dlansvd.F
+            use __user__routines, aprod=>daprod
+            character*1 intent(in) :: jobu
+            character*1 intent(in) :: jobv
+            integer intent(in) :: m
+            integer intent(in) :: n
+            integer intent(in) :: k
+            integer intent(in) :: kmax
+            external aprod
+            double precision intent(in,out),dimension(ldu,kmax+1) :: u
+            integer optional,check(shape(u,0)==ldu),depend(u) :: ldu=shape(u,0)
+            double precision intent(out),dimension(k) :: sigma
+            double precision intent(out),dimension(k) :: bnd
+            double precision intent(in,out),dimension(ldv,kmax) :: v
+            integer optional,check(shape(v,0)==ldv),depend(v) :: ldv=shape(v,0)
+            double precision intent(in) :: tolin
+            double precision intent(in),dimension(lwork) :: work
+            integer optional,check(len(work)>=lwork),depend(work) :: lwork=len(work)
+            integer intent(in),dimension(liwork) :: iwork
+            integer optional,check(len(iwork)>=liwork),depend(iwork) :: liwork=len(iwork)
+            double precision intent(in),dimension(3) :: doption
+            integer intent(in),dimension(2) :: ioption
+            integer intent(out) :: info
+            double precision intent(in),dimension(*) :: dparm
+            integer intent(in),dimension(*) :: iparm
+            integer :: nopx
+            integer :: nreorth
+            integer :: ndot
+            integer :: nreorthu
+            integer :: nreorthv
+            integer :: nitref
+            integer :: nrestart
+            integer :: nbsvd
+            real :: tmvopx
+            real :: tgetu0
+            real :: tupdmu
+            real :: tupdnu
+            real :: tintv
+            real :: tlanbpro
+            real :: treorth
+            real :: treorthu
+            real :: treorthv
+            real :: telru
+            real :: telrv
+            real :: tbsvd
+            real :: tnorm2
+            real :: tlansvd
+            integer :: nlandim
+            real :: tritzvec
+            real :: trestart
+            real :: tdot
+            integer :: nsing
+            common /timing/ nopx,nreorth,ndot,nreorthu,nreorthv,nitref,nrestart,nbsvd,tmvopx,tgetu0,tupdmu,tupdnu,tintv,tlanbpro,treorth,treorthu,treorthv,telru,telrv,tbsvd,tnorm2,tlansvd,nlandim,tritzvec,trestart,tdot,nsing
+        end subroutine dlansvd
+
+        subroutine dlansvd_irl(which,jobu,jobv,m,n,dim,p,neig,maxiter,aprod,u,ldu,sigma,bnd,v,ldv,tolin,work,lwork,iwork,liwork,doption,ioption,info,dparm,iparm) ! in :_dpropack:PROPACK/double/dlansvd_irl.F
+            use __user__routines, aprod=>daprod
+            character*1 intent(in) :: which
+            character*1 intent(in) :: jobu
+            character*1 intent(in) :: jobv
+            integer intent(in) :: m
+            integer intent(in) :: n
+            integer intent(in) :: dim
+            integer intent(in) :: p
+            integer intent(in) :: neig
+            integer intent(in) :: maxiter
+            external aprod
+            double precision intent(in,out),dimension(ldu,dim+1) :: u
+            integer optional,check(shape(u,0)==ldu),depend(u) :: ldu=shape(u,0)
+            double precision intent(out),dimension(neig) :: sigma
+            double precision intent(out),dimension(neig) :: bnd
+            double precision intent(in,out),dimension(ldv,dim) :: v
+            integer optional,check(shape(v,0)==ldv),depend(v) :: ldv=shape(v,0)
+            double precision intent(in) :: tolin
+            double precision intent(in),dimension(lwork) :: work
+            integer optional,check(len(work)>=lwork),depend(work) :: lwork=len(work)
+            integer intent(in),dimension(liwork) :: iwork
+            integer optional,check(len(iwork)>=liwork),depend(iwork) :: liwork=len(iwork)
+            double precision intent(in),dimension(4) :: doption
+            integer intent(in),dimension(2) :: ioption
+            integer intent(out) :: info
+            double precision intent(in),dimension(*) :: dparm
+            integer intent(in),dimension(*) :: iparm
+            integer :: nopx
+            integer :: nreorth
+            integer :: ndot
+            integer :: nreorthu
+            integer :: nreorthv
+            integer :: nitref
+            integer :: nrestart
+            integer :: nbsvd
+            real :: tmvopx
+            real :: tgetu0
+            real :: tupdmu
+            real :: tupdnu
+            real :: tintv
+            real :: tlanbpro
+            real :: treorth
+            real :: treorthu
+            real :: treorthv
+            real :: telru
+            real :: telrv
+            real :: tbsvd
+            real :: tnorm2
+            real :: tlansvd
+            integer :: nlandim
+            real :: tritzvec
+            real :: trestart
+            real :: tdot
+            integer :: nsing
+            common /timing/ nopx,nreorth,ndot,nreorthu,nreorthv,nitref,nrestart,nbsvd,tmvopx,tgetu0,tupdmu,tupdnu,tintv,tlanbpro,treorth,treorthu,treorthv,telru,telrv,tbsvd,tnorm2,tlansvd,nlandim,tritzvec,trestart,tdot,nsing
+        end subroutine dlansvd_irl
+    end interface
+end python module _dpropack
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

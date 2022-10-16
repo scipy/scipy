@@ -24,6 +24,8 @@ Note: This documentation is work in progress.
 
    stats/discrete
    stats/continuous
+   stats/sampling
+   stats/resampling
 
 
 Random variables
@@ -99,7 +101,7 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats, d), stats.rv_discrete)]
     >>> print('number of continuous distributions: %d' % len(dist_continu))
-    number of continuous distributions: 102
+    number of continuous distributions: 107
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
     number of discrete distributions:   19
 
@@ -152,32 +154,58 @@ argument:
     >>> norm.rvs(size=3)
     array([-0.35687759,  1.34347647, -0.11710531])   # random
 
-Note that drawing random numbers relies on generators from
-`numpy.random`
-package. In the example above, the specific stream of
-random numbers is not reproducible across runs. To achieve reproducibility,
-you can explicitly seed a global variable
-
-    >>> np.random.seed(1234)
-
-Relying on a global state is not recommended, though. A better way is to use
-the `random_state` parameter, which accepts an instance of
-`numpy.random.RandomState` class, or an integer, which is then used to
-seed an internal ``RandomState`` object:
-
-    >>> norm.rvs(size=5, random_state=1234)
-    array([ 0.47143516, -1.19097569,  1.43270697, -0.3126519 , -0.72058873])
-
 Don't think that ``norm.rvs(5)`` generates 5 variates:
 
     >>> norm.rvs(5)
-    5.471435163732493
+    5.471435163732493  # random
 
 Here, ``5`` with no keyword is being interpreted as the first possible
 keyword argument, ``loc``, which is the first of a pair of keyword arguments
 taken by all continuous distributions.
 This brings us to the topic of the next subsection.
 
+Random number generation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Drawing random numbers relies on generators from `numpy.random` package.
+In the examples above, the specific stream of
+random numbers is not reproducible across runs. To achieve reproducibility,
+you can explicitly *seed* a random number generator. In NumPy, a generator
+is an instance of `numpy.random.Generator`. Here is the canonical way to create
+a generator:
+
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
+
+And fixing the seed can be done like this:
+
+    >>> # do NOT copy this value
+    >>> rng = default_rng(301439351238479871608357552876690613766)
+
+.. warning:: Do not use this number or common values such as 0. Using just a
+             small set of seeds to instantiate larger state spaces means that
+             there are some initial states that are impossible to reach. This
+             creates some biases if everyone uses such values. A good way to
+             get a seed is to use a `numpy.random.SeedSequence`:
+
+             >>> from numpy.random import SeedSequence
+             >>> print(SeedSequence().entropy)
+             301439351238479871608357552876690613766  # random
+
+The `random_state` parameter in distributions accepts an instance of
+`numpy.random.Generator` class, or an integer, which is then used to
+seed an internal ``Generator`` object:
+
+    >>> norm.rvs(size=5, random_state=rng)
+    array([ 0.47143516, -1.19097569,  1.43270697, -0.3126519 , -0.72058873])  # random
+
+For further info, see `NumPy's documentation
+<https://numpy.org/doc/stable/reference/random/index.html>`__.
+
+To learn more about the random number samplers implemented in SciPy, see
+:ref:`non-uniform random number sampling tutorial
+<non-uniform-random-number-sampling>` and :ref:`quasi monte carlo tutorial
+<quasi-monte-carlo>`
 
 Shifting and scaling
 ^^^^^^^^^^^^^^^^^^^^
@@ -232,7 +260,7 @@ distribution like this, the first argument, i.e., the 5, gets passed
 to set the ``loc`` parameter. Let's see:
 
     >>> np.mean(norm.rvs(5, size=500))
-    5.0098355106969992
+    5.0098355106969992  # random
 
 Thus, to explain the output of the example of the last section:
 ``norm.rvs(5)`` generates a single normally distributed random variate with
@@ -355,8 +383,7 @@ i.e., the percent point function, requires a different definition:
 
     ppf(q) = min{x : cdf(x) >= q, x integer}
 
-For further info, see the docs `here
-<https://docs.scipy.org/doc/scipy/reference/tutorial/stats/discrete.html#percent-point-function-inverse-cdf>`__.
+For further info, see the docs :ref:`here<discrete-ppf>`.
 
 
 We can look at the hypergeometric distribution as an example
@@ -367,7 +394,7 @@ We can look at the hypergeometric distribution as an example
 If we use the cdf at some integer points and then evaluate the ppf at those
 cdf values, we get the initial integers back, for example
 
-    >>> x = np.arange(4)*2
+    >>> x = np.arange(4) * 2
     >>> x
     array([0, 2, 4, 6])
     >>> prb = hypergeom.cdf(x, M, n, N)
@@ -558,12 +585,11 @@ Let's generate a random sample and compare observed frequencies with
 the probabilities.
 
     >>> n_sample = 500
-    >>> np.random.seed(87655678)   # fix the seed for replicability
     >>> rvs = normdiscrete.rvs(size=n_sample)
     >>> f, l = np.histogram(rvs, bins=gridlimits)
     >>> sfreq = np.vstack([gridint, f, probs*n_sample]).T
     >>> print(sfreq)
-    [[-1.00000000e+01  0.00000000e+00  2.95019349e-02]
+    [[-1.00000000e+01  0.00000000e+00  2.95019349e-02]  # random
      [-9.00000000e+00  0.00000000e+00  1.32294142e-01]
      [-8.00000000e+00  0.00000000e+00  5.06497902e-01]
      [-7.00000000e+00  2.00000000e+00  1.65568919e+00]
@@ -588,11 +614,13 @@ the probabilities.
 
 .. plot:: tutorial/examples/normdiscr_plot1.py
    :align: center
+   :alt: "An X-Y histogram plot showing the distribution of random variates. A blue trace shows a normal bell curve. A blue bar chart perfectly approximates the curve showing the true distribution. A red bar chart representing the sample is well described by the blue trace but not exact."
    :include-source: 0
 
 
 .. plot:: tutorial/examples/normdiscr_plot2.py
    :align: center
+   :alt: "An X-Y histogram plot showing the cumulative distribution of random variates. A blue trace shows a CDF for a typical normal distribution. A blue bar chart perfectly approximates the curve showing the true distribution. A red bar chart representing the sample is well described by the blue trace but not exact."
    :include-source: 0
 
 
@@ -609,7 +637,7 @@ enough observations.
     >>> ch2, pval = stats.chisquare(f2, p2*n_sample)
 
     >>> print('chisquare for normdiscrete: chi2 = %6.3f pvalue = %6.4f' % (ch2, pval))
-    chisquare for normdiscrete: chi2 = 12.466 pvalue = 0.4090
+    chisquare for normdiscrete: chi2 = 12.466 pvalue = 0.4090  # random
 
 The pvalue in this case is high, so we can be quite confident that
 our random sample was actually generated by the distribution.
@@ -622,7 +650,6 @@ First, we create some random variables. We set a seed so that in each run
 we get identical results to look at. As an example we take a sample from
 the Student t distribution:
 
-    >>> np.random.seed(282629734)
     >>> x = stats.t.rvs(10, size=1000)
 
 Here, we set the required shape parameter of the t distribution, which
@@ -637,13 +664,13 @@ Descriptive statistics
 `x` is a numpy array, and we have direct access to all array methods, e.g.,
 
     >>> print(x.min())   # equivalent to np.min(x)
-    -3.78975572422
+    -3.78975572422  # random
     >>> print(x.max())   # equivalent to np.max(x)
-    5.26327732981
+    5.26327732981  # random
     >>> print(x.mean())  # equivalent to np.mean(x)
-    0.0140610663985
+    0.0140610663985  # random
     >>> print(x.var())   # equivalent to np.var(x))
-    1.28899386208
+    1.28899386208  # random
 
 How do the sample properties compare to their theoretical counterparts?
 
@@ -652,9 +679,9 @@ How do the sample properties compare to their theoretical counterparts?
 
     >>> sstr = '%-14s mean = %6.4f, variance = %6.4f, skew = %6.4f, kurtosis = %6.4f'
     >>> print(sstr % ('distribution:', m, v, s ,k))
-    distribution:  mean = 0.0000, variance = 1.2500, skew = 0.0000, kurtosis = 1.0000
+    distribution:  mean = 0.0000, variance = 1.2500, skew = 0.0000, kurtosis = 1.0000  # random
     >>> print(sstr % ('sample:', sm, sv, ss, sk))
-    sample:        mean = 0.0141, variance = 1.2903, skew = 0.2165, kurtosis = 1.0556
+    sample:        mean = 0.0141, variance = 1.2903, skew = 0.2165, kurtosis = 1.0556  # random
 
 Note: `stats.describe` uses the unbiased estimator for the variance, while
 np.var is the biased estimator.
@@ -671,7 +698,7 @@ We can use the t-test to test whether the mean of our sample differs
 in a statistically significant way from the theoretical expectation.
 
     >>> print('t-statistic = %6.3f pvalue = %6.4f' %  stats.ttest_1samp(x, m))
-    t-statistic =  0.391 pvalue = 0.6955
+    t-statistic =  0.391 pvalue = 0.6955  # random
 
 The pvalue is 0.7, this means that with an alpha error of, for
 example, 10%, we cannot reject the hypothesis that the sample mean
@@ -685,13 +712,13 @@ and so it does:
     >>> tt = (sm-m)/np.sqrt(sv/float(n))  # t-statistic for mean
     >>> pval = stats.t.sf(np.abs(tt), n-1)*2  # two-sided pvalue = Prob(abs(t)>tt)
     >>> print('t-statistic = %6.3f pvalue = %6.4f' % (tt, pval))
-    t-statistic =  0.391 pvalue = 0.6955
+    t-statistic =  0.391 pvalue = 0.6955  # random
 
 The Kolmogorov-Smirnov test can be used to test the hypothesis that
 the sample comes from the standard t-distribution
 
     >>> print('KS-statistic D = %6.3f pvalue = %6.4f' % stats.kstest(x, 't', (10,)))
-    KS-statistic D =  0.016 pvalue = 0.9571
+    KS-statistic D =  0.016 pvalue = 0.9571  # random
 
 Again, the p-value is high enough that we cannot reject the
 hypothesis that the random sample really is distributed according to the
@@ -702,7 +729,7 @@ also cannot reject the hypothesis that our sample was generated by the
 normal distribution given that, in this example, the p-value is almost 40%.
 
     >>> print('KS-statistic D = %6.3f pvalue = %6.4f' % stats.kstest(x, 'norm'))
-    KS-statistic D =  0.028 pvalue = 0.3918
+    KS-statistic D =  0.028 pvalue = 0.3918  # random
 
 However, the standard normal distribution has a variance of 1, while our
 sample has a variance of 1.29. If we standardize our sample and test it
@@ -712,7 +739,7 @@ normal distribution.
 
     >>> d, pval = stats.kstest((x-x.mean())/x.std(), 'norm')
     >>> print('KS-statistic D = %6.3f pvalue = %6.4f' % (d, pval))
-    KS-statistic D =  0.032 pvalue = 0.2397
+    KS-statistic D =  0.032 pvalue = 0.2397  # random
 
 Note: The Kolmogorov-Smirnov test assumes that we test against a
 distribution with given parameters, since, in the last case, we
@@ -738,7 +765,7 @@ the inverse of the survival function
     >>> freq05 = np.sum(x>crit05) / float(n) * 100
     >>> freq10 = np.sum(x>crit10) / float(n) * 100
     >>> print('sample %%-frequency at 1%%, 5%% and 10%% tail %8.4f %8.4f %8.4f' % (freq01, freq05, freq10))
-    sample %-frequency at 1%, 5% and 10% tail   1.4000   5.8000  10.5000
+    sample %-frequency at 1%, 5% and 10% tail   1.4000   5.8000  10.5000  # random
 
 In all three cases, our sample has more weight in the top tail than the
 underlying distribution.
@@ -748,7 +775,7 @@ but if we repeat this several times, the fluctuations are still pretty large.
 
     >>> freq05l = np.sum(stats.t.rvs(10, size=10000) > crit05) / 10000.0 * 100
     >>> print('larger sample %%-frequency at 5%% tail %8.4f' % freq05l)
-    larger sample %-frequency at 5% tail   4.8000
+    larger sample %-frequency at 5% tail   4.8000  # random
 
 We can also compare it with the tail of the normal distribution, which
 has less weight in the tails:
@@ -773,9 +800,9 @@ hypothesized distribution.
     >>> tch, tpval = stats.chisquare(freqcount, tprob*n_sample)
     >>> nch, npval = stats.chisquare(freqcount, nprob*n_sample)
     >>> print('chisquare for t:      chi2 = %6.2f pvalue = %6.4f' % (tch, tpval))
-    chisquare for t:      chi2 =  2.30 pvalue = 0.8901
+    chisquare for t:      chi2 =  2.30 pvalue = 0.8901  # random
     >>> print('chisquare for normal: chi2 = %6.2f pvalue = %6.4f' % (nch, npval))
-    chisquare for normal: chi2 = 64.60 pvalue = 0.0000
+    chisquare for normal: chi2 = 64.60 pvalue = 0.0000  # random
 
 We see that the standard normal distribution is clearly rejected, while the
 standard t-distribution cannot be rejected. Since the variance of our sample
@@ -793,9 +820,9 @@ estimated distribution.
     >>> tch, tpval = stats.chisquare(freqcount, tprob*n_sample)
     >>> nch, npval = stats.chisquare(freqcount, nprob*n_sample)
     >>> print('chisquare for t:      chi2 = %6.2f pvalue = %6.4f' % (tch, tpval))
-    chisquare for t:      chi2 =  1.58 pvalue = 0.9542
+    chisquare for t:      chi2 =  1.58 pvalue = 0.9542  # random
     >>> print('chisquare for normal: chi2 = %6.2f pvalue = %6.4f' % (nch, npval))
-    chisquare for normal: chi2 = 11.08 pvalue = 0.0858
+    chisquare for normal: chi2 = 11.08 pvalue = 0.0858  # random
 
 Taking account of the estimated parameters, we can still reject the
 hypothesis that our sample came from a normal distribution (at the 5% level),
@@ -813,14 +840,14 @@ First, we can test if skew and kurtosis of our sample differ significantly from
 those of a normal distribution:
 
     >>> print('normal skewtest teststat = %6.3f pvalue = %6.4f' % stats.skewtest(x))
-    normal skewtest teststat =  2.785 pvalue = 0.0054
+    normal skewtest teststat =  2.785 pvalue = 0.0054  # random
     >>> print('normal kurtosistest teststat = %6.3f pvalue = %6.4f' % stats.kurtosistest(x))
-    normal kurtosistest teststat =  4.757 pvalue = 0.0000
+    normal kurtosistest teststat =  4.757 pvalue = 0.0000  # random
 
 These two tests are combined in the normality test
 
     >>> print('normaltest teststat = %6.3f pvalue = %6.4f' % stats.normaltest(x))
-    normaltest teststat = 30.379 pvalue = 0.0000
+    normaltest teststat = 30.379 pvalue = 0.0000  # random
 
 In all three tests, the p-values are very low and we can reject the hypothesis
 that the our sample has skew and kurtosis of the normal distribution.
@@ -830,17 +857,17 @@ exactly the same results if we test the standardized sample:
 
     >>> print('normaltest teststat = %6.3f pvalue = %6.4f' %
     ...       stats.normaltest((x-x.mean())/x.std()))
-    normaltest teststat = 30.379 pvalue = 0.0000
+    normaltest teststat = 30.379 pvalue = 0.0000  # random
 
 Because normality is rejected so strongly, we can check whether the
 normaltest gives reasonable results for other cases:
 
     >>> print('normaltest teststat = %6.3f pvalue = %6.4f' %
     ...       stats.normaltest(stats.t.rvs(10, size=100)))
-    normaltest teststat =  4.698 pvalue = 0.0955
+    normaltest teststat =  4.698 pvalue = 0.0955  # random
     >>> print('normaltest teststat = %6.3f pvalue = %6.4f' %
     ...              stats.normaltest(stats.norm.rvs(size=1000)))
-    normaltest teststat =  0.613 pvalue = 0.7361
+    normaltest teststat =  0.613 pvalue = 0.7361  # random
 
 When testing for normality of a small sample of t-distributed observations
 and a large sample of normal-distributed observations, then in neither case
@@ -866,13 +893,13 @@ Test with sample with identical means:
     >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500)
     >>> rvs2 = stats.norm.rvs(loc=5, scale=10, size=500)
     >>> stats.ttest_ind(rvs1, rvs2)
-    Ttest_indResult(statistic=-0.5489036175088705, pvalue=0.5831943748663959)
+    Ttest_indResult(statistic=-0.5489036175088705, pvalue=0.5831943748663959)  # random
 
 Test with sample with different means:
 
     >>> rvs3 = stats.norm.rvs(loc=8, scale=10, size=500)
     >>> stats.ttest_ind(rvs1, rvs3)
-    Ttest_indResult(statistic=-4.533414290175026, pvalue=6.507128186389019e-06)
+    Ttest_indResult(statistic=-4.533414290175026, pvalue=6.507128186389019e-06)  # random
 
 Kolmogorov-Smirnov test for two samples ks_2samp
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -881,13 +908,13 @@ For the example, where both samples are drawn from the same distribution,
 we cannot reject the null hypothesis, since the pvalue is high
 
     >>> stats.ks_2samp(rvs1, rvs2)
-    KstestResult(statistic=0.026, pvalue=0.9959527565364388)
+    KstestResult(statistic=0.026, pvalue=0.9959527565364388)  # random
 
 In the second example, with different location, i.e., means, we can
 reject the null hypothesis, since the pvalue is below 1%
 
     >>> stats.ks_2samp(rvs1, rvs3)
-    KstestResult(statistic=0.114, pvalue=0.00299005061044668)
+    KstestResult(statistic=0.114, pvalue=0.00299005061044668)  # random
 
 Kernel density estimation
 -------------------------
@@ -911,6 +938,7 @@ sampled from the PDF are shown as blue dashes at the bottom of the figure (this
 is called a rug plot):
 
 .. plot::
+    :alt: " "
 
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
@@ -949,6 +977,7 @@ get a less smoothed-out result.
 
 .. plot:: tutorial/stats/plots/kde_plot2.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 We see that if we set bandwidth to be very narrow, the obtained estimate for
@@ -963,6 +992,7 @@ distribution we take a Student's T distribution with 5 degrees of freedom.
 
 .. plot:: tutorial/stats/plots/kde_plot3.py
    :align: center
+   :alt: " "
    :include-source: 1
 
 We now take a look at a bimodal distribution with one wider and one narrower
@@ -1006,6 +1036,7 @@ each feature.
 
 .. plot:: tutorial/stats/plots/kde_plot4.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 As expected, the KDE is not as close to the true PDF as we would like due to
@@ -1060,6 +1091,7 @@ the individual data points on top.
 
 .. plot:: tutorial/stats/plots/kde_plot5.py
    :align: center
+   :alt: "An X-Y plot showing a random scattering of points around a 2-D gaussian. The distribution has a semi-major axis at 45 degrees with a semi-minor axis about half as large. Each point in the plot is highlighted with the outer region in red, then yellow, then green, with the center in blue. "
    :include-source: 0
 
 
@@ -1122,9 +1154,9 @@ Let's use a custom plotting function to plot the data relationship:
 
 Let's look at some linear data first:
 
-    >>> np.random.seed(12345678)
+    >>> rng = np.random.default_rng()
     >>> x = np.linspace(-1, 1, num=100)
-    >>> y = x + 0.3 * np.random.random(x.size)
+    >>> y = x + 0.3 * rng.random(x.size)
 
 The simulation relationship can be plotted below:
 
@@ -1132,6 +1164,7 @@ The simulation relationship can be plotted below:
 
 .. plot:: tutorial/stats/plots/mgc_plot1.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 Now, we can see the test statistic, p-value, and MGC map visualized below. The
@@ -1146,6 +1179,7 @@ optimal scale is shown on the map as a red "x":
 
 .. plot:: tutorial/stats/plots/mgc_plot2.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 It is clear from here, that MGC is able to determine a relationship between the
@@ -1158,10 +1192,9 @@ case is **equivalent to the global scale**, marked by a red spot on the map.
 The same can be done for nonlinear data sets. The following :math:`x` and
 :math:`y` arrays are derived from a nonlinear simulation:
 
-    >>> np.random.seed(12345678)
-    >>> unif = np.array(np.random.uniform(0, 5, size=100))
+    >>> unif = np.array(rng.uniform(0, 5, size=100))
     >>> x = unif * np.cos(np.pi * unif)
-    >>> y = unif * np.sin(np.pi * unif) + 0.4 * np.random.random(x.size)
+    >>> y = unif * np.sin(np.pi * unif) + 0.4 * rng.random(x.size)
 
 The simulation relationship can be plotted below:
 
@@ -1169,6 +1202,7 @@ The simulation relationship can be plotted below:
 
 .. plot:: tutorial/stats/plots/mgc_plot3.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 Now, we can see the test statistic, p-value, and MGC map visualized below. The
@@ -1176,13 +1210,14 @@ optimal scale is shown on the map as a red "x":
 
     >>> stat, pvalue, mgc_dict = multiscale_graphcorr(x, y)
     >>> print("MGC test statistic: ", round(stat, 1))
-    MGC test statistic:  0.2
+    MGC test statistic:  0.2  # random
     >>> print("P-value: ", round(pvalue, 1))
     P-value:  0.0
     >>> mgc_plot(x, y, "Spiral", mgc_dict, only_mgc=True)
 
 .. plot:: tutorial/stats/plots/mgc_plot4.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 It is clear from here, that MGC is able to determine a relationship again
@@ -1190,6 +1225,8 @@ because the p-value is very low and the MGC test statistic is relatively high.
 The MGC-map indicates a **strongly nonlinear relationship**. The optimal scale
 in this case is **equivalent to the local scale**, marked by a red spot on the
 map.
+
+.. _quasi-monte-carlo:
 
 Quasi-Monte Carlo
 -----------------
@@ -1211,6 +1248,7 @@ of random points can produce radically different results.
 
 .. plot:: tutorial/stats/plots/qmc_plot_mc.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 In both cases in the plot above, points are generated randomly without any
@@ -1232,6 +1270,7 @@ theoretical rate of :math:`O(n^{-1/2})`.
 
 .. plot:: tutorial/stats/plots/qmc_plot_conv_mc.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 Although the convergence is ensured, practitioners tend to want to have an
@@ -1259,6 +1298,7 @@ This exponential growth is called "the curse of dimensionality".
 
 .. plot:: tutorial/stats/plots/qmc_plot_curse.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 To mitigate this issue, QMC methods have been designed. They are
@@ -1270,6 +1310,7 @@ sequences.
 
 .. plot:: tutorial/stats/plots/qmc_plot_mc_qmc.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 This figure presents 2 sets of 256 points. The design of the left is a plain
@@ -1287,6 +1328,7 @@ that the *Sobol'* method has a rate of :math:`O(n^{-1})`:
 
 .. plot:: tutorial/stats/plots/qmc_plot_conv_mc_sobol.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 We refer to the documentation of :mod:`scipy.stats.qmc` for
@@ -1315,6 +1357,7 @@ The lower the discrepancy, the more uniform a sample is.
 
 .. plot:: tutorial/stats/plots/qmc_plot_discrepancy.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 Using a QMC engine
@@ -1326,6 +1369,7 @@ sequences.
 
 .. plot:: tutorial/stats/plots/qmc_plot_sobol_halton.py
    :align: center
+   :alt: " "
    :include-source: 1
 
 .. warning:: QMC methods require particular care and the user must read the
@@ -1339,15 +1383,15 @@ skip some points, or reset it. Let's take 5 points from
 :class:`~stats.qmc.Halton`. And then ask for a second set of 5 points:
 
     >>> from scipy.stats import qmc
-    >>> engine = qmc.Halton(d=2, seed=12345)
+    >>> engine = qmc.Halton(d=2)
     >>> engine.random(5)
-    array([[0.22166437, 0.07980522],
+    array([[0.22166437, 0.07980522],  # random
            [0.72166437, 0.93165708],
            [0.47166437, 0.41313856],
            [0.97166437, 0.19091633],
            [0.01853937, 0.74647189]])
     >>> engine.random(5)
-    array([[0.51853937, 0.52424967],
+    array([[0.51853937, 0.52424967],  # random
            [0.26853937, 0.30202745],
            [0.76853937, 0.857583  ],
            [0.14353937, 0.63536078],
@@ -1358,7 +1402,7 @@ points:
 
     >>> engine.reset()
     >>> engine.random(5)
-    array([[0.22166437, 0.07980522],
+    array([[0.22166437, 0.07980522],  # random
            [0.72166437, 0.93165708],
            [0.47166437, 0.41313856],
            [0.97166437, 0.19091633],
@@ -1369,7 +1413,7 @@ And here we advance the sequence to get the same second set of 5 points:
     >>> engine.reset()
     >>> engine.fast_forward(5)
     >>> engine.random(5)
-    array([[0.51853937, 0.52424967],
+    array([[0.51853937, 0.52424967],  # random
            [0.26853937, 0.30202745],
            [0.76853937, 0.857583  ],
            [0.14353937, 0.63536078],
@@ -1395,8 +1439,7 @@ defined. Following is an example wrapping `numpy.random.Generator`.
     ...         self.rng = np.random.default_rng(self.rng_seed)
     ...
     ...
-    ...     def random(self, n=1):
-    ...         self.num_generated += n
+    ...     def _random(self, n=1, *, workers=1):
     ...         return self.rng.random((n, self.d))
     ...
     ...
@@ -1412,16 +1455,16 @@ defined. Following is an example wrapping `numpy.random.Generator`.
 
 Then we use it as any other QMC engine:
 
-    >>> engine = RandomEngine(2, seed=12345)
+    >>> engine = RandomEngine(2)
     >>> engine.random(5)
-    array([[0.22733602, 0.31675834],
+    array([[0.22733602, 0.31675834],  # random
            [0.79736546, 0.67625467],
            [0.39110955, 0.33281393],
            [0.59830875, 0.18673419],
            [0.67275604, 0.94180287]])
     >>> engine.reset()
     >>> engine.random(5)
-    array([[0.22733602, 0.31675834],
+    array([[0.22733602, 0.31675834],  # random
            [0.79736546, 0.67625467],
            [0.39110955, 0.33281393],
            [0.59830875, 0.18673419],

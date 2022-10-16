@@ -1,12 +1,12 @@
 import numpy as np
-from numpy.testing import (assert_almost_equal,
+from numpy.testing import (assert_allclose,
                            assert_array_equal,
-                           assert_equal,
-                           assert_)
+                           assert_equal)
 import pytest
 from scipy.spatial.distance import directed_hausdorff
 from scipy.spatial import distance
 from scipy._lib._util import check_random_state
+
 
 class TestHausdorff:
     # Test various properties of the directed Hausdorff code.
@@ -36,7 +36,7 @@ class TestHausdorff:
 
         forward = directed_hausdorff(self.path_1, self.path_2)[0]
         reverse = directed_hausdorff(self.path_2, self.path_1)[0]
-        assert_(forward != reverse)
+        assert forward != reverse
 
     def test_brute_force_comparison_forward(self):
         # Ensure that the algorithm for directed_hausdorff gives the
@@ -46,7 +46,7 @@ class TestHausdorff:
         # brute force over rows:
         expected = max(np.amin(distance.cdist(self.path_1, self.path_2),
                                axis=1))
-        assert_almost_equal(actual, expected, decimal=9)
+        assert_allclose(actual, expected)
 
     def test_brute_force_comparison_reverse(self):
         # Ensure that the algorithm for directed_hausdorff gives the
@@ -54,15 +54,15 @@ class TestHausdorff:
         # reverse direction.
         actual = directed_hausdorff(self.path_2, self.path_1)[0]
         # brute force over columns:
-        expected = max(np.amin(distance.cdist(self.path_1, self.path_2), 
+        expected = max(np.amin(distance.cdist(self.path_1, self.path_2),
                                axis=0))
-        assert_almost_equal(actual, expected, decimal=9)
+        assert_allclose(actual, expected)
 
     def test_degenerate_case(self):
         # The directed Hausdorff distance must be zero if both input
         # data arrays match.
         actual = directed_hausdorff(self.path_1, self.path_1)[0]
-        assert_almost_equal(actual, 0.0, decimal=9)
+        assert_allclose(actual, 0.0)
 
     def test_2d_data_forward(self):
         # Ensure that 2D data is handled properly for a simple case
@@ -72,16 +72,16 @@ class TestHausdorff:
         expected = max(np.amin(distance.cdist(self.path_1[..., :2],
                                               self.path_2[..., :2]),
                                axis=1))
-        assert_almost_equal(actual, expected, decimal=9)
+        assert_allclose(actual, expected)
 
     def test_4d_data_reverse(self):
         # Ensure that 4D data is handled properly for a simple case
         # relative to brute force approach.
         actual = directed_hausdorff(self.path_2_4d, self.path_1_4d)[0]
         # brute force over columns:
-        expected = max(np.amin(distance.cdist(self.path_1_4d, self.path_2_4d), 
+        expected = max(np.amin(distance.cdist(self.path_1_4d, self.path_2_4d),
                                axis=0))
-        assert_almost_equal(actual, expected, decimal=9)
+        assert_allclose(actual, expected)
 
     def test_indices(self):
         # Ensure that correct point indices are returned -- they should
@@ -102,24 +102,25 @@ class TestHausdorff:
         new_global_state = rs2.get_state()
         assert_equal(new_global_state, old_global_state)
 
-    def test_random_state_None_int(self):
+    @pytest.mark.parametrize("seed", [None, 27870671])
+    def test_random_state_None_int(self, seed):
         # check that seed values of None or int do not alter global
         # random state
-        for seed in [None, 27870671]:
-            rs = check_random_state(None)
-            old_global_state = rs.get_state()
-            directed_hausdorff(self.path_1, self.path_2, seed)
-            rs2 = check_random_state(None)
-            new_global_state = rs2.get_state()
-            assert_equal(new_global_state, old_global_state)
+        rs = check_random_state(None)
+        old_global_state = rs.get_state()
+        directed_hausdorff(self.path_1, self.path_2, seed)
+        rs2 = check_random_state(None)
+        new_global_state = rs2.get_state()
+        assert_equal(new_global_state, old_global_state)
 
     def test_invalid_dimensions(self):
         # Ensure that a ValueError is raised when the number of columns
         # is not the same
-        np.random.seed(1234)
-        A = np.random.rand(3, 2)
-        B = np.random.rand(4, 5)
-        with pytest.raises(ValueError):
+        rng = np.random.default_rng(189048172503940875434364128139223470523)
+        A = rng.random((3, 2))
+        B = rng.random((3, 5))
+        msg = r"need to have the same number of columns"
+        with pytest.raises(ValueError, match=msg):
             directed_hausdorff(A, B)
 
     @pytest.mark.parametrize("A, B, seed, expected", [
@@ -145,6 +146,27 @@ class TestHausdorff:
         # verify fix for gh-11332
         actual = directed_hausdorff(u=A, v=B, seed=seed)
         # check distance
-        assert_almost_equal(actual[0], expected[0], decimal=9)
+        assert_allclose(actual[0], expected[0])
         # check indices
         assert actual[1:] == expected[1:]
+
+
+@pytest.mark.xslow
+def test_massive_arr_overflow():
+    # on 64-bit systems we should be able to
+    # handle arrays that exceed the indexing
+    # size of a 32-bit signed integer
+    try:
+        import psutil
+    except ModuleNotFoundError:
+        pytest.skip("psutil required to check available memory")
+    if psutil.virtual_memory().available < 80*2**30:
+        # Don't run the test if there is less than 80 gig of RAM available.
+        pytest.skip('insufficient memory available to run this test')
+    size = int(3e9)
+    arr1 = np.zeros(shape=(size, 2))
+    arr2 = np.zeros(shape=(3, 2))
+    arr1[size - 1] = [5, 5]
+    actual = directed_hausdorff(u=arr1, v=arr2)
+    assert_allclose(actual[0], 7.0710678118654755)
+    assert_allclose(actual[1], size - 1)

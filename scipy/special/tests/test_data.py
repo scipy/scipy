@@ -12,6 +12,7 @@ from scipy.special import (
     gamma, gammaln, gammainc, gammaincc, gammaincinv, gammainccinv, digamma,
     beta, betainc, betaincinv, poch,
     ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc, ellipj,
+    elliprc, elliprd, elliprf, elliprg, elliprj,
     erf, erfc, erfinv, erfcinv, exp1, expi, expn,
     bdtrik, btdtr, btdtri, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
     nbdtrik, pdtrik, owens_t,
@@ -459,6 +460,56 @@ BOOST_TESTS = [
         # ellint_pi2_data_ipp/ellint_pi2_data.txt
         # ellint_pi3_data_ipp/ellint_pi3_data.txt
         # ellint_pi3_large_data_ipp/ellint_pi3_large_data.txt
+        data(elliprc, 'ellint_rc_data_ipp-ellint_rc_data', (0, 1), 2,
+             rtol=5e-16),
+        data(elliprd, 'ellint_rd_data_ipp-ellint_rd_data', (0, 1, 2), 3,
+             rtol=5e-16),
+        data(elliprd, 'ellint_rd_0xy_ipp-ellint_rd_0xy', (0, 1, 2), 3,
+             rtol=5e-16),
+        data(elliprd, 'ellint_rd_0yy_ipp-ellint_rd_0yy', (0, 1, 2), 3,
+             rtol=5e-16),
+        data(elliprd, 'ellint_rd_xxx_ipp-ellint_rd_xxx', (0, 1, 2), 3,
+             rtol=5e-16),
+        # Some of the following rtol for elliprd may be larger than 5e-16 to
+        # work around some hard cases in the Boost test where we get slightly
+        # larger error than the ideal bound when the x (==y) input is close to
+        # zero.
+        # Also the accuracy on 32-bit buids with g++ may suffer from excess
+        # loss of precision; see GCC bugzilla 323
+        # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=323
+        data(elliprd, 'ellint_rd_xxz_ipp-ellint_rd_xxz', (0, 1, 2), 3,
+             rtol=6.5e-16),
+        data(elliprd, 'ellint_rd_xyy_ipp-ellint_rd_xyy', (0, 1, 2), 3,
+             rtol=6e-16),
+        data(elliprf, 'ellint_rf_data_ipp-ellint_rf_data', (0, 1, 2), 3,
+             rtol=5e-16),
+        data(elliprf, 'ellint_rf_xxx_ipp-ellint_rf_xxx', (0, 1, 2), 3,
+             rtol=5e-16),
+        data(elliprf, 'ellint_rf_xyy_ipp-ellint_rf_xyy', (0, 1, 2), 3,
+             rtol=5e-16),
+        data(elliprf, 'ellint_rf_xy0_ipp-ellint_rf_xy0', (0, 1, 2), 3,
+             rtol=5e-16),
+        data(elliprf, 'ellint_rf_0yy_ipp-ellint_rf_0yy', (0, 1, 2), 3,
+             rtol=5e-16),
+        # The accuracy of R_G is primarily limited by R_D that is used
+        # internally. It is generally worse than R_D. Notice that we increased
+        # the rtol for R_G here. The cases with duplicate arguments are
+        # slightly less likely to be unbalanced (at least two arguments are
+        # already balanced) so the error bound is slightly better. Again,
+        # precision with g++ 32-bit is even worse.
+        data(elliprg, 'ellint_rg_ipp-ellint_rg', (0, 1, 2), 3,
+             rtol=8.0e-16),
+        data(elliprg, 'ellint_rg_xxx_ipp-ellint_rg_xxx', (0, 1, 2), 3,
+             rtol=6e-16),
+        data(elliprg, 'ellint_rg_xyy_ipp-ellint_rg_xyy', (0, 1, 2), 3,
+             rtol=7.5e-16),
+        data(elliprg, 'ellint_rg_xy0_ipp-ellint_rg_xy0', (0, 1, 2), 3,
+             rtol=5e-16),
+        data(elliprg, 'ellint_rg_00x_ipp-ellint_rg_00x', (0, 1, 2), 3,
+             rtol=5e-16),
+        data(elliprj, 'ellint_rj_data_ipp-ellint_rj_data', (0, 1, 2, 3), 4,
+             rtol=5e-16, atol=1e-25,
+             param_filter=(lambda s: s <= 5e-26,)),
         # ellint_rc_data_ipp/ellint_rc_data.txt
         # ellint_rd_0xy_ipp/ellint_rd_0xy.txt
         # ellint_rd_0yy_ipp/ellint_rd_0yy.txt

@@ -2334,3 +2334,38 @@ def test_binary_closing_noninteger_brute_force_passes_when_true():
     assert ndimage.binary_erosion(
         data, iterations=2, brute_force=0.0
     ) == ndimage.binary_erosion(data, iterations=2, brute_force=bool(0.0))
+
+
+@pytest.mark.parametrize(
+    'function',
+    ['binary_erosion', 'binary_dilation', 'binary_opening', 'binary_closing'],
+)
+@pytest.mark.parametrize('iterations', [1, 5])
+@pytest.mark.parametrize('brute_force', [False, True])
+def test_binary_input_as_output(function, iterations, brute_force):
+    rstate = numpy.random.RandomState(123)
+    data = rstate.randint(low=0, high=2, size=100).astype(bool)
+    ndi_func = getattr(ndimage, function)
+
+    # input data is not modified
+    data_orig = data.copy()
+    expected = ndi_func(data, brute_force=brute_force, iterations=iterations)
+    assert_array_equal(data, data_orig)
+
+    # data should now contain the expected result
+    ndi_func(data, brute_force=brute_force, iterations=iterations, output=data)
+    assert_array_equal(expected, data)
+
+
+def test_binary_hit_or_miss_input_as_output():
+    rstate = numpy.random.RandomState(123)
+    data = rstate.randint(low=0, high=2, size=100).astype(bool)
+
+    # input data is not modified
+    data_orig = data.copy()
+    expected = ndimage.binary_hit_or_miss(data)
+    assert_array_equal(data, data_orig)
+
+    # data should now contain the expected result
+    ndimage.binary_hit_or_miss(data, output=data)
+    assert_array_equal(expected, data)

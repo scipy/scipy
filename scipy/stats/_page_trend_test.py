@@ -1,5 +1,6 @@
 from itertools import permutations
 import numpy as np
+import math
 from ._continuous_distns import norm
 import scipy.stats
 from dataclasses import make_dataclass
@@ -435,7 +436,7 @@ class _PageL:
         # count occurences of each L value
         counts = np.histogram(Ls, np.arange(self.a-0.5, self.b+1.5))[0]
         # factorial(k) is number of possible permutations
-        return counts/np.math.factorial(self.k)
+        return counts/math.factorial(self.k)
 
     def pmf(self, l, n):
         '''Recursive function to evaluate p(l, k, n); see [5] Equation 1'''

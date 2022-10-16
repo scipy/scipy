@@ -281,8 +281,10 @@ def find_best_blas_type(arrays=(), dtype=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.linalg.blas as bla
-    >>> a = np.random.rand(10,15)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.random((10,15))
     >>> b = np.asfortranarray(a)  # Change the memory layout order
     >>> bla.find_best_blas_type((a,))
     ('d', dtype('float64'), False)
@@ -451,8 +453,10 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.linalg as LA
-    >>> a = np.random.rand(3,2)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.random((3,2))
     >>> x_gemv = LA.get_blas_funcs('gemv', (a,))
     >>> x_gemv.typecode
     'd'

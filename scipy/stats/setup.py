@@ -1,5 +1,7 @@
+import os
 from os.path import join
-from platform import system
+
+from numpy.distutils.misc_util import get_info
 
 
 def pre_build_hook(build_ext, ext):
@@ -9,8 +11,9 @@ def pre_build_hook(build_ext, ext):
         ext.extra_compile_args.append(std_flag)
 
 
-def configuration(parent_package='',top_path=None):
+def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from scipy._build_utils.compiler_helper import set_cxx_flags_hook
     import numpy as np
     config = Configuration('stats', parent_package, top_path)
 
@@ -19,41 +22,57 @@ def configuration(parent_package='',top_path=None):
     statlib_src = [join('statlib', '*.f')]
     config.add_library('statlib', sources=statlib_src)
 
-    # add statlib module
-    config.add_extension('statlib',
-        sources=['statlib.pyf'],
-        f2py_options=['--no-wrap-functions'],
-        libraries=['statlib'],
-        depends=statlib_src
-    )
+    # add _statlib module
+    config.add_extension('_statlib',
+                         sources=['statlib.pyf'],
+                         f2py_options=['--no-wrap-functions'],
+                         libraries=['statlib'],
+                         depends=statlib_src)
 
     # add _stats module
     config.add_extension('_stats',
-        sources=['_stats.c'],
-    )
+                         sources=['_stats.c'])
 
-    # add mvn module
-    config.add_extension('mvn',
-        sources=['mvn.pyf', 'mvndst.f'],
-    )
+    # add _mvn module
+    config.add_extension('_mvn',
+                         sources=['mvn.pyf', 'mvndst.f'])
 
     # add _sobol module
     config.add_extension('_sobol',
-        sources=['_sobol.c', ],
-    )
+                         sources=['_sobol.c'])
     config.add_data_files('_sobol_direction_numbers.npz')
 
+    # add _qmc_cy module
+    ext = config.add_extension('_qmc_cy',
+                               sources=['_qmc_cy.cxx'])
+    ext._pre_build_hook = set_cxx_flags_hook
+
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
+        import pythran
+        ext = pythran.dist.PythranExtension(
+            'scipy.stats._stats_pythran',
+            sources=["scipy/stats/_stats_pythran.py"],
+            config=['compiler.blas=none'])
+        config.ext_modules.append(ext)
+
     # add BiasedUrn module
-    config.add_data_files('biasedurn.pxd')
-    from _generate_pyx import isNPY_OLD # type: ignore[import]
+    config.add_data_files('_biasedurn.pxd')
+    from _generate_pyx import isNPY_OLD  # type: ignore[import]
     NPY_OLD = isNPY_OLD()
-    biasedurn_libs = [] if NPY_OLD else ['npyrandom']
-    biasedurn_libdirs = [] if NPY_OLD else [join(np.get_include(),
-                                                 '..', '..', 'random', 'lib')]
+
+    if NPY_OLD:
+        biasedurn_libs = []
+        biasedurn_libdirs = []
+    else:
+        biasedurn_libs = ['npyrandom', 'npymath']
+        biasedurn_libdirs = [join(np.get_include(),
+                                  '..', '..', 'random', 'lib')]
+        biasedurn_libdirs += get_info('npymath')['library_dirs']
+
     ext = config.add_extension(
-        'biasedurn',
+        '_biasedurn',
         sources=[
-            'biasedurn.cxx',
+            '_biasedurn.cxx',
             'biasedurn/impls.cpp',
             'biasedurn/fnchyppr.cpp',
             'biasedurn/wnchyppr.cpp',
@@ -64,14 +83,26 @@ def configuration(parent_package='',top_path=None):
         libraries=biasedurn_libs,
         define_macros=[('R_BUILD', None)],
         language='c++',
-        extra_compile_args=['-Wno-narrowing'] if system() == 'Darwin' else [],
         depends=['biasedurn/stocR.h'],
     )
     ext._pre_build_hook = pre_build_hook
+
+    # add unuran submodule
+    config.add_subpackage('_unuran')
+
+    # add boost stats distributions
+    config.add_subpackage('_boost')
+
+    # add levy stable submodule
+    config.add_subpackage('_levy_stable')
+
+    # Type stubs
+    config.add_data_files('*.pyi')
 
     return config
 
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
+
     setup(**configuration(top_path='').todict())

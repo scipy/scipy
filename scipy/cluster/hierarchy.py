@@ -148,7 +148,7 @@ __all__ = ['ClusterNode', 'DisjointSet', 'average', 'centroid', 'complete',
            'leaders', 'leaves_list', 'linkage', 'maxRstat', 'maxdists',
            'maxinconsts', 'median', 'num_obs_linkage', 'optimal_leaf_ordering',
            'set_link_color_palette', 'single', 'to_mlab_linkage', 'to_tree',
-           'ward', 'weighted', 'distance']
+           'ward', 'weighted']
 
 
 class ClusterWarning(UserWarning):
@@ -221,7 +221,7 @@ def single(y):
 
     See Also
     --------
-    linkage: for advanced creation of hierarchical clusterings.
+    linkage : for advanced creation of hierarchical clusterings.
     scipy.spatial.distance.pdist : pairwise distance metrics
 
     Examples
@@ -301,7 +301,7 @@ def complete(y):
 
     See Also
     --------
-    linkage: for advanced creation of hierarchical clusterings.
+    linkage : for advanced creation of hierarchical clusterings.
     scipy.spatial.distance.pdist : pairwise distance metrics
 
     Examples
@@ -382,7 +382,7 @@ def average(y):
 
     See Also
     --------
-    linkage: for advanced creation of hierarchical clusterings.
+    linkage : for advanced creation of hierarchical clusterings.
     scipy.spatial.distance.pdist : pairwise distance metrics
 
     Examples
@@ -569,7 +569,7 @@ def centroid(y):
 
     See Also
     --------
-    linkage: for advanced creation of hierarchical clusterings.
+    linkage : for advanced creation of hierarchical clusterings.
     scipy.spatial.distance.pdist : pairwise distance metrics
 
     Examples
@@ -671,7 +671,7 @@ def median(y):
 
     See Also
     --------
-    linkage: for advanced creation of hierarchical clusterings.
+    linkage : for advanced creation of hierarchical clusterings.
     scipy.spatial.distance.pdist : pairwise distance metrics
 
     Examples
@@ -770,7 +770,7 @@ def ward(y):
 
     See Also
     --------
-    linkage: for advanced creation of hierarchical clusterings.
+    linkage : for advanced creation of hierarchical clusterings.
     scipy.spatial.distance.pdist : pairwise distance metrics
 
     Examples
@@ -1341,8 +1341,10 @@ def cut_tree(Z, n_clusters=None, height=None):
     Examples
     --------
     >>> from scipy import cluster
-    >>> np.random.seed(23)
-    >>> X = np.random.randn(50, 4)
+    >>> import numpy as np
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
+    >>> X = rng.random((50, 4))
     >>> Z = cluster.hierarchy.ward(X)
     >>> cutree = cluster.hierarchy.cut_tree(Z, n_clusters=[5, 10])
     >>> cutree[:10]
@@ -1355,7 +1357,7 @@ def cut_tree(Z, n_clusters=None, height=None):
            [0, 0],
            [1, 5],
            [3, 6],
-           [4, 7]])
+           [4, 7]])  # random
 
     """
     nobs = num_obs_linkage(Z)
@@ -1441,8 +1443,10 @@ def to_tree(Z, rd=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.cluster import hierarchy
-    >>> x = np.random.rand(10).reshape(5, 2)
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random((5, 2))
     >>> Z = hierarchy.linkage(x)
     >>> hierarchy.to_tree(Z)
     <scipy.cluster.hierarchy.ClusterNode object at ...
@@ -1456,7 +1460,7 @@ def to_tree(Z, rd=False):
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
-    # Number of original objects is equal to the number of rows minus 1.
+    # Number of original objects is equal to the number of rows plus 1.
     n = Z.shape[0] + 1
 
     # Create a list full of None's to store the node objects
@@ -1468,9 +1472,9 @@ def to_tree(Z, rd=False):
 
     nd = None
 
-    for i in range(0, n - 1):
-        fi = int(Z[i, 0])
-        fj = int(Z[i, 1])
+    for i, row in enumerate(Z):
+        fi = int(row[0])
+        fj = int(row[1])
         if fi > i + n:
             raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
                               'is used before it is formed. See row %d, '
@@ -1479,9 +1483,10 @@ def to_tree(Z, rd=False):
             raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
                               'is used before it is formed. See row %d, '
                               'column 1') % fj)
-        nd = ClusterNode(i + n, d[fi], d[fj], Z[i, 2])
-        #                 ^ id   ^ left ^ right ^ dist
-        if Z[i, 3] != nd.count:
+
+        nd = ClusterNode(i + n, d[fi], d[fj], row[2])
+        #                ^ id   ^ left ^ right ^ dist
+        if row[3] != nd.count:
             raise ValueError(('Corrupt matrix Z. The count Z[%d,3] is '
                               'incorrect.') % i)
         d[n + i] = nd
@@ -1520,14 +1525,15 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.cluster import hierarchy
-    >>> np.random.seed(23)
-    >>> X = np.random.randn(10,10)
+    >>> rng = np.random.default_rng()
+    >>> X = rng.standard_normal((10, 10))
     >>> Z = hierarchy.ward(X)
     >>> hierarchy.leaves_list(Z)
-    array([0, 5, 3, 9, 6, 8, 1, 4, 2, 7], dtype=int32)
+    array([0, 3, 1, 9, 2, 5, 7, 4, 6, 8], dtype=int32)
     >>> hierarchy.leaves_list(hierarchy.optimal_leaf_ordering(Z, X))
-    array([3, 9, 0, 5, 8, 2, 7, 4, 1, 6], dtype=int32)
+    array([3, 0, 2, 5, 7, 4, 8, 6, 9, 1], dtype=int32)
 
     """
     Z = np.asarray(Z, order='c')
@@ -1606,8 +1612,10 @@ def cophenet(Z, Y=None):
 
     See Also
     --------
-    linkage: for a description of what a linkage matrix is.
-    scipy.spatial.distance.squareform: transforming condensed matrices into square ones.
+    linkage :
+        for a description of what a linkage matrix is.
+    scipy.spatial.distance.squareform :
+        transforming condensed matrices into square ones.
 
     Examples
     --------
@@ -1807,8 +1815,8 @@ def from_mlab_linkage(Z):
 
     See Also
     --------
-    linkage: for a description of what a linkage matrix is.
-    to_mlab_linkage: transform from SciPy to MATLAB format.
+    linkage : for a description of what a linkage matrix is.
+    to_mlab_linkage : transform from SciPy to MATLAB format.
 
     Examples
     --------
@@ -1897,8 +1905,8 @@ def to_mlab_linkage(Z):
 
     See Also
     --------
-    linkage: for a description of what a linkage matrix is.
-    from_mlab_linkage: transform from Matlab to SciPy format.
+    linkage : for a description of what a linkage matrix is.
+    from_mlab_linkage : transform from Matlab to SciPy format.
 
     Examples
     --------
@@ -1979,7 +1987,7 @@ def is_monotonic(Z):
 
     See Also
     --------
-    linkage: for a description of what a linkage matrix is.
+    linkage : for a description of what a linkage matrix is.
 
     Examples
     --------
@@ -2056,14 +2064,14 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     R : ndarray
         The inconsistency matrix to check for validity.
     warning : bool, optional
-         When True, issues a Python warning if the linkage
-         matrix passed is invalid.
+        When True, issues a Python warning if the linkage
+        matrix passed is invalid.
     throw : bool, optional
-         When True, throws a Python exception if the linkage
-         matrix passed is invalid.
+        When True, throws a Python exception if the linkage
+        matrix passed is invalid.
     name : str, optional
-         This string refers to the variable name of the invalid
-         linkage matrix.
+        This string refers to the variable name of the invalid
+        linkage matrix.
 
     Returns
     -------
@@ -2072,8 +2080,8 @@ def is_valid_im(R, warning=False, throw=False, name=None):
 
     See Also
     --------
-    linkage: for a description of what a linkage matrix is.
-    inconsistent: for the creation of a inconsistency matrix.
+    linkage : for a description of what a linkage matrix is.
+    inconsistent : for the creation of a inconsistency matrix.
 
     Examples
     --------
@@ -2387,7 +2395,7 @@ def correspond(Z, Y):
 
     See Also
     --------
-    linkage: for a description of what a linkage matrix is.
+    linkage : for a description of what a linkage matrix is.
 
     Examples
     --------
@@ -2478,7 +2486,6 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
 
                   MI = maxinconsts(Z, R)
                   fcluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
-
     depth : int, optional
         The maximum depth to perform the inconsistency calculation.
         It has no meaning for the other criteria. Default is 2.
@@ -2724,7 +2731,7 @@ def leaves_list(Z):
 
     See Also
     --------
-    dendrogram: for information about dendrogram structure.
+    dendrogram : for information about dendrogram structure.
 
     Examples
     --------
@@ -2977,6 +2984,7 @@ def set_link_color_palette(palette):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.cluster import hierarchy
     >>> ytdist = np.array([662., 877., 255., 412., 996., 295., 468., 268.,
     ...                    400., 754., 564., 138., 219., 869., 669.])
@@ -3252,6 +3260,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.cluster import hierarchy
     >>> import matplotlib.pyplot as plt
 
@@ -3303,11 +3312,11 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     else:
         raise TypeError('The second argument must be a number')
 
-    if truncate_mode not in ('lastp', 'mlab', 'mtica', 'level', 'none', None):
-        # 'mlab' and 'mtica' are kept working for backwards compat.
+    if truncate_mode not in ('lastp', 'mtica', 'level', 'none', None):
+        # 'mtica' is kept working for backwards compat.
         raise ValueError('Invalid truncation mode.')
 
-    if truncate_mode == 'lastp' or truncate_mode == 'mlab':
+    if truncate_mode == 'lastp':
         if p > n or p == 0:
             p = n
 
@@ -3489,17 +3498,16 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     Returns
     -------
     A tuple (left, w, h, md), where:
+        * left is the independent variable coordinate of the center of the
+          the U of the subtree
 
-      * left is the independent variable coordinate of the center of the
-        the U of the subtree
+        * w is the amount of space used for the subtree (in independent
+          variable units)
 
-      * w is the amount of space used for the subtree (in independent
-        variable units)
+        * h is the height of the subtree in dependent variable units
 
-      * h is the height of the subtree in dependent variable units
-
-      * md is the ``max(Z[*,2]``) for all nodes ``*`` below and including
-        the target node.
+        * md is the ``max(Z[*,2]``) for all nodes ``*`` below and including
+          the target node.
 
     """
     if n == 0:
@@ -3537,9 +3545,6 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
             _append_singleton_leaf_node(Z, p, n, level, lvs, ivl,
                                         leaf_label_func, i, labels)
             return (iv + 5.0, 10.0, 0.0, 0.0)
-    elif truncate_mode in ('mlab',):
-        msg = "Mode 'mlab' is deprecated in scipy 0.19.0 (it never worked)."
-        warnings.warn(msg, DeprecationWarning)
 
     # Otherwise, only truncate if we have a leaf node.
     #
@@ -3704,8 +3709,8 @@ def is_isomorphic(T1, T2):
 
     See Also
     --------
-    linkage: for a description of what a linkage matrix is.
-    fcluster: for the creation of flat cluster assignments.
+    linkage : for a description of what a linkage matrix is.
+    fcluster : for the creation of flat cluster assignments.
 
     Examples
     --------
@@ -3801,8 +3806,8 @@ def maxdists(Z):
 
     See Also
     --------
-    linkage: for a description of what a linkage matrix is.
-    is_monotonic: for testing for monotonicity of a linkage matrix.
+    linkage : for a description of what a linkage matrix is.
+    is_monotonic : for testing for monotonicity of a linkage matrix.
 
     Examples
     --------
@@ -3883,8 +3888,8 @@ def maxinconsts(Z, R):
 
     See Also
     --------
-    linkage: for a description of what a linkage matrix is.
-    inconsistent: for the creation of a inconsistency matrix.
+    linkage : for a description of what a linkage matrix is.
+    inconsistent : for the creation of a inconsistency matrix.
 
     Examples
     --------
@@ -3979,8 +3984,8 @@ def maxRstat(Z, R, i):
 
     See Also
     --------
-    linkage: for a description of what a linkage matrix is.
-    inconsistent: for the creation of a inconsistency matrix.
+    linkage : for a description of what a linkage matrix is.
+    inconsistent : for the creation of a inconsistency matrix.
 
     Examples
     --------
@@ -4092,7 +4097,6 @@ def leaders(Z, T):
         leader of flat cluster with id M[j]. If ``i < n``, ``i``
         corresponds to an original observation, otherwise it
         corresponds to a non-singleton cluster.
-
     M : ndarray
         The leader linkage node id's stored as a k-element 1-D array, where
         ``k`` is the number of flat clusters found in ``T``. This allows the
@@ -4103,7 +4107,7 @@ def leaders(Z, T):
 
     See Also
     --------
-    fcluster: for the creation of flat cluster assignments.
+    fcluster : for the creation of flat cluster assignments.
 
     Examples
     --------
@@ -4131,7 +4135,6 @@ def leaders(Z, T):
            [16.        , 17.        ,  5.77350269,  6.        ],
            [18.        , 19.        ,  5.77350269,  6.        ],
            [20.        , 21.        ,  8.16496581, 12.        ]])
-
 
     >>> T = fcluster(Z, 3, criterion='distance')
     >>> T

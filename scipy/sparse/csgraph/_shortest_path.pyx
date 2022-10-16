@@ -14,13 +14,15 @@ import warnings
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csr, isspmatrix_csc
+from scipy.sparse import csr_matrix, isspmatrix
 from scipy.sparse.csgraph._validation import validate_graph
 
 cimport cython
 
 from libc.stdlib cimport malloc, free
 from numpy.math cimport INFINITY
+
+np.import_array()
 
 include 'parameters.pxi'
 
@@ -144,7 +146,7 @@ def shortest_path(csgraph, method='auto',
 
     >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([ 0.,  1.,  2.,  2.])
+    array([0., 1., 2., 2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 
@@ -269,7 +271,7 @@ def floyd_warshall(csgraph, directed=True,
     >>> from scipy.sparse.csgraph import floyd_warshall
 
     >>> graph = [
-    ... [0, 1 , 2, 0],
+    ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
@@ -285,10 +287,10 @@ def floyd_warshall(csgraph, directed=True,
 
     >>> dist_matrix, predecessors = floyd_warshall(csgraph=graph, directed=False, return_predecessors=True)
     >>> dist_matrix
-    array([[ 0.,  1.,  2.,  2.],
-           [ 1.,  0.,  3.,  1.],
-           [ 2.,  3.,  0.,  3.],
-           [ 2.,  1.,  3.,  0.]])
+    array([[0., 1., 2., 2.],
+           [1., 0., 3., 1.],
+           [2., 3., 0., 3.],
+           [2., 1., 3., 0.]])
     >>> predecessors
     array([[-9999,     0,     0,     1],
            [    1, -9999,     0,     1],
@@ -505,7 +507,7 @@ def dijkstra(csgraph, directed=True, indices=None,
 
     >>> dist_matrix, predecessors = dijkstra(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([ 0.,  1.,  2.,  2.])
+    array([0., 1., 2., 2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 
@@ -657,7 +659,7 @@ cdef _dijkstra_scan_heap_multi(FibonacciHeap *heap,
                                int return_pred,
                                DTYPE_t limit):
     cdef:
-        unsigned int i, k, j_source, j_current
+        unsigned int j_current
         ITYPE_t j
         DTYPE_t next_val
         FibonacciNode *current_node
@@ -696,7 +698,7 @@ cdef _dijkstra_scan_heap(FibonacciHeap *heap,
                          DTYPE_t limit,
                          int i):
     cdef:
-        unsigned int k, j_source, j_current
+        unsigned int j_current
         ITYPE_t j
         DTYPE_t next_val
         FibonacciNode *current_node
@@ -731,9 +733,7 @@ cdef int _dijkstra_directed(
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, k, j_source, j_current
-        ITYPE_t j
-        DTYPE_t next_val
+        unsigned int i, k, j_source
         int return_pred = (pred.size > 0)
         FibonacciHeap heap
         FibonacciNode *v
@@ -777,12 +777,7 @@ cdef int _dijkstra_directed_multi(
             int[:] sources,
             DTYPE_t limit) except -1:
     cdef:
-        unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
-        unsigned int i, k, j_source, j_current
-        ITYPE_t j
-
-        DTYPE_t next_val
 
         int return_pred = (pred.size > 0)
 
@@ -830,9 +825,7 @@ cdef int _dijkstra_undirected(
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, k, j_source, j_current
-        ITYPE_t j
-        DTYPE_t next_val
+        unsigned int i, k, j_source
         int return_pred = (pred.size > 0)
         FibonacciHeap heap
         FibonacciNode *v
@@ -883,15 +876,10 @@ cdef int _dijkstra_undirected_multi(
             int[:] sources,
             DTYPE_t limit) except -1:
     cdef:
-        unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
-        unsigned int i, k, j_source, j_current
-        ITYPE_t j
-        DTYPE_t next_val
         int return_pred = (pred.size > 0)
         FibonacciHeap heap
         FibonacciNode *v
-        FibonacciNode *current_node
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
     if nodes == NULL:
@@ -1002,7 +990,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
 
     >>> dist_matrix, predecessors = bellman_ford(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([ 0.,  1.,  2.,  2.])
+    array([0., 1., 2., 2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 
@@ -1236,7 +1224,7 @@ def johnson(csgraph, directed=True, indices=None,
 
     >>> dist_matrix, predecessors = johnson(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([ 0.,  1.,  2.,  2.])
+    array([0., 1., 2., 2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 
@@ -1351,7 +1339,7 @@ cdef int _johnson_directed(
             double[:] dist_array):
     cdef:
         unsigned int N = dist_array.shape[0]
-        unsigned int j, k, j_source, count
+        unsigned int j, k, count
         DTYPE_t d1, d2, w12
 
     # relax all edges (N+1) - 1 times
@@ -1387,7 +1375,7 @@ cdef int _johnson_undirected(
             double[:] dist_array):
     cdef:
         unsigned int N = dist_array.shape[0]
-        unsigned int j, k, ind_k, j_source, count
+        unsigned int j, k, ind_k, count
         DTYPE_t d1, d2, w12
 
     # relax all edges (N+1) - 1 times
@@ -1573,8 +1561,6 @@ cdef void link(FibonacciHeap* heap, FibonacciNode* node):
     #              - node is already within heap
 
     cdef FibonacciNode *linknode
-    cdef FibonacciNode *parent
-    cdef FibonacciNode *child
 
     if heap.roots_by_rank[node.rank] == NULL:
         heap.roots_by_rank[node.rank] = node

@@ -25,10 +25,12 @@ are:
 - pytest (to run the test suite)
 - asv_ (to run the benchmarks)
 - matplotlib_ (for some functions that can produce plots)
+- pooch_ (for the scipy.datasets module)
 - Pillow_ (for image loading/saving)
 - scikits.umfpack_ (optionally used in ``sparse.linalg``)
 - mpmath_ (for more extended tests in ``special``)
-- pydata/sparse  (compatibility support in ``scipy.sparse``)
+- pydata/sparse (compatibility support in ``scipy.sparse``)
+- threadpoolctl_ (to control BLAS/LAPACK threading in test suite)
 
 *Unconditional build-time dependencies:*
 
@@ -43,13 +45,13 @@ are:
 
 - wheel_ (``python setup.py bdist_wheel``)
 - Sphinx_ (docs)
+- `PyData Sphinx theme`_ (docs)
+- `Sphinx-Design`_  (docs)
 - matplotlib_ (docs)
-- LaTeX (pdf docs)
-- Pillow_ (docs)
 
 Furthermore of course one needs C, C++ and Fortran compilers to build SciPy,
 but those we don't consider to be dependencies and are therefore not discussed
-here.  For details, see https://scipy.github.io/devdocs/building/.
+here.  For details, see https://scipy.github.io/devdocs/dev/contributor/building.html.
 
 When a package provides useful functionality and it's proposed as a new
 dependency, consider also if it makes sense to vendor (i.e. ship a copy of it with
@@ -82,7 +84,7 @@ Version ranges for NumPy and other dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 For dependencies it's important to set lower and upper bounds on their
 versions. For *build-time* dependencies, they are specified in
-``pyproject.toml`` and the versions will _only_ apply to the SciPy build
+``pyproject.toml`` and the versions will *only* apply to the SciPy build
 itself. It's fine to specify either a range or a specific version for a
 dependency like ``wheel`` or ``setuptools``. For NumPy we have to worry
 about ABI compatibility too, hence we specify the version with ``==``
@@ -90,16 +92,16 @@ to the lowest supported version (because NumPy's ABI is backward but not
 forward compatible).
 
 For *run-time dependencies* (currently only ``numpy``), we specify the range
-of versions in ``install_requires`` in ``setup.py``. Getting the upper bound
-right is slightly tricky.  If we don't set any bound, a too-new version
-will be pulled in a few years down the line, and NumPy may have deprecated and
-removed some API that SciPy depended on by then. On the other hand if we set
-the upper bound to the newest already-released version, then as soon as a new
-NumPy version is released there will be no matching SciPy version that works
-with it. Given that NumPy and SciPy both release in a 6-monthly cadence and
-that features that get deprecated in NumPy should stay around for another two
-releases, we specify the upper bound as ``<1.xx+3.0`` (where ``xx`` is the
-minor version of the latest already-released NumPy.
+of versions in ``pyproject.toml`` and in ``install_requires`` in ``setup.py``.
+Getting the upper bound right is slightly tricky.  If we don't set any bound, a
+too-new version will be pulled in a few years down the line, and NumPy may have
+deprecated and removed some API that SciPy depended on by then. On the other
+hand if we set the upper bound to the newest already-released version, then as
+soon as a new NumPy version is released there will be no matching SciPy version
+that works with it. Given that NumPy and SciPy both release in a 6-monthly
+cadence and that features that get deprecated in NumPy should stay around for
+another two releases, we specify the upper bound as ``<1.xx+3.0`` (where ``xx``
+is the minor version of the latest already-released NumPy.
 
 
 .. _supported-py-numpy-versions:
@@ -133,7 +135,7 @@ Building binary installers
 
    This section is only about building SciPy binary installers to *distribute*.
    For info on building SciPy on the same machine as where it will be used, see
-   `this scipy.org page <https://scipy.github.io/devdocs/building/>`_.
+   `this scipy.org page <https://scipy.github.io/devdocs/dev/contributor/building.html>`_.
 
 There are a number of things to take into consideration when building binaries
 and distributing them on PyPI or elsewhere.
@@ -160,7 +162,7 @@ and distributing them on PyPI or elsewhere.
   That method will likely be used for SciPy itself once it's clear that the
   maintenance of that toolchain is sustainable long-term.  See the MingwPy_
   project and `this thread
-  <https://mail.scipy.org/pipermail/numpy-discussion/2015-October/074056.html>`_ for
+  <https://mail.python.org/pipermail/numpy-discussion/2015-October/074056.html>`_ for
   details.
 - The other way to produce 64-bit Windows installers is with ``icc``, ``ifort``
   plus ``MKL`` (or ``MSVC`` instead of ``icc``).  For Intel toolchain
@@ -205,15 +207,19 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _Pillow: https://pillow.readthedocs.org
 .. _scikits.umfpack: https://pypi.org/project/scikit-umfpack
 .. _mpmath: http://mpmath.org
+.. _pooch: https://www.fatiando.org/pooch/latest/
 .. _Cython: https://cython.org
 .. _pybind11: https://github.com/pybind/pybind11
-.. _setuptools: https://bitbucket.org/pypa/setuptools
+.. _setuptools: https://github.com/pypa/setuptools
 .. _wheel: https://wheel.readthedocs.io/
 .. _pip: https://pip.pypa.io/en/stable/
 .. _Python Packaging User Guide: https://packaging.python.org
 .. _Wheelhouse: https://pypi.org/project/Wheelhouse
 .. _MingwPy: https://mingwpy.github.io
 .. _Sphinx: http://www.sphinx-doc.org/
+.. _PyData Sphinx theme: https://pydata-sphinx-theme.readthedocs.io/en/latest/
+.. _Sphinx-Design: https://sphinx-design.readthedocs.io
 .. _six: https://pypi.org/project/six
 .. _decorator: https://github.com/micheles/decorator
 .. _manylinux: https://github.com/pypa/manylinux/
+.. _threadpoolctl: https://github.com/joblib/threadpoolctl

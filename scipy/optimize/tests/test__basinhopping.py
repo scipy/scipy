@@ -48,11 +48,11 @@ class MyTakeStep1(RandomDisplacement):
     make sure it's actually being used."""
     def __init__(self):
         self.been_called = False
-        super(MyTakeStep1, self).__init__()
+        super().__init__()
 
     def __call__(self, x):
         self.been_called = True
-        return super(MyTakeStep1, self).__call__(x)
+        return super().__call__(x)
 
 
 def myTakeStep2(x):
@@ -133,6 +133,19 @@ class TestBasinHopping:
         # if accept_test is passed, it must be callable
         assert_raises(TypeError, basinhopping, func2d, self.x0[i],
                       accept_test=1)
+
+    def test_input_validation(self):
+        msg = 'target_accept_rate has to be in range \\(0, 1\\)'
+        with assert_raises(ValueError, match=msg):
+            basinhopping(func1d, self.x0[0], target_accept_rate=0.)
+        with assert_raises(ValueError, match=msg):
+            basinhopping(func1d, self.x0[0], target_accept_rate=1.)
+
+        msg = 'stepwise_factor has to be in range \\(0, 1\\)'
+        with assert_raises(ValueError, match=msg):
+            basinhopping(func1d, self.x0[0], stepwise_factor=0.)
+        with assert_raises(ValueError, match=msg):
+            basinhopping(func1d, self.x0[0], stepwise_factor=1.)
 
     def test_1d_grad(self):
         # test 1-D minimizations with gradient
@@ -305,8 +318,6 @@ class TestBasinHopping:
                      niter=10, callback=callback2, seed=10)
         assert_equal(np.array(f_1), np.array(f_2))
 
-    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
-                        reason='Generator not available for numpy, < 1.17')
     def test_random_gen(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
         rng = np.random.default_rng(1)

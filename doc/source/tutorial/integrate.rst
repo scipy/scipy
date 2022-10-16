@@ -718,7 +718,9 @@ following ipython session.
 
 First, we define the required inputs::
 
-    In [31]: y0 = np.random.randn(5000)
+    In [30]: rng = np.random.default_rng()
+
+    In [31]: y0 = rng.standard_normal(5000)
 
     In [32]: t = np.linspace(0, 50, 11)
 

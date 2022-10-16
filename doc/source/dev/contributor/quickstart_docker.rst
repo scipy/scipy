@@ -90,11 +90,11 @@ container do not persist after you close it.
    SciPy Docker container by entering the following command in a terminal
    window::
 
-      docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev:<image-tag> /bin/bash
+      docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev:<image-tag> 
    
    If you are using Windows cmd, you may run the following command instead::
 
-      docker run -it --rm -v %cd%:/home/scipy scipy/scipy-dev:<image-tag> /bin/bash
+      docker run -it --rm -v %cd%:/home/scipy scipy/scipy-dev:<image-tag> 
 
    This command starts (``run``) an interactive (``-it``) Docker container
    named ``scipy-dev`` (based on Ubuntu focal) from the ``scipy``
@@ -110,31 +110,32 @@ container do not persist after you close it.
 
    as a prompt. Notice the ``(base)`` at the beginning, since we are using conda.
 
-#. Activate the ``scipydev`` conda environment::
+#. Activate the ``scipy-dev`` conda environment::
 
-      conda activate scipydev
+      conda activate scipy-dev
 
    this environment has all the dependencies you'll need to start using/building SciPy.
 
-#. Do an in-place build by entering::
+#. Initialize git submodules: ``git submodule update --init``.
 
-      python setup.py build_ext --inplace
+#. Build SciPy by entering::
 
-   This will compile the C,
-   C++, and Fortran code that comes with SciPy. ``setup.py`` is a
-   script in the root directory of SciPy, which is why you have to be
-   in the SciPy root directory to call it. ``build_ext`` is a command
-   defined in ``setup.py``, and ``--inplace`` is an option we’ll use to
-   ensure that the compiling happens in the SciPy directory you already
-   have rather than some other folder on your computer. 
+      python dev.py build
+
+   This will compile the C, C++, and Fortran code that comes with SciPy and
+   install it in the directory you already have rather than the default
+   location for Python packages. We installed ``python`` with Anaconda.
+   ``dev.py`` is a script in the root directory of SciPy which can be used to
+   execute several development tasks (see :ref:`the-dev-py-interface` for
+   details).
 
 #. Test the build by entering::
 
-      python runtests.py -v
+      python dev.py test -v
 
-   ``runtests.py`` is another script in the SciPy root directory. It runs a
-   suite of tests that make sure SciPy is working as it should, and ``-v``
-   activates the ``–verbose`` option to show all the test output.
+   This command runs a suite of tests that make sure SciPy is working as it
+   should, and ``-v`` activates the ``--verbose`` option to show all the test
+   output.
 
 #. If you want to :ref:`build the documentation <rendering-documentation>`
    or import SciPy from any directory other than the SciPy root, you should
@@ -158,8 +159,8 @@ If you would like to contribute changes to the SciPy project, please see
 :ref:`development-workflow`.
 
 The Docker image contains all the compilers and dependencies needed for you
-to work on SciPy. Similar to the :ref:`quickstart-ubuntu`,the Docker image uses 
-the  `Anaconda Distribution of Python`_ to manage the development environment.
+to work on SciPy. The Docker image uses the `Anaconda Distribution of Python`_
+to manage the development environment.
 
 .. _here: https://docs.docker.com/get-started/
 .. _Docker Hub repository: https://cloud.docker.com/repository/docker/scipy/scipy-dev

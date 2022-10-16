@@ -24,7 +24,7 @@
 * The file ran-instructions.pdf contains general instructions.
 *
 * Copyright 2002-2008 by Agner Fog. 
-* GNU General Public License http://www.gnu.org/licenses/gpl.html
+* Released under SciPy's license with permission of Agner Fog; see license.txt
 *****************************************************************************/
 
 #include <string.h>                    // memcpy function
@@ -466,7 +466,8 @@ int32_t * source, double * weights, int32_t n, int colors) {
    if (n < 0 || colors < 0 || colors > MAXCOLORS) FatalError("Parameter out of range in function MultiWalleniusNCHyp");
    if (colors == 0) return;
    if (n == 0) {
-      for (i=0; i<colors; i++) destination[i] = 0; return;
+      for (i=0; i<colors; i++) destination[i] = 0;
+      return;
    }
 
    // check validity of array parameters
@@ -1078,7 +1079,8 @@ int32_t * source, double * weights, int32_t n, int colors) {
    if (n < 0 || colors < 0 || colors > MAXCOLORS) FatalError("Parameter out of range in function MultiFishersNCHyp");
    if (colors == 0) return;
    if (n == 0) {
-      for (i=0; i<colors; i++) destination[i] = 0; return;
+      for (i=0; i<colors; i++) destination[i] = 0;
+      return;
    }
 
    // check validity of array parameters

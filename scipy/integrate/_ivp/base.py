@@ -262,7 +262,7 @@ class ConstantDenseOutput(DenseOutput):
     or a system with 0 equations.
     """
     def __init__(self, t_old, t, value):
-        super(ConstantDenseOutput, self).__init__(t_old, t)
+        super().__init__(t_old, t)
         self.value = value
 
     def _call_impl(self, t):

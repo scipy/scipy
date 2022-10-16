@@ -384,6 +384,14 @@ def _read_fmt_chunk(fid, is_big_endian):
     # fmt should always be 16, 18 or 40, but handle it just in case
     _handle_pad_byte(fid, size)
 
+    if format_tag == WAVE_FORMAT.PCM:
+        if bytes_per_second != fs * block_align:
+            raise ValueError("WAV header is invalid: nAvgBytesPerSec must"
+                             " equal product of nSamplesPerSec and"
+                             " nBlockAlign, but file has nSamplesPerSec ="
+                             f" {fs}, nBlockAlign = {block_align}, and"
+                             f" nAvgBytesPerSec = {bytes_per_second}")
+
     return (size, format_tag, channels, fs, bytes_per_second, block_align,
             bit_depth)
 
@@ -745,6 +753,7 @@ def write(filename, rate, data):
     Write to 16-bit PCM, Mono.
 
     >>> from scipy.io.wavfile import write
+    >>> import numpy as np
     >>> samplerate = 44100; fs = 100
     >>> t = np.linspace(0., 1., samplerate)
     >>> amplitude = np.iinfo(np.int16).max

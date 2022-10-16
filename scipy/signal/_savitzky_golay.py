@@ -13,7 +13,6 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     ----------
     window_length : int
         The length of the filter window (i.e., the number of coefficients).
-        `window_length` must be an odd positive integer.
     polyorder : int
         The order of the polynomial used to fit the samples.
         `polyorder` must be less than `window_length`.
@@ -44,6 +43,9 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     A. Savitzky, M. J. E. Golay, Smoothing and Differentiation of Data by
     Simplified Least Squares Procedures. Analytical Chemistry, 1964, 36 (8),
     pp 1627-1639.
+    Jianwen Luo, Kui Ying, and Jing Bai. 2005. Savitzky-Golay smoothing and
+    differentiation filter for even number data. Signal Process.
+    85, 7 (July 2005), 1429-1434.
 
     See Also
     --------
@@ -56,6 +58,7 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import savgol_coeffs
     >>> savgol_coeffs(5, 2)
     array([-0.08571429,  0.34285714,  0.48571429,  0.34285714, -0.08571429])
@@ -69,6 +72,8 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     array([ 0.25714286,  0.37142857,  0.34285714,  0.17142857, -0.14285714])
     >>> savgol_coeffs(5, 2, pos=3, use='dot')
     array([-0.14285714,  0.17142857,  0.34285714,  0.37142857,  0.25714286])
+    >>> savgol_coeffs(4, 2, pos=3, deriv=1, use='dot')
+    array([0.45,  -0.85,  -0.65,  1.05])
 
     `x` contains data from the parabola x = t**2, sampled at
     t = -1, 0, 1, 2, 3.  `c` holds the coefficients that will compute the
@@ -98,11 +103,11 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
 
     halflen, rem = divmod(window_length, 2)
 
-    if rem == 0:
-        raise ValueError("window_length must be odd.")
-
     if pos is None:
-        pos = halflen
+        if rem == 0:
+            pos = halflen - 0.5
+        else:
+            pos = halflen
 
     if not (0 <= pos < window_length):
         raise ValueError("pos must be nonnegative and less than "
@@ -120,6 +125,7 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     # from 0 to polyorder. (That is, A is a vandermonde matrix, but not
     # necessarily square.)
     x = np.arange(-pos, window_length - pos, dtype=float)
+
     if use == "conv":
         # Reverse so that result can be used in a convolution.
         x = x[::-1]
@@ -237,8 +243,8 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
         before filtering.
     window_length : int
         The length of the filter window (i.e., the number of coefficients).
-        `window_length` must be a positive odd integer. If `mode` is 'interp',
-        `window_length` must be less than or equal to the size of `x`.
+        If `mode` is 'interp', `window_length` must be less than or equal
+        to the size of `x`.
     polyorder : int
         The order of the polynomial used to fit the samples.
         `polyorder` must be less than `window_length`.
@@ -304,6 +310,7 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import savgol_filter
     >>> np.set_printoptions(precision=2)  # For compact display.
     >>> x = np.array([2, 2, 5, 2, 1, 0, 1, 4, 9])
@@ -335,7 +342,7 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     coeffs = savgol_coeffs(window_length, polyorder, deriv=deriv, delta=delta)
 
     if mode == "interp":
-        if window_length > x.size:
+        if window_length > x.shape[axis]:
             raise ValueError("If mode is 'interp', window_length must be less "
                              "than or equal to the size of x.")
 

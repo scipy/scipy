@@ -46,10 +46,11 @@ def conv_method(sampler, func, n_samples, n_conv, ref):
 # Analysis
 sample_mc_rmse = []
 sample_sobol_rmse = []
+rng = np.random.default_rng()
 
 for ns in ns_gen:
     # Monte Carlo
-    sampler_mc = lambda x: np.random.random((x, case.dim))
+    sampler_mc = lambda x: rng.random((x, case.dim))
     conv_res = conv_method(sampler_mc, case.func, ns, n_conv, case.ref)
     sample_mc_rmse.append(conv_res)
 
@@ -73,7 +74,7 @@ ax.scatter(ns_gen, sample_mc_rmse, label="MC")
 
 # Sobol'
 ratio = sample_sobol_rmse[0] / ns_gen[0] ** (-2/2)
-ax.plot(ns_gen, ns_gen ** (-2/2) * ratio, ls='-', c='k')
+ax.plot(ns_gen, ns_gen ** (-2/2) * ratio, ls='-.', c='k')
 
 ax.scatter(ns_gen, sample_sobol_rmse, label="Sobol' unscrambled")
 
