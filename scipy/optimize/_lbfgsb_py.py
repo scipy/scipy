@@ -183,8 +183,6 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         jac = fprime
 
     # build options
-    if disp is None:
-        disp = iprint
     opts = {'disp': disp,
             'iprint': iprint,
             'maxcor': m,
