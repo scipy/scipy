@@ -1513,12 +1513,12 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     References
     ----------
-    .. [1] : B.N. Parlett and C. Reinsch, "Balancing a Matrix for
+    .. [1] B.N. Parlett and C. Reinsch, "Balancing a Matrix for
        Calculation of Eigenvalues and Eigenvectors", Numerische Mathematik,
        Vol.13(4), 1969, :doi:`10.1007/BF02165404`
-    .. [2] : R. James, J. Langou, B.R. Lowery, "On matrix balancing and
+    .. [2] R. James, J. Langou, B.R. Lowery, "On matrix balancing and
        eigenvector computation", 2014, :arxiv:`1401.5766`
-    .. [3] :  D.S. Watkins. A case where balancing is harmful.
+    .. [3] D.S. Watkins. A case where balancing is harmful.
        Electron. Trans. Numer. Anal, Vol.23, 2006.
 
     Examples
