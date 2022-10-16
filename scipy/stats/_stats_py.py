@@ -7639,15 +7639,17 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
             KS test statistic, either D+, D-, or D (the maximum of the two)
         pvalue : float
             One-tailed or two-tailed p-value.
-        statistic_location: float
+        statistic_location : float
             Value of `x` corresponding with the KS statistic; i.e., the
-            distance between the hypothesized cumulative distribution function
-            and the empirical distribution function is measured at this
+            distance between the empirical distribution function and the
+            hypothesized cumulative distribution function is measured at this
             observation.
-        statistic_sign: str
-            1 if the KS statistic is the maximal positive difference between
-            empirical and hypothesized distributions (D+), -1 if the KS
-            statistic is the negative difference (D-).
+        statistic_sign : int
+            +1 if the KS statistic is the maximum positive difference between
+            the empirical distribution function and the hypothesized cumulative
+            distribution function (D+); -1 if the KS statistic is the maximum
+            negative difference (D-).
+
 
     See Also
     --------
@@ -7967,11 +7969,11 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             KS test statistic.
         pvalue : float
             One-tailed or two-tailed p-value.
-        statistic_location: float
+        statistic_location : float
             Value from `data1` or `data2` corresponding with the KS statistic;
             i.e., the distance between the empirical distribution functions is
             measured at this observation.
-        statistic_sign: int
+        statistic_sign : int
             +1 if the empirical distribution function of `data1` exceeds
             the empirical distribution function of `data2` at
             `statistic_location`, otherwise -1.
@@ -8250,15 +8252,26 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
             KS test statistic, either D+, D-, or D (the maximum of the two)
         pvalue : float
             One-tailed or two-tailed p-value.
-        statistic_location: float
-            Value of `x` corresponding with the KS statistic; i.e. the
-            observation at which the difference between CDFs is measured.
-        statistic_sign: int
-            If a 1-sample test is run, this is +1 if the KS statistic is the
-            maximal positive difference between empirical and hypothesized
-            distributions (D+), -1 if the KS statistic is the negative
-            difference (D-). If a 2-sample test is run, the difference is
-            between the first and second empirical distributions.
+        statistic_location : float
+            In a one-sample test, this is the value of `rvs`
+            corresponding with the KS statistic; i.e., the distance between
+            the empirical distribution function and the hypothesized cumulative
+            distribution function is measured at this observation.
+
+            In a two-sample test, this is the value from `rvs` or `cdf`
+            corresponding with the KS statistic; i.e., the distance between
+            the empirical distribution functions is measured at this
+            observation.
+        statistic_sign : int
+            In a one-sample test, this is +1 if the KS statistic is the
+            maximum positive difference between the empirical distribution
+            function and the hypothesized cumulative distribution function
+            (D+); it is -1 if the KS statistic is the maximum negative
+            difference (D-).
+
+            In a two-sample test, this is +1 if the empirical distribution
+            function of `rvs` exceeds the empirical distribution
+            function of `cdf` at `statistic_location`, otherwise -1.
 
     See Also
     --------

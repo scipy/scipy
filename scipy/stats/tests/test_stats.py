@@ -3958,20 +3958,23 @@ class TestKSOneSample:
         ])
         FuncData(kolmogn, dataset, (0, 1, 2), 3).check(dtypes=[int, float, bool])
 
-    @pytest.mark.parametrize("alternative, x56val, ref_location, ref_sign",
-                             [('greater', 0.5, 0.5, +1),
-                              ('less', 0.7, 0.7, -1),
-                              ('two-sided', 0.5, 0.5, +1),
-                              ('two-sided', 0.7, 0.7, -1)])
-    def test_location_sign(self, alternative, x56val, ref_location, ref_sign):
+    @pytest.mark.parametrize("ksfunc", [stats.kstest, stats.ks_1samp])
+    @pytest.mark.parametrize("alternative, x6val, ref_location, ref_sign",
+                             [('greater', 6, 6, +1),
+                              ('less', 7, 7, -1),
+                              ('two-sided', 6, 6, +1),
+                              ('two-sided', 7, 7, -1)])
+    def test_location_sign(self, ksfunc, alternative,
+                           x6val, ref_location, ref_sign):
         # Test that location and sign corresponding with statistic are as
         # expected. (Test is designed to be easy to predict.)
-        x = np.arange(1.0, 11, dtype=np.float64) / 10.0
-        x[5:7] = x56val
-        res = stats.ks_1samp(x, stats.uniform.cdf, alternative=alternative)
-        res_list = [res.statistic, res.statistic_location, res.statistic_sign]
-        expected_list = [0.2, ref_location, ref_sign]
-        assert_array_almost_equal(res_list, expected_list)
+        x = np.arange(10) + 0.5
+        x[6] = x6val
+        cdf = stats.uniform(scale=10).cdf
+        res = ksfunc(x, cdf, alternative=alternative)
+        assert_allclose(res.statistic, 0.1, rtol=1e-15)
+        assert res.statistic_location == ref_location
+        assert res.statistic_sign == ref_sign
 
     # missing: no test that uses *args
 
@@ -3979,8 +3982,7 @@ class TestKSOneSample:
 class TestKSTwoSamples:
     """Tests 2-samples with K-S various sizes, alternatives, modes."""
 
-    def _testOne(self, x1, x2, alternative, expected_statistic, expected_prob,
-                 mode='auto'):
+    def _testOne(self, x1, x2, alternative, expected_statistic, expected_prob, mode='auto'):
         result = stats.ks_2samp(x1, x2, alternative, mode=mode)
         expected = np.array([expected_statistic, expected_prob])
         assert_array_almost_equal(np.array(result), expected)
@@ -4224,12 +4226,14 @@ class TestKSTwoSamples:
             res = stats.ks_2samp(data1, data2, alternative='less')
             assert_allclose(res.pvalue, 0, atol=1e-14)
 
+    @pytest.mark.parametrize("ksfunc", [stats.kstest, stats.ks_2samp])
     @pytest.mark.parametrize("alternative, x6val, ref_location, ref_sign",
                              [('greater', 5.9, 5.9, +1),
                               ('less', 6.1, 6.0, -1),
                               ('two-sided', 5.9, 5.9, +1),
                               ('two-sided', 6.1, 6.0, -1)])
-    def test_location_sign(self, alternative, x6val, ref_location, ref_sign):
+    def test_location_sign(self, ksfunc, alternative,
+                           x6val, ref_location, ref_sign):
         # Test that location and sign corresponding with statistic are as
         # expected. (Test is designed to be easy to predict.)
         x = np.arange(10, dtype=np.float64)
