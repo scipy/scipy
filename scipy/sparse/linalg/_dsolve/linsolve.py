@@ -75,6 +75,7 @@ def use_solver(**kwargs):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse.linalg import use_solver, spsolve
     >>> from scipy.sparse import csc_matrix
     >>> R = np.random.randn(5, 5)
@@ -195,6 +196,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import spsolve
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
@@ -367,6 +369,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import splu
     >>> A = csc_matrix([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
@@ -457,6 +460,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import spilu
     >>> A = csc_matrix([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
@@ -523,6 +527,7 @@ def factorized(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse.linalg import factorized
     >>> A = np.array([[ 3. ,  2. , -1. ],
     ...               [ 2. , -2. ,  4. ],
@@ -617,6 +622,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csr_matrix
     >>> from scipy.sparse.linalg import spsolve_triangular
     >>> A = csr_matrix([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)

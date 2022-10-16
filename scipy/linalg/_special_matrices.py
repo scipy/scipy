@@ -500,6 +500,7 @@ def block_diag(*arrs):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import block_diag
     >>> A = [[1, 0],
     ...      [0, 1]]
@@ -1007,6 +1008,7 @@ def dft(n, scale=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import dft
     >>> np.set_printoptions(precision=2, suppress=True)  # for compact output
     >>> m = dft(5)
@@ -1073,6 +1075,7 @@ def fiedler(a):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import det, inv, fiedler
     >>> a = [1, 4, 12, 45, 77]
     >>> n = len(a)
@@ -1153,6 +1156,7 @@ def fiedler_companion(a):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import fiedler_companion, eigvals
     >>> p = np.poly(np.arange(1, 9, 2))  # [1., -16., 86., -176., 105.]
     >>> fc = fiedler_companion(p)
@@ -1300,6 +1304,7 @@ def convolution_matrix(a, n, mode='full'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import convolution_matrix
     >>> A = convolution_matrix([-1, 4, -2], 5, mode='same')
     >>> A

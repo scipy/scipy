@@ -1996,11 +1996,12 @@ def test_sqeuclidean_dtypes():
         assert_(np.issubdtype(d.dtype, np.floating))
 
     for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
-        d1 = wsqeuclidean([0], np.asarray([-1], dtype=dtype))
-        d2 = wsqeuclidean(np.asarray([-1], dtype=dtype), [0])
+        umax = np.iinfo(dtype).max
+        d1 = wsqeuclidean([0], np.asarray([umax], dtype=dtype))
+        d2 = wsqeuclidean(np.asarray([umax], dtype=dtype), [0])
 
         assert_equal(d1, d2)
-        assert_equal(d1, np.float64(np.iinfo(dtype).max)**2)
+        assert_equal(d1, np.float64(umax)**2)
 
     dtypes = [np.float32, np.float64, np.complex64, np.complex128]
     for dtype in ['float16', 'float128']:

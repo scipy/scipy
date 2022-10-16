@@ -14,6 +14,7 @@ _trlib = py3.extension_module('_trlib',
     '../../_lib',
     '../../_build_utils/src'
   ],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize/_trlib'
 )

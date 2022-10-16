@@ -1,6 +1,5 @@
 # cython: language_level=3
 cimport cython
-cimport numpy as cnp
 import numpy as np
 from scipy.linalg._cythonized_array_utils cimport (
     lapack_t,
@@ -84,6 +83,7 @@ def bandwidth(a):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import bandwidth
     >>> A = np.array([[3., 0., 0., 0., 0.],
     ...               [0., 4., 0., 0., 0.],
@@ -239,6 +239,7 @@ def issymmetric(a, atol=None, rtol=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import issymmetric
     >>> A = np.arange(9).reshape(3, 3)
     >>> A = A + A.T
@@ -364,6 +365,7 @@ def ishermitian(a, atol=None, rtol=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import ishermitian
     >>> A = np.arange(9).reshape(3, 3)
     >>> A = A + A.T

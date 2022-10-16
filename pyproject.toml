@@ -10,10 +10,10 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.8.0",
-    "Cython>=0.29.21",
-    "pybind11>=2.4.3",
-    "pythran>=0.11.0",
+    "meson-python>=0.9.0",
+    "Cython>=0.29.32",
+    "pybind11>=2.10.0",
+    "pythran>=0.12.0",
     # `wheel` is needed for non-isolated builds, given that `meson-python`
     # doesn't list it as a runtime requirement (at least in 0.5.0)
     "wheel",
@@ -154,7 +154,7 @@ before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}
 
 [tool.cibuildwheel.macos]
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
-test-skip = "*_arm64 *_universal2:arm64"
+test-skip = "cp38-macosx_arm64"
 
 [tool.cibuildwheel.windows]
 before-build = "bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
@@ -171,9 +171,3 @@ select = "*-win_amd64"
 # Don't use double backslash for path separators, they don't get passed
 # to the build correctly
 environment = { PKG_CONFIG_PATH="c:/opt/openblas/if_32/64/lib/pkgconfig" }
-
-[[tool.cibuildwheel.overrides]]
-select = "*-manylinux_aarch64"
-before-test = ""
-test-requires = ["pytest", "threadpoolctl"]
-test-command = "bash {project}/tools/wheels/cibw_test_command_manylinux_aarch64.sh {project}"

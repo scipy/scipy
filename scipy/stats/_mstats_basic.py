@@ -348,6 +348,8 @@ def _mode(a, axis=0, keepdims=True):
             slices[axis] = 1
             counts = output[tuple(slices)].reshape(newshape)
             output = (modes, counts)
+        else:
+            output = np.moveaxis(output, axis, 0)
 
     return ModeResult(*output)
 

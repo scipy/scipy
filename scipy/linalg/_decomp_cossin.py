@@ -83,6 +83,7 @@ def cossin(X, p=None, q=None, separate=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import cossin
     >>> from scipy.stats import unitary_group
     >>> x = unitary_group.rvs(4)
