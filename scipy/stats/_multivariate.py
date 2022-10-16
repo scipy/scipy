@@ -5119,7 +5119,7 @@ class conditional_table_gen(multi_rv_generic):
 
     Alternatively, the object may be called (as a function) to fix the row
     and column vector sums, returning a "frozen" distribution.
-    
+
     >>> dist = conditional_table(row, col)
     >>> dist.rvs(size=10, random_state=123)
     array([])
@@ -5212,13 +5212,13 @@ class conditional_table_gen(multi_rv_generic):
     def _process_method(cls, method, r, c, n):
         known_methods = {
             None: cls._rvs_select(r, c, n),
-            "shuffle": cls._rvs_shuffle, 
+            "shuffle": cls._rvs_shuffle,
             "patefield" : cls._rvs_patefield,
         }
         try:
             return known_methods[method]
         except KeyError:
-            raise ValueError(f"{method} not recognized, must be one of {{{', '.join(known_methods.keys())}}}")                
+            raise ValueError(f"{method} not recognized, must be one of {{{', '.join(known_methods.keys())}}}")
 
     @classmethod
     def _rvs_select(cls, r, c, n):
@@ -5233,19 +5233,19 @@ class conditional_table_gen(multi_rv_generic):
     def _rvs_shuffle(row, col, tot, size, random_state):
         # could be cached in the frozen distribution
         k = 0
-        ci = np.empty(tot, dtype=np.int_)
+        col_idx = np.empty(tot, dtype=np.int_)
         for i, ci in enumerate(col):
-            ci[k:k+ci] = i
+            col_idx[k:k+ci] = i
             k += ci
 
         matrix = np.zeros((size, len(row), len(col)))
         for o in range(size):
-            random_state.shuffle(ci)
+            random_state.shuffle(col_idx)
             k = 0
             # slow in pure Python, will be replaced by C code
             for i, ri in enumerate(row):
                 for j in range(ri):
-                    matrix[o, i, ci[k+j]] += 1
+                    matrix[o, i, col_idx[k+j]] += 1
                 k += ri
         return matrix
 
