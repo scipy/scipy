@@ -28,39 +28,40 @@ class TestInterp2D:
         z = sin(x+0.5*y)
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning)
-            I = interp2d(x, y, z)
-            assert_almost_equal(I(1.0, 2.0), sin(2.0), decimal=2)
+            II = interp2d(x, y, z)
+            assert_almost_equal(II(1.0, 2.0), sin(2.0), decimal=2)
 
-            v,u = ogrid[0:2:24j, 0:pi:25j]
-            assert_almost_equal(I(u.ravel(), v.ravel()), sin(u+0.5*v), decimal=2)
+            v, u = ogrid[0:2:24j, 0:pi:25j]
+            assert_almost_equal(II(u.ravel(), v.ravel()),
+                                sin(u+0.5*v), decimal=2)
 
     def test_interp2d_meshgrid_input(self):
         # Ticket #703
         x = linspace(0, 2, 16)
         y = linspace(0, pi, 21)
-        z = sin(x[None,:] + y[:,None]/2.)
+        z = sin(x[None, :] + y[:, None]/2.)
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning)
-            I = interp2d(x, y, z)
-            assert_almost_equal(I(1.0, 2.0), sin(2.0), decimal=2)
+            II = interp2d(x, y, z)
+            assert_almost_equal(II(1.0, 2.0), sin(2.0), decimal=2)
 
     def test_interp2d_meshgrid_input_unsorted(self):
         np.random.seed(1234)
         x = linspace(0, 2, 16)
         y = linspace(0, pi, 21)
 
-        z = sin(x[None,:] + y[:,None]/2.)
+        z = sin(x[None, :] + y[:, None] / 2.)
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning)
             ip1 = interp2d(x.copy(), y.copy(), z, kind='cubic')
 
             np.random.shuffle(x)
-            z = sin(x[None,:] + y[:,None]/2.)
+            z = sin(x[None, :] + y[:, None]/2.)
             ip2 = interp2d(x.copy(), y.copy(), z, kind='cubic')
 
             np.random.shuffle(x)
             np.random.shuffle(y)
-            z = sin(x[None,:] + y[:,None]/2.)
+            z = sin(x[None, :] + y[:, None] / 2.)
             ip3 = interp2d(x, y, z, kind='cubic')
 
             x = linspace(0, 2, 31)
@@ -111,9 +112,9 @@ class TestInterp2D:
             iz = b(ix, iy)
             mx = (ix < 0) | (ix > 1)
             my = (iy < 0) | (iy > 2)
-            assert_(np.isnan(iz[my,:]).all())
-            assert_(np.isnan(iz[:,mx]).all())
-            assert_(np.isfinite(iz[~my,:][:,~mx]).all())
+            assert_(np.isnan(iz[my, :]).all())
+            assert_(np.isnan(iz[:, mx]).all())
+            assert_(np.isfinite(iz[~my, :][:, ~mx]).all())
 
 
 class TestInterp1D:
