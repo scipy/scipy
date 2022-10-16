@@ -1450,7 +1450,7 @@ class TestOptimizeSimple(CheckOptimize):
                 raise RuntimeError(
                     "Duplicate evaluations made by {}".format(method))
 
-    def gh12111_cases():
+    def gh12111_cases(self):
         xfail = pytest.mark.xfail(reason="not fixed yet")
         for method in MINIMIZE_METHODS:
             if method in {'cg', 'bfgs', 'l-bfgs-b', 'slsqp'}:
@@ -1458,7 +1458,7 @@ class TestOptimizeSimple(CheckOptimize):
             else:
                 yield method
 
-    @pytest.mark.parametrize('method', gh12111_cases())
+    @pytest.mark.parametrize('method', self.gh12111_cases())
     def test_gh12111(self, method):
         # check that minimizer result is the same as the best solution
         # calculated by the objective function
