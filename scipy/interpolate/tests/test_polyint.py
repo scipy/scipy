@@ -704,7 +704,8 @@ class TestCubicSpline:
         assert_raises(ValueError, CubicSpline, xc, y)
         assert_raises(ValueError, CubicSpline, xn, y)
         assert_raises(ValueError, CubicSpline, x, yn)
-        assert_raises(ValueError, CubicSpline, x, y_empty)
+        with assert_raises(ValueError, match="`y` cannot be an empty array."):
+            CubicSpline(x, y_empty)
         assert_raises(ValueError, CubicSpline, xo, y)
         assert_raises(ValueError, CubicSpline, x, y3)
         assert_raises(ValueError, CubicSpline, x[:, np.newaxis], y)
