@@ -5168,7 +5168,7 @@ class conditional_table_gen(multi_rv_generic):
         ntot_row = np.sum(row)
         ntot_col = np.sum(col)
         if ntot_row != ntot_col:
-            raise ValueError("Sums over `row` and `col` must be equal.")
+            raise ValueError("sums over `row` and `col` must be equal")
 
         return r, c, ntot_row
 

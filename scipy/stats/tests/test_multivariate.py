@@ -2467,6 +2467,27 @@ class TestMultivariateHypergeom:
 
 
 class TestConditionalTable:
+    def test_process_parameters(self):
+        message = "`row` must be one-dimensional"
+        with pytest.raises(ValueError, match=message):
+            conditional_table([[1, 2]], [1, 2])
+
+        message = "`col` must be one-dimensional"
+        with pytest.raises(ValueError, match=message):
+            conditional_table([1, 2], [[1, 2]])
+
+        message = "each element of `row` must be non-negative"
+        with pytest.raises(ValueError, match=message):
+            conditional_table([1, -1], [1, 2])
+
+        message = "each element of `col` must be non-negative"
+        with pytest.raises(ValueError, match=message):
+            conditional_table([1, 2], [1, -2])
+
+        message = "sums over `row` and `col` must be equal"
+        with pytest.raises(ValueError, match=message):
+            conditional_table([1, 2], [1, 0])
+
     def test_pmf(self):
         row = [2, 6]
         col = [1, 3, 4]
