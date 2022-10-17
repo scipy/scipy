@@ -5084,9 +5084,9 @@ class conditional_table_gen(multi_rv_generic):
     Methods
     -------
     logpmf(x)
-        Log-probability of `x` occuring in distribution of conditional tables.
+        Log-probability of table `x` occuring in the distribution.
     pmf(x)
-        Probability of `x` occuring in distribution of conditional tables.
+        Probability of table `x` occuring in the distribution.
     mean(row, col)
         Mean table.
     rvs(row, col, size=1, method=None, random_state=None)
@@ -5109,7 +5109,7 @@ class conditional_table_gen(multi_rv_generic):
     the input, but you can specify the algorithm with the keyword `method`.
     Allowed values are "boyett" and "patefield".
 
-    .. versionadded: 1.9.3
+    .. versionadded:: 1.9.3
 
     Examples
     --------
@@ -5140,7 +5140,7 @@ class conditional_table_gen(multi_rv_generic):
         super().__init__(seed)
 
     def __call__(self, row, col, seed=None):
-        """Create a frozen distribution of tables with fixed column and row marginals.
+        """Create a frozen distribution of tables with given marginals.
 
         See `conditional_table_frozen` for more information.
         """
@@ -5175,19 +5175,16 @@ class conditional_table_gen(multi_rv_generic):
         return r, c, ntot_row
 
     def logpmf(self, x):
-        """Log-probability of sample occuring in distribution of conditional tables.
+        """Log-probability of table occuring.
 
-        Parameters
-        ----------
-        x: array-like
-            Two-dimensional table of non-negative integers, or a
-            three-dimensional array of such tables. The first dimension
-            iterates over tables.
+        %(_doc_pmf_callparams)s
 
         Returns
         -------
         logpmf : ndarray or scalar
-            Log of the probability mass function evaluated at `x`
+            Log of the probability mass function evaluated at `x`.
+
+        %(_doc_pmf_note)s
         """
         if np.any(x < 0):
             raise ValueError("`x` must contain only non-negative integers")
@@ -5196,12 +5193,12 @@ class conditional_table_gen(multi_rv_generic):
         if x.ndim < 2:
             raise ValueError("`x` must be at least two-dimensional")
 
-        if np.any(x.shape[:2] == 0):
-            raise ValueError("`x` must have at least one row and one column")
-
         expand = x.ndim == 2
         if expand:
             x = x.reshape(1, *x.shape)
+
+        if x.shape[1] == 0 or x.shape[2] == 0:
+            raise ValueError("`x` must have at least one row and one column")
 
         r = np.sum(x, axis=2)
         c = np.sum(x, axis=1)
@@ -5210,7 +5207,7 @@ class conditional_table_gen(multi_rv_generic):
         def lnfac(x):
             return gammaln(x + 1)
 
-        res = (np.sum(lnfac(r), axis=1) + np.sum(lnfac(c), axis=1) 
+        res = (np.sum(lnfac(r), axis=1) + np.sum(lnfac(c), axis=1)
                - lnfac(n) - np.sum(lnfac(x), axis=(1, 2)))
 
         if expand:
@@ -5219,17 +5216,16 @@ class conditional_table_gen(multi_rv_generic):
         return res
 
     def pmf(self, x):
-        """Probability of sample occuring in distribution of conditional tables.
+        """Probability of table occuring.
 
-        Parameters
-        ----------
-        x: array-like
-            Two-dimensional table of non-negative integers.
+        %(_doc_pmf_callparams)s
 
         Returns
         -------
-        mean: ndarray
-            The mean of the distribution
+        pmf : ndarray or scalar
+            Probability mass function evaluated at `x`.
+
+        %(_doc_pmf_note)s
         """
         return np.exp(self.logpmf(x))
 
@@ -5239,7 +5235,7 @@ class conditional_table_gen(multi_rv_generic):
         Returns
         -------
         mean: ndarray
-            The mean of the distribution
+            Mean of the distribution.
 
         Notes
         -----
@@ -5263,7 +5259,7 @@ class conditional_table_gen(multi_rv_generic):
         Returns
         -------
         rvs : ndarray
-            Random 2D tables of shape (`size`, `len(row)`, `len(col)`)
+            Random 2D tables of shape (`size`, `len(row)`, `len(col)`).
 
         Notes
         -----
@@ -5354,7 +5350,7 @@ col : array_like
 """
 
 _ctab_doc_callparams_note = """\
-The row and column vectors must be one-dimensional, not empty, 
+The row and column vectors must be one-dimensional, not empty,
 and each sum up to the same value. They cannot contain negative
 or noninteger entries.
 """
@@ -5364,22 +5360,37 @@ Parameters
 ----------{_ctab_doc_callparams}
 """
 
-_ctab_docdict_params = {
-    "_doc_callparams": _ctab_doc_callparams,
-    "_doc_mean_callparams": _ctab_doc_mean_callparams,
-    "_doc_callparams_note": _ctab_doc_callparams_note,
-    "_doc_random_state": _doc_random_state,
-}
-
 _ctab_doc_frozen_callparams_note = """\
 See class definition for a detailed description of parameters."""
 
-_ctab_docdict_noparams = {
+_ctab_doc_pmf_callparams = """\
+Parameters
+----------
+x: array-like
+    Two-dimensional table of non-negative integers, or a
+    three-dimensional array of such tables. The first dimension
+    iterates over tables."""
+
+_ctab_doc_pmf_note = """\
+Notes
+-----
+The row and column marginals are computed from the argument."""
+
+_ctab_docdict_params = {
+    "_doc_random_state": _doc_random_state,
+    "_doc_callparams": _ctab_doc_callparams,
+    "_doc_mean_callparams": _ctab_doc_mean_callparams,
+    "_doc_callparams_note": _ctab_doc_callparams_note,
+    "_doc_pmf_callparams": _ctab_doc_pmf_callparams,
+    "_doc_pmf_note": _ctab_doc_pmf_note,
+}
+
+_ctab_docdict_noparams = _ctab_docdict_params.copy()
+_ctab_docdict_noparams.update({
     "_doc_callparams": "",
     "_doc_mean_callparams": "\n",
     "_doc_callparams_note": _ctab_doc_frozen_callparams_note,
-    "_doc_random_state": _doc_random_state,
-}
+})
 
 # Set frozen generator docstrings from corresponding docstrings in
 # conditional_table and fill in default strings in class docstrings
