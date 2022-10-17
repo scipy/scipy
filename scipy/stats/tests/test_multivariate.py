@@ -2488,6 +2488,13 @@ class TestConditionalTable:
         with pytest.raises(ValueError, match=message):
             conditional_table([1, 2], [1, 0])
 
+        row = [1, 3]
+        col = [2, 1, 1]
+        r, c, n = conditional_table._process_parameters([1, 3], [2, 1, 1])
+        assert_equal(row, r)
+        assert_equal(col, c)
+        assert n == np.sum(row)
+
     def test_pmf(self):
         row = [2, 6]
         col = [1, 3, 4]
