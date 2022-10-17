@@ -2495,6 +2495,36 @@ class TestConditionalTable:
         assert_equal(col, c)
         assert n == np.sum(row)
 
+    def test_process_rvs_method_None(self, arg):
+        message = ""
+        with pytest.raises(NotImplementedError):
+            conditional_table.rvs()
+        conditional_table.rvs()
+
+    def test_rvs_method(self, arg):
+        if arg == "patefield":
+            pytest.xfail("patefield not yet implemented")
+ 
+        row = [1, 3]
+        col = [2, 1, 1]
+        rvs1 = conditional_table.rvs(row, col, size=1000, method="boyett", random_state=1)
+
+        rvs2 = conditional_table.rvs(row, col, size=1000, method="patefield", random_state=1)
+
+        tab1, count1 = np.unique(rvs1, axis=0, return_counts=True)
+        tab2, count2 = np.unique(rvs1, axis=0, return_counts=True)
+
+        assert_equal(tab1, tab2)
+        assert_allclose(count1, count2)
+
+    def test_process_rvs_method_bad_argument(self):
+        row = [1, 3]
+        col = [2, 1, 1]
+
+        message = "'foo' not recognized, must be one of {None, 'boyett', 'patefield'}"
+        with pytest.raises(ValueError, match=message):
+            conditional_table.rvs(row, col, method="foo")
+
     def test_pmf(self):
         row = [2, 6]
         col = [1, 3, 4]

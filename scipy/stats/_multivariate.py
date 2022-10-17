@@ -5268,11 +5268,11 @@ class conditional_table_gen(multi_rv_generic):
         """
         r, c, n = self._process_parameters(row, col)
         random_state = self._get_random_state(random_state)
-        meth = self._process_method(method, r, c, n)
+        meth = self._process_rvs_method(method, r, c, n)
         return meth(r, c, n, size, random_state)
 
     @classmethod
-    def _process_method(cls, method, r, c, n):
+    def _process_rvs_method(cls, method, r, c, n):
         known_methods = {
             None: cls._rvs_select(r, c, n),
             "boyett": cls._rvs_boyett,
@@ -5281,7 +5281,8 @@ class conditional_table_gen(multi_rv_generic):
         try:
             return known_methods[method]
         except KeyError:
-            raise ValueError(f"'{method}' not recognized, must be one of {{{', '.join(known_methods.keys())}}}")
+            raise ValueError(f"'{method}' not recognized, "
+                             f"must be one of {set(known_methods)}")
 
     @classmethod
     def _rvs_select(cls, r, c, n):
