@@ -14,8 +14,7 @@ from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom
-from . import _mvn, _covariance
-
+from . import _mvn, _covariance, contingency
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -5090,7 +5089,7 @@ class conditional_table_gen(multi_rv_generic):
         Probability of `x` occuring in distribution of conditional tables.
     mean(row, col)
         Mean table.
-    rvs(row, col, size=1, random_state=None)
+    rvs(row, col, size=1, method=None, random_state=None)
         Draw random tables with given row and column vector sums.
 
     Parameters
@@ -5106,7 +5105,9 @@ class conditional_table_gen(multi_rv_generic):
     O(N) time and space complexity, where N is the total sum of entries in the
     table. Patefield's algorithm has O(K x log(N)) time complexity, where K is
     the number of cells in the table and requires only a small constant work
-    space.
+    space. By default, the `rvs` method selects the fastest algorithm based on
+    the input, but you can specify the algorithm with the keyword `method`.
+    Allowed values are "boyett" and "patefield".
 
     .. versionadded: 1.9.3
 
@@ -5290,8 +5291,8 @@ class conditional_table_gen(multi_rv_generic):
         # for now we always return "boyett", because "patefield"
         # is not yet implemented.
         
-        k = len(r) * len(c)  # number of cells
         # Example:
+        # k = len(r) * len(c)  # number of cells
         # if n > fac * np.log(n) * k:
         #     return cls._rvs_patefield
         # return cls._rvs_boyett
@@ -5300,23 +5301,15 @@ class conditional_table_gen(multi_rv_generic):
 
     @staticmethod
     def _rvs_boyett(row, col, tot, size, random_state):
-        # 'col_idx' could be cached in the frozen distribution
-        k = 0
-        col_idx = np.empty(tot, dtype=np.int_)
-        for i, ci in enumerate(col):
-            col_idx[k:k+ci] = i
-            k += ci
+        x = np.repeat(np.arange(len(row)), row)
+        y = np.repeat(np.arange(len(col)), col)
 
-        matrix = np.zeros((size, len(row), len(col)))
-        for o in range(size):
-            random_state.shuffle(col_idx)
-            k = 0
-            # slow in pure Python, will be replaced by C code
-            for i, ri in enumerate(row):
-                for j in range(ri):
-                    matrix[o, i, col_idx[k+j]] += 1
-                k += ri
-        return matrix
+        def crosstab(x, y):
+            return contingency.crosstab(x, y).count
+
+        tables = [crosstab(x, random_state.permutation(y))
+                  for i in range(size)]
+        return np.asarray(tables)
 
     @staticmethod
     def _rvs_patefield(row, col, tot, size, random_state):

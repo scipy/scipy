@@ -2495,15 +2495,18 @@ class TestConditionalTable:
         assert_equal(col, c)
         assert n == np.sum(row)
 
-    def test_process_rvs_method_None(self, arg):
-        message = ""
-        with pytest.raises(NotImplementedError):
-            conditional_table.rvs()
-        conditional_table.rvs()
+    def test_process_rvs_method_on_None(self):
+        # TODO also test with a case where "patefield" is selected
+        row = [1, 3]
+        col = [2, 1, 1]
 
-    def test_rvs_method(self, arg):
-        if arg == "patefield":
-            pytest.xfail("patefield not yet implemented")
+        expected = conditional_table.rvs(row, col, method="boyett", random_state=1)
+        got = conditional_table.rvs(row, col, method=None, random_state=1)
+
+        assert_equal(expected, got)
+
+    def test_rvs_method(self):
+        pytest.xfail("patefield not yet implemented")
  
         row = [1, 3]
         col = [2, 1, 1]
@@ -2521,7 +2524,8 @@ class TestConditionalTable:
         row = [1, 3]
         col = [2, 1, 1]
 
-        message = "'foo' not recognized, must be one of {None, 'boyett', 'patefield'}"
+        # order of items in set is random, so cannot check that
+        message = "'foo' not recognized, must be one of"
         with pytest.raises(ValueError, match=message):
             conditional_table.rvs(row, col, method="foo")
 
@@ -2563,6 +2567,8 @@ class TestConditionalTable:
         rvs = conditional_table.rvs(row, col, size=1000, random_state=123)
         mean = conditional_table.mean(row, col)
         assert_allclose(rvs.mean(0), mean, atol=5e-2)
+        assert_equal(rvs.sum(axis=-1), np.broadcast_to(row, (1000, 2)))
+        assert_equal(rvs.sum(axis=-2), np.broadcast_to(col, (1000, 3)))
 
     def test_frozen(self):
         row = [2, 6]
