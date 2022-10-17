@@ -2467,6 +2467,30 @@ class TestMultivariateHypergeom:
 
 
 class TestConditionalTable:
+    def test_pmf(self):
+        row = [2, 6]
+        col = [1, 3, 4]
+        rvs = conditional_table.rvs(row, col, size=1000, random_state=123)
+
+        unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
+
+        p = conditional_table.pmf(unique_rvs)
+        p0 = conditional_table.pmf(unique_rvs[0])
+        assert_equal(p0, p[0])
+        assert_allclose(p * len(rvs), counts, rtol=0.1)
+
+    def test_logpmf(self):
+        row = [2, 6]
+        col = [1, 3, 4]
+        rvs = conditional_table.rvs(row, col, size=1000, random_state=123)
+
+        unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
+
+        lp0 = conditional_table.logpmf(unique_rvs[0])
+        lp = conditional_table.logpmf(unique_rvs)
+        assert_equal(lp0, lp[0])
+        assert_allclose(np.exp(lp) * len(rvs), counts, rtol=0.1)
+
     def test_mean(self):
         row = [2, 6]
         col = [1, 3, 4]
@@ -2475,7 +2499,7 @@ class TestConditionalTable:
 
     def test_rvs(self):
         # test if `rvs` is unbiased and large sample size converges
-        # to the true mean.
+        # to the true mean. `test_pmf` also implicitly tests `rvs`.
         row = [2, 6]
         col = [1, 3, 4]
         rvs = conditional_table.rvs(row, col, size=1000, random_state=123)

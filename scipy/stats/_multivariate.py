@@ -5084,6 +5084,10 @@ class conditional_table_gen(multi_rv_generic):
 
     Methods
     -------
+    logpmf(x)
+        Log-probability of `x` occuring in distribution of conditional tables.
+    pmf(x)
+        Probability of `x` occuring in distribution of conditional tables.
     mean(row, col)
         Mean table.
     rvs(row, col, size=1, random_state=None)
@@ -5097,12 +5101,14 @@ class conditional_table_gen(multi_rv_generic):
     -----
     %(_doc_callparams_note)s
 
-    Random elements from the distribution are generated either with a shuffling
-    algorithm or with Patefield's algorithm [1]_. The shuffling algorithm has
+    Random elements from the distribution are generated either with Boyett's
+    [1]_ or Patefield's algorithm [2]_. Boyett's algorithm has
     O(N) time and space complexity, where N is the total sum of entries in the
     table. Patefield's algorithm has O(K x log(N)) time complexity, where K is
     the number of cells in the table and requires only a small constant work
     space.
+
+    .. versionadded: 1.9.3
 
     Examples
     --------
@@ -5123,11 +5129,10 @@ class conditional_table_gen(multi_rv_generic):
     array([[[1., 0., 0.],
             [1., 3., 1.]]])
 
-    .. versionadded: 1.9.3
-
     References
     ----------
-    .. [1] Patefield's, AS 159 Appl. Statist. (1981) vol. 30, no. 1.
+    .. [1] J. Boyett, AS 144 Appl. Statist. 28 (1979) 329-332
+    .. [2] W.M. Patefield, AS 159 Appl. Statist. 30 (1981) 91-97
     """
 
     def __init__(self, seed=None):
@@ -5140,7 +5145,8 @@ class conditional_table_gen(multi_rv_generic):
         """
         return conditional_table_frozen(row, col, seed)
 
-    def _process_parameters(self, row, col):
+    @staticmethod
+    def _process_parameters(row, col):
         """
         Check that row and column vectors are one-dimensional, that they do not
         contain negative entries, and that the sums over both vectors are equal.
@@ -5149,22 +5155,80 @@ class conditional_table_gen(multi_rv_generic):
         c = np.array(col, dtype=np.int_, copy=True)
 
         if np.ndim(r) != 1:
-            raise ValueError("row array must be one-dimensional")
+            raise ValueError("`row` must be one-dimensional")
         if np.ndim(c) != 1:
-            raise ValueError("column array must be one-dimensional")
+            raise ValueError("`col` must be one-dimensional")
 
         if np.any(r < 0):
-            raise ValueError("each element of row array must be non-negative")
+            raise ValueError("each element of `row` must be non-negative")
 
         if np.any(c < 0):
-            raise ValueError("each element of column array must be non-negative")
+            raise ValueError("each element of `col` must be non-negative")
 
         ntot_row = np.sum(row)
         ntot_col = np.sum(col)
         if ntot_row != ntot_col:
-            raise ValueError("Sums over all rows and columns must be equal.")
+            raise ValueError("Sums over `row` and `col` must be equal.")
 
         return r, c, ntot_row
+
+    def logpmf(self, x):
+        """Log-probability of sample occuring in distribution of conditional tables.
+
+        Parameters
+        ----------
+        x: array-like
+            Two-dimensional table of non-negative integers, or a
+            three-dimensional array of such tables. The first dimension
+            iterates over tables.
+
+        Returns
+        -------
+        logpmf : ndarray or scalar
+            Log of the probability mass function evaluated at `x`
+        """
+        if np.any(x < 0):
+            raise ValueError("`x` must contain only non-negative integers")
+
+        x = np.asarray(x)
+        if x.ndim < 2:
+            raise ValueError("`x` must be at least two-dimensional")
+
+        if np.any(x.shape[:2] == 0):
+            raise ValueError("`x` must have at least one row and one column")
+
+        expand = x.ndim == 2
+        if expand:
+            x = x.reshape(1, *x.shape)
+
+        r = np.sum(x, axis=2)
+        c = np.sum(x, axis=1)
+        n = np.sum(r, axis=1)
+
+        def lnfac(x):
+            return gammaln(x + 1)
+
+        res = np.sum(lnfac(r), axis=1) + np.sum(lnfac(c), axis=1) - lnfac(n) - np.sum(lnfac(x), axis=(1, 2))
+
+        if expand:
+            return res[0]
+
+        return res
+
+    def pmf(self, x):
+        """Probability of sample occuring in distribution of conditional tables.
+
+        Parameters
+        ----------
+        x: array-like
+            Two-dimensional table of non-negative integers.
+
+        Returns
+        -------
+        mean: ndarray
+            The mean of the distribution
+        """
+        return np.exp(cls.logpmf(x))
 
     def mean(self, row, col):
         """Mean of distribution of conditional tables.
@@ -5189,8 +5253,8 @@ class conditional_table_gen(multi_rv_generic):
         size : integer, optional
             Number of samples to draw (default 1).
         method : str, optional
-            Which method to use, "shuffle" or "patefield". If None (default),
-            an attempt is made to select the fastest method for this input.
+            Which method to use, "boyett" or "patefield". If None (default),
+            selects the fastest method for this input.
         %(_doc_random_state)s
 
         Returns
@@ -5211,26 +5275,31 @@ class conditional_table_gen(multi_rv_generic):
     def _process_method(cls, method, r, c, n):
         known_methods = {
             None: cls._rvs_select(r, c, n),
-            "shuffle": cls._rvs_shuffle,
+            "boyett": cls._rvs_boyett,
             "patefield": cls._rvs_patefield,
         }
         try:
             return known_methods[method]
         except KeyError:
-            raise ValueError(f"{method} not recognized, must be one of {{{', '.join(known_methods.keys())}}}")
+            raise ValueError(f"'{method}' not recognized, must be one of {{{', '.join(known_methods.keys())}}}")
 
     @classmethod
     def _rvs_select(cls, r, c, n):
         # TODO find optimal empirical threshold with benchmarks,
-        # for now we always return "shuffle", because "patefield"
-        # is not yet implemented. Example:
-        # if n > 1000:
-        #     return "patefield"
-        return cls._rvs_shuffle
+        # for now we always return "boyett", because "patefield"
+        # is not yet implemented.
+        
+        k = len(r) * len(c)  # number of cells
+        # Example:
+        # if n > fac * np.log(n) * k:
+        #     return cls._rvs_patefield
+        # return cls._rvs_boyett
+        # 'fac' has to be estimated empirically
+        return cls._rvs_boyett
 
     @staticmethod
-    def _rvs_shuffle(row, col, tot, size, random_state):
-        # could be cached in the frozen distribution
+    def _rvs_boyett(row, col, tot, size, random_state):
+        # 'col_idx' could be cached in the frozen distribution
         k = 0
         col_idx = np.empty(tot, dtype=np.int_)
         for i, ci in enumerate(col):
@@ -5267,13 +5336,18 @@ class conditional_table_frozen(multi_rv_frozen):
             return self._params
         self._dist._process_parameters = _process_parameters
 
+    def logpmf(self, x):
+        return self._dist.logpmf(x)
+
+    def pmf(self, x):
+        return self._dist.pmf(x)
+
     def mean(self):
         return self._dist.mean(None, None)
 
     def rvs(self, size=1, method=None, random_state=None):
-        d = self._dist
-        random_state = d._get_random_state(random_state)
-        return d.rvs(None, None, size, method, random_state)
+        # optimisations are possible here
+        return self._dist.rvs(None, None, size, method, random_state)
 
 
 _ctab_doc_callparams = """
@@ -5284,9 +5358,8 @@ col : array_like
 """
 
 _ctab_doc_callparams_note = """\
-The row and column vector sums must be one-dimensional, not empty, and they must
-each sum up to the same value. They cannot contain negative or noninteger
-entries.
+The row and column vectors must be one-dimensional, not empty, and each sum up
+to the same value. They cannot contain negative or noninteger entries.
 """
 
 _ctab_doc_mean_callparams = f"""
@@ -5311,11 +5384,11 @@ _ctab_docdict_noparams = {
     "_doc_random_state": _doc_random_state,
 }
 
-conditional_table_gen.__doc__ = doccer.docformat(conditional_table_gen.__doc__, _ctab_docdict_params)
-
 # Set frozen generator docstrings from corresponding docstrings in
 # conditional_table and fill in default strings in class docstrings
-for name in ['mean', 'rvs']:
+conditional_table_gen.__doc__ = doccer.docformat(
+    conditional_table_gen.__doc__, _ctab_docdict_params)
+for name in ['logpmf', 'pmf', 'mean', 'rvs']:
     method = conditional_table_gen.__dict__[name]
     method_frozen = conditional_table_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(
