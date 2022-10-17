@@ -18,7 +18,7 @@ from scipy.stats._distn_infrastructure import rv_discrete_frozen
 
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
 distdiscrete += [[stats.rv_discrete(values=vals), ()],
-                 [stats.rv_sample(xk=vals[0], pk=vals[1]), ()]]
+                 [stats.rv_count(xk=vals[0], pk=vals[1]), ()]]
 
 # For these distributions, test_discrete_basic only runs with test mode full
 distslow = {'zipfian', 'nhypergeom'}

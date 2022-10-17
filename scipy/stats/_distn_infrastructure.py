@@ -3837,7 +3837,7 @@ class _rv_sample(rv_discrete):
                           "SciPy 1.11.0", DeprecationWarning)
 
         if values is None:
-            raise ValueError("rv_sample.__init__(..., values=None,...)")
+            raise ValueError("rv_count.__init__(..., values=None,...)")
 
         # cf generic freeze
         self._ctor_param = dict(
@@ -3912,28 +3912,98 @@ class _rv_sample(rv_discrete):
         return self.a, self.b
 
     def _pmf(self, x):
-        return rv_sample._pmf(self, x)
+        return rv_count._pmf(self, x)
 
     def _cdf(self, x):
-        return rv_sample._cdf(self, x)
+        return rv_count._cdf(self, x)
 
     def _ppf(self, q):
-        return rv_sample._ppf(self, q)
+        return rv_count._ppf(self, q)
 
     def _rvs(self, size=None, random_state=None):
-        return rv_sample._rvs(self, size, random_state)
+        return rv_count._rvs(self, size, random_state)
 
     def _entropy(self):
-        return rv_sample._entropy(self)
+        return rv_count._entropy(self)
 
     def generic_moment(self, n):
-        return rv_sample.generic_moment(self, n)
+        return rv_count.generic_moment(self, n)
 
     def _expect(self, fun, lb, ub, *args, **kwds):
-        return rv_sample._expect(self, fun, lb, ub, *args, **kwds)
+        return rv_count._expect(self, fun, lb, ub, *args, **kwds)
 
 
-class rv_sample(rv_discrete):
+class rv_count(rv_discrete):
+    """A discrete random variable defined by support points and probabilities.
+
+    Parameters
+    ----------
+    xk : array_like
+        Support points.
+    pk : array_like
+        The probabilities, corresponding to `xk`
+    name : str, optional
+        The name of the instance. This string is used to construct the default
+        example for distributions.
+    longname : str, optional
+        This string is used as part of the first line of the docstring returned
+        when a subclass has no docstring of its own. Note: `longname` exists
+        for backwards compatibility, do not use for new subclasses.
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
+    Methods
+    -------
+    rvs
+    pmf
+    logpmf
+    cdf
+    logcdf
+    sf
+    logsf
+    ppf
+    isf
+    moment
+    stats
+    entropy
+    expect
+    median
+    mean
+    std
+    var
+    interval
+    __call__
+    support
+
+    Notes
+    -----
+    This class is a discrete analog of `rv_histogram`.
+
+    Examples
+    --------
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> xk = np.arange(7)
+    >>> pk = (0.1, 0.2, 0.3, 0.1, 0.1, 0.0, 0.2)
+    >>> custm = stats.rv_count(xk, pk, name='custm')
+    >>>
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.plot(xk, custm.pmf(xk), 'ro', ms=12, mec='r')
+    >>> ax.vlines(xk, 0, custm.pmf(xk), colors='r', lw=4)
+    >>> plt.show()
+
+    Random number generation:
+
+    >>> R = custm.rvs(size=100)
+
+    """
     def __init__(self, xk, pk, name=None, longname=None, seed=None):
         super(rv_discrete, self).__init__(seed)
 
@@ -3985,7 +4055,7 @@ class rv_sample(rv_discrete):
         """Return the current version of _ctor_param, possibly updated by user.
 
         Used by freezing. Keep this in sync with the signature of __init__.
-        Just copy the _ctor_param for rv_sample.
+        Just copy the _ctor_param for rv_count.
         """
         dct = self._ctor_param.copy()
         return dct
