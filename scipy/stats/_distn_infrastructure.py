@@ -3128,7 +3128,7 @@ class rv_discrete(rv_generic):
     """
     def __new__(cls, a=0, b=inf, name=None, badvalue=None,
                 moment_tol=1e-8, values=None, inc=1, longname=None,
-                shapes=None, extradoc=None, seed=None):
+                shapes=None, extradoc=None, seed=None, xk=None, pk=None):
 
         if values is not None:
             # dispatch to a subclass
@@ -3828,31 +3828,23 @@ class rv_sample(rv_discrete):
 
     The ctor ignores most of the arguments, only needs the `values` argument.
     """
-    def __init__(self, a=0, b=inf, name=None, badvalue=None,
-                 moment_tol=1e-8, values=None, inc=1, longname=None,
-                 shapes=None, extradoc=None, seed=None):
+    def __init__(self, xk=None, pk=None, name=None, longname=None, seed=None,
+                 values=None):
+        if values is None:
+            values = xk, pk
 
         super(rv_discrete, self).__init__(seed)
-
-        if extradoc is not None:
-            warnings.warn("extradoc is deprecated and will be removed in "
-                          "SciPy 1.11.0", DeprecationWarning)
 
         if values is None:
             raise ValueError("rv_sample.__init__(..., values=None,...)")
 
         # cf generic freeze
-        self._ctor_param = dict(
-            a=a, b=b, name=name, badvalue=badvalue,
-            moment_tol=moment_tol, values=values, inc=inc,
-            longname=longname, shapes=shapes, extradoc=extradoc, seed=seed)
+        self._ctor_param = dict(xk=xk, pk=pk, seed=seed,
+                                name=name, longname=longname, values=values)
 
-        if badvalue is None:
-            badvalue = nan
-        self.badvalue = badvalue
-        self.moment_tol = moment_tol
-        self.inc = inc
-        self.shapes = shapes
+        self.badvalue = np.nan
+        self.moment_tol = 1e-8
+        self.inc = 1
         self.vecentropy = self._entropy
 
         xk, pk = values
@@ -3881,7 +3873,7 @@ class rv_sample(rv_discrete):
 
         self._attach_methods()
 
-        self._construct_docstrings(name, longname, extradoc)
+        self._construct_docstrings(name, longname, extradoc=None)
 
     def __getstate__(self):
         dct = self.__dict__.copy()
@@ -3950,6 +3942,14 @@ class rv_sample(rv_discrete):
         supp = self.xk[(lb <= self.xk) & (self.xk <= ub)]
         vals = fun(supp)
         return np.sum(vals)
+
+    def _updated_ctor_param(self):
+        """Return the current version of _ctor_param, possibly updated by user.
+        Used by freezing. Keep this in sync with the signature of __init__.
+        Just copy the _ctor_param for rv_sample.
+        """
+        dct = self._ctor_param.copy()
+        return dct
 
 
 def _check_shape(argshape, size):
