@@ -7061,7 +7061,7 @@ add_newdoc("itmodstruve0",
     Wrapper for a Fortran routine created by Shanjie Zhang and Jianming
     Jin [1]_.
 
-    See also
+    See Also
     --------
     modstruve: Modified Struve function which is integrated by this function
 
@@ -9231,12 +9231,12 @@ add_newdoc("modstruve",
     1.102759787367716
 
     Calculate the modified Struve function at 2 for orders 1, 2 and 3 by
-    roviding a list for the the order parameter `v`.
+    providing a list for the order parameter `v`.
 
     >>> modstruve([1, 2, 3], 2.)
     array([1.10275979, 0.41026079, 0.11247294])
 
-    Calculate the modified Struve function of oder 1 for several points
+    Calculate the modified Struve function of order 1 for several points
     by providing an array for `x`.
 
     >>> points = np.array([2., 5., 8.])
@@ -11951,7 +11951,7 @@ add_newdoc("struve",
 
     See also
     --------
-    modstruve: Mofied Struve function
+    modstruve: Modified Struve function
 
     References
     ----------
@@ -11969,12 +11969,12 @@ add_newdoc("struve",
     0.6467637282835622
 
     Calculate the Struve function at 2 for orders 1, 2 and 3 by providing
-    a list for the the order parameter `v`.
+    a list for the order parameter `v`.
 
     >>> struve([1, 2, 3], 2.)
     array([0.64676373, 0.28031806, 0.08363767])
 
-    Calculate the Struve function of oder 1 for several points by providing
+    Calculate the Struve function of order 1 for several points by providing
     an array for `x`.
 
     >>> points = np.array([2., 5., 8.])
@@ -11994,7 +11994,7 @@ add_newdoc("struve",
            [0.28031806, 1.56937455, 1.51769363],
            [0.08363767, 1.50872065, 2.98697513]])
 
-    Plot the Struve functions of order 0 to 3 from - 10 to 10.
+    Plot the Struve functions of order 0 to 3 from -10 to 10.
 
     >>> fig, ax = plt.subplots()
     >>> x = np.linspace(-10., 10., 1000)
