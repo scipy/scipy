@@ -25,6 +25,9 @@ def prepare_input(x, y, axis, dydx=None):
         raise ValueError("`x` must contain real values.")
     x = x.astype(float)
 
+    if y.size == 0:
+        raise ValueError("`y` cannot be an empty array.")
+
     if np.issubdtype(y.dtype, np.complexfloating):
         dtype = complex
     else:
