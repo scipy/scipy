@@ -30,7 +30,7 @@ Authors
 * Andrew Nelson (1)
 * o-alexandre-felipe (1) +
 * Tirth Patel (1)
-* Tyler Reddy (46)
+* Tyler Reddy (51)
 * Martin Reinecke (1)
 * Marie Roald (1) +
 * Pamphile Roy (2)
@@ -39,7 +39,7 @@ Authors
 * ehsan shirvanian (1) +
 * Mamoru TASAKA (1) +
 * Samuel Wallan (1)
-* Warren Weckesser (6)
+* Warren Weckesser (7)
 * Gavin Zhang (1) +
 
 A total of 31 people contributed to this release.
@@ -118,4 +118,5 @@ Pull requests for 1.9.3
 * `#17193 <https://github.com/scipy/scipy/pull/17193>`__: MAINT: update meson.build to make it work on IBM i system
 * `#17200 <https://github.com/scipy/scipy/pull/17200>`__: BLD: fix issue with incomplete threads dependency handling
 * `#17204 <https://github.com/scipy/scipy/pull/17204>`__: Keepdims incorrectly documneted fix
+* `#17209 <https://github.com/scipy/scipy/pull/17209>`__: MAINT: Handle numpy's deprecation of accepting out-of-bound integers.
 * `#17210 <https://github.com/scipy/scipy/pull/17210>`__: BLD: fix invalid shebang for build helper script
