@@ -699,10 +699,12 @@ class TestCubicSpline:
         y3 = [1, 2, 3]
         x1 = [1]
         y1 = [1]
+        y_empty = np.empty(shape=(4, 0))
 
         assert_raises(ValueError, CubicSpline, xc, y)
         assert_raises(ValueError, CubicSpline, xn, y)
         assert_raises(ValueError, CubicSpline, x, yn)
+        assert_raises(ValueError, CubicSpline, x, y_empty)
         assert_raises(ValueError, CubicSpline, xo, y)
         assert_raises(ValueError, CubicSpline, x, y3)
         assert_raises(ValueError, CubicSpline, x[:, np.newaxis], y)
