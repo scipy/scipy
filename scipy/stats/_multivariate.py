@@ -5149,8 +5149,9 @@ class conditional_table_gen(multi_rv_generic):
     @staticmethod
     def _process_parameters(row, col):
         """
-        Check that row and column vectors are one-dimensional, that they do not
-        contain negative entries, and that the sums over both vectors are equal.
+        Check that row and column vectors are one-dimensional, that they do
+        not contain negative entries, and that the sums over both vectors
+        are equal.
         """
         r = np.array(row, dtype=np.int_, copy=True)
         c = np.array(col, dtype=np.int_, copy=True)
@@ -5209,7 +5210,8 @@ class conditional_table_gen(multi_rv_generic):
         def lnfac(x):
             return gammaln(x + 1)
 
-        res = np.sum(lnfac(r), axis=1) + np.sum(lnfac(c), axis=1) - lnfac(n) - np.sum(lnfac(x), axis=(1, 2))
+        res = (np.sum(lnfac(r), axis=1) + np.sum(lnfac(c), axis=1) 
+               - lnfac(n) - np.sum(lnfac(x), axis=(1, 2)))
 
         if expand:
             return res[0]
@@ -5290,7 +5292,7 @@ class conditional_table_gen(multi_rv_generic):
         # TODO find optimal empirical threshold with benchmarks,
         # for now we always return "boyett", because "patefield"
         # is not yet implemented.
-        
+
         # Example:
         # k = len(r) * len(c)  # number of cells
         # if n > fac * np.log(n) * k:
@@ -5352,8 +5354,9 @@ col : array_like
 """
 
 _ctab_doc_callparams_note = """\
-The row and column vectors must be one-dimensional, not empty, and each sum up
-to the same value. They cannot contain negative or noninteger entries.
+The row and column vectors must be one-dimensional, not empty, 
+and each sum up to the same value. They cannot contain negative
+or noninteger entries.
 """
 
 _ctab_doc_mean_callparams = f"""

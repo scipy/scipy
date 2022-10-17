@@ -2500,22 +2500,26 @@ class TestConditionalTable:
         row = [1, 3]
         col = [2, 1, 1]
 
-        expected = conditional_table.rvs(row, col, method="boyett", random_state=1)
-        got = conditional_table.rvs(row, col, method=None, random_state=1)
+        expected = conditional_table.rvs(row, col, 
+            method="boyett", random_state=1)
+        got = conditional_table.rvs(row, col,
+            method=None, random_state=1)
 
         assert_equal(expected, got)
 
     def test_rvs_method(self):
         pytest.xfail("patefield not yet implemented")
- 
+
         row = [1, 3]
         col = [2, 1, 1]
-        rvs1 = conditional_table.rvs(row, col, size=1000, method="boyett", random_state=1)
+        rvs1 = conditional_table.rvs(row, col, size=1000,
+            method="boyett", random_state=1)
 
-        rvs2 = conditional_table.rvs(row, col, size=1000, method="patefield", random_state=1)
+        rvs2 = conditional_table.rvs(row, col, size=1000,
+            method="patefield", random_state=1)
 
         tab1, count1 = np.unique(rvs1, axis=0, return_counts=True)
-        tab2, count2 = np.unique(rvs1, axis=0, return_counts=True)
+        tab2, count2 = np.unique(rvs2, axis=0, return_counts=True)
 
         assert_equal(tab1, tab2)
         assert_allclose(count1, count2)
