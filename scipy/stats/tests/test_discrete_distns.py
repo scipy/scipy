@@ -574,6 +574,9 @@ def test_rv_sample_subclassing():
             return 42
 
     s = S(xk=[1, 2, 3], pk=[0.2, 0.7, 0.1])
-    assert_allclose(s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=42)
+    assert_allclose(s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
     assert s.extra() == 42
 
+    # make sure subclass freezes correctly
+    frozen_s = s()
+    assert_allclose(frozen_s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
