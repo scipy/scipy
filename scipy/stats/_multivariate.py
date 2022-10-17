@@ -5228,7 +5228,7 @@ class conditional_table_gen(multi_rv_generic):
         mean: ndarray
             The mean of the distribution
         """
-        return np.exp(cls.logpmf(x))
+        return np.exp(self.logpmf(x))
 
     def mean(self, row, col):
         """Mean of distribution of conditional tables.
