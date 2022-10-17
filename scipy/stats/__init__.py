@@ -40,7 +40,7 @@ Each univariate distribution is an instance of a subclass of `rv_continuous`
 
    rv_continuous
    rv_discrete
-   rv_sample
+   rv_count
    rv_histogram
 
 Continuous distributions
@@ -486,7 +486,7 @@ from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
 from ._stats_py import *
 from ._variation import variation
 from .distributions import *
-from ._distn_infrastructure import rv_sample
+from ._distn_infrastructure import rv_count
 from ._morestats import *
 from ._binomtest import binomtest
 from ._binned_statistic import *

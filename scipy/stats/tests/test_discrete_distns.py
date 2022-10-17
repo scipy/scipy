@@ -2,7 +2,6 @@ import pytest
 from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
                          boltzmann, skellam, zipf, zipfian, binom, nbinom,
                          nchypergeom_fisher, nchypergeom_wallenius, randint)
-from scipy.stats import rv_sample
 
 import numpy as np
 from numpy.testing import (
@@ -565,18 +564,3 @@ def test_gh_17146():
     assert_allclose(pmf[-1], p)
     assert_allclose(pmf[0], 1-p)
     assert_equal(pmf[~i], 0)
-
-
-def test_rv_sample_subclassing():
-    # gh-8057: rv_sample cannot be subclassed easily
-    class S(rv_sample):
-        def extra(self):
-            return 42
-
-    s = S(xk=[1, 2, 3], pk=[0.2, 0.7, 0.1])
-    assert_allclose(s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
-    assert s.extra() == 42
-
-    # make sure subclass freezes correctly
-    frozen_s = s()
-    assert_allclose(frozen_s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
