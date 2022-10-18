@@ -103,7 +103,7 @@ cleanup:
 
 static PyMethodDef lsap_methods[] = {
     { "linear_sum_assignment",
-      linear_sum_assignment,
+      (PyCFunction)linear_sum_assignment,
       METH_VARARGS | METH_KEYWORDS,
 "Solve the linear sum assignment problem.\n"
 "\n"
@@ -167,6 +167,7 @@ static PyMethodDef lsap_methods[] = {
 "\n"
 "Examples\n"
 "--------\n"
+">>> import numpy as np\n"
 ">>> cost = np.array([[4, 1, 3], [2, 0, 5], [3, 2, 2]])\n"
 ">>> from scipy.optimize import linear_sum_assignment\n"
 ">>> row_ind, col_ind = linear_sum_assignment(cost)\n"

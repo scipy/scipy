@@ -10,6 +10,9 @@ on:
       - main
       - maintenance/**
 
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
 env:
   INSTALLDIR: "build-install"
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
@@ -42,9 +45,9 @@ jobs:
       shell: bash -l {0}
       run: |
         mkdir -p "${CCACHE_DIR}"
-        echo "::set-output name=dir::$CCACHE_DIR"
+        echo "dir=$CCACHE_DIR" >> $GITHUB_OUTPUT
         NOW=$(date -u +"%F-%T")
-        echo "::set-output name=timestamp::${NOW}"
+        echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
       uses:  actions/cache@v3
@@ -78,7 +81,7 @@ jobs:
 
     - name: Get Date
       id: get-date
-      run: echo "::set-output name=today::$(/bin/date -u '+%Y%m%d')"
+      run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Cache conda
@@ -100,6 +103,10 @@ jobs:
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
+
+        # optional test dependencies
+        conda install scikit-umfpack scikit-sparse
+
         # Python.org installers still use 10.9, so let's use that too. Note
         # that scikit-learn already changed to 10.13 in Jan 2021, so increasing
         # this number in the future (if needed) should not be a problem.

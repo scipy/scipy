@@ -215,6 +215,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     In this example, a problem with a large sparse matrix and bounds on the
     variables is solved.
 
+    >>> import numpy as np
     >>> from scipy.sparse import rand
     >>> from scipy.optimize import lsq_linear
     >>> rng = np.random.default_rng()

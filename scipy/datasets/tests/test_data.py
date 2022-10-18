@@ -1,18 +1,19 @@
 from scipy.datasets._registry import registry
-from scipy.datasets._fetchers import data
+from scipy.datasets._fetchers import fetch_data, data_fetcher
 from scipy.datasets import ascent, face, electrocardiogram
-from numpy.testing import assert_equal, assert_almost_equal, suppress_warnings
+from numpy.testing import assert_equal, assert_almost_equal
 import os
 import pytest
 
-
-data_dir = data.path
-
-# https://github.com/scipy/scipy/pull/15607#issuecomment-1176457275
-# TODO: Remove warning filter after next certifi release
-with suppress_warnings() as sup:
-    sup.filter(category=DeprecationWarning)
+try:
     import pooch
+except ImportError:
+    raise ImportError("Missing optional dependency 'pooch' required "
+                      "for scipy.datasets module. Please use pip or "
+                      "conda to install 'pooch'.")
+
+
+data_dir = data_fetcher.path  # type: ignore
 
 
 def _has_hash(path, expected_hash):
@@ -30,7 +31,7 @@ class TestDatasets:
 
         # test_setup phase
         for dataset in registry:
-            data.fetch(dataset)
+            fetch_data(dataset)
 
         yield
 

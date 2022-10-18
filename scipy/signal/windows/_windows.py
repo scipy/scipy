@@ -142,6 +142,7 @@ def boxcar(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -199,6 +200,7 @@ def triang(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -264,6 +266,7 @@ def parzen(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -323,6 +326,7 @@ def bohman(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -414,6 +418,7 @@ def blackman(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -475,6 +480,7 @@ def nuttall(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -522,6 +528,7 @@ def blackmanharris(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -583,6 +590,7 @@ def flattop(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -673,6 +681,7 @@ def bartlett(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -762,6 +771,7 @@ def hann(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -824,6 +834,7 @@ def tukey(M, alpha=0.5, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -894,6 +905,7 @@ def barthann(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1066,6 +1078,7 @@ def hamming(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1175,6 +1188,7 @@ def kaiser(M, beta, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1325,6 +1339,7 @@ def gaussian(M, std, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1395,6 +1410,7 @@ def general_gaussian(M, p, sig, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1492,6 +1508,7 @@ def chebwin(M, at, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1582,6 +1599,7 @@ def cosine(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1655,6 +1673,7 @@ def exponential(M, center=None, tau=1., sym=True):
     --------
     Plot the symmetric window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt

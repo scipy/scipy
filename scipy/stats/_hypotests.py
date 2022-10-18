@@ -11,8 +11,8 @@ from ._common import ConfidenceInterval
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
-from ._hypotests_pythran import _a_ij_Aij_Dij2
-from ._hypotests_pythran import (
+from ._stats_pythran import _a_ij_Aij_Dij2
+from ._stats_pythran import (
     _concordant_pairs as _P, _discordant_pairs as _Q
 )
 from scipy.stats import _stats_py
@@ -304,7 +304,7 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     prob_x1 = distributions.poisson.pmf(x1, nlmbd_hat1)
     prob_x2 = distributions.poisson.pmf(x2, nlmbd_hat2)
 
-    # compute constants for use in the the "pivot statistic" per the
+    # compute constants for use in the "pivot statistic" per the
     # unnumbered equation following (3.3).
     lmbd_x1 = x1 / n1
     lmbd_x2 = x2 / n2
@@ -748,7 +748,7 @@ def somersd(x, y=None, alternative='two-sided'):
     res : SomersDResult
         A `SomersDResult` object with the following fields:
 
-            correlation : float
+            statistic : float
                The Somers' :math:`D` statistic.
             pvalue : float
                The p-value for a hypothesis test whose null
@@ -872,7 +872,11 @@ def somersd(x, y=None, alternative='two-sided'):
     else:
         raise ValueError("x must be either a 1D or 2D array")
     d, p = _somers_d(table, alternative)
-    return SomersDResult(d, p, table)
+
+    # add alias for consistency with other correlation functions
+    res = SomersDResult(d, p, table)
+    res.correlation = d
+    return res
 
 
 # This could be combined with `_all_partitions` in `_resampling.py`
@@ -1902,6 +1906,7 @@ def tukey_hsd(*args):
     Here are some data comparing the time to relief of three brands of
     headache medicine, reported in minutes. Data adapted from [3]_.
 
+    >>> import numpy as np
     >>> from scipy.stats import tukey_hsd
     >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
     >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]

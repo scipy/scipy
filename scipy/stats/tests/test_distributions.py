@@ -1130,6 +1130,17 @@ class TestTruncnorm:
             stats.truncnorm.rvs(-10, -5, size=5,
                                 random_state=np.random.default_rng())
 
+    def test_logcdf_gh17064(self):
+        # regression test for gh-17064 - avoid roundoff error for logcdfs ~0
+        a = np.array([-np.inf, -np.inf, -8, -np.inf, 10])
+        b = np.array([np.inf, np.inf, 8, 10, np.inf])
+        x = np.array([10, 7.5, 7.5, 9, 20])
+        expected = [-7.619853024160525e-24, -3.190891672910947e-14,
+                    -3.128682067168231e-14, -1.1285122074235991e-19,
+                    -3.61374964828753e-66]
+        assert_allclose(stats.truncnorm(a, b).logcdf(x), expected)
+        assert_allclose(stats.truncnorm(-b, -a).logsf(-x), expected)
+
 
 class TestGenLogistic:
 
@@ -1324,6 +1335,20 @@ class TestLoggamma:
             assert_array_almost_equal(computed, [mean, var, skew, kurt],
                                       decimal=4)
 
+    @pytest.mark.parametrize('c', [0.1, 0.001])
+    def test_rvs(self, c):
+        # Regression test for gh-11094.
+        x = stats.loggamma.rvs(c, size=100000)
+        # Before gh-11094 was fixed, the case with c=0.001 would
+        # generate many -inf values.
+        assert np.isfinite(x).all()
+        # Crude statistical test.  About half the values should be
+        # less than the median and half greater than the median.
+        med = stats.loggamma.median(c)
+        btest = stats.binomtest(np.count_nonzero(x < med), len(x))
+        ci = btest.proportion_ci(confidence_level=0.999)
+        assert ci.low < 0.5 < ci.high
+
 
 class TestLogistic:
     # gh-6226
@@ -1383,15 +1408,16 @@ class TestLogistic:
         # to this system of equations are equal
         assert_allclose(fit_method, expected_solution, atol=1e-30)
 
-    @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
-    def test_fit_comp_optimizer(self, loc_rvs, scale_rvs):
-        data = stats.logistic.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
+    def test_fit_comp_optimizer(self):
+        data = stats.logistic.rvs(size=100, loc=0.5, scale=2)
 
         # obtain objective function to compare results of the fit methods
         args = [data, (stats.logistic._fitstart(data),)]
         func = stats.logistic._reduce_func(args, {})[1]
 
         _assert_less_or_close_loglike(stats.logistic, data, func)
+        _assert_less_or_close_loglike(stats.logistic, data, func, floc=1)
+        _assert_less_or_close_loglike(stats.logistic, data, func, fscale=1)
 
     @pytest.mark.parametrize('testlogcdf', [True, False])
     def test_logcdfsf_tails(self, testlogcdf):
@@ -1597,8 +1623,8 @@ class TestPareto:
                              [p for p in product([True, False], repeat=3)
                               if False in p])
     @np.errstate(invalid="ignore")
-    def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
-                                   fix_shape, fix_loc, fix_scale, rng):
+    def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
+                                    fix_shape, fix_loc, fix_scale, rng):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
                                 loc=rvs_loc, random_state=rng)
         args = [data, (stats.pareto._fitstart(data), )]
@@ -1819,6 +1845,25 @@ class TestPearson3:
         moment = stats.pearson3.moment(1, 0.000001)
         assert_equal(moment, 0)
         assert isinstance(moment, np.number)
+
+    def test_ppf_bug_17050(self):
+        # incorrect PPF for negative skews were reported in gh-17050
+        # Check that this is fixed (even in the array case)
+        skews = [-3, -1, 0, 0.5]
+        x_eval = 0.5
+        res = stats.pearson3.ppf(stats.pearson3.cdf(x_eval, skews), skews)
+        assert_allclose(res, x_eval)
+
+        # Negation of the skew flips the distribution about the origin, so
+        # the following should hold
+        skew = np.array([[-0.5], [1.5]])
+        x = np.linspace(-2, 2)
+        assert_allclose(stats.pearson3.pdf(x, skew),
+                        stats.pearson3.pdf(-x, -skew))
+        assert_allclose(stats.pearson3.cdf(x, skew),
+                        stats.pearson3.sf(-x, -skew))
+        assert_allclose(stats.pearson3.ppf(x, skew),
+                        -stats.pearson3.isf(x, -skew))
 
 
 class TestKappa4:
@@ -2170,7 +2215,7 @@ class TestInvgauss:
 
     @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
                              [(2, 0, 1), (np.random.rand(3)*10)])
-    def test_fit_MLE_comp_optimzer(self, rvs_mu, rvs_loc, rvs_scale):
+    def test_fit_MLE_comp_optimizer(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
 
@@ -2317,7 +2362,7 @@ class TestLaplace:
     @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10, -5),
                                                    (5, 10),
                                                    (.2, .5)])
-    def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale):
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale):
         data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
 
         # the log-likelihood function for laplace is given by
@@ -2374,6 +2419,78 @@ class TestLaplace:
         p = 1e-25
         x = stats.laplace.isf(p)
         assert_allclose(x, -np.log(2*p), rtol=1e-13)
+
+
+class TestPowerlaw(object):
+    @pytest.fixture(scope='function')
+    def rng(self):
+        return np.random.default_rng(1234)
+
+    @pytest.mark.parametrize("rvs_shape", [.1, .5, .75, 1, 2])
+    @pytest.mark.parametrize("rvs_loc", [-1, 0, 1])
+    @pytest.mark.parametrize("rvs_scale", [.1, 1, 5])
+    @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
+                             [p for p in product([True, False], repeat=3)
+                              if False in p])
+    def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
+                                    fix_shape, fix_loc, fix_scale, rng):
+        data = stats.powerlaw.rvs(size=250, a=rvs_shape, loc=rvs_loc,
+                                  scale=rvs_scale, random_state=rng)
+
+        args = [data, (stats.powerlaw._fitstart(data), )]
+        func = stats.powerlaw._reduce_func(args, {})[1]
+
+        kwds = dict()
+        if fix_shape:
+            kwds['f0'] = rvs_shape
+        if fix_loc:
+            kwds['floc'] = np.nextafter(data.min(), -np.inf)
+        if fix_scale:
+            kwds['fscale'] = rvs_scale
+        _assert_less_or_close_loglike(stats.powerlaw, data, func, **kwds)
+
+    def test_problem_case(self):
+        # An observed problem with the test method indicated that some fixed
+        # scale values could cause bad results, this is now corrected.
+        a = 2.50002862645130604506
+        location = 0.0
+        scale = 35.249023299873095
+
+        data = stats.powerlaw.rvs(a=a, loc=location, scale=scale, size=100,
+                                  random_state=np.random.default_rng(5))
+
+        kwds = {'fscale': data.ptp() * 2}
+        args = [data, (stats.powerlaw._fitstart(data), )]
+        func = stats.powerlaw._reduce_func(args, {})[1]
+
+        _assert_less_or_close_loglike(stats.powerlaw, data, func, **kwds)
+
+    def test_fit_warnings(self):
+        assert_fit_warnings(stats.powerlaw)
+        # test for error when `fscale + floc <= np.max(data)` is not satisfied
+        msg = r" Maximum likelihood estimation with 'powerlaw' requires"
+        with assert_raises(FitDataError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], floc=0, fscale=3)
+
+        # test for error when `data - floc >= 0`  is not satisfied
+        msg = r" Maximum likelihood estimation with 'powerlaw' requires"
+        with assert_raises(FitDataError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], floc=2)
+
+        # test for fixed location not less than `min(data)`.
+        msg = r" Maximum likelihood estimation with 'powerlaw' requires"
+        with assert_raises(FitDataError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], floc=1)
+
+        # test for when fixed scale is less than or equal to range of data
+        msg = r"Negative or zero `fscale` is outside"
+        with assert_raises(ValueError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], fscale=-3)
+
+        # test for when fixed scale is less than or equal to range of data
+        msg = r"`fscale` must be greater than the range of data."
+        with assert_raises(ValueError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], fscale=3)
 
 
 class TestInvGamma:
@@ -2741,6 +2858,49 @@ class TestSkewCauchy:
         assert_allclose(stats.skewcauchy.ppf(cdf, a), x)
 
 
+# Test data for TestSkewNorm.test_noncentral_moments()
+# The expected noncentral moments were computed by Wolfram Alpha.
+# In Wolfram Alpha, enter
+#    SkewNormalDistribution[0, 1, a] moment
+# with `a` replaced by the desired shape parameter.  In the results, there
+# should be a table of the first four moments. Click on "More" to get more
+# moments.  The expected moments start with the first moment (order = 1).
+_skewnorm_noncentral_moments = [
+    (2, [2*np.sqrt(2/(5*np.pi)),
+         1,
+         22/5*np.sqrt(2/(5*np.pi)),
+         3,
+         446/25*np.sqrt(2/(5*np.pi)),
+         15,
+         2682/25*np.sqrt(2/(5*np.pi)),
+         105,
+         107322/125*np.sqrt(2/(5*np.pi))]),
+    (0.1, [np.sqrt(2/(101*np.pi)),
+           1,
+           302/101*np.sqrt(2/(101*np.pi)),
+           3,
+           (152008*np.sqrt(2/(101*np.pi)))/10201,
+           15,
+           (107116848*np.sqrt(2/(101*np.pi)))/1030301,
+           105,
+           (97050413184*np.sqrt(2/(101*np.pi)))/104060401]),
+    (-3, [-3/np.sqrt(5*np.pi),
+          1,
+          -63/(10*np.sqrt(5*np.pi)),
+          3,
+          -2529/(100*np.sqrt(5*np.pi)),
+          15,
+          -30357/(200*np.sqrt(5*np.pi)),
+          105,
+          -2428623/(2000*np.sqrt(5*np.pi)),
+          945,
+          -242862867/(20000*np.sqrt(5*np.pi)),
+          10395,
+          -29143550277/(200000*np.sqrt(5*np.pi)),
+          135135]),
+]
+
+
 class TestSkewNorm:
     def setup_method(self):
         self.rng = check_random_state(1234)
@@ -2798,6 +2958,12 @@ class TestSkewNorm:
             p = stats.skewnorm.sf(-x, -a)
             assert_allclose(p, cdfval, rtol=1e-8)
 
+    @pytest.mark.parametrize('a, moments', _skewnorm_noncentral_moments)
+    def test_noncentral_moments(self, a, moments):
+        for order, expected in enumerate(moments, start=1):
+            mom = stats.skewnorm.moment(order, a)
+            assert_allclose(mom, expected, rtol=1e-14)
+
     def test_fit(self):
         rng = np.random.default_rng(4609813989115202851)
 
@@ -2820,6 +2986,23 @@ class TestSkewNorm:
         res = dist4.stats(moments='ms')
         ref = np.mean(rvs), stats.skew(rvs)
         assert_allclose(res, ref)
+
+        # Test behavior when skew of data is beyond maximum of skewnorm
+        rvs = stats.pareto.rvs(1, size=100, random_state=rng)
+
+        # MLE still works
+        res = stats.skewnorm.fit(rvs)
+        assert np.all(np.isfinite(res))
+
+        # MoM fits variance and skewness
+        a5, loc5, scale5 = stats.skewnorm.fit(rvs, method='mm')
+        assert np.isinf(a5)
+        # distribution infrastruction doesn't allow infinite shape parameters
+        # into _stats; it just bypasses it and produces NaNs. Calculate
+        # moments manually.
+        m, v = np.mean(rvs), np.var(rvs)
+        assert_allclose(m, loc5 + scale5 * np.sqrt(2/np.pi))
+        assert_allclose(v, scale5**2 * (1 - 2 / np.pi))
 
 
 class TestExpon:
@@ -4961,6 +5144,18 @@ class TestRayleigh:
     def test_fit_warnings(self):
         assert_fit_warnings(stats.rayleigh)
 
+    def test_fit_gh17088(self):
+        # `rayleigh.fit` could return a location that was inconsistent with
+        # the data. See gh-17088.
+        rng = np.random.default_rng(456)
+        loc, scale, size = 50, 600, 500
+        rvs = stats.rayleigh.rvs(loc, scale, size=size, random_state=rng)
+        loc_fit, _ = stats.rayleigh.fit(rvs)
+        assert loc_fit < np.min(rvs)
+        loc_fit, scale_fit = stats.rayleigh.fit(rvs, fscale=scale)
+        assert loc_fit < np.min(rvs)
+        assert scale_fit == scale
+
 
 class TestExponWeib:
 
@@ -5119,6 +5314,29 @@ class TestWeibull:
 
         ls = stats.weibull_max.logsf(-1e-9, 2, scale=3)
         assert_allclose(ls, np.log(-special.expm1(-1/9000000000000000000)))
+
+    def test_fit_min(self):
+        rng = np.random.default_rng(5985959307161735394)
+
+        c, loc, scale = 2, 3.5, 0.5  # arbitrary, valid parameters
+        dist = stats.weibull_min(c, loc, scale)
+        rvs = dist.rvs(size=100, random_state=rng)
+
+        # test that MLE still honors guesses and fixed parameters
+        c2, loc2, scale2 = stats.weibull_min.fit(rvs, 1.5, floc=3)
+        c3, loc3, scale3 = stats.weibull_min.fit(rvs, 1.6, floc=3)
+        assert loc2 == loc3 == 3  # fixed parameter is respected
+        assert c2 != c3  # different guess -> (slightly) different outcome
+        # quality of fit is tested elsewhere
+
+        # test that MoM honors fixed parameters, accepts (but ignores) guesses
+        c4, loc4, scale4 = stats.weibull_min.fit(rvs, 3, fscale=3, method='mm')
+        assert scale4 == 3
+        # because scale was fixed, only the mean and skewness will be matched
+        dist4 = stats.weibull_min(c4, loc4, scale4)
+        res = dist4.stats(moments='ms')
+        ref = np.mean(rvs), stats.skew(rvs)
+        assert_allclose(res, ref)
 
 
 class TestTruncWeibull(object):
@@ -5512,7 +5730,7 @@ class TestStudentizedRange:
     vs = [1, 3, 10, 20, 120, np.inf]
     ks = [2, 8, 14, 20]
 
-    data = zip(product(ps, vs, ks), qs)
+    data = list(zip(product(ps, vs, ks), qs))
 
     # A small selection of large-v cases generated with R's `ptukey`
     # Each case is in the format (q, k, v, r_result)
@@ -5533,8 +5751,9 @@ class TestStudentizedRange:
     @pytest.mark.slow
     def test_ppf_against_tables(self):
         for pvk, q_expected in self.data:
-            res_q = stats.studentized_range.ppf(*pvk)
-            assert_allclose(res_q, q_expected, rtol=1e-4)
+            p, v, k = pvk
+            res_q = stats.studentized_range.ppf(p, k, v)
+            assert_allclose(res_q, q_expected, rtol=5e-4)
 
     path_prefix = os.path.dirname(__file__)
     relative_path = "data/studentized_range_mpmath_ref.json"
@@ -6753,6 +6972,19 @@ def test_ncf_cdf_spotcheck():
     assert_allclose(check_val, np.round(scipy_val, decimals=6))
 
 
+@pytest.mark.skipif(sys.maxsize <= 2**32,
+                    reason="On some 32-bit the warning is not raised")
+def test_ncf_ppf_issue_17026():
+    # Regression test for gh-17026
+    x = np.linspace(0, 1, 600)
+    x[0] = 1e-16
+    par = (0.1, 2, 5, 0, 1)
+    with pytest.warns(RuntimeWarning):
+        q = stats.ncf.ppf(x, *par)
+        q0 = [stats.ncf.ppf(xi, *par) for xi in x]
+    assert_allclose(q, q0)
+
+
 class TestHistogram:
     def setup_method(self):
         np.random.seed(1234)
@@ -7258,7 +7490,6 @@ def test_distr_params_lists():
     assert cont_distnames == invcont_distnames
 
 
-@pytest.mark.xslow
 def test_moment_order_4():
     # gh-13655 reported that if a distribution has a `_stats` method that
     # accepts the `moments` parameter, then if the distribution's `moment`
@@ -7271,6 +7502,9 @@ def test_moment_order_4():
     # When `moment` is called, `_stats` is used, so the moment is very accurate
     # (exactly equal to Pearson's kurtosis of the normal distribution, 3)
     assert stats.skewnorm.moment(order=4, a=0) == 3.0
-    # Had the moment been calculated using `_munp`, the result would have been
-    # less accurate:
-    assert stats.skewnorm._munp(4, 0) != 3.0
+    # At the time of gh-13655, skewnorm._munp() used the generic method
+    # to compute its result, which was inefficient and not very accurate.
+    # At that time, the following assertion would fail.  skewnorm._munp()
+    # has since been made more accurate and efficient, so now this test
+    # is expected to pass.
+    assert stats.skewnorm._munp(4, 0) == 3.0

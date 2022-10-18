@@ -140,25 +140,28 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
        integer intent(hide) :: ier
      end subroutine splder
 
-     function splint(t,n,c,k,a,b,wrk)
-       ! iy = splint(t,c,k,a,b)
+     function splint(t,n,c,nc,k,a,b,wrk)
+       ! iy, wrk = splint(t,c,k,a,b)
        threadsafe
        real*8 dimension(n),intent(in) :: t
        integer intent(hide),depend(t) :: n=len(t)
-       real*8 dimension(n),depend(n),check(len(c)==n) :: c
+       real*8 dimension(nc), intent(in), depend(n,k,t),check(len(c)>=n-k-1) :: c
+       integer intent(hide), depend(c) :: nc=len(c)
        integer intent(in) :: k
        real*8 intent(in) :: a
        real*8 intent(in) :: b
-       real*8 dimension(n),depend(n),intent(cache,hide) :: wrk
+       real*8 dimension(n),depend(n),intent(cache,hide,out) :: wrk
        real*8 :: splint
      end function splint
 
-     subroutine sproot(t,n,c,zero,mest,m,ier)
+     subroutine sproot(t,n,c,nc,zero,mest,m,ier)
        ! zero,m,ier = sproot(t,c[,mest])
        threadsafe
        real*8 dimension(n),intent(in) :: t
        integer intent(hide),depend(t),check(n>=8) :: n=len(t)
-       real*8 dimension(n),depend(n),check(len(c)==n) :: c
+       ! Since sproot is only implemented for cubic splines, so k=3.
+       real*8 dimension(nc), intent(in), depend(n,k,t),check(len(c)>=n-3-1) :: c
+       integer intent(hide), depend(c) :: nc=len(c)
        real*8 dimension(mest),intent(out),depend(mest) :: zero
        integer optional,intent(in),depend(n) :: mest=3*(n-7)
        integer intent(out) :: m
@@ -685,7 +688,7 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
        real*8 optional :: r1
        real*8 optional,check(0.0<=s) :: s = 0.0
        integer intent(hide),depend(mu),check(nuest>=8) &
-            :: nuest = mu+6
+            :: nuest = mu+6+2
        integer intent(hide),depend(mv),check(nvest>=8) &
             :: nvest = mv+7
        integer intent(out) :: nu

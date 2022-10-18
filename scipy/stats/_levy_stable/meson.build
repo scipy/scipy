@@ -13,6 +13,7 @@ levyst = py3.extension_module('levyst',
   cython_gen.process('levyst.pyx'),
   c_args: numpy_nodepr_api,
   include_directories: [inc_np],
+  link_args: version_link_args,
   link_with: _levyst,
   install: true,
   subdir: 'scipy/stats/_levy_stable'

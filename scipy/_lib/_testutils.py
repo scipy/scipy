@@ -106,7 +106,7 @@ class _TestPythranFunc:
         return optional_args
 
     def get_max_dtype_list_length(self):
-        # get the the max supported dtypes list length in all arguments
+        # get the max supported dtypes list length in all arguments
         max_len = 0
         for arg_idx in self.arguments:
             cur_len = len(self.arguments[arg_idx][1])

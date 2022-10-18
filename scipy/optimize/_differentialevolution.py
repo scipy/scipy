@@ -320,6 +320,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     Let us consider the problem of minimizing the Rosenbrock function. This
     function is implemented in `rosen` in `scipy.optimize`.
 
+    >>> import numpy as np
     >>> from scipy.optimize import rosen, differential_evolution
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = differential_evolution(rosen, bounds)
@@ -361,8 +362,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     ...     return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
     >>> bounds = [(-5, 5), (-5, 5)]
     >>> result = differential_evolution(ackley, bounds, seed=1)
-    >>> result.x, result.fun, result.nfev
-    (array([0., 0.]), 4.440892098500626e-16, 3063)
+    >>> result.x, result.fun
+    (array([0., 0.]), 4.440892098500626e-16)
 
     The Ackley function is written in a vectorized manner, so the
     ``'vectorized'`` keyword can be employed. Note the reduced number of
@@ -371,8 +372,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result = differential_evolution(
     ...     ackley, bounds, vectorized=True, updating='deferred', seed=1
     ... )
-    >>> result.x, result.fun, result.nfev
-    (array([0., 0.]), 4.440892098500626e-16, 190)
+    >>> result.x, result.fun
+    (array([0., 0.]), 4.440892098500626e-16)
 
     """
 
