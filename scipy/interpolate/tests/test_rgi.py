@@ -508,13 +508,18 @@ class TestRegularGridInterpolator:
         assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
     @parametrize_rgi_interp_methods
-    def test_nonscalar_values_2(self, method):
+    @pytest.mark.parametrize("flip_points", [False, True])
+    def test_nonscalar_values_2(self, method, flip_points):
         # Verify that non-scalar valued values also work : use different
         # lengths of axes to simplify tracing the internals
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
                   (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0),
                   (0.0, 5.0, 10.0, 15.0, 20, 25.0, 35.0, 36.0),
                   (0.0, 5.0, 10.0, 15.0, 20, 25.0, 35.0, 36.0, 47)]
+
+        # verify, that strictly decreasing dimensions work
+        if flip_points:
+            points = [tuple(reversed(p)) for p in points]
 
         rng = np.random.default_rng(1234)
 
