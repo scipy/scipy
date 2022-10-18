@@ -856,8 +856,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
-        return self._dist.rvs(self.mean, self.cov_object.covariance, size,
-                              random_state)
+        return self._dist.rvs(self.mean, self.cov_object, size, random_state)
 
     def entropy(self):
         """Computes the differential entropy of the multivariate normal.

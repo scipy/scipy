@@ -205,6 +205,29 @@ class TestCovariance:
         with pytest.raises(NotImplementedError, match=message):
             Covariance()
 
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning")  # matrix not PSD
+    def test_gh9942(self):
+        # Originally there was a mistake in the `multivariate_normal_frozen`
+        # `rvs` method that caused all covariance objects to be processed as
+        # a `_CovViaPSD`. Ensure that this is resolved.
+        A = np.diag([1, 2, -1e-8])
+        n = A.shape[0]
+        mean = np.zeros(n)
+
+        # Error if the matrix is processed as a `_CovViaPSD`
+        with pytest.raises(ValueError, match="The input matrix must be..."):
+            multivariate_normal(mean, A).rvs()
+
+        # No error if it is provided as a `CovViaEigendecomposition`
+        seed = 3562050283508273023
+        rng1 = np.random.default_rng(seed)
+        rng2 = np.random.default_rng(seed)
+        cov = Covariance.from_eigendecomposition(np.linalg.eigh(A))
+        rv = multivariate_normal(mean, cov)
+        res = rv.rvs(random_state=rng1)
+        ref = multivariate_normal.rvs(mean, cov, random_state=rng2)
+        assert_equal(res, ref)
+
 
 def _sample_orthonormal_matrix(n):
     M = np.random.randn(n, n)
