@@ -471,6 +471,25 @@ def test_bootstrap_gh15678(method):
     assert isinstance(res.standard_error, np.float64)
 
 
+def test_bootstrap_min():
+    # Check that gh-15883 is fixed: percentileofscore should
+    # behave according to the 'mean' behavior and not trigger nan for BCa
+    rng = np.random.default_rng(1891289180021102)
+    dist = stats.norm(loc=2, scale=4)
+    data = dist.rvs(size=100, random_state=rng)
+    true_min = np.min(data)
+    data = (data,)
+    res = bootstrap(data, np.min, method="BCa", n_resamples=100,
+                    random_state=np.random.default_rng(3942))
+    assert true_min == res.confidence_interval.low
+    res2 = bootstrap(-np.array(data), np.max, method="BCa", n_resamples=100,
+                     random_state=np.random.default_rng(3942))
+    assert_allclose(-res.confidence_interval.low,
+                    res2.confidence_interval.high)
+    assert_allclose(-res.confidence_interval.high,
+                    res2.confidence_interval.low)
+
+
 @pytest.mark.parametrize("additional_resamples", [0, 1000])
 def test_re_boostrap(additional_resamples):
     # Test behavior of parameter `bootstrap_result`
@@ -1314,13 +1333,13 @@ class TestPermutationTest:
         expected = stats.kendalltau(x, y, method='exact')
 
         def statistic1d(x):
-            return stats.kendalltau(x, y, method='asymptotic').correlation
+            return stats.kendalltau(x, y, method='asymptotic').statistic
 
         # kendalltau currently has only one alternative, two-sided
         res = permutation_test((x,), statistic1d, permutation_type='pairings',
                                n_resamples=np.inf)
 
-        assert_allclose(res.statistic, expected.correlation, rtol=self.rtol)
+        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
@@ -1485,7 +1504,7 @@ class TestPermutationTest:
         expected_statistic = 0.7714285714285715
 
         def statistic1d(x):
-            return stats.spearmanr(x, y).correlation
+            return stats.spearmanr(x, y).statistic
 
         res = permutation_test((x,), statistic1d, permutation_type='pairings',
                                n_resamples=np.inf, alternative=alternative)

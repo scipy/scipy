@@ -104,6 +104,7 @@ ipx_lib = static_library('ipx',
     '../../_lib/highs/extern/',
     'cython/src/'
   ],
+  dependencies: thread_dep,
   cpp_args: [highs_flags, highs_define_macros]
 )
 
@@ -220,6 +221,7 @@ highs_lib = static_library('highs',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/util/',
   ],
+  dependencies: thread_dep,
   cpp_args: [highs_flags, highs_define_macros]
 )
 
@@ -234,6 +236,8 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/util/'
   ],
+  dependencies: thread_dep,
+  link_args: version_link_args,
   link_with: [highs_lib, ipx_lib, basiclu_lib],
   cpp_args: [highs_flags, highs_define_macros, cython_c_args],
   install: true,
@@ -251,6 +255,8 @@ _highs_constants = py3.extension_module('_highs_constants',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/simplex/'
   ],
+  dependencies: thread_dep,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize/_highs'
 )

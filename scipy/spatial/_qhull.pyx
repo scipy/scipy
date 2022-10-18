@@ -10,7 +10,6 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 # Distributed under the same BSD license as Scipy.
 #
 
-import threading
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -21,9 +20,6 @@ from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
 from libc.stdio cimport FILE
 
-import os
-import sys
-import tempfile
 import warnings
 
 np.import_array()
@@ -202,7 +198,6 @@ cdef extern from "qhull_src/src/poly_r.h":
 cdef extern from "qhull_src/src/mem_r.h":
     void qh_memfree(qhT *, void *object, int insize)
 
-from libc.string cimport memcpy
 from libc.stdlib cimport qsort
 
 #------------------------------------------------------------------------------
@@ -1273,7 +1268,7 @@ cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
 
     """
     cdef int inside, isimplex
-    cdef int k, m, ineighbor, iself
+    cdef int k, m, ineighbor
     cdef double *transform
 
     if _is_point_fully_outside(d, x, eps):
@@ -1366,7 +1361,6 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
     """
     cdef int k, m, ndim, inside, isimplex, cycle_k
     cdef double *transform
-    cdef double v
 
     ndim = d.ndim
     isimplex = start[0]
@@ -1481,7 +1475,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
     directed search.
 
     """
-    cdef int isimplex, i, j, k, inside, ineigh, neighbor_found
+    cdef int isimplex, k, ineigh
     cdef int ndim
     cdef double z[NPY_MAXDIMS+1]
     cdef double best_dist, dist

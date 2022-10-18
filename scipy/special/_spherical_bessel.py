@@ -65,6 +65,7 @@ def spherical_jn(n, z, derivative=False):
     We can verify the relation for the derivative from the Notes
     for :math:`n=3` in the interval :math:`[1, 2]`:
 
+    >>> import numpy as np
     >>> from scipy.special import spherical_jn
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_jn(3, x, True),
@@ -153,6 +154,7 @@ def spherical_yn(n, z, derivative=False):
     We can verify the relation for the derivative from the Notes
     for :math:`n=3` in the interval :math:`[1, 2]`:
 
+    >>> import numpy as np
     >>> from scipy.special import spherical_yn
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_yn(3, x, True),
@@ -240,6 +242,7 @@ def spherical_in(n, z, derivative=False):
     We can verify the relation for the derivative from the Notes
     for :math:`n=3` in the interval :math:`[1, 2]`:
 
+    >>> import numpy as np
     >>> from scipy.special import spherical_in
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_in(3, x, True),
@@ -327,6 +330,7 @@ def spherical_kn(n, z, derivative=False):
     We can verify the relation for the derivative from the Notes
     for :math:`n=3` in the interval :math:`[1, 2]`:
 
+    >>> import numpy as np
     >>> from scipy.special import spherical_kn
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_kn(3, x, True),
