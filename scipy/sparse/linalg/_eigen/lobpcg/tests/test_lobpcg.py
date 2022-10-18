@@ -10,12 +10,14 @@ from numpy import ones, r_, diag
 from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_allclose, assert_array_less)
 
+import pytest
 from scipy.linalg import eig, eigh, toeplitz, orth
 from scipy.sparse import spdiags, diags, eye, csr_matrix
 from scipy.sparse.linalg import eigs, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 
 _IS_32BIT = (sys.maxsize < 2**32)
+
 
 def ElasticRod(n):
     """Build the matrices for the generalized eigenvalue problem of the
@@ -412,6 +414,7 @@ def test_maxit():
                                 retResidualNormsHistory=True)
     assert_allclose(np.shape(l_h)[0], 20+3)
     assert_allclose(np.shape(r_h)[0], 20+3)
+
 
 
 @pytest.mark.slow

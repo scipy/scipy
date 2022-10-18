@@ -154,13 +154,13 @@ double bdtrc(double k, int n, double p)
     double dk, dn;
     double fk = floor(k);
 
-    if (npy_isnan(p) || npy_isnan(k)) {
-	return NPY_NAN;
+    if (isnan(p) || isnan(k)) {
+	return NAN;
     }
 
     if (p < 0.0 || p > 1.0 || n < fk) {
 	sf_error("bdtrc", SF_ERROR_DOMAIN, NULL);
-	return NPY_NAN;
+	return NAN;
     }
 
     if (fk < 0) {
@@ -192,13 +192,13 @@ double bdtr(double k, int n, double p)
     double dk, dn;
     double fk = floor(k);
 
-    if (npy_isnan(p) || npy_isnan(k)) {
-	return NPY_NAN;
+    if (isnan(p) || isnan(k)) {
+	return NAN;
     }
 
     if (p < 0.0 || p > 1.0 || fk < 0 || n < fk) {
         sf_error("bdtr", SF_ERROR_DOMAIN, NULL);
-        return NPY_NAN;
+        return NAN;
     }
 
     if (fk == n)
@@ -221,13 +221,13 @@ double bdtri(double k, int n, double y)
     double p, dn, dk;
     double fk = floor(k);
 
-    if (npy_isnan(k)) {
-	return NPY_NAN;
+    if (isnan(k)) {
+	return NAN;
     }
 
     if (y < 0.0 || y > 1.0 || fk < 0.0 || n <= fk) {
 	sf_error("bdtri", SF_ERROR_DOMAIN, NULL);
-	return NPY_NAN;
+	return NAN;
     }
 
     dn = n - fk;

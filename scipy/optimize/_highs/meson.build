@@ -50,29 +50,18 @@ basiclu_lib = static_library('basiclu',
     '../../_lib/highs/src',
     '../../_lib/highs/src/ipm/basiclu/include'
   ],
-  c_args: [
-    '-Wno-unused-variable', highs_define_macros
-  ]
+  c_args: [Wno_unused_variable, highs_define_macros]
 )
 
-# Deal with non-portable (or GCC-specific) compiler flags
-if cc.has_argument('-Wno-unused-but-set-variable')
-  Wno_unused_but_set = ['-Wno-unused-but-set-variable']
-else
-  Wno_unused_but_set = []
-endif
-
 highs_flags = [
-  '-Wno-sign-compare',
-  '-Wno-switch',
-  '-Wno-non-virtual-dtor',
+  _cpp_Wno_class_memaccess,
+  _cpp_Wno_format_truncation,
+  _cpp_Wno_non_virtual_dtor,
+  _cpp_Wno_sign_compare,
+  _cpp_Wno_switch,
+  _cpp_Wno_unused_but_set_variable,
+  _cpp_Wno_unused_variable,
 ]
-if cpp.has_argument('-Wno-format-truncation')
-  highs_flags += '-Wno-format-truncation'
-endif
-if cpp.has_argument('-Wno-class-memaccess')  # added in GCC 8
-  highs_flags += '-Wno-class-memaccess'
-endif
 
 ipx_lib = static_library('ipx',
   [
@@ -115,11 +104,8 @@ ipx_lib = static_library('ipx',
     '../../_lib/highs/extern/',
     'cython/src/'
   ],
-  cpp_args: [
-    '-Wno-unused-variable',
-    highs_flags,
-    highs_define_macros
-  ]
+  dependencies: thread_dep,
+  cpp_args: [highs_flags, highs_define_macros]
 )
 
 highs_lib = static_library('highs',
@@ -235,11 +221,8 @@ highs_lib = static_library('highs',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/util/',
   ],
-  cpp_args: [
-    '-Wno-unused-variable',
-    highs_flags,
-    highs_define_macros
-  ]
+  dependencies: thread_dep,
+  cpp_args: [highs_flags, highs_define_macros]
 )
 
 _highs_wrapper = py3.extension_module('_highs_wrapper',
@@ -253,18 +236,10 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/util/'
   ],
+  dependencies: thread_dep,
+  link_args: version_link_args,
   link_with: [highs_lib, ipx_lib, basiclu_lib],
-  cpp_args: [
-    '-Wno-unused-variable',
-    '-Wno-sign-compare',
-    '-Wno-switch',
-    '-Wno-format-truncation',
-    '-Wno-non-virtual-dtor',
-    '-Wno-class-memaccess',
-    Wno_unused_but_set,
-    highs_define_macros,
-    cython_c_args,
-  ],
+  cpp_args: [highs_flags, highs_define_macros, cython_c_args],
   install: true,
   subdir: 'scipy/optimize/_highs'
 )
@@ -280,6 +255,8 @@ _highs_constants = py3.extension_module('_highs_constants',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/simplex/'
   ],
+  dependencies: thread_dep,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize/_highs'
 )

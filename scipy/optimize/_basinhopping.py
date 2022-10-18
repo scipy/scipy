@@ -331,7 +331,7 @@ class Metropolis:
             #
             # RuntimeWarning: invalid value encountered in multiply
             #
-            # Ignore this warning so so when the algorithm is on a flat plane, it always
+            # Ignore this warning so when the algorithm is on a flat plane, it always
             # accepts the step, to try to move off the plane.
             prod = -(energy_new - energy_old) * self.beta
             w = math.exp(min(0, prod))
@@ -555,6 +555,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     The following example is a 1-D minimization problem, with many
     local minima superimposed on a parabola.
 
+    >>> import numpy as np
     >>> from scipy.optimize import basinhopping
     >>> func = lambda x: np.cos(14.5 * x - 0.3) + (x + 0.2) * x
     >>> x0=[1.]

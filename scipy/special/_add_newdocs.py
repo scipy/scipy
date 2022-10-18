@@ -257,6 +257,7 @@ add_newdoc("wrightomega",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import wrightomega, lambertw
 
     >>> wrightomega([-2, -1, 0, 1, 2])
@@ -319,6 +320,7 @@ add_newdoc("agm",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import agm
     >>> a, b = 24.0, 6.0
     >>> agm(a, b)
@@ -405,6 +407,7 @@ add_newdoc("airy",
     --------
     Compute the Airy functions on the interval [-15, 5].
 
+    >>> import numpy as np
     >>> from scipy import special
     >>> x = np.linspace(-15, 5, 201)
     >>> ai, aip, bi, bip = special.airy(x)
@@ -465,6 +468,7 @@ add_newdoc("airye",
     --------
     We can compute exponentially scaled Airy functions and their derivatives:
 
+    >>> import numpy as np
     >>> from scipy.special import airye
     >>> import matplotlib.pyplot as plt
     >>> z = np.linspace(0, 50, 500)
@@ -987,6 +991,7 @@ add_newdoc("bei",
     --------
     It can be expressed using Bessel functions.
 
+    >>> import numpy as np
     >>> import scipy.special as sc
     >>> x = np.array([1.0, 2.0, 3.0, 4.0])
     >>> sc.jv(0, x * np.exp(3 * np.pi * 1j / 4)).imag
@@ -1067,6 +1072,7 @@ add_newdoc("ber",
     --------
     It can be expressed using Bessel functions.
 
+    >>> import numpy as np
     >>> import scipy.special as sc
     >>> x = np.array([1.0, 2.0, 3.0, 4.0])
     >>> sc.jv(0, x * np.exp(3 * np.pi * 1j / 4)).real
@@ -1136,6 +1142,42 @@ add_newdoc("besselpoly",
     scalar or ndarray
         Value of the integral.
 
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Evaluate the function for one parameter set.
+
+    >>> from scipy.special import besselpoly
+    >>> besselpoly(1, 1, 1)
+    0.24449718372863877
+
+    Evaluate the function for different scale factors.
+
+    >>> import numpy as np
+    >>> factors = np.array([0., 3., 6.])
+    >>> besselpoly(factors, 1, 1)
+    array([ 0.        , -0.00549029,  0.00140174])
+
+    Plot the function for varying powers, orders and scales.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> powers = np.linspace(0, 10, 100)
+    >>> orders = [1, 2, 3]
+    >>> scales = [1, 2]
+    >>> all_combinations = [(order, scale) for order in orders
+    ...                     for scale in scales]
+    >>> for order, scale in all_combinations:
+    ...     ax.plot(powers, besselpoly(scale, powers, order),
+    ...             label=rf"$\nu={order}, a={scale}$")
+    >>> ax.legend()
+    >>> ax.set_xlabel(r"$\lambda$")
+    >>> ax.set_ylabel(r"$\int_0^1 x^{\lambda} J_{\nu}(2ax)\,dx$")
+    >>> plt.show()
     """)
 
 add_newdoc("beta",
@@ -1373,6 +1415,33 @@ add_newdoc("betaln",
     gamma : the gamma function
     betainc :  the incomplete beta function
     beta : the beta function
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import betaln, beta
+
+    Verify that, for moderate values of ``a`` and ``b``, ``betaln(a, b)``
+    is the same as ``log(beta(a, b))``:
+
+    >>> betaln(3, 4)
+    -4.0943445622221
+
+    >>> np.log(beta(3, 4))
+    -4.0943445622221
+
+    In the following ``beta(a, b)`` underflows to 0, so we can't compute
+    the logarithm of the actual value.
+
+    >>> a = 400
+    >>> b = 900
+    >>> beta(a, b)
+    0.0
+
+    We can compute the logarithm of ``beta(a, b)`` by using `betaln`:
+
+    >>> betaln(a, b)
+    -804.3069951764146
 
     """)
 
@@ -1704,6 +1773,7 @@ add_newdoc("chdtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It can be expressed in terms of the regularized lower incomplete
@@ -1762,6 +1832,7 @@ add_newdoc("chdtrc",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It can be expressed in terms of the regularized upper incomplete
@@ -2028,6 +2099,7 @@ add_newdoc("cosdg",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using cosine directly.
@@ -2064,6 +2136,7 @@ add_newdoc("cosm1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than computing ``cos(x) - 1`` directly for
@@ -2101,6 +2174,7 @@ add_newdoc("cotdg",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using cotangent directly.
@@ -2146,6 +2220,7 @@ add_newdoc("dawsn",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-15, 15, num=1000)
@@ -2229,6 +2304,7 @@ add_newdoc("ellipe",
     This function is used in finding the circumference of an
     ellipse with semi-major axis `a` and semi-minor axis `b`.
 
+    >>> import numpy as np
     >>> from scipy import special
 
     >>> a = 3.5
@@ -2608,6 +2684,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprc
 
     >>> x = 1.2 + 3.4j
@@ -2723,6 +2800,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprd
 
     >>> x = 1.2 + 3.4j
@@ -2814,6 +2892,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprf
 
     >>> x = 1.2 + 3.4j
@@ -2916,6 +2995,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprg
 
     >>> x = 1.2 + 3.4j
@@ -3056,6 +3136,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprj
 
     >>> x = 1.2 + 3.4j
@@ -3177,6 +3258,7 @@ add_newdoc("erf",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
@@ -3216,6 +3298,7 @@ add_newdoc("erfc",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
@@ -3260,6 +3343,7 @@ add_newdoc("erfi",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
@@ -3305,6 +3389,7 @@ add_newdoc("erfcx",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
@@ -3325,7 +3410,7 @@ add_newdoc(
     Computes the inverse of the error function.
 
     In the complex domain, there is no unique complex number w satisfying
-    erf(w)=z. This indicates a true inverse function would have multi-value.
+    erf(w)=z. This indicates a true inverse function would be multivalued.
     When the domain restricts to the real, -1 < x < 1, there is a unique real
     number satisfying erf(erfinv(x)) = x.
 
@@ -3339,7 +3424,7 @@ add_newdoc(
     Returns
     -------
     erfinv : scalar or ndarray
-        The inverse of erf of y, element-wise)
+        The inverse of erf of y, element-wise
 
     See Also
     --------
@@ -3349,19 +3434,33 @@ add_newdoc(
 
     Examples
     --------
-    1) evaluating a float number
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import erfinv, erf
 
-    >>> from scipy import special
-    >>> special.erfinv(0.5)
-    0.4769362762044698
+    >>> erfinv(0.5)
+    0.4769362762044699
 
-    2) evaluating an ndarray
+    >>> y = np.linspace(-1.0, 1.0, num=9)
+    >>> x = erfinv(y)
+    >>> x
+    array([       -inf, -0.81341985, -0.47693628, -0.22531206,  0.        ,
+            0.22531206,  0.47693628,  0.81341985,         inf])
 
-    >>> from scipy import special
-    >>> y = np.linspace(-1.0, 1.0, num=10)
-    >>> special.erfinv(y)
-    array([       -inf, -0.86312307, -0.5407314 , -0.30457019, -0.0987901 ,
-            0.0987901 ,  0.30457019,  0.5407314 ,  0.86312307,         inf])
+    Verify that ``erf(erfinv(y))`` is ``y``.
+
+    >>> erf(x)
+    array([-1.  , -0.75, -0.5 , -0.25,  0.  ,  0.25,  0.5 ,  0.75,  1.  ])
+
+    Plot the function:
+
+    >>> y = np.linspace(-1, 1, 200)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(y, erfinv(y))
+    >>> ax.grid(True)
+    >>> ax.set_xlabel('y')
+    >>> ax.set_title('erfinv(y)')
+    >>> plt.show()
 
     """)
 
@@ -3375,7 +3474,7 @@ add_newdoc(
     Computes the inverse of the complementary error function.
 
     In the complex domain, there is no unique complex number w satisfying
-    erfc(w)=z. This indicates a true inverse function would have multi-value.
+    erfc(w)=z. This indicates a true inverse function would be multivalued.
     When the domain restricts to the real, 0 < x < 2, there is a unique real
     number satisfying erfc(erfcinv(x)) = erfcinv(erfc(x)).
 
@@ -3401,20 +3500,28 @@ add_newdoc(
 
     Examples
     --------
-    1) evaluating a float number
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import erfcinv
 
-    >>> from scipy import special
-    >>> special.erfcinv(0.5)
-    0.4769362762044698
+    >>> erfcinv(0.5)
+    0.4769362762044699
 
-    2) evaluating an ndarray
-
-    >>> from scipy import special
     >>> y = np.linspace(0.0, 2.0, num=11)
-    >>> special.erfcinv(y)
+    >>> erfcinv(y)
     array([        inf,  0.9061938 ,  0.59511608,  0.37080716,  0.17914345,
            -0.        , -0.17914345, -0.37080716, -0.59511608, -0.9061938 ,
                   -inf])
+
+    Plot the function:
+
+    >>> y = np.linspace(0, 2, 200)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(y, erfcinv(y))
+    >>> ax.grid(True)
+    >>> ax.set_xlabel('y')
+    >>> ax.set_title('erfcinv(y)')
+    >>> plt.show()
 
     """)
 
@@ -3716,6 +3823,7 @@ add_newdoc("eval_chebys",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     They are a scaled version of the Chebyshev polynomials of the
@@ -3776,6 +3884,7 @@ add_newdoc("eval_chebyc",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     They are a scaled version of the Chebyshev polynomials of the
@@ -3930,6 +4039,7 @@ add_newdoc("eval_legendre",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import eval_legendre
 
     Evaluate the zero-order Legendre polynomial at x = 0
@@ -4253,6 +4363,7 @@ add_newdoc("exp1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It has a pole at 0.
@@ -4304,6 +4415,7 @@ add_newdoc("exp10",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import exp10
 
     >>> exp10(3)
@@ -4335,6 +4447,7 @@ add_newdoc("exp2",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import exp2
 
     >>> exp2(3)
@@ -4399,6 +4512,7 @@ add_newdoc("expi",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is related to `exp1`.
@@ -4470,6 +4584,7 @@ add_newdoc('expit',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import expit, logit
 
     >>> expit([-np.inf, -1.5, 0, 1.5, np.inf])
@@ -4519,6 +4634,7 @@ add_newdoc("expm1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import expm1
 
     >>> expm1(1.0)
@@ -4582,6 +4698,7 @@ add_newdoc("expn",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     Its domain is nonnegative n and x.
@@ -4645,6 +4762,7 @@ add_newdoc("exprel",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import exprel
 
     >>> exprel(0.01)
@@ -4917,6 +5035,7 @@ add_newdoc("fresnel",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     As z goes to infinity along the real axis, S and C converge to 0.5.
@@ -4984,6 +5103,7 @@ add_newdoc("gamma",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import gamma, factorial
 
     >>> gamma([0, 0.5, 1, 5])
@@ -5324,6 +5444,7 @@ add_newdoc("gammaln",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It has two positive zeros.
@@ -5396,6 +5517,7 @@ add_newdoc("gammasgn",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is 1 for `x > 0`.
@@ -5980,6 +6102,7 @@ add_newdoc("hyp0f1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is one when `z` is zero.
@@ -6051,6 +6174,7 @@ add_newdoc("hyp1f1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is one when `x` is zero:
@@ -6143,6 +6267,7 @@ add_newdoc("hyp2f1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It has poles when `c` is a negative integer.
@@ -6229,6 +6354,7 @@ add_newdoc("hyperu",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It has a branch cut along the negative `x` axis.
@@ -6287,13 +6413,37 @@ add_newdoc("i0",
 
     See also
     --------
-    iv
-    i0e
+    iv: Modified Bessel function of any order
+    i0e: Exponentially scaled modified Bessel function of order 0
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import i0
+    >>> i0(1.)
+    1.2660658777520082
+
+    Calculate at several points:
+
+    >>> import numpy as np
+    >>> i0(np.array([-2., 0., 3.5]))
+    array([2.2795853 , 1.        , 7.37820343])
+
+    Plot the function from -10 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> y = i0(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+
     """)
 
 add_newdoc("i0e",
@@ -6330,13 +6480,45 @@ add_newdoc("i0e",
 
     See also
     --------
-    iv
-    i0
+    iv: Modified Bessel function of the first kind
+    i0: Modified Bessel function of order 0
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import i0e
+    >>> i0e(1.)
+    0.46575960759364043
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> i0e(np.array([-2., 0., 3.]))
+    array([0.30850832, 1.        , 0.24300035])
+
+    Plot the function from -10 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> y = i0e(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+
+    Exponentially scaled Bessel functions are useful for large arguments for
+    which the unscaled Bessel functions overflow or lose precision. In the
+    following example `i0` returns infinity whereas `i0e` still returns
+    a finite number.
+
+    >>> from scipy.special import i0
+    >>> i0(1000.), i0e(1000.)
+    (inf, 0.012617240455891257)
     """)
 
 add_newdoc("i1",
@@ -6374,13 +6556,37 @@ add_newdoc("i1",
 
     See also
     --------
-    iv
-    i1e
+    iv: Modified Bessel function of the first kind
+    i1e: Exponentially scaled modified Bessel function of order 1
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import i1
+    >>> i1(1.)
+    0.5651591039924851
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> i1(np.array([-2., 0., 6.]))
+    array([-1.59063685,  0.        , 61.34193678])
+
+    Plot the function between -10 and 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> y = i1(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+
     """)
 
 add_newdoc("i1e",
@@ -6417,13 +6623,45 @@ add_newdoc("i1e",
 
     See also
     --------
-    iv
-    i1
+    iv: Modified Bessel function of the first kind
+    i1: Modified Bessel function of order 1
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import i1e
+    >>> i1e(1.)
+    0.2079104153497085
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> i1e(np.array([-2., 0., 6.]))
+    array([-0.21526929,  0.        ,  0.15205146])
+
+    Plot the function between -10 and 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> y = i1e(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+
+    Exponentially scaled Bessel functions are useful for large arguments for
+    which the unscaled Bessel functions overflow or lose precision. In the
+    following example `i1` returns infinity whereas `i1e` still returns a
+    finite number.
+
+    >>> from scipy.special import i1
+    >>> i1(1000.), i1e(1000.)
+    (inf, 0.01261093025692863)
     """)
 
 add_newdoc("_igam_fac",
@@ -6458,6 +6696,40 @@ add_newdoc("it2i0k0",
     ik0 : scalar or ndarray
         The integral for `k0`
 
+    References
+    ----------
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions",
+           Wiley 1996
+
+    Examples
+    --------
+    Evaluate the functions at one point.
+
+    >>> from scipy.special import it2i0k0
+    >>> int_i, int_k = it2i0k0(1.)
+    >>> int_i, int_k
+    (0.12897944249456852, 0.2085182909001295)
+
+    Evaluate the functions at several points.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 1.5, 3.])
+    >>> int_i, int_k = it2i0k0(points)
+    >>> int_i, int_k
+    (array([0.03149527, 0.30187149, 1.50012461]),
+     array([0.66575102, 0.0823715 , 0.00823631]))
+
+    Plot the functions from 0 to 5.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 5., 1000)
+    >>> int_i, int_k = it2i0k0(x)
+    >>> ax.plot(x, int_i, label=r"$\int_0^x \frac{I_0(t)-1}{t}\,dt$")
+    >>> ax.plot(x, int_k, label=r"$\int_x^{\infty} \frac{K_0(t)}{t}\,dt$")
+    >>> ax.legend()
+    >>> ax.set_ylim(0, 10)
+    >>> plt.show()
     """)
 
 add_newdoc("it2j0y0",
@@ -6489,6 +6761,40 @@ add_newdoc("it2j0y0",
     iy0 : scalar or ndarray
         The integral for `y0`
 
+    References
+    ----------
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions",
+           Wiley 1996
+
+    Examples
+    --------
+    Evaluate the functions at one point.
+
+    >>> from scipy.special import it2j0y0
+    >>> int_j, int_y = it2j0y0(1.)
+    >>> int_j, int_y
+    (0.12116524699506871, 0.39527290169929336)
+
+    Evaluate the functions at several points.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 1.5, 3.])
+    >>> int_j, int_y = it2j0y0(points)
+    >>> int_j, int_y
+    (array([0.03100699, 0.26227724, 0.85614669]),
+     array([ 0.26968854,  0.29769696, -0.02987272]))
+
+    Plot the functions from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> int_j, int_y = it2j0y0(x)
+    >>> ax.plot(x, int_j, label=r"$\int_0^x \frac{1-J_0(t)}{t}\,dt$")
+    >>> ax.plot(x, int_y, label=r"$\int_x^{\infty} \frac{Y_0(t)}{t}\,dt$")
+    >>> ax.legend()
+    >>> ax.set_ylim(-2.5, 2.5)
+    >>> plt.show()
     """)
 
 add_newdoc("it2struve0",
@@ -6530,6 +6836,33 @@ add_newdoc("it2struve0",
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    Evaluate the function at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import it2struve0
+    >>> it2struve0(1.)
+    0.9571973506383524
+
+    Evaluate the function at several points by supplying
+    an array for `x`.
+
+    >>> points = np.array([1., 2., 3.5])
+    >>> it2struve0(points)
+    array([0.95719735, 0.46909296, 0.10366042])
+
+    Plot the function from -10 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> it2struve0_values = it2struve0(x)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, it2struve0_values)
+    >>> ax.set_xlabel(r'$x$')
+    >>> ax.set_ylabel(r'$\int_x^{\infty}\frac{H_0(t)}{t}\,dt$')
+    >>> plt.show()
     """)
 
 add_newdoc("itairy",
@@ -6601,6 +6934,40 @@ add_newdoc("iti0k0",
         The integral for `i0`
     ik0 : scalar or ndarray
         The integral for `k0`
+
+    References
+    ----------
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions",
+           Wiley 1996
+
+    Examples
+    --------
+    Evaluate the functions at one point.
+
+    >>> from scipy.special import iti0k0
+    >>> int_i, int_k = iti0k0(1.)
+    >>> int_i, int_k
+    (1.0865210970235892, 1.2425098486237771)
+
+    Evaluate the functions at several points.
+
+    >>> import numpy as np
+    >>> points = np.array([0., 1.5, 3.])
+    >>> int_i, int_k = iti0k0(points)
+    >>> int_i, int_k
+    (array([0.        , 1.80606937, 6.16096149]),
+     array([0.        , 1.39458246, 1.53994809]))
+
+    Plot the functions from 0 to 5.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 5., 1000)
+    >>> int_i, int_k = iti0k0(x)
+    >>> ax.plot(x, int_i, label="$\int_0^x I_0(t)\,dt$")
+    >>> ax.plot(x, int_k, label="$\int_0^x K_0(t)\,dt$")
+    >>> ax.legend()
+    >>> plt.show()
     """)
 
 add_newdoc("itj0y0",
@@ -6632,6 +6999,40 @@ add_newdoc("itj0y0",
     iy0 : scalar or ndarray
         The integral of `y0`
 
+    References
+    ----------
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions",
+           Wiley 1996
+
+    Examples
+    --------
+    Evaluate the functions at one point.
+
+    >>> from scipy.special import itj0y0
+    >>> int_j, int_y = itj0y0(1.)
+    >>> int_j, int_y
+    (0.9197304100897596, -0.637069376607422)
+
+    Evaluate the functions at several points.
+
+    >>> import numpy as np
+    >>> points = np.array([0., 1.5, 3.])
+    >>> int_j, int_y = itj0y0(points)
+    >>> int_j, int_y
+    (array([0.        , 1.24144951, 1.38756725]),
+     array([ 0.        , -0.51175903,  0.19765826]))
+
+    Plot the functions from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> int_j, int_y = itj0y0(x)
+    >>> ax.plot(x, int_j, label="$\int_0^x J_0(t)\,dt$")
+    >>> ax.plot(x, int_y, label="$\int_0^x Y_0(t)\,dt$")
+    >>> ax.legend()
+    >>> plt.show()
+
     """)
 
 add_newdoc("itmodstruve0",
@@ -6660,12 +7061,42 @@ add_newdoc("itmodstruve0",
     Wrapper for a Fortran routine created by Shanjie Zhang and Jianming
     Jin [1]_.
 
+    See Also
+    --------
+    modstruve: Modified Struve function which is integrated by this function
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Evaluate the function at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import itmodstruve0
+    >>> itmodstruve0(1.)
+    0.3364726286440384
+
+    Evaluate the function at several points by supplying
+    an array for `x`.
+
+    >>> points = np.array([1., 2., 3.5])
+    >>> itmodstruve0(points)
+    array([0.33647263, 1.588285  , 7.60382578])
+
+    Plot the function from -10 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> itmodstruve0_values = itmodstruve0(x)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, itmodstruve0_values)
+    >>> ax.set_xlabel(r'$x$')
+    >>> ax.set_ylabel(r'$\int_0^xL_0(t)\,dt$')
+    >>> plt.show()
     """)
 
 add_newdoc("itstruve0",
@@ -6691,7 +7122,7 @@ add_newdoc("itstruve0",
 
     See also
     --------
-    struve
+    struve: Function which is integrated by this function
 
     Notes
     -----
@@ -6704,6 +7135,32 @@ add_newdoc("itstruve0",
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Evaluate the function at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import itstruve0
+    >>> itstruve0(1.)
+    0.30109042670805547
+
+    Evaluate the function at several points by supplying
+    an array for `x`.
+
+    >>> points = np.array([1., 2., 3.5])
+    >>> itstruve0(points)
+    array([0.30109043, 1.01870116, 1.96804581])
+
+    Plot the function from -20 to 20.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-20., 20., 1000)
+    >>> istruve0_values = itstruve0(x)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, istruve0_values)
+    >>> ax.set_xlabel(r'$x$')
+    >>> ax.set_ylabel(r'$\int_0^{x}H_0(t)\,dt$')
+    >>> plt.show()
     """)
 
 add_newdoc("iv",
@@ -6756,7 +7213,9 @@ add_newdoc("iv",
 
     See also
     --------
-    kve : This function with leading exponential behavior stripped off.
+    ive : This function with leading exponential behavior stripped off.
+    i0 : Faster version of this function for order 0.
+    i1 : Faster version of this function for order 1.
 
     References
     ----------
@@ -6764,17 +7223,70 @@ add_newdoc("iv",
     .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Evaluate the function of order 0 at one point.
+
+    >>> from scipy.special import iv
+    >>> iv(0, 1.)
+    1.2660658777520084
+
+    Evaluate the function at one point for different orders.
+
+    >>> iv(0, 1.), iv(1, 1.), iv(1.5, 1.)
+    (1.2660658777520084, 0.565159103992485, 0.2935253263474798)
+
+    The evaluation for different orders can be carried out in one call by
+    providing a list or NumPy array as argument for the `v` parameter:
+
+    >>> iv([0, 1, 1.5], 1.)
+    array([1.26606588, 0.5651591 , 0.29352533])
+
+    Evaluate the function at several points for order 0 by providing an
+    array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([-2., 0., 3.])
+    >>> iv(0, points)
+    array([2.2795853 , 1.        , 4.88079259])
+
+    If `z` is an array, the order parameter `v` must be broadcastable to
+    the correct shape if different orders shall be computed in one call.
+    To calculate the orders 0 and 1 for an 1D array:
+
+    >>> orders = np.array([[0], [1]])
+    >>> orders.shape
+    (2, 1)
+
+    >>> iv(orders, points)
+    array([[ 2.2795853 ,  1.        ,  4.88079259],
+           [-1.59063685,  0.        ,  3.95337022]])
+
+    Plot the functions of order 0 to 3 from -5 to 5.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-5., 5., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, iv(i, x), label=f'$I_{i!r}$')
+    >>> ax.legend()
+    >>> plt.show()
+
     """)
 
 add_newdoc("ive",
     r"""
     ive(v, z, out=None)
 
-    Exponentially scaled modified Bessel function of the first kind
+    Exponentially scaled modified Bessel function of the first kind.
 
     Defined as::
 
         ive(v, z) = iv(v, z) * exp(-abs(z.real))
+
+    For imaginary numbers without a real part, returns the unscaled
+    Bessel function of the first kind `iv`.
 
     Parameters
     ----------
@@ -6813,11 +7325,68 @@ add_newdoc("ive",
     is used, where :math:`K_v(z)` is the modified Bessel function of the
     second kind, evaluated using the AMOS routine `zbesk`.
 
+    See also
+    --------
+    iv: Modified Bessel function of the first kind
+    i0e: Faster implementation of this function for order 0
+    i1e: Faster implementation of this function for order 1
+
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Evaluate the function of order 0 at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import iv, ive
+    >>> import matplotlib.pyplot as plt
+    >>> ive(0, 1.)
+    0.4657596075936404
+
+    Evaluate the function at one point for different orders by
+    providing a list or NumPy array as argument for the `v` parameter:
+
+    >>> ive([0, 1, 1.5], 1.)
+    array([0.46575961, 0.20791042, 0.10798193])
+
+    Evaluate the function at several points for order 0 by providing an
+    array for `z`.
+
+    >>> points = np.array([-2., 0., 3.])
+    >>> ive(0, points)
+    array([0.30850832, 1.        , 0.24300035])
+
+    Evaluate the function at several points for different orders by
+    providing arrays for both `v` for `z`. Both arrays have to be
+    broadcastable to the correct shape. To calculate the orders 0, 1
+    and 2 for a 1D array of points:
+
+    >>> ive([[0], [1], [2]], points)
+    array([[ 0.30850832,  1.        ,  0.24300035],
+           [-0.21526929,  0.        ,  0.19682671],
+           [ 0.09323903,  0.        ,  0.11178255]])
+
+    Plot the functions of order 0 to 3 from -5 to 5.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-5., 5., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, ive(i, x), label=f'$I_{i!r}(z)\cdot e^{{-|z|}}$')
+    >>> ax.legend()
+    >>> ax.set_xlabel(r"$z$")
+    >>> plt.show()
+
+    Exponentially scaled Bessel functions are useful for large arguments for
+    which the unscaled Bessel functions over- or underflow. In the
+    following example `iv` returns infinity whereas `ive` still returns
+    a finite number.
+
+    >>> iv(3, 1000.), ive(3, 1000.)
+    (inf, 0.01256056218254712)
     """)
 
 add_newdoc("j0",
@@ -6867,6 +7436,30 @@ add_newdoc("j0",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import j0
+    >>> j0(1.)
+    0.7651976865579665
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> j0(np.array([-2., 0., 4.]))
+    array([ 0.22389078,  1.        , -0.39714981])
+
+    Plot the function from -20 to 20.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-20., 20., 1000)
+    >>> y = j0(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+
     """)
 
 add_newdoc("j1",
@@ -6900,13 +7493,36 @@ add_newdoc("j1",
 
     See also
     --------
-    jv
-    spherical_jn : spherical Bessel functions.
+    jv: Bessel function of the first kind
+    spherical_jn: spherical Bessel functions.
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import j1
+    >>> j1(1.)
+    0.44005058574493355
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> j1(np.array([-2., 0., 4.]))
+    array([-0.57672481,  0.        , -0.06604333])
+
+    Plot the function from -20 to 20.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-20., 20., 1000)
+    >>> y = j1(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
 
     """)
 
@@ -6967,6 +7583,8 @@ add_newdoc("jv",
     --------
     jve : :math:`J_v` with leading exponential behavior stripped off.
     spherical_jn : spherical Bessel functions.
+    j0 : faster version of this function for order 0.
+    j1 : faster version of this function for order 1.
 
     Notes
     -----
@@ -6995,6 +7613,56 @@ add_newdoc("jv",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Evaluate the function of order 0 at one point.
+
+    >>> from scipy.special import jv
+    >>> jv(0, 1.)
+    0.7651976865579666
+
+    Evaluate the function at one point for different orders.
+
+    >>> jv(0, 1.), jv(1, 1.), jv(1.5, 1.)
+    (0.7651976865579666, 0.44005058574493355, 0.24029783912342725)
+
+    The evaluation for different orders can be carried out in one call by
+    providing a list or NumPy array as argument for the `v` parameter:
+
+    >>> jv([0, 1, 1.5], 1.)
+    array([0.76519769, 0.44005059, 0.24029784])
+
+    Evaluate the function at several points for order 0 by providing an
+    array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([-2., 0., 3.])
+    >>> jv(0, points)
+    array([ 0.22389078,  1.        , -0.26005195])
+
+    If `z` is an array, the order parameter `v` must be broadcastable to
+    the correct shape if different orders shall be computed in one call.
+    To calculate the orders 0 and 1 for an 1D array:
+
+    >>> orders = np.array([[0], [1]])
+    >>> orders.shape
+    (2, 1)
+
+    >>> jv(orders, points)
+    array([[ 0.22389078,  1.        , -0.26005195],
+           [-0.57672481,  0.        ,  0.33905896]])
+
+    Plot the functions of order 0 to 3 from -10 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, jv(i, x), label=f'$J_{i!r}$')
+    >>> ax.legend()
+    >>> plt.show()
+
     """)
 
 add_newdoc("jve",
@@ -7078,13 +7746,37 @@ add_newdoc("k0",
 
     See also
     --------
-    kv
-    k0e
+    kv: Modified Bessel function of the second kind of any order
+    k0e: Exponentially scaled modified Bessel function of the second kind
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import k0
+    >>> k0(1.)
+    0.42102443824070823
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> k0(np.array([0.5, 2., 3.]))
+    array([0.92441907, 0.11389387, 0.0347395 ])
+
+    Plot the function from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = k0(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+
     """)
 
 add_newdoc("k0e",
@@ -7119,13 +7811,49 @@ add_newdoc("k0e",
 
     See also
     --------
-    kv
-    k0
+    kv: Modified Bessel function of the second kind of any order
+    k0: Modified Bessel function of the second kind
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import k0e
+    >>> k0e(1.)
+    1.1444630798068947
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> k0e(np.array([0.5, 2., 3.]))
+    array([1.52410939, 0.84156822, 0.6977616 ])
+
+    Plot the function from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = k0e(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+
+    Exponentially scaled Bessel functions are useful for large arguments for
+    which the unscaled Bessel functions are not precise enough.
+
+    >>> from scipy.special import k0
+    >>> k0(1000.)
+    0.
+
+    While `k0` returns zero, `k0e` still returns a finite number:
+
+    >>> k0e(1000.)
+    0.03962832160075422
+
     """)
 
 add_newdoc("k1",
@@ -7155,13 +7883,37 @@ add_newdoc("k1",
 
     See also
     --------
-    kv
-    k1e
+    kv: Modified Bessel function of the second kind of any order
+    k1e: Exponentially scaled modified Bessel function K of order 1
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import k1
+    >>> k1(1.)
+    0.6019072301972346
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> k1(np.array([0.5, 2., 3.]))
+    array([1.65644112, 0.13986588, 0.04015643])
+
+    Plot the function from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = k1(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+
     """)
 
 add_newdoc("k1e",
@@ -7196,13 +7948,45 @@ add_newdoc("k1e",
 
     See also
     --------
-    kv
-    k1
+    kv: Modified Bessel function of the second kind of any order
+    k1: Modified Bessel function of the second kind of order 1
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import k1e
+    >>> k1e(1.)
+    1.636153486263258
+
+    Calculate the function at several points:
+
+    >>> import numpy as np
+    >>> k1e(np.array([0.5, 2., 3.]))
+    array([2.73100971, 1.03347685, 0.80656348])
+
+    Plot the function from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = k1e(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+
+    Exponentially scaled Bessel functions are useful for large arguments for
+    which the unscaled Bessel functions are not precise enough. In the
+    following example `k1` returns zero whereas `k1e` still returns a
+    useful floating point number.
+
+    >>> from scipy.special import k1
+    >>> k1(1000.), k1e(1000.)
+    (0., 0.03964813081296021)
     """)
 
 add_newdoc("kei",
@@ -7248,6 +8032,7 @@ add_newdoc("kei",
     It can be expressed using the modified Bessel function of the
     second kind.
 
+    >>> import numpy as np
     >>> import scipy.special as sc
     >>> x = np.array([1.0, 2.0, 3.0, 4.0])
     >>> sc.kv(0, x * np.exp(np.pi * 1j / 4)).imag
@@ -7352,6 +8137,7 @@ add_newdoc("ker",
     It can be expressed using the modified Bessel function of the
     second kind.
 
+    >>> import numpy as np
     >>> import scipy.special as sc
     >>> x = np.array([1.0, 2.0, 3.0, 4.0])
     >>> sc.kv(0, x * np.exp(np.pi * 1j / 4)).real
@@ -7428,7 +8214,7 @@ add_newdoc("kl_div",
     This function is non-negative and is jointly convex in `x` and `y`.
 
     The origin of this function is in convex programming; see [1]_ for
-    details. This is why the the function contains the extra :math:`-x
+    details. This is why the function contains the extra :math:`-x
     + y` terms over what might be expected from the Kullback-Leibler
     divergence. For a version of the function without the extra terms,
     see `rel_entr`.
@@ -7491,6 +8277,7 @@ add_newdoc("kn",
     --------
     Plot the function of several orders for real input:
 
+    >>> import numpy as np
     >>> from scipy.special import kn
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 5, 1000)
@@ -7595,6 +8382,7 @@ add_newdoc("kolmogorov",
     --------
     Show the probability of a gap at least as big as 0, 0.5 and 1.0.
 
+    >>> import numpy as np
     >>> from scipy.special import kolmogorov
     >>> from scipy.stats import kstwobign
     >>> kolmogorov([0, 0.5, 1.0])
@@ -7715,6 +8503,7 @@ add_newdoc("kv",
     --------
     Plot the function of several orders for real input:
 
+    >>> import numpy as np
     >>> from scipy.special import kv
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 5, 1000)
@@ -7763,6 +8552,12 @@ add_newdoc("kve",
     Wrapper for AMOS [1]_ routine `zbesk`.  For a discussion of the
     algorithm used, see [2]_ and the references therein.
 
+    See Also
+    --------
+    kv : This function without exponential scaling.
+    k0e : Faster version of this function for order 0.
+    k1e : Faster version of this function for order 1.
+
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
@@ -7771,6 +8566,59 @@ add_newdoc("kve",
     .. [2] Donald E. Amos, "Algorithm 644: A portable package for Bessel
            functions of a complex argument and nonnegative order", ACM
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
+
+    Examples
+    --------
+    Evaluate the function of order 0 at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import kv, kve
+    >>> import matplotlib.pyplot as plt
+    >>> kve(0, 1.)
+    1.1444630798068949
+
+    Evaluate the function at one point for different orders by
+    providing a list or NumPy array as argument for the `v` parameter:
+
+    >>> kve([0, 1, 1.5], 1.)
+    array([1.14446308, 1.63615349, 2.50662827])
+
+    Evaluate the function at several points for order 0 by providing an
+    array for `z`.
+
+    >>> points = np.array([1., 3., 10.])
+    >>> kve(0, points)
+    array([1.14446308, 0.6977616 , 0.39163193])
+
+    Evaluate the function at several points for different orders by
+    providing arrays for both `v` for `z`. Both arrays have to be
+    broadcastable to the correct shape. To calculate the orders 0, 1
+    and 2 for a 1D array of points:
+
+    >>> kve([[0], [1], [2]], points)
+    array([[1.14446308, 0.6977616 , 0.39163193],
+           [1.63615349, 0.80656348, 0.41076657],
+           [4.41677005, 1.23547058, 0.47378525]])
+
+    Plot the functions of order 0 to 3 from 0 to 5.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 5., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, kve(i, x), label=f'$K_{i!r}(z)\cdot e^z$')
+    >>> ax.legend()
+    >>> ax.set_xlabel(r"$z$")
+    >>> ax.set_ylim(0, 4)
+    >>> ax.set_xlim(0, 5)
+    >>> plt.show()
+
+    Exponentially scaled Bessel functions are useful for large arguments for
+    which the unscaled Bessel functions over- or underflow. In the
+    following example `kv` returns 0 whereas `kve` still returns
+    a useful finite number.
+
+    >>> kv(3, 1000.), kve(3, 1000.)
+    (0.0, 0.03980696128440973)
     """)
 
 add_newdoc("_lanczos_sum_expg_scaled",
@@ -7807,6 +8655,7 @@ add_newdoc("log1p",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using ``log(1 + x)`` directly for ``x``
@@ -7864,6 +8713,7 @@ add_newdoc('log_expit',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import log_expit, expit
 
     >>> log_expit([-3.0, 0.25, 2.5, 5.0])
@@ -7928,6 +8778,7 @@ add_newdoc('logit',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import logit, expit
 
     >>> logit([0, 0.25, 0.5, 0.75, 1])
@@ -8368,6 +9219,53 @@ add_newdoc("modstruve",
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/11
+
+    Examples
+    --------
+    Calculate the modified Struve function of order 1 at 2.
+
+    >>> import numpy as np
+    >>> from scipy.special import modstruve
+    >>> import matplotlib.pyplot as plt
+    >>> modstruve(1, 2.)
+    1.102759787367716
+
+    Calculate the modified Struve function at 2 for orders 1, 2 and 3 by
+    providing a list for the order parameter `v`.
+
+    >>> modstruve([1, 2, 3], 2.)
+    array([1.10275979, 0.41026079, 0.11247294])
+
+    Calculate the modified Struve function of order 1 for several points
+    by providing an array for `x`.
+
+    >>> points = np.array([2., 5., 8.])
+    >>> modstruve(1, points)
+    array([  1.10275979,  23.72821578, 399.24709139])
+
+    Compute the modified Struve function for several orders at several
+    points by providing arrays for `v` and `z`. The arrays have to be
+    broadcastable to the correct shapes.
+
+    >>> orders = np.array([[1], [2], [3]])
+    >>> points.shape, orders.shape
+    ((3,), (3, 1))
+
+    >>> modstruve(orders, points)
+    array([[1.10275979e+00, 2.37282158e+01, 3.99247091e+02],
+           [4.10260789e-01, 1.65535979e+01, 3.25973609e+02],
+           [1.12472937e-01, 9.42430454e+00, 2.33544042e+02]])
+
+    Plot the modified Struve functions of order 0 to 3 from -5 to 5.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-5., 5., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, modstruve(i, x), label=f'$L_{i!r}$')
+    >>> ax.legend(ncol=2)
+    >>> ax.set_xlim(-5, 5)
+    >>> ax.set_title(r"Modified Struve functions $L_{\nu}$")
+    >>> plt.show()
     """)
 
 add_newdoc("nbdtr",
@@ -8712,6 +9610,7 @@ add_newdoc("ncfdtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
@@ -8989,6 +9888,7 @@ add_newdoc("nctdtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
@@ -9226,6 +10126,7 @@ add_newdoc("log_ndtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import log_ndtr, ndtr
 
     The benefit of ``log_ndtr(x)`` over the naive implementation
@@ -9662,6 +10563,7 @@ add_newdoc("pdtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is a cumulative distribution function, so it converges to 1
@@ -9832,6 +10734,66 @@ add_newdoc("poch",
     20.52958193377696
 
     """)
+
+add_newdoc("powm1", """
+    powm1(x, y, out=None)
+
+    Computes ``x**y - 1``.
+
+    This function is useful when `y` is near 0, or when `x` is near 1.
+
+    The function is implemented for real types only (unlike ``numpy.power``,
+    which accepts complex inputs).
+
+    Parameters
+    ----------
+    x : array_like
+        The base. Must be a real type (i.e. integer or float, not complex).
+    y : array_like
+        The exponent. Must be a real type (i.e. integer or float, not complex).
+
+    Returns
+    -------
+    array_like
+        Result of the calculation
+
+    Notes
+    -----
+    .. versionadded:: 1.10.0
+
+    The underlying code is implemented for single precision and double
+    precision floats only.  Unlike `numpy.power`, integer inputs to
+    `powm1` are converted to floating point, and complex inputs are
+    not accepted.
+
+    Note the following edge cases:
+
+    * ``powm1(x, 0)`` returns 0 for any ``x``, including 0, ``inf``
+      and ``nan``.
+    * ``powm1(1, y)`` returns 0 for any ``y``, including ``nan``
+      and ``inf``.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import powm1
+
+    >>> x = np.array([1.2, 10.0, 0.9999999975])
+    >>> y = np.array([1e-9, 1e-11, 0.1875])
+    >>> powm1(x, y)
+    array([ 1.82321557e-10,  2.30258509e-11, -4.68749998e-10])
+
+    It can be verified that the relative errors in those results
+    are less than 2.5e-16.
+
+    Compare that to the result of ``x**y - 1``, where the
+    relative errors are all larger than 8e-8:
+
+    >>> x**y - 1
+    array([ 1.82321491e-10,  2.30258035e-11, -4.68750039e-10])
+
+    """)
+
 
 add_newdoc("pro_ang1",
     """
@@ -10362,7 +11324,7 @@ add_newdoc("shichi",
       \gamma + \log(x) + \int_0^x \frac{\cosh{t} - 1}{t} dt
 
     where :math:`\gamma` is Euler's constant and :math:`\log` is the
-    principal branch of the logarithm.
+    principal branch of the logarithm [1]_.
 
     Parameters
     ----------
@@ -10379,6 +11341,12 @@ add_newdoc("shichi",
     ci : scalar or ndarray
         Hyperbolic cosine integral at ``x``
 
+    See Also
+    --------
+    sici : Sine and cosine integrals.
+    exp1 : Exponential integral E1.
+    expi : Exponential integral Ei.
+
     Notes
     -----
     For real arguments with ``x < 0``, ``chi`` is the real part of the
@@ -10386,16 +11354,65 @@ add_newdoc("shichi",
     + 0j)`` differ by a factor of ``1j*pi``.
 
     For real arguments the function is computed by calling Cephes'
-    [1]_ *shichi* routine. For complex arguments the algorithm is based
-    on Mpmath's [2]_ *shi* and *chi* routines.
+    [2]_ *shichi* routine. For complex arguments the algorithm is based
+    on Mpmath's [3]_ *shi* and *chi* routines.
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
+    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+           (See Section 5.2.)
+    .. [2] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    .. [2] Fredrik Johansson and others.
-           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
-           (Version 0.19) http://mpmath.org/
+    .. [3] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point
+           arithmetic" (Version 0.19) http://mpmath.org/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import shichi, sici
+
+    `shichi` accepts real or complex input:
+
+    >>> shichi(0.5)
+    (0.5069967498196671, -0.05277684495649357)
+    >>> shichi(0.5 + 2.5j)
+    ((0.11772029666668238+1.831091777729851j),
+     (0.29912435887648825+1.7395351121166562j))
+
+    The hyperbolic sine and cosine integrals Shi(z) and Chi(z) are
+    related to the sine and cosine integrals Si(z) and Ci(z) by
+
+    * Shi(z) = -i*Si(i*z)
+    * Chi(z) = Ci(-i*z) + i*pi/2
+
+    >>> z = 0.25 + 5j
+    >>> shi, chi = shichi(z)
+    >>> shi, -1j*sici(1j*z)[0]            # Should be the same.
+    ((-0.04834719325101729+1.5469354086921228j),
+     (-0.04834719325101729+1.5469354086921228j))
+    >>> chi, sici(-1j*z)[1] + 1j*np.pi/2  # Should be the same.
+    ((-0.19568708973868087+1.556276312103824j),
+     (-0.19568708973868087+1.556276312103824j))
+
+    Plot the functions evaluated on the real axis:
+
+    >>> xp = np.geomspace(1e-8, 4.0, 250)
+    >>> x = np.concatenate((-xp[::-1], xp))
+    >>> shi, chi = shichi(x)
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, shi, label='Shi(x)')
+    >>> ax.plot(x, chi, '--', label='Chi(x)')
+    >>> ax.set_xlabel('x')
+    >>> ax.set_title('Hyperbolic Sine and Cosine Integrals')
+    >>> ax.legend(shadow=True, framealpha=1, loc='lower right')
+    >>> ax.grid(True)
+    >>> plt.show()
+
     """)
 
 add_newdoc("sici",
@@ -10417,7 +11434,7 @@ add_newdoc("sici",
       \gamma + \log(x) + \int_0^x \frac{\cos{t} - 1}{t}dt
 
     where :math:`\gamma` is Euler's constant and :math:`\log` is the
-    principal branch of the logarithm.
+    principal branch of the logarithm [1]_.
 
     Parameters
     ----------
@@ -10434,6 +11451,12 @@ add_newdoc("sici",
     ci : scalar or ndarray
         Cosine integral at ``x``
 
+    See Also
+    --------
+    shichi : Hyperbolic sine and cosine integrals.
+    exp1 : Exponential integral E1.
+    expi : Exponential integral Ei.
+
     Notes
     -----
     For real arguments with ``x < 0``, ``ci`` is the real part of the
@@ -10441,16 +11464,74 @@ add_newdoc("sici",
     differ by a factor of ``1j*pi``.
 
     For real arguments the function is computed by calling Cephes'
-    [1]_ *sici* routine. For complex arguments the algorithm is based
-    on Mpmath's [2]_ *si* and *ci* routines.
+    [2]_ *sici* routine. For complex arguments the algorithm is based
+    on Mpmath's [3]_ *si* and *ci* routines.
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
+    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+           (See Section 5.2.)
+    .. [2] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    .. [2] Fredrik Johansson and others.
-           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
-           (Version 0.19) http://mpmath.org/
+    .. [3] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point
+           arithmetic" (Version 0.19) http://mpmath.org/
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import sici, exp1
+
+    `sici` accepts real or complex input:
+
+    >>> sici(2.5)
+    (1.7785201734438267, 0.2858711963653835)
+    >>> sici(2.5 + 3j)
+    ((4.505735874563953+0.06863305018999577j),
+    (0.0793644206906966-2.935510262937543j))
+
+    For z in the right half plane, the sine and cosine integrals are
+    related to the exponential integral E1 (implemented in SciPy as
+    `scipy.special.exp1`) by
+
+    * Si(z) = (E1(i*z) - E1(-i*z))/2i + pi/2
+    * Ci(z) = -(E1(i*z) + E1(-i*z))/2
+
+    See [1]_ (equations 5.2.21 and 5.2.23).
+
+    We can verify these relations:
+
+    >>> z = 2 - 3j
+    >>> sici(z)
+    ((4.54751388956229-1.3991965806460565j),
+    (1.408292501520851+2.9836177420296055j))
+
+    >>> (exp1(1j*z) - exp1(-1j*z))/2j + np.pi/2  # Same as sine integral
+    (4.54751388956229-1.3991965806460565j)
+
+    >>> -(exp1(1j*z) + exp1(-1j*z))/2            # Same as cosine integral
+    (1.408292501520851+2.9836177420296055j)
+
+    Plot the functions evaluated on the real axis; the dotted horizontal
+    lines are at pi/2 and -pi/2:
+
+    >>> x = np.linspace(-16, 16, 150)
+    >>> si, ci = sici(x)
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, si, label='Si(x)')
+    >>> ax.plot(x, ci, '--', label='Ci(x)')
+    >>> ax.legend(shadow=True, framealpha=1, loc='upper left')
+    >>> ax.set_xlabel('x')
+    >>> ax.set_title('Sine and Cosine Integrals')
+    >>> ax.axhline(np.pi/2, linestyle=':', alpha=0.5, color='k')
+    >>> ax.axhline(-np.pi/2, linestyle=':', alpha=0.5, color='k')
+    >>> ax.grid(True)
+    >>> plt.show()
+
     """)
 
 add_newdoc("sindg",
@@ -10477,6 +11558,7 @@ add_newdoc("sindg",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using sine directly.
@@ -10532,6 +11614,7 @@ add_newdoc("smirnov",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import smirnov
 
     Show the probability of a gap at least as big as 0, 0.5 and 1.0 for a sample of size 5
@@ -10684,6 +11767,7 @@ add_newdoc("spence",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import spence
     >>> import matplotlib.pyplot as plt
 
@@ -10867,13 +11951,59 @@ add_newdoc("struve",
 
     See also
     --------
-    modstruve
+    modstruve: Modified Struve function
 
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/11
 
+    Examples
+    --------
+    Calculate the Struve function of order 1 at 2.
+
+    >>> import numpy as np
+    >>> from scipy.special import struve
+    >>> import matplotlib.pyplot as plt
+    >>> struve(1, 2.)
+    0.6467637282835622
+
+    Calculate the Struve function at 2 for orders 1, 2 and 3 by providing
+    a list for the order parameter `v`.
+
+    >>> struve([1, 2, 3], 2.)
+    array([0.64676373, 0.28031806, 0.08363767])
+
+    Calculate the Struve function of order 1 for several points by providing
+    an array for `x`.
+
+    >>> points = np.array([2., 5., 8.])
+    >>> struve(1, points)
+    array([0.64676373, 0.80781195, 0.48811605])
+
+    Compute the Struve function for several orders at several points by
+    providing arrays for `v` and `z`. The arrays have to be broadcastable
+    to the correct shapes.
+
+    >>> orders = np.array([[1], [2], [3]])
+    >>> points.shape, orders.shape
+    ((3,), (3, 1))
+
+    >>> struve(orders, points)
+    array([[0.64676373, 0.80781195, 0.48811605],
+           [0.28031806, 1.56937455, 1.51769363],
+           [0.08363767, 1.50872065, 2.98697513]])
+
+    Plot the Struve functions of order 0 to 3 from -10 to 10.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, struve(i, x), label=f'$H_{i!r}$')
+    >>> ax.legend(ncol=2)
+    >>> ax.set_xlim(-10, 10)
+    >>> ax.set_title(r"Struve functions $H_{\nu}$")
+    >>> plt.show()
     """)
 
 add_newdoc("tandg",
@@ -10900,6 +12030,7 @@ add_newdoc("tandg",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using tangent directly.
@@ -10964,6 +12095,7 @@ add_newdoc("wofz",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
 
@@ -11071,13 +12203,37 @@ add_newdoc("y0",
 
     See also
     --------
-    j0
-    yv
+    j0: Bessel function of the first kind of order 0
+    yv: Bessel function of the first kind
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import y0
+    >>> y0(1.)
+    0.08825696421567697
+
+    Calculate at several points:
+
+    >>> import numpy as np
+    >>> y0(np.array([0.5, 2., 3.]))
+    array([-0.44451873,  0.51037567,  0.37685001])
+
+    Plot the function from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = y0(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+
     """)
 
 add_newdoc("y1",
@@ -11111,14 +12267,38 @@ add_newdoc("y1",
 
     See also
     --------
-    j1
-    yn
-    yv
+    j1: Bessel function of the first kind of order 1
+    yn: Bessel function of the second kind
+    yv: Bessel function of the second kind
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function at one point:
+
+    >>> from scipy.special import y1
+    >>> y1(1.)
+    -0.7812128213002888
+
+    Calculate at several points:
+
+    >>> import numpy as np
+    >>> y1(np.array([0.5, 2., 3.]))
+    array([-1.47147239, -0.10703243,  0.32467442])
+
+    Plot the function from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> y = y1(x)
+    >>> ax.plot(x, y)
+    >>> plt.show()
+
     """)
 
 add_newdoc("yn",
@@ -11152,11 +12332,63 @@ add_newdoc("yn",
     See also
     --------
     yv : For real order and real or complex argument.
+    y0: faster implementation of this function for order 0
+    y1: faster implementation of this function for order 1
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Evaluate the function of order 0 at one point.
+
+    >>> from scipy.special import yn
+    >>> yn(0, 1.)
+    0.08825696421567697
+
+    Evaluate the function at one point for different orders.
+
+    >>> yn(0, 1.), yn(1, 1.), yn(2, 1.)
+    (0.08825696421567697, -0.7812128213002888, -1.6506826068162546)
+
+    The evaluation for different orders can be carried out in one call by
+    providing a list or NumPy array as argument for the `v` parameter:
+
+    >>> yn([0, 1, 2], 1.)
+    array([ 0.08825696, -0.78121282, -1.65068261])
+
+    Evaluate the function at several points for order 0 by providing an
+    array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 3., 8.])
+    >>> yn(0, points)
+    array([-0.44451873,  0.37685001,  0.22352149])
+
+    If `z` is an array, the order parameter `v` must be broadcastable to
+    the correct shape if different orders shall be computed in one call.
+    To calculate the orders 0 and 1 for an 1D array:
+
+    >>> orders = np.array([[0], [1]])
+    >>> orders.shape
+    (2, 1)
+
+    >>> yn(orders, points)
+    array([[-0.44451873,  0.37685001,  0.22352149],
+           [-1.47147239,  0.32467442, -0.15806046]])
+
+    Plot the functions of order 0 to 3 from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, yn(i, x), label=f'$Y_{i!r}$')
+    >>> ax.set_ylim(-3, 1)
+    >>> ax.legend()
+    >>> plt.show()
     """)
 
 add_newdoc("yv",
@@ -11199,12 +12431,64 @@ add_newdoc("yv",
     See also
     --------
     yve : :math:`Y_v` with leading exponential behavior stripped off.
+    y0: faster implementation of this function for order 0
+    y1: faster implementation of this function for order 1
 
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Evaluate the function of order 0 at one point.
+
+    >>> from scipy.special import yv
+    >>> yv(0, 1.)
+    0.088256964215677
+
+    Evaluate the function at one point for different orders.
+
+    >>> yv(0, 1.), yv(1, 1.), yv(1.5, 1.)
+    (0.088256964215677, -0.7812128213002889, -1.102495575160179)
+
+    The evaluation for different orders can be carried out in one call by
+    providing a list or NumPy array as argument for the `v` parameter:
+
+    >>> yv([0, 1, 1.5], 1.)
+    array([ 0.08825696, -0.78121282, -1.10249558])
+
+    Evaluate the function at several points for order 0 by providing an
+    array for `z`.
+
+    >>> import numpy as np
+    >>> points = np.array([0.5, 3., 8.])
+    >>> yv(0, points)
+    array([-0.44451873,  0.37685001,  0.22352149])
+
+    If `z` is an array, the order parameter `v` must be broadcastable to
+    the correct shape if different orders shall be computed in one call.
+    To calculate the orders 0 and 1 for an 1D array:
+
+    >>> orders = np.array([[0], [1]])
+    >>> orders.shape
+    (2, 1)
+
+    >>> yv(orders, points)
+    array([[-0.44451873,  0.37685001,  0.22352149],
+           [-1.47147239,  0.32467442, -0.15806046]])
+
+    Plot the functions of order 0 to 3 from 0 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 10., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, yv(i, x), label=f'$Y_{i!r}$')
+    >>> ax.set_ylim(-3, 1)
+    >>> ax.legend()
+    >>> plt.show()
 
     """)
 
@@ -11297,6 +12581,7 @@ add_newdoc("zetac",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import zetac, zeta
 
     Some special values:
@@ -11593,6 +12878,7 @@ add_newdoc("ndtri_exp",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     `ndtri_exp` agrees with the naive implementation when the latter does

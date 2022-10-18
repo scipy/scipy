@@ -7,6 +7,7 @@ from scipy.spatial.distance import directed_hausdorff
 from scipy.spatial import distance
 from scipy._lib._util import check_random_state
 
+
 class TestHausdorff:
     # Test various properties of the directed Hausdorff code.
 
@@ -53,7 +54,7 @@ class TestHausdorff:
         # reverse direction.
         actual = directed_hausdorff(self.path_2, self.path_1)[0]
         # brute force over columns:
-        expected = max(np.amin(distance.cdist(self.path_1, self.path_2), 
+        expected = max(np.amin(distance.cdist(self.path_1, self.path_2),
                                axis=0))
         assert_allclose(actual, expected)
 
@@ -78,7 +79,7 @@ class TestHausdorff:
         # relative to brute force approach.
         actual = directed_hausdorff(self.path_2_4d, self.path_1_4d)[0]
         # brute force over columns:
-        expected = max(np.amin(distance.cdist(self.path_1_4d, self.path_2_4d), 
+        expected = max(np.amin(distance.cdist(self.path_1_4d, self.path_2_4d),
                                axis=0))
         assert_allclose(actual, expected)
 
@@ -155,6 +156,13 @@ def test_massive_arr_overflow():
     # on 64-bit systems we should be able to
     # handle arrays that exceed the indexing
     # size of a 32-bit signed integer
+    try:
+        import psutil
+    except ModuleNotFoundError:
+        pytest.skip("psutil required to check available memory")
+    if psutil.virtual_memory().available < 80*2**30:
+        # Don't run the test if there is less than 80 gig of RAM available.
+        pytest.skip('insufficient memory available to run this test')
     size = int(3e9)
     arr1 = np.zeros(shape=(size, 2))
     arr2 = np.zeros(shape=(3, 2))

@@ -338,9 +338,9 @@ def correlation_lags(in1_len, in2_len, mode='full'):
     --------
     Cross-correlation of a signal with its time-delayed self.
 
+    >>> import numpy as np
     >>> from scipy import signal
-    >>> from numpy.random import default_rng
-    >>> rng = default_rng()
+    >>> rng = np.random.default_rng()
     >>> x = rng.standard_normal(1000)
     >>> y = np.concatenate([rng.standard_normal(100), x])
     >>> correlation = signal.correlate(x, y, mode="full")
@@ -606,6 +606,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     --------
     Autocorrelation of white noise is an impulse.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> rng = np.random.default_rng()
     >>> sig = rng.standard_normal(1000)
@@ -625,8 +626,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     The `convolve2d` function allows for other types of image boundaries,
     but is far slower.
 
-    >>> from scipy import misc
-    >>> face = misc.face(gray=True)
+    >>> from scipy import datasets
+    >>> face = datasets.face(gray=True)
     >>> kernel = np.outer(signal.windows.gaussian(70, 8),
     ...                   signal.windows.gaussian(70, 8))
     >>> blurred = signal.fftconvolve(face, kernel, mode='same')
@@ -835,6 +836,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     --------
     Convolve a 100,000 sample signal with a 512-sample filter.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> rng = np.random.default_rng()
     >>> sig = rng.standard_normal(100000)
@@ -1241,6 +1243,7 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     --------
     Estimate the fastest method for a given input:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> rng = np.random.default_rng()
     >>> img = rng.random((32, 32))
@@ -1368,6 +1371,7 @@ def convolve(in1, in2, mode='full', method='auto'):
     --------
     Smooth a square pulse using a Hann window:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> sig = np.repeat([0., 1., 0.], 100)
     >>> win = signal.windows.hann(50)
@@ -1458,6 +1462,7 @@ def order_filter(a, domain, rank):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> x = np.arange(25).reshape(5, 5)
     >>> domain = np.identity(3)
@@ -1579,7 +1584,7 @@ def wiener(im, mysize=None, noise=None):
     Examples
     --------
 
-    >>> from scipy.misc import face
+    >>> from scipy.datasets import face
     >>> from scipy.signal import wiener
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
@@ -1681,9 +1686,10 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     symmetric boundary condition to avoid creating edges at the image
     boundaries.
 
+    >>> import numpy as np
     >>> from scipy import signal
-    >>> from scipy import misc
-    >>> ascent = misc.ascent()
+    >>> from scipy import datasets
+    >>> ascent = datasets.ascent()
     >>> scharr = np.array([[ -3-3j, 0-10j,  +3 -3j],
     ...                    [-10+0j, 0+ 0j, +10 +0j],
     ...                    [ -3+3j, 0+10j,  +3 +3j]]) # Gx + j*Gy
@@ -1774,9 +1780,9 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     image:
 
     >>> from scipy import signal
-    >>> from scipy import misc
+    >>> from scipy import datasets
     >>> rng = np.random.default_rng()
-    >>> face = misc.face(gray=True) - misc.face(gray=True).mean()
+    >>> face = datasets.face(gray=True) - datasets.face(gray=True).mean()
     >>> template = np.copy(face[300:365, 670:750])  # right eye
     >>> template -= template.mean()
     >>> face = face + rng.standard_normal(face.shape) * 50  # add noise
@@ -1857,6 +1863,7 @@ def medfilt2d(input, kernel_size=3):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> x = np.arange(25).reshape(5, 5)
     >>> x
@@ -2010,6 +2017,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     --------
     Generate a noisy signal to be filtered:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -3069,6 +3077,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     Note that the end of the resampled data rises to meet the first
     sample of the next cycle:
 
+    >>> import numpy as np
     >>> from scipy import signal
 
     >>> x = np.linspace(0, 10, 20, endpoint=False)
@@ -3504,9 +3513,9 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
-    >>> from numpy.random import default_rng
-    >>> rng = default_rng()
+    >>> rng = np.random.default_rng()
     >>> npoints = 1000
     >>> noise = rng.standard_normal(npoints)
     >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise
@@ -3733,6 +3742,7 @@ def sosfilt_zi(sos):
     Filter a rectangular pulse that begins at time 0, with and without
     the use of the `zi` argument of `scipy.signal.sosfilt`.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -4035,6 +4045,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     --------
     The examples will use several functions from `scipy.signal`.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -4358,6 +4369,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import sosfiltfilt, butter
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -4467,6 +4479,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     Examples
     --------
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 

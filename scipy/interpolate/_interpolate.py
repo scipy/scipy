@@ -1,9 +1,6 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 
 
-import itertools
-import warnings
-
 import numpy as np
 from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
                    ravel, poly1d, asarray, intp)
@@ -48,6 +45,7 @@ def lagrange(x, w):
     --------
     Interpolate :math:`f(x) = x^3` by 3 points.
 
+    >>> import numpy as np
     >>> from scipy.interpolate import lagrange
     >>> x = np.array([0, 1, 2])
     >>> y = x**3
@@ -190,6 +188,7 @@ class interp2d:
     --------
     Construct a 2-D grid and interpolate on it:
 
+    >>> import numpy as np
     >>> from scipy import interpolate
     >>> x = np.arange(-5.01, 5.01, 0.25)
     >>> y = np.arange(-5.01, 5.01, 0.25)
@@ -504,7 +503,7 @@ class interp1d(_Interpolator1D):
         if kind in ('linear', 'nearest', 'nearest-up', 'previous', 'next'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
-            minval = 2
+            minval = 1
             if kind == 'nearest':
                 # Do division before addition to prevent possible integer
                 # overflow
@@ -530,7 +529,8 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_previousnext
                 if _do_extrapolate(fill_value):
                     self._check_and_update_bounds_error_for_extrapolation()
-                    fill_value = (np.nan, self.y.max(axis=axis))
+                    # assume y is sorted by x ascending order here.
+                    fill_value = (np.nan, np.take(self.y, -1, axis))
             elif kind == 'next':
                 self._side = 'right'
                 self._ind = 1
@@ -539,7 +539,8 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_previousnext
                 if _do_extrapolate(fill_value):
                     self._check_and_update_bounds_error_for_extrapolation()
-                    fill_value = (self.y.min(axis=axis), np.nan)
+                    # assume y is sorted by x ascending order here.
+                    fill_value = (np.take(self.y, 0, axis), np.nan)
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
                 np_types = (np.float_, np.int_)
@@ -1262,6 +1263,7 @@ class PPoly(_PPolyBase):
         Finding roots of ``[x**2 - 1, (x - 1)**2]`` defined on intervals
         ``[-2, 1], [1, 2]``:
 
+        >>> import numpy as np
         >>> from scipy.interpolate import PPoly
         >>> pp = PPoly(np.array([[1, -4, 3], [1, 0, 0]]).T, [-2, 1, 2])
         >>> pp.solve()
@@ -1338,6 +1340,7 @@ class PPoly(_PPolyBase):
         --------
         Construct an interpolating spline and convert it to a `PPoly` instance 
 
+        >>> import numpy as np
         >>> from scipy.interpolate import splrep, PPoly
         >>> x = np.linspace(0, 1, 11)
         >>> y = np.sin(2*np.pi*x)
@@ -2422,4 +2425,3 @@ class NdPPoly:
             c = out.reshape(c.shape[2:])
 
         return c
-

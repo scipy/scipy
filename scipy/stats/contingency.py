@@ -11,6 +11,7 @@ Functions for creating and analyzing contingency tables.
 
    chi2_contingency
    relative_risk
+   odds_ratio
    crosstab
    association
 
@@ -26,11 +27,12 @@ import numpy as np
 from ._stats_py import power_divergence
 from ._relative_risk import relative_risk
 from ._crosstab import crosstab
+from ._odds_ratio import odds_ratio
 from scipy._lib._bunch import _make_tuple_bunch
 
 
 __all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab',
-           'association', 'relative_risk']
+           'association', 'relative_risk', 'odds_ratio']
 
 
 def margins(a):
@@ -51,11 +53,13 @@ def margins(a):
 
     Examples
     --------
+    >>> import numpy as np
+    >>> from scipy.stats.contingency import margins
+
     >>> a = np.arange(12).reshape(2, 6)
     >>> a
     array([[ 0,  1,  2,  3,  4,  5],
            [ 6,  7,  8,  9, 10, 11]])
-    >>> from scipy.stats.contingency import margins
     >>> m0, m1 = margins(a)
     >>> m0
     array([[15],
@@ -107,6 +111,7 @@ def expected_freq(observed):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats.contingency import expected_freq
     >>> observed = np.array([[10, 10, 20],[20, 20, 20]])
     >>> expected_freq(observed)
@@ -203,11 +208,11 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     This function does not handle masked arrays, because the calculation
     does not make sense with missing values.
 
-    Like stats.chisquare, this function computes a chi-square statistic;
-    the convenience this function provides is to figure out the expected
-    frequencies and degrees of freedom from the given contingency table.
-    If these were already known, and if the Yates' correction was not
-    required, one could use stats.chisquare.  That is, if one calls::
+    Like `scipy.stats.chisquare`, this function computes a chi-square
+    statistic; the convenience this function provides is to figure out the
+    expected frequencies and degrees of freedom from the given contingency
+    table. If these were already known, and if the Yates' correction was not
+    required, one could use `scipy.stats.chisquare`.  That is, if one calls::
 
         res = chi2_contingency(obs, correction=False)
 
@@ -233,6 +238,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     --------
     A two-way example (2 x 3):
 
+    >>> import numpy as np
     >>> from scipy.stats import chi2_contingency
     >>> obs = np.array([[10, 10, 20], [20, 20, 20]])
     >>> res = chi2_contingency(obs)
@@ -370,6 +376,7 @@ def association(observed, method="cramer", correction=False, lambda_=None):
     --------
     An example with a 4x2 contingency table:
 
+    >>> import numpy as np
     >>> from scipy.stats.contingency import association
     >>> obs4x2 = np.array([[100, 150], [203, 322], [420, 700], [320, 210]])
 

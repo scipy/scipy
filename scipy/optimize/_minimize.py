@@ -80,8 +80,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'trust-ncg'   :ref:`(see here) <optimize.minimize-trustncg>`
             - 'trust-exact' :ref:`(see here) <optimize.minimize-trustexact>`
             - 'trust-krylov' :ref:`(see here) <optimize.minimize-trustkrylov>`
-            - custom - a callable object (added in version 0.14.0),
-              see below for description.
+            - custom - a callable object, see below for description.
 
         If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
         depending on whether or not the problem has constraints or bounds.
@@ -399,8 +398,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     expand in future versions and then these parameters will be passed to
     the method.  You can find an example in the scipy.optimize tutorial.
 
-    .. versionadded:: 0.11.0
-
     References
     ----------
     .. [1] Nelder, J A, and R Mead. 1965. A Simplex Method for Function
@@ -520,7 +517,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                    'Currently, singleton dimensions will be removed from '
                    '`x0`, but an error will be raised in SciPy 1.11.0.')
         warn(message, DeprecationWarning, stacklevel=2)
-        x0 = np.squeeze(x0)
+        x0 = np.atleast_1d(np.squeeze(x0))
 
     if x0.dtype.kind in np.typecodes["AllInteger"]:
         x0 = np.asarray(x0, dtype=float)
@@ -555,20 +552,18 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not use Hessian information (hess).' % method,
              RuntimeWarning)
     # - hessp
-    if meth not in ('newton-cg', 'dogleg', 'trust-ncg', 'trust-constr',
+    if meth not in ('newton-cg', 'trust-ncg', 'trust-constr',
                     'trust-krylov', '_custom') \
        and hessp is not None:
         warn('Method %s does not use Hessian-vector product '
              'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
-    if (meth in ('cg', 'bfgs', 'newton-cg', 'dogleg', 'trust-ncg')
-            and (bounds is not None or np.any(constraints))):
-        warn('Method %s cannot handle constraints nor bounds.' % method,
-             RuntimeWarning)
-    if meth in ('nelder-mead', 'l-bfgs-b', 'tnc', 'powell') and np.any(constraints):
+    if (meth not in ('cobyla', 'slsqp', 'trust-constr', '_custom') and
+            np.any(constraints)):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
-    if meth == 'cobyla' and bounds is not None:
+    if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'tnc', 'slsqp',
+                    'trust-constr', '_custom') and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - return_all

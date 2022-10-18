@@ -268,9 +268,22 @@ class RegularGridInterpolator:
         xi : ndarray of shape (..., ndim)
             The coordinates to evaluate the interpolator at.
 
-        method : str
-            The method of interpolation to perform. Supported are "linear" and
-            "nearest".
+        method : str, optional
+            The method of interpolation to perform. Supported are "linear",
+            "nearest", "slinear", "cubic", "quintic" and "pchip". Default is
+            the method chosen when the interpolator was created.
+
+        Returns
+        -------
+        values_x : ndarray, shape xi.shape[:-1] + values.shape[ndim:]
+            Interpolated values at `xi`. See notes for behaviour when
+            ``xi.ndim == 1``.
+
+        Notes
+        -----
+        In the case that ``xi.ndim == 1`` a new axis is inserted into
+        the 0 position of the returned array, values_x, so its shape is
+        instead ``(1,) + values.shape[ndim:]``.
 
         Examples
         --------
@@ -325,18 +338,14 @@ class RegularGridInterpolator:
 
         if method == "linear":
             indices, norm_distances = self._find_indices(xi.T)
-            result = self._evaluate_linear(indices,
-                                           norm_distances,
-                                           out_of_bounds)
+            result = self._evaluate_linear(indices, norm_distances)
         elif method == "nearest":
             indices, norm_distances = self._find_indices(xi.T)
-            result = self._evaluate_nearest(indices,
-                                            norm_distances,
-                                            out_of_bounds)
+            result = self._evaluate_nearest(indices, norm_distances)
         elif method in self._SPLINE_METHODS:
             if is_method_changed:
                 self._validate_grid_dimensions(self.grid, method)
-            result = self._evaluate_spline(self.values.T, xi, method)
+            result = self._evaluate_spline(xi, method)
 
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
@@ -346,7 +355,7 @@ class RegularGridInterpolator:
             result[nans] = np.nan
         return result.reshape(xi_shape[:-1] + self.values.shape[ndim:])
 
-    def _evaluate_linear(self, indices, norm_distances, out_of_bounds):
+    def _evaluate_linear(self, indices, norm_distances):
         # slice for broadcasting over trailing dimensions in self.values
         vslice = (slice(None),) + (None,)*(self.values.ndim - len(indices))
 
@@ -376,7 +385,7 @@ class RegularGridInterpolator:
             values += np.asarray(self.values[edge_indices]) * weight[vslice]
         return values
 
-    def _evaluate_nearest(self, indices, norm_distances, out_of_bounds):
+    def _evaluate_nearest(self, indices, norm_distances):
         idx_res = [np.where(yi <= .5, i, i + 1)
                    for i, yi in zip(indices, norm_distances)]
         return self.values[tuple(idx_res)]
@@ -390,11 +399,23 @@ class RegularGridInterpolator:
                                  f" but method {method} requires at least "
                                  f" {k+1} points per dimension.")
 
-    def _evaluate_spline(self, values, xi, method):
-        # ensure xi is 2D list of points to evaluate
+    def _evaluate_spline(self, xi, method):
+        # ensure xi is 2D list of points to evaluate (`m` is the number of
+        # points and `n` is the number of interpolation dimensions,
+        # ``n == len(self.grid)``.)
         if xi.ndim == 1:
             xi = xi.reshape((1, xi.size))
         m, n = xi.shape
+
+        # Reorder the axes: n-dimensional process iterates over the
+        # interpolation axes from the last axis downwards: E.g. for a 4D grid
+        # the order of axes is 3, 2, 1, 0. Each 1D interpolation works along
+        # the 0th axis of its argument array (for 1D routine it's its ``y``
+        # array). Thus permute the interpolation axes of `values` *and keep
+        # trailing dimensions trailing*.
+        axes = tuple(range(self.values.ndim))
+        axx = axes[:n][::-1] + axes[n:]
+        values = self.values.transpose(axx)
 
         if method == 'pchip':
             _eval_func = self._do_pchip
@@ -415,12 +436,13 @@ class RegularGridInterpolator:
                                   k)
 
         # the rest of the dimensions have to be on a per point-in-xi basis
-        result = np.empty(m, dtype=self.values.dtype)
+        shape = (m, *self.values.shape[n:])
+        result = np.empty(shape, dtype=self.values.dtype)
         for j in range(m):
             # Main process: Apply 1D interpolate in each dimension
             # sequentially, starting with the last dimension.
             # These are then "folded" into the next dimension in-place.
-            folded_values = first_values[j]
+            folded_values = first_values[j, ...]
             for i in range(last_dim-1, -1, -1):
                 # Interpolate for each 1D from the last dimensions.
                 # This collapses each 1D sequence into a scalar.
@@ -428,7 +450,7 @@ class RegularGridInterpolator:
                                            folded_values,
                                            xi[j, i],
                                            k)
-            result[j] = folded_values
+            result[j, ...] = folded_values
 
         return result
 
@@ -499,9 +521,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         The coordinates to sample the gridded data at
 
     method : str, optional
-        The method of interpolation to perform. Supported are "linear" and
-        "nearest", and "splinef2d". "splinef2d" is only supported for
-        2-dimensional data.
+        The method of interpolation to perform. Supported are "linear",
+        "nearest", "slinear", "cubic", "quintic", "pchip", and "splinef2d".
+        "splinef2d" is only supported for 2-dimensional data.
 
     bounds_error : bool, optional
         If True, when interpolated values are requested outside of the
@@ -517,17 +539,23 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     Returns
     -------
     values_x : ndarray, shape xi.shape[:-1] + values.shape[ndim:]
-        Interpolated values at input coordinates.
+        Interpolated values at `xi`. See notes for behaviour when
+        ``xi.ndim == 1``.
 
     Notes
     -----
 
     .. versionadded:: 0.14
 
+    In the case that ``xi.ndim == 1`` a new axis is inserted into
+    the 0 position of the returned array, values_x, so its shape is
+    instead ``(1,) + values.shape[ndim:]``.
+
     Examples
     --------
     Evaluate a simple example function on the points of a regular 3-D grid:
 
+    >>> import numpy as np
     >>> from scipy.interpolate import interpn
     >>> def value_func_3d(x, y, z):
     ...     return 2 * x + 3 * y - z
@@ -562,10 +590,11 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     """
     # sanity check 'method' kwarg
-    if method not in ["linear", "nearest", "splinef2d"]:
+    if method not in ["linear", "nearest", "cubic", "quintic", "pchip",
+                      "splinef2d", "slinear"]:
         raise ValueError("interpn only understands the methods 'linear', "
-                         "'nearest', and 'splinef2d'. You provided %s." %
-                         method)
+                         "'nearest', 'slinear', 'cubic', 'quintic', 'pchip', "
+                         f"and 'splinef2d'. You provided {method}.")
 
     if not hasattr(values, 'ndim'):
         values = np.asarray(values)
@@ -619,13 +648,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                                 "in dimension %d" % i)
 
     # perform interpolation
-    if method == "linear":
-        interp = RegularGridInterpolator(points, values, method="linear",
-                                         bounds_error=bounds_error,
-                                         fill_value=fill_value)
-        return interp(xi)
-    elif method == "nearest":
-        interp = RegularGridInterpolator(points, values, method="nearest",
+    if method in ["linear", "nearest", "slinear", "cubic", "quintic", "pchip"]:
+        interp = RegularGridInterpolator(points, values, method=method,
                                          bounds_error=bounds_error,
                                          fill_value=fill_value)
         return interp(xi)

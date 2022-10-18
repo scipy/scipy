@@ -183,8 +183,6 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         jac = fprime
 
     # build options
-    if disp is None:
-        disp = iprint
     opts = {'disp': disp,
             'iprint': iprint,
             'maxcor': m,
@@ -240,7 +238,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         If `jac is None` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
     maxfun : int
-        Maximum number of function evaluations.
+        Maximum number of function evaluations. Note that this function
+        may violate the limit because of evaluating gradients by numerical
+        differentiation.
     maxiter : int
         Maximum number of iterations.
     iprint : int, optional

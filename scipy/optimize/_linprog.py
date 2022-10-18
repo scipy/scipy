@@ -337,7 +337,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         'revised simplex' method, and can only be used if `x0` represents a
         basic feasible solution.
 
-    integrality : 1-D array, optional
+    integrality : 1-D array or int, optional
         Indicates the type of integrality constraint on each decision variable.
 
         ``0`` : Continuous variable; no integrality constraint.
@@ -351,8 +351,14 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``3`` : Semi-integer variable; decision variable must be an integer
         within `bounds` or take value ``0``.
 
-        By default, all variables are continuous. This argument is currently
-        used only by the ``'highs'`` method and ignored otherwise.
+        By default, all variables are continuous.
+
+        For mixed integrality constraints, supply an array of shape `c.shape`.
+        To infer a constraint on each decision variable from shorter inputs,
+        the argument will be broadcasted to `c.shape` using `np.broadcast_to`.
+
+        This argument is currently used only by the ``'highs'`` method and
+        ignored otherwise.
 
     Returns
     -------
@@ -573,8 +579,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     and residuals (slacks) are also available.
 
     >>> res.ineqlin
-     marginals: array([-0., -1.])
-      residual: array([39.,  0.])
+      residual: [ 3.900e+01  0.000e+00]
+     marginals: [-0.000e+00 -1.000e+00]
 
     For example, because the marginal associated with the second inequality
     constraint is -1, we expect the optimal value of the objective function
@@ -613,6 +619,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         warning_message = ("Only `method='highs'` supports integer "
                            "constraints. Ignoring `integrality`.")
         warn(warning_message, OptimizeWarning)
+    elif np.any(integrality):
+        integrality = np.broadcast_to(integrality, c.shape)
 
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality)
     lp, solver_options = _parse_linprog(lp, options, meth)
