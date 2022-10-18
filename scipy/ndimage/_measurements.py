@@ -347,6 +347,11 @@ def value_indices(arr, *, ignore_value=None):
     more flexible alternative to functions like ``scipy.ndimage.mean()``
     and ``scipy.ndimage.variance()``.
 
+    Some other closely related functionality, with different strengths and
+    weaknesses, can also be found in ``scipy.stats.binned_statistic()`` and
+    the `scikit-image <https://scikit-image.org/>`_ function
+    ``skimage.measure.regionprops()``.
+
     Note for IDL users: this provides functionality equivalent to IDL's
     REVERSE_INDICES option (as per the IDL documentation for the
     `HISTOGRAM <https://www.l3harrisgeospatial.com/docs/histogram.html>`_
