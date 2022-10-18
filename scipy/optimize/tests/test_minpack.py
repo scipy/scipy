@@ -868,7 +868,8 @@ class TestCurveFit:
         y = np.linspace(2, 7, n) + rng.random(n)
         p, cov = optimize.curve_fit(f, x, y, maxfev=100000)
         assert np.all(np.diag(cov) > 0)
-        assert np.all(linalg.eigh(cov)[0] > 0)
+        eigs = linalg.eigh(cov)[0]  # separate line for debugging
+        assert np.all(eigs > -1e-6)
         assert_allclose(cov, cov.T)
 
 
