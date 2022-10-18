@@ -51,7 +51,7 @@ def _extend_mode_to_code(mode):
     elif mode == 'grid-constant':
         return 6
     elif mode == 'antireflect':
-        return 7 
+        return 7
     elif mode == 'antimirror':
         return 8
     else:
