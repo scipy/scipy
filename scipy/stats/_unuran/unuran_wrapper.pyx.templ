@@ -882,14 +882,14 @@ cdef class TransformedDensityRejection(Method):
                 raise UNURANError(self._messages.get())
             _pack_distr(self.distr, self.callbacks)
 
+            if domain is not None:
+                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
+                                                                 domain[1]))
+
             if mode is not None:
                 self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
             if center is not None:
                 self._check_errorcode(unur_distr_cont_set_center(self.distr, center))
-
-            if domain is not None:
-                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
-                                                                 domain[1]))
 
             self.par = unur_tdr_new(self.distr)
             if self.par == NULL:
@@ -1172,12 +1172,13 @@ cdef class SimpleRatioUniforms(Method):
                 raise UNURANError(self._messages.get())
             _pack_distr(self.distr, self.callbacks)
 
-            if mode is not None:
-                self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
-
             if domain is not None:
                 self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
                                                                  domain[1]))
+
+            if mode is not None:
+                self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
+
             self._check_errorcode(unur_distr_cont_set_pdfarea(self.distr, pdf_area))
 
             self.par = unur_srou_new(self.distr)
@@ -1445,14 +1446,14 @@ cdef class NumericalInversePolynomial(Method):
                 raise UNURANError(self._messages.get())
             _pack_distr(self.distr, self.callbacks)
 
+            if domain is not None:
+                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
+                                                                 domain[1]))
+
             if mode is not None:
                 self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
             if center is not None:
                 self._check_errorcode(unur_distr_cont_set_center(self.distr, center))
-
-            if domain is not None:
-                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
-                                                                 domain[1]))
 
             self.par = unur_pinv_new(self.distr)
             if self.par == NULL:

@@ -3259,13 +3259,12 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     fval = squeeze(func(x))
     x1 = x.copy()
     iter = 0
-    ilist = list(range(N))
     while True:
         try:
             fx = fval
             bigind = 0
             delta = 0.0
-            for i in ilist:
+            for i in range(N):
                 direc1 = direc[i]
                 fx2 = fval
                 fval, x, direc1 = _linesearch_powell(func, x, direc1,
@@ -3294,8 +3293,13 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
 
             # Construct the extrapolated point
             direc1 = x - x1
-            x2 = 2*x - x1
             x1 = x.copy()
+            # make sure that we don't go outside the bounds when extrapolating
+            if lower_bound is None and upper_bound is None:
+                lmax = 1
+            else:
+                _, lmax = _line_for_search(x, direc1, lower_bound, upper_bound)
+            x2 = x + min(lmax, 1) * direc1
             fx2 = squeeze(func(x2))
 
             if (fx > fx2):

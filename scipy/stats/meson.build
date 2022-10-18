@@ -96,12 +96,10 @@ py3.install_sources([
   subdir: 'scipy/stats'
 )
 
-pthread = dependency('threads')
-
 _qmc_cy = py3.extension_module('_qmc_cy',
   cython_gen_cpp.process('_qmc_cy.pyx'),
   cpp_args: cython_cpp_args,
-  dependencies: [pthread],
+  dependencies: thread_dep,
   include_directories: [inc_np],
   link_args: version_link_args,
   install: true,

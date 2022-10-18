@@ -163,26 +163,14 @@ def test_random_state(method, kwargs):
     rvs2 = rng2.rvs(100)
     assert_equal(rvs1, rvs2)
 
-    # RandomState seed for old numpy
-    if NumpyVersion(np.__version__) < '1.19.0':
-        seed1 = np.random.RandomState(123)
-        seed2 = 123
-        rng1 = Method(**kwargs, random_state=seed1)
-        rng2 = Method(**kwargs, random_state=seed2)
-        assert_equal(rng1.rvs(100), rng2.rvs(100))
-        rvs11 = rng1.rvs(550)
-        rvs12 = rng1.rvs(50)
-        rvs2 = rng2.rvs(600)
-        assert_equal(rvs11, rvs2[:550])
-        assert_equal(rvs12, rvs2[550:])
-    else:  # Generator seed for new NumPy
-        # when a RandomState is given, it should take the bitgen_t
-        # member of the class and create a Generator instance.
-        seed1 = np.random.RandomState(np.random.MT19937(123))
-        seed2 = np.random.Generator(np.random.MT19937(123))
-        rng1 = Method(**kwargs, random_state=seed1)
-        rng2 = Method(**kwargs, random_state=seed2)
-        assert_equal(rng1.rvs(100), rng2.rvs(100))
+    # Generator seed for new NumPy
+    # when a RandomState is given, it should take the bitgen_t
+    # member of the class and create a Generator instance.
+    seed1 = np.random.RandomState(np.random.MT19937(123))
+    seed2 = np.random.Generator(np.random.MT19937(123))
+    rng1 = Method(**kwargs, random_state=seed1)
+    rng2 = Method(**kwargs, random_state=seed2)
+    assert_equal(rng1.rvs(100), rng2.rvs(100))
 
 
 def test_set_random_state():
@@ -317,6 +305,30 @@ def check_discr_samples(rng, pv, mv_ex):
     obs_freqs[:freqs.size] = freqs
     pval = chisquare(obs_freqs, pv).pvalue
     assert pval > 0.1
+
+
+def test_warning_center_not_in_domain():
+    # UNURAN will warn if the center provided or the one computed w/o the
+    # domain is outside of the domain
+    msg = "102 : center moved into domain of distribution"
+    with pytest.warns(RuntimeWarning, match=msg):
+        NumericalInversePolynomial(StandardNormal(), center=0, domain=(3, 5))
+    with pytest.warns(RuntimeWarning, match=msg):
+        NumericalInversePolynomial(StandardNormal(), domain=(3, 5))
+
+
+@pytest.mark.parametrize('method', ["SimpleRatioUniforms",
+                                    "NumericalInversePolynomial",
+                                    "TransformedDensityRejection"])
+def test_error_mode_not_in_domain(method):
+    # UNURAN raises an error if the mode is not in the domain
+    # the behavior is different compared to the case that center is not in the
+    # domain. mode is supposed to be the exact value, center can be an
+    # approximate value
+    Method = getattr(stats.sampling, method)
+    msg = "17 : mode not in domain"
+    with pytest.raises(UNURANError, match=msg):
+        Method(StandardNormal(), mode=0, domain=(3, 5))
 
 
 @pytest.mark.parametrize('method', ["NumericalInverseHermite",
@@ -993,6 +1005,7 @@ class TestNumericalInverseHermite:
         with pytest.raises(err, match=msg):
             NumericalInverseHermite(StandardNormal(), domain=domain)
 
+
     def basic_test_all_scipy_dists(self, distname, shapes):
         slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
         fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
@@ -1009,12 +1022,7 @@ class TestNumericalInverseHermite:
         np.random.seed(0)
 
         dist = getattr(stats, distname)(*shapes)
-
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "overflow encountered")
-            sup.filter(RuntimeWarning, "divide by zero")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            fni = NumericalInverseHermite(dist)
+        fni = NumericalInverseHermite(dist)
 
         x = np.random.rand(10)
         p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
@@ -1023,6 +1031,7 @@ class TestNumericalInverseHermite:
         assert p_tol < 1e-8
         assert u_tol < 1e-12
 
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     @pytest.mark.xslow
     @pytest.mark.parametrize(("distname", "shapes"), distcont)
     def test_basic_all_scipy_dists(self, distname, shapes):
@@ -1030,6 +1039,7 @@ class TestNumericalInverseHermite:
         #     pytest.skip("Tested separately")
         self.basic_test_all_scipy_dists(distname, shapes)
 
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_basic_truncnorm_gh17155(self):
         self.basic_test_all_scipy_dists("truncnorm", (0.1, 2))
 
@@ -1048,8 +1058,7 @@ class TestNumericalInverseHermite:
                                     u_resolution='ekki')
 
     rngs = [None, 0, np.random.RandomState(0)]
-    if NumpyVersion(np.__version__) >= '1.18.0':
-        rngs.append(np.random.default_rng(0))  # type: ignore
+    rngs.append(np.random.default_rng(0))  # type: ignore
     sizes = [(None, tuple()), (8, (8,)), ((4, 5, 6), (4, 5, 6))]
 
     @pytest.mark.parametrize('rng', rngs)

@@ -10,7 +10,6 @@ import pickle
 import pytest
 
 import numpy as np
-from numpy.lib import NumpyVersion
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
@@ -198,8 +197,6 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
         def unpacker(res):
             return res
 
-    if NumpyVersion(np.__version__) < '1.18.0':
-        pytest.xfail("Generator `permutation` method doesn't support `axis`")
     rng = np.random.default_rng(0)
 
     # Generate multi-dimensional test data with all important combinations
@@ -323,8 +320,6 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
         def unpacker(res):
             return res
 
-    if NumpyVersion(np.__version__) < '1.18.0':
-        pytest.xfail("Generator `permutation` method doesn't support `axis`")
     rng = np.random.default_rng(0)
 
     if data_generator == "empty":
@@ -469,8 +464,6 @@ def test_axis_nan_policy_decorated_positional_axis(axis):
     # Test for correct behavior of function decorated with
     # _axis_nan_policy_decorator whether `axis` is provided as positional or
     # keyword argument
-    if NumpyVersion(np.__version__) < '1.18.0':
-        pytest.xfail("Avoid test failures due to old version of NumPy")
 
     shape = (8, 9, 10)
     rng = np.random.default_rng(0)
@@ -488,8 +481,6 @@ def test_axis_nan_policy_decorated_positional_axis(axis):
 def test_axis_nan_policy_decorated_positional_args():
     # Test for correct behavior of function decorated with
     # _axis_nan_policy_decorator when function accepts *args
-    if NumpyVersion(np.__version__) < '1.18.0':
-        pytest.xfail("Avoid test failures due to old version of NumPy")
 
     shape = (3, 8, 9, 10)
     rng = np.random.default_rng(0)
@@ -509,8 +500,6 @@ def test_axis_nan_policy_decorated_keyword_samples():
     # Test for correct behavior of function decorated with
     # _axis_nan_policy_decorator whether samples are provided as positional or
     # keyword arguments
-    if NumpyVersion(np.__version__) < '1.18.0':
-        pytest.xfail("Avoid test failures due to old version of NumPy")
 
     shape = (2, 8, 9, 10)
     rng = np.random.default_rng(0)
@@ -529,10 +518,7 @@ def test_axis_nan_policy_decorated_keyword_samples():
                           "paired", "unpacker"), axis_nan_policy_cases)
 def test_axis_nan_policy_decorated_pickled(hypotest, args, kwds, n_samples,
                                            n_outputs, paired, unpacker):
-    if NumpyVersion(np.__version__) < '1.18.0':
-        rng = np.random.RandomState(0)
-    else:
-        rng = np.random.default_rng(0)
+    rng = np.random.default_rng(0)
 
     # Some hypothesis tests return a non-iterable that needs an `unpacker` to
     # extract the statistic and p-value. For those that don't:
