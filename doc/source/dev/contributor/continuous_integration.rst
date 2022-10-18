@@ -84,6 +84,7 @@ Skipping CI can be achieved by adding a special text in the commit message:
 * ``[skip azp]``: will skip Azure
 * ``[skip actions]``: will skip GitHub Actions
 * ``[skip circle]``: will skip CircleCI
+* ``[skip cirrus]``: will skip CirrusCI
 * ``[skip ci]``: will skip *all* CI
 
 Of course, you can combine these to skip multiple workflows.
