@@ -1210,7 +1210,7 @@ add_newdoc("beta",
     See Also
     --------
     gamma : the gamma function
-    betainc :  the incomplete beta function
+    betainc :  the regularized incomplete beta function
     betaln : the natural logarithm of the absolute
              value of the beta function
 
@@ -1250,9 +1250,9 @@ add_newdoc("betainc",
     r"""
     betainc(a, b, x, out=None)
 
-    Incomplete beta function.
+    Regularized incomplete beta function.
 
-    Computes the incomplete beta function, defined as [1]_:
+    Computes the regularized incomplete beta function, defined as [1]_:
 
     .. math::
 
@@ -1274,16 +1274,16 @@ add_newdoc("betainc",
     Returns
     -------
     scalar or ndarray
-        Value of the incomplete beta function
+        Value of the regularized incomplete beta function
 
     See Also
     --------
     beta : beta function
-    betaincinv : inverse of the incomplete beta function
+    betaincinv : inverse of the regularized incomplete beta function
 
     Notes
     -----
-    The incomplete beta function is also sometimes defined
+    The regularized incomplete beta function is also sometimes defined
     without the `gamma` terms, in which case the above
     definition is the so-called regularized incomplete beta
     function. Under this definition, you can get the incomplete
@@ -1334,7 +1334,7 @@ add_newdoc("betaincinv",
     r"""
     betaincinv(a, b, y, out=None)
 
-    Inverse of the incomplete beta function.
+    Inverse of the regularized incomplete beta function.
 
     Computes :math:`x` such that:
 
@@ -1359,11 +1359,11 @@ add_newdoc("betaincinv",
     Returns
     -------
     scalar or ndarray
-        Value of the inverse of the incomplete beta function
+        Value of the inverse of the regularized incomplete beta function
 
     See Also
     --------
-    betainc : incomplete beta function
+    betainc : regularized incomplete beta function
     gamma : gamma function
 
     References
@@ -1413,7 +1413,7 @@ add_newdoc("betaln",
     See Also
     --------
     gamma : the gamma function
-    betainc :  the incomplete beta function
+    betainc :  the regularized incomplete beta function
     beta : the beta function
 
     Examples
@@ -4818,7 +4818,7 @@ add_newdoc("fdtr",
 
     Notes
     -----
-    The regularized incomplete beta function is used, according to the
+    The regularized regularized incomplete beta function is used, according to the
     formula,
 
     .. math::
@@ -4865,7 +4865,7 @@ add_newdoc("fdtrc",
 
     Notes
     -----
-    The regularized incomplete beta function is used, according to the
+    The regularized regularized incomplete beta function is used, according to the
     formula,
 
     .. math::
@@ -9591,7 +9591,7 @@ add_newdoc("ncfdtr",
     .. math::
         F(d_n, d_d, n_c, f) = \sum_{j=0}^\infty e^{-n_c/2} \frac{(n_c/2)^j}{j!} I_{x}(\frac{d_n}{2} + j, \frac{d_d}{2}),
 
-    where :math:`I` is the regularized incomplete beta function, and
+    where :math:`I` is the regularized regularized incomplete beta function, and
     :math:`x = f d_n/(f d_n + d_d)`.
 
     The computation time required for this routine is proportional to the

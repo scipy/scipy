@@ -1,7 +1,7 @@
       SUBROUTINE bratio(a,b,x,y,w,w1,ierr)
 C-----------------------------------------------------------------------
 C
-C            EVALUATION OF THE INCOMPLETE BETA FUNCTION IX(A,B)
+C            EVALUATION OF THE REGULARIZED INCOMPLETE BETA FUNCTION IX(A,B)
 C
 C                     --------------------
 C
