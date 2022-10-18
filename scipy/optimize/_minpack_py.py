@@ -469,7 +469,10 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             r = triu(transpose(retval[1]['fjac'])[:n, :])
             R = dot(r, perm)
             try:
-                cov_x = inv(dot(transpose(R), R))
+                # Tis was `cov_x = inv(dot(transpose(R), R))`, but sometimes
+                # the result was not symmetric positive definite. See gh-4555.
+                invR = inv(R)
+                cov_x = invR @ invR.T
             except (LinAlgError, ValueError):
                 pass
         return (retval[0], cov_x) + retval[1:-1] + (errors[info][0], info)
@@ -708,7 +711,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     -----
     Users should ensure that inputs `xdata`, `ydata`, and the output of `f`
     are ``float64``, or else the optimization may return incorrect results.
-    
+
     With ``method='lm'``, the algorithm uses the Levenberg-Marquardt algorithm
     through `leastsq`. Note that this algorithm can only deal with
     unconstrained problems.

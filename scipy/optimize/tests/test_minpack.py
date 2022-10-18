@@ -2,6 +2,7 @@
 Unit tests for optimization routines from minpack.py.
 """
 import warnings
+import pytest
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose,
@@ -11,7 +12,7 @@ import numpy as np
 from numpy import array, float64
 from multiprocessing.pool import ThreadPool
 
-from scipy import optimize
+from scipy import optimize, linalg
 from scipy.special import lambertw
 from scipy.optimize._minpack_py import leastsq, curve_fit, fixed_point
 from scipy.optimize import OptimizeWarning
@@ -851,6 +852,24 @@ class TestCurveFit:
             curve_fit(func,
                       xdata=[1, 2, 3, 4],
                       ydata=[5, 9, 13, 17])
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    def test_gh4555(self):
+        # gh-4555 reported that covariance matrices returned by `leastsq`
+        # can have negative diagonal elements and eigenvalues. (In fact,
+        # they can also be asymmetric.) This shows up in the output of
+        # `scipy.optimize.curve_fit`. Check that it has been resolved.giit
+        def f(x, a, b, c, d, e):
+            return a*np.log(x + 1 + b) + c*np.log(x + 1 + d) + e
+
+        rng = np.random.default_rng(408113519974467917)
+        n = 100
+        x = np.arange(n)
+        y = np.linspace(2, 7, n) + rng.random(n)
+        p, cov = optimize.curve_fit(f, x, y, maxfev=100000)
+        assert np.all(np.diag(cov) > 0)
+        assert np.all(linalg.eigh(cov)[0] > 0)
+        assert_allclose(cov, cov.T)
 
 
 class TestFixedPoint:
