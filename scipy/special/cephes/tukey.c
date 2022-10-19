@@ -26,10 +26,10 @@ double tukeylambdacdf(double x, double lmbda)
 
     xeval = 1.0 / lmbda;
     if (lmbda > 0.0) {
-        if (x < (-xeval)) {
+        if (x <= (-xeval)) {
             return 0.0;
         }
-        if (x > xeval) {
+        if (x >= xeval) {
             return 1.0;
         }
     }
