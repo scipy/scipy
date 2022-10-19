@@ -4841,7 +4841,7 @@ C       **********************************
         SUBROUTINE INCOB(A,B,X,BIX)
 C
 C       ========================================================
-C       Purpose: Compute the regularized incomplete beta function Ix(a,b)
+C       Purpose: Compute the incomplete beta function Ix(a,b)
 C       Input :  a --- Parameter
 C                b --- Parameter
 C                x --- Argument ( 0 ≤ x ≤ 1 )
