@@ -308,17 +308,15 @@ class CheckOptimizeParameterized(CheckOptimize):
 
             assert func_calls == self.funccalls
             assert_allclose(self.func(params), self.func(self.solution),
-                            atol=1e-6)
+                            atol=1e-6, rtol=1e-5)
 
-            # Ensure that function call counts are 'known good'.
-            # Generally, this takes 131 function calls. However, on some CI
-            # checks it finds 138 funccalls. This 20 call leeway was also
-            # included in the test_powell function.
             # The exact evaluation count is sensitive to numerical error, and
             # floating-point computations are not bit-for-bit reproducible
             # across machines, and when using e.g. MKL, data alignment etc.
             # affect the rounding error.
-            assert self.funccalls <= 131 + 20
+            # It takes 155 calls on my machine, but we can add the same +20
+            # margin as is used in `test_powell`
+            assert self.funccalls <= 155 + 20
             assert self.gradcalls == 0
 
     def test_neldermead(self):
@@ -1064,6 +1062,40 @@ class TestOptimizeSimple(CheckOptimize):
         res = optimize.minimize(optimize.rosen, x0, method=custmin,
                                 options=dict(stepsize=0.05))
         assert_allclose(res.x, 1.0, rtol=1e-4, atol=1e-4)
+
+    @pytest.mark.xfail(reason="output not reliable on all platforms")
+    def test_gh13321(self, capfd):
+        # gh-13321 reported issues with console output in fmin_l_bfgs_b;
+        # check that iprint=0 works.
+        kwargs = {'func': optimize.rosen, 'x0': [4, 3],
+                  'fprime': optimize.rosen_der, 'bounds': ((3, 5), (3, 5))}
+
+        # "L-BFGS-B" is always in output; should show when iprint >= 0
+        # "At iterate" is iterate info; should show when iprint >= 1
+
+        optimize.fmin_l_bfgs_b(**kwargs, iprint=-1)
+        out, _ = capfd.readouterr()
+        assert "L-BFGS-B" not in out and "At iterate" not in out
+
+        optimize.fmin_l_bfgs_b(**kwargs, iprint=0)
+        out, _ = capfd.readouterr()
+        assert "L-BFGS-B" in out and "At iterate" not in out
+
+        optimize.fmin_l_bfgs_b(**kwargs, iprint=1)
+        out, _ = capfd.readouterr()
+        assert "L-BFGS-B" in out and "At iterate" in out
+
+        # `disp is not None` overrides `iprint` behavior
+        # `disp=0` should suppress all output
+        # `disp=1` should be the same as `iprint = 1`
+
+        optimize.fmin_l_bfgs_b(**kwargs, iprint=1, disp=False)
+        out, _ = capfd.readouterr()
+        assert "L-BFGS-B" not in out and "At iterate" not in out
+
+        optimize.fmin_l_bfgs_b(**kwargs, iprint=-1, disp=True)
+        out, _ = capfd.readouterr()
+        assert "L-BFGS-B" in out and "At iterate" in out
 
     def test_gh10771(self):
         # check that minimize passes bounds and constraints to a custom
@@ -2001,6 +2033,18 @@ def test_linesearch_powell_bounded():
         assert_allclose(f, func(p0 + l * xi), atol=1e-6)
         assert_allclose(p, p0 + l * xi, atol=1e-6)
         assert_allclose(direction, l * xi, atol=1e-6)
+
+
+def test_powell_limits():
+    # gh15342 - powell was going outside bounds for some function evaluations.
+    bounds = optimize.Bounds([0, 0], [0.6, 20])
+
+    def fun(x):
+        a, b = x
+        assert (x >= bounds.lb).all() and (x <= bounds.ub).all()
+        return a ** 2 + b ** 2
+
+    optimize.minimize(fun, x0=[0.6, 20], method='Powell', bounds=bounds)
 
 
 class TestRosen:

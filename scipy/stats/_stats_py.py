@@ -84,6 +84,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
 
 
 def _contains_nan(a, nan_policy='propagate', use_summation=True):
+    if not isinstance(a, np.ndarray):
+        use_summation = False  # some array_likes ignore nans (e.g. pandas)
     policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
         raise ValueError("nan_policy must be one of {%s}" %
@@ -296,14 +298,15 @@ def gmean(a, axis=0, dtype=None, weights=None):
     """
     if not isinstance(a, np.ndarray):
         # if not an ndarray object attempt to convert it
-        log_a = np.log(np.array(a, dtype=dtype))
+        a = np.array(a, dtype=dtype)
     elif dtype:
         # Must change the default dtype allowing array type
         if isinstance(a, np.ma.MaskedArray):
-            log_a = np.log(np.ma.asarray(a, dtype=dtype))
+            a = np.ma.asarray(a, dtype=dtype)
         else:
-            log_a = np.log(np.asarray(a, dtype=dtype))
-    else:
+            a = np.asarray(a, dtype=dtype)
+
+    with np.errstate(divide='ignore'):
         log_a = np.log(a)
 
     if weights is not None:
@@ -549,6 +552,13 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
     axis : int or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': treats nan as it would treat any other value
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
     keepdims : bool, optional
         If set to ``False``, the `axis` over which the statistic is taken
         is consumed (eliminated from the output array) like other reduction
@@ -564,14 +574,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
             value of `keepdims` will become ``False``, the `axis` over which
             the statistic is taken will be eliminated, and the value ``None``
             will no longer be accepted.
-
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-          * 'propagate': treats nan as it would treat any other value
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        .. versionadded:: 1.9.0
 
     Returns
     -------
@@ -6521,7 +6524,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
     ...                 random_state=rng)
-    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0052)
+    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0052994700529947)
 
     Take these two samples, one of which has an extreme tail.
 
@@ -6691,7 +6694,7 @@ def _permutation_distribution_t(data, permutations, size_a, equal_var,
 
     t_stat = np.concatenate(t_stat, axis=0)
 
-    return t_stat, permutations
+    return t_stat, permutations, n_max
 
 
 def _calc_t_stat(a, b, equal_var, axis=-1):
@@ -6760,7 +6763,7 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
 
-    t_stat, permutations = _permutation_distribution_t(
+    t_stat, permutations, n_max = _permutation_distribution_t(
         mat, permutations, size_a=na, equal_var=equal_var,
         random_state=random_state)
 
@@ -6770,7 +6773,10 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
 
     # Calculate the p-values
     cmps = compare[alternative](t_stat, t_stat_observed)
-    pvalues = cmps.sum(axis=0) / permutations
+    # Randomized test p-value calculation should use biased estimate; see e.g.
+    # https://www.degruyter.com/document/doi/10.2202/1544-6115.1585/
+    adjustment = 1 if n_max > permutations else 0
+    pvalues = (cmps.sum(axis=0) + adjustment) / (permutations + adjustment)
 
     # nans propagate naturally in statistic calculation, but need to be
     # propagated manually into pvalues
@@ -7643,7 +7649,8 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
                 jrange = np.arange(h)
                 prob = np.prod((n1 - jrange) / (n1 + jrange + 1.0))
             else:
-                num_paths = _count_paths_outside_method(n1, n2, g, h)
+                with np.errstate(over='raise'):
+                    num_paths = _count_paths_outside_method(n1, n2, g, h)
                 bin = special.binom(n1 + n2, n1)
                 if not np.isfinite(bin) or not np.isfinite(num_paths)\
                         or num_paths > bin:
@@ -7702,28 +7709,39 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     There are three options for the null and corresponding alternative
     hypothesis that can be selected using the `alternative` parameter.
 
-    - `two-sided`: The null hypothesis is that the two distributions are
-      identical, F(x)=G(x) for all x; the alternative is that they are not
-      identical.
-
     - `less`: The null hypothesis is that F(x) >= G(x) for all x; the
-      alternative is that F(x) < G(x) for at least one x.
+      alternative is that F(x) < G(x) for at least one x. The statistic
+      is the magnitude of the minimum (most negative) difference between the
+      empirical distribution functions of the samples.
 
     - `greater`: The null hypothesis is that F(x) <= G(x) for all x; the
-      alternative is that F(x) > G(x) for at least one x.
+      alternative is that F(x) > G(x) for at least one x. The statistic
+      is the maximum (most positive) difference between the empirical
+      distribution functions of the samples.
+
+    - `two-sided`: The null hypothesis is that the two distributions are
+      identical, F(x)=G(x) for all x; the alternative is that they are not
+      identical. The statistic is the maximum absolute difference between the
+      empirical distribution functions of the samples.
 
     Note that the alternative hypotheses describe the *CDFs* of the
-    underlying distributions, not the observed values. For example,
+    underlying distributions, not the observed values of the data. For example,
     suppose x1 ~ F and x2 ~ G. If F(x) > G(x) for all x, the values in
     x1 tend to be less than those in x2.
 
+    If the KS statistic is large, then the p-value will be small, and this may
+    be taken as evidence against the null hypothesis in favor of the
+    alternative.
 
-    If the KS statistic is small or the p-value is high, then we cannot
-    reject the null hypothesis in favor of the alternative.
-
-    If the method is 'auto', the computation is exact if the sample sizes are
-    less than 10000.  For larger sizes, the computation uses the
-    Kolmogorov-Smirnov distributions to compute an approximate value.
+    If ``method='exact'``, `ks_2samp` attempts to compute an exact p-value,
+    that is, the probability under the null hypothesis of obtaining a test
+    statistic value as extreme as the value computed from the data.
+    If ``method='asymp'``, the asymptotic Kolmogorov-Smirnov distribution is
+    used to compute an approximate p-value.
+    If ``method='auto'``, an exact p-value computation is attempted if both
+    sample sizes are less than 10000; otherwise, the asymptotic method is used.
+    In any case, if an exact p-value calculation is attempted and fails, a
+    warning will be emitted, and the asymptotic p-value will be returned.
 
     The 'two-sided' 'exact' computation computes the complementary probability
     and then subtracts from 1.  As such, the minimum probability it can return
@@ -7819,7 +7837,6 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     n1g = n1 // g
     n2g = n2 // g
     prob = -np.inf
-    original_mode = mode
     if mode == 'auto':
         mode = 'exact' if max(n1, n2) <= MAX_AUTO_N else 'asymp'
     elif mode == 'exact':
@@ -7828,15 +7845,16 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             mode = 'asymp'
             warnings.warn(
                 f"Exact ks_2samp calculation not possible with samples sizes "
-                f"{n1} and {n2}. Switching to 'asymp'.", RuntimeWarning)
+                f"{n1} and {n2}. Switching to 'asymp'.", RuntimeWarning,
+                stacklevel=3)
 
     if mode == 'exact':
         success, d, prob = _attempt_exact_2kssamp(n1, n2, g, d, alternative)
         if not success:
             mode = 'asymp'
-            if original_mode == 'exact':
-                warnings.warn(f"ks_2samp: Exact calculation unsuccessful. "
-                              f"Switching to method={mode}.", RuntimeWarning)
+            warnings.warn(f"ks_2samp: Exact calculation unsuccessful. "
+                          f"Switching to method={mode}.", RuntimeWarning,
+                          stacklevel=3)
 
     if mode == 'asymp':
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.

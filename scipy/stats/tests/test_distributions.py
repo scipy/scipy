@@ -132,6 +132,20 @@ def test_vonmises_pdf(x, kappa, expected_pdf):
     assert_allclose(pdf, expected_pdf, rtol=1e-15)
 
 
+def test_vonmises_rvs_gh4598():
+    # check that random variates wrap around as discussed in gh-4598
+    seed = abs(hash('von_mises_rvs'))
+    rng1 = np.random.default_rng(seed)
+    rng2 = np.random.default_rng(seed)
+    rng3 = np.random.default_rng(seed)
+    rvs1 = stats.vonmises(1, loc=0, scale=1).rvs(random_state=rng1)
+    rvs2 = stats.vonmises(1, loc=2*np.pi, scale=1).rvs(random_state=rng2)
+    rvs3 = stats.vonmises(1, loc=0,
+                          scale=(2*np.pi/abs(rvs1)+1)).rvs(random_state=rng3)
+    assert_allclose(rvs1, rvs2, atol=1e-15)
+    assert_allclose(rvs1, rvs3, atol=1e-15)
+
+
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
     """
     This utility function checks that the log-likelihood (computed by
@@ -1305,6 +1319,20 @@ class TestLoggamma:
             computed = stats.loggamma.stats(c, moments='msvk')
             assert_array_almost_equal(computed, [mean, var, skew, kurt],
                                       decimal=4)
+
+    @pytest.mark.parametrize('c', [0.1, 0.001])
+    def test_rvs(self, c):
+        # Regression test for gh-11094.
+        x = stats.loggamma.rvs(c, size=100000)
+        # Before gh-11094 was fixed, the case with c=0.001 would
+        # generate many -inf values.
+        assert np.isfinite(x).all()
+        # Crude statistical test.  About half the values should be
+        # less than the median and half greater than the median.
+        med = stats.loggamma.median(c)
+        btest = stats.binomtest(np.count_nonzero(x < med), len(x))
+        ci = btest.proportion_ci(confidence_level=0.999)
+        assert ci.low < 0.5 < ci.high
 
 
 class TestLogistic:
@@ -4923,6 +4951,18 @@ class TestRayleigh:
     def test_fit_warnings(self):
         assert_fit_warnings(stats.rayleigh)
 
+    def test_fit_gh17088(self):
+        # `rayleigh.fit` could return a location that was inconsistent with
+        # the data. See gh-17088.
+        rng = np.random.default_rng(456)
+        loc, scale, size = 50, 600, 500
+        rvs = stats.rayleigh.rvs(loc, scale, size=size, random_state=rng)
+        loc_fit, _ = stats.rayleigh.fit(rvs)
+        assert loc_fit < np.min(rvs)
+        loc_fit, scale_fit = stats.rayleigh.fit(rvs, fscale=scale)
+        assert loc_fit < np.min(rvs)
+        assert scale_fit == scale
+
 
 class TestExponWeib:
 
@@ -6744,6 +6784,29 @@ class TestHistogram:
     def test_entropy(self):
         assert_allclose(self.norm_template.entropy(),
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
+
+
+def test_histogram_non_uniform():
+    # Tests rv_histogram works even for non-uniform bin widths
+    counts, bins = ([1, 1], [0, 1, 1001])
+
+    dist = stats.rv_histogram((counts, bins), density=False)
+    np.testing.assert_allclose(dist.pdf([0.5, 200]), [0.5, 0.0005])
+    assert dist.median() == 1
+
+    dist = stats.rv_histogram((counts, bins), density=True)
+    np.testing.assert_allclose(dist.pdf([0.5, 200]), 1/1001)
+    assert dist.median() == 1001/2
+
+    # Omitting density produces a warning for non-uniform bins...
+    message = "Bin widths are not constant. Assuming..."
+    with assert_warns(RuntimeWarning, match=message):
+        dist = stats.rv_histogram((counts, bins))
+        assert dist.median() == 1001/2  # default is like `density=True`
+
+    # ... but not for uniform bins
+    dist = stats.rv_histogram((counts, [0, 1, 2]))
+    assert dist.median() == 1
 
 
 class TestLogUniform:

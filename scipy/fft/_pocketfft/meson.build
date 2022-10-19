@@ -1,12 +1,8 @@
-thread_dep = dependency('threads', required: false)
-
-# mingw-w64 does not implement pthread_pfork, needed by pocket_fft
-win_gcc = is_windows and meson.get_compiler('cpp').get_id() == 'gcc'
-
 pocketfft_threads = []
 fft_deps = [py3_dep]
 if is_windows
-  if win_gcc
+  if is_mingw
+    # mingw-w64 does not implement pthread_pfork, needed by pocket_fft
     # Disable threading completely, because of freezes using threading for
     # mingw-w64 gcc: https://github.com/mreineck/pocketfft/issues/1
     pocketfft_threads += ['-DPOCKETFFT_NO_MULTITHREADING']

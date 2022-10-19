@@ -168,13 +168,25 @@ class _PSD:
         s_pinv = _pinv_1d(s, eps)
         U = np.multiply(u, np.sqrt(s_pinv))
 
+        # Save the eigenvector basis, and tolerance for testing support
+        self.eps = 1e3*eps
+        self.V = u[:, s <= eps]
+
         # Initialize the eagerly precomputed attributes.
         self.rank = len(d)
         self.U = U
         self.log_pdet = np.sum(np.log(d))
 
-        # Initialize an attribute to be lazily computed.
+        # Initialize attributes to be lazily computed.
         self._pinv = None
+
+    def _support_mask(self, x):
+        """
+        Check whether x lies in the support of the distribution.
+        """
+        residual = np.linalg.norm(x @ self.V, axis=-1)
+        in_support = residual < self.eps
+        return in_support
 
     @property
     def pinv(self):
@@ -312,9 +324,15 @@ class multivariate_normal_gen(multi_rv_generic):
                \exp\left( -\frac{1}{2} (x - \mu)^T \Sigma^{-1} (x - \mu) \right),
 
     where :math:`\mu` is the mean, :math:`\Sigma` the covariance matrix,
-    and :math:`k` is the dimension of the space where :math:`x` takes values.
+    :math:`k` the rank of :math:`\Sigma`. In case of singular :math:`\Sigma`,
+    SciPy extends this definition according to [1]_.
 
     .. versionadded:: 0.14.0
+
+    References
+    ----------
+    .. [1] Multivariate Normal Distribution - Degenerate Case, Wikipedia,
+           https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Degenerate_case
 
     Examples
     --------
@@ -494,6 +512,9 @@ class multivariate_normal_gen(multi_rv_generic):
         x = self._process_quantiles(x, dim)
         psd = _PSD(cov, allow_singular=allow_singular)
         out = self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank)
+        if allow_singular and (psd.rank < dim):
+            out_of_bounds = ~psd._support_mask(x-mean)
+            out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
 
     def pdf(self, x, mean=None, cov=1, allow_singular=False):
@@ -519,6 +540,9 @@ class multivariate_normal_gen(multi_rv_generic):
         x = self._process_quantiles(x, dim)
         psd = _PSD(cov, allow_singular=allow_singular)
         out = np.exp(self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank))
+        if allow_singular and (psd.rank < dim):
+            out_of_bounds = ~psd._support_mask(x-mean)
+            out[out_of_bounds] = 0.0
         return _squeeze_output(out)
 
     def _cdf(self, x, mean, cov, maxpts, abseps, releps):
@@ -728,6 +752,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         array([[1.]])
 
         """
+        self.allow_singular = allow_singular
         self._dist = multivariate_normal_gen(seed)
         self.dim, self.mean, self.cov = self._dist._process_parameters(
                                                             None, mean, cov)
@@ -742,6 +767,9 @@ class multivariate_normal_frozen(multi_rv_frozen):
         x = self._dist._process_quantiles(x, self.dim)
         out = self._dist._logpdf(x, self.mean, self.cov_info.U,
                                  self.cov_info.log_pdet, self.cov_info.rank)
+        if self.allow_singular and (self.cov_info.rank < self.dim):
+            out_of_bounds = ~self.cov_info._support_mask(x-self.mean)
+            out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
 
     def pdf(self, x):

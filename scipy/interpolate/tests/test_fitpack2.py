@@ -325,6 +325,33 @@ class TestUnivariateSpline:
         assert_allclose(spl1([0.1, 0.5, 0.9, 0.99]),
                         spl2([0.1, 0.5, 0.9, 0.99]))
 
+    def test_fpknot_oob_crash(self):
+        # https://github.com/scipy/scipy/issues/3691
+        x = range(109)
+        y = [0., 0., 0., 0., 0., 10.9, 0., 11., 0.,
+             0., 0., 10.9, 0., 0., 0., 0., 0., 0.,
+             10.9, 0., 0., 0., 11., 0., 0., 0., 10.9,
+             0., 0., 0., 10.5, 0., 0., 0., 10.7, 0.,
+             0., 0., 11., 0., 0., 0., 0., 0., 0.,
+             10.9, 0., 0., 10.7, 0., 0., 0., 10.6, 0.,
+             0., 0., 10.5, 0., 0., 10.7, 0., 0., 10.5,
+             0., 0., 11.5, 0., 0., 0., 10.7, 0., 0.,
+             10.7, 0., 0., 10.9, 0., 0., 10.8, 0., 0.,
+             0., 10.7, 0., 0., 10.6, 0., 0., 0., 10.4,
+             0., 0., 10.6, 0., 0., 10.5, 0., 0., 0.,
+             10.7, 0., 0., 0., 10.4, 0., 0., 0., 10.8, 0.]
+        with suppress_warnings() as sup:
+            r = sup.record(
+                UserWarning,
+                r"""
+The maximal number of iterations maxit \(set to 20 by the program\)
+allowed for finding a smoothing spline with fp=s has been reached: s
+too small.
+There is an approximation returned but the corresponding weighted sum
+of squared residuals does not satisfy the condition abs\(fp-s\)/s < tol.""")
+            UnivariateSpline(x, y, k=1)
+            assert_equal(len(r), 1)
+
 
 class TestLSQBivariateSpline:
     # NOTE: The systems in this test class are rank-deficient
@@ -1208,6 +1235,20 @@ class TestRectSphereBivariateSpline:
         ans = np.array([[-45.0, -42.480862],
                         [-49.0625, -46.54315]])
         assert_array_almost_equal(data_interp, ans)
+
+    def test_pole_continuity_gh_14591(self):
+        # regression test for https://github.com/scipy/scipy/issues/14591
+        # with pole_continuty=(True, True), the internal work array size
+        # was too small, leading to a FITPACK data validation error.
+
+        # The reproducer in gh-14591 was using a NetCDF4 file with
+        # 361x507 arrays, so here we trivialize array sizes to a minimum
+        # which still demonstrates the issue.
+        u = np.arange(1, 10) * np.pi / 10
+        v = np.arange(1, 10) * np.pi / 10
+        r = np.zeros((9, 9))
+        for p in [(True, True), (True, False), (False, False)]:
+            RectSphereBivariateSpline(u, v, r, s=0, pole_continuity=p)
 
 
 def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
