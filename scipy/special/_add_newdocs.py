@@ -1283,12 +1283,14 @@ add_newdoc("betainc",
 
     Notes
     -----
-    The regularized incomplete beta function is also sometimes defined
-    without the `gamma` terms, in which case the above
-    definition is the so-called regularized incomplete beta
-    function. Under this definition, you can get the incomplete
-    beta function by multiplying the result of the SciPy
-    function by `beta`.
+    The term *regularized* in the name of this function refers to the
+    scaling of the function by the gamma function terms shown in the
+    formula.  When not qualified as *regularized*, the name *incomplete
+    beta function* often refers to just the integral expression,
+    without the gamma terms.  One can use the function `beta` from
+    `scipy.special` to get this "nonregularized" incomplete beta
+    function by multiplying the result of ``betainc(a, b, x)`` by
+    ``beta(a, b)``.
 
     References
     ----------
