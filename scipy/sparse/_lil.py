@@ -305,7 +305,9 @@ class lil_matrix(spmatrix, IndexMixin):
                                     i, j, x)
 
     def _clear_cells(self, row, col):
-        # 1D
+        # the indexing result of self[row, col] is 1D, so the call to nonzero
+        # is performed on a 1D sparse matrix, therefore nonzero rows are
+        # irrelevant
         _, nnz_cols = self[row, col].nonzero()
         mapped_nnz_rows = row[nnz_cols]
         mapped_nnz_cols = col[nnz_cols]
@@ -320,41 +322,37 @@ class lil_matrix(spmatrix, IndexMixin):
         self._set_arrayXarray(row, col, x)
 
     def _set_arrayXarray_sparse(self, row, col, x):
+        x_nrows, x_ncols = x.shape
         # Special case: full matrix assignment
-        if (x.shape == self.shape and
+        if ((x_nrows, x_ncols) == self.shape and
                 isinstance(row, slice) and row == slice(None) and
                 isinstance(col, slice) and col == slice(None)):
             x = self._lil_container(x, dtype=self.dtype)
             self.rows = x.rows
             self.data = x.data
-        else:
-            if x.shape[0] == x.shape[1] == 1:
-                self._densify_set(row, col, x)
-                return
+            return
+        elif x_nrows == x_ncols == 1:
+            self._densify_set(row, col, x)
+            return
+        elif isinstance(row, slice) and isinstance(col, slice):
+            # determine the slicing target
+            row, col = _nd_slice_to_indexes(*self.shape, row, col)
+        elif not isinstance(row, np.ndarray or row.ndim != 2 or
+                not isinstance(col, np.ndarray) or col.ndim != 2):
+            self._densify_set(row, col, x)
+            return
 
-            if (isinstance(row, np.ndarray) and row.ndim == 2 and
-                    isinstance(col, np.ndarray) and col.ndim == 2):
-                # row and col are 2d matrices which contain the indices
-                # in self where we should write
-                pass
-            elif isinstance(row, slice) and isinstance(col, slice):
-                # determine the slicing target
-                row, col = _nd_slice_to_indexes(*self.shape, row, col)
-            else:
-                self._densify_set(row, col, x)
-                return
+        # clear the block
+        self._clear_cells(row.flatten(), col.flatten())
 
-            # clear the block
-            self._clear_cells(row.flatten(), col.flatten())
-
-            # extract sparsity structure from x
-            x_rows, x_cols = x.nonzero()
-            row = row[x_rows, x_cols].flatten()
-            col = col[x_rows, x_cols].flatten()
-            # write in the locations specified by the sparsity structure
-            _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
-                                               self.rows, self.data, row, col,
-                                               x.data)
+        # extract sparsity structure from x
+        x_nnz_rows, x_nnz_cols = x.nonzero()
+        row = row[x_nnz_rows, x_nnz_cols].flatten()
+        col = col[x_nnz_rows, x_nnz_cols].flatten()
+        # write in the locations specified by the sparsity structure
+        _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
+                                            self.rows, self.data, row, col,
+                                            x.data)
 
     def __setitem__(self, key, x):
         # Fast path for simple (int, int) indexing.
