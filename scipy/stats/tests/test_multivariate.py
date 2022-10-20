@@ -2604,6 +2604,10 @@ class TestConditionalTable:
         assert_equal(rvs.sum(axis=-1), np.broadcast_to(row, (1000, 2)))
         assert_equal(rvs.sum(axis=-2), np.broadcast_to(col, (1000, 3)))
 
+        rv = conditional_table.rvs(row, col, random_state=123)
+        assert rv.shape == (2, 3)
+        assert_equal(rv, rvs[0])
+
     def test_frozen(self):
         row = [2, 6]
         col = [1, 3, 4]
