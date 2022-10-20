@@ -26,7 +26,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest,
-                         conditional_table)
+                         random_table)
 from scipy.stats import _covariance, Covariance
 
 from scipy.integrate import romb
@@ -2466,31 +2466,31 @@ class TestMultivariateHypergeom:
                       [10, 15], 5.5)
 
 
-class TestConditionalTable:
+class TestRandomTable:
     def test_process_parameters(self):
         message = "`row` must be one-dimensional"
         with pytest.raises(ValueError, match=message):
-            conditional_table([[1, 2]], [1, 2])
+            random_table([[1, 2]], [1, 2])
 
         message = "`col` must be one-dimensional"
         with pytest.raises(ValueError, match=message):
-            conditional_table([1, 2], [[1, 2]])
+            random_table([1, 2], [[1, 2]])
 
         message = "each element of `row` must be non-negative"
         with pytest.raises(ValueError, match=message):
-            conditional_table([1, -1], [1, 2])
+            random_table([1, -1], [1, 2])
 
         message = "each element of `col` must be non-negative"
         with pytest.raises(ValueError, match=message):
-            conditional_table([1, 2], [1, -2])
+            random_table([1, 2], [1, -2])
 
         message = "sums over `row` and `col` must be equal"
         with pytest.raises(ValueError, match=message):
-            conditional_table([1, 2], [1, 0])
+            random_table([1, 2], [1, 0])
 
         row = [1, 3]
         col = [2, 1, 1]
-        r, c, n = conditional_table._process_parameters([1, 3], [2, 1, 1])
+        r, c, n = random_table._process_parameters([1, 3], [2, 1, 1])
         assert_equal(row, r)
         assert_equal(col, c)
         assert n == np.sum(row)
@@ -2500,7 +2500,7 @@ class TestConditionalTable:
         row = [1, 3]
         col = [2, 1, 1]
 
-        ct = conditional_table
+        ct = random_table
         expected = ct.rvs(row, col, method="boyett", random_state=1)
         got = ct.rvs(row, col, method=None, random_state=1)
 
@@ -2512,7 +2512,7 @@ class TestConditionalTable:
         row = [1, 3]
         col = [2, 1, 1]
 
-        ct = conditional_table
+        ct = random_table
         rvs1 = ct.rvs(row, col, size=1000, method="boyett", random_state=1)
         rvs2 = ct.rvs(row, col, size=1000, method="patefield", random_state=1)
 
@@ -2529,68 +2529,68 @@ class TestConditionalTable:
         # order of items in set is random, so cannot check that
         message = "'foo' not recognized, must be one of"
         with pytest.raises(ValueError, match=message):
-            conditional_table.rvs(row, col, method="foo")
+            random_table.rvs(row, col, method="foo")
 
     def test_pmf(self):
         row = [2, 6]
         col = [1, 3, 4]
-        rvs = conditional_table.rvs(row, col, size=1000, random_state=123)
+        rvs = random_table.rvs(row, col, size=1000, random_state=123)
 
         unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
 
-        p = conditional_table.pmf(unique_rvs)
-        p0 = conditional_table.pmf(unique_rvs[0])
+        p = random_table.pmf(unique_rvs)
+        p0 = random_table.pmf(unique_rvs[0])
         assert_equal(p0, p[0])
         assert_allclose(p * len(rvs), counts, rtol=0.1)
 
         # accept any iterable
-        p0_2 = conditional_table.pmf(list(unique_rvs[0]))
+        p0_2 = random_table.pmf(list(unique_rvs[0]))
         assert_equal(p0, p0_2)
 
         # accept high-dimensional input
         rng = np.random.default_rng(1)
         z = rng.integers(4, 9, size=(2, 3, 4, 5))
-        p = conditional_table.pmf(z)
+        p = random_table.pmf(z)
         assert p.shape == (2, 3)
         for i in range(p.shape[0]):
             for j in range(p.shape[1]):
                 pij = p[i, j]
                 zij = z[i, j]
-                qij = conditional_table.pmf(zij)
+                qij = random_table.pmf(zij)
                 assert_equal(pij, qij)
 
     def test_logpmf(self):
         row = [2, 6]
         col = [1, 3, 4]
-        rvs = conditional_table.rvs(row, col, size=1000, random_state=123)
+        rvs = random_table.rvs(row, col, size=1000, random_state=123)
 
         unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
 
-        lp0 = conditional_table.logpmf(unique_rvs[0])
-        lp = conditional_table.logpmf(unique_rvs)
+        lp0 = random_table.logpmf(unique_rvs[0])
+        lp = random_table.logpmf(unique_rvs)
         assert_equal(lp0, lp[0])
         assert_allclose(np.exp(lp) * len(rvs), counts, rtol=0.1)
 
         # accept any iterable
-        lp0_2 = conditional_table.logpmf(list(unique_rvs[0]))
+        lp0_2 = random_table.logpmf(list(unique_rvs[0]))
         assert_equal(lp0, lp0_2)
 
         # accept high-dimensional input
         rng = np.random.default_rng(1)
         z = rng.integers(4, 9, size=(2, 3, 4, 5))
-        lp = conditional_table.logpmf(z)
+        lp = random_table.logpmf(z)
         assert lp.shape == (2, 3)
         for i in range(lp.shape[0]):
             for j in range(lp.shape[1]):
                 lpij = lp[i, j]
                 zij = z[i, j]
-                lqij = conditional_table.logpmf(zij)
+                lqij = random_table.logpmf(zij)
                 assert_equal(lpij, lqij)
 
     def test_mean(self):
         row = [2, 6]
         col = [1, 3, 4]
-        m = conditional_table.mean(row, col)
+        m = random_table.mean(row, col)
         assert_equal(np.sum(m), np.sum(row))
 
     def test_rvs(self):
@@ -2598,24 +2598,24 @@ class TestConditionalTable:
         # to the true mean. `test_pmf` also implicitly tests `rvs`.
         row = [2, 6]
         col = [1, 3, 4]
-        rvs = conditional_table.rvs(row, col, size=1000, random_state=123)
-        mean = conditional_table.mean(row, col)
+        rvs = random_table.rvs(row, col, size=1000, random_state=123)
+        mean = random_table.mean(row, col)
         assert_allclose(rvs.mean(0), mean, atol=5e-2)
         assert_equal(rvs.sum(axis=-1), np.broadcast_to(row, (1000, 2)))
         assert_equal(rvs.sum(axis=-2), np.broadcast_to(col, (1000, 3)))
 
-        rv = conditional_table.rvs(row, col, random_state=123)
+        rv = random_table.rvs(row, col, random_state=123)
         assert rv.shape == (2, 3)
         assert_equal(rv, rvs[0])
 
     def test_frozen(self):
         row = [2, 6]
         col = [1, 3, 4]
-        d = conditional_table(row, col)
-        expected = conditional_table.mean(row, col)
+        d = random_table(row, col)
+        expected = random_table.mean(row, col)
         assert_equal(expected, d.mean())
 
-        expected = conditional_table.rvs(row, col, size=10, random_state=123)
+        expected = random_table.rvs(row, col, size=10, random_state=123)
         got = d.rvs(size=10, random_state=123)
         assert_equal(expected, got)
 

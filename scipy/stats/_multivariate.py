@@ -28,7 +28,7 @@ __all__ = ['multivariate_normal',
            'unitary_group',
            'multivariate_t',
            'multivariate_hypergeom',
-           'conditional_table']
+           'random_table']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -5069,7 +5069,7 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
                                       mhg_docdict_params)
 
 
-class conditional_table_gen(multi_rv_generic):
+class random_table_gen(multi_rv_generic):
     r"""Distribution of random tables with given marginals.
 
     This is the distribution of random tables with given row and column vector
@@ -5114,18 +5114,18 @@ class conditional_table_gen(multi_rv_generic):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.stats import conditional_table
+    >>> from scipy.stats import random_table
 
     >>> row = [1, 5]
     >>> col = [2, 3, 1]
-    >>> conditional_table.mean(row, col)
+    >>> random_table.mean(row, col)
     array([[0.33333333, 0.5       , 0.16666667],
            [1.66666667, 2.5       , 0.83333333]])
 
     Alternatively, the object may be called (as a function) to fix the row
     and column vector sums, returning a "frozen" distribution.
 
-    >>> dist = conditional_table(row, col)
+    >>> dist = random_table(row, col)
     >>> dist.rvs(size=1, random_state=123)
     array([[[1., 0., 0.],
             [1., 3., 1.]]])
@@ -5142,9 +5142,9 @@ class conditional_table_gen(multi_rv_generic):
     def __call__(self, row, col, *, seed=None):
         """Create a frozen distribution of tables with given marginals.
 
-        See `conditional_table_frozen` for more information.
+        See `random_table_frozen` for more information.
         """
-        return conditional_table_frozen(row, col, seed=seed)
+        return random_table_frozen(row, col, seed=seed)
 
     def logpmf(self, x):
         """Log-probability of table to occur in the distribution.
@@ -5318,12 +5318,12 @@ class conditional_table_gen(multi_rv_generic):
         raise NotImplementedError
 
 
-conditional_table = conditional_table_gen()
+random_table = random_table_gen()
 
 
-class conditional_table_frozen(multi_rv_frozen):
+class random_table_frozen(multi_rv_frozen):
     def __init__(self, row, col, *, seed=None):
-        self._dist = conditional_table_gen(seed)
+        self._dist = random_table_gen(seed)
         self._params = self._dist._process_parameters(row, col)
 
         # monkey patch self._dist
@@ -5397,12 +5397,12 @@ _ctab_docdict_noparams.update({
 })
 
 # Set frozen generator docstrings from corresponding docstrings in
-# conditional_table and fill in default strings in class docstrings
-conditional_table_gen.__doc__ = doccer.docformat(
-    conditional_table_gen.__doc__, _ctab_docdict_params)
+# random_table and fill in default strings in class docstrings
+random_table_gen.__doc__ = doccer.docformat(
+    random_table_gen.__doc__, _ctab_docdict_params)
 for name in ['logpmf', 'pmf', 'mean', 'rvs']:
-    method = conditional_table_gen.__dict__[name]
-    method_frozen = conditional_table_frozen.__dict__[name]
+    method = random_table_gen.__dict__[name]
+    method_frozen = random_table_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(
         method.__doc__, _ctab_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__,
