@@ -448,10 +448,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         im_retval = quad(imfunc, a, b, args, full_output, epsabs,
                          epsrel, limit, points, weight, wvar, wopts,
                          maxp1, limlst, complex_func=False)
-        retval = (re_retval[0] + 1j*im_retval[0],) + \
-            tuple([
-                    np.max((re_retval[i], im_retval[i])) for i in
-                    range(1, 2)])
+        integral = re_retval[0] + 1j*im_retval[0]
+        error_estimate = re_retval[1] + 1j*im_retval[1]
+        retval = integral, error_estimate
         if full_output:
             msgexp = {}
             msgexp["real"] = re_retval[2:]
