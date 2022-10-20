@@ -511,8 +511,7 @@ class TestQuad:
                     1+1j, error_tolerance=1e-6)
 
         full_res = quad(tfunc, 0, np.pi/2, complex_func=True, full_output=True)
-        assert_quad(full_res[:-1],
-                    1+1j, error_tolerance=1e-6)
+        assert_quad(full_res[:-1], 1+1j, error_tolerance=1e-6)
         assert set(("real output", "imag output")) == set(full_res[2].keys())
 
 
