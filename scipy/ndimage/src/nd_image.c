@@ -948,7 +948,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
 #define VALUEINDICES_IGNOREVAL(valType) (*((valType *)PyArray_GETPTR1(ignorevalArr, 0)))
 #define CASE_VALUEINDICES_SET_MINMAX(valType) {\
     valType val = *((valType*)arrData); \
-    if (nullIsNone || (val != VALUEINDICES_IGNOREVAL(valType))) {\
+    if (ignoreValIsNone || (val != VALUEINDICES_IGNOREVAL(valType))) {\
         if (minMaxUnset) { \
             VALUEINDICES_MINVAL(valType) = val;  \
             VALUEINDICES_MAXVAL(valType) = val; \
@@ -967,7 +967,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
         arrData = (char *)PyArray_DATA(arr); \
         for (iterIndex=0; iterIndex<arrSize; iterIndex++) { \
             valType val = *((valType*)arrData); \
-            if (nullIsNone || (val != VALUEINDICES_IGNOREVAL(valType))) { \
+            if (ignoreValIsNone || (val != VALUEINDICES_IGNOREVAL(valType))) { \
                 ii = val - VALUEINDICES_MINVAL(valType); \
                 hist[ii] += 1; \
             } \
@@ -980,7 +980,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
 #define CASE_VALUEINDICES_GET_VALUEOFFSET(valType) { \
     valType val = *((valType*)arrData); \
     ii = val - VALUEINDICES_MINVAL(valType); \
-    valueIsNull = (val == VALUEINDICES_IGNOREVAL(valType)); \
+    valueIsIgnore = (val == VALUEINDICES_IGNOREVAL(valType)); \
 }
 #define CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(valType, ii) { \
     valType val = ii + VALUEINDICES_MINVAL(valType); \
@@ -990,14 +990,14 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
 {
     PyArrayObject *arr, *ndxArr, *minMaxArr, *ignorevalArr;
     PyObject *t=NULL, *valObj=NULL, **ndxPtr=NULL, *ndxTuple, *valDict;
-    int nullIsNone, valueIsNull=0, ndim, j, arrType, minMaxUnset=1;
+    int ignoreValIsNone, valueIsIgnore=0, ndim, j, arrType, minMaxUnset=1;
     NI_Iterator ndiIter;
     char *arrData;
     npy_intp *hist=NULL, *valCtr=NULL, ii, numPossibleVals=0;
     npy_intp arrSize, iterIndex, dims[1];
 
     /* Get arguments passed in */
-    if (!PyArg_ParseTuple(args, "O!iO!", &PyArray_Type, &arr, &nullIsNone,
+    if (!PyArg_ParseTuple(args, "O!iO!", &PyArray_Type, &arr, &ignoreValIsNone,
             &PyArray_Type, &ignorevalArr))
         return NULL;
 
@@ -1037,7 +1037,8 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
     }
 
     /* Second pass, creates a histogram of all the possible values between
-       min and max. If min/max were not set, then the array was all nulls. */
+       min and max. If min/max were not set, then the array was all ignore
+       values. */
     if (!minMaxUnset) {
         switch(arrType) {
         case NPY_INT8:   CASE_VALUEINDICES_MAKEHISTOGRAM(npy_int8); break;
@@ -1115,7 +1116,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
 
             for (iterIndex=0; iterIndex<arrSize; iterIndex++) {
                 /* Get the offset <ii> for the current array value. Also
-                   set valueIsNull flag. */
+                   set valueIsIgnore flag. */
                 switch(arrType) {
                 case NPY_INT8:   CASE_VALUEINDICES_GET_VALUEOFFSET(npy_int8); break;
                 case NPY_UINT8:  CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint8); break;
@@ -1127,7 +1128,7 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
                 case NPY_UINT64: CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint64); break;
                 }
 
-                if (nullIsNone || (!valueIsNull)) {
+                if (ignoreValIsNone || (!valueIsIgnore)) {
                     ndxTuple = ndxPtr[ii];
                     for (j=0; j<ndim; j++) {
                         ndxArr = (PyArrayObject *)PyTuple_GetItem(ndxTuple, j);
