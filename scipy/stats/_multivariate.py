@@ -5084,9 +5084,9 @@ class conditional_table_gen(multi_rv_generic):
     Methods
     -------
     logpmf(x)
-        Log-probability of table `x` occuring in the distribution.
+        Log-probability of table `x` to occur in the distribution.
     pmf(x)
-        Probability of table `x` occuring in the distribution.
+        Probability of table `x` to occur in the distribution.
     mean(row, col)
         Mean table.
     rvs(row, col, size=1, method=None, random_state=None)
@@ -5147,7 +5147,7 @@ class conditional_table_gen(multi_rv_generic):
         return conditional_table_frozen(row, col, seed=seed)
 
     def logpmf(self, x):
-        """Log-probability of table occuring.
+        """Log-probability of table to occur in the distribution.
 
         %(_doc_pmf_callparams)s
 
@@ -5189,7 +5189,7 @@ class conditional_table_gen(multi_rv_generic):
         return res
 
     def pmf(self, x):
-        """Probability of table occuring.
+        """Probability of table to occur in the distribution.
 
         %(_doc_pmf_callparams)s
 
