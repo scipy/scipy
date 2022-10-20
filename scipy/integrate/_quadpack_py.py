@@ -350,8 +350,10 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     .. math::
         \\int_a^b f(x) dx = \\int_a^b g(x) dx + i\\int_a^b h(x) dx
 
-    This assumes that the integrals of :math:`g` and :math:`h` exist
-    over the inteval :math:`[a,b]` [2]_.
+    assuming that the integrals of :math:`g` and :math:`h` exist
+    over the inteval :math:`[a,b]` [2]_. Therefore, ``quad`` integrates
+    complex-valued functions by integrating the real and imaginary components
+    separately.
 
 
     References
