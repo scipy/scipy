@@ -454,8 +454,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
                     range(1, 2)])
         if full_output:
             msgexp = {}
-            msgexp["real output"] = re_retval[2:]
-            msgexp["imag output"] = im_retval[2:]
+            msgexp["real"] = re_retval[2:]
+            msgexp["imag"] = im_retval[2:]
             retval = retval + (msgexp,)
 
         return retval
