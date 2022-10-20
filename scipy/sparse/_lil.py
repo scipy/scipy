@@ -337,8 +337,8 @@ class lil_matrix(spmatrix, IndexMixin):
         elif isinstance(row, slice) and isinstance(col, slice):
             # determine the slicing target
             row, col = _nd_slice_to_indexes(*self.shape, row, col)
-        elif not isinstance(row, np.ndarray or row.ndim != 2 or
-                not isinstance(col, np.ndarray) or col.ndim != 2):
+        elif (not isinstance(row, np.ndarray) or row.ndim != 2 or
+              not isinstance(col, np.ndarray) or col.ndim != 2):
             self._densify_set(row, col, x)
             return
 
@@ -351,8 +351,8 @@ class lil_matrix(spmatrix, IndexMixin):
         col = col[x_nnz_rows, x_nnz_cols].flatten()
         # write in the locations specified by the sparsity structure
         _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
-                                            self.rows, self.data, row, col,
-                                            x.data)
+                                           self.rows, self.data, row, col,
+                                           x.data)
 
     def __setitem__(self, key, x):
         # Fast path for simple (int, int) indexing.
