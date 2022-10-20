@@ -2543,6 +2543,22 @@ class TestConditionalTable:
         assert_equal(p0, p[0])
         assert_allclose(p * len(rvs), counts, rtol=0.1)
 
+        # accept any iterable
+        p0_2 = conditional_table.pmf(list(unique_rvs[0]))
+        assert_equal(p0, p0_2)
+
+        # accept high-dimensional input
+        rng = np.random.default_rng(1)
+        z = rng.integers(4, 9, size=(2, 3, 4, 5))
+        p = conditional_table.pmf(z)
+        assert p.shape == (2, 3)
+        for i in range(p.shape[0]):
+            for j in range(p.shape[1]):
+                pij = p[i, j]
+                zij = z[i, j]
+                qij = conditional_table.pmf(zij)
+                assert_equal(pij, qij)
+
     def test_logpmf(self):
         row = [2, 6]
         col = [1, 3, 4]
@@ -2554,6 +2570,22 @@ class TestConditionalTable:
         lp = conditional_table.logpmf(unique_rvs)
         assert_equal(lp0, lp[0])
         assert_allclose(np.exp(lp) * len(rvs), counts, rtol=0.1)
+
+        # accept any iterable
+        lp0_2 = conditional_table.logpmf(list(unique_rvs[0]))
+        assert_equal(lp0, lp0_2)
+
+        # accept high-dimensional input
+        rng = np.random.default_rng(1)
+        z = rng.integers(4, 9, size=(2, 3, 4, 5))
+        lp = conditional_table.logpmf(z)
+        assert lp.shape == (2, 3)
+        for i in range(lp.shape[0]):
+            for j in range(lp.shape[1]):
+                lpij = lp[i, j]
+                zij = z[i, j]
+                lqij = conditional_table.logpmf(zij)
+                assert_equal(lpij, lqij)
 
     def test_mean(self):
         row = [2, 6]

@@ -5139,40 +5139,12 @@ class conditional_table_gen(multi_rv_generic):
     def __init__(self, seed=None):
         super().__init__(seed)
 
-    def __call__(self, row, col, seed=None):
+    def __call__(self, row, col, *, seed=None):
         """Create a frozen distribution of tables with given marginals.
 
         See `conditional_table_frozen` for more information.
         """
-        return conditional_table_frozen(row, col, seed)
-
-    @staticmethod
-    def _process_parameters(row, col):
-        """
-        Check that row and column vectors are one-dimensional, that they do
-        not contain negative entries, and that the sums over both vectors
-        are equal.
-        """
-        r = np.array(row, dtype=np.int_, copy=True)
-        c = np.array(col, dtype=np.int_, copy=True)
-
-        if np.ndim(r) != 1:
-            raise ValueError("`row` must be one-dimensional")
-        if np.ndim(c) != 1:
-            raise ValueError("`col` must be one-dimensional")
-
-        if np.any(r < 0):
-            raise ValueError("each element of `row` must be non-negative")
-
-        if np.any(c < 0):
-            raise ValueError("each element of `col` must be non-negative")
-
-        ntot_row = np.sum(row)
-        ntot_col = np.sum(col)
-        if ntot_row != ntot_col:
-            raise ValueError("sums over `row` and `col` must be equal")
-
-        return r, c, ntot_row
+        return conditional_table_frozen(row, col, seed=seed)
 
     def logpmf(self, x):
         """Log-probability of table occuring.
@@ -5186,10 +5158,11 @@ class conditional_table_gen(multi_rv_generic):
 
         %(_doc_pmf_note)s
         """
+        x = np.asarray(x)
+
         if np.any(x < 0):
             raise ValueError("`x` must contain only non-negative integers")
 
-        x = np.asarray(x)
         if x.ndim < 2:
             raise ValueError("`x` must be at least two-dimensional")
 
@@ -5197,18 +5170,18 @@ class conditional_table_gen(multi_rv_generic):
         if expand:
             x = x.reshape(1, *x.shape)
 
-        if x.shape[1] == 0 or x.shape[2] == 0:
+        if x.size == 0:
             raise ValueError("`x` must have at least one row and one column")
 
-        r = np.sum(x, axis=2)
-        c = np.sum(x, axis=1)
-        n = np.sum(r, axis=1)
+        r = np.sum(x, axis=-1)
+        c = np.sum(x, axis=-2)
+        n = np.sum(r, axis=-1)
 
         def lnfac(x):
             return gammaln(x + 1)
 
-        res = (np.sum(lnfac(r), axis=1) + np.sum(lnfac(c), axis=1)
-               - lnfac(n) - np.sum(lnfac(x), axis=(1, 2)))
+        res = (np.sum(lnfac(r), axis=-1) + np.sum(lnfac(c), axis=-1)
+               - lnfac(n) - np.sum(lnfac(x), axis=(-1, -2)))
 
         if expand:
             return res[0]
@@ -5244,7 +5217,7 @@ class conditional_table_gen(multi_rv_generic):
         r, c, n = self._process_parameters(row, col)
         return np.outer(r, c) / n
 
-    def rvs(self, row, col, size=1, method=None, random_state=None):
+    def rvs(self, row, col, *, size=None, method=None, random_state=None):
         """Draw random tables with fixed column and row marginals.
 
         Parameters
@@ -5268,7 +5241,37 @@ class conditional_table_gen(multi_rv_generic):
         r, c, n = self._process_parameters(row, col)
         random_state = self._get_random_state(random_state)
         meth = self._process_rvs_method(method, r, c, n)
+        if size is None:
+            return meth(r, c, n, 1, random_state)[0]
         return meth(r, c, n, size, random_state)
+
+    @staticmethod
+    def _process_parameters(row, col):
+        """
+        Check that row and column vectors are one-dimensional, that they do
+        not contain negative entries, and that the sums over both vectors
+        are equal.
+        """
+        r = np.array(row, dtype=np.int_, copy=True)
+        c = np.array(col, dtype=np.int_, copy=True)
+
+        if np.ndim(r) != 1:
+            raise ValueError("`row` must be one-dimensional")
+        if np.ndim(c) != 1:
+            raise ValueError("`col` must be one-dimensional")
+
+        if np.any(r < 0):
+            raise ValueError("each element of `row` must be non-negative")
+
+        if np.any(c < 0):
+            raise ValueError("each element of `col` must be non-negative")
+
+        ntot_row = np.sum(row)
+        ntot_col = np.sum(col)
+        if ntot_row != ntot_col:
+            raise ValueError("sums over `row` and `col` must be equal")
+
+        return r, c, ntot_row
 
     @classmethod
     def _process_rvs_method(cls, method, r, c, n):
@@ -5319,7 +5322,7 @@ conditional_table = conditional_table_gen()
 
 
 class conditional_table_frozen(multi_rv_frozen):
-    def __init__(self, row, col, seed=None):
+    def __init__(self, row, col, *, seed=None):
         self._dist = conditional_table_gen(seed)
         self._params = self._dist._process_parameters(row, col)
 
@@ -5337,9 +5340,10 @@ class conditional_table_frozen(multi_rv_frozen):
     def mean(self):
         return self._dist.mean(None, None)
 
-    def rvs(self, size=1, method=None, random_state=None):
+    def rvs(self, size=None, method=None, random_state=None):
         # optimisations are possible here
-        return self._dist.rvs(None, None, size, method, random_state)
+        return self._dist.rvs(None, None, size=size, method=method,
+                              random_state=random_state)
 
 
 _ctab_doc_callparams = """
