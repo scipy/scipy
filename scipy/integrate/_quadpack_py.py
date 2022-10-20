@@ -339,10 +339,6 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     **Integration of Complex Function of a Real Variable**
 
-    This method integrates the real and complex components separately.
-    Doing so makes the further assumption that the integrals of these
-    components exist over the given interval.
-
     A complex valued function, :math:`f`, of a real variable can be written as
     :math:`f = g + ih`.  Similarly, the integral of :math:`f` can be
     written as
