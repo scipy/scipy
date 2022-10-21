@@ -1,4 +1,4 @@
-# Regular CI for testing linux_aarch64 and macosx_arm64 natively
+# Regular CI for testing musllinux, linux_aarch64 and macosx_arm64 natively
 # This only runs if cirrus is not building wheels. The rationale is that
 # cibuildwheel also runs tests during the wheel build process, so there's no need
 # to have duplication.
@@ -35,6 +35,39 @@ linux_aarch64_test_task:
     python -m pip install click rich_click doit pydevtool
     python -m pip install pytest pooch
     
+    python dev.py test
+
+
+musllinux_amd64_test_task:
+  container:
+    image: alpine
+    cpu: 8
+    memory: 32G
+
+  pip_cache:
+    folder: ~/.cache/pip
+    populate_script: |
+      apk add openblas-dev python3 python3-dev openblas build-base gfortran git py3-pip
+      ln -s $(which python3.10) python
+      export PATH=$PWD:$PATH
+
+      pip install -vvv numpy
+
+  test_script: |
+    apk update
+    apk add openblas-dev python3 python3-dev openblas build-base gfortran git py3-pip
+    git submodule update --init
+
+    ln -s $(which python3.10) python
+    export PATH=$PWD:$PATH
+
+    # I don't think that the alpine py3-numpy package has the include dirs.
+    pip install -vvv numpy
+
+    python -m pip install meson ninja cython pybind11 pythran cython
+    python -m pip install click rich_click doit pydevtool
+    python -m pip install pytest pooch
+    python dev.py build
     python dev.py test
 
 
