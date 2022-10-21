@@ -2488,6 +2488,14 @@ class TestRandomTable:
         with pytest.raises(ValueError, match=message):
             random_table([1, 2], [1, 0])
 
+        message = "each element of `row` must be an integer"
+        with pytest.raises(ValueError, match=message):
+            random_table([2.1, 2.1], [1, 1, 2])
+
+        message = "each element of `col` must be an integer"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, 2], [1.1, 1.1, 1])
+
         row = [1, 3]
         col = [2, 1, 1]
         r, c, n = random_table._process_parameters([1, 3], [2, 1, 1])
@@ -2532,37 +2540,54 @@ class TestRandomTable:
             random_table.rvs(row, col, method="foo")
 
     @pytest.mark.parametrize('frozen', (True, False))
-    @pytest.mark.parametrize('method_name', ('pmf', 'logpmf'))
-    def test_pmf_logpmf(self, frozen, method_name):
+    @pytest.mark.parametrize('log', (True, False))
+    def test_pmf_logpmf(self, frozen, log):
         rng = np.random.default_rng(628174795866951638)
         row = [2, 6]
         col = [1, 3, 4]
         rvs = random_table.rvs(row, col, size=1000, random_state=rng)
 
         obj = random_table(row, col) if frozen else random_table
-        method = getattr(obj, method_name)
+        method = getattr(obj, "logpmf" if log else "pmf")
+        if not frozen:
+            original_method = method
+
+            def method(x):
+                return original_method(x, row, col)
+        pmf = (lambda x: np.exp(method(x))) if log else method
 
         unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
 
         # rough accuracy check
-        p = method(unique_rvs)
-        prob = p if method_name == 'pmf' else np.exp(p)
-        assert_allclose(prob * len(rvs), counts, rtol=0.1)
+        p = pmf(unique_rvs)
+        assert_allclose(p * len(rvs), counts, rtol=0.1)
 
         # accept any iterable
-        p2 = method(list(unique_rvs[0]))
+        p2 = pmf(list(unique_rvs[0]))
         assert_equal(p2, p[0])
 
-        # accept high-dimensional input
-        z = rng.integers(4, 9, size=(2, 3, 4, 5))
-        p = method(z)
-        assert p.shape == (2, 3)
+        # accept high-dimensional input and 2d input
+        rvs_nd = rvs.reshape((10, 100) + rvs.shape[1:])
+        p = pmf(rvs_nd)
+        assert p.shape == (10, 100)
         for i in range(p.shape[0]):
             for j in range(p.shape[1]):
                 pij = p[i, j]
-                zij = z[i, j]
-                qij = method(zij)
+                rvij = rvs_nd[i, j]
+                qij = pmf(rvij)
                 assert_equal(pij, qij)
+
+        # probability is zero if column marginal does not match
+        x = [[0, 1, 1], [2, 1, 3]]
+        assert_equal(np.sum(x, axis=-1), row)
+        p = pmf(x)
+        assert p == 0
+
+        # probability is zero if row marginal does not match
+        x = [[0, 1, 2], [1, 2, 2]]
+        assert_equal(np.sum(x, axis=-2), col)
+        p = pmf(x)
+        assert p == 0
 
     def test_mean(self):
         row = [2, 6]

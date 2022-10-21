@@ -5093,12 +5093,13 @@ class random_table_gen(multi_rv_generic):
         Draw random tables with given row and column vector sums.
 
     Parameters
-    ----------%(_doc_callparams)s
+    ----------
+    %(_doc_row_col)s
     %(_doc_random_state)s
 
     Notes
     -----
-    %(_doc_callparams_note)s
+    %(_doc_row_col_note)s
 
     Random elements from the distribution are generated either with Boyett's
     [1]_ or Patefield's algorithm [2]_. Boyett's algorithm has
@@ -5113,7 +5114,6 @@ class random_table_gen(multi_rv_generic):
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy.stats import random_table
 
     >>> row = [1, 5]
@@ -5126,9 +5126,9 @@ class random_table_gen(multi_rv_generic):
     and column vector sums, returning a "frozen" distribution.
 
     >>> dist = random_table(row, col)
-    >>> dist.rvs(size=1, random_state=123)
-    array([[[1., 0., 0.],
-            [1., 3., 1.]]])
+    >>> dist.rvs(random_state=123)
+    array([[1., 0., 0.],
+           [1., 3., 1.]])
 
     References
     ----------
@@ -5146,18 +5146,45 @@ class random_table_gen(multi_rv_generic):
         """
         return random_table_frozen(row, col, seed=seed)
 
-    def logpmf(self, x):
+    def logpmf(self, x, row, col):
         """Log-probability of table to occur in the distribution.
 
-        %(_doc_pmf_callparams)s
+        Parameters
+        ----------
+        %(_doc_x)s
+        %(_doc_row_col)s
 
         Returns
         -------
         logpmf : ndarray or scalar
             Log of the probability mass function evaluated at `x`.
 
-        %(_doc_pmf_note)s
+        Notes
+        -----
+        %(_doc_row_col_note)s
+
+        If row and column marginals of `x` do not match `row` and `col`,
+        negative infinity is returned.
+
+        Examples
+        --------
+        >>> from scipy.stats import random_table
+        >>> import numpy as np
+
+        >>> x = [[1, 5, 1], [2, 3, 1]]
+        >>> row = np.sum(x, axis=1)
+        >>> col = np.sum(x, axis=0)
+        >>> random_table.logpmf(x, row, col)
+        -1.6306401200847027
+
+        Alternatively, the object may be called (as a function) to fix the row
+        and column vector sums, returning a "frozen" distribution.
+
+        >>> d = random_table(row, col)
+        >>> d.logpmf(x)
+        -1.6306401200847027
         """
+        r, c, n = self._process_parameters(row, col)
         x = np.asarray(x)
 
         if np.any(x < 0):
@@ -5166,45 +5193,72 @@ class random_table_gen(multi_rv_generic):
         if x.ndim < 2:
             raise ValueError("`x` must be at least two-dimensional")
 
-        expand = x.ndim == 2
-        if expand:
-            x = x.reshape(1, *x.shape)
-
         if x.size == 0:
             raise ValueError("`x` must have at least one row and one column")
 
-        r = np.sum(x, axis=-1)
-        c = np.sum(x, axis=-2)
-        n = np.sum(r, axis=-1)
+        r2 = np.sum(x, axis=-1)
+        c2 = np.sum(x, axis=-2)
+
+        if r2.shape[-1] != len(r) or c2.shape[-1] != len(c):
+            raise ValueError("shape of `x` must match `row` and `col`")
+
+        res = np.empty(x.shape[:-2])
+
+        mask = np.all(r2 == r, axis=-1) & np.all(c2 == c, axis=-1)
 
         def lnfac(x):
             return gammaln(x + 1)
 
-        res = (np.sum(lnfac(r), axis=-1) + np.sum(lnfac(c), axis=-1)
-               - lnfac(n) - np.sum(lnfac(x), axis=(-1, -2)))
-
-        if expand:
-            return res[0]
+        res[mask] = (np.sum(lnfac(r), axis=-1) + np.sum(lnfac(c), axis=-1)
+                     - lnfac(n) - np.sum(lnfac(x[mask]), axis=(-1, -2)))
+        res[~mask] = -np.inf
 
         return res
 
-    def pmf(self, x):
+    def pmf(self, x, row, col):
         """Probability of table to occur in the distribution.
 
-        %(_doc_pmf_callparams)s
+        Parameters
+        ----------
+        %(_doc_x)s
+        %(_doc_row_col)s
 
         Returns
         -------
         pmf : ndarray or scalar
             Probability mass function evaluated at `x`.
 
-        %(_doc_pmf_note)s
+        Notes
+        -----
+        %(_doc_row_col_note)s
+
+        If row and column marginals of `x` do not match `row` and `col`,
+        zero is returned.
+
+        Examples
+        --------
+        >>> from scipy.stats import random_table
+        >>> import numpy as np
+
+        >>> x = [[1, 5, 1], [2, 3, 1]]
+        >>> row = np.sum(x, axis=1)
+        >>> col = np.sum(x, axis=0)
+        >>> random_table.pmf(x, row, col)
+        0.19580419580419592
+
+        Alternatively, the object may be called (as a function) to fix the row
+        and column vector sums, returning a "frozen" distribution.
+
+        >>> d = random_table(row, col)
+        >>> d.pmf(x)
+        0.19580419580419592
         """
-        return np.exp(self.logpmf(x))
+        return np.exp(self.logpmf(x, row, col))
 
     def mean(self, row, col):
         """Mean of distribution of conditional tables.
-        %(_doc_mean_callparams)s
+        %(_doc_mean_params)s
+
         Returns
         -------
         mean: ndarray
@@ -5212,7 +5266,25 @@ class random_table_gen(multi_rv_generic):
 
         Notes
         -----
-        %(_doc_callparams_note)s
+        %(_doc_row_col_note)s
+
+        Examples
+        --------
+        >>> from scipy.stats import random_table
+
+        >>> row = [1, 5]
+        >>> col = [2, 3, 1]
+        >>> random_table.mean(row, col)
+        array([[0.33333333, 0.5       , 0.16666667],
+               [1.66666667, 2.5       , 0.83333333]])
+
+        Alternatively, the object may be called (as a function) to fix the row
+        and column vector sums, returning a "frozen" distribution.
+
+        >>> d = random_table(row, col)
+        >>> d.mean()
+        array([[0.33333333, 0.5       , 0.16666667],
+               [1.66666667, 2.5       , 0.83333333]])
         """
         r, c, n = self._process_parameters(row, col)
         return np.outer(r, c) / n
@@ -5221,7 +5293,8 @@ class random_table_gen(multi_rv_generic):
         """Draw random tables with fixed column and row marginals.
 
         Parameters
-        ----------%(_doc_callparams)s
+        ----------
+        %(_doc_row_col)s
         size : integer, optional
             Number of samples to draw (default 1).
         method : str, optional
@@ -5236,7 +5309,25 @@ class random_table_gen(multi_rv_generic):
 
         Notes
         -----
-        %(_doc_callparams_note)s
+        %(_doc_row_col_note)s
+
+        Examples
+        --------
+        >>> from scipy.stats import random_table
+
+        >>> row = [1, 5]
+        >>> col = [2, 3, 1]
+        >>> random_table.rvs(row, col, random_state=123)
+        array([[1., 0., 0.],
+               [1., 3., 1.]])
+
+        Alternatively, the object may be called (as a function) to fix the row
+        and column vector sums, returning a "frozen" distribution.
+
+        >>> d = random_table(row, col)
+        >>> d.rvs(random_state=123)
+        array([[1., 0., 0.],
+               [1., 3., 1.]])
         """
         r, c, n = self._process_parameters(row, col)
         random_state = self._get_random_state(random_state)
@@ -5249,8 +5340,8 @@ class random_table_gen(multi_rv_generic):
     def _process_parameters(row, col):
         """
         Check that row and column vectors are one-dimensional, that they do
-        not contain negative entries, and that the sums over both vectors
-        are equal.
+        not contain negative or non-integer entries, and that the sums over
+        both vectors are equal.
         """
         r = np.array(row, dtype=np.int_, copy=True)
         c = np.array(col, dtype=np.int_, copy=True)
@@ -5266,12 +5357,17 @@ class random_table_gen(multi_rv_generic):
         if np.any(c < 0):
             raise ValueError("each element of `col` must be non-negative")
 
-        ntot_row = np.sum(row)
-        ntot_col = np.sum(col)
-        if ntot_row != ntot_col:
+        n = np.sum(r)
+        if n != np.sum(c):
             raise ValueError("sums over `row` and `col` must be equal")
 
-        return r, c, ntot_row
+        if not np.all(r == np.asarray(row)):
+            raise ValueError("each element of `row` must be an integer")
+
+        if not np.all(c == np.asarray(col)):
+            raise ValueError("each element of `col` must be an integer")
+
+        return r, c, n
 
     @classmethod
     def _process_rvs_method(cls, method, r, c, n):
@@ -5332,10 +5428,10 @@ class random_table_frozen(multi_rv_frozen):
         self._dist._process_parameters = _process_parameters
 
     def logpmf(self, x):
-        return self._dist.logpmf(x)
+        return self._dist.logpmf(x, None, None)
 
     def pmf(self, x):
-        return self._dist.pmf(x)
+        return self._dist.pmf(x, None, None)
 
     def mean(self):
         return self._dist.mean(None, None)
@@ -5346,64 +5442,56 @@ class random_table_frozen(multi_rv_frozen):
                               random_state=random_state)
 
 
-_ctab_doc_callparams = """
+_ctab_doc_row_col = """\
 row : array_like
     Sum of table entries in each row.
 col : array_like
-    Sum of table entries in each column.
-"""
+    Sum of table entries in each column."""
 
-_ctab_doc_callparams_note = """\
+_ctab_doc_x = """\
+x : array-like
+   Two-dimensional table of non-negative integers, or a
+   three-dimensional array of such tables. The first dimension
+   iterates over tables."""
+
+_ctab_doc_row_col_note = """\
 The row and column vectors must be one-dimensional, not empty,
 and each sum up to the same value. They cannot contain negative
-or noninteger entries.
-"""
+or noninteger entries."""
 
-_ctab_doc_mean_callparams = f"""
-Parameters
-----------{_ctab_doc_callparams}
-"""
-
-_ctab_doc_frozen_callparams_note = """\
-See class definition for a detailed description of parameters."""
-
-_ctab_doc_pmf_callparams = """\
+_ctab_doc_mean_params = f"""
 Parameters
 ----------
-x: array-like
-    Two-dimensional table of non-negative integers, or a
-    three-dimensional array of such tables. The first dimension
-    iterates over tables."""
+{_ctab_doc_row_col}"""
 
-_ctab_doc_pmf_note = """\
-Notes
------
-The row and column marginals are computed from the argument."""
+_ctab_doc_row_col_note_frozen = """\
+See class definition for a detailed description of parameters."""
 
-_ctab_docdict_params = {
+_ctab_docdict = {
     "_doc_random_state": _doc_random_state,
-    "_doc_callparams": _ctab_doc_callparams,
-    "_doc_mean_callparams": _ctab_doc_mean_callparams,
-    "_doc_callparams_note": _ctab_doc_callparams_note,
-    "_doc_pmf_callparams": _ctab_doc_pmf_callparams,
-    "_doc_pmf_note": _ctab_doc_pmf_note,
+    "_doc_row_col": _ctab_doc_row_col,
+    "_doc_x": _ctab_doc_x,
+    "_doc_mean_params": _ctab_doc_mean_params,
+    "_doc_row_col_note": _ctab_doc_row_col_note,
 }
 
-_ctab_docdict_noparams = _ctab_docdict_params.copy()
-_ctab_docdict_noparams.update({
-    "_doc_callparams": "",
-    "_doc_mean_callparams": "\n",
-    "_doc_callparams_note": _ctab_doc_frozen_callparams_note,
+_ctab_docdict_frozen = _ctab_docdict.copy()
+_ctab_docdict_frozen.update({
+    "_doc_row_col": "",
+    "_doc_mean_params": "",
+    "_doc_row_col_note": _ctab_doc_row_col_note_frozen,
 })
+
+
+def _docfill(obj, docdict, template=None):
+    obj.__doc__ = doccer.docformat(template or obj.__doc__, docdict)
+
 
 # Set frozen generator docstrings from corresponding docstrings in
 # random_table and fill in default strings in class docstrings
-random_table_gen.__doc__ = doccer.docformat(
-    random_table_gen.__doc__, _ctab_docdict_params)
+_docfill(random_table_gen, _ctab_docdict)
 for name in ['logpmf', 'pmf', 'mean', 'rvs']:
     method = random_table_gen.__dict__[name]
     method_frozen = random_table_frozen.__dict__[name]
-    method_frozen.__doc__ = doccer.docformat(
-        method.__doc__, _ctab_docdict_noparams)
-    method.__doc__ = doccer.docformat(method.__doc__,
-                                      _ctab_docdict_params)
+    _docfill(method_frozen, _ctab_docdict_frozen, method.__doc__)
+    _docfill(method, _ctab_docdict)
