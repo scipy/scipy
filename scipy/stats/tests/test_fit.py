@@ -237,7 +237,7 @@ def cases_test_fit_mse():
                       'betabinom'}
     xslow_basic_fit = {'burr', 'halfgennorm', 'invgamma',
                        'invgauss', 'powerlaw', 'burr12', 'trapezoid', 'kappa4',
-                       'f', 'powerlognorm', 'ncx2', 'reciprocal',
+                       'f', 'powerlognorm', 'ncx2', 'rdist', 'reciprocal',
                        'loguniform', 'betaprime', 'rice', 'gennorm',
                        'gengamma', 'truncnorm', 'ncf', 'nct', 'pearson3',
                        'beta', 'genexpon', 'tukeylambda', 'zipfian',
@@ -621,6 +621,35 @@ class TestFit:
 
         res = stats.fit(dist, data, bounds, guess=params, optimizer=self.opt)
         assert_allclose(res.params, params, **self.tols)
+
+    def test_mse_accuracy_1(self):
+        # Test maximum spacing estimation against example from Wikipedia
+        # https://en.wikipedia.org/wiki/Maximum_spacing_estimation#Examples
+        data = [2, 4]
+        dist = stats.expon
+        bounds = {'loc': (0, 0), 'scale': (1e-8, 10)}
+        res_mle = stats.fit(dist, data, bounds=bounds, method='mle')
+        assert_allclose(res_mle.params.scale, 3, atol=1e-3)
+        res_mse = stats.fit(dist, data, bounds=bounds, method='mse')
+        assert_allclose(res_mse.params.scale, 3.915, atol=1e-3)
+
+    def test_mse_accuracy_2(self):
+        # Test maximum spacing estimation against example from Wikipedia
+        # https://en.wikipedia.org/wiki/Maximum_spacing_estimation#Examples
+        rng = np.random.default_rng(9843212616816518964)
+
+        dist = stats.uniform
+        n = 10
+        data = dist(3, 6).rvs(size=n, random_state=rng)
+        bounds = {'loc': (0, 10), 'scale': (1e-8, 10)}
+        res = stats.fit(dist, data, bounds=bounds, method='mse')
+        # (loc=3.608118420015416, scale=5.509323262055043)
+
+        x = np.sort(data)
+        a = (n*x[0] - x[-1])/(n - 1)
+        b = (n*x[-1] - x[0])/(n - 1)
+        ref = a, b-a  # (3.6081133632151503, 5.509328130317254)
+        assert_allclose(res.params, ref, atol=1e-5)
 
 
 class TestFitResult:
