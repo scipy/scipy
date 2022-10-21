@@ -2531,61 +2531,38 @@ class TestRandomTable:
         with pytest.raises(ValueError, match=message):
             random_table.rvs(row, col, method="foo")
 
-    def test_pmf(self):
+    @pytest.mark.parametrize('frozen', (True, False))
+    @pytest.mark.parametrize('method_name', ('pmf', 'logpmf'))
+    def test_pmf_logpmf(self, frozen, method_name):
+        rng = np.random.default_rng(628174795866951638)
         row = [2, 6]
         col = [1, 3, 4]
-        rvs = random_table.rvs(row, col, size=1000, random_state=123)
+        rvs = random_table.rvs(row, col, size=1000, random_state=rng)
+
+        obj = random_table(row, col) if frozen else random_table
+        method = getattr(obj, method_name)
 
         unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
 
-        p = random_table.pmf(unique_rvs)
-        p0 = random_table.pmf(unique_rvs[0])
-        assert_equal(p0, p[0])
-        assert_allclose(p * len(rvs), counts, rtol=0.1)
+        # rough accuracy check
+        p = method(unique_rvs)
+        prob = p if method_name == 'pmf' else np.exp(p)
+        assert_allclose(prob * len(rvs), counts, rtol=0.1)
 
         # accept any iterable
-        p0_2 = random_table.pmf(list(unique_rvs[0]))
-        assert_equal(p0, p0_2)
+        p2 = method(list(unique_rvs[0]))
+        assert_equal(p2, p[0])
 
         # accept high-dimensional input
-        rng = np.random.default_rng(1)
         z = rng.integers(4, 9, size=(2, 3, 4, 5))
-        p = random_table.pmf(z)
+        p = method(z)
         assert p.shape == (2, 3)
         for i in range(p.shape[0]):
             for j in range(p.shape[1]):
                 pij = p[i, j]
                 zij = z[i, j]
-                qij = random_table.pmf(zij)
+                qij = method(zij)
                 assert_equal(pij, qij)
-
-    def test_logpmf(self):
-        row = [2, 6]
-        col = [1, 3, 4]
-        rvs = random_table.rvs(row, col, size=1000, random_state=123)
-
-        unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
-
-        lp0 = random_table.logpmf(unique_rvs[0])
-        lp = random_table.logpmf(unique_rvs)
-        assert_equal(lp0, lp[0])
-        assert_allclose(np.exp(lp) * len(rvs), counts, rtol=0.1)
-
-        # accept any iterable
-        lp0_2 = random_table.logpmf(list(unique_rvs[0]))
-        assert_equal(lp0, lp0_2)
-
-        # accept high-dimensional input
-        rng = np.random.default_rng(1)
-        z = rng.integers(4, 9, size=(2, 3, 4, 5))
-        lp = random_table.logpmf(z)
-        assert lp.shape == (2, 3)
-        for i in range(lp.shape[0]):
-            for j in range(lp.shape[1]):
-                lpij = lp[i, j]
-                zij = z[i, j]
-                lqij = random_table.logpmf(zij)
-                assert_equal(lpij, lqij)
 
     def test_mean(self):
         row = [2, 6]
