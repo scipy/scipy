@@ -2589,6 +2589,24 @@ class TestRandomTable:
         p = pmf(x)
         assert p == 0
 
+        # response to invalid inputs
+        message = "`x` must be at least two-dimensional"
+        with pytest.raises(ValueError, match=message):
+            pmf([1])
+
+        message = "`x` must contain only non-negative integers"
+        with pytest.raises(ValueError, match=message):
+            pmf([[-1]])
+
+        message = "shape of `x` must match `row`"
+        with pytest.raises(ValueError, match=message):
+            pmf([[1, 2, 3]])
+
+        message = "shape of `x` must match `col`"
+        with pytest.raises(ValueError, match=message):
+            pmf([[1, 2],
+                 [3, 4]])
+
     def test_mean(self):
         row = [2, 6]
         col = [1, 3, 4]

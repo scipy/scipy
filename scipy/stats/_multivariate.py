@@ -5187,20 +5187,20 @@ class random_table_gen(multi_rv_generic):
         r, c, n = self._process_parameters(row, col)
         x = np.asarray(x)
 
-        if np.any(x < 0):
-            raise ValueError("`x` must contain only non-negative integers")
-
         if x.ndim < 2:
             raise ValueError("`x` must be at least two-dimensional")
 
-        if x.size == 0:
-            raise ValueError("`x` must have at least one row and one column")
+        if np.any(x < 0):
+            raise ValueError("`x` must contain only non-negative integers")
 
         r2 = np.sum(x, axis=-1)
         c2 = np.sum(x, axis=-2)
 
-        if r2.shape[-1] != len(r) or c2.shape[-1] != len(c):
-            raise ValueError("shape of `x` must match `row` and `col`")
+        if r2.shape[-1] != len(r):
+            raise ValueError("shape of `x` must match `row`")
+
+        if c2.shape[-1] != len(c):
+            raise ValueError("shape of `x` must match `col`")
 
         res = np.empty(x.shape[:-2])
 
