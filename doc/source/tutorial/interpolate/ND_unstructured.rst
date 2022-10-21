@@ -2,11 +2,12 @@
 
 .. currentmodule:: scipy.interpolate
 
+===============================================
 Scattered data interpolation (:func:`griddata`)
 ===============================================
 
 Suppose you have multidimensional data, for instance, for an underlying
-function *f(x, y)* you only know the values at points ``(x[i], y[i])``
+function :math:`f(x, y)` you only know the values at points ``(x[i], y[i])``
 that do not form a regular grid.
 
 .. plot::
@@ -77,6 +78,7 @@ All these interpolation methods rely on triangulation of the data using the
 
 .. _tutorial-interpolate_RBF:
 
+========================================================
 Using radial basis functions for smoothing/interpolation
 ========================================================
 
@@ -136,7 +138,6 @@ This example shows how to interpolate scattered 2-D data:
     >>> import numpy as np
     >>> from scipy.interpolate import Rbf
     >>> import matplotlib.pyplot as plt
-    >>> from matplotlib import cm
 
     >>> # 2-d tests - setup scattered data
     >>> rng = np.random.default_rng()
