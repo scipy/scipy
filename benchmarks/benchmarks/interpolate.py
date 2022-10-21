@@ -262,12 +262,14 @@ class RegularGridInterpolator(Benchmark):
 
         # coordinates halve in size over the dimensions
         coord_sizes = [max_coord_size // 2**i for i in range(ndim)]
-        self.points = [np.sort(rng.random(size=s))[::flipped] for s in coord_sizes]
+        self.points = [np.sort(rng.random(size=s))[::flipped]
+                       for s in coord_sizes]
         self.values = rng.random(size=coord_sizes)
 
         # choose in-bounds sample points xi
         bounds = [(p.min(), p.max()) for p in self.points]
-        xi = [rng.uniform(low, high, size=n_samples) for low, high in bounds]
+        xi = [rng.uniform(low, high, size=n_samples)
+              for low, high in bounds]
         self.xi = np.array(xi).T
 
         self.interp = interpolate.RegularGridInterpolator(
@@ -275,7 +277,8 @@ class RegularGridInterpolator(Benchmark):
             self.values,
         )
 
-    def time_rgi_setup_interpolator(self, ndim, max_coord_size, n_samples, flipped):
+    def time_rgi_setup_interpolator(self, ndim, max_coord_size,
+                                    n_samples, flipped):
         self.interp = interpolate.RegularGridInterpolator(
             self.points,
             self.values,
@@ -292,8 +295,8 @@ class RegularGridInterpolatorValues(interpolate.RegularGridInterpolator):
         super().__init__(points, values, **kwargs)
         self._is_initialized = False
         # precompute values
-        self.xi, self.xi_shape, self.ndim, self.nans, self.out_of_bounds = self._prepare_xi(
-            xi)
+        (self.xi, self.xi_shape, self.ndim,
+         self.nans, self.out_of_bounds) = self._prepare_xi(xi)
         self.indices, self.norm_distances = self._find_indices(xi.T)
         self._is_initialized = True
 
@@ -302,7 +305,8 @@ class RegularGridInterpolatorValues(interpolate.RegularGridInterpolator):
             return super()._prepare_xi(xi)
         else:
             # just give back precomputed values
-            return self.xi, self.xi_shape, self.ndim, self.nans, self.out_of_bounds
+            return (self.xi, self.xi_shape, self.ndim,
+                    self.nans, self.out_of_bounds)
 
     def _find_indices(self, xi):
         if not self._is_initialized:
@@ -339,12 +343,14 @@ class RegularGridInterpolatorSubclass(Benchmark):
 
         # coordinates halve in size over the dimensions
         coord_sizes = [max_coord_size // 2**i for i in range(ndim)]
-        self.points = [np.sort(rng.random(size=s))[::flipped] for s in coord_sizes]
+        self.points = [np.sort(rng.random(size=s))[::flipped]
+                       for s in coord_sizes]
         self.values = rng.random(size=coord_sizes)
 
         # choose in-bounds sample points xi
         bounds = [(p.min(), p.max()) for p in self.points]
-        xi = [rng.uniform(low, high, size=n_samples) for low, high in bounds]
+        xi = [rng.uniform(low, high, size=n_samples)
+              for low, high in bounds]
         self.xi = np.array(xi).T
 
         self.interp = RegularGridInterpolatorValues(
@@ -352,7 +358,8 @@ class RegularGridInterpolatorSubclass(Benchmark):
             self.xi,
         )
 
-    def time_rgi_setup_interpolator(self, ndim, max_coord_size, n_samples, flipped):
+    def time_rgi_setup_interpolator(self, ndim, max_coord_size,
+                                    n_samples, flipped):
         self.interp = RegularGridInterpolatorValues(
             self.points,
             self.xi,
