@@ -41,7 +41,7 @@ fit ``g(x)``, so that **the resulting knots do not necessarily coincide with the
 
 
 Spline smoothing in 1-D
------------------------
+=======================
 
 `scipy.interpolate` provides two interfaces for the FITPACK library, a functional
 interface and an object-oriented interface. While equivalent, these interfaces
@@ -51,8 +51,8 @@ functional interface --- which we recommend for use in new code.
 
 .. _tutorial-interpolate_splXXX:
 
-Procedural (interpolate.splXXX)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Procedural (`splrep`)
+---------------------
 
 Spline interpolation requires two essential steps: (1) a spline
 representation of the curve is computed, and (2) the spline is
@@ -104,6 +104,52 @@ to perform during the spline fit. The default value of :math:`s` is
 :math:`s=m-\sqrt{2m}` where :math:`m` is the number of data-points
 being fit. Therefore, **if no smoothing is desired a value of**
 :math:`\mathbf{s}=0` **should be passed to the routines.**
+
+Once the spline representation of the data has been determined, it can be
+evaluated either using the `splev` function or by wrapping
+the `tck` tuple into a `BSpline` object, as demonstrated below.
+
+We start by illustrating the effect of the ``s`` parameter on smoothing some
+synthetic noisy data
+
+.. plot::
+
+   >>> import numpy as np
+   >>> from scipy.interpolate import splrep, BSpline
+
+   Generta some noisy data
+
+   >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/16)
+   >>> rng = np.random.default_rng()
+   >>> y =  np.sin(x) + 0.4*rng.standard_normal(size=len(x))
+
+   Construct two splines with different values of ``s``.
+
+   >>> tck = splrep(x, y, s=0)
+   >>> tck_s = splrep(x, y, s=len(x))
+
+   And plot them
+
+   >>> import matplotlib.pyplot as plt
+   >>> xnew = np.arange(0, 9/4, 1/50) * np.pi
+   >>> plt.plot(xnew, np.sin(xnew), '-.', label='sin(x)')
+   >>> plt.plot(xnew, BSpline(*tck)(xnew), '-', label='s=0')
+   >>> plt.plot(xnew, BSpline(*tck_s)(xnew), '-', label=f's={len(x)}')
+   >>> plt.plot(x, y, 'o')
+   >>> plt.legend()
+   >>> plt.show()
+
+We see that the ``s=0`` curve follows the (random) fluctuations of the data points,
+while the ``s > 0`` curve is close to the underlying sine function.
+Also note that the extrapolated values vary wildly depending on the value of ``s``.
+
+The default value of ``s`` depends on whether the weights are supplied or not,
+and also differs for `splrep` and `splprep`. Therefore, we recommend to always
+provide the value of ``s`` explicitly.
+
+
+Manipulating spline objects: procedural (``splXXX``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once the spline representation of the data has been determined,
 functions are available for evaluating the spline
@@ -223,37 +269,10 @@ Thus to wrap its output to a `BSpline`, we need to transpose the coefficients
   >>> np.allclose(y, yy)
   True
 
-So far all examples constructed interpolating splines with ``s=0``. To illustrate
-the effect of the value of ``s`` for noisy data:
-
-.. plot::
-
-   >>> import numpy as np
-   >>> from scipy.interpolate import splrep, splev
-   >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/16)
-   >>> rng = np.random.default_rng()
-   >>> y =  np.sin(x) + 0.4*rng.standard_normal(size=len(x))
-   >>> tck = splrep(x, y, s=0)
-   >>> tck_s = splrep(x, y, s=len(x))
-   >>> import matplotlib.pyplot as plt
-   >>> xnew = np.arange(0, 2*np.pi, np.pi/50)
-   >>> plt.plot(xnew, np.sin(xnew), '-.', label='sin(x)')
-   >>> plt.plot(xnew, splev(xnew, tck), '-', label='s=0')
-   >>> plt.plot(xnew, splev(xnew, tck_s), '-', label=f's={len(x)}')
-   >>> plt.plot(x, y, 'o')
-   >>> plt.legend()
-   >>> plt.show()
-
-We see that the ``s=0`` curve follows the (random) fluctuations of the data points,
-while the ``s > 0`` curve is close to the underlying sine function.
-
-The default value of ``s`` depends on whether the weights are supplied or not,
-and also differs for `splrep` and `splprep`. Therefore, we recommend to always
-supply the value of ``s`` explicitly.
 
 
 Object-oriented (:class:`UnivariateSpline`)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------
 
 The spline-fitting capabilities described above are also available via
 an objected-oriented interface.  The 1-D splines are
@@ -326,7 +345,7 @@ spline.
 
 
 2-D smoothing splines
----------------------
+=====================
 
 In addition to smoothing 1-D splines, the FITPACK library provides the means of
 fitting 2-D *surfaces* to two-dimensional data, represented as tensor products
@@ -337,7 +356,7 @@ object-oriented interface.
 .. _tutorial-interpolate_2d_spline:
 
 Procedural (:func:`bisplrep`)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 For (smooth) spline-fitting to a 2-D surface, the function
 :func:`bisplrep` is available. This function takes as required inputs
@@ -417,7 +436,7 @@ passed in :obj:`mgrid <numpy.mgrid>`.
 
 
 Object-oriented (:class:`BivariateSpline`)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------
 
 The :class:`BivariateSpline` class is the 2-D analog of the
 :class:`UnivariateSpline` class.  It and its subclasses implement
