@@ -2,23 +2,50 @@
 
 .. currentmodule:: scipy.interpolate
 
-=====================
-Piecewise polynomials
-=====================
+=================================
+Piecewise polynomials and splines
+=================================
 
-Internally, `CubicSpline` and monotone interpolants are represented as instances
-of a `PPoly` class, which represents piecewise polynomials in terms of
-breakpoints and coefficients (`PPoly` objects can represent polynomials of 
-arbitrary orders, not only cubics). For the data array ``x``, breakpoints are at
-the data points, and the array of coefficients, ``c`` , define cubic polynomials
-such that ``c[k, j]`` is a coefficient for ``(x - x[j])**(3-k)`` on the segment
-between ``x[j]`` and ``x[j+1]`` .
+1D interpolation routines :ref:`discussed in the previous section
+<tutorial-interpolate_1Dsection>`, work by constructing certain *piecewise
+polynomials*: the interpolation range is split into intervals by the so-called
+*breakpoints*, and there is a certain polynomial on each interval. These
+polynomial pieces then match at the breakpoints with a predefined smoothness:
+the second derivatives for cubic splines, the first derivatives for monotone
+interpolants and so on.
+
+A polynomial of degree :math:`k` can be thought of as a linear combination of
+:math:`k+1` monomial basis elements, :math:`1, x, x^2, \cdots, x^k`. 
+In some applications, it is useful to consider alternative (if formally
+equivalent) bases. Two popular bases, implemented in `scipy.interpolate` are
+B-splines (`BSpline`) and Bernstein polynomials (`BPoly`).
+B-splines are often used for, for example, non-parameteric regression problems,
+and Bernstein polynomials are used for constructing Bezier curves.
+
+`PPoly` objects represent piecewise polynomials in the 'usual' power basis.
+This is the case for `CubicSpline` instances and monotone interpolants.
+In general, `PPoly` objects can represent polynomials of 
+arbitrary orders, not only cubics. For the data array ``x``, breakpoints are at
+the data points, and the array of coefficients, ``c`` , define polynomials of
+degree :math:`m`, such that ``c[k, j]`` is a coefficient for
+``(x - x[j])**(m-k)`` on the segment between ``x[j]`` and ``x[j+1]`` .
+
+`BSpline` objects represent B-spline functions --- linear combinations of
+:ref:`b-spline basis elements <tutorial-interpolate_bspl_basis>`. 
+These objects can be instantiated directly or constructed from data with the
+`make_interp_spline` factory function.
+
+Finally, Bernstein polynomials are represented as instances of the `BPoly` class.
+
+All these classes implement a (mostly) similar interface, `PPoly` being the most
+feature-complete. We next consider main features of this interface and
+discuss some details of the alternative bases for piecewise polynomials.
 
 
 .. _tutorial-interpolate_ppoly:
 
-Manipulating ``PPoly`` objects
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Manipulating `PPoly` objects
+============================
 
 `PPoly` objects have convenient methods for constructing derivatives
 and antiderivatives, computing integrals and root-finding. For example, we
@@ -41,7 +68,8 @@ argument:
     >>> dspl(1.1), spl(1.1, nu=1)
     (0.45361436, 0.45361436)
 
-However with the ``dspl`` object, we find the zeros of the derivative of ``spl``:
+Note that the second form above evaluates the derivative in-place, while with
+the ``dspl`` object, we can find the zeros of the derivative of ``spl``:
 
     >>> dspl.roots() / np.pi
     array([-0.45480801,  0.50000034,  1.50000099,  2.5000016 ,  3.46249993])
@@ -76,8 +104,8 @@ example, we compute an approximation to the complete elliptic integral
     >>> ellipk(m)
     1.8540746773013719
 
-To this end, we tabulate the integrand, interpolate using the monotone
-interpolant (we could as well used a `CubicSpline`):
+To this end, we tabulate the integrand, interpolate it using the monotone
+PCHIP interpolant (we could as well used a `CubicSpline`):
 
     >>> from scipy.interpolate import PchipInterpolator
     >>> x = np.linspace(0, np.pi/2, 70)
@@ -119,17 +147,19 @@ the NumPy broadcasting:
     >>> plt.show()
 
 
-Interpolation with B-splines
-----------------------------
+B-splines: knots and coefficients
+=================================
 
-A polynomial of degree :math:`k` can be thought of as a linear combination of
-:math:`k+1` monomial basis elements, :math:`1, x, x^2, \cdots, x^k`. B-splines
-form an alternative (if equivalent) :ref:`basis <tutorial-interpolate_bspl_basis>`
-of degree-:math:`k` piecewise polynomials. 
+A b-spline function --- for instance, constructed from data via a
+`make_interp_spline` call --- is defined by the so-called *knots* and coefficients.
 
-A b-spline of degree ``k`` is defined by its knots and coefficients. The knots
-are availble as the ``t`` attribute of a `BSpline` instance:
+As an illustration, let us again construct the interpolation of a sine function. 
+The knots are availble as the ``t`` attribute of a `BSpline` instance:
 
+    >>> x = np.linspace(0, 3/2, 7)
+    >>> y = np.sin(np.pi*x)
+    >>> from scipy.interpolate import make_interp_spline
+    >>> bspl = make_interp_spline(x, y)
     >>> print(bspl.t)
     [0.  0.  0.  0.        0.5  0.75  1.        1.5  1.5  1.5  1.5 ]
     >>> print(x)
@@ -158,7 +188,7 @@ coefficients. Some routines (see the :ref:`Smoothing splines section
 <tutorial-interpolate_fitpack>`) zero-pad the ``c`` arrays so that
 ``len(c) == len(t)``. These additional coefficients are ignored for evaluation.
 
-Also note that the coeffients are given in the
+We stress that the coeffients are given in the
 :ref:`b-spline basis <tutorial-interpolate_bspl_basis>`, not the power basis
 of :math:`1, x, \cdots, x^k`.
 
@@ -166,7 +196,7 @@ of :math:`1, x, \cdots, x^k`.
 .. _tutorial-interpolate_bspl_basis:
 
 B-spline basis elements
------------------------
+=======================
 
 B-splines are piecewise polynomials, represented as linear combinations of
 *b-spline basis elements* --- which themselves are certain linear combinations
@@ -213,82 +243,4 @@ If desired, a b-spline can be converted into a `PPoly` object using
 `PPoly` instance. The reverse conversion is performed by the
 `BSpline.from_power_basis` method. However, conversions between bases is best
 avoided because it accumulates rounding errors.
-
-
-.. _tutorial-interpolate_parametric:
-
-Parametric spline curves
-------------------------
-
-So far we considered spline *functions*, where the data, ``y``, is expected to
-depend explicitly on the independent variable ``x``---so that the interpolating
-function satisfies :math:`f(x_j) = y_j`. Spline *curves* treat
-the ``x`` and ``y`` arrays as coordinates of points, :math:`\mathbf{p}_j` on a
-plane, and an interpolating curve which passes through these points is
-parameterized by some additional parameter (typically called ``u``). Note that
-this construction readily generalizes to higher dimensions where
-:math:`\mathbf{p}_j` are points in an N-dimensional space.
-
-The choice of parametrization is problem-dependent and different parametrizations
-may produce vastly different curves. As an example, we consider three
-parametrizations of (a somewhat difficult) dataset, which we take from
-Chapter 6 of Ref [1] listed in the `BSpline` docstring:
-
-.. plot ::
-
-    >>> x = [0, 1, 2, 3, 4, 5, 6]
-    >>> y = [0, 0, 0, 9, 0, 0, 0]
-    >>> p = np.stack((x, y))
-    >>> p
-    array([[0, 1, 2, 3, 4, 5, 6],
-           [0, 0, 0, 9, 0, 0, 0]])
-
-    We take elements of the ``p`` array as coordinates of seven point on the
-    plane, where ``p[:, j]`` gives the coordinates of the point
-    :math:`\mathbf{p}_j`.
-
-    First, consider the *uniform* parametrization, :math:`u_j = j`:
-
-    >>> u_unif = x
-
-    Second, we consider the so-called *cord length* parametrization, which is
-    nothing but a cumulative length of straight line segments connecting the
-    data points:
-
-    .. math::
-        
-        u_j = u_{j-1} + |\mathbf{p}_j - \mathbf{p}_{j-1}|
-
-    for :math:`j=1, 2, \dots` and :math:`u_0 = 0`. Here :math:`| \cdots |` is the
-    length between the consecutive points :math:`p_j` on the plane.
-
-    >>> dp = p[:, 1:] - p[:, :-1]      # 2-vector distances between points
-    >>> l = (dp**2).sum(axis=0)        # squares of lengths of 2-vectors between points
-    >>> u_cord = np.sqrt(l).cumsum()   # cumulative sums of 2-norms
-    >>> u_cord = np.r_[0, u_cord]      # first point is parametrized at zero
-
-    Finally, we consider what is sometimes called the *centripetal*
-    parametrization: :math:`u_j = u_{j-1} + |\mathbf{p}_j - \mathbf{p}_{j-1}|^{1/2}`.
-    Due to the extra square root, the difference between consecutive values
-    :math:`u_j - u_{j-1}` will be smaller than for the cord length parametrization: 
-
-    >>> u_c = np.r_[0, np.cumsum((dp**2).sum(axis=0)**0.25)]
-
-    Now plot the resulting curves:
-
-    >>> from scipy.interpolate import make_interp_spline
-    >>> import matplotlib.pyplot as plt
-    >>> fig, ax = plt.subplots(1, 3, figsize=(8, 3))
-    >>> parametrizations = ['uniform', 'cord length', 'centripetal']
-    >>>
-    >>> for j, u in enumerate([u_unif, u_cord, u_c]):
-    ...    spl = make_interp_spline(u, p, axis=1)    # note p is a 2D array
-    ...    
-    ...    uu = np.linspace(u[0], u[-1], 51)
-    ...    xx, yy = spl(uu)
-    ...    
-    ...    ax[j].plot(xx, yy, '--')
-    ...    ax[j].plot(p[0, :], p[1, :], 'o')
-    ...    ax[j].set_title(parametrizations[j])
-    >>> plt.show()
 
