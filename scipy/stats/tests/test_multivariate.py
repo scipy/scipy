@@ -2598,15 +2598,18 @@ class TestRandomTable:
     def test_rvs(self):
         # test if `rvs` is unbiased and large sample size converges
         # to the true mean. `test_pmf` also implicitly tests `rvs`.
+        rng = np.random.default_rng(628174795866951638)
+
         row = [2, 6]
         col = [1, 3, 4]
-        rvs = random_table.rvs(row, col, size=1000, random_state=123)
+        rvs = random_table.rvs(row, col, size=1000, random_state=rng)
         mean = random_table.mean(row, col)
-        assert_allclose(rvs.mean(0), mean, atol=5e-2)
+        assert_allclose(rvs.mean(0), mean, atol=0.05)
         assert_equal(rvs.sum(axis=-1), np.broadcast_to(row, (1000, 2)))
         assert_equal(rvs.sum(axis=-2), np.broadcast_to(col, (1000, 3)))
 
-        rv = random_table.rvs(row, col, random_state=123)
+        rng = np.random.default_rng(628174795866951638)
+        rv = random_table.rvs(row, col, random_state=rng)
         assert rv.shape == (2, 3)
         assert_equal(rv, rvs[0])
 
@@ -2617,8 +2620,8 @@ class TestRandomTable:
         expected = random_table.mean(row, col)
         assert_equal(expected, d.mean())
 
-        expected = random_table.rvs(row, col, size=10, random_state=123)
-        got = d.rvs(size=10, random_state=123)
+        expected = random_table.rvs(row, col, size=10, random_state=1)
+        got = d.rvs(size=10, random_state=1)
         assert_equal(expected, got)
 
 
