@@ -13,23 +13,10 @@ Interpolation (:mod:`scipy.interpolate`)
 
 There are several general facilities available in SciPy for interpolation and
 smoothing for data in 1, 2, and higher dimensions. The choice of a specific
-interpolation routine depends on whether your data is
-
-- :ref:`One-dimensional <tutorial-interpolate_1Dsection>` (1-D);
-
-- Is given on a :ref:`structured grid <tutorial-interpolate_regular_grid_interpolator>`
-  in arbitrary (N) dimensions;
-
-- Is :ref:`unstructured <tutorial-interpolate_NDunstructured>`;
-
-For data smoothing, :ref:`functions are provided <tutorial-interpolate_fitpack>`
-for 1- and 2-D (smoothed)
-cubic-spline interpolation, based on the FORTRAN library FITPACK. There are
-two interfaces for the FITPACK library, a procedural interface and an
-object-oriented interface.
-
-Additionally, routines are provided for interpolation / smoothing using
-:ref:`radial basis functions <tutorial-interpolate_RBF>` with several kernels.
+interpolation routine depends on the data: whether it is one-dimensional,
+is given on a structured grid, or is unstructured. One other factor is the
+desired smoothness of the interpolator. In short, routines recommended *for
+interpolation* can be summarized as follows:
 
 +------------------+-------------------------+------------------------------+------------------------+---------------------------------------+
 |                  | **kind**                | **routine**                   | **continuity**        | **comment**                           |
@@ -62,7 +49,13 @@ Additionally, routines are provided for interpolation / smoothing using
 +------------------+-------------------------+------------------------------+------------------------+---------------------------------------+
 
 
+For data smoothing, :ref:`functions are provided <tutorial-interpolate_fitpack>`
+for 1- and 2-D data using cubic splines, based on the FORTRAN library FITPACK. 
 
+Additionally, routines are provided for interpolation / smoothing using
+:ref:`radial basis functions <tutorial-interpolate_RBF>` with several kernels.
+
+Futher details are given in the links below. 
 
 .. toctree::
    :maxdepth: 3
@@ -72,21 +65,6 @@ Additionally, routines are provided for interpolation / smoothing using
    interpolate/smoothing_splines
    interpolate/ND_regular_grid
    interpolate/ND_unstructured
-
-
-Missing data
-============
-
-Before describing various interpolators in detail, we note the (lack of) support
-for interpolation with missing data. Two popular ways of representing missing
-data are using masked arrays of the `numpy.ma` library, and encoding missing
-values as not-a-number, ``NaN``. 
-
-Neither of these two approaches are directly suppored in `scipy.interpolate`.
-Individual routines may offer partial support, and/or workarounds, but in
-general the library firmly adheres to the IEEE 754 semantics where a ``NaN``
-means *not-a-number*, i.e. a result of an illegal mathematical operation
-(think a division by zero), not *missing*.
 
 
 

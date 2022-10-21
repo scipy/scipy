@@ -127,44 +127,6 @@ A polynomial of degree :math:`k` can be thought of as a linear combination of
 form an alternative (if equivalent) :ref:`basis <tutorial-interpolate_bspl_basis>`
 of degree-:math:`k` piecewise polynomials. 
 
-As an illustration, we construct
-the interpolation of a :ref:`derivative of a sine function<tutorial-interpolate_ppoly>`
-with b-splines:
-
-.. plot::
-
-    >>> x = np.linspace(0, 3/2, 7)
-    >>> y = np.sin(np.pi*x)
-
-    To construct the interpolating objects given data arrays, ``x`` and ``y``,
-    we use the `make_interp_spline` function:
-
-    >>> from scipy.interpolate import make_interp_spline
-    >>> bspl = make_interp_spline(x, y)
-
-    Now ``bspl`` is a `BSpline` object which has an interface similar to `PPoly`.
-    In particular, it can be evaluated at a data point and differentiated:
-
-    >>> der = bspl.derivative()      # a BSpline representing the derivative
-    >>> import matplotlib.pyplot as plt
-    >>> xx = np.linspace(0, 3/2, 51)
-    >>> plt.plot(xx, bspl(xx), '--', label=r'$\sin(\pi x)$ approx')
-    >>> plt.plot(x, y, 'o', label='data')
-    >>> plt.plot(xx, der(xx)/np.pi, '--', label='$d \sin(\pi x)/dx / \pi$ approx')
-    >>> plt.legend()
-    >>> plt.show()
-
-Note that by default `make_interp_spline` constructs a cubic spline;
-its derivative is a quadratic:
-
-    >>> bspl.k, der.k
-    (3, 2)
-
-By default, the result of ``make_interp_spline(x, y)`` is equivalent to
-``CubicSpline(x, y)``. The difference is that the former allows several optional
-capabilities: it can construct splines of various degrees (via the optional
-argument ``k``) and predefined knots (via the optional argument ``t``). 
-
 A b-spline of degree ``k`` is defined by its knots and coefficients. The knots
 are availble as the ``t`` attribute of a `BSpline` instance:
 

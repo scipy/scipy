@@ -7,7 +7,7 @@
 =================
 
 Piecewise linear interpolation
-------------------------------
+==============================
 
 If all you need is a linear (a.k.a. broken line) interpolation, you can use
 the `numpy.interp` routine. It takes two arrays of data to interpolate, ``x``,
@@ -17,7 +17,6 @@ and ``y``, and a third array, ``xnew``, of points to evaluate the interpolation 
 .. plot::
 
    >>> import numpy as np
-
    >>> x = np.linspace(0, 10, num=11)
    >>> y = np.cos(-x**2 / 9.0)
 
@@ -38,7 +37,7 @@ and ``y``, and a third array, ``xnew``, of points to evaluate the interpolation 
 
 
 Cubic splines
--------------
+=============
 
 Of course, piecewise linear interpolation produces corners at data points,
 where linear pieces join. To produce a smoother curve, you can use cubic
@@ -82,14 +81,14 @@ the third derivative jumps at data points.
 
 
 Monotone interpolants
----------------------
+=====================
 
 Cubic splines are by construction twice continuously differentiable. This may
 lead to the spline function oscillating and ''overshooting'' in between the
 data points. In these situations, an alternative is to use the so-called
 *monotone* cubic interpolants: these are constructed to be only once
 continuously differentiable, and attempt to preserve the local shape implied
-by the data. There are two objects of this class in `scipy.interpolate` :
+by the data. `scipy.interpolate` provides two objects of this kind:
 `PchipInterpolator` and `Akima1DInterpolator` . To illustrate, let's consider
 data with an outlier:
 
@@ -110,11 +109,57 @@ data with an outlier:
     >>> plt.show()
 
 
+Interpolation with B-splines
+============================
+
+As an illustration, we construct the interpolation of a sine function with
+b-splines (see also an :ref:`equivalent exercise<tutorial-interpolate_ppoly>`
+with `CubicSpline`):
+
+.. plot::
+
+    >>> x = np.linspace(0, 3/2, 7)
+    >>> y = np.sin(np.pi*x)
+
+    To construct the interpolating objects given data arrays, ``x`` and ``y``,
+    we use the `make_interp_spline` function:
+
+    >>> from scipy.interpolate import make_interp_spline
+    >>> bspl = make_interp_spline(x, y)
+
+    This functions returns an object which has an interface similar to that
+    of the `CubicSpline` objects.  In particular, it can be evaluated at a data
+    point and differentiated:
+
+    >>> der = bspl.derivative()      # a BSpline representing the derivative
+    >>> import matplotlib.pyplot as plt
+    >>> xx = np.linspace(0, 3/2, 51)
+    >>> plt.plot(xx, bspl(xx), '--', label=r'$\sin(\pi x)$ approx')
+    >>> plt.plot(x, y, 'o', label='data')
+    >>> plt.plot(xx, der(xx)/np.pi, '--', label='$d \sin(\pi x)/dx / \pi$ approx')
+    >>> plt.legend()
+    >>> plt.show()
+
+Note that by default `make_interp_spline` constructs a cubic spline;
+its derivative is a quadratic:
+
+    >>> bspl.k, der.k
+    (3, 2)
+
+By default, the result of ``make_interp_spline(x, y)`` is equivalent to
+``CubicSpline(x, y)``. The difference is that the former allows several optional
+capabilities: it can construct splines of various degrees (via the optional
+argument ``k``) and predefined knots (via the optional argument ``t``). 
+
+Boundary conditions for the spline spline interpolation can be controlled by
+the ``bc_type`` argument to `make_interp_spline` function and `CubicSpline`
+constructor. By default, both use the 'not-a-knot' boundary
+condition.
 
 .. _tutorial-interpolate_interp1d:
 
 Legacy interface for 1-D interpolation (:class:`interp1d`)
-----------------------------------------------------------
+==========================================================
 
 .. note::
     `interp1d` is considered legacy API and is not recommended for use in new
@@ -151,6 +196,9 @@ its use, for linear and cubic spline interpolation:
 ..             class :obj:`interpolate.interp1d` with
 ..             kind equals `linear` and `cubic`.
 
+The 'cubic' kind of `interp1d` is equivalent to `make_interp_spline`, and
+the 'linear' kind is equivalent to `numpy.interp` while also allowing
+N-dimensional ``y`` arrays.
 
 Another set of interpolations in `interp1d` is `nearest`, `previous`, and
 `next`, where they return the nearest, previous, or next point along the
@@ -180,4 +228,19 @@ same data as in the previous example:
 ..             class :obj:`interpolate.interp1d` with
 ..             kind equals `nearest`, `previous`, and
 ..             `next`.
+
+
+
+Missing data
+============
+
+We note that `scipy.interpolate` does *not* support interpolation with missing
+data. Two popular ways of representing missing data are using masked arrays of
+the `numpy.ma` library, and encoding missing values as not-a-number, ``NaN``. 
+
+Neither of these two approaches is directly suppored in `scipy.interpolate`.
+Individual routines may offer partial support, and/or workarounds, but in
+general the library firmly adheres to the IEEE 754 semantics where a ``NaN``
+means *not-a-number*, i.e. a result of an illegal mathematical operation
+(think a division by zero), not *missing*.
 
