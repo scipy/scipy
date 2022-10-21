@@ -6,11 +6,14 @@
 Multivariate data interpolation on a regular grid  (:class:`RegularGridInterpolator`)
 =====================================================================================
 
-Suppose you have n-dimensional data on a regular grid, and you want to interpolate it.
-In such a case, :class:`RegularGridInterpolator` can be useful.
+Suppose you have N-dimensional data on a regular grid, and you
+want to interpolate it. In such a case, :class:`RegularGridInterpolator` can be
+useful. Several interpolation strategies are supported: nearest-neighbor,
+linear, and tensor product splines of odd degree.
 
 Strictly speaking, this class efficiently handles data given on *rectilinear*
 grids: hypercubic lattices with possibly unequal spacing between points.
+The numbers of points per dimension can be different for different dimensions.
 
 The following example demonstrates its use, and compares the interpolation results
 using each method.
@@ -27,7 +30,7 @@ using each method.
 
    Suppose we only know some data on a regular grid.
 
-   >>> fit_points = [np.linspace(0, 3, 8), np.linspace(0, 3, 8)]
+   >>> fit_points = [np.linspace(0, 3, 8), np.linspace(0, 3, 11)]
    >>> values = F(*np.meshgrid(*fit_points, indexing='ij'))
 
    Creating test points and true values for evaluations.
@@ -36,7 +39,7 @@ using each method.
    >>> true_values = F(ut, vt)
    >>> test_points = np.array([ut.ravel(), vt.ravel()]).T
 
-   We can creat interpolator and interpolate test points using each method.
+   We can create the interpolator and interpolate test points using each method.
 
    >>> interp = RegularGridInterpolator(fit_points, values)
    >>> fig, axes = plt.subplots(2, 3, figsize=(10, 6))
@@ -58,8 +61,11 @@ using each method.
    or `nearest`. The `slinear` interpolation also matches the `linear`
    interpolation.
 
+If your data is such that spline methods produce ringing, you may consider
+using `method="pchip"`, which uses the tensor product of PCHIP interpolators,
+a `PchipInterpolator` per dimension.
 
-If you prefer a funcional interface to explicitly creating a class instance,
+If you prefer a functional interface to explicitly creating a class instance,
 the `interpn` convenience function offers the equivalent functionality.
 
 Specifically, these two forms give identical results:
