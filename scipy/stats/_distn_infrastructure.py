@@ -1054,7 +1054,7 @@ class rv_generic:
             self._random_state = random_state_saved
 
         # Cast to int if discrete
-        if discrete and not isinstance(self, _rv_sample):
+        if discrete and not isinstance(self, rv_sample):
             if size == ():
                 vals = int(vals)
             else:
@@ -3130,7 +3130,7 @@ class rv_discrete(rv_generic):
         values = kwds.get('values', None)
         if values is not None:
             # dispatch to a subclass
-            return super(rv_discrete, cls).__new__(_rv_sample)
+            return super(rv_discrete, cls).__new__(rv_sample)
         else:
             # business as usual
             return super(rv_discrete, cls).__new__(cls)
@@ -3340,7 +3340,7 @@ class rv_discrete(rv_generic):
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k <= _b)
-        if not isinstance(self, _rv_sample):
+        if not isinstance(self, rv_sample):
             cond1 = cond1 & self._nonzero(k, *args)
         cond = cond0 & cond1
         output = zeros(shape(cond), 'd')
@@ -3378,7 +3378,7 @@ class rv_discrete(rv_generic):
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k <= _b)
-        if not isinstance(self, _rv_sample):
+        if not isinstance(self, rv_sample):
             cond1 = cond1 & self._nonzero(k, *args)
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
@@ -3729,7 +3729,7 @@ class rv_discrete(rv_generic):
         else:
             invfac = 1.0
 
-        if isinstance(self, _rv_sample):
+        if isinstance(self, rv_sample):
             res = self._expect(fun, lb, ub)
             return res / invfac
 
@@ -3821,7 +3821,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
         yield supp
 
 
-class _rv_sample(rv_discrete):
+class rv_sample(rv_discrete):
     """A 'sample' discrete distribution defined by the support and values.
 
     The ctor ignores most of the arguments, only needs the `values` argument.
