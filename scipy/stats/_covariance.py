@@ -380,13 +380,6 @@ class Covariance:
         return self._covariance
 
     @property
-    def dimensionality(self):
-        """
-        Dimensionality of the vector space
-        """
-        return np.array(self._dimensionality, dtype=int)[()]
-
-    @property
     def shape(self):
         """
         Shape of the covariance array
@@ -428,7 +421,6 @@ class CovViaPrecision(Covariance):
         self._rank = precision.shape[-1]  # must be full rank if invertible
         self._precision = precision
         self._cov_matrix = covariance
-        self._dimensionality = self._rank
         self._shape = precision.shape
         self._allow_singular = False
 
@@ -437,7 +429,7 @@ class CovViaPrecision(Covariance):
 
     @cached_property
     def _covariance(self):
-        n = self._dimensionality
+        n = self._shape[-1]
         return (linalg.cho_solve((self._chol_P, True), np.eye(n))
                 if self._cov_matrix is None else self._cov_matrix)
 
@@ -466,7 +458,6 @@ class CovViaDiagonal(Covariance):
         self._LP = psuedo_reciprocals
         self._rank = positive_diagonal.shape[-1] - i_zero.sum(axis=-1)
         self._covariance = np.apply_along_axis(np.diag, -1, diagonal)
-        self._dimensionality = diagonal.shape[-1]
         self._i_zero = i_zero
         self._shape = self._covariance.shape
         self._allow_singular = True
@@ -490,7 +481,6 @@ class CovViaCholesky(Covariance):
         self._log_pdet = 2*np.log(np.diag(self._factor)).sum(axis=-1)
         self._rank = L.shape[-1]  # must be full rank for cholesky
         self._covariance = L @ L.T
-        self._dimensionality = self._rank
         self._shape = L.shape
         self._allow_singular = False
 
@@ -528,7 +518,6 @@ class CovViaEigendecomposition(Covariance):
         self._rank = positive_eigenvalues.shape[-1] - i_zero.sum(axis=-1)
         self._w = eigenvalues
         self._v = eigenvectors
-        self._dimensionality = eigenvalues.shape[-1]
         self._shape = eigenvectors.shape
         self._null_basis = eigenvectors * i_zero
         # This is only used for `_support_mask`, not to decide whether
@@ -561,7 +550,6 @@ class CovViaPSD(Covariance):
         self._log_pdet = psd.log_pdet
         self._rank = psd.rank
         self._covariance = psd._M
-        self._dimensionality = psd._M.shape[-1]
         self._shape = psd._M.shape
         self._psd = psd
         self._allow_singular = False  # by default

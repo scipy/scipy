@@ -37,6 +37,7 @@ from unittest.mock import patch
 
 
 def assert_close(res, ref, *args, **kwargs):
+    res, ref = np.asarray(res), np.asarray(ref)
     assert_allclose(res, ref, *args, **kwargs)
     assert_equal(res.shape, ref.shape)
 
@@ -120,9 +121,8 @@ class TestCovariance:
         # test properties
         cov_object = cov_type(preprocessing(A))
         assert_close(cov_object.log_pdet, psd.log_pdet)
-        assert_close(cov_object.rank, np.int64(psd.rank))
-        assert_close(cov_object.dimensionality,
-                     np.int64(np.array(A).shape[-1]))
+        assert_close(cov_object.rank, psd.rank)
+        assert_equal(cov_object.shape, np.asarray(A).shape)
         assert_close(cov_object.covariance, np.asarray(A))
 
         # test whitening 1D x

@@ -418,7 +418,7 @@ class multivariate_normal_gen(multi_rv_generic):
             return dim, mean, cov_object
 
     def _process_parameters_Covariance(self, mean, cov):
-        dim = cov.dimensionality
+        dim = cov.shape[-1]
         mean = np.array([0.]) if mean is None else mean
         message = (f"`cov` represents a covariance matrix in {dim} dimensions,"
                    f"and so `mean` must be broadcastable to shape {(dim,)}")
