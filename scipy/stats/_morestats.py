@@ -4024,13 +4024,13 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
 
 DirectionalStats = namedtuple('DirectionalStats',
-                              ('directional_mean', 'magnitude'))
+                              ('mean_resultant', 'mean_resultant_magnitude'))
 
 
 def directional_stats(samples, *, axis=0, normalize=True):
     """
-    Computes the directional mean and magnitude of the mean vector
-    of a sample of vectors.
+    Computes the directional mean (also called the mean resultant vector) and
+    magnitude of the mean resultant vector of a sample of vectors.
 
     The directional mean is a measure of "preferred direction" of vector data.
     It is analogous to the sample mean, but it is for use when the magnitude of
@@ -4057,10 +4057,10 @@ def directional_stats(samples, *, axis=0, normalize=True):
 
     Returns
     -------
-    directional_mean : ndarray
+    mean_resultant : ndarray
         Directional mean.
-    magnitude : ndarray
-        Magnitude of the directional mean. This can be used to calculate
+    mean_resultant_magnitude : ndarray
+        Magnitude of the mean resultant vector. This can be used to calculate
         the directional variance.
 
     See also
@@ -4076,8 +4076,8 @@ def directional_stats(samples, *, axis=0, normalize=True):
     .. code-block:: python
 
         mean = samples.mean(axis=0)
-        magnitude = np.linalg.norm(mean)
-        directional_mean = mean / magnitude
+        mean_resultant_magnitude = np.linalg.norm(mean)
+        mean_resultant = mean / mean_resultant_magnitude
 
     This definition is appropriate for *directional* data (i.e. vector data
     for which the magnitude of each observation is irrelevant) but not
@@ -4087,10 +4087,10 @@ def directional_stats(samples, *, axis=0, normalize=True):
     The function also returns the magnitude of mean resultant vector which
     can be used to calculate directional variance. Several definitions of
     directional variance have been proposed e.g. ``Var(z) = 1 - R`` (where
-    ``R`` is the magnitude of the mean resultant vector) and
-    ``Var(z) = 1 - R**2``. `directional_stats` instead returns the
-    magnitude of the mean resultant vector so one can choose the
-    appropriate definition based on the use case.
+    ``R`` is the magnitude of the mean resultant vector),
+    ``Var(z) = 1 - R**2`` and ``Var(z) = 2 * (1 - R)``. `directional_stats`
+    instead returns the magnitude of the mean resultant vector so one can
+    choose the appropriate definition based on the use case.
 
     References
     ----------
@@ -4105,7 +4105,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     >>> data = np.array([[3, 4],    # first observation, 2D vector space
     ...                  [6, -8]])  # second observation
     >>> dirstats = directional_stats(data)
-    >>> dirstats.directional_mean
+    >>> dirstats.mean_resultant
     array([1., 0.])
 
     In contrast, the regular sample mean of the vectors would be influenced
@@ -4121,7 +4121,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     >>> data = np.array([[0.8660254, 0.5, 0.],
     ...                  [0.8660254, -0.5, 0.]])
     >>> dirstats = directional_stats(data)
-    >>> dirstats.directional_mean
+    >>> dirstats.mean_resultant
     array([1., 0., 0.])
 
     The regular sample mean on the other hand yields a result which does not
@@ -4136,7 +4136,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     resultant vector, we can calculate the directional variance of the vectors
     in the above example as:
 
-    >>> 1 - dirstats.magnitude
+    >>> 1 - dirstats.mean_resultant_magnitude
     0.13397459716167093
 
     As another example, let us calculate the directional variance for 10
@@ -4153,7 +4153,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     ...                  [0.951, 0.2967, -0.09],
     ...                  [0.919, -0.142, 0.367]])
     >>> dirstats = directional_stats(data)
-    >>> 1 - dirstats.magnitude
+    >>> 1 - dirstats.mean_resultant_magnitude
     0.06841124416403555
     """
     samples = np.asarray(samples)
@@ -4165,6 +4165,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
         vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
         samples = samples/vectornorms
     mean = np.mean(samples, axis=0)
-    magnitude = np.linalg.norm(mean, axis=-1, keepdims=True)
-    directional_mean = mean / magnitude
-    return DirectionalStats(directional_mean, magnitude.squeeze(-1))
+    mean_resultant_magnitude = np.linalg.norm(mean, axis=-1, keepdims=True)
+    mean_resultant = mean / mean_resultant_magnitude
+    return DirectionalStats(mean_resultant,
+                            mean_resultant_magnitude.squeeze(-1)[()])

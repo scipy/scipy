@@ -2589,14 +2589,14 @@ class TestDirectionalStats:
                         axis=1)
 
         dirstats = stats.directional_stats(data)
-        directional_mean = dirstats.directional_mean
+        directional_mean = dirstats.mean_resultant
         mean_rounded = np.round(directional_mean, 4)
 
         reference_mean = np.array([0.2984, -0.1346, -0.9449])
         assert_allclose(mean_rounded, reference_mean)
 
         expected_var = 0.025335389565304012
-        directional_var = 1 - dirstats.magnitude
+        directional_var = 1 - dirstats.mean_resultant_magnitude
         assert_allclose(expected_var, directional_var)
 
     def test_directional_stats_2d(self):
@@ -2608,14 +2608,14 @@ class TestDirectionalStats:
                                     np.sin(testdata)),
                                    axis=1)
         dirstats = stats.directional_stats(testdata_vector)
-        directional_mean = dirstats.directional_mean
+        directional_mean = dirstats.mean_resultant
         directional_mean_angle = np.arctan2(directional_mean[1],
                                             directional_mean[0])
         directional_mean_angle = directional_mean_angle % (2*np.pi)
         circmean = stats.circmean(testdata)
         assert_allclose(circmean, directional_mean_angle)
 
-        directional_var = 1 - dirstats.magnitude
+        directional_var = 1 - dirstats.mean_resultant_magnitude
         circular_var = stats.circvar(testdata)
         assert_allclose(directional_var, circular_var)
 
@@ -2630,7 +2630,7 @@ class TestDirectionalStats:
                              [[1., 0., 0.],
                               [1., 0., 0.]]])
         dirstats = stats.directional_stats(full_array, axis=2)
-        assert_allclose(expected, dirstats.directional_mean)
+        assert_allclose(expected, dirstats.mean_resultant)
 
     def test_directional_stats_list_ndarray_input(self):
         # test that list and numpy array inputs yield same results
@@ -2638,8 +2638,9 @@ class TestDirectionalStats:
         data_array = np.asarray(data)
         res = stats.directional_stats(data)
         ref = stats.directional_stats(data_array)
-        assert_allclose(res.directional_mean, ref.directional_mean)
-        assert_allclose(res.magnitude, res.magnitude)
+        assert_allclose(res.mean_resultant, ref.mean_resultant)
+        assert_allclose(res.mean_resultant_magnitude,
+                        res.mean_resultant_magnitude)
 
     def test_directional_stats_1d_error(self):
         # test that one-dimensional data raises ValueError
@@ -2660,5 +2661,6 @@ class TestDirectionalStats:
                                                 keepdims=True)
         ref = stats.directional_stats(normalized_data,
                                       normalize=False)
-        assert_allclose(res.directional_mean, ref.directional_mean)
-        assert_allclose(res.magnitude, res.magnitude)
+        assert_allclose(res.mean_resultant, ref.mean_resultant)
+        assert_allclose(res.mean_resultant_magnitude,
+                        res.mean_resultant_magnitude)
