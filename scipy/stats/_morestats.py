@@ -4138,23 +4138,6 @@ def directional_stats(samples, *, axis=0, normalize=True):
 
     >>> 1 - dirstats.mean_resultant_magnitude
     0.13397459716167093
-
-    As another example, let us calculate the directional variance for 10
-    highly concentrated vectors.
-
-    >>> data = np.array([[0.911, -0.387, 0.14], # first observation
-    ...                  [0.972,0.233, -0.027], # second observation
-    ...                  [0.956, -0.104, -0.273],
-    ...                  [0.889, 0.218, -0.402],
-    ...                  [0.996, 0.076, 0.043],
-    ...                  [0.737, -0.104, -0.668],
-    ...                  [0.987, -0.09, 0.133],
-    ...                  [0.929, 0.127, -0.348],
-    ...                  [0.951, 0.2967, -0.09],
-    ...                  [0.919, -0.142, 0.367]])
-    >>> dirstats = directional_stats(data)
-    >>> 1 - dirstats.mean_resultant_magnitude
-    0.06841124416403555
     """
     samples = np.asarray(samples)
     if samples.ndim < 2:
