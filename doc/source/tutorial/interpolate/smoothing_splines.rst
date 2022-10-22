@@ -117,7 +117,7 @@ synthetic noisy data
    >>> import numpy as np
    >>> from scipy.interpolate import splrep, BSpline
 
-   Generta some noisy data
+   Generate some noisy data
 
    >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/16)
    >>> rng = np.random.default_rng()
@@ -343,35 +343,98 @@ spline.
    >>> plt.show()
 
 
+.. _tutorial-interpolate_2d_spline:
 
 2-D smoothing splines
 =====================
 
 In addition to smoothing 1-D splines, the FITPACK library provides the means of
-fitting 2-D *surfaces* to two-dimensional data, represented as tensor products
-of 1-D splines. There are also two interfaces: a procedural interface and an
-object-oriented interface.
+fitting 2-D *surfaces* to two-dimensional data. The surfaces can be thought of
+as functions of two arguments, :math:`z = g(x, y)`, constructed as tensor products
+of 1-D splines.
+
+Assuming that the data is held in three arrays, ``x``, ``y`` and ``z``, 
+there are two ways these data arrays can be interpreted. First---the *scattered*
+interpolation problem---the data is assumed to be paired, i.e. the pairs of
+values ``x[i]`` and ``y[i]`` represent the coordinates of the point ``i``, which
+corresponds to ``z[i]``.
+
+The surface :math:`g(x, y)` is constructed to satisfy
+
+.. math::
+
+    \sum_i \left[ w_i (g(x_i, y_i) - z_i)\right]^2 \leqslant s
+
+where :math:`w_i` are non-negative weights, and ``s`` is the input parameter,
+known as the *smoothing factor*, which controls the interplay between smoothness
+of the resulting function ``g(x, y)`` and the quality of the approximation of
+the data (i.e., the differences between :math:`g(x_i, y_i)` and :math:`z_i`). The
+limit of :math:`s = 0` formally corresponds to interpolation, where the surface
+passes through the input data, :math:`g(x_i, y_i) = z_i`. See the note below however.
+
+The second case---the *rectangular grid* interpolation problem---is where the data
+points are assumed to be on a rectangular grid defined by all pairs of the
+elements of the ``x`` and ``y`` arrays. For this problem, the ``z`` array is
+assumed to be two-dimensional, and ``z[i, j]`` corresponds to ``(x[i], y[j])``.
+The bivariate spline function :math:`g(x, y)` is constructed to satisfy
+
+.. math::
+
+    \sum_i \sum_j \left[ (g(x_i, y_j) - z_{i,j})\right]^2 \leqslant s
+
+where ``s`` is the smoothing factor. Here the limit of :math:`s=0` also
+formally corresponds to interpolation, :math:`g(x_i, y_j) = z_{i, j}`.
+
+.. note::
+    Internally, the smoothing surface :math:`g(x, y)` is constructed by placing
+    spline knots into the bounding box defined by the data arrays. The knots are
+    placed automatically via the FITPACK algorithm until the desired smoothness
+    is reached. 
+
+    *The knots may be placed away from the data points.*
+
+    While :math:`s=0` formally corresponds to a bivariate spline interpolation,
+    the FITPACK algorithm is not meant for interpolation, and may lead to
+    unexpected results.
+
+    For scattered data interpolation, prefer `griddata`; for data on a regular
+    grid, prefer `RegularGridInterpolator`. 
+
+We now consider the two spline fitting problems in turn.
 
 
-.. _tutorial-interpolate_2d_spline:
+Bivariate spline fitting of scattered data
+------------------------------------------
 
-Procedural (:func:`bisplrep`)
------------------------------
+There are two interfaces for the underlying FITPACK library, a procedural
+one and an object-oriented interface.
 
-For (smooth) spline-fitting to a 2-D surface, the function
+
+Procedural interface (`bisplrep`)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For (smooth) spline fitting to a 2-D surface, the function
 :func:`bisplrep` is available. This function takes as required inputs
 the **1-D** arrays ``x``, ``y``, and ``z``, which represent points on the
-surface :math:`z=f(x, y).` The default output is a list
-``[tx ,ty, c, kx, ky]`` whose entries represent
+surface :math:`z=f(x, y).` The spline orders in ``x`` and ``y`` directions can
+be specified via the optional parameters ``kx`` and ``ky``. The default is
+a bicubic spline, ``kx=ky=3``.
+
+The output of `bisplrep` is a list ``[tx ,ty, c, kx, ky]`` whose entries represent
 respectively, the components of the knot positions, the coefficients
 of the spline, and the order of the spline in each coordinate. It is
 convenient to hold this list in a single object, ``tck``, so that it can
 be passed easily to the function :obj:`bisplev`. The
 keyword, ``s`` , can be used to change the amount of smoothing performed
-on the data while determining the appropriate spline. The default
-value is :math:`s=m-\sqrt{2m}`, where :math:`m` is the number of data
-points in the ``x``, ``y``, and ``z`` vectors. As a result, if no smoothing is
-desired, then ``s=0`` should be passed to :obj:`bisplrep`.
+on the data while determining the appropriate spline. The recommended values
+for :math:`s` depend on the weights :math:`w_i`. If these are taken as :math:`1/d_i`,
+with :math:`d_i` an estimate of the standard deviation of :math:`z_i`, a
+good value of :math:`s` should be found in the range :math:`m- \sqrt{2m}, m + 
+\sqrt{2m}`, where where :math:`m` is the number of data points in the ``x``,
+``y``, and ``z`` vectors.
+
+The default value is :math:`s=m-\sqrt{2m}`.  As a result, **if no smoothing is
+desired, then ``s=0`` should be passed to `bisplrep`**. (See however the note above).
 
 To evaluate the 2-D spline and its partial derivatives
 (up to the order of the spline), the function
@@ -382,11 +445,12 @@ the ``tck`` list returned from :obj:`bisplrep`. If desired,
 the fourth and fifth arguments provide the orders of the partial
 derivative in the :math:`x` and :math:`y` direction, respectively.
 
-It is important to note that 2-D interpolation should not
-be used to find the spline representation of images. The algorithm
-used is not amenable to large numbers of input points. `scipy.signal`
-and `scipy.ndimage` contain more appropriate algorithms for finding
-the spline representation of an image. 
+.. note::
+    It is important to note that 2-D interpolation should not
+    be used to find the spline representation of images. The algorithm
+    used is not amenable to large numbers of input points. `scipy.signal`
+    and `scipy.ndimage` contain more appropriate algorithms for finding
+    the spline representation of an image. 
 
 The 2-D interpolation commands are intended for use when interpolating a 2-D
 function as shown in the example that follows. This
@@ -435,13 +499,137 @@ passed in :obj:`mgrid <numpy.mgrid>`.
 ..   :caption: Example of a 2-D spline interpolation.
 
 
-Object-oriented (:class:`BivariateSpline`)
+Object-oriented interface (`SmoothBivariateSpline`)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The object-oriented interface for bivariate spline smoothing of scattered data,
+`SmoothBivariateSpline` class, implements a subset of the functionality of the
+`bisplrep` / `bisplev` pair, and has different defaults. 
+
+It takes the elements of the weights array equal unity, :math:`w_i = 1`
+and constructs the knot vectors automatically given the input value of the
+smoothing factor `s`--- the default value is :math:`m`, the number of data points.
+
+The spline orders in the ``x`` and ``y`` directions are controlled by the optional
+parameteres ``kx`` and ``ky``, with the default of ``kx=ky=3``.
+
+We illustrate the effect of the smoothing factor using the following example:
+
+.. plot::
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from scipy.interpolate import SmoothBivariateSpline
+
+    import warnings
+    warnings.simplefilter('ignore')
+
+    train_x, train_y = np.meshgrid(np.arange(-5, 5, 0.5), np.arange(-5, 5, 0.5))
+    train_x = train_x.flatten()
+    train_y = train_y.flatten()
+
+    def z_func(x, y): 
+        return np.cos(x) + np.sin(y) ** 2 + 0.05 * x + 0.1 * y
+
+    train_z = z_func(train_x, train_y)
+    interp_func = SmoothBivariateSpline(train_x, train_y, train_z, s=0.0)
+    smth_func = SmoothBivariateSpline(train_x, train_y, train_z)
+
+    test_x = np.arange(-9, 9, 0.01)
+    test_y = np.arange(-9, 9, 0.01)
+    grid_x, grid_y = np.meshgrid(test_x, test_y)
+
+    interp_result = interp_func(test_x, test_y).T
+    smth_result = smth_func(test_x, test_y).T
+    perfect_result = z_func(grid_x, grid_y)
+
+    fig, axes = plt.subplots(1, 3, figsize=(16, 8))
+    extent = [test_x[0], test_x[-1], test_y[0], test_y[-1]]
+    opts = dict(aspect='equal', cmap='nipy_spectral', extent=extent, vmin=-1.5, vmax=2.5)
+
+    im = axes[0].imshow(perfect_result, **opts)
+    fig.colorbar(im, ax=axes[0], orientation='horizontal')
+    axes[0].plot(train_x, train_y, 'w.')
+    axes[0].set_title('Perfect result, sampled function', fontsize=21)
+
+    im = axes[1].imshow(smth_result, **opts)
+    axes[1].plot(train_x, train_y, 'w.')
+    fig.colorbar(im, ax=axes[1], orientation='horizontal')
+    axes[1].set_title('s=default', fontsize=21)
+
+    im = axes[2].imshow(interp_result, **opts)
+    fig.colorbar(im, ax=axes[2], orientation='horizontal')
+    axes[2].plot(train_x, train_y, 'w.')
+    axes[2].set_title('s=0', fontsize=21)
+
+    plt.tight_layout()
+    plt.show()
+
+Here we take a known function (displayed at the leftmost panel), sample it on
+a mesh of points (shown by white dots), and construct the spline fit using the
+default smoothing (center panel) and forcing the interpolation (rightmost panel).
+
+Several features are clearly visible. First, the default value of ``s`` provides
+too much smoothing for this data; forcing the interpolation condition, ``s = 0``,
+allows to restore the underlying function to a reasonable accuracy. Second,
+outside of the interpolation range (i.e., the area covered by
+white dots) the result is extrapolated using a nearest-neighbor constant.
+Finally, we had to silence the warnings (which is a bad form, yes!).
+
+The warning here is emitted in the ``s=0`` case, and signals an internal difficulty
+FITPACK encountered when we forced the interpolation condition. If you see
+this warning in your code, consider switching to `bisplrep` and increase its
+``nxest``, ``nyest`` parameters (see the `bisplrep` docstring for more details).
+
+
+Bivariate spline fitting of data on a grid
 ------------------------------------------
 
-The :class:`BivariateSpline` class is the 2-D analog of the
-:class:`UnivariateSpline` class.  It and its subclasses implement
-the FITPACK functions described above in an object-oriented fashion,
-allowing objects to be instantiated that can be called to compute
-the spline value by passing in the two coordinates as the two
-arguments.
+For gridded 2D data, fitting a smoothing tensor product spline can be done
+using the `RectBivariateSpline` class. It has the interface similar to that of
+`SmoothBivariateSpline`, the main difference is that the 1D input arrays ``x``
+and ``y`` are understood as definifing a 2D grid (as their outer product),
+and the ``z`` array is 2D with the shape of ``len(x)`` by  ``len(y)``.
+
+The spline orders in the ``x`` and ``y`` directions are controlled by the optional
+parameteres ``kx`` and ``ky``, with the default of ``kx=ky=3``, i.e. a bicubic
+spline.
+
+The default value of the smoothing factor is ``s=0``. We nevertheless recommend
+to always specify ``s`` explicitly.
+
+.. plot::
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from scipy.interpolate import RectBivariateSpline
+
+    x = np.arange(-5.01, 5.01, 0.25)        # the grid is an outer product
+    y = np.arange(-5.01, 7.51, 0.25)        # of x and y arrays
+
+    xx, yy = np.meshgrid(x, y, indexing='ij')
+    z = np.sin(xx**2 + 2.*yy**2)            # z array needs to be 2-D
+
+    func = RectBivariateSpline(x, y, z, s=0)
+
+    xnew = np.arange(-5.01, 5.01, 1e-2)
+    ynew = np.arange(-5.01, 7.51, 1e-2)
+    znew = func(xnew, ynew)
+
+    plt.imshow(znew)
+    plt.colorbar()
+    plt.show()
+
+
+Bivariate spline fitting of data in spherical coordinates
+---------------------------------------------------------
+
+If your data is given in spherical coordinates, :math:`r = r(\theta, \phi)`,
+`SmoothSphereBivariateSpline` and `RectSphereBivariateSpline` provide convenient
+analogs of `SmoothBivariateSpline` and `RectBivariateSpline`, respectively.
+
+These classes ensure the periodicity of the spline fits for
+:math:`\theta \in [0, \pi]` and :math:`\phi \in [0, 2\pi]`, and offer some
+control over the continuity at the poles. Refer to the docstrings of these
+classes for details.
 
