@@ -855,10 +855,10 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     the distribution precludes the need to fit the distribution to each Monte
     Carlo sample. (This is essentially how the original Kilmogorov-Smirnov
     test is performed.) Although such a test can provide evidence against the
-    null hypothesis, the test is conservative in the sense that small p-values 
+    null hypothesis, the test is conservative in the sense that small p-values
     will tend to (greatly) *overestimate* the probability of making a type I
-    error (that is, rejecting the null hypothesis although it is true), and the 
-    power of the test is low (that is, it is less likely to reject the null 
+    error (that is, rejecting the null hypothesis although it is true), and the
+    power of the test is low (that is, it is less likely to reject the null
     hypothesis even when the null hypothesis is false).
     This is because the Monte Carlo samples are less likely to agree with the
     null-hypothesized distribution as well as `data`. This tends to increase
@@ -936,7 +936,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     specifically from the normal distribution with the location and scale
     fitted to the observed sample. In this case, Lilliefors [6]_ argued that
     the KS test is far too conservative (that is, the p-value overstates
-    the actual probability of rejecting a true null hypothesis) and thus lacks 
+    the actual probability of rejecting a true null hypothesis) and thus lacks
     power - the ability to reject the null hypothesis when the null hypothesis
     is actually false.
     Indeed, our p-value above is approximately 0.28, which is far too large
