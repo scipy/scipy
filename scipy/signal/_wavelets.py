@@ -378,6 +378,7 @@ def morlet2(M, s, w=5):
     This example shows basic use of `morlet2` with `cwt` in time-frequency
     analysis:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> t, dt = np.linspace(0, 1, 200, retstep=True)
@@ -458,6 +459,7 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> t = np.linspace(-1, 1, 200, endpoint=False)

@@ -51,6 +51,14 @@ if m_dep.found()
   add_project_link_arguments('-lm', language : 'c')
 endif
 
+if host_machine.system() == 'os400'
+  # IBM i system, needed to avoid build errors - see gh-17193
+  add_project_arguments('-D__STDC_FORMAT_MACROS', language : 'cpp')
+  add_project_link_arguments('-Wl,-bnotextro', language : 'c')
+  add_project_link_arguments('-Wl,-bnotextro', language : 'cpp')
+  add_project_link_arguments('-Wl,-bnotextro', language : 'fortran')
+endif
+
 # Adding at project level causes many spurious -lgfortran flags.
 add_languages('fortran', native: false)
 ff = meson.get_compiler('fortran')

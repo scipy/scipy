@@ -432,8 +432,9 @@
         }
     },
     "erfinv": {
-        "cephes.h": {
-            "erfinv": "d->d"
+        "boost_special_functions.h++": {
+            "erfinv_float": "f->f",
+            "erfinv_double": "d->d"
         }
     },
     "erfcinv": {
@@ -1213,6 +1214,12 @@
     "poch": {
         "cephes.h": {
             "poch": "dd->d"
+        }
+    },
+    "powm1": {
+        "boost_special_functions.h++": {
+            "powm1_float": "ff->f",
+            "powm1_double": "dd->d"
         }
     },
     "pro_ang1": {
