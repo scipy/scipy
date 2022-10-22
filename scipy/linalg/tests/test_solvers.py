@@ -307,7 +307,6 @@ def test_solve_continuous_are():
         _test_factory(case, min_decimal[ind])
 
 
-
 def test_solve_discrete_are():
 
     cases = [
