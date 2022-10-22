@@ -5190,7 +5190,8 @@ class random_table_gen(multi_rv_generic):
         if x.ndim < 2:
             raise ValueError("`x` must be at least two-dimensional")
 
-        if not np.issubdtype(x.dtype, np.integer) and not np.all(x.astype(int) == x):
+        dtype_is_int = np.issubdtype(x.dtype, np.integer)
+        if not dtype_is_int and not np.all(x.astype(int) == x):
             raise ValueError("`x` must contain only integral values")
 
         # x does not contain NaN if we arrive here
