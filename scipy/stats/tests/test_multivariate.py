@@ -2515,7 +2515,7 @@ class TestRandomTable:
         assert_equal(expected, got)
 
     def test_rvs_method(self):
-        pytest.xfail("patefield not yet implemented")
+        pytest.xfail("patefield will be implemented in follow-up PR")
 
         row = [1, 3]
         col = [2, 1, 1]
@@ -2594,7 +2594,15 @@ class TestRandomTable:
         with pytest.raises(ValueError, match=message):
             pmf([1])
 
-        message = "`x` must contain only non-negative integers"
+        message = "`x` must contain only integral values"
+        with pytest.raises(ValueError, match=message):
+            pmf([[1.1]])
+
+        message = "`x` must contain only integral values"
+        with pytest.raises(ValueError, match=message):
+            pmf([[np.nan]])
+
+        message = "`x` must contain only non-negative values"
         with pytest.raises(ValueError, match=message):
             pmf([[-1]])
 
@@ -2626,6 +2634,7 @@ class TestRandomTable:
         assert_equal(rvs.sum(axis=-1), np.broadcast_to(row, (1000, 2)))
         assert_equal(rvs.sum(axis=-2), np.broadcast_to(col, (1000, 3)))
 
+        # test with size=None
         rng = np.random.default_rng(628174795866951638)
         rv = random_table.rvs(row, col, random_state=rng)
         assert rv.shape == (2, 3)

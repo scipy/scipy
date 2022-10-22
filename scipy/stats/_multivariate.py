@@ -5190,8 +5190,12 @@ class random_table_gen(multi_rv_generic):
         if x.ndim < 2:
             raise ValueError("`x` must be at least two-dimensional")
 
+        if not np.issubdtype(x.dtype, np.integer) and not np.all(x.astype(int) == x):
+            raise ValueError("`x` must contain only integral values")
+
+        # x does not contain NaN if we arrive here
         if np.any(x < 0):
-            raise ValueError("`x` must contain only non-negative integers")
+            raise ValueError("`x` must contain only non-negative values")
 
         r2 = np.sum(x, axis=-1)
         c2 = np.sum(x, axis=-2)
