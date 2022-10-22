@@ -138,6 +138,7 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
 
     Here, the maximum flow is simply the capacity of the edge:
 
+    >>> import numpy as np
     >>> from scipy.sparse import csr_matrix
     >>> from scipy.sparse.csgraph import maximum_flow
     >>> graph = csr_matrix([[0, 5], [0, 0]])

@@ -96,12 +96,10 @@ py3.install_sources([
   subdir: 'scipy/stats'
 )
 
-pthread = dependency('threads')
-
 _qmc_cy = py3.extension_module('_qmc_cy',
   cython_gen_cpp.process('_qmc_cy.pyx'),
   cpp_args: cython_cpp_args,
-  dependencies: [pthread],
+  dependencies: thread_dep,
   include_directories: [inc_np],
   link_args: version_link_args,
   install: true,
@@ -169,18 +167,24 @@ biasedurn = py3.extension_module('_biasedurn',
 )
 
 if use_pythran
-  _stats_pythran = custom_target('_stats_pythran',
+  _stats_pythran_cpp = custom_target('_stats_pythran',
     output: ['_stats_pythran.cpp'],
     input: '_stats_pythran.py',
     command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_stats_pythran.cpp']
   )
 
-  _group_columns = py3.extension_module('_stats_pythran',
-    _stats_pythran,
+  _stats_pythran = py3.extension_module('_stats_pythran',
+    _stats_pythran_cpp,
     cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
     link_args: version_link_args,
     install: true,
+    subdir: 'scipy/stats'
+  )
+else
+  py3.install_sources(
+    ['_hypotests_pythran.py'],
+    pure: false,
     subdir: 'scipy/stats'
   )
 endif

@@ -3260,6 +3260,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.cluster import hierarchy
     >>> import matplotlib.pyplot as plt
 
