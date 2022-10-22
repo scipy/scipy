@@ -358,6 +358,54 @@ class Covariance:
         """
         return self._whiten(np.asarray(x))
 
+    def colorize(self, x):
+        """
+        Perform a colorizing transformation on data.
+
+        "Colorizing" ("color" as in "colored noise", in which differenct
+        frequencies may have different magnitudes) transforms a set of
+        uncorrelated random variables into a new set of random variables with
+        the desired covariance. When a coloring transform is applied to a
+        sample of points distributed according to a multivariate normal
+        distribution with identity covariance and zero mean, the covariance of
+        the transformed sample is approximately the covariance matrix used
+        in the coloring transform.
+
+        Parameters
+        ----------
+        x : array_like
+            An array of points. The last dimension must correspond with the
+            dimensionality of the space, i.e., the number of columns in the
+            covariance matrix.
+
+        Returns
+        -------
+        x_ : array_like
+            The transformed array of points.
+
+        References
+        ----------
+        .. [1] "Whitening Transformation". Wikipedia.
+               https://en.wikipedia.org/wiki/Whitening_transformation
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+        >>> n = 3
+        >>> A = rng.random(size=(n, n))
+        >>> cov_array = A @ A.T  # make matrix symmetric positive definite
+        >>> cholesky = np.linalg.cholesky(cov_array)
+        >>> cov_object = stats.Covariance.from_cholesky(cholesky)
+        >>> x = rng.multivariate_normal(np.zeros(n), np.eye(n), size=(10000))
+        >>> x_ = cov_object.colorize(x)
+        >>> cov_data = np.cov(x_, rowvar=False)
+        >>> np.allclose(cov_data, cov_array, rtol=3e-2)
+        True
+        """
+        return self._colorize(np.asarray(x))
+
     @property
     def log_pdet(self):
         """
@@ -433,6 +481,9 @@ class CovViaPrecision(Covariance):
         return (linalg.cho_solve((self._chol_P, True), np.eye(n))
                 if self._cov_matrix is None else self._cov_matrix)
 
+    def _colorize(self, x):
+        return linalg.solve_triangular(self._chol_P.T, x.T, lower=False).T
+
 
 def _dot_diag(x, d):
     # If d were a full diagonal matrix, x @ d would always do what we want.
@@ -455,6 +506,7 @@ class CovViaDiagonal(Covariance):
         psuedo_reciprocals = 1 / np.sqrt(positive_diagonal)
         psuedo_reciprocals[i_zero] = 0
 
+        self._sqrt_diagonal = np.sqrt(diagonal)
         self._LP = psuedo_reciprocals
         self._rank = positive_diagonal.shape[-1] - i_zero.sum(axis=-1)
         self._covariance = np.apply_along_axis(np.diag, -1, diagonal)
@@ -464,6 +516,9 @@ class CovViaDiagonal(Covariance):
 
     def _whiten(self, x):
         return _dot_diag(x, self._LP)
+
+    def _colorize(self, x):
+        return _dot_diag(x, self._sqrt_diagonal)
 
     def _support_mask(self, x):
         """
@@ -487,6 +542,9 @@ class CovViaCholesky(Covariance):
     def _whiten(self, x):
         res = linalg.solve_triangular(self._factor, x.T, lower=True).T
         return res
+
+    def _colorize(self, x):
+        return x @ self._factor.T
 
 
 class CovViaEigendecomposition(Covariance):
@@ -515,6 +573,7 @@ class CovViaEigendecomposition(Covariance):
         psuedo_reciprocals[i_zero] = 0
 
         self._LP = eigenvectors * psuedo_reciprocals
+        self._LA = eigenvectors * np.sqrt(positive_eigenvalues)
         self._rank = positive_eigenvalues.shape[-1] - i_zero.sum(axis=-1)
         self._w = eigenvalues
         self._v = eigenvectors
@@ -527,6 +586,9 @@ class CovViaEigendecomposition(Covariance):
 
     def _whiten(self, x):
         return x @ self._LP
+
+    def _colorize(self, x):
+        return x @ self._LA.T
 
     @cached_property
     def _covariance(self):

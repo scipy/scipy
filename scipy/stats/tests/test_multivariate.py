@@ -125,19 +125,24 @@ class TestCovariance:
         assert_equal(cov_object.shape, np.asarray(A).shape)
         assert_close(cov_object.covariance, np.asarray(A))
 
-        # test whitening 1D x
+        # test whitening/coloring 1D x
         rng = np.random.default_rng(5292808890472453840)
         x = rng.random(size=3)
         res = cov_object.whiten(x)
         ref = x @ psd.U
         # res != ref in general; but res @ res == ref @ ref
         assert_close(res @ res, ref @ ref)
+        if hasattr(cov_object, "_colorize") and "singular" not in matrix_type:
+            # CovViaPSD does not have _colorize
+            assert_close(cov_object.colorize(res), x)
 
-        # test whitening 3D x
+        # test whitening/coloring 3D x
         x = rng.random(size=(2, 4, 3))
         res = cov_object.whiten(x)
         ref = x @ psd.U
         assert_close((res**2).sum(axis=-1), (ref**2).sum(axis=-1))
+        if hasattr(cov_object, "_colorize") and "singular" not in matrix_type:
+            assert_close(cov_object.colorize(res), x)
 
     @pytest.mark.parametrize("size", [tuple(), (2, 4, 3)])
     @pytest.mark.parametrize("matrix_type", list(_matrices))
