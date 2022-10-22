@@ -114,7 +114,7 @@ Interpolation with B-splines
 
 As an illustration, we construct the interpolation of a sine function with
 b-splines (see also the section on :ref:`piecewise polynomials <tutorial-interpolate_ppoly>`
-for details on internals of b-splines):
+for details on the internals of b-splines):
 
 .. plot::
 
@@ -127,7 +127,7 @@ for details on internals of b-splines):
     >>> from scipy.interpolate import make_interp_spline
     >>> bspl = make_interp_spline(x, y, k=3)
 
-    This functions returns an object which has an interface similar to that
+    This function returns an object which has an interface similar to that
     of the `CubicSpline` objects.  In particular, it can be evaluated at a data
     point and differentiated:
 
@@ -152,7 +152,7 @@ By default, the result of ``make_interp_spline(x, y)`` is equivalent to
 capabilities: it can construct splines of various degrees (via the optional
 argument ``k``) and predefined knots (via the optional argument ``t``). 
 
-Boundary conditions for the spline spline interpolation can be controlled by
+Boundary conditions for the spline interpolation can be controlled by
 the ``bc_type`` argument to `make_interp_spline` function and `CubicSpline`
 constructor. By default, both use the 'not-a-knot' boundary
 condition.
@@ -256,7 +256,7 @@ create a function based on fixed data points, which can be evaluated
 anywhere within the domain defined by the given data using linear
 interpolation. An instance of this class is created by passing the 1-D
 vectors comprising the data. The instance of this class defines a
-``__call__`` method and can therefore by treated like a function which
+``__call__`` method and can therefore be treated like a function which
 interpolates between known data values to obtain unknown values.
 Behavior at the boundary can be
 specified at instantiation time. The following example demonstrates
@@ -326,7 +326,7 @@ the `numpy.ma` library, and encoding missing values as not-a-number, ``NaN``.
 
 Neither of these two approaches is directly supported in `scipy.interpolate`.
 Individual routines may offer partial support, and/or workarounds, but in
-general the library firmly adheres to the IEEE 754 semantics where a ``NaN``
+general, the library firmly adheres to the IEEE 754 semantics where a ``NaN``
 means *not-a-number*, i.e. a result of an illegal mathematical operation
 (think a division by zero), not *missing*.
 

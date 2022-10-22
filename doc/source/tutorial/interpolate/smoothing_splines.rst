@@ -32,7 +32,7 @@ of a very large ``s``, :math:`g(x)` degenerates into a single best-fit polynomia
 Finding a good value of the ``s`` parameter is a trial-and-error process. If
 the weights correspond to the inverse of standard deviations of the input data,
 the "good" value of ``s`` is expected to be somewhere between :math:`m - \sqrt{2m}`
-and :math:`m + \sqrt{2m}`, where :math:`m` is the number of the data points.
+and :math:`m + \sqrt{2m}`, where :math:`m` is the number of data points.
 If all weights equal unity, a reasonable choice might be around :math:`s \sim m\,\sigma^2`,
 where :math:`\sigma` is an estimate for the standard deviation of the data. 
 
@@ -69,7 +69,7 @@ spline. The default spline order is cubic, but this can be changed
 with the input keyword, *k.*
 
 The knot array defines the interpolation interval to be ``t[k:-k]``, so that 
-first :math:`k+1` and last :math:`k+1` entries of the ``t`` array define
+the first :math:`k+1` and last :math:`k+1` entries of the ``t`` array define
 *boundary knots*. The coefficients are a 1D array of length at least
 ``len(t) - k - 1``. Some routines pad this array to have ``len(c) == len(t)``---
 these additional coefficients are ignored for the spline evaluation. 
@@ -95,13 +95,13 @@ The output consists of two objects: a 3-tuple, :math:`\left(t,c,k\right)`
 , containing the spline representation and the parameter variable
 :math:`u.`
 
-The coeffients are a list of :math:`N` arrays, where each array corresponds to
+The coefficients are a list of :math:`N` arrays, where each array corresponds to
 a dimension of the input data. Note that the knots, ``t`` correspond to the
 parametrization of the curve ``u``. 
 
 The keyword argument, ``s`` , is used to specify the amount of smoothing
 to perform during the spline fit. The default value of :math:`s` is
-:math:`s=m-\sqrt{2m}` where :math:`m` is the number of data-points
+:math:`s=m-\sqrt{2m}` where :math:`m` is the number of data points
 being fit. Therefore, **if no smoothing is desired a value of**
 :math:`\mathbf{s}=0` **should be passed to the routines.**
 
@@ -144,8 +144,8 @@ while the ``s > 0`` curve is close to the underlying sine function.
 Also note that the extrapolated values vary wildly depending on the value of ``s``.
 
 The default value of ``s`` depends on whether the weights are supplied or not,
-and also differs for `splrep` and `splprep`. Therefore, we recommend to always
-provide the value of ``s`` explicitly.
+and also differs for `splrep` and `splprep`. Therefore, we recommend always
+providing the value of ``s`` explicitly.
 
 
 Manipulating spline objects: procedural (``splXXX``)

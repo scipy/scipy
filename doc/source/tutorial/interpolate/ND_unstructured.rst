@@ -69,7 +69,7 @@ All these interpolation methods rely on triangulation of the data using the
 
 .. note::
 
-    `griddata` is based on triangulation, hence is appropriate for unstructures,
+    `griddata` is based on triangulation, hence is appropriate for unstructured,
     scattered data. If your data is on a full grid,  the `griddata` function ---
     despite its name --- is not the right tool. Use `RegularGridInterpolator`
     instead.

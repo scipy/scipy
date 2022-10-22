@@ -38,7 +38,7 @@ These objects can be instantiated directly or constructed from data with the
 Finally, Bernstein polynomials are represented as instances of the `BPoly` class.
 
 All these classes implement a (mostly) similar interface, `PPoly` being the most
-feature-complete. We next consider main features of this interface and
+feature-complete. We next consider the main features of this interface and
 discuss some details of the alternative bases for piecewise polynomials.
 
 
@@ -68,7 +68,7 @@ argument:
     >>> dspl(1.1), spl(1.1, nu=1)
     (0.45361436, 0.45361436)
 
-Note that the second form above evaluates the derivative in-place, while with
+Note that the second form above evaluates the derivative in place, while with
 the ``dspl`` object, we can find the zeros of the derivative of ``spl``:
 
     >>> dspl.roots() / np.pi
@@ -104,7 +104,7 @@ example, we compute an approximation to the complete elliptic integral
     >>> ellipk(m)
     1.8540746773013719
 
-To this end, we tabulate the integrand, interpolate it using the monotone
+To this end, we tabulate the integrand and interpolate it using the monotone
 PCHIP interpolant (we could as well used a `CubicSpline`):
 
     >>> from scipy.interpolate import PchipInterpolator
@@ -202,10 +202,10 @@ B-splines are piecewise polynomials, represented as linear combinations of
 *b-spline basis elements* --- which themselves are certain linear combinations
 of usual monomials, :math:`x^m` with :math:`m=0, 1, \dots, k`.
 
-The b-spline basis are generally more computationally stable then the power basis
-and is useful for variety of applications which include interpolation, regression
+The b-spline basis is generally more computationally stable than the power basis
+and is useful for a variety of applications which include interpolation, regression
 and curve representation. The main feature is that these basis elements are
-*localized* and equal zero outside of an interval defined by the *knot array*.
+*localized* and equal to zero outside of an interval defined by the *knot array*.
 
 Specifically, a b-spline basis element of degree ``k`` (e.g. ``k=3`` for cubics)
 is defined by :math:`k+2` knots and is zero outside of these knots.

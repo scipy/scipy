@@ -13,7 +13,7 @@ linear, and tensor product splines of odd degree.
 
 Strictly speaking, this class efficiently handles data given on *rectilinear*
 grids: hypercubic lattices with possibly unequal spacing between points.
-The numbers of points per dimension can be different for different dimensions.
+The number of points per dimension can be different for different dimensions.
 
 The following example demonstrates its use, and compares the interpolation results
 using each method.
