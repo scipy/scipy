@@ -144,7 +144,7 @@ class TestCovariance:
         if hasattr(cov_object, "_colorize") and "singular" not in matrix_type:
             assert_close(cov_object.colorize(res), x)
 
-    @pytest.mark.parametrize("size", [tuple(), (2, 4, 3)])
+    @pytest.mark.parametrize("size", [None, tuple(), 1, (2, 4, 3)])
     @pytest.mark.parametrize("matrix_type", list(_matrices))
     @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
     def test_mvn_with_covariance(self, size, matrix_type, cov_type_name):
@@ -169,8 +169,13 @@ class TestCovariance:
         x1 = mvn.rvs(mean, cov_object, size=size, random_state=rng)
         rng = np.random.default_rng(5292808890472453840)
         x2 = mvn(mean, cov_object, seed=rng).rvs(size=size)
-        assert_close(x1, x)
-        assert_close(x2, x)
+        if isinstance(cov_object, _covariance.CovViaPSD):
+            assert_close(x1, np.squeeze(x))  # for backward compatibility
+            assert_close(x2, np.squeeze(x))
+        else:
+            assert_close(x1.shape, x.shape)
+            assert_close(x2.shape, x.shape)
+            assert_close(x2, x1)
 
         assert_close(mvn.pdf(x, mean, cov_object), dist0.pdf(x))
         assert_close(dist1.pdf(x), dist0.pdf(x))
