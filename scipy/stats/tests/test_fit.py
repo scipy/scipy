@@ -649,7 +649,7 @@ class TestFit:
         a = (n*x[0] - x[-1])/(n - 1)
         b = (n*x[-1] - x[0])/(n - 1)
         ref = a, b-a  # (3.6081133632151503, 5.509328130317254)
-        assert_allclose(res.params, ref, atol=1e-5)
+        assert_allclose(res.params, ref, atol=1e-4)
 
 
 class TestFitResult:
