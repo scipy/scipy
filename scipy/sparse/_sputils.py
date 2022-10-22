@@ -169,7 +169,8 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     int32min = np.int32(np.iinfo(np.int32).min)
     int32max = np.int32(np.iinfo(np.int32).max)
 
-    dtype = np.intc
+    # not using intc directly due to misinteractions with pythran
+    dtype = np.int32 if np.intc().itemsize == 4 else np.int64
     if maxval is not None:
         maxval = np.int64(maxval)
         if maxval > int32max:

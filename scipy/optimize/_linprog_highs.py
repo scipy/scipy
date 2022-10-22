@@ -115,6 +115,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    primal_feasibility_tolerance=None,
                    ipm_optimality_tolerance=None,
                    simplex_dual_edge_weight_strategy=None,
+                   mip_rel_gap=None,
+                   mip_max_nodes=None,
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
@@ -179,6 +181,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Curently, using ``None`` always selects ``'steepest-devex'``, but this
         may change as new options become available.
 
+    mip_max_nodes : int
+        The maximum number of nodes allotted to solve the problem; default is
+        the largest possible value for a ``HighsInt`` on the platform.
+        Ignored if not using the MIP solver.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing all
@@ -280,8 +286,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
             mip_gap : float
                 The difference between the final objective function value
-                and the final dual bound. Only present when `integrality`
-                is not `None`.
+                and the final dual bound, scaled by the final objective
+                function value. Only present when `integrality` is not
+                `None`.
 
     Notes
     -----
@@ -339,6 +346,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'log_to_console': disp,
+        'mip_max_nodes': mip_max_nodes,
         'output_flag': disp,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
         'simplex_dual_edge_weight_strategy':
@@ -347,6 +355,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'simplex_crash_strategy': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
         'ipm_iteration_limit': maxiter,
         'simplex_iteration_limit': maxiter,
+        'mip_rel_gap': mip_rel_gap,
     }
 
     # np.inf doesn't work; use very large constant
@@ -422,7 +431,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            }
 
     if np.any(x) and integrality is not None:
-        res.update({
+        sol.update({
             'mip_node_count': res.get('mip_node_count', 0),
             'mip_dual_bound': res.get('mip_dual_bound', 0.0),
             'mip_gap': res.get('mip_gap', 0.0),

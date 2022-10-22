@@ -133,6 +133,7 @@ class CubicHermiteSpline(PPoly):
             <https://en.wikipedia.org/wiki/Cubic_Hermite_spline>`_
             on Wikipedia.
     """
+
     def __init__(self, x, y, dydx, axis=0, extrapolate=None):
         if extrapolate is None:
             extrapolate = True
@@ -228,6 +229,7 @@ class PchipInterpolator(CubicHermiteSpline):
 
 
     """
+
     def __init__(self, x, y, axis=0, extrapolate=None):
         x, _, y, axis, _ = prepare_input(x, y, axis)
         xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
@@ -339,6 +341,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     --------
     We can interpolate 2D observed data using pchip interpolation:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import pchip_interpolate
     >>> x_observed = np.linspace(0.0, 10.0, 11)
@@ -570,6 +573,7 @@ class CubicSpline(CubicHermiteSpline):
     You can see that the spline continuity property holds for the first and
     second derivatives and violates only for the third derivative.
 
+    >>> import numpy as np
     >>> from scipy.interpolate import CubicSpline
     >>> import matplotlib.pyplot as plt
     >>> x = np.arange(10)
@@ -625,6 +629,7 @@ class CubicSpline(CubicHermiteSpline):
             on Wikiversity.
     .. [2] Carl de Boor, "A Practical Guide to Splines", Springer-Verlag, 1978.
     """
+
     def __init__(self, x, y, axis=0, bc_type='not-a-knot', extrapolate=None):
         x, dx, y, axis, _ = prepare_input(x, y, axis)
         n = len(x)

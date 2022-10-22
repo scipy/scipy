@@ -50,8 +50,8 @@ def configuration(parent_package='', top_path=None):
     if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
         import pythran
         ext = pythran.dist.PythranExtension(
-            'scipy.stats._hypotests_pythran',
-            sources=["scipy/stats/_hypotests_pythran.py"],
+            'scipy.stats._stats_pythran',
+            sources=["scipy/stats/_stats_pythran.py"],
             config=['compiler.blas=none'])
         config.ext_modules.append(ext)
 

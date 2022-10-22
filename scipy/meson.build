@@ -34,6 +34,8 @@ if is_windows
   endif
 endif
 
+thread_dep = dependency('threads', required: false)
+
 # NumPy include directory - needed in all submodules
 incdir_numpy = run_command(py3,
   [
