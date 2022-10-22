@@ -2663,4 +2663,4 @@ class TestDirectionalStats:
                                       normalize=False)
         assert_allclose(res.mean_resultant, ref.mean_resultant)
         assert_allclose(res.mean_resultant_magnitude,
-                        res.mean_resultant_magnitude)
+                        ref.mean_resultant_magnitude)
