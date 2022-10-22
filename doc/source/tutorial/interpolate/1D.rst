@@ -125,7 +125,7 @@ for details on internals of b-splines):
     we use the `make_interp_spline` function:
 
     >>> from scipy.interpolate import make_interp_spline
-    >>> bspl = make_interp_spline(x, y)
+    >>> bspl = make_interp_spline(x, y, k=3)
 
     This functions returns an object which has an interface similar to that
     of the `CubicSpline` objects.  In particular, it can be evaluated at a data
@@ -140,8 +140,9 @@ for details on internals of b-splines):
     >>> plt.legend()
     >>> plt.show()
 
-Note that by default `make_interp_spline` constructs a cubic spline;
-its derivative is a quadratic:
+Note that by specifying ``k=3`` in the `make_interp_spline` call, we requested
+a cubic spline (this is the default, so ``k=3`` could have been omitted); the
+derivative of a cubic is a quadratic:
 
     >>> bspl.k, der.k
     (3, 2)
@@ -212,7 +213,7 @@ Chapter 6 of Ref [1] listed in the `BSpline` docstring:
     >>> dp = p[:, 1:] - p[:, :-1]      # 2-vector distances between points
     >>> l = (dp**2).sum(axis=0)        # squares of lengths of 2-vectors between points
     >>> u_cord = np.sqrt(l).cumsum()   # cumulative sums of 2-norms
-    >>> u_cord = np.r_[0, u_cord]      # the first point is parametrized at zero
+    >>> u_cord = np.r_[0, u_cord]      # the first point is parameterized at zero
 
     Finally, we consider what is sometimes called the *centripetal*
     parametrization: :math:`u_j = u_{j-1} + |\mathbf{p}_j - \mathbf{p}_{j-1}|^{1/2}`.
@@ -323,7 +324,7 @@ We note that `scipy.interpolate` does *not* support interpolation with missing
 data. Two popular ways of representing missing data are using masked arrays of
 the `numpy.ma` library, and encoding missing values as not-a-number, ``NaN``. 
 
-Neither of these two approaches is directly suppored in `scipy.interpolate`.
+Neither of these two approaches is directly supported in `scipy.interpolate`.
 Individual routines may offer partial support, and/or workarounds, but in
 general the library firmly adheres to the IEEE 754 semantics where a ``NaN``
 means *not-a-number*, i.e. a result of an illegal mathematical operation

@@ -19,7 +19,7 @@ A polynomial of degree :math:`k` can be thought of as a linear combination of
 In some applications, it is useful to consider alternative (if formally
 equivalent) bases. Two popular bases, implemented in `scipy.interpolate` are
 B-splines (`BSpline`) and Bernstein polynomials (`BPoly`).
-B-splines are often used for, for example, non-parameteric regression problems,
+B-splines are often used for, for example, non-parametric regression problems,
 and Bernstein polynomials are used for constructing Bezier curves.
 
 `PPoly` objects represent piecewise polynomials in the 'usual' power basis.
@@ -27,8 +27,8 @@ This is the case for `CubicSpline` instances and monotone interpolants.
 In general, `PPoly` objects can represent polynomials of 
 arbitrary orders, not only cubics. For the data array ``x``, breakpoints are at
 the data points, and the array of coefficients, ``c`` , define polynomials of
-degree :math:`m`, such that ``c[k, j]`` is a coefficient for
-``(x - x[j])**(m-k)`` on the segment between ``x[j]`` and ``x[j+1]`` .
+degree :math:`k`, such that ``c[i, j]`` is a coefficient for
+``(x - x[j])**(k-i)`` on the segment between ``x[j]`` and ``x[j+1]`` .
 
 `BSpline` objects represent B-spline functions --- linear combinations of
 :ref:`b-spline basis elements <tutorial-interpolate_bspl_basis>`. 
@@ -154,19 +154,19 @@ A b-spline function --- for instance, constructed from data via a
 `make_interp_spline` call --- is defined by the so-called *knots* and coefficients.
 
 As an illustration, let us again construct the interpolation of a sine function. 
-The knots are availble as the ``t`` attribute of a `BSpline` instance:
+The knots are available as the ``t`` attribute of a `BSpline` instance:
 
     >>> x = np.linspace(0, 3/2, 7)
     >>> y = np.sin(np.pi*x)
     >>> from scipy.interpolate import make_interp_spline
-    >>> bspl = make_interp_spline(x, y)
+    >>> bspl = make_interp_spline(x, y, k=3)
     >>> print(bspl.t)
     [0.  0.  0.  0.        0.5  0.75  1.        1.5  1.5  1.5  1.5 ]
     >>> print(x)
     [            0.  0.25  0.5  0.75  1.  1.25  1.5 ]
 
 We see that the knot vector by default is constructed from the input
-array ``x``: first, it is made :math:`(k+1)` -regular (it has ``k+1``
+array ``x``: first, it is made :math:`(k+1)` -regular (it has ``k``
 repeated knots appended and prepended); then, the second and
 second-to-last points of the input array are removed---this is the so-called
 *not-a-knot* boundary condition. 
@@ -188,7 +188,7 @@ coefficients. Some routines (see the :ref:`Smoothing splines section
 <tutorial-interpolate_fitpack>`) zero-pad the ``c`` arrays so that
 ``len(c) == len(t)``. These additional coefficients are ignored for evaluation.
 
-We stress that the coeffients are given in the
+We stress that the coefficients are given in the
 :ref:`b-spline basis <tutorial-interpolate_bspl_basis>`, not the power basis
 of :math:`1, x, \cdots, x^k`.
 
@@ -196,7 +196,7 @@ of :math:`1, x, \cdots, x^k`.
 .. _tutorial-interpolate_bspl_basis:
 
 B-spline basis elements
-=======================
+-----------------------
 
 B-splines are piecewise polynomials, represented as linear combinations of
 *b-spline basis elements* --- which themselves are certain linear combinations
@@ -243,4 +243,45 @@ If desired, a b-spline can be converted into a `PPoly` object using
 `PPoly` instance. The reverse conversion is performed by the
 `BSpline.from_power_basis` method. However, conversions between bases is best
 avoided because it accumulates rounding errors.
+
+
+.. _tutorial-interpolate_bspl_design_matrix:
+
+Design matrices in the B-spline basis
+-------------------------------------
+
+One common application of b-splines is in non-parametric regression. The reason
+is that the localized nature of the b-spline basis elements makes linear
+algebra banded. This is because at most :math:`k+1` basis elements are non-zero
+at a given evaluation point, thus a design matrix built on b-splines has at most
+:math:`k+1` diagonals.
+
+As an illustration, we consider a toy example. Suppose our data are
+one-dimensional and are confined to an interval :math:`[0, 6]`.
+We construct a 4-regular knot vector which corresponds to 7 data points and
+cubic, `k=3`, splines:
+
+>>> t = [0., 0., 0., 0., 2., 3., 4., 6., 6., 6., 6.]
+
+Next, take 'observations' to be
+
+>>> xnew = [1, 2, 3]
+
+and construct the design matrix in the sparse CSR format
+
+>>> from scipy.interpolate import BSpline
+>>> mat = BSpline.design_matrix(xnew, t, k=3)
+>>> mat
+<3x7 sparse array of type '<class 'numpy.float64'>'
+	with 12 stored elements in Compressed Sparse Row format>
+
+Here each row of the design matrix corresponds to a value in the ``xnew`` array,
+and a row has no more than ``k+1 = 4`` non-zero elements; row ``j``
+contains basis elements evaluated at ``xnew[j]``:
+
+>>> with np.printoptions(precision=3):
+...     print(mat.toarray())
+[[0.125 0.514 0.319 0.042 0.    0.    0.   ]
+ [0.    0.111 0.556 0.333 0.    0.    0.   ]
+ [0.    0.    0.125 0.75  0.125 0.    0.   ]]
 
