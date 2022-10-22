@@ -4024,20 +4024,20 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
 
 DirectionalStats = namedtuple('DirectionalStats',
-                              ('mean_resultant', 'mean_resultant_magnitude'))
+                              ('mean_resultant', 'mean_resultant_length'))
 
 
 def directional_stats(samples, *, axis=0, normalize=True):
     """
     Computes the directional mean (also called the mean resultant vector) and
-    magnitude of the mean resultant vector of a sample of vectors.
+    length of the mean resultant vector of a sample of vectors.
 
     The directional mean is a measure of "preferred direction" of vector data.
-    It is analogous to the sample mean, but it is for use when the magnitude of
+    It is analogous to the sample mean, but it is for use when the length of
     the data is irrelevant (e.g. unit vectors).
 
     The directional variance serves as a measure of "directional spread" for
-    vector data. The magnitude of the mean vector can be used to calculate
+    vector data. The length of the mean vector can be used to calculate
     directional variance using one of the several definitions outlined in
     [1]_ and [2]_.
 
@@ -4059,8 +4059,8 @@ def directional_stats(samples, *, axis=0, normalize=True):
     -------
     mean_resultant : ndarray
         Directional mean.
-    mean_resultant_magnitude : ndarray
-        Magnitude of the mean resultant vector. This can be used to calculate
+    mean_resultant_length : ndarray
+        length of the mean resultant vector. This can be used to calculate
         the directional variance.
 
     See also
@@ -4076,20 +4076,20 @@ def directional_stats(samples, *, axis=0, normalize=True):
     .. code-block:: python
 
         mean = samples.mean(axis=0)
-        mean_resultant_magnitude = np.linalg.norm(mean)
-        mean_resultant = mean / mean_resultant_magnitude
+        mean_resultant_length = np.linalg.norm(mean)
+        mean_resultant = mean / mean_resultant_length
 
     This definition is appropriate for *directional* data (i.e. vector data
     for which the magnitude of each observation is irrelevant) but not
     for *axial* data (i.e. vector data for which the magnitude and *sign* of
     each observation is irrelevant).
 
-    The function also returns the magnitude of mean resultant vector which
+    The function also returns the length of mean resultant vector which
     can be used to calculate directional variance. Several definitions of
     directional variance have been proposed e.g. ``Var(z) = 1 - R`` (where
-    ``R`` is the magnitude of the mean resultant vector),
+    ``R`` is the length of the mean resultant vector),
     ``Var(z) = 1 - R**2`` and ``Var(z) = 2 * (1 - R)``. `directional_stats`
-    instead returns the magnitude of the mean resultant vector so one can
+    instead returns the length of the mean resultant vector so one can
     choose the appropriate definition based on the use case.
 
     References
@@ -4130,13 +4130,13 @@ def directional_stats(samples, *, axis=0, normalize=True):
     >>> data.mean(axis=0)
     array([0.8660254, 0., 0.])
 
-    The function also return the magnitude of the mean vector which can be
+    The function also return the length of the mean vector which can be
     used to calculate directional variance. For example, using the definition
-    ``Var(z) = 1 - R`` from [2]_ where ``R`` is the magnitude of the mean
+    ``Var(z) = 1 - R`` from [2]_ where ``R`` is the length of the mean
     resultant vector, we can calculate the directional variance of the vectors
     in the above example as:
 
-    >>> 1 - dirstats.mean_resultant_magnitude
+    >>> 1 - dirstats.mean_resultant_length
     0.13397459716167093
     """
     samples = np.asarray(samples)
@@ -4148,7 +4148,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
         vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
         samples = samples/vectornorms
     mean = np.mean(samples, axis=0)
-    mean_resultant_magnitude = np.linalg.norm(mean, axis=-1, keepdims=True)
-    mean_resultant = mean / mean_resultant_magnitude
+    mean_resultant_length = np.linalg.norm(mean, axis=-1, keepdims=True)
+    mean_resultant = mean / mean_resultant_length
     return DirectionalStats(mean_resultant,
-                            mean_resultant_magnitude.squeeze(-1)[()])
+                            mean_resultant_length.squeeze(-1)[()])

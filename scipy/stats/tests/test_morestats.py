@@ -2596,7 +2596,7 @@ class TestDirectionalStats:
         assert_allclose(mean_rounded, reference_mean)
 
         expected_var = 0.025335389565304012
-        directional_var = 1 - dirstats.mean_resultant_magnitude
+        directional_var = 1 - dirstats.mean_resultant_length
         assert_allclose(expected_var, directional_var)
 
     def test_directional_stats_2d(self):
@@ -2615,7 +2615,7 @@ class TestDirectionalStats:
         circmean = stats.circmean(testdata)
         assert_allclose(circmean, directional_mean_angle)
 
-        directional_var = 1 - dirstats.mean_resultant_magnitude
+        directional_var = 1 - dirstats.mean_resultant_length
         circular_var = stats.circvar(testdata)
         assert_allclose(directional_var, circular_var)
 
@@ -2639,8 +2639,8 @@ class TestDirectionalStats:
         res = stats.directional_stats(data)
         ref = stats.directional_stats(data_array)
         assert_allclose(res.mean_resultant, ref.mean_resultant)
-        assert_allclose(res.mean_resultant_magnitude,
-                        res.mean_resultant_magnitude)
+        assert_allclose(res.mean_resultant_length,
+                        res.mean_resultant_length)
 
     def test_directional_stats_1d_error(self):
         # test that one-dimensional data raises ValueError
@@ -2662,5 +2662,5 @@ class TestDirectionalStats:
         ref = stats.directional_stats(normalized_data,
                                       normalize=False)
         assert_allclose(res.mean_resultant, ref.mean_resultant)
-        assert_allclose(res.mean_resultant_magnitude,
-                        ref.mean_resultant_magnitude)
+        assert_allclose(res.mean_resultant_length,
+                        ref.mean_resultant_length)
