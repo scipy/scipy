@@ -5112,7 +5112,8 @@ class random_direction_gen(multi_rv_generic):
     >>> np.linalg.norm(x)
     1.
 
-    This generates one random direction, a vector on the surface of :math:S^2.
+    This generates one random direction, a vector on the surface of
+    :math:`S^2`.
 
     Alternatively, the object may be called (as a function) to fix the `dim`
     parameter, return a "frozen" unitary_group random variable:
