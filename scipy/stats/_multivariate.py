@@ -418,7 +418,7 @@ class multivariate_normal_gen(multi_rv_generic):
             return dim, mean, cov_object
 
     def _process_parameters_Covariance(self, mean, cov):
-        dim = cov.dimensionality
+        dim = cov.shape[-1]
         mean = np.array([0.]) if mean is None else mean
         message = (f"`cov` represents a covariance matrix in {dim} dimensions,"
                    f"and so `mean` must be broadcastable to shape {(dim,)}")
@@ -745,11 +745,20 @@ class multivariate_normal_gen(multi_rv_generic):
 
         """
         dim, mean, cov_object = self._process_parameters(mean, cov)
-        cov = cov_object.covariance
-
         random_state = self._get_random_state(random_state)
-        out = random_state.multivariate_normal(mean, cov, size)
-        return _squeeze_output(out)
+
+        if isinstance(cov_object, _covariance.CovViaPSD):
+            cov = cov_object.covariance
+            out = random_state.multivariate_normal(mean, cov, size)
+            out = _squeeze_output(out)
+        else:
+            size = size or tuple()
+            if not np.iterable(size):
+                size = (size,)
+            shape = tuple(size) + (cov_object.shape[-1],)
+            x = random_state.normal(size=shape)
+            out = mean + cov_object.colorize(x)
+        return out
 
     def entropy(self, mean=None, cov=1):
         """Compute the differential entropy of the multivariate normal.
