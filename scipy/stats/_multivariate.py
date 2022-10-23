@@ -5223,5 +5223,5 @@ def _sample_uniform_direction(dim, size, random_state):
     """
     samples_shape = size + (dim, )
     samples = random_state.standard_normal(samples_shape)
-    samples /=np.linalg.norm(samples, axis=-1, keepdims=True)
+    samples /= np.linalg.norm(samples, axis=-1, keepdims=True)
     return samples
