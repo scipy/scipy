@@ -5068,6 +5068,7 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
     method.__doc__ = doccer.docformat(method.__doc__,
                                       mhg_docdict_params)
 
+
 class random_direction_gen(multi_rv_generic):
     r"""A vector-valued random direction.
 
@@ -5095,12 +5096,13 @@ class random_direction_gen(multi_rv_generic):
 
     Notes
     -----
-    
+    This distribution generates unit vectors uniformly distributed on
+    the surface of a sphere. These can be interpreted as random directions.
 
     References
     ----------
-    .. [1] F. Mezzadri, "How to generate random matrices from the classical
-           compact groups", :arXiv:`math-ph/0609050v2`.
+    .. [1] Marsaglia, G. (1972). "Choosing a Point from the Surface of a
+           Sphere". Annals of Mathematical Statistics. 43 (2): 645–646.
 
     Examples
     --------
@@ -5180,7 +5182,8 @@ class random_direction_frozen(multi_rv_frozen):
         ----------
         dim : scalar
             Dimension of matrices
-        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+        seed : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -5201,9 +5204,37 @@ class random_direction_frozen(multi_rv_frozen):
     def rvs(self, size=1, random_state=None):
         return self._dist.rvs(self.dim, size, random_state)
 
+
 def _sample_uniform_direction(dim, size, random_state):
-    zeros = np.zeros((dim, ))
-    eye = np.eye(dim)
-    samples = random_state.multivariate_normal(zeros, eye, size)
-    samples = samples/np.linalg.norm(samples, axis=1, keepdims=True)
+    """
+    Private method to generate uniform directions
+    Lower dimensions are treated specially to improve efficiency
+    """
+    if dim == 1:
+        # for 1 D "vectors", directions can be 1 or -1
+        samples = random_state.choice([-1., 1.], size)
+    if dim == 2:
+        # first generate uniform distributed angles and from that 2D vectors
+        angles = random_state.uniform(0., 2*np.pi, size)
+        samples = np.stack((np.cos(angles), np.sin(angles)), axis=1)
+    if dim == 3:
+        # Reference: method 10 from
+        # http://extremelearning.com.au/how-to-generate-uniformly-
+        # random-points-on-n-spheres-and-n-balls/
+        ones = np.ones((size, ))
+        u = 2 * random_state.uniform(size=size) - ones
+        phi = random_state.uniform(0., 2*np.pi, size=size)
+        theta = np.sqrt(ones - np.square(u))
+        samples = np.stack((theta * np.cos(phi),
+                            theta * np.sin(phi),
+                            u),
+                           axis=1)
+    if dim > 3:
+        # reference: Marsaglia, G. (1972). "Choosing a Point from the
+        # Surface of a Sphere".
+        # Annals of Mathematical Statistics.43 (2): 645–646.
+        zeros = np.zeros((dim, ))
+        eye = np.eye(dim)
+        samples = random_state.multivariate_normal(zeros, eye, size)
+        samples = samples/np.linalg.norm(samples, axis=1, keepdims=True)
     return samples
