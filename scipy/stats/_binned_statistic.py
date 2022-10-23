@@ -589,7 +589,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
         dedges = [np.diff(edges[i]) for i in builtins.range(Ndim)]
         binnumbers = binned_statistic_result.binnumber
 
-    # Use a float64 accumulator to avoid integer overflow
+    # Avoid overflow with double precision. Complex `values` -> `complex128`.
     result_type = np.result_type(values, np.float64)
     result = np.empty([Vdim, nbin.prod()], dtype=result_type)
 
