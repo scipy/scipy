@@ -1972,6 +1972,8 @@ class TestRandomDirection:
         # test that samples have correct shape and norm 1
         random_direction_dist = random_direction(dim)
         samples = random_direction_dist.rvs(size)
+        if isinstance(size, int):
+            size = (size, )
         expected_shape = size + (dim, )
         assert samples.shape == expected_shape
         norms = np.linalg.norm(samples, axis=-1)
