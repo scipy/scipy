@@ -3,7 +3,7 @@ from collections import namedtuple
 import numpy as np
 from scipy import optimize, stats
 from scipy._lib._util import check_random_state
-from scipy.stats import _stats_py
+
 
 def _combine_bounds(name, user_bounds, shape_domain, integral):
     """Intersection of user-defined bounds and distribution PDF/PMF domain"""
@@ -1152,11 +1152,21 @@ def _anderson_darling(dist, data):
     return -n - S
 
 
+def _compute_dplus(cdfvals):  # adapted from _stats_py before gh-17062
+    n = cdfvals.shape[-1]
+    return (np.arange(1.0, n + 1) / n - cdfvals).max(axis=-1)
+
+
+def _compute_dminus(cdfvals, axis=-1):
+    n = cdfvals.shape[-1]
+    return (cdfvals - np.arange(0.0, n)/n).max(axis=-1)
+
+
 def _kolmogorov_smirnov(dist, data):
     x = np.sort(data, axis=-1)
     cdfvals = dist.cdf(x)
-    Dplus = _stats_py._compute_dplus(cdfvals, axis=-1)
-    Dminus = _stats_py._compute_dminus(cdfvals, axis=-1)
+    Dplus = _compute_dplus(cdfvals)  # always works along last axis
+    Dminus = _compute_dminus(cdfvals)
     return np.maximum(Dplus, Dminus)
 
 
