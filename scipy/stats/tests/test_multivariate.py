@@ -121,7 +121,7 @@ class TestCovariance:
         # test properties
         cov_object = cov_type(preprocessing(A))
         assert_close(cov_object.log_pdet, psd.log_pdet)
-        assert_close(cov_object.rank, psd.rank)
+        assert_equal(cov_object.rank, psd.rank)
         assert_equal(cov_object.shape, np.asarray(A).shape)
         assert_close(cov_object.covariance, np.asarray(A))
 
@@ -173,8 +173,8 @@ class TestCovariance:
             assert_close(x1, np.squeeze(x))  # for backward compatibility
             assert_close(x2, np.squeeze(x))
         else:
-            assert_close(x1.shape, x.shape)
-            assert_close(x2.shape, x.shape)
+            assert_equal(x1.shape, x.shape)
+            assert_equal(x2.shape, x.shape)
             assert_close(x2, x1)
 
         assert_close(mvn.pdf(x, mean, cov_object), dist0.pdf(x))

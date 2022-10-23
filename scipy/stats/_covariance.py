@@ -337,6 +337,9 @@ class Covariance:
         ----------
         .. [1] "Whitening Transformation". Wikipedia.
                https://en.wikipedia.org/wiki/Whitening_transformation
+        .. [2] Novák, Lukáš, and Miroslav Vořechovský. "Generalization of
+               coloring linear transformation". Transactions of VSB 18.2
+               (2018): 31-35. :doi:`10.31490/tces-2018-0013`
 
         Examples
         --------
@@ -362,7 +365,7 @@ class Covariance:
         """
         Perform a colorizing transformation on data.
 
-        "Colorizing" ("color" as in "colored noise", in which differenct
+        "Colorizing" ("color" as in "colored noise", in which different
         frequencies may have different magnitudes) transforms a set of
         uncorrelated random variables into a new set of random variables with
         the desired covariance. When a coloring transform is applied to a
@@ -387,6 +390,9 @@ class Covariance:
         ----------
         .. [1] "Whitening Transformation". Wikipedia.
                https://en.wikipedia.org/wiki/Whitening_transformation
+        .. [2] Novák, Lukáš, and Miroslav Vořechovský. "Generalization of
+               coloring linear transformation". Transactions of VSB 18.2
+               (2018): 31-35. :doi:`10.31490/tces-2018-0013`
 
         Examples
         --------
