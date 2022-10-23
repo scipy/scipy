@@ -220,7 +220,7 @@ add_newdoc("voigt_profile",
 
     Plot the function for different parameter sets.
 
-    >>> (fig, ax) = plt.subplots()
+    >>> (fig, ax) = plt.subplots(figsize=(8, 8))
     >>> x = np.linspace(-10, 10, 500)
     >>> parameters_list = [(1.5, 0., "solid"), (1.3, 0.5, "dashed"),
     ...                    (0., 1.8, "dotted"), (1., 1., "dashdot")]
@@ -248,7 +248,7 @@ add_newdoc("voigt_profile",
     >>> convolved = convolve(cauchy_profile, gauss_profile, mode="same")
     >>> convolved = convolved/sum(gauss_profile)
     >>> voigt = voigt_profile(x, sigma, gamma)
-    >>> (fig, ax) = plt.subplots()
+    >>> (fig, ax) = plt.subplots(figsize=(8, 8))
     >>> ax.plot(x, gauss_profile, label="Gauss: $G$", c='b')
     >>> ax.plot(x, cauchy_profile, label="Cauchy: $C$", c='y', ls="dashed")
     >>> ax.plot(x, convolved, label="Convolution: $G * C$", ls='dashdot',
