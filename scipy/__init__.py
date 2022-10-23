@@ -142,7 +142,7 @@ else:
         import warnings
         warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion}"
                       f" is required for this version of SciPy (detected "
-                      f"version {__numpy_version__}",
+                      f"version {__numpy_version__})",
                       UserWarning)
     del _pep440
 

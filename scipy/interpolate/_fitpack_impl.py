@@ -654,7 +654,7 @@ def splint(a, b, tck, full_output=0):
         return list(map(lambda c, a=a, b=b, t=t, k=k:
                         splint(a, b, [t, c, k]), c))
     else:
-        aint, wrk = _fitpack._splint(t, c, k, a, b)
+        aint, wrk = dfitpack.splint(t, c, k, a, b)
         if full_output:
             return aint, wrk
         else:
@@ -714,15 +714,15 @@ def sproot(tck, mest=10):
     else:
         if len(t) < 8:
             raise TypeError("The number of knots %d>=8" % len(t))
-        z, ier = _fitpack._sproot(t, c, k, mest)
+        z, m, ier = dfitpack.sproot(t, c, mest)
         if ier == 10:
             raise TypeError("Invalid input data. "
                             "t1<=..<=t4<t5<..<tn-3<=..<=tn must hold.")
         if ier == 0:
-            return z
+            return z[:m]
         if ier == 1:
             warnings.warn(RuntimeWarning("The number of zeros exceeds mest"))
-            return z
+            return z[:m]
         raise TypeError("Unknown error")
 
 

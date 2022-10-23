@@ -594,7 +594,7 @@ class TestAnsari:
         pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
         assert pval_l > 0.95
         assert pval_g < 0.05  # level of significance.
-        # also check if the p-values sum up to 1 plus the the probability
+        # also check if the p-values sum up to 1 plus the probability
         # mass under the calculated statistic.
         prob = _abw_state.pmf(statistic, len(x1), len(x2))
         assert_allclose(pval_g + pval_l, 1 + prob, atol=1e-12)
@@ -767,7 +767,7 @@ class TestBinomTestP:
     """
     @staticmethod
     def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
-        # This processing of x and n is copied from from binom_test.
+        # This processing of x and n is copied from binom_test.
         x = np.atleast_1d(x).astype(np.int_)
         if len(x) == 2:
             n = x[1] + x[0]

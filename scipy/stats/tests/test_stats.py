@@ -26,7 +26,6 @@ import numpy as np
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats._mstats_basic as mstats_basic
-from scipy.stats._stats_py import _contains_nan
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
@@ -323,6 +322,12 @@ class TestCorrPearsonr:
         y = stats.pearsonr(ROUND,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
+    def test_pearsonr_result_attributes(self):
+        res = stats.pearsonr(X, X)
+        attributes = ('correlation', 'pvalue')
+        check_named_results(res, attributes)
+        assert_equal(res.correlation, res.statistic)
 
     def test_r_almost_exactly_pos1(self):
         a = arange(3.0)
@@ -643,7 +648,7 @@ class TestCorrSpearmanr:
 
         All the correlations, except for ZERO and MISS, should be exactly 1.
         ZERO and MISS should have undefined or missing correlations with the
-        other variables.  The same should go for SPEARMAN corelations, if
+        other variables.  The same should go for SPEARMAN correlations, if
         your program has them.
     """
 
@@ -660,7 +665,7 @@ class TestCorrSpearmanr:
         np.random.seed(232324)
         x = np.random.randn(4, 3)
         y = np.random.randn(4, 2)
-        assert stats.spearmanr(x, y).correlation.shape == (5, 5)
+        assert stats.spearmanr(x, y).statistic.shape == (5, 5)
         assert stats.spearmanr(x.T, y.T, axis=1).pvalue.shape == (5, 5)
 
         assert_raises(ValueError, stats.spearmanr, x, y, axis=1)
@@ -706,7 +711,7 @@ class TestCorrSpearmanr:
         x[1, 0] = np.nan
         x[3, -1] = np.nan
         corr, pvalue = stats.spearmanr(x, axis=1, nan_policy="propagate")
-        res = [[stats.spearmanr(x[i, :], x[j, :]).correlation for i in range(m)]
+        res = [[stats.spearmanr(x[i, :], x[j, :]).statistic for i in range(m)]
                for j in range(m)]
         assert_allclose(corr, res)
 
@@ -819,6 +824,7 @@ class TestCorrSpearmanr:
         res = stats.spearmanr(X, X)
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes)
+        assert_equal(res.correlation, res.statistic)
 
     def test_1d_vs_2d(self):
         x1 = [1, 2, 3, 4, 5, 6]
@@ -849,7 +855,7 @@ class TestCorrSpearmanr:
         expected_pvalue[2, 0:2] = 0.00480466472
         expected_pvalue[0:2, 2] = 0.00480466472
 
-        assert_allclose(actual.correlation, expected_corr)
+        assert_allclose(actual.statistic, expected_corr)
         assert_allclose(actual.pvalue, expected_pvalue)
 
     def test_gh_9103(self):
@@ -860,10 +866,10 @@ class TestCorrSpearmanr:
         corr = np.array([[np.nan, np.nan, np.nan],
                          [np.nan, np.nan, np.nan],
                          [np.nan, np.nan, 1.]])
-        assert_allclose(stats.spearmanr(x, nan_policy='propagate').correlation,
+        assert_allclose(stats.spearmanr(x, nan_policy='propagate').statistic,
                         corr)
 
-        res = stats.spearmanr(x, nan_policy='omit').correlation
+        res = stats.spearmanr(x, nan_policy='omit').statistic
         assert_allclose((res[0][1], res[0][2], res[1][2]),
                         (0.2051957, 0.4857143, -0.4707919), rtol=1e-6)
 
@@ -877,15 +883,15 @@ class TestCorrSpearmanr:
         # bool against float, no nans
         a = (x > .5)
         b = np.array(x)
-        res1 = stats.spearmanr(a, b, nan_policy='omit').correlation
+        res1 = stats.spearmanr(a, b, nan_policy='omit').statistic
 
         # bool against float with NaNs
         b[m] = np.nan
-        res2 = stats.spearmanr(a, b, nan_policy='omit').correlation
+        res2 = stats.spearmanr(a, b, nan_policy='omit').statistic
 
         # int against float with NaNs
         a = a.astype(np.int32)
-        res3 = stats.spearmanr(a, b, nan_policy='omit').correlation
+        res3 = stats.spearmanr(a, b, nan_policy='omit').statistic
 
         expected = [0.865895477, 0.866100381, 0.866100381]
         assert_allclose([res1, res2, res3], expected)
@@ -1248,6 +1254,7 @@ def test_kendalltau():
     for taux in variants:
         res = stats.kendalltau(x1, x2, variant=taux)
         check_named_results(res, attributes)
+        assert_equal(res.correlation, res.statistic)
 
     # with only ties in one or both inputs in tau-b or tau-c
     for taux in variants:
@@ -1334,7 +1341,7 @@ def test_kendalltau_nan_2nd_arg():
 
     r1 = stats.kendalltau(x, y, nan_policy='omit')
     r2 = stats.kendalltau(x[1:], y[1:])
-    assert_allclose(r1.correlation, r2.correlation, atol=1e-15)
+    assert_allclose(r1.statistic, r2.statistic, atol=1e-15)
 
 
 def test_kendalltau_dep_initial_lexsort():
@@ -1573,6 +1580,12 @@ def test_weightedtau():
     assert_approx_equal(tau, -0.47140452079103173)
     assert_equal(np.nan, p_value)
 
+    # test for namedtuple attribute results
+    res = stats.weightedtau(x, y)
+    attributes = ('correlation', 'pvalue')
+    check_named_results(res, attributes)
+    assert_equal(res.correlation, res.statistic)
+
     # Asymmetric, ranked version
     tau, p_value = stats.weightedtau(x, y, rank=None)
     assert_approx_equal(tau, -0.4157652301037516)
@@ -1680,6 +1693,9 @@ def test_weightedtau_vs_quadratic():
                 disc += w
         return (conc - disc) / np.sqrt(tot - u) / np.sqrt(tot - v)
 
+    def weigher(x):
+        return 1. / (x + 1)
+
     np.random.seed(42)
     for s in range(3,10):
         a = []
@@ -1693,8 +1709,8 @@ def test_weightedtau_vs_quadratic():
         rank = np.arange(len(a), dtype=np.intp)
         for _ in range(2):
             for add in [True, False]:
-                expected = wkq(a, b, rank, lambda x: 1./(x+1), add)
-                actual = stats.weightedtau(a, b, rank, lambda x: 1./(x+1), add).correlation
+                expected = wkq(a, b, rank, weigher, add)
+                actual = stats.weightedtau(a, b, rank, weigher, add).statistic
                 assert_approx_equal(expected, actual)
             # Second pass: use a random rank
             np.random.shuffle(rank)
@@ -2364,15 +2380,16 @@ class TestMode:
 
         # test nan_policy='omit'
         a = [[1, np.nan, np.nan, np.nan, 1],
-             [np.nan, np.nan, np.nan, np.nan, 2]]
+             [np.nan, np.nan, np.nan, np.nan, 2],
+             [1, 2, np.nan, 5, 5]]
 
         res = stats.mode(a, axis=1, keepdims=False, nan_policy='omit')
-        assert_array_equal(res.mode, [1, 2])
-        assert_array_equal(res.count, [2, 1])
+        assert_array_equal(res.mode, [1, 2, 5])
+        assert_array_equal(res.count, [2, 1, 2])
 
         res = stats.mode(a, axis=1, keepdims=True, nan_policy='omit')
-        assert_array_equal(res.mode, [[1], [2]])
-        assert_array_equal(res.count, [[2], [1]])
+        assert_array_equal(res.mode, [[1], [2], [5]])
+        assert_array_equal(res.count, [[2], [1], [2]])
 
         a = np.array(a)
         res = stats.mode(a, axis=None, keepdims=False, nan_policy='omit')
@@ -2384,6 +2401,15 @@ class TestMode:
         ref = stats.mode(a.ravel(), keepdims=True, nan_policy='omit')
         assert_array_equal(res, ref)
         assert res.mode.shape == ref.mode.shape == (1,)
+
+    def test_gh16952(self):
+        # Check that bug reported in gh-16952 is resolved
+        shape = (4, 3)
+        data = np.ones(shape)
+        data[0, 0] = np.nan
+        res = stats.mode(a=data, axis=1, keepdims=False, nan_policy="omit")
+        assert_array_equal(res.mode, [1, 1, 1, 1])
+        assert_array_equal(res.count, [2, 3, 3, 3])
 
 
 def test_mode_futurewarning():
@@ -3932,6 +3958,24 @@ class TestKSOneSample:
         ])
         FuncData(kolmogn, dataset, (0, 1, 2), 3).check(dtypes=[int, float, bool])
 
+    @pytest.mark.parametrize("ksfunc", [stats.kstest, stats.ks_1samp])
+    @pytest.mark.parametrize("alternative, x6val, ref_location, ref_sign",
+                             [('greater', 6, 6, +1),
+                              ('less', 7, 7, -1),
+                              ('two-sided', 6, 6, +1),
+                              ('two-sided', 7, 7, -1)])
+    def test_location_sign(self, ksfunc, alternative,
+                           x6val, ref_location, ref_sign):
+        # Test that location and sign corresponding with statistic are as
+        # expected. (Test is designed to be easy to predict.)
+        x = np.arange(10) + 0.5
+        x[6] = x6val
+        cdf = stats.uniform(scale=10).cdf
+        res = ksfunc(x, cdf, alternative=alternative)
+        assert_allclose(res.statistic, 0.1, rtol=1e-15)
+        assert res.statistic_location == ref_location
+        assert res.statistic_sign == ref_sign
+
     # missing: no test that uses *args
 
 
@@ -4182,6 +4226,23 @@ class TestKSTwoSamples:
             res = stats.ks_2samp(data1, data2, alternative='less')
             assert_allclose(res.pvalue, 0, atol=1e-14)
 
+    @pytest.mark.parametrize("ksfunc", [stats.kstest, stats.ks_2samp])
+    @pytest.mark.parametrize("alternative, x6val, ref_location, ref_sign",
+                             [('greater', 5.9, 5.9, +1),
+                              ('less', 6.1, 6.0, -1),
+                              ('two-sided', 5.9, 5.9, +1),
+                              ('two-sided', 6.1, 6.0, -1)])
+    def test_location_sign(self, ksfunc, alternative,
+                           x6val, ref_location, ref_sign):
+        # Test that location and sign corresponding with statistic are as
+        # expected. (Test is designed to be easy to predict.)
+        x = np.arange(10, dtype=np.float64)
+        y = x.copy()
+        x[6] = x6val
+        res = stats.ks_2samp(x, y, alternative=alternative)
+        assert res.statistic == 0.1
+        assert res.statistic_location == ref_location
+        assert res.statistic_sign == ref_sign
 
 def test_ttest_rel():
     # regression test
@@ -4287,12 +4348,14 @@ def test_ttest_rel():
     t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit',
                            alternative='less')
     assert_allclose(t, tr, rtol=1e-14)
-    assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
+    with np.errstate(invalid='ignore'):
+        assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
 
     t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit',
                            alternative='greater')
     assert_allclose(t, tr, rtol=1e-14)
-    assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
+    with np.errstate(invalid='ignore'):
+        assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
 
 
 def test_ttest_rel_nan_2nd_arg():
@@ -4317,10 +4380,10 @@ def test_ttest_rel_nan_2nd_arg():
 
 
 def test_ttest_rel_empty_1d_returns_nan():
-    # Two empty inputs should return a Ttest_relResult containing nan
+    # Two empty inputs should return a TtestResult containing nan
     # for both values.
     result = stats.ttest_rel([], [])
-    assert isinstance(result, stats._stats_py.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     assert_equal(result, (np.nan, np.nan))
 
 
@@ -4333,7 +4396,7 @@ def test_ttest_rel_axis_size_zero(b, expected_shape):
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
     result = stats.ttest_rel(a, b, axis=-1)
-    assert isinstance(result, stats._stats_py.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
     assert_equal(result.pvalue, expected_value)
@@ -4347,9 +4410,44 @@ def test_ttest_rel_nonaxis_size_zero():
     a = np.empty((1, 8, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_rel(a, b, axis=1)
-    assert isinstance(result, stats._stats_py.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
+
+
+@pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+def test_ttest_rel_ci_1d(alternative):
+    # test confidence interval method against reference values
+    rng = np.random.default_rng(3749065329432213059)
+    n = 10
+    x = rng.normal(size=n, loc=1.5, scale=2)
+    y = rng.normal(size=n, loc=2, scale=2)
+    # Reference values generated with R t.test:
+    # options(digits=16)
+    # x = c(1.22825792,  1.63950485,  4.39025641,  0.68609437,  2.03813481,
+    #       -1.20040109,  1.81997937,  1.86854636,  2.94694282,  3.94291373)
+    # y = c(3.49961496, 1.53192536, 5.53620083, 2.91687718, 0.04858043,
+    #       3.78505943, 3.3077496 , 2.30468892, 3.42168074, 0.56797592)
+    # t.test(x, y, paired=TRUE, conf.level=0.85, alternative='l')
+
+    ref = {'two-sided': [-1.912194489914035, 0.400169725914035],
+           'greater': [-1.563944820311475, np.inf],
+           'less': [-np.inf, 0.05192005631147523]}
+    res = stats.ttest_rel(x, y, alternative=alternative)
+    ci = res.confidence_interval(confidence_level=0.85)
+    assert_allclose(ci, ref[alternative])
+    assert_equal(res.df, n-1)
+
+
+@pytest.mark.parametrize("test_fun, args",
+                         [(stats.ttest_1samp, (np.arange(10), 0)),
+                          (stats.ttest_rel, (np.arange(10), np.arange(10)))])
+def test_ttest_ci_iv(test_fun, args):
+    # test `confidence_interval` method input validation
+    res = test_fun(*args)
+    message = '`confidence_level` must be a number between 0 and 1.'
+    with pytest.raises(ValueError, match=message):
+        res.confidence_interval(confidence_level=10)
 
 
 def _desc_stats(x1, x2, axis=0):
@@ -4525,14 +4623,9 @@ class Test_ttest_ind_permutations():
         (a, b, {'random_state': np.random.RandomState(0), "axis": 1}, p_d),
         (a2, b2, {'equal_var': True}, 1/1001),  # equal variances
         (rvs1, rvs2, {'axis': -1, 'random_state': 0}, p_d_big),  # bigger test
-        (a3, b3, {}, 1/3)  # exact test
+        (a3, b3, {}, 1/3),  # exact test
+        (a, b, {'random_state': np.random.default_rng(0), "axis": 1}, p_d_gen),
         ]
-
-    if NumpyVersion(np.__version__) >= '1.18.0':
-        params.append(
-            (a, b, {'random_state': np.random.default_rng(0), "axis": 1},
-             p_d_gen),
-            )
 
     @pytest.mark.parametrize("a,b,update,p_d", params)
     def test_ttest_ind_permutations(self, a, b, update, p_d):
@@ -5701,6 +5794,7 @@ def test_pointbiserial():
     attributes = ('correlation', 'pvalue')
     res = stats.pointbiserialr(x, y)
     check_named_results(res, attributes)
+    assert_equal(res.correlation, res.statistic)
 
 
 def test_obrientransform():
@@ -7907,53 +8001,3 @@ def test_rename_mode_method(fun, args):
     with pytest.raises(TypeError, match=re.escape(err)):
         fun(*args, method='exact', mode='exact')
 
-
-class TestContainsNaNTest:
-
-    def test_policy(self):
-        data = np.array([1, 2, 3, np.nan])
-
-        contains_nan, nan_policy = _contains_nan(data, nan_policy="propagate")
-        assert contains_nan
-        assert nan_policy == "propagate"
-
-        contains_nan, nan_policy = _contains_nan(data, nan_policy="omit")
-        assert contains_nan
-        assert nan_policy == "omit"
-
-        msg = "The input contains nan values"
-        with pytest.raises(ValueError, match=msg):
-            _contains_nan(data, nan_policy="raise")
-
-        msg = "nan_policy must be one of"
-        with pytest.raises(ValueError, match=msg):
-            _contains_nan(data, nan_policy="nan")
-
-    def test_contains_nan_1d(self):
-        data1 = np.array([1, 2, 3])
-        assert not _contains_nan(data1)[0]
-
-        data2 = np.array([1, 2, 3, np.nan])
-        assert _contains_nan(data2)[0]
-
-        data3 = np.array([np.nan, 2, 3, np.nan])
-        assert _contains_nan(data3)[0]
-
-        data4 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
-        assert not _contains_nan(data4)[0]
-
-        data5 = np.array([1, 2, "3", np.nan], dtype='object')
-        assert _contains_nan(data5)[0]
-
-    def test_contains_nan_2d(self):
-        data1 = np.array([[1, 2], [3, 4]])
-        assert not _contains_nan(data1)[0]
-
-        data2 = np.array([[1, 2], [3, np.nan]])
-        assert _contains_nan(data2)[0]
-
-        data3 = np.array([["1", 2], [3, np.nan]])  # converted to string "nan"
-        assert not _contains_nan(data3)[0]
-
-        data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
-        assert _contains_nan(data4)[0]

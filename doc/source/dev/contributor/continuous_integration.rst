@@ -66,6 +66,8 @@ Codecov
 * ``patch``: the impact on code coverage due to your changes
 * ``project``: the coverage of the whole project
 
+.. _skip-ci:
+
 Skipping
 ========
 
@@ -82,6 +84,7 @@ Skipping CI can be achieved by adding a special text in the commit message:
 * ``[skip azp]``: will skip Azure
 * ``[skip actions]``: will skip GitHub Actions
 * ``[skip circle]``: will skip CircleCI
+* ``[skip cirrus]``: will skip CirrusCI
 * ``[skip ci]``: will skip *all* CI
 
 Of course, you can combine these to skip multiple workflows.
