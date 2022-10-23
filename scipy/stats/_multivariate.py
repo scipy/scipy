@@ -5214,6 +5214,7 @@ def _sample_uniform_direction(dim, size, random_state):
     if dim == 1:
         # for 1 D "vectors", directions can be 1 or -1
         samples = random_state.choice([-1., 1.], size)
+        samples = samples[:, None]
     if dim == 2:
         # first generate uniform distributed angles and from that 2D vectors
         angles = random_state.uniform(0., 2*np.pi, size)
@@ -5222,7 +5223,7 @@ def _sample_uniform_direction(dim, size, random_state):
         # Reference: method 10 from
         # http://extremelearning.com.au/how-to-generate-uniformly-
         # random-points-on-n-spheres-and-n-balls/
-        ones = np.ones((size, ))
+        ones = np.ones(size)
         u = 2 * random_state.uniform(size=size) - ones
         phi = random_state.uniform(0., 2*np.pi, size=size)
         theta = np.sqrt(ones - np.square(u))
