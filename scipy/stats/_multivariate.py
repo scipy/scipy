@@ -5099,6 +5099,9 @@ class random_direction_gen(multi_rv_generic):
     This distribution generates unit vectors uniformly distributed on
     the surface of a sphere. These can be interpreted as random directions.
 
+    For example, if `dim=3`, 3D vectors from the surface of math:`S^2`
+    will be sampled.
+
     References
     ----------
     .. [1] Marsaglia, G. (1972). "Choosing a Point from the Surface of a
@@ -5142,31 +5145,37 @@ class random_direction_gen(multi_rv_generic):
         return dim
 
     def rvs(self, dim, size=1, random_state=None):
-        """Draw random samples from S(N).
+        """Draw random samples from S(N-1).
 
         Parameters
         ----------
         dim : integer
             Dimension of space (N).
-        size : integer, optional
-            Number of samples to draw (default 1).
+        size : int or tuple of ints, optional
+            Given a shape of, for example, (m,n,k), m*n*k samples are
+            generated, and packed in an m-by-n-by-k arrangement.
+            Because each sample is N-dimensional, the output shape
+            is (m,n,k,N). If no shape is specified, a single (N-D)
+            sample is returned.
 
         Returns
         -------
-        rvs : ndarray or scalar
-            Random size N-dimensional matrices, dimension (size, dim, dim)
+        rvs : ndarray
+            Random direction vectors
 
         """
         random_state = self._get_random_state(random_state)
 
-        size = int(size)
-        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
+        error_message_size = "`size` must be a tuple of integers or an int."
+        if isinstance(size, int):
+            size = (size, )
+        elif isinstance(size, tuple):
+            if not all(isinstance(v, int) for v in size):
+                raise ValueError(error_message_size)
+        else:
+            raise ValueError(error_message_size)
 
         dim = self._process_parameters(dim)
-
-        size = (size,) if size > 1 else ()
 
         samples = _sample_uniform_direction(dim, size, random_state)
         return samples
@@ -5181,7 +5190,7 @@ class random_direction_frozen(multi_rv_frozen):
 
         Parameters
         ----------
-        dim : scalar
+        dim : int
             Dimension of matrices
         seed : {None, int, `numpy.random.Generator`,
                 `numpy.random.RandomState`}, optional
@@ -5213,8 +5222,8 @@ def _sample_uniform_direction(dim, size, random_state):
     """
     if dim == 1:
         # for 1 D "vectors", directions can be 1 or -1
-        samples = random_state.choice([-1., 1.], size)
-        samples = samples[:, None]
+        samples = random_state.choice([-1., 1.], size=size)
+        samples = np.expand_dims(samples, axis=-1)
     if dim == 2:
         # first generate uniform distributed angles and from that 2D vectors
         angles = random_state.uniform(0., 2*np.pi, size)
