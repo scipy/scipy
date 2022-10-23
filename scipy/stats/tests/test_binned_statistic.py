@@ -545,9 +545,10 @@ class TestBinnedStatistic:
         assert_allclose(sum1, sum2)
         assert_allclose(edges1[0], edges2)
 
-    @mark.parametrize("dtype", [np.float64, np.complex128])
-    @mark.parametrize("statistic", [np.mean, np.median, np.sum, np.std, np.min,
-                                    np.max, 'count', lambda x: (x**2).sum()])
+    @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+    @pytest.mark.parametrize("statistic", [np.mean, np.median, np.sum, np.std,
+                                           np.min, np.max, 'count',
+                                           lambda x: (x**2).sum()])
     def test_dd_all(self, dtype, statistic):
         def ref_statistic(x):
             return len(x) if statistic == 'count' else statistic(x)
