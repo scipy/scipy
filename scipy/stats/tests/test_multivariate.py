@@ -1966,16 +1966,16 @@ class TestRandomCorrelation:
 
 
 class TestRandomDirection:
-    @pytest.mark.parametrize("dim", range(1, 5))
-    def test_samples(self, dim):
+    @pytest.mark.parametrize("dim", [1, 2, 3, 4])
+    @pytest.mark.parametrize("size", [5, (5, 4)])
+    def test_samples(self, dim, size):
         # test that samples have correct shape and norm 1
-        n_samples = 5
         random_direction_dist = random_direction(dim)
-        samples = random_direction_dist.rvs(n_samples)
-        expected_shape = (n_samples, dim)
+        samples = random_direction_dist.rvs(size)
+        expected_shape = size + (dim, )
         assert samples.shape == expected_shape
-        norms = np.linalg.norm(samples, axis=1)
-        expected_norms = np.ones((n_samples, ))
+        norms = np.linalg.norm(samples, axis=-1)
+        expected_norms = np.ones(size)
         assert_allclose(norms, expected_norms)
 
     def test_invalid_dim(self):
