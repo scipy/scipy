@@ -5102,7 +5102,7 @@ class random_direction_gen(multi_rv_generic):
     References
     ----------
     .. [1] Marsaglia, G. (1972). "Choosing a Point from the Surface of a
-           Sphere". Annals of Mathematical Statistics. 43 (2): 645–646.
+           Sphere". Annals of Mathematical Statistics. 43 (2): 645-646.
 
     Examples
     --------
@@ -5233,7 +5233,7 @@ def _sample_uniform_direction(dim, size, random_state):
     if dim > 3:
         # reference: Marsaglia, G. (1972). "Choosing a Point from the
         # Surface of a Sphere".
-        # Annals of Mathematical Statistics.43 (2): 645–646.
+        # Annals of Mathematical Statistics.43 (2): 645-646.
         zeros = np.zeros((dim, ))
         eye = np.eye(dim)
         samples = random_state.multivariate_normal(zeros, eye, size)
