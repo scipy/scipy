@@ -4036,7 +4036,8 @@ def directional_stats(samples, *, axis=0, normalize=True):
     It is analogous to the sample mean, but it is for use when the length of
     the data is irrelevant (e.g. unit vectors).
 
-    The directional variance serves as a measure of "directional spread" for
+    The length of the mean resultant vector can be used to compute measures
+    of "directional spread" such as the directional variance
     vector data. The length of the mean vector can be used to calculate
     directional variance using one of the several definitions outlined in
     [1]_ and [2]_.
