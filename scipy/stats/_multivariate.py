@@ -5217,7 +5217,7 @@ def _sample_uniform_direction(dim, size, random_state):
     if dim == 2:
         # first generate uniform distributed angles and from that 2D vectors
         angles = random_state.uniform(0., 2*np.pi, size)
-        samples = np.stack((np.cos(angles), np.sin(angles)), axis=1)
+        samples = np.stack((np.cos(angles), np.sin(angles)), axis=-1)
     if dim == 3:
         # Reference: method 10 from
         # http://extremelearning.com.au/how-to-generate-uniformly-
@@ -5229,7 +5229,7 @@ def _sample_uniform_direction(dim, size, random_state):
         samples = np.stack((theta * np.cos(phi),
                             theta * np.sin(phi),
                             u),
-                           axis=1)
+                           axis=-1)
     if dim > 3:
         # reference: Marsaglia, G. (1972). "Choosing a Point from the
         # Surface of a Sphere".
@@ -5237,5 +5237,5 @@ def _sample_uniform_direction(dim, size, random_state):
         zeros = np.zeros((dim, ))
         eye = np.eye(dim)
         samples = random_state.multivariate_normal(zeros, eye, size)
-        samples = samples/np.linalg.norm(samples, axis=1, keepdims=True)
+        samples = samples/np.linalg.norm(samples, axis=-1, keepdims=True)
     return samples
