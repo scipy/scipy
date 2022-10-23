@@ -28,7 +28,8 @@ __all__ = ['multivariate_normal',
            'random_correlation',
            'unitary_group',
            'multivariate_t',
-           'multivariate_hypergeom']
+           'multivariate_hypergeom',
+           'random_direction']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -5066,3 +5067,143 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
         method.__doc__, mhg_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__,
                                       mhg_docdict_params)
+
+class random_direction_gen(multi_rv_generic):
+    r"""A vector-valued random direction.
+
+    Return a random direction (unit vector).
+
+    The `dim` keyword specifies the dimension N.
+
+    Methods
+    -------
+    rvs(dim=None, size=1, random_state=None)
+        Draw random directions.
+
+    Parameters
+    ----------
+    dim : scalar
+        Dimension of directions.
+    seed : {None, int, np.random.RandomState, np.random.Generator}, optional
+        Used for drawing random variates.
+        If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is `None`.
+
+    Notes
+    -----
+    
+
+    References
+    ----------
+    .. [1] F. Mezzadri, "How to generate random matrices from the classical
+           compact groups", :arXiv:`math-ph/0609050v2`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import random_direction
+    >>> x = random_direction.rvs(3)
+    >>> np.linalg.norm(x)
+    1.
+
+    This generates one random direction, a vector on the surface of :math:S^2.
+
+    Alternatively, the object may be called (as a function) to fix the `dim`
+    parameter, return a "frozen" unitary_group random variable:
+
+    >>> rv = random_direction(5)
+
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__)
+
+    def __call__(self, dim=None, seed=None):
+        """Create a frozen n-dimensional uniform direction distribution.
+
+        See `random_direction` for more information.
+        """
+        return random_direction_frozen(dim, seed=seed)
+
+    def _process_parameters(self, dim):
+        """Dimension N must be specified; it cannot be inferred."""
+        if dim is None or not np.isscalar(dim) or dim < 1 or dim != int(dim):
+            raise ValueError("Dimension of rotation must be specified,"
+                             "and must be a scalar greater than 0.")
+
+        return dim
+
+    def rvs(self, dim, size=1, random_state=None):
+        """Draw random samples from S(N).
+
+        Parameters
+        ----------
+        dim : integer
+            Dimension of space (N).
+        size : integer, optional
+            Number of samples to draw (default 1).
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random size N-dimensional matrices, dimension (size, dim, dim)
+
+        """
+        random_state = self._get_random_state(random_state)
+
+        size = int(size)
+        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
+            return np.array([self.rvs(dim, size=1, random_state=random_state)
+                             for i in range(size)])
+
+        dim = self._process_parameters(dim)
+
+        size = (size,) if size > 1 else ()
+
+        samples = _sample_uniform_direction(dim, size, random_state)
+        return samples
+
+
+random_direction = random_direction_gen()
+
+
+class random_direction_frozen(multi_rv_frozen):
+    def __init__(self, dim=None, seed=None):
+        """Create a frozen n-dimensional random direction distribution.
+
+        Parameters
+        ----------
+        dim : scalar
+            Dimension of matrices
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
+
+        Examples
+        --------
+        >>> from scipy.stats import random_direction
+        >>> x = random_direction(3)
+        >>> x.rvs()
+
+        """
+        self._dist = random_direction_gen(seed)
+        self.dim = self._dist._process_parameters(dim)
+
+    def rvs(self, size=1, random_state=None):
+        return self._dist.rvs(self.dim, size, random_state)
+
+def _sample_uniform_direction(dim, size, random_state):
+    zeros = np.zeros((dim, ))
+    eye = np.eye(dim)
+    samples = random_state.multivariate_normal(zeros, eye, size)
+    samples = samples/np.linalg.norm(samples, axis=1, keepdims=True)
+    return samples

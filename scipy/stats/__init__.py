@@ -172,6 +172,7 @@ Multivariate distributions
    random_correlation     -- random correlation matrices
    multivariate_t         -- Multivariate t-distribution
    multivariate_hypergeom -- Multivariate hypergeometric distribution
+   random_direction       -- Random direction
 
 `scipy.stats.multivariate_normal` methods accept instances
 of the following class to represent the covariance.
