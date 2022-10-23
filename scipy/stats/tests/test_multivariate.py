@@ -1966,7 +1966,7 @@ class TestRandomCorrelation:
 
 
 class TestRandomDirection:
-    @pytest.mark.parametrize("dim", range(5))
+    @pytest.mark.parametrize("dim", range(1, 5))
     def test_samples(self, dim):
         # test that samples have correct shape and norm 1
         n_samples = 5
