@@ -4097,6 +4097,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     ----------
     .. [1] Mardia, Jupp. (2000). *Directional Statistics*
        (p. 163). Wiley.
+
     .. [2] https://en.wikipedia.org/wiki/Directional_statistics
 
     Examples
@@ -4131,11 +4132,11 @@ def directional_stats(samples, *, axis=0, normalize=True):
     >>> data.mean(axis=0)
     array([0.8660254, 0., 0.])
 
-    The function also return the length of the mean vector which can be
-    used to calculate directional variance. For example, using the definition
-    ``Var(z) = 1 - R`` from [2]_ where ``R`` is the length of the mean
-    resultant vector, we can calculate the directional variance of the vectors
-    in the above example as:
+    The function also returns the length of the mean resultant vector which
+    can be used to calculate directional variance. For example, using the
+    definition ``Var(z) = 1 - R`` from [2]_ where ``R`` is the length of the
+    mean resultant vector, we can calculate the directional variance of the
+    vectors in the above example as:
 
     >>> 1 - dirstats.mean_resultant_length
     0.13397459716167093
