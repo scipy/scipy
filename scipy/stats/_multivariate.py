@@ -5218,34 +5218,10 @@ class random_direction_frozen(multi_rv_frozen):
 def _sample_uniform_direction(dim, size, random_state):
     """
     Private method to generate uniform directions
-    Lower dimensions are treated specially to improve efficiency
+    Reference: Marsaglia, G. (1972). "Choosing a Point from the Surface of a
+               Sphere". Annals of Mathematical Statistics. 43 (2): 645-646.
     """
-    if dim == 1:
-        # for 1 D "vectors", directions can be 1 or -1
-        samples = random_state.choice([-1., 1.], size=size)
-        samples = np.expand_dims(samples, axis=-1)
-    if dim == 2:
-        # first generate uniform distributed angles and from that 2D vectors
-        angles = random_state.uniform(0., 2*np.pi, size)
-        samples = np.stack((np.cos(angles), np.sin(angles)), axis=-1)
-    if dim == 3:
-        # Reference: method 10 from
-        # http://extremelearning.com.au/how-to-generate-uniformly-
-        # random-points-on-n-spheres-and-n-balls/
-        ones = np.ones(size)
-        u = 2 * random_state.uniform(size=size) - ones
-        phi = random_state.uniform(0., 2*np.pi, size=size)
-        theta = np.sqrt(ones - np.square(u))
-        samples = np.stack((theta * np.cos(phi),
-                            theta * np.sin(phi),
-                            u),
-                           axis=-1)
-    if dim > 3:
-        # reference: Marsaglia, G. (1972). "Choosing a Point from the
-        # Surface of a Sphere".
-        # Annals of Mathematical Statistics.43 (2): 645-646.
-        zeros = np.zeros((dim, ))
-        eye = np.eye(dim)
-        samples = random_state.multivariate_normal(zeros, eye, size)
-        samples = samples/np.linalg.norm(samples, axis=-1, keepdims=True)
+    samples_shape = size + (dim, )
+    samples = random_state.standard_normal(samples_shape)
+    samples /=np.linalg.norm(samples, axis=-1, keepdims=True)
     return samples
