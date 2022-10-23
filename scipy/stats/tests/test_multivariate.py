@@ -25,7 +25,8 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          random_correlation, unitary_group, dirichlet,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
-                         hypergeom, multivariate_t, cauchy, normaltest)
+                         hypergeom, multivariate_t, cauchy, normaltest,
+                         random_direction)
 from scipy.stats import _covariance, Covariance
 
 from scipy.integrate import romb
@@ -1962,6 +1963,38 @@ class TestRandomCorrelation:
         m0 = np.array([[2 + 1e-7, 1], [1, 2]], dtype=float)
         m = random_correlation._to_corr(m0.copy())
         assert_allclose(m[0,0], 1)
+
+
+class TestRandomDirection:
+    @pytest.mark.parametrize("dim", range(5))
+    def test_samples(self, dim):
+        # test that samples have correct shape and norm 1
+        n_samples = 5
+        random_direction_dist = random_direction(dim)
+        samples = random_direction_dist.rvs(n_samples)
+        expected_shape = (n_samples, dim)
+        assert samples.shape == expected_shape
+        norms = np.linalg.norm(samples, axis=1)
+        expected_norms = np.ones((n_samples, ))
+        assert_allclose(norms, expected_norms)
+
+    def test_invalid_dim(self):
+        assert_raises(ValueError, random_direction.rvs, None)
+        assert_raises(ValueError, random_direction.rvs, 0)
+        assert_raises(ValueError, random_direction.rvs, (2, 2))
+        assert_raises(ValueError, random_direction.rvs, 2.5)
+
+    def test_frozen_distribution(self):
+        dim = 5
+        frozen = random_direction(dim)
+        frozen_seed = random_direction(dim, seed=514)
+
+        rvs1 = frozen.rvs(random_state=514)
+        rvs2 = random_direction.rvs(dim, random_state=514)
+        rvs3 = frozen_seed.rvs(size=1)
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
 
 
 class TestUnitaryGroup:
