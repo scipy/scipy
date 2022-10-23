@@ -242,6 +242,7 @@ def cases_test_fit_mse():
                        'gengamma', 'truncnorm', 'ncf', 'nct', 'pearson3',
                        'beta', 'genexpon', 'tukeylambda', 'zipfian',
                        'nchypergeom_wallenius', 'nchypergeom_fisher'}
+    warns_basic_fit = {'skellam'}  # can remove mark after gh-14901 is resolved
 
     for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
@@ -253,6 +254,9 @@ def cases_test_fit_mse():
         elif dist in xslow_basic_fit:
             reason = "too slow (>= 1.0s)"
             yield pytest.param(dist, marks=pytest.mark.xslow(reason=reason))
+        elif dist in warns_basic_fit:
+            mark = pytest.mark.filterwarnings('ignore::RuntimeWarning')
+            yield pytest.param(dist, marks=mark)
         else:
             yield dist
 
@@ -649,7 +653,7 @@ class TestFit:
         a = (n*x[0] - x[-1])/(n - 1)
         b = (n*x[-1] - x[0])/(n - 1)
         ref = a, b-a  # (3.6081133632151503, 5.509328130317254)
-        assert_allclose(res.params, ref, atol=1e-4)
+        assert_allclose(res.params, ref, rtol=1e-4)
 
 
 class TestFitResult:
