@@ -220,7 +220,7 @@ add_newdoc("voigt_profile",
 
     Plot the function for different parameter sets.
 
-    >>> (fig, ax) = plt.subplots(figsize=(8, 8))
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
     >>> x = np.linspace(-10, 10, 500)
     >>> parameters_list = [(1.5, 0., "solid"), (1.3, 0.5, "dashed"),
     ...                    (0., 1.8, "dotted"), (1., 1., "dashdot")]
