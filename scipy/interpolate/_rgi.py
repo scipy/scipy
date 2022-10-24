@@ -218,10 +218,11 @@ class RegularGridInterpolator:
         self.method = method
         self.bounds_error = bounds_error
         self.grid, self.descending_dimensions = self._check_points(points)
-        values = self._check_values(values)
-        self._check_dimensionality(points, values)
-        self.fill_value = self._check_fill_value(values, fill_value)
-        self.values = np.flip(values, axis=self.descending_dimensions)
+        self.values = self._check_values(values)
+        self._check_dimensionality(self.grid, self.values)
+        self.fill_value = self._check_fill_value(self.values, fill_value)
+        if self.descending_dimensions:
+            self.values = np.flip(values, axis=self.descending_dimensions)
 
     def _check_dimensionality(self, points, values):
         if len(points) > values.ndim:
@@ -263,9 +264,8 @@ class RegularGridInterpolator:
             # early make points float
             # see https://github.com/scipy/scipy/pull/17230
             p = np.asarray(p, dtype=float)
-            diff_p = np.diff(p)
-            if not np.all(diff_p > 0.):
-                if np.all(diff_p < 0.):
+            if not np.all(p[1:] > p[:-1]):
+                if np.all(p[1:] < p[:-1]):
                     # input is descending, so make it ascending
                     descending_dimensions.append(i)
                     p = np.flip(p)
