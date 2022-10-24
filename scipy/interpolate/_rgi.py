@@ -217,14 +217,11 @@ class RegularGridInterpolator:
             self._validate_grid_dimensions(points, method)
         self.method = method
         self.bounds_error = bounds_error
+        self.grid, self.descending_dimensions = self._check_points(points)
         values = self._check_values(values)
         self._check_dimensionality(points, values)
-        self._fill_value = self._check_fill_value(values, fill_value)
-        self._descending_dimensions = self._check_points(points)
-        self.grid = tuple([np.flip(p) if i in self._descending_dimensions
-                           else np.asarray(p)
-                           for i, p in enumerate(points)])
-        self.values = np.flip(values, axis=self._descending_dimensions)
+        self.fill_value = self._check_fill_value(values, fill_value)
+        self.values = np.flip(values, axis=self.descending_dimensions)
 
     def _check_dimensionality(self, points, values):
         if len(points) > values.ndim:
@@ -246,6 +243,7 @@ class RegularGridInterpolator:
         if hasattr(values, 'dtype') and hasattr(values, 'astype'):
             if not np.issubdtype(values.dtype, np.inexact):
                 values = values.astype(float)
+
         return values
 
     def _check_fill_value(self, values, fill_value):
@@ -260,18 +258,23 @@ class RegularGridInterpolator:
 
     def _check_points(self, points):
         descending_dimensions = []
+        grid = []
         for i, p in enumerate(points):
+            # early make points float
+            # see https://github.com/scipy/scipy/pull/17230
+            p = np.asarray(p, dtype=float)
             diff_p = np.diff(p)
             if not np.all(diff_p > 0.):
                 if np.all(diff_p < 0.):
                     # input is descending, so make it ascending
                     descending_dimensions.append(i)
+                    p = np.flip(p)
                 else:
                     raise ValueError(
                         "The points in dimension %d must be strictly "
                         "ascending or descending" % i)
-
-        return tuple(descending_dimensions)
+            grid.append(p)
+        return tuple(grid), tuple(descending_dimensions)
 
     def __call__(self, xi, method=None):
         """
