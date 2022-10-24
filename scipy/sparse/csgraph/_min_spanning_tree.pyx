@@ -50,6 +50,9 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     Small elements < 1E-8 of the dense matrix are rounded to zero.
     All users should input sparse matrices if possible to avoid it.
 
+    If the graph is not connected, this routine returns the minimum spanning
+    forest, i.e. the union of the minimum spanning trees on each connected
+    component.
 
     Examples
     --------
