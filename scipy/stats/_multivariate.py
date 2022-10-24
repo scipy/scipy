@@ -5074,7 +5074,7 @@ class random_direction_gen(multi_rv_generic):
 
     Return a random direction (unit vector).
 
-    The `dim` keyword specifies the dimension N.
+    The `dim` keyword specifies the dimension.
 
     Methods
     -------
@@ -5085,7 +5085,9 @@ class random_direction_gen(multi_rv_generic):
     ----------
     dim : scalar
         Dimension of directions.
-    seed : {None, int, np.random.RandomState, np.random.Generator}, optional
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
         Used for drawing random variates.
         If `seed` is `None`, the `~np.random.RandomState` singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used, seeded
@@ -5099,7 +5101,7 @@ class random_direction_gen(multi_rv_generic):
     This distribution generates unit vectors uniformly distributed on
     the surface of a sphere. These can be interpreted as random directions.
 
-    For example, if `dim=3`, 3D vectors from the surface of math:`S^2`
+    For example, if `dim` is 3, 3D vectors from the surface of :math:`S^2`
     will be sampled.
 
     References
@@ -5119,7 +5121,7 @@ class random_direction_gen(multi_rv_generic):
     :math:`S^2`.
 
     Alternatively, the object may be called (as a function) to fix the `dim`
-    parameter, return a "frozen" unitary_group random variable:
+    parameter, return a "frozen" `random_direction` random variable:
 
     >>> rv = random_direction(5)
 

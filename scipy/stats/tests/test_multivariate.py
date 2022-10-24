@@ -1966,7 +1966,7 @@ class TestRandomCorrelation:
 
 
 class TestRandomDirection:
-    @pytest.mark.parametrize("dim", [1, 2, 3, 4])
+    @pytest.mark.parametrize("dim", [1, 3])
     @pytest.mark.parametrize("size", [5, (5, 4)])
     def test_samples(self, dim, size):
         # test that samples have correct shape and norm 1
@@ -1993,7 +1993,7 @@ class TestRandomDirection:
 
         rvs1 = frozen.rvs(random_state=514)
         rvs2 = random_direction.rvs(dim, random_state=514)
-        rvs3 = frozen_seed.rvs(size=1)
+        rvs3 = frozen_seed.rvs()
 
         assert_equal(rvs1, rvs2)
         assert_equal(rvs1, rvs3)
