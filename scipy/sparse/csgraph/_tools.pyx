@@ -439,6 +439,7 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csr_matrix
     >>> from scipy.sparse.csgraph import reconstruct_path
 
@@ -541,6 +542,7 @@ def construct_dist_matrix(graph,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csr_matrix
     >>> from scipy.sparse.csgraph import construct_dist_matrix
 

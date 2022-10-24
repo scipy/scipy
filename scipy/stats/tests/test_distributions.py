@@ -1846,6 +1846,25 @@ class TestPearson3:
         assert_equal(moment, 0)
         assert isinstance(moment, np.number)
 
+    def test_ppf_bug_17050(self):
+        # incorrect PPF for negative skews were reported in gh-17050
+        # Check that this is fixed (even in the array case)
+        skews = [-3, -1, 0, 0.5]
+        x_eval = 0.5
+        res = stats.pearson3.ppf(stats.pearson3.cdf(x_eval, skews), skews)
+        assert_allclose(res, x_eval)
+
+        # Negation of the skew flips the distribution about the origin, so
+        # the following should hold
+        skew = np.array([[-0.5], [1.5]])
+        x = np.linspace(-2, 2)
+        assert_allclose(stats.pearson3.pdf(x, skew),
+                        stats.pearson3.pdf(-x, -skew))
+        assert_allclose(stats.pearson3.cdf(x, skew),
+                        stats.pearson3.sf(-x, -skew))
+        assert_allclose(stats.pearson3.ppf(x, skew),
+                        -stats.pearson3.isf(x, -skew))
+
 
 class TestKappa4:
     def test_cdf_genpareto(self):
@@ -3208,6 +3227,7 @@ class TestSkellam:
 
         assert_almost_equal(stats.skellam.pmf(k, mu1, mu2), skpmfR, decimal=15)
 
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_cdf(self):
         # comparison to R, only 5 decimals
         k = numpy.arange(-10, 15)
@@ -4807,6 +4827,7 @@ class TestExpect:
         res_l = stats.logser.expect(lambda k: k, args=(p,), loc=loc)
         assert_allclose(res_l, res_0 + loc, atol=1e-15)
 
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_skellam(self):
         # Use a discrete distribution w/ bi-infinite support. Compute two first
         # moments and compare to known values (cf skellam.stats)
@@ -5124,6 +5145,18 @@ class TestRayleigh:
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.rayleigh)
+
+    def test_fit_gh17088(self):
+        # `rayleigh.fit` could return a location that was inconsistent with
+        # the data. See gh-17088.
+        rng = np.random.default_rng(456)
+        loc, scale, size = 50, 600, 500
+        rvs = stats.rayleigh.rvs(loc, scale, size=size, random_state=rng)
+        loc_fit, _ = stats.rayleigh.fit(rvs)
+        assert loc_fit < np.min(rvs)
+        loc_fit, scale_fit = stats.rayleigh.fit(rvs, fscale=scale)
+        assert loc_fit < np.min(rvs)
+        assert scale_fit == scale
 
 
 class TestExponWeib:
@@ -5699,7 +5732,7 @@ class TestStudentizedRange:
     vs = [1, 3, 10, 20, 120, np.inf]
     ks = [2, 8, 14, 20]
 
-    data = zip(product(ps, vs, ks), qs)
+    data = list(zip(product(ps, vs, ks), qs))
 
     # A small selection of large-v cases generated with R's `ptukey`
     # Each case is in the format (q, k, v, r_result)
@@ -5720,8 +5753,9 @@ class TestStudentizedRange:
     @pytest.mark.slow
     def test_ppf_against_tables(self):
         for pvk, q_expected in self.data:
-            res_q = stats.studentized_range.ppf(*pvk)
-            assert_allclose(res_q, q_expected, rtol=1e-4)
+            p, v, k = pvk
+            res_q = stats.studentized_range.ppf(p, k, v)
+            assert_allclose(res_q, q_expected, rtol=5e-4)
 
     path_prefix = os.path.dirname(__file__)
     relative_path = "data/studentized_range_mpmath_ref.json"
@@ -6266,6 +6300,7 @@ def test_distribution_too_many_args():
     stats.ncf.pdf(x, 3, 4, 5, 6, 1.0)  # 3 args, plus loc/scale
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_tails_ticket_955():
     # Trac #955 -- check that the cdf computed by special functions
     # matches the integrated pdf
@@ -6319,12 +6354,14 @@ def test_ncx2_zero_nc_rvs():
     assert_allclose(result, expected, atol=1e-15)
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_gh12731():
     # test that gh-12731 is resolved; previously these were all 0.5
     nc = 10**np.arange(5, 10)
     assert_equal(stats.ncx2.cdf(1e4, df=1, nc=nc), 0)
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_gh8665():
     # test that gh-8665 is resolved; previously this tended to nonzero value
     x = np.array([4.99515382e+00, 1.07617327e+01, 2.31854502e+01,

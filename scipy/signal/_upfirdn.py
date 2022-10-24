@@ -165,6 +165,7 @@ def upfirdn(h, x, up=1, down=1, axis=-1, mode='constant', cval=0):
     --------
     Simple operations:
 
+    >>> import numpy as np
     >>> from scipy.signal import upfirdn
     >>> upfirdn([1, 1, 1], [1, 1, 1])   # FIR filter
     array([ 1.,  2.,  3.,  2.,  1.])

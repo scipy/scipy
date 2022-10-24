@@ -116,6 +116,7 @@ def diric(x, n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
 
@@ -1875,6 +1876,7 @@ def bernoulli(n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import bernoulli, zeta
     >>> bernoulli(4)
     array([ 1.        , -0.5       ,  0.16666667,  0.        , -0.03333333])
@@ -1932,6 +1934,7 @@ def euler(n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import euler
     >>> euler(6)
     array([  1.,   0.,  -1.,   0.,   5.,   0., -61.])
@@ -2627,6 +2630,7 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import comb
     >>> k = np.array([3, 4])
     >>> n = np.array([10, 10])
@@ -2695,6 +2699,7 @@ def perm(N, k, exact=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import perm
     >>> k = np.array([3, 4])
     >>> n = np.array([10, 10])
@@ -2779,6 +2784,7 @@ def factorial(n, exact=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import factorial
     >>> arr = np.array([3, 4, 5])
     >>> factorial(arr, exact=False)
@@ -2990,6 +2996,7 @@ def zeta(x, q=None, out=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import zeta, polygamma, factorial
 
     Some specific values:
