@@ -219,8 +219,7 @@ class RegularGridInterpolator:
         self.bounds_error = bounds_error
         values = self._check_values(values)
         self._check_dimensionality(points, values)
-        self._check_fill_value(values, fill_value)
-        self.fill_value = fill_value
+        self._fill_value = self._check_fill_value(values, fill_value)
         self._descending_dimensions = self._check_points(points)
         self.grid = tuple([np.flip(p) if i in self._descending_dimensions
                            else np.asarray(p)
@@ -257,6 +256,7 @@ class RegularGridInterpolator:
                                 casting='same_kind')):
                 raise ValueError("fill_value must be either 'None' or "
                                  "of a type compatible with values")
+        return fill_value
 
     def _check_points(self, points):
         descending_dimensions = []
