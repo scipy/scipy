@@ -128,8 +128,8 @@ def test_diagonal(n, m, m_excluded):
 
     # Define the generalized eigenvalue problem Av = cBv
     # where (c, v) is a generalized eigenpair,
-    # and where we choose A to be the diagonal matrix whose entries are 1..n
-    # and where B is chosen to be the identity matrix.
+    # A is the diagonal matrix whose entries are 1,...n,
+    # B is the identity matrix.
     vals = np.arange(1, n+1, dtype=float)
     A_s = diags([vals], [0], (n, n))
     A_a = A_s.toarray()
