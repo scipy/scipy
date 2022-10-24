@@ -6836,6 +6836,33 @@ add_newdoc("it2struve0",
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    Evaluate the function at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import it2struve0
+    >>> it2struve0(1.)
+    0.9571973506383524
+
+    Evaluate the function at several points by supplying
+    an array for `x`.
+
+    >>> points = np.array([1., 2., 3.5])
+    >>> it2struve0(points)
+    array([0.95719735, 0.46909296, 0.10366042])
+
+    Plot the function from -10 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> it2struve0_values = it2struve0(x)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, it2struve0_values)
+    >>> ax.set_xlabel(r'$x$')
+    >>> ax.set_ylabel(r'$\int_x^{\infty}\frac{H_0(t)}{t}\,dt$')
+    >>> plt.show()
     """)
 
 add_newdoc("itairy",
@@ -7034,12 +7061,42 @@ add_newdoc("itmodstruve0",
     Wrapper for a Fortran routine created by Shanjie Zhang and Jianming
     Jin [1]_.
 
+    See Also
+    --------
+    modstruve: Modified Struve function which is integrated by this function
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Evaluate the function at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import itmodstruve0
+    >>> itmodstruve0(1.)
+    0.3364726286440384
+
+    Evaluate the function at several points by supplying
+    an array for `x`.
+
+    >>> points = np.array([1., 2., 3.5])
+    >>> itmodstruve0(points)
+    array([0.33647263, 1.588285  , 7.60382578])
+
+    Plot the function from -10 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> itmodstruve0_values = itmodstruve0(x)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, itmodstruve0_values)
+    >>> ax.set_xlabel(r'$x$')
+    >>> ax.set_ylabel(r'$\int_0^xL_0(t)\,dt$')
+    >>> plt.show()
     """)
 
 add_newdoc("itstruve0",
@@ -7065,7 +7122,7 @@ add_newdoc("itstruve0",
 
     See also
     --------
-    struve
+    struve: Function which is integrated by this function
 
     Notes
     -----
@@ -7078,6 +7135,32 @@ add_newdoc("itstruve0",
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Evaluate the function at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import itstruve0
+    >>> itstruve0(1.)
+    0.30109042670805547
+
+    Evaluate the function at several points by supplying
+    an array for `x`.
+
+    >>> points = np.array([1., 2., 3.5])
+    >>> itstruve0(points)
+    array([0.30109043, 1.01870116, 1.96804581])
+
+    Plot the function from -20 to 20.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-20., 20., 1000)
+    >>> istruve0_values = itstruve0(x)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, istruve0_values)
+    >>> ax.set_xlabel(r'$x$')
+    >>> ax.set_ylabel(r'$\int_0^{x}H_0(t)\,dt$')
+    >>> plt.show()
     """)
 
 add_newdoc("iv",
@@ -9136,6 +9219,53 @@ add_newdoc("modstruve",
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/11
+
+    Examples
+    --------
+    Calculate the modified Struve function of order 1 at 2.
+
+    >>> import numpy as np
+    >>> from scipy.special import modstruve
+    >>> import matplotlib.pyplot as plt
+    >>> modstruve(1, 2.)
+    1.102759787367716
+
+    Calculate the modified Struve function at 2 for orders 1, 2 and 3 by
+    providing a list for the order parameter `v`.
+
+    >>> modstruve([1, 2, 3], 2.)
+    array([1.10275979, 0.41026079, 0.11247294])
+
+    Calculate the modified Struve function of order 1 for several points
+    by providing an array for `x`.
+
+    >>> points = np.array([2., 5., 8.])
+    >>> modstruve(1, points)
+    array([  1.10275979,  23.72821578, 399.24709139])
+
+    Compute the modified Struve function for several orders at several
+    points by providing arrays for `v` and `z`. The arrays have to be
+    broadcastable to the correct shapes.
+
+    >>> orders = np.array([[1], [2], [3]])
+    >>> points.shape, orders.shape
+    ((3,), (3, 1))
+
+    >>> modstruve(orders, points)
+    array([[1.10275979e+00, 2.37282158e+01, 3.99247091e+02],
+           [4.10260789e-01, 1.65535979e+01, 3.25973609e+02],
+           [1.12472937e-01, 9.42430454e+00, 2.33544042e+02]])
+
+    Plot the modified Struve functions of order 0 to 3 from -5 to 5.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-5., 5., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, modstruve(i, x), label=f'$L_{i!r}$')
+    >>> ax.legend(ncol=2)
+    >>> ax.set_xlim(-5, 5)
+    >>> ax.set_title(r"Modified Struve functions $L_{\nu}$")
+    >>> plt.show()
     """)
 
 add_newdoc("nbdtr",
@@ -11821,13 +11951,59 @@ add_newdoc("struve",
 
     See also
     --------
-    modstruve
+    modstruve: Modified Struve function
 
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/11
 
+    Examples
+    --------
+    Calculate the Struve function of order 1 at 2.
+
+    >>> import numpy as np
+    >>> from scipy.special import struve
+    >>> import matplotlib.pyplot as plt
+    >>> struve(1, 2.)
+    0.6467637282835622
+
+    Calculate the Struve function at 2 for orders 1, 2 and 3 by providing
+    a list for the order parameter `v`.
+
+    >>> struve([1, 2, 3], 2.)
+    array([0.64676373, 0.28031806, 0.08363767])
+
+    Calculate the Struve function of order 1 for several points by providing
+    an array for `x`.
+
+    >>> points = np.array([2., 5., 8.])
+    >>> struve(1, points)
+    array([0.64676373, 0.80781195, 0.48811605])
+
+    Compute the Struve function for several orders at several points by
+    providing arrays for `v` and `z`. The arrays have to be broadcastable
+    to the correct shapes.
+
+    >>> orders = np.array([[1], [2], [3]])
+    >>> points.shape, orders.shape
+    ((3,), (3, 1))
+
+    >>> struve(orders, points)
+    array([[0.64676373, 0.80781195, 0.48811605],
+           [0.28031806, 1.56937455, 1.51769363],
+           [0.08363767, 1.50872065, 2.98697513]])
+
+    Plot the Struve functions of order 0 to 3 from -10 to 10.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, struve(i, x), label=f'$H_{i!r}$')
+    >>> ax.legend(ncol=2)
+    >>> ax.set_xlim(-10, 10)
+    >>> ax.set_title(r"Struve functions $H_{\nu}$")
+    >>> plt.show()
     """)
 
 add_newdoc("tandg",

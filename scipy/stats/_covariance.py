@@ -337,6 +337,9 @@ class Covariance:
         ----------
         .. [1] "Whitening Transformation". Wikipedia.
                https://en.wikipedia.org/wiki/Whitening_transformation
+        .. [2] Novak, Lukas, and Miroslav Vorechovsky. "Generalization of
+               coloring linear transformation". Transactions of VSB 18.2
+               (2018): 31-35. :doi:`10.31490/tces-2018-0013`
 
         Examples
         --------
@@ -358,6 +361,57 @@ class Covariance:
         """
         return self._whiten(np.asarray(x))
 
+    def colorize(self, x):
+        """
+        Perform a colorizing transformation on data.
+
+        "Colorizing" ("color" as in "colored noise", in which different
+        frequencies may have different magnitudes) transforms a set of
+        uncorrelated random variables into a new set of random variables with
+        the desired covariance. When a coloring transform is applied to a
+        sample of points distributed according to a multivariate normal
+        distribution with identity covariance and zero mean, the covariance of
+        the transformed sample is approximately the covariance matrix used
+        in the coloring transform.
+
+        Parameters
+        ----------
+        x : array_like
+            An array of points. The last dimension must correspond with the
+            dimensionality of the space, i.e., the number of columns in the
+            covariance matrix.
+
+        Returns
+        -------
+        x_ : array_like
+            The transformed array of points.
+
+        References
+        ----------
+        .. [1] "Whitening Transformation". Wikipedia.
+               https://en.wikipedia.org/wiki/Whitening_transformation
+        .. [2] Novak, Lukas, and Miroslav Vorechovsky. "Generalization of
+               coloring linear transformation". Transactions of VSB 18.2
+               (2018): 31-35. :doi:`10.31490/tces-2018-0013`
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+        >>> n = 3
+        >>> A = rng.random(size=(n, n))
+        >>> cov_array = A @ A.T  # make matrix symmetric positive definite
+        >>> cholesky = np.linalg.cholesky(cov_array)
+        >>> cov_object = stats.Covariance.from_cholesky(cholesky)
+        >>> x = rng.multivariate_normal(np.zeros(n), np.eye(n), size=(10000))
+        >>> x_ = cov_object.colorize(x)
+        >>> cov_data = np.cov(x_, rowvar=False)
+        >>> np.allclose(cov_data, cov_array, rtol=3e-2)
+        True
+        """
+        return self._colorize(np.asarray(x))
+
     @property
     def log_pdet(self):
         """
@@ -378,13 +432,6 @@ class Covariance:
         Explicit representation of the covariance matrix
         """
         return self._covariance
-
-    @property
-    def dimensionality(self):
-        """
-        Dimensionality of the vector space
-        """
-        return np.array(self._dimensionality, dtype=int)[()]
 
     @property
     def shape(self):
@@ -428,7 +475,6 @@ class CovViaPrecision(Covariance):
         self._rank = precision.shape[-1]  # must be full rank if invertible
         self._precision = precision
         self._cov_matrix = covariance
-        self._dimensionality = self._rank
         self._shape = precision.shape
         self._allow_singular = False
 
@@ -437,9 +483,12 @@ class CovViaPrecision(Covariance):
 
     @cached_property
     def _covariance(self):
-        n = self._dimensionality
+        n = self._shape[-1]
         return (linalg.cho_solve((self._chol_P, True), np.eye(n))
                 if self._cov_matrix is None else self._cov_matrix)
+
+    def _colorize(self, x):
+        return linalg.solve_triangular(self._chol_P.T, x.T, lower=False).T
 
 
 def _dot_diag(x, d):
@@ -463,16 +512,19 @@ class CovViaDiagonal(Covariance):
         psuedo_reciprocals = 1 / np.sqrt(positive_diagonal)
         psuedo_reciprocals[i_zero] = 0
 
+        self._sqrt_diagonal = np.sqrt(diagonal)
         self._LP = psuedo_reciprocals
         self._rank = positive_diagonal.shape[-1] - i_zero.sum(axis=-1)
         self._covariance = np.apply_along_axis(np.diag, -1, diagonal)
-        self._dimensionality = diagonal.shape[-1]
         self._i_zero = i_zero
         self._shape = self._covariance.shape
         self._allow_singular = True
 
     def _whiten(self, x):
         return _dot_diag(x, self._LP)
+
+    def _colorize(self, x):
+        return _dot_diag(x, self._sqrt_diagonal)
 
     def _support_mask(self, x):
         """
@@ -490,13 +542,15 @@ class CovViaCholesky(Covariance):
         self._log_pdet = 2*np.log(np.diag(self._factor)).sum(axis=-1)
         self._rank = L.shape[-1]  # must be full rank for cholesky
         self._covariance = L @ L.T
-        self._dimensionality = self._rank
         self._shape = L.shape
         self._allow_singular = False
 
     def _whiten(self, x):
         res = linalg.solve_triangular(self._factor, x.T, lower=True).T
         return res
+
+    def _colorize(self, x):
+        return x @ self._factor.T
 
 
 class CovViaEigendecomposition(Covariance):
@@ -525,10 +579,10 @@ class CovViaEigendecomposition(Covariance):
         psuedo_reciprocals[i_zero] = 0
 
         self._LP = eigenvectors * psuedo_reciprocals
+        self._LA = eigenvectors * np.sqrt(positive_eigenvalues)
         self._rank = positive_eigenvalues.shape[-1] - i_zero.sum(axis=-1)
         self._w = eigenvalues
         self._v = eigenvectors
-        self._dimensionality = eigenvalues.shape[-1]
         self._shape = eigenvectors.shape
         self._null_basis = eigenvectors * i_zero
         # This is only used for `_support_mask`, not to decide whether
@@ -538,6 +592,9 @@ class CovViaEigendecomposition(Covariance):
 
     def _whiten(self, x):
         return x @ self._LP
+
+    def _colorize(self, x):
+        return x @ self._LA.T
 
     @cached_property
     def _covariance(self):
@@ -561,7 +618,6 @@ class CovViaPSD(Covariance):
         self._log_pdet = psd.log_pdet
         self._rank = psd.rank
         self._covariance = psd._M
-        self._dimensionality = psd._M.shape[-1]
         self._shape = psd._M.shape
         self._psd = psd
         self._allow_singular = False  # by default

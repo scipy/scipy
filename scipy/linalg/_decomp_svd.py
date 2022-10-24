@@ -164,6 +164,11 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     LinAlgError
         If SVD computation does not converge.
 
+    See Also
+    --------
+    svd : Compute the full singular value decomposition of a matrix.
+    diagsvd : Construct the Sigma matrix, given the vector s.
+
     Notes
     -----
     ``svdvals(a)`` only differs from ``svd(a, compute_uv=False)`` by its
@@ -174,11 +179,6 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     >>> from scipy.linalg import svdvals
     >>> svdvals(a)
     array([], dtype=float64)
-
-    See Also
-    --------
-    svd : Compute the full singular value decomposition of a matrix.
-    diagsvd : Construct the Sigma matrix, given the vector s.
 
     Examples
     --------

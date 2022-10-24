@@ -38,6 +38,7 @@ from unittest.mock import patch
 
 
 def assert_close(res, ref, *args, **kwargs):
+    res, ref = np.asarray(res), np.asarray(ref)
     assert_allclose(res, ref, *args, **kwargs)
     assert_equal(res.shape, ref.shape)
 
@@ -121,26 +122,30 @@ class TestCovariance:
         # test properties
         cov_object = cov_type(preprocessing(A))
         assert_close(cov_object.log_pdet, psd.log_pdet)
-        assert_close(cov_object.rank, np.int64(psd.rank))
-        assert_close(cov_object.dimensionality,
-                     np.int64(np.array(A).shape[-1]))
+        assert_equal(cov_object.rank, psd.rank)
+        assert_equal(cov_object.shape, np.asarray(A).shape)
         assert_close(cov_object.covariance, np.asarray(A))
 
-        # test whitening 1D x
+        # test whitening/coloring 1D x
         rng = np.random.default_rng(5292808890472453840)
         x = rng.random(size=3)
         res = cov_object.whiten(x)
         ref = x @ psd.U
         # res != ref in general; but res @ res == ref @ ref
         assert_close(res @ res, ref @ ref)
+        if hasattr(cov_object, "_colorize") and "singular" not in matrix_type:
+            # CovViaPSD does not have _colorize
+            assert_close(cov_object.colorize(res), x)
 
-        # test whitening 3D x
+        # test whitening/coloring 3D x
         x = rng.random(size=(2, 4, 3))
         res = cov_object.whiten(x)
         ref = x @ psd.U
         assert_close((res**2).sum(axis=-1), (ref**2).sum(axis=-1))
+        if hasattr(cov_object, "_colorize") and "singular" not in matrix_type:
+            assert_close(cov_object.colorize(res), x)
 
-    @pytest.mark.parametrize("size", [tuple(), (2, 4, 3)])
+    @pytest.mark.parametrize("size", [None, tuple(), 1, (2, 4, 3)])
     @pytest.mark.parametrize("matrix_type", list(_matrices))
     @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
     def test_mvn_with_covariance(self, size, matrix_type, cov_type_name):
@@ -165,8 +170,13 @@ class TestCovariance:
         x1 = mvn.rvs(mean, cov_object, size=size, random_state=rng)
         rng = np.random.default_rng(5292808890472453840)
         x2 = mvn(mean, cov_object, seed=rng).rvs(size=size)
-        assert_close(x1, x)
-        assert_close(x2, x)
+        if isinstance(cov_object, _covariance.CovViaPSD):
+            assert_close(x1, np.squeeze(x))  # for backward compatibility
+            assert_close(x2, np.squeeze(x))
+        else:
+            assert_equal(x1.shape, x.shape)
+            assert_equal(x2.shape, x.shape)
+            assert_close(x2, x1)
 
         assert_close(mvn.pdf(x, mean, cov_object), dist0.pdf(x))
         assert_close(dist1.pdf(x), dist0.pdf(x))
@@ -205,6 +215,29 @@ class TestCovariance:
         message = "The `Covariance` class cannot be instantiated directly."
         with pytest.raises(NotImplementedError, match=message):
             Covariance()
+
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning")  # matrix not PSD
+    def test_gh9942(self):
+        # Originally there was a mistake in the `multivariate_normal_frozen`
+        # `rvs` method that caused all covariance objects to be processed as
+        # a `_CovViaPSD`. Ensure that this is resolved.
+        A = np.diag([1, 2, -1e-8])
+        n = A.shape[0]
+        mean = np.zeros(n)
+
+        # Error if the matrix is processed as a `_CovViaPSD`
+        with pytest.raises(ValueError, match="The input matrix must be..."):
+            multivariate_normal(mean, A).rvs()
+
+        # No error if it is provided as a `CovViaEigendecomposition`
+        seed = 3562050283508273023
+        rng1 = np.random.default_rng(seed)
+        rng2 = np.random.default_rng(seed)
+        cov = Covariance.from_eigendecomposition(np.linalg.eigh(A))
+        rv = multivariate_normal(mean, cov)
+        res = rv.rvs(random_state=rng1)
+        ref = multivariate_normal.rvs(mean, cov, random_state=rng2)
+        assert_equal(res, ref)
 
 
 def _sample_orthonormal_matrix(n):

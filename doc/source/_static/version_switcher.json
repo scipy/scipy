@@ -5,7 +5,12 @@
         "url": "https://scipy.github.io/devdocs/"
     },
     {
-        "name": "1.9.2 (stable)",
+        "name": "1.9.3 (stable)",
+        "version":"1.9.3",
+        "url": "https://docs.scipy.org/doc/scipy-1.9.3/"
+    },
+    {
+        "name": "1.9.2",
         "version":"1.9.2",
         "url": "https://docs.scipy.org/doc/scipy-1.9.2/"
     },

@@ -216,6 +216,10 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     Z : (N, N) ndarray
         The right Schur vectors.
 
+    See Also
+    --------
+    ordqz
+
     Notes
     -----
     Q is transposed versus the equivalent function in Matlab.
@@ -301,9 +305,6 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
            [ 3.-0.j,  1.-0.j, -1.+0.j],
            [ 5.+0.j,  6.+0.j, -2.+0.j]])
 
-    See Also
-    --------
-    ordqz
     """
     # output for real
     # AA, BB, sdim, alphar, alphai, beta, vsl, vsr, work, info
@@ -374,6 +375,10 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     Z : (N, N) ndarray
         The right Schur vectors.
 
+    See Also
+    --------
+    qz
+
     Notes
     -----
     On exit, ``(ALPHAR(j) + ALPHAI(j)*i)/BETA(j), j=1,...,N``, will be the
@@ -386,10 +391,6 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     complex conjugate pair, with ``ALPHAI(j+1)`` negative.
 
     .. versionadded:: 0.17.0
-
-    See Also
-    --------
-    qz
 
     Examples
     --------

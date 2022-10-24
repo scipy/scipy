@@ -635,6 +635,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     --------
     Given `a`, `b`, `q`, and `r` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg as la
     >>> a = np.array([[0, 1], [0, -1]])
     >>> b = np.array([[1, 0], [2, 1]])
