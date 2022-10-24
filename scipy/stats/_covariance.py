@@ -337,7 +337,7 @@ class Covariance:
         ----------
         .. [1] "Whitening Transformation". Wikipedia.
                https://en.wikipedia.org/wiki/Whitening_transformation
-        .. [2] Novák, Lukáš, and Miroslav Vořechovský. "Generalization of
+        .. [2] Novak, Lukas, and Miroslav Vorechovsky. "Generalization of
                coloring linear transformation". Transactions of VSB 18.2
                (2018): 31-35. :doi:`10.31490/tces-2018-0013`
 
@@ -390,7 +390,7 @@ class Covariance:
         ----------
         .. [1] "Whitening Transformation". Wikipedia.
                https://en.wikipedia.org/wiki/Whitening_transformation
-        .. [2] Novák, Lukáš, and Miroslav Vořechovský. "Generalization of
+        .. [2] Novak, Lukas, and Miroslav Vorechovsky. "Generalization of
                coloring linear transformation". Transactions of VSB 18.2
                (2018): 31-35. :doi:`10.31490/tces-2018-0013`
 
