@@ -3949,7 +3949,9 @@ class rv_count(rv_discrete):
         This string is used as part of the first line of the docstring returned
         when a subclass has no docstring of its own. Note: `longname` exists
         for backwards compatibility, do not use for new subclasses.
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
