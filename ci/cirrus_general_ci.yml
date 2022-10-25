@@ -51,7 +51,7 @@ musllinux_amd64_test_task:
       ln -s $(which python3.10) python
       export PATH=$PWD:$PATH
 
-      pip install -vvv numpy
+      pip install -vvv --upgrade numpy
 
   test_script: |
     apk update
@@ -62,7 +62,7 @@ musllinux_amd64_test_task:
     export PATH=$PWD:$PATH
 
     # I don't think that the alpine py3-numpy package has the include dirs.
-    pip install -vvv numpy
+    pip install -vvv --upgrade numpy
 
     python -m pip install meson ninja cython pybind11 pythran cython
     python -m pip install click rich_click doit pydevtool
