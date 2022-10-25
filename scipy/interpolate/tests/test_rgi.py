@@ -399,7 +399,7 @@ class TestRegularGridInterpolator:
 
         # also test the length-one axis f(nan)
         x = [1, 2, 3]
-        y = [1,]
+        y = [1, ]
         data = np.ones((3, 1))
         f = RegularGridInterpolator((x, y), data, fill_value=1,
                                     bounds_error=False, method=method)
@@ -552,9 +552,9 @@ class TestRegularGridInterpolator:
 
     def test_nonscalar_values_linear_2D(self):
         # Verify that non-scalar valued work in the 2D fast path
-        method='linear'
+        method = 'linear'
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
-                  (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0),]
+                  (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0), ]
 
         rng = np.random.default_rng(1234)
 

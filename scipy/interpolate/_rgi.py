@@ -6,7 +6,7 @@ import numpy as np
 
 from .interpnd import _ndim_coords_from_arrays
 from ._cubic import PchipInterpolator
-from ._rgi_cython import evaluate_linear, evaluate_linear_2d, find_indices
+from ._rgi_cython import evaluate_linear_2d, find_indices
 from ._bsplines import make_interp_spline
 from ._fitpack2 import RectBivariateSpline
 
@@ -340,11 +340,15 @@ class RegularGridInterpolator:
 
         if method == "linear":
             indices, norm_distances = self._find_indices(xi.T)
-            if ndim == 2 and hasattr(self.values, 'dtype') and self.values.ndim == 2:
+            if (ndim == 2 and hasattr(self.values, 'dtype') and
+                    self.values.ndim == 2):
                 # a fast path
                 out = np.empty(indices.shape[1], dtype=self.values.dtype)
                 result = evaluate_linear_2d(self.values,
-                        indices, norm_distances, self.grid, out_of_bounds, out)
+                                            indices,
+                                            norm_distances,
+                                            self.grid,
+                                            out)
             else:
                 result = self._evaluate_linear(indices,
                                                norm_distances,
@@ -393,18 +397,6 @@ class RegularGridInterpolator:
             for w in weights:
                 weight = weight * w
             value = value + np.asarray(self.values[edge_indices]) * weight[vslice]
-#        value2 = evaluate_linear(self.values, indices, norm_distances, out_of_bounds)
-#
-#        from numpy.testing import assert_equal
-#        assert_equal(value2, value)
-#
-#        # special-case d = 2
-#        d, num_points = indices.shape     # # of points, dimensionality
-#        ##assert d == 2
-#        if d == 2:
-#            value3 = evaluate_linear_2d(self.values, indices, norm_distances, self.grid, out_of_bounds)
-#            from numpy.testing import assert_allclose
-#           assert_allclose(value3, value, atol=1e-15)
         return value
 
     def _evaluate_nearest(self, indices, norm_distances):

@@ -1,152 +1,30 @@
 # cython: language_level=3
+"""
+Cythonized routines for the RegularGridInterpolator.
+"""
+
+from libc.math cimport NAN
 import numpy as np
 cimport numpy as np
 cimport cython
 
+include "_poly_common.pxi"
+
 np.import_array()
-
-import itertools
-
-ctypedef double complex double_complex
-
-ctypedef fused double_or_complex:
-    double
-    double complex
-
-
-cdef extern from "numpy/npy_math.h":
-    double nan "NPY_NAN"
-
-
-@cython.wraparound(False)
-@cython.boundscheck(False)
-@cython.cdivision(True)
-cdef int find_interval_ascending(const double *x,
-                                 size_t nx,
-                                 double xval,
-                                 int prev_interval=0,
-                                 bint extrapolate=1) nogil:
-    """
-    Find an interval such that x[interval] <= xval < x[interval+1]. Assuming
-    that x is sorted in the ascending order.
-    If xval < x[0], then interval = 0, if xval > x[-1] then interval = n - 2.
-
-    Parameters
-    ----------
-    x : array of double, shape (m,)
-        Piecewise polynomial breakpoints sorted in ascending order.
-    xval : double
-        Point to find.
-    prev_interval : int, optional
-        Interval where a previous point was found.
-    extrapolate : bint, optional
-        Whether to return the last of the first interval if the
-        point is out-of-bounds.
-
-    Returns
-    -------
-    interval : int
-        Suitable interval or -1 if nan.
-
-    """
-    cdef:
-        int high, low, mid
-        int interval = prev_interval
-        double a = x[0]
-        double b = x[nx - 1]
-    if interval < 0 or interval >= nx:
-        interval = 0
-
-    if not (a <= xval <= b):
-        # Out-of-bounds (or nan)
-        if xval < a and extrapolate:
-            # below
-            interval = 0
-        elif xval > b and extrapolate:
-            # above
-            interval = nx - 2
-        else:
-            # nan or no extrapolation
-            interval = -1
-    elif xval == b:
-        # Make the interval closed from the right
-        interval = nx - 2
-    else:
-        # Find the interval the coordinate is in
-        # (binary search with locality)
-        if xval >= x[interval]:
-            low = interval
-            high = nx - 2
-        else:
-            low = 0
-            high = interval
-
-        if xval < x[low+1]:
-            high = low
-
-        while low < high:
-            mid = (high + low)//2
-            if xval < x[mid]:
-                # mid < high
-                high = mid
-            elif xval >= x[mid + 1]:
-                low = mid + 1
-            else:
-                # x[mid] <= xval < x[mid+1]
-                low = mid
-                break
-
-        interval = low
-
-    return interval
-
-
-def evaluate_linear(values, indices, norm_distances, out_of_bounds):
-    # slice for broadcasting over trailing dimensions in self.values
-    vslice = (slice(None),) + (None,) * (values.ndim - len(indices))
-
-    # Compute shifting up front before zipping everything together
-    shift_norm_distances = [1 - yi for yi in norm_distances]
-    shift_indices = [i + 1 for i in indices]
-
-    # The formula for linear interpolation in 2d takes the form:
-    # values = self.values[(i0, i1)] * (1 - y0) * (1 - y1) + \
-    #          self.values[(i0, i1 + 1)] * (1 - y0) * y1 + \
-    #          self.values[(i0 + 1, i1)] * y0 * (1 - y1) + \
-    #          self.values[(i0 + 1, i1 + 1)] * y0 * y1
-    # We pair i with 1 - yi (zipped1) and i + 1 with yi (zipped2)
-    zipped1 = zip(indices, shift_norm_distances)
-    zipped2 = zip(shift_indices, norm_distances)
-
-    # Take all products of zipped1 and zipped2 and iterate over them
-    # to get the terms in the above formula. This corresponds to iterating
-    # over the vertices of a hypercube.
-    hypercube = itertools.product(*zip(zipped1, zipped2))
-    value = np.array([0.])
-    for h in hypercube:
-        edge_indices, weights = zip(*h)
-        weight = np.array([1.])
-        for w in weights:
-            weight = weight * w
-        value = value + np.asarray(values[edge_indices]) * weight[vslice]
-    return value
 
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-def evaluate_linear_2d(double_or_complex[:, :] values,   # FIXME: double_or_complex
-                       long[:, :]indices,
-                       double[:, :] norm_distances,
+def evaluate_linear_2d(double_or_complex[:, :] values, # cannot declare as ::1
+                       long[:, :]indices,              # unless prior
+                       double[:, :] norm_distances,    # np.ascontiguousarray
                        tuple grid not None,
-                       out_of_bounds,
                        double_or_complex[:] out):
     cdef:
-        long d = indices.shape[0]           # FIXME: npy_intp?
-        long num_points = indices.shape[1]
+        long num_points = indices.shape[1]      # XXX: npy_intp?
         long i0, i1, point
         double_or_complex y0, y1, summ
-#        double[::1] result = np.zeros(num_points, dtype=float)
     assert out.shape[0] == num_points
 
     if grid[1].shape[0] == 1:
@@ -159,7 +37,7 @@ def evaluate_linear_2d(double_or_complex[:, :] values,   # FIXME: double_or_comp
                 out[point] = summ
             else:
                 # xi was nan: find_interval returns -1
-                out[point] = nan
+                out[point] = NAN
     elif grid[0].shape[0] == 1:
         # linear interpolation along axis=1
         for point in range(num_points):
@@ -170,7 +48,7 @@ def evaluate_linear_2d(double_or_complex[:, :] values,   # FIXME: double_or_comp
                 out[point] = summ
             else:
                 # xi was nan: find_interval returns -1
-                out[point] = nan
+                out[point] = NAN
     else:
         for point in range(num_points):
             i0, i1 = indices[0, point], indices[1, point]
@@ -185,7 +63,7 @@ def evaluate_linear_2d(double_or_complex[:, :] values,   # FIXME: double_or_comp
                 out[point] = summ
             else:
                 # xi was nan
-                out[point] = nan
+                out[point] = NAN
 
     return np.asarray(out)
 
@@ -242,7 +120,7 @@ def find_indices(tuple grid not None, double[:, :] xi):
                     norm_distances[i, j] = (value - grid_i[index]) / denom
                 else:
                     # xi[i, j] is nan
-                    norm_distances[i, j] = nan
+                    norm_distances[i, j] = NAN
 
 
     return np.asarray(indices), np.asarray(norm_distances)
