@@ -510,9 +510,19 @@ class TestQuad:
         assert_quad(quad(tfunc, 0, np.pi/2, complex_func=True),
                     1+1j, error_tolerance=1e-6)
 
-        full_res = quad(tfunc, 0, np.pi/2, complex_func=True, full_output=True)
-        assert_quad(full_res[:-1], 1+1j, error_tolerance=1e-6)
-        assert set(("real output", "imag output")) == set(full_res[2].keys())
+        kwargs = {'a': 0, 'b': np.inf, 'full_output':True, 'weight':'cos', 'wvar': 1}
+        res_c = quad(tfunc, complex_func=True, **kwargs)
+        res_r = quad(np.cos, complex_func=False, **kwargs)
+        res_i = quad(np.sin, complex_func=False, **kwargs)
+
+        assert len(res_c[2]['real']) == len(res_r[2:])
+        assert res_c[2]['real'][2] == res_r[4]
+        assert res_c[2]['real'][1] == res_r[3]
+        assert np.allclose(res_c[2]['real'][0]['rslst'], res_r[2]['rslst'])
+        assert np.allclose(res_c[2]['real'][0]['erlst'], res_r[2]['erlst'])
+        assert np.allclose(res_c[2]['real'][0]['ierlst'], res_r[2]['ierlst'])
+
+        assert len(res_c[2]['imag']) == len(res_i[2:])
 
 
 class TestNQuad:
