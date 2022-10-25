@@ -7,9 +7,11 @@ np.import_array()
 
 import itertools
 
-ctypedef fused double_or_long:
+ctypedef double complex double_complex
+
+ctypedef fused double_or_complex:
     double
-    long
+    double complex
 
 
 cdef extern from "numpy/npy_math.h":
@@ -133,18 +135,19 @@ def evaluate_linear(values, indices, norm_distances, out_of_bounds):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-def evaluate_linear_2d(double[:, ::1] values,   # FIXME: double_or_complex
-                       long[:, ::1]indices,
-                       double[:, ::1] norm_distances,
+def evaluate_linear_2d(double_or_complex[:, :] values,   # FIXME: double_or_complex
+                       long[:, :]indices,
+                       double[:, :] norm_distances,
                        tuple grid not None,
-                       out_of_bounds):
+                       out_of_bounds,
+                       double_or_complex[:] out):
     cdef:
         long d = indices.shape[0]           # FIXME: npy_intp?
         long num_points = indices.shape[1]
         long i0, i1, point
-        double y0, y1
-        double summ
-        double[::1] result = np.zeros(num_points, dtype=float)
+        double_or_complex y0, y1, summ
+#        double[::1] result = np.zeros(num_points, dtype=float)
+    assert out.shape[0] == num_points
 
     if grid[1].shape[0] == 1:
         # linear interpolation along axis=0
@@ -153,10 +156,10 @@ def evaluate_linear_2d(double[:, ::1] values,   # FIXME: double_or_complex
             if i0 >= 0:
                 y0 = norm_distances[0, point]
                 summ = values[i0, 0]*(1 - y0) + values[i0+1, 0]*y0
-                result[point] = summ
+                out[point] = summ
             else:
                 # xi was nan: find_interval returns -1
-                result[point] = nan
+                out[point] = nan
     elif grid[0].shape[0] == 1:
         # linear interpolation along axis=1
         for point in range(num_points):
@@ -164,10 +167,10 @@ def evaluate_linear_2d(double[:, ::1] values,   # FIXME: double_or_complex
             if i1 >= 0:
                 y1 = norm_distances[1, point]
                 summ = values[0, i1]*(1 - y1) + values[0, i1+1]*y1
-                result[point] = summ
+                out[point] = summ
             else:
                 # xi was nan: find_interval returns -1
-                result[point] = nan
+                out[point] = nan
     else:
         for point in range(num_points):
             i0, i1 = indices[0, point], indices[1, point]
@@ -179,12 +182,12 @@ def evaluate_linear_2d(double[:, ::1] values,   # FIXME: double_or_complex
                 summ = summ + values[i0, i1+1] * (1 - y0) * y1
                 summ = summ + values[i0+1, i1] * y0 * (1 - y1)
                 summ = summ + values[i0+1, i1+1] * y0 * y1
-                result[point] = summ
+                out[point] = summ
             else:
                 # xi was nan
-                result[point] = nan
+                out[point] = nan
 
-    return np.asarray(result)
+    return np.asarray(out)
 
 
 @cython.wraparound(False)

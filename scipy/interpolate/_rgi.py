@@ -340,10 +340,11 @@ class RegularGridInterpolator:
 
         if method == "linear":
             indices, norm_distances = self._find_indices(xi.T)
-            if ndim == 2 and hasattr(self.values, 'dtype'):
+            if ndim == 2 and hasattr(self.values, 'dtype') and self.values.ndim == 2:
                 # a fast path
+                out = np.empty(indices.shape[1], dtype=self.values.dtype)
                 result = evaluate_linear_2d(self.values,
-                        indices, norm_distances, self.grid, out_of_bounds)
+                        indices, norm_distances, self.grid, out_of_bounds, out)
             else:
                 result = self._evaluate_linear(indices,
                                                norm_distances,
