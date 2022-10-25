@@ -396,7 +396,8 @@ class RegularGridInterpolator:
             weight = np.array([1.])
             for w in weights:
                 weight = weight * w
-            value = value + np.asarray(self.values[edge_indices]) * weight[vslice]
+            term = np.asarray(self.values[edge_indices]) * weight[vslice]
+            value = value + term   # cannot use += because broadcasting
         return value
 
     def _evaluate_nearest(self, indices, norm_distances):
