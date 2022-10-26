@@ -5167,7 +5167,8 @@ class random_direction_gen(multi_rv_generic):
 
         """
         random_state = self._get_random_state(random_state)
-
+        if size is None:
+            size = 1
         size = np.atleast_1d(size)
 
         dim = self._process_parameters(dim)
