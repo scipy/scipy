@@ -5141,8 +5141,8 @@ class random_direction_gen(multi_rv_generic):
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
         if dim is None or not np.isscalar(dim) or dim < 1 or dim != int(dim):
-            raise ValueError("Dimension of rotation must be specified,"
-                             "and must be a scalar greater than 0.")
+            raise ValueError("Dimension of vector must be specified, "
+                             "and must be an integer greater than 0.")
 
         return dim
 

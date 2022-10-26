@@ -1980,11 +1980,12 @@ class TestRandomDirection:
         expected_norms = np.ones(size)
         assert_allclose(norms, expected_norms)
 
-    def test_invalid_dim(self):
-        assert_raises(ValueError, random_direction.rvs, None)
-        assert_raises(ValueError, random_direction.rvs, 0)
-        assert_raises(ValueError, random_direction.rvs, (2, 2))
-        assert_raises(ValueError, random_direction.rvs, 2.5)
+    @pytest.mark.parametrize("dim", [None, 0, (2, 2), 2.5])
+    def test_invalid_dim(self, dim):
+        message = ("Dimension of vector must be specified, "
+                   "and must be an integer greater than 0.")
+        with pytest.raises(ValueError, match=message):
+            random_direction.rvs(dim)
 
     def test_frozen_distribution(self):
         dim = 5
