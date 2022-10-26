@@ -5168,14 +5168,7 @@ class random_direction_gen(multi_rv_generic):
         """
         random_state = self._get_random_state(random_state)
 
-        error_message_size = "`size` must be a tuple of integers or an int."
-        if isinstance(size, int):
-            size = (size, )
-        elif isinstance(size, tuple):
-            if not all(isinstance(v, int) for v in size):
-                raise ValueError(error_message_size)
-        else:
-            raise ValueError(error_message_size)
+        size = np.atleast_1d(size)
 
         dim = self._process_parameters(dim)
 
