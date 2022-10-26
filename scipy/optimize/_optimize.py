@@ -2354,7 +2354,7 @@ class Brent:
         #BEGIN CORE ALGORITHM
         #################################
         x = w = v = xb
-        fw = fv = fx = func(*((x,) + self.args))
+        fw = fv = fx = fb
         if (xa < xc):
             a = xa
             b = xc
@@ -2362,7 +2362,6 @@ class Brent:
             a = xc
             b = xa
         deltax = 0.0
-        funcalls += 1
         iter = 0
 
         if self.disp > 2:
@@ -3135,7 +3134,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 2
-             Function evaluations: 18
+             Function evaluations: 16
     >>> minimum
     array(0.0)
 
