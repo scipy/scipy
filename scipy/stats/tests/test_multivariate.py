@@ -1979,8 +1979,7 @@ class TestRandomDirection:
         expected_shape = size + (dim, )
         assert samples.shape == expected_shape
         norms = np.linalg.norm(samples, axis=-1)
-        expected_norms = np.ones(size)
-        assert_allclose(norms, expected_norms)
+        assert_allclose(norms, 1.)
 
     @pytest.mark.parametrize("dim", [None, 0, (2, 2), 2.5])
     def test_invalid_dim(self, dim):
