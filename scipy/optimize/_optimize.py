@@ -3254,9 +3254,6 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     return_all : bool, optional
         Set to True to return a list of the best solution at each of the
         iterations.
-    return_all : bool, optional
-        Set to True to return a list of the best solution at each of the
-        iterations.
     """
     _check_unknown_options(unknown_options)
     maxfun = maxfev
