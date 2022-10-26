@@ -2014,10 +2014,12 @@ class TestRandomDirection:
         # test that for uniform 2D samples on the circle the resulting
         # angles follow a uniform distribution
         circular_dist = random_direction(2)
-        samples = circular_dist.rvs(size=1000, random_state=42967295)
+        samples = circular_dist.rvs(size=10000, random_state=42967295)
         angles = np.arctan2(samples[:, 1], samples[:, 0])
         # normalize angles to range [0, 1]
+        angles += np.pi
         angles /= 2*np.pi
+        # perform KS test
         uniform_dist = uniform()
         kstest_result = kstest(angles, uniform_dist.cdf)
         assert kstest_result.pvalue > 0.05
