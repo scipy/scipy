@@ -1967,13 +1967,15 @@ class TestRandomCorrelation:
 
 class TestRandomDirection:
     @pytest.mark.parametrize("dim", [1, 3])
-    @pytest.mark.parametrize("size", [5, (5, 4)])
+    @pytest.mark.parametrize("size", [None, 5, (5, 4)])
     def test_samples(self, dim, size):
         # test that samples have correct shape and norm 1
         random_direction_dist = random_direction(dim)
         samples = random_direction_dist.rvs(size)
         if isinstance(size, int):
             size = (size, )
+        elif size is None:
+            size = (1, )
         expected_shape = size + (dim, )
         assert samples.shape == expected_shape
         norms = np.linalg.norm(samples, axis=-1)
