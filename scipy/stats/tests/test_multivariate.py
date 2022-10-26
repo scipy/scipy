@@ -26,7 +26,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest,
-                         random_direction)
+                         random_direction, uniform)
 from scipy.stats import _covariance, Covariance
 
 from scipy.integrate import romb
@@ -2000,6 +2000,16 @@ class TestRandomDirection:
         assert_equal(rvs1, rvs2)
         assert_equal(rvs1, rvs3)
 
+    def test_uniform_circle(self):
+        # test that for uniform 2D samples on the circle the resulting
+        # angles follow a uniform distribution
+        circular_dist = random_direction(2)
+        samples = circular_dist.rvs(size=1000, random_state=158023532469097)
+        angles = np.arctan2(samples[:, 1], samples[:, 0])
+        # normalize angles to range [0, 1]
+        angles /= 2*np.pi
+        kstest_result = kstest(angles, uniform.cdf)
+        assert kstest_result.pvalue > 0.05
 
 class TestUnitaryGroup:
     def test_reproducibility(self):
