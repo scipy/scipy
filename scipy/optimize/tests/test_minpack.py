@@ -204,11 +204,11 @@ class TestFSolve:
 
     def test_concurrent_no_gradient(self):
         v = sequence_parallel([self.test_pressure_network_no_gradient] * 10)
-        assert np.all(np.array(v) == None)
+        assert all([result is None for result in v])
 
     def test_concurrent_with_gradient(self):
         v = sequence_parallel([self.test_pressure_network_with_gradient] * 10)
-        assert np.all(np.array(v) == None)
+        assert all([result is None for result in v])
 
 
 class TestRootHybr:
@@ -389,11 +389,11 @@ class TestLeastSq:
 
     def test_concurrent_no_gradient(self):
         v = sequence_parallel([self.test_basic] * 10)
-        assert np.all(np.array(v) == None)
+        assert all([result is None for result in v])
 
     def test_concurrent_with_gradient(self):
         v = sequence_parallel([self.test_basic_with_gradient] * 10)
-        assert np.all(np.array(v) == None)
+        assert all([result is None for result in v])
 
     def test_func_input_output_length_check(self):
 
