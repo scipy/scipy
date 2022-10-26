@@ -2812,6 +2812,20 @@ class TestRvDiscrete:
         assert_allclose(rv.expect(lambda x: x**2),
                         sum(v**2 * w for v, w in zip(y, py)), atol=1e-14)
 
+    def test_rv_count_subclassing(self):
+        # gh-8057: rv_discrete(values=(xk, pk)) cannot be subclassed easily
+        class S(stats.rv_count):
+            def extra(self):
+                return 42
+
+        s = S(xk=[1, 2, 3], pk=[0.2, 0.7, 0.1])
+        assert_allclose(s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
+        assert s.extra() == 42
+
+        # make sure subclass freezes correctly
+        frozen_s = s()
+        assert_allclose(frozen_s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
+
 
 class TestSkewCauchy:
     def test_cauchy(self):
@@ -3227,6 +3241,7 @@ class TestSkellam:
 
         assert_almost_equal(stats.skellam.pmf(k, mu1, mu2), skpmfR, decimal=15)
 
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_cdf(self):
         # comparison to R, only 5 decimals
         k = numpy.arange(-10, 15)
@@ -4826,6 +4841,7 @@ class TestExpect:
         res_l = stats.logser.expect(lambda k: k, args=(p,), loc=loc)
         assert_allclose(res_l, res_0 + loc, atol=1e-15)
 
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_skellam(self):
         # Use a discrete distribution w/ bi-infinite support. Compute two first
         # moments and compare to known values (cf skellam.stats)
@@ -5143,6 +5159,18 @@ class TestRayleigh:
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.rayleigh)
+
+    def test_fit_gh17088(self):
+        # `rayleigh.fit` could return a location that was inconsistent with
+        # the data. See gh-17088.
+        rng = np.random.default_rng(456)
+        loc, scale, size = 50, 600, 500
+        rvs = stats.rayleigh.rvs(loc, scale, size=size, random_state=rng)
+        loc_fit, _ = stats.rayleigh.fit(rvs)
+        assert loc_fit < np.min(rvs)
+        loc_fit, scale_fit = stats.rayleigh.fit(rvs, fscale=scale)
+        assert loc_fit < np.min(rvs)
+        assert scale_fit == scale
 
 
 class TestExponWeib:
@@ -6286,6 +6314,7 @@ def test_distribution_too_many_args():
     stats.ncf.pdf(x, 3, 4, 5, 6, 1.0)  # 3 args, plus loc/scale
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_tails_ticket_955():
     # Trac #955 -- check that the cdf computed by special functions
     # matches the integrated pdf
@@ -6339,12 +6368,14 @@ def test_ncx2_zero_nc_rvs():
     assert_allclose(result, expected, atol=1e-15)
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_gh12731():
     # test that gh-12731 is resolved; previously these were all 0.5
     nc = 10**np.arange(5, 10)
     assert_equal(stats.ncx2.cdf(1e4, df=1, nc=nc), 0)
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_gh8665():
     # test that gh-8665 is resolved; previously this tended to nonzero value
     x = np.array([4.99515382e+00, 1.07617327e+01, 2.31854502e+01,

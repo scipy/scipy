@@ -111,19 +111,6 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     NotImplementedError
         If transposed is True and input a is a complex matrix.
 
-    Examples
-    --------
-    Given `a` and `b`, solve for `x`:
-
-    >>> a = np.array([[3, 2, 0], [1, -1, 0], [0, 5, 1]])
-    >>> b = np.array([2, 4, -1])
-    >>> from scipy import linalg
-    >>> x = linalg.solve(a, b)
-    >>> x
-    array([ 2., -2.,  9.])
-    >>> np.dot(a, x) == b
-    array([ True,  True,  True], dtype=bool)
-
     Notes
     -----
     If the input b matrix is a 1-D array with N elements, when supplied
@@ -134,6 +121,21 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     The generic, symmetric, Hermitian and positive definite solutions are
     obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
     LAPACK respectively.
+
+    Examples
+    --------
+    Given `a` and `b`, solve for `x`:
+
+    >>> import numpy as np
+    >>> a = np.array([[3, 2, 0], [1, -1, 0], [0, 5, 1]])
+    >>> b = np.array([2, 4, -1])
+    >>> from scipy import linalg
+    >>> x = linalg.solve(a, b)
+    >>> x
+    array([ 2., -2.,  9.])
+    >>> np.dot(a, x) == b
+    array([ True,  True,  True], dtype=bool)
+
     """
     # Flags for 1-D or N-D right-hand side
     b_is_1D = False
@@ -320,6 +322,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
              [1  0  1  0]       [4]
              [1  1  1  1]       [2]
 
+    >>> import numpy as np
     >>> from scipy.linalg import solve_triangular
     >>> a = np.array([[3, 0, 0, 0], [2, 1, 0, 0], [1, 0, 1, 0], [1, 1, 1, 1]])
     >>> b = np.array([4, 2, 4, 2])
@@ -416,6 +419,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
              [5  4  3  2  1]
              [1  1  1  1  *]
 
+    >>> import numpy as np
     >>> from scipy.linalg import solve_banded
     >>> ab = np.array([[0,  0, -1, -1, -1],
     ...                [0,  2,  2,  2,  2],
@@ -535,6 +539,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
             [ 0  0 -1  2  8  2]       [3]
             [ 0  0  0 -1  2  9]       [3]
 
+    >>> import numpy as np
     >>> from scipy.linalg import solveh_banded
 
     ``ab`` contains the main diagonal and the nonzero diagonals below the
@@ -649,6 +654,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     To specify the Toeplitz matrix, only the first column and the first
     row are needed.
 
+    >>> import numpy as np
     >>> c = np.array([1, 3, 6, 10])    # First column of T
     >>> r = np.array([1, -1, -2, -3])  # First row of T
     >>> b = np.array([1, 2, 2, 5])
@@ -777,6 +783,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import solve_circulant, solve, circulant, lstsq
 
     >>> c = np.array([2, 2, 4])
@@ -925,6 +932,7 @@ def inv(a, overwrite_a=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[1., 2.], [3., 4.]])
     >>> linalg.inv(a)
@@ -1010,6 +1018,7 @@ def det(a, overwrite_a=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[1,2,3], [4,5,6], [7,8,9]])
     >>> linalg.det(a)
@@ -1099,6 +1108,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import lstsq
     >>> import matplotlib.pyplot as plt
 
@@ -1301,6 +1311,7 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> rng = np.random.default_rng()
     >>> a = rng.standard_normal((9, 6))
@@ -1394,6 +1405,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import pinvh
     >>> rng = np.random.default_rng()
     >>> a = rng.standard_normal((9, 6))
@@ -1499,8 +1511,19 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     .. versionadded:: 0.19.0
 
+    References
+    ----------
+    .. [1] B.N. Parlett and C. Reinsch, "Balancing a Matrix for
+       Calculation of Eigenvalues and Eigenvectors", Numerische Mathematik,
+       Vol.13(4), 1969, :doi:`10.1007/BF02165404`
+    .. [2] R. James, J. Langou, B.R. Lowery, "On matrix balancing and
+       eigenvector computation", 2014, :arxiv:`1401.5766`
+    .. [3] D.S. Watkins. A case where balancing is harmful.
+       Electron. Trans. Numer. Anal, Vol.23, 2006.
+
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> x = np.array([[1,2,0], [9,1,0.01], [1,2,10*np.pi]])
 
@@ -1515,18 +1538,6 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     array([[  0.5,   0. ,  0. ],  # may vary
            [  0. ,   1. ,  0. ],
            [  0. ,   0. ,  1. ]])
-
-    References
-    ----------
-    .. [1] : B.N. Parlett and C. Reinsch, "Balancing a Matrix for
-       Calculation of Eigenvalues and Eigenvectors", Numerische Mathematik,
-       Vol.13(4), 1969, :doi:`10.1007/BF02165404`
-
-    .. [2] : R. James, J. Langou, B.R. Lowery, "On matrix balancing and
-       eigenvector computation", 2014, :arxiv:`1401.5766`
-
-    .. [3] :  D.S. Watkins. A case where balancing is harmful.
-       Electron. Trans. Numer. Anal, Vol.23, 2006.
 
     """
 
@@ -1744,6 +1755,7 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     To specify the Toeplitz matrix, only the first column and the first
     row are needed.
 
+    >>> import numpy as np
     >>> c = np.array([1, 3, 6, 10])    # First column of T
     >>> r = np.array([1, -1, -2, -3])  # First row of T
     >>> x = np.array([[1, 10], [2, 11], [2, 11], [5, 19]])
