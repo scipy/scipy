@@ -2010,7 +2010,11 @@ class TestRandomDirection:
         assert_equal(rvs1, rvs2)
         assert_equal(rvs1, rvs3)
 
-    def test_uniform_circle(self):
+   @pytest.mark.parametrize("dim", [2, 5, 8])
+    def test_uniform_circle(self, dim):
+          spherical_dist = random_direction(dim)
+          samples = spherical_dist.rvs(size=10000, random_state=42967295)
+          angles = np.arctan2(samples[:, dim -1], samples[:, dim -2])
         # test that for uniform 2D samples on the circle the resulting
         # angles follow a uniform distribution
         circular_dist = random_direction(2)
