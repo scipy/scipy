@@ -65,10 +65,5 @@ Futher details are given in the links below.
    interpolate/smoothing_splines
    interpolate/ND_regular_grid
    interpolate/ND_unstructured
-
-
-
-
-
-
+   interpolate/extrapolation_examples
 
