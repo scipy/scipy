@@ -236,7 +236,7 @@ add_newdoc("voigt_profile",
     of a normal and a Cauchy distribution.
 
     >>> from scipy.signal import convolve
-    >>> x = np.linspace(-10, 10, 500)
+    >>> x, dx = np.linspace(-10, 10, 500, retstep=True)
     >>> def gaussian(x, sigma):
     ...     return np.exp(-0.5 * x**2/sigma**2)/(sigma * np.sqrt(2*np.pi))
     >>> def cauchy(x, gamma):
@@ -245,13 +245,13 @@ add_newdoc("voigt_profile",
     >>> gamma = 1
     >>> gauss_profile = gaussian(x, sigma)
     >>> cauchy_profile = cauchy(x, gamma)
-    >>> convolved = convolve(cauchy_profile, gauss_profile, mode="same")
-    >>> convolved = convolved/sum(gauss_profile)
+    >>> convolved = dx * convolve(cauchy_profile, gauss_profile, mode="same")
     >>> voigt = voigt_profile(x, sigma, gamma)
-    >>> (fig, ax) = plt.subplots(figsize=(8, 8))
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
     >>> ax.plot(x, gauss_profile, label="Gauss: $G$", c='b')
     >>> ax.plot(x, cauchy_profile, label="Cauchy: $C$", c='y', ls="dashed")
-    >>> ax.plot(x, convolved, label="Convolution: $G * C$", ls='dashdot',
+    >>> xx = 0.5*(x[1:] + x[:-1])  # midpoints
+    >>> ax.plot(xx, convolved[1:], label="Convolution: $G * C$", ls='dashdot',
     ...         c='k')
     >>> ax.plot(x, voigt, label="Voigt", ls='dotted', c='r')
     >>> ax.legend()
