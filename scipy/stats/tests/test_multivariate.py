@@ -26,7 +26,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest,
-                         random_direction, uniform)
+                         random_direction)
 from scipy.stats import _covariance, Covariance
 
 from scipy.integrate import romb
@@ -2014,7 +2014,7 @@ class TestRandomDirection:
     def test_uniform(self, dim):
         spherical_dist = random_direction(dim)
         samples = spherical_dist.rvs(size=10000, random_state=42967295)
-        angles = np.arctan2(samples[:, dim -1], samples[:, dim -2])
+        angles = np.arctan2(samples[:, dim - 1], samples[:, dim - 2])
         # test that angles follow a uniform distribution
         # normalize angles to range [0, 1]
         angles += np.pi
