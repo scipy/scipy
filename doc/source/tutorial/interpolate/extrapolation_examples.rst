@@ -87,8 +87,6 @@ To illustrate:
 CubicSpline extend the boundary conditions
 ==========================================
 
-closes gh-14472
-
 `CubicSpline` needs two extra boundary conditions, which are
 controlled by the ``bc_type`` parameter. This parameter can either list
 explicit values of derivatives at the edges, or use helpful aliases. For
@@ -142,7 +140,7 @@ several boundary conditions:
 
 It is clearly seen that e.g. natural spline does have the zero second derivative
 at the boundaries, but extrapolation is non-linear. ``bc_type="clamped"``
-shows a similar behavior: first derivaties are only equal zero exactly at the
+shows a similar behavior: first derivatives are only equal zero exactly at the
 boundary. In all cases, extrapolation is done by extending the first and last
 polynomial pieces of the spline, whatever they happen to be.
 
@@ -217,5 +215,176 @@ proceeds using these two additional intervals.
     
     plt.tight_layout()
     plt.show()
+
+
+
+.. _tutorial-extrapolation-asymptotics:
+
+Manually implement the asymptotics
+==================================
+
+The previous trick of extending the interpolation domain relies on the
+`CubicSpline.extend` method. An somewhat more general alternative is to
+implement a wrapper which handles the out-of-bounds behavior explicitly.
+Let us consider a worked example.
+
+The setup
+~~~~~~~~~
+
+Suppose we want to solve at a given value of :math:`a` the equation
+
+.. math::
+
+   a x = 1/\tan{x}\;.
+
+(One application where these kinds of equations appear is solving for
+energy levels of a quantum particle). For simplicity, let’s only
+consider :math:`x\in (0, \pi/2)`.
+
+Solving this equation *once* is straightforward:
+
+.. plot::
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from scipy.optimize import brentq
+    
+    def f(x, a):
+        return a*x - 1/np.tan(x)
+    
+    a = 3
+    x0 = brentq(f, 1e-16, np.pi/2, args=(a,))   # here we shift the left edge
+                                                # by a machine epsilon to avoid
+                                                # a division by zero at x=0
+    xx = np.linspace(0.2, np.pi/2, 101)
+    plt.plot(xx, a*xx, '--')
+    plt.plot(xx, 1/np.tan(xx), '--')
+    plt.plot(x0, a*x0, 'o', ms=12)
+    plt.text(0.1, 0.9, fr'$x_0 = {x0:.3f}$',
+                   transform=plt.gca().transAxes, fontsize=16)
+    plt.show()
+
+However, if we need to solve it multiple times (e.g. to find *a series*
+of roots due to periodicity of the ``tan`` function), repeated calls to
+`scipy.optimize.brentq` become prohibitively expensive.
+
+To circumvent this difficulty, we tabulate :math:`y = ax - 1/\tan{x}`
+and interpolate it on the tabulated grid. In fact, we will use *inverse*
+interpolation: we interpolate the values of :math:`x` versus :math:`у`.
+This way, solving the original equation becomes simply an evaluation of
+the interpolated function at the zero argument.
+
+To improve the interpolation accuracy we will use the knowledge of the
+derivatives of the tabulated function. We will use
+`BPoly.from_derivatives` to construct a cubic interpolant
+(equivalently, we could have used `CubicHermiteSpline`)
+
+.. plot::
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from scipy.interpolate import BPoly
+    
+    def f(x, a):
+        return a*x - 1/np.tan(x)
+
+    xleft, xright = 0.2, np.pi/2
+    x = np.linspace(xleft, xright, 11)
+    
+    fig, ax = plt.subplots(1, 2, figsize=(12, 4))
+    
+    for j, a in enumerate([3, 93]):
+        y = f(x, a)
+        dydx = a + 1./np.sin(x)**2    # d(ax - 1/tan(x)) / dx
+        dxdy = 1 / dydx               # dx/dy = 1 / (dy/dx)
+    
+        xdx = np.c_[x, dxdy]
+        spl = BPoly.from_derivatives(y, xdx)   # inverse interpolation
+    
+        yy = np.linspace(f(xleft, a), f(xright, a), 51)
+        ax[j].plot(yy, spl(yy), '--')
+        ax[j].plot(y, x, 'o')
+        ax[j].set_xlabel(r'$y$')
+        ax[j].set_ylabel(r'$x$')
+        ax[j].set_title(rf'$a = {a}$')
+    
+        ax[j].plot(0, spl(0), 'o', ms=12)
+        ax[j].text(0.1, 0.85, fr'$x_0 = {spl(0):.3f}$',
+                   transform=ax[j].transAxes, fontsize=18)
+        ax[j].grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+Note that for :math:`a=3`, ``spl(0)`` agrees with the ``brentq`` call
+above, while for :math:`a = 93`, the difference is substantial. The
+reason the procedure starts failing for large :math:`a` is that the
+straight line :math:`y = ax` tends towards the vertical axis, and the
+root of the original equation tends towards :math:`x=0`. Since we
+tabulated the original function at a finite grid, ``spl(0)`` involves
+extrapolation for too-large values of :math:`a`. Relying on
+extrapolation is prone to losing accuracy and is best avoided.
+
+Use the known asymptotics
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Looking at the original equation, we note that for :math:`x\to 0`,
+:math:`\tan(x) = x + O(x^3)`, and the original equation becomes
+
+.. math::
+
+   ax = 1/x  \;,
+
+so that :math:`x_0 \approx 1/\sqrt{a}` for :math:`a \gg 1`.
+
+We will use this to cook up a class which switches from interpolation to
+using this known asymptotic behavior for out-of-range data. A bare-bones
+implementation may look like this
+
+.. code:: python
+
+     class RootWithAsymptotics:
+        def __init__(self, a):
+        
+            # construct the interpolant
+            xleft, xright = 0.2, np.pi/2
+            x = np.linspace(xleft, xright, 11)
+    
+            y = f(x, a)
+            dydx = a + 1./np.sin(x)**2    # d(ax - 1/tan(x)) / dx
+            dxdy = 1 / dydx               # dx/dy = 1 / (dy/dx)
+    
+            # inverse interpolation
+            self.spl = BPoly.from_derivatives(y, np.c_[x, dxdy])
+            self.a = a
+    
+        def root(self):
+            out = self.spl(0)
+            asympt = 1./np.sqrt(self.a)
+            return np.where(spl.x.min() < asympt, out, asympt)
+
+And then
+
+    >>> r = RootWithAsymptotics(93)
+    >>> r.root()
+    array(0.10369517)
+
+which differs from the extrapolated result and agrees with the ``brentq`` call.
+
+Note that this implementation is intentionally pared down. From the API
+perspective, you may want to instead implement the ``__call__`` method
+so that the full dependence of ``x`` on ``y`` is available. From the
+numerical perspective, more work is needed to make sure that the switch
+between interpolation and asymptotic occurs deep enough into the
+asymptotic regime, so that the resulting function is smooth enough at
+the switch-over point.
+
+Also in this example we artificially limited the problem to only
+consider a single periodicity interval of the ``tan`` function, and only
+dealt with :math:`a >0`. For negative values of :math:`a`, we would need
+to implement the other asymptotics, for :math:`x\to \pi`.
+
+However the basic idea is the same.
+
 
 
