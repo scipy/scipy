@@ -1910,7 +1910,23 @@ def anderson(x, dist='norm'):
     .. [6] Stephens, M. A. (1979). Tests of Fit for the Logistic Distribution
            Based on the Empirical Distribution Function, Biometrika, Vol. 66,
            pp. 591-595.
-    """  # noqa
+           
+    Examples
+    --------
+    Consider random list of numbers
+    
+    
+    >>> import numpy as np
+    >>> from scipy.stats import anderson
+    >>> np.random.seed(0)
+    >>> data = np.random.normal(size=1000)
+    >>> print(anderson(data))
+    
+    AndersonResult(statistic=0.2432179174634257, critical_values=array([0.574, 0.653, 0.784, 0.914, 1.088]), 
+    significance_level=array([15. , 10. ,  5. ,  2.5,  1. ]))
+    
+    """  
+    # noqa
     dist = dist.lower()
     if dist in {'extreme1', 'gumbel'}:
         dist = 'gumbel_l'
