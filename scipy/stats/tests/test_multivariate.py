@@ -2010,7 +2010,7 @@ class TestRandomDirection:
         assert_equal(rvs1, rvs2)
         assert_equal(rvs1, rvs3)
 
-   @pytest.mark.parametrize("dim", [2, 5, 8])
+    @pytest.mark.parametrize("dim", [2, 5, 8])
     def test_uniform(self, dim):
         spherical_dist = random_direction(dim)
         samples = spherical_dist.rvs(size=10000, random_state=42967295)
