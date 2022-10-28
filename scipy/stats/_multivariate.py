@@ -5199,8 +5199,9 @@ class random_table_gen(multi_rv_generic):
             raise ValueError("`x` must be at least two-dimensional")
 
         dtype_is_int = np.issubdtype(x.dtype, np.integer)
-        if not dtype_is_int and not np.all(x.astype(int) == x):
-            raise ValueError("`x` must contain only integral values")
+        with np.errstate(invalid='ignore'):
+            if not dtype_is_int and not np.all(x.astype(int) == x):
+                raise ValueError("`x` must contain only integral values")
 
         # x does not contain NaN if we arrive here
         if np.any(x < 0):
@@ -5210,10 +5211,10 @@ class random_table_gen(multi_rv_generic):
         c2 = np.sum(x, axis=-2)
 
         if r2.shape[-1] != len(r):
-            raise ValueError("shape of `x` must match `row`")
+            raise ValueError("shape of `x` must agree with `row`")
 
         if c2.shape[-1] != len(c):
-            raise ValueError("shape of `x` must match `col`")
+            raise ValueError("shape of `x` must agree with `col`")
 
         res = np.empty(x.shape[:-2])
 
@@ -5226,7 +5227,7 @@ class random_table_gen(multi_rv_generic):
                      - lnfac(n) - np.sum(lnfac(x[mask]), axis=(-1, -2)))
         res[~mask] = -np.inf
 
-        return res
+        return res[()]
 
     def pmf(self, x, row, col):
         """Probability of table to occur in the distribution.
@@ -5366,7 +5367,6 @@ class random_table_gen(multi_rv_generic):
 
         if np.any(r < 0):
             raise ValueError("each element of `row` must be non-negative")
-
         if np.any(c < 0):
             raise ValueError("each element of `col` must be non-negative")
 
@@ -5376,7 +5376,6 @@ class random_table_gen(multi_rv_generic):
 
         if not np.all(r == np.asarray(row)):
             raise ValueError("each element of `row` must be an integer")
-
         if not np.all(c == np.asarray(col)):
             raise ValueError("each element of `col` must be an integer")
 
@@ -5464,8 +5463,8 @@ col : array_like
 _ctab_doc_x = """\
 x : array-like
    Two-dimensional table of non-negative integers, or a
-   three-dimensional array of such tables. The first dimension
-   iterates over tables."""
+   multi-dimensional array with the last two dimensions
+   corresponding with the tables."""
 
 _ctab_doc_row_col_note = """\
 The row and column vectors must be one-dimensional, not empty,

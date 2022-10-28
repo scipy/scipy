@@ -2572,6 +2572,9 @@ class TestRandomTable:
         with pytest.raises(ValueError, match=message):
             random_table.rvs(row, col, method="foo")
 
+        with pytest.raises(NotImplementedError):
+            random_table.rvs(row, col, method="patefield")
+
     @pytest.mark.parametrize('frozen', (True, False))
     @pytest.mark.parametrize('log', (True, False))
     def test_pmf_logpmf(self, frozen, log):
@@ -2639,11 +2642,11 @@ class TestRandomTable:
         with pytest.raises(ValueError, match=message):
             pmf([[-1]])
 
-        message = "shape of `x` must match `row`"
+        message = "shape of `x` must agree with `row`"
         with pytest.raises(ValueError, match=message):
             pmf([[1, 2, 3]])
 
-        message = "shape of `x` must match `col`"
+        message = "shape of `x` must agree with `col`"
         with pytest.raises(ValueError, match=message):
             pmf([[1, 2],
                  [3, 4]])
@@ -2674,14 +2677,17 @@ class TestRandomTable:
         assert_equal(rv, rvs[0])
 
     def test_frozen(self):
+        rng1 = np.random.default_rng(628174795866951638)
+        rng2 = np.random.default_rng(628174795866951638)
+
         row = [2, 6]
         col = [1, 3, 4]
-        d = random_table(row, col)
+        d = random_table(row, col, seed=rng1)
         expected = random_table.mean(row, col)
         assert_equal(expected, d.mean())
 
-        expected = random_table.rvs(row, col, size=10, random_state=1)
-        got = d.rvs(size=10, random_state=1)
+        expected = random_table.rvs(row, col, size=10, random_state=rng2)
+        got = d.rvs(size=10)
         assert_equal(expected, got)
 
 
