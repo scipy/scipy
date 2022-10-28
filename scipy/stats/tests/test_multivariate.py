@@ -26,7 +26,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest,
-                         random_direction)
+                         uniform_direction)
 from scipy.stats import _covariance, Covariance
 
 from scipy.integrate import romb
@@ -1975,14 +1975,14 @@ class TestRandomCorrelation:
         assert_allclose(m[0,0], 1)
 
 
-class TestRandomDirection:
+class TestUniformDirection:
     @pytest.mark.parametrize("dim", [1, 3])
     @pytest.mark.parametrize("size", [None, 1, 5, (5, 4)])
     def test_samples(self, dim, size):
         # test that samples have correct shape and norm 1
         rng = np.random.default_rng(2777937887058094419)
-        random_direction_dist = random_direction(dim, seed=rng)
-        samples = random_direction_dist.rvs(size)
+        uniform_direction_dist = uniform_direction(dim, seed=rng)
+        samples = uniform_direction_dist.rvs(size)
         mean, cov = np.zeros(dim), np.eye(dim)
         expected_shape = rng.multivariate_normal(mean, cov, size=size).shape
         assert samples.shape == expected_shape
@@ -1994,15 +1994,15 @@ class TestRandomDirection:
         message = ("Dimension of vector must be specified, "
                    "and must be an integer greater than 0.")
         with pytest.raises(ValueError, match=message):
-            random_direction.rvs(dim)
+            uniform_direction.rvs(dim)
 
     def test_frozen_distribution(self):
         dim = 5
-        frozen = random_direction(dim)
-        frozen_seed = random_direction(dim, seed=514)
+        frozen = uniform_direction(dim)
+        frozen_seed = uniform_direction(dim, seed=514)
 
         rvs1 = frozen.rvs(random_state=514)
-        rvs2 = random_direction.rvs(dim, random_state=514)
+        rvs2 = uniform_direction.rvs(dim, random_state=514)
         rvs3 = frozen_seed.rvs()
 
         assert_equal(rvs1, rvs2)
@@ -2010,7 +2010,7 @@ class TestRandomDirection:
 
     @pytest.mark.parametrize("dim", [2, 5, 8])
     def test_uniform(self, dim):
-        spherical_dist = random_direction(dim)
+        spherical_dist = uniform_direction(dim)
         samples = spherical_dist.rvs(size=10000, random_state=42967295)
         angles = np.arctan2(samples[:, dim - 1], samples[:, dim - 2])
         # test that angles follow a uniform distribution

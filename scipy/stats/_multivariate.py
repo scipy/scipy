@@ -29,7 +29,7 @@ __all__ = ['multivariate_normal',
            'unitary_group',
            'multivariate_t',
            'multivariate_hypergeom',
-           'random_direction']
+           'uniform_direction']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -5078,8 +5078,8 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
                                       mhg_docdict_params)
 
 
-class random_direction_gen(multi_rv_generic):
-    r"""A vector-valued random direction.
+class uniform_direction_gen(multi_rv_generic):
+    r"""A vector-valued uniform direction.
 
     Return a random direction (unit vector).
 
@@ -5121,8 +5121,8 @@ class random_direction_gen(multi_rv_generic):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.stats import random_direction
-    >>> x = random_direction.rvs(3)
+    >>> from scipy.stats import uniform_direction
+    >>> x = uniform_direction.rvs(3)
     >>> np.linalg.norm(x)
     1.
 
@@ -5132,7 +5132,7 @@ class random_direction_gen(multi_rv_generic):
     Alternatively, the object may be called (as a function) to fix the `dim`
     parameter, return a "frozen" `random_direction` random variable:
 
-    >>> rv = random_direction(5)
+    >>> rv = uniform_direction(5)
 
     """
 
@@ -5143,9 +5143,9 @@ class random_direction_gen(multi_rv_generic):
     def __call__(self, dim=None, seed=None):
         """Create a frozen n-dimensional uniform direction distribution.
 
-        See `random_direction` for more information.
+        See `uniform_direction` for more information.
         """
-        return random_direction_frozen(dim, seed=seed)
+        return uniform_direction_frozen(dim, seed=seed)
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
@@ -5186,12 +5186,12 @@ class random_direction_gen(multi_rv_generic):
         return samples
 
 
-random_direction = random_direction_gen()
+uniform_direction = uniform_direction_gen()
 
 
-class random_direction_frozen(multi_rv_frozen):
+class uniform_direction_frozen(multi_rv_frozen):
     def __init__(self, dim=None, seed=None):
-        """Create a frozen n-dimensional random direction distribution.
+        """Create a frozen n-dimensional uniform direction distribution.
 
         Parameters
         ----------
@@ -5208,12 +5208,12 @@ class random_direction_frozen(multi_rv_frozen):
 
         Examples
         --------
-        >>> from scipy.stats import random_direction
-        >>> x = random_direction(3)
+        >>> from scipy.stats import uniform_direction
+        >>> x = uniform_direction(3)
         >>> x.rvs()
 
         """
-        self._dist = random_direction_gen(seed)
+        self._dist = uniform_direction_gen(seed)
         self.dim = self._dist._process_parameters(dim)
 
     def rvs(self, size=None, random_state=None):
