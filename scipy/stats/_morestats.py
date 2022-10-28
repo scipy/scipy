@@ -1913,20 +1913,26 @@ def anderson(x, dist='norm'):
            
     Examples
     --------
-    Consider random list of numbers
-    
-    
+    Test the null hypothesis that a random sample was drawn from a normal
+    distribution (with unspecified mean and standard deviation).
+
     >>> import numpy as np
     >>> from scipy.stats import anderson
-    >>> np.random.seed(0)
-    >>> data = np.random.normal(size=1000)
-    >>> print(anderson(data))
-    
-    AndersonResult(statistic=0.2432179174634257, critical_values=array([0.574, 0.653, 0.784, 0.914, 1.088]), 
-    significance_level=array([15. , 10. ,  5. ,  2.5,  1. ]))
-    
-    """  
-    # noqa
+    >>> rng = np.random.default_rng()
+    >>> data = rng.random(size=35)
+    >>> res = anderson(data)
+    >>> res.statistic
+    0.8398018749744764
+    >>> res.critical_values
+    array([0.527, 0.6  , 0.719, 0.839, 0.998])
+    >>> res.significance_level
+    array([15. , 10. ,  5. ,  2.5,  1. ])
+
+    The value of the statistic (barely) exceeds the critical value associated
+    with a significance level of 2.5%, so the null hypothesis may be rejected
+    at a significance level of 2.5%, but not at a significance level of 1%.
+
+    """  # noqa
     dist = dist.lower()
     if dist in {'extreme1', 'gumbel'}:
         dist = 'gumbel_l'
