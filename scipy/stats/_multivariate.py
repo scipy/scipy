@@ -5155,7 +5155,7 @@ class random_direction_gen(multi_rv_generic):
 
         return dim
 
-    def rvs(self, dim, size=1, random_state=None):
+    def rvs(self, dim, size=None, random_state=None):
         """Draw random samples from S(N-1).
 
         Parameters
@@ -5177,7 +5177,7 @@ class random_direction_gen(multi_rv_generic):
         """
         random_state = self._get_random_state(random_state)
         if size is None:
-            size = 1
+            size = np.array([], dtype=int)
         size = np.atleast_1d(size)
 
         dim = self._process_parameters(dim)
@@ -5216,7 +5216,7 @@ class random_direction_frozen(multi_rv_frozen):
         self._dist = random_direction_gen(seed)
         self.dim = self._dist._process_parameters(dim)
 
-    def rvs(self, size=1, random_state=None):
+    def rvs(self, size=None, random_state=None):
         return self._dist.rvs(self.dim, size, random_state)
 
 
