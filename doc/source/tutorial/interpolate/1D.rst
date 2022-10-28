@@ -112,9 +112,8 @@ data with an outlier:
 Interpolation with B-splines
 ============================
 
-As an illustration, we construct the interpolation of a sine function with
-b-splines (see also the section on :ref:`piecewise polynomials <tutorial-interpolate_ppoly>`
-for details on the internals of b-splines):
+B-splines form an alternative (if formally equivalent) representation of piecewise polynomials. This basis is generally more computationally stable than the power basis and is useful for a variety of applications which include interpolation, regression and curve representation. Details are given in the :ref:`piecewise polynomials section <tutorial-interpolate_ppoly>`, and here we illustrate their usage by constructing the interpolation of a sine function: 
+
 
 .. plot::
 

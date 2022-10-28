@@ -19,9 +19,9 @@ desired smoothness of the interpolator. In short, routines recommended *for
 interpolation* can be summarized as follows:
 
 +------------------+-------------------------+------------------------------+------------------------+---------------------------------------+
-|                  | **kind**                | **routine**                   | **continuity**        | **comment**                           |
+|                  | **kind**                | **routine**                  | **continuity**         | **comment**                           |
 +==================+=========================+==============================+========================+=======================================+
-|                  | linear                  | `numpy.interp`               | broken line            | comes from numpy                      |
+|                  | linear                  | `numpy.interp`               | piecewise continuous   | comes from numpy                      |
 +                  +-------------------------+------------------------------+------------------------+---------------------------------------+
 |                  | cubic spline            | `CubicSpline`                | 2nd derivative         |                                       |
 +                  +-------------------------+------------------------------+------------------------+---------------------------------------+
