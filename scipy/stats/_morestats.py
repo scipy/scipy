@@ -4032,7 +4032,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     Computes sample statistics for directional data.
 
     Computes the directional mean (also called the mean direction vector) and
-    length of the mean resultant vector of a sample of vectors.
+    mean resultant length of a sample of vectors.
 
     The directional mean is a measure of "preferred direction" of vector data.
     It is analogous to the sample mean, but it is for use when the length of
