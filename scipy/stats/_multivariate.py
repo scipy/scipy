@@ -5108,7 +5108,8 @@ class uniform_direction_gen(multi_rv_generic):
     Notes
     -----
     This distribution generates unit vectors uniformly distributed on
-    the surface of a sphere. These can be interpreted as random directions.
+    the surface of a hypersphere. These can be interpreted as random
+    directions.
 
     For example, if `dim` is 3, 3D vectors from the surface of :math:`S^2`
     will be sampled.
