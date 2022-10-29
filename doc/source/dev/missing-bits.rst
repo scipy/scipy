@@ -47,6 +47,15 @@ would probably do anyway even without the use of ``*``), *and* it means
 additional parameters can be added to the function anywhere after the
 ``*``; new parameters do not have to be added after the existing parameters.
 
+Return Objects
+~~~~~~~~~~~~~~
+For new functions or methods that return two or more conceptually distinct
+elements, use an object type that is not iterable. In particular, do not use
+``tuple``, ``namedtuple``, or ``make_tuple_bunch``, the latter of which is
+only for adding new attributes to the object returned by existing functions.
+This practice forces callers to be more explicit about the element of the
+returned object that they wish to access, and it makes it easier to extend
+the function or method in a backward compatible way.
 
 Test functions from `numpy.testing`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
