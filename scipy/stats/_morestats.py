@@ -4029,6 +4029,8 @@ DirectionalStats = namedtuple('DirectionalStats',
 
 def directional_stats(samples, *, axis=0, normalize=True):
     """
+    Computes sample statistics for directional data.
+
     Computes the directional mean (also called the mean direction vector) and
     length of the mean resultant vector of a sample of vectors.
 
@@ -4036,11 +4038,10 @@ def directional_stats(samples, *, axis=0, normalize=True):
     It is analogous to the sample mean, but it is for use when the length of
     the data is irrelevant (e.g. unit vectors).
 
-    The length of the mean resultant vector can be used to compute measures
-    of "directional spread" such as the directional variance
-    vector data. The length of the mean vector can be used to calculate
-    directional variance using one of the several definitions outlined in
-    [1]_ and [2]_.
+    The mean resultant length is a value between 0 and 1 used to quantify the
+    dispersion of directional data: the smaller the mean resultant length, the
+    greater the dispersion. Several definitions of directional variance
+    involving the mean resultant length are given in [1]_ and [2]_.
 
     Parameters
     ----------
@@ -4061,13 +4062,12 @@ def directional_stats(samples, *, axis=0, normalize=True):
     mean_direction : ndarray
         Directional mean.
     mean_resultant_length : ndarray
-        length of the mean resultant vector. This can be used to calculate
-        the directional variance.
+        The mean resultant length [1]_.
 
     See also
     --------
-    circmean: circular mean; i. e. directional mean for 2D *angles*
-    circvar: circular variance; i. e. directional variance for 2D *angles*
+    circmean: circular mean; i.e. directional mean for 2D *angles*
+    circvar: circular variance; i.e. directional variance for 2D *angles*
 
     Notes
     -----
@@ -4085,13 +4085,11 @@ def directional_stats(samples, *, axis=0, normalize=True):
     for *axial* data (i.e. vector data for which the magnitude and *sign* of
     each observation is irrelevant).
 
-    The function also returns the length of mean resultant vector which
-    can be used to calculate directional variance. Several definitions of
-    directional variance have been proposed e.g. ``Var(z) = 1 - R`` (where
-    ``R`` is the length of the mean resultant vector),
-    ``Var(z) = 1 - R**2`` and ``Var(z) = 2 * (1 - R)``. `directional_stats`
-    instead returns the length of the mean resultant vector so one can
-    choose the appropriate definition based on the use case.
+    Several definitions of directional variance involving the mean resultant
+    length ``R`` have been proposed, including ``1 - R`` [1]_, ``1 - R**2``
+    [2]_, and ``2 * (1 - R)`` [2]_. Rather than choosing one, this function
+    returns ``R`` as attribute `mean_resultant_length` so the user can compute
+    their preferred measure of dispersion.
 
     References
     ----------
@@ -4132,10 +4130,10 @@ def directional_stats(samples, *, axis=0, normalize=True):
     >>> data.mean(axis=0)
     array([0.8660254, 0., 0.])
 
-    The function also returns the length of the mean resultant vector which
-    can be used to calculate directional variance. For example, using the
-    definition ``Var(z) = 1 - R`` from [2]_ where ``R`` is the length of the
-    mean resultant vector, we can calculate the directional variance of the
+    The function also returns the mean resultant length, which
+    can be used to calculate a directional variance. For example, using the
+    definition ``Var(z) = 1 - R`` from [2]_ where ``R`` is the
+    mean resultant length, we can calculate the directional variance of the
     vectors in the above example as:
 
     >>> 1 - dirstats.mean_resultant_length
