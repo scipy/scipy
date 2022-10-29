@@ -4024,12 +4024,12 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
 
 DirectionalStats = namedtuple('DirectionalStats',
-                              ('mean_resultant', 'mean_resultant_length'))
+                              ('mean_direction', 'mean_resultant_length'))
 
 
 def directional_stats(samples, *, axis=0, normalize=True):
     """
-    Computes the directional mean (also called the mean resultant vector) and
+    Computes the directional mean (also called the mean direction vector) and
     length of the mean resultant vector of a sample of vectors.
 
     The directional mean is a measure of "preferred direction" of vector data.
@@ -4058,7 +4058,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
 
     Returns
     -------
-    mean_resultant : ndarray
+    mean_direction : ndarray
         Directional mean.
     mean_resultant_length : ndarray
         length of the mean resultant vector. This can be used to calculate
@@ -4078,7 +4078,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
 
         mean = samples.mean(axis=0)
         mean_resultant_length = np.linalg.norm(mean)
-        mean_resultant = mean / mean_resultant_length
+        mean_direction = mean / mean_resultant_length
 
     This definition is appropriate for *directional* data (i.e. vector data
     for which the magnitude of each observation is irrelevant) but not
@@ -4107,7 +4107,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     >>> data = np.array([[3, 4],    # first observation, 2D vector space
     ...                  [6, -8]])  # second observation
     >>> dirstats = directional_stats(data)
-    >>> dirstats.mean_resultant
+    >>> dirstats.mean_direction
     array([1., 0.])
 
     In contrast, the regular sample mean of the vectors would be influenced
@@ -4123,7 +4123,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     >>> data = np.array([[0.8660254, 0.5, 0.],
     ...                  [0.8660254, -0.5, 0.]])
     >>> dirstats = directional_stats(data)
-    >>> dirstats.mean_resultant
+    >>> dirstats.mean_direction
     array([1., 0., 0.])
 
     The regular sample mean on the other hand yields a result which does not
@@ -4151,6 +4151,6 @@ def directional_stats(samples, *, axis=0, normalize=True):
         samples = samples/vectornorms
     mean = np.mean(samples, axis=0)
     mean_resultant_length = np.linalg.norm(mean, axis=-1, keepdims=True)
-    mean_resultant = mean / mean_resultant_length
-    return DirectionalStats(mean_resultant,
+    mean_direction = mean / mean_resultant_length
+    return DirectionalStats(mean_direction,
                             mean_resultant_length.squeeze(-1)[()])
