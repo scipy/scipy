@@ -4023,8 +4023,14 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     return res
 
 
-DirectionalStats = namedtuple('DirectionalStats',
-                              ('mean_direction', 'mean_resultant_length'))
+class DirectionalStats:
+    def __init__(self, mean_direction, mean_resultant_length):
+        self.mean_direction = mean_direction
+        self.mean_resultant_length = mean_resultant_length
+
+    def __repr__(self):
+        return (f"DirectionalStats(mean_direction={self.mean_direction},"
+                f" mean_resultant_length={self.mean_resultant_length})")
 
 
 def directional_stats(samples, *, axis=0, normalize=True):
@@ -4059,10 +4065,13 @@ def directional_stats(samples, *, axis=0, normalize=True):
 
     Returns
     -------
-    mean_direction : ndarray
-        Directional mean.
-    mean_resultant_length : ndarray
-        The mean resultant length [1]_.
+    res : DirectionalStats
+        An object containing attributes:
+
+        mean_direction : ndarray
+            Directional mean.
+        mean_resultant_length : ndarray
+            The mean resultant length [1]_.
 
     See also
     --------
