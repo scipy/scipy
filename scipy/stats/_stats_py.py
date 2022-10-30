@@ -9605,9 +9605,10 @@ def expectile(a, alpha=0.5, *, dtype=None, weights=None):
         weights = np.broadcast_to(weights, a.shape)
 
     # This is the empirical equivalent of Eq. (13) with identification
-    # function from Table 9 (omitting a factor of 2) in [2]
+    # function from Table 9 (omitting a factor of 2) in [2] (their y is our
+    # data a, their x is our t)
     def first_order(t):
-        return np.average(np.abs((a < t) - alpha) * (a - t), weights=weights)
+        return np.average(np.abs((a <= t) - alpha) * (t - a), weights=weights)
 
     if alpha >= 0.5:
         x0 = np.average(a, weights=weights)
