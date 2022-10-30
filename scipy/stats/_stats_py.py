@@ -9535,7 +9535,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     return result
 
 
-def expectile(a, alpha=0.5, *, dtype=None, weights=None):
+def expectile(a, alpha=0.5, *, weights=None):
     r"""Compute the expectile.
 
     Expectiles are a generalization of the expectation in the same way as
@@ -9546,7 +9546,7 @@ def expectile(a, alpha=0.5, *, dtype=None, weights=None):
     ----------
     a : array_like
         Input array or object that can be converted to an array.
-    alpha : float
+    alpha : float, default=0.5
         The level of the expectile; `alpha=0.5` gives the mean.
     weights : array_like, optional
         The sample or case `weights` array must be broadcastable to the same
@@ -9557,7 +9557,7 @@ def expectile(a, alpha=0.5, *, dtype=None, weights=None):
     Returns
     -------
     expectile : ndarray
-        See `dtype` parameter above.
+        The empirical expectile at level `alpha`.
 
     See Also
     --------
@@ -9618,7 +9618,7 @@ def expectile(a, alpha=0.5, *, dtype=None, weights=None):
         raise ValueError(
             "The expectile level alpha must be in the range [0, 1]."
         )
-    a = np.asarray(a, dtype=dtype)
+    a = np.asarray(a)
 
     if weights is not None:
         weights = np.broadcast_to(weights, a.shape)
