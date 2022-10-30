@@ -69,6 +69,7 @@ musllinux_amd64_test_task:
     python dev.py build
 
   test_script: |
+    pip install pooch pytest
     # split over several runs because there's a segfault in ndimage (gh17270)
     python dev.py test -s _lib -s cluster -s constants
     python dev.py test -s datasets -s fft -s fftpack -s integrate
