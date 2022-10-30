@@ -2595,9 +2595,17 @@ class TestDirectionalStats:
         reference_mean = np.array([0.2984, -0.1346, -0.9449])
         assert_allclose(mean_rounded, reference_mean)
 
-        expected_var = 0.025335389565304012
-        directional_var = 1 - dirstats.mean_resultant_length
-        assert_allclose(expected_var, directional_var)
+    @pytest.mark.parametrize('angles, ref', [
+        ([-np.pi/2, np.pi/2], 1.),
+        ([0, 2*np.pi], 0.),
+        ([-np.pi/2, -np.pi/4, 0, np.pi/4, np.pi/2], stats.circvar)
+    ])
+    def test_mean_resultant_length(self, angles, ref):
+        if callable(ref):
+            ref = ref(angles)
+        data = np.stack([np.cos(angles), np.sin(angles)], axis=1)
+        res = 1 - stats.directional_stats(data).mean_resultant_length
+        assert_allclose(res, ref)
 
     def test_directional_stats_2d(self):
         # Test that for circular data directional_stats
