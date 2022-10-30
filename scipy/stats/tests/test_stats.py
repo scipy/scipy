@@ -29,6 +29,7 @@ import scipy.stats._mstats_basic as mstats_basic
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
+from scipy import optimize
 from .common_tests import check_named_results
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
@@ -7987,6 +7988,32 @@ class TestExpectile:
         rng = np.random.default_rng(42)
         x = rng.random(size=20)
         assert_allclose(stats.expectile(x, alpha=1), np.amax(x))
+
+    def test_weights(self):
+        # expectile should minimize `fun` defined below; see
+        # F. Sobotka and T. Kneib, "Geoadditive expectile regression",
+        # Computational Statistics and Data Analysis 56 (2012) 755-767
+        # :doi:`10.1016/j.csda.2010.11.015`
+        rng = np.random.default_rng(1856392524598679138)
+
+        def fun(u, a, alpha, weights):
+            w = np.full_like(a, fill_value=alpha)
+            w[a < u] = 1 - alpha
+            return np.sum(w * weights * (a - u)**2)
+
+        def expectile2(a, alpha, weights):
+            bracket = np.min(a), np.max(a)
+            return optimize.minimize_scalar(fun, bracket=bracket,
+                                            args=(a, alpha, weights)).x
+
+        n = 10
+        a = rng.random(n)
+        alpha = rng.random()
+        weights = rng.random(n)
+
+        res = stats.expectile(a, alpha, weights=weights)
+        ref = expectile2(a, alpha, weights)
+        assert_allclose(res, ref)
 
     @pytest.mark.parametrize(
         "alpha", [0.2, 0.5 - 1e-12, 0.5, 0.5 + 1e-12, 0.8]
