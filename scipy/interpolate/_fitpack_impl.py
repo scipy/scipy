@@ -776,7 +776,7 @@ def spalde(x, tck):
         x = atleast_1d(x)
         if len(x) > 1:
             return list(map(lambda x, tck=tck: spalde(x, tck), x))
-        d, ier = _fitpack._spalde(t, c, k, x[0])
+        d, ier = dfitpack.spalde(t, c, k+1, x[0])
         if ier == 0:
             return d
         if ier == 10:
