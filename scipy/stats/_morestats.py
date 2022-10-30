@@ -1910,6 +1910,28 @@ def anderson(x, dist='norm'):
     .. [6] Stephens, M. A. (1979). Tests of Fit for the Logistic Distribution
            Based on the Empirical Distribution Function, Biometrika, Vol. 66,
            pp. 591-595.
+           
+    Examples
+    --------
+    Test the null hypothesis that a random sample was drawn from a normal
+    distribution (with unspecified mean and standard deviation).
+
+    >>> import numpy as np
+    >>> from scipy.stats import anderson
+    >>> rng = np.random.default_rng()
+    >>> data = rng.random(size=35)
+    >>> res = anderson(data)
+    >>> res.statistic
+    0.8398018749744764
+    >>> res.critical_values
+    array([0.527, 0.6  , 0.719, 0.839, 0.998])
+    >>> res.significance_level
+    array([15. , 10. ,  5. ,  2.5,  1. ])
+
+    The value of the statistic (barely) exceeds the critical value associated
+    with a significance level of 2.5%, so the null hypothesis may be rejected
+    at a significance level of 2.5%, but not at a significance level of 1%.
+
     """  # noqa
     dist = dist.lower()
     if dist in {'extreme1', 'gumbel'}:

@@ -363,7 +363,7 @@ def odds_ratio(table, *, kind='conditional'):
     The conditional odds ratio was discussed by Fisher (see "Example 1"
     of [1]_).  Texts that cover the odds ratio include [2]_ and [3]_.
 
-    .. versionadded:: 1.7.0
+    .. versionadded:: 1.10.0
 
     References
     ----------

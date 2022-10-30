@@ -2,6 +2,7 @@
 # Created by: Pearu Peterson, September 2002
 #
 
+import sys
 from functools import reduce
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
@@ -3051,6 +3052,9 @@ def test_trexc_NAG(t, ifst, ilst, expect):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgexc(dtype):
+    if dtype == np.float32 and sys.platform == 'darwin':
+        pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
+
     seed(1234)
     atol = np.finfo(dtype).eps*100
 
@@ -3220,6 +3224,9 @@ def test_trsen_NAG(t, q, select, expect, expect_s, expect_sep):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgsen(dtype):
+    if dtype == np.float32 and sys.platform == 'darwin':
+        pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
+
     seed(1234)
     atol = np.finfo(dtype).eps*100
 

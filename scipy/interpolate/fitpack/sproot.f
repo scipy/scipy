@@ -1,15 +1,17 @@
-      recursive subroutine sproot(t,n,c,zero,mest,m,ier)
+      recursive subroutine sproot(t,n,c,nc,zero,mest,m,ier)
       implicit none
 c  subroutine sproot finds the zeros of a cubic spline s(x),which is
 c  given in its normalized b-spline representation.
 c
 c  calling sequence:
-c     call sproot(t,n,c,zero,mest,m,ier)
+c     call sproot(t,n,c,nc,zero,mest,m,ier)
 c
 c  input parameters:
 c    t    : real array,length n, containing the knots of s(x).
 c    n    : integer, containing the number of knots.  n>=8
-c    c    : real array,length n, containing the b-spline coefficients.
+c    c    : array,length nc, containing the b-spline coefficients.
+c           the length of the array, nc >= n - k -1.
+c           further coefficients are ignored.
 c    mest : integer, specifying the dimension of array zero.
 c
 c  output parameters:
@@ -38,9 +40,9 @@ c  latest update : march 1987
 c
 c ..
 c ..scalar arguments..
-      integer n,mest,m,ier
+      integer n,nc,mest,m,ier
 c  ..array arguments..
-      real*8 t(n),c(n),zero(mest)
+      real*8 t(n),c(nc),zero(mest)
 c  ..local scalars..
       integer i,j,j1,l,n4
       real*8 ah,a0,a1,a2,a3,bh,b0,b1,c1,c2,c3,c4,c5,d4,d5,h1,h2,

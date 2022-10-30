@@ -251,6 +251,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import gcrotmk
     >>> R = np.random.randn(5, 5)

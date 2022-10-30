@@ -1,7 +1,6 @@
 cdef extern from "Python.h":
     object PyCapsule_New(void *pointer, char *name, void *destructor)
 
-import ctypes
 from libc.math cimport sqrt, fabs
 from libc.stdlib cimport free
 from numpy import nan
@@ -16,7 +15,7 @@ ctypedef struct _ellip_data_t:
 
 cdef double _F_integrand(double t, void *user_data) nogil:
     cdef _ellip_data_t *data = <_ellip_data_t *>user_data
-    cdef double h2, k2, t2, i, a, result
+    cdef double h2, k2, t2, i, result
     cdef int n, p
     cdef double * eval
     t2 = t*t
@@ -31,10 +30,9 @@ cdef double _F_integrand(double t, void *user_data) nogil:
 
 cdef double _F_integrand1(double t, void *user_data) nogil:
     cdef _ellip_data_t *data = <_ellip_data_t *>user_data
-    cdef double h2, k2, t2, i, a, h, result
+    cdef double h2, k2, i, h, result
     cdef int n, p
     cdef double * eval
-    t2 = t*t
     h2 = data[0].h2
     k2 =data[0].k2
     n = data[0].n
@@ -49,7 +47,7 @@ cdef double _F_integrand1(double t, void *user_data) nogil:
 
 cdef double _F_integrand2(double t, void *user_data) nogil:
     cdef _ellip_data_t *data = <_ellip_data_t *>user_data
-    cdef double h2, k2, t2, i, a, h, result
+    cdef double h2, k2, t2, i, h, result
     cdef int n, p
     cdef double * eval
     t2 = t*t
@@ -67,7 +65,7 @@ cdef double _F_integrand2(double t, void *user_data) nogil:
 
 cdef double _F_integrand3(double t, void *user_data) nogil:
     cdef _ellip_data_t *data = <_ellip_data_t *>user_data
-    cdef double h2, k2, t2, i, a, h, result
+    cdef double h2, k2, t2, i, h, result
     cdef int n, p
     cdef double * eval
     t2 = t*t
@@ -78,14 +76,13 @@ cdef double _F_integrand3(double t, void *user_data) nogil:
     eval = data[0].eval
 
     h = sqrt(h2)
-    k = sqrt(k2)
     i = ellip_harm_eval( h2, k2, n, p, t, eval, 1, 1)
     result = i*i/sqrt((t + h)*(k2 - t2))
     return result
 
 cdef double _F_integrand4(double t, void *user_data) nogil:
     cdef _ellip_data_t *data = <_ellip_data_t *>user_data
-    cdef double h2, k2, t2, i, a, h, result
+    cdef double h2, k2, t2, i, h, result
     cdef int n, p
     cdef double *eval
     t2 = t*t
@@ -96,7 +93,6 @@ cdef double _F_integrand4(double t, void *user_data) nogil:
     eval = data[0].eval
 
     h = sqrt(h2)
-    k = sqrt(k2)
     i = ellip_harm_eval( h2, k2, n, p, t, eval, 1, 1)
     result = i*i*t2/sqrt((t + h)*(k2 - t2))
     return result

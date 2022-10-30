@@ -232,6 +232,7 @@ def test_boost_divide_by_zero_issue_15101():
     assert_allclose(binom.pmf(k, n, p), 0.0)
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_skellam_gh11474():
     # test issue reported in gh-11474 caused by `cdfchn`
     mu = [1, 10, 100, 1000, 5000, 5050, 5100, 5250, 6000]
@@ -551,3 +552,15 @@ def test_nbinom_11465(mu, q, expected):
     # options(digits=16)
     # pnbinom(mu=10, size=20, q=120, log.p=TRUE)
     assert_allclose(nbinom.logcdf(q, n, p), expected)
+
+
+def test_gh_17146():
+    # Check that discrete distributions return PMF of zero at non-integral x.
+    # See gh-17146.
+    x = np.linspace(0, 1, 11)
+    p = 0.8
+    pmf = bernoulli(p).pmf(x)
+    i = (x % 1 == 0)
+    assert_allclose(pmf[-1], p)
+    assert_allclose(pmf[0], 1-p)
+    assert_equal(pmf[~i], 0)

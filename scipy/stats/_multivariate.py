@@ -14,7 +14,8 @@ from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom
-from . import _mvn
+from . import _mvn, _covariance
+
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -152,6 +153,8 @@ class _PSD:
 
     def __init__(self, M, cond=None, rcond=None, lower=True,
                  check_finite=True, allow_singular=True):
+        self._M = np.asarray(M)
+
         # Compute the symmetric eigendecomposition.
         # Note that eigh takes care of array conversion, chkfinite,
         # and assertion that the matrix is square.
@@ -247,18 +250,19 @@ class multi_rv_frozen:
 _mvn_doc_default_callparams = """\
 mean : array_like, default: ``[0]``
     Mean of the distribution.
-cov : array_like, default: ``[1]``
+cov : array_like or `Covariance`, default: ``[1]``
     Symmetric positive (semi)definite covariance matrix of the distribution.
 allow_singular : bool, default: ``False``
-    Whether to allow a singular covariance matrix.
+    Whether to allow a singular covariance matrix. This is ignored if `cov` is
+    a `Covariance` object.
 """
 
 _mvn_doc_callparams_note = """\
 Setting the parameter `mean` to `None` is equivalent to having `mean`
 be the zero-vector. The parameter `cov` can be a scalar, in which case
 the covariance matrix is the identity times that value, a vector of
-diagonal entries for the covariance matrix, or a two-dimensional
-array_like.
+diagonal entries for the covariance matrix, a two-dimensional array_like,
+or a `Covariance` object.
 """
 
 _mvn_doc_frozen_callparams = ""
@@ -309,7 +313,11 @@ class multivariate_normal_gen(multi_rv_generic):
     -----
     %(_mvn_doc_callparams_note)s
 
-    The covariance matrix `cov` must be a symmetric positive semidefinite
+    The covariance matrix `cov` may be an instance of a subclass of
+    `Covariance`, e.g. `scipy.stats.CovViaPrecision`. If so, `allow_singular`
+    is ignored.
+
+    Otherwise, `cov` must be a symmetric positive semidefinite
     matrix when `allow_singular` is True; it must be (strictly) positive
     definite when `allow_singular` is False.
     Symmetry is not checked; only the lower triangular portion is used.
@@ -385,11 +393,42 @@ class multivariate_normal_gen(multi_rv_generic):
                                           allow_singular=allow_singular,
                                           seed=seed)
 
-    def _process_parameters(self, dim, mean, cov):
+    def _process_parameters(self, mean, cov, allow_singular=True):
         """
         Infer dimensionality from mean or covariance matrix, ensure that
         mean and covariance are full vector resp. matrix.
         """
+        if isinstance(cov, _covariance.Covariance):
+            return self._process_parameters_Covariance(mean, cov)
+        else:
+            # Before `Covariance` classes were introduced,
+            # `multivariate_normal` accepted plain arrays as `cov` and used the
+            # following input validation. To avoid disturbing the behavior of
+            # `multivariate_normal` when plain arrays are used, we use the
+            # original input validation here.
+            dim, mean, cov = self._process_parameters_psd(None, mean, cov)
+            # After input validation, some methods then processed the arrays
+            # with a `_PSD` object and used that to perform computation.
+            # To avoid branching statements in each method depending on whether
+            # `cov` is an array or `Covariance` object, we always process the
+            # array with `_PSD`, and then use wrapper that satisfies the
+            # `Covariance` interface, `CovViaPSD`.
+            psd = _PSD(cov, allow_singular=allow_singular)
+            cov_object = _covariance.CovViaPSD(psd)
+            return dim, mean, cov_object
+
+    def _process_parameters_Covariance(self, mean, cov):
+        dim = cov.shape[-1]
+        mean = np.array([0.]) if mean is None else mean
+        message = (f"`cov` represents a covariance matrix in {dim} dimensions,"
+                   f"and so `mean` must be broadcastable to shape {(dim,)}")
+        try:
+            mean = np.broadcast_to(mean, dim)
+        except ValueError as e:
+            raise ValueError(message) from e
+        return dim, mean, cov
+
+    def _process_parameters_psd(self, dim, mean, cov):
         # Try to infer dimensionality
         if dim is None:
             if mean is None:
@@ -463,7 +502,7 @@ class multivariate_normal_gen(multi_rv_generic):
 
         return x
 
-    def _logpdf(self, x, mean, prec_U, log_det_cov, rank):
+    def _logpdf(self, x, mean, cov_object):
         """Log of the multivariate normal probability density function.
 
         Parameters
@@ -473,13 +512,8 @@ class multivariate_normal_gen(multi_rv_generic):
             density function
         mean : ndarray
             Mean of the distribution
-        prec_U : ndarray
-            A decomposition such that np.dot(prec_U, prec_U.T)
-            is the precision matrix, i.e. inverse of the covariance matrix.
-        log_det_cov : float
-            Logarithm of the determinant of the covariance matrix
-        rank : int
-            Rank of the covariance matrix.
+        cov_object : Covariance
+            An object representing the Covariance matrix
 
         Notes
         -----
@@ -487,8 +521,12 @@ class multivariate_normal_gen(multi_rv_generic):
         called directly; use 'logpdf' instead.
 
         """
+        log_det_cov, rank = cov_object.log_pdet, cov_object.rank
         dev = x - mean
-        maha = np.sum(np.square(np.dot(dev, prec_U)), axis=-1)
+        if dev.ndim > 1:
+            log_det_cov = log_det_cov[..., np.newaxis]
+            rank = rank[..., np.newaxis]
+        maha = np.sum(np.square(cov_object.whiten(dev)), axis=-1)
         return -0.5 * (rank * _LOG_2PI + log_det_cov + maha)
 
     def logpdf(self, x, mean=None, cov=1, allow_singular=False):
@@ -510,12 +548,12 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
+        params = self._process_parameters(mean, cov, allow_singular)
+        dim, mean, cov_object = params
         x = self._process_quantiles(x, dim)
-        psd = _PSD(cov, allow_singular=allow_singular)
-        out = self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank)
-        if allow_singular and (psd.rank < dim):
-            out_of_bounds = ~psd._support_mask(x-mean)
+        out = self._logpdf(x, mean, cov_object)
+        if np.any(cov_object.rank < dim):
+            out_of_bounds = ~cov_object._support_mask(x-mean)
             out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
 
@@ -538,12 +576,12 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
+        params = self._process_parameters(mean, cov, allow_singular)
+        dim, mean, cov_object = params
         x = self._process_quantiles(x, dim)
-        psd = _PSD(cov, allow_singular=allow_singular)
-        out = np.exp(self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank))
-        if allow_singular and (psd.rank < dim):
-            out_of_bounds = ~psd._support_mask(x-mean)
+        out = np.exp(self._logpdf(x, mean, cov_object))
+        if np.any((cov_object.rank < dim)):
+            out_of_bounds = ~cov_object._support_mask(x-mean)
             out[out_of_bounds] = 0.0
         return _squeeze_output(out)
 
@@ -631,10 +669,10 @@ class multivariate_normal_gen(multi_rv_generic):
         .. versionadded:: 1.0.0
 
         """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
+        params = self._process_parameters(mean, cov, allow_singular)
+        dim, mean, cov_object = params
+        cov = cov_object.covariance
         x = self._process_quantiles(x, dim)
-        # Use _PSD to check covariance matrix
-        _PSD(cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
         cdf = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
@@ -676,10 +714,10 @@ class multivariate_normal_gen(multi_rv_generic):
         .. versionadded:: 1.0.0
 
         """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
+        params = self._process_parameters(mean, cov, allow_singular)
+        dim, mean, cov_object = params
+        cov = cov_object.covariance
         x = self._process_quantiles(x, dim)
-        # Use _PSD to check covariance matrix
-        _PSD(cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
         out = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
@@ -706,11 +744,21 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
-
+        dim, mean, cov_object = self._process_parameters(mean, cov)
         random_state = self._get_random_state(random_state)
-        out = random_state.multivariate_normal(mean, cov, size)
-        return _squeeze_output(out)
+
+        if isinstance(cov_object, _covariance.CovViaPSD):
+            cov = cov_object.covariance
+            out = random_state.multivariate_normal(mean, cov, size)
+            out = _squeeze_output(out)
+        else:
+            size = size or tuple()
+            if not np.iterable(size):
+                size = (size,)
+            shape = tuple(size) + (cov_object.shape[-1],)
+            x = random_state.normal(size=shape)
+            out = mean + cov_object.colorize(x)
+        return out
 
     def entropy(self, mean=None, cov=1):
         """Compute the differential entropy of the multivariate normal.
@@ -729,9 +777,8 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
-        _, logdet = np.linalg.slogdet(2 * np.pi * np.e * cov)
-        return 0.5 * logdet
+        dim, mean, cov_object = self._process_parameters(mean, cov)
+        return 0.5 * (cov_object.rank * (_LOG_2PI + 1) + cov_object.log_pdet)
 
 
 multivariate_normal = multivariate_normal_gen()
@@ -781,11 +828,10 @@ class multivariate_normal_frozen(multi_rv_frozen):
         array([[1.]])
 
         """
-        self.allow_singular = allow_singular
         self._dist = multivariate_normal_gen(seed)
-        self.dim, self.mean, self.cov = self._dist._process_parameters(
-                                                            None, mean, cov)
-        self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
+        self.dim, self.mean, self.cov_object = (
+            self._dist._process_parameters(mean, cov, allow_singular))
+        self.allow_singular = allow_singular or self.cov_object._allow_singular
         if not maxpts:
             maxpts = 1000000 * self.dim
         self.maxpts = maxpts
@@ -794,10 +840,9 @@ class multivariate_normal_frozen(multi_rv_frozen):
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
-        out = self._dist._logpdf(x, self.mean, self.cov_info.U,
-                                 self.cov_info.log_pdet, self.cov_info.rank)
-        if self.allow_singular and (self.cov_info.rank < self.dim):
-            out_of_bounds = ~self.cov_info._support_mask(x-self.mean)
+        out = self._dist._logpdf(x, self.mean, self.cov_object)
+        if np.any(self.cov_object.rank < self.dim):
+            out_of_bounds = ~self.cov_object._support_mask(x-self.mean)
             out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
 
@@ -814,12 +859,13 @@ class multivariate_normal_frozen(multi_rv_frozen):
 
     def cdf(self, x, *, lower_limit=None):
         x = self._dist._process_quantiles(x, self.dim)
-        out = self._dist._cdf(x, self.mean, self.cov, self.maxpts, self.abseps,
-                              self.releps, lower_limit)
+        out = self._dist._cdf(x, self.mean, self.cov_object.covariance,
+                              self.maxpts, self.abseps, self.releps,
+                              lower_limit)
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
-        return self._dist.rvs(self.mean, self.cov, size, random_state)
+        return self._dist.rvs(self.mean, self.cov_object, size, random_state)
 
     def entropy(self):
         """Computes the differential entropy of the multivariate normal.
@@ -830,8 +876,8 @@ class multivariate_normal_frozen(multi_rv_frozen):
             Entropy of the multivariate normal distribution
 
         """
-        log_pdet = self.cov_info.log_pdet
-        rank = self.cov_info.rank
+        log_pdet = self.cov_object.log_pdet
+        rank = self.cov_object.rank
         return 0.5 * (rank * (_LOG_2PI + 1) + log_pdet)
 
 

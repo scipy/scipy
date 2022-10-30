@@ -93,6 +93,7 @@ def lombscargle(x,
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
 
@@ -213,6 +214,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -386,6 +388,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -556,6 +559,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -704,6 +708,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fftshift
     >>> import matplotlib.pyplot as plt
@@ -964,6 +969,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
 
     Confirm NOLA condition for rectangular window of 75% (3/4) overlap:
@@ -1153,6 +1159,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -1323,6 +1330,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -1579,6 +1587,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()

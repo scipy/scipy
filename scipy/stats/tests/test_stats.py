@@ -3959,6 +3959,24 @@ class TestKSOneSample:
         ])
         FuncData(kolmogn, dataset, (0, 1, 2), 3).check(dtypes=[int, float, bool])
 
+    @pytest.mark.parametrize("ksfunc", [stats.kstest, stats.ks_1samp])
+    @pytest.mark.parametrize("alternative, x6val, ref_location, ref_sign",
+                             [('greater', 6, 6, +1),
+                              ('less', 7, 7, -1),
+                              ('two-sided', 6, 6, +1),
+                              ('two-sided', 7, 7, -1)])
+    def test_location_sign(self, ksfunc, alternative,
+                           x6val, ref_location, ref_sign):
+        # Test that location and sign corresponding with statistic are as
+        # expected. (Test is designed to be easy to predict.)
+        x = np.arange(10) + 0.5
+        x[6] = x6val
+        cdf = stats.uniform(scale=10).cdf
+        res = ksfunc(x, cdf, alternative=alternative)
+        assert_allclose(res.statistic, 0.1, rtol=1e-15)
+        assert res.statistic_location == ref_location
+        assert res.statistic_sign == ref_sign
+
     # missing: no test that uses *args
 
 
@@ -4209,6 +4227,23 @@ class TestKSTwoSamples:
             res = stats.ks_2samp(data1, data2, alternative='less')
             assert_allclose(res.pvalue, 0, atol=1e-14)
 
+    @pytest.mark.parametrize("ksfunc", [stats.kstest, stats.ks_2samp])
+    @pytest.mark.parametrize("alternative, x6val, ref_location, ref_sign",
+                             [('greater', 5.9, 5.9, +1),
+                              ('less', 6.1, 6.0, -1),
+                              ('two-sided', 5.9, 5.9, +1),
+                              ('two-sided', 6.1, 6.0, -1)])
+    def test_location_sign(self, ksfunc, alternative,
+                           x6val, ref_location, ref_sign):
+        # Test that location and sign corresponding with statistic are as
+        # expected. (Test is designed to be easy to predict.)
+        x = np.arange(10, dtype=np.float64)
+        y = x.copy()
+        x[6] = x6val
+        res = stats.ks_2samp(x, y, alternative=alternative)
+        assert res.statistic == 0.1
+        assert res.statistic_location == ref_location
+        assert res.statistic_sign == ref_sign
 
 def test_ttest_rel():
     # regression test
@@ -4589,14 +4624,9 @@ class Test_ttest_ind_permutations():
         (a, b, {'random_state': np.random.RandomState(0), "axis": 1}, p_d),
         (a2, b2, {'equal_var': True}, 1/1001),  # equal variances
         (rvs1, rvs2, {'axis': -1, 'random_state': 0}, p_d_big),  # bigger test
-        (a3, b3, {}, 1/3)  # exact test
+        (a3, b3, {}, 1/3),  # exact test
+        (a, b, {'random_state': np.random.default_rng(0), "axis": 1}, p_d_gen),
         ]
-
-    if NumpyVersion(np.__version__) >= '1.18.0':
-        params.append(
-            (a, b, {'random_state': np.random.default_rng(0), "axis": 1},
-             p_d_gen),
-            )
 
     @pytest.mark.parametrize("a,b,update,p_d", params)
     def test_ttest_ind_permutations(self, a, b, update, p_d):
