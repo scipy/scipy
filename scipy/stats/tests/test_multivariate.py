@@ -2651,13 +2651,7 @@ class TestRandomTable:
             pmf([[1, 2],
                  [3, 4]])
 
-    def test_mean(self):
-        row = [2, 6]
-        col = [1, 3, 4]
-        m = random_table.mean(row, col)
-        assert_equal(np.sum(m), np.sum(row))
-
-    def test_rvs(self):
+    def test_rvs_mean(self):
         # test if `rvs` is unbiased and large sample size converges
         # to the true mean. `test_pmf` also implicitly tests `rvs`.
         rng = np.random.default_rng(628174795866951638)
@@ -2666,15 +2660,48 @@ class TestRandomTable:
         col = [1, 3, 4]
         rvs = random_table.rvs(row, col, size=1000, random_state=rng)
         mean = random_table.mean(row, col)
+        assert_equal(np.sum(mean), np.sum(row))
         assert_allclose(rvs.mean(0), mean, atol=0.05)
         assert_equal(rvs.sum(axis=-1), np.broadcast_to(row, (1000, 2)))
         assert_equal(rvs.sum(axis=-2), np.broadcast_to(col, (1000, 3)))
 
-        # test with size=None
+    def test_rvs_size(self):
+        row = [2, 6]
+        col = [1, 3, 4]
+
+        # test size `None`
         rng = np.random.default_rng(628174795866951638)
         rv = random_table.rvs(row, col, random_state=rng)
         assert rv.shape == (2, 3)
-        assert_equal(rv, rvs[0])
+
+        # test size 1
+        rng = np.random.default_rng(628174795866951638)
+        rv2 = random_table.rvs(row, col, size=1, random_state=rng)
+        assert rv2.shape == (1, 2, 3)
+        assert_equal(rv, rv2[0])
+
+        # test size 0
+        rv3 = random_table.rvs(row, col, size=0, random_state=rng)
+        assert rv3.shape == (0, 2, 3)
+
+        # test other valid size
+        rng = np.random.default_rng(628174795866951638)
+        rv4 = random_table.rvs(row, col, size=20, random_state=rng)
+        assert rv4.shape == (20, 2, 3)
+
+        rng = np.random.default_rng(628174795866951638)
+        rv5 = random_table.rvs(row, col, size=(4, 5), random_state=rng)
+        assert rv5.shape == (4, 5, 2, 3)
+
+        assert_allclose(rv5.reshape(20, 2, 3), rv4, rtol=1e-15)
+
+        # test invalid size
+        message = "`size` must be a non-negative integer or `None`"
+        with pytest.raises(ValueError, match=message):
+            random_table.rvs(row, col, size=-1, random_state=rng)
+
+        with pytest.raises(ValueError, match=message):
+            random_table.rvs(row, col, size=np.nan, random_state=rng)
 
     def test_frozen(self):
         rng1 = np.random.default_rng(628174795866951638)

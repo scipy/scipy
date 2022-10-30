@@ -5078,7 +5078,7 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
 
 
 class random_table_gen(multi_rv_generic):
-    r"""Distribution of random tables with given marginals.
+    r"""Contingency tables from independent samples with fixed marginal sums.
 
     This is the distribution of random tables with given row and column vector
     sums. This distribution represents the set of random tables under the null
@@ -5097,7 +5097,7 @@ class random_table_gen(multi_rv_generic):
         Probability of table `x` to occur in the distribution.
     mean(row, col)
         Mean table.
-    rvs(row, col, size=1, method=None, random_state=None)
+    rvs(row, col, size=None, method=None, random_state=None)
         Draw random tables with given row and column vector sums.
 
     Parameters
@@ -5118,7 +5118,7 @@ class random_table_gen(multi_rv_generic):
     the input, but you can specify the algorithm with the keyword `method`.
     Allowed values are "boyett" and "patefield".
 
-    .. versionadded:: 1.9.3
+    .. versionadded:: 1.10.0
 
     Examples
     --------
@@ -5344,11 +5344,12 @@ class random_table_gen(multi_rv_generic):
                [1., 3., 1.]])
         """
         r, c, n = self._process_parameters(row, col)
+        size, shape = self._process_size_shape(size, r, c)
+
         random_state = self._get_random_state(random_state)
         meth = self._process_rvs_method(method, r, c, n)
-        if size is None:
-            return meth(r, c, n, 1, random_state)[0]
-        return meth(r, c, n, size, random_state)
+
+        return meth(r, c, n, size, random_state).reshape(shape)
 
     @staticmethod
     def _process_parameters(row, col):
@@ -5380,6 +5381,22 @@ class random_table_gen(multi_rv_generic):
             raise ValueError("each element of `col` must be an integer")
 
         return r, c, n
+
+    @staticmethod
+    def _process_size_shape(size, r, c):
+        """
+        Compute the number of samples to be drawn and the shape of the output
+        """
+        shape = (len(r), len(c))
+
+        if size is None:
+            return 1, shape
+
+        size = np.atleast_1d(size)
+        if not np.issubdtype(size.dtype, np.integer) or np.any(size < 0):
+            raise ValueError("`size` must be a non-negative integer or `None`")
+
+        return np.prod(size), tuple(size) + shape
 
     @classmethod
     def _process_rvs_method(cls, method, r, c, n):
