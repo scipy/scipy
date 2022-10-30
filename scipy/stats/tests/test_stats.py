@@ -8028,7 +8028,7 @@ class TestExpectile:
 
         def fun(u, a, alpha, weights):
             w = np.full_like(a, fill_value=alpha)
-            w[a < u] = 1 - alpha
+            w[a <= u] = 1 - alpha
             return np.sum(w * weights * (a - u)**2)
 
         def expectile2(a, alpha, weights):
