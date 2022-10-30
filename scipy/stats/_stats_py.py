@@ -9567,18 +9567,18 @@ def expectile(a, alpha=0.5, *, weights=None):
     Notes
     -----
     In general, the expectile at level `alpha` (:math:`\alpha`) of a
-    probability distribution :math:`F` with `X\sim F` is given by the unique
-    solution :math:`t` of:
+    probability distribution :math:`F` with :math:`X\sim F` is given by the
+    unique solution :math:`t` of:
 
     .. math::
 
         \alpha E((X - t)_+) = (1 - \alpha) E((t - X)_+) \,.
 
-    Here, math:`(x)_+ = \max(0, x)` is the positive part of :math:`x`.
+    Here, :math:`(x)_+ = \max(0, x)` is the positive part of :math:`x`.
 
     The empirical expectile of a sample :math:`a_i` (the array `a`) is
     defined by plugging in the empirical CDF of `a`. Given sample or case
-    weights :nath:`w` (the array `weights`), it reads :math:`F(a)(t) =
+    weights :math:`w` (the array `weights`), it reads :math:`F(a)(t) =
     \frac{1}{\sum_i a_i} \sum_i w_i 1_{a_i \leq t}` with indicator function
     :math:`1_{A}`. This leads to the definition of the empirical expectile at
     level `alpha` as the unique solution :math:`t` of:
