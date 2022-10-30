@@ -4,7 +4,7 @@ import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_less, assert_,
+                           assert_array_less, assert_, assert_allclose,
                            suppress_warnings)
 from pytest import raises
 from scipy.optimize import (NonlinearConstraint,
@@ -705,6 +705,13 @@ def test_gh11649():
     res = minimize(fun=obj, x0=x0, method='trust-constr',
                    bounds=bnds, constraints=nlcs)
     assert res.success
+    assert_inbounds(res.x)
+    assert nlcs[0].lb < nlcs[0].fun(res.x) < nlcs[0].ub
+    assert_allclose(nce(res.x), nlcs[1].ub)
+
+    ref = minimize(fun=obj, x0=x0, method='slsqp',
+                   bounds=bnds, constraints=nlcs)
+    assert_allclose(res.fun, ref.fun)
 
 
 class TestBoundedNelderMead:
