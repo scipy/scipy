@@ -679,6 +679,9 @@ def test_bug_11886():
     minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors
 
 
+# Remove xfail when gh-11649 is resolved
+@pytest.mark.xfail(reason="Known bug in trust-constr; see gh-11649.",
+                   strict=True)
 def test_gh11649():
     bnds = Bounds(lb=[-1, -1], ub=[1, 1], keep_feasible=True)
 
