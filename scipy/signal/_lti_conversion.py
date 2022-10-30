@@ -388,6 +388,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     --------
     We can transform a continuous state-space system to a discrete one:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import cont2discrete, lti, dlti, dstep
 

@@ -810,7 +810,7 @@ class Bench(Task):
                 print("Running benchmarks for Scipy version %s at %s"
                       % (version, mod_path))
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
-                       '--python=same', '--quick'] + bench_args
+                       '--python=same'] + bench_args
                 retval = cls.run_asv(dirs, cmd)
                 sys.exit(retval)
             else:

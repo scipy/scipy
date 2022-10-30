@@ -1107,6 +1107,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
           x_0^2+x_1 x_2-x_3^3+ \sin{x_0}+0 & (x_0-0.2 x_3-0.5-0.25 x_1 \leq 0)
         \end{cases} .
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + (
     ...                                 1 if (x0-.2*x3-.5-.25*x1>0) else 0)

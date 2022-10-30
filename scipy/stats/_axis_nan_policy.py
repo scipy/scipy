@@ -5,8 +5,6 @@
 # automatically adds `axis` and `nan_policy` arguments to a function.
 
 import numpy as np
-import scipy.stats
-import scipy.stats._stats_py
 from functools import wraps
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._util import _contains_nan

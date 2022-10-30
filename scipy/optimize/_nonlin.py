@@ -15,7 +15,8 @@ from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
-    'diagbroyden', 'excitingmixing', 'newton_krylov']
+    'diagbroyden', 'excitingmixing', 'newton_krylov',
+    'BroydenFirst', 'KrylovJacobian', 'InverseJacobian']
 
 #------------------------------------------------------------------------------
 # Utility functions
@@ -1338,8 +1339,8 @@ class KrylovJacobian(Jacobian):
         Note that you can use also inverse Jacobians as (adaptive)
         preconditioners. For example,
 
-        >>> from scipy.optimize.nonlin import BroydenFirst, KrylovJacobian
-        >>> from scipy.optimize.nonlin import InverseJacobian
+        >>> from scipy.optimize import BroydenFirst, KrylovJacobian
+        >>> from scipy.optimize import InverseJacobian
         >>> jac = BroydenFirst()
         >>> kjac = KrylovJacobian(inner_M=InverseJacobian(jac))
 
