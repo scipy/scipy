@@ -44,13 +44,14 @@ musllinux_amd64_test_task:
     cpu: 8
     memory: 32G
 
+  env:
+    PATH: $PWD:$PATH
+
   pip_cache:
     folder: ~/.cache/pip
     populate_script: |
       apk add openblas-dev python3 python3-dev openblas build-base gfortran git py3-pip
       ln -sf $(which python3.10) python
-      export PATH=$PWD:$PATH
-
       pip install -vvv --upgrade numpy
 
   setup_script: |
@@ -59,14 +60,10 @@ musllinux_amd64_test_task:
     git submodule update --init
 
     ln -sf $(which python3.10) python
-    export PATH=$PWD:$PATH
-    printenv
     # I don't think that the alpine py3-numpy package has the include dirs.
     pip install -vvv --upgrade numpy
 
   build_script: |
-    printenv
-    ls -al
     python -m pip install meson ninja cython pybind11 pythran cython
     python -m pip install click rich_click doit pydevtool
     python dev.py build
