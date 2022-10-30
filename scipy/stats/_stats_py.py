@@ -9549,8 +9549,10 @@ def expectile(a, alpha=0.5, *, dtype=None, weights=None):
     alpha : float
         The level of the expectile; `alpha=0.5` gives the mean.
     weights : array_like, optional
-        The `weights` array must be broadcastable to the same shape as `a`.
-        Default is None, which gives each value a weight of 1.0.
+        The sample or case `weights` array must be broadcastable to the same
+        shape as `a`. Default is None, which gives each value a weight of 1.0.
+        An integer valued weight element acts like repeating the corresponding
+        observation in `a` that many times. See Notes for more details.
 
     Returns
     -------
@@ -9564,14 +9566,31 @@ def expectile(a, alpha=0.5, *, dtype=None, weights=None):
 
     Notes
     -----
-    The (empirical) expectile at level `alpha` (:math:`\alpha`) of the array
-    `a` (:math:`a_i`) with `weights` (:math:`w_i`) is the unique
+    In general, the expectile at level `alpha` (:math:`\alpha`) of a
+    probability distribution :math:`F` with `X\sim F` is given by the unique
     solution :math:`t` of:
+
+    .. math::
+
+        \alpha E((X - t)_+) = (1 - \alpha) E((t - X)_+) \,.
+
+    Here, math:`(x)_+ = \max(0, x)` is the positive part of :math:`x`.
+
+    The empirical expectile of a sample :math:`a_i` (the array `a`) is
+    defined by plugging in the empirical CDF of `a`. Given sample or case
+    weights :nath:`w` (the array `weights`), it reads :math:`F(a)(t) =
+    \frac{1}{\sum_i a_i} \sum_i w_i 1_{a_i \leq t}` with indicator function
+    :math:`1_{A}`. This leads to the definition of the empirical expectile at
+    level `alpha` as the unique solution :math:`t` of:
 
     .. math::
 
         \alpha \sum_{i=1}^n w_i (a_i - t)_+ =
             (1 - \alpha) \sum_{i=1}^n w_i (t - a_i)_+ \,.
+
+    For :math:`\alpha=0.5`, this simplifies to the weighted average.
+    Furthermore, the larger :math:`alpha`, the larger the value of the
+    expectile.
 
     References
     ----------
