@@ -67,25 +67,9 @@ musllinux_amd64_test_task:
     python dev.py build
 
   test_script: |
-    # split over several runs because there's a segfault in ndimage (gh17270)
+    # Don't run the ndimage tests because there's a segfault (gh17270)
     set -xe -o
-    python dev.py test -s _lib
-    python dev.py test -s cluster
-    python dev.py test -s constants
-    python dev.py test -s datasets
-    python dev.py test -s fft
-    python dev.py test -s fftpack
-    python dev.py test -s integrate
-    python dev.py test -s interpolate
-    python dev.py test -s io
-    python dev.py test -s linalg
-    python dev.py test -s misc
-    python dev.py test -s odr
-    python dev.py test -s optimize
-    python dev.py test -s signal
-    python dev.py test -s sparse
-    python dev.py test -s special
-    python dev.py test -s stats
+    python dev.py test -- --ignore=scipy/ndimage/tests
 
 
 macos_arm64_test_task:
