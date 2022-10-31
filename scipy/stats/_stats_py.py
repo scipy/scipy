@@ -9536,7 +9536,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
 
 
 def expectile(a, alpha=0.5, *, weights=None):
-    r"""Compute the expectile.
+    r"""Compute the expectile at the specified level.
 
     Expectiles are a generalization of the expectation in the same way as
     quantiles are a generalization of the median. The expectile at level
@@ -9545,12 +9545,13 @@ def expectile(a, alpha=0.5, *, weights=None):
     Parameters
     ----------
     a : array_like
-        Input array or object that can be converted to an array.
+        Array containing numbers whose expectile is desired.
     alpha : float, default: 0.5
-        The level of the expectile; `alpha=0.5` gives the mean.
+        The level of the expectile; e.g., `alpha=0.5` gives the mean.
     weights : array_like, optional
-        The sample or case `weights` array must be broadcastable to the same
-        shape as `a`. Default is None, which gives each value a weight of 1.0.
+        An array of weights associated with the values in `a`.
+        The `weights` must be broadcastable to the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
         An integer valued weight element acts like repeating the corresponding
         observation in `a` that many times. See Notes for more details.
 
@@ -9566,22 +9567,28 @@ def expectile(a, alpha=0.5, *, weights=None):
 
     Notes
     -----
-    In general, the expectile at level `alpha` (:math:`\alpha`) of a
-    probability distribution :math:`F` with :math:`X\sim F` is given by the
-    unique solution :math:`t` of:
+    In general, the expectile at level :math:`\alpha` of a
+    cumulative distribution function (CDF) :math:`F` with
+    :math:`X\sim F` is given by the unique solution :math:`t` of:
 
     .. math::
 
         \alpha E((X - t)_+) = (1 - \alpha) E((t - X)_+) \,.
 
     Here, :math:`(x)_+ = \max(0, x)` is the positive part of :math:`x`.
+    This equation can be equivalently written as:
 
-    The empirical expectile of a sample :math:`a_i` (the array `a`) is
-    defined by plugging in the empirical CDF of `a`. Given sample or case
-    weights :math:`w` (the array `weights`), it reads :math:`F(a)(t) =
-    \frac{1}{\sum_i a_i} \sum_i w_i 1_{a_i \leq t}` with indicator function
-    :math:`1_{A}`. This leads to the definition of the empirical expectile at
-    level `alpha` as the unique solution :math:`t` of:
+    .. math::
+
+        \alpha \int_t^\infty (x - t)\mathrm{d}F(x)
+        = (1 - \alpha) \int_{-\infty}^t (t - x)\mathrm{d}F(x) \,.
+
+    The empirical expectile at level :math:`\alpha` (`alpha`) of a sample
+    :math:`a_i` (the array `a`) is defined by plugging in the empirical CDF of
+    `a`. Given sample or case weights :math:`w` (the array `weights`), it
+    reads :math:`F_a(x) = \frac{1}{\sum_i a_i} \sum_i w_i 1_{a_i \leq x}`
+    with indicator function :math:`1_{A}`. This leads to the definition of the
+    empirical expectile at level `alpha` as the unique solution :math:`t` of:
 
     .. math::
 
@@ -9589,7 +9596,7 @@ def expectile(a, alpha=0.5, *, weights=None):
             (1 - \alpha) \sum_{i=1}^n w_i (t - a_i)_+ \,.
 
     For :math:`\alpha=0.5`, this simplifies to the weighted average.
-    Furthermore, the larger :math:`alpha`, the larger the value of the
+    Furthermore, the larger :math:`\alpha`, the larger the value of the
     expectile.
 
     References
