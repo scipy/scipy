@@ -9567,9 +9567,9 @@ def expectile(a, alpha=0.5, *, weights=None):
 
     Notes
     -----
-    In general, the expectile at level :math:`\alpha` of a
-    cumulative distribution function (CDF) :math:`F` with
-    :math:`X\sim F` is given by the unique solution :math:`t` of:
+    In general, the expectile at level :math:`\alpha` of a random variable
+    :math:`X` with cumulative distribution function (CDF) :math:`F` is given
+    by the unique solution :math:`t` of:
 
     .. math::
 
