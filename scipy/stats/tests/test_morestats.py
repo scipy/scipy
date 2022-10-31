@@ -2597,10 +2597,9 @@ class TestDirectionalStats:
 
     @pytest.mark.parametrize('angles, ref', [
         ([-np.pi/2, np.pi/2], 1.),
-        ([0, 2*np.pi], 0.),
-        ([-np.pi/2, -np.pi/4, 0, np.pi/4, np.pi/2], stats.circvar)
+        ([0, 2*np.pi], 0.)
     ])
-    def test_mean_resultant_length(self, angles, ref):
+    def test_directional_stats_2d_special_cases(self, angles, ref):
         if callable(ref):
             ref = ref(angles)
         data = np.stack([np.cos(angles), np.sin(angles)], axis=1)
