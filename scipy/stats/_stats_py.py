@@ -9546,7 +9546,7 @@ def expectile(a, alpha=0.5, *, weights=None):
     ----------
     a : array_like
         Input array or object that can be converted to an array.
-    alpha : float, default=0.5
+    alpha : float, default: 0.5
         The level of the expectile; `alpha=0.5` gives the mean.
     weights : array_like, optional
         The sample or case `weights` array must be broadcastable to the same
