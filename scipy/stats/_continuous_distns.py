@@ -4740,7 +4740,7 @@ norminvgauss = norminvgauss_gen(name="norminvgauss")
 
 
 class invweibull_gen(rv_continuous):
-    u"""An inverted Weibull continuous random variable.
+    """An inverted Weibull continuous random variable.
 
     This distribution is also known as the Fréchet distribution or the
     type II extreme value distribution.
@@ -4785,8 +4785,14 @@ class invweibull_gen(rv_continuous):
         xc1 = np.power(x, -c)
         return np.exp(-xc1)
 
+    def _sf(self, x, c):
+        return -np.expm1(-x**-c)
+
     def _ppf(self, q, c):
         return np.power(-np.log(q), -1.0/c)
+
+    def _isf(self, p, c):
+        return (-np.log1p(-p))**(-1/c)
 
     def _munp(self, n, c):
         return sc.gamma(1 - n / c)
