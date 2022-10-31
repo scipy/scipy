@@ -48,6 +48,46 @@ additional parameters can be added to the function anywhere after the
 ``*``; new parameters do not have to be added after the existing parameters.
 
 
+Return Objects
+~~~~~~~~~~~~~~
+For new functions or methods that return two or more conceptually distinct
+elements, return the elements in an object type that is not iterable. In
+particular, do not return a ``tuple``, ``namedtuple``, or a "bunch" produced
+by `~scipy._lib._bunch.make_tuple_bunch`, the latter being reserved for adding
+new attributes to iterables returned by existing functions. Instead, use an
+existing return class (e.g. `~scipy.optimize.OptimizeResult`), a new, custom
+return class, or use `~dataclasses.make_dataclass`.
+
+This practice of returning non-iterable objects forces callers to be more
+explicit about the element of the returned object that they wish to access,
+and it makes it easier to extend the function or method in a backward
+compatible way.
+
+If the return class is simple and not public (i.e. importable from a public
+module), it may be documented like::
+
+    Returns
+    -------
+    res : MyResultObject
+        An object with attributes:
+
+        attribute1 : ndarray
+            Customized description of attribute 1.
+        attribute2 : ndarray
+            Customized description of attribute 2.
+
+Here "MyResultObject" above does not link to external documentation because it
+is simple enough to fully document all attributes immediately below its name.
+
+Some return classes are sufficiently complex to deserve their own rendered
+documentation. This is fairly standard if the return class is public, but
+return classes should only be public if 1) they are intended to be imported by
+end-users and 2) if they have been approved by the mailing list. For complex,
+private return classes, please see  how `~scipy.stats.binomtest` summarizes
+`~scipy.stats._result_classes.BinomTestResult` and links to its documentation,
+but note that ``BinomTestResult`` cannot be imported from `~scipy.stats`.
+
+
 Test functions from `numpy.testing`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In new code, don't use `assert_almost_equal`, `assert_approx_equal` or
