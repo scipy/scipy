@@ -47,35 +47,45 @@ musllinux_amd64_test_task:
   env:
     PATH: $PWD:$PATH
 
-  pip_cache:
-    folder: ~/.cache/pip
-    populate_script: |
-      apk add openblas-dev python3 python3-dev openblas build-base gfortran git py3-pip
-      ln -sf $(which python3.10) python
-      pip install -vvv --upgrade numpy
-
   setup_script: |
     apk update
     apk add openblas-dev python3 python3-dev openblas build-base gfortran git py3-pip
     git submodule update --init
 
     ln -sf $(which python3.10) python
-    # I don't think that the alpine py3-numpy package has the include dirs.
-    pip install -vvv --upgrade numpy
+
+  pip_cache:
+    folder: ~/.cache/pip
+
+  python_dependencies_script: |
+      python -m pip install cython
+      python -m pip install -vvv --upgrade numpy    
+      python -m pip install meson ninja pybind11 pythran pytest
+      python -m pip install click rich_click doit pydevtool pooch
 
   build_script: |
-    python -m pip install meson ninja cython pybind11 pythran cython
-    python -m pip install click rich_click doit pydevtool
     python dev.py build
 
   test_script: |
-    pip install pooch pytest
     # split over several runs because there's a segfault in ndimage (gh17270)
-    python dev.py test -s _lib -s cluster -s constants
-    python dev.py test -s datasets -s fft -s fftpack -s integrate
-    python dev.py test -s interpolate -s io -s linalg -s misc
-    python dev.py test -s odr -s optimize -s signal -s sparse
-    python dev.py test -s special -s stats
+    set -xe -o
+    python dev.py test -s _lib
+    python dev.py test -s cluster
+    python dev.py test -s constants
+    python dev.py test -s datasets
+    python dev.py test -s fft
+    python dev.py test -s fftpack
+    python dev.py test -s integrate
+    python dev.py test -s interpolate
+    python dev.py test -s io
+    python dev.py test -s linalg
+    python dev.py test -s misc
+    python dev.py test -s odr
+    python dev.py test -s optimize
+    python dev.py test -s signal
+    python dev.py test -s sparse
+    python dev.py test -s special
+    python dev.py test -s stats
 
 
 macos_arm64_test_task:
