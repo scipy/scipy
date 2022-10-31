@@ -74,6 +74,12 @@ All these interpolation methods rely on triangulation of the data using the
     despite its name --- is not the right tool. Use `RegularGridInterpolator`
     instead.
 
+.. note::
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating
+    or use the ``rescale=True`` keyword argument to `griddata`.
 
 
 .. _tutorial-interpolate_RBF:

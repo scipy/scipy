@@ -868,6 +868,10 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     See `bisplev` to evaluate the value of the B-spline given its tck
     representation.
 
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolation.
+
     References
     ----------
     .. [1] Dierckx P.:An algorithm for surface fitting with spline functions

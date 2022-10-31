@@ -104,6 +104,10 @@ class RegularGridInterpolator:
 
     .. versionadded:: 1.9
 
+    If the input data is such that dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
+
     Examples
     --------
     **Evaluate a function on the points of a 3-D grid**
@@ -550,6 +554,10 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     In the case that ``xi.ndim == 1`` a new axis is inserted into
     the 0 position of the returned array, values_x, so its shape is
     instead ``(1,) + values.shape[ndim:]``.
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolation.
 
     Examples
     --------

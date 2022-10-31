@@ -1276,6 +1276,10 @@ class SmoothBivariateSpline(BivariateSpline):
     -----
     The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
 
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
+
     """
 
     def __init__(self, x, y, z, w=None, bbox=[None] * 4, kx=3, ky=3, s=None,
@@ -1360,6 +1364,10 @@ class LSQBivariateSpline(BivariateSpline):
     Notes
     -----
     The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
 
     """
 
@@ -1453,6 +1461,13 @@ class RectBivariateSpline(BivariateSpline):
         a function to find a bivariate B-spline representation of a surface
     bisplev :
         a function to evaluate a bivariate B-spline and its derivatives
+
+    Notes
+    -----
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
 
     """
 

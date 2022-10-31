@@ -400,6 +400,14 @@ formally corresponds to interpolation, :math:`g(x_i, y_j) = z_{i, j}`.
     For scattered data interpolation, prefer `griddata`; for data on a regular
     grid, prefer `RegularGridInterpolator`. 
 
+
+.. note::
+
+    If the input data, ``x`` and ``y``, is such that input dimensions
+    have incommensurate units and differ by many orders of magnitude, the
+    interpolant `math`:g(x, y): may have numerical artifacts. Consider
+    rescaling the data before interpolation.
+
 We now consider the two spline fitting problems in turn.
 
 
