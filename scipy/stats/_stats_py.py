@@ -9599,7 +9599,7 @@ def expectile(a, alpha=0.5, *, weights=None):
     Furthermore, the larger :math:`\alpha`, the larger the value of the
     expectile.
 
-    As a final remark, the expectile at level :math:`alpha` can also be
+    As a final remark, the expectile at level :math:`\alpha` can also be
     written as a minimization problem. One often used choice is
 
     .. math::
