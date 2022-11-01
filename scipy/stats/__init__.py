@@ -226,6 +226,7 @@ Summary statistics
    kurtosis          -- Fisher or Pearson kurtosis
    mode              -- Modal value
    moment            -- Central moment
+   expectile         -- Expectile
    skew              -- Skewness
    kstat             --
    kstatvar          --
