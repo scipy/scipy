@@ -6123,8 +6123,8 @@ add_newdoc("huber",
     squared error loss, residuals with a magnitude higher than `delta` are
     not squared [1]_.
 
-    Typically, `r` represents a residual, the difference
-    between a model prediction and data. Then, for :math:`|r|<\delta`,
+    Typically, `r` represents residuals, the difference
+    between a model prediction and data. Then, for :math:`|r|\leq\delta`,
     `huber` resembles the squared error and for :math:`|r|>\delta` the
     absolute error. This way, the Huber loss often achieves
     a fast convergence in model fitting for small residuals like the squared
@@ -11181,13 +11181,13 @@ add_newdoc("pseudo_huber",
     in statistics or machine learning to reduce the influence of outliers.
     Unlike `huber`, `pseudo_huber` is smooth.
 
-    Typically, `r` represents a residual, the difference
-    between a model prediction and data. Then, for :math:`|r|<\delta`,
-    `pseudo_huber` resembles the squared error and for :math:`|r|>>\delta` the
+    Typically, `r` represents residuals, the difference
+    between a model prediction and data. Then, for :math:`|r|\leq\delta`,
+    `pseudo_huber` resembles the squared error and for :math:`|r|>\delta` the
     absolute error. This way, the Pseudo-Huber loss often achieves
     a fast convergence in model fitting for small residuals like the squared
     error loss function and still reduces the influence of outliers
-    (:math:`|r|>>\delta`) like the absolute error loss. As :math:`\delta` is
+    (:math:`|r|>\delta`) like the absolute error loss. As :math:`\delta` is
     the cutoff between squared and absolute error regimes, it has
     to be tuned carefully for each problem. `pseudo_huber` is also
     convex, making it suitable for gradient based optimization. [1]_ [2]_
