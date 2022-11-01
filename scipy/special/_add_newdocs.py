@@ -6179,7 +6179,7 @@ add_newdoc("huber",
     ...     ax.plot(x, huber(delta, x), label=f"$\delta={delta}$", ls=style)
     >>> ax.legend(loc="upper center")
     >>> ax.set_xlabel("$x$")
-    >>> ax.set_ylabel("Huber loss function $h_{\delta}(x)$")
+    >>> ax.set_title("Huber loss function $h_{\delta}(x)$")
     >>> ax.set_xlim(-4, 4)
     >>> ax.set_ylim(0, 8)
     >>> plt.show()
@@ -11175,11 +11175,11 @@ add_newdoc("pseudo_huber",
 
     References
     ----------
-    [1] Hartley, Zisserman, "Multiple View Geometry in Computer Vision".
-        2003. Cambridge University Press. p. 619
-    [2] Charbonnier et al. "Deterministic edge-preserving regularization
-        in computed imaging". 1997. IEEE Trans. Image Processing.
-        6 (2): 298 - 311.
+    .. [1] Hartley, Zisserman, "Multiple View Geometry in Computer Vision".
+           2003. Cambridge University Press. p. 619
+    .. [2] Charbonnier et al. "Deterministic edge-preserving regularization
+           in computed imaging". 1997. IEEE Trans. Image Processing.
+           6 (2): 298 - 311.
 
     Examples
     --------
@@ -11230,7 +11230,7 @@ add_newdoc("pseudo_huber",
     ...             ls=style)
     >>> ax.legend(loc="upper center")
     >>> ax.set_xlabel("$x$")
-    >>> ax.set_ylabel("Pseudo-Huber loss function $h_{\delta}(x)$")
+    >>> ax.set_title("Pseudo-Huber loss function $h_{\delta}(x)$")
     >>> ax.set_xlim(-4, 4)
     >>> ax.set_ylim(0, 8)
     >>> plt.show()
