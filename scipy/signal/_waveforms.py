@@ -261,7 +261,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
         return yI, yQ, yenv
 
 
-def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
+def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, complex=False):
     """Frequency-swept cosine generator.
 
     In the following, 'Hz' should be interpreted as 'cycles per unit';
@@ -288,6 +288,10 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
         This parameter is only used when `method` is 'quadratic'.
         It determines whether the vertex of the parabola that is the graph
         of the frequency is at t=0 or t=t1.
+    complex : bool, optional
+        It is only available for linear chirp. This parameter makes output
+        of linear chirp complex. If not given `False` is assumed. 
+        
 
     Returns
     -------
@@ -311,6 +315,7 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
     linear, lin, li:
 
         ``f(t) = f0 + (f1 - f0) * t / t1``
+        
 
     quadratic, quad, q:
 
@@ -416,7 +421,14 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
     phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero)
     # Convert  phi to radians.
     phi *= pi / 180
-    return cos(phase + phi)
+    
+    if complex:
+        a = exp(2j * pi * phi / (2*pi))
+        i = cos(phase + phi)
+        q = cos(phase + phi + (2*pi *90/360))*1j
+        return  a * np.complex64(i - q)
+    else:
+        return cos(phase + phi)
 
 
 def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
@@ -431,8 +443,8 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
     t1 = float(t1)
     f1 = float(f1)
     if method in ['linear', 'lin', 'li']:
-        beta = (f1 - f0) / t1
-        phase = 2 * pi * (f0 * t + 0.5 * beta * t * t)
+            beta = (f1 - f0) / t1
+            phase = 2 * pi * (f0 * t + 0.5 * beta * t * t)
 
     elif method in ['quadratic', 'quad', 'q']:
         beta = (f1 - f0) / (t1 ** 2)
