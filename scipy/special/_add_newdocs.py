@@ -6128,7 +6128,7 @@ add_newdoc("huber",
     References
     ----------
     .. [1] Peter Huber. "Robust Estimation of a Location Parameter",
-           Annals of Statistics. 53 (1): 73–101.
+           1964. Annals of Statistics. 53 (1): 73 - 101.
 
     Examples
     --------
@@ -6149,7 +6149,7 @@ add_newdoc("huber",
     >>> huber([1., 3., 5.], 4.)
     array([3.5, 7.5, 8. ])
 
-    Compute the function at different pointy by providing a NumPy array or
+    Compute the function at different points by providing a NumPy array or
     list for `r`.
 
     >>> huber(2., np.array([1., 1.5, 3.]))
