@@ -443,8 +443,8 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
     t1 = float(t1)
     f1 = float(f1)
     if method in ['linear', 'lin', 'li']:
-            beta = (f1 - f0) / t1
-            phase = 2 * pi * (f0 * t + 0.5 * beta * t * t)
+        beta = (f1 - f0) / t1
+        phase = 2 * pi * (f0 * t + 0.5 * beta * t * t)
 
     elif method in ['quadratic', 'quad', 'q']:
         beta = (f1 - f0) / (t1 ** 2)
