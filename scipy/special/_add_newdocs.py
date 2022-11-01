@@ -11256,7 +11256,7 @@ add_newdoc("pseudo_huber",
     >>> ax.plot(x, pseudo_huber_grad(delta, x), label="Pseudo-Huber Gradient",
     ...         ls="solid")
     >>> ax.legend(loc="upper center")
-    plt.show()
+    >>> plt.show()
     """)
 
 add_newdoc("psi",
