@@ -17,14 +17,14 @@ np.import_array()
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
 def evaluate_linear_2d(double_or_complex[:, :] values, # cannot declare as ::1
-                       long[:, :]indices,              # unless prior
+                       long[:, :] indices,             # unless prior
                        double[:, :] norm_distances,    # np.ascontiguousarray
                        tuple grid not None,
                        double_or_complex[:] out):
     cdef:
         long num_points = indices.shape[1]      # XXX: npy_intp?
         long i0, i1, point
-        double_or_complex y0, y1, summ
+        double_or_complex y0, y1, result
     assert out.shape[0] == num_points
 
     if grid[1].shape[0] == 1:
@@ -33,8 +33,8 @@ def evaluate_linear_2d(double_or_complex[:, :] values, # cannot declare as ::1
             i0 = indices[0, point]
             if i0 >= 0:
                 y0 = norm_distances[0, point]
-                summ = values[i0, 0]*(1 - y0) + values[i0+1, 0]*y0
-                out[point] = summ
+                result = values[i0, 0]*(1 - y0) + values[i0+1, 0]*y0
+                out[point] = result
             else:
                 # xi was nan: find_interval returns -1
                 out[point] = NAN
@@ -44,8 +44,8 @@ def evaluate_linear_2d(double_or_complex[:, :] values, # cannot declare as ::1
             i1 = indices[1, point]
             if i1 >= 0:
                 y1 = norm_distances[1, point]
-                summ = values[0, i1]*(1 - y1) + values[0, i1+1]*y1
-                out[point] = summ
+                result = values[0, i1]*(1 - y1) + values[0, i1+1]*y1
+                out[point] = result
             else:
                 # xi was nan: find_interval returns -1
                 out[point] = NAN
@@ -55,12 +55,12 @@ def evaluate_linear_2d(double_or_complex[:, :] values, # cannot declare as ::1
             if i0 >=0 and i1 >=0:
                 y0, y1 = norm_distances[0, point], norm_distances[1, point]
 
-                summ = 0.0
-                summ = summ + values[i0, i1] * (1 - y0) * (1 - y1)
-                summ = summ + values[i0, i1+1] * (1 - y0) * y1
-                summ = summ + values[i0+1, i1] * y0 * (1 - y1)
-                summ = summ + values[i0+1, i1+1] * y0 * y1
-                out[point] = summ
+                result = 0.0
+                result = result + values[i0, i1] * (1 - y0) * (1 - y1)
+                result = result + values[i0, i1+1] * (1 - y0) * y1
+                result = result + values[i0+1, i1] * y0 * (1 - y1)
+                result = result + values[i0+1, i1+1] * y0 * y1
+                out[point] = result
             else:
                 # xi was nan
                 out[point] = NAN

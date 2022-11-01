@@ -551,7 +551,7 @@ class TestRegularGridInterpolator:
         assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
     def test_nonscalar_values_linear_2D(self):
-        # Verify that non-scalar valued work in the 2D fast path
+        # Verify that non-scalar values work in the 2D fast path
         method = 'linear'
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
                   (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0), ]
