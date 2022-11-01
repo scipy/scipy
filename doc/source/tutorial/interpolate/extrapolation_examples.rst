@@ -61,10 +61,10 @@ To illustrate:
     import numpy as np
     import matplotlib.pyplot as plt
     from scipy.interpolate import interp1d
-    
+
     x = np.linspace(0, 1.5*np.pi, 11)
     y = np.column_stack((np.cos(x), np.sin(x)))   # y.shape is (11, 2)
-    
+
     func = interp1d(x, y,
                     axis=0,  # interpolate along columns
                     bounds_error=False,
@@ -72,11 +72,11 @@ To illustrate:
                     fill_value=(y[0], y[-1]))
     xnew = np.linspace(-np.pi, 2.5*np.pi, 51)
     ynew = func(xnew)
-    
+
     fix, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
     ax1.plot(xnew, ynew[:, 0])
     ax1.plot(x, y[:, 0], 'o')
-    
+
     ax2.plot(xnew, ynew[:, 1])
     ax2.plot(x, y[:, 1], 'o')
     plt.tight_layout()
@@ -116,18 +116,18 @@ several boundary conditions:
     import numpy as np
     import matplotlib.pyplot as plt
     from scipy.interpolate import CubicSpline
-    
+
     xs = [1, 2, 3, 4, 5, 6, 7, 8]
     ys = [4.5, 3.6, 1.6, 0.0, -3.3, -3.1, -1.8, -1.7]
-    
+
     notaknot = CubicSpline(xs, ys, bc_type='not-a-knot')
     natural = CubicSpline(xs, ys, bc_type='natural')
     clamped = CubicSpline(xs, ys, bc_type='clamped')
     xnew = np.linspace(min(xs) - 4, max(xs) + 4, 101)
-    
+
     splines = [notaknot, natural, clamped]
     titles = ['not-a-knot', 'natural', 'clamped']
-    
+
     fig, axs = plt.subplots(3, 3, figsize=(12, 12))
     for i in [0, 1, 2]:
         for j, spline, title in zip(range(3), splines, titles):
@@ -157,11 +157,11 @@ proceeds using these two additional intervals.
     import numpy as np
     import matplotlib.pyplot as plt
     from scipy.interpolate import CubicSpline
-    
+
     def add_boundary_knots(spline):
         """
         Add knots infinitesimally to the left and right with zero 2nd and 3rd derivative.
-        
+
         Maintain the first derivative from whatever boundary condition was selected,
         Modifies the spline in place.
         """
@@ -169,14 +169,14 @@ proceeds using these two additional intervals.
         leftx = spline.x[0]
         lefty = spline(leftx)
         leftslope = spline(leftx, nu=1)
-        
+
         # add a new breakpoint just to the left and use the
         # known slope to construct the PPoly coefficients.
         leftxnext = np.nextafter(leftx, leftx - 1)
         leftynext = lefty + leftslope*(leftxnext - leftx)
         leftcoeffs = np.array([0, 0, leftslope, leftynext])
         spline.extend(leftcoeffs[..., None], np.r_[leftxnext])
-        
+
         # repeat with additional knots to the right
         rightx = spline.x[-1]
         righty = spline(rightx)
@@ -185,34 +185,34 @@ proceeds using these two additional intervals.
         rightynext = righty + rightslope * (rightxnext - rightx)
         rightcoeffs = np.array([0, 0, rightslope, rightynext])
         spline.extend(rightcoeffs[..., None], np.r_[rightxnext])
-    
+
     xs = [1, 2, 3, 4, 5, 6, 7, 8]
     ys = [4.5, 3.6, 1.6, 0.0, -3.3, -3.1, -1.8, -1.7]
-    
+
     notaknot = CubicSpline(xs,ys, bc_type='not-a-knot')
     # not-a-knot does not require additional boundary conditions for extrapolation
-    
+
     natural = CubicSpline(xs,ys, bc_type='natural')
     # extend the natural natural spline with linear extrapolating knots
     add_boundary_knots(natural)
-    
+
     clamped = CubicSpline(xs,ys, bc_type='clamped')
     # extend the clamped spline with constant extrapolating knots
     add_boundary_knots(clamped)
-    
+
     xnew = np.linspace(min(xs) - 5, max(xs) + 5, 201)
-    
+
     fig, axs = plt.subplots(3, 3,figsize=(12,12))
-    
+
     splines = [notaknot, natural, clamped]
     titles = ['not-a-knot', 'natural', 'clamped']
-    
+
     for i in [0, 1, 2]:
         for j, spline, title in zip(range(3), splines, titles):
             axs[i, j].plot(xs, spline(xs, nu=i),'o')
             axs[i, j].plot(xnew, spline(xnew, nu=i),'-')
             axs[i, j].set_title(f'{title}, deriv={i}')
-    
+
     plt.tight_layout()
     plt.show()
 
@@ -248,10 +248,10 @@ Solving this equation *once* is straightforward:
     import numpy as np
     import matplotlib.pyplot as plt
     from scipy.optimize import brentq
-    
+
     def f(x, a):
         return a*x - 1/np.tan(x)
-    
+
     a = 3
     x0 = brentq(f, 1e-16, np.pi/2, args=(a,))   # here we shift the left edge
                                                 # by a machine epsilon to avoid
@@ -284,30 +284,30 @@ derivatives of the tabulated function. We will use
     import numpy as np
     import matplotlib.pyplot as plt
     from scipy.interpolate import BPoly
-    
+
     def f(x, a):
         return a*x - 1/np.tan(x)
 
     xleft, xright = 0.2, np.pi/2
     x = np.linspace(xleft, xright, 11)
-    
+
     fig, ax = plt.subplots(1, 2, figsize=(12, 4))
-    
+
     for j, a in enumerate([3, 93]):
         y = f(x, a)
         dydx = a + 1./np.sin(x)**2    # d(ax - 1/tan(x)) / dx
         dxdy = 1 / dydx               # dx/dy = 1 / (dy/dx)
-    
+
         xdx = np.c_[x, dxdy]
         spl = BPoly.from_derivatives(y, xdx)   # inverse interpolation
-    
+
         yy = np.linspace(f(xleft, a), f(xright, a), 51)
         ax[j].plot(yy, spl(yy), '--')
         ax[j].plot(y, x, 'o')
         ax[j].set_xlabel(r'$y$')
         ax[j].set_ylabel(r'$x$')
         ax[j].set_title(rf'$a = {a}$')
-    
+
         ax[j].plot(0, spl(0), 'o', ms=12)
         ax[j].text(0.1, 0.85, fr'$x_0 = {spl(0):.3f}$',
                    transform=ax[j].transAxes, fontsize=18)
@@ -349,15 +349,15 @@ implementation may look like this
             # construct the interpolant
             xleft, xright = 0.2, np.pi/2
             x = np.linspace(xleft, xright, 11)
-    
+
             y = f(x, a)
             dydx = a + 1./np.sin(x)**2    # d(ax - 1/tan(x)) / dx
             dxdy = 1 / dydx               # dx/dy = 1 / (dy/dx)
-    
+
             # inverse interpolation
             self.spl = BPoly.from_derivatives(y, np.c_[x, dxdy])
             self.a = a
-    
+
         def root(self):
             out = self.spl(0)
             asympt = 1./np.sqrt(self.a)
@@ -414,17 +414,17 @@ whole dataset using NumPy broadcasting.
     import numpy as np
     import matplotlib.pyplot as plt
     from scipy.interpolate import CloughTocher2DInterpolator as CT
-    
+
     def my_CT(xy, z):
         """CT interpolator + nearest-neighbor extrapolation.
-        
+
         Parameters
         ----------
         xy : ndarray, shape (npoints, ndim)
             Coordinates of data points
         z : ndarray, shape (npoints)
             Values at data points
-            
+
         Returns
         -------
         func : callable
@@ -435,13 +435,13 @@ whole dataset using NumPy broadcasting.
         x = xy[:, 0]
         y = xy[:, 1]
         f = CT(xy, z)
-    
+
         # this inner function will be returned to a user
         def new_f(xx, yy):
             # evaluate the CT interpolator. Out-of-bounds values are nan.
             zz = f(xx, yy)
             nans = np.isnan(zz)
-            
+
             if nans.any():
                 # for each nan point, find its nearest neighbor
                 inds = np.argmin(
@@ -451,7 +451,7 @@ whole dataset using NumPy broadcasting.
                 # ... and use its value
                 zz[nans] = z[inds]
             return zz
-        
+
         return new_f
 
     # Now illustrate the difference between the original ``CT`` interpolant
@@ -460,24 +460,23 @@ whole dataset using NumPy broadcasting.
     x = np.array([1, 1, 1, 2, 2, 2, 4, 4, 4])
     y = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
     z = np.array([0, 7, 8, 3, 4, 7, 1, 3, 4])
-    
+
     xy = np.c_[x, y]
     lut = CT(xy, z)
     lut2 = my_CT(xy, z)
-    
+
     X = np.linspace(min(x) - 0.5, max(x) + 0.5, 71)
     Y = np.linspace(min(y) - 0.5, max(y) + 0.5, 71)
     X, Y = np.meshgrid(X, Y)
-    
+
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
-    
+
     ax.plot_wireframe(X, Y, lut(X, Y), label='CT')
     ax.plot_wireframe(X, Y, lut2(X, Y), color='m',
                       cstride=10, rstride=10, alpha=0.7, label='CT + n.n.')
-    
+
     ax.scatter(x, y, z,  'o', color='k', s=48, label='data')
     ax.legend()
     plt.tight_layout()
-
 
