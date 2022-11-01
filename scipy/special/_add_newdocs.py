@@ -6158,7 +6158,7 @@ add_newdoc("huber",
     The function can be calculated for different `delta` and `r` by
     providing arrays for both with compatible shapes for broadcasting.
 
-    >>> r=np.array([1., 2.5, 8., 10.])
+    >>> r = np.array([1., 2.5, 8., 10.])
     >>> deltas = np.array([[1.], [5.], [9.]])
     >>> print(r.shape, deltas.shape)
     (4,) (3, 1)
@@ -6172,7 +6172,7 @@ add_newdoc("huber",
 
     >>> x = np.linspace(-4, 4, 500)
     >>> deltas = [1, 2, 3]
-    >>> linestyles=["dashed", "dotted", "dashdot"]
+    >>> linestyles = ["dashed", "dotted", "dashdot"]
     >>> fig, ax = plt.subplots()
     >>> combined_plot_parameters = list(zip(deltas, linestyles))
     >>> for delta, style in combined_plot_parameters:
@@ -11208,7 +11208,7 @@ add_newdoc("pseudo_huber",
     The function can be calculated for different `delta` and `r` by
     providing arrays for both with compatible shapes for broadcasting.
 
-    >>> r=np.array([1., 2.5, 8., 10.])
+    >>> r = np.array([1., 2.5, 8., 10.])
     >>> deltas = np.array([[1.], [5.], [9.]])
     >>> print(r.shape, deltas.shape)
     (4,) (3, 1)
@@ -11222,7 +11222,7 @@ add_newdoc("pseudo_huber",
 
     >>> x = np.linspace(-4, 4, 500)
     >>> deltas = [1, 2, 3]
-    >>> linestyles=["dashed", "dotted", "dashdot"]
+    >>> linestyles = ["dashed", "dotted", "dashdot"]
     >>> fig, ax = plt.subplots()
     >>> combined_plot_parameters = list(zip(deltas, linestyles))
     >>> for delta, style in combined_plot_parameters:
