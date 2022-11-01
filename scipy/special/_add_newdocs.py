@@ -11190,6 +11190,7 @@ add_newdoc("pseudo_huber",
     >>> import matplotlib.pyplot as plt
 
     Calculate the function for ``delta=1`` at ``r=2``.
+
     >>> pseudo_huber(1., 2.)
     1.2360679774997898
 
