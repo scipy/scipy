@@ -467,7 +467,7 @@ py3.extension_module('_test_round',
 npz_files = [
   [
     '_data_boost',
-    'tests/data/boost/acosh_data_ipp/acosh_data.txt',
+    'tests/data/boost/assoc_legendre_p_ipp/assoc_legendre_p.txt',
     'boost',
     'boost.npz'
   ],
