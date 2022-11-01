@@ -11249,7 +11249,7 @@ add_newdoc("pseudo_huber",
     ...     return x* (1+(x/delta)**2)**(-0.5)
     >>> x=np.linspace(-3, 3, 500)
     >>> delta = 1.
-    >>> fig, ax = plt.subplots(figsize=(8, 8))
+    >>> fig, ax = plt.subplots(figsize=(7, 7))
     >>> ax.plot(x, huber(delta, x), label="Huber", ls="dashed")
     >>> ax.plot(x, huber_grad(delta, x), label="Huber Gradient", ls="dashdot")
     >>> ax.plot(x, pseudo_huber(delta, x), label="Pseudo-Huber", ls="dotted")
