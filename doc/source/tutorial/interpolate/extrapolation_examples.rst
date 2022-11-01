@@ -14,13 +14,13 @@ applications you can use the ``extrapolate`` or ``fill_value`` keywords;
 this may or may not be adequate to a particular problem.
 
 Special attention needs to be paid to extrapolation of non-linear
-interpolants. Very often the extrapolated results quickly stop making
-sense with increasing the distance to the data domain. This is of course
+interpolants. Very often the extrapolated results make less
+sense with increasing distance from the data domain. This is of course
 to be expected: an interpolant only knows the data within the data
 domain.
 
-When the extrapolated results are not adequate, users need to implement
-the desired extrapolation mode themselves.
+When the default extrapolated results are not adequate, users need to
+implement the desired extrapolation mode themselves.
 
 In this tutorial, we consider several worked examples of both
 approaches. These examples may or may not be applicable to your
@@ -140,12 +140,12 @@ several boundary conditions:
 
 It is clearly seen that e.g. natural spline does have the zero second derivative
 at the boundaries, but extrapolation is non-linear. ``bc_type="clamped"``
-shows a similar behavior: first derivatives are only equal zero exactly at the
+shows a similar behavior: first derivatives are only equal to zero exactly at the
 boundary. In all cases, extrapolation is done by extending the first and last
 polynomial pieces of the spline, whatever they happen to be.
 
 One possible way to force the extrapolation is to extend the interpolation domain
-to add a first and last polynomial pieces which have desired properties.
+to add first and last polynomial pieces which have desired properties.
 
 Here we use ``extend`` method of the `CubicSpline` superclass,
 `PPoly`, to add two extra breakpoints and to make sure that the additional
