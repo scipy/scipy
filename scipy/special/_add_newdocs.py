@@ -11179,7 +11179,7 @@ add_newdoc("pseudo_huber",
         2003. Cambridge University Press. p. 619
     [2] Charbonnier et al. "Deterministic edge-preserving regularization
         in computed imaging". 1997. IEEE Trans. Image Processing.
-        6 (2): 298–311
+        6 (2): 298 - 311.
 
     Examples
     --------
