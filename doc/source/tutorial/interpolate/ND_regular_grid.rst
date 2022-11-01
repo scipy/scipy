@@ -80,6 +80,20 @@ and
     >>> np.allclose(result_rgi, result_interpn, atol=1e-15)
     True
 
+For data confined to an (N-1)-dimensional subspace of N-dimensional space, i.e.
+when one of the grid axes has length 1, the extrapolation along this axis is
+controlled by the ``fill_value`` keyword parameter:
+
+    >>> x = np.array([0, 5, 10])
+    >>> y = np.array([0])
+    >>> data = array([[0], [5], [10]])
+    >>> rgi = RegularGridInterpolator((x, y), data,
+    ...                               bounds_error=False, fill_value=None)
+    >>> rgi([(2, 0), (2, 1), (2, -1)])
+    array([2., 2., 2.]))         # extrapolate the value on the axis
+    >>> rgi.fill_value = -101
+    >>> rgi([(2, 0), (2, 1), (2, -1)])
+    array([2., -101., -101.]))
 
 Finally, we note that if you are dealing with data on Cartesian grids with
 integer coordinates, e.g. resampling image data, these routines may not be the
