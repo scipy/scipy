@@ -49,7 +49,7 @@ class TestChirp:
     def test_linear_at_zero(self):
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='linear')
         assert_almost_equal(w, 1.0)
-
+        
     def test_linear_freq_01(self):
         method = 'linear'
         f0 = 1.0
@@ -71,6 +71,10 @@ class TestChirp:
         tf, f = compute_frequency(t, phase)
         abserr = np.max(np.abs(f - chirp_linear(tf, f0, f1, t1)))
         assert_(abserr < 1e-6)
+    
+    def test_linear_complex_at_zero(self):
+        w = waveforms.chirp(t=0, f0=-10.0, f1=1.0, t1=1.0, method='linear', complex=True)
+        assert_almost_equal(w, 1.0)
 
     def test_quadratic_at_zero(self):
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='quadratic')
@@ -80,6 +84,10 @@ class TestChirp:
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='quadratic',
                             vertex_zero=False)
         assert_almost_equal(w, 1.0)
+        
+    def test_quadratic_complex_at_zero(self):
+        w = waveforms.chirp(t=0, f0=-1.0, f1=2.0, t1=1.0, method='quadratic', complex=True)
+        assert_almost_equal(w, 1.0+0j)
 
     def test_quadratic_freq_01(self):
         method = 'quadratic'
