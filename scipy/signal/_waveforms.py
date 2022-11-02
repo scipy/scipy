@@ -261,7 +261,8 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
         return yI, yQ, yenv
 
 
-def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, complex=False):
+def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True,
+          complex=False):
     """Frequency-swept cosine generator.
 
     In the following, 'Hz' should be interpreted as 'cycles per unit';
@@ -289,10 +290,9 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, complex=False
         It determines whether the vertex of the parabola that is the graph
         of the frequency is at t=0 or t=t1.
     complex : bool, optional
-        It is only available for linear and quadratic methods. This parameter makes 
-        generated signal complex. When complex option used, it's possible to use 
-        negative frequency as f_0. It's `False` by default. 
-        
+        It is only available for linear and quadratic methods. This parameter
+        makes generated signal complex. When complex option used, it's
+        possible to use negative frequency as f_0. It's `False` by default.
 
     Returns
     -------
@@ -316,7 +316,6 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, complex=False
     linear, lin, li:
 
         ``f(t) = f0 + (f1 - f0) * t / t1``
-        
 
     quadratic, quad, q:
 
@@ -422,7 +421,7 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, complex=False
     phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero)
     # Convert  phi to radians.
     phi *= pi / 180
-    
+
     if complex:
         a = exp(2j * pi * phi / (2*pi))
         i = cos(phase + phi)
