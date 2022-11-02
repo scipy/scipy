@@ -426,8 +426,8 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, complex=False
     if complex:
         a = exp(2j * pi * phi / (2*pi))
         i = cos(phase + phi)
-        q = cos(phase + phi + (2*pi *90/360))*1j
-        return  a * np.complex64(i - q)
+        q = cos(phase + phi + (2 * pi * 90 / 360)) * 1j
+        return a * np.complex64(i - q)
     else:
         return cos(phase + phi)
 
