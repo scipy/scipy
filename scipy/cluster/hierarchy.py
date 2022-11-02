@@ -58,6 +58,7 @@ tree objects.
    ClusterNode
    leaves_list
    to_tree
+   to_newick_tree
    cut_tree
    optimal_leaf_ordering
 
@@ -148,7 +149,7 @@ __all__ = ['ClusterNode', 'DisjointSet', 'average', 'centroid', 'complete',
            'leaders', 'leaves_list', 'linkage', 'maxRstat', 'maxdists',
            'maxinconsts', 'median', 'num_obs_linkage', 'optimal_leaf_ordering',
            'set_link_color_palette', 'single', 'to_mlab_linkage', 'to_tree',
-           'ward', 'weighted']
+           'to_newick_tree', 'ward', 'weighted']
 
 
 class ClusterWarning(UserWarning):
@@ -1475,14 +1476,6 @@ def to_tree(Z, rd=False):
     for i, row in enumerate(Z):
         fi = int(row[0])
         fj = int(row[1])
-        if fi > i + n:
-            raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
-                              'is used before it is formed. See row %d, '
-                              'column 0') % fi)
-        if fj > i + n:
-            raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
-                              'is used before it is formed. See row %d, '
-                              'column 1') % fj)
 
         nd = ClusterNode(i + n, d[fi], d[fj], row[2])
         #                ^ id   ^ left ^ right ^ dist
@@ -1495,6 +1488,70 @@ def to_tree(Z, rd=False):
         return (nd, d)
     else:
         return nd
+
+
+def to_newick_tree(Z, leaf_names):
+    """
+    Convert a linkage matrix into a 
+    string in `Newick <https://en.wikipedia.org/wiki/Newick_format>`_ format.
+
+    Newick is a commonly-used format to represent trees. It is used by packages 
+    such as `ete3 <http://etetoolkit.org/>`_  for tree manipulation and visualisation.
+
+    Parameters
+    ----------
+    Z : ndarray
+        The linkage matrix in proper form (see the `linkage`
+        function documentation).
+    leaf_names : list
+        List of strings giving the names of the leaves of the tree. The order
+        of strings is assumed to be the the same as the order of the data points 
+        given to `linkage`.
+
+    Returns
+    -------
+    tree : string
+
+    See Also
+    --------
+    linkage, to_tree
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.cluster import hierarchy
+    >>> Z = np.asarray([[0, 1, 3.0, 2], [3, 2, 4.0, 3]], dtype=np.double)
+    >>> leaf_names = ["l0", "l1", "l2"]
+    >>> hierarchy.to_newick_tree(Z, leaf_names)
+    ((l0:3.0,l1:3.0):1.0,l2:4.0);
+    """
+    Z = np.asarray(Z, order='c')
+
+    # Number of original objects is equal to the number of rows plus 1.
+    n = Z.shape[0] + 1
+    n_leaves = len(leaf_names)
+    if n != n_leaves:
+        raise ValueError(f"Expected {n} leaf names, got {n_leaves}")
+
+    is_valid_linkage(Z, throw=True, name='Z')
+
+    newick_intermediates = leaf_names + [None] * Z.shape[0]
+    cluster_dists = [0] * (n + Z.shape[0])
+    for i, row in enumerate(Z):
+        dist = row[2]
+        fi = int(row[0])
+        fj = int(row[1])
+        cdi = dist - cluster_dists[fi]
+        cdj = dist - cluster_dists[fj]
+        newick_subtree = (
+                f"({newick_intermediates[fi]}:{cdi},"
+                f"{newick_intermediates[fj]}:{cdj})"
+                )
+        newick_intermediates[i + n] = newick_subtree
+        cluster_dists[i + n] = dist
+        newick_intermediates[fi] = None
+        newick_intermediates[fj] = None
+    return newick_intermediates[i + n] + ";"
 
 
 def optimal_leaf_ordering(Z, y, metric='euclidean'):

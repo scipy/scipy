@@ -42,8 +42,8 @@ from scipy.cluster.hierarchy import (
     num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster,
     is_isomorphic, single, leaders,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
-    is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
-    set_link_color_palette, cut_tree, optimal_leaf_ordering,
+    is_valid_linkage, is_valid_im, to_tree, to_newick_tree, leaves_list,
+    dendrogram, set_link_color_palette, cut_tree, optimal_leaf_ordering,
     _order_cluster_tree, _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
@@ -1089,3 +1089,50 @@ def test_Heap():
     pair = heap.get_min()
     assert_equal(pair['key'], 1)
     assert_equal(pair['value'], 10)
+
+
+class TestNewickTree:
+    def setup_method(self):
+        self.Z = np.asarray([[0, 1, 3.0, 2],
+                            [3, 2, 4.0, 3]], dtype=np.double)
+        self.leaf_names = ["l0", "l1", "l2"]
+
+    def test_invalid_linkage_fails(self):
+        self.Z[0][1] = 3
+        assert_raises(ValueError, to_newick_tree, self.Z, self.leaf_names)
+
+    def test_incorrect_number_of_leaves_fails(self):
+        assert_raises(ValueError, to_newick_tree, self.Z, self.leaf_names[0:2])
+        self.leaf_names.append("l3")
+        assert_raises(ValueError, to_newick_tree, self.Z, self.leaf_names)
+
+    def test_one_cluster_correct_Newick_made(self):
+        Z = np.asarray([[0, 1, 3.0, 2]], dtype=np.double)
+        leaf_names = self.leaf_names[:2]
+        result = to_newick_tree(Z, leaf_names)
+        expected = "(l0:3.0,l1:3.0);"
+        assert_equal(result, expected)
+
+    def test_two_clusters_correct_Newick_made(self):
+        result = to_newick_tree(self.Z, self.leaf_names)
+        expected = "((l0:3.0,l1:3.0):1.0,l2:4.0);"
+        assert_equal(result, expected)
+
+    def test_three_clusters_correct_Newick_made(self):
+        Z = np.asarray([[0, 1, 3.0, 2],
+                        [2, 3, 2.0, 2],
+                        [4, 5, 4.0, 4]], dtype=np.double)
+        leaf_names = self.leaf_names + ["l3"]
+        result = to_newick_tree(Z, leaf_names)
+        expected = "((l0:3.0,l1:3.0):1.0,(l2:2.0,l3:2.0):2.0);"
+        assert_equal(result, expected)
+
+    def test_four_clusters_correct_Newick_made(self):
+        Z = np.asarray([[0, 1, 2.0, 2],
+                        [5, 3, 3.5, 2],
+                        [6, 4, 4.0, 2],
+                        [7, 2, 6.0, 4]], dtype=np.double)
+        leaf_names = self.leaf_names + ["l3", "l4"]
+        result = to_newick_tree(Z, leaf_names)
+        expected = "((((l0:2.0,l1:2.0):1.5,l3:3.5):0.5,l4:4.0):2.0,l2:6.0);"
+        assert_equal(result, expected)
