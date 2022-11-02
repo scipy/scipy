@@ -53,7 +53,7 @@ jobs:
           COMMIT_MSG=$(git log --no-merges -1)
           RUN="0"
           if [[ "$COMMIT_MSG" == *"[wheel build]"* ]]; then
-              RUN="1" 
+              RUN="1"
           fi
           echo "message=$RUN" >> $GITHUB_OUTPUT
           echo github.ref ${{ github.ref }}
@@ -140,7 +140,7 @@ jobs:
 #        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'true' }}
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.10.1
+        uses: pypa/cibuildwheel@v2
         # Build all wheels here, apart from macosx_arm64, linux_aarch64
         # cibuildwheel is currently unable to pass configuration flags to
         # CIBW_BUILD_FRONTEND https://github.com/pypa/cibuildwheel/issues/1227
@@ -200,14 +200,14 @@ jobs:
           # compiler environment.
           $FC $FFLAGS tools/wheels/test.f $LDFLAGS
           ls -al *.out
-          otool -L a.out      
+          otool -L a.out
 
           export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
           export PKG_CONFIG=/usr/local/bin/pkg-config
           export CFLAGS=" -arch arm64 $CFLAGS"
           export CXXFLAGS=" -arch arm64 $CXXFLAGS"
           export LD_LIBRARY_PATH="/opt/arm64-builds/lib:$FC_LIBDIR:$LD_LIBRARY_PATH"
-          
+
           # install dependencies for the build machine
           pip install meson cython pybind11 pythran ninja oldest-supported-numpy build delocate meson-python
 
@@ -254,7 +254,7 @@ jobs:
           # an upload to:
           #
           # https://anaconda.org/scipy-wheels-nightly/scipy
-          # 
+          #
           # Pushes to a maintenance branch that contain '[wheel build]' will
           # cause wheels to be built and uploaded to:
           #
