@@ -41,7 +41,7 @@ Editing SciPy
 - :ref:`git-development` is a guide to using ``git``, the distributed version-control system used to manage the changes made to SciPy code from around the world
 - :ref:`scipy-api` contains some important notes about how SciPy code is organized and documents the structure of the SciPy API; if you are going to import other SciPy code, read this first
 - :ref:`reviewing-prs` explains how to review another author's SciPy code locally
-- :ref:`triage` explains how to curate issues and PRs, as well as how GitHub team permissions work for SciPy
+- :ref:`triaging` explains how to curate issues and PRs, as well as how GitHub team permissions work for SciPy
 - :ref:`adding-new` has information on how to add new methods, functions and classes
 - :ref:`core-dev-guide` has background information including how decisions are made and how a release is prepared; it's geared toward :ref:`Core Developers <governance>`, but contains useful information for all contributors
 - :ref:`missing-bits` - code and documentation style guide
