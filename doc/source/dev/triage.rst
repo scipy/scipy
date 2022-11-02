@@ -19,9 +19,8 @@ Roles and permissions
 =====================
 
 SciPy uses two levels of permissions: triage and core team members. **Triage
-members** can label and close issues and pull requests, while **core team
-members** can label and close issues and pull request, and can also merge pull
-requests.
+members** can label and close issues and pull requests, while **maintainers**
+can label and close issues and pull request, and can also merge pull requests.
 
 `GitHub publishes the full list of permissions for the platform.
 <https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-roles-for-an-organization>`__
@@ -64,8 +63,8 @@ Issue labels (requires triage rights)
 
 When an issue or pull request is created, SciPy may automatically assign one or
 more labels depending on the title or section of the code involved. For example,
-all issues created with title including the ``DOC:`` prefix will automatically
-receive a ``Documentation`` label.
+all issues created with title including the ``BUG:`` prefix will automatically
+receive a ``defect`` label.
 
 In some cases, it may be useful to also include other labels manually. Any
 person with triage rights can add or remove label as appropriate. Check the
