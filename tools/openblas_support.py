@@ -8,13 +8,14 @@ import tarfile
 import textwrap
 import time
 import zipfile
+from packaging.tags import sys_tags
 
 from tempfile import mkstemp, gettempdir
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
-OPENBLAS_V = '0.3.18'
-OPENBLAS_LONG = 'v0.3.18'
+OPENBLAS_V = '0.3.20'
+OPENBLAS_LONG = 'v0.3.20'
 BASE_LOC = 'https://anaconda.org/multibuild-wheels-staging/openblas-libs'
 BASEURL = f'{BASE_LOC}/{OPENBLAS_LONG}/download'
 SUPPORTED_PLATFORMS = [
@@ -58,10 +59,25 @@ def get_manylinux(arch):
         default = '2010'
     else:
         default = '2014'
-    ret = os.environ.get("MB_ML_VER", default)
+    ml_ver = os.environ.get("MB_ML_VER", default)
     # XXX For PEP 600 this can be a glibc version
-    assert ret in ('1', '2010', '2014', '_2_24'), f'invalid MB_ML_VER {ret}'
-    return ret
+    assert ml_ver in ('1', '2010', '2014', '_2_24'), f'invalid MB_ML_VER {ml_ver}'
+    suffix = f'manylinux{ml_ver}_{arch}.tar.gz'
+    return suffix
+
+
+def get_musllinux(arch):
+    musl_ver = "1_1"
+    suffix = f'musllinux_{musl_ver}_{arch}.tar.gz'
+    return suffix
+
+
+def get_linux(arch):
+    tags = list(sys_tags())
+    if 'manylinux' in tags[0].platform:
+        return get_manylinux(arch)
+    elif 'musllinux' in tags[0].platform:
+        return get_musllinux(arch)
 
 
 def download_openblas(target, plat, ilp64):
@@ -73,8 +89,7 @@ def download_openblas(target, plat, ilp64):
                 '(KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.3')}
     suffix = None
     if osname == "linux":
-        ml_ver = get_manylinux(arch)
-        suffix = f'manylinux{ml_ver}_{arch}.tar.gz'
+        suffix = get_linux(arch)
         typ = 'tar.gz'
     elif plat == 'macosx-x86_64':
         suffix = 'macosx_10_9_x86_64-gf_1becaaa.tar.gz'
