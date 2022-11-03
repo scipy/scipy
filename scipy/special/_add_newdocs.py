@@ -9058,7 +9058,7 @@ add_newdoc("mathieu_cem",
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function for values to be periodic with 2pi *360 degrees*
     q : array_like
         Parameter of the function
     x : array_like
@@ -9229,7 +9229,7 @@ add_newdoc(
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function for values to be periodic with 2pi *360 degrees*
     q : array_like
         Parameter of the function
     x : array_like
