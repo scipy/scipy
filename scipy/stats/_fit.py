@@ -362,12 +362,12 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
         fun : callable
             The objective function to be optimized. `fun` accepts one argument
             ``x``, candidate shape parameters of the distribution, and returns
-            the negative log-likelihood function given ``x``, `dist`, and the
-            provided `data`.
+            the objective function value given ``x``, `dist`, and the provided
+            `data`.
             The job of `optimizer` is to find values of the decision variables
             that minimizes `fun`.
 
-        `optimizer` must also accepts the following keyword argument.
+        `optimizer` must also accept the following keyword argument.
 
         bounds : sequence of tuples
             The bounds on values of the decision variables; each element will
@@ -385,7 +385,7 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
         fixed, `optimizer` must also accept the following keyword argument.
 
         integrality : array_like of bools
-            For each decision variable, True if the decision variable is
+            For each decision variable, True if the decision variable
             must be constrained to integer values and False if the decision
             variable is continuous.
 
