@@ -428,6 +428,17 @@ class TestShgoSimplicialTestFunctions:
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
         run_test(test4_1, n=1, sampling_method='simplicial')
 
+    @pytest.mark.xfail(reason="backward incompatible change")
+    def test_lj_symmetry_old(self):
+        """LJ: Symmetry-constrained test function"""
+        options = {'symmetry': [True],
+                   'disp': True}
+        args = (6,)  # Number of atoms
+        run_test(testLJ, args=args, n=None,
+                 options=options, iters=4,
+                 sampling_method='simplicial')
+
+    @pytest.mark.xslow
     def test_f5_1_lj_symmetry(self):
         """LJ: Symmetry constrained test function"""
         options = {'symmetry': [0, ] * 6,
@@ -438,6 +449,7 @@ class TestShgoSimplicialTestFunctions:
                  options=options, iters=3,
                  sampling_method='simplicial')
 
+    @pytest.mark.xslow
     def test_f5_2_cons_symmetry(self):
         """Symmetry constrained test function"""
         options = {'symmetry': [0, 0],
@@ -447,6 +459,7 @@ class TestShgoSimplicialTestFunctions:
                  options=options, iters=2,
                  sampling_method='simplicial')
 
+    @pytest.mark.xslow
     def test_f5_3_cons_symmetry(self):
         """Assymmetrically constrained test function"""
         options = {'symmetry': [0, 0, 0, 3],
@@ -743,6 +756,7 @@ class TestShgoArguments:
         run_test(test1_1, n=30, workers=1)  # Constrained
         run_test(test_s, n=30, workers=1)  # Unconstrained
 
+    @pytest.mark.xslow
     def test_20_constrained_args(self):
         """Test that constraints can be passed to arguments"""
 
@@ -897,5 +911,3 @@ class TestShgoFailures:
                   'sampling_method': 'sobol'
                   }
         warns(UserWarning, shgo, *args, **kwargs)
-
-

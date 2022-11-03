@@ -146,20 +146,20 @@ def shgo(
         * symmetry : list or None
             Specify if the objective function contains symmetric variables.
             The search space (and therefore performance) is decreased by up to
-            O(n!) times in fully semmetric 
+            O(n!) times in the fully symmetric case
 
             E.g.  f(x) = (x_1 + x_2 + x_3) + (x_4)**2 + (x_5)**2 + (x_6)**2
-            
+
             In this equation x_2 and x_3 are symmetric to x_1, while x_5 and x_6
             are symmetric to x_4, this can be specified to the solver as:
-            
+
             symmetry = [0,  # Variable 1
                         0,  # symmetric to variable 1
                         0,  # symmetric to variable 1
                         3,  # Variable 4
                         3,  # symmetric to variable 4
                         3,  # symmetric to variable 4
-                        }
+                        ]
 
         * jac : bool or callable, optional
             Jacobian (gradient) of objective function. Only for CG, BFGS,
@@ -484,7 +484,7 @@ class SHGO:
 
         # Split obj func if given with Jac
         try:
-            if ((minimizer_kwargs['jac'] is True) and 
+            if ((minimizer_kwargs['jac'] is True) and
                (not callable(minimizer_kwargs['jac']))):
                 self.func = MemoizeJac(func)
                 jac = self.func.derivative
@@ -761,7 +761,7 @@ class SHGO:
 
     def __exit__(self, *args):
         return self.HC.V._mapwrapper.__exit__(*args)
-    
+
     # Iteration properties
     # Main construction loop:
     def iterate_all(self):

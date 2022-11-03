@@ -49,7 +49,7 @@ class Complex:
                        f: R^dim --> R^m
                    (for example a gradient function of the scalar field)
     vfield_args : tuple
-        Additional arguments to be passed to sfield
+        Additional arguments to be passed to vfield
     symmetry :
         If all the variables in the field are symmetric this
         option will reduce complexity of the triangulation by O(n!)

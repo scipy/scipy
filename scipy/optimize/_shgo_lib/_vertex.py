@@ -88,14 +88,22 @@ class VertexScalarField(VertexBase):
     def __init__(self, x, field=None, nn=None, index=None, field_args=(),
                  g_cons=None, g_cons_args=()):
         """
-        :param x: tuple, vector of vertex coordinates
-        :param field: function, a scalar field f: R^n --> R associated with
-                      the geometry
-        :param nn: list, optional, list of nearest neighbours
-        :param index: int, optional, index of the vertex
-        :param field_args: tuple, additional arguments to be passed to field
-        :param g_cons: function, constraints on the vertex
-        :param g_cons_args: tuple, additional arguments to be passed to g_cons
+        Parameters
+        ----------
+        x : tuple,
+            vector of vertex coordinates
+        field : callable, optional
+            a scalar field f: R^n --> R associated with the geometry
+        nn : list, optional
+            list of nearest neighbours
+        index : int, optional
+            index of the vertex
+        field_args : tuple, optional
+            additional arguments to be passed to field
+        g_cons : callable, optional
+            constraints on the vertex
+        g_cons_args : tuple, optional
+            additional arguments to be passed to g_cons
 
         """
         super().__init__(x, nn=nn, index=index)
@@ -382,7 +390,7 @@ class VertexCacheField(VertexCacheBase):
             v.maximiser()
 
 
-class ConstraintWraper(object):
+class ConstraintWraper:
     """Object to wrap constraints to pass to `multiprocessing.Pool`."""
     def __init__(self, g_cons, g_cons_args):
         self.g_cons = g_cons
