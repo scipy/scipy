@@ -53,7 +53,7 @@ def configuration(parent_package='', top_path=None):
             # I *think* this is right, because clang-cl doesn't
             # have its own compiler type
             if cc.compiler_type == 'msvc':
-                os_flag = '/O2'
+                o2_flag = '/O2'
                 ext.extra_compile_args.append(o2_flag)
 
         import pythran
