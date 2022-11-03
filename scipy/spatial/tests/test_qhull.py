@@ -795,6 +795,41 @@ class TestConvexHull:
         assert_equal(hull.good, expected)
 
 class TestVoronoi:
+
+    @pytest.mark.parametrize("qhull_opts, extra_pts", [
+        # option Qz (default for SciPy) will add
+        # an extra point at infinity
+        ("Qbb Qc Qz", 1),
+        ("Qbb Qc", 0),
+    ])
+    @pytest.mark.parametrize("n_pts", [50, 100])
+    @pytest.mark.parametrize("ndim", [2, 3])
+    def test_point_region_structure(self,
+                                    qhull_opts,
+                                    n_pts,
+                                    extra_pts,
+                                    ndim):
+        # see gh-16773
+        rng = np.random.default_rng(7790)
+        points = rng.random((n_pts, ndim))
+        vor = Voronoi(points, qhull_options=qhull_opts)
+        pt_region = vor.point_region
+        assert pt_region.max() == n_pts - 1 + extra_pts
+        assert pt_region.size == len(vor.regions) - extra_pts
+        assert len(vor.regions) == n_pts + extra_pts
+        assert vor.points.shape[0] == n_pts
+        # if there is an empty sublist in the Voronoi
+        # regions data structure, it should never be
+        # indexed because it corresponds to an internally
+        # added point at infinity and is not a member of the
+        # generators (input points)
+        if extra_pts:
+            sublens = [len(x) for x in vor.regions]
+            # only one point at infinity (empty region)
+            # is allowed
+            assert sublens.count(0) == 1
+            assert sublens.index(0) not in pt_region
+
     def test_masked_array_fails(self):
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.Voronoi, masked_array)
@@ -1008,14 +1043,15 @@ class Test_HalfspaceIntersection:
             truths[indexes[0]] = True
         assert_(truths.all())
 
-    def test_cube_halfspace_intersection(self):
-        halfspaces = np.array([[-1.0, 0.0, 0.0],
-                               [0.0, -1.0, 0.0],
-                               [1.0, 0.0, -1.0],
-                               [0.0, 1.0, -1.0]])
-        feasible_point = np.array([0.5, 0.5])
+    @pytest.mark.parametrize("dt", [np.float64, int])
+    def test_cube_halfspace_intersection(self, dt):
+        halfspaces = np.array([[-1, 0, 0],
+                               [0, -1, 0],
+                               [1, 0, -2],
+                               [0, 1, -2]], dtype=dt)
+        feasible_point = np.array([1, 1], dtype=dt)
 
-        points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+        points = np.array([[0.0, 0.0], [2.0, 0.0], [0.0, 2.0], [2.0, 2.0]])
 
         hull = qhull.HalfspaceIntersection(halfspaces, feasible_point)
 

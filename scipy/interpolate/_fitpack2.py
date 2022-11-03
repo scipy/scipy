@@ -24,7 +24,7 @@ import warnings
 from numpy import zeros, concatenate, ravel, diff, array, ones
 import numpy as np
 
-from . import _fitpack_py
+from . import _fitpack_impl
 from . import dfitpack
 
 
@@ -84,7 +84,7 @@ class UnivariateSpline:
         1-D array of dependent input data, of the same length as `x`.
     w : (N,) array_like, optional
         Weights for spline fitting.  Must be positive.  If `w` is None,
-        weights are all equal. Default is None.
+        weights are all 1. Default is None.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         `bbox` is None, ``bbox=[x[0], x[-1]]``. Default is None.
@@ -97,9 +97,24 @@ class UnivariateSpline:
 
             sum((w[i] * (y[i]-spl(x[i])))**2, axis=0) <= s
 
-        If `s` is None, ``s = len(w)`` which should be a good value if
-        ``1/w[i]`` is an estimate of the standard deviation of ``y[i]``.
-        If 0, spline will interpolate through all data points. Default is None.
+        However, because of numerical issues, the actual condition is::
+
+            abs(sum((w[i] * (y[i]-spl(x[i])))**2, axis=0) - s) < 0.001 * s
+
+        If `s` is None, `s` will be set as `len(w)` for a smoothing spline
+        that uses all data points.
+        If 0, spline will interpolate through all data points. This is
+        equivalent to `InterpolatedUnivariateSpline`.
+        Default is None.
+        The user can use the `s` to control the tradeoff between closeness
+        and smoothness of fit. Larger `s` means more smoothing while smaller
+        values of `s` indicate less smoothing.
+        Recommended values of `s` depend on the weights, `w`. If the weights
+        represent the inverse of the standard-deviation of `y`, then a good
+        `s` value should be found in the range (m-sqrt(2*m),m+sqrt(2*m))
+        where m is the number of datapoints in `x`, `y`, and `w`. This means
+        ``s = len(w)`` should be a good value if ``1/w[i]`` is an
+        estimate of the standard deviation of ``y[i]``.
     ext : int or str, optional
         Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
@@ -162,6 +177,7 @@ class UnivariateSpline:
     with ``nan``. A workaround is to use zero weights for not-a-number
     data points:
 
+    >>> import numpy as np
     >>> from scipy.interpolate import UnivariateSpline
     >>> x, y = np.array([1, 2, 3, 4]), np.array([1, np.nan, 3, 4])
     >>> w = np.isnan(y)
@@ -173,6 +189,7 @@ class UnivariateSpline:
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import UnivariateSpline
     >>> rng = np.random.default_rng()
@@ -193,6 +210,7 @@ class UnivariateSpline:
     >>> plt.show()
 
     """
+
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None,
                  ext=0, check_finite=False):
 
@@ -359,7 +377,7 @@ class UnivariateSpline:
                 ext = _extrap_modes[ext]
             except KeyError as e:
                 raise ValueError("Unknown extrapolation mode %s." % ext) from e
-        return _fitpack_py.splev(x, self._eval_args, der=nu, ext=ext)
+        return _fitpack_impl.splev(x, self._eval_args, der=nu, ext=ext)
 
     def get_knots(self):
         """ Return positions of interior knots of the spline.
@@ -403,6 +421,7 @@ class UnivariateSpline:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, 3, 11)
         >>> y = x**2
@@ -422,7 +441,7 @@ class UnivariateSpline:
         0.0
 
         """
-        return dfitpack.splint(*(self._eval_args+(a, b)))
+        return _fitpack_impl.splint(a, b, self._eval_args)
 
     def derivatives(self, x):
         """ Return all derivatives of the spline at the point x.
@@ -439,6 +458,7 @@ class UnivariateSpline:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, 3, 11)
         >>> y = x**2
@@ -447,22 +467,52 @@ class UnivariateSpline:
         array([2.25, 3.0, 2.0, 0])
 
         """
-        d, ier = dfitpack.spalde(*(self._eval_args+(x,)))
-        if not ier == 0:
-            raise ValueError("Error code returned by spalde: %s" % ier)
-        return d
+        return _fitpack_impl.spalde(x, self._eval_args)
 
     def roots(self):
         """ Return the zeros of the spline.
 
-        Restriction: only cubic splines are supported by fitpack.
+        Notes
+        -----
+        Restriction: only cubic splines are supported by FITPACK. For non-cubic
+        splines, use `PPoly.root` (see below for an example).
+
+        Examples
+        --------
+
+        For some data, this method may miss a root. This happens when one of
+        the spline knots (which FITPACK places automatically) happens to
+        coincide with the true root. A workaround is to convert to `PPoly`,
+        which uses a different root-finding algorithm.
+
+        For example,
+
+        >>> x = [1.96, 1.97, 1.98, 1.99, 2.00, 2.01, 2.02, 2.03, 2.04, 2.05]
+        >>> y = [-6.365470e-03, -4.790580e-03, -3.204320e-03, -1.607270e-03,
+        ...      4.440892e-16,  1.616930e-03,  3.243000e-03,  4.877670e-03,
+        ...      6.520430e-03,  8.170770e-03]
+        >>> from scipy.interpolate import UnivariateSpline
+        >>> spl = UnivariateSpline(x, y, s=0)
+        >>> spl.roots()
+        array([], dtype=float64)
+
+        Converting to a PPoly object does find the roots at `x=2`:
+
+        >>> from scipy.interpolate import splrep, PPoly
+        >>> tck = splrep(x, y, s=0)
+        >>> ppoly = PPoly.from_spline(tck)
+        >>> ppoly.roots(extrapolate=False)
+        array([2.])
+
+        See Also
+        --------
+        sproot
+        PPoly.roots
+
         """
         k = self._data[5]
         if k == 3:
-            z, m, ier = dfitpack.sproot(*self._eval_args[:2])
-            if not ier == 0:
-                raise ValueError("Error code returned by spalde: %s" % ier)
-            return z[:m]
+            return _fitpack_impl.sproot(self._eval_args)
         raise NotImplementedError('finding roots unsupported for '
                                   'non-cubic splines')
 
@@ -494,6 +544,7 @@ class UnivariateSpline:
         --------
         This can be used for finding maxima of a curve:
 
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, 10, 70)
         >>> y = np.sin(x)
@@ -510,7 +561,7 @@ class UnivariateSpline:
         :math:`\\cos(x) = \\sin'(x)`.
 
         """
-        tck = _fitpack_py.splder(self._eval_args, n)
+        tck = _fitpack_impl.splder(self._eval_args, n)
         # if self.ext is 'const', derivative.ext will be 'zeros'
         ext = 1 if self.ext == 3 else self.ext
         return UnivariateSpline._from_tck(tck, ext=ext)
@@ -541,6 +592,7 @@ class UnivariateSpline:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, np.pi/2, 70)
         >>> y = 1 / np.sqrt(1 - 0.8*np.sin(x)**2)
@@ -566,7 +618,7 @@ class UnivariateSpline:
         2.2572053268208538
 
         """
-        tck = _fitpack_py.splantider(self._eval_args, n)
+        tck = _fitpack_impl.splantider(self._eval_args, n)
         return UnivariateSpline._from_tck(tck, self.ext)
 
 
@@ -576,7 +628,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
     Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.
     Spline function passes through all provided points. Equivalent to
-    `UnivariateSpline` with  s=0.
+    `UnivariateSpline` with  `s` = 0.
 
     Parameters
     ----------
@@ -586,12 +638,13 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         input dimension of data points
     w : (N,) array_like, optional
         Weights for spline fitting.  Must be positive.  If None (default),
-        weights are all equal.
+        weights are all 1.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         None (default), ``bbox=[x[0], x[-1]]``.
     k : int, optional
-        Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
+        Degree of the smoothing spline.  Must be ``1 <= k <= 5``. Default is
+        ``k = 3``, a cubic spline.
     ext : int or str, optional
         Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
@@ -638,6 +691,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import InterpolatedUnivariateSpline
     >>> rng = np.random.default_rng()
@@ -655,6 +709,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     0.0
 
     """
+
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3,
                  ext=0, check_finite=False):
 
@@ -704,7 +759,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     w : (N,) array_like, optional
         weights for spline fitting. Must be positive. If None (default),
-        weights are all equal.
+        weights are all 1.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         None (default), ``bbox = [x[0], x[-1]]``.
@@ -762,6 +817,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.interpolate import LSQUnivariateSpline, UnivariateSpline
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -1220,6 +1276,10 @@ class SmoothBivariateSpline(BivariateSpline):
     -----
     The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
 
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
+
     """
 
     def __init__(self, x, y, z, w=None, bbox=[None] * 4, kx=3, ky=3, s=None,
@@ -1304,6 +1364,10 @@ class LSQBivariateSpline(BivariateSpline):
     Notes
     -----
     The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
 
     """
 
@@ -1397,6 +1461,13 @@ class RectBivariateSpline(BivariateSpline):
         a function to find a bivariate B-spline representation of a surface
     bisplev :
         a function to evaluate a bivariate B-spline and its derivatives
+
+    Notes
+    -----
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
 
     """
 

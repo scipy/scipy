@@ -197,8 +197,9 @@ class TestDIRECT:
         assert result.status == 4
         assert result.success
 
+    @pytest.mark.xslow
     @pytest.mark.parametrize("locally_biased", [True, False])
-    def test_segmentation_fault(self, locally_biased):
+    def test_no_segmentation_fault(self, locally_biased):
         # test that an excessive number of function evaluations
         # does not result in segmentation fault
         bounds = [(-5., 20.)] * 100

@@ -10,6 +10,9 @@ on:
       - main
       - maintenance/**
 
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
 env:
   INSTALLDIR: "build-install"
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
@@ -33,11 +36,6 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Setup Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-
     - name: Install Ccache
       run: |
         brew install ccache
@@ -47,9 +45,9 @@ jobs:
       shell: bash -l {0}
       run: |
         mkdir -p "${CCACHE_DIR}"
-        echo "::set-output name=dir::$CCACHE_DIR"
+        echo "dir=$CCACHE_DIR" >> $GITHUB_OUTPUT
         NOW=$(date -u +"%F-%T")
-        echo "::set-output name=timestamp::${NOW}"
+        echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
       uses:  actions/cache@v3
@@ -73,11 +71,18 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         python-version: ${{ matrix.python-version }}
-        mamba-version: "*"
         channels: conda-forge
         channel-priority: true
         activate-environment: scipy-dev
         use-only-tar-bz2: true
+        miniforge-variant: Mambaforge
+        miniforge-version: latest
+        use-mamba: true
+
+    - name: Get Date
+      id: get-date
+      run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
+      shell: bash
 
     - name: Cache conda
       uses: actions/cache@v3
@@ -85,19 +90,23 @@ jobs:
         # Increase this value to reset cache if environment.yml has not changed
         CACHE_NUMBER: 0
       with:
-        path: /usr/local/miniconda/envs/scipy-dev
+        path: ${{ env.CONDA }}/envs/scipy-dev
         key:
-          ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+          ${{ runner.os }}--${{ steps.get-date.outputs.today }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
       id: envcache
 
     - name: Update Conda Environment
       run: mamba env update -n scipy-dev -f environment.yml
+      if: steps.envcache.outputs.cache-hit != 'true'
 
     - name: Build and Install SciPy
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
-        python -m pip install meson==0.61.1
+
+        # optional test dependencies
+        conda install scikit-umfpack scikit-sparse
+
         # Python.org installers still use 10.9, so let's use that too. Note
         # that scikit-learn already changed to 10.13 in Jan 2021, so increasing
         # this number in the future (if needed) should not be a problem.
@@ -105,14 +114,15 @@ jobs:
         # https://conda-forge.org/docs/maintainer/knowledge_base.html#requiring-newer-macos-sdks
         export MACOSX_DEPLOYMENT_TARGET=10.9
         export MACOSX_SDK_VERSION=10.9
-        CC="ccache $CC" python do.py build -j 2
+        CC="ccache $CC" python dev.py build -j 2
 
     - name: Test SciPy
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
         export OMP_NUM_THREADS=2
-        python dev.py -n -j 2
+        export SCIPY_USE_PROPACK=1
+        python dev.py -n test -j 2
 
     - name: Ccache statistics
       shell: bash -l {0}

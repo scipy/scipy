@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from scipy.special import factorial
 from scipy._lib._util import _asarray_validated, float_factorial
@@ -274,6 +276,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
     For another example, given xi, yi, and a derivative ypi for each
     point, appropriate arrays can be constructed as:
 
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> xi = np.linspace(0, 1, 5)
     >>> yi, ypi = rng.random((2, 5))
@@ -295,6 +298,11 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         self.xi = np.asarray(xi)
         self.yi = self._reshape_yi(yi)
         self.n, self.r = self.yi.shape
+
+        if (deg := self.xi.size) > 30:
+            warnings.warn(f"{deg} degrees provided, degrees higher than about"
+                          " thirty cause problems with numerical instability "
+                          "with 'KroghInterpolator'", stacklevel=2)
 
         c = np.zeros((self.n+1, self.r), dtype=self.dtype)
         c[0] = self.yi[0]
@@ -400,6 +408,7 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
     --------
     We can interpolate 2D observed data using krogh interpolation:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import krogh_interpolate
     >>> x_observed = np.linspace(0.0, 10.0, 11)
@@ -464,6 +473,7 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     We can calculate Taylor approximation polynomials of sin function with
     various degrees:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import approximate_taylor_polynomial
     >>> x = np.linspace(-10.0, 10.0, num=100)
@@ -532,6 +542,7 @@ class BarycentricInterpolator(_Interpolator1D):
     Based on Berrut and Trefethen 2004, "Barycentric Lagrange Interpolation".
 
     """
+
     def __init__(self, xi, yi=None, axis=0):
         _Interpolator1D.__init__(self, xi, yi, axis)
 
@@ -651,11 +662,12 @@ class BarycentricInterpolator(_Interpolator1D):
         if x.size == 0:
             p = np.zeros((0, self.r), dtype=self.dtype)
         else:
-            c = x[...,np.newaxis]-self.xi
+            c = x[..., np.newaxis] - self.xi
             z = c == 0
             c[z] = 1
             c = self.wi/c
-            p = np.dot(c,self.yi)/np.sum(c,axis=-1)[...,np.newaxis]
+            with np.errstate(divide='ignore'):
+                p = np.dot(c, self.yi) / np.sum(c, axis=-1)[..., np.newaxis]
             # Now fix where x==some xi
             r = np.nonzero(z)
             if len(r) == 1:  # evaluation at a scalar
@@ -715,6 +727,7 @@ def barycentric_interpolate(xi, yi, x, axis=0):
     --------
     We can interpolate 2D observed data using barycentric interpolation:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import barycentric_interpolate
     >>> x_observed = np.linspace(0.0, 10.0, 11)

@@ -318,8 +318,6 @@ class TestBasinHopping:
                      niter=10, callback=callback2, seed=10)
         assert_equal(np.array(f_1), np.array(f_2))
 
-    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
-                        reason='Generator not available for numpy, < 1.17')
     def test_random_gen(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
         rng = np.random.default_rng(1)

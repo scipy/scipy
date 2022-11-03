@@ -40,6 +40,7 @@ Each univariate distribution is an instance of a subclass of `rv_continuous`
 
    rv_continuous
    rv_discrete
+   rv_count
    rv_histogram
 
 Continuous distributions
@@ -86,6 +87,7 @@ Continuous distributions
    genhyperbolic     -- Generalized Hyperbolic
    geninvgauss       -- Generalized Inverse Gaussian
    gibrat            -- Gibrat
+   gilbrat           -- Gilbrat
    gompertz          -- Gompertz (Truncated Gumbel)
    gumbel_r          -- Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
    gumbel_l          -- Left Sided Gumbel, etc.
@@ -142,6 +144,7 @@ Continuous distributions
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
+   truncpareto       -- Truncated Pareto
    truncweibull_min  -- Truncated minimum Weibull distribution
    tukeylambda       -- Tukey-Lambda
    uniform           -- Uniform
@@ -170,6 +173,16 @@ Multivariate distributions
    random_correlation     -- random correlation matrices
    multivariate_t         -- Multivariate t-distribution
    multivariate_hypergeom -- Multivariate hypergeometric distribution
+   random_table           -- Distribution of random tables with given marginals
+
+`scipy.stats.multivariate_normal` methods accept instances
+of the following class to represent the covariance.
+
+.. autosummary::
+   :toctree: generated/
+
+   Covariance             -- Representation of a covariance matrix
+
 
 Discrete distributions
 ----------------------
@@ -213,6 +226,7 @@ Summary statistics
    kurtosis          -- Fisher or Pearson kurtosis
    mode              -- Modal value
    moment            -- Central moment
+   expectile         -- Expectile
    skew              -- Skewness
    kstat             --
    kstatvar          --
@@ -301,6 +315,7 @@ Statistical tests
    jarque_bera
    page_trend_test
    tukey_hsd
+   poisson_means_test
 
 .. autosummary::
    :toctree: generated/
@@ -403,12 +418,13 @@ Distribution Fitting
 
    fit
 
-Circular statistical functions
-------------------------------
+Directional statistical functions
+---------------------------------
 
 .. autosummary::
    :toctree: generated/
 
+   directional_stats
    circmean
    circvar
    circstd
@@ -425,6 +441,7 @@ Contingency table functions
    contingency.margins
    contingency.relative_risk
    contingency.association
+   contingency.odds_ratio
    fisher_exact
    barnard_exact
    boschloo_exact
@@ -467,6 +484,7 @@ from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
 from ._stats_py import *
 from ._variation import variation
 from .distributions import *
+from ._distn_infrastructure import rv_count
 from ._morestats import *
 from ._binomtest import binomtest
 from ._binned_statistic import *
@@ -479,10 +497,11 @@ from .contingency import chi2_contingency
 from ._resampling import bootstrap, monte_carlo_test, permutation_test
 from ._entropy import *
 from ._hypotests import *
-from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite
+from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._fit import fit
+from ._covariance import Covariance
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

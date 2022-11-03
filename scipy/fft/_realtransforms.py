@@ -59,6 +59,7 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.fft import dctn, idctn
     >>> rng = np.random.default_rng()
     >>> y = rng.standard_normal((16, 16))
@@ -123,6 +124,7 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.fft import dctn, idctn
     >>> rng = np.random.default_rng()
     >>> y = rng.standard_normal((16, 16))
@@ -187,6 +189,7 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.fft import dstn, idstn
     >>> rng = np.random.default_rng()
     >>> y = rng.standard_normal((16, 16))
@@ -251,6 +254,7 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.fft import dstn, idstn
     >>> rng = np.random.default_rng()
     >>> y = rng.standard_normal((16, 16))
@@ -401,6 +405,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     Half of the FFT input is used to generate half of the FFT output:
 
     >>> from scipy.fft import fft, dct
+    >>> import numpy as np
     >>> fft(np.array([4., 3., 5., 10., 5., 3.])).real
     array([ 30.,  -8.,   6.,  -2.,   6.,  -8.])
     >>> dct(np.array([4., 3., 5., 10.]), 1)
@@ -480,6 +485,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     input is used to generate half of the IFFT output:
 
     >>> from scipy.fft import ifft, idct
+    >>> import numpy as np
     >>> ifft(np.array([ 30.,  -8.,   6.,  -2.,   6.,  -8.])).real
     array([  4.,   3.,   5.,  10.,   5.,   3.])
     >>> idct(np.array([ 30.,  -8.,   6.,  -2.]), 1)

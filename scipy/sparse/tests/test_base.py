@@ -8,14 +8,6 @@ class for generic tests" section.
 
 """
 
-__usage__ = """
-Build sparse:
-  python setup.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.sparse.test()'
-Run tests if sparse is not installed:
-  python tests/test_base.py
-"""
 
 import contextlib
 import functools
@@ -97,7 +89,11 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
 
     """
     if maxval_limit is None:
-        maxval_limit = 10
+        maxval_limit = np.int64(10)
+    else:
+        # Ensure we use numpy scalars rather than Python scalars (matters for
+        # NEP 50 casting rule changes)
+        maxval_limit = np.int64(maxval_limit)
 
     if assert_32bit:
         def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
@@ -409,20 +405,14 @@ class _TestCommon:
             assert_array_equal_dtype(dat < dat2, datsp < dat2)
             assert_array_equal_dtype(datcomplex < dat2, datspcomplex < dat2)
             # sparse/scalar
-            assert_array_equal_dtype((datsp < 2).toarray(), dat < 2)
-            assert_array_equal_dtype((datsp < 1).toarray(), dat < 1)
-            assert_array_equal_dtype((datsp < 0).toarray(), dat < 0)
-            assert_array_equal_dtype((datsp < -1).toarray(), dat < -1)
-            assert_array_equal_dtype((datsp < -2).toarray(), dat < -2)
+            for val in [2, 1, 0, -1, -2]:
+                val = np.int64(val)  # avoid Python scalar (due to NEP 50 changes)
+                assert_array_equal_dtype((datsp < val).toarray(), dat < val)
+                assert_array_equal_dtype((val < datsp).toarray(), val < dat)
+
             with np.errstate(invalid='ignore'):
                 assert_array_equal_dtype((datsp < np.nan).toarray(),
                                          dat < np.nan)
-
-            assert_array_equal_dtype((2 < datsp).toarray(), 2 < dat)
-            assert_array_equal_dtype((1 < datsp).toarray(), 1 < dat)
-            assert_array_equal_dtype((0 < datsp).toarray(), 0 < dat)
-            assert_array_equal_dtype((-1 < datsp).toarray(), -1 < dat)
-            assert_array_equal_dtype((-2 < datsp).toarray(), -2 < dat)
 
             # data
             dat = self.dat_dtypes[dtype]
@@ -477,20 +467,14 @@ class _TestCommon:
             assert_array_equal_dtype(dat > dat2, datsp > dat2)
             assert_array_equal_dtype(datcomplex > dat2, datspcomplex > dat2)
             # sparse/scalar
-            assert_array_equal_dtype((datsp > 2).toarray(), dat > 2)
-            assert_array_equal_dtype((datsp > 1).toarray(), dat > 1)
-            assert_array_equal_dtype((datsp > 0).toarray(), dat > 0)
-            assert_array_equal_dtype((datsp > -1).toarray(), dat > -1)
-            assert_array_equal_dtype((datsp > -2).toarray(), dat > -2)
+            for val in [2, 1, 0, -1, -2]:
+                val = np.int64(val)  # avoid Python scalar (due to NEP 50 changes)
+                assert_array_equal_dtype((datsp > val).toarray(), dat > val)
+                assert_array_equal_dtype((val > datsp).toarray(), val > dat)
+
             with np.errstate(invalid='ignore'):
                 assert_array_equal_dtype((datsp > np.nan).toarray(),
                                          dat > np.nan)
-
-            assert_array_equal_dtype((2 > datsp).toarray(), 2 > dat)
-            assert_array_equal_dtype((1 > datsp).toarray(), 1 > dat)
-            assert_array_equal_dtype((0 > datsp).toarray(), 0 > dat)
-            assert_array_equal_dtype((-1 > datsp).toarray(), -1 > dat)
-            assert_array_equal_dtype((-2 > datsp).toarray(), -2 > dat)
 
             # data
             dat = self.dat_dtypes[dtype]
@@ -545,15 +529,10 @@ class _TestCommon:
             assert_array_equal_dtype(datsp <= dat2, dat <= dat2)
             assert_array_equal_dtype(datspcomplex <= dat2, datcomplex <= dat2)
             # sparse/scalar
-            assert_array_equal_dtype((datsp <= 2).toarray(), dat <= 2)
-            assert_array_equal_dtype((datsp <= 1).toarray(), dat <= 1)
-            assert_array_equal_dtype((datsp <= -1).toarray(), dat <= -1)
-            assert_array_equal_dtype((datsp <= -2).toarray(), dat <= -2)
-
-            assert_array_equal_dtype((2 <= datsp).toarray(), 2 <= dat)
-            assert_array_equal_dtype((1 <= datsp).toarray(), 1 <= dat)
-            assert_array_equal_dtype((-1 <= datsp).toarray(), -1 <= dat)
-            assert_array_equal_dtype((-2 <= datsp).toarray(), -2 <= dat)
+            for val in [2, 1, -1, -2]:
+                val = np.int64(val)  # avoid Python scalar (due to NEP 50 changes)
+                assert_array_equal_dtype((datsp <= val).toarray(), dat <= val)
+                assert_array_equal_dtype((val <= datsp).toarray(), val <= dat)
 
             # data
             dat = self.dat_dtypes[dtype]
@@ -608,15 +587,10 @@ class _TestCommon:
             assert_array_equal_dtype(datsp >= dat2, dat >= dat2)
             assert_array_equal_dtype(datspcomplex >= dat2, datcomplex >= dat2)
             # sparse/scalar
-            assert_array_equal_dtype((datsp >= 2).toarray(), dat >= 2)
-            assert_array_equal_dtype((datsp >= 1).toarray(), dat >= 1)
-            assert_array_equal_dtype((datsp >= -1).toarray(), dat >= -1)
-            assert_array_equal_dtype((datsp >= -2).toarray(), dat >= -2)
-
-            assert_array_equal_dtype((2 >= datsp).toarray(), 2 >= dat)
-            assert_array_equal_dtype((1 >= datsp).toarray(), 1 >= dat)
-            assert_array_equal_dtype((-1 >= datsp).toarray(), -1 >= dat)
-            assert_array_equal_dtype((-2 >= datsp).toarray(), -2 >= dat)
+            for val in [2, 1, -1, -2]:
+                val = np.int64(val)  # avoid Python scalar (due to NEP 50 changes)
+                assert_array_equal_dtype((datsp >= val).toarray(), dat >= val)
+                assert_array_equal_dtype((val >= datsp).toarray(), val >= dat)
 
             # dense data
             dat = self.dat_dtypes[dtype]
@@ -1011,8 +985,8 @@ class _TestCommon:
     def test_mean(self):
         def check(dtype):
             dat = array([[0, 1, 2],
-                         [3, -4, 5],
-                         [-6, 7, 9]], dtype=dtype)
+                         [3, 4, 5],
+                         [6, 7, 9]], dtype=dtype)
             datsp = self.spmatrix(dat, dtype=dtype)
 
             assert_array_almost_equal(dat.mean(), datsp.mean())
@@ -1354,6 +1328,12 @@ class _TestCommon:
 
         for dtype in self.math_dtypes:
             check(dtype)
+
+    # github issue #15210
+    def test_rmul_scalar_type_error(self):
+        datsp = self.datsp_dtypes[np.float64]
+        with assert_raises(TypeError):
+            None * datsp
 
     def test_add(self):
         def check(dtype):
@@ -2351,6 +2331,16 @@ class _TestSlicing:
         assert_equal(self.spmatrix((1,10), dtype=np.float32)[0,1:5].dtype, np.float32)
         assert_equal(self.spmatrix((1,10), dtype=np.float64)[0,1:5].dtype, np.float64)
 
+    def test_dtype_preservation_empty_slice(self):
+        # This should be parametrized with pytest, but something in the parent
+        # class creation used in this file breaks pytest.mark.parametrize.
+        for dt in [np.int16, np.int32, np.float32, np.float64]:
+            A = self.spmatrix((3, 2), dtype=dt)
+            assert_equal(A[:, 0:0:2].dtype, dt)
+            assert_equal(A[0:0:2, :].dtype, dt)
+            assert_equal(A[0, 0:0:2].dtype, dt)
+            assert_equal(A[0:0:2, 0].dtype, dt)
+
     def test_get_horiz_slice(self):
         B = asmatrix(arange(50.).reshape(5,10))
         A = self.spmatrix(B)
@@ -2707,10 +2697,21 @@ class _TestSlicingAssign:
         A[1, :] = x
         assert_array_equal(A.toarray(), [[0, 1, 1], [0, 0, 0], [0, 1, 1]])
 
+
 class _TestFancyIndexing:
     """Tests fancy indexing features.  The tests for any matrix formats
     that implement these features should derive from this class.
     """
+
+    def test_dtype_preservation_empty_index(self):
+        # This should be parametrized with pytest, but something in the parent
+        # class creation used in this file breaks pytest.mark.parametrize.
+        for dt in [np.int16, np.int32, np.float32, np.float64]:
+            A = self.spmatrix((3, 2), dtype=dt)
+            assert_equal(A[:, [False, False]].dtype, dt)
+            assert_equal(A[[False, False, False], :].dtype, dt)
+            assert_equal(A[:, []].dtype, dt)
+            assert_equal(A[[], :].dtype, dt)
 
     def test_bad_index(self):
         A = self.spmatrix(np.zeros([5, 5]))

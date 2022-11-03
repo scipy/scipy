@@ -58,6 +58,7 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import savgol_coeffs
     >>> savgol_coeffs(5, 2)
     array([-0.08571429,  0.34285714,  0.48571429,  0.34285714, -0.08571429])
@@ -309,6 +310,7 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import savgol_filter
     >>> np.set_printoptions(precision=2)  # For compact display.
     >>> x = np.array([2, 2, 5, 2, 1, 0, 1, 4, 9])
@@ -340,7 +342,7 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     coeffs = savgol_coeffs(window_length, polyorder, deriv=deriv, delta=delta)
 
     if mode == "interp":
-        if window_length > x.size:
+        if window_length > x.shape[axis]:
             raise ValueError("If mode is 'interp', window_length must be less "
                              "than or equal to the size of x.")
 

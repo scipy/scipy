@@ -21,7 +21,7 @@ cimport cython
 from libc.stdlib cimport calloc, free
 from libc.string cimport strcmp
 
-from cpython cimport Py_INCREF, Py_DECREF
+from cpython cimport Py_INCREF
 from cpython cimport PyObject
 
 cdef extern from "Python.h":
@@ -60,7 +60,6 @@ DEF _N_MIS = 20
 DEF _N_MXS = 20
 
 from . cimport _streams
-import scipy.io.matlab._miobase as miob
 from scipy.io.matlab._mio_utils import squeeze_element, chars_to_strings
 import scipy.io.matlab._mio5_params as mio5p
 from scipy.sparse import csc_matrix
@@ -340,14 +339,13 @@ cdef class VarReader5:
         See ``read_element_into`` for routine to read element into a
         pre-allocated block of memory.
         '''
-        cdef cnp.uint32_t mdtype, byte_count
+        cdef cnp.uint32_t byte_count
         cdef char tag_data[4]
         cdef object data
         cdef int mod8
         cdef int tag_res = self.cread_tag(mdtype_ptr,
                                           byte_count_ptr,
                                           tag_data)
-        mdtype = mdtype_ptr[0]
         byte_count = byte_count_ptr[0]
         if tag_res == 1: # full format
             data = self.cstream.read_string(
@@ -574,11 +572,9 @@ cdef class VarReader5:
         '''
         cdef:
             cdef cnp.uint32_t u4s[2]
-            cnp.uint32_t mdtype, byte_count
             cnp.uint32_t flags_class, nzmax
             cnp.uint16_t mc
-            int ret, i
-            void *ptr
+            int i
             VarHeader5 header
         # Read and discard mdtype and byte_count
         self.cstream.read_into(<void *>u4s, 8)
@@ -655,7 +651,6 @@ cdef class VarReader5:
         cdef:
             VarHeader5 header
             cnp.uint32_t mdtype, byte_count
-            object arr
         # read full tag
         self.cread_full_tag(&mdtype, &byte_count)
         if mdtype != miMATRIX:
@@ -686,7 +681,6 @@ cdef class VarReader5:
         cdef:
             object arr
             cnp.dtype mat_dtype
-        cdef size_t remaining
         cdef int mc = header.mclass
         if (mc == mxDOUBLE_CLASS
             or mc == mxSINGLE_CLASS
@@ -832,8 +826,7 @@ cdef class VarReader5:
         cdef:
             cnp.uint32_t mdtype, byte_count
             char *data_ptr
-            size_t el_count
-            object data, res, codec
+            object data, codec
             cnp.ndarray arr
             cnp.dtype dt
         cdef size_t length = self.size_from_header(header)
@@ -941,7 +934,6 @@ cdef class VarReader5:
         defined before (this here) struct format structure
         '''
         cdef:
-            cnp.int32_t namelength
             int i, n_names
             cnp.ndarray[object, ndim=1] result
             object dt, tupdims

@@ -247,6 +247,18 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     Note: This function was created before `cwt` and is not compatible
     with it.
 
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> M = 100
+    >>> s = 4.0
+    >>> w = 2.0
+    >>> wavelet = signal.morlet(M, s, w)
+    >>> plt.plot(wavelet)
+    >>> plt.show()
+
     """
     x = np.linspace(-s * 2 * np.pi, s * 2 * np.pi, M)
     output = np.exp(1j * w * x)
@@ -366,6 +378,7 @@ def morlet2(M, s, w=5):
     This example shows basic use of `morlet2` with `cwt` in time-frequency
     analysis:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> t, dt = np.linspace(0, 1, 200, retstep=True)
@@ -446,13 +459,18 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> t = np.linspace(-1, 1, 200, endpoint=False)
     >>> sig  = np.cos(2 * np.pi * 7 * t) + signal.gausspulse(t - 0.4, fc=2)
     >>> widths = np.arange(1, 31)
     >>> cwtmatr = signal.cwt(sig, signal.ricker, widths)
-    >>> plt.imshow(cwtmatr, extent=[-1, 1, 31, 1], cmap='PRGn', aspect='auto',
+
+    .. note:: For cwt matrix plotting it is advisable to flip the y-axis
+
+    >>> cwtmatr_yflip = np.flipud(cwtmatr)
+    >>> plt.imshow(cwtmatr_yflip, extent=[-1, 1, 1, 31], cmap='PRGn', aspect='auto',
     ...            vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())
     >>> plt.show()
     """

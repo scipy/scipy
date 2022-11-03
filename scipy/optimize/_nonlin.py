@@ -15,7 +15,8 @@ from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
-    'diagbroyden', 'excitingmixing', 'newton_krylov']
+    'diagbroyden', 'excitingmixing', 'newton_krylov',
+    'BroydenFirst', 'KrylovJacobian', 'InverseJacobian']
 
 #------------------------------------------------------------------------------
 # Utility functions
@@ -1338,8 +1339,8 @@ class KrylovJacobian(Jacobian):
         Note that you can use also inverse Jacobians as (adaptive)
         preconditioners. For example,
 
-        >>> from scipy.optimize.nonlin import BroydenFirst, KrylovJacobian
-        >>> from scipy.optimize.nonlin import InverseJacobian
+        >>> from scipy.optimize import BroydenFirst, KrylovJacobian
+        >>> from scipy.optimize import InverseJacobian
         >>> jac = BroydenFirst()
         >>> kjac = KrylovJacobian(inner_M=InverseJacobian(jac))
 
@@ -1431,7 +1432,7 @@ class KrylovJacobian(Jacobian):
 
         if self.method is scipy.sparse.linalg.gmres:
             # Replace GMRES's outer iteration with Newton steps
-            self.method_kw['restrt'] = inner_maxiter
+            self.method_kw['restart'] = inner_maxiter
             self.method_kw['maxiter'] = 1
             self.method_kw.setdefault('atol', 0)
         elif self.method in (scipy.sparse.linalg.gcrotmk,

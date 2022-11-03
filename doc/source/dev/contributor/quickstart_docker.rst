@@ -118,25 +118,24 @@ container do not persist after you close it.
 
 #. Initialize git submodules: ``git submodule update --init``.
 
-#. Do an in-place build by entering::
+#. Build SciPy by entering::
 
-      python setup.py build_ext --inplace
+      python dev.py build
 
-   This will compile the C,
-   C++, and Fortran code that comes with SciPy. ``setup.py`` is a
-   script in the root directory of SciPy, which is why you have to be
-   in the SciPy root directory to call it. ``build_ext`` is a command
-   defined in ``setup.py``, and ``--inplace`` is an option we’ll use to
-   ensure that the compiling happens in the SciPy directory you already
-   have rather than some other folder on your computer. 
+   This will compile the C, C++, and Fortran code that comes with SciPy and
+   install it in the directory you already have rather than the default
+   location for Python packages. We installed ``python`` with Anaconda.
+   ``dev.py`` is a script in the root directory of SciPy which can be used to
+   execute several development tasks (see :ref:`the-dev-py-interface` for
+   details).
 
 #. Test the build by entering::
 
-      python runtests.py -v
+      python dev.py test -v
 
-   ``runtests.py`` is another script in the SciPy root directory. It runs a
-   suite of tests that make sure SciPy is working as it should, and ``-v``
-   activates the ``–verbose`` option to show all the test output.
+   This command runs a suite of tests that make sure SciPy is working as it
+   should, and ``-v`` activates the ``--verbose`` option to show all the test
+   output.
 
 #. If you want to :ref:`build the documentation <rendering-documentation>`
    or import SciPy from any directory other than the SciPy root, you should

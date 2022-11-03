@@ -15,8 +15,7 @@ from scipy import stats
 from scipy._lib._pep440 import Version
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_allclose,
-                           assert_almost_equal, assert_array_equal,
+from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
                            assert_string_equal, assert_, suppress_warnings)
 from pytest import raises as assert_raises, warns
 import pytest
@@ -412,8 +411,6 @@ class TestDifferentialEvolutionSolver:
         assert_equal(result.x, result2.x)
         assert_equal(result.nfev, result2.nfev)
 
-    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
-                        reason='Generator not available for numpy, < 1.17')
     def test_random_generator(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
         # obtain a np.random.Generator object
@@ -1463,3 +1460,26 @@ class TestDifferentialEvolutionSolver:
                                       polish=False)
         # the two minimisation runs should be functionally equivalent
         assert_allclose(res1.x, res2.x)
+
+    def test_constraint_violation_error_message(self):
+
+        def func(x):
+            return np.cos(x[0]) + np.sin(x[1])
+
+        # Intentionally infeasible constraints.
+        c0 = NonlinearConstraint(lambda x: x[1] - (x[0]-1)**2, 0, np.inf)
+        c1 = NonlinearConstraint(lambda x: x[1] + x[0]**2, -np.inf, 0)
+
+        result = differential_evolution(func,
+                                        bounds=[(-1, 2), (-1, 1)],
+                                        constraints=[c0, c1],
+                                        maxiter=10,
+                                        polish=False,
+                                        seed=864197532)
+        assert result.success is False
+        # The numerical value in the error message might be sensitive to
+        # changes in the implementation.  It can be updated if the code is
+        # changed.  The essential part of the test is that there is a number
+        # after the '=', so if necessary, the text could be reduced to, say,
+        # "MAXCV = 0.".
+        assert "MAXCV = 0.404" in result.message

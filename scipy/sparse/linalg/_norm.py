@@ -3,6 +3,7 @@
 """
 import numpy as np
 from scipy.sparse import issparse
+import scipy.sparse as sp
 
 from numpy import Inf, sqrt, abs
 
@@ -10,11 +11,8 @@ __all__ = ['norm']
 
 
 def _sparse_frobenius_norm(x):
-    if np.issubdtype(x.dtype, np.complexfloating):
-        sqnorm = abs(x).power(2).sum()
-    else:
-        sqnorm = x.power(2).sum()
-    return sqrt(sqnorm)
+    data = sp._sputils._todata(x)
+    return np.linalg.norm(data)
 
 
 def norm(x, ord=None, axis=None):

@@ -148,8 +148,6 @@ class TestDualAnnealing:
         assert_equal(res1.x, res2.x)
         assert_equal(res1.x, res3.x)
 
-    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
-                        reason='Generator not available for numpy, < 1.17')
     def test_rand_gen(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
         # obtain a np.random.Generator object
@@ -183,18 +181,13 @@ class TestDualAnnealing:
         func = lambda x: np.sum((x-5) * (x-1))
         bounds = list(zip([-6, -5], [6, 5]))
         # Test bounds can be passed (see gh-10831)
-        with pytest.warns(DeprecationWarning, match=r"dual_annealing argument "):
-            dual_annealing(
-                func,
-                bounds=bounds,
-                local_search_options={"method": "SLSQP", "bounds": bounds})
 
         with pytest.warns(RuntimeWarning, match=r"Method CG cannot handle "):
             dual_annealing(
                 func,
                 bounds=bounds,
                 minimizer_kwargs={"method": "CG", "bounds": bounds})
-            
+
     def test_minimizer_kwargs_bounds(self):
         func = lambda x: np.sum((x-5) * (x-1))
         bounds = list(zip([-6, -5], [6, 5]))

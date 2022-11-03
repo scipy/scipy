@@ -3,7 +3,7 @@ import numpy as np
 import scipy.stats._stats_py
 from . import distributions
 from .._lib._bunch import _make_tuple_bunch
-
+from ._stats_pythran import siegelslopes as siegelslopes_pythran
 
 __all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 
@@ -94,6 +94,7 @@ def linregress(x, y=None, alternative='two-sided'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
@@ -285,6 +286,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -457,6 +459,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -492,25 +495,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
         if len(x) != len(y):
             raise ValueError("Incompatible lengths ! (%s<>%s)" %
                              (len(y), len(x)))
-
-    deltax = x[:, np.newaxis] - x
-    deltay = y[:, np.newaxis] - y
-    slopes, intercepts = [], []
-
-    for j in range(len(x)):
-        id_nonzero = deltax[j, :] != 0
-        slopes_j = deltay[j, id_nonzero] / deltax[j, id_nonzero]
-        medslope_j = np.median(slopes_j)
-        slopes.append(medslope_j)
-        if method == 'separate':
-            z = y*x[j] - y[j]*x
-            medintercept_j = np.median(z[id_nonzero] / deltax[j, id_nonzero])
-            intercepts.append(medintercept_j)
-
-    medslope = np.median(np.asarray(slopes))
-    if method == "separate":
-        medinter = np.median(np.asarray(intercepts))
-    else:
-        medinter = np.median(y - medslope*x)
-
+    dtype = np.result_type(x, y, np.float32)  # use at least float32
+    y, x = y.astype(dtype), x.astype(dtype)
+    medslope, medinter = siegelslopes_pythran(y, x, method)
     return SiegelslopesResult(slope=medslope, intercept=medinter)
