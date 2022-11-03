@@ -714,15 +714,15 @@ def sproot(tck, mest=10):
     else:
         if len(t) < 8:
             raise TypeError("The number of knots %d>=8" % len(t))
-        z, ier = _fitpack._sproot(t, c, k, mest)
+        z, m, ier = dfitpack.sproot(t, c, mest)
         if ier == 10:
             raise TypeError("Invalid input data. "
                             "t1<=..<=t4<t5<..<tn-3<=..<=tn must hold.")
         if ier == 0:
-            return z
+            return z[:m]
         if ier == 1:
             warnings.warn(RuntimeWarning("The number of zeros exceeds mest"))
-            return z
+            return z[:m]
         raise TypeError("Unknown error")
 
 
@@ -776,7 +776,7 @@ def spalde(x, tck):
         x = atleast_1d(x)
         if len(x) > 1:
             return list(map(lambda x, tck=tck: spalde(x, tck), x))
-        d, ier = _fitpack._spalde(t, c, k, x[0])
+        d, ier = dfitpack.spalde(t, c, k+1, x[0])
         if ier == 0:
             return d
         if ier == 10:
@@ -867,6 +867,10 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     -----
     See `bisplev` to evaluate the value of the B-spline given its tck
     representation.
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolation.
 
     References
     ----------

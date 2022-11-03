@@ -104,6 +104,10 @@ class RegularGridInterpolator:
 
     .. versionadded:: 1.9
 
+    If the input data is such that dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
+
     Examples
     --------
     **Evaluate a function on the points of a 3-D grid**
@@ -345,7 +349,7 @@ class RegularGridInterpolator:
         elif method in self._SPLINE_METHODS:
             if is_method_changed:
                 self._validate_grid_dimensions(self.grid, method)
-            result = self._evaluate_spline(self.values, xi, method)
+            result = self._evaluate_spline(xi, method)
 
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
@@ -399,7 +403,7 @@ class RegularGridInterpolator:
                                  f" but method {method} requires at least "
                                  f" {k+1} points per dimension.")
 
-    def _evaluate_spline(self, values, xi, method):
+    def _evaluate_spline(self, xi, method):
         # ensure xi is 2D list of points to evaluate (`m` is the number of
         # points and `n` is the number of interpolation dimensions,
         # ``n == len(self.grid)``.)
@@ -413,9 +417,9 @@ class RegularGridInterpolator:
         # the 0th axis of its argument array (for 1D routine it's its ``y``
         # array). Thus permute the interpolation axes of `values` *and keep
         # trailing dimensions trailing*.
-        axes = tuple(range(values.ndim))
+        axes = tuple(range(self.values.ndim))
         axx = axes[:n][::-1] + axes[n:]
-        values = values.transpose(axx)
+        values = self.values.transpose(axx)
 
         if method == 'pchip':
             _eval_func = self._do_pchip
@@ -551,10 +555,15 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     the 0 position of the returned array, values_x, so its shape is
     instead ``(1,) + values.shape[ndim:]``.
 
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolation.
+
     Examples
     --------
     Evaluate a simple example function on the points of a regular 3-D grid:
 
+    >>> import numpy as np
     >>> from scipy.interpolate import interpn
     >>> def value_func_3d(x, y, z):
     ...     return 2 * x + 3 * y - z

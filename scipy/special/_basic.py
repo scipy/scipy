@@ -116,6 +116,7 @@ def diric(x, n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
 
@@ -271,6 +272,45 @@ def jnyn_zeros(n, nt):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute the first three roots of :math:`J_1`, :math:`J_1'`,
+    :math:`Y_1` and :math:`Y_1'`.
+
+    >>> from scipy.special import jnyn_zeros
+    >>> jn_roots, jnp_roots, yn_roots, ynp_roots = jnyn_zeros(1, 3)
+    >>> jn_roots, yn_roots
+    (array([ 3.83170597,  7.01558667, 10.17346814]),
+     array([2.19714133, 5.42968104, 8.59600587]))
+
+    Plot :math:`J_1`, :math:`J_1'`, :math:`Y_1`, :math:`Y_1'` and their roots.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import jnyn_zeros, jvp, jn, yvp, yn
+    >>> jn_roots, jnp_roots, yn_roots, ynp_roots = jnyn_zeros(1, 3)
+    >>> fig, ax = plt.subplots()
+    >>> xmax= 11
+    >>> x = np.linspace(0, xmax)
+    >>> ax.plot(x, jn(1, x), label=r"$J_1$", c='r')
+    >>> ax.plot(x, jvp(1, x, 1), label=r"$J_1'$", c='b')
+    >>> ax.plot(x, yn(1, x), label=r"$Y_1$", c='y')
+    >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$", c='c')
+    >>> zeros = np.zeros((3, ))
+    >>> ax.scatter(jn_roots, zeros, s=30, c='r', zorder=5,
+    ...            label=r"$J_1$ roots")
+    >>> ax.scatter(jnp_roots, zeros, s=30, c='b', zorder=5,
+    ...            label=r"$J_1'$ roots")
+    >>> ax.scatter(yn_roots, zeros, s=30, c='y', zorder=5,
+    ...            label=r"$Y_1$ roots")
+    >>> ax.scatter(ynp_roots, zeros, s=30, c='c', zorder=5,
+    ...            label=r"$Y_1'$ roots")
+    >>> ax.hlines(0, 0, xmax, color='k')
+    >>> ax.set_ylim(-0.6, 0.6)
+    >>> ax.set_xlim(0, xmax)
+    >>> ax.legend(ncol=2, bbox_to_anchor=(1., 0.75))
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     if not (isscalar(nt) and isscalar(n)):
         raise ValueError("Arguments must be scalars.")
@@ -303,7 +343,8 @@ def jn_zeros(n, nt):
 
     See Also
     --------
-    jv
+    jv: Real-order Bessel functions of the first kind
+    jnp_zeros: Zeros of :math:`Jn'`
 
     References
     ----------
@@ -313,23 +354,32 @@ def jn_zeros(n, nt):
 
     Examples
     --------
-    >>> import scipy.special as sc
+    Compute the first four positive roots of :math:`J_3`.
 
-    We can check that we are getting approximations of the zeros by
-    evaluating them with `jv`.
+    >>> from scipy.special import jn_zeros
+    >>> jn_zeros(3, 4)
+    array([ 6.3801619 ,  9.76102313, 13.01520072, 16.22346616])
 
-    >>> n = 1
-    >>> x = sc.jn_zeros(n, 3)
-    >>> x
-    array([ 3.83170597,  7.01558667, 10.17346814])
-    >>> sc.jv(n, x)
-    array([-0.00000000e+00,  1.72975330e-16,  2.89157291e-16])
+    Plot :math:`J_3` and its first four positive roots. Note
+    that the root located at 0 is not returned by `jn_zeros`.
 
-    Note that the zero at ``x = 0`` for ``n > 0`` is not included.
-
-    >>> sc.jv(1, 0)
-    0.0
-
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import jn, jn_zeros
+    >>> j3_roots = jn_zeros(3, 4)
+    >>> xmax = 18
+    >>> xmin = -1
+    >>> x = np.linspace(xmin, xmax, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, jn(3, x), label=r'$J_3$')
+    >>> ax.scatter(j3_roots, np.zeros((4, )), s=30, c='r',
+    ...            label=r"$J_3$_Zeros", zorder=5)
+    >>> ax.scatter(0, 0, s=30, c='k',
+    ...            label=r"Root at 0", zorder=5)
+    >>> ax.hlines(0, 0, xmax, color='k')
+    >>> ax.set_xlim(xmin, xmax)
+    >>> plt.legend()
+    >>> plt.show()
     """
     return jnyn_zeros(n, nt)[0]
 
@@ -356,7 +406,8 @@ def jnp_zeros(n, nt):
 
     See Also
     --------
-    jvp, jv
+    jvp: Derivatives of integer-order Bessel functions of the first kind
+    jv: Float-order Bessel functions of the first kind
 
     References
     ----------
@@ -366,23 +417,32 @@ def jnp_zeros(n, nt):
 
     Examples
     --------
-    >>> import scipy.special as sc
+    Compute the first four roots of :math:`J_2'`.
 
-    We can check that we are getting approximations of the zeros by
-    evaluating them with `jvp`.
+    >>> from scipy.special import jnp_zeros
+    >>> jnp_zeros(2, 4)
+    array([ 3.05423693,  6.70613319,  9.96946782, 13.17037086])
 
-    >>> n = 2
-    >>> x = sc.jnp_zeros(n, 3)
-    >>> x
-    array([3.05423693, 6.70613319, 9.96946782])
-    >>> sc.jvp(n, x)
-    array([ 2.77555756e-17,  2.08166817e-16, -3.01841885e-16])
+    As `jnp_zeros` yields the roots of :math:`J_n'`, it can be used to
+    compute the locations of the peaks of :math:`J_n`. Plot
+    :math:`J_2`, :math:`J_2'` and the locations of the roots of :math:`J_2'`.
 
-    Note that the zero at ``x = 0`` for ``n > 1`` is not included.
-
-    >>> sc.jvp(n, 0)
-    0.0
-
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import jn, jnp_zeros, jvp
+    >>> j2_roots = jnp_zeros(2, 4)
+    >>> xmax = 15
+    >>> x = np.linspace(0, xmax, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, jn(2, x), label=r'$J_2$')
+    >>> ax.plot(x, jvp(2, x, 1), label=r"$J_2'$")
+    >>> ax.hlines(0, 0, xmax, color='k')
+    >>> ax.scatter(j2_roots, np.zeros((4, )), s=30, c='r',
+    ...            label=r"Roots of $J_2'$", zorder=5)
+    >>> ax.set_ylim(-0.4, 0.8)
+    >>> ax.set_xlim(0, xmax)
+    >>> plt.legend()
+    >>> plt.show()
     """
     return jnyn_zeros(n, nt)[1]
 
@@ -407,7 +467,8 @@ def yn_zeros(n, nt):
 
     See Also
     --------
-    yn, yv
+    yn: Bessel function of the second kind for integer order
+    yv: Bessel function of the second kind for real order
 
     References
     ----------
@@ -417,18 +478,29 @@ def yn_zeros(n, nt):
 
     Examples
     --------
-    >>> import scipy.special as sc
+    Compute the first four roots of :math:`Y_2`.
 
-    We can check that we are getting approximations of the zeros by
-    evaluating them with `yn`.
+    >>> from scipy.special import yn_zeros
+    >>> yn_zeros(2, 4)
+    array([ 3.38424177,  6.79380751, 10.02347798, 13.20998671])
 
-    >>> n = 2
-    >>> x = sc.yn_zeros(n, 3)
-    >>> x
-    array([ 3.38424177,  6.79380751, 10.02347798])
-    >>> sc.yn(n, x)
-    array([-1.94289029e-16,  8.32667268e-17, -1.52655666e-16])
+    Plot :math:`Y_2` and its first four roots.
 
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import yn, yn_zeros
+    >>> xmin = 2
+    >>> xmax = 15
+    >>> x = np.linspace(xmin, xmax, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.hlines(0, xmin, xmax, color='k')
+    >>> ax.plot(x, yn(2, x), label=r'$Y_2$')
+    >>> ax.scatter(yn_zeros(2, 4), np.zeros((4, )), s=30, c='r',
+    ...            label='Roots', zorder=5)
+    >>> ax.set_ylim(-0.4, 0.4)
+    >>> ax.set_xlim(xmin, xmax)
+    >>> plt.legend()
+    >>> plt.show()
     """
     return jnyn_zeros(n, nt)[2]
 
@@ -465,18 +537,37 @@ def ynp_zeros(n, nt):
 
     Examples
     --------
-    >>> import scipy.special as sc
+    Compute the first four roots of the first derivative of the
+    Bessel function of second kind for order 0 :math:`Y_0'`.
 
-    We can check that we are getting approximations of the zeros by
-    evaluating them with `yvp`.
+    >>> from scipy.special import ynp_zeros
+    >>> ynp_zeros(0, 4)
+    array([ 2.19714133,  5.42968104,  8.59600587, 11.74915483])
 
-    >>> n = 2
-    >>> x = sc.ynp_zeros(n, 3)
-    >>> x
-    array([ 5.00258293,  8.3507247 , 11.57419547])
-    >>> sc.yvp(n, x)
-    array([ 2.22044605e-16, -3.33066907e-16,  2.94902991e-16])
+    Plot :math:`Y_0`, :math:`Y_0'` and confirm visually that the roots of
+    :math:`Y_0'` are located at local extrema of :math:`Y_0`.
 
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import yn, ynp_zeros, yvp
+    >>> zeros = ynp_zeros(0, 4)
+    >>> xmax = 13
+    >>> x = np.linspace(0, xmax, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, yn(0, x), label=r'$Y_0$')
+    >>> ax.plot(x, yvp(0, x, 1), label=r"$Y_0'$")
+    >>> ax.scatter(zeros, np.zeros((4, )), s=30, c='r',
+    ...            label=r"Roots of $Y_0'$", zorder=5)
+    >>> for root in zeros:
+    ...     y0_extremum =  yn(0, root)
+    ...     lower = min(0, y0_extremum)
+    ...     upper = max(0, y0_extremum)
+    ...     ax.vlines(root, lower, upper, color='r')
+    >>> ax.hlines(0, 0, xmax, color='k')
+    >>> ax.set_ylim(-0.6, 0.6)
+    >>> ax.set_xlim(0, xmax)
+    >>> plt.legend()
+    >>> plt.show()
     """
     return jnyn_zeros(n, nt)[3]
 
@@ -509,6 +600,47 @@ def y0_zeros(nt, complex=False):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute the first 4 real roots and the derivatives at the roots of
+    :math:`Y_0`:
+
+    >>> import numpy as np
+    >>> from scipy.special import y0_zeros
+    >>> zeros, grads = y0_zeros(4)
+    >>> with np.printoptions(precision=5):
+    ...     print(f"Roots: {zeros}")
+    ...     print(f"Gradients: {grads}")
+    Roots: [ 0.89358+0.j  3.95768+0.j  7.08605+0.j 10.22235+0.j]
+    Gradients: [-0.87942+0.j  0.40254+0.j -0.3001 +0.j  0.2497 +0.j]
+
+    Plot the real part of :math:`Y_0` and the first four computed roots.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import y0_zeros, y0
+    >>> xmin = 0
+    >>> xmax = 11
+    >>> x = np.linspace(xmin, xmax, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.hlines(0, xmin, xmax, color='k')
+    >>> ax.plot(x, y0(x), label=r'$Y_0$')
+    >>> zeros, grads = y0_zeros(4)
+    >>> ax.scatter(zeros.real, np.zeros((4, )), s=30, c='r',
+    ...            label=r'$Y_0$_zeros', zorder=5)
+    >>> ax.set_ylim(-0.5, 0.6)
+    >>> ax.set_xlim(xmin, xmax)
+    >>> plt.legend(ncol=2)
+    >>> plt.show()
+
+    Compute the first 4 complex roots and the derivatives at the roots of
+    :math:`Y_0` by setting ``complex=True``:
+
+    >>> y0_zeros(4, True)
+    (array([ -2.40301663+0.53988231j,  -5.5198767 +0.54718001j,
+             -8.6536724 +0.54841207j, -11.79151203+0.54881912j]),
+     array([ 0.10074769-0.88196771j, -0.02924642+0.5871695j ,
+             0.01490806-0.46945875j, -0.00937368+0.40230454j]))
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
@@ -545,6 +677,53 @@ def y1_zeros(nt, complex=False):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute the first 4 real roots and the derivatives at the roots of
+    :math:`Y_1`:
+
+    >>> import numpy as np
+    >>> from scipy.special import y1_zeros
+    >>> zeros, grads = y1_zeros(4)
+    >>> with np.printoptions(precision=5):
+    ...     print(f"Roots: {zeros}")
+    ...     print(f"Gradients: {grads}")
+    Roots: [ 2.19714+0.j  5.42968+0.j  8.59601+0.j 11.74915+0.j]
+    Gradients: [ 0.52079+0.j -0.34032+0.j  0.27146+0.j -0.23246+0.j]
+
+    Extract the real parts:
+
+    >>> realzeros = zeros.real
+    >>> realzeros
+    array([ 2.19714133,  5.42968104,  8.59600587, 11.74915483])
+
+    Plot :math:`Y_1` and the first four computed roots.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import y1_zeros, y1
+    >>> xmin = 0
+    >>> xmax = 13
+    >>> x = np.linspace(xmin, xmax, 500)
+    >>> zeros, grads = y1_zeros(4)
+    >>> fig, ax = plt.subplots()
+    >>> ax.hlines(0, xmin, xmax, color='k')
+    >>> ax.plot(x, y1(x), label=r'$Y_1$')
+    >>> ax.scatter(zeros.real, np.zeros((4, )), s=30, c='r',
+    ...            label=r'$Y_1$_zeros', zorder=5)
+    >>> ax.set_ylim(-0.5, 0.5)
+    >>> ax.set_xlim(xmin, xmax)
+    >>> plt.legend()
+    >>> plt.show()
+
+    Compute the first 4 complex roots and the derivatives at the roots of
+    :math:`Y_1` by setting ``complex=True``:
+
+    >>> y1_zeros(4, True)
+    (array([ -0.50274327+0.78624371j,  -3.83353519+0.56235654j,
+             -7.01590368+0.55339305j, -10.17357383+0.55127339j]),
+     array([-0.45952768+1.31710194j,  0.04830191-0.69251288j,
+            -0.02012695+0.51864253j,  0.011614  -0.43203296j]))
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
@@ -581,6 +760,43 @@ def y1p_zeros(nt, complex=False):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute the first four roots of :math:`Y_1'` and the values of
+    :math:`Y_1` at these roots.
+
+    >>> import numpy as np
+    >>> from scipy.special import y1p_zeros
+    >>> y1grad_roots, y1_values = y1p_zeros(4)
+    >>> with np.printoptions(precision=5):
+    ...     print(f"Y1' Roots: {y1grad_roots}")
+    ...     print(f"Y1 values: {y1_values}")
+    Y1' Roots: [ 3.68302+0.j  6.9415 +0.j 10.1234 +0.j 13.28576+0.j]
+    Y1 values: [ 0.41673+0.j -0.30317+0.j  0.25091+0.j -0.21897+0.j]
+
+    `y1p_zeros` can be used to calculate the extremal points of :math:`Y_1`
+    directly. Here we plot :math:`Y_1` and the first four extrema.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import y1, yvp, y1p_zeros
+    >>> y1_roots, y1_values_at_roots = y1p_zeros(4)
+    >>> real_roots = y1_roots.real
+    >>> xmax = 15
+    >>> x = np.linspace(0, xmax, 500)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y1(x), label=r'$Y_1$')
+    >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$")
+    >>> ax.scatter(real_roots, np.zeros((4, )), s=30, c='r',
+    ...            label=r"Roots of $Y_1'$", zorder=5)
+    >>> ax.scatter(real_roots, y1_values_at_roots.real, s=30, c='k',
+    ...            label=r"Extrema of $Y_1$", zorder=5)
+    >>> ax.hlines(0, 0, xmax, color='k')
+    >>> ax.set_ylim(-0.5, 0.5)
+    >>> ax.set_xlim(0, xmax)
+    >>> ax.legend(ncol=2, bbox_to_anchor=(1., 0.75))
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
@@ -1660,6 +1876,7 @@ def bernoulli(n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import bernoulli, zeta
     >>> bernoulli(4)
     array([ 1.        , -0.5       ,  0.16666667,  0.        , -0.03333333])
@@ -1717,6 +1934,7 @@ def euler(n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import euler
     >>> euler(6)
     array([  1.,   0.,  -1.,   0.,   5.,   0., -61.])
@@ -2412,6 +2630,7 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import comb
     >>> k = np.array([3, 4])
     >>> n = np.array([10, 10])
@@ -2480,6 +2699,7 @@ def perm(N, k, exact=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import perm
     >>> k = np.array([3, 4])
     >>> n = np.array([10, 10])
@@ -2564,6 +2784,7 @@ def factorial(n, exact=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import factorial
     >>> arr = np.array([3, 4, 5])
     >>> factorial(arr, exact=False)
@@ -2775,6 +2996,7 @@ def zeta(x, q=None, out=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import zeta, polygamma, factorial
 
     Some specific values:

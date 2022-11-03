@@ -11,8 +11,8 @@ from ._common import ConfidenceInterval
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
-from ._hypotests_pythran import _a_ij_Aij_Dij2
-from ._hypotests_pythran import (
+from ._stats_pythran import _a_ij_Aij_Dij2
+from ._stats_pythran import (
     _concordant_pairs as _P, _discordant_pairs as _Q
 )
 from scipy.stats import _stats_py

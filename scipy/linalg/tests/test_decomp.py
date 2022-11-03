@@ -28,7 +28,8 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           eigh_tridiagonal, null_space, cdf2rdf, LinAlgError)
 
 from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
-                                 dsbevd, dsbevx, zhbevd, zhbevx)
+                                 dsbevd, dsbevx, zhbevd, zhbevx,
+                                 get_lapack_funcs)
 
 from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
@@ -941,7 +942,15 @@ class TestLU:
         pl, u = lu(data, permute_l=1)
         assert_array_almost_equal(pl @ u, data)
 
-    # Simple tests
+    def _test_common_lu_factor(self, data):
+        l_and_u1, piv1 = lu_factor(data)
+        (getrf,) = get_lapack_funcs(("getrf",), (data,))
+        l_and_u2, piv2, _ = getrf(data, overwrite_a=False)
+        assert_array_equal(l_and_u1, l_and_u2)
+        assert_array_equal(piv1, piv2)
+
+    # Simple tests.
+    # For lu_factor gives a LinAlgWarning because these matrices are singular
     def test_simple(self):
         self._test_common(self.a)
 
@@ -957,24 +966,30 @@ class TestLU:
     # rectangular matrices tests
     def test_hrectangular(self):
         self._test_common(self.hrect)
+        self._test_common_lu_factor(self.hrect)
 
     def test_vrectangular(self):
         self._test_common(self.vrect)
+        self._test_common_lu_factor(self.vrect)
 
     def test_hrectangular_complex(self):
         self._test_common(self.chrect)
+        self._test_common_lu_factor(self.chrect)
 
     def test_vrectangular_complex(self):
         self._test_common(self.cvrect)
+        self._test_common_lu_factor(self.cvrect)
 
     # Bigger matrices
     def test_medium1(self):
         """Check lu decomposition on medium size, rectangular matrix."""
         self._test_common(self.med)
+        self._test_common_lu_factor(self.med)
 
     def test_medium1_complex(self):
         """Check lu decomposition on medium size, rectangular matrix."""
         self._test_common(self.cmed)
+        self._test_common_lu_factor(self.cmed)
 
     def test_check_finite(self):
         p, l, u = lu(self.a, check_finite=False)

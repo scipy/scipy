@@ -2761,8 +2761,11 @@ C
               F2=F1
 50            F1=F
            CS=0.0D0
-           IF (DABS(BJV0).GT.DABS(BJV1)) CS=BJV0/F
-           ELSE CS=BJV1/F2
+           IF (DABS(BJV0).GT.DABS(BJV1)) THEN
+              CS=BJV0/F
+           ELSE
+              CS=BJV1/F2
+           ENDIF
            DO 55 K=0,N
 55            VL(K)=CS*VL(K)
         ENDIF

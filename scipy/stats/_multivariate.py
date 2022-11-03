@@ -14,7 +14,7 @@ from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom
-from . import _mvn
+from . import _mvn, _covariance, contingency
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -27,7 +27,8 @@ __all__ = ['multivariate_normal',
            'random_correlation',
            'unitary_group',
            'multivariate_t',
-           'multivariate_hypergeom']
+           'multivariate_hypergeom',
+           'random_table']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -152,6 +153,8 @@ class _PSD:
 
     def __init__(self, M, cond=None, rcond=None, lower=True,
                  check_finite=True, allow_singular=True):
+        self._M = np.asarray(M)
+
         # Compute the symmetric eigendecomposition.
         # Note that eigh takes care of array conversion, chkfinite,
         # and assertion that the matrix is square.
@@ -247,18 +250,19 @@ class multi_rv_frozen:
 _mvn_doc_default_callparams = """\
 mean : array_like, default: ``[0]``
     Mean of the distribution.
-cov : array_like, default: ``[1]``
+cov : array_like or `Covariance`, default: ``[1]``
     Symmetric positive (semi)definite covariance matrix of the distribution.
 allow_singular : bool, default: ``False``
-    Whether to allow a singular covariance matrix.
+    Whether to allow a singular covariance matrix. This is ignored if `cov` is
+    a `Covariance` object.
 """
 
 _mvn_doc_callparams_note = """\
 Setting the parameter `mean` to `None` is equivalent to having `mean`
 be the zero-vector. The parameter `cov` can be a scalar, in which case
 the covariance matrix is the identity times that value, a vector of
-diagonal entries for the covariance matrix, or a two-dimensional
-array_like.
+diagonal entries for the covariance matrix, a two-dimensional array_like,
+or a `Covariance` object.
 """
 
 _mvn_doc_frozen_callparams = ""
@@ -309,7 +313,11 @@ class multivariate_normal_gen(multi_rv_generic):
     -----
     %(_mvn_doc_callparams_note)s
 
-    The covariance matrix `cov` must be a symmetric positive semidefinite
+    The covariance matrix `cov` may be an instance of a subclass of
+    `Covariance`, e.g. `scipy.stats.CovViaPrecision`. If so, `allow_singular`
+    is ignored.
+
+    Otherwise, `cov` must be a symmetric positive semidefinite
     matrix when `allow_singular` is True; it must be (strictly) positive
     definite when `allow_singular` is False.
     Symmetry is not checked; only the lower triangular portion is used.
@@ -385,11 +393,42 @@ class multivariate_normal_gen(multi_rv_generic):
                                           allow_singular=allow_singular,
                                           seed=seed)
 
-    def _process_parameters(self, dim, mean, cov):
+    def _process_parameters(self, mean, cov, allow_singular=True):
         """
         Infer dimensionality from mean or covariance matrix, ensure that
         mean and covariance are full vector resp. matrix.
         """
+        if isinstance(cov, _covariance.Covariance):
+            return self._process_parameters_Covariance(mean, cov)
+        else:
+            # Before `Covariance` classes were introduced,
+            # `multivariate_normal` accepted plain arrays as `cov` and used the
+            # following input validation. To avoid disturbing the behavior of
+            # `multivariate_normal` when plain arrays are used, we use the
+            # original input validation here.
+            dim, mean, cov = self._process_parameters_psd(None, mean, cov)
+            # After input validation, some methods then processed the arrays
+            # with a `_PSD` object and used that to perform computation.
+            # To avoid branching statements in each method depending on whether
+            # `cov` is an array or `Covariance` object, we always process the
+            # array with `_PSD`, and then use wrapper that satisfies the
+            # `Covariance` interface, `CovViaPSD`.
+            psd = _PSD(cov, allow_singular=allow_singular)
+            cov_object = _covariance.CovViaPSD(psd)
+            return dim, mean, cov_object
+
+    def _process_parameters_Covariance(self, mean, cov):
+        dim = cov.shape[-1]
+        mean = np.array([0.]) if mean is None else mean
+        message = (f"`cov` represents a covariance matrix in {dim} dimensions,"
+                   f"and so `mean` must be broadcastable to shape {(dim,)}")
+        try:
+            mean = np.broadcast_to(mean, dim)
+        except ValueError as e:
+            raise ValueError(message) from e
+        return dim, mean, cov
+
+    def _process_parameters_psd(self, dim, mean, cov):
         # Try to infer dimensionality
         if dim is None:
             if mean is None:
@@ -463,7 +502,7 @@ class multivariate_normal_gen(multi_rv_generic):
 
         return x
 
-    def _logpdf(self, x, mean, prec_U, log_det_cov, rank):
+    def _logpdf(self, x, mean, cov_object):
         """Log of the multivariate normal probability density function.
 
         Parameters
@@ -473,13 +512,8 @@ class multivariate_normal_gen(multi_rv_generic):
             density function
         mean : ndarray
             Mean of the distribution
-        prec_U : ndarray
-            A decomposition such that np.dot(prec_U, prec_U.T)
-            is the precision matrix, i.e. inverse of the covariance matrix.
-        log_det_cov : float
-            Logarithm of the determinant of the covariance matrix
-        rank : int
-            Rank of the covariance matrix.
+        cov_object : Covariance
+            An object representing the Covariance matrix
 
         Notes
         -----
@@ -487,8 +521,12 @@ class multivariate_normal_gen(multi_rv_generic):
         called directly; use 'logpdf' instead.
 
         """
+        log_det_cov, rank = cov_object.log_pdet, cov_object.rank
         dev = x - mean
-        maha = np.sum(np.square(np.dot(dev, prec_U)), axis=-1)
+        if dev.ndim > 1:
+            log_det_cov = log_det_cov[..., np.newaxis]
+            rank = rank[..., np.newaxis]
+        maha = np.sum(np.square(cov_object.whiten(dev)), axis=-1)
         return -0.5 * (rank * _LOG_2PI + log_det_cov + maha)
 
     def logpdf(self, x, mean=None, cov=1, allow_singular=False):
@@ -510,12 +548,12 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
+        params = self._process_parameters(mean, cov, allow_singular)
+        dim, mean, cov_object = params
         x = self._process_quantiles(x, dim)
-        psd = _PSD(cov, allow_singular=allow_singular)
-        out = self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank)
-        if allow_singular and (psd.rank < dim):
-            out_of_bounds = ~psd._support_mask(x-mean)
+        out = self._logpdf(x, mean, cov_object)
+        if np.any(cov_object.rank < dim):
+            out_of_bounds = ~cov_object._support_mask(x-mean)
             out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
 
@@ -538,12 +576,12 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
+        params = self._process_parameters(mean, cov, allow_singular)
+        dim, mean, cov_object = params
         x = self._process_quantiles(x, dim)
-        psd = _PSD(cov, allow_singular=allow_singular)
-        out = np.exp(self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank))
-        if allow_singular and (psd.rank < dim):
-            out_of_bounds = ~psd._support_mask(x-mean)
+        out = np.exp(self._logpdf(x, mean, cov_object))
+        if np.any((cov_object.rank < dim)):
+            out_of_bounds = ~cov_object._support_mask(x-mean)
             out[out_of_bounds] = 0.0
         return _squeeze_output(out)
 
@@ -631,10 +669,10 @@ class multivariate_normal_gen(multi_rv_generic):
         .. versionadded:: 1.0.0
 
         """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
+        params = self._process_parameters(mean, cov, allow_singular)
+        dim, mean, cov_object = params
+        cov = cov_object.covariance
         x = self._process_quantiles(x, dim)
-        # Use _PSD to check covariance matrix
-        _PSD(cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
         cdf = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
@@ -676,10 +714,10 @@ class multivariate_normal_gen(multi_rv_generic):
         .. versionadded:: 1.0.0
 
         """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
+        params = self._process_parameters(mean, cov, allow_singular)
+        dim, mean, cov_object = params
+        cov = cov_object.covariance
         x = self._process_quantiles(x, dim)
-        # Use _PSD to check covariance matrix
-        _PSD(cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
         out = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
@@ -706,11 +744,21 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
-
+        dim, mean, cov_object = self._process_parameters(mean, cov)
         random_state = self._get_random_state(random_state)
-        out = random_state.multivariate_normal(mean, cov, size)
-        return _squeeze_output(out)
+
+        if isinstance(cov_object, _covariance.CovViaPSD):
+            cov = cov_object.covariance
+            out = random_state.multivariate_normal(mean, cov, size)
+            out = _squeeze_output(out)
+        else:
+            size = size or tuple()
+            if not np.iterable(size):
+                size = (size,)
+            shape = tuple(size) + (cov_object.shape[-1],)
+            x = random_state.normal(size=shape)
+            out = mean + cov_object.colorize(x)
+        return out
 
     def entropy(self, mean=None, cov=1):
         """Compute the differential entropy of the multivariate normal.
@@ -729,9 +777,8 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        dim, mean, cov = self._process_parameters(None, mean, cov)
-        _, logdet = np.linalg.slogdet(2 * np.pi * np.e * cov)
-        return 0.5 * logdet
+        dim, mean, cov_object = self._process_parameters(mean, cov)
+        return 0.5 * (cov_object.rank * (_LOG_2PI + 1) + cov_object.log_pdet)
 
 
 multivariate_normal = multivariate_normal_gen()
@@ -781,11 +828,10 @@ class multivariate_normal_frozen(multi_rv_frozen):
         array([[1.]])
 
         """
-        self.allow_singular = allow_singular
         self._dist = multivariate_normal_gen(seed)
-        self.dim, self.mean, self.cov = self._dist._process_parameters(
-                                                            None, mean, cov)
-        self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
+        self.dim, self.mean, self.cov_object = (
+            self._dist._process_parameters(mean, cov, allow_singular))
+        self.allow_singular = allow_singular or self.cov_object._allow_singular
         if not maxpts:
             maxpts = 1000000 * self.dim
         self.maxpts = maxpts
@@ -794,10 +840,9 @@ class multivariate_normal_frozen(multi_rv_frozen):
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
-        out = self._dist._logpdf(x, self.mean, self.cov_info.U,
-                                 self.cov_info.log_pdet, self.cov_info.rank)
-        if self.allow_singular and (self.cov_info.rank < self.dim):
-            out_of_bounds = ~self.cov_info._support_mask(x-self.mean)
+        out = self._dist._logpdf(x, self.mean, self.cov_object)
+        if np.any(self.cov_object.rank < self.dim):
+            out_of_bounds = ~self.cov_object._support_mask(x-self.mean)
             out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
 
@@ -814,12 +859,13 @@ class multivariate_normal_frozen(multi_rv_frozen):
 
     def cdf(self, x, *, lower_limit=None):
         x = self._dist._process_quantiles(x, self.dim)
-        out = self._dist._cdf(x, self.mean, self.cov, self.maxpts, self.abseps,
-                              self.releps, lower_limit)
+        out = self._dist._cdf(x, self.mean, self.cov_object.covariance,
+                              self.maxpts, self.abseps, self.releps,
+                              lower_limit)
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
-        return self._dist.rvs(self.mean, self.cov, size, random_state)
+        return self._dist.rvs(self.mean, self.cov_object, size, random_state)
 
     def entropy(self):
         """Computes the differential entropy of the multivariate normal.
@@ -830,8 +876,8 @@ class multivariate_normal_frozen(multi_rv_frozen):
             Entropy of the multivariate normal distribution
 
         """
-        log_pdet = self.cov_info.log_pdet
-        rank = self.cov_info.rank
+        log_pdet = self.cov_object.log_pdet
+        rank = self.cov_object.rank
         return 0.5 * (rank * (_LOG_2PI + 1) + log_pdet)
 
 
@@ -5029,3 +5075,452 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
         method.__doc__, mhg_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__,
                                       mhg_docdict_params)
+
+
+class random_table_gen(multi_rv_generic):
+    r"""Contingency tables from independent samples with fixed marginal sums.
+
+    This is the distribution of random tables with given row and column vector
+    sums. This distribution represents the set of random tables under the null
+    hypothesis that rows and columns are independent. It is used in hypothesis
+    tests of independence.
+
+    Because of assumed independence, the expected frequency of each table
+    element can be computed from the row and column sums, so that the
+    distribution is completely determined by these two vectors.
+
+    Methods
+    -------
+    logpmf(x)
+        Log-probability of table `x` to occur in the distribution.
+    pmf(x)
+        Probability of table `x` to occur in the distribution.
+    mean(row, col)
+        Mean table.
+    rvs(row, col, size=None, method=None, random_state=None)
+        Draw random tables with given row and column vector sums.
+
+    Parameters
+    ----------
+    %(_doc_row_col)s
+    %(_doc_random_state)s
+
+    Notes
+    -----
+    %(_doc_row_col_note)s
+
+    Random elements from the distribution are generated either with Boyett's
+    [1]_ or Patefield's algorithm [2]_. Boyett's algorithm has
+    O(N) time and space complexity, where N is the total sum of entries in the
+    table. Patefield's algorithm has O(K x log(N)) time complexity, where K is
+    the number of cells in the table and requires only a small constant work
+    space. By default, the `rvs` method selects the fastest algorithm based on
+    the input, but you can specify the algorithm with the keyword `method`.
+    Allowed values are "boyett" and "patefield".
+
+    .. versionadded:: 1.10.0
+
+    Examples
+    --------
+    >>> from scipy.stats import random_table
+
+    >>> row = [1, 5]
+    >>> col = [2, 3, 1]
+    >>> random_table.mean(row, col)
+    array([[0.33333333, 0.5       , 0.16666667],
+           [1.66666667, 2.5       , 0.83333333]])
+
+    Alternatively, the object may be called (as a function) to fix the row
+    and column vector sums, returning a "frozen" distribution.
+
+    >>> dist = random_table(row, col)
+    >>> dist.rvs(random_state=123)
+    array([[1., 0., 0.],
+           [1., 3., 1.]])
+
+    References
+    ----------
+    .. [1] J. Boyett, AS 144 Appl. Statist. 28 (1979) 329-332
+    .. [2] W.M. Patefield, AS 159 Appl. Statist. 30 (1981) 91-97
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(seed)
+
+    def __call__(self, row, col, *, seed=None):
+        """Create a frozen distribution of tables with given marginals.
+
+        See `random_table_frozen` for more information.
+        """
+        return random_table_frozen(row, col, seed=seed)
+
+    def logpmf(self, x, row, col):
+        """Log-probability of table to occur in the distribution.
+
+        Parameters
+        ----------
+        %(_doc_x)s
+        %(_doc_row_col)s
+
+        Returns
+        -------
+        logpmf : ndarray or scalar
+            Log of the probability mass function evaluated at `x`.
+
+        Notes
+        -----
+        %(_doc_row_col_note)s
+
+        If row and column marginals of `x` do not match `row` and `col`,
+        negative infinity is returned.
+
+        Examples
+        --------
+        >>> from scipy.stats import random_table
+        >>> import numpy as np
+
+        >>> x = [[1, 5, 1], [2, 3, 1]]
+        >>> row = np.sum(x, axis=1)
+        >>> col = np.sum(x, axis=0)
+        >>> random_table.logpmf(x, row, col)
+        -1.6306401200847027
+
+        Alternatively, the object may be called (as a function) to fix the row
+        and column vector sums, returning a "frozen" distribution.
+
+        >>> d = random_table(row, col)
+        >>> d.logpmf(x)
+        -1.6306401200847027
+        """
+        r, c, n = self._process_parameters(row, col)
+        x = np.asarray(x)
+
+        if x.ndim < 2:
+            raise ValueError("`x` must be at least two-dimensional")
+
+        dtype_is_int = np.issubdtype(x.dtype, np.integer)
+        with np.errstate(invalid='ignore'):
+            if not dtype_is_int and not np.all(x.astype(int) == x):
+                raise ValueError("`x` must contain only integral values")
+
+        # x does not contain NaN if we arrive here
+        if np.any(x < 0):
+            raise ValueError("`x` must contain only non-negative values")
+
+        r2 = np.sum(x, axis=-1)
+        c2 = np.sum(x, axis=-2)
+
+        if r2.shape[-1] != len(r):
+            raise ValueError("shape of `x` must agree with `row`")
+
+        if c2.shape[-1] != len(c):
+            raise ValueError("shape of `x` must agree with `col`")
+
+        res = np.empty(x.shape[:-2])
+
+        mask = np.all(r2 == r, axis=-1) & np.all(c2 == c, axis=-1)
+
+        def lnfac(x):
+            return gammaln(x + 1)
+
+        res[mask] = (np.sum(lnfac(r), axis=-1) + np.sum(lnfac(c), axis=-1)
+                     - lnfac(n) - np.sum(lnfac(x[mask]), axis=(-1, -2)))
+        res[~mask] = -np.inf
+
+        return res[()]
+
+    def pmf(self, x, row, col):
+        """Probability of table to occur in the distribution.
+
+        Parameters
+        ----------
+        %(_doc_x)s
+        %(_doc_row_col)s
+
+        Returns
+        -------
+        pmf : ndarray or scalar
+            Probability mass function evaluated at `x`.
+
+        Notes
+        -----
+        %(_doc_row_col_note)s
+
+        If row and column marginals of `x` do not match `row` and `col`,
+        zero is returned.
+
+        Examples
+        --------
+        >>> from scipy.stats import random_table
+        >>> import numpy as np
+
+        >>> x = [[1, 5, 1], [2, 3, 1]]
+        >>> row = np.sum(x, axis=1)
+        >>> col = np.sum(x, axis=0)
+        >>> random_table.pmf(x, row, col)
+        0.19580419580419592
+
+        Alternatively, the object may be called (as a function) to fix the row
+        and column vector sums, returning a "frozen" distribution.
+
+        >>> d = random_table(row, col)
+        >>> d.pmf(x)
+        0.19580419580419592
+        """
+        return np.exp(self.logpmf(x, row, col))
+
+    def mean(self, row, col):
+        """Mean of distribution of conditional tables.
+        %(_doc_mean_params)s
+
+        Returns
+        -------
+        mean: ndarray
+            Mean of the distribution.
+
+        Notes
+        -----
+        %(_doc_row_col_note)s
+
+        Examples
+        --------
+        >>> from scipy.stats import random_table
+
+        >>> row = [1, 5]
+        >>> col = [2, 3, 1]
+        >>> random_table.mean(row, col)
+        array([[0.33333333, 0.5       , 0.16666667],
+               [1.66666667, 2.5       , 0.83333333]])
+
+        Alternatively, the object may be called (as a function) to fix the row
+        and column vector sums, returning a "frozen" distribution.
+
+        >>> d = random_table(row, col)
+        >>> d.mean()
+        array([[0.33333333, 0.5       , 0.16666667],
+               [1.66666667, 2.5       , 0.83333333]])
+        """
+        r, c, n = self._process_parameters(row, col)
+        return np.outer(r, c) / n
+
+    def rvs(self, row, col, *, size=None, method=None, random_state=None):
+        """Draw random tables with fixed column and row marginals.
+
+        Parameters
+        ----------
+        %(_doc_row_col)s
+        size : integer, optional
+            Number of samples to draw (default 1).
+        method : str, optional
+            Which method to use, "boyett" or "patefield". If None (default),
+            selects the fastest method for this input.
+        %(_doc_random_state)s
+
+        Returns
+        -------
+        rvs : ndarray
+            Random 2D tables of shape (`size`, `len(row)`, `len(col)`).
+
+        Notes
+        -----
+        %(_doc_row_col_note)s
+
+        Examples
+        --------
+        >>> from scipy.stats import random_table
+
+        >>> row = [1, 5]
+        >>> col = [2, 3, 1]
+        >>> random_table.rvs(row, col, random_state=123)
+        array([[1., 0., 0.],
+               [1., 3., 1.]])
+
+        Alternatively, the object may be called (as a function) to fix the row
+        and column vector sums, returning a "frozen" distribution.
+
+        >>> d = random_table(row, col)
+        >>> d.rvs(random_state=123)
+        array([[1., 0., 0.],
+               [1., 3., 1.]])
+        """
+        r, c, n = self._process_parameters(row, col)
+        size, shape = self._process_size_shape(size, r, c)
+
+        random_state = self._get_random_state(random_state)
+        meth = self._process_rvs_method(method, r, c, n)
+
+        return meth(r, c, n, size, random_state).reshape(shape)
+
+    @staticmethod
+    def _process_parameters(row, col):
+        """
+        Check that row and column vectors are one-dimensional, that they do
+        not contain negative or non-integer entries, and that the sums over
+        both vectors are equal.
+        """
+        r = np.array(row, dtype=np.int_, copy=True)
+        c = np.array(col, dtype=np.int_, copy=True)
+
+        if np.ndim(r) != 1:
+            raise ValueError("`row` must be one-dimensional")
+        if np.ndim(c) != 1:
+            raise ValueError("`col` must be one-dimensional")
+
+        if np.any(r < 0):
+            raise ValueError("each element of `row` must be non-negative")
+        if np.any(c < 0):
+            raise ValueError("each element of `col` must be non-negative")
+
+        n = np.sum(r)
+        if n != np.sum(c):
+            raise ValueError("sums over `row` and `col` must be equal")
+
+        if not np.all(r == np.asarray(row)):
+            raise ValueError("each element of `row` must be an integer")
+        if not np.all(c == np.asarray(col)):
+            raise ValueError("each element of `col` must be an integer")
+
+        return r, c, n
+
+    @staticmethod
+    def _process_size_shape(size, r, c):
+        """
+        Compute the number of samples to be drawn and the shape of the output
+        """
+        shape = (len(r), len(c))
+
+        if size is None:
+            return 1, shape
+
+        size = np.atleast_1d(size)
+        if not np.issubdtype(size.dtype, np.integer) or np.any(size < 0):
+            raise ValueError("`size` must be a non-negative integer or `None`")
+
+        return np.prod(size), tuple(size) + shape
+
+    @classmethod
+    def _process_rvs_method(cls, method, r, c, n):
+        known_methods = {
+            None: cls._rvs_select(r, c, n),
+            "boyett": cls._rvs_boyett,
+            "patefield": cls._rvs_patefield,
+        }
+        try:
+            return known_methods[method]
+        except KeyError:
+            raise ValueError(f"'{method}' not recognized, "
+                             f"must be one of {set(known_methods)}")
+
+    @classmethod
+    def _rvs_select(cls, r, c, n):
+        # TODO find optimal empirical threshold with benchmarks,
+        # for now we always return "boyett", because "patefield"
+        # is not yet implemented.
+
+        # Example:
+        # k = len(r) * len(c)  # number of cells
+        # if n > fac * np.log(n) * k:
+        #     return cls._rvs_patefield
+        # return cls._rvs_boyett
+        # 'fac' has to be estimated empirically
+        return cls._rvs_boyett
+
+    @staticmethod
+    def _rvs_boyett(row, col, tot, size, random_state):
+        x = np.repeat(np.arange(len(row)), row)
+        y = np.repeat(np.arange(len(col)), col)
+
+        def crosstab(x, y):
+            return contingency.crosstab(x, y).count
+
+        tables = [crosstab(x, random_state.permutation(y))
+                  for i in range(size)]
+        return np.asarray(tables)
+
+    @staticmethod
+    def _rvs_patefield(row, col, tot, size, random_state):
+        # TODO call into C code
+        raise NotImplementedError
+
+
+random_table = random_table_gen()
+
+
+class random_table_frozen(multi_rv_frozen):
+    def __init__(self, row, col, *, seed=None):
+        self._dist = random_table_gen(seed)
+        self._params = self._dist._process_parameters(row, col)
+
+        # monkey patch self._dist
+        def _process_parameters(r, c):
+            return self._params
+        self._dist._process_parameters = _process_parameters
+
+    def logpmf(self, x):
+        return self._dist.logpmf(x, None, None)
+
+    def pmf(self, x):
+        return self._dist.pmf(x, None, None)
+
+    def mean(self):
+        return self._dist.mean(None, None)
+
+    def rvs(self, size=None, method=None, random_state=None):
+        # optimisations are possible here
+        return self._dist.rvs(None, None, size=size, method=method,
+                              random_state=random_state)
+
+
+_ctab_doc_row_col = """\
+row : array_like
+    Sum of table entries in each row.
+col : array_like
+    Sum of table entries in each column."""
+
+_ctab_doc_x = """\
+x : array-like
+   Two-dimensional table of non-negative integers, or a
+   multi-dimensional array with the last two dimensions
+   corresponding with the tables."""
+
+_ctab_doc_row_col_note = """\
+The row and column vectors must be one-dimensional, not empty,
+and each sum up to the same value. They cannot contain negative
+or noninteger entries."""
+
+_ctab_doc_mean_params = f"""
+Parameters
+----------
+{_ctab_doc_row_col}"""
+
+_ctab_doc_row_col_note_frozen = """\
+See class definition for a detailed description of parameters."""
+
+_ctab_docdict = {
+    "_doc_random_state": _doc_random_state,
+    "_doc_row_col": _ctab_doc_row_col,
+    "_doc_x": _ctab_doc_x,
+    "_doc_mean_params": _ctab_doc_mean_params,
+    "_doc_row_col_note": _ctab_doc_row_col_note,
+}
+
+_ctab_docdict_frozen = _ctab_docdict.copy()
+_ctab_docdict_frozen.update({
+    "_doc_row_col": "",
+    "_doc_mean_params": "",
+    "_doc_row_col_note": _ctab_doc_row_col_note_frozen,
+})
+
+
+def _docfill(obj, docdict, template=None):
+    obj.__doc__ = doccer.docformat(template or obj.__doc__, docdict)
+
+
+# Set frozen generator docstrings from corresponding docstrings in
+# random_table and fill in default strings in class docstrings
+_docfill(random_table_gen, _ctab_docdict)
+for name in ['logpmf', 'pmf', 'mean', 'rvs']:
+    method = random_table_gen.__dict__[name]
+    method_frozen = random_table_frozen.__dict__[name]
+    _docfill(method_frozen, _ctab_docdict_frozen, method.__doc__)
+    _docfill(method, _ctab_docdict)

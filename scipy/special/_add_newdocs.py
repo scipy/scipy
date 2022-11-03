@@ -201,6 +201,61 @@ add_newdoc("voigt_profile",
     ----------
     .. [1] https://en.wikipedia.org/wiki/Voigt_profile
 
+    Examples
+    --------
+    Calculate the function at point 2 for ``sigma=1`` and ``gamma=1``.
+
+    >>> from scipy.special import voigt_profile
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> voigt_profile(2, 1., 1.)
+    0.09071519942627544
+
+    Calculate the function at several points by providing a NumPy array
+    for `x`.
+
+    >>> values = np.array([-2., 0., 5])
+    >>> voigt_profile(values, 1., 1.)
+    array([0.0907152 , 0.20870928, 0.01388492])
+
+    Plot the function for different parameter sets.
+
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
+    >>> x = np.linspace(-10, 10, 500)
+    >>> parameters_list = [(1.5, 0., "solid"), (1.3, 0.5, "dashed"),
+    ...                    (0., 1.8, "dotted"), (1., 1., "dashdot")]
+    >>> for params in parameters_list:
+    ...     sigma, gamma, linestyle = params
+    ...     voigt = voigt_profile(x, sigma, gamma)
+    ...     ax.plot(x, voigt, label=rf"$\sigma={sigma},\, \gamma={gamma}$",
+    ...             ls=linestyle)
+    >>> ax.legend()
+    >>> plt.show()
+
+    Verify visually that the Voigt profile indeed arises as the convolution
+    of a normal and a Cauchy distribution.
+
+    >>> from scipy.signal import convolve
+    >>> x, dx = np.linspace(-10, 10, 500, retstep=True)
+    >>> def gaussian(x, sigma):
+    ...     return np.exp(-0.5 * x**2/sigma**2)/(sigma * np.sqrt(2*np.pi))
+    >>> def cauchy(x, gamma):
+    ...     return gamma/(np.pi * (np.square(x)+gamma**2))
+    >>> sigma = 2
+    >>> gamma = 1
+    >>> gauss_profile = gaussian(x, sigma)
+    >>> cauchy_profile = cauchy(x, gamma)
+    >>> convolved = dx * convolve(cauchy_profile, gauss_profile, mode="same")
+    >>> voigt = voigt_profile(x, sigma, gamma)
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
+    >>> ax.plot(x, gauss_profile, label="Gauss: $G$", c='b')
+    >>> ax.plot(x, cauchy_profile, label="Cauchy: $C$", c='y', ls="dashed")
+    >>> xx = 0.5*(x[1:] + x[:-1])  # midpoints
+    >>> ax.plot(xx, convolved[1:], label="Convolution: $G * C$", ls='dashdot',
+    ...         c='k')
+    >>> ax.plot(x, voigt, label="Voigt", ls='dotted', c='r')
+    >>> ax.legend()
+    >>> plt.show()
     """)
 
 add_newdoc("wrightomega",
@@ -3424,7 +3479,7 @@ add_newdoc(
     Returns
     -------
     erfinv : scalar or ndarray
-        The inverse of erf of y, element-wise)
+        The inverse of erf of y, element-wise
 
     See Also
     --------
@@ -3436,15 +3491,21 @@ add_newdoc(
     --------
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import erfinv
+    >>> from scipy.special import erfinv, erf
 
     >>> erfinv(0.5)
     0.4769362762044699
 
-    >>> y = np.linspace(-1.0, 1.0, num=10)
-    >>> erfinv(y)
-    array([       -inf, -0.86312307, -0.5407314 , -0.30457019, -0.0987901 ,
-            0.0987901 ,  0.30457019,  0.5407314 ,  0.86312307,         inf])
+    >>> y = np.linspace(-1.0, 1.0, num=9)
+    >>> x = erfinv(y)
+    >>> x
+    array([       -inf, -0.81341985, -0.47693628, -0.22531206,  0.        ,
+            0.22531206,  0.47693628,  0.81341985,         inf])
+
+    Verify that ``erf(erfinv(y))`` is ``y``.
+
+    >>> erf(x)
+    array([-1.  , -0.75, -0.5 , -0.25,  0.  ,  0.25,  0.5 ,  0.75,  1.  ])
 
     Plot the function:
 
@@ -6051,12 +6112,88 @@ add_newdoc("huber",
     scalar or ndarray
         The computed Huber loss function values.
 
+    See also
+    --------
+    pseudo_huber : smooth approximation of this function
+
     Notes
     -----
-    This function is convex in r.
+    `huber` is useful as a loss function in robust statistics or machine
+    learning to reduce the influence of outliers as compared to the common
+    squared error loss, residuals with a magnitude higher than `delta` are
+    not squared [1]_.
+
+    Typically, `r` represents residuals, the difference
+    between a model prediction and data. Then, for :math:`|r|\leq\delta`,
+    `huber` resembles the squared error and for :math:`|r|>\delta` the
+    absolute error. This way, the Huber loss often achieves
+    a fast convergence in model fitting for small residuals like the squared
+    error loss function and still reduces the influence of outliers
+    (:math:`|r|>\delta`) like the absolute error loss. As :math:`\delta` is
+    the cutoff between squared and absolute error regimes, it has
+    to be tuned carefully for each problem. `huber` is also
+    convex, making it suitable for gradient based optimization.
 
     .. versionadded:: 0.15.0
 
+    References
+    ----------
+    .. [1] Peter Huber. "Robust Estimation of a Location Parameter",
+           1964. Annals of Statistics. 53 (1): 73 - 101.
+
+    Examples
+    --------
+    Import all necessary modules.
+
+    >>> import numpy as np
+    >>> from scipy.special import huber
+    >>> import matplotlib.pyplot as plt
+
+    Compute the function for ``delta=1`` at ``r=2``
+
+    >>> huber(1., 2.)
+    1.5
+
+    Compute the function for different `delta` by providing a NumPy array or
+    list for `delta`.
+
+    >>> huber([1., 3., 5.], 4.)
+    array([3.5, 7.5, 8. ])
+
+    Compute the function at different points by providing a NumPy array or
+    list for `r`.
+
+    >>> huber(2., np.array([1., 1.5, 3.]))
+    array([0.5  , 1.125, 4.   ])
+
+    The function can be calculated for different `delta` and `r` by
+    providing arrays for both with compatible shapes for broadcasting.
+
+    >>> r = np.array([1., 2.5, 8., 10.])
+    >>> deltas = np.array([[1.], [5.], [9.]])
+    >>> print(r.shape, deltas.shape)
+    (4,) (3, 1)
+
+    >>> huber(deltas, r)
+    array([[ 0.5  ,  2.   ,  7.5  ,  9.5  ],
+           [ 0.5  ,  3.125, 27.5  , 37.5  ],
+           [ 0.5  ,  3.125, 32.   , 49.5  ]])
+
+    Plot the function for different `delta`.
+
+    >>> x = np.linspace(-4, 4, 500)
+    >>> deltas = [1, 2, 3]
+    >>> linestyles = ["dashed", "dotted", "dashdot"]
+    >>> fig, ax = plt.subplots()
+    >>> combined_plot_parameters = list(zip(deltas, linestyles))
+    >>> for delta, style in combined_plot_parameters:
+    ...     ax.plot(x, huber(delta, x), label=f"$\delta={delta}$", ls=style)
+    >>> ax.legend(loc="upper center")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("Huber loss function $h_{\delta}(x)$")
+    >>> ax.set_xlim(-4, 4)
+    >>> ax.set_ylim(0, 8)
+    >>> plt.show()
     """)
 
 add_newdoc("hyp0f1",
@@ -6830,6 +6967,33 @@ add_newdoc("it2struve0",
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    Evaluate the function at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import it2struve0
+    >>> it2struve0(1.)
+    0.9571973506383524
+
+    Evaluate the function at several points by supplying
+    an array for `x`.
+
+    >>> points = np.array([1., 2., 3.5])
+    >>> it2struve0(points)
+    array([0.95719735, 0.46909296, 0.10366042])
+
+    Plot the function from -10 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> it2struve0_values = it2struve0(x)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, it2struve0_values)
+    >>> ax.set_xlabel(r'$x$')
+    >>> ax.set_ylabel(r'$\int_x^{\infty}\frac{H_0(t)}{t}\,dt$')
+    >>> plt.show()
     """)
 
 add_newdoc("itairy",
@@ -7028,12 +7192,42 @@ add_newdoc("itmodstruve0",
     Wrapper for a Fortran routine created by Shanjie Zhang and Jianming
     Jin [1]_.
 
+    See Also
+    --------
+    modstruve: Modified Struve function which is integrated by this function
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Evaluate the function at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import itmodstruve0
+    >>> itmodstruve0(1.)
+    0.3364726286440384
+
+    Evaluate the function at several points by supplying
+    an array for `x`.
+
+    >>> points = np.array([1., 2., 3.5])
+    >>> itmodstruve0(points)
+    array([0.33647263, 1.588285  , 7.60382578])
+
+    Plot the function from -10 to 10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> itmodstruve0_values = itmodstruve0(x)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, itmodstruve0_values)
+    >>> ax.set_xlabel(r'$x$')
+    >>> ax.set_ylabel(r'$\int_0^xL_0(t)\,dt$')
+    >>> plt.show()
     """)
 
 add_newdoc("itstruve0",
@@ -7059,7 +7253,7 @@ add_newdoc("itstruve0",
 
     See also
     --------
-    struve
+    struve: Function which is integrated by this function
 
     Notes
     -----
@@ -7072,6 +7266,32 @@ add_newdoc("itstruve0",
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Evaluate the function at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import itstruve0
+    >>> itstruve0(1.)
+    0.30109042670805547
+
+    Evaluate the function at several points by supplying
+    an array for `x`.
+
+    >>> points = np.array([1., 2., 3.5])
+    >>> itstruve0(points)
+    array([0.30109043, 1.01870116, 1.96804581])
+
+    Plot the function from -20 to 20.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-20., 20., 1000)
+    >>> istruve0_values = itstruve0(x)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, istruve0_values)
+    >>> ax.set_xlabel(r'$x$')
+    >>> ax.set_ylabel(r'$\int_0^{x}H_0(t)\,dt$')
+    >>> plt.show()
     """)
 
 add_newdoc("iv",
@@ -7190,11 +7410,14 @@ add_newdoc("ive",
     r"""
     ive(v, z, out=None)
 
-    Exponentially scaled modified Bessel function of the first kind
+    Exponentially scaled modified Bessel function of the first kind.
 
     Defined as::
 
         ive(v, z) = iv(v, z) * exp(-abs(z.real))
+
+    For imaginary numbers without a real part, returns the unscaled
+    Bessel function of the first kind `iv`.
 
     Parameters
     ----------
@@ -7233,11 +7456,68 @@ add_newdoc("ive",
     is used, where :math:`K_v(z)` is the modified Bessel function of the
     second kind, evaluated using the AMOS routine `zbesk`.
 
+    See also
+    --------
+    iv: Modified Bessel function of the first kind
+    i0e: Faster implementation of this function for order 0
+    i1e: Faster implementation of this function for order 1
+
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Evaluate the function of order 0 at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import iv, ive
+    >>> import matplotlib.pyplot as plt
+    >>> ive(0, 1.)
+    0.4657596075936404
+
+    Evaluate the function at one point for different orders by
+    providing a list or NumPy array as argument for the `v` parameter:
+
+    >>> ive([0, 1, 1.5], 1.)
+    array([0.46575961, 0.20791042, 0.10798193])
+
+    Evaluate the function at several points for order 0 by providing an
+    array for `z`.
+
+    >>> points = np.array([-2., 0., 3.])
+    >>> ive(0, points)
+    array([0.30850832, 1.        , 0.24300035])
+
+    Evaluate the function at several points for different orders by
+    providing arrays for both `v` for `z`. Both arrays have to be
+    broadcastable to the correct shape. To calculate the orders 0, 1
+    and 2 for a 1D array of points:
+
+    >>> ive([[0], [1], [2]], points)
+    array([[ 0.30850832,  1.        ,  0.24300035],
+           [-0.21526929,  0.        ,  0.19682671],
+           [ 0.09323903,  0.        ,  0.11178255]])
+
+    Plot the functions of order 0 to 3 from -5 to 5.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-5., 5., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, ive(i, x), label=f'$I_{i!r}(z)\cdot e^{{-|z|}}$')
+    >>> ax.legend()
+    >>> ax.set_xlabel(r"$z$")
+    >>> plt.show()
+
+    Exponentially scaled Bessel functions are useful for large arguments for
+    which the unscaled Bessel functions over- or underflow. In the
+    following example `iv` returns infinity whereas `ive` still returns
+    a finite number.
+
+    >>> iv(3, 1000.), ive(3, 1000.)
+    (inf, 0.01256056218254712)
     """)
 
 add_newdoc("j0",
@@ -8403,6 +8683,12 @@ add_newdoc("kve",
     Wrapper for AMOS [1]_ routine `zbesk`.  For a discussion of the
     algorithm used, see [2]_ and the references therein.
 
+    See Also
+    --------
+    kv : This function without exponential scaling.
+    k0e : Faster version of this function for order 0.
+    k1e : Faster version of this function for order 1.
+
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
@@ -8411,6 +8697,59 @@ add_newdoc("kve",
     .. [2] Donald E. Amos, "Algorithm 644: A portable package for Bessel
            functions of a complex argument and nonnegative order", ACM
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
+
+    Examples
+    --------
+    Evaluate the function of order 0 at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import kv, kve
+    >>> import matplotlib.pyplot as plt
+    >>> kve(0, 1.)
+    1.1444630798068949
+
+    Evaluate the function at one point for different orders by
+    providing a list or NumPy array as argument for the `v` parameter:
+
+    >>> kve([0, 1, 1.5], 1.)
+    array([1.14446308, 1.63615349, 2.50662827])
+
+    Evaluate the function at several points for order 0 by providing an
+    array for `z`.
+
+    >>> points = np.array([1., 3., 10.])
+    >>> kve(0, points)
+    array([1.14446308, 0.6977616 , 0.39163193])
+
+    Evaluate the function at several points for different orders by
+    providing arrays for both `v` for `z`. Both arrays have to be
+    broadcastable to the correct shape. To calculate the orders 0, 1
+    and 2 for a 1D array of points:
+
+    >>> kve([[0], [1], [2]], points)
+    array([[1.14446308, 0.6977616 , 0.39163193],
+           [1.63615349, 0.80656348, 0.41076657],
+           [4.41677005, 1.23547058, 0.47378525]])
+
+    Plot the functions of order 0 to 3 from 0 to 5.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0., 5., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, kve(i, x), label=f'$K_{i!r}(z)\cdot e^z$')
+    >>> ax.legend()
+    >>> ax.set_xlabel(r"$z$")
+    >>> ax.set_ylim(0, 4)
+    >>> ax.set_xlim(0, 5)
+    >>> plt.show()
+
+    Exponentially scaled Bessel functions are useful for large arguments for
+    which the unscaled Bessel functions over- or underflow. In the
+    following example `kv` returns 0 whereas `kve` still returns
+    a useful finite number.
+
+    >>> kv(3, 1000.), kve(3, 1000.)
+    (0.0, 0.03980696128440973)
     """)
 
 add_newdoc("_lanczos_sum_expg_scaled",
@@ -9011,6 +9350,53 @@ add_newdoc("modstruve",
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/11
+
+    Examples
+    --------
+    Calculate the modified Struve function of order 1 at 2.
+
+    >>> import numpy as np
+    >>> from scipy.special import modstruve
+    >>> import matplotlib.pyplot as plt
+    >>> modstruve(1, 2.)
+    1.102759787367716
+
+    Calculate the modified Struve function at 2 for orders 1, 2 and 3 by
+    providing a list for the order parameter `v`.
+
+    >>> modstruve([1, 2, 3], 2.)
+    array([1.10275979, 0.41026079, 0.11247294])
+
+    Calculate the modified Struve function of order 1 for several points
+    by providing an array for `x`.
+
+    >>> points = np.array([2., 5., 8.])
+    >>> modstruve(1, points)
+    array([  1.10275979,  23.72821578, 399.24709139])
+
+    Compute the modified Struve function for several orders at several
+    points by providing arrays for `v` and `z`. The arrays have to be
+    broadcastable to the correct shapes.
+
+    >>> orders = np.array([[1], [2], [3]])
+    >>> points.shape, orders.shape
+    ((3,), (3, 1))
+
+    >>> modstruve(orders, points)
+    array([[1.10275979e+00, 2.37282158e+01, 3.99247091e+02],
+           [4.10260789e-01, 1.65535979e+01, 3.25973609e+02],
+           [1.12472937e-01, 9.42430454e+00, 2.33544042e+02]])
+
+    Plot the modified Struve functions of order 0 to 3 from -5 to 5.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-5., 5., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, modstruve(i, x), label=f'$L_{i!r}$')
+    >>> ax.legend(ncol=2)
+    >>> ax.set_xlim(-5, 5)
+    >>> ax.set_title(r"Modified Struve functions $L_{\nu}$")
+    >>> plt.show()
     """)
 
 add_newdoc("nbdtr",
@@ -10480,6 +10866,66 @@ add_newdoc("poch",
 
     """)
 
+add_newdoc("powm1", """
+    powm1(x, y, out=None)
+
+    Computes ``x**y - 1``.
+
+    This function is useful when `y` is near 0, or when `x` is near 1.
+
+    The function is implemented for real types only (unlike ``numpy.power``,
+    which accepts complex inputs).
+
+    Parameters
+    ----------
+    x : array_like
+        The base. Must be a real type (i.e. integer or float, not complex).
+    y : array_like
+        The exponent. Must be a real type (i.e. integer or float, not complex).
+
+    Returns
+    -------
+    array_like
+        Result of the calculation
+
+    Notes
+    -----
+    .. versionadded:: 1.10.0
+
+    The underlying code is implemented for single precision and double
+    precision floats only.  Unlike `numpy.power`, integer inputs to
+    `powm1` are converted to floating point, and complex inputs are
+    not accepted.
+
+    Note the following edge cases:
+
+    * ``powm1(x, 0)`` returns 0 for any ``x``, including 0, ``inf``
+      and ``nan``.
+    * ``powm1(1, y)`` returns 0 for any ``y``, including ``nan``
+      and ``inf``.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import powm1
+
+    >>> x = np.array([1.2, 10.0, 0.9999999975])
+    >>> y = np.array([1e-9, 1e-11, 0.1875])
+    >>> powm1(x, y)
+    array([ 1.82321557e-10,  2.30258509e-11, -4.68749998e-10])
+
+    It can be verified that the relative errors in those results
+    are less than 2.5e-16.
+
+    Compare that to the result of ``x**y - 1``, where the
+    relative errors are all larger than 8e-8:
+
+    >>> x**y - 1
+    array([ 1.82321491e-10,  2.30258035e-11, -4.68750039e-10])
+
+    """)
+
+
 add_newdoc("pro_ang1",
     """
     pro_ang1(m, n, c, x, out=None)
@@ -10725,12 +11171,114 @@ add_newdoc("pseudo_huber",
     res : scalar or ndarray
         The computed Pseudo-Huber loss function values.
 
+    See also
+    --------
+    huber: Similar function which this function approximates
+
     Notes
     -----
-    This function is convex in :math:`r`.
+    Like `huber`, `pseudo_huber` often serves as a robust loss function
+    in statistics or machine learning to reduce the influence of outliers.
+    Unlike `huber`, `pseudo_huber` is smooth.
+
+    Typically, `r` represents residuals, the difference
+    between a model prediction and data. Then, for :math:`|r|\leq\delta`,
+    `pseudo_huber` resembles the squared error and for :math:`|r|>\delta` the
+    absolute error. This way, the Pseudo-Huber loss often achieves
+    a fast convergence in model fitting for small residuals like the squared
+    error loss function and still reduces the influence of outliers
+    (:math:`|r|>\delta`) like the absolute error loss. As :math:`\delta` is
+    the cutoff between squared and absolute error regimes, it has
+    to be tuned carefully for each problem. `pseudo_huber` is also
+    convex, making it suitable for gradient based optimization. [1]_ [2]_
 
     .. versionadded:: 0.15.0
 
+    References
+    ----------
+    .. [1] Hartley, Zisserman, "Multiple View Geometry in Computer Vision".
+           2003. Cambridge University Press. p. 619
+    .. [2] Charbonnier et al. "Deterministic edge-preserving regularization
+           in computed imaging". 1997. IEEE Trans. Image Processing.
+           6 (2): 298 - 311.
+
+    Examples
+    --------
+    Import all necessary modules.
+
+    >>> import numpy as np
+    >>> from scipy.special import pseudo_huber, huber
+    >>> import matplotlib.pyplot as plt
+
+    Calculate the function for ``delta=1`` at ``r=2``.
+
+    >>> pseudo_huber(1., 2.)
+    1.2360679774997898
+
+    Calculate the function at ``r=2`` for different `delta` by providing
+    a list or NumPy array for `delta`.
+
+    >>> pseudo_huber([1., 2., 4.], 3.)
+    array([2.16227766, 3.21110255, 4.        ])
+
+    Calculate the function for ``delta=1`` at several points by providing
+    a list or NumPy array for `r`.
+
+    >>> pseudo_huber(2., np.array([1., 1.5, 3., 4.]))
+    array([0.47213595, 1.        , 3.21110255, 4.94427191])
+
+    The function can be calculated for different `delta` and `r` by
+    providing arrays for both with compatible shapes for broadcasting.
+
+    >>> r = np.array([1., 2.5, 8., 10.])
+    >>> deltas = np.array([[1.], [5.], [9.]])
+    >>> print(r.shape, deltas.shape)
+    (4,) (3, 1)
+
+    >>> pseudo_huber(deltas, r)
+    array([[ 0.41421356,  1.6925824 ,  7.06225775,  9.04987562],
+           [ 0.49509757,  2.95084972, 22.16990566, 30.90169944],
+           [ 0.49846624,  3.06693762, 27.37435121, 40.08261642]])
+
+    Plot the function for different `delta`.
+
+    >>> x = np.linspace(-4, 4, 500)
+    >>> deltas = [1, 2, 3]
+    >>> linestyles = ["dashed", "dotted", "dashdot"]
+    >>> fig, ax = plt.subplots()
+    >>> combined_plot_parameters = list(zip(deltas, linestyles))
+    >>> for delta, style in combined_plot_parameters:
+    ...     ax.plot(x, pseudo_huber(delta, x), label=f"$\delta={delta}$",
+    ...             ls=style)
+    >>> ax.legend(loc="upper center")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("Pseudo-Huber loss function $h_{\delta}(x)$")
+    >>> ax.set_xlim(-4, 4)
+    >>> ax.set_ylim(0, 8)
+    >>> plt.show()
+
+    Finally, illustrate the difference between `huber` and `pseudo_huber` by
+    plotting them and their gradients with respect to `r`. The plot shows
+    that `pseudo_huber` is continuously differentiable while `huber` is not
+    at the points :math:`\pm\delta`.
+
+    >>> def huber_grad(delta, x):
+    ...     grad = np.copy(x)
+    ...     linear_area = np.argwhere(np.abs(x) > delta)
+    ...     grad[linear_area]=delta*np.sign(x[linear_area])
+    ...     return grad
+    >>> def pseudo_huber_grad(delta, x):
+    ...     return x* (1+(x/delta)**2)**(-0.5)
+    >>> x=np.linspace(-3, 3, 500)
+    >>> delta = 1.
+    >>> fig, ax = plt.subplots(figsize=(7, 7))
+    >>> ax.plot(x, huber(delta, x), label="Huber", ls="dashed")
+    >>> ax.plot(x, huber_grad(delta, x), label="Huber Gradient", ls="dashdot")
+    >>> ax.plot(x, pseudo_huber(delta, x), label="Pseudo-Huber", ls="dotted")
+    >>> ax.plot(x, pseudo_huber_grad(delta, x), label="Pseudo-Huber Gradient",
+    ...         ls="solid")
+    >>> ax.legend(loc="upper center")
+    >>> plt.show()
     """)
 
 add_newdoc("psi",
@@ -11636,13 +12184,59 @@ add_newdoc("struve",
 
     See also
     --------
-    modstruve
+    modstruve: Modified Struve function
 
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/11
 
+    Examples
+    --------
+    Calculate the Struve function of order 1 at 2.
+
+    >>> import numpy as np
+    >>> from scipy.special import struve
+    >>> import matplotlib.pyplot as plt
+    >>> struve(1, 2.)
+    0.6467637282835622
+
+    Calculate the Struve function at 2 for orders 1, 2 and 3 by providing
+    a list for the order parameter `v`.
+
+    >>> struve([1, 2, 3], 2.)
+    array([0.64676373, 0.28031806, 0.08363767])
+
+    Calculate the Struve function of order 1 for several points by providing
+    an array for `x`.
+
+    >>> points = np.array([2., 5., 8.])
+    >>> struve(1, points)
+    array([0.64676373, 0.80781195, 0.48811605])
+
+    Compute the Struve function for several orders at several points by
+    providing arrays for `v` and `z`. The arrays have to be broadcastable
+    to the correct shapes.
+
+    >>> orders = np.array([[1], [2], [3]])
+    >>> points.shape, orders.shape
+    ((3,), (3, 1))
+
+    >>> struve(orders, points)
+    array([[0.64676373, 0.80781195, 0.48811605],
+           [0.28031806, 1.56937455, 1.51769363],
+           [0.08363767, 1.50872065, 2.98697513]])
+
+    Plot the Struve functions of order 0 to 3 from -10 to 10.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-10., 10., 1000)
+    >>> for i in range(4):
+    ...     ax.plot(x, struve(i, x), label=f'$H_{i!r}$')
+    >>> ax.legend(ncol=2)
+    >>> ax.set_xlim(-10, 10)
+    >>> ax.set_title(r"Struve functions $H_{\nu}$")
+    >>> plt.show()
     """)
 
 add_newdoc("tandg",

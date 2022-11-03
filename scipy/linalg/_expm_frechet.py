@@ -65,22 +65,24 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
 
     Examples
     --------
-    >>> import scipy.linalg
+    >>> import numpy as np
+    >>> from scipy import linalg
     >>> rng = np.random.default_rng()
+
     >>> A = rng.standard_normal((3, 3))
     >>> E = rng.standard_normal((3, 3))
-    >>> expm_A, expm_frechet_AE = scipy.linalg.expm_frechet(A, E)
+    >>> expm_A, expm_frechet_AE = linalg.expm_frechet(A, E)
     >>> expm_A.shape, expm_frechet_AE.shape
     ((3, 3), (3, 3))
 
-    >>> import scipy.linalg
-    >>> rng = np.random.default_rng()
-    >>> A = rng.standard_normal((3, 3))
-    >>> E = rng.standard_normal((3, 3))
-    >>> expm_A, expm_frechet_AE = scipy.linalg.expm_frechet(A, E)
+    Create a 6x6 matrix containg [[A, E], [0, A]]:
+
     >>> M = np.zeros((6, 6))
-    >>> M[:3, :3] = A; M[:3, 3:] = E; M[3:, 3:] = A
-    >>> expm_M = scipy.linalg.expm(M)
+    >>> M[:3, :3] = A
+    >>> M[:3, 3:] = E
+    >>> M[3:, 3:] = A
+
+    >>> expm_M = linalg.expm(M)
     >>> np.allclose(expm_A, expm_M[:3, :3])
     True
     >>> np.allclose(expm_frechet_AE, expm_M[:3, 3:])
@@ -368,6 +370,11 @@ def expm_cond(A, check_finite=True):
         The relative condition number of the matrix exponential
         in the Frobenius norm
 
+    See Also
+    --------
+    expm : Compute the exponential of a matrix.
+    expm_frechet : Compute the Frechet derivative of the matrix exponential.
+
     Notes
     -----
     A faster estimate for the condition number in the 1-norm
@@ -375,13 +382,9 @@ def expm_cond(A, check_finite=True):
 
     .. versionadded:: 0.14.0
 
-    See Also
-    --------
-    expm : Compute the exponential of a matrix.
-    expm_frechet : Compute the Frechet derivative of the matrix exponential.
-
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import expm_cond
     >>> A = np.array([[-0.3, 0.2, 0.6], [0.6, 0.3, -0.1], [-0.7, 1.2, 0.9]])
     >>> k = expm_cond(A)

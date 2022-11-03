@@ -177,6 +177,7 @@ class UnivariateSpline:
     with ``nan``. A workaround is to use zero weights for not-a-number
     data points:
 
+    >>> import numpy as np
     >>> from scipy.interpolate import UnivariateSpline
     >>> x, y = np.array([1, 2, 3, 4]), np.array([1, np.nan, 3, 4])
     >>> w = np.isnan(y)
@@ -188,6 +189,7 @@ class UnivariateSpline:
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import UnivariateSpline
     >>> rng = np.random.default_rng()
@@ -208,6 +210,7 @@ class UnivariateSpline:
     >>> plt.show()
 
     """
+
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None,
                  ext=0, check_finite=False):
 
@@ -418,6 +421,7 @@ class UnivariateSpline:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, 3, 11)
         >>> y = x**2
@@ -454,6 +458,7 @@ class UnivariateSpline:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, 3, 11)
         >>> y = x**2
@@ -462,10 +467,7 @@ class UnivariateSpline:
         array([2.25, 3.0, 2.0, 0])
 
         """
-        d, ier = dfitpack.spalde(*(self._eval_args+(x,)))
-        if not ier == 0:
-            raise ValueError("Error code returned by spalde: %s" % ier)
-        return d
+        return _fitpack_impl.spalde(x, self._eval_args)
 
     def roots(self):
         """ Return the zeros of the spline.
@@ -510,10 +512,7 @@ class UnivariateSpline:
         """
         k = self._data[5]
         if k == 3:
-            z, m, ier = dfitpack.sproot(*self._eval_args[:2])
-            if not ier == 0:
-                raise ValueError("Error code returned by spalde: %s" % ier)
-            return z[:m]
+            return _fitpack_impl.sproot(self._eval_args)
         raise NotImplementedError('finding roots unsupported for '
                                   'non-cubic splines')
 
@@ -545,6 +544,7 @@ class UnivariateSpline:
         --------
         This can be used for finding maxima of a curve:
 
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, 10, 70)
         >>> y = np.sin(x)
@@ -592,6 +592,7 @@ class UnivariateSpline:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, np.pi/2, 70)
         >>> y = 1 / np.sqrt(1 - 0.8*np.sin(x)**2)
@@ -690,6 +691,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import InterpolatedUnivariateSpline
     >>> rng = np.random.default_rng()
@@ -707,6 +709,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     0.0
 
     """
+
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3,
                  ext=0, check_finite=False):
 
@@ -814,6 +817,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.interpolate import LSQUnivariateSpline, UnivariateSpline
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -1272,6 +1276,10 @@ class SmoothBivariateSpline(BivariateSpline):
     -----
     The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
 
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
+
     """
 
     def __init__(self, x, y, z, w=None, bbox=[None] * 4, kx=3, ky=3, s=None,
@@ -1356,6 +1364,10 @@ class LSQBivariateSpline(BivariateSpline):
     Notes
     -----
     The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
 
     """
 
@@ -1449,6 +1461,13 @@ class RectBivariateSpline(BivariateSpline):
         a function to find a bivariate B-spline representation of a surface
     bisplev :
         a function to evaluate a bivariate B-spline and its derivatives
+
+    Notes
+    -----
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
 
     """
 

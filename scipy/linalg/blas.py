@@ -281,6 +281,7 @@ def find_best_blas_type(arrays=(), dtype=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.linalg.blas as bla
     >>> rng = np.random.default_rng()
     >>> a = rng.random((10,15))
@@ -452,6 +453,7 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.linalg as LA
     >>> rng = np.random.default_rng()
     >>> a = rng.random((3,2))

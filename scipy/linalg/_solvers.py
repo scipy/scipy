@@ -66,6 +66,7 @@ def solve_sylvester(a, b, q):
     --------
     Given `a`, `b`, and `q` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[-3, -2, 0], [-1, -1, 3], [3, -5, -1]])
     >>> b = np.array([[1]])
@@ -141,6 +142,7 @@ def solve_continuous_lyapunov(a, q):
     --------
     Given `a` and `q` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[-3, -2, 0], [-1, -1, 0], [0, -5, -1]])
     >>> b = np.array([2, 4, -1])
@@ -290,6 +292,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     --------
     Given `a` and `q` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[0.2, 0.5],[0.7, -0.9]])
     >>> q = np.eye(2)
@@ -426,6 +429,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     --------
     Given `a`, `b`, `q`, and `r` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[4, 3], [-4.5, -3.5]])
     >>> b = np.array([[1], [-1]])
@@ -631,6 +635,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     --------
     Given `a`, `b`, `q`, and `r` solve for `x`:
 
+    >>> import numpy as np
     >>> from scipy import linalg as la
     >>> a = np.array([[0, 1], [0, -1]])
     >>> b = np.array([[1, 0], [2, 1]])

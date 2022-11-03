@@ -154,31 +154,29 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
        real*8 :: splint
      end function splint
 
-     subroutine sproot(t,n,c,zero,mest,m,ier)
+     subroutine sproot(t,n,c,nc,zero,mest,m,ier)
        ! zero,m,ier = sproot(t,c[,mest])
        threadsafe
        real*8 dimension(n),intent(in) :: t
        integer intent(hide),depend(t),check(n>=8) :: n=len(t)
-       real*8 dimension(n),depend(n),check(len(c)==n) :: c
+       ! Since sproot is only implemented for cubic splines, so k=3.
+       real*8 dimension(nc), intent(in), depend(n,k,t),check(len(c)>=n-3-1) :: c
+       integer intent(hide), depend(c) :: nc=len(c)
        real*8 dimension(mest),intent(out),depend(mest) :: zero
        integer optional,intent(in),depend(n) :: mest=3*(n-7)
        integer intent(out) :: m
        integer intent(out) :: ier
      end subroutine sproot
 
-     subroutine spalde(t,n,c,k,x,d,ier)
-       ! d,ier = spalde(t,c,k,x)
-
+     subroutine spalde(t,n,c,k1,x,d,ier)
+       ! d,ier = spalde(t,c,k1,x)
        threadsafe
-       callprotoargument double*,F_INT*,double*,F_INT*,double*,double*,F_INT*
-       callstatement {int k1=k+1; (*f2py_func)(t,&n,c,&k1,&x,d,&ier); }
-
        real*8 dimension(n) :: t
        integer intent(hide),depend(t) :: n=len(t)
        real*8 dimension(n),depend(n),check(len(c)==n) :: c
-       integer intent(in) :: k
+       integer intent(in) :: k1
        real*8 intent(in) :: x
-       real*8 dimension(k+1),intent(out),depend(k) :: d
+       real*8 dimension(k1),intent(out),depend(k1) :: d
        integer intent(out) :: ier
      end subroutine spalde
 
