@@ -60,7 +60,7 @@ def _call_super_mom(fun):
     @wraps(fun)
     def wrapper(self, *args, **kwds):
         method = kwds.get('method', 'mle').lower()
-        if method == 'mm':
+        if method != 'mle':
             return super(type(self), self).fit(*args, **kwds)
         else:
             return fun(self, *args, **kwds)
@@ -2321,11 +2321,11 @@ class weibull_min_gen(rv_continuous):
         s = stats.skew(data)
         max_c = 1e4
         s_min = skew(max_c)
-        if s < s_min and method == "mle" and fc is None and not args:
+        if s < s_min and method != "mm" and fc is None and not args:
             return super().fit(data, *args, **kwds)
 
         # If method is method of moments, we don't need the user's guesses.
-        # If method is "mle", extract the guesses from args and kwds.
+        # Otherwise, extract the guesses from args and kwds.
         if method == "mm":
             c, loc, scale = None, None, None
         else:
@@ -4740,7 +4740,7 @@ norminvgauss = norminvgauss_gen(name="norminvgauss")
 
 
 class invweibull_gen(rv_continuous):
-    u"""An inverted Weibull continuous random variable.
+    """An inverted Weibull continuous random variable.
 
     This distribution is also known as the Fréchet distribution or the
     type II extreme value distribution.
@@ -4785,8 +4785,14 @@ class invweibull_gen(rv_continuous):
         xc1 = np.power(x, -c)
         return np.exp(-xc1)
 
+    def _sf(self, x, c):
+        return -np.expm1(-x**-c)
+
     def _ppf(self, q, c):
         return np.power(-np.log(q), -1.0/c)
+
+    def _isf(self, p, c):
+        return (-np.log1p(-p))**(-1/c)
 
     def _munp(self, n, c):
         return sc.gamma(1 - n / c)
@@ -8176,6 +8182,8 @@ class skew_norm_gen(rv_continuous):
 
     def _cdf(self, x, a):
         cdf = _boost._skewnorm_cdf(x, 0, 1, a)
+        # for some reason, a isn't broadcasted if some of x are invalid
+        a = np.broadcast_to(a, cdf.shape)
         # Boost is not accurate in left tail when a > 0
         i_small_cdf = (cdf < 1e-6) & (a > 0)
         cdf[i_small_cdf] = super()._cdf(x[i_small_cdf], a[i_small_cdf])
@@ -8291,11 +8299,11 @@ class skew_norm_gen(rv_continuous):
         # MoM won't provide a good guess. Get out early.
         s = stats.skew(data)
         s_max = skew_d(1)
-        if abs(s) >= s_max and method == "mle" and fa is None and not args:
+        if abs(s) >= s_max and method != "mm" and fa is None and not args:
             return super().fit(data, *args, **kwds)
 
         # If method is method of moments, we don't need the user's guesses.
-        # If method is "mle", extract the guesses from args and kwds.
+        # Otherwise, extract the guesses from args and kwds.
         if method == "mm":
             a, loc, scale = None, None, None
         else:

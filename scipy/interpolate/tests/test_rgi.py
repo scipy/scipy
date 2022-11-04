@@ -443,7 +443,8 @@ class TestRegularGridInterpolator:
         assert_equal(res[i], np.nan)
         assert_equal(res[~i], interp(z[~i]))
 
-    def test_descending_points(self):
+    @parametrize_rgi_interp_methods
+    def test_descending_points(self, method):
         def val_func_3d(x, y, z):
             return 2 * x ** 3 + 3 * y ** 2 - z
 
@@ -454,7 +455,8 @@ class TestRegularGridInterpolator:
         values = val_func_3d(
             *np.meshgrid(*points, indexing='ij', sparse=True))
         my_interpolating_function = RegularGridInterpolator(points,
-                                                            values)
+                                                            values,
+                                                            method=method)
         pts = np.array([[2.1, 6.2, 8.3], [3.3, 5.2, 7.1]])
         correct_result = my_interpolating_function(pts)
 
@@ -466,7 +468,7 @@ class TestRegularGridInterpolator:
         values_shuffled = val_func_3d(
             *np.meshgrid(*points_shuffled, indexing='ij', sparse=True))
         my_interpolating_function = RegularGridInterpolator(
-            points_shuffled, values_shuffled)
+            points_shuffled, values_shuffled, method=method)
         test_result = my_interpolating_function(pts)
 
         assert_array_equal(correct_result, test_result)
@@ -517,13 +519,18 @@ class TestRegularGridInterpolator:
         assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
     @parametrize_rgi_interp_methods
-    def test_nonscalar_values_2(self, method):
+    @pytest.mark.parametrize("flip_points", [False, True])
+    def test_nonscalar_values_2(self, method, flip_points):
         # Verify that non-scalar valued values also work : use different
         # lengths of axes to simplify tracing the internals
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
                   (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0),
                   (0.0, 5.0, 10.0, 15.0, 20, 25.0, 35.0, 36.0),
                   (0.0, 5.0, 10.0, 15.0, 20, 25.0, 35.0, 36.0, 47)]
+
+        # verify, that strictly decreasing dimensions work
+        if flip_points:
+            points = [tuple(reversed(p)) for p in points]
 
         rng = np.random.default_rng(1234)
 
