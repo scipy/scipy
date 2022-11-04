@@ -183,7 +183,7 @@ if use_pythran
   )
 else
   py3.install_sources(
-    ['_hypotests_pythran.py'],
+    ['_stats_pythran.py'],
     pure: false,
     subdir: 'scipy/stats'
   )
