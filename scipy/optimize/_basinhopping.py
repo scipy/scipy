@@ -646,21 +646,29 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     The minimum at -1.0109 is actually the global minimum, found already on the
     8th iteration.
 
-    Now let's implement bounds on the problem using a custom `accept_test`:
+    Now let's restrict new accepted solutions to be within some
+    bounds by providing a custom `accept_test`:
 
-    >>> class MyBounds:
+    >>> class MyAcceptanceBounds:
     ...     def __init__(self):
     ...         self.xmax = np.array([1.1, 1.1])
     ...         self.xmin = np.array([-1.1, -1.1])
-    ...     def __call__(self, **kwargs):
-    ...         x = kwargs["x_new"]
-    ...         tmax = bool(np.all(x <= self.xmax))
-    ...         tmin = bool(np.all(x >= self.xmin))
+    ...     def __call__(self, f_new, x_new, f_old, x_old):
+    ...         tmax = bool(np.all(x_new <= self.xmax))
+    ...         tmin = bool(np.all(x_new >= self.xmin))
     ...         return tmax and tmin
 
-    >>> mybounds = MyBounds()
+    >>> accept_bounds = MyAcceptanceBounds()
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
-    ...                    niter=10, accept_test=mybounds)
+    ...                    niter=10, accept_test=accept_bounds)
+
+    .. note::
+
+        This snippet only restrict new candidates to be within bounds.
+        The local minimization and stepping process can still evaluate points
+        outside bounds. To completely restrict the problem to specific bounds,
+        bounds need to be defined for all `minimizer_kwargs`, `take_step` and
+        `accept_test`.
 
     """
     if target_accept_rate <= 0. or target_accept_rate >= 1.:
