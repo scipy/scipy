@@ -1265,7 +1265,7 @@ add_newdoc("beta",
     See Also
     --------
     gamma : the gamma function
-    betainc :  the incomplete beta function
+    betainc :  the regularized incomplete beta function
     betaln : the natural logarithm of the absolute
              value of the beta function
 
@@ -1305,9 +1305,9 @@ add_newdoc("betainc",
     r"""
     betainc(a, b, x, out=None)
 
-    Incomplete beta function.
+    Regularized incomplete beta function.
 
-    Computes the incomplete beta function, defined as [1]_:
+    Computes the regularized incomplete beta function, defined as [1]_:
 
     .. math::
 
@@ -1329,21 +1329,23 @@ add_newdoc("betainc",
     Returns
     -------
     scalar or ndarray
-        Value of the incomplete beta function
+        Value of the regularized incomplete beta function
 
     See Also
     --------
     beta : beta function
-    betaincinv : inverse of the incomplete beta function
+    betaincinv : inverse of the regularized incomplete beta function
 
     Notes
     -----
-    The incomplete beta function is also sometimes defined
-    without the `gamma` terms, in which case the above
-    definition is the so-called regularized incomplete beta
-    function. Under this definition, you can get the incomplete
-    beta function by multiplying the result of the SciPy
-    function by `beta`.
+    The term *regularized* in the name of this function refers to the
+    scaling of the function by the gamma function terms shown in the
+    formula.  When not qualified as *regularized*, the name *incomplete
+    beta function* often refers to just the integral expression,
+    without the gamma terms.  One can use the function `beta` from
+    `scipy.special` to get this "nonregularized" incomplete beta
+    function by multiplying the result of ``betainc(a, b, x)`` by
+    ``beta(a, b)``.
 
     References
     ----------
@@ -1389,7 +1391,7 @@ add_newdoc("betaincinv",
     r"""
     betaincinv(a, b, y, out=None)
 
-    Inverse of the incomplete beta function.
+    Inverse of the regularized incomplete beta function.
 
     Computes :math:`x` such that:
 
@@ -1414,11 +1416,11 @@ add_newdoc("betaincinv",
     Returns
     -------
     scalar or ndarray
-        Value of the inverse of the incomplete beta function
+        Value of the inverse of the regularized incomplete beta function
 
     See Also
     --------
-    betainc : incomplete beta function
+    betainc : regularized incomplete beta function
     gamma : gamma function
 
     References
@@ -1468,7 +1470,7 @@ add_newdoc("betaln",
     See Also
     --------
     gamma : the gamma function
-    betainc :  the incomplete beta function
+    betainc :  the regularized incomplete beta function
     beta : the beta function
 
     Examples
