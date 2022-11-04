@@ -322,7 +322,7 @@ class RegularGridInterpolatorValues(interpolate.RegularGridInterpolator):
         # check dimensionality
         self._check_dimensionality(self.grid, values)
         # flip, if needed
-        self.values = np.flip(values, axis=self.descending_dimensions)
+        self.values = np.flip(values, axis=self._descending_dimensions)
         return super().__call__(self.xi, method=method)
 
 
