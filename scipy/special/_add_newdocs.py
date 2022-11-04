@@ -4820,8 +4820,8 @@ add_newdoc("fdtr",
 
     Notes
     -----
-    The regularized regularized incomplete beta function is used, according to
-    the formula,
+    The regularized incomplete beta function is used, according to the
+    formula,
 
     .. math::
         F(d_n, d_d; x) = I_{xd_n/(d_d + xd_n)}(d_n/2, d_d/2).
@@ -4867,8 +4867,8 @@ add_newdoc("fdtrc",
 
     Notes
     -----
-    The regularized regularized incomplete beta function is used, according to
-    the formula,
+    The regularized incomplete beta function is used, according to the
+    formula,
 
     .. math::
         F(d_n, d_d; x) = I_{d_d/(d_d + xd_n)}(d_d/2, d_n/2).
@@ -9593,8 +9593,8 @@ add_newdoc("ncfdtr",
     .. math::
         F(d_n, d_d, n_c, f) = \sum_{j=0}^\infty e^{-n_c/2} \frac{(n_c/2)^j}{j!} I_{x}(\frac{d_n}{2} + j, \frac{d_d}{2}),
 
-    where :math:`I` is the regularized regularized incomplete beta function,
-    and :math:`x = f d_n/(f d_n + d_d)`.
+    where :math:`I` is the regularized incomplete beta function, and
+    :math:`x = f d_n/(f d_n + d_d)`.
 
     The computation time required for this routine is proportional to the
     noncentrality parameter `nc`.  Very large values of this parameter can
