@@ -54,7 +54,9 @@ def configuration(parent_package='', top_path=None):
             # have its own compiler type
             if cc.compiler_type == 'msvc':
                 o2_flag = '/O2'
+                sse_flags = ['/arch:SSE', '/arch:SSE2']
                 ext.extra_compile_args.append(o2_flag)
+                ext.extra_compile_args.extend(sse_flags)
 
         import pythran
         ext = pythran.dist.PythranExtension(
