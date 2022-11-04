@@ -121,7 +121,7 @@ a bare-bones example originating from `the Johanness Buchner's
         def __init__(self, points, values, method='linear'):
             self.limits = np.array([[min(x), max(x)] for x in points])
             self.values = np.asarray(values, dtype=float)
-            self.order = {'linear': 1, 'cubic': 3, 'quntic': 5}[method]
+            self.order = {'linear': 1, 'cubic': 3, 'quintic': 5}[method]
 
         def __call__(self, xi):
             """
@@ -158,6 +158,8 @@ This wrapper can be used as a(n almost) drop-in replacement for the
 
 Note that the example above uses the ``map_coordinates`` boundary conditions.
 Thus, results of the ``cubic`` and ``quintic`` interpolations may differ from
-those of the ``RegularGridInterpolator``. Refer to
-`scipy.ndimage.map_coordinates` documentation for more details.
-
+those of the ``RegularGridInterpolator``. 
+Refer to `scipy.ndimage.map_coordinates` documentation for more details on
+boundary conditions and other additional arguments.
+Finally, we note that this simplified example assumes that the input data is
+given in the ascending order.
