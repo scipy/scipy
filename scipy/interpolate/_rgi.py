@@ -221,20 +221,37 @@ class RegularGridInterpolator:
             self._validate_grid_dimensions(points, method)
         self.method = method
         self.bounds_error = bounds_error
+        self.grid, self._descending_dimensions = self._check_points(points)
+        self.values = self._check_values(values)
+        self._check_dimensionality(self.grid, self.values)
+        self.fill_value = self._check_fill_value(self.values, fill_value)
+        if self._descending_dimensions:
+            self.values = np.flip(values, axis=self._descending_dimensions)
 
-        if not hasattr(values, 'ndim'):
-            # allow reasonable duck-typed values
-            values = np.asarray(values)
-
+    def _check_dimensionality(self, points, values):
         if len(points) > values.ndim:
             raise ValueError("There are %d point arrays, but values has %d "
                              "dimensions" % (len(points), values.ndim))
+        for i, p in enumerate(points):
+            if not np.asarray(p).ndim == 1:
+                raise ValueError("The points in dimension %d must be "
+                                 "1-dimensional" % i)
+            if not values.shape[i] == len(p):
+                raise ValueError("There are %d points and %d values in "
+                                 "dimension %d" % (len(p), values.shape[i], i))
+
+    def _check_values(self, values):
+        if not hasattr(values, 'ndim'):
+            # allow reasonable duck-typed values
+            values = np.asarray(values)
 
         if hasattr(values, 'dtype') and hasattr(values, 'astype'):
             if not np.issubdtype(values.dtype, np.inexact):
                 values = values.astype(float)
 
-        self.fill_value = fill_value
+        return values
+
+    def _check_fill_value(self, values, fill_value):
         if fill_value is not None:
             fill_value_dtype = np.asarray(fill_value).dtype
             if (hasattr(values, 'dtype') and not
@@ -242,26 +259,26 @@ class RegularGridInterpolator:
                                 casting='same_kind')):
                 raise ValueError("fill_value must be either 'None' or "
                                  "of a type compatible with values")
+        return fill_value
 
+    def _check_points(self, points):
+        descending_dimensions = []
+        grid = []
         for i, p in enumerate(points):
-            diff_p = np.diff(p)
-            if not np.all(diff_p > 0.):
-                if np.all(diff_p < 0.):
+            # early make points float
+            # see https://github.com/scipy/scipy/pull/17230
+            p = np.asarray(p, dtype=float)
+            if not np.all(p[1:] > p[:-1]):
+                if np.all(p[1:] < p[:-1]):
                     # input is descending, so make it ascending
-                    points, values = _make_points_and_values_ascending(
-                        points, values)
+                    descending_dimensions.append(i)
+                    p = np.flip(p)
                 else:
                     raise ValueError(
                         "The points in dimension %d must be strictly "
                         "ascending or descending" % i)
-            if not np.asarray(p).ndim == 1:
-                raise ValueError("The points in dimension %d must be "
-                                 "1-dimensional" % i)
-            if not values.shape[i] == len(p):
-                raise ValueError("There are %d points and %d values in "
-                                 "dimension %d" % (len(p), values.shape[i], i))
-        self.grid = tuple([np.asarray(p) for p in points])
-        self.values = values
+            grid.append(p)
+        return tuple(grid), tuple(descending_dimensions)
 
     def __call__(self, xi, method=None):
         """
@@ -317,6 +334,28 @@ class RegularGridInterpolator:
         if method not in self._ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
 
+        xi, xi_shape, ndim, nans, out_of_bounds = self._prepare_xi(xi)
+
+        if method == "linear":
+            indices, norm_distances = self._find_indices(xi.T)
+            result = self._evaluate_linear(indices, norm_distances)
+        elif method == "nearest":
+            indices, norm_distances = self._find_indices(xi.T)
+            result = self._evaluate_nearest(indices, norm_distances)
+        elif method in self._SPLINE_METHODS:
+            if is_method_changed:
+                self._validate_grid_dimensions(self.grid, method)
+            result = self._evaluate_spline(xi, method)
+
+        if not self.bounds_error and self.fill_value is not None:
+            result[out_of_bounds] = self.fill_value
+
+        # f(nan) = nan, if any
+        if np.any(nans):
+            result[nans] = np.nan
+        return result.reshape(xi_shape[:-1] + self.values.shape[ndim:])
+
+    def _prepare_xi(self, xi):
         ndim = len(self.grid)
         xi = _ndim_coords_from_arrays(xi, ndim=ndim)
         if xi.shape[-1] != len(self.grid):
@@ -340,24 +379,7 @@ class RegularGridInterpolator:
         else:
             out_of_bounds = self._find_out_of_bounds(xi.T)
 
-        if method == "linear":
-            indices, norm_distances = self._find_indices(xi.T)
-            result = self._evaluate_linear(indices, norm_distances)
-        elif method == "nearest":
-            indices, norm_distances = self._find_indices(xi.T)
-            result = self._evaluate_nearest(indices, norm_distances)
-        elif method in self._SPLINE_METHODS:
-            if is_method_changed:
-                self._validate_grid_dimensions(self.grid, method)
-            result = self._evaluate_spline(xi, method)
-
-        if not self.bounds_error and self.fill_value is not None:
-            result[out_of_bounds] = self.fill_value
-
-        # f(nan) = nan, if any
-        if np.any(nans):
-            result[nans] = np.nan
-        return result.reshape(xi_shape[:-1] + self.values.shape[ndim:])
+        return xi, xi_shape, ndim, nans, out_of_bounds
 
     def _evaluate_linear(self, indices, norm_distances):
         # slice for broadcasting over trailing dimensions in self.values
