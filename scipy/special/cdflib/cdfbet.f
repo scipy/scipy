@@ -87,7 +87,7 @@ C     DiDinato, A. R. and Morris,  A.   H.  Algorithm 708: Significant
 C     Digit Computation of the Incomplete  Beta  Function Ratios.  ACM
 C     Trans. Math.  Softw. 18 (1993), 360-373.
 C
-C     Computation of other parameters involve a seach for a value that
+C     Computation of other parameters involve a search for a value that
 C     produces  the desired  value  of P.   The search relies  on  the
 C     monotinicity of P with the other parameter.
 C

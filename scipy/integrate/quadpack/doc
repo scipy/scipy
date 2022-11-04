@@ -110,7 +110,7 @@ C    with a name ending in E, as QAGE.  These provide more
 C    information and control than the easier versions.
 C
 C
-C   The preceeding routines are all automatic.  That is, the user
+C   The preceding routines are all automatic.  That is, the user
 C      inputs his problem and an error tolerance.  The routine
 C      attempts to perform the integration to within the requested
 C      absolute or relative error.
@@ -170,7 +170,7 @@ C        If bad local difficulties occur, such as a discontinuity, a
 C        singularity, derivative singularity or high peak at one or
 C        more points within the interval, the first advice is to
 C        split up the interval at these points. The integrand must
-C        then be examinated over each of the subintervals separately,
+C        then be examined over each of the subintervals separately,
 C        so that a suitable integrator can be selected for each of
 C        them. If this yields problems involving relative accuracies
 C        to be imposed on -finite- subintervals, one can make use of

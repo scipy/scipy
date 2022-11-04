@@ -1,5 +1,6 @@
-      subroutine sphere(iopt,m,teta,phi,r,w,s,ntest,npest,eps,
-     *  nt,tt,np,tp,c,fp,wrk1,lwrk1,wrk2,lwrk2,iwrk,kwrk,ier)
+      recursive subroutine sphere(iopt,m,teta,phi,r,w,s,ntest,npest,
+     *  eps,nt,tt,np,tp,c,fp,wrk1,lwrk1,wrk2,lwrk2,iwrk,kwrk,ier)
+      implicit none
 c  subroutine sphere determines a smooth bicubic spherical spline
 c  approximation s(teta,phi), 0 <= teta <= pi ; 0 <= phi <= 2*pi
 c  to a given set of data points (teta(i),phi(i),r(i)),i=1,2,...,m.
@@ -87,7 +88,7 @@ c          is used, the value of nt should be left unchanged between
 c          subsequent calls.
 c          in case iopt=-1, the value of nt should be specified on entry
 c  tt    : real array of dimension at least ntest.
-c          on succesful exit, this array will contain the knots of the
+c          on successful exit, this array will contain the knots of the
 c          spline with respect to the teta-variable, i.e. the position
 c          of the interior knots tt(5),...,tt(nt-4) as well as the
 c          position of the additional knots tt(1)=...=tt(4)=0 and
@@ -106,7 +107,7 @@ c          subsequent calls.
 c          in case iopt=-1, the value of np (>=9) should be specified
 c          on entry.
 c  tp    : real array of dimension at least npest.
-c          on succesful exit, this array will contain the knots of the
+c          on successful exit, this array will contain the knots of the
 c          spline with respect to the phi-variable, i.e. the position of
 c          the interior knots tp(5),...,tp(np-4) as well as the position
 c          of the additional knots tp(1),...,tp(4) and tp(np-3),...,
@@ -117,7 +118,7 @@ c          if the computation mode iopt=-1 is used, the values tp(5),
 c          ...tp(np-4) must be supplied by the user, before entry.
 c          see also the restrictions (ier=10).
 c  c     : real array of dimension at least (ntest-4)*(npest-4).
-c          on succesful exit, c contains the coefficients of the spline
+c          on successful exit, c contains the coefficients of the spline
 c          approximation s(teta,phi).
 c  fp    : real. unless ier=10, fp contains the weighted sum of
 c          squared residuals of the spline approximation returned.
@@ -177,7 +178,7 @@ c            spherical spline according to the current set of knots.
 c            the parameter fp gives the corresponding weighted sum of
 c            squared residuals (fp>s).
 c   ier=2  : error. a theoretically impossible result was found during
-c            the iteration proces for finding a smoothing spline with
+c            the iteration process for finding a smoothing spline with
 c            fp = s. probably causes : s too small or badly chosen eps.
 c            there is an approximation returned but the corresponding
 c            weighted sum of squared residuals does not satisfy the
@@ -314,7 +315,7 @@ c  ..array arguments..
       integer iwrk(kwrk)
 c  ..local scalars..
       real*8 tol,pi,pi2,one
-      integer i,ib1,ib3,ki,kn,kwest,la,lbt,lcc,lcs,lro,j
+      integer i,ib1,ib3,ki,kn,kwest,la,lbt,lcc,lcs,lro,j,
      * lbp,lco,lf,lff,lfp,lh,lq,lst,lsp,lwest,maxit,ncest,ncc,ntt,
      * npp,nreg,nrint,ncof,nt4,np4
 c  ..function references..

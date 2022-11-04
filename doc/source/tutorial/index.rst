@@ -1,22 +1,33 @@
-**************
-SciPy Tutorial
-**************
+.. _user_guide:
+
+****************
+SciPy User Guide
+****************
 
 .. sectionauthor:: Travis E. Oliphant
+
+.. raw:: latex
+
+   \addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
 
 .. toctree::
    :maxdepth: 1
 
    general
-   basic
    special
    integrate
    optimize
    interpolate
-   fftpack
+   fft
    signal
    linalg
+   arpack
+   csgraph
+   spatial
    stats
    ndimage
    io
-   weave
+
+.. raw:: latex
+
+   \addtocontents{toc}{\protect\setcounter{tocdepth}{1}}

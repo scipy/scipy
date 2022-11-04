@@ -1,0 +1,13 @@
+==========================
+SciPy 0.13.2 Release Notes
+==========================
+
+SciPy 0.13.2 is a bug-fix release with no new features compared to 0.13.1.
+
+
+Issues fixed
+------------
+
+- 3096: require Cython 0.19, earlier versions have memory leaks in fused types
+- 3079: ``ndimage.label`` fix swapped 64-bitness test
+- 3108: ``optimize.fmin_slsqp`` constraint violation

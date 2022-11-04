@@ -1,5 +1,6 @@
-      subroutine concur(iopt,idim,m,u,mx,x,xx,w,ib,db,nb,ie,de,ne,k,s,
-     * nest,n,t,nc,c,np,cp,fp,wrk,lwrk,iwrk,ier)
+      recursive subroutine concur(iopt,idim,m,u,mx,x,xx,w,ib,db,nb,
+     * ie,de,ne,k,s,nest,n,t,nc,c,np,cp,fp,wrk,lwrk,iwrk,ier)
+      implicit none
 c  given the ordered set of m points x(i) in the idim-dimensional space
 c  and given also a corresponding set of strictly increasing values u(i)
 c  and the set of positive numbers w(i),i=1,2,...,m, subroutine concur
@@ -105,7 +106,7 @@ c           if the computation mode iopt=1 is used this value of n
 c           should be left unchanged between subsequent calls.
 c           in case iopt=-1, the value of n must be specified on entry.
 c   t     : real array of dimension at least (nest).
-c           on succesful exit, this array will contain the knots of the
+c           on successful exit, this array will contain the knots of the
 c           spline curve,i.e. the position of the interior knots t(k+2),
 c           t(k+3),..,t(n-k-1) as well as the position of the additional
 c           t(1)=t(2)=...=t(k+1)=ub and t(n-k)=...=t(n)=ue needed for
@@ -119,7 +120,7 @@ c   nc    : integer. on entry nc must specify the actual dimension of
 c           the array c as declared in the calling (sub)program. nc
 c           must not be too small (see c). unchanged on exit.
 c   c     : real array of dimension at least (nest*idim).
-c           on succesful exit, this array will contain the coefficients
+c           on successful exit, this array will contain the coefficients
 c           in the b-spline representation of the spline curve s(u),i.e.
 c           the b-spline coefficients of the spline sj(u) will be given
 c           in c(n*(j-1)+i),i=1,2,...,n-k-1 for j=1,2,...,idim.
@@ -165,7 +166,7 @@ c             curve according to the knots t(1),t(2),...,t(n). (n=nest)
 c             the parameter fp gives the corresponding weighted sum of
 c             squared residuals (fp>s).
 c    ier=2  : error. a theoretically impossible result was found during
-c             the iteration proces for finding a smoothing spline curve
+c             the iteration process for finding a smoothing spline curve
 c             with fp = s. probably causes : s too small.
 c             there is an approximation returned but the corresponding
 c             weighted sum of squared residuals does not satisfy the
@@ -284,7 +285,7 @@ c  ..array arguments..
       real*8 cp(np)
       integer iwrk(nest)
 c  ..local scalars..
-      real*8 tol,dist
+      real*8 tol
       integer i,ib1,ie1,ja,jb,jfp,jg,jq,jz,j,k1,k2,lwest,maxit,nmin,
      * ncc,kk,mmin,nmax,mxx
 c ..function references
@@ -349,7 +350,7 @@ c  with zero derivative constraints.
   50  continue
 c  evaluate the polynomial curve
       call curev(idim,wrk,nmin,cp,np,k,u,m,xx,mxx,ier)
-c  substract from the old data, the values of the polynomial curve
+c  subtract from the old data, the values of the polynomial curve
       do 60 i=1,mxx
         xx(i) = x(i)-xx(i)
   60  continue

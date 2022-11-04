@@ -38,14 +38,13 @@
  *           SCHOOL OF INFORMATION TECHNOLOGY & ENGINEERING
  *           GEORGE MASON UNIVERSITY
  *           FAIRFAX, VA 22030
+ *
+ * The SciPy version was derived from TNC 1.3:
+ * $Jeannot: tnc.h,v 1.55 2005/01/28 18:27:31 js Exp $
  */
-
-/* $Jeannot: tnc.h,v 1.55 2005/01/28 18:27:31 js Exp $ */
 
 #ifndef _TNC_
 #define _TNC_
-
-#define TNC_VERSION "1.3"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,11 +57,9 @@ typedef enum {
   TNC_MSG_NONE = 0, /* No messages */
   TNC_MSG_ITER = 1, /* One line per iteration */
   TNC_MSG_INFO = 2, /* Informational messages */
-  TNC_MSG_VERS = 4, /* Version info */
   TNC_MSG_EXIT = 8, /* Exit reasons */
 
-  TNC_MSG_ALL = TNC_MSG_ITER | TNC_MSG_INFO
-    | TNC_MSG_VERS | TNC_MSG_EXIT /* All messages */
+  TNC_MSG_ALL = TNC_MSG_ITER | TNC_MSG_INFO | TNC_MSG_EXIT /* All messages */
 } tnc_message;
 
 /*
@@ -90,7 +87,7 @@ typedef enum
  * return code rc.
  */
 
-extern char *tnc_rc_string[11];
+extern const char *const tnc_rc_string[11];
 
 /*
  * A function as required by tnc
@@ -105,6 +102,12 @@ extern char *tnc_rc_string[11];
  *
  */
 typedef int tnc_function(double x[], double *f, double g[], void *state);
+
+/*
+ * A callback function accepting x as input parameter along with the state
+ * pointer.
+ */
+typedef void tnc_callback(double x[], void *state);
 
 /*
  * tnc : minimize a function with variables subject to bounds, using
@@ -126,7 +129,7 @@ typedef int tnc_function(double x[], double *f, double g[], void *state);
  * scale     : scaling factors to apply to each variable
  *             if NULL, the factors are up-low for interval bounded variables
  *             and 1+|x] for the others.
- * offset    : constant to substract to each variable
+ * offset    : constant to subtract to each variable
  *             if NULL, the constant are (up+low)/2 for interval bounded
  *             variables and x for the others.
  * messages  : see the tnc_message enum
@@ -140,7 +143,7 @@ typedef int tnc_function(double x[], double *f, double g[], void *state);
  * accuracy  : relative precision for finite difference calculations
  *             if <= machine_precision, set to sqrt(machine_precision)
  * fmin      : minimum function value estimate
- * ftol      : precision goal for the value of f in the stoping criterion
+ * ftol      : precision goal for the value of f in the stopping criterion
  *             if ftol < 0.0, ftol is set to accuracy
  * xtol      : precision goal for the value of x in the stopping criterion
  *             (after applying x scaling factors)
@@ -165,7 +168,7 @@ extern int tnc(int n, double x[], double *f, double g[],
   double low[], double up[], double scale[], double offset[],
   int messages, int maxCGit, int maxnfeval, double eta, double stepmx,
   double accuracy, double fmin, double ftol, double xtol, double pgtol,
-  double rescale, int *nfeval);
+  double rescale, int *nfeval, int *niter, tnc_callback *callback);
 
 #ifdef __cplusplus
 }

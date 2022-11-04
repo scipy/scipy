@@ -1,4 +1,4 @@
-* Note: The test program has been removed and a utlity routine mvnun has been
+* Note: The test program has been removed and a utility routine mvnun has been
 * added.  RTK 2004-08-10
 *
 * Copyright 2000 by Alan Genz.
@@ -42,12 +42,24 @@
       double precision lower(d), upper(d), releps, abseps,
      &                 error, value, stdev(d), rho(d*(d-1)/2), 
      &                 covar(d,d),
-     &                 nlower(d), nupper(d), means(d,n), tmpval
+     &                 nlower(d), nupper(d), means(d,n), tmpval,
+     &                 inf
       integer i, j
+
+      inf = 0d0
+      inf = 1d0 / inf
 
       do i=1,d
         stdev(i) = dsqrt(covar(i,i))
-        infin(i) = 2
+        if (upper(i).eq.inf.and.lower(i).eq.-inf) then
+           infin(i) = -1
+        else if (lower(i).eq.-inf) then
+           infin(i) = 0
+        else if (upper(i).eq.inf) then
+           infin(i) = 1
+        else
+           infin(i) = 2
+        end if
       end do
       do i=1,d
         do j=1,i-1
@@ -72,6 +84,73 @@
       end do
 
       value = value / n
+      
+      END 
+
+
+      SUBROUTINE mvnun_weighted(d, n, lower, upper, means, weights,
+     &                          covar, maxpts, abseps, releps, 
+     &                           value, inform)
+*  Parameters
+*
+*   d       integer, dimensionality of the data
+*   n       integer, the number of data points
+*   lower   double(2), the lower integration limits
+*   upper   double(2), the upper integration limits
+*   means   double(n), the mean of each kernel
+*   weights double(n), the weight of each kernel
+*   covar   double(2,2), the covariance matrix
+*   maxpts  integer, the maximum number of points to evaluate at
+*   abseps  double, absolute error tolerance
+*   releps  double, relative error tolerance
+*   value   double intent(out), integral value
+*   inform  integer intent(out), 
+*               if inform == 0: error < eps
+*               elif inform == 1: error > eps, all maxpts used
+      integer n, d, infin(d), maxpts, inform, tmpinf
+      double precision lower(d), upper(d), releps, abseps,
+     &                 error, value, stdev(d), rho(d*(d-1)/2), 
+     &                 covar(d,d),
+     &                 nlower(d), nupper(d), means(d,n), tmpval,
+     &                 inf, weights(n)
+      integer i, j
+
+      inf = 0d0
+      inf = 1d0 / inf
+
+      do i=1,d
+        stdev(i) = dsqrt(covar(i,i))
+        if (upper(i).eq.inf.and.lower(i).eq.-inf) then
+           infin(i) = -1
+        else if (lower(i).eq.-inf) then
+           infin(i) = 0
+        else if (upper(i).eq.inf) then
+           infin(i) = 1
+        else
+           infin(i) = 2
+        end if
+      end do
+      do i=1,d
+        do j=1,i-1
+          rho(j+(i-2)*(i-1)/2) = covar(i,j)/stdev(i)/stdev(j)
+        end do
+      end do
+      value = 0d0
+
+      inform = 0
+
+      do i=1,n
+        do j=1,d
+          nlower(j) = (lower(j) - means(j,i))/stdev(j)
+          nupper(j) = (upper(j) - means(j,i))/stdev(j)
+        end do
+        call mvndst(d,nlower,nupper,infin,rho,maxpts,abseps,releps,
+     &              error,tmpval,tmpinf)
+        value = value + tmpval * weights(i)
+        if (tmpinf .eq. 1) then
+            inform = 1
+        end if
+      end do
       
       END 
 
@@ -113,7 +192,7 @@
 *     INFORM INTEGER, termination status parameter:
 *            if INFORM = 0, normal completion with ERROR < EPS;
 *            if INFORM = 1, completion with ERROR > EPS and MAXPTS 
-*                           function vaules used; increase MAXPTS to 
+*                           function values used; increase MAXPTS to 
 *                           decrease ERROR;
 *            if INFORM = 2, N > 500 or N < 1.
 *
@@ -199,7 +278,7 @@
       END DO
       RETURN
 *
-*     Entry point for intialization.
+*     Entry point for initialization.
 *
       ENTRY MVNDNT( N, CORREL, LOWER, UPPER, INFIN, INFIS, D, E )
       MVNDNT = 0
@@ -1063,7 +1142,7 @@
             BVN = -BVN/TWOPI
          ENDIF
          IF ( R .GT. 0 ) BVN =  BVN + MVNPHI( -MAX( H, K ) )
-         IF ( R .LT. 0 ) BVN = -BVN + MAX( ZERO, MVNPHI(-H)-MVNPHI(-K) )     
+         IF ( R .LT. 0 ) BVN = -BVN + MAX( ZERO, MVNPHI(-H)-MVNPHI(-K) )
       ENDIF
       BVU = BVN
       END
@@ -1089,8 +1168,8 @@
       PARAMETER ( INVMP1 = 4.656612873077392578125D-10 ) 
 *                 INVMP1 = 1/(M1+1)
       SAVE X10, X11, X12, X20, X21, X22
-      DATA       X10,      X11,      X12,      X20,      X21,      X22  
-     &    / 15485857, 17329489, 36312197, 55911127, 75906931, 96210113 /      
+      DATA       X10,      X11,      X12,      X20,      X21,      X22
+     &    / 15485857, 17329489, 36312197, 55911127, 75906931, 96210113 /
 *
 *     Component 1
 *

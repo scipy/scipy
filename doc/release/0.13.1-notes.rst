@@ -1,0 +1,15 @@
+==========================
+SciPy 0.13.1 Release Notes
+==========================
+
+SciPy 0.13.1 is a bug-fix release with no new features compared to 0.13.0.
+The only changes are several fixes in ``ndimage``, one of which was a serious
+regression in ``ndimage.label`` (Github issue 3025), which gave
+incorrect results in 0.13.0.
+
+Issues fixed
+------------
+
+- 3025: ``ndimage.label`` returns incorrect results in scipy 0.13.0
+- 1992: ``ndimage.label`` return type changed from int32 to uint32
+- 1992: ``ndimage.find_objects`` doesn't work with int32 input in some cases

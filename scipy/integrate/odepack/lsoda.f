@@ -946,9 +946,9 @@ c  bnorm    computes the norm of a band matrix consistent with the
 c           weighted max-norm on vectors.
 c  srcma    is a user-callable routine to save and restore
 c           the contents of the internal common blocks.
-c  dgefa and dgesl   are routines from linpack for solving full
+c  dgetrf and dgetrs   are routines from lapack for solving full
 c           systems of linear algebraic equations.
-c  dgbfa and dgbsl   are routines from linpack for solving banded
+c  dgbtrf and dgbtrs   are routines from lapack for solving banded
 c           linear systems.
 c  daxpy, dscal, idamax, and ddot   are basic linear algebra modules
 c           (blas) used by the above linpack routines.
@@ -959,7 +959,7 @@ c note..  vmnorm, fnorm, bnorm, idamax, ddot, and d1mach are function
 c routines.  all the others are subroutines.
 c
 c the intrinsic and external routines used by lsoda are..
-c dabs, dmax1, dmin1, dfloat, max0, min0, mod, dsign, dsqrt, and write.
+c dabs, dmax1, dmin1, dble, max0, min0, mod, dsign, dsqrt, and write.
 c
 c a block data subprogram is also included with the package,
 c for loading some of the variables in internal common.
@@ -1210,6 +1210,8 @@ c initial call to f.  (lf0 points to yh(*,2).) -------------------------
       lf0 = lyh + nyh
       call srcma(rsav, isav, 1)
       call f (neq, t, y, rwork(lf0))
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       call srcma(rsav, isav, 2)
       nfe = 1
 c load the initial value vector in yh. ---------------------------------
@@ -1353,6 +1355,8 @@ c-----------------------------------------------------------------------
       call stoda (neq, y, rwork(lyh), nyh, rwork(lyh), rwork(lewt),
      1   rwork(lsavf), rwork(lacor), rwork(lwm), iwork(liwm),
      2   f, jac, prja, solsy)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       kgo = 1 - kflag
       go to (300, 530, 540), kgo
 c-----------------------------------------------------------------------
@@ -1453,11 +1457,8 @@ c counter illin is set to 0.  the optional outputs are loaded into
 c the work arrays before returning.
 c-----------------------------------------------------------------------
 c the maximum number of steps was taken before reaching tout. ----------
- 500  call xerrwv('lsoda--  at current t (=r1), mxstep (=i1) steps   ',
-     1   50, 201, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv('      taken on this call before reaching tout     ',
-     1   50, 201, 0, 1, mxstep, 0, 1, tn, 0.0d0)
-      istate = -1
+c Error message removed, see gh-7888
+ 500  istate = -1
       go to 580
 c ewt(i) .le. 0.0 for some i (not at start of problem). ----------------
  510  ewti = rwork(lewt+i-1)
@@ -1647,8 +1648,7 @@ c
  710  call xerrwv('lsoda--  repeated occurrences of illegal input    ',
      1   50, 302, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
 c
- 800  call xerrwv('lsoda--  run aborted.. apparent infinite loop     ',
-     1   50, 303, 2, 0, 0, 0, 0, 0.0d0, 0.0d0)
+ 800  istate = -8
       return
 c----------------------- end of subroutine lsoda -----------------------
       end

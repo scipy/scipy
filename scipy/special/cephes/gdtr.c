@@ -1,6 +1,6 @@
-/*							gdtr.c
+/*                                                     gdtr.c
  *
- *	Gamma distribution function
+ *     Gamma distribution function
  *
  *
  *
@@ -87,52 +87,49 @@
  *
  */
 
-/*							gdtr()  */
+/*                                                     gdtr()  */
 
 
 /*
-Cephes Math Library Release 2.3:  March,1995
-Copyright 1984, 1987, 1995 by Stephen L. Moshier
-*/
+ * Cephes Math Library Release 2.3:  March,1995
+ * Copyright 1984, 1987, 1995 by Stephen L. Moshier
+ */
 
 #include "mconf.h"
-double gdtri(double,double,double);
+double gdtri(double, double, double);
 
-double gdtr( a, b, x )
+double gdtr(a, b, x)
 double a, b, x;
 {
 
-if( x < 0.0 )
-	{
-	mtherr( "gdtr", DOMAIN );
-	return( NPY_NAN );
-	}
-return(  igam( b, a * x )  );
+    if (x < 0.0) {
+	sf_error("gdtr", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
+    }
+    return (igam(b, a * x));
 }
 
 
-double gdtrc( a, b, x )
+double gdtrc(a, b, x)
 double a, b, x;
 {
 
-if( x < 0.0 )
-	{
-	mtherr( "gdtrc", DOMAIN );
-	return( NPY_NAN );
-	}
-return(  igamc( b, a * x )  );
+    if (x < 0.0) {
+	sf_error("gdtrc", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
+    }
+    return (igamc(b, a * x));
 }
 
 
-double gdtri( a, b, y)
+double gdtri(a, b, y)
 double a, b, y;
 {
 
-if ((y < 0.0) || (y > 1.0) || (a <= 0.0) || (b < 0.0))
-  {
-    mtherr("gdtri", DOMAIN);
-    return( NPY_NAN );
-  }
+    if ((y < 0.0) || (y > 1.0) || (a <= 0.0) || (b < 0.0)) {
+	sf_error("gdtri", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
+    }
 
-return ( igami (b, 1.0-y) / a);
+    return (igamci(b, 1.0 - y) / a);
 }

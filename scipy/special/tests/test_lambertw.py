@@ -79,12 +79,20 @@ def test_values():
 
     def w(x, y):
         return lambertw(x, y.real.astype(int))
-    olderr = np.seterr(all='ignore')
-    try:
+    with np.errstate(all='ignore'):
         FuncData(w, data, (0,1), 2, rtol=1e-10, atol=1e-13).check()
-    finally:
-        np.seterr(**olderr)
+
 
 def test_ufunc():
     assert_array_almost_equal(
         lambertw(r_[0., e, 1.]), r_[0., 1., 0.567143290409783873])
+
+
+def test_lambertw_ufunc_loop_selection():
+    # see https://github.com/scipy/scipy/issues/4895
+    dt = np.dtype(np.complex128)
+    assert_equal(lambertw(0, 0, 0).dtype, dt)
+    assert_equal(lambertw([0], 0, 0).dtype, dt)
+    assert_equal(lambertw(0, [0], 0).dtype, dt)
+    assert_equal(lambertw(0, 0, [0]).dtype, dt)
+    assert_equal(lambertw([0], [0], [0]).dtype, dt)

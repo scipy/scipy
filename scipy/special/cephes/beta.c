@@ -1,6 +1,6 @@
-/*							beta.c
+/*                                                     beta.c
  *
- *	Beta function
+ *     Beta function
  *
  *
  *
@@ -29,7 +29,6 @@
  *
  *                      Relative error:
  * arithmetic   domain     # trials      peak         rms
- *    DEC        0,30        1700       7.7e-15     1.5e-15
  *    IEEE       0,30       30000       8.1e-14     1.1e-14
  *
  * ERROR MESSAGES:
@@ -39,153 +38,221 @@
  *                  a or b <0 integer        0.0
  *
  */
-
-/*							beta.c	*/
 
 
 /*
-Cephes Math Library Release 2.0:  April, 1987
-Copyright 1984, 1987 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
-*/
+ * Cephes Math Library Release 2.0:  April, 1987
+ * Copyright 1984, 1987 by Stephen L. Moshier
+ * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+ */
 
 #include "mconf.h"
 
-#ifdef UNK
-#define MAXGAM 34.84425627277176174
-#endif
-#ifdef DEC
-#define MAXGAM 34.84425627277176174
-#endif
-#ifdef IBMPC
 #define MAXGAM 171.624376956302725
-#endif
-#ifdef MIEEE
-#define MAXGAM 171.624376956302725
-#endif
 
-extern double MAXLOG, MAXNUM;
-extern int sgngam;
+extern double MAXLOG;
 
-double beta( a, b )
-double a, b;
+#define ASYMP_FACTOR 1e6
+
+static double lbeta_asymp(double a, double b, int *sgn);
+static double lbeta_negint(int a, double b);
+static double beta_negint(int a, double b);
+
+double beta(double a, double b)
 {
-double y;
-int sign;
+    double y;
+    int sign = 1;
 
-sign = 1;
+    if (a <= 0.0) {
+	if (a == floor(a)) {
+            if (a == (int)a) {
+                return beta_negint((int)a, b);
+            }
+            else {
+                goto overflow;
+            }
+        }
+    }
 
-if( a <= 0.0 )
-	{
-	if( a == floor(a) )
-		goto over;
-	}
-if( b <= 0.0 )
-	{
-	if( b == floor(b) )
-		goto over;
-	}
+    if (b <= 0.0) {
+	if (b == floor(b)) {
+            if (b == (int)b) {
+                return beta_negint((int)b, a);
+            }
+            else {
+                goto overflow;
+            }
+        }
+    }
 
+    if (fabs(a) < fabs(b)) {
+        y = a; a = b; b = y;
+    }
 
-y = a + b;
-if( fabs(y) > MAXGAM )
-	{
-	y = lgam(y);
-	sign *= sgngam; /* keep track of the sign */
-	y = lgam(b) - y;
+    if (fabs(a) > ASYMP_FACTOR * fabs(b) && a > ASYMP_FACTOR) {
+        /* Avoid loss of precision in lgam(a + b) - lgam(a) */
+        y = lbeta_asymp(a, b, &sign);
+        return sign * exp(y);
+    }
+
+    y = a + b;
+    if (fabs(y) > MAXGAM || fabs(a) > MAXGAM || fabs(b) > MAXGAM) {
+	int sgngam;
+	y = lgam_sgn(y, &sgngam);
+	sign *= sgngam;		/* keep track of the sign */
+	y = lgam_sgn(b, &sgngam) - y;
 	sign *= sgngam;
-	y = lgam(a) + y;
+	y = lgam_sgn(a, &sgngam) + y;
 	sign *= sgngam;
-	if( y > MAXLOG )
-		{
-over:
-		mtherr( "beta", OVERFLOW );
-		return( sign * MAXNUM );
-		}
-	return( sign * exp(y) );
+	if (y > MAXLOG) {
+	    goto overflow;
 	}
+	return (sign * exp(y));
+    }
 
-y = Gamma(y);
-if( y == 0.0 )
-	goto over;
+    y = Gamma(y);
+    a = Gamma(a);
+    b = Gamma(b);
+    if (y == 0.0)
+	goto overflow;
 
-if( a > b )
-	{
-	y = Gamma(a)/y;
-	y *= Gamma(b);
-	}
-else
-	{
-	y = Gamma(b)/y;
-	y *= Gamma(a);
-	}
+    if (fabs(fabs(a) - fabs(y)) > fabs(fabs(b) - fabs(y))) {
+        y = b / y;
+        y *= a;
+    }
+    else {
+        y = a / y;
+        y *= b;
+    }
 
-return(y);
+    return (y);
+
+overflow:
+    sf_error("beta", SF_ERROR_OVERFLOW, NULL);
+    return (sign * INFINITY);
 }
 
 
+/* Natural log of |beta|. */
 
-/* Natural log of |beta|.  Return the sign of beta in sgngam.  */
-
-double lbeta( a, b )
-double a, b;
+double lbeta(double a, double b)
 {
-double y;
-int sign;
+    double y;
+    int sign;
 
-sign = 1;
+    sign = 1;
 
-if( a <= 0.0 )
-	{
-	if( a == floor(a) )
-		goto over;
-	}
-if( b <= 0.0 )
-	{
-	if( b == floor(b) )
-		goto over;
-	}
+    if (a <= 0.0) {
+	if (a == floor(a)) {
+            if (a == (int)a) {
+                return lbeta_negint((int)a, b);
+            }
+            else {
+                goto over;
+            }
+        }
+    }
 
+    if (b <= 0.0) {
+	if (b == floor(b)) {
+            if (b == (int)b) {
+                return lbeta_negint((int)b, a);
+            }
+            else {
+                goto over;
+            }
+        }
+    }
 
-y = a + b;
-if( fabs(y) > MAXGAM )
-	{
-	y = lgam(y);
-	sign *= sgngam; /* keep track of the sign */
-	y = lgam(b) - y;
+    if (fabs(a) < fabs(b)) {
+        y = a; a = b; b = y;
+    }
+
+    if (fabs(a) > ASYMP_FACTOR * fabs(b) && a > ASYMP_FACTOR) {
+        /* Avoid loss of precision in lgam(a + b) - lgam(a) */
+        y = lbeta_asymp(a, b, &sign);
+        return y;
+    }
+
+    y = a + b;
+    if (fabs(y) > MAXGAM || fabs(a) > MAXGAM || fabs(b) > MAXGAM) {
+	int sgngam;
+	y = lgam_sgn(y, &sgngam);
+	sign *= sgngam;		/* keep track of the sign */
+	y = lgam_sgn(b, &sgngam) - y;
 	sign *= sgngam;
-	y = lgam(a) + y;
+	y = lgam_sgn(a, &sgngam) + y;
 	sign *= sgngam;
-	sgngam = sign;
-	return( y );
-	}
+	return (y);
+    }
 
-y = Gamma(y);
-if( y == 0.0 )
-	{
-over:
-	mtherr( "lbeta", OVERFLOW );
-	return( sign * MAXNUM );
-	}
+    y = Gamma(y);
+    a = Gamma(a);
+    b = Gamma(b);
+    if (y == 0.0) {
+      over:
+	sf_error("lbeta", SF_ERROR_OVERFLOW, NULL);
+	return (sign * INFINITY);
+    }
 
-if( a > b )
-	{
-	y = Gamma(a)/y;
-	y *= Gamma(b);
-	}
-else
-	{
-	y = Gamma(b)/y;
-	y *= Gamma(a);
-	}
+    if (fabs(fabs(a) - fabs(y)) > fabs(fabs(b) - fabs(y))) {
+        y = b / y;
+        y *= a;
+    }
+    else {
+        y = a / y;
+        y *= b;
+    }
 
-if( y < 0 )
-  {
-    sgngam = -1;
-    y = -y;
-  }
-else
-  sgngam = 1;
+    if (y < 0) {
+	y = -y;
+    }
 
-return( log(y) );
+    return (log(y));
+}
+
+/*
+ * Asymptotic expansion for  ln(|B(a, b)|) for a > ASYMP_FACTOR*max(|b|, 1).
+ */
+static double lbeta_asymp(double a, double b, int *sgn)
+{
+    double r = lgam_sgn(b, sgn);
+    r -= b * log(a);
+
+    r += b*(1-b)/(2*a);
+    r += b*(1-b)*(1-2*b)/(12*a*a);
+    r += - b*b*(1-b)*(1-b)/(12*a*a*a);
+
+    return r;
+}
+
+
+/*
+ * Special case for a negative integer argument
+ */
+
+static double beta_negint(int a, double b)
+{
+    int sgn;
+    if (b == (int)b && 1 - a - b > 0) {
+        sgn = ((int)b % 2 == 0) ? 1 : -1;
+        return sgn * beta(1 - a - b, b);
+    }
+    else {
+	sf_error("lbeta", SF_ERROR_OVERFLOW, NULL);
+        return INFINITY;
+    }
+}
+
+static double lbeta_negint(int a, double b)
+{
+    double r;
+    if (b == (int)b && 1 - a - b > 0) {
+        r = lbeta(1 - a - b, b);
+        return r;
+    }
+    else {
+	sf_error("lbeta", SF_ERROR_OVERFLOW, NULL);
+        return INFINITY;
+    }
 }

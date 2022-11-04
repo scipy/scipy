@@ -1,5 +1,6 @@
-      subroutine clocur(iopt,ipar,idim,m,u,mx,x,w,k,s,nest,n,t,nc,c,fp,
-     * wrk,lwrk,iwrk,ier)
+      recursive subroutine clocur(iopt,ipar,idim,m,u,mx,x,w,k,s,nest,
+     * n,t,nc,c,fp,wrk,lwrk,iwrk,ier)
+      implicit none
 c  given the ordered set of m points x(i) in the idim-dimensional space
 c  with x(1)=x(m), and given also a corresponding set of strictly in-
 c  creasing values u(i) and the set of positive numbers w(i),i=1,2,...,m
@@ -90,7 +91,7 @@ c           if the computation mode iopt=1 is used this value of n
 c           should be left unchanged between subsequent calls.
 c           in case iopt=-1, the value of n must be specified on entry.
 c   t     : real array of dimension at least (nest).
-c           on succesful exit, this array will contain the knots of the
+c           on successful exit, this array will contain the knots of the
 c           spline curve,i.e. the position of the interior knots t(k+2),
 c           t(k+3),..,t(n-k-1) as well as the position of the additional
 c           t(1),t(2),..,t(k+1)=u(1) and u(m)=t(n-k),...,t(n) needed for
@@ -104,7 +105,7 @@ c   nc    : integer. on entry nc must specify the actual dimension of
 c           the array c as declared in the calling (sub)program. nc
 c           must not be too small (see c). unchanged on exit.
 c   c     : real array of dimension at least (nest*idim).
-c           on succesful exit, this array will contain the coefficients
+c           on successful exit, this array will contain the coefficients
 c           in the b-spline representation of the spline curve s(u),i.e.
 c           the b-spline coefficients of the spline sj(u) will be given
 c           in c(n*(j-1)+i),i=1,2,...,n-k-1 for j=1,2,...,idim.
@@ -142,7 +143,7 @@ c             curve according to the knots t(1),t(2),...,t(n). (n=nest)
 c             the parameter fp gives the corresponding weighted sum of
 c             squared residuals (fp>s).
 c    ier=2  : error. a theoretically impossible result was found during
-c             the iteration proces for finding a smoothing curve with
+c             the iteration process for finding a smoothing curve with
 c             fp = s. probably causes : s too small.
 c             there is an approximation returned but the corresponding
 c             weighted sum of squared residuals does not satisfy the

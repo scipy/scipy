@@ -1,6 +1,7 @@
-      subroutine fpcosp(m,x,y,w,n,t,e,maxtr,maxbin,c,sq,sx,bind,nm,mb,a,
-     *
+      recursive subroutine fpcosp(m,x,y,w,n,t,e,maxtr,maxbin,c,sq,sx,
+     * bind,nm,mb,a,
      * b,const,z,zz,u,q,info,up,left,right,jbind,ibind,ier)
+      implicit none
 c  ..
 c  ..scalar arguments..
       real*8 sq
@@ -52,7 +53,7 @@ c  set up the normal equations  n'nc=n'y  where n denotes the m x (n-4)
 c  observation matrix with elements ni,j = wi*nj(xi)  and y is the
 c  column vector with elements yi*wi.
 c  from the properties of the b-splines nj(x),j=1,2,...n-4, it follows
-c  that  n'n  is a (n-4) x (n-4)  positive definit bandmatrix of
+c  that  n'n  is a (n-4) x (n-4)  positive definite bandmatrix of
 c  bandwidth 7. the matrices n'n and n'y are built up in a and z.
       n4 = n-4
 c  initialization

@@ -1,6 +1,6 @@
-/*							nbdtr.c
+/*                                                     nbdtr.c
  *
- *	Negative binomial distribution
+ *     Negative binomial distribution
  *
  *
  *
@@ -83,9 +83,9 @@
  * See also incbet.c.
  */
 
-/*							nbdtrc
+/*                                                     nbdtrc
  *
- *	Complemented negative binomial distribution
+ *     Complemented negative binomial distribution
  *
  *
  *
@@ -146,71 +146,68 @@
  */
 
 /*
-Cephes Math Library Release 2.3:  March, 1995
-Copyright 1984, 1987, 1995 by Stephen L. Moshier
-*/
+ * Cephes Math Library Release 2.3:  March, 1995
+ * Copyright 1984, 1987, 1995 by Stephen L. Moshier
+ */
 
 #include "mconf.h"
 
-double nbdtrc( k, n, p )
+double nbdtrc(k, n, p)
 int k, n;
 double p;
 {
-double dk, dn;
+    double dk, dn;
 
-if( (p < 0.0) || (p > 1.0) )
+    if ((p < 0.0) || (p > 1.0))
 	goto domerr;
-if( k < 0 )
-	{
-domerr:
-	mtherr( "nbdtr", DOMAIN );
-	return( NPY_NAN );
-	}
+    if (k < 0) {
+      domerr:
+	sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
+    }
 
-dk = k+1;
-dn = n;
-return( incbet( dk, dn, 1.0 - p ) );
+    dk = k + 1;
+    dn = n;
+    return (incbet(dk, dn, 1.0 - p));
 }
 
 
 
-double nbdtr( k, n, p )
+double nbdtr(k, n, p)
 int k, n;
 double p;
 {
-double dk, dn;
+    double dk, dn;
 
-if( (p < 0.0) || (p > 1.0) )
+    if ((p < 0.0) || (p > 1.0))
 	goto domerr;
-if( k < 0 )
-	{
-domerr:
-	mtherr( "nbdtr", DOMAIN );
-	return( NPY_NAN );
-	}
-dk = k+1;
-dn = n;
-return( incbet( dn, dk, p ) );
+    if (k < 0) {
+      domerr:
+	sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
+    }
+    dk = k + 1;
+    dn = n;
+    return (incbet(dn, dk, p));
 }
 
 
 
-double nbdtri( k, n, p )
+double nbdtri(k, n, p)
 int k, n;
 double p;
 {
-double dk, dn, w;
+    double dk, dn, w;
 
-if( (p < 0.0) || (p > 1.0) )
+    if ((p < 0.0) || (p > 1.0))
 	goto domerr;
-if( k < 0 )
-	{
-domerr:
-	mtherr( "nbdtri", DOMAIN );
-	return( NPY_NAN );
-	}
-dk = k+1;
-dn = n;
-w = incbi( dn, dk, p );
-return( w );
+    if (k < 0) {
+      domerr:
+	sf_error("nbdtri", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
+    }
+    dk = k + 1;
+    dn = n;
+    w = incbi(dn, dk, p);
+    return (w);
 }

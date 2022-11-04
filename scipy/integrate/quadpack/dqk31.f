@@ -1,4 +1,4 @@
-      subroutine dqk31(f,a,b,result,abserr,resabs,resasc)
+      recursive subroutine dqk31(f,a,b,result,abserr,resabs,resasc)
 c***begin prologue  dqk31
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)
@@ -36,7 +36,7 @@ c                       gauss-kronrod rule (resk), obtained by optimal
 c                       addition of abscissae to the 15-point gauss
 c                       rule (resg).
 c
-c              abserr - double precison
+c              abserr - double precision
 c                       estimate of the modulus of the modulus,
 c                       which should not exceed abs(i-result)
 c

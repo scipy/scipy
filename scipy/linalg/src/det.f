@@ -6,7 +6,7 @@ c     prefixes: d,z,s,c   (double,complex double,float,complex float)
 c     suffixes: _c,_r     (column major order,row major order)
 
       subroutine ddet_c(det,a,n,piv,info)
-      integer n,piv(n),i
+      integer n,piv(n),i,info
       double precision det,a(n,n)
 cf2py intent(in,copy) :: a
 cf2py intent(out) :: det,info
@@ -31,7 +31,7 @@ cf2py callprotoargument double*,double*,int*,int*,int*
       end
 
       subroutine ddet_r(det,a,n,piv,info)
-      integer n,piv(n)
+      integer n,piv(n),info
       double precision det,a(n,n)
 cf2py intent(c,in,copy) :: a
 cf2py intent(out) :: det,info
@@ -44,7 +44,7 @@ cf2py callprotoargument double*,double*,int*,int*,int*
       end
 
       subroutine sdet_c(det,a,n,piv,info)
-      integer n,piv(n),i
+      integer n,piv(n),i,info
       real det,a(n,n)
 cf2py intent(in,copy) :: a
 cf2py intent(out) :: det,info
@@ -69,7 +69,7 @@ cf2py callprotoargument float*,float*,int*,int*,int*
       end
 
       subroutine sdet_r(det,a,n,piv,info)
-      integer n,piv(n)
+      integer n,piv(n),info
       real det,a(n,n)
 cf2py intent(c,in,copy) :: a
 cf2py intent(out) :: det,info
@@ -82,7 +82,7 @@ cf2py callprotoargument float*,float*,int*,int*,int*
       end
 
       subroutine zdet_c(det,a,n,piv,info)
-      integer n,piv(n),i
+      integer n,piv(n),i,info
       complex*16 det,a(n,n)
 cf2py intent(in,copy) :: a
 cf2py intent(out) :: det,info
@@ -107,7 +107,7 @@ cf2py callprotoargument complex_double*,complex_double*,int*,int*,int*
       end
 
       subroutine zdet_r(det,a,n,piv,info)
-      integer n,piv(n)
+      integer n,piv(n),info
       complex*16 det,a(n,n)
 cf2py intent(c,in,copy) :: a
 cf2py intent(out) :: det,info
@@ -120,7 +120,7 @@ cf2py callprotoargument complex_double*,complex_double*,int*,int*,int*
       end
 
       subroutine cdet_c(det,a,n,piv,info)
-      integer n,piv(n),i
+      integer n,piv(n),i,info
       complex det,a(n,n)
 cf2py intent(in,copy) :: a
 cf2py intent(out) :: det,info
@@ -145,7 +145,7 @@ cf2py callprotoargument complex_float*,complex_float*,int*,int*,int*
       end
 
       subroutine cdet_r(det,a,n,piv,info)
-      integer n,piv(n)
+      integer n,piv(n),info
       complex det,a(n,n)
 cf2py intent(c,in,copy) :: a
 cf2py intent(out) :: det,info

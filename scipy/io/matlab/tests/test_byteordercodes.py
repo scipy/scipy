@@ -2,14 +2,16 @@
 
 import sys
 
-from numpy.testing import assert_raises, assert_, run_module_suite
+from numpy.testing import assert_
+from pytest import raises as assert_raises
 
-import scipy.io.matlab.byteordercodes as sibc
+import scipy.io.matlab._byteordercodes as sibc
 
 
 def test_native():
     native_is_le = sys.byteorder == 'little'
     assert_(sibc.sys_is_le == native_is_le)
+
 
 def test_to_numpy():
     if sys.byteorder == 'little':
@@ -25,6 +27,3 @@ def test_to_numpy():
     for code in ('big', '>', 'b', 'B', 'be'):
         assert_(sibc.to_numpy_code(code) == '>')
     assert_raises(ValueError, sibc.to_numpy_code, 'silly string')
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -3,7 +3,7 @@
 
 #include <fftw3.h>
 
-#ifdef DCT_TEST_USE_SINGLE
+#if DCT_TEST_PRECISION == 1
 typedef float float_prec;
 #define PF "%.7f"
 #define FFTW_PLAN fftwf_plan
@@ -13,7 +13,7 @@ typedef float float_prec;
 #define FFTW_EXECUTE fftwf_execute
 #define FFTW_DESTROY_PLAN fftwf_destroy_plan
 #define FFTW_CLEANUP fftwf_cleanup
-#else
+#elif DCT_TEST_PRECISION == 2
 typedef double float_prec;
 #define PF "%.18f"
 #define FFTW_PLAN fftw_plan
@@ -23,6 +23,18 @@ typedef double float_prec;
 #define FFTW_EXECUTE fftw_execute
 #define FFTW_DESTROY_PLAN fftw_destroy_plan
 #define FFTW_CLEANUP fftw_cleanup
+#elif DCT_TEST_PRECISION == 3
+typedef long double float_prec;
+#define PF "%.18Lf"
+#define FFTW_PLAN fftwl_plan
+#define FFTW_MALLOC fftwl_malloc
+#define FFTW_FREE fftwl_free
+#define FFTW_PLAN_CREATE fftwl_plan_r2r_1d
+#define FFTW_EXECUTE fftwl_execute
+#define FFTW_DESTROY_PLAN fftwl_destroy_plan
+#define FFTW_CLEANUP fftwl_cleanup
+#else
+#error DCT_TEST_PRECISION must be a number 1-3
 #endif
 
 
@@ -31,6 +43,10 @@ enum type {
         DCT_II = 2,
         DCT_III = 3,
         DCT_IV = 4,
+        DST_I = 5,
+        DST_II = 6,
+        DST_III = 7,
+	    DST_IV = 8,
 };
 
 int gen(int type, int sz)
@@ -50,10 +66,6 @@ int gen(int type, int sz)
                 exit(EXIT_FAILURE);
         }
 
-        for(i=0; i < sz; ++i) {
-                a[i] = i;
-        }
-
         switch(type) {
                 case DCT_I:
                         tp = FFTW_REDFT00;
@@ -67,9 +79,44 @@ int gen(int type, int sz)
                 case DCT_IV:
                         tp = FFTW_REDFT11;
                         break;
+                case DST_I:
+                        tp = FFTW_RODFT00;
+                        break;
+                case DST_II:
+                        tp = FFTW_RODFT10;
+                        break;
+                case DST_III:
+                        tp = FFTW_RODFT01;
+                        break;
+                case DST_IV:
+                        tp = FFTW_RODFT11;
+                        break;
                 default:
                         fprintf(stderr, "unknown type\n");
                         exit(EXIT_FAILURE);
+        }
+
+        switch(type) {
+            case DCT_I:
+            case DCT_II:
+            case DCT_III:
+            case DCT_IV:
+                for(i=0; i < sz; ++i) {
+                    a[i] = i;
+                }
+                break;
+            case DST_I:
+            case DST_II:
+            case DST_III:
+            case DST_IV:
+/*                TODO: what should we do for dst's?*/
+                for(i=0; i < sz; ++i) {
+                    a[i] = i;
+                }
+                break;
+            default:
+                fprintf(stderr, "unknown type\n");
+                exit(EXIT_FAILURE);
         }
 
         p = FFTW_PLAN_CREATE(sz, a, b, tp, FFTW_ESTIMATE);

@@ -1,5 +1,5 @@
-      subroutine dqags(f,a,b,epsabs,epsrel,result,abserr,neval,ier,
-     *   limit,lenw,last,iwork,work)
+      recursive subroutine dqags(f,a,b,epsabs,epsrel,result,abserr,
+     *   neval,ier,limit,lenw,last,iwork,work)
 c***begin prologue  dqags
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)
@@ -121,7 +121,7 @@ c                    with ier = 6.
 c
 c            last  - integer
 c                    on return, last equals the number of subintervals
-c                    produced in the subdivision process, detemines the
+c                    produced in the subdivision process, determines the
 c                    number of significant elements actually in the work
 c                    arrays.
 c

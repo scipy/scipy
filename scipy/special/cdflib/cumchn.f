@@ -57,7 +57,8 @@ C     .. Scalar Arguments ..
 C     ..
 C     .. Local Scalars ..
       DOUBLE PRECISION adj,centaj,centwt,chid2,dfd2,eps,lcntaj,lcntwt,
-     +                 lfact,pcent,pterm,sum,sumadj,term,wt,xnonc,xx
+     +                 lfact,pcent,pterm,sum,sumadj,term,wt,xnonc,xx,
+     +                 abstol
       INTEGER i,icent
 C     ..
 C     .. External Functions ..
@@ -75,10 +76,11 @@ C     .. Statement Functions ..
       LOGICAL qsmall
 C     ..
 C     .. Data statements ..
-      DATA eps/1.0D-5/
+      DATA eps/1.0D-15/
+      DATA abstol/1.0D-300/
 C     ..
 C     .. Statement Function definitions ..
-      qsmall(xx) = sum .LT. 1.0D-20 .OR. xx .LT. eps*sum
+      qsmall(xx) = .NOT. (sum .GE. abstol .AND. xx .GE. eps*sum)
       dg(i) = df + 2.0D0*dble(i)
 C     ..
 C
@@ -100,7 +102,7 @@ C
    20 xnonc = pnonc/2.0D0
 C***********************************************************************
 C
-C     The following code calcualtes the weight, chi-square, and
+C     The following code calculates the weight, chi-square, and
 C     adjustment term for the central term in the infinite series.
 C     The central term is the one in which the poisson weight is
 C     greatest.  The adjustment term is the amount that must

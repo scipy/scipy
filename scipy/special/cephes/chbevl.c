@@ -1,6 +1,6 @@
-/*							chbevl.c
+/*                                                     chbevl.c
  *
- *	Evaluate Chebyshev series
+ *     Evaluate Chebyshev series
  *
  *
  *
@@ -52,34 +52,30 @@
 /*							chbevl.c	*/
 
 /*
-Cephes Math Library Release 2.0:  April, 1987
-Copyright 1985, 1987 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
-*/
+ * Cephes Math Library Release 2.0:  April, 1987
+ * Copyright 1985, 1987 by Stephen L. Moshier
+ * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+ */
 
+#include "mconf.h"
 #include <stdio.h>
-#include "protos.h"
 
-double chbevl( x, array, n )
-double x;
-double array[];
-int n;
+double chbevl(double x, double array[], int n)
 {
-double b0, b1, b2, *p;
-int i;
+    double b0, b1, b2, *p;
+    int i;
 
-p = array;
-b0 = *p++;
-b1 = 0.0;
-i = n - 1;
+    p = array;
+    b0 = *p++;
+    b1 = 0.0;
+    i = n - 1;
 
-do
-	{
+    do {
 	b2 = b1;
 	b1 = b0;
-	b0 = x * b1  -  b2  + *p++;
-	}
-while( --i );
+	b0 = x * b1 - b2 + *p++;
+    }
+    while (--i);
 
-return( 0.5*(b0-b2) );
+    return (0.5 * (b0 - b2));
 }

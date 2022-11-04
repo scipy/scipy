@@ -1,6 +1,0 @@
-from numscons import GetNumpyEnvironment
-
-env = GetNumpyEnvironment(ARGUMENTS)
-env.NumpyPythonExtension('streams', source='streams.c')
-env.NumpyPythonExtension('mio_utils', source='mio_utils.c')
-env.NumpyPythonExtension('mio5_utils', source='mio5_utils.c')

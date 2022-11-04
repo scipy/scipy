@@ -1,0 +1,69 @@
+==========================
+SciPy 1.0.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.0.1 is a bug-fix release with no new features compared to 1.0.0.
+Probably the most important change is a fix for an incompatibility between
+SciPy 1.0.0 and ``numpy.f2py`` in the NumPy master branch.
+
+Authors
+=======
+
+* Saurabh Agarwal +
+* Alessandro Pietro Bardelli
+* Philip DeBoer
+* Ralf Gommers
+* Matt Haberland
+* Eric Larson
+* Denis Laxalde
+* Mihai Capotă +
+* Andrew Nelson
+* Oleksandr Pavlyk
+* Ilhan Polat
+* Anant Prakash +
+* Pauli Virtanen
+* Warren Weckesser
+* @xoviat
+* Ted Ying +
+
+A total of 16 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.0.1
+-----------------------
+
+- `#7493 <https://github.com/scipy/scipy/issues/7493>`__: `ndimage.morphology` functions are broken with numpy 1.13.0
+- `#8118 <https://github.com/scipy/scipy/issues/8118>`__: minimize_cobyla broken if `disp=True` passed
+- `#8142 <https://github.com/scipy/scipy/issues/8142>`__: scipy-v1.0.0 pdist with metric=\`minkowski\` raises \`ValueError:...
+- `#8173 <https://github.com/scipy/scipy/issues/8173>`__: `scipy.stats.ortho_group` produces all negative determinants...
+- `#8207 <https://github.com/scipy/scipy/issues/8207>`__: gaussian_filter seg faults on float16 numpy arrays
+- `#8234 <https://github.com/scipy/scipy/issues/8234>`__: `scipy.optimize.linprog` `interior-point` presolve bug with trivial...
+- `#8243 <https://github.com/scipy/scipy/issues/8243>`__: Make csgraph importable again via `from scipy.sparse import*`
+- `#8320 <https://github.com/scipy/scipy/issues/8320>`__: scipy.root segfaults with optimizer 'lm'
+
+
+Pull requests for 1.0.1
+-----------------------
+
+- `#8068 <https://github.com/scipy/scipy/pull/8068>`__: BUG: fix numpy deprecation test failures
+- `#8082 <https://github.com/scipy/scipy/pull/8082>`__: BUG: fix solve_lyapunov import
+- `#8144 <https://github.com/scipy/scipy/pull/8144>`__: MRG: Fix for cobyla
+- `#8150 <https://github.com/scipy/scipy/pull/8150>`__: MAINT: resolve UPDATEIFCOPY deprecation errors
+- `#8156 <https://github.com/scipy/scipy/pull/8156>`__: BUG: missing check on minkowski w kwarg
+- `#8187 <https://github.com/scipy/scipy/pull/8187>`__: BUG: Sign of elements in random orthogonal 2D matrices in "ortho_group_gen"...
+- `#8197 <https://github.com/scipy/scipy/pull/8197>`__: CI: uninstall oclint
+- `#8215 <https://github.com/scipy/scipy/pull/8215>`__: Fixes Numpy datatype compatibility issues
+- `#8237 <https://github.com/scipy/scipy/pull/8237>`__: BUG: optimize: fix bug when variables fixed by bounds are inconsistent...
+- `#8248 <https://github.com/scipy/scipy/pull/8248>`__: BUG: declare "gfk" variable before call of terminate() in newton-cg
+- `#8280 <https://github.com/scipy/scipy/pull/8280>`__: REV: reintroduce csgraph import in scipy.sparse
+- `#8322 <https://github.com/scipy/scipy/pull/8322>`__: MAINT: prevent scipy.optimize.root segfault closes #8320
+- `#8334 <https://github.com/scipy/scipy/pull/8334>`__: TST: stats: don't use exact equality check for hdmedian test
+- `#8477 <https://github.com/scipy/scipy/pull/8477>`__: BUG: signal/signaltools: fix wrong refcounting in PyArray_OrderFilterND
+- `#8530 <https://github.com/scipy/scipy/pull/8530>`__: BUG: linalg: Fixed typo in flapack.pyf.src.
+- `#8566 <https://github.com/scipy/scipy/pull/8566>`__: CI: Temporarily pin Cython version to 0.27.3
+- `#8573 <https://github.com/scipy/scipy/pull/8573>`__: Backports for 1.0.1
+- `#8581 <https://github.com/scipy/scipy/pull/8581>`__: Fix Cython 0.28 build break of qhull.pyx

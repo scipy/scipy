@@ -1,4 +1,5 @@
-      subroutine profil(iopt,tx,nx,ty,ny,c,kx,ky,u,nu,cu,ier)
+      recursive subroutine profil(iopt,tx,nx,ty,ny,c,kx,ky,u,nu,cu,ier)
+      implicit none
 c  if iopt=0 subroutine profil calculates the b-spline coefficients of
 c  the univariate spline f(y) = s(u,y) with s(x,y) a bivariate spline of
 c  degrees kx and ky, given in the b-spline representation.
@@ -28,7 +29,7 @@ c           nu >= ny if iopt=0, nu >= nx if iopt=1.
 c
 c  output parameters:
 c   cu    : real array of dimension (nu).
-c           on succesful exit this array contains the b-spline
+c           on successful exit this array contains the b-spline
 c   ier   : integer error flag
 c    ier=0 : normal return
 c    ier=10: invalid input data (see restrictions)

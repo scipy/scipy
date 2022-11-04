@@ -1,5 +1,5 @@
-      subroutine dqc25f(f,a,b,omega,integr,nrmom,maxp1,ksave,result,
-     *   abserr,neval,resabs,resasc,momcom,chebmo)
+      recursive subroutine dqc25f(f,a,b,omega,integr,nrmom,maxp1,
+     *   ksave,result,abserr,neval,resabs,resasc,momcom,chebmo)
 c***begin prologue  dqc25f
 c***date written   810101   (yymmdd)
 c***revision date  830518   (yymmdd)
@@ -228,10 +228,11 @@ c
 c           solve the tridiagonal system by means of gaussian
 c           elimination with partial pivoting.
 c
-c***        call to dgtsl must be replaced by call to
-c***        double precision version of linpack routine sgtsl
+c***        call to dgtsl has been replaced by call to
+c***        lapack routine dgtsv
 c
-      call dgtsl(noequ,d1,d,d2,v(4),iers)
+c      call dgtsl(noequ,d1,d,d2,v(4),iers)
+      call dgtsv(noequ,1,d1(2),d,d2,v(4),noequ,iers)
       go to 50
 c
 c           compute the chebyshev moments by means of forward
@@ -285,10 +286,11 @@ c
 c           solve the tridiagonal system by means of gaussian
 c           elimination with partial pivoting.
 c
-c***        call to dgtsl must be replaced by call to
-c***        double precision version of linpack routine sgtsl
+c***        call to dgtsl has been replaced by call to
+c***        lapack routine dgtsv
 c
-      call dgtsl(noequ,d1,d,d2,v(3),iers)
+c      call dgtsl(noequ,d1,d,d2,v(3),iers)
+      call dgtsv(noequ,1,d1(2),d,d2,v(3),noequ,iers)
       go to 100
 c
 c           compute the chebyshev moments by means of forward recursion.
@@ -337,7 +339,7 @@ c
       do 150 j = 1,12
         resc24 = resc24+cheb24(k)*chebmo(m,k)
         ress24 = ress24+cheb24(k+1)*chebmo(m,k+1)
-        resabs = dabs(cheb24(k))+dabs(cheb24(k+1))
+        resabs = resabs+dabs(cheb24(k))+dabs(cheb24(k+1))
         k = k-2
   150 continue
       estc = dabs(resc24-resc12)

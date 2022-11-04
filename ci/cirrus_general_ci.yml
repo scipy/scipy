@@ -1,0 +1,100 @@
+# Regular CI for testing musllinux, linux_aarch64 and macosx_arm64 natively
+# This only runs if cirrus is not building wheels. The rationale is that
+# cibuildwheel also runs tests during the wheel build process, so there's no need
+# to have duplication.
+
+linux_aarch64_test_task:
+  compute_engine_instance:
+    image_project: cirrus-images
+    image: family/docker-builder-arm64
+    architecture: arm64
+    platform: linux
+    cpu: 4
+    memory: 16G
+
+  test_script: |
+    git submodule update --init
+    apt-get update
+    apt-get install -y --no-install-recommends software-properties-common gcc g++ gfortran pkg-config
+    apt-get install -y --no-install-recommends libopenblas-dev libatlas-base-dev liblapack-dev
+
+    # When this task was written the linux image used ubuntu:jammy, for which
+    # python3.10 is the default. If required different versions can be
+    # installed using the deadsnakes apt repository.
+    # add-apt-repository -y ppa:deadsnakes/ppa
+    # apt-get update
+    # DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata
+
+    apt-get install -y python3.10 python3.10-venv
+    # python3.10 -m ensurepip --default-pip --user
+
+    ln -s $(which python3.10) python
+    export PATH=$PWD:$PATH
+
+    python -m pip install meson ninja numpy cython pybind11 pythran cython
+    python -m pip install click rich_click doit pydevtool
+    python -m pip install pytest pooch
+    
+    python dev.py test
+
+
+musllinux_amd64_test_task:
+  container:
+    image: alpine
+    cpu: 8
+    memory: 32G
+
+  env:
+    PATH: $PWD:$PATH
+
+  setup_script: |
+    apk update
+    apk add openblas-dev python3 python3-dev openblas build-base gfortran git py3-pip
+    git submodule update --init
+
+    ln -sf $(which python3.10) python
+
+  pip_cache:
+    folder: ~/.cache/pip
+
+  python_dependencies_script: |
+      python -m pip install cython
+      python -m pip install -vvv --upgrade numpy    
+      python -m pip install meson ninja pybind11 pythran pytest
+      python -m pip install click rich_click doit pydevtool pooch
+
+  build_script: |
+    python dev.py build
+
+  test_script: |
+    # Don't run the ndimage tests because there's a segfault (gh17270)
+    set -xe -o
+    python dev.py test -- --ignore=scipy/ndimage/tests
+
+
+macos_arm64_test_task:
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-monterey-xcode:13.3.1
+  test_script: |
+    git submodule update --init
+    brew install python@3.10
+
+    export PATH=/opt/homebrew/opt/python@3.10/libexec/bin:$PATH
+    python --version
+
+    # used for installing OpenBLAS/gfortran
+    bash tools/wheels/cibw_before_build_macos.sh $PWD
+
+    export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
+    export CMAKE_PREFIX_PATH=/opt/arm64-builds/
+
+    pushd ~/
+    python -m venv scipy-dev
+    source scipy-dev/bin/activate
+    popd
+
+    python -m pip install meson ninja numpy cython pybind11 pythran cython
+    python -m pip install click rich_click doit pydevtool
+    python -m pip install pytest pooch
+    export DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib
+    python dev.py test

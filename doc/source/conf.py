@@ -1,17 +1,30 @@
 # -*- coding: utf-8 -*-
-
 import sys, os, re
+import glob
+from datetime import date
+import warnings
 
-# If your extensions are in another directory, add it here. If the directory
-# is relative to the documentation root, use os.path.abspath to make it
-# absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../sphinxext'))
+import numpy as np
+
+# Currently required to build scipy.fft docs
+os.environ['_SCIPY_BUILDING_DOC'] = 'True'
 
 # Check Sphinx version
 import sphinx
-if sphinx.__version__ < "0.5":
-    raise RuntimeError("Sphinx 0.5.dev or newer required")
+if sphinx.__version__ < "2.0":
+    raise RuntimeError("Sphinx 2.0 or newer required")
 
+needs_sphinx = '2.0'
+
+# Workaround for sphinx-doc/sphinx#6573
+# ua._Function should not be treated as an attribute
+from sphinx.util import inspect
+import scipy._lib.uarray as ua
+from scipy.stats._distn_infrastructure import rv_generic  # noqa: E402
+from scipy.stats._multivariate import multi_rv_generic  # noqa: E402
+old_isdesc = inspect.isdescriptor
+inspect.isdescriptor = (lambda obj: old_isdesc(obj)
+                        and not isinstance(obj, ua._Function))
 
 # -----------------------------------------------------------------------------
 # General configuration
@@ -19,15 +32,35 @@ if sphinx.__version__ < "0.5":
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'numpydoc',
-              'sphinx.ext.intersphinx', 'sphinx.ext.coverage', 'plot_directive']
 
-if sphinx.__version__ >= "0.7":
-    extensions.append('sphinx.ext.autosummary')
-else:
-    extensions.append('autosummary')
-    extensions.append('only_directives')
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
+import numpydoc.docscrape as np_docscrape  # noqa:E402
+
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.coverage',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.intersphinx',
+    'numpydoc',
+    'sphinx_design',
+    'scipyoptdoc',
+    'doi_role',
+    'matplotlib.sphinxext.plot_directive',
+]
+
+# Determine if the matplotlib has a recent enough version of the
+# plot_directive.
+from matplotlib.sphinxext import plot_directive
+if plot_directive.__version__ < 2:
+    raise RuntimeError("You need a recent enough version of matplotlib")
+# Do some matplotlib config in case users have a matplotlibrc that will break
+# things
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+plt.ioff()
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -35,29 +68,25 @@ templates_path = ['_templates']
 # The suffix of source filenames.
 source_suffix = '.rst'
 
-# The master toctree document.
+# The main toctree document.
 master_doc = 'index'
 
 # General substitutions.
 project = 'SciPy'
-copyright = '2008-2009, The Scipy community'
+copyright = '2008-%s, The SciPy community' % date.today().year
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
-#
 import scipy
-# The short X.Y version (including the .devXXXX suffix if present)
-version = re.sub(r'^(\d+\.\d+)\.\d+(.*)', r'\1\2', scipy.__version__)
-if 'dev' in version:
-    # retain the .dev suffix, but clean it up
-    version = re.sub(r'(\.dev\d*).*?$', r'\1', version)
-else:
-    # strip all other suffixes
-    version = re.sub(r'^(\d+\.\d+).*?$', r'\1', version)
-# The full version, including alpha/beta/rc tags.
+version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
 release = scipy.__version__
 
-print "Scipy (VERSION %s) (RELEASE %s)" % (version, release)
+if os.environ.get('CIRCLE_JOB', False) and \
+        os.environ.get('CIRCLE_BRANCH', '') != 'main':
+    version = os.environ['CIRCLE_BRANCH']
+    release = version
+
+print("%s (VERSION %s)" % (project, version))
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -84,138 +113,127 @@ add_function_parentheses = False
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
-show_authors = False
+# show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+# pygments_style = 'sphinx'
 
+# Ensure all our internal links work
+nitpicky = True
+nitpick_ignore = [
+    # This ignores errors for classes (OptimizeResults, sparse.dok_matrix)
+    # which inherit methods from `dict`. missing references to builtins get
+    # ignored by default (see https://github.com/sphinx-doc/sphinx/pull/7254),
+    # but that fix doesn't work for inherited methods.
+    ("py:class", "a shallow copy of D"),
+    ("py:class", "a set-like object providing a view on D's keys"),
+    ("py:class", "a set-like object providing a view on D's items"),
+    ("py:class", "an object providing a view on D's values"),
+    ("py:class", "None.  Remove all items from D."),
+    ("py:class", "(k, v), remove and return some (key, value) pair as a"),
+    ("py:class", "None.  Update D from dict/iterable E and F."),
+    ("py:class", "v, remove specified key and return the corresponding value."),
+]
+
+exclude_patterns = [  # glob-style
+
+]
+
+# be strict about warnings in our examples, we should write clean code
+# (exceptions permitted for pedagogical purposes below)
+warnings.resetwarnings()
+warnings.filterwarnings('error')
+# allow these and show them
+warnings.filterwarnings('default', module='sphinx')  # internal warnings
+# global weird ones that can be safely ignored
+for key in (
+        r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
+        r"distutils Version",  # distutils
+        ):
+    warnings.filterwarnings(  # deal with other modules having bad imports
+        'ignore', message=".*" + key, category=DeprecationWarning)
+warnings.filterwarnings(  # matplotlib<->pyparsing issue
+    'ignore', message="Exception creating Regex for oneOf.*",
+    category=SyntaxWarning)
+# warnings in examples (mostly) that we allow
+# TODO: eventually these should be eliminated!
+for key in (
+        'invalid escape sequence',  # numpydoc 0.8 has some bad escape chars
+        'The integral is probably divergent',  # stats.mielke example
+        'underflow encountered in square',  # signal.filtfilt underflow
+        'underflow encountered in multiply',  # scipy.spatial.HalfspaceIntersection
+        'underflow encountered in nextafter',  # tuterial/interpolate.rst
+        # stats.skewnorm, stats.norminvgauss, stats.gaussian_kde,
+        # tutorial/stats.rst (twice):
+        'underflow encountered in exp',
+        ):
+    warnings.filterwarnings(
+        'once', message='.*' + key)
 
 # -----------------------------------------------------------------------------
 # HTML output
 # -----------------------------------------------------------------------------
 
-# The style sheet to use for HTML and HTML Help pages. A file of that name
-# must exist either in Sphinx' static/ path, or in one of the custom paths
-# given in html_static_path.
-html_style = 'scipy.css'
+html_theme = 'pydata_sphinx_theme'
 
-# The name for this set of Sphinx documents.  If None, it defaults to
-# "<project> v<release> documentation".
-html_title = "%s v%s Reference Guide (DRAFT)" % (project, version)
+html_logo = '_static/logo.svg'
+html_favicon = '_static/favicon.ico'
 
-# The name of an image file (within the static path) to place at the top of
-# the sidebar.
-html_logo = '_static/scipyshiny_small.png'
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
-
-# If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
-html_last_updated_fmt = '%b %d, %Y'
-
-# Correct index page
-#html_index = "index"
-
-# If true, SmartyPants will be used to convert quotes and dashes to
-# typographically correct entities.
-#html_use_smartypants = True
-
-# Custom sidebar templates, maps document names to template names.
-html_sidebars = {
-    'index': 'indexsidebar.html'
+html_theme_options = {
+  "github_url": "https://github.com/scipy/scipy",
+  "twitter_url": "https://twitter.com/SciPy_team",
+  "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
+  "switcher": {
+      "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
+      "version_match": version,
+  }
 }
 
-# Additional templates that should be rendered to pages, maps page names to
-# template names.
-html_additional_pages = {}
+if 'dev' in version:
+    html_theme_options["switcher"]["version_match"] = "dev"
 
-# If false, no module index is generated.
-html_use_modindex = True
+if 'versionwarning' in tags:
+    # Specific to docs.scipy.org deployment.
+    # See https://github.com/scipy/docs.scipy.org/blob/main/_static/versionwarning.js_t
+    src = ('var script = document.createElement("script");\n'
+           'script.type = "text/javascript";\n'
+           'script.src = "/doc/_static/versionwarning.js";\n'
+           'document.head.appendChild(script);');
+    html_context = {
+        'VERSIONCHECK_JS': src
+    }
+    html_js_files = ['versioncheck.js']
 
-# If true, the reST sources are included in the HTML build as _sources/<name>.
-#html_copy_source = True
+html_title = "%s v%s Manual" % (project, version)
+html_static_path = ['_static']
+html_last_updated_fmt = '%b %d, %Y'
 
-# If true, an OpenSearch description file will be output, and all pages will
-# contain a <link> tag referring to it.  The value of this option must be the
-# base URL from which the finished HTML is served.
-#html_use_opensearch = ''
-
-# If nonempty, this is the file name suffix for HTML files (e.g. ".html").
-html_file_suffix = '.html'
-
-# Output file base name for HTML help builder.
-htmlhelp_basename = 'scipy'
-
-# Pngmath should try to align formulas properly
-pngmath_use_preview = True
-
-
-# -----------------------------------------------------------------------------
-# LaTeX output
-# -----------------------------------------------------------------------------
-
-# The paper size ('letter' or 'a4').
-#latex_paper_size = 'letter'
-
-# The font size ('10pt', '11pt' or '12pt').
-#latex_font_size = '10pt'
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title, author, document class [howto/manual]).
-_stdauthor = 'Written by the SciPy community'
-latex_documents = [
-  ('index', 'scipy-ref.tex', 'SciPy Reference Guide', _stdauthor, 'manual'),
-#  ('user/index', 'scipy-user.tex', 'SciPy User Guide',
-#   _stdauthor, 'manual'),
+html_css_files = [
+    "scipy.css",
 ]
 
-# The name of an image file (relative to this directory) to place at the top of
-# the title page.
-#latex_logo = None
+# html_additional_pages = {
+#     'index': 'indexcontent.html',
+# }
+html_additional_pages = {}
+html_use_modindex = True
+html_domain_indices = False
+html_copy_source = False
+html_file_suffix = '.html'
 
-# For "manual" documents, if this is true, then toplevel headings are parts,
-# not chapters.
-#latex_use_parts = False
+htmlhelp_basename = 'scipy'
 
-# Additional stuff for the LaTeX preamble.
-latex_preamble = r'''
-\usepackage{amsmath}
-\DeclareUnicodeCharacter{00A0}{\nobreakspace}
-
-% In the parameters section, place a newline after the Parameters
-% header
-\usepackage{expdlist}
-\let\latexdescription=\description
-\def\description{\latexdescription{}{} \breaklabel}
-
-% Make Examples/etc section headers smaller and more compact
-\makeatletter
-\titleformat{\paragraph}{\normalsize\py@HeaderFamily}%
-            {\py@TitleColor}{0em}{\py@TitleColor}{\py@NormalColor}
-\titlespacing*{\paragraph}{0pt}{1ex}{0pt}
-\makeatother
-
-% Fix footer/header
-\renewcommand{\chaptermark}[1]{\markboth{\MakeUppercase{\thechapter.\ #1}}{}}
-\renewcommand{\sectionmark}[1]{\markright{\MakeUppercase{\thesection.\ #1}}}
-'''
-
-# Documents to append as an appendix to all manuals.
-#latex_appendices = []
-
-# If false, no module index is generated.
-latex_use_modindex = False
-
+mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
 
 # -----------------------------------------------------------------------------
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
-        'http://docs.python.org/dev': None,
-        'http://docs.scipy.org/doc/numpy': None,
+    'python': ('https://docs.python.org/3', None),
+    'numpy': ('https://numpy.org/devdocs', None),
+    'neps': ('https://numpy.org/neps', None),
+    'matplotlib': ('https://matplotlib.org/stable', None),
+    'asv': ('https://asv.readthedocs.io/en/stable/', None),
 }
 
 
@@ -228,14 +246,36 @@ phantom_import_file = 'dump.xml'
 
 # Generate plots for example sections
 numpydoc_use_plots = True
+np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
+    '__call__', '__mul__', '__getitem__', '__len__',
+]
 
 # -----------------------------------------------------------------------------
 # Autosummary
 # -----------------------------------------------------------------------------
 
-if sphinx.__version__ >= "0.7": 
-    import glob
-    autosummary_generate = glob.glob("*.rst")
+autosummary_generate = True
+
+# maps functions with a name same as a class name that is indistinguishable
+# Ex: scipy.signal.czt and scipy.signal.CZT or scipy.odr.odr and scipy.odr.ODR
+# Otherwise, the stubs are overwritten when the name is same for
+# OS (like MacOS) which has a filesystem that ignores the case
+# See https://github.com/sphinx-doc/sphinx/pull/7927
+autosummary_filename_map = {
+    "scipy.odr.odr": "odr-function",
+    "scipy.signal.czt": "czt-function",
+}
+
+
+# -----------------------------------------------------------------------------
+# Autodoc
+# -----------------------------------------------------------------------------
+
+autodoc_default_options = {
+    'inherited-members': None,
+}
+autodoc_typehints = 'none'
+
 
 # -----------------------------------------------------------------------------
 # Coverage checker
@@ -255,28 +295,37 @@ coverage_ignore_c_items = {}
 
 
 #------------------------------------------------------------------------------
-# Plot
+# Matplotlib plot_directive options
 #------------------------------------------------------------------------------
+
 plot_pre_code = """
+import warnings
+for key in (
+        'gilbrat'  # misspelling for gibrat and has been deprecated
+        'scipy.misc'  # scipy.misc deprecated in v1.10.0; use scipy.datasets
+        ):
+    warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
+
 import numpy as np
-import scipy as sp
 np.random.seed(123)
 """
 plot_include_source = True
-plot_formats = [('png', 100), 'pdf']
+plot_formats = [('png', 96)]
 plot_html_show_formats = False
+plot_html_show_source_link = False
 
 import math
 phi = (math.sqrt(5) + 1)/2
 
-import matplotlib
-matplotlib.rcParams.update({
-    'font.size': 8,
-    'axes.titlesize': 8,
-    'axes.labelsize': 8,
-    'xtick.labelsize': 8,
-    'ytick.labelsize': 8,
-    'legend.fontsize': 8,
+font_size = 13*72/96.0  # 13 px
+
+plot_rcparams = {
+    'font.size': font_size,
+    'axes.titlesize': font_size,
+    'axes.labelsize': font_size,
+    'xtick.labelsize': font_size,
+    'ytick.labelsize': font_size,
+    'legend.fontsize': font_size,
     'figure.figsize': (3*phi, 3),
     'figure.subplot.bottom': 0.2,
     'figure.subplot.left': 0.2,
@@ -284,4 +333,88 @@ matplotlib.rcParams.update({
     'figure.subplot.top': 0.85,
     'figure.subplot.wspace': 0.4,
     'text.usetex': False,
-})
+}
+
+# -----------------------------------------------------------------------------
+# Source code links
+# -----------------------------------------------------------------------------
+
+import re
+import inspect
+from os.path import relpath, dirname
+
+for name in ['sphinx.ext.linkcode', 'linkcode', 'numpydoc.linkcode']:
+    try:
+        __import__(name)
+        extensions.append(name)
+        break
+    except ImportError:
+        pass
+else:
+    print("NOTE: linkcode extension not found -- no links to source generated")
+
+def linkcode_resolve(domain, info):
+    """
+    Determine the URL corresponding to Python object
+    """
+    if domain != 'py':
+        return None
+
+    modname = info['module']
+    fullname = info['fullname']
+
+    submod = sys.modules.get(modname)
+    if submod is None:
+        return None
+
+    obj = submod
+    for part in fullname.split('.'):
+        try:
+            obj = getattr(obj, part)
+        except Exception:
+            return None
+
+    # Use the original function object if it is wrapped.
+    obj = getattr(obj, "__wrapped__", obj)
+    # SciPy's distributions are instances of *_gen. Point to this
+    # class since it contains the implementation of all the methods.
+    if isinstance(obj, (rv_generic, multi_rv_generic)):
+        obj = obj.__class__
+    try:
+        fn = inspect.getsourcefile(obj)
+    except Exception:
+        fn = None
+    if not fn:
+        try:
+            fn = inspect.getsourcefile(sys.modules[obj.__module__])
+        except Exception:
+            fn = None
+    if not fn:
+        return None
+
+    try:
+        source, lineno = inspect.getsourcelines(obj)
+    except Exception:
+        lineno = None
+
+    if lineno:
+        linespec = "#L%d-L%d" % (lineno, lineno + len(source) - 1)
+    else:
+        linespec = ""
+
+    startdir = os.path.abspath(os.path.join(dirname(scipy.__file__), '..'))
+    fn = relpath(fn, start=startdir).replace(os.path.sep, '/')
+
+    if fn.startswith('scipy/'):
+        m = re.match(r'^.*dev0\+([a-f0-9]+)$', scipy.__version__)
+        if m:
+            return "https://github.com/scipy/scipy/blob/%s/%s%s" % (
+                m.group(1), fn, linespec)
+        elif 'dev' in scipy.__version__:
+            return "https://github.com/scipy/scipy/blob/main/%s%s" % (
+                fn, linespec)
+        else:
+            return "https://github.com/scipy/scipy/blob/v%s/%s%s" % (
+                scipy.__version__, fn, linespec)
+    else:
+        return None

@@ -1,6 +1,8 @@
-      subroutine fpgrsp(ifsu,ifsv,ifbu,ifbv,iback,u,mu,v,mv,r,mr,dr,
-     * iop0,iop1,tu,nu,tv,nv,p,c,nc,sq,fp,fpu,fpv,mm,mvnu,spu,spv,
-     * right,q,au,av1,av2,bu,bv,a0,a1,b0,b1,c0,c1,cosi,nru,nrv)
+      recursive subroutine fpgrsp(ifsu,ifsv,ifbu,ifbv,iback,u,mu,v,
+     * mv,r,mr,dr,iop0,iop1,tu,nu,tv,nv,p,c,nc,sq,fp,fpu,fpv,mm,
+     * mvnu,spu,spv,right,q,au,av1,av2,bu,bv,a0,a1,b0,b1,c0,c1,
+     * cosi,nru,nrv)
+      implicit none
 c  ..
 c  ..scalar arguments..
       real*8 p,sq,fp
@@ -345,7 +347,7 @@ c  we update the sum of squared residuals.
  390    do 395 j=1,mvv
           sq = sq+right(j)**2
  395    continue
- 400    if(nrold.eq.number) go to 420
+        if(nrold.eq.number) go to 420
  410    nrold = n1
         n1 = n1+1
         go to 250
@@ -384,7 +386,7 @@ c  fetch a new row of matrix (bv).
         do 460 j=1,5
           h(j) = bv(n1,j)*pinv
  460    continue
-c  find the appropiate row of g.
+c  find the appropriate row of g.
         do 465 j=1,nuu
           right(j) = 0.
  465    continue
@@ -400,7 +402,7 @@ c  fetch a new row of matrix (spv)
         do 490 j=1,4
           h(j) = spv(it,j)
  490    continue
-c  find the appropiate row of g.
+c  find the appropriate row of g.
         l = it
         do 500 j=1,nuu
           right(j) = q(l)
@@ -623,7 +625,7 @@ c  main loop for the different grid points.
           ir = ir+1
 c  evaluate s(u,v) at the current grid point by making the sum of the
 c  cross products of the non-zero b-splines at (u,v), multiplied with
-c  the appropiate b-spline coefficients.
+c  the appropriate b-spline coefficients.
           term = 0.
           k1 = numu*nv4+numv
           do 920 l1=1,4

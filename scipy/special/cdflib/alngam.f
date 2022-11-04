@@ -105,6 +105,7 @@ C
 C     IF NECESSARY MAKE X AT LEAST 12 AND CARRY CORRECTION IN OFFSET
 C
 C
+      IF ((x.GT.12.0D0)) GO TO 90
       n = int(12.0D0-x)
       IF (.NOT. (n.GT.0)) GO TO 90
       prod = 1.0D0

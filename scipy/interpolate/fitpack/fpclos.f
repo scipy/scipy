@@ -1,5 +1,6 @@
-      subroutine fpclos(iopt,idim,m,u,mx,x,w,k,s,nest,tol,maxit,k1,k2,
-     * n,t,nc,c,fp,fpint,z,a1,a2,b,g1,g2,q,nrdata,ier)
+      recursive subroutine fpclos(iopt,idim,m,u,mx,x,w,k,s,nest,tol,
+     *  maxit,k1,k2,n,t,nc,c,fp,fpint,z,a1,a2,b,g1,g2,q,nrdata,ier)
+      implicit none
 c  ..
 c  ..scalar arguments..
       real*8 s,tol,fp
@@ -191,7 +192,7 @@ c            ! a1 '    !
 c        a = !    ' a2 !
 c            ! 0  '    !
 c  with a2 a n7 x k matrix and a1 a n10 x n10 upper triangular
-c  matrix of bandwith k+1 ( n10 = n7-k).
+c  matrix of bandwidth k+1 ( n10 = n7-k).
 c  initialization.
         do 65 i=1,nc
           z(i) = 0.

@@ -1,4 +1,4 @@
->>> sp.info(optimize.fmin)
+>>> np.info(optimize.fmin)
  fmin(func, x0, args=(), xtol=0.0001, ftol=0.0001, maxiter=None, maxfun=None,
       full_output=0, disp=1, retall=0, callback=None)
 

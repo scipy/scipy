@@ -1,18 +1,27 @@
-__all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq']
+# This file is not meant for public use and will be removed in SciPy v2.0.0.
+# Use the `scipy.fftpack` namespace for importing the functions
+# included below.
 
-from numpy import array
-from numpy.fft.helper import fftshift, ifftshift, fftfreq
+import warnings
+from . import _helper
 
-def rfftfreq(n, d=1.0):
-    """DFT sample frequencies (for usage with rfft, irfft).
+__all__ = [  # noqa: F822
+    'fftshift', 'ifftshift', 'fftfreq', 'rfftfreq', 'next_fast_len'
+]
 
-    The returned float array contains the frequency bins in
-    cycles/unit (with zero at the start) given a window length n and a
-    sample spacing d:
 
-      f = [0,1,1,2,2,...,n/2-1,n/2-1,n/2]/(d*n)   if n is even
-      f = [0,1,1,2,2,...,n/2-1,n/2-1,n/2,n/2]/(d*n)   if n is odd
-    """
-    if not isinstance(n, int) or n < 0:
-        raise ValueError("n = %s is not valid.  n must be a nonnegative integer." % n)
-    return (array(range(1,n+1),dtype=int)//2)/float(n*d)
+def __dir__():
+    return __all__
+
+
+def __getattr__(name):
+    if name not in __all__:
+        raise AttributeError(
+            "scipy.fftpack.helper is deprecated and has no attribute "
+            f"{name}. Try looking in scipy.fftpack instead.")
+
+    warnings.warn(f"Please use `{name}` from the `scipy.fftpack` namespace, "
+                  "the `scipy.fftpack.helper` namespace is deprecated.",
+                  category=DeprecationWarning, stacklevel=2)
+
+    return getattr(_helper, name)

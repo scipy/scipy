@@ -2,10 +2,10 @@ C
 C      ALGORITHM 733, COLLECTED ALGORITHMS FROM ACM.
 C      TRANSACTIONS ON MATHEMATICAL SOFTWARE,
 C      VOL. 20, NO. 3, SEPTEMBER, 1994, PP. 262-281.
-C      http://doi.acm.org/10.1145/192115.192124
+C      https://doi.org/10.1145/192115.192124
 C
 C
-C      http://permalink.gmane.org/gmane.comp.python.scientific.devel/6725
+C      https://web.archive.org/web/20170106155705/http://permalink.gmane.org/gmane.comp.python.scientific.devel/6725
 C      ------
 C      From: Deborah Cotton <cotton@hq.acm.org>
 C      Date: Fri, 14 Sep 2007 12:35:55 -0500
@@ -35,7 +35,10 @@ C
 ************************************************************************
 
       SUBROUTINE slsqp (m, meq, la, n, x, xl, xu, f, c, g, a,
-     *                  acc, iter, mode, w, l_w, jw, l_jw)
+     *                  acc, iter, mode, w, l_w, jw, l_jw,
+     *                  alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+     *                  iexact, incons, ireset, itermx, line, 
+     *                  n1, n2, n3)
 
 C   SLSQP       S EQUENTIAL  L EAST  SQ UARES  P ROGRAMMING
 C            TO SOLVE GENERAL NONLINEAR OPTIMIZATION PROBLEMS
@@ -75,7 +78,9 @@ C*  * X()            X() STORES THE CURRENT ITERATE OF THE N VECTOR X  *
 C*                   ON ENTRY X() MUST BE INITIALIZED. ON EXIT X()     *
 C*                   STORES THE SOLUTION VECTOR X IF MODE = 0.         *
 C*    XL()           XL() STORES AN N VECTOR OF LOWER BOUNDS XL TO X.  *
+C*                   ELEMENTS MAY BE NAN TO INDICATE NO LOWER BOUND.   *
 C*    XU()           XU() STORES AN N VECTOR OF UPPER BOUNDS XU TO X.  *
+C*                   ELEMENTS MAY BE NAN TO INDICATE NO UPPER BOUND.   *
 C*    F              IS THE VALUE OF THE OBJECTIVE FUNCTION.           *
 C*    C()            C() STORES THE M VECTOR C OF CONSTRAINTS,         *
 C*                   EQUALITY CONSTRAINTS (IF ANY) FIRST.              *
@@ -110,7 +115,7 @@ C*                   ON EXIT : REQUIRED ACCURACY FOR SOLUTION OBTAINED *
 C*                1: FUNCTION EVALUATION, (F&C)                        *
 C*                                                                     *
 C*                   FAILURE MODES:                                    *
-C*                2: NUMBER OF EQUALITY CONTRAINTS LARGER THAN N       *
+C*                2: NUMBER OF EQUALITY CONSTRAINTS LARGER THAN N      *
 C*                3: MORE THAN 3*N ITERATIONS IN LSQ SUBPROBLEM        *
 C*                4: INEQUALITY CONSTRAINTS INCOMPATIBLE               *
 C*                5: SINGULAR MATRIX E IN LSQ SUBPROBLEM               *
@@ -196,7 +201,7 @@ C*  which should be referenced if the user publishes results of SLSQP  *
 C*                                                                     *
 C*  DATE:           APRIL - OCTOBER, 1981.                             *
 C*  STATUS:         DECEMBER, 31-ST, 1984.                             *
-C*  STATUS:         MARCH   , 21-ST, 1987, REVISED TO FORTAN 77        *
+C*  STATUS:         MARCH   , 21-ST, 1987, REVISED TO FORTRAN 77       *
 C*  STATUS:         MARCH   , 20-th, 1989, REVISED TO MS-FORTRAN       *
 C*  STATUS:         APRIL   , 14-th, 1989, HESSE   in-line coded       *
 C*  STATUS:         FEBRUARY, 28-th, 1991, FORTRAN/2 Version 1.04      *
@@ -212,10 +217,14 @@ C*                                                                     *
 C***********************************************************************
 
       INTEGER          il, im, ir, is, iter, iu, iv, iw, ix, l_w, l_jw,
-     *                 jw(l_jw), la, m, meq, mineq, mode, n, n1
+     *                 jw(l_jw), la, m, meq, mineq, mode, n
 
       DOUBLE PRECISION acc, a(la,n+1), c(la), f, g(n+1),
      *                 x(n), xl(n), xu(n), w(l_w)
+
+      INTEGER          iexact, incons, ireset, itermx, line, n1, n2, n3
+
+      DOUBLE PRECISION alpha, f0, gs, h1, h2, h3, h4, t, t0, tol
 
 c     dim(W) =         N1*(N1+1) + MEQ*(N1+1) + MINEQ*(N1+1)  for LSQ
 c                    +(N1-MEQ+1)*(MINEQ+2) + 2*MINEQ          for LSI
@@ -252,12 +261,18 @@ C   PREPARE DATA FOR CALLING SQPBDY  -  INITIAL ADDRESSES IN W
       iw = iv + n1
 
       CALL slsqpb  (m, meq, la, n, x, xl, xu, f, c, g, a, acc, iter,
-     * mode, w(ir), w(il), w(ix), w(im), w(is), w(iu), w(iv), w(iw), jw)
-
+     * mode, w(ir), w(il), w(ix), w(im), w(is), w(iu), w(iv), w(iw), jw,
+     * alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+     * iexact, incons, ireset, itermx, line, 
+     * n1, n2, n3)
+ 
       END
 
       SUBROUTINE slsqpb (m, meq, la, n, x, xl, xu, f, c, g, a, acc,
-     *                   iter, mode, r, l, x0, mu, s, u, v, w, iw)
+     *                   iter, mode, r, l, x0, mu, s, u, v, w, iw,
+     *                   alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+     *                   iexact, incons, ireset, itermx, line, 
+     *                   n1, n2, n3)
 
 C   NONLINEAR PROGRAMMING BY SOLVING SEQUENTIALLY QUADRATIC PROGRAMS
 
@@ -267,6 +282,7 @@ C                      BODY SUBROUTINE FOR SLSQP
 
       INTEGER          iw(*), i, iexact, incons, ireset, iter, itermx,
      *                 k, j, la, line, m, meq, mode, n, n1, n2, n3
+      LOGICAL          badlin
 
       DOUBLE PRECISION a(la,n+1), c(la), g(n+1), l((n+1)*(n+2)/2),
      *                 mu(la), r(m+n+n+2), s(n+1), u(n+1), v(n+1), w(*),
@@ -280,11 +296,12 @@ c                     +(N1-MEQ+1)*(MINEQ+2) + 2*MINEQ
 c                     +(N1+MINEQ)*(N1-MEQ) + 2*MEQ + N1       for LSEI
 c                      with MINEQ = M - MEQ + 2*N1  &  N1 = N+1
 
-      SAVE             alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-     *                 iexact, incons, ireset, itermx, line, n1, n2, n3
-
       DATA             ZERO /0.0d0/, one /1.0d0/, alfmin /1.0d-1/,
      *                 hun /1.0d+2/, ten /1.0d+1/, two /2.0d0/
+
+C     The badlin flag keeps track whether the SQP problem on the current
+C     iteration was inconsistent or not.
+      badlin = .false.
 
       IF (mode) 260, 100, 220
 
@@ -334,13 +351,19 @@ C   SEARCH DIRECTION AS SOLUTION OF QP - SUBPROBLEM
       CALL lsq (m, meq, n , n3, la, l, g, a, c, u, v, s, r, w, iw, mode)
 
 C   AUGMENTED PROBLEM FOR INCONSISTENT LINEARIZATION
+C
+C   If it turns out that the original SQP problem is inconsistent,
+C   disallow termination with convergence on this iteration,
+C   even if the augmented problem was solved.
 
+      badlin = .false.
       IF (mode.EQ.6) THEN
           IF (n.EQ.meq) THEN
               mode = 4
           ENDIF
       ENDIF
       IF (mode.EQ.4) THEN
+          badlin = .true.
           DO 140 j=1,m
              IF (j.LE.meq) THEN
                  a(j,n1) = -c(j)
@@ -397,7 +420,8 @@ C   UPDATE MULTIPLIERS FOR L1-TEST
 C   CHECK CONVERGENCE
 
       mode = 0
-      IF (h1.LT.acc .AND. h2.LT.acc) GO TO 330
+      IF (h1.LT.acc .AND. h2.LT.acc .AND. .NOT. badlin
+     *     .AND. f .EQ. f) GO TO 330
       h1 = ZERO
       DO 180 j=1,m
          IF (j.LE.meq) THEN
@@ -468,7 +492,8 @@ C   CHECK CONVERGENCE
          ENDIF
          h3 = h3 + MAX(-c(j),h1)
   250 CONTINUE
-      IF ((ABS(f-f0).LT.acc .OR. dnrm2_(n,s,1).LT.acc) .AND. h3.LT.acc)
+      IF ((ABS(f-f0).LT.acc .OR. dnrm2_(n,s,1).LT.acc) .AND. h3.LT.acc
+     *     .AND. .NOT. badlin .AND. f .EQ. f)
      *   THEN
             mode = 0
          ELSE
@@ -479,7 +504,17 @@ C   CHECK CONVERGENCE
 C   CHECK relaxed CONVERGENCE in case of positive directional derivative
 
   255 CONTINUE
-      IF ((ABS(f-f0).LT.tol .OR. dnrm2_(n,s,1).LT.tol) .AND. h3.LT.tol)
+      h3 = ZERO
+      DO 256 j=1,m
+         IF (j.LE.meq) THEN
+             h1 = c(j)
+         ELSE
+             h1 = ZERO
+         ENDIF
+         h3 = h3 + MAX(-c(j),h1)
+  256 CONTINUE
+      IF ((ABS(f-f0).LT.tol .OR. dnrm2_(n,s,1).LT.tol) .AND. h3.LT.tol
+     *     .AND. .NOT. badlin .AND. f .EQ. f)
      *   THEN
             mode = 0
          ELSE
@@ -537,6 +572,10 @@ C   L*D*L'*S
           CALL dscal_sl(n, h4, u, 1)
           CALL daxpy_sl(n, one-h4, v, 1, u, 1)
       ENDIF
+      IF (h1.EQ.0 .or. h2.EQ.0) THEN
+C         Singular update: reset hessian.
+          GO TO 110
+      end if
       CALL ldl(n, l, u, +one/h1, v)
       CALL ldl(n, l, v, -one/h2, u)
 
@@ -596,7 +635,8 @@ c     revised                        march 1989
      .                 diag,ZERO,one,ddot_sl,xnorm
 
       INTEGER          jw(*),i,ic,id,ie,IF,ig,ih,il,im,ip,iu,iw,
-     .                 i1,i2,i3,i4,la,m,meq,mineq,mode,m1,n,nl,n1,n2,n3
+     .     i1,i2,i3,i4,la,m,meq,mineq,mode,m1,n,nl,n1,n2,n3,
+     .     nancnt,j
 
       DIMENSION        a(la,n), b(la), g(n), l(nl),
      .                 w(*), x(n), xl(n), xu(n), y(m+n+n)
@@ -667,9 +707,12 @@ C  RECOVER VECTOR D FROM UPPER PART OF B
 
       ig = id + meq
 
-      IF (mineq .GT. 0) THEN
-
 C  RECOVER MATRIX G FROM LOWER PART OF A
+C  The matrix G(mineq+2*n,m1) is stored at w(ig)
+C  Not all rows will be filled if some of the upper/lower
+C  bounds are unbounded.
+
+      IF (mineq .GT. 0) THEN
 
           DO 30 i=1,mineq
               CALL dcopy_ (n, a(meq+i,1), la, w(ig-1+i), m1)
@@ -677,57 +720,76 @@ C  RECOVER MATRIX G FROM LOWER PART OF A
 
       ENDIF
 
-C  AUGMENT MATRIX G BY +I AND -I
-
-      ip = ig + mineq
-      DO 40 i=1,n
-         w(ip-1+i) = ZERO
-         CALL dcopy_ (n, w(ip-1+i), 0, w(ip-1+i), m1)
-   40 CONTINUE
-      w(ip) = one
-      CALL dcopy_ (n, w(ip), 0, w(ip), m1+1)
-
-      im = ip + n
-      DO 50 i=1,n
-         w(im-1+i) = ZERO
-         CALL dcopy_ (n, w(im-1+i), 0, w(im-1+i), m1)
-   50 CONTINUE
-      w(im) = -one
-      CALL dcopy_ (n, w(im), 0, w(im), m1+1)
-
       ih = ig + m1*n
+      iw = ih + mineq + 2*n
 
       IF (mineq .GT. 0) THEN
 
 C  RECOVER H FROM LOWER PART OF B
+C  The vector H(mineq+2*n) is stored at w(ih)
 
           CALL dcopy_ (mineq, b(meq+1), 1, w(ih), 1)
           CALL dscal_sl (mineq,       - one, w(ih), 1)
 
       ENDIF
 
+C  AUGMENT MATRIX G BY +I AND -I, AND,
 C  AUGMENT VECTOR H BY XL AND XU
+C  NaN value indicates no bound
 
+      ip = ig + mineq
       il = ih + mineq
-      CALL dcopy_ (n, xl, 1, w(il), 1)
-      iu = il + n
-      CALL dcopy_ (n, xu, 1, w(iu), 1)
-      CALL dscal_sl (n, - one, w(iu), 1)
+      nancnt = 0
 
-      iw = iu + n
+      DO 40 i=1,n
+         if (xl(i).eq.xl(i)) then
+            w(il) = xl(i)
+            do 41 j=1,n
+               w(ip + m1*(j-1)) = 0
+ 41         continue
+            w(ip + m1*(i-1)) = 1
+            ip = ip + 1
+            il = il + 1
+         else
+            nancnt = nancnt + 1
+         end if
+   40 CONTINUE
+
+      DO 50 i=1,n
+         if (xu(i).eq.xu(i)) then
+            w(il) = -xu(i)
+            do 51 j=1,n
+               w(ip + m1*(j-1)) = 0
+ 51         continue
+            w(ip + m1*(i-1)) = -1
+            ip = ip + 1
+            il = il + 1
+         else
+            nancnt = nancnt + 1
+         end if
+ 50   CONTINUE
 
       CALL lsei (w(ic), w(id), w(ie), w(IF), w(ig), w(ih), MAX(1,meq),
-     .           meq, n, n, m1, m1, n, x, xnorm, w(iw), jw, mode)
+     .           meq, n, n, m1, m1-nancnt, n, x, xnorm, w(iw), jw, mode)
 
       IF (mode .EQ. 1) THEN
 
-c   restore Lagrange multipliers
+c   restore Lagrange multipliers (only for user-defined variables)
 
           CALL dcopy_ (m,  w(iw),     1, y(1),      1)
-          CALL dcopy_ (n3, w(iw+m),   1, y(m+1),    1)
-          CALL dcopy_ (n3, w(iw+m+n), 1, y(m+n3+1), 1)
+
+c   set rest of the multipliers to nan (they are not used)
+
+          IF (n3 .GT. 0) THEN
+             y(m+1) = 0
+             y(m+1) = 0 / y(m+1)
+             do 60 i=m+2,m+n3+n3
+                y(i) = y(m+1)
+ 60          continue
+          ENDIF
 
       ENDIF
+      call bound(n, x, xl, xu)
 
 C   END OF SUBROUTINE LSQ
 
@@ -781,7 +843,7 @@ C     20.3.1987, DIETER KRAFT, DFVLR OBERPFAFFENHOFEN
       INTEGER          jw(*),i,ie,IF,ig,iw,j,k,krank,l,lc,LE,lg,
      .                 mc,mc1,me,mg,mode,n
       DOUBLE PRECISION c(lc,n),e(LE,n),g(lg,n),d(lc),f(LE),h(lg),x(n),
-     .                 w(*),t,ddot_sl,xnrm,dnrm2_,epmach,ZERO
+     .                 w(*),t,ddot_sl,xnrm,rnorm(1),dnrm2_,epmach,ZERO
       DATA             epmach/2.22d-16/,ZERO/0.0d+00/
 
       mode=2
@@ -831,7 +893,10 @@ C  SOLVE LS WITHOUT INEQUALITY CONSTRAINTS
       mode=7
       k=MAX(LE,n)
       t=SQRT(epmach)
-      CALL hfti (w(ie),me,me,l,w(IF),k,1,t,krank,xnrm,w,w(l+1),jw)
+      CALL hfti (w(ie),me,me,l,w(IF),k,1,t,krank,rnorm,w,w(l+1),jw)
+C  HFTI IS MORE GENERIC, BUT WE ONLY CALL IT WITH NB=1, SO RETRIEVE THE
+C  SINGLE VALUE WE NEED FROM RNORM HERE
+      xnrm = rnorm(1)
       CALL dcopy_(l,w(IF),1,x(mc1),1)
       IF(krank.NE.l)                   GOTO 75
       mode=1
@@ -922,7 +987,7 @@ C  TRANSFORM G AND H TO GET LEAST DISTANCE PROBLEM
       mode=5
       DO 30 i=1,mg
           DO 20 j=1,n
-              IF (ABS(e(j,j)).LT.epmach) GOTO 50
+              IF (.NOT.(ABS(e(j,j)).GE.epmach)) GOTO 50
    20         g(i,j)=(g(i,j)-ddot_sl(j-1,g(i,1),lg,e(1,j),1))/e(j,j)
    30     h(i)=h(i)-ddot_sl(n,g(i,1),lg,f,1)
 
@@ -1026,7 +1091,7 @@ C  SOLVE DUAL PROBLEM
 C  COMPUTE SOLUTION OF PRIMAL PROBLEM
 
       fac=one-ddot_sl(m,h,1,w(iy),1)
-      IF(diff(one+fac,one).LE.ZERO) GOTO 50
+      IF(.NOT.(diff(one+fac,one).GT.ZERO)) GOTO 50
       mode=1
       fac=one/fac
       DO 40 j=1,n
@@ -2110,3 +2175,16 @@ C        CLEAN-UP LOOP
    50 CONTINUE
       RETURN
       END
+
+      subroutine bound(n, x, xl, xu)
+      integer n, i
+      double precision x(n), xl(n), xu(n)
+      do i = 1, n
+C        Note that xl(i) and xu(i) may be NaN to indicate no bound
+         if(xl(i).eq.xl(i).and.x(i) < xl(i))then
+            x(i) = xl(i)
+         else if(xu(i).eq.xu(i).and.x(i) > xu(i))then
+            x(i) = xu(i)
+         end if
+      end do
+      end subroutine bound

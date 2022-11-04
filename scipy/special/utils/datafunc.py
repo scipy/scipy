@@ -2,13 +2,12 @@ import csv
 
 import numpy as np
 
+
 def parse_txt_data(filename):
     f = open(filename)
     try:
         reader = csv.reader(f, delimiter=',')
-        data = []
-        for row in reader:
-            data.append(map(float, row))
+        data = [list(map(float, row)) for row in reader]
         nc = len(data[0])
         for i in data:
             if not nc == len(i):
@@ -29,6 +28,7 @@ def parse_txt_data(filename):
 
     return np.array(data)
 
+
 def run_test(filename, funcs, args=[0]):
     nargs = len(args)
     if len(funcs) > 1 and nargs > 1:
@@ -44,21 +44,18 @@ def run_test(filename, funcs, args=[0]):
         x = [data[args[i]] for i in nargs]
         return f(*x)
     else:
-        y = []
-        i = 1
-        for f in funcs:
-            y.append(f(data[:, 0]) - data[:, i])
-            i += 1
+        y = [f(data[:, 0]) - data[:, idx + 1] for idx, f in enumerate(funcs)]
 
         return data[:, 0], y
+
 
 if __name__ == '__main__':
     from convert import DATA_DIR
     import os
 
-    data =[]
+    data = []
     for root, dirs, files in os.walk(DATA_DIR):
         for f in files:
             name = os.path.join(root, f)
-            print name
+            print(name)
             data.append(parse_txt_data(name))
