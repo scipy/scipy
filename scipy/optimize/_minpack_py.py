@@ -465,13 +465,18 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     if full_output:
         cov_x = None
         if info in LEASTSQ_SUCCESS:
-            perm = take(eye(n), retval[1]['ipvt'] - 1, 0)
+            # This was
+            # perm = take(eye(n), retval[1]['ipvt'] - 1, 0)
+            # r = triu(transpose(retval[1]['fjac'])[:n, :])
+            # R = dot(r, perm)
+            # cov_x = inv(dot(transpose(R), R))
+            # but the explicit dot product was not necessary and sometimes
+            # the result was not symmetric positive definite. See gh-4555.
+            perm = retval[1]['ipvt'] - 1
             r = triu(transpose(retval[1]['fjac'])[:n, :])
-            R = dot(r, perm)
             try:
-                # This was `cov_x = inv(dot(transpose(R), R))`, but sometimes
-                # the result was not symmetric positive definite. See gh-4555.
-                invR = inv(R)
+                invR = inv(r)
+                invR[perm] = invR[np.arange(len(perm))]
                 cov_x = invR @ invR.T
             except (LinAlgError, ValueError):
                 pass
