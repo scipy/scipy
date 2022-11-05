@@ -6,6 +6,7 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    transpose, zeros, prod, greater,
                    asarray, inf,
                    finfo, inexact, issubdtype, dtype)
+from scipy import linalg
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError, inv
 from scipy._lib._util import _asarray_validated, _lazywhere
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
@@ -473,10 +474,15 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             # but the explicit dot product was not necessary and sometimes
             # the result was not symmetric positive definite. See gh-4555.
             perm = retval[1]['ipvt'] - 1
+            n = len(perm)
             r = triu(transpose(retval[1]['fjac'])[:n, :])
+            inv_triu = linalg.get_lapack_funcs('trtri', (r,))
             try:
-                invR = inv(r)
-                invR[perm] = invR[np.arange(len(perm))]
+                # inverse of permuted matrix is a permuation of matrix inverse
+                invR, trtri_info = inv_triu(r)  # default: upper, non-unit diag
+                if trtri_info:
+                    raise LinAlgError(f'trtri returned info {trtri_info}')
+                invR[perm] = invR[np.arange(n)]
                 cov_x = invR @ invR.T
             except (LinAlgError, ValueError):
                 pass
