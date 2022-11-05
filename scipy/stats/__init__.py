@@ -173,6 +173,7 @@ Multivariate distributions
    random_correlation     -- random correlation matrices
    multivariate_t         -- Multivariate t-distribution
    multivariate_hypergeom -- Multivariate hypergeometric distribution
+   random_table           -- Distribution of random tables with given marginals
    uniform_direction      -- Uniform distribution on S(N-1)
 
 `scipy.stats.multivariate_normal` methods accept instances
@@ -226,6 +227,7 @@ Summary statistics
    kurtosis          -- Fisher or Pearson kurtosis
    mode              -- Modal value
    moment            -- Central moment
+   expectile         -- Expectile
    skew              -- Skewness
    kstat             --
    kstatvar          --
@@ -423,7 +425,7 @@ Directional statistical functions
 .. autosummary::
    :toctree: generated/
 
-   directionalmean
+   directional_stats
    circmean
    circvar
    circstd

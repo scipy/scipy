@@ -1806,6 +1806,10 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     xout : ndarray
         The time-evolution of the state-vector.
 
+    See Also
+    --------
+    lsim
+
     Notes
     -----
     This function uses `scipy.integrate.odeint` to solve the
@@ -1816,10 +1820,6 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     If (num, den) is passed in for ``system``, coefficients for both the
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
-
-    See Also
-    --------
-    lsim
 
     Examples
     --------
@@ -2394,7 +2394,7 @@ def step(system, X0=None, T=None, N=None):
     yout : 1D ndarray
         Step response of system.
 
-    See also
+    See Also
     --------
     scipy.signal.step2
 
@@ -2473,7 +2473,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     yout : 1D ndarray
         Step response of system.
 
-    See also
+    See Also
     --------
     scipy.signal.step
 

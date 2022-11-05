@@ -38,6 +38,14 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     coeffs : 1-D ndarray
         The filter coefficients.
 
+    See Also
+    --------
+    savgol_filter
+
+    Notes
+    -----
+    .. versionadded:: 0.14.0
+
     References
     ----------
     A. Savitzky, M. J. E. Golay, Smoothing and Differentiation of Data by
@@ -46,15 +54,6 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     Jianwen Luo, Kui Ying, and Jing Bai. 2005. Savitzky-Golay smoothing and
     differentiation filter for even number data. Signal Process.
     85, 7 (July 2005), 1429-1434.
-
-    See Also
-    --------
-    savgol_filter
-
-    Notes
-    -----
-
-    .. versionadded:: 0.14.0
 
     Examples
     --------

@@ -1,4 +1,4 @@
-# Regular CI for testing linux_aarch64 and macosx_arm64 natively
+# Regular CI for testing musllinux, linux_aarch64 and macosx_arm64 natively
 # This only runs if cirrus is not building wheels. The rationale is that
 # cibuildwheel also runs tests during the wheel build process, so there's no need
 # to have duplication.
@@ -36,6 +36,40 @@ linux_aarch64_test_task:
     python -m pip install pytest pooch
     
     python dev.py test
+
+
+musllinux_amd64_test_task:
+  container:
+    image: alpine
+    cpu: 8
+    memory: 32G
+
+  env:
+    PATH: $PWD:$PATH
+
+  setup_script: |
+    apk update
+    apk add openblas-dev python3 python3-dev openblas build-base gfortran git py3-pip
+    git submodule update --init
+
+    ln -sf $(which python3.10) python
+
+  pip_cache:
+    folder: ~/.cache/pip
+
+  python_dependencies_script: |
+      python -m pip install cython
+      python -m pip install -vvv --upgrade numpy    
+      python -m pip install meson ninja pybind11 pythran pytest
+      python -m pip install click rich_click doit pydevtool pooch
+
+  build_script: |
+    python dev.py build
+
+  test_script: |
+    # Don't run the ndimage tests because there's a segfault (gh17270)
+    set -xe -o
+    python dev.py test -- --ignore=scipy/ndimage/tests
 
 
 macos_arm64_test_task:

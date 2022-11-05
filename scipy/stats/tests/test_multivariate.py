@@ -26,7 +26,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest,
-                         uniform_direction)
+                         random_table, uniform_direction)
 from scipy.stats import _covariance, Covariance
 
 from scipy.integrate import romb
@@ -2544,6 +2544,225 @@ class TestMultivariateHypergeom:
                       [10.5, 15.5], 5)
         assert_raises(TypeError, multivariate_hypergeom.pmf, [5, 4],
                       [10, 15], 5.5)
+
+
+class TestRandomTable:
+    def test_process_parameters(self):
+        message = "`row` must be one-dimensional"
+        with pytest.raises(ValueError, match=message):
+            random_table([[1, 2]], [1, 2])
+
+        message = "`col` must be one-dimensional"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, 2], [[1, 2]])
+
+        message = "each element of `row` must be non-negative"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, -1], [1, 2])
+
+        message = "each element of `col` must be non-negative"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, 2], [1, -2])
+
+        message = "sums over `row` and `col` must be equal"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, 2], [1, 0])
+
+        message = "each element of `row` must be an integer"
+        with pytest.raises(ValueError, match=message):
+            random_table([2.1, 2.1], [1, 1, 2])
+
+        message = "each element of `col` must be an integer"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, 2], [1.1, 1.1, 1])
+
+        row = [1, 3]
+        col = [2, 1, 1]
+        r, c, n = random_table._process_parameters([1, 3], [2, 1, 1])
+        assert_equal(row, r)
+        assert_equal(col, c)
+        assert n == np.sum(row)
+
+    def test_process_rvs_method_on_None(self):
+        # TODO also test with a case where "patefield" is selected
+        row = [1, 3]
+        col = [2, 1, 1]
+
+        ct = random_table
+        expected = ct.rvs(row, col, method="boyett", random_state=1)
+        got = ct.rvs(row, col, method=None, random_state=1)
+
+        assert_equal(expected, got)
+
+    def test_rvs_method(self):
+        pytest.xfail("patefield will be implemented in follow-up PR")
+
+        row = [1, 3]
+        col = [2, 1, 1]
+
+        ct = random_table
+        rvs1 = ct.rvs(row, col, size=1000, method="boyett", random_state=1)
+        rvs2 = ct.rvs(row, col, size=1000, method="patefield", random_state=1)
+
+        tab1, count1 = np.unique(rvs1, axis=0, return_counts=True)
+        tab2, count2 = np.unique(rvs2, axis=0, return_counts=True)
+
+        assert_equal(tab1, tab2)
+        assert_allclose(count1, count2)
+
+    def test_process_rvs_method_bad_argument(self):
+        row = [1, 3]
+        col = [2, 1, 1]
+
+        # order of items in set is random, so cannot check that
+        message = "'foo' not recognized, must be one of"
+        with pytest.raises(ValueError, match=message):
+            random_table.rvs(row, col, method="foo")
+
+        with pytest.raises(NotImplementedError):
+            random_table.rvs(row, col, method="patefield")
+
+    @pytest.mark.parametrize('frozen', (True, False))
+    @pytest.mark.parametrize('log', (True, False))
+    def test_pmf_logpmf(self, frozen, log):
+        rng = np.random.default_rng(628174795866951638)
+        row = [2, 6]
+        col = [1, 3, 4]
+        rvs = random_table.rvs(row, col, size=1000, random_state=rng)
+
+        obj = random_table(row, col) if frozen else random_table
+        method = getattr(obj, "logpmf" if log else "pmf")
+        if not frozen:
+            original_method = method
+
+            def method(x):
+                return original_method(x, row, col)
+        pmf = (lambda x: np.exp(method(x))) if log else method
+
+        unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
+
+        # rough accuracy check
+        p = pmf(unique_rvs)
+        assert_allclose(p * len(rvs), counts, rtol=0.1)
+
+        # accept any iterable
+        p2 = pmf(list(unique_rvs[0]))
+        assert_equal(p2, p[0])
+
+        # accept high-dimensional input and 2d input
+        rvs_nd = rvs.reshape((10, 100) + rvs.shape[1:])
+        p = pmf(rvs_nd)
+        assert p.shape == (10, 100)
+        for i in range(p.shape[0]):
+            for j in range(p.shape[1]):
+                pij = p[i, j]
+                rvij = rvs_nd[i, j]
+                qij = pmf(rvij)
+                assert_equal(pij, qij)
+
+        # probability is zero if column marginal does not match
+        x = [[0, 1, 1], [2, 1, 3]]
+        assert_equal(np.sum(x, axis=-1), row)
+        p = pmf(x)
+        assert p == 0
+
+        # probability is zero if row marginal does not match
+        x = [[0, 1, 2], [1, 2, 2]]
+        assert_equal(np.sum(x, axis=-2), col)
+        p = pmf(x)
+        assert p == 0
+
+        # response to invalid inputs
+        message = "`x` must be at least two-dimensional"
+        with pytest.raises(ValueError, match=message):
+            pmf([1])
+
+        message = "`x` must contain only integral values"
+        with pytest.raises(ValueError, match=message):
+            pmf([[1.1]])
+
+        message = "`x` must contain only integral values"
+        with pytest.raises(ValueError, match=message):
+            pmf([[np.nan]])
+
+        message = "`x` must contain only non-negative values"
+        with pytest.raises(ValueError, match=message):
+            pmf([[-1]])
+
+        message = "shape of `x` must agree with `row`"
+        with pytest.raises(ValueError, match=message):
+            pmf([[1, 2, 3]])
+
+        message = "shape of `x` must agree with `col`"
+        with pytest.raises(ValueError, match=message):
+            pmf([[1, 2],
+                 [3, 4]])
+
+    def test_rvs_mean(self):
+        # test if `rvs` is unbiased and large sample size converges
+        # to the true mean. `test_pmf` also implicitly tests `rvs`.
+        rng = np.random.default_rng(628174795866951638)
+
+        row = [2, 6]
+        col = [1, 3, 4]
+        rvs = random_table.rvs(row, col, size=1000, random_state=rng)
+        mean = random_table.mean(row, col)
+        assert_equal(np.sum(mean), np.sum(row))
+        assert_allclose(rvs.mean(0), mean, atol=0.05)
+        assert_equal(rvs.sum(axis=-1), np.broadcast_to(row, (1000, 2)))
+        assert_equal(rvs.sum(axis=-2), np.broadcast_to(col, (1000, 3)))
+
+    def test_rvs_size(self):
+        row = [2, 6]
+        col = [1, 3, 4]
+
+        # test size `None`
+        rng = np.random.default_rng(628174795866951638)
+        rv = random_table.rvs(row, col, random_state=rng)
+        assert rv.shape == (2, 3)
+
+        # test size 1
+        rng = np.random.default_rng(628174795866951638)
+        rv2 = random_table.rvs(row, col, size=1, random_state=rng)
+        assert rv2.shape == (1, 2, 3)
+        assert_equal(rv, rv2[0])
+
+        # test size 0
+        rv3 = random_table.rvs(row, col, size=0, random_state=rng)
+        assert rv3.shape == (0, 2, 3)
+
+        # test other valid size
+        rng = np.random.default_rng(628174795866951638)
+        rv4 = random_table.rvs(row, col, size=20, random_state=rng)
+        assert rv4.shape == (20, 2, 3)
+
+        rng = np.random.default_rng(628174795866951638)
+        rv5 = random_table.rvs(row, col, size=(4, 5), random_state=rng)
+        assert rv5.shape == (4, 5, 2, 3)
+
+        assert_allclose(rv5.reshape(20, 2, 3), rv4, rtol=1e-15)
+
+        # test invalid size
+        message = "`size` must be a non-negative integer or `None`"
+        with pytest.raises(ValueError, match=message):
+            random_table.rvs(row, col, size=-1, random_state=rng)
+
+        with pytest.raises(ValueError, match=message):
+            random_table.rvs(row, col, size=np.nan, random_state=rng)
+
+    def test_frozen(self):
+        rng1 = np.random.default_rng(628174795866951638)
+        rng2 = np.random.default_rng(628174795866951638)
+
+        row = [2, 6]
+        col = [1, 3, 4]
+        d = random_table(row, col, seed=rng1)
+        expected = random_table.mean(row, col)
+        assert_equal(expected, d.mean())
+
+        expected = random_table.rvs(row, col, size=10, random_state=rng2)
+        got = d.rvs(size=10)
+        assert_equal(expected, got)
 
 
 def check_pickling(distfn, args):
