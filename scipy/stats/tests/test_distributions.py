@@ -2812,6 +2812,20 @@ class TestRvDiscrete:
         assert_allclose(rv.expect(lambda x: x**2),
                         sum(v**2 * w for v, w in zip(y, py)), atol=1e-14)
 
+    def test_rv_count_subclassing(self):
+        # gh-8057: rv_discrete(values=(xk, pk)) cannot be subclassed easily
+        class S(stats.rv_count):
+            def extra(self):
+                return 42
+
+        s = S(xk=[1, 2, 3], pk=[0.2, 0.7, 0.1])
+        assert_allclose(s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
+        assert s.extra() == 42
+
+        # make sure subclass freezes correctly
+        frozen_s = s()
+        assert_allclose(frozen_s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
+
 
 class TestSkewCauchy:
     def test_cauchy(self):
@@ -6901,7 +6915,7 @@ def test_crystalball_entropy():
     assert_allclose(res1, res2, rtol=1e-7)
 
 
-def test_invweibull():
+def test_invweibull_fit():
     """
     Test fitting invweibull to data.
 
@@ -6932,6 +6946,26 @@ def test_invweibull():
     assert_allclose(c, 1.048482, rtol=5e-6)
     assert loc == 0
     assert_allclose(scale, 3.099456, rtol=5e-6)
+
+
+# Expected values were computed with mpmath.
+@pytest.mark.parametrize('x, c, expected',
+                         [(3, 1.5, 0.175064510070713299327),
+                          (2000, 1.5, 1.11802773877318715787e-5),
+                          (2000, 9.25, 2.92060308832269637092e-31),
+                          (1e15, 1.5, 3.16227766016837933199884e-23)])
+def test_invweibull_sf(x, c, expected):
+    computed = stats.invweibull.sf(x, c)
+    assert_allclose(computed, expected, rtol=1e-15)
+
+
+# Expected values were computed with mpmath.
+@pytest.mark.parametrize('p, c, expected',
+                         [(0.5, 2.5, 1.15789669836468183976),
+                          (3e-18, 5, 3195.77171838060906447)])
+def test_invweibull_isf(p, c, expected):
+    computed = stats.invweibull.isf(p, c)
+    assert_allclose(computed, expected, rtol=1e-15)
 
 
 @pytest.mark.parametrize(
