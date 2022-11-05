@@ -13,14 +13,14 @@
 #include <numpy/random/distributions.h>
 
 // helper function to access a 1D array like a C-style 2D array
-long *ptr(long *m, int nr, int nc, int ir, int ic)
+double *ptr(double *m, int nr, int nc, int ir, int ic)
 {
   return m + nc * ir + ic;
 }
 
 // sanity checks for inputs to rcont1 and rcont2,
 // also sets total number of entries
-int rcont_check(long *n, const long *m, int nr, const long *r, int nc, const long *c)
+int rcont_check(double *n, const double *m, int nr, const double *r, int nc, const double *c)
 {
   if (m == 0 || r == 0 || c == 0 || n == 0)
     return 1;
@@ -36,7 +36,7 @@ int rcont_check(long *n, const long *m, int nr, const long *r, int nc, const lon
       return 3;
     *n += c[i];
   }
-  long n2 = 0;
+  double n2 = 0;
   for (int i = 0; i < nr; ++i)
   {
     if (!(r[i] >= 0))
@@ -62,41 +62,42 @@ int rcont_check(long *n, const long *m, int nr, const long *r, int nc, const lon
   This function uses a work space that is allocated into the argument work
   (which must be zero initialised) and has to freed by the user.
 */
-int rcont1(long *matrix, int nr, const long *r, int nc, const long *c,
-           long **work, bitgen_t *rstate)
+int rcont1(double *matrix, int nr, const double *r, int nc, const double *c,
+           int **work, bitgen_t *rstate)
 {
   int status = 0;
   if (*work == 0)
   {
-    long nd = 0;
+    double nd = 0;
     status = rcont_check(&nd, matrix, nr, r, nc, c);
     if (status != 0)
       return status;
 
-    *work = (long *)malloc(sizeof(long) * (nd + 1));
+    int n = (int)nd;
+    *work = (int *)malloc(sizeof(int) * (n + 1));
     if (!*work)
     {
       status = 1;
       return status;
     }
     *work[0] = n;
-    long *ymap = *work + 1;
+    int *ymap = *work + 1;
     for (int i = 0; i < nc; ++i)
     {
-      long ci = c[i];
+      int ci = (int)c[i];
       while (ci--)
         *ymap++ = i;
     }
   }
 
-  long n = *work[0];
-  long *ymap = *work + 1;
+  int n = *work[0];
+  int *ymap = *work + 1;
 
   // shuffle ymap
-  for (long i = n - 1; i > 0; --i)
+  for (int i = n - 1; i > 0; --i)
   {
-    long j = random_interval(rstate, i);
-    long tmp = ymap[j];
+    int j = random_interval(rstate, i);
+    int tmp = ymap[j];
     ymap[j] = ymap[i];
     ymap[i] = tmp;
   }
@@ -108,7 +109,7 @@ int rcont1(long *matrix, int nr, const long *r, int nc, const long *c,
   // fill table
   for (int ir = 0; ir < nr; ++ir)
   {
-    long ri = r[ir];
+    int ri = (int)r[ir];
     while (ri--)
       *ptr(matrix, nr, nc, ir, *ymap++) += 1;
   }
@@ -128,6 +129,8 @@ int rcont1(long *matrix, int nr, const long *r, int nc, const long *c,
   - The computation of a look-up table of log-factorials was replaced with
     calls to lgamma, which lifts the limitation that the code only works for
     tables with less then 5000 entries.
+  - The data type of input and output arrays was changed to double to minimize
+    type conversions. Users are responsible for passing only integral numbers.
   - The original implementation allocated a column vector JWORK, but this is
     not necessary. The vector can be folded into the last column of the output
     matrix.
@@ -139,8 +142,8 @@ int rcont1(long *matrix, int nr, const long *r, int nc, const long *c,
   The argument ntot is used to detect whether the function has been run before
   and has to be zero initialised.
 */
-int rcont2(long *matrix, int nr, const long *r, int nc, const long *c,
-           long *ntot, bitgen_t *rstate)
+int rcont2(double *matrix, int nr, const double *r, int nc, const double *c,
+           double *ntot, bitgen_t *rstate)
 {
   int status = 0;
   if (*ntot == 0) // perform checks only once
@@ -149,7 +152,7 @@ int rcont2(long *matrix, int nr, const long *r, int nc, const long *c,
     return status;
 
   // jwork is folded into matrix using last row
-  long *jwork = ptr(matrix, nr, nc, nr - 1, 0);
+  double *jwork = ptr(matrix, nr, nc, nr - 1, 0);
   for (int i = 0; i < nc; ++i)
   {
     jwork[i] = c[i];
