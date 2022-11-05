@@ -5601,7 +5601,7 @@ class uniform_direction_gen(multi_rv_generic):
             raise ValueError("Dimension of vector must be specified, "
                              "and must be an integer greater than 0.")
 
-        return dim
+        return int(dim)
 
     def rvs(self, dim, size=None, random_state=None):
         """Draw random samples from S(N-1).
@@ -5616,6 +5616,17 @@ class uniform_direction_gen(multi_rv_generic):
             Because each sample is N-dimensional, the output shape
             is (m,n,k,N). If no shape is specified, a single (N-D)
             sample is returned.
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+            Pseudorandom number generator state used to generate resamples.
+
+            If `random_state` is ``None`` (or `np.random`), the
+            `numpy.random.RandomState` singleton is used.
+            If `random_state` is an int, a new ``RandomState`` instance is
+            used, seeded with `random_state`.
+            If `random_state` is already a ``Generator`` or ``RandomState``
+            instance then that instance is used.
 
         Returns
         -------

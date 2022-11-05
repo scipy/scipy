@@ -2010,9 +2010,18 @@ class TestUniformDirection:
 
     @pytest.mark.parametrize("dim", [2, 5, 8])
     def test_uniform(self, dim):
-        spherical_dist = uniform_direction(dim)
-        samples = spherical_dist.rvs(size=10000, random_state=42967295)
-        angles = np.arctan2(samples[:, dim - 1], samples[:, dim - 2])
+        rng = np.random.default_rng(1036978481269651776)
+        spherical_dist = uniform_direction(dim, seed=rng)
+        # generate random, orthogonal vectors
+        v1, v2 = spherical_dist.rvs(size=2)
+        v2 -= v1 @ v2 * v1
+        v2 /= np.linalg.norm(v2)
+        assert_allclose(v1 @ v2, 0, atol=1e-14)  # orthogonal
+        # generate data and project onto orthogonal vectors
+        samples = spherical_dist.rvs(size=10000)
+        s1 = samples @ v1
+        s2 = samples @ v2
+        angles = np.arctan2(s1, s2)
         # test that angles follow a uniform distribution
         # normalize angles to range [0, 1]
         angles += np.pi
