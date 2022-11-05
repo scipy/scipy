@@ -16,9 +16,10 @@ class TestMakeTupleBunch:
     # Tests with Result
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def setup_method(self):
+    @classmethod
+    def setup_method(cls):
         # Set up an instance of Result.
-        self.result = Result(x=1, y=2, z=3, w=99, beta=0.5)
+        cls.result = Result(x=1, y=2, z=3, w=99, beta=0.5)
 
     def test_attribute_access(self):
         assert_equal(self.result.x, 1)

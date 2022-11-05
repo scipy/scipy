@@ -169,7 +169,8 @@ class TestCvm:
 
 
 class TestMannWhitneyU:
-    def setup_method(self):
+    @classmethod
+    def setup_method(cls):
         _mwu_state._recursive = True
 
     # All magic numbers are from R wilcox.test unless otherwise specied
@@ -621,10 +622,12 @@ class TestMannWhitneyU:
 
 
 class TestMannWhitneyU_iterative(TestMannWhitneyU):
-    def setup_method(self):
+    @classmethod
+    def setup_method(cls):
         _mwu_state._recursive = False
 
-    def teardown_method(self):
+    @classmethod
+    def teardown_method(cls):
         _mwu_state._recursive = None
 
 
