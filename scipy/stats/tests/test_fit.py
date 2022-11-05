@@ -595,10 +595,6 @@ class TestGoodnessOfFit:
         with pytest.raises(ValueError, match=message):
             goodness_of_fit(dist, x, statistic='mm')
 
-        message = "`fit_method` must be one of..."
-        with pytest.raises(ValueError, match=message):
-            goodness_of_fit(dist, x, fit_method='ad')
-
         message = "`n_mc_samples` must be an integer."
         with pytest.raises(TypeError, match=message):
             goodness_of_fit(dist, x, n_mc_samples=1000.5)

@@ -697,8 +697,8 @@ GoodnessOfFitResult = namedtuple('GoodnessOfFitResult',
 
 
 def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
-                    guessed_params=None, statistic='ad', fit_method='mle',
-                    n_mc_samples=9999, random_state=None):
+                    guessed_params=None, statistic='ad', n_mc_samples=9999,
+                    random_state=None):
     r"""
     Perform a goodness of fit test comparing data to a distribution family.
 
@@ -744,16 +744,6 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         unknown parameters of the distribution family to the data. The
         Anderson-Darling ("ad"), Kolmogorov-Smirnov ("ks"), and
         Cramer-von Mises ("cvm") statistics are available [1]_.
-    fit_method : {"mle", "mm"}, optional
-        The method used to fit the null-hypothesized distribution family to
-        the Monte Carlo samples. Maximum likelihood estimation ("mle") is the
-        default; method of moments ("mm") is also available. For some
-        distributions, bias-correction procedures may be employed to improve
-        the quality of the fit. For example, the maximum likelihood estimate
-        of the normal distribution scale parameter is always given by
-        ``np.std(data)``, but the bias-corrected standard deviation
-        ``np.std(data, ddof=1)`` is used when both location and scale
-        are unknown.
     n_mc_samples : int, default: 9999
         The number of Monte Carlo samples drawn from the null hypothesized
         distribution to form the null distribution of the statistic.
@@ -814,12 +804,12 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     particular data.
 
     First, any unknown parameters of the distribution family specified by
-    `dist` are fit to the provided `data`. These values of the parameters
-    specify a particular member of the distribution family referred to as the
-    "null-hypothesized distribution", that is, the distribution from which the
-    data were sampled under the null hypothesis. The `statistic`, which
-    compares data to a distribution, is computed between `data` and the
-    null-hypothesized distribution.
+    `dist` are fit to the provided `data` using maximum likelihood estimation.
+    These values of the parameters specify a particular member of the
+    distribution family referred to as the "null-hypothesized distribution",
+    that is, the distribution from which the data were sampled under the null
+    hypothesis. The `statistic`, which compares data to a distribution, is
+    computed between `data` and the null-hypothesized distribution.
 
     Next, many (specifically `n_mc_samples`) new samples, each containing the
     same number of observations as `data`, are drawn from the
@@ -1037,15 +1027,14 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     (0.2231991510248692, 0.0525)
 
     """
-    args = gof_iv(dist, data, known_params, fit_params, guessed_params,
-                  statistic, fit_method, n_mc_samples, random_state)
+    args = _gof_iv(dist, data, known_params, fit_params, guessed_params,
+                   statistic, n_mc_samples, random_state)
     (dist, data, fixed_nhd_params, fixed_rfd_params, guessed_nhd_params,
-     guessed_rfd_params, statistic, fit_method, n_mc_samples_int,
-     random_state) = args
+     guessed_rfd_params, statistic, n_mc_samples_int, random_state) = args
 
     # Fit null hypothesis distribution to data
-    nhd_fit_fun = _get_fit_fun(dist, data, fit_method,
-                               guessed_nhd_params, fixed_nhd_params)
+    nhd_fit_fun = _get_fit_fun(dist, data, guessed_nhd_params,
+                               fixed_nhd_params)
     nhd_vals = nhd_fit_fun(data)
     nhd_dist = dist(*nhd_vals)
 
@@ -1053,8 +1042,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         return nhd_dist.rvs(size=size, random_state=random_state)
 
     # Define statistic
-    fit_fun = _get_fit_fun(dist, data, fit_method,
-                           guessed_rfd_params, fixed_rfd_params)
+    fit_fun = _get_fit_fun(dist, data, guessed_rfd_params, fixed_rfd_params)
     compare_fun = _compare_dict[statistic]
 
     def statistic_fun(data, axis=-1):
@@ -1081,7 +1069,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                                res.null_distribution)
 
 
-def _get_fit_fun(dist, data, fit_method, guessed_params, fixed_params):
+def _get_fit_fun(dist, data, guessed_params, fixed_params):
 
     shape_names = [] if dist.shapes is None else dist.shapes.split(", ")
     param_names = shape_names + ['loc', 'scale']
@@ -1093,8 +1081,7 @@ def _get_fit_fun(dist, data, fit_method, guessed_params, fixed_params):
     # Define statistic, including fitting distribution to data
     if dist in _fit_funs:
         def fit_fun(data):
-            params = _fit_funs[dist](data, **fixed_params,
-                                     fit_method=fit_method)
+            params = _fit_funs[dist](data, **fixed_params)
             params = np.asarray(np.broadcast_arrays(*params))
             if params.ndim > 1:
                 params = params[..., np.newaxis]
@@ -1107,7 +1094,7 @@ def _get_fit_fun(dist, data, fit_method, guessed_params, fixed_params):
     else:
         def fit_fun_1d(data):
             return dist.fit(data, *guessed_shapes, **guessed_params,
-                            **fixed_params, method=fit_method)
+                            **fixed_params)
 
         def fit_fun(data):
             params = np.apply_along_axis(fit_fun_1d, axis=-1, arr=data)
@@ -1119,10 +1106,9 @@ def _get_fit_fun(dist, data, fit_method, guessed_params, fixed_params):
 
 
 # Vectorized fitting functions. These are to accept ND `data` in which each
-# row (slice along last axis) is a sample to fit, scalar fixed parameters,
-# and `fit_method`. They return a tuple of shape parameter arrays, each of
-# shape data.shape[:-1].
-def _fit_norm(data, floc=None, fscale=None, fit_method="mle"):
+# row (slice along last axis) is a sample to fit and scalar fixed parameters.
+# They return a tuple of shape parameter arrays, each of shape data.shape[:-1].
+def _fit_norm(data, floc=None, fscale=None):
     loc = floc
     scale = fscale
     if loc is None and scale is None:
@@ -1183,8 +1169,8 @@ _compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov,
                  "cvm": _cramer_von_mises}
 
 
-def gof_iv(dist, data, known_params, fit_params, guessed_params,
-           statistic, fit_method, n_mc_samples, random_state):
+def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
+            n_mc_samples, random_state):
 
     if not isinstance(dist, stats.rv_continuous):
         message = ("`dist` must be a (non-frozen) instance of "
@@ -1227,11 +1213,6 @@ def gof_iv(dist, data, known_params, fit_params, guessed_params,
         message = f"`statistic` must be one of {statistics}."
         raise ValueError(message)
 
-    fit_methods = {'mle', 'mm'}
-    if fit_method.lower() not in fit_methods:
-        message = f"`fit_method` must be one of {fit_methods}."
-        raise ValueError(message)
-
     n_mc_samples_int = int(n_mc_samples)
     if n_mc_samples_int != n_mc_samples:
         message = "`n_mc_samples` must be an integer."
@@ -1240,5 +1221,4 @@ def gof_iv(dist, data, known_params, fit_params, guessed_params,
     random_state = check_random_state(random_state)
 
     return (dist, data, fixed_nhd_params, fixed_rfd_params, guessed_nhd_params,
-            guessed_rfd_params, statistic, fit_method, n_mc_samples_int,
-            random_state)
+            guessed_rfd_params, statistic, n_mc_samples_int, random_state)
