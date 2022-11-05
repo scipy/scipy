@@ -60,6 +60,14 @@ def lombscargle(x,
     ValueError
         If the input arrays `x` and `y` do not have the same shape.
 
+    See Also
+    --------
+    istft: Inverse Short Time Fourier Transform
+    check_COLA: Check whether the Constant OverLap Add (COLA) constraint is met
+    welch: Power spectral density by Welch's method
+    spectrogram: Spectrogram by Welch's method
+    csd: Cross spectral density by Welch's method
+
     Notes
     -----
     This subroutine calculates the periodogram using a slightly
@@ -82,14 +90,6 @@ def lombscargle(x,
     .. [3] R.H.D. Townsend, "Fast calculation of the Lomb-Scargle
            periodogram using graphics processing units.", The Astrophysical
            Journal Supplement Series, vol 191, pp. 247-253, 2010
-
-    See Also
-    --------
-    istft: Inverse Short Time Fourier Transform
-    check_COLA: Check whether the Constant OverLap Add (COLA) constraint is met
-    welch: Power spectral density by Welch's method
-    spectrogram: Spectrogram by Welch's method
-    csd: Cross spectral density by Welch's method
 
     Examples
     --------
@@ -203,14 +203,14 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     Pxx : ndarray
         Power spectral density or power spectrum of `x`.
 
-    Notes
-    -----
-    .. versionadded:: 0.12.0
-
     See Also
     --------
     welch: Estimate power spectral density using Welch's method
     lombscargle: Lomb-Scargle periodogram for unevenly sampled data
+
+    Notes
+    -----
+    .. versionadded:: 0.12.0
 
     Examples
     --------
