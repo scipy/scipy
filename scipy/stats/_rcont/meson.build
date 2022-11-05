@@ -7,6 +7,8 @@ py3.install_sources([
 
 _rcont = static_library('_rcont',
   ['rcont.c'],
+  include_directories: [inc_np],
+  dependencies: [npyrandom_lib, npymath_lib],
 )
 
 rcont = py3.extension_module('rcont',
@@ -16,5 +18,6 @@ rcont = py3.extension_module('rcont',
   link_args: version_link_args,
   link_with: _rcont,
   install: true,
-  subdir: 'scipy/stats/_rcont'
+  subdir: 'scipy/stats/_rcont', 
+  dependencies: [npyrandom_lib, npymath_lib],
 )

@@ -60,7 +60,7 @@ int rcont_check(double *n, const double *m, int nr, const double *r, int nc, con
   but is insensitive to the number K of table cells.
 
   This function uses a work space that is allocated into the argument work
-  (which must be zero initialised) and has to freed by the user.
+  (which must be a null pointer initially) and has to freed by the user.
 */
 int rcont1(double *matrix, int nr, const double *r, int nc, const double *c,
            int **work, bitgen_t *rstate)

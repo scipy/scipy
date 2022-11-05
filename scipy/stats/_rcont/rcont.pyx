@@ -14,7 +14,7 @@ cdef extern from "./rcont.c":
                double* ntot, bitgen_t*)
 
 
-cdef get_bitgen(random_state):
+cdef bitgen_t* get_bitgen(random_state):
     if isinstance(random_state, np.random.RandomState):
         bg = random_state._bit_generator
     elif isinstance(random_state, np.random.Generator):
@@ -23,30 +23,36 @@ cdef get_bitgen(random_state):
         raise ValueError('random_state is not one of None, int, RandomState, Generator')
     capsule = bg.capsule
 
+    cdef:
+        const char *capsule_name = "BitGenerator"
+
     if not PyCapsule_IsValid(capsule, capsule_name):
         raise ValueError("Invalid pointer to anon_func_state.")
 
-    cdef:
-        bitgen_t *bitgen
-        const char *capsule_name = "BitGenerator"
-
-    bitgen = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
-
-    return bitgen
+    return <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
 
 
-cdef rvs_rcont1(row, col, int size, random_state):
+cdef rvs_rcont1(double[:] row, double[:] col, int size, double ntot, random_state):
 
     cdef:
-        bitgen_t *bitgen
-        Py_ssize_t nr = row.shape[0]
-        Py_ssize_t nc = col.shape[0]
+        bitgen_t *rstate
+        int nr = row.shape[0]
+        int nc = col.shape[0]
+        int** work = NULL
 
-    bitgen = get_bitgen(random_state)
+    rstate = get_bitgen(random_state)
 
-    result = np.zeros((size, nr, nc), dtype=np.int64)
+    result = np.zeros((size, nr, nc), dtype=np.double)
 
-    cdef np.intc 
+    cdef double [:,:,:] result_view = result
 
+    cdef int error = 0
     for i in range(size):
-        
+        error = rcont1(<double*>result_view[i, :, :],
+                       nr, <const double*>row,
+                       nc, <const double*>col,
+                       work, rstate)
+        if error != 0:
+            break
+    
+    return error, result
