@@ -9,8 +9,8 @@
   variables.
 */
 
+#include "_rcont.h"
 #include <math.h>
-#include <numpy/random/distributions.h>
 
 // helper function to access a 1D array like a C-style 2D array
 double *ptr(double *m, int nr, int nc, int ir, int ic)
@@ -52,6 +52,21 @@ int rcont_check(double *n, const double *m, int nr, const double *r, int nc, con
 }
 
 /*
+  Call this once to initialize workspace for rcont1.
+
+  The work space must have size N, where N is the total number of entries.
+*/
+void rcont1_init(int *work, int nc, const double *c)
+{
+  for (int i = 0; i < nc; ++i)
+  {
+    int ci = (int)c[i];
+    while (ci--)
+      *work++ = i;
+  }
+}
+
+/*
   Generate random two-way table with given marginal totals.
 
   Boyett's shuffling algorithm adapted from AS 144 Appl. Statist. (1979)
@@ -59,47 +74,21 @@ int rcont_check(double *n, const double *m, int nr, const double *r, int nc, con
   a table with N entries in total. The algorithm performs poorly for large N,
   but is insensitive to the number K of table cells.
 
-  This function uses a work space that is allocated into the argument work
-  (which must be a null pointer initially) and has to freed by the user.
+  This function uses a work space of size N which must be preallocated and
+  initialized with rcont1_init.
 */
-int rcont1(double *matrix, int nr, const double *r, int nc, const double *c,
-           int **work, bitgen_t *rstate)
+void rcont1(double *matrix, int nr, const double *r, int nc, const double *c,
+            double ntot, int *work, bitgen_t *rstate)
 {
-  int status = 0;
-  if (*work == 0)
-  {
-    double nd = 0;
-    status = rcont_check(&nd, matrix, nr, r, nc, c);
-    if (status != 0)
-      return status;
+  int n = (int)ntot;
 
-    int n = (int)nd;
-    *work = (int *)malloc(sizeof(int) * (n + 1));
-    if (!*work)
-    {
-      status = 1;
-      return status;
-    }
-    *work[0] = n;
-    int *ymap = *work + 1;
-    for (int i = 0; i < nc; ++i)
-    {
-      int ci = (int)c[i];
-      while (ci--)
-        *ymap++ = i;
-    }
-  }
-
-  int n = *work[0];
-  int *ymap = *work + 1;
-
-  // shuffle ymap
+  // shuffle work
   for (int i = n - 1; i > 0; --i)
   {
     int j = random_interval(rstate, i);
-    int tmp = ymap[j];
-    ymap[j] = ymap[i];
-    ymap[i] = tmp;
+    int tmp = work[j];
+    work[j] = work[i];
+    work[i] = tmp;
   }
 
   // clear table
@@ -111,10 +100,8 @@ int rcont1(double *matrix, int nr, const double *r, int nc, const double *c,
   {
     int ri = (int)r[ir];
     while (ri--)
-      *ptr(matrix, nr, nc, ir, *ymap++) += 1;
+      *ptr(matrix, nr, nc, ir, *work++) += 1;
   }
-
-  return 0;
 }
 
 /*
@@ -142,15 +129,9 @@ int rcont1(double *matrix, int nr, const double *r, int nc, const double *c,
   The argument ntot is used to detect whether the function has been run before
   and has to be zero initialised.
 */
-int rcont2(double *matrix, int nr, const double *r, int nc, const double *c,
-           double *ntot, bitgen_t *rstate)
+void rcont2(double *matrix, int nr, const double *r, int nc, const double *c,
+            double ntot, bitgen_t *rstate)
 {
-  int status = 0;
-  if (*ntot == 0) // perform checks only once
-    status = rcont_check(ntot, matrix, nr, r, nc, c);
-  if (status != 0)
-    return status;
-
   // jwork is folded into matrix using last row
   double *jwork = ptr(matrix, nr, nc, nr - 1, 0);
   for (int i = 0; i < nc; ++i)
@@ -158,7 +139,7 @@ int rcont2(double *matrix, int nr, const double *r, int nc, const double *c,
     jwork[i] = c[i];
   }
 
-  double jc = *ntot;
+  double jc = ntot;
   double ib = 0;
   // last row is not random due to constraint
   for (int l = 0; l < nr - 1; ++l)
@@ -256,6 +237,4 @@ int rcont2(double *matrix, int nr, const double *r, int nc, const double *c,
   // compute entries in last row of matrix
   // jwork is already last row of matrix, so nothing to be done up to nc - 2
   *ptr(matrix, nr, nc, nr - 1, nc - 1) = ib - *ptr(matrix, nr, nc, nr - 1, nc - 2);
-
-  return 0;
 }

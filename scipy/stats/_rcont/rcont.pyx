@@ -7,11 +7,12 @@ from numpy.random cimport bitgen_t
 from cpython.pycapsule cimport PyCapsule_GetPointer, PyCapsule_IsValid
 
 
-cdef extern from "./rcont.c":
-    int rcont1(double*, int, const double*, int, const double*,
-               int**, bitgen_t*)
-    int rcont2(double*, int, const double*, int, const double*,
-               double* ntot, bitgen_t*)
+cdef extern from "./_rcont.h":
+    void rcont1_init(int*, int, const double*)
+    void rcont1(double*, int, const double*, int, const double*,
+                double, int*, bitgen_t*)
+    void rcont2(double*, int, const double*, int, const double*,
+                double, bitgen_t*)
 
 
 cdef bitgen_t* get_bitgen(random_state):
@@ -20,39 +21,56 @@ cdef bitgen_t* get_bitgen(random_state):
     elif isinstance(random_state, np.random.Generator):
         bg = random_state.bit_generator
     else:
-        raise ValueError('random_state is not one of None, int, RandomState, Generator')
+        raise ValueError('random_state is not RandomState or Generator')
     capsule = bg.capsule
 
     cdef:
         const char *capsule_name = "BitGenerator"
 
     if not PyCapsule_IsValid(capsule, capsule_name):
-        raise ValueError("Invalid pointer to anon_func_state.")
+        raise ValueError("invalid pointer to anon_func_state")
 
     return <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
 
 
-cdef rvs_rcont1(double[:] row, double[:] col, int size, double ntot, random_state):
+def rvs_rcont1(double[::1] row, double[::1] col, double ntot,
+               int size, random_state):
 
     cdef:
-        bitgen_t *rstate
+        bitgen_t *rstate = get_bitgen(random_state)
         int nr = row.shape[0]
         int nc = col.shape[0]
-        int** work = NULL
 
-    rstate = get_bitgen(random_state)
+    cdef np.ndarray[double, ndim=3, mode="c"] result = np.zeros(
+        (size, nr, nc), dtype=np.double
+    )
 
-    result = np.zeros((size, nr, nc), dtype=np.double)
+    cdef np.ndarray[int, ndim=1, mode="c"] work = np.empty(
+        <int>ntot, dtype=np.intc
+    )
 
-    cdef double [:,:,:] result_view = result
+    rcont1_init(&work[0], nc, &col[0])
 
-    cdef int error = 0
     for i in range(size):
-        error = rcont1(<double*>result_view[i, :, :],
-                       nr, <const double*>row,
-                       nc, <const double*>col,
-                       work, rstate)
-        if error != 0:
-            break
-    
-    return error, result
+        rcont1(&result[i, 0, 0], nr, &row[0], nc, &col[0], ntot,
+               &work[0], rstate)
+
+    return result
+
+
+def rvs_rcont2(double[::1] row, double[::1] col, double ntot,
+               int size, random_state):
+    cdef:
+        bitgen_t *rstate = get_bitgen(random_state)
+        int nr = row.shape[0]
+        int nc = col.shape[0]
+
+    cdef np.ndarray[double, ndim=3, mode="c"] result = np.zeros(
+        (size, nr, nc), dtype=np.double
+    )
+
+    for i in range(size):
+        rcont2(&result[i, 0, 0], nr, &row[0], nc, &col[0], ntot,
+               rstate)
+
+    return result

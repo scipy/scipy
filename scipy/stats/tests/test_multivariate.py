@@ -2523,11 +2523,11 @@ class TestRandomTable:
 
         message = "each element of `row` must be an integer"
         with pytest.raises(ValueError, match=message):
-            random_table([2.1, 2.1], [1, 1, 2])
+            random_table([2.1, 1.9], [1, 1, 2])
 
         message = "each element of `col` must be an integer"
         with pytest.raises(ValueError, match=message):
-            random_table([1, 2], [1.1, 1.1, 1])
+            random_table([1, 2], [1.1, 0.9, 1])
 
         row = [1, 3]
         col = [2, 1, 1]
@@ -2571,9 +2571,6 @@ class TestRandomTable:
         message = "'foo' not recognized, must be one of"
         with pytest.raises(ValueError, match=message):
             random_table.rvs(row, col, method="foo")
-
-        with pytest.raises(NotImplementedError):
-            random_table.rvs(row, col, method="patefield")
 
     @pytest.mark.parametrize('frozen', (True, False))
     @pytest.mark.parametrize('log', (True, False))
@@ -2651,46 +2648,53 @@ class TestRandomTable:
             pmf([[1, 2],
                  [3, 4]])
 
-    def test_rvs_mean(self):
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_mean(self, method):
         # test if `rvs` is unbiased and large sample size converges
         # to the true mean. `test_pmf` also implicitly tests `rvs`.
         rng = np.random.default_rng(628174795866951638)
 
         row = [2, 6]
         col = [1, 3, 4]
-        rvs = random_table.rvs(row, col, size=1000, random_state=rng)
+        rvs = random_table.rvs(row, col, size=1000, method=method,
+                               random_state=rng)
         mean = random_table.mean(row, col)
         assert_equal(np.sum(mean), np.sum(row))
         assert_allclose(rvs.mean(0), mean, atol=0.05)
         assert_equal(rvs.sum(axis=-1), np.broadcast_to(row, (1000, 2)))
         assert_equal(rvs.sum(axis=-2), np.broadcast_to(col, (1000, 3)))
 
-    def test_rvs_size(self):
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_size(self, method):
         row = [2, 6]
         col = [1, 3, 4]
 
         # test size `None`
         rng = np.random.default_rng(628174795866951638)
-        rv = random_table.rvs(row, col, random_state=rng)
+        rv = random_table.rvs(row, col, method=method, random_state=rng)
         assert rv.shape == (2, 3)
 
         # test size 1
         rng = np.random.default_rng(628174795866951638)
-        rv2 = random_table.rvs(row, col, size=1, random_state=rng)
+        rv2 = random_table.rvs(row, col, size=1, method=method,
+                               random_state=rng)
         assert rv2.shape == (1, 2, 3)
         assert_equal(rv, rv2[0])
 
         # test size 0
-        rv3 = random_table.rvs(row, col, size=0, random_state=rng)
+        rv3 = random_table.rvs(row, col, size=0, method=method,
+                               random_state=rng)
         assert rv3.shape == (0, 2, 3)
 
         # test other valid size
         rng = np.random.default_rng(628174795866951638)
-        rv4 = random_table.rvs(row, col, size=20, random_state=rng)
+        rv4 = random_table.rvs(row, col, size=20, method=method,
+                               random_state=rng)
         assert rv4.shape == (20, 2, 3)
 
         rng = np.random.default_rng(628174795866951638)
-        rv5 = random_table.rvs(row, col, size=(4, 5), random_state=rng)
+        rv5 = random_table.rvs(row, col, size=(4, 5), method=method,
+                               random_state=rng)
         assert rv5.shape == (4, 5, 2, 3)
 
         assert_allclose(rv5.reshape(20, 2, 3), rv4, rtol=1e-15)
@@ -2698,10 +2702,12 @@ class TestRandomTable:
         # test invalid size
         message = "`size` must be a non-negative integer or `None`"
         with pytest.raises(ValueError, match=message):
-            random_table.rvs(row, col, size=-1, random_state=rng)
+            random_table.rvs(row, col, size=-1, method=method,
+                             random_state=rng)
 
         with pytest.raises(ValueError, match=message):
-            random_table.rvs(row, col, size=np.nan, random_state=rng)
+            random_table.rvs(row, col, size=np.nan, method=method,
+                             random_state=rng)
 
     def test_frozen(self):
         rng1 = np.random.default_rng(628174795866951638)
@@ -2716,6 +2722,23 @@ class TestRandomTable:
         expected = random_table.rvs(row, col, size=10, random_state=rng2)
         got = d.rvs(size=10)
         assert_equal(expected, got)
+
+    @pytest.mark.parametrize('v', (1, 2))
+    def test_rvs_rcont(self, v):
+        import scipy.stats._rcont as _rcont
+
+        row = np.array([1.0, 3.0])
+        col = np.array([2.0, 2.0])
+
+        rng = np.random.default_rng(628174795866951638)
+
+        rvs = getattr(_rcont, f"rvs_rcont{v}")
+
+        ntot = np.sum(row)
+        result = rvs(row, col, ntot, 1, rng)
+
+        assert result.shape == (1, len(row), len(col))
+        assert np.sum(result) == ntot
 
 
 def check_pickling(distfn, args):

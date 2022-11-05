@@ -14,7 +14,7 @@ from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom
-from . import _mvn, _covariance, contingency
+from . import _mvn, _covariance, contingency, _rcont
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -5358,8 +5358,8 @@ class random_table_gen(multi_rv_generic):
         not contain negative or non-integer entries, and that the sums over
         both vectors are equal.
         """
-        r = np.array(row, dtype=np.int_, copy=True)
-        c = np.array(col, dtype=np.int_, copy=True)
+        r = np.array(row, dtype=np.double, copy=True)
+        c = np.array(col, dtype=np.double, copy=True)
 
         if np.ndim(r) != 1:
             raise ValueError("`row` must be one-dimensional")
@@ -5375,9 +5375,9 @@ class random_table_gen(multi_rv_generic):
         if n != np.sum(c):
             raise ValueError("sums over `row` and `col` must be equal")
 
-        if not np.all(r == np.asarray(row)):
+        if not np.all(r == r.astype(np.int_)):
             raise ValueError("each element of `row` must be an integer")
-        if not np.all(c == np.asarray(col)):
+        if not np.all(c == c.astype(np.int_)):
             raise ValueError("each element of `col` must be an integer")
 
         return r, c, n
@@ -5404,6 +5404,8 @@ class random_table_gen(multi_rv_generic):
             None: cls._rvs_select(r, c, n),
             "boyett": cls._rvs_boyett,
             "patefield": cls._rvs_patefield,
+            # TODO remove this, it only exist temporarily for testing
+            "boyett2": cls._rvs_boyett2,
         }
         try:
             return known_methods[method]
@@ -5413,20 +5415,18 @@ class random_table_gen(multi_rv_generic):
 
     @classmethod
     def _rvs_select(cls, r, c, n):
-        # TODO find optimal empirical threshold with benchmarks,
-        # for now we always return "boyett", because "patefield"
-        # is not yet implemented.
-
-        # Example:
-        # k = len(r) * len(c)  # number of cells
-        # if n > fac * np.log(n) * k:
-        #     return cls._rvs_patefield
-        # return cls._rvs_boyett
-        # 'fac' has to be estimated empirically
+        fac = 1.0  # TODO find optimum with benchmarks,
+        k = len(r) * len(c)  # number of cells
+        if n > fac * np.log(n) * k:
+            return cls._rvs_patefield
         return cls._rvs_boyett
 
     @staticmethod
-    def _rvs_boyett(row, col, tot, size, random_state):
+    def _rvs_boyett(row, col, ntot, size, random_state):
+        return _rcont.rvs_rcont1(row, col, ntot, size, random_state)
+
+    @staticmethod
+    def _rvs_boyett2(row, col, ntot, size, random_state):
         x = np.repeat(np.arange(len(row)), row)
         y = np.repeat(np.arange(len(col)), col)
 
@@ -5438,9 +5438,8 @@ class random_table_gen(multi_rv_generic):
         return np.asarray(tables)
 
     @staticmethod
-    def _rvs_patefield(row, col, tot, size, random_state):
-        # TODO call into C code
-        raise NotImplementedError
+    def _rvs_patefield(row, col, ntot, size, random_state):
+        return _rcont.rvs_rcont2(row, col, ntot, size, random_state)
 
 
 random_table = random_table_gen()
