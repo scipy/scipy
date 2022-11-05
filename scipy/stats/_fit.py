@@ -829,8 +829,8 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     First, any unknown parameters of the distribution family specified by
     `dist` are fit to the provided `data` using maximum likelihood estimation.
     (One exception is the normal distribution with unknown location and scale:
-     we use the bias-corrected standard deviation ``np.std(data, ddof=1)`` for
-     the scale as recommended in [1]_.)
+    we use the bias-corrected standard deviation ``np.std(data, ddof=1)`` for
+    the scale as recommended in [1]_.)
     These values of the parameters specify a particular member of the
     distribution family referred to as the "null-hypothesized distribution",
     that is, the distribution from which the data were sampled under the null
