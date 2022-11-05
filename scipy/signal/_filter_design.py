@@ -635,6 +635,10 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     gd : ndarray
         The group delay.
 
+    See Also
+    --------
+    freqz : Frequency response of a digital filter
+
     Notes
     -----
     The similar function in MATLAB is called `grpdelay`.
@@ -647,10 +651,6 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     For the details of numerical computation of the group delay refer to [1]_.
 
     .. versionadded:: 0.16.0
-
-    See Also
-    --------
-    freqz : Frequency response of a digital filter
 
     References
     ----------
@@ -3538,6 +3538,12 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
 
     The ``'sos'`` output parameter was added in 0.16.0.
 
+    References
+    ----------
+    .. [1] Thomson, W.E., "Delay Networks having Maximally Flat Frequency
+           Characteristics", Proceedings of the Institution of Electrical
+           Engineers, Part III, November 1949, Vol. 96, No. 44, pp. 487-490.
+
     Examples
     --------
     Plot the phase-normalized frequency response, showing the relationship
@@ -3602,12 +3608,6 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
     >>> plt.show()
-
-    References
-    ----------
-    .. [1] Thomson, W.E., "Delay Networks having Maximally Flat Frequency
-           Characteristics", Proceedings of the Institution of Electrical
-           Engineers, Part III, November 1949, Vol. 96, No. 44, pp. 487-490.
 
     """
     return iirfilter(N, Wn, btype=btype, analog=analog,
