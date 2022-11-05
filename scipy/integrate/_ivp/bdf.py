@@ -206,7 +206,8 @@ class BDF(OdeSolver):
         if first_step is None:
             self.h_abs = select_initial_step(self.fun, self.t, self.y, f,
                                              self.direction, 1,
-                                             self.rtol, self.atol)
+                                             self.rtol, self.atol, 
+                                             t_bound=t_bound)
         else:
             self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.h_abs_old = None
