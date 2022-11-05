@@ -873,6 +873,25 @@ class TestCurveFit:
         assert np.all(eigs > -1e-2)
         assert_allclose(cov, cov.T)
 
+    def test_gh4555b(self):
+        # check that PR gh-17247 did not significantly change covariance matrix
+        # for simple cases
+        rng = np.random.default_rng(408113519974467917)
+
+        def func(x, a, b, c):
+            return a * np.exp(-b * x) + c
+
+        xdata = np.linspace(0, 4, 50)
+        y = func(xdata, 2.5, 1.3, 0.5)
+        y_noise = 0.2 * rng.normal(size=xdata.size)
+        ydata = y + y_noise
+        _, res = curve_fit(func, xdata, ydata)
+        # reference from commit 1d80a2f254380d2b45733258ca42eb6b55c8755b
+        ref = [[+0.0158972536486215, 0.0069207183284242, -0.0007474400714749],
+               [+0.0069207183284242, 0.0205057958128679, +0.0053997711275403],
+               [-0.0007474400714749, 0.0053997711275403, +0.0027833930320877]]
+        assert_allclose(res, ref)
+
 
 class TestFixedPoint:
 
