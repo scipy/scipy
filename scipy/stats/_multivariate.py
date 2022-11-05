@@ -5529,12 +5529,16 @@ for name in ['logpmf', 'pmf', 'mean', 'rvs']:
 
 class uniform_direction_gen(multi_rv_generic):
     r"""A vector-valued uniform direction.
+
     Return a random direction (unit vector).
+
     The `dim` keyword specifies the dimension.
+
     Methods
     -------
     rvs(dim=None, size=1, random_state=None)
         Draw random directions.
+
     Parameters
     ----------
     dim : scalar
@@ -5548,6 +5552,7 @@ class uniform_direction_gen(multi_rv_generic):
         If `seed` is already a ``RandomState`` or ``Generator`` instance,
         then that object is used.
         Default is `None`.
+
     Notes
     -----
     This distribution generates unit vectors uniformly distributed on
@@ -5555,10 +5560,12 @@ class uniform_direction_gen(multi_rv_generic):
     directions.
     For example, if `dim` is 3, 3D vectors from the surface of :math:`S^2`
     will be sampled.
+
     References
     ----------
     .. [1] Marsaglia, G. (1972). "Choosing a Point from the Surface of a
            Sphere". Annals of Mathematical Statistics. 43 (2): 645-646.
+
     Examples
     --------
     >>> import numpy as np
@@ -5566,11 +5573,15 @@ class uniform_direction_gen(multi_rv_generic):
     >>> x = uniform_direction.rvs(3)
     >>> np.linalg.norm(x)
     1.
+
     This generates one random direction, a vector on the surface of
     :math:`S^2`.
+
     Alternatively, the object may be called (as a function) to fix the `dim`
     parameter, return a "frozen" `random_direction` random variable:
+
     >>> rv = uniform_direction(5)
+
     """
 
     def __init__(self, seed=None):
@@ -5579,6 +5590,7 @@ class uniform_direction_gen(multi_rv_generic):
 
     def __call__(self, dim=None, seed=None):
         """Create a frozen n-dimensional uniform direction distribution.
+
         See `uniform_direction` for more information.
         """
         return uniform_direction_frozen(dim, seed=seed)
@@ -5593,6 +5605,7 @@ class uniform_direction_gen(multi_rv_generic):
 
     def rvs(self, dim, size=None, random_state=None):
         """Draw random samples from S(N-1).
+
         Parameters
         ----------
         dim : integer
@@ -5603,10 +5616,12 @@ class uniform_direction_gen(multi_rv_generic):
             Because each sample is N-dimensional, the output shape
             is (m,n,k,N). If no shape is specified, a single (N-D)
             sample is returned.
+
         Returns
         -------
         rvs : ndarray
             Random direction vectors
+
         """
         random_state = self._get_random_state(random_state)
         if size is None:
@@ -5625,6 +5640,7 @@ uniform_direction = uniform_direction_gen()
 class uniform_direction_frozen(multi_rv_frozen):
     def __init__(self, dim=None, seed=None):
         """Create a frozen n-dimensional uniform direction distribution.
+
         Parameters
         ----------
         dim : int
@@ -5637,11 +5653,13 @@ class uniform_direction_frozen(multi_rv_frozen):
             seeded with `seed`.
             If `seed` is already a ``Generator`` or ``RandomState`` instance
             then that instance is used.
+
         Examples
         --------
         >>> from scipy.stats import uniform_direction
         >>> x = uniform_direction(3)
         >>> x.rvs()
+
         """
         self._dist = uniform_direction_gen(seed)
         self.dim = self._dist._process_parameters(dim)
