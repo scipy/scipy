@@ -1,6 +1,6 @@
 /**
   This file contains two algorithms written in C to generate random two-way
-  tables. The algorithm rcont1 and rcont2 originate from Boyett and Patefield,
+  tables. The algorithms rcont1 and rcont2 originate from Boyett and Patefield,
   respectively. For more information, see the docs for each function.
 
   If you wonder about the spelling, rcont is short for random contingency
