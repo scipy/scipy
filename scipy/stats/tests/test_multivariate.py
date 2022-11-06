@@ -690,9 +690,9 @@ class TestMultivariateNormal:
 
         #create a disterbution and fit
         disterbution = multivariate_normal(mean=np.zeros(d),cov=np.identity(d))
-        fitted = disterbution.fit(data)
-        
-        #check if data is close engouth to f
+        fitted = disterbution.fit(data=data)
+
+        #check if data is close engouth to fitted
         assert_allclose(fitted.mean, mean_exmple,rtol=1e-01,atol=1e-01)
         assert_allclose(fitted.cov, cov_exmple,rtol=1e-01,atol=1e-01)
 

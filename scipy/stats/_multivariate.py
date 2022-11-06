@@ -905,6 +905,36 @@ class multivariate_normal_frozen(multi_rv_frozen):
     def rvs(self, size=1, random_state=None):
         return self._dist.rvs(self.mean, self.cov_object, size, random_state)
 
+    def fit(self, data, mean=None, cov=1):
+        r"""Fits a multivariante disterbution to data.
+
+        Parameters
+        ----------
+        data : ndarray
+            The data for which the disterbution is fitted to.
+
+        Returns
+        -------
+        h : multivariate_normal
+            Multivariate normal distribution fitted for data
+
+        Raises
+        ------
+        data and disterbution have a dimensions mismatch
+
+        .. versionadded:: 1.9.4
+        """
+        mean = self.mean
+        cov_object = self.cov_object
+        
+        if len(data[0]) != len(mean):
+            raise Exception("data and disterbution have a dimension mismatch")
+        
+        np.mean(data,axis=0,out=mean)
+        cov_object = np.cov(data, rowvar=False)
+
+        return multivariate_normal_frozen(mean=mean,cov=cov_object)
+
     def entropy(self):
         """Computes the differential entropy of the multivariate normal.
 
