@@ -2721,12 +2721,25 @@ class TestRandomTable:
         got = d.rvs(size=10, method=method)
         assert_equal(expected, got)
 
+    @pytest.mark.parametrize("method", ("boyett", "boyett2", "patefield"))
+    def test_rvs_with_zeros_in_col_row(self, method):
+        if method == "boyett2":
+            pytest.xfail("boyett2 is broken and will be removed")
+        rng = np.random.default_rng(12345678)
+        row = [0, 1]
+        col = [1, 0, 0]
+        d = random_table(row, col)
+        rv = d.rvs(1000, method=method, random_state=rng)
+        expected = np.zeros((1000, 2, 3))
+        expected[:, 1, 0] = 1
+        assert_equal(rv, expected)
+
     @pytest.mark.parametrize('v', (1, 2))
     def test_rvs_rcont(self, v):
         import scipy.stats._rcont as _rcont
 
         row = np.array([1.0, 3.0])
-        col = np.array([2.0, 2.0])
+        col = np.array([2.0, 1.0, 1.0])
 
         rng = np.random.default_rng(628174795866951638)
 

@@ -723,10 +723,8 @@ class RandomTable(Benchmark):
     param_names = ["method", "ntot", "ncell"]
     params = [
         ["boyett", "boyett2", "patefield"],
-        # [1, 10, 100, 1000, 10000],
-        # [4, 16, 64, 144, 256, 625, 1024]
-        [1, 100],
-        [4, 16]
+        [10, 100, 1000, 10000],
+        [4, 64, 256, 1024]
     ]
 
     def setup(self, method, ntot, ncell):

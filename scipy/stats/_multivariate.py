@@ -5435,6 +5435,7 @@ class random_table_gen(multi_rv_generic):
 
         tables = [crosstab(x, random_state.permutation(y))
                   for i in range(size)]
+
         return np.asarray(tables)
 
     @staticmethod

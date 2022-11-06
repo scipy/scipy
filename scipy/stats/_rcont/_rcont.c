@@ -7,6 +7,8 @@
   table. Random contingency table is a bit of a misnomer. The tables generated
   by these algorithms have no contingency/association between the two
   variables.
+
+  Author: Hans Dembinski
 */
 
 #include "_rcont.h"
