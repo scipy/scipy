@@ -5642,7 +5642,9 @@ add_newdoc("gdtr",
     The evaluation is carried out using the relation to the incomplete gamma
     integral (regularized gamma function).
 
-    Wrapper for the Cephes [1]_ routine `gdtr`.
+    Wrapper for the Cephes [1]_ routine `gdtr`. Calling `gdtr` directly can
+    improve performance compared to `stats.gamma.cdf`
+    (see last example below).
 
     References
     ----------
@@ -5760,7 +5762,8 @@ add_newdoc("gdtrc",
     The evaluation is carried out using the relation to the incomplete gamma
     integral (regularized gamma function).
 
-    Wrapper for the Cephes [1]_ routine `gdtrc`.
+    Wrapper for the Cephes [1]_ routine `gdtrc`. Calling `gdtrc` directly can
+    improve performance compared to `stats.gamma.sf` (see last example below).
 
     References
     ----------
