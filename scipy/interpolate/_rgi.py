@@ -274,6 +274,7 @@ class RegularGridInterpolator:
                     # input is descending, so make it ascending
                     descending_dimensions.append(i)
                     p = np.flip(p)
+                    p = np.ascontiguousarray(p)
                 else:
                     raise ValueError(
                         "The points in dimension %d must be strictly "
@@ -506,6 +507,9 @@ class RegularGridInterpolator:
         return values
 
     def _find_indices(self, xi):
+
+   ##     breakpoint()
+
         return find_indices(self.grid, xi)
 
     def _find_out_of_bounds(self, xi):
