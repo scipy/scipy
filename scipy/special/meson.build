@@ -269,7 +269,7 @@ ufuncs_cxx_sources = [
   '_wright.cxx',
   'ellint_carlson_wrap.cxx',
   'Faddeeva.cc',
-  'sf_error.c',
+  'sf_error.cc',
   'wright.cc'
 ]
 
@@ -283,26 +283,26 @@ cephes_lib = static_library('cephes',
 
 amos_lib = static_library('amos',
   amos_sources,
-  fortran_args: '-Wno-maybe-uninitialized'
+  fortran_args: _fflag_Wno_maybe_uninitialized
 )
 
 cdflib_lib = static_library('cdflib',
   cdflib_sources,
   fortran_args: [
-    '-Wno-maybe-uninitialized',
-    '-Wno-unused-label',
-    '-Wno-intrinsic-shadow'
+    _fflag_Wno_maybe_uninitialized,
+    _fflag_Wno_unused_label,
+    _fflag_Wno_intrinsic_shadow
   ]
 )
 
 mach_lib = static_library('mach',
   mach_sources,
-  fortran_args: ['-Wno-unused-dummy-argument', '-Wno-maybe-uninitialized']
+  fortran_args: [_fflag_Wno_unused_dummy_argument, _fflag_Wno_maybe_uninitialized]
 )
 
 specfun_lib = static_library('specfun',
   'specfun/specfun.f',
-  fortran_args: '-Wno-maybe-uninitialized'
+  fortran_args: _fflag_Wno_maybe_uninitialized
 )
 
 specfun_module = custom_target('specfun_module',
@@ -315,6 +315,7 @@ py3.extension_module('_specfun',
   specfun_module,
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   dependencies: [fortranobject_dep],
   link_with: specfun_lib,
   link_language: 'fortran',
@@ -341,7 +342,7 @@ cython_special = custom_target('cython_special',
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
   command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
   install: true,
-  install_dir: py3.get_install_dir() / 'scipy/special'
+  install_dir: py3.get_install_dir(pure: false) / 'scipy/special'
 )
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
@@ -360,13 +361,14 @@ py3.extension_module('_ufuncs',
     ufuncs_sources,
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
-  c_args: [cython_c_args, c_undefined_ok],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies: [
     lapack,
     npymath_lib,
     cython_tree
   ],
+  link_args: version_link_args,
   link_with: [
     amos_lib,
     cdflib_lib,
@@ -401,7 +403,9 @@ py3.extension_module('_ufuncs_cxx',
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
   cpp_args: cython_cpp_args,
-  include_directories: [inc_np, '../_lib', '../_build_utils/src'],
+  include_directories: [inc_np, '../_lib/boost', '../_lib',
+                        '../_build_utils/src'],
+  link_args: version_link_args,
   dependencies: [ellint_dep],
   install: true,
   subdir: 'scipy/special'
@@ -409,8 +413,9 @@ py3.extension_module('_ufuncs_cxx',
 
 py3.extension_module('_ellip_harm_2',
   [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.c'],
-  c_args: [cython_c_args, c_undefined_ok],
+  c_args: cython_c_args,
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
+  link_args: version_link_args,
   dependencies: [lapack],
   install: true,
   subdir: 'scipy/special'
@@ -425,8 +430,9 @@ py3.extension_module('cython_special',
     'specfun_wrappers.c',
     'sf_error.c'
   ],
-  c_args: [cython_c_args, c_undefined_ok],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: [inc_np, '../_lib', '../_build_utils/src', 'cephes'],
+  link_args: version_link_args,
   dependencies: [npymath_lib, lapack],
   link_with: [
     amos_lib,
@@ -442,6 +448,7 @@ py3.extension_module('cython_special',
 
 py3.extension_module('_comb',
   cython_gen.process('_comb.pyx'),
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/special'
 )
@@ -449,6 +456,7 @@ py3.extension_module('_comb',
 py3.extension_module('_test_round',
   cython_gen.process('_test_round.pyx'),
   include_directories: [inc_np, 'cephes', '../_lib', '../_build_utils/src'],
+  link_args: version_link_args,
   dependencies: [npymath_lib],
   install: true,
   subdir: 'scipy/special'
@@ -459,7 +467,7 @@ py3.extension_module('_test_round',
 npz_files = [
   [
     '_data_boost',
-    'tests/data/boost/acosh_data_ipp/acosh_data.txt',
+    'tests/data/boost/assoc_legendre_p_ipp/assoc_legendre_p.txt',
     'boost',
     'boost.npz'
   ],
@@ -486,7 +494,7 @@ foreach npz_file: npz_files
       '--use-timestamp', npz_file[2], '-o', '@OUTDIR@'
     ],
     install: true,
-    install_dir: py3.get_install_dir() / 'scipy/special/tests/data'
+    install_dir: py3.get_install_dir(pure: false) / 'scipy/special/tests/data'
   )
 endforeach
 

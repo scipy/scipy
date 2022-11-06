@@ -14,6 +14,9 @@ on:
       - main
       - maintenance/**
 
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   INSTALLDIR: "build-install"
@@ -27,7 +30,7 @@ jobs:
     name: Meson build
     # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python-version: ['3.9', '3.11-dev']
@@ -58,13 +61,13 @@ jobs:
     - name: Install Python packages
       if: matrix.python-version == '3.9'
       run: |
-        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja==1.10.2.4 meson click rich-click doit pydevtool pooch
 
     - name: Install Python packages from repositories
       if: matrix.python-version == '3.11-dev'
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
-        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch
+        python -m pip install ninja==1.10.2.4 cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch
         python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         python -m pip install git+https://github.com/mesonbuild/meson.git
 
@@ -73,9 +76,9 @@ jobs:
       shell: bash
       run: |
         mkdir -p "${CCACHE_DIR}"
-        echo "::set-output name=dir::$CCACHE_DIR"
+        echo "dir=$CCACHE_DIR" >> $GITHUB_OUTPUT
         NOW=$(date -u +"%F-%T")
-        echo "::set-output name=timestamp::${NOW}"
+        echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
       uses:  actions/cache@v3
@@ -105,10 +108,11 @@ jobs:
       run: |
         pushd tools
         python check_installation.py ${{ env.INSTALLDIR }}
+        ./check_pyext_symbol_hiding.sh ../build
         popd
 
     - name: Mypy
-      if: matrix.python-version == '3.11-dev'
+      if: matrix.python-version == '3.9'
       run: |
         # Packages that are only needed for their annotations
         python -m pip install -r mypy_requirements.txt

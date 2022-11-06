@@ -72,13 +72,63 @@ class MemoizeJac:
             self._value = fg[0]
 
     def __call__(self, x, *args):
-        """ returns the the function value """
+        """ returns the function value """
         self._compute_if_needed(x, *args)
         return self._value
 
     def derivative(self, x, *args):
         self._compute_if_needed(x, *args)
         return self.jac
+
+
+def _indenter(s, n=0):
+    """
+    Ensures that lines after the first are indented by the specified amount
+    """
+    split = s.split("\n")
+    indent = " "*n
+    return ("\n" + indent).join(split)
+
+
+def _float_formatter_10(x):
+    """
+    Returns a string representation of a float with exactly ten characters
+    """
+    if np.isposinf(x):
+        return "       inf"
+    elif np.isneginf(x):
+        return "      -inf"
+    elif np.isnan(x):
+        return "       nan"
+    return np.format_float_scientific(x, precision=3, pad_left=2, unique=False)
+
+
+def _dict_formatter(d, n=0, mplus=1, sorter=None):
+    """
+    Pretty printer for dictionaries
+
+    `n` keeps track of the starting indentation;
+    lines are indented by this much after a line break.
+    `mplus` is additional left padding applied to keys
+    """
+    if isinstance(d, dict):
+        m = max(map(len, list(d.keys()))) + mplus  # width to print keys
+        s = '\n'.join([k.rjust(m) + ': ' +  # right justified, width m
+                       _indenter(_dict_formatter(v, m+n+2, 0, sorter), m+2)
+                       for k, v in sorter(d)])  # +2 for ': '
+    else:
+        # By default, NumPy arrays print with linewidth=76. `n` is
+        # the indent at which a line begins printing, so it is subtracted
+        # from the default to avoid exceeding 76 characters total.
+        # `edgeitems` is the number of elements to include before and after
+        # ellipses when arrays are not shown in full.
+        # `threshold` is the maximum number of elements for which an
+        # array is shown in full.
+        # These values tend to work well for use with OptimizeResult.
+        with np.printoptions(linewidth=76-n, edgeitems=2, threshold=12,
+                             formatter={'float_kind': _float_formatter_10}):
+            s = str(d)
+    return s
 
 
 class OptimizeResult(dict):
@@ -129,10 +179,29 @@ class OptimizeResult(dict):
     __delattr__ = dict.__delitem__
 
     def __repr__(self):
+        order_keys = ['message', 'success', 'status', 'fun', 'funl', 'x', 'xl',
+                      'col_ind', 'nit', 'lower', 'upper', 'eqlin', 'ineqlin']
+        # 'slack', 'con' are redundant with residuals
+        # 'crossover_nit' is probably not interesting to most users
+        omit_keys = {'slack', 'con', 'crossover_nit'}
+
+        def key(item):
+            try:
+                return order_keys.index(item[0].lower())
+            except ValueError:  # item not in list
+                return np.inf
+
+        def omit_redundant(items):
+            for item in items:
+                if item[0] in omit_keys:
+                    continue
+                yield item
+
+        def item_sorter(d):
+            return sorted(omit_redundant(d.items()), key=key)
+
         if self.keys():
-            m = max(map(len, list(self.keys()))) + 1
-            return '\n'.join([k.rjust(m) + ': ' + repr(v)
-                              for k, v in sorted(self.items())])
+            return _dict_formatter(self, sorter=item_sorter)
         else:
             return self.__class__.__name__ + "()"
 
@@ -2285,7 +2354,7 @@ class Brent:
         #BEGIN CORE ALGORITHM
         #################################
         x = w = v = xb
-        fw = fv = fx = func(*((x,) + self.args))
+        fw = fv = fx = fb
         if (xa < xc):
             a = xa
             b = xc
@@ -2293,7 +2362,6 @@ class Brent:
             a = xc
             b = xa
         deltax = 0.0
-        funcalls += 1
         iter = 0
 
         if self.disp > 2:
@@ -3066,7 +3134,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 2
-             Function evaluations: 18
+             Function evaluations: 16
     >>> minimum
     array(0.0)
 
@@ -3102,6 +3170,70 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     Minimization of scalar function of one or more variables using the
     modified Powell algorithm.
 
+    Parameters
+    ----------
+    fun : callable
+        The objective function to be minimized.
+
+            ``fun(x, *args) -> float``
+
+        where ``x`` is a 1-D array with shape (n,) and ``args``
+        is a tuple of the fixed parameters needed to completely
+        specify the function.
+    x0 : ndarray, shape (n,)
+        Initial guess. Array of real elements of size (n,),
+        where ``n`` is the number of independent variables.
+    args : tuple, optional
+        Extra arguments passed to the objective function and its
+        derivatives (`fun`, `jac` and `hess` functions).
+    method : str or callable, optional
+        The present documentation is specific to ``method='powell'``, but other
+        options are available. See documentation for `scipy.optimize.minimize`.
+    bounds : sequence or `Bounds`, optional
+        Bounds on decision variables. There are two ways to specify the bounds:
+
+            1. Instance of `Bounds` class.
+            2. Sequence of ``(min, max)`` pairs for each element in `x`. None
+               is used to specify no bound.
+
+        If bounds are not provided, then an unbounded line search will be used.
+        If bounds are provided and the initial guess is within the bounds, then
+        every function evaluation throughout the minimization procedure will be
+        within the bounds. If bounds are provided, the initial guess is outside
+        the bounds, and `direc` is full rank (or left to default), then some
+        function evaluations during the first iteration may be outside the
+        bounds, but every function evaluation after the first iteration will be
+        within the bounds. If `direc` is not full rank, then some parameters
+        may not be optimized and the solution is not guaranteed to be within
+        the bounds.
+
+    options : dict, optional
+        A dictionary of solver options. All methods accept the following
+        generic options:
+
+            maxiter : int
+                Maximum number of iterations to perform. Depending on the
+                method each iteration may use several function evaluations.
+            disp : bool
+                Set to True to print convergence messages.
+
+        See method-specific options for ``method='powell'`` below.
+    callback : callable, optional
+        Called after each iteration. The signature is:
+
+            ``callback(xk)``
+
+        where ``xk`` is the current parameter vector.
+
+    Returns
+    -------
+    res : OptimizeResult
+        The optimization result represented as a ``OptimizeResult`` object.
+        Important attributes are: ``x`` the solution array, ``success`` a
+        Boolean flag indicating if the optimizer exited successfully and
+        ``message`` which describes the cause of the termination. See
+        `OptimizeResult` for a description of other attributes.
+
     Options
     -------
     disp : bool
@@ -3118,20 +3250,6 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         first reached.
     direc : ndarray
         Initial set of direction vectors for the Powell method.
-    return_all : bool, optional
-        Set to True to return a list of the best solution at each of the
-        iterations.
-    bounds : `Bounds`
-        If bounds are not provided, then an unbounded line search will be used.
-        If bounds are provided and the initial guess is within the bounds, then
-        every function evaluation throughout the minimization procedure will be
-        within the bounds. If bounds are provided, the initial guess is outside
-        the bounds, and `direc` is full rank (or left to default), then some
-        function evaluations during the first iteration may be outside the
-        bounds, but every function evaluation after the first iteration will be
-        within the bounds. If `direc` is not full rank, then some parameters may
-        not be optimized and the solution is not guaranteed to be within the
-        bounds.
     return_all : bool, optional
         Set to True to return a list of the best solution at each of the
         iterations.
@@ -3190,13 +3308,12 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     fval = squeeze(func(x))
     x1 = x.copy()
     iter = 0
-    ilist = list(range(N))
     while True:
         try:
             fx = fval
             bigind = 0
             delta = 0.0
-            for i in ilist:
+            for i in range(N):
                 direc1 = direc[i]
                 fx2 = fval
                 fval, x, direc1 = _linesearch_powell(func, x, direc1,
@@ -3225,8 +3342,13 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
 
             # Construct the extrapolated point
             direc1 = x - x1
-            x2 = 2*x - x1
             x1 = x.copy()
+            # make sure that we don't go outside the bounds when extrapolating
+            if lower_bound is None and upper_bound is None:
+                lmax = 1
+            else:
+                _, lmax = _line_for_search(x, direc1, lower_bound, upper_bound)
+            x2 = x + min(lmax, 1) * direc1
             fx2 = squeeze(func(x2))
 
             if (fx > fx2):

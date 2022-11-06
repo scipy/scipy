@@ -69,12 +69,13 @@ def _bootstrap_resample(sample, n_resamples=None, random_state=None):
 
 def _percentile_of_score(a, score, axis):
     """Vectorized, simplified `scipy.stats.percentileofscore`.
+    Uses logic of the 'mean' value of percentileofscore's kind parameter.
 
     Unlike `stats.percentileofscore`, the percentile returned is a fraction
     in [0, 1].
     """
     B = a.shape[axis]
-    return (a < score).sum(axis=axis) / B
+    return ((a < score).sum(axis=axis) + (a <= score).sum(axis=axis)) / (2 * B)
 
 
 def _percentile_along_axis(theta_hat_b, alpha):
@@ -778,7 +779,7 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
 
     The probability of obtaining a test statistic less than or equal to the
     observed value under the null hypothesis is ~70%. This is greater than
-    our chosen threshold of 5%, so we cannot consider this to to be significant
+    our chosen threshold of 5%, so we cannot consider this to be significant
     evidence against the null hypothesis.
 
     Note that this p-value essentially matches that of
@@ -1429,7 +1430,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
 
     The probability of obtaining a test statistic less than or equal to the
     observed value under the null hypothesis is 0.4329%. This is less than our
-    chosen threshold of 5%, so we consider this to to be significant evidence
+    chosen threshold of 5%, so we consider this to be significant evidence
     against the null hypothesis in favor of the alternative.
 
     Because the size of the samples above was small, `permutation_test` could

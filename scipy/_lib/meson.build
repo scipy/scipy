@@ -31,11 +31,11 @@ lib_cython_gen = generator(cython_cli,
   output : '@BASENAME@.c',
   depends : [_cython_tree, _lib_pxd])
 
-
 py3.extension_module('_ccallback_c',
   lib_cython_gen.process('_ccallback_c.pyx'),
-  c_args: ['-Wno-discarded-qualifiers', cython_c_args],
+  c_args: [cython_c_args, Wno_discarded_qualifiers],
   include_directories: 'src',
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib'
 )
@@ -43,6 +43,7 @@ py3.extension_module('_ccallback_c',
 py3.extension_module('_test_ccallback',
   'src/_test_ccallback.c',
   include_directories: 'src',
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib'
 )
@@ -50,6 +51,7 @@ py3.extension_module('_test_ccallback',
 py3.extension_module('_fpumode',
   '_fpumode.c',
   include_directories: 'src',
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib'
 )
@@ -58,6 +60,7 @@ py3.extension_module('_test_deprecation_call',
   cython_gen.process('_test_deprecation_call.pyx'),
   c_args: cython_c_args,
   include_directories: 'src',
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib'
 )
@@ -66,6 +69,7 @@ py3.extension_module('_test_deprecation_def',
   cython_gen.process('_test_deprecation_def.pyx'),
   c_args: cython_c_args,
   include_directories: 'src',
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib'
 )
@@ -96,6 +100,7 @@ py3.extension_module('messagestream',
   lib_cython_gen.process('messagestream.pyx'),
   c_args: cython_c_args,
   include_directories: 'src',
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib'
 )
@@ -106,6 +111,7 @@ python_sources = [
   '_ccallback.py',
   '_disjoint_set.py',
   '_docscrape.py',
+  '_finite_differences.py',
   '_gcutils.py',
   '_pep440.py',
   '_testutils.py',

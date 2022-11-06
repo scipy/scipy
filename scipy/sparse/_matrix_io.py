@@ -33,6 +33,7 @@ def save_npz(file, matrix, compressed=True):
     --------
     Store sparse matrix to disk, and load it again:
 
+    >>> import numpy as np
     >>> import scipy.sparse
     >>> sparse_matrix = scipy.sparse.csc_matrix(np.array([[0, 0, 3], [4, 0, 0]]))
     >>> sparse_matrix
@@ -100,6 +101,7 @@ def load_npz(file):
     --------
     Store sparse matrix to disk, and load it again:
 
+    >>> import numpy as np
     >>> import scipy.sparse
     >>> sparse_matrix = scipy.sparse.csc_matrix(np.array([[0, 0, 3], [4, 0, 0]]))
     >>> sparse_matrix

@@ -215,6 +215,15 @@ class TestPeriodogram:
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype)
 
+    def test_shorter_window_error(self):
+        x = np.zeros(16)
+        x[0] = 1
+        win = signal.get_window('hann', 10)
+        expected_msg = ('the size of the window must be the same size '
+                        'of the input on the specified axis')
+        with assert_raises(ValueError, match=expected_msg):
+            periodogram(x, window=win)
+
 
 class TestWelch:
     def test_real_onesided_even(self):
