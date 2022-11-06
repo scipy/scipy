@@ -5673,7 +5673,7 @@ add_newdoc("gdtr",
 
     >>> a = np.array([[0.5], [1.5], [2.5]])
     >>> x = np.array([1., 2., 3., 4])
-    >>> print(f"a.shape: {a.shape}, xvalues.shape: {x.shape}")
+    >>> print(f"a.shape: {a.shape}, x.shape: {x.shape}")
     >>> gdtr_vals = gdtr(a, 3., x)
     >>> print(gdtr_vals)
     a shape: (3, 1), xvalues.shape: (4,)
@@ -5698,11 +5698,11 @@ add_newdoc("gdtr",
     >>> ax.set_title("Gamma distribution cumulative distribution function")
     >>> plt.show()
 
-    The gamma distribution cumulative distribution function is also available
-    as `stats.gamma`. Using `gdtr` directly can be much faster than calling
-    `stats.gamma.cdf`, especially for small arrays or individual values.
-    To get the same results one must use the following parametrization:
-    ``stats.gamma(b, scale=1/a)=gdtr(a, b)``.
+    The gamma distribution is also available as `stats.gamma`. Using `gdtr`
+    directly can be much faster than calling `stats.gamma.cdf`, especially
+    for small arrays or individual values. To get the same results one must
+    use the following parametrization:
+    ``stats.gamma(b, scale=1/a).cdf(x)=gdtr(a, b, x)``.
 
     >>> from scipy.stats import gamma
     >>> a = 1
@@ -5751,7 +5751,9 @@ add_newdoc("gdtrc",
 
     See Also
     --------
-    gdtr, gdtrix
+    gdtr: Gamma distribution cumulative distribution function
+    stats.gamma: Gamma distribution
+    gdtrix
 
     Notes
     -----
@@ -5765,6 +5767,70 @@ add_newdoc("gdtrc",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Compute the function for `a=1`, `b=2` at `x=5`.
+
+    >>> import numpy as np
+    >>> from scipy.special import gdtrc
+    >>> import matplotlib.pyplot as plt
+    >>> gdtrc(1., 2., 5.)
+    0.04042768199451279
+
+    Compute the function for `a=1`, `b=2` at several points by providing
+    a NumPy array for `x`.
+
+    >>> xvalues = np.array([1., 2., 3., 4])
+    >>> gdtrc(1., 1., xvalues)
+    array([0.36787944, 0.13533528, 0.04978707, 0.01831564])
+
+    `gdtrc` can evaluate different parameter sets by providing arrays with
+    broadcasting compatible shapes for `a`, `b` and `x`. Here we compute the
+    function for three different `a` at four positions `x` and `b=3`,
+    resulting in a 3x4 array.
+
+    >>> a = np.array([[0.5], [1.5], [2.5]])
+    >>> x = np.array([1., 2., 3., 4])
+    >>> print(f"a.shape: {a.shape}, x.shape: {x.shape}")
+    >>> gdtrc_vals = gdtrc(a, 3., x)
+    >>> print(gdtrc_vals)
+    a shape: (3, 1), xvalues.shape: (4,)
+    [[0.98561232 0.9196986  0.80884683 0.67667642]
+     [0.80884683 0.42319008 0.17357807 0.0619688 ]
+     [0.54381312 0.12465202 0.02025672 0.0027694 ]]
+
+    Plot the function for four different parameter sets.
+
+    >>> a_parameters = [0.3, 1, 2, 6]
+    >>> b_parameters = [2, 10, 15, 20]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(a_parameters, b_parameters, linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     a, b, style = parameter_set
+    ...     gdtrc_vals = gdtrc(a, b, x)
+    ...     ax.plot(x, gdtrc_vals, label=f"$a= {a},\, b={b}$", ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("Gamma distribution survival function")
+    >>> plt.show()
+
+    The gamma distribution is also available as `stats.gamma`. Using `gdtrc`
+    directly can be much faster than calling `stats.gamma.sf`, especially
+    for small arrays or individual values. To get the same results one must
+    use the following parametrization:
+    ``stats.gamma(b, scale=1/a).sf(x)=gdtrc(a, b, x)``.
+
+    >>> from scipy.stats import gamma
+    >>> a = 1
+    >>> b = 3
+    >>> x = 2.
+    >>> gdtrc_result = gdtrc(a, b, x) # this will often be faster than below
+    >>> gamma_dist = gamma(b, scale=1/a)
+    >>> gamma_dist_result = gamma_dist.sf(x)
+    >>> gdtr_result == gamma_dist_result # test that results are equal
+    True
     """)
 
 add_newdoc("gdtria",
