@@ -397,6 +397,15 @@ class TestRegularGridInterpolator:
         assert_equal(res[i], np.nan)
         assert_equal(res[~i], f(x[~i]))
 
+        # also test the length-one axis f(nan)
+        x = [1, 2, 3]
+        y = [1, ]
+        data = np.ones((3, 1))
+        f = RegularGridInterpolator((x, y), data, fill_value=1,
+                                    bounds_error=False, method=method)
+        assert np.isnan(f([np.nan, 1]))
+        assert np.isnan(f([1, np.nan]))
+
     @pytest.mark.parametrize("method", ['nearest', 'linear'])
     def test_nan_x_2d(self, method):
         x, y = np.array([0, 1, 2]), np.array([1, 3, 7])
@@ -548,6 +557,36 @@ class TestRegularGridInterpolator:
         v2 = np.expand_dims(vs, axis=0)
         assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
+    def test_nonscalar_values_linear_2D(self):
+        # Verify that non-scalar values work in the 2D fast path
+        method = 'linear'
+        points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
+                  (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0), ]
+
+        rng = np.random.default_rng(1234)
+
+        trailing_points = (3, 4)
+        # NB: values has a `num_trailing_dims` trailing dimension
+        values = rng.random((6, 7, *trailing_points))
+        sample = rng.random(2)   # a single sample point !
+
+        interp = RegularGridInterpolator(points, values, method=method,
+                                         bounds_error=False)
+        v = interp(sample)
+
+        # v has a single sample point *per entry in the trailing dimensions*
+        assert v.shape == (1, *trailing_points)
+
+        # check the values, too : manually loop over the trailing dimensions
+        vs = np.empty((values.shape[-2:]))
+        for i in range(values.shape[-2]):
+            for j in range(values.shape[-1]):
+                interp = RegularGridInterpolator(points, values[..., i, j],
+                                                 method=method,
+                                                 bounds_error=False)
+                vs[i, j] = interp(sample)
+        v2 = np.expand_dims(vs, axis=0)
+        assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
 class MyValue:
     """

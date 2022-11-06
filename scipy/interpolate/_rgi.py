@@ -6,6 +6,7 @@ import numpy as np
 
 from .interpnd import _ndim_coords_from_arrays
 from ._cubic import PchipInterpolator
+from ._rgi_cython import evaluate_linear_2d, find_indices
 from ._bsplines import make_interp_spline
 from ._fitpack2 import RectBivariateSpline
 
@@ -273,6 +274,7 @@ class RegularGridInterpolator:
                     # input is descending, so make it ascending
                     descending_dimensions.append(i)
                     p = np.flip(p)
+                    p = np.ascontiguousarray(p)
                 else:
                     raise ValueError(
                         "The points in dimension %d must be strictly "
@@ -338,7 +340,17 @@ class RegularGridInterpolator:
 
         if method == "linear":
             indices, norm_distances = self._find_indices(xi.T)
-            result = self._evaluate_linear(indices, norm_distances)
+            if (ndim == 2 and hasattr(self.values, 'dtype') and
+                    self.values.ndim == 2):
+                # a fast path
+                out = np.empty(indices.shape[1], dtype=self.values.dtype)
+                result = evaluate_linear_2d(self.values,
+                                            indices,
+                                            norm_distances,
+                                            self.grid,
+                                            out)
+            else:
+                result = self._evaluate_linear(indices, norm_distances)
         elif method == "nearest":
             indices, norm_distances = self._find_indices(xi.T)
             result = self._evaluate_nearest(indices, norm_distances)
@@ -365,6 +377,7 @@ class RegularGridInterpolator:
 
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi_shape[-1])
+        xi = np.asarray(xi, dtype=float)
 
         # find nans in input
         nans = np.any(np.isnan(xi), axis=-1)
@@ -402,14 +415,15 @@ class RegularGridInterpolator:
         # to get the terms in the above formula. This corresponds to iterating
         # over the vertices of a hypercube.
         hypercube = itertools.product(*zip(zipped1, zipped2))
-        values = 0.
+        value = np.array([0.])
         for h in hypercube:
             edge_indices, weights = zip(*h)
-            weight = 1.
+            weight = np.array([1.])
             for w in weights:
-                weight *= w
-            values += np.asarray(self.values[edge_indices]) * weight[vslice]
-        return values
+                weight = weight * w
+            term = np.asarray(self.values[edge_indices]) * weight[vslice]
+            value = value + term   # cannot use += because broadcasting
+        return value
 
     def _evaluate_nearest(self, indices, norm_distances):
         idx_res = [np.where(yi <= .5, i, i + 1)
@@ -493,25 +507,7 @@ class RegularGridInterpolator:
         return values
 
     def _find_indices(self, xi):
-        # find relevant edges between which xi are situated
-        indices = []
-        # compute distance to lower edge in unity units
-        norm_distances = []
-        # iterate through dimensions
-        for x, grid in zip(xi, self.grid):
-            i = np.searchsorted(grid, x) - 1
-            i[i < 0] = 0
-            i[i > grid.size - 2] = grid.size - 2
-            indices.append(i)
-
-            # compute norm_distances, incl length-1 grids,
-            # where `grid[i+1] == grid[i]`
-            denom = grid[i + 1] - grid[i]
-            with np.errstate(divide='ignore', invalid='ignore'):
-                norm_dist = np.where(denom != 0, (x - grid[i]) / denom, 0)
-            norm_distances.append(norm_dist)
-
-        return indices, norm_distances
+        return find_indices(self.grid, xi)
 
     def _find_out_of_bounds(self, xi):
         # check for out of bounds xi
