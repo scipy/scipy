@@ -51,6 +51,14 @@ if m_dep.found()
   add_project_link_arguments('-lm', language : 'c')
 endif
 
+if host_machine.system() == 'os400'
+  # IBM i system, needed to avoid build errors - see gh-17193
+  add_project_arguments('-D__STDC_FORMAT_MACROS', language : 'cpp')
+  add_project_link_arguments('-Wl,-bnotextro', language : 'c')
+  add_project_link_arguments('-Wl,-bnotextro', language : 'cpp')
+  add_project_link_arguments('-Wl,-bnotextro', language : 'fortran')
+endif
+
 # Adding at project level causes many spurious -lgfortran flags.
 add_languages('fortran', native: false)
 ff = meson.get_compiler('fortran')
@@ -105,7 +113,6 @@ if not cc.links('', name: '-Wl,--version-script', args: ['-shared', version_link
 endif
 
 cython = find_program('cython')
-pythran = find_program('pythran')
 generate_f2pymod = files('tools/generate_f2pymod.py')
 tempita = files('scipy/_build_utils/tempita.py')
 copier = find_program(['cp', 'scipy/_build_utils/copyfiles.py'])
@@ -116,5 +123,18 @@ py_mod = import('python')
 # everywhere else, see https://github.com/mesonbuild/meson/pull/10783.
 py3 = py_mod.find_installation()
 py3_dep = py3.dependency()
+
+# For now, keep supporting this environment variable (same as in setup.py)
+# Once setup.py-based builds are gone, we can convert this to a command-line flag, or make Pythran non-optional.
+use_pythran = run_command(py3,
+  [
+    '-c',
+    'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 1))'
+  ],
+  check: true
+).stdout().strip() == '1'
+if use_pythran
+  pythran = find_program('pythran')
+endif
 
 subdir('scipy')

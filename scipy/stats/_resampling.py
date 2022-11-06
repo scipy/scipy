@@ -69,12 +69,13 @@ def _bootstrap_resample(sample, n_resamples=None, random_state=None):
 
 def _percentile_of_score(a, score, axis):
     """Vectorized, simplified `scipy.stats.percentileofscore`.
+    Uses logic of the 'mean' value of percentileofscore's kind parameter.
 
     Unlike `stats.percentileofscore`, the percentile returned is a fraction
     in [0, 1].
     """
     B = a.shape[axis]
-    return (a < score).sum(axis=axis) / B
+    return ((a < score).sum(axis=axis) + (a <= score).sum(axis=axis)) / (2 * B)
 
 
 def _percentile_along_axis(theta_hat_b, alpha):

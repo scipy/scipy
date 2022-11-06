@@ -12,7 +12,7 @@ from scipy._build_utils.compiler_helper import (set_c_flags_hook,
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from scipy._build_utils.system_info import get_info as get_system_info
+    from numpy.distutils.system_info import get_info as get_system_info
     from scipy._build_utils import combine_dict, uses_blas64
 
     config = Configuration('special', parent_package, top_path)

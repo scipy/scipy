@@ -84,6 +84,11 @@ def qmf(hk):
     hk : array_like
         Coefficients of high-pass filter.
 
+    Returns
+    -------
+    array_like
+        High-pass filter coefficients.
+
     """
     N = len(hk) - 1
     asgn = [{0: 1, 1: -1}[k % 2] for k in range(N + 1)]
@@ -365,6 +370,7 @@ def morlet2(M, s, w=5):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -378,8 +384,6 @@ def morlet2(M, s, w=5):
     This example shows basic use of `morlet2` with `cwt` in time-frequency
     analysis:
 
-    >>> from scipy import signal
-    >>> import matplotlib.pyplot as plt
     >>> t, dt = np.linspace(0, 1, 200, retstep=True)
     >>> fs = 1/dt
     >>> w = 6.
@@ -458,6 +462,7 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> t = np.linspace(-1, 1, 200, endpoint=False)

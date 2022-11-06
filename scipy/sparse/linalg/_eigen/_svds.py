@@ -207,6 +207,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     --------
     Construct a matrix ``A`` from singular values and vectors.
 
+    >>> import numpy as np
     >>> from scipy.stats import ortho_group
     >>> from scipy.sparse import csc_matrix, diags
     >>> from scipy.sparse.linalg import svds

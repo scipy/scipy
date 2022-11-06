@@ -417,6 +417,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     --------
     Basic exponential decay showing automatically chosen time points.
 
+    >>> import numpy as np
     >>> from scipy.integrate import solve_ivp
     >>> def exponential_decay(t, y): return -0.5 * y
     >>> sol = solve_ivp(exponential_decay, [0, 10], [2, 4, 8])

@@ -13,7 +13,7 @@ dependencies:
   - compilers
   - meson>=0.63.0
   - meson-python
-  - ninja
+  - ninja==1.10.2
   - numpy
   - openblas
   - pkg-config  # note: not available on Windows
