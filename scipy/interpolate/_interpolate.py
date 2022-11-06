@@ -93,10 +93,41 @@ def lagrange(x, w):
 # !! found, get rid of it!
 
 
+dep_mesg = """\
+`interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy 1.12.0.
+
+For legacy code, nearly bug-for-bug compatible replacements are
+`RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
+scattered 2D data.
+
+In new code, for regular grids use `RegularGridInterpolator` instead.
+For scattered data, prefer `LinearNDInterpolator` or
+`CloughTocher2DInterpolator`.
+
+For more details see
+`https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff`
+"""
+
 class interp2d:
     """
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
+
+    .. deprecated:: 1.10.0
+
+    `interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy 1.12.0.
+
+    For legacy code, nearly bug-for-bug compatible replacements are
+    `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
+    scattered 2D data.
+
+    In new code, for regular grids use `RegularGridInterpolator` instead.
+    For scattered data, prefer `LinearNDInterpolator` or
+    `CloughTocher2DInterpolator`.
+
+    For more details see
+    `https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff`
+
 
     Interpolate over a 2-D grid.
 
@@ -206,6 +237,7 @@ class interp2d:
     >>> plt.show()
     """
 
+    @np.deprecate(old_name='interp2d', message=dep_mesg)
     def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
                  fill_value=None):
         x = ravel(x)
@@ -263,6 +295,7 @@ class interp2d:
         self.x_min, self.x_max = np.amin(x), np.amax(x)
         self.y_min, self.y_max = np.amin(y), np.amax(y)
 
+    @np.deprecate(old_name='interp2d', message=dep_mesg)
     def __call__(self, x, y, dx=0, dy=0, assume_sorted=False):
         """Interpolate the function.
 
