@@ -2547,22 +2547,6 @@ class TestRandomTable:
 
         assert_equal(expected, got)
 
-    def test_rvs_method(self):
-        pytest.xfail("patefield will be implemented in follow-up PR")
-
-        row = [1, 3]
-        col = [2, 1, 1]
-
-        ct = random_table
-        rvs1 = ct.rvs(row, col, size=1000, method="boyett", random_state=1)
-        rvs2 = ct.rvs(row, col, size=1000, method="patefield", random_state=1)
-
-        tab1, count1 = np.unique(rvs1, axis=0, return_counts=True)
-        tab2, count2 = np.unique(rvs2, axis=0, return_counts=True)
-
-        assert_equal(tab1, tab2)
-        assert_allclose(count1, count2)
-
     def test_process_rvs_method_bad_argument(self):
         row = [1, 3]
         col = [2, 1, 1]
@@ -2709,18 +2693,32 @@ class TestRandomTable:
             random_table.rvs(row, col, size=np.nan, method=method,
                              random_state=rng)
 
-    def test_frozen(self):
+    @pytest.mark.parametrize("method", ("boyett", "boyett2", "patefield"))
+    def test_rvs_method(self, method):
+        row = [1, 3]
+        col = [2, 1, 1]
+
+        ct = random_table
+        rng = np.random.default_rng(628174795866951638)
+        rvs = ct.rvs(row, col, size=10000, method=method, random_state=rng)
+
+        unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
+
+        # generated frequencies should match expected frequencies
+        p = ct.pmf(unique_rvs, row, col)
+        assert_allclose(p * len(rvs), counts, rtol=0.03)
+
+    @pytest.mark.parametrize("method", ("boyett", "boyett2", "patefield"))
+    def test_rvs_frozen(self, method):
         rng1 = np.random.default_rng(628174795866951638)
         rng2 = np.random.default_rng(628174795866951638)
 
         row = [2, 6]
         col = [1, 3, 4]
         d = random_table(row, col, seed=rng1)
-        expected = random_table.mean(row, col)
-        assert_equal(expected, d.mean())
 
-        expected = random_table.rvs(row, col, size=10, random_state=rng2)
-        got = d.rvs(size=10)
+        expected = random_table.rvs(row, col, size=10, method=method, random_state=rng2)
+        got = d.rvs(size=10, method=method)
         assert_equal(expected, got)
 
     @pytest.mark.parametrize('v', (1, 2))
@@ -2740,6 +2738,21 @@ class TestRandomTable:
         assert result.shape == (1, len(row), len(col))
         assert np.sum(result) == ntot
 
+    def test_frozen(self):
+        row = [2, 6]
+        col = [1, 3, 4]
+        d = random_table(row, col)
+
+        sample = d.rvs()
+
+        expected = random_table.mean(row, col)
+        assert_equal(expected, d.mean())
+
+        expected = random_table.pmf(sample, row, col)
+        assert_equal(expected, d.pmf(sample))
+
+        expected = random_table.logpmf(sample, row, col)
+        assert_equal(expected, d.logpmf(sample))
 
 def check_pickling(distfn, args):
     # check that a distribution instance pickles and unpickles

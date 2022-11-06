@@ -717,3 +717,26 @@ class KolmogorovSmirnovTwoSamples(Benchmark):
 
     def time_ks2(self, alternative, mode, size):
         stats.ks_2samp(self.a, self.b, alternative=alternative, mode=mode)
+
+
+class RandomTable(Benchmark):
+    param_names = ["method", "ntot", "ncell"]
+    params = [
+        ["boyett", "boyett2", "patefield"],
+        # [1, 10, 100, 1000, 10000],
+        # [4, 16, 64, 144, 256, 625, 1024]
+        [1, 100],
+        [4, 16]
+    ]
+
+    def setup(self, method, ntot, ncell):
+        self.rng = np.random.default_rng(12345678)
+        k = int(ncell ** 0.5)
+        assert k ** 2 == ncell
+        p = np.ones(k) / k
+        row = self.rng.multinomial(ntot, p)
+        col = self.rng.multinomial(ntot, p)
+        self.dist = stats.random_table(row, col)
+
+    def time_method(self, method, ntot, ncell):
+        self.dist.rvs(1000, method=method, random_state=self.rng)

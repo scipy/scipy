@@ -5427,8 +5427,8 @@ class random_table_gen(multi_rv_generic):
 
     @staticmethod
     def _rvs_boyett2(row, col, ntot, size, random_state):
-        x = np.repeat(np.arange(len(row)), row)
-        y = np.repeat(np.arange(len(col)), col)
+        x = np.repeat(np.arange(len(row)), row.astype(np.int_))
+        y = np.repeat(np.arange(len(col)), col.astype(np.int_))
 
         def crosstab(x, y):
             return contingency.crosstab(x, y).count
