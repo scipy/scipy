@@ -5629,6 +5629,7 @@ add_newdoc("gdtr",
     See also
     --------
     gdtrc : 1 - CDF of the gamma distribution.
+    stats.gamma: Gamma distribution
 
     Returns
     -------
@@ -5648,6 +5649,70 @@ add_newdoc("gdtr",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Compute the function for `a=1`, `b=2` at `x=5`.
+
+    >>> import numpy as np
+    >>> from scipy.special import gdtr
+    >>> import matplotlib.pyplot as plt
+    >>> gdtr(1., 2., 5.)
+    0.9595723180054873
+
+    Compute the function for `a=1`, `b=2` at several points by providing
+    a NumPy array for `x`.
+
+    >>> xvalues = np.array([1., 2., 3., 4])
+    >>> gdtr(1., 1., xvalues)
+    array([0.63212056, 0.86466472, 0.95021293, 0.98168436])
+
+    `gdtr` can evaluate different parameter sets by providing arrays with
+    broadcasting compatible shapes for `a`, `b` and `x`. Here we compute the
+    function for three different `a` at four positions `x` and `b=3`,
+    resulting in a 3x4 array.
+
+    >>> a = np.array([[0.5], [1.5], [2.5]])
+    >>> x = np.array([1., 2., 3., 4])
+    >>> print(f"a.shape: {a.shape}, xvalues.shape: {x.shape}")
+    >>> gdtr_vals = gdtr(a, 3., x)
+    >>> print(gdtr_vals)
+    a shape: (3, 1), xvalues.shape: (4,)
+    [[0.01438768 0.0803014  0.19115317 0.32332358]
+     [0.19115317 0.57680992 0.82642193 0.9380312 ]
+     [0.45618688 0.87534798 0.97974328 0.9972306 ]]
+
+    Plot the function for four different parameter sets.
+
+    >>> a_parameters = [0.3, 1, 2, 6]
+    >>> b_parameters = [2, 10, 15, 20]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(a_parameters, b_parameters, linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     a, b, style = parameter_set
+    ...     gdtr_vals = gdtr(a, b, x)
+    ...     ax.plot(x, gdtr_vals, label=f"$a= {a},\, b={b}$", ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("Gamma distribution cumulative distribution function")
+    >>> plt.show()
+
+    The gamma distribution cumulative distribution function is also available
+    as `stats.gamma`. Using `gdtr` directly can be much faster than calling
+    `stats.gamma.cdf`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.gamma(b, scale=1/a)=gdtr(a, b)``.
+
+    >>> from scipy.stats import gamma
+    >>> a = 1
+    >>> b = 3
+    >>> x = 2.
+    >>> gdtr_result = gdtr(a, b, x) # this will often be faster than below
+    >>> gamma_dist = gamma(b, scale=1/a)
+    >>> gamma_dist_result = gamma_dist.cdf(x)
+    >>> gdtr_result == gamma_dist_result # test that results are equal
+    True
     """)
 
 add_newdoc("gdtrc",
