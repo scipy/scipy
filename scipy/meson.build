@@ -70,14 +70,6 @@ incdir_pybind11 = run_command(py3,
 inc_pybind11 = include_directories(incdir_pybind11)
 
 # Pythran include directory and build flags
-use_pythran = run_command(py3,
-  [
-    '-c',
-    'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 1))'
-  ],
-  check: true
-).stdout().strip() == '1'
-
 if use_pythran
   incdir_pythran = run_command(py3,
     [
