@@ -12,9 +12,9 @@ def configuration(parent_package='', top_path=None):
         sources=['_rcont.c'],
         include_dirs=[np.get_include()],
         library_dirs=[join(np.get_include(),
-                        '..', '..', 'random', 'lib'),
+                      '..', '..', 'random', 'lib'),
                       join(np.get_include(),
-                        '..', 'lib')],
+                      '..', 'lib')],
         libraries=['npyrandom', 'npymath']
     )
     return config

@@ -2718,7 +2718,8 @@ class TestRandomTable:
         col = [1, 3, 4]
         d = random_table(row, col, seed=rng1)
 
-        expected = random_table.rvs(row, col, size=10, method=method, random_state=rng2)
+        expected = random_table.rvs(row, col, size=10, method=method,
+                                    random_state=rng2)
         got = d.rvs(size=10, method=method)
         assert_equal(expected, got)
 
