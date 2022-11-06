@@ -5545,6 +5545,7 @@ class uniform_direction_gen(multi_rv_generic):
         Dimension of directions.
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
+
         Used for drawing random variates.
         If `seed` is `None`, the `~np.random.RandomState` singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used, seeded
@@ -5658,6 +5659,7 @@ class uniform_direction_frozen(multi_rv_frozen):
             Dimension of matrices
         seed : {None, int, `numpy.random.Generator`,
                 `numpy.random.RandomState`}, optional
+
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
