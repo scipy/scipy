@@ -507,9 +507,6 @@ class RegularGridInterpolator:
         return values
 
     def _find_indices(self, xi):
-
-   ##     breakpoint()
-
         return find_indices(self.grid, xi)
 
     def _find_out_of_bounds(self, xi):
