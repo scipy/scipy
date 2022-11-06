@@ -5675,13 +5675,13 @@ add_newdoc("gdtr",
 
     >>> a = np.array([[0.5], [1.5], [2.5]])
     >>> x = np.array([1., 2., 3., 4])
-    >>> print(f"a.shape: {a.shape}, x.shape: {x.shape}")
-    >>> gdtr_vals = gdtr(a, 3., x)
-    >>> print(gdtr_vals)
-    a shape: (3, 1), xvalues.shape: (4,)
-    [[0.01438768 0.0803014  0.19115317 0.32332358]
-     [0.19115317 0.57680992 0.82642193 0.9380312 ]
-     [0.45618688 0.87534798 0.97974328 0.9972306 ]]
+    >>> a.shape, x.shape
+    ((3, 1), (4,))
+
+    >>> gdtr(a, 3., x)
+    array([[0.01438768, 0.0803014 , 0.19115317, 0.32332358],
+           [0.19115317, 0.57680992, 0.82642193, 0.9380312 ],
+           [0.45618688, 0.87534798, 0.97974328, 0.9972306 ]])
 
     Plot the function for four different parameter sets.
 
@@ -5711,8 +5711,7 @@ add_newdoc("gdtr",
     >>> b = 3
     >>> x = 2.
     >>> gdtr_result = gdtr(a, b, x) # this will often be faster than below
-    >>> gamma_dist = gamma(b, scale=1/a)
-    >>> gamma_dist_result = gamma_dist.cdf(x)
+    >>> gamma_dist_result = gamma(b, scale=1/a).cdf(x)
     >>> gdtr_result == gamma_dist_result # test that results are equal
     True
     """)
@@ -5794,13 +5793,13 @@ add_newdoc("gdtrc",
 
     >>> a = np.array([[0.5], [1.5], [2.5]])
     >>> x = np.array([1., 2., 3., 4])
-    >>> print(f"a.shape: {a.shape}, x.shape: {x.shape}")
-    >>> gdtrc_vals = gdtrc(a, 3., x)
-    >>> print(gdtrc_vals)
-    a shape: (3, 1), xvalues.shape: (4,)
-    [[0.98561232 0.9196986  0.80884683 0.67667642]
-     [0.80884683 0.42319008 0.17357807 0.0619688 ]
-     [0.54381312 0.12465202 0.02025672 0.0027694 ]]
+    >>> a.shape, x.shape
+    ((3, 1), (4,))
+
+    >>> gdtrc(a, 3., x)
+    array([[0.98561232, 0.9196986 , 0.80884683, 0.67667642],
+           [0.80884683, 0.42319008, 0.17357807, 0.0619688 ],
+           [0.54381312, 0.12465202, 0.02025672, 0.0027694 ]])
 
     Plot the function for four different parameter sets.
 
@@ -5830,9 +5829,8 @@ add_newdoc("gdtrc",
     >>> b = 3
     >>> x = 2.
     >>> gdtrc_result = gdtrc(a, b, x) # this will often be faster than below
-    >>> gamma_dist = gamma(b, scale=1/a)
-    >>> gamma_dist_result = gamma_dist.sf(x)
-    >>> gdtr_result == gamma_dist_result # test that results are equal
+    >>> gamma_dist_result = gamma(b, scale=1/a).sf(x)
+    >>> gdtrc_result == gamma_dist_result # test that results are equal
     True
     """)
 
