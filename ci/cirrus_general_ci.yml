@@ -31,7 +31,7 @@ linux_aarch64_test_task:
     ln -s $(which python3.10) python
     export PATH=$PWD:$PATH
 
-    python -m pip install meson ninja==1.10.2.4 numpy cython pybind11 pythran cython
+    python -m pip install meson ninja numpy cython pybind11 pythran cython
     python -m pip install click rich_click doit pydevtool
     python -m pip install pytest pooch
     
@@ -60,7 +60,7 @@ musllinux_amd64_test_task:
   python_dependencies_script: |
       python -m pip install cython
       python -m pip install -vvv --upgrade numpy    
-      python -m pip install meson ninja==1.10.2.4 pybind11 pythran pytest
+      python -m pip install meson ninja pybind11 pythran pytest
       python -m pip install click rich_click doit pydevtool pooch
 
   build_script: |
@@ -93,7 +93,7 @@ macos_arm64_test_task:
     source scipy-dev/bin/activate
     popd
 
-    python -m pip install meson ninja==1.10.2.4 numpy cython pybind11 pythran cython
+    python -m pip install meson ninja numpy cython pybind11 pythran cython
     python -m pip install click rich_click doit pydevtool
     python -m pip install pytest pooch
     export DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib
