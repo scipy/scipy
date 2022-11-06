@@ -2536,13 +2536,14 @@ class TestRandomTable:
         assert_equal(col, c)
         assert n == np.sum(row)
 
-    def test_process_rvs_method_on_None(self):
-        # TODO also test with a case where "patefield" is selected
-        row = [1, 3]
-        col = [2, 1, 1]
+    @pytest.mark.parametrize("scale,method",
+                             ((1, "boyett"), (100, "patefield")))
+    def test_process_rvs_method_on_None(self, scale, method):
+        row = np.array([1, 3]) * scale
+        col = np.array([2, 1, 1]) * scale
 
         ct = random_table
-        expected = ct.rvs(row, col, method="boyett", random_state=1)
+        expected = ct.rvs(row, col, method=method, random_state=1)
         got = ct.rvs(row, col, method=None, random_state=1)
 
         assert_equal(expected, got)

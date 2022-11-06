@@ -5415,7 +5415,7 @@ class random_table_gen(multi_rv_generic):
 
     @classmethod
     def _rvs_select(cls, r, c, n):
-        fac = 1.0  # TODO find optimum with benchmarks,
+        fac = 1.0  # benchmarks show that this value is about 1
         k = len(r) * len(c)  # number of cells
         if n > fac * np.log(n) * k:
             return cls._rvs_patefield
@@ -5425,6 +5425,7 @@ class random_table_gen(multi_rv_generic):
     def _rvs_boyett(row, col, ntot, size, random_state):
         return _rcont.rvs_rcont1(row, col, ntot, size, random_state)
 
+    # TODO remove this, it only exist temporarily for testing
     @staticmethod
     def _rvs_boyett2(row, col, ntot, size, random_state):
         x = np.repeat(np.arange(len(row)), row.astype(np.int_))
