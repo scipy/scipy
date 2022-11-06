@@ -7,13 +7,16 @@
 Extrapolation tips and tricks
 =============================
 
-Handling of extrapolation—evaluation of the interpolators on query
-points outside of the domain of interpolated data— is not fully
-consistent among different routines in `scipy.interpolate`. In some
-applications you can use the ``extrapolate`` or ``fill_value`` keywords;
-this may or may not be adequate to a particular problem.
+Handling of extrapolation---evaluation of the interpolators on query
+points outside of the domain of interpolated data---is not fully
+consistent among different routines in `scipy.interpolate`. Different
+interpolators use different sets of keyword arguments to control the behavior
+outside of the data domain: some use ``extrapolate=True/False/None``, some
+allow the ``fill_value`` keyword. Refer to the API documentation for details
+for each specific interpolation routine.
 
-Special attention needs to be paid to extrapolation of non-linear
+Depending on a particular problem, the available keywords may or may not be
+sufficient. Special attention needs to be paid to extrapolation of non-linear
 interpolants. Very often the extrapolated results make less
 sense with increasing distance from the data domain. This is of course
 to be expected: an interpolant only knows the data within the data
@@ -22,8 +25,9 @@ domain.
 When the default extrapolated results are not adequate, users need to
 implement the desired extrapolation mode themselves.
 
-In this tutorial, we consider several worked examples of both
-approaches. These examples may or may not be applicable to your
+In this tutorial, we consider several worked examples where we demonstrate both
+a use of available keywords and manual implementtaion of desired extrapolation
+modes. These examples may or may not be applicable to your
 particular problem; they are not necessarily best practices; and they
 are deliberately pared down to bare essentials needed to demonstrate the
 main ideas, in a hope that they serve as an inspiration for your
@@ -91,7 +95,8 @@ CubicSpline extend the boundary conditions
 controlled by the ``bc_type`` parameter. This parameter can either list
 explicit values of derivatives at the edges, or use helpful aliases. For
 instance, ``bc_type="clamped"`` sets the first derivatives to zero,
-``bc_type="natural"`` sets the second derivatives to zero, and so on.
+``bc_type="natural"`` sets the second derivatives to zero (two other
+recognized string values are "periodic" and "not-a-knot")
 
 While the extrapolation is controlled by the boundary condition, the
 relation is not very intuitive. For instance, one can expect that for
@@ -103,10 +108,10 @@ zero second derivative at a given point.
 
 One other way of seeing why this expectation is too strong is to
 consider a dataset with only three data points, where the spline has two
-polynomial pieces. To extrapolate linearly, both of these pieces need to
-be linear. But then, two linear pieces cannot match at a middle point
-with a continuous 2nd derivative! (Unless of course, if all three data
-points actually lie on a single straight line).
+polynomial pieces. To extrapolate linearly, this expectation implies that both
+of these pieces are linear. But then, two linear pieces cannot match at a
+middle point with a continuous 2nd derivative! (Unless of course, if all three
+data points actually lie on a single straight line).
 
 To illustrate the behavior we consider a synthetic dataset and compare
 several boundary conditions:
@@ -138,19 +143,20 @@ several boundary conditions:
     plt.tight_layout()
     plt.show()
 
-It is clearly seen that e.g. natural spline does have the zero second derivative
-at the boundaries, but extrapolation is non-linear. ``bc_type="clamped"``
-shows a similar behavior: first derivatives are only equal to zero exactly at the
-boundary. In all cases, extrapolation is done by extending the first and last
-polynomial pieces of the spline, whatever they happen to be.
+It is clearly seen that e.g. natural spline does have the zero second
+derivative at the boundaries, but extrapolation is non-linear.
+``bc_type="clamped"`` shows a similar behavior: first derivatives are only
+equal to zero exactly at the boundary. In all cases, extrapolation is done by
+extending the first and last polynomial pieces of the spline, whatever they
+happen to be.
 
-One possible way to force the extrapolation is to extend the interpolation domain
-to add first and last polynomial pieces which have desired properties.
+One possible way to force the extrapolation is to extend the interpolation
+domain to add first and last polynomial pieces which have desired properties.
 
 Here we use ``extend`` method of the `CubicSpline` superclass,
 `PPoly`, to add two extra breakpoints and to make sure that the additional
-polynomial pieces maintain the values of the derivatives. Then the extrapolation
-proceeds using these two additional intervals.
+polynomial pieces maintain the values of the derivatives. Then the
+extrapolation proceeds using these two additional intervals.
 
 .. plot::
 
@@ -160,10 +166,11 @@ proceeds using these two additional intervals.
 
     def add_boundary_knots(spline):
         """
-        Add knots infinitesimally to the left and right with zero 2nd and 3rd derivative.
+        Add knots infinitesimally to the left and right.
 
-        Maintain the first derivative from whatever boundary condition was selected,
-        Modifies the spline in place.
+        Additional intervals are added to have zero 2nd and 3rd derivatives,
+        and to maintain the first derivative from whatever boundary condition
+        was selected. The spline is modified in place.
         """
         # determine the slope at the left edge
         leftx = spline.x[0]
@@ -190,7 +197,7 @@ proceeds using these two additional intervals.
     ys = [4.5, 3.6, 1.6, 0.0, -3.3, -3.1, -1.8, -1.7]
 
     notaknot = CubicSpline(xs,ys, bc_type='not-a-knot')
-    # not-a-knot does not require additional boundary conditions for extrapolation
+    # not-a-knot does not require additional intervals
 
     natural = CubicSpline(xs,ys, bc_type='natural')
     # extend the natural natural spline with linear extrapolating knots
@@ -224,7 +231,7 @@ Manually implement the asymptotics
 ==================================
 
 The previous trick of extending the interpolation domain relies on the
-`CubicSpline.extend` method. An somewhat more general alternative is to
+`CubicSpline.extend` method. A somewhat more general alternative is to
 implement a wrapper which handles the out-of-bounds behavior explicitly.
 Let us consider a worked example.
 
@@ -269,10 +276,10 @@ of roots due to periodicity of the ``tan`` function), repeated calls to
 `scipy.optimize.brentq` become prohibitively expensive.
 
 To circumvent this difficulty, we tabulate :math:`y = ax - 1/\tan{x}`
-and interpolate it on the tabulated grid. In fact, we will use *inverse*
+and interpolate it on the tabulated grid. In fact, we will use the *inverse*
 interpolation: we interpolate the values of :math:`x` versus :math:`у`.
 This way, solving the original equation becomes simply an evaluation of
-the interpolated function at the zero argument.
+the interpolated function at zero argument.
 
 To improve the interpolation accuracy we will use the knowledge of the
 derivatives of the tabulated function. We will use
@@ -375,13 +382,13 @@ Note that this implementation is intentionally pared down. From the API
 perspective, you may want to instead implement the ``__call__`` method
 so that the full dependence of ``x`` on ``y`` is available. From the
 numerical perspective, more work is needed to make sure that the switch
-between interpolation and asymptotic occurs deep enough into the
+between interpolation and asymptotics occurs deep enough into the
 asymptotic regime, so that the resulting function is smooth enough at
 the switch-over point.
 
 Also in this example we artificially limited the problem to only
 consider a single periodicity interval of the ``tan`` function, and only
-dealt with :math:`a >0`. For negative values of :math:`a`, we would need
+dealt with :math:`a > 0`. For negative values of :math:`a`, we would need
 to implement the other asymptotics, for :math:`x\to \pi`.
 
 However the basic idea is the same.
