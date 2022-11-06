@@ -760,6 +760,44 @@ class multivariate_normal_gen(multi_rv_generic):
             out = mean + cov_object.colorize(x)
         return out
 
+    def fit(self, data,mean=None, cov=1):
+        r"""Fits a multivariante disterbution to data.
+
+        Parameters
+        ----------
+        data : ndarray
+            The data for which the disterbution is fitted to.
+
+        Returns
+        -------
+        h : multivariate_normal
+            Multivariate normal distribution fitted for data
+
+        Raises
+        ------
+        data and disterbution have a dimensions mismatch
+
+        Notes
+        -----
+        This function uses MLE which probably 
+        isn't the best way to fit multivariante normal disterbution
+
+        References
+        ----------
+        https://numpy.org/doc/stable/reference/generated/numpy.cov.html?highlight=cov#numpy.cov
+
+        .. versionadded:: 1.9.4
+        """
+        dim,mean, cov_object = self._process_parameters(mean, cov)
+        
+        if len(data[0]) != len(mean):
+            raise Exception("data and disterbution have a dimension mismatch")
+
+        np.mean(data,axis=0,out=mean)
+        cov_object = np.cov(data, rowvar=False)
+
+        return multivariate_normal(mean=mean,cov=cov_object)
+
     def entropy(self, mean=None, cov=1):
         """Compute the differential entropy of the multivariate normal.
 
