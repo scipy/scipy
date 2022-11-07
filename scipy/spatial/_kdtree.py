@@ -30,8 +30,7 @@ def minkowski_distance_p(x, y, p=2):
     Returns
     -------
     dist : ndarray
-        Distance between the input arrays.  Length of the last
-        dimension will be `K`.
+        pth power of the distance between the input arrays.
 
     Examples
     --------
@@ -79,8 +78,7 @@ def minkowski_distance(x, y, p=2):
     Returns
     -------
     dist : ndarray
-        Distance between the input arrays.  Length of the last
-        dimension will be `K`.
+        Distance between the input arrays.
 
     Examples
     --------
