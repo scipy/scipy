@@ -680,7 +680,7 @@ class TestMultivariateNormal:
 
     def test_fit(self):
         np.random.seed(1234)
-        N = 500
+        N = 1000
         d = 5
 
         #creates data
