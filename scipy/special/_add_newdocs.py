@@ -5643,7 +5643,7 @@ add_newdoc("gdtr",
     integral (regularized gamma function).
 
     Wrapper for the Cephes [1]_ routine `gdtr`. Calling `gdtr` directly can
-    improve performance compared to `scipy.stats.gamma.cdf`
+    improve performance compared to the ``cdf`` method of `scipy.stats.gamma`
     (see last example below).
 
     References
@@ -5701,9 +5701,9 @@ add_newdoc("gdtr",
     >>> plt.show()
 
     The gamma distribution is also available as `scipy.stats.gamma`. Using
-    `gdtr` directly can be much faster than calling `stats.gamma.cdf`,
-    especially for small arrays or individual values. To get the same
-    results one must use the following parametrization:
+    `gdtr` directly can be much faster than calling the ``cdf`` method of
+    `stats.gamma.cdf`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
     ``stats.gamma(b, scale=1/a).cdf(x)=gdtr(a, b, x)``.
 
     >>> from scipy.stats import gamma
@@ -5762,7 +5762,7 @@ add_newdoc("gdtrc",
     integral (regularized gamma function).
 
     Wrapper for the Cephes [1]_ routine `gdtrc`. Calling `gdtrc` directly can
-    improve performance compared to `scipy.stats.gamma.sf`
+    improve performance compared to the ``sf`` method of `scipy.stats.gamma`
     (see last example below).
 
     References
@@ -5820,8 +5820,8 @@ add_newdoc("gdtrc",
     >>> plt.show()
 
     The gamma distribution is also available as `scipy.stats.gamma`.
-    Using `gdtrc` directly can be much faster than calling
-    `scipy.stats.gamma.sf`, especially for small arrays or individual
+    Using `gdtrc` directly can be much faster than calling the ``sf`` method
+    of `scipy.stats.gamma`, especially for small arrays or individual
     values. To get the same results one must use the following parametrization:
     ``stats.gamma(b, scale=1/a).sf(x)=gdtrc(a, b, x)``.
 
