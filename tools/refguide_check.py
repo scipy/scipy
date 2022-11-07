@@ -107,6 +107,15 @@ DOCTEST_SKIPLIST = set([
     'scipy.stats.kstwobign',  # inaccurate cdf or ppf
     'scipy.stats.levy_stable',
     'scipy.special.sinc',  # comes from numpy
+    'scipy.fft.fftfreq',
+    'scipy.fft.rfftfreq',
+    'scipy.fft.fftshift',
+    'scipy.fft.ifftshift',
+    'scipy.fftpack.fftfreq',
+    'scipy.fftpack.fftshift',
+    'scipy.fftpack.ifftshift',
+    'scipy.integrate.trapezoid',
+    'scipy.linalg.LinAlgError',
     'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])

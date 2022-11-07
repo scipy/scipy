@@ -778,6 +778,7 @@ cdef class TransformedDensityRejection(Method):
     Examples
     --------
     >>> from scipy.stats.sampling import TransformedDensityRejection
+    >>> import numpy as np
 
     Suppose we have a density:
 
@@ -989,6 +990,7 @@ cdef class TransformedDensityRejection(Method):
         --------
         >>> from scipy.stats.sampling import TransformedDensityRejection
         >>> from scipy.stats import norm
+        >>> import numpy as np
         >>> from math import exp
         >>>
         >>> class MyDist:
@@ -1096,6 +1098,7 @@ cdef class SimpleRatioUniforms(Method):
     Examples
     --------
     >>> from scipy.stats.sampling import SimpleRatioUniforms
+    >>> import numpy as np
 
     Suppose we have the normal distribution:
 
@@ -1332,6 +1335,7 @@ cdef class NumericalInversePolynomial(Method):
     --------
     >>> from scipy.stats.sampling import NumericalInversePolynomial
     >>> from scipy.stats import norm
+    >>> import numpy as np
 
     To create a generator to sample from the standard normal distribution, do:
 
@@ -1866,6 +1870,7 @@ cdef class NumericalInverseHermite(Method):
     >>> from scipy.stats.sampling import NumericalInverseHermite
     >>> from scipy.stats import norm, genexpon
     >>> from scipy.special import ndtr
+    >>> import numpy as np
 
     To create a generator to sample from the standard normal distribution, do:
 
@@ -2327,6 +2332,7 @@ cdef class DiscreteAliasUrn(Method):
     Examples
     --------
     >>> from scipy.stats.sampling import DiscreteAliasUrn
+    >>> import numpy as np
 
     To create a random number generator using a probability vector, use:
 
@@ -2590,6 +2596,7 @@ cdef class DiscreteGuideTable(Method):
     Examples
     --------
     >>> from scipy.stats.sampling import DiscreteGuideTable
+    >>> import numpy as np
 
     To create a random number generator using a probability vector, use:
 

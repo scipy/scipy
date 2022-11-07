@@ -359,6 +359,7 @@ cdef class Rotation:
     Examples
     --------
     >>> from scipy.spatial.transform import Rotation as R
+    >>> import numpy as np
 
     A `Rotation` instance can be initialized in any of the above formats and
     converted to any of the others. The underlying object is independent of the
@@ -668,6 +669,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Initialize a single rotation:
 
@@ -821,6 +823,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Initialize a single rotation:
 
@@ -1094,6 +1097,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Initialize a single rotation:
 
@@ -1177,6 +1181,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Represent a single rotation:
 
@@ -1227,6 +1232,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Represent a single rotation:
 
@@ -1339,6 +1345,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Represent a single rotation:
 
@@ -1463,6 +1470,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Represent a single rotation:
 
@@ -1547,6 +1555,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Represent a single rotation:
 
@@ -1666,6 +1675,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Single rotation applied on a single vector:
 
@@ -1806,6 +1816,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Composition of two single rotations:
 
@@ -1869,6 +1880,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Inverting a single rotation:
 
@@ -1907,6 +1919,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
         >>> r = R.from_quat(np.eye(4))
         >>> r.magnitude()
         array([3.14159265, 3.14159265, 3.14159265, 0.        ])
