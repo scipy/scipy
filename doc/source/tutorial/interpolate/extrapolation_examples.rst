@@ -26,7 +26,7 @@ When the default extrapolated results are not adequate, users need to
 implement the desired extrapolation mode themselves.
 
 In this tutorial, we consider several worked examples where we demonstrate both
-a use of available keywords and manual implementtaion of desired extrapolation
+the use of available keywords and manual implementation of desired extrapolation
 modes. These examples may or may not be applicable to your
 particular problem; they are not necessarily best practices; and they
 are deliberately pared down to bare essentials needed to demonstrate the
@@ -143,7 +143,7 @@ several boundary conditions:
     plt.tight_layout()
     plt.show()
 
-It is clearly seen that e.g. natural spline does have the zero second
+It is clearly seen that the natural spline does have the zero second
 derivative at the boundaries, but extrapolation is non-linear.
 ``bc_type="clamped"`` shows a similar behavior: first derivatives are only
 equal to zero exactly at the boundary. In all cases, extrapolation is done by
@@ -279,7 +279,7 @@ To circumvent this difficulty, we tabulate :math:`y = ax - 1/\tan{x}`
 and interpolate it on the tabulated grid. In fact, we will use the *inverse*
 interpolation: we interpolate the values of :math:`x` versus :math:`у`.
 This way, solving the original equation becomes simply an evaluation of
-the interpolated function at zero argument.
+the interpolated function at zero :math:`y` argument.
 
 To improve the interpolation accuracy we will use the knowledge of the
 derivatives of the tabulated function. We will use
