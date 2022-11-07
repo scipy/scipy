@@ -5702,7 +5702,7 @@ add_newdoc("gdtr",
 
     The gamma distribution is also available as `scipy.stats.gamma`. Using
     `gdtr` directly can be much faster than calling the ``cdf`` method of
-    `stats.gamma.cdf`, especially for small arrays or individual values.
+    `scipy.stats.gamma`, especially for small arrays or individual values.
     To get the same results one must use the following parametrization:
     ``stats.gamma(b, scale=1/a).cdf(x)=gdtr(a, b, x)``.
 
