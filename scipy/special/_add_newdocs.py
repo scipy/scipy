@@ -5704,14 +5704,14 @@ add_newdoc("gdtr",
     directly can be much faster than calling `stats.gamma.cdf`, especially
     for small arrays or individual values. To get the same results one must
     use the following parametrization:
-    ``stats.gamma(b, 1/a).cdf(x)=gdtr(a, b, x)``.
+    ``stats.gamma(b, scale=1/a).cdf(x)=gdtr(a, b, x)``.
 
     >>> from scipy.stats import gamma
     >>> a = 1
     >>> b = 3
     >>> x = 2.
     >>> gdtr_result = gdtr(a, b, x) # this will often be faster than below
-    >>> gamma_dist_result = gamma(b, 1/a).cdf(x)
+    >>> gamma_dist_result = gamma(b, scale=1/a).cdf(x)
     >>> gdtr_result == gamma_dist_result # test that results are equal
     True
     """)
@@ -5822,14 +5822,14 @@ add_newdoc("gdtrc",
     directly can be much faster than calling `stats.gamma.sf`, especially
     for small arrays or individual values. To get the same results one must
     use the following parametrization:
-    ``stats.gamma(b, 1/a).sf(x)=gdtrc(a, b, x)``.
+    ``stats.gamma(b, scale=1/a).sf(x)=gdtrc(a, b, x)``.
 
     >>> from scipy.stats import gamma
     >>> a = 1
     >>> b = 3
     >>> x = 2.
     >>> gdtrc_result = gdtrc(a, b, x) # this will often be faster than below
-    >>> gamma_dist_result = gamma(b, 1/a).sf(x)
+    >>> gamma_dist_result = gamma(b, scale=1/a).sf(x)
     >>> gdtrc_result == gamma_dist_result # test that results are equal
     True
     """)
