@@ -683,18 +683,16 @@ class TestMultivariateNormal:
         N = 500
         d = 5
 
-        #create data
+        #creates data
         mean_exmple = np.zeros(d)
         cov_exmple = np.identity(d)
         data = multivariate_normal.rvs(mean = mean_exmple,cov = cov_exmple,size=N)
 
-        #create a disterbution and fit
-        disterbution = multivariate_normal(mean=np.zeros(d),cov=np.identity(d))
-        fitted = disterbution.fit(data=data)
+        fitted = multivariate_normal.fit(data=data)
 
         #check if data is close engouth to fitted
         assert_allclose(fitted.mean, mean_exmple,rtol=1e-01,atol=1e-01)
-        assert_allclose(fitted.cov, cov_exmple,rtol=1e-01,atol=1e-01)
+        assert_allclose(fitted.cov_object, cov_exmple,rtol=1e-01,atol=1e-01)
 
     def test_entropy(self):
         np.random.seed(2846)
