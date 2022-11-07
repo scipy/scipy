@@ -85,6 +85,13 @@ cdef inline const double[:] _elementary_basis_vector(uchar axis):
     if axis == b'x': return _ex
     elif axis == b'y': return _ey
     elif axis == b'z': return _ez
+    
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline int _elementary_basis_index(uchar axis):
+    if axis == b'x': return 0
+    elif axis == b'y': return 1
+    elif axis == b'z': return 2
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -212,6 +219,130 @@ cdef double[:, :] _compute_euler_from_matrix(
                 _angles[i] -= 2 * pi
 
         if extrinsic:
+            # reversal
+            _angles[0], _angles[2] = _angles[2], _angles[0]
+
+        # Step 8
+        if not safe:
+            warnings.warn("Gimbal lock detected. Setting third angle to zero "
+                          "since it is not possible to uniquely determine "
+                          "all angles.")
+
+    return angles
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef double[:, :] _compute_euler_from_quat(
+    np.ndarray[double, ndim=2] quat, const uchar[:] seq, bint extrinsic=False
+):
+    # The algorithm assumes intrinsic frame transformations. The algorithm
+    # in the paper is formulated for rotation matrices which are transposition
+    # rotation matrices used within Rotation.
+    # Adapt the algorithm for our case by
+    # 1. Instead of transposing our representation, use the transpose of the
+    #    O matrix as defined in the paper, and be careful to swap indices
+    # 2. Reversing both axis sequence and angles for extrinsic rotations
+    
+    if not extrinsic:
+        seq = seq[::-1]
+
+    cdef int i = _elementary_basis_index(seq[0])
+    cdef int j = _elementary_basis_index(seq[1])
+    cdef int k = _elementary_basis_index(seq[2])
+
+    is_proper = i == k
+    if is_proper:
+        k = 3 - i - j # get third axis
+        
+    # Step 0
+    # Check if permutation is even (+1) or odd (-1)     
+    cdef int sign = int((i-j)*(j-k)*(k-i)/2)
+
+    cdef Py_ssize_t num_rotations = quat.shape[0]
+
+    # some forward definitions
+    cdef double[:, :] angles = _empty2(num_rotations, 3)
+    cdef double[:] _angles # accessor for each rotation
+    cdef double a, b, c, d, n2
+    cdef double half_sum, half_diff
+    cdef double eps = 1e-7
+    cdef bint safe1, safe2, safe, adjust
+
+    for ind in range(num_rotations):
+        _angles = angles[ind, :]
+
+        # Step 1
+        # Permutate quaternion elements            
+        if is_proper:
+            a = quat[ind, 3]
+            b = quat[ind, i]
+            c = quat[ind, j]
+            d = quat[ind, k] * sign
+        else:
+            a = quat[ind, 3] - quat[ind, j]
+            b = quat[ind, i] + quat[ind, k] * sign
+            c = quat[ind, j] + quat[ind, 3]
+            d = quat[ind, k] * sign - quat[ind, i]
+    
+        # Step 2
+        # Compute second angle...
+        n2 = a**2 + b**2 + c**2 + d**2
+        _angles[1] = 2*acos(sqrt((a**2 + b**2) / n2))
+
+        # ... and check if equalt to is 0 or pi, causing a singularity
+        safe1 = abs(_angles[1]) >= eps
+        safe2 = abs(_angles[1] - <double>pi) >= eps
+        safe = safe1 and safe2
+
+        # Step 4
+        # compute first and third angles, according to case
+        if safe:
+            half_sum = atan2(b, a) # == (alpha+gamma)/2
+            half_diff = atan2(-d, c) # == (alpha-gamma)/2     
+        
+            _angles[0] = half_sum + half_diff
+            _angles[2] = half_sum - half_diff
+
+        if not extrinsic:
+            # For intrinsic, set first angle to zero so that after reversal we
+            # ensure that third angle is zero
+            # 
+            if not safe:
+                _angles[0] = 0
+            # 
+            if not safe1:
+                half_sum = atan2(b, a)
+                _angles[2] = 2 * half_sum
+            # 
+            if not safe2:
+                half_diff = atan2(-d, c)
+                _angles[2] = -2 * half_diff
+        else:
+            # For extrinsic , set third angle to zero
+            # 
+            if not safe:
+                _angles[2] = 0
+            # 
+            if not safe1:
+                half_sum = atan2(b, a)
+                _angles[0] = 2 * half_sum
+            # 
+            if not safe2:
+                half_diff = atan2(-d, c)
+                _angles[0] = 2 * half_diff
+
+        # for Tait-Bryan angles
+        if not is_proper:
+            _angles[2] *= sign
+            _angles[1] -= pi / 2
+            
+        for idx in range(3):
+            if _angles[idx] < -pi:
+                _angles[idx] += 2 * pi
+            elif _angles[idx] > pi:
+                _angles[idx] -= 2 * pi
+
+        if not extrinsic:
             # reversal
             _angles[0], _angles[2] = _angles[2], _angles[0]
 
@@ -1410,15 +1541,15 @@ cdef class Rotation:
             return np.asarray(rotvec)
 
     @cython.embedsignature(True)
-    def as_euler(self, seq, degrees=False):
+    def as_euler(self, seq, degrees=False, algorithm = 'from_matrix'):
         """Represent as Euler angles.
 
         Any orientation can be expressed as a composition of 3 elementary
         rotations. Once the axis sequence has been chosen, Euler angles define
         the angle of rotation around each respective axis [1]_.
 
-        The algorithm from [2]_ has been used to calculate Euler angles for the
-        rotation about a given sequence of axes.
+        Either the algorithm from [2]_ or [4]_ has been used to calculate Euler 
+        angles for the rotation about a given sequence of axes.
 
         Euler angles suffer from the problem of gimbal lock [3]_, where the
         representation loses a degree of freedom and it is not possible to
@@ -1459,6 +1590,9 @@ cdef class Rotation:
                extraction the Euler angles", Journal of guidance, control, and
                dynamics, vol. 29.1, pp. 215-221. 2006
         .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
+        .. [4] Evandro Bernardes, Stéphane Viollet, "Quaternion to Euler angles 
+               conversion: a direct, general and computationally efficient 
+               method", PLOS ONE 2022
 
         Examples
         --------
@@ -1510,11 +1644,22 @@ cdef class Rotation:
 
         seq = seq.lower()
 
-        matrix = self.as_matrix()
-        if matrix.ndim == 2:
-            matrix = matrix[None, :, :]
-        angles = np.asarray(_compute_euler_from_matrix(
-            matrix, seq.encode(), extrinsic))
+        if algorithm == 'from_matrix':
+            matrix = self.as_matrix()
+            if matrix.ndim == 2:
+                matrix = matrix[None, :, :]
+            angles = np.asarray(_compute_euler_from_matrix(
+                matrix, seq.encode(), extrinsic))
+        elif algorithm == 'from_quat':
+            quat = self.as_quat()
+            if quat.ndim == 1:
+                quat = quat[None, :]
+            angles = np.asarray(_compute_euler_from_quat(
+                    quat, seq.encode(), extrinsic))
+        else:
+            raise ValueError("Algorithm choices are `from_matrix` or "
+                             "`from_quat`, got {}".format(algorithm))
+            
         if degrees:
             angles = np.rad2deg(angles)
 
