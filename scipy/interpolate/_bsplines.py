@@ -1570,7 +1570,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 #############################
 
 def _compute_optimal_gcv_parameter(X, wE, y, w):
-    '''
+    """
     Returns an optimal regularization parameter from the GCV criteria [1].
 
     Parameters
@@ -1596,10 +1596,12 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
     .. [1] G. Wahba, “Estimating the smoothing patameter” in Spline models
         for observational data, Philadelphia, Pennsylvania: Society for
         Industrial and Applied Mathematics, 1990, pp. 45–65.
-    '''
+        :doi:`10.1137/1.9781611970128`
+
+    """
 
     def compute_banded_symmetric_XT_W_Y(X, w, Y):
-        '''
+        """
         Assuming that the product :math:`X^T W Y` is symmetric and both ``X``
         and ``Y`` are 5-banded, compute the unique bands of the product.
 
@@ -1622,7 +1624,8 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         As far as the matrices ``X`` and ``Y`` are 5-banded, their product 
         :math:`X^T W Y` is 7-banded. It is also symmetric, so we can store only
         unique diagonals.
-        '''
+
+        """
         # compute W Y
         W_Y = np.copy(Y)
         
@@ -1640,7 +1643,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
     
 
     def compute_b_inv(A):
-        '''
+        """
         Inverse 3 central bands of matrix :math:`A=U^T D^{-1} U` assuming that
         ``U`` is a unit upper triangular banded matrix using an algorithm
         proposed in [1].
@@ -1668,8 +1671,9 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         ----------
         .. [1] M. F. Hutchinson and F. R. de Hoog, “Smoothing noisy data with spline 
             functions,” Numerische Mathematik, vol. 47, no. 1, pp. 99–106, 1985.
+            :doi:`10.1007/BF01389878`
 
-        '''
+        """
         U = cholesky_banded(A)
         for i in range(2, 5):
             U[-i, i-1:] /= U[-1, :-i+1]
@@ -1704,7 +1708,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
     
 
     def _gcv(lam, X, XtWX, wE, XtE):
-        r'''
+        r"""
         Computes the generalized cross-validation criteria [1].
         
         Parameters
@@ -1745,12 +1749,15 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         .. [1] G. Wahba, “Estimating the smoothing patameter” in Spline models
             for observational data, Philadelphia, Pennsylvania: Society for
             Industrial and Applied Mathematics, 1990, pp. 45–65.
+            :doi:`10.1137/1.9781611970128`
         .. [2] M. F. Hutchinson and F. R. de Hoog, “Smoothing noisy data with spline 
             functions,” Numerische Mathematik, vol. 47, no. 1, pp. 99–106, 1985.
             :doi:`10.1007/BF01389878`
         .. [3] E. Zemlyanoy, "Generalized cross-validation smoothing splines",
-            2022.
-        '''
+            2022. Might be available 
+            `here <https://www.hse.ru/ba/am/students/diplomas/620910604>`_
+
+        """
         # Compute the numerator from (2.2.4)[1]
         n = X.shape[1]
         c = solve_banded((2, 2), X + lam * wE, y)
@@ -1793,7 +1800,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
 
 
 def _coeff_of_divided_diff(x):
-    '''
+    """
     Returns the coefficients of the divided difference.
 
     Parameters
@@ -1813,7 +1820,7 @@ def _coeff_of_divided_diff(x):
 
     No checks are performed.
 
-    '''
+    """
     n = x.shape[0]
     res = np.zeros(n)
     for i in range(n):
@@ -1826,8 +1833,11 @@ def _coeff_of_divided_diff(x):
 
 
 def make_smoothing_spline(x, y, w=None, lam=None):
-    r'''
-    Returns a smoothing cubic spline function using the GCV criteria [1].
+    r"""
+    Returns a smoothing cubic spline function using ``lam`` to control the
+    tradeoff between the amount of smoothness of the curve and its proximity
+    to the data. In case ``lam`` is None, using the GCV criteria [1] to find
+    it.
 
     A smoothing spline is found as a solution to the regularized weighted
     linear regression problem:
@@ -1842,7 +1852,9 @@ def make_smoothing_spline(x, y, w=None, lam=None):
 
     If ``lam`` is None, we use the GCV criteria to find an optimal
     regularization parameter, otherwise we solve the regularized weighted
-    linear regression problem with given parameter.
+    linear regression problem with given parameter. The parameter controlls
+    the tradeoff in the following way: the larger the parameter becomes, the
+    smoother the function gets.
 
     Parameters
     ----------
@@ -1861,12 +1873,14 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     func : a BSpline object.
         A callable representing a spline in the B-spline basis 
         as a solution of the problem of smoothing splines using
-        the GCV criteria [1].
+        the GCV criteria [1] in case ``lam`` is None, otherwise using the
+        given parameter ``lam``.
     
     Notes
     -----
-    The original implementation was introduced by Woltring in FORTRAN [2], but
-    because of the license issues cannot be used in the SciPy source code.
+    This algorithm is a clean room reimplementation of the algorithm
+    introduced by Woltring in FORTRAN [2]. The original version cannot be used
+    in SciPy source code because of the license issues.
 
     If the vector of weights ``w`` is None, we assume that all the points are
     equal in terms of weights, and vector of weights is vector of ones.
@@ -1876,7 +1890,7 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     the sum is built from the squared weights.
 
     In cases when the initial problem is ill-posed (for example, the product
-    :math:`X^T W X` where :math:`X is a design matrix is not a positive
+    :math:`X^T W X` where :math:`X` is a design matrix is not a positive
     defined matrix) a ValueError is raised.
 
     References
@@ -1884,6 +1898,7 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     .. [1] G. Wahba, “Estimating the smoothing patameter” in Spline models for
         observational data, Philadelphia, Pennsylvania: Society for Industrial
         and Applied Mathematics, 1990, pp. 45–65.
+        :doi:`10.1137/1.9781611970128`
     .. [2] H. J. Woltring, A Fortran package for generalized, cross-validatory
         spline smoothing and differentiation, Advances in Engineering
         Software, vol. 8, no. 2, pp. 104–113, 1986.
@@ -1891,6 +1906,7 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     .. [3] T. Hastie, J. Friedman, and R. Tisbshirani, “Smoothing Splines” in
         The elements of Statistical Learning: Data Mining, Inference, and
         prediction, New York: Springer, 2017, pp. 241–249.
+        :doi:`10.1007/978-0-387-84858-7`
 
     Examples
     --------
@@ -1906,6 +1922,7 @@ def make_smoothing_spline(x, y, w=None, lam=None):
 
     Make a smoothing spline function
 
+    >>> from scipy.interpolate import make_smoothing_spline
     >>> spl = make_smoothing_spline(x, y)
     
     Plot both
@@ -1918,7 +1935,7 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     >>> plt.legend(loc='best')
     >>> plt.show()
 
-    '''
+    """
 
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)

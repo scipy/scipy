@@ -1523,7 +1523,7 @@ class TestSmoothingSpline:
     def test_invalid_input(self):
         np.random.seed(1234)
         n = 100
-        x = np.sort(np.random.random_sample(100) * 4 - 2)
+        x = np.sort(np.random.random_sample(n) * 4 - 2)
         y = x**2 * np.sin(4 * x) + x**3 + np.random.normal(0., 1.5, n)
 
         # ``x`` and ``y`` should have same shapes (1-D array)
@@ -1546,7 +1546,7 @@ class TestSmoothingSpline:
             
 
     def test_compare_with_GCVSPL(self):
-        '''
+        """
         Data is generated in the following way:
         >>> np.random.seed(1234)
         >>> n = 100
@@ -1584,7 +1584,7 @@ class TestSmoothingSpline:
 
         >>> csvwrite('y0.csv', y0);
 
-        '''
+        """
         # load the data sample
         data = np.load(data_file('gcvspl.npz'))
         # data points
@@ -1597,10 +1597,10 @@ class TestSmoothingSpline:
 
 
     def test_non_regularized_case(self):
-        '''
+        """
         In case the regularization parameter is 0, the resulting spline
         is an interpolation spline with natural boundary conditions.
-        '''
+        """
         # create data sample
         np.random.seed(1234)
         n = 100
@@ -1620,7 +1620,7 @@ class TestSmoothingSpline:
         # create data sample
         np.random.seed(1234)
         n = 100
-        x = np.sort(np.random.random_sample(100) * 4 - 2)
+        x = np.sort(np.random.random_sample(n) * 4 - 2)
         y = x**2 * np.sin(4 * x) + x**3 + np.random.normal(0., 1.5, n)
 
         spl = make_smoothing_spline(x, y)

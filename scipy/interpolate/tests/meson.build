@@ -19,7 +19,8 @@ py3.install_sources([
 
 py3.install_sources([
     'data/bug-1310.npz',
-    'data/estimate_gradients_hang.npy'
+    'data/estimate_gradients_hang.npy',
+    'data/gcvspl.npz'
   ],
   pure: false,
   subdir: 'scipy/interpolate/tests/data'
