@@ -15,6 +15,7 @@ from scipy import optimize
 from scipy.special import lambertw
 from scipy.optimize._minpack_py import leastsq, curve_fit, fixed_point
 from scipy.optimize import OptimizeWarning
+from scipy.optimize._minimize import Bounds
 
 
 class ReturnShape:
@@ -202,10 +203,12 @@ class TestFSolve:
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_concurrent_no_gradient(self):
-        return sequence_parallel([self.test_pressure_network_no_gradient] * 10)
+        v = sequence_parallel([self.test_pressure_network_no_gradient] * 10)
+        assert all([result is None for result in v])
 
     def test_concurrent_with_gradient(self):
-        return sequence_parallel([self.test_pressure_network_with_gradient] * 10)
+        v = sequence_parallel([self.test_pressure_network_with_gradient] * 10)
+        assert all([result is None for result in v])
 
 
 class TestRootHybr:
@@ -385,10 +388,12 @@ class TestLeastSq:
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
     def test_concurrent_no_gradient(self):
-        return sequence_parallel([self.test_basic] * 10)
+        v = sequence_parallel([self.test_basic] * 10)
+        assert all([result is None for result in v])
 
     def test_concurrent_with_gradient(self):
-        return sequence_parallel([self.test_basic_with_gradient] * 10)
+        v = sequence_parallel([self.test_basic_with_gradient] * 10)
+        assert all([result is None for result in v])
 
     def test_func_input_output_length_check(self):
 
@@ -605,11 +610,21 @@ class TestCurveFit:
 
         # The minimum w/out bounds is at [2., 2.],
         # and with bounds it's at [1.5, smth].
-        bounds = ([1., 0], [1.5, 3.])
+        lb = [1., 0]
+        ub = [1.5, 3.]
+
+        # Test that both variants of the bounds yield the same result
+        bounds = (lb, ub)
+        bounds_class = Bounds(lb, ub)
         for method in [None, 'trf', 'dogbox']:
             popt, pcov = curve_fit(f, xdata, ydata, bounds=bounds,
                                    method=method)
             assert_allclose(popt[0], 1.5)
+
+            popt_class, pcov_class = curve_fit(f, xdata, ydata,
+                                               bounds=bounds_class,
+                                               method=method)
+            assert_allclose(popt_class, popt)
 
         # With bounds, the starting estimate is feasible.
         popt, pcov = curve_fit(f, xdata, ydata, method='trf',
