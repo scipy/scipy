@@ -9,7 +9,7 @@
 c = ['clang', '-arch', 'arm64']
 cpp = ['clang++', '-arch', 'arm64']
 strip = ['strip']
-fortran = ['/opt/gfortran-darwin-arm64/bin/arm64-apple-darwin20.0.0-gfortran']
+fortran = ['/opt/gfortran-darwin-arm64-cross/bin/gfortran']
 pkg-config = '/usr/local/bin/pkg-config'
 
 [host_machine]

@@ -25,8 +25,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Bash utilities for use with gfortran
-
-GF_LIB_URL="https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com"
+# https://github.com/MacPython/gfortran-install
 ARCHIVE_SDIR="${ARCHIVE_SDIR:-archives}"
 
 GF_UTIL_DIR=$(dirname "${BASH_SOURCE[0]}")
@@ -86,7 +85,7 @@ function get_distutils_platform_ex {
 
 function get_macosx_target {
     # Report MACOSX_DEPLOYMENT_TARGET as given by distutils get_platform.
-    python -c "import sysconfig as s; print(s.get_config_vars()['MACOSX_DEPLOYMENT_TARGET'])"
+    python3 -c "import sysconfig as s; print(s.get_config_vars()['MACOSX_DEPLOYMENT_TARGET'])"
 }
 
 function check_gfortran {
@@ -107,9 +106,6 @@ function get_gf_lib_for_suf {
     if [ -n "$suffix" ]; then suffix="-$suffix"; fi
     local fname="$prefix-${plat_tag}${suffix}.tar.gz"
     local out_fname="${ARCHIVE_SDIR}/$fname"
-    if [ ! -e "$out_fname" ]; then
-        curl -L "${GF_LIB_URL}/$fname" > $out_fname || (echo "Fetch of $out_fname failed"; exit 1)
-    fi
     [ -s $out_fname ] || (echo "$out_fname is empty"; exit 24)
     echo "$out_fname"
 }
@@ -117,37 +113,66 @@ function get_gf_lib_for_suf {
 if [ "$(uname)" == "Darwin" ]; then
     mac_target=${MACOSX_DEPLOYMENT_TARGET:-$(get_macosx_target)}
     export MACOSX_DEPLOYMENT_TARGET=$mac_target
-    GFORTRAN_DMG="${GF_UTIL_DIR}/archives/gfortran-4.9.0-Mavericks.dmg"
-    export GFORTRAN_SHA="$(shasum $GFORTRAN_DMG)"
+    # Keep this for now as some builds might depend on this being
+    # available before install_gfortran is called
+    export GFORTRAN_SHA=c469a420d2d003112749dcdcbe3c684eef42127e
+    # Set SDKROOT env variable if not set
+    export SDKROOT=${SDKROOT:-$(xcrun --show-sdk-path)}
 
-    function install_arm64_cross_gfortran {
-        curl -L -O https://github.com/isuruf/gcc/releases/download/gcc-10-arm-20210728/gfortran-darwin-arm64.tar.gz
-        export GFORTRAN_SHA=4a1354e61294d5163609e83b6b2b082bd9a9bbdf
-        if [[ "$(shasum gfortran-darwin-arm64.tar.gz)" != "${GFORTRAN_SHA}  gfortran-darwin-arm64.tar.gz" ]]; then
-            echo "shasum mismatch for gfortran-darwin-arm64"
+    function download_and_unpack_gfortran {
+        local arch=$1
+        local type=$2
+        curl -L -O https://github.com/isuruf/gcc/releases/download/gcc-11.3.0-2/gfortran-darwin-${arch}-${type}.tar.gz
+        case ${arch}-${type} in
+            arm64-native)
+                export GFORTRAN_SHA=142290685240f4f86cdf359cb2030d586105d7e4
+          ;;
+            arm64-cross)
+          export GFORTRAN_SHA=527232845abc5af21f21ceacc46fb19c190fe804
+          ;;
+            x86_64-native)
+          export GFORTRAN_SHA=c469a420d2d003112749dcdcbe3c684eef42127e
+          ;;
+            x86_64-cross)
+          export GFORTRAN_SHA=107604e57db97a0ae3e7ca7f5dd722959752f0b3
+          ;;
+        esac
+        if [[ "$(shasum gfortran-darwin-${arch}-${type}.tar.gz)" != "${GFORTRAN_SHA}  gfortran-darwin-${arch}-${type}.tar.gz" ]]; then
+            echo "shasum mismatch for gfortran-darwin-${arch}-${type}"
             exit 1
         fi
         sudo mkdir -p /opt/
-        sudo cp "gfortran-darwin-arm64.tar.gz" /opt/gfortran-darwin-arm64.tar.gz
+        sudo cp "gfortran-darwin-${arch}-${type}.tar.gz" /opt/gfortran-darwin-${arch}-${type}.tar.gz
         pushd /opt
-            sudo tar -xvf gfortran-darwin-arm64.tar.gz
-            sudo rm gfortran-darwin-arm64.tar.gz
+            sudo tar -xvf gfortran-darwin-${arch}-${type}.tar.gz
+            sudo rm gfortran-darwin-${arch}-${type}.tar.gz
         popd
-        export FC_ARM64="$(find /opt/gfortran-darwin-arm64/bin -name "*-gfortran")"
-        export FC_LOC=/opt/gfortran-darwin-arm64/bin
-        local libgfortran="$(find /opt/gfortran-darwin-arm64/lib -name libgfortran.dylib)"
-        local libdir=$(dirname $libgfortran)
+        if [[ "${type}" == "native" ]]; then
+            # Link these into /usr/local so that there's no need to add rpath or -L
+            sudo mkdir -p /usr/local/gfortran/lib
 
-        export FC_LIBDIR=$libdir
-        export FC_ARM64_LDFLAGS="-L$libdir -Wl,-rpath,$libdir"
-        echo $FC_ARM64_LDFLAGS
-        if [[ "${PLAT:-}" == "arm64" ]]; then
-            export FC=$FC_ARM64
+            for f in libgfortran.dylib libgfortran.5.dylib libgcc_s.1.dylib libgcc_s.1.1.dylib libquadmath.dylib libquadmath.0.dylib; do
+                ln -sf /opt/gfortran-darwin-${arch}-${type}/lib/$f /usr/local/lib/$f
+                sudo ln -sf /opt/gfortran-darwin-${arch}-${type}/lib/$f /usr/local/gfortran/lib/$f
+                  done
+            # Add it to PATH
+            ln -sf /opt/gfortran-darwin-${arch}-${type}/bin/gfortran /usr/local/bin/gfortran
         fi
     }
+
+    function install_arm64_cross_gfortran {
+      download_and_unpack_gfortran arm64 cross
+      export FC_ARM64="$(find /opt/gfortran-darwin-arm64-cross/bin -name "*-gfortran")"
+      local libgfortran="$(find /opt/gfortran-darwin-arm64-cross/lib -name libgfortran.dylib)"
+      local libdir=$(dirname $libgfortran)
+
+      export FC_ARM64_LDFLAGS="-L$libdir -Wl,-rpath,$libdir"
+      if [[ "${PLAT:-}" == "arm64" ]]; then
+          export FC=$FC_ARM64
+      fi
+    }
     function install_gfortran {
-        hdiutil attach -mountpoint /Volumes/gfortran $GFORTRAN_DMG
-        sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
+        download_and_unpack_gfortran $(uname -m) native
         check_gfortran
         if [[ "${PLAT:-}" == "universal2" || "${PLAT:-}" == "arm64" ]]; then
             install_arm64_cross_gfortran

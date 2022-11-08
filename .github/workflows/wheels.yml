@@ -58,6 +58,7 @@ jobs:
           echo "message=$RUN" >> $GITHUB_OUTPUT
           echo github.ref ${{ github.ref }}
 
+
   build_wheels:
     name: Build wheel for ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }} ${{ matrix.buildplat[2] }}
     needs: get_commit_message
@@ -85,7 +86,7 @@ jobs:
         # recent gfortran (gfortran-9 is present on the macOS-11.0 image), and
         # will probably require that the prebuilt openBLAS is updated.
         # xref https://github.com/andyfaff/scipy/pull/28#issuecomment-1203496836
-        - [macos-10.15, macosx, x86_64]
+        - [macos-11, macosx, x86_64]
         - [macos-12, macosx, arm64]
         - [windows-2019, win, AMD64]
 
@@ -116,7 +117,7 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - uses: actions/setup-python@v4.2.0
+      - uses: actions/setup-python@v4.3.0
         with:
           python-version: 3.8
 
@@ -140,7 +141,7 @@ jobs:
 #        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'true' }}
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.10.1
+        uses: pypa/cibuildwheel@v2.11.2
         # Build all wheels here, apart from macosx_arm64, linux_aarch64
         # cibuildwheel is currently unable to pass configuration flags to
         # CIBW_BUILD_FRONTEND https://github.com/pypa/cibuildwheel/issues/1227
@@ -155,6 +156,12 @@ jobs:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
+          CIBW_ENVIRONMENT_MACOS: >
+            SDKROOT=/Applications/Xcode_11.7.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk MACOSX_DEPLOYMENT_TARGET=10.11
+          CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
+            DYLD_LIBRARY_PATH=/usr/local/gfortran/lib delocate-listdeps {wheel} &&
+            DYLD_LIBRARY_PATH=/usr/local/gfortran/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}
+
 
       - name: Build cp38-macosx_arm64
         # This is solely used to build cp38-macosx_arm64. As soon as 3.8 is
@@ -181,26 +188,34 @@ jobs:
           # The install script requires the PLAT variable in order to set
           # the FC variable
           export PLAT=arm64
+
           install_arm64_cross_gfortran
           export FC=$FC_ARM64
-          export PATH=$FC_LOC:$PATH
+          F_LOC=/opt/gfortran-darwin-arm64-cross
+          export PATH=$F_LOC/bin:$PATH
+          sudo ln -s $FC $F_LOC/bin/gfortran
+          libgfortran="$(find $F_LOC/lib -name libgfortran.dylib)"
+          echo $libgfortran
+          FC_LIBDIR=$(dirname $libgfortran)  
+          echo $FC_LIBDIR
 
           export FFLAGS=" -arch arm64 $FFLAGS"
           export LDFLAGS=" $FC_ARM64_LDFLAGS $LDFLAGS -L/opt/arm64-builds/lib -arch arm64"
-          sudo ln -s $FC $FC_LOC/gfortran
           echo $(type -p gfortran)
+
+          # having a test fortran program has helped in debugging problems with the
+          # compiler environment.
+          # $FC $FFLAGS tools/wheels/test.f $LDFLAGS
+          $FC tools/wheels/test.f
+          ls -al *.out
+          otool -L a.out
+          lipo -info a.out
 
           # OpenBLAS
           curl -L https://anaconda.org/multibuild-wheels-staging/openblas-libs/v0.3.20-140-gbfd9c1b5/download/openblas-v0.3.20-140-gbfd9c1b5-macosx_11_0_arm64-gf_f26990f.tar.gz -o openblas.tar.gz
           sudo tar -xv -C / -f openblas.tar.gz
           # force a dynamic link, there may be a more elegant way of doing this.
           sudo rm /opt/arm64-builds/lib/*.a
-
-          # having a test fortran program has helped in debugging problems with the
-          # compiler environment.
-          $FC $FFLAGS tools/wheels/test.f $LDFLAGS
-          ls -al *.out
-          otool -L a.out      
 
           export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
           export PKG_CONFIG=/usr/local/bin/pkg-config
@@ -232,7 +247,7 @@ jobs:
           # The `.so` are all converted to `-rpath/libgfortran` by
           # gfortran/meson, with all absolute paths removed.
           # Enables delocate to find the libopenblas/libgfortran libraries.
-          export DYLD_LIBRARY_PATH=/opt/gfortran-darwin-arm64/lib/gcc/arm64-apple-darwin20.0.0/10.2.1:/opt/arm64-builds/lib
+          export DYLD_LIBRARY_PATH=$FC_LIBDIR:/opt/arm64-builds/lib
           delocate-listdeps dist/scipy*.whl
           delocate-wheel --require-archs=arm64 -k -w wheelhouse dist/scipy*.whl
 
