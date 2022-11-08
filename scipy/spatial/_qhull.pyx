@@ -2167,6 +2167,7 @@ class Delaunay(_QhullUser):
         z[...,-1] += self.paraboloid_shift
         return z
 
+
 def tsearch(tri, xi):
     """
     tsearch(tri, xi)
@@ -2174,16 +2175,29 @@ def tsearch(tri, xi):
     Find simplices containing the given points. This function does the
     same thing as `Delaunay.find_simplex`.
 
-    .. versionadded:: 0.9
+    Parameters
+    ----------
+    tri : DelaunayInfo
+        Delaunay triangulation
+    xi : ndarray of double, shape (..., ndim)
+        Points to locate
+
+    Returns
+    -------
+    i : ndarray of int, same shape as `xi`
+        Indices of simplices containing each point.
+        Points outside the triangulation get the value -1.
 
     See Also
     --------
     Delaunay.find_simplex
 
+    Notes
+    -----
+    .. versionadded:: 0.9
 
     Examples
     --------
-
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import Delaunay, delaunay_plot_2d, tsearch
