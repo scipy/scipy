@@ -5653,7 +5653,7 @@ add_newdoc("gdtr",
 
     Examples
     --------
-    Compute the function for `a=1`, `b=2` at `x=5`.
+    Compute the function for ``a=1``, ``b=2`` at ``x=5``.
 
     >>> import numpy as np
     >>> from scipy.special import gdtr
@@ -5661,8 +5661,8 @@ add_newdoc("gdtr",
     >>> gdtr(1., 2., 5.)
     0.9595723180054873
 
-    Compute the function for `a=1`, `b=2` at several points by providing
-    a NumPy array for `x`.
+    Compute the function for ``a=1`` and ``b=2`` at several points by
+    providing a NumPy array for `x`.
 
     >>> xvalues = np.array([1., 2., 3., 4])
     >>> gdtr(1., 1., xvalues)
@@ -5670,7 +5670,7 @@ add_newdoc("gdtr",
 
     `gdtr` can evaluate different parameter sets by providing arrays with
     broadcasting compatible shapes for `a`, `b` and `x`. Here we compute the
-    function for three different `a` at four positions `x` and `b=3`,
+    function for three different `a` at four positions `x` and ``b=3``,
     resulting in a 3x4 array.
 
     >>> a = np.array([[0.5], [1.5], [2.5]])
@@ -5772,7 +5772,7 @@ add_newdoc("gdtrc",
 
     Examples
     --------
-    Compute the function for `a=1`, `b=2` at `x=5`.
+    Compute the function for ``a=1`` and ``b=2`` at ``x=5``.
 
     >>> import numpy as np
     >>> from scipy.special import gdtrc
@@ -5780,7 +5780,7 @@ add_newdoc("gdtrc",
     >>> gdtrc(1., 2., 5.)
     0.04042768199451279
 
-    Compute the function for `a=1`, `b=2` at several points by providing
+    Compute the function for ``a=1``, ``b=2`` at several points by providing
     a NumPy array for `x`.
 
     >>> xvalues = np.array([1., 2., 3., 4])
@@ -5789,7 +5789,7 @@ add_newdoc("gdtrc",
 
     `gdtrc` can evaluate different parameter sets by providing arrays with
     broadcasting compatible shapes for `a`, `b` and `x`. Here we compute the
-    function for three different `a` at four positions `x` and `b=3`,
+    function for three different `a` at four positions `x` and ``b=3``,
     resulting in a 3x4 array.
 
     >>> a = np.array([[0.5], [1.5], [2.5]])
