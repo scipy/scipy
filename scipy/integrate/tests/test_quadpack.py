@@ -507,8 +507,9 @@ class TestQuad:
         def tfunc(x):
             return np.exp(1j*x)
 
-        assert_quad(quad(tfunc, 0, np.pi/2, complex_func=True),
-                    1+1j, error_tolerance=1e-6)
+        assert np.allclose(
+                    quad(tfunc, 0, np.pi/2, complex_func=True)[0],
+                    1+1j)
 
         kwargs = {'a': 0, 'b': np.inf, 'full_output': True,
                   'weight': 'cos', 'wvar': 1}
