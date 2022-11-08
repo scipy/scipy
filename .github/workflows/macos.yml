@@ -41,9 +41,8 @@ jobs:
 
     - name: Install gfortran + OpenBLAS
       run: |
-        # this is taken verbatim from the numpy azure pipeline setup.
         set -xe
-        bash tools/wheel/cibw_before_build_macos.sh $PWD
+        bash tools/wheels/cibw_before_build_macos.sh $PWD
         
         # create site.cfg
         echo "[openblas]" > site.cfg
