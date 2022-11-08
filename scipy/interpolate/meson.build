@@ -178,7 +178,6 @@ if use_pythran
 else
   py3.install_sources(
     ['_rbfinterp_pythran.py'],
-    pure: false,
     subdir: 'scipy/interpolate'
   )
 endif
@@ -205,7 +204,6 @@ py3.install_sources([
     'polyint.py',
     'rbf.py'
   ],
-  pure: false,
   subdir: 'scipy/interpolate'
 )
 

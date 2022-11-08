@@ -156,7 +156,7 @@ generate_config = custom_target(
   output: '__config__.py',
   input: '../tools/config_utils.py',
   command: [py3, '@INPUT@', '@OUTPUT@'],
-  install_dir: py3.get_install_dir(pure: false) / 'scipy'
+  install_dir: py3.get_install_dir() / 'scipy'
 )
 
 generate_version = custom_target(
@@ -167,7 +167,7 @@ generate_version = custom_target(
   output: 'version.py',
   input: '../tools/version_utils.py',
   command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
-  install_dir: py3.get_install_dir(pure: false) / 'scipy'
+  install_dir: py3.get_install_dir() / 'scipy'
 )
 
 python_sources = [
@@ -181,13 +181,11 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy'
 )
 
 py3.install_sources(
   ['_build_utils/tests/test_scipy_version.py'],
-  pure: false,
   subdir: 'scipy/_lib/tests'
 )
 

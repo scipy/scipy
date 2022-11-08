@@ -39,6 +39,5 @@ py3.install_sources([
     'test_trustregion_krylov.py',
     'test_zeros.py'
   ],
-  pure: false,
   subdir: 'scipy/optimize/tests'
 )
