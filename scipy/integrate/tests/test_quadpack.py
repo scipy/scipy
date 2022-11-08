@@ -510,19 +510,40 @@ class TestQuad:
         assert_quad(quad(tfunc, 0, np.pi/2, complex_func=True),
                     1+1j, error_tolerance=1e-6)
 
-        kwargs = {'a': 0, 'b': np.inf, 'full_output':True, 'weight':'cos', 'wvar': 1}
+        kwargs = {'a': 0, 'b': np.inf, 'full_output': True,
+                  'weight': 'cos', 'wvar': 1}
         res_c = quad(tfunc, complex_func=True, **kwargs)
-        res_r = quad(np.cos, complex_func=False, **kwargs)
-        res_i = quad(np.sin, complex_func=False, **kwargs)
+        res_r = quad(lambda x: np.real(np.exp(1j*x)),
+                     complex_func=False,
+                     **kwargs)
+        res_i = quad(lambda x: np.imag(np.exp(1j*x)),
+                     complex_func=False,
+                     **kwargs)
+
+        assert_allclose(res_c[1], res_r[1] + 1j*res_i[1])
+        assert_allclose(res_c[0], res_r[0] + 1j*res_i[0], atol=res_c[1])
 
         assert len(res_c[2]['real']) == len(res_r[2:])
         assert res_c[2]['real'][2] == res_r[4]
         assert res_c[2]['real'][1] == res_r[3]
-        assert np.allclose(res_c[2]['real'][0]['rslst'], res_r[2]['rslst'])
-        assert np.allclose(res_c[2]['real'][0]['erlst'], res_r[2]['erlst'])
-        assert np.allclose(res_c[2]['real'][0]['ierlst'], res_r[2]['ierlst'])
+        assert res_c[2]['real'][0]['lst'] == res_r[2]['lst']
+        k_f = res_r[2]['lst']
+        assert np.allclose(res_c[2]['real'][0]['rslst'][:k_f],
+                           res_r[2]['rslst'][:k_f])
+        assert np.allclose(res_c[2]['real'][0]['erlst'][:k_f],
+                           res_r[2]['erlst'][:k_f])
+        assert np.allclose(res_c[2]['real'][0]['ierlst'][:k_f],
+                           res_r[2]['ierlst'][:k_f])
 
         assert len(res_c[2]['imag']) == len(res_i[2:])
+        assert res_c[2]['imag'][0]['lst'] == res_i[2]['lst']
+        k_f = res_i[2]['lst']
+        assert np.allclose(res_c[2]['imag'][0]['rslst'][:k_f],
+                           res_i[2]['rslst'][:k_f])
+        assert np.allclose(res_c[2]['imag'][0]['erlst'][:k_f],
+                           res_i[2]['erlst'][:k_f])
+        assert np.allclose(res_c[2]['imag'][0]['ierlst'][:k_f],
+                           res_i[2]['ierlst'][:k_f])
 
 
 class TestNQuad:
@@ -538,8 +559,8 @@ class TestNQuad:
         res = nquad(func1, [[0, 1], [-1, 1], [.13, .8], [-.15, 1]],
                     opts=[opts_basic, {}, {}, {}], full_output=True)
         assert_quad(res[:-1], 1.5267454070738635)
-        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5) 
-        
+        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5)
+
     def test_variable_limits(self):
         scale = .1
 
