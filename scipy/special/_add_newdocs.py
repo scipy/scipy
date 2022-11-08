@@ -5710,9 +5710,9 @@ add_newdoc("gdtr",
     >>> a = 2.
     >>> b = 3
     >>> x = 1.
-    >>> gdtr_result = gdtr(a, b, x) # this will often be faster than below
+    >>> gdtr_result = gdtr(a, b, x)  # this will often be faster than below
     >>> gamma_dist_result = gamma(b, scale=1/a).cdf(x)
-    >>> gdtr_result == gamma_dist_result # test that results are equal
+    >>> gdtr_result == gamma_dist_result  # test that results are equal
     True
     """)
 
@@ -5829,9 +5829,9 @@ add_newdoc("gdtrc",
     >>> a = 2
     >>> b = 3
     >>> x = 1.
-    >>> gdtrc_result = gdtrc(a, b, x) # this will often be faster than below
+    >>> gdtrc_result = gdtrc(a, b, x)  # this will often be faster than below
     >>> gamma_dist_result = gamma(b, scale=1/a).sf(x)
-    >>> gdtrc_result == gamma_dist_result # test that results are equal
+    >>> gdtrc_result == gamma_dist_result  # test that results are equal
     True
     """)
 
