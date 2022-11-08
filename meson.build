@@ -6,7 +6,7 @@ project(
   # tools/version_utils.py
   version: '1.10.0.dev0',
   license: 'BSD-3',
-  meson_version: '>= 0.63.0',
+  meson_version: '>= 0.64.0',
   default_options: [
     'buildtype=debugoptimized',
     'c_std=c99',
@@ -119,9 +119,7 @@ copier = find_program(['cp', 'scipy/_build_utils/copyfiles.py'])
 
 # https://mesonbuild.com/Python-module.html
 py_mod = import('python')
-# NOTE: with Meson >=0.64.0 we can add `pure: false` here and remove that line
-# everywhere else, see https://github.com/mesonbuild/meson/pull/10783.
-py3 = py_mod.find_installation()
+py3 = py_mod.find_installation(pure: false)
 py3_dep = py3.dependency()
 
 # For now, keep supporting this environment variable (same as in setup.py)

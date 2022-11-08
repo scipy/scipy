@@ -91,7 +91,6 @@ py3.install_sources([
     'tfqmr.py',
     'utils.py',
   ],
-  pure: false,
   subdir: 'scipy/sparse/linalg/_isolve'
 )
 

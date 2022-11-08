@@ -31,7 +31,6 @@ py3.install_sources([
     'netcdf.py',
     'wavfile.py'
   ],
-  pure: false,
   subdir: 'scipy/io'
 )
 
