@@ -10278,6 +10278,71 @@ studentized_range = studentized_range_gen(name='studentized_range', a=0,
                                           b=np.inf)
 
 
+class relativistic_bw_gen(rv_continuous):
+    r"""A relativistic Breit-Wigner random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+
+    stuff
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _argcheck(self, rho):
+        return rho > 0.
+
+    def _shape_info(self):
+        return [_ShapeInfo("rho", False, (0, np.inf), (False, False))]
+
+    def _pdf(self, x, rho):
+        k = (
+            2 * np.sqrt(2) * rho**2 * np.sqrt(rho**2 + 1)
+            / (np.pi * np.sqrt(rho**2 + rho * np.sqrt(rho**2 + 1)))
+        )
+        return k / ((x**2 - rho**2)**2 + rho**2)
+
+    def _cdf(self, x, rho):
+        k = (
+            np.sqrt(2) * rho * np.sqrt(rho**2 + 1)
+            / (np.pi * np.sqrt(rho**2 + rho * np.sqrt(rho**2 + 1)))
+        )
+        result =  np.arctan(x/np.sqrt(-rho*(rho + 1j)))/np.sqrt(-rho*(rho + 1j))
+        result -=  np.arctan(x/np.sqrt(-rho*(rho - 1j)))/np.sqrt(-rho*(rho - 1j))
+        result = - k * 1j * result
+        return result.real
+
+    def _munp(self, n, rho):
+        if n == 1:
+            k = (
+                np.sqrt(2) * rho * np.sqrt(rho**2 + 1)
+                / (np.pi * np.sqrt(rho**2 + rho * np.sqrt(rho**2 + 1)))
+            )
+            return k * (np.pi/2 + np.arctan(rho))
+        if n == 2:
+            k = (
+                np.sqrt(2) * rho**2 * np.sqrt(rho**2 + 1)
+                / (2 * np.sqrt(rho**2 + rho * np.sqrt(rho**2 + 1)))
+            )
+            result = (1 - rho * 1j) / np.sqrt(-rho*(rho + 1j))
+            result += (1 + rho * 1j) / np.sqrt(-rho*(rho - 1j))
+            result = k * result
+            return result.real
+        else:
+            return np.inf
+
+    def _stats(self, rho):
+        # Returning None from stats makes public stats use _munp.
+        return None, None, np.inf, np.inf
+
+
+relativistic_bw = relativistic_bw_gen(a=0.0, name="relativistic_bw")
+
+
 # Collect names of classes and objects in this module.
 pairs = list(globals().copy().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
