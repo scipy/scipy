@@ -522,7 +522,7 @@ class TestQuad:
                      **kwargs)
 
         assert_allclose(res_c[1], res_r[1] + 1j*res_i[1])
-        assert_allclose(res_c[0], res_r[0] + 1j*res_i[0], atol=res_c[1])
+        assert_allclose(res_c[0], res_r[0] + 1j*res_i[0])
 
         assert len(res_c[2]['real']) == len(res_r[2:])
         assert res_c[2]['real'][2] == res_r[4]
