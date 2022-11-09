@@ -7131,7 +7131,8 @@ add_newdoc("it2struve0",
     >>> plt.show()
     """)
 
-add_newdoc("itairy",
+add_newdoc(
+    "itairy",
     r"""
     itairy(x, out=None)
 
