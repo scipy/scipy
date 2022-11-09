@@ -74,6 +74,12 @@ All these interpolation methods rely on triangulation of the data using the
     despite its name --- is not the right tool. Use `RegularGridInterpolator`
     instead.
 
+.. note::
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating
+    or use the ``rescale=True`` keyword argument to `griddata`.
 
 
 .. _tutorial-interpolate_RBF:
@@ -89,20 +95,20 @@ outside of the observed data range.
 1-D Example
 -----------
 
-This example compares the usage of the `Rbf` and `UnivariateSpline` classes
-from the scipy.interpolate module.
+This example compares the usage of the `RBFInterpolator` and `UnivariateSpline`
+classes from the `scipy.interpolate` module.
 
 .. plot::
     :alt: " "
 
     >>> import numpy as np
-    >>> from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
+    >>> from scipy.interpolate import RBFInterpolator, InterpolatedUnivariateSpline
     >>> import matplotlib.pyplot as plt
 
     >>> # setup data
-    >>> x = np.linspace(0, 10, 9)
+    >>> x = np.linspace(0, 10, 9).reshape(-1, 1)
     >>> y = np.sin(x)
-    >>> xi = np.linspace(0, 10, 101)
+    >>> xi = np.linspace(0, 10, 101).reshape(-1, 1)
 
     >>> # use fitpack2 method
     >>> ius = InterpolatedUnivariateSpline(x, y)
@@ -115,7 +121,7 @@ from the scipy.interpolate module.
     >>> plt.title('Interpolation using univariate spline')
 
     >>> # use RBF method
-    >>> rbf = Rbf(x, y)
+    >>> rbf = RBFInterpolator(x, y)
     >>> fi = rbf(xi)
 
     >>> plt.subplot(2, 1, 2)
@@ -136,29 +142,36 @@ This example shows how to interpolate scattered 2-D data:
     :alt: " "
 
     >>> import numpy as np
-    >>> from scipy.interpolate import Rbf
+    >>> from scipy.interpolate import RBFInterpolator
     >>> import matplotlib.pyplot as plt
 
     >>> # 2-d tests - setup scattered data
     >>> rng = np.random.default_rng()
-    >>> x = rng.random(100)*4.0-2.0
-    >>> y = rng.random(100)*4.0-2.0
-    >>> z = x*np.exp(-x**2-y**2)
+    >>> xy = rng.random((100, 2))*4.0-2.0
+    >>> z = xy[:, 0]*np.exp(-xy[:, 0]**2-xy[:, 1]**2)
     >>> edges = np.linspace(-2.0, 2.0, 101)
     >>> centers = edges[:-1] + np.diff(edges[:2])[0] / 2.
-    >>> XI, YI = np.meshgrid(centers, centers)
+    >>> x_i, y_i = np.meshgrid(centers, centers)
+    >>> x_i = x_i.reshape(-1, 1)
+    >>> y_i = y_i.reshape(-1, 1)
+    >>> xy_i = np.concatenate([x_i, y_i], axis=1)
 
     >>> # use RBF
-    >>> rbf = Rbf(x, y, z, epsilon=2)
-    >>> ZI = rbf(XI, YI)
+    >>> rbf = RBFInterpolator(xy, z, epsilon=2)
+    >>> z_i = rbf(xy_i)
 
     >>> # plot the result
-    >>> plt.subplot(1, 1, 1)
+    >>> fig, ax = plt.subplots()
     >>> X_edges, Y_edges = np.meshgrid(edges, edges)
     >>> lims = dict(cmap='RdBu_r', vmin=-0.4, vmax=0.4)
-    >>> plt.pcolormesh(X_edges, Y_edges, ZI, shading='flat', **lims)
-    >>> plt.scatter(x, y, 100, z, edgecolor='w', lw=0.1, **lims)
-    >>> plt.title('RBF interpolation - multiquadrics')
-    >>> plt.xlim(-2, 2)
-    >>> plt.ylim(-2, 2)
-    >>> plt.colorbar()
+    >>> mapping = ax.pcolormesh(
+    ...     X_edges, Y_edges, z_i.reshape(100, 100),
+    ...     shading='flat', **lims
+    ... )
+    >>> ax.scatter(xy[:, 0], xy[:, 1], 100, z, edgecolor='w', lw=0.1, **lims)
+    >>> ax.set(
+    ...     title='RBF interpolation - multiquadrics',
+    ...     xlim=(-2, 2),
+    ...     ylim=(-2, 2),
+    ... )
+    >>> fig.colorbar(mapping)

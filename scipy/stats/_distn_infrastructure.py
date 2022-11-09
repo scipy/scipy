@@ -1510,7 +1510,7 @@ class rv_generic:
         ``ppf`` is the inverse cumulative distribution function and
         ``p_tail = (1-confidence)/2``. Suppose ``[c, d]`` is the support of a
         discrete distribution; then ``ppf([0, 1]) == (c-1, d)``. Therefore,
-        when ``confidence==1`` and the distribution is discrete, the left end
+        when ``confidence=1`` and the distribution is discrete, the left end
         of the interval will be beyond the support of the distribution.
         For discrete distributions, the interval will limit the probability
         in each tail to be less than or equal to ``p_tail`` (usually
@@ -1611,18 +1611,19 @@ class rv_generic:
     def _nnlf(self, x, *args):
         return -np.sum(self._logpxf(x, *args), axis=0)
 
-    def _nnlf_and_penalty(self, x, args):
+    def _nlff_and_penalty(self, x, args, log_fitfun):
+        # negative log fit function
         cond0 = ~self._support_mask(x, *args)
         n_bad = np.count_nonzero(cond0, axis=0)
         if n_bad > 0:
             x = argsreduce(~cond0, x)[0]
-        logpxf = self._logpxf(x, *args)
-        finite_logpxf = np.isfinite(logpxf)
-        n_bad += np.sum(~finite_logpxf, axis=0)
+        logff = log_fitfun(x, *args)
+        finite_logff = np.isfinite(logff)
+        n_bad += np.sum(~finite_logff, axis=0)
         if n_bad > 0:
             penalty = n_bad * log(_XMAX) * 100
-            return -np.sum(logpxf[finite_logpxf], axis=0) + penalty
-        return -np.sum(logpxf, axis=0)
+            return -np.sum(logff[finite_logff], axis=0) + penalty
+        return -np.sum(logff, axis=0)
 
     def _penalized_nnlf(self, theta, x):
         """Penalized negative loglikelihood function.
@@ -1634,7 +1635,32 @@ class rv_generic:
             return inf
         x = asarray((x-loc) / scale)
         n_log_scale = len(x) * log(scale)
-        return self._nnlf_and_penalty(x, args) + n_log_scale
+        return self._nlff_and_penalty(x, args, self._logpxf) + n_log_scale
+
+    def _penalized_nlpsf(self, theta, x):
+        """Penalized negative log product spacing function.
+        i.e., - sum (log (diff (cdf (x, theta))), axis=0) + penalty
+        where theta are the parameters (including loc and scale)
+        Follows reference [1] of scipy.stats.fit
+        """
+        loc, scale, args = self._unpack_loc_scale(theta)
+        if not self._argcheck(*args) or scale <= 0:
+            return inf
+        x = (np.sort(x) - loc)/scale
+
+        def log_psf(x, *args):
+            x, lj = np.unique(x, return_counts=True)  # fast for sorted x
+            cdf_data = self._cdf(x, *args) if x.size else []
+            if not (x.size and 1 - cdf_data[-1] <= 0):
+                cdf = np.concatenate(([0], cdf_data, [1]))
+                lj = np.concatenate((lj, [1]))
+            else:
+                cdf = np.concatenate(([0], cdf_data))
+            # here we could use logcdf w/ logsumexp trick to take differences,
+            # but in the context of the method, it seems unlikely to matter
+            return lj * np.log(np.diff(cdf) / lj)
+
+        return self._nlff_and_penalty(x, args, log_psf)
 
 
 class _ShapeInfo:
