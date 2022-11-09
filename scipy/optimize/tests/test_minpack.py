@@ -894,7 +894,8 @@ class TestCurveFit:
         ref = [[+0.0158972536486215, 0.0069207183284242, -0.0007474400714749],
                [+0.0069207183284242, 0.0205057958128679, +0.0053997711275403],
                [-0.0007474400714749, 0.0053997711275403, +0.0027833930320877]]
-        assert_allclose(res, ref)
+        # Linux_Python_38_32bit_full fails with default tolerance
+        assert_allclose(res, ref, 2e-7)
 
 
 class TestFixedPoint:

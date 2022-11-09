@@ -480,9 +480,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             try:
                 # inverse of permuted matrix is a permuation of matrix inverse
                 invR, trtri_info = inv_triu(r)  # default: upper, non-unit diag
-                if trtri_info:
+                if trtri_info != 0:  # explicit comparison for readability
                     raise LinAlgError(f'trtri returned info {trtri_info}')
-                invR[perm] = invR[np.arange(n)]
+                invR[perm] = invR.copy()
                 cov_x = invR @ invR.T
             except (LinAlgError, ValueError):
                 pass
