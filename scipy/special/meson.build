@@ -342,7 +342,7 @@ cython_special = custom_target('cython_special',
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
   command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
   install: true,
-  install_dir: py3.get_install_dir(pure: false) / 'scipy/special'
+  install_dir: py3.get_install_dir() / 'scipy/special'
 )
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
@@ -467,7 +467,7 @@ py3.extension_module('_test_round',
 npz_files = [
   [
     '_data_boost',
-    'tests/data/boost/acosh_data_ipp/acosh_data.txt',
+    'tests/data/boost/assoc_legendre_p_ipp/assoc_legendre_p.txt',
     'boost',
     'boost.npz'
   ],
@@ -494,7 +494,7 @@ foreach npz_file: npz_files
       '--use-timestamp', npz_file[2], '-o', '@OUTDIR@'
     ],
     install: true,
-    install_dir: py3.get_install_dir(pure: false) / 'scipy/special/tests/data'
+    install_dir: py3.get_install_dir() / 'scipy/special/tests/data'
   )
 endforeach
 
@@ -525,7 +525,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/special'
 )
 

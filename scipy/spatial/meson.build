@@ -110,7 +110,6 @@ _hausdorff = py3.extension_module('_hausdorff',
 py3.install_sources([
     'qhull_src/COPYING.txt'
   ],
-  pure: false,
   subdir: 'scipy/spatial/qhull_src'
 )
 
@@ -120,7 +119,6 @@ py3.install_sources([
     '_voronoi.pyi',
     'distance.pyi'
   ],
-  pure: false,
   subdir: 'scipy/spatial'
 )
 
@@ -136,7 +134,6 @@ py3.install_sources([
     'kdtree.py',
     'qhull.py'
   ],
-  pure: false,
   subdir: 'scipy/spatial'
 )
 
