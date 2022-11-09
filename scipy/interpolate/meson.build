@@ -111,6 +111,15 @@ py3.extension_module('_ppoly',
   subdir: 'scipy/interpolate'
 )
 
+py3.extension_module('_rgi_cython',
+  linalg_cython_gen.process('_rgi_cython.pyx'),
+  c_args: cython_c_args,
+  include_directories: [incdir_numpy],
+  dependencies: [py3_dep],
+  install: true,
+  subdir: 'scipy/interpolate'
+)
+
 _bspl = py3.extension_module('_bspl',
   cython_gen.process('_bspl.pyx'),
   c_args: cython_c_args,
@@ -169,7 +178,6 @@ if use_pythran
 else
   py3.install_sources(
     ['_rbfinterp_pythran.py'],
-    pure: false,
     subdir: 'scipy/interpolate'
   )
 endif
@@ -196,7 +204,6 @@ py3.install_sources([
     'polyint.py',
     'rbf.py'
   ],
-  pure: false,
   subdir: 'scipy/interpolate'
 )
 

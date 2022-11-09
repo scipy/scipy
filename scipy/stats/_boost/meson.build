@@ -34,6 +34,5 @@ endforeach
 py3.install_sources([
     '__init__.py'
   ],
-  pure: false,
   subdir: 'scipy/stats/_boost'
 )

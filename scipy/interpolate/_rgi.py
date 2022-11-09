@@ -6,6 +6,7 @@ import numpy as np
 
 from .interpnd import _ndim_coords_from_arrays
 from ._cubic import PchipInterpolator
+from ._rgi_cython import evaluate_linear_2d, find_indices
 from ._bsplines import make_interp_spline
 from ._fitpack2 import RectBivariateSpline
 
@@ -104,6 +105,10 @@ class RegularGridInterpolator:
 
     .. versionadded:: 1.9
 
+    If the input data is such that dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
+
     Examples
     --------
     **Evaluate a function on the points of a 3-D grid**
@@ -112,6 +117,7 @@ class RegularGridInterpolator:
     a 3-D grid:
 
     >>> from scipy.interpolate import RegularGridInterpolator
+    >>> import numpy as np
     >>> def f(x, y, z):
     ...     return 2 * x**3 + 3 * y**2 - z
     >>> x = np.linspace(1, 4, 11)
@@ -217,20 +223,37 @@ class RegularGridInterpolator:
             self._validate_grid_dimensions(points, method)
         self.method = method
         self.bounds_error = bounds_error
+        self.grid, self._descending_dimensions = self._check_points(points)
+        self.values = self._check_values(values)
+        self._check_dimensionality(self.grid, self.values)
+        self.fill_value = self._check_fill_value(self.values, fill_value)
+        if self._descending_dimensions:
+            self.values = np.flip(values, axis=self._descending_dimensions)
 
-        if not hasattr(values, 'ndim'):
-            # allow reasonable duck-typed values
-            values = np.asarray(values)
-
+    def _check_dimensionality(self, points, values):
         if len(points) > values.ndim:
             raise ValueError("There are %d point arrays, but values has %d "
                              "dimensions" % (len(points), values.ndim))
+        for i, p in enumerate(points):
+            if not np.asarray(p).ndim == 1:
+                raise ValueError("The points in dimension %d must be "
+                                 "1-dimensional" % i)
+            if not values.shape[i] == len(p):
+                raise ValueError("There are %d points and %d values in "
+                                 "dimension %d" % (len(p), values.shape[i], i))
+
+    def _check_values(self, values):
+        if not hasattr(values, 'ndim'):
+            # allow reasonable duck-typed values
+            values = np.asarray(values)
 
         if hasattr(values, 'dtype') and hasattr(values, 'astype'):
             if not np.issubdtype(values.dtype, np.inexact):
                 values = values.astype(float)
 
-        self.fill_value = fill_value
+        return values
+
+    def _check_fill_value(self, values, fill_value):
         if fill_value is not None:
             fill_value_dtype = np.asarray(fill_value).dtype
             if (hasattr(values, 'dtype') and not
@@ -238,26 +261,27 @@ class RegularGridInterpolator:
                                 casting='same_kind')):
                 raise ValueError("fill_value must be either 'None' or "
                                  "of a type compatible with values")
+        return fill_value
 
+    def _check_points(self, points):
+        descending_dimensions = []
+        grid = []
         for i, p in enumerate(points):
-            diff_p = np.diff(p)
-            if not np.all(diff_p > 0.):
-                if np.all(diff_p < 0.):
+            # early make points float
+            # see https://github.com/scipy/scipy/pull/17230
+            p = np.asarray(p, dtype=float)
+            if not np.all(p[1:] > p[:-1]):
+                if np.all(p[1:] < p[:-1]):
                     # input is descending, so make it ascending
-                    points, values = _make_points_and_values_ascending(
-                        points, values)
+                    descending_dimensions.append(i)
+                    p = np.flip(p)
+                    p = np.ascontiguousarray(p)
                 else:
                     raise ValueError(
                         "The points in dimension %d must be strictly "
                         "ascending or descending" % i)
-            if not np.asarray(p).ndim == 1:
-                raise ValueError("The points in dimension %d must be "
-                                 "1-dimensional" % i)
-            if not values.shape[i] == len(p):
-                raise ValueError("There are %d points and %d values in "
-                                 "dimension %d" % (len(p), values.shape[i], i))
-        self.grid = tuple([np.asarray(p) for p in points])
-        self.values = values
+            grid.append(p)
+        return tuple(grid), tuple(descending_dimensions)
 
     def __call__(self, xi, method=None):
         """
@@ -289,6 +313,7 @@ class RegularGridInterpolator:
         --------
         Here we define a nearest-neighbor interpolator of a simple function
 
+        >>> import numpy as np
         >>> x, y = np.array([0, 1, 2]), np.array([1, 3, 7])
         >>> def f(x, y):
         ...     return x**2 + y**2
@@ -313,32 +338,21 @@ class RegularGridInterpolator:
         if method not in self._ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
 
-        ndim = len(self.grid)
-        xi = _ndim_coords_from_arrays(xi, ndim=ndim)
-        if xi.shape[-1] != len(self.grid):
-            raise ValueError("The requested sample points xi have dimension "
-                             f"{xi.shape[-1]} but this "
-                             f"RegularGridInterpolator has dimension {ndim}")
-
-        xi_shape = xi.shape
-        xi = xi.reshape(-1, xi_shape[-1])
-
-        # find nans in input
-        nans = np.any(np.isnan(xi), axis=-1)
-
-        if self.bounds_error:
-            for i, p in enumerate(xi.T):
-                if not np.logical_and(np.all(self.grid[i][0] <= p),
-                                      np.all(p <= self.grid[i][-1])):
-                    raise ValueError("One of the requested xi is out of bounds "
-                                     "in dimension %d" % i)
-            out_of_bounds = None
-        else:
-            out_of_bounds = self._find_out_of_bounds(xi.T)
+        xi, xi_shape, ndim, nans, out_of_bounds = self._prepare_xi(xi)
 
         if method == "linear":
             indices, norm_distances = self._find_indices(xi.T)
-            result = self._evaluate_linear(indices, norm_distances)
+            if (ndim == 2 and hasattr(self.values, 'dtype') and
+                    self.values.ndim == 2):
+                # a fast path
+                out = np.empty(indices.shape[1], dtype=self.values.dtype)
+                result = evaluate_linear_2d(self.values,
+                                            indices,
+                                            norm_distances,
+                                            self.grid,
+                                            out)
+            else:
+                result = self._evaluate_linear(indices, norm_distances)
         elif method == "nearest":
             indices, norm_distances = self._find_indices(xi.T)
             result = self._evaluate_nearest(indices, norm_distances)
@@ -354,6 +368,33 @@ class RegularGridInterpolator:
         if np.any(nans):
             result[nans] = np.nan
         return result.reshape(xi_shape[:-1] + self.values.shape[ndim:])
+
+    def _prepare_xi(self, xi):
+        ndim = len(self.grid)
+        xi = _ndim_coords_from_arrays(xi, ndim=ndim)
+        if xi.shape[-1] != len(self.grid):
+            raise ValueError("The requested sample points xi have dimension "
+                             f"{xi.shape[-1]} but this "
+                             f"RegularGridInterpolator has dimension {ndim}")
+
+        xi_shape = xi.shape
+        xi = xi.reshape(-1, xi_shape[-1])
+        xi = np.asarray(xi, dtype=float)
+
+        # find nans in input
+        nans = np.any(np.isnan(xi), axis=-1)
+
+        if self.bounds_error:
+            for i, p in enumerate(xi.T):
+                if not np.logical_and(np.all(self.grid[i][0] <= p),
+                                      np.all(p <= self.grid[i][-1])):
+                    raise ValueError("One of the requested xi is out of bounds "
+                                     "in dimension %d" % i)
+            out_of_bounds = None
+        else:
+            out_of_bounds = self._find_out_of_bounds(xi.T)
+
+        return xi, xi_shape, ndim, nans, out_of_bounds
 
     def _evaluate_linear(self, indices, norm_distances):
         # slice for broadcasting over trailing dimensions in self.values
@@ -376,14 +417,15 @@ class RegularGridInterpolator:
         # to get the terms in the above formula. This corresponds to iterating
         # over the vertices of a hypercube.
         hypercube = itertools.product(*zip(zipped1, zipped2))
-        values = 0.
+        value = np.array([0.])
         for h in hypercube:
             edge_indices, weights = zip(*h)
-            weight = 1.
+            weight = np.array([1.])
             for w in weights:
-                weight *= w
-            values += np.asarray(self.values[edge_indices]) * weight[vslice]
-        return values
+                weight = weight * w
+            term = np.asarray(self.values[edge_indices]) * weight[vslice]
+            value = value + term   # cannot use += because broadcasting
+        return value
 
     def _evaluate_nearest(self, indices, norm_distances):
         idx_res = [np.where(yi <= .5, i, i + 1)
@@ -467,25 +509,7 @@ class RegularGridInterpolator:
         return values
 
     def _find_indices(self, xi):
-        # find relevant edges between which xi are situated
-        indices = []
-        # compute distance to lower edge in unity units
-        norm_distances = []
-        # iterate through dimensions
-        for x, grid in zip(xi, self.grid):
-            i = np.searchsorted(grid, x) - 1
-            i[i < 0] = 0
-            i[i > grid.size - 2] = grid.size - 2
-            indices.append(i)
-
-            # compute norm_distances, incl length-1 grids,
-            # where `grid[i+1] == grid[i]`
-            denom = grid[i + 1] - grid[i]
-            with np.errstate(divide='ignore', invalid='ignore'):
-                norm_dist = np.where(denom != 0, (x - grid[i]) / denom, 0)
-            norm_distances.append(norm_dist)
-
-        return indices, norm_distances
+        return find_indices(self.grid, xi)
 
     def _find_out_of_bounds(self, xi):
         # check for out of bounds xi
@@ -550,6 +574,10 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     In the case that ``xi.ndim == 1`` a new axis is inserted into
     the 0 position of the returned array, values_x, so its shape is
     instead ``(1,) + values.shape[ndim:]``.
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolation.
 
     Examples
     --------

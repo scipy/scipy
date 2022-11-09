@@ -963,7 +963,7 @@ class TestSystematic:
         eps = np.finfo(float).eps
         assert_mpmath_equal(_cospi,
                             mpmath.cospi,
-                            [Arg()], nan_ok=False, rtol=eps)
+                            [Arg()], nan_ok=False, rtol=2*eps)
 
     def test_cospi_complex(self):
         assert_mpmath_equal(_cospi,
@@ -1743,7 +1743,7 @@ class TestSystematic:
     def test_sinpi(self):
         eps = np.finfo(float).eps
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
-                            [Arg()], nan_ok=False, rtol=eps)
+                            [Arg()], nan_ok=False, rtol=2*eps)
 
     def test_sinpi_complex(self):
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
