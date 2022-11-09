@@ -126,8 +126,7 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,          # Will be installed next to binaries
-  subdir: 'scipy/_lib'  # Folder relative to site-packages to install to
+  subdir: 'scipy/_lib'
 )
 
 subdir('_uarray')

@@ -129,7 +129,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See the ``method=='hybr'`` in particular.
+           functions. See the ``method='hybr'`` in particular.
 
     Notes
     -----
@@ -375,7 +375,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     See Also
     --------
     least_squares : Newer interface to solve nonlinear least-squares problems
-        with bounds on the variables. See ``method=='lm'`` in particular.
+        with bounds on the variables. See ``method='lm'`` in particular.
 
     Notes
     -----

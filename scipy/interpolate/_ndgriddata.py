@@ -55,6 +55,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
     We can interpolate values on a 2D plane:
 
     >>> from scipy.interpolate import NearestNDInterpolator
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
     >>> x = rng.random(10) - 0.5

@@ -204,10 +204,12 @@ class TestFSolve:
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_concurrent_no_gradient(self):
-        return sequence_parallel([self.test_pressure_network_no_gradient] * 10)
+        v = sequence_parallel([self.test_pressure_network_no_gradient] * 10)
+        assert all([result is None for result in v])
 
     def test_concurrent_with_gradient(self):
-        return sequence_parallel([self.test_pressure_network_with_gradient] * 10)
+        v = sequence_parallel([self.test_pressure_network_with_gradient] * 10)
+        assert all([result is None for result in v])
 
 
 class TestRootHybr:
@@ -387,10 +389,12 @@ class TestLeastSq:
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
     def test_concurrent_no_gradient(self):
-        return sequence_parallel([self.test_basic] * 10)
+        v = sequence_parallel([self.test_basic] * 10)
+        assert all([result is None for result in v])
 
     def test_concurrent_with_gradient(self):
-        return sequence_parallel([self.test_basic_with_gradient] * 10)
+        v = sequence_parallel([self.test_basic_with_gradient] * 10)
+        assert all([result is None for result in v])
 
     def test_func_input_output_length_check(self):
 

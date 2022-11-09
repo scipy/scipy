@@ -46,6 +46,7 @@ desired `numpy` type object to the output argument. For example:
 .. code:: python
 
     >>> from scipy.ndimage import correlate
+    >>> import numpy as np
     >>> correlate(np.arange(10), [1, 2.5])
     array([ 0,  2,  6,  9, 13, 16, 20, 23, 27, 30])
     >>> correlate(np.arange(10), [1, 2.5], output=np.float64)
