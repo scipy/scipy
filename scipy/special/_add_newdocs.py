@@ -7132,7 +7132,7 @@ add_newdoc("it2struve0",
     """)
 
 add_newdoc("itairy",
-    """
+    r"""
     itairy(x, out=None)
 
     Integrals of Airy functions
@@ -7198,6 +7198,7 @@ add_newdoc("itairy",
     Plot the functions from -10 to 10.
 
     >>> x = np.linspace(-10, 10, 500)
+    >>> apt, bpt, ant, bnt = itairy(x)
     >>> fig, ax = plt.subplots(figsize=(6, 5))
     >>> ax.plot(x, apt, label="$\int_0^x\, Ai(t)\, dt$")
     >>> ax.plot(x, bpt, ls="dashed", label="$\int_0^x\, Bi(t)\, dt$")
