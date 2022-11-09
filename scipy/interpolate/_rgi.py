@@ -117,6 +117,7 @@ class RegularGridInterpolator:
     a 3-D grid:
 
     >>> from scipy.interpolate import RegularGridInterpolator
+    >>> import numpy as np
     >>> def f(x, y, z):
     ...     return 2 * x**3 + 3 * y**2 - z
     >>> x = np.linspace(1, 4, 11)
@@ -312,6 +313,7 @@ class RegularGridInterpolator:
         --------
         Here we define a nearest-neighbor interpolator of a simple function
 
+        >>> import numpy as np
         >>> x, y = np.array([0, 1, 2]), np.array([1, 3, 7])
         >>> def f(x, y):
         ...     return x**2 + y**2

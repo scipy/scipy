@@ -1680,6 +1680,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     Suppose we have global data on a coarse grid (the input data does not
     have to be on a grid):
 
+    >>> import numpy as np
     >>> theta = np.linspace(0., np.pi, 7)
     >>> phi = np.linspace(0., 2*np.pi, 9)
     >>> data = np.empty((theta.shape[0], phi.shape[0]))
@@ -1825,6 +1826,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     have to be on a grid):
 
     >>> from scipy.interpolate import LSQSphereBivariateSpline
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
 
     >>> theta = np.linspace(0, np.pi, num=7)
@@ -2030,6 +2032,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     --------
     Suppose we have global data on a coarse grid
 
+    >>> import numpy as np
     >>> lats = np.linspace(10, 170, 9) * np.pi / 180.
     >>> lons = np.linspace(0, 350, 18) * np.pi / 180.
     >>> data = np.dot(np.atleast_2d(90. - np.linspace(-80., 80., 18)).T,
