@@ -3,7 +3,7 @@ import numpy
 from numpy.testing import assert_allclose
 import pytest
 from pytest import raises as assert_raises, warns
-from scipy.optimize import shgo, Bounds, minimize_scalar
+from scipy.optimize import shgo, Bounds, minimize_scalar, minimize
 from scipy.optimize._shgo import SHGO
 
 
@@ -825,6 +825,24 @@ class TestShgoArguments:
             sampling_method="sobol",
             minimizer_kwargs={'method': 'SLSQP', 'jac': True}
         )
+
+    def test_21_arg_tuple_sobol(self):
+        """shgo used to raise an error when passing `args` with Sobol sampling
+        # see gh-12114. check that this is resolved"""
+        def fun(x, k):
+            return x[0] ** k
+
+        constraints = ({'type': 'ineq', 'fun': lambda x: x[0] - 1})
+
+        bounds = [(0, 10)]
+        res = shgo(fun, bounds, args=(1,), constraints=constraints,
+                   sampling_method='sobol')
+        ref = minimize(fun, numpy.zeros(1), bounds=bounds, args=(1,),
+                                constraints=constraints)
+        assert res.success
+        assert_allclose(res.fun, ref.fun)
+        assert_allclose(res.x, ref.x)
+
 
 
 # Failure test functions
