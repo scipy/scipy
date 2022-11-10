@@ -24,5 +24,5 @@ class NdimageUniformFilter(Benchmark):
         uniform_filter(self.x, size=size, mode=mode)
 
     def time_uniform_filter_nan(self, shape, size, mode):
-        uniform_filter(self.x, size=size, mode=mode, ignore_nan=True)
+        uniform_filter(self.x, size=size, mode=mode, nan_policy='omit')
 

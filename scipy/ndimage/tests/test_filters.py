@@ -895,11 +895,10 @@ class TestNdimageFilters:
         assert_array_almost_equal([3, 5, 6], output)
 
     def test_uniform01_nan(self):
-        array  = numpy.array([2, numpy.nan, 6])
-        size   = 2
-        output = ndimage.uniform_filter1d(array, size, origin=-1, ignore_nan=True)
+        array = numpy.array([2, numpy.nan, 6])
+        size = 2
+        output = ndimage.uniform_filter1d(array, size, origin=-1, nan_policy='omit')
         assert_array_almost_equal([2, 6, 6], output)
-
 
     def test_uniform01_complex(self):
         array = numpy.array([2 + 1j, 4 + 2j, 6 + 3j], dtype=numpy.complex128)
@@ -911,7 +910,7 @@ class TestNdimageFilters:
     def test_uniform01_complex_nan(self):
         array = numpy.array([2 + 1j, numpy.nan + 2j, 6 + 3j], dtype=numpy.complex128)
         size = 2
-        output = ndimage.uniform_filter1d(array, size, origin=-1, ignore_nan=True)
+        output = ndimage.uniform_filter1d(array, size, origin=-1, nan_policy='omit')
         assert_array_almost_equal([2, 6, 6], output.real)
         assert_array_almost_equal([1.5, 2.5, 3], output.imag)
 
@@ -924,7 +923,7 @@ class TestNdimageFilters:
     def test_uniform02_nan(self):
         array = numpy.array([1, numpy.nan, 3])
         filter_shape = [0]
-        output = ndimage.uniform_filter(array, filter_shape, ignore_nan=True)
+        output = ndimage.uniform_filter(array, filter_shape, nan_policy='omit')
         assert_array_almost_equal(array, output)
 
     def test_uniform03(self):
@@ -936,7 +935,7 @@ class TestNdimageFilters:
     def test_uniform03_nan(self):
         array = numpy.array([1, numpy.nan, 3])
         filter_shape = [1]
-        output = ndimage.uniform_filter(array, filter_shape, ignore_nan=True)
+        output = ndimage.uniform_filter(array, filter_shape, nan_policy='omit')
         assert_array_almost_equal(array, output)
 
     def test_uniform04(self):
@@ -948,7 +947,7 @@ class TestNdimageFilters:
     def test_uniform04_nan(self):
         array = numpy.array([2, numpy.nan, 6])
         filter_shape = [2]
-        output = ndimage.uniform_filter(array, filter_shape, ignore_nan=True)
+        output = ndimage.uniform_filter(array, filter_shape, nan_policy='omit')
         assert_array_almost_equal([2, 2, 6], output)
 
     def test_uniform05(self):
@@ -960,7 +959,7 @@ class TestNdimageFilters:
     def test_uniform05_nan(self):
         array = []
         filter_shape = [1]
-        output = ndimage.uniform_filter(array, filter_shape, ignore_nan=True)
+        output = ndimage.uniform_filter(array, filter_shape, nan_policy='omit')
         assert_array_almost_equal([], output)
 
     @pytest.mark.parametrize('dtype_array', types)
@@ -978,10 +977,10 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', float_types)
     def test_uniform06_nan(self, dtype_array, dtype_output):
         filter_shape = [2, 2]
-        array = numpy.array([[ 4, numpy.nan, 12],
+        array = numpy.array([[4, numpy.nan, 12],
                              [16, numpy.nan, 24]], dtype_array)
         output = ndimage.uniform_filter(
-            array, filter_shape, output=dtype_output, ignore_nan=True)
+            array, filter_shape, output=dtype_output, nan_policy='omit')
         assert_array_almost_equal([[4, 4, 12], [10, 10, 18]], output)
         assert_equal(output.dtype.type, dtype_output)
 
@@ -1000,10 +999,10 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_uniform06_complex_nan(self, dtype_array, dtype_output):
         filter_shape = [2, 2]
-        array = numpy.array([[ 4, numpy.nan + 5j, 12],
+        array = numpy.array([[4, numpy.nan + 5j, 12],
                              [16, numpy.nan, 24]], dtype_array)
         output = ndimage.uniform_filter(
-            array, filter_shape, output=dtype_output, ignore_nan=True)
+            array, filter_shape, output=dtype_output, nan_policy='omit')
         assert_array_almost_equal([[4, 4, 12], [10, 10, 18]], output.real)
         assert_equal(output.dtype.type, dtype_output)
 
@@ -1717,7 +1716,7 @@ def test_multiple_modes_sequentially():
                        [1., 1., 0.],
                        [0., 0., 0.]])
     arr_nan = arr.copy()
-    arr_nan[ [0,1], [1,2] ] = numpy.nan
+    arr_nan[[0,1], [1,2]] = numpy.nan
 
     modes = ['reflect', 'wrap']
 
@@ -1732,10 +1731,10 @@ def test_multiple_modes_sequentially():
                  ndimage.uniform_filter(arr, 5, mode=modes))
 
     # Test ignore_nan
-    expected = ndimage.uniform_filter1d(arr_nan, 5, axis=0, mode=modes[0], ignore_nan=True)
-    expected = ndimage.uniform_filter1d(expected, 5, axis=1, mode=modes[1], ignore_nan=True)
+    expected = ndimage.uniform_filter1d(arr_nan, 5, axis=0, mode=modes[0], nan_policy='omit')
+    expected = ndimage.uniform_filter1d(expected, 5, axis=1, mode=modes[1], nan_policy='omit')
     assert_equal(expected,
-                 ndimage.uniform_filter(arr_nan, 5, mode=modes, ignore_nan=True) )
+                 ndimage.uniform_filter(arr_nan, 5, mode=modes, nan_policy='omit'))
 
     expected = ndimage.maximum_filter1d(arr, size=5, axis=0, mode=modes[0])
     expected = ndimage.maximum_filter1d(expected, size=5, axis=1,
@@ -1970,12 +1969,12 @@ class TestThreading:
         assert_array_equal(os, ot)
 
     def test_uniform_filter1d_nan(self):
-        d  = numpy.random.randn(5000)
-        d[ numpy.random.randint( 100 ) ] = numpy.nan
+        d = numpy.random.randn(5000)
+        d[numpy.random.randint( 100 )] = numpy.nan
         os = numpy.empty((4, d.size))
         ot = numpy.empty_like(os)
-        self.check_func_serial(4, ndimage.uniform_filter1d, (d, 5), os, ignore_nan=True)
-        self.check_func_thread(4, ndimage.uniform_filter1d, (d, 5), ot, ignore_nan=True)
+        self.check_func_serial(4, ndimage.uniform_filter1d, (d, 5), os, nan_policy='omit')
+        self.check_func_thread(4, ndimage.uniform_filter1d, (d, 5), ot, nan_policy='omit')
         assert_array_equal(os, ot)
 
     def test_minmax_filter(self):

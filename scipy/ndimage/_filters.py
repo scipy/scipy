@@ -34,6 +34,7 @@ import warnings
 import numpy
 import operator
 from numpy.core.multiarray import normalize_axis_index
+from scipy._lib._util import _contains_nan
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
@@ -894,7 +895,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
 @_ni_docstrings.docfiller
 def uniform_filter1d(input, size, axis=-1, output=None,
                      mode="reflect", cval=0.0, origin=0, 
-                     ignore_nan=False):
+                     nan_policy='propagate'):
     """Calculate a 1-D uniform filter along the given axis.
 
     The lines of the array along the given axis are filtered with a
@@ -910,8 +911,15 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     %(mode_reflect)s
     %(cval)s
     %(origin)s
-    ignore_nan : bool
-        If set, then acts as numpy.nanmean() over window
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+        * 'propagate': If present, nan values are propagated through
+            through output
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values;
+            i.e., applies numpy.nanmean()-like function over window
 
     Examples
     --------
@@ -920,6 +928,9 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     array([4, 3, 4, 1, 4, 6, 6, 3])
     """
     input = numpy.asarray(input)
+
+    contains_nan, nan_policy = _contains_nan(input, nan_policy)
+
     axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
@@ -929,10 +940,11 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     if (size // 2 + origin < 0) or (size // 2 + origin >= size):
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
-    func = (
-      _nd_image.uniform_filter1d_nan if ignore_nan else 
-      _nd_image.uniform_filter1d
-    )
+
+    if contains_nan and nan_policy == 'omit':
+      func = _nd_image.uniform_filter1d_nan
+    else:
+      func = _nd_image.uniform_filter1d
 
     if not complex_output:
         func(input, size, axis, output, mode, cval, origin)
@@ -946,7 +958,7 @@ def uniform_filter1d(input, size, axis=-1, output=None,
 
 @_ni_docstrings.docfiller
 def uniform_filter(input, size=3, output=None, mode="reflect",
-                   cval=0.0, origin=0, ignore_nan=False):
+                   cval=0.0, origin=0, nan_policy='propagate'):
     """Multidimensional uniform filter.
 
     Parameters
@@ -960,8 +972,15 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     %(mode_multiple)s
     %(cval)s
     %(origin_multiple)s
-    ignore_nan : bool
-        If set, then acts as numpy.nanmean() over window
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+        * 'propagate': If present, nan values are propagated through
+            through output
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values;
+            i.e., applies numpy.nanmean()-like function over window
 
     Returns
     -------
@@ -1002,7 +1021,7 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     if len(axes) > 0:
         for axis, size, origin, mode in axes:
             uniform_filter1d(input, int(size), axis, output, mode,
-                             cval, origin, ignore_nan)
+                             cval, origin, nan_policy)
             input = output
     else:
         output[...] = input[...]
