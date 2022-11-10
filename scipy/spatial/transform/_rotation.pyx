@@ -1597,9 +1597,10 @@ cdef class Rotation:
                extraction the Euler angles", Journal of guidance, control, and
                dynamics, vol. 29.1, pp. 215-221. 2006
         .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
-        .. [4] Evandro Bernardes, Stéphane Viollet, "Quaternion to Euler angles 
-               conversion: a direct, general and computationally efficient 
-               method", PLOS ONE 2022
+        .. [4] Bernardes E, Viollet S (2022) Quaternion to Euler angles 
+               conversion: A direct, general and computationally efficient 
+               method. PLoS ONE 17(11): e0276302. 
+               https://doi.org/10.1371/journal.pone.0276302
 
         Examples
         --------
