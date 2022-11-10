@@ -94,7 +94,9 @@ def shgo(
         ``scipy.optimize.minimize`` Some important options could be:
 
             * method : str
-                The minimization method, the default is ``SLSQP``.
+                The minimization method. If not given, chosen to be one of BFGS,
+                 L-BFGS-B, SLSQP, depending on whether or not the problem has 
+                 constraints or bounds.
             * args : tuple
                 Extra arguments passed to the objective function (``func``) and
                 its derivatives (Jacobian, Hessian).

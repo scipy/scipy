@@ -868,7 +868,8 @@ class TestShgoArguments:
         minimizer_kwargs = {'method': 'Newton-CG'}
         res = shgo(rosen, bounds, minimizer_kwargs=minimizer_kwargs,
                    options=options)
-        ref = minimize(rosen, numpy.zeros(5), bounds=bounds, **options)
+        ref = minimize(rosen, numpy.zeros(5), method='Newton-CG',
+                       **options)
         assert res.success
         assert_allclose(res.fun, ref.fun)
         assert_allclose(res.x, ref.x, atol=1e-15)
