@@ -206,6 +206,22 @@ class VertexCacheBase:
         for v in self.cache:
             self.cache[v].print_out()
 
+class VertexCube(VertexBase):
+    """Vertex class to be used for a pure simplicial complex with no associated
+    differential geometry (single level domain that exists in R^n)"""
+    def __init__(self, x, nn=None, index=None):
+        super().__init__(x, nn=nn, index=index)
+
+    def connect(self, v):
+        if v is not self and v not in self.nn:
+            self.nn.add(v)
+            v.nn.add(self)
+
+    def disconnect(self, v):
+        if v in self.nn:
+            self.nn.remove(v)
+            v.nn.remove(self)
+
 class VertexCacheIndex(VertexCacheBase):
     def __init__(self):
         """
@@ -218,7 +234,7 @@ class VertexCacheIndex(VertexCacheBase):
         super().__init__()
         self.Vertex = VertexCube
 
-    def __getitem__(self, x, nn=None):  #TODO: Check if no_index is significant speedup
+    def __getitem__(self, x, nn=None):
         try:
             return self.cache[x]
         except KeyError:
@@ -369,7 +385,6 @@ class VertexCacheField(VertexCacheBase):
         # Clean the pool
         self.fpool = set()
 
-
     def pproc_fpool_g(self):
         """
         Process all field functions with constraints supplied in parallel.
@@ -410,7 +425,6 @@ class VertexCacheField(VertexCacheBase):
         for v in self:
             v.minimiser()
             v.maximiser()
-
 
 class ConstraintWraper:
     """Object to wrap constraints to pass to `multiprocessing.Pool`."""

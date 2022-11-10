@@ -801,7 +801,7 @@ class Complex:
                         c_vl.connect(vco)
                         c_vc.connect(c_vl)  # Connect cN group vertices
                         yield(c_vl.x)
-                        c_vu = self.split_edge(vu.x, a_vu.x) # yield at end of loop
+                        c_vu = self.split_edge(vu.x, a_vu.x)  # yield at end of loop
                         c_vu.connect(vco)
                         # Connect remaining cN group vertices
                         c_vc.connect(c_vu)  # Connect cN group vertices

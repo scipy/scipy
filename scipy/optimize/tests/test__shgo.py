@@ -862,7 +862,6 @@ class TestShgoArguments:
         """Ensure the Hessian gets passed correctly to the local minimizer routine.
         Previous report gh-14533.
         """
-        from scipy.optimize import rosen, rosen_der, rosen_hess
         bounds = [(0, 1.6), (0, 1.6), (0, 1.4), (0, 1.4), (0, 1.4)]
         options = {'jac': rosen_der, 'hess': rosen_hess}
         minimizer_kwargs = {'method': 'Newton-CG'}
@@ -890,8 +889,6 @@ class TestShgoArguments:
         assert res.success
         assert_allclose(res.fun, ref.fun)
         assert_allclose(res.x, ref.x)
-
-
 
 # Failure test functions
 class TestShgoFailures:
