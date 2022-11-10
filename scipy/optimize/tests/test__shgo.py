@@ -813,8 +813,8 @@ class TestShgoArguments:
 
     def test_21_1_jac_true(self):
         """Test that shgo can handle objective functions that return the
-        gradient alongside the objective value"""
-
+        gradient alongside the objective value. Fixes gh-13547"""
+        # previous
         def func(x):
             return numpy.sum(numpy.power(x, 2)), 2 * x
 
@@ -825,6 +825,20 @@ class TestShgoArguments:
             sampling_method="sobol",
             minimizer_kwargs={'method': 'SLSQP', 'jac': True}
         )
+        
+        # new
+        def func(x):
+            return numpy.sum(x ** 2), 2 * x
+
+        bounds = [[-1, 1], [1, 2], [-1, 1], [1, 2], [0, 3]]
+
+        res = shgo(func, bounds=bounds, sampling_method="sobol",
+                   minimizer_kwargs={'method': 'SLSQP', 'jac': True})
+        ref = minimize(func, x0=[1, 1, 1, 1, 1], bounds=bounds,
+                                jac=True)
+        assert res.success
+        assert_allclose(res.fun, ref.fun)
+        assert_allclose(res.x, ref.x, atol=1e-15)
 
     def test_21_2_jac_options(self):
         """shgo used to raise an error when passing `options` with 'jac'
