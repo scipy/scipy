@@ -318,6 +318,7 @@ def shgo(
     the capabilities of `shgo`.
     (https://en.wikipedia.org/wiki/Test_functions_for_optimization)
 
+    >>> import numpy as np
     >>> def eggholder(x):
     ...     return (-(x[1] + 47.0)
     ...             * np.sin(np.sqrt(abs(x[0]/2.0 + (x[1] + 47.0))))
