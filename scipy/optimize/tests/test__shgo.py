@@ -3,7 +3,8 @@ import numpy
 from numpy.testing import assert_allclose
 import pytest
 from pytest import raises as assert_raises, warns
-from scipy.optimize import shgo, Bounds, minimize_scalar, minimize
+from scipy.optimize import (shgo, Bounds, minimize_scalar, minimize, rosen, 
+                            rosen_der, rosen_hess)
 from scipy.optimize._shgo import SHGO
 
 
@@ -856,6 +857,21 @@ class TestShgoArguments:
         assert res.success
         assert_allclose(res.fun, ref.fun)
         assert_allclose(res.x, ref.x)
+
+    def test_21_3_hess_options_rosen(self):
+        """Ensure the Hessian gets passed correctly to the local minimizer routine.
+        Previous report gh-14533.
+        """
+        from scipy.optimize import rosen, rosen_der, rosen_hess
+        bounds = [(0, 1.6), (0, 1.6), (0, 1.4), (0, 1.4), (0, 1.4)]
+        options = {'jac': rosen_der, 'hess': rosen_hess}
+        minimizer_kwargs = {'method': 'Newton-CG'}
+        res = shgo(rosen, bounds, minimizer_kwargs=minimizer_kwargs,
+                   options=options)
+        ref = minimize(rosen, numpy.zeros(5), bounds=bounds, **options)
+        assert res.success
+        assert_allclose(res.fun, ref.fun)
+        assert_allclose(res.x, ref.x, atol=1e-15)
 
     def test_21_arg_tuple_sobol(self):
         """shgo used to raise an error when passing `args` with Sobol sampling
