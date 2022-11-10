@@ -143,10 +143,12 @@ def shgo(
 
         Objective function knowledge:
 
-        * symmetry : list or None
+        * symmetry : list or bool
             Specify if the objective function contains symmetric variables.
             The search space (and therefore performance) is decreased by up to
-            O(n!) times in the fully symmetric case
+            O(n!) times in the fully symmetric case. If `True` is specified then
+            all variables will be set symmetric to the first variable. Default
+            is set to False.
 
             E.g.  f(x) = (x_1 + x_2 + x_3) + (x_4)**2 + (x_5)**2 + (x_6)**2
 
@@ -749,8 +751,11 @@ class SHGO:
         self.minhgrd = options.get('minhgrd', None)
 
         # Objective function knowledge
-        self.symmetry = options.get('symmetry', None)
-
+        self.symmetry = options.get('symmetry', False)
+        if self.symmetry:
+            self.symmetry = [0, ]*len(self.bounds)
+        else:
+            self.symmetry = None
         # Algorithm functionality
         # Only evaluate a few of the best candiates
         self.local_iter = options.get('local_iter', False)

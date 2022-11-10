@@ -428,46 +428,42 @@ class TestShgoSimplicialTestFunctions:
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
         run_test(test4_1, n=1, sampling_method='simplicial')
 
-    @pytest.mark.xfail(reason="backward incompatible change")
     def test_lj_symmetry_old(self):
         """LJ: Symmetry-constrained test function"""
-        options = {'symmetry': [True],
+        options = {'symmetry': True,
                    'disp': True}
         args = (6,)  # Number of atoms
-        run_test(testLJ, args=args, n=None,
-                 options=options, iters=4,
+        run_test(testLJ, args=args, n=300,
+                 options=options, iters=1,
                  sampling_method='simplicial')
 
-    @pytest.mark.xslow
     def test_f5_1_lj_symmetry(self):
         """LJ: Symmetry constrained test function"""
         options = {'symmetry': [0, ] * 6,
                    'disp': True}
         args = (6,)  # No. of atoms
 
-        run_test(testLJ, args=args, n=100,
-                 options=options, iters=3,
+        run_test(testLJ, args=args, n=300,
+                 options=options, iters=1,
                  sampling_method='simplicial')
 
-    @pytest.mark.xslow
     def test_f5_2_cons_symmetry(self):
         """Symmetry constrained test function"""
         options = {'symmetry': [0, 0],
                    'disp': True}
 
-        run_test(test1_1, n=100,
-                 options=options, iters=2,
+        run_test(test1_1, n=200,
+                 options=options, iters=1,
                  sampling_method='simplicial')
 
-    @pytest.mark.xslow
     def test_f5_3_cons_symmetry(self):
         """Assymmetrically constrained test function"""
         options = {'symmetry': [0, 0, 0, 3],
                    'disp': True}
 
-        run_test(test_s,  # n=10000,
+        run_test(test_s, n=10000,
                  options=options,
-                 iters=3,
+                 iters=1,
                  sampling_method='simplicial')
 
 
@@ -756,7 +752,6 @@ class TestShgoArguments:
         run_test(test1_1, n=30, workers=1)  # Constrained
         run_test(test_s, n=30, workers=1)  # Unconstrained
 
-    @pytest.mark.xslow
     def test_20_constrained_args(self):
         """Test that constraints can be passed to arguments"""
 
@@ -788,9 +783,9 @@ class TestShgoArguments:
                 {'type': 'ineq', 'fun': g2},
                 {'type': 'eq', 'fun': h1})
 
-        res_modConstr = shgo(f, bounds, iters=3, constraints=cons)
+        res_modConstr = shgo(f, bounds, n=300, iters=1, constraints=cons)
         # using constrain with arguments AND sampling method sobol
-        res_modConstr_sobol = shgo(f, bounds, iters=3, constraints=cons,
+        res_modConstr_sobol = shgo(f, bounds, n=300, iters=1, constraints=cons,
                                    sampling_method='sobol')
 
     def test_21_jac_true(self):

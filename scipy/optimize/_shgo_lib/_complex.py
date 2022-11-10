@@ -50,9 +50,24 @@ class Complex:
                    (for example a gradient function of the scalar field)
     vfield_args : tuple
         Additional arguments to be passed to vfield
-    symmetry :
-        If all the variables in the field are symmetric this
-        option will reduce complexity of the triangulation by O(n!)
+    symmetry : None or list
+            Specify if the objective function contains symmetric variables.
+            The search space (and therefore performance) is decreased by up to
+            O(n!) times in the fully symmetric case.
+
+            E.g.  f(x) = (x_1 + x_2 + x_3) + (x_4)**2 + (x_5)**2 + (x_6)**2
+
+            In this equation x_2 and x_3 are symmetric to x_1, while x_5 and x_6
+            are symmetric to x_4, this can be specified to the solver as:
+
+            symmetry = [0,  # Variable 1
+                        0,  # symmetric to variable 1
+                        0,  # symmetric to variable 1
+                        3,  # Variable 4
+                        3,  # symmetric to variable 4
+                        3,  # symmetric to variable 4
+                        ]
+
     constraints : dict or sequence of dict, optional
         Constraints definition.
         Function(s) ``R**n`` in the form::
