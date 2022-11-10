@@ -374,6 +374,94 @@ NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
     return PyErr_Occurred() ? 0 : 1;
 }
 
+int
+NI_UniformFilter1D_NaN(PyArrayObject *input, npy_intp filter_size,
+                   int axis, PyArrayObject *output, NI_ExtendMode mode,
+                   double cval, npy_intp origin)
+{
+    /* fs is filter_size, but reset after iteration over each line in lines */
+    npy_intp lines, kk, ll, fs, length, size1, size2;
+    int more;
+    double *ibuffer = NULL, *obuffer = NULL;
+    NI_LineBuffer iline_buffer, oline_buffer;
+    NPY_BEGIN_THREADS_DEF;
+
+    size1 = filter_size / 2;
+    size2 = filter_size - size1 - 1;
+    /* allocate and initialize the line buffers: */
+    lines = -1;
+    if (!NI_AllocateLineBuffer(input, axis, size1 + origin, size2 - origin,
+                                                         &lines, BUFFER_SIZE, &ibuffer))
+        goto exit;
+    if (!NI_AllocateLineBuffer(output, axis, 0, 0, &lines, BUFFER_SIZE,
+                                                         &obuffer))
+        goto exit;
+    if (!NI_InitLineBuffer(input, axis, size1 + origin, size2 - origin,
+                                                            lines, ibuffer, mode, cval, &iline_buffer))
+        goto exit;
+    if (!NI_InitLineBuffer(output, axis, 0, 0, lines, obuffer, mode, 0.0,
+                                                 &oline_buffer))
+        goto exit;
+    NPY_BEGIN_THREADS;
+    length = PyArray_NDIM(input) > 0 ? PyArray_DIM(input, axis) : 1;
+
+    /* iterate over all the array lines: */
+    do {
+        /* copy lines from array to buffer: */
+        if (!NI_ArrayToLineBuffer(&iline_buffer, &lines, &more)) {
+            goto exit;
+        }
+        /* iterate over the lines in the buffers: */
+        for(kk = 0; kk < lines; kk++) {
+            /* Set fs to filter_size for each iteration */
+            fs = filter_size;
+            /* get lines: */
+            double *iline = NI_GET_LINE(iline_buffer, kk);
+            double *oline = NI_GET_LINE(oline_buffer, kk);
+            /* do the uniform filter: */
+            double tmp = 0.0;
+            double *l1 = iline;
+            double *l2 = iline + filter_size;
+            for (ll = 0; ll < filter_size; ++ll) {
+                if ( iline[ll] != iline[ll] ){
+                  fs -= 1;
+                } else {
+                  tmp += iline[ll];
+                }
+            }
+            oline[0] = tmp / fs;
+            for (ll = 1; ll < length; ++ll) {
+                if (*l1 == *l1){
+                  tmp -= *l1++;
+                } else {
+                  fs += 1;
+                  l1++;
+                }
+                if (*l2 == *l2) {
+                  tmp += *l2++;
+                } else { 
+                  fs -= 1;
+                  l2++;
+                }
+                if (fs == 0) {
+                  tmp = 0.0;
+                }
+                oline[ll] = tmp / fs;
+            }
+        }
+        /* copy lines from buffer to array: */
+        if (!NI_LineBufferToArray(&oline_buffer)) {
+            goto exit;
+        }
+    } while(more);
+
+ exit:
+    NPY_END_THREADS;
+    free(ibuffer);
+    free(obuffer);
+    return PyErr_Occurred() ? 0 : 1;
+}
+
 #define INCREASE_RING_PTR(ptr) \
     (ptr)++;                   \
     if ((ptr) >= end) {        \

@@ -266,6 +266,31 @@ exit:
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
+static PyObject *Py_UniformFilter1D_NaN(PyObject *obj, PyObject *args)
+{
+    PyArrayObject *input = NULL, *output = NULL;
+    int axis, mode;
+    npy_intp filter_size, origin;
+    double cval;
+
+    if (!PyArg_ParseTuple(args, "O&niO&idn",
+                          NI_ObjectToInputArray, &input,
+                          &filter_size, &axis,
+                          NI_ObjectToOutputArray, &output,
+                          &mode, &cval, &origin))
+        goto exit;
+
+    NI_UniformFilter1D_NaN(input, filter_size, axis, output, (NI_ExtendMode)mode,
+                       cval, origin);
+    #ifdef HAVE_WRITEBACKIFCOPY
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
+
+exit:
+    Py_XDECREF(input);
+    Py_XDECREF(output);
+    return PyErr_Occurred() ? NULL : Py_BuildValue("");
+}
 static PyObject *Py_MinOrMaxFilter1D(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL;
@@ -1347,6 +1372,8 @@ static PyMethodDef methods[] = {
     {"correlate",             (PyCFunction)Py_Correlate,
      METH_VARARGS, NULL},
     {"uniform_filter1d",      (PyCFunction)Py_UniformFilter1D,
+     METH_VARARGS, NULL},
+    {"uniform_filter1d_nan",  (PyCFunction)Py_UniformFilter1D_NaN,
      METH_VARARGS, NULL},
     {"min_or_max_filter1d",   (PyCFunction)Py_MinOrMaxFilter1D,
         METH_VARARGS, NULL},

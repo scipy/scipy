@@ -893,7 +893,8 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
 
 @_ni_docstrings.docfiller
 def uniform_filter1d(input, size, axis=-1, output=None,
-                     mode="reflect", cval=0.0, origin=0):
+                     mode="reflect", cval=0.0, origin=0, 
+                     ignore_nan=False):
     """Calculate a 1-D uniform filter along the given axis.
 
     The lines of the array along the given axis are filtered with a
@@ -909,6 +910,8 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     %(mode_reflect)s
     %(cval)s
     %(origin)s
+    ignore_nan : bool
+        If set, then acts as numpy.nanmean() over window
 
     Examples
     --------
@@ -926,20 +929,24 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     if (size // 2 + origin < 0) or (size // 2 + origin >= size):
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
+    func = (
+      _nd_image.uniform_filter1d_nan if ignore_nan else 
+      _nd_image.uniform_filter1d
+    )
+
     if not complex_output:
-        _nd_image.uniform_filter1d(input, size, axis, output, mode, cval,
-                                   origin)
+        func(input, size, axis, output, mode, cval, origin)
     else:
-        _nd_image.uniform_filter1d(input.real, size, axis, output.real, mode,
+        func(input.real, size, axis, output.real, mode,
                                    numpy.real(cval), origin)
-        _nd_image.uniform_filter1d(input.imag, size, axis, output.imag, mode,
+        func(input.imag, size, axis, output.imag, mode,
                                    numpy.imag(cval), origin)
     return output
 
 
 @_ni_docstrings.docfiller
 def uniform_filter(input, size=3, output=None, mode="reflect",
-                   cval=0.0, origin=0):
+                   cval=0.0, origin=0, ignore_nan=False):
     """Multidimensional uniform filter.
 
     Parameters
@@ -953,6 +960,8 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     %(mode_multiple)s
     %(cval)s
     %(origin_multiple)s
+    ignore_nan : bool
+        If set, then acts as numpy.nanmean() over window
 
     Returns
     -------
@@ -993,7 +1002,7 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     if len(axes) > 0:
         for axis, size, origin, mode in axes:
             uniform_filter1d(input, int(size), axis, output, mode,
-                             cval, origin)
+                             cval, origin, ignore_nan)
             input = output
     else:
         output[...] = input[...]
