@@ -7131,8 +7131,9 @@ add_newdoc("it2struve0",
     >>> plt.show()
     """)
 
-add_newdoc("itairy",
-    """
+add_newdoc(
+    "itairy",
+    r"""
     itairy(x, out=None)
 
     Integrals of Airy functions
@@ -7170,6 +7171,43 @@ add_newdoc("itairy",
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    Compute the functions at ``x=1.``.
+
+    >>> import numpy as np
+    >>> from scipy.special import itairy
+    >>> import matplotlib.pyplot as plt
+    >>> apt, bpt, ant, bnt = itairy(1.)
+    >>> apt, bpt, ant, bnt
+    (0.23631734191710949,
+     0.8727691167380077,
+     0.46567398346706845,
+     0.3730050096342943)
+
+    Compute the functions at several points by providing a NumPy array for `x`.
+
+    >>> x = np.array([1., 1.5, 2.5, 5])
+    >>> apt, bpt, ant, bnt = itairy(x)
+    >>> apt, bpt, ant, bnt
+    (array([0.23631734, 0.28678675, 0.324638  , 0.33328759]),
+     array([  0.87276912,   1.62470809,   5.20906691, 321.47831857]),
+     array([0.46567398, 0.72232876, 0.93187776, 0.7178822 ]),
+     array([ 0.37300501,  0.35038814, -0.02812939,  0.15873094]))
+
+    Plot the functions from -10 to 10.
+
+    >>> x = np.linspace(-10, 10, 500)
+    >>> apt, bpt, ant, bnt = itairy(x)
+    >>> fig, ax = plt.subplots(figsize=(6, 5))
+    >>> ax.plot(x, apt, label="$\int_0^x\, Ai(t)\, dt$")
+    >>> ax.plot(x, bpt, ls="dashed", label="$\int_0^x\, Bi(t)\, dt$")
+    >>> ax.plot(x, ant, ls="dashdot", label="$\int_0^x\, Ai(-t)\, dt$")
+    >>> ax.plot(x, bnt, ls="dotted", label="$\int_0^x\, Bi(-t)\, dt$")
+    >>> ax.set_ylim(-2, 1.5)
+    >>> ax.legend(loc="lower right")
+    >>> plt.show()
     """)
 
 add_newdoc("iti0k0",
