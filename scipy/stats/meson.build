@@ -92,7 +92,6 @@ _sobol = py3.extension_module('_sobol',
 py3.install_sources([
     '_sobol_direction_numbers.npz'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 
@@ -184,7 +183,6 @@ if use_pythran
 else
   py3.install_sources(
     ['_stats_pythran.py'],
-    pure: false,
     subdir: 'scipy/stats'
   )
 endif
@@ -240,7 +238,6 @@ py3.install_sources([
     'statlib.py',
     'stats.py'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 
@@ -248,7 +245,6 @@ py3.install_sources([
     '_biasedurn.pxd',
     '_stats.pxd'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 
@@ -256,7 +252,6 @@ py3.install_sources([
     '_qmc_cy.pyi',
     '_sobol.pyi'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 

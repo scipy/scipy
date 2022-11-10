@@ -221,6 +221,5 @@ py3.install_sources([
     'quadpack.py',
     'vode.py',
   ],
-  pure: false,
   subdir: 'scipy/integrate'
 )

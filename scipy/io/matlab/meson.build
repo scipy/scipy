@@ -42,7 +42,6 @@ py3.install_sources([
     'miobase.py',
     'streams.py'
   ],
-  pure: false,
   subdir: 'scipy/io/matlab'
 )
 
