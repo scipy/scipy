@@ -7,7 +7,7 @@ from functools import lru_cache
 
 import numpy
 
-from ._vertex import VertexCacheField
+from ._vertex import (VertexCacheField, VertexCacheIndex)
 
 
 class Complex:
@@ -909,10 +909,9 @@ class Complex:
 
         # Clean class trash
         try:
-            del C0x
-            del cC0x
-            del C1x
-            del cC1x
+            del Cox
+            del Ccx
+            del Cux
             del ab_C
             del ab_Cc
         except UnboundLocalError:

@@ -466,7 +466,18 @@ class TestShgoSimplicialTestFunctions:
                  iters=1,
                  sampling_method='simplicial')
 
+    def test_gh10429(self):
+        """Return a minimum on a perfectly symmetric problem, based on 
+           gh10429"""
+        avg = 0.5  # Given average value of x
+        cons = {'type': 'eq', 'fun': lambda x: numpy.mean(x) - avg}
 
+        # Minimize the variance of x under the given constraint
+        res = shgo(numpy.var, bounds=6 * [(0, 1)], constraints=cons)
+        assert res.success
+        assert_allclose(res.fun, 0, atol=1e-15)
+        assert_allclose(res.x, 0.5)
+        
 # Argument test functions
 class TestShgoArguments:
     def test_1_1_simpl_iter(self):

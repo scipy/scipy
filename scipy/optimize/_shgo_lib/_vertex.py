@@ -206,6 +206,28 @@ class VertexCacheBase:
         for v in self.cache:
             self.cache[v].print_out()
 
+class VertexCacheIndex(VertexCacheBase):
+    def __init__(self):
+        """
+        Class for a vertex cache for a simplicial complex without an associated
+        field. Useful only for building and visualising a domain complex.
+
+        Parameters
+        ----------
+        """
+        super().__init__()
+        self.Vertex = VertexCube
+
+    def __getitem__(self, x, nn=None):  #TODO: Check if no_index is significant speedup
+        try:
+            return self.cache[x]
+        except KeyError:
+            self.index += 1
+            xval = self.Vertex(x, index=self.index)
+            # logging.info("New generated vertex at x = {}".format(x))
+            # NOTE: Surprisingly high performance increase if logging is commented out
+            self.cache[x] = xval
+            return self.cache[x]
 
 class VertexCacheField(VertexCacheBase):
     def __init__(self, field=None, field_args=(), g_cons=None, g_cons_args=(),
@@ -308,7 +330,7 @@ class VertexCacheField(VertexCacheBase):
         try:
             v.f = self.field(v.x_a, *self.field_args)
             self.nfev += 1
-        except:
+        except AttributeError:
             v.f = np.inf
             # logging.warning(f"Field function not found at x = {self.x_a}")
         if np.isnan(v.f):
