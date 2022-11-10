@@ -726,7 +726,13 @@ class SHGO:
         None
 
         """
+        # Update 'options' dict passed to optimize.minimize
         self.minimizer_kwargs['options'].update(options)
+        # Unembed the 'jac' key if it was passed to 'shgo'
+        if 'jac' in self.minimizer_kwargs['options']:
+            self.minimizer_kwargs['jac'] = self.minimizer_kwargs['options']['jac']
+            del self.minimizer_kwargs['options']['jac']
+
         # Default settings:
         self.minimize_every_iter = options.get('minimize_every_iter', True)
 
@@ -1314,6 +1320,12 @@ class SHGO:
             logging.info(self.minimizer_kwargs['bounds'])
 
         # Local minimization using scipy.optimize.minimize:
+        print('====')
+        print(f'self.minimizer_kwargs = {self.minimizer_kwargs}')
+        print('====')
+        print('====')
+        print(f'self.func = {self.func}')
+        print('====')
         lres = minimize(self.func, x_min, **self.minimizer_kwargs)
 
         if self.disp:

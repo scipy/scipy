@@ -811,7 +811,7 @@ class TestShgoArguments:
         res_modConstr_sobol = shgo(f, bounds, n=300, iters=1, constraints=cons,
                                    sampling_method='sobol')
 
-    def test_21_jac_true(self):
+    def test_21_1_jac_true(self):
         """Test that shgo can handle objective functions that return the
         gradient alongside the objective value"""
 
@@ -825,6 +825,23 @@ class TestShgoArguments:
             sampling_method="sobol",
             minimizer_kwargs={'method': 'SLSQP', 'jac': True}
         )
+
+    def test_21_2_jac_options(self):
+        """shgo used to raise an error when passing `options` with 'jac'
+        # see gh-12829. check that this is resolved
+        """
+        def objective(x):
+            return 3 * x[0] * x[0] + 2 * x[0] + 5
+
+        def gradient(x):
+            return 6 * x[0] + 2
+
+        bounds = [(-100, 100)]
+        res = shgo(objective, bounds, options={'jac': gradient})
+        ref = minimize(objective, x0=[0], bounds=bounds, jac=gradient)
+        assert res.success
+        assert_allclose(res.fun, ref.fun)
+        assert_allclose(res.x, ref.x)
 
     def test_21_arg_tuple_sobol(self):
         """shgo used to raise an error when passing `args` with Sobol sampling
