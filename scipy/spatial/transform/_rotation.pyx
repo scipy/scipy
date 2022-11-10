@@ -287,7 +287,8 @@ cdef double[:, :] _compute_euler_from_quat(
         # Step 2
         # Compute second angle...
         n2 = a**2 + b**2 + c**2 + d**2
-        _angles[1] = 2*acos(sqrt((a**2 + b**2) / n2))
+        #_angles[1] = 2*acos(sqrt((a**2 + b**2) / n2))
+        _angles[1] = np.arccos(2*(a**2 + b**2) / n2 - 1)
 
         # ... and check if equalt to is 0 or pi, causing a singularity
         safe1 = abs(_angles[1]) >= eps
