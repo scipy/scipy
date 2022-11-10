@@ -3,7 +3,7 @@ import numpy
 from numpy.testing import assert_allclose
 import pytest
 from pytest import raises as assert_raises, warns
-from scipy.optimize import shgo, Bounds
+from scipy.optimize import shgo, Bounds, minimize_scalar
 from scipy.optimize._shgo import SHGO
 
 
@@ -466,7 +466,7 @@ class TestShgoSimplicialTestFunctions:
                  iters=1,
                  sampling_method='simplicial')
 
-    def test_gh10429(self):
+    def test_f0_min_variance(self):
         """Return a minimum on a perfectly symmetric problem, based on 
            gh10429"""
         avg = 0.5  # Given average value of x
@@ -477,6 +477,18 @@ class TestShgoSimplicialTestFunctions:
         assert res.success
         assert_allclose(res.fun, 0, atol=1e-15)
         assert_allclose(res.x, 0.5)
+        
+    def test_f0_min_variance_1D(self):
+        """Return a minimum on a perfectly symmetric 1D problem, based on 
+           gh10538"""
+        def fun(x):
+            return x * (x - 1.0) * (x - 0.5)
+        bounds = [(0, 1)]
+        res = shgo(fun, bounds=bounds)
+        ref = minimize_scalar(fun, bounds=bounds[0])
+        assert res.success
+        assert_allclose(res.fun, ref.fun)
+        assert_allclose(res.x, ref.x, rtol=1e-6)
         
 # Argument test functions
 class TestShgoArguments:
