@@ -678,6 +678,22 @@ class TestMultivariateNormal:
         assert_allclose(numpy.cov(sample.T), cov, rtol=1e-1)
         assert_allclose(sample.mean(0), mean, rtol=1e-1)
 
+    def test_fit(self):
+        np.random.seed(1234)
+        N = 1000
+        d = 5
+
+        #creates data
+        mean_exmple = np.zeros(d)
+        cov_exmple = np.identity(d)
+        data = multivariate_normal.rvs(mean = mean_exmple,cov = cov_exmple,size=N)
+
+        fitted = multivariate_normal.fit(data=data)
+
+        #check if data is close engouth to fitted
+        assert_allclose(fitted.mean, mean_exmple,rtol=1e-01,atol=1e-01)
+        assert_allclose(fitted.cov_object, cov_exmple,rtol=1e-01,atol=1e-01)
+
     def test_entropy(self):
         np.random.seed(2846)
 
