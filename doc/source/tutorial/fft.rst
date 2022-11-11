@@ -42,6 +42,7 @@ These transforms can be calculated by means of :func:`fft` and :func:`ifft`,
 respectively, as shown in the following example.
 
 >>> from scipy.fft import fft, ifft
+>>> import numpy as np
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
 >>> y = fft(x)
 >>> y
@@ -83,6 +84,7 @@ The example plots the FFT of the sum of two sines.
     :alt: "This code generates an X-Y plot showing amplitude on the Y axis vs frequency on the X axis. A single blue trace has an amplitude of zero all the way across with the exception of two peaks. The taller first peak is at 50 Hz with a second peak at 80 Hz."
 
     >>> from scipy.fft import fft, fftfreq
+    >>> import numpy as np
     >>> # Number of sample points
     >>> N = 600
     >>> # sample spacing
@@ -111,6 +113,7 @@ truncated for illustrative purposes).
     :alt: "This code generates an X-Y log-linear plot with amplitude on the Y axis vs frequency on the X axis. The first trace is the FFT with two peaks at 50 and 80 Hz and a noise floor around an amplitude of 1e-2. The second trace is the windowed FFT and has the same two peaks but the noise floor is much lower around an amplitude of 1e-7 due to the window function."
 
     >>> from scipy.fft import fft, fftfreq
+    >>> import numpy as np
     >>> # Number of sample points
     >>> N = 600
     >>> # sample spacing
@@ -156,6 +159,7 @@ asymmetric spectrum.
     :alt: "This code generates an X-Y plot with amplitude on the Y axis vs frequency on the X axis. The trace is zero-valued across the plot except for two sharp peaks at -80 and 50 Hz. The 50 Hz peak on the right is twice as tall."
 
     >>> from scipy.fft import fft, fftfreq, fftshift
+    >>> import numpy as np
     >>> # number of signal points
     >>> N = 400
     >>> # sample spacing
@@ -240,6 +244,7 @@ The example below demonstrates a 2-D IFFT and plots the resulting
     >>> from scipy.fft import ifftn
     >>> import matplotlib.pyplot as plt
     >>> import matplotlib.cm as cm
+    >>> import numpy as np
     >>> N = 30
     >>> f, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, sharex='col', sharey='row')
     >>> xf = np.zeros((N,N))

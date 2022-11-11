@@ -134,6 +134,7 @@ class Rbf:
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.interpolate import Rbf
     >>> rng = np.random.default_rng()
     >>> x, y, z, d = rng.random((4, 50))

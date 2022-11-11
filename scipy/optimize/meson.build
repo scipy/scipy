@@ -188,7 +188,6 @@ __nnls_module = custom_target('__nnls_module',
 
 py3.install_sources(
   ['__nnls.pyi'],
-  pure: false,
   subdir: 'scipy/optimize'
 )
 
@@ -264,7 +263,6 @@ subdir('tests')
 
 py3.install_sources(
   ['lbfgsb_src/README'],
-  pure: false,
   subdir: 'scipy/optimize'
 )
 
@@ -322,6 +320,5 @@ py3.install_sources([
   'tnc.py',
   'zeros.py'
 ],
-  pure: false,
   subdir: 'scipy/optimize'
 )

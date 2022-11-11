@@ -227,6 +227,5 @@ py3.install_sources([
     'unuran.pxd',
     'unuran_wrapper.pyi',
   ],
-  pure: false,
   subdir: 'scipy/stats/_unuran'
 )

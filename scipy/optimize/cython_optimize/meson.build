@@ -44,6 +44,5 @@ py3.install_sources([
     '_zeros.pxd',
     'c_zeros.pxd'
   ],
-  pure: false,
   subdir: 'scipy/optimize/cython_optimize'
 )

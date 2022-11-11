@@ -292,7 +292,8 @@ class FitResult:
         ax.legend(handles[::-1], labels[::-1])
         return ax
 
-def fit(dist, data, bounds=None, *, guess=None,
+
+def fit(dist, data, bounds=None, *, guess=None, method='mle',
         optimizer=optimize.differential_evolution):
     r"""Fit a discrete or continuous distribution to data
 
@@ -345,6 +346,15 @@ def fit(dist, data, bounds=None, *, guess=None,
         rounded to integral values, and guesses that lie outside the
         intersection of the user-provided bounds and the domain of the
         distribution will be clipped.
+    method : {'mle', 'mse'}
+        With ``method="mle"`` (default), the fit is computed by minimizing
+        the negative log-likelihood function. A large, finite penalty
+        (rather than infinite negative log-likelihood) is applied for
+        observations beyond the support of the distribution.
+        With ``method="mse"``, the fit is computed by minimizing
+        the negative log-product spacing function. The same penalty is applied
+        for observations beyond the support. We follow the approach of [1]_,
+        which is generalized for samples with repeated observations.
     optimizer : callable, optional
         `optimizer` is a callable that accepts the following positional
         argument.
@@ -352,12 +362,12 @@ def fit(dist, data, bounds=None, *, guess=None,
         fun : callable
             The objective function to be optimized. `fun` accepts one argument
             ``x``, candidate shape parameters of the distribution, and returns
-            the negative log-likelihood function given ``x``, `dist`, and the
-            provided `data`.
+            the objective function value given ``x``, `dist`, and the provided
+            `data`.
             The job of `optimizer` is to find values of the decision variables
             that minimizes `fun`.
 
-        `optimizer` must also accepts the following keyword argument.
+        `optimizer` must also accept the following keyword argument.
 
         bounds : sequence of tuples
             The bounds on values of the decision variables; each element will
@@ -375,7 +385,7 @@ def fit(dist, data, bounds=None, *, guess=None,
         fixed, `optimizer` must also accept the following keyword argument.
 
         integrality : array_like of bools
-            For each decision variable, True if the decision variable is
+            For each decision variable, True if the decision variable
             must be constrained to integer values and False if the decision
             variable is continuous.
 
@@ -423,6 +433,12 @@ def fit(dist, data, bounds=None, *, guess=None,
     estimate. For example, when fitting a binomial distribution to data, the
     number of experiments underlying each sample may be known, in which case
     the corresponding shape parameter ``n`` can be fixed.
+
+    References
+    ----------
+    .. [1] Shao, Yongzhao, and Marjorie G. Hahn. "Maximum product of spacings
+           method: a unified formulation with illustration of strong
+           consistency." Illinois Journal of Mathematics 43.3 (1999): 489-499.
 
     Examples
     --------
@@ -672,10 +688,17 @@ def fit(dist, data, bounds=None, *, guess=None,
     else:
         guess = None
 
-    # --- MLE Fitting --- #
+    # --- Fitting --- #
     def nllf(free_params, data=data):  # bind data NOW
         with np.errstate(invalid='ignore', divide='ignore'):
             return dist._penalized_nnlf(free_params, data)
+
+    def nlpsf(free_params, data=data):  # bind data NOW
+        with np.errstate(invalid='ignore', divide='ignore'):
+            return dist._penalized_nlpsf(free_params, data)
+
+    methods = {'mle': nllf, 'mse': nlpsf}
+    objective = methods[method.lower()]
 
     with np.errstate(invalid='ignore', divide='ignore'):
         kwds = {}
@@ -685,6 +708,6 @@ def fit(dist, data, bounds=None, *, guess=None,
             kwds['integrality'] = integrality
         if guess is not None:
             kwds['x0'] = guess
-        res = optimizer(nllf, **kwds)
+        res = optimizer(objective, **kwds)
 
     return FitResult(dist, data, discrete, res)

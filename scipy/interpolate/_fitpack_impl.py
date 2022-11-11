@@ -776,7 +776,7 @@ def spalde(x, tck):
         x = atleast_1d(x)
         if len(x) > 1:
             return list(map(lambda x, tck=tck: spalde(x, tck), x))
-        d, ier = _fitpack._spalde(t, c, k, x[0])
+        d, ier = dfitpack.spalde(t, c, k+1, x[0])
         if ier == 0:
             return d
         if ier == 10:
@@ -867,6 +867,10 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     -----
     See `bisplev` to evaluate the value of the B-spline given its tck
     representation.
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolation.
 
     References
     ----------
