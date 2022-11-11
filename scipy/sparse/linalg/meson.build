@@ -12,7 +12,6 @@ py3.install_sources([
     'isolve.py',
     'matfuncs.py'
   ],
-  pure: false,
   subdir: 'scipy/sparse/linalg'
 )
 

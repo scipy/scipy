@@ -5629,6 +5629,7 @@ add_newdoc("gdtr",
     See also
     --------
     gdtrc : 1 - CDF of the gamma distribution.
+    scipy.stats.gamma: Gamma distribution
 
     Returns
     -------
@@ -5641,13 +5642,78 @@ add_newdoc("gdtr",
     The evaluation is carried out using the relation to the incomplete gamma
     integral (regularized gamma function).
 
-    Wrapper for the Cephes [1]_ routine `gdtr`.
+    Wrapper for the Cephes [1]_ routine `gdtr`. Calling `gdtr` directly can
+    improve performance compared to the ``cdf`` method of `scipy.stats.gamma`
+    (see last example below).
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Compute the function for ``a=1``, ``b=2`` at ``x=5``.
+
+    >>> import numpy as np
+    >>> from scipy.special import gdtr
+    >>> import matplotlib.pyplot as plt
+    >>> gdtr(1., 2., 5.)
+    0.9595723180054873
+
+    Compute the function for ``a=1`` and ``b=2`` at several points by
+    providing a NumPy array for `x`.
+
+    >>> xvalues = np.array([1., 2., 3., 4])
+    >>> gdtr(1., 1., xvalues)
+    array([0.63212056, 0.86466472, 0.95021293, 0.98168436])
+
+    `gdtr` can evaluate different parameter sets by providing arrays with
+    broadcasting compatible shapes for `a`, `b` and `x`. Here we compute the
+    function for three different `a` at four positions `x` and ``b=3``,
+    resulting in a 3x4 array.
+
+    >>> a = np.array([[0.5], [1.5], [2.5]])
+    >>> x = np.array([1., 2., 3., 4])
+    >>> a.shape, x.shape
+    ((3, 1), (4,))
+
+    >>> gdtr(a, 3., x)
+    array([[0.01438768, 0.0803014 , 0.19115317, 0.32332358],
+           [0.19115317, 0.57680992, 0.82642193, 0.9380312 ],
+           [0.45618688, 0.87534798, 0.97974328, 0.9972306 ]])
+
+    Plot the function for four different parameter sets.
+
+    >>> a_parameters = [0.3, 1, 2, 6]
+    >>> b_parameters = [2, 10, 15, 20]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(a_parameters, b_parameters, linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     a, b, style = parameter_set
+    ...     gdtr_vals = gdtr(a, b, x)
+    ...     ax.plot(x, gdtr_vals, label=f"$a= {a},\, b={b}$", ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("Gamma distribution cumulative distribution function")
+    >>> plt.show()
+
+    The gamma distribution is also available as `scipy.stats.gamma`. Using
+    `gdtr` directly can be much faster than calling the ``cdf`` method of
+    `scipy.stats.gamma`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.gamma(b, scale=1/a).cdf(x)=gdtr(a, b, x)``.
+
+    >>> from scipy.stats import gamma
+    >>> a = 2.
+    >>> b = 3
+    >>> x = 1.
+    >>> gdtr_result = gdtr(a, b, x)  # this will often be faster than below
+    >>> gamma_dist_result = gamma(b, scale=1/a).cdf(x)
+    >>> gdtr_result == gamma_dist_result  # test that results are equal
+    True
     """)
 
 add_newdoc("gdtrc",
@@ -5686,20 +5752,87 @@ add_newdoc("gdtrc",
 
     See Also
     --------
-    gdtr, gdtrix
+    gdtr: Gamma distribution cumulative distribution function
+    scipy.stats.gamma: Gamma distribution
+    gdtrix
 
     Notes
     -----
     The evaluation is carried out using the relation to the incomplete gamma
     integral (regularized gamma function).
 
-    Wrapper for the Cephes [1]_ routine `gdtrc`.
+    Wrapper for the Cephes [1]_ routine `gdtrc`. Calling `gdtrc` directly can
+    improve performance compared to the ``sf`` method of `scipy.stats.gamma`
+    (see last example below).
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Compute the function for ``a=1`` and ``b=2`` at ``x=5``.
+
+    >>> import numpy as np
+    >>> from scipy.special import gdtrc
+    >>> import matplotlib.pyplot as plt
+    >>> gdtrc(1., 2., 5.)
+    0.04042768199451279
+
+    Compute the function for ``a=1``, ``b=2`` at several points by providing
+    a NumPy array for `x`.
+
+    >>> xvalues = np.array([1., 2., 3., 4])
+    >>> gdtrc(1., 1., xvalues)
+    array([0.36787944, 0.13533528, 0.04978707, 0.01831564])
+
+    `gdtrc` can evaluate different parameter sets by providing arrays with
+    broadcasting compatible shapes for `a`, `b` and `x`. Here we compute the
+    function for three different `a` at four positions `x` and ``b=3``,
+    resulting in a 3x4 array.
+
+    >>> a = np.array([[0.5], [1.5], [2.5]])
+    >>> x = np.array([1., 2., 3., 4])
+    >>> a.shape, x.shape
+    ((3, 1), (4,))
+
+    >>> gdtrc(a, 3., x)
+    array([[0.98561232, 0.9196986 , 0.80884683, 0.67667642],
+           [0.80884683, 0.42319008, 0.17357807, 0.0619688 ],
+           [0.54381312, 0.12465202, 0.02025672, 0.0027694 ]])
+
+    Plot the function for four different parameter sets.
+
+    >>> a_parameters = [0.3, 1, 2, 6]
+    >>> b_parameters = [2, 10, 15, 20]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(a_parameters, b_parameters, linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     a, b, style = parameter_set
+    ...     gdtrc_vals = gdtrc(a, b, x)
+    ...     ax.plot(x, gdtrc_vals, label=f"$a= {a},\, b={b}$", ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("Gamma distribution survival function")
+    >>> plt.show()
+
+    The gamma distribution is also available as `scipy.stats.gamma`.
+    Using `gdtrc` directly can be much faster than calling the ``sf`` method
+    of `scipy.stats.gamma`, especially for small arrays or individual
+    values. To get the same results one must use the following parametrization:
+    ``stats.gamma(b, scale=1/a).sf(x)=gdtrc(a, b, x)``.
+
+    >>> from scipy.stats import gamma
+    >>> a = 2
+    >>> b = 3
+    >>> x = 1.
+    >>> gdtrc_result = gdtrc(a, b, x)  # this will often be faster than below
+    >>> gamma_dist_result = gamma(b, scale=1/a).sf(x)
+    >>> gdtrc_result == gamma_dist_result  # test that results are equal
+    True
     """)
 
 add_newdoc("gdtria",
@@ -6998,8 +7131,9 @@ add_newdoc("it2struve0",
     >>> plt.show()
     """)
 
-add_newdoc("itairy",
-    """
+add_newdoc(
+    "itairy",
+    r"""
     itairy(x, out=None)
 
     Integrals of Airy functions
@@ -7037,6 +7171,43 @@ add_newdoc("itairy",
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    Compute the functions at ``x=1.``.
+
+    >>> import numpy as np
+    >>> from scipy.special import itairy
+    >>> import matplotlib.pyplot as plt
+    >>> apt, bpt, ant, bnt = itairy(1.)
+    >>> apt, bpt, ant, bnt
+    (0.23631734191710949,
+     0.8727691167380077,
+     0.46567398346706845,
+     0.3730050096342943)
+
+    Compute the functions at several points by providing a NumPy array for `x`.
+
+    >>> x = np.array([1., 1.5, 2.5, 5])
+    >>> apt, bpt, ant, bnt = itairy(x)
+    >>> apt, bpt, ant, bnt
+    (array([0.23631734, 0.28678675, 0.324638  , 0.33328759]),
+     array([  0.87276912,   1.62470809,   5.20906691, 321.47831857]),
+     array([0.46567398, 0.72232876, 0.93187776, 0.7178822 ]),
+     array([ 0.37300501,  0.35038814, -0.02812939,  0.15873094]))
+
+    Plot the functions from -10 to 10.
+
+    >>> x = np.linspace(-10, 10, 500)
+    >>> apt, bpt, ant, bnt = itairy(x)
+    >>> fig, ax = plt.subplots(figsize=(6, 5))
+    >>> ax.plot(x, apt, label="$\int_0^x\, Ai(t)\, dt$")
+    >>> ax.plot(x, bpt, ls="dashed", label="$\int_0^x\, Bi(t)\, dt$")
+    >>> ax.plot(x, ant, ls="dashdot", label="$\int_0^x\, Ai(-t)\, dt$")
+    >>> ax.plot(x, bnt, ls="dotted", label="$\int_0^x\, Bi(-t)\, dt$")
+    >>> ax.set_ylim(-2, 1.5)
+    >>> ax.legend(loc="lower right")
+    >>> plt.show()
     """)
 
 add_newdoc("iti0k0",

@@ -517,7 +517,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             xtol, state, initial_barrier_parameter,
             initial_barrier_tolerance,
             initial_constr_penalty, initial_tr_radius,
-            factorization_method, finite_diff_bounds)
+            factorization_method)
 
     # Status 3 occurs when the callback function requests termination,
     # this is assumed to not be a success.

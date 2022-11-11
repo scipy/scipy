@@ -31,8 +31,7 @@ py3.install_sources([
     'hierarchy.py',
     'vq.py'
   ],
-  pure: false,             # Will be installed next to binaries
-  subdir: 'scipy/cluster'  # Folder relative to site-packages to install to
+  subdir: 'scipy/cluster'
 )
 
 subdir('tests')

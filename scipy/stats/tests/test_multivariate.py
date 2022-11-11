@@ -26,7 +26,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest,
-                         random_table)
+                         random_table, uniform_direction)
 from scipy.stats import _covariance, Covariance
 
 from scipy.integrate import romb
@@ -1990,6 +1990,62 @@ class TestRandomCorrelation:
         m = random_correlation._to_corr(m0.copy())
         assert_allclose(m[0,0], 1)
 
+
+class TestUniformDirection:
+    @pytest.mark.parametrize("dim", [1, 3])
+    @pytest.mark.parametrize("size", [None, 1, 5, (5, 4)])
+    def test_samples(self, dim, size):
+        # test that samples have correct shape and norm 1
+        rng = np.random.default_rng(2777937887058094419)
+        uniform_direction_dist = uniform_direction(dim, seed=rng)
+        samples = uniform_direction_dist.rvs(size)
+        mean, cov = np.zeros(dim), np.eye(dim)
+        expected_shape = rng.multivariate_normal(mean, cov, size=size).shape
+        assert samples.shape == expected_shape
+        norms = np.linalg.norm(samples, axis=-1)
+        assert_allclose(norms, 1.)
+
+    @pytest.mark.parametrize("dim", [None, 0, (2, 2), 2.5])
+    def test_invalid_dim(self, dim):
+        message = ("Dimension of vector must be specified, "
+                   "and must be an integer greater than 0.")
+        with pytest.raises(ValueError, match=message):
+            uniform_direction.rvs(dim)
+
+    def test_frozen_distribution(self):
+        dim = 5
+        frozen = uniform_direction(dim)
+        frozen_seed = uniform_direction(dim, seed=514)
+
+        rvs1 = frozen.rvs(random_state=514)
+        rvs2 = uniform_direction.rvs(dim, random_state=514)
+        rvs3 = frozen_seed.rvs()
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
+
+    @pytest.mark.parametrize("dim", [2, 5, 8])
+    def test_uniform(self, dim):
+        rng = np.random.default_rng(1036978481269651776)
+        spherical_dist = uniform_direction(dim, seed=rng)
+        # generate random, orthogonal vectors
+        v1, v2 = spherical_dist.rvs(size=2)
+        v2 -= v1 @ v2 * v1
+        v2 /= np.linalg.norm(v2)
+        assert_allclose(v1 @ v2, 0, atol=1e-14)  # orthogonal
+        # generate data and project onto orthogonal vectors
+        samples = spherical_dist.rvs(size=10000)
+        s1 = samples @ v1
+        s2 = samples @ v2
+        angles = np.arctan2(s1, s2)
+        # test that angles follow a uniform distribution
+        # normalize angles to range [0, 1]
+        angles += np.pi
+        angles /= 2*np.pi
+        # perform KS test
+        uniform_dist = uniform()
+        kstest_result = kstest(angles, uniform_dist.cdf)
+        assert kstest_result.pvalue > 0.05
 
 class TestUnitaryGroup:
     def test_reproducibility(self):
