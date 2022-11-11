@@ -2687,7 +2687,13 @@ class TestFDRControl:
         with pytest.raises(ValueError, match=message):
             stats.false_discovery_control([0.5, 0.7, 0.9], method='YAK')
 
-    def test_against_3(self):
+        message = "`axis` must be an integer or `None`"
+        with pytest.raises(ValueError, match=message):
+            stats.false_discovery_control([0.5, 0.7, 0.9], axis=1.5)
+        with pytest.raises(ValueError, match=message):
+            stats.false_discovery_control([0.5, 0.7, 0.9], axis=(1, 2))
+
+    def test_against_TileStats(self):
         # See reference [3] of false_discovery_control
         ps = [0.005, 0.009, 0.019, 0.022, 0.051, 0.101, 0.361, 0.387]
         res = stats.false_discovery_control(ps)
@@ -2711,3 +2717,18 @@ class TestFDRControl:
         ps[3] = ps[7]  # force a tie
         res = stats.false_discovery_control(ps, method=method)
         assert_allclose(res, ref, atol=1e-6)
+
+    def test_axis_None(self):
+        rng = np.random.default_rng(6134137338861652935)
+        ps = stats.loguniform.rvs(1e-3, 0.5, size=(3, 4, 5), random_state=rng)
+        res = stats.false_discovery_control(ps, axis=None)
+        ref = stats.false_discovery_control(ps.ravel())
+        assert_equal(res, ref)
+
+    @pytest.mark.parametrize("axis", [0, 1, -1])
+    def test_axis(self, axis):
+        rng = np.random.default_rng(6134137338861652935)
+        ps = stats.loguniform.rvs(1e-3, 0.5, size=(3, 4, 5), random_state=rng)
+        res = stats.false_discovery_control(ps, axis=axis)
+        ref = np.apply_along_axis(stats.false_discovery_control, axis, ps)
+        assert_equal(res, ref)

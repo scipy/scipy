@@ -4186,7 +4186,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
                             mean_resultant_length.squeeze(-1)[()])
 
 
-def false_discovery_control(ps, *, method='bh'):
+def false_discovery_control(ps, *, axis=0, method='bh'):
     """Adjust p-values to control the false discovery rate (FDR).
 
     If the null hypothesis is rejected when the *adjusted* p-value falls below
@@ -4196,6 +4196,10 @@ def false_discovery_control(ps, *, method='bh'):
     ----------
     ps : 1D array_like
         The p-values to adjust. Elements must be numbers between 0 and 1.
+    axis : int
+        The axis along which to perform the adjustment. The adjustment is
+        performed independently along each axis-slice. If `axis` is None, `ps`
+        is raveled before performing the adjustment.
     method : {'bh', 'by'}
         The false discovery rate control procedure to apply: ``'bh'`` is for
         Benjamini-Hochberg [1]_ (Eq. 1), ``'by'`` is for Benjaminini-Yekutieli
@@ -4303,25 +4307,39 @@ def false_discovery_control(ps, *, method='bh'):
                          f"Method must be one of {methods}.")
     method = method.lower()
 
-    # Procedures are equivalent to those of [1] and [2], except that they
-    # adjust the p-values as in [3] and R's p.adjust.
-    m = len(ps)
+    if axis is None:
+        axis = 0
+        ps = ps.ravel()
+
+    axis = np.asarray(axis)[()]
+    if not np.issubdtype(axis.dtype, np.integer) or axis.size != 1:
+        raise ValueError("`axis` must be an integer or `None`")
+
+    ps = np.moveaxis(ps, axis, -1)
+    m = ps.shape[-1]
+
+    # Algorithm
+    # Equivalent to the ideas of [1] and [2], except that this adjust the
+    # p-values as in [3] and R's p.adjust.
 
     # "Let [ps] be the ordered observed p-values..."
-    order = np.argsort(ps)
-    ps = ps[order]
+    order = np.argsort(ps, axis=-1)
+    ps = np.take_along_axis(ps, order, axis=-1)  # this copies ps
 
-    # Equation 1 of [1]
+    # Equation 1 of [1] rearranged to reject when p is less than specified q
     i = np.arange(1, m+1)
-    qs = ps * m / i  # rearranged to reject when this is less than specified q
+    ps *= m / i
 
     # Theorem 1.3 of [2]
-    if method.lower() == 'by':
-        qs *= np.sum(1 / i)
+    if method == 'by':
+        ps *= np.sum(1 / i)
 
     # accounts for rejecting all null hypotheses i for i < k, where k is
     # defined in Eq. 1 of either [1] or [2]. See [3].
-    np.minimum.accumulate(qs[::-1], out=qs[::-1])
+    np.minimum.accumulate(ps[..., ::-1], out=ps[..., ::-1], axis=-1)
 
-    qs[order] = qs.copy()  # restore original order
-    return np.clip(qs, 0, 1)
+    # Restore original order of axes and data
+    np.put_along_axis(ps, order, values=ps.copy(), axis=-1)
+    ps = np.moveaxis(ps, -1, axis)
+
+    return np.clip(ps, 0, 1)
