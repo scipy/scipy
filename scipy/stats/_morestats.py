@@ -33,7 +33,8 @@ __all__ = ['mvsdist',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot', 'directional_stats'
+           'yeojohnson_normplot', 'directional_stats',
+           'false_discovery_control'
            ]
 
 
@@ -1910,7 +1911,7 @@ def anderson(x, dist='norm'):
     .. [6] Stephens, M. A. (1979). Tests of Fit for the Logistic Distribution
            Based on the Empirical Distribution Function, Biometrika, Vol. 66,
            pp. 591-595.
-           
+
     Examples
     --------
     Test the null hypothesis that a random sample was drawn from a normal
@@ -4183,3 +4184,144 @@ def directional_stats(samples, *, axis=0, normalize=True):
     mean_direction = mean / mean_resultant_length
     return DirectionalStats(mean_direction,
                             mean_resultant_length.squeeze(-1)[()])
+
+
+def false_discovery_control(ps, *, method='bh'):
+    """Adjust p-values to control the false discovery rate (FDR).
+
+    If the null hypothesis is rejected when the *adjusted* p-value falls below
+    a specified level, the false discovery rate is controlled at that level.
+
+    Parameters
+    ----------
+    ps : 1D array_like
+        The p-values to adjust. Elements must be numbers between 0 and 1.
+    method : {'bh', 'by'}
+        The false discovery rate control procedure to apply: ``'bh'`` is for
+        Benjamini-Hochberg [1]_ (Eq. 1), ``'by'`` is for Benjaminini-Yekutieli
+        [2]_ (Theorem 1.3). The latter is more conservative, but it is
+        guaranteed to control the FDR even when the p-values are not from
+        independent tests.
+
+    Returns
+    -------
+    ps_adusted : array_like
+        The adjusted p-values. If the null hypothesis is rejected where these
+        fall below a specified level, the false discovery rate is controlled
+        at that level.
+
+    See Also
+    --------
+    combine_pvalues
+
+    Notes
+    -----
+    The false discovery rate is the fraction of rejected null hypotheses
+    that were actually true. In multiple hypothesis testing, false discovery
+    control procedures tend to offer higher power than familywise error rate
+    control procedures (e.g. Bonferroni correction [1]_).
+
+    If the p-values correspond with independent tests (or tests with
+    "positive regression dependencies" [2]_), rejecting null hypotheses
+    corresponding with Benjamini-Hochberg-adjusted p-values below :math:`q`
+    controls the false discovery rate at a level less than or equal to
+    :math:`q m_0 / m`, where :math:`m_0` is the number of true null hypotheses
+    and :math:`m` is the total number of null hypotheses tested. The same is
+    true even for dependent tests when the p-values are adjusted accorded to
+    the more conservative Benjaminini-Yekutieli procedure.
+
+    The behavior of this function is similar to the R function ``p.adjust``.
+
+    References
+    ----------
+    .. [1] Benjamini, Yoav, and Yosef Hochberg. "Controlling the false
+           discovery rate: a practical and powerful approach to multiple
+           testing." Journal of the Royal statistical society: series B
+           (Methodological) 57.1 (1995): 289-300.
+
+    .. [2] Benjamini, Yoav, and Daniel Yekutieli. "The control of the false
+           discovery rate in multiple testing under dependency." Annals of
+           statistics (2001): 1165-1188.
+
+    .. [3] TileStats. FDR - Benjamini-Hochberg explained - Youtube.
+           https://www.youtube.com/watch?v=rZKa4tW2NKs.
+
+    .. [4] Neuhaus, Karl-Ludwig, et al. "Improved thrombolysis in acute
+           myocardial infarction with front-loaded administration of alteplase:
+           results of the rt-PA-APSAC patency study (TAPS)." Journal of the
+           American College of Cardiology 19.5 (1992): 885-891.
+
+    Examples
+    --------
+    We follow the example from [1]_.
+
+        Thrombolysis with recombinant tissue-type plasminogen activator (rt-PA)
+        and anisoylated plasminogen streptokinase activator (APSAC) in
+        myocardial infarction has been proved to reduce mortality. [4]_
+        investigated the effects of a new front-loaded administration of rt-PA
+        versus those obtained with a standard regimen of APSAC, in a randomized
+        multicentre trial in 421 patients with acute myocardial infarction.
+
+    There were four families of hypotheses tested in the study, the last of
+    which was "cardiac and other events after the start of thrombolitic
+    treatment". FDR control may be desired in this family of hypotheses
+    because it would not be appropriate to conclude that the front-loaded
+    treatment is better if it is merely equivalent to the previous treatment.
+
+    The p-values from [4]_ were
+
+    >>> ps = [0.0001, 0.0004, 0.0019, 0.0095, 0.0201, 0.0278, 0.0298, 0.0344,
+    ...       0.0459, 0.3240, 0.4262, 0.5719, 0.6528, 0.7590, 1.000]
+
+    If the chosen significance level is 0.05, we may be tempted to reject the
+    null hypotheses for the tests corresponding with the first nine p-values,
+    as the first nine p-values fall below the chosen significance level.
+
+    If we wish to control the false discovery rate at 0.05, however, we could
+    apply the Benjamini-Hochberg p-value adjustment:
+
+    >>> from scipy import stats
+    >>> stats.false_discovery_control(ps)
+    array([0.0015    , 0.003     , 0.0095    , 0.035625  , 0.0603    ,
+           0.06385714, 0.06385714, 0.0645    , 0.0765    , 0.486     ,
+           0.58118182, 0.714875  , 0.75323077, 0.81321429, 1.        ])
+
+    Only the first four adjusted p-values fall below 0.05, so we would reject
+    only the null hypotheses corresponding with these p-values.
+
+    """
+    # Input Validation
+    ps = np.asarray(ps)
+    ps_in_range = (np.issubdtype(ps.dtype, np.number)
+                   and np.all(ps == np.clip(ps, 0, 1)))
+    if not ps_in_range:
+        raise ValueError("`ps` must include only numbers between 0 and 1.")
+
+    methods = {'bh', 'by'}
+    if method.lower() not in methods:
+        raise ValueError(f"Unrecognized `method` '{method}'."
+                         f"Method must be one of {methods}.")
+    method = method.lower()
+
+    # Procedures are equivalent to those of [1] and [2], except that they
+    # adjust the p-values as in [3] and R's p.adjust.
+    m = len(ps)
+
+    # "Let [ps] be the ordered observed p-values..."
+    order = np.argsort(ps)
+    ps = ps[order]
+
+    # Equation 1 of [1]
+    i = np.arange(1, m+1)
+    qs = ps * m / i  # rearranged to reject when this is less than specified q
+
+    # Theorem 1.3 of [2]
+    if method.lower() == 'by':
+        qs *= np.sum(1 / i)
+
+    # accounts for rejecting all null hypotheses i for i < k, where k is
+    # defined in Eq. 1 of either [1] or [2]. See [3].
+    np.minimum.accumulate(qs[::-1], out=qs[::-1])
+
+    qs[order] = qs.copy()  # restore original order
+    return np.clip(qs, 0, 1)

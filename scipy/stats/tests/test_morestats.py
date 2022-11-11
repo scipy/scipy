@@ -2671,3 +2671,43 @@ class TestDirectionalStats:
         assert_allclose(res.mean_direction, ref.mean_direction)
         assert_allclose(res.mean_resultant_length,
                         ref.mean_resultant_length)
+
+
+class TestFDRControl:
+    def test_input_validation(self):
+        message = "`ps` must include only numbers between 0 and 1"
+        with pytest.raises(ValueError, match=message):
+            stats.false_discovery_control([-1, 0.5, 0.7])
+        with pytest.raises(ValueError, match=message):
+            stats.false_discovery_control([0.5, 0.7, 2])
+        with pytest.raises(ValueError, match=message):
+            stats.false_discovery_control([0.5, 0.7, np.nan])
+
+        message = "Unrecognized `method` 'YAK'"
+        with pytest.raises(ValueError, match=message):
+            stats.false_discovery_control([0.5, 0.7, 0.9], method='YAK')
+
+    def test_against_3(self):
+        # See reference [3] of false_discovery_control
+        ps = [0.005, 0.009, 0.019, 0.022, 0.051, 0.101, 0.361, 0.387]
+        res = stats.false_discovery_control(ps)
+        ref = [0.036, 0.036, 0.044, 0.044, 0.082, 0.135, 0.387, 0.387]
+        assert_allclose(res, ref, atol=1e-3)
+
+    @pytest.mark.parametrize("case",
+                             [([0.24617028, 0.01140030, 0.05652047, 0.06841983,
+                                0.07989886, 0.01841490, 0.17540784, 0.06841983,
+                                0.06841983, 0.25464082], 'bh'),
+                              ([0.72102493, 0.03339112, 0.16554665, 0.20039952,
+                                0.23402122, 0.05393666, 0.51376399, 0.20039952,
+                                0.20039952, 0.74583488], 'by')])
+    def test_against_R(self, case):
+        # Test against p.adjust, e.g.
+        # p = c(0.22155325, 0.00114003,..., 0.0364813 , 0.25464082)
+        # p.adjust(p, "BY")
+        ref, method = case
+        rng = np.random.default_rng(6134137338861652935)
+        ps = stats.loguniform.rvs(1e-3, 0.5, size=10, random_state=rng)
+        ps[3] = ps[7]  # force a tie
+        res = stats.false_discovery_control(ps, method=method)
+        assert_allclose(res, ref, atol=1e-6)

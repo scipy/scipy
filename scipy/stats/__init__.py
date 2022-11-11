@@ -313,6 +313,7 @@ Statistical tests
    friedmanchisquare
    brunnermunzel
    combine_pvalues
+   false_discovery_control
    jarque_bera
    page_trend_test
    tukey_hsd
