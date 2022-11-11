@@ -2732,3 +2732,8 @@ class TestFDRControl:
         res = stats.false_discovery_control(ps, axis=axis)
         ref = np.apply_along_axis(stats.false_discovery_control, axis, ps)
         assert_equal(res, ref)
+
+    def test_edge_cases(self):
+        assert_array_equal(stats.false_discovery_control([0.25]), [0.25])
+        assert_array_equal(stats.false_discovery_control(0.25), 0.25)
+        assert_array_equal(stats.false_discovery_control([]), [])

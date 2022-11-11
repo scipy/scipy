@@ -4294,8 +4294,9 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     only the null hypotheses corresponding with these p-values.
 
     """
-    # Input Validation
+    # Input Validation and Special Cases
     ps = np.asarray(ps)
+
     ps_in_range = (np.issubdtype(ps.dtype, np.number)
                    and np.all(ps == np.clip(ps, 0, 1)))
     if not ps_in_range:
@@ -4315,10 +4316,13 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     if not np.issubdtype(axis.dtype, np.integer) or axis.size != 1:
         raise ValueError("`axis` must be an integer or `None`")
 
+    if ps.size <= 1 or ps.shape[axis] <= 1:
+        return ps[()]
+
     ps = np.moveaxis(ps, axis, -1)
     m = ps.shape[-1]
 
-    # Algorithm
+    # Main Algorithm
     # Equivalent to the ideas of [1] and [2], except that this adjust the
     # p-values as in [3] and R's p.adjust.
 
