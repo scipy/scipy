@@ -2226,7 +2226,6 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             - Chebyshev I   : 'cheby1'
             - Chebyshev II  : 'cheby2'
             - Cauer/elliptic: 'ellip'
-            - Bessel/Thomson: 'bessel'
 
     output : {'ba', 'zpk', 'sos'}, optional
         Filter form of the output:
