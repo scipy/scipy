@@ -828,12 +828,9 @@ class SVDSCommonTests:
         assert_allclose(ss, 0, atol=1e-5, rtol=1e0)
         # Smallest singular vectors via svds in null space:
         n, m = mat.shape
-        if n >= m:
-            assert_allclose(sp_mat @ svh.T, 0, atol=1e-5, rtol=1e0)
-        else:
+        if n < m:  # else the assert fails with some libraries unclear why
             assert_allclose(sp_mat.transpose() @ su, 0, atol=1e-5, rtol=1e0)
         assert_allclose(sp_mat @ svh.T, 0, atol=1e-5, rtol=1e0)
-        # assert_allclose(sp_mat.transpose() @ su, 0, atol=1e-5, rtol=1e0)
 
 # --- Perform tests with each solver ---
 
