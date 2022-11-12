@@ -142,6 +142,7 @@ def cases_test_cont_basic():
             yield distname, arg
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
 @pytest.mark.parametrize('sn, n_fit_samples', [(500, 200)])
 def test_cont_basic(distname, arg, sn, n_fit_samples):
@@ -401,18 +402,18 @@ def test_nomodify_gh9900_regression():
     # Use the right-half truncated normal
     # Check that the cdf and _cdf return the same result.
     npt.assert_almost_equal(tn.cdf(1, 0, np.inf), 0.6826894921370859)
-    npt.assert_almost_equal(tn._cdf(1, 0, np.inf), 0.6826894921370859)
+    npt.assert_almost_equal(tn._cdf([1], [0], [np.inf]), 0.6826894921370859)
 
     # Now use the left-half truncated normal
     npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0), 0.31731050786291415)
-    npt.assert_almost_equal(tn._cdf(-1, -np.inf, 0), 0.31731050786291415)
+    npt.assert_almost_equal(tn._cdf([-1], [-np.inf], [0]), 0.31731050786291415)
 
     # Check that the right-half truncated normal _cdf hasn't changed
-    npt.assert_almost_equal(tn._cdf(1, 0, np.inf), 0.6826894921370859)  # NOT 1.6826894921370859
+    npt.assert_almost_equal(tn._cdf([1], [0], [np.inf]), 0.6826894921370859)  # noqa, NOT 1.6826894921370859
     npt.assert_almost_equal(tn.cdf(1, 0, np.inf), 0.6826894921370859)
 
     # Check that the left-half truncated normal _cdf hasn't changed
-    npt.assert_almost_equal(tn._cdf(-1, -np.inf, 0), 0.31731050786291415)  # Not -0.6826894921370859
+    npt.assert_almost_equal(tn._cdf([-1], [-np.inf], [0]), 0.31731050786291415)  # noqa, Not -0.6826894921370859
     npt.assert_almost_equal(tn.cdf(1, -np.inf, 0), 1)                     # Not 1.6826894921370859
     npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0), 0.31731050786291415)  # Not -0.6826894921370859
 
@@ -695,6 +696,7 @@ def check_fit_args_fix(distfn, arg, rvs, method):
             npt.assert_(vals5[2] == arg[2])
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
                                     'sf', 'logsf', 'ppf', 'isf'])
 @pytest.mark.parametrize('distname, args', distcont)

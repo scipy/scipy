@@ -495,7 +495,7 @@ class TransferFunction(LinearTimeInvariant):
     Represents the system as the continuous-time transfer function
     :math:`H(s)=\sum_{i=0}^N b[N-i] s^i / \sum_{j=0}^M a[M-j] s^j` or the
     discrete-time transfer function
-    :math:`H(s)=\sum_{i=0}^N b[N-i] z^i / \sum_{j=0}^M a[M-j] z^j`, where
+    :math:`H(z)=\sum_{i=0}^N b[N-i] z^i / \sum_{j=0}^M a[M-j] z^j`, where
     :math:`b` are elements of the numerator `num`, :math:`a` are elements of
     the denominator `den`, and ``N == len(b) - 1``, ``M == len(a) - 1``.
     `TransferFunction` systems inherit additional
@@ -795,6 +795,7 @@ class TransferFunctionContinuous(TransferFunction, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `TransferFunction` system.
@@ -1130,6 +1131,7 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `ZerosPolesGain` system.
@@ -1153,8 +1155,8 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     Discrete-time Linear Time Invariant system in zeros, poles, gain form.
 
     Represents the system as the discrete-time transfer function
-    :math:`H(s)=k \prod_i (s - z[i]) / \prod_j (s - p[j])`, where :math:`k` is
-    the `gain`, :math:`z` are the `zeros` and :math:`p` are the `poles`.
+    :math:`H(z)=k \prod_i (z - q[i]) / \prod_j (z - p[j])`, where :math:`k` is
+    the `gain`, :math:`q` are the `zeros` and :math:`p` are the `poles`.
     Discrete-time `ZerosPolesGain` systems inherit additional functionality
     from the `dlti` class.
 
@@ -1203,7 +1205,7 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     )
 
     Construct the transfer function
-    :math:`H(s) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
+    :math:`H(z) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
     of 0.1 seconds:
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5, dt=0.1)
@@ -1264,7 +1266,7 @@ class StateSpace(LinearTimeInvariant):
     Examples
     --------
     >>> from scipy import signal
-
+    >>> import numpy as np
     >>> a = np.array([[0, 1], [0, 0]])
     >>> b = np.array([[0], [1]])
     >>> c = np.array([[1, 0]])
@@ -1684,6 +1686,7 @@ class StateSpaceContinuous(StateSpace, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `StateSpace` system.
@@ -1808,6 +1811,10 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     xout : ndarray
         The time-evolution of the state-vector.
 
+    See Also
+    --------
+    lsim
+
     Notes
     -----
     This function uses `scipy.integrate.odeint` to solve the system's
@@ -1824,15 +1831,12 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
-    See Also
-    --------
-    lsim
-
     Examples
     --------
     We'll use `lsim2` to simulate an analog Bessel filter applied to
     a signal.
 
+    >>> import numpy as np
     >>> from scipy.signal import bessel, lsim2
     >>> import matplotlib.pyplot as plt
     >>> import warnings
@@ -2017,6 +2021,7 @@ def lsim(system, U, T, X0=None, interp=True):
     We'll use `lsim` to simulate an analog Bessel filter applied to
     a signal.
 
+    >>> import numpy as np
     >>> from scipy.signal import bessel, lsim
     >>> import matplotlib.pyplot as plt
 
@@ -2504,7 +2509,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     yout : 1D ndarray
         Step response of system.
 
-    See also
+    See Also
     --------
     scipy.signal.step
 
@@ -3213,6 +3218,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     algorithms.  This is example number 1 from section 4 of the reference KNV
     publication ([1]_):
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -3500,6 +3506,7 @@ def dlsim(system, u, t=None, x0=None):
     A simple integrator transfer function with a discrete time step of 1.0
     could be implemented as:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> tf = ([1.0,], [1.0, -1.0], 1.0)
     >>> t_in = [0.0, 1.0, 2.0, 3.0]
@@ -3607,6 +3614,7 @@ def dimpulse(system, x0=None, t=None, n=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -3693,6 +3701,7 @@ def dstep(system, x0=None, t=None, n=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 

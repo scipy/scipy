@@ -175,7 +175,7 @@ def test_nnlf_and_related_methods(dist, params):
     assert_allclose(res2, ref)
 
 
-def cases_test_fit():
+def cases_test_fit_mle():
     # These fail default test or hang
     skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
                       'ksone', 'levy_stable', 'studentized_range', 'kstwo'}
@@ -212,6 +212,55 @@ def cases_test_fit():
             yield dist
 
 
+def cases_test_fit_mse():
+    # the first four are so slow that I'm not sure whether they would pass
+    skip_basic_fit = {'levy_stable', 'studentized_range', 'ksone', 'skewnorm',
+                      'norminvgauss',  # super slow (~1 hr) but passes
+                      'kstwo',  # very slow (~25 min) but passes
+                      'geninvgauss',  # quite slow (~4 minutes) but passes
+                      'gausshyper', 'genhyperbolic',  # integration warnings
+                      'argus',  # close, but doesn't meet tolerance
+                      'vonmises'}  # can have negative CDF; doesn't play nice
+    slow_basic_fit = {'wald', 'genextreme', 'anglit', 'semicircular',
+                      'kstwobign', 'arcsine', 'genlogistic', 'truncexpon',
+                      'fisk', 'uniform', 'exponnorm', 'maxwell', 'lomax',
+                      'laplace_asymmetric', 'lognorm', 'foldcauchy',
+                      'genpareto', 'powernorm', 'loglaplace', 'foldnorm',
+                      'recipinvgauss', 'exponpow', 'bradford', 'weibull_max',
+                      'gompertz', 'dweibull', 'truncpareto', 'weibull_min',
+                      'johnsonsu', 'loggamma', 'kappa3', 'fatiguelife',
+                      'pareto', 'invweibull', 'alpha', 'erlang', 'dgamma',
+                      'chi2', 'crystalball', 'nakagami', 'truncweibull_min',
+                      't', 'vonmises_line', 'triang', 'wrapcauchy', 'gamma',
+                      'mielke', 'chi', 'johnsonsb', 'exponweib',
+                      'genhalflogistic', 'randint', 'nhypergeom', 'hypergeom',
+                      'betabinom'}
+    xslow_basic_fit = {'burr', 'halfgennorm', 'invgamma',
+                       'invgauss', 'powerlaw', 'burr12', 'trapezoid', 'kappa4',
+                       'f', 'powerlognorm', 'ncx2', 'rdist', 'reciprocal',
+                       'loguniform', 'betaprime', 'rice', 'gennorm',
+                       'gengamma', 'truncnorm', 'ncf', 'nct', 'pearson3',
+                       'beta', 'genexpon', 'tukeylambda', 'zipfian',
+                       'nchypergeom_wallenius', 'nchypergeom_fisher'}
+    warns_basic_fit = {'skellam'}  # can remove mark after gh-14901 is resolved
+
+    for dist in dict(distdiscrete + distcont):
+        if dist in skip_basic_fit or not isinstance(dist, str):
+            reason = "Fails. Oh well."
+            yield pytest.param(dist, marks=pytest.mark.skip(reason=reason))
+        elif dist in slow_basic_fit:
+            reason = "too slow (>= 0.25s)"
+            yield pytest.param(dist, marks=pytest.mark.slow(reason=reason))
+        elif dist in xslow_basic_fit:
+            reason = "too slow (>= 1.0s)"
+            yield pytest.param(dist, marks=pytest.mark.xslow(reason=reason))
+        elif dist in warns_basic_fit:
+            mark = pytest.mark.filterwarnings('ignore::RuntimeWarning')
+            yield pytest.param(dist, marks=mark)
+        else:
+            yield dist
+
+
 def cases_test_fitstart():
     for distname, shapes in dict(distcont).items():
         if (not isinstance(distname, str) or
@@ -232,11 +281,13 @@ def test_fitstart(distname, shapes):
     assert dist._argcheck(*guess[:-2])
 
 
-def assert_nllf_less_or_close(dist, data, params1, params0, rtol=1e-7, atol=0):
-    nllf1 = dist.nnlf(params1, data)
-    nllf0 = dist.nnlf(params0, data)
-    if not (nllf1 < nllf0):
-        np.testing.assert_allclose(nllf1, nllf0, rtol=rtol, atol=atol)
+def assert_nlff_less_or_close(dist, data, params1, params0, rtol=1e-7, atol=0,
+                              nlff_name='nnlf'):
+    nlff = getattr(dist, nlff_name)
+    nlff1 = nlff(params1, data)
+    nlff0 = nlff(params0, data)
+    if not (nlff1 < nlff0):
+        np.testing.assert_allclose(nlff1, nlff0, rtol=rtol, atol=atol)
 
 
 class TestFit:
@@ -369,8 +420,7 @@ class TestFit:
         with pytest.warns(RuntimeWarning, match=message):
             stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
 
-    @pytest.mark.parametrize("dist_name", cases_test_fit())
-    def test_basic_fit(self, dist_name):
+    def basic_fit_test(self, dist_name, method):
 
         N = 5000
         dist_data = dict(distcont + distdiscrete)
@@ -378,10 +428,10 @@ class TestFit:
         dist = getattr(stats, dist_name)
         shapes = np.array(dist_data[dist_name])
         bounds = np.empty((len(shapes) + 2, 2), dtype=np.float64)
-        bounds[:-2, 0] = shapes/10**np.sign(shapes)
-        bounds[:-2, 1] = shapes*10**np.sign(shapes)
+        bounds[:-2, 0] = shapes/10.**np.sign(shapes)
+        bounds[:-2, 1] = shapes*10.**np.sign(shapes)
         bounds[-2] = (0, 10)
-        bounds[-1] = (0, 10)
+        bounds[-1] = (1e-16, 10)
         loc = rng.uniform(*bounds[-2])
         scale = rng.uniform(*bounds[-1])
         ref = list(dist_data[dist_name]) + [loc, scale]
@@ -396,9 +446,21 @@ class TestFit:
 
         with npt.suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "overflow encountered")
-            res = stats.fit(dist, data, bounds, optimizer=self.opt)
+            res = stats.fit(dist, data, bounds, method=method,
+                            optimizer=self.opt)
 
-        assert_nllf_less_or_close(dist, data, res.params, ref, **self.tols)
+        nlff_names = {'mle': 'nnlf', 'mse': '_penalized_nlpsf'}
+        nlff_name = nlff_names[method]
+        assert_nlff_less_or_close(dist, data, res.params, ref, **self.tols,
+                                  nlff_name=nlff_name)
+
+    @pytest.mark.parametrize("dist_name", cases_test_fit_mle())
+    def test_basic_fit_mle(self, dist_name):
+        self.basic_fit_test(dist_name, "mle")
+
+    @pytest.mark.parametrize("dist_name", cases_test_fit_mse())
+    def test_basic_fit_mse(self, dist_name):
+        self.basic_fit_test(dist_name, "mse")
 
     def test_argus(self):
         # Can't guarantee that all distributions will fit all data with
@@ -412,7 +474,7 @@ class TestFit:
         shape_bounds = {'chi': (0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
 
-        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
+        assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
     def test_foldnorm(self):
         # Can't guarantee that all distributions will fit all data with
@@ -426,7 +488,7 @@ class TestFit:
         shape_bounds = {'c': (0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
 
-        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
+        assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
     def test_truncpareto(self):
         # Can't guarantee that all distributions will fit all data with
@@ -440,7 +502,7 @@ class TestFit:
         shape_bounds = [(0.1, 10)]*4
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
 
-        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
+        assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
     def test_truncweibull_min(self):
         # Can't guarantee that all distributions will fit all data with
@@ -454,7 +516,7 @@ class TestFit:
         shape_bounds = [(0.1, 10)]*5
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
 
-        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
+        assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
     def test_missing_shape_bounds(self):
         # some distributions have a small domain w.r.t. a parameter, e.g.
@@ -564,12 +626,46 @@ class TestFit:
         res = stats.fit(dist, data, bounds, guess=params, optimizer=self.opt)
         assert_allclose(res.params, params, **self.tols)
 
+    def test_mse_accuracy_1(self):
+        # Test maximum spacing estimation against example from Wikipedia
+        # https://en.wikipedia.org/wiki/Maximum_spacing_estimation#Examples
+        data = [2, 4]
+        dist = stats.expon
+        bounds = {'loc': (0, 0), 'scale': (1e-8, 10)}
+        res_mle = stats.fit(dist, data, bounds=bounds, method='mle')
+        assert_allclose(res_mle.params.scale, 3, atol=1e-3)
+        res_mse = stats.fit(dist, data, bounds=bounds, method='mse')
+        assert_allclose(res_mse.params.scale, 3.915, atol=1e-3)
+
+    def test_mse_accuracy_2(self):
+        # Test maximum spacing estimation against example from Wikipedia
+        # https://en.wikipedia.org/wiki/Maximum_spacing_estimation#Examples
+        rng = np.random.default_rng(9843212616816518964)
+
+        dist = stats.uniform
+        n = 10
+        data = dist(3, 6).rvs(size=n, random_state=rng)
+        bounds = {'loc': (0, 10), 'scale': (1e-8, 10)}
+        res = stats.fit(dist, data, bounds=bounds, method='mse')
+        # (loc=3.608118420015416, scale=5.509323262055043)
+
+        x = np.sort(data)
+        a = (n*x[0] - x[-1])/(n - 1)
+        b = (n*x[-1] - x[0])/(n - 1)
+        ref = a, b-a  # (3.6081133632151503, 5.509328130317254)
+        assert_allclose(res.params, ref, rtol=1e-4)
+
 
 class TestFitResult:
     def test_plot_iv(self):
-        data = stats.norm.rvs(0, 1, size=100)  # random state doesn't matter
+        rng = np.random.default_rng(1769658657308472721)
+        data = stats.norm.rvs(0, 1, size=100, random_state=rng)
+
+        def optimizer(*args, **kwargs):
+            return differential_evolution(*args, **kwargs, seed=rng)
+
         bounds = [(0, 30), (0, 1)]
-        res = stats.fit(stats.norm, data, bounds)
+        res = stats.fit(stats.norm, data, bounds, optimizer=optimizer)
         try:
             import matplotlib  # noqa
             message = r"`plot_type` must be one of \{'..."

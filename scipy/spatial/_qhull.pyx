@@ -10,7 +10,6 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 # Distributed under the same BSD license as Scipy.
 #
 
-import threading
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -21,9 +20,6 @@ from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
 from libc.stdio cimport FILE
 
-import os
-import sys
-import tempfile
 import warnings
 
 np.import_array()
@@ -202,7 +198,6 @@ cdef extern from "qhull_src/src/poly_r.h":
 cdef extern from "qhull_src/src/mem_r.h":
     void qh_memfree(qhT *, void *object, int insize)
 
-from libc.string cimport memcpy
 from libc.stdlib cimport qsort
 
 #------------------------------------------------------------------------------
@@ -1273,7 +1268,7 @@ cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
 
     """
     cdef int inside, isimplex
-    cdef int k, m, ineighbor, iself
+    cdef int k, m, ineighbor
     cdef double *transform
 
     if _is_point_fully_outside(d, x, eps):
@@ -1366,7 +1361,6 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
     """
     cdef int k, m, ndim, inside, isimplex, cycle_k
     cdef double *transform
-    cdef double v
 
     ndim = d.ndim
     isimplex = start[0]
@@ -1481,7 +1475,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
     directed search.
 
     """
-    cdef int isimplex, i, j, k, inside, ineigh, neighbor_found
+    cdef int isimplex, k, ineigh
     cdef int ndim
     cdef double z[NPY_MAXDIMS+1]
     cdef double best_dist, dist
@@ -1757,6 +1751,7 @@ class Delaunay(_QhullUser):
     --------
     Triangulation of a set of points:
 
+    >>> import numpy as np
     >>> points = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
     >>> from scipy.spatial import Delaunay
     >>> tri = Delaunay(points)
@@ -2173,6 +2168,7 @@ class Delaunay(_QhullUser):
         z[...,-1] += self.paraboloid_shift
         return z
 
+
 def tsearch(tri, xi):
     """
     tsearch(tri, xi)
@@ -2180,16 +2176,29 @@ def tsearch(tri, xi):
     Find simplices containing the given points. This function does the
     same thing as `Delaunay.find_simplex`.
 
-    .. versionadded:: 0.9
+    Parameters
+    ----------
+    tri : DelaunayInfo
+        Delaunay triangulation
+    xi : ndarray of double, shape (..., ndim)
+        Points to locate
+
+    Returns
+    -------
+    i : ndarray of int, same shape as `xi`
+        Indices of simplices containing each point.
+        Points outside the triangulation get the value -1.
 
     See Also
     --------
     Delaunay.find_simplex
 
+    Notes
+    -----
+    .. versionadded:: 0.9
 
     Examples
     --------
-
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import Delaunay, delaunay_plot_2d, tsearch
@@ -2366,6 +2375,7 @@ class ConvexHull(_QhullUser):
     Convex hull of a random set of points:
 
     >>> from scipy.spatial import ConvexHull, convex_hull_plot_2d
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> points = rng.random((30, 2))   # 30 random points in 2-D
     >>> hull = ConvexHull(points)
@@ -2568,6 +2578,7 @@ class Voronoi(_QhullUser):
     --------
     Voronoi diagram for a set of point:
 
+    >>> import numpy as np
     >>> points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],
     ...                    [2, 0], [2, 1], [2, 2]])
     >>> from scipy.spatial import Voronoi, voronoi_plot_2d
@@ -2734,6 +2745,7 @@ class HalfspaceIntersection(_QhullUser):
     Halfspace intersection of planes forming some polygon
 
     >>> from scipy.spatial import HalfspaceIntersection
+    >>> import numpy as np
     >>> halfspaces = np.array([[-1, 0., 0.],
     ...                        [0., -1., 0.],
     ...                        [2., 1., -4.],

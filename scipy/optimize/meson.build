@@ -11,6 +11,7 @@ _direct = py3.extension_module('_direct',
   ],
   c_args: [numpy_nodepr_api],
   include_directories: include_dirs,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
 )
@@ -48,6 +49,7 @@ _minpack = py3.extension_module('_minpack',
   link_with: minpack_lib,
   c_args: numpy_nodepr_api,
   include_directories: include_dirs,
+  link_args: version_link_args,
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'
@@ -65,6 +67,7 @@ py3.extension_module('_lsap',
   link_with: rectangular_lsap,
   c_args: numpy_nodepr_api,
   include_directories: include_dirs,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
 )
@@ -84,6 +87,7 @@ py3.extension_module('_zeros',
   link_with: rootfind_lib,
   c_args: numpy_nodepr_api,
   include_directories: inc_np,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
 )
@@ -104,6 +108,7 @@ _lbfgsb = py3.extension_module('_lbfgsb',
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
@@ -116,6 +121,7 @@ moduleTNC = py3.extension_module('_moduleTNC',
     'tnc/tnc.c'],
   c_args: cython_c_args,
   include_directories: [inc_np, inc_f2py, 'tnc'],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
 )
@@ -131,6 +137,7 @@ _cobyla = py3.extension_module('_cobyla',
   c_args: [numpy_nodepr_api, Wno_unused_variable],
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   dependencies: [fortranobject_dep],
   install: true,
   link_language: 'fortran',
@@ -148,6 +155,7 @@ minpack2 = py3.extension_module('_minpack2',
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   dependencies: [fortranobject_dep],
   install: true,
   link_language: 'fortran',
@@ -165,6 +173,7 @@ _slsqp = py3.extension_module('_slsqp',
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   dependencies: [fortranobject_dep],
   install: true,
   link_language: 'fortran',
@@ -179,7 +188,6 @@ __nnls_module = custom_target('__nnls_module',
 
 py3.install_sources(
   ['__nnls.pyi'],
-  pure: false,
   subdir: 'scipy/optimize'
 )
 
@@ -188,6 +196,7 @@ __nnls = py3.extension_module('__nnls',
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   dependencies: [fortranobject_dep],
   install: true,
   link_language: 'fortran',
@@ -195,16 +204,17 @@ __nnls = py3.extension_module('__nnls',
 )
 
 if use_pythran
-  _group_columns = custom_target('_group_columns',
+  _group_columns_cpp = custom_target('_group_columns',
     output: ['_group_columns.cpp'],
     input: '_group_columns.py',
     command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_group_columns.cpp']
   )
 
   _group_columns = py3.extension_module('_group_columns',
-    [_group_columns],
+    [_group_columns_cpp],
     cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
+    link_args: version_link_args,
     install: true,
     subdir: 'scipy/optimize'
   )
@@ -213,6 +223,7 @@ else
     cython_gen.process('_group_columns.pyx'),
     c_args: cython_c_args,
     include_directories: [inc_np],
+    link_args: version_link_args,
     install: true,
     subdir: 'scipy/optimize'
   )
@@ -237,6 +248,7 @@ py3.extension_module('_bglu_dense',
   _bglu_dense_c,
   c_args: cython_c_args,
   include_directories: [inc_np],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
 )
@@ -251,7 +263,6 @@ subdir('tests')
 
 py3.install_sources(
   ['lbfgsb_src/README'],
-  pure: false,
   subdir: 'scipy/optimize'
 )
 
@@ -309,6 +320,5 @@ py3.install_sources([
   'tnc.py',
   'zeros.py'
 ],
-  pure: false,
   subdir: 'scipy/optimize'
 )

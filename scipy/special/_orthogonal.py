@@ -615,6 +615,7 @@ def genlaguerre(n, alpha, monic=False):
     This can be verified, for example,  for :math:`n = \alpha = 3` over the
     interval :math:`[-1, 1]`:
 
+    >>> import numpy as np
     >>> from scipy.special import binom
     >>> from scipy.special import genlaguerre
     >>> from scipy.special import hyp1f1
@@ -746,6 +747,7 @@ def laguerre(n, monic=False):
     :math:`L_n^{(\alpha)}`.
     Let's verify it on the interval :math:`[-1, 1]`:
 
+    >>> import numpy as np
     >>> from scipy.special import genlaguerre
     >>> from scipy.special import laguerre
     >>> x = np.arange(-1.0, 1.0, 0.01)
@@ -1554,6 +1556,7 @@ def gegenbauer(n, alpha, monic=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
 
@@ -1695,6 +1698,7 @@ def chebyt(n, monic=False):
     the determinant of the following :math:`3 \times 3` matrix
     lay exacty on :math:`T_3`:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.linalg import det
     >>> from scipy.special import chebyt
@@ -1858,6 +1862,7 @@ def chebyu(n, monic=False):
     the determinant of the following :math:`3 \times 3` matrix
     lay exacty on :math:`U_3`:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.linalg import det
     >>> from scipy.special import chebyu
@@ -2331,6 +2336,7 @@ def roots_legendre(n, mu=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import roots_legendre, eval_legendre
     >>> roots, weights = roots_legendre(9)
 

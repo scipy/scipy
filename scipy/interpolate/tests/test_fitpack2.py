@@ -6,7 +6,7 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal
 from pytest import raises as assert_raises
 
 from numpy import array, diff, linspace, meshgrid, ones, pi, shape
-from scipy.interpolate._fitpack_py import bisplrep, bisplev
+from scipy.interpolate._fitpack_py import bisplrep, bisplev, splrep, spalde
 from scipy.interpolate._fitpack2 import (UnivariateSpline,
         LSQUnivariateSpline, InterpolatedUnivariateSpline,
         LSQBivariateSpline, SmoothBivariateSpline, RectBivariateSpline,
@@ -60,6 +60,35 @@ class TestUnivariateSpline:
         y = [0,4,9,12,21]
         spl = UnivariateSpline(x, y, k=3)
         assert_array_equal(spl([]), array([]))
+
+    def test_roots(self):
+        x = [1, 3, 5, 7, 9]
+        y = [0, 4, 9, 12, 21]
+        spl = UnivariateSpline(x, y, k=3)
+        assert_almost_equal(spl.roots()[0], 1.050290639101332)
+
+    def test_derivatives(self):
+        x = [1, 3, 5, 7, 9]
+        y = [0, 4, 9, 12, 21]
+        spl = UnivariateSpline(x, y, k=3)
+        assert_almost_equal(spl.derivatives(3.5),
+                            [5.5152902, 1.7146577, -0.1830357, 0.3125])
+
+    def test_derivatives_2(self):
+        x = np.arange(8)
+        y = x**3 + 2.*x**2
+
+        tck = splrep(x, y, s=0)
+        ders = spalde(3, tck)
+        assert_allclose(ders, [45.,   # 3**3 + 2*(3)**2
+                               39.,   # 3*(3)**2 + 4*(3)
+                               22.,   # 6*(3) + 4
+                               6.],   # 6*3**0
+                        atol=1e-15)
+        spl = UnivariateSpline(x, y, s=0, k=3)
+        assert_allclose(spl.derivatives(3),
+                        ders,
+                        atol=1e-15)
 
     def test_resize_regression(self):
         """Regression test for #1375."""

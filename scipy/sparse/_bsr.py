@@ -90,6 +90,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     Examples
     --------
     >>> from scipy.sparse import bsr_matrix
+    >>> import numpy as np
     >>> bsr_matrix((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],

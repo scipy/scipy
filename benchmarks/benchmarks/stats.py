@@ -499,29 +499,37 @@ class BinnedStatisticDD(Benchmark):
 
 class ContinuousFitAnalyticalMLEOverride(Benchmark):
     # list of distributions to time
-    dists = ["pareto", "laplace", "rayleigh",
-             "invgauss", "gumbel_r", "gumbel_l"]
+    dists = ["pareto", "laplace", "rayleigh", "invgauss", "gumbel_r",
+             "gumbel_l", "powerlaw"]
     # add custom values for rvs and fit, if desired, for any distribution:
     # key should match name in dists and value should be list of loc, scale,
     # and shapes
     custom_input = {}
     fnames = ['floc', 'fscale', 'f0', 'f1', 'f2']
     fixed = {}
-    distcont = dict(distcont)
 
-    param_names = ["distribution", "loc_fixed", "scale_fixed",
+    param_names = ["distribution", "case", "loc_fixed", "scale_fixed",
                    "shape1_fixed", "shape2_fixed", "shape3_fixed"]
-    params = [dists, * [[True, False]] * 5]
+    # in the `_distr_params.py` list, some distributions have multiple sets of
+    # "sane" shape combinations. `case` needs to be an enumeration of the
+    # maximum number of cases for a benchmarked distribution; the maximum is
+    # currently two. Should a benchmarked distribution have more cases in the
+    # `_distr_params.py` list, this will need to be increased.
+    params = [dists, range(2), * [[True, False]] * 5]
 
-    def setup(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
-              shape2_fixed, shape3_fixed):
+    def setup(self, dist_name, case, loc_fixed, scale_fixed,
+              shape1_fixed, shape2_fixed, shape3_fixed):
         self.distn = eval("stats." + dist_name)
 
         # default `loc` and `scale` are .834 and 4.342, and shapes are from
-        # `_distr_params.py`
-        default_shapes = self.distcont[dist_name]
-        param_values = self.custom_input.get(dist_name, [.834, 4.342,
-                                                         *default_shapes])
+        # `_distr_params.py`. If there are multiple cases of valid shapes in
+        # `distcont`, they are benchmarked separately.
+        default_shapes_n = [s[1] for s in distcont if s[0] == dist_name]
+        if case >= len(default_shapes_n):
+            raise NotImplementedError("no alternate case for this dist")
+        default_shapes = default_shapes_n[case]
+        param_values = self.custom_input.get(dist_name, [*default_shapes,
+                                                         .834, 4.342])
         # separate relevant and non-relevant parameters for this distribution
         # based on the number of shapes
         nparam = len(param_values)
@@ -536,13 +544,17 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
             raise NotImplementedError("skip non-relevant case")
 
         # add fixed values if fixed in relevant_parameters to self.fixed
-        # with keys from self.fnames and values from parameter_values
+        # with keys from self.fnames and values in the same order as `fnames`.
+        fixed_vales = self.custom_input.get(dist_name, [.834, 4.342,
+                                                        *default_shapes])
         self.fixed = dict(zip(compress(self.fnames, relevant_parameters),
-                          compress(param_values, relevant_parameters)))
-        self.data = self.distn.rvs(*param_values, size=1000)
+                          compress(fixed_vales, relevant_parameters)))
+        self.param_values = param_values
+        self.data = self.distn.rvs(*param_values, size=1000,
+                                   random_state=np.random.default_rng(4653465))
 
-    def time_fit(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
-                 shape2_fixed, shape3_fixed):
+    def time_fit(self, dist_name, case, loc_fixed, scale_fixed,
+                 shape1_fixed, shape2_fixed, shape3_fixed):
         self.distn.fit(self.data, **self.fixed)
 
 

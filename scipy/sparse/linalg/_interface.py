@@ -552,6 +552,7 @@ class _CustomLinearOperator(LinearOperator):
 
 class _AdjointLinearOperator(LinearOperator):
     """Adjoint of arbitrary Linear Operator"""
+
     def __init__(self, A):
         shape = (A.shape[1], A.shape[0])
         super().__init__(dtype=A.dtype, shape=shape)
@@ -572,6 +573,7 @@ class _AdjointLinearOperator(LinearOperator):
 
 class _TransposedLinearOperator(LinearOperator):
     """Transposition of arbitrary Linear Operator"""
+
     def __init__(self, A):
         shape = (A.shape[1], A.shape[0])
         super().__init__(dtype=A.dtype, shape=shape)
@@ -790,6 +792,7 @@ def aslinearoperator(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse.linalg import aslinearoperator
     >>> M = np.array([[1,2,3],[4,5,6]], dtype=np.int32)
     >>> aslinearoperator(M)

@@ -403,17 +403,18 @@ class Build(Task):
     debug = Option(
         ['--debug', '-d'], default=False, is_flag=True, help="Debug build")
     parallel = Option(
-        ['--parallel', '-j'], default=1, metavar='N_JOBS',
-        help="Number of parallel jobs for build and testing")
+        ['--parallel', '-j'], default=None, metavar='N_JOBS',
+        help=("Number of parallel jobs for building. "
+              "This defaults to 2 * n_cpus + 2."))
     show_build_log = Option(
         ['--show-build-log'], default=False, is_flag=True,
         help="Show build output rather than using a log file")
     win_cp_openblas = Option(
         ['--win-cp-openblas'], default=False, is_flag=True,
-        help=("If set, and on Windows, copy OpenBLAS lib to install directory"
+        help=("If set, and on Windows, copy OpenBLAS lib to install directory "
               "after meson install. "
               "Note: this argument may be removed in the future once a "
-              "`site.cfg`-like mechanism to select BLAS/LAPACK libraries is"
+              "`site.cfg`-like mechanism to select BLAS/LAPACK libraries is "
               "implemented for Meson"))
 
     @classmethod
@@ -475,7 +476,7 @@ class Build(Task):
         Build a dev version of the project.
         """
         cmd = ["ninja", "-C", str(dirs.build)]
-        if args.parallel > 1:
+        if args.parallel is not None:
             cmd += ["-j", str(args.parallel)]
 
         # Building with ninja-backend
@@ -809,7 +810,7 @@ class Bench(Task):
                 print("Running benchmarks for Scipy version %s at %s"
                       % (version, mod_path))
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
-                       '--python=same', '--quick'] + bench_args
+                       '--python=same'] + bench_args
                 retval = cls.run_asv(dirs, cmd)
                 sys.exit(retval)
             else:
