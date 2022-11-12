@@ -224,8 +224,13 @@ class CheckOptimizeParameterized(CheckOptimize):
             assert not np.isfinite(func(x))
 
     def test_bfgs_xtol(self):
-        # add test here to test xtol param 
-        pass 
+        # test for #17345 to test xtol parameter 
+        x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
+        res = optimize.minimize(optimize.rosen,
+                                x0, method='bfgs', options={'xtol': 1e-3})
+        ref = optimize.minimize(optimize.rosen,
+                                x0, method='bfgs', options={'gtol': 1e-3})
+        assert res.nit != ref.nit
 
     def test_powell(self):
         # Powell (direction set) optimization routine

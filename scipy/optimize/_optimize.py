@@ -1409,7 +1409,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         if (gnorm <= gtol):
             break
 
-        # stopping criteria following http://www2.imm.dtu.dk/~hbn/Software/#GO
         #  See Chapter 5 in  P.E. Frandsen, K. Jonasson, H.B. Nielsen,
         #  O. Tingleff: "Unconstrained Optimization", IMM, DTU.  1999.
         #  These notes are available here:
@@ -1428,7 +1427,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         # below. On the other hand, if dot(yk, sk) <= 0, there is no need
         # to abort, we simply skip the update of Hk this iteration.
         #  See Chapter 5, p.75 of the above reference for details.
-        yksk = np.dot(yk,sk)
+        yksk = np.dot(yk, sk)
         if yksk > _epsilon * vecnorm(yk) * vecnorm(sk):
             rhok = 1.0 / yksk
             A1 = I - sk[:, np.newaxis] * yk[np.newaxis, :] * rhok
