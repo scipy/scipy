@@ -1,16 +1,7 @@
 # TODO: 64-bit BLAS and LAPACK
 
-__init__py = custom_target('__init__py',
-  output: '__init__.py',
-  input: '__init__.py',
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
-
-_cy_array_utils_pxd = custom_target('_cy_array_utils_pxd',
-  output: '_cythonized_array_utils.pxd',
-  input: '_cythonized_array_utils.pxd',
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
+__init__py = fs.copyfile('__init__.py')
+_cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 
 cython_linalg = custom_target('cython_linalg',
   output: [
@@ -336,8 +327,8 @@ py3.install_sources(
 #       see https://github.com/mesonbuild/meson/issues/3206
 #
 #       For the below code to work, the script generating the files should use
-#       a different filename, and then cp (or better: `copier`) should move it
-#       to the final location. Either that, or split the codegen scripts and
+#       a different filename, and then it should be moved to the final location 
+#       (e.g. with `fs.copyfile`). Either that, or split the codegen scripts and
 #       call it twice: once for the installable files, and once for the
 #       non-installable files.
 #

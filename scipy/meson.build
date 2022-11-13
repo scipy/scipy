@@ -189,23 +189,16 @@ py3.install_sources(
   subdir: 'scipy/_lib/tests'
 )
 
+# Copy the main __init__.py and pxd files to the build dir.
 # Needed to trick Cython, it won't do a relative import outside a package
-_cython_tree = custom_target('_cython_tree',
-  output: [
-    '__init__.py',
-    'linalg.pxd',
-    'optimize.pxd',
-    'special.pxd'
-  ],
-  input: [
-    '__init__.py',
-    'linalg.pxd',
-    'optimize.pxd',
-    'special.pxd'
-  ],
-  command: [copier, '@INPUT@', '@OUTDIR@'],
-)
-cython_tree = declare_dependency(sources: _cython_tree)
+fs = import('fs')
+#_cython_tree = declare_dependency(sources: [
+_cython_tree = [
+  fs.copyfile('__init__.py'),
+  fs.copyfile('linalg.pxd'),
+  fs.copyfile('optimize.pxd'),
+  fs.copyfile('special.pxd'),
+]
 
 cython_cli = find_program('_build_utils/cythoner.py')
 
