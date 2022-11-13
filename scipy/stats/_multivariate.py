@@ -15,6 +15,7 @@ from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom
 from . import _mvn, _covariance, contingency
+from ._mvt import _qsimvtv
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -4406,6 +4407,81 @@ class multivariate_t_gen(multi_rv_generic):
 
         return _squeeze_output(A - B - C - D + E)
 
+    def _cdf(self, x, loc, shape, df, dim, maxpts=None, lower_limit=None,
+             random_state=None):
+
+        # All of this -  random state validation, maxpts, apply_along_axis,
+        # etc. needs to go in this private method unless we want
+        # frozen distribution's `cdf` method to duplicate it or call `cdf`,
+        # which would require re-processing parameters
+        if random_state is not None:
+            rng = check_random_state(random_state)
+        else:
+            rng = self._random_state
+
+        if not maxpts:
+            maxpts = 1000 * dim
+
+        x = self._process_quantiles(x, dim)
+        lower_limit = (np.full(loc.shape, -np.inf)
+                       if lower_limit is None else lower_limit)
+
+        # remove the mean
+        x, lower_limit = x - loc, lower_limit - loc
+
+        b, a = np.broadcast_arrays(x, lower_limit)
+        i_swap = b < a
+        signs = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
+        a, b = a.copy(), b.copy()
+        a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
+        n = x.shape[-1]
+        limits = np.concatenate((a, b), axis=-1)
+
+        def func1d(limits):
+            a, b = limits[:n], limits[n:]
+            return _qsimvtv(maxpts, df, shape, a, b, rng)[0]
+
+        return np.apply_along_axis(func1d, -1, limits) * signs
+
+    def cdf(self, x, loc=None, shape=1, df=1, allow_singular=False, *,
+            maxpts=None, lower_limit=None, random_state=None):
+        """Multivariate t-distribution cumulative distribution function.
+
+        Parameters
+        ----------
+        x : array_like
+            Points at which to evaluate the cumulative distribution function.
+        %(_mvt_doc_default_callparams)s
+        maxpts : int, optional
+            Maximum number of points to use for integration. The default is
+            1000 times the number of dimensions.
+        lower_limit : array_like, optional
+            Lower limit of integration of the cumulative distribution function.
+            Default is negative infinity. Must be broadcastable with `x`.
+        %(_doc_random_state)s
+
+        Returns
+        -------
+        cdf : ndarray or scalar
+            Cumulative distribution function evaluated at `x`.
+
+        Examples
+        --------
+        >>> from scipy.stats import multivariate_t
+        >>> x = [0.4, 5]
+        >>> loc = [0, 1]
+        >>> shape = [[1, 0.1], [0.1, 1]]
+        >>> df = 7
+        >>> multivariate_t.cdf(x, loc, shape, df)
+        array([0.64798491])
+
+        """
+        dim, loc, shape, df = self._process_parameters(loc, shape, df)
+        shape = _PSD(shape, allow_singular=allow_singular)._M
+
+        return self._cdf(x, loc, shape, df, dim, maxpts,
+                        lower_limit, random_state)
+
     def rvs(self, loc=None, shape=1, df=1, size=1, random_state=None):
         """Draw random samples from a multivariate t-distribution.
 
@@ -4563,6 +4639,11 @@ class multivariate_t_frozen(multi_rv_frozen):
         log_pdet = self.shape_info.log_pdet
         return self._dist._logpdf(x, self.loc, U, log_pdet, self.df, self.dim,
                                   self.shape_info.rank)
+
+    def cdf(self, x, *, maxpts=None, lower_limit=None, random_state=None):
+        x = self._dist._process_quantiles(x, self.dim)
+        return self._dist._cdf(x, self.loc, self.shape, self.df, self.dim,
+                               maxpts, lower_limit, random_state)
 
     def pdf(self, x):
         return np.exp(self.logpdf(x))

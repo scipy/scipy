@@ -28,6 +28,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          hypergeom, multivariate_t, cauchy, normaltest,
                          random_table, uniform_direction)
 from scipy.stats import _covariance, Covariance
+from scipy import stats
 
 from scipy.integrate import romb
 from scipy.special import multigammaln
@@ -2325,6 +2326,75 @@ class TestMultivariateT:
         dist = multivariate_t(np.zeros(dim), np.eye(dim), df)
         rvs = dist.rvs(size=size)
         assert rvs.shape == size + (dim, )
+
+    def test_cdf_signs(self):
+        # check that sign of output is correct when np.any(lower > x)
+        mean = np.zeros(3)
+        cov = np.eye(3)
+        df = 10
+        b = [[1, 1, 1], [0, 0, 0], [1, 0, 1], [0, 1, 0]]
+        a = [[0, 0, 0], [1, 1, 1], [0, 1, 0], [1, 0, 1]]
+        # when odd number of elements of b < a, output is negative
+        expected_signs = np.array([1, -1, -1, 1])
+        cdf = multivariate_normal.cdf(b, mean, cov, df, lower_limit=a)
+        assert_allclose(cdf, cdf[0]*expected_signs)
+
+    @pytest.mark.parametrize('dim', [1, 2, 5, 10])
+    def test_cdf_against_multivariate_normal(self, dim):
+        self.cdf_against_mvn_test(dim)
+
+    def test_cdf_against_multivariate_normal_singular(self):
+        self.cdf_against_mvn_test(3, True)
+
+    def cdf_against_mvn_test(self, dim, singular=False):
+        rng = np.random.default_rng(413722918996573)
+        n = 3
+
+        A = rng.random((dim, dim))
+        A = A @ A.T
+        w, v = np.linalg.eigh(A)
+        w = 10**rng.uniform(-2, 1, size=dim)
+        if singular:
+            zero_eigs = rng.normal(size=dim) > 0
+            w[zero_eigs] = 0
+        cov = v @ np.diag(w) @ v.T
+
+        mean = 10**rng.uniform(-1, 2, size=dim) * np.sign(rng.normal(size=dim))
+        a = -10**rng.uniform(-1, 2, size=(n, dim)) + mean
+        b = 10**rng.uniform(-1, 2, size=(n, dim)) + mean
+
+        res = stats.multivariate_t.cdf(b, mean, cov, df=10000, lower_limit=a,
+                                       allow_singular=True, random_state=rng)
+        ref = stats.multivariate_normal.cdf(b, mean, cov, allow_singular=True,
+                                            lower_limit=a)
+        assert_allclose(res, ref, atol=5e-4)
+
+    def test_cdf_against_univariate_t(self):
+        rng = np.random.default_rng(413722918996573)
+        cov = 2
+        mean = 0
+        x = rng.normal(size=10, scale=np.sqrt(cov))
+        df = 3
+
+        res = stats.multivariate_t.cdf(x, mean, cov, df, lower_limit=-np.inf,
+                                       random_state=rng)
+        ref = stats.t.cdf(x, df, mean, np.sqrt(cov))
+        incorrect = stats.norm.cdf(x, mean, np.sqrt(cov))
+
+        assert_allclose(res, ref, atol=5e-4)  # close to t
+        assert np.all(np.abs(res - incorrect) > 1e-3)  # not close to normal
+
+    def test_frozen(self):
+        seed = 4137229573
+        rng = np.random.default_rng(seed)
+        loc = rng.uniform(size=3)
+        x = rng.uniform(size=3) + loc
+        shape = np.eye(3)
+        df = rng.random()
+        args = (loc, shape, df)
+        dist = stats.multivariate_t(*args, seed=seed)
+        assert_equal(dist.cdf(x), multivariate_t.cdf(x, *args,
+                                                     random_state=seed))
 
 
 class TestMultivariateHypergeom:
