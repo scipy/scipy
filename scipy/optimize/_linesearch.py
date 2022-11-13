@@ -112,8 +112,10 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
 # Wrapper around derphi to handle the added input fs
 def _wrapper_func(derphi):
     sig = inspect.signature(derphi)
+
     def wrapped_func1(alpha, fs=None):
         return derphi(alpha, fs=fs)
+
     def wrapped_func2(alpha, fs=None):
         # silently drop fs for backwards compatibility
         return derphi(alpha)
@@ -140,7 +142,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
         Function at point `alpha`
     derphi : callable phi'(alpha)
         Objective function derivative. Returns a scalar.
-        derphi also accepts an optional argument fs, the 
+        derphi also accepts an optional argument fs, the
         current function value phi(alpha), which can be
         used to reduce computation.
     phi0 : float, optional
@@ -387,7 +389,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
         Objective scalar function.
     derphi : callable phi'(alpha)
         Objective function derivative. Returns a scalar.
-        derphi also accepts an optional argument fs, the 
+        derphi also accepts an optional argument fs, the
         current function value phi(alpha), which can be
         used to reduce computation.
     phi0 : float, optional
@@ -580,9 +582,9 @@ def _quadmin(a, fa, fpa, b, fb):
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
           phi, derphi, phi0, derphi0, c1, c2, extra_condition):
     """Zoom stage of approximate linesearch satisfying strong Wolfe conditions.
-    
+
     Part of the optimization algorithm in `scalar_search_wolfe2`.
-    
+
     Notes
     -----
     Implements Algorithm 3.6 (zoom) in Wright and Nocedal,
