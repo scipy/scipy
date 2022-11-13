@@ -55,6 +55,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
     We can interpolate values on a 2D plane:
 
     >>> from scipy.interpolate import NearestNDInterpolator
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
     >>> x = rng.random(10) - 0.5
@@ -179,6 +180,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
 
     Suppose we want to interpolate the 2-D function
 
+    >>> import numpy as np
     >>> def func(x, y):
     ...     return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
 

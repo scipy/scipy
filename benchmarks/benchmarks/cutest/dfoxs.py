@@ -1,5 +1,5 @@
 # This is a python implementation of dfoxs.m,
-# provided at http://www.mcs.anl.gov/~more/dfo/
+# provided at https://github.com/POptUS/BenDFO
 import numpy as np
 
 

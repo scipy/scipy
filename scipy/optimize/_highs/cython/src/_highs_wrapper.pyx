@@ -165,7 +165,8 @@ cdef apply_options(dict options, Highs & highs):
             'simplex_initial_condition_tolerance',
             'small_matrix_value',
             'start_crossover_tolerance',
-            'time_limit'
+            'time_limit',
+            'mip_rel_gap'
     ]):
         val = options.get(opt, None)
         if val is not None:

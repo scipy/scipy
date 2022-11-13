@@ -79,6 +79,7 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
 
     Check that the functions indeed are solutions to the Lame equation:
 
+    >>> import numpy as np
     >>> from scipy.interpolate import UnivariateSpline
     >>> def eigenvalue(f, df, ddf):
     ...     r = ((s**2 - h**2)*(s**2 - k**2)*ddf + s*(2*s**2 - h**2 - k**2)*df - n*(n+1)*s**2*f)/f

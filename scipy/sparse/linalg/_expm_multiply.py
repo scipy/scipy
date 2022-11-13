@@ -142,7 +142,7 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
     Warns
     -----
     UserWarning
-        If `A` is a linear operator and ``traceA==None`` (default).
+        If `A` is a linear operator and ``traceA=None`` (default).
 
     Notes
     -----
@@ -179,6 +179,7 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import expm, expm_multiply
     >>> A = csc_matrix([[1, 0], [0, 1]])
@@ -400,6 +401,7 @@ class LazyOperatorNormInfo:
     outside of this module.
 
     """
+
     def __init__(self, A, A_1_norm=None, ell=2, scale=1):
         """
         Provide the operator and some norm-related information.

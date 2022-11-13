@@ -3,7 +3,6 @@ py3.install_sources([
     '_arffread.py',
     'arffread.py'
   ],
-  pure: false,
   subdir: 'scipy/io/arff'
 )
 

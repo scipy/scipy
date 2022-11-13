@@ -122,6 +122,7 @@ def electrocardiogram():
     E.g., the first few seconds show the electrical activity of a heart in
     normal sinus rhythm as seen below.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> fs = 360
     >>> time = np.arange(ecg.size) / fs

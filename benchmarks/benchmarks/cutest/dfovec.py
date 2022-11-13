@@ -1,5 +1,5 @@
 # This is a python implementation of dfovec.m,
-# provided at http://www.mcs.anl.gov/~more/dfo/
+# provided at https://github.com/POptUS/BenDFO
 import numpy as np
 
 
@@ -312,7 +312,7 @@ def dfovec(m, n, x, nprob):
             tmp2 = np.exp(-x[5] * (temp - x[8]) ** 2)
             tmp3 = np.exp(-x[6] * (temp - x[9]) ** 2)
             tmp4 = np.exp(-x[7] * (temp - x[10]) ** 2)
-            fvec[i] = y5[i] - (x[0] * tmp1 + x[1] * tmp2 + x[2] * tmp3 + x[3] * tmp4)
+            fvec[i] = y5[i] - (x[0] * tmp1 + x[1] * tmp2 + x[2] * tmp3 + x[3] * tmp4)  # noqa
     elif nprob == 19:  # Bdqrtic
         # n >= 5, m = (n-4)*2
         for i in range(n - 4):
@@ -335,7 +335,7 @@ def dfovec(m, n, x, nprob):
             ss = 0
             for j in range(n):
                 v2 = np.sqrt(x[i] ** 2 + (i + 1) / (j + 1))
-                ss = ss + v2 * ((np.sin(np.log(v2))) ** 5 + (np.cos(np.log(v2))) ** 5)
+                ss = ss + v2 * ((np.sin(np.log(v2))) ** 5 + (np.cos(np.log(v2))) ** 5)  # noqa
             fvec[i] = 1400 * x[i] + (i - 49) ** 3 + ss
     elif nprob == 22:  # Heart8ls
         # m = n = 8
