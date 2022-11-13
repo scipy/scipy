@@ -255,10 +255,16 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef int i = _elementary_basis_index(seq[0])
     cdef int j = _elementary_basis_index(seq[1])
     cdef int k = _elementary_basis_index(seq[2])
+    
+    # quick renormalization of transformed quaternion, assumes |q| = 1
+    cdef int norm_squared 
 
     is_proper = i == k
     if is_proper:
         k = 3 - i - j # get third axis
+        norm_squared = 1
+    else:
+        norm_squared = 2
         
     # Step 0
     # Check if permutation is even (+1) or odd (-1)     
@@ -292,7 +298,7 @@ cdef double[:, :] _compute_euler_from_quat(
         
         # Step 2
         # Ensure less than unit norm
-        cos_theta_2 = 2*(a**2 + b**2)/(a**2 + b**2 + c**2 + d**2) - 1
+        cos_theta_2 = 2*(a**2 + b**2)/norm_squared - 1
         cos_theta_2 = min(cos_theta_2, 1)
         cos_theta_2 = max(cos_theta_2, -1)
         
@@ -300,7 +306,7 @@ cdef double[:, :] _compute_euler_from_quat(
         # Compute second angle...
         _angles[1] = acos(cos_theta_2)
 
-        # ... and check if equalt to is 0 or pi, causing a singularity
+        # ... and check if equal to is 0 or pi, causing a singularity
         safe1 = abs(_angles[1]) >= eps
         safe2 = abs(_angles[1] - <double>pi) >= eps
         safe = safe1 and safe2
