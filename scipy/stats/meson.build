@@ -213,7 +213,7 @@ py3.install_sources([
     '_mstats_extras.py',
     '_multivariate.py',
     '_odds_ratio.py',
-    '_page_trend_test.py',
+    '_page_trend_test_.py',
     '_qmc.py',
     '_relative_risk.py',
     '_resampling.py',
