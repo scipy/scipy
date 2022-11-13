@@ -314,8 +314,8 @@ cdef double[:, :] _compute_euler_from_quat(
         # Step 4
         # compute first and third angles, according to case
         if safe:
-            half_sum = atan2(b, a) # == (alpha+gamma)/2
-            half_diff = atan2(-d, c) # == (alpha-gamma)/2     
+            half_sum = atan2(b, a) # == (angles[0] + angles[2])/2
+            half_diff = atan2(-d, c) # == (angles[0] - angles[2])/2 
         
             _angles[0] = half_sum + half_diff
             _angles[2] = half_sum - half_diff
