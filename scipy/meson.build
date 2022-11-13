@@ -34,6 +34,8 @@ if is_windows
   endif
 endif
 
+thread_dep = dependency('threads', required: false)
+
 # NumPy include directory - needed in all submodules
 incdir_numpy = run_command(py3,
   [
@@ -68,14 +70,6 @@ incdir_pybind11 = run_command(py3,
 inc_pybind11 = include_directories(incdir_pybind11)
 
 # Pythran include directory and build flags
-use_pythran = run_command(py3,
-  [
-    '-c',
-    'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 1))'
-  ],
-  check: true
-).stdout().strip() == '1'
-
 if use_pythran
   incdir_pythran = run_command(py3,
     [
@@ -162,7 +156,7 @@ generate_config = custom_target(
   output: '__config__.py',
   input: '../tools/config_utils.py',
   command: [py3, '@INPUT@', '@OUTPUT@'],
-  install_dir: py3.get_install_dir(pure: false) / 'scipy'
+  install_dir: py3.get_install_dir() / 'scipy'
 )
 
 generate_version = custom_target(
@@ -173,7 +167,7 @@ generate_version = custom_target(
   output: 'version.py',
   input: '../tools/version_utils.py',
   command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
-  install_dir: py3.get_install_dir(pure: false) / 'scipy'
+  install_dir: py3.get_install_dir() / 'scipy'
 )
 
 python_sources = [
@@ -187,13 +181,11 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy'
 )
 
 py3.install_sources(
   ['_build_utils/tests/test_scipy_version.py'],
-  pure: false,
   subdir: 'scipy/_lib/tests'
 )
 

@@ -1874,13 +1874,6 @@ class TestCompareWithStats:
                         res3 = stats.kstest(xm, y, alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res3))
 
-    def test_nametuples_agree(self):
-        result = stats.kstest([1, 2], [3, 4])
-        assert_(isinstance(result, stats._stats_py.KstestResult))
-        result2 = stats._stats_py.Ks_2sampResult(result.statistic, result.pvalue)
-        assert_(isinstance(result2, stats._stats_py.Ks_2sampResult))
-        assert_equal(result, result2)
-
 
 class TestBrunnerMunzel:
     # Data from (Lumley, 1996)

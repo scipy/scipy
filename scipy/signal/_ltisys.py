@@ -794,6 +794,7 @@ class TransferFunctionContinuous(TransferFunction, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `TransferFunction` system.
@@ -1129,6 +1130,7 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `ZerosPolesGain` system.
@@ -1263,7 +1265,7 @@ class StateSpace(LinearTimeInvariant):
     Examples
     --------
     >>> from scipy import signal
-
+    >>> import numpy as np
     >>> a = np.array([[0, 1], [0, 0]])
     >>> b = np.array([[0], [1]])
     >>> c = np.array([[1, 0]])
@@ -1683,6 +1685,7 @@ class StateSpaceContinuous(StateSpace, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `StateSpace` system.
@@ -1803,6 +1806,10 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     xout : ndarray
         The time-evolution of the state-vector.
 
+    See Also
+    --------
+    lsim
+
     Notes
     -----
     This function uses `scipy.integrate.odeint` to solve the
@@ -1814,15 +1821,12 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
-    See Also
-    --------
-    lsim
-
     Examples
     --------
     We'll use `lsim2` to simulate an analog Bessel filter applied to
     a signal.
 
+    >>> import numpy as np
     >>> from scipy.signal import bessel, lsim2
     >>> import matplotlib.pyplot as plt
 
@@ -2001,6 +2005,7 @@ def lsim(system, U, T, X0=None, interp=True):
     We'll use `lsim` to simulate an analog Bessel filter applied to
     a signal.
 
+    >>> import numpy as np
     >>> from scipy.signal import bessel, lsim
     >>> import matplotlib.pyplot as plt
 
@@ -2389,7 +2394,7 @@ def step(system, X0=None, T=None, N=None):
     yout : 1D ndarray
         Step response of system.
 
-    See also
+    See Also
     --------
     scipy.signal.step2
 
@@ -2468,7 +2473,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     yout : 1D ndarray
         Step response of system.
 
-    See also
+    See Also
     --------
     scipy.signal.step
 
@@ -3160,6 +3165,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     algorithms.  This is example number 1 from section 4 of the reference KNV
     publication ([1]_):
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -3447,6 +3453,7 @@ def dlsim(system, u, t=None, x0=None):
     A simple integrator transfer function with a discrete time step of 1.0
     could be implemented as:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> tf = ([1.0,], [1.0, -1.0], 1.0)
     >>> t_in = [0.0, 1.0, 2.0, 3.0]
@@ -3554,6 +3561,7 @@ def dimpulse(system, x0=None, t=None, n=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -3640,6 +3648,7 @@ def dstep(system, x0=None, t=None, n=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 

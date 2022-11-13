@@ -36,6 +36,7 @@ def spline_filter(Iin, lmbda=5.0):
     We can filter an multi dimentional signal (ex: 2D image) using cubic
     B-spline filter:
 
+    >>> import numpy as np
     >>> from scipy.signal import spline_filter
     >>> import matplotlib.pyplot as plt
     >>> orig_img = np.eye(20)  # create an image
@@ -167,6 +168,7 @@ def bspline(x, n):
     --------
     We can calculate B-Spline basis function of several orders:
 
+    >>> import numpy as np
     >>> from scipy.signal import bspline, cubic, quadratic
     >>> bspline(0.0, 1)
     1
@@ -227,6 +229,7 @@ def gauss_spline(x, n):
     We can calculate B-Spline basis functions approximated by a gaussian
     distribution:
 
+    >>> import numpy as np
     >>> from scipy.signal import gauss_spline, bspline
     >>> knots = np.array([-1.0, 0.0, -1.0])
     >>> gauss_spline(knots, 3)
@@ -265,6 +268,7 @@ def cubic(x):
     --------
     We can calculate B-Spline basis function of several orders:
 
+    >>> import numpy as np
     >>> from scipy.signal import bspline, cubic, quadratic
     >>> bspline(0.0, 1)
     1
@@ -317,6 +321,7 @@ def quadratic(x):
     --------
     We can calculate B-Spline basis function of several orders:
 
+    >>> import numpy as np
     >>> from scipy.signal import bspline, cubic, quadratic
     >>> bspline(0.0, 1)
     1
@@ -457,6 +462,7 @@ def cspline1d(signal, lamb=0.0):
     We can filter a signal to reduce and smooth out high-frequency noise with
     a cubic spline:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import cspline1d, cspline1d_eval
     >>> rng = np.random.default_rng()
@@ -507,6 +513,7 @@ def qspline1d(signal, lamb=0.0):
     We can filter a signal to reduce and smooth out high-frequency noise with
     a quadratic spline:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import qspline1d, qspline1d_eval
     >>> rng = np.random.default_rng()
@@ -562,6 +569,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     We can filter a signal to reduce and smooth out high-frequency noise with
     a cubic spline:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import cspline1d, cspline1d_eval
     >>> rng = np.random.default_rng()
@@ -637,6 +645,7 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     We can filter a signal to reduce and smooth out high-frequency noise with
     a quadratic spline:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import qspline1d, qspline1d_eval
     >>> rng = np.random.default_rng()

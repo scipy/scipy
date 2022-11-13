@@ -92,16 +92,13 @@ _sobol = py3.extension_module('_sobol',
 py3.install_sources([
     '_sobol_direction_numbers.npz'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
-
-pthread = dependency('threads')
 
 _qmc_cy = py3.extension_module('_qmc_cy',
   cython_gen_cpp.process('_qmc_cy.pyx'),
   cpp_args: cython_cpp_args,
-  dependencies: [pthread],
+  dependencies: thread_dep,
   include_directories: [inc_np],
   link_args: version_link_args,
   install: true,
@@ -185,8 +182,7 @@ if use_pythran
   )
 else
   py3.install_sources(
-    ['_hypotests_pythran.py'],
-    pure: false,
+    ['_stats_pythran.py'],
     subdir: 'scipy/stats'
   )
 endif
@@ -242,7 +238,6 @@ py3.install_sources([
     'statlib.py',
     'stats.py'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 
@@ -250,7 +245,6 @@ py3.install_sources([
     '_biasedurn.pxd',
     '_stats.pxd'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 
@@ -258,7 +252,6 @@ py3.install_sources([
     '_qmc_cy.pyi',
     '_sobol.pyi'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 

@@ -20,10 +20,9 @@ Produces output similar to autodoc, except
 - See Also link to the actual function documentation is inserted
 
 """
-import os, sys, re, pydoc
+import sys, pydoc
 import sphinx
 import inspect
-import collections
 import textwrap
 import warnings
 
@@ -125,8 +124,7 @@ def wrap_mangling_directive(base_directive):
             # XXX deprecation that we should fix someday using Signature (?)
             with warnings.catch_warnings(record=True):
                 warnings.simplefilter('ignore')
-                signature = inspect.formatargspec(
-                    args, varargs, keywords, defaults)
+                signature = str(inspect.signature(obj))
 
             # Produce output
             self.options['noindex'] = True

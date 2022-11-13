@@ -14,8 +14,7 @@ from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom
-from . import _mvn, _covariance
-
+from . import _mvn, _covariance, contingency
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -28,7 +27,9 @@ __all__ = ['multivariate_normal',
            'random_correlation',
            'unitary_group',
            'multivariate_t',
-           'multivariate_hypergeom']
+           'multivariate_hypergeom',
+           'random_table',
+           'uniform_direction']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -418,7 +419,7 @@ class multivariate_normal_gen(multi_rv_generic):
             return dim, mean, cov_object
 
     def _process_parameters_Covariance(self, mean, cov):
-        dim = cov.dimensionality
+        dim = cov.shape[-1]
         mean = np.array([0.]) if mean is None else mean
         message = (f"`cov` represents a covariance matrix in {dim} dimensions,"
                    f"and so `mean` must be broadcastable to shape {(dim,)}")
@@ -745,11 +746,20 @@ class multivariate_normal_gen(multi_rv_generic):
 
         """
         dim, mean, cov_object = self._process_parameters(mean, cov)
-        cov = cov_object.covariance
-
         random_state = self._get_random_state(random_state)
-        out = random_state.multivariate_normal(mean, cov, size)
-        return _squeeze_output(out)
+
+        if isinstance(cov_object, _covariance.CovViaPSD):
+            cov = cov_object.covariance
+            out = random_state.multivariate_normal(mean, cov, size)
+            out = _squeeze_output(out)
+        else:
+            size = size or tuple()
+            if not np.iterable(size):
+                size = (size,)
+            shape = tuple(size) + (cov_object.shape[-1],)
+            x = random_state.normal(size=shape)
+            out = mean + cov_object.colorize(x)
+        return out
 
     def entropy(self, mean=None, cov=1):
         """Compute the differential entropy of the multivariate normal.
@@ -856,8 +866,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
-        return self._dist.rvs(self.mean, self.cov_object.covariance, size,
-                              random_state)
+        return self._dist.rvs(self.mean, self.cov_object, size, random_state)
 
     def entropy(self):
         """Computes the differential entropy of the multivariate normal.
@@ -5067,3 +5076,618 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
         method.__doc__, mhg_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__,
                                       mhg_docdict_params)
+
+
+class random_table_gen(multi_rv_generic):
+    r"""Contingency tables from independent samples with fixed marginal sums.
+
+    This is the distribution of random tables with given row and column vector
+    sums. This distribution represents the set of random tables under the null
+    hypothesis that rows and columns are independent. It is used in hypothesis
+    tests of independence.
+
+    Because of assumed independence, the expected frequency of each table
+    element can be computed from the row and column sums, so that the
+    distribution is completely determined by these two vectors.
+
+    Methods
+    -------
+    logpmf(x)
+        Log-probability of table `x` to occur in the distribution.
+    pmf(x)
+        Probability of table `x` to occur in the distribution.
+    mean(row, col)
+        Mean table.
+    rvs(row, col, size=None, method=None, random_state=None)
+        Draw random tables with given row and column vector sums.
+
+    Parameters
+    ----------
+    %(_doc_row_col)s
+    %(_doc_random_state)s
+
+    Notes
+    -----
+    %(_doc_row_col_note)s
+
+    Random elements from the distribution are generated either with Boyett's
+    [1]_ or Patefield's algorithm [2]_. Boyett's algorithm has
+    O(N) time and space complexity, where N is the total sum of entries in the
+    table. Patefield's algorithm has O(K x log(N)) time complexity, where K is
+    the number of cells in the table and requires only a small constant work
+    space. By default, the `rvs` method selects the fastest algorithm based on
+    the input, but you can specify the algorithm with the keyword `method`.
+    Allowed values are "boyett" and "patefield".
+
+    .. versionadded:: 1.10.0
+
+    Examples
+    --------
+    >>> from scipy.stats import random_table
+
+    >>> row = [1, 5]
+    >>> col = [2, 3, 1]
+    >>> random_table.mean(row, col)
+    array([[0.33333333, 0.5       , 0.16666667],
+           [1.66666667, 2.5       , 0.83333333]])
+
+    Alternatively, the object may be called (as a function) to fix the row
+    and column vector sums, returning a "frozen" distribution.
+
+    >>> dist = random_table(row, col)
+    >>> dist.rvs(random_state=123)
+    array([[1., 0., 0.],
+           [1., 3., 1.]])
+
+    References
+    ----------
+    .. [1] J. Boyett, AS 144 Appl. Statist. 28 (1979) 329-332
+    .. [2] W.M. Patefield, AS 159 Appl. Statist. 30 (1981) 91-97
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(seed)
+
+    def __call__(self, row, col, *, seed=None):
+        """Create a frozen distribution of tables with given marginals.
+
+        See `random_table_frozen` for more information.
+        """
+        return random_table_frozen(row, col, seed=seed)
+
+    def logpmf(self, x, row, col):
+        """Log-probability of table to occur in the distribution.
+
+        Parameters
+        ----------
+        %(_doc_x)s
+        %(_doc_row_col)s
+
+        Returns
+        -------
+        logpmf : ndarray or scalar
+            Log of the probability mass function evaluated at `x`.
+
+        Notes
+        -----
+        %(_doc_row_col_note)s
+
+        If row and column marginals of `x` do not match `row` and `col`,
+        negative infinity is returned.
+
+        Examples
+        --------
+        >>> from scipy.stats import random_table
+        >>> import numpy as np
+
+        >>> x = [[1, 5, 1], [2, 3, 1]]
+        >>> row = np.sum(x, axis=1)
+        >>> col = np.sum(x, axis=0)
+        >>> random_table.logpmf(x, row, col)
+        -1.6306401200847027
+
+        Alternatively, the object may be called (as a function) to fix the row
+        and column vector sums, returning a "frozen" distribution.
+
+        >>> d = random_table(row, col)
+        >>> d.logpmf(x)
+        -1.6306401200847027
+        """
+        r, c, n = self._process_parameters(row, col)
+        x = np.asarray(x)
+
+        if x.ndim < 2:
+            raise ValueError("`x` must be at least two-dimensional")
+
+        dtype_is_int = np.issubdtype(x.dtype, np.integer)
+        with np.errstate(invalid='ignore'):
+            if not dtype_is_int and not np.all(x.astype(int) == x):
+                raise ValueError("`x` must contain only integral values")
+
+        # x does not contain NaN if we arrive here
+        if np.any(x < 0):
+            raise ValueError("`x` must contain only non-negative values")
+
+        r2 = np.sum(x, axis=-1)
+        c2 = np.sum(x, axis=-2)
+
+        if r2.shape[-1] != len(r):
+            raise ValueError("shape of `x` must agree with `row`")
+
+        if c2.shape[-1] != len(c):
+            raise ValueError("shape of `x` must agree with `col`")
+
+        res = np.empty(x.shape[:-2])
+
+        mask = np.all(r2 == r, axis=-1) & np.all(c2 == c, axis=-1)
+
+        def lnfac(x):
+            return gammaln(x + 1)
+
+        res[mask] = (np.sum(lnfac(r), axis=-1) + np.sum(lnfac(c), axis=-1)
+                     - lnfac(n) - np.sum(lnfac(x[mask]), axis=(-1, -2)))
+        res[~mask] = -np.inf
+
+        return res[()]
+
+    def pmf(self, x, row, col):
+        """Probability of table to occur in the distribution.
+
+        Parameters
+        ----------
+        %(_doc_x)s
+        %(_doc_row_col)s
+
+        Returns
+        -------
+        pmf : ndarray or scalar
+            Probability mass function evaluated at `x`.
+
+        Notes
+        -----
+        %(_doc_row_col_note)s
+
+        If row and column marginals of `x` do not match `row` and `col`,
+        zero is returned.
+
+        Examples
+        --------
+        >>> from scipy.stats import random_table
+        >>> import numpy as np
+
+        >>> x = [[1, 5, 1], [2, 3, 1]]
+        >>> row = np.sum(x, axis=1)
+        >>> col = np.sum(x, axis=0)
+        >>> random_table.pmf(x, row, col)
+        0.19580419580419592
+
+        Alternatively, the object may be called (as a function) to fix the row
+        and column vector sums, returning a "frozen" distribution.
+
+        >>> d = random_table(row, col)
+        >>> d.pmf(x)
+        0.19580419580419592
+        """
+        return np.exp(self.logpmf(x, row, col))
+
+    def mean(self, row, col):
+        """Mean of distribution of conditional tables.
+        %(_doc_mean_params)s
+
+        Returns
+        -------
+        mean: ndarray
+            Mean of the distribution.
+
+        Notes
+        -----
+        %(_doc_row_col_note)s
+
+        Examples
+        --------
+        >>> from scipy.stats import random_table
+
+        >>> row = [1, 5]
+        >>> col = [2, 3, 1]
+        >>> random_table.mean(row, col)
+        array([[0.33333333, 0.5       , 0.16666667],
+               [1.66666667, 2.5       , 0.83333333]])
+
+        Alternatively, the object may be called (as a function) to fix the row
+        and column vector sums, returning a "frozen" distribution.
+
+        >>> d = random_table(row, col)
+        >>> d.mean()
+        array([[0.33333333, 0.5       , 0.16666667],
+               [1.66666667, 2.5       , 0.83333333]])
+        """
+        r, c, n = self._process_parameters(row, col)
+        return np.outer(r, c) / n
+
+    def rvs(self, row, col, *, size=None, method=None, random_state=None):
+        """Draw random tables with fixed column and row marginals.
+
+        Parameters
+        ----------
+        %(_doc_row_col)s
+        size : integer, optional
+            Number of samples to draw (default 1).
+        method : str, optional
+            Which method to use, "boyett" or "patefield". If None (default),
+            selects the fastest method for this input.
+        %(_doc_random_state)s
+
+        Returns
+        -------
+        rvs : ndarray
+            Random 2D tables of shape (`size`, `len(row)`, `len(col)`).
+
+        Notes
+        -----
+        %(_doc_row_col_note)s
+
+        Examples
+        --------
+        >>> from scipy.stats import random_table
+
+        >>> row = [1, 5]
+        >>> col = [2, 3, 1]
+        >>> random_table.rvs(row, col, random_state=123)
+        array([[1., 0., 0.],
+               [1., 3., 1.]])
+
+        Alternatively, the object may be called (as a function) to fix the row
+        and column vector sums, returning a "frozen" distribution.
+
+        >>> d = random_table(row, col)
+        >>> d.rvs(random_state=123)
+        array([[1., 0., 0.],
+               [1., 3., 1.]])
+        """
+        r, c, n = self._process_parameters(row, col)
+        size, shape = self._process_size_shape(size, r, c)
+
+        random_state = self._get_random_state(random_state)
+        meth = self._process_rvs_method(method, r, c, n)
+
+        return meth(r, c, n, size, random_state).reshape(shape)
+
+    @staticmethod
+    def _process_parameters(row, col):
+        """
+        Check that row and column vectors are one-dimensional, that they do
+        not contain negative or non-integer entries, and that the sums over
+        both vectors are equal.
+        """
+        r = np.array(row, dtype=np.int_, copy=True)
+        c = np.array(col, dtype=np.int_, copy=True)
+
+        if np.ndim(r) != 1:
+            raise ValueError("`row` must be one-dimensional")
+        if np.ndim(c) != 1:
+            raise ValueError("`col` must be one-dimensional")
+
+        if np.any(r < 0):
+            raise ValueError("each element of `row` must be non-negative")
+        if np.any(c < 0):
+            raise ValueError("each element of `col` must be non-negative")
+
+        n = np.sum(r)
+        if n != np.sum(c):
+            raise ValueError("sums over `row` and `col` must be equal")
+
+        if not np.all(r == np.asarray(row)):
+            raise ValueError("each element of `row` must be an integer")
+        if not np.all(c == np.asarray(col)):
+            raise ValueError("each element of `col` must be an integer")
+
+        return r, c, n
+
+    @staticmethod
+    def _process_size_shape(size, r, c):
+        """
+        Compute the number of samples to be drawn and the shape of the output
+        """
+        shape = (len(r), len(c))
+
+        if size is None:
+            return 1, shape
+
+        size = np.atleast_1d(size)
+        if not np.issubdtype(size.dtype, np.integer) or np.any(size < 0):
+            raise ValueError("`size` must be a non-negative integer or `None`")
+
+        return np.prod(size), tuple(size) + shape
+
+    @classmethod
+    def _process_rvs_method(cls, method, r, c, n):
+        known_methods = {
+            None: cls._rvs_select(r, c, n),
+            "boyett": cls._rvs_boyett,
+            "patefield": cls._rvs_patefield,
+        }
+        try:
+            return known_methods[method]
+        except KeyError:
+            raise ValueError(f"'{method}' not recognized, "
+                             f"must be one of {set(known_methods)}")
+
+    @classmethod
+    def _rvs_select(cls, r, c, n):
+        # TODO find optimal empirical threshold with benchmarks,
+        # for now we always return "boyett", because "patefield"
+        # is not yet implemented.
+
+        # Example:
+        # k = len(r) * len(c)  # number of cells
+        # if n > fac * np.log(n) * k:
+        #     return cls._rvs_patefield
+        # return cls._rvs_boyett
+        # 'fac' has to be estimated empirically
+        return cls._rvs_boyett
+
+    @staticmethod
+    def _rvs_boyett(row, col, tot, size, random_state):
+        x = np.repeat(np.arange(len(row)), row)
+        y = np.repeat(np.arange(len(col)), col)
+
+        def crosstab(x, y):
+            return contingency.crosstab(x, y).count
+
+        tables = [crosstab(x, random_state.permutation(y))
+                  for i in range(size)]
+        return np.asarray(tables)
+
+    @staticmethod
+    def _rvs_patefield(row, col, tot, size, random_state):
+        # TODO call into C code
+        raise NotImplementedError
+
+
+random_table = random_table_gen()
+
+
+class random_table_frozen(multi_rv_frozen):
+    def __init__(self, row, col, *, seed=None):
+        self._dist = random_table_gen(seed)
+        self._params = self._dist._process_parameters(row, col)
+
+        # monkey patch self._dist
+        def _process_parameters(r, c):
+            return self._params
+        self._dist._process_parameters = _process_parameters
+
+    def logpmf(self, x):
+        return self._dist.logpmf(x, None, None)
+
+    def pmf(self, x):
+        return self._dist.pmf(x, None, None)
+
+    def mean(self):
+        return self._dist.mean(None, None)
+
+    def rvs(self, size=None, method=None, random_state=None):
+        # optimisations are possible here
+        return self._dist.rvs(None, None, size=size, method=method,
+                              random_state=random_state)
+
+
+_ctab_doc_row_col = """\
+row : array_like
+    Sum of table entries in each row.
+col : array_like
+    Sum of table entries in each column."""
+
+_ctab_doc_x = """\
+x : array-like
+   Two-dimensional table of non-negative integers, or a
+   multi-dimensional array with the last two dimensions
+   corresponding with the tables."""
+
+_ctab_doc_row_col_note = """\
+The row and column vectors must be one-dimensional, not empty,
+and each sum up to the same value. They cannot contain negative
+or noninteger entries."""
+
+_ctab_doc_mean_params = f"""
+Parameters
+----------
+{_ctab_doc_row_col}"""
+
+_ctab_doc_row_col_note_frozen = """\
+See class definition for a detailed description of parameters."""
+
+_ctab_docdict = {
+    "_doc_random_state": _doc_random_state,
+    "_doc_row_col": _ctab_doc_row_col,
+    "_doc_x": _ctab_doc_x,
+    "_doc_mean_params": _ctab_doc_mean_params,
+    "_doc_row_col_note": _ctab_doc_row_col_note,
+}
+
+_ctab_docdict_frozen = _ctab_docdict.copy()
+_ctab_docdict_frozen.update({
+    "_doc_row_col": "",
+    "_doc_mean_params": "",
+    "_doc_row_col_note": _ctab_doc_row_col_note_frozen,
+})
+
+
+def _docfill(obj, docdict, template=None):
+    obj.__doc__ = doccer.docformat(template or obj.__doc__, docdict)
+
+
+# Set frozen generator docstrings from corresponding docstrings in
+# random_table and fill in default strings in class docstrings
+_docfill(random_table_gen, _ctab_docdict)
+for name in ['logpmf', 'pmf', 'mean', 'rvs']:
+    method = random_table_gen.__dict__[name]
+    method_frozen = random_table_frozen.__dict__[name]
+    _docfill(method_frozen, _ctab_docdict_frozen, method.__doc__)
+    _docfill(method, _ctab_docdict)
+
+
+class uniform_direction_gen(multi_rv_generic):
+    r"""A vector-valued uniform direction.
+
+    Return a random direction (unit vector).
+
+    The `dim` keyword specifies the dimension.
+
+    Methods
+    -------
+    rvs(dim=None, size=1, random_state=None)
+        Draw random directions.
+
+    Parameters
+    ----------
+    dim : scalar
+        Dimension of directions.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        Used for drawing random variates.
+        If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is `None`.
+
+    Notes
+    -----
+    This distribution generates unit vectors uniformly distributed on
+    the surface of a hypersphere. These can be interpreted as random
+    directions.
+    For example, if `dim` is 3, 3D vectors from the surface of :math:`S^2`
+    will be sampled.
+
+    References
+    ----------
+    .. [1] Marsaglia, G. (1972). "Choosing a Point from the Surface of a
+           Sphere". Annals of Mathematical Statistics. 43 (2): 645-646.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import uniform_direction
+    >>> x = uniform_direction.rvs(3)
+    >>> np.linalg.norm(x)
+    1.
+
+    This generates one random direction, a vector on the surface of
+    :math:`S^2`.
+
+    Alternatively, the object may be called (as a function) to fix the `dim`
+    parameter, return a "frozen" `random_direction` random variable:
+
+    >>> rv = uniform_direction(5)
+
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__)
+
+    def __call__(self, dim=None, seed=None):
+        """Create a frozen n-dimensional uniform direction distribution.
+
+        See `uniform_direction` for more information.
+        """
+        return uniform_direction_frozen(dim, seed=seed)
+
+    def _process_parameters(self, dim):
+        """Dimension N must be specified; it cannot be inferred."""
+        if dim is None or not np.isscalar(dim) or dim < 1 or dim != int(dim):
+            raise ValueError("Dimension of vector must be specified, "
+                             "and must be an integer greater than 0.")
+
+        return int(dim)
+
+    def rvs(self, dim, size=None, random_state=None):
+        """Draw random samples from S(N-1).
+
+        Parameters
+        ----------
+        dim : integer
+            Dimension of space (N).
+        size : int or tuple of ints, optional
+            Given a shape of, for example, (m,n,k), m*n*k samples are
+            generated, and packed in an m-by-n-by-k arrangement.
+            Because each sample is N-dimensional, the output shape
+            is (m,n,k,N). If no shape is specified, a single (N-D)
+            sample is returned.
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+            Pseudorandom number generator state used to generate resamples.
+
+            If `random_state` is ``None`` (or `np.random`), the
+            `numpy.random.RandomState` singleton is used.
+            If `random_state` is an int, a new ``RandomState`` instance is
+            used, seeded with `random_state`.
+            If `random_state` is already a ``Generator`` or ``RandomState``
+            instance then that instance is used.
+
+        Returns
+        -------
+        rvs : ndarray
+            Random direction vectors
+
+        """
+        random_state = self._get_random_state(random_state)
+        if size is None:
+            size = np.array([], dtype=int)
+        size = np.atleast_1d(size)
+
+        dim = self._process_parameters(dim)
+
+        samples = _sample_uniform_direction(dim, size, random_state)
+        return samples
+
+
+uniform_direction = uniform_direction_gen()
+
+
+class uniform_direction_frozen(multi_rv_frozen):
+    def __init__(self, dim=None, seed=None):
+        """Create a frozen n-dimensional uniform direction distribution.
+
+        Parameters
+        ----------
+        dim : int
+            Dimension of matrices
+        seed : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
+
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
+
+        Examples
+        --------
+        >>> from scipy.stats import uniform_direction
+        >>> x = uniform_direction(3)
+        >>> x.rvs()
+
+        """
+        self._dist = uniform_direction_gen(seed)
+        self.dim = self._dist._process_parameters(dim)
+
+    def rvs(self, size=None, random_state=None):
+        return self._dist.rvs(self.dim, size, random_state)
+
+
+def _sample_uniform_direction(dim, size, random_state):
+    """
+    Private method to generate uniform directions
+    Reference: Marsaglia, G. (1972). "Choosing a Point from the Surface of a
+               Sphere". Annals of Mathematical Statistics. 43 (2): 645-646.
+    """
+    samples_shape = np.append(size, dim)
+    samples = random_state.standard_normal(samples_shape)
+    samples /= np.linalg.norm(samples, axis=-1, keepdims=True)
+    return samples
