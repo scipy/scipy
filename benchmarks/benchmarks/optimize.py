@@ -111,6 +111,11 @@ class _BenchOptimizers(Benchmark):
             newres.mean_njev = np.mean([r.njev for r in result_list])
             newres.mean_nhev = np.mean([r.nhev for r in result_list])
             newres.mean_time = np.mean([r.time for r in result_list])
+            funs = [r.fun for r in result_list]
+            newres.max_obj = np.max(funs)
+            newres.min_obj = np.min(funs)
+            newres.mean_obj = np.mean(funs)
+
             newres.ntrials = len(result_list)
             newres.nfail = len([r for r in result_list if not r.success])
             newres.nsuccess = len([r for r in result_list if r.success])
@@ -264,10 +269,10 @@ class _BenchOptimizers(Benchmark):
         if methods is None:
             methods = MINIMIZE_METHODS
 
-        # L-BFGS-B, BFGS, trust-constr can use gradients, but examine
+        # L-BFGS-B, BFGS, trust-constr, SLSQP can use gradients, but examine
         # performance when numerical differentiation is used.
         fonly_methods = ["COBYLA", 'Powell', 'nelder-mead', 'L-BFGS-B', 'BFGS',
-                         'trust-constr']
+                         'trust-constr', 'SLSQP']
         for method in fonly_methods:
             if method not in methods:
                 continue
@@ -570,14 +575,14 @@ class BenchDFO(Benchmark):
     """
     Benchmark the optimizers with the CUTEST DFO benchmark of Moré and Wild.
     The original benchmark suite is available at
-    https://www.mcs.anl.gov/~more/dfo/.
+    https://github.com/POptUS/BenDFO
     """
 
     params = [
-        list(range(53)),
-        ["COBYLA", "Powell", "nelder-mead",
-         "L-BFGS-B", "BFGS", "trust-constr"],
-        ["mean_nfev", "mean_time"],
+        list(range(53)),  # adjust which problems to solve
+        ["COBYLA", "SLSQP", "Powell", "nelder-mead", "L-BFGS-B", "BFGS",
+         "trust-constr"],  # note: methods must also be listed in bench_run
+        ["mean_nfev", "min_obj"],  # defined in average_results
     ]
     param_names = ["DFO benchmark problem number", "solver", "result type"]
 

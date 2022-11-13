@@ -40,8 +40,8 @@ def find_branch_point(branch):
     https://stackoverflow.com/questions/1527234/finding-a-branch-point-with-git#4991675
 
     """
-    branch_commits = rev_list('HEAD', 1000)
-    main_commits = set(rev_list(branch, 1000))
+    branch_commits = rev_list('HEAD', 10000)
+    main_commits = set(rev_list(branch, 10000))
     for branch_commit in branch_commits:
         if branch_commit in main_commits:
             return branch_commit
