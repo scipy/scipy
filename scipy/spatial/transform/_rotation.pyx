@@ -98,6 +98,8 @@ cdef inline int _elementary_basis_index(uchar axis):
 cdef double[:, :] _compute_euler_from_matrix(
     np.ndarray[double, ndim=3] matrix, const uchar[:] seq, bint extrinsic=False
 ):
+    # Deprecated, see _compute_euler_from_quat
+    #
     # The algorithm assumes intrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation matrices which are transposition
     # rotation matrices used within Rotation.
@@ -105,6 +107,10 @@ cdef double[:, :] _compute_euler_from_matrix(
     # 1. Instead of transposing our representation, use the transpose of the
     #    O matrix as defined in the paper, and be careful to swap indices
     # 2. Reversing both axis sequence and angles for extrinsic rotations
+    #
+    # Based on Malcolm D. Shuster, F. Landis Markley, "General formula for
+    # extraction the Euler angles", Journal of guidance, control, and
+    # dynamics, vol. 29.1, pp. 215-221. 2006
 
     if extrinsic:
         seq = seq[::-1]
@@ -263,7 +269,7 @@ cdef double[:, :] _compute_euler_from_quat(
     # some forward definitions
     cdef double[:, :] angles = _empty2(num_rotations, 3)
     cdef double[:] _angles # accessor for each rotation
-    cdef double a, b, c, d, n2
+    cdef double a, b, c, d, cos_theta_2
     cdef double half_sum, half_diff
     cdef double eps = 1e-7
     cdef bint safe1, safe2, safe, adjust
@@ -283,12 +289,16 @@ cdef double[:, :] _compute_euler_from_quat(
             b = quat[ind, i] + quat[ind, k] * sign
             c = quat[ind, j] + quat[ind, 3]
             d = quat[ind, k] * sign - quat[ind, i]
-    
+        
         # Step 2
+        # Ensure less than unit norm
+        cos_theta_2 = 2*(a**2 + b**2)/(a**2 + b**2 + c**2 + d**2) - 1
+        cos_theta_2 = min(cos_theta_2, 1)
+        cos_theta_2 = max(cos_theta_2, -1)
+        
+        # Step 3
         # Compute second angle...
-        n2 = a**2 + b**2 + c**2 + d**2
-        #_angles[1] = 2*acos(sqrt((a**2 + b**2) / n2))
-        _angles[1] = np.arccos(2*(a**2 + b**2) / n2 - 1)
+        _angles[1] = acos(cos_theta_2)
 
         # ... and check if equalt to is 0 or pi, causing a singularity
         safe1 = abs(_angles[1]) >= eps
@@ -1549,15 +1559,15 @@ cdef class Rotation:
             return np.asarray(rotvec)
 
     @cython.embedsignature(True)
-    def as_euler(self, seq, degrees=False, algorithm = 'from_matrix'):
+    def as_euler(self, seq, degrees=False):
         """Represent as Euler angles.
 
         Any orientation can be expressed as a composition of 3 elementary
         rotations. Once the axis sequence has been chosen, Euler angles define
         the angle of rotation around each respective axis [1]_.
 
-        Either the algorithm from [2]_ or [4]_ has been used to calculate Euler 
-        angles for the rotation about a given sequence of axes.
+        The algorithm from [2]_ has been used to calculate Euler angles for the 
+        rotation about a given sequence of axes.
 
         Euler angles suffer from the problem of gimbal lock [3]_, where the
         representation loses a degree of freedom and it is not possible to
@@ -1594,14 +1604,11 @@ cdef class Rotation:
         References
         ----------
         .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
-        .. [2] Malcolm D. Shuster, F. Landis Markley, "General formula for
-               extraction the Euler angles", Journal of guidance, control, and
-               dynamics, vol. 29.1, pp. 215-221. 2006
-        .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
-        .. [4] Bernardes E, Viollet S (2022) Quaternion to Euler angles 
+        .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles 
                conversion: A direct, general and computationally efficient 
                method. PLoS ONE 17(11): e0276302. 
                https://doi.org/10.1371/journal.pone.0276302
+        .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
 
         Examples
         --------
@@ -1653,22 +1660,12 @@ cdef class Rotation:
                              "got {}".format(seq))
 
         seq = seq.lower()
-
-        if algorithm == 'from_matrix':
-            matrix = self.as_matrix()
-            if matrix.ndim == 2:
-                matrix = matrix[None, :, :]
-            angles = np.asarray(_compute_euler_from_matrix(
-                matrix, seq.encode(), extrinsic))
-        elif algorithm == 'from_quat':
-            quat = self.as_quat()
-            if quat.ndim == 1:
-                quat = quat[None, :]
-            angles = np.asarray(_compute_euler_from_quat(
-                    quat, seq.encode(), extrinsic))
-        else:
-            raise ValueError("Algorithm choices are `from_matrix` or "
-                             "`from_quat`, got {}".format(algorithm))
+            
+        quat = self.as_quat()
+        if quat.ndim == 1:
+            quat = quat[None, :]
+        angles = np.asarray(_compute_euler_from_quat(
+                quat, seq.encode(), extrinsic))
             
         if degrees:
             angles = np.rad2deg(angles)
