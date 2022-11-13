@@ -4933,7 +4933,7 @@ add_newdoc("fdtr",
     >>> ax.set_title("F distribution cumulative distribution function")
     >>> plt.show()
 
-    The F distribution is also available as ``scipy.stats.f``. Using `fdtr`
+    The F distribution is also available as `scipy.stats.f`. Using `fdtr`
     directly can be much faster than calling the ``cdf`` method of
     `scipy.stats.f`, especially for small arrays or individual values.
     To get the same results one must use the following parametrization:
@@ -5033,7 +5033,7 @@ add_newdoc("fdtrc",
     >>> ax.set_title("F distribution survival function")
     >>> plt.show()
 
-    The F distribution is also available as ``scipy.stats.f``. Using `fdtrc`
+    The F distribution is also available as `scipy.stats.f`. Using `fdtrc`
     directly can be much faster than calling the ``sf`` method of
     `scipy.stats.f`, especially for small arrays or individual values.
     To get the same results one must use the following parametrization:
@@ -5143,7 +5143,7 @@ add_newdoc("fdtri",
     >>> ax.set_ylim(0, 30)
     >>> plt.show()
 
-    The F distribution is also available as ``scipy.stats.f``. Using `fdtri`
+    The F distribution is also available as `scipy.stats.f`. Using `fdtri`
     directly can be much faster than calling the ``ppf`` method of
     `scipy.stats.f`, especially for small arrays or individual values.
     To get the same results one must use the following parametrization:
