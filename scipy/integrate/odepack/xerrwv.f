@@ -1,5 +1,6 @@
       subroutine xerrwv (msg, nmes, nerr, level, ni, i1, i2, nr, r1, r2)
-      integer msg, nmes, nerr, level, ni, i1, i2, nr,
+      character  msg*1
+      integer nmes, nerr, level, ni, i1, i2, nr,
      1   i, lun, lunit, mesflg, ncpw, nch, nwds
       double precision r1, r2
       dimension msg(nmes)
