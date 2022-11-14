@@ -1695,20 +1695,82 @@ add_newdoc("btdtr",
 
     See Also
     --------
+    btdtri: Inverse of the beta distribution CDF
     betainc
+    scipy.stats.beta: Beta distribution
 
     Notes
     -----
     This function is identical to the incomplete beta integral function
-    `betainc`.
+    `betainc`. Wrapper for the Cephes [1]_ routine `btdtr`.
 
-    Wrapper for the Cephes [1]_ routine `btdtr`.
+    The beta distribution is also available as `scipy.stats.beta`. Calling
+    `btdtr` directly can improve performance compared to the ``cdf`` method
+    of `scipy.stats.beta` (see last example below).
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Compute the function for ``a=2``, ``b=4`` at ``x=0.45``.
+
+    >>> import numpy as np
+    >>> from scipy.special import btdtr
+    >>> btdtr(2, 4, 0.45)
+    0.7437824999999998
+
+    Compute the function at several points by providing a NumPy array for `x`.
+
+    >>> x = np.array([0.1, 0.3, 0.7])
+    >>> btdtr(2, 4, x)
+    array([0.08146, 0.47178, 0.96922])
+
+    Plot the function for different parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> a_parameters = [2, 1, 10, 50]
+    >>> b_parameters = [1, 3, 5, 10]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(a_parameters, b_parameters, linestyles))
+    >>> x = np.linspace(0, 1, 1000)
+    >>> fig, ax = plt.subplots(figsize=(8, 6))
+    >>> for parameter_set in parameters_list:
+    ...     a, b, style = parameter_set
+    ...     btdtr_vals = btdtr(a, b, x)
+    ...     ax.plot(x, btdtr_vals, label=f"$a={a},\, b={b}$", ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("Beta distribution cumulative distribution function")
+    >>> plt.show()
+
+    Calculating the function for several parameter sets at multiple
+    points is possible by providing broadcasting compatible arrays for
+    `a`, `b` and `x`. Here we compute `btdtr` at 4 points for three
+    different values for `a`, resulting in a 3x4 array.
+
+    >>> a = np.array([[1], [3], [6]])
+    >>> x = np.array([0.1, 0.3, 0.5, 0.7])
+    >>> a.shape, x.shape
+    ((3, 1), (4,))
+
+    >>> btdtr(a, 8, x)
+    array([[5.69532790e-01, 9.42351990e-01, 9.96093750e-01, 9.99934390e-01],
+           [7.01908264e-02, 6.17217214e-01, 9.45312500e-01, 9.98409614e-01],
+           [9.20042967e-04, 1.65397476e-01, 7.09472656e-01, 9.81777187e-01]])
+
+    The beta distribution is also available as `scipy.stats.beta`. Using
+    `btdtr` directly can be much faster than callingthe ``cdf`` method
+    of `scipy.stats.beta`, especially for small arrays or individual
+    values. To get the same results one must use the following
+    parametrization: ``stats.beta(a, b).cdf(x)=btdtr(a, b, x)``.
+
+    >>> from scipy.stats import beta
+    >>> a, b, x = 2, 4, 0.45
+    >>> btdtr(a, b, x), beta(a, b).cdf(x)
+    (0.7437824999999998, 0.7437824999999998)
     """)
 
 add_newdoc("btdtri",
@@ -1742,20 +1804,83 @@ add_newdoc("btdtri",
     See Also
     --------
     betaincinv
-    btdtr
+    btdtr: Beta distribution cumulative distribution function
+    scipy.stats.beta: Beta distribution
 
     Notes
     -----
     The value of `x` is found by interval halving or Newton iterations.
-
     Wrapper for the Cephes [1]_ routine `incbi`, which solves the equivalent
     problem of finding the inverse of the incomplete beta integral.
+
+    The beta distribution is also available as `scipy.stats.beta`. Calling
+    `btdtri` directly can improve performance compared to the ``ppf`` method
+    of `scipy.stats.beta` (see last example below).
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Compute the function for ``a=2``, ``b=4`` at ``x=0.45``.
+
+    >>> import numpy as np
+    >>> from scipy.special import btdtri
+    >>> btdtri(2, 4, 0.45)
+    0.28946651072155144
+
+    Compute the function at several points by providing a NumPy array for `x`.
+
+    >>> x = np.array([0.1, 0.3, 0.7])
+    >>> btdtri(2, 4, x)
+    array([0.11223496, 0.21802692, 0.42200821])
+
+    Plot the function for different parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> a_parameters = [2, 1, 10, 50]
+    >>> b_parameters = [1, 3, 5, 10]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(a_parameters, b_parameters, linestyles))
+    >>> x = np.linspace(0, 1, 1000)
+    >>> fig, ax = plt.subplots(figsize=(8, 6))
+    >>> for parameter_set in parameters_list:
+    ...     a, b, style = parameter_set
+    ...     btdtri_vals = btdtri(a, b, x)
+    ...     ax.plot(x, btdtri_vals, label=f"$a={a},\, b={b}$", ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> title = "Beta distribution inverse cumulative distribution function"
+    >>> ax.set_title(title)
+    >>> plt.show()
+
+    Calculating the function for several parameter sets at multiple
+    points is possible by providing broadcasting compatible arrays for
+    `a`, `b` and `x`. Here we compute `btdtr` at 4 points for three
+    different values for `a`, resulting in a 3x4 array.
+
+    >>> a = np.array([[1], [3], [6]])
+    >>> x = np.array([0.1, 0.3, 0.5, 0.7])
+    >>> a.shape, x.shape
+    ((3, 1), (4,))
+
+    >>> btdtri(a, 8, x)
+    array([[0.01308372, 0.04360509, 0.08299596, 0.13971935],
+           [0.11582528, 0.19261045, 0.25857472, 0.33296688],
+           [0.26373026, 0.35593477, 0.42507666, 0.49625925]])
+
+    The beta distribution is also available as `scipy.stats.beta`. Using
+    `btdtri` directly can be much faster than callingthe ``ppf`` method
+    of `scipy.stats.beta`, especially for small arrays or individual
+    values. To get the same results one must use the following
+    parametrization: ``stats.beta(a, b).ppf(x)=btdtri(a, b, x)``.
+
+    >>> from scipy.stats import beta
+    >>> a, b, x = 2, 4, 0.45
+    >>> btdtri(a, b, x), beta(a, b).ppf(x)
+    (0.28946651072155144, 0.28946651072155144)
     """)
 
 add_newdoc("cbrt",
@@ -4957,7 +5082,7 @@ add_newdoc("fdtri",
         Optional output array for the function values
 
     Returns
-    -------
+    -------"
     x : scalar or ndarray
         The quantile corresponding to `p`.
 
