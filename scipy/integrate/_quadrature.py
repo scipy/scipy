@@ -971,6 +971,11 @@ def newton_cotes(rn, equal=0):
     B : float
         Error coefficient.
 
+    Notes
+    -----
+    Normally, the Newton-Cotes rules are used on smaller integration
+    regions and a composite rule is used to return the total integral.
+
     Examples
     --------
     Compute the integral of sin(x) in [0, :math:`\pi`]:
@@ -995,11 +1000,6 @@ def newton_cotes(rn, equal=0):
      6   2.000017814   1.78136e-05
      8   1.999999835   1.64725e-07
     10   2.000000001   1.14677e-09
-
-    Notes
-    -----
-    Normally, the Newton-Cotes rules are used on smaller integration
-    regions and a composite rule is used to return the total integral.
 
     """
     try:
