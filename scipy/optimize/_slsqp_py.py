@@ -215,6 +215,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     constraints=(),
                     maxiter=100, ftol=1.0E-6, iprint=1, disp=False,
                     eps=_epsilon, callback=None, finite_diff_rel_step=None,
+                    terminate_condition=None,
                     **unknown_options):
     """
     Minimize a scalar function of one or more variables using Sequential
@@ -320,7 +321,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                    6: "Singular matrix C in LSQ subproblem",
                    7: "Rank-deficient equality constraint subproblem HFTI",
                    8: "Positive directional derivative for linesearch",
-                   9: "Iteration limit reached"}
+                   9: "Iteration limit reached",
+                   99: "Custom terminate condition satisfied"}
 
     # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints
@@ -441,6 +443,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             if iprint >= 2:
                 print("%5i %5i % 16.6E % 16.6E" % (majiter, sf.nfev,
                                                    fx, linalg.norm(g)))
+
+        if terminate_condition is not None:
+            if terminate_condition(x, fx, g[:-1], int(majiter), sf.nfev, sf.ngev):
+                mode = 99
+                break
 
         # If exit mode is not -1 or 1, slsqp has completed
         if abs(mode) != 1:
