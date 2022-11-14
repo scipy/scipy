@@ -3086,7 +3086,6 @@ add_newdoc(
 
         S = 4 \pi a b c R_{\mathrm{G}}(1 / a^2, 1 / b^2, 1 / c^2).
 
-    >>> from scipy.special import elliprg
     >>> def ellipsoid_area(a, b, c):
     ...     r = 4.0 * np.pi * a * b * c
     ...     return r * elliprg(1.0 / (a * a), 1.0 / (b * b), 1.0 / (c * c))
@@ -4582,7 +4581,6 @@ add_newdoc("expi",
 
     The complex variant has a branch cut on the negative real axis.
 
-    >>> import scipy.special as sc
     >>> sc.expi(-1 + 1e-12j)
     (-0.21938393439552062+3.1415926535894254j)
     >>> sc.expi(-1 - 1e-12j)
