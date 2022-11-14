@@ -241,12 +241,11 @@ cdef double[:, :] _compute_euler_from_matrix(
 cdef double[:, :] _compute_euler_from_quat(
     np.ndarray[double, ndim=2] quat, const uchar[:] seq, bint extrinsic=False
 ):
-    # The algorithm assumes intrinsic frame transformations. The algorithm
-    # in the paper is formulated for rotation matrices which are transposition
-    # rotation matrices used within Rotation.
+    # The algorithm assumes extrinsic frame transformations. The algorithm
+    # in the paper is formulated for rotation quaternions, which are stored
+    # directly by Rotation.
     # Adapt the algorithm for our case by
-    # 1. Instead of transposing our representation, use the transpose of the
-    #    O matrix as defined in the paper, and be careful to swap indices
+    # 1. Replacing "d" with "-d" for intrinsic rotation
     # 2. Reversing both axis sequence and angles for extrinsic rotations
     
     if not extrinsic:
@@ -268,7 +267,7 @@ cdef double[:, :] _compute_euler_from_quat(
         
     # Step 0
     # Check if permutation is even (+1) or odd (-1)     
-    cdef int sign = int((i-j)*(j-k)*(k-i)/2)
+    cdef int sign = (i-j)*(j-k)*(k-i)//2
 
     cdef Py_ssize_t num_rotations = quat.shape[0]
 
