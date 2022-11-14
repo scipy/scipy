@@ -1222,7 +1222,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     retall : bool, optional
         Return a list of results at each iteration if True.
     xrtol : float, default: 0
-        Relative tolerance for x. Terminate successfully if step
+        Relative tolerance for `x`. Terminate successfully if step
         size is less than ``xk * xrtol`` where `xk` is the current
         parameter vector.
 
@@ -1347,7 +1347,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
     xrtol : float, default: 0
-        Relative tolerance for x. Terminate successfully if step size is
+        Relative tolerance for `x`. Terminate successfully if step size is
         less than ``xk * xrtol`` where `xk` is the current parameter vector.
     """
     _check_unknown_options(unknown_options)
