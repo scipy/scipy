@@ -229,13 +229,7 @@ else
   )
 endif
 
-# Needed to trick Cython, it won't do a relative import outside a
-# package
-_dummy_init_optimize = custom_target('_dummy_init_optimize',
-  output: '__init__.py',
-  input: '__init__.py',
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
+_dummy_init_optimize = fs.copyfile('__init__.py')
 
 opt_gen = generator(cython_cli,
   arguments : ['@INPUT@', '@OUTPUT@'],
