@@ -1188,7 +1188,7 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0, callback=None, xtol=1e-6):
+              retall=0, callback=None, xrtol=0):
     """
     Minimize a function using the BFGS algorithm.
 
@@ -1221,9 +1221,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         Print convergence message if True.
     retall : bool, optional
         Return a list of results at each iteration if True.
-    xtol : float
-        Terminate successfully if step size is less than ``xk * xtol``.
-        where `xk` is the current parameter vector.
+    xrtol : float, default: 0
+        Relative tolerance for x. Terminate successfully if step
+        size is less than ``xk * xrtol`` where `xk` is the current
+        parameter vector.
 
     Returns
     -------
@@ -1317,7 +1318,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
-                   xtol=0, **unknown_options):
+                   xrtol=0, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1345,9 +1346,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
-    xtol : float, default: 0
-        Terminate successfully if step size is less than ``xk * xtol``.
-        where `xk` is the current parameter vector.
+    xrtol : float, default: 0
+        Relative tolerance for x. Terminate successfully if step size is
+        less than ``xk * xrtol`` where `xk` is the current parameter vector.
     """
     _check_unknown_options(unknown_options)
     retall = return_all
@@ -1412,8 +1413,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         #  See Chapter 5 in  P.E. Frandsen, K. Jonasson, H.B. Nielsen,
         #  O. Tingleff: "Unconstrained Optimization", IMM, DTU.  1999.
         #  These notes are available here:
-        #   http://www2.imm.dtu.dk/documents/ftp/publlec.html
-        if (alpha_k*vecnorm(pk) <= xtol*(xtol + vecnorm(xk))):
+        #  http://www2.imm.dtu.dk/documents/ftp/publlec.html
+        if (alpha_k*vecnorm(pk) <= xrtol*(xrtol + vecnorm(xk))):
             break
 
         if not np.isfinite(old_fval):
@@ -1422,18 +1423,21 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             warnflag = 2
             break
 
-        # The inner product dot(yk,sk) must be strictly positive otherwise
-        # we destroy the positive definiteness of Hk during the update
-        # below. On the other hand, if dot(yk, sk) <= 0, there is no need
-        # to abort, we simply skip the update of Hk this iteration.
-        #  See Chapter 5, p.75 of the above reference for details.
-        yksk = np.dot(yk, sk)
-        if yksk > _epsilon * vecnorm(yk) * vecnorm(sk):
-            rhok = 1.0 / yksk
-            A1 = I - sk[:, np.newaxis] * yk[np.newaxis, :] * rhok
-            A2 = I - yk[:, np.newaxis] * sk[np.newaxis, :] * rhok
-            Hk = np.dot(A1, np.dot(Hk, A2)) + (rhok * sk[:, np.newaxis] *
-                                                     sk[np.newaxis, :])
+        rhok_inv = np.dot(yk, sk)
+
+        # this was handled in numeric, let it remain for more safety.
+        # possible change discussed in #17345, reference commit for more details 
+        if rhok_inv == 0.:
+            rhok = 1000.0
+            if disp:
+                print("Divide-by-zero encountered: rhok assumed large")
+        else:
+            rhok = 1. / rhok_inv
+
+        A1 = I - sk[:, np.newaxis] * yk[np.newaxis, :] * rhok
+        A2 = I - yk[:, np.newaxis] * sk[np.newaxis, :] * rhok
+        Hk = np.dot(A1, np.dot(Hk, A2)) + (rhok * sk[:, np.newaxis] *
+                                                 sk[np.newaxis, :])
 
     fval = old_fval
 
