@@ -1317,7 +1317,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
-                   xtol=1e-6, **unknown_options):
+                   xtol=0, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1345,7 +1345,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
-    xtol : float
+    xtol : float, default: 0
         Terminate successfully if step size is less than ``xk * xtol``.
         where `xk` is the current parameter vector.
     """
