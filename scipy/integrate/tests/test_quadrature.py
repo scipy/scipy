@@ -179,6 +179,18 @@ class TestQuadrature:
         assert_equal(simpson(y, x=x, axis=0), zero_axis)
         assert_equal(simpson(y, x=x, axis=-1), default_axis)
 
+    @pytest.mark.parametrize('droplast', [False, True])
+    def test_simpson_2d_integer_no_x(self, droplast):
+        # The inputs are 2d integer arrays.  The results should be
+        # identical to the results when the inputs are floating point.
+        y = np.array([[2, 2, 4, 4, 8, 8, -4, 5],
+                      [4, 4, 2, -4, 10, 22, -2, 10]])
+        if droplast:
+            y = y[:, :-1]
+        result = simpson(y, axis=-1)
+        expected = simpson(np.array(y, dtype=np.float64), axis=-1)
+        assert_equal(result, expected)
+
     def test_simps(self):
         # Basic coverage test for the alias
         y = np.arange(4)
