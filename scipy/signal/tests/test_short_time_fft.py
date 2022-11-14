@@ -62,11 +62,11 @@ def test_fft_func_roundtrip(n: int):
                         f"{f_typ=}, {mfft=}, {scaling=}, {phase_shift=}")
 
     SFT = ShortTimeFFT(w, h_n, T=1)
-    SFT._fft_typ = 'invalid_fft'
+    SFT._fft_typ = 'invalid_fft'  # type: ignore
     with pytest.raises(RuntimeError):
         SFT._fft_func(x0)
     with pytest.raises(RuntimeError):
-        SFT._ifft_func(x0)
+        SFT._ifft_func(x0)  # type: ignore
 
 
 def test_impulse_roundtrip():

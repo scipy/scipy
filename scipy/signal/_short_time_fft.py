@@ -1,6 +1,6 @@
 """Short-time Fourier Transform Module. """
-from functools import cache, lru_cache, partial
-from typing import Callable, Generator, get_args, Literal, Optional, Union
+from functools import lru_cache, partial
+from typing import Callable, Generator, get_args, Literal, Optional, Union, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -144,9 +144,9 @@ class ShortTimeFFT:
 
     >>> fig1, ax1 = plt.subplots()
     >>> t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
-    >>> ax1.set(title=rf"STFT ({SFT.m_num*SFT.T:g}$\,s$ Gaussian window, " +
-    ...               rf"$\sigma_t={g_std*SFT.T}\,$s)",
-    ...         xlabel=f"Time $t$ in seconds ({SFT.p_num(N)} slices, " +
+    >>> ax1.set_title(rf"STFT ({SFT.m_num*SFT.T:g}$\,s$ Gaussian window, " +
+    ...               rf"$\sigma_t={g_std*SFT.T}\,$s)")
+    >>> ax1.set(xlabel=f"Time $t$ in seconds ({SFT.p_num(N)} slices, " +
     ...                rf"$\Delta t = {SFT.delta_t:g}\,$s)",
     ...         ylabel=f"Freq. $f$ in Hz ({SFT.f_pts} bins, " +
     ...                rf"$\Delta f = {SFT.delta_f:g}\,$Hz)",
@@ -281,8 +281,8 @@ class ShortTimeFFT:
         >>> t = T * (np.arange(N) - N//2)
         ...
         >>> fg1, ax1 = plt.subplots()
-        >>> ax1.set(title=r"Dual Window: Gaussian with $\sigma_t=1$",
-        ...        xlabel=f"Time $t$ in seconds ({N} samples, $T={T}$ s)",
+        >>> ax1.set_title(r"Dual Window: Gaussian with $\sigma_t=1$")
+        >>> ax1.set(xlabel=f"Time $t$ in seconds ({N} samples, $T={T}$ s)",
         ...        xlim=(t[0], t[-1]), ylim=(0, 1.1*max(d_win)))
         >>> ax1.plot(t, d_win, 'C0-')
 
@@ -596,7 +596,7 @@ class ShortTimeFFT:
 
     def stft(self, x: NDArray, p0: Optional[int] = None, p1: Optional[int] = None,
              k_offset: int = 0, padding: PAD_TYPE = 'zeros', axis: int = -1) \
-            -> NDArray[complex]:
+            -> NDArray[np.complex_]:
         """Perform the short-time Fourier transform.
 
         A two-dimensional matrix with ``p1-p0`` columns is calculated.
@@ -656,7 +656,7 @@ class ShortTimeFFT:
                      p0: Optional[int] = None, p1: Optional[int] = None,
                      k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                      axis: int = -1) \
-            -> NDArray[complex]:
+            -> NDArray[np.complex_]:
         """Short-time Fourier transform a trend subtracted from each segment.
 
         If `detr` is set to 'constant', the mean is subtracted, if set to
@@ -688,9 +688,8 @@ class ShortTimeFFT:
             x = np.moveaxis(x, axis, -1)
         # determine slice index range:
         p0, p1 = self.p_range(n, p0, p1)
-        S_shape = (self.f_pts, p1 - p0)
-        if x.ndim > 1:
-            S_shape = x.shape[:-1] + S_shape
+        S_shape_1d = (self.f_pts, p1 - p0)
+        S_shape = x.shape[:-1] + S_shape_1d if x.ndim > 1 else S_shape_1d
         S = np.zeros(S_shape, dtype=complex)
         for p_, x_ in enumerate(self._x_slices(x, k_offset, p0, p1, padding)):
             if detr is not None:
@@ -749,9 +748,9 @@ class ShortTimeFFT:
 
         >>> fig1, ax1 = plt.subplots()
         >>> t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
-        >>> ax1.set(title=rf"Spectrogram ({SFT.m_num*SFT.T:g}$\,s$ Gaussian " +
-        ...               rf"window, $\sigma_t={g_std*SFT.T:g}\,$s)",
-        ...         xlabel=f"Time $t$ in seconds ({SFT.p_num(N)} slices, " +
+        >>> ax1.set_title(rf"Spectrogram ({SFT.m_num*SFT.T:g}$\,s$ Gaussian " +
+        ...               rf"window, $\sigma_t={g_std*SFT.T:g}\,$s)")
+        >>> ax1.set(xlabel=f"Time $t$ in seconds ({SFT.p_num(N)} slices, " +
         ...                rf"$\Delta t = {SFT.delta_t:g}\,$s)",
         ...         ylabel=f"Freq. $f$ in Hz ({SFT.f_pts} bins, " +
         ...                rf"$\Delta f = {SFT.delta_f:g}\,$Hz)",
@@ -832,7 +831,7 @@ class ShortTimeFFT:
         except ValueError:
             return False
 
-    def istft(self, S: NDArray[complex], k0: int = 0, k1: Optional[int] = None,
+    def istft(self, S: NDArray[np.complex_], k0: int = 0, k1: Optional[int] = None,
               f_axis: int = -2, t_axis: int = -1) -> NDArray:
         """Inverse short-time Fourier transform.
 
@@ -993,9 +992,8 @@ class ShortTimeFFT:
         """
         return self.m_num // 2
 
-    @property
-    @cache
-    def _pre_padding(self) -> tuple[int, int]:
+    @lru_cache(maxsize=None)
+    def _pre_padding(self) -> Tuple[int, int]:
         """Smallest signal index and slice index due to padding.
 
          Since, per convention, for time t=0, n,q is zero, the returned values
@@ -1027,7 +1025,7 @@ class ShortTimeFFT:
         p_num: Number of time slices, i.e., `p_max` - `p_min`.
         p_range: Determine and validate slice index range.
         """
-        return self._pre_padding[0]
+        return self._pre_padding()[0]
 
     @property
     def p_min(self) -> int:
@@ -1049,10 +1047,10 @@ class ShortTimeFFT:
         p_num: Number of time slices, i.e., `p_max` - `p_min`.
         p_range: Determine and validate slice index range.
         """
-        return self._pre_padding[1]
+        return self._pre_padding()[1]
 
     @lru_cache(maxsize=256)
-    def _post_padding(self, n: int) -> tuple[int, int]:
+    def _post_padding(self, n: int) -> Tuple[int, int]:
         """Largest signal index and slice index due to padding."""
         w2 = self.win.real**2 + self.win.imag**2
         # move window to the right until the overlap for t < t[n] vanishes:
@@ -1118,8 +1116,8 @@ class ShortTimeFFT:
         return self.p_max(n) - self.p_min
 
     @property
-    @cache
-    def lower_border_end(self) -> tuple[int, int]:
+    @lru_cache(maxsize=None)
+    def lower_border_end(self) -> Tuple[int, int]:
         """First signal index and first slice index unaffected by pre-padding.
         """
         # first non-zero element in self.win:
@@ -1133,7 +1131,7 @@ class ShortTimeFFT:
         return 0, self.p_min
 
     @lru_cache(maxsize=256)
-    def upper_border_begin(self, n: int) -> tuple[int, int]:
+    def upper_border_begin(self, n: int) -> Tuple[int, int]:
         """First signal index and first slice index affected by post-padding.
         """
         w2 = self.win.real**2 + self.win.imag**2
@@ -1164,7 +1162,7 @@ class ShortTimeFFT:
         return self.T * self.hop
 
     def p_range(self, n: int, p0: Optional[int] = None, p1: Optional[int] = None) \
-            -> tuple[int, int]:
+            -> Tuple[int, int]:
         """Determine and validate slice index range.
 
         Parameters
@@ -1315,7 +1313,7 @@ class ShortTimeFFT:
         # This should never happen but makes the Linter happy:
         raise RuntimeError(f"{self.fft_typ=} not in {get_args(FFT_TYP_TYPE)}!")
 
-    def _ifft_func(self, X: NDArray[complex], axis: int = -1) -> NDArray:
+    def _ifft_func(self, X: NDArray[np.complex_], axis: int = -1) -> NDArray:
         """Inverse to `_fft_func`.
 
         Returned is an array of length `m_num`. If the FFT is `onesided`
@@ -1345,7 +1343,7 @@ class ShortTimeFFT:
         return np.roll(x, p_s)[:self.m_num]
 
     def extent(self, n: int, axes_seq: Literal['tf', 'ft'] = 'tf',
-               center_bins: bool = False) -> tuple[float, float, float, float]:
+               center_bins: bool = False) -> Tuple[float, float, float, float]:
         """Return minimum and maximum values time-frequency values.
 
         A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
@@ -1381,7 +1379,9 @@ class ShortTimeFFT:
                              "['centered', 'onesided', 'onesided2X']")
 
         if center_bins:
-            p0, p1, q0, q1 = p0 - 0.5, p1 - 0.5, q0 - 0.5, q1 - 0.5
-        t0, t1 = p0 * self.delta_t, p1 * self.delta_t
-        f0, f1 = q0 * self.delta_f, q1 * self.delta_f
+            t0, t1 = self.delta_t * (p0 - 0.5), self.delta_t * (p1 - 0.5)
+            f0, f1 = self.delta_f * (q0 - 0.5), self.delta_f * (q1 - 0.5)
+        else:
+            t0, t1 = self.delta_t * p0, self.delta_t * p1
+            f0, f1 = self.delta_f * q0, self.delta_f * q1
         return (t0, t1, f0, f1) if axes_seq == 'tf' else (f0, f1, t0, t1)

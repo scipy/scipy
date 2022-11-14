@@ -17,13 +17,17 @@ as the existing one and delivers comparable results. Furthermore, the
 wrappers highlight the different philosophies of the implementations, espically
 in the border handling.
 """
+from typing import Tuple, cast, Literal
+
 import numpy as np
-from scipy.signal import _signaltools, stft, istft, get_window
-from scipy.signal._arraytools import const_ext, even_ext, odd_ext, zero_ext
-from scipy.signal._spectral_py import _triage_segments
 from numpy.testing import assert_allclose
+from numpy.typing import NDArray
+
 from scipy.signal import ShortTimeFFT
+from scipy.signal import stft, istft, get_window
+from scipy.signal._arraytools import const_ext, even_ext, odd_ext, zero_ext
 from scipy.signal._short_time_fft import FFT_TYP_TYPE
+from scipy.signal._spectral_py import _triage_segments
 
 
 def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
@@ -108,8 +112,8 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
 
     if np.iscomplexobj(x) and return_onesided:
         return_onesided = False
-    # noinspection PyTypeChecker
-    fft_typ: FFT_TYP_TYPE = 'onesided' if return_onesided else 'twosided'
+    # using cast() to make mypy happy:
+    fft_typ = cast(FFT_TYP_TYPE, 'onesided' if return_onesided else 'twosided')
 
     ST = ShortTimeFFT(win, nstep, 1/fs, fft_typ, nfft, scale_to=scale_to,
                       phase_shift=None)
@@ -140,7 +144,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
 def _istft_wrapper(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
                    nfft=None, input_onesided=True, boundary=True, time_axis=-1,
                    freq_axis=-2, scaling='spectrum') -> \
-        tuple[np.ndarray, np.ndarray, tuple[int, int]]:
+        Tuple[NDArray, NDArray, Tuple[int, int]]:
     """Wrapper for the SciPy `istft()` function based on `ShortTimeFFT` for
         unit testing.
 
@@ -173,7 +177,7 @@ def _istft_wrapper(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
             raise ValueError('nperseg must be a positive integer')
 
     if nfft is None:
-        if (input_onesided) and (nperseg == n_default + 1):
+        if input_onesided and (nperseg == n_default + 1):
             # Odd nperseg, no FFT padding
             nfft = nperseg
         else:
@@ -204,9 +208,10 @@ def _istft_wrapper(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     outputlength = nperseg + (nseg-1)*nstep
     # *** End block of: Taken from _spectral_py.istft() ***
 
-    # noinspection PyTypeChecker
-    fft_typ: FFT_TYP_TYPE = 'onesided' if input_onesided else 'twosided'
-    scale_to = {'spectrum': 'magnitude', 'psd': 'psd'}[scaling]
+    # Using cast() to make mypy happy:
+    fft_typ = cast(FFT_TYP_TYPE, 'onesided' if input_onesided else 'twosided')
+    scale_to = cast(Literal['magnitude', 'psd'],
+                    {'spectrum': 'magnitude', 'psd': 'psd'}[scaling])
 
     ST = ShortTimeFFT(win, nstep, 1 / fs, fft_typ, nfft, scale_to=scale_to,
                       phase_shift=None)
@@ -222,7 +227,8 @@ def _istft_wrapper(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     x = ST.istft(Zxx, k0=k0, k1=k1, f_axis=freq_axis, t_axis=time_axis)
     t = np.arange(k1 - k0) * ST.T
     k_hi = ST.upper_border_begin(k1 - k0)[0]
-    return t, x, (ST.lower_border_end[0], k_hi)
+    # using cast() to make mypy happy:
+    return t, x, (cast(Tuple[int, int], ST.lower_border_end)[0], k_hi)
 
 
 def stft_compare(x, fs=1.0, window='hann', nperseg=256, noverlap=None,

@@ -1,5 +1,6 @@
 """Tools for spectral analysis.
 """
+from typing import cast
 
 import numpy as np
 from scipy import fft as sp_fft
@@ -731,8 +732,8 @@ def _spect_helper_csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     if np.iscomplexobj(x) and return_onesided:
         return_onesided = False
 
-    # noinspection PyTypeChecker
-    fft_typ: FFT_TYP_TYPE = 'onesided' if return_onesided else 'twosided'
+    # using cast() to make mypy happy:
+    fft_typ = cast(FFT_TYP_TYPE, 'onesided' if return_onesided else 'twosided')
     scale = {'spectrum': 'magnitude', 'density': 'psd'}[scaling]
     SFT = ShortTimeFFT(win, nstep, 1 / fs, fft_typ, nfft, scale_to=scale,
                        phase_shift=None)
