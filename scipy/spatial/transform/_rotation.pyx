@@ -238,6 +238,7 @@ cdef double[:, :] _compute_euler_from_matrix(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+@cython.cdivision(True)
 cdef double[:, :] _compute_euler_from_quat(
     np.ndarray[double, ndim=2] quat, const uchar[:] seq, bint extrinsic=False
 ):
@@ -256,9 +257,9 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef int k = _elementary_basis_index(seq[2])
     
     # quick renormalization of transformed quaternion, assumes |q| = 1
-    cdef int norm_squared 
+    cdef double norm_squared 
 
-    is_proper = i == k
+    cdef bint is_proper = i == k
     if is_proper:
         k = 3 - i - j # get third axis
         norm_squared = 1
@@ -267,7 +268,7 @@ cdef double[:, :] _compute_euler_from_quat(
         
     # Step 0
     # Check if permutation is even (+1) or odd (-1)     
-    cdef int sign = (i-j)*(j-k)*(k-i)//2
+    cdef int sign = (i-j) * (j-k) * (k-i) // 2
 
     cdef Py_ssize_t num_rotations = quat.shape[0]
 
@@ -327,12 +328,10 @@ cdef double[:, :] _compute_euler_from_quat(
                 _angles[0] = 0
             # 
             if not safe1:
-                half_sum = atan2(b, a)
-                _angles[2] = 2 * half_sum
+                _angles[2] = 2 * atan2(b, a)
             # 
             if not safe2:
-                half_diff = atan2(-d, c)
-                _angles[2] = -2 * half_diff
+                _angles[2] = -2 * atan2(-d, c)
         else:
             # For extrinsic , set third angle to zero
             # 
@@ -340,12 +339,10 @@ cdef double[:, :] _compute_euler_from_quat(
                 _angles[2] = 0
             # 
             if not safe1:
-                half_sum = atan2(b, a)
-                _angles[0] = 2 * half_sum
+                _angles[0] = 2 * atan2(b, a)
             # 
             if not safe2:
-                half_diff = atan2(-d, c)
-                _angles[0] = 2 * half_diff
+                _angles[0] = 2 * atan2(-d, c)
 
         # for Tait-Bryan angles
         if not is_proper:
@@ -1562,6 +1559,86 @@ cdef class Rotation:
             return np.asarray(rotvec[0])
         else:
             return np.asarray(rotvec)
+
+    @cython.embedsignature(True)
+    def as_euler_from_matrix(self, seq, degrees=False):
+        """Represent as Euler angles.
+        
+        DEPRECATED
+
+        Any orientation can be expressed as a composition of 3 elementary
+        rotations. Once the axis sequence has been chosen, Euler angles define
+        the angle of rotation around each respective axis [1]_.
+
+        The algorithm from [2]_ has been used to calculate Euler angles for the
+        rotation about a given sequence of axes.
+
+        Euler angles suffer from the problem of gimbal lock [3]_, where the
+        representation loses a degree of freedom and it is not possible to
+        determine the first and third angles uniquely. In this case,
+        a warning is raised, and the third angle is set to zero. Note however
+        that the returned angles still represent the correct rotation.
+
+        Parameters
+        ----------
+        seq : string, length 3
+            3 characters belonging to the set {'X', 'Y', 'Z'} for intrinsic
+            rotations, or {'x', 'y', 'z'} for extrinsic rotations [1]_.
+            Adjacent axes cannot be the same.
+            Extrinsic and intrinsic rotations cannot be mixed in one function
+            call.
+        degrees : boolean, optional
+            Returned angles are in degrees if this flag is True, else they are
+            in radians. Default is False.
+
+        Returns
+        -------
+        angles : ndarray, shape (3,) or (N, 3)
+            Shape depends on shape of inputs used to initialize object.
+            The returned angles are in the range:
+
+            - First angle belongs to [-180, 180] degrees (both inclusive)
+            - Third angle belongs to [-180, 180] degrees (both inclusive)
+            - Second angle belongs to:
+
+                - [-90, 90] degrees if all axes are different (like xyz)
+                - [0, 180] degrees if first and third axes are the same
+                  (like zxz)
+
+        References
+        ----------
+        .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
+        .. [2] Malcolm D. Shuster, F. Landis Markley, "General formula for
+               extraction the Euler angles", Journal of guidance, control, and
+               dynamics, vol. 29.1, pp. 215-221. 2006
+        .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
+
+        """
+        if len(seq) != 3:
+            raise ValueError("Expected 3 axes, got {}.".format(seq))
+
+        intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
+        extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
+        if not (intrinsic or extrinsic):
+            raise ValueError("Expected axes from `seq` to be from "
+                             "['x', 'y', 'z'] or ['X', 'Y', 'Z'], "
+                             "got {}".format(seq))
+
+        if any(seq[i] == seq[i+1] for i in range(2)):
+            raise ValueError("Expected consecutive axes to be different, "
+                             "got {}".format(seq))
+
+        seq = seq.lower()
+
+        matrix = self.as_matrix()
+        if matrix.ndim == 2:
+            matrix = matrix[None, :, :]
+        angles = np.asarray(_compute_euler_from_matrix(
+            matrix, seq.encode(), extrinsic))
+        if degrees:
+            angles = np.rad2deg(angles)
+
+        return angles[0] if self._single else angles
 
     @cython.embedsignature(True)
     def as_euler(self, seq, degrees=False):
