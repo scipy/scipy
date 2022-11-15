@@ -10304,15 +10304,15 @@ class relativistic_bw_gen(rv_continuous):
 
     The relativistic Breit-Wigner distribution is used in high-energy physics
     to model resonances (unstable particles). It gives the probability of observed
-    center-of-mass energy produced by a resonance given the mass :math`M` and
-    decay-width :math`\Gamma` of the resonance [1]_ (where :math`M` and
-    :math`\Gamma` are expressed in natural units).
+    center-of-mass energy produced by a resonance given the mass :math:`M` and
+    decay-width :math:`\Gamma` of the resonance [1]_ (where :math:`M` and
+    :math:`\Gamma` are expressed in natural units).
 
     In SciPy's parametrization, the shape parameter `rho` is equal to
-    :math`\frac{M}{\Gamma}`. :math`\Gamma` is then the scale parameter.
-    For instance, if one seeks to model the :math`\Z^0` resonance with
-    :math`M \approx 91.177` and :math`\Gamma \approx 2.465` one can
-    set `rho` equal to :math`\frac{91.177}{2.465}` and ``scale=2.465``.
+    :math:`\frac{M}{\Gamma}`. :math:`\Gamma` is then the scale parameter.
+    For instance, if one seeks to model the :math:`\Z^0` resonance with
+    :math:`M \approx 91.177` and :math:`\Gamma \approx 2.465` one can
+    set `rho` equal to :math:`\frac{91.177}{2.465}` and ``scale=2.465``.
 
     To produce a physically meaningful result when using the `fit` method, one
     should set ``floc=0`` to fix the location parameter to 0.
