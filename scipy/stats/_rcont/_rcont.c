@@ -20,39 +20,6 @@ double *ptr(double *m, int nr, int nc, int ir, int ic)
   return m + nc * ir + ic;
 }
 
-// sanity checks for inputs to rcont1 and rcont2,
-// also sets total number of entries
-int rcont_check(double *n, const double *m, int nr, const double *r, int nc, const double *c)
-{
-  if (m == 0 || r == 0 || c == 0 || n == 0)
-    return 1;
-
-  if (nr < 2 || nc < 2)
-    return 2;
-
-  // check sum(r) == sum(c); r[i] >= 0, c[i] >= 0; sum(r) > 0
-  *n = 0;
-  for (int i = 0; i < nc; ++i)
-  {
-    if (!(c[i] >= 0))
-      return 3;
-    *n += c[i];
-  }
-  double n2 = 0;
-  for (int i = 0; i < nr; ++i)
-  {
-    if (!(r[i] >= 0))
-      return 3;
-    n2 += r[i];
-  }
-  if (*n != n2)
-    return 4;
-  if (!(*n > 0))
-    return 5;
-
-  return 0;
-}
-
 /*
   Call this once to initialize workspace for rcont1.
 
