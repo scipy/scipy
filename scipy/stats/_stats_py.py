@@ -4806,6 +4806,10 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
        Section  14.7
+    .. [2] Kendall, M. G. and Stuart, A. (1973). 
+       The Advanced Theory of Statistics, Volume 2: Inference and Relationship.
+       Griffin. 1973
+       Section 31.18
 
     Examples
     --------
