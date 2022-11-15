@@ -11,10 +11,10 @@ jobs:
   label_pull_request:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/labeler@v4.0.1
+    - uses: actions/jjerphan@main
       continue-on-error: true
       if: github.repository == 'scipy/scipy'
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
-        sync: false
+        sync-labels: false
         configuration-path: ".github/label-globs.yml"
