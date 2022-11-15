@@ -616,8 +616,7 @@ def test_as_euler_degenerate_asymmetric_axes():
         [45, 90, 35],
         [35, -90, 20],
         [35, 90, 25],
-        [25, -90, 15]
-        ])
+        [25, -90, 15]])
 
     with pytest.warns(UserWarning, match="Gimbal lock"):
         for seq_tuple in permutations('xyz'):
@@ -653,8 +652,7 @@ def test_as_euler_degenerate_symmetric_axes():
         [15, 0, 60],
         [35, 0, 75],
         [60, 180, 35],
-        [15, -180, 25],
-        ])
+        [15, -180, 25]])
 
     with pytest.warns(UserWarning, match="Gimbal lock"):
         for seq_tuple in permutations('xyz'):
@@ -705,14 +703,14 @@ def test_as_euler_compare_algorithms():
     # symmetric axes
     angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
     for seq_tuple in permutations('xyz'):
-       # Extrinsic rotations
-       seq = ''.join([seq_tuple[0],seq_tuple[1],seq_tuple[0]])
-       rot = Rotation.from_euler(seq, angles)
-       assert_allclose(rot.as_euler_from_matrix(seq), rot.as_euler(seq))
-       # Intrinsic rotations
-       seq = seq.upper()
-       rot = Rotation.from_euler(seq, angles)
-       assert_allclose(rot.as_euler_from_matrix(seq), rot.as_euler(seq))
+        # Extrinsic rotations
+        seq = ''.join([seq_tuple[0],seq_tuple[1],seq_tuple[0]])
+        rot = Rotation.from_euler(seq, angles)
+        assert_allclose(rot.as_euler_from_matrix(seq), rot.as_euler(seq))
+        # Intrinsic rotations
+        seq = seq.upper()
+        rot = Rotation.from_euler(seq, angles)
+        assert_allclose(rot.as_euler_from_matrix(seq), rot.as_euler(seq))
 
 
 def test_as_euler_degenerate_compare_algorithms():
@@ -729,15 +727,15 @@ def test_as_euler_degenerate_compare_algorithms():
             seq = ''.join(seq_tuple)            
             rot = Rotation.from_euler(seq, angles, degrees = True)
             assert_allclose(
-                   rot.as_euler_from_matrix(seq, degrees = True)[:,[0,2]], 
-                   rot.as_euler(seq, degrees = True)[:,[0,2]])
+                rot.as_euler_from_matrix(seq, degrees = True)[:,[0,2]], 
+                rot.as_euler(seq, degrees = True)[:,[0,2]])
             
             # Intrinsic rotations
             seq = seq.upper()
             rot = Rotation.from_euler(seq, angles, degrees = True)
             assert_allclose(
-                   rot.as_euler_from_matrix(seq, degrees = True)[:,[0,2]], 
-                   rot.as_euler(seq, degrees = True)[:,[0,2]])
+                rot.as_euler_from_matrix(seq, degrees = True)[:,[0,2]], 
+                rot.as_euler(seq, degrees = True)[:,[0,2]])
         
     # symmetric axes
     angles = np.array([
@@ -748,19 +746,19 @@ def test_as_euler_degenerate_compare_algorithms():
        
     with pytest.warns(UserWarning, match="Gimbal lock"):
         for seq_tuple in permutations('xyz'):
-           # Extrinsic rotations
-           seq = ''.join([seq_tuple[0],seq_tuple[1],seq_tuple[0]])
-           rot = Rotation.from_euler(seq, angles, degrees = True)
-           assert_allclose(
-                   rot.as_euler_from_matrix(seq, degrees = True)[:,[0,2]], 
-                   rot.as_euler(seq, degrees = True)[:,[0,2]])
+            # Extrinsic rotations
+            seq = ''.join([seq_tuple[0],seq_tuple[1],seq_tuple[0]])
+            rot = Rotation.from_euler(seq, angles, degrees = True)
+            assert_allclose(
+                rot.as_euler_from_matrix(seq, degrees = True)[:,[0,2]], 
+                rot.as_euler(seq, degrees = True)[:,[0,2]])
            
-           # Intrinsic rotations
-           seq = seq.upper()
-           rot = Rotation.from_euler(seq, angles, degrees = True)
-           assert_allclose(
-                   rot.as_euler_from_matrix(seq, degrees = True)[:,[0,2]], 
-                   rot.as_euler(seq, degrees = True)[:,[0,2]])
+            # Intrinsic rotations
+            seq = seq.upper()
+            rot = Rotation.from_euler(seq, angles, degrees = True)
+            assert_allclose(
+                rot.as_euler_from_matrix(seq, degrees = True)[:,[0,2]], 
+                rot.as_euler(seq, degrees = True)[:,[0,2]])
 
 
 def test_inv():
