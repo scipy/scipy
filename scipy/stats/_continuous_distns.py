@@ -10281,14 +10281,48 @@ studentized_range = studentized_range_gen(name='studentized_range', a=0,
 class relativistic_bw_gen(rv_continuous):
     r"""A relativistic Breit-Wigner random variable.
 
+    The probability density function for `relativistic_bw` is
+
+    .. math::
+
+        f(x, \rho) = \frac{k}{(x^2 - \rho^2)^2 + rho^2}
+
+    where
+
+    .. math::
+        k = \frac{2\sqrt{2}\rho^2\sqrt{\rho^2 + 1}}
+            {\pi\sqrt{\rho^2 + rho\sqrt{rho^2 + 1}}}
+
     %(before_notes)s
+
+    See Also
+    --------
+    cauchy: Cauchy distribution, also known as the Breit-Wigner distribution.
 
     Notes
     -----
 
-    stuff
+    The relativistic Breit-Wigner distribution is used in high-energy physics
+    to model resonances (unstable particles). It gives the probability of observed
+    center-of-mass energy produced by a resonance given the mass :math`M` and
+    decay-width :math`\Gamma` of the resonance [1]_ (where :math`M` and
+    :math`\Gamma` are expressed in natural units).
+
+    In SciPy's parametrization, the shape parameter `rho` is equal to
+    :math`\frac{M}{\Gamma}`. :math`\Gamma` is then the scale parameter.
+    For instance, if one seeks to model the :math`\Z^0` resonance with
+    :math`M \approx 91.177` and :math`\Gamma \approx 2.465` one can
+    set `rho` equal to :math`\frac{91.177}{2.465}` and ``scale=2.465``.
+
+    To produce a physically meaningful result when using the `fit` method, one
+    should set ``floc=0`` to fix the location parameter to 0.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Relativistic Breit-Wigner distriution, Wikipedia,
+           https://en.wikipedia.org/wiki/Relativistic_Breit-Wigner_distribution
 
     %(example)s
 
