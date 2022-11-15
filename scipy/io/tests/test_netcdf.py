@@ -278,7 +278,7 @@ def test_write_invalid_dtype():
     with netcdf_file(BytesIO(), 'w') as f:
         f.createDimension('time', N_EG_ELS)
         for dt in dtypes:
-            assert_raises(ValueError, f.createVariable, 'time', dt, ('time',))
+            assert_raises(TypeError, f.createVariable, 'time', dt, ('time',))
 
 
 def test_flush_rewind():
