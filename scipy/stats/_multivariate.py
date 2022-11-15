@@ -5417,7 +5417,8 @@ class random_table_gen(multi_rv_generic):
     def _rvs_select(cls, r, c, n):
         fac = 1.0  # benchmarks show that this value is about 1
         k = len(r) * len(c)  # number of cells
-        if n > fac * np.log(n) * k:
+        # n + 1 guards against failure if n == 0
+        if n > fac * np.log(n + 1) * k:
             return cls._rvs_patefield
         return cls._rvs_boyett
 

@@ -49,10 +49,12 @@ void rcont1_init(int *work, int nc, const double *c)
 void rcont1(double *matrix, int nr, const double *r, int nc, const double *c,
             double ntot, int *work, bitgen_t *rstate)
 {
-  int n = (int)ntot;
+  // nothing to do
+  if (ntot == 0)
+    return;
 
-  // shuffle work
-  for (int i = n - 1; i > 0; --i)
+  // shuffle work with Knuth's algorithm
+  for (int i = (int)ntot - 1; i > 0; --i)
   {
     int j = random_interval(rstate, i);
     int tmp = work[j];
@@ -101,6 +103,10 @@ void rcont1(double *matrix, int nr, const double *r, int nc, const double *c,
 void rcont2(double *matrix, int nr, const double *r, int nc, const double *c,
             double ntot, bitgen_t *rstate)
 {
+  // nothing to do
+  if (ntot == 0.0)
+    return;
+
   // jwork is folded into matrix using last row
   double *jwork = ptr(matrix, nr, nc, nr - 1, 0);
   for (int i = 0; i < nc; ++i)

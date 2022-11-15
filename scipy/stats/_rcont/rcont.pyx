@@ -49,6 +49,9 @@ def rvs_rcont1(double[::1] row, double[::1] col, double ntot,
         <int>ntot, dtype=np.intc
     )
 
+    if nc == 0 or nr == 0 or ntot == 0:
+        return result
+
     rcont1_init(&work[0], nc, &col[0])
 
     for i in range(size):
@@ -68,6 +71,9 @@ def rvs_rcont2(double[::1] row, double[::1] col, double ntot,
     cdef np.ndarray[double, ndim=3, mode="c"] result = np.zeros(
         (size, nr, nc), dtype=np.double
     )
+
+    if nc == 0 or nr == 0:
+        return result
 
     for i in range(size):
         rcont2(&result[i, 0, 0], nr, &row[0], nc, &col[0], ntot,

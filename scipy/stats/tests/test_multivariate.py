@@ -2736,6 +2736,16 @@ class TestRandomTable:
         expected[:, 1, 0] = 1
         assert_equal(rv, expected)
 
+    @pytest.mark.parametrize("method", (None, "boyett", "patefield"))
+    @pytest.mark.parametrize("col", ([], [0]))
+    @pytest.mark.parametrize("row", ([], [0]))
+    def test_rvs_with_edge_cases(self, method, row, col):
+        rng = np.random.default_rng(12345678)
+        d = random_table(row, col)
+        rv = d.rvs(10, method=method, random_state=rng)
+        expected = np.zeros((10, len(row), len(col)))
+        assert_equal(rv, expected)
+
     @pytest.mark.parametrize('v', (1, 2))
     def test_rvs_rcont(self, v):
         import scipy.stats._rcont as _rcont
