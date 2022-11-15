@@ -1,7 +1,7 @@
 """HiGHS Linear Optimization Methods
 
 Interface to HiGHS linear optimization software.
-https://www.maths.ed.ac.uk/hall/HiGHS/
+https://highs.dev/
 
 .. versionadded:: 1.5.0
 
