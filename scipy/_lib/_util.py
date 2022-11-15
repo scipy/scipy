@@ -252,7 +252,7 @@ def _asarray_validated(a, check_finite=True,
     a = toarray(a)
     if not objects_ok:
         if a.dtype is np.dtype('O'):
-            raise ValueError('object arrays are not supported')
+            raise TypeError('object arrays are not supported')
     if as_inexact:
         if not np.issubdtype(a.dtype, np.inexact):
             a = toarray(a, dtype=np.float_)

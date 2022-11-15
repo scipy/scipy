@@ -2409,7 +2409,9 @@ def hilbert2(x, N=None):
         if N <= 0:
             raise ValueError("N must be positive.")
         N = (N, N)
-    elif len(N) != 2 or np.any(np.asarray(N) <= 0):
+    elif len(N) != 2:
+        raise ValueError("N should be a tuple of two values")
+    elif type(N) == tuple and len(N) == 2 and np.any(np.asarray(N) <= 0):
         raise ValueError("When given as a tuple, N must hold exactly "
                          "two positive integers")
 

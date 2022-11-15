@@ -34,8 +34,7 @@ def _minimize_trustregion_exact(fun, x0, args=(), jac=None, hess=None,
         raise ValueError('Jacobian is required for trust region '
                          'exact minimization.')
     if not callable(hess):
-        raise ValueError('Hessian matrix is required for trust region '
-                         'exact minimization.')
+        raise ValueError('hess object must be callable')
     return _minimize_trust_region(fun, x0, args=args, jac=jac, hess=hess,
                                   subproblem=IterativeSubproblem,
                                   **trust_region_options)
