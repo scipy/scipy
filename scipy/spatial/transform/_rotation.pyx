@@ -7,7 +7,7 @@ from ._rotation_groups import create_group
 cimport numpy as np
 cimport cython
 from cython.view cimport array
-from libc.math cimport sqrt, sin, cos, atan2, acos
+from libc.math cimport sqrt, sin, cos, atan2, acos, hypot
 from numpy.math cimport PI as pi, NAN, isnan # avoid MSVC error
 
 np.import_array()
@@ -255,6 +255,9 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef int i = _elementary_basis_index(seq[0])
     cdef int j = _elementary_basis_index(seq[1])
     cdef int k = _elementary_basis_index(seq[2])
+    
+    # quick renormalization of transformed quaternion, assumes |q| = 1
+    cdef double norm_squared 
 
     cdef bint is_proper = i == k
     if is_proper:
@@ -272,7 +275,7 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef double a, b, c, d
     cdef double half_sum, half_diff
     cdef double eps = 1e-7
-    cdef bint safe1, safe2, safe, adjust
+    cdef int case
 
     for ind in range(num_rotations):
         _angles = angles[ind, :]
@@ -292,45 +295,50 @@ cdef double[:, :] _compute_euler_from_quat(
         
         # Step 2
         # Compute second angle...
-        _angles[1] = 2*atan2(sqrt(c*c + d*d), sqrt(a*a + b*b))
+        _angles[1] = 2*atan2(hypot(c,d), hypot(a,b))# hypot(x,y)==sqrt(x*x+y*y)
 
         # ... and check if equal to is 0 or pi, causing a singularity
-        safe1 = abs(_angles[1]) >= eps
-        safe2 = abs(_angles[1] - <double>pi) >= eps
-        safe = safe1 and safe2
+        if abs(_angles[1]) <= eps:
+            case = 1 # first degenerate case
+        elif abs(_angles[1] - <double>pi) <= eps:
+            case = 2 # second degenerate case
+        else:
+            case = 0 # normal case
 
         # Step 3
         # compute first and third angles, according to case
-        if safe:
-            half_sum = atan2(b, a) # == (angles[0] + angles[2])/2
-            half_diff = atan2(-d, c) # == (angles[0] - angles[2])/2 
         
+        half_sum = atan2(b, a) # == (angles[0] + angles[2])/2
+        half_diff = atan2(-d, c) # == (angles[0] - angles[2])/2 
+        
+        if case == 0: # no singularities
+            
             _angles[0] = half_sum + half_diff
             _angles[2] = half_sum - half_diff
+        
+        else: # any degenerate case
 
-        if not extrinsic:
-            # For intrinsic, set first angle to zero so that after reversal we
-            # ensure that third angle is zero
-            # 
-            if not safe:
+            if not extrinsic:
+                # For intrinsic, set first angle to zero so that after reversal we
+                # ensure that third angle is zero
+                # 
                 _angles[0] = 0
-            # 
-            if not safe1:
-                _angles[2] = 2 * atan2(b, a)
-            # 
-            if not safe2:
-                _angles[2] = -2 * atan2(-d, c)
-        else:
-            # For extrinsic , set third angle to zero
-            # 
-            if not safe:
+                # 
+                if case == 1:
+                    _angles[2] = 2 * half_sum
+                # 
+                if case == 2:
+                    _angles[2] = -2 * half_diff
+            else:
+                # For extrinsic , set third angle to zero
+                # 
                 _angles[2] = 0
-            # 
-            if not safe1:
-                _angles[0] = 2 * atan2(b, a)
-            # 
-            if not safe2:
-                _angles[0] = 2 * atan2(-d, c)
+                # 
+                if case == 1:
+                    _angles[0] = 2 * half_sum
+                # 
+                if case == 2:
+                    _angles[0] = 2 * half_diff
 
         # for Tait-Bryan angles
         if not is_proper:
@@ -347,7 +355,7 @@ cdef double[:, :] _compute_euler_from_quat(
             # reversal
             _angles[0], _angles[2] = _angles[2], _angles[0]
 
-        if not safe:
+        if case != 0:
             warnings.warn("Gimbal lock detected. Setting third angle to zero "
                           "since it is not possible to uniquely determine "
                           "all angles.")
