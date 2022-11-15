@@ -262,20 +262,17 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef bint is_proper = i == k
     if is_proper:
         k = 3 - i - j # get third axis
-        norm_squared = 1
-    else:
-        norm_squared = 2
         
     # Step 0
     # Check if permutation is even (+1) or odd (-1)     
-    cdef int sign = (i-j) * (j-k) * (k-i) // 2
+    cdef int sign = (i - j) * (j - k) * (k - i) // 2
 
     cdef Py_ssize_t num_rotations = quat.shape[0]
 
     # some forward definitions
     cdef double[:, :] angles = _empty2(num_rotations, 3)
     cdef double[:] _angles # accessor for each rotation
-    cdef double a, b, c, d, cos_theta_2
+    cdef double a, b, c, d
     cdef double half_sum, half_diff
     cdef double eps = 1e-7
     cdef bint safe1, safe2, safe, adjust
@@ -297,21 +294,15 @@ cdef double[:, :] _compute_euler_from_quat(
             d = quat[ind, k] * sign - quat[ind, i]
         
         # Step 2
-        # Ensure less than unit norm
-        cos_theta_2 = 2*(a**2 + b**2)/norm_squared - 1
-        cos_theta_2 = min(cos_theta_2, 1)
-        cos_theta_2 = max(cos_theta_2, -1)
-        
-        # Step 3
         # Compute second angle...
-        _angles[1] = acos(cos_theta_2)
+        _angles[1] = 2*atan2(sqrt(c*c + d*d), sqrt(a*a + b*b))
 
         # ... and check if equal to is 0 or pi, causing a singularity
         safe1 = abs(_angles[1]) >= eps
         safe2 = abs(_angles[1] - <double>pi) >= eps
         safe = safe1 and safe2
 
-        # Step 4
+        # Step 3
         # compute first and third angles, according to case
         if safe:
             half_sum = atan2(b, a) # == (angles[0] + angles[2])/2
@@ -359,7 +350,6 @@ cdef double[:, :] _compute_euler_from_quat(
             # reversal
             _angles[0], _angles[2] = _angles[2], _angles[0]
 
-        # Step 8
         if not safe:
             warnings.warn("Gimbal lock detected. Setting third angle to zero "
                           "since it is not possible to uniquely determine "
