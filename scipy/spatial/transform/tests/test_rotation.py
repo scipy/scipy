@@ -586,10 +586,20 @@ def test_as_euler_asymmetric_axes():
     for seq_tuple in permutations('xyz'):
         # Extrinsic rotations
         seq = ''.join(seq_tuple)
-        assert_allclose(angles, Rotation.from_euler(seq, angles).as_euler(seq))
+        
+        rotation = Rotation.from_euler(seq, angles)
+        angles_from_quat = rotation.as_euler(seq)
+        angles_from_matrix = rotation.as_euler_from_matrix(seq)
+        assert_allclose(angles, angles_from_quat)
+        assert_allclose(angles_from_matrix, angles_from_quat)
+        
         # Intrinsic rotations
         seq = seq.upper()
-        assert_allclose(angles, Rotation.from_euler(seq, angles).as_euler(seq))
+        rotation = Rotation.from_euler(seq, angles)
+        angles_from_quat = rotation.as_euler(seq)
+        angles_from_matrix = rotation.as_euler_from_matrix(seq)
+        assert_allclose(angles, angles_from_quat)
+        assert_allclose(angles_from_matrix, angles_from_quat)
 
 
 def test_as_euler_symmetric_axes():
@@ -606,12 +616,19 @@ def test_as_euler_symmetric_axes():
                 continue
             # Extrinsic rotations
             seq = axis1 + axis2 + axis1
-            assert_allclose(
-                angles, Rotation.from_euler(seq, angles).as_euler(seq))
+            rotation = Rotation.from_euler(seq, angles)
+            angles_from_quat = rotation.as_euler(seq)
+            angles_from_matrix = rotation.as_euler_from_matrix(seq)
+            assert_allclose(angles, angles_from_quat)
+            assert_allclose(angles_from_matrix, angles_from_quat)
+            
             # Intrinsic rotations
             seq = seq.upper()
-            assert_allclose(
-                angles, Rotation.from_euler(seq, angles).as_euler(seq))
+            rotation = Rotation.from_euler(seq, angles)
+            angles_from_quat = rotation.as_euler(seq)
+            angles_from_matrix = rotation.as_euler_from_matrix(seq)
+            assert_allclose(angles, angles_from_quat)
+            assert_allclose(angles_from_matrix, angles_from_quat)
 
 
 def test_as_euler_degenerate_asymmetric_axes():
@@ -631,24 +648,46 @@ def test_as_euler_degenerate_asymmetric_axes():
             rotation = Rotation.from_euler(seq, angles, degrees=True)
             mat_expected = rotation.as_matrix()
 
-            angle_estimates = rotation.as_euler(seq, degrees=True)
-            mat_estimated = Rotation.from_euler(
-                seq, angle_estimates, degrees=True
+            # testing euler_from_quat algorithm
+            angles_from_quat = rotation.as_euler(seq, degrees=True)
+            mat_estimated_from_quat = Rotation.from_euler(
+                seq, angles_from_quat, degrees=True
+                ).as_matrix()
+            
+            # testing euler_from_matrix algorithm
+            angles_from_matrix = rotation.as_euler_from_matrix(seq, degrees=True)
+            mat_estimated_from_matrix = Rotation.from_euler(
+                seq, angles_from_matrix, degrees=True
                 ).as_matrix()
 
-            assert_array_almost_equal(mat_expected, mat_estimated)
+            # comparing both algorithms to expected value
+            #assert_allclose(angles_from_matrix, angles_from_quat)
+            assert_array_almost_equal(mat_expected, mat_estimated_from_quat)
+            assert_array_almost_equal(
+                    mat_estimated_from_matrix, mat_estimated_from_quat)
 
             # Intrinsic rotations
             seq = seq.upper()
             rotation = Rotation.from_euler(seq, angles, degrees=True)
             mat_expected = rotation.as_matrix()
 
-            angle_estimates = rotation.as_euler(seq, degrees=True)
-            mat_estimated = Rotation.from_euler(
-                seq, angle_estimates, degrees=True
+            # testing euler_from_quat algorithm
+            angles_from_quat = rotation.as_euler(seq, degrees=True)
+            mat_estimated_from_quat = Rotation.from_euler(
+                seq, angles_from_quat, degrees=True
+                ).as_matrix()
+            
+            # testing euler_from_matrix algorithm
+            angles_from_matrix = rotation.as_euler_from_matrix(seq, degrees=True)
+            mat_estimated_from_matrix = Rotation.from_euler(
+                seq, angles_from_matrix, degrees=True
                 ).as_matrix()
 
-            assert_array_almost_equal(mat_expected, mat_estimated)
+            # comparing both algorithms to expected value
+            #assert_allclose(angles_from_matrix, angles_from_quat)
+            assert_array_almost_equal(mat_expected, mat_estimated_from_quat)
+            assert_array_almost_equal(
+                    mat_estimated_from_matrix, mat_estimated_from_quat)
 
 
 def test_as_euler_degenerate_symmetric_axes():
@@ -672,24 +711,50 @@ def test_as_euler_degenerate_symmetric_axes():
                 rotation = Rotation.from_euler(seq, angles, degrees=True)
                 mat_expected = rotation.as_matrix()
 
-                angle_estimates = rotation.as_euler(seq, degrees=True)
-                mat_estimated = Rotation.from_euler(
-                    seq, angle_estimates, degrees=True
+                # testing euler_from_quat algorithm
+                angles_from_quat = rotation.as_euler(seq, degrees=True)
+                mat_estimated_from_quat = Rotation.from_euler(
+                    seq, angles_from_quat, degrees=True
                     ).as_matrix()
+                
+                # testing euler_from_matrix algorithm
+                angles_from_matrix = rotation.as_euler_from_matrix(seq, degrees=True)
+                mat_estimated_from_matrix = Rotation.from_euler(
+                    seq, angles_from_matrix, degrees=True
+                    ).as_matrix()
+    
+                # comparing both algorithms to expected value
+                #assert_allclose(angles_from_matrix, angles_from_quat)
+                assert_array_almost_equal(
+                        mat_expected, mat_estimated_from_quat)
+                assert_array_almost_equal(
+                        mat_estimated_from_matrix, mat_estimated_from_quat)
 
-                assert_array_almost_equal(mat_expected, mat_estimated)
 
                 # Intrinsic rotations
                 seq = seq.upper()
                 rotation = Rotation.from_euler(seq, angles, degrees=True)
                 mat_expected = rotation.as_matrix()
 
-                angle_estimates = rotation.as_euler(seq, degrees=True)
-                mat_estimated = Rotation.from_euler(
-                    seq, angle_estimates, degrees=True
+                # testing euler_from_quat algorithm
+                angles_from_quat = rotation.as_euler(seq, degrees=True)
+                mat_estimated_from_quat = Rotation.from_euler(
+                    seq, angles_from_quat, degrees=True
                     ).as_matrix()
+                
+                # testing euler_from_matrix algorithm
+                angles_from_matrix = rotation.as_euler_from_matrix(seq, degrees=True)
+                mat_estimated_from_matrix = Rotation.from_euler(
+                    seq, angles_from_matrix, degrees=True
+                    ).as_matrix()
+    
+                # comparing both algorithms to expected value
+                #assert_allclose(angles_from_matrix, angles_from_quat)
+                assert_array_almost_equal(
+                        mat_expected, mat_estimated_from_quat)
+                assert_array_almost_equal(
+                        mat_estimated_from_matrix, mat_estimated_from_quat)
 
-                assert_array_almost_equal(mat_expected, mat_estimated)
 
 
 def test_inv():
