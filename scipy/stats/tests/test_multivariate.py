@@ -2728,12 +2728,14 @@ class TestRandomTable:
         if method == "boyett2":
             pytest.xfail("boyett2 is broken and will be removed")
         rng = np.random.default_rng(12345678)
-        row = [0, 1]
-        col = [1, 0, 0]
+        row = [0, 1, 0]
+        col = [1, 0, 0, 0]
         d = random_table(row, col)
         rv = d.rvs(1000, method=method, random_state=rng)
-        expected = np.zeros((1000, 2, 3))
-        expected[:, 1, 0] = 1
+        expected = np.zeros((1000, len(row), len(col)))
+        expected[...] = [[0, 0, 0, 0],
+                         [1, 0, 0, 0],
+                         [0, 0, 0, 0]]
         assert_equal(rv, expected)
 
     @pytest.mark.parametrize("method", (None, "boyett", "patefield"))
