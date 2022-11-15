@@ -2500,6 +2500,9 @@ class TestMultivariateHypergeom:
 
 
 class TestRandomTable:
+    def get_rng(self):
+        return np.random.default_rng(628174795866951638)
+
     def test_process_parameters(self):
         message = "`row` must be one-dimensional"
         with pytest.raises(ValueError, match=message):
@@ -2560,7 +2563,7 @@ class TestRandomTable:
     @pytest.mark.parametrize('frozen', (True, False))
     @pytest.mark.parametrize('log', (True, False))
     def test_pmf_logpmf(self, frozen, log):
-        rng = np.random.default_rng(628174795866951638)
+        rng = self.get_rng()
         row = [2, 6]
         col = [1, 3, 4]
         rvs = random_table.rvs(row, col, size=1000, random_state=rng)
@@ -2637,8 +2640,7 @@ class TestRandomTable:
     def test_rvs_mean(self, method):
         # test if `rvs` is unbiased and large sample size converges
         # to the true mean. `test_pmf` also implicitly tests `rvs`.
-        rng = np.random.default_rng(628174795866951638)
-
+        rng = self.get_rng()
         row = [2, 6]
         col = [1, 3, 4]
         rvs = random_table.rvs(row, col, size=1000, method=method,
@@ -2655,31 +2657,28 @@ class TestRandomTable:
         col = [1, 3, 4]
 
         # test size `None`
-        rng = np.random.default_rng(628174795866951638)
-        rv = random_table.rvs(row, col, method=method, random_state=rng)
+        rv = random_table.rvs(row, col, method=method,
+                              random_state=self.get_rng())
         assert rv.shape == (2, 3)
 
         # test size 1
-        rng = np.random.default_rng(628174795866951638)
         rv2 = random_table.rvs(row, col, size=1, method=method,
-                               random_state=rng)
+                               random_state=self.get_rng())
         assert rv2.shape == (1, 2, 3)
         assert_equal(rv, rv2[0])
 
         # test size 0
         rv3 = random_table.rvs(row, col, size=0, method=method,
-                               random_state=rng)
+                               random_state=self.get_rng())
         assert rv3.shape == (0, 2, 3)
 
         # test other valid size
-        rng = np.random.default_rng(628174795866951638)
         rv4 = random_table.rvs(row, col, size=20, method=method,
-                               random_state=rng)
+                               random_state=self.get_rng())
         assert rv4.shape == (20, 2, 3)
 
-        rng = np.random.default_rng(628174795866951638)
         rv5 = random_table.rvs(row, col, size=(4, 5), method=method,
-                               random_state=rng)
+                               random_state=self.get_rng())
         assert rv5.shape == (4, 5, 2, 3)
 
         assert_allclose(rv5.reshape(20, 2, 3), rv4, rtol=1e-15)
@@ -2688,11 +2687,11 @@ class TestRandomTable:
         message = "`size` must be a non-negative integer or `None`"
         with pytest.raises(ValueError, match=message):
             random_table.rvs(row, col, size=-1, method=method,
-                             random_state=rng)
+                             random_state=self.get_rng())
 
         with pytest.raises(ValueError, match=message):
             random_table.rvs(row, col, size=np.nan, method=method,
-                             random_state=rng)
+                             random_state=self.get_rng())
 
     @pytest.mark.parametrize("method", ("boyett", "boyett2", "patefield"))
     def test_rvs_method(self, method):
@@ -2700,8 +2699,8 @@ class TestRandomTable:
         col = [2, 1, 1]
 
         ct = random_table
-        rng = np.random.default_rng(628174795866951638)
-        rvs = ct.rvs(row, col, size=10000, method=method, random_state=rng)
+        rvs = ct.rvs(row, col, size=10000, method=method,
+                     random_state=self.get_rng())
 
         unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
 
@@ -2711,15 +2710,12 @@ class TestRandomTable:
 
     @pytest.mark.parametrize("method", ("boyett", "boyett2", "patefield"))
     def test_rvs_frozen(self, method):
-        rng1 = np.random.default_rng(628174795866951638)
-        rng2 = np.random.default_rng(628174795866951638)
-
         row = [2, 6]
         col = [1, 3, 4]
-        d = random_table(row, col, seed=rng1)
+        d = random_table(row, col, seed=self.get_rng())
 
         expected = random_table.rvs(row, col, size=10, method=method,
-                                    random_state=rng2)
+                                    random_state=self.get_rng())
         got = d.rvs(size=10, method=method)
         assert_equal(expected, got)
 
@@ -2727,11 +2723,10 @@ class TestRandomTable:
     def test_rvs_with_zeros_in_col_row(self, method):
         if method == "boyett2":
             pytest.xfail("boyett2 is broken and will be removed")
-        rng = np.random.default_rng(12345678)
         row = [0, 1, 0]
         col = [1, 0, 0, 0]
         d = random_table(row, col)
-        rv = d.rvs(1000, method=method, random_state=rng)
+        rv = d.rvs(1000, method=method, random_state=self.get_rng())
         expected = np.zeros((1000, len(row), len(col)))
         expected[...] = [[0, 0, 0, 0],
                          [1, 0, 0, 0],
@@ -2742,9 +2737,8 @@ class TestRandomTable:
     @pytest.mark.parametrize("col", ([], [0]))
     @pytest.mark.parametrize("row", ([], [0]))
     def test_rvs_with_edge_cases(self, method, row, col):
-        rng = np.random.default_rng(12345678)
         d = random_table(row, col)
-        rv = d.rvs(10, method=method, random_state=rng)
+        rv = d.rvs(10, method=method, random_state=self.get_rng())
         expected = np.zeros((10, len(row), len(col)))
         assert_equal(rv, expected)
 
@@ -2755,12 +2749,10 @@ class TestRandomTable:
         row = np.array([1.0, 3.0])
         col = np.array([2.0, 1.0, 1.0])
 
-        rng = np.random.default_rng(628174795866951638)
-
         rvs = getattr(_rcont, f"rvs_rcont{v}")
 
         ntot = np.sum(row)
-        result = rvs(row, col, ntot, 1, rng)
+        result = rvs(row, col, ntot, 1, self.get_rng())
 
         assert result.shape == (1, len(row), len(col))
         assert np.sum(result) == ntot
@@ -2768,7 +2760,7 @@ class TestRandomTable:
     def test_frozen(self):
         row = [2, 6]
         col = [1, 3, 4]
-        d = random_table(row, col)
+        d = random_table(row, col, seed=self.get_rng())
 
         sample = d.rvs()
 
