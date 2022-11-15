@@ -255,9 +255,6 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef int i = _elementary_basis_index(seq[0])
     cdef int j = _elementary_basis_index(seq[1])
     cdef int k = _elementary_basis_index(seq[2])
-    
-    # quick renormalization of transformed quaternion, assumes |q| = 1
-    cdef double norm_squared 
 
     cdef bint is_proper = i == k
     if is_proper:
