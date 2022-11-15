@@ -109,7 +109,8 @@ void rcont2(double *matrix, int nr, const double *r, int nc, const double *c,
 
   // jwork is folded into matrix using last row
   double *jwork = ptr(matrix, nr, nc, nr - 1, 0);
-  for (int i = 0; i < nc; ++i)
+  // last entry of jwork is never used
+  for (int i = 0; i < nc - 1; ++i)
   {
     jwork[i] = c[i];
   }
