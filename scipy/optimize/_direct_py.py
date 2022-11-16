@@ -215,7 +215,7 @@ def direct(
     # check that lower bounds are smaller than upper bounds
     if not np.all(lb < ub):
         raise ValueError('Bounds are not consistent min < max')
-    # check for infs and nans
+    # check for infs
     if (np.any(np.isinf(lb)) or np.any(np.isinf(ub))):
         raise ValueError("Bounds must not be inf.")
 

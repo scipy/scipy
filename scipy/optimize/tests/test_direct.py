@@ -116,6 +116,22 @@ class TestDIRECT:
         assert res.status == 5
         assert res.success
         assert_allclose(res.x, np.zeros((4, )))
+        message = ("The side length measure of the hyperrectangle containing "
+                   f"the lowest function value found is below len_tol={len_tol}")
+        assert res.message == message
+
+    @pytest.mark.parametrize("vol_tol", [1e-6, 1e-8])
+    @pytest.mark.parametrize("locally_biased", [True, False])
+    def test_vol_tol(self, vol_tol, locally_biased):
+        bounds = 4*[(-10., 10.)]
+        res = direct(self.sphere, bounds=bounds, vol_tol=vol_tol,
+                     len_tol=0., locally_biased=locally_biased)
+        assert res.status == 4
+        assert res.success
+        assert_allclose(res.x, np.zeros((4, )))
+        message = ("The volume of the hyperrectangle containing the lowest "
+                   f"function value found is below vol_tol={vol_tol}")
+        assert res.message == message
 
     @pytest.mark.parametrize("f_min_rtol", [1e-3, 1e-5, 1e-7])
     @pytest.mark.parametrize("locally_biased", [True, False])
@@ -130,6 +146,9 @@ class TestDIRECT:
         assert res.status == 3
         assert res.success
         assert res.fun < f_min * (1. + f_min_rtol)
+        message = ("The best function value found is within a relative "
+                   f"error={f_min_rtol} of the (known) global optimum f_min")
+        assert res.message == message
 
     def circle_with_args(self, x, a, b):
         return np.square(x[0] - a) + np.square(x[1] - b).sum()
@@ -153,6 +172,9 @@ class TestDIRECT:
         assert result.success is False
         assert result.status == 1
         assert result.nfev >= maxfun
+        message = ("Number of function evaluations done is "
+                   f"larger than maxfun={maxfun}")
+        assert result.message == message
 
     @pytest.mark.parametrize("locally_biased", [True, False])
     def test_failure_maxiter(self, locally_biased):
@@ -165,6 +187,8 @@ class TestDIRECT:
         assert result.success is False
         assert result.status == 2
         assert result.nit >= maxiter
+        message = f"Number of iterations is larger than maxiter={maxiter}"
+        assert result.message == message
 
     @pytest.mark.parametrize("locally_biased", [True, False])
     def test_bounds_variants(self, locally_biased):
