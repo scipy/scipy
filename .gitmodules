@@ -13,3 +13,7 @@
 	path = scipy/_lib/highs
 	url = https://github.com/scipy/highs
 	shallow = true
+[submodule "scipy/_lib/boost"]
+	path = scipy/_lib/boost
+	url = https://github.com/boostorg/math.git
+    shallow = true
