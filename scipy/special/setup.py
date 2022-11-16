@@ -35,7 +35,7 @@ def configuration(parent_package='',top_path=None):
     if python_inc_dirs != plat_specific_python_inc_dirs:
         inc_dirs.append(plat_specific_python_inc_dirs)
     inc_dirs.append(join(dirname(dirname(__file__)), '_lib'))
-    inc_dirs.append(join(dirname(dirname(__file__)), '_lib', 'boost'))
+    inc_dirs.append(join(dirname(dirname(__file__)), '_lib', 'boost', 'include'))
     inc_dirs.append(join(dirname(dirname(__file__)), '_build_utils', 'src'))
 
     # C libraries

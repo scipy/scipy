@@ -5,7 +5,6 @@
 #include <cmath>
 
 #include "boost/math/distributions.hpp"
-#include "boost/format.hpp"
 
 // Round up to achieve correct ppf(cdf) round-trips for discrete distributions
 typedef boost::math::policies::policy<
@@ -25,7 +24,9 @@ template <class RealType>
 RealType
 boost::math::policies::user_evaluation_error(const char* function, const char* message, const RealType& val) {
     std::string msg("Error in function ");
-    msg += (boost::format(function) % typeid(RealType).name()).str() + ": ";
+    std::string haystack {function};
+    const std::string needle {"%1%"};
+    msg += haystack.replace(haystack.find(needle), needle.length(), typeid(RealType).name()) + ": ";
     // "message" may have %1%, but arguments don't always contain all
     // required information, so don't call boost::format for now
     msg += message;
@@ -40,7 +41,9 @@ template <class RealType>
 RealType
 boost::math::policies::user_overflow_error(const char* function, const char* message, const RealType& val) {
     std::string msg("Error in function ");
-    msg += (boost::format(function) % typeid(RealType).name()).str() + ": ";
+    std::string haystack {function};
+    const std::string needle {"%1%"};
+    msg += haystack.replace(haystack.find(needle), needle.length(), typeid(RealType).name()) + ": ";
     // From Boost docs: "overflow and underflow messages do not contain this %1% specifier
     //                   (since the value of value is immaterial in these cases)."
     msg += message;

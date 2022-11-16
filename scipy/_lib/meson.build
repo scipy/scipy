@@ -1,5 +1,5 @@
 fs = import('fs')
-if not fs.exists('boost/README.rst')
+if not fs.exists('boost/README.md')
   error('Missing the `boost` submodule! Run `git submodule update --init` to fix this.')
 endif
 if not fs.exists('highs/README.md')

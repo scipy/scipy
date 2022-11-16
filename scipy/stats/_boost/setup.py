@@ -18,6 +18,7 @@ def configuration(parent_package='', top_path=None):
 
     DEFINES = [
         # return nan instead of throwing
+        ('DBOOST_MATH_STANDALONE', '1'),
         ('BOOST_MATH_DOMAIN_ERROR_POLICY', 'ignore_error'),
         ('BOOST_MATH_EVALUATION_ERROR_POLICY', 'user_error'),
         ('BOOST_MATH_OVERFLOW_ERROR_POLICY', 'user_error'),

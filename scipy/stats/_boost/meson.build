@@ -1,4 +1,5 @@
 cpp_args = [
+  '-DBOOST_MATH_STANDALONE=1',
   '-DBOOST_MATH_DOMAIN_ERROR_POLICY=ignore_error',
   '-DBOOST_MATH_EVALUATION_ERROR_POLICY=user_error',
   '-DBOOST_MATH_OVERFLOW_ERROR_POLICY=user_error'
@@ -23,7 +24,7 @@ pyx_files = [
 foreach pyx_file: pyx_files
   py3.extension_module(pyx_file[0],
     pyx_file[1],
-    include_directories: [inc_np, 'include', '../../_lib/boost'],
+    include_directories: [inc_np, 'include', '../../_lib/boost/include'],
     link_args: version_link_args,
     cpp_args: [cpp_args, cython_cpp_args],
     install: true,
