@@ -223,13 +223,13 @@ class TestDIRECT:
                    len_tol=len_tol)
 
     @pytest.mark.parametrize("vol_tol", [-1, 2])
-    def test_len_tol_validation(self, vol_tol):
+    def test_vol_tol_validation(self, vol_tol):
         error_msg = "vol_tol must be between 0 and 1."
         with pytest.raises(ValueError, match=error_msg):
             direct(self.styblinski_tang, self.bounds_stylinski_tang,
                    vol_tol=vol_tol)
 
-    @pytest.mark.parametrize("f_min_rtol", [-1, 2, np.inf, -np.inf])
+    @pytest.mark.parametrize("f_min_rtol", [-1, 2])
     def test_fmin_rtol_validation(self, f_min_rtol):
         error_msg = "f_min_rtol must be between 0 and 1."
         with pytest.raises(ValueError, match=error_msg):
@@ -269,21 +269,18 @@ class TestDIRECT:
         with pytest.raises(ValueError, match=error_msg):
             direct(self.styblinski_tang, bounds)
 
-    def test_incorrect_bounds(self):
+    @pytest.mark.parametrize("bounds",
+                             [Bounds([-1., -1], [-2, 1]),
+                              Bounds([-np.nan, -1], [-2, np.nan])
+                             ])
+    def test_incorrect_bounds(self, bounds):
         error_msg = 'Bounds are not consistent min < max'
-        bounds = Bounds([-1., -1], [-2, 1])
         with pytest.raises(ValueError, match=error_msg):
             direct(self.styblinski_tang, bounds)
 
     def test_inf_bounds(self):
         error_msg = 'Bounds must not be inf.'
         bounds = Bounds([-np.inf, -1], [-2, np.inf])
-        with pytest.raises(ValueError, match=error_msg):
-            direct(self.styblinski_tang, bounds)
-
-    def test_nan_bounds(self):
-        error_msg = 'Bounds must not be NaN.'
-        bounds = Bounds([np.nan, -1], [-2, np.nan])
         with pytest.raises(ValueError, match=error_msg):
             direct(self.styblinski_tang, bounds)
 
