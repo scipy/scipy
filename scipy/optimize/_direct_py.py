@@ -212,16 +212,14 @@ def direct(
     ub = np.ascontiguousarray(bounds.ub, dtype=np.float64)
 
     # validate bounds
-    if not np.all(lb < ub):
-        raise ValueError('Bounds are not consistent min < max')
-    if not len(lb) == len(ub):
-        raise ValueError('Bounds do not have the same dimensions')
-
     # check for infs and nans
     if (np.any(np.isinf(lb)) or np.any(np.isinf(ub))):
         raise ValueError("Bounds must not be inf.")
     if (np.any(np.isnan(lb)) or np.any(np.isnan(ub))):
         raise ValueError("Bounds must not be NaN.")
+    # check that lower bounds are smaller than upper bounds
+    if not np.all(lb < ub):
+        raise ValueError('Bounds are not consistent min < max')
 
     # validate tolerances
     if (vol_tol < 0 or vol_tol > 1):
