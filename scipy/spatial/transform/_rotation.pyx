@@ -238,7 +238,6 @@ cdef double[:, :] _compute_euler_from_matrix(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-@cython.cdivision(True)
 cdef double[:, :] _compute_euler_from_quat(
     np.ndarray[double, ndim=2] quat, const uchar[:] seq, bint extrinsic=False
 ):
@@ -255,9 +254,6 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef int i = _elementary_basis_index(seq[0])
     cdef int j = _elementary_basis_index(seq[1])
     cdef int k = _elementary_basis_index(seq[2])
-    
-    # quick renormalization of transformed quaternion, assumes |q| = 1
-    cdef double norm_squared 
 
     cdef bint is_proper = i == k
     if is_proper:
@@ -295,21 +291,21 @@ cdef double[:, :] _compute_euler_from_quat(
         
         # Step 2
         # Compute second angle...
-        _angles[1] = 2*atan2(hypot(c,d), hypot(a,b))# hypot(x,y)==sqrt(x*x+y*y)
+        _angles[1] = 2 * atan2(hypot(c, d), hypot(a, b))
 
         # ... and check if equal to is 0 or pi, causing a singularity
         if abs(_angles[1]) <= eps:
-            case = 1 # first degenerate case
+            case = 1
         elif abs(_angles[1] - <double>pi) <= eps:
-            case = 2 # second degenerate case
+            case = 2
         else:
             case = 0 # normal case
 
         # Step 3
         # compute first and third angles, according to case
         
-        half_sum = atan2(b, a) # == (angles[0] + angles[2])/2
-        half_diff = atan2(-d, c) # == (angles[0] - angles[2])/2 
+        half_sum = atan2(b, a)
+        half_diff = atan2(-d, c)
         
         if case == 0: # no singularities
             
