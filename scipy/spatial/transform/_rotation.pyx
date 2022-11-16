@@ -319,20 +319,16 @@ cdef double[:, :] _compute_euler_from_quat(
                 # ensure that third angle is zero
                 # 
                 _angles[0] = 0
-                # 
                 if case == 1:
                     _angles[2] = 2 * half_sum
-                # 
                 if case == 2:
                     _angles[2] = -2 * half_diff
             else:
                 # For extrinsic , set third angle to zero
                 # 
                 _angles[2] = 0
-                # 
                 if case == 1:
                     _angles[0] = 2 * half_sum
-                # 
                 if case == 2:
                     _angles[0] = 2 * half_diff
 
