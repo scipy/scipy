@@ -117,7 +117,8 @@ class TestDIRECT:
         assert res.success
         assert_allclose(res.x, np.zeros((4, )))
         message = ("The side length measure of the hyperrectangle containing "
-                   f"the lowest function value found is below len_tol={len_tol}")
+                   "the lowest function value found is below "
+                   f"len_tol={len_tol}")
         assert res.message == message
 
     @pytest.mark.parametrize("vol_tol", [1e-6, 1e-8])
@@ -295,8 +296,9 @@ class TestDIRECT:
 
     @pytest.mark.parametrize("bounds",
                              [Bounds([-1., -1], [-2, 1]),
-                              Bounds([-np.nan, -1], [-2, np.nan])
-                             ])
+                              Bounds([-np.nan, -1], [-2, np.nan]),
+                              ]
+                             )
     def test_incorrect_bounds(self, bounds):
         error_msg = 'Bounds are not consistent min < max'
         with pytest.raises(ValueError, match=error_msg):
