@@ -2709,17 +2709,6 @@ class TestRandomTable:
         assert_allclose(p * len(rvs), counts, rtol=0.03)
 
     @pytest.mark.parametrize("method", ("boyett", "boyett2", "patefield"))
-    def test_rvs_frozen(self, method):
-        row = [2, 6]
-        col = [1, 3, 4]
-        d = random_table(row, col, seed=self.get_rng())
-
-        expected = random_table.rvs(row, col, size=10, method=method,
-                                    random_state=self.get_rng())
-        got = d.rvs(size=10, method=method)
-        assert_equal(expected, got)
-
-    @pytest.mark.parametrize("method", ("boyett", "boyett2", "patefield"))
     def test_rvs_with_zeros_in_col_row(self, method):
         if method == "boyett2":
             pytest.xfail("boyett2 is broken and will be removed")
@@ -2772,6 +2761,17 @@ class TestRandomTable:
 
         expected = random_table.logpmf(sample, row, col)
         assert_equal(expected, d.logpmf(sample))
+
+    @pytest.mark.parametrize("method", ("boyett", "boyett2", "patefield"))
+    def test_rvs_frozen(self, method):
+        row = [2, 6]
+        col = [1, 3, 4]
+        d = random_table(row, col, seed=self.get_rng())
+
+        expected = random_table.rvs(row, col, size=10, method=method,
+                                    random_state=self.get_rng())
+        got = d.rvs(size=10, method=method)
+        assert_equal(expected, got)
 
 def check_pickling(distfn, args):
     # check that a distribution instance pickles and unpickles
