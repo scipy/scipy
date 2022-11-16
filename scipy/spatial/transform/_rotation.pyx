@@ -1548,7 +1548,7 @@ cdef class Rotation:
             return np.asarray(rotvec)
 
     @cython.embedsignature(True)
-    def as_euler_from_matrix(self, seq, degrees=False):
+    def _as_euler_from_matrix(self, seq, degrees=False):
         """Represent as Euler angles.
         
         DEPRECATED
