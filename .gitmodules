@@ -16,4 +16,4 @@
 [submodule "scipy/_lib/boost"]
 	path = scipy/_lib/boost
 	url = https://github.com/boostorg/math.git
-    shallow = true
+	shallow = true
