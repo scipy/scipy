@@ -299,6 +299,7 @@ class TestDIRECT:
                               Bounds([-np.nan, -1], [-2, np.nan]),
                               ]
                              )
+
     def test_incorrect_bounds(self, bounds):
         error_msg = 'Bounds are not consistent min < max'
         with pytest.raises(ValueError, match=error_msg):
