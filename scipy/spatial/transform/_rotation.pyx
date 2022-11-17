@@ -247,9 +247,16 @@ cdef double[:, :] _compute_euler_from_quat(
     # Adapt the algorithm for our case by reversing both axis sequence and 
     # angles for intrinsic rotations when needed
     
+    # intrinsic/extrinsic conversion helpers
+    cdef int angle_first, angle_third
     if not extrinsic:
         seq = seq[::-1]
-
+        angle_first = 2
+        angle_third = 0
+    else:
+        angle_first = 0
+        angle_third = 2
+        
     cdef int i = _elementary_basis_index(seq[0])
     cdef int j = _elementary_basis_index(seq[1])
     cdef int k = _elementary_basis_index(seq[2])
@@ -302,38 +309,23 @@ cdef double[:, :] _compute_euler_from_quat(
 
         # Step 3
         # compute first and third angles, according to case
-        
         half_sum = atan2(b, a)
         half_diff = atan2(d, c)
         
         if case == 0: # no singularities
-            
-            _angles[0] = half_sum - half_diff
-            _angles[2] = half_sum + half_diff
+            _angles[angle_first] = half_sum - half_diff
+            _angles[angle_third] = half_sum + half_diff
         
         else: # any degenerate case
-
-            if extrinsic:
-                # For extrinsic , set third angle to zero
-                # 
-                _angles[2] = 0
-                if case == 1:
-                    _angles[0] = 2 * half_sum
-                if case == 2:
-                    _angles[0] = -2 * half_diff
+            _angles[2] = 0
+            if case == 1:
+                _angles[0] = 2 * half_sum
             else:
-                # For intrinsic, set first angle to zero so that after reversal we
-                # ensure that third angle is zero
-                # 
-                _angles[0] = 0
-                if case == 1:
-                    _angles[2] = 2 * half_sum
-                if case == 2:
-                    _angles[2] = 2 * half_diff
-
+                _angles[0] = 2 * half_diff * (-1 if extrinsic else 1)
+                
         # for Tait-Bryan angles
         if not symmetric:
-            _angles[2] *= sign
+            _angles[angle_third] *= sign
             _angles[1] -= pi / 2
             
         for idx in range(3):
@@ -341,10 +333,6 @@ cdef double[:, :] _compute_euler_from_quat(
                 _angles[idx] += 2 * pi
             elif _angles[idx] > pi:
                 _angles[idx] -= 2 * pi
-
-        if not extrinsic:
-            # reversal
-            _angles[0], _angles[2] = _angles[2], _angles[0]
 
         if case != 0:
             warnings.warn("Gimbal lock detected. Setting third angle to zero "
@@ -1547,6 +1535,94 @@ cdef class Rotation:
             return np.asarray(rotvec)
 
     @cython.embedsignature(True)
+    def _prepare_axes_compute_euler(self, seq, degrees=False, 
+                                    algorithm='from_quat'):
+        """Prepare axis sequence to call Euler angles conversion algorithm.
+
+        Any orientation can be expressed as a composition of 3 elementary
+        rotations. Once the axis sequence has been chosen, Euler angles define
+        the angle of rotation around each respective axis [1]_.
+
+        The algorithm for the actual conversion if either from [2]_ or [3_] .
+
+        Parameters
+        ----------
+        seq : string, length 3
+            3 characters belonging to the set {'X', 'Y', 'Z'} for intrinsic
+            rotations, or {'x', 'y', 'z'} for extrinsic rotations [1]_.
+            Adjacent axes cannot be the same.
+            Extrinsic and intrinsic rotations cannot be mixed in one function
+            call.
+        degrees : boolean, optional
+            Returned angles are in degrees if this flag is True, else they are
+            in radians. Default is False.
+        algorithm : string, optional
+            if algorithm='from_quat', chooses
+
+        Returns
+        -------
+        angles : ndarray, shape (3,) or (N, 3)
+            Shape depends on shape of inputs used to initialize object.
+            The returned angles are in the range:
+
+            - First angle belongs to [-180, 180] degrees (both inclusive)
+            - Third angle belongs to [-180, 180] degrees (both inclusive)
+            - Second angle belongs to:
+
+                - [-90, 90] degrees if all axes are different (like xyz)
+                - [0, 180] degrees if first and third axes are the same
+                  (like zxz)
+
+        References
+        ----------
+        .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
+        .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles 
+               conversion: A direct, general and computationally efficient 
+               method. PLoS ONE 17(11): e0276302. 
+               https://doi.org/10.1371/journal.pone.0276302
+        .. [3] Malcolm D. Shuster, F. Landis Markley, "General formula for
+               extraction the Euler angles", Journal of guidance, control, and
+               dynamics, vol. 29.1, pp. 215-221. 2006
+
+        """
+        if len(seq) != 3:
+            raise ValueError("Expected 3 axes, got {}.".format(seq))
+
+        intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
+        extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
+        if not (intrinsic or extrinsic):
+            raise ValueError("Expected axes from `seq` to be from "
+                             "['x', 'y', 'z'] or ['X', 'Y', 'Z'], "
+                             "got {}".format(seq))
+
+        if any(seq[i] == seq[i+1] for i in range(2)):
+            raise ValueError("Expected consecutive axes to be different, "
+                             "got {}".format(seq))
+
+        seq = seq.lower()
+            
+        if algorithm == 'from_matrix':
+            matrix = self.as_matrix()
+            if matrix.ndim == 2:
+                matrix = matrix[None, :, :]
+            angles = np.asarray(_compute_euler_from_matrix(
+                matrix, seq.encode(), extrinsic))
+        elif algorithm == 'from_quat':
+            quat = self.as_quat()
+            if quat.ndim == 1:
+                quat = quat[None, :]
+            angles = np.asarray(_compute_euler_from_quat(
+                    quat, seq.encode(), extrinsic))
+        else:
+            raise ValueError("algorithm can be 'from_quat' or 'from_matrix'"
+                             ", got '{}'".format(algorithm))
+            
+        if degrees:
+            angles = np.rad2deg(angles)
+
+        return angles[0] if self._single else angles
+
+    @cython.embedsignature(True)
     def _as_euler_from_matrix(self, seq, degrees=False):
         """Represent as Euler angles.
         
@@ -1600,31 +1676,7 @@ cdef class Rotation:
         .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
 
         """
-        if len(seq) != 3:
-            raise ValueError("Expected 3 axes, got {}.".format(seq))
-
-        intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
-        extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
-        if not (intrinsic or extrinsic):
-            raise ValueError("Expected axes from `seq` to be from "
-                             "['x', 'y', 'z'] or ['X', 'Y', 'Z'], "
-                             "got {}".format(seq))
-
-        if any(seq[i] == seq[i+1] for i in range(2)):
-            raise ValueError("Expected consecutive axes to be different, "
-                             "got {}".format(seq))
-
-        seq = seq.lower()
-
-        matrix = self.as_matrix()
-        if matrix.ndim == 2:
-            matrix = matrix[None, :, :]
-        angles = np.asarray(_compute_euler_from_matrix(
-            matrix, seq.encode(), extrinsic))
-        if degrees:
-            angles = np.rad2deg(angles)
-
-        return angles[0] if self._single else angles
+        return self._prepare_axes_compute_euler(seq, degrees, 'from_matrix')
 
     @cython.embedsignature(True)
     def as_euler(self, seq, degrees=False):
@@ -1713,32 +1765,7 @@ cdef class Rotation:
         (3, 3)
 
         """
-        if len(seq) != 3:
-            raise ValueError("Expected 3 axes, got {}.".format(seq))
-
-        intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
-        extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
-        if not (intrinsic or extrinsic):
-            raise ValueError("Expected axes from `seq` to be from "
-                             "['x', 'y', 'z'] or ['X', 'Y', 'Z'], "
-                             "got {}".format(seq))
-
-        if any(seq[i] == seq[i+1] for i in range(2)):
-            raise ValueError("Expected consecutive axes to be different, "
-                             "got {}".format(seq))
-
-        seq = seq.lower()
-            
-        quat = self.as_quat()
-        if quat.ndim == 1:
-            quat = quat[None, :]
-        angles = np.asarray(_compute_euler_from_quat(
-                quat, seq.encode(), extrinsic))
-            
-        if degrees:
-            angles = np.rad2deg(angles)
-
-        return angles[0] if self._single else angles
+        return self._prepare_axes_compute_euler(seq, degrees, 'from_quat')
 
     @cython.embedsignature(True)
     def as_mrp(self):
