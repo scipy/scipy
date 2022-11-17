@@ -244,9 +244,8 @@ cdef double[:, :] _compute_euler_from_quat(
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
     # directly by Rotation.
-    # Adapt the algorithm for our case by
-    # 1. Replacing "d" with "-d" for intrinsic rotation
-    # 2. Reversing both axis sequence and angles for extrinsic rotations
+    # Adapt the algorithm for our case by reversing both axis sequence and 
+    # angles for intrinsic rotations when needed
     
     if not extrinsic:
         seq = seq[::-1]
@@ -305,16 +304,24 @@ cdef double[:, :] _compute_euler_from_quat(
         # compute first and third angles, according to case
         
         half_sum = atan2(b, a)
-        half_diff = atan2(-d, c)
+        half_diff = atan2(d, c)
         
         if case == 0: # no singularities
             
-            _angles[0] = half_sum + half_diff
-            _angles[2] = half_sum - half_diff
+            _angles[0] = half_sum - half_diff
+            _angles[2] = half_sum + half_diff
         
         else: # any degenerate case
 
-            if not extrinsic:
+            if extrinsic:
+                # For extrinsic , set third angle to zero
+                # 
+                _angles[2] = 0
+                if case == 1:
+                    _angles[0] = 2 * half_sum
+                if case == 2:
+                    _angles[0] = -2 * half_diff
+            else:
                 # For intrinsic, set first angle to zero so that after reversal we
                 # ensure that third angle is zero
                 # 
@@ -322,15 +329,7 @@ cdef double[:, :] _compute_euler_from_quat(
                 if case == 1:
                     _angles[2] = 2 * half_sum
                 if case == 2:
-                    _angles[2] = -2 * half_diff
-            else:
-                # For extrinsic , set third angle to zero
-                # 
-                _angles[2] = 0
-                if case == 1:
-                    _angles[0] = 2 * half_sum
-                if case == 2:
-                    _angles[0] = 2 * half_diff
+                    _angles[2] = 2 * half_diff
 
         # for Tait-Bryan angles
         if not is_proper:
