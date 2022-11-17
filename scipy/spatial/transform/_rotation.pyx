@@ -254,8 +254,8 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef int j = _elementary_basis_index(seq[1])
     cdef int k = _elementary_basis_index(seq[2])
 
-    cdef bint is_proper = i == k
-    if is_proper:
+    cdef bint symmetric = i == k
+    if symmetric:
         k = 3 - i - j # get third axis
         
     # Step 0
@@ -277,7 +277,7 @@ cdef double[:, :] _compute_euler_from_quat(
 
         # Step 1
         # Permutate quaternion elements            
-        if is_proper:
+        if symmetric:
             a = quat[ind, 3]
             b = quat[ind, i]
             c = quat[ind, j]
@@ -332,7 +332,7 @@ cdef double[:, :] _compute_euler_from_quat(
                     _angles[2] = 2 * half_diff
 
         # for Tait-Bryan angles
-        if not is_proper:
+        if not symmetric:
             _angles[2] *= sign
             _angles[1] -= pi / 2
             
