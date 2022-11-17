@@ -759,46 +759,7 @@ def test_as_euler_degenerate_compare_algorithms():
             assert_allclose(
                 rot._as_euler_from_matrix(seq, degrees=True)[:,[0,2]], 
                 rot.as_euler(seq, degrees=True)[:,[0,2]])
-            
-
-#def test_as_euler_continuous_intrinsic():
-#    n = 1000
-#    angle1 = np.pi/4
-#    angles = np.empty((6*n, 3))
-#    
-#    angles[:, 0] = angle1
-#    angles[:, 2] = np.linspace(0, np.pi/2, 6*n)
-#    
-#    angles[:n, 1] = np.linspace(np.pi/2, 0, n)
-#    angles[n:2*n, 1] = 0
-#    angles[2*n:4*n, 1] = np.linspace(0, np.pi, 2*n)
-#    angles[4*n:5*n, 1] = np.pi
-#    angles[5*n:, 1] = np.linspace(np.pi, np.pi/2, n)
-#    
-#    # Extrinsic rotations
-#    seq = 'ZYZ'
-#    angles_cont = Rotation.from_euler(seq, angles).as_euler(seq, continuous=True)
-#    assert_allclose(angles, angles_cont)
-#    
-#
-#def test_as_euler_continuous_extrinsic():
-#    n = 1000
-#    angle1 = np.pi/4
-#    angles = np.empty((6*n, 3))
-#    
-#    angles[:, 2] = angle1
-#    angles[:, 0] = np.linspace(0, np.pi/2, 6*n)
-#    
-#    angles[:n, 1] = np.linspace(np.pi/2, 0, n)
-#    angles[n:2*n, 1] = 0
-#    angles[2*n:4*n, 1] = np.linspace(0, np.pi, 2*n)
-#    angles[4*n:5*n, 1] = np.pi
-#    angles[5*n:, 1] = np.linspace(np.pi, np.pi/2, n)
-#    
-#    seq = 'zyz'
-#    angles_cont = Rotation.from_euler(seq, angles).as_euler(seq, continuous=True)
-#    assert_allclose(angles, angles_cont)
-    
+   
 
 def test_inv():
     rnd = np.random.RandomState(0)
