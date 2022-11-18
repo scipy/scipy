@@ -694,11 +694,13 @@ def test_as_euler_compare_algorithms():
         # Extrinsic rotations
         seq = ''.join(seq_tuple)
         rot = Rotation.from_euler(seq, angles)
-        assert_allclose(rot._as_euler_from_matrix(seq), rot.as_euler(seq))
+        assert_allclose(rot._as_euler_from_matrix(seq), rot.as_euler(seq),
+                        atol=0, rtol=1e-11)
         # Intrinsic rotations
         seq = seq.upper()
         rot = Rotation.from_euler(seq, angles)
-        assert_allclose(rot._as_euler_from_matrix(seq), rot.as_euler(seq))
+        assert_allclose(rot._as_euler_from_matrix(seq), rot.as_euler(seq),
+                        atol=0, rtol=1e-11)
         
     # symmetric axes
     angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
@@ -706,11 +708,13 @@ def test_as_euler_compare_algorithms():
         # Extrinsic rotations
         seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
         rot = Rotation.from_euler(seq, angles)
-        assert_allclose(rot._as_euler_from_matrix(seq), rot.as_euler(seq))
+        assert_allclose(rot._as_euler_from_matrix(seq), rot.as_euler(seq),
+                        atol=0, rtol=1e-9)
         # Intrinsic rotations
         seq = seq.upper()
         rot = Rotation.from_euler(seq, angles)
-        assert_allclose(rot._as_euler_from_matrix(seq), rot.as_euler(seq))
+        assert_allclose(rot._as_euler_from_matrix(seq), rot.as_euler(seq),
+                        atol=0, rtol=1e-9)
 
 
 def test_as_euler_degenerate_compare_algorithms():
