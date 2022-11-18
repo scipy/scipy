@@ -5531,7 +5531,7 @@ class uniform_direction_gen(multi_rv_generic):
     r"""A vector-valued uniform direction.
 
     Return a random direction (unit vector). The `dim` keyword specifies
-    the dimension.
+    the dimensionality of the space.
 
     Methods
     -------
@@ -5577,19 +5577,20 @@ class uniform_direction_gen(multi_rv_generic):
     This generates one random direction, a vector on the surface of
     :math:`S^2`.
 
-    Alternatively, the object may be called (as a function) to fix the `dim`
-    parameter, return a "frozen" `uniform_direction` distribution. Here
-    we create a ``uniform_direction`` with ``dim=3`` and draw 5 samples.
+    Alternatively, the object may be called (as a function) to return a frozen
+    distribution with fixed `dim` parameter. Here,
+    we create a `uniform_direction` with ``dim=3`` and draw 5 observations.
     The samples are then arranged in an array of shape 5x3.
 
+    >>> rng = np.random.default_rng()
     >>> uniform_sphere_dist = uniform_direction(3)
-    >>> unit_vector_samples = uniform_sphere_dist.rvs(5, random_state=1234)
-    >>> unit_vector_samples
-    array([[ 0.2453089 , -0.61971816,  0.74550181],
-           [-0.26385701, -0.60812805,  0.74870539],
-           [ 0.80356397, -0.59503751,  0.01467335],
-           [-0.8280059 ,  0.42459658,  0.3662294 ],
-           [ 0.42189482, -0.89450892, -0.14784637]])
+    >>> unit_vectors = uniform_sphere_dist.rvs(5, random_state=rng)
+    >>> unit_vectors
+    array([[ 0.56688642, -0.1332634 , -0.81294566],
+           [-0.427126  , -0.74779278,  0.50830044],
+           [ 0.3793989 ,  0.92346629,  0.05715323],
+           [ 0.36428383, -0.92449076, -0.11231259],
+           [-0.27733285,  0.94410968, -0.17816678]])
     """
 
     def __init__(self, seed=None):
