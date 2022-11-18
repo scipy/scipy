@@ -411,8 +411,6 @@ class TestDifferentialEvolutionSolver:
         assert_equal(result.x, result2.x)
         assert_equal(result.nfev, result2.nfev)
 
-    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
-                        reason='Generator not available for numpy, < 1.17')
     def test_random_generator(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
         # obtain a np.random.Generator object

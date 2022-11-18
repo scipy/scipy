@@ -171,6 +171,7 @@ def correlate(in1, in2, mode='full', method='auto'):
     Implement a matched filter using cross-correlation, to recover a signal
     that has passed through a noisy channel.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -300,16 +301,16 @@ def correlation_lags(in1_len, in2_len, mode='full'):
         A string indicating the size of the output.
         See the documentation `correlate` for more information.
 
-    See Also
-    --------
-    correlate : Compute the N-dimensional cross-correlation.
-
     Returns
     -------
     lags : array
         Returns an array containing cross-correlation lag/displacement indices.
         Indices can be indexed with the np.argmax of the correlation to return
         the lag/displacement.
+
+    See Also
+    --------
+    correlate : Compute the N-dimensional cross-correlation.
 
     Notes
     -----
@@ -338,9 +339,9 @@ def correlation_lags(in1_len, in2_len, mode='full'):
     --------
     Cross-correlation of a signal with its time-delayed self.
 
+    >>> import numpy as np
     >>> from scipy import signal
-    >>> from numpy.random import default_rng
-    >>> rng = default_rng()
+    >>> rng = np.random.default_rng()
     >>> x = rng.standard_normal(1000)
     >>> y = np.concatenate([rng.standard_normal(100), x])
     >>> correlation = signal.correlate(x, y, mode="full")
@@ -606,6 +607,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     --------
     Autocorrelation of white noise is an impulse.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> rng = np.random.default_rng()
     >>> sig = rng.standard_normal(1000)
@@ -831,10 +833,19 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     -----
     .. versionadded:: 1.4.0
 
+    References
+    ----------
+    .. [1] Wikipedia, "Overlap-add_method".
+           https://en.wikipedia.org/wiki/Overlap-add_method
+    .. [2] Richard G. Lyons. Understanding Digital Signal Processing,
+           Third Edition, 2011. Chapter 13.10.
+           ISBN 13: 978-0137-02741-5
+
     Examples
     --------
     Convolve a 100,000 sample signal with a 512-sample filter.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> rng = np.random.default_rng()
     >>> sig = rng.standard_normal(100000)
@@ -849,14 +860,6 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     >>> ax_mag.set_title('Filtered noise')
     >>> fig.tight_layout()
     >>> fig.show()
-
-    References
-    ----------
-    .. [1] Wikipedia, "Overlap-add_method".
-           https://en.wikipedia.org/wiki/Overlap-add_method
-    .. [2] Richard G. Lyons. Understanding Digital Signal Processing,
-           Third Edition, 2011. Chapter 13.10.
-           ISBN 13: 978-0137-02741-5
 
     """
     in1 = np.asarray(in1)
@@ -1241,6 +1244,7 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     --------
     Estimate the fastest method for a given input:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> rng = np.random.default_rng()
     >>> img = rng.random((32, 32))
@@ -1368,6 +1372,7 @@ def convolve(in1, in2, mode='full', method='auto'):
     --------
     Smooth a square pulse using a Hann window:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> sig = np.repeat([0., 1., 0.], 100)
     >>> win = signal.windows.hann(50)
@@ -1458,6 +1463,7 @@ def order_filter(a, domain, rank):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> x = np.arange(25).reshape(5, 5)
     >>> domain = np.identity(3)
@@ -1576,9 +1582,18 @@ def wiener(im, mysize=None, noise=None):
     out : ndarray
         Wiener filtered result with the same shape as `im`.
 
+    Notes
+    -----
+    This implementation is similar to wiener2 in Matlab/Octave.
+    For more details see [1]_
+
+    References
+    ----------
+    .. [1] Lim, Jae S., Two-Dimensional Signal and Image Processing,
+           Englewood Cliffs, NJ, Prentice Hall, 1990, p. 548.
+
     Examples
     --------
-
     >>> from scipy.datasets import face
     >>> from scipy.signal import wiener
     >>> import matplotlib.pyplot as plt
@@ -1590,17 +1605,6 @@ def wiener(im, mysize=None, noise=None):
     >>> plot1.imshow(img)
     >>> plot2.imshow(filtered_img)
     >>> plt.show()
-
-    Notes
-    -----
-    This implementation is similar to wiener2 in Matlab/Octave.
-    For more details see [1]_
-
-    References
-    ----------
-    .. [1] Lim, Jae S., Two-Dimensional Signal and Image Processing,
-           Englewood Cliffs, NJ, Prentice Hall, 1990, p. 548.
-
 
     """
     im = np.asarray(im)
@@ -1681,6 +1685,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     symmetric boundary condition to avoid creating edges at the image
     boundaries.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy import datasets
     >>> ascent = datasets.ascent()
@@ -1773,6 +1778,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     Use 2D cross-correlation to find the location of a template in a noisy
     image:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy import datasets
     >>> rng = np.random.default_rng()
@@ -1844,7 +1850,7 @@ def medfilt2d(input, kernel_size=3):
         An array the same size as input containing the median filtered
         result.
 
-    See also
+    See Also
     --------
     scipy.ndimage.median_filter
 
@@ -1857,6 +1863,7 @@ def medfilt2d(input, kernel_size=3):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> x = np.arange(25).reshape(5, 5)
     >>> x
@@ -2010,6 +2017,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     --------
     Generate a noisy signal to be filtered:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -2219,6 +2227,11 @@ def deconvolve(signal, divisor):
     remainder : ndarray
         Remainder
 
+    See Also
+    --------
+    numpy.polydiv : performs polynomial division (same operation, but
+                    also accepts poly1d objects)
+
     Examples
     --------
     Deconvolve a signal that's been filtered:
@@ -2232,11 +2245,6 @@ def deconvolve(signal, divisor):
     >>> recovered, remainder = signal.deconvolve(recorded, impulse_response)
     >>> recovered
     array([ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  0.])
-
-    See Also
-    --------
-    numpy.polydiv : performs polynomial division (same operation, but
-                    also accepts poly1d objects)
 
     """
     num = np.atleast_1d(signal)
@@ -2292,6 +2300,15 @@ def hilbert(x, N=None, axis=-1):
     transformed signal can be obtained from ``np.imag(hilbert(x))``, and the
     original signal from ``np.real(hilbert(x))``.
 
+    References
+    ----------
+    .. [1] Wikipedia, "Analytic signal".
+           https://en.wikipedia.org/wiki/Analytic_signal
+    .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
+    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
+           Processing, Third Edition, 2009. Chapter 12.
+           ISBN 13: 978-1292-02572-8
+
     Examples
     --------
     In this example we use the Hilbert transform to determine the amplitude
@@ -2332,15 +2349,6 @@ def hilbert(x, N=None, axis=-1):
     >>> ax1.set_xlabel("time in seconds")
     >>> ax1.set_ylim(0.0, 120.0)
     >>> fig.tight_layout()
-
-    References
-    ----------
-    .. [1] Wikipedia, "Analytic signal".
-           https://en.wikipedia.org/wiki/Analytic_signal
-    .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
-    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
-           Processing, Third Edition, 2009. Chapter 12.
-           ISBN 13: 978-1292-02572-8
 
     """
     x = np.asarray(x)
@@ -3069,6 +3077,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     Note that the end of the resampled data rises to meet the first
     sample of the next cycle:
 
+    >>> import numpy as np
     >>> from scipy import signal
 
     >>> x = np.linspace(0, 10, 20, endpoint=False)
@@ -3268,7 +3277,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     sample of the next cycle for the FFT method, and gets closer to zero
     for the polyphase method:
 
+    >>> import numpy as np
     >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
 
     >>> x = np.linspace(0, 10, 20, endpoint=False)
     >>> y = np.cos(-x**2/6.0)
@@ -3276,7 +3287,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     >>> f_poly = signal.resample_poly(y, 100, 20)
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
 
-    >>> import matplotlib.pyplot as plt
     >>> plt.plot(xnew, f_fft, 'b.-', xnew, f_poly, 'r.-')
     >>> plt.plot(x, y, 'ko-')
     >>> plt.plot(10, y[0], 'bo', 10, 0., 'ro')  # boundaries
@@ -3284,9 +3294,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     >>> plt.show()
 
     This default behaviour can be changed by using the padtype option:
-
-    >>> import numpy as np
-    >>> from scipy import signal
 
     >>> N = 5
     >>> x = np.linspace(0, 1, N, endpoint=False)
@@ -3300,7 +3307,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     >>> y3 = signal.resample_poly(Y, up, 1, padtype='mean')
     >>> y4 = signal.resample_poly(Y, up, 1, padtype='line')
 
-    >>> import matplotlib.pyplot as plt
     >>> for i in [0,1]:
     ...     plt.figure()
     ...     plt.plot(xr, y4[:,i], 'g.', label='line')
@@ -3504,9 +3510,9 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
-    >>> from numpy.random import default_rng
-    >>> rng = default_rng()
+    >>> rng = np.random.default_rng()
     >>> npoints = 1000
     >>> noise = rng.standard_normal(npoints)
     >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise
@@ -3733,6 +3739,7 @@ def sosfilt_zi(sos):
     Filter a rectangular pulse that begins at time 0, with and without
     the use of the `zi` argument of `scipy.signal.sosfilt`.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -4035,6 +4042,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     --------
     The examples will use several functions from `scipy.signal`.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -4358,6 +4366,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import sosfiltfilt, butter
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -4467,6 +4476,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     Examples
     --------
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 

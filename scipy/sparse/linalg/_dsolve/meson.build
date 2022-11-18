@@ -198,6 +198,7 @@ _superlu = py3.extension_module('_superlu',
   c_args: numpy_nodepr_api,
   link_with: [superlu_lib],
   include_directories: [incdir_numpy, 'SuperLU/SRC'],
+  link_args: version_link_args,
   dependencies: [blas, lapack],
   install: true,
   subdir: 'scipy/sparse/linalg/_dsolve'
@@ -208,7 +209,6 @@ py3.install_sources([
     '_add_newdocs.py',
     'linsolve.py'
   ],
-  pure: false,
   subdir: 'scipy/sparse/linalg/_dsolve'
 )
 

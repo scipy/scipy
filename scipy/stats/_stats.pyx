@@ -753,7 +753,7 @@ def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
     xi : array_like with shape (m, d)
         Coordinates to evaluate the estimate at in d dimensions.
     cho_cov : array_like with shape (d, d)
-        Permuted Cholesky factor of permuted covariance of the data.
+        (Lower) Cholesky factor of the covariance.
 
     Returns
     -------
@@ -778,9 +778,9 @@ def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
 
     # Rescale the data
     cho_cov_ = cho_cov.astype(dtype, copy=False)
-    points_ = np.asarray(solve_triangular(cho_cov, points.T, lower=False).T,
+    points_ = np.asarray(solve_triangular(cho_cov, points.T, lower=True).T,
                          dtype=dtype)
-    xi_ = np.asarray(solve_triangular(cho_cov, xi.T, lower=False).T,
+    xi_ = np.asarray(solve_triangular(cho_cov, xi.T, lower=True).T,
                      dtype=dtype)
     values_ = values.astype(dtype, copy=False)
 
@@ -805,9 +805,9 @@ cdef real logsumexp(real a, real b):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0):
+def gaussian_kernel_estimate_log(points, values, xi, cho_cov, dtype, real _=0):
     """
-    def gaussian_kernel_estimate_log(points, real[:, :] values, xi, precision)
+    def gaussian_kernel_estimate_log(points, real[:, :] values, xi, cho_cov)
 
     Evaluate the log of the estimated pdf on a provided set of points.
 
@@ -819,8 +819,8 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
         Multivariate values associated with the data points.
     xi : array_like with shape (m, d)
         Coordinates to evaluate the estimate at in ``d`` dimensions.
-    precision : array_like with shape (d, d)
-        Precision matrix for the Gaussian kernel.
+    cho_cov : array_like with shape (d, d)
+        (Lower) Cholesky factor of the covariance.
 
     Returns
     -------
@@ -829,7 +829,7 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
         input coordinates.
     """
     cdef:
-        real[:, :] points_, xi_, values_, log_values_, estimate, whitening
+        real[:, :] points_, xi_, values_, log_values_, estimate, cho_cov_
         int i, j, k
         int n, d, m, p
         real arg, residual, log_norm
@@ -841,13 +841,15 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
 
     if xi.shape[1] != d:
         raise ValueError("points and xi must have same trailing dim")
-    if precision.shape[0] != d or precision.shape[1] != d:
-        raise ValueError("precision matrix must match data dims")
+    if cho_cov.shape[0] != d or cho_cov.shape[1] != d:
+        raise ValueError("Covariance matrix must match data dims")
 
     # Rescale the data
-    whitening = np.linalg.cholesky(precision).astype(dtype, copy=False)
-    points_ = np.dot(points, whitening).astype(dtype, copy=False)
-    xi_ = np.dot(xi, whitening).astype(dtype, copy=False)
+    cho_cov_ = cho_cov.astype(dtype, copy=False)
+    points_ = np.asarray(solve_triangular(cho_cov, points.T, lower=True).T,
+                         dtype=dtype)
+    xi_ = np.asarray(solve_triangular(cho_cov, xi.T, lower=True).T,
+                     dtype=dtype)
     values_ = values.astype(dtype, copy=False)
 
     log_values_ = np.empty((n, p), dtype)
@@ -858,7 +860,7 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
     # Evaluate the normalisation
     log_norm = (- d / 2) * math.log(2 * PI)
     for i in range(d):
-        log_norm += math.log(whitening[i, i])
+        log_norm -= math.log(cho_cov[i, i])
 
     # Create the result array and evaluate the weighted sum
     estimate = np.full((m, p), fill_value=-np.inf, dtype=dtype)

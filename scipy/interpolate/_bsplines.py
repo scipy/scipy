@@ -7,7 +7,6 @@ from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           solve, solve_banded)
 from . import _bspl
 from . import _fitpack_impl
-from . import _fitpack as _dierckx
 from scipy._lib._util import prod
 from scipy.sparse import csr_array
 from scipy.special import poch
@@ -202,6 +201,7 @@ class BSpline:
     .. [2] Carl de Boor, A practical guide to splines, Springer, 2001.
 
     """
+
     def __init__(self, t, c, k, extrapolate=True, axis=0):
         super().__init__()
 
@@ -299,6 +299,7 @@ class BSpline:
 
         Construct a cubic B-spline:
 
+        >>> import numpy as np
         >>> from scipy.interpolate import BSpline
         >>> b = BSpline.basis_element([0, 1, 2, 3, 4])
         >>> k = b.k
@@ -657,8 +658,7 @@ class BSpline:
             if self.c.ndim == 1:
                 # Fast path: use FITPACK's routine
                 # (cf _fitpack_impl.splint).
-                t, c, k = self.tck
-                integral, wrk = _dierckx._splint(t, c, k, a, b)
+                integral = _fitpack_impl.splint(a, b, self.tck)
                 return integral * sign
 
         out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
@@ -879,7 +879,7 @@ def _woodbury_algorithm(A, ur, ll, b, k):
     Solve a cyclic banded linear system with upper right
     and lower blocks of size ``(k-1) / 2`` using
     the Woodbury formula
-    
+
     Parameters
     ----------
     A : 2-D array, shape(k, n)
@@ -893,12 +893,12 @@ def _woodbury_algorithm(A, ur, ll, b, k):
         Vector of constant terms of the system of linear equations.
     k : int
         B-spline degree.
-        
+
     Returns
     -------
     c : 1-D array, shape(n,)
         Solution of the original system of linear equations.
-        
+
     Notes
     -----
     This algorithm works only for systems with banded matrix A plus
@@ -949,7 +949,7 @@ def _woodbury_algorithm(A, ur, ll, b, k):
     # lower left block 
     U[-bs:, -bs:] = ll
     VT[np.arange(bs) - bs, np.arange(bs)] = 1
-    
+
     Z = solve_banded((bs, bs), A, U)
 
     H = solve(np.identity(k_mod) + VT @ Z, np.identity(k_mod))
@@ -1021,7 +1021,7 @@ def _make_interp_per_full_matr(x, y, t, k):
         matr[i, : k + 1] += bb
         bb = _bspl.evaluate_all_bspl(t, k, x[-1], n + k - 1, nu=i + 1)[:-1]
         matr[i, -k:] -= bb
-    
+
     # collocation matrix
     for i in range(n):
         xval = x[i]
@@ -1034,7 +1034,7 @@ def _make_interp_per_full_matr(x, y, t, k):
         # fill a row
         bb = _bspl.evaluate_all_bspl(t, k, xval, left)
         matr[i + k - 1, left-k:left+1] = bb
-    
+
     # RHS
     b = np.r_[[0] * (k - 1), y]
 
@@ -1097,21 +1097,21 @@ def _make_periodic_spline(x, y, t, k, axis):
 
     # size of block elements
     kul = int(k / 2)
-    
+
     # kl = ku = k
     ab = np.zeros((3 * k + 1, nt), dtype=np.float_, order='F')
 
     # upper right and lower left blocks
     ur = np.zeros((kul, kul))
     ll = np.zeros_like(ur)
-    
+
     # `offset` is made to shift all the non-zero elements to the end of the
     # matrix
     _bspl._colloc(x, t, k, ab, offset=k)
-    
+
     # remove zeros before the matrix
     ab = ab[-k - (k + 1) % 2:, :]
-    
+
     # The least elements in rows (except repetitions) are diagonals
     # of block matrices. Upper right matrix is an upper triangular
     # matrix while lower left is a lower triangular one.
@@ -1237,7 +1237,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     >>> plt.show()
 
     Build a B-spline curve with 2 dimensional y
-    
+
     >>> x = np.linspace(0, 2*np.pi, 10)
     >>> y = np.array([np.sin(x), np.cos(x)])
 
@@ -1393,7 +1393,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
             overwrite_ab=True, overwrite_b=True)
 
     if info > 0:
-        raise LinAlgError("Collocation matix is singular.")
+        raise LinAlgError("Collocation matrix is singular.")
     elif info < 0:
         raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
 

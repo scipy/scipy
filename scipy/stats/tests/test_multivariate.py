@@ -25,7 +25,9 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          random_correlation, unitary_group, dirichlet,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
-                         hypergeom, multivariate_t, cauchy, normaltest)
+                         hypergeom, multivariate_t, cauchy, normaltest,
+                         random_table, uniform_direction)
+from scipy.stats import _covariance, Covariance
 
 from scipy.integrate import romb
 from scipy.special import multigammaln
@@ -33,6 +35,209 @@ from scipy.special import multigammaln
 from .common_tests import check_random_state_property
 
 from unittest.mock import patch
+
+
+def assert_close(res, ref, *args, **kwargs):
+    res, ref = np.asarray(res), np.asarray(ref)
+    assert_allclose(res, ref, *args, **kwargs)
+    assert_equal(res.shape, ref.shape)
+
+
+class TestCovariance:
+
+    def test_input_validation(self):
+
+        message = "The input `precision` must be a square, two-dimensional..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaPrecision(np.ones(2))
+
+        message = "`precision.shape` must equal `covariance.shape`."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaPrecision(np.eye(3), covariance=np.eye(2))
+
+        message = "The input `diagonal` must be a one-dimensional array..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaDiagonal("alpaca")
+
+        message = "The input `cholesky` must be a square, two-dimensional..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaCholesky(np.ones(2))
+
+        message = "The input `eigenvalues` must be a one-dimensional..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaEigendecomposition(("alpaca", np.eye(2)))
+
+        message = "The input `eigenvectors` must be a square..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaEigendecomposition((np.ones(2), "alpaca"))
+
+        message = "The shapes of `eigenvalues` and `eigenvectors` must be..."
+        with pytest.raises(ValueError, match=message):
+            _covariance.CovViaEigendecomposition(([1, 2, 3], np.eye(2)))
+
+    _covariance_preprocessing = {"Diagonal": np.diag,
+                                 "Precision": np.linalg.inv,
+                                 "Cholesky": np.linalg.cholesky,
+                                 "Eigendecomposition": np.linalg.eigh,
+                                 "PSD": lambda x:
+                                     _PSD(x, allow_singular=True)}
+    _all_covariance_types = np.array(list(_covariance_preprocessing))
+    _matrices = {"diagonal full rank": np.diag([1, 2, 3]),
+                 "general full rank": [[5, 1, 3], [1, 6, 4], [3, 4, 7]],
+                 "diagonal singular": np.diag([1, 0, 3]),
+                 "general singular": [[5, -1, 0], [-1, 5, 0], [0, 0, 0]]}
+    _cov_types = {"diagonal full rank": _all_covariance_types,
+                  "general full rank": _all_covariance_types[1:],
+                  "diagonal singular": _all_covariance_types[[0, -2, -1]],
+                  "general singular": _all_covariance_types[-2:]}
+
+    @pytest.mark.parametrize("cov_type_name", _all_covariance_types[:-1])
+    def test_factories(self, cov_type_name):
+        A = np.diag([1, 2, 3])
+        x = [-4, 2, 5]
+
+        cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
+        preprocessing = self._covariance_preprocessing[cov_type_name]
+        factory = getattr(Covariance, f"from_{cov_type_name.lower()}")
+
+        res = factory(preprocessing(A))
+        ref = cov_type(preprocessing(A))
+        assert type(res) == type(ref)
+        assert_allclose(res.whiten(x), ref.whiten(x))
+
+    @pytest.mark.parametrize("matrix_type", list(_matrices))
+    @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
+    def test_covariance(self, matrix_type, cov_type_name):
+        message = (f"CovVia{cov_type_name} does not support {matrix_type} "
+                   "matrices")
+        if cov_type_name not in self._cov_types[matrix_type]:
+            pytest.skip(message)
+
+        A = self._matrices[matrix_type]
+        cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
+        preprocessing = self._covariance_preprocessing[cov_type_name]
+
+        psd = _PSD(A, allow_singular=True)
+
+        # test properties
+        cov_object = cov_type(preprocessing(A))
+        assert_close(cov_object.log_pdet, psd.log_pdet)
+        assert_equal(cov_object.rank, psd.rank)
+        assert_equal(cov_object.shape, np.asarray(A).shape)
+        assert_close(cov_object.covariance, np.asarray(A))
+
+        # test whitening/coloring 1D x
+        rng = np.random.default_rng(5292808890472453840)
+        x = rng.random(size=3)
+        res = cov_object.whiten(x)
+        ref = x @ psd.U
+        # res != ref in general; but res @ res == ref @ ref
+        assert_close(res @ res, ref @ ref)
+        if hasattr(cov_object, "_colorize") and "singular" not in matrix_type:
+            # CovViaPSD does not have _colorize
+            assert_close(cov_object.colorize(res), x)
+
+        # test whitening/coloring 3D x
+        x = rng.random(size=(2, 4, 3))
+        res = cov_object.whiten(x)
+        ref = x @ psd.U
+        assert_close((res**2).sum(axis=-1), (ref**2).sum(axis=-1))
+        if hasattr(cov_object, "_colorize") and "singular" not in matrix_type:
+            assert_close(cov_object.colorize(res), x)
+
+    @pytest.mark.parametrize("size", [None, tuple(), 1, (2, 4, 3)])
+    @pytest.mark.parametrize("matrix_type", list(_matrices))
+    @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
+    def test_mvn_with_covariance(self, size, matrix_type, cov_type_name):
+        message = (f"CovVia{cov_type_name} does not support {matrix_type} "
+                   "matrices")
+        if cov_type_name not in self._cov_types[matrix_type]:
+            pytest.skip(message)
+
+        A = self._matrices[matrix_type]
+        cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
+        preprocessing = self._covariance_preprocessing[cov_type_name]
+
+        mean = [0.1, 0.2, 0.3]
+        cov_object = cov_type(preprocessing(A))
+        mvn = multivariate_normal
+        dist0 = multivariate_normal(mean, A, allow_singular=True)
+        dist1 = multivariate_normal(mean, cov_object, allow_singular=True)
+
+        rng = np.random.default_rng(5292808890472453840)
+        x = rng.multivariate_normal(mean, A, size=size)
+        rng = np.random.default_rng(5292808890472453840)
+        x1 = mvn.rvs(mean, cov_object, size=size, random_state=rng)
+        rng = np.random.default_rng(5292808890472453840)
+        x2 = mvn(mean, cov_object, seed=rng).rvs(size=size)
+        if isinstance(cov_object, _covariance.CovViaPSD):
+            assert_close(x1, np.squeeze(x))  # for backward compatibility
+            assert_close(x2, np.squeeze(x))
+        else:
+            assert_equal(x1.shape, x.shape)
+            assert_equal(x2.shape, x.shape)
+            assert_close(x2, x1)
+
+        assert_close(mvn.pdf(x, mean, cov_object), dist0.pdf(x))
+        assert_close(dist1.pdf(x), dist0.pdf(x))
+        assert_close(mvn.logpdf(x, mean, cov_object), dist0.logpdf(x))
+        assert_close(dist1.logpdf(x), dist0.logpdf(x))
+        assert_close(mvn.entropy(mean, cov_object), dist0.entropy())
+        assert_close(dist1.entropy(), dist0.entropy())
+
+    @pytest.mark.parametrize("size", [tuple(), (2, 4, 3)])
+    @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
+    def test_mvn_with_covariance_cdf(self, size, cov_type_name):
+        # This is split from the test above because it's slow to be running
+        # with all matrix types, and there's no need because _mvn.mvnun
+        # does the calculation. All Covariance needs to do is pass is
+        # provide the `covariance` attribute.
+        matrix_type = "diagonal full rank"
+        A = self._matrices[matrix_type]
+        cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
+        preprocessing = self._covariance_preprocessing[cov_type_name]
+
+        mean = [0.1, 0.2, 0.3]
+        cov_object = cov_type(preprocessing(A))
+        mvn = multivariate_normal
+        dist0 = multivariate_normal(mean, A, allow_singular=True)
+        dist1 = multivariate_normal(mean, cov_object, allow_singular=True)
+
+        rng = np.random.default_rng(5292808890472453840)
+        x = rng.multivariate_normal(mean, A, size=size)
+
+        assert_close(mvn.cdf(x, mean, cov_object), dist0.cdf(x))
+        assert_close(dist1.cdf(x), dist0.cdf(x))
+        assert_close(mvn.logcdf(x, mean, cov_object), dist0.logcdf(x))
+        assert_close(dist1.logcdf(x), dist0.logcdf(x))
+
+    def test_covariance_instantiation(self):
+        message = "The `Covariance` class cannot be instantiated directly."
+        with pytest.raises(NotImplementedError, match=message):
+            Covariance()
+
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning")  # matrix not PSD
+    def test_gh9942(self):
+        # Originally there was a mistake in the `multivariate_normal_frozen`
+        # `rvs` method that caused all covariance objects to be processed as
+        # a `_CovViaPSD`. Ensure that this is resolved.
+        A = np.diag([1, 2, -1e-8])
+        n = A.shape[0]
+        mean = np.zeros(n)
+
+        # Error if the matrix is processed as a `_CovViaPSD`
+        with pytest.raises(ValueError, match="The input matrix must be..."):
+            multivariate_normal(mean, A).rvs()
+
+        # No error if it is provided as a `CovViaEigendecomposition`
+        seed = 3562050283508273023
+        rng1 = np.random.default_rng(seed)
+        rng2 = np.random.default_rng(seed)
+        cov = Covariance.from_eigendecomposition(np.linalg.eigh(A))
+        rv = multivariate_normal(mean, cov)
+        res = rv.rvs(random_state=rng1)
+        ref = multivariate_normal.rvs(mean, cov, random_state=rng2)
+        assert_equal(res, ref)
 
 
 def _sample_orthonormal_matrix(n):
@@ -132,7 +337,7 @@ class TestMultivariateNormal:
             s = np.random.randn(n, expected_rank)
             cov = np.dot(s, s.T)
             distn = multivariate_normal(mean, cov, allow_singular=True)
-            assert_equal(distn.cov_info.rank, expected_rank)
+            assert_equal(distn.cov_object.rank, expected_rank)
 
     def test_degenerate_distributions(self):
 
@@ -163,9 +368,9 @@ class TestMultivariateNormal:
                                                allow_singular=True)
                 distn_rr = multivariate_normal(np.zeros(n), cov_rr,
                                                allow_singular=True)
-                assert_equal(distn_kk.cov_info.rank, k)
-                assert_equal(distn_nn.cov_info.rank, k)
-                assert_equal(distn_rr.cov_info.rank, k)
+                assert_equal(distn_kk.cov_object.rank, k)
+                assert_equal(distn_nn.cov_object.rank, k)
+                assert_equal(distn_rr.cov_object.rank, k)
                 pdf_kk = distn_kk.pdf(x[:k])
                 pdf_nn = distn_nn.pdf(x)
                 pdf_rr = distn_rr.pdf(y)
@@ -409,7 +614,7 @@ class TestMultivariateNormal:
                           0.1063242573, 0.2501068509])
 
         cdf = multivariate_normal.cdf(r, mean, cov)
-        assert_allclose(cdf, r_cdf, atol=1e-5)
+        assert_allclose(cdf, r_cdf, atol=2e-5)
 
         # Also test bivariate cdf with some values precomputed
         # in R version 3.3.2 (2016-10-31) on Debian GNU/Linux.
@@ -545,6 +750,25 @@ class TestMultivariateNormal:
         expected_signs = np.array([1, -1, -1, 1])
         cdf = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
         assert_allclose(cdf, cdf[0]*expected_signs)
+
+    def test_mean_cov(self):
+        # test the interaction between a Covariance object and mean
+        P = np.diag(1 / np.array([1, 2, 3]))
+        cov_object = _covariance.CovViaPrecision(P)
+
+        message = "`cov` represents a covariance matrix in 3 dimensions..."
+        with pytest.raises(ValueError, match=message):
+            multivariate_normal.entropy([0, 0], cov_object)
+
+        with pytest.raises(ValueError, match=message):
+            multivariate_normal([0, 0], cov_object)
+
+        x = [0.5, 0.5, 0.5]
+        ref = multivariate_normal.pdf(x, [0, 0, 0], cov_object)
+        assert_equal(multivariate_normal.pdf(x, cov=cov_object), ref)
+
+        ref = multivariate_normal.pdf(x, [1, 1, 1], cov_object)
+        assert_equal(multivariate_normal.pdf(x, 1, cov=cov_object), ref)
 
 
 class TestMatrixNormal:
@@ -1751,6 +1975,62 @@ class TestRandomCorrelation:
         assert_allclose(m[0,0], 1)
 
 
+class TestUniformDirection:
+    @pytest.mark.parametrize("dim", [1, 3])
+    @pytest.mark.parametrize("size", [None, 1, 5, (5, 4)])
+    def test_samples(self, dim, size):
+        # test that samples have correct shape and norm 1
+        rng = np.random.default_rng(2777937887058094419)
+        uniform_direction_dist = uniform_direction(dim, seed=rng)
+        samples = uniform_direction_dist.rvs(size)
+        mean, cov = np.zeros(dim), np.eye(dim)
+        expected_shape = rng.multivariate_normal(mean, cov, size=size).shape
+        assert samples.shape == expected_shape
+        norms = np.linalg.norm(samples, axis=-1)
+        assert_allclose(norms, 1.)
+
+    @pytest.mark.parametrize("dim", [None, 0, (2, 2), 2.5])
+    def test_invalid_dim(self, dim):
+        message = ("Dimension of vector must be specified, "
+                   "and must be an integer greater than 0.")
+        with pytest.raises(ValueError, match=message):
+            uniform_direction.rvs(dim)
+
+    def test_frozen_distribution(self):
+        dim = 5
+        frozen = uniform_direction(dim)
+        frozen_seed = uniform_direction(dim, seed=514)
+
+        rvs1 = frozen.rvs(random_state=514)
+        rvs2 = uniform_direction.rvs(dim, random_state=514)
+        rvs3 = frozen_seed.rvs()
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
+
+    @pytest.mark.parametrize("dim", [2, 5, 8])
+    def test_uniform(self, dim):
+        rng = np.random.default_rng(1036978481269651776)
+        spherical_dist = uniform_direction(dim, seed=rng)
+        # generate random, orthogonal vectors
+        v1, v2 = spherical_dist.rvs(size=2)
+        v2 -= v1 @ v2 * v1
+        v2 /= np.linalg.norm(v2)
+        assert_allclose(v1 @ v2, 0, atol=1e-14)  # orthogonal
+        # generate data and project onto orthogonal vectors
+        samples = spherical_dist.rvs(size=10000)
+        s1 = samples @ v1
+        s2 = samples @ v2
+        angles = np.arctan2(s1, s2)
+        # test that angles follow a uniform distribution
+        # normalize angles to range [0, 1]
+        angles += np.pi
+        angles /= 2*np.pi
+        # perform KS test
+        uniform_dist = uniform()
+        kstest_result = kstest(angles, uniform_dist.cdf)
+        assert kstest_result.pvalue > 0.05
+
 class TestUnitaryGroup:
     def test_reproducibility(self):
         np.random.seed(514)
@@ -2273,6 +2553,225 @@ class TestMultivariateHypergeom:
                       [10.5, 15.5], 5)
         assert_raises(TypeError, multivariate_hypergeom.pmf, [5, 4],
                       [10, 15], 5.5)
+
+
+class TestRandomTable:
+    def test_process_parameters(self):
+        message = "`row` must be one-dimensional"
+        with pytest.raises(ValueError, match=message):
+            random_table([[1, 2]], [1, 2])
+
+        message = "`col` must be one-dimensional"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, 2], [[1, 2]])
+
+        message = "each element of `row` must be non-negative"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, -1], [1, 2])
+
+        message = "each element of `col` must be non-negative"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, 2], [1, -2])
+
+        message = "sums over `row` and `col` must be equal"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, 2], [1, 0])
+
+        message = "each element of `row` must be an integer"
+        with pytest.raises(ValueError, match=message):
+            random_table([2.1, 2.1], [1, 1, 2])
+
+        message = "each element of `col` must be an integer"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, 2], [1.1, 1.1, 1])
+
+        row = [1, 3]
+        col = [2, 1, 1]
+        r, c, n = random_table._process_parameters([1, 3], [2, 1, 1])
+        assert_equal(row, r)
+        assert_equal(col, c)
+        assert n == np.sum(row)
+
+    def test_process_rvs_method_on_None(self):
+        # TODO also test with a case where "patefield" is selected
+        row = [1, 3]
+        col = [2, 1, 1]
+
+        ct = random_table
+        expected = ct.rvs(row, col, method="boyett", random_state=1)
+        got = ct.rvs(row, col, method=None, random_state=1)
+
+        assert_equal(expected, got)
+
+    def test_rvs_method(self):
+        pytest.xfail("patefield will be implemented in follow-up PR")
+
+        row = [1, 3]
+        col = [2, 1, 1]
+
+        ct = random_table
+        rvs1 = ct.rvs(row, col, size=1000, method="boyett", random_state=1)
+        rvs2 = ct.rvs(row, col, size=1000, method="patefield", random_state=1)
+
+        tab1, count1 = np.unique(rvs1, axis=0, return_counts=True)
+        tab2, count2 = np.unique(rvs2, axis=0, return_counts=True)
+
+        assert_equal(tab1, tab2)
+        assert_allclose(count1, count2)
+
+    def test_process_rvs_method_bad_argument(self):
+        row = [1, 3]
+        col = [2, 1, 1]
+
+        # order of items in set is random, so cannot check that
+        message = "'foo' not recognized, must be one of"
+        with pytest.raises(ValueError, match=message):
+            random_table.rvs(row, col, method="foo")
+
+        with pytest.raises(NotImplementedError):
+            random_table.rvs(row, col, method="patefield")
+
+    @pytest.mark.parametrize('frozen', (True, False))
+    @pytest.mark.parametrize('log', (True, False))
+    def test_pmf_logpmf(self, frozen, log):
+        rng = np.random.default_rng(628174795866951638)
+        row = [2, 6]
+        col = [1, 3, 4]
+        rvs = random_table.rvs(row, col, size=1000, random_state=rng)
+
+        obj = random_table(row, col) if frozen else random_table
+        method = getattr(obj, "logpmf" if log else "pmf")
+        if not frozen:
+            original_method = method
+
+            def method(x):
+                return original_method(x, row, col)
+        pmf = (lambda x: np.exp(method(x))) if log else method
+
+        unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
+
+        # rough accuracy check
+        p = pmf(unique_rvs)
+        assert_allclose(p * len(rvs), counts, rtol=0.1)
+
+        # accept any iterable
+        p2 = pmf(list(unique_rvs[0]))
+        assert_equal(p2, p[0])
+
+        # accept high-dimensional input and 2d input
+        rvs_nd = rvs.reshape((10, 100) + rvs.shape[1:])
+        p = pmf(rvs_nd)
+        assert p.shape == (10, 100)
+        for i in range(p.shape[0]):
+            for j in range(p.shape[1]):
+                pij = p[i, j]
+                rvij = rvs_nd[i, j]
+                qij = pmf(rvij)
+                assert_equal(pij, qij)
+
+        # probability is zero if column marginal does not match
+        x = [[0, 1, 1], [2, 1, 3]]
+        assert_equal(np.sum(x, axis=-1), row)
+        p = pmf(x)
+        assert p == 0
+
+        # probability is zero if row marginal does not match
+        x = [[0, 1, 2], [1, 2, 2]]
+        assert_equal(np.sum(x, axis=-2), col)
+        p = pmf(x)
+        assert p == 0
+
+        # response to invalid inputs
+        message = "`x` must be at least two-dimensional"
+        with pytest.raises(ValueError, match=message):
+            pmf([1])
+
+        message = "`x` must contain only integral values"
+        with pytest.raises(ValueError, match=message):
+            pmf([[1.1]])
+
+        message = "`x` must contain only integral values"
+        with pytest.raises(ValueError, match=message):
+            pmf([[np.nan]])
+
+        message = "`x` must contain only non-negative values"
+        with pytest.raises(ValueError, match=message):
+            pmf([[-1]])
+
+        message = "shape of `x` must agree with `row`"
+        with pytest.raises(ValueError, match=message):
+            pmf([[1, 2, 3]])
+
+        message = "shape of `x` must agree with `col`"
+        with pytest.raises(ValueError, match=message):
+            pmf([[1, 2],
+                 [3, 4]])
+
+    def test_rvs_mean(self):
+        # test if `rvs` is unbiased and large sample size converges
+        # to the true mean. `test_pmf` also implicitly tests `rvs`.
+        rng = np.random.default_rng(628174795866951638)
+
+        row = [2, 6]
+        col = [1, 3, 4]
+        rvs = random_table.rvs(row, col, size=1000, random_state=rng)
+        mean = random_table.mean(row, col)
+        assert_equal(np.sum(mean), np.sum(row))
+        assert_allclose(rvs.mean(0), mean, atol=0.05)
+        assert_equal(rvs.sum(axis=-1), np.broadcast_to(row, (1000, 2)))
+        assert_equal(rvs.sum(axis=-2), np.broadcast_to(col, (1000, 3)))
+
+    def test_rvs_size(self):
+        row = [2, 6]
+        col = [1, 3, 4]
+
+        # test size `None`
+        rng = np.random.default_rng(628174795866951638)
+        rv = random_table.rvs(row, col, random_state=rng)
+        assert rv.shape == (2, 3)
+
+        # test size 1
+        rng = np.random.default_rng(628174795866951638)
+        rv2 = random_table.rvs(row, col, size=1, random_state=rng)
+        assert rv2.shape == (1, 2, 3)
+        assert_equal(rv, rv2[0])
+
+        # test size 0
+        rv3 = random_table.rvs(row, col, size=0, random_state=rng)
+        assert rv3.shape == (0, 2, 3)
+
+        # test other valid size
+        rng = np.random.default_rng(628174795866951638)
+        rv4 = random_table.rvs(row, col, size=20, random_state=rng)
+        assert rv4.shape == (20, 2, 3)
+
+        rng = np.random.default_rng(628174795866951638)
+        rv5 = random_table.rvs(row, col, size=(4, 5), random_state=rng)
+        assert rv5.shape == (4, 5, 2, 3)
+
+        assert_allclose(rv5.reshape(20, 2, 3), rv4, rtol=1e-15)
+
+        # test invalid size
+        message = "`size` must be a non-negative integer or `None`"
+        with pytest.raises(ValueError, match=message):
+            random_table.rvs(row, col, size=-1, random_state=rng)
+
+        with pytest.raises(ValueError, match=message):
+            random_table.rvs(row, col, size=np.nan, random_state=rng)
+
+    def test_frozen(self):
+        rng1 = np.random.default_rng(628174795866951638)
+        rng2 = np.random.default_rng(628174795866951638)
+
+        row = [2, 6]
+        col = [1, 3, 4]
+        d = random_table(row, col, seed=rng1)
+        expected = random_table.mean(row, col)
+        assert_equal(expected, d.mean())
+
+        expected = random_table.rvs(row, col, size=10, random_state=rng2)
+        got = d.rvs(size=10)
+        assert_equal(expected, got)
 
 
 def check_pickling(distfn, args):

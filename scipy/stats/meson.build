@@ -1,18 +1,9 @@
-_stats_pxd = custom_target('_stats_pxd',
-  output: [
-    '__init__.py',
-    '_stats.pxd',
-    '_biasedurn.pxd',
-    'unuran.pxd',
-  ],
-  input: [
-    '__init__.py',
-    '_stats.pxd',
-    '_biasedurn.pxd',
-    '_unuran/unuran.pxd',
-  ],
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
+_stats_pxd = [
+  fs.copyfile('__init__.py'),
+  fs.copyfile('_stats.pxd'),
+  fs.copyfile('_biasedurn.pxd'),
+  fs.copyfile('_unuran/unuran.pxd'),
+]
 
 stats_special_cython_gen = generator(cython_cli,
   arguments : ['@INPUT@', '@OUTPUT@'],
@@ -45,6 +36,7 @@ statlib = py3.extension_module('_statlib',
   link_with: statlib_lib,
   dependencies: [fortranobject_dep],
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/stats'
@@ -54,6 +46,7 @@ _stats = py3.extension_module('_stats',
   stats_special_cython_gen.process('_stats.pyx'),
   c_args: cython_c_args,
   include_directories: [inc_np],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats'
 )
@@ -72,6 +65,7 @@ mvn = py3.extension_module('_mvn',
   fortran_args: [fortran_ignore_warnings, _fflag_Wno_surprising],
   dependencies: [fortranobject_dep],
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/stats'
@@ -81,6 +75,7 @@ _sobol = py3.extension_module('_sobol',
   cython_gen.process('_sobol.pyx'),
   c_args: cython_c_args,
   include_directories: [inc_np],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats'
 )
@@ -88,17 +83,15 @@ _sobol = py3.extension_module('_sobol',
 py3.install_sources([
     '_sobol_direction_numbers.npz'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
-
-pthread = dependency('threads')
 
 _qmc_cy = py3.extension_module('_qmc_cy',
   cython_gen_cpp.process('_qmc_cy.pyx'),
   cpp_args: cython_cpp_args,
-  dependencies: [pthread],
+  dependencies: thread_dep,
   include_directories: [inc_np],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats'
 )
@@ -156,6 +149,7 @@ biasedurn = py3.extension_module('_biasedurn',
   ],
   cpp_args: ['-DR_BUILD', cython_cpp_args],
   include_directories: [inc_np],
+  link_args: version_link_args,
   # Note that we're not using npymath directly, it is needed to use npyrandom
   dependencies: [npyrandom_lib, npymath_lib],
   install: true,
@@ -163,17 +157,23 @@ biasedurn = py3.extension_module('_biasedurn',
 )
 
 if use_pythran
-  _hypotests_pythran = custom_target('_hypotests_pythran',
-    output: ['_hypotests_pythran.cpp'],
-    input: '_hypotests_pythran.py',
-    command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_hypotests_pythran.cpp']
+  _stats_pythran_cpp = custom_target('_stats_pythran',
+    output: ['_stats_pythran.cpp'],
+    input: '_stats_pythran.py',
+    command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_stats_pythran.cpp']
   )
 
-  _group_columns = py3.extension_module('_hypotests_pythran',
-    _hypotests_pythran,
+  _stats_pythran = py3.extension_module('_stats_pythran',
+    _stats_pythran_cpp,
     cpp_args: cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
+    link_args: version_link_args,
     install: true,
+    subdir: 'scipy/stats'
+  )
+else
+  py3.install_sources(
+    ['_stats_pythran.py'],
     subdir: 'scipy/stats'
   )
 endif
@@ -187,6 +187,7 @@ py3.install_sources([
     '_common.py',
     '_constants.py',
     '_continuous_distns.py',
+    '_covariance.py',
     '_crosstab.py',
     '_discrete_distns.py',
     '_distn_infrastructure.py',
@@ -228,7 +229,6 @@ py3.install_sources([
     'statlib.py',
     'stats.py'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 
@@ -236,7 +236,6 @@ py3.install_sources([
     '_biasedurn.pxd',
     '_stats.pxd'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 
@@ -244,7 +243,6 @@ py3.install_sources([
     '_qmc_cy.pyi',
     '_sobol.pyi'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 
