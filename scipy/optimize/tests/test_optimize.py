@@ -224,7 +224,7 @@ class CheckOptimizeParameterized(CheckOptimize):
             assert not np.isfinite(func(x))
 
     def test_bfgs_xrtol(self):
-        # test for #17345 to test xrtol parameter 
+        # test for #17345 to test xrtol parameter
         x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
         res = optimize.minimize(optimize.rosen,
                                 x0, method='bfgs', options={'xrtol': 1e-3})

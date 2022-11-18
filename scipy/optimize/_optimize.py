@@ -1223,7 +1223,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         Return a list of results at each iteration if True.
     xrtol : float, default: 0
         Relative tolerance for `x`. Terminate successfully if step
-        size is less than ``xk * xrtol`` where `xk` is the current
+        size is less than ``xk * xrtol`` where ``xk`` is the current
         parameter vector.
 
     Returns
@@ -1348,7 +1348,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         automatically.
     xrtol : float, default: 0
         Relative tolerance for `x`. Terminate successfully if step size is
-        less than ``xk * xrtol`` where `xk` is the current parameter vector.
+        less than ``xk * xrtol`` where ``xk`` is the current parameter vector.
     """
     _check_unknown_options(unknown_options)
     retall = return_all
@@ -1424,9 +1424,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             break
 
         rhok_inv = np.dot(yk, sk)
-
-        # this was handled in numeric, let it remain for more safety.
-        # possible change discussed in #17345, reference commit for more details 
+        # this was handled in numeric, let it remaines for more safety
+        # Cryptic comment above is preserved for posterity. Future reader:
+        # consider change to condition below proposed in gh-1261/gh-17345.
         if rhok_inv == 0.:
             rhok = 1000.0
             if disp:
