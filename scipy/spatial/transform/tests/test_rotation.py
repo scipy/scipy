@@ -760,8 +760,8 @@ def test_as_euler_degenerate_compare_algorithms():
             estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True) 
             estimates_quat = rot.as_euler(seq, degrees=True)
             assert_allclose(estimates_matrix[:,[0,2]], estimates_quat[:,[0,2]])  
-            assert_allclose(estimates_matrix[2:,1], estimates_quat[2:,1])
-            assert_allclose(estimates_matrix[:2,1], estimates_quat[:2,1], 
+            assert_allclose(estimates_matrix[~idx,1], estimates_quat[~idx,1])
+            assert_allclose(estimates_matrix[idx,1], estimates_quat[idx,1],
                             atol=atol, rtol=rtol) # problematic, angles[1] = 0
            
             # Intrinsic rotations
