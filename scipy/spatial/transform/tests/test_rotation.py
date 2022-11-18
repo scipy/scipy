@@ -714,6 +714,11 @@ def test_as_euler_compare_algorithms():
 
 
 def test_as_euler_degenerate_compare_algorithms():
+    # Absolute error tolerance must be looser to directly compare the results
+    # from both algorithms, because of numerical loss of precision for the
+    # method _as_euler_from_matrix near singularities
+    atol = 1e-06
+    
     # asymmetric axes
     angles = np.array([
         [45, 90, 35],
@@ -727,15 +732,15 @@ def test_as_euler_degenerate_compare_algorithms():
             seq = ''.join(seq_tuple)
             rot = Rotation.from_euler(seq, angles, degrees=True)
             assert_allclose(
-                rot._as_euler_from_matrix(seq, degrees=True)[:,[0,2]],
-                rot.as_euler(seq, degrees=True)[:,[0,2]])
+                rot._as_euler_from_matrix(seq, degrees=True),
+                rot.as_euler(seq, degrees=True), atol=atol)
             
             # Intrinsic rotations
             seq = seq.upper()
             rot = Rotation.from_euler(seq, angles, degrees=True)
             assert_allclose(
-                rot._as_euler_from_matrix(seq, degrees=True)[:,[0,2]], 
-                rot.as_euler(seq, degrees=True)[:,[0,2]])
+                rot._as_euler_from_matrix(seq, degrees=True), 
+                rot.as_euler(seq, degrees=True), atol=atol)
         
     # symmetric axes
     angles = np.array([
@@ -750,15 +755,15 @@ def test_as_euler_degenerate_compare_algorithms():
             seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
             rot = Rotation.from_euler(seq, angles, degrees=True)
             assert_allclose(
-                rot._as_euler_from_matrix(seq, degrees=True)[:,[0,2]], 
-                rot.as_euler(seq, degrees=True)[:,[0,2]])
+                rot._as_euler_from_matrix(seq, degrees=True), 
+                rot.as_euler(seq, degrees=True), atol=atol)
            
             # Intrinsic rotations
             seq = seq.upper()
             rot = Rotation.from_euler(seq, angles, degrees=True)
             assert_allclose(
-                rot._as_euler_from_matrix(seq, degrees=True)[:,[0,2]], 
-                rot.as_euler(seq, degrees=True)[:,[0,2]])
+                rot._as_euler_from_matrix(seq, degrees=True), 
+                rot.as_euler(seq, degrees=True), atol=atol)
    
 
 def test_inv():
