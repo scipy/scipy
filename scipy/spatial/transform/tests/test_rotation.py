@@ -714,11 +714,6 @@ def test_as_euler_compare_algorithms():
 
 
 def test_as_euler_degenerate_compare_algorithms():
-    # Absolute error tolerance must be looser to directly compare the results
-    # from both algorithms, because of numerical loss of precision for the
-    # method _as_euler_from_matrix near singularities
-    atol = 1e-06
-    
     # asymmetric axes
     angles = np.array([
         [45, 90, 35],
@@ -731,18 +726,24 @@ def test_as_euler_degenerate_compare_algorithms():
             # Extrinsic rotations
             seq = ''.join(seq_tuple)
             rot = Rotation.from_euler(seq, angles, degrees=True)
-            assert_allclose(
-                rot._as_euler_from_matrix(seq, degrees=True),
-                rot.as_euler(seq, degrees=True), atol=atol)
+            estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True) 
+            estimates_quat = rot.as_euler(seq, degrees=True)
+            assert_allclose(estimates_matrix, estimates_quat)  
             
             # Intrinsic rotations
             seq = seq.upper()
             rot = Rotation.from_euler(seq, angles, degrees=True)
-            assert_allclose(
-                rot._as_euler_from_matrix(seq, degrees=True), 
-                rot.as_euler(seq, degrees=True), atol=atol)
-        
+            estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True) 
+            estimates_quat = rot.as_euler(seq, degrees=True)
+            assert_allclose(estimates_matrix, estimates_quat)  
+      
     # symmetric axes
+    # Absolute error tolerance must be looser to directly compare the results
+    # from both algorithms, because of numerical loss of precision for the
+    # method _as_euler_from_matrix near a zero angle value
+    atol = 1e-6
+    rtol = 1e-7
+    
     angles = np.array([
         [15, 0, 60],
         [35, 0, 75],
@@ -754,16 +755,22 @@ def test_as_euler_degenerate_compare_algorithms():
             # Extrinsic rotations
             seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
             rot = Rotation.from_euler(seq, angles, degrees=True)
-            assert_allclose(
-                rot._as_euler_from_matrix(seq, degrees=True), 
-                rot.as_euler(seq, degrees=True), atol=atol)
+            estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True) 
+            estimates_quat = rot.as_euler(seq, degrees=True)
+            assert_allclose(estimates_matrix[:,[0,2]], estimates_quat[:,[0,2]])  
+            assert_allclose(estimates_matrix[2:,1], estimates_quat[2:,1])
+            assert_allclose(estimates_matrix[:2,1], estimates_quat[:2,1], 
+                            atol=atol, rtol=rtol) # problematic, angles[1] = 0
            
             # Intrinsic rotations
             seq = seq.upper()
             rot = Rotation.from_euler(seq, angles, degrees=True)
-            assert_allclose(
-                rot._as_euler_from_matrix(seq, degrees=True), 
-                rot.as_euler(seq, degrees=True), atol=atol)
+            estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True) 
+            estimates_quat = rot.as_euler(seq, degrees=True)
+            assert_allclose(estimates_matrix[:,[0,2]], estimates_quat[:,[0,2]])  
+            assert_allclose(estimates_matrix[2:,1], estimates_quat[2:,1])
+            assert_allclose(estimates_matrix[:2,1], estimates_quat[:2,1], 
+                            atol=atol, rtol=rtol) # problematic, angles[1] = 0
    
 
 def test_inv():
