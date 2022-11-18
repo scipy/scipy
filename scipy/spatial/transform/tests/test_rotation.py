@@ -749,7 +749,9 @@ def test_as_euler_degenerate_compare_algorithms():
         [35, 0, 75],
         [60, 180, 35],
         [15, -180, 25]])
-       
+        
+    idx = angles[:,1] == 0 # find problematic angles indices
+        
     with pytest.warns(UserWarning, match="Gimbal lock"):
         for seq_tuple in permutations('xyz'):
             # Extrinsic rotations
@@ -768,8 +770,8 @@ def test_as_euler_degenerate_compare_algorithms():
             estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True) 
             estimates_quat = rot.as_euler(seq, degrees=True)
             assert_allclose(estimates_matrix[:,[0,2]], estimates_quat[:,[0,2]])  
-            assert_allclose(estimates_matrix[2:,1], estimates_quat[2:,1])
-            assert_allclose(estimates_matrix[:2,1], estimates_quat[:2,1], 
+            assert_allclose(estimates_matrix[~idx,1], estimates_quat[~idx,1])
+            assert_allclose(estimates_matrix[idx,1], estimates_quat[idx,1],
                             atol=atol, rtol=rtol) # problematic, angles[1] = 0
    
 
