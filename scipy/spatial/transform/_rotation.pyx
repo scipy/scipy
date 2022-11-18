@@ -249,13 +249,13 @@ cdef double[:, :] _compute_euler_from_quat(
     
     # intrinsic/extrinsic conversion helpers
     cdef int angle_first, angle_third
-    if not extrinsic:
+    if extrinsic:
+        angle_first = 0
+        angle_third = 2
+    else:
         seq = seq[::-1]
         angle_first = 2
         angle_third = 0
-    else:
-        angle_first = 0
-        angle_third = 2
         
     cdef int i = _elementary_basis_index(seq[0])
     cdef int j = _elementary_basis_index(seq[1])
