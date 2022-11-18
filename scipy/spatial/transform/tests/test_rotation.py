@@ -683,7 +683,7 @@ def test_as_euler_degenerate_symmetric_axes():
 
 def test_as_euler_compare_algorithms():
     rnd = np.random.RandomState(0)
-    n = 10
+    n = 10000
     angles = np.empty((n, 3))
     angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
     angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
