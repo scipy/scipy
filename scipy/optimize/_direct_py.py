@@ -100,7 +100,7 @@ def direct(
         Terminate the optimization once the relative error between the
         current best minimum `f` and the supplied global minimum `f_min`
         is smaller than `f_min_rtol`. This parameter is only used if
-        `f_min` is also set. Default is 1e-4.
+        `f_min` is also set. Must lie between 0 and 1. Default is 1e-4.
     vol_tol : float, optional
         Terminate the optimization once the volume of the hyperrectangle
         containing the lowest function value is smaller than `vol_tol`
