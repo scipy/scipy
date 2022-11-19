@@ -703,7 +703,7 @@ def test_as_euler_test_algorithms():
         assert np.all(rms < rms_max)
     
     rnd = np.random.RandomState(0)
-    n = 100
+    n = 1000
     
     # assymmetric 
     angles = np.empty((n, 3))
@@ -737,7 +737,7 @@ def test_as_euler_test_algorithms():
         error_quat = rotation.as_euler(seq) - angles
         error_mat = rotation._as_euler_from_matrix(seq) - angles
         test(error_quat, 1e-16, 1e-14)
-        test(error_mat, 1e-15, 1e-14)
+        test(error_mat, 1e-15, 1e-13)
         
         # Intrinsic rotations
         seq = seq.upper()
@@ -745,7 +745,7 @@ def test_as_euler_test_algorithms():
         error_quat = rotation.as_euler(seq) - angles
         error_mat = rotation._as_euler_from_matrix(seq) - angles
         test(error_quat, 1e-16, 1e-14)
-        test(error_mat, 1e-15, 1e-14)
+        test(error_mat, 1e-15, 1e-13)
 
 
 def test_as_euler_degenerate_compare_algorithms():

@@ -1567,8 +1567,8 @@ cdef class Rotation:
             angles = np.asarray(_compute_euler_from_quat(
                     quat, seq.encode(), extrinsic))
         else:
-            raise ValueError("algorithm can be 'from_quat' or 'from_matrix'"
-                             ", got '{}'".format(algorithm))
+            # algorithm can only be 'from_quat' or 'from_matrix'
+            assert False
             
         if degrees:
             angles = np.rad2deg(angles)
