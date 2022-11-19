@@ -577,7 +577,7 @@ def test_from_euler_extrinsic_rotation_313():
 
 def test_as_euler_asymmetric_axes():
     rnd = np.random.RandomState(0)
-    n = 10
+    n = 500
     angles = np.empty((n, 3))
     angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
     angles[:, 1] = rnd.uniform(low=-np.pi / 2, high=np.pi / 2, size=(n,))
@@ -586,15 +586,21 @@ def test_as_euler_asymmetric_axes():
     for seq_tuple in permutations('xyz'):
         # Extrinsic rotations
         seq = ''.join(seq_tuple)
-        assert_allclose(angles, Rotation.from_euler(seq, angles).as_euler(seq))
+        rotation = Rotation.from_euler(seq, angles)
+        assert_allclose(angles, rotation.as_euler(seq), atol=0, rtol=1e-12)
+        assert_allclose(angles, rotation._as_euler_from_matrix(seq),
+                        atol=0, rtol=1e-12)
         # Intrinsic rotations
         seq = seq.upper()
-        assert_allclose(angles, Rotation.from_euler(seq, angles).as_euler(seq))
+        rotation = Rotation.from_euler(seq, angles)
+        assert_allclose(angles, rotation.as_euler(seq), atol=0, rtol=1e-12)
+        assert_allclose(angles, rotation._as_euler_from_matrix(seq),
+                        atol=0, rtol=1e-12)
 
 
 def test_as_euler_symmetric_axes():
     rnd = np.random.RandomState(0)
-    n = 10
+    n = 500
     angles = np.empty((n, 3))
     angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
     angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
@@ -603,10 +609,16 @@ def test_as_euler_symmetric_axes():
     for seq_tuple in permutations('xyz'):
         # Extrinsic rotations
         seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
-        assert_allclose(angles, Rotation.from_euler(seq, angles).as_euler(seq))
+        rotation = Rotation.from_euler(seq, angles)
+        assert_allclose(angles, rotation.as_euler(seq), atol=0, rtol=1e-13)
+        assert_allclose(angles, rotation._as_euler_from_matrix(seq),
+                        atol=0, rtol=1e-9) 
         # Intrinsic rotations
         seq = seq.upper()
-        assert_allclose(angles, Rotation.from_euler(seq, angles).as_euler(seq))
+        rotation = Rotation.from_euler(seq, angles)
+        assert_allclose(angles, rotation.as_euler(seq), atol=0, rtol=1e-13)
+        assert_allclose(angles, rotation._as_euler_from_matrix(seq),
+                        atol=0, rtol=1e-9)
 
 
 def test_as_euler_degenerate_asymmetric_axes():
@@ -681,43 +693,65 @@ def test_as_euler_degenerate_symmetric_axes():
             assert_array_almost_equal(mat_expected, mat_estimated)
 
 
-def test_as_euler_compare_algorithms():
+def test_as_euler_test_algorithms():
+    # helper function for benchmark
+    def test(error, mean_max, rms_max):
+        mean = np.mean(error, axis=0)
+        std = np.std(error, axis=0)
+        rms = np.hypot(mean, std)
+        assert np.all(np.abs(mean) < mean_max)
+        assert np.all(rms < rms_max)
+    
     rnd = np.random.RandomState(0)
-    n = 10000
+    n = 100
+    
+    # assymmetric 
     angles = np.empty((n, 3))
     angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
-    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
-
-    # asymmetric axes
     angles[:, 1] = rnd.uniform(low=-np.pi / 2, high=np.pi / 2, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    
     for seq_tuple in permutations('xyz'):
         # Extrinsic rotations
         seq = ''.join(seq_tuple)
-        rot = Rotation.from_euler(seq, angles)
-        assert_allclose(rot._as_euler_from_matrix(seq), rot.as_euler(seq),
-                        atol=0, rtol=1e-11)
-        # Intrinsic rotations
-        seq = seq.upper()
-        rot = Rotation.from_euler(seq, angles)
-        assert_allclose(rot._as_euler_from_matrix(seq), rot.as_euler(seq),
-                        atol=0, rtol=1e-11)
+        rotation = Rotation.from_euler(seq, angles)
+        error_quat = rotation.as_euler(seq) - angles
+        error_mat = rotation._as_euler_from_matrix(seq) - angles
+        test(error_quat, 1e-15, 1e-14)
+        test(error_mat, 1e-15, 1e-14)
         
-    # symmetric axes
+        # Intrinsic rotations
+        seq = ''.join(seq_tuple)
+        rotation = Rotation.from_euler(seq, angles)
+        error_quat = rotation.as_euler(seq) - angles
+        error_mat = rotation._as_euler_from_matrix(seq) - angles
+        test(error_quat, 1e-15, 1e-14)
+        test(error_mat, 1e-15, 1e-14)
+
+    # symmetric 
     angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
     for seq_tuple in permutations('xyz'):
         # Extrinsic rotations
         seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
-        rot = Rotation.from_euler(seq, angles)
-        assert_allclose(rot._as_euler_from_matrix(seq), rot.as_euler(seq),
-                        atol=0, rtol=1e-9)
+        rotation = Rotation.from_euler(seq, angles)
+        error_quat = rotation.as_euler(seq) - angles
+        error_mat = rotation._as_euler_from_matrix(seq) - angles
+        test(error_quat, 1e-16, 1e-14)
+        test(error_mat, 1e-15, 1e-14)
+        
         # Intrinsic rotations
         seq = seq.upper()
-        rot = Rotation.from_euler(seq, angles)
-        assert_allclose(rot._as_euler_from_matrix(seq), rot.as_euler(seq),
-                        atol=0, rtol=1e-9)
+        rotation = Rotation.from_euler(seq, angles)
+        error_quat = rotation.as_euler(seq) - angles
+        error_mat = rotation._as_euler_from_matrix(seq) - angles
+        test(error_quat, 1e-16, 1e-14)
+        test(error_mat, 1e-15, 1e-14)
 
 
 def test_as_euler_degenerate_compare_algorithms():
+    # this test makes sure that both algorithms are doing the same choices
+    # in degenerate cases
+    
     # asymmetric axes
     angles = np.array([
         [45, 90, 35],
