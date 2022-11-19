@@ -795,7 +795,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     Notes
     -----
     This section describes the available solvers that can be selected by the
-    'method' parameter. The default method is *Brent*.
+    'method' parameter. The default method is the ``"Bounded"`` Brent method if
+    `bounds` are passed and unbounded ``"Brent"`` otherwise.
 
     Method :ref:`Brent <optimize.minimize_scalar-brent>` uses Brent's
     algorithm to find a local minimum.  The algorithm uses inverse
@@ -863,6 +864,10 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         meth = method.lower()
     if options is None:
         options = {}
+
+    if bounds is not None and meth in {'brent', 'golden'}:
+        message = f"Use of `bounds` is incompatible with 'method={method}'."
+        raise ValueError(message)
 
     if tol is not None:
         options = dict(options)
