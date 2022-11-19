@@ -693,9 +693,9 @@ def test_as_euler_degenerate_symmetric_axes():
             assert_array_almost_equal(mat_expected, mat_estimated)
 
 
-def test_as_euler_benchmark_algorithms():
+def test_as_euler_test_algorithms():
     # helper function for benchmark
-    def benchmark(error, mean_max, rms_max):
+    def test(error, mean_max, rms_max):
         mean = np.mean(error, axis=0)
         std = np.std(error, axis=0)
         rms = np.hypot(mean, std)
@@ -717,16 +717,16 @@ def test_as_euler_benchmark_algorithms():
         rotation = Rotation.from_euler(seq, angles)
         error_quat = rotation.as_euler(seq) - angles
         error_mat = rotation._as_euler_from_matrix(seq) - angles
-        benchmark(error_quat, 1e-15, 1e-14)
-        benchmark(error_mat, 1e-15, 1e-14)
+        test(error_quat, 1e-15, 1e-14)
+        test(error_mat, 1e-15, 1e-14)
         
         # Intrinsic rotations
         seq = ''.join(seq_tuple)
         rotation = Rotation.from_euler(seq, angles)
         error_quat = rotation.as_euler(seq) - angles
         error_mat = rotation._as_euler_from_matrix(seq) - angles
-        benchmark(error_quat, 1e-15, 1e-14)
-        benchmark(error_mat, 1e-15, 1e-14)
+        test(error_quat, 1e-15, 1e-14)
+        test(error_mat, 1e-15, 1e-14)
 
     # symmetric 
     angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
@@ -736,16 +736,16 @@ def test_as_euler_benchmark_algorithms():
         rotation = Rotation.from_euler(seq, angles)
         error_quat = rotation.as_euler(seq) - angles
         error_mat = rotation._as_euler_from_matrix(seq) - angles
-        benchmark(error_quat, 1e-16, 1e-14)
-        benchmark(error_mat, 1e-15, 1e-14)
+        test(error_quat, 1e-16, 1e-14)
+        test(error_mat, 1e-15, 1e-14)
         
         # Intrinsic rotations
         seq = seq.upper()
         rotation = Rotation.from_euler(seq, angles)
         error_quat = rotation.as_euler(seq) - angles
         error_mat = rotation._as_euler_from_matrix(seq) - angles
-        benchmark(error_quat, 1e-16, 1e-14)
-        benchmark(error_mat, 1e-15, 1e-14)
+        test(error_quat, 1e-16, 1e-14)
+        test(error_mat, 1e-15, 1e-14)
 
 
 def test_as_euler_degenerate_compare_algorithms():
