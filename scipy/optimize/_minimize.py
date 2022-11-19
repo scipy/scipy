@@ -733,7 +733,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
-                    method='brent', tol=None, options=None):
+                    method=None, tol=None, options=None):
     """Minimization of scalar function of one variable.
 
     Parameters
@@ -761,6 +761,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
             - :ref:`Golden <optimize.minimize_scalar-golden>`
             - custom - a callable object (added in version 0.14.0), see below
 
+        Default is "Bounded" if bounds are provided and "Brent" otherwise.
         See the 'Notes' section for details of each solver.
 
     tol : float, optional
@@ -856,6 +857,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     if callable(method):
         meth = "_custom"
+    elif method is None:
+        meth = 'brent' if bounds is None else 'bounded'
     else:
         meth = method.lower()
     if options is None:
