@@ -192,7 +192,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     This is a naive implementation using ARPACK or LOBPCG as an eigensolver
     on the matrix ``A.conj().T @ A`` or ``A @ A.conj().T``, depending on
     which one is smaller size, followed by the Rayleigh-Ritz method
-    as postprocessing; see https://w.wiki/4zms
+    as postprocessing; see
+    Using the normal matrix, in Rayleigh–Ritz method, (2022, Nov. 19),
+    Wikipedia, https://w.wiki/4zms.
 
     Alternatively, the PROPACK solver can be called. ``form="array"``
 
@@ -353,8 +355,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
      [ 0  0  1 -1]
      [ 0  0  0  1]]
 
-    can be viewed as the incidence matrix https://w.wiki/5YXU of
-    a linear graph with 5 vertices and 4 edges. The 5x5 normal matrix
+    can be viewed as the incidence matrix; see
+    Incidence matrix, (2022, Nov. 19), Wikipedia, https://w.wiki/5YXU,
+    of a linear graph with 5 vertices and 4 edges. The 5x5 normal matrix
     'M.T @ M' thus is
 
     >>> print(M.T @ M)
@@ -373,7 +376,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
      [ 0 -1  2 -1]
      [ 0  0 -1  2]]
 
-    is the so-called edge-based Laplacian; see https://w.wiki/5YXW .
+    is the so-called edge-based Laplacian; see
+    Symmetric Laplacian via the incidence matrix, in Laplacian matrix,
+    (2022, Nov. 19), Wikipedia, https://w.wiki/5YXW.
 
     The 'LinearOperator' setup needs the options 'rmatvec' and 'rmatmat'
     of multiplication by the matrix transpose 'M.T', but we want to be
@@ -422,7 +427,11 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> u, s, vT = svds(diff0_func_aslo, k=3, which='SM')
 
     The singular values squared and the singular vectors are known
-    explicitly; see https://w.wiki/5YX6, since 'diff' corresponds to first
+    explicitly; see
+    Pure Dirichlet boundary conditions, in
+    Eigenvalues and eigenvectors of the second derivative,
+    (2022, Nov. 19), Wikipedia, https://w.wiki/5YX6,
+    since 'diff' corresponds to first
     derivative, and its smaller size n-1 x n-1 normal matrix
     'M @ M.T' represent the discrete second derivative with the Dirichlet
     boundary conditions. We use these analytic expressions for validation.
