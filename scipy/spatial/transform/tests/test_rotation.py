@@ -693,7 +693,65 @@ def test_as_euler_degenerate_symmetric_axes():
             assert_array_almost_equal(mat_expected, mat_estimated)
 
 
+def test_as_euler_benchmark_algorithms():
+    # helper function for benchmark
+    def benchmark(error, mean_max, rms_max):
+        mean = np.mean(error, axis=0)
+        std = np.std(error, axis=0)
+        rms = np.hypot(mean, std)
+        assert np.all(np.abs(mean) < mean_max)
+        assert np.all(rms < rms_max)
+    
+    rnd = np.random.RandomState(0)
+    n = 100
+    
+    # assymmetric 
+    angles = np.empty((n, 3))
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=-np.pi / 2, high=np.pi / 2, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    
+    for seq_tuple in permutations('xyz'):
+        # Extrinsic rotations
+        seq = ''.join(seq_tuple)
+        rotation = Rotation.from_euler(seq, angles)
+        error_quat = rotation.as_euler(seq) - angles
+        error_mat = rotation._as_euler_from_matrix(seq) - angles
+        benchmark(error_quat, 1e-15, 1e-14)
+        benchmark(error_mat, 1e-15, 1e-14)
+        
+        # Intrinsic rotations
+        seq = ''.join(seq_tuple)
+        rotation = Rotation.from_euler(seq, angles)
+        error_quat = rotation.as_euler(seq) - angles
+        error_mat = rotation._as_euler_from_matrix(seq) - angles
+        benchmark(error_quat, 1e-15, 1e-14)
+        benchmark(error_mat, 1e-15, 1e-14)
+
+    # symmetric 
+    angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
+    for seq_tuple in permutations('xyz'):
+        # Extrinsic rotations
+        seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
+        rotation = Rotation.from_euler(seq, angles)
+        error_quat = rotation.as_euler(seq) - angles
+        error_mat = rotation._as_euler_from_matrix(seq) - angles
+        benchmark(error_quat, 1e-16, 1e-14)
+        benchmark(error_mat, 1e-15, 1e-14)
+        
+        # Intrinsic rotations
+        seq = seq.upper()
+        rotation = Rotation.from_euler(seq, angles)
+        error_quat = rotation.as_euler(seq) - angles
+        error_mat = rotation._as_euler_from_matrix(seq) - angles
+        benchmark(error_quat, 1e-16, 1e-14)
+        benchmark(error_mat, 1e-15, 1e-14)
+
+
 def test_as_euler_degenerate_compare_algorithms():
+    # this test makes sure that both algorithms are doing the same choices
+    # in degenerate cases
+    
     # asymmetric axes
     angles = np.array([
         [45, 90, 35],
