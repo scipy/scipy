@@ -749,8 +749,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         bracket search (see `bracket`); it doesn't always mean that the
         obtained solution will satisfy ``a <= x <= c``.
     bounds : sequence, optional
-        For method 'bounded', `bounds` is mandatory and must have two items
-        corresponding to the optimization bounds.
+        For method 'bounded', `bounds` is mandatory and must have two finite
+        items corresponding to the optimization bounds.
     args : tuple, optional
         Extra arguments passed to the objective function.
     method : str or callable, optional
