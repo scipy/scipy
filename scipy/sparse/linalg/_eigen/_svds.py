@@ -193,7 +193,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     on the matrix ``A.conj().T @ A`` or ``A @ A.conj().T``, depending on
     which one is smaller size, followed by the Rayleigh-Ritz method
     as postprocessing; see
-    Using the normal matrix, in Rayleigh–Ritz method, (2022, Nov. 19),
+    Using the normal matrix, in Rayleigh-Ritz method, (2022, Nov. 19),
     Wikipedia, https://w.wiki/4zms.
 
     Alternatively, the PROPACK solver can be called. ``form="array"``
