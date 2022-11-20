@@ -478,6 +478,7 @@ cdef class Rotation:
     concatenate
     apply
     __mul__
+    __pow__
     inv
     magnitude
     mean
@@ -630,6 +631,13 @@ cdef class Rotation:
     >>> r3 = r2 * r1 # Note the order
     >>> r3.apply(v)
     array([-2.        , -1.41421356,  2.82842712])
+
+    A rotation can be composed with itself using the ``**`` operator:
+
+    >>> p = R.from_rotvec([1, 0, 0])
+    >>> q = p ** 2
+    >>> q.as_rotvec()
+    array([2., 0., 0.])
 
     Finally, it is also possible to invert rotations:
 
@@ -1080,7 +1088,7 @@ cdef class Rotation:
         for ind in range(num_rotations):
             angle = _norm3(crotvec[ind, :])
 
-            if angle <= 1e-3:  # small angle
+            if angle <= 1e-3:  # small angle Taylor series expansion
                 angle2 = angle * angle
                 scale = 0.5 - angle2 / 48 + angle2 * angle2 / 3840
             else:  # large angle
@@ -1602,7 +1610,7 @@ cdef class Rotation:
         (2, 3)
 
         """
-        
+
         cdef Py_ssize_t num_rotations = len(self._quat)
         cdef double angle, scale, angle2
         cdef double[:, :] rotvec = _empty2(num_rotations, 3)
@@ -1614,7 +1622,7 @@ cdef class Rotation:
 
             angle = 2 * atan2(_norm3(quat), quat[3])
 
-            if angle <= 1e-3:  # small angle
+            if angle <= 1e-3:  # small angle Taylor series expansion
                 angle2 = angle * angle
                 scale = 2 + angle2 / 12 + 7 * angle2 * angle2 / 2880
             else:  # large angle
@@ -2152,6 +2160,87 @@ cdef class Rotation:
         if self._single and other._single:
             result = result[0]
         return self.__class__(result, normalize=True, copy=False)
+
+    @cython.embedsignature(True)
+    def __pow__(Rotation self, float n, modulus):
+        """Compose this rotation with itself ``n`` times.
+
+        Composition of a rotation ``p`` with itself can be extended to
+        non-integer ``n`` by considering the power ``n`` to be a scale factor
+        applied to the angle of rotation about the rotation's fixed axis. The
+        expression ``q = p ** n`` can also be expressed as
+        ``q = Rotation.from_rotvec(n * p.as_rotvec())``
+
+        Parameters
+        ----------
+        n : float
+            The number of times to compose the rotation with itself. If ``n``
+            is negative, then this is equivalent to
+            ``self ** -n == self.inv() ** n``.
+        modulus : None
+            This overridden argument is not applicable to Rotations and must be
+            ``None``.
+
+        Returns
+        -------
+        composition : `Rotation` instance
+            If the input Rotation ``p`` contains ``N`` multiple rotations, then
+            the output will contain ``N`` rotations where the ``i`` th rotation
+            is equal to ``p[i] ** n``
+
+        Notes
+        -----
+        For example, a power of 2 will double the angle of rotation, and a
+        power of 0.5 will halve the angle. There are three notable cases: if
+        ``n == 1`` then the original rotation is returned, if ``n == 0``
+        then the identity rotation is returned, and if ``n == -1`` then
+        ``p.inv()`` is returned.
+
+        Note that fractional powers ``n`` which effectively take a root of
+        rotation, do so using the shortest path smallest representation of that
+        angle (the principal root). This means that powers of ``n`` and ``1/n``
+        are not necessarily inverses of each other. For example, a 0.5 power of
+        a +240 degree rotation will be calculated as the 0.5 power of a -120
+        degree rotation, with the result being a rotation of -60 rather than
+        +120 degrees.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Raising a rotation to a power:
+
+        >>> p = R.from_rotvec([1, 0, 0])
+        >>> q = p ** 2
+        >>> q.as_rotvec()
+        array([2., 0., 0.])
+        >>> r = p ** 0.5
+        >>> r.as_rotvec()
+        array([0.5, 0., 0.])
+
+        Inverse powers do not necessarily cancel out:
+
+        >>> p = R.from_rotvec([0, 0, 120], degrees=True)
+        >>> ((p ** 2) ** 0.5).as_rotvec(degrees=True)
+        array([  -0.,   -0., -60.])
+
+        """
+        if modulus is not None:
+            raise NotImplementedError("modulus not supported")
+
+        # Exact short-cuts
+        if n == 0:
+            return Rotation.identity(len(self._quat))
+
+        elif n == -1:
+            return self.inv()
+
+        elif n == 1:
+            return self.__class__(self._quat.copy())
+
+        # general scaling of rotation angle
+        else:
+            return Rotation.from_rotvec(n * self.as_rotvec())
 
     @cython.embedsignature(True)
     def inv(self):
