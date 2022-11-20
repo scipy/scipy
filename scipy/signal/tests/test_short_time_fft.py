@@ -68,7 +68,7 @@ def test_fft_func_roundtrip(n: int):
     with pytest.raises(RuntimeError):
         SFT._fft_func(x0)
     with pytest.raises(RuntimeError):
-        SFT._ifft_func(x0)  # type: ignore
+        SFT._ifft_func(x0)
 
 
 def test_impulse_roundtrip():

@@ -9,16 +9,24 @@ Implementation Notes (as of 2022-11)
   applying ``@property`` to methods decorated with `@lru_cache(maxsize=None)``
   causes a MyPy error. Hence, the caching in method `lower_border_end()` is
   done by hand. MyPy Version 0.950 does not seem to have this limitation.
+* Since `NDArray` is only available for Numpy versions 1.21 and above, the
+  methods `stft()`, `stft_detrend()`, `istft()`, and  `_ifft_func()` need to
+  use `NDArray` array as a parameter instead of `NDArray[complex]`.
 """
 from functools import lru_cache, partial
 from typing import Callable, Generator, get_args, Literal, Optional, Union, \
-    Tuple
+    Tuple, Type
 
 import numpy as np
-from numpy.typing import NDArray
 
 import scipy.fft as fft_lib
 from scipy.signal import detrend
+
+try:  # Workaround needed for Numpy versions < 1.21
+    from numpy.typing import NDArray
+except ModuleNotFoundError:
+    NDArray: Type = np.ndarray  # type: ignore
+
 
 __all__ = ['ShortTimeFFT']
 
@@ -144,8 +152,8 @@ class ShortTimeFFT:
     by a factor of 4:
 
     >>> g_std = 8  # standard deviation for Gaussian window in samples
-    >>> win = gaussian(50, std=g_std, sym=True)  # symmetric Gaussian window
-    >>> SFT = ShortTimeFFT(win, hop=10, T=T_x, mfft=200, scale_to='magnitude')
+    >>> w = gaussian(50, std=g_std, sym=True)  # symmetric Gaussian window
+    >>> SFT = ShortTimeFFT(w, hop=10, T=T_x, mfft=200, scale_to='magnitude')
     >>> Sx = SFT.stft(x)  # perform the STFT
 
     In the plot, the time extent of the signal `x` is marked by vertical dashed
@@ -610,7 +618,7 @@ class ShortTimeFFT:
     def stft(self, x: NDArray, p0: Optional[int] = None,
              p1: Optional[int] = None, k_offset: int = 0,
              padding: PAD_TYPE = 'zeros', axis: int = -1) \
-            -> NDArray[np.complex_]:
+            -> NDArray:
         """Perform the short-time Fourier transform.
 
         A two-dimensional matrix with ``p1-p0`` columns is calculated.
@@ -670,7 +678,7 @@ class ShortTimeFFT:
                      p0: Optional[int] = None, p1: Optional[int] = None,
                      k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                      axis: int = -1) \
-            -> NDArray[np.complex_]:
+            -> NDArray:
         """Short-time Fourier transform a trend subtracted from each segment.
 
         If `detr` is set to 'constant', the mean is subtracted, if set to
@@ -846,7 +854,7 @@ class ShortTimeFFT:
         except ValueError:
             return False
 
-    def istft(self, S: NDArray[np.complex_], k0: int = 0,
+    def istft(self, S: NDArray, k0: int = 0,
               k1: Optional[int] = None, f_axis: int = -2, t_axis: int = -1) \
             -> NDArray:
         """Inverse short-time Fourier transform.
@@ -1337,7 +1345,7 @@ class ShortTimeFFT:
         # This should never happen but makes the Linter happy:
         raise RuntimeError(f"{self.fft_typ=} not in {get_args(FFT_TYP_TYPE)}!")
 
-    def _ifft_func(self, X: NDArray[np.complex_]) -> NDArray:
+    def _ifft_func(self, X: NDArray) -> NDArray:
         """Inverse to `_fft_func`.
 
         Returned is an array of length `m_num`. If the FFT is `onesided`
