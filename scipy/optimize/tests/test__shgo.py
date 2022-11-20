@@ -1006,9 +1006,8 @@ class TestShgoFailures:
         result = shgo(fun, bounds)
         print(result.x, result.fun, fun.nfev)  # 50
 
-# Returns
 
-from scipy.optimize import rosen, shgo
+# Returns
 class TestShgoReturns:
     def test_1_nfev_simplicial(self):
         bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
@@ -1031,3 +1030,4 @@ class TestShgoReturns:
 
         result = shgo(fun, bounds, sampling_method='sobol')
         numpy.testing.assert_equal(fun.nfev, result.nfev)
+

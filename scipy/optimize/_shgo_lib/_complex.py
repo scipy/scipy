@@ -190,10 +190,6 @@ class Complex:
     # %% Triangulation methods
     def cyclic_product(self, bounds, origin, supremum, centroid=True):
         """Generate initial triangulation using cyclic product"""
-        # Init variables defined in later inner `for` loop:
-        vl = None
-        vu = None
-        a_vu = None
         # Define current hyperrectangle
         vot = tuple(origin)
         vut = tuple(supremum)  # Hyperrectangle supremum
@@ -535,6 +531,9 @@ class Complex:
         # Copy for later removal
         origin_c = copy.copy(origin)
         supremum_c = copy.copy(supremum)
+
+        # Initiate local variables redefined in later inner `for` loop:
+        vl, vu, a_vu = None, None, None
 
         # Change the vector orientation so that it is only increasing
         s_ov = list(origin)
