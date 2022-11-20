@@ -312,11 +312,11 @@ cdef double[:, :] _compute_euler_from_quat(
         half_sum = atan2(b, a)
         half_diff = atan2(d, c)
         
-        if case == 0: # no singularities
+        if case == 0:  # no singularities
             _angles[angle_first] = half_sum - half_diff
             _angles[angle_third] = half_sum + half_diff
         
-        else: # any degenerate case
+        else:  # any degenerate case
             _angles[2] = 0
             if case == 1:
                 _angles[0] = 2 * half_sum
