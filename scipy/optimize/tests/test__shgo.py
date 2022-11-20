@@ -992,3 +992,42 @@ class TestShgoFailures:
                   'sampling_method': 'sobol'
                   }
         warns(UserWarning, shgo, *args, **kwargs)
+
+    def test(self):
+        from scipy.optimize import rosen, shgo
+        bounds = [(0, 2), (0, 2), (0, 2), (0, 2), (0, 2)]
+
+        def fun(x):
+            fun.nfev += 1
+            return rosen(x)
+
+        fun.nfev = 0
+
+        result = shgo(fun, bounds)
+        print(result.x, result.fun, fun.nfev)  # 50
+
+# Returns
+
+from scipy.optimize import rosen, shgo
+class TestShgoReturns:
+    def test_1_nfev_simplicial(self):
+        bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
+
+        def fun(x):
+            fun.nfev += 1
+            return rosen(x)
+        fun.nfev = 0
+
+        result = shgo(fun, bounds)
+        numpy.testing.assert_equal(fun.nfev, result.nfev)
+
+    def test_1_nfev_sobol(self):
+        bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
+
+        def fun(x):
+            fun.nfev += 1
+            return rosen(x)
+        fun.nfev = 0
+
+        result = shgo(fun, bounds, sampling_method='sobol')
+        numpy.testing.assert_equal(fun.nfev, result.nfev)

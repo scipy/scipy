@@ -285,7 +285,7 @@ def shgo(
     .. [2] Joe, SW and Kuo, FY (2008) "Constructing Sobol' sequences with
            better  two-dimensional projections", SIAM J. Sci. Comput. 30,
            2635-2654.
-    .. [3] Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear
+    .. [3] Hock, W and Schittkowski, K (1981) "Test examples for nonlinear
            programming codes", Lecture Notes in Economics and Mathematical
            Systems, 187. Springer-Verlag, New York.
            http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
@@ -810,6 +810,7 @@ class SHGO:
 
         self.res.nit = self.iters_done  # + 1
         self.fn = self.HC.V.nfev
+        print(f'self.HC.V.size() = {self.HC.V.size()}')
 
     def find_minima(self):
         """

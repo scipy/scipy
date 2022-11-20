@@ -342,7 +342,6 @@ class VertexCacheField(VertexCacheBase):
         ----------
         v : VertexBase or VertexScalarField object
         """
-        self.field(v.x_a, *self.field_args)
         try:
             v.f = self.field(v.x_a, *self.field_args)
             self.nfev += 1
@@ -449,7 +448,7 @@ class FieldWraper:
     def func(self, v_x_a):
         try:
             v_f = self.field(v_x_a, *self.field_args)
-        except:
+        except Exception:
             v_f = np.inf
         if np.isnan(v_f):
             v_f = np.inf

@@ -190,6 +190,11 @@ class Complex:
     # %% Triangulation methods
     def cyclic_product(self, bounds, origin, supremum, centroid=True):
         """Generate initial triangulation using cyclic product"""
+        # Init variables defined in later inner `for` loop:
+        vl = None
+        vu = None
+        a_vu = None
+        # Define current hyperrectangle
         vot = tuple(origin)
         vut = tuple(supremum)  # Hyperrectangle supremum
         self.V[vot]
@@ -327,7 +332,6 @@ class Complex:
 
                             # Add new list of cross pairs
                             ab_C.append((vp[0], ab_v))
-
 
         # Clean class trash
         try:
