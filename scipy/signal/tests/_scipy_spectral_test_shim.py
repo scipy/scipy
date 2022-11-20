@@ -14,8 +14,8 @@ and remove the existing imports of stft and istft.
 The idea of these wrappers is not to provide a backward-compatible interface
 but to demonstrate that the ShortTimeFFT implementation is at least as capable
 as the existing one and delivers comparable results. Furthermore, the
-wrappers highlight the different philosophies of the implementations, espically
-in the border handling.
+wrappers highlight the different philosophies of the implementations,
+especially in the border handling.
 """
 from typing import Tuple, cast, Literal
 
@@ -42,7 +42,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
 
     This function is meant to be solely used by `stft_compare()`.
     """
-    if scaling not in ('psd', 'spectrum'):  # same errors as in original stft():
+    if scaling not in ('psd', 'spectrum'):  # same errors as in original stft:
         raise ValueError(f"Parameter {scaling=} not in ['spectrum', 'psd']!")
 
     # The following lines are taken from the original _spectral_helper():
@@ -64,7 +64,8 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
             raise ValueError('nperseg must be a positive integer')
 
     # parse window; if array like, then set nperseg = win.shape
-    win, nperseg = _triage_segments(window, nperseg, input_length=x.shape[axis])
+    win, nperseg = _triage_segments(window, nperseg,
+                                    input_length=x.shape[axis])
 
     if nfft is None:
         nfft = nperseg
@@ -228,7 +229,7 @@ def _istft_wrapper(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     t = np.arange(k1 - k0) * ST.T
     k_hi = ST.upper_border_begin(k1 - k0)[0]
     # using cast() to make mypy happy:
-    return t, x, (cast(Tuple[int, int], ST.lower_border_end)[0], k_hi)
+    return t, x, (ST.lower_border_end[0], k_hi)
 
 
 def stft_compare(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
@@ -256,7 +257,7 @@ def stft_compare(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
     assert_allclose(t_wrapper, t, err_msg=f"Time slices {e_msg_part}")
 
     # Adapted tolerances to account for:
-    atol = np.finfo(Zxx.dtype).resolution  # if x.dtype == np.float32 else 0
+    atol = np.finfo(Zxx.dtype).resolution * 2  # if x.dtype == np.float32 else 0
     assert_allclose(Zxx_wrapper, Zxx, atol=atol,
                     err_msg=f"STFT values {e_msg_part}")
     return f, t, Zxx

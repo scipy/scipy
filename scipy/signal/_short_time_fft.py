@@ -1,6 +1,18 @@
-"""Short-time Fourier Transform Module. """
+"""Short-time Fourier Transform Module.
+
+Implementation Notes (as of 2022-11)
+------------------------------------
+* When the minimal version of Python is bumped to 3.9 then
+  ``@lru_cache(maxsize=None)`` can be replaced with ``@cache`` from functools,
+  which should be marginally faster.
+* MyPy Version 0.931 does not support decorated property methods. Hence,
+  applying ``@property`` to methods decorated with `@lru_cache(maxsize=None)``
+  causes a MyPy error. Hence, the caching in method `lower_border_end()` is
+  done by hand. MyPy Version 0.950 does not seem to have this limitation.
+"""
 from functools import lru_cache, partial
-from typing import Callable, Generator, get_args, Literal, Optional, Union, Tuple
+from typing import Callable, Generator, get_args, Literal, Optional, Union, \
+    Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -142,7 +154,7 @@ class ShortTimeFFT:
     by  the window slices in that area not fully being inside time range of
     `x`:
 
-    >>> fig1, ax1 = plt.subplots()
+    >>> fig1, ax1 = plt.subplots(figsize=(6., 4.))  # enlarge plot a bit
     >>> t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
     >>> ax1.set_title(rf"STFT ({SFT.m_num*SFT.T:g}$\,s$ Gaussian window, " +
     ...               rf"$\sigma_t={g_std*SFT.T}\,$s)")
@@ -216,6 +228,7 @@ class ShortTimeFFT:
     # attributes for caching calculated values:
     _fac_mag: Optional[float] = None
     _fac_psd: Optional[float] = None
+    _lower_border_end: Optional[Tuple[int, int]] = None
 
     def __init__(self, win: NDArray, hop: int, T: float,
                  fft_typ: FFT_TYP_TYPE = 'onesided',
@@ -594,8 +607,9 @@ class ShortTimeFFT:
                     xs[..., :-k_] = -x[..., :-k2_-1:-1]
                 yield xs
 
-    def stft(self, x: NDArray, p0: Optional[int] = None, p1: Optional[int] = None,
-             k_offset: int = 0, padding: PAD_TYPE = 'zeros', axis: int = -1) \
+    def stft(self, x: NDArray, p0: Optional[int] = None,
+             p1: Optional[int] = None, k_offset: int = 0,
+             padding: PAD_TYPE = 'zeros', axis: int = -1) \
             -> NDArray[np.complex_]:
         """Perform the short-time Fourier transform.
 
@@ -720,7 +734,7 @@ class ShortTimeFFT:
         Examples
         --------
         The following example shows the spectrogram of a square wave with
-        varying frequency :math:`f_i(t)` (marked by a red dashed line in the
+        varying frequency :math:`f_i(t)` (marked by a green dashed line in the
         plot) sampled with 20 Hz:
 
         >>> import matplotlib.pyplot as plt
@@ -733,12 +747,13 @@ class ShortTimeFFT:
         >>> f_i = 5e-3*(t_x - t_x[N // 3])**2 + 1  # varying frequency
         >>> x = square(2*np.pi*np.cumsum(f_i)*T_x)  # the signal
 
-        The utitlized Gaussian window is 50 samples or 2.5 s long. The parameter
-        ``mfft=800`` (oversampling factor 16) and the `hop` interval of 2 in
-        `ShortTimeFFT` was chosen to produce a sufficient number of points:
+        The utitlized Gaussian window is 50 samples or 2.5 s long. The
+        parameter ``mfft=800`` (oversampling factor 16) and the `hop` interval
+        of 2 in `ShortTimeFFT` was chosen to produce a sufficient number of
+        points:
 
         >>> g_std = 12  # standard deviation for Gaussian window in samples
-        >>> win = gaussian(50, std=g_std, sym=True)  # symmetric Gaussian window
+        >>> win = gaussian(50, std=g_std, sym=True)  # symmetric Gaussian wind.
         >>> SFT = ShortTimeFFT(win, hop=2, T=T_x, mfft=800, scale_to='psd')
         >>> Sx2 = SFT.spectrogram(x)  # calculate absolute square of STFT
 
@@ -746,7 +761,7 @@ class ShortTimeFFT:
         The time extent of the signal `x` is marked by vertical dashed lines
         and the shaded areas mark the presence of border effects:
 
-        >>> fig1, ax1 = plt.subplots()
+        >>> fig1, ax1 = plt.subplots(figsize=(6., 4.))  # enlarge plot a bit
         >>> t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
         >>> ax1.set_title(rf"Spectrogram ({SFT.m_num*SFT.T:g}$\,s$ Gaussian " +
         ...               rf"window, $\sigma_t={g_std*SFT.T:g}\,$s)")
@@ -766,7 +781,7 @@ class ShortTimeFFT:
         >>> for t0_, t1_ in [(t_lo, SFT.lower_border_end[0] * SFT.T),
         ...                  (SFT.upper_border_begin(N)[0] * SFT.T, t_hi)]:
         ...     ax1.axvspan(t0_, t1_, color='w', linewidth=0, alpha=.3)
-        >>> for t_ in [0, N * SFT.T]:  # mark signal borders with vertical line:
+        >>> for t_ in [0, N * SFT.T]:  # mark signal borders with vertical line
         ...     ax1.axvline(t_, color='c', linestyle='--', alpha=0.5)
         >>> ax1.legend()
         >>> fig1.tight_layout()
@@ -831,8 +846,9 @@ class ShortTimeFFT:
         except ValueError:
             return False
 
-    def istft(self, S: NDArray[np.complex_], k0: int = 0, k1: Optional[int] = None,
-              f_axis: int = -2, t_axis: int = -1) -> NDArray:
+    def istft(self, S: NDArray[np.complex_], k0: int = 0,
+              k1: Optional[int] = None, f_axis: int = -2, t_axis: int = -1) \
+            -> NDArray:
         """Inverse short-time Fourier transform.
 
         An array of dimension ``S.ndim - 1``  which is real if `onesided_fft`
@@ -914,7 +930,7 @@ class ShortTimeFFT:
             x[..., i0-k0:i1-k0] += xs[..., j0:j1]
         x = x[..., :k1-k0]
         if x.ndim > 1:
-            x = np.moveaxis(x, -1, t_axis)
+            x = np.moveaxis(x, -1, f_axis if f_axis < x.ndim else t_axis)
         return x
 
     @property
@@ -1116,10 +1132,13 @@ class ShortTimeFFT:
         return self.p_max(n) - self.p_min
 
     @property
-    @lru_cache(maxsize=None)
     def lower_border_end(self) -> Tuple[int, int]:
         """First signal index and first slice index unaffected by pre-padding.
         """
+        # not using @cache decorator due to MyPy limitations
+        if self._lower_border_end is not None:
+            return self._lower_border_end
+
         # first non-zero element in self.win:
         m0 = np.flatnonzero(self.win.real**2 + self.win.imag**2)[0]
 
@@ -1127,8 +1146,10 @@ class ShortTimeFFT:
         k0 = -self.m_num_mid + m0
         for q_, k_ in enumerate(range(k0, self.hop + 1, self.hop)):
             if k_ + self.hop >= 0:  # next entry does not stick out anymore
-                return k_ + self.m_num, q_ + 1
-        return 0, self.p_min
+                self._lower_border_end = (k_ + self.m_num, q_ + 1)
+                return self._lower_border_end
+        self._lower_border_end = (0, self.p_min)
+        return self._lower_border_end
 
     @lru_cache(maxsize=256)
     def upper_border_begin(self, n: int) -> Tuple[int, int]:
@@ -1161,8 +1182,8 @@ class ShortTimeFFT:
         """
         return self.T * self.hop
 
-    def p_range(self, n: int, p0: Optional[int] = None, p1: Optional[int] = None) \
-            -> Tuple[int, int]:
+    def p_range(self, n: int, p0: Optional[int] = None,
+                p1: Optional[int] = None) -> Tuple[int, int]:
         """Determine and validate slice index range.
 
         Parameters
@@ -1285,54 +1306,59 @@ class ShortTimeFFT:
         # This should never happen but makes the Linters happy:
         raise RuntimeError(f"{self.fft_typ=} not in {get_args(FFT_TYP_TYPE)}!")
 
-    def _fft_func(self, x: NDArray, axis: int = -1) -> NDArray:
-        """FFT based on the `fft_typ`, 'mfft`, `scaling` and `phase_shift`
+    def _fft_func(self, x: NDArray) -> NDArray:
+        """FFT based on the `fft_typ`, `mfft`, `scaling` and `phase_shift`
         attributes.
+
+        For multidimensional arrays the transformation is carried out on the
+        last axis.
         """
         if self.phase_shift is not None:
-            if x.shape[axis] < self.mfft:  # zero pad if needed
+            if x.shape[-1] < self.mfft:  # zero pad if needed
                 z_shape = list(x.shape)
-                z_shape[axis] = self.mfft - x.shape[axis]
+                z_shape[-1] = self.mfft - x.shape[-1]
                 x = np.hstack((x, np.zeros(z_shape, dtype=x.dtype)))
             p_s = (self.phase_shift + self.m_num_mid) % self.m_num
-            x = np.roll(x, -p_s)
+            x = np.roll(x, -p_s, axis=-1)
 
         if self.fft_typ == 'twosided':
-            return fft_lib.fft(x, n=self.mfft, axis=axis)
+            return fft_lib.fft(x, n=self.mfft, axis=-1)
         if self.fft_typ == 'centered':
-            return fft_lib.fftshift(fft_lib.fft(x, self.mfft, axis=axis))
+            return fft_lib.fftshift(fft_lib.fft(x, self.mfft, axis=-1))
         if self.fft_typ == 'onesided':
-            return fft_lib.rfft(x, n=self.mfft, axis=axis)
+            return fft_lib.rfft(x, n=self.mfft, axis=-1)
         if self.fft_typ == 'onesided2X':
-            X = fft_lib.rfft(x, n=self.mfft, axis=axis)
+            X = fft_lib.rfft(x, n=self.mfft, axis=-1)
             # Either squared magnitude (psd) or magnitude is doubled:
             fac = np.sqrt(2) if self.scaling == 'psd' else 2
             # For even input length, the last entry is unpaired:
-            X[1: -1 if self.mfft % 2 == 0 else None] *= fac
+            X[..., 1: -1 if self.mfft % 2 == 0 else None] *= fac
             return X
         # This should never happen but makes the Linter happy:
         raise RuntimeError(f"{self.fft_typ=} not in {get_args(FFT_TYP_TYPE)}!")
 
-    def _ifft_func(self, X: NDArray[np.complex_], axis: int = -1) -> NDArray:
+    def _ifft_func(self, X: NDArray[np.complex_]) -> NDArray:
         """Inverse to `_fft_func`.
 
         Returned is an array of length `m_num`. If the FFT is `onesided`
         then a float array is returned else a complex array is returned.
+        For multidimensional arrays the transformation is carried out on the
+        last axis.
         """
         if self.fft_typ == 'twosided':
-            x = fft_lib.ifft(X, n=self.mfft, axis=axis)
+            x = fft_lib.ifft(X, n=self.mfft, axis=-1)
         elif self.fft_typ == 'centered':
-            x = fft_lib.ifft(fft_lib.ifftshift(X), n=self.mfft, axis=axis)
+            x = fft_lib.ifft(fft_lib.ifftshift(X), n=self.mfft, axis=-1)
         elif self.fft_typ == 'onesided':
-            x = fft_lib.irfft(X, n=self.mfft, axis=axis)
+            x = fft_lib.irfft(X, n=self.mfft, axis=-1)
         elif self.fft_typ == 'onesided2X':
             Xc = X.copy()  # we do not want to modify function parameters
             fac = np.sqrt(2) if self.scaling == 'psd' else 2
             # For even length X the last value is not paired with a negative
             # value on the two-sided FFT:
             q1 = -1 if self.mfft % 2 == 0 else None
-            Xc[1:q1] /= fac
-            x = fft_lib.irfft(Xc, n=self.mfft, axis=axis)
+            Xc[..., 1:q1] /= fac
+            x = fft_lib.irfft(Xc, n=self.mfft, axis=-1)
         else:  # This should never happen but makes the Linter happy:
             error_str = f"{self.fft_typ=} not in {get_args(FFT_TYP_TYPE)}!"
             raise RuntimeError(error_str)
@@ -1340,7 +1366,7 @@ class ShortTimeFFT:
         if self.phase_shift is None:
             return x[:self.m_num]
         p_s = (self.phase_shift + self.m_num_mid) % self.m_num
-        return np.roll(x, p_s)[:self.m_num]
+        return np.roll(x, p_s, axis=-1)[:self.m_num]
 
     def extent(self, n: int, axes_seq: Literal['tf', 'ft'] = 'tf',
                center_bins: bool = False) -> Tuple[float, float, float, float]:

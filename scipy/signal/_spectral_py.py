@@ -593,8 +593,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     # ShortTimeFFT, more precisely _spect_helper_csd(), calculate identical
     # STFTs - only useful for unit testing:
     freqs, _, Pxy = _csd_test_shim(x, y, fs, window, nperseg, noverlap, nfft,
-                                   detrend, return_onesided, scaling, axis,
-                                   mode='psd')
+                                   detrend, return_onesided, scaling, axis)
     # freqs, _, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
     #                               detrend, return_onesided, scaling, axis,
     #                               mode='psd')
@@ -625,6 +624,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 # toggle comparison of _spectral_helper() with the shortTimeFFT ins csd():
 _csd_shortTimeFFT_comparison_enable = False
 
+
 def _enable_shortTimeFFT_comparison():
     """Enable comparing output of  _spectral_helper() and ShortTimeFFT.
 
@@ -635,9 +635,8 @@ def _enable_shortTimeFFT_comparison():
 
 
 def _csd_test_shim(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
-                     nfft=None, detrend='constant', return_onesided=True,
-                     scaling='density', axis=-1, mode='psd', boundary=None,
-                     padded=False):
+                   nfft=None, detrend='constant', return_onesided=True,
+                   scaling='density', axis=-1, ):
     """Compare output of  _spectral_helper() and ShortTimeFFT, more
     precisely _spect_helper_csd() for used in csd().
 
@@ -681,9 +680,9 @@ def _spect_helper_csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     x = np.asarray(x)
     if not same_data:
         y = np.asarray(y)
-        outdtype = np.result_type(x, y, np.complex64)
-    else:
-        outdtype = np.result_type(x, np.complex64)
+    #     outdtype = np.result_type(x, y, np.complex64)
+    # else:
+    #     outdtype = np.result_type(x, np.complex64)
 
     if not same_data:
         # Check if we can broadcast the outer axes together

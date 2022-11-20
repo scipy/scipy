@@ -1179,15 +1179,12 @@ interval `T` of one, e.g., ``ShortTimeFFT(np.ones(6), 2, T=1)``.
 The following image schematically depicts the first four window positions also
 named time slices:
 
-.. The images ``../_static/tutorial_stft_sliding_win_[start,stop].png are
-   manually exported from ``../_static/tutorial_stft_sliding_win_startstop.svg``
-   which is an SVG file drawn with Inkscape. Unfortunately, using the SVG
-   directly does not display the arrow tips in the browser (tested with
-   Firefox 105). It is not clear how to generate SVGs with Inkscape which do
-   not have that problem.
+.. When editing the SVGs with Inkscape, convert all arrows from "Stroke" to
+   "Path" (See "Path" menu). This circumvents the problem of the arrow tips
+   not being displayed in the browser (as with Firefox 105 and Inkscape 1.2).
 
-.. figure:: ../_static/tutorial_stft_sliding_win_start.png
-    :width: 66%
+.. figure:: ../_static/tutorial_stft_sliding_win_start.svg
+    :width: 60%
     :align: center
 
 The x-axis denotes the time :math:`t`, which corresponds to the sample index
@@ -1206,7 +1203,7 @@ unaffected by border effects is :math:`k_{lb} = 5`. The property
 The behavior at the end of the signal is depicted for a signal with :math:`n=50`
 samples below, as indicated by the blue background:
 
-.. figure:: ../_static/tutorial_stft_sliding_win_stop.png
+.. figure:: ../_static/tutorial_stft_sliding_win_stop.svg
     :width: 66%
     :align: center
 
@@ -1236,7 +1233,7 @@ functions :math:`f` in the given Hilbert space :math:`\mathcal{H}`
      =  \sum_{k\in\IN} \langle f, h_k\rangle g_k\ , \quad f \in \mathcal{H}\ ,
 
 holds, where :math:`\langle ., .\rangle` denotes the scalar product of
-:math:`\mathcal{H}`. All frames :math:`\{f_k\}` have dual frames [5]_.
+:math:`\mathcal{H}`. All frames have dual frames [5]_.
 
 An STFT evaluated only at discrete grid
 points :math:`S(q \Delta f, p\Delta t)` is called  a "Gabor frame" in
