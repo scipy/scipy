@@ -17,7 +17,9 @@ from scipy.signal._spectral_py import _spectral_helper
 from ._scipy_spectral_test_shim import stft_compare as stft
 from ._scipy_spectral_test_shim import istft_compare as istft
 from scipy.signal._spectral_py import _enable_shortTimeFFT_comparison
-_enable_shortTimeFFT_comparison()  # enable comparison with shortTimeFFT within csd()
+
+# Enable comparison with shortTimeFFT within csd():
+_enable_shortTimeFFT_comparison()
 
 
 class TestPeriodogram:

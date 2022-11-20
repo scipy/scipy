@@ -95,7 +95,8 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
 
     if boundary is not None:
         ext_func = boundary_funcs[boundary]
-        x = ext_func(x, nperseg//2, axis=axis)  # extend by nperseg//2 in front and back
+        # Extend by nperseg//2 in front and back:
+        x = ext_func(x, nperseg//2, axis=axis)
 
     if padded:
         # Pad to integer number of windowed segments
@@ -261,7 +262,7 @@ def stft_compare(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
     assert_allclose(t_wrapper, t, err_msg=f"Time slices {e_msg_part}")
 
     # Adapted tolerances to account for:
-    atol = np.finfo(Zxx.dtype).resolution * 2  # if x.dtype == np.float32 else 0
+    atol = np.finfo(Zxx.dtype).resolution * 2
     assert_allclose(Zxx_wrapper, Zxx, atol=atol,
                     err_msg=f"STFT values {e_msg_part}")
     return f, t, Zxx
@@ -304,7 +305,7 @@ def istft_compare(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     assert_allclose(t, t_wrapper, err_msg=f"Sample times {e_msg_part}")
 
     # Adapted tolerances to account for resolution loss if input is float32:
-    atol = np.finfo(x.dtype).resolution if x.dtype == np.float32 else 0
+    atol = np.finfo(x.dtype).resolution*2
     assert_allclose(x_wrapper[k_lo:k_hi], x[k_lo:k_hi], atol=atol,
                     err_msg=f"Signal values {e_msg_part}")
     return t, x

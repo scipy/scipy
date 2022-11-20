@@ -199,7 +199,8 @@ def test_permute_axes():
                           ('boxcar', 100, 10, 3),     # NOLA True, COLA False
                           ('bartlett', 101, 51, 37),  # NOLA True, COLA False
                           ('hann', 1024, 256, 127),   # NOLA True, COLA False
-                          (('tukey', 0.5), 1152, 256, 14),  # NOLA True, COLA False
+                          # NOLA True, COLA False:
+                          (('tukey', 0.5), 1152, 256, 14),
                           ('hann', 1024, 256, 5)])    # NOLA True, COLA False
 def test_roundtrip_windows(window, n: int, nperseg: int, noverlap: int):
     """Roundtrip test adapted from `test_spectral.TestSTFT`.

@@ -594,9 +594,9 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     # STFTs - only useful for unit testing:
     freqs, _, Pxy = _csd_test_shim(x, y, fs, window, nperseg, noverlap, nfft,
                                    detrend, return_onesided, scaling, axis)
-    # freqs, _, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
-    #                               detrend, return_onesided, scaling, axis,
-    #                               mode='psd')
+    # freqs, _, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap,
+    #                                  nfft, detrend, return_onesided, scaling,
+    #                                  axis, mode='psd')
 
     # Average over windows.
     if len(Pxy.shape) >= 2 and Pxy.size > 0:

@@ -74,8 +74,8 @@ def _calc_dual_canonical_window(win: NDArray, hop: int) -> NDArray:
 
 # noinspection PyShadowingNames
 class ShortTimeFFT:
-    r"""Provide a parametrized discrete Short-time Fourier transform `stft`
-    and its inverse `istft`.
+    r"""Provide a parametrized discrete Short-time Fourier transform (stft)
+    and its inverse (istft).
 
     The `stft` calculates sequential FFTs by sliding a window (`win`) over
     an input signal by `hop` increments. It can be used to quantify the change
@@ -439,7 +439,7 @@ class ShortTimeFFT:
             raise ValueError(f"fft_typ={t_} not in {fft_typ_types}!")
 
         if t_ == 'onesided2X' and self.scaling is None:
-            raise ValueError(f"For scaling is None, fft_typ='{t_}' is invalid!" 
+            raise ValueError(f"For scaling is None, fft_typ='{t_}' is invalid!"
                              "Do scale_to('psd') or scale_to('magnitude')!")
         self._fft_typ = t_
 
@@ -457,7 +457,7 @@ class ShortTimeFFT:
         m_num: Number of samples in window `win`.
         """
         return self._mfft
-    
+
     @mfft.setter
     def mfft(self, n_: int):
         """Setter for the length of FFT utilized.
@@ -1286,7 +1286,7 @@ class ShortTimeFFT:
         mfft: Length of the input for FFT used.
         """
         return self.mfft // 2 + 1 if self.onesided_fft else self.mfft
-    
+
     @property
     def onesided_fft(self) -> bool:
         """Return True if a one-sided FFT is used.
