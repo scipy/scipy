@@ -2,7 +2,7 @@ import logging
 import numpy
 import pytest
 from pytest import raises as assert_raises, warns
-from scipy.optimize import shgo, Bounds
+from scipy.optimize import shgo, Bounds, minimize
 from scipy.optimize._shgo import SHGO
 
 
@@ -771,3 +771,20 @@ class TestShgoFailures:
                   'sampling_method': 'sobol'
                   }
         warns(UserWarning, shgo, *args, **kwargs)
+
+    def test_21_2_jac_options(self):
+        """shgo used to raise an error when passing `options` with 'jac'
+        # see gh-12829. check that this is resolved
+        """
+        def objective(x):
+            return 3 * x[0] * x[0] + 2 * x[0] + 5
+
+        def gradient(x):
+            return 6 * x[0] + 2
+
+        bounds = [(-100, 100)]
+        res = shgo(objective, bounds, options={'jac': gradient})
+        ref = minimize(objective, x0=[0], bounds=bounds, jac=gradient)
+        assert res.success
+        numpy.testing.assert_allclose(res.fun, ref.fun)
+        numpy.testing.assert_allclose(res.x, ref.x)

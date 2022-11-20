@@ -12,6 +12,7 @@ from scipy.optimize._optimize import MemoizeJac
 from scipy.optimize._constraints import new_bounds_to_old
 from ._optimize import _wrap_scalar_function
 from scipy.optimize._shgo_lib.triangulation import Complex
+from scipy._lib._util import _FunctionWrapper
 
 
 __all__ = ['shgo']
@@ -478,6 +479,7 @@ class SHGO:
             self.func = func  # Normal definition of objective function
 
         # Initiate class
+        self._raw_func = func  # some methods pass args in (e.g. Complex)
         _, self.func = _wrap_scalar_function(func, args)
         self.bounds = bounds
         self.args = args
@@ -695,9 +697,19 @@ class SHGO:
         None
 
         """
+        # Update 'options' dict passed to optimize.minimize
         self.minimizer_kwargs['options'].update(options)
+        # Unembed the 'jac' key if it was passed to 'shgo'
+        if 'jac' in self.minimizer_kwargs['options']:
+            self.minimizer_kwargs['jac'] = self.minimizer_kwargs['options']['jac']
+            del self.minimizer_kwargs['options']['jac']
+        # Unembed the 'hess' key if it was passed to 'shgo'
+        if 'hess' in self.minimizer_kwargs['options']:
+            self.minimizer_kwargs['hess'] = self.minimizer_kwargs['options']['hess']
+            del self.minimizer_kwargs['options']['hess']
+
         # Default settings:
-        self.minimize_every_iter = options.get('minimize_every_iter', False)
+        self.minimize_every_iter = options.get('minimize_every_iter', True)
 
         # Algorithm limits
         # Maximum number of iterations to perform.
