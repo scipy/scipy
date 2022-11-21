@@ -385,7 +385,7 @@ def test_open_append():
         f._attributes['Kilroy'] = 'was here'
         f.close()
 
-        # open again in 'a', read the att and and a new one
+        # open again in 'a', read the att and a new one
         f = netcdf_file(filename, 'a')
         assert_equal(f._attributes['Kilroy'], b'was here')
         f._attributes['naughty'] = b'Zoot'

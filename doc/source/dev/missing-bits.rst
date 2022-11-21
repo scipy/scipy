@@ -1,3 +1,6 @@
+:orphan:
+
+.. _missing-bits:
 
 Code and Documentation Style Guide - The Missing Bits
 =====================================================
@@ -9,8 +12,7 @@ are not explicitly stated in the existing guidelines and standards, including
 * `PEP-257 <https://www.python.org/dev/peps/pep-0257>`_ Docstring Conventions
 * `NumPy docstring standard
   <https://numpydoc.readthedocs.io/en/latest/format.html>`_
-* NumPy `Testing Guidelines
-  <https://numpy.org/doc/stable/reference/testing.html>`_
+* :doc:`NumPy Testing Guidelines <numpy:reference/testing>`
 
 Some of these are trivial, and might not seem worth discussing, but in many
 cases, the issue has come up in a pull request review in either the SciPy
@@ -57,8 +59,8 @@ functions::
     instead of this function for more consistent floating point
     comparisons.
 
-For more information about writing unit tests, see `Testing Guidelines
-<https://numpy.org/doc/stable/reference/testing.html>`_.
+For more information about writing unit tests, see the
+:doc:`NumPy Testing Guidelines <numpy:reference/testing>`.
 
 
 Testing that expected exceptions are raised
@@ -81,110 +83,3 @@ A test for this is::
 
 The ``match`` argument ensures that the test doesn't pass by raising
 a ``ValueError`` that is not related to the input containing ``nan``.
-
-
-Documentation Guidelines
-------------------------
-
-Use "must", not "should"
-~~~~~~~~~~~~~~~~~~~~~~~~
-When specifying a required condition on the input parameters, the
-word "must" is preferable to "should".  For many English speakers,
-"must" implies a stronger constraint than "should",  e.g. "I must
-have oxygen to live" versus "I should exercise more".
-
-    Yes::
-
-            Parameters
-            ----------
-            x : float
-                `x` must be nonnegative.
-
-    No::
-
-            Parameters
-            ----------
-            x : float
-                `x` should be nonnegative.
-
-
-Use of the 'versionadded' markup
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* For a new function, the 'versionadded' markup goes in the "Notes" section,
-  *not* in the description at the beginning of the docstring.
-* For a new argument added to an existing function,  the 'versionadded' markup
-  is placed at the end of the description of the argument in the "Parameters"
-  section.
-
-
-Citing wikipedia articles in the "References" section
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-It is acceptable to use wikipedia articles as references.
-When creating the citation for the reference, include the article title,
-the name "Wikipedia" (similar to how one gives a journal title), and the
-URL.
-
-    Yes::
-
-        .. [1] "Zeta Distribution", Wikipedia,
-               https://en.wikipedia.org/wiki/Zeta_distribution
-
-    No::
-
-        .. [1] https://en.wikipedia.org/wiki/Zeta_distribution    
-
-
-DOIs in references
-~~~~~~~~~~~~~~~~~~
-The use of DOIs in references is strongly recommended.
-There is special Sphinx syntax for DOIs: `:doi:`. For example::
-
-    .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
-           C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
-           203-215, :doi:`10.1016/j.patcog.2018.09.014`
-
-(arXiv articles also have special markup available: `:arxiv:`.)
-
-
-Bulleted lists
-~~~~~~~~~~~~~~
-This is not so much a guideline as it is a reminder of the Sphinx markup
-for bulleted lists.  The incorrect use of indentation is common enough
-that it is worthwhile mentioning it here.
-
-When creating a bulleted list:
-
-* Don't end the preceding line with `::`.
-* Don't indent the bullets.
-* Include a blank line before and after the list.
-
-Some examples:
-
-    Yes::
-
-        Some text that precedes this interesting list:
-
-        * The first item in the list.
-        * The second item in the list.
-        * You get the idea.
-
-        Some text that follows the list.
-
-    No::
-
-        Some text that precedes this interesting list:
-
-          * The first item in the list.
-          * The second item in the list.
-          * You get the idea.
-
-        Some text that follows the list.
-
-    No::
-
-        Some text that precedes this interesting list:
-        * The first item in the list.
-        * The second item in the list.
-        * You get the idea.
-        Some text that follows the list.
-

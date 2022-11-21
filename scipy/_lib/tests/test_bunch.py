@@ -16,7 +16,7 @@ class TestMakeTupleBunch:
     # Tests with Result
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def setup(self):
+    def setup_method(self):
         # Set up an instance of Result.
         self.result = Result(x=1, y=2, z=3, w=99, beta=0.5)
 

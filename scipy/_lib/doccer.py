@@ -3,8 +3,11 @@ parameters into function and method docstrings'''
 
 import sys
 
-__all__ = ['docformat', 'inherit_docstring_from', 'indentcount_lines',
-           'filldoc', 'unindent_dict', 'unindent_string', 'doc_replace']
+__all__ = [
+    'docformat', 'inherit_docstring_from', 'indentcount_lines',
+    'filldoc', 'unindent_dict', 'unindent_string', 'extend_notes_in_docstring',
+    'replace_notes_in_docstring', 'doc_replace'
+]
 
 
 def docformat(docstring, docdict=None):

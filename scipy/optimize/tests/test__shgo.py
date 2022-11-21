@@ -1,5 +1,6 @@
 import logging
 import numpy
+from numpy.testing import assert_allclose
 import pytest
 from pytest import raises as assert_raises, warns
 from scipy.optimize import shgo, Bounds
@@ -468,6 +469,13 @@ class TestShgoArguments:
 
             shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
                  callback=callback_func, options={'disp': True})
+
+    def test_args_gh14589(self):
+        # Using `args` used to cause `shgo` to fail; see #14589, #15986, #16506
+        res = shgo(func=lambda x, y, z: x*z + y, bounds=[(0, 3)], args=(1, 2))
+        ref = shgo(func=lambda x: 2*x + 1, bounds=[(0, 3)])
+        assert_allclose(res.fun, ref.fun)
+        assert_allclose(res.x, ref.x)
 
     @pytest.mark.slow
     def test_4_1_known_f_min(self):

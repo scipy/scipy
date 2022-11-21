@@ -23,12 +23,14 @@ References
 # Direct evaluation of polynomials
 #------------------------------------------------------------------------------
 cimport cython
-from libc.math cimport sqrt, exp, floor, fabs, log, sin, M_PI as pi
+from libc.math cimport sqrt, exp, floor, fabs, log, sin, isnan, NAN, M_PI as pi
 
 from numpy cimport npy_cdouble
 from ._complexstuff cimport (
-    nan, inf, number_t, npy_cdouble_from_double_complex,
-    double_complex_from_npy_cdouble)
+    number_t,
+    npy_cdouble_from_double_complex,
+    double_complex_from_npy_cdouble
+)
 
 from . cimport sf_error
 from ._cephes cimport Gamma, lgam, beta, lbeta, gammasgn
@@ -57,8 +59,6 @@ cdef inline number_t hyp1f1(double a, double b, number_t z) nogil:
         r = chyp1f1_wrap(a, b, npy_cdouble_from_double_complex(z))
         return double_complex_from_npy_cdouble(r)
 
-cdef extern from "numpy/npy_math.h":
-    double npy_isnan(double x) nogil
 
 #-----------------------------------------------------------------------------
 # Binomial coefficient
@@ -73,7 +73,7 @@ cdef inline double binom(double n, double k) nogil:
         nx = floor(n)
         if n == nx:
             # undefined
-            return nan
+            return NAN
 
     kx = floor(k)
     if k == kx and (fabs(n) > 1e-8 or n == 0):
@@ -197,8 +197,8 @@ cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
     cdef double p, d
     cdef double k
 
-    if npy_isnan(alpha) or npy_isnan(x):
-        return nan
+    if isnan(alpha) or isnan(x):
+        return NAN
 
     if n < 0:
         return 0.0
@@ -435,7 +435,7 @@ cdef inline number_t eval_genlaguerre(double n, double alpha, number_t x) nogil:
     if alpha <= -1:
         sf_error.error("eval_genlaguerre", sf_error.DOMAIN,
                        "polynomial defined only for alpha > -1")
-        return nan
+        return NAN
 
     d = binom(n+alpha, n)
     a = -n
@@ -452,10 +452,10 @@ cdef inline double eval_genlaguerre_l(long n, double alpha, double x) nogil:
     if alpha <= -1:
         sf_error.error("eval_genlaguerre", sf_error.DOMAIN,
                        "polynomial defined only for alpha > -1")
-        return nan
+        return NAN
 
-    if npy_isnan(alpha) or npy_isnan(x):
-        return nan
+    if isnan(alpha) or isnan(x):
+        return NAN
 
     if n < 0:
         return 0.0
@@ -490,7 +490,7 @@ cdef inline double eval_hermitenorm(long n, double x) nogil:
     cdef long k
     cdef double y1, y2, y3
 
-    if npy_isnan(x):
+    if isnan(x):
         return x
 
     if n < 0:
@@ -499,7 +499,7 @@ cdef inline double eval_hermitenorm(long n, double x) nogil:
             sf_error.DOMAIN,
             "polynomial only defined for nonnegative n",
         )
-        return nan
+        return NAN
     elif n == 0:
         return 1.0
     elif n == 1:
@@ -525,5 +525,5 @@ cdef inline double eval_hermite(long n, double x) nogil:
             sf_error.DOMAIN,
             "polynomial only defined for nonnegative n",
         )
-        return nan
+        return NAN
     return eval_hermitenorm(n, sqrt(2)*x) * 2**(n/2.0)

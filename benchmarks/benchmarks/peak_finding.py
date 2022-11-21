@@ -4,7 +4,7 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy.signal import find_peaks, peak_prominences, peak_widths
-    from scipy.misc import electrocardiogram
+    from scipy.datasets import electrocardiogram
 
 
 class FindPeaks(Benchmark):

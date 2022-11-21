@@ -722,6 +722,25 @@ class TestSpsolveTriangular:
     def setup_method(self):
         use_solver(useUmfpack=False)
 
+    def test_zero_diagonal(self):
+        n = 5
+        rng = np.random.default_rng(43876432987)
+        A = rng.standard_normal((n, n))
+        b = np.arange(n)
+        A = scipy.sparse.tril(A, k=0, format='csr')
+
+        x = spsolve_triangular(A, b, unit_diagonal=True, lower=True)
+
+        A.setdiag(1)
+        assert_allclose(A.dot(x), b)
+
+        # Regression test from gh-15199
+        A = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0]], dtype=np.float64)
+        b = np.array([1., 2., 3.])
+        with suppress_warnings() as sup:
+            sup.filter(SparseEfficiencyWarning, "CSR matrix format is")
+            spsolve_triangular(A, b, unit_diagonal=True)
+
     def test_singular(self):
         n = 5
         A = csr_matrix((n, n))
@@ -749,6 +768,7 @@ class TestSpsolveTriangular:
             assert_array_almost_equal(A.dot(x), b)
 
     @pytest.mark.slow
+    @pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
     @sup_sparse_efficiency
     def test_random(self):
         def random_triangle_matrix(n, lower=True):

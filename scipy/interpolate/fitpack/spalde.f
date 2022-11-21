@@ -1,4 +1,5 @@
-      subroutine spalde(t,n,c,k1,x,d,ier)
+      recursive subroutine spalde(t,n,c,k1,x,d,ier)
+      implicit none
 c  subroutine spalde evaluates at a point x all the derivatives
 c              (j-1)
 c      d(j) = s     (x) , j=1,2,...,k1

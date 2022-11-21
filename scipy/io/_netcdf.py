@@ -179,6 +179,7 @@ class netcdf_file:
     To create a NetCDF file:
 
     >>> from scipy.io import netcdf_file
+    >>> import numpy as np
     >>> f = netcdf_file('simple.nc', 'w')
     >>> f.history = 'Created for a test'
     >>> f.createDimension('time', 10)

@@ -30,7 +30,6 @@ cdef extern from "Highs.h":
         # split up for cython below
         #const HighsModelStatus& getModelStatus(const bool scaled_model = False) const
         const HighsModelStatus & getModelStatus() const
-        const HighsModelStatus & getModelStatus(const bool scaled_model) const
 
         const HighsInfo& getHighsInfo "getInfo" () const
         string modelStatusToString(const HighsModelStatus model_status) const
