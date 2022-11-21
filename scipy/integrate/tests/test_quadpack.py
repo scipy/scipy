@@ -532,23 +532,9 @@ class TestQuad:
         assert res_c[2]['real'][2] == res_r[4]
         assert res_c[2]['real'][1] == res_r[3]
         assert res_c[2]['real'][0]['lst'] == res_r[2]['lst']
-        k_f = res_r[2]['lst']
-        assert np.allclose(res_c[2]['real'][0]['rslst'][:k_f],
-                           res_r[2]['rslst'][:k_f])
-        assert np.allclose(res_c[2]['real'][0]['erlst'][:k_f],
-                           res_r[2]['erlst'][:k_f])
-        assert np.allclose(res_c[2]['real'][0]['ierlst'][:k_f],
-                           res_r[2]['ierlst'][:k_f])
 
         assert len(res_c[2]['imag']) == len(res_i[2:]) == 1
         assert res_c[2]['imag'][0]['lst'] == res_i[2]['lst']
-        k_f = res_i[2]['lst']
-        assert np.allclose(res_c[2]['imag'][0]['rslst'][:k_f],
-                           res_i[2]['rslst'][:k_f])
-        assert np.allclose(res_c[2]['imag'][0]['erlst'][:k_f],
-                           res_i[2]['erlst'][:k_f])
-        assert np.allclose(res_c[2]['imag'][0]['ierlst'][:k_f],
-                           res_i[2]['ierlst'][:k_f])
 
 
 class TestNQuad:
