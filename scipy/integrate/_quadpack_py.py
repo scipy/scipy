@@ -693,7 +693,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     >>> integrate.dblquad(f, 0, np.pi/4, np.sin, np.cos)
         (0.41421356237309503, 1.1083280054755938e-14)
 
-    Calculate :math:`\\int^{x=1}_{x=0} \\int^{y=x}_{y=2-x} a x y \\,dy \\,dx`
+    Calculate :math:`\\int^{x=1}_{x=0} \\int^{y=2-x}_{y=x} a x y \\,dy \\,dx`
     for :math:`a=1, 3`.
 
     >>> f = lambda y, x, a: a*x*y
