@@ -1136,6 +1136,10 @@ def fiedler_companion(a):
     c : (N-1, N-1) ndarray
         Resulting companion matrix
 
+    See Also
+    --------
+    companion
+
     Notes
     -----
     Similar to `companion` the leading coefficient should be nonzero. In the case
@@ -1144,10 +1148,6 @@ def fiedler_companion(a):
     monic polynomial.
 
     .. versionadded:: 1.3.0
-
-    See Also
-    --------
-    companion
 
     References
     ----------

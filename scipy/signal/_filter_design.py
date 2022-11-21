@@ -635,6 +635,10 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     gd : ndarray
         The group delay.
 
+    See Also
+    --------
+    freqz : Frequency response of a digital filter
+
     Notes
     -----
     The similar function in MATLAB is called `grpdelay`.
@@ -647,10 +651,6 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     For the details of numerical computation of the group delay refer to [1]_.
 
     .. versionadded:: 0.16.0
-
-    See Also
-    --------
-    freqz : Frequency response of a digital filter
 
     References
     ----------
@@ -2226,7 +2226,6 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             - Chebyshev I   : 'cheby1'
             - Chebyshev II  : 'cheby2'
             - Cauer/elliptic: 'ellip'
-            - Bessel/Thomson: 'bessel'
 
     output : {'ba', 'zpk', 'sos'}, optional
         Filter form of the output:
@@ -2263,7 +2262,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -2437,7 +2436,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3030,7 +3029,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3145,7 +3144,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3263,7 +3262,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3378,7 +3377,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3519,7 +3518,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     Notes
     -----
@@ -3537,6 +3536,12 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
     See `besselap` for implementation details and references.
 
     The ``'sos'`` output parameter was added in 0.16.0.
+
+    References
+    ----------
+    .. [1] Thomson, W.E., "Delay Networks having Maximally Flat Frequency
+           Characteristics", Proceedings of the Institution of Electrical
+           Engineers, Part III, November 1949, Vol. 96, No. 44, pp. 487-490.
 
     Examples
     --------
@@ -3602,12 +3607,6 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
     >>> plt.show()
-
-    References
-    ----------
-    .. [1] Thomson, W.E., "Delay Networks having Maximally Flat Frequency
-           Characteristics", Proceedings of the Institution of Electrical
-           Engineers, Part III, November 1949, Vol. 96, No. 44, pp. 487-490.
 
     """
     return iirfilter(N, Wn, btype=btype, analog=analog,

@@ -1,25 +1,15 @@
-# Needed to trick Cython, it won't do a relative import outside a package
-# (see https://github.com/mesonbuild/meson/issues/8961)
-_dummy_init_cyoptimize = custom_target('_dummy_init_cyoptimize',
-  output: [
-    '__init__.py',
-    'c_zeros.pxd',
-    '_zeros.pxd'
-  ],
-  input: [
-    '__init__.py',
-    'c_zeros.pxd',
-    '_zeros.pxd'
-  ],
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
+_dummy_init_cyoptimize = [
+  fs.copyfile('__init__.py'),
+  fs.copyfile('c_zeros.pxd'),
+  fs.copyfile('_zeros.pxd'),
+]
 
 _zeros_pyx = custom_target('_zeros_pyx',
   output: '_zeros.pyx',
   input: '_zeros.pyx.in',
   command: [
     py3, tempita, '@INPUT@', '-o', '@OUTDIR@',
-    '--ignore', _dummy_init_cyoptimize
+    '--ignore', _dummy_init_cyoptimize[0]
   ]
 )
 
@@ -44,6 +34,5 @@ py3.install_sources([
     '_zeros.pxd',
     'c_zeros.pxd'
   ],
-  pure: false,
   subdir: 'scipy/optimize/cython_optimize'
 )

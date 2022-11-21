@@ -142,7 +142,7 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
     Warns
     -----
     UserWarning
-        If `A` is a linear operator and ``traceA==None`` (default).
+        If `A` is a linear operator and ``traceA=None`` (default).
 
     Notes
     -----

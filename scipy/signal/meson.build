@@ -137,7 +137,6 @@ py3.install_sources([
     'waveforms.py',
     'wavelets.py'
   ],
-  pure: false,
   subdir: 'scipy/signal'
 )
 

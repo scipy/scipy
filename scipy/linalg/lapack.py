@@ -928,6 +928,7 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     >>> import numpy as np
     >>> import scipy.linalg as LA
     >>> rng = np.random.default_rng()
+
     >>> a = rng.random((3,2))
     >>> x_lange = LA.get_lapack_funcs('lange', (a,))
     >>> x_lange.typecode
@@ -942,8 +943,6 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     to the function which is often wrapped as a standalone function and
     commonly denoted as ``###_lwork``. Below is an example for ``?sysv``
 
-    >>> import scipy.linalg as LA
-    >>> rng = np.random.default_rng()
     >>> a = rng.random((1000, 1000))
     >>> b = rng.random((1000, 1)) * 1j
     >>> # We pick up zsysv and zsysv_lwork due to b array
