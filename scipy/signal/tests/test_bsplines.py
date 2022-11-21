@@ -1,8 +1,7 @@
 # pylint: disable=missing-docstring
 import numpy as np
 from numpy import array
-from numpy.testing import (assert_equal,
-                           assert_allclose, assert_array_equal,
+from numpy.testing import (assert_allclose, assert_array_equal,
                            assert_almost_equal, suppress_warnings)
 import pytest
 from pytest import raises
@@ -12,9 +11,9 @@ from scipy import signal
 
 
 class TestBSplines:
-    """Test behaviors of B-splines. Some of the values tested against were 
-    returned as of SciPy 1.1.0 and are included for regression testing 
-    purposes. Others (at integer points) are compared to theoretical 
+    """Test behaviors of B-splines. Some of the values tested against were
+    returned as of SciPy 1.1.0 and are included for regression testing
+    purposes. Others (at integer points) are compared to theoretical
     expressions (cf. Unser, Aldroubi, Eden, IEEE TSP 1993, Table 1)."""
 
     def test_spline_filter(self):
