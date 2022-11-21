@@ -1,7 +1,8 @@
 # pylint: disable=missing-docstring
 import numpy as np
 from numpy import array
-from numpy.testing import (assert_allclose, assert_array_equal,
+from numpy.testing import (assert_equal,
+                           assert_allclose, assert_array_equal,
                            assert_almost_equal)
 import pytest
 from pytest import raises
@@ -11,8 +12,10 @@ from scipy import signal
 
 
 class TestBSplines:
-    """Test behaviors of B-splines. The values tested against were returned as of
-    SciPy 1.1.0 and are included for regression testing purposes"""
+    """Test behaviors of B-splines. Some of the values tested against were 
+    returned as of SciPy 1.1.0 and are included for regression testing 
+    purposes. Others (at integer points) are compared to theoretical 
+    expressions (cf. Unser, Aldroubi, Eden, IEEE TSP 1993, Table 1)."""
 
     def test_spline_filter(self):
         np.random.seed(12457)
@@ -103,6 +106,20 @@ class TestBSplines:
 
     def test_bspline(self):
         np.random.seed(12458)
+        # Verify with theoretical results at integer points up to order 5
+        assert_allclose(bsp.bspline([-1, 0, 1], 0),
+                        array([0, 1, 0]))
+        assert_allclose(bsp.bspline([-1, 0, 1], 1),
+                        array([0, 1, 0]))
+        assert_allclose(bsp.bspline([-2, -1, 0, 1, 2], 2),
+                        array([0, 1, 6, 1, 0])/8.)
+        assert_allclose(bsp.bspline([-2, -1, 0, 1, 2], 3),
+                        array([0, 1, 4, 1, 0])/6.)
+        assert_allclose(bsp.bspline([-3, -2, -1, 0, 1, 2, 3], 4),
+                        array([0, 1, 76, 230, 76, 1, 0])/384.)
+        assert_allclose(bsp.bspline([-3, -2, -1, 0, 1, 2, 3], 5),
+                        array([0, 1, 26, 66, 26, 1, 0]) / 120.)
+        # Compare with SciPy 1.1.0
         assert_allclose(bsp.bspline(np.random.rand(1, 1), 2),
                         array([[0.73694695]]))
         data_array_complex = np.random.rand(4, 4) + np.random.rand(4, 4)*1j
@@ -128,7 +145,10 @@ class TestBSplines:
 
     def test_cubic(self):
         np.random.seed(12460)
-        assert_array_equal(bsp.cubic([0]), array([0]))
+        # Verify with theoretical results at integer points (see docstring)
+        assert_allclose(bsp.cubic([-2, -1, 0, 1, 2]),
+                        array([0, 1, 4, 1, 0])/6.)
+        # Compare with SciPy 1.1.0
         data_array_complex = np.random.rand(4, 4) + np.random.rand(4, 4)*1j
         data_array_complex = 1+1j-2*data_array_complex
         # scaling the magnitude by 10 makes the results close enough to zero,
@@ -143,7 +163,10 @@ class TestBSplines:
 
     def test_quadratic(self):
         np.random.seed(12461)
-        assert_array_equal(bsp.quadratic([0]), array([0]))
+        # Verify correct results at integer points
+        assert_allclose(bsp.quadratic([-2, -1, 0, 1, 2]),
+                        array([0, 1, 6, 1, 0])/8.)
+        # Compare with SciPy 1.1.0
         data_array_complex = np.random.rand(4, 4) + np.random.rand(4, 4)*1j
         # scaling the magnitude by 10 makes the results all zero,
         # so just make the elements have a mix of positive and negative
