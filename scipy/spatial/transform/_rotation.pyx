@@ -363,9 +363,17 @@ cdef double[:, :] _compute_euler_from_quat(
 
     return angles
 
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline void _compose_quat_single( # calculate p * q into r
+cdef inline double _quat_magnitude(const double[:] q):
+    # this is higher precision than `2 * acos(abs(quat[3]))`
+    return 2 * atan2(_norm3(q[:3]), abs(q[3]))
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline void _compose_quat_single(  # calculate p * q into r
     const double[:] p, const double[:] q, double[:] r
 ) noexcept:
     cdef double[:] cross = _cross3(p[:3], q[:3])
@@ -480,7 +488,10 @@ cdef class Rotation:
     __mul__
     __pow__
     inv
+    rotation_to
     magnitude
+    angle_to
+    approx_equal
     mean
     reduce
     create_group
@@ -1630,7 +1641,7 @@ cdef class Rotation:
             quat = self._quat[ind, :].copy()
             _quat_canonical_single(quat)  # w > 0 ensures that 0 <= angle <= pi
 
-            angle = 2 * atan2(_norm3(quat), quat[3])
+            angle = _quat_magnitude(quat)
 
             if angle <= 1e-3:  # small angle Taylor series expansion
                 angle2 = angle * angle
@@ -2290,6 +2301,41 @@ cdef class Rotation:
             quat = quat[0]
         return self.__class__(quat, copy=False)
 
+
+    @cython.embedsignature(True)
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    def rotation_to(Rotation self, Rotation other):
+        """Get the shortest rotation from this Rotation to another.
+
+        For two rotations ``p`` and ``q``, ``p.rotation_to(q) * p = q``.
+        Equivalently, ``p.rotation_to(q)`` is the same as ``q * p.inv()``.
+
+        Parameters
+        ----------
+        other : `Rotation` instance
+            Object containing the rotations to calculate the rotations to.
+
+        Returns
+        -------
+        rotations : `Rotation` instance
+            The rotation(s) from `self` to `other`.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> p = R.from_euler('zyx', [1, 0, 0])
+        >>> q = R.from_euler('zyx', [0.75, 0, 0])
+        >>> p.rotation_to(q).as_euler('zyx')
+        array([-0.25,  0.  ,  0.  ])
+
+        >>> q2 = p.rotation_to(q) * p
+        >>> q2.as_euler('zyx')
+        array([0.75,  0.  ,  0.  ])
+
+        """
+        return other * self.inv()
+
     @cython.embedsignature(True)
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -2300,7 +2346,8 @@ cdef class Rotation:
         -------
         magnitude : ndarray or float
             Angle(s) in radians, float if object contains a single rotation
-            and ndarray if object contains multiple rotations.
+            and ndarray if object contains multiple rotations. The magnitude
+            will always be in the range [0, pi].
 
         Examples
         --------
@@ -2320,12 +2367,92 @@ cdef class Rotation:
         cdef double[:] angles = _empty1(num_rotations)
 
         for ind in range(num_rotations):
-            angles[ind] = 2 * atan2(_norm3(quat[ind, :3]), abs(quat[ind, 3]))
+            angles[ind] = _quat_magnitude(quat[ind])
 
         if self._single:
             return angles[0]
         else:
             return np.asarray(angles)
+
+    @cython.embedsignature(True)
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    def angle_to(Rotation self, Rotation other):
+        """Get the smallest angular distance(s) to another rotation.
+
+        For two rotations ``p`` and ``q``, the angular distance
+        ``p.angle_to(q)`` is equivalent to calculating
+        ``(q * p.inv()).magnitude()``.
+
+        Parameters
+        ----------
+        other : `Rotation` instance
+            Object containing the rotations to measure the angle to.
+
+        Returns
+        -------
+        angle : ndarray or float
+            Angle(s) in radians, float if object contains a single rotation
+            and ndarray if object contains multiple rotations. The angle
+            will always be in the range [0, pi].
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
+        >>> p = R.from_quat([0, 0, 0, 1])
+        >>> q = R.from_quat(np.eye(4))
+        >>> p.angle_to(q)
+        array([3.14159265, 3.14159265, 3.14159265, 0.        ])
+
+        Angle to a single rotation:
+
+        >>> p.angle_to(q[0])
+        3.141592653589793
+        """
+        return self.rotation_to(other).magnitude()
+
+
+    @cython.embedsignature(True)
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    def approx_equal(Rotation self, Rotation other, float atol=1e-12):
+        """Determine if another rotation is approximately equal to this one.
+
+        Equality is measured by calculating the smallest angle between the
+        rotations, and checking to see if it is smaller than atol.
+
+        Parameters
+        ----------
+        other : `Rotation` instance
+            Object containing the rotations to measure against this one.
+        atol : float
+            The absolute tolerance in radians, below which the rotations are
+            considered equal. If not given, then set to 1e-12 by default.
+
+        Returns
+        -------
+        approx_equal : ndarray or bool
+            Whether the rotations are approximately equal, bool if object
+            contains a single rotation and ndarray if object contains multiple
+            rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
+        >>> p = R.from_quat([0, 0, 0, 1])
+        >>> q = R.from_quat(np.eye(4))
+        >>> p.approx_equal(q)
+        array([False, False, False, True])
+
+        Approximate equality for a single rotation:
+
+        >>> p.approx_equal(q[0])
+        False
+        """
+        angles = self.angle_to(other)
+        return angles < atol
 
     @cython.embedsignature(True)
     def mean(self, weights=None):
