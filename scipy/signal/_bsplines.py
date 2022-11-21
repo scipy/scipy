@@ -184,7 +184,7 @@ def bspline(x, n):
     True
 
     """
-    ax = -abs(asarray(x))
+    ax = -abs(asarray(x, dtype=float))
     # number of pieces on the left-side is (n+1)/2
     funclist, condfuncs = _bspline_piecefunctions(n)
     condlist = [func(ax) for func in condfuncs]
@@ -337,7 +337,7 @@ def quadratic(x):
     True
 
     """
-    ax = abs(asarray(x))
+    ax = abs(asarray(x, dtype=float))
     res = zeros_like(ax)
     cond1 = less(ax, 0.5)
     if cond1.any():
