@@ -2,6 +2,7 @@ from numpy import (logical_and, asarray, pi, zeros_like,
                    piecewise, array, arctan2, tan, zeros, arange, floor)
 from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
                               less_equal, greater_equal)
+import numpy as np
 
 # From splinemodule.c
 from ._spline import cspline2d, sepfir2d
@@ -141,6 +142,18 @@ def _bspline_piecefunctions(order):
     return funclist, condfuncs
 
 
+msg_bspline="""`scipy.signal.bspline` is deprecated in SciPy 1.11 and will be
+removed in SciPy 1.13.
+
+The exact equivalent (for a float array `x`) is
+
+>>> from scipy.interpolate import BSpline
+>>> knots = np.arange(-(n+1)/2, (n+3)/2)
+>>> out = BSpline.basis_element(knots)(x)
+>>> out[(x < knots[0]) | (x > knots[-1])] = 0.0
+"""
+
+@np.deprecate(message=msg_bspline)
 def bspline(x, n):
     """B-spline basis function of order n.
 
@@ -190,7 +203,6 @@ def bspline(x, n):
     out = BSpline.basis_element(knots)(x)
     out[(x < knots[0]) | (x > knots[-1])] = 0
     return out
-
 
 
 def gauss_spline(x, n):
@@ -246,6 +258,17 @@ def gauss_spline(x, n):
     return 1 / sqrt(2 * pi * signsq) * exp(-x ** 2 / 2 / signsq)
 
 
+msg_cubic="""`scipy.signal.cubic` is deprecated in SciPy 1.11 and will be
+removed in SciPy 1.13.
+
+The exact equivalent (for a float array `x`) is
+
+>>> from scipy.interpolate import BSpline
+>>> out = BSpline.basis_element([-2, -1, 0, 1, 2])(x)
+>>> out[(x < -2 | (x > 2)] = 0.0
+"""
+
+@np.deprecate(message=msg_cubic)
 def cubic(x):
     """A cubic B-spline.
 
@@ -292,8 +315,25 @@ def cubic(x):
     out[(x < -2) | (x > 2)] = 0
     return out
 
+def _cubic(x):
+    x = asarray(x, dtype=float)
+    b = BSpline.basis_element([-2, -1, 0, 1, 2], extrapolate=False)
+    out = b(x)
+    out[(x < -2) | (x > 2)] = 0
+    return out
 
 
+msg_quadratic="""`scipy.signal.quadratic` is deprecated in SciPy 1.11 and
+will be removed in SciPy 1.13.
+
+The exact equivalent (for a float array `x`) is
+
+>>> from scipy.interpolate import BSpline
+>>> out = BSpline.basis_element([-1.5, -0.5, 0.5, 1.5])(x)
+>>> out[(x < -1.5 | (x > 1.5)] = 0.0
+"""
+
+@np.deprecate(message=msg_quadratic)
 def quadratic(x):
     """A quadratic B-spline.
 
@@ -334,6 +374,14 @@ def quadratic(x):
     True
 
     """
+    x = abs(asarray(x, dtype=float))
+    b = BSpline.basis_element([-1.5, -0.5, 0.5, 1.5], extrapolate=False)
+    out = b(x)
+    out[(x < -1.5) | (x > 1.5)] = 0
+    return out
+
+
+def _quadratic(x):
     x = abs(asarray(x, dtype=float))
     b = BSpline.basis_element([-1.5, -0.5, 0.5, 1.5], extrapolate=False)
     out = b(x)
@@ -593,7 +641,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     for i in range(4):
         thisj = jlower + i
         indj = thisj.clip(0, N - 1)  # handle edge cases
-        result += cj[indj] * cubic(newx - thisj)
+        result += cj[indj] * _cubic(newx - thisj)
     res[cond3] = result
     return res
 
@@ -669,6 +717,6 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     for i in range(3):
         thisj = jlower + i
         indj = thisj.clip(0, N - 1)  # handle edge cases
-        result += cj[indj] * quadratic(newx - thisj)
+        result += cj[indj] * _quadratic(newx - thisj)
     res[cond3] = result
     return res
