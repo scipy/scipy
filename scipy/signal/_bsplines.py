@@ -9,7 +9,6 @@ from ._spline import cspline2d, sepfir2d
 
 from scipy.special import comb
 from scipy._lib._util import float_factorial
-from scipy.interpolate import BSpline
 
 __all__ = ['spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
            'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval']
@@ -198,12 +197,11 @@ def bspline(x, n):
     True
 
     """
-    x = asarray(x, dtype=float)
-    knots = arange(-(n+1)/2, (n+3)/2)
-    out = BSpline.basis_element(knots)(x)
-    out[(x < knots[0]) | (x > knots[-1])] = 0
-    return out
-
+    ax = -abs(asarray(x, dtype=float))
+    # number of pieces on the left-side is (n+1)/2
+    funclist, condfuncs = _bspline_piecefunctions(n)
+    condlist = [func(ax) for func in condfuncs]
+    return piecewise(ax, condlist, funclist)
 
 def gauss_spline(x, n):
     r"""Gaussian approximation to B-spline basis function of order n.
@@ -309,11 +307,17 @@ def cubic(x):
     True
 
     """
-    x = asarray(x, dtype=float)
-    b = BSpline.basis_element([-2, -1, 0, 1, 2], extrapolate=False)
-    out = b(x)
-    out[(x < -2) | (x > 2)] = 0
-    return out
+    ax = abs(asarray(x))
+    res = zeros_like(ax)
+    cond1 = less(ax, 1)
+    if cond1.any():
+        ax1 = ax[cond1]
+        res[cond1] = 2.0 / 3 - 1.0 / 2 * ax1 ** 2 * (2 - ax1)
+    cond2 = ~cond1 & less(ax, 2)
+    if cond2.any():
+        ax2 = ax[cond2]
+        res[cond2] = 1.0 / 6 * (2 - ax2) ** 3
+    return res
 
 def _cubic(x):
     x = asarray(x, dtype=float)
@@ -374,11 +378,17 @@ def quadratic(x):
     True
 
     """
-    x = abs(asarray(x, dtype=float))
-    b = BSpline.basis_element([-1.5, -0.5, 0.5, 1.5], extrapolate=False)
-    out = b(x)
-    out[(x < -1.5) | (x > 1.5)] = 0
-    return out
+    ax = abs(asarray(x, dtype=float))
+    res = zeros_like(ax)
+    cond1 = less(ax, 0.5)
+    if cond1.any():
+        ax1 = ax[cond1]
+        res[cond1] = 0.75 - ax1 ** 2
+    cond2 = ~cond1 & less(ax, 1.5)
+    if cond2.any():
+        ax2 = ax[cond2]
+        res[cond2] = (ax2 - 1.5) ** 2 / 2.0
+    return res
 
 
 def _quadratic(x):
