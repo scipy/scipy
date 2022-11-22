@@ -116,6 +116,8 @@ doc = [
     "sphinx-design>=0.2.0",
     "matplotlib>2",
     "numpydoc",
+    "docutils<0.18.1",
+    "myst-nb",
 ]
 dev = [
     "mypy",

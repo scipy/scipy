@@ -48,6 +48,7 @@ are:
 - `PyData Sphinx theme`_ (docs)
 - `Sphinx-Design`_  (docs)
 - matplotlib_ (docs)
+- MyST-NB_ (docs)
 
 Furthermore of course one needs C, C++ and Fortran compilers to build SciPy,
 but those we don't consider to be dependencies and are therefore not discussed
@@ -223,3 +224,4 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _decorator: https://github.com/micheles/decorator
 .. _manylinux: https://github.com/pypa/manylinux/
 .. _threadpoolctl: https://github.com/joblib/threadpoolctl
+.. _MyST-NB: https://myst-nb.readthedocs.io/

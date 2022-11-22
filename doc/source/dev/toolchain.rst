@@ -29,7 +29,9 @@ section for an example.)
 - Compilers for C, C++, Fortran code are needed, as well as for Cython & Pythran (the latter is opt-out currently)
 - The Python environment needs the ``NumPy`` package to be installed.
 - Testing requires the ``pytest`` Python package.
-- Building the documentation requires the ``matplotlib``, Sphinx packages along with PyData theme.
+- Building the documentation requires the ``matplotlib``, Sphinx and MyST-NB_ packages along with PyData theme.
+
+.. _MyST-NB: https://myst-nb.readthedocs.io/
 
 The tooling used to build CPython has some implications for the tooling used
 in building SciPy.
@@ -411,6 +413,7 @@ PyData Sphinx theme   Whatever recent versions work. >= 0.8.1.
 Sphinx-Design         Whatever recent versions work. >= 0.2.0.
 numpydoc              Whatever recent versions work. >= 0.8.0.
 matplotlib            Generally suggest >= 2.0.
+MyST-NB               Whatever recent versions work. >= 0.17.1
 ====================  =================================================
 
 .. note::

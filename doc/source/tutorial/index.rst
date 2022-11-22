@@ -9,9 +9,8 @@ SciPy User Guide
 .. sectionauthor:: Travis E. Oliphant
 
 SciPy is a collection of mathematical algorithms and convenience functions built
-on NumPy_ . It adds significant power to the interactive Python session by
-providing the user with high-level commands and classes for manipulating and
-visualizing data.
+on NumPy_ . It adds significant power to Python by providing the user with
+high-level commands and classes for manipulating and visualizing data.
 
 .. _NumPy: https://numpy.org
 
@@ -44,12 +43,6 @@ Subpackage          Description
 SciPy subpackages need to be imported separately, for example::
 
     >>> from scipy import linalg, optimize
-
-Because of their ubiquitousness, some of the functions in these
-subpackages are also made available in the `scipy` namespace to ease
-their use in interactive sessions and programs. In addition, many
-basic array functions from :mod:`numpy` are also available at the
-top-level of the :mod:`scipy` package.
 
 Below, you can find the complete user guide organized by subpackages.
 

@@ -19,13 +19,13 @@ This notebook contains three sets of demonstrations:
 - recommended replacements for `interp2d` for use in new code;
 - a demonstration of failure modes of 2D FITPACK-based linear interpolation and recommended replacements.
 
-+++ 
++++
 
 ## 1. How to transition away from using  `interp2d`
 
 `interp2d` silently switches between interpolation on a 2D regular grid and interpolatin 2D scattered data. The switch is based on the lengths of the (raveled) `x`, `y`, and `z` arrays. In short, for regular grid use `RectBivariateSpline`; for scattered interpolation, use the `bisprep/bisplev` combo. Below we give examples of the literal point-for-point transition, which should preserve the `interp2d` results exactly.
 
-+++ 
++++
 
 ### 1.1 `interp2d` on a regular grid
 
