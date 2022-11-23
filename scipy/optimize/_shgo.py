@@ -12,7 +12,6 @@ from scipy.optimize._optimize import MemoizeJac
 from scipy.optimize._constraints import new_bounds_to_old
 from ._optimize import _wrap_scalar_function
 from scipy.optimize._shgo_lib.triangulation import Complex
-from scipy._lib._util import _FunctionWrapper
 
 
 __all__ = ['shgo']
@@ -465,19 +464,6 @@ class SHGO:
             raise ValueError(("Unknown sampling_method specified."
                               " Valid methods: {}").format(', '.join(methods)))
 
-        # Split obj func if given with Jac
-        try:
-            if ((minimizer_kwargs['jac'] is True) and
-               (not callable(minimizer_kwargs['jac']))):
-                self.func = MemoizeJac(func)
-                jac = self.func.derivative
-                minimizer_kwargs['jac'] = jac
-                func = self.func  # .fun
-            else:
-                self.func = func  # Normal definition of objective function
-        except (TypeError, KeyError):
-            self.func = func  # Normal definition of objective function
-
         # Initiate class
         self._raw_func = func  # some methods pass args in (e.g. Complex)
         _, self.func = _wrap_scalar_function(func, args)
@@ -697,19 +683,16 @@ class SHGO:
         None
 
         """
+        # Ensure that 'jac' and 'hess' are passed directly to `minimize` as
+        # keywords, not as part of its 'options' dictionary
+        self.minimizer_kwargs['jac'] = options.pop('jac', None)
+        self.minimizer_kwargs['hess'] = options.pop('hess', None)
+
         # Update 'options' dict passed to optimize.minimize
         self.minimizer_kwargs['options'].update(options)
-        # Unembed the 'jac' key if it was passed to 'shgo'
-        if 'jac' in self.minimizer_kwargs['options']:
-            self.minimizer_kwargs['jac'] = self.minimizer_kwargs['options']['jac']
-            del self.minimizer_kwargs['options']['jac']
-        # Unembed the 'hess' key if it was passed to 'shgo'
-        if 'hess' in self.minimizer_kwargs['options']:
-            self.minimizer_kwargs['hess'] = self.minimizer_kwargs['options']['hess']
-            del self.minimizer_kwargs['options']['hess']
 
         # Default settings:
-        self.minimize_every_iter = options.get('minimize_every_iter', True)
+        self.minimize_every_iter = options.get('minimize_every_iter', False)
 
         # Algorithm limits
         # Maximum number of iterations to perform.
