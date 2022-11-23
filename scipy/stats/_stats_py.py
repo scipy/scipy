@@ -58,6 +58,7 @@ from ._axis_nan_policy import (_axis_nan_policy_factory,
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
+from scipy.optimize import root_scalar
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -80,7 +81,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'alexandergovern']
+           'brunnermunzel', 'alexandergovern',
+           'expectile', ]
 
 
 def _chk_asarray(a, axis):
@@ -504,6 +506,13 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
     axis : int or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': treats nan as it would treat any other value
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
     keepdims : bool, optional
         If set to ``False``, the `axis` over which the statistic is taken
         is consumed (eliminated from the output array) like other reduction
@@ -519,14 +528,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
             value of `keepdims` will become ``False``, the `axis` over which
             the statistic is taken will be eliminated, and the value ``None``
             will no longer be accepted.
-
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-          * 'propagate': treats nan as it would treat any other value
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        .. versionadded:: 1.9.0
 
     Returns
     -------
@@ -4804,6 +4806,10 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
        Section  14.7
+    .. [2] Kendall, M. G. and Stuart, A. (1973).
+       The Advanced Theory of Statistics, Volume 2: Inference and Relationship.
+       Griffin. 1973.
+       Section 31.18
 
     Examples
     --------
@@ -7549,40 +7555,55 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
                             lambda_="pearson")
 
 
-KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
+KstestResult = _make_tuple_bunch('KstestResult', ['statistic', 'pvalue'],
+                                 ['statistic_location', 'statistic_sign'])
 
 
-def _compute_dplus(cdfvals):
+def _compute_dplus(cdfvals, x):
     """Computes D+ as used in the Kolmogorov-Smirnov test.
 
     Parameters
     ----------
     cdfvals : array_like
         Sorted array of CDF values between 0 and 1
+    x: array_like
+        Sorted array of the stochastic variable itself
 
     Returns
     -------
-      Maximum distance of the CDF values below Uniform(0, 1)
-"""
+    res: Pair with the following elements:
+        - The maximum distance of the CDF values below Uniform(0, 1).
+        - The location at which the maximum is reached.
+
+    """
     n = len(cdfvals)
-    return (np.arange(1.0, n + 1) / n - cdfvals).max()
+    dplus = (np.arange(1.0, n + 1) / n - cdfvals)
+    amax = dplus.argmax()
+    loc_max = x[amax]
+    return (dplus[amax], loc_max)
 
 
-def _compute_dminus(cdfvals):
+def _compute_dminus(cdfvals, x):
     """Computes D- as used in the Kolmogorov-Smirnov test.
 
     Parameters
     ----------
     cdfvals : array_like
         Sorted array of CDF values between 0 and 1
+    x: array_like
+        Sorted array of the stochastic variable itself
 
     Returns
     -------
-      Maximum distance of the CDF values above Uniform(0, 1)
-
+    res: Pair with the following elements:
+        - Maximum distance of the CDF values above Uniform(0, 1)
+        - The location at which the maximum is reached.
     """
     n = len(cdfvals)
-    return (cdfvals - np.arange(0.0, n)/n).max()
+    dminus = (cdfvals - np.arange(0.0, n)/n)
+    amax = dminus.argmax()
+    loc_max = x[amax]
+    return (dminus[amax], loc_max)
 
 
 @_rename_parameter("mode", "method")
@@ -7617,11 +7638,24 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
 
     Returns
     -------
-    statistic : float
-        KS test statistic, either D, D+ or D- (depending on the value
-        of 'alternative')
-    pvalue : float
-        One-tailed or two-tailed p-value.
+    res: KstestResult
+        An object containing attributes:
+
+        statistic : float
+            KS test statistic, either D+, D-, or D (the maximum of the two)
+        pvalue : float
+            One-tailed or two-tailed p-value.
+        statistic_location : float
+            Value of `x` corresponding with the KS statistic; i.e., the
+            distance between the empirical distribution function and the
+            hypothesized cumulative distribution function is measured at this
+            observation.
+        statistic_sign : int
+            +1 if the KS statistic is the maximum positive difference between
+            the empirical distribution function and the hypothesized cumulative
+            distribution function (D+); -1 if the KS statistic is the maximum
+            negative difference (D-).
+
 
     See Also
     --------
@@ -7706,17 +7740,29 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     cdfvals = cdf(x, *args)
 
     if alternative == 'greater':
-        Dplus = _compute_dplus(cdfvals)
-        return KstestResult(Dplus, distributions.ksone.sf(Dplus, N))
+        Dplus, d_location = _compute_dplus(cdfvals, x)
+        return KstestResult(Dplus, distributions.ksone.sf(Dplus, N),
+                            statistic_location=d_location,
+                            statistic_sign=1)
 
     if alternative == 'less':
-        Dminus = _compute_dminus(cdfvals)
-        return KstestResult(Dminus, distributions.ksone.sf(Dminus, N))
+        Dminus, d_location = _compute_dminus(cdfvals, x)
+        return KstestResult(Dminus, distributions.ksone.sf(Dminus, N),
+                            statistic_location=d_location,
+                            statistic_sign=-1)
 
     # alternative == 'two-sided':
-    Dplus = _compute_dplus(cdfvals)
-    Dminus = _compute_dminus(cdfvals)
-    D = np.max([Dplus, Dminus])
+    Dplus, dplus_location = _compute_dplus(cdfvals, x)
+    Dminus, dminus_location = _compute_dminus(cdfvals, x)
+    if Dplus > Dminus:
+        D = Dplus
+        d_location = dplus_location
+        d_sign = 1
+    else:
+        D = Dminus
+        d_location = dminus_location
+        d_sign = -1
+
     if mode == 'auto':  # Always select exact
         mode = 'exact'
     if mode == 'exact':
@@ -7727,7 +7773,9 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
         # mode == 'approx'
         prob = 2 * distributions.ksone.sf(D, N)
     prob = np.clip(prob, 0, 1)
-    return KstestResult(D, prob)
+    return KstestResult(D, prob,
+                        statistic_location=d_location,
+                        statistic_sign=d_sign)
 
 
 Ks_2sampResult = KstestResult
@@ -7899,8 +7947,8 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
 
     This test compares the underlying continuous distributions F(x) and G(x)
-    of two independent samples.  See Notes for a description
-    of the available null and alternative hypotheses.
+    of two independent samples.  See Notes for a description of the available
+    null and alternative hypotheses.
 
     Parameters
     ----------
@@ -7920,10 +7968,21 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
 
     Returns
     -------
-    statistic : float
-        KS statistic.
-    pvalue : float
-        One-tailed or two-tailed p-value.
+    res: KstestResult
+        An object containing attributes:
+
+        statistic : float
+            KS test statistic.
+        pvalue : float
+            One-tailed or two-tailed p-value.
+        statistic_location : float
+            Value from `data1` or `data2` corresponding with the KS statistic;
+            i.e., the distance between the empirical distribution functions is
+            measured at this observation.
+        statistic_sign : int
+            +1 if the empirical distribution function of `data1` exceeds
+            the empirical distribution function of `data2` at
+            `statistic_location`, otherwise -1.
 
     See Also
     --------
@@ -8054,11 +8113,25 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     cdf1 = np.searchsorted(data1, data_all, side='right') / n1
     cdf2 = np.searchsorted(data2, data_all, side='right') / n2
     cddiffs = cdf1 - cdf2
+
+    # Identify the location of the statistic
+    argminS = np.argmin(cddiffs)
+    argmaxS = np.argmax(cddiffs)
+    loc_minS = data_all[argminS]
+    loc_maxS = data_all[argmaxS]
+
     # Ensure sign of minS is not negative.
-    minS = np.clip(-np.min(cddiffs), 0, 1)
-    maxS = np.max(cddiffs)
-    alt2Dvalue = {'less': minS, 'greater': maxS, 'two-sided': max(minS, maxS)}
-    d = alt2Dvalue[alternative]
+    minS = np.clip(-cddiffs[argminS], 0, 1)
+    maxS = cddiffs[argmaxS]
+
+    if alternative == 'less' or (alternative == 'two-sided' and minS > maxS):
+        d = minS
+        d_location = loc_minS
+        d_sign = -1
+    else:
+        d = maxS
+        d_location = loc_maxS
+        d_sign = 1
     g = gcd(n1, n2)
     n1g = n1 // g
     n2g = n2 // g
@@ -8098,7 +8171,8 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             prob = np.exp(expt)
 
     prob = np.clip(prob, 0, 1)
-    return KstestResult(d, prob)
+    return KstestResult(d, prob, statistic_location=d_location,
+                        statistic_sign=d_sign)
 
 
 def _parse_kstest_args(data1, data2, args, N):
@@ -8177,14 +8251,37 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
 
     Returns
     -------
-    statistic : float
-        KS test statistic, either D, D+ or D-.
-    pvalue : float
-        One-tailed or two-tailed p-value.
+    res: KstestResult
+        An object containing attributes:
+
+        statistic : float
+            KS test statistic, either D+, D-, or D (the maximum of the two)
+        pvalue : float
+            One-tailed or two-tailed p-value.
+        statistic_location : float
+            In a one-sample test, this is the value of `rvs`
+            corresponding with the KS statistic; i.e., the distance between
+            the empirical distribution function and the hypothesized cumulative
+            distribution function is measured at this observation.
+
+            In a two-sample test, this is the value from `rvs` or `cdf`
+            corresponding with the KS statistic; i.e., the distance between
+            the empirical distribution functions is measured at this
+            observation.
+        statistic_sign : int
+            In a one-sample test, this is +1 if the KS statistic is the
+            maximum positive difference between the empirical distribution
+            function and the hypothesized cumulative distribution function
+            (D+); it is -1 if the KS statistic is the maximum negative
+            difference (D-).
+
+            In a two-sample test, this is +1 if the empirical distribution
+            function of `rvs` exceeds the empirical distribution
+            function of `cdf` at `statistic_location`, otherwise -1.
 
     See Also
     --------
-    ks_2samp
+    ks_1samp, ks_2samp
 
     Notes
     -----
@@ -9440,3 +9537,129 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         result[nan_indexes] = np.nan
 
     return result
+
+
+def expectile(a, alpha=0.5, *, weights=None):
+    r"""Compute the expectile at the specified level.
+
+    Expectiles are a generalization of the expectation in the same way as
+    quantiles are a generalization of the median. The expectile at level
+    `alpha = 0.5` is the mean (average). See Notes for more details.
+
+    Parameters
+    ----------
+    a : array_like
+        Array containing numbers whose expectile is desired.
+    alpha : float, default: 0.5
+        The level of the expectile; e.g., `alpha=0.5` gives the mean.
+    weights : array_like, optional
+        An array of weights associated with the values in `a`.
+        The `weights` must be broadcastable to the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
+        An integer valued weight element acts like repeating the corresponding
+        observation in `a` that many times. See Notes for more details.
+
+    Returns
+    -------
+    expectile : ndarray
+        The empirical expectile at level `alpha`.
+
+    See Also
+    --------
+    numpy.mean : Arithmetic average
+    numpy.quantile : Quantile
+
+    Notes
+    -----
+    In general, the expectile at level :math:`\alpha` of a random variable
+    :math:`X` with cumulative distribution function (CDF) :math:`F` is given
+    by the unique solution :math:`t` of:
+
+    .. math::
+
+        \alpha E((X - t)_+) = (1 - \alpha) E((t - X)_+) \,.
+
+    Here, :math:`(x)_+ = \max(0, x)` is the positive part of :math:`x`.
+    This equation can be equivalently written as:
+
+    .. math::
+
+        \alpha \int_t^\infty (x - t)\mathrm{d}F(x)
+        = (1 - \alpha) \int_{-\infty}^t (t - x)\mathrm{d}F(x) \,.
+
+    The empirical expectile at level :math:`\alpha` (`alpha`) of a sample
+    :math:`a_i` (the array `a`) is defined by plugging in the empirical CDF of
+    `a`. Given sample or case weights :math:`w` (the array `weights`), it
+    reads :math:`F_a(x) = \frac{1}{\sum_i a_i} \sum_i w_i 1_{a_i \leq x}`
+    with indicator function :math:`1_{A}`. This leads to the definition of the
+    empirical expectile at level `alpha` as the unique solution :math:`t` of:
+
+    .. math::
+
+        \alpha \sum_{i=1}^n w_i (a_i - t)_+ =
+            (1 - \alpha) \sum_{i=1}^n w_i (t - a_i)_+ \,.
+
+    For :math:`\alpha=0.5`, this simplifies to the weighted average.
+    Furthermore, the larger :math:`\alpha`, the larger the value of the
+    expectile.
+
+    As a final remark, the expectile at level :math:`\alpha` can also be
+    written as a minimization problem. One often used choice is
+
+    .. math::
+
+        \operatorname{argmin}_t
+        E(\lvert 1_{t\geq X} - \alpha\rvert(t - X)^2) \,.
+
+    References
+    ----------
+    .. [1] W. K. Newey and J. L. Powell (1987), "Asymmetric Least Squares
+           Estimation and Testing," Econometrica, 55, 819-847.
+    .. [2] T. Gneiting (2009). "Making and Evaluating Point Forecasts,"
+           Journal of the American Statistical Association, 106, 746 - 762.
+           :doi:`10.48550/arXiv.0912.0902`
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import expectile
+    >>> a = [1, 4, 2, -1]
+    >>> expectile(a, alpha=0.5) == np.mean(a)
+    True
+    >>> expectile(a, alpha=0.2)
+    0.42857142857142855
+    >>> expectile(a, alpha=0.8)
+    2.5714285714285716
+    >>> weights = [1, 3, 1, 1]
+
+    """
+    if alpha < 0 or alpha > 1:
+        raise ValueError(
+            "The expectile level alpha must be in the range [0, 1]."
+        )
+    a = np.asarray(a)
+
+    if weights is not None:
+        weights = np.broadcast_to(weights, a.shape)
+
+    # This is the empirical equivalent of Eq. (13) with identification
+    # function from Table 9 (omitting a factor of 2) in [2] (their y is our
+    # data a, their x is our t)
+    def first_order(t):
+        return np.average(np.abs((a <= t) - alpha) * (t - a), weights=weights)
+
+    if alpha >= 0.5:
+        x0 = np.average(a, weights=weights)
+        x1 = np.amax(a)
+    else:
+        x1 = np.average(a, weights=weights)
+        x0 = np.amin(a)
+
+    if x0 == x1:
+        # a has a single unique element
+        return x0
+
+    # Note that the expectile is the unique solution, so no worries about
+    # finding a wrong root.
+    res = root_scalar(first_order, x0=x0, x1=x1)
+    return res.root

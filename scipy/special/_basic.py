@@ -116,6 +116,7 @@ def diric(x, n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
 
@@ -615,9 +616,8 @@ def y0_zeros(nt, complex=False):
 
     Plot the real part of :math:`Y_0` and the first four computed roots.
 
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import y0_zeros, y0
+    >>> from scipy.special import y0
     >>> xmin = 0
     >>> xmax = 11
     >>> x = np.linspace(xmin, xmax, 500)
@@ -698,9 +698,8 @@ def y1_zeros(nt, complex=False):
 
     Plot :math:`Y_1` and the first four computed roots.
 
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import y1_zeros, y1
+    >>> from scipy.special import y1
     >>> xmin = 0
     >>> xmax = 13
     >>> x = np.linspace(xmin, xmax, 500)
@@ -776,9 +775,8 @@ def y1p_zeros(nt, complex=False):
     `y1p_zeros` can be used to calculate the extremal points of :math:`Y_1`
     directly. Here we plot :math:`Y_1` and the first four extrema.
 
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import y1, yvp, y1p_zeros
+    >>> from scipy.special import y1, yvp
     >>> y1_roots, y1_values_at_roots = y1p_zeros(4)
     >>> real_roots = y1_roots.real
     >>> xmax = 15
@@ -1875,6 +1873,7 @@ def bernoulli(n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import bernoulli, zeta
     >>> bernoulli(4)
     array([ 1.        , -0.5       ,  0.16666667,  0.        , -0.03333333])
@@ -1932,6 +1931,7 @@ def euler(n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import euler
     >>> euler(6)
     array([  1.,   0.,  -1.,   0.,   5.,   0., -61.])
@@ -2627,6 +2627,7 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import comb
     >>> k = np.array([3, 4])
     >>> n = np.array([10, 10])
@@ -2695,6 +2696,7 @@ def perm(N, k, exact=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import perm
     >>> k = np.array([3, 4])
     >>> n = np.array([10, 10])
@@ -2779,6 +2781,7 @@ def factorial(n, exact=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import factorial
     >>> arr = np.array([3, 4, 5])
     >>> factorial(arr, exact=False)
@@ -2990,6 +2993,7 @@ def zeta(x, q=None, out=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import zeta, polygamma, factorial
 
     Some specific values:

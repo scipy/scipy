@@ -37,6 +37,42 @@ cirrus_wheels_linux_aarch64_task:
 
 
 ######################################################################
+# Build macosx_arm64 natively
+######################################################################
+
+cirrus_wheels_macos_arm64_task:
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-monterey-xcode:13.3.1
+  matrix:
+    - env:
+        CIBW_BUILD: cp39-*
+    - env:
+        CIBW_BUILD: cp310-* cp311-*
+  env:
+    PATH: /opt/homebrew/opt/python@3.10/bin:$PATH
+    CIBW_ENVIRONMENT: MACOSX_DEPLOYMENT_TARGET=12.0 _PYTHON_HOST_PLATFORM="macosx-12.0-arm64"
+    PKG_CONFIG_PATH: /opt/arm64-builds/lib/pkgconfig
+    # assumes that the cmake config is in /usr/local/lib/cmake
+    CMAKE_PREFIX_PATH: /opt/arm64-builds/
+    REPAIR_PATH: /usr/local/gfortran/lib:/opt/arm64-builds/lib
+    CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
+      DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib delocate-listdeps {wheel} &&
+      DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}
+  install_pre_requirements_script:
+    - brew install python@3.10
+    - ln -s python3 /opt/homebrew/opt/python@3.10/bin/python
+
+  build_script:
+    - which python
+    # needed for submodules
+    - git submodule update --init
+    - uname -m
+    - python -c "import platform;print(platform.python_version());print(platform.system());print(platform.machine())"
+    - clang --version
+  <<: *BUILD_AND_STORE_WHEELS
+
+
+######################################################################
 # Upload all wheels
 ######################################################################
 
@@ -45,7 +81,9 @@ cirrus_wheels_upload_task:
   # Rather than upload wheels at the end of each cibuildwheel run we do a
   # final upload here. This is because a run may be on different OS for
   # which bash, etc, may not be present.
-  depends_on: cirrus_wheels_linux_aarch64
+  depends_on:
+    - cirrus_wheels_linux_aarch64
+    - cirrus_wheels_macos_arm64
   compute_engine_instance:
     image_project: cirrus-images
     image: family/docker-builder
@@ -53,8 +91,9 @@ cirrus_wheels_upload_task:
 
   env:
     # created as SCIPY_STAGING_UPLOAD_TOKEN_CIRRUS and SCIPY_NIGHTLY_UPLOAD_TOKEN_CIRRUS
-    SCIPY_STAGING_UPLOAD_TOKEN: ENCRYPTED[92da39a48bc14c0d14f05c057b011e321915337a8e0a664da56be892e3d19c5c991d12bc7ef79470693214620d3e3b1a]
-    SCIPY_NIGHTLY_UPLOAD_TOKEN: ENCRYPTED[3084f2103e33493cfc1992a22ec8e67665f835ab31eec7a84711dc9b2f78ea6d6e189e871214b7e9ba41e240ad4f8af4]
+    SCIPY_STAGING_UPLOAD_TOKEN: ENCRYPTED[5940af5e589adf1647fb2832be2c912812de22b5b6551d93e177600da69b2103ffdf0ee1cf16671cf5e76f69a966bc30]
+    SCIPY_NIGHTLY_UPLOAD_TOKEN: ENCRYPTED[377be83afdaf9e8fa8bac105022bb1d362f72fff8501c2b5e827018b82270111828fb542fd7bd56bbfac9745603bd535]
+
   upload_script: |
     apt-get install -y python3-venv python-is-python3 curl
     export IS_SCHEDULE_DISPATCH="false"
@@ -64,8 +103,11 @@ cirrus_wheels_upload_task:
     if [[ "$CIRRUS_CRON" == "nightly" ]]; then
       export IS_SCHEDULE_DISPATCH="true"
     fi
-    # it's a tag event starting with 'v' and not ending with 'dev0'
-    if [[ $CIRRUS_TAG =~ ^v.*[^dev0]$ ]]; then
+
+    # If it's a push event to a maintenance branch, and the commit message contains
+    # '[wheel build]' then upload to staging
+    COMMIT_MSG=$(git log --no-merges -1)
+    if [[ "$COMMIT_MSG" == *"[wheel build]"* ]] && [[ $CIRRUS_BRANCH == maintenance* ]]; then
           export IS_PUSH="true"
     fi
     
@@ -78,10 +120,15 @@ cirrus_wheels_upload_task:
     
     source tools/wheels/upload_wheels.sh
     set_upload_vars
-    # trigger an upload to
+    # For cron jobs (restricted to main branch)
+    # an upload to:
+    #
     # https://anaconda.org/scipy-wheels-nightly/scipy
-    # for cron jobs or "Run workflow" (restricted to main branch).
-    # Tags will upload to
+    # 
+    # Pushes to a maintenance branch that contain '[wheel build]' will
+    # cause wheels to be built and uploaded to:
+    #
     # https://anaconda.org/multibuild-wheels-staging/scipy
+    #
     # The tokens were originally generated at anaconda.org
     upload_wheels

@@ -177,12 +177,14 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         equal to `tol`. For detailed control, use solver-specific
         options.
     options : dict, optional
-        A dictionary of solver options. All methods accept the following
-        generic options:
+        A dictionary of solver options. All methods except `TNC` accept the
+        following generic options:
 
             maxiter : int
                 Maximum number of iterations to perform. Depending on the
                 method each iteration may use several function evaluations.
+
+                For `TNC` use `maxfun` instead of `maxiter`.
             disp : bool
                 Set to True to print convergence messages.
 
@@ -552,20 +554,18 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not use Hessian information (hess).' % method,
              RuntimeWarning)
     # - hessp
-    if meth not in ('newton-cg', 'dogleg', 'trust-ncg', 'trust-constr',
+    if meth not in ('newton-cg', 'trust-ncg', 'trust-constr',
                     'trust-krylov', '_custom') \
        and hessp is not None:
         warn('Method %s does not use Hessian-vector product '
              'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
-    if (meth in ('cg', 'bfgs', 'newton-cg', 'dogleg', 'trust-ncg')
-            and (bounds is not None or np.any(constraints))):
-        warn('Method %s cannot handle constraints nor bounds.' % method,
-             RuntimeWarning)
-    if meth in ('nelder-mead', 'l-bfgs-b', 'tnc', 'powell') and np.any(constraints):
+    if (meth not in ('cobyla', 'slsqp', 'trust-constr', '_custom') and
+            np.any(constraints)):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
-    if meth == 'cobyla' and bounds is not None:
+    if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'tnc', 'slsqp',
+                    'trust-constr', '_custom') and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - return_all

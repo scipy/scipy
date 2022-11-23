@@ -33,7 +33,7 @@ __all__ = ['mvsdist',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot', 'directionalmean'
+           'yeojohnson_normplot', 'directional_stats'
            ]
 
 
@@ -1910,6 +1910,28 @@ def anderson(x, dist='norm'):
     .. [6] Stephens, M. A. (1979). Tests of Fit for the Logistic Distribution
            Based on the Empirical Distribution Function, Biometrika, Vol. 66,
            pp. 591-595.
+           
+    Examples
+    --------
+    Test the null hypothesis that a random sample was drawn from a normal
+    distribution (with unspecified mean and standard deviation).
+
+    >>> import numpy as np
+    >>> from scipy.stats import anderson
+    >>> rng = np.random.default_rng()
+    >>> data = rng.random(size=35)
+    >>> res = anderson(data)
+    >>> res.statistic
+    0.8398018749744764
+    >>> res.critical_values
+    array([0.527, 0.6  , 0.719, 0.839, 0.998])
+    >>> res.significance_level
+    array([15. , 10. ,  5. ,  2.5,  1. ])
+
+    The value of the statistic (barely) exceeds the critical value associated
+    with a significance level of 2.5%, so the null hypothesis may be rejected
+    at a significance level of 2.5%, but not at a significance level of 1%.
+
     """  # noqa
     dist = dist.lower()
     if dist in {'extreme1', 'gumbel'}:
@@ -4023,13 +4045,31 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     return res
 
 
-def directionalmean(samples, *, axis=0, normalize=True):
+class DirectionalStats:
+    def __init__(self, mean_direction, mean_resultant_length):
+        self.mean_direction = mean_direction
+        self.mean_resultant_length = mean_resultant_length
+
+    def __repr__(self):
+        return (f"DirectionalStats(mean_direction={self.mean_direction},"
+                f" mean_resultant_length={self.mean_resultant_length})")
+
+
+def directional_stats(samples, *, axis=0, normalize=True):
     """
-    Computes the directional mean of a sample of vectors.
+    Computes sample statistics for directional data.
+
+    Computes the directional mean (also called the mean direction vector) and
+    mean resultant length of a sample of vectors.
 
     The directional mean is a measure of "preferred direction" of vector data.
-    It is analogous to the sample mean, but it is for use when the magnitude of
+    It is analogous to the sample mean, but it is for use when the length of
     the data is irrelevant (e.g. unit vectors).
+
+    The mean resultant length is a value between 0 and 1 used to quantify the
+    dispersion of directional data: the smaller the mean resultant length, the
+    greater the dispersion. Several definitions of directional variance
+    involving the mean resultant length are given in [1]_ and [2]_.
 
     Parameters
     ----------
@@ -4047,12 +4087,18 @@ def directionalmean(samples, *, axis=0, normalize=True):
 
     Returns
     -------
-    directionalmean : ndarray
-        Directional mean.
+    res : DirectionalStats
+        An object containing attributes:
+
+        mean_direction : ndarray
+            Directional mean.
+        mean_resultant_length : ndarray
+            The mean resultant length [1]_.
 
     See also
     --------
     circmean: circular mean; i.e. directional mean for 2D *angles*
+    circvar: circular variance; i.e. directional variance for 2D *angles*
 
     Notes
     -----
@@ -4061,26 +4107,36 @@ def directionalmean(samples, *, axis=0, normalize=True):
 
     .. code-block:: python
 
-        mean=samples.mean(axis=0)
-        directionalmean = mean/np.linalg.norm(mean)
+        mean = samples.mean(axis=0)
+        mean_resultant_length = np.linalg.norm(mean)
+        mean_direction = mean / mean_resultant_length
 
     This definition is appropriate for *directional* data (i.e. vector data
     for which the magnitude of each observation is irrelevant) but not
     for *axial* data (i.e. vector data for which the magnitude and *sign* of
     each observation is irrelevant).
 
+    Several definitions of directional variance involving the mean resultant
+    length ``R`` have been proposed, including ``1 - R`` [1]_, ``1 - R**2``
+    [2]_, and ``2 * (1 - R)`` [2]_. Rather than choosing one, this function
+    returns ``R`` as attribute `mean_resultant_length` so the user can compute
+    their preferred measure of dispersion.
+
     References
     ----------
     .. [1] Mardia, Jupp. (2000). *Directional Statistics*
        (p. 163). Wiley.
 
+    .. [2] https://en.wikipedia.org/wiki/Directional_statistics
+
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.stats import directionalmean
+    >>> from scipy.stats import directional_stats
     >>> data = np.array([[3, 4],    # first observation, 2D vector space
     ...                  [6, -8]])  # second observation
-    >>> directionalmean(data)
+    >>> dirstats = directional_stats(data)
+    >>> dirstats.mean_direction
     array([1., 0.])
 
     In contrast, the regular sample mean of the vectors would be influenced
@@ -4090,12 +4146,13 @@ def directionalmean(samples, *, axis=0, normalize=True):
     >>> data.mean(axis=0)
     array([4.5, -2.])
 
-    An exemplary use case for `directionalmean` is to find a *meaningful*
+    An exemplary use case for `directional_stats` is to find a *meaningful*
     center for a set of observations on a sphere, e.g. geographical locations.
 
     >>> data = np.array([[0.8660254, 0.5, 0.],
     ...                  [0.8660254, -0.5, 0.]])
-    >>> directionalmean(data)
+    >>> dirstats = directional_stats(data)
+    >>> dirstats.mean_direction
     array([1., 0., 0.])
 
     The regular sample mean on the other hand yields a result which does not
@@ -4104,6 +4161,14 @@ def directionalmean(samples, *, axis=0, normalize=True):
     >>> data.mean(axis=0)
     array([0.8660254, 0., 0.])
 
+    The function also returns the mean resultant length, which
+    can be used to calculate a directional variance. For example, using the
+    definition ``Var(z) = 1 - R`` from [2]_ where ``R`` is the
+    mean resultant length, we can calculate the directional variance of the
+    vectors in the above example as:
+
+    >>> 1 - dirstats.mean_resultant_length
+    0.13397459716167093
     """
     samples = np.asarray(samples)
     if samples.ndim < 2:
@@ -4114,5 +4179,7 @@ def directionalmean(samples, *, axis=0, normalize=True):
         vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
         samples = samples/vectornorms
     mean = np.mean(samples, axis=0)
-    directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)
-    return directional_mean
+    mean_resultant_length = np.linalg.norm(mean, axis=-1, keepdims=True)
+    mean_direction = mean / mean_resultant_length
+    return DirectionalStats(mean_direction,
+                            mean_resultant_length.squeeze(-1)[()])

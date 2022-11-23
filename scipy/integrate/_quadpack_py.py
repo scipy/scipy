@@ -693,7 +693,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     >>> integrate.dblquad(f, 0, np.pi/4, np.sin, np.cos)
         (0.41421356237309503, 1.1083280054755938e-14)
 
-    Calculate :math:`\\int^{x=1}_{x=0} \\int^{y=x}_{y=2-x} a x y \\,dy \\,dx`
+    Calculate :math:`\\int^{x=1}_{x=0} \\int^{y=2-x}_{y=x} a x y \\,dy \\,dx`
     for :math:`a=1, 3`.
 
     >>> f = lambda y, x, a: a*x*y
@@ -1056,6 +1056,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
           x_0^2+x_1 x_2-x_3^3+ \sin{x_0}+0 & (x_0-0.2 x_3-0.5-0.25 x_1 \leq 0)
         \end{cases} .
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + (
     ...                                 1 if (x0-.2*x3-.5-.25*x1>0) else 0)

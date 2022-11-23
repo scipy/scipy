@@ -133,6 +133,7 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
                footer="""\
                Examples
                --------
+               >>> import numpy as np
                >>> from scipy.sparse import csc_matrix
                >>> from scipy.sparse.linalg import bicg
                >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
@@ -220,6 +221,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
                footer="""\
                Examples
                --------
+               >>> import numpy as np
                >>> from scipy.sparse import csc_matrix
                >>> from scipy.sparse.linalg import bicgstab
                >>> R = np.array([[4, 2, 0, 1],
@@ -304,6 +306,7 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
                footer="""\
                Examples
                --------
+               >>> import numpy as np
                >>> from scipy.sparse import csc_matrix
                >>> from scipy.sparse.linalg import cg
                >>> P = np.array([[4, 0, 1, 0],
@@ -393,6 +396,7 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
                footer="""\
                Examples
                --------
+               >>> import numpy as np
                >>> from scipy.sparse import csc_matrix
                >>> from scipy.sparse.linalg import cgs
                >>> R = np.array([[4, 2, 0, 1],
@@ -568,6 +572,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import gmres
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
@@ -777,6 +782,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import qmr
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)

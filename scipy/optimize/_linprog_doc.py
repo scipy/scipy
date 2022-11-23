@@ -14,6 +14,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                        primal_feasibility_tolerance=None,
                        ipm_optimality_tolerance=None,
                        simplex_dual_edge_weight_strategy=None,
+                       mip_rel_gap=None,
                        **unknown_options):
     r"""
     Linear programming: minimize a linear objective function subject to linear
@@ -157,6 +158,10 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         Curently, ``None`` always selects ``'steepest-devex'``, but this
         may change as new options become available.
+    mip_rel_gap : double (default: None)
+        Termination criterion for MIP solver: solver will terminate when the
+        gap between the primal objective value and the dual objective bound,
+        scaled by the primal objective value, is <= mip_rel_gap.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing
@@ -273,7 +278,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ----------
     .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
            "HiGHS - high performance software for linear optimization."
-           Accessed 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+           https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
            119-142, 2018. DOI: 10.1007/s12532-017-0130-5
@@ -514,7 +519,7 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ----------
     .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
            "HiGHS - high performance software for linear optimization."
-           Accessed 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+           https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
            119-142, 2018. DOI: 10.1007/s12532-017-0130-5
@@ -746,7 +751,7 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ----------
     .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
            "HiGHS - high performance software for linear optimization."
-           Accessed 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+           https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
            119-142, 2018. DOI: 10.1007/s12532-017-0130-5

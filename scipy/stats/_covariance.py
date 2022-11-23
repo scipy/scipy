@@ -2,6 +2,7 @@ from functools import cached_property
 
 import numpy as np
 from scipy import linalg
+from scipy.stats import _multivariate
 
 
 __all__ = ["Covariance"]
@@ -89,6 +90,36 @@ class Covariance:
         does not lie in the span of the columns of the covariance matrix. The
         convention taken here is to treat the inverse square root of
         non-positive elements of :math:`d` as zeros.
+
+        Examples
+        --------
+        Prepare a symmetric positive definite covariance matrix ``A`` and a
+        data point ``x``.
+
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> rng = np.random.default_rng()
+        >>> n = 5
+        >>> A = np.diag(rng.random(n))
+        >>> x = rng.random(size=n)
+
+        Extract the diagonal from ``A`` and create the `Covariance` object.
+
+        >>> d = np.diag(A)
+        >>> cov = stats.Covariance.from_diagonal(d)
+
+        Compare the functionality of the `Covariance` object against a
+        reference implementations.
+
+        >>> res = cov.whiten(x)
+        >>> ref = np.diag(d**-0.5) @ x
+        >>> np.allclose(res, ref)
+        True
+        >>> res = cov.log_pdet
+        >>> ref = np.linalg.slogdet(A)[-1]
+        >>> np.allclose(res, ref)
+        True
+
         """
         return CovViaDiagonal(diagonal)
 
@@ -121,17 +152,48 @@ class Covariance:
         This `Covariance` class does not support singular covariance matrices
         because the precision matrix does not exist for a singular covariance
         matrix.
+
+        Examples
+        --------
+        Prepare a symmetric positive definite precision matrix ``P`` and a
+        data point ``x``. (If the precision matrix is not already available,
+        consider the other factory methods of the `Covariance` class.)
+
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> rng = np.random.default_rng()
+        >>> n = 5
+        >>> P = rng.random(size=(n, n))
+        >>> P = P @ P.T  # a precision matrix must be positive definite
+        >>> x = rng.random(size=n)
+
+        Create the `Covariance` object.
+
+        >>> cov = stats.Covariance.from_precision(P)
+
+        Compare the functionality of the `Covariance` object against
+        reference implementations.
+
+        >>> res = cov.whiten(x)
+        >>> ref = x @ np.linalg.cholesky(P)
+        >>> np.allclose(res, ref)
+        True
+        >>> res = cov.log_pdet
+        >>> ref = -np.linalg.slogdet(P)[-1]
+        >>> np.allclose(res, ref)
+        True
+
         """
         return CovViaPrecision(precision, covariance)
 
     @staticmethod
-    def from_cholesky(L):
+    def from_cholesky(cholesky):
         r"""
         Representation of a covariance provided via the (lower) Cholesky factor
 
         Parameters
         ----------
-        L : array_like
+        cholesky : array_like
             The lower triangular Cholesky factor of the covariance matrix.
 
         Notes
@@ -147,8 +209,106 @@ class Covariance:
         because the Cholesky decomposition does not exist for a singular
         covariance matrix.
 
+        Examples
+        --------
+        Prepare a symmetric positive definite covariance matrix ``A`` and a
+        data point ``x``.
+
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> rng = np.random.default_rng()
+        >>> n = 5
+        >>> A = rng.random(size=(n, n))
+        >>> A = A @ A.T  # make the covariance symmetric positive definite
+        >>> x = rng.random(size=n)
+
+        Perform the Cholesky decomposition of ``A`` and create the
+        `Covariance` object.
+
+        >>> L = np.linalg.cholesky(A)
+        >>> cov = stats.Covariance.from_cholesky(L)
+
+        Compare the functionality of the `Covariance` object against
+        reference implementation.
+
+        >>> from scipy.linalg import solve_triangular
+        >>> res = cov.whiten(x)
+        >>> ref = solve_triangular(L, x, lower=True)
+        >>> np.allclose(res, ref)
+        True
+        >>> res = cov.log_pdet
+        >>> ref = np.linalg.slogdet(A)[-1]
+        >>> np.allclose(res, ref)
+        True
+
         """
-        return CovViaCholesky(L)
+        return CovViaCholesky(cholesky)
+
+    @staticmethod
+    def from_eigendecomposition(eigendecomposition):
+        r"""
+        Representation of a covariance provided via eigendecomposition
+
+        Parameters
+        ----------
+        eigendecomposition : sequence
+            A sequence (nominally a tuple) containing the eigenvalue and
+            eigenvector arrays as computed by `scipy.linalg.eigh` or
+            `numpy.linalg.eigh`.
+
+        Notes
+        -----
+        Let the covariance matrix be :math:`A`, let :math:`V` be matrix of
+        eigenvectors, and let :math:`W` be the diagonal matrix of eigenvalues
+        such that `V W V^T = A`.
+
+        When all of the eigenvalues are strictly positive, whitening of a
+        data point :math:`x` is performed by computing
+        :math:`x^T (V W^{-1/2})`, where the inverse square root can be taken
+        element-wise.
+        :math:`\log\det{A}` is calculated as  :math:`tr(\log{W})`,
+        where the :math:`\log` operation is performed element-wise.
+
+        This `Covariance` class supports singular covariance matrices. When
+        computing ``_log_pdet``, non-positive eigenvalues are ignored.
+        Whitening is not well defined when the point to be whitened
+        does not lie in the span of the columns of the covariance matrix. The
+        convention taken here is to treat the inverse square root of
+        non-positive eigenvalues as zeros.
+
+        Examples
+        --------
+        Prepare a symmetric positive definite covariance matrix ``A`` and a
+        data point ``x``.
+
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> rng = np.random.default_rng()
+        >>> n = 5
+        >>> A = rng.random(size=(n, n))
+        >>> A = A @ A.T  # make the covariance symmetric positive definite
+        >>> x = rng.random(size=n)
+
+        Perform the eigendecomposition of ``A`` and create the `Covariance`
+        object.
+
+        >>> w, v = np.linalg.eigh(A)
+        >>> cov = stats.Covariance.from_eigendecomposition((w, v))
+
+        Compare the functionality of the `Covariance` object against
+        reference implementations.
+
+        >>> res = cov.whiten(x)
+        >>> ref = x @ (v @ np.diag(w**-0.5))
+        >>> np.allclose(res, ref)
+        True
+        >>> res = cov.log_pdet
+        >>> ref = np.linalg.slogdet(A)[-1]
+        >>> np.allclose(res, ref)
+        True
+
+        """
+        return CovViaEigendecomposition(eigendecomposition)
 
     def whiten(self, x):
         """
@@ -177,6 +337,9 @@ class Covariance:
         ----------
         .. [1] "Whitening Transformation". Wikipedia.
                https://en.wikipedia.org/wiki/Whitening_transformation
+        .. [2] Novak, Lukas, and Miroslav Vorechovsky. "Generalization of
+               coloring linear transformation". Transactions of VSB 18.2
+               (2018): 31-35. :doi:`10.31490/tces-2018-0013`
 
         Examples
         --------
@@ -198,6 +361,57 @@ class Covariance:
         """
         return self._whiten(np.asarray(x))
 
+    def colorize(self, x):
+        """
+        Perform a colorizing transformation on data.
+
+        "Colorizing" ("color" as in "colored noise", in which different
+        frequencies may have different magnitudes) transforms a set of
+        uncorrelated random variables into a new set of random variables with
+        the desired covariance. When a coloring transform is applied to a
+        sample of points distributed according to a multivariate normal
+        distribution with identity covariance and zero mean, the covariance of
+        the transformed sample is approximately the covariance matrix used
+        in the coloring transform.
+
+        Parameters
+        ----------
+        x : array_like
+            An array of points. The last dimension must correspond with the
+            dimensionality of the space, i.e., the number of columns in the
+            covariance matrix.
+
+        Returns
+        -------
+        x_ : array_like
+            The transformed array of points.
+
+        References
+        ----------
+        .. [1] "Whitening Transformation". Wikipedia.
+               https://en.wikipedia.org/wiki/Whitening_transformation
+        .. [2] Novak, Lukas, and Miroslav Vorechovsky. "Generalization of
+               coloring linear transformation". Transactions of VSB 18.2
+               (2018): 31-35. :doi:`10.31490/tces-2018-0013`
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+        >>> n = 3
+        >>> A = rng.random(size=(n, n))
+        >>> cov_array = A @ A.T  # make matrix symmetric positive definite
+        >>> cholesky = np.linalg.cholesky(cov_array)
+        >>> cov_object = stats.Covariance.from_cholesky(cholesky)
+        >>> x = rng.multivariate_normal(np.zeros(n), np.eye(n), size=(10000))
+        >>> x_ = cov_object.colorize(x)
+        >>> cov_data = np.cov(x_, rowvar=False)
+        >>> np.allclose(cov_data, cov_array, rtol=3e-2)
+        True
+        """
+        return self._colorize(np.asarray(x))
+
     @property
     def log_pdet(self):
         """
@@ -218,13 +432,6 @@ class Covariance:
         Explicit representation of the covariance matrix
         """
         return self._covariance
-
-    @property
-    def dimensionality(self):
-        """
-        Dimensionality of the vector space
-        """
-        return np.array(self._dimensionality, dtype=int)[()]
 
     @property
     def shape(self):
@@ -268,7 +475,6 @@ class CovViaPrecision(Covariance):
         self._rank = precision.shape[-1]  # must be full rank if invertible
         self._precision = precision
         self._cov_matrix = covariance
-        self._dimensionality = self._rank
         self._shape = precision.shape
         self._allow_singular = False
 
@@ -277,9 +483,12 @@ class CovViaPrecision(Covariance):
 
     @cached_property
     def _covariance(self):
-        n = self._dimensionality
+        n = self._shape[-1]
         return (linalg.cho_solve((self._chol_P, True), np.eye(n))
                 if self._cov_matrix is None else self._cov_matrix)
+
+    def _colorize(self, x):
+        return linalg.solve_triangular(self._chol_P.T, x.T, lower=False).T
 
 
 def _dot_diag(x, d):
@@ -303,16 +512,19 @@ class CovViaDiagonal(Covariance):
         psuedo_reciprocals = 1 / np.sqrt(positive_diagonal)
         psuedo_reciprocals[i_zero] = 0
 
+        self._sqrt_diagonal = np.sqrt(diagonal)
         self._LP = psuedo_reciprocals
         self._rank = positive_diagonal.shape[-1] - i_zero.sum(axis=-1)
         self._covariance = np.apply_along_axis(np.diag, -1, diagonal)
-        self._dimensionality = diagonal.shape[-1]
         self._i_zero = i_zero
         self._shape = self._covariance.shape
         self._allow_singular = True
 
     def _whiten(self, x):
         return _dot_diag(x, self._LP)
+
+    def _colorize(self, x):
+        return _dot_diag(x, self._sqrt_diagonal)
 
     def _support_mask(self, x):
         """
@@ -323,14 +535,13 @@ class CovViaDiagonal(Covariance):
 
 class CovViaCholesky(Covariance):
 
-    def __init__(self, L):
-        L = self._validate_matrix(L, 'L')
+    def __init__(self, cholesky):
+        L = self._validate_matrix(cholesky, 'cholesky')
 
         self._factor = L
         self._log_pdet = 2*np.log(np.diag(self._factor)).sum(axis=-1)
         self._rank = L.shape[-1]  # must be full rank for cholesky
         self._covariance = L @ L.T
-        self._dimensionality = self._rank
         self._shape = L.shape
         self._allow_singular = False
 
@@ -338,6 +549,64 @@ class CovViaCholesky(Covariance):
         res = linalg.solve_triangular(self._factor, x.T, lower=True).T
         return res
 
+    def _colorize(self, x):
+        return x @ self._factor.T
+
+
+class CovViaEigendecomposition(Covariance):
+
+    def __init__(self, eigendecomposition):
+        eigenvalues, eigenvectors = eigendecomposition
+        eigenvalues = self._validate_vector(eigenvalues, 'eigenvalues')
+        eigenvectors = self._validate_matrix(eigenvectors, 'eigenvectors')
+        message = ("The shapes of `eigenvalues` and `eigenvectors` "
+                   "must be compatible.")
+        try:
+            eigenvalues = np.expand_dims(eigenvalues, -2)
+            eigenvectors, eigenvalues = np.broadcast_arrays(eigenvectors,
+                                                            eigenvalues)
+            eigenvalues = eigenvalues[..., 0, :]
+        except ValueError:
+            raise ValueError(message)
+
+        i_zero = eigenvalues <= 0
+        positive_eigenvalues = np.array(eigenvalues, dtype=np.float64)
+
+        positive_eigenvalues[i_zero] = 1  # ones don't affect determinant
+        self._log_pdet = np.sum(np.log(positive_eigenvalues), axis=-1)
+
+        psuedo_reciprocals = 1 / np.sqrt(positive_eigenvalues)
+        psuedo_reciprocals[i_zero] = 0
+
+        self._LP = eigenvectors * psuedo_reciprocals
+        self._LA = eigenvectors * np.sqrt(positive_eigenvalues)
+        self._rank = positive_eigenvalues.shape[-1] - i_zero.sum(axis=-1)
+        self._w = eigenvalues
+        self._v = eigenvectors
+        self._shape = eigenvectors.shape
+        self._null_basis = eigenvectors * i_zero
+        # This is only used for `_support_mask`, not to decide whether
+        # the covariance is singular or not.
+        self._eps = _multivariate._eigvalsh_to_eps(eigenvalues) * 10**3
+        self._allow_singular = True
+
+    def _whiten(self, x):
+        return x @ self._LP
+
+    def _colorize(self, x):
+        return x @ self._LA.T
+
+    @cached_property
+    def _covariance(self):
+        return (self._v * self._w) @ self._v.T
+
+    def _support_mask(self, x):
+        """
+        Check whether x lies in the support of the distribution.
+        """
+        residual = np.linalg.norm(x @ self._null_basis, axis=-1)
+        in_support = residual < self._eps
+        return in_support
 
 class CovViaPSD(Covariance):
     """
@@ -349,7 +618,6 @@ class CovViaPSD(Covariance):
         self._log_pdet = psd.log_pdet
         self._rank = psd.rank
         self._covariance = psd._M
-        self._dimensionality = psd._M.shape[-1]
         self._shape = psd._M.shape
         self._psd = psd
         self._allow_singular = False  # by default

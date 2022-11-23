@@ -114,7 +114,6 @@ py3.install_sources([
     'arpack.py',
     'ARPACK/COPYING'
   ],
-  pure: false,
   subdir: 'scipy/sparse/linalg/_eigen/arpack'
 )
 

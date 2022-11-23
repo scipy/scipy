@@ -1188,7 +1188,7 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0, callback=None):
+              retall=0, callback=None, xrtol=0):
     """
     Minimize a function using the BFGS algorithm.
 
@@ -1203,7 +1203,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     args : tuple, optional
         Extra arguments passed to f and fprime.
     gtol : float, optional
-        Gradient norm must be less than `gtol` before successful termination.
+        Terminate successfully if gradient norm is less than `gtol`
     norm : float, optional
         Order of norm (Inf is max, -Inf is min)
     epsilon : int or ndarray, optional
@@ -1221,6 +1221,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         Print convergence message if True.
     retall : bool, optional
         Return a list of results at each iteration if True.
+    xrtol : float, default: 0
+        Relative tolerance for `x`. Terminate successfully if step
+        size is less than ``xk * xrtol`` where ``xk`` is the current
+        parameter vector.
 
     Returns
     -------
@@ -1314,7 +1318,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
-                   **unknown_options):
+                   xrtol=0, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1326,8 +1330,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     maxiter : int
         Maximum number of iterations to perform.
     gtol : float
-        Gradient norm must be less than `gtol` before successful
-        termination.
+        Terminate successfully if gradient norm is less than `gtol`.
     norm : float
         Order of norm (Inf is max, -Inf is min).
     eps : float or ndarray
@@ -1343,7 +1346,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
-
+    xrtol : float, default: 0
+        Relative tolerance for `x`. Terminate successfully if step size is
+        less than ``xk * xrtol`` where ``xk`` is the current parameter vector.
     """
     _check_unknown_options(unknown_options)
     retall = return_all
@@ -1387,10 +1392,11 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             warnflag = 2
             break
 
-        xkp1 = xk + alpha_k * pk
+        sk = alpha_k * pk
+        xkp1 = xk + sk
+
         if retall:
             allvecs.append(xkp1)
-        sk = xkp1 - xk
         xk = xkp1
         if gfkp1 is None:
             gfkp1 = myfprime(xkp1)
@@ -1404,6 +1410,13 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         if (gnorm <= gtol):
             break
 
+        #  See Chapter 5 in  P.E. Frandsen, K. Jonasson, H.B. Nielsen,
+        #  O. Tingleff: "Unconstrained Optimization", IMM, DTU.  1999.
+        #  These notes are available here:
+        #  http://www2.imm.dtu.dk/documents/ftp/publlec.html
+        if (alpha_k*vecnorm(pk) <= xrtol*(xrtol + vecnorm(xk))):
+            break
+
         if not np.isfinite(old_fval):
             # We correctly found +-Inf as optimal value, or something went
             # wrong.
@@ -1412,6 +1425,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
         rhok_inv = np.dot(yk, sk)
         # this was handled in numeric, let it remaines for more safety
+        # Cryptic comment above is preserved for posterity. Future reader:
+        # consider change to condition below proposed in gh-1261/gh-17345.
         if rhok_inv == 0.:
             rhok = 1000.0
             if disp:
@@ -2354,7 +2369,7 @@ class Brent:
         #BEGIN CORE ALGORITHM
         #################################
         x = w = v = xb
-        fw = fv = fx = func(*((x,) + self.args))
+        fw = fv = fx = fb
         if (xa < xc):
             a = xa
             b = xc
@@ -2362,7 +2377,6 @@ class Brent:
             a = xc
             b = xa
         deltax = 0.0
-        funcalls += 1
         iter = 0
 
         if self.disp > 2:
@@ -3135,7 +3149,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 2
-             Function evaluations: 18
+             Function evaluations: 16
     >>> minimum
     array(0.0)
 
@@ -3171,6 +3185,70 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     Minimization of scalar function of one or more variables using the
     modified Powell algorithm.
 
+    Parameters
+    ----------
+    fun : callable
+        The objective function to be minimized.
+
+            ``fun(x, *args) -> float``
+
+        where ``x`` is a 1-D array with shape (n,) and ``args``
+        is a tuple of the fixed parameters needed to completely
+        specify the function.
+    x0 : ndarray, shape (n,)
+        Initial guess. Array of real elements of size (n,),
+        where ``n`` is the number of independent variables.
+    args : tuple, optional
+        Extra arguments passed to the objective function and its
+        derivatives (`fun`, `jac` and `hess` functions).
+    method : str or callable, optional
+        The present documentation is specific to ``method='powell'``, but other
+        options are available. See documentation for `scipy.optimize.minimize`.
+    bounds : sequence or `Bounds`, optional
+        Bounds on decision variables. There are two ways to specify the bounds:
+
+            1. Instance of `Bounds` class.
+            2. Sequence of ``(min, max)`` pairs for each element in `x`. None
+               is used to specify no bound.
+
+        If bounds are not provided, then an unbounded line search will be used.
+        If bounds are provided and the initial guess is within the bounds, then
+        every function evaluation throughout the minimization procedure will be
+        within the bounds. If bounds are provided, the initial guess is outside
+        the bounds, and `direc` is full rank (or left to default), then some
+        function evaluations during the first iteration may be outside the
+        bounds, but every function evaluation after the first iteration will be
+        within the bounds. If `direc` is not full rank, then some parameters
+        may not be optimized and the solution is not guaranteed to be within
+        the bounds.
+
+    options : dict, optional
+        A dictionary of solver options. All methods accept the following
+        generic options:
+
+            maxiter : int
+                Maximum number of iterations to perform. Depending on the
+                method each iteration may use several function evaluations.
+            disp : bool
+                Set to True to print convergence messages.
+
+        See method-specific options for ``method='powell'`` below.
+    callback : callable, optional
+        Called after each iteration. The signature is:
+
+            ``callback(xk)``
+
+        where ``xk`` is the current parameter vector.
+
+    Returns
+    -------
+    res : OptimizeResult
+        The optimization result represented as a ``OptimizeResult`` object.
+        Important attributes are: ``x`` the solution array, ``success`` a
+        Boolean flag indicating if the optimizer exited successfully and
+        ``message`` which describes the cause of the termination. See
+        `OptimizeResult` for a description of other attributes.
+
     Options
     -------
     disp : bool
@@ -3187,20 +3265,6 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         first reached.
     direc : ndarray
         Initial set of direction vectors for the Powell method.
-    return_all : bool, optional
-        Set to True to return a list of the best solution at each of the
-        iterations.
-    bounds : `Bounds`
-        If bounds are not provided, then an unbounded line search will be used.
-        If bounds are provided and the initial guess is within the bounds, then
-        every function evaluation throughout the minimization procedure will be
-        within the bounds. If bounds are provided, the initial guess is outside
-        the bounds, and `direc` is full rank (or left to default), then some
-        function evaluations during the first iteration may be outside the
-        bounds, but every function evaluation after the first iteration will be
-        within the bounds. If `direc` is not full rank, then some parameters may
-        not be optimized and the solution is not guaranteed to be within the
-        bounds.
     return_all : bool, optional
         Set to True to return a list of the best solution at each of the
         iterations.
@@ -3259,13 +3323,12 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     fval = squeeze(func(x))
     x1 = x.copy()
     iter = 0
-    ilist = list(range(N))
     while True:
         try:
             fx = fval
             bigind = 0
             delta = 0.0
-            for i in ilist:
+            for i in range(N):
                 direc1 = direc[i]
                 fx2 = fval
                 fval, x, direc1 = _linesearch_powell(func, x, direc1,
@@ -3294,8 +3357,13 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
 
             # Construct the extrapolated point
             direc1 = x - x1
-            x2 = 2*x - x1
             x1 = x.copy()
+            # make sure that we don't go outside the bounds when extrapolating
+            if lower_bound is None and upper_bound is None:
+                lmax = 1
+            else:
+                _, lmax = _line_for_search(x, direc1, lower_bound, upper_bound)
+            x2 = x + min(lmax, 1) * direc1
             fx2 = squeeze(func(x2))
 
             if (fx > fx2):
