@@ -80,10 +80,17 @@ Below, you can find the complete user guide organized by subpackages.
    While we obviously don't require you to follow these conventions in your own
    code, they are highly recommended.
 
-Below you can also find tutorials in Jupyter Notebook format.
+.. _executable-tutorials:
+
+Executable tutorials
+--------------------
+
+Below you can also find tutorials in Jupyter Notebook format. These can be
+downloaded and executed locally, and can be useful for experimentation and
+learning.
 
 .. toctree::
-   :caption: Tutorials
+   :caption: Executable tutorials
    :maxdepth: 1
    
    ../notebooks/interp_transition_guide
