@@ -47,25 +47,6 @@ def configuration(parent_package='', top_path=None):
                                sources=['_qmc_cy.cxx'])
     ext._pre_build_hook = set_cxx_flags_hook
 
-    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
-        def hook_to_debug_sse2(build_ext, ext):
-            cc = build_ext._cxx_compiler
-            # I *think* this is right, because clang-cl doesn't
-            # have its own compiler type
-            if cc.compiler_type == 'msvc':
-                o2_flag = '/O2'
-                sse_flags = ['/arch:SSE', '/arch:SSE2']
-                ext.extra_compile_args.append(o2_flag)
-                ext.extra_compile_args.extend(sse_flags)
-
-        import pythran
-        ext = pythran.dist.PythranExtension(
-            'scipy.stats._stats_pythran',
-            sources=["scipy/stats/_stats_pythran.py"],
-            config=['compiler.blas=none'])
-        ext._pre_build_hook = hook_to_debug_sse2
-        config.ext_modules.append(ext)
-
     # add BiasedUrn module
     config.add_data_files('_biasedurn.pxd')
     from _generate_pyx import isNPY_OLD  # type: ignore[import]
