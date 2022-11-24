@@ -7351,8 +7351,8 @@ class TestWassersteinDistance:
                                        [[-1], [3], [2], [0]],
                                        [1, 3, 5, 7], [2, 4, 6, 8]))
         
-    def test_rotation_(self):
-        # Either rotaing or flipping both of the input will not affect 
+    def test_rotation_reflection(self):
+        # Either rotaing or reflecting both of the input will not affect 
         # the wasserstein distance.
         assert_almost_equal(
             stats.wasserstein_distance([[1, 5], [2, -5], [3, 0]], 
@@ -7360,12 +7360,10 @@ class TestWassersteinDistance:
             stats.wasserstein_distance([[5, -1], [-5, -2], [0, -3]], 
                                        [[0, 1], [-1, -5], [0, -1]]))
         assert_almost_equal(
-            stats.wasserstein_distance([[1, 5], [2, -5], [3, 0]], 
-                                       [[-1, 0], [5, -1], [1, 0]]),
-            stats.wasserstein_distance([[5, -1], [-5, -2], [0, -3]], 
-                                       [[0, 1], [-1, -5], [0, -1]]))
-        
-        
+            stats.wasserstein_distance([[0.2, 0], [-2, 3], [0, 3]], 
+                                       [[-1, 0], [-5, 2], [1, 1]]),
+            stats.wasserstein_distance([[-0.2, 0], [2, 3], [0, 3]], 
+                                       [[1, 0], [5, 2], [-1, 1]]))
                                     
 
 class TestEnergyDistance:
