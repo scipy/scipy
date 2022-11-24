@@ -104,7 +104,7 @@ class ShortTimeFFT:
     More detailed information can be found in the :ref:`tutorial_stft` section
     of the :ref:`user_guide`.
 
-    Note that all parameters of the initializer, expect `scale_to` (which uses
+    Note that all parameters of the initializer, except `scale_to` (which uses
     `scaling`) have identical named properties.
 
     Parameters
