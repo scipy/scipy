@@ -10281,18 +10281,6 @@ studentized_range = studentized_range_gen(name='studentized_range', a=0,
 class relativistic_bw_gen(rv_continuous):
     r"""A relativistic Breit-Wigner random variable.
 
-    The probability density function for `relativistic_bw` is
-
-    .. math::
-
-        f(x, \rho) = \frac{k}{(x^2 - \rho^2)^2 + rho^2}
-
-    where
-
-    .. math::
-        k = \frac{2\sqrt{2}\rho^2\sqrt{\rho^2 + 1}}
-            {\pi\sqrt{\rho^2 + rho\sqrt{rho^2 + 1}}}
-
     %(before_notes)s
 
     See Also
@@ -10300,35 +10288,49 @@ class relativistic_bw_gen(rv_continuous):
     cauchy: Cauchy distribution, also known as the Breit-Wigner distribution.
 
     Notes
-    -----
+    --------
 
-    The relativistic Breit-Wigner distribution is used in high-energy physics
-    to model resonances (unstable particles). It gives the probability of observed
-    center-of-mass energy produced by a resonance given the mass :math:`M` and
-    decay-width :math:`\Gamma` of the resonance [1]_ (where :math:`M` and
-    :math:`\Gamma` are expressed in natural units).
+    The probability density function for `relativistic_bw` is
 
-    In SciPy's parametrization, the shape parameter `rho` is equal to
-    :math:`\frac{M}{\Gamma}`. :math:`\Gamma` is then the scale parameter.
-    For instance, if one seeks to model the :math:`\Z^0` resonance with
-    :math:`M \approx 91.177` and :math:`\Gamma \approx 2.465` one can
-    set `rho` equal to :math:`\frac{91.177}{2.465}` and ``scale=2.465``.
+    .. math::
 
-    To produce a physically meaningful result when using the `fit` method, one
-    should set ``floc=0`` to fix the location parameter to 0.
+        f(x, \rho) = \frac{k}{(x^2 - \rho^2)^2 + \rho^2}
+
+    where
+
+    .. math::
+        k = \frac{2\sqrt{2}\rho^2\sqrt{\rho^2 + 1}}
+            {\pi\sqrt{\rho^2 + \rho\sqrt{\rho^2 + 1}}}
+
+    The relativistic Breit-Wigner distribution is used in high energy
+    physics to model resonances. It gives the distribution for the observed
+    center-of-mass energy produced by a resonance given its mass :math:`M` and
+    decay-width :math:`\Gamma` [1]_, where :math:`M` and :math:`\Gamma` are
+    expressed in natural units. In SciPy's parametrization, the shape parameter
+    :math:`\rho` is equal to :math:`M/\Gamma`.
 
     %(after_notes)s
+
+    :math:`\rho = M/\Gamma` and :math:`\Gamma` is the scale parameter. If one
+    seeks to model the :math:`Z^0` boson with :math:`M \approx 91.1876 text{
+    GeV}` and :math:`\Gamma \approx 2.4952\text{ GeV}` [2]_ one can set `rho`
+    equal to ``91.1876/2.4952`` and ``scale=2.4952``.
+
+    To ensure a physically meaningful result when using the `fit` method, one
+    should set ``floc=0`` to fix the location parameter to 0.
 
     References
     ----------
     .. [1] Relativistic Breit-Wigner distriution, Wikipedia,
            https://en.wikipedia.org/wiki/Relativistic_Breit-Wigner_distribution
+    .. [2] M. Tanabashi et al. (Particle Data Group) Phys. Rev. D 98, 030001 –
+           Published 17 August 2018
 
     %(example)s
 
     """
     def _argcheck(self, rho):
-        return rho > 0.
+        return rho > 0
 
     def _shape_info(self):
         return [_ShapeInfo("rho", False, (0, np.inf), (False, False))]
@@ -10341,6 +10343,7 @@ class relativistic_bw_gen(rv_continuous):
         return k / ((x**2 - rho**2)**2 + rho**2)
 
     def _cdf(self, x, rho):
+        # Factor of 1/(2*rho) has been absorbed into the constant.
         k = (
             np.sqrt(2) * rho * np.sqrt(rho**2 + 1)
             / (np.pi * np.sqrt(rho**2 + rho * np.sqrt(rho**2 + 1)))
