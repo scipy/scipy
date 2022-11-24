@@ -685,8 +685,10 @@ class SHGO:
         """
         # Ensure that 'jac' and 'hess' are passed directly to `minimize` as
         # keywords, not as part of its 'options' dictionary
-        self.minimizer_kwargs['jac'] = options.pop('jac', None)
-        self.minimizer_kwargs['hess'] = options.pop('hess', None)
+        if 'jac' in options:
+            self.minimizer_kwargs['jac'] = options.pop('jac')
+        if 'hass' in options:
+            self.minimizer_kwargs['hess'] = options.pop('hess')
 
         # Update 'options' dict passed to optimize.minimize
         self.minimizer_kwargs['options'].update(options)
