@@ -235,6 +235,23 @@ def test_border_values_exotic():
         _ = SFT.k_min
 
 
+def test_t():
+    """Verify that the times of the slices are correct. """
+    SFT = ShortTimeFFT(np.ones(8), hop=4, T=1/2)
+    assert SFT.T == 1/2
+    assert SFT.fs == 2.
+    assert SFT.delta_t == 4 * 1/2
+    t_stft = np.arange(0, SFT.p_max(10)) * SFT.delta_t
+    assert_equal(SFT.t(10), t_stft)
+    assert_equal(SFT.t(10, 1, 3), t_stft[1:3])
+    SFT.T = 1/4
+    assert SFT.T == 1/4
+    assert SFT.fs == 4
+    SFT.fs = 1/8
+    assert SFT.fs == 1/8
+    assert SFT.T == 8
+
+
 @pytest.mark.parametrize('fft_typ, f',
                          [('onesided', [0., 1., 2.]),
                           ('onesided2X', [0., 1., 2.]),

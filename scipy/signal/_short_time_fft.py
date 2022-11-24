@@ -377,7 +377,7 @@ class ShortTimeFFT:
     def T(self) -> float:
         """Sampling interval of input signal and of the window.
 
-        The sampling interval must be non-negative.
+        A ``ValueError`` is raised if it is set to a non-positive value.
         """
         return self._T
 
@@ -385,11 +385,29 @@ class ShortTimeFFT:
     def T(self, v: float):
         """Sampling interval of input signal and of the window.
 
-        The sampling interval must be non-negative.
+        A ``ValueError`` is raised if it is set to a non-positive value.
         """
         if not (v > 0):
             raise ValueError(f"Sampling interval T={v} must be positive!")
         self._T = v
+
+    @property
+    def fs(self) -> float:
+        """Sampling frequency of input signal and of the window.
+
+        The sampling frequency is the inverse of the sampling interval `T`.
+        A ``ValueError`` is raised if it is set to a non-positive value.
+        """
+        return 1/self.T
+
+    @fs.setter
+    def fs(self, v: float):
+        """Sampling frequency of input signal and of the window.
+
+        The sampling frequency is the inverse of the sampling interval `T`.
+        A ``ValueError`` is raised if it is set to a non-positive value.
+        """
+        self.T = 1 / v
 
     @property
     def fft_typ(self) -> FFT_TYP_TYPE:
@@ -861,6 +879,10 @@ class ShortTimeFFT:
             -> NDArray:
         """Inverse short-time Fourier transform.
 
+        It returns an array of dimension ``S.ndim - 1``  which is real
+        if `onesided_fft` is set, else complex. If the STFT is not
+        `invertible`, or the parameters are out of bounds  a ``ValueError`` is
+        raised.
 
         Parameters
         ----------
@@ -874,12 +896,6 @@ class ShortTimeFFT:
             signal should be reconstructed.
         f_axis, t_axis
             The axes in `S` denoting the frequency and the time dimension.
-
-        Returns
-        -------
-        An array of dimension ``S.ndim - 1``  which is real if `onesided_fft`
-        is set, else complex. If the STFT is not `invertible`, or the
-        parameters are out of bounds  a ``ValueError`` is raised.
 
         Notes
         -----
