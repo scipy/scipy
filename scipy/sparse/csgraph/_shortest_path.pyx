@@ -1476,13 +1476,14 @@ cdef void add_sibling(FibonacciNode* node, FibonacciNode* new_sibling):
     #              - new_sibling is a valid pointer
     #              - new_sibling is not the child or sibling of another node
     
-    # insert new_sibling between node and node.right_sibling
+    # Insert new_sibling between node and node.right_sibling
     if node.right_sibling:
         node.right_sibling.left_sibling = new_sibling
     new_sibling.right_sibling = node.right_sibling
     new_sibling.left_sibling = node
-    new_sibling.parent = node.parent
     node.right_sibling = new_sibling
+
+    new_sibling.parent = node.parent
     if new_sibling.parent:
         new_sibling.parent.rank += 1
 
@@ -1491,7 +1492,7 @@ cdef void remove(FibonacciNode* node):
     # Assumptions: - node is a valid pointer
     if node.parent:
         node.parent.rank -= 1
-        if node.parent.children == node:
+        if node.parent.children == node:  # node is the leftmost sibling.
             node.parent.children = node.right_sibling
 
     if node.left_sibling:
@@ -1513,7 +1514,9 @@ ctypedef FibonacciNode* pFibonacciNode
 
 
 cdef struct FibonacciHeap:
-    FibonacciNode* min_node # min_node.left_sibling is always NULL
+    # In this representation, min_node is always at the leftmost end
+    # of the linked-list, hence min_node.left_sibling is always NULL.
+    FibonacciNode* min_node
     pFibonacciNode[100] roots_by_rank  # maximum number of nodes is ~2^100.
 
 
@@ -1524,7 +1527,8 @@ cdef void insert_node(FibonacciHeap* heap,
     #              - node is not the child or sibling of another node
     if heap.min_node:
         if node.val < heap.min_node.val:
-            # heap.min_node is always at the leftmost end of the linked-list
+            # Replace heap.min_node with node, which is always 
+            # at the leftmost end of the roots' linked-list.
             node.left_sibling = NULL
             node.right_sibling = heap.min_node
             heap.min_node.left_sibling = node
@@ -1548,6 +1552,8 @@ cdef void decrease_val(FibonacciHeap* heap,
         remove(node)
         insert_node(heap, node)
     elif heap.min_node.val > node.val:
+        # Replace heap.min_node with node, which is always 
+        # at the leftmost end of the roots' linked-list.
         remove(node)
         node.right_sibling = heap.min_node
         heap.min_node.left_sibling = node.right_sibling
@@ -1602,6 +1608,8 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap):
     heap.min_node = temp
     
     if temp == NULL:
+        # There is a unique root in the tree, hence a unique node
+        # which is the minimum that we return here.
         return out
 
     # re-link the heap
