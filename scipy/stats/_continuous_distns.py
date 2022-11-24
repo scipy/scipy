@@ -10371,7 +10371,7 @@ class relativistic_bw_gen(rv_continuous):
 
     def _stats(self, rho):
         # Returning None from stats makes public stats use _munp.
-        return None, None, np.inf, np.inf
+        return None, None, np.nan, np.nan
 
 
 relativistic_bw = relativistic_bw_gen(a=0.0, name="relativistic_bw")
