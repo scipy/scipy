@@ -10,6 +10,7 @@ from ._rgi_cython import evaluate_linear_2d, find_indices
 from ._bsplines import make_interp_spline
 from ._fitpack2 import RectBivariateSpline
 
+
 def _check_points(points):
     descending_dimensions = []
     grid = []
