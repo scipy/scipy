@@ -70,6 +70,8 @@ pi = _math.pi
 golden = golden_ratio = (1 + _math.sqrt(5)) / 2
 
 # SI prefixes
+quetta = 1e30
+ronna = 1e27
 yotta = 1e24
 zetta = 1e21
 exa = 1e18
@@ -90,6 +92,8 @@ femto = 1e-15
 atto = 1e-18
 zepto = 1e-21
 yocto = 1e-24
+ronto = 1e-27
+quecto = 1e-30
 
 # binary prefixes
 kibi = 2**10
