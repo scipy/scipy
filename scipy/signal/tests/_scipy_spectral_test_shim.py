@@ -18,6 +18,7 @@ wrappers highlight the different philosophies of the implementations,
 especially in the border handling.
 """
 from typing import Tuple, cast, Literal, Type
+import platform
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -306,6 +307,9 @@ def istft_compare(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     # Adapted tolerances to account for resolution loss if input is float32:
     atol = np.finfo(x.dtype).resolution*2
+    if platform.machine() == 'aarch64':
+        atol = max(atol, 1e-12)  # Resolution loss only on this platform
+
     assert_allclose(x_wrapper[k_lo:k_hi], x[k_lo:k_hi], atol=atol,
                     err_msg=f"Signal values {e_msg_part}")
     return t, x
