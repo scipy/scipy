@@ -37,7 +37,10 @@ from numpy.lib import NumpyVersion
 from numpy.testing import suppress_warnings
 
 from scipy.spatial.distance import cdist
+from scipy.spatial import distance_matrix
+from scipy.sparse import coo_matrix
 from scipy.ndimage import _measurements
+from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, MapWrapper,
                               rng_integers, _rename_parameter, _contains_nan)
 
@@ -9002,19 +9005,25 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
 def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
-    Compute the first Wasserstein distance between two 1D distributions.
-
-    This distance is also known as the earth mover's distance, since it can be
-    seen as the minimum amount of "work" required to transform :math:`u` into
-    :math:`v`, where "work" is measured as the amount of distribution weight
-    that must be moved, multiplied by the distance it has to be moved.
+    Compute the general wasserstein-1 function between two n dimensional
+    ditributions(histograms).
+    
+    The wasserstein distance, also called the Earth mover distance or the
+    optimal transport distance, is defined as a similarity metric between
+    two probability distribution. In the discrete case, the wasserstein
+    distance can be understood as the cost of an optimal transport plan
+    between two samples. A brief and intuitive introduction can be found
+    at [2]_.
 
     .. versionadded:: 1.0.0
 
     Parameters
     ----------
     u_values, v_values : array_like
-        Values observed in the (empirical) distribution.
+        could be:
+        - Values observed in the (empirical) distribution.
+        - Value of each class in the (distribution)histogram.
+        
     u_weights, v_weights : array_like, optional
         Weight for each value. If unspecified, each value is assigned the same
         weight.
@@ -9030,8 +9039,8 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     Notes
     -----
-    The first Wasserstein distance between the distributions :math:`u` and
-    :math:`v` is:
+    Given two samples(histograms), :math:`u` and :math:`v`, the first Wasserstein
+    distance between the distributions is:
 
     .. math::
 
@@ -9042,14 +9051,58 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     :math:`\mathbb{R} \times \mathbb{R}` whose marginals are :math:`u` and
     :math:`v` on the first and second factors respectively.
 
-    If :math:`U` and :math:`V` are the respective CDFs of :math:`u` and
-    :math:`v`, this distance also equals to:
+    In the 1-dimensional case, let :math:`U` and :math:`V` denote the
+    respective CDFs of :math:`u` and :math:`v`, this distance also equals to:
 
     .. math::
 
         l_1(u, v) = \int_{-\infty}^{+\infty} |U-V|
 
-    See [2]_ for a proof of the equivalence of both definitions.
+    See [3]_ for a proof of the equivalence of both definitions.
+
+    In the more general(higher dimensional) and discrete case, it is also called
+    the optimal transport problem or the Monge problem, which can be expressed
+    in this form,
+
+    Given :math:`\Gamma` the transport plan, :math:`D` the distance matrix and 
+    follows,
+
+    .. math:
+
+        x = vec(\Gamma)
+        c = vec(D)
+        b = \begin{bmatrix}
+                u\\
+                v\\
+            \end{bmatrix}
+
+    The Monge problem can be tranformed into a linear programming problem by
+    taking :math:`A x = b` as constraints and :math:`z = c^T x` as minimization 
+    target(sum of costs) , where A is a matrix looks like 
+
+    .. math:
+
+        \begin{array} {rrr|rrr|r|rrr}
+            1 & 1 & \dots & 0 & 0 & \dots & \dots & 0 & 0 & \dots \cr
+            0 & 0 & \dots & 1 & 1 & \dots & \dots & 0 & 0 & \dots \cr
+            \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \dots 
+                & \vdots & \vdots & \vdots  \cr
+            0 & 0 & \dots & 0 & 0 & \dots & \dots & 1 & 1 & \dots \cr \hline
+
+            1 & 0 & \dots & 1 & 0 & \dots & \dots & 1 & 0 & \dots \cr
+            0 & 1 & \dots & 0 & 1 & \dots & \dots & 0 & 1 & \dots \cr
+            \vdots & \vdots & \ddots & \vdots & \vdots & \ddots & \dots & 
+                \vdots & \vdots & \ddots  \cr
+            \FixWidth{0} & \FixWidth{0} & \FixWidth{\dots} & \FixWidth{0} 
+                & \FixWidth{0} & \FixWidth{\dots} & \FixWidth{\dots} & \FixWidth{0}
+                & \FixWidth{0} & \FixWidth{\dots}
+        \end{array}
+    
+    By solving the dual form of the above linear programming problem(with solution 
+    :math:`y^*`), the Wasserstein distance :math:`l_1 (u, v)`can be computed as 
+    :math:`b^T x^*`.
+
+    For a more thorough explanation, see [4]_ .
 
     The input distributions can be empirical, therefore coming from samples
     whose values are effectively inputs of the function, or they can be seen as
@@ -9059,8 +9112,12 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     References
     ----------
     .. [1] "Wasserstein metric", https://en.wikipedia.org/wiki/Wasserstein_metric
-    .. [2] Ramdas, Garcia, Cuturi "On Wasserstein Two Sample Testing and Related
+    .. [2] https://lilianweng.github.io/posts/2017-08-20-gan/#what-is-wasserstein-distance.
+    .. [3] Ramdas, Garcia, Cuturi "On Wasserstein Two Sample Testing and Related
            Families of Nonparametric Tests" (2015). :arXiv:`1509.02237`.
+    .. [4] Peyré, Gabriel, and Marco Cuturi. "Computational optimal transport." 
+           Center for Research in Economics and Statistics Working Papers 2017-86 
+           (2017).
 
     Examples
     --------
@@ -9072,9 +9129,57 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     >>> wasserstein_distance([3.4, 3.9, 7.5, 7.8], [4.5, 1.4],
     ...                      [1.4, 0.9, 3.1, 7.2], [3.2, 3.5])
     4.0781331438047861
-
+    >>> wasserstein_distance([[0, 2, 3], [1, 2, 5]], [[3, 2, 3], [4, 2, 5]])
+    3.0
+    >>> wasserstein_distance([[0, 2.75], [2, 209.3], [0, 0]],
+    ...                      [[0.2, 0.322], [4.5, 25.1808]],
+    ...                      [0.4, 5.2, 0.114], [0.8, 1.5])
+    174.15840245217169
     """
-    return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
+    u_values, u_weights = _validate_distribution(u_values, u_weights)
+    v_values, v_weights = _validate_distribution(v_values, v_weights)
+
+    # convert value into 2D array
+    m, n = len(u_values), len(v_values)
+    u_values = asarray(u_values).reshape(m, -1)
+    v_values = asarray(v_values).reshape(n, -1)
+
+    # if dimensions are not equal throw error
+    if u_values.shape[1] != v_values.shape[1]:
+        raise ValueError('Dimensions of value are not equal.')
+
+    # if data is 1D then call the cdf_distance function
+    if u_values.shape[1] == 1 and v_values.shape[1] == 1:
+        return _cdf_distance(1, u_values.flatten(), v_values.flatten(), 
+                                u_weights, v_weights)
+
+    # if data contains np.inf then return inf or nan
+    if np.any(np.isinf(u_values)) ^ np.any(np.isinf(v_values)):
+        return np.inf
+    elif np.any(np.isinf(u_values)) and np.any(np.isinf(v_values)):
+        return np.nan
+    
+    # creat constraints
+    _row_func = np.vectorize(lambda x: np.floor(x/n) if x < m*n else m + x % n)
+    row = _row_func(np.arange(m * n * 2))
+    col = np.append(np.arange(m * n), np.arange(m * n))
+    value = np.ones(m * n * 2, dtype = float)
+    # sparse constraint matrix of size (m + n)*(m * n)
+    A = coo_matrix((value, (row, col)), shape=(n + m, m * n))
+
+    # get cost matrix
+    D = distance_matrix(u_values, v_values, p = 2)
+    cost = D.reshape((n * m))
+
+    # create the minimization target
+    _normal = lambda x, y: np.ones(x)/x if y is None else y/np.sum(y)
+    p_u, p_v = _normal(m, u_weights), _normal(n, v_weights)
+    b = np.concatenate((p_u, p_v), axis = 0)
+
+    # solving LP
+    constraints = LinearConstraint(A = A.T, ub = cost)
+    opt_res = milp(c = -b, constraints = constraints, bounds=(-np.inf, np.inf))
+    return b @ opt_res.x
 
 
 def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
