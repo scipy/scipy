@@ -1,16 +1,24 @@
 import math
 from itertools import product
-from typing import get_args
+from typing import cast, get_args, Literal
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 from scipy.signal import ShortTimeFFT
 from scipy.signal import get_window
 from scipy.signal._short_time_fft import FFT_TYP_TYPE, \
-    _calc_dual_canonical_window
+    _calc_dual_canonical_window, PAD_TYPE
 from scipy.signal.windows import gaussian
+
+
+def chk_VE(match):
+    """Assert for a ValueError matching regexp `match`.
+
+    This little wrapper allows a more concise code layout.
+    """
+    return pytest.raises(ValueError, match=match)
 
 
 def test__calc_dual_canonical_window_roundtrip():
@@ -38,6 +46,217 @@ def test__calc_dual_canonical_window_exceptions():
     # Verify that parameter `win` may not be integers:
     with pytest.raises(ValueError, match="Parameter 'win' cannot be of int.*"):
         _calc_dual_canonical_window(np.ones(4, dtype=int), 1)
+
+
+def test_invalid_initializer_parameters():
+    """Verify that exceptions get raised on invalid parameters when
+    instantiating ShortTimeFFT. """
+    with chk_VE(r"Parameter win must be 1d, but win.shape=\(2, 2\)!"):
+        ShortTimeFFT(np.ones((2, 2)), hop=4, T=1)
+    with chk_VE("Parameter win must have finite entries"):
+        ShortTimeFFT(np.array([1, np.inf, 2, 3]), hop=4, T=1)
+    with chk_VE("Parameter hop=0 is not an integer >= 1!"):
+        ShortTimeFFT(np.ones(4), hop=0, T=1)
+    with chk_VE("Parameter hop=2.0 is not an integer >= 1!"):
+        # noinspection PyTypeChecker
+        ShortTimeFFT(np.ones(4), hop=2.0, T=1)
+    with chk_VE(r"dual_win.shape=\(5,\) must equal win.shape=\(4,\)!"):
+        ShortTimeFFT(np.ones(4), hop=2, T=1, dual_win=np.ones(5))
+    with chk_VE("Parameter dual_win must be a finite array!"):
+        ShortTimeFFT(np.ones(3), hop=2, T=1, dual_win=np.array([np.nan, 2, 3]))
+
+
+def test_exceptions_properties_methods():
+    """Verify that exceptions get raised when setting properties or calling
+    method of ShortTimeFFT to/with invalid values."""
+    SFT = ShortTimeFFT(np.ones(8), hop=4, T=1)
+    with chk_VE("Sampling interval T=-1 must be positive!"):
+        SFT.T = -1
+    with chk_VE("fft_typ='invalid_typ' not in " +
+                r"\('twosided', 'centered', 'onesided', 'onesided2X'\)!"):
+        SFT.fft_typ = 'invalid_typ'
+    with chk_VE("For scaling is None, fft_typ='onesided2X' is invalid.*"):
+        SFT.fft_typ = 'onesided2X'
+    with chk_VE("Attribute mfft=7 needs to be at least the window length.*"):
+        SFT.mfft = 7
+    with chk_VE("scaling='invalid' not in.*"):
+        # noinspection PyTypeChecker
+        SFT.scale_to('invalid')
+    with chk_VE("phase_shift=3.0 has the unit samples.*"):
+        SFT.phase_shift = 3.0
+    with chk_VE("-mfft < phase_shift < mfft does not hold.*"):
+        SFT.phase_shift = 2*SFT.mfft
+    with chk_VE("Parameter padding='invalid' not in.*"):
+        # noinspection PyTypeChecker
+        g = SFT._x_slices(np.zeros(16), k_off=0, p0=0, p1=1, padding='invalid')
+        next(g)  # execute generator
+    with chk_VE("Trend type must be 'linear' or 'constant'"):
+        # noinspection PyTypeChecker
+        SFT.stft_detrend(np.zeros(16), detr='invalid')
+    with chk_VE("Parameter detr=nan is not a str, function or None!"):
+        # noinspection PyTypeChecker
+        SFT.stft_detrend(np.zeros(16), detr=np.nan)
+    with chk_VE("Invalid Parameter p0=0, p1=200.*"):
+        SFT.p_range(100, 0, 200)
+
+    with chk_VE("f_axis=0 may not be equal to t_axis=0!"):
+        SFT.istft(np.zeros((SFT.f_pts, 2)), t_axis=0, f_axis=0)
+    with chk_VE(r"S.shape\[f_axis\]=2 must be equal to self.f_pts=5.*"):
+        SFT.istft(np.zeros((2, 2)))
+    with chk_VE(r"S.shape\[t_axis\]=1 needs to have at least 2 slices.*"):
+        SFT.istft(np.zeros((SFT.f_pts, 1)))
+    with chk_VE(r".*\(k1=100\) <= \(k_max=12\) is false!$"):
+        SFT.istft(np.zeros((SFT.f_pts, 3)), k1=100)
+    with chk_VE(r"\(k1=1\) - \(k0=0\) = 1 has to be at least.* length 4!"):
+        SFT.istft(np.zeros((SFT.f_pts, 3)), k0=0, k1=1)
+
+    with chk_VE(r"Parameter axes_seq='invalid' not in \['tf', 'ft'\]!"):
+        # noinspection PyTypeChecker
+        SFT.extent(n=100, axes_seq='invalid')
+    with chk_VE("Attribute fft_typ=twosided must be in.*"):
+        SFT.fft_typ = 'twosided'
+        SFT.extent(n=100)
+
+
+def test_invalid_fft_typ_RuntimeError():
+    """Ensure exception gets raised when property `fft_typ` is invalid. """
+    SFT = ShortTimeFFT(np.ones(8), hop=4, T=1)
+    SFT._fft_typ = 'invalid_typ'
+
+    with pytest.raises(RuntimeError):
+        _ = SFT.f
+    with pytest.raises(RuntimeError):
+        SFT._fft_func(np.ones(8))
+    with pytest.raises(RuntimeError):
+        SFT._ifft_func(np.ones(8))
+
+
+def test_dual_win_roundtrip():
+    """Verify the duality of `win` and `dual_win`.
+
+    Note that this test does not work for any window, since dual windows are
+    not unique. It always works if the windows do not overlap.
+    """
+    SFT0 = ShortTimeFFT(np.ones(4), hop=4, T=1)
+    SFT1 = ShortTimeFFT.from_dual(SFT0.dual_win, hop=4, T=1)
+    assert_allclose(SFT1.dual_win, SFT0.win)
+
+
+@pytest.mark.parametrize('scale_to, fac_psd, fac_mag',
+                         [(None, 0.25, 0.125),
+                          ('magnitude', 2.0, 1),
+                          ('psd', 1, 0.5)])
+def test_scaling_init(scale_to: Literal['magnitude', 'psd'], fac_psd, fac_mag):
+    """Verify scaling calculations when passing `scale_to` to ``__init__(). """
+    SFT = ShortTimeFFT(np.ones(4) * 2, hop=4, T=1, scale_to=scale_to)
+    assert SFT.fac_psd == fac_psd
+    assert SFT.fac_magnitude == fac_mag
+
+
+def test_scaling():
+    """Verify `scale_to()` method."""
+    SFT = ShortTimeFFT(np.ones(4) * 2, hop=4, T=1, scale_to=None)
+
+    SFT.scale_to('magnitude')
+    assert SFT.scaling == 'magnitude'
+    assert SFT.fac_psd == 2.0
+    assert SFT.fac_magnitude == 1
+
+    SFT.scale_to('psd')
+    assert SFT.scaling == 'psd'
+    assert SFT.fac_psd == 1
+    assert SFT.fac_magnitude == 0.5
+
+    SFT.scale_to('psd')  # needed for coverage
+
+    for scale, s_fac in zip(('magnitude', 'psd'), (8, 4)):
+        SFT = ShortTimeFFT(np.ones(4) * 2, hop=4, T=1, scale_to=None)
+        dual_win = SFT.dual_win.copy()
+
+        SFT.scale_to(cast(Literal['magnitude', 'psd'], scale))
+        assert_allclose(SFT.dual_win, dual_win * s_fac)
+
+
+def test_x_slices_padding():
+    """Verify padding.
+
+    The reference arrays were taken from  the docstrings of `zero_ext`,
+    `const_ext`, `odd_ext()`, and `even_ext()` from the _array_tools module.
+    """
+    SFT = ShortTimeFFT(np.ones(5), hop=4, T=1)
+    x = np.array([[1, 2, 3, 4, 5], [0, 1, 4, 9, 16]], dtype=float)
+    d = {'zeros': [[[0, 0, 1, 2, 3], [0, 0, 0, 1, 4]],
+                   [[3, 4, 5, 0, 0], [4, 9, 16, 0, 0]]],
+         'edge': [[[1, 1, 1, 2, 3], [0, 0, 0, 1, 4]],
+                  [[3, 4, 5, 5, 5], [4, 9, 16, 16, 16]]],
+         'even': [[[3, 2, 1, 2, 3], [4, 1, 0, 1, 4]],
+                  [[3, 4, 5, 4, 3], [4, 9, 16, 9, 4]]],
+         'odd': [[[-1, 0, 1, 2, 3], [-4, -1, 0, 1, 4]],
+                 [[3, 4, 5, 6, 7], [4, 9, 16, 23, 28]]]}
+    for p_, xx in d.items():
+        gen = SFT._x_slices(np.array(x), 0, 0, 2, padding=cast(PAD_TYPE, p_))
+        yy = np.array([y_.copy() for y_ in gen])  # due to inplace copying
+        assert_equal(yy, xx, err_msg=f"Failed '{p_}' padding.")
+
+
+def test_invertible():
+    """Verify `invertible` property. """
+    SFT = ShortTimeFFT(np.ones(8), hop=4, T=1)
+    assert SFT.invertible
+    SFT = ShortTimeFFT(np.ones(8), hop=9, T=1)
+    assert not SFT.invertible
+
+
+def test_border_values():
+    """Ensure that minimum and maximum values of slices are correct."""
+    SFT = ShortTimeFFT(np.ones(8), hop=4, T=1)
+    assert SFT.p_min == 0
+    assert SFT.k_min == -4
+    assert SFT.lower_border_end == (4, 1)
+    assert SFT.p_max(10) == 4
+    assert SFT.k_max(10) == 16
+    assert SFT.upper_border_begin(10) == (4, 2)
+
+
+def test_border_values_exotic():
+    """Ensure that the border calculations are correct for windows with
+    zeros. """
+    w = np.array([0, 0, 0, 0, 0, 0, 0, 1.])
+    SFT = ShortTimeFFT(w, hop=1, T=1)
+    assert SFT.lower_border_end == (0, 0)
+
+    SFT = ShortTimeFFT(np.flip(w), hop=20, T=1)
+    assert SFT.upper_border_begin(4) == (0, 0)
+
+    SFT._hop = -1  # provoke unreachable line
+    with pytest.raises(RuntimeError):
+        _ = SFT.k_max(4)
+    with pytest.raises(RuntimeError):
+        _ = SFT.k_min
+
+
+@pytest.mark.parametrize('fft_typ, f',
+                         [('onesided', [0., 1., 2.]),
+                          ('onesided2X', [0., 1., 2.]),
+                          ('twosided', [0., 1., 2., -2., -1.]),
+                          ('centered', [-2., -1., 0., 1., 2.])])
+def test_f(fft_typ: FFT_TYP_TYPE, f):
+    """Verify the frequency values property `f`."""
+    SFT = ShortTimeFFT(np.ones(5), hop=4, T=1/5, fft_typ=fft_typ,
+                       scale_to='psd')
+    assert_equal(SFT.f, f)
+
+
+def test_extent():
+    """Ensure that the `extent()` method is correct. """
+    SFT = ShortTimeFFT(np.ones(32), hop=4, T=1/32, fft_typ='onesided')
+    assert SFT.extent(100, 'tf', False) == (-0.375, 3.625, 0.0, 17.0)
+    assert SFT.extent(100, 'ft', False) == (0.0, 17.0, -0.375, 3.625)
+    assert SFT.extent(100, 'tf', True) == (-0.4375, 3.5625, -0.5, 16.5)
+    assert SFT.extent(100, 'ft', True) == (-0.5, 16.5, -0.4375, 3.5625)
+
+    SFT = ShortTimeFFT(np.ones(32), hop=4, T=1/32, fft_typ='centered')
+    assert SFT.extent(100, 'tf', False) == (-0.375, 3.625, -16.0, 15.0)
 
 
 @pytest.mark.parametrize('n', [8, 9])

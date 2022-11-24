@@ -267,7 +267,7 @@ class ShortTimeFFT:
         self.fft_typ, self.phase_shift = fft_typ, phase_shift
 
     @classmethod
-    def from_dual(cls, dual_win: NDArray, h_k: int, T: float,
+    def from_dual(cls, dual_win: NDArray, hop: int, T: float,
                   fft_typ: FFT_TYP_TYPE = 'onesided',
                   mfft: Optional[int] = None,
                   scale_to: Optional[Literal['magnitude', 'psd']] = None,
@@ -338,8 +338,8 @@ class ShortTimeFFT:
         a time-frequency resolution and memory requirements demanded by small
         `hop` sizes.
         """
-        win = _calc_dual_canonical_window(dual_win, h_k)
-        return cls(win, h_k, T, fft_typ, mfft, dual_win, scale_to, phase_shift)
+        win = _calc_dual_canonical_window(dual_win, hop)
+        return cls(win, hop, T, fft_typ, mfft, dual_win, scale_to, phase_shift)
 
     @property
     def win(self) -> NDArray:
@@ -436,7 +436,7 @@ class ShortTimeFFT:
         See the property `fft_typ` for more details.
         """
         if t_ not in (fft_typ_types := get_args(FFT_TYP_TYPE)):
-            raise ValueError(f"fft_typ={t_} not in {fft_typ_types}!")
+            raise ValueError(f"fft_typ='{t_}' not in {fft_typ_types}!")
 
         if t_ == 'onesided2X' and self.scaling is None:
             raise ValueError(f"For scaling is None, fft_typ='{t_}' is invalid!"
@@ -465,7 +465,7 @@ class ShortTimeFFT:
         See the property `mfft` for further details.
         """
         if not (n_ >= self.m_num):
-            raise ValueError(f"Attribute mfft={n_} needs to be at least the" +
+            raise ValueError(f"Attribute mfft={n_} needs to be at least the " +
                              f"window length m_num={self.m_num}!")
         self._mfft = n_
 
@@ -592,11 +592,12 @@ class ShortTimeFFT:
                 if padding == 'zeros':
                     xs[..., :-k_] = 0
                 elif padding == 'edge':
-                    xs[..., :-k_] = x[..., 0]
+                    xs[..., :-k_] = np.tile(x[..., :1], -k_)
                 elif padding == 'even':
-                    xs[..., :-k_] = x[..., -k_-1::-1]
+                    xs[..., :-k_] = x[..., -k_:0:-1]
                 elif padding == 'odd':
-                    xs[..., :-k_] = -x[..., -k_-1::-1]
+                    xs[..., :-k_] = (np.tile(2*x[..., :1], -k_) -
+                                     x[..., -k_:0:-1])
                 xs[..., -k_:] = x[..., :self.m_num+k_]
                 yield xs
             elif k_ <= n-self.m_num:  # no padding needed
@@ -608,11 +609,12 @@ class ShortTimeFFT:
                 if padding == 'zeros':
                     xs[..., k1_:] = 0
                 elif padding == 'edge':
-                    xs[..., k1_:] = x[..., -1]
+                    xs[..., k1_:] = np.tile(x[..., -1:], k2_)
                 elif padding == 'even':
-                    xs[..., k1_:] = x[..., :-k2_-1:-1]
+                    xs[..., k1_:] = x[..., -2:-k2_-2:-1]
                 elif padding == 'odd':
-                    xs[..., :-k_] = -x[..., :-k2_-1:-1]
+                    xs[..., k1_:] = (np.tile(2*x[..., -1:], k2_) -
+                                     x[..., -2:-k2_ - 2:-1])
                 yield xs
 
     def stft(self, x: NDArray, p0: Optional[int] = None,
@@ -699,7 +701,7 @@ class ShortTimeFFT:
         if isinstance(detr, str):
             detr = partial(detrend, type=detr)
         elif not (detr is None or callable(detr)):
-            raise ValueError("Parameter {detr=} is not a str, function or " +
+            raise ValueError(f"Parameter {detr=} is not a str, function or " +
                              "None!")
         n = x.shape[axis]
         if not (n >= (m2p := self.m_num-self.m_num_mid)):
@@ -859,9 +861,6 @@ class ShortTimeFFT:
             -> NDArray:
         """Inverse short-time Fourier transform.
 
-        An array of dimension ``S.ndim - 1``  which is real if `onesided_fft`
-        is set, else complex. If the STFT is not `invertible`, or the
-        parameters are out of bounds  a ``ValueError`` is raised.
 
         Parameters
         ----------
@@ -875,6 +874,12 @@ class ShortTimeFFT:
             signal should be reconstructed.
         f_axis, t_axis
             The axes in `S` denoting the frequency and the time dimension.
+
+        Returns
+        -------
+        An array of dimension ``S.ndim - 1``  which is real if `onesided_fft`
+        is set, else complex. If the STFT is not `invertible`, or the
+        parameters are out of bounds  a ``ValueError`` is raised.
 
         Notes
         -----
@@ -1030,8 +1035,9 @@ class ShortTimeFFT:
             n_next = n_ - self.hop
             if n_next + self.m_num <= 0 or all(w2[n_next:] == 0):
                 return n_, -q_
-        # hop size larger than window width:
-        return n0, 0
+        raise RuntimeError("This is code line should not have been reached!")
+        # If this case is reached, it probably means the first slice should be
+        # returned, i.e.: return n0, 0
 
     @property
     def k_min(self) -> int:
@@ -1084,8 +1090,9 @@ class ShortTimeFFT:
             n_next = k_ + self.hop
             if n_next >= n or all(w2[:n-n_next] == 0):
                 return k_ + self.m_num, q_ + 1
-        # hop size larger than window width:
-        return k1 + self.m_num - self.m_num_mid, q1 + 1
+        raise RuntimeError("This is code line should not have been reached!")
+        # If this case is reached, it probably means the last slice should be
+        # returned, i.e.: return k1 + self.m_num - self.m_num_mid, q1 + 1
 
     def k_max(self, n: int) -> int:
         """First sample index right of input not affected by a time slice.
@@ -1156,7 +1163,7 @@ class ShortTimeFFT:
             if k_ + self.hop >= 0:  # next entry does not stick out anymore
                 self._lower_border_end = (k_ + self.m_num, q_ + 1)
                 return self._lower_border_end
-        self._lower_border_end = (0, self.p_min)
+        self._lower_border_end = (0, max(self.p_min, 0))  # ends at first slice
         return self._lower_border_end
 
     @lru_cache(maxsize=256)
@@ -1171,8 +1178,7 @@ class ShortTimeFFT:
             k_ = q_ * self.hop + (self.m_num - self.m_num_mid)
             if k_ < n or all(w2[n-k_:] == 0):
                 return (q_ + 1) * self.hop - self.m_num_mid, q_ + 1
-        # hop size larger than window width:
-        return q1 * self.hop - self.m_num_mid, q1
+        return 0, 0  # border starts at first slice
 
     @property
     def delta_t(self) -> float:
