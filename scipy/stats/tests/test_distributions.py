@@ -7547,3 +7547,39 @@ def test_moment_order_4():
     # has since been made more accurate and efficient, so now this test
     # is expected to pass.
     assert stats.skewnorm._munp(4, 0) == 3.0
+
+
+class TestRelativisticBW:
+    rho = 36.98864097363084
+
+    def test_pdf_integration(self):
+        """Test pdf integrates to 1."""
+
+        res = quad(stats.relativistic_bw.pdf, 0, np.inf, args=(self.rho,))
+        assert_allclose(res[0], 1)
+
+    def test_pdf_against_cdf(self):
+        """Test whether the integrated PDF matches the CDF."""
+        x = np.arange(0, 100, step=0.01)
+        y_pdf_raw = stats.relativistic_bw.pdf(x, self.rho)
+        y_cdf = stats.relativistic_bw.cdf(x, self.rho)[1:]
+        y_pdf_cumulative = cumulative_trapezoid(y_pdf_raw, x)
+        assert_allclose(y_pdf_cumulative, y_cdf, rtol=1e-4)
+
+    @pytest.mark.parametrize("n", [1, 2])
+    def test_moments(self, n):
+        observed = stats.relativistic_bw.moment(n, self.rho)
+        def integrand(x):
+            return x**n * stats.relativistic_bw.pdf(x, self.rho)
+        expected = quad(integrand, 0, np.inf)[0]
+        assert_allclose(observed, expected)
+
+    @pytest.mark.slow
+    def test_fit(self):
+        seed = abs(hash("relativistic_bw"))
+        rng = np.random.default_rng(seed)
+        data = stats.relativistic_bw.rvs(
+            self.rho, loc=0, scale=2.495, size=2000, random_state=rng
+        )
+        fit = stats.relativistic_bw.fit(data, floc=0)
+        assert_allclose(fit, (self.rho, 0, 2.465), rtol=1e-1)
