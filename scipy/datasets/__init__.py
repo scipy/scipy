@@ -6,7 +6,7 @@ Datasets (:mod:`scipy.datasets`)
 .. currentmodule:: scipy.datasets
 
 Dataset Methods
-=======================================
+===============
 
 .. autosummary::
    :toctree: generated/
@@ -16,7 +16,7 @@ Dataset Methods
    electrocardiogram
 
 Utility Methods
-=======================================
+===============
 
 .. autosummary::
    :toctree: generated/

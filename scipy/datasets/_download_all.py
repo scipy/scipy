@@ -1,4 +1,3 @@
-#!python3
 """
 Platform independent script to download all the
 `scipy.datasets` module data files.
@@ -29,7 +28,7 @@ def download_all(path=None):
 
     Parameters
     ----------
-    path : str
+    path : str, optional
         Directory path to download all the dataset files.
         If None, default to the system cache_dir detected by pooch.
     """
@@ -47,7 +46,7 @@ def download_all(path=None):
 
 def main():
     parser = argparse.ArgumentParser(description='Download SciPy data files.')
-    parser.add_argument("path", type=str,
+    parser.add_argument("path", nargs='?', type=str,
                         default=pooch.os_cache('scipy-data'),
                         help="Directory path to download all the data files.")
     args = parser.parse_args()
