@@ -8,7 +8,6 @@ import logging
 import warnings
 from scipy import spatial
 from scipy.optimize import OptimizeResult, minimize, Bounds
-from scipy.optimize._optimize import MemoizeJac
 from scipy.optimize._constraints import new_bounds_to_old
 from ._optimize import _wrap_scalar_function
 from scipy.optimize._shgo_lib.triangulation import Complex
