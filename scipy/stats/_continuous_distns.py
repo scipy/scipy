@@ -10352,12 +10352,14 @@ class relativistic_bw_gen(rv_continuous):
 
     def _munp(self, n, rho):
         if n == 1:
+            # Factor of 1/(2*rho) has been absorbed into the constant.
             k = (
                 np.sqrt(2) * rho * np.sqrt(rho**2 + 1)
                 / (np.pi * np.sqrt(rho**2 + rho * np.sqrt(rho**2 + 1)))
             )
             return k * (np.pi/2 + np.arctan(rho))
         if n == 2:
+            # Factor of pi/4 has been absorbed into the constant.
             k = (
                 np.sqrt(2) * rho**2 * np.sqrt(rho**2 + 1)
                 / (2 * np.sqrt(rho**2 + rho * np.sqrt(rho**2 + 1)))
