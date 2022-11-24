@@ -95,7 +95,7 @@ class ShortTimeFFT:
     the signal. If only the dual window is known and the STFT is invertible,
     `from_dual` can be used to instanciate this class.
 
-    Due to the convetion of time t = 0 being at the first sample of the input
+    Due to the convention of time t = 0 being at the first sample of the input
     signal, the STFT values typically have negative time slots. Hence,
     negative indexes like `p_min` or `k_min` do not indicate counting
     backwards from an array's end like in standard Python indexing but being
