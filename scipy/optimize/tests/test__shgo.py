@@ -841,7 +841,8 @@ class TestShgoArguments:
         assert_allclose(res.fun, ref.fun)
         assert_allclose(res.x, ref.x, atol=1e-15)
 
-    def test_21_2_jac_options(self):
+    @pytest.mark.parametrize('derivative', ['jac', 'hess', 'hessp'])
+    def test_21_2_derivative_options(self, derivative):
         """shgo used to raise an error when passing `options` with 'jac'
         # see gh-12829. check that this is resolved
         """
@@ -851,12 +852,25 @@ class TestShgoArguments:
         def gradient(x):
             return 6 * x[0] + 2
 
+        def hess(x):
+            return 6
+
+        def hessp(x, p):
+            return 6 * p
+
+        derivative_funcs = {'jac': gradient, 'hess': hess, 'hessp': hessp}
+        options = {derivative: derivative_funcs[derivative]}
+        minimizer_kwargs = {'method': 'trust-constr'}
+
         bounds = [(-100, 100)]
-        res = shgo(objective, bounds, options={'jac': gradient})
-        ref = minimize(objective, x0=[0], bounds=bounds, jac=gradient)
+        res = shgo(objective, bounds, minimizer_kwargs=minimizer_kwargs,
+                   options=options)
+        ref = minimize(objective, x0=[0], bounds=bounds, **minimizer_kwargs,
+                       **options)
+
         assert res.success
-        assert_allclose(res.fun, ref.fun)
-        assert_allclose(res.x, ref.x)
+        numpy.testing.assert_allclose(res.fun, ref.fun)
+        numpy.testing.assert_allclose(res.x, ref.x)
 
     def test_21_3_hess_options_rosen(self):
         """Ensure the Hessian gets passed correctly to the local minimizer routine.
@@ -1030,4 +1044,3 @@ class TestShgoReturns:
 
         result = shgo(fun, bounds, sampling_method='sobol')
         numpy.testing.assert_equal(fun.nfev, result.nfev)
-

@@ -30,19 +30,6 @@ package. Some general Python facility is also assumed, such as could be
 acquired by working through the Python distribution's Tutorial. For further
 introductory help the user is directed to the NumPy documentation.
 
-For brevity and convenience, we will often assume that the main
-packages (numpy, scipy, and matplotlib) have been imported as::
-
-    >>> import numpy as np
-    >>> import matplotlib as mpl
-    >>> import matplotlib.pyplot as plt
-
-These are the import conventions that our community has adopted
-after discussion on public mailing lists.  You will see these
-conventions used throughout NumPy and SciPy source code and
-documentation.  While we obviously don't require you to follow
-these conventions in your own code, it is highly recommended.
-
 SciPy Organization
 ------------------
 

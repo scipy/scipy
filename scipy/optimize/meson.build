@@ -188,7 +188,6 @@ __nnls_module = custom_target('__nnls_module',
 
 py3.install_sources(
   ['__nnls.pyi'],
-  pure: false,
   subdir: 'scipy/optimize'
 )
 
@@ -230,13 +229,7 @@ else
   )
 endif
 
-# Needed to trick Cython, it won't do a relative import outside a
-# package
-_dummy_init_optimize = custom_target('_dummy_init_optimize',
-  output: '__init__.py',
-  input: '__init__.py',
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
+_dummy_init_optimize = fs.copyfile('__init__.py')
 
 opt_gen = generator(cython_cli,
   arguments : ['@INPUT@', '@OUTPUT@'],
@@ -264,7 +257,6 @@ subdir('tests')
 
 py3.install_sources(
   ['lbfgsb_src/README'],
-  pure: false,
   subdir: 'scipy/optimize'
 )
 
@@ -322,6 +314,5 @@ py3.install_sources([
   'tnc.py',
   'zeros.py'
 ],
-  pure: false,
   subdir: 'scipy/optimize'
 )
