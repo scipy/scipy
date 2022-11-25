@@ -690,7 +690,7 @@ class SHGO:
         # Ensure that 'jac', 'hess', and 'hessp' are passed directly to
         # `minimize` as keywords, not as part of its 'options' dictionary.
         for opt in ['jac', 'hess', 'hessp']:
-            if opt in options:
+            if opt in self.minimizer_kwargs['options']:
                 self.minimizer_kwargs[opt] = (
                     self.minimizer_kwargs['options'].pop(opt))
 
