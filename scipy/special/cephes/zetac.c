@@ -326,7 +326,7 @@ static inline double zeta_reflection(double x)
     /* Group large terms together to prevent overflow */
     base = (x + lanczos_g + 0.5) / (2 * NPY_PI * NPY_E);
     large_term = pow(base, x + 0.5);
-    if (npy_isfinite(large_term)) {
+    if (isfinite(large_term)) {
       return large_term * small_term;
     }
     /*
