@@ -9007,7 +9007,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
     Compute the general wasserstein-1 function between two n dimensional
     ditributions(histograms).
-    
+
     The wasserstein distance, also called the Earth mover distance or the
     optimal transport distance, is defined as a similarity metric between
     two probability distribution. In the discrete case, the wasserstein
@@ -9023,7 +9023,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
         could be:
         - Values observed in the (empirical) distribution.
         - Value of each class in the (distribution)histogram.
-        
+
     u_weights, v_weights : array_like, optional
         Weight for each value. If unspecified, each value is assigned the same
         weight.
@@ -9039,8 +9039,8 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     Notes
     -----
-    Given two samples(histograms), :math:`u` and :math:`v`, the first Wasserstein
-    distance between the distributions is:
+    Given two samples(histograms), :math:`u` and :math:`v`, the first
+    Wasserstein distance between the distributions is:
 
     .. math::
 
@@ -9060,11 +9060,11 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     See [3]_ for a proof of the equivalence of both definitions.
 
-    In the more general(higher dimensional) and discrete case, it is also called
-    the optimal transport problem or the Monge problem, which can be expressed
-    in this form,
+    In the more general(higher dimensional) and discrete case, it is also
+    called the optimal transport problem or the Monge problem, which can be
+    expressed in this form,
 
-    Given :math:`\Gamma` the transport plan, :math:`D` the distance matrix and 
+    Given :math:`\Gamma` the transport plan, :math:`D` the distance matrix and
     follows,
 
     .. math:
@@ -9077,30 +9077,30 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
             \end{bmatrix}
 
     The Monge problem can be tranformed into a linear programming problem by
-    taking :math:`A x = b` as constraints and :math:`z = c^T x` as minimization 
-    target(sum of costs) , where A is a matrix looks like 
+    taking :math:`A x = b` as constraints and :math:`z = c^T x` as minimization
+    target(sum of costs) , where A is a matrix looks like
 
     .. math:
 
         \begin{array} {rrr|rrr|r|rrr}
             1 & 1 & \dots & 0 & 0 & \dots & \dots & 0 & 0 & \dots \cr
             0 & 0 & \dots & 1 & 1 & \dots & \dots & 0 & 0 & \dots \cr
-            \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \dots 
+            \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \dots
                 & \vdots & \vdots & \vdots  \cr
             0 & 0 & \dots & 0 & 0 & \dots & \dots & 1 & 1 & \dots \cr \hline
 
             1 & 0 & \dots & 1 & 0 & \dots & \dots & 1 & 0 & \dots \cr
             0 & 1 & \dots & 0 & 1 & \dots & \dots & 0 & 1 & \dots \cr
-            \vdots & \vdots & \ddots & \vdots & \vdots & \ddots & \dots & 
+            \vdots & \vdots & \ddots & \vdots & \vdots & \ddots & \dots &
                 \vdots & \vdots & \ddots  \cr
-            \FixWidth{0} & \FixWidth{0} & \FixWidth{\dots} & \FixWidth{0} 
-                & \FixWidth{0} & \FixWidth{\dots} & \FixWidth{\dots} & \FixWidth{0}
-                & \FixWidth{0} & \FixWidth{\dots}
+            \FixWidth{0} & \FixWidth{0} & \FixWidth{\dots} & \FixWidth{0}
+                & \FixWidth{0} & \FixWidth{\dots} & \FixWidth{\dots} &
+                \FixWidth{0} & \FixWidth{0} & \FixWidth{\dots}
         \end{array}
-    
-    By solving the dual form of the above linear programming problem(with solution 
-    :math:`y^*`), the Wasserstein distance :math:`l_1 (u, v)`can be computed as 
-    :math:`b^T x^*`.
+
+    By solving the dual form of the above linear programming problem(with
+    solution :math:`y^*`), the Wasserstein distance :math:`l_1 (u, v)`can
+    be computed as :math:`b^T x^*`.
 
     For a more thorough explanation, see [4]_ .
 
@@ -9112,12 +9112,14 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     References
     ----------
     .. [1] "Wasserstein metric", https://en.wikipedia.org/wiki/Wasserstein_metric
-    .. [2] https://lilianweng.github.io/posts/2017-08-20-gan/#what-is-wasserstein-distance.
-    .. [3] Ramdas, Garcia, Cuturi "On Wasserstein Two Sample Testing and Related
-           Families of Nonparametric Tests" (2015). :arXiv:`1509.02237`.
-    .. [4] Peyré, Gabriel, and Marco Cuturi. "Computational optimal transport." 
-           Center for Research in Economics and Statistics Working Papers 2017-86 
-           (2017).
+    .. [2] https://lilianweng.github.io/posts/2017-08-20-gan/#what-is-
+           wasserstein-distance.
+    .. [3] Ramdas, Garcia, Cuturi "On Wasserstein Two Sample Testing and
+           Related Families of Nonparametric Tests" (2015).
+           :arXiv:`1509.02237`.
+    .. [4] Peyré, Gabriel, and Marco Cuturi. "Computational optimal
+           transport." Center for Research in Economics and Statistics
+           Working Papers 2017-86 (2017).
 
     Examples
     --------
@@ -9150,35 +9152,36 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     # if data is 1D then call the cdf_distance function
     if u_values.shape[1] == 1 and v_values.shape[1] == 1:
-        return _cdf_distance(1, u_values.flatten(), v_values.flatten(), 
-                                u_weights, v_weights)
+        return _cdf_distance(1,
+                             u_values.flatten(), v_values.flatten(),
+                             u_weights, v_weights)
 
     # if data contains np.inf then return inf or nan
     if np.any(np.isinf(u_values)) ^ np.any(np.isinf(v_values)):
         return np.inf
     elif np.any(np.isinf(u_values)) and np.any(np.isinf(v_values)):
         return np.nan
-    
+
     # creat constraints
     _row_func = np.vectorize(lambda x: np.floor(x/n) if x < m*n else m + x % n)
     row = _row_func(np.arange(m * n * 2))
     col = np.append(np.arange(m * n), np.arange(m * n))
-    value = np.ones(m * n * 2, dtype = float)
+    value = np.ones(m * n * 2, dtype=float)
     # sparse constraint matrix of size (m + n)*(m * n)
     A = coo_matrix((value, (row, col)), shape=(n + m, m * n))
 
     # get cost matrix
-    D = distance_matrix(u_values, v_values, p = 2)
+    D = distance_matrix(u_values, v_values, p=2)
     cost = D.reshape((n * m))
 
     # create the minimization target
-    _normal = lambda x, y: np.ones(x)/x if y is None else y/np.sum(y)
-    p_u, p_v = _normal(m, u_weights), _normal(n, v_weights)
-    b = np.concatenate((p_u, p_v), axis = 0)
+    p_u = np.ones(m)/m if u_weights is None else u_weights/np.sum(u_weights)
+    p_v = np.ones(n)/n if v_weights is None else v_weights/np.sum(v_weights)
+    b = np.concatenate((p_u, p_v), axis=0)
 
     # solving LP
-    constraints = LinearConstraint(A = A.T, ub = cost)
-    opt_res = milp(c = -b, constraints = constraints, bounds=(-np.inf, np.inf))
+    constraints = LinearConstraint(A=A.T, ub=cost)
+    opt_res = milp(c=-b, constraints=constraints, bounds=(-np.inf, np.inf))
     return b @ opt_res.x
 
 
