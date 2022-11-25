@@ -232,6 +232,6 @@ double x;
     while (fabs(t / s) > MACHEP);
 
   adone:
-    ans = exp(-x) * sqrt(NPY_PI / (2.0 * x)) * s;
+    ans = exp(-x) * sqrt(M_PI / (2.0 * x)) * s;
     return (ans);
 }

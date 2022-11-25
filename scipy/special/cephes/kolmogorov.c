@@ -95,8 +95,8 @@ extern double MINLOG;
 /* exp() of anything below this returns 0 */
 static const int MIN_EXPABLE = (-708 - 38);
 
-#ifndef NPY_LOGSQRT2PI
-#define NPY_LOGSQRT2PI 0.91893853320467274178032973640561764
+#ifndef LOGSQRT2PI
+#define LOGSQRT2PI 0.91893853320467274178032973640561764
 #endif
 
 /* Struct to hold the CDF, SF and PDF, which are computed simultaneously */
@@ -169,7 +169,7 @@ _kolmogorov(double x)
         RETURN_3PROBS(1.0, 0.0, 0);
     }
     /* x <= 0.040611972203751713 */
-    if (x <= (double)NPY_PI/sqrt(-MIN_EXPABLE * 8)) {
+    if (x <= (double)M_PI/sqrt(-MIN_EXPABLE * 8)) {
         RETURN_3PROBS(1.0, 0.0, 0);
     }
 
@@ -180,8 +180,8 @@ _kolmogorov(double x)
          *  w = sqrt(2pi)/x
          *  P = w*u * (1 + u^8 + u^24 + u^48 + ...)
          */
-        double w = sqrt(2 * NPY_PI)/x;
-        double logu8 = -NPY_PI * NPY_PI/(x * x); /* log(u^8) */
+        double w = sqrt(2 * M_PI)/x;
+        double logu8 = -M_PI * M_PI/(x * x); /* log(u^8) */
         double u = exp(logu8/8);
         if (u == 0) {
             /*
@@ -201,7 +201,7 @@ _kolmogorov(double x)
             P = 1 + u8 * P;
             D = 1*1 + u8 * D;
 
-            D = NPY_PI * NPY_PI/4/(x*x) * D - P;
+            D = M_PI * M_PI/4/(x*x) * D - P;
             D *=  w * u/x;
             P = w * u * P;
         }
@@ -278,14 +278,13 @@ _kolmogi(double psf, double pcdf)
     if (pcdf <= 0.5) {
         /* p ~ (sqrt(2pi)/x) *exp(-pi^2/8x^2).  Generate lower and upper bounds  */
         double logpcdf = log(pcdf);
-        const double SQRT2 = NPY_SQRT2;
-        const double LOGSQRT2 = NPY_LOGSQRT2PI;
-        /* Nnow that 1 >= x >= sqrt(p) */
+        const double SQRT2 = M_SQRT2;
+        /* Now that 1 >= x >= sqrt(p) */
         /* Iterate twice: x <- pi/(sqrt(8) sqrt(log(sqrt(2pi)) - log(x) - log(pdf))) */
-        a = NPY_PI / (2 * SQRT2 * sqrt(-(logpcdf + logpcdf/2 - LOGSQRT2)));
-        b = NPY_PI / (2 * SQRT2 * sqrt(-(logpcdf + 0 - LOGSQRT2)));
-        a = NPY_PI / (2 * SQRT2 * sqrt(-(logpcdf + log(a) - LOGSQRT2)));
-        b = NPY_PI / (2 * SQRT2 * sqrt(-(logpcdf + log(b) - LOGSQRT2)));
+        a = M_PI / (2 * SQRT2 * sqrt(-(logpcdf + logpcdf/2 - LOGSQRT2PI)));
+        b = M_PI / (2 * SQRT2 * sqrt(-(logpcdf + 0 - LOGSQRT2PI)));
+        a = M_PI / (2 * SQRT2 * sqrt(-(logpcdf + log(a) - LOGSQRT2PI)));
+        b = M_PI / (2 * SQRT2 * sqrt(-(logpcdf + log(b) - LOGSQRT2PI)));
         x =  (a + b) / 2.0;
     }
     else {

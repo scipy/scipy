@@ -320,11 +320,11 @@ static inline double zeta_reflection(double x)
 
     /* Reduce the argument to sine */
     x_shift = fmod(x, 4);
-    small_term = -SQRT_2_PI * sin(0.5 * NPY_PI * x_shift);
+    small_term = -SQRT_2_PI * sin(0.5 * M_PI * x_shift);
     small_term *= lanczos_sum_expg_scaled(x + 1) * zeta(x + 1, 1);
 
     /* Group large terms together to prevent overflow */
-    base = (x + lanczos_g + 0.5) / (2 * NPY_PI * NPY_E);
+    base = (x + lanczos_g + 0.5) / (2 * M_PI * M_E);
     large_term = pow(base, x + 0.5);
     if (isfinite(large_term)) {
       return large_term * small_term;
