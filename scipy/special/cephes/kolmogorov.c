@@ -584,9 +584,9 @@ pow2Scaled_D(double2 a, int m, int *pExponent)
      *              <= 665/(1-y.x[0])
      * Quick check to see if we might need to break up the exponentiation
      */
-    if (m*(y.x[0]-1) / y.x[0] < -_MAX_EXPONENT * NPY_LOGE2) {
+    if (m*(y.x[0]-1) / y.x[0] < -_MAX_EXPONENT * SCIPY_LOGE2) {
         /* Now do it carefully, calling log() */
-        double lg2y = log(y.x[0]) / NPY_LOGE2;
+        double lg2y = log(y.x[0]) / SCIPY_LOGE2;
         double lgAns = m * lg2y;
         if (lgAns <= -_MAX_EXPONENT) {
             maxExpt = (int)(nextPowerOf2(-_MAX_EXPONENT / lg2y + 1)/2);
@@ -943,7 +943,7 @@ _smirnovi(int n, double psf, double pcdf)
      */
     maxlogpcdf = logpow4(1, 0.0, n, 0, 1) + logpow4(n, 1, n, 0, n - 1);
     if (logpcdf <= maxlogpcdf) {
-        double xmin = pcdf / NPY_El;
+        double xmin = pcdf / SCIPY_El;
         double xmax = pcdf;
         double P1 = pow4(n, 1, n, 0, n - 1) / n;
         double R = pcdf/P1;

@@ -236,7 +236,7 @@ double *si, *ci;
     if (sign)
 	s = -s;
     *si = s;
-    *ci = NPY_EULER + log(x) + c;	/* real part if x < 0 */
+    *ci = SCIPY_EULER + log(x) + c;	/* real part if x < 0 */
     return (0);
 
 

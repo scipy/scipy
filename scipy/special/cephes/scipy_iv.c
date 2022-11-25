@@ -373,7 +373,7 @@ static int temme_ik_series(double v, double x, double *K, double *K1)
     sigma = -a * v;
     c = fabs(v) < MACHEP ? 1 : sin(M_PI * v) / (v * M_PI);
     d = fabs(sigma) < MACHEP ? 1 : sinh(sigma) / sigma;
-    gamma1 = fabs(v) < MACHEP ? -NPY_EULER : (0.5f / v) * (gp - gm) * c;
+    gamma1 = fabs(v) < MACHEP ? -SCIPY_EULER : (0.5f / v) * (gp - gm) * c;
     gamma2 = (2 + gp + gm) * c / 2;
 
     /* initial values */

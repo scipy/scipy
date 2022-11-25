@@ -162,7 +162,7 @@ static double lgam1p_taylor(double x)
     if (x == 0) {
         return 0;
     }
-    res = -NPY_EULER * x;
+    res = -SCIPY_EULER * x;
     xfac = -x;
     for (n = 2; n < 42; n++) {
         xfac *= -x;

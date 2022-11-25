@@ -179,7 +179,7 @@ double psi(double x)
 	for (i = 1; i < n; i++) {
 	    y += 1.0 / i;
 	}
-	y -= NPY_EULER;
+	y -= SCIPY_EULER;
 	return y;
     }
 
