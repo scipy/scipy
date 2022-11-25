@@ -853,6 +853,76 @@ class TestGennorm:
         assert stats.kstest(rvs[:, 1, 1], stats.gennorm(5.0).cdf)[1] > 0.1
 
 
+class TestGibrat:
+
+    # sfx is sf(x).  The values were computed with mpmath:
+    #
+    #   from mpmath import mp
+    #   mp.dps = 100
+    #   def gibrat_sf(x):
+    #       return 1 - mp.ncdf(mp.log(x))
+    #
+    # E.g.
+    #
+    #   >>> float(gibrat_sf(1.5))
+    #   0.3425678305148459
+    #
+    @pytest.mark.parametrize('x, sfx', [(1.5, 0.3425678305148459),
+                                        (5000, 8.173334352522493e-18)])
+    def test_sf_isf(self, x, sfx):
+        assert_allclose(stats.gibrat.sf(x), sfx, rtol=2e-14)
+        assert_allclose(stats.gibrat.isf(sfx), x, rtol=2e-14)
+
+
+class TestGompertz:
+
+    def test_gompertz_accuracy(self):
+        # Regression test for gh-4031
+        p = stats.gompertz.ppf(stats.gompertz.cdf(1e-100, 1), 1)
+        assert_allclose(p, 1e-100)
+
+    # sfx is sf(x).  The values were computed with mpmath:
+    #
+    #   from mpmath import mp
+    #   mp.dps = 100
+    #   def gompertz_sf(x, c):
+    #       reurn mp.exp(-c*mp.expm1(x))
+    #
+    # E.g.
+    #
+    #   >>> float(gompertz_sf(1, 2.5))
+    #   0.013626967146253437
+    #
+    @pytest.mark.parametrize('x, c, sfx', [(1, 2.5, 0.013626967146253437),
+                                           (3, 2.5, 1.8973243273704087e-21),
+                                           (0.05, 5, 0.7738668242570479),
+                                           (2.25, 5, 3.707795833465481e-19)])
+    def test_sf_isf(self, x, c, sfx):
+        assert_allclose(stats.gompertz.sf(x, c), sfx, rtol=1e-14)
+        assert_allclose(stats.gompertz.isf(sfx, c), x, rtol=1e-14)
+
+
+class TestHalfNorm:
+
+    # sfx is sf(x).  The values were computed with mpmath:
+    #
+    #   from mpmath import mp
+    #   mp.dps = 100
+    #   def halfnorm_sf(x):
+    #       reurn 2*(1 - mp.ncdf(x))
+    #
+    # E.g.
+    #
+    #   >>> float(halfnorm_sf(1))
+    #   0.3173105078629141
+    #
+    @pytest.mark.parametrize('x, sfx', [(1, 0.3173105078629141),
+                                        (10, 1.523970604832105e-23)])
+    def test_sf_isf(self, x, sfx):
+        assert_allclose(stats.halfnorm.sf(x), sfx, rtol=1e-14)
+        assert_allclose(stats.halfnorm.isf(sfx), x, rtol=1e-14)
+
+
 class TestHalfgennorm:
     def test_expon(self):
         # test against exponential (special case for beta=1)
@@ -6673,12 +6743,6 @@ def test_infinite_input():
 def test_lomax_accuracy():
     # regression test for gh-4033
     p = stats.lomax.ppf(stats.lomax.cdf(1e-100, 1), 1)
-    assert_allclose(p, 1e-100)
-
-
-def test_gompertz_accuracy():
-    # Regression test for gh-4031
-    p = stats.gompertz.ppf(stats.gompertz.cdf(1e-100, 1), 1)
     assert_allclose(p, 1e-100)
 
 
