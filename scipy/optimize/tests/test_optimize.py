@@ -1487,7 +1487,8 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     @pytest.mark.parametrize('method', MINIMIZE_METHODS_PY)
-    def test_callback_stopiteration(self, method):
+    @pytest.mark.parametrize('new_cb_interface', [True, False])
+    def test_callback_stopiteration(self, method, new_cb_interface):
         # Check that if callback raises StopIteration, optimization
         # terminates with the same result as if iterations were limited
 
@@ -1506,7 +1507,15 @@ class TestOptimizeSimple(CheckOptimize):
 
         maxiter = 5
 
-        def callback(xk, *args):
+        if new_cb_interface:
+            def callback_interface(xk, *args):
+                callback()
+        else:
+            def callback_interface(*, res_i):
+                assert res_i.fun == f(res_i.x)
+                callback()
+
+        def callback():
             callback.i += 1
             callback.flag = False
             if callback.i == maxiter:
@@ -1518,7 +1527,7 @@ class TestOptimizeSimple(CheckOptimize):
         kwargs = {'x0': [1.1]*5, 'method': method,
                   'fun': f, 'jac': g, 'hess': h}
 
-        res = optimize.minimize(**kwargs, callback=callback)
+        res = optimize.minimize(**kwargs, callback=callback_interface)
         if method == 'nelder-mead':
             maxiter = maxiter + 1  # nelder-mead counts differently
         ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})

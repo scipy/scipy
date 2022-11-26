@@ -363,7 +363,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             # new iteration
             n_iterations += 1
 
-            if _call_callback(callback, x):
+            if _call_callback(callback, x, f):
                 task[:] = 'STOP: CALLBACK SAYS SO!'
             if n_iterations >= maxiter:
                 task[:] = 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'

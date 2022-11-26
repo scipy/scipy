@@ -431,7 +431,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             if callback is not None:
                 callback_stop = False
                 try:
-                    callback_stop = callback(state.x, state)
+                    callback_stop = callback(state)
                 except StopIteration:
                     callback_stop = True
                 if callback_stop:
@@ -473,9 +473,16 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                          state.cg_stop_cond)
             state.status = None
             state.niter = state.nit  # Alias for callback (backward compatibility)
-            if callback is not None and callback(np.copy(state.x), state):
-                state.status = 3
-            elif state.optimality < gtol and state.constr_violation < gtol:
+            if callback is not None:
+                callback_stop = False
+                try:
+                    callback_stop = callback(state)
+                except StopIteration:
+                    callback_stop = True
+                if callback_stop:
+                    state.status = 3
+                    return True
+            if state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
             elif (state.tr_radius < xtol
                   and state.barrier_parameter < barrier_tol):

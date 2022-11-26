@@ -259,7 +259,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         k += 1
 
-        if _call_callback(callback, x):
+        if _call_callback(callback, x, m.fun):
             break
 
         # check if the gradient is small enough to stop

@@ -27,6 +27,7 @@ __docformat__ = "restructuredtext en"
 
 import warnings
 import sys
+import inspect
 from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
                    asarray, sqrt, Inf, asfarray)
 import numpy as np
@@ -132,12 +133,19 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
 
 
 def _wrap_callback(callback):
-    """Wraps a user-provided callback so that attributes can be attached"""
-    return lambda x, *args: callback(np.copy(x), *args)
+    """Wrap a user-provided callback so that attributes can be attached."""
+    params = (inspect.Parameter('res_i', kind=inspect.Parameter.KEYWORD_ONLY),)
+    signature = inspect.signature(callback)
+    if signature == inspect.Signature(parameters=params):
+        return lambda res: callback(res_i=res)
+    elif len(signature.parameters) == 2:  # trust-constr
+        return lambda res: callback(np.copy(res.x), res)
+    else:
+        return lambda res: callback(np.copy(res.x))
 
 
-def _call_callback(callback, x):
-    """Calls wrapped callback; returns True if minimization should stop
+def _call_callback(callback, x, fval):
+    """Call wrapped callback; return True if minimization should stop.
 
     Parameters
     ----------
@@ -152,11 +160,11 @@ def _call_callback(callback, x):
         True if minimization should stop
 
     """
-
     if callback is None:
         return False
+    res = OptimizeResult(x=x, fun=fval)
     try:
-        callback(x)
+        callback(res)
         return False
     except StopIteration:
         callback.stop_iteration = True  # make `minimize` override status/msg
@@ -960,7 +968,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             fsim = np.take(fsim, ind, 0)
             if retall:
                 allvecs.append(sim[0])
-            if _call_callback(callback, sim[0]):
+            if _call_callback(callback, sim[0], fsim[0]):
                 break
 
     x = sim[0]
@@ -1436,7 +1444,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         yk = gfkp1 - gfk
         gfk = gfkp1
         k += 1
-        if _call_callback(callback, xk):
+        if _call_callback(callback, xk, old_fval):
             break
         gnorm = vecnorm(gfk, ord=norm)
         if (gnorm <= gtol):
@@ -1788,7 +1796,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         if retall:
             allvecs.append(xk)
         k += 1
-        if _call_callback(callback, xk):
+        if _call_callback(callback, xk, old_fval):
             break
 
     fval = old_fval
@@ -2100,7 +2108,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         if retall:
             allvecs.append(xk)
         k += 1
-        if _call_callback(callback, xk):
+        if _call_callback(callback, xk, old_fval):
             return terminate(5, "")
 
     else:
@@ -3375,7 +3383,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             iter += 1
             if retall:
                 allvecs.append(x)
-            if _call_callback(callback, x):
+            if _call_callback(callback, x, fval):
                 break
             bnd = ftol * (np.abs(fx) + np.abs(fval)) + 1e-20
             if 2.0 * (fx - fval) <= bnd:

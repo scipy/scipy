@@ -193,23 +193,26 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         For method-specific options, see :func:`show_options()`.
     callback : callable, optional
-        Called after each iteration. For 'trust-constr' it is a callable with
+        A callable called after each iteration.
+
+        All methods except TNC, SLSQP, and COBYLA support a callable with
         the signature:
 
-            ``callback(xk, OptimizeResult state) -> bool``
+            ``callback(*, OptimizeResult res_i) -> bool``
 
-        where ``xk`` is the current parameter vector. and ``state``
-        is an `OptimizeResult` object, with the same fields
-        as the ones from the return.
+        where ``res_i`` is a keyword-only parameter containing an
+        `OptimizeResult` with attributes ``x`` and ``fun``, the present values
+        of the parameter vector and objective function.
 
-        For all the other methods, the signature is:
+        All methods except trust-constr (also) support a signature like:
 
             ``callback(xk)``
 
         where ``xk`` is the current parameter vector.
 
-        For all methods except TNC, SLSQP, and COBYLA, the minimization
-        algorithm will terminate if the callback raises `StopIteration`.
+        All methods except TNC, SLSQP, and COBYLA will terminate if the
+        callback raises `StopIteration`. Introspection is used to determine
+        which of the signatures above to invoke.
 
     Returns
     -------
@@ -686,7 +689,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                                                        remove=1)
         bounds = standardize_bounds(bounds, x0, meth)
 
-    if callback is not None:
+    _wrappable_cb = (callback is not None
+                     and meth not in {'tnc', 'slsqp', 'cobyla'})
+    if _wrappable_cb:
         callback = _wrap_callback(callback)
         callback.stop_iteration = False
 
@@ -739,7 +744,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         if "hess_inv" in res:
             res.hess_inv = None  # unknown
 
-    if callback is not None and callback.stop_iteration:
+    if _wrappable_cb and callback.stop_iteration:
         res.success = False
         res.status = 5
         res.message = "`callback` raised `StopIteration`."
