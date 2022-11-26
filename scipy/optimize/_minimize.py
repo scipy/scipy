@@ -41,7 +41,10 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
                     'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
 
-MINIMIZE_METHODS_PY = MINIMIZE_METHODS[:6] + MINIMIZE_METHODS[9:]
+# These methods support the new callback interface (passed an OptimizeResult)
+MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
+                           'l-bfgs-b', 'trust-constr', 'dogleg', 'trust-ncg',
+                           'trust-exact', 'trust-krylov']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
@@ -198,11 +201,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         All methods except TNC, SLSQP, and COBYLA support a callable with
         the signature:
 
-            ``callback(*, OptimizeResult res_i) -> bool``
+            ``callback(OptimizeResult intermediate_result)``
 
-        where ``res_i`` is a keyword-only parameter containing an
+        where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the present values
-        of the parameter vector and objective function.
+        of the parameter vector and objective function. Note that the name
+        of the parameter must be ``intermediate_result`` for the callback
+        to be passed an `OptimizeResult`.
 
         All methods except trust-constr (also) support a signature like:
 

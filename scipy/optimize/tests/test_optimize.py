@@ -21,7 +21,8 @@ from pytest import raises as assert_raises
 
 from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
-from scipy.optimize._minimize import (MINIMIZE_METHODS, MINIMIZE_METHODS_PY,
+from scipy.optimize._minimize import (MINIMIZE_METHODS,
+                                      MINIMIZE_METHODS_NEW_CB,
                                       MINIMIZE_SCALAR_METHODS)
 from scipy.optimize._linprog import LINPROG_METHODS
 from scipy.optimize._root import ROOT_METHODS
@@ -1487,7 +1488,7 @@ class TestOptimizeSimple(CheckOptimize):
                     "Duplicate evaluations made by {}".format(method))
 
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
-    @pytest.mark.parametrize('method', MINIMIZE_METHODS_PY)
+    @pytest.mark.parametrize('method', MINIMIZE_METHODS_NEW_CB)
     @pytest.mark.parametrize('new_cb_interface', [True, False])
     def test_callback_stopiteration(self, method, new_cb_interface):
         # Check that if callback raises StopIteration, optimization
@@ -1512,8 +1513,8 @@ class TestOptimizeSimple(CheckOptimize):
             def callback_interface(xk, *args):
                 callback()
         else:
-            def callback_interface(*, res_i):  # type: ignore[misc]
-                assert res_i.fun == f(res_i.x)
+            def callback_interface(*, intermediate_result):  # type: ignore[misc]  # noqa
+                assert intermediate_result.fun == f(intermediate_result.x)
                 callback()
 
         def callback():
