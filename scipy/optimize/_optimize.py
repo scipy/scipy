@@ -134,7 +134,7 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
 
 def _wrap_callback(callback, method=None):
     """Wrap a user-provided callback so that attributes can be attached."""
-    if callback is None or method in {'tnc', 'slsqp', 'cobyla'}:
+    if callback is None or method not in {'nelder-mead', 'trust-constr', None}:
         return callback  # don't wrap
 
     p1 = (inspect.Parameter('intermediate_result',
@@ -1349,7 +1349,6 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             'maxiter': maxiter,
             'return_all': retall}
 
-    callback = _wrap_callback(callback)
     res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
@@ -1453,9 +1452,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
         yk = gfkp1 - gfk
         gfk = gfkp1
+        if callback is not None:
+            callback(xk)
         k += 1
-        if _call_callback(callback, xk, old_fval):
-            break
         gnorm = vecnorm(gfk, ord=norm)
         if (gnorm <= gtol):
             break
@@ -1678,7 +1677,6 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             'maxiter': maxiter,
             'return_all': retall}
 
-    callback = _wrap_callback(callback)
     res = _minimize_cg(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
@@ -1806,9 +1804,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
         if retall:
             allvecs.append(xk)
+        if callback is not None:
+            callback(xk)
         k += 1
-        if _call_callback(callback, xk, old_fval):
-            break
 
     fval = old_fval
     if warnflag == 2:
@@ -1935,7 +1933,6 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             'disp': disp,
             'return_all': retall}
 
-    callback = _wrap_callback(callback)
     res = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p,
                              callback=callback, **opts)
 
@@ -2117,12 +2114,11 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         update = alphak * pk
         xk = xk + update        # upcast if necessary
+        if callback is not None:
+            callback(xk)
         if retall:
             allvecs.append(xk)
         k += 1
-        if _call_callback(callback, xk, old_fval):
-            return terminate(5, "")
-
     else:
         if np.isnan(old_fval) or np.isnan(update).any():
             return terminate(3, _status_message['nan'])
@@ -3215,7 +3211,6 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'direc': direc,
             'return_all': retall}
 
-    callback = _wrap_callback(callback)
     res = _minimize_powell(func, x0, args, callback=callback, **opts)
 
     if full_output:
@@ -3394,10 +3389,10 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
                     delta = fx2 - fval
                     bigind = i
             iter += 1
+            if callback is not None:
+                callback(x)
             if retall:
                 allvecs.append(x)
-            if _call_callback(callback, x, fval):
-                break
             bnd = ftol * (np.abs(fx) + np.abs(fval)) + 1e-20
             if 2.0 * (fx - fval) <= bnd:
                 break
