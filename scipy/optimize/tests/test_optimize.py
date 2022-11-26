@@ -21,18 +21,14 @@ from pytest import raises as assert_raises
 
 from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
-from scipy.optimize._minimize import MINIMIZE_METHODS, MINIMIZE_SCALAR_METHODS
+from scipy.optimize._minimize import (MINIMIZE_METHODS, MINIMIZE_METHODS_PY,
+                                      MINIMIZE_SCALAR_METHODS)
 from scipy.optimize._linprog import LINPROG_METHODS
 from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy.optimize._optimize import MemoizeJac, show_options
-
-
-_all_minimize_methods = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newtoncg',
-                         'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
-                         'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
 
 
 def test_check_grad():
@@ -1490,8 +1486,7 @@ class TestOptimizeSimple(CheckOptimize):
                     "Duplicate evaluations made by {}".format(method))
 
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
-    @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs',
-                                        'newton-cg'])
+    @pytest.mark.parametrize('method', MINIMIZE_METHODS_PY)
     def test_callback_stopiteration(self, method):
         # Check that if callback raises StopIteration, optimization
         # terminates with the same result as if iterations were limited
@@ -1511,7 +1506,7 @@ class TestOptimizeSimple(CheckOptimize):
 
         maxiter = 5
 
-        def callback(xk):
+        def callback(xk, *args):
             callback.i += 1
             callback.flag = False
             if callback.i == maxiter:
@@ -1520,7 +1515,7 @@ class TestOptimizeSimple(CheckOptimize):
         callback.i = 0
         callback.flag = False
 
-        kwargs = {'x0': [1, 10, 100, 1000, 10000], 'method': method,
+        kwargs = {'x0': [1.1]*5, 'method': method,
                   'fun': f, 'jac': g, 'hess': h}
 
         res = optimize.minimize(**kwargs, callback=callback)
@@ -1530,7 +1525,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert res.fun == ref.fun
         assert_equal(res.x, ref.x)
         assert res.nit == ref.nit == maxiter
-        assert res.status == 5
+        assert res.status == 3 if method == 'trust-constr' else 5
 
 
 @pytest.mark.parametrize(

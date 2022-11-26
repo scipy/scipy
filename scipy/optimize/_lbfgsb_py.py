@@ -193,6 +193,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             'maxiter': maxiter,
             'callback': callback,
             'maxls': maxls}
+    if callback is not None:
+        opts['callback'] = lambda x: callback(np.copy(x))
 
     res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
                            **opts)
@@ -361,7 +363,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             # new iteration
             n_iterations += 1
             if callback is not None:
-                callback(np.copy(x))
+                try:
+                    callback(x)
+                except StopIteration:
+                    callback.stop_iteration = True
+                    break
 
             if n_iterations >= maxiter:
                 task[:] = 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'

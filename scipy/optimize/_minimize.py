@@ -40,6 +40,8 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
                     'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
 
+MINIMIZE_METHODS_PY = MINIMIZE_METHODS[:6] + MINIMIZE_METHODS[9:]
+
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
@@ -615,10 +617,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             options.setdefault('gtol', tol)
             options.setdefault('barrier_tol', tol)
 
-    if callback is not None:
-        callback = _wrap_callback(callback)
-        callback.stop_iteration = False
-
     if meth == '_custom':
         # custom method called before bounds and constraints are 'standardised'
         # custom method should be able to accept whatever bounds/constraints
@@ -684,6 +682,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                                                        remove=1)
         bounds = standardize_bounds(bounds, x0, meth)
 
+    if callback is not None:
+        callback = _wrap_callback(callback)
+        callback.stop_iteration = False
+
     if meth == 'nelder-mead':
         res = _minimize_neldermead(fun, x0, args, callback, bounds=bounds,
                                    **options)
@@ -743,7 +745,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
 def _wrap_callback(callback):
     # Wraps the callback function so we can attach attributes to it
-    return lambda *args, **kwargs: callback(*args, **kwargs)
+    return lambda x, *args: callback(np.copy(x), *args)
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
