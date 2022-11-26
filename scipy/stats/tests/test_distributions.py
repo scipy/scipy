@@ -132,6 +132,26 @@ def test_vonmises_pdf(x, kappa, expected_pdf):
     assert_allclose(pdf, expected_pdf, rtol=1e-15)
 
 
+# Expected values of the vonmises entropy were computed using
+# mpmath with 50 digits of precision:
+#
+# def vonmises_entropy(kappa):
+#     kappa = mpmath.mpf(kappa)
+#     return (-kappa * mpmath.besseli(1, kappa) /
+#             mpmath.besseli(0, kappa) + mpmath.log(2 * mpmath.pi *
+#             mpmath.besseli(0, kappa)))
+# >>> float(vonmises_entropy(kappa))
+
+@pytest.mark.parametrize('kappa, expected_entropy',
+                         [(1, 1.6274014590199897),
+                          (5, 0.6756431570114528),
+                          (100, -0.8811275441649473),
+                          (1000, -2.03468891852547),
+                          (2000, -2.3813876496587847)])
+def test_vonmises_entropy(kappa, expected_entropy):
+    entropy = stats.vonmises.entropy(kappa)
+    assert_allclose(entropy, expected_entropy, rtol=1e-13)
+
 def test_vonmises_rvs_gh4598():
     # check that random variates wrap around as discussed in gh-4598
     seed = abs(hash('von_mises_rvs'))
