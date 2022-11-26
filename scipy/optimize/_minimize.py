@@ -690,8 +690,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         bounds = standardize_bounds(bounds, x0, meth)
 
     callback = _wrap_callback(callback, meth)
-    if callback is not None:
-        callback.stop_iteration = False
 
     if meth == 'nelder-mead':
         res = _minimize_neldermead(fun, x0, args, callback, bounds=bounds,

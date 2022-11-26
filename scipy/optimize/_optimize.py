@@ -145,11 +145,17 @@ def _wrap_callback(callback, method=None):
     sig2 = inspect.Signature(parameters=p2)
 
     if inspect.signature(callback) in {sig1, sig2}:
-        return lambda res: callback(intermediate_result=res)
+        def wrapped_callback(res):
+            return callback(intermediate_result=res)
     elif method == 'trust-constr':
-        return lambda res: callback(np.copy(res.x), res)
+        def wrapped_callback(res):
+            return callback(np.copy(res.x), res)
     else:
-        return lambda res: callback(np.copy(res.x))
+        def wrapped_callback(res):
+            return callback(np.copy(res.x))
+
+    wrapped_callback.stop_iteration = False
+    return wrapped_callback
 
 
 def _call_callback(callback, x, fval):
