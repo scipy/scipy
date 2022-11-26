@@ -7550,7 +7550,7 @@ def test_moment_order_4():
 
 
 class TestRelativisticBW:
-    rho = 36.98864097363084
+    rho = 36.545206797050334
 
     def test_pdf_integration(self):
         """Test pdf integrates to 1."""
