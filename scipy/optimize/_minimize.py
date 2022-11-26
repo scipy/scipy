@@ -615,6 +615,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             options.setdefault('gtol', tol)
             options.setdefault('barrier_tol', tol)
 
+    if callback is not None:
+        callback = _wrap_callback(callback)
+        callback.stop_iteration = False
+
     if meth == '_custom':
         # custom method called before bounds and constraints are 'standardised'
         # custom method should be able to accept whatever bounds/constraints
@@ -729,7 +733,17 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         if "hess_inv" in res:
             res.hess_inv = None  # unknown
 
+    if callback is not None and callback.stop_iteration:
+        res.success = False
+        res.status = 5
+        res.message = "`callback` raised `StopIteration`."
+
     return res
+
+
+def _wrap_callback(callback):
+    # Wraps the callback function so we can attach attributes to it
+    return lambda *args, **kwargs: callback(*args, **kwargs)
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),

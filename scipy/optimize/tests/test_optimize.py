@@ -30,6 +30,11 @@ from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy.optimize._optimize import MemoizeJac, show_options
 
 
+_all_minimize_methods = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newtoncg',
+                         'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
+                         'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
+
+
 def test_check_grad():
     # Verify if check_grad is able to estimate the derivative of the
     # expit (logistic sigmoid) function.
@@ -1483,6 +1488,49 @@ class TestOptimizeSimple(CheckOptimize):
             if np.array_equal(self.trace[i - 1], self.trace[i]):
                 raise RuntimeError(
                     "Duplicate evaluations made by {}".format(method))
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs',
+                                        'newton-cg'])
+    def test_callback_stopiteration(self, method):
+        # Check that if callback raises StopIteration, optimization
+        # terminates with the same result as if iterations were limited
+
+        def f(x):
+            f.flag = False  # check that f isn't called after StopIteration
+            return optimize.rosen(x)
+        f.flag = False
+
+        def g(x):
+            f.flag = False
+            return optimize.rosen_der(x)
+
+        def h(x):
+            f.flag = False
+            return optimize.rosen_hess(x)
+
+        maxiter = 5
+
+        def callback(xk):
+            callback.i += 1
+            callback.flag = False
+            if callback.i == maxiter:
+                callback.flag = True
+                raise StopIteration()
+        callback.i = 0
+        callback.flag = False
+
+        kwargs = {'x0': [1, 10, 100, 1000, 10000], 'method': method,
+                  'fun': f, 'jac': g, 'hess': h}
+
+        res = optimize.minimize(**kwargs, callback=callback)
+        if method == 'nelder-mead':
+            maxiter = maxiter + 1  # nelder-mead counts differently
+        ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+        assert res.fun == ref.fun
+        assert_equal(res.x, ref.x)
+        assert res.nit == ref.nit == maxiter
+        assert res.status == 5
 
 
 @pytest.mark.parametrize(
