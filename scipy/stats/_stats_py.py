@@ -7808,7 +7808,8 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
                     jrange = np.arange(h)
                     prob = np.prod((n1 - jrange) / (n1 + jrange + 1.0))
                 else:
-                    num_paths = _count_paths_outside_method(n1, n2, g, h)
+                    with np.errstate(over='raise'):
+                        num_paths = _count_paths_outside_method(n1, n2, g, h)
                     bin = special.binom(n1 + n2, n1)
                     if num_paths > bin or np.isinf(bin):
                         saw_fp_error = True
