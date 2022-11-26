@@ -58,18 +58,19 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
             - 'best1bin'
             - 'best1exp'
+            - 'rand1bin'
             - 'rand1exp'
-            - 'randtobest1exp'
-            - 'currenttobest1exp'
-            - 'best2exp'
+            - 'rand2bin'
             - 'rand2exp'
             - 'randtobest1bin'
+            - 'randtobest1exp'
             - 'currenttobest1bin'
+            - 'currenttobest1exp'
+            - 'best2exp'
             - 'best2bin'
-            - 'rand2bin'
-            - 'rand1bin'
 
-        The default is 'best1bin'.
+        The default is 'best1bin'. Strategies that may be
+        implemented are outlined in 'Notes'
     maxiter : int, optional
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
@@ -273,6 +274,54 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     values, with higher `mutation` and (dithering), but lower `recombination`
     values. This has the effect of widening the search radius, but slowing
     convergence.
+
+    An outline of the strategies and their strengths and weaknesses is given by 
+    Qiang and Mitchell (2014) [3]_
+
+    .. math::
+            rand1* : b' = x_{r_1} + mutation *(b_{r_2} − b_{r_3})
+
+            rand2* : b' = x_{r_1} + mutation * (b_{r_2} − b_{r_3}) 
+                                    + mutation * (b_{r_4} − b_{r_5})
+
+            best1* : b' = b_0 + mutation * (b_{r_1} − b_{r_2})
+
+            best2* : b' = b_0 + mutation * (b_{r_1} − b_{r_2})
+                                    + mutation * (b_{r_3 − b_{r_4})
+
+            currenttobest1* : b' = b_i + recombination * (b_0 − b_i)
+                                    + mutation * (b_{r_1} − b_{r_2})
+
+            randtobest1* : b' = b_{r_1} + recombination * (b_0 − b_i)
+                                    + mutation * (b_{r_2} − b_{r_3})
+
+
+    where the integers :math:`r_1, r_2, r_3, r_4, r_5` are chosen randomly 
+    from the interval [1, NP] and are different from the
+    current index i, :math:`mutation` is a real scaling factor that controls
+    the amplification of the differential variation, :math:`b_0` is the best
+    solution among the NP population members at the generation
+    G, and :math:`recombination` is a weight for the combination between the
+    original target vector and the best parent vector or the random
+    parent vector. The strategy rand1 is the most widely used
+    mutation strategy proposed in the original paper of Storn and
+    Price. It has stronger exploration capability but may converge
+    more slowly than the strategies that use the best solution
+    from the parent generation. The strategy rand2 uses two
+    difference vectors and may result in better perturbation than
+    the strategies that use one difference vector. The strategies
+    best1 and best2 take advantage of the best solution
+    found in the parent population and have a faster convergence
+    towards the optimal solution. However, they may become
+    stuck at a local minimum point during multimodal function 
+    optimization. The currenttobest1 strategy provides a 
+    compromise between exploitation of the best solution and 
+    exploration of the parameter space. The randtobest 
+    strategies are similar to the currenttobest strategies, 
+    but a larger diversity of the mutant vector is attained by
+    using a randomly selected parent vector instead of the current
+    target parent vector.
+
     By default the best solution vector is updated continuously within a single
     iteration (``updating='immediate'``). This is a modification [4]_ of the
     original differential evolution algorithm which can lead to faster
@@ -294,6 +343,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     iteration, rather than multiple times for all the population members; the
     interpreter overhead is reduced.
 
+
     .. versionadded:: 0.15.0
 
     References
@@ -303,7 +353,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     .. [2] Storn, R and Price, K, Differential Evolution - a Simple and
            Efficient Heuristic for Global Optimization over Continuous Spaces,
            Journal of Global Optimization, 1997, 11, 341 - 359.
-    .. [3] http://www1.icsi.berkeley.edu/~storn/code.html
+    .. [3] Qiang, J., Mitchell, C., A Unified Differential Evolution Algorithm
+            for Global Optimization, 2014, https://www.osti.gov/servlets/purl/1163659
     .. [4] Wormington, M., Panaccione, C., Matney, K. M., Bowen, D. K., -
            Characterization of structures from X-ray scattering data using
            genetic algorithms, Phil. Trans. R. Soc. Lond. A, 1999, 357,
@@ -314,6 +365,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
            2002.
     .. [6] https://mpi4py.readthedocs.io/en/stable/
     .. [7] https://schwimmbad.readthedocs.io/en/latest/
+ 
 
     Examples
     --------
