@@ -94,7 +94,6 @@ def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
         The axis of the real transform.
     output : ndarray, optional
         If given, the result of filtering the input is placed in this array.
-        None is returned in this case.
 
     Returns
     -------
@@ -153,7 +152,6 @@ def fourier_uniform(input, size, n=-1, axis=-1, output=None):
         The axis of the real transform.
     output : ndarray, optional
         If given, the result of filtering the input is placed in this array.
-        None is returned in this case.
 
     Returns
     -------
@@ -190,7 +188,7 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
     """
     Multidimensional ellipsoid Fourier filter.
 
-    The array is multiplied with the fourier transform of a ellipsoid of
+    The array is multiplied with the fourier transform of an ellipsoid of
     given sizes.
 
     Parameters
@@ -211,7 +209,6 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
         The axis of the real transform.
     output : ndarray, optional
         If given, the result of filtering the input is placed in this array.
-        None is returned in this case.
 
     Returns
     -------
@@ -278,7 +275,6 @@ def fourier_shift(input, shift, n=-1, axis=-1, output=None):
         The axis of the real transform.
     output : ndarray, optional
         If given, the result of shifting the input is placed in this array.
-        None is returned in this case.
 
     Returns
     -------
