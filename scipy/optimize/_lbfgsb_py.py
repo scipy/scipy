@@ -36,7 +36,7 @@ Functions
 import numpy as np
 from numpy import array, asarray, float64, zeros
 from . import _lbfgsb
-from ._optimize import (MemoizeJac, OptimizeResult,
+from ._optimize import (MemoizeJac, OptimizeResult, _call_callback,
                        _check_unknown_options, _prepare_scalar_function)
 from ._constraints import old_bound_to_new
 
@@ -362,13 +362,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         elif task_str.startswith(b'NEW_X'):
             # new iteration
             n_iterations += 1
-            if callback is not None:
-                try:
-                    callback(x)
-                except StopIteration:
-                    callback.stop_iteration = True
-                    break
 
+            if _call_callback(callback, x):
+                task[:] = 'STOP: CALLBACK SAYS SO!'
             if n_iterations >= maxiter:
                 task[:] = 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'
             elif sf.nfev > maxfun:

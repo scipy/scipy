@@ -431,7 +431,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             if callback is not None:
                 callback_stop = False
                 try:
-                    callback_stop = callback(np.copy(state.x), state)
+                    callback_stop = callback(state.x, state)
                 except StopIteration:
                     callback_stop = True
                 if callback_stop:

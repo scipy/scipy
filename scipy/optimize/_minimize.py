@@ -18,7 +18,8 @@ import numpy as np
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                         _minimize_bfgs, _minimize_newtoncg,
                         _minimize_scalar_brent, _minimize_scalar_bounded,
-                        _minimize_scalar_golden, MemoizeJac, OptimizeResult)
+                        _minimize_scalar_golden, MemoizeJac, OptimizeResult,
+                        _wrap_callback)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov
@@ -199,13 +200,16 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         where ``xk`` is the current parameter vector. and ``state``
         is an `OptimizeResult` object, with the same fields
-        as the ones from the return. If callback returns True
-        the algorithm execution is terminated.
+        as the ones from the return.
+
         For all the other methods, the signature is:
 
             ``callback(xk)``
 
         where ``xk`` is the current parameter vector.
+
+        For all methods except TNC, SLSQP, and COBYLA, the minimization
+        algorithm will terminate if the callback raises `StopIteration`.
 
     Returns
     -------
@@ -741,11 +745,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         res.message = "`callback` raised `StopIteration`."
 
     return res
-
-
-def _wrap_callback(callback):
-    # Wraps the callback function so we can attach attributes to it
-    return lambda x, *args: callback(np.copy(x), *args)
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),

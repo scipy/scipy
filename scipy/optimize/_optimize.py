@@ -131,6 +131,38 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
     return s
 
 
+def _wrap_callback(callback):
+    """Wraps a user-provided callback so that attributes can be attached"""
+    return lambda x, *args: callback(np.copy(x), *args)
+
+
+def _call_callback(callback, x):
+    """Calls wrapped callback; returns True if minimization should stop
+
+    Parameters
+    ----------
+    callback : callable
+        A user-provided callback wrapped with `_wrap_callback`
+    x : ndarray
+        The current solution vector
+
+    Returns
+    -------
+    halt : bool
+        True if minimization should stop
+
+    """
+
+    if callback is None:
+        return False
+    try:
+        callback(x)
+        return False
+    except StopIteration:
+        callback.stop_iteration = True  # make `minimize` override status/msg
+        return True
+
+
 class OptimizeResult(dict):
     """ Represents the optimization result.
 
@@ -928,12 +960,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             fsim = np.take(fsim, ind, 0)
             if retall:
                 allvecs.append(sim[0])
-            if callback is not None:
-                try:
-                    callback(sim[0])
-                except StopIteration:
-                    callback.stop_iteration = True
-                    break
+            if _call_callback(callback, sim[0]):
+                break
 
     x = sim[0]
     fval = np.min(fsim)
@@ -1408,12 +1436,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         yk = gfkp1 - gfk
         gfk = gfkp1
         k += 1
-        if callback is not None:
-            try:
-                callback(xk)
-            except StopIteration:
-                callback.stop_iteration = True
-                break
+        if _call_callback(callback, xk):
+            break
         gnorm = vecnorm(gfk, ord=norm)
         if (gnorm <= gtol):
             break
@@ -1764,12 +1788,8 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         if retall:
             allvecs.append(xk)
         k += 1
-        if callback is not None:
-            try:
-                callback(xk)
-            except StopIteration:
-                callback.stop_iteration = True
-                break
+        if _call_callback(callback, xk):
+            break
 
     fval = old_fval
     if warnflag == 2:
@@ -2080,12 +2100,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         if retall:
             allvecs.append(xk)
         k += 1
-        if callback is not None:
-            try:
-                callback(xk)
-            except StopIteration:
-                callback.stop_iteration = True
-                return terminate(5, "")
+        if _call_callback(callback, xk):
+            return terminate(5, "")
+
     else:
         if np.isnan(old_fval) or np.isnan(update).any():
             return terminate(3, _status_message['nan'])
@@ -3358,12 +3375,8 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             iter += 1
             if retall:
                 allvecs.append(x)
-            if callback is not None:
-                try:
-                    callback(x)
-                except StopIteration:
-                    callback.stop_iteration = True
-                    break
+            if _call_callback(callback, x):
+                break
             bnd = ftol * (np.abs(fx) + np.abs(fval)) + 1e-20
             if 2.0 * (fx - fval) <= bnd:
                 break
