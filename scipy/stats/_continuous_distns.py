@@ -10336,41 +10336,46 @@ class relativistic_bw_gen(rv_continuous):
         return [_ShapeInfo("rho", False, (0, np.inf), (False, False))]
 
     def _pdf(self, x, rho):
-        k = (
-            2 * np.sqrt(2) * rho**2 * np.sqrt(rho**2 + 1)
-            / (np.pi * np.sqrt(rho**2 + rho * np.sqrt(rho**2 + 1)))
-        )
-        return k / ((x**2 - rho**2)**2 + rho**2)
+        k = np.sqrt(
+            2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
+        ) * 2  / np.pi
+        return k / (((x**2 - rho**2)/rho)**2 + 1)
 
     def _cdf(self, x, rho):
         # Factor of 1/(2*rho) has been absorbed into the constant.
-        k = (
-            np.sqrt(2) * rho * np.sqrt(rho**2 + 1)
-            / (np.pi * np.sqrt(rho**2 + rho * np.sqrt(rho**2 + 1)))
+        k = np.sqrt(
+                2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
+            ) / np.pi
+        result =  np.arctan(x/np.sqrt(-rho*(rho + 1j))) / np.sqrt(-1 - 1j/rho)
+        # For real entries of x, one can take advantage of the quantity to be
+        # subtracted being the complex conjugate of the first. This is not the
+        # case for complex entries of x with nonzero imaginary part.
+        result -= _lazywhere(
+            np.iscomplex(x),
+            (x, result),
+            lambda x_, result_: np.arctan(x/np.sqrt(-rho*(rho - 1j))) /
+            np.sqrt(-1 + 1j/rho),
+            f2=lambda x_, result_: result.conjugate(),
         )
-        result =  np.arctan(x/np.sqrt(-rho*(rho + 1j)))/np.sqrt(-rho*(rho + 1j))
-        result -=  np.arctan(x/np.sqrt(-rho*(rho - 1j)))/np.sqrt(-rho*(rho - 1j))
         result = - k * 1j * result
-        return result.real
+        return result if np.iscomplexobj(x) else np.real(result)
 
     def _munp(self, n, rho):
         if n == 1:
             # Factor of 1/(2*rho) has been absorbed into the constant.
-            k = (
-                np.sqrt(2) * rho * np.sqrt(rho**2 + 1)
-                / (np.pi * np.sqrt(rho**2 + rho * np.sqrt(rho**2 + 1)))
-            )
+            k = np.sqrt(
+                2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
+            ) / np.pi * rho
             return k * (np.pi/2 + np.arctan(rho))
         if n == 2:
             # Factor of pi/4 has been absorbed into the constant.
-            k = (
-                np.sqrt(2) * rho**2 * np.sqrt(rho**2 + 1)
-                / (2 * np.sqrt(rho**2 + rho * np.sqrt(rho**2 + 1)))
-            )
-            result = (1 - rho * 1j) / np.sqrt(-rho*(rho + 1j))
-            result += (1 + rho * 1j) / np.sqrt(-rho*(rho - 1j))
+            k = np.sqrt(
+                (1 + 1/rho**2) / (2 * (1 + np.sqrt(1 + 1/rho**2)))
+            ) * rho
+            result = (1 - rho * 1j) / np.sqrt(-1 - 1j/rho)
+            result += result.conjugate()
             result = k * result
-            return result.real
+            return np.real(result)
         else:
             return np.inf
 
