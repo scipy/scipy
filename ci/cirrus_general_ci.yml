@@ -70,9 +70,8 @@ musllinux_amd64_test_task:
     python dev.py build
 
   test_script: |
-    # Don't run the ndimage tests because there's a segfault (gh17270)
     set -xe -o
-    python dev.py test -- --ignore=scipy/ndimage/tests
+    python dev.py test
 
 
 macos_arm64_test_task:

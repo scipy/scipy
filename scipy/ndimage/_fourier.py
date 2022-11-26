@@ -241,6 +241,10 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
     if input.ndim > 3:
         raise NotImplementedError("Only 1d, 2d and 3d inputs are supported")
     output = _get_output_fourier(output, input)
+    if output.size == 0:
+        # The C code has a bug that can result in a segfault with arrays
+        # that have size 0 (gh-17270), so check here.
+        return output
     axis = normalize_axis_index(axis, input.ndim)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
     sizes = numpy.asarray(sizes, dtype=numpy.float64)
