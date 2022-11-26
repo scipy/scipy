@@ -689,10 +689,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                                                        remove=1)
         bounds = standardize_bounds(bounds, x0, meth)
 
-    _wrappable_cb = (callback is not None
-                     and meth not in {'tnc', 'slsqp', 'cobyla'})
-    if _wrappable_cb:
-        callback = _wrap_callback(callback)
+    callback = _wrap_callback(callback, meth)
+    if callback is not None:
         callback.stop_iteration = False
 
     if meth == 'nelder-mead':
@@ -744,7 +742,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         if "hess_inv" in res:
             res.hess_inv = None  # unknown
 
-    if _wrappable_cb and callback.stop_iteration:
+    if getattr(callback, 'stop_iteration', False):
         res.success = False
         res.status = 5
         res.message = "`callback` raised `StopIteration`."

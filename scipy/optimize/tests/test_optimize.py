@@ -1198,6 +1198,7 @@ class TestOptimizeSimple(CheckOptimize):
         results = []
 
         def callback(x, *args, **kwargs):
+            assert not isinstance(x, optimize.OptimizeResult)
             results.append((x, np.copy(x)))
 
         routine(func, x0, callback=callback, **kwargs)
@@ -1511,7 +1512,7 @@ class TestOptimizeSimple(CheckOptimize):
             def callback_interface(xk, *args):
                 callback()
         else:
-            def callback_interface(*, res_i):
+            def callback_interface(*, res_i):  # type: ignore[misc]
                 assert res_i.fun == f(res_i.x)
                 callback()
 

@@ -37,7 +37,8 @@ import numpy as np
 from numpy import array, asarray, float64, zeros
 from . import _lbfgsb
 from ._optimize import (MemoizeJac, OptimizeResult, _call_callback,
-                       _check_unknown_options, _prepare_scalar_function)
+                        _wrap_callback, _check_unknown_options,
+                        _prepare_scalar_function)
 from ._constraints import old_bound_to_new
 
 from scipy.sparse.linalg import LinearOperator
@@ -183,6 +184,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         jac = fprime
 
     # build options
+    callback = _wrap_callback(callback)
     opts = {'disp': disp,
             'iprint': iprint,
             'maxcor': m,
@@ -193,8 +195,6 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             'maxiter': maxiter,
             'callback': callback,
             'maxls': maxls}
-    if callback is not None:
-        opts['callback'] = lambda x: callback(np.copy(x))
 
     res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
                            **opts)
