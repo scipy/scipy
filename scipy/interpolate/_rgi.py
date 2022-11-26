@@ -243,18 +243,6 @@ class RegularGridInterpolator:
         if self._descending_dimensions:
             self.values = np.flip(values, axis=self._descending_dimensions)
 
-    def _check_dimensionality(self, points, values):
-        if len(points) > values.ndim:
-            raise ValueError("There are %d point arrays, but values has %d "
-                             "dimensions" % (len(points), values.ndim))
-        for i, p in enumerate(points):
-            if not np.asarray(p).ndim == 1:
-                raise ValueError("The points in dimension %d must be "
-                                 "1-dimensional" % i)
-            if not values.shape[i] == len(p):
-                raise ValueError("There are %d points and %d values in "
-                                 "dimension %d" % (len(p), values.shape[i], i))
-
     def _check_values(self, values):
         if not hasattr(values, 'ndim'):
             # allow reasonable duck-typed values
