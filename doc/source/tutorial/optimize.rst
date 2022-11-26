@@ -918,20 +918,6 @@ The table below compares the characteristics of all :func:`minimize` optimizatio
      -
      -
      -
-   * - References
-     -
-     -
-     -
-     -
-     -
-     -
-     -
-     -
-     -
-     -
-     -
-     -
-     -
 
 .. list-table:: Optimization methods from :mod:`minimize`
    :widths: 5 35
