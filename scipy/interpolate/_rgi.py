@@ -238,10 +238,16 @@ class RegularGridInterpolator:
         self.bounds_error = bounds_error
         self.grid, self._descending_dimensions = _check_points(points)
         self.values = self._check_values(values)
-        _check_dimensionality(self.grid, self.values)
+        self._check_dimensionality(self.grid, self.values)
         self.fill_value = self._check_fill_value(self.values, fill_value)
         if self._descending_dimensions:
             self.values = np.flip(values, axis=self._descending_dimensions)
+
+    def _check_dimensionality(self, grid, values):
+        _check_dimensionality(grid, values)
+
+    def _check_points(self, points):
+        return _check_points(points)
 
     def _check_values(self, values):
         if not hasattr(values, 'ndim'):
