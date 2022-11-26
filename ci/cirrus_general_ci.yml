@@ -63,6 +63,9 @@ musllinux_amd64_test_task:
       python -m pip install meson ninja pybind11 pythran pytest
       python -m pip install click rich_click doit pydevtool pooch
 
+      # pin setuptools to get around https://github.com/scipy/scipy/issues/17475
+      python -m pip install "setuptools<65.6.0"
+
   build_script: |
     python dev.py build
 
