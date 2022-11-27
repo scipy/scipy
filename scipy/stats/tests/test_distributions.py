@@ -7550,36 +7550,59 @@ def test_moment_order_4():
 
 
 class TestRelativisticBW:
-    rho = 36.545206797050334
-
-    def test_pdf_integration(self):
+    @pytest.mark.parametrize(
+        "rho,gamma", [
+            (36.545206797050334, 2.4952),  # Z0 Boson
+            (38.55107913669065, 2.085),  # W Boson,
+        ]
+    )
+    def test_pdf_integration(self, rho, gamma):
         """Test pdf integrates to 1."""
-
-        res = quad(stats.relativistic_bw.pdf, 0, np.inf, args=(self.rho,))
+        res = quad(stats.relativistic_bw.pdf, 0, np.inf, args=(rho, 0, gamma))
         assert_allclose(res[0], 1)
 
-    def test_pdf_against_cdf(self):
+    @pytest.mark.parametrize(
+        "rho,gamma", [
+            (36.545206797050334, 2.4952),  # Z0 Boson
+            (38.55107913669065, 2.085),  # W Boson
+            (96292.3076923077, 0.0013),  # Higgs Boson
+        ]
+    )
+    def test_pdf_against_cdf(self, rho, gamma):
         """Test whether the integrated PDF matches the CDF."""
         x = np.arange(0, 100, step=0.01)
-        y_pdf_raw = stats.relativistic_bw.pdf(x, self.rho)
-        y_cdf = stats.relativistic_bw.cdf(x, self.rho)[1:]
+        y_pdf_raw = stats.relativistic_bw.pdf(x, rho, scale=gamma)
+        y_cdf = stats.relativistic_bw.cdf(x, rho, scale=gamma)[1:]
         y_pdf_cumulative = cumulative_trapezoid(y_pdf_raw, x)
         assert_allclose(y_pdf_cumulative, y_cdf, rtol=1e-4)
 
+    @pytest.mark.parametrize(
+        "rho,gamma", [
+            (36.545206797050334, 2.4952),  # Z0 Boson
+            (38.55107913669065, 2.085),  # W Boson
+        ]
+    )
     @pytest.mark.parametrize("n", [1, 2])
-    def test_moments(self, n):
-        observed = stats.relativistic_bw.moment(n, self.rho)
+    def test_moments(self, n, rho, gamma):
+        observed = stats.relativistic_bw.moment(n, rho, 0, gamma)
         def integrand(x):
-            return x**n * stats.relativistic_bw.pdf(x, self.rho)
+            return x**n * stats.relativistic_bw.pdf(x, rho, scale=gamma)
         expected = quad(integrand, 0, np.inf)[0]
         assert_allclose(observed, expected)
 
-    @pytest.mark.slow
-    def test_fit(self):
+    @pytest.mark.parametrize(
+        "rho,gamma", [
+            (36.545206797050334, 2.4952),  # Z0 Boson
+            (38.55107913669065, 2.085),  # W Boson
+            (96292.3076923077, 0.0013),  # Higgs Boson
+        ]
+    )
+    @pytest.mark.xslow
+    def test_fit(self, rho, gamma):
         seed = abs(hash("relativistic_bw"))
         rng = np.random.default_rng(seed)
         data = stats.relativistic_bw.rvs(
-            self.rho, loc=0, scale=2.495, size=2000, random_state=rng
+            rho, scale=gamma, size=5000, random_state=rng
         )
         fit = stats.relativistic_bw.fit(data, floc=0)
-        assert_allclose(fit, (self.rho, 0, 2.465), rtol=1e-1)
+        assert_allclose(fit, (rho, 0, gamma), rtol=1e-1)
