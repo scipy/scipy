@@ -245,7 +245,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
 
     Since the singular values are not close to each other in this example,
-    every singular vector matchs as expected up to a difference in sign.
+    every singular vector matches as expected up to a difference in sign.
 
     >>> (np.allclose(np.abs(u5), np.abs(u)) and
     ...  np.allclose(np.abs(vT5), np.abs(vT)))
@@ -284,7 +284,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     ...  s_a(vT2[1:, :].T, vT[1:, :].T)) > 1e-3
     True
 
-    As opposed to the angles between the 2-dimentional invariant subspaces
+    As opposed to the angles between the 2-dimensional invariant subspaces
     that these vectors span, which are small for rights singular vectors
 
     >>> s_a(u2, u).sum() < 1e-6
@@ -306,7 +306,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     [ 4.3293...  4.4491...  4.5420...  4.5987... 35.2410...]
 
     The function can be called without the transpose of the input matrix
-    ever explicitely constructed.
+    ever explicitly constructed.
 
     >>> from scipy.linalg import svd
     >>> from scipy.sparse import rand
@@ -338,7 +338,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
      [ 0  0 -1  1  0]
      [ 0  0  0 -1  1]]
 
-    The matrix 'M_from_diff0' is bi-diagonasl and could be alternatively
+    The matrix 'M_from_diff0' is bi-diagonal and could be alternatively
     created directly by
 
     >>> M = - np.eye(n - 1, n, dtype=int)
