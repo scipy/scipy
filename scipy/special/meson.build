@@ -417,7 +417,6 @@ py3.extension_module('_test_round',
   cython_gen.process('_test_round.pyx'),
   include_directories: [inc_np, 'cephes', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [npymath_lib],
   install: true,
   subdir: 'scipy/special'
 )

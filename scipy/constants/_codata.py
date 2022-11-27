@@ -1577,7 +1577,7 @@ def value(key: str) -> float:
 
     Parameters
     ----------
-    key : Python string or unicode
+    key : Python string
         Key in dictionary `physical_constants`
 
     Returns
@@ -1588,7 +1588,7 @@ def value(key: str) -> float:
     Examples
     --------
     >>> from scipy import constants
-    >>> constants.value(u'elementary charge')
+    >>> constants.value('elementary charge')
     1.602176634e-19
 
     """
@@ -1602,7 +1602,7 @@ def unit(key: str) -> str:
 
     Parameters
     ----------
-    key : Python string or unicode
+    key : Python string
         Key in dictionary `physical_constants`
 
     Returns
@@ -1613,7 +1613,7 @@ def unit(key: str) -> str:
     Examples
     --------
     >>> from scipy import constants
-    >>> constants.unit(u'proton mass')
+    >>> constants.unit('proton mass')
     'kg'
 
     """
@@ -1627,7 +1627,7 @@ def precision(key: str) -> float:
 
     Parameters
     ----------
-    key : Python string or unicode
+    key : Python string
         Key in dictionary `physical_constants`
 
     Returns
@@ -1638,7 +1638,7 @@ def precision(key: str) -> float:
     Examples
     --------
     >>> from scipy import constants
-    >>> constants.precision(u'proton mass')
+    >>> constants.precision('proton mass')
     5.1e-37
 
     """
@@ -1652,7 +1652,7 @@ def find(sub: str | None = None, disp: bool = False) -> Any:
 
     Parameters
     ----------
-    sub : str, unicode
+    sub : str
         Sub-string to search keys for. By default, return all keys.
     disp : bool
         If True, print the keys that are found and return None.

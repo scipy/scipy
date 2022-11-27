@@ -347,8 +347,6 @@ def jacobi(n, alpha, beta, monic=False):
     different values of :math:`\alpha`:
 
     >>> import matplotlib.pyplot as plt
-    >>> import numpy as np
-    >>> from scipy.special import jacobi
     >>> x = np.arange(-1.0, 1.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-2.0, 2.0)
@@ -627,7 +625,6 @@ def genlaguerre(n, alpha, monic=False):
     :math:`L_3^{(\alpha)}` for some values of :math:`\alpha`:
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import genlaguerre
     >>> x = np.arange(-4.0, 12.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-5.0, 10.0)
@@ -761,7 +758,6 @@ def laguerre(n, monic=False):
 
     This can be easily checked on :math:`[0, 1]` for :math:`n = 3`:
 
-    >>> from scipy.special import laguerre
     >>> x = np.arange(0.0, 1.0, 0.01)
     >>> np.allclose(4 * laguerre(4)(x),
     ...             (7 - x) * laguerre(3)(x) - 3 * laguerre(2)(x))
@@ -770,7 +766,6 @@ def laguerre(n, monic=False):
     This is the plot of the first few Laguerre polynomials :math:`L_n`:
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import laguerre
     >>> x = np.arange(-1.0, 5.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-5.0, 5.0)
@@ -1723,7 +1718,6 @@ def chebyt(n, monic=False):
     Let's verify it for :math:`n = 3`:
 
     >>> from scipy.special import binom
-    >>> from scipy.special import chebyt
     >>> from scipy.special import jacobi
     >>> x = np.arange(-1.0, 1.0, 0.01)
     >>> np.allclose(jacobi(3, -0.5, -0.5)(x),
@@ -1733,8 +1727,6 @@ def chebyt(n, monic=False):
     We can plot the Chebyshev polynomials :math:`T_n` for some values
     of :math:`n`:
 
-    >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import chebyt
     >>> x = np.arange(-1.5, 1.5, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-4.0, 4.0)
@@ -1887,7 +1879,6 @@ def chebyu(n, monic=False):
     Let's verify it for :math:`n = 2`:
 
     >>> from scipy.special import chebyt
-    >>> from scipy.special import chebyu
     >>> x = np.arange(-1.0, 1.0, 0.01)
     >>> np.allclose(chebyu(3)(x), 2 * chebyt(2)(x) * chebyu(1)(x))
     True
@@ -1895,8 +1886,6 @@ def chebyu(n, monic=False):
     We can plot the Chebyshev polynomials :math:`U_n` for some values
     of :math:`n`:
 
-    >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import chebyu
     >>> x = np.arange(-1.0, 1.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-1.5, 1.5)
