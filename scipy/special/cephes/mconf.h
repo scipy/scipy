@@ -105,6 +105,5 @@
 /* Constants needed that are not available in the C standard library */
 #define SCIPY_EULER     0.577215664901532860606512090082402431   /* Euler constant */
 #define SCIPY_El        2.718281828459045235360287471352662498L  /* e as long double */
-#define SCIPY_LOGE2     0.693147180559945309417232121458176568   /* log_e 2 */
 
 #endif				/* CEPHES_MCONF_H */
