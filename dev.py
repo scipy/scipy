@@ -7,7 +7,7 @@ This file contains tasks definitions for doit (https://pydoit.org).
 And also a CLI interface using click (https://click.palletsprojects.com).
 
 The CLI is ideal for project contributors while,
-doit interface is better suited for authring the development tasks.
+doit interface is better suited for authoring the development tasks.
 
 REQUIREMENTS:
 --------------
@@ -183,7 +183,7 @@ rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "static checkers",
-            "commands": ["lint", "mypy"],
+            "commands": ["lint", "flake8", "mypy"],
         },
         {
             "name": "environments",
@@ -233,8 +233,8 @@ CONTEXT = UnifiedContext({
         help=':wrench: Relative path to the build directory.'),
     'no_build': Option(
         ["--no-build", "-n"], default=False, is_flag=True,
-        help=(":wrench: do not build the project"
-              " (note event python only modification require build)")),
+        help=(":wrench: Do not build the project"
+              " (note event python only modification require build).")),
     'install_prefix': Option(
         ['--install-prefix'], default=None, metavar='INSTALL_DIR',
         help=(":wrench: Relative path to the install directory."
@@ -371,7 +371,7 @@ def get_test_runner(project_module):
 
 @cli.cls_cmd('build')
 class Build(Task):
-    """:wrench: build & install package on path
+    """:wrench: Build & install package on path.
 
     \b
     ```python
@@ -621,7 +621,7 @@ class Build(Task):
 
 @cli.cls_cmd('test')
 class Test(Task):
-    """:wrench: Run tests
+    """:wrench: Run tests.
 
     \b
     ```python
@@ -730,7 +730,7 @@ class Test(Task):
 
 @cli.cls_cmd('bench')
 class Bench(Task):
-    """:wrench: Run benchmarks
+    """:wrench: Run benchmarks.
 
     \b
     ```python
@@ -880,13 +880,13 @@ def task_pep8diff():
     return {
         'basename': 'pep8-diff',
         'actions': [str(Dirs().root / 'tools' / 'lint_diff.py')],
-        'doc': 'Lint only files modified since last commit (stricker rules)',
+        'doc': 'Lint only files modified since last commit (stricter rules)',
     }
 
 
 @cli.cls_cmd('lint')
 class Lint():
-    """:dash: run flake8, and check PEP 8 compliance on branch diff."""
+    """:dash: Run flake8, and check PEP 8 compliance on branch diff."""
     output_file = Option(
         ['--output-file'], default=None, help='Redirect report to a file')
 
@@ -897,7 +897,7 @@ class Lint():
 
 @cli.cls_cmd('mypy')
 class Mypy(Task):
-    """:wrench: Run mypy on the codebase"""
+    """:wrench: Run mypy on the codebase."""
     ctx = CONTEXT
 
     TASK_META = {
@@ -943,7 +943,7 @@ class Mypy(Task):
 
 @cli.cls_cmd('doc')
 class Doc(Task):
-    """:wrench: Build documentation
+    """:wrench: Build documentation.
 
 TARGETS: Sphinx build targets [default: 'html']
 
@@ -991,7 +991,7 @@ TARGETS: Sphinx build targets [default: 'html']
 
 @cli.cls_cmd('refguide-check')
 class RefguideCheck(Task):
-    """:wrench: Run refguide check"""
+    """:wrench: Run refguide check."""
     ctx = CONTEXT
 
     submodule = Option(
@@ -1027,7 +1027,7 @@ class RefguideCheck(Task):
 
 @cli.cls_cmd('python')
 class Python():
-    """:wrench: Start a Python shell with PYTHONPATH set"""
+    """:wrench: Start a Python shell with PYTHONPATH set."""
     ctx = CONTEXT
     pythonpath = Option(
         ['--pythonpath', '-p'], metavar='PYTHONPATH', default=None,
@@ -1063,7 +1063,7 @@ class Python():
 
 @cli.cls_cmd('ipython')
 class Ipython(Python):
-    """:wrench: Start IPython shell with PYTHONPATH set"""
+    """:wrench: Start IPython shell with PYTHONPATH set."""
     ctx = CONTEXT
     pythonpath = Python.pythonpath
 
@@ -1076,7 +1076,7 @@ class Ipython(Python):
 
 @cli.cls_cmd('shell')
 class Shell(Python):
-    """:wrench: Start Unix shell with PYTHONPATH set"""
+    """:wrench: Start Unix shell with PYTHONPATH set."""
     ctx = CONTEXT
     pythonpath = Python.pythonpath
     extra_argv = Python.extra_argv
@@ -1094,7 +1094,7 @@ class Shell(Python):
 @click.argument('version_args', nargs=2)
 @click.pass_obj
 def notes(ctx_obj, version_args):
-    """:ledger: Release notes and log generation
+    """:ledger: Release notes and log generation.
 
     \b
     ```python
@@ -1119,7 +1119,8 @@ def notes(ctx_obj, version_args):
 @click.argument('revision_args', nargs=2)
 @click.pass_obj
 def authors(ctx_obj, revision_args):
-    """:ledger: Generate list of authors who contributed within revision interval
+    """:ledger: Generate list of authors who contributed within revision
+    interval.
 
     \b
     ```python
