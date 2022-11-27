@@ -283,14 +283,10 @@ scipy_signal__sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * ar
                 goto fail;
             }
             /* Give our reference to arVi to arVi_view */
-#if NPY_API_VERSION >= 0x00000007
             if (PyArray_SetBaseObject(arVi_view, (PyObject *)arVi) == -1) {
                 Py_DECREF(arVi_view);
                 goto fail;
             }
-#else
-            PyArray_BASE(arVi_view) = arVi;
-#endif
             arVi = arVi_view;
         }
 
