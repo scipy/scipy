@@ -1188,7 +1188,7 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0, callback=None):
+              retall=0, callback=None, xrtol=0):
     """
     Minimize a function using the BFGS algorithm.
 
@@ -1203,7 +1203,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     args : tuple, optional
         Extra arguments passed to f and fprime.
     gtol : float, optional
-        Gradient norm must be less than `gtol` before successful termination.
+        Terminate successfully if gradient norm is less than `gtol`
     norm : float, optional
         Order of norm (Inf is max, -Inf is min)
     epsilon : int or ndarray, optional
@@ -1221,6 +1221,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         Print convergence message if True.
     retall : bool, optional
         Return a list of results at each iteration if True.
+    xrtol : float, default: 0
+        Relative tolerance for `x`. Terminate successfully if step
+        size is less than ``xk * xrtol`` where ``xk`` is the current
+        parameter vector.
 
     Returns
     -------
@@ -1314,7 +1318,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
-                   **unknown_options):
+                   xrtol=0, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1326,8 +1330,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     maxiter : int
         Maximum number of iterations to perform.
     gtol : float
-        Gradient norm must be less than `gtol` before successful
-        termination.
+        Terminate successfully if gradient norm is less than `gtol`.
     norm : float
         Order of norm (Inf is max, -Inf is min).
     eps : float or ndarray
@@ -1343,7 +1346,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
-
+    xrtol : float, default: 0
+        Relative tolerance for `x`. Terminate successfully if step size is
+        less than ``xk * xrtol`` where ``xk`` is the current parameter vector.
     """
     _check_unknown_options(unknown_options)
     retall = return_all
@@ -1387,10 +1392,11 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             warnflag = 2
             break
 
-        xkp1 = xk + alpha_k * pk
+        sk = alpha_k * pk
+        xkp1 = xk + sk
+
         if retall:
             allvecs.append(xkp1)
-        sk = xkp1 - xk
         xk = xkp1
         if gfkp1 is None:
             gfkp1 = myfprime(xkp1)
@@ -1404,6 +1410,13 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         if (gnorm <= gtol):
             break
 
+        #  See Chapter 5 in  P.E. Frandsen, K. Jonasson, H.B. Nielsen,
+        #  O. Tingleff: "Unconstrained Optimization", IMM, DTU.  1999.
+        #  These notes are available here:
+        #  http://www2.imm.dtu.dk/documents/ftp/publlec.html
+        if (alpha_k*vecnorm(pk) <= xrtol*(xrtol + vecnorm(xk))):
+            break
+
         if not np.isfinite(old_fval):
             # We correctly found +-Inf as optimal value, or something went
             # wrong.
@@ -1412,6 +1425,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
         rhok_inv = np.dot(yk, sk)
         # this was handled in numeric, let it remaines for more safety
+        # Cryptic comment above is preserved for posterity. Future reader:
+        # consider change to condition below proposed in gh-1261/gh-17345.
         if rhok_inv == 0.:
             rhok = 1000.0
             if disp:

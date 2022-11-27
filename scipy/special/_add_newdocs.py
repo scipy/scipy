@@ -3086,7 +3086,6 @@ add_newdoc(
 
         S = 4 \pi a b c R_{\mathrm{G}}(1 / a^2, 1 / b^2, 1 / c^2).
 
-    >>> from scipy.special import elliprg
     >>> def ellipsoid_area(a, b, c):
     ...     r = 4.0 * np.pi * a * b * c
     ...     return r * elliprg(1.0 / (a * a), 1.0 / (b * b), 1.0 / (c * c))
@@ -4582,7 +4581,6 @@ add_newdoc("expi",
 
     The complex variant has a branch cut on the negative real axis.
 
-    >>> import scipy.special as sc
     >>> sc.expi(-1 + 1e-12j)
     (-0.21938393439552062+3.1415926535894254j)
     >>> sc.expi(-1 - 1e-12j)
@@ -12175,6 +12173,12 @@ add_newdoc("smirnov",
     scalar or ndarray
         The value(s) of smirnov(n, d), Prob(Dn+ >= d) (Also Prob(Dn- >= d))
 
+    See Also
+    --------
+    smirnovi : The Inverse Survival Function for the distribution
+    scipy.stats.ksone : Provides the functionality as a continuous distribution
+    kolmogorov, kolmogi : Functions for the two-sided distribution
+
     Notes
     -----
     `smirnov` is used by `stats.kstest` in the application of the
@@ -12183,69 +12187,75 @@ add_newdoc("smirnov",
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
 
-    See Also
-    --------
-    smirnovi : The Inverse Survival Function for the distribution
-    scipy.stats.ksone : Provides the functionality as a continuous distribution
-    kolmogorov, kolmogi : Functions for the two-sided distribution
-
     Examples
     --------
     >>> import numpy as np
     >>> from scipy.special import smirnov
+    >>> from scipy.stats import norm
 
-    Show the probability of a gap at least as big as 0, 0.5 and 1.0 for a sample of size 5
+    Show the probability of a gap at least as big as 0, 0.5 and 1.0 for a
+    sample of size 5.
 
     >>> smirnov(5, [0, 0.5, 1.0])
     array([ 1.   ,  0.056,  0.   ])
 
-    Compare a sample of size 5 drawn from a source N(0.5, 1) distribution against
-    a target N(0, 1) CDF.
+    Compare a sample of size 5 against N(0, 1), the standard normal
+    distribution with mean 0 and standard deviation 1.
 
-    >>> from scipy.stats import norm
-    >>> rng = np.random.default_rng()
-    >>> n = 5
-    >>> gendist = norm(0.5, 1)       # Normal distribution, mean 0.5, stddev 1
-    >>> x = np.sort(gendist.rvs(size=n, random_state=rng))
-    >>> x
-    array([-1.3922078 , -0.13526532,  0.1371477 ,  0.18981686,  1.81948167])
+    `x` is the sample.
+
+    >>> x = np.array([-1.392, -0.135, 0.114, 0.190, 1.82])
+
     >>> target = norm(0, 1)
     >>> cdfs = target.cdf(x)
     >>> cdfs
-    array([0.08192974, 0.44620105, 0.55454297, 0.57527368, 0.96558101])
-    # Construct the Empirical CDF and the K-S statistics (Dn+, Dn-, Dn)
+    array([0.0819612 , 0.44630594, 0.5453811 , 0.57534543, 0.9656205 ])
+
+    Construct the empirical CDF and the K-S statistics (Dn+, Dn-, Dn).
+
+    >>> n = len(x)
     >>> ecdfs = np.arange(n+1, dtype=float)/n
-    >>> cols = np.column_stack([x, ecdfs[1:], cdfs, cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
-    >>> np.set_printoptions(precision=3)
-    >>> cols
-    array([[-1.392,  0.2  ,  0.082,  0.082,  0.118],
-           [-0.135,  0.4  ,  0.446,  0.246, -0.046],
-           [ 0.137,  0.6  ,  0.555,  0.155,  0.045],
-           [ 0.19 ,  0.8  ,  0.575, -0.025,  0.225],
-           [ 1.819,  1.   ,  0.966,  0.166,  0.034]])
+    >>> cols = np.column_stack([x, ecdfs[1:], cdfs, cdfs - ecdfs[:n],
+    ...                        ecdfs[1:] - cdfs])
+    >>> with np.printoptions(precision=3):
+    ...    print(cols)
+    [[-1.392  0.2    0.082  0.082  0.118]
+     [-0.135  0.4    0.446  0.246 -0.046]
+     [ 0.114  0.6    0.545  0.145  0.055]
+     [ 0.19   0.8    0.575 -0.025  0.225]
+     [ 1.82   1.     0.966  0.166  0.034]]
     >>> gaps = cols[:, -2:]
     >>> Dnpm = np.max(gaps, axis=0)
-    >>> print('Dn-=%f, Dn+=%f' % (Dnpm[0], Dnpm[1]))
-    Dn-=0.246201, Dn+=0.224726
+    >>> print(f'Dn-={Dnpm[0]:f}, Dn+={Dnpm[1]:f}')
+    Dn-=0.246306, Dn+=0.224655
     >>> probs = smirnov(n, Dnpm)
-    >>> print(chr(10).join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
-    ...      ' Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]),
-    ...      ' Smirnov n=%d: Prob(Dn+ >= %f) = %.4f' % (n, Dnpm[1], probs[1])]))
-    For a sample of size 5 drawn from a N(0, 1) distribution:
-     Smirnov n=5: Prob(Dn- >= 0.246201) = 0.4713
-     Smirnov n=5: Prob(Dn+ >= 0.224726) = 0.5243
+    >>> print(f'For a sample of size {n} drawn from N(0, 1):',
+    ...       f' Smirnov n={n}: Prob(Dn- >= {Dnpm[0]:f}) = {probs[0]:.4f}',
+    ...       f' Smirnov n={n}: Prob(Dn+ >= {Dnpm[1]:f}) = {probs[1]:.4f}',
+    ...       sep='\n')
+    For a sample of size 5 drawn from N(0, 1):
+     Smirnov n=5: Prob(Dn- >= 0.246306) = 0.4711
+     Smirnov n=5: Prob(Dn+ >= 0.224655) = 0.5245
 
-    Plot the Empirical CDF against the target N(0, 1) CDF
+    Plot the empirical CDF and the standard normal CDF.
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.step(np.concatenate([[-3], x]), ecdfs, where='post', label='Empirical CDF')
-    >>> x3 = np.linspace(-3, 3, 100)
-    >>> plt.plot(x3, target.cdf(x3), label='CDF for N(0, 1)')
-    >>> plt.ylim([0, 1]); plt.grid(True); plt.legend();
-    # Add vertical lines marking Dn+ and Dn-
+    >>> plt.step(np.concatenate(([-2.5], x, [2.5])),
+    ...          np.concatenate((ecdfs, [1])),
+    ...          where='post', label='Empirical CDF')
+    >>> xx = np.linspace(-2.5, 2.5, 100)
+    >>> plt.plot(xx, target.cdf(xx), '--', label='CDF for N(0, 1)')
+
+    Add vertical lines marking Dn+ and Dn-.
+
     >>> iminus, iplus = np.argmax(gaps, axis=0)
-    >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r', linestyle='dashed', lw=4)
-    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='m', linestyle='dashed', lw=4)
+    >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r',
+    ...            alpha=0.5, lw=4)
+    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='m',
+    ...            alpha=0.5, lw=4)
+
+    >>> plt.grid(True)
+    >>> plt.legend(framealpha=1, shadow=True)
     >>> plt.show()
     """)
 
@@ -12272,6 +12282,13 @@ add_newdoc("smirnovi",
     scalar or ndarray
         The value(s) of smirnovi(n, p), the critical values.
 
+    See Also
+    --------
+    smirnov : The Survival Function (SF) for the distribution
+    scipy.stats.ksone : Provides the functionality as a continuous distribution
+    kolmogorov, kolmogi : Functions for the two-sided distribution
+    scipy.stats.kstwobign : Two-sided Kolmogorov-Smirnov distribution, large n
+
     Notes
     -----
     `smirnov` is used by `stats.kstest` in the application of the
@@ -12280,11 +12297,25 @@ add_newdoc("smirnovi",
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
 
-    See Also
+    Examples
     --------
-    smirnov  : The Survival Function (SF) for the distribution
-    scipy.stats.ksone : Provides the functionality as a continuous distribution
-    kolmogorov, kolmogi, scipy.stats.kstwobign : Functions for the two-sided distribution
+    >>> from scipy.special import smirnovi, smirnov
+
+    >>> n = 24
+    >>> deviations = [0.1, 0.2, 0.3]
+
+    Use `smirnov` to compute the complementary CDF of the Smirnov
+    distribution for the given number of samples and deviations.
+
+    >>> p = smirnov(n, deviations)
+    >>> p
+    array([0.58105083, 0.12826832, 0.01032231])
+
+    The inverse function ``smirnovi(n, p)`` returns ``deviations``.
+
+    >>> smirnovi(n, p)
+    array([0.1, 0.2, 0.3])
+
     """)
 
 add_newdoc("_smirnovc",
