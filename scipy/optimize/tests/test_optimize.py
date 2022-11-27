@@ -1510,11 +1510,11 @@ class TestOptimizeSimple(CheckOptimize):
         maxiter = 5
 
         if new_cb_interface:
-            def callback_interface(*, intermediate_result):  # type: ignore[misc]  # noqa
+            def callback_interface(*, intermediate_result):
                 assert intermediate_result.fun == f(intermediate_result.x)
                 callback()
         else:
-            def callback_interface(xk, *args):
+            def callback_interface(xk, *args):  # type: ignore[misc]
                 callback()
 
         def callback():
