@@ -421,6 +421,17 @@ py3.extension_module('_test_round',
   subdir: 'scipy/special'
 )
 
+dd_dep = declare_dependency(sources: ['cephes/dd_real.c'])
+
+
+py3.extension_module('_test_dd',
+  cython_gen.process('_test_dd.pyx'),
+  include_directories: [inc_np, 'cephes', '../_lib', '../_build_utils/src'],
+  dependencies: [py3_dep, dd_dep],
+  install: true,
+  subdir: 'scipy/special'
+)
+
 # Must use `custom_target`, because `py3.install_sources` does not work with
 # generated sources - see https://github.com/mesonbuild/meson/issues/7372
 npz_files = [
@@ -471,6 +482,7 @@ python_sources = [
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',
+  '_test_dd.pyi',
   '_test_round.pyi',
   '_testutils.py',
   'add_newdocs.py',
