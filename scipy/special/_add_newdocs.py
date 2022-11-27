@@ -5105,12 +5105,17 @@ add_newdoc("fdtri",
 
     Examples
     --------
-    Calculate the function for ``dfn=1`` and ``dfd=2`` at ``x=0.8``.
+    `fdtri` represents the inverse of the F distribution CDF which is
+    available as `fdtr`. Here, we calculate the CDF for ``df1=1``, ``df2=2``
+    at ``x=3``. `fdtri` then returns ``3`` given the same values for `df1`,
+    `df2` and the computed CDF value.
 
     >>> import numpy as np
-    >>> from scipy.special import fdtri
-    >>> fdtri(1, 2, 0.8)
-    3.555555555555557
+    >>> from scipy.special import fdtri, fdtr
+    >>> df1, df2, x = 1, 2, 3
+    >>> cdf_value =  fdtr(df1, df2, x)
+    >>> fdtri(df1, df2, cdf_value)
+    3.000000000000006
 
     Calculate the function at several points by providing a NumPy array for
     `x`.
