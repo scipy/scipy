@@ -7598,11 +7598,20 @@ class TestRelativisticBW:
         ]
     )
     @pytest.mark.xslow
-    def test_fit(self, rho, gamma):
+    def test_fit_floc(self, rho, gamma):
+        """Tests fit for cases where floc is set.
+
+        `relativistic_bw` has special handling for these cases.
+        """
         seed = abs(hash("relativistic_bw"))
         rng = np.random.default_rng(seed)
         data = stats.relativistic_bw.rvs(
             rho, scale=gamma, size=5000, random_state=rng
         )
         fit = stats.relativistic_bw.fit(data, floc=0)
-        assert_allclose(fit, (rho, 0, gamma), rtol=1e-1)
+        assert_allclose((fit[0], fit[2]), (rho, gamma), rtol=1e-1)
+        assert fit[1] == 0
+        # Check again with fscale set.
+        fit = stats.relativistic_bw.fit(data, floc=0, fscale=gamma)
+        assert_allclose(fit[0], rho, rtol=1e-3)
+        assert (fit[1], fit[2]) == (0, gamma)
