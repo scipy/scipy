@@ -183,7 +183,7 @@ rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "static checkers",
-            "commands": ["lint", "flake8", "mypy"],
+            "commands": ["lint", "mypy"],
         },
         {
             "name": "environments",
@@ -884,15 +884,25 @@ def task_pep8diff():
     }
 
 
+def task_unicode_check():
+    return {
+        'basename': 'unicode-check',
+        'actions': [str(Dirs().root / 'tools' / 'unicode-check.py')],
+        'doc': 'Check for disallowed Unicode characters in the SciPy Python '
+                'and Cython source code.',
+    }
+
+
 @cli.cls_cmd('lint')
 class Lint():
-    """:dash: Run flake8, and check PEP 8 compliance on branch diff."""
+    """:dash: Run flake8, check PEP 8 compliance on branch diff and check for
+    disallowed Unicode characters."""
     output_file = Option(
         ['--output-file'], default=None, help='Redirect report to a file')
 
     def run(output_file):
         opts = {'output_file': output_file}
-        run_doit_task({'flake8': opts, 'pep8-diff': {}})
+        run_doit_task({'flake8': opts, 'pep8-diff': {}, 'unicode-check': {}})
 
 
 @cli.cls_cmd('mypy')
