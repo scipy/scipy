@@ -10383,6 +10383,31 @@ class relativistic_bw_gen(rv_continuous):
         # Returning None from stats makes public stats use _munp.
         return None, None, np.nan, np.nan
 
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        # Override rv_continuous.fit to better handle case where floc is set.
+        data, _, floc, fscale = _check_fit_input_parameters(
+            self, data, args, kwds
+        )
+        if floc is None:
+            return super().fit(data, *args, **kwds)
+        if fscale is None:
+            # The interquartile range approximates the scale parameter gamma.
+            # The median approximates rho * gamma.
+            p25, p50, p75 = np.quantile(data - floc, [0.25, 0.5, 0.75])
+            scale_0 = p75 - p25
+            rho_0 = p50 / scale_0
+            if not args:
+                args = [rho_0]
+            if "scale" not in kwds:
+                kwds["scale"] = scale_0
+        else:
+            M_0 = np.median(data - floc)
+            rho_0 = M_0 / fscale
+            if not args:
+                args = [rho_0]
+        return super().fit(data, *args, **kwds)
+
 
 relativistic_bw = relativistic_bw_gen(a=0.0, name="relativistic_bw")
 
