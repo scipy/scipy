@@ -7607,6 +7607,7 @@ class TestRelativisticBW:
     @pytest.mark.parametrize("n", [1, 2])
     def test_moments(self, n, rho, gamma):
         observed = stats.relativistic_bw.moment(n, rho, 0, gamma)
+
         def integrand(x):
             return x**n * stats.relativistic_bw.pdf(x, rho, scale=gamma)
 
