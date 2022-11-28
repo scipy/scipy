@@ -1290,7 +1290,7 @@ class TestResample:
         x = np.arange(10, dtype=np.float32)
         h = np.array([1, 1, 1], dtype=np.float32)
         y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
-        assert(y.dtype == np.float32)
+        assert y.dtype == np.float32
 
     @pytest.mark.parametrize('padtype', padtype_options)
     @pytest.mark.parametrize('dtype', [np.float32, np.float64])
@@ -1298,7 +1298,7 @@ class TestResample:
         # Test that the dtype of x is preserved per issue #14733
         x = np.arange(10, dtype=dtype)
         y = signal.resample_poly(x, 1, 2, padtype=padtype)
-        assert(y.dtype == x.dtype)
+        assert y.dtype == x.dtype
 
     @pytest.mark.parametrize(
         "method, ext, padtype",
