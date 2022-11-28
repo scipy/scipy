@@ -413,8 +413,8 @@ py3.extension_module('_comb',
   subdir: 'scipy/special'
 )
 
-py3.extension_module('_test_round',
-  cython_gen.process('_test_round.pyx'),
+py3.extension_module('_test_internal',
+  cython_gen.process('_test_internal.pyx'),
   include_directories: [inc_np, 'cephes', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
   install: true,
@@ -483,7 +483,7 @@ python_sources = [
   '_spfun_stats.py',
   '_spherical_bessel.py',
   '_test_dd.pyi',
-  '_test_round.pyi',
+  '_test_internal.pyi',
   '_testutils.py',
   'add_newdocs.py',
   'basic.py',
