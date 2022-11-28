@@ -817,8 +817,8 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     "parametric bootstrap" throughout to avoid confusion with the more familiar
     nonparametric bootstrap, and describe how the test is performed below.
 
-    Traditional goodness of fit tests
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    *Traditional goodness of fit tests*
+
     Traditionally, critical values corresponding with a fixed set of
     significance levels are pre-calculated using Monte Carlo methods. Users
     perform the test by calculating the value of the test statistic only for
@@ -831,8 +831,8 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     allows the user to perform the Monte Carlo trials adapted to their
     particular data.
 
-    Algorithmic overview
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    *Algorithmic overview*
+
     In brief, this routine executes the following steps:
     
       1. Fit unknown parameters to the given `data`, thereby forming the
@@ -882,15 +882,15 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     value of the statistic corresponding with `data` in the null distribution,
     but a more formal explanation is given in [5]_.
 
-    Limitations
-    ~~~~~~~~~~~
+    *Limitations*
+
     The test can be very slow for some distribution families because unknown
     parameters of the distribution family must be fit to each of the Monte
     Carlo samples, and for most distributions in SciPy, distribution fitting
     performed via numerical optimization.
 
-    Anti-Pattern
-    ~~~~~~~~~~~~
+    *Anti-Pattern*
+
     For this reason, it may be tempting
     to treat parameters of the distribution pre-fit to `data` (by the user)
     as though they were `known_params`, as specification of all parameters of
