@@ -889,7 +889,7 @@ def task_unicode_check():
         'basename': 'unicode-check',
         'actions': [str(Dirs().root / 'tools' / 'unicode-check.py')],
         'doc': 'Check for disallowed Unicode characters in the SciPy Python '
-                'and Cython source code.',
+               'and Cython source code.',
     }
 
 
