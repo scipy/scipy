@@ -7609,6 +7609,7 @@ class TestRelativisticBW:
         observed = stats.relativistic_bw.moment(n, rho, 0, gamma)
         def integrand(x):
             return x**n * stats.relativistic_bw.pdf(x, rho, scale=gamma)
+
         expected = quad(integrand, 0, np.inf)[0]
         assert_allclose(observed, expected)
 

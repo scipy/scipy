@@ -10346,7 +10346,7 @@ class relativistic_bw_gen(rv_continuous):
     def _pdf(self, x, rho):
         k = np.sqrt(
             2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
-        ) * 2  / np.pi
+        ) * 2 / np.pi
         return k / (((x**2 - rho**2)/rho)**2 + 1)
 
     def _cdf(self, x, rho):
@@ -10354,7 +10354,7 @@ class relativistic_bw_gen(rv_continuous):
         k = np.sqrt(
                 2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
             ) / np.pi
-        result =  np.arctan(x/np.sqrt(-rho*(rho + 1j))) / np.sqrt(-1 - 1j/rho)
+        result = np.arctan(x/np.sqrt(-rho*(rho + 1j))) / np.sqrt(-1 - 1j/rho)
         # For real entries of x, one can take advantage of the quantity to be
         # subtracted being the complex conjugate of the first. This is not the
         # case for complex entries of x with nonzero imaginary part.
@@ -10422,6 +10422,6 @@ relativistic_bw = relativistic_bw_gen(a=0.0, name="relativistic_bw")
 
 # Collect names of classes and objects in this module.
 pairs = list(globals().copy().items())
-_distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
+  _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
 __all__ = _distn_names + _distn_gen_names + ['rv_histogram']
