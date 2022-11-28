@@ -65,18 +65,18 @@ class TestDatasets:
                          registry["ecg.dat"])
 
 
-def test_clear_cache():
-    # Use Dummy path
-    dummy_basepath = "dummy_cache_dir"
-    os.makedirs(dummy_basepath, exist_ok=True)
+def test_clear_cache(tmp_path):
+    # Note: `tmp_path` is a pytest fixture, it handles cleanup
+    dummy_basepath = tmp_path / "dummy_cache_dir"
+    dummy_basepath.mkdir()
 
     # Create three dummy dataset files
     dummy_registry = {}
     for i in range(3):
         dataset_name = f"data{i}.dat"
         dummy_registry[dataset_name] = hash(dataset_name)
-        with open(os.path.join(dummy_basepath, dataset_name), 'a'):
-            pass
+        dataset_file = dummy_basepath / dataset_name
+        dataset_file.write_text("")
 
     # remove single dataset file from cache dir
     _clear_cache(datasets=["data0.dat"], cache_dir=dummy_basepath,
