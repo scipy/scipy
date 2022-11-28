@@ -536,7 +536,7 @@ class TestInterp1D:
         try:
             interpolant(test_array)
         except ValueError as err:
-            assert("{}".format(fail_value) in str(err))
+            assert ("{}".format(fail_value) in str(err))
 
     def _bounds_check(self, kind='linear'):
         # Test that our handling of out-of-bounds input is correct.

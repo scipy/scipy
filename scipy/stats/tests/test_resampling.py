@@ -864,7 +864,7 @@ class TestMonteCarloHypothesisTest:
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
             sol = root(fun, x0=0)
-        assert(sol.success)
+        assert sol.success
 
         # get the significance level (p-value) associated with that critical
         # value

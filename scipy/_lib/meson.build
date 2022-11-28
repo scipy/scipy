@@ -9,21 +9,12 @@ if not fs.exists('unuran/README.md')
   error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
 endif
 
-_lib_pxd = custom_target('_lib_pxd',
-  output: [
-    '__init__.py',
-    '_ccallback_c.pxd',
-    'ccallback.pxd',
-    'messagestream.pxd',
-  ],
-  input: [
-    '__init__.py',
-    '_ccallback_c.pxd',
-    'ccallback.pxd',
-    'messagestream.pxd',
-  ],
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
+_lib_pxd = [
+  fs.copyfile('__init__.py'),
+  fs.copyfile('_ccallback_c.pxd'),
+  fs.copyfile('ccallback.pxd'),
+  fs.copyfile('messagestream.pxd'),
+]
 
 # Cython pyx -> c generator with _lib_pxd dependency
 lib_cython_gen = generator(cython_cli,
