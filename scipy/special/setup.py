@@ -144,17 +144,13 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_comb',
                          sources=['_comb.c'])
 
-    # testing for _round.h
+    # testing for _round.h and cephes/dd_real.c functions
     config.add_extension('_test_internal',
-                         sources=['_test_internal.c'],
-                         depends=['_round.h', 'cephes/dd_idefs.h'],
+                         sources=['_test_internal.c', 'cephes/dd_real.c'],
+                         depends=['_round.h', 'cephes/dd_idefs.h',
+                                  'cephes/dd_real.h'],
                          include_dirs=[numpy.get_include()] + inc_dirs,
                          extra_info=get_info('npymath'))
-
-    config.add_extension('_test_dd',
-                         sources=['_test_dd.c', 'cephes/dd_real.c'],
-                         depends=['cephes/dd_real.h'],
-                         include_dirs=[numpy.get_include()] + inc_dirs)
 
     config.add_data_files('tests/*.py')
     config.add_data_files('tests/data/README')

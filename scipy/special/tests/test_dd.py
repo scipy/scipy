@@ -2,7 +2,7 @@
 
 import pytest
 from numpy.testing import assert_allclose
-from scipy.special._test_dd import _dd_exp, _dd_log, _dd_expm1
+from scipy.special._test_internal import _dd_exp, _dd_log, _dd_expm1
 
 
 # Each tuple in test_data contains:
