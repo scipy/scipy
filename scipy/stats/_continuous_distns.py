@@ -10296,7 +10296,7 @@ class relativistic_bw_gen(rv_continuous):
     cauchy: Cauchy distribution, also known as the Breit-Wigner distribution.
 
     Notes
-    --------
+    -----
 
     The probability density function for `relativistic_bw` is
 
