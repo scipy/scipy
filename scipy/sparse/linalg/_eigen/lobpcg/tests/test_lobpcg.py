@@ -7,8 +7,7 @@ import sys
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
-                           assert_allclose, assert_array_less,
-                           suppress_warnings)
+                           assert_allclose, assert_array_less)
 
 import pytest
 
@@ -19,6 +18,7 @@ from scipy.sparse.linalg import eigs, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 
 _IS_32BIT = (sys.maxsize < 2**32)
+
 
 def ElasticRod(n):
     """Build the matrices for the generalized eigenvalue problem of the
@@ -265,7 +265,7 @@ def test_failure_to_run_iterations():
     Q = rnd.standard_normal((X.shape[0], 4))
     with pytest.warns(UserWarning, match="Exited at iteration"):
         eigenvalues, _ = lobpcg(A, Q, maxiter=20)
-    assert(np.max(eigenvalues) > 0)
+    assert np.max(eigenvalues) > 0
 
 
 @pytest.mark.filterwarnings("ignore:The problem size")
@@ -390,6 +390,7 @@ def test_maxit():
     with pytest.warns(UserWarning, match="Exited at iteration"):
         _, _, l_h = lobpcg(A, X, tol=1e-8, retLambdaHistory=True)
     assert_allclose(np.shape(l_h)[0], 20+2)
+
 
 @pytest.mark.slow
 def test_diagonal_data_types():

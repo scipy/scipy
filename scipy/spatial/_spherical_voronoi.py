@@ -111,6 +111,7 @@ class SphericalVoronoi:
     --------
     Do some imports and take some points on a cube:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import SphericalVoronoi, geometric_slerp
     >>> from mpl_toolkits.mplot3d import proj3d

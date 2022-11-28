@@ -388,6 +388,16 @@ class TestBarycentric:
         factor = P.wi[0]
         assert_almost_equal(P.wi / (2 * factor), w)
 
+    def test_warning(self):
+        # Test if the divide-by-zero warning is properly ignored when computing
+        # interpolated values equals to interpolation points
+        P = BarycentricInterpolator([0, 1], [1, 2])
+        with np.errstate(divide='raise'):
+            yi = P(P.xi)
+
+        # Additionaly check if the interpolated values are the nodes values
+        assert_almost_equal(yi, P.yi.ravel())
+
 
 class TestPCHIP:
     def _make_random(self, npts=20):
@@ -750,3 +760,53 @@ def test_roots_extrapolate_gh_11185():
     r = p.roots(extrapolate=True)
     assert_equal(p.c.shape[1], 1)
     assert_equal(r.size, 3)
+
+
+class TestZeroSizeArrays:
+    # regression tests for gh-17241 : CubicSpline et al must not segfault
+    # when y.size == 0
+    # The two methods below are _almost_ the same, but not quite:
+    # one is for objects which have the `bc_type` argument (CubicSpline)
+    # and the other one is for those which do not (Pchip, Akima1D)
+
+    @pytest.mark.parametrize('y', [np.zeros((10, 0, 5)),
+                                   np.zeros((10, 5, 0))])
+    @pytest.mark.parametrize('bc_type',
+                             ['not-a-knot', 'periodic', 'natural', 'clamped'])
+    @pytest.mark.parametrize('axis', [0, 1, 2])
+    @pytest.mark.parametrize('cls', [make_interp_spline, CubicSpline])
+    def test_zero_size(self, cls, y, bc_type, axis):
+        x = np.arange(10)
+        xval = np.arange(3)
+
+        obj = cls(x, y, bc_type=bc_type)
+        assert obj(xval).size == 0
+        assert obj(xval).shape == xval.shape + y.shape[1:]
+
+        # Also check with an explicit non-default axis
+        yt = np.moveaxis(y, 0, axis)  # (10, 0, 5) --> (0, 10, 5) if axis=1 etc
+
+        obj = cls(x, yt, bc_type=bc_type, axis=axis)
+        sh = yt.shape[:axis] + (xval.size, ) + yt.shape[axis+1:]
+        assert obj(xval).size == 0
+        assert obj(xval).shape == sh
+
+    @pytest.mark.parametrize('y', [np.zeros((10, 0, 5)),
+                                   np.zeros((10, 5, 0))])
+    @pytest.mark.parametrize('axis', [0, 1, 2])
+    @pytest.mark.parametrize('cls', [PchipInterpolator, Akima1DInterpolator])
+    def test_zero_size_2(self, cls, y, axis):
+        x = np.arange(10)
+        xval = np.arange(3)
+
+        obj = cls(x, y)
+        assert obj(xval).size == 0
+        assert obj(xval).shape == xval.shape + y.shape[1:]
+
+        # Also check with an explicit non-default axis
+        yt = np.moveaxis(y, 0, axis)  # (10, 0, 5) --> (0, 10, 5) if axis=1 etc
+
+        obj = cls(x, yt, axis=axis)
+        sh = yt.shape[:axis] + (xval.size, ) + yt.shape[axis+1:]
+        assert obj(xval).size == 0
+        assert obj(xval).shape == sh

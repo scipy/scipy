@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 refguide_check.py [OPTIONS] [-- ARGS]
 
@@ -7,7 +7,7 @@ correspond to the objects included in the reference guide.
 
 Example of usage::
 
-    $ python refguide_check.py optimize
+    $ python3 refguide_check.py optimize
 
 Note that this is a helper script to be able to check if things are missing;
 the output of this script does need to be checked manually.  In some cases
@@ -19,7 +19,7 @@ in docstrings. This is different from doctesting [we do not aim to have
 scipy docstrings doctestable!], this is just to make sure that code in
 docstrings is valid python::
 
-    $ python refguide_check.py --doctests optimize
+    $ python3 refguide_check.py --doctests optimize
 
 """
 import copy
@@ -39,9 +39,7 @@ from doctest import NORMALIZE_WHITESPACE, ELLIPSIS, IGNORE_EXCEPTION_DETAIL
 
 import docutils.core
 import numpy as np
-import sphinx
 from docutils.parsers.rst import directives
-from pkg_resources import parse_version
 
 from numpydoc.docscrape_sphinx import get_doc_object
 from numpydoc.docscrape import NumpyDocString  # noqa
@@ -49,20 +47,10 @@ from scipy.stats._distr_params import distcont, distdiscrete  # noqa
 from scipy import stats  # noqa
 
 
-if parse_version(sphinx.__version__) >= parse_version('1.5'):
-    # Enable specific Sphinx directives
-    from sphinx.directives.other import SeeAlso, Only
-    directives.register_directive('seealso', SeeAlso)
-    directives.register_directive('only', Only)
-else:
-    # Remove sphinx directives that don't run without Sphinx environment.
-    # Sphinx < 1.5 installs all directives on import...
-    directives._directives.pop('versionadded', None)
-    directives._directives.pop('versionchanged', None)
-    directives._directives.pop('moduleauthor', None)
-    directives._directives.pop('sectionauthor', None)
-    directives._directives.pop('codeauthor', None)
-    directives._directives.pop('toctree', None)
+# Enable specific Sphinx directives
+from sphinx.directives.other import SeeAlso, Only
+directives.register_directive('seealso', SeeAlso)
+directives.register_directive('only', Only)
 
 
 BASE_MODULE = "scipy"
@@ -72,6 +60,7 @@ PUBLIC_SUBMODULES = [
     'cluster.hierarchy',
     'cluster.vq',
     'constants',
+    'datasets',
     'fft',
     'fftpack',
     'fftpack.convolve',
@@ -118,7 +107,15 @@ DOCTEST_SKIPLIST = set([
     'scipy.stats.kstwobign',  # inaccurate cdf or ppf
     'scipy.stats.levy_stable',
     'scipy.special.sinc',  # comes from numpy
-    'scipy.misc.who',  # comes from numpy
+    'scipy.fft.fftfreq',
+    'scipy.fft.rfftfreq',
+    'scipy.fft.fftshift',
+    'scipy.fft.ifftshift',
+    'scipy.fftpack.fftfreq',
+    'scipy.fftpack.fftshift',
+    'scipy.fftpack.ifftshift',
+    'scipy.integrate.trapezoid',
+    'scipy.linalg.LinAlgError',
     'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
@@ -128,7 +125,6 @@ DOCTEST_SKIPLIST = set([
 REFGUIDE_ALL_SKIPLIST = [
     r'scipy\.sparse\.csgraph',
     r'scipy\.sparse\.linalg',
-    r'scipy\.spatial\.distance',
     r'scipy\.linalg\.blas\.[sdczi].*',
     r'scipy\.linalg\.lapack\.[sdczi].*',
 ]
@@ -418,12 +414,7 @@ def check_rest(module, names, dots=True):
 
     Returns: [(name, success_flag, output), ...]
     """
-
-    try:
-        skip_types = (dict, str, unicode, float, int)
-    except NameError:
-        # python 3
-        skip_types = (dict, str, float, int)
+    skip_types = (dict, str, float, int)
 
     results = []
 
@@ -480,7 +471,7 @@ def check_rest(module, names, dots=True):
 ### Doctest helpers ####
 
 # the namespace to run examples in
-DEFAULT_NAMESPACE = {'np': np}
+DEFAULT_NAMESPACE = {}
 
 # the namespace to do checks in
 CHECK_NAMESPACE = {

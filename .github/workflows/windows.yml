@@ -10,6 +10,9 @@ on:
       - main
       - maintenance/**
 
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -43,7 +46,7 @@ jobs:
           gfortran --version
       - name: pip-packages
         run: |
-          pip install numpy==1.22.2 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout
+          pip install numpy==1.22.2 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch
       - name: openblas-libs
         run: |
           # Download and install pre-built OpenBLAS library
@@ -56,7 +59,7 @@ jobs:
           echo "PKG_CONFIG_PATH=c:\opt\openblas\if_32\64\lib\pkgconfig;" >> $env:GITHUB_ENV
       - name: meson-configure
         run: |
-          meson build --prefix=$PWD\build
+          meson setup build --prefix=$PWD\build
       - name: meson-build
         run: |
           ninja -j 2 -C build

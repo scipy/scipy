@@ -93,7 +93,7 @@ library is MKL and if so, use the CBLAS API instead of the BLAS API.
 If autodetection fails or if the user wants to override this
 autodetection mechanism, use the following:
 
-_For ``meson`` based builds (new in 1.9.0):_
+*For ``meson`` based builds (new in 1.9.0):*
 
 Use the ``-Duse-g77-abi=true`` build option. E.g.,::
 
@@ -106,7 +106,7 @@ example)::
     $ meson setup builddir -Duse-g77-abi=true -Dblas=blas -Dlapack=lapack -Dpython.install_env=auto
     $ meson install -C builddir
 
-_For ``distutils`` based builds:_
+*For ``distutils`` based builds:*
 
 Set the environment variable ``SCIPY_USE_G77_ABI_WRAPPER`` to 0 or 1 to disable
 or enable using CBLAS API.

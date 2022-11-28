@@ -6,7 +6,7 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal
 from pytest import raises as assert_raises
 
 from numpy import array, diff, linspace, meshgrid, ones, pi, shape
-from scipy.interpolate._fitpack_py import bisplrep, bisplev
+from scipy.interpolate._fitpack_py import bisplrep, bisplev, splrep, spalde
 from scipy.interpolate._fitpack2 import (UnivariateSpline,
         LSQUnivariateSpline, InterpolatedUnivariateSpline,
         LSQBivariateSpline, SmoothBivariateSpline, RectBivariateSpline,
@@ -60,6 +60,35 @@ class TestUnivariateSpline:
         y = [0,4,9,12,21]
         spl = UnivariateSpline(x, y, k=3)
         assert_array_equal(spl([]), array([]))
+
+    def test_roots(self):
+        x = [1, 3, 5, 7, 9]
+        y = [0, 4, 9, 12, 21]
+        spl = UnivariateSpline(x, y, k=3)
+        assert_almost_equal(spl.roots()[0], 1.050290639101332)
+
+    def test_derivatives(self):
+        x = [1, 3, 5, 7, 9]
+        y = [0, 4, 9, 12, 21]
+        spl = UnivariateSpline(x, y, k=3)
+        assert_almost_equal(spl.derivatives(3.5),
+                            [5.5152902, 1.7146577, -0.1830357, 0.3125])
+
+    def test_derivatives_2(self):
+        x = np.arange(8)
+        y = x**3 + 2.*x**2
+
+        tck = splrep(x, y, s=0)
+        ders = spalde(3, tck)
+        assert_allclose(ders, [45.,   # 3**3 + 2*(3)**2
+                               39.,   # 3*(3)**2 + 4*(3)
+                               22.,   # 6*(3) + 4
+                               6.],   # 6*3**0
+                        atol=1e-15)
+        spl = UnivariateSpline(x, y, s=0, k=3)
+        assert_allclose(spl.derivatives(3),
+                        ders,
+                        atol=1e-15)
 
     def test_resize_regression(self):
         """Regression test for #1375."""
@@ -1235,6 +1264,20 @@ class TestRectSphereBivariateSpline:
         ans = np.array([[-45.0, -42.480862],
                         [-49.0625, -46.54315]])
         assert_array_almost_equal(data_interp, ans)
+
+    def test_pole_continuity_gh_14591(self):
+        # regression test for https://github.com/scipy/scipy/issues/14591
+        # with pole_continuty=(True, True), the internal work array size
+        # was too small, leading to a FITPACK data validation error.
+
+        # The reproducer in gh-14591 was using a NetCDF4 file with
+        # 361x507 arrays, so here we trivialize array sizes to a minimum
+        # which still demonstrates the issue.
+        u = np.arange(1, 10) * np.pi / 10
+        v = np.arange(1, 10) * np.pi / 10
+        r = np.zeros((9, 9))
+        for p in [(True, True), (True, False), (False, False)]:
+            RectSphereBivariateSpline(u, v, r, s=0, pole_continuity=p)
 
 
 def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):

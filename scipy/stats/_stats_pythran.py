@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.special import binom
 
 #pythran export _Aij(float[:,:], int, int)
 #pythran export _Aij(int[:,:], int, int)
@@ -149,3 +150,143 @@ def _compute_outer_prob_inside_method(m, n, g, h):
             A[maxj - minj:maxj - minj + (lastlen - curlen)] = 1
 
     return A[maxj - minj - 1]
+
+
+# pythran export _compute_prob_outside_square(int64, int64)
+def _compute_prob_outside_square(n, h):
+    """
+    Compute the proportion of paths that pass outside the two diagonal lines.
+
+    Parameters
+    ----------
+    n : integer
+        n > 0
+    h : integer
+        0 <= h <= n
+
+    Returns
+    -------
+    p : float
+        The proportion of paths that pass outside the lines x-y = +/-h.
+
+    """
+    # Compute Pr(D_{n,n} >= h/n)
+    # Prob = 2 * ( binom(2n, n-h) - binom(2n, n-2a) + binom(2n, n-3a) - ... )
+    # / binom(2n, n)
+    # This formulation exhibits subtractive cancellation.
+    # Instead divide each term by binom(2n, n), then factor common terms
+    # and use a Horner-like algorithm
+    # P = 2 * A0 * (1 - A1*(1 - A2*(1 - A3*(1 - A4*(...)))))
+
+    P = 0.0
+    k = int(np.floor(n / h))
+    while k >= 0:
+        p1 = 1.0
+        # Each of the Ai terms has numerator and denominator with
+        # h simple terms.
+        for j in range(h):
+            p1 = (n - k * h - j) * p1 / (n + k * h + j + 1)
+        P = p1 * (1.0 - P)
+        k -= 1
+    return 2 * P
+
+
+# pythran export _count_paths_outside_method(int64, int64, int64, int64)
+def _count_paths_outside_method(m, n, g, h):
+    """Count the number of paths that pass outside the specified diagonal.
+
+    Parameters
+    ----------
+    m : integer
+        m > 0
+    n : integer
+        n > 0
+    g : integer
+        g is greatest common divisor of m and n
+    h : integer
+        0 <= h <= lcm(m,n)
+
+    Returns
+    -------
+    p : float
+        The number of paths that go low.
+        The calculation may overflow - check for a finite answer.
+
+    Notes
+    -----
+    Count the integer lattice paths from (0, 0) to (m, n), which at some
+    point (x, y) along the path, satisfy:
+      m*y <= n*x - h*g
+    The paths make steps of size +1 in either positive x or positive y
+    directions.
+
+    We generally follow Hodges' treatment of Drion/Gnedenko/Korolyuk.
+    Hodges, J.L. Jr.,
+    "The Significance Probability of the Smirnov Two-Sample Test,"
+    Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
+
+    """
+    # Compute #paths which stay lower than x/m-y/n = h/lcm(m,n)
+    # B(x, y) = #{paths from (0,0) to (x,y) without
+    #             previously crossing the boundary}
+    #         = binom(x, y) - #{paths which already reached the boundary}
+    # Multiply by the number of path extensions going from (x, y) to (m, n)
+    # Sum.
+
+    # Probability is symmetrical in m, n.  Computation below assumes m >= n.
+    if m < n:
+        m, n = n, m
+    mg = m // g
+    ng = n // g
+
+    # Not every x needs to be considered.
+    # xj holds the list of x values to be checked.
+    # Wherever n*x/m + ng*h crosses an integer
+    lxj = n + (mg-h)//mg
+    xj = [(h + mg * j + ng-1)//ng for j in range(lxj)]
+    # B is an array just holding a few values of B(x,y), the ones needed.
+    # B[j] == B(x_j, j)
+    if lxj == 0:
+        return binom(m + n, n)
+    B = np.zeros(lxj)
+    B[0] = 1
+    # Compute the B(x, y) terms
+    for j in range(1, lxj):
+        Bj = binom(xj[j] + j, j)
+        for i in range(j):
+            bin = binom(xj[j] - xj[i] + j - i, j-i)
+            Bj -= bin * B[i]
+        B[j] = Bj
+    # Compute the number of path extensions...
+    num_paths = 0
+    for j in range(lxj):
+        bin = binom((m-xj[j]) + (n - j), n-j)
+        term = B[j] * bin
+        num_paths += term
+    return num_paths
+
+
+# pythran export siegelslopes(float32[:], float32[:], str)
+# pythran export siegelslopes(float64[:], float64[:], str)
+def siegelslopes(y, x, method):
+    deltax = np.expand_dims(x, 1) - x
+    deltay = np.expand_dims(y, 1) - y
+    slopes, intercepts = [], []
+
+    for j in range(len(x)):
+        id_nonzero, = np.nonzero(deltax[j, :])
+        slopes_j = deltay[j, id_nonzero] / deltax[j, id_nonzero]
+        medslope_j = np.median(slopes_j)
+        slopes.append(medslope_j)
+        if method == 'separate':
+            z = y*x[j] - y[j]*x
+            medintercept_j = np.median(z[id_nonzero] / deltax[j, id_nonzero])
+            intercepts.append(medintercept_j)
+
+    medslope = np.median(np.asarray(slopes))
+    if method == "separate":
+        medinter = np.median(np.asarray(intercepts))
+    else:
+        medinter = np.median(y - medslope*x)
+
+    return medslope, medinter

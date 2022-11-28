@@ -1,10 +1,3 @@
-fortran_ignore_warnings = [
-  '-Wno-tabs', '-Wno-conversion',
-  '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
-  '-Wno-maybe-uninitialized', '-Wno-unused-label',
-  '-Wno-unused-variable'
-]
-
 _test_fortran_module = custom_target('_test_fortran_module',
   output: ['_test_fortranmodule.c'],
   input: '_test_fortran.pyf',
@@ -16,9 +9,10 @@ _test_fortran = py3.extension_module('_test_fortran',
     _test_fortran_module,
     '_test_fortran.f'
   ],
-  c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
+  c_args: [numpy_nodepr_api, Wno_unused_variable],
   fortran_args: fortran_ignore_warnings,
   include_directories: [incdir_numpy, incdir_f2py],
+  link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
@@ -37,7 +31,6 @@ py3.install_sources([
     'netcdf.py',
     'wavfile.py'
   ],
-  pure: false,
   subdir: 'scipy/io'
 )
 

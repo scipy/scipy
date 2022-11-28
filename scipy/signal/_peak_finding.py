@@ -61,7 +61,7 @@ def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     array([False, False,  True, False, False], dtype=bool)
 
     """
-    if((int(order) != order) or (order < 1)):
+    if (int(order) != order) or (order < 1):
         raise ValueError('Order must be an int >= 1')
 
     datalen = data.shape[axis]
@@ -74,7 +74,7 @@ def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
         minus = data.take(locs - shift, axis=axis, mode=mode)
         results &= comparator(main, plus)
         results &= comparator(main, minus)
-        if(~results.any()):
+        if ~results.any():
             return results
     return results
 
@@ -869,12 +869,12 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     Examples
     --------
     To demonstrate this function's usage we use a signal `x` supplied with
-    SciPy (see `scipy.misc.electrocardiogram`). Let's find all peaks (local
+    SciPy (see `scipy.datasets.electrocardiogram`). Let's find all peaks (local
     maxima) in `x` whose amplitude lies above 0.
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.misc import electrocardiogram
+    >>> from scipy.datasets import electrocardiogram
     >>> from scipy.signal import find_peaks
     >>> x = electrocardiogram()[2000:4000]
     >>> peaks, _ = find_peaks(x, height=0)
@@ -1059,14 +1059,14 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     as part of `find_peaks_cwt`.
 
     """
-    if(len(max_distances) < matr.shape[0]):
+    if len(max_distances) < matr.shape[0]:
         raise ValueError('Max_distances must have at least as many rows '
                          'as matr')
 
     all_max_cols = _boolrelextrema(matr, np.greater, axis=1, order=1)
     # Highest row for which there are any relative maxima
     has_relmax = np.nonzero(all_max_cols.any(axis=1))[0]
-    if(len(has_relmax) == 0):
+    if len(has_relmax) == 0:
         return []
     start_row = has_relmax[-1]
     # Each ridge line is a 3-tuple:
@@ -1096,12 +1096,12 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
             # the max_distance to connect to, do so.
             # Otherwise start a new one.
             line = None
-            if(len(prev_ridge_cols) > 0):
+            if len(prev_ridge_cols) > 0:
                 diffs = np.abs(col - prev_ridge_cols)
                 closest = np.argmin(diffs)
                 if diffs[closest] <= max_distances[row]:
                     line = ridge_lines[closest]
-            if(line is not None):
+            if line is not None:
                 # Found a point close enough, extend current ridge line
                 line[1].append(col)
                 line[0].append(row)

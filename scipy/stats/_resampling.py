@@ -69,12 +69,13 @@ def _bootstrap_resample(sample, n_resamples=None, random_state=None):
 
 def _percentile_of_score(a, score, axis):
     """Vectorized, simplified `scipy.stats.percentileofscore`.
+    Uses logic of the 'mean' value of percentileofscore's kind parameter.
 
     Unlike `stats.percentileofscore`, the percentile returned is a fraction
     in [0, 1].
     """
     B = a.shape[axis]
-    return (a < score).sum(axis=axis) / B
+    return ((a < score).sum(axis=axis) + (a <= score).sum(axis=axis)) / (2 * B)
 
 
 def _percentile_along_axis(theta_hat_b, alpha):
@@ -103,23 +104,44 @@ def _percentile_along_axis(theta_hat_b, alpha):
 
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     """Bias-corrected and accelerated interval."""
-    # closely follows [2] "BCa Bootstrap CIs"
-    sample = data[0]  # only works with 1 sample statistics right now
+    # closely follows [1] 14.3 and 15.4 (Eq. 15.36)
 
     # calculate z0_hat
-    theta_hat = np.asarray(statistic(sample, axis=axis))[..., None]
+    theta_hat = np.asarray(statistic(*data, axis=axis))[..., None]
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1)
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
-    theta_hat_i = []  # would be better to fill pre-allocated array
-    for jackknife_sample in _jackknife_resample(sample, batch):
-        theta_hat_i.append(statistic(jackknife_sample, axis=-1))
-    theta_hat_i = np.concatenate(theta_hat_i, axis=-1)
-    theta_hat_dot = theta_hat_i.mean(axis=-1, keepdims=True)
-    num = ((theta_hat_dot - theta_hat_i)**3).sum(axis=-1)
-    den = 6*((theta_hat_dot - theta_hat_i)**2).sum(axis=-1)**(3/2)
-    a_hat = num / den
+    theta_hat_ji = []  # j is for sample of data, i is for jackknife resample
+    for j, sample in enumerate(data):
+        # _jackknife_resample will add an axis prior to the last axis that
+        # corresponds with the different jackknife resamples. Do the same for
+        # each sample of the data to ensure broadcastability. We need to
+        # create a copy of the list containing the samples anyway, so do this
+        # in the loop to simplify the code. This is not the bottleneck...
+        samples = [np.expand_dims(sample, -2) for sample in data]
+        theta_hat_i = []
+        for jackknife_sample in _jackknife_resample(sample, batch):
+            samples[j] = jackknife_sample
+            broadcasted = _broadcast_arrays(samples, axis=-1)
+            theta_hat_i.append(statistic(*broadcasted, axis=-1))
+        theta_hat_ji.append(theta_hat_i)
+
+    theta_hat_ji = [np.concatenate(theta_hat_i, axis=-1)
+                    for theta_hat_i in theta_hat_ji]
+
+    n_j = [len(theta_hat_i) for theta_hat_i in theta_hat_ji]
+
+    theta_hat_j_dot = [theta_hat_i.mean(axis=-1, keepdims=True)
+                       for theta_hat_i in theta_hat_ji]
+
+    U_ji = [(n - 1) * (theta_hat_dot - theta_hat_i)
+            for theta_hat_dot, theta_hat_i, n
+            in zip(theta_hat_j_dot, theta_hat_ji, n_j)]
+
+    nums = [(U_i**3).sum(axis=-1)/n**3 for U_i, n in zip(U_ji, n_j)]
+    dens = [(U_i**2).sum(axis=-1)/n**2 for U_i, n in zip(U_ji, n_j)]
+    a_hat = 1/6 * sum(nums) / sum(dens)**(3/2)
 
     # calculate alpha_1, alpha_2
     z_alpha = ndtri(alpha)
@@ -128,7 +150,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     alpha_1 = ndtr(z0_hat + num1/(1 - a_hat*num1))
     num2 = z0_hat + z_1alpha
     alpha_2 = ndtr(z0_hat + num2/(1 - a_hat*num2))
-    return alpha_1, alpha_2
+    return alpha_1, alpha_2, a_hat  # return a_hat for testing
 
 
 def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
@@ -202,10 +224,6 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     method = method.lower()
     if method not in methods:
         raise ValueError(f"`method` must be in {methods}")
-
-    message = "`method = 'BCa' is only available for one-sample statistics"
-    if not paired and n_samples > 1 and method == 'bca':
-        raise ValueError(message)
 
     message = "`bootstrap_result` must have attribute `bootstrap_distribution'"
     if (bootstrap_result is not None
@@ -299,10 +317,9 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         The confidence level of the confidence interval.
     method : {'percentile', 'basic', 'bca'}, default: ``'BCa'``
         Whether to return the 'percentile' bootstrap confidence interval
-        (``'percentile'``), the 'reverse' or the bias-corrected and accelerated
-        bootstrap confidence interval (``'BCa'``).
-        Note that only ``'percentile'`` and ``'basic'`` support multi-sample
-        statistics at this time.
+        (``'percentile'``), the 'basic' (AKA 'reverse') bootstrap confidence
+        interval (``'basic'``), or the bias-corrected and accelerated bootstrap
+        confidence interval (``'BCa'``).
     bootstrap_result : BootstrapResult, optional
         Provide the result object returned by a previous call to `bootstrap`
         to include the previous bootstrap distribution in the new bootstrap
@@ -577,7 +594,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     alpha = (1 - confidence_level)/2
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
-                                 theta_hat_b=theta_hat_b, batch=batch)
+                                 theta_hat_b=theta_hat_b, batch=batch)[:2]
         percentile_fun = _percentile_along_axis
     else:
         interval = alpha, 1-alpha
@@ -762,7 +779,7 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
 
     The probability of obtaining a test statistic less than or equal to the
     observed value under the null hypothesis is ~70%. This is greater than
-    our chosen threshold of 5%, so we cannot consider this to to be significant
+    our chosen threshold of 5%, so we cannot consider this to be significant
     evidence against the null hypothesis.
 
     Note that this p-value essentially matches that of
@@ -877,6 +894,32 @@ def _batch_generator(iterable, batch):
         z = [item for i, item in zip(range(batch), iterator)]
 
 
+def _pairings_permutations_gen(n_permutations, n_samples, n_obs_sample, batch,
+                               random_state):
+    # Returns a generator that yields arrays of size
+    # `(batch, n_samples, n_obs_sample)`.
+    # Each row is an independent permutation of indices 0 to `n_obs_sample`.
+    batch = min(batch, n_permutations)
+
+    if hasattr(random_state, 'permuted'):
+        def batched_perm_generator():
+            indices = np.arange(n_obs_sample)
+            indices = np.tile(indices, (batch, n_samples, 1))
+            for k in range(0, n_permutations, batch):
+                batch_actual = min(batch, n_permutations-k)
+                # Don't permute in place, otherwise results depend on `batch`
+                permuted_indices = random_state.permuted(indices, axis=-1)
+                yield permuted_indices[:batch_actual]
+    else:  # RandomState and early Generators don't have `permuted`
+        def batched_perm_generator():
+            for k in range(0, n_permutations, batch):
+                batch_actual = min(batch, n_permutations-k)
+                size = (batch_actual, n_samples, n_obs_sample)
+                x = random_state.random(size=size)
+                yield np.argsort(x, axis=-1)[:batch_actual]
+
+    return batched_perm_generator()
+
 def _calculate_null_both(data, statistic, n_permutations, batch,
                          random_state=None):
     """
@@ -953,22 +996,23 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
     if n_permutations >= n_max:
         exact_test = True
         n_permutations = n_max
+        batch = batch or int(n_permutations)
         # cartesian product of the sets of all permutations of indices
         perm_generator = product(*(permutations(range(n_obs_sample))
                                    for i in range(n_samples)))
+        batched_perm_generator = _batch_generator(perm_generator, batch=batch)
     else:
         exact_test = False
+        batch = batch or int(n_permutations)
         # Separate random permutations of indices for each sample.
         # Again, it would be nice if RandomState/Generator.permutation
         # could permute each axis-slice separately.
-        perm_generator = ([random_state.permutation(n_obs_sample)
-                           for i in range(n_samples)]
-                          for j in range(n_permutations))
+        args = n_permutations, n_samples, n_obs_sample, batch, random_state
+        batched_perm_generator = _pairings_permutations_gen(*args)
 
-    batch = batch or int(n_permutations)
     null_distribution = []
 
-    for indices in _batch_generator(perm_generator, batch=batch):
+    for indices in batched_perm_generator:
         indices = np.array(indices)
 
         # `indices` is 3D: the zeroth axis is for permutations, the next is
@@ -1413,7 +1457,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
 
     The probability of obtaining a test statistic less than or equal to the
     observed value under the null hypothesis is 0.4329%. This is less than our
-    chosen threshold of 5%, so we consider this to to be significant evidence
+    chosen threshold of 5%, so we consider this to be significant evidence
     against the null hypothesis in favor of the alternative.
 
     Because the size of the samples above was small, `permutation_test` could

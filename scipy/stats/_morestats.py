@@ -12,12 +12,12 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 from scipy import optimize
 from scipy import special
 from scipy._lib._bunch import _make_tuple_bunch
-from scipy._lib._util import _rename_parameter
+from scipy._lib._util import _rename_parameter, _contains_nan
 
 from . import _statlib
 from . import _stats_py
-from ._stats_py import (find_repeats, _contains_nan, _normtest_finish,
-                        SignificanceResult)
+from ._fit import FitResult
+from ._stats_py import find_repeats, _normtest_finish, SignificanceResult
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -33,7 +33,7 @@ __all__ = ['mvsdist',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot', 'directionalmean'
+           'yeojohnson_normplot', 'directional_stats'
            ]
 
 
@@ -310,7 +310,7 @@ def kstat(data, n=2):
     elif n == 4:
         return ((-6*S[1]**4 + 12*N*S[1]**2 * S[2] - 3*N*(N-1.0)*S[2]**2 -
                  4*N*(N+1)*S[1]*S[3] + N*N*(N+1)*S[4]) /
-                 (N*(N-1.0)*(N-2.0)*(N-3.0)))
+                (N*(N-1.0)*(N-2.0)*(N-3.0)))
     else:
         raise ValueError("Should not be here.")
 
@@ -1181,11 +1181,11 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     >>> lmax_pearsonr = stats.boxcox_normmax(x)
 
     >>> lmax_mle
-    1.4613865614008015
+    2.217563431465757
     >>> lmax_pearsonr
-    1.6685004886804342
+    2.238318660200961
     >>> stats.boxcox_normmax(x, method='all')
-    array([1.66850049, 1.46138656])
+    array([2.23831866, 2.21756343])
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -1534,7 +1534,7 @@ def yeojohnson_llf(lmb, data):
         llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
 
-    where :math:`\hat{\sigma}^2` is estimated variance of the the Yeo-Johnson
+    where :math:`\hat{\sigma}^2` is estimated variance of the Yeo-Johnson
     transformed input data ``x``.
 
     .. versionadded:: 1.2.0
@@ -1831,9 +1831,9 @@ _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
 _Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
 
 
-AndersonResult = namedtuple('AndersonResult', ('statistic',
-                                               'critical_values',
-                                               'significance_level'))
+AndersonResult = _make_tuple_bunch('AndersonResult',
+                                   ['statistic', 'critical_values',
+                                    'significance_level'], ['fit_result'])
 
 
 def anderson(x, dist='norm'):
@@ -1857,15 +1857,21 @@ def anderson(x, dist='norm'):
 
     Returns
     -------
-    statistic : float
-        The Anderson-Darling test statistic.
-    critical_values : list
-        The critical values for this distribution.
-    significance_level : list
-        The significance levels for the corresponding critical values
-        in percents.  The function returns critical values for a
-        differing set of significance levels depending on the
-        distribution that is being tested against.
+    result : AndersonResult
+        An object with the following attributes:
+
+        statistic : float
+            The Anderson-Darling test statistic.
+        critical_values : list
+            The critical values for this distribution.
+        significance_level : list
+            The significance levels for the corresponding critical values
+            in percents.  The function returns critical values for a
+            differing set of significance levels depending on the
+            distribution that is being tested against.
+        fit_result : `~scipy.stats._result_classes.FitResult`
+            An object containing the results of fitting the distribution to
+            the data.
 
     See Also
     --------
@@ -1904,24 +1910,49 @@ def anderson(x, dist='norm'):
     .. [6] Stephens, M. A. (1979). Tests of Fit for the Logistic Distribution
            Based on the Empirical Distribution Function, Biometrika, Vol. 66,
            pp. 591-595.
+           
+    Examples
+    --------
+    Test the null hypothesis that a random sample was drawn from a normal
+    distribution (with unspecified mean and standard deviation).
 
-    """
-    if dist not in ['norm', 'expon', 'gumbel', 'gumbel_l',
-                    'gumbel_r', 'extreme1', 'logistic']:
-        raise ValueError("Invalid distribution; dist must be 'norm', "
-                         "'expon', 'gumbel', 'extreme1' or 'logistic'.")
+    >>> import numpy as np
+    >>> from scipy.stats import anderson
+    >>> rng = np.random.default_rng()
+    >>> data = rng.random(size=35)
+    >>> res = anderson(data)
+    >>> res.statistic
+    0.8398018749744764
+    >>> res.critical_values
+    array([0.527, 0.6  , 0.719, 0.839, 0.998])
+    >>> res.significance_level
+    array([15. , 10. ,  5. ,  2.5,  1. ])
+
+    The value of the statistic (barely) exceeds the critical value associated
+    with a significance level of 2.5%, so the null hypothesis may be rejected
+    at a significance level of 2.5%, but not at a significance level of 1%.
+
+    """  # noqa
+    dist = dist.lower()
+    if dist in {'extreme1', 'gumbel'}:
+        dist = 'gumbel_l'
+    dists = {'norm', 'expon', 'gumbel_l', 'gumbel_r', 'logistic'}
+    if dist not in dists:
+        raise ValueError(f"Invalid distribution; dist must be in {dists}.")
     y = sort(x)
     xbar = np.mean(x, axis=0)
     N = len(y)
     if dist == 'norm':
         s = np.std(x, ddof=1, axis=0)
         w = (y - xbar) / s
+        fit_params = xbar, s
         logcdf = distributions.norm.logcdf(w)
         logsf = distributions.norm.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
         critical = around(_Avals_norm / (1.0 + 4.0/N - 25.0/N/N), 3)
     elif dist == 'expon':
         w = y / xbar
+        fit_params = 0, xbar
         logcdf = distributions.expon.logcdf(w)
         logsf = distributions.expon.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
@@ -1938,6 +1969,7 @@ def anderson(x, dist='norm'):
         sol0 = array([xbar, np.std(x, ddof=1, axis=0)])
         sol = optimize.fsolve(rootfunc, sol0, args=(x, N), xtol=1e-5)
         w = (y - sol[0]) / sol[1]
+        fit_params = sol
         logcdf = distributions.logistic.logcdf(w)
         logsf = distributions.logistic.logsf(w)
         sig = array([25, 10, 5, 2.5, 1, 0.5])
@@ -1945,13 +1977,15 @@ def anderson(x, dist='norm'):
     elif dist == 'gumbel_r':
         xbar, s = distributions.gumbel_r.fit(x)
         w = (y - xbar) / s
+        fit_params = xbar, s
         logcdf = distributions.gumbel_r.logcdf(w)
         logsf = distributions.gumbel_r.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
-    else:  # (dist == 'gumbel') or (dist == 'gumbel_l') or (dist == 'extreme1')
+    elif dist == 'gumbel_l':
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y - xbar) / s
+        fit_params = xbar, s
         logcdf = distributions.gumbel_l.logcdf(w)
         logsf = distributions.gumbel_l.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
@@ -1960,7 +1994,14 @@ def anderson(x, dist='norm'):
     i = arange(1, N + 1)
     A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
 
-    return AndersonResult(A2, critical, sig)
+    # FitResult initializer expects an optimize result, so let's work with it
+    message = '`anderson` successfully fit the distribution to the data.'
+    res = optimize.OptimizeResult(success=True, message=message)
+    res.x = np.array(fit_params)
+    fit_result = FitResult(getattr(distributions, dist), y,
+                           discrete=False, res=res)
+
+    return AndersonResult(A2, critical, sig, fit_result=fit_result)
 
 
 def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
@@ -2681,7 +2722,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     is `p`.
 
     .. deprecated:: 1.10.0
-        'binom_test' is deprecated in favour of 'binomtest' and will
+        `binom_test` is deprecated in favour of `binomtest` and will
         be removed in Scipy 1.12.0.
 
     Parameters
@@ -3297,7 +3338,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     >>> d = [6, 8, 14, 16, 23, 24, 28, 29, 41, -48, 49, 56, 60, -67, 75]
 
-    Cross-fertilized plants appear to be be higher. To test the null
+    Cross-fertilized plants appear to be higher. To test the null
     hypothesis that there is no height difference, we can apply the
     two-sided test:
 
@@ -3739,16 +3780,39 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     circmean : float
         Circular mean.
 
+    See Also
+    --------
+    circstd : Circular standard deviation.
+    circvar : Circular variance.
+
     Examples
     --------
+    For simplicity, all angles are printed out in degrees.
+
     >>> import numpy as np
     >>> from scipy.stats import circmean
-    >>> circmean([0.1, 2*np.pi+0.2, 6*np.pi+0.3])
-    0.2
+    >>> import matplotlib.pyplot as plt
+    >>> angles = np.deg2rad(np.array([20, 30, 330]))
+    >>> circmean = circmean(angles)
+    >>> np.rad2deg(circmean)
+    7.294976657784009
 
-    >>> from scipy.stats import circmean
-    >>> circmean([0.2, 1.4, 2.6], high = 1, low = 0)
-    0.4
+    >>> mean = angles.mean()
+    >>> np.rad2deg(mean)
+    126.66666666666666
+
+    Plot and compare the circular mean against the arithmetic mean.
+
+    >>> plt.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...          np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...          c='k')
+    >>> plt.scatter(np.cos(angles), np.sin(angles), c='k')
+    >>> plt.scatter(np.cos(circmean), np.sin(circmean), c='b',
+    ...             label='circmean')
+    >>> plt.scatter(np.cos(mean), np.sin(mean), c='r', label='mean')
+    >>> plt.legend()
+    >>> plt.axis('equal')
+    >>> plt.show()
 
     """
     samples, sin_samp, cos_samp, nmask = _circfuncs_common(samples, high, low,
@@ -3808,6 +3872,11 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     circvar : float
         Circular variance.
 
+    See Also
+    --------
+    circmean : Circular mean.
+    circstd : Circular standard deviation.
+
     Notes
     -----
     This uses the following definition of circular variance: ``1-R``, where
@@ -3818,15 +3887,35 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     References
     ----------
-    ..[1] Fisher, N.I. *Statistical analysis of circular data*. Cambridge
+    .. [1] Fisher, N.I. *Statistical analysis of circular data*. Cambridge
           University Press, 1993.
 
     Examples
     --------
     >>> import numpy as np
     >>> from scipy.stats import circvar
-    >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
-    0.6666666666666665
+    >>> import matplotlib.pyplot as plt
+    >>> samples_1 = np.array([0.072, -0.158, 0.077, 0.108, 0.286,
+    ...                       0.133, -0.473, -0.001, -0.348, 0.131])
+    >>> samples_2 = np.array([0.111, -0.879, 0.078, 0.733, 0.421,
+    ...                       0.104, -0.136, -0.867,  0.012,  0.105])
+    >>> circvar_1 = circvar(samples_1)
+    >>> circvar_2 = circvar(samples_2)
+
+    Plot the samples.
+
+    >>> fig, (left, right) = plt.subplots(ncols=2)
+    >>> for image in (left, right):
+    ...     image.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...                np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...                c='k')
+    ...     image.axis('equal')
+    ...     image.axis('off')
+    >>> left.scatter(np.cos(samples_1), np.sin(samples_1), c='k', s=15)
+    >>> left.set_title(f"circular variance: {np.round(circvar_1, 2)!r}")
+    >>> right.scatter(np.cos(samples_2), np.sin(samples_2), c='k', s=15)
+    >>> right.set_title(f"circular variance: {np.round(circvar_2, 2)!r}")
+    >>> plt.show()
 
     """
     samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
@@ -3878,6 +3967,11 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     circstd : float
         Circular standard deviation.
 
+    See Also
+    --------
+    circmean : Circular mean.
+    circvar : Circular variance.
+
     Notes
     -----
     This uses a definition of circular standard deviation from [1]_.
@@ -3904,11 +3998,31 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     --------
     >>> import numpy as np
     >>> from scipy.stats import circstd
-    >>> small_samples = [0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2]
-    >>> circstd(small_samples)
-    0.06356406330602443
-    >>> np.std(small_samples)
-    0.06355419420577858
+    >>> import matplotlib.pyplot as plt
+    >>> samples_1 = np.array([0.072, -0.158, 0.077, 0.108, 0.286,
+    ...                       0.133, -0.473, -0.001, -0.348, 0.131])
+    >>> samples_2 = np.array([0.111, -0.879, 0.078, 0.733, 0.421,
+    ...                       0.104, -0.136, -0.867,  0.012,  0.105])
+    >>> circstd_1 = circstd(samples_1)
+    >>> circstd_2 = circstd(samples_2)
+
+    Plot the samples.
+
+    >>> fig, (left, right) = plt.subplots(ncols=2)
+    >>> for image in (left, right):
+    ...     image.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...                np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...                c='k')
+    ...     image.axis('equal')
+    ...     image.axis('off')
+    >>> left.scatter(np.cos(samples_1), np.sin(samples_1), c='k', s=15)
+    >>> left.set_title(f"circular std: {np.round(circstd_1, 2)!r}")
+    >>> right.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...            np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...            c='k')
+    >>> right.scatter(np.cos(samples_2), np.sin(samples_2), c='k', s=15)
+    >>> right.set_title(f"circular std: {np.round(circstd_2, 2)!r}")
+    >>> plt.show()
 
     """
     samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
@@ -3931,13 +4045,31 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     return res
 
 
-def directionalmean(samples, *, axis=0, normalize=True):
+class DirectionalStats:
+    def __init__(self, mean_direction, mean_resultant_length):
+        self.mean_direction = mean_direction
+        self.mean_resultant_length = mean_resultant_length
+
+    def __repr__(self):
+        return (f"DirectionalStats(mean_direction={self.mean_direction},"
+                f" mean_resultant_length={self.mean_resultant_length})")
+
+
+def directional_stats(samples, *, axis=0, normalize=True):
     """
-    Computes the directional mean of a sample of vectors.
+    Computes sample statistics for directional data.
+
+    Computes the directional mean (also called the mean direction vector) and
+    mean resultant length of a sample of vectors.
 
     The directional mean is a measure of "preferred direction" of vector data.
-    It is analogous to the sample mean, but it is for use when the magnitude of
+    It is analogous to the sample mean, but it is for use when the length of
     the data is irrelevant (e.g. unit vectors).
+
+    The mean resultant length is a value between 0 and 1 used to quantify the
+    dispersion of directional data: the smaller the mean resultant length, the
+    greater the dispersion. Several definitions of directional variance
+    involving the mean resultant length are given in [1]_ and [2]_.
 
     Parameters
     ----------
@@ -3955,12 +4087,18 @@ def directionalmean(samples, *, axis=0, normalize=True):
 
     Returns
     -------
-    directionalmean : ndarray
-        Directional mean.
+    res : DirectionalStats
+        An object containing attributes:
+
+        mean_direction : ndarray
+            Directional mean.
+        mean_resultant_length : ndarray
+            The mean resultant length [1]_.
 
     See also
     --------
     circmean: circular mean; i.e. directional mean for 2D *angles*
+    circvar: circular variance; i.e. directional variance for 2D *angles*
 
     Notes
     -----
@@ -3969,26 +4107,36 @@ def directionalmean(samples, *, axis=0, normalize=True):
 
     .. code-block:: python
 
-        mean=samples.mean(axis=0)
-        directionalmean = mean/np.linalg.norm(mean)
+        mean = samples.mean(axis=0)
+        mean_resultant_length = np.linalg.norm(mean)
+        mean_direction = mean / mean_resultant_length
 
     This definition is appropriate for *directional* data (i.e. vector data
     for which the magnitude of each observation is irrelevant) but not
     for *axial* data (i.e. vector data for which the magnitude and *sign* of
     each observation is irrelevant).
 
+    Several definitions of directional variance involving the mean resultant
+    length ``R`` have been proposed, including ``1 - R`` [1]_, ``1 - R**2``
+    [2]_, and ``2 * (1 - R)`` [2]_. Rather than choosing one, this function
+    returns ``R`` as attribute `mean_resultant_length` so the user can compute
+    their preferred measure of dispersion.
+
     References
     ----------
     .. [1] Mardia, Jupp. (2000). *Directional Statistics*
        (p. 163). Wiley.
 
+    .. [2] https://en.wikipedia.org/wiki/Directional_statistics
+
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.stats import directionalmean
+    >>> from scipy.stats import directional_stats
     >>> data = np.array([[3, 4],    # first observation, 2D vector space
     ...                  [6, -8]])  # second observation
-    >>> directionalmean(data)
+    >>> dirstats = directional_stats(data)
+    >>> dirstats.mean_direction
     array([1., 0.])
 
     In contrast, the regular sample mean of the vectors would be influenced
@@ -3998,12 +4146,13 @@ def directionalmean(samples, *, axis=0, normalize=True):
     >>> data.mean(axis=0)
     array([4.5, -2.])
 
-    An exemplary use case for `directionalmean` is to find a *meaningful*
+    An exemplary use case for `directional_stats` is to find a *meaningful*
     center for a set of observations on a sphere, e.g. geographical locations.
 
     >>> data = np.array([[0.8660254, 0.5, 0.],
     ...                  [0.8660254, -0.5, 0.]])
-    >>> directionalmean(data)
+    >>> dirstats = directional_stats(data)
+    >>> dirstats.mean_direction
     array([1., 0., 0.])
 
     The regular sample mean on the other hand yields a result which does not
@@ -4012,6 +4161,14 @@ def directionalmean(samples, *, axis=0, normalize=True):
     >>> data.mean(axis=0)
     array([0.8660254, 0., 0.])
 
+    The function also returns the mean resultant length, which
+    can be used to calculate a directional variance. For example, using the
+    definition ``Var(z) = 1 - R`` from [2]_ where ``R`` is the
+    mean resultant length, we can calculate the directional variance of the
+    vectors in the above example as:
+
+    >>> 1 - dirstats.mean_resultant_length
+    0.13397459716167093
     """
     samples = np.asarray(samples)
     if samples.ndim < 2:
@@ -4022,5 +4179,7 @@ def directionalmean(samples, *, axis=0, normalize=True):
         vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
         samples = samples/vectornorms
     mean = np.mean(samples, axis=0)
-    directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)
-    return directional_mean
+    mean_resultant_length = np.linalg.norm(mean, axis=-1, keepdims=True)
+    mean_direction = mean / mean_resultant_length
+    return DirectionalStats(mean_direction,
+                            mean_resultant_length.squeeze(-1)[()])

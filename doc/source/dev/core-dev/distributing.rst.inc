@@ -25,6 +25,7 @@ are:
 - pytest (to run the test suite)
 - asv_ (to run the benchmarks)
 - matplotlib_ (for some functions that can produce plots)
+- pooch_ (for the scipy.datasets module)
 - Pillow_ (for image loading/saving)
 - scikits.umfpack_ (optionally used in ``sparse.linalg``)
 - mpmath_ (for more extended tests in ``special``)
@@ -206,6 +207,7 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _Pillow: https://pillow.readthedocs.org
 .. _scikits.umfpack: https://pypi.org/project/scikit-umfpack
 .. _mpmath: http://mpmath.org
+.. _pooch: https://www.fatiando.org/pooch/latest/
 .. _Cython: https://cython.org
 .. _pybind11: https://github.com/pybind/pybind11
 .. _setuptools: https://github.com/pypa/setuptools
