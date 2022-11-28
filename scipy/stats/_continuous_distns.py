@@ -10331,7 +10331,7 @@ class relativistic_bw_gen(rv_continuous):
     ----------
     .. [1] Relativistic Breit-Wigner distriution, Wikipedia,
            https://en.wikipedia.org/wiki/Relativistic_Breit-Wigner_distribution
-    .. [2] M. Tanabashi et al. (Particle Data Group) Phys. Rev. D 98, 030001 –
+    .. [2] M. Tanabashi et al. (Particle Data Group) Phys. Rev. D 98, 030001 -
            Published 17 August 2018
 
     %(example)s
