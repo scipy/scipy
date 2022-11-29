@@ -96,10 +96,10 @@ def test_deriv_shapes():
         return pchip(x, y, axis).derivative(2)
 
     def pchip_antideriv(x, y, axis=0):
-        return pchip(x, y, axis).derivative()
+        return pchip(x, y, axis).antiderivative()
 
     def pchip_antideriv2(x, y, axis=0):
-        return pchip(x, y, axis).derivative(2)
+        return pchip(x, y, axis).antiderivative(2)
 
     def pchip_deriv_inplace(x, y, axis=0):
         class P(PchipInterpolator):
