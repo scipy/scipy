@@ -451,8 +451,9 @@ class TestSqrtM:
         assert sqrtm(M).dtype == np.float32
         M = np.zeros((10, 10), dtype=np.float64)
         assert sqrtm(M).dtype == np.float64
-        M = np.zeros((10, 10), dtype=np.float128)
-        assert sqrtm(M).dtype == np.float128
+        if hasattr(np, 'float128'):
+            M = np.zeros((10, 10), dtype=np.float128)
+            assert sqrtm(M).dtype == np.float128
 
     def test_data_size_preservation_float_in_comp_out(self):
         M = np.array([[2, 4], [0, -2]], dtype=np.float16)
@@ -462,16 +463,18 @@ class TestSqrtM:
         assert sqrtm(M).dtype == np.complex64
         M = np.array([[2, 4], [0, -2]], dtype=np.float64)
         assert sqrtm(M).dtype == np.complex128
-        M = np.array([[2, 4], [0, -2]], dtype=np.float128)
-        assert sqrtm(M).dtype == np.complex256
+        if hasattr(np, 'float128') and hasattr(np, 'complex256'):
+            M = np.array([[2, 4], [0, -2]], dtype=np.float128)
+            assert sqrtm(M).dtype == np.complex256
 
     def test_data_size_preservation_comp_in_comp_out(self):
         M = np.array([[2j, 4], [0, -2j]], dtype=np.complex64)
         assert sqrtm(M).dtype == np.complex128
         M = np.array([[2j, 4], [0, -2j]], dtype=np.complex128)
         assert sqrtm(M).dtype == np.complex256
-        M = np.array([[2j, 4], [0, -2j]], dtype=np.complex256)
-        assert sqrtm(M).dtype == np.complex256
+        if hasattr(np, 'complex256'):
+            M = np.array([[2j, 4], [0, -2j]], dtype=np.complex256)
+            assert sqrtm(M).dtype == np.complex256
 
 
 class TestFractionalMatrixPower:
