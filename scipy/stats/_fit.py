@@ -834,7 +834,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     *Algorithmic overview*
 
     In brief, this routine executes the following steps:
-    
+
       1. Fit unknown parameters to the given `data`, thereby forming the
          "null-hypothesized" distribution and compute the statistic for them.
       2. Draw random samples from this null-hypothesized distribution.
@@ -846,7 +846,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
          samples from (4). The p-value is the proportion of samples with a
          statistic value greater than or equal to the statistic of the observed
          data.
-         
+
     In more detail, the steps are as follows.
 
     First, any unknown parameters of the distribution family specified by
