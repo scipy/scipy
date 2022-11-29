@@ -25,10 +25,6 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
     s.insert(axis % (len(y_shape)+1), 0)
     y = np.random.rand(*((6,) + y_shape)).transpose(s)
 
-    # Cython code chokes on y.shape = (0, 3) etc., skip them
-    if y.size == 0:
-        return
-
     xi = np.zeros(x_shape)
     if interpolator_cls is CubicHermiteSpline:
         dydx = np.random.rand(*((6,) + y_shape)).transpose(s)
