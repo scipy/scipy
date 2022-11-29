@@ -720,7 +720,7 @@ GoodnessOfFitResult = namedtuple('GoodnessOfFitResult',
 
 
 def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
-                    fit_init_params=None, statistic='ad', n_mc_samples=9999,
+                    guessed_params=None, statistic='ad', n_mc_samples=9999,
                     random_state=None):
     r"""
     Perform a goodness of fit test comparing data to a distribution family.
@@ -756,12 +756,12 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         parameter. On those Monte Carlo samples, however, these and all other
         unknown parameters of the null-hypothesized distribution family are
         fit before the statistic is evaluated.
-    fit_init_params : dict, optional
+    guessed_params : dict, optional
         A dictionary containing name-value pairs of distribution parameters
         which have been guessed. These parameters are always considered as
         free parameters and are fit both to the provided `data` as well as
         to the Monte Carlo samples drawn from the null-hypothesized
-        distribtion. The purpose of these `fit_init_params` is to be used as
+        distribtion. The purpose of these `guessed_params` is to be used as
         initial starting values for the numerical fitting procedure.
     statistic : {"ad", "ks", "cvm"}, optional
         The statistic used to compare data to a distribution after fitting
@@ -1083,7 +1083,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     (0.2231991510248692, 0.0525)
 
     """
-    args = _gof_iv(dist, data, known_params, fit_params, fit_init_params,
+    args = _gof_iv(dist, data, known_params, fit_params, guessed_params,
                    statistic, n_mc_samples, random_state)
     (dist, data, fixed_nhd_params, fixed_rfd_params, guessed_nhd_params,
      guessed_rfd_params, statistic, n_mc_samples_int, random_state) = args
@@ -1125,14 +1125,14 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                                res.null_distribution)
 
 
-def _get_fit_fun(dist, data, fit_init_params, fixed_params):
+def _get_fit_fun(dist, data, guessed_params, fixed_params):
 
     shape_names = [] if dist.shapes is None else dist.shapes.split(", ")
     param_names = shape_names + ['loc', 'scale']
     fparam_names = ['f'+name for name in param_names]
     all_fixed = not set(fparam_names).difference(fixed_params)
-    guessed_shapes = [fit_init_params.pop(x, None)
-                      for x in shape_names if x in fit_init_params]
+    guessed_shapes = [guessed_params.pop(x, None)
+                      for x in shape_names if x in guessed_params]
 
     # Define statistic, including fitting distribution to data
     if dist in _fit_funs:
@@ -1149,7 +1149,7 @@ def _get_fit_fun(dist, data, fit_init_params, fixed_params):
 
     else:
         def fit_fun_1d(data):
-            return dist.fit(data, *guessed_shapes, **fit_init_params,
+            return dist.fit(data, *guessed_shapes, **guessed_params,
                             **fixed_params)
 
         def fit_fun(data):
@@ -1225,7 +1225,7 @@ _compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov,
                  "cvm": _cramer_von_mises}
 
 
-def _gof_iv(dist, data, known_params, fit_params, fit_init_params, statistic,
+def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
             n_mc_samples, random_state):
 
     if not isinstance(dist, stats.rv_continuous):
@@ -1242,7 +1242,7 @@ def _gof_iv(dist, data, known_params, fit_params, fit_init_params, statistic,
     # but collect these into dictionaries that will be used
     known_params = known_params or dict()
     fit_params = fit_params or dict()
-    fit_init_params = fit_init_params or dict()
+    guessed_params = guessed_params or dict()
 
     known_params_f = {("f"+key): val for key, val in known_params.items()}
     fit_params_f = {("f"+key): val for key, val in fit_params.items()}
@@ -1257,12 +1257,12 @@ def _gof_iv(dist, data, known_params, fit_params, fit_init_params, statistic,
 
     # These are used as guesses when fitting the distribution family to
     # the original data
-    guessed_nhd_params = fit_init_params.copy()
+    guessed_nhd_params = guessed_params.copy()
 
     # These are used as guesses when fitting the distribution family to
     # resamples
     guessed_rfd_params = fit_params.copy()
-    guessed_rfd_params.update(fit_init_params)
+    guessed_rfd_params.update(guessed_params)
 
     statistics = {'ad', 'ks', 'cvm'}
     if statistic.lower() not in statistics:
