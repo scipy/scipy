@@ -3402,7 +3402,7 @@ class TestBeta:
         # the value), because our goal here is to verify that the call does
         # not trigger a segmentation fault.
         try:
-            stats.beta.ppf(p, a, b)
+            method(p, a, b)
         except OverflowError:
             # The OverflowError exception occurs with Boost 1.80 or earlier
             # when Boost's double promotion policy is false; see
