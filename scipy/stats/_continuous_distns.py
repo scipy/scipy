@@ -9341,35 +9341,20 @@ class vonmises_gen(rv_continuous):
         0.0
 
         """
-        lockwds = {'loc': loc,
-                   'scale': scale}
         self._argcheck(*args)
         _a, _b = -np.pi, np.pi
         if func is None:
-            def fun(x, *args):
-                return np.exp(1j*x) * self.pdf(x, *args, **lockwds)
-        else:
-            def fun(x, *args):
-                return func(x) * self.pdf(x, *args, **lockwds)
+            def func(x, *args):
+                return np.exp(1j*x)
 
         if lb is None:
             lb = loc + _a
         if ub is None:
             ub = loc + _b
-        if ub-lb > 2*np.pi:
-            raise ValueError("Interval of Von Mises integral must " +
-                             "be 2pi or smaller.")
 
-        cdf_bounds = self.cdf([lb, ub], *args, **lockwds)
-        invfac = cdf_bounds[1] - cdf_bounds[0]
-
-        kwds['args'] = args
-
-        vals = integrate.quad(fun, lb, ub, complex_func=True, **kwds)[0]
-
-        if conditional:
-            vals /= invfac
-        return np.array(vals)[()]  # make it a numpy scalar like other methods
+        kwds['complex_func'] = True
+        return super().expect(func, args, loc,
+                              scale, lb, ub, conditional, **kwds)
 
 
 vonmises = vonmises_gen(name='vonmises')
