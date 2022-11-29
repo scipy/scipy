@@ -470,9 +470,9 @@ class TestSqrtM:
     def test_data_size_preservation_comp_in_comp_out(self):
         M = np.array([[2j, 4], [0, -2j]], dtype=np.complex64)
         assert sqrtm(M).dtype == np.complex128
-        M = np.array([[2j, 4], [0, -2j]], dtype=np.complex128)
-        assert sqrtm(M).dtype == np.complex256
         if hasattr(np, 'complex256'):
+            M = np.array([[2j, 4], [0, -2j]], dtype=np.complex128)
+            assert sqrtm(M).dtype == np.complex256
             M = np.array([[2j, 4], [0, -2j]], dtype=np.complex256)
             assert sqrtm(M).dtype == np.complex256
 
