@@ -761,8 +761,8 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         which have been guessed. These parameters are always considered as
         free parameters and are fit both to the provided `data` as well as
         to the Monte Carlo samples drawn from the null-hypothesized
-        distribtion. The purpose of these `guessed_params` is to be used as
-        initial starting values for the numerical fitting procedure.
+        distribution. The purpose of these `guessed_params` is to be used as
+        initial values for the numerical fitting procedure.
     statistic : {"ad", "ks", "cvm"}, optional
         The statistic used to compare data to a distribution after fitting
         unknown parameters of the distribution family to the data. The
@@ -838,13 +838,16 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
       1. Fit unknown parameters to the given `data`, thereby forming the
          "null-hypothesized" distribution and compute the statistic for them.
       2. Draw random samples from this null-hypothesized distribution.
-      3. Re-Fit the unknown parameters again on each sample.
-      4. Calculate the statistic on each sample with the distribution specified
-         by the re-fit parameters (and the known parameters, of course).
-      5. Compare those values of the statistic (4) to the one from the `data`
-         with its corresponding null-hypothesized distribution (1).
+      3. Fit the unknown parameters to each random sample.
+      4. Calculate the statistic between each sample and the distribution that
+         has been fit to the sample.
+      5. Compare the value of the statistic corresponding with `data` from (1)
+         against the values of the statistic corresponding with the random
+         samples from (4). The p-value is the proportion of samples with a
+         statistic value greater than or equal to the statistic of the observed
+         data.
          
-    In more details, the steps are as follows.
+    In more detail, the steps are as follows.
 
     First, any unknown parameters of the distribution family specified by
     `dist` are fit to the provided `data` using maximum likelihood estimation.
@@ -1007,7 +1010,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     However, the KS statistic is not very sensitive to all deviations from
     normality. The original advantage of the KS statistic was the ability
     to compute the null distribution theoretically, but a more sensitive
-    statistic - resulting in a higher test power -  can be used now that we can
+    statistic - resulting in a higher test power - can be used now that we can
     approximate the null distribution
     computationally. The Anderson-Darling statistic [1]_ tends to be more
     sensitive, and critical values of the this statistic have been tabulated
