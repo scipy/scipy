@@ -272,7 +272,7 @@ scipy/special/_comb.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
 scipy/special/_logit.c
-scipy/special/_test_round.c
+scipy/special/_test_internal.c
 scipy/special/_ufuncs.c
 scipy/special/_ufuncs.h
 scipy/special/_ufuncs.pyx
