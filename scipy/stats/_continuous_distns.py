@@ -9245,7 +9245,7 @@ class vonmises_gen(rv_continuous):
                 np.log(2 * np.pi * sc.i0e(kappa)) + kappa)
 
     def expect(self, func=None, args=(), loc=0, scale=1, lb=-np.pi, ub=np.pi,
-                conditional=False, **kwds):
+               conditional=False, **kwds):
         """Calculate expected value of a function with respect to the
         distribution by numerical integration.
 
@@ -9278,7 +9278,8 @@ class vonmises_gen(rv_continuous):
         scale : float, optional
             Scale parameter (default=1).
         lb, ub : scalar, optional
-            Lower and upper bound for integration. Default is set [-np.pi,np.pi]
+            Lower and upper bound for integration.
+            Default is set [-np.pi,np.pi]
         conditional : bool, optional
             If True, the integral is corrected by the conditional probability
             of the integration interval.  The return value is the expectation
@@ -9351,26 +9352,20 @@ class vonmises_gen(rv_continuous):
             def fun(x, *args):
                 return func(x) * self.pdf(x, *args, **lockwds)
 
-        def refun(x, *args):
-            return np.real(fun(x, *args))
-
-        def imfun(x, *args):
-            return np.imag(fun(x, *args))
         if lb is None:
             lb = loc + _a
         if ub is None:
             ub = loc + _b
         if ub-lb > 2*np.pi:
-            raise ValueError("Interval of Von Mises integral must be 2pi or smaller.")
+            raise ValueError("Interval of Von Mises integral must " +
+                             "be 2pi or smaller.")
 
         cdf_bounds = self.cdf([lb, ub], *args, **lockwds)
         invfac = cdf_bounds[1] - cdf_bounds[0]
 
         kwds['args'] = args
 
-        alpha = integrate.quad(refun, lb, ub, **kwds)[0]
-        beta = 1j*integrate.quad(imfun, lb, ub, **kwds)[0]
-        vals = alpha + beta
+        vals = integrate.quad(fun, lb, ub, complex_func=True, **kwds)[0]
 
         if conditional:
             vals /= invfac
