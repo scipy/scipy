@@ -836,7 +836,8 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     In brief, this routine executes the following steps:
 
       1. Fit unknown parameters to the given `data`, thereby forming the
-         "null-hypothesized" distribution and compute the statistic for them.
+         "null-hypothesized" distribution, and compute the statistic of
+         this pair of data and distribution.
       2. Draw random samples from this null-hypothesized distribution.
       3. Fit the unknown parameters to each random sample.
       4. Calculate the statistic between each sample and the distribution that
