@@ -6,6 +6,8 @@ Routines for evaluating and manipulating B-splines.
 import numpy as np
 cimport numpy as cnp
 
+from numpy cimport npy_intp
+
 cimport cython
 from libc.math cimport NAN
 
@@ -425,7 +427,7 @@ def _make_design_matrix(const double[::1] x,
 
     Note that only indices is passed, but not indptr because indptr is already
     precomputed in the calling Python function design_matrix.
-    
+
     Parameters
     ----------
     x : array_like, shape (n,)
@@ -445,7 +447,7 @@ def _make_design_matrix(const double[::1] x,
         The data array of a CSR array of the b-spline design matrix.
         In each row all the basis elements are evaluated at the certain point
         (first row - x[0], ..., last row - x[-1]).
-    
+
     indices
         The indices array of a CSR array of the b-spline design matrix.
     """
@@ -473,3 +475,93 @@ def _make_design_matrix(const double[::1] x,
             indices[m] = ind - k + j
 
     return np.asarray(data), np.asarray(indices)
+
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.nonecheck(False)
+def evaluate_ndbspline(const double[:, ::1] xi,
+                       tuple t,
+                       tuple ktuple,
+                       const double[::1] c1r,
+                       npy_intp num_c_tr,
+                       double[:, ::1] out,
+                       const npy_intp[:, ::] indices_k1d,
+                       const npy_intp[::1] strides_c1,
+                      ):
+        cdef:
+            npy_intp ndim = len(t)
+
+            # 'intervals': indices for a point in xi into the knot arrays t
+            npy_intp[::1] i = np.empty(ndim, dtype=int)
+
+            # container for non-zero b-splines at each point in xi
+            double[:, ::1] b = np.empty((ndim, max(ktuple)+1), dtype=float)
+
+            const double[::1] x
+            const double[::1] td
+            double xd
+            npy_intp kd
+            const npy_intp[::1] k = np.asarray(ktuple, dtype=int)
+
+            npy_intp i_c      # index to loop over range(num_c_tr)
+            npy_intp iflat    # index to loop over (k+1)**ndim non-zero terms
+            npy_intp volume   # the number of non-zero terms
+            const npy_intp[:] idx_b   # ndim-dimensional index corresponding to iflat_idx
+
+            npy_intp idx_cflat_base, idx
+
+            double factor
+        
+            double[::1] wrk = np.empty(2*max(ktuple)+2, dtype=float)
+
+        # TODO: basic asserts of input shapes
+
+        volume = 1
+        for d in range(ndim):
+            volume *= k[d] + 1
+
+        ### Finally, iterate over the data points
+        for j in range(xi.shape[0]):
+            x = xi[j]
+
+            for d in range(ndim):
+                td = t[d]
+                xd = x[d]
+                kd = k[d]
+
+                # get the location of x[d] in t[d]
+                i[d] = find_interval(td, kd, xd, kd, False)
+                # TODO: interval < 0
+
+                # compute non-zero b-splines at this value of xd in dimension d
+                _deBoor_D(&td[0], xd, kd, i[d], 0, &wrk[0])
+                b[d, :kd+1] = wrk[:kd+1]
+
+            for i_c in range(num_c_tr):
+                out[j, i_c] = 0.0
+
+            # iterate over the direct products
+            for iflat in range(volume):
+                # idx_b = np.unravel_index(iflat, (k+1,)*ndim)   # equiv below
+                idx_b = indices_k1d[iflat, :]
+                
+                # 1. Shift the subblock indices into indices into c1.ravel()
+                # 2. Collect the product of non-zero b-splines at this value of the $x$ vector
+                # 3. Compute the base index for iterating over the c1 array
+                idx_cflat_base = 0
+                factor = 1.0
+                for d in range(ndim):
+                    factor *= b[d, idx_b[d]]
+                    idx = idx_b[d] + i[d] - k[d]
+                    idx_cflat_base += idx * strides_c1[d]
+
+                ### collect linear combinations of coef * factor
+                for i_c in range(num_c_tr):
+                    # this is equivalent to 
+                    # idx_cflat = np.ravel_multi_index(tuple(idx_c) + (i_c,), c1.shape)
+                    # we pre-computed the first ndim strides of `c1r` array and use the
+                    # fact that the `c1r` array is C-ordered by construction
+                    out[j, i_c] += c1r[idx_cflat_base + i_c] * factor
+

@@ -1,17 +1,16 @@
+import operator
+import itertools
+
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_
 from pytest import raises as assert_raises
 import pytest
 
-from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
-<<<<<<< HEAD
-                               make_lsq_spline, _bspl, splev, splrep, splprep,
-                               splder, splantider, sproot, splint, insert,
-                               CubicSpline, make_smoothing_spline)
-=======
-        make_lsq_spline, _bspl, splev, splrep, splprep, splder, splantider,
-         sproot, splint, insert, CubicSpline, NdBSpline)
->>>>>>> MAINT: interpolate/ndbspline: initial version
+from scipy.interpolate import (
+        BSpline, BPoly, PPoly, make_interp_spline, make_lsq_spline, _bspl,
+        splev, splrep, splprep, splder, splantider, sproot, splint, insert,
+        CubicSpline, NdBSpline, make_smoothing_spline
+)
 import scipy.linalg as sl
 
 from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
@@ -1672,7 +1671,8 @@ class TestSmoothingSpline:
                                  f'{weighted:.4}')
 
 
-###  NdBSpline tests ###########
+################################
+# NdBSpline tests
 def bspline2(xy, t, c, k):
     """A naive 2D tensort product spline evaluation."""
     x, y = xy
@@ -1683,6 +1683,7 @@ def bspline2(xy, t, c, k):
     assert (ny >= k+1)
     return sum(c[ix, iy] * B(x, k, ix, tx) * B(y, k, iy, ty)
                for ix in range(nx) for iy in range(ny))
+
 
 def B(x, k, i, t):
     if k == 0:
@@ -1697,21 +1698,19 @@ def B(x, k, i, t):
         c2 = (t[i+k+1] - x)/(t[i+k+1] - t[i+1]) * B(x, k-1, i+1, t)
     return c1 + c2
 
+
 def bspline(x, t, c, k):
     n = len(t) - k - 1
     assert (n >= k+1) and (len(c) >= n)
     return sum(c[i] * B(x, k, i, t) for i in range(n))
 
 
-import operator
-import itertools
 class NdBSpline0:
     def __init__(self, t, c, k=3):
         """Tensor product spline object.
-        
+
         c[i1, i2, ..., id] * B(x1, i1) * B(x2, i2) * ... * B(xd, id)
-        
-        
+
         Parameters
         ----------
         c : ndarray, shape (n1, n2, ..., nd, ...)
@@ -1724,7 +1723,7 @@ class NdBSpline0:
         """
         ndim = len(t)
         assert ndim <= len(c.shape)
-        
+
         try:
             len(k)
         except TypeError:
@@ -1739,13 +1738,13 @@ class NdBSpline0:
         ndim = len(self.t)
         # a single evaluation point: `x` is a 1D array_like, shape (ndim,)
         assert len(x) == ndim
-        
+
         # get the indices in an ndim-dimensional vector
-        i = ['none',]*ndim
+        i = ['none', ]*ndim
         for d in range(ndim):
             td, xd = self.t[d], x[d]
             k = self.k[d]
-            
+
             # find the index for x[d]
             if xd == td[k]:
                 i[d] = k
@@ -1754,7 +1753,7 @@ class NdBSpline0:
             assert td[i[d]] <= xd <= td[i[d]+1]
             assert i[d] >= k and i[d] < len(td) - k
         i = tuple(i)
-        
+
         # iterate over the dimensions, form linear combinations of
         # products B(x_1) * B(x_2) * ... B(x_N) of (k+1)**N b-splines
         # which are non-zero at `i = (i_1, i_2, ..., i_N)`.
@@ -1773,14 +1772,13 @@ class TestNdBSpline:
         x = np.arange(6)
         y = x**3
         spl = make_interp_spline(x, y, k=3)
-        
+
         y_1 = x**3 + 2*x
         spl_1 = make_interp_spline(x, y_1, k=3)
 
         t2 = (spl.t, spl_1.t)
-        #c2 = np.outer(spl_1.c, spl.c)
         c2 = spl.c[:, None] * spl_1.c[None, :]
-        
+
         return t2, c2, 3
 
     def make_2d_mixed(self):
@@ -1788,21 +1786,21 @@ class TestNdBSpline:
         x = np.arange(6)
         y = x**3
         spl = make_interp_spline(x, y, k=3)
-        
+
         x = np.arange(5) + 1.5
         y_1 = x**2 + 2*x
         spl_1 = make_interp_spline(x, y_1, k=2)
 
         t2 = (spl.t, spl_1.t)
-        c2 = spl.c[:, None] * spl_1.c[None, :]    
-        
+        c2 = spl.c[:, None] * spl_1.c[None, :]
+
         return t2, c2, spl.k, spl_1.k
 
     def test_2D_separable(self):
-        xi = [(1.5, 2.5), (2.5, 1), (0.5, 1.5)]  
+        xi = [(1.5, 2.5), (2.5, 1), (0.5, 1.5)]
         t2, c2, k = self.make_2d_case()
         target = [x**3 * (y**3 + 2*y) for (x, y) in xi]
-        
+
         # sanity check: bspline2 gives the product as constructed
         assert_allclose([bspline2(xy, t2, c2, k) for xy in xi],
                         target,
@@ -1813,46 +1811,45 @@ class TestNdBSpline:
         assert bspl2(xi).shape == (len(xi), )
         assert_allclose(bspl2(xi),
                         target, atol=1e-14)
-        
+
         # now check on a multidim xi
         rng = np.random.default_rng(12345)
         xi = rng.uniform(size=(4, 3, 2)) * 5
         result = bspl2(xi)
         assert result.shape == (4, 3)
-        
+
         # also check the values
         x, y = xi.reshape((-1, 2)).T
         assert_allclose(result.ravel(),
                         x**3 * (y**3 + 2*y), atol=1e-14)
 
-
     def test_2D_separable_2(self):
         # test `c` with trailing dimensions, i.e. c.ndim > ndim
         ndim = 2
-        xi = [(1.5, 2.5), (2.5, 1), (0.5, 1.5)]  
+        xi = [(1.5, 2.5), (2.5, 1), (0.5, 1.5)]
         target = [x**3 * (y**3 + 2*y) for (x, y) in xi]
 
         t2, c2, k = self.make_2d_case()
         c2_4 = np.dstack((c2, c2, c2, c2))   # c22.shape = (6, 6, 4)
-        
+
         xy = (1.5, 2.5)
         bspl2_4 = NdBSpline(t2, c2_4, k=3)
         result = bspl2_4(xy)
         val_single = NdBSpline(t2, c2, k)(xy)
         assert result.shape == (4,)
         assert_allclose(result,
-                        [val_single,]*4, atol=1e-14)
-        
-        # now try the array xi : the output.shape is (3, 4)
-        # where 3 is the number of points in xi and 4 is the trailing dimension of c
+                        [val_single, ]*4, atol=1e-14)
+
+        # now try the array xi : the output.shape is (3, 4) where 3
+        # is the number of points in xi and 4 is the trailing dimension of c
         assert bspl2_4(xi).shape == np.shape(xi)[:-1] + bspl2_4.c.shape[ndim:]
         assert_allclose(bspl2_4(xi) - np.asarray(target)[:, None],
                         0, atol=5e-14)
-        
+
         # two trailing dimensions
         c2_22 = c2_4.reshape((6, 6, 2, 2))
         bspl2_22 = NdBSpline(t2, c2_22, k=3)
-        
+
         result = bspl2_22(xy)
         assert result.shape == (2, 2)
         assert_allclose(result,
@@ -1861,7 +1858,8 @@ class TestNdBSpline:
 
         # now try the array xi : the output shape is (3, 2, 2)
         # for 3 points in xi and c trailing dimensions being (2, 2)
-        assert bspl2_22(xi).shape == np.shape(xi)[:-1] + bspl2_22.c.shape[ndim:]
+        assert (bspl2_22(xi).shape ==
+                np.shape(xi)[:-1] + bspl2_22.c.shape[ndim:])
         assert_allclose(bspl2_22(xi) - np.asarray(target)[:, None, None],
                         0, atol=5e-14)
 
@@ -1871,9 +1869,9 @@ class TestNdBSpline:
         tx = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=7)) * 3, 3, 3, 3, 3]
         ty = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=8)) * 4, 4, 4, 4, 4]
         c = rng.uniform(size=(tx.size-k-1, ty.size-k-1))
-        
+
         spl = NdBSpline((tx, ty), c, k=k)
-        
+
         xi = (1., 1.)
         assert_allclose(spl(xi),
                         bspline2(xi, (tx, ty), c, k), atol=1e-14)
@@ -1881,13 +1879,13 @@ class TestNdBSpline:
         xi = np.c_[[1, 1.5, 2],
                    [1.1, 1.6, 2.1]]
         assert_allclose(spl(xi),
-                        [bspline2(xy, (tx, ty), c, k) for xy in xi], atol=1e-14)
+                        [bspline2(xy, (tx, ty), c, k) for xy in xi],
+                        atol=1e-14)
 
     def test_2D_mixed(self):
         t2, c2, kx, ky = self.make_2d_mixed()
-        ndim = 2
         xi = [(1.4, 4.5), (2.5, 2.4), (4.5, 3.5)]
-        target = [x**3 * (y**2 + 2*y) for (x, y) in xi]    
+        target = [x**3 * (y**2 + 2*y) for (x, y) in xi]
 
         bspl2 = NdBSpline(t2, c2, k=(kx, ky))
         assert bspl2(xi).shape == (len(xi), )
@@ -1906,7 +1904,7 @@ class TestNdBSpline:
 
         bspl2 = NdBSpline((tx, ty), c, k=(kx, ky))
         bspl2_0 = NdBSpline0((tx, ty), c, k=(kx, ky))
-        
+
         assert_allclose(bspl2(xi),
                         [bspl2_0(xp) for xp in xi], atol=1e-14)
 
@@ -1915,16 +1913,18 @@ class TestNdBSpline:
         x = np.arange(6)
         y = x**3
         spl = make_interp_spline(x, y, k=3)
-        
+
         y_1 = x**3 + 2*x
         spl_1 = make_interp_spline(x, y_1, k=3)
 
         y_2 = x**3 + 3*x + 1
         spl_2 = make_interp_spline(x, y_2, k=3)
-        
+
         t2 = (spl.t, spl_1.t, spl_2.t)
-        c2 = spl.c[:, None, None] * spl_1.c[None, :, None] * spl_2.c[None, None, :]
-        
+        c2 = (spl.c[:, None, None] *
+              spl_1.c[None, :, None] *
+              spl_2.c[None, None, :])
+
         return t2, c2, 3
 
     def test_3D_separable(self):
@@ -1939,8 +1939,7 @@ class TestNdBSpline:
         result = bspl3(xi)
         assert result.shape == (11,)
         assert_allclose(result, target, atol=1e-14)
-        
-        
+
     def test_3D_random(self):
         rng = np.random.default_rng(12345)
         k = 3
@@ -1951,7 +1950,7 @@ class TestNdBSpline:
 
         spl = NdBSpline((tx, ty, tz), c, k=k)
         spl_0 = NdBSpline0((tx, ty, tz), c, k=k)
-        
+
         xi = (1., 1., 1)
         assert_allclose(spl(xi), spl_0(xi), atol=1e-14)
 
@@ -1959,7 +1958,7 @@ class TestNdBSpline:
                    [1.1, 1.6, 2.1],
                    [0.9, 1.4, 1.9]]
         assert_allclose(spl(xi), [spl_0(xp) for xp in xi], atol=1e-14)
-    
+
     @pytest.mark.xfail
     def test_3D_random_complex(self):
         rng = np.random.default_rng(12345)
@@ -1967,16 +1966,15 @@ class TestNdBSpline:
         tx = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=7)) * 3, 3, 3, 3, 3]
         ty = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=8)) * 4, 4, 4, 4, 4]
         tz = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=8)) * 4, 4, 4, 4, 4]
-        c = rng.uniform(size=(tx.size-k-1, ty.size-k-1, tz.size-k-1))
-        c = c + c*1j
-        
+        c = (rng.uniform(size=(tx.size-k-1, ty.size-k-1, tz.size-k-1)) +
+             rng.uniform(size=(tx.size-k-1, ty.size-k-1, tz.size-k-1))*1j)
+
         spl = NdBSpline((tx, ty, tz), c, k=k)
         spl_re = NdBSpline0((tx, ty, tz), c.real, k=k)
         spl_im = NdBSpline0((tx, ty, tz), c.imag, k=k)
-        
+
         xi = np.c_[[1, 1.5, 2],
                    [1.1, 1.6, 2.1],
                    [0.9, 1.4, 1.9]]
         assert_allclose(spl(xi),
-                        spl_re(xi) + 1j*spl_re(xi), atol=1e-14)
-
+                        spl_re(xi) + 1j*spl_im(xi), atol=1e-14)
