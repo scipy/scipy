@@ -15,15 +15,15 @@ kernelspec:
 
 This notebook contains three sets of demonstrations:
 
-- lower-level FITPACK replacements for `interp2d` for legacy bug-for-bug compatible `interp2d` replacements;
-- recommended replacements for `interp2d` for use in new code;
+- lower-level FITPACK replacements for {class}`scipy.interpolate.interp2d` for legacy bug-for-bug compatible {class}`scipy.interpolate.interp2d` replacements;
+- recommended replacements for {class}`scipy.interpolate.interp2d` for use in new code;
 - a demonstration of failure modes of 2D FITPACK-based linear interpolation and recommended replacements.
 
 +++
 
 ## 1. How to transition away from using  `interp2d`
 
-`interp2d` silently switches between interpolation on a 2D regular grid and interpolatin 2D scattered data. The switch is based on the lengths of the (raveled) `x`, `y`, and `z` arrays. In short, for regular grid use `RectBivariateSpline`; for scattered interpolation, use the `bisprep/bisplev` combo. Below we give examples of the literal point-for-point transition, which should preserve the `interp2d` results exactly.
+`interp2d` silently switches between interpolation on a 2D regular grid and interpolatin 2D scattered data. The switch is based on the lengths of the (raveled) `x`, `y`, and `z` arrays. In short, for regular grid use {class}`scipy.interpolate.RectBivariateSpline`; for scattered interpolation, use the `bisprep/bisplev` combo. Below we give examples of the literal point-for-point transition, which should preserve the `interp2d` results exactly.
 
 +++
 
@@ -119,7 +119,7 @@ ynew = np.arange(-5.01, 7.51, 1e-2)
 znew_i = plot(f, xnew, ynew)
 ```
 
-#### Replacement: Use `bisplrep / bisplev` directly
+#### Replacement: Use {class}`scipy.interpolate.bisplrep` / {class}`scipy.interpolate.bisplev` directly
 
 ```{code-cell} ipython3
 from scipy.interpolate import bisplrep, bisplev
