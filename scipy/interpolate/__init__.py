@@ -186,6 +186,8 @@ from ._pade import *
 
 from ._rgi import *
 
+from ._ndbspline import NdBSpline
+
 # Deprecated namespaces, to be removed in v2.0.0
 from . import fitpack, fitpack2, interpolate, ndgriddata, polyint, rbf
 
