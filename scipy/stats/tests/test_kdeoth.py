@@ -1,6 +1,6 @@
-from scipy import stats
+from scipy import stats, linalg, integrate
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_,
+from numpy.testing import (assert_almost_equal, assert_, assert_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_allclose)
 import pytest
 from pytest import raises as assert_raises
@@ -218,16 +218,6 @@ class _kde_subclass2(stats.gaussian_kde):
         super().__init__(dataset)
 
 
-class _kde_subclass3(stats.gaussian_kde):
-    def __init__(self, dataset, covariance):
-        self.covariance = covariance
-        stats.gaussian_kde.__init__(self, dataset)
-
-    def _compute_covariance(self):
-        self.inv_cov = np.linalg.inv(self.covariance)
-        self._norm_factor = np.sqrt(np.linalg.det(2 * np.pi * self.covariance))
-
-
 class _kde_subclass4(stats.gaussian_kde):
     def covariance_factor(self):
         return 0.5 * self.silverman_factor()
@@ -251,10 +241,8 @@ def test_gaussian_kde_subclassing():
     y2 = kde2(xs)
     assert_array_almost_equal_nulp(ys, y2, nulp=10)
 
-    # subclass 3
-    kde3 = _kde_subclass3(x1, kde.covariance)
-    y3 = kde3(xs)
-    assert_array_almost_equal_nulp(ys, y3, nulp=10)
+    # subclass 3 was removed because we have no obligation to maintain support
+    # for user invocation of private methods
 
     # subclass 4
     kde4 = _kde_subclass4(x1)
@@ -319,14 +307,10 @@ def test_kde_integer_input():
 _ftypes = ['float32', 'float64', 'float96', 'float128', 'int32', 'int64']
 
 @pytest.mark.parametrize("bw_type", _ftypes + ["scott", "silverman"])
-@pytest.mark.parametrize("weights_type", _ftypes)
-@pytest.mark.parametrize("dataset_type", _ftypes)
-@pytest.mark.parametrize("point_type", _ftypes)
-def test_kde_output_dtype(point_type, dataset_type, weights_type, bw_type):
+@pytest.mark.parametrize("dtype", _ftypes)
+def test_kde_output_dtype(dtype, bw_type):
     # Check whether the datatypes are available
-    point_type = getattr(np, point_type, None)
-    dataset_type = getattr(np, weights_type, None)
-    weights_type = getattr(np, weights_type, None)
+    dtype = getattr(np, dtype, None)
 
     if bw_type in ["scott", "silverman"]:
         bw = bw_type
@@ -334,17 +318,28 @@ def test_kde_output_dtype(point_type, dataset_type, weights_type, bw_type):
         bw_type = getattr(np, bw_type, None)
         bw = bw_type(3) if bw_type else None
 
-    if any(dt is None for dt in [point_type, dataset_type, weights_type, bw]):
+    if any(dt is None for dt in [dtype, bw]):
         pytest.skip()
 
-    weights = np.arange(5, dtype=weights_type)
-    dataset = np.arange(5, dtype=dataset_type)
+    weights = np.arange(5, dtype=dtype)
+    dataset = np.arange(5, dtype=dtype)
     k = stats.gaussian_kde(dataset, bw_method=bw, weights=weights)
-    points = np.arange(5, dtype=point_type)
+    points = np.arange(5, dtype=dtype)
     result = k(points)
     # weights are always cast to float64
     assert result.dtype == np.result_type(dataset, points, np.float64(weights),
                                           k.factor)
+
+
+def test_pdf_logpdf_validation():
+    rng = np.random.default_rng(64202298293133848336925499069837723291)
+    xn = rng.standard_normal((2, 10))
+    gkde = stats.gaussian_kde(xn)
+    xs = rng.standard_normal((3, 10))
+
+    msg = "points have dimension 3, dataset has dimension 2"
+    with pytest.raises(ValueError, match=msg):
+        gkde.logpdf(xs)
 
 
 def test_pdf_logpdf():
@@ -394,6 +389,99 @@ def test_pdf_logpdf_weighted():
     pdf = np.log(gkde.evaluate(xn))
     pdf2 = gkde.logpdf(xn)
     assert_almost_equal(pdf, pdf2, decimal=12)
+
+
+def test_marginal_1_axis():
+    rng = np.random.default_rng(6111799263660870475)
+    n_data = 50
+    n_dim = 10
+    dataset = rng.normal(size=(n_dim, n_data))
+    points = rng.normal(size=(n_dim, 3))
+
+    dimensions = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])  # dimensions to keep
+
+    kde = stats.gaussian_kde(dataset)
+    marginal = kde.marginal(dimensions)
+    pdf = marginal.pdf(points[dimensions])
+
+    def marginal_pdf_single(point):
+        def f(x):
+            x = np.concatenate(([x], point[dimensions]))
+            return kde.pdf(x)[0]
+        return integrate.quad(f, -np.inf, np.inf)[0]
+
+    def marginal_pdf(points):
+        return np.apply_along_axis(marginal_pdf_single, axis=0, arr=points)
+
+    ref = marginal_pdf(points)
+
+    assert_allclose(pdf, ref, rtol=1e-6)
+
+
+@pytest.mark.slow
+def test_marginal_2_axis():
+    rng = np.random.default_rng(6111799263660870475)
+    n_data = 30
+    n_dim = 4
+    dataset = rng.normal(size=(n_dim, n_data))
+    points = rng.normal(size=(n_dim, 3))
+
+    dimensions = np.array([1, 3])  # dimensions to keep
+
+    kde = stats.gaussian_kde(dataset)
+    marginal = kde.marginal(dimensions)
+    pdf = marginal.pdf(points[dimensions])
+
+    def marginal_pdf(points):
+        def marginal_pdf_single(point):
+            def f(y, x):
+                w, z = point[dimensions]
+                x = np.array([x, w, y, z])
+                return kde.pdf(x)[0]
+            return integrate.dblquad(f, -np.inf, np.inf, -np.inf, np.inf)[0]
+
+        return np.apply_along_axis(marginal_pdf_single, axis=0, arr=points)
+
+    ref = marginal_pdf(points)
+
+    assert_allclose(pdf, ref, rtol=1e-6)
+
+
+def test_marginal_iv():
+    # test input validation
+    rng = np.random.default_rng(6111799263660870475)
+    n_data = 30
+    n_dim = 4
+    dataset = rng.normal(size=(n_dim, n_data))
+    points = rng.normal(size=(n_dim, 3))
+
+    kde = stats.gaussian_kde(dataset)
+
+    # check that positive and negative indices are equivalent
+    dimensions1 = [-1, 1]
+    marginal1 = kde.marginal(dimensions1)
+    pdf1 = marginal1.pdf(points[dimensions1])
+
+    dimensions2 = [3, -3]
+    marginal2 = kde.marginal(dimensions2)
+    pdf2 = marginal2.pdf(points[dimensions2])
+
+    assert_equal(pdf1, pdf2)
+
+    # IV for non-integer dimensions
+    message = "Elements of `dimensions` must be integers..."
+    with pytest.raises(ValueError, match=message):
+        kde.marginal([1, 2.5])
+
+    # IV for uniquenes
+    message = "All elements of `dimensions` must be unique."
+    with pytest.raises(ValueError, match=message):
+        kde.marginal([1, 2, 2])
+
+    # IV for non-integer dimensions
+    message = (r"Dimensions \[-5  6\] are invalid for a distribution in 4...")
+    with pytest.raises(ValueError, match=message):
+        kde.marginal([1, -5, 6])
 
 
 @pytest.mark.xslow
@@ -486,3 +574,31 @@ def test_seed():
     test_seed_sub(gkde_2d)
     gkde_2d_weighted = stats.gaussian_kde(xn_2d, weights=wn)
     test_seed_sub(gkde_2d_weighted)
+
+
+def test_singular_data_covariance_gh10205():
+    # When the data lie in a lower-dimensional subspace and this causes
+    # and exception, check that the error message is informative.
+    rng = np.random.default_rng(2321583144339784787)
+    mu = np.array([1, 10, 20])
+    sigma = np.array([[4, 10, 0], [10, 25, 0], [0, 0, 100]])
+    data = rng.multivariate_normal(mu, sigma, 1000)
+    try:  # doesn't raise any error on some platforms, and that's OK
+        stats.gaussian_kde(data.T)
+    except linalg.LinAlgError:
+        msg = "The data appears to lie in a lower-dimensional subspace..."
+        with assert_raises(linalg.LinAlgError, match=msg):
+            stats.gaussian_kde(data.T)
+
+
+def test_fewer_points_than_dimensions_gh17436():
+    # When the number of points is fewer than the number of dimensions, the
+    # the covariance matrix would be singular, and the exception tested in
+    # test_singular_data_covariance_gh10205 would occur. However, sometimes
+    # this occurs when the user passes in the transpose of what `gaussian_kde`
+    # expects. This can result in a huge covariance matrix, so bail early.
+    rng = np.random.default_rng(2046127537594925772)
+    rvs = rng.multivariate_normal(np.zeros(3), np.eye(3), size=5)
+    message = "Number of dimensions is greater than number of samples..."
+    with pytest.raises(ValueError, match=message):
+        stats.gaussian_kde(rvs)

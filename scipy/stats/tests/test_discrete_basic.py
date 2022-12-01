@@ -17,7 +17,8 @@ from scipy.stats._distr_params import distdiscrete, invdistdiscrete
 from scipy.stats._distn_infrastructure import rv_discrete_frozen
 
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
-distdiscrete += [[stats.rv_discrete(values=vals), ()]]
+distdiscrete += [[stats.rv_discrete(values=vals), ()],
+                 [stats.rv_count(xk=vals[0], pk=vals[1]), ()]]
 
 # For these distributions, test_discrete_basic only runs with test mode full
 distslow = {'zipfian', 'nhypergeom'}
@@ -33,6 +34,7 @@ def cases_test_discrete_basic():
         seen.add(distname)
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg,first_case', cases_test_discrete_basic())
 def test_discrete_basic(distname, arg, first_case):
     try:
@@ -78,6 +80,7 @@ def test_discrete_basic(distname, arg, first_case):
             check_private_entropy(distfn, arg, stats.rv_discrete)
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg', distdiscrete)
 def test_moments(distname, arg):
     try:
@@ -181,9 +184,20 @@ def test_isf_with_loc(dist, args):
 
 
 def check_cdf_ppf(distfn, arg, supp, msg):
+    # supp is assumed to be an array of integers in the support of distfn
+    # (but not necessarily all the integers in the support).
+    # This test assumes that the PMF of any value in the support of the
+    # distribution is greater than 1e-8.
+
     # cdf is a step function, and ppf(q) = min{k : cdf(k) >= q, k integer}
-    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp, *arg), *arg),
+    cdf_supp = distfn.cdf(supp, *arg)
+    # In very rare cases, the finite precision calculation of ppf(cdf(supp))
+    # can produce an array in which an element is off by one.  We nudge the
+    # CDF values down by 10 ULPs help to avoid this.
+    cdf_supp0 = cdf_supp - 10*np.spacing(cdf_supp)
+    npt.assert_array_equal(distfn.ppf(cdf_supp0, *arg),
                            supp, msg + '-roundtrip')
+    # Repeat the same calculation, but with the CDF values decreased by 1e-8.
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp, *arg) - 1e-8, *arg),
                            supp, msg + '-roundtrip')
 
@@ -192,7 +206,6 @@ def check_cdf_ppf(distfn, arg, supp, msg):
         supp1 = supp[supp < _b]
         npt.assert_array_equal(distfn.ppf(distfn.cdf(supp1, *arg) + 1e-8, *arg),
                                supp1 + distfn.inc, msg + ' ppf-cdf-next')
-        # -1e-8 could cause an error if pmf < 1e-8
 
 
 def check_pmf_cdf(distfn, arg, distname):
@@ -209,6 +222,17 @@ def check_pmf_cdf(distfn, arg, distname):
         atol, rtol = 1e-5, 1e-5
     npt.assert_allclose(cdfs - cdfs[0], pmfs_cum - pmfs_cum[0],
                         atol=atol, rtol=rtol)
+
+    # also check that pmf at non-integral k is zero
+    k = np.asarray(index)
+    k_shifted = k[:-1] + np.diff(k)/2
+    npt.assert_equal(distfn.pmf(k_shifted, *arg), 0)
+
+    # better check frozen distributions, and also when loc != 0
+    loc = 0.5
+    dist = distfn(loc=loc, *arg)
+    npt.assert_allclose(dist.pmf(k[1:] + loc), np.diff(dist.cdf(k + loc)))
+    npt.assert_equal(dist.pmf(k_shifted + loc), 0)
 
 
 def check_moment_frozen(distfn, arg, m, k):
@@ -386,6 +410,22 @@ def test_frozen_attributes():
     frozen_binom = stats.binom(10, 0.5)
     assert isinstance(frozen_binom, rv_discrete_frozen)
     delattr(stats.binom, 'pdf')
+
+
+@pytest.mark.parametrize('distname, shapes', distdiscrete)
+def test_interval(distname, shapes):
+    # gh-11026 reported that `interval` returns incorrect values when
+    # `confidence=1`. The values were not incorrect, but it was not intuitive
+    # that the left end of the interval should extend beyond the support of the
+    # distribution. Confirm that this is the behavior for all distributions.
+    if isinstance(distname, str):
+        dist = getattr(stats, distname)
+    else:
+        dist = distname
+    a, b = dist.support(*shapes)
+    npt.assert_equal(dist.ppf([0, 1], *shapes), (a-1, b))
+    npt.assert_equal(dist.isf([1, 0], *shapes), (a-1, b))
+    npt.assert_equal(dist.interval(1, *shapes), (a-1, b))
 
 
 def test_rv_sample():

@@ -135,7 +135,10 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     # y  =  beta1 P' v1,  where  P = C**(-1).
     # v is really P' v1.
 
-    r1 = b - A@x
+    if x0 is None:
+        r1 = b.copy()
+    else:
+        r1 = b - A@x
     y = psolve(r1)
 
     beta1 = inner(r1, y)

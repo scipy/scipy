@@ -8,12 +8,10 @@ Routines for traversing graphs in compressed sparse format
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csr, isspmatrix_csc
 from scipy.sparse.csgraph._validation import validate_graph
 from scipy.sparse.csgraph._tools import reconstruct_path
 
 cimport cython
-from libc cimport stdlib
 
 np.import_array()
 
@@ -371,7 +369,6 @@ cdef unsigned int _breadth_first_directed(
     #  n_nodes: the number of nodes in the breadth-first tree
     cdef unsigned int i, pnode, cnode
     cdef unsigned int i_nl, i_nl_end
-    cdef unsigned int N = node_list.shape[0]
 
     node_list[0] = head_node
     i_nl = 0
@@ -415,7 +412,6 @@ cdef unsigned int _breadth_first_undirected(
     #  n_nodes: the number of nodes in the breadth-first tree
     cdef unsigned int i, pnode, cnode
     cdef unsigned int i_nl, i_nl_end
-    cdef unsigned int N = node_list.shape[0]
 
     node_list[0] = head_node
     i_nl = 0
@@ -550,7 +546,7 @@ cdef unsigned int _depth_first_directed(
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] root_list,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] flag):
-    cdef unsigned int i, j, i_nl_end, cnode, pnode
+    cdef unsigned int i, i_nl_end, cnode, pnode
     cdef unsigned int N = node_list.shape[0]
     cdef int no_children, i_root
 
@@ -596,7 +592,7 @@ cdef unsigned int _depth_first_undirected(
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] root_list,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] flag):
-    cdef unsigned int i, j, i_nl_end, cnode, pnode
+    cdef unsigned int i, i_nl_end, cnode, pnode
     cdef unsigned int N = node_list.shape[0]
     cdef int no_children, i_root
 

@@ -1,13 +1,38 @@
 [
     {
-        "name": "1.9.0 (dev)",
+        "name": "dev",
         "version": "dev",
         "url": "https://scipy.github.io/devdocs/"
     },
     {
-        "name": "1.8.0 (stable)",
+        "name": "1.9.3 (stable)",
+        "version":"1.9.3",
+        "url": "https://docs.scipy.org/doc/scipy-1.9.3/"
+    },
+    {
+        "name": "1.9.2",
+        "version":"1.9.2",
+        "url": "https://docs.scipy.org/doc/scipy-1.9.2/"
+    },
+    {
+        "name": "1.9.1",
+        "version":"1.9.1",
+        "url": "https://docs.scipy.org/doc/scipy-1.9.1/"
+    },
+    {
+        "name": "1.9.0",
+        "version":"1.9.0",
+        "url": "https://docs.scipy.org/doc/scipy-1.9.0/"
+    },
+    {
+        "name": "1.8.1",
+        "version":"1.8.1",
+        "url": "https://docs.scipy.org/doc/scipy-1.8.1/"
+    },
+    {
+        "name": "1.8.0",
         "version":"1.8.0",
-        "url": "https://docs.scipy.org/doc/scipy-1.8.0/html-scipyorg/"
+        "url": "https://docs.scipy.org/doc/scipy-1.8.0/"
     },
     {
         "name": "1.7.1",

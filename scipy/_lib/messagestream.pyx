@@ -3,7 +3,6 @@ from libc cimport stdio, stdlib
 from cpython cimport PyBytes_FromStringAndSize
 
 import os
-import sys
 import tempfile
 
 cdef extern from "messagestream.h":
@@ -27,18 +26,21 @@ cdef class MessageStream:
             return
 
         # Fall back to temporary files
-        fd, filename = tempfile.mkstemp(prefix='scipy-')
-        os.close(fd)
-        self._filename = filename.encode(sys.getfilesystemencoding())
-        self.handle = stdio.fopen(self._filename, "wb+")
-        if self.handle == NULL:
-            stdio.remove(self._filename)
-            raise OSError(f"Failed to open file {self._filename}")
-        self._removed = 0
+        fd, self._filename = tempfile.mkstemp(prefix=b'scipy-')
 
         # Use a posix-style deleted file, if possible
-        if stdio.remove(self._filename) == 0:
+        try:
+            os.remove(self._filename)
             self._removed = 1
+        except PermissionError:
+            self._removed = 0
+
+        self.handle = stdio.fdopen(fd, 'wb+')
+        if self.handle == NULL:
+            os.close(fd)
+            if not self._removed:
+                os.remove(self._filename)
+            raise OSError(f"Failed to open file {self._filename}")
 
     def __dealloc__(self):
         self.close()
@@ -86,5 +88,5 @@ cdef class MessageStream:
             self._memstream_ptr = NULL
 
         if not self._removed:
-            stdio.remove(self._filename)
+            os.remove(self._filename)
             self._removed = 1

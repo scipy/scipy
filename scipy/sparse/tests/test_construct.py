@@ -430,7 +430,7 @@ class TestConstructUtils:
 
         with assert_raises(ValueError) as excinfo:
             construct.bmat([[A.tocsc()], [B.tocsc()]])
-        excinfo.match(r'Mismatching dimensions along axis 1: {1, 2}')
+        excinfo.match(r'Mismatching dimensions along axis 1: ({1, 2}|{2, 1})')
 
         with assert_raises(ValueError) as excinfo:
             construct.bmat([[A, C]])
@@ -438,7 +438,7 @@ class TestConstructUtils:
 
         with assert_raises(ValueError) as excinfo:
             construct.bmat([[A.tocsr(), C.tocsr()]])
-        excinfo.match(r'Mismatching dimensions along axis 0: {1, 2}')
+        excinfo.match(r'Mismatching dimensions along axis 0: ({1, 2}|{2, 1})')
 
         with assert_raises(ValueError) as excinfo:
             construct.bmat([[A.tocsc(), C.tocsc()]])

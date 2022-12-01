@@ -72,9 +72,9 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
-    >>> from numpy.random import default_rng
-    >>> rng = default_rng()
+    >>> rng = np.random.default_rng()
     >>> m, n = 9, 6
     >>> a = rng.standard_normal((m, n)) + 1.j*rng.standard_normal((m, n))
     >>> U, s, Vh = linalg.svd(a)
@@ -164,24 +164,26 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     LinAlgError
         If SVD computation does not converge.
 
+    See Also
+    --------
+    svd : Compute the full singular value decomposition of a matrix.
+    diagsvd : Construct the Sigma matrix, given the vector s.
+
     Notes
     -----
     ``svdvals(a)`` only differs from ``svd(a, compute_uv=False)`` by its
     handling of the edge case of empty ``a``, where it returns an
     empty sequence:
 
+    >>> import numpy as np
     >>> a = np.empty((0, 2))
     >>> from scipy.linalg import svdvals
     >>> svdvals(a)
     array([], dtype=float64)
 
-    See Also
-    --------
-    svd : Compute the full singular value decomposition of a matrix.
-    diagsvd : Construct the Sigma matrix, given the vector s.
-
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import svdvals
     >>> m = np.array([[1.0, 0.0],
     ...               [2.0, 3.0],
@@ -255,6 +257,7 @@ def diagsvd(s, M, N):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import diagsvd
     >>> vals = np.array([1, 2, 3])  # The array representing the computed svd
     >>> diagsvd(vals, 3, 4)
@@ -307,6 +310,7 @@ def orth(A, rcond=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import orth
     >>> A = np.array([[2, 0, 0], [0, 5, 0]])  # rank 2 array
     >>> orth(A)
@@ -356,6 +360,7 @@ def null_space(A, rcond=None):
     --------
     1-D null space:
 
+    >>> import numpy as np
     >>> from scipy.linalg import null_space
     >>> A = np.array([[1, 1], [1, 1]])
     >>> ns = null_space(A)
@@ -432,9 +437,9 @@ def subspace_angles(A, B):
     An Hadamard matrix, which has orthogonal columns, so we expect that
     the suspace angle to be :math:`\frac{\pi}{2}`:
 
-    >>> from numpy.random import default_rng
+    >>> import numpy as np
     >>> from scipy.linalg import hadamard, subspace_angles
-    >>> rng = default_rng()
+    >>> rng = np.random.default_rng()
     >>> H = hadamard(4)
     >>> print(H)
     [[ 1  1  1  1]

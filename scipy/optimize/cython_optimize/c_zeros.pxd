@@ -7,20 +7,20 @@ cdef extern from "../Zeros/zeros.h":
 
 cdef extern from "../Zeros/bisect.c" nogil:
     double bisect(callback_type f, double xa, double xb, double xtol,
-                  double rtol, int iter, void *func_data,
+                  double rtol, int iter, void *func_data_param,
                   scipy_zeros_info *solver_stats)
 
 cdef extern from "../Zeros/ridder.c" nogil:
     double ridder(callback_type f, double xa, double xb, double xtol,
-                  double rtol, int iter, void *func_data,
+                  double rtol, int iter, void *func_data_param,
                   scipy_zeros_info *solver_stats)
 
 cdef extern from "../Zeros/brenth.c" nogil:
     double brenth(callback_type f, double xa, double xb, double xtol,
-                  double rtol, int iter, void *func_data,
+                  double rtol, int iter, void *func_data_param,
                   scipy_zeros_info *solver_stats)
 
 cdef extern from "../Zeros/brentq.c" nogil:
     double brentq(callback_type f, double xa, double xb, double xtol,
-                  double rtol, int iter, void *func_data,
+                  double rtol, int iter, void *func_data_param,
                   scipy_zeros_info *solver_stats)

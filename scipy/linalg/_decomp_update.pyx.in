@@ -47,13 +47,10 @@ cimport cython
 cimport libc.stdlib
 cimport libc.limits
 cimport libc.float
-from libc.math cimport sqrt, fabs, hypot
+from libc.math cimport sqrt, fabs, hypot, M_SQRT1_2
 from libc.string cimport memset
 
 cimport numpy as cnp
-
-cdef extern from "numpy/npy_math.h":
-    double NPY_SQRT1_2
 
 from numpy.linalg import LinAlgError
 
@@ -296,7 +293,7 @@ cdef bint reorthx(int m, int n, blas_t* q, int* qs, bint qisF, int j, blas_t* u,
     cdef char* N = 'N'
     cdef char* C = 'C'
     cdef int ss = 1
-    cdef blas_t inv_root2 = NPY_SQRT1_2
+    cdef blas_t inv_root2 = M_SQRT1_2
 
     # u starts out as the jth basis vector.
     u[j] = 1
@@ -1064,7 +1061,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
     cdef char* N = 'N'
     cdef char* C = 'C'
     cdef int ss = 1
-    cdef blas_t inv_root2 = NPY_SQRT1_2
+    cdef blas_t inv_root2 = M_SQRT1_2
 
     # normalize u
     unorm = nrm2(m, u, us[0])
@@ -1466,6 +1463,7 @@ def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -9.,  -3.],
@@ -1692,6 +1690,7 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_fi
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -7.,   4.],
@@ -2093,6 +2092,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -9.,  -3.],

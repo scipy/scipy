@@ -3,6 +3,5 @@ py3.install_sources([
   '_windows.py',
   'windows.py'
   ],
-  pure: false,
   subdir: 'scipy/signal/windows'
 )

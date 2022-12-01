@@ -10,4 +10,4 @@ cdef extern from "HighsStatus.h" nogil:
         HighsStatusWarning "HighsStatus::kWarning" = 1
 
 
-    string HighsStatusToString(HighsStatus status)
+    string highsStatusToString(HighsStatus status)

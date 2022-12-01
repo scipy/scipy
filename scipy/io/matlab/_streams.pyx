@@ -1,14 +1,11 @@
 # -*- python -*- or near enough
 
-import sys
 import zlib
 
-from cpython cimport PyBytes_FromStringAndSize, \
-    PyBytes_AS_STRING, PyBytes_Size
+from cpython cimport PyBytes_AS_STRING, PyBytes_Size
 
 from ._pyalloc cimport pyalloc_v
 
-from libc.stdio cimport fread, fseek, ftell
 from libc.string cimport memcpy
 
 cdef extern from "Python.h":
@@ -142,7 +139,7 @@ cdef class ZlibInputStream(GenericStream):
         """
         cdef char *dstp
         cdef char *srcp
-        cdef size_t read_size, count, size
+        cdef size_t count, size
 
         dstp = <char*>buf
         count = 0

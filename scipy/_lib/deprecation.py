@@ -18,7 +18,7 @@ def _deprecated(msg, stacklevel=2):
             warnings.warn(msg, category=DeprecationWarning,
                           stacklevel=stacklevel)
             return fun(*args, **kwargs)
-        call.__doc__ = msg
+        call.__doc__ = fun.__doc__
         return call
 
     return wrap

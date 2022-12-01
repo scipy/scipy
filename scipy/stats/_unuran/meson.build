@@ -164,7 +164,7 @@ unuran_include_dirs = [
   '../../_lib/unuran/unuran/src/tests'
 ]
 
-unuran_version = '16:0:0'  # TODO: grab from configure.ac file
+unuran_version = '16:0:0'  # taken from `_lib/unuran/unuran/configure.ac`
 
 unuran_defines = [
   '-DHAVE_ALARM=1',
@@ -215,8 +215,8 @@ statlib = py3.extension_module('unuran_wrapper',
     unuran_sources
   ],
   c_args: [unuran_defines, cython_c_args],
-  dependencies: [py3_dep],
   include_directories: [inc_np, unuran_include_dirs],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats/_unuran'
 )
@@ -227,6 +227,5 @@ py3.install_sources([
     'unuran.pxd',
     'unuran_wrapper.pyi',
   ],
-  pure: false,
   subdir: 'scipy/stats/_unuran'
 )

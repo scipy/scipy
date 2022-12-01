@@ -73,15 +73,14 @@ def configuration(parent_package='', top_path=None):
     # here:
     TODAY_DATE = datetime.today().strftime('%Y-%m-%d')
     DEFINE_MACROS = [
-        ('CMAKE_BUILD_TYPE', '"Release"'),
-        ('HiGHSRELEASE', None),
-        ('IPX_ON', 'ON'),
+        ('CMAKE_BUILD_TYPE', '"RELEASE"'),
         ('HIGHS_GITHASH', '"%s"' % GITHASH),
         ('HIGHS_COMPILATION_DATE', '"' + TODAY_DATE + '"'),
         ('HIGHS_VERSION_MAJOR', HIGHS_VERSION_MAJOR),
         ('HIGHS_VERSION_MINOR', HIGHS_VERSION_MINOR),
         ('HIGHS_VERSION_PATCH', HIGHS_VERSION_PATCH),
         ('HIGHS_DIR', '"' + HIGHS_DIR + '"'),
+        ('NDEBUG', None),
         # ('NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION', None),
     ]
     UNDEF_MACROS = [

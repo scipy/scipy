@@ -10,6 +10,5 @@ npz_files = [
 
 py3.install_sources(
   npz_files,
-  pure: false,
   subdir: 'scipy/linalg/tests/data'
 )

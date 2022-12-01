@@ -12,7 +12,6 @@
  * Journal of Statistical Software, 5 (5), 1-25
  */
 #include "mconf.h"
-#include "_c99compat.h"
 
 static const int SELECT_METHOD[] = {
     0, 0, 1, 12, 12, 12, 12, 12, 12, 12, 12, 15, 15, 15, 8,
@@ -131,11 +130,11 @@ static double owensT1(double h, double a, double m) {
     double hs = -0.5 * h * h;
     double dhs = exp(hs);
     double as = a * a;
-    double aj = a / (2 * NPY_PI);
+    double aj = a / (2 * M_PI);
     double dj = expm1(hs);
     double gj = hs * dhs;
 
-    double val = atan(a) / (2 * NPY_PI);
+    double val = atan(a) / (2 * M_PI);
 
     while (1) {
 	val += dj*aj / jj;
@@ -161,7 +160,7 @@ static double owensT2(double h, double a, double ah, double m) {
     double as = -a * a;
     double y = 1.0 / hs;
     double val = 0.0;
-    double vi = a*exp(-0.5 * ah * ah) / sqrt(2 * NPY_PI);
+    double vi = a*exp(-0.5 * ah * ah) / sqrt(2 * M_PI);
     double z = (ndtr(ah) - 0.5) / h;
 
     while (1) {
@@ -173,7 +172,7 @@ static double owensT2(double h, double a, double ah, double m) {
 	vi *= as;
 	i += 2;
     }
-    val *= exp(-0.5 * hs) / sqrt(2 * NPY_PI);
+    val *= exp(-0.5 * hs) / sqrt(2 * M_PI);
 
     return val;
 }
@@ -187,7 +186,7 @@ static double owensT3(double h, double a, double ah) {
     hh = h * h;
     y = 1 / hh;
 
-    vi = a * exp(-ah * ah/ 2) / sqrt(2 * NPY_PI);
+    vi = a * exp(-ah * ah/ 2) / sqrt(2 * M_PI);
     zi = owens_t_norm1(ah) / h;
     result = 0;
 
@@ -197,7 +196,7 @@ static double owensT3(double h, double a, double ah) {
         vi *= aa;
     }
 
-    result *= exp(-hh / 2) / sqrt(2 * NPY_PI);
+    result *= exp(-hh / 2) / sqrt(2 * M_PI);
 
     return result;
 }
@@ -212,7 +211,7 @@ static double owensT4(double h, double a, double m) {
     naa = -a * a;
 
     i = 1;
-    ai = a * exp(-hh * (1 - naa) / 2) / (2 * NPY_PI);
+    ai = a * exp(-hh * (1 - naa) / 2) / (2 * M_PI);
     yi = 1;
     result = 0;
 
@@ -261,7 +260,7 @@ static double owensT6(double h, double a) {
     result = normh * (1 - normh) / 2;
 
     if (r != 0) {
-        result -= r * exp(-y * h * h / (2 * r)) / (2 * NPY_PI);
+        result -= r * exp(-y * h * h / (2 * r)) / (2 * M_PI);
     }
 
     return result;
@@ -273,7 +272,7 @@ static double owens_t_dispatch(double h, double a, double ah) {
     double m, result;
 
     if (h == 0) {
-        return atan(a) / (2 * NPY_PI);
+        return atan(a) / (2 * M_PI);
     }
     if (a == 0) {
 	return 0;
@@ -306,7 +305,7 @@ static double owens_t_dispatch(double h, double a, double ah) {
 	result = owensT6(h, a);
 	break;
     default:
-	result = NPY_NAN;
+	result = NAN;
     }
 
     return result;
@@ -317,7 +316,7 @@ double owens_t(double h, double a) {
     double result, fabs_a, fabs_ah, normh, normah;
 
     if (cephes_isnan(h) || cephes_isnan(a)) {
-        return NPY_NAN;
+        return NAN;
     }
 
     /* exploit that T(-h,a) == T(h,a) */
@@ -331,11 +330,11 @@ double owens_t(double h, double a) {
     fabs_a = fabs(a);
     fabs_ah = fabs_a * h;
 
-    if (fabs_a == NPY_INFINITY) {
+    if (fabs_a == INFINITY) {
 	/* See page 13 in the paper */
 	result = 0.5 * owens_t_norm2(h);
     }
-    else if (h == NPY_INFINITY) {
+    else if (h == INFINITY) {
 	result = 0;
     }
     else if (fabs_a <= 1) {

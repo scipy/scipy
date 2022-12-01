@@ -188,9 +188,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         options is determined by `vectorized` argument (see below). The
         vectorized implementation allows a faster approximation of the Jacobian
         by finite differences (required for stiff solvers).
-    t_span : 2-tuple of floats
+    t_span : 2-member sequence
         Interval of integration (t0, tf). The solver starts with t=t0 and
-        integrates until it reaches t=tf.
+        integrates until it reaches t=tf. Both t0 and tf must be floats
+        or values interpretable by the float conversion function.
     y0 : array_like, shape (n,)
         Initial state. For problems in the complex domain, pass `y0` with a
         complex data type (even if the initial value is purely real).
@@ -416,6 +417,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     --------
     Basic exponential decay showing automatically chosen time points.
 
+    >>> import numpy as np
     >>> from scipy.integrate import solve_ivp
     >>> def exponential_decay(t, y): return -0.5 * y
     >>> sol = solve_ivp(exponential_decay, [0, 10], [2, 4, 8])
