@@ -80,7 +80,7 @@ class NdBSpline:
             if self.c.ndim < ndim:
                 raise ValueError(f"Coefficients must be at least"
                                  f" {d}-dimensional.")
-            if self.c.shape[d] < n:
+            if self.c.shape[d] != n:
                 raise ValueError(f"Knots, coefficients and degree in dimension"
                                  f" {d} are inconsistent:"
                                  f" got {self.c.shape[d]} coefficients for"
