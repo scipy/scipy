@@ -1767,6 +1767,25 @@ class NdBSpline0:
 
 
 class TestNdBSpline:
+
+    def test_1D(self):
+        # test ndim=1 agrees with BSpline
+        rng = np.random.default_rng(12345)
+        n, k = 11, 3
+        n_tr = 7
+        t = np.sort(rng.uniform(size=n + k + 1))
+        c = rng.uniform(size=(n, n_tr))
+
+        b = BSpline(t, c, k)
+        nb = NdBSpline((t,), c, k)
+
+        xi = rng.uniform(size=21)
+        # NdBSpline expects xi.shape=(npts, ndim)
+        assert_allclose(nb(xi[:, None]),
+                        b(xi), atol=1e-14)
+        assert nb(xi[:, None]).shape == (xi.shape[0], c.shape[1])
+
+
     def make_2d_case(self):
         # make a 2D separable spline
         x = np.arange(6)
