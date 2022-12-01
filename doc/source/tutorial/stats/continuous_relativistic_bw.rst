@@ -10,18 +10,24 @@ There is a single shape parameter :math:`\rho`. The support is
 .. math::
    :nowrap:
 
-
    \begin{eqnarray*}
        f\left(x, \rho\right) & = & \frac{k}{\left(x^2 - \rho^2\right)^2 + \rho^2}\\
        F\left(x, \rho\right) & = & -\frac{i k\left(\frac{\tan^{-1}\left(\frac{x}{c}\right)}{c} -
                                     \frac{\tan^{-1}\left(\frac{x}{\bar{c}}\right)}{\bar{c}}\right)}{2\rho}
    \end{eqnarray*}
 
+.. math::
+   :nowrap:
+
+   \begin{eqnarray*}
+       \mu & = & \frac{k}{2\rho} \left[\frac{\pi}{2} + \tan^{-1}\left(\rho\right)\right]\\
+       \mu_2 & = & \frac{k\pi}{4} \left[\frac{1 - \rho i}{\sqrt{-1 - \rho i}} + \frac{1 + \rho i}{\sqrt{-1 + \rho i}}\right]\\
+   \end{eqnarray*}
+
 where
 
 .. math::
    :nowrap:
-
 
    \begin{eqnarray*}
    c & = & \sqrt{-\rho (\rho + i)}\\
