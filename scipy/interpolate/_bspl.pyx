@@ -485,6 +485,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                        tuple t,
                        tuple ktuple,
                        int[::1] nu,
+                       bint extrapolate,
                        double_or_complex[::1] c1r,
                        npy_intp num_c_tr,
                        const npy_intp[::1] strides_c1,
@@ -513,6 +514,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
             npy_intp volume   # the number of non-zero terms
             const npy_intp[:] idx_b   # ndim-dimensional index corresponding to iflat
 
+            int out_of_bounds
             npy_intp idx_cflat_base, idx
             double factor
             double[::1] wrk = np.empty(2*max(ktuple)+2, dtype=float)
@@ -527,18 +529,28 @@ def evaluate_ndbspline(const double[:, ::1] xi,
         for j in range(xi.shape[0]):
             x = xi[j]
 
+            out_of_bounds = 0
             for d in range(ndim):
                 td = t[d]
                 xd = x[d]
                 kd = k[d]
 
                 # get the location of x[d] in t[d]
-                i[d] = find_interval(td, kd, xd, kd, False)
-                # TODO: interval < 0
+                i[d] = find_interval(td, kd, xd, kd, extrapolate)
+
+                if i[d] < 0:
+                    out_of_bounds = 1
+                    break
 
                 # compute non-zero b-splines at this value of xd in dimension d
                 _deBoor_D(&td[0], xd, kd, i[d], nu[d], &wrk[0])
                 b[d, :kd+1] = wrk[:kd+1]
+
+            if out_of_bounds:
+                # extrapolate=False or x was nan
+                for i_c in range(num_c_tr):
+                    out[j, i_c] = NAN
+                continue
 
             for i_c in range(num_c_tr):
                 out[j, i_c] = 0.0

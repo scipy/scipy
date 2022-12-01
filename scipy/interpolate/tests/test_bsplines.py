@@ -2016,3 +2016,70 @@ class TestNdBSpline:
                    [0.9, 1.4, 1.9]]
         assert_allclose(spl(xi),
                         spl_re(xi) + 1j*spl_im(xi), atol=1e-14)
+
+    @pytest.mark.parametrize('cls_extrap', [None, True])
+    @pytest.mark.parametrize('call_extrap', [None, True])
+    def test_extrapolate_3D_separable(self, cls_extrap, call_extrap):
+        # test that extrapolate=True does extrapolate
+        t3, c3, k = self.make_3d_case()
+        bspl3 = NdBSpline(t3, c3, k=3, extrapolate=cls_extrap)
+
+        # evaluate out of bounds
+        x, y, z = [-2, -1, 7], [-3, -0.5, 6.5], [-1, -1.5, 7.5]
+        x, y, z = map(np.asarray, (x, y, z))
+        xi = [_ for _ in zip(x, y, z)]
+        target = x**3 * (y**3 + 2*y) * (z**3 + 3*z + 1)
+
+        result = bspl3(xi, extrapolate=call_extrap)
+        assert_allclose(result, target, atol=1e-14)
+
+    @pytest.mark.parametrize('extrap', [(False, True), (True, None)])
+    def test_extrapolate_3D_separable_2(self, extrap):
+        # test that call(..., extrapolate=None) defers to self.extrapolate,
+        # otherwise supersedes self.extrapolate
+        t3, c3, k = self.make_3d_case()
+        cls_extrap, call_extrap = extrap
+        bspl3 = NdBSpline(t3, c3, k=3, extrapolate=cls_extrap)
+
+        # evaluate out of bounds
+        x, y, z = [-2, -1, 7], [-3, -0.5, 6.5], [-1, -1.5, 7.5]
+        x, y, z = map(np.asarray, (x, y, z))
+        xi = [_ for _ in zip(x, y, z)]
+        target = x**3 * (y**3 + 2*y) * (z**3 + 3*z + 1)
+
+        result = bspl3(xi, extrapolate=call_extrap)
+        assert_allclose(result, target, atol=1e-14)
+
+    def test_extrapolate_false_3D_separable(self):
+        # test that extrapolate=False produces nans for out-of-bounds values
+        t3, c3, k = self.make_3d_case()
+        bspl3 = NdBSpline(t3, c3, k=3)
+
+        # evaluate out of bounds and inside
+        x, y, z = [-2, 1, 7], [-3, 0.5, 6.5], [-1, 1.5, 7.5]
+        x, y, z = map(np.asarray, (x, y, z))
+        xi = [_ for _ in zip(x, y, z)]
+        target = x**3 * (y**3 + 2*y) * (z**3 + 3*z + 1)
+
+        result = bspl3(xi, extrapolate=False)
+        assert np.isnan(result[0])
+        assert np.isnan(result[-1])
+        assert_allclose(result[1:-1], target[1:-1], atol=1e-14)
+
+    def test_x_nan_3D(self):
+        # test that spline(nan) is nan
+        t3, c3, k = self.make_3d_case()
+        bspl3 = NdBSpline(t3, c3, k=3)
+
+        # evaluate out of bounds and inside
+        x = np.asarray([-2, 3, np.nan, 1, 2, 7, np.nan])
+        y = np.asarray([-3, 3.5, 1, np.nan, 3, 6.5, 6.5])
+        z = np.asarray([-1, 3.5, 2, 3, np.nan, 7.5, 7.5])
+        xi = [_ for _ in zip(x, y, z)]
+        target = x**3 * (y**3 + 2*y) * (z**3 + 3*z + 1)
+        mask = np.isnan(x) | np.isnan(y) | np.isnan(z)
+        target[mask] = np.nan
+
+        result = bspl3(xi)
+        assert np.isnan(result[mask]).all()
+        assert_allclose(result, target, atol=1e-14)

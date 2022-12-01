@@ -30,8 +30,11 @@ class NdBSpline:
         ``len(t[i]) == n[i] + k + 1``
     k : int or length-d tuple of integers
         spline degrees.
+    extrapolate : bool, optional
+        Whether to exrapolate based on first and last intervals in each
+        dimension, or return `nan`. Default is to extrapolate.
     """
-    def __init__(self, t, c, k=3):
+    def __init__(self, t, c, k, extrapolate=None):
         ndim = len(t)
         assert ndim <= len(c.shape)
 
@@ -40,6 +43,10 @@ class NdBSpline:
         except TypeError:
             # make k a tuple
             k = (k,)*ndim
+
+        if extrapolate is None:
+            extrapolate = True
+        self.extrapolate = bool(extrapolate)
 
         self.k = tuple(operator.index(ki) for ki in k)
         self.t = tuple(np.ascontiguousarray(ti, dtype=float) for ti in t)
@@ -98,7 +105,7 @@ class NdBSpline:
         assert strides_c1[-1] == 1
         self._strides_c1 = np.asarray(strides_c1)
 
-    def __call__(self, xi, nu=None):
+    def __call__(self, xi, nu=None, extrapolate=None):
         """Evaluate the tensor product b-spline at `xi`.
 
         Parameters
@@ -107,8 +114,11 @@ class NdBSpline:
             The coordinates to evaluate the interpolator at.
             This can be a list or tuple of ndim-dimensional points
             or an array with the shape (num_points, ndim).
-        nu : tuple, optional
+        nu : array_like, optional, shape (ndim,)
             Orders of derivatives to evaluate. Each must be non-negative.
+        extrapolate : book, optional
+            Whether to exrapolate based on first and last intervals in each
+            dimension, or return `nan`. Default is to ``self.extrapolate`.
 
         Returns
         -------
@@ -116,6 +126,10 @@ class NdBSpline:
             Interpolated values at xi
         """
         ndim = len(self.t)
+
+        if extrapolate is None:
+            extrapolate = self.extrapolate
+        extrapolate = bool(extrapolate)
 
         if nu is None:
             nu = np.zeros((ndim,), dtype=np.intc)
@@ -146,11 +160,11 @@ class NdBSpline:
                                  self.t,
                                  self.k,
                                  nu,
+                                 extrapolate,
                                  c1r,
                                  num_c_tr,
                                  self._strides_c1,
                                  self._indices_k1d,
-                                 out,
-        )
+                                 out,)
 
         return out.reshape(xi_shape[:-1] + self.c.shape[ndim:])
