@@ -5769,10 +5769,18 @@ def distance_correlation(x, y, compute_distance="euclidean", reps=1000,
 
     Returns
     -------
-    stat : float
-        The sample Dcorr test statistic within `[-1, 1]`.
-    pvalue : float
-        The p-value obtained via permutation.
+    res : DcorrResult
+        An object containing attributes:
+
+        statistic : float
+            The sample Dcorr test statistic within `[-1, 1]`.
+        pvalue : float
+            The p-value obtained via permutation.
+        mgc_dict : dict
+            Contains additional useful results:
+
+                - null_dist : list
+                    The null distribution derived from the permuted matrices.
 
     See Also
     --------
@@ -5893,6 +5901,10 @@ def distance_correlation(x, y, compute_distance="euclidean", reps=1000,
 
     # save all stats (other than stat/p-value) in dictionary
     dcorr_dict = {"null_dist": null_dist}
+
+    # create result object with alias for backward compatibility
+    res = DcorrResult(stat, pvalue, dcorr_dict)
+    res.stat = stat
 
     return DcorrResult(stat, pvalue, dcorr_dict)
 
