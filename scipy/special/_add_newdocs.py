@@ -4873,9 +4873,9 @@ add_newdoc("fdtr",
 
     See Also
     --------
-    fdtrc: F distribution survival function
-    fdtri: F distribution inverse cumulative distribution
-    scipy.stats.f: F distribution
+    fdtrc : F distribution survival function
+    fdtri : F distribution inverse cumulative distribution
+    scipy.stats.f : F distribution
 
     Notes
     -----
@@ -4938,7 +4938,8 @@ add_newdoc("fdtr",
     ``stats.f(dfn, dfd).cdf(x)=fdtr(dfn, dfd, x)``.
 
     >>> from scipy.stats import f
-    >>> dfn, dfd, x = 1, 2, 1
+    >>> dfn, dfd = 1, 2
+    >>> x = 1
     >>> fdtr_res = fdtr(dfn, dfd, x)  # this will often be faster than below
     >>> f_dist_res = f(dfn, dfd).cdf(x)
     >>> fdtr_res == f_dist_res  # test that results are equal
@@ -4971,11 +4972,11 @@ add_newdoc("fdtrc",
         The complemented F-distribution function with parameters `dfn` and
         `dfd` at `x`.
 
-    See also
+    See Also
     --------
-    fdtr: F distribution cumulative distribution function
-    fdtri: F distribution inverse cumulative distribution function
-    scipy.stats.f: F distribution
+    fdtr : F distribution cumulative distribution function
+    fdtri : F distribution inverse cumulative distribution function
+    scipy.stats.f : F distribution
 
     Notes
     -----
@@ -5038,7 +5039,8 @@ add_newdoc("fdtrc",
     ``stats.f(dfn, dfd).sf(x)=fdtrc(dfn, dfd, x)``.
 
     >>> from scipy.stats import f
-    >>> dfn, dfd, x = 1, 2, 1
+    >>> dfn, dfd = 1, 2
+    >>> x = 1
     >>> fdtrc_res = fdtrc(dfn, dfd, x)  # this will often be faster than below
     >>> f_dist_res = f(dfn, dfd).sf(x)
     >>> f_dist_res == fdtrc_res  # test that results are equal
@@ -5070,11 +5072,11 @@ add_newdoc("fdtri",
     x : scalar or ndarray
         The quantile corresponding to `p`.
 
-    See also
+    See Also
     --------
-    fdtr: F distribution cumulative distribution function
-    fdtrc: F distribution survival function
-    scipy.stats.f: F distribution
+    fdtr : F distribution cumulative distribution function
+    fdtrc : F distribution survival function
+    scipy.stats.f : F distribution
 
     Notes
     -----
@@ -5112,7 +5114,8 @@ add_newdoc("fdtri",
 
     >>> import numpy as np
     >>> from scipy.special import fdtri, fdtr
-    >>> df1, df2, x = 1, 2, 3
+    >>> df1, df2 = 1, 2
+    >>> x = 3
     >>> cdf_value =  fdtr(df1, df2, x)
     >>> fdtri(df1, df2, cdf_value)
     3.000000000000006
@@ -5153,7 +5156,8 @@ add_newdoc("fdtri",
     ``stats.f(dfn, dfd).ppf(x)=fdtri(dfn, dfd, x)``.
 
     >>> from scipy.stats import f
-    >>> dfn, dfd, x = 1, 2, 0.7
+    >>> dfn, dfd = 1, 2
+    >>> x = 0.7
     >>> fdtri_res = fdtri(dfn, dfd, x)  # this will often be faster than below
     >>> f_dist_res = f(dfn, dfd).ppf(x)
     >>> f_dist_res == fdtri_res  # test that results are equal
