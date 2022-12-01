@@ -1785,7 +1785,6 @@ class TestNdBSpline:
                         b(xi), atol=1e-14)
         assert nb(xi[:, None]).shape == (xi.shape[0], c.shape[1])
 
-
     def make_2d_case(self):
         # make a 2D separable spline
         x = np.arange(6)

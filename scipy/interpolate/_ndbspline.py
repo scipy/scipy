@@ -31,12 +31,27 @@ class NdBSpline:
     k : int or length-d tuple of integers
         spline degrees.
     extrapolate : bool, optional
-        Whether to exrapolate based on first and last intervals in each
-        dimension, or return `nan`. Default is to extrapolate.
+        Whether to exrapolate out-of-bounds inputs, or return `nan`.
+        Default is to extrapolate.
+
+    Attributes
+    ----------
+    t : tuple of ndarrays
+        Knots vectors.
+    c : ndarray
+        Coefficients of the tensor-produce spline.
+    k : ndarray
+        Degrees for each dimension.
+    extrapolate : bool
+        Whether to extrapolate or return nans for out-of-bounds inputs.
+
+    Methods
+    -------
+    __call__
+
     """
     def __init__(self, t, c, k, extrapolate=None):
         ndim = len(t)
-        assert ndim <= len(c.shape)
 
         try:
             len(k)
@@ -44,16 +59,18 @@ class NdBSpline:
             # make k a tuple
             k = (k,)*ndim
 
-        if extrapolate is None:
-            extrapolate = True
-        self.extrapolate = bool(extrapolate)
+        if len(k) != ndim:
+            raise ValueError(f"len(t) = {ndim} != {len(k)} = len(k)")
 
         self.k = tuple(operator.index(ki) for ki in k)
         self.t = tuple(np.ascontiguousarray(ti, dtype=float) for ti in t)
         self.c = np.asarray(c)
 
-        if len(k) != ndim:
-            raise ValueError(f"len(t) = {ndim} != {len(k)} = len(k)")
+        if extrapolate is None:
+            extrapolate = True
+        self.extrapolate = bool(extrapolate)
+
+        self.c = np.asarray(c)
 
         for d in range(ndim):
             td = self.t[d]
@@ -89,21 +106,6 @@ class NdBSpline:
 
         dt = _get_dtype(self.c.dtype)
         self.c = np.ascontiguousarray(self.c, dtype=dt)
-
-        # tabulate the flat indices for iterating over the (k+1)**ndim subarray
-        shape = tuple(kd + 1 for kd in self.k)
-        indices = np.unravel_index(np.arange(prod(shape)), shape)
-        self._indices_k1d = np.asarray(indices).T
-
-        # replacement for np.ravel_multi_index for indexing of `c1`:
-        c1 = self.c.reshape(self.c.shape[:ndim] + (-1,))
-        strides_c1 = [1]*(ndim + 1)
-        for d in range(ndim-1, -1, -1):
-            strides_c1[d] = strides_c1[d+1] * c1.shape[d+1]
-
-        assert strides_c1 == [_//c1.dtype.itemsize for _ in c1.strides]
-        assert strides_c1[-1] == 1
-        self._strides_c1 = np.asarray(strides_c1)
 
     def __call__(self, xi, nu=None, extrapolate=None):
         """Evaluate the tensor product b-spline at `xi`.
@@ -146,25 +148,48 @@ class NdBSpline:
 
         if xi_shape[-1] != ndim:
             raise ValueError(f"Shapes: xi.shape={xi_shape} and ndim={ndim}")
-        assert xi_shape[-1] == xi.shape[-1]
+
+        # prepare k & t
+        _k = np.asarray(self.k)
+
+        # pack the knots into a single array
+        len_t = [len(ti) for ti in self.t]
+        _t = np.empty((ndim, max(len_t)), dtype=float)
+        _t.fill(np.nan)
+        for d in range(ndim):
+            _t[d, :len(self.t[d])] = self.t[d]
+
+        # tabulate the flat indices for iterating over the (k+1)**ndim subarray
+        shape = tuple(kd + 1 for kd in self.k)
+        indices = np.unravel_index(np.arange(prod(shape)), shape)
+        _indices_k1d = np.asarray(indices).T
 
         # prepare the coefficients: flatten the trailing dimensions
         c1 = self.c.reshape(self.c.shape[:ndim] + (-1,))
         c1r = c1.ravel()
         assert c1r.flags.c_contiguous
 
+        # replacement for np.ravel_multi_index for indexing of `c1`:
+        strides_c1 = [1]*(ndim + 1)
+        for d in range(ndim-1, -1, -1):
+            strides_c1[d] = strides_c1[d+1] * c1.shape[d+1]
+
+        assert strides_c1 == [_//c1.dtype.itemsize for _ in c1.strides]
+        assert strides_c1[-1] == 1
+        _strides_c1 = np.asarray(strides_c1)
+
         num_c_tr = c1.shape[-1]  # # of trailing coefficients
         out = np.empty(xi.shape[:-1] + (num_c_tr,), dtype=c1.dtype)
 
         _bspl.evaluate_ndbspline(xi,
-                                 self.t,
-                                 self.k,
+                                 _t,
+                                 _k,
                                  nu,
                                  extrapolate,
                                  c1r,
                                  num_c_tr,
-                                 self._strides_c1,
-                                 self._indices_k1d,
+                                 _strides_c1,
+                                 _indices_k1d,
                                  out,)
 
         return out.reshape(xi_shape[:-1] + self.c.shape[ndim:])
