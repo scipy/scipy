@@ -1959,7 +1959,6 @@ class TestNdBSpline:
                    [0.9, 1.4, 1.9]]
         assert_allclose(spl(xi), [spl_0(xp) for xp in xi], atol=1e-14)
 
-    @pytest.mark.xfail
     def test_3D_random_complex(self):
         rng = np.random.default_rng(12345)
         k = 3
@@ -1970,8 +1969,8 @@ class TestNdBSpline:
              rng.uniform(size=(tx.size-k-1, ty.size-k-1, tz.size-k-1))*1j)
 
         spl = NdBSpline((tx, ty, tz), c, k=k)
-        spl_re = NdBSpline0((tx, ty, tz), c.real, k=k)
-        spl_im = NdBSpline0((tx, ty, tz), c.imag, k=k)
+        spl_re = NdBSpline((tx, ty, tz), c.real, k=k)
+        spl_im = NdBSpline((tx, ty, tz), c.imag, k=k)
 
         xi = np.c_[[1, 1.5, 2],
                    [1.1, 1.6, 2.1],

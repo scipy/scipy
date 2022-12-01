@@ -93,7 +93,8 @@ class NdBSpline:
         strides_c1 = [1]*(ndim + 1)
         for d in range(ndim-1, -1, -1):
             strides_c1[d] = strides_c1[d+1] * c1.shape[d+1]
-        assert strides_c1 == [_//8 for _ in c1.strides]
+
+        assert strides_c1 == [_//c1.dtype.itemsize for _ in c1.strides]
         assert strides_c1[-1] == 1
         self._strides_c1 = np.asarray(strides_c1)
 
@@ -130,15 +131,16 @@ class NdBSpline:
         assert c1r.flags.c_contiguous
 
         num_c_tr = c1.shape[-1]  # # of trailing coefficients
-        out = np.empty(xi.shape[:-1] + (num_c_tr,), dtype=float)
+        out = np.empty(xi.shape[:-1] + (num_c_tr,), dtype=c1.dtype)
 
         _bspl.evaluate_ndbspline(xi,
                                  self.t,
                                  self.k,
                                  c1r,
                                  num_c_tr,
-                                 out,
+                                 self._strides_c1,
                                  self._indices_k1d,
-                                 self._strides_c1)
+                                 out,
+        )
 
         return out.reshape(xi_shape[:-1] + self.c.shape[ndim:])

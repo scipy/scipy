@@ -484,11 +484,11 @@ def _make_design_matrix(const double[::1] x,
 def evaluate_ndbspline(const double[:, ::1] xi,
                        tuple t,
                        tuple ktuple,
-                       const double[::1] c1r,
+                       double_or_complex[::1] c1r,
                        npy_intp num_c_tr,
-                       double[:, ::1] out,
-                       const npy_intp[:, ::] indices_k1d,
                        const npy_intp[::1] strides_c1,
+                       const npy_intp[:, ::] indices_k1d,
+                       double_or_complex[:, ::1] out,
                       ):
         cdef:
             npy_intp ndim = len(t)
@@ -499,21 +499,21 @@ def evaluate_ndbspline(const double[:, ::1] xi,
             # container for non-zero b-splines at each point in xi
             double[:, ::1] b = np.empty((ndim, max(ktuple)+1), dtype=float)
 
-            const double[::1] x
-            const double[::1] td
-            double xd
-            npy_intp kd
+            const double[::1] x     # an ndim-dimensional input point
+            double xd               # d-th component of x
+
+            const double[::1] td    # knots in dimension d
+
             const npy_intp[::1] k = np.asarray(ktuple, dtype=int)
+            npy_intp kd             # d-th component of k
 
             npy_intp i_c      # index to loop over range(num_c_tr)
             npy_intp iflat    # index to loop over (k+1)**ndim non-zero terms
             npy_intp volume   # the number of non-zero terms
-            const npy_intp[:] idx_b   # ndim-dimensional index corresponding to iflat_idx
+            const npy_intp[:] idx_b   # ndim-dimensional index corresponding to iflat
 
             npy_intp idx_cflat_base, idx
-
             double factor
-        
             double[::1] wrk = np.empty(2*max(ktuple)+2, dtype=float)
 
         # TODO: basic asserts of input shapes
@@ -563,5 +563,5 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                     # idx_cflat = np.ravel_multi_index(tuple(idx_c) + (i_c,), c1.shape)
                     # we pre-computed the first ndim strides of `c1r` array and use the
                     # fact that the `c1r` array is C-ordered by construction
-                    out[j, i_c] += c1r[idx_cflat_base + i_c] * factor
+                    out[j, i_c] = out[j, i_c] + c1r[idx_cflat_base + i_c] * factor
 
