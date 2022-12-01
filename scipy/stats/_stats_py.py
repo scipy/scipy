@@ -5846,6 +5846,8 @@ def distance_correlation(x, y, compute_distance="euclidean", reps=1000,
     and even faster version of the algorithm is run (computational
     complexity is :math:`\mathcal{O}(n \log n)`) [3]_.
 
+    .. versionadded:: 1.10.0
+
     References
     ----------
     .. [1] Székely, G. J., Rizzo, M. L., & Bakirov, N. K. (2007). Measuring
