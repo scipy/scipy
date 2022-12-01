@@ -17,7 +17,7 @@ There is a single shape parameter :math:`\rho`. The support is
                                     \frac{\tan^{-1}\left(\frac{x}{\bar{c}}\right)}{\bar{c}}\right)}{2\rho}
    \end{eqnarray*}
 
-Where
+where
 
 .. math::
    :nowrap:
