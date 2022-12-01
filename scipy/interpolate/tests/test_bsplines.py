@@ -1892,6 +1892,23 @@ class TestNdBSpline:
         assert_allclose(bspl2(xi),
                         target, atol=1e-14)
 
+    def test_2D_derivative(self):
+        t2, c2, kx, ky = self.make_2d_mixed()
+        xi = [(1.4, 4.5), (2.5, 2.4), (4.5, 3.5)]
+        bspl2 = NdBSpline(t2, c2, k=(kx, ky))
+
+        der = bspl2(xi, nu=(1, 0))
+        assert_allclose(der,
+                        [3*x**2 * (y**2 + 2*y) for x, y in xi], atol=1e-14)
+
+        der = bspl2(xi, nu=(1, 1))
+        assert_allclose(der,
+                        [3*x**2 * (2*y + 2) for x, y in xi], atol=1e-14)
+
+        der = bspl2(xi, nu=(0, 0))
+        assert_allclose(der,
+                        [x**3 * (y**2 + 2*y) for x, y in xi], atol=1e-14)
+
     def test_2D_mixed_random(self):
         rng = np.random.default_rng(12345)
         kx, ky = 2, 3
@@ -1939,6 +1956,28 @@ class TestNdBSpline:
         result = bspl3(xi)
         assert result.shape == (11,)
         assert_allclose(result, target, atol=1e-14)
+
+    def test_3D_derivative(self):
+        t3, c3, k = self.make_3d_case()
+        bspl3 = NdBSpline(t3, c3, k=3)
+        rng = np.random.default_rng(12345)
+        x, y, z = rng.uniform(size=(3, 11)) * 5
+        xi = [_ for _ in zip(x, y, z)]
+
+        assert_allclose(bspl3(xi, nu=(1, 0, 0)),
+                        3*x**2 * (y**3 + 2*y) * (z**3 + 3*z + 1), atol=1e-14)
+
+        assert_allclose(bspl3(xi, nu=(2, 0, 0)),
+                        6*x * (y**3 + 2*y) * (z**3 + 3*z + 1), atol=1e-14)
+
+        assert_allclose(bspl3(xi, nu=(2, 1, 0)),
+                        6*x * (3*y**2 + 2) * (z**3 + 3*z + 1), atol=1e-14)
+
+        assert_allclose(bspl3(xi, nu=(2, 1, 3)),
+                        6*x * (3*y**2 + 2) * (6), atol=1e-14)
+
+        assert_allclose(bspl3(xi, nu=(2, 1, 4)),
+                        np.zeros(len(xi)), atol=1e-14)
 
     def test_3D_random(self):
         rng = np.random.default_rng(12345)

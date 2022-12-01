@@ -484,6 +484,7 @@ def _make_design_matrix(const double[::1] x,
 def evaluate_ndbspline(const double[:, ::1] xi,
                        tuple t,
                        tuple ktuple,
+                       int[::1] nu,
                        double_or_complex[::1] c1r,
                        npy_intp num_c_tr,
                        const npy_intp[::1] strides_c1,
@@ -536,7 +537,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                 # TODO: interval < 0
 
                 # compute non-zero b-splines at this value of xd in dimension d
-                _deBoor_D(&td[0], xd, kd, i[d], 0, &wrk[0])
+                _deBoor_D(&td[0], xd, kd, i[d], nu[d], &wrk[0])
                 b[d, :kd+1] = wrk[:kd+1]
 
             for i_c in range(num_c_tr):

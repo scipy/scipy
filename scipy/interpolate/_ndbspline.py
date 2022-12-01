@@ -98,8 +98,8 @@ class NdBSpline:
         assert strides_c1[-1] == 1
         self._strides_c1 = np.asarray(strides_c1)
 
-    def __call__(self, xi):
-        """Evaluate the tensor product b-spline at coordinates.
+    def __call__(self, xi, nu=None):
+        """Evaluate the tensor product b-spline at `xi`.
 
         Parameters
         ----------
@@ -107,6 +107,8 @@ class NdBSpline:
             The coordinates to evaluate the interpolator at.
             This can be a list or tuple of ndim-dimensional points
             or an array with the shape (num_points, ndim).
+        nu : tuple, optional
+            Orders of derivatives to evaluate. Each must be non-negative.
 
         Returns
         -------
@@ -114,6 +116,13 @@ class NdBSpline:
             Interpolated values at xi
         """
         ndim = len(self.t)
+
+        if nu is None:
+            nu = np.zeros((ndim,), dtype=np.intc)
+        else:
+            nu = np.asarray(nu, dtype=np.intc)
+            if nu.ndim != 1 or nu.shape[0] != ndim:
+                raise ValueError("invalid number of derivative orders nu")
 
         # prepare xi : shape (..., m1, ..., md) -> (1, m1, ..., md)
         xi = np.asarray(xi, dtype=float)
@@ -136,6 +145,7 @@ class NdBSpline:
         _bspl.evaluate_ndbspline(xi,
                                  self.t,
                                  self.k,
+                                 nu,
                                  c1r,
                                  num_c_tr,
                                  self._strides_c1,
