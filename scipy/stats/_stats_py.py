@@ -5781,46 +5781,75 @@ def distance_correlation(x, y, compute_distance="euclidean", reps=1000,
     Notes
     -----
     A description of the process of Dcorr and applications on data
-    can be found in [2]_. It is performed using the following steps:
-    Let :math:`x` and :math:`y` be :math:`(n,p)` samples of random variables :math:`X` and :math:`Y`.
-    Let :math:`D^x` be the :math:`n \times n` distance matrix of :math:`x` and :math:`D^y` be the :math:`n \times n` be the
-    distance matrix of :math:`y`. The distance covariance is
+    can be found in [1]_. It is performed using the following steps:
+
+    Let :math:`x` and :math:`y` be :math:`(n, p)` samples of random
+    variables
+    :math:`X` and :math:`Y`. Let :math:`D^x` be the :math:`n \times n`
+    distance matrix of :math:`x` and :math:`D^y` be the
+    :math:`n \times n` be
+    the distance matrix of :math:`y`. The distance covariance is,
 
     .. math::
-        Dcov_n^b(x,y) = (1/(n^2)) \ times \mathrm{tr(D^{y} H D^{y} H)}
-    where math`\mathrm{tr} (\cdot)` is the trace operator and :math:`H` is defined as \mathbb{1} =I-(1/n)J where :math:`I`
-    is the identity matrix and :math:`J` is a matrix of ones. The normalized version
-    of this covariance is distance correlation 1 and is
+
+        Dcov^b_n (x, y) = \frac{1}{n^2} \mathrm{tr} (D^x H D^y H)
+
+    where :math:`\mathrm{tr} (\cdot)` is the trace operator and:math:`H` is
+    defined as :math:`H = I - (1/n) J` where :math:`I` is the identity matrix
+    and :math:`J` is a matrix of ones. The normalized version of this
+    covariance is distance correlation [1]_ and is
 
     .. math::
-        Dcorr_n^b(x,y) = {Dcov_n^b(x,y)}/{\sqrt{Dcov_n^b(x,x) Dcov_n^b(y,y)}}
+
+        Dcorr^b_n (x, y) = \frac{\mathrm{Dcov}^b_n (x, y)}
+                                {\sqrt{\mathrm{Dcov}^b_n (x, x)
+                                        \mathrm{Dcov}^b_n (y, y)}}
+
+
     This is a biased test statistic. An unbiased alternative also exists,
-    and is defined using the following:
-    Consider the centering process where \mathbb{1} is the indicator function:
-
-    .. math::
-        C_{ij}^x = [\(D_{ij}^x - (1/(n-2)) \sum_{t=1}^{n} D_{it}^x - (1/(n-2))
-                \sum_{s=1}^{n} D_{sj}^x + (\frac{1}{(n-2)(n+2)}) \sum_{s,t=1}^{n} D_{st}^x] 1_{i \neq j}
-
-    and similarly for :math:`C^y`.
-    Then, the unbiased Dcorr test statistic is:
+    and is
+    defined using the following: Consider the
+    centering process where :math:`\mathbb{1}(\cdot)` is the indicator
+    function:
 
     .. math::
 
-        Dcov_n(x,y)=(1/n(n-3))\mathrm{tr(C^x C^y)}
-    The p-value returned is calculated using a permutation test using a helper function
-    that calculates the parallel p-value.
-    Dcorr's stat and p-value is equivalent to the values in similar testing methods
-    such as Energy and hSIC [1]_ [2]_.
+        C^x_{ij} = \left[ D^x_{ij} - \frac{1}{n-2} \sum_{t=1}^n D^x_{it}
+            - \frac{1}{n-2} \sum_{s=1}^n D^x_{sj}
+            + \frac{1}{(n-1) (n-2)} \sum_{s,t=1}^n D^x_{st} \right]
+            \mathbb{1}_{i \neq j}
+
+    and similarly for :math:`C^y`. Then, this unbiased Dcov is,
+
+    .. math::
+
+        Dcov_n (x, y) = \frac{1}{n (n-3)} \mathrm{tr} (C^x C^y)
+
+    The normalized version of this covariance [2]_ is
+
+    .. math::
+
+        Dcorr_n (x, y) = \frac{\mathrm{Dcov}_n (x, y)}
+                              {\sqrt{\mathrm{Dcov}_n (x, x)
+                                     \mathrm{Dcov}_n (y, y)}}
+
+
+    When the data is 1 dimension and the distance metric is Euclidean,
+    and even faster version of the algorithm is run (computational
+    complexity is :math:`\mathcal{O}(n \log n)`) [3]_.
 
     References
     ----------
-    .. [1] Panda, S., Cencheng, S., Perry, R., Zorn, J., Lutz, A.
-           Priebe, C., Vogelstein, J. T. (2019). Nonpar MANOVA via Independence
-           Testing. Package. : arXiv: `1910.08883`
-    .. [2] Cencheng, S., Vogelstein, J. T. (2019). The Exact Equivalence of
-           Distance and Kernel Methods for Hypothesis Testing.
-           Package. : arXiv: `1806.05514`
+    .. [1] Székely, G. J., Rizzo, M. L., & Bakirov, N. K. (2007). Measuring
+           and testing dependence by correlation of distances. The Annals of
+           Statistics, 35(6), 2769–2794.
+           https://doi.org/10.1214/009053607000000505
+    .. [2] Székely, G. J., & Rizzo, M. L. (2014). Partial distance correlation
+           with methods for dissimilarities. The Annals of Statistics, 42(6),
+           2382–2412. https://doi.org/10.1214/14-AOS1255
+    .. [3] Chaudhuri, A., & Hu, W. (2019). A fast algorithm for computing
+           distance correlation. Computational Statistics & Data Analysis,
+           135, 15–24. https://doi.org/10.1016/j.csda.2019.01.016
 
     Examples
     --------
@@ -6075,17 +6104,20 @@ def multiscale_graphcorr(x, y, compute_distance="euclidean", reps=1000,
     ----------
     .. [1] Vogelstein, J. T., Bridgeford, E. W., Wang, Q., Priebe, C. E.,
            Maggioni, M., & Shen, C. (2019). Discovering and deciphering
-           relationships across disparate data modalities. ELife.
-    .. [2] Panda, S., Palaniappan, S., Xiong, J., Swaminathan, A.,
-           Ramachandran, S., Bridgeford, E. W., ... Vogelstein, J. T. (2019).
-           mgcpy: A Comprehensive High Dimensional Independence Testing Python
-           Package. :arXiv:`1907.02088`
-    .. [3] Shen, C., Priebe, C.E., & Vogelstein, J. T. (2019). From distance
-           correlation to multiscale graph correlation. Journal of the American
-           Statistical Association.
-    .. [4] Shen, C. & Vogelstein, J. T. (2018). The Exact Equivalence of
-           Distance and Kernel Methods for Hypothesis Testing.
-           :arXiv:`1806.05514`
+           relationships across disparate data modalities. ELife, 8, e41690.
+           https://doi.org/10.7554/eLife.41690
+    .. [2] Panda, S., Palaniappan, S., Xiong, J., Bridgeford, E. W.,
+           Mehta, R., Shen, C., & Vogelstein, J. T. (2021). hyppo: A
+           Multivariate Hypothesis Testing Python Package (arXiv:1907.02088).
+           arXiv. https://doi.org/10.48550/arXiv.1907.02088
+    .. [3] Shen, C., Priebe, C. E., & Vogelstein, J. T. (2020). From Distance
+           Correlation to Multiscale Graph Correlation. Journal of the American
+           Statistical Association, 115(529), 280–291.
+           https://doi.org/10.1080/01621459.2018.1543125
+    .. [4] Shen, C., & Vogelstein, J. T. (2021). The exact equivalence of
+           distance and kernel methods in hypothesis testing. AStA Advances in
+           Statistical Analysis, 105(3), 385–403.
+           https://doi.org/10.1007/s10182-020-00378-1
 
     Examples
     --------
