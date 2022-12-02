@@ -230,7 +230,7 @@ def lobpcg(
     iteration by calling the dense eigensolver `eigh`, so if ``k`` is not
     small enough compared to ``n``, it makes no sense to call the LOBPCG code.
     Moreover, if one calls the LOBPCG algorithm for ``5k > n``, it would likely
-    break internally, so the code calls the standard function `eigh` instead. 
+    break internally, so the code calls the standard function `eigh` instead.
     It is not that ``n`` should be large for the LOBPCG to work, but rather the
     ratio ``n / k`` should be large. It you call LOBPCG with ``k=1``
     and ``n=10``, it works though ``n`` is small. The method is intended
