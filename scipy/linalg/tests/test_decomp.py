@@ -2331,7 +2331,7 @@ class TestOrdQZ:
             # once the sorting criterion was not matched all subsequent
             # eigenvalues also shouldn't match
             if not lastsort:
-                assert(not cursort)
+                assert not cursort
             lastsort = cursort
 
     def check_all(self, sort):

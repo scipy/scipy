@@ -1,18 +1,9 @@
-_stats_pxd = custom_target('_stats_pxd',
-  output: [
-    '__init__.py',
-    '_stats.pxd',
-    '_biasedurn.pxd',
-    'unuran.pxd',
-  ],
-  input: [
-    '__init__.py',
-    '_stats.pxd',
-    '_biasedurn.pxd',
-    '_unuran/unuran.pxd',
-  ],
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
+_stats_pxd = [
+  fs.copyfile('__init__.py'),
+  fs.copyfile('_stats.pxd'),
+  fs.copyfile('_biasedurn.pxd'),
+  fs.copyfile('_unuran/unuran.pxd'),
+]
 
 stats_special_cython_gen = generator(cython_cli,
   arguments : ['@INPUT@', '@OUTPUT@'],

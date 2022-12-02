@@ -132,6 +132,27 @@ def test_vonmises_pdf(x, kappa, expected_pdf):
     assert_allclose(pdf, expected_pdf, rtol=1e-15)
 
 
+# Expected values of the vonmises entropy were computed using
+# mpmath with 50 digits of precision:
+#
+# def vonmises_entropy(kappa):
+#     kappa = mpmath.mpf(kappa)
+#     return (-kappa * mpmath.besseli(1, kappa) /
+#             mpmath.besseli(0, kappa) + mpmath.log(2 * mpmath.pi *
+#             mpmath.besseli(0, kappa)))
+# >>> float(vonmises_entropy(kappa))
+
+@pytest.mark.parametrize('kappa, expected_entropy',
+                         [(1, 1.6274014590199897),
+                          (5, 0.6756431570114528),
+                          (100, -0.8811275441649473),
+                          (1000, -2.03468891852547),
+                          (2000, -2.3813876496587847)])
+def test_vonmises_entropy(kappa, expected_entropy):
+    entropy = stats.vonmises.entropy(kappa)
+    assert_allclose(entropy, expected_entropy, rtol=1e-13)
+
+
 def test_vonmises_rvs_gh4598():
     # check that random variates wrap around as discussed in gh-4598
     seed = abs(hash('von_mises_rvs'))
@@ -1385,7 +1406,8 @@ class TestLogistic:
         # with 64 bit floating point.
         assert_equal(logp, [-800, -800])
 
-    @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
+    @pytest.mark.parametrize("loc_rvs,scale_rvs", [(0.4484955, 0.10216821),
+                                                   (0.62918191, 0.74367064)])
     def test_fit(self, loc_rvs, scale_rvs):
         data = stats.logistic.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
 
@@ -2183,7 +2205,7 @@ class TestInvgauss:
         np.random.seed(1234)
 
     @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
-                             [(2, 0, 1), (np.random.rand(3)*10)])
+                             [(2, 0, 1), (4.635, 4.362, 6.303)])
     def test_fit(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
@@ -2214,7 +2236,7 @@ class TestInvgauss:
         assert shape_mle1 == shape_mle2 == shape_mle3 == 1.04
 
     @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
-                             [(2, 0, 1), (np.random.rand(3)*10)])
+                             [(2, 0, 1), (6.311, 3.225, 4.520)])
     def test_fit_MLE_comp_optimizer(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
@@ -3366,6 +3388,30 @@ class TestBeta:
         q, a, b = 0.995, 1.0e11, 1.0e13
         with pytest.warns(RuntimeWarning):
             stats.beta.ppf(q, a, b)
+
+    @pytest.mark.parametrize('method', [stats.beta.ppf, stats.beta.isf])
+    @pytest.mark.parametrize('a, b', [(1e-310, 12.5), (12.5, 1e-310)])
+    def test_beta_ppf_with_subnormal_a_b(self, method, a, b):
+        # Regression test for gh-17444: beta.ppf(p, a, b) and beta.isf(p, a, b)
+        # would result in a segmentation fault if either a or b was subnormal.
+        p = 0.9
+        # Depending on the version of Boost that we have vendored and
+        # our setting of the Boost double promotion policy, the call
+        # `stats.beta.ppf(p, a, b)` might raise an OverflowError or
+        # return a value.  We'll accept either behavior (and not care about
+        # the value), because our goal here is to verify that the call does
+        # not trigger a segmentation fault.
+        try:
+            method(p, a, b)
+        except OverflowError:
+            # The OverflowError exception occurs with Boost 1.80 or earlier
+            # when Boost's double promotion policy is false; see
+            #   https://github.com/boostorg/math/issues/882
+            # and
+            #   https://github.com/boostorg/math/pull/883
+            # Once we have vendored the fixed version of Boost, we can drop
+            # this try-except wrapper and just call the function.
+            pass
 
 
 class TestBetaPrime:
@@ -5120,7 +5166,8 @@ class TestRayleigh:
         y = stats.rayleigh.logsf(50)
         assert_allclose(y, -1250)
 
-    @pytest.mark.parametrize("rvs_loc,rvs_scale", [np.random.rand(2)])
+    @pytest.mark.parametrize("rvs_loc,rvs_scale", [(0.85373171, 0.86932204),
+                                                   (0.20558821, 0.61621008)])
     def test_fit(self, rvs_loc, rvs_scale):
         data = stats.rayleigh.rvs(size=250, loc=rvs_loc, scale=rvs_scale)
 
@@ -5145,7 +5192,7 @@ class TestRayleigh:
         assert_equal(scale, scale_mle(data, loc))
 
     @pytest.mark.parametrize("rvs_loc,rvs_scale", [[0.74, 0.01],
-                                                   np.random.rand(2)])
+                                                   [0.08464463, 0.12069025]])
     def test_fit_comparison_super_method(self, rvs_loc, rvs_scale):
         # test that the objective function result of the analytical MLEs is
         # less than or equal to that of the numerically optimized estimate

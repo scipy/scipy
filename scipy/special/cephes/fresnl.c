@@ -185,8 +185,8 @@ double xxa, *ssa, *cca;
          * http://functions.wolfram.com/GammaBetaErf/FresnelC/06/02/
          * http://functions.wolfram.com/GammaBetaErf/FresnelS/06/02/
          */
-	cc = 0.5 + 1/(NPY_PI*x) * sin(NPY_PI*x*x/2);
-	ss = 0.5 - 1/(NPY_PI*x) * cos(NPY_PI*x*x/2);
+	cc = 0.5 + 1/(M_PI*x) * sin(M_PI*x*x/2);
+	ss = 0.5 - 1/(M_PI*x) * cos(M_PI*x*x/2);
 	goto done;
     }
 
@@ -195,16 +195,16 @@ double xxa, *ssa, *cca;
      *             for large argument
      */
     x2 = x * x;
-    t = NPY_PI * x2;
+    t = M_PI * x2;
     u = 1.0 / (t * t);
     t = 1.0 / t;
     f = 1.0 - u * polevl(u, fn, 9) / p1evl(u, fd, 10);
     g = t * polevl(u, gn, 10) / p1evl(u, gd, 11);
 
-    t = NPY_PI_2 * x2;
+    t = M_PI_2 * x2;
     c = cos(t);
     s = sin(t);
-    t = NPY_PI * x;
+    t = M_PI * x;
     cc = 0.5 + (f * s - g * c) / t;
     ss = 0.5 - (f * c + g * s) / t;
 

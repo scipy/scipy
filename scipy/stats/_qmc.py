@@ -1719,7 +1719,7 @@ class PoissonDisk(QMCEngine):
     >>>
     >>> rng = np.random.default_rng()
     >>> radius = 0.2
-    >>> engine = qmc.PoissonDisk(d=2, radius=0.2, seed=rng)
+    >>> engine = qmc.PoissonDisk(d=2, radius=radius, seed=rng)
     >>> sample = engine.random(20)
 
     Visualizing the 2D sample and showing that no points are closer than

@@ -278,7 +278,7 @@ def test_failure_to_run_iterations_nonsymmetric():
     Q = np.ones((10, 1))
     with pytest.warns(UserWarning, match="Exited at iteration 2"):
         eigenvalues, _ = lobpcg(A, Q, maxiter=20)
-    assert(np.max(eigenvalues) > 0)
+    assert np.max(eigenvalues) > 0
 
 
 @pytest.mark.filterwarnings("ignore:The problem size")

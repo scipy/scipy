@@ -1652,8 +1652,7 @@ def watershed_ift(input, markers, structure=None, output=None):
     if input.shape != markers.shape:
         raise RuntimeError('input and markers must have equal shape')
 
-    integral_types = [numpy.int0,
-                      numpy.int8,
+    integral_types = [numpy.int8,
                       numpy.int16,
                       numpy.int32,
                       numpy.int_,

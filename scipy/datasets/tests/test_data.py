@@ -1,6 +1,6 @@
 from scipy.datasets._registry import registry
-from scipy.datasets._fetchers import fetch_data, data_fetcher
-from scipy.datasets import ascent, face, electrocardiogram
+from scipy.datasets._fetchers import data_fetcher
+from scipy.datasets import ascent, face, electrocardiogram, download_all
 from numpy.testing import assert_equal, assert_almost_equal
 import os
 import pytest
@@ -30,8 +30,7 @@ class TestDatasets:
         # This fixture requires INTERNET CONNECTION
 
         # test_setup phase
-        for dataset in registry:
-            fetch_data(dataset)
+        download_all()
 
         yield
 
