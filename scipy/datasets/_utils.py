@@ -1,6 +1,6 @@
 import os
 import shutil
-from ._registry import registry
+from ._registry import method_files_map
 
 try:
     import appdirs
@@ -8,10 +8,10 @@ except ImportError:
     appdirs = None
 
 
-def _clear_cache(datasets, cache_dir=None, data_registry=None):
-    if data_registry is None:
-        # Use SciPy Datasets registry map
-        data_registry = registry
+def _clear_cache(datasets, cache_dir=None, method_map=None):
+    if method_map is None:
+        # Use SciPy Datasets method map
+        method_map = method_files_map
     if cache_dir is None:
         # Use default cache_dir path
         if appdirs is None:
@@ -29,34 +29,53 @@ def _clear_cache(datasets, cache_dir=None, data_registry=None):
         print(f"Cleaning the cache directory {cache_dir}!")
         shutil.rmtree(cache_dir)
     else:
-        for dataset_name in datasets:
-            if dataset_name not in data_registry:
-                raise ValueError(f"Dataset {dataset_name} doesn't exist. "
-                                 "Please check if the passed dataset "
-                                 "is a subset of the following: "
-                                 f"{list(data_registry.keys())}")
+        if not isinstance(datasets, (list, tuple)):
+            # single dataset method passed should be converted to list
+            datasets = [datasets, ]
+        for dataset in datasets:
+            assert callable(dataset)
+            dataset_name = dataset.__name__  # Name of the dataset method
+            if dataset_name not in method_map:
+                raise ValueError(f"Dataset method {dataset_name} doesn't "
+                                 "exist. Please check if the passed dataset "
+                                 "is a subset of the following dataset "
+                                 f"methods: {list(method_map.keys())}")
 
-            dataset_path = os.path.join(cache_dir, dataset_name)
-            if os.path.exists(dataset_path):
-                print(f"Cleaning the {dataset_name} file!")
-                os.remove(dataset_path)
-            else:
-                print(f"Path {dataset_path} doesn't exist. Nothing to clear.")
+            data_files = method_map[dataset_name]
+            data_filepaths = [os.path.join(cache_dir, file)
+                              for file in data_files]
+            for data_filepath in data_filepaths:
+                if os.path.exists(data_filepath):
+                    print("Cleaning the file "
+                          f"{os.path.split(data_filepath)[1]} "
+                          f"for dataset {dataset_name}")
+                    os.remove(data_filepath)
+                else:
+                    print(f"Path {data_filepath} doesn't exist. "
+                          "Nothing to clear.")
 
 
 def clear_cache(datasets=None):
     """
     Cleans the scipy datasets cache directory.
 
-    If a list/tuple of dataset strings is provided, then it
-    removes all the datasets in the list/tuple.
+    If a scipy.datasets method or a list/tuple of the same is
+    provided, then clear_cache removes all the data files
+    associated to the passed dataset method callable(s).
 
     By default, it removes all the cached data files.
 
     Parameters
     ----------
-    datasets : list/tuple of str or None
-        A list/tuple of datasets to be removed from cache.
+    datasets : callable or list/tuple of callable or None
 
+    Examples
+    --------
+    >>> from scipy import datasets
+    >>> ascent_array = datasets.ascent()
+    >>> ascent_array.shape
+    (512, 512)
+    >>> datasets.clear_cache([datasets.ascent])
+    Cleaning the file ascent.dat for dataset ascent
     """
     _clear_cache(datasets)
