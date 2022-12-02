@@ -1538,7 +1538,6 @@ class TestSmoothingSpline:
 
         with assert_raises(ValueError):
             make_smoothing_spline(x_dupl, y)
-            
 
     def test_compare_with_GCVSPL(self):
         """
@@ -1588,8 +1587,11 @@ class TestSmoothingSpline:
         
         y_GCVSPL = data['y_GCVSPL']
         y_compr = make_smoothing_spline(x, y)(x)
-        assert_allclose(y_compr, y_GCVSPL, atol=1e-5, rtol=1e-6)
 
+        # such tolerance is explained by the fact that the spline is built
+        # using an iterative algorithm for minimizing the GCV criteria. These
+        # algorithms may vary, so the tolerance should be rather low.
+        assert_allclose(y_compr, y_GCVSPL, atol=1e-4, rtol=1e-4)
 
     def test_non_regularized_case(self):
         """
@@ -1610,7 +1612,6 @@ class TestSmoothingSpline:
                         spline_interp(grid),
                         atol=1e-15)
 
-
     def test_weighted_smoothing_spline(self):
         # create data sample
         np.random.seed(1234)
@@ -1620,7 +1621,9 @@ class TestSmoothingSpline:
 
         spl = make_smoothing_spline(x, y)
 
-        for ind in [0, 20, 49, 60]:
+        # in order not to iterate over all of the indices, we select 10 of
+        # them randomly
+        for ind in np.random.choice(range(100), size=10):
             w = np.ones(n)
             w[ind] = 30.
             spl_w = make_smoothing_spline(x, y, w)

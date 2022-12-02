@@ -1590,10 +1590,14 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
     lam : float
         An optimal from the GCV criteria point of view regularization
         parameter.
+    
+    Notes
+    -----
+    No checks are performed.
 
     References
     ----------
-    .. [1] G. Wahba, “Estimating the smoothing patameter” in Spline models
+    .. [1] G. Wahba, “Estimating the smoothing parameter” in Spline models
         for observational data, Philadelphia, Pennsylvania: Society for
         Industrial and Applied Mathematics, 1990, pp. 45–65.
         :doi:`10.1137/1.9781611970128`
@@ -1640,7 +1644,6 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
             for j in range(min(n-i, 4)):
                 res[-j-1, i + j] = sum(X[j:, i] * W_Y[:5-j, i + j])
         return res
-    
 
     def compute_b_inv(A):
         """
@@ -1651,7 +1654,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         Parameters
         ----------
         A : array, shape (4, n)
-            Matrix to inverse stored in LAPACK banded storage.
+            Matrix to inverse, stored in LAPACK banded storage.
 
         Returns
         -------
@@ -1674,13 +1677,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
             :doi:`10.1007/BF01389878`
 
         """
-        U = cholesky_banded(A)
-        for i in range(2, 5):
-            U[-i, i-1:] /= U[-1, :-i+1]
-        D = 1. / (U[-1])**2
-        U[-1] /= U[-1]
 
-        n = U.shape[1]
         def find_b_inv_elem(i, l, U, D, B):
             rng = min(3, n - i - 1)
             rng_sum = 0.
@@ -1698,6 +1695,14 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
                     rng_sum -= U[-k - 1, i + k] * B[-diag - 1, ind + diag]
                 B[-l - 1, i + l] = rng_sum
 
+        U = cholesky_banded(A)
+        for i in range(2, 5):
+            U[-i, i-1:] /= U[-1, :-i+1]
+        D = 1. / (U[-1])**2
+        U[-1] /= U[-1]
+
+        n = U.shape[1]
+
         B = np.zeros(shape=(4, n))
         for i in range(n - 1, -1, -1):
             for l in range(min(3, n - i - 1), -1, -1):
@@ -1705,7 +1710,6 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         # the first row contains garbage and should be removed
         B[0] = [0.] * n
         return B
-    
 
     def _gcv(lam, X, XtWX, wE, XtE):
         r"""
@@ -1732,7 +1736,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         
         Notes
         -----
-        Criteria is computed from the formula (1.3.2)[3]:
+        Criteria is computed from the formula (1.3.2) [3]:
 
         .. math:
 
@@ -1740,13 +1744,13 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         y_k - f_{\lambda}(x_k) \right)^2}{\left( 1 - \Tr{A}/n\right)^2}$.
         The criteria is discussed in section 1.3 [3].
 
-        The numerator is computed using (2.2.4)[3] and the denominator is
+        The numerator is computed using (2.2.4) [3] and the denominator is
         computed using an algorithm from [2] (see in the ``compute_b_inv``
         function).
 
         References
         ----------
-        .. [1] G. Wahba, “Estimating the smoothing patameter” in Spline models
+        .. [1] G. Wahba, “Estimating the smoothing parameter” in Spline models
             for observational data, Philadelphia, Pennsylvania: Society for
             Industrial and Applied Mathematics, 1990, pp. 45–65.
             :doi:`10.1137/1.9781611970128`
@@ -1754,11 +1758,11 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
             functions,” Numerische Mathematik, vol. 47, no. 1, pp. 99–106, 1985.
             :doi:`10.1007/BF01389878`
         .. [3] E. Zemlyanoy, "Generalized cross-validation smoothing splines",
-            2022. Might be available 
+            BSc thesis, 2022. Might be available (in Russian) 
             `here <https://www.hse.ru/ba/am/students/diplomas/620910604>`_
 
         """
-        # Compute the numerator from (2.2.4)[1]
+        # Compute the numerator from (2.2.4) [3]
         n = X.shape[1]
         c = solve_banded((2, 2), X + lam * wE, y)
         res = np.zeros(n)
@@ -1767,7 +1771,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         for i in range(n):
             for j in range(max(0, i - n + 3), min(5, i + 3)):
                 res[i] += tmp[j, i + 2 - j]
-        numer = np.linalg.norm(lam * res)**2
+        numer = np.linalg.norm(lam * res)**2 / n
 
         # compute the denominator
         lhs = XtWX + lam * XtE
@@ -1852,7 +1856,7 @@ def make_smoothing_spline(x, y, w=None, lam=None):
 
     If ``lam`` is None, we use the GCV criteria to find an optimal
     regularization parameter, otherwise we solve the regularized weighted
-    linear regression problem with given parameter. The parameter controlls
+    linear regression problem with given parameter. The parameter controls
     the tradeoff in the following way: the larger the parameter becomes, the
     smoother the function gets.
 
@@ -1880,7 +1884,8 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     -----
     This algorithm is a clean room reimplementation of the algorithm
     introduced by Woltring in FORTRAN [2]. The original version cannot be used
-    in SciPy source code because of the license issues.
+    in SciPy source code because of the license issues. The details of the
+    reimplementation are discussed here (available only in Russian) [4].
 
     If the vector of weights ``w`` is None, we assume that all the points are
     equal in terms of weights, and vector of weights is vector of ones.
@@ -1895,7 +1900,7 @@ def make_smoothing_spline(x, y, w=None, lam=None):
 
     References
     ----------
-    .. [1] G. Wahba, “Estimating the smoothing patameter” in Spline models for
+    .. [1] G. Wahba, “Estimating the smoothing parameter” in Spline models for
         observational data, Philadelphia, Pennsylvania: Society for Industrial
         and Applied Mathematics, 1990, pp. 45–65.
         :doi:`10.1137/1.9781611970128`
@@ -1907,6 +1912,9 @@ def make_smoothing_spline(x, y, w=None, lam=None):
         The elements of Statistical Learning: Data Mining, Inference, and
         prediction, New York: Springer, 2017, pp. 241–249.
         :doi:`10.1007/978-0-387-84858-7`
+    .. [4] E. Zemlyanoy, "Generalized cross-validation smoothing splines",
+        BSc thesis, 2022. Might be available (in Russian)
+        `here <https://www.hse.ru/ba/am/students/diplomas/620910604>`_
 
     Examples
     --------
@@ -1944,8 +1952,8 @@ def make_smoothing_spline(x, y, w=None, lam=None):
         raise ValueError('``x`` should be an ascending array')
     
     if x.ndim != 1 or y.ndim != 1 or x.shape[0] != y.shape[0]:
-        raise ValueError('``x`` and ``y`` should one dimensional and the same'
-                         ' size')
+        raise ValueError('``x`` and ``y`` should be one dimensional and the'
+                         ' same size')
 
     if w is None:
         w = np.ones(len(x))
@@ -1964,7 +1972,8 @@ def make_smoothing_spline(x, y, w=None, lam=None):
 
     # create design matrix in the B-spline basis
     X_bspl = BSpline.design_matrix(x, t, 3)
-    # move from B-spline basis to the basis of natural splines 
+    # move from B-spline basis to the basis of natural splines using equations
+    # (2.1.7) [4]
     # central elements
     X = np.zeros((5, n))
     for i in range(1, 4):
@@ -2001,11 +2010,11 @@ def make_smoothing_spline(x, y, w=None, lam=None):
 
     # solve the initial problem in the basis of natural splines
     c = solve_banded((2, 2), X + lam * wE, y)
-    # move back to B-spline basis
-    c_ = np.r_[ c[0] * (t[5] + t[4] - 2 * t[3]) + c[1],
-                c[0] * (t[5] - t[3]) + c[1],
-                c[1: -1],
-                c[-1] * (t[-4] - t[-6]) + c[-2],
-                c[-1] * (2 * t[-4] - t[-5] - t[-6]) + c[-2]]
+    # move back to B-spline basis using equations (2.2.10) [4]
+    c_ = np.r_[c[0] * (t[5] + t[4] - 2 * t[3]) + c[1],
+               c[0] * (t[5] - t[3]) + c[1],
+               c[1: -1],
+               c[-1] * (t[-4] - t[-6]) + c[-2],
+               c[-1] * (2 * t[-4] - t[-5] - t[-6]) + c[-2]]
 
     return BSpline.construct_fast(t, c_, 3)
