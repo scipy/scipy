@@ -7,12 +7,12 @@ from numpy import asarray_chkfinite, asarray
 from numpy.lib import NumpyVersion
 import scipy.linalg
 from scipy._lib import doccer
-from scipy.special import gammaln, psi, multigammaln, xlogy, entr, betaln
+from scipy.special import gammaln, psi, multigammaln, xlogy, entr, betaln, ive
 from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
 from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
-
+from ._continuous_distns import beta
 from ._discrete_distns import binom
 from . import _mvn, _covariance, contingency
 
@@ -29,7 +29,8 @@ __all__ = ['multivariate_normal',
            'multivariate_t',
            'multivariate_hypergeom',
            'random_table',
-           'uniform_direction']
+           'uniform_direction',
+           'vonmises_fisher']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -5699,3 +5700,396 @@ def _sample_uniform_direction(dim, size, random_state):
     samples = random_state.standard_normal(samples_shape)
     samples /= np.linalg.norm(samples, axis=-1, keepdims=True)
     return samples
+
+
+class vonmises_fisher_gen(multi_rv_generic):
+    r"""A von Mises-Fisher variable.
+
+    The `mu` keyword specifies the mean direction vector. The `kappa` keyword
+    specifies the concentration parameter.
+
+    Methods
+    -------
+    pdf(x, mu=None, cov=1, allow_singular=False)
+        Probability density function.
+    logpdf(x, mean=None, cov=1, allow_singular=False)
+        Log of the probability density function.
+    rvs(mu=None, cov=1, size=1, random_state=None)
+        Draw random samples from a von Mises-Fisher distribution.
+    entropy()
+        Compute the differential entropy of the von Mises-Fisher distribution.
+
+    Parameters
+    ----------
+
+    Notes
+    -----
+    The von Mises-Fisher distribution is a spherical distribution on the
+    n-dimensional unit sphere. The probability density function is
+
+    .. math::
+
+        f(\mathbf{x}) = \frac{\kappa^{d/2-1}}{(2\pi)^{d/2}I_{d/2-1}(\kappa)}
+               \exp\left(\kappa \mathbf{\mu}^T\mathbf{x}\right),
+
+    where :math:`\mu` is the mean direction, :math:`\kappa` the
+    concentration parameter, :math:`d` the dimension and :math:`I` the
+    modified Bessel function of the first kind.
+
+    .. versionadded:: 1.11
+
+    References
+    ----------
+    .. [1] Von Mises-Fisher distribution, Wikipedia,
+           https://en.wikipedia.org/wiki/Von_Mises%E2%80%93Fisher_distribution
+    .. [2] Mardia, K., and Jupp, P. Directional statistics. Wiley, 2000.
+    .. [3] J. Wenzel. Numerically stable sampling of the von Mises Fisher
+           distribution on S2.
+           https://www.mitsuba-renderer.org/~wenzel/files/vmf.pdf
+    .. [4] Wood, A. Simulation of the von mises fisher distribution.
+           Communications in statistics-simulation and computation 23,
+           1 (1994), 157–164. https://doi.org/10.1080/03610919408813161
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(seed)
+        #self.__doc__ = doccer.docformat(self.__doc__, mvn_docdict_params)
+
+    def __call__(self, mu=None, kappa=1, seed=None):
+        """Create a frozen von Mises-Fisher distribution.
+
+        See `vonmises_fisher_frozen` for more information.
+        """
+        return vonmises_fisher_frozen(mu, kappa, seed=seed)
+
+    def _process_parameters(self, mu, kappa):
+        """
+        Infer dimensionality from mu and ensure that mu is a one-dimensional
+        unit vector and kappa positive.
+        """
+        mu = np.asarray(mu)
+        if mu.ndim > 1:
+            raise ValueError("mu must be one-dimensional.")
+        if not np.allclose(np.linalg.norm(mu), 1.):
+            raise ValueError("mu must be of length 1.")
+        if not np.isscalar(kappa) or kappa < 0:
+            raise ValueError("kappa must be a positive scalar.")
+        dim = mu.size
+
+        return dim, mu, kappa
+
+    def _check_norms(self, x):
+        if not np.allclose(np.linalg.norm(x, axis=-1), 1.):
+            msg = "x must be unit vectors of norm 1 along last dimension."
+            raise ValueError(msg)
+
+    def _log_norm_factor(self, dim, kappa):
+        halfdim = 0.5 * dim
+        return (0.5 * (dim -2)*np.log(kappa) - halfdim * _LOG_2PI -
+                 np.log(ive(halfdim -1, kappa)) - kappa)
+    
+    def _logpdf(self, x, dim, mu, kappa):
+        """Log of the von Mises-Fisher probability density function.
+
+        Parameters
+        ----------
+        x : ndarray
+            Points at which to evaluate the log of the probability
+            density function
+        mu : ndarray
+            Mean direction of the distribution
+        kappa : Concentration parameter
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'logpdf' instead.
+
+        """
+        dotproducts = np.einsum('i,...i->...', mu, x)
+        return self._log_norm_factor(dim, kappa) + kappa * dotproducts
+               
+
+    def logpdf(self, x, mu=None, kappa=1):
+        """Log of the multivariate normal probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+
+        Returns
+        -------
+        pdf : ndarray or scalar
+            Log of the probability density function evaluated at `x`
+
+        Notes
+        -----
+        %(_mvn_doc_callparams_note)s
+        """
+        self._check_norms(x)
+        params = self._process_parameters(mu, kappa)
+        dim, mu, kappa = params
+        return self._logpdf(x, dim, mu, kappa)
+
+    def pdf(self, x, mu=None, kappa=1):
+        """Multivariate normal probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+
+        Returns
+        -------
+        pdf : ndarray or scalar
+            Probability density function evaluated at `x`
+
+        Notes
+        -----
+        %(_mvn_doc_callparams_note)s
+
+        """
+        self._check_norms(x)
+        params = self._process_parameters(mu, kappa)
+        dim, mu, kappa = params
+        return np.exp(self._logpdf(x, dim, mu, kappa))
+
+    def _rvs_2d(self, mu, kappa, size, random_state):
+        """
+        In 2D, the von Mises-Fisher distribution reduces to the
+        von Mises distribution which can be efficiently sampled by numpy.
+        This method is much faster than the general rejection
+        sampling based algorithm.
+        """
+        mean_angle = np.arctan2(mu[1], mu[0])
+        angle_samples = random_state.vonmises(mean_angle, kappa, size=size)
+        samples = np.stack([np.cos(angle_samples), np.sin(angle_samples)],
+                            axis=-1)
+        return samples
+
+    def _rvs_3d(self, kappa, size, random_state):
+        """
+        Generate samples from a von Mises-Fisher distribution
+        with mu = [1, 0, 0] and kappa. Samples then have to be
+        rotated towards the desired mean direction mu.
+        This method is much faster than the general rejection
+        sampling based algorithm.
+        """
+        x = random_state.random(size)
+        x = 1. + np.log(x + (1. - x) * np.exp(-2 * kappa))/kappa
+        temp = np.sqrt(1. - np.square(x))
+        uniformcircle = _sample_uniform_direction(2, size, random_state)
+        samples = np.stack([x, temp * uniformcircle[..., 0],
+                            temp * uniformcircle[..., 1]],
+                           axis=-1)
+        return samples
+
+    def _rejection_sampling(self, random_state, dim, kappa, size):
+        """
+        Generate samples from a von Mises-Fisher distribution
+        with mu = [1, 0, ..., 0] and kappa via rejection sampling.
+        Samples then have to be rotated towards the desired mean direction mu.
+        """
+        # calculate number of requested samples
+        if size is not None:
+            if not np.iterable(size):
+                size = (size, )
+            n_samples = math.prod(size)
+        else:
+            n_samples = 1
+        sqrt = np.sqrt(4 * kappa ** 2. + dim ** 2)
+        envelop_param = (-2 * kappa + sqrt) / dim
+        node = (1. - envelop_param) / (1. + envelop_param)
+        correction = kappa * node + dim * np.log(1. - node ** 2)
+        n_accepted = 0
+        result = []
+        halfdim = 0.5 * dim
+        # main loop
+        while n_accepted < n_samples:
+            sym_beta = beta.rvs(
+                halfdim, halfdim, size=n_samples - n_accepted, seed=random_state)
+            coord_x = (1 - (1 + envelop_param) * sym_beta) / (
+                1 - (1 - envelop_param) * sym_beta)
+            accept_tol = random_state.random(n_samples - n_accepted)
+            criterion = (
+                kappa * coord_x
+                + dim * np.log(1 - node * coord_x)
+                - correction) > np.log(accept_tol)
+            result.append(coord_x[criterion])
+            n_accepted += np.sum(criterion)
+        coord_x = np.concatenate(result)
+        coord_rest = _sample_uniform_direction(dim -1, n_accepted, random_state)
+        coord_rest = np.einsum(
+            '...,...i->...i', np.sqrt(1 - coord_x ** 2), coord_rest)
+        samples = np.concatenate([coord_x[..., None], coord_rest], axis=1)
+        # reshape output to (size, dim)
+        if size is not None:
+            samples = samples.reshape(size + (dim, ))
+        else:
+            samples = np.squeeze(samples)
+        return samples
+
+    def _rotate_samples(self, samples, mu):
+        """A QR decomposition is used to find the rotation that maps the north pole
+        (1, 0,...,0) to the vector mu. This rotation is then applied to all samples.
+
+        Parameters
+        ----------
+        samples: array_like, shape = [..., n]
+        mu : array-like, shape=[n, ]
+            Point to parametrise the rotation.
+
+        Returns
+        -------
+        rotation_matrix : array-like, shape=[n, n]
+            Rotation matrix to rotate vectors from (1, 0, ..., 0)
+            to mu
+        sign : 1 or -1
+            Sign the vectors have to be multiplied with after rotation
+        """
+        n = mu.shape[0]
+        base_point = np.array([1.] + [0] * (n - 1))
+        embedded = np.concatenate([mu[None, :], np.zeros((n - 1, n))])
+        rotmatrix, _ = np.linalg.qr(np.transpose(embedded))
+        if not np.allclose(np.matmul(rotmatrix, base_point[:, None])[:, 0],
+                           mu):
+            rotsign = -1
+        else:
+            rotsign = 1
+
+        # apply rotation
+        samples = np.einsum('ij,...j->...i', rotmatrix, samples) * rotsign
+        return samples
+
+    def _rvs(self, dim, mu, kappa, size, random_state):
+        if dim == 2:
+            samples = self._rvs_2d(mu, kappa, size, random_state)
+        else:
+            if dim == 3:
+                samples = self._rvs_3d(kappa, size, random_state)
+            else:
+                samples = self._rejection_sampling(dim, kappa, size,
+                                                   random_state)
+            samples = self._rotate_samples(samples, mu)
+        return samples
+        
+    def rvs(self, mu=None, kappa=1, size=1, random_state=None):
+        """Draw random samples from a von Mises-Fisher distribution.
+
+        Parameters
+        ----------
+        %(_mvn_doc_default_callparams)s
+        size : integer, optional
+            Number of samples to draw (default 1).
+        %(_doc_random_state)s
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random variates of size (`size`, `N`), where `N` is the
+            dimension of the random variable.
+
+        Notes
+        -----
+        %(_mvn_doc_callparams_note)s
+
+        dim, mean, cov_object = self._process_parameters(mean, cov)
+        random_state = self._get_random_state(random_state)
+
+        if isinstance(cov_object, _covariance.CovViaPSD):
+            cov = cov_object.covariance
+            out = random_state.multivariate_normal(mean, cov, size)
+            out = _squeeze_output(out)
+        else:
+            size = size or tuple()
+            if not np.iterable(size):
+                size = (size,)
+            shape = tuple(size) + (cov_object.shape[-1],)
+            x = random_state.normal(size=shape)
+            out = mean + cov_object.colorize(x)
+        """
+        dim, mu, kappa = self._process_parameters(mu, kappa)
+        random_state = self._get_random_state(random_state)
+        samples = self._rvs(dim, mu, kappa, size, random_state)
+        return samples
+
+    def _entropy(self, dim, kappa):
+            halfdim = 0.5 * dim
+            return (-self._log_norm_factor(dim, kappa) - kappa *
+                    ive(halfdim, kappa)/ive(halfdim -1, kappa))
+
+    def entropy(self, mu=None, kappa=1):
+        """Compute the differential entropy of the von Mises-Fisher
+        distribution.
+
+        Parameters
+        ----------
+        %(_mvn_doc_default_callparams)s
+
+        Returns
+        -------
+        h : scalar
+            Entropy of the multivariate normal distribution
+
+        Notes
+        -----
+        %(_mvn_doc_callparams_note)s
+
+        """
+        dim, mu, kappa = self._process_parameters(mu, kappa)
+        return self._entropy(dim, kappa)
+        
+
+
+vonmises_fisher = vonmises_fisher_gen()
+
+
+class vonmises_fisher_frozen(multi_rv_frozen):
+    def __init__(self, mu=None, kappa=1, seed=None):
+        """Create a frozen von Mises-Fisher distribution.
+
+        Parameters
+        ----------
+        mu : array_like, default: ``[0, 0]``
+            Mean direction of the distribution.
+        kappa : concentration parameter.
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
+
+        Examples
+        --------
+        """
+        self._dist = vonmises_fisher_gen(seed)
+        self.dim, self.mu, self.kappa = (
+            self._dist._process_parameters(mu, kappa))
+
+    def logpdf(self, x):
+        return self._dist._logpdf(x, self.dim, self.mu, self.kappa)
+
+    def pdf(self, x):
+        return np.exp(self.logpdf(x))
+
+    def rvs(self, size=1, random_state=None):
+        return self._dist.rvs(self.mu, self.kappa, size, random_state)
+
+    def entropy(self):
+        """Computes the differential entropy of the von Mises-Fisher distribution.
+
+        Returns
+        -------
+        h : scalar
+            Entropy of the multivariate normal distribution
+
+        """
+        return self._dist._entropy(self.dim, self.kappa)
