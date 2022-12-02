@@ -8151,7 +8151,7 @@ add_newdoc("jve",
     r"""
     jve(v, z, out=None)
 
-    Exponentially scaled Bessel function of order `v`.
+    Exponentially scaled Bessel function of the first kind of order `v`.
 
     Defined as::
 
@@ -8170,6 +8170,10 @@ add_newdoc("jve",
     -------
     J : scalar or ndarray
         Value of the exponentially scaled Bessel function.
+
+    See also
+    --------
+    jv: Unscaled Bessel function of the first kind
 
     Notes
     -----
@@ -8191,11 +8195,32 @@ add_newdoc("jve",
     term is exactly zero for integer `v`; to improve accuracy the second
     term is explicitly omitted for `v` values such that `v = floor(v)`.
 
+    Exponentially scaled Bessel functions are useful for large arguments `z`:
+    for these, the unscaled Bessel functions can easily under-or overflow.
+
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Compare the output of `jv` and `jve` for large complex arguments for `z`
+    by computing their values for order ``v=1`` at ``z=1000j``. We see that
+    `jv` overflows but `jve` returns a finite number:
+
+    >>> from scipy.special import jv, jve
+    >>> v = 1
+    >>> z = 1000j
+    >>> jv(v, z), jve(v, z)
+    ((inf+infj), (7.721967686709077e-19+0.012610930256928629j))
+
+    For real arguments for `z`, `jve` returns the same as `jv`.
+
+    >>> v, z = 1, 1000
+    >>> jv(v, z), jve(v, z)
+    (0.004728311907089523, 0.004728311907089523)
     """)
 
 add_newdoc("k0",
@@ -13134,6 +13159,10 @@ add_newdoc("yve",
     Y : scalar or ndarray
         Value of the exponentially scaled Bessel function.
 
+    See Also
+    --------
+    yv: Unscaled Bessel function of the second kind of real order.
+
     Notes
     -----
     For positive `v` values, the computation is carried out using the
@@ -13151,11 +13180,33 @@ add_newdoc("yve",
     exactly zero for integer `v`; to improve accuracy the second term is
     explicitly omitted for `v` values such that `v = floor(v)`.
 
+    Exponentially scaled Bessel functions are useful for large arguments `z`:
+    for these, the unscaled Bessel functions can easily under-or overflow.
+
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Compare the output of `yv` and `yve` for large complex arguments for `z`
+    by computing their values for order ``v=1`` at ``z=1000j``. We see that
+    `yv` returns nan but `yve` returns a finite number:
+
+    >>> from scipy.special import yv, yve
+    >>> v = 1
+    >>> z = 1000j
+    >>> yv(v, z), yve(v, z)
+    ((nan+nanj), (-0.012610930256928629+7.721967686709076e-19j))
+
+    For real arguments for `z`, `yve` returns the same as `yv` up to
+    floating point errors.
+
+    >>> v, z = 1, 1000
+    >>> yv(v, z), yve(v, z)
+    (-0.02478433129235178, -0.02478433129235179)
     """)
 
 add_newdoc("_zeta",
