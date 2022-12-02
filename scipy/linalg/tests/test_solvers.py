@@ -617,7 +617,7 @@ def test_solve_generalized_discrete_are():
                    [7.093648e-01, 6.797027e-01, 1.189977e-01],
                    [7.546867e-01, 6.550980e-01, 4.983641e-01]]),
          np.ones((3, 2)),
-         None),
+        "Presumed issue with OpenBLAS, see gh-16926"),
         # user-reported (under PR-6616) 20-Jan-2017
         # tests against the case where E is None but S is provided
         (mat20170120['A'],
