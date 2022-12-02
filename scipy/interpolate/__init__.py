@@ -68,7 +68,7 @@ Tensor product polynomials:
    :toctree: generated/
 
    NdPPoly
-
+   NdBSpline
 
 1-D Splines
 ===========

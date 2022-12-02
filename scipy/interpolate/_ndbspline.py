@@ -19,17 +19,27 @@ def _get_dtype(dtype):
 class NdBSpline:
     """Tensor product spline object.
 
-    c[i1, i2, ..., id] * B(x1, i1) * B(x2, i2) * ... * B(xd, id)
+    The value at point ``xp = (x1, x2, ..., xN)`` is evaluated as a linear
+    combination of products of one-dimensional b-splines in each of the ``N``
+    dimensions::
+
+       c[i1, i2, ..., iN] * B(x1; i1, t1) * B(x2; i2, t2) * ... * B(xN; iN, tN)
+
+
+    Here ``B(x; i, t)`` is the ``i``-th b-spline defined by the knot vector
+    ``t`` evaluated at ``x``.
 
     Parameters
     ----------
-    c : ndarray, shape (n1, n2, ..., nd, ...)
+    c : ndarray, shape (n1, n2, ..., nN, ...)
         b-spline coefficients
     t : tuple of 1D ndarrays
-        knot vectors in directions 1, 2, ... d
+        knot vectors in directions 1, 2, ... N,
         ``len(t[i]) == n[i] + k + 1``
     k : int or length-d tuple of integers
         spline degrees.
+        A single integer is interpreted as having this degree for
+        all dimensions.
     extrapolate : bool, optional
         Whether to exrapolate out-of-bounds inputs, or return `nan`.
         Default is to extrapolate.
@@ -40,7 +50,7 @@ class NdBSpline:
         Knots vectors.
     c : ndarray
         Coefficients of the tensor-produce spline.
-    k : ndarray
+    k : tuple of integers
         Degrees for each dimension.
     extrapolate : bool
         Whether to extrapolate or return nans for out-of-bounds inputs.
@@ -48,6 +58,11 @@ class NdBSpline:
     Methods
     -------
     __call__
+
+    See Also
+    --------
+    BSpline : a one-dimensional B-spline object
+    NdPPoly : an N-dimensional piecewise tensor product polynomal
 
     """
     def __init__(self, t, c, k, extrapolate=None):
@@ -120,7 +135,7 @@ class NdBSpline:
             Orders of derivatives to evaluate. Each must be non-negative.
         extrapolate : book, optional
             Whether to exrapolate based on first and last intervals in each
-            dimension, or return `nan`. Default is to ``self.extrapolate`.
+            dimension, or return `nan`. Default is to ``self.extrapolate``.
 
         Returns
         -------
