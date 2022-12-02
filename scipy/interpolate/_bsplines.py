@@ -1597,9 +1597,9 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
 
     References
     ----------
-    .. [1] G. Wahba, “Estimating the smoothing parameter” in Spline models
+    .. [1] G. Wahba, "Estimating the smoothing parameter" in Spline models
         for observational data, Philadelphia, Pennsylvania: Society for
-        Industrial and Applied Mathematics, 1990, pp. 45–65.
+        Industrial and Applied Mathematics, 1990, pp. 45-65.
         :doi:`10.1137/1.9781611970128`
 
     """
@@ -1672,9 +1672,9 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
 
         References
         ----------
-        .. [1] M. F. Hutchinson and F. R. de Hoog, “Smoothing noisy data with
-            spline functions,” Numerische Mathematik, vol. 47, no. 1,
-            pp. 99–106, 1985.
+        .. [1] M. F. Hutchinson and F. R. de Hoog, "Smoothing noisy data with
+            spline functions," Numerische Mathematik, vol. 47, no. 1,
+            pp. 99-106, 1985.
             :doi:`10.1007/BF01389878`
 
         """
@@ -1751,13 +1751,13 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
 
         References
         ----------
-        .. [1] G. Wahba, “Estimating the smoothing parameter” in Spline models
+        .. [1] G. Wahba, "Estimating the smoothing parameter" in Spline models
             for observational data, Philadelphia, Pennsylvania: Society for
-            Industrial and Applied Mathematics, 1990, pp. 45–65.
+            Industrial and Applied Mathematics, 1990, pp. 45-65.
             :doi:`10.1137/1.9781611970128`
-        .. [2] M. F. Hutchinson and F. R. de Hoog, “Smoothing noisy data with
-            spline functions,” Numerische Mathematik, vol. 47, no. 1,
-            pp. 99–106, 1985.
+        .. [2] M. F. Hutchinson and F. R. de Hoog, "Smoothing noisy data with
+            spline functions," Numerische Mathematik, vol. 47, no. 1,
+            pp. 99-106, 1985.
             :doi:`10.1007/BF01389878`
         .. [3] E. Zemlyanoy, "Generalized cross-validation smoothing splines",
             BSc thesis, 2022. Might be available (in Russian)
@@ -1904,17 +1904,17 @@ def make_smoothing_spline(x, y, w=None, lam=None):
 
     References
     ----------
-    .. [1] G. Wahba, “Estimating the smoothing parameter” in Spline models for
+    .. [1] G. Wahba, "Estimating the smoothing parameter" in Spline models for
         observational data, Philadelphia, Pennsylvania: Society for Industrial
-        and Applied Mathematics, 1990, pp. 45–65.
+        and Applied Mathematics, 1990, pp. 45-65.
         :doi:`10.1137/1.9781611970128`
     .. [2] H. J. Woltring, A Fortran package for generalized, cross-validatory
         spline smoothing and differentiation, Advances in Engineering
-        Software, vol. 8, no. 2, pp. 104–113, 1986.
+        Software, vol. 8, no. 2, pp. 104-113, 1986.
         :doi:`10.1016/0141-1195(86)90098-7`
-    .. [3] T. Hastie, J. Friedman, and R. Tisbshirani, “Smoothing Splines” in
+    .. [3] T. Hastie, J. Friedman, and R. Tisbshirani, "Smoothing Splines" in
         The elements of Statistical Learning: Data Mining, Inference, and
-        prediction, New York: Springer, 2017, pp. 241–249.
+        prediction, New York: Springer, 2017, pp. 241-249.
         :doi:`10.1007/978-0-387-84858-7`
     .. [4] E. Zemlyanoy, "Generalized cross-validation smoothing splines",
         BSc thesis, 2022. Might be available (in Russian)
