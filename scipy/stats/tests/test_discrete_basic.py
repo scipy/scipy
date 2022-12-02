@@ -1,4 +1,6 @@
 import numpy.testing as npt
+from numpy.testing import assert_allclose
+
 import numpy as np
 import pytest
 
@@ -8,11 +10,15 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_kurt_expect, check_entropy,
                            check_private_entropy, check_edge_support,
                            check_named_args, check_random_state_property,
-                           check_pickling, check_rvs_broadcast, check_freezing)
+                           check_pickling, check_rvs_broadcast, check_freezing,
+                           check_deprecation_warning_gh5982_moment,
+                           check_deprecation_warning_gh5982_interval)
 from scipy.stats._distr_params import distdiscrete, invdistdiscrete
+from scipy.stats._distn_infrastructure import rv_discrete_frozen
 
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
-distdiscrete += [[stats.rv_discrete(values=vals), ()]]
+distdiscrete += [[stats.rv_discrete(values=vals), ()],
+                 [stats.rv_count(xk=vals[0], pk=vals[1]), ()]]
 
 # For these distributions, test_discrete_basic only runs with test mode full
 distslow = {'zipfian', 'nhypergeom'}
@@ -28,6 +34,7 @@ def cases_test_discrete_basic():
         seen.add(distname)
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg,first_case', cases_test_discrete_basic())
 def test_discrete_basic(distname, arg, first_case):
     try:
@@ -44,6 +51,8 @@ def test_discrete_basic(distname, arg, first_case):
     check_pmf_cdf(distfn, arg, distname)
     check_oth(distfn, arg, supp, distname + ' oth')
     check_edge_support(distfn, arg)
+    check_deprecation_warning_gh5982_moment(distfn, arg, distname)
+    check_deprecation_warning_gh5982_interval(distfn, arg, distname)
 
     alpha = 0.01
     check_discrete_chisquare(distfn, arg, rvs, alpha,
@@ -71,6 +80,7 @@ def test_discrete_basic(distname, arg, first_case):
             check_private_entropy(distfn, arg, stats.rv_discrete)
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg', distdiscrete)
 def test_moments(distname, arg):
     try:
@@ -174,9 +184,20 @@ def test_isf_with_loc(dist, args):
 
 
 def check_cdf_ppf(distfn, arg, supp, msg):
+    # supp is assumed to be an array of integers in the support of distfn
+    # (but not necessarily all the integers in the support).
+    # This test assumes that the PMF of any value in the support of the
+    # distribution is greater than 1e-8.
+
     # cdf is a step function, and ppf(q) = min{k : cdf(k) >= q, k integer}
-    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp, *arg), *arg),
+    cdf_supp = distfn.cdf(supp, *arg)
+    # In very rare cases, the finite precision calculation of ppf(cdf(supp))
+    # can produce an array in which an element is off by one.  We nudge the
+    # CDF values down by 10 ULPs help to avoid this.
+    cdf_supp0 = cdf_supp - 10*np.spacing(cdf_supp)
+    npt.assert_array_equal(distfn.ppf(cdf_supp0, *arg),
                            supp, msg + '-roundtrip')
+    # Repeat the same calculation, but with the CDF values decreased by 1e-8.
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp, *arg) - 1e-8, *arg),
                            supp, msg + '-roundtrip')
 
@@ -185,7 +206,6 @@ def check_cdf_ppf(distfn, arg, supp, msg):
         supp1 = supp[supp < _b]
         npt.assert_array_equal(distfn.ppf(distfn.cdf(supp1, *arg) + 1e-8, *arg),
                                supp1 + distfn.inc, msg + ' ppf-cdf-next')
-        # -1e-8 could cause an error if pmf < 1e-8
 
 
 def check_pmf_cdf(distfn, arg, distname):
@@ -202,6 +222,17 @@ def check_pmf_cdf(distfn, arg, distname):
         atol, rtol = 1e-5, 1e-5
     npt.assert_allclose(cdfs - cdfs[0], pmfs_cum - pmfs_cum[0],
                         atol=atol, rtol=rtol)
+
+    # also check that pmf at non-integral k is zero
+    k = np.asarray(index)
+    k_shifted = k[:-1] + np.diff(k)/2
+    npt.assert_equal(distfn.pmf(k_shifted, *arg), 0)
+
+    # better check frozen distributions, and also when loc != 0
+    loc = 0.5
+    dist = distfn(loc=loc, *arg)
+    npt.assert_allclose(dist.pmf(k[1:] + loc), np.diff(dist.cdf(k + loc)))
+    npt.assert_equal(dist.pmf(k_shifted + loc), 0)
 
 
 def check_moment_frozen(distfn, arg, m, k):
@@ -315,3 +346,201 @@ def test_cdf_gh13280_regression(distname, args):
     vals = dist.cdf(x, *args)
     expected = np.nan
     npt.assert_equal(vals, expected)
+
+
+def cases_test_discrete_integer_shapes():
+    # distributions parameters that are only allowed to be integral when
+    # fitting, but are allowed to be real as input to PDF, etc.
+    integrality_exceptions = {'nbinom': {'n'}}
+
+    seen = set()
+    for distname, shapes in distdiscrete:
+        if distname in seen:
+            continue
+        seen.add(distname)
+
+        try:
+            dist = getattr(stats, distname)
+        except TypeError:
+            continue
+
+        shape_info = dist._shape_info()
+
+        for i, shape in enumerate(shape_info):
+            if (shape.name in integrality_exceptions.get(distname, set()) or
+                    not shape.integrality):
+                continue
+
+            yield distname, shape.name, shapes
+
+
+@pytest.mark.parametrize('distname, shapename, shapes',
+                         cases_test_discrete_integer_shapes())
+def test_integer_shapes(distname, shapename, shapes):
+    dist = getattr(stats, distname)
+    shape_info = dist._shape_info()
+    shape_names = [shape.name for shape in shape_info]
+    i = shape_names.index(shapename)  # this element of params must be integral
+
+    shapes_copy = list(shapes)
+
+    valid_shape = shapes[i]
+    invalid_shape = valid_shape - 0.5  # arbitrary non-integral value
+    new_valid_shape = valid_shape - 1
+    shapes_copy[i] = [[valid_shape], [invalid_shape], [new_valid_shape]]
+
+    a, b = dist.support(*shapes)
+    x = np.round(np.linspace(a, b, 5))
+
+    pmf = dist.pmf(x, *shapes_copy)
+    assert not np.any(np.isnan(pmf[0, :]))
+    assert np.all(np.isnan(pmf[1, :]))
+    assert not np.any(np.isnan(pmf[2, :]))
+
+
+def test_frozen_attributes():
+    # gh-14827 reported that all frozen distributions had both pmf and pdf
+    # attributes; continuous should have pdf and discrete should have pmf.
+    message = "'rv_discrete_frozen' object has no attribute"
+    with pytest.raises(AttributeError, match=message):
+        stats.binom(10, 0.5).pdf
+    with pytest.raises(AttributeError, match=message):
+        stats.binom(10, 0.5).logpdf
+    stats.binom.pdf = "herring"
+    frozen_binom = stats.binom(10, 0.5)
+    assert isinstance(frozen_binom, rv_discrete_frozen)
+    delattr(stats.binom, 'pdf')
+
+
+@pytest.mark.parametrize('distname, shapes', distdiscrete)
+def test_interval(distname, shapes):
+    # gh-11026 reported that `interval` returns incorrect values when
+    # `confidence=1`. The values were not incorrect, but it was not intuitive
+    # that the left end of the interval should extend beyond the support of the
+    # distribution. Confirm that this is the behavior for all distributions.
+    if isinstance(distname, str):
+        dist = getattr(stats, distname)
+    else:
+        dist = distname
+    a, b = dist.support(*shapes)
+    npt.assert_equal(dist.ppf([0, 1], *shapes), (a-1, b))
+    npt.assert_equal(dist.isf([1, 0], *shapes), (a-1, b))
+    npt.assert_equal(dist.interval(1, *shapes), (a-1, b))
+
+
+def test_rv_sample():
+    # Thoroughly test rv_sample and check that gh-3758 is resolved
+
+    # Generate a random discrete distribution
+    rng = np.random.default_rng(98430143469)
+    xk = np.sort(rng.random(10) * 10)
+    pk = rng.random(10)
+    pk /= np.sum(pk)
+    dist = stats.rv_discrete(values=(xk, pk))
+
+    # Generate points to the left and right of xk
+    xk_left = (np.array([0] + xk[:-1].tolist()) + xk)/2
+    xk_right = (np.array(xk[1:].tolist() + [xk[-1]+1]) + xk)/2
+
+    # Generate points to the left and right of cdf
+    cdf2 = np.cumsum(pk)
+    cdf2_left = (np.array([0] + cdf2[:-1].tolist()) + cdf2)/2
+    cdf2_right = (np.array(cdf2[1:].tolist() + [1]) + cdf2)/2
+
+    # support - leftmost and rightmost xk
+    a, b = dist.support()
+    assert_allclose(a, xk[0])
+    assert_allclose(b, xk[-1])
+
+    # pmf - supported only on the xk
+    assert_allclose(dist.pmf(xk), pk)
+    assert_allclose(dist.pmf(xk_right), 0)
+    assert_allclose(dist.pmf(xk_left), 0)
+
+    # logpmf is log of the pmf; log(0) = -np.inf
+    with np.errstate(divide='ignore'):
+        assert_allclose(dist.logpmf(xk), np.log(pk))
+        assert_allclose(dist.logpmf(xk_right), -np.inf)
+        assert_allclose(dist.logpmf(xk_left), -np.inf)
+
+    # cdf - the cumulative sum of the pmf
+    assert_allclose(dist.cdf(xk), cdf2)
+    assert_allclose(dist.cdf(xk_right), cdf2)
+    assert_allclose(dist.cdf(xk_left), [0]+cdf2[:-1].tolist())
+
+    with np.errstate(divide='ignore'):
+        assert_allclose(dist.logcdf(xk), np.log(dist.cdf(xk)),
+                        atol=1e-15)
+        assert_allclose(dist.logcdf(xk_right), np.log(dist.cdf(xk_right)),
+                        atol=1e-15)
+        assert_allclose(dist.logcdf(xk_left), np.log(dist.cdf(xk_left)),
+                        atol=1e-15)
+
+    # sf is 1-cdf
+    assert_allclose(dist.sf(xk), 1-dist.cdf(xk))
+    assert_allclose(dist.sf(xk_right), 1-dist.cdf(xk_right))
+    assert_allclose(dist.sf(xk_left), 1-dist.cdf(xk_left))
+
+    with np.errstate(divide='ignore'):
+        assert_allclose(dist.logsf(xk), np.log(dist.sf(xk)),
+                        atol=1e-15)
+        assert_allclose(dist.logsf(xk_right), np.log(dist.sf(xk_right)),
+                        atol=1e-15)
+        assert_allclose(dist.logsf(xk_left), np.log(dist.sf(xk_left)),
+                        atol=1e-15)
+
+    # ppf
+    assert_allclose(dist.ppf(cdf2), xk)
+    assert_allclose(dist.ppf(cdf2_left), xk)
+    assert_allclose(dist.ppf(cdf2_right)[:-1], xk[1:])
+    assert_allclose(dist.ppf(0), a - 1)
+    assert_allclose(dist.ppf(1), b)
+
+    # isf
+    sf2 = dist.sf(xk)
+    assert_allclose(dist.isf(sf2), xk)
+    assert_allclose(dist.isf(1-cdf2_left), dist.ppf(cdf2_left))
+    assert_allclose(dist.isf(1-cdf2_right), dist.ppf(cdf2_right))
+    assert_allclose(dist.isf(0), b)
+    assert_allclose(dist.isf(1), a - 1)
+
+    # interval is (ppf(alpha/2), isf(alpha/2))
+    ps = np.linspace(0.01, 0.99, 10)
+    int2 = dist.ppf(ps/2), dist.isf(ps/2)
+    assert_allclose(dist.interval(1-ps), int2)
+    assert_allclose(dist.interval(0), dist.median())
+    assert_allclose(dist.interval(1), (a-1, b))
+
+    # median is simply ppf(0.5)
+    med2 = dist.ppf(0.5)
+    assert_allclose(dist.median(), med2)
+
+    # all four stats (mean, var, skew, and kurtosis) from the definitions
+    mean2 = np.sum(xk*pk)
+    var2 = np.sum((xk - mean2)**2 * pk)
+    skew2 = np.sum((xk - mean2)**3 * pk) / var2**(3/2)
+    kurt2 = np.sum((xk - mean2)**4 * pk) / var2**2 - 3
+    assert_allclose(dist.mean(), mean2)
+    assert_allclose(dist.std(), np.sqrt(var2))
+    assert_allclose(dist.var(), var2)
+    assert_allclose(dist.stats(moments='mvsk'), (mean2, var2, skew2, kurt2))
+
+    # noncentral moment against definition
+    mom3 = np.sum((xk**3) * pk)
+    assert_allclose(dist.moment(3), mom3)
+
+    # expect - check against moments
+    assert_allclose(dist.expect(lambda x: 1), 1)
+    assert_allclose(dist.expect(), mean2)
+    assert_allclose(dist.expect(lambda x: x**3), mom3)
+
+    # entropy is the negative of the expected value of log(p)
+    with np.errstate(divide='ignore'):
+        assert_allclose(-dist.expect(lambda x: dist.logpmf(x)), dist.entropy())
+
+    # RVS is just ppf of uniform random variates
+    rng = np.random.default_rng(98430143469)
+    rvs = dist.rvs(size=100, random_state=rng)
+    rng = np.random.default_rng(98430143469)
+    rvs0 = dist.ppf(rng.random(size=100))
+    assert_allclose(rvs, rvs0)

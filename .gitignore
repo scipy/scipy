@@ -12,6 +12,7 @@
 .pydevproject
 *.rej
 .settings/
+.spyproject/
 .*.sw[nop]
 .sw[nop]
 *.tmp
@@ -81,6 +82,13 @@ pip-wheel-metadata
 # install directory for Meson
 installdir/
 
+# doit
+######
+.doit.db.dat
+.doit.db.dir
+.doit.db.db
+.doit.db
+
 # Paver generated files #
 #########################
 /release
@@ -129,6 +137,7 @@ benchmarks/results
 benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
+.mesonpy-native-file.ini
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
 scipy/_lib/messagestream.c
@@ -198,6 +207,8 @@ scipy/linalg/cython_lapack.pyx
 scipy/linalg/src/id_dist/src/*_subr_*.f
 scipy/linalg/_matfuncs_sqrtm_triu.c
 scipy/linalg/_matfuncs_sqrtm_triu.cpp
+scipy/linalg/_matfuncs_expm.c
+scipy/linalg/_matfuncs_expm.pyx
 scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
@@ -261,7 +272,7 @@ scipy/special/_comb.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
 scipy/special/_logit.c
-scipy/special/_test_round.c
+scipy/special/_test_internal.c
 scipy/special/_ufuncs.c
 scipy/special/_ufuncs.h
 scipy/special/_ufuncs.pyx

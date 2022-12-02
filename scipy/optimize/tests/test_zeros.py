@@ -423,7 +423,7 @@ class TestBasic:
             assert_equal(x, r.root)
             assert_equal((r.iterations, r.function_calls), expected_counts[derivs])
             if derivs == 0:
-                assert(r.function_calls <= r.iterations + 1)
+                assert r.function_calls <= r.iterations + 1
             else:
                 assert_equal(r.function_calls, (derivs + 1) * r.iterations)
 
@@ -690,11 +690,11 @@ def test_gh_8881():
     # The function has positive slope, x0 < root.
     # Newton succeeds in 8 iterations
     rt, r = newton(f, x0, fprime=fp, full_output=True)
-    assert(r.converged)
+    assert r.converged
     # Before the Issue 8881/PR 8882, halley would send x in the wrong direction.
     # Check that it now succeeds.
     rt, r = newton(f, x0, fprime=fp, fprime2=fpp, full_output=True)
-    assert(r.converged)
+    assert r.converged
 
 
 def test_gh_9608_preserve_array_shape():
@@ -713,7 +713,7 @@ def test_gh_9608_preserve_array_shape():
 
     x0 = np.array([-2], dtype=np.float32)
     rt, r = newton(f, x0, fprime=fp, fprime2=fpp, full_output=True)
-    assert(r.converged)
+    assert r.converged
 
     x0_array = np.array([-2, -3], dtype=np.float32)
     # This next invocation should fail

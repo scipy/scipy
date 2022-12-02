@@ -12,16 +12,15 @@ import scipy.sparse
 cimport numpy as np
 from numpy.math cimport INFINITY
 
-from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libcpp.vector cimport vector
-from libcpp.algorithm cimport sort
 from libcpp cimport bool
+from libc.math cimport isinf
 
 cimport cython
 import os
 import threading
 import operator
-import warnings
 
 np.import_array()
 
@@ -40,8 +39,6 @@ cdef extern from *:
 # ===================
 
 cdef extern from "ckdtree_decl.h":
-    int ckdtree_isinf(np.float64_t x) nogil
-
     struct ckdtreenode:
         np.intp_t split_dim
         np.intp_t children
@@ -382,16 +379,9 @@ cdef class cKDTreeNode:
 
 
 cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
-    """Handle the workers argument, translating the old n_jobs name"""
+    """Handle the workers argument"""
     if workers is None:
-        if 'n_jobs' in kwargs:
-            warnings.warn(
-                'The n_jobs argument has been renamed "workers". '
-                'The old name "n_jobs" will stop working in SciPy 1.8.0.',
-                DeprecationWarning)
-            workers = kwargs.pop('n_jobs')
-        else:
-            workers = 1
+        workers = 1
 
     if len(kwargs) > 0:
         raise TypeError(
@@ -703,9 +693,10 @@ cdef class cKDTree:
             Number of workers to use for parallel processing. If -1 is given
             all CPU threads are used. Default: 1.
 
-            .. versionchanged:: 1.6.0
+            .. versionchanged:: 1.9.0
                The "n_jobs" argument was renamed "workers". The old name
-               "n_jobs" is deprecated and will stop working in SciPy 1.8.0.
+               "n_jobs" was deprecated in SciPy 1.6.0 and was removed in
+               SciPy 1.9.0.
 
         Returns
         -------
@@ -875,9 +866,10 @@ cdef class cKDTree:
             Number of jobs to schedule for parallel processing. If -1 is given
             all processors are used. Default: 1.
 
-            .. versionchanged:: 1.6.0
+            .. versionchanged:: 1.9.0
                The "n_jobs" argument was renamed "workers". The old name
-               "n_jobs" is deprecated and will stop working in SciPy 1.8.0.
+               "n_jobs" was deprecated in SciPy 1.6.0 and was removed in
+               SciPy 1.9.0.
 
         return_sorted : bool, optional
             Sorts returned indicies if True and does not sort them if False. If
@@ -906,6 +898,7 @@ cdef class cKDTree:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy import spatial
         >>> x, y = np.mgrid[0:4, 0:4]
         >>> points = np.c_[x.ravel(), y.ravel()]
@@ -1378,9 +1371,9 @@ cdef class cKDTree:
         n_queries = real_r.shape[0]
 
         # Internally, we represent all distances as distance ** p
-        if not ckdtree_isinf(p):
+        if not isinf(p):
             for i in range(n_queries):
-                if not ckdtree_isinf(real_r[i]):
+                if not isinf(real_r[i]):
                     real_r[i] = real_r[i] ** p
 
         if weights is None:

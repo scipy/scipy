@@ -11,30 +11,41 @@ dependencies:
   - setuptools<60.0
   - cython
   - compilers
+  - meson>=0.64.0
+  - meson-python
+  - ninja
   - numpy
   - openblas
+  - pkg-config  # note: not available on Windows
   - libblas=*=*openblas  # helps avoid pulling in MKL
   - pybind11
-  - pythran>=0.9.12
-  - conda-build  # to allow `conda develop .`
+  # scipy.datasets dependency
+  - pooch
+  - pythran>=0.11.0
   # For testing and benchmarking
   - pytest
   - pytest-cov
   - pytest-xdist
-  - asv
+  - pytest-timeout
+  - asv<0.5
   # For type annotations
   - mypy
   - typing_extensions
   # For building docs
   - sphinx
-  - numpydoc=1.1.0
+  - numpydoc
   - ipython
   - matplotlib
-  - pydata-sphinx-theme
-  - sphinx-panels
+  - pydata-sphinx-theme==0.9.0
+  - sphinx-design
   # For linting
-  - flake8
+  - flake8 < 6.0
   # Some optional test dependencies
   - mpmath
   - gmpy2
   - threadpoolctl
+  # For CLI
+  - rich-click
+  - click
+  - doit>=0.36.0
+  - pydevtool

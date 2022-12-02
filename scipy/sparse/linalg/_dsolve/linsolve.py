@@ -33,24 +33,59 @@ def use_solver(**kwargs):
     Parameters
     ----------
     useUmfpack : bool, optional
-        Use UMFPACK over SuperLU. Has effect only if scikits.umfpack is
-        installed. Default: True
+        Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
+        if ``scikits.umfpack`` is installed. Default: True
     assumeSortedIndices : bool, optional
         Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
-        Has effect only if useUmfpack is True and scikits.umfpack is installed.
-        Default: False
+        Has effect only if useUmfpack is True and ``scikits.umfpack`` is
+        installed. Default: False
 
     Notes
     -----
-    The default sparse solver is umfpack when available
-    (scikits.umfpack is installed). This can be changed by passing
+    The default sparse solver is UMFPACK when available
+    (``scikits.umfpack`` is installed). This can be changed by passing
     useUmfpack = False, which then causes the always present SuperLU
     based solver to be used.
 
-    Umfpack requires a CSR/CSC matrix to have sorted column/row indices. If
+    UMFPACK requires a CSR/CSC matrix to have sorted column/row indices. If
     sure that the matrix fulfills this, pass ``assumeSortedIndices=True``
     to gain some speed.
 
+    References
+    ----------
+    .. [1] T. A. Davis, Algorithm 832:  UMFPACK - an unsymmetric-pattern
+           multifrontal method with a column pre-ordering strategy, ACM
+           Trans. on Mathematical Software, 30(2), 2004, pp. 196--199.
+           https://dl.acm.org/doi/abs/10.1145/992200.992206
+
+    .. [2] T. A. Davis, A column pre-ordering strategy for the
+           unsymmetric-pattern multifrontal method, ACM Trans.
+           on Mathematical Software, 30(2), 2004, pp. 165--195.
+           https://dl.acm.org/doi/abs/10.1145/992200.992205
+
+    .. [3] T. A. Davis and I. S. Duff, A combined unifrontal/multifrontal
+           method for unsymmetric sparse matrices, ACM Trans. on
+           Mathematical Software, 25(1), 1999, pp. 1--19.
+           https://doi.org/10.1145/305658.287640
+
+    .. [4] T. A. Davis and I. S. Duff, An unsymmetric-pattern multifrontal
+           method for sparse LU factorization, SIAM J. Matrix Analysis and
+           Computations, 18(1), 1997, pp. 140--158.
+           https://doi.org/10.1137/S0895479894246905T.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse.linalg import use_solver, spsolve
+    >>> from scipy.sparse import csc_matrix
+    >>> R = np.random.randn(5, 5)
+    >>> A = csc_matrix(R)
+    >>> b = np.random.randn(5)
+    >>> use_solver(useUmfpack=False) # enforce superLU over UMFPACK
+    >>> x = spsolve(A, b)
+    >>> np.allclose(A.dot(x), b)
+    True
+    >>> use_solver(useUmfpack=True) # reset umfPack usage to default
     """
     if 'useUmfpack' in kwargs:
         globals()['useUmfpack'] = kwargs['useUmfpack']
@@ -105,10 +140,12 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         - ``NATURAL``: natural ordering.
         - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
         - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
-        - ``COLAMD``: approximate minimum degree column ordering
+        - ``COLAMD``: approximate minimum degree column ordering [1]_, [2]_.
+
     use_umfpack : bool, optional
-        if True (default) then use umfpack for the solution.  This is
-        only referenced if b is a vector and ``scikit-umfpack`` is installed.
+        if True (default) then use UMFPACK for the solution [3]_, [4]_, [5]_,
+        [6]_ . This is only referenced if b is a vector and
+        ``scikits.umfpack`` is installed.
 
     Returns
     -------
@@ -125,8 +162,41 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     relatively expensive.  In that case, consider converting A to a dense
     matrix and using scipy.linalg.solve or its variants.
 
+    References
+    ----------
+    .. [1] T. A. Davis, J. R. Gilbert, S. Larimore, E. Ng, Algorithm 836:
+           COLAMD, an approximate column minimum degree ordering algorithm,
+           ACM Trans. on Mathematical Software, 30(3), 2004, pp. 377--380.
+           :doi:`10.1145/1024074.1024080`
+
+    .. [2] T. A. Davis, J. R. Gilbert, S. Larimore, E. Ng, A column approximate
+           minimum degree ordering algorithm, ACM Trans. on Mathematical
+           Software, 30(3), 2004, pp. 353--376. :doi:`10.1145/1024074.1024079`
+
+    .. [3] T. A. Davis, Algorithm 832:  UMFPACK - an unsymmetric-pattern
+           multifrontal method with a column pre-ordering strategy, ACM
+           Trans. on Mathematical Software, 30(2), 2004, pp. 196--199.
+           https://dl.acm.org/doi/abs/10.1145/992200.992206
+
+    .. [4] T. A. Davis, A column pre-ordering strategy for the
+           unsymmetric-pattern multifrontal method, ACM Trans.
+           on Mathematical Software, 30(2), 2004, pp. 165--195.
+           https://dl.acm.org/doi/abs/10.1145/992200.992205
+
+    .. [5] T. A. Davis and I. S. Duff, A combined unifrontal/multifrontal
+           method for unsymmetric sparse matrices, ACM Trans. on
+           Mathematical Software, 25(1), 1999, pp. 1--19.
+           https://doi.org/10.1145/305658.287640
+
+    .. [6] T. A. Davis and I. S. Duff, An unsymmetric-pattern multifrontal
+           method for sparse LU factorization, SIAM J. Matrix Analysis and
+           Computations, 18(1), 1997, pp. 140--158.
+           https://doi.org/10.1137/S0895479894246905T.
+
+
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import spsolve
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
@@ -253,7 +323,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     Parameters
     ----------
     A : sparse matrix
-        Sparse matrix to factorize. Should be in CSR or CSC format.
+        Sparse matrix to factorize. Most efficient when provided in CSC
+        format. Other formats will be converted to CSC before factorization.
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
         (default: 'COLAMD')
@@ -298,6 +369,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import splu
     >>> A = csc_matrix([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
@@ -319,7 +391,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
-        warn('splu requires CSC matrix format', SparseEfficiencyWarning)
+        warn('splu converted its input to CSC format', SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -353,7 +425,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Parameters
     ----------
     A : (N, N) array_like
-        Sparse matrix to factorize
+        Sparse matrix to factorize. Most efficient when provided in CSC format.
+        Other formats will be converted to CSC before factorization.
     drop_tol : float, optional
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
         (default: 1e-4)
@@ -387,6 +460,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import spilu
     >>> A = csc_matrix([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
@@ -408,7 +482,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
-        warn('splu requires CSC matrix format', SparseEfficiencyWarning)
+        warn('spilu converted its input to CSC format',
+             SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -441,7 +516,8 @@ def factorized(A):
     Parameters
     ----------
     A : (N, N) array_like
-        Input.
+        Input. A in CSC format is most efficient. A CSR format matrix will
+        be converted to CSC before factorization.
 
     Returns
     -------
@@ -451,6 +527,7 @@ def factorized(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse.linalg import factorized
     >>> A = np.array([[ 3. ,  2. , -1. ],
     ...               [ 2. , -2. ,  4. ],
@@ -470,7 +547,8 @@ def factorized(A):
 
         if not isspmatrix_csc(A):
             A = csc_matrix(A)
-            warn('splu requires CSC matrix format', SparseEfficiencyWarning)
+            warn('splu converted its input to CSC format',
+                 SparseEfficiencyWarning)
 
         A = A.asfptype()  # upcast to a floating point format
 
@@ -485,7 +563,11 @@ def factorized(A):
         umf.numeric(A)
 
         def solve(b):
-            return umf.solve(umfpack.UMFPACK_A, A, b, autoTranspose=True)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                # Ignoring warnings with numpy >= 1.23.0, see gh-16523
+                result = umf.solve(umfpack.UMFPACK_A, A, b, autoTranspose=True)
+
+            return result
 
         return solve
     else:
@@ -540,6 +622,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csr_matrix
     >>> from scipy.sparse.linalg import spsolve_triangular
     >>> A = csr_matrix([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
@@ -602,6 +685,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         # Get indices for i-th row.
         indptr_start = A.indptr[i]
         indptr_stop = A.indptr[i + 1]
+
         if lower:
             A_diagonal_index_row_i = indptr_stop - 1
             A_off_diagonal_indices_row_i = slice(indptr_start, indptr_stop - 1)
@@ -614,7 +698,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
                                   or A.indices[A_diagonal_index_row_i] < i):
             raise LinAlgError(
                 'A is singular: diagonal {} is zero.'.format(i))
-        if A.indices[A_diagonal_index_row_i] > i:
+        if not unit_diagonal and A.indices[A_diagonal_index_row_i] > i:
             raise LinAlgError(
                 'A is not triangular: A[{}, {}] is nonzero.'
                 ''.format(i, A.indices[A_diagonal_index_row_i]))

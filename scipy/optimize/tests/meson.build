@@ -14,6 +14,7 @@ py3.install_sources([
     'test_constraints.py',
     'test_cython_optimize.py',
     'test_differentiable_functions.py',
+    'test_direct.py',
     'test_hessian_update_strategy.py',
     'test_lbfgsb_hessinv.py',
     'test_lbfgsb_setulb.py',
@@ -23,6 +24,7 @@ py3.install_sources([
     'test_linprog.py',
     'test_lsq_common.py',
     'test_lsq_linear.py',
+    'test_milp.py',
     'test_minimize_constrained.py',
     'test_minpack.py',
     'test_nnls.py',
@@ -37,6 +39,5 @@ py3.install_sources([
     'test_trustregion_krylov.py',
     'test_zeros.py'
   ],
-  pure: false,
   subdir: 'scipy/optimize/tests'
 )

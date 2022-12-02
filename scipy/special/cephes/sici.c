@@ -52,8 +52,6 @@
  * Copyright 1984, 1987, 1989 by Stephen L. Moshier
  * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
  */
-#include <Python.h>
-#include <numpy/npy_math.h>
 
 #include "mconf.h"
 
@@ -205,7 +203,7 @@ double *si, *ci;
 
     if (x == 0.0) {
 	*si = 0.0;
-	*ci = -NPY_INFINITY;
+	*ci = -INFINITY;
 	return (0);
     }
 
@@ -213,16 +211,16 @@ double *si, *ci;
     if (x > 1.0e9) {
 	if (cephes_isinf(x)) {
 	    if (sign == -1) {
-		*si = -NPY_PI_2;
-		*ci = NPY_NAN;
+		*si = -M_PI_2;
+		*ci = NAN;
 	    }
 	    else {
-		*si = NPY_PI_2;
+		*si = M_PI_2;
 		*ci = 0;
 	    }
 	    return 0;
 	}
-	*si = NPY_PI_2 - cos(x) / x;
+	*si = M_PI_2 - cos(x) / x;
 	*ci = sin(x) / x;
     }
 
@@ -238,7 +236,7 @@ double *si, *ci;
     if (sign)
 	s = -s;
     *si = s;
-    *ci = NPY_EULER + log(x) + c;	/* real part if x < 0 */
+    *ci = SCIPY_EULER + log(x) + c;	/* real part if x < 0 */
     return (0);
 
 
@@ -246,7 +244,7 @@ double *si, *ci;
     /* The auxiliary functions are:
      *
      *
-     * *si = *si - NPY_PI_2;
+     * *si = *si - M_PI_2;
      * c = cos(x);
      * s = sin(x);
      *
@@ -271,7 +269,7 @@ double *si, *ci;
 	f = polevl(z, FN8, 8) / (x * p1evl(z, FD8, 8));
 	g = z * polevl(z, GN8, 8) / p1evl(z, GD8, 9);
     }
-    *si = NPY_PI_2 - f * c - g * s;
+    *si = M_PI_2 - f * c - g * s;
     if (sign)
 	*si = -(*si);
     *ci = f * s - g * c;

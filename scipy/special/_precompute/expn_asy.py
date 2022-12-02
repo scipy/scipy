@@ -10,7 +10,7 @@ Sources
 import os
 
 try:
-    import sympy  # type: ignore[import]
+    import sympy
     from sympy import Poly
     x = sympy.symbols('x')
 except ImportError:

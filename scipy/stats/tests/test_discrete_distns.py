@@ -154,12 +154,12 @@ def test_betabinom_bernoulli():
 
 def test_issue_10317():
     alpha, n, p = 0.9, 10, 1
-    assert_equal(nbinom.interval(alpha=alpha, n=n, p=p), (0, 0))
+    assert_equal(nbinom.interval(confidence=alpha, n=n, p=p), (0, 0))
 
 
 def test_issue_11134():
     alpha, n, p = 0.95, 10, 0
-    assert_equal(binom.interval(alpha=alpha, n=n, p=p), (0, 0))
+    assert_equal(binom.interval(confidence=alpha, n=n, p=p), (0, 0))
 
 
 def test_issue_7406():
@@ -225,6 +225,14 @@ def test_issue_6682():
     assert_allclose(nbinom.sf(250, 50, 32./63.), 1.460458510976452e-35)
 
 
+def test_boost_divide_by_zero_issue_15101():
+    n = 1000
+    p = 0.01
+    k = 996
+    assert_allclose(binom.pmf(k, n, p), 0.0)
+
+
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_skellam_gh11474():
     # test issue reported in gh-11474 caused by `cdfchn`
     mu = [1, 10, 100, 1000, 5000, 5050, 5100, 5250, 6000]
@@ -464,7 +472,7 @@ class TestNCH():
 
         atol, rtol = 1e-6, 1e-6
         i = np.abs(pmf1 - pmf0) < atol + rtol*np.abs(pmf0)
-        assert(i.sum() > np.prod(shape) / 2)  # works at least half the time
+        assert i.sum() > np.prod(shape) / 2  # works at least half the time
 
         # for those that fail, discredit the naive implementation
         for N, m1, n, w in zip(N[~i], m1[~i], n[~i], w[~i]):
@@ -544,3 +552,15 @@ def test_nbinom_11465(mu, q, expected):
     # options(digits=16)
     # pnbinom(mu=10, size=20, q=120, log.p=TRUE)
     assert_allclose(nbinom.logcdf(q, n, p), expected)
+
+
+def test_gh_17146():
+    # Check that discrete distributions return PMF of zero at non-integral x.
+    # See gh-17146.
+    x = np.linspace(0, 1, 11)
+    p = 0.8
+    pmf = bernoulli(p).pmf(x)
+    i = (x % 1 == 0)
+    assert_allclose(pmf[-1], p)
+    assert_allclose(pmf[0], 1-p)
+    assert_equal(pmf[~i], 0)

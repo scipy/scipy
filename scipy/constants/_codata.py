@@ -4,6 +4,8 @@
 # Updated to 2014 values by Joseph Booker, 2015
 # Updated to 2018 values by Jakob Jakobson, 2019
 
+from __future__ import annotations
+
 """
 Fundamental Physical Constants
 ------------------------------
@@ -49,8 +51,11 @@ back to the 1800s. To search the bibliography, visit
 https://physics.nist.gov/cuu/Constants/
 
 """
+
 import warnings
 from math import pi, sqrt
+
+from typing import Any
 
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
@@ -1492,29 +1497,26 @@ W to Z mass ratio                                           0.881 53            
 
 # -----------------------------------------------------------------------------
 
-physical_constants = {}
+physical_constants: dict[str, tuple[float, str, float]] = {}
 
 
-def parse_constants_2002to2014(d):
+def parse_constants_2002to2014(d: str) -> dict[str, tuple[float, str, float]]:
     constants = {}
     for line in d.split('\n'):
         name = line[:55].rstrip()
-        val = line[55:77].replace(' ', '').replace('...', '')
-        val = float(val)
-        uncert = line[77:99].replace(' ', '').replace('(exact)', '0')
-        uncert = float(uncert)
+        val = float(line[55:77].replace(' ', '').replace('...', ''))
+        uncert = float(line[77:99].replace(' ', '').replace('(exact)', '0'))
         units = line[99:].rstrip()
         constants[name] = (val, units, uncert)
     return constants
 
-def parse_constants_2018toXXXX(d):
+
+def parse_constants_2018toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
     constants = {}
     for line in d.split('\n'):
         name = line[:60].rstrip()
-        val = line[60:85].replace(' ', '').replace('...', '')
-        val = float(val)
-        uncert = line[85:110].replace(' ', '').replace('(exact)', '0')
-        uncert = float(uncert)
+        val = float(line[60:85].replace(' ', '').replace('...', ''))
+        uncert = float(line[85:110].replace(' ', '').replace('(exact)', '0'))
         units = line[110:].rstrip()
         constants[name] = (val, units, uncert)
     return constants
@@ -1563,19 +1565,19 @@ class ConstantWarning(DeprecationWarning):
     pass
 
 
-def _check_obsolete(key):
+def _check_obsolete(key: str) -> None:
     if key in _obsolete_constants and key not in _aliases:
         warnings.warn("Constant '%s' is not in current %s data set" % (
             key, _current_codata), ConstantWarning)
 
 
-def value(key):
+def value(key: str) -> float:
     """
     Value in physical_constants indexed by key
 
     Parameters
     ----------
-    key : Python string or unicode
+    key : Python string
         Key in dictionary `physical_constants`
 
     Returns
@@ -1586,7 +1588,7 @@ def value(key):
     Examples
     --------
     >>> from scipy import constants
-    >>> constants.value(u'elementary charge')
+    >>> constants.value('elementary charge')
     1.602176634e-19
 
     """
@@ -1594,13 +1596,13 @@ def value(key):
     return physical_constants[key][0]
 
 
-def unit(key):
+def unit(key: str) -> str:
     """
     Unit in physical_constants indexed by key
 
     Parameters
     ----------
-    key : Python string or unicode
+    key : Python string
         Key in dictionary `physical_constants`
 
     Returns
@@ -1611,7 +1613,7 @@ def unit(key):
     Examples
     --------
     >>> from scipy import constants
-    >>> constants.unit(u'proton mass')
+    >>> constants.unit('proton mass')
     'kg'
 
     """
@@ -1619,13 +1621,13 @@ def unit(key):
     return physical_constants[key][1]
 
 
-def precision(key):
+def precision(key: str) -> float:
     """
     Relative precision in physical_constants indexed by key
 
     Parameters
     ----------
-    key : Python string or unicode
+    key : Python string
         Key in dictionary `physical_constants`
 
     Returns
@@ -1636,7 +1638,7 @@ def precision(key):
     Examples
     --------
     >>> from scipy import constants
-    >>> constants.precision(u'proton mass')
+    >>> constants.precision('proton mass')
     5.1e-37
 
     """
@@ -1644,13 +1646,13 @@ def precision(key):
     return physical_constants[key][2] / physical_constants[key][0]
 
 
-def find(sub=None, disp=False):
+def find(sub: str | None = None, disp: bool = False) -> Any:
     """
     Return list of physical_constant keys containing a given string.
 
     Parameters
     ----------
-    sub : str, unicode
+    sub : str
         Sub-string to search keys for. By default, return all keys.
     disp : bool
         If True, print the keys that are found and return None.
@@ -1705,7 +1707,7 @@ def find(sub=None, disp=False):
     else:
         return result
 
-    
+
 c = value('speed of light in vacuum')
 mu0 = value('vacuum mag. permeability')
 epsilon0 = value('vacuum electric permittivity')

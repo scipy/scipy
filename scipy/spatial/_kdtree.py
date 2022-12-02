@@ -1,7 +1,6 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 import numpy as np
-import warnings
 from ._ckdtree import cKDTree, cKDTreeNode
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
@@ -16,28 +15,38 @@ def minkowski_distance_p(x, y, p=2):
     not extract the pth root. If `p` is 1 or infinity, this is equal to
     the actual L**p distance.
 
+    The last dimensions of `x` and `y` must be the same length.  Any
+    other dimensions must be compatible for broadcasting.
+
     Parameters
     ----------
-    x : (M, K) array_like
+    x : (..., K) array_like
         Input array.
-    y : (N, K) array_like
+    y : (..., K) array_like
         Input array.
     p : float, 1 <= p <= infinity
         Which Minkowski p-norm to use.
 
+    Returns
+    -------
+    dist : ndarray
+        pth power of the distance between the input arrays.
+
     Examples
     --------
     >>> from scipy.spatial import minkowski_distance_p
-    >>> minkowski_distance_p([[0,0],[0,0]], [[1,1],[0,1]])
+    >>> minkowski_distance_p([[0, 0], [0, 0]], [[1, 1], [0, 1]])
     array([2, 1])
 
     """
     x = np.asarray(x)
     y = np.asarray(y)
 
-    # Find smallest common datatype with float64 (return type of this function) - addresses #10262.
+    # Find smallest common datatype with float64 (return type of this
+    # function) - addresses #10262.
     # Don't just cast to float64 for complex input case.
-    common_datatype = np.promote_types(np.promote_types(x.dtype, y.dtype), 'float64')
+    common_datatype = np.promote_types(np.promote_types(x.dtype, y.dtype),
+                                       'float64')
 
     # Make sure x and y are NumPy arrays of correct datatype.
     x = x.astype(common_datatype)
@@ -54,19 +63,27 @@ def minkowski_distance_p(x, y, p=2):
 def minkowski_distance(x, y, p=2):
     """Compute the L**p distance between two arrays.
 
+    The last dimensions of `x` and `y` must be the same length.  Any
+    other dimensions must be compatible for broadcasting.
+
     Parameters
     ----------
-    x : (M, K) array_like
+    x : (..., K) array_like
         Input array.
-    y : (N, K) array_like
+    y : (..., K) array_like
         Input array.
     p : float, 1 <= p <= infinity
         Which Minkowski p-norm to use.
 
+    Returns
+    -------
+    dist : ndarray
+        Distance between the input arrays.
+
     Examples
     --------
     >>> from scipy.spatial import minkowski_distance
-    >>> minkowski_distance([[0,0],[0,0]], [[1,1],[0,1]])
+    >>> minkowski_distance([[0, 0], [0, 0]], [[1, 1], [0, 1]])
     array([ 1.41421356,  1.        ])
 
     """
@@ -385,11 +402,10 @@ class KDTree(cKDTree):
             Missing neighbors are indicated with infinite distances.
             Hits are sorted by distance (nearest first).
 
-            .. deprecated:: 1.6.0
-               If ``k=None``, then ``d`` is an object array of shape ``tuple``,
-               containing lists of distances. This behavior is deprecated and
-               will be removed in SciPy 1.8.0, use ``query_ball_point``
-               instead.
+            .. versionchanged:: 1.9.0
+               Previously if ``k=None``, then `d` was an object array of
+               shape ``tuple``, containing lists of distances. This behavior
+               has been removed, use `query_ball_point` instead.
 
         i : integer or array of integers
             The index of each neighbor in ``self.data``.
@@ -454,31 +470,7 @@ class KDTree(cKDTree):
             raise TypeError("KDTree does not work with complex data")
 
         if k is None:
-            # k=None, return all neighbors
-            warnings.warn(
-                "KDTree.query with k=None is deprecated and will be removed "
-                "in SciPy 1.8.0. Use KDTree.query_ball_point instead.",
-                DeprecationWarning)
-
-            # Convert index query to a lists of distance and index,
-            # sorted by distance
-            def inds_to_hits(point, neighbors):
-                dist = minkowski_distance(point, self.data[neighbors], p)
-                hits = sorted([(d, i) for d, i in zip(dist, neighbors)])
-                return [d for d, i in hits], [i for d, i in hits]
-
-            x = np.asarray(x, dtype=np.float64)
-            inds = super().query_ball_point(
-                x, distance_upper_bound, p, eps, workers)
-
-            if isinstance(inds, list):
-                return inds_to_hits(x, inds)
-
-            dists = np.empty_like(inds)
-            for idx in np.ndindex(inds.shape):
-                dists[idx], inds[idx] = inds_to_hits(x[idx], inds[idx])
-
-            return dists, inds
+            raise ValueError("k must be an integer or a sequence of integers")
 
         d, i = super().query(x, k, eps, p, distance_upper_bound, workers)
         if isinstance(i, int):
@@ -536,6 +528,7 @@ class KDTree(cKDTree):
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy import spatial
         >>> x, y = np.mgrid[0:5, 0:5]
         >>> points = np.c_[x.ravel(), y.ravel()]
@@ -911,7 +904,8 @@ def distance_matrix(x, y, p=2, threshold=1000000):
     n, kk = y.shape
 
     if k != kk:
-        raise ValueError("x contains %d-dimensional vectors but y contains %d-dimensional vectors" % (k, kk))
+        raise ValueError(f"x contains {k}-dimensional vectors but y contains "
+                         f"{kk}-dimensional vectors")
 
     if m*n*k <= threshold:
         return minkowski_distance(x[:,np.newaxis,:],y[np.newaxis,:,:],p)

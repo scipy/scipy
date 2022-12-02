@@ -7,7 +7,8 @@ import time
 import logging
 import warnings
 from scipy import spatial
-from scipy.optimize import OptimizeResult, minimize
+from scipy.optimize import OptimizeResult, minimize, Bounds
+from scipy.optimize._constraints import new_bounds_to_old
 from ._optimize import _wrap_scalar_function
 from scipy.optimize._shgo_lib.triangulation import Complex
 
@@ -30,13 +31,12 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a tuple of any additional fixed parameters needed to
         completely specify the function.
-    bounds : sequence
-        Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
-        defining the lower and upper bounds for the optimizing argument of
-        `func`. It is required to have ``len(bounds) == len(x)``.
-        ``len(bounds)`` is used to determine the number of parameters in ``x``.
-        Use ``None`` for one of min or max when there is no bound in that
-        direction. By default bounds are ``(None, None)``.
+    bounds : sequence or `Bounds`
+        Bounds for variables. There are two ways to specify the bounds:
+
+        1. Instance of `Bounds` class.
+        2. Sequence of ``(min, max)`` pairs for each element in `x`.
+
     args : tuple, optional
         Any additional fixed parameters needed to completely specify the
         objective function.
@@ -275,6 +275,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     --------
     First consider the problem of minimizing the Rosenbrock function, `rosen`:
 
+    >>> import numpy as np
     >>> from scipy.optimize import rosen, shgo
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = shgo(rosen, bounds)
@@ -394,22 +395,27 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     >>> bounds = [(0, 1.0),]*4
     >>> res = shgo(f, bounds, iters=3, constraints=cons)
     >>> res
-         fun: 29.894378159142136
-        funl: array([29.89437816])
-     message: 'Optimization terminated successfully.'
-        nfev: 114
-         nit: 3
-       nlfev: 35
-       nlhev: 0
-       nljev: 5
+     message: Optimization terminated successfully.
      success: True
-           x: array([6.35521569e-01, 1.13700270e-13, 3.12701881e-01, 5.17765506e-02])
-          xl: array([[6.35521569e-01, 1.13700270e-13, 3.12701881e-01, 5.17765506e-02]])
+         fun: 29.894378159142136
+        funl: [ 2.989e+01]
+           x: [ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]
+          xl: [[ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]]
+         nit: 3
+        nfev: 114
+       nlfev: 35
+       nljev: 5
+       nlhev: 0
 
     >>> g1(res.x), g2(res.x), h1(res.x)
     (-5.062616992290714e-14, -2.9594104944408173e-12, 0.0)
 
     """
+
+    # if necessary, convert bounds class to old bounds
+    if isinstance(bounds, Bounds):
+        bounds = new_bounds_to_old(bounds.lb, bounds.ub, len(bounds.lb))
+
     # Initiate SHGO class
     shc = SHGO(func, bounds, args=args, constraints=constraints, n=n,
                iters=iters, callback=callback,
@@ -458,6 +464,7 @@ class SHGO:
                               " Valid methods: {}").format(', '.join(methods)))
 
         # Initiate class
+        self._raw_func = func  # some methods pass args in (e.g. Complex)
         _, self.func = _wrap_scalar_function(func, args)
         self.bounds = bounds
         self.args = args
@@ -569,6 +576,7 @@ class SHGO:
             'trust-ncg': ['jac', 'hess', 'hessp'],
             'trust-krylov': ['jac', 'hess', 'hessp'],
             'trust-exact': ['jac', 'hess'],
+            'trust-constr': ['jac', 'hess', 'hessp'],
         }
         method = self.minimizer_kwargs['method']
         self.min_solver_args += solver_args[method.lower()]
@@ -675,7 +683,17 @@ class SHGO:
         None
 
         """
+        # Update 'options' dict passed to optimize.minimize
+        # Do this first so we don't mutate `options` below.
         self.minimizer_kwargs['options'].update(options)
+
+        # Ensure that 'jac', 'hess', and 'hessp' are passed directly to
+        # `minimize` as keywords, not as part of its 'options' dictionary.
+        for opt in ['jac', 'hess', 'hessp']:
+            if opt in self.minimizer_kwargs['options']:
+                self.minimizer_kwargs[opt] = (
+                    self.minimizer_kwargs['options'].pop(opt))
+
         # Default settings:
         self.minimize_every_iter = options.get('minimize_every_iter', False)
 
@@ -891,8 +909,11 @@ class SHGO:
         """
         # Iterate the complex
         if self.n_sampled == 0:
-            # Initial triangulation of the hyper-rectangle
-            self.HC = Complex(self.dim, self.func, self.args,
+            # Initial triangulation of the hyper-rectangle. Note that
+            # we use `self.raw_func` as `self.func` is a *wrapped* function
+            # that already takes the original function arguments into
+            # account.
+            self.HC = Complex(self.dim, self._raw_func, self.args,
                               self.symmetry, self.bounds, self.g_cons,
                               self.g_args)
         else:

@@ -19,8 +19,8 @@ Integrating functions, given function object
    fixed_quad    -- Integrate func(x) using Gaussian quadrature of order n
    quadrature    -- Integrate with given tolerance using Gaussian quadrature
    romberg       -- Integrate func using Romberg integration
-   quad_explain  -- Print information for use of quad
    newton_cotes  -- Weights and error coefficient for Newton-Cotes integration
+   qmc_quad      -- N-D integration using Quasi-Monte Carlo quadrature
    IntegrationWarning -- Warning on issues during integration
    AccuracyWarning  -- Warning on issues during quadrature integration
 

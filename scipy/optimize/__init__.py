@@ -103,11 +103,11 @@ Global optimization
 
    basinhopping - Basinhopping stochastic optimizer.
    brute - Brute force searching optimizer.
-   differential_evolution - stochastic minimization using differential evolution.
+   differential_evolution - Stochastic optimizer using differential evolution.
 
-   shgo - simplicial homology global optimisation
+   shgo - Simplicial homology global optimizer.
    dual_annealing - Dual annealing stochastic optimizer.
-
+   direct - DIRECT (Dividing Rectangles) optimizer.
 
 Least-squares and curve fitting
 ===============================
@@ -232,12 +232,13 @@ The `root` function supports the following methods:
    optimize.root-krylov
    optimize.root-dfsane
 
-Linear programming
-==================
+Linear programming / MILP
+=========================
 
 .. autosummary::
    :toctree: generated/
 
+   milp -- Mixed integer linear programming.
    linprog -- Unified interface for minimizers of linear programming problems.
 
 The `linprog` function supports the following methods:
@@ -385,6 +386,10 @@ Large-scale nonlinear solvers:
    newton_krylov
    anderson
 
+   BroydenFirst
+   InverseJacobian
+   KrylovJacobian
+
 Simple iteration solvers:
 
 .. autosummary::
@@ -420,6 +425,8 @@ from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 from ._shgo import shgo
 from ._dual_annealing import dual_annealing
 from ._qap import quadratic_assignment
+from ._direct_py import direct
+from ._milp import milp
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

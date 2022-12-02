@@ -11,7 +11,6 @@ Spherical Voronoi Code
 # Distributed under the same BSD license as SciPy.
 #
 
-import warnings
 import numpy as np
 import scipy
 from . import _voronoi
@@ -112,6 +111,7 @@ class SphericalVoronoi:
     --------
     Do some imports and take some points on a cube:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import SphericalVoronoi, geometric_slerp
     >>> from mpl_toolkits.mplot3d import proj3d
@@ -167,12 +167,9 @@ class SphericalVoronoi:
     def __init__(self, points, radius=1, center=None, threshold=1e-06):
 
         if radius is None:
-            radius = 1.
-            warnings.warn('`radius` is `None`. '
-                          'This will raise an error in a future version. '
-                          'Please provide a floating point number '
-                          '(i.e. `radius=1`).',
-                          DeprecationWarning)
+            raise ValueError('`radius` is `None`. '
+                             'Please provide a floating point number '
+                             '(i.e. `radius=1`).')
 
         self.radius = float(radius)
         self.points = np.array(points).astype(np.double)

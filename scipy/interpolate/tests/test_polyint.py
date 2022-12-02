@@ -6,6 +6,7 @@ from numpy.testing import (
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
     assert_allclose, assert_equal, assert_)
 from pytest import raises as assert_raises
+import pytest
 
 from scipy.interpolate import (
     KroghInterpolator, krogh_interpolate,
@@ -23,10 +24,6 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
     s = list(range(1, len(y_shape)+1))
     s.insert(axis % (len(y_shape)+1), 0)
     y = np.random.rand(*((6,) + y_shape)).transpose(s)
-
-    # Cython code chokes on y.shape = (0, 3) etc., skip them
-    if y.size == 0:
-        return
 
     xi = np.zeros(x_shape)
     if interpolator_cls is CubicHermiteSpline:
@@ -99,10 +96,10 @@ def test_deriv_shapes():
         return pchip(x, y, axis).derivative(2)
 
     def pchip_antideriv(x, y, axis=0):
-        return pchip(x, y, axis).derivative()
+        return pchip(x, y, axis).antiderivative()
 
     def pchip_antideriv2(x, y, axis=0):
-        return pchip(x, y, axis).derivative(2)
+        return pchip(x, y, axis).antiderivative(2)
 
     def pchip_deriv_inplace(x, y, axis=0):
         class P(PchipInterpolator):
@@ -281,6 +278,10 @@ class TestKrogh:
                   1j*KroghInterpolator(x, y.imag).derivatives(0))
         assert_allclose(cmplx, cmplx2, atol=1e-15)
 
+    def test_high_degree_warning(self):
+        with pytest.warns(UserWarning, match="40 degrees provided,"):
+            KroghInterpolator(np.arange(40), np.ones(40))
+
 
 class TestTaylor:
     def test_exponential(self):
@@ -382,6 +383,16 @@ class TestBarycentric:
         # cancels out in the evaluation of the polynomial.
         factor = P.wi[0]
         assert_almost_equal(P.wi / (2 * factor), w)
+
+    def test_warning(self):
+        # Test if the divide-by-zero warning is properly ignored when computing
+        # interpolated values equals to interpolation points
+        P = BarycentricInterpolator([0, 1], [1, 2])
+        with np.errstate(divide='raise'):
+            yi = P(P.xi)
+
+        # Additionaly check if the interpolated values are the nodes values
+        assert_almost_equal(yi, P.yi.ravel())
 
 
 class TestPCHIP:
@@ -745,3 +756,53 @@ def test_roots_extrapolate_gh_11185():
     r = p.roots(extrapolate=True)
     assert_equal(p.c.shape[1], 1)
     assert_equal(r.size, 3)
+
+
+class TestZeroSizeArrays:
+    # regression tests for gh-17241 : CubicSpline et al must not segfault
+    # when y.size == 0
+    # The two methods below are _almost_ the same, but not quite:
+    # one is for objects which have the `bc_type` argument (CubicSpline)
+    # and the other one is for those which do not (Pchip, Akima1D)
+
+    @pytest.mark.parametrize('y', [np.zeros((10, 0, 5)),
+                                   np.zeros((10, 5, 0))])
+    @pytest.mark.parametrize('bc_type',
+                             ['not-a-knot', 'periodic', 'natural', 'clamped'])
+    @pytest.mark.parametrize('axis', [0, 1, 2])
+    @pytest.mark.parametrize('cls', [make_interp_spline, CubicSpline])
+    def test_zero_size(self, cls, y, bc_type, axis):
+        x = np.arange(10)
+        xval = np.arange(3)
+
+        obj = cls(x, y, bc_type=bc_type)
+        assert obj(xval).size == 0
+        assert obj(xval).shape == xval.shape + y.shape[1:]
+
+        # Also check with an explicit non-default axis
+        yt = np.moveaxis(y, 0, axis)  # (10, 0, 5) --> (0, 10, 5) if axis=1 etc
+
+        obj = cls(x, yt, bc_type=bc_type, axis=axis)
+        sh = yt.shape[:axis] + (xval.size, ) + yt.shape[axis+1:]
+        assert obj(xval).size == 0
+        assert obj(xval).shape == sh
+
+    @pytest.mark.parametrize('y', [np.zeros((10, 0, 5)),
+                                   np.zeros((10, 5, 0))])
+    @pytest.mark.parametrize('axis', [0, 1, 2])
+    @pytest.mark.parametrize('cls', [PchipInterpolator, Akima1DInterpolator])
+    def test_zero_size_2(self, cls, y, axis):
+        x = np.arange(10)
+        xval = np.arange(3)
+
+        obj = cls(x, y)
+        assert obj(xval).size == 0
+        assert obj(xval).shape == xval.shape + y.shape[1:]
+
+        # Also check with an explicit non-default axis
+        yt = np.moveaxis(y, 0, axis)  # (10, 0, 5) --> (0, 10, 5) if axis=1 etc
+
+        obj = cls(x, yt, axis=axis)
+        sh = yt.shape[:axis] + (xval.size, ) + yt.shape[axis+1:]
+        assert obj(xval).size == 0
+        assert obj(xval).shape == sh

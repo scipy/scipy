@@ -1,8 +1,8 @@
 
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
-from scipy._lib._util import _nan_allsame
-from ._stats_py import _chk_asarray, _contains_nan
+from scipy._lib._util import _nan_allsame, _contains_nan
+from ._stats_py import _chk_asarray
 
 
 def _nanvariation(a, *, axis=0, ddof=0, keepdims=False):
@@ -68,7 +68,7 @@ def _nanvariation(a, *, axis=0, ddof=0, keepdims=False):
     sum_zero = np.nansum(a, axis=axis, keepdims=True) == 0
 
     # Where the sum along the axis is 0, replace mean_a with 1.  This avoids
-    # division by zero.  We'll fix the the corresponding output later.
+    # division by zero.  We'll fix the corresponding output later.
     mean_a[sum_zero] = 1.0
 
     # Here--finally!--is the calculation of the variation.
@@ -163,6 +163,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import variation
     >>> variation([1, 2, 3, 4, 5], ddof=1)
     0.5270462766947299

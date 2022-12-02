@@ -138,16 +138,17 @@ def get_build_ext_override():
         try:
             import pythran
             from pythran.dist import PythranBuildExt
+        except ImportError:
+            BaseBuildExt = npy_build_ext
+        else:
             BaseBuildExt = PythranBuildExt[npy_build_ext]
-            importlib.import_module('scipy/_lib/_pep440')
-            if _pep440.parse(pythran.__version__) < _pep440.Version('0.9.12'):
+            _pep440 = importlib.import_module('scipy._lib._pep440')
+            if _pep440.parse(pythran.__version__) < _pep440.Version('0.11.0'):
                 raise RuntimeError("The installed `pythran` is too old, >= "
-                                   "0.9.12 is needed, {} detected. Please "
+                                   "0.11.0 is needed, {} detected. Please "
                                    "upgrade Pythran, or use `export "
                                    "SCIPY_USE_PYTHRAN=0`.".format(
                                    pythran.__version__))
-        except ImportError:
-            BaseBuildExt = npy_build_ext
     else:
         BaseBuildExt = npy_build_ext
 
@@ -251,7 +252,10 @@ def generate_cython():
         try:
             # Note, pip may not be installed or not have been used
             import pip
-            importlib.import_module('scipy/_lib/_pep440')
+        except (ImportError, ModuleNotFoundError):
+            raise RuntimeError("Running cythonize failed!")
+        else:
+            _pep440 = importlib.import_module('scipy._lib._pep440')
             if _pep440.parse(pip.__version__) < _pep440.Version('18.0.0'):
                 raise RuntimeError("Cython not found or too old. Possibly due "
                                    "to `pip` being too old, found version {}, "
@@ -259,8 +263,6 @@ def generate_cython():
                                    pip.__version__))
             else:
                 raise RuntimeError("Running cythonize failed!")
-        except (ImportError, ModuleNotFoundError):
-            raise RuntimeError("Running cythonize failed!")
 
 
 def parse_setuppy_commands():
@@ -408,7 +410,7 @@ def check_setuppy_command():
     return run_build
 
 def configuration(parent_package='', top_path=None):
-    from scipy._build_utils.system_info import get_info, NotFoundError
+    from numpy.distutils.system_info import get_info, NotFoundError
     from numpy.distutils.misc_util import Configuration
 
     lapack_opt = get_info('lapack_opt')
@@ -447,7 +449,7 @@ def setup_package():
     # Rationale: SciPy builds without deprecation warnings with N; deprecations
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
-    np_minversion = '1.18.5'
+    np_minversion = '1.19.5'
     np_maxversion = '9.9.99'
     python_minversion = '3.8'
     python_maxversion = '3.10'

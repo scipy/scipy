@@ -7,14 +7,12 @@ import numpy as np
 cimport numpy as cnp
 
 cimport cython
+from libc.math cimport NAN
 
 cnp.import_array()
 
 cdef extern from "src/__fitpack.h":
     void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
-
-cdef extern from "numpy/npy_math.h":
-    double nan "NPY_NAN"
 
 ctypedef double complex double_complex
 
@@ -22,6 +20,9 @@ ctypedef fused double_or_complex:
     double
     double complex
 
+ctypedef fused int32_or_int64:
+    cnp.npy_int32
+    cnp.npy_int64
 
 #------------------------------------------------------------------------------
 # B-splines
@@ -146,7 +147,7 @@ def evaluate_spline(const double[::1] t,
             if interval < 0:
                 # xval was nan etc
                 for jp in range(c.shape[1]):
-                    out[ip, jp] = nan
+                    out[ip, jp] = NAN
                 continue
 
             # Evaluate (k+1) b-splines which are non-zero on the interval.
@@ -191,15 +192,14 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     Consider a cubic spline
 
     >>> k = 3
-    >>> t = [0., 2., 2., 3., 4.]   # internal knots
+    >>> t = [0., 1., 2., 3., 4.]   # internal knots
     >>> a, b = t[0], t[-1]    # base interval is [a, b)
-    >>> t = [a]*k + t + [b]*k  # add boundary knots
+    >>> t = np.array([a]*k + t + [b]*k)  # add boundary knots
 
     >>> import matplotlib.pyplot as plt
     >>> xx = np.linspace(a, b, 100)
     >>> plt.plot(xx, BSpline.basis_element(t[k:-k])(xx),
-    ...          'r-', lw=5, alpha=0.5)
-    >>> c = ['b', 'g', 'c', 'k']
+    ...          lw=3, alpha=0.5, label='basis_element')
 
     Now we use slide an interval ``t[m]..t[m+1]`` along the base interval
     ``a..b`` and use `evaluate_all_bspl` to compute the restriction of
@@ -209,7 +209,7 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     ...    x1, x2 = t[2*k - i], t[2*k - i + 1]
     ...    xx = np.linspace(x1 - 0.5, x2 + 0.5)
     ...    yy = [evaluate_all_bspl(t, k, x, 2*k - i)[i] for x in xx]
-    ...    plt.plot(xx, yy, c[i] + '--', lw=3, label=str(i))
+    ...    plt.plot(xx, yy, '--', label=str(i))
     ...
     >>> plt.grid(True)
     >>> plt.legend()
@@ -419,9 +419,14 @@ def _norm_eq_lsq(const double[::1] x,
 @cython.boundscheck(False)
 def _make_design_matrix(const double[::1] x,
                         const double[::1] t,
-                        int k):
+                        int k,
+                        bint extrapolate,
+                        int32_or_int64[::1] indices):
     """
-    Returns a design matrix in CSR format
+    Returns a design matrix in CSR format.
+
+    Note that only indices is passed, but not indptr because indptr is already
+    precomputed in the calling Python function design_matrix.
     
     Parameters
     ----------
@@ -431,31 +436,42 @@ def _make_design_matrix(const double[::1] x,
         Sorted 1D array of knots.
     k : int
         B-spline degree.
+    extrapolate : bool, optional
+        Whether to extrapolate to ouf-of-bounds points.
+    indices : ndarray, shape (n * (k + 1),)
+        Preallocated indices of the final CSR array.
 
     Returns
     -------
-    data, (row_idx, col_idx)
-        Constructor parameters for a CSR matrix: in each row all the basis
-        elements are evaluated at the certain point (first row - x[0],
-        ..., last row - x[-1]).
+    data
+        The data array of a CSR array of the b-spline design matrix.
+        In each row all the basis elements are evaluated at the certain point
+        (first row - x[0], ..., last row - x[-1]).
+    
+    indices
+        The indices array of a CSR array of the b-spline design matrix.
     """
     cdef:
-        cnp.npy_intp i, ind
+        cnp.npy_intp i, j, m, ind
         cnp.npy_intp n = x.shape[0]
-        double[::1] wrk = np.empty(2*k+2, dtype=float)
+        double[::1] work = np.empty(2*k+2, dtype=float)
         double[::1] data = np.zeros(n * (k + 1), dtype=float)
-        cnp.ndarray[long, ndim=1] row_ind = np.zeros(n * (k + 1), dtype=int)
-        cnp.ndarray[long, ndim=1] col_ind = np.zeros(n * (k + 1), dtype=int)
+        double xval
     ind = k
     for i in range(n):
-        
-        ind = find_interval(t, k, x[i], ind, 0)
-        _deBoor_D(&t[0], x[i], k, ind, 0, &wrk[0])
+        xval = x[i]
 
-        data[(k + 1) * i : (k + 1) * (i + 1)] = wrk[:k + 1]
-        row_ind[(k + 1) * i : (k + 1) * (i + 1)] = i
-        col_ind[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k
-                                                            ,ind + 1
-                                                            ,dtype=int)
+        # Find correct interval. Note that interval >= 0 always as
+        # extrapolate=False and out of bound values are already dealt with in
+        # design_matrix
+        ind = find_interval(t, k, xval, ind, extrapolate)
+        _deBoor_D(&t[0], xval, k, ind, 0, &work[0])
 
-    return np.asarray(data), (row_ind, col_ind)
+        # data[(k + 1) * i : (k + 1) * (i + 1)] = work[:k + 1]
+        # indices[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k, ind + 1)
+        for j in range(k + 1):
+            m = (k + 1) * i + j
+            data[m] = work[j]
+            indices[m] = ind - k + j
+
+    return np.asarray(data), np.asarray(indices)

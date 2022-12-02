@@ -1,7 +1,7 @@
 """HiGHS Linear Optimization Methods
 
 Interface to HiGHS linear optimization software.
-https://www.maths.ed.ac.uk/hall/HiGHS/
+https://highs.dev/
 
 .. versionadded:: 1.5.0
 
@@ -46,14 +46,43 @@ from ._highs._highs_constants import (
 
     HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
 
-    HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_CHOOSE,
-    HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
-    HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
-    HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
+    HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_CHOOSE,
+    HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DANTZIG,
+    HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DEVEX,
+    HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
 
     HIGHS_VAR_TYPE_CONTINUOUS,
 )
 from scipy.sparse import csc_matrix, vstack, issparse
+
+
+def _highs_to_scipy_status_message(highs_status, highs_message):
+    """Converts HiGHS status number/message to SciPy status number/message"""
+
+    scipy_statuses_messages = {
+        None: (4, "HiGHS did not provide a status code. "),
+        MODEL_STATUS_NOTSET: (4, ""),
+        MODEL_STATUS_LOAD_ERROR: (4, ""),
+        MODEL_STATUS_MODEL_ERROR: (2, ""),
+        MODEL_STATUS_PRESOLVE_ERROR: (4, ""),
+        MODEL_STATUS_SOLVE_ERROR: (4, ""),
+        MODEL_STATUS_POSTSOLVE_ERROR: (4, ""),
+        MODEL_STATUS_MODEL_EMPTY: (4, ""),
+        MODEL_STATUS_RDOVUB: (4, ""),
+        MODEL_STATUS_REACHED_OBJECTIVE_TARGET: (4, ""),
+        MODEL_STATUS_OPTIMAL: (0, "Optimization terminated successfully. "),
+        MODEL_STATUS_REACHED_TIME_LIMIT: (1, "Time limit reached. "),
+        MODEL_STATUS_REACHED_ITERATION_LIMIT: (1, "Iteration limit reached. "),
+        MODEL_STATUS_INFEASIBLE: (2, "The problem is infeasible. "),
+        MODEL_STATUS_UNBOUNDED: (3, "The problem is unbounded. "),
+        MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE: (4, "The problem is unbounded "
+                                               "or infeasible. ")}
+    unrecognized = (4, "The HiGHS status code was not recognized. ")
+    scipy_status, scipy_message = (
+        scipy_statuses_messages.get(highs_status, unrecognized))
+    scipy_message = (f"{scipy_message}"
+                     f"(HiGHS Status {highs_status}: {highs_message})")
+    return scipy_status, scipy_message
 
 
 def _replace_inf(x):
@@ -86,6 +115,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    primal_feasibility_tolerance=None,
                    ipm_optimality_tolerance=None,
                    simplex_dual_edge_weight_strategy=None,
+                   mip_rel_gap=None,
+                   mip_max_nodes=None,
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
@@ -150,6 +181,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Curently, using ``None`` always selects ``'steepest-devex'``, but this
         may change as new options become available.
 
+    mip_max_nodes : int
+        The maximum number of nodes allotted to solve the problem; default is
+        the largest possible value for a ``HighsInt`` on the platform.
+        Ignored if not using the MIP solver.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing all
@@ -251,8 +286,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
             mip_gap : float
                 The difference between the final objective function value
-                and the final dual bound. Only present when `integrality`
-                is not `None`.
+                and the final dual bound, scaled by the final objective
+                function value. Only present when `integrality` is not
+                `None`.
 
     Notes
     -----
@@ -277,83 +313,12 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     simplex_dual_edge_weight_strategy_enum = _convert_to_highs_enum(
         simplex_dual_edge_weight_strategy,
         'simplex_dual_edge_weight_strategy',
-        choices={'dantzig': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
-                 'devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
-                 'steepest-devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_CHOOSE,
+        choices={'dantzig': HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DANTZIG,
+                 'devex': HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DEVEX,
+                 'steepest-devex': HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_CHOOSE,
                  'steepest':
-                 HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
+                 HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
                  None: None})
-
-    statuses = {
-        MODEL_STATUS_NOTSET: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_NOTSET}: HighsModelStatusNOTSET',
-        ),
-        MODEL_STATUS_LOAD_ERROR: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_LOAD_ERROR}: '
-            'HighsModelStatusLOAD_ERROR',
-        ),
-        MODEL_STATUS_MODEL_ERROR: (
-            2,
-            f'HiGHS Status Code {MODEL_STATUS_MODEL_ERROR}: '
-            'HighsModelStatusMODEL_ERROR',
-        ),
-        MODEL_STATUS_PRESOLVE_ERROR: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_PRESOLVE_ERROR}: '
-            'HighsModelStatusPRESOLVE_ERROR',
-        ),
-        MODEL_STATUS_SOLVE_ERROR: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_SOLVE_ERROR}: '
-            'HighsModelStatusSOLVE_ERROR',
-        ),
-        MODEL_STATUS_POSTSOLVE_ERROR: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_POSTSOLVE_ERROR}: '
-            'HighsModelStatusPOSTSOLVE_ERROR',
-        ),
-        MODEL_STATUS_MODEL_EMPTY: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_MODEL_EMPTY}: '
-            'HighsModelStatusMODEL_EMPTY',
-        ),
-        MODEL_STATUS_RDOVUB: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_RDOVUB}: '
-            'HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND',
-        ),
-        MODEL_STATUS_REACHED_OBJECTIVE_TARGET: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_REACHED_OBJECTIVE_TARGET}: '
-            'HighsModelStatusREACHED_OBJECTIVE_TARGET',
-        ),
-        MODEL_STATUS_INFEASIBLE: (
-            2,
-            "The problem is infeasible.",
-        ),
-        MODEL_STATUS_UNBOUNDED: (
-            3,
-            "The problem is unbounded.",
-        ),
-        MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE: (
-            4,
-            "The problem is unbounded or infeasible.",
-        ),
-        MODEL_STATUS_OPTIMAL: (
-            0,
-            "Optimization terminated successfully.",
-        ),
-        MODEL_STATUS_REACHED_TIME_LIMIT: (
-            1,
-            "Time limit reached.",
-        ),
-        MODEL_STATUS_REACHED_ITERATION_LIMIT: (
-            1,
-            "Iteration limit reached.",
-        ),
-    }
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
@@ -381,6 +346,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'log_to_console': disp,
+        'mip_max_nodes': mip_max_nodes,
         'output_flag': disp,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
         'simplex_dual_edge_weight_strategy':
@@ -389,6 +355,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'simplex_crash_strategy': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
         'ipm_iteration_limit': maxiter,
         'simplex_iteration_limit': maxiter,
+        'mip_rel_gap': mip_rel_gap,
     }
 
     # np.inf doesn't work; use very large constant
@@ -430,7 +397,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     solvers = {"ipm": "highs-ipm", "simplex": "highs-ds", None: "highs-ds"}
 
     # Convert to scipy-style status and message
-    status, message = statuses[res['status']]
+    highs_status = res.get('status', None)
+    highs_message = res.get('message', None)
+    status, message = _highs_to_scipy_status_message(highs_status,
+                                                     highs_message)
 
     x = np.array(res['x']) if 'x' in res else None
     sol = {'x': x,
@@ -461,7 +431,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            }
 
     if np.any(x) and integrality is not None:
-        res.update({
+        sol.update({
             'mip_node_count': res.get('mip_node_count', 0),
             'mip_dual_bound': res.get('mip_dual_bound', 0.0),
             'mip_gap': res.get('mip_gap', 0.0),

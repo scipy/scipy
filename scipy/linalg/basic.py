@@ -8,9 +8,9 @@ from . import _basic
 __all__ = [  # noqa: F822
     'solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
     'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
-    'pinv', 'pinv2', 'pinvh', 'matrix_balance', 'matmul_toeplitz',
+    'pinv', 'pinvh', 'matrix_balance', 'matmul_toeplitz',
     'atleast_1d', 'atleast_2d', 'get_flinalg_funcs', 'get_lapack_funcs',
-    'LinAlgError', 'LinAlgWarning', 'decomp', 'decomp_svd', 'levinson'
+    'LinAlgError', 'LinAlgWarning', 'levinson'
 ]
 
 

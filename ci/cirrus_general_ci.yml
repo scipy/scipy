@@ -1,0 +1,138 @@
+# Regular CI for testing musllinux, linux_aarch64 and macosx_arm64 natively
+# This only runs if cirrus is not building wheels. The rationale is that
+# cibuildwheel also runs tests during the wheel build process, so there's no need
+# to have duplication.
+
+modified_clone: &MODIFIED_CLONE
+  # makes sure that for a PR the CI runs against a merged main
+  clone_script: |
+    if [ -z "$CIRRUS_PR" ]; then
+      # if you're not in a PR then clone against the branch name that was pushed to.
+      git clone --recursive --branch=$CIRRUS_BRANCH https://x-access-token:${CIRRUS_REPO_CLONE_TOKEN}@github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
+      git reset --hard $CIRRUS_CHANGE_IN_REPO
+    else
+      # it's a PR so clone the main branch then merge the changes from the PR
+      git clone --recursive https://x-access-token:${CIRRUS_REPO_CLONE_TOKEN}@github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
+      git fetch origin pull/$CIRRUS_PR/head:pull/$CIRRUS_PR
+      git merge --no-commit pull/$CIRRUS_PR
+    fi
+
+
+linux_aarch64_test_task:
+  compute_engine_instance:
+    image_project: cirrus-images
+    image: family/docker-builder-arm64
+    architecture: arm64
+    platform: linux
+    cpu: 4
+    memory: 16G
+
+  <<: *MODIFIED_CLONE
+
+  pip_cache:
+    folder: ~/.cache/pip
+
+  test_script: |
+    apt-get update
+    apt-get install -y --no-install-recommends software-properties-common gcc g++ gfortran pkg-config
+    apt-get install -y --no-install-recommends libopenblas-dev libatlas-base-dev liblapack-dev
+
+    # When this task was written the linux image used ubuntu:jammy, for which
+    # python3.10 is the default. If required different versions can be
+    # installed using the deadsnakes apt repository.
+    # add-apt-repository -y ppa:deadsnakes/ppa
+    # apt-get update
+    # DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata
+
+    apt-get install -y python3.10 python3.10-venv
+    # python3.10 -m ensurepip --default-pip --user
+
+    ln -s $(which python3.10) python
+    export PATH=$PWD:$PATH
+
+    python -m pip install meson ninja numpy cython pybind11 pythran cython
+    python -m pip install click rich_click doit pydevtool
+    python -m pip install pytest pooch
+    
+    python dev.py test
+
+
+musllinux_amd64_test_task:
+  container:
+    image: alpine
+    cpu: 8
+    memory: 32G
+
+  env:
+    PATH: $PWD:$PATH
+
+  setup_script: |
+    # The alpine image doesn't have a git client. The first step is to get 
+    # git, then clone in the *MODIFIED_CLONE step. To make sure the clone step
+    # works we have to delete CIRRUS_WORKING_DIR (alpine doesn't have pushd).
+    # Because this is the default working directory we should cd to that folder
+    # a subsequent script.
+
+    apk update
+    apk add openblas-dev python3 python3-dev openblas build-base gfortran git py3-pip
+    ln -sf $(which python3.10) python
+    
+    _CWD=$PWD
+    echo "_CWD=$(_CWD)" >> $CIRRUS_ENV
+    cd $CIRRUS_WORKING_DIR/..
+    rm -rf $CIRRUS_WORKING_DIR
+
+  pip_cache:
+    folder: ~/.cache/pip
+
+  <<: *MODIFIED_CLONE
+
+  python_dependencies_script: |
+    cd $_CWD
+    python -m pip install cython
+    python -m pip install -vvv --upgrade numpy    
+    python -m pip install meson ninja pybind11 pythran pytest
+    python -m pip install click rich_click doit pydevtool pooch
+
+    # pin setuptools to get around https://github.com/scipy/scipy/issues/17475
+    python -m pip install "setuptools<65.6.0"
+
+  build_script: |
+    python dev.py build
+
+  test_script: |
+    set -xe -o
+    python dev.py test
+
+
+macos_arm64_test_task:
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-monterey-xcode:13.3.1
+
+  <<: *MODIFIED_CLONE
+
+  pip_cache:
+    folder: ~/.cache/pip
+
+  test_script: |
+    brew install python@3.10
+
+    export PATH=/opt/homebrew/opt/python@3.10/libexec/bin:$PATH
+    python --version
+
+    # used for installing OpenBLAS/gfortran
+    bash tools/wheels/cibw_before_build_macos.sh $PWD
+
+    export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
+    export CMAKE_PREFIX_PATH=/opt/arm64-builds/
+
+    pushd ~/
+    python -m venv scipy-dev
+    source scipy-dev/bin/activate
+    popd
+
+    python -m pip install meson ninja numpy cython pybind11 pythran cython
+    python -m pip install click rich_click doit pydevtool
+    python -m pip install pytest pooch
+    export DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib
+    python dev.py test

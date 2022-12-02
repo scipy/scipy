@@ -21,7 +21,7 @@
 * instructions.
 *
 * Copyright 2002-2008 by Agner Fog. 
-* GNU General Public License http://www.gnu.org/licenses/gpl.html
+* Released under SciPy's license with permission of Agner Fog; see license.txt
 *****************************************************************************/
 
 #include <string.h>                    // memcpy function

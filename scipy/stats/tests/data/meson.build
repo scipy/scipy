@@ -1,7 +1,7 @@
 py3.install_sources([
+    'fisher_exact_results_from_r.py',
     'studentized_range_mpmath_ref.json'
   ],
-  pure: false,
   subdir: 'scipy/stats/tests/data'
 )
 

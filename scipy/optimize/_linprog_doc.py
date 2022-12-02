@@ -14,6 +14,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                        primal_feasibility_tolerance=None,
                        ipm_optimality_tolerance=None,
                        simplex_dual_edge_weight_strategy=None,
+                       mip_rel_gap=None,
                        **unknown_options):
     r"""
     Linear programming: minimize a linear objective function subject to linear
@@ -80,7 +81,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
         are also available.
-    integrality : 1-D array, optional
+    integrality : 1-D array or int, optional
         Indicates the type of integrality constraint on each decision variable.
 
         ``0`` : Continuous variable; no integrality constraint.
@@ -95,6 +96,13 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         within `bounds` or take value ``0``.
 
         By default, all variables are continuous.
+
+        For mixed integrality constraints, supply an array of shape `c.shape`.
+        To infer a constraint on each decision variable from shorter inputs,
+        the argument will be broadcasted to `c.shape` using `np.broadcast_to`.
+
+        This argument is currently used only by the ``'highs'`` method and
+        ignored otherwise.
 
     Options
     -------
@@ -150,6 +158,10 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         Curently, ``None`` always selects ``'steepest-devex'``, but this
         may change as new options become available.
+    mip_rel_gap : double (default: None)
+        Termination criterion for MIP solver: solver will terminate when the
+        gap between the primal objective value and the dual objective bound,
+        scaled by the primal objective value, is <= mip_rel_gap.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing
@@ -266,7 +278,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ----------
     .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
            "HiGHS - high performance software for linear optimization."
-           Accessed 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+           https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
            119-142, 2018. DOI: 10.1007/s12532-017-0130-5
@@ -507,7 +519,7 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ----------
     .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
            "HiGHS - high performance software for linear optimization."
-           Accessed 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+           https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
            119-142, 2018. DOI: 10.1007/s12532-017-0130-5
@@ -739,7 +751,7 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ----------
     .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
            "HiGHS - high performance software for linear optimization."
-           Accessed 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+           https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
            119-142, 2018. DOI: 10.1007/s12532-017-0130-5
@@ -758,6 +770,11 @@ def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Linear programming: minimize a linear objective function subject to linear
     equality and inequality constraints using the interior-point method of
     [4]_.
+
+    .. deprecated:: 1.9.0
+        `method='interior-point'` will be removed in SciPy 1.11.0.
+        It is replaced by `method='highs'` because the latter is
+        faster and more robust.
 
     Linear programming solves problems of the following form:
 
@@ -1082,6 +1099,11 @@ def _linprog_rs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Linear programming: minimize a linear objective function subject to linear
     equality and inequality constraints using the revised simplex method.
 
+    .. deprecated:: 1.9.0
+        `method='revised simplex'` will be removed in SciPy 1.11.0.
+        It is replaced by `method='highs'` because the latter is
+        faster and more robust.
+
     Linear programming solves problems of the following form:
 
     .. math::
@@ -1262,6 +1284,11 @@ def _linprog_simplex_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     r"""
     Linear programming: minimize a linear objective function subject to linear
     equality and inequality constraints using the tableau-based simplex method.
+
+    .. deprecated:: 1.9.0
+        `method='simplex'` will be removed in SciPy 1.11.0.
+        It is replaced by `method='highs'` because the latter is
+        faster and more robust.
 
     Linear programming solves problems of the following form:
 

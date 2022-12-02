@@ -45,6 +45,7 @@ cdef extern from "unuran_callback.h":
 
     double pdf_thunk(double x, const unur_distr *distr) nogil
     double dpdf_thunk(double x, const unur_distr *distr) nogil
+    double logpdf_thunk(double x, const unur_distr *distr) nogil
     double cont_cdf_thunk(double x, const unur_distr *distr) nogil
     double pmf_thunk(int x, const unur_distr *distr) nogil
     double discr_cdf_thunk(int x, const unur_distr *distr) nogil
@@ -168,7 +169,9 @@ cdef class _URNG:
     cdef unur_urng *get_qurng(self, size, qmc_engine) except *:
         cdef unur_urng *unuran_urng
         self.i = 0
-        self.qrvs_array = np.ascontiguousarray(qmc_engine.random(size).ravel())
+        self.qrvs_array = np.ascontiguousarray(
+            qmc_engine.random(size).ravel().astype(np.float64)
+        )
         unuran_urng = unur_urng_new(<URNG_FUNCT>self._next_qdouble,
                                     <void *>self)
         return unuran_urng
@@ -221,7 +224,7 @@ cdef object _setup_unuran():
 _setup_unuran()
 
 
-cdef dict _unpack_dist(object dist, str dist_type, list meths,
+cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
                        list optional_meths = None):
     """
     Get the required methods/attributes from a Python class or object.
@@ -262,10 +265,16 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                     self.support = dist.support
                 def pdf(self, x):
                     # some distributions require array inputs.
-                    x = np.asarray((x-self.loc)/self.scale)
+                    x = np.atleast_1d((x-self.loc)/self.scale)
                     return max(0, self.dist.dist._pdf(x, *self.args)/self.scale)
-                def cdf(self, x):
+                def logpdf(self, x):
+                    # some distributions require array inputs.
                     x = np.asarray((x-self.loc)/self.scale)
+                    if self.pdf(x) > 0:
+                        return self.dist.dist._logpdf(x, *self.args) - np.log(self.scale)
+                    return -np.inf
+                def cdf(self, x):
+                    x = np.atleast_1d((x-self.loc)/self.scale)
                     res = self.dist.dist._cdf(x, *self.args)
                     if res < 0:
                         return 0
@@ -282,10 +291,10 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                     self.support = dist.support
                 def pmf(self, x):
                     # some distributions require array inputs.
-                    x = np.asarray(x-self.loc)
+                    x = np.atleast_1d(x-self.loc)
                     return max(0, self.dist.dist._pmf(x, *self.args))
                 def cdf(self, x):
-                    x = np.asarray(x-self.loc)
+                    x = np.atleast_1d(x-self.loc)
                     res = self.dist.dist._cdf(x, *self.args)
                     if res < 0:
                         return 0
@@ -293,12 +302,13 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                         return 1
                     return res
         dist = wrap_dist(dist)
-    for meth in meths:
-        if hasattr(dist, meth):
-            callbacks[meth] = getattr(dist, meth)
-        else:
-            msg = f"`{meth}` required but not found."
-            raise ValueError(msg)
+    if meths is not None:
+        for meth in meths:
+            if hasattr(dist, meth):
+                callbacks[meth] = getattr(dist, meth)
+            else:
+                msg = f"`{meth}` required but not found."
+                raise ValueError(msg)
     if optional_meths is not None:
         for meth in optional_meths:
             if hasattr(dist, meth):
@@ -325,6 +335,8 @@ cdef void _pack_distr(unur_distr *distr, dict callbacks) except *:
             unur_distr_cont_set_dpdf(distr, dpdf_thunk)
         if "cdf" in callbacks:
             unur_distr_cont_set_cdf(distr, cont_cdf_thunk)
+        if "logpdf" in callbacks:
+            unur_distr_cont_set_logpdf(distr, logpdf_thunk)
     else:
         if "pmf" in callbacks:
             unur_distr_discr_set_pmf(distr, pmf_thunk)
@@ -371,6 +383,26 @@ cdef double[::1] _validate_pv(pv) except *:
                              "one non-zero value.")
     # return a contiguous memory view of the PV
     return pv_view
+
+
+def _validate_qmc_input(qmc_engine, d):
+    # Input validation for `qmc_engine` and `d`
+    # Error messages for invalid `d` are raised by QMCEngine
+    # we could probably use a stats.qmc.check_qrandom_state
+    if isinstance(qmc_engine, stats.qmc.QMCEngine):
+        if d is not None and qmc_engine.d != d:
+            message = "`d` must be consistent with dimension of `qmc_engine`."
+            raise ValueError(message)
+        d = qmc_engine.d if d is None else d
+    elif qmc_engine is None:
+        d = 1 if d is None else d
+        qmc_engine = stats.qmc.Halton(d)
+    else:
+        message = ("`qmc_engine` must be an instance of "
+                    "`scipy.stats.qmc.QMCEngine` or `None`.")
+        raise ValueError(message)
+
+    return qmc_engine, d
 
 
 cdef class Method:
@@ -746,6 +778,7 @@ cdef class TransformedDensityRejection(Method):
     Examples
     --------
     >>> from scipy.stats.sampling import TransformedDensityRejection
+    >>> import numpy as np
 
     Suppose we have a density:
 
@@ -775,7 +808,7 @@ cdef class TransformedDensityRejection(Method):
     ...         return 1-x*x
     ...     def dpdf(self, x):
     ...         return -2*x
-    ... 
+    ...
     >>> dist = MyDist()
     >>> rng = TransformedDensityRejection(dist, domain=(-1, 1),
     ...                                   random_state=urng)
@@ -791,7 +824,7 @@ cdef class TransformedDensityRejection(Method):
     ...         return -2*x
     ...     def support(self):
     ...         return (-1, 1)
-    ... 
+    ...
     >>> dist = MyDist()
     >>> rng = TransformedDensityRejection(dist, random_state=urng)
 
@@ -860,14 +893,14 @@ cdef class TransformedDensityRejection(Method):
                 raise UNURANError(self._messages.get())
             _pack_distr(self.distr, self.callbacks)
 
+            if domain is not None:
+                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
+                                                                 domain[1]))
+
             if mode is not None:
                 self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
             if center is not None:
                 self._check_errorcode(unur_distr_cont_set_center(self.distr, center))
-
-            if domain is not None:
-                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
-                                                                 domain[1]))
 
             self.par = unur_tdr_new(self.distr)
             if self.par == NULL:
@@ -957,17 +990,18 @@ cdef class TransformedDensityRejection(Method):
         --------
         >>> from scipy.stats.sampling import TransformedDensityRejection
         >>> from scipy.stats import norm
+        >>> import numpy as np
         >>> from math import exp
-        >>> 
+        >>>
         >>> class MyDist:
         ...     def pdf(self, x):
         ...         return exp(-0.5 * x**2)
         ...     def dpdf(self, x):
         ...         return -x * exp(-0.5 * x**2)
-        ... 
+        ...
         >>> dist = MyDist()
         >>> rng = TransformedDensityRejection(dist)
-        >>> 
+        >>>
         >>> rng.ppf_hat(0.5)
         -0.00018050266342393984
         >>> norm.ppf(0.5)
@@ -1064,6 +1098,7 @@ cdef class SimpleRatioUniforms(Method):
     Examples
     --------
     >>> from scipy.stats.sampling import SimpleRatioUniforms
+    >>> import numpy as np
 
     Suppose we have the normal distribution:
 
@@ -1150,12 +1185,13 @@ cdef class SimpleRatioUniforms(Method):
                 raise UNURANError(self._messages.get())
             _pack_distr(self.distr, self.callbacks)
 
-            if mode is not None:
-                self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
-
             if domain is not None:
                 self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
                                                                  domain[1]))
+
+            if mode is not None:
+                self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
+
             self._check_errorcode(unur_distr_cont_set_pdfarea(self.distr, pdf_area))
 
             self.par = unur_srou_new(self.distr)
@@ -1227,18 +1263,25 @@ cdef class NumericalInversePolynomial(Method):
     * The algorithm has problems when the distribution has heavy tails (as then the
       inverse CDF becomes very steep at 0 or 1) and the requested u-resolution is
       very small. E.g., the Cauchy distribution is likely to show this problem when
-      the requested u-resolution is less then 1.e-12. 
+      the requested u-resolution is less then 1.e-12.
 
 
     Parameters
     ----------
     dist : object
-        An instance of a class with a ``pdf`` and optionally a ``cdf`` method.
+        An instance of a class with a ``pdf`` or ``logpdf`` method,
+        optionally a ``cdf`` method.
 
         * ``pdf``: PDF of the distribution. The signature of the PDF is expected to be:
           ``def pdf(self, x: float) -> float``, i.e., the PDF should accept a Python
           float and return a Python float. It doesn't need to integrate to 1,
-          i.e., the PDF doesn't need to be normalized.
+          i.e., the PDF doesn't need to be normalized. This method is optional,
+          but either ``pdf`` or ``logpdf`` need to be specified. If both are given,
+          ``logpdf`` is used.
+        * ``logpdf``: The log of the PDF of the distribution. The signature is
+          the same as for ``pdf``. Similarly, log of the normalization constant
+          of the PDF can be ignored. This method is optional, but either ``pdf`` or
+          ``logpdf`` need to be specified. If both are given, ``logpdf`` is used.
         * ``cdf``: CDF of the distribution. This method is optional. If provided, it
           enables the calculation of "u-error". See `u_error`. Must have the same
           signature as the PDF.
@@ -1279,13 +1322,6 @@ cdef class NumericalInversePolynomial(Method):
         If `random_state` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
 
-    Notes
-    -----
-    This method does not work for densities with constant parts (e.g. `uniform`
-    distribution) and segmentation faults if such a density is passed to the
-    constructor. It is recommended to use the composition method to sample from
-    such distributions.
-
     References
     ----------
     .. [1] Derflinger, Gerhard, Wolfgang Hörmann, and Josef Leydold. "Random variate
@@ -1299,13 +1335,14 @@ cdef class NumericalInversePolynomial(Method):
     --------
     >>> from scipy.stats.sampling import NumericalInversePolynomial
     >>> from scipy.stats import norm
+    >>> import numpy as np
 
     To create a generator to sample from the standard normal distribution, do:
 
     >>> class StandardNormal:
     ...    def pdf(self, x):
     ...        return np.exp(-0.5 * x*x)
-    ... 
+    ...
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInversePolynomial(dist, random_state=urng)
@@ -1341,7 +1378,7 @@ cdef class NumericalInversePolynomial(Method):
     ...        return np.exp(-0.5 * x*x)
     ...    def cdf(self, x):
     ...        return ndtr(x)
-    ... 
+    ...
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInversePolynomial(dist, random_state=urng)
@@ -1416,7 +1453,12 @@ cdef class NumericalInversePolynomial(Method):
             unur_par *par
             unur_gen *rng
 
-        self.callbacks = _unpack_dist(dist, "cont", meths=["pdf"], optional_meths=["cdf"])
+        # either logpdf or pdf are required: use meths = None and check separately
+        self.callbacks = _unpack_dist(dist, "cont", meths=None, optional_meths=["cdf", "pdf", "logpdf"])
+        if not ("pdf" in self.callbacks or "logpdf" in self.callbacks):
+            msg = ("Either of the methods `pdf` or `logpdf` must be specified "
+                   "for the distribution object `dist`.")
+            raise ValueError(msg)
         def _callback_wrapper(x, name):
             return self.callbacks[name](x)
         self._callback_wrapper = _callback_wrapper
@@ -1430,14 +1472,14 @@ cdef class NumericalInversePolynomial(Method):
                 raise UNURANError(self._messages.get())
             _pack_distr(self.distr, self.callbacks)
 
+            if domain is not None:
+                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
+                                                                 domain[1]))
+
             if mode is not None:
                 self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
             if center is not None:
                 self._check_errorcode(unur_distr_cont_set_center(self.distr, center))
-
-            if domain is not None:
-                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
-                                                                 domain[1]))
 
             self.par = unur_pinv_new(self.distr)
             if self.par == NULL:
@@ -1614,6 +1656,100 @@ cdef class NumericalInversePolynomial(Method):
         return UError(max_error, mae)
 
 
+    def qrvs(self, size=None, d=None, qmc_engine=None):
+        """
+        qrvs(size=None, d=None, qmc_engine=None)
+
+        Quasi-random variates of the given RV.
+
+        The `qmc_engine` is used to draw uniform quasi-random variates, and
+        these are converted to quasi-random variates of the given RV using
+        inverse transform sampling.
+
+        Parameters
+        ----------
+        size : int, tuple of ints, or None; optional
+            Defines shape of random variates array. Default is ``None``.
+        d : int or None, optional
+            Defines dimension of uniform quasi-random variates to be
+            transformed. Default is ``None``.
+        qmc_engine : scipy.stats.qmc.QMCEngine(d=1), optional
+            Defines the object to use for drawing
+            quasi-random variates. Default is ``None``, which uses
+            `scipy.stats.qmc.Halton(1)`.
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Quasi-random variates. See Notes for shape information.
+
+        Notes
+        -----
+        The shape of the output array depends on `size`, `d`, and `qmc_engine`.
+        The intent is for the interface to be natural, but the detailed rules
+        to achieve this are complicated.
+
+        - If `qmc_engine` is ``None``, a `scipy.stats.qmc.Halton` instance is
+          created with dimension `d`. If `d` is not provided, ``d=1``.
+        - If `qmc_engine` is not ``None`` and `d` is ``None``, `d` is
+          determined from the dimension of the `qmc_engine`.
+        - If `qmc_engine` is not ``None`` and `d` is not ``None`` but the
+          dimensions are inconsistent, a ``ValueError`` is raised.
+        - After `d` is determined according to the rules above, the output
+          shape is ``tuple_shape + d_shape``, where:
+
+              - ``tuple_shape = tuple()`` if `size` is ``None``,
+              - ``tuple_shape = (size,)`` if `size` is an ``int``,
+              - ``tuple_shape = size`` if `size` is a sequence,
+              - ``d_shape = tuple()`` if `d` is ``None`` or `d` is 1, and
+              - ``d_shape = (d,)`` if `d` is greater than 1.
+
+        The elements of the returned array are part of a low-discrepancy
+        sequence. If `d` is 1, this means that none of the samples are truly
+        independent. If `d` > 1, each slice ``rvs[..., i]`` will be of a
+        quasi-independent sequence; see `scipy.stats.qmc.QMCEngine` for
+        details. Note that when `d` > 1, the samples returned are still those
+        of the provided univariate distribution, not a multivariate
+        generalization of that distribution.
+
+        """
+        qmc_engine, d = _validate_qmc_input(qmc_engine, d)
+        # `rvs` is flexible about whether `size` is an int or tuple, so this
+        # should be, too.
+        try:
+            if size is None:
+                tuple_size = (1, )
+            else:
+                tuple_size = tuple(size)
+        except TypeError:
+            tuple_size = (size,)
+
+        cdef unur_urng *unuran_urng
+        cdef double[::1] qrvs_view
+        N = 1 if size is None else np.prod(size)
+        N = N*d
+        qrvs_view = np.empty(N, dtype=np.float64)
+        _lock.acquire()
+        try:
+            # the call below must be under a lock
+            unuran_urng = self._urng_builder.get_qurng(size=N, qmc_engine=qmc_engine)
+            unur_chg_urng(self.rng, unuran_urng)
+            self._rvs_cont(qrvs_view)
+            self.set_random_state(self.numpy_rng)
+            qrvs = np.asarray(qrvs_view).reshape(tuple_size + (d,))
+        finally:
+            _lock.release()
+
+        # Output reshaping for user convenience
+        if size is None:
+            return qrvs.squeeze()[()]
+        else:
+            if d == 1:
+                return qrvs.reshape(tuple_size)
+            else:
+                return qrvs.reshape(tuple_size + (d,))
+
+
 cdef class NumericalInverseHermite(Method):
     """
     NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, construction_points=None, random_state=None)
@@ -1720,10 +1856,6 @@ cdef class NumericalInverseHermite(Method):
     refinement could exceed the maximum allowed number of intervals, which is
     100000.
 
-    This method accepted a `tol` parameter to specify the maximum tolerable u-error
-    but it has now been deprecated in the favor of `u_resolution`. `tol` will be
-    removed completely in a future release.
-
     References
     ----------
     .. [1] Hörmann, Wolfgang, and Josef Leydold. "Continuous random variate
@@ -1738,6 +1870,7 @@ cdef class NumericalInverseHermite(Method):
     >>> from scipy.stats.sampling import NumericalInverseHermite
     >>> from scipy.stats import norm, genexpon
     >>> from scipy.special import ndtr
+    >>> import numpy as np
 
     To create a generator to sample from the standard normal distribution, do:
 
@@ -1746,7 +1879,7 @@ cdef class NumericalInverseHermite(Method):
     ...        return 1/np.sqrt(2*np.pi) * np.exp(-x**2 / 2)
     ...     def cdf(self, x):
     ...        return ndtr(x)
-    ... 
+    ...
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInverseHermite(dist, random_state=urng)
@@ -1800,7 +1933,7 @@ cdef class NumericalInverseHermite(Method):
     ...        return -1/np.sqrt(2*np.pi) * x * np.exp(-x**2 / 2)
     ...     def cdf(self, x):
     ...        return ndtr(x)
-    ... 
+    ...
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInverseHermite(dist, order=5, random_state=urng)
@@ -1867,12 +2000,10 @@ cdef class NumericalInverseHermite(Method):
                   domain=None,
                   order=3,
                   u_resolution=1e-12,
-                  tol=None,
                   construction_points=None,
-                  max_intervals=100000,
                   random_state=None):
-        domain, order, u_resolution = self._validate_args(dist, domain, order, max_intervals,
-                                                          u_resolution, tol, construction_points)
+        domain, order, u_resolution = self._validate_args(dist, domain, order,
+                                                          u_resolution, construction_points)
 
         # save all the arguments for pickling support
         self._kwargs = {
@@ -1880,8 +2011,6 @@ cdef class NumericalInverseHermite(Method):
             'domain': domain,
             'order': order,
             'u_resolution': u_resolution,
-            'tol': tol,
-            'max_intervals': max_intervals,
             'construction_points': construction_points,
             'random_state': random_state
         }
@@ -1914,30 +2043,17 @@ cdef class NumericalInverseHermite(Method):
 
             self._check_errorcode(unur_hinv_set_order(self.par, order))
             self._check_errorcode(unur_hinv_set_u_resolution(self.par, u_resolution))
-            self._check_errorcode(unur_hinv_set_max_intervals(self.par, max_intervals))
             self._check_errorcode(unur_hinv_set_cpoints(self.par, &self.construction_points_array[0],
                                                         len(self.construction_points_array)))
             self._set_rng(random_state)
         finally:
             _lock.release()
 
-    def _validate_args(self, dist, domain, order, max_intervals, u_resolution, tol,
-                       construction_points):
+    def _validate_args(self, dist, domain, order, u_resolution, construction_points):
         domain = _validate_domain(domain, dist)
         # UNU.RAN raises warning and sets a default value. Prefer an error instead.
         if order not in {1, 3, 5}:
             raise ValueError("`order` must be either 1, 3, or 5.")
-        if int(max_intervals) != max_intervals or max_intervals <= 1:
-            raise ValueError("`max_intervals' must be an integer greater than 1.")
-        if max_intervals != 100000:
-            warnings.warn("`max_intervals` has been deprecated. "
-                          "It will be completely removed in a future release.",
-                          DeprecationWarning)
-        if tol is not None:
-            warnings.warn("`tol` has been deprecated and replaced with `u_resolution`. "
-                          "It will be completely removed in a future release.",
-                          DeprecationWarning)
-            u_resolution = tol
         u_resolution = float(u_resolution)
         self.construction_points_array = np.ascontiguousarray(construction_points,
                                                               dtype=np.float64)
@@ -2082,22 +2198,7 @@ cdef class NumericalInverseHermite(Method):
         generalization of that distribution.
 
         """
-        # Input validation for `qmc_engine` and `d`
-        # Error messages for invalid `d` are raised by QMCEngine
-        # we could probably use a stats.qmc.check_qrandom_state
-        if isinstance(qmc_engine, stats.qmc.QMCEngine):
-            message = "`d` must be consistent with dimension of `qmc_engine`."
-            if d is not None and qmc_engine.d != d:
-                raise ValueError(message)
-            d = qmc_engine.d if d is None else d
-        elif qmc_engine is None:
-            d = 1 if d is None else d
-            qmc_engine = stats.qmc.Halton(d)
-        else:
-            message = ("`qmc_engine` must be an instance of "
-                       "`scipy.stats.qmc.QMCEngine` or `None`.")
-            raise ValueError(message)
-
+        qmc_engine, d = _validate_qmc_input(qmc_engine, d)
         # `rvs` is flexible about whether `size` is an int or tuple, so this
         # should be, too.
         try:
@@ -2231,6 +2332,7 @@ cdef class DiscreteAliasUrn(Method):
     Examples
     --------
     >>> from scipy.stats.sampling import DiscreteAliasUrn
+    >>> import numpy as np
 
     To create a random number generator using a probability vector, use:
 
@@ -2273,7 +2375,7 @@ cdef class DiscreteAliasUrn(Method):
     ...         return self.p**x * (1-self.p)**(self.n-x)
     ...     def support(self):
     ...         return (0, self.n)
-    ... 
+    ...
     >>> n, p = 10, 0.2
     >>> dist = Binomial(n, p)
     >>> rng = DiscreteAliasUrn(dist, random_state=urng)
@@ -2494,6 +2596,7 @@ cdef class DiscreteGuideTable(Method):
     Examples
     --------
     >>> from scipy.stats.sampling import DiscreteGuideTable
+    >>> import numpy as np
 
     To create a random number generator using a probability vector, use:
 

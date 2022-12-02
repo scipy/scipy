@@ -8,8 +8,24 @@ Build a npz containing all data files in the directory.
 import os
 import numpy as np
 import argparse
+from stat import ST_MTIME
 
-from distutils.util import newer  # type: ignore
+
+def newer(source, target):
+    """
+    Return true if 'source' exists and is more recently modified than
+    'target', or if 'source' exists and 'target' doesn't.  Return false if
+    both exist and 'target' is the same age or younger than 'source'.
+    """
+    if not os.path.exists(source):
+        raise ValueError("file '%s' does not exist" % os.path.abspath(source))
+    if not os.path.exists(target):
+        return 1
+
+    mtime1 = os.stat(source)[ST_MTIME]
+    mtime2 = os.stat(target)[ST_MTIME]
+
+    return mtime1 > mtime2
 
 
 def main():

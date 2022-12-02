@@ -19,7 +19,6 @@ __all__ = [  # noqa: F822
     'atleast_2d',
     'comb',
     'dfitpack',
-    'fitpack',
     'interp1d',
     'interp2d',
     'interpn',

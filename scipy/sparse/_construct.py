@@ -23,7 +23,7 @@ from ._dia import dia_matrix
 from ._base import issparse
 
 
-def spdiags(data, diags, m, n, format=None):
+def spdiags(data, diags, m=None, n=None, format=None):
     """
     Return a sparse matrix from diagonals.
 
@@ -37,8 +37,10 @@ def spdiags(data, diags, m, n, format=None):
         * k = 0  the main diagonal
         * k > 0  the kth upper diagonal
         * k < 0  the kth lower diagonal
-    m, n : int
-        Shape of the result
+    m, n : int, tuple, optional
+        Shape of the result. If `n` is None and `m` is a given tuple,
+        the shape is this tuple. If omitted, the matrix is square and
+        its shape is len(data[0]).
     format : str, optional
         Format of the result. By default (format=None) an appropriate sparse
         matrix format is returned. This choice is subject to change.
@@ -50,6 +52,7 @@ def spdiags(data, diags, m, n, format=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import spdiags
     >>> data = np.array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
     >>> diags = np.array([0, -1, 2])
@@ -60,6 +63,10 @@ def spdiags(data, diags, m, n, format=None):
            [0, 0, 3, 4]])
 
     """
+    if m is None and n is None:
+        m = n = len(data[0])
+    elif n is None:
+        m, n = m
     return dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
 
@@ -240,6 +247,7 @@ def eye(m, n=None, k=0, dtype=float, format=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import sparse
     >>> sparse.eye(3).toarray()
     array([[ 1.,  0.,  0.],
@@ -293,6 +301,7 @@ def kron(A, B, format=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import sparse
     >>> A = sparse.csr_matrix(np.array([[0, 2], [5, 0]]))
     >>> B = sparse.csr_matrix(np.array([[1, 2], [3, 4]]))
@@ -459,8 +468,16 @@ def _stack_along_minor_axis(blocks, axis):
     # Do the stacking
     indptr_list = [b.indptr for b in blocks]
     data_cat = np.concatenate([b.data for b in blocks])
-    idx_dtype = get_index_dtype(arrays=indptr_list,
-                                maxval=max(data_cat.size, constant_dim))
+
+    # Need to check if any indices/indptr, would be too large post-
+    # concatenation for np.int32:
+    # - The max value of indices is the output array's stacking-axis length - 1
+    # - The max value in indptr is the number of non-zero entries. This is
+    #   exceedingly unlikely to require int64, but is checked out of an
+    #   abundance of caution.
+    sum_dim = sum(b.shape[axis] for b in blocks)
+    nnz = sum(len(b.indices) for b in blocks)
+    idx_dtype = get_index_dtype(maxval=max(sum_dim - 1, nnz))
     stack_dim_cat = np.array([b.shape[axis] for b in blocks], dtype=idx_dtype)
     if data_cat.size > 0:
         indptr_cat = np.concatenate(indptr_list).astype(idx_dtype)
@@ -477,7 +494,6 @@ def _stack_along_minor_axis(blocks, axis):
         indices = np.empty(0, dtype=idx_dtype)
         data = np.empty(0, dtype=data_cat.dtype)
 
-    sum_dim = stack_dim_cat.sum()
     if axis == 0:
         return csc_matrix((data, indices, indptr),
                           shape=(sum_dim, constant_dim))

@@ -1,8 +1,10 @@
-import math
 import threading
 import pickle
 import pytest
 from copy import deepcopy
+import platform
+import sys
+import math
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from numpy.lib import NumpyVersion
@@ -47,6 +49,12 @@ all_methods = [
     ("SimpleRatioUniforms", {"dist": StandardNormal(), "mode": 0})
 ]
 
+if (sys.implementation.name == 'pypy'
+        and sys.implementation.version < (7, 3, 10)):
+    # changed in PyPy for v7.3.10
+    floaterr = r"unsupported operand type for float\(\): 'list'"
+else:
+    floaterr = r"must be real number, not list"
 # Make sure an internal error occurs in UNU.RAN when invalid callbacks are
 # passed. Moreover, different generators throw different error messages.
 # So, in case of an `UNURANError`, we do not validate the error message.
@@ -54,7 +62,7 @@ bad_pdfs_common = [
     # Negative PDF
     (lambda x: -x, UNURANError, r"..."),
     # Returning wrong type
-    (lambda x: [], TypeError, r"must be real number, not list"),
+    (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
     (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
     # Infinite value returned => Overflow error.
@@ -65,19 +73,33 @@ bad_pdfs_common = [
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
 
-# Make sure an internal error occurs in UNU.RAN when invalid callbacks are
-# passed. Moreover, different generators throw different error messages.
-# So, in case of an `UNURANError`, we do not validate the messages.
+
+# same approach for dpdf
 bad_dpdf_common = [
     # Infinite value returned.
     (lambda x: np.inf, UNURANError, r"..."),
     # NaN value => internal error in UNU.RAN
     (lambda x: np.nan, UNURANError, r"..."),
     # Returning wrong type
-    (lambda x: [], TypeError, r"must be real number, not list"),
+    (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
     (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
     # signature of dPDF wrong
+    (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
+]
+
+
+# same approach for logpdf
+bad_logpdfs_common = [
+    # Returning wrong type
+    (lambda x: [], TypeError, floaterr),
+    # Undefined name inside the function
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
+    # Infinite value returned => Overflow error.
+    (lambda x: np.inf, UNURANError, r"..."),
+    # NaN value => internal error in UNU.RAN
+    (lambda x: np.nan, UNURANError, r"..."),
+    # signature of logpdf wrong
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
 
@@ -156,26 +178,14 @@ def test_random_state(method, kwargs):
     rvs2 = rng2.rvs(100)
     assert_equal(rvs1, rvs2)
 
-    # RandomState seed for old numpy
-    if NumpyVersion(np.__version__) < '1.19.0':
-        seed1 = np.random.RandomState(123)
-        seed2 = 123
-        rng1 = Method(**kwargs, random_state=seed1)
-        rng2 = Method(**kwargs, random_state=seed2)
-        assert_equal(rng1.rvs(100), rng2.rvs(100))
-        rvs11 = rng1.rvs(550)
-        rvs12 = rng1.rvs(50)
-        rvs2 = rng2.rvs(600)
-        assert_equal(rvs11, rvs2[:550])
-        assert_equal(rvs12, rvs2[550:])
-    else:  # Generator seed for new NumPy
-        # when a RandomState is given, it should take the bitgen_t
-        # member of the class and create a Generator instance.
-        seed1 = np.random.RandomState(np.random.MT19937(123))
-        seed2 = np.random.Generator(np.random.MT19937(123))
-        rng1 = Method(**kwargs, random_state=seed1)
-        rng2 = Method(**kwargs, random_state=seed2)
-        assert_equal(rng1.rvs(100), rng2.rvs(100))
+    # Generator seed for new NumPy
+    # when a RandomState is given, it should take the bitgen_t
+    # member of the class and create a Generator instance.
+    seed1 = np.random.RandomState(np.random.MT19937(123))
+    seed2 = np.random.Generator(np.random.MT19937(123))
+    rng1 = Method(**kwargs, random_state=seed1)
+    rng2 = Method(**kwargs, random_state=seed2)
+    assert_equal(rng1.rvs(100), rng2.rvs(100))
 
 
 def test_set_random_state():
@@ -310,6 +320,123 @@ def check_discr_samples(rng, pv, mv_ex):
     obs_freqs[:freqs.size] = freqs
     pval = chisquare(obs_freqs, pv).pvalue
     assert pval > 0.1
+
+
+def test_warning_center_not_in_domain():
+    # UNURAN will warn if the center provided or the one computed w/o the
+    # domain is outside of the domain
+    msg = "102 : center moved into domain of distribution"
+    with pytest.warns(RuntimeWarning, match=msg):
+        NumericalInversePolynomial(StandardNormal(), center=0, domain=(3, 5))
+    with pytest.warns(RuntimeWarning, match=msg):
+        NumericalInversePolynomial(StandardNormal(), domain=(3, 5))
+
+
+@pytest.mark.parametrize('method', ["SimpleRatioUniforms",
+                                    "NumericalInversePolynomial",
+                                    "TransformedDensityRejection"])
+def test_error_mode_not_in_domain(method):
+    # UNURAN raises an error if the mode is not in the domain
+    # the behavior is different compared to the case that center is not in the
+    # domain. mode is supposed to be the exact value, center can be an
+    # approximate value
+    Method = getattr(stats.sampling, method)
+    msg = "17 : mode not in domain"
+    with pytest.raises(UNURANError, match=msg):
+        Method(StandardNormal(), mode=0, domain=(3, 5))
+
+
+@pytest.mark.parametrize('method', ["NumericalInverseHermite",
+                                    "NumericalInversePolynomial"])
+class TestQRVS:
+    def test_input_validation(self, method):
+        match = "`qmc_engine` must be an instance of..."
+        with pytest.raises(ValueError, match=match):
+            Method = getattr(stats.sampling, method)
+            gen = Method(StandardNormal())
+            gen.qrvs(qmc_engine=0)
+
+        # issues with QMCEngines and old NumPy
+        Method = getattr(stats.sampling, method)
+        gen = Method(StandardNormal())
+
+        match = "`d` must be consistent with dimension of `qmc_engine`."
+        with pytest.raises(ValueError, match=match):
+            gen.qrvs(d=3, qmc_engine=stats.qmc.Halton(2))
+
+    qrngs = [None, stats.qmc.Sobol(1, seed=0), stats.qmc.Halton(3, seed=0)]
+    # `size=None` should not add anything to the shape, `size=1` should
+    sizes = [(None, tuple()), (1, (1,)), (4, (4,)),
+             ((4,), (4,)), ((2, 4), (2, 4))]  # type: ignore
+    # Neither `d=None` nor `d=1` should add anything to the shape
+    ds = [(None, tuple()), (1, tuple()), (3, (3,))]
+
+    @pytest.mark.parametrize('qrng', qrngs)
+    @pytest.mark.parametrize('size_in, size_out', sizes)
+    @pytest.mark.parametrize('d_in, d_out', ds)
+    def test_QRVS_shape_consistency(self, qrng, size_in, size_out,
+                                    d_in, d_out, method):
+        w32 = sys.platform == "win32" and platform.architecture()[0] == "32bit"
+        if w32 and method == "NumericalInversePolynomial":
+            pytest.xfail("NumericalInversePolynomial.qrvs fails for Win "
+                         "32-bit")
+
+        dist = StandardNormal()
+        Method = getattr(stats.sampling, method)
+        gen = Method(dist)
+
+        # If d and qrng.d are inconsistent, an error is raised
+        if d_in is not None and qrng is not None and qrng.d != d_in:
+            match = "`d` must be consistent with dimension of `qmc_engine`."
+            with pytest.raises(ValueError, match=match):
+                gen.qrvs(size_in, d=d_in, qmc_engine=qrng)
+            return
+
+        # Sometimes d is really determined by qrng
+        if d_in is None and qrng is not None and qrng.d != 1:
+            d_out = (qrng.d,)
+
+        shape_expected = size_out + d_out
+
+        qrng2 = deepcopy(qrng)
+        qrvs = gen.qrvs(size=size_in, d=d_in, qmc_engine=qrng)
+        if size_in is not None:
+            assert qrvs.shape == shape_expected
+
+        if qrng2 is not None:
+            uniform = qrng2.random(np.prod(size_in) or 1)
+            qrvs2 = stats.norm.ppf(uniform).reshape(shape_expected)
+            assert_allclose(qrvs, qrvs2, atol=1e-12)
+
+    def test_QRVS_size_tuple(self, method):
+        # QMCEngine samples are always of shape (n, d). When `size` is a tuple,
+        # we set `n = prod(size)` in the call to qmc_engine.random, transform
+        # the sample, and reshape it to the final dimensions. When we reshape,
+        # we need to be careful, because the _columns_ of the sample returned
+        # by a QMCEngine are "independent"-ish, but the elements within the
+        # columns are not. We need to make sure that this doesn't get mixed up
+        # by reshaping: qrvs[..., i] should remain "independent"-ish of
+        # qrvs[..., i+1], but the elements within qrvs[..., i] should be
+        # transformed from the same low-discrepancy sequence.
+
+        dist = StandardNormal()
+        Method = getattr(stats.sampling, method)
+        gen = Method(dist)
+
+        size = (3, 4)
+        d = 5
+        qrng = stats.qmc.Halton(d, seed=0)
+        qrng2 = stats.qmc.Halton(d, seed=0)
+
+        uniform = qrng2.random(np.prod(size))
+
+        qrvs = gen.qrvs(size=size, d=d, qmc_engine=qrng)
+        qrvs2 = stats.norm.ppf(uniform)
+
+        for i in range(d):
+            sample = qrvs[..., i]
+            sample2 = qrvs2[:, i].reshape(size)
+            assert_allclose(sample, sample2, atol=1e-12)
 
 
 class TestTransformedDensityRejection:
@@ -683,15 +810,11 @@ class TestNumericalInversePolynomial:
     very_slow_dists = ['studentized_range', 'trapezoid', 'triang', 'vonmises',
                        'levy_stable', 'kappa4', 'ksone', 'kstwo', 'levy_l',
                        'gausshyper', 'anglit']
-    # for some reason, UNU.RAN segmentation faults for the uniform.
-    fatal_fail_dists = ['uniform']
-    # fails for unbounded PDFs
-    unbounded_pdf_fail_dists = ['beta']
     # for these distributions, some assertions fail due to minor
     # numerical differences. They can be avoided either by changing
     # the seed or by increasing the u_resolution.
     fail_dists = ['ncf', 'pareto', 'chi2', 'fatiguelife', 'halfgennorm',
-                  'gilbrat', 'lognorm', 'ncx2', 't']
+                  'gibrat', 'lognorm', 'ncx2', 't']
 
     @pytest.mark.xslow
     @pytest.mark.parametrize("distname, params", distcont)
@@ -700,10 +823,6 @@ class TestNumericalInversePolynomial:
             pytest.skip(f"PINV too slow for {distname}")
         if distname in self.fail_dists:
             pytest.skip(f"PINV fails for {distname}")
-        if distname in self.unbounded_pdf_fail_dists:
-            pytest.skip("PINV fails for unbounded PDFs.")
-        if distname in self.fatal_fail_dists:
-            pytest.xfail(f"PINV segmentation faults for {distname}")
         dist = (getattr(stats, distname)
                 if isinstance(distname, str)
                 else distname)
@@ -718,6 +837,14 @@ class TestNumericalInversePolynomial:
         class dist:
             pass
         dist.pdf = pdf
+        with pytest.raises(err, match=msg):
+            NumericalInversePolynomial(dist, domain=[0, 5])
+
+    @pytest.mark.parametrize("logpdf, err, msg", bad_logpdfs_common)
+    def test_bad_logpdf(self, logpdf, err, msg):
+        class dist:
+            pass
+        dist.logpdf = logpdf
         with pytest.raises(err, match=msg):
             NumericalInversePolynomial(dist, domain=[0, 5])
 
@@ -813,6 +940,16 @@ class TestNumericalInversePolynomial:
                                        u_resolution=u_resolution)
 
     def test_bad_args(self):
+
+        class BadDist:
+            def cdf(self, x):
+                return stats.norm._cdf(x)
+
+        dist = BadDist()
+        msg = r"Either of the methods `pdf` or `logpdf` must be specified"
+        with pytest.raises(ValueError, match=msg):
+            rng = NumericalInversePolynomial(dist)
+
         dist = StandardNormal()
         rng = NumericalInversePolynomial(dist)
         msg = r"`sample_size` must be greater than or equal to 1000."
@@ -828,6 +965,26 @@ class TestNumericalInversePolynomial:
         msg = r"Exact CDF required but not found."
         with pytest.raises(ValueError, match=msg):
             rng.u_error()
+
+    def test_logpdf_pdf_consistency(self):
+        # 1. check that PINV works with pdf and logpdf only
+        # 2. check that generated ppf is the same (up to a small tolerance)
+
+        class MyDist:
+            pass
+
+        # create genrator from dist with only pdf
+        dist_pdf = MyDist()
+        dist_pdf.pdf = lambda x: math.exp(-x*x/2)
+        rng1 = NumericalInversePolynomial(dist_pdf)
+
+        # create dist with only logpdf
+        dist_logpdf = MyDist()
+        dist_logpdf.logpdf = lambda x: -x*x/2
+        rng2 = NumericalInversePolynomial(dist_logpdf)
+
+        q = np.linspace(1e-5, 1-1e-5, num=100)
+        assert_allclose(rng1.ppf(q), rng2.ppf(q))
 
 
 class TestNumericalInverseHermite:
@@ -901,9 +1058,7 @@ class TestNumericalInverseHermite:
         with pytest.raises(err, match=msg):
             NumericalInverseHermite(StandardNormal(), domain=domain)
 
-    @pytest.mark.xslow
-    @pytest.mark.parametrize(("distname", "shapes"), distcont)
-    def test_basic_all_scipy_dists(self, distname, shapes):
+    def basic_test_all_scipy_dists(self, distname, shapes):
         slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
         fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
                       'norminvgauss', 'genhyperbolic', 'studentized_range',
@@ -919,12 +1074,7 @@ class TestNumericalInverseHermite:
         np.random.seed(0)
 
         dist = getattr(stats, distname)(*shapes)
-
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "overflow encountered")
-            sup.filter(RuntimeWarning, "divide by zero")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            fni = NumericalInverseHermite(dist)
+        fni = NumericalInverseHermite(dist)
 
         x = np.random.rand(10)
         p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
@@ -932,6 +1082,18 @@ class TestNumericalInverseHermite:
 
         assert p_tol < 1e-8
         assert u_tol < 1e-12
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.xslow
+    @pytest.mark.parametrize(("distname", "shapes"), distcont)
+    def test_basic_all_scipy_dists(self, distname, shapes):
+        # if distname == "truncnorm":
+        #     pytest.skip("Tested separately")
+        self.basic_test_all_scipy_dists(distname, shapes)
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    def test_basic_truncnorm_gh17155(self):
+        self.basic_test_all_scipy_dists("truncnorm", (0.1, 2))
 
     def test_input_validation(self):
         match = r"`order` must be either 1, 3, or 5."
@@ -947,26 +1109,8 @@ class TestNumericalInverseHermite:
             NumericalInverseHermite(StandardNormal(),
                                     u_resolution='ekki')
 
-        match = "`max_intervals' must be..."
-        with pytest.raises(ValueError, match=match):
-            NumericalInverseHermite(StandardNormal(), max_intervals=-1)
-
-        match = "`qmc_engine` must be an instance of..."
-        with pytest.raises(ValueError, match=match):
-            fni = NumericalInverseHermite(StandardNormal())
-            fni.qrvs(qmc_engine=0)
-
-        if NumpyVersion(np.__version__) >= '1.18.0':
-            # issues with QMCEngines and old NumPy
-            fni = NumericalInverseHermite(StandardNormal())
-
-            match = "`d` must be consistent with dimension of `qmc_engine`."
-            with pytest.raises(ValueError, match=match):
-                fni.qrvs(d=3, qmc_engine=stats.qmc.Halton(2))
-
     rngs = [None, 0, np.random.RandomState(0)]
-    if NumpyVersion(np.__version__) >= '1.18.0':
-        rngs.append(np.random.default_rng(0))  # type: ignore
+    rngs.append(np.random.default_rng(0))  # type: ignore
     sizes = [(None, tuple()), (8, (8,)), ((4, 5, 6), (4, 5, 6))]
 
     @pytest.mark.parametrize('rng', rngs)
@@ -978,84 +1122,13 @@ class TestNumericalInverseHermite:
         rng2 = deepcopy(rng)
         rvs = fni.rvs(size=size_in, random_state=rng)
         if size_in is not None:
-            assert(rvs.shape == size_out)
+            assert rvs.shape == size_out
 
         if rng2 is not None:
             rng2 = check_random_state(rng2)
             uniform = rng2.uniform(size=size_in)
             rvs2 = stats.norm.ppf(uniform)
             assert_allclose(rvs, rvs2)
-
-    if NumpyVersion(np.__version__) >= '1.18.0':
-        qrngs = [None, stats.qmc.Sobol(1, seed=0), stats.qmc.Halton(3, seed=0)]
-    else:
-        qrngs = []
-    # `size=None` should not add anything to the shape, `size=1` should
-    sizes = [(None, tuple()), (1, (1,)), (4, (4,)),
-             ((4,), (4,)), ((2, 4), (2, 4))]  # type: ignore
-    # Neither `d=None` nor `d=1` should add anything to the shape
-    ds = [(None, tuple()), (1, tuple()), (3, (3,))]
-
-    @pytest.mark.parametrize('qrng', qrngs)
-    @pytest.mark.parametrize('size_in, size_out', sizes)
-    @pytest.mark.parametrize('d_in, d_out', ds)
-    def test_QRVS(self, qrng, size_in, size_out, d_in, d_out):
-        dist = StandardNormal()
-        fni = NumericalInverseHermite(dist)
-
-        # If d and qrng.d are inconsistent, an error is raised
-        if d_in is not None and qrng is not None and qrng.d != d_in:
-            match = "`d` must be consistent with dimension of `qmc_engine`."
-            with pytest.raises(ValueError, match=match):
-                fni.qrvs(size_in, d=d_in, qmc_engine=qrng)
-            return
-
-        # Sometimes d is really determined by qrng
-        if d_in is None and qrng is not None and qrng.d != 1:
-            d_out = (qrng.d,)
-
-        shape_expected = size_out + d_out
-
-        qrng2 = deepcopy(qrng)
-        qrvs = fni.qrvs(size=size_in, d=d_in, qmc_engine=qrng)
-        if size_in is not None:
-            assert(qrvs.shape == shape_expected)
-
-        if qrng2 is not None:
-            uniform = qrng2.random(np.prod(size_in) or 1)
-            qrvs2 = stats.norm.ppf(uniform).reshape(shape_expected)
-            assert_allclose(qrvs, qrvs2, atol=1e-12)
-
-    def test_QRVS_size_tuple(self):
-        # QMCEngine samples are always of shape (n, d). When `size` is a tuple,
-        # we set `n = prod(size)` in the call to qmc_engine.random, transform
-        # the sample, and reshape it to the final dimensions. When we reshape,
-        # we need to be careful, because the _columns_ of the sample returned
-        # by a QMCEngine are "independent"-ish, but the elements within the
-        # columns are not. We need to make sure that this doesn't get mixed up
-        # by reshaping: qrvs[..., i] should remain "independent"-ish of
-        # qrvs[..., i+1], but the elements within qrvs[..., i] should be
-        # transformed from the same low-discrepancy sequence.
-        if NumpyVersion(np.__version__) <= '1.18.0':
-            pytest.skip("QMC doesn't play well with old NumPy")
-
-        dist = StandardNormal()
-        fni = NumericalInverseHermite(dist)
-
-        size = (3, 4)
-        d = 5
-        qrng = stats.qmc.Halton(d, seed=0)
-        qrng2 = stats.qmc.Halton(d, seed=0)
-
-        uniform = qrng2.random(np.prod(size))
-
-        qrvs = fni.qrvs(size=size, d=d, qmc_engine=qrng)
-        qrvs2 = stats.norm.ppf(uniform)
-
-        for i in range(d):
-            sample = qrvs[..., i]
-            sample2 = qrvs2[:, i].reshape(size)
-            assert_allclose(sample, sample2, atol=1e-12)
 
     def test_inaccurate_CDF(self):
         # CDF function with inaccurate tail cannot be inverted; see gh-13319
@@ -1126,12 +1199,6 @@ class TestNumericalInverseHermite:
         max_error, mae = rng.u_error()
         assert max_error < 1e-14
         assert mae <= max_error
-
-    def test_deprecations(self):
-        msg = ("`tol` has been deprecated and replaced with `u_resolution`. "
-               "It will be completely removed in a future release.")
-        with pytest.warns(DeprecationWarning, match=msg):
-            NumericalInverseHermite(StandardNormal(), tol=1e-12)
 
 
 class TestDiscreteGuideTable:
