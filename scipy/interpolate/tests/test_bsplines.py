@@ -4,8 +4,9 @@ from pytest import raises as assert_raises
 import pytest
 
 from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
-        make_lsq_spline, _bspl, splev, splrep, splprep, splder, splantider,
-         sproot, splint, insert, CubicSpline, make_smoothing_spline)
+                               make_lsq_spline, _bspl, splev, splrep, splprep,
+                               splder, splantider, sproot, splint, insert,
+                               CubicSpline, make_smoothing_spline)
 import scipy.linalg as sl
 
 from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
@@ -1550,13 +1551,13 @@ class TestSmoothingSpline:
         >>> np.savetxt('y.csv', y)
 
         We obtain the result of performing the GCV smoothing splines
-        package (by Woltring, gcvspl) on the sample data points 
+        package (by Woltring, gcvspl) on the sample data points
         using its version for Octave (https://github.com/srkuberski/gcvspl).
         In order to use this implementation, one should clone the repository
         and open the folder in Octave.
         In Octave, we load up ``x`` and ``y`` (generated from Python code
         above):
-    
+
         >>> x = csvread('x.csv');
         >>> y = csvread('y.csv');
 
@@ -1566,7 +1567,7 @@ class TestSmoothingSpline:
         >>> mex gcvsplmex.c gcvspl.c
         >>> mex spldermex.c gcvspl.c
 
-        The first function computes the vector of unknowns from the dataset 
+        The first function computes the vector of unknowns from the dataset
         (x, y) while the second one evaluates the spline in certain points
         with known vector of coefficients.
 
@@ -1584,7 +1585,7 @@ class TestSmoothingSpline:
         # data points
         x = data['x']
         y = data['y']
-        
+
         y_GCVSPL = data['y_GCVSPL']
         y_compr = make_smoothing_spline(x, y)(x)
 

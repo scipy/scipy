@@ -1590,7 +1590,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
     lam : float
         An optimal from the GCV criteria point of view regularization
         parameter.
-    
+
     Notes
     -----
     No checks are performed.
@@ -1625,19 +1625,19 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
 
         Notes
         -----
-        As far as the matrices ``X`` and ``Y`` are 5-banded, their product 
+        As far as the matrices ``X`` and ``Y`` are 5-banded, their product
         :math:`X^T W Y` is 7-banded. It is also symmetric, so we can store only
         unique diagonals.
 
         """
         # compute W Y
         W_Y = np.copy(Y)
-        
+
         W_Y[2] *= w
         for i in range(2):
             W_Y[i, 2 - i:] *= w[:-2 + i]
             W_Y[3 + i, :-1 - i] *= w[1 + i:]
-        
+
         n = X.shape[1]
         res = np.zeros((4, n))
         for i in range(n):
@@ -1661,7 +1661,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         B : array, shape (4, n)
             3 unique bands of the symmetric matrix that is an inverse to ``A``.
             The first row is filled with zeros.
-        
+
         Notes
         -----
         The algorithm is based on the cholesky decomposition and, therefore,
@@ -1672,16 +1672,17 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
 
         References
         ----------
-        .. [1] M. F. Hutchinson and F. R. de Hoog, “Smoothing noisy data with spline 
-            functions,” Numerische Mathematik, vol. 47, no. 1, pp. 99–106, 1985.
+        .. [1] M. F. Hutchinson and F. R. de Hoog, “Smoothing noisy data with
+            spline functions,” Numerische Mathematik, vol. 47, no. 1,
+            pp. 99–106, 1985.
             :doi:`10.1007/BF01389878`
 
         """
 
-        def find_b_inv_elem(i, l, U, D, B):
+        def find_b_inv_elem(i, j, U, D, B):
             rng = min(3, n - i - 1)
             rng_sum = 0.
-            if l == 0:
+            if j == 0:
                 # use 2-nd formula from [1]
                 for k in range(1, rng + 1):
                     rng_sum -= U[-k - 1, i + k] * B[-k - 1, i + k]
@@ -1690,10 +1691,10 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
             else:
                 # use 1-st formula from [1]
                 for k in range(1, rng + 1):
-                    diag = abs(k - l)
-                    ind = i + min(k, l)
+                    diag = abs(k - j)
+                    ind = i + min(k, j)
                     rng_sum -= U[-k - 1, i + k] * B[-diag - 1, ind + diag]
-                B[-l - 1, i + l] = rng_sum
+                B[-j - 1, i + j] = rng_sum
 
         U = cholesky_banded(A)
         for i in range(2, 5):
@@ -1705,8 +1706,8 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
 
         B = np.zeros(shape=(4, n))
         for i in range(n - 1, -1, -1):
-            for l in range(min(3, n - i - 1), -1, -1):
-                find_b_inv_elem(i, l, U, D, B)
+            for j in range(min(3, n - i - 1), -1, -1):
+                find_b_inv_elem(i, j, U, D, B)
         # the first row contains garbage and should be removed
         B[0] = [0.] * n
         return B
@@ -1714,7 +1715,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
     def _gcv(lam, X, XtWX, wE, XtE):
         r"""
         Computes the generalized cross-validation criteria [1].
-        
+
         Parameters
         ----------
         lam : float, (:math:`\lambda \geq 0`)
@@ -1727,13 +1728,13 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
             Matrix :math:`W^{-1} E` stored in LAPACK banded storage.
         XtE : array, shape (4, n)
             Product :math:`X^T E` stored in LAPACK banded storage.
-        
+
         Returns
         -------
         res : float
             Value of the GCV criteria with the regularization parameter
             :math:`\lambda`.
-        
+
         Notes
         -----
         Criteria is computed from the formula (1.3.2) [3]:
@@ -1754,11 +1755,12 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
             for observational data, Philadelphia, Pennsylvania: Society for
             Industrial and Applied Mathematics, 1990, pp. 45–65.
             :doi:`10.1137/1.9781611970128`
-        .. [2] M. F. Hutchinson and F. R. de Hoog, “Smoothing noisy data with spline 
-            functions,” Numerische Mathematik, vol. 47, no. 1, pp. 99–106, 1985.
+        .. [2] M. F. Hutchinson and F. R. de Hoog, “Smoothing noisy data with
+            spline functions,” Numerische Mathematik, vol. 47, no. 1,
+            pp. 99–106, 1985.
             :doi:`10.1007/BF01389878`
         .. [3] E. Zemlyanoy, "Generalized cross-validation smoothing splines",
-            BSc thesis, 2022. Might be available (in Russian) 
+            BSc thesis, 2022. Might be available (in Russian)
             `here <https://www.hse.ru/ba/am/students/diplomas/620910604>`_
 
         """
@@ -1784,10 +1786,10 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
             denom = (1 - sum(sum(tr)) / n)**2
         except LinAlgError:
             # cholesky decomposition cannot be performed
-            raise ValueError('Seems like the problem is ill-posed')            
-        
+            raise ValueError('Seems like the problem is ill-posed')
+
         res = numer / denom
-        
+
         return res
 
     n = X.shape[1]
@@ -1795,7 +1797,9 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
     XtWX = compute_banded_symmetric_XT_W_Y(X, w, X)
     XtE = compute_banded_symmetric_XT_W_Y(X, w, wE)
 
-    fun = lambda lam: _gcv(lam, X, XtWX, wE, XtE)
+    def fun(lam):
+        return _gcv(lam, X, XtWX, wE, XtE)
+
     gcv_est = minimize_scalar(fun, bounds=(0, n), method='Bounded')
     if gcv_est.success:
         return gcv_est.x
@@ -1816,7 +1820,7 @@ def _coeff_of_divided_diff(x):
     -------
     res : array_like, shape (n,)
         Coefficients of the divided difference.
-    
+
     Notes
     -----
     Vector ``x`` should have unique elements, otherwise an error division by
@@ -1845,10 +1849,10 @@ def make_smoothing_spline(x, y, w=None, lam=None):
 
     A smoothing spline is found as a solution to the regularized weighted
     linear regression problem:
-    
+
     .. math::
 
-        \sum\limits_{i=1}^n w_i\abs{y_i - f(x_i)}^2 + 
+        \sum\limits_{i=1}^n w_i\abs{y_i - f(x_i)}^2 +
         \lambda\int\limits_{x_1}^{x_n} (f^{(2)}(u))^2 \diff u
 
     where :math:`f` is a spline function, :math:`w` is a vector of weights and
@@ -1871,15 +1875,15 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     lam : float, (:math:`\lambda \geq 0`), optional
         Regularization parameter. If ``lam`` is None, then it is found from
         the GCV criteria. Default is None.
-    
+
     Returns
     -------
     func : a BSpline object.
-        A callable representing a spline in the B-spline basis 
+        A callable representing a spline in the B-spline basis
         as a solution of the problem of smoothing splines using
         the GCV criteria [1] in case ``lam`` is None, otherwise using the
         given parameter ``lam``.
-    
+
     Notes
     -----
     This algorithm is a clean room reimplementation of the algorithm
@@ -1932,7 +1936,7 @@ def make_smoothing_spline(x, y, w=None, lam=None):
 
     >>> from scipy.interpolate import make_smoothing_spline
     >>> spl = make_smoothing_spline(x, y)
-    
+
     Plot both
 
     >>> import matplotlib.pyplot as plt
@@ -1950,7 +1954,7 @@ def make_smoothing_spline(x, y, w=None, lam=None):
 
     if any(x[1:] - x[:-1] <= 0):
         raise ValueError('``x`` should be an ascending array')
-    
+
     if x.ndim != 1 or y.ndim != 1 or x.shape[0] != y.shape[0]:
         raise ValueError('``x`` and ``y`` should be one dimensional and the'
                          ' same size')
