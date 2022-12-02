@@ -1084,9 +1084,10 @@ product of :math:`x` with the window :math:`w` which is translated by the
 time :math:`t` and then modulated (i.e., frequency-shifted) by the frequency
 :math:`f`.
 For working with sampled signals :math:`x[k] := x(kT)`, :math:`k\in\IZ` with
-sampling interval :math:`T`, the discrete version, i.e., only evaluating the
-STFT at discrete grid points :math:`S[q, p] := S(q \Delta f, p\Delta t)`,
-:math:`q,p\in\IZ`, needs to be used. It can be formulated as
+sampling interval :math:`T` (being the inverse of the sampling frequency `fs`),
+the discrete version, i.e., only evaluating the STFT at discrete grid points
+:math:`S[q, p] := S(q \Delta f, p\Delta t)`, :math:`q,p\in\IZ`, needs to be
+used. It can be formulated as
 
 .. math::
     :label: eq_dSTFT
@@ -1095,9 +1096,10 @@ STFT at discrete grid points :math:`S[q, p] := S(q \Delta f, p\Delta t)`,
               \quad q,p\in\IZ\ ,
 
 with the time interval :math:`\Delta t := h T`, :math:`h\in\IN` (see `delta_t`)
-being expressed as the `hop` size of :math:`h` samples and the frequency interval
-:math:`\Delta f := 1 / (N T)` (see `delta_f`), which makes it FFT compatible.
-:math:`w[m] := w(mT)` , :math:`m\in\IZ` is the sampled window function.
+being expressed as the `hop` size of :math:`h` samples and the frequency
+interval :math:`\Delta f := 1 / (N T)` (see `delta_f`), which makes it FFT
+compatible. :math:`w[m] := w(mT)` , :math:`m\in\IZ` is the sampled window
+function.
 
 To be more aligned to the implementation of
 :class:`ShortTimeFFT <scipy.signal.ShortTimeFFT>`, it makes sense to
@@ -1175,7 +1177,7 @@ Sliding Windows
 This subsection discusses how the sliding window is indexed in the
 :class:`ShortTimeFFT <scipy.signal.ShortTimeFFT>` by means of an example:
 Consider a window of length 6 with a `hop` interval of two and a sampling
-interval `T` of one, e.g., ``ShortTimeFFT(np.ones(6), 2, T=1)``.
+interval `T` of one, e.g., ``ShortTimeFFT(np.ones(6), 2, fs=1)``.
 The following image schematically depicts the first four window positions also
 named time slices:
 

@@ -21,6 +21,7 @@ import numpy as np
 
 import scipy.fft as fft_lib
 from scipy.signal import detrend
+from .windows import get_window
 
 try:  # Workaround needed for Numpy versions < 1.21
     from numpy.typing import NDArray
@@ -113,11 +114,15 @@ class ShortTimeFFT:
         The window must be  real- or complex-valued 1d array.
     hop : int
         The increment in samples, by which the window is shifted in each step.
-    T : float
-        Sampling interval of input signal and window.
+    fs : float
+        Sampling frequency of input signal and window. Its relation to the
+        sampling interval `T` is ``T = 1 / fs``.
     fft_typ : 'twosided', 'centered', 'onesided', 'onesided2X'
         Type of FFT to be used (default 'onesided').
         See property `fft_typ` for details.
+    mfft: int | None
+        Length of the FFT used, if a zero padded FFT is desired.
+        If ``None`` (default), the length of the window `win` is used.
     dual_win : NDArray | None
         The dual window of `win`. If set to ``None``, it is calculated if
         needed.
@@ -153,7 +158,7 @@ class ShortTimeFFT:
 
     >>> g_std = 8  # standard deviation for Gaussian window in samples
     >>> w = gaussian(50, std=g_std, sym=True)  # symmetric Gaussian window
-    >>> SFT = ShortTimeFFT(w, hop=10, T=T_x, mfft=200, scale_to='magnitude')
+    >>> SFT = ShortTimeFFT(w, hop=10, fs=1/T_x, mfft=200, scale_to='magnitude')
     >>> Sx = SFT.stft(x)  # perform the STFT
 
     In the plot, the time extent of the signal `x` is marked by vertical dashed
@@ -227,7 +232,7 @@ class ShortTimeFFT:
     _hop: int  # Step of STFT in number of samples
 
     # mutable attributes:
-    _T: float  # sampling interval of input signal and window
+    _fs: float  # sampling frequency of input signal and window
     _fft_typ: FFT_TYP_TYPE = 'onesided'  # Type of FFT to use
     _mfft: int  # length of FFT used - defaults to len(win)
     _scaling: Optional[Literal['magnitude', 'psd']] = None  # Scaling of _win
@@ -238,7 +243,7 @@ class ShortTimeFFT:
     _fac_psd: Optional[float] = None
     _lower_border_end: Optional[Tuple[int, int]] = None
 
-    def __init__(self, win: NDArray, hop: int, T: float,
+    def __init__(self, win: NDArray, hop: int, fs: float,
                  fft_typ: FFT_TYP_TYPE = 'onesided',
                  mfft: Optional[int] = None,
                  dual_win: Optional[NDArray] = None,
@@ -250,7 +255,7 @@ class ShortTimeFFT:
             raise ValueError("Parameter win must have finite entries!")
         if not (hop >= 1 and isinstance(hop, int)):
             raise ValueError(f"Parameter {hop=} is not an integer >= 1!")
-        self._win, self._hop, self.T = win, hop, T
+        self._win, self._hop, self.fs = win, hop, fs
 
         self.mfft = len(win) if mfft is None else mfft
 
@@ -267,7 +272,7 @@ class ShortTimeFFT:
         self.fft_typ, self.phase_shift = fft_typ, phase_shift
 
     @classmethod
-    def from_dual(cls, dual_win: NDArray, hop: int, T: float,
+    def from_dual(cls, dual_win: NDArray, hop: int, fs: float,
                   fft_typ: FFT_TYP_TYPE = 'onesided',
                   mfft: Optional[int] = None,
                   scale_to: Optional[Literal['magnitude', 'psd']] = None,
@@ -314,7 +319,7 @@ class ShortTimeFFT:
         ...
         >>> axx[0].set_title(r"Windows for hop$\in\{10, 40, 49\}$")
         >>> for c_, h_ in enumerate([10, 40, 49]):
-        ...     SFT = ShortTimeFFT.from_dual(d_win, h_, T)
+        ...     SFT = ShortTimeFFT.from_dual(d_win, h_, 1/T)
         ...     axx[c_].plot(t + h_ * T, SFT.win, 'k--', alpha=.3, label=None)
         ...     axx[c_].plot(t - h_ * T, SFT.win, 'k:', alpha=.3, label=None)
         ...     axx[c_].plot(t, SFT.win, f'C{c_+1}',
@@ -339,7 +344,74 @@ class ShortTimeFFT:
         `hop` sizes.
         """
         win = _calc_dual_canonical_window(dual_win, hop)
-        return cls(win, hop, T, fft_typ, mfft, dual_win, scale_to, phase_shift)
+        return cls(win, hop, fs, fft_typ, mfft, dual_win, scale_to, phase_shift)
+
+    @classmethod
+    def from_window(cls, win_param: Union[str, Tuple, float],
+                    fs: float, nperseg: int, noverlap: int,
+                    fft_typ: FFT_TYP_TYPE = 'onesided',
+                    mfft: Optional[int] = None,
+                    scale_to: Optional[Literal['magnitude', 'psd']] = None,
+                    phase_shift: Optional[int] = 0):
+        """Instantiate `ShortTimeFFT` by using `get_window`.
+
+        This method `get_window` is used to create a symmetric window of length
+        `nperseg`. The parameter names `fs`, `noverlap`, and `nperseg` are used
+        here, since they more inline with other classical STFT libraries.
+
+        Parameters
+        ----------
+        win_param: Union[str, Tuple, float],
+            Parameters passed to `get_window`. For windows with no parameters,
+            it may be a string (e.g., ``'hann'``), for parametrized windows a
+            tuple, (e.g., ``('gaussian', 2.)``) or a single float specifying
+            the shape parameter of a kaiser window (i.e. ``4.``  and
+            ``('kaiser', 4.)`` are equal. See `get_window` for more details.
+        fs : flaot
+            Sampling frequency of input signal. Its relation to the
+            sampling interval `T` is ``T = 1 / fs``.
+        nperseg: int
+            Window length in samples, which corresponds to the `m_num`.
+        noverlap:
+            Window overlap in samples. It relates to the `hop` increment by
+            ``hop = npsereg - noverlap``.
+        fft_typ : 'twosided', 'centered', 'onesided', 'onesided2X'
+            Type of FFT to be used (default 'onesided').
+            See property `fft_typ` for details.
+        mfft: int | None
+            Length of the FFT used, if a zero padded FFT is desired.
+            If ``None`` (default), the length of the window `win` is used.
+        scale_to : 'magnitude', 'psd' | None
+            If not ``None`` (default) the window function is scaled, so each STFT
+            column represents  either a 'magnitude' or a power spectral density
+            ('psd') spectrum. This parameter sets the property `scaling` to the
+            same value. See method `scale_to` for details.
+        phase_shift : int | None
+            If set, add a linear phase `phase_shift/mfft * f` to each frequency
+            `f`. The default value 0 ensures that there is no phase shift on the
+            zeroth slice (in which t=0 is centered). See property `phase_shift` for
+            more details.
+
+        Examples
+        --------
+        The following instances ``SFT0`` and ``SFT1`` are equivalent:
+
+        >>> from scipy.signal import ShortTimeFFT, get_window
+        >>> nperseg = 9  # window length
+        >>> w = get_window(('gaussian', 2.), nperseg, fftbins=False)
+        >>> fs = 128  # sampling frequency
+        >>> hop = 3  # increment of STFT time slice
+        >>> SFT0 = ShortTimeFFT(w, hop, fs=fs)
+        >>> SFT1 = ShortTimeFFT.from_window(('gaussian', 2.), fs, nperseg,
+        ...                                 noverlap=nperseg-hop)
+
+        See Also
+        --------
+        get_window: Return a window of a given length and type.
+        """
+        win = get_window(win_param, nperseg, fftbins=False)  # symmetric window
+        return cls(win, hop=nperseg-noverlap, fs=fs, fft_typ=fft_typ,
+                   mfft=mfft, scale_to=scale_to, phase_shift=phase_shift)
 
     @property
     def win(self) -> NDArray:
@@ -379,7 +451,7 @@ class ShortTimeFFT:
 
         A ``ValueError`` is raised if it is set to a non-positive value.
         """
-        return self._T
+        return 1 / self._fs
 
     @T.setter
     def T(self, v: float):
@@ -389,7 +461,7 @@ class ShortTimeFFT:
         """
         if not (v > 0):
             raise ValueError(f"Sampling interval T={v} must be positive!")
-        self._T = v
+        self._fs = 1 / v
 
     @property
     def fs(self) -> float:
@@ -398,7 +470,7 @@ class ShortTimeFFT:
         The sampling frequency is the inverse of the sampling interval `T`.
         A ``ValueError`` is raised if it is set to a non-positive value.
         """
-        return 1/self.T
+        return self._fs
 
     @fs.setter
     def fs(self, v: float):
@@ -407,7 +479,9 @@ class ShortTimeFFT:
         The sampling frequency is the inverse of the sampling interval `T`.
         A ``ValueError`` is raised if it is set to a non-positive value.
         """
-        self.T = 1 / v
+        if not (v > 0):
+            raise ValueError(f"Sampling frequency fs={v} must be positive!")
+        self._fs = v
 
     @property
     def fft_typ(self) -> FFT_TYP_TYPE:
@@ -613,7 +687,7 @@ class ShortTimeFFT:
                     xs[..., :-k_] = np.tile(x[..., :1], -k_)
                 elif padding == 'even':
                     xs[..., :-k_] = x[..., -k_:0:-1]
-                elif padding == 'odd':
+                else:  # padding == 'odd':
                     xs[..., :-k_] = (np.tile(2*x[..., :1], -k_) -
                                      x[..., -k_:0:-1])
                 xs[..., -k_:] = x[..., :self.m_num+k_]
@@ -630,7 +704,7 @@ class ShortTimeFFT:
                     xs[..., k1_:] = np.tile(x[..., -1:], k2_)
                 elif padding == 'even':
                     xs[..., k1_:] = x[..., -2:-k2_-2:-1]
-                elif padding == 'odd':
+                else:  # padding == 'odd':
                     xs[..., k1_:] = (np.tile(2*x[..., -1:], k2_) -
                                      x[..., -2:-k2_ - 2:-1])
                 yield xs
@@ -782,7 +856,7 @@ class ShortTimeFFT:
 
         >>> g_std = 12  # standard deviation for Gaussian window in samples
         >>> win = gaussian(50, std=g_std, sym=True)  # symmetric Gaussian wind.
-        >>> SFT = ShortTimeFFT(win, hop=2, T=T_x, mfft=800, scale_to='psd')
+        >>> SFT = ShortTimeFFT(win, hop=2, fs=1/T_x, mfft=800, scale_to='psd')
         >>> Sx2 = SFT.spectrogram(x)  # calculate absolute square of STFT
 
         The plot is logarithmically scaled as the power spectral density in dB.
