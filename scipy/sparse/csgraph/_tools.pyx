@@ -253,6 +253,7 @@ def csgraph_to_dense(csgraph, null_value=0):
     This illustrates the difference in behavior:
 
     >>> from scipy.sparse import csr_matrix, csgraph
+    >>> import numpy as np
     >>> data = np.array([2, 3])
     >>> indices = np.array([1, 1])
     >>> indptr = np.array([0, 2, 2])

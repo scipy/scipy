@@ -576,6 +576,7 @@ class SHGO:
             'trust-ncg': ['jac', 'hess', 'hessp'],
             'trust-krylov': ['jac', 'hess', 'hessp'],
             'trust-exact': ['jac', 'hess'],
+            'trust-constr': ['jac', 'hess', 'hessp'],
         }
         method = self.minimizer_kwargs['method']
         self.min_solver_args += solver_args[method.lower()]
@@ -682,7 +683,17 @@ class SHGO:
         None
 
         """
+        # Update 'options' dict passed to optimize.minimize
+        # Do this first so we don't mutate `options` below.
         self.minimizer_kwargs['options'].update(options)
+
+        # Ensure that 'jac', 'hess', and 'hessp' are passed directly to
+        # `minimize` as keywords, not as part of its 'options' dictionary.
+        for opt in ['jac', 'hess', 'hessp']:
+            if opt in self.minimizer_kwargs['options']:
+                self.minimizer_kwargs[opt] = (
+                    self.minimizer_kwargs['options'].pop(opt))
+
         # Default settings:
         self.minimize_every_iter = options.get('minimize_every_iter', False)
 

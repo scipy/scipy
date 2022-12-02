@@ -103,7 +103,63 @@ controlled by the ``fill_value`` keyword parameter:
     numerical artifacts. Consider rescaling the data before interpolating.
 
 
-Finally, we note that if you are dealing with data on Cartesian grids with
-integer coordinates, e.g. resampling image data, these routines may not be the
-optimal choice. Consider using `scipy.ndimage.map_coordinates` instead.
+.. _tutorial-interpolate_cartesian-grids:
 
+Uniformly spaced data
+=====================
+
+If you are dealing with data on Cartesian grids with integer coordinates, e.g.
+resampling image data, these routines may not be the optimal choice. Consider
+using `scipy.ndimage.map_coordinates` instead.
+
+For floating-point data on grids with equal spacing, ``map_coordinates`` can
+be easily wrapped into a `RegularGridInterpolator` look-alike. The following is
+a bare-bones example originating from `the Johanness Buchner's
+'regulargrid' package <https://github.com/JohannesBuchner/regulargrid/>`_::
+
+    class CartesianGridInterpolator:
+        def __init__(self, points, values, method='linear'):
+            self.limits = np.array([[min(x), max(x)] for x in points])
+            self.values = np.asarray(values, dtype=float)
+            self.order = {'linear': 1, 'cubic': 3, 'quintic': 5}[method]
+
+        def __call__(self, xi):
+            """
+            `xi` here is an array-like (an array or a list) of points.
+
+            Each "point" is an ndim-dimensional array_like, representing
+            the coordinates of a point in ndim-dimensional space.
+            """
+            # transpose the xi array into the ``map_coordinates`` convention
+            # which takes coordinates of a point along columns of a 2D array.
+            xi = np.asarray(xi).T
+
+            # convert from data coordinates to pixel coordinates
+            ns = self.values.shape
+            coords = [(n-1)*(val - lo) / (hi - lo)
+                      for val, n, (lo, hi) in zip(xi, ns, self.limits)]
+
+            # interpolate
+            return map_coordinates(self.values, coords, 
+                                   order=self.order,
+                                   cval=np.nan)  # fill_value
+
+This wrapper can be used as a(n almost) drop-in replacement for the
+`RegularGridInterpolator`:
+
+    >>> x, y = np.arange(5), np.arange(6)
+    >>> xx, yy = np.meshgrid(x, y, indexing='ij')
+    >>> values = xx**3 + yy**3
+    >>> rgi = RegularGridInterpolator((x, y), values, method='linear')
+    >>> rgi([[1.5, 1.5], [3.5, 2.6]])
+    array([ 9. , 64.9])
+    >>> cgi = CartesianGridInterpolator((x, y), values, method='linear')
+    array([ 9. , 64.9])
+
+Note that the example above uses the ``map_coordinates`` boundary conditions.
+Thus, results of the ``cubic`` and ``quintic`` interpolations may differ from
+those of the ``RegularGridInterpolator``. 
+Refer to `scipy.ndimage.map_coordinates` documentation for more details on
+boundary conditions and other additional arguments.
+Finally, we note that this simplified example assumes that the input data is
+given in the ascending order.

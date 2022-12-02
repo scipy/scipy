@@ -11,7 +11,8 @@ highs_define_macros = [
   '-UEXT_PRESOLVE',
   '-USCIP_DEV',
   '-UHiGHSDEV',
-  '-UOSI_FOUND'
+  '-UOSI_FOUND',
+  '-DNDEBUG'
 ]
 
 basiclu_lib = static_library('basiclu',
@@ -275,12 +276,10 @@ py3.install_sources([
     'cython/src/SimplexConst.pxd',
     'cython/src/highs_c_api.pxd'
   ],
-  pure: false,
   subdir: 'scipy/optimize/_highs/src/cython'
 )
 
 py3.install_sources(
   ['__init__.py'],
-  pure: false,
   subdir: 'scipy/optimize/_highs'
 )

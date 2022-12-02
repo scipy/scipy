@@ -1366,6 +1366,11 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError("The number of derivatives at boundaries does not "
                          "match: expected %s, got %s+%s" % (nt-n, nleft, nright))
 
+    # bail out if the `y` array is zero-sized
+    if y.size == 0:
+        c = np.zeros((nt,) + y.shape[1:], dtype=float)
+        return BSpline.construct_fast(t, c, k, axis=axis)
+
     # set up the LHS: the collocation matrix + derivatives at boundaries
     kl = ku = k
     ab = np.zeros((2*kl + ku + 1, nt), dtype=np.float_, order='F')

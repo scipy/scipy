@@ -46,6 +46,8 @@ interpolation* can be summarized as follows:
 |  N-D scattered   | linear                  | `LinearNDInterpolator`       |                        | alias: `griddata`                     |
 +                  +-------------------------+------------------------------+------------------------+                                       +
 |                  | cubic (2D only)         | `CloughTocher2DInterpolator` | 1st derivatives        |                                       |
++                  +-------------------------+------------------------------+------------------------+---------------------------------------+
+|                  | radial basis function   | `RBFInterpolator`            |                        |                                       |
 +------------------+-------------------------+------------------------------+------------------------+---------------------------------------+
 
 
@@ -65,10 +67,5 @@ Futher details are given in the links below.
    interpolate/smoothing_splines
    interpolate/ND_regular_grid
    interpolate/ND_unstructured
-
-
-
-
-
-
+   interpolate/extrapolation_examples
 

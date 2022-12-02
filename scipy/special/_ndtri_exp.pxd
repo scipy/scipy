@@ -24,7 +24,7 @@ for y < ~ -745.1.
 When p > 1 - exp(-2), the Cephes implementation of ndtri uses the symmetry
 of the normal distribution and calculates ndtri(p) as -ndtri(1 - p) allowing
 for the use of the same approximation. When y > log(1 - exp(-2)) this
-implementation calculates ndtri_exp as -ndtri(-exp1m(y)).
+implementation calculates ndtri_exp as -ndtri(-expm1(y)).
 
 
 Accuracy
