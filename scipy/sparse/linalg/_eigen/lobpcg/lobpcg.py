@@ -210,6 +210,15 @@ def lobpcg(
 
     Notes
     -----
+    The iterative loop in lobpcg runs maxit=maxiter (or 20 if maxit=None)
+    iterations at most and finishes earler if the tolerance is met.
+    Breaking backward compatibility with the previous version, lobpcg
+    now returns the block of iterative vectors with the best accuracy rather
+    than the last one iterated, as a cure for possible divergence.
+
+    The size of the iteration history output equals to the number of the best
+    (limited by maxit) iterations plus 3 (initial, final, and postprocessing).
+
     If both ``retLambdaHistory`` and ``retResidualNormsHistory`` are True,
     the return tuple has the following format
     ``(lambda, V, lambda history, residual norms history)``.
@@ -218,13 +227,10 @@ def lobpcg(
     of required eigenvalues (smallest or largest).
 
     The LOBPCG code internally solves eigenproblems of the size ``3k`` on every
-    iteration by calling the "standard" dense eigensolver, so if ``k`` is not
-    small enough compared to ``n``, it does not make sense to call the LOBPCG
-    code, but rather one should use the "standard" eigensolver, e.g. numpy or
-    scipy function in this case.
-    If one calls the LOBPCG algorithm for ``5k > n``, it will most likely break
-    internally, so the code tries to call the standard function instead.
-
+    iteration by calling the dense eigensolver `eigh`, so if ``k`` is not
+    small enough compared to ``n``, it makes no sense to call the LOBPCG code.
+    Moreover, if one calls the LOBPCG algorithm for ``5k > n``, it would likely
+    break internally, so the code calls the standard function `eigh` instead. 
     It is not that ``n`` should be large for the LOBPCG to work, but rather the
     ratio ``n / k`` should be large. It you call LOBPCG with ``k=1``
     and ``n=10``, it works though ``n`` is small. The method is intended
