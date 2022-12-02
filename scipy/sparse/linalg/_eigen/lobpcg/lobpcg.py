@@ -358,7 +358,7 @@ def lobpcg(
 
     n, sizeX = blockVectorX.shape
 
-    # Data type of iterates, determined by X, must be inexect
+    # Data type of iterates, determined by X, must be inexact
     if not np.issubdtype(blockVectorX.dtype, np.inexact):
         warnings.warn(
             f"Data type for argument X is {blockVectorX.dtype}, "
