@@ -4233,3 +4233,38 @@ class TestOrderFilter:
             order_filter(x, np.ones((3, 3), dtype=np.int8), 4),
             expected
         )
+
+    @pytest.mark.parametrize(
+        'dtype',
+        (
+            np.int8, np.int16, np.int32, np.int64,
+            np.uint8, np.uint16, np.uint32, np.uint64,
+            np.float32, np.float64,
+        )
+    )
+    def test_order_filter_asymmetric(self, dtype):
+        x = np.arange(25, dtype=dtype).reshape(5, 5)
+        domain = np.array(
+            [[ 1, 1, 0],
+             [ 0, 1, 0],
+             [ 0, 0, 0]]
+            dtype=np.int8
+        )
+
+        expected = np.array(
+            [[ 0,  0,  0,  0,  0],
+             [ 0,  0,  1,  2,  3],
+             [ 0,  5,  6,  7,  8],
+             [ 0, 10, 11, 12, 13],
+             [ 0, 15, 16, 17, 18]]
+        )
+        assert_allclose(order_filter(x, domain, 0), expected)
+
+        expected = np.array(
+            [[ 0,  0,  0,  0,  0],
+             [ 0,  1,  2,  3,  4],
+             [ 5,  6,  7,  8,  9],
+             [10, 11, 12, 13, 14],
+             [15, 16, 17, 18, 19]]
+        )
+        assert_allclose(order_filter(x, domain, 0), expected)
