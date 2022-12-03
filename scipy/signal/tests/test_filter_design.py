@@ -16,6 +16,7 @@ from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bili
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
                           gammatone, group_delay, iircomb, iirdesign, iirfilter,
                           iirnotch, iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize,
+                          medfilt, order_filter,
                           sos2tf, sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos,
                           zpk2tf, bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
@@ -4154,3 +4155,81 @@ class TestGammatone:
               0.793651554625368]
         assert_allclose(b, b2)
         assert_allclose(a, a2)
+
+
+class TestOrderFilter:
+
+    @pytest.mark.parametrize(
+        'dtype',
+        (
+            np.int8, np.int16, np.int32, np.int64,
+            np.uint8, np.uint16, np.uint32, np.uint64,
+            np.float32, np.float64,
+        )
+    )
+    def test_doc_example(self, dtype):
+        x = np.arange(25, dtype=dtype).reshape(5, 5)
+        domain = np.identity(3)
+
+        # minimum of elements 1,3,9 (zero-padded) on phone pad
+        # 7,5,3 on numpad
+        expected = np.array(
+            [[  0.,   0.,   0.,   0.,   0.],
+             [  0.,   0.,   1.,   2.,   0.],
+             [  0.,   5.,   6.,   7.,   0.],
+             [  0.,  10.,  11.,  12.,   0.],
+             [  0.,   0.,   0.,   0.,   0.]],
+            dtype=dtype
+        )
+        assert_allclose(order_filter(x, domain, 0), expected)
+
+        # maximum of elements 1,3,9 (zero-padded) on phone pad
+        # 7,5,3 on numpad
+        expected = np.array(
+            [[  6.,   7.,   8.,   9.,   4.],
+             [ 11.,  12.,  13.,  14.,   9.],
+             [ 16.,  17.,  18.,  19.,  14.],
+             [ 21.,  22.,  23.,  24.,  19.],
+             [ 20.,  21.,  22.,  23.,  24.]],
+            dtype=dtype
+        )
+        assert_allclose(order_filter(x, domain, 2), expected)
+
+        # and, just to complete the set, median of zero-padded elements
+        expected = np.array(
+            [[ 0,  1,  2,  3,  0],
+             [ 5,  6,  7,  8,  3],
+             [10, 11, 12, 13,  8],
+             [15, 16, 17, 18, 13],
+             [ 0, 15, 16, 17, 18]],
+            dtype=dtype
+        )
+        assert_allclose(order_filter(x, domain, 1), expected)
+
+    @pytest.mark.parametrize(
+        'dtype',
+        (
+            np.int8, np.int16, np.int32, np.int64,
+            np.uint8, np.uint16, np.uint32, np.uint64,
+            np.float32, np.float64,
+        )
+    )
+    def test_medfilt_order_filter(self, dtype):
+        x = np.arange(25, dtype=dtype).reshape(5, 5)
+
+        # median of zero-padded elements 1,5,9 on phone pad
+        # 7,5,3 on numpad
+        expected = np.array(
+            [[ 0,  1,  2,  3,  0],
+             [ 1,  6,  7,  8,  4],
+             [ 6, 11, 12, 13,  9],
+             [11, 16, 17, 18, 14],
+             [ 0, 16, 17, 18,  0]],
+            dtype=dtype
+        )
+        assert_allclose(medfilt(x, 3), expected)
+
+        assert_allclose(
+            order_filter(x, np.ones((3, 3), dtype=np.int8), 4),
+            expected
+        )
