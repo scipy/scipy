@@ -194,15 +194,19 @@ def test_vonmises_expect():
     loc, kappa, lb = rng.random(3) * 10
     res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1)
     assert_allclose(res, 1)
+    assert np.issubdtype(res.dtype, np.floating)
 
     bounds = lb, lb + 2 * np.pi
     res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1, *bounds)
     assert_allclose(res, 1)
+    assert np.issubdtype(res.dtype, np.floating)
 
     bounds = lb, lb + 2 * np.pi
     res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: np.exp(1j*x),
-                                                      *bounds)
+                                                      *bounds, complex_func=1)
     assert_allclose(np.angle(res), loc % (2*np.pi))
+    assert np.issubdtype(res.dtype, np.complexfloating)
+
 
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
     """

@@ -9247,15 +9247,7 @@ class vonmises_gen(rv_continuous):
     @extend_notes_in_docstring(rv_continuous, notes="""\
         The default limits of integration are endpoints of the interval
         of width ``2*pi`` centered at `loc` (e.g. ``[-pi, pi]`` when
-        ``loc=0``). The integrand is always treated as a complex-valued
-        function, so the dtype of the return value will always be complex.
-
-        >>> res = vonmises(loc=2, kappa=1).expect(lambda x: np.exp(1j*x))
-        (-0.18576377217422957+0.40590124735052263j)
-
-        >>> np.angle(res)
-        2.0
-        \n\n""")
+        ``loc=0``).\n\n""")
     def expect(self, func=None, args=(), loc=0, scale=1, lb=-np.pi, ub=np.pi,
                conditional=False, **kwds):
         _a, _b = -np.pi, np.pi
@@ -9265,7 +9257,6 @@ class vonmises_gen(rv_continuous):
         if ub is None:
             ub = loc + _b
 
-        kwds['complex_func'] = True
         return super().expect(func, args, loc,
                               scale, lb, ub, conditional, **kwds)
 
