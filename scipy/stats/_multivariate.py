@@ -5779,8 +5779,11 @@ class vonmises_fisher_gen(multi_rv_generic):
             raise ValueError("mu must have length 1.")
         if not mu.size > 1:
             raise ValueError("mu must have at least two entries.")
-        if not np.isscalar(kappa) or kappa < 0:
-            raise ValueError("kappa must be a positive scalar.")
+        kappa_error_msg = "kappa must be a positive scalar."
+        if not np.isscalar(kappa):
+            raise ValueError(kappa_error_msg)
+        if kappa < 0:
+            raise ValueError(kappa_error_msg)
         dim = mu.size
 
         return dim, mu, kappa

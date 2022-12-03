@@ -2813,7 +2813,7 @@ def test_random_state_property():
 
 
 class TestVonMises_Fisher:
-    @pytest.mark.parametrize("dim", [2, 3, 4])
+    @pytest.mark.parametrize("dim", [2, 3, 4, 6])
     @pytest.mark.parametrize("size", [None, 1, 5, (5, 4)])
     def test_samples(self, dim, size):
         # test that samples have correct shape and norm 1
@@ -2838,3 +2838,34 @@ class TestVonMises_Fisher:
         msg = "mu must have length 1."
         with pytest.raises(ValueError, match=msg):
             vonmises_fisher(mu, 1)
+
+    def test_one_entry_mu(self):
+        mu = np.ones((1, ))
+        msg = "mu must have at least two entries."
+        with pytest.raises(ValueError, match=msg):
+            vonmises_fisher(mu, 1)
+
+    @pytest.mark.parametrize("kappa", [-1, (5, 3)])
+    def test_kappa_validation(self, kappa):
+        msg = "kappa must be a positive scalar."
+        with pytest.raises(ValueError, match=msg):
+            vonmises_fisher([1, 0], kappa)
+
+    def test_invalid_shapes_pdf_logpdf(self):
+        vmf = vonmises_fisher([1, 0], 1)
+        x = np.array([1., 0., 0])
+        msg = ("Dimension of last axis of x must match "
+              "the dimension of the von Mises Fisher distribution.")
+        with pytest.raises(ValueError, match=msg):
+            vmf.pdf(x)
+        with pytest.raises(ValueError, match=msg):
+            vmf.logpdf(x)
+
+    def test_unnormalized_input(self):
+        vmf = vonmises_fisher([1, 0], 1)
+        x = np.array([0.5, 0.])
+        msg = "x must be unit vectors of norm 1 along last dimension."
+        with pytest.raises(ValueError, match=msg):
+            vmf.pdf(x)
+        with pytest.raises(ValueError, match=msg):
+            vmf.logpdf(x)
