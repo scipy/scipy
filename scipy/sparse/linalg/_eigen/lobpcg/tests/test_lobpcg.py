@@ -265,7 +265,7 @@ def test_failure_to_run_iterations():
     Q = rnd.standard_normal((X.shape[0], 4))
     with pytest.warns(UserWarning, match="Exited at iteration"):
         eigenvalues, _ = lobpcg(A, Q, maxiter=20)
-    assert(np.max(eigenvalues) > 0)
+    assert np.max(eigenvalues) > 0
 
 
 @pytest.mark.filterwarnings("ignore:The problem size")

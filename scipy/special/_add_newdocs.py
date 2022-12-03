@@ -4871,6 +4871,12 @@ add_newdoc("fdtr",
     y : scalar or ndarray
         The CDF of the F-distribution with parameters `dfn` and `dfd` at `x`.
 
+    See Also
+    --------
+    fdtrc : F distribution survival function
+    fdtri : F distribution inverse cumulative distribution
+    scipy.stats.f : F distribution
+
     Notes
     -----
     The regularized incomplete beta function is used, according to the
@@ -4879,13 +4885,65 @@ add_newdoc("fdtr",
     .. math::
         F(d_n, d_d; x) = I_{xd_n/(d_d + xd_n)}(d_n/2, d_d/2).
 
-    Wrapper for the Cephes [1]_ routine `fdtr`.
+    Wrapper for the Cephes [1]_ routine `fdtr`. The F distribution is also
+    available as `scipy.stats.f`. Calling `fdtr` directly can improve
+    performance compared to the ``cdf`` method of `scipy.stats.f` (see last
+    example below).
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Calculate the function for ``dfn=1`` and ``dfd=2`` at ``x=1``.
+
+    >>> import numpy as np
+    >>> from scipy.special import fdtr
+    >>> fdtr(1, 2, 1)
+    0.5773502691896258
+
+    Calculate the function at several points by providing a NumPy array for
+    `x`.
+
+    >>> x = np.array([0.5, 2., 3.])
+    >>> fdtr(1, 2, x)
+    array([0.4472136 , 0.70710678, 0.77459667])
+
+    Plot the function for several parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dfn_parameters = [1, 5, 10, 50]
+    >>> dfd_parameters = [1, 1, 2, 3]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(dfn_parameters, dfd_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     dfn, dfd, style = parameter_set
+    ...     fdtr_vals = fdtr(dfn, dfd, x)
+    ...     ax.plot(x, fdtr_vals, label=rf"$d_n={dfn},\, d_d={dfd}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("F distribution cumulative distribution function")
+    >>> plt.show()
+
+    The F distribution is also available as `scipy.stats.f`. Using `fdtr`
+    directly can be much faster than calling the ``cdf`` method of
+    `scipy.stats.f`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.f(dfn, dfd).cdf(x)=fdtr(dfn, dfd, x)``.
+
+    >>> from scipy.stats import f
+    >>> dfn, dfd = 1, 2
+    >>> x = 1
+    >>> fdtr_res = fdtr(dfn, dfd, x)  # this will often be faster than below
+    >>> f_dist_res = f(dfn, dfd).cdf(x)
+    >>> fdtr_res == f_dist_res  # test that results are equal
+    True
     """)
 
 add_newdoc("fdtrc",
@@ -4914,9 +4972,11 @@ add_newdoc("fdtrc",
         The complemented F-distribution function with parameters `dfn` and
         `dfd` at `x`.
 
-    See also
+    See Also
     --------
-    fdtr
+    fdtr : F distribution cumulative distribution function
+    fdtri : F distribution inverse cumulative distribution function
+    scipy.stats.f : F distribution
 
     Notes
     -----
@@ -4926,12 +4986,65 @@ add_newdoc("fdtrc",
     .. math::
         F(d_n, d_d; x) = I_{d_d/(d_d + xd_n)}(d_d/2, d_n/2).
 
-    Wrapper for the Cephes [1]_ routine `fdtrc`.
+    Wrapper for the Cephes [1]_ routine `fdtrc`. The F distribution is also
+    available as `scipy.stats.f`. Calling `fdtrc` directly can improve
+    performance compared to the ``sf`` method of `scipy.stats.f` (see last
+    example below).
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function for ``dfn=1`` and ``dfd=2`` at ``x=1``.
+
+    >>> import numpy as np
+    >>> from scipy.special import fdtrc
+    >>> fdtrc(1, 2, 1)
+    0.42264973081037427
+
+    Calculate the function at several points by providing a NumPy array for
+    `x`.
+
+    >>> x = np.array([0.5, 2., 3.])
+    >>> fdtrc(1, 2, x)
+    array([0.5527864 , 0.29289322, 0.22540333])
+
+    Plot the function for several parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dfn_parameters = [1, 5, 10, 50]
+    >>> dfd_parameters = [1, 1, 2, 3]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(dfn_parameters, dfd_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     dfn, dfd, style = parameter_set
+    ...     fdtrc_vals = fdtrc(dfn, dfd, x)
+    ...     ax.plot(x, fdtrc_vals, label=rf"$d_n={dfn},\, d_d={dfd}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("F distribution survival function")
+    >>> plt.show()
+
+    The F distribution is also available as `scipy.stats.f`. Using `fdtrc`
+    directly can be much faster than calling the ``sf`` method of
+    `scipy.stats.f`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.f(dfn, dfd).sf(x)=fdtrc(dfn, dfd, x)``.
+
+    >>> from scipy.stats import f
+    >>> dfn, dfd = 1, 2
+    >>> x = 1
+    >>> fdtrc_res = fdtrc(dfn, dfd, x)  # this will often be faster than below
+    >>> f_dist_res = f(dfn, dfd).sf(x)
+    >>> f_dist_res == fdtrc_res  # test that results are equal
+    True
     """)
 
 add_newdoc("fdtri",
@@ -4959,6 +5072,12 @@ add_newdoc("fdtri",
     x : scalar or ndarray
         The quantile corresponding to `p`.
 
+    See Also
+    --------
+    fdtr : F distribution cumulative distribution function
+    fdtrc : F distribution survival function
+    scipy.stats.f : F distribution
+
     Notes
     -----
     The computation is carried out using the relation to the inverse
@@ -4977,11 +5096,72 @@ add_newdoc("fdtri",
 
     Wrapper for the Cephes [1]_ routine `fdtri`.
 
+    The F distribution is also available as `scipy.stats.f`. Calling
+    `fdtri` directly can improve performance compared to the ``ppf``
+    method of `scipy.stats.f` (see last example below).
+
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    `fdtri` represents the inverse of the F distribution CDF which is
+    available as `fdtr`. Here, we calculate the CDF for ``df1=1``, ``df2=2``
+    at ``x=3``. `fdtri` then returns ``3`` given the same values for `df1`,
+    `df2` and the computed CDF value.
+
+    >>> import numpy as np
+    >>> from scipy.special import fdtri, fdtr
+    >>> df1, df2 = 1, 2
+    >>> x = 3
+    >>> cdf_value =  fdtr(df1, df2, x)
+    >>> fdtri(df1, df2, cdf_value)
+    3.000000000000006
+
+    Calculate the function at several points by providing a NumPy array for
+    `x`.
+
+    >>> x = np.array([0.1, 0.4, 0.7])
+    >>> fdtri(1, 2, x)
+    array([0.02020202, 0.38095238, 1.92156863])
+
+    Plot the function for several parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dfn_parameters = [50, 10, 1, 50]
+    >>> dfd_parameters = [0.5, 1, 1, 5]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(dfn_parameters, dfd_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 1, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     dfn, dfd, style = parameter_set
+    ...     fdtri_vals = fdtri(dfn, dfd, x)
+    ...     ax.plot(x, fdtri_vals, label=rf"$d_n={dfn},\, d_d={dfd}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> title = "F distribution inverse cumulative distribution function"
+    >>> ax.set_title(title)
+    >>> ax.set_ylim(0, 30)
+    >>> plt.show()
+
+    The F distribution is also available as `scipy.stats.f`. Using `fdtri`
+    directly can be much faster than calling the ``ppf`` method of
+    `scipy.stats.f`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.f(dfn, dfd).ppf(x)=fdtri(dfn, dfd, x)``.
+
+    >>> from scipy.stats import f
+    >>> dfn, dfd = 1, 2
+    >>> x = 0.7
+    >>> fdtri_res = fdtri(dfn, dfd, x)  # this will often be faster than below
+    >>> f_dist_res = f(dfn, dfd).ppf(x)
+    >>> f_dist_res == fdtri_res  # test that results are equal
+    True
     """)
 
 add_newdoc("fdtridfd",

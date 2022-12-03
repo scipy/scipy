@@ -2079,7 +2079,7 @@ def test_Xdist_deprecated_args():
         for arg in ["p", "V", "VI"]:
             kwargs = {arg:"foo"}
 
-            if((arg == "V" and metric == "seuclidean") or
+            if ((arg == "V" and metric == "seuclidean") or
             (arg == "VI" and metric == "mahalanobis") or
             (arg == "p" and metric == "minkowski")):
                 continue

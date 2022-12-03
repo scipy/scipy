@@ -12,9 +12,6 @@ cimport numpy as np
 
 from . cimport sf_error
 
-cdef extern from "numpy/npy_math.h":
-    double NPY_EULER
-
 from ._complexstuff cimport (
     npy_cdouble_from_double_complex, double_complex_from_npy_cdouble,
     zabs, zlog, zpack)
@@ -24,6 +21,7 @@ cdef extern from "specfun_wrappers.h":
 
 DEF MAXITER = 100
 DEF TOL = 2.220446092504131e-16
+DEF EULER = 0.577215664901532860606512090082402431  # Euler constant
     
 
 cdef inline double complex zexpi(double complex z) nogil:
@@ -80,7 +78,7 @@ cdef inline int csici(double complex z,
             sf_error.error("sici", sf_error.DOMAIN, NULL)
             ci[0] = zpack(-INFINITY, NAN)
         else:
-            ci[0] += NPY_EULER + zlog(z)
+            ci[0] += EULER + zlog(z)
         return 0
     
     # DLMF 6.5.5/6.5.6 plus DLMF 6.4.4/6.4.6/6.4.7
@@ -129,7 +127,7 @@ cdef inline int cshichi(double complex z,
             sf_error.error("shichi", sf_error.DOMAIN, NULL)
             chi[0] = zpack(-INFINITY, NAN)
         else:
-            chi[0] += NPY_EULER + zlog(z)
+            chi[0] += EULER + zlog(z)
         return 0
 
     term1 = zexpi(z)
