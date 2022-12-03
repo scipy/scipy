@@ -1156,7 +1156,7 @@ these two steps:
 
    .. math::
 
-        x[k] = \sum_p x_p\!\big[\mu_q(k)\big]\, w_d\!\big[\mu_p(k)\big]\ , \quad
+        x[k] = \sum_p x_p\!\big[\mu_p(k)\big]\, w_d\!\big[\mu_p(k)\big]\ , \quad
                \mu_p(k) = k + \lfloor M/2\rfloor - h p
 
    for :math:`k \in [0, \ldots, n-1]`. :math:`w_d[m]` is the so-called

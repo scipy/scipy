@@ -1,12 +1,9 @@
 """Tools for spectral analysis.
 """
-from typing import cast
-
 import numpy as np
 from scipy import fft as sp_fft
 from . import _signaltools
 from .windows import get_window
-from ._short_time_fft import FFT_TYP_TYPE, ShortTimeFFT
 from ._spectral import _lombscargle
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings

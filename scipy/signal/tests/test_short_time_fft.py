@@ -63,7 +63,8 @@ def test_invalid_initializer_parameters():
     with chk_VE(r"dual_win.shape=\(5,\) must equal win.shape=\(4,\)!"):
         ShortTimeFFT(np.ones(4), hop=2, fs=1, dual_win=np.ones(5))
     with chk_VE("Parameter dual_win must be a finite array!"):
-        ShortTimeFFT(np.ones(3), hop=2, fs=1, dual_win=np.array([np.nan, 2, 3]))
+        ShortTimeFFT(np.ones(3), hop=2, fs=1,
+                     dual_win=np.array([np.nan, 2, 3]))
 
 
 def test_exceptions_properties_methods():

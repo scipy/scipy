@@ -283,11 +283,11 @@ Spectral analysis
    spectrogram    -- Compute the spectrogram.
    lombscargle    -- Computes the Lomb-Scargle periodogram.
    vectorstrength -- Computes the vector strength.
-   stft           -- Compute the Short Time Fourier Transform (legacy).
-   istft          -- Compute the Inverse Short Time Fourier Transform (legacy).
    ShortTimeFFT   -- Interface for calculating the \
                      :ref:`Short Time Fourier Transform <tutorial_stft>` and \
                      its inverse.
+   stft           -- Compute the Short Time Fourier Transform (legacy).
+   istft          -- Compute the Inverse Short Time Fourier Transform (legacy).
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction.
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
