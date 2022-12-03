@@ -175,6 +175,7 @@ Multivariate distributions
    multivariate_hypergeom -- Multivariate hypergeometric distribution
    random_table           -- Distribution of random tables with given marginals
    uniform_direction      -- Uniform distribution on S(N-1)
+   vonmises_fisher        -- Von Mises-Fisher distribution
 
 `scipy.stats.multivariate_normal` methods accept instances
 of the following class to represent the covariance.
