@@ -5774,16 +5774,22 @@ class vonmises_fisher_gen(multi_rv_generic):
         """
         mu = np.asarray(mu)
         if mu.ndim > 1:
-            raise ValueError("mu must be one-dimensional.")
+            raise ValueError("mu must have one-dimensional shape.")
         if not np.allclose(np.linalg.norm(mu), 1.):
-            raise ValueError("mu must be of length 1.")
+            raise ValueError("mu must have length 1.")
+        if not mu.size > 1:
+            raise ValueError("mu must have at least two entries.")
         if not np.isscalar(kappa) or kappa < 0:
             raise ValueError("kappa must be a positive scalar.")
         dim = mu.size
 
         return dim, mu, kappa
 
-    def _check_norms(self, x):
+    def _check_data_vs_dist(self, x, dim):
+        if not x.shape[-1] == dim:
+            raise ValueError("Dimension of last axis of x must match "
+                             "the dimension of the von Mises Fisher "
+                             "distribution.")
         if not np.allclose(np.linalg.norm(x, axis=-1), 1.):
             msg = "x must be unit vectors of norm 1 along last dimension."
             raise ValueError(msg)
@@ -5811,6 +5817,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         called directly; use 'logpdf' instead.
 
         """
+        self._check_data_vs_dist(x, dim)
         dotproducts = np.einsum('i,...i->...', mu, x)
         return self._log_norm_factor(dim, kappa) + kappa * dotproducts
                
@@ -5832,7 +5839,6 @@ class vonmises_fisher_gen(multi_rv_generic):
         -----
         %(_mvn_doc_callparams_note)s
         """
-        self._check_norms(x)
         params = self._process_parameters(mu, kappa)
         dim, mu, kappa = params
         return self._logpdf(x, dim, mu, kappa)
@@ -5855,7 +5861,6 @@ class vonmises_fisher_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        self._check_norms(x)
         params = self._process_parameters(mu, kappa)
         dim, mu, kappa = params
         return np.exp(self._logpdf(x, dim, mu, kappa))
@@ -5881,16 +5886,22 @@ class vonmises_fisher_gen(multi_rv_generic):
         This method is much faster than the general rejection
         sampling based algorithm.
         """
-        x = random_state.random(size)
+        if size is None:
+            sample_size = 1
+        else:
+            sample_size = size
+        x = random_state.random(sample_size)
         x = 1. + np.log(x + (1. - x) * np.exp(-2 * kappa))/kappa
         temp = np.sqrt(1. - np.square(x))
-        uniformcircle = _sample_uniform_direction(2, size, random_state)
+        uniformcircle = _sample_uniform_direction(2, sample_size, random_state)
         samples = np.stack([x, temp * uniformcircle[..., 0],
                             temp * uniformcircle[..., 1]],
                            axis=-1)
+        if size is None:
+            samples = np.squeeze(samples)
         return samples
 
-    def _rejection_sampling(self, random_state, dim, kappa, size):
+    def _rejection_sampling(self, dim, kappa, size, random_state):
         """
         Generate samples from a von Mises-Fisher distribution
         with mu = [1, 0, ..., 0] and kappa via rejection sampling.
@@ -5913,7 +5924,8 @@ class vonmises_fisher_gen(multi_rv_generic):
         # main loop
         while n_accepted < n_samples:
             sym_beta = beta.rvs(
-                halfdim, halfdim, size=n_samples - n_accepted, seed=random_state)
+                halfdim, halfdim, size=n_samples - n_accepted,
+                random_state=random_state)
             coord_x = (1 - (1 + envelop_param) * sym_beta) / (
                 1 - (1 - envelop_param) * sym_beta)
             accept_tol = random_state.random(n_samples - n_accepted)
@@ -5957,11 +5969,11 @@ class vonmises_fisher_gen(multi_rv_generic):
         base_point = np.array([1.] + [0] * (n - 1))
         embedded = np.concatenate([mu[None, :], np.zeros((n - 1, n))])
         rotmatrix, _ = np.linalg.qr(np.transpose(embedded))
-        if not np.allclose(np.matmul(rotmatrix, base_point[:, None])[:, 0],
+        if np.allclose(np.matmul(rotmatrix, base_point[:, None])[:, 0],
                            mu):
-            rotsign = -1
-        else:
             rotsign = 1
+        else:
+            rotsign = -1
 
         # apply rotation
         samples = np.einsum('ij,...j->...i', rotmatrix, samples) * rotsign
@@ -5998,21 +6010,6 @@ class vonmises_fisher_gen(multi_rv_generic):
         Notes
         -----
         %(_mvn_doc_callparams_note)s
-
-        dim, mean, cov_object = self._process_parameters(mean, cov)
-        random_state = self._get_random_state(random_state)
-
-        if isinstance(cov_object, _covariance.CovViaPSD):
-            cov = cov_object.covariance
-            out = random_state.multivariate_normal(mean, cov, size)
-            out = _squeeze_output(out)
-        else:
-            size = size or tuple()
-            if not np.iterable(size):
-                size = (size,)
-            shape = tuple(size) + (cov_object.shape[-1],)
-            x = random_state.normal(size=shape)
-            out = mean + cov_object.colorize(x)
         """
         dim, mu, kappa = self._process_parameters(mu, kappa)
         random_state = self._get_random_state(random_state)

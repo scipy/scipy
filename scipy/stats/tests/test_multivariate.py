@@ -26,7 +26,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest,
-                         random_table, uniform_direction)
+                         random_table, uniform_direction, vonmises_fisher)
 from scipy.stats import _covariance, Covariance
 
 from scipy.integrate import romb
@@ -2810,3 +2810,31 @@ def test_random_state_property():
     for distfn, args in dists:
         check_random_state_property(distfn, args)
         check_pickling(distfn, args)
+
+
+class TestVonMises_Fisher:
+    @pytest.mark.parametrize("dim", [2, 3, 4])
+    @pytest.mark.parametrize("size", [None, 1, 5, (5, 4)])
+    def test_samples(self, dim, size):
+        # test that samples have correct shape and norm 1
+        rng = np.random.default_rng(2777937887058094419)
+        mu = np.full((dim, ), 1/np.sqrt(dim))
+        vmf_dist = vonmises_fisher(mu, 1, seed=rng)
+        samples = vmf_dist.rvs(size)
+        mean, cov = np.zeros(dim), np.eye(dim)
+        expected_shape = rng.multivariate_normal(mean, cov, size=size).shape
+        assert samples.shape == expected_shape
+        norms = np.linalg.norm(samples, axis=-1)
+        assert_allclose(norms, 1.)
+
+    def test_two_dimensional_mu(self):
+        mu = np.ones((2, 2))
+        msg = "mu must have one-dimensional shape."
+        with pytest.raises(ValueError, match=msg):
+            vonmises_fisher(mu, 1)
+
+    def test_wrong_norm_mu(self):
+        mu = np.ones((2, ))
+        msg = "mu must have length 1."
+        with pytest.raises(ValueError, match=msg):
+            vonmises_fisher(mu, 1)
