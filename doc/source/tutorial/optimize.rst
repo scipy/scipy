@@ -746,8 +746,9 @@ and :math:`f \: : \: \mathbf{R}^n \rightarrow \mathbf{R}`
 
 The table below compares the characteristics of all :func:`minimize` optimization methods:
 
+
 .. list-table:: Optimization methods from :func:`minimize`
-   :widths: 5 5 5 5 5 5 5 5 5 5 5 5 5 5
+   :widths: 5 5 5 5 5 5 5 5
    :header-rows: 1
 
    * -
@@ -758,50 +759,10 @@ The table below compares the characteristics of all :func:`minimize` optimizatio
      - ``BFGS``
      - ``L-BFGS-G``
      - ``SLSQP``
-     - ``TNC``
-     - ``Newton-CG``
-     - ``dogleg``
-     - ``trust-ncg``
-     - ``trust-exact``
-     - ``trust-Krylov``
-   * - Version added
-     - 0.6*
-     - 0.6*
-     - 0.6*
-     - 0.6*
-     - 0.6*
-     - 0.6*
-     - 0.9
-     - 0.6*
-     - 0.6*
-     - 0.13
-     - 0.13
-     - 0.19
-     - 1.0
-   * - Wrapper
-     - ✓
-     -
-     -
-     -
-     -
-     - ✓
-     - ✓
-     - ✓
-     -
-     -
-     -
-     -
-     - ✓
    * - First derivatives
      -
      -
      -
-     - ✓
-     - ✓
-     - ✓
-     - ✓
-     - ✓
-     - ✓
      - ✓
      - ✓
      - ✓
@@ -814,12 +775,6 @@ The table below compares the characteristics of all :func:`minimize` optimizatio
      - ~
      - ~
      - ~
-     - ✓
-     - ✓
-     - ✓
-     - ✓
-     - ✓
-     - ✓
    * - Iterative Hessian factorization
      -
      -
@@ -828,13 +783,7 @@ The table below compares the characteristics of all :func:`minimize` optimizatio
      -
      -
      -
-     - ✓
-     - ✓
-     -
-     - ✓
-     -
-     - ✓
-   * - Local convergence
+   * - Convergence rate
      -
      -
      -
@@ -842,23 +791,11 @@ The table below compares the characteristics of all :func:`minimize` optimizatio
      - S
      - L
      - S
-     - S*
-     - S*
-     - Q
-     - S*
-     - Q
-     - S*
-   * - Global convergence
+   * - Convergence to stationary point
      -
      -
      -
      -
-     - ✓
-     - ✓
-     - ✓
-     - ✓
-     - ✓
-     - ✓
      - ✓
      - ✓
      - ✓
@@ -870,12 +807,6 @@ The table below compares the characteristics of all :func:`minimize` optimizatio
      - LS
      - LS
      - LS
-     - LS
-     - LS
-     - TR
-     - TR
-     - TR
-     - TR
    * - Bound constraints
      -
      -
@@ -884,6 +815,78 @@ The table below compares the characteristics of all :func:`minimize` optimizatio
      -
      - ✓
      - ✓
+   * - Equality constraints
+     -
+     -
+     -
+     -
+     -
+     -
+     - ✓
+   * - Inequality constraints
+     -
+     -
+     - ✓
+     -
+     -
+     -
+     - ✓
+
+
+.. list-table:: Optimization methods from :func:`minimize`
+   :widths: 5 5 5 5 5 5 5
+   :header-rows: 1
+
+   * -
+     - ``TNC``
+     - ``Newton-CG``
+     - ``dogleg``
+     - ``trust-ncg``
+     - ``trust-exact``
+     - ``trust-Krylov``
+   * - First derivatives
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+   * - Second derivatives
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+   * - Iterative Hessian factorization
+     - ✓
+     - ✓
+     -
+     - ✓
+     -
+     - ✓
+   * - Convergence rate
+     - S*
+     - S*
+     - Q
+     - S*
+     - Q
+     - S*
+   * - Convergence to stationary point
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+   * - Trust region
+     - LS
+     - LS
+     - TR
+     - TR
+     - TR
+     - TR
+   * - Bound constraints
      - ✓
      - ✓
      -
@@ -897,33 +900,20 @@ The table below compares the characteristics of all :func:`minimize` optimizatio
      -
      -
      -
-     - ✓
-     -
-     -
-     -
-     -
-     -
-     -
    * - Inequality constraints
      -
      -
-     - ✓
-     -
-     -
-     -
-     - ✓
      -
      -
      -
      -
-     -
-     -
+
 
 .. list-table:: Optimization methods from :mod:`minimize`
    :widths: 5 35
    :header-rows: 1
 
-   * - 
+   * -
      - Description
    * - Version added
      - Specifies the algorithm’s first appearance in SciPy. Algorithms with version added 0.6*' were added in version 0.6 or before.
