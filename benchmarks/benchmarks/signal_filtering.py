@@ -111,8 +111,12 @@ class OrderFilter2D(Benchmark):
     timeout = 300
 
     def setup(self, filter_size):
-        self.to_filter = np.ones((200, 201), np.float32)
-        self.filter_domain = np.ones((filter_size, filter_size), dtype=np.int8)
+        self.to_filter = np.ones((300, 401), np.float32)
+        self.filter_domain_one = np.ones((filter_size, filter_size), dtype=np.int8)
+        self.filter_domain_two = np.identity(filter_size, dtype=np.int8)
 
-    def time_orderfilter(self, filter_size):
-        order_filter(self.to_filter, self.filter_domain, filter_size // 3)
+    def time_orderfilter_domain_one(self, filter_size):
+        order_filter(self.to_filter, self.filter_domain_one, filter_size // 3)
+
+    def time_orderfilter_domain_two(self, filter_size):
+        order_filter(self.to_filter, self.filter_domain_two, 2 * filter_size // 3)
