@@ -5758,7 +5758,7 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     def __init__(self, seed=None):
         super().__init__(seed)
-        #self.__doc__ = doccer.docformat(self.__doc__, mvn_docdict_params)
+        # self.__doc__ = doccer.docformat(self.__doc__, mvn_docdict_params)
 
     def __call__(self, mu=None, kappa=1, seed=None):
         """Create a frozen von Mises-Fisher distribution.
@@ -5799,9 +5799,9 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     def _log_norm_factor(self, dim, kappa):
         halfdim = 0.5 * dim
-        return (0.5 * (dim -2)*np.log(kappa) - halfdim * _LOG_2PI -
-                 np.log(ive(halfdim -1, kappa)) - kappa)
-    
+        return (0.5 * (dim - 2)*np.log(kappa) - halfdim * _LOG_2PI -
+                np.log(ive(halfdim - 1, kappa)) - kappa)
+
     def _logpdf(self, x, dim, mu, kappa):
         """Log of the von Mises-Fisher probability density function.
 
@@ -5823,7 +5823,6 @@ class vonmises_fisher_gen(multi_rv_generic):
         self._check_data_vs_dist(x, dim)
         dotproducts = np.einsum('i,...i->...', mu, x)
         return self._log_norm_factor(dim, kappa) + kappa * dotproducts
-               
 
     def logpdf(self, x, mu=None, kappa=1):
         """Log of the multivariate normal probability density function.
@@ -5878,7 +5877,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         mean_angle = np.arctan2(mu[1], mu[0])
         angle_samples = random_state.vonmises(mean_angle, kappa, size=size)
         samples = np.stack([np.cos(angle_samples), np.sin(angle_samples)],
-                            axis=-1)
+                           axis=-1)
         return samples
 
     def _rvs_3d(self, kappa, size, random_state):
@@ -5939,7 +5938,8 @@ class vonmises_fisher_gen(multi_rv_generic):
             result.append(coord_x[criterion])
             n_accepted += np.sum(criterion)
         coord_x = np.concatenate(result)
-        coord_rest = _sample_uniform_direction(dim -1, n_accepted, random_state)
+        coord_rest = _sample_uniform_direction(dim - 1, n_accepted,
+                                               random_state)
         coord_rest = np.einsum(
             '...,...i->...i', np.sqrt(1 - coord_x ** 2), coord_rest)
         samples = np.concatenate([coord_x[..., None], coord_rest], axis=1)
@@ -5951,8 +5951,9 @@ class vonmises_fisher_gen(multi_rv_generic):
         return samples
 
     def _rotate_samples(self, samples, mu):
-        """A QR decomposition is used to find the rotation that maps the north pole
-        (1, 0,...,0) to the vector mu. This rotation is then applied to all samples.
+        """A QR decomposition is used to find the rotation that maps the
+        north pole (1, 0,...,0) to the vector mu. This rotation is then
+        applied to all samples.
 
         Parameters
         ----------
@@ -5972,8 +5973,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         base_point = np.array([1.] + [0] * (n - 1))
         embedded = np.concatenate([mu[None, :], np.zeros((n - 1, n))])
         rotmatrix, _ = np.linalg.qr(np.transpose(embedded))
-        if np.allclose(np.matmul(rotmatrix, base_point[:, None])[:, 0],
-                           mu):
+        if np.allclose(np.matmul(rotmatrix, base_point[:, None])[:, 0], mu):
             rotsign = 1
         else:
             rotsign = -1
@@ -5993,7 +5993,7 @@ class vonmises_fisher_gen(multi_rv_generic):
                                                    random_state)
             samples = self._rotate_samples(samples, mu)
         return samples
-        
+
     def rvs(self, mu=None, kappa=1, size=1, random_state=None):
         """Draw random samples from a von Mises-Fisher distribution.
 
@@ -6020,9 +6020,9 @@ class vonmises_fisher_gen(multi_rv_generic):
         return samples
 
     def _entropy(self, dim, kappa):
-            halfdim = 0.5 * dim
-            return (-self._log_norm_factor(dim, kappa) - kappa *
-                    ive(halfdim, kappa)/ive(halfdim -1, kappa))
+        halfdim = 0.5 * dim
+        return (-self._log_norm_factor(dim, kappa) - kappa *
+                ive(halfdim, kappa) / ive(halfdim - 1, kappa))
 
     def entropy(self, mu=None, kappa=1):
         """Compute the differential entropy of the von Mises-Fisher
@@ -6044,7 +6044,6 @@ class vonmises_fisher_gen(multi_rv_generic):
         """
         dim, mu, kappa = self._process_parameters(mu, kappa)
         return self._entropy(dim, kappa)
-        
 
 
 vonmises_fisher = vonmises_fisher_gen()
@@ -6059,7 +6058,8 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         mu : array_like, default: ``[0, 0]``
             Mean direction of the distribution.
         kappa : concentration parameter.
-        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+        seed : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -6084,7 +6084,8 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         return self._dist.rvs(self.mu, self.kappa, size, random_state)
 
     def entropy(self):
-        """Computes the differential entropy of the von Mises-Fisher distribution.
+        """
+        Computes the differential entropy of the von Mises-Fisher distribution.
 
         Returns
         -------

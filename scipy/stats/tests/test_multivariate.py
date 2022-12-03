@@ -2855,7 +2855,7 @@ class TestVonMises_Fisher:
         vmf = vonmises_fisher([1, 0], 1)
         x = np.array([1., 0., 0])
         msg = ("Dimension of last axis of x must match "
-              "the dimension of the von Mises Fisher distribution.")
+               "the dimension of the von Mises Fisher distribution.")
         with pytest.raises(ValueError, match=msg):
             vmf.pdf(x)
         with pytest.raises(ValueError, match=msg):
@@ -2884,28 +2884,28 @@ class TestVonMises_Fisher:
     @pytest.mark.parametrize('x, mu, kappa, reference',
                              [(np.array([1., 0., 0.]), np.array([1., 0., 0.]),
                                1e-4, 0.07958542955836051),
-                               (np.array([1., 0., 0]), np.array([0., 0., 1.]),
+                              (np.array([1., 0., 0]), np.array([0., 0., 1.]),
                                1e-4, 0.07957747141331856),
-                               (np.array([1., 0., 0.]), np.array([1., 0., 0.]),
-                                100, 15.915494309189533),
-                               (np.array([1., 0., 0]), np.array([0., 0., 1.]),
+                              (np.array([1., 0., 0.]), np.array([1., 0., 0.]),
+                               100, 15.915494309189533),
+                              (np.array([1., 0., 0]), np.array([0., 0., 1.]),
                                100, 5.920684802611231e-43),
-                               (np.array([1., 0., 0.]),
-                                np.array([np.sqrt(0.98), np.sqrt(0.02), 0.]),
-                                2000, 5.930499050746484e-07),
-                               (np.array([1., 0., 0]), np.array([1., 0., 0.]),
-                                2000, 318.3098861837907),
-                               (np.array([1., 0., 0., 0., 0.]),
-                                np.array([1., 0., 0., 0., 0.]),
-                                2000, 101371.86957712634),
-                               (np.array([1., 0., 0., 0., 0.]),
-                                np.array([np.sqrt(0.98), np.sqrt(0.02), 0.,
-                                          0, 0.]),
-                                2000, 0.00018886808182653247),
-                               (np.array([1., 0., 0., 0., 0.]),
-                                np.array([np.sqrt(0.8), np.sqrt(0.2), 0.,
-                                          0, 0.]),
-                                2000, 2.0255393314603596e-87)])
+                              (np.array([1., 0., 0.]),
+                               np.array([np.sqrt(0.98), np.sqrt(0.02), 0.]),
+                               2000, 5.930499050746484e-07),
+                              (np.array([1., 0., 0]), np.array([1., 0., 0.]),
+                               2000, 318.3098861837907),
+                              (np.array([1., 0., 0., 0., 0.]),
+                               np.array([1., 0., 0., 0., 0.]),
+                               2000, 101371.86957712634),
+                              (np.array([1., 0., 0., 0., 0.]),
+                               np.array([np.sqrt(0.98), np.sqrt(0.02), 0.,
+                                         0, 0.]),
+                               2000, 0.00018886808182653247),
+                              (np.array([1., 0., 0., 0., 0.]),
+                               np.array([np.sqrt(0.8), np.sqrt(0.2), 0.,
+                                         0, 0.]),
+                               2000, 2.0255393314603596e-87)])
     def test_pdf_accuracy(self, x, mu, kappa, reference):
         pdf = vonmises_fisher(mu, kappa).pdf(x)
         assert_allclose(pdf, reference)
@@ -2945,7 +2945,7 @@ class TestVonMises_Fisher:
                               (np.array([1., 0., 0., 0., 0.]),
                                np.array([np.sqrt(0.8), np.sqrt(0.2), 0.,
                                          0, 0.]),
-                                2000, -199.6190670888611)])
+                               2000, -199.6190670888611)])
     def test_logpdf_accuracy(self, x, mu, kappa, reference):
         logpdf = vonmises_fisher(mu, kappa).logpdf(x)
         assert_allclose(logpdf, reference)
@@ -2956,8 +2956,11 @@ class TestVonMises_Fisher:
     #     dim = mu.size
     #     kappa = mpmath.mpf(kappa)
     #     halfdim = mpmath.mpf(0.5 * dim)
-    #     logconstant = mpmath.log(kappa**(halfdim -1)/((2*mpmath.pi)**halfdim*mpmath.besseli(halfdim -1, kappa)))
-    #     return -logconstant - kappa * mpmath.besseli(halfdim, kappa)/mpmath.besseli(halfdim -1, kappa)
+    #     logconstant = mpmath.log(kappa**(halfdim -1)/
+    #                   ((2*mpmath.pi)**halfdim *\
+    #                   mpmath.besseli(halfdim -1, kappa)))
+    #     return (-logconstant - kappa * mpmath.besseli(halfdim, kappa)/
+    #             mpmath.besseli(halfdim -1, kappa))
     # >>> float(entropy_mpmath(mu, kappa))
 
     @pytest.mark.parametrize('dim, kappa, reference',
@@ -2965,8 +2968,7 @@ class TestVonMises_Fisher:
                               (3, 100, -1.7672931195787527),
                               (3, 2000, -4.763025393132466),
                               (5, 2000, -9.527051161432155),
-                              (5, 1e-6, 3.2702890247104266),
-                             ])
+                              (5, 1e-6, 3.2702890247104266)])
     def test_entropy_accuracy(self, dim, kappa, reference):
         mu = np.full((dim, ), 1/np.sqrt(dim))
         entropy = vonmises_fisher(mu, kappa).entropy()
@@ -2975,7 +2977,8 @@ class TestVonMises_Fisher:
     def test_pdf_consistency(self):
         # test that pdf values are correctly broadcasted
         testshape = (2, 4)
-        x = uniform_direction(3).rvs(testshape)
+        rng = np.random.default_rng(2777937887058094419)
+        x = uniform_direction(3).rvs(testshape, seed=rng)
         vmf = vonmises_fisher([0, 0, 1], 20)
         all_pdf = vmf.pdf(x)
         assert all_pdf.shape == testshape
