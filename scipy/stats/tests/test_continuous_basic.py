@@ -112,8 +112,9 @@ fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                    'halfgennorm', 'invgamma',
                    'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
                    'logistic', 'loguniform', 'maxwell', 'nakagami',
-                   'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
-                   'reciprocal', 'rice', 'skewnorm', 't', 'truncweibull_min',
+                   'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
+                   'powerlaw', 'rdist', 'reciprocal', 'rice',
+                   'skewnorm', 't', 'truncweibull_min',
                    'tukeylambda', 'vonmises', 'vonmises_line',
                    'rv_histogram_instance', 'truncnorm', 'studentized_range'])
 
