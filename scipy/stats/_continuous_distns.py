@@ -9248,7 +9248,7 @@ class vonmises_gen(rv_continuous):
         The default limits of integration are endpoints of the interval
         of width ``2*pi`` centered at `loc` (e.g. ``[-pi, pi]`` when
         ``loc=0``).\n\n""")
-    def expect(self, func=None, args=(), loc=0, scale=1, lb=-np.pi, ub=np.pi,
+    def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None,
                conditional=False, **kwds):
         _a, _b = -np.pi, np.pi
 
