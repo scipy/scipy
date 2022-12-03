@@ -672,3 +672,154 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                     for i_c in range(num_c_tr):
                         out[j, i_c] = out[j, i_c] + c1r[idx_cflat_base + i_c] * factor
 
+
+def _not_a_knot(x, k):
+    """Given data x, construct the knot vector w/ not-a-knot BC.
+    cf de Boor, XIII(12)."""
+    x = np.asarray(x)
+    if k % 2 != 1:
+        raise ValueError("Odd degree for now only. Got %s." % k)
+
+    m = (k - 1) // 2
+    t = x[m+1:-m-1]
+    t = np.r_[(x[0],)*(k+1), t, (x[-1],)*(k+1)]
+    return t
+
+
+def make_ndbspl(xi, values, k):
+    """RGI look-alike"""
+    cdef:
+        npy_intp ndim = len(xi)
+        # 'intervals': indices for a point in xi into the knot arrays t
+        npy_intp[::1] i = np.empty(ndim, dtype=int)
+
+        # container for non-zero b-splines at each point in xi
+        double[:, ::1] b = np.empty((ndim, k + 1), dtype=float)
+
+     #   const double[::1] xv     # an ndim-dimensional input point
+        double xd               # d-th component of x
+
+        const double[::1] td    # knots in dimension d
+
+        npy_intp kd             # d-th component of k
+
+        npy_intp i_c      # index to loop over range(num_c_tr)
+        npy_intp iflat    # index to loop over (k+1)**ndim non-zero terms
+        npy_intp volume   # the number of non-zero terms
+  #      const npy_intp[:] idx_b   # ndim-dimensional index corresponding to iflat
+
+        long[::1] nu = np.zeros(ndim, dtype=int)
+
+        int out_of_bounds
+        npy_intp idx
+        double factor
+        double[::1] wrk = np.empty(2*k + 2, dtype=float)
+
+    t = tuple(_not_a_knot(np.asarray(x, dtype=float), k) for x in xi)
+
+    shape = (k + 1,)*ndim
+    indices = np.unravel_index(np.arange(np.prod(shape)), shape)
+    indices_k1d = np.asarray(indices).T
+
+    shape = tuple(len(xi[i]) for i in range(ndim))
+    c = np.empty(shape, dtype=float)
+    c1 = c.ravel()
+
+    # the number of non-zero terms for each point in ``xi``.
+    volume = 1
+    for d in range(ndim):
+        volume *= k + 1
+
+    size = np.prod([len(x) for x in xi])
+    matr = np.zeros((size, size), dtype=float)
+
+    csr_indices = np.empty(shape=(size*volume,), dtype=int)
+    csr_data = np.empty(shape=(size*volume,), dtype=float)
+    csr_indptr = np.arange(0, volume*size + 1, volume) 
+
+
+    import itertools
+    ### Iterate over the outer product of the data points
+    j = -1
+    for xv in itertools.product(*xi):
+        j+= 1
+        print('======', j, np.asarray(xv))
+
+        # For each point, iterate over the dimensions
+        out_of_bounds = 0
+        for d in range(ndim):
+            td = t[d]
+            xd = xv[d]
+            kd = k
+
+            # get the location of x[d] in t[d]
+            extrapolate = False
+            i[d] = find_interval(td, kd, xd, kd, extrapolate)
+
+            if i[d] < 0:
+                out_of_bounds = 1
+                break
+
+            # compute non-zero b-splines at this value of xd in dimension d
+            _deBoor_D(&td[0], xd, kd, i[d], 0, &wrk[0])
+            b[d, :kd+1] = wrk[:kd+1]
+
+        if out_of_bounds:
+            # xd was nan or extrapolate=False: Fill the output array
+            # *for this xv value*, and continue to the next xv in xi.
+#            for i_c in range(num_c_tr):
+#                out[j, i_c] = NAN
+            continue
+
+        # iterate over the direct products of non-zero b-splines
+        for iflat in range(volume):
+            #idx_b = indices_k1d[iflat, :]
+            idx_b = np.unravel_index(iflat, (k+1,)*ndim)
+
+            # The line above is equivalent to 
+            # idx_b = np.unravel_index(iflat, (k+1,)*ndim)
+            
+            # From the indices in ``idx_b``, we prepare to index into
+            # c1.ravel() : for each dimension d, need to shift the index
+            # by ``i[d] - k[d]`` (see the docstring above).
+            #
+            # Since the strides of `c1` are pre-computed, and the array
+            # is already raveled and is guaranteed to be C-ordered, we only
+            # need to compute the base index for iterating over ``num_c_tr``
+            # elements which represent the trailing dimensions of ``c``.
+            #
+            # This all is essentially equivalent to iterating over
+            # idx_cflat = np.ravel_multi_index(tuple(idx_c) + (i_c,),
+            #                                  c1.shape)
+            factor = 1.0
+            idx_c = ['none']*ndim
+            for d in range(ndim):
+                factor *= b[d, idx_b[d]]
+                idx_c[d] = idx_b[d] + i[d] - k
+  #              idx_cflat_base += idx * strides_c1[d]
+
+            idx_cflat = np.ravel_multi_index(tuple(idx_c), c.shape)
+            matr[j, idx_cflat] += factor
+            print('matr: ', j, idx_cflat, factor)
+
+            # Fill the CSR format array of b-splines. Each row of the full
+            # matrix has `volume` non-zero elements. Thus the CSR format indptr
+            # increases in steps of `volume` (hence pre-constructed), the
+            # current element ends up in the `j*volume + iflat`-th element of
+            # the CSR `indices` and `data` arrays.
+            csr_indices[j*volume + iflat] = idx_cflat
+            csr_data[j*volume + iflat] = factor
+
+    from numpy.linalg import solve
+    coef = solve(matr, values.ravel())
+
+    xi_shape = tuple(len(x) for x in xi)
+
+    from scipy.sparse import csr_array
+    matr_csr = csr_array((csr_data, csr_indices, csr_indptr))
+
+    from numpy.testing import assert_allclose
+    assert_allclose(matr, matr_csr.toarray(), atol=1e-15)
+
+
+    return matr, t, coef.reshape(xi_shape), matr_csr

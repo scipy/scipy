@@ -2159,3 +2159,49 @@ class TestNdBSpline:
         bspl3_ = NdBSpline(t3, c3, k=3)
 
         assert bspl3((1, 2, 3)) == bspl3_((1, 2, 3))
+
+
+class TestMakeND:
+    def make_2d_case(self):
+        # make a 2D separable spline
+        x = np.arange(6)
+        y = x**3
+        spl = make_interp_spline(x, y, k=3)
+
+        y_1 = x**3 + 2*x
+        spl_1 = make_interp_spline(x, y_1, k=3)
+
+        t2 = (spl.t, spl_1.t)
+        c2 = spl.c[:, None] * spl_1.c[None, :]
+
+        return t2, c2, 3
+
+    def test_2D_separable_simple(self):
+        x = np.arange(6)
+        y = np.arange(6)
+        values = x[:, None]**3 * (y**3 + 2*y)[None, :]
+
+        import itertools
+        xi = [(a, b) for a, b in itertools.product(x, y)]
+
+        from scipy.interpolate._bspl import make_ndbspl
+        m, t, coef, m_csr = make_ndbspl((np.arange(6), np.arange(6)), values, k=3)
+
+        with np.printoptions(threshold=100000, linewidth=200):
+            print(m)
+
+        bspl = NdBSpline(t, coef, k=3)
+        assert_allclose(bspl(xi), values.ravel(), atol=1e-15)
+
+        # test against RGI
+        from scipy.interpolate import RegularGridInterpolator as RGI
+        rgi = RGI((x, y), values, method='cubic')
+        assert_allclose(rgi(xi), bspl(xi), atol=1e-14)
+
+        # test sparse solve
+        from scipy.sparse.linalg import spsolve
+        coef_2 = spsolve(m_csr, values.ravel())
+        bspl_2 = NdBSpline(t, coef_2.reshape((6, 6)), k=3)
+        assert_allclose(rgi(xi), bspl_2(xi), atol=1e-14)
+
+        breakpoint()
