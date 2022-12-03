@@ -2147,7 +2147,9 @@ cdef class Rotation:
 
         """
         cdef np.ndarray quat = np.array(self._quat, copy=True)
-        quat[:, -1] *= -1
+        quat[:, 0] *= -1
+        quat[:, 1] *= -1
+        quat[:, 2] *= -1
         if self._single:
             quat = quat[0]
         return self.__class__(quat, copy=False)
