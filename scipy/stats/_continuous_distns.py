@@ -9245,24 +9245,20 @@ class vonmises_gen(rv_continuous):
                 np.log(2 * np.pi * sc.i0e(kappa)) + kappa)
 
     @extend_notes_in_docstring(rv_continuous, notes="""\
-        The limits of integration of the vonmises distribution
-        default to the 2pi interval centered at loc
-        (e.g. [-pi,pi] when ``loc=0``).
+        The default limits of integration are endpoints of the interval
+        of width ``2*pi`` centered at `loc` (e.g. ``[-pi, pi]`` when
+        ``loc=0``). The integrand is always treated as a complex-valued
+        function, so the dtype of the return value will always be complex.
 
-        >>> r = vonmises(kappa=1).expect(lambda x: np.exp(1j*x))
-        >>> np.angle(r)
-        0.0
+        >>> res = vonmises(loc=2, kappa=1).expect(lambda x: np.exp(1j*x))
+        (-0.18576377217422957+0.40590124735052263j)
 
-        The ``vonmises::expect`` method, as shown above, uses the
-        ``complex_func`` feature of ``integrate.quad`` to evaluate
-        integral.\n\n""")
+        >>> np.angle(res)
+        2.0
+        \n\n""")
     def expect(self, func=None, args=(), loc=0, scale=1, lb=-np.pi, ub=np.pi,
                conditional=False, **kwds):
-        self._argcheck(*args)
         _a, _b = -np.pi, np.pi
-        if func is None:
-            def func(x, *args):
-                return np.exp(1j*x)
 
         if lb is None:
             lb = loc + _a
