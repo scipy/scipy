@@ -2971,3 +2971,27 @@ class TestVonMises_Fisher:
         mu = np.full((dim, ), 1/np.sqrt(dim))
         entropy = vonmises_fisher(mu, kappa).entropy()
         assert_allclose(entropy, reference)
+
+    def test_pdf_consistency(self):
+        # test that pdf values are correctly broadcasted
+        testshape = (2, 4)
+        x = uniform_direction(3).rvs(testshape)
+        vmf = vonmises_fisher([0, 0, 1], 20)
+        all_pdf = vmf.pdf(x)
+        assert all_pdf.shape == testshape
+        for i in range(testshape[0]):
+            for j in range(testshape[1]):
+                current_pdf = vmf.pdf(x[i, j, :])
+                assert_allclose(current_pdf, all_pdf[i, j])
+
+    def test_logpdf_consistency(self):
+        # test that logpdf values are correctly broadcasted
+        testshape = (2, 4)
+        x = uniform_direction(3).rvs(testshape)
+        vmf = vonmises_fisher([0, 0, 1], 20)
+        all_logpdf = vmf.logpdf(x)
+        assert all_logpdf.shape == testshape
+        for i in range(testshape[0]):
+            for j in range(testshape[1]):
+                current_logpdf = vmf.logpdf(x[i, j, :])
+                assert_allclose(current_logpdf, all_logpdf[i, j])
