@@ -4247,7 +4247,7 @@ class TestOrderFilter:
         domain = np.array(
             [[ 1, 1, 0],
              [ 0, 1, 0],
-             [ 0, 0, 0]]
+             [ 0, 0, 0]],
             dtype=np.int8
         )
 
