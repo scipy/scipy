@@ -104,7 +104,7 @@ stages:
         test_mode: fast
         numpy_spec: "numpy==1.19.5"
         use_sdist: true
-  - job: wheel_optimized_gcc6
+  - job: wheel_optimized_gcc8
     timeoutInMinutes: 90
     pool:
       vmImage: 'ubuntu-18.04'
@@ -114,14 +114,15 @@ stages:
       # flag. This environment variable starts all Py instances in -OO mode.
       PYTHONOPTIMIZE: 2
       # Use gcc version 6
-      CC: gcc-6
-      CXX: g++-6
+      CC: gcc-8
+      CXX: g++-8
+      FC: gfortran-8
     steps:
     - script: |
         set -euo pipefail
         sudo apt update -y
-        sudo apt install -y g++-6 gcc-6
-      displayName: 'Install GCC 6'
+        sudo apt install -y g++-8 gcc-8 gfortran-8
+      displayName: 'Install GCC 8'
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.8'
@@ -182,15 +183,15 @@ stages:
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
             python3.8 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools==59.6.0 wheel numpy==1.19.5 cython==0.29.21 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran && \
-            apt-get -y install gcc-5 g++-5 gfortran-8 wget && \
+            pip3 install setuptools==59.6.0 wheel numpy==1.19.5 cython==0.29.21 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran pooch && \
+            apt-get -y install gcc-8 g++-8 gfortran-8 wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
             target=\$(python3.8 ../scipy/tools/openblas_support.py) && \
             cp -r \$target/lib/* /usr/lib && \
             cp \$target/include/* /usr/include && \
             cd ../scipy && \
-            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.8 setup.py install && \
+            CC=gcc-8 CXX=g++-8 F77=gfortran-8 F90=gfortran-8 python3.8 setup.py install && \
             python3.8 tools/openblas_support.py --check_version $(openblas_version) && \
             python3.8 runtests.py -n --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html --durations=10 --timeout=60"
       displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
@@ -295,13 +296,14 @@ stages:
         numpy==1.21.4
         Pillow
         pybind11
-        pythran==0.11.0
+        pythran==0.12.0
         pytest
         pytest-cov
         pytest-env
         pytest-timeout
         pytest-xdist
         threadpoolctl
+        pooch
       displayName: 'Install dependencies'
     # DLL resolution mechanics were changed in
     # Python 3.8: https://bugs.python.org/issue36085
@@ -337,6 +339,7 @@ stages:
             refreshenv
         }
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
+        $env:SCIPY_USE_PYTHRAN=$(SCIPY_USE_PYTHRAN)
 
         # Still testing distutils here (`pip wheel --no-use-pep517` cannot be
         # used, so back to `setup.py` it is ...)
@@ -347,7 +350,6 @@ stages:
       displayName: 'Build SciPy'
     - powershell: |
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
-        $env:SCIPY_USE_PYTHRAN=$(SCIPY_USE_PYTHRAN)
         python runtests.py -n --mode=$(TEST_MODE) -- -n 2 --junitxml=junit/test-results.xml --durations=10 --timeout=60
       displayName: 'Run SciPy Test Suite'
     - task: PublishTestResults@2

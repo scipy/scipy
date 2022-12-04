@@ -429,7 +429,11 @@ class DescriptiveStats(Benchmark):
 
 
 class GaussianKDE(Benchmark):
-    def setup(self):
+    param_names = ['points']
+    params = [10, 6400]
+
+    def setup(self, points):
+        self.length = points
         rng = np.random.default_rng(12345678)
         n = 2000
         m1 = rng.normal(size=n)
@@ -440,18 +444,16 @@ class GaussianKDE(Benchmark):
         ymin = m2.min()
         ymax = m2.max()
 
-        X, Y = np.mgrid[xmin:xmax:200j, ymin:ymax:200j]
+        X, Y = np.mgrid[xmin:xmax:80j, ymin:ymax:80j]
         self.positions = np.vstack([X.ravel(), Y.ravel()])
         values = np.vstack([m1, m2])
         self.kernel = stats.gaussian_kde(values)
 
-    def time_gaussian_kde_evaluate_few_points(self):
-        # test gaussian_kde evaluate on a small number of points
-        self.kernel(self.positions[:, :10])
+    def time_gaussian_kde_evaluate(self, length):
+        self.kernel(self.positions[:, :self.length])
 
-    def time_gaussian_kde_evaluate_many_points(self):
-        # test gaussian_kde evaluate on many points
-        self.kernel(self.positions)
+    def time_gaussian_kde_logpdf(self, length):
+        self.kernel.logpdf(self.positions[:, :self.length])
 
 
 class GroupSampling(Benchmark):
@@ -497,29 +499,37 @@ class BinnedStatisticDD(Benchmark):
 
 class ContinuousFitAnalyticalMLEOverride(Benchmark):
     # list of distributions to time
-    dists = ["pareto", "laplace", "rayleigh",
-             "invgauss", "gumbel_r", "gumbel_l"]
+    dists = ["pareto", "laplace", "rayleigh", "invgauss", "gumbel_r",
+             "gumbel_l", "powerlaw"]
     # add custom values for rvs and fit, if desired, for any distribution:
     # key should match name in dists and value should be list of loc, scale,
     # and shapes
     custom_input = {}
     fnames = ['floc', 'fscale', 'f0', 'f1', 'f2']
     fixed = {}
-    distcont = dict(distcont)
 
-    param_names = ["distribution", "loc_fixed", "scale_fixed",
+    param_names = ["distribution", "case", "loc_fixed", "scale_fixed",
                    "shape1_fixed", "shape2_fixed", "shape3_fixed"]
-    params = [dists, * [[True, False]] * 5]
+    # in the `_distr_params.py` list, some distributions have multiple sets of
+    # "sane" shape combinations. `case` needs to be an enumeration of the
+    # maximum number of cases for a benchmarked distribution; the maximum is
+    # currently two. Should a benchmarked distribution have more cases in the
+    # `_distr_params.py` list, this will need to be increased.
+    params = [dists, range(2), * [[True, False]] * 5]
 
-    def setup(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
-              shape2_fixed, shape3_fixed):
+    def setup(self, dist_name, case, loc_fixed, scale_fixed,
+              shape1_fixed, shape2_fixed, shape3_fixed):
         self.distn = eval("stats." + dist_name)
 
         # default `loc` and `scale` are .834 and 4.342, and shapes are from
-        # `_distr_params.py`
-        default_shapes = self.distcont[dist_name]
-        param_values = self.custom_input.get(dist_name, [.834, 4.342,
-                                                         *default_shapes])
+        # `_distr_params.py`. If there are multiple cases of valid shapes in
+        # `distcont`, they are benchmarked separately.
+        default_shapes_n = [s[1] for s in distcont if s[0] == dist_name]
+        if case >= len(default_shapes_n):
+            raise NotImplementedError("no alternate case for this dist")
+        default_shapes = default_shapes_n[case]
+        param_values = self.custom_input.get(dist_name, [*default_shapes,
+                                                         .834, 4.342])
         # separate relevant and non-relevant parameters for this distribution
         # based on the number of shapes
         nparam = len(param_values)
@@ -534,13 +544,17 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
             raise NotImplementedError("skip non-relevant case")
 
         # add fixed values if fixed in relevant_parameters to self.fixed
-        # with keys from self.fnames and values from parameter_values
+        # with keys from self.fnames and values in the same order as `fnames`.
+        fixed_vales = self.custom_input.get(dist_name, [.834, 4.342,
+                                                        *default_shapes])
         self.fixed = dict(zip(compress(self.fnames, relevant_parameters),
-                          compress(param_values, relevant_parameters)))
-        self.data = self.distn.rvs(*param_values, size=1000)
+                          compress(fixed_vales, relevant_parameters)))
+        self.param_values = param_values
+        self.data = self.distn.rvs(*param_values, size=1000,
+                                   random_state=np.random.default_rng(4653465))
 
-    def time_fit(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
-                 shape2_fixed, shape3_fixed):
+    def time_fit(self, dist_name, case, loc_fixed, scale_fixed,
+                 shape1_fixed, shape2_fixed, shape3_fixed):
         self.distn.fit(self.data, **self.fixed)
 
 
@@ -664,3 +678,42 @@ class Somersd(Benchmark):
 
     def time_somersd(self, n_size):
         res = stats.somersd(self.x, self.y)
+
+
+class KolmogorovSmirnov(Benchmark):
+    param_names = ['alternative', 'mode', 'size']
+    # No auto since it defaults to exact for 20 samples
+    params = [
+        ['two-sided', 'less', 'greater'],
+        ['exact', 'approx', 'asymp'],
+        [19, 20, 21]
+    ]
+
+    def setup(self, alternative, mode, size):
+        np.random.seed(12345678)
+        a = stats.norm.rvs(size=20)
+        self.a = a
+
+    def time_ks(self, alternative, mode, size):
+        stats.kstest(self.a, 'norm', alternative=alternative,
+                     mode=mode, N=size)
+
+
+class KolmogorovSmirnovTwoSamples(Benchmark):
+    param_names = ['alternative', 'mode', 'size']
+    # No auto since it defaults to exact for 20 samples
+    params = [
+        ['two-sided', 'less', 'greater'],
+        ['exact', 'asymp'],
+        [(21, 20), (20, 20)]
+    ]
+
+    def setup(self, alternative, mode, size):
+        np.random.seed(12345678)
+        a = stats.norm.rvs(size=size[0])
+        b = stats.norm.rvs(size=size[1])
+        self.a = a
+        self.b = b
+
+    def time_ks2(self, alternative, mode, size):
+        stats.ks_2samp(self.a, self.b, alternative=alternative, mode=mode)

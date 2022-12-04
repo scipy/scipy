@@ -258,13 +258,13 @@ def lobpcg(
 
     >>> A = spdiags(vals, 0, n, n)
     >>> A.toarray()
-    array([[  1.,   0.,   0., ...,   0.,   0.,   0.],
-           [  0.,   2.,   0., ...,   0.,   0.,   0.],
-           [  0.,   0.,   3., ...,   0.,   0.,   0.],
+    array([[  1,   0,   0, ...,   0,   0,   0],
+           [  0,   2,   0, ...,   0,   0,   0],
+           [  0,   0,   3, ...,   0,   0,   0],
            ...,
-           [  0.,   0.,   0., ...,  98.,   0.,   0.],
-           [  0.,   0.,   0., ...,   0.,  99.,   0.],
-           [  0.,   0.,   0., ...,   0.,   0., 100.]])
+           [  0,   0,   0, ...,  98,   0,   0],
+           [  0,   0,   0, ...,   0,  99,   0],
+           [  0,   0,   0, ...,   0,   0, 100]])
 
     Initial guess for eigenvectors, should have linearly independent
     columns. The second mandatory input parameter, a 2D array with the

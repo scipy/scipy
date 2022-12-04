@@ -43,7 +43,8 @@ import warnings
 from numpy.linalg import norm
 from numpy.testing import (verbose, assert_,
                            assert_array_equal, assert_equal,
-                           assert_almost_equal, assert_allclose)
+                           assert_almost_equal, assert_allclose,
+                           break_cycles, IS_PYPY)
 import pytest
 from pytest import raises as assert_raises
 
@@ -656,6 +657,9 @@ class TestCdist:
             # references, the arrays should be deallocated.
             weak_refs = [weakref.ref(v) for v in (x1, x2, out)]
             del x1, x2, out
+
+            if IS_PYPY:
+                break_cycles()
             assert all(weak_ref() is None for weak_ref in weak_refs)
 
 
@@ -1992,11 +1996,12 @@ def test_sqeuclidean_dtypes():
         assert_(np.issubdtype(d.dtype, np.floating))
 
     for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
-        d1 = wsqeuclidean([0], np.asarray([-1], dtype=dtype))
-        d2 = wsqeuclidean(np.asarray([-1], dtype=dtype), [0])
+        umax = np.iinfo(dtype).max
+        d1 = wsqeuclidean([0], np.asarray([umax], dtype=dtype))
+        d2 = wsqeuclidean(np.asarray([umax], dtype=dtype), [0])
 
         assert_equal(d1, d2)
-        assert_equal(d1, np.float64(np.iinfo(dtype).max)**2)
+        assert_equal(d1, np.float64(umax)**2)
 
     dtypes = [np.float32, np.float64, np.complex64, np.complex128]
     for dtype in ['float16', 'float128']:
@@ -2074,7 +2079,7 @@ def test_Xdist_deprecated_args():
         for arg in ["p", "V", "VI"]:
             kwargs = {arg:"foo"}
 
-            if((arg == "V" and metric == "seuclidean") or
+            if ((arg == "V" and metric == "seuclidean") or
             (arg == "VI" and metric == "mahalanobis") or
             (arg == "p" and metric == "minkowski")):
                 continue

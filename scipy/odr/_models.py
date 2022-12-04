@@ -95,6 +95,7 @@ class _MultilinearModel(Model):
     dimensional linear model:
 
     >>> from scipy import odr
+    >>> import numpy as np
     >>> x = np.linspace(0.0, 5.0)
     >>> y = 10.0 + 5.0 * x
     >>> data = odr.Data(x, y)
@@ -104,6 +105,7 @@ class _MultilinearModel(Model):
     [10.  5.]
 
     """
+
     def __init__(self):
         super().__init__(
             _lin_fcn, fjacb=_lin_fjb, fjacd=_lin_fjd, estimate=_lin_est,
@@ -138,6 +140,7 @@ def polynomial(order):
     We can fit an input data using orthogonal distance regression (ODR) with
     a polynomial model:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import odr
     >>> x = np.linspace(0.0, 5.0)
@@ -186,6 +189,7 @@ class _ExponentialModel(Model):
     We can calculate orthogonal distance regression with an exponential model:
 
     >>> from scipy import odr
+    >>> import numpy as np
     >>> x = np.linspace(0.0, 5.0)
     >>> y = -10.0 + np.exp(0.5*x)
     >>> data = odr.Data(x, y)
@@ -195,6 +199,7 @@ class _ExponentialModel(Model):
     [-10.    0.5]
 
     """
+
     def __init__(self):
         super().__init__(_exp_fcn, fjacd=_exp_fjd, fjacb=_exp_fjb,
                          estimate=_exp_est,
@@ -255,6 +260,7 @@ class _UnilinearModel(Model):
     We can calculate orthogonal distance regression with an unilinear model:
 
     >>> from scipy import odr
+    >>> import numpy as np
     >>> x = np.linspace(0.0, 5.0)
     >>> y = 1.0 * x + 2.0
     >>> data = odr.Data(x, y)
@@ -264,6 +270,7 @@ class _UnilinearModel(Model):
     [1. 2.]
 
     """
+
     def __init__(self):
         super().__init__(_unilin, fjacd=_unilin_fjd, fjacb=_unilin_fjb,
                          estimate=_unilin_est,
@@ -286,6 +293,7 @@ class _QuadraticModel(Model):
     We can calculate orthogonal distance regression with a quadratic model:
 
     >>> from scipy import odr
+    >>> import numpy as np
     >>> x = np.linspace(0.0, 5.0)
     >>> y = 1.0 * x ** 2 + 2.0 * x + 3.0
     >>> data = odr.Data(x, y)
@@ -295,6 +303,7 @@ class _QuadraticModel(Model):
     [1. 2. 3.]
 
     """
+
     def __init__(self):
         super().__init__(
             _quadratic, fjacd=_quad_fjd, fjacb=_quad_fjb, estimate=_quad_est,

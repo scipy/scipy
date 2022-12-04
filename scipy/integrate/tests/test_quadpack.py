@@ -549,6 +549,39 @@ class TestQuad:
             error_tolerance=6e-8
         )
 
+    def test_complex(self):
+        def tfunc(x):
+            return np.exp(1j*x)
+
+        assert np.allclose(
+                    quad(tfunc, 0, np.pi/2, complex_func=True)[0],
+                    1+1j)
+
+        # We consider a divergent case in order to force quadpack
+        # to return an error message.  The output is compared
+        # against what is returned by explicit integration
+        # of the parts.
+        kwargs = {'a': 0, 'b': np.inf, 'full_output': True,
+                  'weight': 'cos', 'wvar': 1}
+        res_c = quad(tfunc, complex_func=True, **kwargs)
+        res_r = quad(lambda x: np.real(np.exp(1j*x)),
+                     complex_func=False,
+                     **kwargs)
+        res_i = quad(lambda x: np.imag(np.exp(1j*x)),
+                     complex_func=False,
+                     **kwargs)
+
+        np.testing.assert_equal(res_c[0], res_r[0] + 1j*res_i[0])
+        np.testing.assert_equal(res_c[1], res_r[1] + 1j*res_i[1])
+
+        assert len(res_c[2]['real']) == len(res_r[2:]) == 3
+        assert res_c[2]['real'][2] == res_r[4]
+        assert res_c[2]['real'][1] == res_r[3]
+        assert res_c[2]['real'][0]['lst'] == res_r[2]['lst']
+
+        assert len(res_c[2]['imag']) == len(res_i[2:]) == 1
+        assert res_c[2]['imag'][0]['lst'] == res_i[2]['lst']
+
 
 class TestNQuad:
     def test_fixed_limits(self):
@@ -563,8 +596,8 @@ class TestNQuad:
         res = nquad(func1, [[0, 1], [-1, 1], [.13, .8], [-.15, 1]],
                     opts=[opts_basic, {}, {}, {}], full_output=True)
         assert_quad(res[:-1], 1.5267454070738635)
-        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5) 
-        
+        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5)
+
     def test_variable_limits(self):
         scale = .1
 
@@ -683,6 +716,6 @@ class TestNQuad:
     def test_dict_as_opts(self):
         try:
             nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
-        except(TypeError):
+        except TypeError:
             assert False
 

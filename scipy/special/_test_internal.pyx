@@ -1,5 +1,16 @@
+"""
+Wrappers to allow unit tests of internal C code.
+
+This module includes wrappers for:
+* Tests of the functions add_round_up() and add_round_down() from _round.h
+* Several double-double functions from cephes/dd_real.c
+
+"""
+
 import numpy as np
-from numpy.testing import assert_
+from numpy.testing import assert_, assert_allclose
+
+from libc.math cimport isnan
 
 cdef extern from "_round.h":
     double add_round_up(double, double) nogil
@@ -9,8 +20,16 @@ cdef extern from "_round.h":
     int FE_UPWARD
     int FE_DOWNWARD
 
-cdef extern from "numpy/npy_math.h":
-    int npy_isnan(double) nogil
+
+cdef extern from "cephes/dd_real.h":
+    cdef struct double2:
+        pass
+    double2 dd_create(double, double)
+    double dd_hi(double2)
+    double dd_lo(double2)
+    double2 dd_exp(const double2 a)
+    double2 dd_log(const double2 a)
+    double2 dd_expm1(const double2 a)
 
 
 def have_fenv():
@@ -71,7 +90,7 @@ def test_add_round(size, mode):
             std = sample1[i] + sample2[i]
         finally:
             fesetround(old_round)
-        if npy_isnan(res) and npy_isnan(std):
+        if isnan(res) and isnan(std):
             continue
         if res != std:
             nfail += 1
@@ -82,3 +101,25 @@ def test_add_round(size, mode):
         s = "{}/{} failures with mode {}.".format(nfail, size, mode)
         msg = [s] + msg
         assert_(False, "\n".join(msg))
+
+
+# Python wrappers for a few of the "double-double" C functions defined
+# in cephes/dd_*.  The wrappers are not part of the public API; they are
+# for use in scipy.special unit tests only.
+
+def _dd_exp(double xhi, double xlo):
+    cdef double2 x = dd_create(xhi, xlo)
+    cdef double2 y = dd_exp(x)
+    return dd_hi(y), dd_lo(y)
+
+
+def _dd_log(double xhi, double xlo):
+    cdef double2 x = dd_create(xhi, xlo)
+    cdef double2 y = dd_log(x)
+    return dd_hi(y), dd_lo(y)
+
+
+def _dd_expm1(double xhi, double xlo):
+    cdef double2 x = dd_create(xhi, xlo)
+    cdef double2 y = dd_expm1(x)
+    return dd_hi(y), dd_lo(y)

@@ -8,6 +8,7 @@ python_sources = [
   'test_cosine_distr.py',
   'test_cython_special.py',
   'test_data.py',
+  'test_dd.py',
   'test_digamma.py',
   'test_ellip_harm.py',
   'test_erfinv.py',
@@ -32,6 +33,7 @@ python_sources = [
   'test_owens_t.py',
   'test_pcf.py',
   'test_pdtr.py',
+  'test_powm1.py',
   'test_precompute_expn_asy.py',
   'test_precompute_gammainc.py',
   'test_precompute_utils.py',
@@ -51,6 +53,5 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/special/tests'
 )
