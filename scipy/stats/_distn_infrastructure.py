@@ -25,7 +25,7 @@ from scipy import optimize
 from scipy import integrate
 
 # to approximate the pdf of a continuous distribution given its cdf
-from scipy.misc import derivative
+from scipy._lib._finite_differences import _derivative
 
 # for scipy.stats.entropy. Attempts to import just that function or file
 # have cause import problems
@@ -198,7 +198,8 @@ Generate random numbers:
 
 And compare the histogram:
 
->>> ax.hist(r, density=True, histtype='stepfilled', alpha=0.2)
+>>> ax.hist(r, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
+>>> ax.set_xlim([x[0], x[-1]])
 >>> ax.legend(loc='best', frameon=False)
 >>> plt.show()
 
@@ -1509,7 +1510,7 @@ class rv_generic:
         ``ppf`` is the inverse cumulative distribution function and
         ``p_tail = (1-confidence)/2``. Suppose ``[c, d]`` is the support of a
         discrete distribution; then ``ppf([0, 1]) == (c-1, d)``. Therefore,
-        when ``confidence==1`` and the distribution is discrete, the left end
+        when ``confidence=1`` and the distribution is discrete, the left end
         of the interval will be beyond the support of the distribution.
         For discrete distributions, the interval will limit the probability
         in each tail to be less than or equal to ``p_tail`` (usually
@@ -1610,18 +1611,19 @@ class rv_generic:
     def _nnlf(self, x, *args):
         return -np.sum(self._logpxf(x, *args), axis=0)
 
-    def _nnlf_and_penalty(self, x, args):
+    def _nlff_and_penalty(self, x, args, log_fitfun):
+        # negative log fit function
         cond0 = ~self._support_mask(x, *args)
         n_bad = np.count_nonzero(cond0, axis=0)
         if n_bad > 0:
             x = argsreduce(~cond0, x)[0]
-        logpxf = self._logpxf(x, *args)
-        finite_logpxf = np.isfinite(logpxf)
-        n_bad += np.sum(~finite_logpxf, axis=0)
+        logff = log_fitfun(x, *args)
+        finite_logff = np.isfinite(logff)
+        n_bad += np.sum(~finite_logff, axis=0)
         if n_bad > 0:
             penalty = n_bad * log(_XMAX) * 100
-            return -np.sum(logpxf[finite_logpxf], axis=0) + penalty
-        return -np.sum(logpxf, axis=0)
+            return -np.sum(logff[finite_logff], axis=0) + penalty
+        return -np.sum(logff, axis=0)
 
     def _penalized_nnlf(self, theta, x):
         """Penalized negative loglikelihood function.
@@ -1633,7 +1635,32 @@ class rv_generic:
             return inf
         x = asarray((x-loc) / scale)
         n_log_scale = len(x) * log(scale)
-        return self._nnlf_and_penalty(x, args) + n_log_scale
+        return self._nlff_and_penalty(x, args, self._logpxf) + n_log_scale
+
+    def _penalized_nlpsf(self, theta, x):
+        """Penalized negative log product spacing function.
+        i.e., - sum (log (diff (cdf (x, theta))), axis=0) + penalty
+        where theta are the parameters (including loc and scale)
+        Follows reference [1] of scipy.stats.fit
+        """
+        loc, scale, args = self._unpack_loc_scale(theta)
+        if not self._argcheck(*args) or scale <= 0:
+            return inf
+        x = (np.sort(x) - loc)/scale
+
+        def log_psf(x, *args):
+            x, lj = np.unique(x, return_counts=True)  # fast for sorted x
+            cdf_data = self._cdf(x, *args) if x.size else []
+            if not (x.size and 1 - cdf_data[-1] <= 0):
+                cdf = np.concatenate(([0], cdf_data, [1]))
+                lj = np.concatenate((lj, [1]))
+            else:
+                cdf = np.concatenate(([0], cdf_data))
+            # here we could use logcdf w/ logsumexp trick to take differences,
+            # but in the context of the method, it seems unlikely to matter
+            return lj * np.log(np.diff(cdf) / lj)
+
+        return self._nlff_and_penalty(x, args, log_psf)
 
 
 class _ShapeInfo:
@@ -1717,9 +1744,7 @@ class rv_continuous(rv_generic):
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility and will be removed in SciPy 1.11.0, do not
         use for new subclasses.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -2016,7 +2041,7 @@ class rv_continuous(rv_generic):
         return integrate.quad(self._mom_integ1, 0, 1, args=(m,)+args)[0]
 
     def _pdf(self, x, *args):
-        return derivative(self._cdf, x, dx=1e-5, args=args, order=5)
+        return _derivative(self._cdf, x, dx=1e-5, args=args, order=5)
 
     # Could also define any of these
     def _logpdf(self, x, *args):
@@ -2877,6 +2902,20 @@ class rv_continuous(rv_generic):
         1.0000000000000002
 
         The slight deviation from 1 is due to numerical integration.
+
+        The integrand can be treated as a complex-valued function
+        by passing ``complex_func=True`` to `scipy.integrate.quad` .
+
+        >>> import numpy as np
+        >>> from scipy.stats import vonmises
+        >>> res = vonmises(loc=2, kappa=1).expect(lambda x: np.exp(1j*x),
+        ...                                       complex_func=True)
+        >>> res
+        (-0.18576377217422957+0.40590124735052263j)
+
+        >>> np.angle(res)  # location of the (circular) distribution
+        2.0
+
         """
         lockwds = {'loc': loc,
                    'scale': scale}
@@ -3038,9 +3077,7 @@ class rv_discrete(rv_generic):
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility and will be removed in SciPy 1.11.0, do not
         use for new subclasses.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3345,9 +3382,9 @@ class rv_discrete(rv_generic):
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k <= _b)
-        cond = cond0 & cond1
         if not isinstance(self, rv_sample):
             cond1 = cond1 & self._nonzero(k, *args)
+        cond = cond0 & cond1
         output = zeros(shape(cond), 'd')
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         if np.any(cond):

@@ -256,6 +256,16 @@ np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
 
 autosummary_generate = True
 
+# maps functions with a name same as a class name that is indistinguishable
+# Ex: scipy.signal.czt and scipy.signal.CZT or scipy.odr.odr and scipy.odr.ODR
+# Otherwise, the stubs are overwritten when the name is same for
+# OS (like MacOS) which has a filesystem that ignores the case
+# See https://github.com/sphinx-doc/sphinx/pull/7927
+autosummary_filename_map = {
+    "scipy.odr.odr": "odr-function",
+    "scipy.signal.czt": "czt-function",
+}
+
 
 # -----------------------------------------------------------------------------
 # Autodoc
@@ -289,6 +299,13 @@ coverage_ignore_c_items = {}
 #------------------------------------------------------------------------------
 
 plot_pre_code = """
+import warnings
+for key in (
+        'gilbrat'  # misspelling for gibrat and has been deprecated
+        'scipy.misc'  # scipy.misc deprecated in v1.10.0; use scipy.datasets
+        ):
+    warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
+
 import numpy as np
 np.random.seed(123)
 """
@@ -358,7 +375,8 @@ def linkcode_resolve(domain, info):
             return None
 
     # Use the original function object if it is wrapped.
-    obj = getattr(obj, "__wrapped__", obj)
+    while hasattr(obj, "__wrapped__"):
+        obj = obj.__wrapped__
     # SciPy's distributions are instances of *_gen. Point to this
     # class since it contains the implementation of all the methods.
     if isinstance(obj, (rv_generic, multi_rv_generic)):

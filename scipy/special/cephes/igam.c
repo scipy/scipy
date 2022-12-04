@@ -131,22 +131,22 @@ double igam(double a, double x)
 
     if (x < 0 || a < 0) {
         sf_error("gammainc", SF_ERROR_DOMAIN, NULL);
-        return NPY_NAN;
+        return NAN;
     } else if (a == 0) {
         if (x > 0) {
             return 1;
         } else {
-            return NPY_NAN;
+            return NAN;
         }
     } else if (x == 0) {
         /* Zero integration limit */
         return 0;
-    } else if (npy_isinf(a)) {
-        if (npy_isinf(x)) {
-            return NPY_NAN;
+    } else if (isinf(a)) {
+        if (isinf(x)) {
+            return NAN;
         }
         return 0;
-    } else if (npy_isinf(x)) {
+    } else if (isinf(x)) {
         return 1;
     }
 
@@ -172,21 +172,21 @@ double igamc(double a, double x)
 
     if (x < 0 || a < 0) {
 	sf_error("gammaincc", SF_ERROR_DOMAIN, NULL);
-	return NPY_NAN;
+	return NAN;
     } else if (a == 0) {
         if (x > 0) {
 	    return 0;
 	} else {
-	    return NPY_NAN;
+	    return NAN;
 	}
     } else if (x == 0) {
 	return 1;
-    } else if (npy_isinf(a)) {
-	if (npy_isinf(x)) {
-	    return NPY_NAN;
+    } else if (isinf(a)) {
+	if (isinf(x)) {
+	    return NAN;
 	}
 	return 1;
-    } else if (npy_isinf(x)) {
+    } else if (isinf(x)) {
 	return 0;
     }
 
@@ -372,7 +372,7 @@ static double asymptotic_series(double a, double x, int func)
     double lambda = x / a;
     double sigma = (x - a) / a;
     double eta, res, ck, ckterm, term, absterm;
-    double absoldterm = NPY_INFINITY;
+    double absoldterm = INFINITY;
     double etapow[N] = {1};
     double sum = 0;
     double afac = 1;
@@ -417,7 +417,7 @@ static double asymptotic_series(double a, double x, int func)
 	absoldterm = absterm;
 	afac /= a;
     }
-    res += sgn * exp(-0.5 * a * eta * eta) * sum / sqrt(2 * NPY_PI * a);
+    res += sgn * exp(-0.5 * a * eta * eta) * sum / sqrt(2 * M_PI * a);
 
     return res;
 }

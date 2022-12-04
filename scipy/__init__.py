@@ -18,6 +18,7 @@ Using any of these subpackages requires an explicit import. For example,
 ::
 
  cluster                      --- Vector Quantization / Kmeans
+ datasets                     --- Dataset methods
  fft                          --- Discrete Fourier transforms
  fftpack                      --- Legacy discrete Fourier transforms
  integrate                    --- Integration routines
@@ -141,7 +142,7 @@ else:
         import warnings
         warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion}"
                       f" is required for this version of SciPy (detected "
-                      f"version {__numpy_version__}",
+                      f"version {__numpy_version__})",
                       UserWarning)
     del _pep440
 
@@ -163,6 +164,7 @@ else:
 
     submodules = [
         'cluster',
+        'datasets',
         'fft',
         'fftpack',
         'integrate',

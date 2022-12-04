@@ -411,8 +411,6 @@ class TestDifferentialEvolutionSolver:
         assert_equal(result.x, result2.x)
         assert_equal(result.nfev, result2.nfev)
 
-    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
-                        reason='Generator not available for numpy, < 1.17')
     def test_random_generator(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
         # obtain a np.random.Generator object
@@ -482,7 +480,7 @@ class TestDifferentialEvolutionSolver:
         _, fun_prev = next(solver)
         for i, soln in enumerate(solver):
             x_current, fun_current = soln
-            assert(fun_prev >= fun_current)
+            assert fun_prev >= fun_current
             _, fun_prev = x_current, fun_current
             # need to have this otherwise the solver would never stop.
             if i == 50:

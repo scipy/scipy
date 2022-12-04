@@ -1,8 +1,7 @@
-_spatial_pxd = custom_target('_spatial_pxd',
-  output: ['_qhull.pxd', 'setlist.pxd'],
-  input: ['_qhull.pxd', 'setlist.pxd'],
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
+_spatial_pxd = [
+  fs.copyfile('_qhull.pxd'),
+  fs.copyfile('setlist.pxd'),
+]
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxd files.
 # _qhull.pyx depends also on _lib/messagestream
@@ -41,7 +40,8 @@ qhull = py3.extension_module('_qhull',
     '../_build_utils/src',
     'qhull_src/src'
   ],
-  dependencies: [py3_dep, lapack],
+  link_args: version_link_args,
+  dependencies: [lapack],
   install: true,
   subdir: 'scipy/spatial'
 )
@@ -65,7 +65,7 @@ ckdtree = py3.extension_module('_ckdtree',
     '../_build_utils/src',
     'ckdtree/src'
   ],
-  dependencies: [py3_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/spatial'
 )
@@ -74,7 +74,7 @@ _distance_wrap = py3.extension_module('_distance_wrap',
   'src/distance_wrap.c',
   c_args: numpy_nodepr_api,
   include_directories: [incdir_numpy, '../_lib'],
-  dependencies: [py3_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/spatial'
 )
@@ -83,16 +83,16 @@ _distance_pybind = py3.extension_module('_distance_pybind',
   ['src/distance_pybind.cpp'],
   cpp_args: [numpy_nodepr_api],
   include_directories: [incdir_pybind11, incdir_numpy, 'src/'],
-  dependencies: [py3_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/spatial'
 )
 
 _voronoi = py3.extension_module('_voronoi',
   [cython_gen.process('_voronoi.pyx')],
-  c_args: [cython_c_args, c_undefined_ok],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: [incdir_numpy],
-  dependencies: [py3_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/spatial'
 )
@@ -101,7 +101,7 @@ _hausdorff = py3.extension_module('_hausdorff',
   [cython_gen.process('_hausdorff.pyx')],
   c_args: cython_c_args,
   include_directories: [incdir_numpy],
-  dependencies: [py3_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/spatial'
 )
@@ -109,7 +109,6 @@ _hausdorff = py3.extension_module('_hausdorff',
 py3.install_sources([
     'qhull_src/COPYING.txt'
   ],
-  pure: false,
   subdir: 'scipy/spatial/qhull_src'
 )
 
@@ -119,7 +118,6 @@ py3.install_sources([
     '_voronoi.pyi',
     'distance.pyi'
   ],
-  pure: false,
   subdir: 'scipy/spatial'
 )
 
@@ -135,7 +133,6 @@ py3.install_sources([
     'kdtree.py',
     'qhull.py'
   ],
-  pure: false,
   subdir: 'scipy/spatial'
 )
 

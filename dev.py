@@ -7,7 +7,7 @@ This file contains tasks definitions for doit (https://pydoit.org).
 And also a CLI interface using click (https://click.palletsprojects.com).
 
 The CLI is ideal for project contributors while,
-doit interface is better suited for authring the development tasks.
+doit interface is better suited for authoring the development tasks.
 
 REQUIREMENTS:
 --------------
@@ -166,7 +166,8 @@ rich_click.OPTION_GROUPS = {
     "dev.py test": [
         {
             "name": "Options",
-            "options": ["--help", "--verbose", "--parallel", "--coverage"],
+            "options": ["--help", "--verbose", "--parallel", "--coverage",
+                        "--durations"],
         },
         {
             "name": "Options: test selection",
@@ -232,8 +233,8 @@ CONTEXT = UnifiedContext({
         help=':wrench: Relative path to the build directory.'),
     'no_build': Option(
         ["--no-build", "-n"], default=False, is_flag=True,
-        help=(":wrench: do not build the project"
-              " (note event python only modification require build)")),
+        help=(":wrench: Do not build the project"
+              " (note event python only modification require build).")),
     'install_prefix': Option(
         ['--install-prefix'], default=None, metavar='INSTALL_DIR',
         help=(":wrench: Relative path to the install directory."
@@ -370,7 +371,7 @@ def get_test_runner(project_module):
 
 @cli.cls_cmd('build')
 class Build(Task):
-    """:wrench: build & install package on path
+    """:wrench: Build & install package on path.
 
     \b
     ```python
@@ -402,17 +403,18 @@ class Build(Task):
     debug = Option(
         ['--debug', '-d'], default=False, is_flag=True, help="Debug build")
     parallel = Option(
-        ['--parallel', '-j'], default=1, metavar='PARALLEL',
-        help="Number of parallel jobs for build and testing")
+        ['--parallel', '-j'], default=None, metavar='N_JOBS',
+        help=("Number of parallel jobs for building. "
+              "This defaults to 2 * n_cpus + 2."))
     show_build_log = Option(
         ['--show-build-log'], default=False, is_flag=True,
         help="Show build output rather than using a log file")
     win_cp_openblas = Option(
         ['--win-cp-openblas'], default=False, is_flag=True,
-        help=("If set, and on Windows, copy OpenBLAS lib to install directory"
+        help=("If set, and on Windows, copy OpenBLAS lib to install directory "
               "after meson install. "
               "Note: this argument may be removed in the future once a "
-              "`site.cfg`-like mechanism to select BLAS/LAPACK libraries is"
+              "`site.cfg`-like mechanism to select BLAS/LAPACK libraries is "
               "implemented for Meson"))
 
     @classmethod
@@ -447,7 +449,7 @@ class Build(Task):
                     break
             if installdir != str(dirs.installed):
                 run_dir = build_dir
-                cmd = ["meson", "--reconfigure",
+                cmd = ["meson", "setup", "--reconfigure",
                        "--prefix", str(dirs.installed)]
             else:
                 return
@@ -474,7 +476,7 @@ class Build(Task):
         Build a dev version of the project.
         """
         cmd = ["ninja", "-C", str(dirs.build)]
-        if args.parallel > 1:
+        if args.parallel is not None:
             cmd += ["-j", str(args.parallel)]
 
         # Building with ninja-backend
@@ -498,7 +500,7 @@ class Build(Task):
             if non_empty and not dirs.site.exists():
                 raise RuntimeError("Can't install in non-empty directory: "
                                    f"'{dirs.installed}'")
-        cmd = ["meson", "install", "-C", args.build_dir]
+        cmd = ["meson", "install", "-C", args.build_dir, "--only-changed"]
         log_filename = dirs.root / 'meson-install.log'
         start_time = datetime.datetime.now()
         cmd_str = ' '.join([str(p) for p in cmd])
@@ -619,7 +621,7 @@ class Build(Task):
 
 @cli.cls_cmd('test')
 class Test(Task):
-    """:wrench: Run tests
+    """:wrench: Run tests.
 
     \b
     ```python
@@ -627,7 +629,8 @@ class Test(Task):
 
     $ python dev.py test -s {SAMPLE_SUBMODULE}
     $ python dev.py test -t scipy.optimize.tests.test_minimize_constrained
-    $ python dev.py test -s stats -- --tb=line
+    $ python dev.py test -s cluster -m full --durations 20
+    $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
     ```
     """
     ctx = CONTEXT
@@ -638,11 +641,15 @@ class Test(Task):
     # removed doctests as currently not supported by _lib/_testutils.py
     # doctests = Option(['--doctests'], default=False)
     coverage = Option(
-        ['--coverage'], default=False, is_flag=True,
+        ['--coverage', '-c'], default=False, is_flag=True,
         help=("report coverage of project code. "
               "HTML output goes under build/coverage"))
+    durations = Option(
+        ['--durations', '-d'], default=None, metavar="NUM_TESTS",
+        help="Show timing for the given number of slowest tests"
+    )
     submodule = Option(
-        ['--submodule', '-s'], default=None, metavar='SUBMODULE',
+        ['--submodule', '-s'], default=None, metavar='MODULE_NAME',
         help="Submodule whose tests to run (cluster, constants, ...)")
     tests = Option(
         ['--tests', '-t'], default=None, multiple=True, metavar='TESTS',
@@ -652,11 +659,13 @@ class Test(Task):
         help=("'fast', 'full', or something that could be passed to "
               "`pytest -m` as a marker expression"))
     parallel = Option(
-        ['--parallel', '-j'], default=1, metavar='PARALLEL',
+        ['--parallel', '-j'], default=1, metavar='N_JOBS',
         help="Number of parallel jobs for testing"
     )
+    # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`
     pytest_args = Argument(
-        ['pytest_args'], nargs=-1, metavar='PYTEST-ARGS', required=False)
+        ['pytest_args'], nargs=-1, metavar='PYTEST-ARGS', required=False
+    )
 
     TASK_META = {
         'task_dep': ['build'],
@@ -681,6 +690,9 @@ class Test(Task):
             extra_argv += ['--cov-report=html:' + str(dst_dir)]
             shutil.copyfile(dirs.root / '.coveragerc',
                             dirs.site / '.coveragerc')
+
+        if args.durations:
+            extra_argv += ['--durations', args.durations]
 
         # convert options to test selection
         if args.submodule:
@@ -718,7 +730,7 @@ class Test(Task):
 
 @cli.cls_cmd('bench')
 class Bench(Task):
-    """:wrench: Run benchmarks
+    """:wrench: Run benchmarks.
 
     \b
     ```python
@@ -798,7 +810,7 @@ class Bench(Task):
                 print("Running benchmarks for Scipy version %s at %s"
                       % (version, mod_path))
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
-                       '--python=same', '--quick'] + bench_args
+                       '--python=same'] + bench_args
                 retval = cls.run_asv(dirs, cmd)
                 sys.exit(retval)
             else:
@@ -839,7 +851,7 @@ class Bench(Task):
 
     @classmethod
     def run(cls, **kwargs):
-        """run benchamark"""
+        """run benchmark"""
         kwargs.update(cls.ctx.get())
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
@@ -868,24 +880,34 @@ def task_pep8diff():
     return {
         'basename': 'pep8-diff',
         'actions': [str(Dirs().root / 'tools' / 'lint_diff.py')],
-        'doc': 'Lint only files modified since last commit (stricker rules)',
+        'doc': 'Lint only files modified since last commit (stricter rules)',
+    }
+
+
+def task_unicode_check():
+    return {
+        'basename': 'unicode-check',
+        'actions': [str(Dirs().root / 'tools' / 'unicode-check.py')],
+        'doc': 'Check for disallowed Unicode characters in the SciPy Python '
+               'and Cython source code.',
     }
 
 
 @cli.cls_cmd('lint')
 class Lint():
-    """:dash: run flake8, and check PEP 8 compliance on branch diff."""
+    """:dash: Run flake8, check PEP 8 compliance on branch diff and check for
+    disallowed Unicode characters."""
     output_file = Option(
         ['--output-file'], default=None, help='Redirect report to a file')
 
     def run(output_file):
         opts = {'output_file': output_file}
-        run_doit_task({'flake8': opts, 'pep8-diff': {}})
+        run_doit_task({'flake8': opts, 'pep8-diff': {}, 'unicode-check': {}})
 
 
 @cli.cls_cmd('mypy')
 class Mypy(Task):
-    """:wrench: Run mypy on the codebase"""
+    """:wrench: Run mypy on the codebase."""
     ctx = CONTEXT
 
     TASK_META = {
@@ -931,7 +953,7 @@ class Mypy(Task):
 
 @cli.cls_cmd('doc')
 class Doc(Task):
-    """:wrench: Build documentation
+    """:wrench: Build documentation.
 
 TARGETS: Sphinx build targets [default: 'html']
 
@@ -944,7 +966,7 @@ TARGETS: Sphinx build targets [default: 'html']
         help='List doc targets',
     )
     parallel = Option(
-        ['--parallel', '-j'], default=1, metavar='PARALLEL',
+        ['--parallel', '-j'], default=1, metavar='N_JOBS',
         help="Number of parallel jobs"
     )
 
@@ -979,7 +1001,7 @@ TARGETS: Sphinx build targets [default: 'html']
 
 @cli.cls_cmd('refguide-check')
 class RefguideCheck(Task):
-    """:wrench: Run refguide check"""
+    """:wrench: Run refguide check."""
     ctx = CONTEXT
 
     submodule = Option(
@@ -995,7 +1017,9 @@ class RefguideCheck(Task):
         args = Args(**kwargs)
         dirs = Dirs(args)
 
-        cmd = [str(dirs.root / 'tools' / 'refguide_check.py'), '--doctests']
+        cmd = [f'{sys.executable}',
+               str(dirs.root / 'tools' / 'refguide_check.py'),
+               '--doctests']
         if args.verbose:
             cmd += ['-vvv']
         if args.submodule:
@@ -1013,7 +1037,7 @@ class RefguideCheck(Task):
 
 @cli.cls_cmd('python')
 class Python():
-    """:wrench: Start a Python shell with PYTHONPATH set"""
+    """:wrench: Start a Python shell with PYTHONPATH set."""
     ctx = CONTEXT
     pythonpath = Option(
         ['--pythonpath', '-p'], metavar='PYTHONPATH', default=None,
@@ -1049,7 +1073,7 @@ class Python():
 
 @cli.cls_cmd('ipython')
 class Ipython(Python):
-    """:wrench: Start IPython shell with PYTHONPATH set"""
+    """:wrench: Start IPython shell with PYTHONPATH set."""
     ctx = CONTEXT
     pythonpath = Python.pythonpath
 
@@ -1062,7 +1086,7 @@ class Ipython(Python):
 
 @cli.cls_cmd('shell')
 class Shell(Python):
-    """:wrench: Start Unix shell with PYTHONPATH set"""
+    """:wrench: Start Unix shell with PYTHONPATH set."""
     ctx = CONTEXT
     pythonpath = Python.pythonpath
     extra_argv = Python.extra_argv
@@ -1080,7 +1104,7 @@ class Shell(Python):
 @click.argument('version_args', nargs=2)
 @click.pass_obj
 def notes(ctx_obj, version_args):
-    """:ledger: Release notes and log generation
+    """:ledger: Release notes and log generation.
 
     \b
     ```python
@@ -1105,7 +1129,8 @@ def notes(ctx_obj, version_args):
 @click.argument('revision_args', nargs=2)
 @click.pass_obj
 def authors(ctx_obj, revision_args):
-    """:ledger: Generate list of authors who contributed within revision interval
+    """:ledger: Generate list of authors who contributed within revision
+    interval.
 
     \b
     ```python

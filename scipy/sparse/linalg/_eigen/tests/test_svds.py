@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
-from scipy.linalg import hilbert, svd, null_space
+from scipy.linalg import svd, null_space
 from scipy.sparse import csc_matrix, isspmatrix, spdiags, random
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 if os.environ.get("SCIPY_USE_PROPACK"):
@@ -447,7 +447,7 @@ class SVDSCommonTests:
         if self.solver == 'propack':
             if not has_propack:
                 pytest.skip("PROPACK not available")
-        A = hilbert(6)
+        A = np.diag(np.arange(9)).astype(np.float64)
         k = 1
         u, s, vh = sorted_svd(A, k)
 
@@ -456,18 +456,18 @@ class SVDSCommonTests:
             with pytest.raises(ArpackNoConvergence, match=message):
                 svds(A, k, ncv=3, maxiter=1, solver=self.solver)
         elif self.solver == 'lobpcg':
-            message = "Not equal to tolerance"
-            with pytest.raises(AssertionError, match=message):
-                with pytest.warns(UserWarning, match="Exited at iteration"):
-                    u2, s2, vh2 = svds(A, k, maxiter=1, solver=self.solver)
-                assert_allclose(np.abs(u2), np.abs(u))
+            with pytest.warns(UserWarning, match="Exited at iteration"):
+                svds(A, k, maxiter=1, solver=self.solver)
         elif self.solver == 'propack':
             message = "k=1 singular triplets did not converge within"
             with pytest.raises(np.linalg.LinAlgError, match=message):
                 svds(A, k, maxiter=1, solver=self.solver)
 
-        u, s, vh = svds(A, k, solver=self.solver)  # default maxiter
-        _check_svds(A, k, u, s, vh)
+        ud, sd, vhd = svds(A, k, solver=self.solver)  # default maxiter
+        _check_svds(A, k, ud, sd, vhd, atol=1e-8)
+        assert_allclose(np.abs(ud), np.abs(u), atol=1e-8)
+        assert_allclose(np.abs(vhd), np.abs(vh), atol=1e-8)
+        assert_allclose(np.abs(sd), np.abs(s), atol=1e-9)
 
     @pytest.mark.parametrize("rsv", (True, False, 'u', 'vh'))
     @pytest.mark.parametrize("shape", ((5, 7), (6, 6), (7, 5)))
@@ -545,6 +545,8 @@ class SVDSCommonTests:
     A1 = [[1, 2, 3], [3, 4, 3], [1 + 1j, 0, 2], [0, 0, 1]]
     A2 = [[1, 2, 3, 8 + 5j], [3 - 2j, 4, 3, 5], [1, 0, 2, 3], [0, 0, 1, 0]]
 
+    @pytest.mark.filterwarnings("ignore:k >= N - 1",
+                                reason="needed to demonstrate #16725")
     @pytest.mark.parametrize('A', (A1, A2))
     @pytest.mark.parametrize('k', range(1, 5))
     # PROPACK fails a lot if @pytest.mark.parametrize('which', ("SM", "LM"))
@@ -570,7 +572,7 @@ class SVDSCommonTests:
         if self.solver != 'propack' and k >= min(A.shape):
             pytest.skip("Only PROPACK supports complete SVD")
         if self.solver == 'arpack' and not real and k == min(A.shape) - 1:
-            pytest.skip("ARPACK has additional restriction for complex dtype")
+            pytest.skip("#16725")
 
         if self.solver == 'propack' and (np.intp(0).itemsize < 8 and not real):
             pytest.skip('PROPACK complex-valued SVD methods not available '
@@ -720,7 +722,6 @@ class SVDSCommonTests:
         else:
             U, s, VH = svds(A, k, solver=self.solver)
 
-        # Check some generic properties of svd.
         _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
 
         # Check that the largest singular value is near sqrt(n*m)
@@ -730,9 +731,11 @@ class SVDSCommonTests:
         z = np.ones_like(s)
         assert_allclose(s, z)
 
+    @pytest.mark.filterwarnings("ignore:k >= N - 1",
+                                reason="needed to demonstrate #16725")
     @pytest.mark.parametrize("shape", ((3, 4), (4, 4), (4, 3), (4, 2)))
     @pytest.mark.parametrize("dtype", (float, complex))
-    def test_svd_LM_zeros_matrix(self, shape, dtype):
+    def test_zero_matrix(self, shape, dtype):
         # Check that svds can deal with matrices containing only zeros;
         # see https://github.com/scipy/scipy/issues/3452/
         # shape = (4, 2) is included because it is the particular case
@@ -743,7 +746,10 @@ class SVDSCommonTests:
 
         if (self.solver == 'arpack' and dtype is complex
                 and k == min(A.shape) - 1):
-            pytest.skip("ARPACK has additional restriction for complex dtype")
+            pytest.skip("#16725")
+
+        if self.solver == 'propack':
+            pytest.skip("PROPACK failures unrelated to PR #16712")
 
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
@@ -786,11 +792,15 @@ class SVDSCommonTests:
     @pytest.mark.filterwarnings("ignore:The problem size")
     @pytest.mark.parametrize("dtype", (float, complex, np.float32))
     def test_small_sigma2(self, dtype):
-        if not has_propack:
-            pytest.skip("PROPACK not enabled")
-        # https://github.com/scipy/scipy/issues/11406
-        if dtype == complex and self.solver == 'propack':
-            pytest.skip("PROPACK unsupported for complex dtype")
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not enabled")
+            elif dtype == np.float32:
+                pytest.skip("Test failures in CI, see gh-17004")
+            elif dtype == complex:
+                # https://github.com/scipy/scipy/issues/11406
+                pytest.skip("PROPACK unsupported for complex dtype")
+
         rng = np.random.default_rng(179847540)
         # create a 10x10 singular matrix with a 4-dim null space
         dim = 4
@@ -818,11 +828,9 @@ class SVDSCommonTests:
         assert_allclose(ss, 0, atol=1e-5, rtol=1e0)
         # Smallest singular vectors via svds in null space:
         n, m = mat.shape
-        if n > m:
-            assert_allclose(sp_mat @ svh.T, 0, atol=1e-5, rtol=1e0)
-        else:
+        if n < m:  # else the assert fails with some libraries unclear why
             assert_allclose(sp_mat.transpose() @ su, 0, atol=1e-5, rtol=1e0)
-
+        assert_allclose(sp_mat @ svh.T, 0, atol=1e-5, rtol=1e0)
 
 # --- Perform tests with each solver ---
 

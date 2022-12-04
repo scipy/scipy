@@ -213,13 +213,13 @@ count_neighbors(struct CNBParams *params,
     if (CKDTREE_LIKELY(self->raw_boxsize_data == NULL)) {
         HANDLE(CKDTREE_LIKELY(p == 2), MinkowskiDistP2)
         HANDLE(p == 1, MinkowskiDistP1)
-        HANDLE(ckdtree_isinf(p), MinkowskiDistPinf)
+        HANDLE(std::isinf(p), MinkowskiDistPinf)
         HANDLE(1, MinkowskiDistPp)
         {}
     } else {
         HANDLE(CKDTREE_LIKELY(p == 2), BoxMinkowskiDistP2)
         HANDLE(p == 1, BoxMinkowskiDistP1)
-        HANDLE(ckdtree_isinf(p), BoxMinkowskiDistPinf)
+        HANDLE(std::isinf(p), BoxMinkowskiDistPinf)
         HANDLE(1, BoxMinkowskiDistPp)
         {}
     }

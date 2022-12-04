@@ -280,9 +280,9 @@ class nbinom_gen(rv_discrete):
 
     for :math:`k \ge 0`, :math:`0 < p \leq 1`
 
-    `nbinom` takes :math:`n` and :math:`p` as shape parameters where n is the
-    number of successes, :math:`p` is the probability of a single success,
-    and :math:`1-p` is the probability of a single failure.
+    `nbinom` takes :math:`n` and :math:`p` as shape parameters where :math:`n`
+    is the number of successes, :math:`p` is the probability of a single
+    success, and :math:`1-p` is the probability of a single failure.
 
     Another common parameterization of the negative binomial distribution is
     in terms of the mean number of failures :math:`\mu` to achieve :math:`n`
@@ -368,7 +368,7 @@ class nbinom_gen(rv_discrete):
             return _boost._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
-        return(
+        return (
             _boost._nbinom_mean(n, p),
             _boost._nbinom_variance(n, p),
             _boost._nbinom_skewness(n, p),
@@ -990,7 +990,7 @@ class boltzmann_gen(rv_discrete):
 
     """
     def _shape_info(self):
-        return [_ShapeInfo("lambda", False, (0, np.inf), (False, False)),
+        return [_ShapeInfo("lambda_", False, (0, np.inf), (False, False)),
                 _ShapeInfo("N", True, (0, np.inf), (False, False))]
 
     def _argcheck(self, lambda_, N):

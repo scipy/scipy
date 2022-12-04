@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import numpy.testing as npt
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 import pytest
 from scipy import stats
 from scipy.optimize import differential_evolution
@@ -9,6 +9,7 @@ from scipy.optimize import differential_evolution
 from .test_continuous_basic import distcont
 from scipy.stats._distn_infrastructure import FitError
 from scipy.stats._distr_params import distdiscrete
+from scipy.stats import goodness_of_fit
 
 
 # this is not a proper statistical test for convergence, but only
@@ -57,7 +58,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
 # not sure if these fail, but they caused my patience to fail
 mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                 'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
-                'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm',
+                'kappa4', 'kstwobign', 'recipinvgauss',
                 'truncexpon', 'vonmises', 'vonmises_line']
 
 failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
@@ -175,22 +176,21 @@ def test_nnlf_and_related_methods(dist, params):
     assert_allclose(res2, ref)
 
 
-def cases_test_fit():
-    # These three fail default test; check separately
-    skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min'}
-    # status of 'studentized_range', 'ksone', 'kstwo' unknown; all others pass
+def cases_test_fit_mle():
+    # These fail default test or hang
+    skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
+                      'ksone', 'levy_stable', 'studentized_range', 'kstwo'}
     slow_basic_fit = {'burr12', 'johnsonsb', 'bradford', 'fisk', 'mielke',
                       'exponpow', 'rdist', 'norminvgauss', 'betaprime',
                       'powerlaw', 'pareto', 'johnsonsu', 'loglaplace',
                       'wrapcauchy', 'weibull_max', 'arcsine', 'binom', 'rice',
-                      'uniform', 'f', 'invweibull', 'genpareto', 'weibull_min',
+                      'uniform', 'f', 'invweibull', 'genpareto',
                       'nbinom', 'kappa3', 'lognorm', 'halfgennorm', 'pearson3',
                       'alpha', 't', 'crystalball', 'fatiguelife', 'nakagami',
                       'kstwobign', 'gompertz', 'dweibull', 'lomax', 'invgauss',
                       'recipinvgauss', 'chi', 'foldcauchy', 'powernorm',
-                      'gennorm', 'skewnorm', 'randint', 'genextreme'}
-    xslow_basic_fit = {'studentized_range', 'ksone', 'kstwo', 'levy_stable',
-                       'nchypergeom_fisher', 'nchypergeom_wallenius',
+                      'gennorm', 'randint', 'genextreme'}
+    xslow_basic_fit = {'nchypergeom_fisher', 'nchypergeom_wallenius',
                        'gausshyper', 'genexpon', 'gengamma', 'genhyperbolic',
                        'geninvgauss', 'tukeylambda', 'skellam', 'ncx2',
                        'hypergeom', 'nhypergeom', 'zipfian', 'ncf',
@@ -213,9 +213,59 @@ def cases_test_fit():
             yield dist
 
 
+def cases_test_fit_mse():
+    # the first four are so slow that I'm not sure whether they would pass
+    skip_basic_fit = {'levy_stable', 'studentized_range', 'ksone', 'skewnorm',
+                      'norminvgauss',  # super slow (~1 hr) but passes
+                      'kstwo',  # very slow (~25 min) but passes
+                      'geninvgauss',  # quite slow (~4 minutes) but passes
+                      'gausshyper', 'genhyperbolic',  # integration warnings
+                      'argus',  # close, but doesn't meet tolerance
+                      'vonmises'}  # can have negative CDF; doesn't play nice
+    slow_basic_fit = {'wald', 'genextreme', 'anglit', 'semicircular',
+                      'kstwobign', 'arcsine', 'genlogistic', 'truncexpon',
+                      'fisk', 'uniform', 'exponnorm', 'maxwell', 'lomax',
+                      'laplace_asymmetric', 'lognorm', 'foldcauchy',
+                      'genpareto', 'powernorm', 'loglaplace', 'foldnorm',
+                      'recipinvgauss', 'exponpow', 'bradford', 'weibull_max',
+                      'gompertz', 'dweibull', 'truncpareto', 'weibull_min',
+                      'johnsonsu', 'loggamma', 'kappa3', 'fatiguelife',
+                      'pareto', 'invweibull', 'alpha', 'erlang', 'dgamma',
+                      'chi2', 'crystalball', 'nakagami', 'truncweibull_min',
+                      't', 'vonmises_line', 'triang', 'wrapcauchy', 'gamma',
+                      'mielke', 'chi', 'johnsonsb', 'exponweib',
+                      'genhalflogistic', 'randint', 'nhypergeom', 'hypergeom',
+                      'betabinom'}
+    xslow_basic_fit = {'burr', 'halfgennorm', 'invgamma',
+                       'invgauss', 'powerlaw', 'burr12', 'trapezoid', 'kappa4',
+                       'f', 'powerlognorm', 'ncx2', 'rdist', 'reciprocal',
+                       'loguniform', 'betaprime', 'rice', 'gennorm',
+                       'gengamma', 'truncnorm', 'ncf', 'nct', 'pearson3',
+                       'beta', 'genexpon', 'tukeylambda', 'zipfian',
+                       'nchypergeom_wallenius', 'nchypergeom_fisher'}
+    warns_basic_fit = {'skellam'}  # can remove mark after gh-14901 is resolved
+
+    for dist in dict(distdiscrete + distcont):
+        if dist in skip_basic_fit or not isinstance(dist, str):
+            reason = "Fails. Oh well."
+            yield pytest.param(dist, marks=pytest.mark.skip(reason=reason))
+        elif dist in slow_basic_fit:
+            reason = "too slow (>= 0.25s)"
+            yield pytest.param(dist, marks=pytest.mark.slow(reason=reason))
+        elif dist in xslow_basic_fit:
+            reason = "too slow (>= 1.0s)"
+            yield pytest.param(dist, marks=pytest.mark.xslow(reason=reason))
+        elif dist in warns_basic_fit:
+            mark = pytest.mark.filterwarnings('ignore::RuntimeWarning')
+            yield pytest.param(dist, marks=mark)
+        else:
+            yield dist
+
+
 def cases_test_fitstart():
     for distname, shapes in dict(distcont).items():
-        if not isinstance(distname, str) or distname in {'studentized_range'}:
+        if (not isinstance(distname, str) or
+                distname in {'studentized_range', 'recipinvgauss'}):  # slow
             continue
         yield distname, shapes
 
@@ -232,11 +282,13 @@ def test_fitstart(distname, shapes):
     assert dist._argcheck(*guess[:-2])
 
 
-def assert_nllf_less_or_close(dist, data, params1, params0, rtol=1e-7, atol=0):
-    nllf1 = dist.nnlf(params1, data)
-    nllf0 = dist.nnlf(params0, data)
-    if not (nllf1 < nllf0):
-        np.testing.assert_allclose(nllf1, nllf0, rtol=rtol, atol=atol)
+def assert_nlff_less_or_close(dist, data, params1, params0, rtol=1e-7, atol=0,
+                              nlff_name='nnlf'):
+    nlff = getattr(dist, nlff_name)
+    nlff1 = nlff(params1, data)
+    nlff0 = nlff(params0, data)
+    if not (nlff1 < nlff0):
+        np.testing.assert_allclose(nlff1, nlff0, rtol=rtol, atol=atol)
 
 
 class TestFit:
@@ -369,8 +421,7 @@ class TestFit:
         with pytest.warns(RuntimeWarning, match=message):
             stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
 
-    @pytest.mark.parametrize("dist_name", cases_test_fit())
-    def test_basic_fit(self, dist_name):
+    def basic_fit_test(self, dist_name, method):
 
         N = 5000
         dist_data = dict(distcont + distdiscrete)
@@ -378,10 +429,10 @@ class TestFit:
         dist = getattr(stats, dist_name)
         shapes = np.array(dist_data[dist_name])
         bounds = np.empty((len(shapes) + 2, 2), dtype=np.float64)
-        bounds[:-2, 0] = shapes/10**np.sign(shapes)
-        bounds[:-2, 1] = shapes*10**np.sign(shapes)
+        bounds[:-2, 0] = shapes/10.**np.sign(shapes)
+        bounds[:-2, 1] = shapes*10.**np.sign(shapes)
         bounds[-2] = (0, 10)
-        bounds[-1] = (0, 10)
+        bounds[-1] = (1e-16, 10)
         loc = rng.uniform(*bounds[-2])
         scale = rng.uniform(*bounds[-1])
         ref = list(dist_data[dist_name]) + [loc, scale]
@@ -396,9 +447,21 @@ class TestFit:
 
         with npt.suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "overflow encountered")
-            res = stats.fit(dist, data, bounds, optimizer=self.opt)
+            res = stats.fit(dist, data, bounds, method=method,
+                            optimizer=self.opt)
 
-        assert_nllf_less_or_close(dist, data, res.params, ref, **self.tols)
+        nlff_names = {'mle': 'nnlf', 'mse': '_penalized_nlpsf'}
+        nlff_name = nlff_names[method]
+        assert_nlff_less_or_close(dist, data, res.params, ref, **self.tols,
+                                  nlff_name=nlff_name)
+
+    @pytest.mark.parametrize("dist_name", cases_test_fit_mle())
+    def test_basic_fit_mle(self, dist_name):
+        self.basic_fit_test(dist_name, "mle")
+
+    @pytest.mark.parametrize("dist_name", cases_test_fit_mse())
+    def test_basic_fit_mse(self, dist_name):
+        self.basic_fit_test(dist_name, "mse")
 
     def test_argus(self):
         # Can't guarantee that all distributions will fit all data with
@@ -412,7 +475,7 @@ class TestFit:
         shape_bounds = {'chi': (0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
 
-        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
+        assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
     def test_foldnorm(self):
         # Can't guarantee that all distributions will fit all data with
@@ -426,7 +489,7 @@ class TestFit:
         shape_bounds = {'c': (0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
 
-        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
+        assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
     def test_truncpareto(self):
         # Can't guarantee that all distributions will fit all data with
@@ -440,7 +503,7 @@ class TestFit:
         shape_bounds = [(0.1, 10)]*4
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
 
-        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
+        assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
     def test_truncweibull_min(self):
         # Can't guarantee that all distributions will fit all data with
@@ -454,7 +517,7 @@ class TestFit:
         shape_bounds = [(0.1, 10)]*5
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
 
-        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
+        assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
     def test_missing_shape_bounds(self):
         # some distributions have a small domain w.r.t. a parameter, e.g.
@@ -563,3 +626,225 @@ class TestFit:
 
         res = stats.fit(dist, data, bounds, guess=params, optimizer=self.opt)
         assert_allclose(res.params, params, **self.tols)
+
+    def test_mse_accuracy_1(self):
+        # Test maximum spacing estimation against example from Wikipedia
+        # https://en.wikipedia.org/wiki/Maximum_spacing_estimation#Examples
+        data = [2, 4]
+        dist = stats.expon
+        bounds = {'loc': (0, 0), 'scale': (1e-8, 10)}
+        res_mle = stats.fit(dist, data, bounds=bounds, method='mle')
+        assert_allclose(res_mle.params.scale, 3, atol=1e-3)
+        res_mse = stats.fit(dist, data, bounds=bounds, method='mse')
+        assert_allclose(res_mse.params.scale, 3.915, atol=1e-3)
+
+    def test_mse_accuracy_2(self):
+        # Test maximum spacing estimation against example from Wikipedia
+        # https://en.wikipedia.org/wiki/Maximum_spacing_estimation#Examples
+        rng = np.random.default_rng(9843212616816518964)
+
+        dist = stats.uniform
+        n = 10
+        data = dist(3, 6).rvs(size=n, random_state=rng)
+        bounds = {'loc': (0, 10), 'scale': (1e-8, 10)}
+        res = stats.fit(dist, data, bounds=bounds, method='mse')
+        # (loc=3.608118420015416, scale=5.509323262055043)
+
+        x = np.sort(data)
+        a = (n*x[0] - x[-1])/(n - 1)
+        b = (n*x[-1] - x[0])/(n - 1)
+        ref = a, b-a  # (3.6081133632151503, 5.509328130317254)
+        assert_allclose(res.params, ref, rtol=1e-4)
+
+
+# Data from Matlab: https://www.mathworks.com/help/stats/lillietest.html
+examgrades = [65, 61, 81, 88, 69, 89, 55, 84, 86, 84, 71, 81, 84, 81, 78, 67,
+              96, 66, 73, 75, 59, 71, 69, 63, 79, 76, 63, 85, 87, 88, 80, 71,
+              65, 84, 71, 75, 81, 79, 64, 65, 84, 77, 70, 75, 84, 75, 73, 92,
+              90, 79, 80, 71, 73, 71, 58, 79, 73, 64, 77, 82, 81, 59, 54, 82,
+              57, 79, 79, 73, 74, 82, 63, 64, 73, 69, 87, 68, 81, 73, 83, 73,
+              80, 73, 73, 71, 66, 78, 64, 74, 68, 67, 75, 75, 80, 85, 74, 76,
+              80, 77, 93, 70, 86, 80, 81, 83, 68, 60, 85, 64, 74, 82, 81, 77,
+              66, 85, 75, 81, 69, 60, 83, 72]
+
+
+class TestGoodnessOfFit:
+
+    def test_gof_iv(self):
+        dist = stats.norm
+        x = [1, 2, 3]
+
+        message = r"`dist` must be a \(non-frozen\) instance of..."
+        with pytest.raises(TypeError, match=message):
+            goodness_of_fit(stats.norm(), x)
+
+        message = "`data` must be a one-dimensional array of numbers."
+        with pytest.raises(ValueError, match=message):
+            goodness_of_fit(dist, [[1, 2, 3]])
+
+        message = "`statistic` must be one of..."
+        with pytest.raises(ValueError, match=message):
+            goodness_of_fit(dist, x, statistic='mm')
+
+        message = "`n_mc_samples` must be an integer."
+        with pytest.raises(TypeError, match=message):
+            goodness_of_fit(dist, x, n_mc_samples=1000.5)
+
+        message = "'herring' cannot be used to seed a"
+        with pytest.raises(ValueError, match=message):
+            goodness_of_fit(dist, x, random_state='herring')
+
+    def test_against_ks(self):
+        rng = np.random.default_rng(8517426291317196949)
+        x = examgrades
+        known_params = {'loc': np.mean(x), 'scale': np.std(x, ddof=1)}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='ks', random_state=rng)
+        ref = stats.kstest(x, stats.norm(**known_params).cdf, method='exact')
+        assert_allclose(res.statistic, ref.statistic)  # ~0.0848
+        assert_allclose(res.pvalue, ref.pvalue, atol=5e-3)  # ~0.335
+
+    def test_against_lilliefors(self):
+        rng = np.random.default_rng(2291803665717442724)
+        x = examgrades
+        res = goodness_of_fit(stats.norm, x, statistic='ks', random_state=rng)
+        known_params = {'loc': np.mean(x), 'scale': np.std(x, ddof=1)}
+        ref = stats.kstest(x, stats.norm(**known_params).cdf, method='exact')
+        assert_allclose(res.statistic, ref.statistic)  # ~0.0848
+        assert_allclose(res.pvalue, 0.0348, atol=5e-3)
+
+    def test_against_cvm(self):
+        rng = np.random.default_rng(8674330857509546614)
+        x = examgrades
+        known_params = {'loc': np.mean(x), 'scale': np.std(x, ddof=1)}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='cvm', random_state=rng)
+        ref = stats.cramervonmises(x, stats.norm(**known_params).cdf)
+        assert_allclose(res.statistic, ref.statistic)  # ~0.090
+        assert_allclose(res.pvalue, ref.pvalue, atol=5e-3)  # ~0.636
+
+    def test_against_anderson_case_0(self):
+        # "Case 0" is where loc and scale are known [1]
+        rng = np.random.default_rng(7384539336846690410)
+        x = np.arange(1, 101)
+        # loc that produced critical value of statistic found w/ root_scalar
+        known_params = {'loc': 45.01575354024957, 'scale': 30}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='ad', random_state=rng)
+        assert_allclose(res.statistic, 2.492)  # See [1] Table 1A 1.0
+        assert_allclose(res.pvalue, 0.05, atol=5e-3)
+
+    def test_against_anderson_case_1(self):
+        # "Case 1" is where scale is known and loc is fit [1]
+        rng = np.random.default_rng(5040212485680146248)
+        x = np.arange(1, 101)
+        # scale that produced critical value of statistic found w/ root_scalar
+        known_params = {'scale': 29.957112639101933}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='ad', random_state=rng)
+        assert_allclose(res.statistic, 0.908)  # See [1] Table 1B 1.1
+        assert_allclose(res.pvalue, 0.1, atol=5e-3)
+
+    def test_against_anderson_case_2(self):
+        # "Case 2" is where loc is known and scale is fit [1]
+        rng = np.random.default_rng(726693985720914083)
+        x = np.arange(1, 101)
+        # loc that produced critical value of statistic found w/ root_scalar
+        known_params = {'loc': 44.5680212261933}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='ad', random_state=rng)
+        assert_allclose(res.statistic, 2.904)  # See [1] Table 1B 1.2
+        assert_allclose(res.pvalue, 0.025, atol=5e-3)
+
+    def test_against_anderson_case_3(self):
+        # "Case 3" is where both loc and scale are fit [1]
+        rng = np.random.default_rng(6763691329830218206)
+        # c that produced critical value of statistic found w/ root_scalar
+        x = stats.skewnorm.rvs(1.4477847789132101, loc=1, scale=2, size=100,
+                               random_state=rng)
+        res = goodness_of_fit(stats.norm, x, statistic='ad', random_state=rng)
+        assert_allclose(res.statistic, 0.559)  # See [1] Table 1B 1.2
+        assert_allclose(res.pvalue, 0.15, atol=5e-3)
+
+    @pytest.mark.slow
+    def test_against_anderson_gumbel_r(self):
+        rng = np.random.default_rng(7302761058217743)
+        # c that produced critical value of statistic found w/ root_scalar
+        x = stats.genextreme(0.051896837188595134, loc=0.5,
+                             scale=1.5).rvs(size=1000, random_state=rng)
+        res = goodness_of_fit(stats.gumbel_r, x, statistic='ad',
+                              random_state=rng)
+        ref = stats.anderson(x, dist='gumbel_r')
+        assert_allclose(res.statistic, ref.critical_values[0])
+        assert_allclose(res.pvalue, ref.significance_level[0]/100, atol=5e-3)
+
+    def test_params_effects(self):
+        # Ensure that `guessed_params`, `fit_params`, and `known_params` have
+        # the intended effects.
+        rng = np.random.default_rng(9121950977643805391)
+        x = stats.skewnorm.rvs(-5.044559778383153, loc=1, scale=2, size=50,
+                               random_state=rng)
+
+        # Show that `guessed_params` don't fit to the guess,
+        # but `fit_params` and `known_params` respect the provided fit
+        guessed_params = {'c': 13.4}
+        fit_params = {'scale': 13.73}
+        known_params = {'loc': -13.85}
+        rng = np.random.default_rng(9121950977643805391)
+        res1 = goodness_of_fit(stats.weibull_min, x, n_mc_samples=2,
+                               guessed_params=guessed_params,
+                               fit_params=fit_params,
+                               known_params=known_params, random_state=rng)
+        assert not np.allclose(res1.fit_result.params.c, 13.4)
+        assert_equal(res1.fit_result.params.scale, 13.73)
+        assert_equal(res1.fit_result.params.loc, -13.85)
+
+        # Show that changing the guess changes the parameter that gets fit,
+        # and it changes the null distribution
+        guessed_params = {'c': 2}
+        rng = np.random.default_rng(9121950977643805391)
+        res2 = goodness_of_fit(stats.weibull_min, x, n_mc_samples=2,
+                               guessed_params=guessed_params,
+                               fit_params=fit_params,
+                               known_params=known_params, random_state=rng)
+        assert not np.allclose(res2.fit_result.params.c,
+                               res1.fit_result.params.c, rtol=1e-8)
+        assert not np.allclose(res2.null_distribution,
+                               res1.null_distribution, rtol=1e-8)
+        assert_equal(res2.fit_result.params.scale, 13.73)
+        assert_equal(res2.fit_result.params.loc, -13.85)
+
+        # If we set all parameters as fit_params and known_params,
+        # they're all fixed to those values, but the null distribution
+        # varies.
+        fit_params = {'c': 13.4, 'scale': 13.73}
+        rng = np.random.default_rng(9121950977643805391)
+        res3 = goodness_of_fit(stats.weibull_min, x, n_mc_samples=2,
+                               guessed_params=guessed_params,
+                               fit_params=fit_params,
+                               known_params=known_params, random_state=rng)
+        assert_equal(res3.fit_result.params.c, 13.4)
+        assert_equal(res3.fit_result.params.scale, 13.73)
+        assert_equal(res3.fit_result.params.loc, -13.85)
+        assert not np.allclose(res3.null_distribution, res1.null_distribution)
+
+
+class TestFitResult:
+    def test_plot_iv(self):
+        rng = np.random.default_rng(1769658657308472721)
+        data = stats.norm.rvs(0, 1, size=100, random_state=rng)
+
+        def optimizer(*args, **kwargs):
+            return differential_evolution(*args, **kwargs, seed=rng)
+
+        bounds = [(0, 30), (0, 1)]
+        res = stats.fit(stats.norm, data, bounds, optimizer=optimizer)
+        try:
+            import matplotlib  # noqa
+            message = r"`plot_type` must be one of \{'..."
+            with pytest.raises(ValueError, match=message):
+                res.plot(plot_type='llama')
+        except (ModuleNotFoundError, ImportError):
+            message = r"matplotlib must be installed to use method `plot`."
+            with pytest.raises(ModuleNotFoundError, match=message):
+                res.plot(plot_type='llama')

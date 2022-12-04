@@ -5,7 +5,7 @@ import warnings
 from functools import partial
 
 from . import _quadpack
-import numpy
+import numpy as np
 from numpy import Inf
 
 __all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]
@@ -22,7 +22,7 @@ class IntegrationWarning(UserWarning):
 
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,
-         limlst=50):
+         limlst=50, complex_func=False):
     """
     Compute a definite integral.
 
@@ -61,6 +61,13 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Non-zero to return a dictionary of integration information.
         If non-zero, warning messages are also suppressed and the
         message is appended to the output tuple.
+    complex_func : bool, optional
+        Indicate if the function's (`func`) return type is real
+        (``complex_func=False``: default) or complex (``complex_func=True``).
+        In both cases, the function's argument is real.
+        If full_output is also non-zero, the `infodict`, `message`, and
+        `explain` for the real and complex components are returned in
+        a dictionary with keys "real output" and "imag output".
 
     Returns
     -------
@@ -330,6 +337,21 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Clenshaw-Curtis integration is used on those intervals containing the
         point :math:`x = c`.
 
+    **Integration of Complex Function of a Real Variable**
+
+    A complex valued function, :math:`f`, of a real variable can be written as
+    :math:`f = g + ih`.  Similarly, the integral of :math:`f` can be
+    written as
+
+    .. math::
+        \\int_a^b f(x) dx = \\int_a^b g(x) dx + i\\int_a^b h(x) dx
+
+    assuming that the integrals of :math:`g` and :math:`h` exist
+    over the inteval :math:`[a,b]` [2]_. Therefore, ``quad`` integrates
+    complex-valued functions by integrating the real and imaginary components
+    separately.
+
+
     References
     ----------
 
@@ -339,11 +361,17 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
            Springer-Verlag.
            ISBN 978-3-540-12553-2.
 
+    .. [2] McCullough, Thomas; Phillips, Keith (1973).
+           Foundations of Analysis in the Complex Plane.
+           Holt Rinehart Winston.
+           ISBN 0-03-086370-8
+
     Examples
     --------
     Calculate :math:`\\int^4_0 x^2 dx` and compare with an analytic result
 
     >>> from scipy import integrate
+    >>> import numpy as np
     >>> x2 = lambda x: x**2
     >>> integrate.quad(x2, 0, 4)
     (21.333333333333332, 2.3684757858670003e-13)
@@ -406,6 +434,30 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     # check the limits of integration: \int_a^b, expect a < b
     flip, a, b = b < a, min(a, b), max(a, b)
+
+    if complex_func:
+        def imfunc(x, *args):
+            return np.imag(func(x, *args))
+
+        def refunc(x, *args):
+            return np.real(func(x, *args))
+
+        re_retval = quad(refunc, a, b, args, full_output, epsabs,
+                         epsrel, limit, points, weight, wvar, wopts,
+                         maxp1, limlst, complex_func=False)
+        im_retval = quad(imfunc, a, b, args, full_output, epsabs,
+                         epsrel, limit, points, weight, wvar, wopts,
+                         maxp1, limlst, complex_func=False)
+        integral = re_retval[0] + 1j*im_retval[0]
+        error_estimate = re_retval[1] + 1j*im_retval[1]
+        retval = integral, error_estimate
+        if full_output:
+            msgexp = {}
+            msgexp["real"] = re_retval[2:]
+            msgexp["imag"] = im_retval[2:]
+            retval = retval + (msgexp,)
+
+        return retval
 
     if weight is None:
         retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
@@ -528,10 +580,10 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
             raise ValueError("Infinity inputs cannot be used with break points.")
         else:
             #Duplicates force function evaluation at singular points
-            the_points = numpy.unique(points)
+            the_points = np.unique(points)
             the_points = the_points[a < the_points]
             the_points = the_points[the_points < b]
-            the_points = numpy.concatenate((the_points, (0., 0.)))
+            the_points = np.concatenate((the_points, (0., 0.)))
             return _quadpack._qagpe(func,a,b,the_points,args,full_output,epsabs,epsrel,limit)
 
 
@@ -679,6 +731,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     ``x`` ranging from 0 to 2 and ``y`` ranging from 0 to 1.
     That is, :math:`\\int^{x=2}_{x=0} \\int^{y=1}_{y=0} x y^2 \\,dy \\,dx`.
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> f = lambda y, x: x*y**2
     >>> integrate.dblquad(f, 0, 2, 0, 1)
@@ -691,7 +744,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     >>> integrate.dblquad(f, 0, np.pi/4, np.sin, np.cos)
         (0.41421356237309503, 1.1083280054755938e-14)
 
-    Calculate :math:`\\int^{x=1}_{x=0} \\int^{y=x}_{y=2-x} a x y \\,dy \\,dx`
+    Calculate :math:`\\int^{x=1}_{x=0} \\int^{y=2-x}_{y=x} a x y \\,dy \\,dx`
     for :math:`a=1, 3`.
 
     >>> f = lambda y, x, a: a*x*y
@@ -699,6 +752,15 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         (0.33333333333333337, 5.551115123125783e-15)
     >>> integrate.dblquad(f, 0, 1, lambda x: x, lambda x: 2-x, args=(3,))
         (0.9999999999999999, 1.6653345369377348e-14)
+
+    Compute the two-dimensional Gaussian Integral, which is the integral of the
+    Gaussian function :math:`f(x,y) = e^{-(x^{2} + y^{2})}`, over
+    :math:`(-\\infty,+\\infty)`. That is, compute the integral
+    :math:`\\iint^{+\\infty}_{-\\infty} e^{-(x^{2} + y^{2})} \\,dy\\,dx`.
+
+    >>> f = lambda x, y: np.exp(-(x ** 2 + y ** 2))
+    >>> integrate.dblquad(f, -np.inf, np.inf, -np.inf, np.inf)
+        (3.141592653589777, 2.5173086737433208e-08)
 
     """
 
@@ -803,6 +865,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     That is, :math:`\\int^{x=2}_{x=1} \\int^{y=3}_{y=2} \\int^{z=1}_{z=0} x y z
     \\,dz \\,dy \\,dx`.
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> f = lambda z, y, x: x*y*z
     >>> integrate.tplquad(f, 1, 2, 2, 3, 0, 1)
@@ -825,6 +888,16 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         (0.125, 5.527033708952211e-15)
     >>> integrate.tplquad(f, 0, 1, 0, 1, 0, 1, args=(3,))
         (0.375, 1.6581101126856635e-14)
+
+    Compute the three-dimensional Gaussian Integral, which is the integral of
+    the Gaussian function :math:`f(x,y,z) = e^{-(x^{2} + y^{2} + z^{2})}`, over
+    :math:`(-\\infty,+\\infty)`. That is, compute the integral
+    :math:`\\iiint^{+\\infty}_{-\\infty} e^{-(x^{2} + y^{2} + z^{2})} \\,dz
+    \\,dy\\,dx`.
+
+    >>> f = lambda x, y, z: np.exp(-(x ** 2 + y ** 2 + z ** 2))
+    >>> integrate.tplquad(f, -np.inf, np.inf, -np.inf, np.inf, -np.inf, np.inf)
+        (5.568327996830833, 4.4619078828029765e-08)
 
     """
     # f(z, y, x)
@@ -1034,6 +1107,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
           x_0^2+x_1 x_2-x_3^3+ \sin{x_0}+0 & (x_0-0.2 x_3-0.5-0.25 x_1 \leq 0)
         \end{cases} .
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + (
     ...                                 1 if (x0-.2*x3-.5-.25*x1>0) else 0)

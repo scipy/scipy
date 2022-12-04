@@ -399,8 +399,11 @@ def test_subclassing_QMCEngine():
 
 def test_raises():
     # input validation
-    with pytest.raises(ValueError, match=r"d must be an integer value"):
+    with pytest.raises(ValueError, match=r"d must be a non-negative integer"):
         RandomEngine((2,))  # noqa
+
+    with pytest.raises(ValueError, match=r"d must be a non-negative integer"):
+        RandomEngine(-1)  # noqa
 
     msg = r"'u_bounds' and 'l_bounds' must be integers"
     with pytest.raises(ValueError, match=msg):
@@ -651,17 +654,15 @@ class TestLHS(QMCEngineTests):
                     " implementation dependent.")
 
     @pytest.mark.parametrize("strength", [1, 2])
-    @pytest.mark.parametrize("centered", [False, True])
+    @pytest.mark.parametrize("scramble", [False, True])
     @pytest.mark.parametrize("optimization", [None, "random-CD"])
-    def test_sample_stratified(self, optimization, centered, strength):
+    def test_sample_stratified(self, optimization, scramble, strength):
         seed = np.random.default_rng(37511836202578819870665127532742111260)
         p = 5
         n = p**2
         d = 6
-        expected1d = (np.arange(n) + 0.5) / n
-        expected = np.broadcast_to(expected1d, (d, n)).T
 
-        engine = qmc.LatinHypercube(d=d, centered=centered,
+        engine = qmc.LatinHypercube(d=d, scramble=scramble,
                                     strength=strength,
                                     optimization=optimization,
                                     seed=seed)
@@ -669,11 +670,18 @@ class TestLHS(QMCEngineTests):
         assert sample.shape == (n, d)
         assert engine.num_generated == n
 
-        sorted_sample = np.sort(sample, axis=0)
-
+        # centering stratifies samples in the middle of equal segments:
+        # * inter-sample distance is constant in 1D sub-projections
+        # * after ordering, columns are equal
+        expected1d = (np.arange(n) + 0.5) / n
+        expected = np.broadcast_to(expected1d, (d, n)).T
         assert np.any(sample != expected)
-        assert_allclose(sorted_sample, expected, atol=0.5 / n)
-        assert np.any(sample - expected > 0.5 / n)
+
+        sorted_sample = np.sort(sample, axis=0)
+        tol = 0.5 / n if scramble else 0
+
+        assert_allclose(sorted_sample, expected, atol=tol)
+        assert np.any(sample - expected > tol)
 
         if strength == 2 and optimization is None:
             unique_elements = np.arange(p)
@@ -704,6 +712,10 @@ class TestLHS(QMCEngineTests):
         with pytest.raises(ValueError, match=message):
             engine = qmc.LatinHypercube(d=5, strength=2)
             engine.random(9)
+
+        message = r"'centered' is deprecated"
+        with pytest.warns(UserWarning, match=message):
+            qmc.LatinHypercube(1, centered=True)
 
 
 class TestSobol(QMCEngineTests):
@@ -814,13 +826,11 @@ class TestPoisson(QMCEngineTests):
         assert len(sample) <= ns * 2
         assert l2_norm(sample) >= radius
 
-    @pytest.mark.slow
-    @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_mindist(self):
         rng = np.random.default_rng(132074951149370773672162394161442690287)
         ns = 50
 
-        low, high = 0.01, 0.1
+        low, high = 0.08, 0.2
         radii = (high - low) * rng.random(5) + low
 
         dimensions = [1, 3, 4]

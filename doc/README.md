@@ -14,14 +14,7 @@ git submodule update --init
 
 Now to build both SciPy itself and the docs, use:
 ```
-python3 runtests.py --doc html
-```
-
-Alternatively, if you prefer to build SciPy and the docs separately rather
-than use `runtests.py`:
-```
-python setup.py develop  # in the root of the repo
-cd doc && make html
+python dev.py doc
 ```
 
 In case the SciPy version found by the above command is different from that of the

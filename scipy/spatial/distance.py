@@ -60,6 +60,7 @@ computing the distances between all pairs.
    dice             -- the Dice dissimilarity.
    hamming          -- the Hamming distance.
    jaccard          -- the Jaccard distance.
+   kulsinski        -- the Kulsinski distance.
    kulczynski1      -- the Kulczynski 1 distance.
    rogerstanimoto   -- the Rogers-Tanimoto dissimilarity.
    russellrao       -- the Russell-Rao dissimilarity.
@@ -372,6 +373,7 @@ def directed_hausdorff(u, v, seed=0):
     coordinates:
 
     >>> from scipy.spatial.distance import directed_hausdorff
+    >>> import numpy as np
     >>> u = np.array([(1.0, 0.0),
     ...               (0.0, 1.0),
     ...               (-1.0, 0.0),
@@ -816,9 +818,9 @@ def kulsinski(u, v, w=None):
     :math:`k < n`.
 
     .. deprecated:: 0.12.0
-        Kulsinski has been deprecated from `scipy.spatial.distance` in
+        `kulsinski` has been deprecated from `scipy.spatial.distance` in
         SciPy 1.9.0 and it will be removed in SciPy 1.11.0. It is superseded
-        by scipy.spatial.distance.kulczynski1.
+        by `scipy.spatial.distance.kulczynski1`.
 
     Parameters
     ----------
@@ -1264,6 +1266,7 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
     Examples
     --------
     >>> from scipy.spatial import distance
+    >>> import numpy as np
     >>> distance.jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0)
     1.0
     >>> distance.jensenshannon([1.0, 0.0], [0.5, 0.5])
@@ -1376,6 +1379,12 @@ def dice(u, v, w=None):
     -------
     dice : double
         The Dice dissimilarity between 1-D arrays `u` and `v`.
+
+    Notes
+    -----
+    This function computes the Dice dissimilarity index. To compute the
+    Dice similarity index, convert one to the other with similarity =
+    1 - dissimilarity.
 
     Examples
     --------
@@ -2856,6 +2865,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
     Find the Euclidean distances between four 2-D coordinates:
 
     >>> from scipy.spatial import distance
+    >>> import numpy as np
     >>> coords = [(35.0456, -85.2672),
     ...           (35.1174, -89.9711),
     ...           (35.9728, -83.9422),
