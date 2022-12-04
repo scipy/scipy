@@ -2902,6 +2902,20 @@ class rv_continuous(rv_generic):
         1.0000000000000002
 
         The slight deviation from 1 is due to numerical integration.
+
+        The integrand can be treated as a complex-valued function
+        by passing ``complex_func=True`` to `scipy.integrate.quad` .
+
+        >>> import numpy as np
+        >>> from scipy.stats import vonmises
+        >>> res = vonmises(loc=2, kappa=1).expect(lambda x: np.exp(1j*x),
+        ...                                       complex_func=True)
+        >>> res
+        (-0.18576377217422957+0.40590124735052263j)
+
+        >>> np.angle(res)  # location of the (circular) distribution
+        2.0
+
         """
         lockwds = {'loc': loc,
                    'scale': scale}
