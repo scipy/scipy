@@ -6838,7 +6838,7 @@ class nct_gen(rv_continuous):
         mu = _boost._nct_mean(df, nc)
         mu2 = _boost._nct_variance(df, nc)
         g1 = _boost._nct_skewness(df, nc) if 's' in moments else None
-        g2 = _boost._nct_kurtosis_excess(df, nc)-3 if 'k' in moments else None
+        g2 = _boost._nct_kurtosis_excess(df, nc) if 'k' in moments else None
         return mu, mu2, g1, g2
 
 
