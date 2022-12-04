@@ -4267,4 +4267,4 @@ class TestOrderFilter:
              [10, 11, 12, 13, 14],
              [15, 16, 17, 18, 19]]
         )
-        assert_allclose(order_filter(x, domain, 0), expected)
+        assert_allclose(order_filter(x, domain, 1), expected)
