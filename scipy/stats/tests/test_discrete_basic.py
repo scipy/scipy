@@ -34,7 +34,6 @@ def cases_test_discrete_basic():
         seen.add(distname)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg,first_case', cases_test_discrete_basic())
 def test_discrete_basic(distname, arg, first_case):
     try:
@@ -80,7 +79,6 @@ def test_discrete_basic(distname, arg, first_case):
             check_private_entropy(distfn, arg, stats.rv_discrete)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg', distdiscrete)
 def test_moments(distname, arg):
     try:
