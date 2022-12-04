@@ -1084,10 +1084,11 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     >>> plt.show()
 
     """
+    x = np.asarray(x)
+
     if lmbda is not None:  # single transformation
         return special.boxcox(x, lmbda)
 
-    x = np.asarray(x)
     if x.ndim != 1:
         raise ValueError("Data must be 1-dimensional.")
 
@@ -1910,7 +1911,7 @@ def anderson(x, dist='norm'):
     .. [6] Stephens, M. A. (1979). Tests of Fit for the Logistic Distribution
            Based on the Empirical Distribution Function, Biometrika, Vol. 66,
            pp. 591-595.
-           
+
     Examples
     --------
     Test the null hypothesis that a random sample was drawn from a normal
