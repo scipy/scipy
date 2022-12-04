@@ -669,16 +669,20 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=None, epsrel=None,
         where ``i`` = inner integral of ``func(y, x)`` from ``gfun(x)``
         to ``hfun(x)``, and ``result`` is the numerical approximation.
         See `epsrel` below.
+
         .. deprecated:: 1.10.0
             This argument is deprecated and will be removed in SciPy 1.12.0.
             Please use the `opts` argument instead.
+
     epsrel : float, optional, deprecated
         Relative tolerance of the inner 1-D integrals. Default is 1.49e-8.
         If ``epsabs <= 0``, `epsrel` must be greater than both 5e-29
         and ``50 * (machine epsilon)``. See `epsabs` above.
+
         .. deprecated:: 1.10.0
             This argument is deprecated and will be removed in SciPy 1.12.0.
             Please use the `opts` argument instead.
+
     opts : iterable object or dict, optional
         Options to be passed to `quad`. May be empty, a dict, or
         a sequence of dicts. If empty, the
@@ -845,21 +849,27 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=None, epsrel=None,
 
     """
 
-    if epsabs is None:
-        epsabs = 1.49e-8
-    else:
+    if epsabs is not None:
         msg = ("The 'epsabs' argument is deprecated and will be removed "
                "in SciPy 1.12.0. Please pass it via the 'opts' argument "
-               "instead. 'epsabs' will be ignored.")
+               "instead. If both are passed, the argument is ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
-    if epsrel is None:
-        epsrel = 1.49e-8
-    else:
+    if epsrel is not None:
         msg = ("The 'epsrel' argument is deprecated and will be removed "
                "in SciPy 1.12.0. Please pass it via the 'opts' argument "
-               "instead. 'epsrel' will be ignored.")
+               "instead. If both are passed, the argument is ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+    opts = opts or {}
+    if isinstance(opts, dict):
+        opts = [opts]*2
+    opts = [opt.copy() for opt in opts]
+    for opt in opts:
+        if epsabs is not None and opt.get('epsabs', None) is None:
+            opt['epsabs'] = epsabs
+        if epsrel is not None and opt.get('epsrel', None) is None:
+            opt['epsrel'] = epsrel
 
     def temp_ranges(*args):
         return [gfun(args[0]) if callable(gfun) else gfun,
@@ -900,14 +910,18 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=None,
     epsabs : float, optional, deprecated
         Absolute tolerance passed directly to the innermost 1-D quadrature
         integration. Default is 1.49e-8.
+
         .. deprecated:: 1.10.0
             This argument is deprecated and will be removed in SciPy 1.12.0.
             Please use the `opts` argument instead.
+
     epsrel : float, optional, deprecated
         Relative tolerance of the innermost 1-D integrals. Default is 1.49e-8.
+
         .. deprecated:: 1.10.0
             This argument is deprecated and will be removed in SciPy 1.12.0.
             Please use the `opts` argument instead.
+
     opts : iterable object or dict, optional
         Options to be passed to `quad`. May be empty, a dict, or
         a sequence of dicts. If empty, the
@@ -1088,7 +1102,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=None,
     else:
         msg = ("The 'epsabs' argument is deprecated and will be removed "
                "in SciPy 1.12.0. Please pass it via the 'opts' argument "
-               "instead. 'epsabs' will be ignored.")
+               "instead. If both are passed, the argument is ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     if epsrel is None:
@@ -1096,8 +1110,18 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=None,
     else:
         msg = ("The 'epsrel' argument is deprecated and will be removed "
                "in SciPy 1.12.0. Please pass it via the 'opts' argument "
-               "instead. 'epsrel' will be ignored.")
+               "instead. If both are passed, the argument is ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+    opts = opts or {}
+    if isinstance(opts, dict):
+        opts = [opts]*3
+    opts = [opt.copy() for opt in opts]
+    for opt in opts:
+        if epsabs is not None and opt.get('epsabs', None) is None:
+            opt['epsabs'] = epsabs
+        if epsrel is not None and opt.get('epsrel', None) is None:
+            opt['epsrel'] = epsrel
 
     def ranges0(*args):
         return [qfun(args[1], args[0]) if callable(qfun) else qfun,
