@@ -8239,7 +8239,7 @@ add_newdoc("jve",
 
     It is also possible to evaluate several orders at several points
     at the same time by providing arrays for `v` and `z` with
-    broadcasting compatible shapes. Compute `jve` for two different orders
+    compatible shapes for broadcasting. Compute `jve` for two different orders
     `v` and three points `z` resulting in a 2x3 array.
 
     >>> v = np.array([[1], [3]])
