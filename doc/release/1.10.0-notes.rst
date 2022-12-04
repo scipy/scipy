@@ -26,8 +26,12 @@ For running on PyPy, PyPy3 6.0+ is required.
 Highlights of this release
 **************************
 
-- a new dedicated datasets submodule (`scipy.datasets`) has been added, and is
-  now preferred over usage of `scipy.misc` for dataset retrieval
+- A new dedicated datasets submodule (`scipy.datasets`) has been added, and is
+  now preferred over usage of `scipy.misc` for dataset retrieval.
+- A new `scipy.interpolate.make_smoothing_spline` function was added. This
+  function constructs a smoothing cubic spline from noisy data, using the
+  generalized cross-validation (GCV) criterion to find the tradeoff between
+  smoothness and proximity to data points.
 
 ************
 New features
@@ -49,8 +53,8 @@ New features
 
 `scipy.integrate` improvements
 ==============================
-- Added `scipy.integrate.qmc_quad`, which uses performs quadrature using
-  Quasi-Monte Carlo points.
+- Added `scipy.integrate.qmc_quad`, which performs quadrature using Quasi-Monte
+  Carlo points.
 - Added parameter ``complex_func`` to `scipy.integrate.quad`, which can be set
   ``True`` to integrate a complex integrand.
 
@@ -76,7 +80,14 @@ New features
   allowing extrapolation based on the first and last intervals.
 - A new function ``make_smoothing_spline`` has been added. It is an
   implementation of the generalized cross-validation spline smoothing
-  algorithm.
+  algorithm. The ``lam=None`` (default) mode of this function is a clean-room
+  reimplementation of the classic ``gcvspl.f`` Fortran algorithm for
+  constructing GCV splines.
+- A new ``method="pchip"`` mode was aded to
+  `scipy.interpolate.RegularGridInterpolator`. This mode constructs an
+  interpolator using tensor products of C1-continuous monotone splines
+  (essentially, a `scipy.interpolate.PchipInterpolator` instance per
+  dimension).
 
 
 
@@ -279,6 +290,8 @@ Deprecated features
 - `scipy.stats.qmc.LatinHypercube` parameter ``centered`` has been deprecated.
   It is replaced by the ``scramble`` argument for more consistency with other
   QMC engines.
+- `scipy.interpolate.interp2d` class has been deprecated.  The docstring of the
+  deprecated routine lists recommended replacements.
 
 ********************
 Expired Deprecations
