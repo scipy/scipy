@@ -3009,7 +3009,7 @@ class TestVonMises_Fisher:
         if kappa < 1:
             n_samples = 1000000
         else:
-            n_samples = 100000
+            n_samples = (100, 100)
         samples = vmf_dist.rvs(n_samples, random_state=rng)
         mu_fit, kappa_fit = vonmises_fisher.fit(samples)
         assert_allclose(mu, mu_fit, rtol=1e-1)
