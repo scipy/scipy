@@ -95,9 +95,7 @@ coefficients by assuming them to be mirror-symmetric also.
 Currently the package provides functions for determining second- and third-
 order cubic spline coefficients from equally-spaced samples in one and two
 dimensions (:func:`qspline1d`, :func:`qspline2d`, :func:`cspline1d`,
-:func:`cspline2d`). The package also supplies a function ( :func:`bspline` )
-for evaluating the B-spline basis function, :math:`\beta^{o}\left(x\right)` for
-arbitrary order and :math:`x.` For large :math:`o`, the B-spline basis
+:func:`cspline2d`). For large :math:`o`, the B-spline basis
 function can be approximated well by a zero-mean Gaussian function with
 standard-deviation equal to :math:`\sigma_{o}=\left(o+1\right)/12` :
 
