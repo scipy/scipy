@@ -5993,7 +5993,7 @@ class vonmises_fisher_gen(multi_rv_generic):
                 samples = self._rvs_3d(kappa, size, random_state)
             else:
                 samples = self._rejection_sampling(dim, kappa, size,
-                                               random_state)
+                                                   random_state)
             samples = self._rotate_samples(samples, mu)
         return samples
 
@@ -6065,9 +6065,9 @@ class vonmises_fisher_gen(multi_rv_generic):
         r = dirstats.mean_resultant_length
 
         # kappa is the solution to the equation:
-        # I[dim/2](kappa) / I[dim/2 -1](kappa) = r
-        # I[dim/2](kappa) * exp(-kappa) / I[dim/2 -1](kappa) * exp(-kappa) = r
-        # ive(dim/2, kappa) / ive(dim/2 -1, kappa) - r = 0
+        # r = I[dim/2](kappa) / I[dim/2 -1](kappa)
+        #   = I[dim/2](kappa) * exp(-kappa) / I[dim/2 -1](kappa) * exp(-kappa)
+        #   = ive(dim/2, kappa) / ive(dim/2 -1, kappa)
 
         halfdim = 0.5 * dim
 
@@ -6075,7 +6075,7 @@ class vonmises_fisher_gen(multi_rv_generic):
             return ive(halfdim, kappa)/ive(halfdim - 1, kappa) - r
 
         root_res = root_scalar(solve_for_kappa, method="brentq",
-                               bracket=(1e-8, 1e6))#                            xtol=8.881784197001252e-16)
+                               bracket=(1e-8, 1e8))
         if not root_res.converged:
             raise RuntimeError("Fit did not converge.")
         kappa = root_res.root
