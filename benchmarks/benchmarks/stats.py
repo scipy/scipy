@@ -722,7 +722,7 @@ class KolmogorovSmirnovTwoSamples(Benchmark):
 class RandomTable(Benchmark):
     param_names = ["method", "ntot", "ncell"]
     params = [
-        ["boyett", "boyett2", "patefield"],
+        ["boyett", "patefield"],
         [10, 100, 1000, 10000],
         [4, 64, 256, 1024]
     ]

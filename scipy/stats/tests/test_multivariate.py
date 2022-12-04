@@ -2693,7 +2693,7 @@ class TestRandomTable:
             random_table.rvs(row, col, size=np.nan, method=method,
                              random_state=self.get_rng())
 
-    @pytest.mark.parametrize("method", ("boyett", "boyett2", "patefield"))
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
     def test_rvs_method(self, method):
         row = [1, 3]
         col = [2, 1, 1]
@@ -2708,10 +2708,8 @@ class TestRandomTable:
         p = ct.pmf(unique_rvs, row, col)
         assert_allclose(p * len(rvs), counts, rtol=0.03)
 
-    @pytest.mark.parametrize("method", ("boyett", "boyett2", "patefield"))
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
     def test_rvs_with_zeros_in_col_row(self, method):
-        if method == "boyett2":
-            pytest.xfail("boyett2 is broken and will be removed")
         row = [0, 1, 0]
         col = [1, 0, 0, 0]
         d = random_table(row, col)
@@ -2762,7 +2760,7 @@ class TestRandomTable:
         expected = random_table.logpmf(sample, row, col)
         assert_equal(expected, d.logpmf(sample))
 
-    @pytest.mark.parametrize("method", ("boyett", "boyett2", "patefield"))
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
     def test_rvs_frozen(self, method):
         row = [2, 6]
         col = [1, 3, 4]

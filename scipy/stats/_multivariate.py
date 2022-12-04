@@ -5404,8 +5404,6 @@ class random_table_gen(multi_rv_generic):
             None: cls._rvs_select(r, c, n),
             "boyett": cls._rvs_boyett,
             "patefield": cls._rvs_patefield,
-            # TODO remove this, it only exist temporarily for testing
-            "boyett2": cls._rvs_boyett2,
         }
         try:
             return known_methods[method]
@@ -5425,20 +5423,6 @@ class random_table_gen(multi_rv_generic):
     @staticmethod
     def _rvs_boyett(row, col, ntot, size, random_state):
         return _rcont.rvs_rcont1(row, col, ntot, size, random_state)
-
-    # TODO remove this, it only exist temporarily for testing
-    @staticmethod
-    def _rvs_boyett2(row, col, ntot, size, random_state):
-        x = np.repeat(np.arange(len(row)), row.astype(np.int_))
-        y = np.repeat(np.arange(len(col)), col.astype(np.int_))
-
-        def crosstab(x, y):
-            return contingency.crosstab(x, y).count
-
-        tables = [crosstab(x, random_state.permutation(y))
-                  for i in range(size)]
-
-        return np.asarray(tables)
 
     @staticmethod
     def _rvs_patefield(row, col, ntot, size, random_state):
