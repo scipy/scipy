@@ -2978,7 +2978,7 @@ class TestVonMises_Fisher:
         # test that pdf values are correctly broadcasted
         testshape = (2, 4)
         rng = np.random.default_rng(2777937887058094419)
-        x = uniform_direction(3).rvs(testshape, seed=rng)
+        x = uniform_direction(3).rvs(testshape, random_state=rng)
         vmf = vonmises_fisher([0, 0, 1], 20)
         all_pdf = vmf.pdf(x)
         assert all_pdf.shape == testshape
@@ -2990,7 +2990,8 @@ class TestVonMises_Fisher:
     def test_logpdf_consistency(self):
         # test that logpdf values are correctly broadcasted
         testshape = (2, 4)
-        x = uniform_direction(3).rvs(testshape)
+        rng = np.random.default_rng(2777937887058094419)
+        x = uniform_direction(3).rvs(testshape, random_state=rng)
         vmf = vonmises_fisher([0, 0, 1], 20)
         all_logpdf = vmf.logpdf(x)
         assert all_logpdf.shape == testshape
@@ -2998,3 +2999,14 @@ class TestVonMises_Fisher:
             for j in range(testshape[1]):
                 current_logpdf = vmf.logpdf(x[i, j, :])
                 assert_allclose(current_logpdf, all_logpdf[i, j])
+
+    @pytest.mark.parametrize("dim", [2, 3, 4, 5])
+    @pytest.mark.parametrize("kappa", [1, 10, 100])
+    def test_fit(self, dim, kappa):
+        mu = np.full((dim, ), 1/np.sqrt(dim))
+        vmf_dist = vonmises_fisher(mu, kappa)
+        rng = np.random.default_rng(2777937887058094419)
+        samples = vmf_dist.rvs(100000, random_state=rng)
+        mu_fit, kappa_fit = vonmises_fisher.fit(samples)
+        assert_allclose(mu, mu_fit, rtol=5e-2)
+        assert_allclose(kappa, kappa_fit, rtol=1e-2)

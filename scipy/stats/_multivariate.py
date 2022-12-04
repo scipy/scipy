@@ -5911,6 +5911,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         with mu = [1, 0, ..., 0] and kappa via rejection sampling.
         Samples then have to be rotated towards the desired mean direction mu.
         """
+        dim_minus_one = dim - 1
         # calculate number of requested samples
         if size is not None:
             if not np.iterable(size):
@@ -5918,13 +5919,13 @@ class vonmises_fisher_gen(multi_rv_generic):
             n_samples = math.prod(size)
         else:
             n_samples = 1
-        sqrt = np.sqrt(4 * kappa ** 2. + dim ** 2)
-        envelop_param = (-2 * kappa + sqrt) / dim
+        sqrt = np.sqrt(4 * kappa ** 2. + dim_minus_one ** 2)
+        envelop_param = (-2 * kappa + sqrt) / dim_minus_one
         node = (1. - envelop_param) / (1. + envelop_param)
-        correction = kappa * node + dim * np.log(1. - node ** 2)
+        correction = kappa * node + dim_minus_one * np.log(1. - node ** 2)
         n_accepted = 0
         result = []
-        halfdim = 0.5 * dim
+        halfdim = 0.5 * dim_minus_one
         # main loop
         while n_accepted < n_samples:
             sym_beta = beta.rvs(
@@ -5935,12 +5936,12 @@ class vonmises_fisher_gen(multi_rv_generic):
             accept_tol = random_state.random(n_samples - n_accepted)
             criterion = (
                 kappa * coord_x
-                + dim * np.log(1 - node * coord_x)
+                + dim_minus_one * np.log(1 - node * coord_x)
                 - correction) > np.log(accept_tol)
             result.append(coord_x[criterion])
             n_accepted += np.sum(criterion)
         coord_x = np.concatenate(result)
-        coord_rest = _sample_uniform_direction(dim - 1, n_accepted,
+        coord_rest = _sample_uniform_direction(dim_minus_one, n_accepted,
                                                random_state)
         coord_rest = np.einsum(
             '...,...i->...i', np.sqrt(1 - coord_x ** 2), coord_rest)
@@ -5992,7 +5993,7 @@ class vonmises_fisher_gen(multi_rv_generic):
                 samples = self._rvs_3d(kappa, size, random_state)
             else:
                 samples = self._rejection_sampling(dim, kappa, size,
-                                                   random_state)
+                                               random_state)
             samples = self._rotate_samples(samples, mu)
         return samples
 
@@ -6074,7 +6075,8 @@ class vonmises_fisher_gen(multi_rv_generic):
             return ive(halfdim, kappa)/ive(halfdim - 1, kappa) - r
 
         root_res = root_scalar(solve_for_kappa, method="brentq",
-                               bracket=(1e-8, 1e6))
+                               bracket=(1e-8, 1e6), maxiter=1000,
+                               xtol=8.881784197001252e-16)
         if not root_res.converged:
             raise RuntimeError("Fit did not converge.")
         kappa = root_res.root
