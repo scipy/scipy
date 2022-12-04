@@ -889,7 +889,6 @@ class TestEigh:
         else:
             assert_allclose(b @ a @ v - v * w, 0., atol=atol, rtol=0.)
 
-
     def test_eigvalsh_new_args(self):
         a = _random_hermitian_matrix(5)
         w = eigvalsh(a, subset_by_index=[1, 2])
