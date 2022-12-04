@@ -6075,8 +6075,7 @@ class vonmises_fisher_gen(multi_rv_generic):
             return ive(halfdim, kappa)/ive(halfdim - 1, kappa) - r
 
         root_res = root_scalar(solve_for_kappa, method="brentq",
-                               bracket=(1e-8, 1e6), maxiter=1000,
-                               xtol=8.881784197001252e-16)
+                               bracket=(1e-8, 1e6))#                            xtol=8.881784197001252e-16)
         if not root_res.converged:
             raise RuntimeError("Fit did not converge.")
         kappa = root_res.root
