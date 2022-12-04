@@ -339,20 +339,11 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
     turbo : bool, optional, deprecated
-        Use divide and conquer algorithm (faster but expensive in memory, only
-        for generalized eigenvalue problem and if full set of eigenvalues are
-        requested). Has no significant effect if eigenvectors are not
-        requested.
-
             .. deprecated:: 1.5.0
                 `eigh` keyword argument `turbo` is deprecated in favour of
                 ``driver=gvd`` keyword instead and will be removed in SciPy
                 1.12.0.
     eigvals : tuple (lo, hi), optional, deprecated
-        Indexes of the smallest and largest (in ascending order) eigenvalues
-        and corresponding eigenvectors to be returned: 0 <= lo <= hi <= M-1.
-        If omitted, all eigenvalues and eigenvectors are returned.
-
             .. deprecated:: 1.5.0
                 `eigh` keyword argument `eigvals` is deprecated in favour of
                 `subset_by_index` keyword instead and will be removed in SciPy
@@ -974,18 +965,11 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
         generalized (where b is not None) problems. See the Notes section of
         `scipy.linalg.eigh`.
     turbo : bool, optional, deprecated
-        Has no significant effect for
-        eigenvalue computations since no eigenvectors are requested.
-
         .. deprecated:: 1.5.0
             'eigvalsh' keyword argument `turbo` is deprecated in favor of
             ``driver=gvd`` option and will be removed in SciPy 1.12.0.
 
     eigvals : tuple (lo, hi), optional
-        Indexes of the smallest and largest (in ascending order) eigenvalues
-        and corresponding eigenvectors to be returned: 0 <= lo <= hi <= M-1.
-        If omitted, all eigenvalues and eigenvectors are returned.
-
         .. deprecated:: 1.5.0
             'eigvalsh' keyword argument `eigvals` is deprecated in favor of
             `subset_by_index` option and will be removed in SciPy 1.12.0.
