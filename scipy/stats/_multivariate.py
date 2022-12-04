@@ -15,6 +15,8 @@ from scipy.linalg.lapack import get_lapack_funcs
 from ._continuous_distns import beta
 from ._discrete_distns import binom
 from . import _mvn, _covariance, contingency
+from ._morestats import directional_stats
+from scipy.optimize import root_scalar
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -5748,7 +5750,7 @@ class vonmises_fisher_gen(multi_rv_generic):
            https://www.mitsuba-renderer.org/~wenzel/files/vmf.pdf
     .. [4] Wood, A. Simulation of the von mises fisher distribution.
            Communications in statistics-simulation and computation 23,
-           1 (1994), 157–164. https://doi.org/10.1080/03610919408813161
+           1 (1994), 157-164. https://doi.org/10.1080/03610919408813161
 
     Examples
     --------
@@ -5905,7 +5907,7 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     def _rejection_sampling(self, dim, kappa, size, random_state):
         """
-        Generate samples from a von Mises-Fisher distribution
+        Generate samples from a n-dimensional von Mises-Fisher distribution
         with mu = [1, 0, ..., 0] and kappa via rejection sampling.
         Samples then have to be rotated towards the desired mean direction mu.
         """
@@ -6045,6 +6047,39 @@ class vonmises_fisher_gen(multi_rv_generic):
         dim, mu, kappa = self._process_parameters(mu, kappa)
         return self._entropy(dim, kappa)
 
+    def fit(self, x):
+        # validate input data
+        if x.ndim == 1:
+            raise ValueError("x must be at least two dimensional.")
+        if not np.allclose(np.linalg.norm(x, axis=-1), 1.):
+            msg = "x must be unit vectors of norm 1 along last dimension."
+            raise ValueError(msg)
+        dim = x.shape[-1]
+        if x.ndim > 2:
+            x = x.reshape((math.prod(x.shape[:-1]), dim))
+
+        # mu is simply the directional mean
+        dirstats = directional_stats(x)
+        mu = dirstats.mean_direction
+        r = dirstats.mean_resultant_length
+
+        # kappa is the solution to the equation:
+        # I[dim/2](kappa) / I[dim/2 -1](kappa) = r
+        # I[dim/2](kappa) * exp(-kappa) / I[dim/2 -1](kappa) * exp(-kappa) = r
+        # ive(dim/2, kappa) / ive(dim/2 -1, kappa) - r = 0
+
+        halfdim = 0.5 * dim
+
+        def solve_for_kappa(kappa):
+            return ive(halfdim, kappa)/ive(halfdim - 1, kappa) - r
+
+        root_res = root_scalar(solve_for_kappa, method="brentq",
+                               bracket=(1e-8, 1e6))
+        if not root_res.converged:
+            raise RuntimeError("Fit did not converge.")
+        kappa = root_res.root
+        return mu, kappa
+
 
 vonmises_fisher = vonmises_fisher_gen()
 
@@ -6081,7 +6116,9 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         return np.exp(self.logpdf(x))
 
     def rvs(self, size=1, random_state=None):
-        return self._dist.rvs(self.mu, self.kappa, size, random_state)
+        random_state = self._dist._get_random_state(random_state)
+        return self._dist._rvs(self.dim, self.mu, self.kappa, size,
+                               random_state)
 
     def entropy(self):
         """
