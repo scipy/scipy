@@ -1,11 +1,12 @@
 cimport numpy as np
 import numpy as np
+
+np.import_array()
+
 from numpy.random cimport bitgen_t
 from cpython.pycapsule cimport PyCapsule_GetPointer, PyCapsule_IsValid
 
 ctypedef np.int64_t tab_t
-
-np.import_array()
 
 cdef extern from "./_rcont.h":
 
