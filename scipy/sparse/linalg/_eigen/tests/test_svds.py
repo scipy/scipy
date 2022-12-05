@@ -441,6 +441,7 @@ class SVDSCommonTests:
         with pytest.raises(AssertionError, match=message):
             assert_equal(res1a, res2a)
 
+    @pytest.mark.filterwarnings("ignore:Exited postprocessing")
     def test_svd_maxiter(self):
         # check that maxiter works as expected: should not return accurate
         # solution after 1 iteration, but should with default `maxiter`
@@ -680,6 +681,7 @@ class SVDSCommonTests:
     SHAPES = ((100, 100), (100, 101), (101, 100))
 
     @pytest.mark.filterwarnings("ignore:Exited at iteration")
+    @pytest.mark.filterwarnings("ignore:Exited postprocessing")
     @pytest.mark.parametrize("shape", SHAPES)
     # ARPACK supports only dtype float, complex, or np.float32
     @pytest.mark.parametrize("dtype", (float, complex, np.float32))
