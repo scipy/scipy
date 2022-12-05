@@ -9244,6 +9244,22 @@ class vonmises_gen(rv_continuous):
         return (-kappa * sc.i1e(kappa) / sc.i0e(kappa) +
                 np.log(2 * np.pi * sc.i0e(kappa)) + kappa)
 
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        The default limits of integration are endpoints of the interval
+        of width ``2*pi`` centered at `loc` (e.g. ``[-pi, pi]`` when
+        ``loc=0``).\n\n""")
+    def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None,
+               conditional=False, **kwds):
+        _a, _b = -np.pi, np.pi
+
+        if lb is None:
+            lb = loc + _a
+        if ub is None:
+            ub = loc + _b
+
+        return super().expect(func, args, loc,
+                              scale, lb, ub, conditional, **kwds)
+
 
 vonmises = vonmises_gen(name='vonmises')
 vonmises_line = vonmises_gen(a=-np.pi, b=np.pi, name='vonmises_line')
