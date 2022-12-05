@@ -182,6 +182,33 @@ def test_vonmises_logpdf(x, kappa, expected_logpdf):
     assert_allclose(logpdf, expected_logpdf, rtol=1e-15)
 
 
+def test_vonmises_expect():
+    """
+    Test that the vonmises expectation values are
+    computed correctly.  This test checks that the
+    numeric integration estimates the correct normalization
+    (1) and mean angle (loc).  These expectations are
+    independent of the chosen 2pi interval.
+    """
+    rng = np.random.default_rng(6762668991392531563)
+
+    loc, kappa, lb = rng.random(3) * 10
+    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1)
+    assert_allclose(res, 1)
+    assert np.issubdtype(res.dtype, np.floating)
+
+    bounds = lb, lb + 2 * np.pi
+    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1, *bounds)
+    assert_allclose(res, 1)
+    assert np.issubdtype(res.dtype, np.floating)
+
+    bounds = lb, lb + 2 * np.pi
+    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: np.exp(1j*x),
+                                                      *bounds, complex_func=1)
+    assert_allclose(np.angle(res), loc % (2*np.pi))
+    assert np.issubdtype(res.dtype, np.complexfloating)
+
+
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
     """
     This utility function checks that the log-likelihood (computed by
@@ -2833,20 +2860,6 @@ class TestRvDiscrete:
         # also check the second moment
         assert_allclose(rv.expect(lambda x: x**2),
                         sum(v**2 * w for v, w in zip(y, py)), atol=1e-14)
-
-    def test_rv_count_subclassing(self):
-        # gh-8057: rv_discrete(values=(xk, pk)) cannot be subclassed easily
-        class S(stats.rv_count):
-            def extra(self):
-                return 42
-
-        s = S(xk=[1, 2, 3], pk=[0.2, 0.7, 0.1])
-        assert_allclose(s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
-        assert s.extra() == 42
-
-        # make sure subclass freezes correctly
-        frozen_s = s()
-        assert_allclose(frozen_s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
 
 
 class TestSkewCauchy:
