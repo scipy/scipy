@@ -14,6 +14,11 @@ modified_clone: &MODIFIED_CLONE
       # it's a PR so clone the main branch then merge the changes from the PR
       git clone --recursive https://x-access-token:${CIRRUS_REPO_CLONE_TOKEN}@github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
       git fetch origin pull/$CIRRUS_PR/head:pull/$CIRRUS_PR
+
+      # alpine needs default user.name and user.email to be set before a merge
+      git config --global user.email "you@example.com"
+      git config --global user.name "Your Name"
+
       git merge --no-commit pull/$CIRRUS_PR
     fi
 
