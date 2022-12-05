@@ -14,7 +14,7 @@ from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom
-from . import _mvn, _covariance, contingency, _rcont
+from . import _mvn, _covariance, _rcont
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
