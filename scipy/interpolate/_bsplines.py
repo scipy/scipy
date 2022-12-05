@@ -1922,8 +1922,8 @@ def make_smoothing_spline(x, y, w=None, lam=None):
         prediction, New York: Springer, 2017, pp. 241-249.
         :doi:`10.1007/978-0-387-84858-7`
     .. [4] E. Zemlyanoy, "Generalized cross-validation smoothing splines",
-        BSc thesis, 2022. Might be available
-        `here <https://www.hse.ru/ba/am/students/diplomas/620910604>`_ (in
+        BSc thesis, 2022.
+        `<https://www.hse.ru/ba/am/students/diplomas/620910604>`_ (in
         Russian)
 
     Examples
