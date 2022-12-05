@@ -1,18 +1,19 @@
 cimport numpy as np
 import numpy as np
-
-np.import_array()
-
 from numpy.random cimport bitgen_t
 from cpython.pycapsule cimport PyCapsule_GetPointer, PyCapsule_IsValid
 
+ctypedef np.int64_t tab_t
+
+np.import_array()
 
 cdef extern from "./_rcont.h":
-    void rcont1_init(int*, int, const double*)
-    void rcont1(double*, int, const double*, int, const double*,
-                double, int*, bitgen_t*)
-    void rcont2(double*, int, const double*, int, const double*,
-                double, bitgen_t*)
+
+    void rcont1_init(tab_t*, int, const tab_t*)
+    void rcont1(tab_t*, int, const tab_t*, int, const tab_t*,
+                tab_t, tab_t*, bitgen_t*)
+    void rcont2(tab_t*, int, const tab_t*, int, const tab_t*,
+                tab_t, bitgen_t*)
 
 
 cdef bitgen_t* get_bitgen(random_state):
@@ -33,7 +34,7 @@ cdef bitgen_t* get_bitgen(random_state):
     return <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
 
 
-def rvs_rcont1(double[::1] row, double[::1] col, double ntot,
+def rvs_rcont1(tab_t[::1] row, tab_t[::1] col, tab_t ntot,
                int size, random_state):
 
     cdef:
@@ -41,12 +42,12 @@ def rvs_rcont1(double[::1] row, double[::1] col, double ntot,
         int nr = row.shape[0]
         int nc = col.shape[0]
 
-    cdef np.ndarray[double, ndim=3, mode="c"] result = np.zeros(
-        (size, nr, nc), dtype=np.double
+    cdef np.ndarray[tab_t, ndim=3, mode="c"] result = np.zeros(
+        (size, nr, nc), dtype=np.int64
     )
 
-    cdef np.ndarray[int, ndim=1, mode="c"] work = np.empty(
-        <int>ntot, dtype=np.intc
+    cdef np.ndarray[tab_t, ndim=1, mode="c"] work = np.empty(
+        ntot, dtype=np.int64
     )
 
     if nc == 0 or nr == 0 or ntot == 0:
@@ -61,18 +62,18 @@ def rvs_rcont1(double[::1] row, double[::1] col, double ntot,
     return result
 
 
-def rvs_rcont2(double[::1] row, double[::1] col, double ntot,
+def rvs_rcont2(tab_t[::1] row, tab_t[::1] col, tab_t ntot,
                int size, random_state):
     cdef:
         bitgen_t *rstate = get_bitgen(random_state)
         int nr = row.shape[0]
         int nc = col.shape[0]
 
-    cdef np.ndarray[double, ndim=3, mode="c"] result = np.zeros(
-        (size, nr, nc), dtype=np.double
+    cdef np.ndarray[tab_t, ndim=3, mode="c"] result = np.zeros(
+        (size, nr, nc), dtype=np.int64
     )
 
-    if nc == 0 or nr == 0:
+    if nc == 0 or nr == 0 or ntot == 0:
         return result
 
     for i in range(size):

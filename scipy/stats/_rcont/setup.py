@@ -9,7 +9,7 @@ def configuration(parent_package='', top_path=None):
 
     config.add_extension(
         'rcont',
-        sources=['rcont.c', '_rcont.c'],
+        sources=['rcont.c', '_rcont.c', 'logfactorial.c'],
         include_dirs=[np.get_include()],
         library_dirs=[join(np.get_include(),
                       '..', '..', 'random', 'lib'),

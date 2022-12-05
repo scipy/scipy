@@ -2526,11 +2526,11 @@ class TestRandomTable:
 
         message = "each element of `row` must be an integer"
         with pytest.raises(ValueError, match=message):
-            random_table([2.1, 1.9], [1, 1, 2])
+            random_table([2.1, 2.1], [1, 1, 2])
 
         message = "each element of `col` must be an integer"
         with pytest.raises(ValueError, match=message):
-            random_table([1, 2], [1.1, 0.9, 1])
+            random_table([1, 2], [1.1, 1.1, 1])
 
         row = [1, 3]
         col = [2, 1, 1]
@@ -2733,8 +2733,8 @@ class TestRandomTable:
     def test_rvs_rcont(self, v):
         import scipy.stats._rcont as _rcont
 
-        row = np.array([1.0, 3.0])
-        col = np.array([2.0, 1.0, 1.0])
+        row = np.array([1, 3], dtype=np.int64)
+        col = np.array([2, 1, 1], dtype=np.int64)
 
         rvs = getattr(_rcont, f"rvs_rcont{v}")
 

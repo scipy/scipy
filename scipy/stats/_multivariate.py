@@ -5358,8 +5358,8 @@ class random_table_gen(multi_rv_generic):
         not contain negative or non-integer entries, and that the sums over
         both vectors are equal.
         """
-        r = np.array(row, dtype=np.double, copy=True)
-        c = np.array(col, dtype=np.double, copy=True)
+        r = np.array(row, dtype=np.int64, copy=True)
+        c = np.array(col, dtype=np.int64, copy=True)
 
         if np.ndim(r) != 1:
             raise ValueError("`row` must be one-dimensional")
@@ -5375,9 +5375,9 @@ class random_table_gen(multi_rv_generic):
         if n != np.sum(c):
             raise ValueError("sums over `row` and `col` must be equal")
 
-        if not np.all(r == r.astype(np.int_)):
+        if not np.all(r == np.asarray(row)):
             raise ValueError("each element of `row` must be an integer")
-        if not np.all(c == c.astype(np.int_)):
+        if not np.all(c == np.asarray(col)):
             raise ValueError("each element of `col` must be an integer")
 
         return r, c, n

@@ -2,13 +2,16 @@
 #define RCONT_H
 
 #include <numpy/random/distributions.h>
+#include <stdint.h>
 
-void rcont1_init(int *work, int nc, const double *c);
+typedef int64_t tab_t;
 
-void rcont1(double *matrix, int nr, const double *r, int nc, const double *c,
-            double ntot, int *work, bitgen_t *rstate);
+void rcont1_init(tab_t *work, int nc, const tab_t *c);
 
-void rcont2(double *matrix, int nr, const double *r, int nc, const double *c,
-            double ntot, bitgen_t *rstate);
+void rcont1(tab_t *table, int nr, const tab_t *r, int nc, const tab_t *c,
+            const tab_t ntot, tab_t *work, bitgen_t *rstate);
+
+void rcont2(tab_t *table, int nr, const tab_t *r, int nc, const tab_t *c,
+            const tab_t ntot, bitgen_t *rstate);
 
 #endif
