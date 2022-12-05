@@ -16,3 +16,11 @@ registry_urls = {
     "ecg.dat": "https://raw.githubusercontent.com/scipy/dataset-ecg/main/ecg.dat",
     "face.dat": "https://raw.githubusercontent.com/scipy/dataset-face/main/face.dat"
 }
+
+# dataset method mapping with their associated filenames
+# <method_name> : ["filename1", "filename2", ...]
+method_files_map = {
+    "ascent": ["ascent.dat"],
+    "electrocardiogram": ["ecg.dat"],
+    "face": ["face.dat"]
+}
