@@ -351,7 +351,6 @@ Authors
 * Hood Chatham (5)
 * Andrew Chin (1) +
 * Daniel Ching (1) +
-* chohner (2) +
 * Leo Chow (1) +
 * chris (3) +
 * John Clow (1) +
@@ -372,7 +371,6 @@ Authors
 * Pieter Eendebak (1) +
 * Jérome Eertmans (1) +
 * Fabian Egli (2) +
-* Egor (16) +
 * Sebastian Ehlert (2) +
 * Kian Eliasi (1) +
 * Tomohiro Endo (1) +
@@ -384,12 +382,12 @@ Authors
 * Neil Flood (1) +
 * Franz Forstmayr (1)
 * Sara Fridovich-Keil (1)
-* GavinZhang (2) +
 * David Gilbertson (1) +
 * Ralf Gommers (251)
 * Marco Gorelli (2) +
 * Matt Haberland (373)
 * Andrew Hawryluk (2) +
+* Christoph Hohnerlein (2) +
 * Loïc Houpert (2) +
 * Shamus Husheer (1) +
 * ideasrule (1) +
@@ -408,14 +406,13 @@ Authors
 * jvavrek (1) +
 * jyuv (2)
 * Kai Mühlbauer (1) +
-* Nikita Karetnikov (2) +
+* Nikita Karetnikov (3) +
 * Reinert Huseby Karlsen (1) +
 * kaspar (2) +
 * Toshiki Kataoka (1)
 * Robert Kern (3)
 * Joshua Klein (1) +
 * Andrew Knyazev (5)
-* korneix (1) +
 * Jozsef Kutas (16) +
 * Eric Larson (4)
 * Lechnio (1) +
@@ -429,6 +426,7 @@ Authors
 * marianasalamoni (2) +
 * mariprudencio (1) +
 * Paige Martin (1) +
+* Arno Marty (1) +
 * matthewborish (3) +
 * Damon McDougall (1)
 * Nicholas McKibben (22)
@@ -442,7 +440,6 @@ Authors
 * nboudrie (1) +
 * Andrew Nelson (50)
 * Nico Schlömer (1)
-* Nikita Karetnikov (ニキータ カレートニコフ) (1) +
 * NiMlr (1) +
 * o-alexandre-felipe (1) +
 * Maureen Ononiwu (1) +
@@ -462,11 +459,10 @@ Authors
 * Martin Reinecke (1)
 * Ned Richards (1)
 * Marie Roald (1) +
-* Sam Rosen (2) +
+* Sam Rosen (4) +
 * Pamphile Roy (102)
 * sabonerune (2) +
 * Atsushi Sakai (94)
-* SamGRosen (2) +
 * Daniel Schmitz (26)
 * Anna Scholtz (1) +
 * Eli Schwartz (11)
@@ -507,10 +503,10 @@ Authors
 * Meekail Zain (2) +
 * Fabio Zanini (1) +
 * Steffen Zeile (1) +
-* Egor Zemlyanoy (2)
-* Gavin Zhang (1) +
+* Egor Zemlyanoy (18)
+* Gavin Zhang (3) +
 
-A total of 184 people contributed to this release.
+A total of 180 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
