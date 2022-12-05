@@ -2563,10 +2563,14 @@ class TestRandomTable:
     @pytest.mark.parametrize('frozen', (True, False))
     @pytest.mark.parametrize('log', (True, False))
     def test_pmf_logpmf(self, frozen, log):
+        # The pmf is tested through random sample generation
+        # with Boyett's algorithm, whose implementation is simple
+        # enough to verify manually for correctness.
         rng = self.get_rng()
         row = [2, 6]
         col = [1, 3, 4]
-        rvs = random_table.rvs(row, col, size=1000, random_state=rng)
+        rvs = random_table.rvs(row, col, size=1000,
+                               method="boyett", random_state=rng)
 
         obj = random_table(row, col) if frozen else random_table
         method = getattr(obj, "logpmf" if log else "pmf")
@@ -2639,7 +2643,7 @@ class TestRandomTable:
     @pytest.mark.parametrize("method", ("boyett", "patefield"))
     def test_rvs_mean(self, method):
         # test if `rvs` is unbiased and large sample size converges
-        # to the true mean. `test_pmf` also implicitly tests `rvs`.
+        # to the true mean.
         rng = self.get_rng()
         row = [2, 6]
         col = [1, 3, 4]
@@ -2650,6 +2654,20 @@ class TestRandomTable:
         assert_allclose(rvs.mean(0), mean, atol=0.05)
         assert_equal(rvs.sum(axis=-1), np.broadcast_to(row, (1000, 2)))
         assert_equal(rvs.sum(axis=-2), np.broadcast_to(col, (1000, 3)))
+
+    def test_rvs_cov(self):
+        # test if `rvs` generated with patefield and boyett algorithms
+        # produce approximately the same covariance matrix
+        rng = self.get_rng()
+        row = [2, 6]
+        col = [1, 3, 4]
+        rvs1 = random_table.rvs(row, col, size=10000, method="boyett",
+                                random_state=rng)
+        rvs2 = random_table.rvs(row, col, size=10000, method="patefield",
+                                random_state=rng)
+        cov1 = np.var(rvs1, axis=0)
+        cov2 = np.var(rvs2, axis=0)
+        assert_allclose(cov1, cov2, atol=0.02)
 
     @pytest.mark.parametrize("method", ("boyett", "patefield"))
     def test_rvs_size(self, method):
@@ -2695,18 +2713,24 @@ class TestRandomTable:
 
     @pytest.mark.parametrize("method", ("boyett", "patefield"))
     def test_rvs_method(self, method):
-        row = [1, 3]
-        col = [2, 1, 1]
+        # This test assumes that pmf is correct and checks that random samples
+        # follow this probability distribution. This seems like a circular
+        # argument, since pmf is checked in test_pmf_logpmf with random samples
+        # generated with the rvs method. This test is not redundant, because
+        # test_pmf_logpmf intentionally uses rvs generation with Boyett only,
+        # but here we test both Boyett and Patefield.
+        row = [2, 6]
+        col = [1, 3, 4]
 
         ct = random_table
-        rvs = ct.rvs(row, col, size=10000, method=method,
+        rvs = ct.rvs(row, col, size=100000, method=method,
                      random_state=self.get_rng())
 
         unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
 
         # generated frequencies should match expected frequencies
         p = ct.pmf(unique_rvs, row, col)
-        assert_allclose(p * len(rvs), counts, rtol=0.03)
+        assert_allclose(p * len(rvs), counts, rtol=0.02)
 
     @pytest.mark.parametrize("method", ("boyett", "patefield"))
     def test_rvs_with_zeros_in_col_row(self, method):
@@ -2731,6 +2755,8 @@ class TestRandomTable:
 
     @pytest.mark.parametrize('v', (1, 2))
     def test_rvs_rcont(self, v):
+        # This test checks the internal low-level interface.
+        # It is implicitly also checked by the other test_rvs* calls.
         import scipy.stats._rcont as _rcont
 
         row = np.array([1, 3], dtype=np.int64)
