@@ -69,12 +69,13 @@ def _bootstrap_resample(sample, n_resamples=None, random_state=None):
 
 def _percentile_of_score(a, score, axis):
     """Vectorized, simplified `scipy.stats.percentileofscore`.
+    Uses logic of the 'mean' value of percentileofscore's kind parameter.
 
     Unlike `stats.percentileofscore`, the percentile returned is a fraction
     in [0, 1].
     """
     B = a.shape[axis]
-    return (a < score).sum(axis=axis) / B
+    return ((a < score).sum(axis=axis) + (a <= score).sum(axis=axis)) / (2 * B)
 
 
 def _percentile_along_axis(theta_hat_b, alpha):
@@ -893,6 +894,32 @@ def _batch_generator(iterable, batch):
         z = [item for i, item in zip(range(batch), iterator)]
 
 
+def _pairings_permutations_gen(n_permutations, n_samples, n_obs_sample, batch,
+                               random_state):
+    # Returns a generator that yields arrays of size
+    # `(batch, n_samples, n_obs_sample)`.
+    # Each row is an independent permutation of indices 0 to `n_obs_sample`.
+    batch = min(batch, n_permutations)
+
+    if hasattr(random_state, 'permuted'):
+        def batched_perm_generator():
+            indices = np.arange(n_obs_sample)
+            indices = np.tile(indices, (batch, n_samples, 1))
+            for k in range(0, n_permutations, batch):
+                batch_actual = min(batch, n_permutations-k)
+                # Don't permute in place, otherwise results depend on `batch`
+                permuted_indices = random_state.permuted(indices, axis=-1)
+                yield permuted_indices[:batch_actual]
+    else:  # RandomState and early Generators don't have `permuted`
+        def batched_perm_generator():
+            for k in range(0, n_permutations, batch):
+                batch_actual = min(batch, n_permutations-k)
+                size = (batch_actual, n_samples, n_obs_sample)
+                x = random_state.random(size=size)
+                yield np.argsort(x, axis=-1)[:batch_actual]
+
+    return batched_perm_generator()
+
 def _calculate_null_both(data, statistic, n_permutations, batch,
                          random_state=None):
     """
@@ -969,22 +996,23 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
     if n_permutations >= n_max:
         exact_test = True
         n_permutations = n_max
+        batch = batch or int(n_permutations)
         # cartesian product of the sets of all permutations of indices
         perm_generator = product(*(permutations(range(n_obs_sample))
                                    for i in range(n_samples)))
+        batched_perm_generator = _batch_generator(perm_generator, batch=batch)
     else:
         exact_test = False
+        batch = batch or int(n_permutations)
         # Separate random permutations of indices for each sample.
         # Again, it would be nice if RandomState/Generator.permutation
         # could permute each axis-slice separately.
-        perm_generator = ([random_state.permutation(n_obs_sample)
-                           for i in range(n_samples)]
-                          for j in range(n_permutations))
+        args = n_permutations, n_samples, n_obs_sample, batch, random_state
+        batched_perm_generator = _pairings_permutations_gen(*args)
 
-    batch = batch or int(n_permutations)
     null_distribution = []
 
-    for indices in _batch_generator(perm_generator, batch=batch):
+    for indices in batched_perm_generator:
         indices = np.array(indices)
 
         # `indices` is 3D: the zeroth axis is for permutations, the next is

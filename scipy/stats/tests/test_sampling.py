@@ -4,6 +4,7 @@ import pytest
 from copy import deepcopy
 import platform
 import sys
+import math
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from numpy.lib import NumpyVersion
@@ -72,9 +73,8 @@ bad_pdfs_common = [
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
 
-# Make sure an internal error occurs in UNU.RAN when invalid callbacks are
-# passed. Moreover, different generators throw different error messages.
-# So, in case of an `UNURANError`, we do not validate the messages.
+
+# same approach for dpdf
 bad_dpdf_common = [
     # Infinite value returned.
     (lambda x: np.inf, UNURANError, r"..."),
@@ -85,6 +85,21 @@ bad_dpdf_common = [
     # Undefined name inside the function
     (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
     # signature of dPDF wrong
+    (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
+]
+
+
+# same approach for logpdf
+bad_logpdfs_common = [
+    # Returning wrong type
+    (lambda x: [], TypeError, floaterr),
+    # Undefined name inside the function
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
+    # Infinite value returned => Overflow error.
+    (lambda x: np.inf, UNURANError, r"..."),
+    # NaN value => internal error in UNU.RAN
+    (lambda x: np.nan, UNURANError, r"..."),
+    # signature of logpdf wrong
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
 
@@ -386,7 +401,7 @@ class TestQRVS:
         qrng2 = deepcopy(qrng)
         qrvs = gen.qrvs(size=size_in, d=d_in, qmc_engine=qrng)
         if size_in is not None:
-            assert(qrvs.shape == shape_expected)
+            assert qrvs.shape == shape_expected
 
         if qrng2 is not None:
             uniform = qrng2.random(np.prod(size_in) or 1)
@@ -825,6 +840,14 @@ class TestNumericalInversePolynomial:
         with pytest.raises(err, match=msg):
             NumericalInversePolynomial(dist, domain=[0, 5])
 
+    @pytest.mark.parametrize("logpdf, err, msg", bad_logpdfs_common)
+    def test_bad_logpdf(self, logpdf, err, msg):
+        class dist:
+            pass
+        dist.logpdf = logpdf
+        with pytest.raises(err, match=msg):
+            NumericalInversePolynomial(dist, domain=[0, 5])
+
     # test domains with inf + nan in them. need to write a custom test for
     # this because not all methods support infinite tails.
     @pytest.mark.parametrize("domain, err, msg", inf_nan_domains)
@@ -917,6 +940,16 @@ class TestNumericalInversePolynomial:
                                        u_resolution=u_resolution)
 
     def test_bad_args(self):
+
+        class BadDist:
+            def cdf(self, x):
+                return stats.norm._cdf(x)
+
+        dist = BadDist()
+        msg = r"Either of the methods `pdf` or `logpdf` must be specified"
+        with pytest.raises(ValueError, match=msg):
+            rng = NumericalInversePolynomial(dist)
+
         dist = StandardNormal()
         rng = NumericalInversePolynomial(dist)
         msg = r"`sample_size` must be greater than or equal to 1000."
@@ -932,6 +965,26 @@ class TestNumericalInversePolynomial:
         msg = r"Exact CDF required but not found."
         with pytest.raises(ValueError, match=msg):
             rng.u_error()
+
+    def test_logpdf_pdf_consistency(self):
+        # 1. check that PINV works with pdf and logpdf only
+        # 2. check that generated ppf is the same (up to a small tolerance)
+
+        class MyDist:
+            pass
+
+        # create genrator from dist with only pdf
+        dist_pdf = MyDist()
+        dist_pdf.pdf = lambda x: math.exp(-x*x/2)
+        rng1 = NumericalInversePolynomial(dist_pdf)
+
+        # create dist with only logpdf
+        dist_logpdf = MyDist()
+        dist_logpdf.logpdf = lambda x: -x*x/2
+        rng2 = NumericalInversePolynomial(dist_logpdf)
+
+        q = np.linspace(1e-5, 1-1e-5, num=100)
+        assert_allclose(rng1.ppf(q), rng2.ppf(q))
 
 
 class TestNumericalInverseHermite:
@@ -1005,9 +1058,7 @@ class TestNumericalInverseHermite:
         with pytest.raises(err, match=msg):
             NumericalInverseHermite(StandardNormal(), domain=domain)
 
-    @pytest.mark.xslow
-    @pytest.mark.parametrize(("distname", "shapes"), distcont)
-    def test_basic_all_scipy_dists(self, distname, shapes):
+    def basic_test_all_scipy_dists(self, distname, shapes):
         slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
         fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
                       'norminvgauss', 'genhyperbolic', 'studentized_range',
@@ -1023,12 +1074,7 @@ class TestNumericalInverseHermite:
         np.random.seed(0)
 
         dist = getattr(stats, distname)(*shapes)
-
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "overflow encountered")
-            sup.filter(RuntimeWarning, "divide by zero")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            fni = NumericalInverseHermite(dist)
+        fni = NumericalInverseHermite(dist)
 
         x = np.random.rand(10)
         p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
@@ -1036,6 +1082,18 @@ class TestNumericalInverseHermite:
 
         assert p_tol < 1e-8
         assert u_tol < 1e-12
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.xslow
+    @pytest.mark.parametrize(("distname", "shapes"), distcont)
+    def test_basic_all_scipy_dists(self, distname, shapes):
+        # if distname == "truncnorm":
+        #     pytest.skip("Tested separately")
+        self.basic_test_all_scipy_dists(distname, shapes)
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    def test_basic_truncnorm_gh17155(self):
+        self.basic_test_all_scipy_dists("truncnorm", (0.1, 2))
 
     def test_input_validation(self):
         match = r"`order` must be either 1, 3, or 5."
@@ -1064,7 +1122,7 @@ class TestNumericalInverseHermite:
         rng2 = deepcopy(rng)
         rvs = fni.rvs(size=size_in, random_state=rng)
         if size_in is not None:
-            assert(rvs.shape == size_out)
+            assert rvs.shape == size_out
 
         if rng2 is not None:
             rng2 = check_random_state(rng2)

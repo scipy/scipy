@@ -43,7 +43,9 @@ boost::math::policies::user_overflow_error(const char* function, const char* mes
     msg += (boost::format(function) % typeid(RealType).name()).str() + ": ";
     // From Boost docs: "overflow and underflow messages do not contain this %1% specifier
     //                   (since the value of value is immaterial in these cases)."
-    msg += message;
+    if (message) {
+        msg += message;
+    }
     PyGILState_STATE save = PyGILState_Ensure();
     PyErr_SetString(PyExc_OverflowError, msg.c_str());
     PyGILState_Release(save);

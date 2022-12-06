@@ -59,6 +59,12 @@ def bandwidth(a):
         say for N rows (N-1) means that side is full. Same example applies
         to the upper triangular part with (M-1).
 
+    Raises
+    ------
+    TypeError
+        If the dtype of the array is not supported, in particular, NumPy
+        float16, float128 and complex256 dtypes.
+
     Notes
     -----
     This helper function simply runs over the array looking for the nonzero
@@ -74,12 +80,6 @@ def bandwidth(a):
     the horizontal search is done only up to that band entries since we know
     that band is occupied. Therefore, a completely dense matrix scan cost is
     in the the order of n.
-
-    Raises
-    ------
-    TypeError
-        If the dtype of the array is not supported, in particular, NumPy
-        float16, float128 and complex256 dtypes.
 
     Examples
     --------
@@ -208,6 +208,16 @@ def issymmetric(a, atol=None, rtol=None):
     sym : bool
         Returns True if the array symmetric.
 
+    Raises
+    ------
+    TypeError
+        If the dtype of the array is not supported, in particular, NumPy
+        float16, float128 and complex256 dtypes for exact comparisons.
+
+    See Also
+    --------
+    ishermitian : Check if a square 2D array is Hermitian
+
     Notes
     -----
     For square empty arrays the result is returned True by convention. Complex
@@ -226,16 +236,6 @@ def issymmetric(a, atol=None, rtol=None):
     performance can improve or degrade depending on the size and dtype of the
     array. If one of ``atol`` or ``rtol`` given the other one is automatically
     set to zero.
-
-    See Also
-    --------
-    ishermitian : Check if a square 2D array is Hermitian
-
-    Raises
-    ------
-    TypeError
-        If the dtype of the array is not supported, in particular, NumPy
-        float16, float128 and complex256 dtypes for exact comparisons.
 
     Examples
     --------
@@ -338,6 +338,16 @@ def ishermitian(a, atol=None, rtol=None):
     her : bool
         Returns True if the array Hermitian.
 
+    Raises
+    ------
+    TypeError
+        If the dtype of the array is not supported, in particular, NumPy
+        float16, float128 and complex256 dtypes.
+
+    See Also
+    --------
+    issymmetric : Check if a square 2D array is symmetric
+
     Notes
     -----
     For square empty arrays the result is returned True by convention.
@@ -352,16 +362,6 @@ def ishermitian(a, atol=None, rtol=None):
     performance can improve or degrade depending on the size and dtype of the
     array. If one of ``atol`` or ``rtol`` given the other one is automatically
     set to zero.
-
-    Raises
-    ------
-    TypeError
-        If the dtype of the array is not supported, in particular, NumPy
-        float16, float128 and complex256 dtypes.
-
-    See Also
-    --------
-    issymmetric : Check if a square 2D array is symmetric
 
     Examples
     --------

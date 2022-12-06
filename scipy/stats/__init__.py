@@ -172,6 +172,8 @@ Multivariate distributions
    random_correlation     -- random correlation matrices
    multivariate_t         -- Multivariate t-distribution
    multivariate_hypergeom -- Multivariate hypergeometric distribution
+   random_table           -- Distribution of random tables with given marginals
+   uniform_direction      -- Uniform distribution on S(N-1)
 
 `scipy.stats.multivariate_normal` methods accept instances
 of the following class to represent the covariance.
@@ -224,6 +226,7 @@ Summary statistics
    kurtosis          -- Fisher or Pearson kurtosis
    mode              -- Modal value
    moment            -- Central moment
+   expectile         -- Expectile
    skew              -- Skewness
    kstat             --
    kstatvar          --
@@ -331,6 +334,7 @@ Statistical tests
    skewtest
    kurtosistest
    normaltest
+   goodness_of_fit
 
 
 Quasi-Monte Carlo
@@ -421,7 +425,7 @@ Directional statistical functions
 .. autosummary::
    :toctree: generated/
 
-   directionalmean
+   directional_stats
    circmean
    circvar
    circstd
@@ -496,7 +500,7 @@ from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
-from ._fit import fit
+from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 
 # Deprecated namespaces, to be removed in v2.0.0

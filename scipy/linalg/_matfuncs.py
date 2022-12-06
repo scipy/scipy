@@ -660,18 +660,6 @@ def funm(A, func, disp=True):
 
         1-norm of the estimated error, ||err||_1 / ||A||_1
 
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.linalg import funm
-    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
-    >>> funm(a, lambda x: x*x)
-    array([[  4.,  15.],
-           [  5.,  19.]])
-    >>> a.dot(a)
-    array([[  4.,  15.],
-           [  5.,  19.]])
-
     Notes
     -----
     This function implements the general algorithm based on Schur decomposition
@@ -693,6 +681,18 @@ def funm(A, func, disp=True):
     References
     ----------
     .. [1] Gene H. Golub, Charles F. van Loan, Matrix Computations 4th ed.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import funm
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> funm(a, lambda x: x*x)
+    array([[  4.,  15.],
+           [  5.,  19.]])
+    >>> a.dot(a)
+    array([[  4.,  15.],
+           [  5.,  19.]])
 
     """
     A = _asarray_square(A)
@@ -835,6 +835,10 @@ def khatri_rao(a, b):
     c:  (n*m, k) ndarray
         Khatri-rao product of `a` and `b`.
 
+    See Also
+    --------
+    kron : Kronecker product
+
     Notes
     -----
     The mathematical definition of the Khatri-Rao product is:
@@ -846,10 +850,6 @@ def khatri_rao(a, b):
     which is the Kronecker product of every column of A and B, e.g.::
 
         c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
-
-    See Also
-    --------
-    kron : Kronecker product
 
     Examples
     --------
@@ -869,7 +869,7 @@ def khatri_rao(a, b):
     a = np.asarray(a)
     b = np.asarray(b)
 
-    if not(a.ndim == 2 and b.ndim == 2):
+    if not (a.ndim == 2 and b.ndim == 2):
         raise ValueError("The both arrays should be 2-dimensional.")
 
     if not a.shape[1] == b.shape[1]:

@@ -406,7 +406,7 @@ def _basic_simpson(y, start, stop, x, dx, axis):
     slice2 = tupleset(slice_all, axis, slice(start+2, stop+2, step))
 
     if x is None:  # Even-spaced Simpson's rule.
-        result = np.sum(y[slice0] + 4*y[slice1] + y[slice2], axis=axis)
+        result = np.sum(y[slice0] + 4.0*y[slice1] + y[slice2], axis=axis)
         result *= dx / 3.0
     else:
         # Account for possibly different spacings.
@@ -473,6 +473,11 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
 
         'last' : Use Simpson's rule for the last N-2 intervals with a
                trapezoidal rule on the first interval.
+
+    Returns
+    -------
+    float
+        The estimated integral computed with the composite Simpson's rule.
 
     See Also
     --------
@@ -966,6 +971,11 @@ def newton_cotes(rn, equal=0):
     B : float
         Error coefficient.
 
+    Notes
+    -----
+    Normally, the Newton-Cotes rules are used on smaller integration
+    regions and a composite rule is used to return the total integral.
+
     Examples
     --------
     Compute the integral of sin(x) in [0, :math:`\pi`]:
@@ -990,11 +1000,6 @@ def newton_cotes(rn, equal=0):
      6   2.000017814   1.78136e-05
      8   1.999999835   1.64725e-07
     10   2.000000001   1.14677e-09
-
-    Notes
-    -----
-    Normally, the Newton-Cotes rules are used on smaller integration
-    regions and a composite rule is used to return the total integral.
 
     """
     try:
