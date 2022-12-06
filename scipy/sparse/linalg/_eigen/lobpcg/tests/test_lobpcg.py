@@ -413,6 +413,10 @@ def test_maxit():
                                 retResidualNormsHistory=True)
     assert_allclose(np.shape(l_h)[0], 20+3)
     assert_allclose(np.shape(r_h)[0], 20+3)
+    assert isinstance(l_h, list)
+    assert isinstance(r_h, list)
+    assert_allclose(np.shape(l_h), np.shape(np.asarray(l_h))
+    assert_allclose(np.shape(r_h), np.shape(np.asarray(r_h))
 
 
 @pytest.mark.slow
