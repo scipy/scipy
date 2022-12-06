@@ -963,6 +963,12 @@ def lobpcg(
         print(f"Final residual norm(s):\n{residualNorms}")
 
     if retLambdaHistory:
+        lambdaHistory = np.vsplit(lambdaHistory, np.shape(lambdaHistory)[0])
+    if retResidualNormsHistory:
+        residualNormsHistory = np.vsplit(residualNormsHistory,
+                                         np.shape(residualNormsHistory)[0])
+
+    if retLambdaHistory:
         if retResidualNormsHistory:
             return _lambda, blockVectorX, lambdaHistory, residualNormsHistory
         else:
