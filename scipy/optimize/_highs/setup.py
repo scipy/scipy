@@ -4,8 +4,6 @@ setup.py for HiGHS scipy interface
 Some CMake files are used to create source lists for compilation
 """
 
-import pathlib
-from datetime import datetime
 import os
 from os.path import join
 
@@ -66,28 +64,19 @@ def configuration(parent_package='', top_path=None):
     HIGHS_VERSION_PATCH = _get_version(
         'CMakeLists.txt', 'HIGHS_VERSION_PATCH')
     GITHASH = 'n/a'
-    HIGHS_DIR = str(_highs_dir().resolve())
 
     # Here are the pound defines that HConfig.h would usually provide;
     # We provide an empty HConfig.h file and do the defs and undefs
     # here:
-    TODAY_DATE = datetime.today().strftime('%Y-%m-%d')
     DEFINE_MACROS = [
-        ('CMAKE_BUILD_TYPE', '"RELEASE"'),
         ('HIGHS_GITHASH', '"%s"' % GITHASH),
-        ('HIGHS_COMPILATION_DATE', '"' + TODAY_DATE + '"'),
         ('HIGHS_VERSION_MAJOR', HIGHS_VERSION_MAJOR),
         ('HIGHS_VERSION_MINOR', HIGHS_VERSION_MINOR),
         ('HIGHS_VERSION_PATCH', HIGHS_VERSION_PATCH),
-        ('HIGHS_DIR', '"' + HIGHS_DIR + '"'),
         ('NDEBUG', None),
         # ('NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION', None),
     ]
     UNDEF_MACROS = [
-        'OPENMP',  # unconditionally disable openmp
-        'EXT_PRESOLVE',
-        'SCIP_DEV',
-        'HiGHSDEV',
         'OSI_FOUND',
     ]
 
@@ -104,7 +93,7 @@ def configuration(parent_package='', top_path=None):
             str(highs_root / 'src'),
             str(highs_root / 'src/util'),
             str(highs_root / 'extern'),
-            join(str(highs_root), 'src', 'ipm', 'basiclu', 'include'),
+            join(str(highs_root), 'src', 'ipm', 'basiclu'),
         ],
         language='c',
         macros=DEFINE_MACROS,
@@ -130,10 +119,10 @@ def configuration(parent_package='', top_path=None):
             join(str(highs_root), 'src', 'lp_data'),
             # highs
             join(str(highs_root), 'src', 'io'),
-            join(str(highs_root), 'src', 'ipm', 'ipx', 'include'),
+            join(str(highs_root), 'src', 'ipm', 'ipx'),
             # IPX
-            join(str(highs_root), 'src', 'ipm', 'ipx', 'include'),
-            join(str(highs_root), 'src', 'ipm', 'basiclu', 'include'),
+            join(str(highs_root), 'src', 'ipm', 'ipx'),
+            join(str(highs_root), 'src', 'ipm', 'basiclu'),
         ],
         language='c++',
         libraries=['basiclu'],
