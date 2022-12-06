@@ -919,11 +919,11 @@ The table below compares the characteristics of all :func:`minimize` optimizatio
      -
      -
 
-.. list-table:: Optimization methods from :mod:`minimize`
+.. list-table:: Optimization methods from :func:`minimize`
    :widths: 5 35
    :header-rows: 1
 
-   * - 
+   * -
      - Description
    * - Version added
      - Specifies the algorithm’s first appearance in SciPy. Algorithms with version added 0.6*' were added in version 0.6 or before.
