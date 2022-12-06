@@ -4,6 +4,7 @@ setup.py for HiGHS scipy interface
 Some CMake files are used to create source lists for compilation
 """
 
+from datetime import datetime
 import os
 from os.path import join
 
@@ -68,8 +69,10 @@ def configuration(parent_package='', top_path=None):
     # Here are the pound defines that HConfig.h would usually provide;
     # We provide an empty HConfig.h file and do the defs and undefs
     # here:
+    TODAY_DATE = datetime.today().strftime('%Y-%m-%d')
     DEFINE_MACROS = [
         ('HIGHS_GITHASH', '"%s"' % GITHASH),
+        ('HIGHS_COMPILATION_DATE', '"' + TODAY_DATE + '"'),
         ('HIGHS_VERSION_MAJOR', HIGHS_VERSION_MAJOR),
         ('HIGHS_VERSION_MINOR', HIGHS_VERSION_MINOR),
         ('HIGHS_VERSION_PATCH', HIGHS_VERSION_PATCH),
