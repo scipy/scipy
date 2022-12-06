@@ -243,6 +243,7 @@ _cpp_Wno_format_truncation = cpp.get_supported_arguments('-Wno-format-truncation
 _cpp_Wno_non_virtual_dtor = cpp.get_supported_arguments('-Wno-non-virtual-dtor')
 _cpp_Wno_sign_compare = cpp.get_supported_arguments('-Wno-sign-compare')
 _cpp_Wno_switch = cpp.get_supported_arguments('-Wno-switch')
+_cpp_Wno_return_type = cpp.get_supported_arguments('-Wno-return-type')
 _cpp_Wno_terminate = cpp.get_supported_arguments('-Wno-terminate')
 _cpp_Wno_unused_but_set_variable = cpp.get_supported_arguments('-Wno-unused-but-set-variable')
 _cpp_Wno_unused_function = cpp.get_supported_arguments('-Wno-unused-function')
