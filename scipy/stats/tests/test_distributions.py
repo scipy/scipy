@@ -152,6 +152,7 @@ def test_vonmises_entropy(kappa, expected_entropy):
     entropy = stats.vonmises.entropy(kappa)
     assert_allclose(entropy, expected_entropy, rtol=1e-13)
 
+
 def test_vonmises_rvs_gh4598():
     # check that random variates wrap around as discussed in gh-4598
     seed = abs(hash('von_mises_rvs'))
@@ -179,6 +180,33 @@ def test_vonmises_rvs_gh4598():
 def test_vonmises_logpdf(x, kappa, expected_logpdf):
     logpdf = stats.vonmises.logpdf(x, kappa)
     assert_allclose(logpdf, expected_logpdf, rtol=1e-15)
+
+
+def test_vonmises_expect():
+    """
+    Test that the vonmises expectation values are
+    computed correctly.  This test checks that the
+    numeric integration estimates the correct normalization
+    (1) and mean angle (loc).  These expectations are
+    independent of the chosen 2pi interval.
+    """
+    rng = np.random.default_rng(6762668991392531563)
+
+    loc, kappa, lb = rng.random(3) * 10
+    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1)
+    assert_allclose(res, 1)
+    assert np.issubdtype(res.dtype, np.floating)
+
+    bounds = lb, lb + 2 * np.pi
+    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1, *bounds)
+    assert_allclose(res, 1)
+    assert np.issubdtype(res.dtype, np.floating)
+
+    bounds = lb, lb + 2 * np.pi
+    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: np.exp(1j*x),
+                                                      *bounds, complex_func=1)
+    assert_allclose(np.angle(res), loc % (2*np.pi))
+    assert np.issubdtype(res.dtype, np.complexfloating)
 
 
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
@@ -2833,20 +2861,6 @@ class TestRvDiscrete:
         assert_allclose(rv.expect(lambda x: x**2),
                         sum(v**2 * w for v, w in zip(y, py)), atol=1e-14)
 
-    def test_rv_count_subclassing(self):
-        # gh-8057: rv_discrete(values=(xk, pk)) cannot be subclassed easily
-        class S(stats.rv_count):
-            def extra(self):
-                return 42
-
-        s = S(xk=[1, 2, 3], pk=[0.2, 0.7, 0.1])
-        assert_allclose(s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
-        assert s.extra() == 42
-
-        # make sure subclass freezes correctly
-        frozen_s = s()
-        assert_allclose(frozen_s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
-
 
 class TestSkewCauchy:
     def test_cauchy(self):
@@ -3387,6 +3401,30 @@ class TestBeta:
         q, a, b = 0.995, 1.0e11, 1.0e13
         with pytest.warns(RuntimeWarning):
             stats.beta.ppf(q, a, b)
+
+    @pytest.mark.parametrize('method', [stats.beta.ppf, stats.beta.isf])
+    @pytest.mark.parametrize('a, b', [(1e-310, 12.5), (12.5, 1e-310)])
+    def test_beta_ppf_with_subnormal_a_b(self, method, a, b):
+        # Regression test for gh-17444: beta.ppf(p, a, b) and beta.isf(p, a, b)
+        # would result in a segmentation fault if either a or b was subnormal.
+        p = 0.9
+        # Depending on the version of Boost that we have vendored and
+        # our setting of the Boost double promotion policy, the call
+        # `stats.beta.ppf(p, a, b)` might raise an OverflowError or
+        # return a value.  We'll accept either behavior (and not care about
+        # the value), because our goal here is to verify that the call does
+        # not trigger a segmentation fault.
+        try:
+            method(p, a, b)
+        except OverflowError:
+            # The OverflowError exception occurs with Boost 1.80 or earlier
+            # when Boost's double promotion policy is false; see
+            #   https://github.com/boostorg/math/issues/882
+            # and
+            #   https://github.com/boostorg/math/pull/883
+            # Once we have vendored the fixed version of Boost, we can drop
+            # this try-except wrapper and just call the function.
+            pass
 
 
 class TestBetaPrime:
