@@ -5,12 +5,14 @@ import numpy as np
 import pytest
 
 from scipy import stats
-from .common_tests import (check_normalization, check_moment, check_mean_expect,
+from .common_tests import (check_normalization, check_moment,
+                           check_mean_expect,
                            check_var_expect, check_skew_expect,
                            check_kurt_expect, check_entropy,
                            check_private_entropy, check_edge_support,
                            check_named_args, check_random_state_property,
-                           check_pickling, check_rvs_broadcast, check_freezing,)
+                           check_pickling, check_rvs_broadcast,
+                           check_freezing,)
 from scipy.stats._distr_params import distdiscrete, invdistdiscrete
 from scipy.stats._distn_infrastructure import rv_discrete_frozen
 
