@@ -659,7 +659,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         If the Jacobian matrix at the solution doesn't have a full rank, then
         'lm' method returns a matrix filled with ``np.inf``, on the other hand
         'trf'  and 'dogbox' methods use Moore-Penrose pseudoinverse to compute
-        the covariance matrix.
+        the covariance matrix. Covariance matrices with large condition numbers
+        (e.g. computed with`numpy.linalg.cond`) may indicate that results are
+        unreliable.
     infodict : dict (returned only if `full_output` is True)
         a dictionary of optional outputs with the keys:
 
