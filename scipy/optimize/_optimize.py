@@ -3430,9 +3430,9 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         result['allvecs'] = allvecs
     return result
 
-def fmin_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed=None, 
-               population_size=None, cov=None, n_generations=50, n_max_resampling=100,
-               disp=False, xtol=1e-12, xuptol=1e4, ftol=1e-12, covconditiontol=1e14):
+def fmin_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed=None, population_size=None,
+               cov=None, n_generations=1000, n_max_resampling=100, full_output=0, retall=0, disp=0,
+               xtol=1e-12, xuptol=1e4, ftol=1e-12, covconditiontol=1e14):
     """
     Minimize a function using CMA-ES Algorithm.
 
@@ -3456,9 +3456,16 @@ def fmin_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed=None
         A population size (lambda).
     cov : ndarray, optional
         A covariance matrix.
+    n_generations : int, default=1000
+        Number of generations
     n_max_resampling : int, default=100
-        A maximum number of resampling parameters (default: 100). 
+        A maximum number of resampling parameters.
         If all sampled parameters are infeasible, the last sampled one will be clipped with lower and upper bounds.
+    full_output : bool, optional
+        If True, return the evaluation grid and the objective function's
+        values on it.
+    retall : bool, optional
+        Set to True to return list of solutions at each iteration.
     disp : bool
         Set to True to print convergence messages.
     xtol : float, default=1e-12
@@ -3467,7 +3474,7 @@ def fmin_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed=None
         Divergence tolerance.
     ftol : float, default=1e-12
         Relative error in ``fun(xopt)`` acceptable for convergence.
-    conditioncovtol : float, default=1e14
+    covconditiontol : float, default=1e14
         Condition covariance tolerance.
 
     Returns
@@ -3477,7 +3484,7 @@ def fmin_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed=None
     fopt : float
         Value of function at minimum: ``fopt = func(xopt)``.
     iter : int
-        Number of iterations performed.
+        Number of iterations (generations) performed.
     funcalls : int
         Number of function calls made.
     warnflag : int
@@ -3507,18 +3514,21 @@ def fmin_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed=None
 
     Examples
     --------
-    >>> def f(x):
-    ...     return x**2
+    >>> ex_mean = np.zeros(5)
+
+    >>> ex_sigma = 1
 
     >>> from scipy import optimize
 
-    >>> minimum = optimize.fmin(f, 1)
-    Optimization terminated successfully.
-             Current function value: 0.000000
-             Iterations: 17
-             Function evaluations: 34
-    >>> minimum[0]
-    -8.8817841970012523e-16
+    >>> minimum = optimize.fmin_cmaes(rosen, ex_mean, ex_sigma)
+
+     message: Optimization terminated successfully.
+     success: True
+      status: 0
+         fun: 4.8069138254174965e-16
+           x: [ 1.000e+00  1.000e+00  1.000e+00  1.000e+00  1.000e+00]
+         nit: 292
+        nfev: 2336
 
     References
     ----------
@@ -3551,8 +3561,8 @@ def fmin_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed=None
             return res['x']
 
 def _minimize_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed=None, 
-                    population_size=None, cov=None, n_generations=50, n_max_resampling=100,
-                    disp=False, xtol=1e-12, xuptol=1e4, ftol=1e-12, covconditiontol=1e14):
+                    population_size=None, cov=None, n_generations=1000, n_max_resampling=100,
+                    retall=0, disp=0, xtol=1e-12, xuptol=1e4, ftol=1e-12, covconditiontol=1e14):
     """
     Minimization of scalar function of one or more variables using the
     Nelder-Mead algorithm.
@@ -3575,7 +3585,7 @@ def _minimize_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed
         A population size (lambda).
     cov : ndarray, optional
         A covariance matrix.
-    n_generations : int, default=50
+    n_generations : int, default=1000
         Number of generations
     n_max_resampling : int, default=100
         A maximum number of resampling parameters. 
@@ -4013,6 +4023,9 @@ def _minimize_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed
     result = OptimizeResult(fun=fval, nit=gen, nfev=evals,
                             status=warnflag, success=(warnflag == 0),
                             message=msg, x=x)
+    if retall:
+        result['allvecs'] = solutions
+
     return result
 
 
