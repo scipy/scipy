@@ -490,14 +490,14 @@ class rv_frozen:
     def std(self):
         return self.dist.std(*self.args, **self.kwds)
 
-    def moment(self, order=None, **kwds):
-        return self.dist.moment(order, *self.args, **self.kwds, **kwds)
+    def moment(self, order=None):
+        return self.dist.moment(order, *self.args, **self.kwds)
 
     def entropy(self):
         return self.dist.entropy(*self.args, **self.kwds)
 
-    def interval(self, confidence=None, **kwds):
-        return self.dist.interval(confidence, *self.args, **self.kwds, **kwds)
+    def interval(self, confidence=None):
+        return self.dist.interval(confidence, *self.args, **self.kwds)
 
     def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
         # expect method only accepts shape parameters as positional args
@@ -1226,12 +1226,6 @@ class rv_generic:
 
         """
         n = order
-        # No special treatment of A1, A3, or B3 is needed because the order
-        # of the moment is now in variable `n` and the shape parameter, if
-        # needed, will be fished out of `args` or `kwds` by _parse_args
-        # A3 might still cause an error if the shape parameter called `n`
-        # is not found in `args`.
-
         shapes, loc, scale = self._parse_args(*args, **kwds)
         args = np.broadcast_arrays(*(*shapes, loc, scale))
         *shapes, loc, scale = args
