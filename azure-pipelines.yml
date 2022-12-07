@@ -145,7 +145,7 @@ stages:
         architecture: 'x64'
     - script: >-
         python -m pip install
-        flake8==3.9.2
+        "flake8<6"
       displayName: 'Install tools'
       failOnStderr: false
     - script: |
