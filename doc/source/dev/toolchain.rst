@@ -123,7 +123,7 @@ Currently, SciPy wheels are being built as follows:
 ================  ========================  ===========================  ==============================
  Platform          Azure Base Image [5]_     Compilers                    Comment
 ================  ========================  ===========================  ==============================
-Linux (nightly)    ``ubuntu-18.04``          GCC 6.5                      See ``azure-pipelines.yml``
+Linux (nightly)    ``ubuntu-20.04``          GCC 6.5                      See ``azure-pipelines.yml``
 Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [6]_
 OSX                ``macOS-10.15``           LLVM 12.0.0                  Built in separate repo [6]_
 Windows            ``windows-2019``          Visual Studio 2019 (vc142)   Built in separate repo [6]_
