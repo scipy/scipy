@@ -35,6 +35,7 @@ __all__ = [  # noqa: F822
     'fmin_ncg',
     'fmin_powell',
     'fminbound',
+    'fmin_cmaes',
     'golden',
     'is_array_scalar',
     'line_search',

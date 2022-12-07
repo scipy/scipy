@@ -3572,7 +3572,7 @@ def _minimize_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed
     industrial environments around the world. The CMA-ES is typically applied to unconstrained or
     bounded constraint optimization problems, and search space dimensions between three and a hundred.
 
-    Options
+    Parameters
     -------
     func : callable func(x,*args)
         The objective function to be minimized.
