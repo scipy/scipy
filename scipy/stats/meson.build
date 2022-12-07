@@ -249,5 +249,6 @@ py3.install_sources([
 subdir('_boost')
 subdir('_levy_stable')
 subdir('_unuran')
+subdir('_rcont')
 
 subdir('tests')

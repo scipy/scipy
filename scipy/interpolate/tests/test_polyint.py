@@ -25,10 +25,6 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
     s.insert(axis % (len(y_shape)+1), 0)
     y = np.random.rand(*((6,) + y_shape)).transpose(s)
 
-    # Cython code chokes on y.shape = (0, 3) etc., skip them
-    if y.size == 0:
-        return
-
     xi = np.zeros(x_shape)
     if interpolator_cls is CubicHermiteSpline:
         dydx = np.random.rand(*((6,) + y_shape)).transpose(s)
@@ -100,10 +96,10 @@ def test_deriv_shapes():
         return pchip(x, y, axis).derivative(2)
 
     def pchip_antideriv(x, y, axis=0):
-        return pchip(x, y, axis).derivative()
+        return pchip(x, y, axis).antiderivative()
 
     def pchip_antideriv2(x, y, axis=0):
-        return pchip(x, y, axis).derivative(2)
+        return pchip(x, y, axis).antiderivative(2)
 
     def pchip_deriv_inplace(x, y, axis=0):
         class P(PchipInterpolator):

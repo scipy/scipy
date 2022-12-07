@@ -620,7 +620,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                            "constraints. Ignoring `integrality`.")
         warn(warning_message, OptimizeWarning)
     elif np.any(integrality):
-        integrality = np.broadcast_to(integrality, c.shape)
+        integrality = np.broadcast_to(integrality, np.shape(c))
 
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality)
     lp, solver_options = _parse_linprog(lp, options, meth)

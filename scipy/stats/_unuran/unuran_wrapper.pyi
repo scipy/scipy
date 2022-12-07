@@ -1,6 +1,6 @@
 import numpy as np
-from typing import Union, Any, Tuple, List, overload, Callable, NamedTuple
-from typing_extensions import Protocol
+from typing import (Union, Any, Tuple, List, overload, Callable, NamedTuple,
+                    Protocol)
 import numpy.typing as npt
 from scipy._lib._util import SeedType
 import scipy.stats as stats
