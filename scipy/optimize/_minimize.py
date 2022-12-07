@@ -18,7 +18,7 @@ import numpy as np
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                         _minimize_bfgs, _minimize_newtoncg,
                         _minimize_scalar_brent, _minimize_scalar_bounded,
-                        _minimize_scalar_golden, MemoizeJac, OptimizeResult)
+                        _minimize_scalar_golden, MemoizeJac, _minimize_cmaes, OptimizeResult)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov
@@ -36,9 +36,9 @@ from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            PreparedConstraint)
 from ._differentiable_functions import FD_METHODS
 
-MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
-                    'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
-                    'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
+MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg', 'l-bfgs-b',
+                    'tnc', 'cobyla', 'slsqp', 'trust-constr', 'dogleg', 'trust-ncg',
+                    'trust-exact', 'trust-krylov', 'cmaes']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
@@ -720,6 +720,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     elif meth == 'trust-exact':
         res = _minimize_trustregion_exact(fun, x0, args, jac, hess,
                                           callback=callback, **options)
+    elif meth == 'cmaes':
+        res = _minimize_cmaes(fun, x0, args, callback=callback, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 

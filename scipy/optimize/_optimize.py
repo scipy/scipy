@@ -3436,7 +3436,12 @@ def fmin_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed=None
     """
     Minimize a function using CMA-ES Algorithm.
 
-    xxxx
+    The CMA-ES (Covariance Matrix Adaptation Evolution Strategy) is an evolutionary algorithm for difficult
+    non-linear non-convex black-box optimisation problems in continuous domain.
+    The CMA-ES is considered as state-of-the-art in evolutionary computation and has been adopted as one of the
+    standard tools for continuous optimisation in many (probably hundreds of) research labs and
+    industrial environments around the world. The CMA-ES is typically applied to unconstrained or
+    bounded constraint optimization problems, and search space dimensions between three and a hundred.
 
     Parameters
     ----------
@@ -3500,19 +3505,13 @@ def fmin_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed=None
 
     Notes
     -----
-    Uses a Nelder-Mead simplex algorithm to find the minimum of function of
-    one or more variables.
+    In contrast to quasi-Newton methods, the CMA-ES does not use or approximate gradients
+    and does not even presume or require their existence.
+    This makes the method feasible on non-smooth and even non-continuous problems,
+    as well as on multimodal and/or noisy problems. It turns out to be a particularly reliable and
+    highly competitive evolutionary algorithm for local optimization [1] and also for global optimization [2].
 
-    This algorithm has a long history of successful use in applications.
-    But it will usually be slower than an algorithm that uses first or
-    second derivative information. In practice, it can have poor
-    performance in high-dimensional problems and is not robust to
-    minimizing complicated functions. Additionally, there currently is no
-    complete theory describing when the algorithm will successfully
-    converge to the minimum, or how fast it will if it does. Both the ftol and
-    xtol criteria must be met for convergence.
-
-    Examples
+    Examples (rosenbrock function optimization)
     --------
     >>> ex_mean = np.zeros(5)
 
@@ -3532,14 +3531,14 @@ def fmin_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed=None
 
     References
     ----------
-    .. [1] Nelder, J.A. and Mead, R. (1965), "A simplex method for function
-           minimization", The Computer Journal, 7, pp. 308-313
+    .. [1] Hansen, N. and A. Ostermeier (2001)
+       Completely Derandomized Self-Adaptation in Evolution Strategies
+       9(2), pp. 159-195
 
-    .. [2] Wright, M.H. (1996), "Direct Search Methods: Once Scorned, Now
-           Respectable", in Numerical Analysis 1995, Proceedings of the
-           1995 Dundee Biennial Conference in Numerical Analysis, D.F.
-           Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
-           Harlow, UK, pp. 191-208.
+    .. [2] Hansen, N. and S. Kern (2004)
+        Evaluating the CMA Evolution Strategy on Multimodal Test Functions
+        Eighth International Conference on Parallel Problem Solving from Nature PPSN VIII, Proceedings
+        pp. 282-291
 
     """
     opts = {'bounds': bounds,
@@ -3564,8 +3563,14 @@ def _minimize_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed
                     population_size=None, cov=None, n_generations=1000, n_max_resampling=100,
                     retall=0, disp=0, xtol=1e-12, xuptol=1e4, ftol=1e-12, covconditiontol=1e14):
     """
-    Minimization of scalar function of one or more variables using the
-    Nelder-Mead algorithm.
+    Minimize a function using CMA-ES Algorithm.
+
+    The CMA-ES (Covariance Matrix Adaptation Evolution Strategy) is an evolutionary algorithm for difficult
+    non-linear non-convex black-box optimisation problems in continuous domain.
+    The CMA-ES is considered as state-of-the-art in evolutionary computation and has been adopted as one of the
+    standard tools for continuous optimisation in many (probably hundreds of) research labs and
+    industrial environments around the world. The CMA-ES is typically applied to unconstrained or
+    bounded constraint optimization problems, and search space dimensions between three and a hundred.
 
     Options
     -------
@@ -3601,12 +3606,24 @@ def _minimize_cmaes(func, mean, sigma, args=(), callback=None, bounds=None, seed
     conditioncovtol : float, default=1e14
         Condition covariance tolerance.    
 
+    Notes
+    -----
+    In contrast to quasi-Newton methods, the CMA-ES does not use or approximate gradients
+    and does not even presume or require their existence.
+    This makes the method feasible on non-smooth and even non-continuous problems,
+    as well as on multimodal and/or noisy problems. It turns out to be a particularly reliable and
+    highly competitive evolutionary algorithm for local optimization [1] and also for global optimization [2].
+
     References
     ----------
-    .. [1] Gao, F. and Han, L.
-       Implementing the Nelder-Mead simplex algorithm with adaptive
-       parameters. 2012. Computational Optimization and Applications.
-       51:1, pp. 259-277
+    .. [1] Hansen, N. and A. Ostermeier (2001)
+       Completely Derandomized Self-Adaptation in Evolution Strategies
+       9(2), pp. 159-195
+
+    .. [2] Hansen, N. and S. Kern (2004)
+        Evaluating the CMA Evolution Strategy on Multimodal Test Functions
+        Eighth International Conference on Parallel Problem Solving from Nature PPSN VIII, Proceedings
+        pp. 282-291
 
     """
     _EPS = 1e-8
