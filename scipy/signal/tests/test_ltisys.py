@@ -413,7 +413,7 @@ class TestSS2TF:
 
 
 class _TestLsimFunctions:
-    decimal = 7
+    digits_accuracy = 7
 
     @abstractmethod
     def func(self, *args, **kwargs):
@@ -454,8 +454,8 @@ class _TestLsimFunctions:
         u = t
         tout, y, x = self.func(system, u, t)
         expected_x = 0.5 * tout**2
-        assert_almost_equal(x, expected_x, decimal=self.decimal)
-        assert_almost_equal(y, expected_x, decimal=self.decimal)
+        assert_almost_equal(x, expected_x, decimal=self.digits_accuracy)
+        assert_almost_equal(y, expected_x, decimal=self.digits_accuracy)
 
     def test_two_states(self):
         # A system with two state variables, two inputs, and one output.
@@ -487,8 +487,8 @@ class _TestLsimFunctions:
         tout, y, x = self.func(system, u, t)
         expected_x = np.transpose(np.array([0.5 * tout**2, tout]))
         expected_y = tout**2
-        assert_almost_equal(x, expected_x, decimal=self.decimal)
-        assert_almost_equal(y, expected_y, decimal=self.decimal)
+        assert_almost_equal(x, expected_x, decimal=self.digits_accuracy)
+        assert_almost_equal(y, expected_y, decimal=self.digits_accuracy)
 
     def test_jordan_block(self):
         # Non-diagonalizable A matrix
@@ -549,7 +549,7 @@ class TestLsim(_TestLsimFunctions):
 
 
 class Test_lsim2(_TestLsimFunctions):
-    decimal = 6
+    digits_accuracy = 6
 
     def func(self, *args, **kwargs):
         with warns(DeprecationWarning, match="lsim2 is deprecated"):
