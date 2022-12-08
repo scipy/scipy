@@ -315,7 +315,11 @@ def lobpcg(
     >>> eigenvalues
     array([100.])
 
-    Constraints - an optional input parameter is a 2D array comprising
+    >>> k = 3
+    >>> rng = np.random.default_rng()
+    >>> X = rng.normal(size=(n, k))
+
+       Constraints - an optional input parameter is a 2D array comprising
     of column vectors that the eigenvectors must be orthogonal to:
 
     >>> Y = np.eye(n, 3)
