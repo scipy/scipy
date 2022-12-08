@@ -665,6 +665,8 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
                            alpha0=alpha0)
     return r[0], r[1], 0, r[2]
 
+# s, phi1 = scalar_search_armijo(phi, tmp_phi[0], -tmp_phi[0], amin=smin)
+
 
 def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
     """Minimize over alpha, the function ``phi(alpha)``.
@@ -710,7 +712,10 @@ def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
         phi_a2 = phi(alpha2)
 
         if (phi_a2 <= phi0 + c1*alpha2*derphi0):
-            return alpha2, phi_a2
+            if (alpha2 > amin):
+                return alpha2, phi_a2
+            else:
+                return alpha1, phi_a1
 
         if (alpha1 - alpha2) > alpha1 / 2.0 or (1 - alpha2/alpha1) < 0.96:
             alpha2 = alpha1 / 2.0
