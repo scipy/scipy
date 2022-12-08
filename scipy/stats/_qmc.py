@@ -13,6 +13,7 @@ from typing import (
     ClassVar,
     Dict,
     List,
+    Literal,
     Optional,
     overload,
     Tuple,
@@ -23,7 +24,6 @@ import numpy as np
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from typing_extensions import Literal
     from scipy._lib._util import (
         DecimalNumber, GeneratorType, IntNumber, SeedType
     )

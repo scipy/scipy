@@ -465,7 +465,7 @@ def lobpcg(
         try:
             vals, vecs = eigh(A,
                               B,
-                              eigvals=eigvals,
+                              subset_by_index=eigvals,
                               check_finite=False)
             if largest:
                 # Reverse order to be compatible with eigs() in 'LM' mode.
@@ -961,6 +961,14 @@ def lobpcg(
     if verbosityLevel:
         print(f"Final postprocessing eigenvalue(s):\n{_lambda}")
         print(f"Final residual norm(s):\n{residualNorms}")
+
+    if retLambdaHistory:
+        lambdaHistory = np.vsplit(lambdaHistory, np.shape(lambdaHistory)[0])
+        lambdaHistory = [np.squeeze(i) for i in lambdaHistory]
+    if retResidualNormsHistory:
+        residualNormsHistory = np.vsplit(residualNormsHistory,
+                                         np.shape(residualNormsHistory)[0])
+        residualNormsHistory = [np.squeeze(i) for i in residualNormsHistory]
 
     if retLambdaHistory:
         if retResidualNormsHistory:

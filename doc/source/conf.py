@@ -301,7 +301,6 @@ coverage_ignore_c_items = {}
 plot_pre_code = """
 import warnings
 for key in (
-        'gilbrat',  # misspelling for gibrat and has been deprecated
         'lsim2 is deprecated',  # Deprecation of scipy.signal.lsim2
         'impulse2 is deprecated',  # Deprecation of scipy.signal.impulse2
         'step2 is deprecated',  # Deprecation of scipy.signal.step2
