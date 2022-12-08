@@ -169,7 +169,7 @@ def lobpcg(
     B : {dense matrix, ndarray, LinearOperator, callable object}
         Optional. By default ``B = None`` equivalent to identity.
         The right hand side operator in a generalized eigenproblem if present.
-        Often called the "mass matrix". Must be Hermitian and positive definite.
+        Often called the "mass matrix". Must be Hermitian positive definite.
     M : {dense matrix, sparse matrix, LinearOperator, callable object}
         Optional. By default ``M = None`` equivalent to identity.
         Preconditioner aiming to accelerate convergence.
@@ -241,14 +241,14 @@ def lobpcg(
        choice is known.
 
     2. Relative separation of the seeking eigenvalues from the rest
-       of the eigenvalues. One can vary ``k`` to improve the separation. 
+       of the eigenvalues. One can vary ``k`` to improve the separation.
 
     3. Proper preconditioning to shrink the spectral spread.
        For example, a rod vibration test problem (under tests
        directory) is ill-conditioned for large ``n``, so convergence will be
        slow, unless efficient preconditioning is used. For this specific
        problem, a good simple preconditioner function would be a linear solve
-       for `A`, which is easy to code since `A` is tridiagonal..
+       for `A`, which is easy to code since `A` is tridiagonal.
 
     References
     ----------
@@ -297,7 +297,7 @@ def lobpcg(
            ...,
            [  0,   0,   0, ...,  98,   0,   0],
            [  0,   0,   0, ...,   0,  99,   0],
-           [  0,   0,   0, ...,   0,   0, 100]])
+           [  0,   0,   0, ...,   0,   0, 100]], dtype=int32)
 
     Initial guess for eigenvectors, should have linearly independent
     columns. The second mandatory input parameter, a 2D array with the
@@ -339,7 +339,7 @@ def lobpcg(
 
     Let us now solve the eigenvalue problem for the matrix A:
 
-    >>> eigenvalues, _ = lobpcg(A, X, Y=Y, M=M, largest=False)
+    >>> eigenvalues, _ = lobpcg(A, X, Y=Y, M=M, largest=False, maxiter=60)
     >>> eigenvalues
     array([4., 5., 6.])
 
