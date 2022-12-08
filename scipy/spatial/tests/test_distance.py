@@ -32,6 +32,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import sys
 import os.path
 
 from functools import wraps, partial
@@ -43,23 +44,21 @@ from numpy.linalg import norm
 from numpy.testing import (verbose, assert_,
                            assert_array_equal, assert_equal,
                            assert_almost_equal, assert_allclose,
-                           suppress_warnings)
+                           break_cycles, IS_PYPY)
 import pytest
 from pytest import raises as assert_raises
 
-import scipy.spatial.distance
-from scipy.spatial import _distance_pybind
 from scipy.spatial.distance import (
     squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y,
-    _validate_vector, _METRICS_NAMES, _METRICS)
+    _validate_vector, _METRICS_NAMES)
 
 # these were missing: chebyshev cityblock kulsinski
-# jensenshannon, matching and seuclidean are referenced by string name.
+# jensenshannon  and seuclidean are referenced by string name.
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon,
                                     kulsinski, kulczynski1, mahalanobis,
-                                    matching, minkowski, rogerstanimoto,
+                                    minkowski, rogerstanimoto,
                                     russellrao, seuclidean, sokalmichener,
                                     sokalsneath, sqeuclidean, yule)
 
@@ -219,6 +218,10 @@ def _weight_masked(arrays, weights, axis):
 
 
 def _rand_split(arrays, weights, axis, split_per, seed=None):
+    # Coerce `arrays` to float64 if integer, to avoid nan-to-integer issues
+    arrays = [arr.astype(np.float64) if np.issubdtype(arr.dtype, np.integer)
+              else arr for arr in arrays]
+
     # inverse operation for stats.collapse_weights
     weights = np.array(weights, dtype=np.float64)  # modified inplace; need a copy
     seeded_rand = np.random.RandomState(seed)
@@ -398,18 +401,22 @@ class TestCdist:
         kwargs = {'N0tV4l1D_p4raM': 3.14, "w":np.arange(3)}
         args = [3.14] * 200
         for metric in _METRICS_NAMES:
-            assert_raises(TypeError, cdist, X1, X2,
-                          metric=metric, **kwargs)
-            assert_raises(TypeError, cdist, X1, X2,
-                          metric=eval(metric), **kwargs)
-            assert_raises(TypeError, cdist, X1, X2,
-                          metric="test_" + metric, **kwargs)
-            assert_raises(TypeError, cdist, X1, X2,
-                          metric=metric, *args)
-            assert_raises(TypeError, cdist, X1, X2,
-                          metric=eval(metric), *args)
-            assert_raises(TypeError, cdist, X1, X2,
-                          metric="test_" + metric, *args)
+            with np.testing.suppress_warnings() as sup:
+                if metric == "kulsinski":
+                    sup.filter(DeprecationWarning,
+                               "Kulsinski has been deprecated from")
+                assert_raises(TypeError, cdist, X1, X2,
+                              metric=metric, **kwargs)
+                assert_raises(TypeError, cdist, X1, X2,
+                              metric=eval(metric), **kwargs)
+                assert_raises(TypeError, cdist, X1, X2,
+                              metric="test_" + metric, **kwargs)
+                assert_raises(TypeError, cdist, X1, X2,
+                              metric=metric, *args)
+                assert_raises(TypeError, cdist, X1, X2,
+                              metric=eval(metric), *args)
+                assert_raises(TypeError, cdist, X1, X2,
+                              metric="test_" + metric, *args)
 
         assert_raises(TypeError, cdist, X1, X2, _my_metric)
         assert_raises(TypeError, cdist, X1, X2, _my_metric, *args)
@@ -522,13 +529,17 @@ class TestCdist:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
                 if metric in {'dice', 'yule', 'kulsinski',
-                              'matching', 'rogerstanimoto',
+                              'rogerstanimoto',
                               'russellrao', 'sokalmichener',
                               'sokalsneath',
                               'kulczynski1'} and 'bool' not in eo_name:
                     # python version permits non-bools e.g. for fuzzy logic
                     continue
-                self._check_calling_conventions(X1, X2, metric)
+                with np.testing.suppress_warnings() as sup:
+                    if metric == "kulsinski":
+                        sup.filter(DeprecationWarning,
+                                   "Kulsinski has been deprecated from")
+                    self._check_calling_conventions(X1, X2, metric)
 
                 # Testing built-in metrics with extra args
                 if metric == "seuclidean":
@@ -646,6 +657,9 @@ class TestCdist:
             # references, the arrays should be deallocated.
             weak_refs = [weakref.ref(v) for v in (x1, x2, out)]
             del x1, x2, out
+
+            if IS_PYPY:
+                break_cycles()
             assert all(weak_ref() is None for weak_ref in weak_refs)
 
 
@@ -669,15 +683,19 @@ class TestPdist:
         kwargs = {'N0tV4l1D_p4raM': 3.14, "w":np.arange(2)}
         args = [3.14] * 200
         for metric in _METRICS_NAMES:
-            assert_raises(TypeError, pdist, X1, metric=metric, **kwargs)
-            assert_raises(TypeError, pdist, X1,
-                          metric=eval(metric), **kwargs)
-            assert_raises(TypeError, pdist, X1,
-                          metric="test_" + metric, **kwargs)
-            assert_raises(TypeError, pdist, X1, metric=metric, *args)
-            assert_raises(TypeError, pdist, X1, metric=eval(metric), *args)
-            assert_raises(TypeError, pdist, X1,
-                          metric="test_" + metric, *args)
+            with np.testing.suppress_warnings() as sup:
+                if metric == "kulsinski":
+                    sup.filter(DeprecationWarning,
+                               "Kulsinski has been deprecated from")
+                assert_raises(TypeError, pdist, X1, metric=metric, **kwargs)
+                assert_raises(TypeError, pdist, X1,
+                              metric=eval(metric), **kwargs)
+                assert_raises(TypeError, pdist, X1,
+                              metric="test_" + metric, **kwargs)
+                assert_raises(TypeError, pdist, X1, metric=metric, *args)
+                assert_raises(TypeError, pdist, X1, metric=eval(metric), *args)
+                assert_raises(TypeError, pdist, X1,
+                              metric="test_" + metric, *args)
 
         assert_raises(TypeError, pdist, X1, _my_metric)
         assert_raises(TypeError, pdist, X1, _my_metric, *args)
@@ -942,7 +960,10 @@ class TestPdist:
 
     @pytest.mark.slow
     def test_pdist_correlation_iris_nonC(self):
-        eps = 1e-7
+        if sys.maxsize > 2**32:
+            eps = 1e-7
+        else:
+            pytest.skip("see gh-16456")
         X = eo['iris']
         Y_right = eo['pdist-correlation-iris']
         Y_test2 = wpdist(X, 'test_correlation')
@@ -1427,7 +1448,11 @@ class TestPdist:
                               'kulczynski1'} and 'bool' not in eo_name:
                     # python version permits non-bools e.g. for fuzzy logic
                     continue
-                self._check_calling_conventions(X, metric)
+                with np.testing.suppress_warnings() as sup:
+                    if metric == "kulsinski":
+                        sup.filter(DeprecationWarning,
+                                   "Kulsinski has been deprecated from")
+                    self._check_calling_conventions(X, metric)
 
                 # Testing built-in metrics with extra args
                 if metric == "seuclidean":
@@ -1577,39 +1602,6 @@ class TestSomeDistanceFunctions:
         for x, y in self.cases:
             dist = mahalanobis(x, y, vi)
             assert_almost_equal(dist, np.sqrt(6.0))
-
-
-def construct_squeeze_tests():
-    # Construct a class like TestSomeDistanceFunctions but testing 2-d vectors
-    # with a length-1 dimension which is deprecated
-    def setup_method(self):
-        # 1D arrays
-        x = np.array([1.0, 2.0, 3.0])
-        y = np.array([1.0, 1.0, 5.0])
-        # 3x1 arrays
-        x31 = x[:, np.newaxis]
-        y31 = y[:, np.newaxis]
-        # 1x3 arrays
-        x13 = x31.T
-        y13 = y31.T
-
-        self.cases = [(x31, y31), (x13, y13), (x31, y13)]
-
-    sup = suppress_warnings()
-    sup.filter(DeprecationWarning,
-            ".*distance metrics ignoring length-1 dimensions is deprecated.*")
-    base = TestSomeDistanceFunctions
-    attrs = {
-        name: sup(getattr(base, name))
-        for name in dir(base)
-        if name.startswith('test_')
-    }
-    attrs['setup_method'] = setup_method
-    name = 'TestDistanceFunctionsSqueeze'
-    globals()[name] = type(name, (base,), attrs)
-
-
-construct_squeeze_tests()
 
 
 class TestSquareForm:
@@ -1931,18 +1923,15 @@ def test_euclideans():
     assert_almost_equal(weuclidean(x1, x2), np.sqrt(3), decimal=14)
 
     # Check flattening for (1, N) or (N, 1) inputs
-    with pytest.warns(DeprecationWarning,
-                      match="ignoring length-1 dimensions is deprecated"):
-        assert_almost_equal(weuclidean(x1[np.newaxis, :], x2[np.newaxis, :]),
-                            np.sqrt(3), decimal=14)
-    with pytest.warns(DeprecationWarning,
-                      match="ignoring length-1 dimensions is deprecated"):
-        assert_almost_equal(wsqeuclidean(x1[np.newaxis, :], x2[np.newaxis, :]),
-                            3.0, decimal=14)
-    with pytest.warns(DeprecationWarning,
-                      match="ignoring length-1 dimensions is deprecated"):
-        assert_almost_equal(wsqeuclidean(x1[:, np.newaxis], x2[:, np.newaxis]),
-                            3.0, decimal=14)
+    with assert_raises(ValueError,
+                       match="Input vector should be 1-D"):
+        weuclidean(x1[np.newaxis, :], x2[np.newaxis, :]), np.sqrt(3)
+    with assert_raises(ValueError,
+                       match="Input vector should be 1-D"):
+        wsqeuclidean(x1[np.newaxis, :], x2[np.newaxis, :])
+    with assert_raises(ValueError,
+                       match="Input vector should be 1-D"):
+        wsqeuclidean(x1[:, np.newaxis], x2[:, np.newaxis])
 
     # Distance metrics only defined for vectors (= 1-D)
     x = np.arange(4).reshape(2, 2)
@@ -2007,11 +1996,12 @@ def test_sqeuclidean_dtypes():
         assert_(np.issubdtype(d.dtype, np.floating))
 
     for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
-        d1 = wsqeuclidean([0], np.asarray([-1], dtype=dtype))
-        d2 = wsqeuclidean(np.asarray([-1], dtype=dtype), [0])
+        umax = np.iinfo(dtype).max
+        d1 = wsqeuclidean([0], np.asarray([umax], dtype=dtype))
+        d2 = wsqeuclidean(np.asarray([umax], dtype=dtype), [0])
 
         assert_equal(d1, d2)
-        assert_equal(d1, np.float64(np.iinfo(dtype).max)**2)
+        assert_equal(d1, np.float64(umax)**2)
 
     dtypes = [np.float32, np.float64, np.complex64, np.complex128]
     for dtype in ['float16', 'float128']:
@@ -2089,7 +2079,7 @@ def test_Xdist_deprecated_args():
         for arg in ["p", "V", "VI"]:
             kwargs = {arg:"foo"}
 
-            if((arg == "V" and metric == "seuclidean") or
+            if ((arg == "V" and metric == "seuclidean") or
             (arg == "VI" and metric == "mahalanobis") or
             (arg == "p" and metric == "minkowski")):
                 continue
@@ -2108,10 +2098,13 @@ def test_Xdist_non_negative_weights():
     for metric in _METRICS_NAMES:
         if metric in ['seuclidean', 'mahalanobis', 'jensenshannon']:
             continue
-
-        for m in [metric, eval(metric), "test_" + metric]:
-            assert_raises(ValueError, pdist, X, m, w=w)
-            assert_raises(ValueError, cdist, X, X, m, w=w)
+        with np.testing.suppress_warnings() as sup:
+            if metric == "kulsinski":
+                sup.filter(DeprecationWarning,
+                           "Kulsinski has been deprecated from")
+            for m in [metric, eval(metric), "test_" + metric]:
+                assert_raises(ValueError, pdist, X, m, w=w)
+                assert_raises(ValueError, cdist, X, X, m, w=w)
 
 
 def test__validate_vector():
@@ -2129,21 +2122,19 @@ def test__validate_vector():
     assert_equal(y, x)
 
     x = 1
-    with pytest.warns(DeprecationWarning,
-                      match="ignoring length-1 dimensions is deprecated"):
-        y = _validate_vector(x)
-    assert_equal(y.ndim, 1)
-    assert_equal(y, [x])
+    with assert_raises(ValueError,
+                       match="Input vector should be 1-D"):
+        _validate_vector(x)
 
     x = np.arange(5).reshape(1, -1, 1)
-    with pytest.warns(DeprecationWarning,
-                      match="ignoring length-1 dimensions is deprecated"):
-        y = _validate_vector(x)
-    assert_equal(y.ndim, 1)
-    assert_array_equal(y, x[0, :, 0])
+    with assert_raises(ValueError,
+                       match="Input vector should be 1-D"):
+        _validate_vector(x)
 
     x = [[1, 2], [3, 4]]
-    assert_raises(ValueError, _validate_vector, x)
+    with assert_raises(ValueError,
+                       match="Input vector should be 1-D"):
+        _validate_vector(x)
 
 def test_yule_all_same():
     # Test yule avoids a divide by zero when exactly equal
@@ -2185,3 +2176,11 @@ def test_jensenshannon():
                         [0.1954288, 0.1447697, 0.1138377, 0.0927636])
     assert_almost_equal(jensenshannon(a, b, axis=1),
                         [0.1402339, 0.0399106, 0.0201815])
+
+
+def test_kulsinski_deprecation():
+    msg = ("Kulsinski has been deprecated from scipy.spatial.distance"
+           " in SciPy 1.9.0 and it will be removed in SciPy 1.11.0."
+           " It is superseded by scipy.spatial.distance.kulczynski1.")
+    with pytest.warns(DeprecationWarning, match=msg):
+        kulsinski([], [])

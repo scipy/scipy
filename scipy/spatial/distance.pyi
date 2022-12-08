@@ -1,20 +1,13 @@
 import sys
-from typing import overload, Optional, Any, Union, Tuple, SupportsFloat
+from typing import (overload, Optional, Any, Union, Tuple, SupportsFloat,
+                    Literal, Protocol, SupportsIndex)
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-if sys.version_info >= (3, 8):
-    from typing import Literal, Protocol, SupportsIndex
-else:
-    from typing_extensions import Literal, Protocol
-
 # Anything that can be parsed by `np.float64.__init__` and is thus
 # compatible with `ndarray.__setitem__` (for a float64 array)
-if sys.version_info >= (3, 8):
-    _FloatValue = Union[None, str, bytes, SupportsFloat, SupportsIndex]
-else:
-    _FloatValue = Union[None, str, bytes, SupportsFloat]
+_FloatValue = Union[None, str, bytes, SupportsFloat, SupportsIndex]
 
 class _MetricCallback1(Protocol):
     def __call__(
@@ -39,7 +32,7 @@ _MetricKind = Literal[
     'cosine', 'cos',
     'dice',
     'euclidean', 'euclid', 'eu', 'e',
-    'matching', 'hamming', 'hamm', 'ha', 'h',
+    'hamming', 'hamm', 'ha', 'h',
     'minkowski', 'mi', 'm', 'pnorm',
     'jaccard', 'jacc', 'ja', 'j',
     'jensenshannon', 'js',
@@ -51,8 +44,6 @@ _MetricKind = Literal[
     'sokalmichener',
     'sokalsneath',
     'sqeuclidean', 'sqe', 'sqeuclid',
-    # NOTE: deprecated
-    # 'wminkowski', 'wmi', 'wm', 'wpnorm',
     'yule',
 ]
 
@@ -161,9 +152,6 @@ def mahalanobis(
     u: ArrayLike, v: ArrayLike, VI: ArrayLike
 ) -> np.float64: ...
 
-# NOTE: deprecated
-# def matching(u, v, w=None): ...
-
 def minkowski(
     u: ArrayLike, v: ArrayLike, p: float = ..., w: Optional[ArrayLike] = ...
 ) -> float: ...
@@ -222,9 +210,6 @@ def rogerstanimoto(
 def russellrao(
     u: ArrayLike, v: ArrayLike, w: Optional[ArrayLike] = ...
 ) -> float: ...
-
-# NOTE: deprecated
-# def wminkowski(u, v, p, w): ...
 
 def yule(
     u: ArrayLike, v: ArrayLike, w: Optional[ArrayLike] = ...

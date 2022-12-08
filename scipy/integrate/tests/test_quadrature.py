@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 from numpy import cos, sin, pi
 from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
@@ -5,24 +6,24 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
-                             quad, simpson, simps, fixed_quad, AccuracyWarning)
+                             quad, simpson, simps, fixed_quad, AccuracyWarning,
+                             qmc_quad)
+from scipy import stats, special as sc
 
 
 class TestFixedQuad:
     def test_scalar(self):
         n = 4
-        func = lambda x: x**(2*n - 1)
         expected = 1/(2*n)
-        got, _ = fixed_quad(func, 0, 1, n=n)
+        got, _ = fixed_quad(lambda x: x**(2*n - 1), 0, 1, n=n)
         # quadrature exact for this input
         assert_allclose(got, expected, rtol=1e-12)
 
     def test_vector(self):
         n = 4
         p = np.arange(1, 2*n)
-        func = lambda x: x**p[:,None]
         expected = 1/(p + 1)
-        got, _ = fixed_quad(func, 0, 1, n=n)
+        got, _ = fixed_quad(lambda x: x**p[:, None], 0, 1, n=n)
         assert_allclose(got, expected, rtol=1e-12)
 
 
@@ -153,6 +154,43 @@ class TestQuadrature:
         assert_equal(simpson(y, x=x, even='first'), 13.75)
         assert_equal(simpson(y, x=x, even='last'), 14)
 
+        # Tests for checking base case
+        x = np.array([3])
+        y = np.power(x, 2)
+        assert_equal(simpson(y, x=x, axis=0), 0.0)
+        assert_equal(simpson(y, x=x, axis=-1), 0.0)
+
+        x = np.array([3, 3, 3, 3])
+        y = np.power(x, 2)
+        assert_equal(simpson(y, x=x, axis=0), 0.0)
+        assert_equal(simpson(y, x=x, axis=-1), 0.0)
+
+        x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 2, 4, 8]])
+        y = np.power(x, 2)
+        zero_axis = [0.0, 0.0, 0.0, 0.0]
+        default_axis = [175.75, 175.75, 175.75]
+        assert_equal(simpson(y, x=x, axis=0), zero_axis)
+        assert_equal(simpson(y, x=x, axis=-1), default_axis)
+
+        x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 8, 16, 32]])
+        y = np.power(x, 2)
+        zero_axis = [0.0, 136.0, 1088.0, 8704.0]
+        default_axis = [175.75, 175.75, 11292.25]
+        assert_equal(simpson(y, x=x, axis=0), zero_axis)
+        assert_equal(simpson(y, x=x, axis=-1), default_axis)
+
+    @pytest.mark.parametrize('droplast', [False, True])
+    def test_simpson_2d_integer_no_x(self, droplast):
+        # The inputs are 2d integer arrays.  The results should be
+        # identical to the results when the inputs are floating point.
+        y = np.array([[2, 2, 4, 4, 8, 8, -4, 5],
+                      [4, 4, 2, -4, 10, 22, -2, 10]])
+        if droplast:
+            y = y[:, :-1]
+        result = simpson(y, axis=-1)
+        expected = simpson(np.array(y, dtype=np.float64), axis=-1)
+        assert_equal(result, expected)
+
     def test_simps(self):
         # Basic coverage test for the alias
         y = np.arange(4)
@@ -265,3 +303,95 @@ class TestTrapezoid():
         assert_equal(trapezoid(y, x=x, dx=0.5, axis=0),
                      trapz(y, x=x, dx=0.5, axis=0))
 
+
+class TestQMCQuad():
+    def test_input_validation(self):
+        message = "`func` must be callable."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad("a duck", [0, 0], [1, 1])
+
+        message = "`func` must evaluate the integrand at points..."
+        with pytest.raises(ValueError, match=message):
+            qmc_quad(lambda: 1, [0, 0], [1, 1])
+
+        def func(x):
+            assert x.ndim == 1
+            return np.sum(x)
+        message = "Exception encountered when attempting vectorized call..."
+        with pytest.warns(UserWarning, match=message):
+            qmc_quad(func, [0, 0], [1, 1])
+
+        message = "`n_points` must be an integer."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], n_points=1024.5)
+
+        message = "`n_estimates` must be an integer."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], n_estimates=8.5)
+
+        message = "`qrng` must be an instance of scipy.stats.qmc.QMCEngine."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], qrng="a duck")
+
+        message = "`qrng` must be initialized with dimensionality equal to "
+        with pytest.raises(ValueError, match=message):
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], qrng=stats.qmc.Sobol(1))
+
+        message = r"`log` must be boolean \(`True` or `False`\)."
+        with pytest.raises(TypeError, match=message):
+            qmc_quad(lambda x: 1, [0, 0], [1, 1], log=10)
+
+    def basic_test(self, n_points=2**8, n_estimates=8, signs=np.ones(2)):
+
+        ndim = 2
+        mean = np.zeros(ndim)
+        cov = np.eye(ndim)
+
+        def func(x):
+            return stats.multivariate_normal.pdf(x, mean, cov)
+
+        rng = np.random.default_rng(2879434385674690281)
+        qrng = stats.qmc.Sobol(ndim, seed=rng)
+        a = np.zeros(ndim)
+        b = np.ones(ndim) * signs
+        res = qmc_quad(func, a, b, n_points=n_points,
+                       n_estimates=n_estimates, args=(mean, cov), qrng=qrng)
+        ref = stats.multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+        atol = sc.stdtrit(n_estimates-1, 0.995) * res.standard_error  # 99% CI
+        assert_allclose(res.integral, ref, atol=atol)
+        assert np.prod(signs)*res.integral > 0
+
+        rng = np.random.default_rng(2879434385674690281)
+        qrng = stats.qmc.Sobol(ndim, seed=rng)
+        logres = qmc_quad(lambda *args: np.log(func(*args)), a, b,
+                          n_points=n_points, n_estimates=n_estimates,
+                          args=(mean, cov), log=True, qrng=qrng)
+        assert_allclose(np.exp(logres.integral), res.integral)
+        assert np.imag(logres.integral) == (np.pi if np.prod(signs) < 0 else 0)
+
+    @pytest.mark.parametrize("n_points", [2**8, 2**12])
+    @pytest.mark.parametrize("n_estimates", [8, 16])
+    def test_basic(self, n_points, n_estimates):
+        self.basic_test(n_points, n_estimates)
+
+    @pytest.mark.parametrize("signs", [[1, 1], [-1, -1], [-1, 1], [1, -1]])
+    def test_sign(self, signs):
+        self.basic_test(signs=signs)
+
+    @pytest.mark.parametrize("log", [False, True])
+    def test_zero(self, log):
+        message = "A lower limit was equal to an upper limit, so"
+        with pytest.warns(UserWarning, match=message):
+            res = qmc_quad(lambda x: 1, [0, 0], [0, 1], log=log)
+        assert res.integral == (-np.inf if log else 0)
+        assert res.standard_error == 0
+
+    def test_flexible_input(self):
+        # check that qrng is not required
+        # also checks that for 1d problems, a and b can be scalars
+        def func(x):
+            return stats.norm.pdf(x, scale=2)
+
+        res = qmc_quad(func, 0, 1)
+        ref = stats.norm.cdf(1, scale=2) - stats.norm.cdf(0, scale=2)
+        assert_allclose(res.integral, ref, 1e-2)

@@ -117,6 +117,7 @@ def test_hyperu_around_0():
 
     FuncData(sc.hyperu, dataset, (0, 1, 2), 3, rtol=1e-15, atol=5e-13).check()
 
+
 # ------------------------------------------------------------------------------
 # hyp2f1
 # ------------------------------------------------------------------------------
@@ -236,6 +237,7 @@ def test_hyp2f1_real_random():
         ds[4] = float(mpmath.hyp2f1(*tuple(ds[:4])))
 
     FuncData(sc.hyp2f1, dataset, (0, 1, 2, 3), 4, rtol=1e-9).check()
+
 
 # ------------------------------------------------------------------------------
 # erf (complex)
@@ -961,7 +963,7 @@ class TestSystematic:
         eps = np.finfo(float).eps
         assert_mpmath_equal(_cospi,
                             mpmath.cospi,
-                            [Arg()], nan_ok=False, rtol=eps)
+                            [Arg()], nan_ok=False, rtol=2*eps)
 
     def test_cospi_complex(self):
         assert_mpmath_equal(_cospi,
@@ -1170,7 +1172,7 @@ class TestSystematic:
     def test_log_ndtr(self):
         assert_mpmath_equal(sc.log_ndtr,
                             exception_to_nan(lambda z: mpmath.log(mpmath.ncdf(z))),
-                            [Arg()], n=600, dps=300)
+                            [Arg()], n=600, dps=300, rtol=1e-13)
 
     def test_log_ndtr_complex(self):
         assert_mpmath_equal(sc.log_ndtr,
@@ -1741,7 +1743,7 @@ class TestSystematic:
     def test_sinpi(self):
         eps = np.finfo(float).eps
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
-                            [Arg()], nan_ok=False, rtol=eps)
+                            [Arg()], nan_ok=False, rtol=2*eps)
 
     def test_sinpi_complex(self):
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
@@ -1859,17 +1861,18 @@ class TestSystematic:
     def test_riemann_zeta(self):
         assert_mpmath_equal(
             sc.zeta,
-            mpmath.zeta,
+            lambda x: mpmath.zeta(x) if x != 1 else mpmath.inf,
             [Arg(-100, 100)],
             nan_ok=False,
-            rtol=1e-13,
+            rtol=5e-13,
         )
 
     def test_zetac(self):
         assert_mpmath_equal(sc.zetac,
-                            lambda x: mpmath.zeta(x) - 1,
+                            lambda x: (mpmath.zeta(x) - 1
+                                       if x != 1 else mpmath.inf),
                             [Arg(-100, 100)],
-                            nan_ok=False, dps=45, rtol=1e-13)
+                            nan_ok=False, dps=45, rtol=5e-13)
 
     def test_boxcox(self):
 

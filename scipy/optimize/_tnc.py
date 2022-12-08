@@ -32,6 +32,8 @@ value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
 
+import warnings
+
 from scipy.optimize import _moduleTNC as moduleTNC
 from ._optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)
@@ -311,8 +313,13 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         -gradient if maxCGit < 0, maxCGit is set to
         max(1,min(50,n/2)). Defaults to -1.
     maxiter : int, optional
-        Maximum number of function evaluations. This keyword is deprecated
-        in favor of `maxfun`. Only if `maxfun` is None is this keyword used.
+        Maximum number of function evaluations. If `maxfun` is also provided
+        then `maxiter` is ignored.
+        Default is None.
+
+        .. deprecated :: 1.9.0
+            `maxiter` is deprecated in favor of `maxfun` and will removed in
+            SciPy 1.11.0.
     eta : float
         Severity of the line search. If < 0 or > 1, set to 0.25.
         Defaults to -1.
@@ -409,6 +416,11 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
 
     if maxfun is None:
         if maxiter is not None:
+            warnings.warn(
+                "'maxiter' has been deprecated in favor of 'maxfun'"
+                " and will be removed in SciPy 1.11.0.",
+                DeprecationWarning, stacklevel=3
+            )
             maxfun = maxiter
         else:
             maxfun = max(100, 10*len(x0))
@@ -427,30 +439,3 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=sf.nfev,
                           nit=nit, status=rc, message=RCSTRINGS[rc],
                           success=(-1 < rc < 3))
-
-
-if __name__ == '__main__':
-    # Examples for TNC
-
-    def example():
-        print("Example")
-
-        # A function to minimize
-        def function(x):
-            f = pow(x[0],2.0)+pow(abs(x[1]),3.0)
-            g = [0,0]
-            g[0] = 2.0*x[0]
-            g[1] = 3.0*pow(abs(x[1]),2.0)
-            if x[1] < 0:
-                g[1] = -g[1]
-            return f, g
-
-        # Optimizer call
-        x, nf, rc = fmin_tnc(function, [-7, 3], bounds=([-10, 1], [10, 10]))
-
-        print("After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc])
-        print("x =", x)
-        print("exact value = [0, 1]")
-        print()
-
-    example()

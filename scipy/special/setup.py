@@ -12,7 +12,7 @@ from scipy._build_utils.compiler_helper import (set_c_flags_hook,
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from scipy._build_utils.system_info import get_info as get_system_info
+    from numpy.distutils.system_info import get_info as get_system_info
     from scipy._build_utils import combine_dict, uses_blas64
 
     config = Configuration('special', parent_package, top_path)
@@ -35,6 +35,7 @@ def configuration(parent_package='',top_path=None):
     if python_inc_dirs != plat_specific_python_inc_dirs:
         inc_dirs.append(plat_specific_python_inc_dirs)
     inc_dirs.append(join(dirname(dirname(__file__)), '_lib'))
+    inc_dirs.append(join(dirname(dirname(__file__)), '_lib', 'boost'))
     inc_dirs.append(join(dirname(dirname(__file__)), '_build_utils', 'src'))
 
     # C libraries
@@ -143,10 +144,11 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_comb',
                          sources=['_comb.c'])
 
-    # testing for _round.h
-    config.add_extension('_test_round',
-                         sources=['_test_round.c'],
-                         depends=['_round.h', 'cephes/dd_idefs.h'],
+    # testing for _round.h and cephes/dd_real.c functions
+    config.add_extension('_test_internal',
+                         sources=['_test_internal.c', 'cephes/dd_real.c'],
+                         depends=['_round.h', 'cephes/dd_idefs.h',
+                                  'cephes/dd_real.h'],
                          include_dirs=[numpy.get_include()] + inc_dirs,
                          extra_info=get_info('npymath'))
 

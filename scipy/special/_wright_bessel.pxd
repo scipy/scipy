@@ -17,7 +17,7 @@
 
 import cython
 from libc.math cimport (cos, exp, floor, fmax, fmin, log, log10, pow, sin,
-                        sqrt, M_PI)
+                        sqrt, isnan, isinf, M_PI, NAN, INFINITY)
 
 cdef extern from "cephes/lanczos.h":
     double lanczos_g
@@ -25,13 +25,8 @@ cdef extern from "cephes/lanczos.h":
 cdef extern from "cephes/polevl.h":
     double polevl(double x, const double coef[], int N) nogil
 
-cdef extern from "_c99compat.h":
-    int sc_isnan(double x) nogil
-    int sc_isinf(double x) nogil
-
 from ._cephes cimport lgam, rgamma, zeta, sinpi, cospi, lanczos_sum_expg_scaled
 from ._digamma cimport digamma
-from ._complexstuff cimport inf, nan
 from . cimport sf_error
 
 
@@ -812,21 +807,21 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
         double xk_k, res
         int order
 
-    if sc_isnan(a) or sc_isnan(b) or sc_isnan(x):
-        return nan
+    if isnan(a) or isnan(b) or isnan(x):
+        return NAN
     elif a < 0 or b < 0 or x < 0:
         sf_error.error("wright_bessel", sf_error.DOMAIN, NULL)
-        return nan
-    elif sc_isinf(x):
-        if sc_isinf(a) or sc_isinf(b):
-            return nan
+        return NAN
+    elif isinf(x):
+        if isinf(a) or isinf(b):
+            return NAN
         else:
-            return inf
-    elif sc_isinf(a) or sc_isinf(b):
-        return nan  # or 0
+            return INFINITY
+    elif isinf(a) or isinf(b):
+        return NAN  # or 0
     elif a >= rgamma_zero or b >= rgamma_zero:
         sf_error.error("wright_bessel", sf_error.OVERFLOW, NULL)
-        return nan
+        return NAN
     elif x == 0:
         return rgamma(b)
     elif a == 0:
@@ -893,7 +888,7 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
 
         return _wb_large_a(a, b, x, order)
     elif (0.5 <= a) & (a <= 1.8) & (100 <= b) & (1e5 <= x):
-        return nan
+        return NAN
     elif (pow(a * x, 1 / (1. + a)) >= 14 + b * b / (2 * (1 + a))):
         # Asymptotic expansion in Z = (a*x)^(1/(1+a)) up to 8th term 1/Z^8.
         # For 1/Z^k, the highest term in b is b^(2*k) * a0 / (2^k k! (1+a)^k).

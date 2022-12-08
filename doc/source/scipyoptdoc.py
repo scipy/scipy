@@ -20,10 +20,9 @@ Produces output similar to autodoc, except
 - See Also link to the actual function documentation is inserted
 
 """
-import os, sys, re, pydoc
+import sys, pydoc
 import sphinx
 import inspect
-import collections
 import textwrap
 import warnings
 
@@ -125,8 +124,7 @@ def wrap_mangling_directive(base_directive):
             # XXX deprecation that we should fix someday using Signature (?)
             with warnings.catch_warnings(record=True):
                 warnings.simplefilter('ignore')
-                signature = inspect.formatargspec(
-                    args, varargs, keywords, defaults)
+                signature = str(inspect.signature(obj))
 
             # Produce output
             self.options['noindex'] = True
@@ -135,10 +133,12 @@ def wrap_mangling_directive(base_directive):
             # Change "Options" to "Other Parameters", run numpydoc, reset
             new_lines = []
             for line in lines:
+                # Remap Options to the "Other Parameters" numpydoc section
+                # along with correct heading length
                 if line.strip() == 'Options':
                     line = "Other Parameters"
-                elif line.strip() == "-"*len('Options'):
-                    line = "-"*len("Other Parameters")
+                    new_lines.extend([line, "-"*len(line)])
+                    continue
                 new_lines.append(line)
             # use impl_name instead of name here to avoid duplicate refs
             mangle_docstrings(env.app, 'function', impl_name,

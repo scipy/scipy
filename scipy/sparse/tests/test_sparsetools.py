@@ -14,6 +14,13 @@ import pytest
 from pytest import raises as assert_raises
 
 
+def int_to_int8(n):
+    """
+    Wrap an integer to the interval [-128, 127].
+    """
+    return (n + 128) % 256 - 128
+
+
 def test_exception():
     assert_raises(MemoryError, _sparsetools.test_throw_error)
 
@@ -157,7 +164,7 @@ class TestInt32Overflow:
         m = dia_matrix((data, offsets), shape=(n, n))
         v = np.ones(m.shape[1], dtype=np.int8)
         r = m.dot(v)
-        assert_equal(r[0], np.int8(n))
+        assert_equal(r[0], int_to_int8(n))
         del data, offsets, m, v, r
         gc.collect()
 
@@ -219,7 +226,7 @@ class TestInt32Overflow:
 
         # _matvecs
         r = m.dot(np.ones((n, 2), dtype=np.int8))
-        assert_equal(r[0,0], np.int8(n))
+        assert_equal(r[0, 0], int_to_int8(n))
 
     def _check_bsr_matvec(self, m):
         m = m()
@@ -227,7 +234,7 @@ class TestInt32Overflow:
 
         # _matvec
         r = m.dot(np.ones((n,), dtype=np.int8))
-        assert_equal(r[0], np.int8(n))
+        assert_equal(r[0], int_to_int8(n))
 
     def _check_bsr_diagonal(self, m):
         m = m()
@@ -295,7 +302,10 @@ def test_upcast():
             if np.issubdtype(b_dtype, np.complexfloating):
                 b = b0.copy().astype(b_dtype)
             else:
-                b = b0.real.copy().astype(b_dtype)
+                with np.errstate(invalid="ignore"):
+                    # Casting a large value (2**32) to int8 causes a warning in
+                    # numpy >1.23
+                    b = b0.real.copy().astype(b_dtype)
 
             if not (a_dtype == np.bool_ and b_dtype == np.bool_):
                 c = np.zeros((2,), dtype=np.bool_)

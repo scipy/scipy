@@ -79,8 +79,6 @@ an alternative to ode with the zvode solver, sometimes performing better.
 #     IntegratorBase.integrator_classes.append(myodeint)
 
 __all__ = ['ode', 'complex_ode']
-__version__ = "$Id$"
-__docformat__ = "restructuredtext en"
 
 import re
 import warnings

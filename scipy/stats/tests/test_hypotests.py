@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from itertools import product
 
 import numpy as np
@@ -17,7 +15,6 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     boschloo_exact)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
 from .common_tests import check_named_results
-from scipy import special
 from scipy._lib._testutils import _TestPythranFunc
 
 
@@ -172,6 +169,9 @@ class TestCvm:
 
 
 class TestMannWhitneyU:
+    def setup_method(self):
+        _mwu_state._recursive = True
+
     # All magic numbers are from R wilcox.test unless otherwise specied
     # https://rdrr.io/r/stats/wilcox.test.html
 
@@ -469,19 +469,19 @@ class TestMannWhitneyU:
         res = mannwhitneyu(x, y, method=method, axis=axis)
 
         shape = (6, 3, 8)  # appropriate shape of outputs, given inputs
-        assert(res.pvalue.shape == shape)
-        assert(res.statistic.shape == shape)
+        assert res.pvalue.shape == shape
+        assert res.statistic.shape == shape
 
         # move axis of test to end for simplicity
         x, y = np.moveaxis(x, axis, -1), np.moveaxis(y, axis, -1)
 
         x = x[None, ...]  # give x a zeroth dimension
-        assert(x.ndim == y.ndim)
+        assert x.ndim == y.ndim
 
         x = np.broadcast_to(x, shape + (m,))
         y = np.broadcast_to(y, shape + (n,))
-        assert(x.shape[:-1] == shape)
-        assert(y.shape[:-1] == shape)
+        assert x.shape[:-1] == shape
+        assert y.shape[:-1] == shape
 
         # loop over pairs of samples
         statistics = np.zeros(shape)
@@ -615,6 +615,43 @@ class TestMannWhitneyU:
         res = mannwhitneyu(x, y, use_continuity=True, alternative=alternative,
                            method="asymptotic")
         assert_allclose(res, expected, rtol=1e-12)
+
+    def teardown_method(self):
+        _mwu_state._recursive = None
+
+
+class TestMannWhitneyU_iterative(TestMannWhitneyU):
+    def setup_method(self):
+        _mwu_state._recursive = False
+
+    def teardown_method(self):
+        _mwu_state._recursive = None
+
+
+@pytest.mark.xslow
+def test_mann_whitney_u_switch():
+    # Check that mannwhiteneyu switches between recursive and iterative
+    # implementations at n = 500
+
+    # ensure that recursion is not enforced
+    _mwu_state._recursive = None
+    _mwu_state._fmnks = -np.ones((1, 1, 1))
+
+    rng = np.random.default_rng(9546146887652)
+    x = rng.random(5)
+
+    # use iterative algorithm because n > 500
+    y = rng.random(501)
+    stats.mannwhitneyu(x, y, method='exact')
+    # iterative algorithm doesn't modify _mwu_state._fmnks
+    assert np.all(_mwu_state._fmnks == -1)
+
+    # use recursive algorithm because n <= 500
+    y = rng.random(500)
+    stats.mannwhitneyu(x, y, method='exact')
+
+    # recursive algorithm has modified _mwu_state._fmnks
+    assert not np.all(_mwu_state._fmnks == -1)
 
 
 class TestSomersD(_TestPythranFunc):
@@ -1238,6 +1275,25 @@ class TestBoschlooExact:
         assert_equal(pvalue, expected[0])
         assert_equal(statistic, expected[1])
 
+    def test_two_sided_gt_1(self):
+        # Check that returned p-value does not exceed 1 even when twice
+        # the minimum of the one-sided p-values does. See gh-15345.
+        tbl = [[1, 1], [13, 12]]
+        pl = boschloo_exact(tbl, alternative='less').pvalue
+        pg = boschloo_exact(tbl, alternative='greater').pvalue
+        assert 2*min(pl, pg) > 1
+        pt = boschloo_exact(tbl, alternative='two-sided').pvalue
+        assert pt == 1.0
+
+    @pytest.mark.parametrize("alternative", ("less", "greater"))
+    def test_against_fisher_exact(self, alternative):
+        # Check that the statistic of `boschloo_exact` is the same as the
+        # p-value of `fisher_exact` (for one-sided tests). See gh-15345.
+        tbl = [[2, 7], [8, 2]]
+        boschloo_stat = boschloo_exact(tbl, alternative=alternative).statistic
+        fisher_p = stats.fisher_exact(tbl, alternative=alternative)[1]
+        assert_allclose(boschloo_stat, fisher_p)
+
 
 class TestCvm_2samp:
     def test_invalid_input(self):
@@ -1306,13 +1362,13 @@ class TestCvm_2samp:
         assert_allclose(r1.pvalue, r2.pvalue, atol=1e-2)
 
     def test_method_auto(self):
-        x = np.arange(10)
+        x = np.arange(20)
         y = [0.5, 4.7, 13.1]
         r1 = cramervonmises_2samp(x, y, method='exact')
         r2 = cramervonmises_2samp(x, y, method='auto')
         assert_equal(r1.pvalue, r2.pvalue)
-        # switch to asymptotic if one sample has more than 10 observations
-        x = np.arange(11)
+        # switch to asymptotic if one sample has more than 20 observations
+        x = np.arange(21)
         r1 = cramervonmises_2samp(x, y, method='asymptotic')
         r2 = cramervonmises_2samp(x, y, method='auto')
         assert_equal(r1.pvalue, r2.pvalue)
@@ -1570,3 +1626,87 @@ class TestTukeyHSD:
         res_ttest = stats.ttest_ind(*self.data_diff_size[:2])
         assert_allclose(res_ttest.pvalue, res_tukey.pvalue[0, 1])
         assert_allclose(res_ttest.pvalue, res_tukey.pvalue[1, 0])
+
+
+class TestPoissonMeansTest:
+    @pytest.mark.parametrize("c1, n1, c2, n2, p_expect", (
+        # example from [1], 6. Illustrative examples: Example 1
+        [0, 100, 3, 100, 0.0884],
+        [2, 100, 6, 100, 0.1749]
+    ))
+    def test_paper_examples(self, c1, n1, c2, n2, p_expect):
+        res = stats.poisson_means_test(c1, n1, c2, n2)
+        assert_allclose(res.pvalue, p_expect, atol=1e-4)
+
+    @pytest.mark.parametrize("c1, n1, c2, n2, p_expect, alt, d", (
+        # These test cases are produced by the wrapped fortran code from the
+        # original authors. Using a slightly modified version of this fortran,
+        # found here, https://github.com/nolanbconaway/poisson-etest,
+        # additional tests were created.
+        [20, 10, 20, 10, 0.9999997568929630, 'two-sided', 0],
+        [10, 10, 10, 10, 0.9999998403241203, 'two-sided', 0],
+        [50, 15, 1, 1, 0.09920321053409643, 'two-sided', .05],
+        [3, 100, 20, 300, 0.12202725450896404, 'two-sided', 0],
+        [3, 12, 4, 20, 0.40416087318539173, 'greater', 0],
+        [4, 20, 3, 100, 0.008053640402974236, 'greater', 0],
+        # publishing paper does not include a `less` alternative,
+        # so it was calculated with switched argument order and
+        # alternative="greater"
+        [4, 20, 3, 10, 0.3083216325432898, 'less', 0],
+        [1, 1, 50, 15, 0.09322998607245102, 'less', 0]
+    ))
+    def test_fortran_authors(self, c1, n1, c2, n2, p_expect, alt, d):
+        res = stats.poisson_means_test(c1, n1, c2, n2, alternative=alt, diff=d)
+        assert_allclose(res.pvalue, p_expect, atol=2e-6, rtol=1e-16)
+
+    def test_different_results(self):
+        # The implementation in Fortran is known to break down at higher
+        # counts and observations, so we expect different results. By
+        # inspection we can infer the p-value to be near one.
+        count1, count2 = 10000, 10000
+        nobs1, nobs2 = 10000, 10000
+        res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
+        assert_allclose(res.pvalue, 1)
+
+    def test_less_than_zero_lambda_hat2(self):
+        # demonstrates behavior that fixes a known fault from original Fortran.
+        # p-value should clearly be near one.
+        count1, count2 = 0, 0
+        nobs1, nobs2 = 1, 1
+        res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
+        assert_allclose(res.pvalue, 1)
+
+    def test_input_validation(self):
+        count1, count2 = 0, 0
+        nobs1, nobs2 = 1, 1
+
+        # test non-integral events
+        message = '`k1` and `k2` must be integers.'
+        with assert_raises(TypeError, match=message):
+            stats.poisson_means_test(.7, nobs1, count2, nobs2)
+        with assert_raises(TypeError, match=message):
+            stats.poisson_means_test(count1, nobs1, .7, nobs2)
+
+        # test negative events
+        message = '`k1` and `k2` must be greater than or equal to 0.'
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(-1, nobs1, count2, nobs2)
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(count1, nobs1, -1, nobs2)
+
+        # test negative sample size
+        message = '`n1` and `n2` must be greater than 0.'
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(count1, -1, count2, nobs2)
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(count1, nobs1, count2, -1)
+
+        # test negative difference
+        message = 'diff must be greater than or equal to 0.'
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(count1, nobs1, count2, nobs2, diff=-1)
+
+        # test invalid alternatvie
+        message = 'Alternative must be one of ...'
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(1, 2, 1, 2, alternative='error')

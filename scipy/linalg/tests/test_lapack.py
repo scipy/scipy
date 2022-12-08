@@ -3,8 +3,6 @@
 #
 
 import sys
-import subprocess
-import time
 from functools import reduce
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
@@ -746,39 +744,32 @@ def test_larfg_larf():
         assert_allclose(a[0, :], expected, atol=1e-5)
 
 
-@pytest.mark.xslow
 def test_sgesdd_lwork_bug_workaround():
     # Test that SGESDD lwork is sufficiently large for LAPACK.
     #
-    # This checks that workaround around an apparent LAPACK bug
-    # actually works. cf. gh-5401
-    #
-    # xslow: requires 1GB+ of memory
+    # This checks that _compute_lwork() correctly works around a bug in
+    # LAPACK versions older than 3.10.1.
 
-    p = subprocess.Popen([sys.executable, '-c',
-                          'import numpy as np; '
-                          'from scipy.linalg import svd; '
-                          'a = np.zeros([9537, 9537], dtype=np.float32); '
-                          'svd(a)'],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-
-    # Check if it an error occurred within 5 sec; the computation can
-    # take substantially longer, and we will not wait for it to finish
-    for j in range(50):
-        time.sleep(0.1)
-        if p.poll() is not None:
-            returncode = p.returncode
-            break
-    else:
-        # Didn't exit in time -- probably entered computation.  The
-        # error is raised before entering computation, so things are
-        # probably OK.
-        returncode = 0
-        p.terminate()
-
-    assert_equal(returncode, 0,
-                 "Code apparently failed: " + p.stdout.read().decode())
+    sgesdd_lwork = get_lapack_funcs('gesdd_lwork', dtype=np.float32,
+                                    ilp64='preferred')
+    n = 9537
+    lwork = _compute_lwork(sgesdd_lwork, n, n,
+                           compute_uv=True, full_matrices=True)
+    # If we called the Fortran function SGESDD directly with IWORK=-1, the
+    # LAPACK bug would result in lwork being 272929856, which was too small.
+    # (The result was returned in a single precision float, which does not
+    # have sufficient precision to represent the exact integer value that it
+    # computed internally.)  The work-around implemented in _compute_lwork()
+    # will convert that to 272929888.  If we are using LAPACK 3.10.1 or later
+    # (such as in OpenBLAS 0.3.21 or later), the work-around will return
+    # 272929920, because it does not know which version of LAPACK is being
+    # used, so it always applies the correction to whatever it is given.  We
+    # will accept either 272929888 or 272929920.
+    # Note that the acceptable values are a LAPACK implementation detail.
+    # If a future version of LAPACK changes how SGESDD works, and therefore
+    # changes the required LWORK size, the acceptable values might have to
+    # be updated.
+    assert lwork == 272929888 or lwork == 272929920
 
 
 class TestSytrd:
@@ -1476,7 +1467,7 @@ class TestBlockedQR:
             geqrt, gemqrt = get_lapack_funcs(('geqrt', 'gemqrt'), dtype=dtype)
 
             a, t, info = geqrt(n, A)
-            assert(info == 0)
+            assert info == 0
 
             # Extract elementary reflectors from lower triangle, adding the
             # main diagonal of ones.
@@ -1500,7 +1491,7 @@ class TestBlockedQR:
             for side in ('L', 'R'):
                 for trans in ('N', transpose):
                     c, info = gemqrt(a, t, C, side=side, trans=trans)
-                    assert(info == 0)
+                    assert info == 0
 
                     if trans == transpose:
                         q = Q.T.conj()
@@ -1517,7 +1508,7 @@ class TestBlockedQR:
                     # Test default arguments
                     if (side, trans) == ('L', 'N'):
                         c_default, info = gemqrt(a, t, C)
-                        assert(info == 0)
+                        assert info == 0
                         assert_equal(c_default, c)
 
             # Test invalid side/trans
@@ -1543,7 +1534,7 @@ class TestBlockedQR:
             # triangular
             for l in (0, n // 2, n):
                 a, b, t, info = tpqrt(l, n, A, B)
-                assert(info == 0)
+                assert info == 0
 
                 # Check that lower triangular part of A has not been modified
                 assert_equal(np.tril(a, -1), np.tril(A, -1))
@@ -1579,7 +1570,7 @@ class TestBlockedQR:
                     for trans in ('N', transpose):
                         c, d, info = tpmqrt(l, b, t, C, D, side=side,
                                             trans=trans)
-                        assert(info == 0)
+                        assert info == 0
 
                         if trans == transpose:
                             q = Q.T.conj()
@@ -1599,7 +1590,7 @@ class TestBlockedQR:
 
                         if (side, trans) == ('L', 'N'):
                             c_default, d_default, info = tpmqrt(l, b, t, C, D)
-                            assert(info == 0)
+                            assert info == 0
                             assert_equal(c_default, c)
                             assert_equal(d_default, d)
 
@@ -2832,6 +2823,7 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     assert_(berr.shape == (2,), "berr.shape is {} but shoud be ({},)"
             .format(berr.shape, x_soln.shape[1]))
 
+
 @pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
                                                + REAL_DTYPES))
 @pytest.mark.parametrize("fact,df_de_lambda",
@@ -2982,7 +2974,87 @@ def test_pptrs_pptri_pptrf_ppsv_ppcon(dtype, lower):
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
+def test_gees_trexc(dtype):
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+
+    n = 10
+    a = generate_random_dtype_array([n, n], dtype=dtype)
+
+    gees, trexc = get_lapack_funcs(('gees', 'trexc'), dtype=dtype)
+
+    result = gees(lambda x: None, a, overwrite_a=False)
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    z = result[-3]
+
+    d2 = t[6, 6]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(z @ t @ z.conj().T, a, rtol=0, atol=atol)
+
+    result = trexc(t, z, 7, 1)
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    z = result[-2]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(z @ t @ z.conj().T, a, rtol=0, atol=atol)
+
+    assert_allclose(t[0, 0], d2, rtol=0, atol=atol)
+
+
+@pytest.mark.parametrize(
+    "t, expect, ifst, ilst",
+    [(np.array([[0.80, -0.11, 0.01, 0.03],
+                [0.00, -0.10, 0.25, 0.35],
+                [0.00, -0.65, -0.10, 0.20],
+                [0.00, 0.00, 0.00, -0.10]]),
+      np.array([[-0.1000, -0.6463, 0.0874, 0.2010],
+                [0.2514, -0.1000, 0.0927, 0.3505],
+                [0.0000, 0.0000, 0.8000, -0.0117],
+                [0.0000, 0.0000, 0.0000, -0.1000]]),
+      2, 1),
+     (np.array([[-6.00 - 7.00j, 0.36 - 0.36j, -0.19 + 0.48j, 0.88 - 0.25j],
+                [0.00 + 0.00j, -5.00 + 2.00j, -0.03 - 0.72j, -0.23 + 0.13j],
+                [0.00 + 0.00j, 0.00 + 0.00j, 8.00 - 1.00j, 0.94 + 0.53j],
+                [0.00 + 0.00j, 0.00 + 0.00j, 0.00 + 0.00j, 3.00 - 4.00j]]),
+      np.array([[-5.0000 + 2.0000j, -0.1574 + 0.7143j,
+                 0.1781 - 0.1913j, 0.3950 + 0.3861j],
+                [0.0000 + 0.0000j, 8.0000 - 1.0000j,
+                 1.0742 + 0.1447j, 0.2515 - 0.3397j],
+                [0.0000 + 0.0000j, 0.0000 + 0.0000j,
+                 3.0000 - 4.0000j, 0.2264 + 0.8962j],
+                [0.0000 + 0.0000j, 0.0000 + 0.0000j,
+                 0.0000 + 0.0000j, -6.0000 - 7.0000j]]),
+      1, 4)])
+def test_trexc_NAG(t, ifst, ilst, expect):
+    """
+    This test implements the example found in the NAG manual,
+    f08qfc, f08qtc, f08qgc, f08quc.
+    """
+    # NAG manual provides accuracy up to 4 decimals
+    atol = 1e-4
+    trexc = get_lapack_funcs('trexc', dtype=t.dtype)
+
+    result = trexc(t, t, ifst, ilst, wantq=0)
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    assert_allclose(expect, t, atol=atol)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgexc(dtype):
+    if dtype == np.float32 and sys.platform == 'darwin':
+        pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
+
     seed(1234)
     atol = np.finfo(dtype).eps*100
 
@@ -3010,13 +3082,194 @@ def test_gges_tgexc(dtype):
     assert_allclose(q @ s @ z.conj().T, a, rtol=0, atol=atol)
     assert_allclose(q @ t @ z.conj().T, b, rtol=0, atol=atol)
 
-    result = tgexc(s, t, q, z, 6, 0)
+    result = tgexc(s, t, q, z, 7, 1)
     assert_equal(result[-1], 0)
 
     s = result[0]
     t = result[1]
     q = result[2]
     z = result[3]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(s, np.triu(s), rtol=0, atol=atol)
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(q @ s @ z.conj().T, a, rtol=0, atol=atol)
+    assert_allclose(q @ t @ z.conj().T, b, rtol=0, atol=atol)
+
+    assert_allclose(s[0, 0] / t[0, 0], d2, rtol=0, atol=atol)
+    assert_allclose(s[1, 1] / t[1, 1], d1, rtol=0, atol=atol)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gees_trsen(dtype):
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+
+    n = 10
+    a = generate_random_dtype_array([n, n], dtype=dtype)
+
+    gees, trsen, trsen_lwork = get_lapack_funcs(
+        ('gees', 'trsen', 'trsen_lwork'), dtype=dtype)
+
+    result = gees(lambda x: None, a, overwrite_a=False)
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    z = result[-3]
+
+    d2 = t[6, 6]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(z @ t @ z.conj().T, a, rtol=0, atol=atol)
+
+    select = np.zeros(n)
+    select[6] = 1
+
+    lwork = _compute_lwork(trsen_lwork, select, t)
+
+    if dtype in COMPLEX_DTYPES:
+        result = trsen(select, t, z, lwork=lwork)
+    else:
+        result = trsen(select, t, z, lwork=lwork, liwork=lwork[1])
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    z = result[1]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(z @ t @ z.conj().T, a, rtol=0, atol=atol)
+
+    assert_allclose(t[0, 0], d2, rtol=0, atol=atol)
+
+
+@pytest.mark.parametrize(
+    "t, q, expect, select, expect_s, expect_sep",
+    [(np.array([[0.7995, -0.1144, 0.0060, 0.0336],
+                [0.0000, -0.0994, 0.2478, 0.3474],
+                [0.0000, -0.6483, -0.0994, 0.2026],
+                [0.0000, 0.0000, 0.0000, -0.1007]]),
+      np.array([[0.6551, 0.1037, 0.3450, 0.6641],
+                [0.5236, -0.5807, -0.6141, -0.1068],
+                [-0.5362, -0.3073, -0.2935, 0.7293],
+                [0.0956, 0.7467, -0.6463, 0.1249]]),
+      np.array([[0.3500, 0.4500, -0.1400, -0.1700],
+                [0.0900, 0.0700, -0.5399, 0.3500],
+                [-0.4400, -0.3300, -0.0300, 0.1700],
+                [0.2500, -0.3200, -0.1300, 0.1100]]),
+      np.array([1, 0, 0, 1]),
+      1.75e+00, 3.22e+00),
+     (np.array([[-6.0004 - 6.9999j, 0.3637 - 0.3656j,
+                 -0.1880 + 0.4787j, 0.8785 - 0.2539j],
+                [0.0000 + 0.0000j, -5.0000 + 2.0060j,
+                 -0.0307 - 0.7217j, -0.2290 + 0.1313j],
+                [0.0000 + 0.0000j, 0.0000 + 0.0000j,
+                 7.9982 - 0.9964j, 0.9357 + 0.5359j],
+                [0.0000 + 0.0000j, 0.0000 + 0.0000j,
+                 0.0000 + 0.0000j, 3.0023 - 3.9998j]]),
+      np.array([[-0.8347 - 0.1364j, -0.0628 + 0.3806j,
+                 0.2765 - 0.0846j, 0.0633 - 0.2199j],
+                [0.0664 - 0.2968j, 0.2365 + 0.5240j,
+                 -0.5877 - 0.4208j, 0.0835 + 0.2183j],
+                [-0.0362 - 0.3215j, 0.3143 - 0.5473j,
+                 0.0576 - 0.5736j, 0.0057 - 0.4058j],
+                [0.0086 + 0.2958j, -0.3416 - 0.0757j,
+                 -0.1900 - 0.1600j, 0.8327 - 0.1868j]]),
+      np.array([[-3.9702 - 5.0406j, -4.1108 + 3.7002j,
+                 -0.3403 + 1.0098j, 1.2899 - 0.8590j],
+                [0.3397 - 1.5006j, 1.5201 - 0.4301j,
+                 1.8797 - 5.3804j, 3.3606 + 0.6498j],
+                [3.3101 - 3.8506j, 2.4996 + 3.4504j,
+                 0.8802 - 1.0802j, 0.6401 - 1.4800j],
+                [-1.0999 + 0.8199j, 1.8103 - 1.5905j,
+                 3.2502 + 1.3297j, 1.5701 - 3.4397j]]),
+      np.array([1, 0, 0, 1]),
+      1.02e+00, 1.82e-01)])
+def test_trsen_NAG(t, q, select, expect, expect_s, expect_sep):
+    """
+    This test implements the example found in the NAG manual,
+    f08qgc, f08quc.
+    """
+    # NAG manual provides accuracy up to 4 and 2 decimals
+    atol = 1e-4
+    atol2 = 1e-2
+    trsen, trsen_lwork = get_lapack_funcs(
+        ('trsen', 'trsen_lwork'), dtype=t.dtype)
+
+    lwork = _compute_lwork(trsen_lwork, select, t)
+
+    if t.dtype in COMPLEX_DTYPES:
+        result = trsen(select, t, q, lwork=lwork)
+    else:
+        result = trsen(select, t, q, lwork=lwork, liwork=lwork[1])
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    q = result[1]
+    if t.dtype in COMPLEX_DTYPES:
+        s = result[4]
+        sep = result[5]
+    else:
+        s = result[5]
+        sep = result[6]
+
+    assert_allclose(expect, q @ t @ q.conj().T, atol=atol)
+    assert_allclose(expect_s, 1 / s, atol=atol2)
+    assert_allclose(expect_sep, 1 / sep, atol=atol2)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gges_tgsen(dtype):
+    if dtype == np.float32 and sys.platform == 'darwin':
+        pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
+
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+
+    n = 10
+    a = generate_random_dtype_array([n, n], dtype=dtype)
+    b = generate_random_dtype_array([n, n], dtype=dtype)
+
+    gges, tgsen, tgsen_lwork = get_lapack_funcs(
+        ('gges', 'tgsen', 'tgsen_lwork'), dtype=dtype)
+
+    result = gges(lambda x: None, a, b, overwrite_a=False, overwrite_b=False)
+    assert_equal(result[-1], 0)
+
+    s = result[0]
+    t = result[1]
+    q = result[-4]
+    z = result[-3]
+
+    d1 = s[0, 0] / t[0, 0]
+    d2 = s[6, 6] / t[6, 6]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(s, np.triu(s), rtol=0, atol=atol)
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(q @ s @ z.conj().T, a, rtol=0, atol=atol)
+    assert_allclose(q @ t @ z.conj().T, b, rtol=0, atol=atol)
+
+    select = np.zeros(n)
+    select[6] = 1
+
+    lwork = _compute_lwork(tgsen_lwork, select, s, t)
+
+    # off-by-one error in LAPACK, see gh-issue #13397
+    lwork = (lwork[0]+1, lwork[1])
+
+    result = tgsen(select, s, t, q, z, lwork=lwork)
+    assert_equal(result[-1], 0)
+
+    s = result[0]
+    t = result[1]
+    q = result[-7]
+    z = result[-6]
 
     if dtype in COMPLEX_DTYPES:
         assert_allclose(s, np.triu(s), rtol=0, atol=atol)

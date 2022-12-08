@@ -5,7 +5,6 @@
  *  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
  */
 #include "mconf.h"
-#include "_c99compat.h"
 
 static double find_inverse_s(double, double);
 static double didonato_SN(double, double, unsigned, double);
@@ -108,13 +107,13 @@ static double find_inverse_gamma(double a, double p, double q)
                 u = pow(p * g * a, 1 / a);
             }
             else {
-                u = exp((-q / a) - NPY_EULER);
+                u = exp((-q / a) - SCIPY_EULER);
             }
             result = u / (1 - (u / (a + 1)));
         }
         else if ((a < 0.3) && (b >= 0.35)) {
             /* DiDonato & Morris Eq 22: */
-            double t = exp(-NPY_EULER - b);
+            double t = exp(-SCIPY_EULER - b);
             double u = t * exp(t);
             result = t * exp(u);
         }
@@ -260,8 +259,8 @@ double igami(double a, double p)
     int i;
     double x, fac, f_fp, fpp_fp;
 
-    if (npy_isnan(a) || npy_isnan(p)) {
-	return NPY_NAN;
+    if (isnan(a) || isnan(p)) {
+	return NAN;
     }
     else if ((a < 0) || (p < 0) || (p > 1)) {
 	sf_error("gammaincinv", SF_ERROR_DOMAIN, NULL);
@@ -270,7 +269,7 @@ double igami(double a, double p)
 	return 0.0;
     }
     else if (p == 1.0) {
-	return NPY_INFINITY;
+	return INFINITY;
     }
     else if (p > 0.9) {
 	return igamci(a, 1 - p);
@@ -286,7 +285,7 @@ double igami(double a, double p)
 	f_fp = (igam(a, x) - p) * x / fac;
 	/* The ratio of the first and second derivatives simplifies */
 	fpp_fp = -1.0 + (a - 1) / x;
-	if (npy_isinf(fpp_fp)) {
+	if (isinf(fpp_fp)) {
 	    /* Resort to Newton's method in the case of overflow */
 	    x = x - f_fp;
 	}
@@ -304,14 +303,14 @@ double igamci(double a, double q)
     int i;
     double x, fac, f_fp, fpp_fp;
 
-    if (npy_isnan(a) || npy_isnan(q)) {
-	return NPY_NAN;
+    if (isnan(a) || isnan(q)) {
+	return NAN;
     }
     else if ((a < 0.0) || (q < 0.0) || (q > 1.0)) {
 	sf_error("gammainccinv", SF_ERROR_DOMAIN, NULL);
     }
     else if (q == 0.0) {
-	return NPY_INFINITY;
+	return INFINITY;
     }
     else if (q == 1.0) {
 	return 0.0;
@@ -328,7 +327,7 @@ double igamci(double a, double q)
 	}
 	f_fp = (igamc(a, x) - q) * x / (-fac);
 	fpp_fp = -1.0 + (a - 1) / x;
-	if (npy_isinf(fpp_fp)) {
+	if (isinf(fpp_fp)) {
 	    x = x - f_fp;
 	}
 	else {

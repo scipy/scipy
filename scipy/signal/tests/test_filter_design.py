@@ -1001,7 +1001,9 @@ class TestSOSFreqz:
         dB = 20*np.log10(np.maximum(np.abs(h), 1e-10))
         w /= np.pi
         assert_allclose(dB[w >= 0.3], 0, atol=.55)
-        assert_array_less(dB[w <= 0.2], -150)
+        # Allow some numerical slop in the upper bound -150, so this is
+        # a check that dB[w <= 0.2] is less than or almost equal to -150.
+        assert dB[w <= 0.2].max() < -150*(1 - 1e-12)
 
     @mpmath_check("0.10")
     def test_sos_freqz_against_mp(self):
@@ -2366,15 +2368,15 @@ class TestBessel:
                 for N in (0, 1, 2, 3, 10):
                     for fc in (100, 100.1, 432.12345):
                         for btype in ('lp', 'hp'):
-                            ba1 = bessel(N, fc, btype, fs=fs)
-                            ba2 = bessel(N, fc/(fs/2), btype)
+                            ba1 = bessel(N, fc, btype, norm=norm, fs=fs)
+                            ba2 = bessel(N, fc/(fs/2), btype, norm=norm)
                             assert_allclose(ba1, ba2)
                     for fc in ((100, 200), (100.1, 200.2), (321.123, 432.123)):
                         for btype in ('bp', 'bs'):
-                            ba1 = bessel(N, fc, btype, fs=fs)
+                            ba1 = bessel(N, fc, btype, norm=norm, fs=fs)
                             for seq in (list, tuple, array):
                                 fcnorm = seq([f/(fs/2) for f in fc])
-                                ba2 = bessel(N, fcnorm, btype)
+                                ba2 = bessel(N, fcnorm, btype, norm=norm)
                                 assert_allclose(ba1, ba2)
 
 
@@ -3692,7 +3694,7 @@ class TestIIRPeak:
 
 
 class TestIIRComb:
-    # Test erroneus input cases
+    # Test erroneous input cases
     def test_invalid_input(self):
         # w0 is <= 0 or >= fs / 2
         fs = 1000
@@ -3704,6 +3706,15 @@ class TestIIRComb:
         for args in [(120, 30), (157, 35)]:
             with pytest.raises(ValueError, match='fs must be divisible '):
                 iircomb(*args, fs=fs)
+
+        # https://github.com/scipy/scipy/issues/14043#issuecomment-1107349140
+        # Previously, fs=44100, w0=49.999 was rejected, but fs=2,
+        # w0=49.999/int(44100/2) was accepted. Now it is rejected, too.
+        with pytest.raises(ValueError, match='fs must be divisible '):
+            iircomb(w0=49.999/int(44100/2), Q=30)
+
+        with pytest.raises(ValueError, match='fs must be divisible '):
+            iircomb(w0=49.999, Q=30, fs=44100)
 
         # Filter type is not notch or peak
         for args in [(0.2, 30, 'natch'), (0.5, 35, 'comb')]:
@@ -3726,6 +3737,25 @@ class TestIIRComb:
         # Verify that the first notch sits at 1000 Hz
         comb1 = comb_points[0]
         assert_allclose(freqs[comb1], 1000)
+
+    # Verify pass_zero parameter
+    @pytest.mark.parametrize('ftype,pass_zero,peak,notch',
+                             [('peak', True, 123.45, 61.725),
+                              ('peak', False, 61.725, 123.45),
+                              ('peak', None, 61.725, 123.45),
+                              ('notch', None, 61.725, 123.45),
+                              ('notch', True, 123.45, 61.725),
+                              ('notch', False, 61.725, 123.45)])
+    def test_pass_zero(self, ftype, pass_zero, peak, notch):
+        # Create a notching or peaking comb filter
+        b, a = iircomb(123.45, 30, ftype=ftype, fs=1234.5, pass_zero=pass_zero)
+
+        # Compute the frequency response
+        freqs, response = freqz(b, a, [peak, notch], fs=1234.5)
+
+        # Verify that expected notches are notches and peaks are peaks
+        assert abs(response[0]) > 0.99
+        assert abs(response[1]) < 1e-10
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using
@@ -3758,6 +3788,18 @@ class TestIIRComb:
                    0.0, 0.0, 0.0, 0.0, 0.914040348817395]
         assert_allclose(b_peak, b_peak2)
         assert_allclose(a_peak, a_peak2)
+
+    # Verify that https://github.com/scipy/scipy/issues/14043 is fixed
+    def test_nearest_divisor(self):
+        # Create a notching comb filter
+        b, a = iircomb(50/int(44100/2), 50.0, ftype='notch')
+
+        # Compute the frequency response at an upper harmonic of 50
+        freqs, response = freqz(b, a, [22000], fs=44100)
+
+        # Before bug fix, this would produce N = 881, so that 22 kHz was ~0 dB.
+        # Now N = 882 correctly and 22 kHz should be a notch <-220 dB
+        assert abs(response[0]) < 1e-10
 
 
 class TestIIRDesign:
@@ -3940,6 +3982,15 @@ class TestIIRFilter:
         sos = [[0., 0., 1., 0., 1., 1.]]
         sos2 = iirfilter(N=1, Wn=1, btype='low', analog=True, output='sos')
         assert_array_almost_equal(sos, sos2)
+
+    def test_wn1_ge_wn0(self):
+        # gh-15773: should raise error if Wn[0] >= Wn[1]
+        with pytest.raises(ValueError,
+                           match=r"Wn\[0\] must be less than Wn\[1\]"):
+            iirfilter(2, [0.5, 0.5])
+        with pytest.raises(ValueError,
+                           match=r"Wn\[0\] must be less than Wn\[1\]"):
+            iirfilter(2, [0.6, 0.5])
 
 
 class TestGroupDelay:
