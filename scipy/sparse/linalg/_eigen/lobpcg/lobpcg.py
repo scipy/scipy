@@ -155,42 +155,40 @@ def lobpcg(
 ):
     """Locally Optimal Block Preconditioned Conjugate Gradient Method (LOBPCG).
 
-    LOBPCG is a preconditioned eigensolver for large symmetric positive
-    definite (SPD) generalized eigenproblems.
+    LOBPCG is a preconditioned eigensolver for large real symmetric and complex
+    Hermitian definite generalized eigenproblems.
 
     Parameters
     ----------
-    A : {sparse matrix, dense matrix, LinearOperator, callable object}
-        The symmetric linear operator of the problem, usually a
+    A : {sparse matrix, ndarray, LinearOperator, callable object}
+        The Hermitian linear operator of the problem, usually given by a
         sparse matrix.  Often called the "stiffness matrix".
     X : ndarray, float32 or float64
         Initial approximation to the ``k`` eigenvectors (non-sparse). If `A`
-        has ``shape=(n,n)`` then `X` should have shape ``shape=(n,k)``.
-    B : {dense matrix, sparse matrix, LinearOperator, callable object}
-        Optional.
-        The right hand side operator in a generalized eigenproblem.
-        By default, ``B = Identity``.  Often called the "mass matrix".
+        has ``shape=(n,n)`` then `X` must have ``shape=(n,k)``.
+    B : {dense matrix, ndarray, LinearOperator, callable object}
+        Optional. By default ``B = None`` equivalent to identity.
+        The right hand side operator in a generalized eigenproblem if present.
+        Often called the "mass matrix". Must be Hermitian and positive definite.
     M : {dense matrix, sparse matrix, LinearOperator, callable object}
-        Optional.
-        Preconditioner to `A`; by default ``M = Identity``.
-        `M` should approximate the inverse of `A`.
-    Y : ndarray, float32 or float64, optional.
-        An n-by-sizeY matrix of constraints (non-sparse), sizeY < n.
+        Optional. By default ``M = None`` equivalent to identity.
+        Preconditioner aiming to accelerate convergence.
+    Y : ndarray, float32 or float64, optional. By default ``Y = None``.
+        An n-by-sizeY ndarray of constraints with sizeY < n.
         The iterations will be performed in the B-orthogonal complement
-        of the column-space of Y. Y must be full rank.
-    tol : scalar, optional.
-        Solver tolerance (stopping criterion).
-        The default is ``tol=n*sqrt(eps)``.
-    maxiter : int, optional.
-        Maximum number of iterations.  The default is ``maxiter=20``.
-    largest : bool, optional.
+        of the column-space of Y. Y must be full rank if present.
+    tol : scalar, optional. The default is ``tol=n*sqrt(eps)``.
+        Solver tolerance for the stopping criterion.
+    maxiter : int, optional. The default is ``maxiter=20``.
+        Maximum number of iterations.
+    largest : bool, optional. The default is ``largest=True``.
         When True, solve for the largest eigenvalues, otherwise the smallest.
-    verbosityLevel : int, optional
-        Controls solver output.  The default is ``verbosityLevel=0``.
-    retLambdaHistory : bool, optional.
-        Whether to return eigenvalue history.  Default is False.
-    retResidualNormsHistory : bool, optional.
-        Whether to return history of residual norms.  Default is False.
+    verbosityLevel : int, optional. By default ``verbosityLevel=0`` no output.
+        Controls the solver standard/screen output.
+    retLambdaHistory : bool, optional. The default is ``False``.
+        Whether to return iterative eigenvalue history.
+    retResidualNormsHistory : bool, optional. The default is ``False``.
+        Whether to return iterative history of residual norms.
     restartControl : int, optional.
         Iterations restart if the residuals jump up 2**restartControl times
         compared to the smallest ones recorded in retResidualNormsHistory.
@@ -199,13 +197,13 @@ def lobpcg(
 
     Returns
     -------
-    w : ndarray
-        Array of ``k`` eigenvalues.
-    v : ndarray
-        An array of ``k`` eigenvectors.  `v` has the same shape as `X`.
-    lambdas : ndarray, optional
+    lambda : ndarray of the shape ``(k, )``.
+        Array of ``k`` approximate eigenvalues.
+    v : ndarray of the same shape and dtype as `X`.
+        An array of ``k`` approximate eigenvectors.
+    lambdaHistory : ndarray, optional
         The eigenvalue history, if `retLambdaHistory` is True.
-    rnorms : ndarray, optional
+    ResidualNormsHistory : ndarray, optional
         The history of residual norms, if `retResidualNormsHistory` is True.
 
     Notes
@@ -236,20 +234,21 @@ def lobpcg(
     and ``n=10``, it works though ``n`` is small. The method is intended
     for extremely large ``n / k``.
 
-    The convergence speed depends basically on two factors:
+    The convergence speed depends basically on three factors:
 
-    1. Relative separation of the seeking eigenvalues from the rest
-       of the eigenvalues. One can vary ``k`` to improve the absolute
-       separation and use proper preconditioning to shrink the spectral spread.
+    1. Quality of the initial approximations `X` to the seeking eigenvectors.
+       Randomly distributed around the origin vectors work well if no better
+       choice is known.
+
+    2. Relative separation of the seeking eigenvalues from the rest
+       of the eigenvalues. One can vary ``k`` to improve the separation. 
+
+    3. Proper preconditioning to shrink the spectral spread.
        For example, a rod vibration test problem (under tests
        directory) is ill-conditioned for large ``n``, so convergence will be
        slow, unless efficient preconditioning is used. For this specific
        problem, a good simple preconditioner function would be a linear solve
-       for `A`, which is easy to code since `A` is tridiagonal.
-
-    2. Quality of the initial approximations `X` to the seeking eigenvectors.
-       Randomly distributed around the origin vectors work well if no better
-       choice is known.
+       for `A`, which is easy to code since `A` is tridiagonal..
 
     References
     ----------
@@ -268,22 +267,29 @@ def lobpcg(
 
     Examples
     --------
-    Solve ``A x = lambda x`` with constraints and preconditioning.
+    Our first example is minimalistic - find the largest eigenvalue of
+    a diagonal matrix by solving the non-generalized eigenvalue problem
+    ``A x = lambda x`` without constraints or preconditioning.
 
     >>> import numpy as np
-    >>> from scipy.sparse import spdiags, issparse
-    >>> from scipy.sparse.linalg import lobpcg, LinearOperator
+    >>> from scipy.sparse import spdiags
+    >>> from scipy.sparse.linalg import LinearOperator, aslinearoperator
+    >>> from scipy.sparse.linalg import lobpcg
 
-    The square matrix size:
+    The square matrix size is
 
     >>> n = 100
+
+    and its diagonal entries are 1, ..., 100 defined by
+
     >>> vals = np.arange(1, n + 1)
 
-    The first mandatory input parameter, in this test
-    a sparse 2D array representing the square matrix
-    of the eigenvalue problem to solve:
+    The first mandatory input parameter, in this test is
+    the sparse diagonal matrix ``A``
+    of the eigenvalue problem ``A x = lambda x`` to solve:
 
     >>> A = spdiags(vals, 0, n, n)
+    >>> A = A.astype(np.int32)
     >>> A.toarray()
     array([[  1,   0,   0, ...,   0,   0,   0],
            [  0,   2,   0, ...,   0,   0,   0],
@@ -300,8 +306,14 @@ def lobpcg(
     commonly work best, e.g., with components normally disrtibuted
     around zero or uniformly distributed on the interval [-1 1].
 
+    >>> k = 1
     >>> rng = np.random.default_rng()
-    >>> X = rng.normal(size=(n, 3))
+    >>> X = rng.normal(size=(n, k))
+    >>> X = X.astype(np.float32)
+
+    >>> eigenvalues, _ = lobpcg(A, X, maxiter=60)
+    >>> eigenvalues
+    array([100.])
 
     Constraints - an optional input parameter is a 2D array comprising
     of column vectors that the eigenvectors must be orthogonal to:
