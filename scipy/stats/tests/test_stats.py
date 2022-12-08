@@ -10,7 +10,7 @@ import os
 import re
 import warnings
 from collections import namedtuple
-from itertools import product, combinations_with_replacement
+from itertools import product
 
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -2361,43 +2361,15 @@ class TestMode:
         ref = ([20, np.nan], [2, 0])
         assert_equal(res, ref)
 
-        res = stats.mode(a, axis=1, nan_policy='propagate')
-        ref = ([20, np.nan], [2, 3])
-        assert_equal(res, ref)
+        if NumpyVersion(np.__version__) >= '1.21.0':
+            res = stats.mode(a, axis=1, nan_policy='propagate')
+            ref = ([20, np.nan], [2, 3])
+            assert_equal(res, ref)
 
         z = np.array([[], []])
         res = stats.mode(z, axis=1)
         ref = ([np.nan, np.nan], [0, 0])
         assert_equal(res, ref)
-
-    @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # np.mean warns
-    def test_gh9955b(self):
-        # A more thorough test of gh-9955 with empty arrays based on
-        # `test_axis_nan_policy.test_empty`
-
-        def small_sample_generator(n_dims):
-            # return all possible "small" arrays in up to n_dim dimensions
-            for i in n_dims:
-                # "small" means with size along dimension either 0 or 1
-                for combo in combinations_with_replacement([0, 1, 2], i):
-                    yield np.zeros(combo)
-
-        for sample in small_sample_generator([2, 3]):
-            # this test is only for arrays of zero size
-            if not sample.size == 0:
-                continue
-
-            # need to test for all valid values of `axis` parameter, too
-            for axis in range(-sample.ndim, sample.ndim):
-                res = stats.mode(sample, axis=axis)
-
-                ref = np.mean(sample, axis=axis) * np.nan  # mode is always NaN
-                assert_equal(res.mode, ref)
-                assert np.shape(res.mode) == ref.shape
-
-                ref[np.isnan(ref)] = 0  # count is always zero
-                assert_equal(res.count, ref)
-                assert res.count.shape == ref.shape
 
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # np.mean warns
     @pytest.mark.parametrize('z', [np.empty((0, 1, 2)), np.empty((1, 1, 2))])

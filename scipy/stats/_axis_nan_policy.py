@@ -490,7 +490,6 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     contains_nans.append(contains_nan)
 
                 # Addresses nan_policy == "propagate"
-
                 if any(contains_nans) and (nan_policy == 'propagate'
                                            and override['nan_propagation']):
                     res = np.full(n_out, np.nan)

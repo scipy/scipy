@@ -505,7 +505,7 @@ def _mode_result(mode, count):
         count = count.dtype(0) if i else count
     else:
         count[i] = 0
-    return ModeResult(mode, count * (~np.isnan(count)))
+    return ModeResult(mode, count)
 
 
 @_axis_nan_policy_factory(_mode_result, override={'vectorization': True,
