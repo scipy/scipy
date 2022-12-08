@@ -870,6 +870,10 @@ class betaprime_gen(rv_continuous):
     def _cdf(self, x, a, b):
         return sc.betainc(a, b, x/(1.+x))
 
+    def _ppf(self, p, a, b):
+        r = sc.betaincinv(a, b, p)
+        return r / (1 - r)
+
     def _munp(self, n, a, b):
         if n == 1.0:
             return np.where(b > 1,
