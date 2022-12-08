@@ -190,8 +190,8 @@ def lobpcg(
     retResidualNormsHistory : bool, optional. The default is ``False``.
         Whether to return iterative history of residual norms.
     restartControl : int, optional.
-        Iterations restart if the residuals jump up 2**restartControl times
-        compared to the smallest ones recorded in retResidualNormsHistory.
+        Iterations restart if the residuals jump ``2**restartControl`` times
+        up compared to the smallest ones recorded in retResidualNormsHistory.
         The default is ``restartControl=20``, making the restarts rare for
         backward compatibility.
 
@@ -201,9 +201,9 @@ def lobpcg(
         Array of ``k`` approximate eigenvalues.
     v : ndarray of the same shape and dtype as `X`.
         An array of ``k`` approximate eigenvectors.
-    lambdaHistory : ndarray, optional
+    lambdaHistory : ndarray, optional.
         The eigenvalue history, if `retLambdaHistory` is True.
-    ResidualNormsHistory : ndarray, optional
+    ResidualNormsHistory : ndarray, optional.
         The history of residual norms, if `retResidualNormsHistory` is True.
 
     Notes
@@ -319,7 +319,7 @@ def lobpcg(
     >>> rng = np.random.default_rng()
     >>> X = rng.normal(size=(n, k))
 
-       Constraints - an optional input parameter is a 2D array comprising
+    Constraints - an optional input parameter is a 2D array comprising
     of column vectors that the eigenvectors must be orthogonal to:
 
     >>> Y = np.eye(n, 3)
@@ -349,6 +349,7 @@ def lobpcg(
 
     Note that the vectors passed in Y are the eigenvectors of the 3 smallest
     eigenvalues. The results returned are orthogonal to those.
+
     """
     blockVectorX = X
     bestblockVectorX = blockVectorX
