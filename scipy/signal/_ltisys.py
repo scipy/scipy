@@ -1839,7 +1839,6 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     >>> import numpy as np
     >>> from scipy.signal import bessel, lsim2
     >>> import matplotlib.pyplot as plt
-    >>> import warnings
 
     Create a low-pass Bessel filter with a cutoff of 12 Hz.
 
@@ -1888,7 +1887,6 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
     Compute the simulation, and then plot `y`.  As expected, the plot shows
     the curve ``y = 0.5*t**2``.
-
 
     >>> tout, y, x = lsim2(system, u, t)
     >>> plt.plot(t, y)
@@ -2357,7 +2355,6 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     root: ``x''(t) + 2*x'(t) + x(t) = u(t)``
 
     >>> from scipy import signal
-    >>> import warnings
 
     >>> system = ([1.0], [1.0, 2.0, 1.0])
 
@@ -2530,7 +2527,6 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> import warnings
 
     >>> lti = signal.lti([1.0], [1.0, 1.0])
     >>> t, y = signal.step2(lti)
