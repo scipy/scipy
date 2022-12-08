@@ -4301,7 +4301,7 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     To control the FWER at 5%, we reject only the hypotheses corresponding
     with adjusted p-values less than 0.05. In this case, only the hypotheses
     corresponding with the first three p-values can be rejected. According to
-    [1], these three hypotheses concerned "allergic reaction" and "two
+    [1]_, these three hypotheses concerned "allergic reaction" and "two
     different aspects of bleeding."
 
     An alternative approach is to control the false discovery rate: the
