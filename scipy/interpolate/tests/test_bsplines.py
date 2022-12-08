@@ -20,6 +20,9 @@ from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
 import scipy.interpolate._fitpack_impl as _impl
 from scipy._lib._util import AxisError
 
+# XXX: move to the interpolate namespace
+from scipy.interpolate._ndbspline import make_ndbspl
+
 
 class TestBSpline:
 
@@ -1906,6 +1909,8 @@ class TestNdBSpline:
         xi = [(1.4, 4.5), (2.5, 2.4), (4.5, 3.5)]
         target = [x**3 * (y**2 + 2*y) for (x, y) in xi]
 
+        breakpoint()
+
         bspl2 = NdBSpline(t2, c2, k=(kx, ky))
         assert bspl2(xi).shape == (len(xi), )
         assert_allclose(bspl2(xi),
@@ -2160,10 +2165,12 @@ class TestNdBSpline:
 
         assert bspl3((1, 2, 3)) == bspl3_((1, 2, 3))
 
+    # TODO: test complex values
+
 
 class TestMakeND:
     def make_2d_case(self):
-        # make a 2D separable spline
+        # make a 2D separable spline ; XXX: remove as not needed?
         x = np.arange(6)
         y = x**3
         spl = make_interp_spline(x, y, k=3)
@@ -2178,30 +2185,66 @@ class TestMakeND:
 
     def test_2D_separable_simple(self):
         x = np.arange(6)
-        y = np.arange(6)
+        y = np.arange(6) + 0.5
         values = x[:, None]**3 * (y**3 + 2*y)[None, :]
-
-        import itertools
         xi = [(a, b) for a, b in itertools.product(x, y)]
 
-        from scipy.interpolate._bspl import make_ndbspl
-        m, t, coef, m_csr = make_ndbspl((np.arange(6), np.arange(6)), values, k=3)
-
-        with np.printoptions(threshold=100000, linewidth=200):
-            print(m)
-
-        bspl = NdBSpline(t, coef, k=3)
+        bspl, dense = make_ndbspl((x, y), values, k=3)
         assert_allclose(bspl(xi), values.ravel(), atol=1e-15)
+
+        # test the coefficients vs outer product of 1D coefficients
+        spl_x = make_interp_spline(x, x**3, k=3)
+        spl_y = make_interp_spline(y, y**3 + 2*y, k=3)
+        cc = spl_x.c[:, None] * spl_y.c[None, :]
+        assert_allclose(cc, bspl.c, atol=1e-11)
 
         # test against RGI
         from scipy.interpolate import RegularGridInterpolator as RGI
         rgi = RGI((x, y), values, method='cubic')
         assert_allclose(rgi(xi), bspl(xi), atol=1e-14)
 
-        # test sparse solve
-        from scipy.sparse.linalg import spsolve
-        coef_2 = spsolve(m_csr, values.ravel())
-        bspl_2 = NdBSpline(t, coef_2.reshape((6, 6)), k=3)
-        assert_allclose(rgi(xi), bspl_2(xi), atol=1e-14)
+        # XXX: test dense solve
+        from scipy.linalg import solve
+        coef2 = solve(dense, values.ravel())
+        bspl2 = NdBSpline(bspl.t, coef2.reshape((6, 6)), k=3)
+        assert_allclose(rgi(xi), bspl2(xi), atol=1e-14)
 
-        breakpoint()
+    def test_2D_separable_trailing_dims(self):
+        # test `c` with trailing dimensions, i.e. c.ndim > ndim
+        x = np.arange(6)
+        y = np.arange(6)
+        xi = [(a, b) for a, b in itertools.product(x, y)]
+
+        # make values4.shape = (6, 6, 4)
+        values = x[:, None]**3 * (y**3 + 2*y)[None, :]
+        values4 = np.dstack((values, values, values, values))
+
+        bspl, dense = make_ndbspl((x, y), values4, k=3)
+
+        result = bspl(xi)
+        target = np.dstack((values, values, values, values))
+        assert result.shape == (36, 4)
+        assert_allclose(result.reshape(6, 6, 4),
+                        target, atol=1e-14)
+
+        # now two trailing dimensions
+        values22 = values4.reshape((6, 6, 2, 2))
+        bspl, dense = make_ndbspl((x, y), values22, k=3)
+
+        result = bspl(xi)
+        assert result.shape == (36, 2, 2)
+        assert_allclose(result.reshape(6, 6, 2, 2),
+                        target.reshape((6, 6, 2, 2)), atol=1e-14)
+
+    @pytest.mark.parametrize('k', [(3, 3), (1, 1), (3, 1), (1, 3), (3, 5)])
+    def test_2D_mixed(self, k):
+        # make a 2D separable spline w/ len(tx) != len(ty)
+        x = np.arange(6)
+        y = np.arange(7) + 1.5
+        xi = [(a, b) for a, b in itertools.product(x, y)]
+
+        values = (x**3)[:, None] * (y**2 + 2*y)[None, :]
+        bspl, dense = make_ndbspl((x, y), values, k=k)
+        assert_allclose(bspl(xi), values.ravel(), atol=1e-15)
+
+

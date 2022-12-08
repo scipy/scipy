@@ -5,6 +5,11 @@ from math import prod
 
 from . import _bspl  # type: ignore
 
+from scipy.sparse.linalg import spsolve
+from scipy.sparse import csr_array
+
+from ._bsplines import _not_a_knot
+
 __all__ = ["NdBSpline"]
 
 
@@ -155,7 +160,7 @@ class NdBSpline:
         else:
             nu = np.asarray(nu, dtype=np.intc)
             if nu.ndim != 1 or nu.shape[0] != ndim:
-                raise ValueError("invalid number of derivative orders nu")
+                raise ValueError(f"invalid number of derivative orders {nu = }")
 
         # prepare xi : shape (..., m1, ..., md) -> (1, m1, ..., md)
         xi = np.asarray(xi, dtype=float)
@@ -207,3 +212,61 @@ class NdBSpline:
                                  out,)
 
         return out.reshape(xi_shape[:-1] + self.c.shape[ndim:])
+
+
+def make_ndbspl(points, values, k=3):
+    """Construct an interpolating NdBspline.
+
+    Parameters
+    ----------
+    points : tuple of ndarrays of float, with shapes (m1,), ... (mN,)
+        The points defining the regular grid in N dimensions. The points in
+        each dimension (i.e. every elements of the points tuple) must be
+        strictly ascending or descending.      
+    values : ndarray of float, shape (m1, ..., mN, ...)
+        The data on the regular grid in n dimensions.
+    k : int, optional
+        The spline degree. Must be odd. Default is cubic, k=3
+
+    Returns
+    -------
+    spl : NdBSpline object
+
+    Notes
+    -----
+    Boundary conditions are not-a-knot in all dimensions.
+
+    """
+   
+    # TODO: 1. check consistency of inputs
+    #       2. DONE trailing dims of values
+    #       3. DONE mixed k
+    ndim = len(points)
+    xi_shape = tuple(len(x) for x in points)
+
+    try:
+        len(k)
+    except TypeError:
+        # make k a tuple
+        k = (k,)*ndim
+
+    t = tuple(_not_a_knot(np.asarray(points[d], dtype=float), k[d])
+              for d in range(ndim))
+
+    # construct the colocation matrix
+    data, indices, indptr, dense = _bspl._colloc_nd(points, t, np.asarray(k))
+    matr = csr_array((data, indices, indptr))
+
+    # Solve for the coefficients given `values`.
+    # Trailing dimensions: first ndim dimensions are data, trailing dimensions
+    # are batch dimensions, so stack `values` into a 2D array for `spsolve` to undestand.
+    v_shape = values.shape
+    vals_shape = (prod(v_shape[:ndim]), prod(v_shape[ndim:]))
+    vals = values.reshape(vals_shape)
+    coef = spsolve(matr, vals)
+    coef = coef.reshape(xi_shape + v_shape[ndim:])
+
+    from numpy.testing import assert_allclose
+    assert_allclose(dense, matr.toarray(), atol=1e-15)
+    return NdBSpline(t, coef, k), dense
+
