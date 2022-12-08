@@ -82,9 +82,6 @@ def test_distributions_submodule():
     # <scipy.stats._continuous_distns.trapezoid_gen at 0x1df83bbc688>
     expected = set(filter(lambda s: not str(s).startswith('<'), expected))
 
-    # gilbrat is deprecated and no longer in distcont
-    actual.remove('gilbrat')
-
     assert actual == expected
 
 
