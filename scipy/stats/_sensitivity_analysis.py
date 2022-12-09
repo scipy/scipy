@@ -1,53 +1,99 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, Tuple
+
 import numpy as np
+
+from scipy.stats._qmc import check_random_state
 from scipy.stats import qmc, bootstrap
 from scipy.stats.sampling import NumericalInversePolynomial
-import scipy.stats as stats
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 
-def f_ishigami(x):
+__all__ = [
+    'sobol_indices',
+    'f_ishigami'
+]
+
+
+def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
     """Ishigami function.
 
-    :param array_like x: [n, [x1, x2, x3]].
-    :return: Function evaluation.
-    :rtype: array_like (n, 1)
+    .. math::
+
+        Y(\mathbf{x}) = \sin x_1 + 7 \sin^2 x_2 + 0.1 x_3^4 \sin x_1
+
+    with :math:`\mathbf{x} \in [-\pi, \pi]^3`.
+
+    Parameters
+    ----------
+    x : array_like (n, [x1, x2, x3])
+
+    Returns
+    -------
+    f : array_like (n, 1)
+        Function evaluation.
+
+    References
+    ----------
+    .. [1] Ishigami, T. and T. Homma. "An importance quantification technique
+       in uncertainty analysis for computer models." IEEE,
+       :doi:`10.1109/ISUMA.1990.151285`, 1990.
     """
     x = np.atleast_2d(x)
-    return np.array([np.sin(xi[0]) + 7 * np.sin(xi[1])**2 +
-                     0.1 * (xi[2]**4) * np.sin(xi[0]) for xi in x]).reshape(-1, 1)
+    f_eval = (
+        np.sin(x[:, 0])
+        + 7 * np.sin(x[:, 1])**2
+        + 0.1 * (x[:, 2]**4) * np.sin(x[:, 0])
+    )
+    return f_eval.reshape(-1, 1)
 
 
-def sample_A_B(d, n, *, dists=None, seed=None):
-    rng = np.random.default_rng(seed)
-    A_B = qmc.Sobol(d=2*d, seed=rng, bits=64).random(n)
+def sample_A_B(d, n, dists=None, random_state=None):
+    """Sample two matrices A and B.
+
+    Uses a Sobol' sequence with 2`d` columns to have 2 uncorrelated matrices.
+    This is more efficient than using 2 random draw of Sobol'.
+    """
+    A_B = qmc.Sobol(d=2*d, seed=random_state, bits=64).random(n)
 
     A, B = A_B[:, :d], A_B[:, d:]
 
     if dists is not None:
         for d_, dist in enumerate(dists):
-            dist_rng = NumericalInversePolynomial(dist, random_state=rng)
+            dist_rng = NumericalInversePolynomial(
+                dist, random_state=random_state
+            )
             A[:, d_] = dist_rng.ppf(A[:, d_])
             B[:, d_] = dist_rng.ppf(B[:, d_])
 
     return A, B
 
 
-def sample_A_B_AB(d, n, *, dists=None, seed=None):
-    # A and B
-    A, B = sample_A_B(d=d, n=n, dists=dists, seed=seed)
+def sample_AB(A: np.ndarray, B: np.ndarray) -> np.ndarray:
+    """AB matrix.
 
-    # AB: columns of B into A
+    AB: columns of B into A. Shape (n*d, d). e.g in 2d
+    Take A and replace 1st column with 1st column of B. You have (n, d)
+    Then A and replace 2nd column with 2nd column of B. You have (n, d)
+    Concatenate to get AB. Which means AB is (2*n, d)
+    """
+    n, d = A.shape
     AB = np.empty((int(d*n), d))
     for i in range(d):
         AB[i*n:(i+1)*n, :] = np.column_stack((A[:, :i], B[:, i], A[:, i+1:]))
 
-    return A, B, AB
+    return AB
 
 
-def sobol_saltelli(f_A, f_B, f_AB):
+def saltelli_2010(
+    f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray
+) -> Tuple[np.ndarray,  np.ndarray]:
+    """Saltelli2010 formulation."""
     f_AB = f_AB.reshape(-1, f_A.shape[0])
 
     var = np.var(np.vstack([f_A, f_B]))
-    # var = np.clip(var, a_min=0, a_max=None)
 
     s = np.mean(f_B * (f_AB - f_A.flatten()).T, axis=0) / var
     st = 0.5 * np.mean((f_A.flatten() - f_AB).T ** 2, axis=0) / var
@@ -55,16 +101,179 @@ def sobol_saltelli(f_A, f_B, f_AB):
     return s, st
 
 
-def sobol_indices(*, func, n, d, dists=None, l_bounds=None, u_bounds=None, seed=None):
-    """Sobol' indices.
+def sobol_indices(
+    *, func, n, d, dists=None, l_bounds=None, u_bounds=None, random_state=None
+):
+    """Global sensitivity indices of Sobol'.
 
-    The total number of function call is ``d(d+2)``.
+    Notes
+    -----
+    Variance-based Sensitivity Analysis allows obtaining the contribution of
+    theparameters on the quantity of interest’s (QoI) variance. Sobol'
+    method [1]_, [2]_, gives not only a ranking but also quantifies the
+    importance factor using the variance.
+
+    .. note:: Parameters are assumed to be independant.
+
+    It uses a functional decomposition of the variance of the function to
+    explore
+
+    .. math::
+
+        \mathbb{V}(Y) &= \sum_{i}^{d} \mathbb{V}_i (Y) + \sum_{i<j}^{d}
+        \mathbb{V}_{ij}(Y) + ... + \mathbb{V}_{1,2,...,d}(Y),
+
+    introducing conditional variances:
+
+    .. math::
+
+        \mathbb{V}_i(Y) = \mathbb{\mathbb{V}}[\mathbb{E}(Y|x_i)]
+        \qquad
+        \mathbb{V}_{ij}(Y) = \mathbb{\mathbb{V}}[\mathbb{E}(Y|x_i x_j)]
+        - \mathbb{V}_i(Y) - \mathbb{V}_j(Y),
+
+    Sobol' indices are expressed as
+
+    .. math::
+
+        S_i = \frac{\mathbb{V}_i(Y)}{\mathbb{V}[Y]}
+        \qquad
+        S_{ij} =\frac{\mathbb{V}_{ij}(Y)}{\mathbb{V}[Y]}.
+
+    :math:`S_{i}` corresponds to the first-order term which apprises the
+    contribution of the i-th parameter, while :math:`S_{ij}` corresponds to the
+    second-order term which informs about the correlations between the
+    i-th and the j-th parameters. These equations can be generalized to compute
+    higher order terms. However, the computational effort to converge them is
+    most often not at hand and their analysis and interpretations are not
+    simple. This is why only first order indices are provided.
+
+    Total indices represent the global contribution of the parameters on the
+    variance of the QoI and express as:
+
+    .. math::
+
+        S_{T_i} = S_i + \sum_j S_{ij} + \sum_{j,k} S_{ijk} + ...
+        = 1 - \frac{\mathbb{V}[\mathbb{E}(Y|x_{\sim i})]}{\mathbb{V}[Y]}.
+
+    The total number of function call is ``n+n+d*n=n(d+2)``.
     Three matrices are required for the computation of
     the indices: A, B and a permutation matrix AB based
     on both A and B.
 
+    .. warning::
+
+        Negative Sobol' values are due to numerical errors. Increasing the
+        number of sample should help.
+
+    References
+    ----------
+    .. [1] Sobol, I. M.. "Sensitivity analysis for nonlinear mathematical
+       models." Mathematical Modeling and Computational Experiment, 1:407-414,
+       1993.
+    .. [2] Sobol, I. M. (2001). "Global sensitivity indices for nonlinear
+       mathematical models and their Monte Carlo estimates." Mathematics
+       and Computers in Simulation, 55(1-3):271-280,
+       :doi:`10.1016/S0378-4754(00)00270-6`, 2001.
+    .. [3] Saltelli, A. "Making best use of model evaluations to
+       compute sensitivity indices."  Computer Physics Communications,
+       145(2):280-297, :doi:`10.1016/S0010-4655(02)00280-1`, 2002.
+    .. [4] Saltelli, A., M. Ratto, T. Andres, F. Campolongo, J. Cariboni,
+       D. Gatelli, M. Saisana, and S. Tarantola. "Global Sensitivity Analysis.
+       The Primer." 2007.
+    .. [5] Saltelli, A., P. Annoni, I. Azzini, F. Campolongo, M. Ratto, and
+       S. Tarantola. "Variance based sensitivity analysis of model
+       output. Design and estimator for the total sensitivity index."
+       Computer Physics Communications, 181(2):259-270,
+       :doi:`10.1016/j.cpc.2009.09.018`, 2010.
+    .. [6] Ishigami, T. and T. Homma. "An importance quantification technique
+       in uncertainty analysis for computer models." IEEE,
+       :doi:`10.1109/ISUMA.1990.151285`, 1990.
+
+    Examples
+    --------
+    The following is an example with the Ishigami function [6]_
+
+    .. math::
+
+        Y(\mathbf{x}) = \sin x_1 + 7 \sin^2 x_2 + 0.1 x_3^4 \sin x_1,
+
+    with :math:`\mathbf{x} \in [-\pi, \pi]^3`. This function exhibits strong
+    non-linearity and non-monotonicity.
+
+    >>> from scipy.stats import f_ishigami
+    >>> indices = sobol_indices(
+    ...    func=f_ishigami, n=1024, d=3,
+    ...    l_bounds=[-np.pi, -np.pi, -np.pi], u_bounds=[np.pi, np.pi, np.pi]
+    ... )
+
+    It is particularly interesting because
+    the first order indice of :math:`S_{x_3} = 0` whereas its total order is
+    :math:`S_{T_{x_3}} = 0.244`.
+
+    It means that higher order interactions are responsible for the difference,
+    and are responsible for 25% of the observed variance on the QoI.
+
+
+    Note that on second order indices,
+    `S_{x_1,x_3} = 0.244`. It means that almost 25% of the observed variance
+    on the QoI is due to the correlations between :math:`x_3` and :math:`x_1`,
+    although :math:`x_3` by itself has no impact on the QoI.
+
+    The following gives a visual explanation of Sobol' indices. It shows
+    scatter plots of the output with respect to each parameter. By conditioning
+    the output value by given values of the parameter
+    (black lines), the conditional output mean is computed. It corresponds to
+    the term :math:`\mathbb{E}(Y|x_i)`. Taking the variance of this term gives
+    the numerator of the Sobol' indices. Looking at :math:`x_3`, the variance
+    of the mean is zero leading to :math:`S_{x_3} = 0`. But we can further
+    observe that the variance of the output is not constant along the parameter
+    values of :math:`x_3`. This heteroscedasticity is explained by higher order
+    interactions. Moreover, an heteroscedasticity is also noticeable on
+    :math:`x_1` leading to an interaction between :math:`x_3` and :math:`x_1`.
+    On :math:`x_2`, the variance seems to be constant and thus null interaction
+    with this parameter can be supposed. This case is fairly simple to analyse
+    visually---although it is only a qualitative analysis. Nevertheless, when
+    the number of input parameters increases such analysis becomes unrealistic
+    as it would be difficult to conclude on high-order terms.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import f_ishigami, qmc
+    >>> n_dim = 3
+    >>> p_labels = ['$x_1$', '$x_2$', '$x_3$']
+    >>> sample = qmc.Sobol(d=n_dim).random(1024)
+    >>> sample = qmc.scale(
+    ...     sample=sample,
+    ...     l_bounds=[-np.pi, -np.pi, -np.pi],
+    ...     u_bounds=[np.pi, np.pi, np.pi]
+    ... )
+    >>> output = f_ishigami(sample)
+    >>> mini = np.min(output)
+    >>> maxi = np.max(output)
+    >>> n_bins = 10
+    >>> bins = np.linspace(-np.pi, np.pi, num=n_bins, endpoint=False)
+    >>> dx = bins[1] - bins[0]
+    >>> fig, ax = plt.subplots(1, n_dim)
+    >>> for i in range(n_dim):
+    >>>     xi = sample[:, i]
+    >>>     ax[i].scatter(xi, output, marker='+')
+    >>>     ax[i].set_xlabel(p_labels[i])
+    >>>     for bin_ in bins:
+    >>>         idx = np.where((bin_ <= xi) & (xi <= bin_ + dx))
+    >>>         xi_ = xi[idx]
+    >>>         y_ = output[idx]
+    >>>         ave_y_ = np.mean(y_)
+    >>>         ax[i].plot([bin_ + dx / 2] * 2, [mini, maxi], c='k')
+    >>>         ax[i].scatter(bin_ + dx / 2, ave_y_, c='r')
+    >>> ax[0].set_ylabel('Y')
+    >>> plt.tight_layout()
+    >>> plt.show()
+
     """
-    A, B, AB = sample_A_B_AB(d=d, n=n, dists=dists, seed=seed)
+    random_state = check_random_state(random_state)
+    A, B = sample_A_B(d=d, n=n, dists=dists, random_state=random_state)
+    AB = sample_AB(A=A, B=B)
 
     if (l_bounds is not None) or (u_bounds is not None):
         A = qmc.scale(A, l_bounds=l_bounds, u_bounds=u_bounds)
@@ -77,179 +286,17 @@ def sobol_indices(*, func, n, d, dists=None, l_bounds=None, u_bounds=None, seed=
 
     # Y = (Y - Y.mean()) / Y.std()
 
-    s, st = sobol_saltelli(f_A, f_B, f_AB)
+    s, st = saltelli_2010(f_A, f_B, f_AB)
 
-    def sobol_saltelli_(idx):
+    def saltelli_2010_(idx):
         f_A_ = f_A[idx]
         f_B_ = f_B[idx]
         f_AB_ = f_AB[idx]
-        return sobol_saltelli(f_A_, f_B_, f_AB_)
+        return saltelli_2010(f_A_, f_B_, f_AB_)
 
     ci = bootstrap(
-        [np.arange(n)], sobol_saltelli_, method="BCa",
+        [np.arange(n)], saltelli_2010_, method="BCa",
         batch=int(n*0.7), n_resamples=99
     )
 
     return s, st, ci
-
-
-# indices = sobol_indices(
-#     func=f_ishigami, n=1024, d=3,
-#     l_bounds=[-np.pi, -np.pi, -np.pi], u_bounds=[np.pi, np.pi, np.pi]
-# )
-# print(indices[:2])
-
-# aggregated indices
-# sum(Vik)/sum(var(Vk))
-# Vik = Sik*Vk
-
-
-def discrepancy_indices(*, func, n, d, dists=None, l_bounds=None, u_bounds=None, seed=None):
-    rng = np.random.default_rng(seed)
-    sample = qmc.Sobol(d=d, seed=rng, bits=64).random(n)
-
-    if dists is not None:
-        for d_, dist in enumerate(dists):
-            dist_rng = NumericalInversePolynomial(dist, random_state=rng)
-            sample[:, d_] = dist_rng.ppf(sample[:, d_])
-
-    if (l_bounds is not None) or (u_bounds is not None):
-        sample_scaled = qmc.scale(sample, l_bounds=l_bounds, u_bounds=u_bounds)
-    else:
-        sample_scaled = sample
-
-    f_sample = func(sample_scaled)
-
-    f_sample = qmc.scale(
-        f_sample, l_bounds=np.min(f_sample), u_bounds=np.max(f_sample), reverse=True
-    )
-
-    indices = [
-        qmc.discrepancy(
-            np.concatenate([sample[:, i].reshape(-1, 1), f_sample], axis=1)
-        )
-        for i in range(d)
-    ]
-
-    # l_discrepancy = qmc.discrepancy(sample[:, :2])
-    # u_discepancy = qmc.discrepancy(np.concatenate([sample[:, 0].reshape(-1, 1), np.ones((1024, 1))*1], axis=1))
-    # indices_scaled = qmc.scale(np.array(indices).reshape(-1, 1), l_bounds=l_discrepancy, u_bounds=u_discepancy, reverse=True)
-
-    indices = indices / np.sum(indices)
-
-    return indices
-
-
-# indices = discrepancy_indices(
-#     func=f_ishigami, n=1024, d=3,
-#     l_bounds=[-np.pi, -np.pi, -np.pi], u_bounds=[np.pi, np.pi, np.pi]
-# )
-# print(indices)
-
-def discontinuous(x):
-    res = np.zeros_like(x)
-    res[np.where(x > 0.5)] = 1
-    return res
-
-
-functions = [
-    ("Linear", lambda x: x),
-    ("Quadratic", lambda x: x**2),
-    ("Cubic", lambda x: x**3),
-    ("Exponential", lambda x: (np.exp(x) - 1) / (np.exp(1) - 1)),
-    ("Periodic", lambda x: np.sin(2 * np.pi * x) / 2 + 0.5),
-    ("Discontinuous", discontinuous),
-    ("No effect", lambda x: x * 0),
-    ("Non monotonic", lambda x: 4 * (x - 0.5) ** 2),
-    ("Inverse", lambda x: (10 - 1 / 1.1) ** (-1) * (x + 0.1) ** (- 1) - 0.1),
-    ("Trigonometric", lambda x: np.cos(x)),
-    ("Piecewise large", lambda x: ((-1) ** (4 * x).astype(int) * (0.125 - np.mod(x, 0.25)) + 0.125)),
-    ("Piecewise small", lambda x: ((-1) ** (32 * x).astype(int) * (0.03125 - 2 * np.mod(x, 0.03125)) + 0.03125) / 2),
-    ("Oscillation", lambda x: x ** 2 - 0.2 * np.cos(7 * np.pi * x)),
-]
-
-distributions = [
-    ("uniform", stats.uniform()),
-    ("normal", stats.norm(loc=0.5, scale=0.15)),
-    ("beta", stats.beta(a=8, b=2)),
-    ("beta2", stats.beta(a=2, b=8)),
-    ("beta3", stats.beta(a=2, b=0.8)),
-    ("beta4", stats.beta(a=0.8, b=2)),
-    ("logitnormal", stats.logistic(loc=0, scale=3.16)),
-]
-
-
-def mixture_phi(n, rng):
-    dists = [
-        stats.norm(loc=0, scale=np.sqrt(0.5)),
-        stats.norm(loc=0, scale=np.sqrt(5)),
-    ]
-    coefficients = np.array([0.7, 0.3])
-
-    n_dists = len(dists)
-    data = np.zeros((n, n_dists))
-    for i, dist in enumerate(dists):
-        data[:, i] = dist.rvs(n, random_state=rng)
-    random_idx = rng.choice(np.arange(n_dists), size=(n,), p=coefficients)
-    sample = data[np.arange(n), random_idx]
-
-    return sample
-
-
-
-
-
-class MetaModel:
-
-    def __init__(self, d, seed=None):
-
-        rng = np.random.default_rng(seed)
-
-        n_funcs = len(functions)
-
-        self.d = d
-
-        # first order
-        u = rng.integers(low=0, high=n_funcs, size=d)
-        self.u = np.array(functions)[u]
-        # phi[0] * u * u
-
-        d2 = int(0.5 * d)
-        self.V = rng.integers(low=0, high=d, size=(d2, 2))
-        # phi[1] * u[V[0]] * u[V[1]]
-
-        d3 = int(0.2 * d)
-        self.W = rng.integers(low=0, high=d, size=(d3, 3))
-        # phi[2] * u[W[0]] * u[W[1]] * u[W[2]]
-
-        phi = mixture_phi(d + d2 + d3, rng)
-        self.phi = [phi[:d], phi[d:d+d2], phi[d+d2:]]
-
-    def __call__(self, x):
-
-        first_order = np.zeros((len(x),))
-        for d_ in range(self.d):
-            first_order += self.phi[0][d_] * self.u[d_][1](x[:, d_])
-
-        second_order = np.zeros((len(x),))
-        for i, v_ in enumerate(self.V):
-            second_order += self.phi[1][i] \
-                            * self.u[v_[0]][1](x[:, v_[0]]) \
-                            * self.u[v_[1]][1](x[:, v_[1]])
-
-        third_order = np.zeros((len(x),))
-        for i, w_ in enumerate(self.W):
-            third_order += self.phi[2][i] \
-                           * self.u[w_[0]][1](x[:, w_[0]]) \
-                           * self.u[w_[1]][1](x[:, w_[1]]) \
-                           * self.u[w_[2]][1](x[:, w_[2]])
-
-        return (first_order + second_order + third_order).reshape(-1, 1)
-
-
-rng = np.random.default_rng()
-metamodel = MetaModel(d=4, seed=rng)
-sample = rng.random((100, 4))
-metamodel(sample)
-
-pass
