@@ -453,6 +453,46 @@ def test_find_objects09():
                        (slice(5, 6, None), slice(3, 5, None))])
 
 
+def test_value_indices01():
+    "Test dictionary keys and entries"
+    data = np.array([[1, 0, 0, 0, 0, 0],
+                     [0, 0, 2, 2, 0, 0],
+                     [0, 0, 2, 2, 2, 0],
+                     [0, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 4, 4, 0]])
+    vi = ndimage.value_indices(data, ignore_value=0)
+    true_keys = [1, 2, 4]
+    assert_equal(list(vi.keys()), true_keys)
+
+    truevi = {}
+    for k in true_keys:
+        truevi[k] = np.where(data == k)
+
+    vi = ndimage.value_indices(data, ignore_value=0)
+    assert_equal(vi, truevi)
+
+
+def test_value_indices02():
+    "Test input checking"
+    data = np.zeros((5, 4), dtype=np.float32)
+    msg = "Parameter 'arr' must be an integer array"
+    with assert_raises(ValueError, match=msg):
+        ndimage.value_indices(data)
+
+
+def test_value_indices03():
+    "Test different input array shapes, from 1-D to 4-D"
+    for shape in [(36,), (18, 2), (3, 3, 4), (3, 3, 2, 2)]:
+        a = np.array((12*[1]+12*[2]+12*[3]), dtype=np.int32).reshape(shape)
+        trueKeys = np.unique(a)
+        vi = ndimage.value_indices(a)
+        assert_equal(list(vi.keys()), list(trueKeys))
+        for k in trueKeys:
+            trueNdx = np.where(a == k)
+            assert_equal(vi[k], trueNdx)
+
+
 def test_sum01():
     for type in types:
         input = np.array([], type)

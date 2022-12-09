@@ -490,14 +490,14 @@ class rv_frozen:
     def std(self):
         return self.dist.std(*self.args, **self.kwds)
 
-    def moment(self, order=None, **kwds):
-        return self.dist.moment(order, *self.args, **self.kwds, **kwds)
+    def moment(self, order=None):
+        return self.dist.moment(order, *self.args, **self.kwds)
 
     def entropy(self):
         return self.dist.entropy(*self.args, **self.kwds)
 
-    def interval(self, confidence=None, **kwds):
-        return self.dist.interval(confidence, *self.args, **self.kwds, **kwds)
+    def interval(self, confidence=None):
+        return self.dist.interval(confidence, *self.args, **self.kwds)
 
     def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
         # expect method only accepts shape parameters as positional args
@@ -1209,13 +1209,8 @@ class rv_generic:
         place(output, cond0, self.vecentropy(*goodargs) + log(goodscale))
         return output[()]
 
-    def moment(self, order=None, *args, **kwds):
+    def moment(self, order, *args, **kwds):
         """non-central moment of distribution of specified order.
-
-        .. deprecated:: 1.9.0
-           Parameter `n` is replaced by parameter `order` to avoid name
-           collisions with the shape parameter `n` of several distributions.
-           Parameter `n` will be removed in SciPy 1.11.0.
 
         Parameters
         ----------
@@ -1230,94 +1225,7 @@ class rv_generic:
             scale parameter (default=1)
 
         """
-        # This function was originally written with parameter `n`, but `n`
-        # is also the name of many distribution shape parameters.
-        # This block allows the function to accept both `n` and its
-        # replacement `order` during a deprecation period; it can be removed
-        # in the second release after 1.9.0.
-        # The logic to provide a DeprecationWarning only when `n` is passed
-        # as a keyword, accept the new keyword `order`, and otherwise be
-        # backward-compatible deserves explanation. We need to look out for
-        # the following:
-        # * Does the distribution have a shape named `n`?
-        # * Is `order` provided? It doesn't matter whether it is provided as a
-        #   positional or keyword argument; it will be used as the order of the
-        #   moment rather than a distribution shape parameter because:
-        #   - The first positional argument of `moment` has always been the
-        #     order of the moment.
-        #   - The keyword `order` is new, so it's unambiguous that it refers to
-        #     the order of the moment.
-        # * Is `n` provided as a keyword argument? It _does_ matter whether it
-        #   is provided as a positional or keyword argument.
-        #   - The first positional argument of `moment` has always been the
-        #     order of moment, but
-        #   - if `n` is provided as a keyword argument, its meaning depends
-        #     on whether the distribution accepts `n` as a shape parameter.
-        has_shape_n = (self.shapes is not None
-                       and "n" in (self.shapes.split(", ")))
-        got_order = order is not None
-        got_keyword_n = kwds.get("n", None) is not None
-
-        # These lead to the following cases.
-        # Case A: If the distribution _does_ accept `n` as a shape
-        # 1. If both `order` and `n` are provided, this is now OK:
-        #    it is unambiguous that `order` is the order of the moment and `n`
-        #    is the shape parameter. Previously, this would have caused an
-        #    error because `n` was provided both as a keyword argument and
-        #    as the first positional argument. I don't think it is credible for
-        #    users to rely on this error in their code, though, so I don't see
-        #    this as a backward compatibility break.
-        # 2. If only `n` is provided (as a keyword argument), this would have
-        #    been an error in the past because `n` would have been treated as
-        #    the order of the moment while the shape parameter would be
-        #    missing. It is still the same type of error, but for a different
-        #    reason: now, `n` is treated as the shape parameter while the
-        #    order of the moment is missing.
-        # 3. If only `order` is provided, no special treament is needed.
-        #    Clearly this value is intended to be the order of the moment,
-        #    and the rest of the function will determine whether `n` is
-        #    available as a shape parameter in `args`.
-        # 4. If neither `n` nor `order` is provided, this would have been an
-        #    error (order of the moment is not provided) and it is still an
-        #    error for the same reason.
-
-        # Case B: the distribution does _not_ accept `n` as a shape
-        # 1. If both `order` and `n` are provided, this was an error, and it
-        #    still is an error: two values for same parameter.
-        # 2. If only `n` is provided (as a keyword argument), this was OK and
-        #    is still OK, but there shold now be a `DeprecationWarning`. The
-        #    value of `n` should be removed from `kwds` and stored in `order`.
-        # 3. If only `order` is provided, there was no problem before providing
-        #    only the first argument of `moment`, and there is no problem with
-        #    that now.
-        # 4. If neither `n` nor `order` is provided, this would have been an
-        #    error (order of the moment is not provided), and it is still an
-        #    error for the same reason.
-        if not got_order and ((not got_keyword_n)  # A4 and B4
-                              or (got_keyword_n and has_shape_n)):  # A2
-            message = ("moment() missing 1 required "
-                       "positional argument: `order`")
-            raise TypeError(message)
-
-        if got_keyword_n and not has_shape_n:
-            if got_order:  # B1
-                # this will change to "moment got unexpected argument n"
-                message = "moment() got multiple values for first argument"
-                raise TypeError(message)
-            else:  # B2
-                message = ("Use of keyword argument 'n' for method 'moment is"
-                           " deprecated and will be removed in SciPy 1.11.0. "
-                           "Use first positional argument or keyword argument"
-                           " 'order' instead.")
-                order = kwds.pop("n")
-                warnings.warn(message, DeprecationWarning, stacklevel=2)
         n = order
-        # No special treatment of A1, A3, or B3 is needed because the order
-        # of the moment is now in variable `n` and the shape parameter, if
-        # needed, will be fished out of `args` or `kwds` by _parse_args
-        # A3 might still cause an error if the shape parameter called `n`
-        # is not found in `args`.
-
         shapes, loc, scale = self._parse_args(*args, **kwds)
         args = np.broadcast_arrays(*(*shapes, loc, scale))
         *shapes, loc, scale = args
@@ -1477,13 +1385,8 @@ class rv_generic:
         res = sqrt(self.stats(*args, **kwds))
         return res
 
-    def interval(self, confidence=None, *args, **kwds):
+    def interval(self, confidence, *args, **kwds):
         """Confidence interval with equal areas around the median.
-
-        .. deprecated:: 1.9.0
-           Parameter `alpha` is replaced by parameter `confidence` to avoid
-           name collisions with the shape parameter `alpha` of some
-           distributions. Parameter `alpha` will be removed in SciPy 1.11.0.
 
         Parameters
         ----------
@@ -1510,42 +1413,13 @@ class rv_generic:
         ``ppf`` is the inverse cumulative distribution function and
         ``p_tail = (1-confidence)/2``. Suppose ``[c, d]`` is the support of a
         discrete distribution; then ``ppf([0, 1]) == (c-1, d)``. Therefore,
-        when ``confidence==1`` and the distribution is discrete, the left end
+        when ``confidence=1`` and the distribution is discrete, the left end
         of the interval will be beyond the support of the distribution.
         For discrete distributions, the interval will limit the probability
         in each tail to be less than or equal to ``p_tail`` (usually
         strictly less).
 
         """
-        # This function was originally written with parameter `alpha`, but
-        # `alpha` is also the name of a shape parameter of two distributions.
-        # This block allows the function to accept both `alpha` and its
-        # replacement `confidence` during a deprecation period; it can be
-        # removed in the second release after 1.9.0.
-        # See description of logic in `moment` method.
-        has_shape_alpha = (self.shapes is not None
-                           and "alpha" in (self.shapes.split(", ")))
-        got_confidence = confidence is not None
-        got_keyword_alpha = kwds.get("alpha", None) is not None
-
-        if not got_confidence and ((not got_keyword_alpha)
-                                   or (got_keyword_alpha and has_shape_alpha)):
-            message = ("interval() missing 1 required positional argument: "
-                       "`confidence`")
-            raise TypeError(message)
-
-        if got_keyword_alpha and not has_shape_alpha:
-            if got_confidence:
-                # this will change to "interval got unexpected argument alpha"
-                message = "interval() got multiple values for first argument"
-                raise TypeError(message)
-            else:
-                message = ("Use of keyword argument 'alpha' for method "
-                           "'interval' is deprecated and wil be removed in "
-                           "SciPy 1.11.0. Use first positional argument or "
-                           "keyword argument 'confidence' instead.")
-                confidence = kwds.pop("alpha")
-                warnings.warn(message, DeprecationWarning, stacklevel=2)
         alpha = confidence
 
         alpha = asarray(alpha)
@@ -1611,18 +1485,19 @@ class rv_generic:
     def _nnlf(self, x, *args):
         return -np.sum(self._logpxf(x, *args), axis=0)
 
-    def _nnlf_and_penalty(self, x, args):
+    def _nlff_and_penalty(self, x, args, log_fitfun):
+        # negative log fit function
         cond0 = ~self._support_mask(x, *args)
         n_bad = np.count_nonzero(cond0, axis=0)
         if n_bad > 0:
             x = argsreduce(~cond0, x)[0]
-        logpxf = self._logpxf(x, *args)
-        finite_logpxf = np.isfinite(logpxf)
-        n_bad += np.sum(~finite_logpxf, axis=0)
+        logff = log_fitfun(x, *args)
+        finite_logff = np.isfinite(logff)
+        n_bad += np.sum(~finite_logff, axis=0)
         if n_bad > 0:
             penalty = n_bad * log(_XMAX) * 100
-            return -np.sum(logpxf[finite_logpxf], axis=0) + penalty
-        return -np.sum(logpxf, axis=0)
+            return -np.sum(logff[finite_logff], axis=0) + penalty
+        return -np.sum(logff, axis=0)
 
     def _penalized_nnlf(self, theta, x):
         """Penalized negative loglikelihood function.
@@ -1634,7 +1509,32 @@ class rv_generic:
             return inf
         x = asarray((x-loc) / scale)
         n_log_scale = len(x) * log(scale)
-        return self._nnlf_and_penalty(x, args) + n_log_scale
+        return self._nlff_and_penalty(x, args, self._logpxf) + n_log_scale
+
+    def _penalized_nlpsf(self, theta, x):
+        """Penalized negative log product spacing function.
+        i.e., - sum (log (diff (cdf (x, theta))), axis=0) + penalty
+        where theta are the parameters (including loc and scale)
+        Follows reference [1] of scipy.stats.fit
+        """
+        loc, scale, args = self._unpack_loc_scale(theta)
+        if not self._argcheck(*args) or scale <= 0:
+            return inf
+        x = (np.sort(x) - loc)/scale
+
+        def log_psf(x, *args):
+            x, lj = np.unique(x, return_counts=True)  # fast for sorted x
+            cdf_data = self._cdf(x, *args) if x.size else []
+            if not (x.size and 1 - cdf_data[-1] <= 0):
+                cdf = np.concatenate(([0], cdf_data, [1]))
+                lj = np.concatenate((lj, [1]))
+            else:
+                cdf = np.concatenate(([0], cdf_data))
+            # here we could use logcdf w/ logsumexp trick to take differences,
+            # but in the context of the method, it seems unlikely to matter
+            return lj * np.log(np.diff(cdf) / lj)
+
+        return self._nlff_and_penalty(x, args, log_psf)
 
 
 class _ShapeInfo:
@@ -2876,6 +2776,20 @@ class rv_continuous(rv_generic):
         1.0000000000000002
 
         The slight deviation from 1 is due to numerical integration.
+
+        The integrand can be treated as a complex-valued function
+        by passing ``complex_func=True`` to `scipy.integrate.quad` .
+
+        >>> import numpy as np
+        >>> from scipy.stats import vonmises
+        >>> res = vonmises(loc=2, kappa=1).expect(lambda x: np.exp(1j*x),
+        ...                                       complex_func=True)
+        >>> res
+        (-0.18576377217422957+0.40590124735052263j)
+
+        >>> np.angle(res)  # location of the (circular) distribution
+        2.0
+
         """
         lockwds = {'loc': loc,
                    'scale': scale}

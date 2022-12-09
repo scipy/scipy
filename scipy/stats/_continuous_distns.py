@@ -60,7 +60,7 @@ def _call_super_mom(fun):
     @wraps(fun)
     def wrapper(self, *args, **kwds):
         method = kwds.get('method', 'mle').lower()
-        if method == 'mm':
+        if method != 'mle':
             return super(type(self), self).fit(*args, **kwds)
         else:
             return fun(self, *args, **kwds)
@@ -694,7 +694,7 @@ class beta_gen(rv_continuous):
             return _boost._beta_ppf(q, a, b)
 
     def _stats(self, a, b):
-        return(
+        return (
             _boost._beta_mean(a, b),
             _boost._beta_variance(a, b),
             _boost._beta_skewness(a, b),
@@ -869,6 +869,10 @@ class betaprime_gen(rv_continuous):
 
     def _cdf(self, x, a, b):
         return sc.betainc(a, b, x/(1.+x))
+
+    def _ppf(self, p, a, b):
+        r = sc.betaincinv(a, b, p)
+        return r / (1 - r)
 
     def _munp(self, n, a, b):
         if n == 1.0:
@@ -2321,11 +2325,11 @@ class weibull_min_gen(rv_continuous):
         s = stats.skew(data)
         max_c = 1e4
         s_min = skew(max_c)
-        if s < s_min and method == "mle" and fc is None and not args:
+        if s < s_min and method != "mm" and fc is None and not args:
             return super().fit(data, *args, **kwds)
 
         # If method is method of moments, we don't need the user's guesses.
-        # If method is "mle", extract the guesses from args and kwds.
+        # Otherwise, extract the guesses from args and kwds.
         if method == "mm":
             c, loc, scale = None, None, None
         else:
@@ -4421,7 +4425,7 @@ class geninvgauss_gen(rv_continuous):
         # following [2], the quasi-pdf is used instead of the pdf for the
         # generation of rvs
         invert_res = False
-        if not(numsamples):
+        if not numsamples:
             numsamples = 1
         if p < 0:
             # note: if X is geninvgauss(p, b), then 1/X is geninvgauss(-p, b)
@@ -4740,7 +4744,7 @@ norminvgauss = norminvgauss_gen(name="norminvgauss")
 
 
 class invweibull_gen(rv_continuous):
-    u"""An inverted Weibull continuous random variable.
+    """An inverted Weibull continuous random variable.
 
     This distribution is also known as the Fréchet distribution or the
     type II extreme value distribution.
@@ -4785,8 +4789,14 @@ class invweibull_gen(rv_continuous):
         xc1 = np.power(x, -c)
         return np.exp(-xc1)
 
+    def _sf(self, x, c):
+        return -np.expm1(-x**-c)
+
     def _ppf(self, q, c):
         return np.power(-np.log(q), -1.0/c)
+
+    def _isf(self, p, c):
+        return (-np.log1p(-p))**(-1/c)
 
     def _munp(self, n, c):
         return sc.gamma(1 - n / c)
@@ -5774,45 +5784,7 @@ class gibrat_gen(rv_continuous):
         return 0.5 * np.log(2 * np.pi) + 0.5
 
 
-# deprecation of gilbrat, see #15911
-deprmsg = ("`gilbrat` is a misspelling of the correct name for the `gibrat` "
-           "distribution, and will be removed in SciPy 1.11.")
-
-
-class gilbrat_gen(gibrat_gen):
-    # override __call__ protocol from rv_generic to also
-    # deprecate instantiation of frozen distributions
-    r"""
-
-    .. deprecated:: 1.9.0
-        `gilbrat` is deprecated, use `gibrat` instead!
-        `gilbrat` is a misspelling of the correct name for the `gibrat`
-        distribution, and will be removed in SciPy 1.11.
-
-    """
-    def __call__(self, *args, **kwds):
-        # align with warning text from np.deprecated that's used for methods
-        msg = "`gilbrat` is deprecated, use `gibrat` instead!\n" + deprmsg
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        return self.freeze(*args, **kwds)
-
-
 gibrat = gibrat_gen(a=0.0, name='gibrat')
-gilbrat = gilbrat_gen(a=0.0, name='gilbrat')
-
-
-# since the deprecated class gets intantiated upon import (and we only want to
-# warn upon use), add the deprecation to each (documented) class method, c.f.
-# https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gilbrat.html
-_gibrat_method_names = [
-    "cdf", "entropy", "expect", "fit", "interval", "isf", "logcdf", "logpdf",
-    "logsf", "mean", "median", "moment", "pdf", "ppf", "rvs", "sf", "stats",
-    "std", "var"
-]
-for m in _gibrat_method_names:
-    wrapper = np.deprecate(getattr(gilbrat, m), f"gilbrat.{m}", f"gibrat.{m}",
-                           deprmsg)
-    setattr(gilbrat, m, wrapper)
 
 
 class maxwell_gen(rv_continuous):
@@ -7288,6 +7260,9 @@ class powerlaw_gen(rv_continuous):
     def _ppf(self, q, a):
         return pow(q, 1.0/a)
 
+    def _sf(self, p, a):
+        return -sc.powm1(p, a)
+
     def _stats(self, a):
         return (a / (a + 1.0),
                 a / (a + 2.0) / (a + 1.0) ** 2,
@@ -8176,6 +8151,8 @@ class skew_norm_gen(rv_continuous):
 
     def _cdf(self, x, a):
         cdf = _boost._skewnorm_cdf(x, 0, 1, a)
+        # for some reason, a isn't broadcasted if some of x are invalid
+        a = np.broadcast_to(a, cdf.shape)
         # Boost is not accurate in left tail when a > 0
         i_small_cdf = (cdf < 1e-6) & (a > 0)
         cdf[i_small_cdf] = super()._cdf(x[i_small_cdf], a[i_small_cdf])
@@ -8291,11 +8268,11 @@ class skew_norm_gen(rv_continuous):
         # MoM won't provide a good guess. Get out early.
         s = stats.skew(data)
         s_max = skew_d(1)
-        if abs(s) >= s_max and method == "mle" and fa is None and not args:
+        if abs(s) >= s_max and method != "mm" and fa is None and not args:
             return super().fit(data, *args, **kwds)
 
         # If method is method of moments, we don't need the user's guesses.
-        # If method is "mle", extract the guesses from args and kwds.
+        # Otherwise, extract the guesses from args and kwds.
         if method == "mm":
             a, loc, scale = None, None, None
         else:
@@ -9225,8 +9202,32 @@ class vonmises_gen(rv_continuous):
         return 0, None, 0, None
 
     def _entropy(self, kappa):
-        return (-kappa * sc.i1(kappa) / sc.i0(kappa) +
-                np.log(2 * np.pi * sc.i0(kappa)))
+        # vonmises.entropy(kappa) = -kappa * I[1](kappa) / I[0](kappa) +
+        #                           log(2 * np.pi * I[0](kappa))
+        #                         = -kappa * I[1](kappa) * exp(-kappa) /
+        #                           (I[0](kappa) * exp(-kappa)) +
+        #                           log(2 * np.pi *
+        #                           I[0](kappa) * exp(-kappa) / exp(-kappa))
+        #                         = -kappa * sc.i1e(kappa) / sc.i0e(kappa) +
+        #                           log(2 * np.pi * i0e(kappa)) + kappa
+        return (-kappa * sc.i1e(kappa) / sc.i0e(kappa) +
+                np.log(2 * np.pi * sc.i0e(kappa)) + kappa)
+
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        The default limits of integration are endpoints of the interval
+        of width ``2*pi`` centered at `loc` (e.g. ``[-pi, pi]`` when
+        ``loc=0``).\n\n""")
+    def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None,
+               conditional=False, **kwds):
+        _a, _b = -np.pi, np.pi
+
+        if lb is None:
+            lb = loc + _a
+        if ub is None:
+            ub = loc + _b
+
+        return super().expect(func, args, loc,
+                              scale, lb, ub, conditional, **kwds)
 
 
 vonmises = vonmises_gen(name='vonmises')

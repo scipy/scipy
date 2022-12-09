@@ -15,7 +15,7 @@ import numpy as np
 from scipy.special import lambertw
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
-from ._filter_design import cheby1, _validate_sos
+from ._filter_design import cheby1, _validate_sos, zpk2sos
 from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 import warnings
@@ -171,6 +171,7 @@ def correlate(in1, in2, mode='full', method='auto'):
     Implement a matched filter using cross-correlation, to recover a signal
     that has passed through a noisy channel.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -300,16 +301,16 @@ def correlation_lags(in1_len, in2_len, mode='full'):
         A string indicating the size of the output.
         See the documentation `correlate` for more information.
 
-    See Also
-    --------
-    correlate : Compute the N-dimensional cross-correlation.
-
     Returns
     -------
     lags : array
         Returns an array containing cross-correlation lag/displacement indices.
         Indices can be indexed with the np.argmax of the correlation to return
         the lag/displacement.
+
+    See Also
+    --------
+    correlate : Compute the N-dimensional cross-correlation.
 
     Notes
     -----
@@ -832,6 +833,14 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     -----
     .. versionadded:: 1.4.0
 
+    References
+    ----------
+    .. [1] Wikipedia, "Overlap-add_method".
+           https://en.wikipedia.org/wiki/Overlap-add_method
+    .. [2] Richard G. Lyons. Understanding Digital Signal Processing,
+           Third Edition, 2011. Chapter 13.10.
+           ISBN 13: 978-0137-02741-5
+
     Examples
     --------
     Convolve a 100,000 sample signal with a 512-sample filter.
@@ -851,14 +860,6 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     >>> ax_mag.set_title('Filtered noise')
     >>> fig.tight_layout()
     >>> fig.show()
-
-    References
-    ----------
-    .. [1] Wikipedia, "Overlap-add_method".
-           https://en.wikipedia.org/wiki/Overlap-add_method
-    .. [2] Richard G. Lyons. Understanding Digital Signal Processing,
-           Third Edition, 2011. Chapter 13.10.
-           ISBN 13: 978-0137-02741-5
 
     """
     in1 = np.asarray(in1)
@@ -1581,9 +1582,18 @@ def wiener(im, mysize=None, noise=None):
     out : ndarray
         Wiener filtered result with the same shape as `im`.
 
+    Notes
+    -----
+    This implementation is similar to wiener2 in Matlab/Octave.
+    For more details see [1]_
+
+    References
+    ----------
+    .. [1] Lim, Jae S., Two-Dimensional Signal and Image Processing,
+           Englewood Cliffs, NJ, Prentice Hall, 1990, p. 548.
+
     Examples
     --------
-
     >>> from scipy.datasets import face
     >>> from scipy.signal import wiener
     >>> import matplotlib.pyplot as plt
@@ -1595,17 +1605,6 @@ def wiener(im, mysize=None, noise=None):
     >>> plot1.imshow(img)
     >>> plot2.imshow(filtered_img)
     >>> plt.show()
-
-    Notes
-    -----
-    This implementation is similar to wiener2 in Matlab/Octave.
-    For more details see [1]_
-
-    References
-    ----------
-    .. [1] Lim, Jae S., Two-Dimensional Signal and Image Processing,
-           Englewood Cliffs, NJ, Prentice Hall, 1990, p. 548.
-
 
     """
     im = np.asarray(im)
@@ -1779,6 +1778,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     Use 2D cross-correlation to find the location of a template in a noisy
     image:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy import datasets
     >>> rng = np.random.default_rng()
@@ -1850,7 +1850,7 @@ def medfilt2d(input, kernel_size=3):
         An array the same size as input containing the median filtered
         result.
 
-    See also
+    See Also
     --------
     scipy.ndimage.median_filter
 
@@ -2227,6 +2227,11 @@ def deconvolve(signal, divisor):
     remainder : ndarray
         Remainder
 
+    See Also
+    --------
+    numpy.polydiv : performs polynomial division (same operation, but
+                    also accepts poly1d objects)
+
     Examples
     --------
     Deconvolve a signal that's been filtered:
@@ -2240,11 +2245,6 @@ def deconvolve(signal, divisor):
     >>> recovered, remainder = signal.deconvolve(recorded, impulse_response)
     >>> recovered
     array([ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  0.])
-
-    See Also
-    --------
-    numpy.polydiv : performs polynomial division (same operation, but
-                    also accepts poly1d objects)
 
     """
     num = np.atleast_1d(signal)
@@ -2300,6 +2300,15 @@ def hilbert(x, N=None, axis=-1):
     transformed signal can be obtained from ``np.imag(hilbert(x))``, and the
     original signal from ``np.real(hilbert(x))``.
 
+    References
+    ----------
+    .. [1] Wikipedia, "Analytic signal".
+           https://en.wikipedia.org/wiki/Analytic_signal
+    .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
+    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
+           Processing, Third Edition, 2009. Chapter 12.
+           ISBN 13: 978-1292-02572-8
+
     Examples
     --------
     In this example we use the Hilbert transform to determine the amplitude
@@ -2340,15 +2349,6 @@ def hilbert(x, N=None, axis=-1):
     >>> ax1.set_xlabel("time in seconds")
     >>> ax1.set_ylim(0.0, 120.0)
     >>> fig.tight_layout()
-
-    References
-    ----------
-    .. [1] Wikipedia, "Analytic signal".
-           https://en.wikipedia.org/wiki/Analytic_signal
-    .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
-    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
-           Processing, Third Edition, 2009. Chapter 12.
-           ISBN 13: 978-1292-02572-8
 
     """
     x = np.asarray(x)
@@ -3277,7 +3277,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     sample of the next cycle for the FFT method, and gets closer to zero
     for the polyphase method:
 
+    >>> import numpy as np
     >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
 
     >>> x = np.linspace(0, 10, 20, endpoint=False)
     >>> y = np.cos(-x**2/6.0)
@@ -3285,7 +3287,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     >>> f_poly = signal.resample_poly(y, 100, 20)
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
 
-    >>> import matplotlib.pyplot as plt
     >>> plt.plot(xnew, f_fft, 'b.-', xnew, f_poly, 'r.-')
     >>> plt.plot(x, y, 'ko-')
     >>> plt.plot(10, y[0], 'bo', 10, 0., 'ro')  # boundaries
@@ -3293,9 +3294,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     >>> plt.show()
 
     This default behaviour can be changed by using the padtype option:
-
-    >>> import numpy as np
-    >>> from scipy import signal
 
     >>> N = 5
     >>> x = np.linspace(0, 1, N, endpoint=False)
@@ -3309,7 +3307,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     >>> y3 = signal.resample_poly(Y, up, 1, padtype='mean')
     >>> y4 = signal.resample_poly(Y, up, 1, padtype='line')
 
-    >>> import matplotlib.pyplot as plt
     >>> for i in [0,1]:
     ...     plt.figure()
     ...     plt.plot(xr, y4[:,i], 'g.', label='line')
@@ -4520,32 +4517,34 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     if n is not None:
         n = operator.index(n)
 
+    result_type = x.dtype
+    if not np.issubdtype(result_type, np.inexact) \
+       or result_type.type == np.float16:
+        # upcast integers and float16 to float64
+        result_type = np.float64
+
     if ftype == 'fir':
         if n is None:
             half_len = 10 * q  # reasonable cutoff for our sinc-like function
             n = 2 * half_len
         b, a = firwin(n+1, 1. / q, window='hamming'), 1.
+        b = np.asarray(b, dtype=result_type)
+        a = np.asarray(a, dtype=result_type)
     elif ftype == 'iir':
         if n is None:
             n = 8
-        system = dlti(*cheby1(n, 0.05, 0.8 / q))
-        b, a = system.num, system.den
+        sos = cheby1(n, 0.05, 0.8 / q, output='sos')
+        sos = np.asarray(sos, dtype=result_type)
     elif isinstance(ftype, dlti):
-        system = ftype._as_tf()  # Avoids copying if already in TF form
-        b, a = system.num, system.den
+        system = ftype._as_zpk()
+        sos = zpk2sos(system.zeros, system.poles, system.gain)
+        sos = np.asarray(sos, dtype=result_type)
     else:
         raise ValueError('invalid ftype')
 
-    result_type = x.dtype
-    if result_type.kind in 'bui':
-        result_type = np.float64
-    b = np.asarray(b, dtype=result_type)
-    a = np.asarray(a, dtype=result_type)
-
     sl = [slice(None)] * x.ndim
-    a = np.asarray(a)
 
-    if a.size == 1:  # FIR case
+    if ftype == 'fir':
         b = b / a
         if zero_phase:
             y = resample_poly(x, 1, q, axis=axis, window=b)
@@ -4558,9 +4557,9 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
     else:  # IIR case
         if zero_phase:
-            y = filtfilt(b, a, x, axis=axis)
+            y = sosfiltfilt(sos, x, axis=axis)
         else:
-            y = lfilter(b, a, x, axis=axis)
+            y = sosfilt(sos, x, axis=axis)
         sl[axis] = slice(None, None, q)
 
     return y[tuple(sl)]

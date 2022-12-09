@@ -616,9 +616,8 @@ def y0_zeros(nt, complex=False):
 
     Plot the real part of :math:`Y_0` and the first four computed roots.
 
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import y0_zeros, y0
+    >>> from scipy.special import y0
     >>> xmin = 0
     >>> xmax = 11
     >>> x = np.linspace(xmin, xmax, 500)
@@ -699,9 +698,8 @@ def y1_zeros(nt, complex=False):
 
     Plot :math:`Y_1` and the first four computed roots.
 
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import y1_zeros, y1
+    >>> from scipy.special import y1
     >>> xmin = 0
     >>> xmax = 13
     >>> x = np.linspace(xmin, xmax, 500)
@@ -777,9 +775,8 @@ def y1p_zeros(nt, complex=False):
     `y1p_zeros` can be used to calculate the extremal points of :math:`Y_1`
     directly. Here we plot :math:`Y_1` and the first four extrema.
 
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import y1, yvp, y1p_zeros
+    >>> from scipy.special import y1, yvp
     >>> y1_roots, y1_values_at_roots = y1p_zeros(4)
     >>> real_roots = y1_roots.real
     >>> xmax = 15
@@ -1781,7 +1778,7 @@ def clpmn(m, n, z, type=3):
         raise ValueError("n must be a non-negative integer.")
     if not isscalar(z):
         raise ValueError("z must be scalar.")
-    if not(type == 2 or type == 3):
+    if not (type == 2 or type == 3):
         raise ValueError("type must be either 2 or 3.")
     if (m < 0):
         mp = -m

@@ -25,7 +25,8 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          random_correlation, unitary_group, dirichlet,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
-                         hypergeom, multivariate_t, cauchy, normaltest)
+                         hypergeom, multivariate_t, cauchy, normaltest,
+                         random_table, uniform_direction)
 from scipy.stats import _covariance, Covariance
 
 from scipy.integrate import romb
@@ -37,6 +38,7 @@ from unittest.mock import patch
 
 
 def assert_close(res, ref, *args, **kwargs):
+    res, ref = np.asarray(res), np.asarray(ref)
     assert_allclose(res, ref, *args, **kwargs)
     assert_equal(res.shape, ref.shape)
 
@@ -120,26 +122,30 @@ class TestCovariance:
         # test properties
         cov_object = cov_type(preprocessing(A))
         assert_close(cov_object.log_pdet, psd.log_pdet)
-        assert_close(cov_object.rank, np.int64(psd.rank))
-        assert_close(cov_object.dimensionality,
-                     np.int64(np.array(A).shape[-1]))
+        assert_equal(cov_object.rank, psd.rank)
+        assert_equal(cov_object.shape, np.asarray(A).shape)
         assert_close(cov_object.covariance, np.asarray(A))
 
-        # test whitening 1D x
+        # test whitening/coloring 1D x
         rng = np.random.default_rng(5292808890472453840)
         x = rng.random(size=3)
         res = cov_object.whiten(x)
         ref = x @ psd.U
         # res != ref in general; but res @ res == ref @ ref
         assert_close(res @ res, ref @ ref)
+        if hasattr(cov_object, "_colorize") and "singular" not in matrix_type:
+            # CovViaPSD does not have _colorize
+            assert_close(cov_object.colorize(res), x)
 
-        # test whitening 3D x
+        # test whitening/coloring 3D x
         x = rng.random(size=(2, 4, 3))
         res = cov_object.whiten(x)
         ref = x @ psd.U
         assert_close((res**2).sum(axis=-1), (ref**2).sum(axis=-1))
+        if hasattr(cov_object, "_colorize") and "singular" not in matrix_type:
+            assert_close(cov_object.colorize(res), x)
 
-    @pytest.mark.parametrize("size", [tuple(), (2, 4, 3)])
+    @pytest.mark.parametrize("size", [None, tuple(), 1, (2, 4, 3)])
     @pytest.mark.parametrize("matrix_type", list(_matrices))
     @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
     def test_mvn_with_covariance(self, size, matrix_type, cov_type_name):
@@ -164,8 +170,13 @@ class TestCovariance:
         x1 = mvn.rvs(mean, cov_object, size=size, random_state=rng)
         rng = np.random.default_rng(5292808890472453840)
         x2 = mvn(mean, cov_object, seed=rng).rvs(size=size)
-        assert_close(x1, x)
-        assert_close(x2, x)
+        if isinstance(cov_object, _covariance.CovViaPSD):
+            assert_close(x1, np.squeeze(x))  # for backward compatibility
+            assert_close(x2, np.squeeze(x))
+        else:
+            assert_equal(x1.shape, x.shape)
+            assert_equal(x2.shape, x.shape)
+            assert_close(x2, x1)
 
         assert_close(mvn.pdf(x, mean, cov_object), dist0.pdf(x))
         assert_close(dist1.pdf(x), dist0.pdf(x))
@@ -1964,6 +1975,62 @@ class TestRandomCorrelation:
         assert_allclose(m[0,0], 1)
 
 
+class TestUniformDirection:
+    @pytest.mark.parametrize("dim", [1, 3])
+    @pytest.mark.parametrize("size", [None, 1, 5, (5, 4)])
+    def test_samples(self, dim, size):
+        # test that samples have correct shape and norm 1
+        rng = np.random.default_rng(2777937887058094419)
+        uniform_direction_dist = uniform_direction(dim, seed=rng)
+        samples = uniform_direction_dist.rvs(size)
+        mean, cov = np.zeros(dim), np.eye(dim)
+        expected_shape = rng.multivariate_normal(mean, cov, size=size).shape
+        assert samples.shape == expected_shape
+        norms = np.linalg.norm(samples, axis=-1)
+        assert_allclose(norms, 1.)
+
+    @pytest.mark.parametrize("dim", [None, 0, (2, 2), 2.5])
+    def test_invalid_dim(self, dim):
+        message = ("Dimension of vector must be specified, "
+                   "and must be an integer greater than 0.")
+        with pytest.raises(ValueError, match=message):
+            uniform_direction.rvs(dim)
+
+    def test_frozen_distribution(self):
+        dim = 5
+        frozen = uniform_direction(dim)
+        frozen_seed = uniform_direction(dim, seed=514)
+
+        rvs1 = frozen.rvs(random_state=514)
+        rvs2 = uniform_direction.rvs(dim, random_state=514)
+        rvs3 = frozen_seed.rvs()
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
+
+    @pytest.mark.parametrize("dim", [2, 5, 8])
+    def test_uniform(self, dim):
+        rng = np.random.default_rng(1036978481269651776)
+        spherical_dist = uniform_direction(dim, seed=rng)
+        # generate random, orthogonal vectors
+        v1, v2 = spherical_dist.rvs(size=2)
+        v2 -= v1 @ v2 * v1
+        v2 /= np.linalg.norm(v2)
+        assert_allclose(v1 @ v2, 0, atol=1e-14)  # orthogonal
+        # generate data and project onto orthogonal vectors
+        samples = spherical_dist.rvs(size=10000)
+        s1 = samples @ v1
+        s2 = samples @ v2
+        angles = np.arctan2(s1, s2)
+        # test that angles follow a uniform distribution
+        # normalize angles to range [0, 1]
+        angles += np.pi
+        angles /= 2*np.pi
+        # perform KS test
+        uniform_dist = uniform()
+        kstest_result = kstest(angles, uniform_dist.cdf)
+        assert kstest_result.pvalue > 0.05
+
 class TestUnitaryGroup:
     def test_reproducibility(self):
         np.random.seed(514)
@@ -2487,6 +2554,304 @@ class TestMultivariateHypergeom:
         assert_raises(TypeError, multivariate_hypergeom.pmf, [5, 4],
                       [10, 15], 5.5)
 
+
+class TestRandomTable:
+    def get_rng(self):
+        return np.random.default_rng(628174795866951638)
+
+    def test_process_parameters(self):
+        message = "`row` must be one-dimensional"
+        with pytest.raises(ValueError, match=message):
+            random_table([[1, 2]], [1, 2])
+
+        message = "`col` must be one-dimensional"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, 2], [[1, 2]])
+
+        message = "each element of `row` must be non-negative"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, -1], [1, 2])
+
+        message = "each element of `col` must be non-negative"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, 2], [1, -2])
+
+        message = "sums over `row` and `col` must be equal"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, 2], [1, 0])
+
+        message = "each element of `row` must be an integer"
+        with pytest.raises(ValueError, match=message):
+            random_table([2.1, 2.1], [1, 1, 2])
+
+        message = "each element of `col` must be an integer"
+        with pytest.raises(ValueError, match=message):
+            random_table([1, 2], [1.1, 1.1, 1])
+
+        row = [1, 3]
+        col = [2, 1, 1]
+        r, c, n = random_table._process_parameters([1, 3], [2, 1, 1])
+        assert_equal(row, r)
+        assert_equal(col, c)
+        assert n == np.sum(row)
+
+    @pytest.mark.parametrize("scale,method",
+                             ((1, "boyett"), (100, "patefield")))
+    def test_process_rvs_method_on_None(self, scale, method):
+        row = np.array([1, 3]) * scale
+        col = np.array([2, 1, 1]) * scale
+
+        ct = random_table
+        expected = ct.rvs(row, col, method=method, random_state=1)
+        got = ct.rvs(row, col, method=None, random_state=1)
+
+        assert_equal(expected, got)
+
+    def test_process_rvs_method_bad_argument(self):
+        row = [1, 3]
+        col = [2, 1, 1]
+
+        # order of items in set is random, so cannot check that
+        message = "'foo' not recognized, must be one of"
+        with pytest.raises(ValueError, match=message):
+            random_table.rvs(row, col, method="foo")
+
+    @pytest.mark.parametrize('frozen', (True, False))
+    @pytest.mark.parametrize('log', (True, False))
+    def test_pmf_logpmf(self, frozen, log):
+        # The pmf is tested through random sample generation
+        # with Boyett's algorithm, whose implementation is simple
+        # enough to verify manually for correctness.
+        rng = self.get_rng()
+        row = [2, 6]
+        col = [1, 3, 4]
+        rvs = random_table.rvs(row, col, size=1000,
+                               method="boyett", random_state=rng)
+
+        obj = random_table(row, col) if frozen else random_table
+        method = getattr(obj, "logpmf" if log else "pmf")
+        if not frozen:
+            original_method = method
+
+            def method(x):
+                return original_method(x, row, col)
+        pmf = (lambda x: np.exp(method(x))) if log else method
+
+        unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
+
+        # rough accuracy check
+        p = pmf(unique_rvs)
+        assert_allclose(p * len(rvs), counts, rtol=0.1)
+
+        # accept any iterable
+        p2 = pmf(list(unique_rvs[0]))
+        assert_equal(p2, p[0])
+
+        # accept high-dimensional input and 2d input
+        rvs_nd = rvs.reshape((10, 100) + rvs.shape[1:])
+        p = pmf(rvs_nd)
+        assert p.shape == (10, 100)
+        for i in range(p.shape[0]):
+            for j in range(p.shape[1]):
+                pij = p[i, j]
+                rvij = rvs_nd[i, j]
+                qij = pmf(rvij)
+                assert_equal(pij, qij)
+
+        # probability is zero if column marginal does not match
+        x = [[0, 1, 1], [2, 1, 3]]
+        assert_equal(np.sum(x, axis=-1), row)
+        p = pmf(x)
+        assert p == 0
+
+        # probability is zero if row marginal does not match
+        x = [[0, 1, 2], [1, 2, 2]]
+        assert_equal(np.sum(x, axis=-2), col)
+        p = pmf(x)
+        assert p == 0
+
+        # response to invalid inputs
+        message = "`x` must be at least two-dimensional"
+        with pytest.raises(ValueError, match=message):
+            pmf([1])
+
+        message = "`x` must contain only integral values"
+        with pytest.raises(ValueError, match=message):
+            pmf([[1.1]])
+
+        message = "`x` must contain only integral values"
+        with pytest.raises(ValueError, match=message):
+            pmf([[np.nan]])
+
+        message = "`x` must contain only non-negative values"
+        with pytest.raises(ValueError, match=message):
+            pmf([[-1]])
+
+        message = "shape of `x` must agree with `row`"
+        with pytest.raises(ValueError, match=message):
+            pmf([[1, 2, 3]])
+
+        message = "shape of `x` must agree with `col`"
+        with pytest.raises(ValueError, match=message):
+            pmf([[1, 2],
+                 [3, 4]])
+
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_mean(self, method):
+        # test if `rvs` is unbiased and large sample size converges
+        # to the true mean.
+        rng = self.get_rng()
+        row = [2, 6]
+        col = [1, 3, 4]
+        rvs = random_table.rvs(row, col, size=1000, method=method,
+                               random_state=rng)
+        mean = random_table.mean(row, col)
+        assert_equal(np.sum(mean), np.sum(row))
+        assert_allclose(rvs.mean(0), mean, atol=0.05)
+        assert_equal(rvs.sum(axis=-1), np.broadcast_to(row, (1000, 2)))
+        assert_equal(rvs.sum(axis=-2), np.broadcast_to(col, (1000, 3)))
+
+    def test_rvs_cov(self):
+        # test if `rvs` generated with patefield and boyett algorithms
+        # produce approximately the same covariance matrix
+        rng = self.get_rng()
+        row = [2, 6]
+        col = [1, 3, 4]
+        rvs1 = random_table.rvs(row, col, size=10000, method="boyett",
+                                random_state=rng)
+        rvs2 = random_table.rvs(row, col, size=10000, method="patefield",
+                                random_state=rng)
+        cov1 = np.var(rvs1, axis=0)
+        cov2 = np.var(rvs2, axis=0)
+        assert_allclose(cov1, cov2, atol=0.02)
+
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_size(self, method):
+        row = [2, 6]
+        col = [1, 3, 4]
+
+        # test size `None`
+        rv = random_table.rvs(row, col, method=method,
+                              random_state=self.get_rng())
+        assert rv.shape == (2, 3)
+
+        # test size 1
+        rv2 = random_table.rvs(row, col, size=1, method=method,
+                               random_state=self.get_rng())
+        assert rv2.shape == (1, 2, 3)
+        assert_equal(rv, rv2[0])
+
+        # test size 0
+        rv3 = random_table.rvs(row, col, size=0, method=method,
+                               random_state=self.get_rng())
+        assert rv3.shape == (0, 2, 3)
+
+        # test other valid size
+        rv4 = random_table.rvs(row, col, size=20, method=method,
+                               random_state=self.get_rng())
+        assert rv4.shape == (20, 2, 3)
+
+        rv5 = random_table.rvs(row, col, size=(4, 5), method=method,
+                               random_state=self.get_rng())
+        assert rv5.shape == (4, 5, 2, 3)
+
+        assert_allclose(rv5.reshape(20, 2, 3), rv4, rtol=1e-15)
+
+        # test invalid size
+        message = "`size` must be a non-negative integer or `None`"
+        with pytest.raises(ValueError, match=message):
+            random_table.rvs(row, col, size=-1, method=method,
+                             random_state=self.get_rng())
+
+        with pytest.raises(ValueError, match=message):
+            random_table.rvs(row, col, size=np.nan, method=method,
+                             random_state=self.get_rng())
+
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_method(self, method):
+        # This test assumes that pmf is correct and checks that random samples
+        # follow this probability distribution. This seems like a circular
+        # argument, since pmf is checked in test_pmf_logpmf with random samples
+        # generated with the rvs method. This test is not redundant, because
+        # test_pmf_logpmf intentionally uses rvs generation with Boyett only,
+        # but here we test both Boyett and Patefield.
+        row = [2, 6]
+        col = [1, 3, 4]
+
+        ct = random_table
+        rvs = ct.rvs(row, col, size=100000, method=method,
+                     random_state=self.get_rng())
+
+        unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
+
+        # generated frequencies should match expected frequencies
+        p = ct.pmf(unique_rvs, row, col)
+        assert_allclose(p * len(rvs), counts, rtol=0.02)
+
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_with_zeros_in_col_row(self, method):
+        row = [0, 1, 0]
+        col = [1, 0, 0, 0]
+        d = random_table(row, col)
+        rv = d.rvs(1000, method=method, random_state=self.get_rng())
+        expected = np.zeros((1000, len(row), len(col)))
+        expected[...] = [[0, 0, 0, 0],
+                         [1, 0, 0, 0],
+                         [0, 0, 0, 0]]
+        assert_equal(rv, expected)
+
+    @pytest.mark.parametrize("method", (None, "boyett", "patefield"))
+    @pytest.mark.parametrize("col", ([], [0]))
+    @pytest.mark.parametrize("row", ([], [0]))
+    def test_rvs_with_edge_cases(self, method, row, col):
+        d = random_table(row, col)
+        rv = d.rvs(10, method=method, random_state=self.get_rng())
+        expected = np.zeros((10, len(row), len(col)))
+        assert_equal(rv, expected)
+
+    @pytest.mark.parametrize('v', (1, 2))
+    def test_rvs_rcont(self, v):
+        # This test checks the internal low-level interface.
+        # It is implicitly also checked by the other test_rvs* calls.
+        import scipy.stats._rcont as _rcont
+
+        row = np.array([1, 3], dtype=np.int64)
+        col = np.array([2, 1, 1], dtype=np.int64)
+
+        rvs = getattr(_rcont, f"rvs_rcont{v}")
+
+        ntot = np.sum(row)
+        result = rvs(row, col, ntot, 1, self.get_rng())
+
+        assert result.shape == (1, len(row), len(col))
+        assert np.sum(result) == ntot
+
+    def test_frozen(self):
+        row = [2, 6]
+        col = [1, 3, 4]
+        d = random_table(row, col, seed=self.get_rng())
+
+        sample = d.rvs()
+
+        expected = random_table.mean(row, col)
+        assert_equal(expected, d.mean())
+
+        expected = random_table.pmf(sample, row, col)
+        assert_equal(expected, d.pmf(sample))
+
+        expected = random_table.logpmf(sample, row, col)
+        assert_equal(expected, d.logpmf(sample))
+
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_frozen(self, method):
+        row = [2, 6]
+        col = [1, 3, 4]
+        d = random_table(row, col, seed=self.get_rng())
+
+        expected = random_table.rvs(row, col, size=10, method=method,
+                                    random_state=self.get_rng())
+        got = d.rvs(size=10, method=method)
+        assert_equal(expected, got)
 
 def check_pickling(distfn, args):
     # check that a distribution instance pickles and unpickles

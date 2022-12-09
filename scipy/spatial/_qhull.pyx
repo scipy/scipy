@@ -20,8 +20,6 @@ from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
 from libc.stdio cimport FILE
 
-import warnings
-
 np.import_array()
 
 
@@ -1713,12 +1711,6 @@ class Delaunay(_QhullUser):
         If option "Qc" is not specified, this list is not computed.
 
         .. versionadded:: 0.12.0
-    vertices
-        Same as `simplices`, but deprecated.
-
-        .. deprecated:: 0.12.0
-            Delaunay attribute `vertices` is deprecated in favour of `simplices`
-            and will be removed in Scipy 1.11.0.
     vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
         Neighboring vertices of vertices. The indices of neighboring
         vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.
@@ -1751,6 +1743,7 @@ class Delaunay(_QhullUser):
     --------
     Triangulation of a set of points:
 
+    >>> import numpy as np
     >>> points = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
     >>> from scipy.spatial import Delaunay
     >>> tri = Delaunay(points)
@@ -1857,17 +1850,7 @@ class Delaunay(_QhullUser):
         self._vertex_to_simplex = None
         self._vertex_neighbor_vertices = None
 
-        # Backwards compatibility (Scipy < 0.12.0)
-        self._vertices = self.simplices
-
         _QhullUser._update(self, qhull)
-
-    @property
-    def vertices(self):
-        msg = ("Delaunay attribute 'vertices' is deprecated in favour of "
-               "'simplices' and will be removed in Scipy 1.11.0.")
-        warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
-        return self._vertices
 
     def add_points(self, points, restart=False):
         self._add_points(points, restart)
@@ -2167,6 +2150,7 @@ class Delaunay(_QhullUser):
         z[...,-1] += self.paraboloid_shift
         return z
 
+
 def tsearch(tri, xi):
     """
     tsearch(tri, xi)
@@ -2174,16 +2158,29 @@ def tsearch(tri, xi):
     Find simplices containing the given points. This function does the
     same thing as `Delaunay.find_simplex`.
 
-    .. versionadded:: 0.9
+    Parameters
+    ----------
+    tri : DelaunayInfo
+        Delaunay triangulation
+    xi : ndarray of double, shape (..., ndim)
+        Points to locate
+
+    Returns
+    -------
+    i : ndarray of int, same shape as `xi`
+        Indices of simplices containing each point.
+        Points outside the triangulation get the value -1.
 
     See Also
     --------
     Delaunay.find_simplex
 
+    Notes
+    -----
+    .. versionadded:: 0.9
 
     Examples
     --------
-
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import Delaunay, delaunay_plot_2d, tsearch
@@ -2360,6 +2357,7 @@ class ConvexHull(_QhullUser):
     Convex hull of a random set of points:
 
     >>> from scipy.spatial import ConvexHull, convex_hull_plot_2d
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> points = rng.random((30, 2))   # 30 random points in 2-D
     >>> hull = ConvexHull(points)
@@ -2562,6 +2560,7 @@ class Voronoi(_QhullUser):
     --------
     Voronoi diagram for a set of point:
 
+    >>> import numpy as np
     >>> points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],
     ...                    [2, 0], [2, 1], [2, 2]])
     >>> from scipy.spatial import Voronoi, voronoi_plot_2d
@@ -2728,6 +2727,7 @@ class HalfspaceIntersection(_QhullUser):
     Halfspace intersection of planes forming some polygon
 
     >>> from scipy.spatial import HalfspaceIntersection
+    >>> import numpy as np
     >>> halfspaces = np.array([[-1, 0., 0.],
     ...                        [0., -1., 0.],
     ...                        [2., 1., -4.],

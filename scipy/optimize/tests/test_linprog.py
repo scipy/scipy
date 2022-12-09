@@ -345,6 +345,10 @@ def test_highs_status_message():
     assert message.startswith(msg)
 
 
+def test_bug_17380():
+    linprog([1, 1], A_ub=[[-1, 0]], b_ub=[-2.5], integrality=[1, 1])
+
+
 A_ub = None
 b_ub = None
 A_eq = None

@@ -1,11 +1,11 @@
 cpp_args = [
   '-DBOOST_MATH_DOMAIN_ERROR_POLICY=ignore_error',
   '-DBOOST_MATH_EVALUATION_ERROR_POLICY=user_error',
-  '-DBOOST_MATH_OVERFLOW_ERROR_POLICY=user_error'
+  '-DBOOST_MATH_OVERFLOW_ERROR_POLICY=user_error',
+  '-DBOOST_MATH_PROMOTE_DOUBLE_POLICY=false'
 ]
-if meson.get_compiler('cpp', native: true).sizeof('void*') > 4
-  cpp_args += ['-DBOOST_MATH_PROMOTE_DOUBLE_POLICY=false',
-                numpy_nodepr_api]
+if meson.get_compiler('cpp').sizeof('void*') > 4
+  cpp_args += [numpy_nodepr_api]
 endif
 
 pyx_files = [
@@ -34,6 +34,5 @@ endforeach
 py3.install_sources([
     '__init__.py'
   ],
-  pure: false,
   subdir: 'scipy/stats/_boost'
 )

@@ -177,12 +177,14 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         equal to `tol`. For detailed control, use solver-specific
         options.
     options : dict, optional
-        A dictionary of solver options. All methods accept the following
-        generic options:
+        A dictionary of solver options. All methods except `TNC` accept the
+        following generic options:
 
             maxiter : int
                 Maximum number of iterations to perform. Depending on the
                 method each iteration may use several function evaluations.
+
+                For `TNC` use `maxfun` instead of `maxiter`.
             disp : bool
                 Set to True to print convergence messages.
 
@@ -795,17 +797,17 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     'method' parameter. The default method is *Brent*.
 
     Method :ref:`Brent <optimize.minimize_scalar-brent>` uses Brent's
-    algorithm to find a local minimum.  The algorithm uses inverse
+    algorithm [1]_ to find a local minimum.  The algorithm uses inverse
     parabolic interpolation when possible to speed up convergence of
     the golden section method.
 
     Method :ref:`Golden <optimize.minimize_scalar-golden>` uses the
-    golden section search technique. It uses analog of the bisection
+    golden section search technique [1]_. It uses analog of the bisection
     method to decrease the bracketed interval. It is usually
     preferable to use the *Brent* method.
 
     Method :ref:`Bounded <optimize.minimize_scalar-bounded>` can
-    perform bounded minimization. It uses the Brent method to find a
+    perform bounded minimization [2]_ [3]_. It uses the Brent method to find a
     local minimum in the interval x1 < xopt < x2.
 
     **Custom minimizers**
@@ -827,6 +829,16 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     .. versionadded:: 0.11.0
 
+    References
+    ----------
+    .. [1] Press, W., S.A. Teukolsky, W.T. Vetterling, and B.P. Flannery.
+           Numerical Recipes in C. Cambridge University Press.
+    .. [2] Forsythe, G.E., M. A. Malcolm, and C. B. Moler. "Computer Methods
+           for Mathematical Computations." Prentice-Hall Series in Automatic
+           Computation 259 (1977).
+    .. [3] Brent, Richard P. Algorithms for Minimization Without Derivatives.
+           Courier Corporation, 2013.
+
     Examples
     --------
     Consider the problem of minimizing the following function.
@@ -838,6 +850,11 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     >>> from scipy.optimize import minimize_scalar
     >>> res = minimize_scalar(f)
+    >>> res.fun
+    -9.9149495908
+
+    The minimizer is:
+
     >>> res.x
     1.28077640403
 
@@ -845,7 +862,9 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     bounds as:
 
     >>> res = minimize_scalar(f, bounds=(-3, -1), method='bounded')
-    >>> res.x
+    >>> res.fun  # minimum
+    3.28365179850e-13
+    >>> res.x  # minimizer
     -2.0000002026
 
     """

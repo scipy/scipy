@@ -82,9 +82,6 @@ def test_distributions_submodule():
     # <scipy.stats._continuous_distns.trapezoid_gen at 0x1df83bbc688>
     expected = set(filter(lambda s: not str(s).startswith('<'), expected))
 
-    # gilbrat is deprecated and no longer in distcont
-    actual.remove('gilbrat')
-
     assert actual == expected
 
 
@@ -132,6 +129,27 @@ def test_vonmises_pdf(x, kappa, expected_pdf):
     assert_allclose(pdf, expected_pdf, rtol=1e-15)
 
 
+# Expected values of the vonmises entropy were computed using
+# mpmath with 50 digits of precision:
+#
+# def vonmises_entropy(kappa):
+#     kappa = mpmath.mpf(kappa)
+#     return (-kappa * mpmath.besseli(1, kappa) /
+#             mpmath.besseli(0, kappa) + mpmath.log(2 * mpmath.pi *
+#             mpmath.besseli(0, kappa)))
+# >>> float(vonmises_entropy(kappa))
+
+@pytest.mark.parametrize('kappa, expected_entropy',
+                         [(1, 1.6274014590199897),
+                          (5, 0.6756431570114528),
+                          (100, -0.8811275441649473),
+                          (1000, -2.03468891852547),
+                          (2000, -2.3813876496587847)])
+def test_vonmises_entropy(kappa, expected_entropy):
+    entropy = stats.vonmises.entropy(kappa)
+    assert_allclose(entropy, expected_entropy, rtol=1e-13)
+
+
 def test_vonmises_rvs_gh4598():
     # check that random variates wrap around as discussed in gh-4598
     seed = abs(hash('von_mises_rvs'))
@@ -159,6 +177,33 @@ def test_vonmises_rvs_gh4598():
 def test_vonmises_logpdf(x, kappa, expected_logpdf):
     logpdf = stats.vonmises.logpdf(x, kappa)
     assert_allclose(logpdf, expected_logpdf, rtol=1e-15)
+
+
+def test_vonmises_expect():
+    """
+    Test that the vonmises expectation values are
+    computed correctly.  This test checks that the
+    numeric integration estimates the correct normalization
+    (1) and mean angle (loc).  These expectations are
+    independent of the chosen 2pi interval.
+    """
+    rng = np.random.default_rng(6762668991392531563)
+
+    loc, kappa, lb = rng.random(3) * 10
+    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1)
+    assert_allclose(res, 1)
+    assert np.issubdtype(res.dtype, np.floating)
+
+    bounds = lb, lb + 2 * np.pi
+    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1, *bounds)
+    assert_allclose(res, 1)
+    assert np.issubdtype(res.dtype, np.floating)
+
+    bounds = lb, lb + 2 * np.pi
+    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: np.exp(1j*x),
+                                                      *bounds, complex_func=1)
+    assert_allclose(np.angle(res), loc % (2*np.pi))
+    assert np.issubdtype(res.dtype, np.complexfloating)
 
 
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
@@ -1385,7 +1430,8 @@ class TestLogistic:
         # with 64 bit floating point.
         assert_equal(logp, [-800, -800])
 
-    @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
+    @pytest.mark.parametrize("loc_rvs,scale_rvs", [(0.4484955, 0.10216821),
+                                                   (0.62918191, 0.74367064)])
     def test_fit(self, loc_rvs, scale_rvs):
         data = stats.logistic.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
 
@@ -2183,7 +2229,7 @@ class TestInvgauss:
         np.random.seed(1234)
 
     @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
-                             [(2, 0, 1), (np.random.rand(3)*10)])
+                             [(2, 0, 1), (4.635, 4.362, 6.303)])
     def test_fit(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
@@ -2214,7 +2260,7 @@ class TestInvgauss:
         assert shape_mle1 == shape_mle2 == shape_mle3 == 1.04
 
     @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
-                             [(2, 0, 1), (np.random.rand(3)*10)])
+                             [(2, 0, 1), (6.311, 3.225, 4.520)])
     def test_fit_MLE_comp_optimizer(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
@@ -2421,7 +2467,15 @@ class TestLaplace:
         assert_allclose(x, -np.log(2*p), rtol=1e-13)
 
 
-class TestPowerlaw(object):
+class TestPowerlaw:
+
+    # In the following data, `sf` was computed with mpmath.
+    @pytest.mark.parametrize('x, a, sf',
+                             [(0.25, 2.0, 0.9375),
+                              (0.99609375, 1/256, 1.528855235208108e-05)])
+    def test_sf(self, x, a, sf):
+        assert_allclose(stats.powerlaw.sf(x, a), sf, rtol=1e-15)
+
     @pytest.fixture(scope='function')
     def rng(self):
         return np.random.default_rng(1234)
@@ -3353,6 +3407,30 @@ class TestBeta:
         with pytest.warns(RuntimeWarning):
             stats.beta.ppf(q, a, b)
 
+    @pytest.mark.parametrize('method', [stats.beta.ppf, stats.beta.isf])
+    @pytest.mark.parametrize('a, b', [(1e-310, 12.5), (12.5, 1e-310)])
+    def test_beta_ppf_with_subnormal_a_b(self, method, a, b):
+        # Regression test for gh-17444: beta.ppf(p, a, b) and beta.isf(p, a, b)
+        # would result in a segmentation fault if either a or b was subnormal.
+        p = 0.9
+        # Depending on the version of Boost that we have vendored and
+        # our setting of the Boost double promotion policy, the call
+        # `stats.beta.ppf(p, a, b)` might raise an OverflowError or
+        # return a value.  We'll accept either behavior (and not care about
+        # the value), because our goal here is to verify that the call does
+        # not trigger a segmentation fault.
+        try:
+            method(p, a, b)
+        except OverflowError:
+            # The OverflowError exception occurs with Boost 1.80 or earlier
+            # when Boost's double promotion policy is false; see
+            #   https://github.com/boostorg/math/issues/882
+            # and
+            #   https://github.com/boostorg/math/pull/883
+            # Once we have vendored the fixed version of Boost, we can drop
+            # this try-except wrapper and just call the function.
+            pass
+
 
 class TestBetaPrime:
     def test_logpdf(self):
@@ -3377,6 +3455,33 @@ class TestBetaPrime:
         gen_cdf = stats.rv_continuous._cdf_single
         cdfs_g = [gen_cdf(stats.betaprime, val, alpha, beta) for val in x]
         assert_allclose(cdfs, cdfs_g, atol=0, rtol=2e-12)
+
+    # The expected values for test_ppf() were computed with mpmath, e.g.
+    #
+    #   from mpmath import mp
+    #   mp.dps = 125
+    #   p = 0.01
+    #   a, b = 1.25, 2.5
+    #   x = mp.findroot(lambda t: mp.betainc(a, b, x1=0, x2=t/(1+t),
+    #                                        regularized=True) - p,
+    #                   x0=(0.01, 0.011), method='secant')
+    #   print(float(x))
+    #
+    # prints
+    #
+    #   0.01080162700956614
+    #
+    @pytest.mark.parametrize(
+        'p, a, b, expected',
+        [(0.010, 1.25, 2.5, 0.01080162700956614),
+         (1e-12, 1.25, 2.5, 1.0610141996279122e-10),
+         (1e-18, 1.25, 2.5, 1.6815941817974941e-15),
+         (1e-17, 0.25, 7.0, 1.0179194531881782e-69),
+         (0.375, 0.25, 7.0, 0.002036820346115211)],
+    )
+    def test_ppf(self, p, a, b, expected):
+        p = stats.betaprime.ppf(p, a, b)
+        assert_allclose(p, expected, rtol=1e-14)
 
 
 class TestGamma:
@@ -5106,7 +5211,8 @@ class TestRayleigh:
         y = stats.rayleigh.logsf(50)
         assert_allclose(y, -1250)
 
-    @pytest.mark.parametrize("rvs_loc,rvs_scale", [np.random.rand(2)])
+    @pytest.mark.parametrize("rvs_loc,rvs_scale", [(0.85373171, 0.86932204),
+                                                   (0.20558821, 0.61621008)])
     def test_fit(self, rvs_loc, rvs_scale):
         data = stats.rayleigh.rvs(size=250, loc=rvs_loc, scale=rvs_scale)
 
@@ -5131,7 +5237,7 @@ class TestRayleigh:
         assert_equal(scale, scale_mle(data, loc))
 
     @pytest.mark.parametrize("rvs_loc,rvs_scale", [[0.74, 0.01],
-                                                   np.random.rand(2)])
+                                                   [0.08464463, 0.12069025]])
     def test_fit_comparison_super_method(self, rvs_loc, rvs_scale):
         # test that the objective function result of the analytical MLEs is
         # less than or equal to that of the numerically optimized estimate
@@ -6901,7 +7007,7 @@ def test_crystalball_entropy():
     assert_allclose(res1, res2, rtol=1e-7)
 
 
-def test_invweibull():
+def test_invweibull_fit():
     """
     Test fitting invweibull to data.
 
@@ -6932,6 +7038,26 @@ def test_invweibull():
     assert_allclose(c, 1.048482, rtol=5e-6)
     assert loc == 0
     assert_allclose(scale, 3.099456, rtol=5e-6)
+
+
+# Expected values were computed with mpmath.
+@pytest.mark.parametrize('x, c, expected',
+                         [(3, 1.5, 0.175064510070713299327),
+                          (2000, 1.5, 1.11802773877318715787e-5),
+                          (2000, 9.25, 2.92060308832269637092e-31),
+                          (1e15, 1.5, 3.16227766016837933199884e-23)])
+def test_invweibull_sf(x, c, expected):
+    computed = stats.invweibull.sf(x, c)
+    assert_allclose(computed, expected, rtol=1e-15)
+
+
+# Expected values were computed with mpmath.
+@pytest.mark.parametrize('p, c, expected',
+                         [(0.5, 2.5, 1.15789669836468183976),
+                          (3e-18, 5, 3195.77171838060906447)])
+def test_invweibull_isf(p, c, expected):
+    computed = stats.invweibull.isf(p, c)
+    assert_allclose(computed, expected, rtol=1e-15)
 
 
 @pytest.mark.parametrize(

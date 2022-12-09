@@ -401,7 +401,7 @@ class TestQRVS:
         qrng2 = deepcopy(qrng)
         qrvs = gen.qrvs(size=size_in, d=d_in, qmc_engine=qrng)
         if size_in is not None:
-            assert(qrvs.shape == shape_expected)
+            assert qrvs.shape == shape_expected
 
         if qrng2 is not None:
             uniform = qrng2.random(np.prod(size_in) or 1)
@@ -1122,7 +1122,7 @@ class TestNumericalInverseHermite:
         rng2 = deepcopy(rng)
         rvs = fni.rvs(size=size_in, random_state=rng)
         if size_in is not None:
-            assert(rvs.shape == size_out)
+            assert rvs.shape == size_out
 
         if rng2 is not None:
             rng2 = check_random_state(rng2)

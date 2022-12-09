@@ -90,6 +90,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     --------
 
     >>> # Constructing an empty matrix
+    >>> import numpy as np
     >>> from scipy.sparse import coo_matrix
     >>> coo_matrix((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],

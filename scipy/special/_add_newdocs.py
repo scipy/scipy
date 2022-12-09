@@ -201,6 +201,61 @@ add_newdoc("voigt_profile",
     ----------
     .. [1] https://en.wikipedia.org/wiki/Voigt_profile
 
+    Examples
+    --------
+    Calculate the function at point 2 for ``sigma=1`` and ``gamma=1``.
+
+    >>> from scipy.special import voigt_profile
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> voigt_profile(2, 1., 1.)
+    0.09071519942627544
+
+    Calculate the function at several points by providing a NumPy array
+    for `x`.
+
+    >>> values = np.array([-2., 0., 5])
+    >>> voigt_profile(values, 1., 1.)
+    array([0.0907152 , 0.20870928, 0.01388492])
+
+    Plot the function for different parameter sets.
+
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
+    >>> x = np.linspace(-10, 10, 500)
+    >>> parameters_list = [(1.5, 0., "solid"), (1.3, 0.5, "dashed"),
+    ...                    (0., 1.8, "dotted"), (1., 1., "dashdot")]
+    >>> for params in parameters_list:
+    ...     sigma, gamma, linestyle = params
+    ...     voigt = voigt_profile(x, sigma, gamma)
+    ...     ax.plot(x, voigt, label=rf"$\sigma={sigma},\, \gamma={gamma}$",
+    ...             ls=linestyle)
+    >>> ax.legend()
+    >>> plt.show()
+
+    Verify visually that the Voigt profile indeed arises as the convolution
+    of a normal and a Cauchy distribution.
+
+    >>> from scipy.signal import convolve
+    >>> x, dx = np.linspace(-10, 10, 500, retstep=True)
+    >>> def gaussian(x, sigma):
+    ...     return np.exp(-0.5 * x**2/sigma**2)/(sigma * np.sqrt(2*np.pi))
+    >>> def cauchy(x, gamma):
+    ...     return gamma/(np.pi * (np.square(x)+gamma**2))
+    >>> sigma = 2
+    >>> gamma = 1
+    >>> gauss_profile = gaussian(x, sigma)
+    >>> cauchy_profile = cauchy(x, gamma)
+    >>> convolved = dx * convolve(cauchy_profile, gauss_profile, mode="same")
+    >>> voigt = voigt_profile(x, sigma, gamma)
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
+    >>> ax.plot(x, gauss_profile, label="Gauss: $G$", c='b')
+    >>> ax.plot(x, cauchy_profile, label="Cauchy: $C$", c='y', ls="dashed")
+    >>> xx = 0.5*(x[1:] + x[:-1])  # midpoints
+    >>> ax.plot(xx, convolved[1:], label="Convolution: $G * C$", ls='dashdot',
+    ...         c='k')
+    >>> ax.plot(x, voigt, label="Voigt", ls='dotted', c='r')
+    >>> ax.legend()
+    >>> plt.show()
     """)
 
 add_newdoc("wrightomega",
@@ -1210,7 +1265,7 @@ add_newdoc("beta",
     See Also
     --------
     gamma : the gamma function
-    betainc :  the incomplete beta function
+    betainc :  the regularized incomplete beta function
     betaln : the natural logarithm of the absolute
              value of the beta function
 
@@ -1250,9 +1305,9 @@ add_newdoc("betainc",
     r"""
     betainc(a, b, x, out=None)
 
-    Incomplete beta function.
+    Regularized incomplete beta function.
 
-    Computes the incomplete beta function, defined as [1]_:
+    Computes the regularized incomplete beta function, defined as [1]_:
 
     .. math::
 
@@ -1274,21 +1329,23 @@ add_newdoc("betainc",
     Returns
     -------
     scalar or ndarray
-        Value of the incomplete beta function
+        Value of the regularized incomplete beta function
 
     See Also
     --------
     beta : beta function
-    betaincinv : inverse of the incomplete beta function
+    betaincinv : inverse of the regularized incomplete beta function
 
     Notes
     -----
-    The incomplete beta function is also sometimes defined
-    without the `gamma` terms, in which case the above
-    definition is the so-called regularized incomplete beta
-    function. Under this definition, you can get the incomplete
-    beta function by multiplying the result of the SciPy
-    function by `beta`.
+    The term *regularized* in the name of this function refers to the
+    scaling of the function by the gamma function terms shown in the
+    formula.  When not qualified as *regularized*, the name *incomplete
+    beta function* often refers to just the integral expression,
+    without the gamma terms.  One can use the function `beta` from
+    `scipy.special` to get this "nonregularized" incomplete beta
+    function by multiplying the result of ``betainc(a, b, x)`` by
+    ``beta(a, b)``.
 
     References
     ----------
@@ -1334,7 +1391,7 @@ add_newdoc("betaincinv",
     r"""
     betaincinv(a, b, y, out=None)
 
-    Inverse of the incomplete beta function.
+    Inverse of the regularized incomplete beta function.
 
     Computes :math:`x` such that:
 
@@ -1359,11 +1416,11 @@ add_newdoc("betaincinv",
     Returns
     -------
     scalar or ndarray
-        Value of the inverse of the incomplete beta function
+        Value of the inverse of the regularized incomplete beta function
 
     See Also
     --------
-    betainc : incomplete beta function
+    betainc : regularized incomplete beta function
     gamma : gamma function
 
     References
@@ -1413,7 +1470,7 @@ add_newdoc("betaln",
     See Also
     --------
     gamma : the gamma function
-    betainc :  the incomplete beta function
+    betainc :  the regularized incomplete beta function
     beta : the beta function
 
     Examples
@@ -3029,7 +3086,6 @@ add_newdoc(
 
         S = 4 \pi a b c R_{\mathrm{G}}(1 / a^2, 1 / b^2, 1 / c^2).
 
-    >>> from scipy.special import elliprg
     >>> def ellipsoid_area(a, b, c):
     ...     r = 4.0 * np.pi * a * b * c
     ...     return r * elliprg(1.0 / (a * a), 1.0 / (b * b), 1.0 / (c * c))
@@ -4525,7 +4581,6 @@ add_newdoc("expi",
 
     The complex variant has a branch cut on the negative real axis.
 
-    >>> import scipy.special as sc
     >>> sc.expi(-1 + 1e-12j)
     (-0.21938393439552062+3.1415926535894254j)
     >>> sc.expi(-1 - 1e-12j)
@@ -4816,6 +4871,12 @@ add_newdoc("fdtr",
     y : scalar or ndarray
         The CDF of the F-distribution with parameters `dfn` and `dfd` at `x`.
 
+    See Also
+    --------
+    fdtrc : F distribution survival function
+    fdtri : F distribution inverse cumulative distribution
+    scipy.stats.f : F distribution
+
     Notes
     -----
     The regularized incomplete beta function is used, according to the
@@ -4824,13 +4885,65 @@ add_newdoc("fdtr",
     .. math::
         F(d_n, d_d; x) = I_{xd_n/(d_d + xd_n)}(d_n/2, d_d/2).
 
-    Wrapper for the Cephes [1]_ routine `fdtr`.
+    Wrapper for the Cephes [1]_ routine `fdtr`. The F distribution is also
+    available as `scipy.stats.f`. Calling `fdtr` directly can improve
+    performance compared to the ``cdf`` method of `scipy.stats.f` (see last
+    example below).
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Calculate the function for ``dfn=1`` and ``dfd=2`` at ``x=1``.
+
+    >>> import numpy as np
+    >>> from scipy.special import fdtr
+    >>> fdtr(1, 2, 1)
+    0.5773502691896258
+
+    Calculate the function at several points by providing a NumPy array for
+    `x`.
+
+    >>> x = np.array([0.5, 2., 3.])
+    >>> fdtr(1, 2, x)
+    array([0.4472136 , 0.70710678, 0.77459667])
+
+    Plot the function for several parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dfn_parameters = [1, 5, 10, 50]
+    >>> dfd_parameters = [1, 1, 2, 3]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(dfn_parameters, dfd_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     dfn, dfd, style = parameter_set
+    ...     fdtr_vals = fdtr(dfn, dfd, x)
+    ...     ax.plot(x, fdtr_vals, label=rf"$d_n={dfn},\, d_d={dfd}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("F distribution cumulative distribution function")
+    >>> plt.show()
+
+    The F distribution is also available as `scipy.stats.f`. Using `fdtr`
+    directly can be much faster than calling the ``cdf`` method of
+    `scipy.stats.f`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.f(dfn, dfd).cdf(x)=fdtr(dfn, dfd, x)``.
+
+    >>> from scipy.stats import f
+    >>> dfn, dfd = 1, 2
+    >>> x = 1
+    >>> fdtr_res = fdtr(dfn, dfd, x)  # this will often be faster than below
+    >>> f_dist_res = f(dfn, dfd).cdf(x)
+    >>> fdtr_res == f_dist_res  # test that results are equal
+    True
     """)
 
 add_newdoc("fdtrc",
@@ -4859,9 +4972,11 @@ add_newdoc("fdtrc",
         The complemented F-distribution function with parameters `dfn` and
         `dfd` at `x`.
 
-    See also
+    See Also
     --------
-    fdtr
+    fdtr : F distribution cumulative distribution function
+    fdtri : F distribution inverse cumulative distribution function
+    scipy.stats.f : F distribution
 
     Notes
     -----
@@ -4871,12 +4986,65 @@ add_newdoc("fdtrc",
     .. math::
         F(d_n, d_d; x) = I_{d_d/(d_d + xd_n)}(d_d/2, d_n/2).
 
-    Wrapper for the Cephes [1]_ routine `fdtrc`.
+    Wrapper for the Cephes [1]_ routine `fdtrc`. The F distribution is also
+    available as `scipy.stats.f`. Calling `fdtrc` directly can improve
+    performance compared to the ``sf`` method of `scipy.stats.f` (see last
+    example below).
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function for ``dfn=1`` and ``dfd=2`` at ``x=1``.
+
+    >>> import numpy as np
+    >>> from scipy.special import fdtrc
+    >>> fdtrc(1, 2, 1)
+    0.42264973081037427
+
+    Calculate the function at several points by providing a NumPy array for
+    `x`.
+
+    >>> x = np.array([0.5, 2., 3.])
+    >>> fdtrc(1, 2, x)
+    array([0.5527864 , 0.29289322, 0.22540333])
+
+    Plot the function for several parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dfn_parameters = [1, 5, 10, 50]
+    >>> dfd_parameters = [1, 1, 2, 3]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(dfn_parameters, dfd_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     dfn, dfd, style = parameter_set
+    ...     fdtrc_vals = fdtrc(dfn, dfd, x)
+    ...     ax.plot(x, fdtrc_vals, label=rf"$d_n={dfn},\, d_d={dfd}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("F distribution survival function")
+    >>> plt.show()
+
+    The F distribution is also available as `scipy.stats.f`. Using `fdtrc`
+    directly can be much faster than calling the ``sf`` method of
+    `scipy.stats.f`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.f(dfn, dfd).sf(x)=fdtrc(dfn, dfd, x)``.
+
+    >>> from scipy.stats import f
+    >>> dfn, dfd = 1, 2
+    >>> x = 1
+    >>> fdtrc_res = fdtrc(dfn, dfd, x)  # this will often be faster than below
+    >>> f_dist_res = f(dfn, dfd).sf(x)
+    >>> f_dist_res == fdtrc_res  # test that results are equal
+    True
     """)
 
 add_newdoc("fdtri",
@@ -4904,6 +5072,12 @@ add_newdoc("fdtri",
     x : scalar or ndarray
         The quantile corresponding to `p`.
 
+    See Also
+    --------
+    fdtr : F distribution cumulative distribution function
+    fdtrc : F distribution survival function
+    scipy.stats.f : F distribution
+
     Notes
     -----
     The computation is carried out using the relation to the inverse
@@ -4922,11 +5096,72 @@ add_newdoc("fdtri",
 
     Wrapper for the Cephes [1]_ routine `fdtri`.
 
+    The F distribution is also available as `scipy.stats.f`. Calling
+    `fdtri` directly can improve performance compared to the ``ppf``
+    method of `scipy.stats.f` (see last example below).
+
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    `fdtri` represents the inverse of the F distribution CDF which is
+    available as `fdtr`. Here, we calculate the CDF for ``df1=1``, ``df2=2``
+    at ``x=3``. `fdtri` then returns ``3`` given the same values for `df1`,
+    `df2` and the computed CDF value.
+
+    >>> import numpy as np
+    >>> from scipy.special import fdtri, fdtr
+    >>> df1, df2 = 1, 2
+    >>> x = 3
+    >>> cdf_value =  fdtr(df1, df2, x)
+    >>> fdtri(df1, df2, cdf_value)
+    3.000000000000006
+
+    Calculate the function at several points by providing a NumPy array for
+    `x`.
+
+    >>> x = np.array([0.1, 0.4, 0.7])
+    >>> fdtri(1, 2, x)
+    array([0.02020202, 0.38095238, 1.92156863])
+
+    Plot the function for several parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dfn_parameters = [50, 10, 1, 50]
+    >>> dfd_parameters = [0.5, 1, 1, 5]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(dfn_parameters, dfd_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 1, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     dfn, dfd, style = parameter_set
+    ...     fdtri_vals = fdtri(dfn, dfd, x)
+    ...     ax.plot(x, fdtri_vals, label=rf"$d_n={dfn},\, d_d={dfd}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> title = "F distribution inverse cumulative distribution function"
+    >>> ax.set_title(title)
+    >>> ax.set_ylim(0, 30)
+    >>> plt.show()
+
+    The F distribution is also available as `scipy.stats.f`. Using `fdtri`
+    directly can be much faster than calling the ``ppf`` method of
+    `scipy.stats.f`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.f(dfn, dfd).ppf(x)=fdtri(dfn, dfd, x)``.
+
+    >>> from scipy.stats import f
+    >>> dfn, dfd = 1, 2
+    >>> x = 0.7
+    >>> fdtri_res = fdtri(dfn, dfd, x)  # this will often be faster than below
+    >>> f_dist_res = f(dfn, dfd).ppf(x)
+    >>> f_dist_res == fdtri_res  # test that results are equal
+    True
     """)
 
 add_newdoc("fdtridfd",
@@ -5572,6 +5807,7 @@ add_newdoc("gdtr",
     See also
     --------
     gdtrc : 1 - CDF of the gamma distribution.
+    scipy.stats.gamma: Gamma distribution
 
     Returns
     -------
@@ -5584,13 +5820,78 @@ add_newdoc("gdtr",
     The evaluation is carried out using the relation to the incomplete gamma
     integral (regularized gamma function).
 
-    Wrapper for the Cephes [1]_ routine `gdtr`.
+    Wrapper for the Cephes [1]_ routine `gdtr`. Calling `gdtr` directly can
+    improve performance compared to the ``cdf`` method of `scipy.stats.gamma`
+    (see last example below).
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Compute the function for ``a=1``, ``b=2`` at ``x=5``.
+
+    >>> import numpy as np
+    >>> from scipy.special import gdtr
+    >>> import matplotlib.pyplot as plt
+    >>> gdtr(1., 2., 5.)
+    0.9595723180054873
+
+    Compute the function for ``a=1`` and ``b=2`` at several points by
+    providing a NumPy array for `x`.
+
+    >>> xvalues = np.array([1., 2., 3., 4])
+    >>> gdtr(1., 1., xvalues)
+    array([0.63212056, 0.86466472, 0.95021293, 0.98168436])
+
+    `gdtr` can evaluate different parameter sets by providing arrays with
+    broadcasting compatible shapes for `a`, `b` and `x`. Here we compute the
+    function for three different `a` at four positions `x` and ``b=3``,
+    resulting in a 3x4 array.
+
+    >>> a = np.array([[0.5], [1.5], [2.5]])
+    >>> x = np.array([1., 2., 3., 4])
+    >>> a.shape, x.shape
+    ((3, 1), (4,))
+
+    >>> gdtr(a, 3., x)
+    array([[0.01438768, 0.0803014 , 0.19115317, 0.32332358],
+           [0.19115317, 0.57680992, 0.82642193, 0.9380312 ],
+           [0.45618688, 0.87534798, 0.97974328, 0.9972306 ]])
+
+    Plot the function for four different parameter sets.
+
+    >>> a_parameters = [0.3, 1, 2, 6]
+    >>> b_parameters = [2, 10, 15, 20]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(a_parameters, b_parameters, linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     a, b, style = parameter_set
+    ...     gdtr_vals = gdtr(a, b, x)
+    ...     ax.plot(x, gdtr_vals, label=f"$a= {a},\, b={b}$", ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("Gamma distribution cumulative distribution function")
+    >>> plt.show()
+
+    The gamma distribution is also available as `scipy.stats.gamma`. Using
+    `gdtr` directly can be much faster than calling the ``cdf`` method of
+    `scipy.stats.gamma`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.gamma(b, scale=1/a).cdf(x)=gdtr(a, b, x)``.
+
+    >>> from scipy.stats import gamma
+    >>> a = 2.
+    >>> b = 3
+    >>> x = 1.
+    >>> gdtr_result = gdtr(a, b, x)  # this will often be faster than below
+    >>> gamma_dist_result = gamma(b, scale=1/a).cdf(x)
+    >>> gdtr_result == gamma_dist_result  # test that results are equal
+    True
     """)
 
 add_newdoc("gdtrc",
@@ -5629,20 +5930,87 @@ add_newdoc("gdtrc",
 
     See Also
     --------
-    gdtr, gdtrix
+    gdtr: Gamma distribution cumulative distribution function
+    scipy.stats.gamma: Gamma distribution
+    gdtrix
 
     Notes
     -----
     The evaluation is carried out using the relation to the incomplete gamma
     integral (regularized gamma function).
 
-    Wrapper for the Cephes [1]_ routine `gdtrc`.
+    Wrapper for the Cephes [1]_ routine `gdtrc`. Calling `gdtrc` directly can
+    improve performance compared to the ``sf`` method of `scipy.stats.gamma`
+    (see last example below).
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Compute the function for ``a=1`` and ``b=2`` at ``x=5``.
+
+    >>> import numpy as np
+    >>> from scipy.special import gdtrc
+    >>> import matplotlib.pyplot as plt
+    >>> gdtrc(1., 2., 5.)
+    0.04042768199451279
+
+    Compute the function for ``a=1``, ``b=2`` at several points by providing
+    a NumPy array for `x`.
+
+    >>> xvalues = np.array([1., 2., 3., 4])
+    >>> gdtrc(1., 1., xvalues)
+    array([0.36787944, 0.13533528, 0.04978707, 0.01831564])
+
+    `gdtrc` can evaluate different parameter sets by providing arrays with
+    broadcasting compatible shapes for `a`, `b` and `x`. Here we compute the
+    function for three different `a` at four positions `x` and ``b=3``,
+    resulting in a 3x4 array.
+
+    >>> a = np.array([[0.5], [1.5], [2.5]])
+    >>> x = np.array([1., 2., 3., 4])
+    >>> a.shape, x.shape
+    ((3, 1), (4,))
+
+    >>> gdtrc(a, 3., x)
+    array([[0.98561232, 0.9196986 , 0.80884683, 0.67667642],
+           [0.80884683, 0.42319008, 0.17357807, 0.0619688 ],
+           [0.54381312, 0.12465202, 0.02025672, 0.0027694 ]])
+
+    Plot the function for four different parameter sets.
+
+    >>> a_parameters = [0.3, 1, 2, 6]
+    >>> b_parameters = [2, 10, 15, 20]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(a_parameters, b_parameters, linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     a, b, style = parameter_set
+    ...     gdtrc_vals = gdtrc(a, b, x)
+    ...     ax.plot(x, gdtrc_vals, label=f"$a= {a},\, b={b}$", ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("Gamma distribution survival function")
+    >>> plt.show()
+
+    The gamma distribution is also available as `scipy.stats.gamma`.
+    Using `gdtrc` directly can be much faster than calling the ``sf`` method
+    of `scipy.stats.gamma`, especially for small arrays or individual
+    values. To get the same results one must use the following parametrization:
+    ``stats.gamma(b, scale=1/a).sf(x)=gdtrc(a, b, x)``.
+
+    >>> from scipy.stats import gamma
+    >>> a = 2
+    >>> b = 3
+    >>> x = 1.
+    >>> gdtrc_result = gdtrc(a, b, x)  # this will often be faster than below
+    >>> gamma_dist_result = gamma(b, scale=1/a).sf(x)
+    >>> gdtrc_result == gamma_dist_result  # test that results are equal
+    True
     """)
 
 add_newdoc("gdtria",
@@ -6057,12 +6425,88 @@ add_newdoc("huber",
     scalar or ndarray
         The computed Huber loss function values.
 
+    See also
+    --------
+    pseudo_huber : smooth approximation of this function
+
     Notes
     -----
-    This function is convex in r.
+    `huber` is useful as a loss function in robust statistics or machine
+    learning to reduce the influence of outliers as compared to the common
+    squared error loss, residuals with a magnitude higher than `delta` are
+    not squared [1]_.
+
+    Typically, `r` represents residuals, the difference
+    between a model prediction and data. Then, for :math:`|r|\leq\delta`,
+    `huber` resembles the squared error and for :math:`|r|>\delta` the
+    absolute error. This way, the Huber loss often achieves
+    a fast convergence in model fitting for small residuals like the squared
+    error loss function and still reduces the influence of outliers
+    (:math:`|r|>\delta`) like the absolute error loss. As :math:`\delta` is
+    the cutoff between squared and absolute error regimes, it has
+    to be tuned carefully for each problem. `huber` is also
+    convex, making it suitable for gradient based optimization.
 
     .. versionadded:: 0.15.0
 
+    References
+    ----------
+    .. [1] Peter Huber. "Robust Estimation of a Location Parameter",
+           1964. Annals of Statistics. 53 (1): 73 - 101.
+
+    Examples
+    --------
+    Import all necessary modules.
+
+    >>> import numpy as np
+    >>> from scipy.special import huber
+    >>> import matplotlib.pyplot as plt
+
+    Compute the function for ``delta=1`` at ``r=2``
+
+    >>> huber(1., 2.)
+    1.5
+
+    Compute the function for different `delta` by providing a NumPy array or
+    list for `delta`.
+
+    >>> huber([1., 3., 5.], 4.)
+    array([3.5, 7.5, 8. ])
+
+    Compute the function at different points by providing a NumPy array or
+    list for `r`.
+
+    >>> huber(2., np.array([1., 1.5, 3.]))
+    array([0.5  , 1.125, 4.   ])
+
+    The function can be calculated for different `delta` and `r` by
+    providing arrays for both with compatible shapes for broadcasting.
+
+    >>> r = np.array([1., 2.5, 8., 10.])
+    >>> deltas = np.array([[1.], [5.], [9.]])
+    >>> print(r.shape, deltas.shape)
+    (4,) (3, 1)
+
+    >>> huber(deltas, r)
+    array([[ 0.5  ,  2.   ,  7.5  ,  9.5  ],
+           [ 0.5  ,  3.125, 27.5  , 37.5  ],
+           [ 0.5  ,  3.125, 32.   , 49.5  ]])
+
+    Plot the function for different `delta`.
+
+    >>> x = np.linspace(-4, 4, 500)
+    >>> deltas = [1, 2, 3]
+    >>> linestyles = ["dashed", "dotted", "dashdot"]
+    >>> fig, ax = plt.subplots()
+    >>> combined_plot_parameters = list(zip(deltas, linestyles))
+    >>> for delta, style in combined_plot_parameters:
+    ...     ax.plot(x, huber(delta, x), label=f"$\delta={delta}$", ls=style)
+    >>> ax.legend(loc="upper center")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("Huber loss function $h_{\delta}(x)$")
+    >>> ax.set_xlim(-4, 4)
+    >>> ax.set_ylim(0, 8)
+    >>> plt.show()
     """)
 
 add_newdoc("hyp0f1",
@@ -6865,8 +7309,9 @@ add_newdoc("it2struve0",
     >>> plt.show()
     """)
 
-add_newdoc("itairy",
-    """
+add_newdoc(
+    "itairy",
+    r"""
     itairy(x, out=None)
 
     Integrals of Airy functions
@@ -6904,6 +7349,43 @@ add_newdoc("itairy",
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    Compute the functions at ``x=1.``.
+
+    >>> import numpy as np
+    >>> from scipy.special import itairy
+    >>> import matplotlib.pyplot as plt
+    >>> apt, bpt, ant, bnt = itairy(1.)
+    >>> apt, bpt, ant, bnt
+    (0.23631734191710949,
+     0.8727691167380077,
+     0.46567398346706845,
+     0.3730050096342943)
+
+    Compute the functions at several points by providing a NumPy array for `x`.
+
+    >>> x = np.array([1., 1.5, 2.5, 5])
+    >>> apt, bpt, ant, bnt = itairy(x)
+    >>> apt, bpt, ant, bnt
+    (array([0.23631734, 0.28678675, 0.324638  , 0.33328759]),
+     array([  0.87276912,   1.62470809,   5.20906691, 321.47831857]),
+     array([0.46567398, 0.72232876, 0.93187776, 0.7178822 ]),
+     array([ 0.37300501,  0.35038814, -0.02812939,  0.15873094]))
+
+    Plot the functions from -10 to 10.
+
+    >>> x = np.linspace(-10, 10, 500)
+    >>> apt, bpt, ant, bnt = itairy(x)
+    >>> fig, ax = plt.subplots(figsize=(6, 5))
+    >>> ax.plot(x, apt, label="$\int_0^x\, Ai(t)\, dt$")
+    >>> ax.plot(x, bpt, ls="dashed", label="$\int_0^x\, Bi(t)\, dt$")
+    >>> ax.plot(x, ant, ls="dashdot", label="$\int_0^x\, Ai(-t)\, dt$")
+    >>> ax.plot(x, bnt, ls="dotted", label="$\int_0^x\, Bi(-t)\, dt$")
+    >>> ax.set_ylim(-2, 1.5)
+    >>> ax.legend(loc="lower right")
+    >>> plt.show()
     """)
 
 add_newdoc("iti0k0",
@@ -7669,7 +8151,7 @@ add_newdoc("jve",
     r"""
     jve(v, z, out=None)
 
-    Exponentially scaled Bessel function of order `v`.
+    Exponentially scaled Bessel function of the first kind of order `v`.
 
     Defined as::
 
@@ -7688,6 +8170,10 @@ add_newdoc("jve",
     -------
     J : scalar or ndarray
         Value of the exponentially scaled Bessel function.
+
+    See also
+    --------
+    jv: Unscaled Bessel function of the first kind
 
     Notes
     -----
@@ -7709,11 +8195,63 @@ add_newdoc("jve",
     term is exactly zero for integer `v`; to improve accuracy the second
     term is explicitly omitted for `v` values such that `v = floor(v)`.
 
+    Exponentially scaled Bessel functions are useful for large arguments `z`:
+    for these, the unscaled Bessel functions can easily under-or overflow.
+
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Compare the output of `jv` and `jve` for large complex arguments for `z`
+    by computing their values for order ``v=1`` at ``z=1000j``. We see that
+    `jv` overflows but `jve` returns a finite number:
+
+    >>> import numpy as np
+    >>> from scipy.special import jv, jve
+    >>> v = 1
+    >>> z = 1000j
+    >>> jv(v, z), jve(v, z)
+    ((inf+infj), (7.721967686709077e-19+0.012610930256928629j))
+
+    For real arguments for `z`, `jve` returns the same as `jv`.
+
+    >>> v, z = 1, 1000
+    >>> jv(v, z), jve(v, z)
+    (0.004728311907089523, 0.004728311907089523)
+
+    The function can be evaluated for several orders at the same time by
+    providing a list or NumPy array for `v`:
+
+    >>> jve([1, 3, 5], 1j)
+    array([1.27304208e-17+2.07910415e-01j, -4.99352086e-19-8.15530777e-03j,
+           6.11480940e-21+9.98657141e-05j])
+
+    In the same way, the function can be evaluated at several points in one
+    call by providing a list or NumPy array for `z`:
+
+    >>> jve(1, np.array([1j, 2j, 3j]))
+    array([1.27308412e-17+0.20791042j, 1.31814423e-17+0.21526929j,
+           1.20521602e-17+0.19682671j])
+
+    It is also possible to evaluate several orders at several points
+    at the same time by providing arrays for `v` and `z` with
+    compatible shapes for broadcasting. Compute `jve` for two different orders
+    `v` and three points `z` resulting in a 2x3 array.
+
+    >>> v = np.array([[1], [3]])
+    >>> z = np.array([1j, 2j, 3j])
+    >>> v.shape, z.shape
+    ((2, 1), (3,))
+
+    >>> jve(v, z)
+    array([[1.27304208e-17+0.20791042j,  1.31810070e-17+0.21526929j,
+            1.20517622e-17+0.19682671j],
+           [-4.99352086e-19-0.00815531j, -1.76289571e-18-0.02879122j,
+            -2.92578784e-18-0.04778332j]])
     """)
 
 add_newdoc("k0",
@@ -11040,12 +11578,114 @@ add_newdoc("pseudo_huber",
     res : scalar or ndarray
         The computed Pseudo-Huber loss function values.
 
+    See also
+    --------
+    huber: Similar function which this function approximates
+
     Notes
     -----
-    This function is convex in :math:`r`.
+    Like `huber`, `pseudo_huber` often serves as a robust loss function
+    in statistics or machine learning to reduce the influence of outliers.
+    Unlike `huber`, `pseudo_huber` is smooth.
+
+    Typically, `r` represents residuals, the difference
+    between a model prediction and data. Then, for :math:`|r|\leq\delta`,
+    `pseudo_huber` resembles the squared error and for :math:`|r|>\delta` the
+    absolute error. This way, the Pseudo-Huber loss often achieves
+    a fast convergence in model fitting for small residuals like the squared
+    error loss function and still reduces the influence of outliers
+    (:math:`|r|>\delta`) like the absolute error loss. As :math:`\delta` is
+    the cutoff between squared and absolute error regimes, it has
+    to be tuned carefully for each problem. `pseudo_huber` is also
+    convex, making it suitable for gradient based optimization. [1]_ [2]_
 
     .. versionadded:: 0.15.0
 
+    References
+    ----------
+    .. [1] Hartley, Zisserman, "Multiple View Geometry in Computer Vision".
+           2003. Cambridge University Press. p. 619
+    .. [2] Charbonnier et al. "Deterministic edge-preserving regularization
+           in computed imaging". 1997. IEEE Trans. Image Processing.
+           6 (2): 298 - 311.
+
+    Examples
+    --------
+    Import all necessary modules.
+
+    >>> import numpy as np
+    >>> from scipy.special import pseudo_huber, huber
+    >>> import matplotlib.pyplot as plt
+
+    Calculate the function for ``delta=1`` at ``r=2``.
+
+    >>> pseudo_huber(1., 2.)
+    1.2360679774997898
+
+    Calculate the function at ``r=2`` for different `delta` by providing
+    a list or NumPy array for `delta`.
+
+    >>> pseudo_huber([1., 2., 4.], 3.)
+    array([2.16227766, 3.21110255, 4.        ])
+
+    Calculate the function for ``delta=1`` at several points by providing
+    a list or NumPy array for `r`.
+
+    >>> pseudo_huber(2., np.array([1., 1.5, 3., 4.]))
+    array([0.47213595, 1.        , 3.21110255, 4.94427191])
+
+    The function can be calculated for different `delta` and `r` by
+    providing arrays for both with compatible shapes for broadcasting.
+
+    >>> r = np.array([1., 2.5, 8., 10.])
+    >>> deltas = np.array([[1.], [5.], [9.]])
+    >>> print(r.shape, deltas.shape)
+    (4,) (3, 1)
+
+    >>> pseudo_huber(deltas, r)
+    array([[ 0.41421356,  1.6925824 ,  7.06225775,  9.04987562],
+           [ 0.49509757,  2.95084972, 22.16990566, 30.90169944],
+           [ 0.49846624,  3.06693762, 27.37435121, 40.08261642]])
+
+    Plot the function for different `delta`.
+
+    >>> x = np.linspace(-4, 4, 500)
+    >>> deltas = [1, 2, 3]
+    >>> linestyles = ["dashed", "dotted", "dashdot"]
+    >>> fig, ax = plt.subplots()
+    >>> combined_plot_parameters = list(zip(deltas, linestyles))
+    >>> for delta, style in combined_plot_parameters:
+    ...     ax.plot(x, pseudo_huber(delta, x), label=f"$\delta={delta}$",
+    ...             ls=style)
+    >>> ax.legend(loc="upper center")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("Pseudo-Huber loss function $h_{\delta}(x)$")
+    >>> ax.set_xlim(-4, 4)
+    >>> ax.set_ylim(0, 8)
+    >>> plt.show()
+
+    Finally, illustrate the difference between `huber` and `pseudo_huber` by
+    plotting them and their gradients with respect to `r`. The plot shows
+    that `pseudo_huber` is continuously differentiable while `huber` is not
+    at the points :math:`\pm\delta`.
+
+    >>> def huber_grad(delta, x):
+    ...     grad = np.copy(x)
+    ...     linear_area = np.argwhere(np.abs(x) > delta)
+    ...     grad[linear_area]=delta*np.sign(x[linear_area])
+    ...     return grad
+    >>> def pseudo_huber_grad(delta, x):
+    ...     return x* (1+(x/delta)**2)**(-0.5)
+    >>> x=np.linspace(-3, 3, 500)
+    >>> delta = 1.
+    >>> fig, ax = plt.subplots(figsize=(7, 7))
+    >>> ax.plot(x, huber(delta, x), label="Huber", ls="dashed")
+    >>> ax.plot(x, huber_grad(delta, x), label="Huber Gradient", ls="dashdot")
+    >>> ax.plot(x, pseudo_huber(delta, x), label="Pseudo-Huber", ls="dotted")
+    >>> ax.plot(x, pseudo_huber_grad(delta, x), label="Pseudo-Huber Gradient",
+    ...         ls="solid")
+    >>> ax.legend(loc="upper center")
+    >>> plt.show()
     """)
 
 add_newdoc("psi",
@@ -11598,6 +12238,12 @@ add_newdoc("smirnov",
     scalar or ndarray
         The value(s) of smirnov(n, d), Prob(Dn+ >= d) (Also Prob(Dn- >= d))
 
+    See Also
+    --------
+    smirnovi : The Inverse Survival Function for the distribution
+    scipy.stats.ksone : Provides the functionality as a continuous distribution
+    kolmogorov, kolmogi : Functions for the two-sided distribution
+
     Notes
     -----
     `smirnov` is used by `stats.kstest` in the application of the
@@ -11606,69 +12252,75 @@ add_newdoc("smirnov",
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
 
-    See Also
-    --------
-    smirnovi : The Inverse Survival Function for the distribution
-    scipy.stats.ksone : Provides the functionality as a continuous distribution
-    kolmogorov, kolmogi : Functions for the two-sided distribution
-
     Examples
     --------
     >>> import numpy as np
     >>> from scipy.special import smirnov
+    >>> from scipy.stats import norm
 
-    Show the probability of a gap at least as big as 0, 0.5 and 1.0 for a sample of size 5
+    Show the probability of a gap at least as big as 0, 0.5 and 1.0 for a
+    sample of size 5.
 
     >>> smirnov(5, [0, 0.5, 1.0])
     array([ 1.   ,  0.056,  0.   ])
 
-    Compare a sample of size 5 drawn from a source N(0.5, 1) distribution against
-    a target N(0, 1) CDF.
+    Compare a sample of size 5 against N(0, 1), the standard normal
+    distribution with mean 0 and standard deviation 1.
 
-    >>> from scipy.stats import norm
-    >>> rng = np.random.default_rng()
-    >>> n = 5
-    >>> gendist = norm(0.5, 1)       # Normal distribution, mean 0.5, stddev 1
-    >>> x = np.sort(gendist.rvs(size=n, random_state=rng))
-    >>> x
-    array([-1.3922078 , -0.13526532,  0.1371477 ,  0.18981686,  1.81948167])
+    `x` is the sample.
+
+    >>> x = np.array([-1.392, -0.135, 0.114, 0.190, 1.82])
+
     >>> target = norm(0, 1)
     >>> cdfs = target.cdf(x)
     >>> cdfs
-    array([0.08192974, 0.44620105, 0.55454297, 0.57527368, 0.96558101])
-    # Construct the Empirical CDF and the K-S statistics (Dn+, Dn-, Dn)
+    array([0.0819612 , 0.44630594, 0.5453811 , 0.57534543, 0.9656205 ])
+
+    Construct the empirical CDF and the K-S statistics (Dn+, Dn-, Dn).
+
+    >>> n = len(x)
     >>> ecdfs = np.arange(n+1, dtype=float)/n
-    >>> cols = np.column_stack([x, ecdfs[1:], cdfs, cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
-    >>> np.set_printoptions(precision=3)
-    >>> cols
-    array([[-1.392,  0.2  ,  0.082,  0.082,  0.118],
-           [-0.135,  0.4  ,  0.446,  0.246, -0.046],
-           [ 0.137,  0.6  ,  0.555,  0.155,  0.045],
-           [ 0.19 ,  0.8  ,  0.575, -0.025,  0.225],
-           [ 1.819,  1.   ,  0.966,  0.166,  0.034]])
+    >>> cols = np.column_stack([x, ecdfs[1:], cdfs, cdfs - ecdfs[:n],
+    ...                        ecdfs[1:] - cdfs])
+    >>> with np.printoptions(precision=3):
+    ...    print(cols)
+    [[-1.392  0.2    0.082  0.082  0.118]
+     [-0.135  0.4    0.446  0.246 -0.046]
+     [ 0.114  0.6    0.545  0.145  0.055]
+     [ 0.19   0.8    0.575 -0.025  0.225]
+     [ 1.82   1.     0.966  0.166  0.034]]
     >>> gaps = cols[:, -2:]
     >>> Dnpm = np.max(gaps, axis=0)
-    >>> print('Dn-=%f, Dn+=%f' % (Dnpm[0], Dnpm[1]))
-    Dn-=0.246201, Dn+=0.224726
+    >>> print(f'Dn-={Dnpm[0]:f}, Dn+={Dnpm[1]:f}')
+    Dn-=0.246306, Dn+=0.224655
     >>> probs = smirnov(n, Dnpm)
-    >>> print(chr(10).join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
-    ...      ' Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]),
-    ...      ' Smirnov n=%d: Prob(Dn+ >= %f) = %.4f' % (n, Dnpm[1], probs[1])]))
-    For a sample of size 5 drawn from a N(0, 1) distribution:
-     Smirnov n=5: Prob(Dn- >= 0.246201) = 0.4713
-     Smirnov n=5: Prob(Dn+ >= 0.224726) = 0.5243
+    >>> print(f'For a sample of size {n} drawn from N(0, 1):',
+    ...       f' Smirnov n={n}: Prob(Dn- >= {Dnpm[0]:f}) = {probs[0]:.4f}',
+    ...       f' Smirnov n={n}: Prob(Dn+ >= {Dnpm[1]:f}) = {probs[1]:.4f}',
+    ...       sep='\n')
+    For a sample of size 5 drawn from N(0, 1):
+     Smirnov n=5: Prob(Dn- >= 0.246306) = 0.4711
+     Smirnov n=5: Prob(Dn+ >= 0.224655) = 0.5245
 
-    Plot the Empirical CDF against the target N(0, 1) CDF
+    Plot the empirical CDF and the standard normal CDF.
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.step(np.concatenate([[-3], x]), ecdfs, where='post', label='Empirical CDF')
-    >>> x3 = np.linspace(-3, 3, 100)
-    >>> plt.plot(x3, target.cdf(x3), label='CDF for N(0, 1)')
-    >>> plt.ylim([0, 1]); plt.grid(True); plt.legend();
-    # Add vertical lines marking Dn+ and Dn-
+    >>> plt.step(np.concatenate(([-2.5], x, [2.5])),
+    ...          np.concatenate((ecdfs, [1])),
+    ...          where='post', label='Empirical CDF')
+    >>> xx = np.linspace(-2.5, 2.5, 100)
+    >>> plt.plot(xx, target.cdf(xx), '--', label='CDF for N(0, 1)')
+
+    Add vertical lines marking Dn+ and Dn-.
+
     >>> iminus, iplus = np.argmax(gaps, axis=0)
-    >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r', linestyle='dashed', lw=4)
-    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='m', linestyle='dashed', lw=4)
+    >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r',
+    ...            alpha=0.5, lw=4)
+    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='m',
+    ...            alpha=0.5, lw=4)
+
+    >>> plt.grid(True)
+    >>> plt.legend(framealpha=1, shadow=True)
     >>> plt.show()
     """)
 
@@ -11695,6 +12347,13 @@ add_newdoc("smirnovi",
     scalar or ndarray
         The value(s) of smirnovi(n, p), the critical values.
 
+    See Also
+    --------
+    smirnov : The Survival Function (SF) for the distribution
+    scipy.stats.ksone : Provides the functionality as a continuous distribution
+    kolmogorov, kolmogi : Functions for the two-sided distribution
+    scipy.stats.kstwobign : Two-sided Kolmogorov-Smirnov distribution, large n
+
     Notes
     -----
     `smirnov` is used by `stats.kstest` in the application of the
@@ -11703,11 +12362,25 @@ add_newdoc("smirnovi",
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
 
-    See Also
+    Examples
     --------
-    smirnov  : The Survival Function (SF) for the distribution
-    scipy.stats.ksone : Provides the functionality as a continuous distribution
-    kolmogorov, kolmogi, scipy.stats.kstwobign : Functions for the two-sided distribution
+    >>> from scipy.special import smirnovi, smirnov
+
+    >>> n = 24
+    >>> deviations = [0.1, 0.2, 0.3]
+
+    Use `smirnov` to compute the complementary CDF of the Smirnov
+    distribution for the given number of samples and deviations.
+
+    >>> p = smirnov(n, deviations)
+    >>> p
+    array([0.58105083, 0.12826832, 0.01032231])
+
+    The inverse function ``smirnovi(n, p)`` returns ``deviations``.
+
+    >>> smirnovi(n, p)
+    array([0.1, 0.2, 0.3])
+
     """)
 
 add_newdoc("_smirnovc",
@@ -12517,6 +13190,10 @@ add_newdoc("yve",
     Y : scalar or ndarray
         Value of the exponentially scaled Bessel function.
 
+    See Also
+    --------
+    yv: Unscaled Bessel function of the second kind of real order.
+
     Notes
     -----
     For positive `v` values, the computation is carried out using the
@@ -12534,11 +13211,64 @@ add_newdoc("yve",
     exactly zero for integer `v`; to improve accuracy the second term is
     explicitly omitted for `v` values such that `v = floor(v)`.
 
+    Exponentially scaled Bessel functions are useful for large `z`:
+    for these, the unscaled Bessel functions can easily under-or overflow.
+
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Compare the output of `yv` and `yve` for large complex arguments for `z`
+    by computing their values for order ``v=1`` at ``z=1000j``. We see that
+    `yv` returns nan but `yve` returns a finite number:
+
+    >>> import numpy as np
+    >>> from scipy.special import yv, yve
+    >>> v = 1
+    >>> z = 1000j
+    >>> yv(v, z), yve(v, z)
+    ((nan+nanj), (-0.012610930256928629+7.721967686709076e-19j))
+
+    For real arguments for `z`, `yve` returns the same as `yv` up to
+    floating point errors.
+
+    >>> v, z = 1, 1000
+    >>> yv(v, z), yve(v, z)
+    (-0.02478433129235178, -0.02478433129235179)
+
+    The function can be evaluated for several orders at the same time by
+    providing a list or NumPy array for `v`:
+
+    >>> yve([1, 2, 3], 1j)
+    array([-0.20791042+0.14096627j,  0.38053618-0.04993878j,
+           0.00815531-1.66311097j])
+
+    In the same way, the function can be evaluated at several points in one
+    call by providing a list or NumPy array for `z`:
+
+    >>> yve(1, np.array([1j, 2j, 3j]))
+    array([-0.20791042+0.14096627j, -0.21526929+0.01205044j,
+           -0.19682671+0.00127278j])
+
+    It is also possible to evaluate several orders at several points
+    at the same time by providing arrays for `v` and `z` with
+    broadcasting compatible shapes. Compute `yve` for two different orders
+    `v` and three points `z` resulting in a 2x3 array.
+
+    >>> v = np.array([[1], [2]])
+    >>> z = np.array([3j, 4j, 5j])
+    >>> v.shape, z.shape
+    ((2, 1), (3,))
+
+    >>> yve(v, z)
+    array([[-1.96826713e-01+1.27277544e-03j, -1.78750840e-01+1.45558819e-04j,
+            -1.63972267e-01+1.73494110e-05j],
+           [1.94960056e-03-1.11782545e-01j,  2.02902325e-04-1.17626501e-01j,
+            2.27727687e-05-1.17951906e-01j]])
     """)
 
 add_newdoc("_zeta",

@@ -1,20 +1,13 @@
 import sys
-from typing import overload, Optional, Any, Union, Tuple, SupportsFloat
+from typing import (overload, Optional, Any, Union, Tuple, SupportsFloat,
+                    Literal, Protocol, SupportsIndex)
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-if sys.version_info >= (3, 8):
-    from typing import Literal, Protocol, SupportsIndex
-else:
-    from typing_extensions import Literal, Protocol
-
 # Anything that can be parsed by `np.float64.__init__` and is thus
 # compatible with `ndarray.__setitem__` (for a float64 array)
-if sys.version_info >= (3, 8):
-    _FloatValue = Union[None, str, bytes, SupportsFloat, SupportsIndex]
-else:
-    _FloatValue = Union[None, str, bytes, SupportsFloat]
+_FloatValue = Union[None, str, bytes, SupportsFloat, SupportsIndex]
 
 class _MetricCallback1(Protocol):
     def __call__(

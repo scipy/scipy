@@ -1,18 +1,9 @@
-_stats_pxd = custom_target('_stats_pxd',
-  output: [
-    '__init__.py',
-    '_stats.pxd',
-    '_biasedurn.pxd',
-    'unuran.pxd',
-  ],
-  input: [
-    '__init__.py',
-    '_stats.pxd',
-    '_biasedurn.pxd',
-    '_unuran/unuran.pxd',
-  ],
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
+_stats_pxd = [
+  fs.copyfile('__init__.py'),
+  fs.copyfile('_stats.pxd'),
+  fs.copyfile('_biasedurn.pxd'),
+  fs.copyfile('_unuran/unuran.pxd'),
+]
 
 stats_special_cython_gen = generator(cython_cli,
   arguments : ['@INPUT@', '@OUTPUT@'],
@@ -92,7 +83,6 @@ _sobol = py3.extension_module('_sobol',
 py3.install_sources([
     '_sobol_direction_numbers.npz'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 
@@ -183,8 +173,7 @@ if use_pythran
   )
 else
   py3.install_sources(
-    ['_hypotests_pythran.py'],
-    pure: false,
+    ['_stats_pythran.py'],
     subdir: 'scipy/stats'
   )
 endif
@@ -240,7 +229,6 @@ py3.install_sources([
     'statlib.py',
     'stats.py'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 
@@ -248,7 +236,6 @@ py3.install_sources([
     '_biasedurn.pxd',
     '_stats.pxd'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 
@@ -256,12 +243,12 @@ py3.install_sources([
     '_qmc_cy.pyi',
     '_sobol.pyi'
   ],
-  pure: false,
   subdir: 'scipy/stats'
 )
 
 subdir('_boost')
 subdir('_levy_stable')
 subdir('_unuran')
+subdir('_rcont')
 
 subdir('tests')

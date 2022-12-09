@@ -51,13 +51,17 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
 from ._hypotests import _all_partitions
-from ._stats_pythran import _compute_outer_prob_inside_method
+
+from ._stats_pythran import (_compute_outer_prob_inside_method,
+                             _compute_prob_outside_square,
+                             _count_paths_outside_method)
 from ._resampling import _batch_generator
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
+from scipy.optimize import root_scalar
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -80,7 +84,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'alexandergovern']
+           'brunnermunzel', 'alexandergovern',
+           'expectile', ]
 
 
 def _chk_asarray(a, axis):
@@ -4804,6 +4809,10 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
        Section  14.7
+    .. [2] Kendall, M. G. and Stuart, A. (1973).
+       The Advanced Theory of Statistics, Volume 2: Inference and Relationship.
+       Griffin. 1973.
+       Section 31.18
 
     Examples
     --------
@@ -7775,118 +7784,6 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
 Ks_2sampResult = KstestResult
 
 
-def _compute_prob_outside_square(n, h):
-    """
-    Compute the proportion of paths that pass outside the two diagonal lines.
-
-    Parameters
-    ----------
-    n : integer
-        n > 0
-    h : integer
-        0 <= h <= n
-
-    Returns
-    -------
-    p : float
-        The proportion of paths that pass outside the lines x-y = +/-h.
-
-    """
-    # Compute Pr(D_{n,n} >= h/n)
-    # Prob = 2 * ( binom(2n, n-h) - binom(2n, n-2a) + binom(2n, n-3a) - ... )
-    # / binom(2n, n)
-    # This formulation exhibits subtractive cancellation.
-    # Instead divide each term by binom(2n, n), then factor common terms
-    # and use a Horner-like algorithm
-    # P = 2 * A0 * (1 - A1*(1 - A2*(1 - A3*(1 - A4*(...)))))
-
-    P = 0.0
-    k = int(np.floor(n / h))
-    while k >= 0:
-        p1 = 1.0
-        # Each of the Ai terms has numerator and denominator with
-        # h simple terms.
-        for j in range(h):
-            p1 = (n - k * h - j) * p1 / (n + k * h + j + 1)
-        P = p1 * (1.0 - P)
-        k -= 1
-    return 2 * P
-
-
-def _count_paths_outside_method(m, n, g, h):
-    """Count the number of paths that pass outside the specified diagonal.
-
-    Parameters
-    ----------
-    m : integer
-        m > 0
-    n : integer
-        n > 0
-    g : integer
-        g is greatest common divisor of m and n
-    h : integer
-        0 <= h <= lcm(m,n)
-
-    Returns
-    -------
-    p : float
-        The number of paths that go low.
-        The calculation may overflow - check for a finite answer.
-
-    Notes
-    -----
-    Count the integer lattice paths from (0, 0) to (m, n), which at some
-    point (x, y) along the path, satisfy:
-      m*y <= n*x - h*g
-    The paths make steps of size +1 in either positive x or positive y
-    directions.
-
-    We generally follow Hodges' treatment of Drion/Gnedenko/Korolyuk.
-    Hodges, J.L. Jr.,
-    "The Significance Probability of the Smirnov Two-Sample Test,"
-    Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
-
-    """
-    # Compute #paths which stay lower than x/m-y/n = h/lcm(m,n)
-    # B(x, y) = #{paths from (0,0) to (x,y) without
-    #             previously crossing the boundary}
-    #         = binom(x, y) - #{paths which already reached the boundary}
-    # Multiply by the number of path extensions going from (x, y) to (m, n)
-    # Sum.
-
-    # Probability is symmetrical in m, n.  Computation below assumes m >= n.
-    if m < n:
-        m, n = n, m
-    mg = m // g
-    ng = n // g
-
-    # Not every x needs to be considered.
-    # xj holds the list of x values to be checked.
-    # Wherever n*x/m + ng*h crosses an integer
-    lxj = n + (mg-h)//mg
-    xj = [(h + mg * j + ng-1)//ng for j in range(lxj)]
-    # B is an array just holding a few values of B(x,y), the ones needed.
-    # B[j] == B(x_j, j)
-    if lxj == 0:
-        return special.binom(m + n, n)
-    B = np.zeros(lxj)
-    B[0] = 1
-    # Compute the B(x, y) terms
-    for j in range(1, lxj):
-        Bj = special.binom(xj[j] + j, j)
-        for i in range(j):
-            bin = special.binom(xj[j] - xj[i] + j - i, j-i)
-            Bj -= bin * B[i]
-        B[j] = Bj
-    # Compute the number of path extensions...
-    num_paths = 0
-    for j in range(lxj):
-        bin = special.binom((m-xj[j]) + (n - j), n-j)
-        term = B[j] * bin
-        num_paths += term
-    return num_paths
-
-
 def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     """Attempts to compute the exact 2sample probability.
 
@@ -7925,7 +7822,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
                     else:
                         prob = num_paths / bin
 
-    except (FloatingPointError, OverflowError):
+    except (FloatingPointError, OverflowError, RuntimeError):
         saw_fp_error = True
 
     if saw_fp_error:
@@ -9531,3 +9428,129 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         result[nan_indexes] = np.nan
 
     return result
+
+
+def expectile(a, alpha=0.5, *, weights=None):
+    r"""Compute the expectile at the specified level.
+
+    Expectiles are a generalization of the expectation in the same way as
+    quantiles are a generalization of the median. The expectile at level
+    `alpha = 0.5` is the mean (average). See Notes for more details.
+
+    Parameters
+    ----------
+    a : array_like
+        Array containing numbers whose expectile is desired.
+    alpha : float, default: 0.5
+        The level of the expectile; e.g., `alpha=0.5` gives the mean.
+    weights : array_like, optional
+        An array of weights associated with the values in `a`.
+        The `weights` must be broadcastable to the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
+        An integer valued weight element acts like repeating the corresponding
+        observation in `a` that many times. See Notes for more details.
+
+    Returns
+    -------
+    expectile : ndarray
+        The empirical expectile at level `alpha`.
+
+    See Also
+    --------
+    numpy.mean : Arithmetic average
+    numpy.quantile : Quantile
+
+    Notes
+    -----
+    In general, the expectile at level :math:`\alpha` of a random variable
+    :math:`X` with cumulative distribution function (CDF) :math:`F` is given
+    by the unique solution :math:`t` of:
+
+    .. math::
+
+        \alpha E((X - t)_+) = (1 - \alpha) E((t - X)_+) \,.
+
+    Here, :math:`(x)_+ = \max(0, x)` is the positive part of :math:`x`.
+    This equation can be equivalently written as:
+
+    .. math::
+
+        \alpha \int_t^\infty (x - t)\mathrm{d}F(x)
+        = (1 - \alpha) \int_{-\infty}^t (t - x)\mathrm{d}F(x) \,.
+
+    The empirical expectile at level :math:`\alpha` (`alpha`) of a sample
+    :math:`a_i` (the array `a`) is defined by plugging in the empirical CDF of
+    `a`. Given sample or case weights :math:`w` (the array `weights`), it
+    reads :math:`F_a(x) = \frac{1}{\sum_i a_i} \sum_i w_i 1_{a_i \leq x}`
+    with indicator function :math:`1_{A}`. This leads to the definition of the
+    empirical expectile at level `alpha` as the unique solution :math:`t` of:
+
+    .. math::
+
+        \alpha \sum_{i=1}^n w_i (a_i - t)_+ =
+            (1 - \alpha) \sum_{i=1}^n w_i (t - a_i)_+ \,.
+
+    For :math:`\alpha=0.5`, this simplifies to the weighted average.
+    Furthermore, the larger :math:`\alpha`, the larger the value of the
+    expectile.
+
+    As a final remark, the expectile at level :math:`\alpha` can also be
+    written as a minimization problem. One often used choice is
+
+    .. math::
+
+        \operatorname{argmin}_t
+        E(\lvert 1_{t\geq X} - \alpha\rvert(t - X)^2) \,.
+
+    References
+    ----------
+    .. [1] W. K. Newey and J. L. Powell (1987), "Asymmetric Least Squares
+           Estimation and Testing," Econometrica, 55, 819-847.
+    .. [2] T. Gneiting (2009). "Making and Evaluating Point Forecasts,"
+           Journal of the American Statistical Association, 106, 746 - 762.
+           :doi:`10.48550/arXiv.0912.0902`
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import expectile
+    >>> a = [1, 4, 2, -1]
+    >>> expectile(a, alpha=0.5) == np.mean(a)
+    True
+    >>> expectile(a, alpha=0.2)
+    0.42857142857142855
+    >>> expectile(a, alpha=0.8)
+    2.5714285714285716
+    >>> weights = [1, 3, 1, 1]
+
+    """
+    if alpha < 0 or alpha > 1:
+        raise ValueError(
+            "The expectile level alpha must be in the range [0, 1]."
+        )
+    a = np.asarray(a)
+
+    if weights is not None:
+        weights = np.broadcast_to(weights, a.shape)
+
+    # This is the empirical equivalent of Eq. (13) with identification
+    # function from Table 9 (omitting a factor of 2) in [2] (their y is our
+    # data a, their x is our t)
+    def first_order(t):
+        return np.average(np.abs((a <= t) - alpha) * (t - a), weights=weights)
+
+    if alpha >= 0.5:
+        x0 = np.average(a, weights=weights)
+        x1 = np.amax(a)
+    else:
+        x1 = np.average(a, weights=weights)
+        x0 = np.amin(a)
+
+    if x0 == x1:
+        # a has a single unique element
+        return x0
+
+    # Note that the expectile is the unique solution, so no worries about
+    # finding a wrong root.
+    res = root_scalar(first_order, x0=x0, x1=x1)
+    return res.root
