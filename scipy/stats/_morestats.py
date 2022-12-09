@@ -2276,7 +2276,7 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     elif A2 > critical.max() and not n_resamples:
         p = sig.min()
         message = (f"p-value floored: true value smaller than {p}. Consider "
-                   "setting `n_resamples` to a possible integer (e.g. 9999).")
+                   "setting `n_resamples` to a positive integer (e.g. 9999).")
         warnings.warn(message, stacklevel=2)
     elif not n_resamples:
         # interpolation of probit of significance level
