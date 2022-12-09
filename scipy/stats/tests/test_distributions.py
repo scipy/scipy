@@ -7663,9 +7663,9 @@ class TestRelativisticBW:
 
     @pytest.mark.parametrize(
         "rho,gamma,rtol", [
-            (36.545206797050334, 2.4952, 1e-14), # Z0 Boson
-            (38.55107913669065, 2.085, 1e-14), # W Boson
-            (96292.3076923077, 0.0013, 5e-13), # Higgs Boson
+            (36.545206797050334, 2.4952, 1e-14),  # Z0 Boson
+            (38.55107913669065, 2.085, 1e-14),  # W Boson
+            (96292.3076923077, 0.0013, 5e-13),  # Higgs Boson
         ]
     )
     def test_pdf_against_ROOT(self, ROOT_pdf_sample_data, rho, gamma, rtol):
