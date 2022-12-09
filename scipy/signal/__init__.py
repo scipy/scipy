@@ -327,7 +327,7 @@ from ._ltisys import *
 from ._lti_conversion import *
 from ._signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
-from .wigner import wigner_ville
+from ._wigner import wigner_ville
 from ._spectral_py import *
 from ._wavelets import *
 from ._peak_finding import *
