@@ -107,6 +107,16 @@ def saltelli_2010(
 ) -> Tuple[np.ndarray,  np.ndarray]:
     """Saltelli2010 formulation.
 
+    .. math::
+
+        S_i = \frac{1}{N} \sum_{j=1}^N
+        f(\mathbf{B})_j (f(\mathbf{AB}^{(i)})_j - f(\mathbf{A})_j)
+
+    .. math::
+
+        S_{T_i} = \frac{1}{N} \sum_{j=1}^N
+        (f(\mathbf{A})_j - f(\mathbf{AB}^{(i)})_j)^2
+
     References
     ----------
     .. [1] Saltelli, A., P. Annoni, I. Azzini, F. Campolongo, M. Ratto, and
@@ -251,7 +261,7 @@ def sobol_indices(
     ...    l_bounds=[-np.pi, -np.pi, -np.pi], u_bounds=[np.pi, np.pi, np.pi]
     ... )
     >>> indices[:2]
-    (array([0.28717719, 0.44694404, 0.00404842]),
+    (array([0.28717719, 0.44694404, 0.00404842]),  # may vary
      array([0.53461512, 0.42775372, 0.23343319]))
 
     It is particularly interesting because the first order indice of
