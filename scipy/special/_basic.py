@@ -292,7 +292,6 @@ def jnyn_zeros(n, nt):
     >>> fig, ax = plt.subplots()
     >>> xmax= 11
     >>> x = np.linspace(0, xmax)
-    >>> x[0] += 1e-15
     >>> ax.plot(x, jn(1, x), label=r"$J_1$", c='r')
     >>> ax.plot(x, jvp(1, x, 1), label=r"$J_1'$", c='b')
     >>> ax.plot(x, yn(1, x), label=r"$Y_1$", c='y')
@@ -782,7 +781,6 @@ def y1p_zeros(nt, complex=False):
     >>> real_roots = y1_roots.real
     >>> xmax = 15
     >>> x = np.linspace(0, xmax, 500)
-    >>> x[0] += 1e-15
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, y1(x), label=r'$Y_1$')
     >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$")
@@ -961,7 +959,6 @@ def yvp(v, z, n=1):
 
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 5, 1000)
-    >>> x[0] += 1e-15
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, yvp(1, x, 0), label=r"$Y_1$")
     >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$")

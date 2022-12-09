@@ -304,7 +304,6 @@ for key in (
         'lsim2 is deprecated',  # Deprecation of scipy.signal.lsim2
         'impulse2 is deprecated',  # Deprecation of scipy.signal.impulse2
         'step2 is deprecated',  # Deprecation of scipy.signal.step2
-        '`interp2d` is deprecated',  # Deprecation of interpolate.interp2d
         'scipy.misc'  # scipy.misc deprecated in v1.10.0; use scipy.datasets
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
