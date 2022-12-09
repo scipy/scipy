@@ -2271,7 +2271,7 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     if A2 < critical.min() and not n_resamples:
         p = sig.max()
         message = (f"p-value capped: true value larger than {p}. Consider "
-                   "setting `n_resamples` to a possible integer (e.g. 9999).")
+                   "setting `n_resamples` to a positive integer (e.g. 9999).")
         warnings.warn(message, stacklevel=2)
     elif A2 > critical.max() and not n_resamples:
         p = sig.min()
