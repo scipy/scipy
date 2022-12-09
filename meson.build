@@ -6,7 +6,7 @@ project(
   # tools/version_utils.py
   version: '1.10.0.dev0',
   license: 'BSD-3',
-  meson_version: '>= 0.64.0',
+  meson_version: '>= 0.64.0,< 0.66',
   default_options: [
     'buildtype=debugoptimized',
     'c_std=c99',
