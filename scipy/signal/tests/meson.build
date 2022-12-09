@@ -18,6 +18,7 @@ py3.install_sources([
     'test_upfirdn.py',
     'test_waveforms.py',
     'test_wavelets.py',
+    'test_wigner.py',
     'test_windows.py'
   ],
   subdir: 'scipy/signal/tests'
