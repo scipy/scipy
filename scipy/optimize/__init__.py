@@ -318,6 +318,14 @@ Benchmark problems
    rosen_hess - The Hessian matrix of the Rosenbrock function.
    rosen_hess_prod - Product of the Rosenbrock Hessian with a vector.
 
+Other
+-----
+
+.. autosummary::
+   :toctree: generated/
+
+   MemoizeJac - Decorator that caches function returning `(fun, grad)`.
+
 Legacy functions
 ================
 
