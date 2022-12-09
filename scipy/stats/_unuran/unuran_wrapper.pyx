@@ -1,17 +1,11 @@
 # cython: language_level=3
 
-
-# Expression below is replaced by ``DEF NPY_OLD = True`` for NumPy < 1.19
-# and ``DEF NPY_OLD = False`` for NumPy >= 1.19.
-DEF NPY_OLD = isNPY_OLD
-
-
 cimport cython
 from cpython.object cimport PyObject
 cimport numpy as np
-IF not NPY_OLD:
-    from cpython.pycapsule cimport PyCapsule_IsValid, PyCapsule_GetPointer
-    from numpy.random cimport bitgen_t
+from cpython.pycapsule cimport PyCapsule_IsValid, PyCapsule_GetPointer
+from numpy.random cimport bitgen_t
+
 from scipy._lib.ccallback cimport ccallback_t
 from scipy._lib.messagestream cimport MessageStream
 from .unuran cimport *
@@ -66,45 +60,25 @@ class UNURANError(RuntimeError):
 
 ctypedef double (*URNG_FUNCT)(void *) nogil
 
-IF not NPY_OLD:
-    cdef object get_numpy_rng(object seed = None):
-        """
-        Create a NumPy Generator object from a given seed.
+cdef object get_numpy_rng(object seed = None):
+    """
+    Create a NumPy Generator object from a given seed.
 
-        Parameters
-        ----------
-        seed : object, optional
-            Seed for the generator. If None, no seed is set. The seed can be
-            an integer, Generator, or RandomState.
+    Parameters
+    ----------
+    seed : object, optional
+        Seed for the generator. If None, no seed is set. The seed can be
+        an integer, Generator, or RandomState.
 
-        Returns
-        -------
-        numpy_rng : object
-            An instance of NumPy's Generator class.
-        """
-        seed = check_random_state(seed)
-        if isinstance(seed, np.random.RandomState):
-            return np.random.default_rng(seed._bit_generator)
-        return seed
-ELSE:
-    cdef object get_numpy_rng(object seed = None):
-        """
-        Create a NumPy RandomState object from a given seed. If the seed is
-        is an instance of `np.random.Generator`, it is returned as-is.
-
-        Parameters
-        ----------
-        seed : object, optional
-            Seed for the generator. If None, no seed is set. The seed can be
-            an integer, Generator, or RandomState.
-
-        Returns
-        -------
-        numpy_rng : object
-            An instance of NumPy's RandomState or Generator class.
-        """
-        return check_random_state(seed)
-
+    Returns
+    -------
+    numpy_rng : object
+        An instance of NumPy's Generator class.
+    """
+    seed = check_random_state(seed)
+    if isinstance(seed, np.random.RandomState):
+        return np.random.default_rng(seed._bit_generator)
+    return seed
 
 @cython.final
 cdef class _URNG:
@@ -125,11 +99,6 @@ cdef class _URNG:
     def __init__(self, numpy_rng):
         self.numpy_rng = numpy_rng
 
-    IF NPY_OLD:
-        cdef double _next_double(self) nogil:
-            with gil:
-                return self.numpy_rng.uniform()
-
     @cython.boundscheck(False)
     @cython.wraparound(False)
     cdef double _next_qdouble(self) nogil:
@@ -146,25 +115,20 @@ cdef class _URNG:
             A UNU.RAN uniform random number generator.
         """
         cdef unur_urng *unuran_urng
-        IF NPY_OLD:
-            unuran_urng = unur_urng_new(<URNG_FUNCT>self._next_double,
-                                        <void *>self)
-            return unuran_urng
-        ELSE:
-            cdef:
-                bitgen_t *numpy_urng
-                const char *capsule_name = "BitGenerator"
+        cdef:
+            bitgen_t *numpy_urng
+            const char *capsule_name = "BitGenerator"
 
-            capsule = self.numpy_rng.bit_generator.capsule
+        capsule = self.numpy_rng.bit_generator.capsule
 
-            if not PyCapsule_IsValid(capsule, capsule_name):
-                raise ValueError("Invalid pointer to anon_func_state.")
+        if not PyCapsule_IsValid(capsule, capsule_name):
+            raise ValueError("Invalid pointer to anon_func_state.")
 
-            numpy_urng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
-            unuran_urng = unur_urng_new(numpy_urng.next_double,
-                                        <void *>(numpy_urng.state))
+        numpy_urng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
+        unuran_urng = unur_urng_new(numpy_urng.next_double,
+                                    <void *>(numpy_urng.state))
 
-            return unuran_urng
+        return unuran_urng
 
     cdef unur_urng *get_qurng(self, size, qmc_engine) except *:
         cdef unur_urng *unuran_urng
