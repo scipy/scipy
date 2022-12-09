@@ -1,8 +1,10 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Tuple
+from typing import Callable, List, Optional, TYPE_CHECKING, Tuple
 
 import numpy as np
+from scipy.stats._unuran.unuran_wrapper import PINVDist
 
+from scipy._lib._util import IntNumber, SeedType
 from scipy.stats._qmc import check_random_state
 from scipy.stats import qmc, bootstrap
 from scipy.stats.sampling import NumericalInversePolynomial
@@ -50,7 +52,11 @@ def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
     return f_eval.reshape(-1, 1)
 
 
-def sample_A_B(d, n, dists=None, random_state=None):
+def sample_A_B(
+    d: int, n: int,
+    dists: Optional[List[PINVDist]] = None,
+    random_state: SeedType = None
+) -> Tuple[np.ndarray,  np.ndarray]:
     """Sample two matrices A and B.
 
     Uses a Sobol' sequence with 2`d` columns to have 2 uncorrelated matrices.
@@ -90,7 +96,16 @@ def sample_AB(A: np.ndarray, B: np.ndarray) -> np.ndarray:
 def saltelli_2010(
     f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray
 ) -> Tuple[np.ndarray,  np.ndarray]:
-    """Saltelli2010 formulation."""
+    """Saltelli2010 formulation.
+
+    References
+    ----------
+    .. [1] Saltelli, A., P. Annoni, I. Azzini, F. Campolongo, M. Ratto, and
+       S. Tarantola. "Variance based sensitivity analysis of model
+       output. Design and estimator for the total sensitivity index."
+       Computer Physics Communications, 181(2):259-270,
+       :doi:`10.1016/j.cpc.2009.09.018`, 2010.
+    """
     f_AB = f_AB.reshape(-1, f_A.shape[0])
 
     var = np.var(np.vstack([f_A, f_B]))
@@ -102,7 +117,14 @@ def saltelli_2010(
 
 
 def sobol_indices(
-    *, func, n, d, dists=None, l_bounds=None, u_bounds=None, random_state=None
+    *,
+    func: Callable,
+    n: IntNumber,
+    d: IntNumber,
+    dists: Optional[List[PINVDist]] = None,
+    l_bounds: Optional[npt.ArrayLike] = None,
+    u_bounds: Optional[npt.ArrayLike] = None,
+    random_state: SeedType = None
 ):
     """Global sensitivity indices of Sobol'.
 
