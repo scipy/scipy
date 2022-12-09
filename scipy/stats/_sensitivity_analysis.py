@@ -61,6 +61,15 @@ def sample_A_B(
 
     Uses a Sobol' sequence with 2`d` columns to have 2 uncorrelated matrices.
     This is more efficient than using 2 random draw of Sobol'.
+    See sec. 5 from [1]_.
+
+    References
+    ----------
+    .. [1] Saltelli, A., P. Annoni, I. Azzini, F. Campolongo, M. Ratto, and
+       S. Tarantola. "Variance based sensitivity analysis of model
+       output. Design and estimator for the total sensitivity index."
+       Computer Physics Communications, 181(2):259-270,
+       :doi:`10.1016/j.cpc.2009.09.018`, 2010.
     """
     A_B = qmc.Sobol(d=2*d, seed=random_state, bits=64).random(n)
 
@@ -83,7 +92,7 @@ def sample_AB(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     AB: columns of B into A. Shape (n*d, d). e.g in 2d
     Take A and replace 1st column with 1st column of B. You have (n, d)
     Then A and replace 2nd column with 2nd column of B. You have (n, d)
-    Concatenate to get AB. Which means AB is (2*n, d)
+    Concatenate to get AB. Which means AB is (2*n, d).
     """
     n, d = A.shape
     AB = np.empty((int(d*n), d))
@@ -127,6 +136,19 @@ def sobol_indices(
     random_state: SeedType = None
 ):
     """Global sensitivity indices of Sobol'.
+
+    Parameters
+    ----------
+    n : int
+        Must be a power of 2. The total number of function call will
+        ``n(d+2)``.
+    d : int
+        Dimension of the parameter space.
+    random_state : {None, int, `numpy.random.Generator`}, optional
+        If `random_state` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(random_state)``.
+        If `random_state` is already a ``Generator`` instance, then the
+        provided instance is used.
 
     Notes
     -----
