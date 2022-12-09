@@ -2091,7 +2091,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 )
 
 
-def anderson_ksamp(samples, midrank=True, n_resamples=0, random_state=None):
+def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2111,9 +2111,9 @@ def anderson_ksamp(samples, midrank=True, n_resamples=0, random_state=None):
         distribution is used.
     n_resamples : int, default: 0
         If positive, perform a permutation test to determine the p-value
-        rather than interpolating between tabulated values.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
+        rather than interpolating between tabulated values. Typically 9999 is
+        sufficient for at least two digits of accuracy.
+    random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
 
         Pseudorandom number generator state used to generate resamples.
 
@@ -2215,7 +2215,7 @@ def anderson_ksamp(samples, midrank=True, n_resamples=0, random_state=None):
     >>> res.pvalue
     0.5254
 
-    """
+    """  # noqa
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
@@ -2270,12 +2270,14 @@ def anderson_ksamp(samples, midrank=True, n_resamples=0, random_state=None):
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
     if A2 < critical.min() and not n_resamples:
         p = sig.max()
-        warnings.warn("p-value capped: true value larger than {}".format(p),
-                      stacklevel=2)
+        message = (f"p-value capped: true value larger than {p}. Consider "
+                   "setting `n_resamples` to a possible integer (e.g. 9999).")
+        warnings.warn(message, stacklevel=2)
     elif A2 > critical.max() and not n_resamples:
         p = sig.min()
-        warnings.warn("p-value floored: true value smaller than {}".format(p),
-                      stacklevel=2)
+        message = (f"p-value floored: true value smaller than {p}. Consider "
+                   "setting `n_resamples` to a possible integer (e.g. 9999).")
+        warnings.warn(message, stacklevel=2)
     elif not n_resamples:
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
