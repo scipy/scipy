@@ -17,6 +17,7 @@ __all__ = ['wigner_ville']
 def wigner_ville(
         x: npt.ArrayLike,
         fs: float = 1.0,
+        *,
         resolution: int = 1,
         window_size: None | int = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
