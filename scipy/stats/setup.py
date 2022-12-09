@@ -88,6 +88,9 @@ def configuration(parent_package='', top_path=None):
     # add levy stable submodule
     config.add_subpackage('_levy_stable')
 
+    # add rcont submodule
+    config.add_subpackage('_rcont')
+
     # Type stubs
     config.add_data_files('*.pyi')
 

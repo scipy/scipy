@@ -272,7 +272,7 @@ scipy/special/_comb.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
 scipy/special/_logit.c
-scipy/special/_test_round.c
+scipy/special/_test_internal.c
 scipy/special/_ufuncs.c
 scipy/special/_ufuncs.h
 scipy/special/_ufuncs.pyx
@@ -308,6 +308,8 @@ scipy/stats/_qmc_cy.cxx
 scipy/stats/_hypotests_pythran.cpp
 scipy/stats/_unuran/unuran_wrapper.pyx
 scipy/stats/_unuran/unuran_wrapper.c
+scipy/stats/_rcont/rcont.c
+scipy/stats/_stats_pythran.cpp
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c

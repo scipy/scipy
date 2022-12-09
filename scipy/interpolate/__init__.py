@@ -79,6 +79,7 @@ Tensor product polynomials:
    BSpline
    make_interp_spline
    make_lsq_spline
+   make_smoothing_spline
 
 Functional interface to FITPACK routines:
 

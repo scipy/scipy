@@ -4,14 +4,12 @@
 import itertools
 import platform
 import sys
-
+import pytest
 import numpy as np
+from numpy import ones, r_, diag
 from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_allclose, assert_array_less)
 
-import pytest
-
-from numpy import ones, r_, diag
 from scipy.linalg import eig, eigh, toeplitz, orth
 from scipy.sparse import spdiags, diags, eye, csr_matrix
 from scipy.sparse.linalg import eigs, LinearOperator
@@ -84,6 +82,7 @@ def test_MikotaPair():
 
 
 @pytest.mark.filterwarnings("ignore:Exited at iteration 0")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_nonhermitian_warning(capsys):
     """Check the warning of a Ritz matrix being not Hermitian
     by feeding a non-Hermitian input matrix.
@@ -129,8 +128,8 @@ def test_diagonal(n, m, m_excluded):
 
     # Define the generalized eigenvalue problem Av = cBv
     # where (c, v) is a generalized eigenpair,
-    # and where we choose A to be the diagonal matrix whose entries are 1..n
-    # and where B is chosen to be the identity matrix.
+    # A is the diagonal matrix whose entries are 1,...n,
+    # B is the identity matrix.
     vals = np.arange(1, n+1, dtype=float)
     A_s = diags([vals], [0], (n, n))
     A_a = A_s.toarray()
@@ -256,6 +255,8 @@ def test_fiedler_large_12():
     _check_fiedler(12, 2)
 
 
+@pytest.mark.skipif(platform.machine() == 'aarch64',
+                    reason="issue #15935")
 def test_failure_to_run_iterations():
     """Check that the code exists gracefully without breaking. Issue #10974.
     """
@@ -263,9 +264,21 @@ def test_failure_to_run_iterations():
     X = rnd.standard_normal((100, 10))
     A = X @ X.T
     Q = rnd.standard_normal((X.shape[0], 4))
-    with pytest.warns(UserWarning, match="Exited at iteration"):
-        eigenvalues, _ = lobpcg(A, Q, maxiter=20)
+    with pytest.warns(UserWarning, match="Failed at iteration"):
+        eigenvalues, _ = lobpcg(A, Q, maxiter=40, tol=1e-12)
     assert(np.max(eigenvalues) > 0)
+
+
+def test_failure_to_run_iterations_nonsymmetric():
+    """Check that the code exists gracefully without breaking
+    if the matrix in not symmetric.
+    """
+    A = np.zeros((10, 10))
+    A[0, 1] = 1
+    Q = np.ones((10, 1))
+    with pytest.warns(UserWarning, match="Exited at iteration 2"):
+        eigenvalues, _ = lobpcg(A, Q, maxiter=20)
+    assert np.max(eigenvalues) > 0
 
 
 @pytest.mark.filterwarnings("ignore:The problem size")
@@ -285,7 +298,8 @@ def test_hermitian():
         H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
         H = 10 * np.eye(s) + H + H.T.conj()
 
-        X = rnd.random((s, k))
+        X = rnd.standard_normal((s, k))
+        X = X + 1.j * rnd.standard_normal((s, k))
 
         if not gen:
             B = np.eye(s)
@@ -325,7 +339,7 @@ def test_eigs_consistency(n, atol):
     assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
 
 
-def test_verbosity(tmpdir):
+def test_verbosity():
     """Check that nonzero verbosity level code runs.
     """
     rnd = np.random.RandomState(0)
@@ -340,6 +354,7 @@ def test_verbosity(tmpdir):
                    reason="tolerance violation on windows")
 @pytest.mark.xfail(platform.machine() == 'ppc64le',
                    reason="fails on ppc64le")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_tolerance_float32():
     """Check lobpcg for attainable tolerance in float32.
     """
@@ -371,10 +386,11 @@ def test_random_initial_float32():
 
 
 def test_maxit():
-    """Check lobpcg if maxit=10 runs 10 iterations
+    """Check lobpcg if maxit=maxiter runs maxiter iterations and
     if maxit=None runs 20 iterations (the default)
     by checking the size of the iteration history output, which should
-    be the number of iterations plus 2 (initial and final values).
+    be the number of iterations plus 3 (initial, final, and postprocessing)
+    typically when maxiter is small and the choice of the best is passive.
     """
     rnd = np.random.RandomState(0)
     n = 50
@@ -383,28 +399,46 @@ def test_maxit():
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
     X = rnd.standard_normal((n, m))
-    X = X.astype(np.float32)
+    X = X.astype(np.float64)
+    for maxiter in range(1, 4):
+        with pytest.warns(UserWarning, match="Exited at iteration"):
+            _, _, l_h, r_h = lobpcg(A, X, tol=1e-8, maxiter=maxiter,
+                                    retLambdaHistory=True,
+                                    retResidualNormsHistory=True)
+        assert_allclose(np.shape(l_h)[0], maxiter+3)
+        assert_allclose(np.shape(r_h)[0], maxiter+3)
     with pytest.warns(UserWarning, match="Exited at iteration"):
-        _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=10, retLambdaHistory=True)
-    assert_allclose(np.shape(l_h)[0], 10+2)
-    with pytest.warns(UserWarning, match="Exited at iteration"):
-        _, _, l_h = lobpcg(A, X, tol=1e-8, retLambdaHistory=True)
-    assert_allclose(np.shape(l_h)[0], 20+2)
+        l, _, l_h, r_h = lobpcg(A, X, tol=1e-8,
+                                retLambdaHistory=True,
+                                retResidualNormsHistory=True)
+    assert_allclose(np.shape(l_h)[0], 20+3)
+    assert_allclose(np.shape(r_h)[0], 20+3)
+    # Check that eigenvalue output is the last one in history
+    assert_allclose(l, l_h[-1])
+    # Make sure that both history outputs are lists
+    assert isinstance(l_h, list)
+    assert isinstance(r_h, list)
+    # Make sure that both history lists are arrays-like
+    assert_allclose(np.shape(l_h), np.shape(np.asarray(l_h)))
+    assert_allclose(np.shape(r_h), np.shape(np.asarray(r_h)))
 
 
 @pytest.mark.slow
-def test_diagonal_data_types():
+@pytest.mark.parametrize("n", [20])
+@pytest.mark.parametrize("m", [1, 3])
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
+def test_diagonal_data_types(n, m):
     """Check lobpcg for diagonal matrices for all matrix types.
     """
     rnd = np.random.RandomState(0)
-    n = 40
-    m = 4
     # Define the generalized eigenvalue problem Av = cBv
     # where (c, v) is a generalized eigenpair,
     # and where we choose A  and B to be diagonal.
     vals = np.arange(1, n + 1)
 
-    list_sparse_format = ['bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil']
+    # list_sparse_format = ['bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil']
+    list_sparse_format = ['coo']
     sparse_formats = len(list_sparse_format)
     for s_f_i, s_f in enumerate(list_sparse_format):
 
@@ -412,11 +446,27 @@ def test_diagonal_data_types():
         As32 = As64.astype(np.float32)
         Af64 = As64.toarray()
         Af32 = Af64.astype(np.float32)
-        listA = [Af64, As64, Af32, As32]
+
+        def As32f(x):
+            return As32 @ x
+        As32LO = LinearOperator(matvec=As32f,
+                                matmat=As32f,
+                                shape=(n, n),
+                                dtype=As32.dtype)
+
+        listA = [Af64, As64, Af32, As32, As32f, As32LO, lambda v: As32 @ v]
 
         Bs64 = diags([vals], [0], (n, n), format=s_f)
         Bf64 = Bs64.toarray()
-        listB = [Bf64, Bs64]
+        Bs32 = Bs64.astype(np.float32)
+
+        def Bs32f(x):
+            return Bs32 @ x
+        Bs32LO = LinearOperator(matvec=Bs32f,
+                                matmat=Bs32f,
+                                shape=(n, n),
+                                dtype=Bs32.dtype)
+        listB = [Bf64, Bs64, Bs32, Bs32f, Bs32LO, lambda v: Bs32 @ v]
 
         # Define the preconditioner function as LinearOperator.
         Ms64 = diags([1./vals], [0], (n, n), format=s_f)
@@ -426,7 +476,7 @@ def test_diagonal_data_types():
         Ms64precondLO = LinearOperator(matvec=Ms64precond,
                                        matmat=Ms64precond,
                                        shape=(n, n),
-                                       dtype=float)
+                                       dtype=Ms64.dtype)
         Mf64 = Ms64.toarray()
 
         def Mf64precond(x):
@@ -434,7 +484,7 @@ def test_diagonal_data_types():
         Mf64precondLO = LinearOperator(matvec=Mf64precond,
                                        matmat=Mf64precond,
                                        shape=(n, n),
-                                       dtype=float)
+                                       dtype=Mf64.dtype)
         Ms32 = Ms64.astype(np.float32)
 
         def Ms32precond(x):
@@ -442,7 +492,7 @@ def test_diagonal_data_types():
         Ms32precondLO = LinearOperator(matvec=Ms32precond,
                                        matmat=Ms32precond,
                                        shape=(n, n),
-                                       dtype=np.float32)
+                                       dtype=Ms32.dtype)
         Mf32 = Ms32.toarray()
 
         def Mf32precond(x):
@@ -450,9 +500,9 @@ def test_diagonal_data_types():
         Mf32precondLO = LinearOperator(matvec=Mf32precond,
                                        matmat=Mf32precond,
                                        shape=(n, n),
-                                       dtype=np.float32)
-        listM = [None, Ms64precondLO, Mf64precondLO,
-                 Ms32precondLO, Mf32precondLO]
+                                       dtype=Mf32.dtype)
+        listM = [None, Ms64, Ms64precondLO, Mf64precondLO, Ms64precond,
+                 Ms32, Ms32precondLO, Mf32precondLO, Ms32precond]
 
         # Setup matrix of the initial approximation to the eigenvectors
         # (cannot be sparse array).
@@ -480,4 +530,5 @@ def test_diagonal_data_types():
             eigvals, _ = lobpcg(A, X, B=B, M=M, Y=Y, tol=1e-4,
                                 maxiter=100, largest=False)
             assert_allclose(eigvals,
-                            np.arange(1 + m_excluded, 1 + m_excluded + m))
+                            np.arange(1 + m_excluded, 1 + m_excluded + m),
+                            atol=1e-5)

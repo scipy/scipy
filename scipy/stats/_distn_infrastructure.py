@@ -490,14 +490,14 @@ class rv_frozen:
     def std(self):
         return self.dist.std(*self.args, **self.kwds)
 
-    def moment(self, order=None, **kwds):
-        return self.dist.moment(order, *self.args, **self.kwds, **kwds)
+    def moment(self, order=None):
+        return self.dist.moment(order, *self.args, **self.kwds)
 
     def entropy(self):
         return self.dist.entropy(*self.args, **self.kwds)
 
-    def interval(self, confidence=None, **kwds):
-        return self.dist.interval(confidence, *self.args, **self.kwds, **kwds)
+    def interval(self, confidence=None):
+        return self.dist.interval(confidence, *self.args, **self.kwds)
 
     def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
         # expect method only accepts shape parameters as positional args
@@ -1209,13 +1209,8 @@ class rv_generic:
         place(output, cond0, self.vecentropy(*goodargs) + log(goodscale))
         return output[()]
 
-    def moment(self, order=None, *args, **kwds):
+    def moment(self, order, *args, **kwds):
         """non-central moment of distribution of specified order.
-
-        .. deprecated:: 1.9.0
-           Parameter `n` is replaced by parameter `order` to avoid name
-           collisions with the shape parameter `n` of several distributions.
-           Parameter `n` will be removed in SciPy 1.11.0.
 
         Parameters
         ----------
@@ -1230,94 +1225,7 @@ class rv_generic:
             scale parameter (default=1)
 
         """
-        # This function was originally written with parameter `n`, but `n`
-        # is also the name of many distribution shape parameters.
-        # This block allows the function to accept both `n` and its
-        # replacement `order` during a deprecation period; it can be removed
-        # in the second release after 1.9.0.
-        # The logic to provide a DeprecationWarning only when `n` is passed
-        # as a keyword, accept the new keyword `order`, and otherwise be
-        # backward-compatible deserves explanation. We need to look out for
-        # the following:
-        # * Does the distribution have a shape named `n`?
-        # * Is `order` provided? It doesn't matter whether it is provided as a
-        #   positional or keyword argument; it will be used as the order of the
-        #   moment rather than a distribution shape parameter because:
-        #   - The first positional argument of `moment` has always been the
-        #     order of the moment.
-        #   - The keyword `order` is new, so it's unambiguous that it refers to
-        #     the order of the moment.
-        # * Is `n` provided as a keyword argument? It _does_ matter whether it
-        #   is provided as a positional or keyword argument.
-        #   - The first positional argument of `moment` has always been the
-        #     order of moment, but
-        #   - if `n` is provided as a keyword argument, its meaning depends
-        #     on whether the distribution accepts `n` as a shape parameter.
-        has_shape_n = (self.shapes is not None
-                       and "n" in (self.shapes.split(", ")))
-        got_order = order is not None
-        got_keyword_n = kwds.get("n", None) is not None
-
-        # These lead to the following cases.
-        # Case A: If the distribution _does_ accept `n` as a shape
-        # 1. If both `order` and `n` are provided, this is now OK:
-        #    it is unambiguous that `order` is the order of the moment and `n`
-        #    is the shape parameter. Previously, this would have caused an
-        #    error because `n` was provided both as a keyword argument and
-        #    as the first positional argument. I don't think it is credible for
-        #    users to rely on this error in their code, though, so I don't see
-        #    this as a backward compatibility break.
-        # 2. If only `n` is provided (as a keyword argument), this would have
-        #    been an error in the past because `n` would have been treated as
-        #    the order of the moment while the shape parameter would be
-        #    missing. It is still the same type of error, but for a different
-        #    reason: now, `n` is treated as the shape parameter while the
-        #    order of the moment is missing.
-        # 3. If only `order` is provided, no special treament is needed.
-        #    Clearly this value is intended to be the order of the moment,
-        #    and the rest of the function will determine whether `n` is
-        #    available as a shape parameter in `args`.
-        # 4. If neither `n` nor `order` is provided, this would have been an
-        #    error (order of the moment is not provided) and it is still an
-        #    error for the same reason.
-
-        # Case B: the distribution does _not_ accept `n` as a shape
-        # 1. If both `order` and `n` are provided, this was an error, and it
-        #    still is an error: two values for same parameter.
-        # 2. If only `n` is provided (as a keyword argument), this was OK and
-        #    is still OK, but there shold now be a `DeprecationWarning`. The
-        #    value of `n` should be removed from `kwds` and stored in `order`.
-        # 3. If only `order` is provided, there was no problem before providing
-        #    only the first argument of `moment`, and there is no problem with
-        #    that now.
-        # 4. If neither `n` nor `order` is provided, this would have been an
-        #    error (order of the moment is not provided), and it is still an
-        #    error for the same reason.
-        if not got_order and ((not got_keyword_n)  # A4 and B4
-                              or (got_keyword_n and has_shape_n)):  # A2
-            message = ("moment() missing 1 required "
-                       "positional argument: `order`")
-            raise TypeError(message)
-
-        if got_keyword_n and not has_shape_n:
-            if got_order:  # B1
-                # this will change to "moment got unexpected argument n"
-                message = "moment() got multiple values for first argument"
-                raise TypeError(message)
-            else:  # B2
-                message = ("Use of keyword argument 'n' for method 'moment is"
-                           " deprecated and will be removed in SciPy 1.11.0. "
-                           "Use first positional argument or keyword argument"
-                           " 'order' instead.")
-                order = kwds.pop("n")
-                warnings.warn(message, DeprecationWarning, stacklevel=2)
         n = order
-        # No special treatment of A1, A3, or B3 is needed because the order
-        # of the moment is now in variable `n` and the shape parameter, if
-        # needed, will be fished out of `args` or `kwds` by _parse_args
-        # A3 might still cause an error if the shape parameter called `n`
-        # is not found in `args`.
-
         shapes, loc, scale = self._parse_args(*args, **kwds)
         args = np.broadcast_arrays(*(*shapes, loc, scale))
         *shapes, loc, scale = args
@@ -1477,13 +1385,8 @@ class rv_generic:
         res = sqrt(self.stats(*args, **kwds))
         return res
 
-    def interval(self, confidence=None, *args, **kwds):
+    def interval(self, confidence, *args, **kwds):
         """Confidence interval with equal areas around the median.
-
-        .. deprecated:: 1.9.0
-           Parameter `alpha` is replaced by parameter `confidence` to avoid
-           name collisions with the shape parameter `alpha` of some
-           distributions. Parameter `alpha` will be removed in SciPy 1.11.0.
 
         Parameters
         ----------
@@ -1517,35 +1420,6 @@ class rv_generic:
         strictly less).
 
         """
-        # This function was originally written with parameter `alpha`, but
-        # `alpha` is also the name of a shape parameter of two distributions.
-        # This block allows the function to accept both `alpha` and its
-        # replacement `confidence` during a deprecation period; it can be
-        # removed in the second release after 1.9.0.
-        # See description of logic in `moment` method.
-        has_shape_alpha = (self.shapes is not None
-                           and "alpha" in (self.shapes.split(", ")))
-        got_confidence = confidence is not None
-        got_keyword_alpha = kwds.get("alpha", None) is not None
-
-        if not got_confidence and ((not got_keyword_alpha)
-                                   or (got_keyword_alpha and has_shape_alpha)):
-            message = ("interval() missing 1 required positional argument: "
-                       "`confidence`")
-            raise TypeError(message)
-
-        if got_keyword_alpha and not has_shape_alpha:
-            if got_confidence:
-                # this will change to "interval got unexpected argument alpha"
-                message = "interval() got multiple values for first argument"
-                raise TypeError(message)
-            else:
-                message = ("Use of keyword argument 'alpha' for method "
-                           "'interval' is deprecated and wil be removed in "
-                           "SciPy 1.11.0. Use first positional argument or "
-                           "keyword argument 'confidence' instead.")
-                confidence = kwds.pop("alpha")
-                warnings.warn(message, DeprecationWarning, stacklevel=2)
         alpha = confidence
 
         alpha = asarray(alpha)
@@ -2902,6 +2776,20 @@ class rv_continuous(rv_generic):
         1.0000000000000002
 
         The slight deviation from 1 is due to numerical integration.
+
+        The integrand can be treated as a complex-valued function
+        by passing ``complex_func=True`` to `scipy.integrate.quad` .
+
+        >>> import numpy as np
+        >>> from scipy.stats import vonmises
+        >>> res = vonmises(loc=2, kappa=1).expect(lambda x: np.exp(1j*x),
+        ...                                       complex_func=True)
+        >>> res
+        (-0.18576377217422957+0.40590124735052263j)
+
+        >>> np.angle(res)  # location of the (circular) distribution
+        2.0
+
         """
         lockwds = {'loc': loc,
                    'scale': scale}
@@ -3152,8 +3040,10 @@ class rv_discrete(rv_generic):
     >>> R = custm.rvs(size=100)
 
     """
-    def __new__(cls, *args, **kwds):
-        values = kwds.get('values', None)
+    def __new__(cls, a=0, b=inf, name=None, badvalue=None,
+                moment_tol=1e-8, values=None, inc=1, longname=None,
+                shapes=None, extradoc=None, seed=None):
+
         if values is not None:
             # dispatch to a subclass
             return super(rv_discrete, cls).__new__(rv_sample)
@@ -3863,7 +3753,7 @@ class rv_sample(rv_discrete):
                           "SciPy 1.11.0", DeprecationWarning)
 
         if values is None:
-            raise ValueError("rv_count.__init__(..., values=None,...)")
+            raise ValueError("rv_sample.__init__(..., values=None,...)")
 
         # cf generic freeze
         self._ctor_param = dict(
@@ -3915,177 +3805,6 @@ class rv_sample(rv_discrete):
         attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs"]
         [dct.pop(attr, None) for attr in attrs]
 
-        return dct
-
-    def _attach_methods(self):
-        """Attaches dynamically created argparser methods."""
-        self._attach_argparser_methods()
-
-    def _get_support(self, *args):
-        """Return the support of the (unscaled, unshifted) distribution.
-
-        Parameters
-        ----------
-        arg1, arg2, ... : array_like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information).
-
-        Returns
-        -------
-        a, b : numeric (float, or int or +/-np.inf)
-            end-points of the distribution's support.
-        """
-        return self.a, self.b
-
-    def _pmf(self, x):
-        return rv_count._pmf(self, x)
-
-    def _cdf(self, x):
-        return rv_count._cdf(self, x)
-
-    def _ppf(self, q):
-        return rv_count._ppf(self, q)
-
-    def _rvs(self, size=None, random_state=None):
-        return rv_count._rvs(self, size, random_state)
-
-    def _entropy(self):
-        return rv_count._entropy(self)
-
-    def generic_moment(self, n):
-        return rv_count.generic_moment(self, n)
-
-    def _expect(self, fun, lb, ub, *args, **kwds):
-        return rv_count._expect(self, fun, lb, ub, *args, **kwds)
-
-
-class rv_count(rv_discrete):
-    """A discrete random variable defined by support points and probabilities.
-
-    Parameters
-    ----------
-    xk : array_like
-        Support points.
-    pk : array_like
-        The probabilities, corresponding to `xk`
-    name : str, optional
-        The name of the instance. This string is used to construct the default
-        example for distributions.
-    longname : str, optional
-        This string is used as part of the first line of the docstring returned
-        when a subclass has no docstring of its own. Note: `longname` exists
-        for backwards compatibility, do not use for new subclasses.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-
-    Methods
-    -------
-    rvs
-    pmf
-    logpmf
-    cdf
-    logcdf
-    sf
-    logsf
-    ppf
-    isf
-    moment
-    stats
-    entropy
-    expect
-    median
-    mean
-    std
-    var
-    interval
-    __call__
-    support
-
-    Notes
-    -----
-    This class is a discrete analog of `rv_histogram`.
-
-    Examples
-    --------
-
-    >>> import numpy as np
-    >>> from scipy import stats
-    >>> xk = np.arange(7)
-    >>> pk = (0.1, 0.2, 0.3, 0.1, 0.1, 0.0, 0.2)
-    >>> custm = stats.rv_count(xk, pk, name='custm')
-    >>>
-    >>> import matplotlib.pyplot as plt
-    >>> fig, ax = plt.subplots(1, 1)
-    >>> ax.plot(xk, custm.pmf(xk), 'ro', ms=12, mec='r')
-    >>> ax.vlines(xk, 0, custm.pmf(xk), colors='r', lw=4)
-    >>> plt.show()
-
-    Random number generation:
-
-    >>> R = custm.rvs(size=100)
-
-    """
-    def __init__(self, xk, pk, name=None, longname=None, seed=None):
-        super(rv_discrete, self).__init__(seed)
-
-        # cf generic freeze
-        self._ctor_param = dict(xk=xk, pk=pk, seed=seed,
-                                name=name, longname=longname)
-
-        self.badvalue = np.nan
-        self.vecentropy = self._entropy
-        self.inc = 1
-
-        if np.shape(xk) != np.shape(pk):
-            raise ValueError("xk and pk must have the same shape.")
-        if np.less(pk, 0.0).any():
-            raise ValueError("All elements of pk must be non-negative.")
-        if not np.allclose(np.sum(pk), 1):
-            raise ValueError("The sum of provided pk is not 1.")
-
-        indx = np.argsort(np.ravel(xk))
-        self.xk = np.take(np.ravel(xk), indx, 0)
-        self.pk = np.take(np.ravel(pk), indx, 0)
-        self.a = self.xk[0]
-        self.b = self.xk[-1]
-
-        self.qvals = np.cumsum(self.pk, axis=0)
-
-        self.shapes = ' '   # bypass inspection
-
-        self._construct_argparser(meths_to_inspect=[self._pmf],
-                                  locscale_in='loc=0',
-                                  # scale=1 for discrete RVs
-                                  locscale_out='loc, 1')
-
-        self._attach_methods()
-
-        self._construct_docstrings(name, longname, extradoc=None)
-
-    def __getstate__(self):
-        dct = self.__dict__.copy()
-
-        # these methods will be remade in rv_generic.__setstate__,
-        # which calls rv_generic._attach_methods
-        attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs"]
-        [dct.pop(attr, None) for attr in attrs]
-
-        return dct
-
-    def _updated_ctor_param(self):
-        """Return the current version of _ctor_param, possibly updated by user.
-
-        Used by freezing. Keep this in sync with the signature of __init__.
-        Just copy the _ctor_param for rv_count.
-        """
-        dct = self._ctor_param.copy()
         return dct
 
     def _attach_methods(self):
