@@ -7572,6 +7572,42 @@ def test_moment_order_4():
 
 
 class TestRelativisticBW:
+    @pytest.fixture
+    def ROOT_pdf_sample_data(self):
+        """Sample data points for pdf computed with CERN's ROOT
+
+        See - https://root.cern/
+
+        Uses ROOT.TMath.BreitWignerRelativistic, available in ROOT
+        versions 6.27+
+
+        pdf calculated for Z0 Boson, W Boson, and Higgs Boson for
+        x in `np.linspace(0, 200, 401)`.
+        """
+        data = np.load(
+            Path(__file__).parent /
+            'data/relativistic_bw_pdf_sample_data_ROOT.npy'
+        )
+        data = np.core.records.fromarrays(data.T, names='x,pdf,rho,gamma')
+        return data
+
+    @pytest.mark.parametrize(
+        "rho,gamma,rtol", [
+            (36.545206797050334, 2.4952, 1e-14), # Z0 Boson
+            (38.55107913669065, 2.085, 1e-14), # W Boson
+            (96292.3076923077, 0.0013, 5e-13), # Higgs Boson
+        ]
+    )
+    def test_pdf_against_ROOT(self, ROOT_pdf_sample_data, rho, gamma, rtol):
+        data = ROOT_pdf_sample_data[
+            (ROOT_pdf_sample_data['rho'] == rho)
+            & (ROOT_pdf_sample_data['gamma'] == gamma)
+        ]
+        x, pdf = data['x'], data['pdf']
+        assert_allclose(
+            pdf, stats.relativistic_bw.pdf(x, rho, scale=gamma), rtol=rtol
+        )
+
     @pytest.mark.parametrize(
         "rho,gamma", [
             pytest.param(
