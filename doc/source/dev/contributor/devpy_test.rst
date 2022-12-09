@@ -1,23 +1,23 @@
 :orphan:
 
-.. _runtests:
+.. _devpy-runtest:
 
-================================================
-Running SciPy Tests Locally with ``runtests.py``
-================================================
+===========================
+Running SciPy Tests Locally
+===========================
 
 Basic test writing and execution from within the Python interpreter is
 documented in the `NumPy/SciPy Testing Guidelines`_. This page includes
-information about running tests from the command line using SciPy’s
-``runtests.py``, which permits greater control. *Note: Before beginning,
-ensure that* |pytest|_ *is installed.*
+information about running tests from the command line using SciPy's
+``dev.py`` command line tool. *Note: Before beginning, ensure that* |pytest|_
+*is installed.*
 
 To run all tests, navigate to the root SciPy directory at the command
 line and execute
 
 ::
 
-   python runtests.py -v
+   python dev.py test -v
 
 where ``-v`` activates the ``--verbose`` option. This builds SciPy (or
 updates an existing build) and runs the tests.
@@ -27,55 +27,55 @@ To run tests on a particular submodule, such as ``optimize``, use the
 
 ::
 
-   python runtests.py -v -s optimize
+   python dev.py test -v -s optimize
 
 To run a particular test module, use the ``--test`` option:
 
 ::
 
-   python runtests.py -v -t scipy.<module>.tests.<test_file>
+   python dev.py test -v -t scipy.<module>.tests.<test_file>
 
 Example for |test-linprog|_ file tests, run:
 
 ::
 
-   python runtests.py -v -t scipy.optimize.tests.test_linprog
+   python dev.py test -v -t scipy.optimize.tests.test_linprog
 
 To run a test class:
 
 ::
 
-   python runtests.py -v -t scipy.<module>.tests.<test_file>::<TestClass>
+   python dev.py test -v -t scipy.<module>.tests.<test_file>::<TestClass>
 
 Example for ``TestLinprogRSCommon`` class from ``test_linprog.py``:
 
 ::
 
-   python runtests.py -v -t scipy.optimize.tests.test_linprog::TestLinprogRSCommon
+   python dev.py test -v -t scipy.optimize.tests.test_linprog::TestLinprogRSCommon
 
 To run a particular test:
 
 ::
 
-   python runtests.py -v -t scipy.<module>.tests.<test_file>::<test_name>
+   python dev.py test -v -t scipy.<module>.tests.<test_file>::<test_name>
 
 Example for ``test_unknown_solvers_and_options`` from ``test_linprog.py``:
 
 ::
 
-   python runtests.py -v -t scipy.optimize.tests.test_linprog::test_unknown_solvers_and_options
+   python dev.py test -v -t scipy.optimize.tests.test_linprog::test_unknown_solvers_and_options
 
 For tests within a class, you need to specify the class name and the test name:
 
 ::
 
-   python runtests.py -v -t scipy.<module>.tests.<test_file>::<TestClass>::<test_name>
+   python dev.py test -v -t scipy.<module>.tests.<test_file>::<TestClass>::<test_name>
 
 Example:
 
 ::
 
-   python runtests.py -v -t scipy.optimize.tests.test_linprog::TestLinprogRSCommon::test_nontrivial_problem_with_guess
+   python dev.py test -v -t scipy.optimize.tests.test_linprog::TestLinprogRSCommon::test_nontrivial_problem_with_guess
 
 
 Other useful options include:
@@ -86,23 +86,24 @@ Other useful options include:
 -  ``--doc`` to build the docs in ``scipy/doc/build``. By default,
    docs are built only in the ``html`` format, but you can
    change this by appending the name of the desired format.
--  ``--refguide-check`` to check whether the objects in a Scipy submodule's
-   ``__all__`` dict correspond to the objects included in the reference
-   guide. It also checks the validity of code samples in docstrings.
+-  ``python dev.py refguide-check`` to check whether the objects in a SciPy
+   submodule's ``__all__`` dict correspond to the objects included in the
+   reference guide. It also checks the validity of code samples in docstrings.
+   Run ``python dev.py refguide-check --help`` for more information.
 -  ``--bench`` to run all benchmarks. See :ref:`benchmarking-with-asv`.
 -  ``--pep8`` to perform pep8 check.
 -  ``--mypy`` to run *mypy* on the codebase.
 -  ``-n`` or ``--no-build`` to prevent SciPy from updating the build
    before testing
 -  ``-j`` or ``--parallel`` *n* to engage *n* cores when building SciPy;
-   e.g. \ ``python runtests.py -j 4`` engages four cores. As of `#10172`_
+   e.g. \ ``python dev.py test -j 4`` engages four cores. As of `#10172`_
    this also runs the tests on four cores if |pytest-xdist|_ is installed.
 -  ``-m`` or ``--mode`` ``full`` to run the full test suite, including slow
-   tests. For example, ``python runtests.py -m full``.
+   tests. For example, ``python dev.py test -m full``.
 -  ``--`` to send remaining command line arguments to ``pytest`` instead of
-   ``runtest.py``. For instance, while ``-n`` sent to ``pytest.py`` activates
+   ``dev.py test``. For instance, while ``-n`` sent to ``pytest.py`` activates
    the ``--no-build`` option, ``-n`` sent to ``pytest`` runs the tests on
-   multiple cores; e.g. \ ``python runtests.py -- -n 4`` runs tests using
+   multiple cores; e.g. \ ``python dev.py test -- -n 4`` runs tests using
    four cores. *Note:* |pytest-xdist|_ *must be installed for testing on
    multiple cores.*
 
@@ -116,11 +117,11 @@ Tips:
 
 If you built SciPy from source but are having trouble running tests
 after a change to the codebase, try deleting the ``scipy/build``
-directory. This forces ``runtest.py`` to completely rebuild SciPy before
+directory. This forces ``dev.py`` to completely rebuild SciPy before
 performing tests.
 
 There is an additional level of very slow tests (several minutes),
-which are disabled even when calling ``python runtests.py -m full``.
+which are disabled even when calling ``python dev.py test -m full``.
 They can be enabled by setting the environment variable ``SCIPY_XSLOW=1``
 before running the test suite.
 

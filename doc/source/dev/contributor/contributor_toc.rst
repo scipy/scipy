@@ -51,7 +51,7 @@ Editing SciPy
 Unit tests
 ----------
 - :doc:`numpy:reference/testing` is the definitive guide to writing unit tests of NumPy or SciPy code (part of the NumPy documentation)
-- :ref:`runtests` documents ``runtests.py``, a convenient script for building SciPy and running tests locally
+- :ref:`devpy-runtest` documents ``dev.py test``, the command to build SciPy and run tests locally
 
 .. _docs:
 
