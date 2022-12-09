@@ -74,11 +74,11 @@ def wigner_ville(
     Plot the Wigner-Ville distribution with expected cross-terms clearly
     visible at 3 Hz.
 
-    >>> plt.figure()
-    >>> plt.pcolormesh(t, f, wv, shading='nearest')
-    >>> plt.xlabel('Time $t$ / s')
+    >>> fig, ax = plt.subplots()
+    >>> ax.pcolormesh(t, f, wv, shading='nearest')
+    >>> ax.set_xlabel('Time $t$ / s')
     >>> plt.ylabel('Frequency $f$ / Hz')
-    >>> plt.ylim([0, 6])
+    >>> ax.set_ylabel([0, 6])
     >>> plt.show()
     """
     x = np.asarray(x)
