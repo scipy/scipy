@@ -90,6 +90,8 @@ SI prefixes
 -----------
 
 ============  =================================================================
+``quetta``    :math:`10^{30}`
+``ronna``     :math:`10^{27}`
 ``yotta``     :math:`10^{24}`
 ``zetta``     :math:`10^{21}`
 ``exa``       :math:`10^{18}`
@@ -109,6 +111,9 @@ SI prefixes
 ``femto``     :math:`10^{-15}`
 ``atto``      :math:`10^{-18}`
 ``zepto``     :math:`10^{-21}`
+``yocto``     :math:`10^{-24}`
+``ronto``     :math:`10^{-27}`
+``quecto``    :math:`10^{-30}`
 ============  =================================================================
 
 Binary prefixes
@@ -316,20 +321,24 @@ References
 
 """
 # Modules contributed by BasSw (wegwerp@gmail.com)
-from .codata import *
-from .constants import *
-from .codata import _obsolete_constants
+from ._codata import *
+from ._constants import *
+from ._codata import _obsolete_constants, physical_constants
 
-_constant_names = [(_k.lower(), _k, _v)
-                   for _k, _v in physical_constants.items()
-                   if _k not in _obsolete_constants]
+# Deprecated namespaces, to be removed in v2.0.0
+from . import codata, constants
+
+_constant_names_list = [(_k.lower(), _k, _v)
+                        for _k, _v in physical_constants.items()
+                        if _k not in _obsolete_constants]
 _constant_names = "\n".join(["``%s``%s  %s %s" % (_x[1], " "*(66-len(_x[1])),
                                                   _x[2][0], _x[2][1])
-                             for _x in sorted(_constant_names)])
+                             for _x in sorted(_constant_names_list)])
 if __doc__:
     __doc__ = __doc__ % dict(constant_names=_constant_names)
 
 del _constant_names
+del _constant_names_list
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

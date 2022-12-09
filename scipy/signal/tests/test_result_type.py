@@ -3,8 +3,6 @@
 import numpy as np
 from numpy.testing import assert_
 
-import pytest
-
 from scipy.signal import (decimate,
                           lfilter_zi,
                           lfiltic,

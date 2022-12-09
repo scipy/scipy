@@ -16,7 +16,7 @@ class TestMakeTupleBunch:
     # Tests with Result
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def setup(self):
+    def setup_method(self):
         # Set up an instance of Result.
         self.result = Result(x=1, y=2, z=3, w=99, beta=0.5)
 
@@ -70,8 +70,8 @@ class TestMakeTupleBunch:
             self.result.x = -1
 
     def test_read_only_new(self):
-        with pytest.raises(AttributeError, match="can't set attribute"):
-            self.result.plate_of_shrimp = "lattice of coincidence"
+        self.result.plate_of_shrimp = "lattice of coincidence"
+        assert self.result.plate_of_shrimp == "lattice of coincidence"
 
     def test_constructor_missing_parameter(self):
         with pytest.raises(TypeError, match='missing'):

@@ -1,19 +1,21 @@
-from __future__ import division, print_function, absolute_import
+from itertools import product
 
 import numpy as np
-from itertools import product
+import functools
+import pytest
 from numpy.testing import (assert_, assert_equal, assert_allclose,
                            assert_almost_equal)  # avoid new uses
-
-import pytest
 from pytest import raises as assert_raises
-from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
-                                    _cdf_cvm, cramervonmises_2samp,
-                                    _pval_cvm_2samp_exact, barnard_exact)
-from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
+
 import scipy.stats as stats
 from scipy.stats import distributions
+from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
+                                    _cdf_cvm, cramervonmises_2samp,
+                                    _pval_cvm_2samp_exact, barnard_exact,
+                                    boschloo_exact)
+from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
 from .common_tests import check_named_results
+from scipy._lib._testutils import _TestPythranFunc
 
 
 class TestEppsSingleton:
@@ -167,6 +169,9 @@ class TestCvm:
 
 
 class TestMannWhitneyU:
+    def setup_method(self):
+        _mwu_state._recursive = True
+
     # All magic numbers are from R wilcox.test unless otherwise specied
     # https://rdrr.io/r/stats/wilcox.test.html
 
@@ -179,8 +184,6 @@ class TestMannWhitneyU:
             mannwhitneyu([], y)
         with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
             mannwhitneyu(x, [])
-        with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu([np.nan, 2], y)
         with assert_raises(ValueError, match="`use_continuity` must be one"):
             mannwhitneyu(x, y, use_continuity='ekki')
         with assert_raises(ValueError, match="`alternative` must be one of"):
@@ -466,19 +469,19 @@ class TestMannWhitneyU:
         res = mannwhitneyu(x, y, method=method, axis=axis)
 
         shape = (6, 3, 8)  # appropriate shape of outputs, given inputs
-        assert(res.pvalue.shape == shape)
-        assert(res.statistic.shape == shape)
+        assert res.pvalue.shape == shape
+        assert res.statistic.shape == shape
 
         # move axis of test to end for simplicity
         x, y = np.moveaxis(x, axis, -1), np.moveaxis(y, axis, -1)
 
         x = x[None, ...]  # give x a zeroth dimension
-        assert(x.ndim == y.ndim)
+        assert x.ndim == y.ndim
 
         x = np.broadcast_to(x, shape + (m,))
         y = np.broadcast_to(y, shape + (n,))
-        assert(x.shape[:-1] == shape)
-        assert(y.shape[:-1] == shape)
+        assert x.shape[:-1] == shape
+        assert y.shape[:-1] == shape
 
         # loop over pairs of samples
         statistics = np.zeros(shape)
@@ -506,10 +509,11 @@ class TestMannWhitneyU:
         assert_equal(res1.statistic, res2.statistic)
         assert_equal(res1.pvalue, res2.pvalue)
 
-        # NaNs should raise an error. No nan_policy for now.
+        # NaNs should propagate by default.
         y[4] = np.nan
-        with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu(x, y)
+        res3 = mannwhitneyu(x, y)
+        assert_equal(res3.statistic, np.nan)
+        assert_equal(res3.pvalue, np.nan)
 
     cases_11355 = [([1, 2, 3, 4],
                     [3, 6, 7, 8, np.inf, 3, 2, 1, 4, 4, 5],
@@ -581,11 +585,12 @@ class TestMannWhitneyU:
             mannwhitneyu([], [])
 
     def test_gh_4067(self):
-        # Test for correct behavior with all NaN input
+        # Test for correct behavior with all NaN input - default is propagate
         a = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
         b = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
-        with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu(a, b)
+        res = mannwhitneyu(a, b)
+        assert_equal(res.statistic, np.nan)
+        assert_equal(res.pvalue, np.nan)
 
     # All cases checked against R wilcox.test, e.g.
     # options(digits=16)
@@ -611,8 +616,75 @@ class TestMannWhitneyU:
                            method="asymptotic")
         assert_allclose(res, expected, rtol=1e-12)
 
+    def teardown_method(self):
+        _mwu_state._recursive = None
 
-class TestSomersD:
+
+class TestMannWhitneyU_iterative(TestMannWhitneyU):
+    def setup_method(self):
+        _mwu_state._recursive = False
+
+    def teardown_method(self):
+        _mwu_state._recursive = None
+
+
+@pytest.mark.xslow
+def test_mann_whitney_u_switch():
+    # Check that mannwhiteneyu switches between recursive and iterative
+    # implementations at n = 500
+
+    # ensure that recursion is not enforced
+    _mwu_state._recursive = None
+    _mwu_state._fmnks = -np.ones((1, 1, 1))
+
+    rng = np.random.default_rng(9546146887652)
+    x = rng.random(5)
+
+    # use iterative algorithm because n > 500
+    y = rng.random(501)
+    stats.mannwhitneyu(x, y, method='exact')
+    # iterative algorithm doesn't modify _mwu_state._fmnks
+    assert np.all(_mwu_state._fmnks == -1)
+
+    # use recursive algorithm because n <= 500
+    y = rng.random(500)
+    stats.mannwhitneyu(x, y, method='exact')
+
+    # recursive algorithm has modified _mwu_state._fmnks
+    assert not np.all(_mwu_state._fmnks == -1)
+
+
+class TestSomersD(_TestPythranFunc):
+    def setup_method(self):
+        self.dtypes = self.ALL_INTEGER + self.ALL_FLOAT
+        self.arguments = {0: (np.arange(10),
+                              self.ALL_INTEGER + self.ALL_FLOAT),
+                          1: (np.arange(10),
+                              self.ALL_INTEGER + self.ALL_FLOAT)}
+        input_array = [self.arguments[idx][0] for idx in self.arguments]
+        # In this case, self.partialfunc can simply be stats.somersd,
+        # since `alternative` is an optional argument. If it is required,
+        # we can use functools.partial to freeze the value, because
+        # we only mainly test various array inputs, not str, etc.
+        self.partialfunc = functools.partial(stats.somersd,
+                                             alternative='two-sided')
+        self.expected = self.partialfunc(*input_array)
+
+    def pythranfunc(self, *args):
+        res = self.partialfunc(*args)
+        assert_allclose(res.statistic, self.expected.statistic, atol=1e-15)
+        assert_allclose(res.pvalue, self.expected.pvalue, atol=1e-15)
+
+    def test_pythranfunc_keywords(self):
+        # Not specifying the optional keyword args
+        table = [[27, 25, 14, 7, 0], [7, 14, 18, 35, 12], [1, 3, 2, 7, 17]]
+        res1 = stats.somersd(table)
+        # Specifying the optional keyword args with default value
+        optional_args = self.get_optional_args(stats.somersd)
+        res2 = stats.somersd(table, **optional_args)
+        # Check if the results are the same in two cases
+        assert_allclose(res1.statistic, res2.statistic, atol=1e-15)
+        assert_allclose(res1.pvalue, res2.pvalue, atol=1e-15)
 
     def test_like_kendalltau(self):
         # All tests correspond with one in test_stats.py `test_kendalltau`
@@ -856,6 +928,72 @@ class TestSomersD:
         res = stats.somersd(x, y)
         assert_equal(res.table, np.eye(10))
 
+    def test_somersd_alternative(self):
+        # Test alternative parameter, asymptotic method (due to tie)
+
+        # Based on scipy.stats.test_stats.TestCorrSpearman2::test_alternative
+        x1 = [1, 2, 3, 4, 5]
+        x2 = [5, 6, 7, 8, 7]
+
+        # strong positive correlation
+        expected = stats.somersd(x1, x2, alternative="two-sided")
+        assert expected.statistic > 0
+
+        # rank correlation > 0 -> large "less" p-value
+        res = stats.somersd(x1, x2, alternative="less")
+        assert_equal(res.statistic, expected.statistic)
+        assert_allclose(res.pvalue, 1 - (expected.pvalue / 2))
+
+        # rank correlation > 0 -> small "greater" p-value
+        res = stats.somersd(x1, x2, alternative="greater")
+        assert_equal(res.statistic, expected.statistic)
+        assert_allclose(res.pvalue, expected.pvalue / 2)
+
+        # reverse the direction of rank correlation
+        x2.reverse()
+
+        # strong negative correlation
+        expected = stats.somersd(x1, x2, alternative="two-sided")
+        assert expected.statistic < 0
+
+        # rank correlation < 0 -> large "greater" p-value
+        res = stats.somersd(x1, x2, alternative="greater")
+        assert_equal(res.statistic, expected.statistic)
+        assert_allclose(res.pvalue, 1 - (expected.pvalue / 2))
+
+        # rank correlation < 0 -> small "less" p-value
+        res = stats.somersd(x1, x2, alternative="less")
+        assert_equal(res.statistic, expected.statistic)
+        assert_allclose(res.pvalue, expected.pvalue / 2)
+
+        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+            stats.somersd(x1, x2, alternative="ekki-ekki")
+
+    @pytest.mark.parametrize("positive_correlation", (False, True))
+    def test_somersd_perfect_correlation(self, positive_correlation):
+        # Before the addition of `alternative`, perfect correlation was
+        # treated as a special case. Now it is treated like any other case, but
+        # make sure there are no divide by zero warnings or associated errors
+
+        x1 = np.arange(10)
+        x2 = x1 if positive_correlation else np.flip(x1)
+        expected_statistic = 1 if positive_correlation else -1
+
+        # perfect correlation -> small "two-sided" p-value (0)
+        res = stats.somersd(x1, x2, alternative="two-sided")
+        assert res.statistic == expected_statistic
+        assert res.pvalue == 0
+
+        # rank correlation > 0 -> large "less" p-value (1)
+        res = stats.somersd(x1, x2, alternative="less")
+        assert res.statistic == expected_statistic
+        assert res.pvalue == (1 if positive_correlation else 0)
+
+        # rank correlation > 0 -> small "greater" p-value (0)
+        res = stats.somersd(x1, x2, alternative="greater")
+        assert res.statistic == expected_statistic
+        assert res.pvalue == (0 if positive_correlation else 1)
+
 
 class TestBarnardExact:
     """Some tests to show that barnard_exact() works correctly."""
@@ -1004,6 +1142,159 @@ class TestBarnardExact:
         )
 
 
+class TestBoschlooExact:
+    """Some tests to show that boschloo_exact() works correctly."""
+
+    ATOL = 1e-7
+
+    @pytest.mark.parametrize(
+        "input_sample,expected",
+        [
+            ([[2, 7], [8, 2]], (0.01852173, 0.009886142)),
+            ([[5, 1], [10, 10]], (0.9782609, 0.9450994)),
+            ([[5, 16], [20, 25]], (0.08913823, 0.05827348)),
+            ([[10, 5], [10, 1]], (0.1652174, 0.08565611)),
+            ([[5, 0], [1, 4]], (1, 1)),
+            ([[0, 1], [3, 2]], (0.5, 0.34375)),
+            ([[2, 7], [8, 2]], (0.01852173, 0.009886142)),
+            ([[7, 12], [8, 3]], (0.06406797, 0.03410916)),
+            ([[10, 24], [25, 37]], (0.2009359, 0.1512882)),
+        ],
+    )
+    def test_less(self, input_sample, expected):
+        """The expected values have been generated by R, using a resolution
+        for the nuisance parameter of 1e-8 :
+        ```R
+        library(Exact)
+        options(digits=10)
+        data <- matrix(c(43, 10, 40, 39), 2, 2, byrow=TRUE)
+        a = exact.test(data, method="Boschloo", alternative="less",
+                       tsmethod="central", np.interval=TRUE, beta=1e-8)
+        ```
+        """
+        res = boschloo_exact(input_sample, alternative="less")
+        statistic, pvalue = res.statistic, res.pvalue
+        assert_allclose([statistic, pvalue], expected, atol=self.ATOL)
+
+    @pytest.mark.parametrize(
+        "input_sample,expected",
+        [
+            ([[43, 40], [10, 39]], (0.0002875544, 0.0001615562)),
+            ([[2, 7], [8, 2]], (0.9990149, 0.9918327)),
+            ([[5, 1], [10, 10]], (0.1652174, 0.09008534)),
+            ([[5, 15], [20, 20]], (0.9849087, 0.9706997)),
+            ([[5, 16], [20, 25]], (0.972349, 0.9524124)),
+            ([[5, 0], [1, 4]], (0.02380952, 0.006865367)),
+            ([[0, 1], [3, 2]], (1, 1)),
+            ([[0, 2], [6, 4]], (1, 1)),
+            ([[2, 7], [8, 2]], (0.9990149, 0.9918327)),
+            ([[7, 12], [8, 3]], (0.9895302, 0.9771215)),
+            ([[10, 24], [25, 37]], (0.9012936, 0.8633275)),
+        ],
+    )
+    def test_greater(self, input_sample, expected):
+        """The expected values have been generated by R, using a resolution
+        for the nuisance parameter of 1e-8 :
+        ```R
+        library(Exact)
+        options(digits=10)
+        data <- matrix(c(43, 10, 40, 39), 2, 2, byrow=TRUE)
+        a = exact.test(data, method="Boschloo", alternative="greater",
+                       tsmethod="central", np.interval=TRUE, beta=1e-8)
+        ```
+        """
+        res = boschloo_exact(input_sample, alternative="greater")
+        statistic, pvalue = res.statistic, res.pvalue
+        assert_allclose([statistic, pvalue], expected, atol=self.ATOL)
+
+    @pytest.mark.parametrize(
+        "input_sample,expected",
+        [
+            ([[43, 40], [10, 39]], (0.0002875544, 0.0003231115)),
+            ([[2, 7], [8, 2]], (0.01852173, 0.01977228)),
+            ([[5, 1], [10, 10]], (0.1652174, 0.1801707)),
+            ([[5, 16], [20, 25]], (0.08913823, 0.116547)),
+            ([[5, 0], [1, 4]], (0.02380952, 0.01373073)),
+            ([[0, 1], [3, 2]], (0.5, 0.6875)),
+            ([[2, 7], [8, 2]], (0.01852173, 0.01977228)),
+            ([[7, 12], [8, 3]], (0.06406797, 0.06821831)),
+        ],
+    )
+    def test_two_sided(self, input_sample, expected):
+        """The expected values have been generated by R, using a resolution
+        for the nuisance parameter of 1e-8 :
+        ```R
+        library(Exact)
+        options(digits=10)
+        data <- matrix(c(43, 10, 40, 39), 2, 2, byrow=TRUE)
+        a = exact.test(data, method="Boschloo", alternative="two.sided",
+                       tsmethod="central", np.interval=TRUE, beta=1e-8)
+        ```
+        """
+        res = boschloo_exact(input_sample, alternative="two-sided", n=64)
+        # Need n = 64 for python 32-bit
+        statistic, pvalue = res.statistic, res.pvalue
+        assert_allclose([statistic, pvalue], expected, atol=self.ATOL)
+
+    def test_raises(self):
+        # test we raise an error for wrong input number of nuisances.
+        error_msg = (
+            "Number of points `n` must be strictly positive, found 0"
+        )
+        with assert_raises(ValueError, match=error_msg):
+            boschloo_exact([[1, 2], [3, 4]], n=0)
+
+        # test we raise an error for wrong shape of input.
+        error_msg = "The input `table` must be of shape \\(2, 2\\)."
+        with assert_raises(ValueError, match=error_msg):
+            boschloo_exact(np.arange(6).reshape(2, 3))
+
+        # Test all values must be positives
+        error_msg = "All values in `table` must be nonnegative."
+        with assert_raises(ValueError, match=error_msg):
+            boschloo_exact([[-1, 2], [3, 4]])
+
+        # Test value error on wrong alternative param
+        error_msg = (
+            r"`alternative` should be one of \('two-sided', 'less', "
+            r"'greater'\), found .*"
+        )
+        with assert_raises(ValueError, match=error_msg):
+            boschloo_exact([[1, 2], [3, 4]], "not-correct")
+
+    @pytest.mark.parametrize(
+        "input_sample,expected",
+        [
+            ([[0, 5], [0, 10]], (np.nan, np.nan)),
+            ([[5, 0], [10, 0]], (np.nan, np.nan)),
+        ],
+    )
+    def test_row_or_col_zero(self, input_sample, expected):
+        res = boschloo_exact(input_sample)
+        statistic, pvalue = res.statistic, res.pvalue
+        assert_equal(pvalue, expected[0])
+        assert_equal(statistic, expected[1])
+
+    def test_two_sided_gt_1(self):
+        # Check that returned p-value does not exceed 1 even when twice
+        # the minimum of the one-sided p-values does. See gh-15345.
+        tbl = [[1, 1], [13, 12]]
+        pl = boschloo_exact(tbl, alternative='less').pvalue
+        pg = boschloo_exact(tbl, alternative='greater').pvalue
+        assert 2*min(pl, pg) > 1
+        pt = boschloo_exact(tbl, alternative='two-sided').pvalue
+        assert pt == 1.0
+
+    @pytest.mark.parametrize("alternative", ("less", "greater"))
+    def test_against_fisher_exact(self, alternative):
+        # Check that the statistic of `boschloo_exact` is the same as the
+        # p-value of `fisher_exact` (for one-sided tests). See gh-15345.
+        tbl = [[2, 7], [8, 2]]
+        boschloo_stat = boschloo_exact(tbl, alternative=alternative).statistic
+        fisher_p = stats.fisher_exact(tbl, alternative=alternative)[1]
+        assert_allclose(boschloo_stat, fisher_p)
+
+
 class TestCvm_2samp:
     def test_invalid_input(self):
         x = np.arange(10).reshape((2, 5))
@@ -1071,13 +1362,13 @@ class TestCvm_2samp:
         assert_allclose(r1.pvalue, r2.pvalue, atol=1e-2)
 
     def test_method_auto(self):
-        x = np.arange(10)
+        x = np.arange(20)
         y = [0.5, 4.7, 13.1]
         r1 = cramervonmises_2samp(x, y, method='exact')
         r2 = cramervonmises_2samp(x, y, method='auto')
         assert_equal(r1.pvalue, r2.pvalue)
-        # switch to asymptotic if one sample has more than 10 observations
-        x = np.arange(11)
+        # switch to asymptotic if one sample has more than 20 observations
+        x = np.arange(21)
         r1 = cramervonmises_2samp(x, y, method='asymptotic')
         r2 = cramervonmises_2samp(x, y, method='auto')
         assert_equal(r1.pvalue, r2.pvalue)
@@ -1092,3 +1383,330 @@ class TestCvm_2samp:
         # check exact p-value
         res = cramervonmises_2samp(x[:4], x[:4])
         assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
+
+
+class TestTukeyHSD:
+
+    data_same_size = ([24.5, 23.5, 26.4, 27.1, 29.9],
+                      [28.4, 34.2, 29.5, 32.2, 30.1],
+                      [26.1, 28.3, 24.3, 26.2, 27.8])
+    data_diff_size = ([24.5, 23.5, 26.28, 26.4, 27.1, 29.9, 30.1, 30.1],
+                      [28.4, 34.2, 29.5, 32.2, 30.1],
+                      [26.1, 28.3, 24.3, 26.2, 27.8])
+    extreme_size = ([24.5, 23.5, 26.4],
+                    [28.4, 34.2, 29.5, 32.2, 30.1, 28.4, 34.2, 29.5, 32.2,
+                     30.1],
+                    [26.1, 28.3, 24.3, 26.2, 27.8])
+
+    sas_same_size = """
+    Comparison LowerCL Difference UpperCL Significance
+    2 - 3	0.6908830568	4.34	7.989116943	    1
+    2 - 1	0.9508830568	4.6 	8.249116943 	1
+    3 - 2	-7.989116943	-4.34	-0.6908830568	1
+    3 - 1	-3.389116943	0.26	3.909116943	    0
+    1 - 2	-8.249116943	-4.6	-0.9508830568	1
+    1 - 3	-3.909116943	-0.26	3.389116943	    0
+    """
+
+    sas_diff_size = """
+    Comparison LowerCL Difference UpperCL Significance
+    2 - 1	0.2679292645	3.645	7.022070736	    1
+    2 - 3	0.5934764007	4.34	8.086523599	    1
+    1 - 2	-7.022070736	-3.645	-0.2679292645	1
+    1 - 3	-2.682070736	0.695	4.072070736	    0
+    3 - 2	-8.086523599	-4.34	-0.5934764007	1
+    3 - 1	-4.072070736	-0.695	2.682070736	    0
+    """
+
+    sas_extreme = """
+    Comparison LowerCL Difference UpperCL Significance
+    2 - 3	1.561605075	    4.34	7.118394925	    1
+    2 - 1	2.740784879	    6.08	9.419215121	    1
+    3 - 2	-7.118394925	-4.34	-1.561605075	1
+    3 - 1	-1.964526566	1.74	5.444526566	    0
+    1 - 2	-9.419215121	-6.08	-2.740784879	1
+    1 - 3	-5.444526566	-1.74	1.964526566	    0
+    """
+
+    @pytest.mark.parametrize("data,res_expect_str,atol",
+                             ((data_same_size, sas_same_size, 1e-4),
+                              (data_diff_size, sas_diff_size, 1e-4),
+                              (extreme_size, sas_extreme, 1e-10),
+                              ),
+                             ids=["equal size sample",
+                                  "unequal sample size",
+                                  "extreme sample size differences"])
+    def test_compare_sas(self, data, res_expect_str, atol):
+        '''
+        SAS code used to generate results for each sample:
+        DATA ACHE;
+        INPUT BRAND RELIEF;
+        CARDS;
+        1 24.5
+        ...
+        3 27.8
+        ;
+        ods graphics on;   ODS RTF;ODS LISTING CLOSE;
+           PROC ANOVA DATA=ACHE;
+           CLASS BRAND;
+           MODEL RELIEF=BRAND;
+           MEANS BRAND/TUKEY CLDIFF;
+           TITLE 'COMPARE RELIEF ACROSS MEDICINES  - ANOVA EXAMPLE';
+           ods output  CLDiffs =tc;
+        proc print data=tc;
+            format LowerCL 17.16 UpperCL 17.16 Difference 17.16;
+            title "Output with many digits";
+        RUN;
+        QUIT;
+        ODS RTF close;
+        ODS LISTING;
+        '''
+        res_expect = np.asarray(res_expect_str.replace(" - ", " ").split()[5:],
+                                dtype=float).reshape((6, 6))
+        res_tukey = stats.tukey_hsd(*data)
+        conf = res_tukey.confidence_interval()
+        # loop over the comparisons
+        for i, j, l, s, h, sig in res_expect:
+            i, j = int(i) - 1, int(j) - 1
+            assert_allclose(conf.low[i, j], l, atol=atol)
+            assert_allclose(res_tukey.statistic[i, j], s, atol=atol)
+            assert_allclose(conf.high[i, j], h, atol=atol)
+            assert_allclose((res_tukey.pvalue[i, j] <= .05), sig == 1)
+
+    matlab_sm_siz = """
+        1	2	-8.2491590248597	-4.6	-0.9508409751403	0.0144483269098
+        1	3	-3.9091590248597	-0.26	3.3891590248597	0.9803107240900
+        2	3	0.6908409751403	4.34	7.9891590248597	0.0203311368795
+        """
+
+    matlab_diff_sz = """
+        1	2	-7.02207069748501	-3.645	-0.26792930251500 0.03371498443080
+        1	3	-2.68207069748500	0.695	4.07207069748500 0.85572267328807
+        2	3	0.59347644287720	4.34	8.08652355712281 0.02259047020620
+        """
+
+    @pytest.mark.parametrize("data,res_expect_str,atol",
+                             ((data_same_size, matlab_sm_siz, 1e-12),
+                              (data_diff_size, matlab_diff_sz, 1e-7)),
+                             ids=["equal size sample",
+                                  "unequal size sample"])
+    def test_compare_matlab(self, data, res_expect_str, atol):
+        """
+        vals = [24.5, 23.5,  26.4, 27.1, 29.9, 28.4, 34.2, 29.5, 32.2, 30.1,
+         26.1, 28.3, 24.3, 26.2, 27.8]
+        names = {'zero', 'zero', 'zero', 'zero', 'zero', 'one', 'one', 'one',
+         'one', 'one', 'two', 'two', 'two', 'two', 'two'}
+        [p,t,stats] = anova1(vals,names,"off");
+        [c,m,h,nms] = multcompare(stats, "CType","hsd");
+        """
+        res_expect = np.asarray(res_expect_str.split(),
+                                dtype=float).reshape((3, 6))
+        res_tukey = stats.tukey_hsd(*data)
+        conf = res_tukey.confidence_interval()
+        # loop over the comparisons
+        for i, j, l, s, h, p in res_expect:
+            i, j = int(i) - 1, int(j) - 1
+            assert_allclose(conf.low[i, j], l, atol=atol)
+            assert_allclose(res_tukey.statistic[i, j], s, atol=atol)
+            assert_allclose(conf.high[i, j], h, atol=atol)
+            assert_allclose(res_tukey.pvalue[i, j], p, atol=atol)
+
+    def test_compare_r(self):
+        """
+        Testing against results and p-values from R:
+        from: https://www.rdocumentation.org/packages/stats/versions/3.6.2/
+        topics/TukeyHSD
+        > require(graphics)
+        > summary(fm1 <- aov(breaks ~ tension, data = warpbreaks))
+        > TukeyHSD(fm1, "tension", ordered = TRUE)
+        > plot(TukeyHSD(fm1, "tension"))
+        Tukey multiple comparisons of means
+        95% family-wise confidence level
+        factor levels have been ordered
+        Fit: aov(formula = breaks ~ tension, data = warpbreaks)
+        $tension
+        """
+        str_res = """
+                diff        lwr      upr     p adj
+        2 - 3  4.722222 -4.8376022 14.28205 0.4630831
+        1 - 3 14.722222  5.1623978 24.28205 0.0014315
+        1 - 2 10.000000  0.4401756 19.55982 0.0384598
+        """
+        res_expect = np.asarray(str_res.replace(" - ", " ").split()[5:],
+                                dtype=float).reshape((3, 6))
+        data = ([26, 30, 54, 25, 70, 52, 51, 26, 67,
+                 27, 14, 29, 19, 29, 31, 41, 20, 44],
+                [18, 21, 29, 17, 12, 18, 35, 30, 36,
+                 42, 26, 19, 16, 39, 28, 21, 39, 29],
+                [36, 21, 24, 18, 10, 43, 28, 15, 26,
+                 20, 21, 24, 17, 13, 15, 15, 16, 28])
+
+        res_tukey = stats.tukey_hsd(*data)
+        conf = res_tukey.confidence_interval()
+        # loop over the comparisons
+        for i, j, s, l, h, p in res_expect:
+            i, j = int(i) - 1, int(j) - 1
+            # atols are set to the number of digits present in the r result.
+            assert_allclose(conf.low[i, j], l, atol=1e-7)
+            assert_allclose(res_tukey.statistic[i, j], s, atol=1e-6)
+            assert_allclose(conf.high[i, j], h, atol=1e-5)
+            assert_allclose(res_tukey.pvalue[i, j], p, atol=1e-7)
+
+    def test_engineering_stat_handbook(self):
+        '''
+        Example sourced from:
+        https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm
+        '''
+        group1 = [6.9, 5.4, 5.8, 4.6, 4.0]
+        group2 = [8.3, 6.8, 7.8, 9.2, 6.5]
+        group3 = [8.0, 10.5, 8.1, 6.9, 9.3]
+        group4 = [5.8, 3.8, 6.1, 5.6, 6.2]
+        res = stats.tukey_hsd(group1, group2, group3, group4)
+        conf = res.confidence_interval()
+        lower = np.asarray([
+            [0, 0, 0, -2.25],
+            [.29, 0, -2.93, .13],
+            [1.13, 0, 0, .97],
+            [0, 0, 0, 0]])
+        upper = np.asarray([
+            [0, 0, 0, 1.93],
+            [4.47, 0, 1.25, 4.31],
+            [5.31, 0, 0, 5.15],
+            [0, 0, 0, 0]])
+
+        for (i, j) in [(1, 0), (2, 0), (0, 3), (1, 2), (2, 3)]:
+            assert_allclose(conf.low[i, j], lower[i, j], atol=1e-2)
+            assert_allclose(conf.high[i, j], upper[i, j], atol=1e-2)
+
+    def test_rand_symm(self):
+        # test some expected identities of the results
+        np.random.seed(1234)
+        data = np.random.rand(3, 100)
+        res = stats.tukey_hsd(*data)
+        conf = res.confidence_interval()
+        # the confidence intervals should be negated symmetric of each other
+        assert_equal(conf.low, -conf.high.T)
+        # the `high` and `low` center diagonals should be the same since the
+        # mean difference in a self comparison is 0.
+        assert_equal(np.diagonal(conf.high), conf.high[0, 0])
+        assert_equal(np.diagonal(conf.low), conf.low[0, 0])
+        # statistic array should be antisymmetric with zeros on the diagonal
+        assert_equal(res.statistic, -res.statistic.T)
+        assert_equal(np.diagonal(res.statistic), 0)
+        # p-values should be symmetric and 1 when compared to itself
+        assert_equal(res.pvalue, res.pvalue.T)
+        assert_equal(np.diagonal(res.pvalue), 1)
+
+    def test_no_inf(self):
+        with assert_raises(ValueError, match="...must be finite."):
+            stats.tukey_hsd([1, 2, 3], [2, np.inf], [6, 7, 3])
+
+    def test_is_1d(self):
+        with assert_raises(ValueError, match="...must be one-dimensional"):
+            stats.tukey_hsd([[1, 2], [2, 3]], [2, 5], [5, 23, 6])
+
+    def test_no_empty(self):
+        with assert_raises(ValueError, match="...must be greater than one"):
+            stats.tukey_hsd([], [2, 5], [4, 5, 6])
+
+    @pytest.mark.parametrize("nargs", (0, 1))
+    def test_not_enough_treatments(self, nargs):
+        with assert_raises(ValueError, match="...more than 1 treatment."):
+            stats.tukey_hsd(*([[23, 7, 3]] * nargs))
+
+    @pytest.mark.parametrize("cl", [-.5, 0, 1, 2])
+    def test_conf_level_invalid(self, cl):
+        with assert_raises(ValueError, match="must be between 0 and 1"):
+            r = stats.tukey_hsd([23, 7, 3], [3, 4], [9, 4])
+            r.confidence_interval(cl)
+
+    def test_2_args_ttest(self):
+        # that with 2 treatments the `pvalue` is equal to that of `ttest_ind`
+        res_tukey = stats.tukey_hsd(*self.data_diff_size[:2])
+        res_ttest = stats.ttest_ind(*self.data_diff_size[:2])
+        assert_allclose(res_ttest.pvalue, res_tukey.pvalue[0, 1])
+        assert_allclose(res_ttest.pvalue, res_tukey.pvalue[1, 0])
+
+
+class TestPoissonMeansTest:
+    @pytest.mark.parametrize("c1, n1, c2, n2, p_expect", (
+        # example from [1], 6. Illustrative examples: Example 1
+        [0, 100, 3, 100, 0.0884],
+        [2, 100, 6, 100, 0.1749]
+    ))
+    def test_paper_examples(self, c1, n1, c2, n2, p_expect):
+        res = stats.poisson_means_test(c1, n1, c2, n2)
+        assert_allclose(res.pvalue, p_expect, atol=1e-4)
+
+    @pytest.mark.parametrize("c1, n1, c2, n2, p_expect, alt, d", (
+        # These test cases are produced by the wrapped fortran code from the
+        # original authors. Using a slightly modified version of this fortran,
+        # found here, https://github.com/nolanbconaway/poisson-etest,
+        # additional tests were created.
+        [20, 10, 20, 10, 0.9999997568929630, 'two-sided', 0],
+        [10, 10, 10, 10, 0.9999998403241203, 'two-sided', 0],
+        [50, 15, 1, 1, 0.09920321053409643, 'two-sided', .05],
+        [3, 100, 20, 300, 0.12202725450896404, 'two-sided', 0],
+        [3, 12, 4, 20, 0.40416087318539173, 'greater', 0],
+        [4, 20, 3, 100, 0.008053640402974236, 'greater', 0],
+        # publishing paper does not include a `less` alternative,
+        # so it was calculated with switched argument order and
+        # alternative="greater"
+        [4, 20, 3, 10, 0.3083216325432898, 'less', 0],
+        [1, 1, 50, 15, 0.09322998607245102, 'less', 0]
+    ))
+    def test_fortran_authors(self, c1, n1, c2, n2, p_expect, alt, d):
+        res = stats.poisson_means_test(c1, n1, c2, n2, alternative=alt, diff=d)
+        assert_allclose(res.pvalue, p_expect, atol=2e-6, rtol=1e-16)
+
+    def test_different_results(self):
+        # The implementation in Fortran is known to break down at higher
+        # counts and observations, so we expect different results. By
+        # inspection we can infer the p-value to be near one.
+        count1, count2 = 10000, 10000
+        nobs1, nobs2 = 10000, 10000
+        res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
+        assert_allclose(res.pvalue, 1)
+
+    def test_less_than_zero_lambda_hat2(self):
+        # demonstrates behavior that fixes a known fault from original Fortran.
+        # p-value should clearly be near one.
+        count1, count2 = 0, 0
+        nobs1, nobs2 = 1, 1
+        res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
+        assert_allclose(res.pvalue, 1)
+
+    def test_input_validation(self):
+        count1, count2 = 0, 0
+        nobs1, nobs2 = 1, 1
+
+        # test non-integral events
+        message = '`k1` and `k2` must be integers.'
+        with assert_raises(TypeError, match=message):
+            stats.poisson_means_test(.7, nobs1, count2, nobs2)
+        with assert_raises(TypeError, match=message):
+            stats.poisson_means_test(count1, nobs1, .7, nobs2)
+
+        # test negative events
+        message = '`k1` and `k2` must be greater than or equal to 0.'
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(-1, nobs1, count2, nobs2)
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(count1, nobs1, -1, nobs2)
+
+        # test negative sample size
+        message = '`n1` and `n2` must be greater than 0.'
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(count1, -1, count2, nobs2)
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(count1, nobs1, count2, -1)
+
+        # test negative difference
+        message = 'diff must be greater than or equal to 0.'
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(count1, nobs1, count2, nobs2, diff=-1)
+
+        # test invalid alternatvie
+        message = 'Alternative must be one of ...'
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(1, 2, 1, 2, alternative='error')

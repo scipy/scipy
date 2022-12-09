@@ -5,15 +5,16 @@ Method agnostic utility functions for linear progamming
 import numpy as np
 import scipy.sparse as sps
 from warnings import warn
-from .optimize import OptimizeWarning
+from ._optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
     _remove_redundancy_svd, _remove_redundancy_pivot_sparse,
     _remove_redundancy_pivot_dense, _remove_redundancy_id
     )
 from collections import namedtuple
 
-_LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
-_LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
+_LPProblem = namedtuple('_LPProblem',
+                        'c A_ub b_ub A_eq b_eq bounds x0 integrality')
+_LPProblem.__new__.__defaults__ = (None,) * 7  # make c the only required arg
 _LPProblem.__doc__ = \
     """ Represents a linear-programming problem.
 
@@ -50,6 +51,28 @@ _LPProblem.__doc__ = \
         the optimization algorithm. This argument is currently used only by the
         'revised simplex' method, and can only be used if `x0` represents a
         basic feasible solution.
+    integrality : 1-D array or int, optional
+        Indicates the type of integrality constraint on each decision variable.
+
+        ``0`` : Continuous variable; no integrality constraint.
+
+        ``1`` : Integer variable; decision variable must be an integer
+        within `bounds`.
+
+        ``2`` : Semi-continuous variable; decision variable must be within
+        `bounds` or take value ``0``.
+
+        ``3`` : Semi-integer variable; decision variable must be an integer
+        within `bounds` or take value ``0``.
+
+        By default, all variables are continuous.
+
+        For mixed integrality constraints, supply an array of shape `c.shape`.
+        To infer a constraint on each decision variable from shorter inputs,
+        the argument will be broadcasted to `c.shape` using `np.broadcast_to`.
+
+        This argument is currently used only by the ``'highs'`` method and
+        ignored otherwise.
 
     Notes
     -----
@@ -258,7 +281,7 @@ def _clean_inputs(lp):
             basic feasible solution.
 
     """
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
     if c is None:
         raise TypeError
@@ -279,7 +302,7 @@ def _clean_inputs(lp):
             raise ValueError(
                 "Invalid input for linprog: c must be a 1-D array and must "
                 "not have more than one non-singleton dimension")
-        if not(np.isfinite(c).all()):
+        if not np.isfinite(c).all():
             raise ValueError(
                 "Invalid input for linprog: c must not contain values "
                 "inf, nan, or None")
@@ -318,7 +341,7 @@ def _clean_inputs(lp):
                 "must not have more than one non-singleton dimension and "
                 "the number of rows in A_ub must equal the number of values "
                 "in b_ub")
-        if not(np.isfinite(b_ub).all()):
+        if not np.isfinite(b_ub).all():
             raise ValueError(
                 "Invalid input for linprog: b_ub must not contain values "
                 "inf, nan, or None")
@@ -357,7 +380,7 @@ def _clean_inputs(lp):
                 "must not have more than one non-singleton dimension and "
                 "the number of rows in A_eq must equal the number of values "
                 "in b_eq")
-        if not(np.isfinite(b_eq).all()):
+        if not np.isfinite(b_eq).all():
             raise ValueError(
                 "Invalid input for linprog: b_eq must not contain values "
                 "inf, nan, or None")
@@ -448,7 +471,7 @@ def _clean_inputs(lp):
     i_none = np.isnan(bounds_clean[:, 1])
     bounds_clean[i_none, 1] = np.inf
 
-    return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds_clean, x0)
+    return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds_clean, x0, integrality)
 
 
 def _presolve(lp, rr, rr_method, tol=1e-9):
@@ -572,7 +595,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
     #  * loop presolve until no additional changes are made
     #  * implement additional efficiency improvements in redundancy removal [2]
 
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, _ = lp
 
     revstack = []               # record of variables eliminated from problem
     # constant term in cost function may be added if variables are eliminated
@@ -1089,7 +1112,7 @@ def _get_Abc(lp, c0):
            programming." Athena Scientific 1 (1997): 997.
 
     """
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
     if sps.issparse(A_eq):
         sparse = True
@@ -1355,7 +1378,8 @@ def _postsolve(x, postsolve_args, complete=False):
     # note that all the inputs are the ORIGINAL, unmodified versions
     # no rows, columns have been removed
 
-    (c, A_ub, b_ub, A_eq, b_eq, bounds, x0), revstack, C, b_scale = postsolve_args
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = postsolve_args[0]
+    revstack, C, b_scale = postsolve_args[1:]
 
     x = _unscale(x, C, b_scale)
 

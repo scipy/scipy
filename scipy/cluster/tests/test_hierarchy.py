@@ -54,11 +54,11 @@ from . import hierarchy_test_data
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
 # check if it's available
 try:
-    import matplotlib  # type: ignore[import]
+    import matplotlib
     # and set the backend to be Agg (no gui)
     matplotlib.use('Agg')
     # before importing pyplot
-    import matplotlib.pyplot as plt  # type: ignore[import]
+    import matplotlib.pyplot as plt
     have_matplotlib = True
 except Exception:
     have_matplotlib = False
@@ -949,6 +949,36 @@ class TestDendrogram:
 
         # reset color palette (global list)
         set_link_color_palette(None)
+
+    def test_dendrogram_leaf_colors_zero_dist(self):
+        # tests that the colors of leafs are correct for tree
+        # with two identical points
+        x = np.array([[1, 0, 0],
+                      [0, 0, 1],
+                      [0, 2, 0],
+                      [0, 0, 1],
+                      [0, 1, 0],
+                      [0, 1, 0]])
+        z = linkage(x, "single")
+        d = dendrogram(z, no_plot=True)
+        exp_colors = ['C0', 'C1', 'C1', 'C0', 'C2', 'C2']
+        colors = d["leaves_color_list"]
+        assert_equal(colors, exp_colors)
+
+    def test_dendrogram_leaf_colors(self):
+        # tests that the colors are correct for a tree
+        # with two near points ((0, 0, 1.1) and (0, 0, 1))
+        x = np.array([[1, 0, 0],
+                      [0, 0, 1.1],
+                      [0, 2, 0],
+                      [0, 0, 1],
+                      [0, 1, 0],
+                      [0, 1, 0]])
+        z = linkage(x, "single")
+        d = dendrogram(z, no_plot=True)
+        exp_colors = ['C0', 'C1', 'C1', 'C0', 'C2', 'C2']
+        colors = d["leaves_color_list"]
+        assert_equal(colors, exp_colors)
 
 
 def calculate_maximum_distances(Z):

@@ -24,7 +24,7 @@ for y < ~ -745.1.
 When p > 1 - exp(-2), the Cephes implementation of ndtri uses the symmetry
 of the normal distribution and calculates ndtri(p) as -ndtri(1 - p) allowing
 for the use of the same approximation. When y > log(1 - exp(-2)) this
-implementation calculates ndtri_exp as -ndtri(-exp1m(y)).
+implementation calculates ndtri_exp as -ndtri(-expm1(y)).
 
 
 Accuracy
@@ -100,14 +100,11 @@ ndtri itself, leading to an error profile that is still favorable.
 
 import cython
 from libc.float cimport DBL_MAX
-from libc.math cimport exp, expm1, log, log1p, sqrt, M_SQRT2
+from libc.math cimport exp, expm1, log, log1p, sqrt, M_SQRT2, INFINITY
 
 cdef extern from "cephes/polevl.h":
     double polevl(double x, const double coef[], int N) nogil
     double p1evl(double x, const double coef[], int N) nogil
-
-cdef extern from "numpy/npy_math.h":
-    double NPY_INFINITY
 
 from ._cephes cimport ndtri
 
@@ -166,7 +163,7 @@ cdef inline double _ndtri_exp_small_y(double y) nogil:
 cdef inline double ndtri_exp(double y) nogil:
     """Return inverse of logarithm of Normal CDF evaluated at y."""
     if y < -DBL_MAX:
-        return -NPY_INFINITY
+        return -INFINITY
     elif y < - 2.0:
         return _ndtri_exp_small_y(y)
     elif y > -0.14541345786885906: # log1p(-exp(-2))

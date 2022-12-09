@@ -171,8 +171,6 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
        returned.  Values of ``y[m-1]`` and ``w[m-1]`` are not used.
     quiet : int, optional
          Non-zero to suppress messages.
-         This parameter is deprecated; use standard Python warning filters
-         instead.
 
     Returns
     -------
@@ -222,7 +220,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     if per:
         for i in range(idim):
             if x[i][0] != x[i][-1]:
-                if quiet < 2:
+                if not quiet:
                     warnings.warn(RuntimeWarning('Setting x[%d][%d]=x[%d][0]' %
                                                  (i, m, i)))
                 x[i][-1] = x[i][0]
@@ -373,8 +371,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         y[m-1] and w[m-1] are not used.
     quiet : bool, optional
         Non-zero to suppress messages.
-        This parameter is deprecated; use standard Python warning filters
-        instead.
 
     Returns
     -------
@@ -658,7 +654,7 @@ def splint(a, b, tck, full_output=0):
         return list(map(lambda c, a=a, b=b, t=t, k=k:
                         splint(a, b, [t, c, k]), c))
     else:
-        aint, wrk = _fitpack._splint(t, c, k, a, b)
+        aint, wrk = dfitpack.splint(t, c, k, a, b)
         if full_output:
             return aint, wrk
         else:
@@ -687,7 +683,7 @@ def sproot(tck, mest=10):
     zeros : ndarray
         An array giving the roots of the spline.
 
-    See also
+    See Also
     --------
     splprep, splrep, splint, spalde, splev
     bisplrep, bisplev
@@ -718,15 +714,15 @@ def sproot(tck, mest=10):
     else:
         if len(t) < 8:
             raise TypeError("The number of knots %d>=8" % len(t))
-        z, ier = _fitpack._sproot(t, c, k, mest)
+        z, m, ier = dfitpack.sproot(t, c, mest)
         if ier == 10:
             raise TypeError("Invalid input data. "
                             "t1<=..<=t4<t5<..<tn-3<=..<=tn must hold.")
         if ier == 0:
-            return z
+            return z[:m]
         if ier == 1:
             warnings.warn(RuntimeWarning("The number of zeros exceeds mest"))
-            return z
+            return z[:m]
         raise TypeError("Unknown error")
 
 
@@ -780,7 +776,7 @@ def spalde(x, tck):
         x = atleast_1d(x)
         if len(x) > 1:
             return list(map(lambda x, tck=tck: spalde(x, tck), x))
-        d, ier = _fitpack._spalde(t, c, k, x[0])
+        d, ier = dfitpack.spalde(t, c, k+1, x[0])
         if ier == 0:
             return d
         if ier == 10:
@@ -846,8 +842,6 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
         ``nyest = max(ky+sqrt(m/2),2*ky+3)``.
     quiet : int, optional
         Non-zero to suppress printing of messages.
-        This parameter is deprecated; use standard Python warning filters
-        instead.
 
     Returns
     -------
@@ -873,6 +867,10 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     -----
     See `bisplev` to evaluate the value of the B-spline given its tck
     representation.
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolation.
 
     References
     ----------
@@ -996,7 +994,7 @@ def bisplev(x, y, tck, dx=0, dy=0):
     Return a rank-2 array of spline function values (or spline derivative
     values) at points given by the cross-product of the rank-1 arrays `x` and
     `y`.  In special cases, return an array or just a float if either `x` or
-    `y` or both are floats.  Based on BISPEV from FITPACK.
+    `y` or both are floats.  Based on BISPEV and PARDER from FITPACK.
 
     Parameters
     ----------

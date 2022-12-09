@@ -5,7 +5,8 @@
 """
 Unit tests for the dual annealing global optimizer
 """
-from scipy.optimize import dual_annealing
+from scipy.optimize import dual_annealing, Bounds
+
 from scipy.optimize._dual_annealing import EnergyState
 from scipy.optimize._dual_annealing import LocalSearchWrapper
 from scipy.optimize._dual_annealing import ObjectiveFunWrapper
@@ -147,8 +148,6 @@ class TestDualAnnealing:
         assert_equal(res1.x, res2.x)
         assert_equal(res1.x, res3.x)
 
-    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
-                        reason='Generator not available for numpy, < 1.17')
     def test_rand_gen(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
         # obtain a np.random.Generator object
@@ -178,29 +177,31 @@ class TestDualAnnealing:
         assert_raises(ValueError, dual_annealing, self.func,
                       invalid_bounds)
 
-    def test_local_search_option_bounds(self):
+    def test_deprecated_local_search_options_bounds(self):
         func = lambda x: np.sum((x-5) * (x-1))
         bounds = list(zip([-6, -5], [6, 5]))
         # Test bounds can be passed (see gh-10831)
 
-        with np.testing.suppress_warnings() as sup:
-            sup.record(RuntimeWarning, "Values in x were outside bounds ")
-
+        with pytest.warns(RuntimeWarning, match=r"Method CG cannot handle "):
             dual_annealing(
                 func,
                 bounds=bounds,
-                local_search_options={"method": "SLSQP", "bounds": bounds})
+                minimizer_kwargs={"method": "CG", "bounds": bounds})
 
-        with np.testing.suppress_warnings() as sup:
-            sup.record(RuntimeWarning, "Method CG cannot handle ")
+    def test_minimizer_kwargs_bounds(self):
+        func = lambda x: np.sum((x-5) * (x-1))
+        bounds = list(zip([-6, -5], [6, 5]))
+        # Test bounds can be passed (see gh-10831)
+        dual_annealing(
+            func,
+            bounds=bounds,
+            minimizer_kwargs={"method": "SLSQP", "bounds": bounds})
 
+        with pytest.warns(RuntimeWarning, match=r"Method CG cannot handle "):
             dual_annealing(
                 func,
                 bounds=bounds,
-                local_search_options={"method": "CG", "bounds": bounds})
-
-            # Verify warning happened for Method cannot handle bounds.
-            assert sup.log
+                minimizer_kwargs={"method": "CG", "bounds": bounds})
 
     def test_max_fun_ls(self):
         ret = dual_annealing(self.func, self.ld_bounds, maxfun=100,
@@ -257,7 +258,7 @@ class TestDualAnnealing:
     ])
     def test_multi_ls_minimizer(self, method, atol):
         ret = dual_annealing(self.func, self.ld_bounds,
-                             local_search_options=dict(method=method),
+                             minimizer_kwargs=dict(method=method),
                              seed=self.seed)
         assert_allclose(ret.fun, 0., atol=atol)
 
@@ -272,7 +273,7 @@ class TestDualAnnealing:
             'jac': self.rosen_der_wrapper,
         }
         ret = dual_annealing(rosen, self.ld_bounds,
-                             local_search_options=minimizer_opts,
+                             minimizer_kwargs=minimizer_opts,
                              seed=self.seed)
         assert ret.njev == self.ngev
 
@@ -329,3 +330,31 @@ class TestDualAnnealing:
         rate = 0 if pqv <= 0 else np.exp(np.log(pqv) / (1 - accept_param))
 
         assert_allclose(rate, accept_rate)
+
+    def test_bounds_class(self):
+        # test that result does not depend on the bounds type
+        def func(x):
+            f = np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
+            return f
+        lw = [-5.12] * 5
+        up = [5.12] * 5
+
+        # Unbounded global minimum is all zeros. Most bounds below will force
+        # a DV away from unbounded minimum and be active at solution.
+        up[0] = -2.0
+        up[1] = -1.0
+        lw[3] = 1.0
+        lw[4] = 2.0
+
+        # run optimizations
+        bounds = Bounds(lw, up)
+        ret_bounds_class = dual_annealing(func, bounds=bounds, seed=1234)
+
+        bounds_old = list(zip(lw, up))
+        ret_bounds_list = dual_annealing(func, bounds=bounds_old, seed=1234)
+
+        # test that found minima, function evaluations and iterations match
+        assert_allclose(ret_bounds_class.x, ret_bounds_list.x, atol=1e-8)
+        assert_allclose(ret_bounds_class.x, np.arange(-2, 3), atol=1e-7)
+        assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-9)
+        assert ret_bounds_list.nfev == ret_bounds_class.nfev

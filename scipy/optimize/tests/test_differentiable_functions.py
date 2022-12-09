@@ -9,6 +9,7 @@ from scipy.optimize._differentiable_functions import (ScalarFunction,
                                                       VectorFunction,
                                                       LinearVectorFunction,
                                                       IdentityVectorFunction)
+from scipy.optimize import rosen, rosen_der, rosen_hess
 from scipy.optimize._hessian_update_strategy import BFGS
 
 
@@ -141,7 +142,7 @@ class TestScalarFunction(TestCase):
 
         fg = ex.fun(x0), ex.grad(x0)
         fg_allclose(analit.fun_and_grad(x0), fg)
-        assert(analit.ngev == 1)
+        assert analit.ngev == 1
 
         x0[1] = 1.
         fg = ex.fun(x0), ex.grad(x0)
@@ -151,10 +152,10 @@ class TestScalarFunction(TestCase):
         x0 = [2.0, 0.3]
         sf = ScalarFunction(ex.fun, x0, (), '3-point',
                                 ex.hess, None, (-np.inf, np.inf))
-        assert(sf.ngev == 1)
+        assert sf.ngev == 1
         fg = ex.fun(x0), ex.grad(x0)
         fg_allclose(sf.fun_and_grad(x0), fg)
-        assert(sf.ngev == 1)
+        assert sf.ngev == 1
 
         x0[1] = 1.
         fg = ex.fun(x0), ex.grad(x0)
@@ -339,6 +340,27 @@ class TestScalarFunction(TestCase):
         assert_equal(sf.fun(x), 14.0)
         assert_equal(sf.x, np.array([1., 2., 3.]))
         assert x is not sf.x
+
+    def test_lowest_x(self):
+        # ScalarFunction should remember the lowest func(x) visited.
+        x0 = np.array([2, 3, 4])
+        sf = ScalarFunction(rosen, x0, (), rosen_der, rosen_hess,
+                            None, None)
+        sf.fun([1, 1, 1])
+        sf.fun(x0)
+        sf.fun([1.01, 1, 1.0])
+        sf.grad([1.01, 1, 1.0])
+        assert_equal(sf._lowest_f, 0.0)
+        assert_equal(sf._lowest_x, [1.0, 1.0, 1.0])
+
+        sf = ScalarFunction(rosen, x0, (), '2-point', rosen_hess,
+                            None, (-np.inf, np.inf))
+        sf.fun([1, 1, 1])
+        sf.fun(x0)
+        sf.fun([1.01, 1, 1.0])
+        sf.grad([1.01, 1, 1.0])
+        assert_equal(sf._lowest_f, 0.0)
+        assert_equal(sf._lowest_x, [1.0, 1.0, 1.0])
 
 
 class ExVectorialFunction:

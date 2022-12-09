@@ -1,5 +1,6 @@
-      subroutine pogrid(iopt,ider,mu,u,mv,v,z,z0,r,s,nuest,nvest,
-     * nu,tu,nv,tv,c,fp,wrk,lwrk,iwrk,kwrk,ier)
+      recursive subroutine pogrid(iopt,ider,mu,u,mv,v,z,z0,r,s,
+     * nuest,nvest,nu,tu,nv,tv,c,fp,wrk,lwrk,iwrk,kwrk,ier)
+      implicit none
 c  subroutine pogrid fits a function f(x,y) to a set of data points
 c  z(i,j) given at the nodes (x,y)=(u(i)*cos(v(j)),u(i)*sin(v(j))),
 c  i=1,...,mu ; j=1,...,mv , of a radius-angle grid over a disc

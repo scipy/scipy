@@ -30,13 +30,14 @@ cdef extern from "Highs.h":
         # split up for cython below
         #const HighsModelStatus& getModelStatus(const bool scaled_model = False) const
         const HighsModelStatus & getModelStatus() const
-        const HighsModelStatus & getModelStatus(const bool scaled_model) const
 
-        const HighsInfo& getHighsInfo() const
-        string highsModelStatusToString(const HighsModelStatus model_status) const
+        const HighsInfo& getHighsInfo "getInfo" () const
+        string modelStatusToString(const HighsModelStatus model_status) const
         #HighsStatus getHighsInfoValue(const string& info, int& value)
         HighsStatus getHighsInfoValue(const string& info, double& value) const
         const HighsOptions& getHighsOptions() const
+
+        const HighsLp& getLp() const
 
         HighsStatus writeSolution(const string filename, const bool pretty) const
 
@@ -46,9 +47,9 @@ cdef extern from "Highs.h":
 
         bool changeObjectiveSense(const ObjSense sense)
 
-        HighsStatus setHighsOptionValueBool "setHighsOptionValue" (const string & option, const bool value)
-        HighsStatus setHighsOptionValueInt "setHighsOptionValue" (const string & option, const int value)
-        HighsStatus setHighsOptionValueStr "setHighsOptionValue" (const string & option, const string & value)
-        HighsStatus setHighsOptionValueDbl "setHighsOptionValue" (const string & option, const double value)
+        HighsStatus setHighsOptionValueBool "setOptionValue" (const string & option, const bool value)
+        HighsStatus setHighsOptionValueInt "setOptionValue" (const string & option, const int value)
+        HighsStatus setHighsOptionValueStr "setOptionValue" (const string & option, const string & value)
+        HighsStatus setHighsOptionValueDbl "setOptionValue" (const string & option, const double value)
 
         string primalDualStatusToString(const int primal_dual_status)

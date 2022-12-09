@@ -2,6 +2,7 @@
 Unit tests for optimization routines from minpack.py.
 """
 import warnings
+import pytest
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose,
@@ -11,10 +12,11 @@ import numpy as np
 from numpy import array, float64
 from multiprocessing.pool import ThreadPool
 
-from scipy import optimize
+from scipy import optimize, linalg
 from scipy.special import lambertw
-from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
+from scipy.optimize._minpack_py import leastsq, curve_fit, fixed_point
 from scipy.optimize import OptimizeWarning
+from scipy.optimize._minimize import Bounds
 
 
 class ReturnShape:
@@ -202,10 +204,12 @@ class TestFSolve:
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_concurrent_no_gradient(self):
-        return sequence_parallel([self.test_pressure_network_no_gradient] * 10)
+        v = sequence_parallel([self.test_pressure_network_no_gradient] * 10)
+        assert all([result is None for result in v])
 
     def test_concurrent_with_gradient(self):
-        return sequence_parallel([self.test_pressure_network_with_gradient] * 10)
+        v = sequence_parallel([self.test_pressure_network_with_gradient] * 10)
+        assert all([result is None for result in v])
 
 
 class TestRootHybr:
@@ -385,10 +389,12 @@ class TestLeastSq:
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
     def test_concurrent_no_gradient(self):
-        return sequence_parallel([self.test_basic] * 10)
+        v = sequence_parallel([self.test_basic] * 10)
+        assert all([result is None for result in v])
 
     def test_concurrent_with_gradient(self):
-        return sequence_parallel([self.test_basic_with_gradient] * 10)
+        v = sequence_parallel([self.test_basic_with_gradient] * 10)
+        assert all([result is None for result in v])
 
     def test_func_input_output_length_check(self):
 
@@ -576,6 +582,26 @@ class TestCurveFit:
 
         assert_raises(ValueError, curve_fit, f, xdata, ydata, method='unknown')
 
+    def test_full_output(self):
+        def f(x, a, b):
+            return a * np.exp(-b * x)
+
+        xdata = np.linspace(0, 1, 11)
+        ydata = f(xdata, 2., 2.)
+
+        for method in ['trf', 'dogbox', 'lm', None]:
+            popt, pcov, infodict, errmsg, ier = curve_fit(
+                f, xdata, ydata, method=method, full_output=True)
+            assert_allclose(popt, [2., 2.])
+            assert "nfev" in infodict
+            assert "fvec" in infodict
+            if method == 'lm' or method is None:
+                assert "fjac" in infodict
+                assert "ipvt" in infodict
+                assert "qtf" in infodict
+            assert isinstance(errmsg, str)
+            assert ier in (1, 2, 3, 4)
+
     def test_bounds(self):
         def f(x, a, b):
             return a * np.exp(-b*x)
@@ -585,11 +611,21 @@ class TestCurveFit:
 
         # The minimum w/out bounds is at [2., 2.],
         # and with bounds it's at [1.5, smth].
-        bounds = ([1., 0], [1.5, 3.])
+        lb = [1., 0]
+        ub = [1.5, 3.]
+
+        # Test that both variants of the bounds yield the same result
+        bounds = (lb, ub)
+        bounds_class = Bounds(lb, ub)
         for method in [None, 'trf', 'dogbox']:
             popt, pcov = curve_fit(f, xdata, ydata, bounds=bounds,
                                    method=method)
             assert_allclose(popt[0], 1.5)
+
+            popt_class, pcov_class = curve_fit(f, xdata, ydata,
+                                               bounds=bounds_class,
+                                               method=method)
+            assert_allclose(popt_class, popt)
 
         # With bounds, the starting estimate is feasible.
         popt, pcov = curve_fit(f, xdata, ydata, method='trf',
@@ -811,6 +847,55 @@ class TestCurveFit:
                       ydata=[5, 9, 13, 17],
                       p0=[1],
                       args=(1,))
+
+    def test_data_point_number_validation(self):
+        def func(x, a, b, c, d, e):
+            return a * np.exp(-b * x) + c + d + e
+
+        with assert_raises(TypeError, match="The number of func parameters="):
+            curve_fit(func,
+                      xdata=[1, 2, 3, 4],
+                      ydata=[5, 9, 13, 17])
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    def test_gh4555(self):
+        # gh-4555 reported that covariance matrices returned by `leastsq`
+        # can have negative diagonal elements and eigenvalues. (In fact,
+        # they can also be asymmetric.) This shows up in the output of
+        # `scipy.optimize.curve_fit`. Check that it has been resolved.giit
+        def f(x, a, b, c, d, e):
+            return a*np.log(x + 1 + b) + c*np.log(x + 1 + d) + e
+
+        rng = np.random.default_rng(408113519974467917)
+        n = 100
+        x = np.arange(n)
+        y = np.linspace(2, 7, n) + rng.random(n)
+        p, cov = optimize.curve_fit(f, x, y, maxfev=100000)
+        assert np.all(np.diag(cov) > 0)
+        eigs = linalg.eigh(cov)[0]  # separate line for debugging
+        # some platforms see a small negative eigevenvalue
+        assert np.all(eigs > -1e-2)
+        assert_allclose(cov, cov.T)
+
+    def test_gh4555b(self):
+        # check that PR gh-17247 did not significantly change covariance matrix
+        # for simple cases
+        rng = np.random.default_rng(408113519974467917)
+
+        def func(x, a, b, c):
+            return a * np.exp(-b * x) + c
+
+        xdata = np.linspace(0, 4, 50)
+        y = func(xdata, 2.5, 1.3, 0.5)
+        y_noise = 0.2 * rng.normal(size=xdata.size)
+        ydata = y + y_noise
+        _, res = curve_fit(func, xdata, ydata)
+        # reference from commit 1d80a2f254380d2b45733258ca42eb6b55c8755b
+        ref = [[+0.0158972536486215, 0.0069207183284242, -0.0007474400714749],
+               [+0.0069207183284242, 0.0205057958128679, +0.0053997711275403],
+               [-0.0007474400714749, 0.0053997711275403, +0.0027833930320877]]
+        # Linux_Python_38_32bit_full fails with default tolerance
+        assert_allclose(res, ref, 2e-7)
 
 
 class TestFixedPoint:

@@ -7,7 +7,7 @@ from pytest import raises as assert_raises
 import pytest
 
 import scipy.interpolate.interpnd as interpnd
-import scipy.spatial.qhull as qhull
+import scipy.spatial._qhull as qhull
 
 import pickle
 

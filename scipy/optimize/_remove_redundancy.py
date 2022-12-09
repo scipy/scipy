@@ -85,7 +85,7 @@ def _remove_zero_rows(A, b):
     message = ""
     i_zero = _row_count(A) == 0
     A = A[np.logical_not(i_zero), :]
-    if not(np.allclose(b[i_zero], 0)):
+    if not np.allclose(b[i_zero], 0):
         status = 2
         message = "There is a zero row in A_eq with a nonzero corresponding " \
                   "entry in b_eq. The problem is infeasible."
@@ -118,7 +118,7 @@ def _remove_redundancy_pivot_dense(A, rhs, true_rank=None):
         An array representing the right-hand side of a system of equations
 
     Returns
-    ----------
+    -------
     A : 2-D sparse matrix
         A matrix representing the left-hand side of a system of equations
     rhs : 1-D array

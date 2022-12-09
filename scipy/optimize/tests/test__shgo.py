@@ -1,8 +1,9 @@
 import logging
 import numpy
+from numpy.testing import assert_allclose
 import pytest
 from pytest import raises as assert_raises, warns
-from scipy.optimize import shgo
+from scipy.optimize import shgo, Bounds, minimize
 from scipy.optimize._shgo import SHGO
 
 
@@ -469,6 +470,13 @@ class TestShgoArguments:
             shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
                  callback=callback_func, options={'disp': True})
 
+    def test_args_gh14589(self):
+        # Using `args` used to cause `shgo` to fail; see #14589, #15986, #16506
+        res = shgo(func=lambda x, y, z: x*z + y, bounds=[(0, 3)], args=(1, 2))
+        ref = shgo(func=lambda x: 2*x + 1, bounds=[(0, 3)])
+        assert_allclose(res.fun, ref.fun)
+        assert_allclose(res.x, ref.x)
+
     @pytest.mark.slow
     def test_4_1_known_f_min(self):
         """Test known function minima stopping criteria"""
@@ -649,6 +657,28 @@ class TestShgoArguments:
 
         run_test(test1_1, n=30, sampling_method=sample)
 
+    def test_18_bounds_class(self):
+        # test that new and old bounds yield same result
+        def f(x):
+            return numpy.square(x).sum()
+
+        lb = [-6., 1., -5.]
+        ub = [-1., 3., 5.]
+        bounds_old = list(zip(lb, ub))
+        bounds_new = Bounds(lb, ub)
+
+        res_old_bounds = shgo(f, bounds_old)
+        res_new_bounds = shgo(f, bounds_new)
+
+        assert res_new_bounds.nfev == res_old_bounds.nfev
+        assert res_new_bounds.message == res_old_bounds.message
+        assert res_new_bounds.success == res_old_bounds.success
+        x_opt = numpy.array([-1., 1., 0.])
+        numpy.testing.assert_allclose(res_new_bounds.x, x_opt)
+        numpy.testing.assert_allclose(res_new_bounds.x,
+                                      res_old_bounds.x)
+
+
 # Failure test functions
 class TestShgoFailures:
     def test_1_maxiter(self):
@@ -749,3 +779,34 @@ class TestShgoFailures:
                   'sampling_method': 'sobol'
                   }
         warns(UserWarning, shgo, *args, **kwargs)
+
+    @pytest.mark.parametrize('derivative', ['jac', 'hess', 'hessp'])
+    def test_21_2_derivative_options(self, derivative):
+        """shgo used to raise an error when passing `options` with 'jac'
+        # see gh-12829. check that this is resolved
+        """
+        def objective(x):
+            return 3 * x[0] * x[0] + 2 * x[0] + 5
+
+        def gradient(x):
+            return 6 * x[0] + 2
+
+        def hess(x):
+            return 6
+
+        def hessp(x, p):
+            return 6 * p
+
+        derivative_funcs = {'jac': gradient, 'hess': hess, 'hessp': hessp}
+        options = {derivative: derivative_funcs[derivative]}
+        minimizer_kwargs = {'method': 'trust-constr'}
+
+        bounds = [(-100, 100)]
+        res = shgo(objective, bounds, minimizer_kwargs=minimizer_kwargs,
+                   options=options)
+        ref = minimize(objective, x0=[0], bounds=bounds, **minimizer_kwargs,
+                       **options)
+
+        assert res.success
+        numpy.testing.assert_allclose(res.fun, ref.fun)
+        numpy.testing.assert_allclose(res.x, ref.x)
