@@ -250,17 +250,14 @@ def sobol_indices(
     ...    func=f_ishigami, n=1024, d=3,
     ...    l_bounds=[-np.pi, -np.pi, -np.pi], u_bounds=[np.pi, np.pi, np.pi]
     ... )
+    >>> indices[:2]
+    (array([0.28717719, 0.44694404, 0.00404842]),
+     array([0.53461512, 0.42775372, 0.23343319]))
 
-    It is particularly interesting because
-    the first order indice of :math:`S_{x_3} = 0` whereas its total order is
-    :math:`S_{T_{x_3}} = 0.244`.
-
-    It means that higher order interactions are responsible for the difference,
-    and are responsible for 25% of the observed variance on the QoI.
-
-
-    Note that on second order indices,
-    `S_{x_1,x_3} = 0.244`. It means that almost 25% of the observed variance
+    It is particularly interesting because the first order indice of
+    :math:`S_{x_3} = 0` whereas its total order is :math:`S_{T_{x_3}} = 0.244`.
+    It means that higher order interactions with :math:`x_3` are responsible
+    for the difference. Almost 25% of the observed variance
     on the QoI is due to the correlations between :math:`x_3` and :math:`x_1`,
     although :math:`x_3` by itself has no impact on the QoI.
 
