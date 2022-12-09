@@ -28,7 +28,7 @@ class Storage:
 
     def update(self, minres):
         if minres.success and (minres.fun < self.minres.fun
-                               or not self.minres.success)
+                               or not self.minres.success):
             self._add(minres)
             return True
         else:
