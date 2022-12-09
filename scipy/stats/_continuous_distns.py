@@ -10310,12 +10310,12 @@ class relativistic_bw_gen(rv_continuous):
         k = \frac{2\sqrt{2}\rho^2\sqrt{\rho^2 + 1}}
             {\pi\sqrt{\rho^2 + \rho\sqrt{\rho^2 + 1}}}
 
-    The relativistic Breit-Wigner distribution is used in high energy
-    physics to model resonances. It gives the distribution for the observed
-    center-of-mass energy produced by a resonance given its mass :math:`M` and
-    decay-width :math:`\Gamma` [1]_, where :math:`M` and :math:`\Gamma` are
-    expressed in natural units. In SciPy's parametrization, the shape parameter
-    :math:`\rho` is equal to :math:`M/\Gamma`.
+    The relativistic Breit-Wigner distribution is used in high energy physics
+    to model resonances. It gives the distribution for the probability of
+    observing a resonance with energy :math:`E` given the rest mass :math:`M`
+    and decay-width :math:`\Gamma` of the resonance [1]_, where :math:`M` and
+    :math:`\Gamma` are expressed in natural units. In SciPy's parametrization,
+    the shape parameter :math:`\rho` is equal to :math:`M/\Gamma`.
 
     %(after_notes)s
 
