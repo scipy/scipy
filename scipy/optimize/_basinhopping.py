@@ -27,9 +27,8 @@ class Storage:
         self.minres.x = np.copy(minres.x)
 
     def update(self, minres):
-        cond1 = minres.fun < self.minres.fun and minres.success
-        cond2 = minres.success and not self.minres.success
-        if cond1 or cond2:
+        if minres.success and (minres.fun < self.minres.fun
+                               or not self.minres.success)
             self._add(minres)
             return True
         else:
