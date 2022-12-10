@@ -1,8 +1,7 @@
 python_sources = [
   '__init__.py',
   '_codata.py',
-  'codata.py',
-  'constants.py'
+  'codata.py'
 ]
 
 
