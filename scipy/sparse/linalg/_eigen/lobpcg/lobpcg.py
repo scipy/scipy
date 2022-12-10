@@ -318,7 +318,7 @@ def lobpcg(
     >>> eigenvalues
     array([100.])
     >>> eigenvalues.dtype
-    np.float32
+    dtype('float64')
 
     LOBPCG needs only access the matrix product with ``A`` rather
     then the matrix itself. Since the matrix ``A`` is diagonal in
@@ -350,7 +350,7 @@ def lobpcg(
     The preconditioner acts as the inverse of A in this example:
 
     >>> inv_vals = 1./vals
-    >>> precond = lambda X: inv_vals[:, np.newaxis] * X
+    >>> M = lambda X: inv_vals[:, np.newaxis] * X
 
     Let us now solve the eigenvalue problem for the matrix A:
 
