@@ -85,7 +85,6 @@ PUBLIC_MODULES = ["scipy." + s for s in [
 # These private modules support will be removed in SciPy v2.0.0
 PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.constants.codata',
-    'scipy.constants.constants',
     'scipy.fftpack.basic',
     'scipy.fftpack.convolve',
     'scipy.fftpack.helper',
