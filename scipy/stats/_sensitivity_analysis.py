@@ -21,7 +21,7 @@ __all__ = [
 
 
 def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
-    """Ishigami function.
+    r"""Ishigami function.
 
     .. math::
 
@@ -106,7 +106,7 @@ def sample_AB(A: np.ndarray, B: np.ndarray) -> np.ndarray:
 def saltelli_2010(
     f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray
 ) -> Tuple[np.ndarray,  np.ndarray]:
-    """Saltelli2010 formulation.
+    r"""Saltelli2010 formulation.
 
     .. math::
 
@@ -146,7 +146,7 @@ def sobol_indices(
     u_bounds: Optional[npt.ArrayLike] = None,
     random_state: SeedType = None
 ):
-    """Global sensitivity indices of Sobol'.
+    r"""Global sensitivity indices of Sobol'.
 
     Parameters
     ----------

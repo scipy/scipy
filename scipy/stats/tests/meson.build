@@ -24,6 +24,7 @@ py3.install_sources([
     'test_relative_risk.py',
     'test_resampling.py',
     'test_sampling.py',
+    'test_sensitivity_analysis.py',
     'test_stats.py',
     'test_tukeylambda_stats.py',
     'test_variation.py'
