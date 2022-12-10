@@ -2981,7 +2981,7 @@ class TestVonMises_Fisher:
         x = uniform_direction(3).rvs(testshape, random_state=rng)
         vmf = vonmises_fisher([0, 0, 1], 20)
         all_pdf = vmf.pdf(x)
-        all_logpdf = vmf.logpdf(x)        
+        all_logpdf = vmf.logpdf(x)
         assert all_pdf.shape == testshape
         for i in range(testshape[0]):
             for j in range(testshape[1]):
