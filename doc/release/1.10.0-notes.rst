@@ -6,7 +6,7 @@ SciPy 1.10.0 Release Notes
 
 .. contents::
 
-SciPy 1.10.0 is the culmination of X months of hard work. It contains
+SciPy 1.10.0 is the culmination of 6 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and better
 documentation. There have been a number of deprecations and API changes
 in this release, which are documented below. All users are encouraged to
