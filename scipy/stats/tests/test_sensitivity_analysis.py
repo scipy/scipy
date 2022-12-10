@@ -27,16 +27,35 @@ def ishigami_ref_indices():
     ])
     s_total = s_first + s_second.sum(axis=1)
 
-    return s_first.reshape(-1, 1), s_total.reshape(-1, 1)
+    return [s_first.reshape(-1, 1), s_total.reshape(-1, 1)]
+
+
+def f_ishigami_vec(x):
+    res = f_ishigami(x)
+    return np.column_stack([res, res])
 
 
 class TestSobolIndices:
 
-    def test_ishigami(self, ishigami_ref_indices):
+    @pytest.mark.parametrize(
+        'func',
+        [f_ishigami, f_ishigami_vec],
+        ids=['scalar', 'vector']
+    )
+    def test_ishigami(self, ishigami_ref_indices, func):
         indices = sobol_indices(
-            func=f_ishigami, n=4096, d=3,
+            func=func, n=4096, d=3,
             l_bounds=[-np.pi, -np.pi, -np.pi], u_bounds=[np.pi, np.pi, np.pi]
         )
+
+        if func.__name__ == 'f_ishigami_vec':
+            ishigami_ref_indices[0] = np.column_stack(
+                [ishigami_ref_indices[0], ishigami_ref_indices[0]]
+            )
+            ishigami_ref_indices[1] = np.column_stack(
+                [ishigami_ref_indices[1], ishigami_ref_indices[1]]
+            )
+
 
         assert_allclose(indices[0], ishigami_ref_indices[0], atol=1e-2)
         assert_allclose(indices[1], ishigami_ref_indices[1], atol=1e-2)
