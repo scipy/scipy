@@ -303,8 +303,11 @@ def lobpcg(
     columns. The second mandatory input parameter, a 2D array with the
     row dimension determining the number of requested eigenvalues.
     If no initial approximations available, randomly oriented vectors
-    commonly work best, e.g., with components normally disrtibuted
+    commonly work best, e.g., with components normally distributed
     around zero or uniformly distributed on the interval [-1 1].
+    Setting the initial approximations to dtype ``np.float32``
+    forces all iterative values to dtype ``np.float32`` speeding up
+    the run while still allowing accurate eigenvalue computations.
 
     >>> k = 1
     >>> rng = np.random.default_rng()
@@ -314,6 +317,26 @@ def lobpcg(
     >>> eigenvalues, _ = lobpcg(A, X, maxiter=60)
     >>> eigenvalues
     array([100.])
+    >>> eigenvalues.dtype
+    np.float32
+
+    LOBPCG needs only access the matrix product with ``A`` rather
+    then the matrix itself. Since the matrix ``A`` is diagonal in
+    this example, one can write a function of the product
+    ``A @ X`` using the diagonal values ``vals`` only, e.g., by
+    element-wise multiplication with broadcasting
+
+    >>> A_f = lambda X: vals[:, np.newaxis] * X
+
+    and use the handle ``A_f`` to this callable function as an input
+
+    >>> eigenvalues, _ = lobpcg(A_f, X, maxiter=60)
+    >>> eigenvalues
+    array([100.])
+
+    The next example illustrates computing 3 smallest eigenvalues of
+    the same matrix given by the function handle ``A_f`` with
+    constraints and preconditioning.
 
     >>> k = 3
     >>> rng = np.random.default_rng()
@@ -324,22 +347,10 @@ def lobpcg(
 
     >>> Y = np.eye(n, 3)
 
-    Preconditioner in the inverse of A in this example:
+    The preconditioner acts as the inverse of A in this example:
 
-    >>> invA = spdiags([1./vals], 0, n, n)
-
-    The preconditiner must be defined by a function:
-
-    >>> def precond( x ):
-    ...     return invA @ x
-
-    The argument x of the preconditioner function is a matrix inside `lobpcg`,
-    thus the use of matrix-matrix product ``@``.
-
-    The preconditioner function is passed to lobpcg as a `LinearOperator`:
-
-    >>> M = LinearOperator(matvec=precond, matmat=precond,
-    ...                    shape=(n, n), dtype=np.float64)
+    >>> inv_vals = 1./vals
+    >>> precond = lambda X: inv_vals[:, np.newaxis] * X
 
     Let us now solve the eigenvalue problem for the matrix A:
 
