@@ -5724,6 +5724,10 @@ class vonmises_fisher_gen(multi_rv_generic):
     Parameters
     ----------
 
+    See Also
+    --------
+    vonmises : Von-Mises Fisher distribution in 2D on a circle
+
     Notes
     -----
     The von Mises-Fisher distribution is a spherical distribution on the
@@ -6075,7 +6079,7 @@ class vonmises_fisher_gen(multi_rv_generic):
             return ive(halfdim, kappa)/ive(halfdim - 1, kappa) - r
 
         root_res = root_scalar(solve_for_kappa, method="brentq",
-                               bracket=(1e-8, 1e8))
+                               bracket=(1e-8, 1e9))
         if not root_res.converged:
             raise RuntimeError("Fit did not converge.")
         kappa = root_res.root

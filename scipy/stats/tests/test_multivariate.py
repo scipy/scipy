@@ -2974,33 +2974,23 @@ class TestVonMises_Fisher:
         entropy = vonmises_fisher(mu, kappa).entropy()
         assert_allclose(entropy, reference)
 
-    def test_pdf_consistency(self):
-        # test that pdf values are correctly broadcasted
-        testshape = (2, 4)
+    def test_pdf_logpdf_consistency(self):
+        # test that pdf and logpdf values are correctly broadcasted
+        testshape = (2, 2)
         rng = np.random.default_rng(2777937887058094419)
         x = uniform_direction(3).rvs(testshape, random_state=rng)
         vmf = vonmises_fisher([0, 0, 1], 20)
         all_pdf = vmf.pdf(x)
+        all_logpdf = vmf.logpdf(x)        
         assert all_pdf.shape == testshape
         for i in range(testshape[0]):
             for j in range(testshape[1]):
                 current_pdf = vmf.pdf(x[i, j, :])
                 assert_allclose(current_pdf, all_pdf[i, j])
-
-    def test_logpdf_consistency(self):
-        # test that logpdf values are correctly broadcasted
-        testshape = (2, 4)
-        rng = np.random.default_rng(2777937887058094419)
-        x = uniform_direction(3).rvs(testshape, random_state=rng)
-        vmf = vonmises_fisher([0, 0, 1], 20)
-        all_logpdf = vmf.logpdf(x)
-        assert all_logpdf.shape == testshape
-        for i in range(testshape[0]):
-            for j in range(testshape[1]):
                 current_logpdf = vmf.logpdf(x[i, j, :])
                 assert_allclose(current_logpdf, all_logpdf[i, j])
 
-    @pytest.mark.parametrize("dim", [2, 3, 4, 5])
+    @pytest.mark.parametrize("dim", [2, 3, 6])
     @pytest.mark.parametrize("kappa", np.logspace(-1, 6, 8))
     def test_fit_accuracy(self, dim, kappa):
         mu = np.full((dim, ), 1/np.sqrt(dim))
@@ -3026,3 +3016,16 @@ class TestVonMises_Fisher:
         msg = "x must be unit vectors of norm 1 along last dimension."
         with pytest.raises(ValueError, match=msg):
             vonmises_fisher.fit(x)
+
+    def test_frozen_distribution(self):
+        mu = np.array([0, 0, 1])
+        kappa = 5
+        frozen = vonmises_fisher(mu, kappa)
+        frozen_seed = vonmises_fisher(mu, kappa, seed=514)
+
+        rvs1 = frozen.rvs(random_state=514)
+        rvs2 = vonmises_fisher.rvs(mu, kappa, random_state=514)
+        rvs3 = frozen_seed.rvs()
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
