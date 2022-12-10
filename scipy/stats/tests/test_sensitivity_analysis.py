@@ -7,6 +7,10 @@ from scipy.stats import f_ishigami, sobol_indices
 
 @pytest.fixture(scope='session')
 def ishigami_ref_indices():
+    """Reference values for Ishigami from Saltelli2007.
+
+    Chapter 4, exercise 5 pages 179-182.
+    """
     a = 7.
     b = 0.1
 
@@ -55,7 +59,6 @@ class TestSobolIndices:
             ishigami_ref_indices[1] = np.column_stack(
                 [ishigami_ref_indices[1], ishigami_ref_indices[1]]
             )
-
 
         assert_allclose(indices[0], ishigami_ref_indices[0], atol=1e-2)
         assert_allclose(indices[1], ishigami_ref_indices[1], atol=1e-2)
