@@ -10374,7 +10374,7 @@ class relativistic_bw_gen(rv_continuous):
 
     def _stats(self, rho):
         # Returning None from stats makes public stats use _munp.
-        return None, None, np.inf, np.inf
+        return None, None, np.nan, np.nan
 
     @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
