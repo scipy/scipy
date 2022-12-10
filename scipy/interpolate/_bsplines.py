@@ -1847,18 +1847,18 @@ def _coeff_of_divided_diff(x):
 
 def make_smoothing_spline(x, y, w=None, lam=None):
     r"""
-    Returns a smoothing cubic spline function using ``lam`` to control the
-    tradeoff between the amount of smoothness of the curve and its proximity
-    to the data. In case ``lam`` is None, using the GCV criteria [1] to find
-    it.
+    Compute the (coefficients of) smoothing cubic spline function using
+    ``lam`` to control the tradeoff between the amount of smoothness of the
+    curve and its proximity to the data. In case ``lam`` is None, using the
+    GCV criteria [1] to find it.
 
     A smoothing spline is found as a solution to the regularized weighted
     linear regression problem:
 
     .. math::
 
-        \sum\limits_{i=1}^n w_i\abs{y_i - f(x_i)}^2 +
-        \lambda\int\limits_{x_1}^{x_n} (f^{(2)}(u))^2 \diff u
+        \sum\limits_{i=1}^n w_i\lvert y_i - f(x_i) \rvert^2 +
+        \lambda\int\limits_{x_1}^{x_n} (f^{(2)}(u))^2 d u
 
     where :math:`f` is a spline function, :math:`w` is a vector of weights and
     :math:`\lambda` is a regularization parameter.
@@ -1900,8 +1900,8 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     equal in terms of weights, and vector of weights is vector of ones.
 
     Note that in weighted residual sum of squares, weights are not squared:
-    :math:`\sum\limits_{i=1}^n w_i\abs{y_i - f(x_i)}^2` while in ``splrep``
-    the sum is built from the squared weights.
+    :math:`\sum\limits_{i=1}^n w_i\lvert y_i - f(x_i) \rvert^2` while in
+    ``splrep`` the sum is built from the squared weights.
 
     In cases when the initial problem is ill-posed (for example, the product
     :math:`X^T W X` where :math:`X` is a design matrix is not a positive
@@ -1922,8 +1922,9 @@ def make_smoothing_spline(x, y, w=None, lam=None):
         prediction, New York: Springer, 2017, pp. 241-249.
         :doi:`10.1007/978-0-387-84858-7`
     .. [4] E. Zemlyanoy, "Generalized cross-validation smoothing splines",
-        BSc thesis, 2022. Might be available (in Russian)
-        `here <https://www.hse.ru/ba/am/students/diplomas/620910604>`_
+        BSc thesis, 2022.
+        `<https://www.hse.ru/ba/am/students/diplomas/620910604>`_ (in
+        Russian)
 
     Examples
     --------

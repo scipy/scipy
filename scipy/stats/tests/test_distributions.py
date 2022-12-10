@@ -82,9 +82,6 @@ def test_distributions_submodule():
     # <scipy.stats._continuous_distns.trapezoid_gen at 0x1df83bbc688>
     expected = set(filter(lambda s: not str(s).startswith('<'), expected))
 
-    # gilbrat is deprecated and no longer in distcont
-    actual.remove('gilbrat')
-
     assert actual == expected
 
 
@@ -180,6 +177,33 @@ def test_vonmises_rvs_gh4598():
 def test_vonmises_logpdf(x, kappa, expected_logpdf):
     logpdf = stats.vonmises.logpdf(x, kappa)
     assert_allclose(logpdf, expected_logpdf, rtol=1e-15)
+
+
+def test_vonmises_expect():
+    """
+    Test that the vonmises expectation values are
+    computed correctly.  This test checks that the
+    numeric integration estimates the correct normalization
+    (1) and mean angle (loc).  These expectations are
+    independent of the chosen 2pi interval.
+    """
+    rng = np.random.default_rng(6762668991392531563)
+
+    loc, kappa, lb = rng.random(3) * 10
+    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1)
+    assert_allclose(res, 1)
+    assert np.issubdtype(res.dtype, np.floating)
+
+    bounds = lb, lb + 2 * np.pi
+    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1, *bounds)
+    assert_allclose(res, 1)
+    assert np.issubdtype(res.dtype, np.floating)
+
+    bounds = lb, lb + 2 * np.pi
+    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: np.exp(1j*x),
+                                                      *bounds, complex_func=1)
+    assert_allclose(np.angle(res), loc % (2*np.pi))
+    assert np.issubdtype(res.dtype, np.complexfloating)
 
 
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
@@ -2443,7 +2467,15 @@ class TestLaplace:
         assert_allclose(x, -np.log(2*p), rtol=1e-13)
 
 
-class TestPowerlaw(object):
+class TestPowerlaw:
+
+    # In the following data, `sf` was computed with mpmath.
+    @pytest.mark.parametrize('x, a, sf',
+                             [(0.25, 2.0, 0.9375),
+                              (0.99609375, 1/256, 1.528855235208108e-05)])
+    def test_sf(self, x, a, sf):
+        assert_allclose(stats.powerlaw.sf(x, a), sf, rtol=1e-15)
+
     @pytest.fixture(scope='function')
     def rng(self):
         return np.random.default_rng(1234)
@@ -3423,6 +3455,33 @@ class TestBetaPrime:
         gen_cdf = stats.rv_continuous._cdf_single
         cdfs_g = [gen_cdf(stats.betaprime, val, alpha, beta) for val in x]
         assert_allclose(cdfs, cdfs_g, atol=0, rtol=2e-12)
+
+    # The expected values for test_ppf() were computed with mpmath, e.g.
+    #
+    #   from mpmath import mp
+    #   mp.dps = 125
+    #   p = 0.01
+    #   a, b = 1.25, 2.5
+    #   x = mp.findroot(lambda t: mp.betainc(a, b, x1=0, x2=t/(1+t),
+    #                                        regularized=True) - p,
+    #                   x0=(0.01, 0.011), method='secant')
+    #   print(float(x))
+    #
+    # prints
+    #
+    #   0.01080162700956614
+    #
+    @pytest.mark.parametrize(
+        'p, a, b, expected',
+        [(0.010, 1.25, 2.5, 0.01080162700956614),
+         (1e-12, 1.25, 2.5, 1.0610141996279122e-10),
+         (1e-18, 1.25, 2.5, 1.6815941817974941e-15),
+         (1e-17, 0.25, 7.0, 1.0179194531881782e-69),
+         (0.375, 0.25, 7.0, 0.002036820346115211)],
+    )
+    def test_ppf(self, p, a, b, expected):
+        p = stats.betaprime.ppf(p, a, b)
+        assert_allclose(p, expected, rtol=1e-14)
 
 
 class TestGamma:

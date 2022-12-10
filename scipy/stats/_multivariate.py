@@ -14,9 +14,13 @@ from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 from ._continuous_distns import beta
 from ._discrete_distns import binom
+<<<<<<< HEAD
 from . import _mvn, _covariance, contingency
 from ._morestats import directional_stats
 from scipy.optimize import root_scalar
+=======
+from . import _mvn, _covariance, _rcont
+>>>>>>> main
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -5362,8 +5366,8 @@ class random_table_gen(multi_rv_generic):
         not contain negative or non-integer entries, and that the sums over
         both vectors are equal.
         """
-        r = np.array(row, dtype=np.int_, copy=True)
-        c = np.array(col, dtype=np.int_, copy=True)
+        r = np.array(row, dtype=np.int64, copy=True)
+        c = np.array(col, dtype=np.int64, copy=True)
 
         if np.ndim(r) != 1:
             raise ValueError("`row` must be one-dimensional")
@@ -5417,34 +5421,20 @@ class random_table_gen(multi_rv_generic):
 
     @classmethod
     def _rvs_select(cls, r, c, n):
-        # TODO find optimal empirical threshold with benchmarks,
-        # for now we always return "boyett", because "patefield"
-        # is not yet implemented.
-
-        # Example:
-        # k = len(r) * len(c)  # number of cells
-        # if n > fac * np.log(n) * k:
-        #     return cls._rvs_patefield
-        # return cls._rvs_boyett
-        # 'fac' has to be estimated empirically
+        fac = 1.0  # benchmarks show that this value is about 1
+        k = len(r) * len(c)  # number of cells
+        # n + 1 guards against failure if n == 0
+        if n > fac * np.log(n + 1) * k:
+            return cls._rvs_patefield
         return cls._rvs_boyett
 
     @staticmethod
-    def _rvs_boyett(row, col, tot, size, random_state):
-        x = np.repeat(np.arange(len(row)), row)
-        y = np.repeat(np.arange(len(col)), col)
-
-        def crosstab(x, y):
-            return contingency.crosstab(x, y).count
-
-        tables = [crosstab(x, random_state.permutation(y))
-                  for i in range(size)]
-        return np.asarray(tables)
+    def _rvs_boyett(row, col, ntot, size, random_state):
+        return _rcont.rvs_rcont1(row, col, ntot, size, random_state)
 
     @staticmethod
-    def _rvs_patefield(row, col, tot, size, random_state):
-        # TODO call into C code
-        raise NotImplementedError
+    def _rvs_patefield(row, col, ntot, size, random_state):
+        return _rcont.rvs_rcont2(row, col, ntot, size, random_state)
 
 
 random_table = random_table_gen()
