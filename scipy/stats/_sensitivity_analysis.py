@@ -2,15 +2,16 @@ from __future__ import annotations
 from typing import Callable, List, Optional, TYPE_CHECKING, Tuple
 
 import numpy as np
-from scipy.stats._unuran.unuran_wrapper import PINVDist
 
-from scipy._lib._util import IntNumber, SeedType
+
 from scipy.stats._qmc import check_random_state
 from scipy.stats import qmc, bootstrap
 from scipy.stats.sampling import NumericalInversePolynomial
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+    from scipy.stats._unuran.unuran_wrapper import PINVDist
+    from scipy._lib._util import IntNumber, SeedType
 
 
 __all__ = [
@@ -149,11 +150,21 @@ def sobol_indices(
 
     Parameters
     ----------
+    func : callable
+        Function to compute the Sobol' indices from. It's signature must be
+        ``func(x: ArrayLike) -> ArrayLike``, with ``x`` of shape ``(-1, d)``
+        and the output should have a shape ``(-1, 1)``.
     n : int
         Must be a power of 2. The total number of function call will
         ``n(d+2)``.
     d : int
         Dimension of the parameter space.
+    dists : list(distributions), optional
+        List of distributions of the parameters. It must be compatible with
+        `scipy.stats.sampling.NumericalInversePolynomial`.
+    l_bounds, u_bounds : array_like (d,), optional
+        Lower and upper bounds (resp. :math:`a`, :math:`b`) of transformed
+        data in the parameter space.
     random_state : {None, int, `numpy.random.Generator`}, optional
         If `random_state` is an int or None, a new `numpy.random.Generator` is
         created using ``np.random.default_rng(random_state)``.
