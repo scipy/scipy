@@ -126,12 +126,12 @@ def saltelli_2010(
        Computer Physics Communications, 181(2):259-270,
        :doi:`10.1016/j.cpc.2009.09.018`, 2010.
     """
-    f_AB = f_AB.reshape(-1, f_A.shape[0])
+    f_AB = f_AB.reshape(-1, *f_A.shape)
 
-    var = np.var(np.vstack([f_A, f_B]))
+    var = np.var(np.vstack([f_A, f_B]), axis=0)
 
-    s = np.mean(f_B * (f_AB - f_A.flatten()).T, axis=0) / var
-    st = 0.5 * np.mean((f_A.flatten() - f_AB).T ** 2, axis=0) / var
+    s = np.mean(f_B * (f_AB - f_A), axis=1) / var
+    st = 0.5 * np.mean((f_A - f_AB) ** 2, axis=1) / var
 
     return s, st
 
@@ -153,7 +153,8 @@ def sobol_indices(
     func : callable
         Function to compute the Sobol' indices from. It's signature must be
         ``func(x: ArrayLike) -> ArrayLike``, with ``x`` of shape ``(-1, d)``
-        and the output should have a shape ``(-1, 1)``.
+        and the output should have a shape ``(-1, s)`` with ``s`` the number
+        of output.
     n : int
         Must be a power of 2. The total number of function call will
         ``n(d+2)``.
