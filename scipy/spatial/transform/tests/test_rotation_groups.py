@@ -5,7 +5,6 @@ from numpy.testing import assert_array_almost_equal
 from scipy.spatial.transform import Rotation
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
-from scipy.constants import golden as phi
 from scipy.spatial import cKDTree
 
 
@@ -13,6 +12,7 @@ TOL = 1E-12
 NS = range(1, 13)
 NAMES = ["I", "O", "T"] + ["C%d" % n for n in NS] + ["D%d" % n for n in NS]
 SIZES = [60, 24, 12] + list(NS) + [2 * n for n in NS]
+phi = ((1 + np.sqrt(5)) / 2)
 
 
 def _calculate_rmsd(P, Q):
