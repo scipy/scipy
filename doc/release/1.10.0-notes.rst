@@ -6,7 +6,7 @@ SciPy 1.10.0 Release Notes
 
 .. contents::
 
-SciPy 1.10.0 is the culmination of X months of hard work. It contains
+SciPy 1.10.0 is the culmination of 6 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and better
 documentation. There have been a number of deprecations and API changes
 in this release, which are documented below. All users are encouraged to
@@ -75,10 +75,6 @@ New features
   Carlo points.
 - Added parameter ``complex_func`` to `scipy.integrate.quad`, which can be set
   ``True`` to integrate a complex integrand.
-
-
-`scipy.cluster` improvements
-============================
 
 
 `scipy.interpolate` improvements
@@ -162,17 +158,10 @@ New features
   Lanczos window, also known as a sinc window.
 
 
-`scipy.sparse` improvements
-===========================
-
-
 `scipy.sparse.csgraph` improvements
 ===================================
 - the performance of `scipy.sparse.csgraph.dijkstra` has been improved, and
   star graphs in particular see a marked performance improvement
-
-`scipy.spatial` improvements
-============================
 
 
 `scipy.special` improvements
@@ -193,123 +182,137 @@ New features
   Cramer-von Mises, and Anderson-Darling).
 - Improved `scipy.stats.bootstrap`: Default method ``'BCa'`` now supports
   multi-sample statistics. Also, the bootstrap distribution is returned in the
-  result object, and the result object can be passed into the function to add
-  additional resamples or change the confidence interval level and type.
-- Added a ``confidence_interval`` method to the result object returned by
-  `scipy.stats.ttest_1samp` and `scipy.stats.ttest_rel``.
+  result object, and the result object can be passed into the function as
+  parameter ``bootstrap_result`` to add additional resamples or change the
+  confidence interval level and type.
 - Added maximum spacing estimation to `scipy.stats.fit`.
-- Added `scipy.stats.contingency.odds_ratio` to compute both the conditional and
-  unconditional odds ratio for 2x2 contingency tables and corresponding
-  confidence intervals.
 - Added the Poisson means test ("E-test") as `scipy.stats.poisson_means_test`.
-- Added `scipy.stats.expectile`, which generalizes the expected value in the
-  same way as quantiles are a generalization of the median.
+- Added new sample statistics.
+
+  - Added `scipy.stats.contingency.odds_ratio` to compute both the conditional
+    and unconditional odds ratios and corresponding confidence intervals for
+    2x2 contingency tables.
+  - Added `scipy.stats.directional_stats` to compute sample statistics of
+    n-dimensional directional data.
+  - Added `scipy.stats.expectile`, which generalizes the expected value in the
+    same way as quantiles are a generalization of the median.
+
 - Added new statistical distributions.
+
   - Added `scipy.stats.uniform_direction`, a multivariate distribution to
-  sample uniformly from the surface of a hypersphere.
+    sample uniformly from the surface of a hypersphere.
   - Added `scipy.stats.random_table`, a multivariate distribution to sample
-  uniformly from m x n contingency tables with provided marginals.
+    uniformly from m x n contingency tables with provided marginals.
   - Added `scipy.stats.truncpareto`, the truncated Pareto distribution.
+
 - Improved the ``fit`` method of several distributions.
+
   - `scipy.stats.skewnorm` and `scipy.stats.weibull_min` now use an analytical
-  solution when ``method='mm'``, which also serves a starting guess to improve
-  the performance of ``method='mle'``.
+    solution when ``method='mm'``, which also serves a starting guess to
+    improve the performance of ``method='mle'``.
   - `scipy.stats.gumbel_r` and `scipy.stats.gumbel_l`: analytical maximum
-  likelihood estimates have been extended to the cases in which location or
-  scale are fixed by the user.
+    likelihood estimates have been extended to the cases in which location or
+    scale are fixed by the user.
   - Analytical maximum likelihood estimates have been added for
-  `scipy.stats.powerlaw`.
+    `scipy.stats.powerlaw`.
+
 - Improved random variate sampling of several distributions.
+
   - Drawing multiple samples from `scipy.stats.matrix_normal`,
-  `scipy.stats.ortho_group`, `scipy.stats.special_ortho_group`, and
-  `scipy.stats.unitary_group` is faster.
+    `scipy.stats.ortho_group`, `scipy.stats.special_ortho_group`, and
+    `scipy.stats.unitary_group` is faster.
   - The ``rvs`` method of `scipy.stats.vonmises` now wraps to the interval
-  ``[-np.pi, np.pi]``
+    ``[-np.pi, np.pi]``.
   - Improved the reliability of `scipy.stats.loggamma` ``rvs`` method for small
-  values of the shape parameter.
+    values of the shape parameter.
+
 - Improved the speed and/or accuracy of functions of several statistical
   distributions.
+
   - Added `scipy.stats.Covariance` for better speed, accuracy, and user control
-  in multivariate normal calculations.
+    in multivariate normal calculations.
   - `scipy.stats.skewnorm` methods ``cdf``, ``sf``, ``ppf``, and ``isf``
-  methods now use the implementations from Boost, improving speed while
-  maintaining accuracy. The calculation of higher-order moments is also faster
-  and more accurate.
+    methods now use the implementations from Boost, improving speed while
+    maintaining accuracy. The calculation of higher-order moments is also
+    faster and more accurate.
   - `scipy.stats.invgauss` methods ``ppf`` and ``isf`` methods now use the
-  implementations from Boost, improving speed and accuracy.
+    implementations from Boost, improving speed and accuracy.
   - `scipy.stats.invweibull` methods ``sf`` and ``isf`` are more accurate for
-  small probability masses.
+    small probability masses.
   - `scipy.stats.nct` and `scipy.stats.ncx2` now rely on the implementations
-  from Boost, improving speed and accuracy.
+    from Boost, improving speed and accuracy.
   - Implemented the ``logpdf`` method of `scipy.stats.vonmises` for reliability
-  in extreme tails.
+    in extreme tails.
   - Implemented the ``isf`` method of `scipy.stats.levy` for speed and
-  accuracy.
+    accuracy.
   - Improved the robustness of `scipy.stats.studentized_range` for large ``df``
-  by adding an infinite degree-of-freedom approximation.
+    by adding an infinite degree-of-freedom approximation.
   - Added a parameter ``lower_limit`` to `scipy.stats.multivariate_normal`,
-  allowing the user to change the integration limit from -inf to a desired
-  value.
+    allowing the user to change the integration limit from -inf to a desired
+    value.
   - Improved the robustness of ``entropy`` of `scipy.stats.vonmises` for large
-  concentration values
+    concentration values.
+
 - Enhanced `scipy.stats.gaussian_kde`.
+
   - Added `scipy.stats.gaussian_kde.marginal`, which returns the desired
-  marginal distribution of the original kernel density estimate distribution.
+    marginal distribution of the original kernel density estimate distribution.
   - The ``cdf`` method of `scipy.stats.gaussian_kde` now accepts a
-  ``lower_limit`` parameter for integrating the PDF over a rectangular region.
+    ``lower_limit`` parameter for integrating the PDF over a rectangular region.
   - Moved calculations for `scipy.stats.gaussian_kde.logpdf` to Cython,
-  improving speed.
+    improving speed.
   - The global interpreter lock is released by the ``pdf`` method of
-  `scipy.stats.gaussian_kde` for improved multithreading performance.
+    `scipy.stats.gaussian_kde` for improved multithreading performance.
   - Replaced explicit matrix inversion with Cholesky decomposition for speed
-  and accuracy.
-- Statistical test functions that previously returned plain tuples now return
-  bunches, allowing attributes to be accessed by name. The `scipy.stats`
-  functions ``combine_pvalues``, ``fisher_exact``, ``chi2_contingency``,
-  ``median_test`` and ``mood`` have been updated.
-- The result objects returned by statistical test functions now consistently
-  use the attribute names ``statistic`` and ``pvalue``. Old attribute names are
-  allowed for backward compatibility. The `scipy.stats` functions
-  ``multiscale_graphcorr``, ``anderson_ksamp``, ``binomtest``, ``crosstab``,
-  ``pointbiserialr``, ``spearmanr``, ``kendalltau`` and ``weightedtau`` have
-  been updated.
-- `scipy.stats.anderson` now returns the parameters of the fitted distribution
-  in a `scipy.stats._result_classes.FitResult` object.
-- Kolmogorov-Smirnov tests (e.g. `scipy.stats.kstest`) return more information:
-  the location (argmax) at which the statistic is calculated, and the variant
-  of the statistic used.
-- Improved the performance of `scipy.stats.cramervonmises_2samp` and
-  `scipy.stats.ks_2samp` with ``method='exact'``.
-- Improved the performance of `scipy.stats.siegelslopes`.
-- Improved the performance of `scipy.stats.hdquantile_sd`
-- Added the ``scramble`` optional argument to `scipy.stats.qmc.LatinHypercube`. It
-  replaces ``centered`` which is now deprecated.
+    and accuracy.
+
+- Enhanced the result objects returned by many `scipy.stats` functions
+
+  - Added a ``confidence_interval`` method to the result object returned by
+    `scipy.stats.ttest_1samp` and `scipy.stats.ttest_rel`.
+  - The `scipy.stats` functions ``combine_pvalues``, ``fisher_exact``,
+    ``chi2_contingency``, ``median_test`` and ``mood`` now return
+    bunch objects rather than plain tuples, allowing attributes to be
+    accessed by name.
+  - Attributes of the result objects returned by ``multiscale_graphcorr``,
+    ``anderson_ksamp``, ``binomtest``, ``crosstab``, ``pointbiserialr``,
+    ``spearmanr``, ``kendalltau``, and ``weightedtau`` have been renamed to
+    ``statistic`` and ``pvalue`` for consistency throughout `scipy.stats`.
+    Old attribute names are still allowed for backward compatibility.
+  - `scipy.stats.anderson` now returns the parameters of the fitted
+    distribution in a `scipy.stats._result_classes.FitResult` object.
+  - The ``plot`` method of `scipy.stats._result_classes.FitResult` now accepts
+    a ``plot_type`` parameter; the options are ``'hist'`` (histogram, default),
+    ``'qq'`` (Q-Q plot), ``'pp'`` (P-P plot), and ``'cdf'`` (empirical CDF
+    plot).
+  - Kolmogorov-Smirnov tests (e.g. `scipy.stats.kstest`) now return the
+    location (argmax) at which the statistic is calculated and the variant
+    of the statistic used.
+
+- Improved the performance of several `scipy.stats` functions.
+
+  - Improved the performance of `scipy.stats.cramervonmises_2samp` and
+    `scipy.stats.ks_2samp` with ``method='exact'``.
+  - Improved the performance of `scipy.stats.siegelslopes`.
+  - Improved the performance of `scipy.stats.hdquantile_sd`.
+  - Improved the performance of `scipy.stats.binned_statistic_dd` for several
+    NumPy statistics, and binned statistics methods now support complex data.
+
+- Added the ``scramble`` optional argument to `scipy.stats.qmc.LatinHypercube`.
+  It replaces ``centered``, which is now deprecated.
 - Added a parameter ``optimization`` to all `scipy.stats.qmc.QMCEngine`
-  subclasses to improve characteristics of the quasi-random variates
-- Added `scipy.stats.directional_stats` to compute sample statistics of
-  n-dimensional directional data.
-- The ``plot`` method of `scipy.stats._result_classes.FitResult` now accepts a
-  ``plot_type`` parameter; the options are ``'hist'`` (histogram, default),
-  ``'qq'`` (Q-Q plot), ``'pp'`` (P-P plot), and ``'cdf'`` (empirical CDF plot).
+  subclasses to improve characteristics of the quasi-random variates.
 - Added tie correction to `scipy.stats.mood`.
 - Added tutorials for resampling methods in `scipy.stats`.
 - `scipy.stats.bootstrap`, `scipy.stats.permutation_test`, and
   `scipy.stats.monte_carlo_test` now automatically detect whether the provided
   ``statistic`` is vectorized, so passing the ``vectorized`` argument
   explicitly is no longer required to take advantage of vectorized statistics.
-- Improved speed of `scipy.stats.permutation_test` for permutation types
+- Improved the speed of `scipy.stats.permutation_test` for permutation types
   ``'samples'`` and ``'pairings'``.
-- Improved the performance of `scipy.stats.binned_statistic_dd` for several
-  NumPy statistics, and binned statistics methods now support complex data.
 - Added ``axis``, ``nan_policy``, and masked array support to
-  `scipy.stats.jarque_bera`
+  `scipy.stats.jarque_bera`.
 - Added the ``nan_policy`` optional argument to `scipy.stats.rankdata`.
-
-
-Other
------
-
-
 
 
 *******************
@@ -328,16 +331,13 @@ Deprecated features
 Expired Deprecations
 ********************
 - There is an ongoing effort to follow through on long-standing deprecations.
-  The following previously deprecated features are affected:
+- The following previously deprecated features are affected:
+
   - Removed ``cond`` & ``rcond`` kwargs in ``linalg.pinv``
   - Removed wrappers ``scipy.linalg.blas.{clapack, flapack}``
   - Removed ``scipy.stats.NumericalInverseHermite`` and removed ``tol`` & ``max_intervals`` kwargs from ``scipy.stats.sampling.NumericalInverseHermite``
   - Removed ``local_search_options`` kwarg frrom ``scipy.optimize.dual_annealing``.
 
-
-******************************
-Backwards incompatible changes
-******************************
 
 *************
 Other changes
