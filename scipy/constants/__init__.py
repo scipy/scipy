@@ -5,8 +5,9 @@ Constants (:mod:`scipy.constants`)
 
 .. currentmodule:: scipy.constants
 
-The 2018 self-consistent values of constants and conversion factors of physics and chemistry recommended by the Committee
-on Data of the International Science Council (CODATA) are given below [JPCRD, RMP].
+The 2018 self-consistent values of constants and conversion factors of physics
+and chemistry recommended by the Committee on Data of the International Science
+Council (CODATA) are given below [JPCRD, RMP].
 
 .. autosummary::
    :toctree: generated/
@@ -31,8 +32,10 @@ Available constants:
 References
 ==========
 
-.. [JPCRD] [E. Tiesinga, P. J. Mohr, D. B. Newell, and B. N. Taylor, J. Phys. Chem. Ref. Data 50, 033105 (2021)](https://physics.nist.gov/cuu/pdf/JPCRD2018CODATA.pdf)
-.. [RMP] [E. Tiesinga, P. J. Mohr, D. B. Newell, and B. N. Taylor, Rev. Mod. Phys. 93, 025010 (2021)](https://physics.nist.gov/cuu/pdf/RevModPhys.93.025010.pdf)
+.. [JPCRD] E. Tiesinga, P. J. Mohr, D. B. Newell, and B. N. Taylor, J. Phys.
+           Chem. Ref. Data 50, 033105 (2021)
+.. [RMP] E. Tiesinga, P. J. Mohr, D. B. Newell, and B. N. Taylor, Rev. Mod.
+         Phys. 93, 025010 (2021)
 
 """
 # Modules contributed by BasSw (wegwerp@gmail.com)
