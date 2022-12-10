@@ -51,10 +51,7 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
 from ._hypotests import _all_partitions
-
-from ._stats_pythran import (_compute_outer_prob_inside_method,
-                             _compute_prob_outside_square,
-                             _count_paths_outside_method)
+from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import _batch_generator
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
@@ -7784,6 +7781,118 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
 Ks_2sampResult = KstestResult
 
 
+def _compute_prob_outside_square(n, h):
+    """
+    Compute the proportion of paths that pass outside the two diagonal lines.
+
+    Parameters
+    ----------
+    n : integer
+        n > 0
+    h : integer
+        0 <= h <= n
+
+    Returns
+    -------
+    p : float
+        The proportion of paths that pass outside the lines x-y = +/-h.
+
+    """
+    # Compute Pr(D_{n,n} >= h/n)
+    # Prob = 2 * ( binom(2n, n-h) - binom(2n, n-2a) + binom(2n, n-3a) - ... )
+    # / binom(2n, n)
+    # This formulation exhibits subtractive cancellation.
+    # Instead divide each term by binom(2n, n), then factor common terms
+    # and use a Horner-like algorithm
+    # P = 2 * A0 * (1 - A1*(1 - A2*(1 - A3*(1 - A4*(...)))))
+
+    P = 0.0
+    k = int(np.floor(n / h))
+    while k >= 0:
+        p1 = 1.0
+        # Each of the Ai terms has numerator and denominator with
+        # h simple terms.
+        for j in range(h):
+            p1 = (n - k * h - j) * p1 / (n + k * h + j + 1)
+        P = p1 * (1.0 - P)
+        k -= 1
+    return 2 * P
+
+
+def _count_paths_outside_method(m, n, g, h):
+    """Count the number of paths that pass outside the specified diagonal.
+
+    Parameters
+    ----------
+    m : integer
+        m > 0
+    n : integer
+        n > 0
+    g : integer
+        g is greatest common divisor of m and n
+    h : integer
+        0 <= h <= lcm(m,n)
+
+    Returns
+    -------
+    p : float
+        The number of paths that go low.
+        The calculation may overflow - check for a finite answer.
+
+    Notes
+    -----
+    Count the integer lattice paths from (0, 0) to (m, n), which at some
+    point (x, y) along the path, satisfy:
+      m*y <= n*x - h*g
+    The paths make steps of size +1 in either positive x or positive y
+    directions.
+
+    We generally follow Hodges' treatment of Drion/Gnedenko/Korolyuk.
+    Hodges, J.L. Jr.,
+    "The Significance Probability of the Smirnov Two-Sample Test,"
+    Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
+
+    """
+    # Compute #paths which stay lower than x/m-y/n = h/lcm(m,n)
+    # B(x, y) = #{paths from (0,0) to (x,y) without
+    #             previously crossing the boundary}
+    #         = binom(x, y) - #{paths which already reached the boundary}
+    # Multiply by the number of path extensions going from (x, y) to (m, n)
+    # Sum.
+
+    # Probability is symmetrical in m, n.  Computation below assumes m >= n.
+    if m < n:
+        m, n = n, m
+    mg = m // g
+    ng = n // g
+
+    # Not every x needs to be considered.
+    # xj holds the list of x values to be checked.
+    # Wherever n*x/m + ng*h crosses an integer
+    lxj = n + (mg-h)//mg
+    xj = [(h + mg * j + ng-1)//ng for j in range(lxj)]
+    # B is an array just holding a few values of B(x,y), the ones needed.
+    # B[j] == B(x_j, j)
+    if lxj == 0:
+        return special.binom(m + n, n)
+    B = np.zeros(lxj)
+    B[0] = 1
+    # Compute the B(x, y) terms
+    for j in range(1, lxj):
+        Bj = special.binom(xj[j] + j, j)
+        for i in range(j):
+            bin = special.binom(xj[j] - xj[i] + j - i, j-i)
+            Bj -= bin * B[i]
+        B[j] = Bj
+    # Compute the number of path extensions...
+    num_paths = 0
+    for j in range(lxj):
+        bin = special.binom((m-xj[j]) + (n - j), n-j)
+        term = B[j] * bin
+        num_paths += term
+    return num_paths
+
+
 def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     """Attempts to compute the exact 2sample probability.
 
@@ -7822,7 +7931,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
                     else:
                         prob = num_paths / bin
 
-    except (FloatingPointError, OverflowError, RuntimeError):
+    except (FloatingPointError, OverflowError):
         saw_fp_error = True
 
     if saw_fp_error:
