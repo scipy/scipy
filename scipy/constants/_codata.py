@@ -26,11 +26,11 @@ find(sub):
 
 References
 ----------
-2002 values: https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2002.txt
-2006 values: https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2006.txt
-2010 values: https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2010.txt
-2014 values: https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2014.txt
-2018 values: https://physics.nist.gov/cuu/Constants/Table/allascii.txt
+2002: https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2002.txt
+2006: https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2006.txt
+2010: https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2010.txt
+2014: https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2014.txt
+2018: https://physics.nist.gov/cuu/Constants/Table/allascii.txt
 """
 
 import warnings
