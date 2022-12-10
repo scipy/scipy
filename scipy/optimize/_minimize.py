@@ -199,14 +199,14 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         Methods nelder-mead and trust-constr support a callable with
         the signature:
 
-            ``callback(OptimizeResult intermediate_result)``
+            ``callback(OptimizeResult: intermediate_result)``
 
         where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the present values
         of the parameter vector and objective function. Note that the name
         of the parameter must be ``intermediate_result`` for the callback
         to be passed an `OptimizeResult`. These methods will also terminate if
-        the callback raises `StopIteration`
+        the callback raises `StopIteration`.
 
         All methods except trust-constr support a signature like:
 
@@ -742,7 +742,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     if getattr(callback, 'stop_iteration', False):
         res.success = False
-        res.status = 5
+        res.status = 99
         res.message = "`callback` raised `StopIteration`."
 
     return res

@@ -158,15 +158,15 @@ def _wrap_callback(callback, method=None):
     return wrapped_callback
 
 
-def _call_callback(callback, x, fval):
+def _call_callback_maybe_halt(callback, res):
     """Call wrapped callback; return True if minimization should stop.
 
     Parameters
     ----------
-    callback : callable
+    callback : callable or None
         A user-provided callback wrapped with `_wrap_callback`
-    x : ndarray
-        The current solution vector
+    res : OptimizeResult
+        Information about the current iterate
 
     Returns
     -------
@@ -176,7 +176,6 @@ def _call_callback(callback, x, fval):
     """
     if callback is None:
         return False
-    res = OptimizeResult(x=x, fun=fval)
     try:
         callback(res)
         return False
@@ -983,7 +982,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             fsim = np.take(fsim, ind, 0)
             if retall:
                 allvecs.append(sim[0])
-            if _call_callback(callback, sim[0], fsim[0]):
+            intermediate_result = OptimizeResult(x=sim[0], fun=fsim[0])
+            if _call_callback_maybe_halt(callback, intermediate_result):
                 break
 
     x = sim[0]

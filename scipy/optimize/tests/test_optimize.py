@@ -1536,7 +1536,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert res.fun == ref.fun
         assert_equal(res.x, ref.x)
         assert res.nit == ref.nit == maxiter
-        assert res.status == 3 if method == 'trust-constr' else 5
+        assert res.status == (3 if method == 'trust-constr' else 99)
 
 
 @pytest.mark.parametrize(
