@@ -48,7 +48,7 @@ def _generate_dodecahedron():
 
 def _generate_icosahedron():
     phi = (1 + np.sqrt(5)) / 2
-    
+
     x = np.array([[0, -1, -phi],
                   [0, -1, +phi],
                   [0, +1, -phi],
