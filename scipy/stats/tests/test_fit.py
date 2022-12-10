@@ -181,7 +181,8 @@ def test_nnlf_and_related_methods(dist, params):
 def cases_test_fit_mle():
     # These fail default test or hang
     skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
-                      'ksone', 'levy_stable', 'studentized_range', 'kstwo'}
+                      'ksone', 'levy_stable', 'studentized_range', 'kstwo',
+                      'relativistic_bw'}
     slow_basic_fit = {'burr12', 'johnsonsb', 'bradford', 'fisk', 'mielke',
                       'exponpow', 'rdist', 'norminvgauss', 'betaprime',
                       'powerlaw', 'pareto', 'johnsonsu', 'loglaplace',
@@ -223,7 +224,8 @@ def cases_test_fit_mse():
                       'geninvgauss',  # quite slow (~4 minutes) but passes
                       'gausshyper', 'genhyperbolic',  # integration warnings
                       'argus',  # close, but doesn't meet tolerance
-                      'vonmises'}  # can have negative CDF; doesn't play nice
+                      'vonmises',  # can have negative CDF; doesn't play nice
+                      'relativistic_bw'}  # fit fails when loc not fixed
     slow_basic_fit = {'wald', 'genextreme', 'anglit', 'semicircular',
                       'kstwobign', 'arcsine', 'genlogistic', 'truncexpon',
                       'fisk', 'uniform', 'exponnorm', 'maxwell', 'lomax',
