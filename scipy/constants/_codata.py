@@ -7,12 +7,6 @@
 from __future__ import annotations
 
 """
-Fundamental Physical Constants
-------------------------------
-
-These constants are taken from CODATA Recommended Values of the Fundamental
-Physical Constants 2018.
-
 Object
 ------
 physical_constants : dict
@@ -30,26 +24,13 @@ precision(key):
 find(sub):
     Prints or returns list of keys containing the string sub, default is all.
 
-Source
-------
-The values of the constants provided at this site are recommended for
-international use by CODATA and are the latest available. Termed the "2018
-CODATA recommended values," they are generally recognized worldwide for use in
-all fields of science and technology. The values became available on 20 May
-2019 and replaced the 2014 CODATA set. Also available is an introduction to the
-constants for non-experts at
-
-https://physics.nist.gov/cuu/Constants/introduction.html
-
 References
 ----------
-Theoretical and experimental publications relevant to the fundamental constants
-and closely related precision measurements published since the mid 1980s, but
-also including many older papers of particular interest, some of which date
-back to the 1800s. To search the bibliography, visit
-
-https://physics.nist.gov/cuu/Constants/
-
+2002 values: https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2002.txt
+2006 values: https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2006.txt
+2010 values: https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2010.txt
+2014 values: https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2014.txt
+2018 values: https://physics.nist.gov/cuu/Constants/Table/allascii.txt
 """
 
 import warnings
@@ -59,20 +40,6 @@ from typing import Any
 
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
-
-"""
-Source:  https://physics.nist.gov/cuu/Constants/
-
-The values of the constants provided at this site are recommended for
-international use by CODATA and are the latest available. Termed the "2018
-CODATA recommended values," they are generally recognized worldwide for use in
-all fields of science and technology. The values became available on 20 May
-2019 and replaced the 2014 CODATA set.
-"""
-
-#
-# Source:  https://physics.nist.gov/cuu/Constants/
-#
 
 # Quantity                                             Value                 Uncertainty          Unit
 # ---------------------------------------------------- --------------------- -------------------- -------------
