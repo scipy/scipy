@@ -24,8 +24,6 @@ def test_find():
                                 'natural unit of time']))
 
 
-
-
 def test_basic_lookup():
     assert_equal('%d %s' % (_cd.c, _cd.unit('speed of light in vacuum')),
                  '299792458 m s^-1')
