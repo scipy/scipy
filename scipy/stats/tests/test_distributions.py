@@ -7681,13 +7681,13 @@ class TestRelativisticBW:
     @pytest.mark.parametrize(
         "rho,gamma", [
             pytest.param(
-                36.545206797050334, 2.4952, marks=pytest.mark.xslow
+                36.545206797050334, 2.4952, marks=pytest.mark.slow
             ),  # Z0 Boson
             pytest.param(
                 38.55107913669065, 2.085, marks=pytest.mark.xslow
             ),  # W Boson
             pytest.param(
-                96292.3076923077, 0.0013, marks=pytest.mark.slow
+                96292.3076923077, 0.0013, marks=pytest.mark.xslow
             ),  # Higgs Boson
         ]
     )
@@ -7702,7 +7702,7 @@ class TestRelativisticBW:
             rho, scale=gamma, size=1000, random_state=rng
         )
         fit = stats.relativistic_bw.fit(data, floc=0)
-        assert_allclose((fit[0], fit[2]), (rho, gamma), rtol=1e-1)
+        assert_allclose((fit[0], fit[2]), (rho, gamma), rtol=2e-1)
         assert fit[1] == 0
         # Check again with fscale set.
         fit = stats.relativistic_bw.fit(data, floc=0, fscale=gamma)
