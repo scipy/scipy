@@ -562,7 +562,8 @@ class TestCurveFit:
 
                 with assert_raises(OptimizeWarning, match=warning_msg):
                     curve_fit(f, xdata_with_nan, ydata_with_nan, method=method,
-                              check_finite=False, nan_policy="propagate")
+                              check_finite=False, nan_policy="propagate",
+                              maxfev=2000)
         else:  # "trf", "dogbox"
             error_msg = "Residuals are not finite in the initial point"
             with assert_raises(ValueError, match=error_msg):
