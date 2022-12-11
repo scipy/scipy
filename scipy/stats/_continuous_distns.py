@@ -10296,19 +10296,19 @@ class relativistic_bw_gen(rv_continuous):
             {\pi\sqrt{\rho^2 + \rho\sqrt{\rho^2 + 1}}}
 
     The relativistic Breit-Wigner distribution is used in high energy physics
-    to model resonances. It describes the uncertainty in the invariant mass
-    :math:`M` [1]_ of a resonance given the characteristic mass :math:`M_0` and
-    decay-width :math:`\Gamma` of the resonance, where :math:`M`, :math:`M_0`
-    and :math:`\Gamma` are expressed in natural units. In SciPy's
-    parametrization, the shape parameter :math:`\rho` is equal to
-    :math:`M_0/\Gamma`.
+    to model resonances [1]_. It describes the uncertainty in the invariant
+    mass :math:`M` [2]_ of a resonance given the characteristic mass
+    :math:`M_0` and decay-width :math:`\Gamma` of the resonance, where
+    :math:`M`, :math:`M_0` and :math:`\Gamma` are expressed in natural
+    units. In SciPy's parametrization, the shape parameter :math:`\rho` is
+    equal to :math:`M_0/\Gamma`.
 
     In natural units, the speed of light :math:`c` is equal to 1, and thus the
     invariant mass is equal to the rest energy :math:`Mc^2`. In the
     center-of-mass frame, the rest energy is equal to the total energy
-    [2]_. Therefore, the relativistic Breit-Wigner distribution is also said to
+    [3]_. Therefore, the relativistic Breit-Wigner distribution is also said to
     describe the uncertainty in the center-of-mass energy
-    :math:`E_{\text{COM}}` of a resonance [3]_.
+    :math:`E_{\text{com}}` of a resonance.
 
     %(after_notes)s
 
@@ -10322,12 +10322,12 @@ class relativistic_bw_gen(rv_continuous):
 
     References
     ----------
-    .. [1] Invariant mass, Wikipedia,
-           https://en.wikipedia.org/wiki/Invariant_mass
-    .. [2] Center-of-momentum frame, Wikipedia,
-           https://en.wikipedia.org/wiki/Center-of-momentum_frame
-    .. [3] Relativistic Breit-Wigner distribution, Wikipedia,
+    .. [1] Relativistic Breit-Wigner distribution, Wikipedia,
            https://en.wikipedia.org/wiki/Relativistic_Breit-Wigner_distribution
+    .. [2] Invariant mass, Wikipedia,
+           https://en.wikipedia.org/wiki/Invariant_mass
+    .. [3] Center-of-momentum frame, Wikipedia,
+           https://en.wikipedia.org/wiki/Center-of-momentum_frame
     .. [4] M. Tanabashi et al. (Particle Data Group) Phys. Rev. D 98, 030001 -
            Published 17 August 2018
 
