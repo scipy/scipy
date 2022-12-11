@@ -3108,6 +3108,3 @@ class TestVonMises_Fisher:
 
         assert_equal(rvs1, rvs2)
         assert_equal(rvs1, rvs3)
-
-#testvmf = TestVonMises_Fisher()
-#testvmf.test_samples(4, 10)
