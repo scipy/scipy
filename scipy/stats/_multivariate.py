@@ -5915,7 +5915,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         node = (1. - envelop_param) / (1. + envelop_param)
         correction = kappa * node + dim_minus_one * np.log(1. - node ** 2)
         n_accepted = 0
-        result = []
+        x = np.zeros((n_samples, ))
         halfdim = 0.5 * dim_minus_one
         # main loop
         while n_accepted < n_samples:
@@ -5928,14 +5928,14 @@ class vonmises_fisher_gen(multi_rv_generic):
                 kappa * coord_x
                 + dim_minus_one * np.log(1 - node * coord_x)
                 - correction) > np.log(accept_tol)
-            result.append(coord_x[criterion])
-            n_accepted += np.sum(criterion)
-        coord_x = np.concatenate(result)
+            accepted_iter = np.sum(criterion)
+            x[n_accepted:n_accepted + accepted_iter] = coord_x[criterion]
+            n_accepted += accepted_iter
         coord_rest = _sample_uniform_direction(dim_minus_one, n_accepted,
                                                random_state)
         coord_rest = np.einsum(
-            '...,...i->...i', np.sqrt(1 - coord_x ** 2), coord_rest)
-        samples = np.concatenate([coord_x[..., None], coord_rest], axis=1)
+            '...,...i->...i', np.sqrt(1 - x ** 2), coord_rest)
+        samples = np.concatenate([x[..., None], coord_rest], axis=1)
         # reshape output to (size, dim)
         if size is not None:
             samples = samples.reshape(size + (dim, ))
