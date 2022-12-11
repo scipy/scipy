@@ -294,7 +294,7 @@ New features
   - Improved the performance of `scipy.stats.cramervonmises_2samp` and
     `scipy.stats.ks_2samp` with ``method='exact'``.
   - Improved the performance of `scipy.stats.siegelslopes`.
-  - Improved the performance of `scipy.stats.hdquantile_sd`.
+  - Improved the performance of `scipy.stats.mstats.hdquantile_sd`.
   - Improved the performance of `scipy.stats.binned_statistic_dd` for several
     NumPy statistics, and binned statistics methods now support complex data.
 
@@ -419,7 +419,7 @@ Authors
 * David Gilbertson (1) +
 * Ralf Gommers (251)
 * Marco Gorelli (2) +
-* Matt Haberland (378)
+* Matt Haberland (381)
 * Andrew Hawryluk (2) +
 * Christoph Hohnerlein (2) +
 * Loïc Houpert (2) +
@@ -472,7 +472,7 @@ Authors
 * Shashaank N (1)
 * Pablo S Naharro (1) +
 * nboudrie (1) +
-* Andrew Nelson (51)
+* Andrew Nelson (52)
 * Nico Schlömer (1)
 * NiMlr (1) +
 * o-alexandre-felipe (1) +
@@ -489,7 +489,7 @@ Authors
 * Ilhan Polat (6)
 * Akshita Prasanth (2) +
 * Sean Quinn (1)
-* Tyler Reddy (114)
+* Tyler Reddy (117)
 * Martin Reinecke (1)
 * Ned Richards (1)
 * Marie Roald (1) +
@@ -681,6 +681,7 @@ Issues closed for 1.10.0
 * `#17444 <https://github.com/scipy/scipy/issues/17444>`__: BUG: beta.ppf causes segfault
 * `#17468 <https://github.com/scipy/scipy/issues/17468>`__: Weird errors with running the tests \`scipy.stats.tests.test_distributions\`...
 * `#17523 <https://github.com/scipy/scipy/issues/17523>`__: BUG: \`[source]\` button in the docs sending to the wrong place
+* `#17578 <https://github.com/scipy/scipy/issues/17578>`__: TST, BLD, CI: 1.10.0rc1 wheel build/test failures
 
 ************************
 Pull requests for 1.10.0
@@ -1178,8 +1179,12 @@ Pull requests for 1.10.0
 * `#17512 <https://github.com/scipy/scipy/pull/17512>`__: TST: interpolate: stop skipping a test with zero-sized arrays
 * `#17513 <https://github.com/scipy/scipy/pull/17513>`__: BUG: optimize: fixed issue 17380
 * `#17526 <https://github.com/scipy/scipy/pull/17526>`__: BUG, DOC: stats: fix \`[source]\` button redicting to the wrong...
+* `#17534 <https://github.com/scipy/scipy/pull/17534>`__: DOC: 1.10.0 release notes
 * `#17536 <https://github.com/scipy/scipy/pull/17536>`__: DOC: Examples for \`yve\` and \`jve\`
 * `#17540 <https://github.com/scipy/scipy/pull/17540>`__: DOC: fix documentation of \`make_smoothing_spline\`
 * `#17543 <https://github.com/scipy/scipy/pull/17543>`__: CI: fix gh17539 failures of the alpine linux run
 * `#17545 <https://github.com/scipy/scipy/pull/17545>`__: BUG: special: Fix handling of subnormal input for lambertw.
 * `#17551 <https://github.com/scipy/scipy/pull/17551>`__: BUG Fix: Update lobpcg.py to turn history arrays into lists for...
+* `#17569 <https://github.com/scipy/scipy/pull/17569>`__: MAINT: version bounds for 1.10.0rc1/relnotes fixes
+* `#17579 <https://github.com/scipy/scipy/pull/17579>`__: Revert "ENH: stats.ks_2samp: Pythranize remaining exact p-value...
+* `#17580 <https://github.com/scipy/scipy/pull/17580>`__: CI: native cp38-macosx_arm64 [wheel build][skip azp][skip circle][ski…
