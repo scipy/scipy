@@ -10296,17 +10296,25 @@ class relativistic_bw_gen(rv_continuous):
             {\pi\sqrt{\rho^2 + \rho\sqrt{\rho^2 + 1}}}
 
     The relativistic Breit-Wigner distribution is used in high energy physics
-    to model resonances. It gives the distribution for the probability of
-    observing a resonance with energy :math:`E` given the rest mass :math:`M`
-    and decay-width :math:`\Gamma` of the resonance [1]_, where :math:`M` and
-    :math:`\Gamma` are expressed in natural units. In SciPy's parametrization,
-    the shape parameter :math:`\rho` is equal to :math:`M/\Gamma`.
+    to model resonances. It describes the uncertainty in the invariant mass
+    :math:`M` [1]_ of a resonance given the characteristic mass :math:`M_0` and
+    decay-width :math:`\Gamma` of the resonance, where :math:`M`, :math:`M_0`
+    and :math:`\Gamma` are expressed in natural units. In SciPy's
+    parametrization, the shape parameter :math:`\rho` is equal to
+    :math:`M_0/\Gamma`.
+
+    In natural units, the speed of light :math:`c` is equal to 1, and thus the
+    invariant mass is equal to the rest energy :math:`Mc^2`. In the
+    center-of-mass frame, the rest energy is equal to the total energy
+    [2]_. Therefore, the relativistic Breit-Wigner distribution is also said to
+    describe the uncertainty in the center-of-mass energy
+    :math:`E_{\text{COM}}` of a resonance [3]_.
 
     %(after_notes)s
 
     :math:`\rho = M/\Gamma` and :math:`\Gamma` is the scale parameter. For
-    example, if one seeks to model the :math:`Z^0` boson with :math:`M \approx
-    91.1876 \text{ GeV}` and :math:`\Gamma \approx 2.4952\text{ GeV}` [2]_ one
+    example, if one seeks to model the :math:`Z^0` boson with :math:`M_0 \approx
+    91.1876 \text{ GeV}` and :math:`\Gamma \approx 2.4952\text{ GeV}` [4]_ one
     can set `rho` equal to ``91.1876/2.4952`` and ``scale=2.4952``.
 
     To ensure a physically meaningful result when using the `fit` method, one
@@ -10314,9 +10322,13 @@ class relativistic_bw_gen(rv_continuous):
 
     References
     ----------
-    .. [1] Relativistic Breit-Wigner distriution, Wikipedia,
+    .. [1] Invariant mass, Wikipedia,
+           https://en.wikipedia.org/wiki/Invariant_mass
+    .. [2] Center-of-momentum frame, Wikipedia,
+           https://en.wikipedia.org/wiki/Center-of-momentum_frame
+    .. [3] Relativistic Breit-Wigner distribution, Wikipedia,
            https://en.wikipedia.org/wiki/Relativistic_Breit-Wigner_distribution
-    .. [2] M. Tanabashi et al. (Particle Data Group) Phys. Rev. D 98, 030001 -
+    .. [4] M. Tanabashi et al. (Particle Data Group) Phys. Rev. D 98, 030001 -
            Published 17 August 2018
 
     %(example)s
