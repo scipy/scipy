@@ -5,6 +5,7 @@
 # Updated to 2018 values by Jakob Jakobson, 2019
 
 from __future__ import annotations
+from scipy.special import lambertw
 
 """
 Fundamental Physical Constants
