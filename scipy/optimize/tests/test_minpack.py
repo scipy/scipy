@@ -553,27 +553,37 @@ class TestCurveFit:
 
     @staticmethod
     def _check_nan_policy(f, xdata_with_nan, xdata_without_nan,
-                          ydata_with_nan, ydata_without_nan):
+                          ydata_with_nan, ydata_without_nan, method):
         # propagate test
-        warning_msg = "Covariance of the parameters could not be estimated"
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", OptimizeWarning)
+        if method == "lm":
+            warning_msg = "Covariance of the parameters could not be estimated"
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", OptimizeWarning)
 
-            with assert_raises(OptimizeWarning, match=warning_msg):
-                curve_fit(f, xdata_with_nan, ydata_with_nan,
+                with assert_raises(OptimizeWarning, match=warning_msg):
+                    curve_fit(f, xdata_with_nan, ydata_with_nan, method=method,
+                              check_finite=False, nan_policy="propagate")
+        else:  # "trf", "dogbox"
+            error_msg = "Residuals are not finite in the initial point"
+            with assert_raises(ValueError, match=error_msg):
+                curve_fit(f, xdata_with_nan, ydata_with_nan, method=method,
                           check_finite=False, nan_policy="propagate")
+
         # raise test
         with assert_raises(ValueError, match="The input contains nan"):
-            curve_fit(f, xdata_with_nan, ydata_with_nan, check_finite=False,
-                      nan_policy="raise")
+            curve_fit(f, xdata_with_nan, ydata_with_nan, method=method,
+                      check_finite=False, nan_policy="raise")
+
         # omit test
         result_with_nan, _ = curve_fit(f, xdata_with_nan, ydata_with_nan,
-                                       check_finite=False, nan_policy="omit")
+                                       method=method, check_finite=False,
+                                       nan_policy="omit")
         result_without_nan, _ = curve_fit(f, xdata_without_nan,
-                                          ydata_without_nan)
+                                          ydata_without_nan, method=method)
         assert_allclose(result_with_nan, result_without_nan)
 
-    def test_nan_policy_1d(self):
+    @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
+    def test_nan_policy_1d(self, method):
         def f(x, a, b):
             return a*x + b
 
@@ -583,9 +593,10 @@ class TestCurveFit:
         ydata_without_nan = np.array([1, 2, 3])
 
         self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
-                               ydata_with_nan, ydata_without_nan)
+                               ydata_with_nan, ydata_without_nan, method)
 
-    def test_nan_policy_2d(self):
+    @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
+    def test_nan_policy_2d(self, method):
         def f(x, a, b):
             x1 = x[0, :]
             x2 = x[1, :]
@@ -598,9 +609,10 @@ class TestCurveFit:
         ydata_without_nan = np.array([1, 2, 10])
 
         self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
-                               ydata_with_nan, ydata_without_nan)
+                               ydata_with_nan, ydata_without_nan, method)
 
-    def test_nan_policy_3d(self):
+    @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
+    def test_nan_policy_3d(self, method):
         def f(x, a, b):
             x1 = x[0, 0, :]
             x2 = x[0, 1, :]
@@ -613,7 +625,7 @@ class TestCurveFit:
         ydata_without_nan = np.array([1, 2, 10])
 
         self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
-                               ydata_with_nan, ydata_without_nan)
+                               ydata_with_nan, ydata_without_nan, method)
 
     def test_empty_inputs(self):
         # Test both with and without bounds (regression test for gh-9864)

@@ -567,8 +567,8 @@ def _initialize_feasible(lb, ub):
 
 
 def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
-              check_finite=True, bounds=(-np.inf, np.inf), method=None,
-              jac=None, *, full_output=False, nan_policy='propagate',
+              check_finite=None, bounds=(-np.inf, np.inf), method=None,
+              jac=None, *, full_output=False, nan_policy=None,
               **kwargs):
     """
     Use non-linear least squares to fit a function, f, to data.
@@ -626,6 +626,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         and raise a ValueError if they do. Setting this parameter to
         False may silently produce nonsensical results if the input arrays
         do contain nans. Default is True.
+        Note that if `nan_policy` is specified explicitly (not None), this value will be ignored.
     bounds : 2-tuple of array_like or `Bounds`, optional
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
@@ -660,16 +661,16 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         `mesg`, and `ier`.
 
         .. versionadded:: 1.9
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
+    nan_policy : {'propagate', 'raise', 'omit', None}, optional
         Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
+        The following options are available (default is 'None'):
 
-          * 'propagate': just propagate nan values.
+          * 'propagate': just propagate nan values without check finite.
           * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+          * 'omit': performs the calculations ignoring nan values without check finite.
+          * None: check nan valudes based on `check_finite` value.
 
-        Note that if you want to use `omit` or `propagate` without the finite
-        checks, `check_finite` should be set to False.
+        Note that if thsi value is specified explicitly (not None), `check_finite` will be set as False.
 
         .. versionadded:: 1.10
     **kwargs
@@ -864,8 +865,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         raise ValueError("Method 'lm' only works for unconstrained problems. "
                          "Use 'trf' or 'dogbox' instead.")
 
-    # optimization may produce garbage for float32 inputs, cast them to float64
+    if nan_policy is None:  # If nan_policy is not specified explicitly
+        check_finite = True  # check finite for backward compatibility
+    elif check_finite is None:  # if only nan_policy is specified explicitly
+        check_finite = False  # not check finite
 
+    # optimization may produce garbage for float32 inputs, cast them to float64
     # NaNs cannot be handled
     if check_finite:
         ydata = np.asarray_chkfinite(ydata, float)
@@ -970,7 +975,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         pcov = np.dot(VT.T / s**2, VT)
 
     warn_cov = False
-    if pcov is None:
+    if pcov is None or np.isnan(pcov).any():
         # indeterminate covariance
         pcov = zeros((len(popt), len(popt)), dtype=float)
         pcov.fill(inf)
