@@ -1649,7 +1649,7 @@ def parse_constants_2002to2014(d: str, exact_func: str) -> dict[str, tuple[float
     return constants
 
 
-    def parse_constants_2018toXXXX(d: str, exact_func: str) -> dict[str, tuple[float, str, float]]:
+def parse_constants_2018toXXXX(d: str, exact_func: str) -> dict[str, tuple[float, str, float]]:
     constants = {}
     exact = {}
     need_replace = set()
