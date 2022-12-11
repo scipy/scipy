@@ -13433,7 +13433,7 @@ add_newdoc("loggamma",
     Parameters
     ----------
     z : array_like
-        Values in the complex plain at which to compute ``loggamma``
+        Values in the complex plane at which to compute ``loggamma``
     out : ndarray, optional
         Output array for computed values of ``loggamma``
 
