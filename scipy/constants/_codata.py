@@ -1582,7 +1582,7 @@ def exact2018(exact):
         'inverse meter-joule relationship': h * c,
         'inverse meter-kelvin relationship': h * c / k,
         'inverse meter-kilogram relationship': h / c,
-        'inverse of conductance quantum': 1 / G_0,
+        'inverse of conductance quantum': 1 / (2 * e**2 / h),
         'Josephson constant': K_J,
         'joule-electron volt relationship': 1 / e,
         'joule-hertz relationship': 1 / h,
