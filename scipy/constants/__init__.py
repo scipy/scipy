@@ -5,25 +5,14 @@ Constants (:mod:`scipy.constants`)
 
 .. currentmodule:: scipy.constants
 
-The 2018 self-consistent values of constants and conversion factors of physics
-and chemistry recommended by the Committee on Data of the International Science
-Council (CODATA) are given below [JPCRD, RMP].
+``scipy.constants.physical_constants[name] = (value, unit, uncertainty)``
+contains the 2018 self-consistent values of constants and conversion factors
+of physics and chemistry recommended by the Committee on Data of the
+International Science Council (CODATA) [JPCRD] [RMP].
 
-.. autosummary::
-   :toctree: generated/
-
-   value      -- Value in physical_constants indexed by key
-   unit       -- Unit in physical_constants indexed by key
-   precision  -- Relative precision in physical_constants indexed by key
-   find       -- Return list of physical_constant keys with a given string
-   ConstantWarning -- Constant sought not in newest CODATA data set
-
+They can be searched by ``find`` and are also listed below.
+   
 .. data:: physical_constants
-
-   Dictionary of physical constants, of the format
-   ``physical_constants[name] = (value, unit, uncertainty)``.
-
-Available constants:
 
 ======================================================================  ====
 %(constant_names)s
