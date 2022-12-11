@@ -12,6 +12,7 @@ from scipy.special import gamma
 
 
 TOL = 1E-10
+phi = (1 + np.sqrt(5)) / 2
 
 
 def _generate_tetrahedron():
@@ -28,8 +29,6 @@ def _generate_octahedron():
 
 
 def _generate_dodecahedron():
-    phi = (1 + np.sqrt(5)) / 2
-
     x1 = _generate_cube()
     x2 = np.array([[0, -phi, -1 / phi],
                    [0, -phi, +1 / phi],
@@ -47,8 +46,6 @@ def _generate_dodecahedron():
 
 
 def _generate_icosahedron():
-    phi = (1 + np.sqrt(5)) / 2
-
     x = np.array([[0, -1, -phi],
                   [0, -1, +phi],
                   [0, +1, -phi],
