@@ -91,6 +91,7 @@ jobs:
         python: [["cp38", "3.8"], ["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11.0-alpha - 3.11.0"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
+    env:
       IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}
       # upload to staging if it's a push to a maintenance branch and the last
       # commit message contains '[wheel build]'
