@@ -4191,11 +4191,9 @@ class TestKSTwoSamples:
         _count_paths_outside_method(1000, 1, 1, 1001)
 
         with np.errstate(invalid='raise'):
-            # Exception could be RuntimeError (if executed via Pythran) or
-            # FloatingPointError if run in pure Python
-            assert_raises(Exception, _count_paths_outside_method,
+            assert_raises(FloatingPointError, _count_paths_outside_method,
                           1100, 1099, 1, 1)
-            assert_raises(Exception, _count_paths_outside_method,
+            assert_raises(FloatingPointError, _count_paths_outside_method,
                           2000, 1000, 1, 1)
 
     def test_argument_checking(self):
@@ -4229,17 +4227,6 @@ class TestKSTwoSamples:
             res = stats.ks_2samp(data1, data2, alternative='less')
             assert_allclose(res.pvalue, 0, atol=1e-14)
 
-    def test_warning_gh13957(self):
-        # This is similar to the test above, but the pathway exercised in this
-        # test is different. Considered parameterizing the test above,
-        # but there are enough differences that it doesn't make sense to do so.
-        rng = np.random.default_rng(890960479021739796)
-        x = rng.random(size=800)
-        y = rng.random(size=401)
-        message = "ks_2samp: Exact calculation unsuccessful"
-        with pytest.warns(RuntimeWarning, match=message):
-            stats.ks_2samp(x, y, mode='exact', alternative='less')
-
     @pytest.mark.parametrize("ksfunc", [stats.kstest, stats.ks_2samp])
     @pytest.mark.parametrize("alternative, x6val, ref_location, ref_sign",
                              [('greater', 5.9, 5.9, +1),
@@ -4257,7 +4244,6 @@ class TestKSTwoSamples:
         assert res.statistic == 0.1
         assert res.statistic_location == ref_location
         assert res.statistic_sign == ref_sign
-
 
 def test_ttest_rel():
     # regression test
