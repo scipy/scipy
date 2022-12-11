@@ -5908,6 +5908,7 @@ class vonmises_fisher_gen(multi_rv_generic):
             n_samples = math.prod(size)
         else:
             n_samples = 1
+        # calculate envelope for rejection sampler
         sqrt = np.sqrt(4 * kappa ** 2. + dim_minus_one ** 2)
         envelop_param = (-2 * kappa + sqrt) / dim_minus_one
         node = (1. - envelop_param) / (1. + envelop_param)
@@ -5917,10 +5918,12 @@ class vonmises_fisher_gen(multi_rv_generic):
         halfdim = 0.5 * dim_minus_one
         # main loop
         while n_accepted < n_samples:
+            # generate candidate
             sym_beta = random_state.beta(halfdim, halfdim,
                                          size=n_samples - n_accepted)
             coord_x = (1 - (1 + envelop_param) * sym_beta) / (
                 1 - (1 - envelop_param) * sym_beta)
+            # accept or reject
             accept_tol = random_state.random(n_samples - n_accepted)
             criterion = (
                 kappa * coord_x
@@ -5929,6 +5932,7 @@ class vonmises_fisher_gen(multi_rv_generic):
             accepted_iter = np.sum(criterion)
             x[n_accepted:n_accepted + accepted_iter] = coord_x[criterion]
             n_accepted += accepted_iter
+        # concatenate x and remaining coordinates
         coord_rest = _sample_uniform_direction(dim_minus_one, n_accepted,
                                                random_state)
         coord_rest = np.einsum(
