@@ -665,13 +665,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Defines how to handle when input contains nan.
         The following options are available (default is 'None'):
 
-          * 'propagate': just propagate nan values without check finite.
+          * 'propagate': just propagate nan values
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-          without check finite.
-          * None: check nan valudes based on `check_finite` value.
+          * None: check nan values based on `check_finite` value.
 
-        Note that if thsi value is specified explicitly (not None),
+        Note that if this value is specified explicitly (not None),
         `check_finite` will be set as False.
 
         .. versionadded:: 1.10
