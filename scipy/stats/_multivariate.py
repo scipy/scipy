@@ -14,13 +14,10 @@ from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 from ._continuous_distns import beta
 from ._discrete_distns import binom
-<<<<<<< HEAD
 from . import _mvn, _covariance, contingency
 from ._morestats import directional_stats
 from scipy.optimize import root_scalar
-=======
 from . import _mvn, _covariance, _rcont
->>>>>>> main
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
