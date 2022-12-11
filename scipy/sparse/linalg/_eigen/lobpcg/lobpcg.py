@@ -282,14 +282,14 @@ def lobpcg(
 
     and its diagonal entries are 1, ..., 100 defined by
 
-    >>> vals = np.arange(1, n + 1)
+    >>> vals = np.arange(1, n + 1).astype(np.int16)
 
     The first mandatory input parameter, in this test is
     the sparse diagonal matrix ``A``
     of the eigenvalue problem ``A x = lambda x`` to solve:
 
     >>> A = spdiags(vals, 0, n, n)
-    >>> A = A.astype(np.int32)
+    >>> A = A.astype(np.int16)
     >>> A.toarray()
     array([[  1,   0,   0, ...,   0,   0,   0],
            [  0,   2,   0, ...,   0,   0,   0],
@@ -297,7 +297,7 @@ def lobpcg(
            ...,
            [  0,   0,   0, ...,  98,   0,   0],
            [  0,   0,   0, ...,   0,  99,   0],
-           [  0,   0,   0, ...,   0,   0, 100]], dtype=int32)
+           [  0,   0,   0, ...,   0,   0, 100]], dtype=int16)
 
     Initial guess for eigenvectors, should have linearly independent
     columns. The second mandatory input parameter, a 2D array with the
@@ -318,7 +318,7 @@ def lobpcg(
     >>> eigenvalues
     array([100.])
     >>> eigenvalues.dtype
-    dtype('float64')
+    dtype('float32')
 
     LOBPCG needs only access the matrix product with ``A`` rather
     then the matrix itself. Since the matrix ``A`` is diagonal in
