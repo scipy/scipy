@@ -10304,11 +10304,12 @@ class relativistic_bw_gen(rv_continuous):
     equal to :math:`M_0/\Gamma`.
 
     In natural units, the speed of light :math:`c` is equal to 1, and thus the
-    invariant mass is equal to the rest energy :math:`Mc^2`. In the
+    invariant mass :math:`M` is equal to the rest energy :math:`Mc^2`. In the
     center-of-mass frame, the rest energy is equal to the total energy
-    [3]_. Therefore, the relativistic Breit-Wigner distribution is also said to
-    describe the uncertainty in the center-of-mass energy
-    :math:`E_{\text{com}}` of a resonance.
+    [3]_. Sometimes the relativistic Breit-Wigner distribution is given the
+    equivalent characterization of describing the uncertainty in the
+    center-of-mass energy :math:`E_{\text{com}}` of a resonance.
+
 
     %(after_notes)s
 
