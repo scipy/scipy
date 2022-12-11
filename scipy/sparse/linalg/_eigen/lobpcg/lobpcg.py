@@ -352,7 +352,14 @@ def lobpcg(
     >>> inv_vals = 1./vals
     >>> M = lambda X: inv_vals[:, np.newaxis] * X
 
-    Let us now solve the eigenvalue problem for the matrix A:
+    Let us now solve the eigenvalue problem for the matrix A first
+    without preconditioning
+
+    >>> eigenvalues, _ = lobpcg(A, X, Y=Y, largest=False, maxiter=60)
+    >>> eigenvalues
+    array([4., 5., 6.])
+
+    and then with preconditioning
 
     >>> eigenvalues, _ = lobpcg(A, X, Y=Y, M=M, largest=False, maxiter=60)
     >>> eigenvalues
