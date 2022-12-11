@@ -5,7 +5,7 @@
 # Updated to 2018 values by Jakob Jakobson, 2019
 
 from __future__ import annotations
-from numpy import exp
+from numpy import exp, pi
 from scipy.special import lambertw
 
 """
@@ -1554,7 +1554,7 @@ def exact2018(exact):
     A_90 = V_90 / ohm_90
 
     replace = {
-        'atomic unit of action': hbar,
+        'atomic unit of action': h / (2*pi),
         'Boltzmann constant in eV/K': k / e,
         'Boltzmann constant in Hz/K': k / h,
         'Boltzmann constant in inverse meter per kelvin': k / (h*c),
@@ -1570,7 +1570,7 @@ def exact2018(exact):
         'electron volt-inverse meter relationship': e / (h * c),
         'electron volt-kelvin relationship': e / k,
         'electron volt-kilogram relationship': e / c**2,
-        'elementary charge over h-bar': e / hbar,
+        'elementary charge over h-bar': e / (h / (2*pi)),
         'Faraday constant': e * N_A,
         'first radiation constant': 2 * pi * h * c**2,
         'first radiation constant for spectral radiance': 2 * h * c**2,
@@ -1605,12 +1605,12 @@ def exact2018(exact):
         'molar Planck constant': h * N_A,
         'molar volume of ideal gas (273.15 K, 100 kPa)': R * 273.15 / 100e3,
         'molar volume of ideal gas (273.15 K, 101.325 kPa)': R * 273.15 / 101.325e3,
-        'natural unit of action': hbar,
-        'natural unit of action in eV s': hbar/e,
+        'natural unit of action': (h / (2*pi)),
+        'natural unit of action in eV s': (h / (2*pi))/e,
         'Planck constant in eV/Hz': h/e,
-        'reduced Planck constant': hbar,
-        'reduced Planck constant in eV s': hbar/e,
-        'reduced Planck constant times c in MeV fm': hbar * c / (e * 1e6 * 1e-15),
+        'reduced Planck constant': h / (2*pi),
+        'reduced Planck constant in eV s': (h / (2*pi)) / e,
+        'reduced Planck constant times c in MeV fm': (h / (2*pi)) * c / (e * 1e6 * 1e-15),
         'second radiation constant': h * c / k,
         'Stefan-Boltzmann constant': 2 * pi**5 * k**4 / (15 * h**3 * c**2),
         'von Klitzing constant': R_K,
