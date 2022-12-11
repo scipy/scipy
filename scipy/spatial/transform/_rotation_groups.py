@@ -1,11 +1,14 @@
 import numpy as np
 
 
+phi = (1 + np.sqrt(5)) / 2
+
+
 def icosahedral(cls):
     g1 = tetrahedral(cls).as_quat()
     a = 0.5
-    b = 0.5 / ((1 + np.sqrt(5)) / 2)
-    c = ((1 + np.sqrt(5)) / 2) / 2
+    b = 0.5 / (phi / 2)
+    c = phi / 2
     g2 = np.array([[+a, +b, +c, 0],
                    [+a, +b, -c, 0],
                    [+a, +c, 0, +b],
