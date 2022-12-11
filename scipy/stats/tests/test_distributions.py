@@ -205,7 +205,26 @@ def test_vonmises_expect():
     assert_allclose(np.angle(res), loc % (2*np.pi))
     assert np.issubdtype(res.dtype, np.complexfloating)
 
+@pytest.mark.parametrize('kappa', [1, 10, 100, 1000])
+def test_vonmises_fit_all(kappa):
+    rng = np.random.default_rng(6762668991392531563)
+    loc = 0.25*np.pi
+    data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
+    loc_fit, kappa_fit = stats.vonmises.fit(data)
+    loc_vector = np.array([np.cos(loc), np.sin(loc)])
+    loc_vector_fit = np.array([np.cos(loc_fit), np.sin(loc_fit)])
+    assert_allclose(loc_vector, loc_vector_fit, rtol=1e-2)
+    assert_allclose(kappa, kappa_fit, rtol=1e-2)
 
+def test_vonmises_fit_shape():
+    rng = np.random.default_rng(6762668991392531563)
+    loc = 0.25*np.pi
+    kappa = 10
+    data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
+    loc_fit, kappa_fit = stats.vonmises.fit(data, floc=loc)
+    assert loc_fit == loc
+    assert_allclose(kappa, kappa_fit, rtol=1e-2)
+    
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
     """
     This utility function checks that the log-likelihood (computed by
