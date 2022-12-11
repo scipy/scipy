@@ -5919,9 +5919,8 @@ class vonmises_fisher_gen(multi_rv_generic):
         halfdim = 0.5 * dim_minus_one
         # main loop
         while n_accepted < n_samples:
-            sym_beta = beta.rvs(
-                halfdim, halfdim, size=n_samples - n_accepted,
-                random_state=random_state)
+            sym_beta = random_state.beta(halfdim, halfdim,
+                                         size=n_samples - n_accepted)
             coord_x = (1 - (1 + envelop_param) * sym_beta) / (
                 1 - (1 - envelop_param) * sym_beta)
             accept_tol = random_state.random(n_samples - n_accepted)
