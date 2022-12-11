@@ -9235,7 +9235,7 @@ class vonmises_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         if kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
-        #(data, *fshapes, floc, fscale)
+
         data, fshape, floc, fscale = _check_fit_input_parameters(self, data,
                                                                  args, kwds)
 
