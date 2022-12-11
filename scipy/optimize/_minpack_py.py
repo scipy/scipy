@@ -625,8 +625,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         If True, check that the input arrays do not contain nans of infs,
         and raise a ValueError if they do. Setting this parameter to
         False may silently produce nonsensical results if the input arrays
-        do contain nans. Default is True.
-        Note that if `nan_policy` is specified explicitly (not None), this value will be ignored.
+        do contain nans. Default is True. Note that if `nan_policy` is specified
+        explicitly (not None), this value will be ignored.
     bounds : 2-tuple of array_like or `Bounds`, optional
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
@@ -667,10 +667,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
           * 'propagate': just propagate nan values without check finite.
           * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values without check finite.
+          * 'omit': performs the calculations ignoring nan values
+          without check finite.
           * None: check nan valudes based on `check_finite` value.
 
-        Note that if thsi value is specified explicitly (not None), `check_finite` will be set as False.
+        Note that if thsi value is specified explicitly (not None),
+        `check_finite` will be set as False.
 
         .. versionadded:: 1.10
     **kwargs
