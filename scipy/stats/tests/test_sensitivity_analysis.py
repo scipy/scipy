@@ -66,7 +66,3 @@ class TestSobolIndices:
 
         assert_allclose(indices[0], ishigami_ref_indices[0], atol=1e-2)
         assert_allclose(indices[1], ishigami_ref_indices[1], atol=1e-2)
-
-# aggregated indices
-# Vik = Sik*Vk
-# sum(Vik)/sum(var(Vk))
