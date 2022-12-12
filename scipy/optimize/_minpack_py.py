@@ -866,10 +866,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         raise ValueError("Method 'lm' only works for unconstrained problems. "
                          "Use 'trf' or 'dogbox' instead.")
 
-    if nan_policy is None:  # If nan_policy is not specified explicitly
-        check_finite = True  # check finite for backward compatibility
-    elif check_finite is None:  # if only nan_policy is specified explicitly
-        check_finite = False  # not check finite
+    if check_finite is None:
+        check_finite = False if nan_policy is not None else True
 
     # optimization may produce garbage for float32 inputs, cast them to float64
     # NaNs cannot be handled
