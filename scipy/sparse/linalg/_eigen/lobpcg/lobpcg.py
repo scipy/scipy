@@ -174,9 +174,9 @@ def lobpcg(
         Optional. By default ``M = None`` equivalent to identity.
         Preconditioner aiming to accelerate convergence.
     Y : ndarray, float32 or float64, optional. By default ``Y = None``.
-        An n-by-sizeY ndarray of constraints with sizeY < n.
-        The iterations will be performed in the B-orthogonal complement
-        of the column-space of Y. Y must be full rank if present.
+        An ``n-by-sizeY`` ndarray of constraints with ``sizeY < n``.
+        The iterations will be performed in the `B`-orthogonal complement
+        of the column-space of `Y`. `Y` must be full rank if present.
     tol : scalar, optional. The default is ``tol=n*sqrt(eps)``.
         Solver tolerance for the stopping criterion.
     maxiter : int, optional. The default is ``maxiter=20``.
@@ -191,7 +191,7 @@ def lobpcg(
         Whether to return iterative history of residual norms.
     restartControl : int, optional.
         Iterations restart if the residuals jump ``2**restartControl`` times
-        up compared to the smallest ones recorded in retResidualNormsHistory.
+        compared to the smallest ones recorded in `retResidualNormsHistory`.
         The default is ``restartControl=20``, making the restarts rare for
         backward compatibility.
 
@@ -208,9 +208,9 @@ def lobpcg(
 
     Notes
     -----
-    The iterative loop in lobpcg runs maxit=maxiter (or 20 if maxit=None)
+    The iterative loop runs ``maxit=maxiter`` (20 if ``maxit=None``)
     iterations at most and finishes earler if the tolerance is met.
-    Breaking backward compatibility with the previous version, lobpcg
+    Breaking backward compatibility with the previous version, LOBPCG
     now returns the block of iterative vectors with the best accuracy rather
     than the last one iterated, as a cure for possible divergence.
 
@@ -219,9 +219,9 @@ def lobpcg(
     calculations and the output are in ``np.float32``.
 
     The size of the iteration history output equals to the number of the best
-    (limited by maxit) iterations plus 3 (initial, final, and postprocessing).
+    (limited by `maxit`) iterations plus 3: initial, final, and postprocessing.
 
-    If both ``retLambdaHistory`` and ``retResidualNormsHistory`` are True,
+    If both ``retLambdaHistory`` and ``retResidualNormsHistory`` are `True`,
     the return tuple has the following format
     ``(lambda, V, lambda history, residual norms history)``.
 
@@ -290,7 +290,7 @@ def lobpcg(
 
     The first mandatory input parameter, in this test is
     the sparse diagonal matrix ``A``
-    of the eigenvalue problem ``A x = lambda x`` to solve:
+    of the eigenvalue problem ``A x = lambda x`` to solve.
 
     >>> A = spdiags(vals, 0, n, n)
     >>> A = A.astype(np.int16)
@@ -303,9 +303,10 @@ def lobpcg(
            [  0,   0,   0, ...,   0,  99,   0],
            [  0,   0,   0, ...,   0,   0, 100]], dtype=int16)
 
-    Initial guess for eigenvectors, should have linearly independent
-    columns. The second mandatory input parameter, a 2D array with the
+    The second mandatory input parameter `X` is a 2D array with the
     row dimension determining the number of requested eigenvalues.
+    `X` is an initial guess for targeted eigenvectors.
+    `X` must have linearly independent columns. 
     If no initial approximations available, randomly oriented vectors
     commonly work best, e.g., with components normally distributed
     around zero or uniformly distributed on the interval [-1 1].
