@@ -244,7 +244,7 @@ def lobpcg(
        Randomly distributed around the origin vectors work well if no better
        choice is known.
 
-    2. Relative separation of the seeking eigenvalues from the rest
+    2. Relative separation of the desired eigenvalues from the rest
        of the eigenvalues. One can vary ``k`` to improve the separation.
 
     3. Proper preconditioning to shrink the spectral spread.
@@ -288,7 +288,7 @@ def lobpcg(
 
     >>> vals = np.arange(1, n + 1).astype(np.int16)
 
-    The first mandatory input parameter, in this test is
+    The first mandatory input parameter in this test is
     the sparse diagonal matrix ``A``
     of the eigenvalue problem ``A x = lambda x`` to solve.
 
