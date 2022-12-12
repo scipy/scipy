@@ -555,20 +555,12 @@ class TestCurveFit:
     def _check_nan_policy(f, xdata_with_nan, xdata_without_nan,
                           ydata_with_nan, ydata_without_nan, method):
         # propagate test
-        if method == "lm":
-            warning_msg = "Covariance of the parameters could not be estimated"
-            with warnings.catch_warnings():
-                warnings.simplefilter("error", OptimizeWarning)
-
-                with assert_raises(OptimizeWarning, match=warning_msg):
+        error_msg = "`propagate` is not supported for nan_policy " \
+                    "in this function."
+        with assert_raises(ValueError, match=error_msg):
                     curve_fit(f, xdata_with_nan, ydata_with_nan, method=method,
                               check_finite=False, nan_policy="propagate",
                               maxfev=2000)
-        else:  # "trf", "dogbox"
-            error_msg = "Residuals are not finite in the initial point"
-            with assert_raises(ValueError, match=error_msg):
-                curve_fit(f, xdata_with_nan, ydata_with_nan, method=method,
-                          check_finite=False, nan_policy="propagate")
 
         # raise test
         with assert_raises(ValueError, match="The input contains nan"):

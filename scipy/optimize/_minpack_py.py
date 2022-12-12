@@ -661,19 +661,20 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         `mesg`, and `ier`.
 
         .. versionadded:: 1.9
-    nan_policy : {'propagate', 'raise', 'omit', None}, optional
+    nan_policy : {'raise', 'omit', None}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is None):
 
-          * 'propagate': just propagate nan values
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-          * None: check nan values based on `check_finite` value.
+          * None: no special handling of NaNs is performed
+          (except what is done by check_finite); the behavior when NaNs
+          are present is implementation-dependent and may change.
 
         Note that if this value is specified explicitly (not None),
         `check_finite` will be set as False.
 
-        .. versionadded:: 1.10
+        .. versionadded:: 1.11
     **kwargs
         Keyword arguments passed to `leastsq` for ``method='lm'`` or
         `least_squares` otherwise.
@@ -890,6 +891,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     # nan handling is needed only if check_finite is False because if True,
     # the x-y data are already checked, and they don't contain nans.
     if not check_finite and nan_policy is not None:
+        if nan_policy == "propagate":
+            raise ValueError("`propagate` is not supported for nan_policy "
+                             "in this function.")
+
         x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy)
         y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy)
 
