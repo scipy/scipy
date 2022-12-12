@@ -165,30 +165,30 @@ def lobpcg(
         sparse matrix.  Often called the "stiffness matrix".
     X : ndarray, float32 or float64
         Initial approximation to the ``k`` eigenvectors (non-sparse). If `A`
-        has ``shape=(n,n)`` then `X` must have ``shape=(n,k)``.
+        has ``shape=(n,n)`` then ``X`` must have ``shape=(n,k)``.
     B : {sparse matrix, ndarray, LinearOperator, callable object}
-        Optional. By default ``B = None`` equivalent to identity.
+        Optional. By default ``B = None``, which is equivalent to identity.
         The right hand side operator in a generalized eigenproblem if present.
         Often called the "mass matrix". Must be Hermitian positive definite.
     M : {sparse matrix, ndarray, LinearOperator, callable object}
-        Optional. By default ``M = None`` equivalent to identity.
+        Optional. By default ``M = None``, which is equivalent to identity.
         Preconditioner aiming to accelerate convergence.
     Y : ndarray, float32 or float64, optional. By default ``Y = None``.
         An ``n-by-sizeY`` ndarray of constraints with ``sizeY < n``.
         The iterations will be performed in the `B`-orthogonal complement
         of the column-space of `Y`. `Y` must be full rank if present.
-    tol : scalar, optional. The default is ``tol=n*sqrt(eps)``.
-        Solver tolerance for the stopping criterion.
-    maxiter : int, optional. The default is ``maxiter=20``.
-        Maximum number of iterations.
+    tol : scalar, optional.
+        The default is ``tol=n*sqrt(eps)``. Solver tolerance for the stopping criterion.
+    maxiter : int, optional.
+        The default is ``maxiter=20``. Maximum number of iterations.
     largest : bool, optional. The default is ``largest=True``.
         When True, solve for the largest eigenvalues, otherwise the smallest.
-    verbosityLevel : int, optional. By default ``verbosityLevel=0`` no output.
-        Controls the solver standard/screen output.
-    retLambdaHistory : bool, optional. The default is ``False``.
-        Whether to return iterative eigenvalue history.
-    retResidualNormsHistory : bool, optional. The default is ``False``.
-        Whether to return iterative history of residual norms.
+    verbosityLevel : int, optional.
+        By default ``verbosityLevel=0`` no output. Controls the solver standard/screen output.
+    retLambdaHistory : bool, optional.
+        The default is ``False``. Whether to return iterative eigenvalue history.
+    retResidualNormsHistory : bool, optional.
+        The default is ``False``. Whether to return iterative history of residual norms.
     restartControl : int, optional.
         Iterations restart if the residuals jump ``2**restartControl`` times
         compared to the smallest ones recorded in `retResidualNormsHistory`.
