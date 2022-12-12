@@ -367,7 +367,7 @@ def lobpcg(
     Let us now solve the eigenvalue problem for the matrix A first
     without preconditioning requesting 70 iterations
 
-    >>> eigenvalues, _ = lobpcg(A, X, Y=Y, largest=False, maxiter=70)
+    >>> eigenvalues, _ = lobpcg(A_f, X, Y=Y, largest=False, maxiter=70)
     >>> eigenvalues
     array([4., 5., 6.])
     >>> eigenvalues.dtype
@@ -375,12 +375,24 @@ def lobpcg(
 
     With preconditioning we need only 20 iterations from the same `X`
 
-    >>> eigenvalues, _ = lobpcg(A, X, Y=Y, M=M, largest=False, maxiter=20)
+    >>> eigenvalues, _ = lobpcg(A_f, X, Y=Y, M=M, largest=False, maxiter=20)
     >>> eigenvalues
     array([4., 5., 6.])
 
     Note that the vectors passed in Y are the eigenvectors of the 3 smallest
-    eigenvalues. The results returned are orthogonal to those.
+    eigenvalues. The results returned above are orthogonal to those.
+
+    Finally, the primary matrix `A` may be indefinite, e.g., after shifting
+    ``vals`` by 50 from 1, ..., 100 to -49, ..., 50, we still can compute
+    the 3 smallest or largest eigenvalues.
+
+    >>> vals = vals - 50
+    >>> eigenvalues, _ = lobpcg(A_l, X, largest=False, maxiter=99)
+    >>> eigenvalues
+    array([-49., -48., -47.])
+    >>> eigenvalues, _ = lobpcg(A_l, X, largest=True, maxiter=99)
+    >>> eigenvalues
+    array([50., 49., 48.])
 
     """
     blockVectorX = X
