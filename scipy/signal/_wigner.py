@@ -24,7 +24,7 @@ def wigner_ville(
     """
     Wigner-Ville distribution.
 
-    The Wigner–Ville distribution is a method of signal analysis that yields
+    The Wigner-Ville distribution is a method of signal analysis that yields
     (under ideal conditions) the signal energy distributed over time and
     frequency. It provides the highest temporal vs frequency resolution
     possible within the limitations of the uncertainty principle.
