@@ -1292,7 +1292,7 @@ cdef class NumericalInversePolynomial(Method):
            generation by numerical inversion when only the density is known." ACM
            Transactions on Modeling and Computer Simulation (TOMACS) 20.4 (2010): 1-25.
     .. [2] UNU.RAN reference manual, Section 5.3.12,
-           "PINV – Polynomial interpolation based INVersion of CDF",
+           "PINV - Polynomial interpolation based INVersion of CDF",
            https://statmath.wu.ac.at/software/unuran/doc/unuran.html#PINV
 
     Examples
