@@ -663,7 +663,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         .. versionadded:: 1.9
     nan_policy : {'propagate', 'raise', 'omit', None}, optional
         Defines how to handle when input contains nan.
-        The following options are available (default is 'None'):
+        The following options are available (default is None):
 
           * 'propagate': just propagate nan values
           * 'raise': throws an error
