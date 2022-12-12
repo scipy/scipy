@@ -294,7 +294,7 @@ def lobpcg(
     >>> vals = np.arange(1, n + 1).astype(np.int16)
 
     The first mandatory input parameter in this test is
-    the sparse diagonal matrix ``A``
+    the sparse diagonal matrix `A`
     of the eigenvalue problem ``A x = lambda x`` to solve.
 
     >>> A = spdiags(vals, 0, n, n)
@@ -330,8 +330,8 @@ def lobpcg(
     >>> eigenvalues.dtype
     dtype('float32')
 
-    LOBPCG needs only access the matrix product with ``A`` rather
-    then the matrix itself. Since the matrix ``A`` is diagonal in
+    LOBPCG needs only access the matrix product with `A` rather
+    then the matrix itself. Since the matrix `A` is diagonal in
     this example, one can write a function of the product
     ``A @ X`` using the diagonal values ``vals`` only, e.g., by
     element-wise multiplication with broadcasting
@@ -356,7 +356,7 @@ def lobpcg(
 
     >>> Y = np.eye(n, 3)
 
-    The preconditioner acts as the inverse of A in this example, but
+    The preconditioner acts as the inverse of `A` in this example, but
     in the reduced precision ``np.float32`` even though the initial `X`
     and thus all iterates and the output are in full ``np.float64``
 
@@ -364,7 +364,7 @@ def lobpcg(
     >>> inv_vals = inv_vals.astype(np.float32)
     >>> M = lambda X: inv_vals[:, np.newaxis] * X
 
-    Let us now solve the eigenvalue problem for the matrix A first
+    Let us now solve the eigenvalue problem for the matrix `A` first
     without preconditioning requesting 70 iterations
 
     >>> eigenvalues, _ = lobpcg(A_f, X, Y=Y, largest=False, maxiter=70)
