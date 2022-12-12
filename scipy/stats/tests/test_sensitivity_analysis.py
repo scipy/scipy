@@ -47,7 +47,7 @@ class TestSobolIndices:
         ids=['scalar', 'vector']
     )
     def test_ishigami(self, ishigami_ref_indices, func):
-        indices = sobol_indices(
+        res = sobol_indices(
             func=func, n=4096,
             dists=[
                 uniform(loc=-np.pi, scale=2*np.pi),
@@ -64,5 +64,5 @@ class TestSobolIndices:
                 [ishigami_ref_indices[1], ishigami_ref_indices[1]]
             )
 
-        assert_allclose(indices[0], ishigami_ref_indices[0], atol=1e-2)
-        assert_allclose(indices[1], ishigami_ref_indices[1], atol=1e-2)
+        assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
+        assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-2)

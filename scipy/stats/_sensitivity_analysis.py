@@ -1,8 +1,10 @@
 from __future__ import annotations
-from typing import Callable, List, Optional, TYPE_CHECKING, Tuple
+
+from dataclasses import dataclass, make_dataclass
+from typing import Callable, List, TYPE_CHECKING, Tuple
 
 import numpy as np
-
+from scipy.stats._resampling import BootstrapResult
 
 from scipy.stats._qmc import check_random_state
 from scipy.stats import qmc, bootstrap
@@ -136,13 +138,20 @@ def saltelli_2010(
     return s, st
 
 
+@dataclass
+class SobolResult:
+  first_order: np.ndarray
+  total_order: np.ndarray
+  bootstrap_result: BootstrapResult
+
+
 def sobol_indices(
     *,
     func: Callable,
     n: IntNumber,
     dists: List[PINVDist],
     random_state: SeedType = None
-):
+) -> SobolResult:
     r"""Global sensitivity indices of Sobol'.
 
     Parameters
@@ -163,6 +172,19 @@ def sobol_indices(
         created using ``np.random.default_rng(random_state)``.
         If `random_state` is already a ``Generator`` instance, then the
         provided instance is used.
+
+    Returns
+    -------
+    res : SobolResult
+        An object with attributes:
+
+        first_order : ndarray
+            ...
+        total_order : ndarray
+            ...
+        bootstrap_result : BootstrapResult
+            An object providing confidence intervals on the indices.
+            See `scipy.stats.bootstrap` for more details.
 
     Notes
     -----
@@ -346,7 +368,7 @@ def sobol_indices(
 
     # Y = (Y - Y.mean()) / Y.std()
 
-    s, st = saltelli_2010(f_A, f_B, f_AB)
+    first_order, total_order = saltelli_2010(f_A, f_B, f_AB)
 
     def saltelli_2010_(idx):
         f_A_ = f_A[idx]
@@ -354,9 +376,15 @@ def sobol_indices(
         f_AB_ = f_AB[idx]
         return saltelli_2010(f_A_, f_B_, f_AB_)
 
-    ci = bootstrap(
+    bootstrap_result = bootstrap(
         [np.arange(n)], saltelli_2010_, method="BCa",
         batch=int(n*0.7), n_resamples=99
     )
 
-    return s, st, ci
+    res = SobolResult(
+        first_order=first_order,
+        total_order=total_order,
+        bootstrap_result=bootstrap_result
+    )
+
+    return res
