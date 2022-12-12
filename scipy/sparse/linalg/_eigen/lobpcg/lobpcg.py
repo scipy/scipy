@@ -173,22 +173,27 @@ def lobpcg(
     M : {sparse matrix, ndarray, LinearOperator, callable object}
         Optional. By default ``M = None``, which is equivalent to identity.
         Preconditioner aiming to accelerate convergence.
-    Y : ndarray, float32 or float64, optional. By default ``Y = None``.
+    Y : ndarray, float32 or float64, optional.
+        By default ``Y = None``.
         An ``n-by-sizeY`` ndarray of constraints with ``sizeY < n``.
         The iterations will be performed in the `B`-orthogonal complement
         of the column-space of `Y`. `Y` must be full rank if present.
     tol : scalar, optional.
-        The default is ``tol=n*sqrt(eps)``. Solver tolerance for the stopping criterion.
+        The default is ``tol=n*sqrt(eps)``.
+        Solver tolerance for the stopping criterion.
     maxiter : int, optional.
         The default is ``maxiter=20``. Maximum number of iterations.
     largest : bool, optional. The default is ``largest=True``.
         When True, solve for the largest eigenvalues, otherwise the smallest.
     verbosityLevel : int, optional.
-        By default ``verbosityLevel=0`` no output. Controls the solver standard/screen output.
+        By default ``verbosityLevel=0`` no output.
+        Controls the solver standard/screen output.
     retLambdaHistory : bool, optional.
-        The default is ``False``. Whether to return iterative eigenvalue history.
+        The default is ``False``.
+        Whether to return iterative eigenvalue history.
     retResidualNormsHistory : bool, optional.
-        The default is ``False``. Whether to return iterative history of residual norms.
+        The default is ``False``.
+        Whether to return iterative history of residual norms.
     restartControl : int, optional.
         Iterations restart if the residuals jump ``2**restartControl`` times
         compared to the smallest ones recorded in `retResidualNormsHistory`.
