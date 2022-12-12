@@ -4,9 +4,9 @@
 # Updated to 2014 values by Joseph Booker, 2015
 # Updated to 2018 values by Jakob Jakobson, 2019
 
+
 from __future__ import annotations
-from numpy import exp, pi
-from scipy.special import lambertw
+
 
 """
 Fundamental Physical Constants
@@ -55,7 +55,8 @@ https://physics.nist.gov/cuu/Constants/
 """
 
 import warnings
-from math import pi, sqrt
+from math import exp, pi, sqrt
+from scipy.special import lambertw
 
 from typing import Any
 
@@ -1629,8 +1630,7 @@ def parse_constants_2002to2014(d: str, exact_func) -> dict[str, tuple[float, str
     need_replace = set()
     for line in d.split('\n'):
         name = line[:55].rstrip()
-        val = line[55:77].replace(' ', '').replace('...', '')
-        val = float(val)
+        val = float(line[55:77].replace(' ', '').replace('...', ''))
         is_truncated = '...' in line[55:77]
         is_exact = '(exact)' in line[77:99]
         if is_truncated and is_exact:
@@ -1640,8 +1640,7 @@ def parse_constants_2002to2014(d: str, exact_func) -> dict[str, tuple[float, str
             exact[name] = val
         else:
             assert not is_truncated
-        uncert = line[77:99].replace(' ', '').replace('(exact)', '0')
-        uncert = float(uncert)
+        uncert = float(line[77:99].replace(' ', '').replace('(exact)', '0'))
         units = line[99:].rstrip()
         constants[name] = (val, units, uncert)
     replace = exact_func(exact)
@@ -1655,8 +1654,7 @@ def parse_constants_2018toXXXX(d: str, exact_func) -> dict[str, tuple[float, str
     need_replace = set()
     for line in d.split('\n'):
         name = line[:60].rstrip()
-        val = line[60:85].replace(' ', '').replace('...', '')
-        val = float(val)
+        val = float(line[60:85].replace(' ', '').replace('...', ''))
         is_truncated = '...' in line[60:85]
         is_exact = '(exact)' in line[85:110]
         if is_truncated and is_exact:
@@ -1666,8 +1664,7 @@ def parse_constants_2018toXXXX(d: str, exact_func) -> dict[str, tuple[float, str
             exact[name] = val
         else:
             assert not is_truncated
-        uncert = line[85:110].replace(' ', '').replace('(exact)', '0')
-        uncert = float(uncert)
+        uncert = float(line[85:110].replace(' ', '').replace('(exact)', '0'))
         units = line[110:].rstrip()
         constants[name] = (val, units, uncert)
     replace = exact_func(exact)
