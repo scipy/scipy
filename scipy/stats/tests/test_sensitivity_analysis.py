@@ -31,7 +31,7 @@ def ishigami_ref_indices():
     ])
     s_total = s_first + s_second.sum(axis=1)
 
-    return [s_first.reshape(-1, 1), s_total.reshape(-1, 1)]
+    return [s_first.reshape(1, -1), s_total.reshape(1, -1)]
 
 
 def f_ishigami_vec(x):
@@ -59,10 +59,10 @@ class TestSobolIndices:
         )
 
         if func.__name__ == 'f_ishigami_vec':
-            ishigami_ref_indices[0] = np.column_stack(
+            ishigami_ref_indices[0] = np.concatenate(
                 [ishigami_ref_indices[0], ishigami_ref_indices[0]]
             )
-            ishigami_ref_indices[1] = np.column_stack(
+            ishigami_ref_indices[1] = np.concatenate(
                 [ishigami_ref_indices[1], ishigami_ref_indices[1]]
             )
 

@@ -120,6 +120,17 @@ def saltelli_2010(
         S_{T_i} = \frac{1}{N} \sum_{j=1}^N
         (f(\mathbf{A})_j - f(\mathbf{AB}^{(i)})_j)^2
 
+    Parameters
+    ----------
+    f_A, f_B, f_AB : array_like (n, x)
+        Function evaluations ``n`` being the number of evaluations and ``x``
+        a vector output.
+
+    Returns
+    -------
+    s, st : array_like (x, d)
+        First order and total order Sobol' indices.
+
     References
     ----------
     .. [1] Saltelli, A., P. Annoni, I. Azzini, F. Campolongo, M. Ratto, and
@@ -135,7 +146,7 @@ def saltelli_2010(
     s = np.mean(f_B * (f_AB - f_A), axis=1) / var
     st = 0.5 * np.mean((f_A - f_AB) ** 2, axis=1) / var
 
-    return s, st
+    return s.T, st.T
 
 
 @dataclass
@@ -162,7 +173,7 @@ def sobol_indices(
         and the output should have a shape ``(-1, s)`` with ``s`` the number
         of output.
     n : int
-        Must be a power of 2. The total number of function call will
+        Must be a power of 2. The total number of function call will be
         ``n(d+2)``.
     dists : list(distributions), optional
         List of distributions of the parameters. It must be compatible with
@@ -293,13 +304,9 @@ def sobol_indices(
     ...     ]
     ... )
     >>> indices.first_order
-    array([[ 0.32112344],
-           [ 0.45050503],
-           [-0.0010357 ]])
+    array([[ 0.29563153,  0.44014138, -0.00489234]])
     >>> indices.total_order
-    array([[0.56068116],
-           [0.4358865 ],
-           [0.24123547]])
+    array([[0.56138789, 0.44500977, 0.24570556]])
 
     .. note::
 
