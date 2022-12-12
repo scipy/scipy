@@ -5983,12 +5983,6 @@ def test_540_567():
                         decimal=10, err_msg='test_540_567')
 
 
-def test_regression_ticket_1316():
-    # The following was raising an exception, because _construct_default_doc()
-    # See ticket #1316.
-    stats._continuous_distns.gamma_gen(name='gamma')
-
-
 def test_regression_ticket_1326():
     # adjust to avoid nan with 0*log(0)
     assert_almost_equal(stats.chi2.pdf(0.0, 2), 0.5, 14)
