@@ -7706,5 +7706,5 @@ class TestRelativisticBW:
         assert fit[1] == 0
         # Check again with fscale set.
         fit = stats.relativistic_bw.fit(data, floc=0, fscale=gamma)
-        assert_allclose(fit[0], rho, rtol=1e-3)
+        assert_allclose(fit[0], rho, rtol=1e-2)
         assert (fit[1], fit[2]) == (0, gamma)
