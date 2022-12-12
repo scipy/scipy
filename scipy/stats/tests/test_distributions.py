@@ -1344,18 +1344,39 @@ class TestHypergeom:
 
 class TestLoggamma:
 
+    # Expected cdf values were computed with mpmath. For given x and c,
+    #     x = mpmath.mpf(x)
+    #     c = mpmath.mpf(c)
+    #     cdf = mpmath.gammainc(c, 0, mpmath.exp(x),
+    #                           regularized=True)
+    @pytest.mark.parametrize('x, c, cdf',
+                             [(1, 2, 0.7546378854206702),
+                              (-1, 14, 6.768116452566383e-18),
+                              (-745.1, 0.001, 0.4749605142005238),
+                              (-800, 0.001, 0.44958802911019136),
+                              (-725, 0.1, 3.4301205868273265e-32),
+                              (-740, 0.75, 1.0074360436599631e-241)])
+    def test_cdf_ppf(self, x, c, cdf):
+        p = stats.loggamma.cdf(x, c)
+        assert_allclose(p, cdf, rtol=1e-13)
+        y = stats.loggamma.ppf(cdf, c)
+        assert_allclose(y, x, rtol=1e-13)
+
     # Expected sf values were computed with mpmath. For given x and c,
     #     x = mpmath.mpf(x)
     #     c = mpmath.mpf(c)
     #     sf = mpmath.gammainc(c, mpmath.exp(x), mpmath.inf,
     #                          regularized=True)
-    @pytest.mark.parametrize('x, c, sf', [(4, 1.5, 1.6341528919488565e-23),
-                                          (6, 100, 8.23836829202024e-74)])
+    @pytest.mark.parametrize('x, c, sf',
+                             [(4, 1.5, 1.6341528919488565e-23),
+                              (6, 100, 8.23836829202024e-74),
+                              (-800, 0.001, 0.5504119708898086),
+                              (-743, 0.0025, 0.8437131370024089)])
     def test_sf_isf(self, x, c, sf):
         s = stats.loggamma.sf(x, c)
-        assert_allclose(s, sf, rtol=1e-12)
-        y = stats.loggamma.isf(s, c)
-        assert_allclose(y, x, rtol=1e-12)
+        assert_allclose(s, sf, rtol=1e-13)
+        y = stats.loggamma.isf(sf, c)
+        assert_allclose(y, x, rtol=1e-13)
 
     def test_logpdf(self):
         # Test logpdf with x=-500, c=2.  ln(gamma(2)) = 0, and
