@@ -306,7 +306,7 @@ def lobpcg(
     The second mandatory input parameter `X` is a 2D array with the
     row dimension determining the number of requested eigenvalues.
     `X` is an initial guess for targeted eigenvectors.
-    `X` must have linearly independent columns. 
+    `X` must have linearly independent columns.
     If no initial approximations available, randomly oriented vectors
     commonly work best, e.g., with components normally distributed
     around zero or uniformly distributed on the interval [-1 1].
