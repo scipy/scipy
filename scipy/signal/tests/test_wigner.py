@@ -8,7 +8,7 @@ from scipy.signal import wigner_ville
 class TestWigner:
     def test_wigner_ville_shapes(self):
         t, f, wv = wigner_ville(np.sin(np.linspace(0, 100, 1024)),
-                                       resolution=4, window_size=128)
+                                resolution=4, window_size=128)
         assert len(t) == 256
         assert len(f) == 128
         assert wv.shape == (128, 256)
