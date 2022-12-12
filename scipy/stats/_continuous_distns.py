@@ -10296,20 +10296,17 @@ class relativistic_bw_gen(rv_continuous):
             {\pi\sqrt{\rho^2 + \rho\sqrt{\rho^2 + 1}}}
 
     The relativistic Breit-Wigner distribution is used in high energy physics
-    to model resonances [1]_. It describes the uncertainty in the invariant
-    mass :math:`M` [2]_ of a resonance given the characteristic mass
-    :math:`M_0` and decay-width :math:`\Gamma` of the resonance, where
-    :math:`M`, :math:`M_0` and :math:`\Gamma` are expressed in natural
-    units. In SciPy's parametrization, the shape parameter :math:`\rho` is
-    equal to :math:`M_0/\Gamma`.
+    to model resonances [1]_. It gives the uncertainty in the invariant mass,
+    :math:`M` [2]_, of a resonance with characteristic mass :math:`M_0` and
+    decay-width :math:`\Gamma`, where :math:`M`, :math:`M_0` and :math:`\Gamma`
+    are expressed in natural units. In SciPy's parametrization, the shape
+    parameter :math:`\rho` is equal to :math:`M_0/\Gamma`.
 
-    In natural units, the speed of light :math:`c` is equal to 1, and thus the
-    invariant mass :math:`M` is equal to the rest energy :math:`Mc^2`. In the
-    center-of-mass frame, the rest energy is equal to the total energy
-    [3]_. Sometimes the relativistic Breit-Wigner distribution is given the
-    equivalent characterization of describing the uncertainty in the
-    center-of-mass energy :math:`E_{\text{com}}` of a resonance.
-
+    Equivalently, the relativistic Breit-Wigner distribution is said to give
+    the uncertainty in the center-of-mass energy :math:`E_{\text{com}}`. In
+    natural units, the speed of light :math:`c` is equal to 1 and the invariant
+    mass :math:`M` is equal to the rest energy :math:`Mc^2`. In the
+    center-of-mass frame, the rest energy is equal to the total energy [3]_.
 
     %(after_notes)s
 
