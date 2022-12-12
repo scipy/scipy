@@ -367,7 +367,7 @@ def lobpcg(
     >>> eigenvalues.dtype
     dtype('float64')
 
-    With preconditioning we need only 20 iterations from the same `X` 
+    With preconditioning we need only 20 iterations from the same `X`
 
     >>> eigenvalues, _ = lobpcg(A, X, Y=Y, M=M, largest=False, maxiter=20)
     >>> eigenvalues
