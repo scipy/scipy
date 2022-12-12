@@ -48,4 +48,4 @@ def test_exact_values():
     replace = _codata.exact2018(exact)
     for key, val in _codata.replace.items():
         assert_equal(val, _codata.value(key))
-        assert_(precision(key) == 0)
+        assert_(_codata.precision(key) == 0)
