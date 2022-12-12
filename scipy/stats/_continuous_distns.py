@@ -10311,9 +10311,9 @@ class relativistic_bw_gen(rv_continuous):
     %(after_notes)s
 
     :math:`\rho = M/\Gamma` and :math:`\Gamma` is the scale parameter. For
-    example, if one seeks to model the :math:`Z^0` boson with :math:`M_0 \approx
-    91.1876 \text{ GeV}` and :math:`\Gamma \approx 2.4952\text{ GeV}` [4]_ one
-    can set `rho` equal to ``91.1876/2.4952`` and ``scale=2.4952``.
+    example, if one seeks to model the :math:`Z^0` boson with :math:`M_0
+    \approx 91.1876 \text{ GeV}` and :math:`\Gamma \approx 2.4952\text{ GeV}`
+    [4]_ one can set `rho` equal to ``91.1876/2.4952`` and ``scale=2.4952``.
 
     To ensure a physically meaningful result when using the `fit` method, one
     should set ``floc=0`` to fix the location parameter to 0.
