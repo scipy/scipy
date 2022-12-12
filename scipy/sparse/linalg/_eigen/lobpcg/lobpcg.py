@@ -387,10 +387,10 @@ def lobpcg(
     the 3 smallest or largest eigenvalues.
 
     >>> vals = vals - 50
-    >>> eigenvalues, _ = lobpcg(A_l, X, largest=False, maxiter=99)
+    >>> eigenvalues, _ = lobpcg(A_f, X, largest=False, maxiter=99)
     >>> eigenvalues
     array([-49., -48., -47.])
-    >>> eigenvalues, _ = lobpcg(A_l, X, largest=True, maxiter=99)
+    >>> eigenvalues, _ = lobpcg(A_f, X, largest=True, maxiter=99)
     >>> eigenvalues
     array([50., 49., 48.])
 
