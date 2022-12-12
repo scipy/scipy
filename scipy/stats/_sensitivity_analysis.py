@@ -197,6 +197,9 @@ def sobol_indices(
             An object providing confidence intervals on the indices.
             See `scipy.stats.bootstrap` for more details.
 
+            The bootstrapping is done on both first and total order indices
+            at the same time meaning both bootstrap is a concatenated array.
+
     Notes
     -----
     Variance-based Sensitivity Analysis allows obtaining the contribution of
