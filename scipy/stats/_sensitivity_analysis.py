@@ -281,7 +281,9 @@ def sobol_indices(
     with :math:`\mathbf{x} \in [-\pi, \pi]^3`. This function exhibits strong
     non-linearity and non-monotonicity.
 
+    >>> import numpy as  np
     >>> from scipy.stats import f_ishigami, sobol_indices, uniform
+    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
     >>> indices = sobol_indices(
     ...     func=f_ishigami, n=1024,
     ...     dists=[
@@ -290,9 +292,14 @@ def sobol_indices(
     ...         uniform(loc=-np.pi, scale=2*np.pi)
     ...     ]
     ... )
-    >>> indices[:2]
-    (array([0.28717719, 0.44694404, 0.00404842]),  # may vary
-     array([0.53461512, 0.42775372, 0.23343319]))
+    >>> indices.first_order
+    array([[ 0.32112344],
+           [ 0.45050503],
+           [-0.0010357 ]])
+    >>> indices.total_order
+    array([[0.56068116],
+           [0.4358865 ],
+           [0.24123547]])
 
     .. note::
 
