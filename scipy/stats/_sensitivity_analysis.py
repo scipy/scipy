@@ -378,9 +378,14 @@ def sobol_indices(
     first_order, total_order = saltelli_2010(f_A, f_B, f_AB)
 
     def saltelli_2010_(idx):
-        f_A_ = f_A[idx]
-        f_B_ = f_B[idx]
-        f_AB_ = f_AB[idx]
+        A_ = A[idx]
+        B_ = B[idx]
+        AB_ = sample_AB(A=A_, B=B_)
+
+        f_A_ = func(A_)
+        f_B_ = func(B_)
+        f_AB_ = func(AB_)
+
         return saltelli_2010(f_A_, f_B_, f_AB_)
 
     bootstrap_result = bootstrap(
