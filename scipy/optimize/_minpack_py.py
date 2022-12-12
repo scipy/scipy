@@ -889,7 +889,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     # nan handling is needed only if check_finite is False because if True,
     # the x-y data are already checked, and they don't contain nans.
-    if not check_finite:
+    if not check_finite and nan_policy is not None:
         x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy)
         y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy)
 
