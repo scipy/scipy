@@ -1622,10 +1622,8 @@ def exact2018(exact):
 
 # -----------------------------------------------------------------------------
 
-physical_constants: dict[str, tuple[float, str, float]] = {}
 
-
-def parse_constants_2002to2014(d: str, exact_func: str) -> dict[str, tuple[float, str, float]]:
+def parse_constants_2002to2014(d: str, exact_func) -> dict[str, tuple[float, str, float]]:
     constants = {}
     exact = {}
     need_replace = set()
@@ -1651,7 +1649,7 @@ def parse_constants_2002to2014(d: str, exact_func: str) -> dict[str, tuple[float
     return constants
 
 
-def parse_constants_2018toXXXX(d: str, exact_func: str) -> dict[str, tuple[float, str, float]]:
+def parse_constants_2018toXXXX(d: str, exact_func) -> dict[str, tuple[float, str, float]]:
     constants = {}
     exact = {}
     need_replace = set()
@@ -1674,7 +1672,7 @@ def parse_constants_2018toXXXX(d: str, exact_func: str) -> dict[str, tuple[float
         constants[name] = (val, units, uncert)
     replace = exact_func(exact)
     replace_exact(constants, need_replace, replace)
-    return 
+    return constants
 
 
 def replace_exact(d, to_replace, exact):
@@ -1693,7 +1691,7 @@ _physical_constants_2014 = parse_constants_2002to2014(txt2014, exact2014)
 _physical_constants_2018 = parse_constants_2018toXXXX(txt2018, exact2018)
 
 
-physical_constants = {}
+physical_constants: dict[str, tuple[float, str, float]] = {}
 physical_constants.update(_physical_constants_2002)
 physical_constants.update(_physical_constants_2006)
 physical_constants.update(_physical_constants_2010)
