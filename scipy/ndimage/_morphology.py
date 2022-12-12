@@ -2239,12 +2239,15 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         dt_inplace, ft_inplace, return_distances, return_indices
     )
     input = numpy.asarray(input)
-    if metric in ['taxicab', 'cityblock', 'manhattan']:
-        rank = input.ndim
-        metric = generate_binary_structure(rank, 1)
-    elif metric == 'chessboard':
-        rank = input.ndim
-        metric = generate_binary_structure(rank, rank)
+    if isinstance(metric, str):
+        if metric in ['taxicab', 'cityblock', 'manhattan']:
+            rank = input.ndim
+            metric = generate_binary_structure(rank, 1)
+        elif metric == 'chessboard':
+            rank = input.ndim
+            metric = generate_binary_structure(rank, rank)
+        else:
+            raise RuntimeError('invalid metric provided')
     else:
         try:
             metric = numpy.asarray(metric)

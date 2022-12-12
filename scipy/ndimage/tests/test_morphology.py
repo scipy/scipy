@@ -440,6 +440,26 @@ class TestNdimageMorphology:
                 return_indices=False,
                 indices=indices_out
             )
+    
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_cdt05(self, dtype):
+        # test custom metric type per dicussion on issue #17381
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        metric_arg = numpy.array([[1, 1, 1],
+                                  [1, 1, 1],
+                                  [1, 1, 1]])
+        try:
+            ndimage.distance_transform_cdt(data, metric=metric_arg)
+        except Exception as exc:
+            raise pytest.fail("Unit test failed. Raised {0}".format(exc))
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt01(self, dtype):
