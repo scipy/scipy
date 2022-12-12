@@ -388,13 +388,19 @@ def sobol_indices(
     first_order, total_order = saltelli_2010(f_A, f_B, f_AB)
 
     def saltelli_2010_(idx):
-        A_ = A[idx]
-        B_ = B[idx]
-        AB_ = sample_AB(A=A_, B=B_)
+        f_A_ = f_A[idx]
+        f_B_ = f_B[idx]
 
-        f_A_ = func(A_)
-        f_B_ = func(B_)
-        f_AB_ = func(AB_)
+        n, d = A.shape
+        f_AB_ = np.empty((d, *f_A_.shape))
+        for i in range(d):
+            f_AB_[i] = f_AB[np.array(idx)+i*n]
+        f_AB_ = f_AB_.reshape(-1, f_A_.shape[1])
+
+        # A_ = A[idx]
+        # B_ = B[idx]
+        # AB_ = sample_AB(A=A_, B=B_)
+        # f_AB_ = func(AB_)
 
         return saltelli_2010(f_A_, f_B_, f_AB_)
 
