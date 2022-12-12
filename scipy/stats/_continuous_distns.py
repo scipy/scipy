@@ -5784,7 +5784,7 @@ class gibrat_gen(rv_continuous):
         return _norm_sf(np.log(x))
 
     def _isf(self, p):
-        return np.exp(-sc.ndtri(p))
+        return np.exp(_norm_isf(p))
 
     def _stats(self):
         p = np.e
