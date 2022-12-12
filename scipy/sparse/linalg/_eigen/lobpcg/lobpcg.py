@@ -166,11 +166,11 @@ def lobpcg(
     X : ndarray, float32 or float64
         Initial approximation to the ``k`` eigenvectors (non-sparse). If `A`
         has ``shape=(n,n)`` then `X` must have ``shape=(n,k)``.
-    B : {dense matrix, ndarray, LinearOperator, callable object}
+    B : {sparse matrix, ndarray, LinearOperator, callable object}
         Optional. By default ``B = None`` equivalent to identity.
         The right hand side operator in a generalized eigenproblem if present.
         Often called the "mass matrix". Must be Hermitian positive definite.
-    M : {dense matrix, sparse matrix, LinearOperator, callable object}
+    M : {sparse matrix, ndarray, LinearOperator, callable object}
         Optional. By default ``M = None`` equivalent to identity.
         Preconditioner aiming to accelerate convergence.
     Y : ndarray, float32 or float64, optional. By default ``Y = None``.
@@ -199,7 +199,7 @@ def lobpcg(
     -------
     lambda : ndarray of the shape ``(k, )``.
         Array of ``k`` approximate eigenvalues.
-    v : ndarray of the same shape and dtype as `X`.
+    v : ndarray of the same shape as ``X.shape``.
         An array of ``k`` approximate eigenvectors.
     lambdaHistory : ndarray, optional.
         The eigenvalue history, if `retLambdaHistory` is True.
@@ -213,6 +213,10 @@ def lobpcg(
     Breaking backward compatibility with the previous version, lobpcg
     now returns the block of iterative vectors with the best accuracy rather
     than the last one iterated, as a cure for possible divergence.
+
+    If ``X.dtype == np.float32`` and user-provided operations/multiplications
+    by `A`, `B`, and `M` all presere the ``np.float32`` data type, all the
+    calculations and the output are in ``np.float32``.
 
     The size of the iteration history output equals to the number of the best
     (limited by maxit) iterations plus 3 (initial, final, and postprocessing).
@@ -339,29 +343,33 @@ def lobpcg(
     constraints and preconditioning.
 
     >>> k = 3
-    >>> rng = np.random.default_rng()
     >>> X = rng.normal(size=(n, k))
 
     Constraints - an optional input parameter is a 2D array comprising
-    of column vectors that the eigenvectors must be orthogonal to:
+    of column vectors that the eigenvectors must be orthogonal to
 
     >>> Y = np.eye(n, 3)
 
-    The preconditioner acts as the inverse of A in this example:
+    The preconditioner acts as the inverse of A in this example, but
+    in the reduced precision ``np.float32`` even though the initial `X`
+    and thus all iterates and the output are in full ``np.float64``
 
     >>> inv_vals = 1./vals
+    >>> inv_vals = inv_vals.astype(np.float32)
     >>> M = lambda X: inv_vals[:, np.newaxis] * X
 
     Let us now solve the eigenvalue problem for the matrix A first
-    without preconditioning
+    without preconditioning requesting 70 iterations
 
-    >>> eigenvalues, _ = lobpcg(A, X, Y=Y, largest=False, maxiter=60)
+    >>> eigenvalues, _ = lobpcg(A, X, Y=Y, largest=False, maxiter=70)
     >>> eigenvalues
     array([4., 5., 6.])
+    >>> eigenvalues.dtype
+    dtype('float64')
 
-    and then with preconditioning
+    With preconditioning we need only 20 iterations from the same `X` 
 
-    >>> eigenvalues, _ = lobpcg(A, X, Y=Y, M=M, largest=False, maxiter=60)
+    >>> eigenvalues, _ = lobpcg(A, X, Y=Y, M=M, largest=False, maxiter=20)
     >>> eigenvalues
     array([4., 5., 6.])
 
