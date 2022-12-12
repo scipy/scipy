@@ -1540,7 +1540,7 @@ def exact2018(exact):
     e = exact['elementary charge']
     k = exact['Boltzmann constant']
     N_A = exact['Avogadro constant']
-Use only real part for Wien law calculation    
+
     # Wien law numerical constants
     alpha_W = (3 + lambertw(-3 * exp(-3))).real
     x_W = (5 + lambertw(-5 * exp(-5))).real
