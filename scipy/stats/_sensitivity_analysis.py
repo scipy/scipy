@@ -259,14 +259,24 @@ def sobol_indices(
     with :math:`\mathbf{x} \in [-\pi, \pi]^3`. This function exhibits strong
     non-linearity and non-monotonicity.
 
-    >>> from scipy.stats import f_ishigami
+    >>> from scipy.stats import f_ishigami, sobol_indices, uniform
     >>> indices = sobol_indices(
-    ...    func=f_ishigami, n=1024, d=3,
-    ...    l_bounds=[-np.pi, -np.pi, -np.pi], u_bounds=[np.pi, np.pi, np.pi]
+    ...     func=f_ishigami, n=1024,
+    ...     dists=[
+    ...         uniform(loc=-np.pi, scale=2*np.pi),
+    ...         uniform(loc=-np.pi, scale=2*np.pi),
+    ...         uniform(loc=-np.pi, scale=2*np.pi)
+    ...     ]
     ... )
     >>> indices[:2]
     (array([0.28717719, 0.44694404, 0.00404842]),  # may vary
      array([0.53461512, 0.42775372, 0.23343319]))
+
+    .. note::
+
+        In the standard form, the distribution is uniform on ``[0, 1]``.
+        Using the parameters ``loc`` and ``scale``, one obtains the uniform
+        distribution on ``[loc, loc + scale]``.
 
     It is particularly interesting because the first order indice of
     :math:`S_{x_3} = 0` whereas its total order is :math:`S_{T_{x_3}} = 0.244`.
