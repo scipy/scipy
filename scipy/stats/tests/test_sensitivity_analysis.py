@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-from scipy.stats import f_ishigami, sobol_indices
+from scipy.stats import f_ishigami, sobol_indices, uniform
 
 
 @pytest.fixture(scope='session')
@@ -48,8 +48,12 @@ class TestSobolIndices:
     )
     def test_ishigami(self, ishigami_ref_indices, func):
         indices = sobol_indices(
-            func=func, n=4096, d=3,
-            l_bounds=[-np.pi, -np.pi, -np.pi], u_bounds=[np.pi, np.pi, np.pi]
+            func=func, n=4096,
+            dists=[
+                uniform(loc=-np.pi, scale=2*np.pi),
+                uniform(loc=-np.pi, scale=2*np.pi),
+                uniform(loc=-np.pi, scale=2*np.pi)
+            ]
         )
 
         if func.__name__ == 'f_ishigami_vec':
@@ -62,3 +66,7 @@ class TestSobolIndices:
 
         assert_allclose(indices[0], ishigami_ref_indices[0], atol=1e-2)
         assert_allclose(indices[1], ishigami_ref_indices[1], atol=1e-2)
+
+# aggregated indices
+# Vik = Sik*Vk
+# sum(Vik)/sum(var(Vk))

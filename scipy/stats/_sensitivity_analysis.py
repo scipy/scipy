@@ -54,8 +54,8 @@ def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
 
 
 def sample_A_B(
-    d: int, n: int,
-    dists: Optional[List[PINVDist]] = None,
+    n: int,
+    dists: List[PINVDist],
     random_state: SeedType = None
 ) -> Tuple[np.ndarray,  np.ndarray]:
     """Sample two matrices A and B.
@@ -72,17 +72,17 @@ def sample_A_B(
        Computer Physics Communications, 181(2):259-270,
        :doi:`10.1016/j.cpc.2009.09.018`, 2010.
     """
+    d = len(dists)
     A_B = qmc.Sobol(d=2*d, seed=random_state, bits=64).random(n)
 
     A, B = A_B[:, :d], A_B[:, d:]
 
-    if dists is not None:
-        for d_, dist in enumerate(dists):
-            dist_rng = NumericalInversePolynomial(
-                dist, random_state=random_state
-            )
-            A[:, d_] = dist_rng.ppf(A[:, d_])
-            B[:, d_] = dist_rng.ppf(B[:, d_])
+    for d_, dist in enumerate(dists):
+        dist_rng = NumericalInversePolynomial(
+            dist, random_state=random_state
+        )
+        A[:, d_] = dist_rng.ppf(A[:, d_])
+        B[:, d_] = dist_rng.ppf(B[:, d_])
 
     return A, B
 
@@ -140,10 +140,7 @@ def sobol_indices(
     *,
     func: Callable,
     n: IntNumber,
-    d: IntNumber,
-    dists: Optional[List[PINVDist]] = None,
-    l_bounds: Optional[npt.ArrayLike] = None,
-    u_bounds: Optional[npt.ArrayLike] = None,
+    dists: List[PINVDist],
     random_state: SeedType = None
 ):
     r"""Global sensitivity indices of Sobol'.
@@ -158,14 +155,9 @@ def sobol_indices(
     n : int
         Must be a power of 2. The total number of function call will
         ``n(d+2)``.
-    d : int
-        Dimension of the parameter space.
     dists : list(distributions), optional
         List of distributions of the parameters. It must be compatible with
         `scipy.stats.sampling.NumericalInversePolynomial`.
-    l_bounds, u_bounds : array_like (d,), optional
-        Lower and upper bounds (resp. :math:`a`, :math:`b`) of transformed
-        data in the parameter space.
     random_state : {None, int, `numpy.random.Generator`}, optional
         If `random_state` is an int or None, a new `numpy.random.Generator` is
         created using ``np.random.default_rng(random_state)``.
@@ -335,13 +327,8 @@ def sobol_indices(
 
     """
     random_state = check_random_state(random_state)
-    A, B = sample_A_B(d=d, n=n, dists=dists, random_state=random_state)
+    A, B = sample_A_B(n=n, dists=dists, random_state=random_state)
     AB = sample_AB(A=A, B=B)
-
-    if (l_bounds is not None) or (u_bounds is not None):
-        A = qmc.scale(A, l_bounds=l_bounds, u_bounds=u_bounds)
-        B = qmc.scale(B, l_bounds=l_bounds, u_bounds=u_bounds)
-        AB = qmc.scale(AB, l_bounds=l_bounds, u_bounds=u_bounds)
 
     f_A = func(A)
     f_B = func(B)
