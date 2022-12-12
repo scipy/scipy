@@ -440,7 +440,6 @@ class TestNdimageMorphology:
                 return_indices=False,
                 indices=indices_out
             )
-    
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_cdt05(self, dtype):
         # test custom metric type per dicussion on issue #17381
