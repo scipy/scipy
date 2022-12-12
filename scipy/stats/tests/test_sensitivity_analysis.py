@@ -47,13 +47,15 @@ class TestSobolIndices:
         ids=['scalar', 'vector']
     )
     def test_ishigami(self, ishigami_ref_indices, func):
+        rng = np.random.default_rng(28631265345463262246170309650372465332)
         res = sobol_indices(
             func=func, n=4096,
             dists=[
                 uniform(loc=-np.pi, scale=2*np.pi),
                 uniform(loc=-np.pi, scale=2*np.pi),
                 uniform(loc=-np.pi, scale=2*np.pi)
-            ]
+            ],
+            random_state=rng
         )
 
         if func.__name__ == 'f_ishigami_vec':
