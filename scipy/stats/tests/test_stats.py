@@ -477,6 +477,11 @@ class TestCorrPearsonr:
         y = [2]
         assert_raises(ValueError, stats.pearsonr, x, y)
 
+    def test_complex_data(self):
+        x = [-1j, -2j, -3.0j]
+        y = [-1j, -2j, -3.0j]
+        assert_raises(ValueError, stats.pearsonr, x, y)
+
 
 class TestFisherExact:
     """Some tests to show that fisher_exact() works correctly.
