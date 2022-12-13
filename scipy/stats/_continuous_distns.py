@@ -3601,6 +3601,12 @@ class gompertz_gen(rv_continuous):
     def _ppf(self, q, c):
         return sc.log1p(-1.0 / c * sc.log1p(-q))
 
+    def _sf(self, x, c):
+        return np.exp(-c * sc.expm1(x))
+
+    def _isf(self, p, c):
+        return sc.log1p(-np.log(p)/c)
+
     def _entropy(self, c):
         return 1.0 - np.log(c) - np.exp(c)*sc.expn(1, c)
 
@@ -3967,6 +3973,12 @@ class halfnorm_gen(rv_continuous):
 
     def _ppf(self, q):
         return sc.ndtri((1+q)/2.0)
+
+    def _sf(self, x):
+        return 2 * _norm_sf(x)
+
+    def _isf(self, p):
+        return -sc.ndtri(p/2)
 
     def _stats(self):
         return (np.sqrt(2.0/np.pi),
@@ -5771,6 +5783,12 @@ class gibrat_gen(rv_continuous):
 
     def _ppf(self, q):
         return np.exp(_norm_ppf(q))
+
+    def _sf(self, x):
+        return _norm_sf(np.log(x))
+
+    def _isf(self, p):
+        return np.exp(_norm_isf(p))
 
     def _stats(self):
         p = np.e
