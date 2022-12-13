@@ -380,8 +380,8 @@ def lobpcg(
     >>> eigenvalues
     array([4., 5., 6.])
 
-    Note that the vectors passed in ``Y`` are the eigenvectors of the 3 smallest
-    eigenvalues. The results returned above are orthogonal to those.
+    Note that the vectors passed in ``Y`` are the eigenvectors of the 3
+    smallest eigenvalues. The results returned above are orthogonal to those.
 
     Finally, the primary matrix ``A`` may be indefinite, e.g., after shifting
     ``vals`` by 50 from 1, ..., 100 to -49, ..., 50, we still can compute
@@ -392,7 +392,6 @@ def lobpcg(
     >>> eigenvalues, _ = lobpcg(A_f, X, largest=False, maxiter=99)
     >>> eigenvalues
     array([-49., -48., -47.])
-    >>> X = rng.normal(size=(n, k))
     >>> eigenvalues, _ = lobpcg(A_f, X, largest=True, maxiter=99)
     >>> eigenvalues
     array([50., 49., 48.])
