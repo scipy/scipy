@@ -480,7 +480,9 @@ class TestCorrPearsonr:
     def test_complex_data(self):
         x = [-1j, -2j, -3.0j]
         y = [-1j, -2j, -3.0j]
-        assert_raises(ValueError, stats.pearsonr, x, y)
+        message = 'This function does not support complex data'
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr(x, y)
 
 
 class TestFisherExact:
