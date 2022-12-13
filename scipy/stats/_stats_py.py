@@ -4413,7 +4413,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
     x = np.asarray(x)
     y = np.asarray(y)
 
-    if (np.issubdtype(x.dtype, np.complexfloating) 
+    if (np.issubdtype(x.dtype, np.complexfloating)
             or np.issubdtype(y.dtype, np.complexfloating)):
         raise ValueError('This function does not support complex data')
 
