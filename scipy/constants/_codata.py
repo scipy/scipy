@@ -1683,8 +1683,8 @@ def replace_exact(d, to_replace, exact):
             'Bad exact value: {}: {}, {}'.format(name, exact[name], d[name][0])
         d[name] = (exact[name],) + d[name][1:]
     assert set(exact.keys()) == set(to_replace)
-    
-    
+
+
 _physical_constants_2002 = parse_constants_2002to2014(txt2002, exact2002)
 _physical_constants_2006 = parse_constants_2002to2014(txt2006, exact2006)
 _physical_constants_2010 = parse_constants_2002to2014(txt2010, exact2010)
