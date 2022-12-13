@@ -10353,15 +10353,18 @@ class rel_breitwigner_gen(rv_continuous):
         result = np.arctan(x/np.sqrt(-rho*(rho + 1j))) / np.sqrt(-1 - 1j/rho)
         # For real entries of x, one can take advantage of the quantity to be
         # subtracted being the complex conjugate of the first. This is not the
-        # case for complex entries of x with nonzero imaginary part.
-        result -= _lazywhere(
+        # case for complex entries of x with nonzero imaginary part which
+        # are supported to allow complex-step derivatives following gh-4979.
+        result = _lazywhere(
             np.iscomplex(x),
             (x, result),
-            lambda x_, result_: np.arctan(x/np.sqrt(-rho*(rho - 1j))) /
-            np.sqrt(-1 + 1j/rho),
-            f2=lambda x_, result_: result.conjugate(),
+            lambda x_, result_: -1j * (
+                result_ -
+                np.arctan(x/np.sqrt(-rho*(rho - 1j))) / np.sqrt(-1 + 1j/rho)
+                ),
+            f2=lambda x_, result_: 2 * np.imag(result_)
         )
-        result = - C * 1j * result
+        result *= C
         return result if np.iscomplexobj(x) else np.real(result)
 
     def _munp(self, n, rho):
