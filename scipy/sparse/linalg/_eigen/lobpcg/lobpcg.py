@@ -173,30 +173,30 @@ def lobpcg(
     M : {sparse matrix, ndarray, LinearOperator, callable object}
         Optional. By default ``M = None``, which is equivalent to identity.
         Preconditioner aiming to accelerate convergence.
-    Y : ndarray, float32 or float64, optional.
+    Y : ndarray, float32 or float64, optional
         By default ``Y = None``.
         An ``n-by-sizeY`` ndarray of constraints with ``sizeY < n``.
         The iterations will be performed in the `B`-orthogonal complement
         of the column-space of `Y`. `Y` must be full rank if present.
-    tol : scalar, optional.
+    tol : scalar, optional
         The default is ``tol=n*sqrt(eps)``.
         Solver tolerance for the stopping criterion.
-    maxiter : int, optional.
+    maxiter : int, optional
         The default is ``maxiter=20``. Maximum number of iterations.
     largest : bool, optional. The default is ``largest=True``.
         When True, solve for the largest eigenvalues, otherwise the smallest.
-    verbosityLevel : int, optional.
+    verbosityLevel : int, optional
         By default ``verbosityLevel=0`` no output.
         Controls the solver standard/screen output.
-    retLambdaHistory : bool, optional.
+    retLambdaHistory : bool, optional
         The default is ``False``.
         Whether to return iterative eigenvalue history.
-    retResidualNormsHistory : bool, optional.
+    retResidualNormsHistory : bool, optional
         The default is ``False``.
         Whether to return iterative history of residual norms.
     restartControl : int, optional.
         Iterations restart if the residuals jump ``2**restartControl`` times
-        compared to the smallest ones recorded in `retResidualNormsHistory`.
+        compared to the smallest recorded in ``retResidualNormsHistory``.
         The default is ``restartControl=20``, making the restarts rare for
         backward compatibility.
 
@@ -220,13 +220,13 @@ def lobpcg(
     than the last one iterated, as a cure for possible divergence.
 
     If ``X.dtype == np.float32`` and user-provided operations/multiplications
-    by `A`, `B`, and `M` all presere the ``np.float32`` data type, all the
-    calculations and the output are in ``np.float32``.
+    by ``A``, ``B``, and ``M`` all presere the `np.float32` data type, all the
+    calculations and the output are in `np.float32`.
 
     The size of the iteration history output equals to the number of the best
     (limited by `maxit`) iterations plus 3: initial, final, and postprocessing.
 
-    If both ``retLambdaHistory`` and ``retResidualNormsHistory`` are `True`,
+    If both ``retLambdaHistory`` and ``retResidualNormsHistory`` are ``True``,
     the return tuple has the following format
     ``(lambda, V, lambda history, residual norms history)``.
 
@@ -245,7 +245,7 @@ def lobpcg(
 
     The convergence speed depends basically on three factors:
 
-    1. Quality of the initial approximations `X` to the seeking eigenvectors.
+    1. Quality of the initial approximations ``X`` to the seeking eigenvectors.
        Randomly distributed around the origin vectors work well if no better
        choice is known.
 
@@ -257,7 +257,7 @@ def lobpcg(
        directory) is ill-conditioned for large ``n``, so convergence will be
        slow, unless efficient preconditioning is used. For this specific
        problem, a good simple preconditioner function would be a linear solve
-       for `A`, which is easy to code since `A` is tridiagonal.
+       for ``A``, which is easy to code since ``A`` is tridiagonal.
 
     References
     ----------
@@ -294,7 +294,7 @@ def lobpcg(
     >>> vals = np.arange(1, n + 1).astype(np.int16)
 
     The first mandatory input parameter in this test is
-    the sparse diagonal matrix `A`
+    the sparse diagonal matrix ``A``
     of the eigenvalue problem ``A x = lambda x`` to solve.
 
     >>> A = spdiags(vals, 0, n, n)
@@ -308,15 +308,15 @@ def lobpcg(
            [  0,   0,   0, ...,   0,  99,   0],
            [  0,   0,   0, ...,   0,   0, 100]], dtype=int16)
 
-    The second mandatory input parameter `X` is a 2D array with the
+    The second mandatory input parameter ``X`` is a 2D array with the
     row dimension determining the number of requested eigenvalues.
-    `X` is an initial guess for targeted eigenvectors.
-    `X` must have linearly independent columns.
+    ``X`` is an initial guess for targeted eigenvectors.
+    ``X`` must have linearly independent columns.
     If no initial approximations available, randomly oriented vectors
     commonly work best, e.g., with components normally distributed
     around zero or uniformly distributed on the interval [-1 1].
-    Setting the initial approximations to dtype ``np.float32``
-    forces all iterative values to dtype ``np.float32`` speeding up
+    Setting the initial approximations to dtype `np.float32`
+    forces all iterative values to dtype `np.float32` speeding up
     the run while still allowing accurate eigenvalue computations.
 
     >>> k = 1
@@ -330,8 +330,8 @@ def lobpcg(
     >>> eigenvalues.dtype
     dtype('float32')
 
-    LOBPCG needs only access the matrix product with `A` rather
-    then the matrix itself. Since the matrix `A` is diagonal in
+    LOBPCG needs only access the matrix product with ``A`` rather
+    then the matrix itself. Since the matrix ``A`` is diagonal in
     this example, one can write a function of the product
     ``A @ X`` using the diagonal values ``vals`` only, e.g., by
     element-wise multiplication with broadcasting
@@ -356,24 +356,24 @@ def lobpcg(
 
     >>> Y = np.eye(n, 3)
 
-    The preconditioner acts as the inverse of `A` in this example, but
-    in the reduced precision ``np.float32`` even though the initial `X`
-    and thus all iterates and the output are in full ``np.float64``
+    The preconditioner acts as the inverse of ``A`` in this example, but
+    in the reduced precision `np.float32` even though the initial ``X``
+    and thus all iterates and the output are in full `np.float64`.
 
     >>> inv_vals = 1./vals
     >>> inv_vals = inv_vals.astype(np.float32)
     >>> M = lambda X: inv_vals[:, np.newaxis] * X
 
-    Let us now solve the eigenvalue problem for the matrix `A` first
-    without preconditioning requesting 70 iterations
+    Let us now solve the eigenvalue problem for the matrix ``A`` first
+    without preconditioning requesting 80 iterations
 
-    >>> eigenvalues, _ = lobpcg(A_f, X, Y=Y, largest=False, maxiter=70)
+    >>> eigenvalues, _ = lobpcg(A_f, X, Y=Y, largest=False, maxiter=80)
     >>> eigenvalues
     array([4., 5., 6.])
     >>> eigenvalues.dtype
     dtype('float64')
 
-    With preconditioning we need only 20 iterations from the same `X`
+    With preconditioning we need only 20 iterations from the same ``X``
 
     >>> eigenvalues, _ = lobpcg(A_f, X, Y=Y, M=M, largest=False, maxiter=20)
     >>> eigenvalues
@@ -387,9 +387,11 @@ def lobpcg(
     the 3 smallest or largest eigenvalues.
 
     >>> vals = vals - 50
+    >>> X = rng.normal(size=(n, k))
     >>> eigenvalues, _ = lobpcg(A_f, X, largest=False, maxiter=99)
     >>> eigenvalues
     array([-49., -48., -47.])
+    >>> X = rng.normal(size=(n, k))
     >>> eigenvalues, _ = lobpcg(A_f, X, largest=True, maxiter=99)
     >>> eigenvalues
     array([50., 49., 48.])
