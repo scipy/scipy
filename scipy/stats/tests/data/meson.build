@@ -1,6 +1,6 @@
 py3.install_sources([
     'fisher_exact_results_from_r.py',
-    'relativistic_bw_pdf_sample_data_ROOT.npy',
+    'rel_breitwigner_pdf_sample_data_ROOT.npy',
     'studentized_range_mpmath_ref.json'
   ],
   subdir: 'scipy/stats/tests/data'

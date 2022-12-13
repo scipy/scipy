@@ -10271,7 +10271,7 @@ studentized_range = studentized_range_gen(name='studentized_range', a=0,
                                           b=np.inf)
 
 
-class relativistic_bw_gen(rv_continuous):
+class rel_breitwigner_gen(rv_continuous):
     r"""A relativistic Breit-Wigner random variable.
 
     %(before_notes)s
@@ -10283,7 +10283,7 @@ class relativistic_bw_gen(rv_continuous):
     Notes
     -----
 
-    The probability density function for `relativistic_bw` is
+    The probability density function for `rel_breitwigner` is
 
     .. math::
 
@@ -10303,7 +10303,7 @@ class relativistic_bw_gen(rv_continuous):
     parameter :math:`\rho` is equal to :math:`M_0/\Gamma`.
 
     Equivalently, the relativistic Breit-Wigner distribution is said to give
-    the uncertainty in the center-of-mass energy :math:`E_{\text{com}}`. In
+    the uncertainty in the center-of-mass energy :math:`E_{\text{cm}}`. In
     natural units, the speed of light :math:`c` is equal to 1 and the invariant
     mass :math:`M` is equal to the rest energy :math:`Mc^2`. In the
     center-of-mass frame, the rest energy is equal to the total energy [3]_.
@@ -10412,7 +10412,7 @@ class relativistic_bw_gen(rv_continuous):
         return super().fit(data, *args, **kwds)
 
 
-relativistic_bw = relativistic_bw_gen(a=0.0, name="relativistic_bw")
+rel_breitwigner = rel_breitwigner_gen(a=0.0, name="rel_breitwigner")
 
 
 # Collect names of classes and objects in this module.

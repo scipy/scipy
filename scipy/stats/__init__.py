@@ -131,7 +131,7 @@ Continuous distributions
    powernorm         -- Power normal
    rdist             -- R-distribution
    rayleigh          -- Rayleigh
-   relativistic_bw   -- Relativistic Breit-Wigner
+   rel_breitwigner   -- Relativistic Breit-Wigner
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular

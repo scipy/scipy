@@ -34,7 +34,7 @@ mle_failing_fits = [
         'ncx2',
         'pearson3',
         'powerlognorm',
-        'relativistic_bw',
+        'rel_breitwigner',
         'truncexpon',
         'truncpareto',
         'tukeylambda',
@@ -53,7 +53,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
-                   'relativistic_bw', 'skewcauchy', 't', 'trapezoid', 'triang',
+                   'rel_breitwigner', 'skewcauchy', 't', 'trapezoid', 'triang',
                    'truncpareto', 'truncweibull_min', 'tukeylambda',
                    'studentized_range']
 
@@ -182,7 +182,7 @@ def cases_test_fit_mle():
     # These fail default test or hang
     skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
                       'ksone', 'levy_stable', 'studentized_range', 'kstwo',
-                      'relativistic_bw'}
+                      'rel_breitwigner'}
     slow_basic_fit = {'burr12', 'johnsonsb', 'bradford', 'fisk', 'mielke',
                       'exponpow', 'rdist', 'norminvgauss', 'betaprime',
                       'powerlaw', 'pareto', 'johnsonsu', 'loglaplace',
@@ -225,7 +225,7 @@ def cases_test_fit_mse():
                       'gausshyper', 'genhyperbolic',  # integration warnings
                       'argus',  # close, but doesn't meet tolerance
                       'vonmises',  # can have negative CDF; doesn't play nice
-                      'relativistic_bw'}  # fit fails when loc not fixed
+                      'rel_breitwigner'}  # fit fails when loc not fixed
     slow_basic_fit = {'wald', 'genextreme', 'anglit', 'semicircular',
                       'kstwobign', 'arcsine', 'genlogistic', 'truncexpon',
                       'fisk', 'uniform', 'exponnorm', 'maxwell', 'lomax',

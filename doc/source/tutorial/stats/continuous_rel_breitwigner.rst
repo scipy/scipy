@@ -1,5 +1,5 @@
 
-.. _continuous-relativistic_bw:
+.. _continuous-rel_breitwigner:
 
 Relativistic Breit-Wigner Distribution
 ======================================
@@ -35,4 +35,4 @@ where
    k & = & \frac{2\sqrt{2}\rho^2\sqrt{\rho^2 + 1}}{\pi\sqrt{\rho^2 + \rho\sqrt{\rho^2 + 1}}}
    \end{eqnarray*}
 
-Implementation `scipy.stats.relativistic_bw`
+Implementation `scipy.stats.rel_breitwigner`

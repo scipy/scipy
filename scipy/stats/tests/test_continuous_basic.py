@@ -72,7 +72,7 @@ fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
                      'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                      'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
-                     'tukeylambda', 'invweibull', 'relativistic_bw']
+                     'tukeylambda', 'invweibull', 'rel_breitwigner']
                      + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
                         'nct', 'pareto', 'powernorm', 'powerlognorm']
                      + ['pearson3'])
@@ -118,7 +118,7 @@ fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                    'skewnorm', 't', 'truncweibull_min',
                    'tukeylambda', 'vonmises', 'vonmises_line',
                    'rv_histogram_instance', 'truncnorm', 'studentized_range',
-                   'relativistic_bw'])
+                   'rel_breitwigner'])
 
 # rv_histogram instances, with uniform and non-uniform bins;
 # stored as (dist, arg) tuples for cases_test_cont_basic

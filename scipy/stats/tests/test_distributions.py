@@ -7656,7 +7656,7 @@ class TestRelativisticBW:
         """
         data = np.load(
             Path(__file__).parent /
-            'data/relativistic_bw_pdf_sample_data_ROOT.npy'
+            'data/rel_breitwigner_pdf_sample_data_ROOT.npy'
         )
         data = np.core.records.fromarrays(data.T, names='x,pdf,rho,gamma')
         return data
@@ -7675,7 +7675,7 @@ class TestRelativisticBW:
         ]
         x, pdf = data['x'], data['pdf']
         assert_allclose(
-            pdf, stats.relativistic_bw.pdf(x, rho, scale=gamma), rtol=rtol
+            pdf, stats.rel_breitwigner.pdf(x, rho, scale=gamma), rtol=rtol
         )
 
     @pytest.mark.parametrize(
@@ -7694,17 +7694,17 @@ class TestRelativisticBW:
     def test_fit_floc(self, rho, gamma):
         """Tests fit for cases where floc is set.
 
-        `relativistic_bw` has special handling for these cases.
+        `rel_breitwigner` has special handling for these cases.
         """
-        seed = abs(hash("relativistic_bw"))
+        seed = 6936804688480013683
         rng = np.random.default_rng(seed)
-        data = stats.relativistic_bw.rvs(
+        data = stats.rel_breitwigner.rvs(
             rho, scale=gamma, size=1000, random_state=rng
         )
-        fit = stats.relativistic_bw.fit(data, floc=0)
+        fit = stats.rel_breitwigner.fit(data, floc=0)
         assert_allclose((fit[0], fit[2]), (rho, gamma), rtol=2e-1)
         assert fit[1] == 0
         # Check again with fscale set.
-        fit = stats.relativistic_bw.fit(data, floc=0, fscale=gamma)
+        fit = stats.rel_breitwigner.fit(data, floc=0, fscale=gamma)
         assert_allclose(fit[0], rho, rtol=1e-2)
         assert (fit[1], fit[2]) == (0, gamma)
