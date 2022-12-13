@@ -10339,14 +10339,15 @@ class rel_breitwigner_gen(rv_continuous):
         return [_ShapeInfo("rho", False, (0, np.inf), (False, False))]
 
     def _pdf(self, x, rho):
-        k = np.sqrt(
+        # C = k / rho**2
+        C = np.sqrt(
             2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
         ) * 2 / np.pi
-        return k / (((x**2 - rho**2)/rho)**2 + 1)
+        return C / (((x**2 - rho**2)/rho)**2 + 1)
 
     def _cdf(self, x, rho):
-        # Factor of 1/(2*rho) has been absorbed into the constant.
-        k = np.sqrt(
+        # C = k / (2 * rho**2)
+        C = np.sqrt(
                 2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
             ) / np.pi
         result = np.arctan(x/np.sqrt(-rho*(rho + 1j))) / np.sqrt(-1 - 1j/rho)
@@ -10360,25 +10361,24 @@ class rel_breitwigner_gen(rv_continuous):
             np.sqrt(-1 + 1j/rho),
             f2=lambda x_, result_: result.conjugate(),
         )
-        result = - k * 1j * result
+        result = - C * 1j * result
         return result if np.iscomplexobj(x) else np.real(result)
 
     def _munp(self, n, rho):
         if n == 1:
-            # Factor of 1/(2*rho) has been absorbed into the constant.
-            k = np.sqrt(
+            # C = k / (2 * rho)
+            C = np.sqrt(
                 2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
             ) / np.pi * rho
-            return k * (np.pi/2 + np.arctan(rho))
+            return C * (np.pi/2 + np.arctan(rho))
         if n == 2:
-            # Factor of pi/4 has been absorbed into the constant.
-            k = np.sqrt(
+            # C = pi * k / (4 * rho)
+            C = np.sqrt(
                 (1 + 1/rho**2) / (2 * (1 + np.sqrt(1 + 1/rho**2)))
             ) * rho
             result = (1 - rho * 1j) / np.sqrt(-1 - 1j/rho)
             result += result.conjugate()
-            result = k * result
-            return np.real(result)
+            return C * np.real(result)
         else:
             return np.inf
 
