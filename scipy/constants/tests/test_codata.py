@@ -44,7 +44,9 @@ def test_2002_vs_2006():
 
 def test_exact_values():
     # Check that updating stored values with exact ones worked.
-    exact = dict((k, v[0]) for k, v in _codata._physical_constants_2018.items())
+    exact = dict(
+        (k, v[0]) for k, v in _codata._physical_constants_2018.items()
+    )
     replace = _codata.exact2018(exact)
     for key, val in replace.items():
         assert_equal(val, _codata.value(key))
