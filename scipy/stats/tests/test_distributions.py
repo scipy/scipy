@@ -7678,6 +7678,26 @@ class TestRelativisticBW:
             pdf, stats.rel_breitwigner.pdf(x, rho, scale=gamma), rtol=rtol
         )
 
+    @pytest.mark.parametrize("rho, Gamma, rtol", [
+              (36.545206797050334, 2.4952, 5e-13),  # Z0 Boson
+              (38.55107913669065, 2.085, 5e-13),  # W Boson
+              (96292.3076923077, 0.0013, 5e-10),  # Higgs Boson
+          ]
+      )
+    def test_pdf_against_simple_implementation(self, rho, Gamma, rtol):
+        # reference implementation straight from formulas on Wikipedia [1]
+        def pdf(E, M, Gamma):
+            gamma = np.sqrt(M**2 * (M**2 + Gamma**2))
+            k = (2 * np.sqrt(2) * M * Gamma * gamma
+                 / (np.pi * np.sqrt(M**2 + gamma)))
+            return k / ((E**2 - M**2)**2 + M**2*Gamma**2)
+        # get reasonable values at which to evaluate the CDF
+        p = np.linspace(0.05, 0.95, 10)
+        x = stats.rel_breitwigner.ppf(p, rho, scale=Gamma)
+        res = stats.rel_breitwigner.pdf(x, rho, scale=Gamma)
+        ref = pdf(x, rho*Gamma, Gamma)
+        assert_allclose(res, ref, rtol=rtol)
+
     @pytest.mark.parametrize(
         "rho,gamma", [
             pytest.param(
