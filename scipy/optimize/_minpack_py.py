@@ -668,8 +668,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
           * None: no special handling of NaNs is performed
-          (except what is done by check_finite); the behavior when NaNs
-          are present is implementation-dependent and may change.
+            (except what is done by check_finite); the behavior when NaNs
+            are present is implementation-dependent and may change.
 
         Note that if this value is specified explicitly (not None),
         `check_finite` will be set as False.
