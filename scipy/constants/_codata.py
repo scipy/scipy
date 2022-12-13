@@ -1744,7 +1744,6 @@ for k, v in list(_aliases.items()):
     else:
         del _aliases[k]
 
-        
 # The following derived quantities are no longer included,
 # but sync values for backward compatibility
 mu0 = physical_constants['vacuum mag. permeability'][0]
