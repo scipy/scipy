@@ -58,7 +58,7 @@ import warnings
 from math import exp, pi, sqrt
 from scipy.special import lambertw
 
-from typing import Any
+from typing import Any, Callable
 
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
