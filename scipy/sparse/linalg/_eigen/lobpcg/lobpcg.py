@@ -164,8 +164,8 @@ def lobpcg(
         The Hermitian linear operator of the problem, usually given by a
         sparse matrix.  Often called the "stiffness matrix".
     X : ndarray, float32 or float64
-        Initial approximation to the ``k`` eigenvectors (non-sparse). If `A`
-        has ``shape=(n,n)`` then ``X`` must have ``shape=(n,k)``.
+        Initial approximation to the ``k`` eigenvectors (non-sparse).
+        If ``A`` has ``shape=(n,n)`` then ``X`` must have ``shape=(n,k)``.
     B : {sparse matrix, ndarray, LinearOperator, callable object}
         Optional. By default ``B = None``, which is equivalent to identity.
         The right hand side operator in a generalized eigenproblem if present.
@@ -176,8 +176,8 @@ def lobpcg(
     Y : ndarray, float32 or float64, optional
         By default ``Y = None``.
         An ``n-by-sizeY`` ndarray of constraints with ``sizeY < n``.
-        The iterations will be performed in the `B`-orthogonal complement
-        of the column-space of `Y`. `Y` must be full rank if present.
+        The iterations will be performed in the ``B``-orthogonal complement
+        of the column-space of ``Y``. ``Y`` must be full rank if present.
     tol : scalar, optional
         The default is ``tol=n*sqrt(eps)``.
         Solver tolerance for the stopping criterion.
@@ -207,9 +207,10 @@ def lobpcg(
     v : ndarray of the same shape as ``X.shape``.
         An array of ``k`` approximate eigenvectors.
     lambdaHistory : ndarray, optional.
-        The eigenvalue history, if `retLambdaHistory` is True.
+        The eigenvalue history, if ``retLambdaHistory`` is ``True``.
     ResidualNormsHistory : ndarray, optional.
-        The history of residual norms, if `retResidualNormsHistory` is True.
+        The history of residual norms, if ``retResidualNormsHistory``
+        is ``True``.
 
     Notes
     -----
@@ -220,8 +221,8 @@ def lobpcg(
     than the last one iterated, as a cure for possible divergence.
 
     If ``X.dtype == np.float32`` and user-provided operations/multiplications
-    by ``A``, ``B``, and ``M`` all presere the `np.float32` data type, all the
-    calculations and the output are in `np.float32`.
+    by ``A``, ``B``, and ``M`` all presere the ``np.float32`` data type,
+    all the calculations and the output are in ``np.float32``.
 
     The size of the iteration history output equals to the number of the best
     (limited by `maxit`) iterations plus 3: initial, final, and postprocessing.
@@ -315,8 +316,8 @@ def lobpcg(
     If no initial approximations available, randomly oriented vectors
     commonly work best, e.g., with components normally distributed
     around zero or uniformly distributed on the interval [-1 1].
-    Setting the initial approximations to dtype `np.float32`
-    forces all iterative values to dtype `np.float32` speeding up
+    Setting the initial approximations to dtype ``np.float32``
+    forces all iterative values to dtype ``np.float32`` speeding up
     the run while still allowing accurate eigenvalue computations.
 
     >>> k = 1
@@ -357,8 +358,8 @@ def lobpcg(
     >>> Y = np.eye(n, 3)
 
     The preconditioner acts as the inverse of ``A`` in this example, but
-    in the reduced precision `np.float32` even though the initial ``X``
-    and thus all iterates and the output are in full `np.float64`.
+    in the reduced precision ``np.float32`` even though the initial ``X``
+    and thus all iterates and the output are in full ``np.float64``.
 
     >>> inv_vals = 1./vals
     >>> inv_vals = inv_vals.astype(np.float32)
@@ -379,10 +380,10 @@ def lobpcg(
     >>> eigenvalues
     array([4., 5., 6.])
 
-    Note that the vectors passed in Y are the eigenvectors of the 3 smallest
+    Note that the vectors passed in ``Y`` are the eigenvectors of the 3 smallest
     eigenvalues. The results returned above are orthogonal to those.
 
-    Finally, the primary matrix `A` may be indefinite, e.g., after shifting
+    Finally, the primary matrix ``A`` may be indefinite, e.g., after shifting
     ``vals`` by 50 from 1, ..., 100 to -49, ..., 50, we still can compute
     the 3 smallest or largest eigenvalues.
 
