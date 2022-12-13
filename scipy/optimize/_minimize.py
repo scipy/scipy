@@ -515,7 +515,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     x0 = np.atleast_1d(np.asarray(x0))
 
     if x0.ndim != 1:
-        raise ValueError("'X0' must only have one dimension.")
+        raise ValueError("'x0' must only have one dimension.")
 
     if x0.dtype.kind in np.typecodes["AllInteger"]:
         x0 = np.asarray(x0, dtype=float)
