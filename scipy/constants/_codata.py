@@ -1719,7 +1719,6 @@ for k in _physical_constants_2018:
     if 'momentum' in k:
         _aliases[k] = k.replace('momentum', 'mom.um')
 
-        
 # CODATA 2018: renamed and no longer exact; use as aliases
 _aliases['mag. constant'] = 'vacuum mag. permeability'
 _aliases['electric constant'] = 'vacuum electric permittivity'
