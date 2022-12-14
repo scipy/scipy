@@ -13,7 +13,7 @@ from scipy.stats.sampling import NumericalInversePolynomial
 if TYPE_CHECKING:
     import numpy.typing as npt
     from scipy.stats._unuran.unuran_wrapper import PINVDist
-    from scipy._lib._util import IntNumber, SeedType
+    from scipy._lib._util import DecimalNumber, IntNumber, SeedType
 
 
 __all__ = [
@@ -151,9 +151,60 @@ def saltelli_2010(
 
 @dataclass
 class SobolResult:
-  first_order: np.ndarray
-  total_order: np.ndarray
-  bootstrap_result: BootstrapResult
+    first_order: np.ndarray
+    total_order: np.ndarray
+    _A: np.ndarray
+    _B: np.ndarray
+    _AB: np.ndarray
+    _f_A: np.ndarray
+    _f_B: np.ndarray
+    _f_AB: np.ndarray
+    _bootstrap_result: BootstrapResult = None
+
+    def bootstrap(
+        self,
+        confidence_level: DecimalNumber = 0.95,
+        n_resamples: IntNumber = 99
+    ) -> BootstrapResult:
+        """Bootstrap Sobol' indices to provide confidence intervals.
+
+        Parameters
+        ----------
+        confidence_level : float, default: ``0.95``
+            The confidence level of the confidence intervals.
+        n_resamples : int, default: ``99``
+            The number of resamples performed to form the bootstrap
+            distribution of the indices.
+
+        Returns
+        -------
+        res : BootstrapResult
+            Bootstrap result containing the confidence intervals and the
+            bootstrap distribution of the indices.
+
+        """
+        def statistic(idx):
+            f_A_ = self._f_A[idx]
+            f_B_ = self._f_B[idx]
+
+            n, d = self._A.shape
+            f_AB_ = np.empty((d, *f_A_.shape))
+            for i in range(d):
+                f_AB_[i] = self._f_AB[np.array(idx)+i*n]
+            f_AB_ = f_AB_.reshape(-1, f_A_.shape[1])
+
+            return saltelli_2010(f_A_, f_B_, f_AB_)
+
+        n = len(self._f_A)
+
+        self._bootstrap_result = bootstrap(
+            [np.arange(n)], statistic=statistic, method="BCa",
+            batch=int(n*0.7), n_resamples=n_resamples,
+            confidence_level=confidence_level,
+            bootstrap_result=self._bootstrap_result
+        )
+
+        return self._bootstrap_result
 
 
 def sobol_indices(
@@ -190,15 +241,18 @@ def sobol_indices(
         An object with attributes:
 
         first_order : ndarray
-            ...
+            First order Sobol' indices.
         total_order : ndarray
-            ...
-        bootstrap_result : BootstrapResult
-            An object providing confidence intervals on the indices.
+            Total order Sobol' indices.
+
+        And methods:
+
+        bootstrap(confidence_level: float, n_resamples: int) -> BootstrapResult
+            A method providing confidence intervals on the indices.
             See `scipy.stats.bootstrap` for more details.
 
             The bootstrapping is done on both first and total order indices
-            at the same time meaning both bootstrap is a concatenated array.
+            at the same time meaning the result is a concatenated array.
 
     Notes
     -----
@@ -250,7 +304,7 @@ def sobol_indices(
         S_{T_i} = S_i + \sum_j S_{ij} + \sum_{j,k} S_{ijk} + ...
         = 1 - \frac{\mathbb{V}[\mathbb{E}(Y|x_{\sim i})]}{\mathbb{V}[Y]}.
 
-    The total number of function calls is ``n+n+d*n=n(d+2)``.
+    First oder indices sum to 1, while total order indices go above 1.
 
     .. warning::
 
@@ -383,27 +437,15 @@ def sobol_indices(
 
     first_order, total_order = saltelli_2010(f_A, f_B, f_AB)
 
-    def saltelli_2010_(idx):
-        f_A_ = f_A[idx]
-        f_B_ = f_B[idx]
-
-        n, d = A.shape
-        f_AB_ = np.empty((d, *f_A_.shape))
-        for i in range(d):
-            f_AB_[i] = f_AB[np.array(idx)+i*n]
-        f_AB_ = f_AB_.reshape(-1, f_A_.shape[1])
-
-        return saltelli_2010(f_A_, f_B_, f_AB_)
-
-    bootstrap_result = bootstrap(
-        [np.arange(n)], saltelli_2010_, method="BCa",
-        batch=int(n*0.7), n_resamples=99
-    )
-
     res = SobolResult(
         first_order=first_order,
         total_order=total_order,
-        bootstrap_result=bootstrap_result
+        _A=A,
+        _B=B,
+        _AB=AB,
+        _f_A=f_A,
+        _f_B=f_B,
+        _f_AB=f_AB
     )
 
     return res
