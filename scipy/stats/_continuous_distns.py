@@ -10400,8 +10400,7 @@ class rel_breitwigner_gen(rv_continuous):
                 (1 + 1/rho**2) / (2 * (1 + np.sqrt(1 + 1/rho**2)))
             ) * rho
             result = (1 - rho * 1j) / np.sqrt(-1 - 1j/rho)
-            result += result.conjugate()
-            return C * np.real(result)
+            return 2 * C * np.real(result)
         else:
             return np.inf
 
