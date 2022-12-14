@@ -325,11 +325,13 @@ class SphericalVorAreas(Benchmark):
 
 
 class Xdist(Benchmark):
-    params = ([10, 100, 1000], ['euclidean', 'minkowski', 'cityblock',
-    'seuclidean', 'sqeuclidean', 'cosine', 'correlation', 'hamming', 'jaccard',
-    'jensenshannon', 'chebyshev', 'canberra', 'braycurtis', 'mahalanobis',
-    'yule', 'dice', 'kulsinski1', 'rogerstanimoto', 'russellrao',
-    'sokalmichener', 'sokalsneath', 'wminkowski', 'minkowski-P3'])
+    params = ([10, 100, 1000],
+              ['euclidean', 'minkowski', 'cityblock',
+               'seuclidean', 'sqeuclidean', 'cosine', 'correlation',
+               'hamming', 'jaccard', 'jensenshannon', 'chebyshev', 'canberra',
+               'braycurtis', 'mahalanobis', 'yule', 'dice', 'kulsinski1',
+               'rogerstanimoto', 'russellrao', 'sokalmichener', 'sokalsneath',
+               'wminkowski', 'minkowski-P3'])
     param_names = ['num_points', 'metric']
 
     def setup(self, num_points, metric):

@@ -400,18 +400,16 @@ class TestCdist:
         kwargs = {'N0tV4l1D_p4raM': 3.14, "w":np.arange(3)}
         args = [3.14] * 200
         for metric in _METRICS_NAMES:
-            assert_raises(TypeError, cdist, X1, X2,
-                            metric=metric, **kwargs)
-            assert_raises(TypeError, cdist, X1, X2,
-                            metric=eval(metric), **kwargs)
-            assert_raises(TypeError, cdist, X1, X2,
-                            metric="test_" + metric, **kwargs)
-            assert_raises(TypeError, cdist, X1, X2,
-                            metric=metric, *args)
-            assert_raises(TypeError, cdist, X1, X2,
-                            metric=eval(metric), *args)
-            assert_raises(TypeError, cdist, X1, X2,
-                            metric="test_" + metric, *args)
+            assert_raises(TypeError, cdist, X1, X2, metric=metric, **kwargs)
+            assert_raises(TypeError, cdist, X1, X2, metric=eval(metric),
+                          **kwargs)
+            assert_raises(TypeError, cdist, X1, X2, metric="test_" + metric,
+                          **kwargs)
+            assert_raises(TypeError, cdist, X1, X2, metric=metric, *args)
+            assert_raises(TypeError, cdist, X1, X2, metric=eval(metric),
+                          *args)
+            assert_raises(TypeError, cdist, X1, X2, metric="test_" + metric,
+                          *args)
 
         assert_raises(TypeError, cdist, X1, X2, _my_metric)
         assert_raises(TypeError, cdist, X1, X2, _my_metric, *args)
@@ -675,14 +673,13 @@ class TestPdist:
         args = [3.14] * 200
         for metric in _METRICS_NAMES:
             assert_raises(TypeError, pdist, X1, metric=metric, **kwargs)
-            assert_raises(TypeError, pdist, X1,
-                            metric=eval(metric), **kwargs)
-            assert_raises(TypeError, pdist, X1,
-                            metric="test_" + metric, **kwargs)
+            assert_raises(TypeError, pdist, X1, metric=eval(metric), **kwargs)
+            assert_raises(TypeError, pdist, X1, metric="test_" + metric,
+                          **kwargs)
             assert_raises(TypeError, pdist, X1, metric=metric, *args)
             assert_raises(TypeError, pdist, X1, metric=eval(metric), *args)
-            assert_raises(TypeError, pdist, X1,
-                            metric="test_" + metric, *args)
+            assert_raises(TypeError, pdist, X1, metric="test_" + metric,
+                          *args)
 
         assert_raises(TypeError, pdist, X1, _my_metric)
         assert_raises(TypeError, pdist, X1, _my_metric, *args)
