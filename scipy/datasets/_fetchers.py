@@ -71,7 +71,7 @@ def ascent():
     fname = fetch_data("ascent.dat")
     # Now we just need to load it with our standard Python tools.
     with open(fname, 'rb') as f:
-        ascent = array(pickle.load(f))
+        ascent = array(pickle.load(f), dtype='uint8')
     return ascent
 
 
