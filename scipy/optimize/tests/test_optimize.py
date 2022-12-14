@@ -1484,6 +1484,11 @@ class TestOptimizeSimple(CheckOptimize):
                 raise RuntimeError(
                     "Duplicate evaluations made by {}".format(method))
 
+    def test_ndim_error(self):
+        msg = "'x0' must only have one dimension."
+        with assert_raises(ValueError, match=msg):
+            optimize.minimize(lambda x: x, np.ones((2, 1)))
+
 
 @pytest.mark.parametrize(
     'method',
