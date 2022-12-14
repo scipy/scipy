@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
+from scipy.stats._resampling import BootstrapResult
 
 from scipy.stats import f_ishigami, sobol_indices, uniform
 
@@ -68,6 +69,18 @@ class TestSobolIndices:
 
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
         assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-2)
+
+        assert res._bootstrap_result is None
+        assert isinstance(res.bootstrap(), BootstrapResult)
+        assert isinstance(res._bootstrap_result, BootstrapResult)
+
+        assert res._bootstrap_result.confidence_interval.low.shape[0] == 2
+        assert res._bootstrap_result.confidence_interval.low[1].shape \
+               == res.first_order.shape
+
+        # call again to use previous results and change a param
+        assert isinstance(res.bootstrap(confidence_level=0.9), BootstrapResult)
+        assert isinstance(res._bootstrap_result, BootstrapResult)
 
     def test_raises(self):
 
