@@ -56,7 +56,7 @@ def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
 
 
 def sample_A_B(
-    n: int,
+    n: IntNumber,
     dists: List[PINVDist],
     random_state: SeedType = None
 ) -> Tuple[np.ndarray,  np.ndarray]:
@@ -159,13 +159,13 @@ class SobolResult:
     _f_A: np.ndarray
     _f_B: np.ndarray
     _f_AB: np.ndarray
-    _bootstrap_result: BootstrapResult = None
+    _bootstrap_result: BootstrapResult = None  # type: ignore[valid-type]
 
     def bootstrap(
         self,
         confidence_level: DecimalNumber = 0.95,
         n_resamples: IntNumber = 99
-    ) -> BootstrapResult:
+    ) -> BootstrapResult:  # type: ignore[valid-type]
         """Bootstrap Sobol' indices to provide confidence intervals.
 
         Parameters
