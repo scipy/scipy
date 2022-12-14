@@ -440,7 +440,9 @@ class LegacyDirective(Directive):
             self.content[0] = text+" "+self.content[0]
         except IndexError:
             # Content is empty; use the default text
-            source, lineno = self.state_machine.get_source_and_line(self.lineno)
+            source, lineno = self.state_machine.get_source_and_line(
+                self.lineno
+            )
             self.content.append(
                 text,
                 source=source,
@@ -459,6 +461,7 @@ class LegacyDirective(Directive):
         self.state.nested_parse(self.content, self.content_offset,
                                 admonition_node)
         return [admonition_node]
+
 
 def setup(app):
     app.add_directive("legacy", LegacyDirective)
