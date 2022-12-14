@@ -1140,36 +1140,55 @@ class LatinHypercube(QMCEngine):
        integration and visualization." Statistica Sinica, 1992.
     .. [8] B. Tang, "Orthogonal Array-Based Latin Hypercubes."
        Journal of the American Statistical Association, 1993.
+    .. [9] Susan K. Seaholm et al. "Latin hypercube sampling and the
+       sensitivity analysis of a Monte Carlo epidemic model".
+       Int J Biomed Comput, 23(1-2), 97–112,
+       :doi:`10.1016/0020-7101(88)90067-0`, 1988.
 
     Examples
     --------
-    Generate samples from a Latin hypercube generator.
+    In [9]_, a Latin Hypercube sampling strategy was used to sample a
+    parameter space to produce a sensitivity analysis on the parameters of
+    an epidemic model.
+
+    The epidemic model had 6 parameters representing 4 contact probabilities,
+    the probbility of illness and the probability of withdrawal.
+
+    They assumed uniform distributions for all parameters and generated 50
+    samples.
+
+    Using `scipy.stats.qmc.LatinHypercube` to replicate the protocol, the
+    first step is to create a sample in the unit hypercube:
 
     >>> from scipy.stats import qmc
+    >>> sampler = qmc.LatinHypercube(d=6)
+    >>> sample = sampler.random(n=50)
+
+    Then the sample can be scaled to the appropriate bounds:
+
+    >>> l_bounds = [0.000125, 0.01, 0.0025, 0.05, 0.47, 0.7]
+    >>> u_bounds = [0.000375, 0.03, 0.0075, 0.15, 0.87, 0.9]
+    >>> sample_scaled = qmc.scale(sample, l_bounds, u_bounds)
+
+    Then this sample was used to run the model and a polynomial response
+    surface was constructed. This allowed to produce a sensitivity
+    analysis.
+
+    In this experiment, they showed a 14 times reduction in the number of
+    samples required to have an error bellow 2% on their response surface.
+    Since the dimensionality of the problem is high (6), it is challenging to
+    cover the space. When numerical experiments are costly, QMC enables new
+    kind of analysis not possible otherwise.
+
+    Bellow are other examples showing alternative ways to construct LHS
+    with even better coverage of the space.
+
+    Using a base LHS as a baseline.
+
     >>> sampler = qmc.LatinHypercube(d=2)
     >>> sample = sampler.random(n=5)
-    >>> sample
-    array([[0.1545328 , 0.53664833],  # random
-           [0.84052691, 0.06474907],
-           [0.52177809, 0.93343721],
-           [0.68033825, 0.36265316],
-           [0.26544879, 0.61163943]])
-
-    Compute the quality of the sample using the discrepancy criterion.
-
     >>> qmc.discrepancy(sample)
     0.0196...  # random
-
-    Samples can be scaled to bounds.
-
-    >>> l_bounds = [0, 2]
-    >>> u_bounds = [10, 5]
-    >>> qmc.scale(sample, l_bounds, u_bounds)
-    array([[1.54532796, 3.609945  ],  # random
-           [8.40526909, 2.1942472 ],
-           [5.2177809 , 4.80031164],
-           [6.80338249, 3.08795949],
-           [2.65448791, 3.83491828]])
 
     Use the `optimization` keyword argument to produce a LHS with
     lower discrepancy at higher computational cost.
