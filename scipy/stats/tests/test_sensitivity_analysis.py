@@ -68,3 +68,23 @@ class TestSobolIndices:
 
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
         assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-2)
+
+    def test_raises(self):
+
+        message = r"Either of the methods `pdf` or `logpdf` must be specified"
+        with pytest.raises(ValueError, match=message):
+            sobol_indices(n=0, func=f_ishigami, dists="uniform")
+
+        with pytest.raises(ValueError, match=message):
+            sobol_indices(n=0, func=f_ishigami, dists=[lambda x: x])
+
+        message = r"The balance properties of Sobol'"
+        with pytest.raises(ValueError, match=message):
+            sobol_indices(n=7, func=f_ishigami, dists=[uniform()])
+
+        def func_wrong_shape_output(x):
+            return x.reshape(1, -1)
+
+        message = r"'func' output should have a shape"
+        with pytest.raises(ValueError, match=message):
+            sobol_indices(n=2, func=func_wrong_shape_output, dists=[uniform()])

@@ -426,12 +426,27 @@ def sobol_indices(
 
     """
     random_state = check_random_state(random_state)
+    n = int(n)
+    if not (n & (n - 1) == 0):
+        raise ValueError(
+            "The balance properties of Sobol' points require 'n' "
+            "to be a power of 2."
+        )
+
     A, B = sample_A_B(n=n, dists=dists, random_state=random_state)
     AB = sample_AB(A=A, B=B)
 
-    f_A = func(A)
-    f_B = func(B)
-    f_AB = func(AB)
+    # validate output shape of func. Makes 2 func evaluations
+    f_A_val = np.asarray(func(A[:2]))
+    if f_A_val.shape[0] != 2 or f_A_val.shape[1] < 1:
+        raise ValueError(
+            "'func' output should have a shape ``(-1, s)`` with ``s`` "
+            "the number of output."
+        )
+
+    f_A = np.asarray(func(A))
+    f_B = np.asarray(func(B))
+    f_AB = np.asarray(func(AB))
 
     # Y = (Y - Y.mean()) / Y.std()
 
