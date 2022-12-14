@@ -1483,7 +1483,7 @@ class TestOptimizeSimple(CheckOptimize):
             if np.array_equal(self.trace[i - 1], self.trace[i]):
                 raise RuntimeError(
                     "Duplicate evaluations made by {}".format(method))
-    
+
     def test_ndim_error(self):
         msg = "'x0' must only have one dimension."
         with assert_raises(ValueError, match=msg):

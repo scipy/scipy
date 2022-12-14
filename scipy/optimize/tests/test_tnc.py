@@ -128,7 +128,7 @@ class TestTnc:
         assert_equal(len(iterx), res.nit)
 
     def test_minimize_tnc1b(self):
-        x0, bnds = np.array([-2, 1]), ([-np.inf, None],[-1.5, None])
+        x0, bnds = np.array([-2, 1]), ([-np.inf, None], [-1.5, None])
         xopt = [1, 1]
         x = optimize.minimize(self.f1, x0, method='TNC',
                               bounds=bnds, options=self.opts).x
