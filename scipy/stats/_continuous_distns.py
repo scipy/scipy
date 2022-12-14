@@ -9243,6 +9243,11 @@ class vonmises_gen(rv_continuous):
             return stats.circmean(data)
 
         def find_kappa(data):
+            # kappa is the solution to
+            # r = I[1](kappa)/I[0](kappa)
+            #   = I[1](kappa) * exp(-kappa)/(I[0](kappa) * exp(-kappa))
+            #   = sc.i1e(kappa)/sc.i0e(kappa)
+            # where r = mean resultant length
             r = 1 - stats.circvar(data)
 
             def solve_for_kappa(kappa):

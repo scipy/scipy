@@ -211,9 +211,7 @@ def test_vonmises_fit_all(kappa):
     loc = 0.25*np.pi
     data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
     loc_fit, kappa_fit = stats.vonmises.fit(data)
-    loc_vector = np.array([np.cos(loc), np.sin(loc)])
-    loc_vector_fit = np.array([np.cos(loc_fit), np.sin(loc_fit)])
-    assert_allclose(loc_vector, loc_vector_fit, rtol=1e-2)
+    assert_allclose(loc_fit, loc, rtol=1e-2)
     assert_allclose(kappa, kappa_fit, rtol=1e-2)
 
 def test_vonmises_fit_shape():
