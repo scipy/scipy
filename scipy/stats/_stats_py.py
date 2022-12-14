@@ -8997,7 +8997,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
 
 QuantileTestResultBase = _make_tuple_bunch('QuantileTestResultBase',
-                                           ['statistic', 'pvalue'], [])
+                                           ['statistic1', 'statistic2', 'pvalue'], [])
 
 
 class QuantileTestResult(QuantileTestResultBase):
@@ -9015,8 +9015,8 @@ class QuantileTestResult(QuantileTestResultBase):
 
     """
 
-    def __init__(self, statistic, pvalue, alternative, x, p):
-        super().__init__(statistic, pvalue)
+    def __init__(self, statistic1, statistic2, pvalue, alternative, x, p):
+        super().__init__(statistic1, statistic2, pvalue)    
         self._alternative = alternative
         self._x = np.sort(x)
         self._p = p
@@ -9053,6 +9053,9 @@ class QuantileTestResult(QuantileTestResultBase):
         if confidence_level < 0 or confidence_level > 1:
             message = "`confidence_level` must be a number between 0 and 1."
             raise ValueError(message)
+
+        low_index = np.nan
+        high_index = np.nan
 
         if alternative == 'less':
             p = 1 - confidence_level
@@ -9226,12 +9229,24 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
     args = quantile_test_iv(x, q, p, alternative)
     x, q, p, qalternative, palternative = args
 
-    k = (x <= q).sum()
-    n = len(x)
-    res = binomtest(k, n, p, alternative=palternative)
+    k1 = (x <= q).sum() 
+    k2 = (x <  q).sum() 
 
-    return QuantileTestResult(res.statistic, res.pvalue,
-                              alternative=qalternative, x=x, p=p)
+    n = len(x)
+    bd = stats.binom(n, p)
+
+    if alternative == 'less':
+        # pvalue = P(Y>=T2)
+        pvalue = bd.sf(k2)
+    elif alternative == 'greater':
+        # pvalue = P(Y<=T1)
+        pvalue = bd.cdf(k1-1) # -1 because of the step-like definition of the CDF
+    elif alternative == 'two-sided':
+        # pvalue = 2*min(P(Y<=T1),P(Y>=T2))
+        pvalue = min(bd.cdf(k1-1), bd.sf(k2))
+
+    return QuantileTestResult(statistic1=k1, statistic2=k2, pvalue=pvalue,
+                              alternative=alternative, x=x, p=p)
 
 
 #####################################
