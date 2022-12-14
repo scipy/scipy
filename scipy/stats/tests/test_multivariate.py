@@ -3070,8 +3070,13 @@ class TestVonMises_Fisher:
                 assert_allclose(current_logpdf, all_logpdf[i, j])
 
     @pytest.mark.parametrize("dim", [2, 3, 6])
-    @pytest.mark.parametrize("kappa", np.logspace(-1, 6, 8))
-    def test_fit_accuracy(self, dim, kappa):
+    @pytest.mark.parametrize("kappa, mu_tol, kappa_tol",
+                             [(0.1, 8e-2, 5e-2),
+                              (1, 5e-2, 5e-2),
+                              (10, 1e-2, 1e-2),
+                              (100, 5e-3, 2e-2),
+                              (1000, 1e-3, 2e-2)])
+    def test_fit_accuracy(self, dim, kappa, mu_tol, kappa_tol):
         mu = np.full((dim, ), 1/np.sqrt(dim))
         vmf_dist = vonmises_fisher(mu, kappa)
         rng = np.random.default_rng(2777937887058094419)
@@ -3081,8 +3086,9 @@ class TestVonMises_Fisher:
             n_samples = (100, 100)
         samples = vmf_dist.rvs(n_samples, random_state=rng)
         mu_fit, kappa_fit = vonmises_fisher.fit(samples)
-        assert_allclose(mu, mu_fit, rtol=1e-1)
-        assert_allclose(kappa, kappa_fit, rtol=5e-2)
+        angular_error = np.arccos(mu.dot(mu_fit))
+        assert_allclose(angular_error, 0., atol=mu_tol, rtol=0)
+        assert_allclose(kappa, kappa_fit, rtol=kappa_tol)
 
     def test_fit_error_one_dimensional_data(self):
         x = np.zeros((3, ))
