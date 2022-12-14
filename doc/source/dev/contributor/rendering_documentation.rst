@@ -286,6 +286,32 @@ the use of a seed in their program. The consequence is that users cannot
 reproduce the results of the example exactly, so examples using random data
 should not refer to precise numerical values based on random data or rely on
 them to make their point.
+Legacy directive
+~~~~~~~~~~~~~~~~
+
+If a function, module or API is in *legacy* mode, meaning that it is kept around
+for backwards compatibility reasons, but is not recommended to use in new code,
+you can use the ``.. legacy::`` directive.
+
+By default, if used with no arguments, the legacy directive will generate the
+following output:
+
+.. legacy::
+
+
+If you need to include a custom message, such as a new API to replace the old
+one, this message will be appended to the default message::
+
+   .. legacy::
+
+      New code should use :mod:`scipy.fft`.
+
+will create the following output:
+
+.. legacy::
+
+   New code should use :mod:`scipy.fft`.
+
 
 .. _GitHub: https://github.com/
 .. _CircleCI: https://circleci.com/vcs-authorize/
