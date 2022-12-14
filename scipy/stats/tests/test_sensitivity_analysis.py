@@ -44,7 +44,7 @@ class TestSobolIndices:
 
     @pytest.mark.parametrize(
         'func',
-        [f_ishigami, f_ishigami_vec],
+        [f_ishigami, pytest.param(f_ishigami_vec, marks=pytest.mark.slow)],
         ids=['scalar', 'vector']
     )
     def test_ishigami(self, ishigami_ref_indices, func):
