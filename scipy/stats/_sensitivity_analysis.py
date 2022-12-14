@@ -203,7 +203,7 @@ def sobol_indices(
     Notes
     -----
     Variance-based Sensitivity Analysis allows obtaining the contribution of
-    theparameters on the quantity of interest’s (QoI) variance. Sobol'
+    the parameters on the quantity of interest’s (QoI) variance. Sobol'
     method [1]_, [2]_, gives not only a ranking but also quantifies the
     importance factor using the variance.
 
@@ -250,10 +250,7 @@ def sobol_indices(
         S_{T_i} = S_i + \sum_j S_{ij} + \sum_{j,k} S_{ijk} + ...
         = 1 - \frac{\mathbb{V}[\mathbb{E}(Y|x_{\sim i})]}{\mathbb{V}[Y]}.
 
-    The total number of function call is ``n+n+d*n=n(d+2)``.
-    Three matrices are required for the computation of
-    the indices: A, B and a permutation matrix AB based
-    on both A and B.
+    The total number of function calls is ``n+n+d*n=n(d+2)``.
 
     .. warning::
 
@@ -297,7 +294,7 @@ def sobol_indices(
 
     >>> import numpy as  np
     >>> from scipy.stats import f_ishigami, sobol_indices, uniform
-    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+    >>> rng = np.random.default_rng()
     >>> indices = sobol_indices(
     ...     func=f_ishigami, n=1024,
     ...     dists=[
@@ -313,7 +310,7 @@ def sobol_indices(
 
     .. note::
 
-        In the standard form, the distribution is uniform on ``[0, 1]``.
+        By default, `scipy.stats.uniform` has support ``[0, 1]``.
         Using the parameters ``loc`` and ``scale``, one obtains the uniform
         distribution on ``[loc, loc + scale]``.
 
@@ -341,7 +338,6 @@ def sobol_indices(
     the number of input parameters increases such analysis becomes unrealistic
     as it would be difficult to conclude on high-order terms.
 
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import f_ishigami, qmc
     >>> n_dim = 3
@@ -396,11 +392,6 @@ def sobol_indices(
         for i in range(d):
             f_AB_[i] = f_AB[np.array(idx)+i*n]
         f_AB_ = f_AB_.reshape(-1, f_A_.shape[1])
-
-        # A_ = A[idx]
-        # B_ = B[idx]
-        # AB_ = sample_AB(A=A_, B=B_)
-        # f_AB_ = func(AB_)
 
         return saltelli_2010(f_A_, f_B_, f_AB_)
 
