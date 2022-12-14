@@ -10373,17 +10373,19 @@ class rel_breitwigner_gen(rv_continuous):
         # subtracted being the complex conjugate of the first. This is not the
         # case for complex entries of x with nonzero imaginary part which
         # are supported to allow complex-step derivatives following gh-4979.
-        result = _lazywhere(
-            np.iscomplex(x),
-            (x, result),
-            lambda x_, result_: -1j * (
-                result_ -
-                np.arctan(x/np.sqrt(-rho*(rho - 1j))) / np.sqrt(-1 + 1j/rho)
+        if np.iscomplexobj(x):
+            result = _lazywhere(
+                np.iscomplex(x),
+                (x, ),
+                lambda x_: -1j * (
+                    result -
+                    np.arctan(x/np.sqrt(-rho*(rho - 1j))) / np.sqrt(-1 + 1j/rho)
                 ),
-            f2=lambda x_, result_: 2 * np.imag(result_)
-        )
-        result *= C
-        return result if np.iscomplexobj(x) else np.real(result)
+                f2=lambda x_: 2 * np.imag(result) + 0j
+            )
+        else:
+            result = 2 * np.imag(result)
+        return C * result
 
     def _munp(self, n, rho):
         if n == 1:
