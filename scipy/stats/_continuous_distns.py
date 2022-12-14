@@ -10406,6 +10406,8 @@ class rel_breitwigner_gen(rv_continuous):
 
     def _stats(self, rho):
         # Returning None from stats makes public stats use _munp.
+        # nan values will be omitted from public stats. Skew and
+        # kurtosis are actually infinite.
         return None, None, np.nan, np.nan
 
     @inherit_docstring_from(rv_continuous)
