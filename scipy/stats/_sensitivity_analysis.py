@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, make_dataclass
+from dataclasses import dataclass
 from typing import Callable, List, TYPE_CHECKING, Tuple
 
 import numpy as np
@@ -339,7 +339,7 @@ def sobol_indices(
     as it would be difficult to conclude on high-order terms.
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.stats import f_ishigami, qmc
+    >>> from scipy.stats import qmc
     >>> n_dim = 3
     >>> p_labels = ['$x_1$', '$x_2$', '$x_3$']
     >>> sample = qmc.Sobol(d=n_dim).random(1024)
