@@ -10379,7 +10379,9 @@ class rel_breitwigner_gen(rv_continuous):
                 (x, ),
                 lambda x_: -1j * (
                     result -
-                    np.arctan(x/np.sqrt(-rho*(rho - 1j))) / np.sqrt(-1 + 1j/rho)
+                    np.arctan(
+                        x/np.sqrt(-rho*(rho - 1j))
+                    ) / np.sqrt(-1 + 1j/rho)
                 ),
                 f2=lambda x_: 2 * np.imag(result) + 0j
             )
