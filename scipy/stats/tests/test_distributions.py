@@ -206,6 +206,7 @@ def test_vonmises_expect():
     assert_allclose(np.angle(res), loc % (2*np.pi))
     assert np.issubdtype(res.dtype, np.complexfloating)
 
+
 @pytest.mark.parametrize('kappa', [1, 10, 100, 1000])
 def test_vonmises_fit_all(kappa):
     rng = np.random.default_rng(6762668991392531563)
@@ -214,6 +215,7 @@ def test_vonmises_fit_all(kappa):
     loc_fit, kappa_fit = stats.vonmises.fit(data)
     assert_allclose(loc_fit, loc, rtol=1e-2)
     assert_allclose(kappa, kappa_fit, rtol=1e-2)
+
 
 def test_vonmises_fit_shape():
     rng = np.random.default_rng(6762668991392531563)
