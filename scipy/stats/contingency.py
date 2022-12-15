@@ -267,7 +267,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     >>> import numpy as np
     >>> from scipy.stats import chi2_contingency
     >>> table = np.array([[179, 230], [21032, 21018]])
-    >>> res = chi2_contingency(obs)
+    >>> res = chi2_contingency(table)
     >>> res.statistic
     6.084250213339923
     >>> res.pvalue
