@@ -1148,8 +1148,15 @@ class LatinHypercube(QMCEngine):
     Examples
     --------
     In [9]_, a Latin Hypercube sampling strategy was used to sample a
-    parameter space to perform sensitivity analysis on the parameters of
-    an epidemic model.
+    parameter space to study the importance of each parameter of an epidemic
+    model. Such analysis is also called a sensitivity analysis.
+
+    In this computer experiment, they showed a 14 times reduction in the number
+    of samples required to maintain an error below 2% on their response surface
+    when compared to a grid sampling.
+    Since the dimensionality of the problem is high (6), it is computationally
+    expensive to cover the space. When numerical experiments are costly,
+    QMC enables analysis not possible otherwise if using a grid.
 
     The six parameters of the model represented the probability of illness, 
     the probability of withdrawal, and four contact probabilities,
@@ -1169,16 +1176,10 @@ class LatinHypercube(QMCEngine):
     >>> u_bounds = [0.000375, 0.03, 0.0075, 0.15, 0.87, 0.9]
     >>> sample_scaled = qmc.scale(sample, l_bounds, u_bounds)
 
-    Then this sample was used to run the model and a polynomial response
-    surface was constructed. This allowed the authors to study the
+    Then this sample was used to run 50 times the model and a polynomial
+    response surface was constructed. This allowed the authors to study the
     relative importance of each parameter across the range of
     possibilities of every other parameter.
-
-    In this experiment, they showed a 14 times reduction in the number of
-    samples required to have an error below 2% on their response surface.
-    Since the dimensionality of the problem is high (6), it is challenging to
-    cover the space. When numerical experiments are costly, QMC enables new
-    kind of analysis not possible otherwise.
 
     Below are other examples showing alternative ways to construct LHS
     with even better coverage of the space.
