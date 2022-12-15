@@ -9238,6 +9238,9 @@ class vonmises_gen(rv_continuous):
 
         data, fshape, floc, fscale = _check_fit_input_parameters(self, data,
                                                                  args, kwds)
+        if self.a == -np.pi:
+            # vonmises line case, here the default fit method will be used
+            return super().fit(data, *args, **kwds)
 
         def find_mu(data):
             return stats.circmean(data)
@@ -9254,12 +9257,8 @@ class vonmises_gen(rv_continuous):
                 return sc.i1e(kappa)/sc.i0e(kappa) - r
 
             root_res = root_scalar(solve_for_kappa, method="brentq",
-                                   bracket=(1e-8, 1e9))
-            if root_res.converged:
-                kappa = root_res.root
-                return kappa
-            else:
-                raise FitSolverError("Shape parameter could not be estimated.")
+                                   bracket=(1e-8, 1e12))
+            return root_res.root
 
         if floc is None:
             floc = find_mu(data)
