@@ -329,7 +329,7 @@ class Xdist(Benchmark):
               ['euclidean', 'minkowski', 'cityblock',
                'seuclidean', 'sqeuclidean', 'cosine', 'correlation',
                'hamming', 'jaccard', 'jensenshannon', 'chebyshev', 'canberra',
-               'braycurtis', 'mahalanobis', 'yule', 'dice', 'kulsinski1',
+               'braycurtis', 'mahalanobis', 'yule', 'dice', 'kulczynski1',
                'rogerstanimoto', 'russellrao', 'sokalmichener', 'sokalsneath',
                'wminkowski', 'minkowski-P3'])
     param_names = ['num_points', 'metric']
@@ -366,7 +366,7 @@ class XdistWeighted(Benchmark):
         [10, 20, 100],
         ['euclidean', 'minkowski', 'cityblock', 'sqeuclidean', 'cosine',
          'correlation', 'hamming', 'jaccard', 'chebyshev', 'canberra',
-         'braycurtis', 'yule', 'dice', 'kulsinski1', 'rogerstanimoto',
+         'braycurtis', 'yule', 'dice', 'kulczynski1', 'rogerstanimoto',
          'russellrao', 'sokalmichener', 'sokalsneath', 'minkowski-P3'])
     param_names = ['num_points', 'metric']
 
