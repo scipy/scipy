@@ -141,6 +141,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import lsmr
     >>> A = csc_matrix([[1., 0.], [1., 1.], [0., 1.]], dtype=float)
@@ -302,7 +303,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         return x, istop, itn, normr, normar, normA, condA, normx
 
     if normb == 0:
-        x = b
+        x[()] = 0
         return x, istop, itn, normr, normar, normA, condA, normx
 
     if show:

@@ -92,6 +92,8 @@ def test_warning_calls_filters(warning_calls):
     # SciPy correctly. So we list exceptions here.  Add new entries only if
     # there's a good reason.
     allowed_filters = (
+        os.path.join('datasets', '_fetchers.py'),
+        os.path.join('datasets', '__init__.py'),
         os.path.join('optimize', '_optimize.py'),
         os.path.join('sparse', '__init__.py'),  # np.matrix pending-deprecation
         os.path.join('stats', '_discrete_distns.py'),  # gh-14901

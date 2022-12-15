@@ -1,6 +1,5 @@
 py3.install_sources([
     '__init__.py',
-    'demo_lgmres.py',
     'test_gcrotmk.py',
     'test_iterative.py',
     'test_lgmres.py',
@@ -9,6 +8,5 @@ py3.install_sources([
     'test_minres.py',
     'test_utils.py'
   ],
-  pure: false,
   subdir: 'scipy/sparse/linalg/_isolve/tests'
 )

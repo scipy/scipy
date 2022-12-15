@@ -2,7 +2,7 @@ from os.path import join
 
 
 def configuration(parent_package='',top_path=None):
-    from scipy._build_utils.system_info import get_info
+    from numpy.distutils.system_info import get_info
     from numpy.distutils.misc_util import Configuration
     from scipy._build_utils import (get_g77_abi_wrappers,
                                     gfortran_legacy_flag_hook,

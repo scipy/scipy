@@ -47,7 +47,8 @@ To run the job with verbose logging, push in the following command::
 
   act -v
 
-To reuse the containers in `act` to maintain state, push in the following command::
+To reuse the containers in ``act`` to maintain state, push in the following
+command::
 
   act -j <JOB_NAME> --bind --reuse
 
@@ -59,7 +60,7 @@ pushing the following command::
 
   act --secret-file my.secrets
 
-If the environment variables are supplied via `.env` file, use the following
+If the environment variables are supplied via ``.env`` file, use the following
 command::
 
   act --env-file my.env

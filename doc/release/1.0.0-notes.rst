@@ -378,7 +378,7 @@ Name - (accessing/setting has been removed) - (setting has been removed)
 ``signal.freqz(b, a)`` with ``b`` or ``a`` >1-D raises a ``ValueError``.  This
 was a corner case for which it was unclear that the behavior was well-defined.
 
-The method ``var`` of `scipy.stats.dirichlet` now returns a scalar rather than
+The method ``var`` of ``scipy.stats.dirichlet`` now returns a scalar rather than
 an ndarray when the length of alpha is 1.
 
 

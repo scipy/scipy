@@ -95,6 +95,7 @@ def binned_statistic(x, values, statistic='mean',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -361,6 +362,17 @@ BinnedStatisticddResult = namedtuple('BinnedStatisticddResult',
                                       'binnumber'))
 
 
+def _bincount(x, weights):
+    if np.iscomplexobj(weights):
+        a = np.bincount(x, np.real(weights))
+        b = np.bincount(x, np.imag(weights))
+        z = a + b*1j
+
+    else:
+        z = np.bincount(x, weights)
+    return z
+
+
 def binned_statistic_dd(sample, values, statistic='mean',
                         bins=10, range=None, expand_binnumbers=False,
                         binned_statistic_result=None):
@@ -474,6 +486,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.mplot3d import Axes3D
@@ -554,7 +567,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     Vdim, Vlen = values.shape
 
     # Make sure `values` match `sample`
-    if(statistic != 'count' and Vlen != Dlen):
+    if statistic != 'count' and Vlen != Dlen:
         raise AttributeError('The number of `values` elements must match the '
                              'length of each `sample` dimension.')
 
@@ -576,36 +589,42 @@ def binned_statistic_dd(sample, values, statistic='mean',
         dedges = [np.diff(edges[i]) for i in builtins.range(Ndim)]
         binnumbers = binned_statistic_result.binnumber
 
-    result = np.empty([Vdim, nbin.prod()], float)
+    # Avoid overflow with double precision. Complex `values` -> `complex128`.
+    result_type = np.result_type(values, np.float64)
+    result = np.empty([Vdim, nbin.prod()], dtype=result_type)
 
-    if statistic == 'mean':
+    if statistic in {'mean', np.mean}:
         result.fill(np.nan)
-        flatcount = np.bincount(binnumbers, None)
+        flatcount = _bincount(binnumbers, None)
         a = flatcount.nonzero()
         for vv in builtins.range(Vdim):
-            flatsum = np.bincount(binnumbers, values[vv])
+            flatsum = _bincount(binnumbers, values[vv])
             result[vv, a] = flatsum[a] / flatcount[a]
-    elif statistic == 'std':
+    elif statistic in {'std', np.std}:
         result.fill(np.nan)
-        flatcount = np.bincount(binnumbers, None)
+        flatcount = _bincount(binnumbers, None)
         a = flatcount.nonzero()
         for vv in builtins.range(Vdim):
-            flatsum = np.bincount(binnumbers, values[vv])
+            flatsum = _bincount(binnumbers, values[vv])
             delta = values[vv] - flatsum[binnumbers] / flatcount[binnumbers]
-            std = np.sqrt(np.bincount(binnumbers, delta**2)[a] / flatcount[a])
+            std = np.sqrt(
+                _bincount(binnumbers, delta*np.conj(delta))[a] / flatcount[a]
+            )
             result[vv, a] = std
+        result = np.real(result)
     elif statistic == 'count':
+        result = np.empty([Vdim, nbin.prod()], dtype=np.float64)
         result.fill(0)
-        flatcount = np.bincount(binnumbers, None)
+        flatcount = _bincount(binnumbers, None)
         a = np.arange(len(flatcount))
         result[:, a] = flatcount[np.newaxis, :]
-    elif statistic == 'sum':
+    elif statistic in {'sum', np.sum}:
         result.fill(0)
         for vv in builtins.range(Vdim):
-            flatsum = np.bincount(binnumbers, values[vv])
+            flatsum = _bincount(binnumbers, values[vv])
             a = np.arange(len(flatsum))
             result[vv, a] = flatsum
-    elif statistic == 'median':
+    elif statistic in {'median', np.median}:
         result.fill(np.nan)
         for vv in builtins.range(Vdim):
             i = np.lexsort((values[vv], binnumbers))
@@ -616,12 +635,12 @@ def binned_statistic_dd(sample, values, statistic='mean',
             mid_b = values[vv, i][np.ceil(mid).astype(int)]
             medians = (mid_a + mid_b) / 2
             result[vv, binnumbers[i][j]] = medians
-    elif statistic == 'min':
+    elif statistic in {'min', np.min}:
         result.fill(np.nan)
         for vv in builtins.range(Vdim):
             i = np.argsort(values[vv])[::-1]  # Reversed so the min is last
             result[vv, binnumbers[i]] = values[vv, i]
-    elif statistic == 'max':
+    elif statistic in {'max', np.max}:
         result.fill(np.nan)
         for vv in builtins.range(Vdim):
             i = np.argsort(values[vv])
@@ -633,8 +652,18 @@ def binned_statistic_dd(sample, values, statistic='mean',
                 null = statistic([])
             except Exception:
                 null = np.nan
+        if np.iscomplexobj(null):
+            result = result.astype(np.complex128)
         result.fill(null)
-        _calc_binned_statistic(Vdim, binnumbers, result, values, statistic)
+        try:
+            _calc_binned_statistic(
+                Vdim, binnumbers, result, values, statistic
+            )
+        except ValueError:
+            result = result.astype(np.complex128)
+            _calc_binned_statistic(
+                Vdim, binnumbers, result, values, statistic
+            )
 
     # Shape into a proper matrix
     result = result.reshape(np.append(Vdim, nbin))
@@ -644,7 +673,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     result = result[core]
 
     # Unravel binnumbers into an ndarray, each row the bins for each dimension
-    if(expand_binnumbers and Ndim > 1):
+    if expand_binnumbers and Ndim > 1:
         binnumbers = np.asarray(np.unravel_index(binnumbers, nbin))
 
     if np.any(result.shape[1:] != nbin - 2):
@@ -662,7 +691,10 @@ def _calc_binned_statistic(Vdim, bin_numbers, result, values, stat_func):
         bin_map = _create_binned_data(bin_numbers, unique_bin_numbers,
                                       values, vv)
         for i in unique_bin_numbers:
-            result[vv, i] = stat_func(np.array(bin_map[i]))
+            stat = stat_func(np.array(bin_map[i]))
+            if np.iscomplexobj(stat) and not np.iscomplexobj(result):
+                raise ValueError("The statistic function returns complex ")
+            result[vv, i] = stat
 
 
 def _create_binned_data(bin_numbers, unique_bin_numbers, values, vv):

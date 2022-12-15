@@ -119,7 +119,7 @@ class FuncData:
         Whether to ignore signs of infinities.
         (Doesn't matter for complex-valued functions.)
     distinguish_nan_and_inf : bool, optional
-        If True, treat numbers which contain nans or infs as as
+        If True, treat numbers which contain nans or infs as
         equal. Sets ignore_inf_sign to be True.
 
     """

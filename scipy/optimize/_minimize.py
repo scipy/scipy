@@ -54,7 +54,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
             ``fun(x, *args) -> float``
 
-        where ``x`` is an 1-D array with shape (n,) and ``args``
+        where ``x`` is a 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
     x0 : ndarray, shape (n,)
@@ -80,8 +80,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'trust-ncg'   :ref:`(see here) <optimize.minimize-trustncg>`
             - 'trust-exact' :ref:`(see here) <optimize.minimize-trustexact>`
             - 'trust-krylov' :ref:`(see here) <optimize.minimize-trustkrylov>`
-            - custom - a callable object (added in version 0.14.0),
-              see below for description.
+            - custom - a callable object, see below for description.
 
         If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
         depending on whether or not the problem has constraints or bounds.
@@ -178,12 +177,14 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         equal to `tol`. For detailed control, use solver-specific
         options.
     options : dict, optional
-        A dictionary of solver options. All methods accept the following
-        generic options:
+        A dictionary of solver options. All methods except `TNC` accept the
+        following generic options:
 
             maxiter : int
                 Maximum number of iterations to perform. Depending on the
                 method each iteration may use several function evaluations.
+
+                For `TNC` use `maxfun` instead of `maxiter`.
             disp : bool
                 Set to True to print convergence messages.
 
@@ -399,8 +400,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     expand in future versions and then these parameters will be passed to
     the method.  You can find an example in the scipy.optimize tutorial.
 
-    .. versionadded:: 0.11.0
-
     References
     ----------
     .. [1] Nelder, J A, and R Mead. 1965. A Simplex Method for Function
@@ -516,11 +515,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     x0 = np.atleast_1d(np.asarray(x0))
 
     if x0.ndim != 1:
-        message = ('Use of `minimize` with `x0.ndim != 1` is deprecated. '
-                   'Currently, singleton dimensions will be removed from '
-                   '`x0`, but an error will be raised in SciPy 1.11.0.')
-        warn(message, DeprecationWarning, stacklevel=2)
-        x0 = np.squeeze(x0)
+        raise ValueError("'x0' must only have one dimension.")
 
     if x0.dtype.kind in np.typecodes["AllInteger"]:
         x0 = np.asarray(x0, dtype=float)
@@ -555,20 +550,18 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not use Hessian information (hess).' % method,
              RuntimeWarning)
     # - hessp
-    if meth not in ('newton-cg', 'dogleg', 'trust-ncg', 'trust-constr',
+    if meth not in ('newton-cg', 'trust-ncg', 'trust-constr',
                     'trust-krylov', '_custom') \
        and hessp is not None:
         warn('Method %s does not use Hessian-vector product '
              'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
-    if (meth in ('cg', 'bfgs', 'newton-cg', 'dogleg', 'trust-ncg')
-            and (bounds is not None or np.any(constraints))):
-        warn('Method %s cannot handle constraints nor bounds.' % method,
-             RuntimeWarning)
-    if meth in ('nelder-mead', 'l-bfgs-b', 'tnc', 'powell') and np.any(constraints):
+    if (meth not in ('cobyla', 'slsqp', 'trust-constr', '_custom') and
+            np.any(constraints)):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
-    if meth == 'cobyla' and bounds is not None:
+    if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'tnc', 'slsqp',
+                    'trust-constr', '_custom') and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - return_all
@@ -800,17 +793,17 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     'method' parameter. The default method is *Brent*.
 
     Method :ref:`Brent <optimize.minimize_scalar-brent>` uses Brent's
-    algorithm to find a local minimum.  The algorithm uses inverse
+    algorithm [1]_ to find a local minimum.  The algorithm uses inverse
     parabolic interpolation when possible to speed up convergence of
     the golden section method.
 
     Method :ref:`Golden <optimize.minimize_scalar-golden>` uses the
-    golden section search technique. It uses analog of the bisection
+    golden section search technique [1]_. It uses analog of the bisection
     method to decrease the bracketed interval. It is usually
     preferable to use the *Brent* method.
 
     Method :ref:`Bounded <optimize.minimize_scalar-bounded>` can
-    perform bounded minimization. It uses the Brent method to find a
+    perform bounded minimization [2]_ [3]_. It uses the Brent method to find a
     local minimum in the interval x1 < xopt < x2.
 
     **Custom minimizers**
@@ -832,6 +825,16 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     .. versionadded:: 0.11.0
 
+    References
+    ----------
+    .. [1] Press, W., S.A. Teukolsky, W.T. Vetterling, and B.P. Flannery.
+           Numerical Recipes in C. Cambridge University Press.
+    .. [2] Forsythe, G.E., M. A. Malcolm, and C. B. Moler. "Computer Methods
+           for Mathematical Computations." Prentice-Hall Series in Automatic
+           Computation 259 (1977).
+    .. [3] Brent, Richard P. Algorithms for Minimization Without Derivatives.
+           Courier Corporation, 2013.
+
     Examples
     --------
     Consider the problem of minimizing the following function.
@@ -843,6 +846,11 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     >>> from scipy.optimize import minimize_scalar
     >>> res = minimize_scalar(f)
+    >>> res.fun
+    -9.9149495908
+
+    The minimizer is:
+
     >>> res.x
     1.28077640403
 
@@ -850,7 +858,9 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     bounds as:
 
     >>> res = minimize_scalar(f, bounds=(-3, -1), method='bounded')
-    >>> res.x
+    >>> res.fun  # minimum
+    3.28365179850e-13
+    >>> res.x  # minimizer
     -2.0000002026
 
     """

@@ -4,6 +4,7 @@ python_sources = [
   '_basic.py',
   '_debug_backends.py',
   '_fftlog.py',
+  '_fftlog_multimethods.py',
   '_helper.py',
   '_realtransforms.py'
 ]
@@ -11,8 +12,7 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,         # Will be installed next to binaries
-  subdir: 'scipy/fft'  # Folder relative to site-packages to install to
+  subdir: 'scipy/fft'
 )
 
 subdir('_pocketfft')

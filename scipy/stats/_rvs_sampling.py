@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from ._unuran import unuran_wrapper
-from scipy._lib.deprecation import _deprecated
 from scipy._lib._util import check_random_state
 
 
@@ -101,6 +99,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
 
@@ -171,25 +170,3 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
         i += 1
 
     return np.reshape(x, size1d)
-
-
-class NumericalInverseHermite:
-    @_deprecated(
-        "NumericalInverseHermite has been deprecated from `scipy.stats`. "
-        " To use `NumericalInverseHermite`, import/use it from "
-        "`scipy.stats.sampling` module instead. "
-        "i.e. `from scipy.stats.sampling import NumericalInverseHermite`"
-    )
-    def __init__(self, *args, **kwargs):
-        self.hinv = unuran_wrapper.NumericalInverseHermite(*args, **kwargs)
-        self.intervals = self.hinv.intervals
-        self.midpoint_error = self.hinv.midpoint_error
-
-    def rvs(self, *args, **kwargs):
-        return self.hinv.rvs(*args, **kwargs)
-
-    def ppf(self, *args, **kwargs):
-        return self.hinv.ppf(*args, **kwargs)
-
-    def qrvs(self, *args, **kwargs):
-        return self.hinv.qrvs(*args, **kwargs)

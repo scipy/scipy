@@ -59,7 +59,8 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__fpumode(void)
+PyMODINIT_FUNC
+PyInit__fpumode(void)
 {
     return PyModule_Create(&moduledef);
 }

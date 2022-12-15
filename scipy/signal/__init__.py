@@ -345,10 +345,6 @@ deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'general_gaussian', 'chebwin', 'cosine',
                       'hann', 'exponential', 'tukey')
 
-# backward compatibility imports for actually deprecated windows not
-# in the above list
-from .windows import hanning
-
 
 def deco(name):
     f = getattr(windows, name)

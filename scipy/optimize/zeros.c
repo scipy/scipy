@@ -6,7 +6,6 @@
 
 #include "Python.h"
 #include <setjmp.h>
-#include <numpy/npy_math.h>
 #include "Zeros/zeros.h"
 
 /*
@@ -197,7 +196,8 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__zeros(void)
+PyMODINIT_FUNC
+PyInit__zeros(void)
 {
     PyObject *m;
 

@@ -1,15 +1,9 @@
+
+----
+
 The SciPy repository and source distributions bundle a number of libraries that
 are compatibly licensed.  We list these here.
 
-Name: Numpydoc
-Files: doc/sphinxext/numpydoc/*
-License: 2-clause BSD
-  For details, see doc/sphinxext/LICENSE.txt
-
-Name: scipy-sphinx-theme
-Files: doc/scipy-sphinx-theme/*
-License: 3-clause BSD, PSF and Apache 2.0
-  For details, see doc/sphinxext/LICENSE.txt
 
 Name: Decorator
 Files: scipy/_lib/decorator.py
@@ -246,3 +240,19 @@ Name: Boost
 Files: scipy/_lib/boost/*
 License: Boost Software License - Version 1.0
   For details, see scipy/_lib/boost/LICENSE_1_0.txt
+
+Name: Biasedurn
+Files: scipy/stats/biasedurn/*
+License 3-Clause BSD
+  For details, see scipy/stats/biasedurn/license.txt
+
+Name: UNU.RAN
+Files: scipy/_lib/unuran/*
+License 3-Clause BSD
+  For details, see scipy/_lib/unuran/license.txt
+
+Name: NumPy
+Files: scipy/stats/_rcont/[logfactorial.h,logfactorial.c]
+License 3-Clause BSD
+  For details, see header inside scipy/stats/_rcont/logfactorial.h
+  and scipy/stats/_rcont/logfactorial.c

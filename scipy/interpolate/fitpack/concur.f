@@ -1,5 +1,5 @@
-      subroutine concur(iopt,idim,m,u,mx,x,xx,w,ib,db,nb,ie,de,ne,k,s,
-     * nest,n,t,nc,c,np,cp,fp,wrk,lwrk,iwrk,ier)
+      recursive subroutine concur(iopt,idim,m,u,mx,x,xx,w,ib,db,nb,
+     * ie,de,ne,k,s,nest,n,t,nc,c,np,cp,fp,wrk,lwrk,iwrk,ier)
       implicit none
 c  given the ordered set of m points x(i) in the idim-dimensional space
 c  and given also a corresponding set of strictly increasing values u(i)

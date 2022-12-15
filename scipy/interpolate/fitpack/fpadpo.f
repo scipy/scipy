@@ -1,4 +1,5 @@
-      subroutine fpadpo(idim,t,n,c,nc,k,cp,np,cc,t1,t2)
+      recursive subroutine fpadpo(idim,t,n,c,nc,k,cp,np,cc,t1,t2)
+      implicit none
 c  given a idim-dimensional spline curve of degree k, in its b-spline
 c  representation ( knots t(j),j=1,...,n , b-spline coefficients c(j),
 c  j=1,...,nc) and given also a polynomial curve in its b-spline
