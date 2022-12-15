@@ -233,13 +233,53 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     .. [3] Cressie, N. and Read, T. R. C., "Multinomial Goodness-of-Fit
            Tests", J. Royal Stat. Soc. Series B, Vol. 46, No. 3 (1984),
            pp. 440-464.
+    .. [4] Berger, Jeffrey S. et al. "Aspirin for the Primary Prevention of
+           Cardiovascular Events in Women and Men: A Sex-Specific
+           Meta-analysis of Randomized Controlled Trials."
+           JAMA, 295(3):306–313, :doi:`10.1001/jama.295.3.306`, 2006.
 
     Examples
     --------
-    A two-way example (2 x 3):
+    In [4]_, the use of aspirin to prevent cardiovascular events in woman
+    and men was investigated. The study notably concluded:
+
+        For women and men, aspirin therapy reduced the risk of a composite of
+        cardiovascular events due to its effect on reducing the risk of
+        ischemic stroke in women [...]
+
+    The article list multiple studies for various cardiovascular events. Let's
+    focus on the ischemic stoke in women.
+
+    The following table summarizes two survey where women were given aspirin
+    or a placebo::
+
+                          Aspirin   Control/Placebo
+        Ischemic stroke     179           230
+        No stroke         21032         21018
+
+    Is there evidence that the aspirin reduces the risk of ischemic stroke?
+    We can formulate a null hypothesis :math:`H_0`:
+    "the placebo is as effective as the aspirin in reducing the risk of
+    ischemic stroke". Let's confront this hypothesis with a chi-square test.
 
     >>> import numpy as np
     >>> from scipy.stats import chi2_contingency
+    >>> table = np.array([[179, 230], [21032, 21018]])
+    >>> res = chi2_contingency(obs)
+    >>> res.statistic
+    6.084250213339923
+    >>> res.pvalue
+    0.013639223957976988
+
+    Using a confidence level of 5%, we would reject the null hypothesis in
+    favor of the alternative hypothesis: "aspirin has a positive effect in
+    reducing the risk of ischemic stoke in women".
+
+    Below are further examples showing how larger contingency tables can be
+    tested.
+
+    A two-way example (2 x 3):
+
     >>> obs = np.array([[10, 10, 20], [20, 20, 20]])
     >>> res = chi2_contingency(obs)
     >>> res.statistic
