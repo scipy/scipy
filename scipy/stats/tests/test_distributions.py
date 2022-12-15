@@ -32,8 +32,7 @@ import scipy.stats.distributions
 from scipy.special import xlogy, polygamma, entr
 from scipy.stats._distr_params import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
-from scipy.stats._continuous_distns import (FitDataError, _argus_phi,
-                                            FitSolverError)
+from scipy.stats._continuous_distns import FitDataError, _argus_phi
 from scipy.optimize import root, fmin
 from itertools import product
 
@@ -225,6 +224,7 @@ def test_vonmises_fit_shape():
     loc_fit, kappa_fit = stats.vonmises.fit(data, floc=loc)
     assert loc_fit == loc
     assert_allclose(kappa, kappa_fit, rtol=1e-2)
+
 
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
     """
