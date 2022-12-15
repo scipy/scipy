@@ -2212,12 +2212,12 @@ class TestLinprogHiGHSMIP():
         # solve non-relaxed magic square problem (finally!)
         # also check that values are all integers - they don't always
         # come out of HiGHS that way
-        n = 4
+        n = 3
         A, b, c, numbers, M = magic_square(n)
         bounds = [(0, 1)] * len(c)
         integrality = [1] * len(c)
 
-        res = linprog(c=c*0, A_eq=A, b_eq=b, bounds=bounds,
+        res = linprog(c=c, A_eq=A, b_eq=b, bounds=bounds,
                       method=self.method, integrality=integrality)
 
         s = (numbers.flatten() * res.x).reshape(n**2, n, n)
