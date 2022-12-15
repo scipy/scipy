@@ -240,7 +240,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 
     Examples
     --------
-    In [4]_, the use of aspirin to prevent cardiovascular events in woman
+    In [4]_, the use of aspirin to prevent cardiovascular events in women
     and men was investigated. The study notably concluded:
 
         For women and men, aspirin therapy reduced the risk of a composite of
@@ -250,8 +250,9 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     The article list multiple studies for various cardiovascular events. Let's
     focus on the ischemic stoke in women.
 
-    The following table summarizes two survey where women were given aspirin
-    or a placebo::
+    The following table summarizes the results of an experiment in which 
+    women were given aspirin or a placebo and occurences of ischemic stroke
+    were recorded::
 
                           Aspirin   Control/Placebo
         Ischemic stroke     179           230
@@ -260,7 +261,8 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     Is there evidence that the aspirin reduces the risk of ischemic stroke?
     We can formulate a null hypothesis :math:`H_0`:
     "the placebo is as effective as the aspirin in reducing the risk of
-    ischemic stroke". Let's confront this hypothesis with a chi-square test.
+    ischemic stroke". Let's assess the plausibility of this hypothesis with
+    a chi-square test.
 
     >>> import numpy as np
     >>> from scipy.stats import chi2_contingency
@@ -271,7 +273,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     >>> res.pvalue
     0.013639223957976988
 
-    Using a confidence level of 5%, we would reject the null hypothesis in
+    Using a significance level of 5%, we would reject the null hypothesis in
     favor of the alternative hypothesis: "aspirin has a positive effect in
     reducing the risk of ischemic stoke in women".
 
