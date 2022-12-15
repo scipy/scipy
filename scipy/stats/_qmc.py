@@ -1148,14 +1148,13 @@ class LatinHypercube(QMCEngine):
     Examples
     --------
     In [9]_, a Latin Hypercube sampling strategy was used to sample a
-    parameter space to produce a sensitivity analysis on the parameters of
+    parameter space to perform sensitivity analysis on the parameters of
     an epidemic model.
 
-    The epidemic model had 6 parameters representing 4 contact probabilities,
-    the probbility of illness and the probability of withdrawal.
-
-    They assumed uniform distributions for all parameters and generated 50
-    samples.
+    The six parameters of the model represented the probability of illness, 
+    the probability of withdrawal, and four contact probabilities,
+    The authors assumed uniform distributions for all parameters and generated
+    50 samples.
 
     Using `scipy.stats.qmc.LatinHypercube` to replicate the protocol, the
     first step is to create a sample in the unit hypercube:
@@ -1171,16 +1170,17 @@ class LatinHypercube(QMCEngine):
     >>> sample_scaled = qmc.scale(sample, l_bounds, u_bounds)
 
     Then this sample was used to run the model and a polynomial response
-    surface was constructed. This allowed to produce a sensitivity
-    analysis.
+    surface was constructed. This allowed the authors to study the
+    relative importance of each parameter across the range of
+    possibilities of every other parameter.
 
     In this experiment, they showed a 14 times reduction in the number of
-    samples required to have an error bellow 2% on their response surface.
+    samples required to have an error below 2% on their response surface.
     Since the dimensionality of the problem is high (6), it is challenging to
     cover the space. When numerical experiments are costly, QMC enables new
     kind of analysis not possible otherwise.
 
-    Bellow are other examples showing alternative ways to construct LHS
+    Below are other examples showing alternative ways to construct LHS
     with even better coverage of the space.
 
     Using a base LHS as a baseline.
