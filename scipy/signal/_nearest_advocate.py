@@ -72,8 +72,8 @@ def nearest_advocate(arr_ref, arr_sig,
     >>> plt.legend(loc="lower right")
     >>> plt.show()
     """
-    assert isinstance(arr_ref, np.ndarray) and len(arr_ref.shape)==1
-    assert isinstance(arr_sig, np.ndarray) and len(arr_sig.shape)==1
+    assert isinstance(arr_ref, np.ndarray) and len(arr_ref.shape) == 1
+    assert isinstance(arr_sig, np.ndarray) and len(arr_sig.shape) == 1
     assert isinstance(td_min, (int, float))
     assert isinstance(td_max, (int, float))
     assert isinstance(sps, int)
@@ -87,4 +87,3 @@ def nearest_advocate(arr_ref, arr_sig,
                              td_min=td_min, td_max=td_max, sps=sps, sparse_factor=sparse_factor, 
                              dist_max=dist_max, regulate_paddings=regulate_paddings, 
                              dist_padding=dist_padding)
-
