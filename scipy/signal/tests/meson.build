@@ -10,6 +10,7 @@ py3.install_sources([
     'test_fir_filter_design.py',
     'test_ltisys.py',
     'test_max_len_seq.py',
+    'test_nearest_advocate.py',
     'test_peak_finding.py',
     'test_result_type.py',
     'test_savitzky_golay.py',

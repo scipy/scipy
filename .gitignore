@@ -223,6 +223,7 @@ scipy/optimize/_lsq/givens_elimination.c
 scipy/optimize/_trlib/_trlib.c
 scipy/optimize/tnc/moduleTNC.c
 scipy/optimize/tnc/_moduleTNC.c
+scipy/signal/_nearest_advocate_util.c
 scipy/signal/_peak_finding_utils.c
 scipy/signal/_spectral.c
 scipy/signal/_spectral.cpp

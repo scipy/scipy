@@ -77,6 +77,7 @@ else
 endif
 
 pyx_files = [
+  ['_nearest_advocate_util', '_nearest_advocate_util.pyx'],
   ['_peak_finding_utils', '_peak_finding_utils.pyx'],
   ['_sosfilt', '_sosfilt.pyx'],
   ['_upfirdn_apply', '_upfirdn_apply.pyx']
@@ -118,6 +119,7 @@ py3.install_sources([
     '_lti_conversion.py',
     '_ltisys.py',
     '_max_len_seq.py',
+    '_nearest_advocate.py',
     '_peak_finding.py',
     '_savitzky_golay.py',
     '_signaltools.py',

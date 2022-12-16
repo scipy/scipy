@@ -49,6 +49,8 @@ def configuration(parent_package='', top_path=None):
             '_max_len_seq_inner', sources=['_max_len_seq_inner.c'])
 
     config.add_extension(
+        '_nearest_advocate_util', sources=['_nearest_advocate_util.c'])
+    config.add_extension(
         '_peak_finding_utils', sources=['_peak_finding_utils.c'])
     config.add_extension(
         '_sosfilt', sources=['_sosfilt.c'])
