@@ -51,8 +51,8 @@ def nearest_advocate(arr_ref, arr_sig,
     
     Create a reference array whose events differences are sampled from a normal distribution. The signal array is the reference but shifted by `np.pi` and addional gaussian noise. The event-timestamps of both arrays must be sorted.
     
-    >>> arr_ref = np.sort(np.cumsum(np.random.normal(loc=1, scale=0.25, size=N))).astype(np.float32)
-    >>> arr_sig = np.sort(arr_ref + np.pi + np.random.normal(loc=0, scale=0.1, size=N)).astype(np.float32)
+    >>> arr_ref = np.sort(np.cumsum(np.random.normal(loc=1, scale=0.25, size=N)))
+    >>> arr_sig = np.sort(arr_ref + np.pi + np.random.normal(loc=0, scale=0.1, size=N))
 
     The function `nearest_advocate` returns a two-columned array with all investigated time-shifts and their mean distances, i.e., the measure of the synchronicity between both array (lower is better). 
     
@@ -83,7 +83,7 @@ def nearest_advocate(arr_ref, arr_sig,
     assert isinstance(dist_padding, float)
     
     # call and return the cython function
-    return _nearest_advocate(arr_ref, arr_sig, 
+    return _nearest_advocate(arr_ref.astype(np.float32), arr_sig.astype(np.float32), 
                              td_min=td_min, td_max=td_max, sps=sps, sparse_factor=sparse_factor, 
                              dist_max=dist_max, regulate_paddings=regulate_paddings, 
                              dist_padding=dist_padding)
