@@ -110,5 +110,3 @@ def test_nearest_advocate_base_noverlap():
     
     # assert_almost_equal(time_shift, -60, decimal=1)  # each value is the same
     assert_equal(min_mean_dist, DEF_DIST)
-        
-    
