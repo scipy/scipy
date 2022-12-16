@@ -1155,7 +1155,7 @@ class LatinHypercube(QMCEngine):
     expensive to cover the space. When numerical experiments are costly,
     QMC enables analysis that may not be possible if using a grid.
 
-    The six parameters of the model represented the probability of illness, 
+    The six parameters of the model represented the probability of illness,
     the probability of withdrawal, and four contact probabilities,
     The authors assumed uniform distributions for all parameters and generated
     50 samples.
