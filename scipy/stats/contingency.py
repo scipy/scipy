@@ -250,9 +250,9 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     The article list multiple studies for various cardiovascular events. Let's
     focus on the ischemic stoke in women.
 
-    The following table summarizes the results of an experiment in which 
-    women were given aspirin or a placebo and occurences of ischemic stroke
-    were recorded::
+    The following table summarizes the results of the experiment in which
+    women were given aspirin or a placebo up to every day for a mean duration
+    of 6.4 years. Occurences of ischemic stroke were recorded::
 
                           Aspirin   Control/Placebo
         Ischemic stroke     179           230
@@ -260,7 +260,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 
     Is there evidence that the aspirin reduces the risk of ischemic stroke?
     We can formulate a null hypothesis :math:`H_0`:
-    "the placebo is as effective as the aspirin in reducing the risk of
+    "the placebo is equivalent to the aspirin and does not reduce the risk of
     ischemic stroke". Let's assess the plausibility of this hypothesis with
     a chi-square test.
 
