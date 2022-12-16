@@ -423,6 +423,7 @@ def association(observed, method="cramer", correction=False, lambda_=None):
     >>> obs4x2 = np.array([[100, 150], [203, 322], [420, 700], [320, 210]])
 
     Pearson's contingency coefficient
+
     >>> association(obs4x2, method="pearson")
     0.18303298140595667
 
