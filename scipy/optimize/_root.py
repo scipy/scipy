@@ -331,7 +331,7 @@ def _root_nonlin_solve(fun, x0, args=(), jac=None,
                 }[_method]
 
     if args:
-        if jac:
+        if jac is True:
             def f(x):
                 return fun(x, *args)[0]
         else:
