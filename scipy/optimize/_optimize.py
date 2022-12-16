@@ -2165,7 +2165,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         Parameters (over given interval) which minimize the
         objective function.
     fval : number
-        The function value at the minimum point.
+        The function value evaluated at the minimizer.
     ierr : int
         An error flag (0 if converged, 1 if maximum number of
         function calls reached).
@@ -2183,22 +2183,34 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     interval x1 < xopt < x2 using Brent's method. (See `brent`
     for auto-bracketing.)
 
+    References
+    ----------
+    .. [1] Forsythe, G.E., M. A. Malcolm, and C. B. Moler. "Computer Methods
+           for Mathematical Computations." Prentice-Hall Series in Automatic
+           Computation 259 (1977).
+    .. [2] Brent, Richard P. Algorithms for Minimization Without Derivatives.
+           Courier Corporation, 2013.
+
     Examples
     --------
-    `fminbound` finds the minimum of the function in the given range.
-    The following examples illustrate the same
-
-    >>> def f(x):
-    ...     return x**2
+    `fminbound` finds the minimizer of the function in the given range.
+    The following examples illustrate this.
 
     >>> from scipy import optimize
-
-    >>> minimum = optimize.fminbound(f, -1, 2)
+    >>> def f(x):
+    ...     return (x-1)**2
+    >>> minimizer = optimize.fminbound(f, -4, 4)
+    >>> minimizer
+    1.0
+    >>> minimum = f(minimizer)
     >>> minimum
     0.0
-    >>> minimum = optimize.fminbound(f, 1, 2)
+    >>> minimizer = optimize.fminbound(f, 3, 4)
+    >>> minimizer
+    3.000005960860986
+    >>> minimum = f(minimizer)
     >>> minimum
-    1.0000059608609866
+    4.000023843479476
     """
     options = {'xatol': xtol,
                'maxiter': maxfun,

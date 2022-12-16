@@ -1538,6 +1538,11 @@ class TestOptimizeSimple(CheckOptimize):
         assert res.nit == ref.nit == maxiter
         assert res.status == (3 if method == 'trust-constr' else 99)
 
+    def test_ndim_error(self):
+        msg = "'x0' must only have one dimension."
+        with assert_raises(ValueError, match=msg):
+            optimize.minimize(lambda x: x, np.ones((2, 1)))
+
 
 @pytest.mark.parametrize(
     'method',

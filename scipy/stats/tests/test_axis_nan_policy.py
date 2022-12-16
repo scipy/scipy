@@ -915,9 +915,9 @@ def test_axis_None_vs_tuple_with_broadcasting():
     res2 = stats.mannwhitneyu(x, y, axis=(0, 1))
     res3 = stats.mannwhitneyu(x2.ravel(), y2.ravel())
 
-    assert(res1 == res0)
-    assert(res2 == res0)
-    assert(res3 != res0)
+    assert res1 == res0
+    assert res2 == res0
+    assert res3 != res0
 
 
 @pytest.mark.parametrize(("axis"),

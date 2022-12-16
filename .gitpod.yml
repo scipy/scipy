@@ -12,13 +12,12 @@ tasks:
     init: |
       mkdir -p .vscode
       cp tools/docker_dev/settings.json .vscode/settings.json
-      conda activate scipy-meson
+      conda activate scipy-dev
       git submodule update --init
-      python dev.py --build-only -j2
+      python dev.py build -j2
       echo "🛠 Completed rebuilding SciPy!! 🛠 "
       echo "📖 Building docs 📖 "
-      cd doc 
-      python dev.py --doc
+      python dev.py doc
       echo "✨ Pre-build complete! You can close this terminal ✨ "
   
 # --------------------------------------------------------
