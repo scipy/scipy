@@ -42,7 +42,9 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
 
 # These methods support the new callback interface (passed an OptimizeResult)
-MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'trust-constr']
+MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
+                           'l-bfgs-b', 'trust-constr', 'dogleg', 'trust-ncg',
+                           'trust-exact', 'trust-krylov']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
@@ -196,7 +198,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     callback : callable, optional
         A callable called after each iteration.
 
-        Methods nelder-mead and trust-constr support a callable with
+        All methods except TNC, SLSQP, and COBYLA support a callable with
         the signature:
 
             ``callback(OptimizeResult: intermediate_result)``
@@ -208,11 +210,15 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         to be passed an `OptimizeResult`. These methods will also terminate if
         the callback raises `StopIteration`.
 
-        All methods except trust-constr support a signature like:
+        All methods except trust-constr (also) support a signature like:
 
             ``callback(xk)``
 
         where ``xk`` is the current parameter vector.
+
+        All methods except TNC, SLSQP, and COBYLA will terminate if the
+        callback raises `StopIteration`. Introspection is used to determine
+        which of the signatures above to invoke.
 
     Returns
     -------
