@@ -668,8 +668,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             count function calls for numerical Jacobian approximation,
             as opposed to 'lm' method.
         ``fvec``
-            The residual values evaluated at the solution, i.e.
-            ``f(x, *popt) - ydata``.
+            The residual values evaluated at the solution, for a 1-D `sigma`
+            this is ``(f(x, *popt) - ydata)/sigma``.
         ``fjac``
             A permutation of the R matrix of a QR
             factorization of the final approximate
