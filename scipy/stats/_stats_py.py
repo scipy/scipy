@@ -4413,6 +4413,10 @@ def pearsonr(x, y, *, alternative='two-sided'):
     x = np.asarray(x)
     y = np.asarray(y)
 
+    if (np.issubdtype(x.dtype, np.complexfloating)
+            or np.issubdtype(y.dtype, np.complexfloating)):
+        raise ValueError('This function does not support complex data')
+
     # If an input is constant, the correlation coefficient is not defined.
     if (x == x[0]).all() or (y == y[0]).all():
         msg = ("An input array is constant; the correlation coefficient "

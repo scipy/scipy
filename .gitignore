@@ -302,11 +302,9 @@ scipy/stats/_levy_stable/levyst.c
 scipy/stats/_biasedurn.cxx
 scipy/stats/_biasedurn.pyx
 scipy/stats/biasedurn.cxx
-scipy/stats/biasedurn.pyx
 scipy/stats/_sobol.c
 scipy/stats/_qmc_cy.cxx
 scipy/stats/_hypotests_pythran.cpp
-scipy/stats/_unuran/unuran_wrapper.pyx
 scipy/stats/_unuran/unuran_wrapper.c
 scipy/stats/_rcont/rcont.c
 scipy/stats/_stats_pythran.cpp
