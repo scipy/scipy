@@ -130,7 +130,8 @@ def _milp_iv(c, integrality, bounds, constraints, options):
 
     # options IV
     options = options or {}
-    supported_options = {'disp', 'presolve', 'time_limit', 'node_limit'}
+    supported_options = {'disp', 'presolve', 'time_limit', 'node_limit',
+                         'mip_rel_gap'}
     unsupported_options = set(options).difference(supported_options)
     if unsupported_options:
         message = (f"Unrecognized options detected: {unsupported_options}. "
@@ -236,6 +237,10 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
         time_limit : float, optional
             The maximum number of seconds allotted to solve the problem.
             Default is no time limit.
+        mip_rel_gap : float, optional
+            Termination criterion for MIP solver: solver will terminate when
+            the gap between the primal objective value and the dual objective
+            bound, scaled by the primal objective value, is <= mip_rel_gap.
 
     Returns
     -------
@@ -276,8 +281,8 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
             The MILP solver's final estimate of the lower bound on the optimal
             solution.
         mip_gap : float
-            The difference between the final objective function value and the
-            final dual bound.
+            The difference between the primal objective value and the dual
+            objective bound, scaled by the primal objective value.
 
     Notes
     -----

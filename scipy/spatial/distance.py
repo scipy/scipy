@@ -60,7 +60,6 @@ computing the distances between all pairs.
    dice             -- the Dice dissimilarity.
    hamming          -- the Hamming distance.
    jaccard          -- the Jaccard distance.
-   kulsinski        -- the Kulsinski distance.
    kulczynski1      -- the Kulczynski 1 distance.
    rogerstanimoto   -- the Rogers-Tanimoto dissimilarity.
    russellrao       -- the Russell-Rao dissimilarity.
@@ -89,7 +88,6 @@ __all__ = [
     'is_valid_y',
     'jaccard',
     'jensenshannon',
-    'kulsinski',
     'kulczynski1',
     'mahalanobis',
     'minkowski',
@@ -122,8 +120,6 @@ from ..linalg import norm
 from ..special import rel_entr
 
 from . import _distance_pybind
-
-from .._lib.deprecation import _deprecated
 
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
@@ -796,70 +792,6 @@ def jaccard(u, v, w=None):
     a = np.double(unequal_nonzero.sum())
     b = np.double(nonzero.sum())
     return (a / b) if b != 0 else 0
-
-
-@_deprecated("Kulsinski has been deprecated from scipy.spatial.distance"
-             " in SciPy 1.9.0 and it will be removed in SciPy 1.11.0."
-             " It is superseded by scipy.spatial.distance.kulczynski1.")
-def kulsinski(u, v, w=None):
-    """
-    Compute the Kulsinski dissimilarity between two boolean 1-D arrays.
-
-    The Kulsinski dissimilarity between two boolean 1-D arrays `u` and `v`,
-    is defined as
-
-    .. math::
-
-         \\frac{c_{TF} + c_{FT} - c_{TT} + n}
-              {c_{FT} + c_{TF} + n}
-
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n`.
-
-    .. deprecated:: 0.12.0
-        `kulsinski` has been deprecated from `scipy.spatial.distance` in
-        SciPy 1.9.0 and it will be removed in SciPy 1.11.0. It is superseded
-        by `scipy.spatial.distance.kulczynski1`.
-
-    Parameters
-    ----------
-    u : (N,) array_like, bool
-        Input array.
-    v : (N,) array_like, bool
-        Input array.
-    w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
-
-    Returns
-    -------
-    kulsinski : double
-        The Kulsinski distance between vectors `u` and `v`.
-
-    Examples
-    --------
-    >>> from scipy.spatial import distance
-    >>> distance.kulsinski([1, 0, 0], [0, 1, 0])
-    1.0
-    >>> distance.kulsinski([1, 0, 0], [1, 1, 0])
-    0.75
-    >>> distance.kulsinski([1, 0, 0], [2, 1, 0])
-    0.33333333333333331
-    >>> distance.kulsinski([1, 0, 0], [3, 1, 0])
-    -0.5
-
-    """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    if w is None:
-        n = float(len(u))
-    else:
-        w = _validate_weights(w)
-        n = w.sum()
-    (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
-
-    return (ntf + nft - ntt + n) / (ntf + nft + n)
 
 
 def kulczynski1(u, v, *, w=None):
@@ -1849,14 +1781,6 @@ _METRIC_INFOS = [
         dist_func=jensenshannon,
         cdist_func=CDistMetricWrapper('jensenshannon'),
         pdist_func=PDistMetricWrapper('jensenshannon'),
-    ),
-    MetricInfo(
-        canonical_name='kulsinski',
-        aka={'kulsinski'},
-        types=['bool'],
-        dist_func=kulsinski,
-        cdist_func=CDistMetricWrapper('kulsinski'),
-        pdist_func=PDistMetricWrapper('kulsinski'),
     ),
     MetricInfo(
         canonical_name='kulczynski1',
