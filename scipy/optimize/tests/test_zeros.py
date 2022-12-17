@@ -773,14 +773,16 @@ def test_gh9551_raise_error_if_disp_true():
 @pytest.mark.parametrize('solver_name',
                          ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
 @pytest.mark.parametrize('rs_interface', [True, False])
-def test_gh3089(solver_name, rs_interface):
+def test_gh3089_8394(solver_name, rs_interface):
+    # gh-3089 and gh-8394 reported that bracketing solvers returned incorrect
+    # results when they encountered NaNs. Check that this is resolved.
     solver = ((lambda f, a, b: root_scalar(f, bracket=(a, b))) if rs_interface
               else getattr(zeros, solver_name))
 
     def f(x):
         return np.nan
 
-    message = "The function value is NaN at at least one end of the bracketing"
+    message = "The function value at x..."
     with pytest.raises(ValueError, match=message):
         solver(f, 0, 1)
 
@@ -789,6 +791,8 @@ def test_gh3089(solver_name, rs_interface):
                          ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
 @pytest.mark.parametrize('rs_interface', [True, False])
 def test_function_calls(solver_name, rs_interface):
+    # There do not appear to be checks that the bracketing solvers report the
+    # correct number of function evaluations. Check that this is the case.
     solver = ((lambda f, a, b, **kwargs: root_scalar(f, bracket=(a, b)))
               if rs_interface else getattr(zeros, solver_name))
 

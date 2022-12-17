@@ -67,12 +67,12 @@ class RootResults:
                           for a in attrs])
 
 
-def results_c(full_output, r, feval_adjustment=0):
+def results_c(full_output, r):
     if full_output:
         x, funcalls, iterations, flag = r
         results = RootResults(root=x,
                               iterations=iterations,
-                              function_calls=funcalls + feval_adjustment,
+                              function_calls=funcalls,
                               flag=flag)
         return x, results
     else:
@@ -91,15 +91,17 @@ def _results_select(full_output, r):
     return x
 
 
-def _nan_raise(f, a, b, args):
-    fs = f(a, *args), f(b, *args)
-    feval_adjustment = 2
-    msg = ('The function value is NaN at at least one end of the bracketing '
-           'interval. The function values at the ends of the bracketing '
-           'interval must be finite numbers of different signs.')
-    if np.any(np.isnan(fs)):
-        raise ValueError(msg)
-    return feval_adjustment
+def _wrap_nan_raise(f):
+
+    def f_raise(x, *args):
+        fx = f(x, *args)
+        if np.isnan(fx):
+            msg = (f'The function value at x={x} is NaN; '
+                   'solver cannot continue.')
+            raise ValueError(msg)
+        return fx
+
+    return f_raise
 
 
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
@@ -565,9 +567,9 @@ def bisect(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
-    feval_adjustment = _nan_raise(f, a, b, args)
+    f = _wrap_nan_raise(f)
     r = _zeros._bisect(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
-    return results_c(full_output, r, feval_adjustment)
+    return results_c(full_output, r)
 
 
 def ridder(f, a, b, args=(),
@@ -663,9 +665,9 @@ def ridder(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
-    feval_adjustment = _nan_raise(f, a, b, args)
+    f = _wrap_nan_raise(f)
     r = _zeros._ridder(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
-    return results_c(full_output, r, feval_adjustment)
+    return results_c(full_output, r)
 
 
 def brentq(f, a, b, args=(),
@@ -794,9 +796,9 @@ def brentq(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
-    feval_adjustment = _nan_raise(f, a, b, args)
+    f = _wrap_nan_raise(f)
     r = _zeros._brentq(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
-    return results_c(full_output, r, feval_adjustment)
+    return results_c(full_output, r)
 
 
 def brenth(f, a, b, args=(),
@@ -905,9 +907,9 @@ def brenth(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
-    feval_adjustment = _nan_raise(f, a, b, args)
+    f = _wrap_nan_raise(f)
     r = _zeros._brenth(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
-    return results_c(full_output, r, feval_adjustment)
+    return results_c(full_output, r)
 
 
 ################################
@@ -1385,10 +1387,9 @@ def toms748(f, a, b, args=(), k=1,
 
     if not isinstance(args, tuple):
         args = (args,)
-    feval_adjustment = _nan_raise(f, a, b, args)
+    f = _wrap_nan_raise(f)
     solver = TOMS748Solver()
     result = solver.solve(f, a, b, args=args, k=k, xtol=xtol, rtol=rtol,
                           maxiter=maxiter, disp=disp)
     x, function_calls, iterations, flag = result
-    function_calls += feval_adjustment
     return _results_select(full_output, (x, function_calls, iterations, flag))
