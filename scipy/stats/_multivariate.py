@@ -5791,8 +5791,8 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     def __init__(self, seed=None):
         super().__init__(seed)
-        self.__doc__ = \
-            doccer.docformat(self.__doc__, vonmises_fisher_docdict_params)
+        # self.__doc__ = \
+        #     doccer.docformat(self.__doc__, vonmises_fisher_docdict_params)
 
     def __call__(self, mu=None, kappa=1, seed=None):
         """Create a frozen von Mises-Fisher distribution.
