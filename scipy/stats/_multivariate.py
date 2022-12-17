@@ -5689,6 +5689,37 @@ def _sample_uniform_direction(dim, size, random_state):
     return samples
 
 
+_vonmises_fisher_doc_default_callparams = """\
+mu : array_like
+    Mean direction of the distribution. Must be a one-dimensional unit
+    vector of norm 1.
+kappa : float
+    Concentration parameter. Must be positive."""
+
+_vonmises_fisher_doc_callparams_note = "bla"
+
+_vonmises_fisher_doc_frozen_callparams = ""
+
+_vonmises_fisher_doc_frozen_callparams_note = """\
+See class definition for a detailed description of parameters."""
+
+vonmises_fisher_docdict_params = {
+    '_vonmises_fisher_doc_default_callparams':
+        _vonmises_fisher_doc_default_callparams,
+    '_vonmises_fisher_doc_callparams_note':
+        _vonmises_fisher_doc_callparams_note,
+    '_doc_random_state': _doc_random_state
+}
+
+vonmises_fisher_docdict_noparams = {
+    '_vonmises_fisher_doc_default_callparams':
+        _vonmises_fisher_doc_frozen_callparams,
+    '_vonmises_fisher_doc_callparams_note':
+        _vonmises_fisher_doc_frozen_callparams_note,
+    '_doc_random_state': _doc_random_state
+}
+
+
 class vonmises_fisher_gen(multi_rv_generic):
     r"""A von Mises-Fisher variable.
 
@@ -5697,25 +5728,31 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     Methods
     -------
-    pdf(x, mu=None, cov=1, allow_singular=False)
+    pdf(x, mu=None, kappa=1)
         Probability density function.
-    logpdf(x, mean=None, cov=1, allow_singular=False)
+    logpdf(x, mu=None, kappa=1)
         Log of the probability density function.
-    rvs(mu=None, cov=1, size=1, random_state=None)
+    rvs(mu=None, kappa=1, size=1, random_state=None)
         Draw random samples from a von Mises-Fisher distribution.
     entropy()
         Compute the differential entropy of the von Mises-Fisher distribution.
+    fit(data)
+        Fit a von Mises-Fisher distribution to data.
 
     Parameters
     ----------
+    %(_vonmises_fisher_doc_default_callparams)s
+    %(_doc_random_state)s
 
     See Also
     --------
-    vonmises : Von-Mises Fisher distribution in 2D on a circle
+    scipy.stats.vonmises : Von-Mises Fisher distribution in 2D on a circle
 
     Notes
     -----
-    The von Mises-Fisher distribution is a spherical distribution on the
+    %(_vonmises_fisher_doc_callparams_note)s
+
+    The von Mises-Fisher distribution is a directional distribution on the
     n-dimensional unit sphere. The probability density function is
 
     .. math::
@@ -5725,7 +5762,12 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     where :math:`\mu` is the mean direction, :math:`\kappa` the
     concentration parameter, :math:`d` the dimension and :math:`I` the
-    modified Bessel function of the first kind.
+    modified Bessel function of the first kind. It often serves as an analogue
+    of the Normal distribution on the unit sphere.
+
+    In dimensions 2 and 3, specialized algorithms are used for fast sampling
+    [2, 3]_. For dimenions of 4 or higher the rejection sampling algorithm
+    described in [4]_ is utilized.
 
     .. versionadded:: 1.11
 
@@ -5749,7 +5791,8 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     def __init__(self, seed=None):
         super().__init__(seed)
-        # self.__doc__ = doccer.docformat(self.__doc__, mvn_docdict_params)
+        self.__doc__ = \
+            doccer.docformat(self.__doc__, vonmises_fisher_docdict_params)
 
     def __call__(self, mu=None, kappa=1, seed=None):
         """Create a frozen von Mises-Fisher distribution.
@@ -5800,10 +5843,9 @@ class vonmises_fisher_gen(multi_rv_generic):
         ----------
         x : ndarray
             Points at which to evaluate the log of the probability
-            density function
-        mu : ndarray
-            Mean direction of the distribution
-        kappa : Concentration parameter
+            density function. The last axis of `x` corresponds to unit
+            vectors of the same dimension as the distribution.
+        %(_vonmises_fisher_doc_default_callparams)s
 
         Notes
         -----
@@ -5820,17 +5862,17 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        x : array_like
-            Quantiles, with the last axis of `x` denoting the components.
+        x : ndarray
+            Points at which to evaluate the log of the probability
+            density function. The last axis of `x` corresponds to unit
+            vectors of the same dimension as the distribution.
+        %(_vonmises_fisher_doc_default_callparams)s
 
         Returns
         -------
-        pdf : ndarray or scalar
+        logpdf : ndarray or scalar
             Log of the probability density function evaluated at `x`
 
-        Notes
-        -----
-        %(_mvn_doc_callparams_note)s
         """
         params = self._process_parameters(mu, kappa)
         dim, mu, kappa = params
@@ -5841,17 +5883,16 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        x : array_like
-            Quantiles, with the last axis of `x` denoting the components.
+        x : ndarray
+            Points at which to evaluate the log of the probability
+            density function. The last axis of `x` corresponds to unit
+            vectors of the same dimension as the distribution.
+        %(_vonmises_fisher_doc_default_callparams)s
 
         Returns
         -------
         pdf : ndarray or scalar
             Probability density function evaluated at `x`
-
-        Notes
-        -----
-        %(_mvn_doc_callparams_note)s
 
         """
         params = self._process_parameters(mu, kappa)
@@ -5945,7 +5986,7 @@ class vonmises_fisher_gen(multi_rv_generic):
             samples = np.squeeze(samples)
         return samples
 
-    def _rotate_samples(self, samples, mu):
+    def _rotate_samples(self, samples, mu, dim):
         """A QR decomposition is used to find the rotation that maps the
         north pole (1, 0,...,0) to the vector mu. This rotation is then
         applied to all samples.
@@ -5964,9 +6005,9 @@ class vonmises_fisher_gen(multi_rv_generic):
         sign : 1 or -1
             Sign the vectors have to be multiplied with after rotation
         """
-        n = mu.shape[0]
-        base_point = np.array([1.] + [0] * (n - 1))
-        embedded = np.concatenate([mu[None, :], np.zeros((n - 1, n))])
+        base_point = np.zeros((dim, ))
+        base_point[0] = 1.
+        embedded = np.concatenate([mu[None, :], np.zeros((dim - 1, dim))])
         rotmatrix, _ = np.linalg.qr(np.transpose(embedded))
         if np.allclose(np.matmul(rotmatrix, base_point[:, None])[:, 0], mu):
             rotsign = 1
@@ -5986,7 +6027,7 @@ class vonmises_fisher_gen(multi_rv_generic):
             else:
                 samples = self._rejection_sampling(dim, kappa, size,
                                                    random_state)
-            samples = self._rotate_samples(samples, mu)
+            samples = self._rotate_samples(samples, mu, dim)
         return samples
 
     def rvs(self, mu=None, kappa=1, size=1, random_state=None):
@@ -5994,7 +6035,7 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_mvn_doc_default_callparams)s
+        %(_vonmises_fisher_doc_default_callparams)s
         size : integer, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
@@ -6005,9 +6046,6 @@ class vonmises_fisher_gen(multi_rv_generic):
             Random variates of size (`size`, `N`), where `N` is the
             dimension of the random variable.
 
-        Notes
-        -----
-        %(_mvn_doc_callparams_note)s
         """
         dim, mu, kappa = self._process_parameters(mu, kappa)
         random_state = self._get_random_state(random_state)
@@ -6025,16 +6063,12 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_mvn_doc_default_callparams)s
+        %(_vonmises_fisher_doc_default_callparams)s
 
         Returns
         -------
         h : scalar
             Entropy of the multivariate normal distribution
-
-        Notes
-        -----
-        %(_mvn_doc_callparams_note)s
 
         """
         dim, mu, kappa = self._process_parameters(mu, kappa)
@@ -6097,6 +6131,8 @@ class vonmises_fisher_frozen(multi_rv_frozen):
 
         Examples
         --------
+        bla
+
         """
         self._dist = vonmises_fisher_gen(seed)
         self.dim, self.mu, self.kappa = (
@@ -6124,3 +6160,12 @@ class vonmises_fisher_frozen(multi_rv_frozen):
 
         """
         return self._dist._entropy(self.dim, self.kappa)
+
+
+for name in ['logpdf', 'pdf', 'rvs']:
+    method = vonmises_fisher_gen.__dict__[name]
+    method_frozen = vonmises_fisher_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(method.__doc__,
+                                             vonmises_fisher_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__,
+                                      vonmises_fisher_docdict_params)
