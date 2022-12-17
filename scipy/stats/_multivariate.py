@@ -5832,6 +5832,15 @@ class vonmises_fisher_gen(multi_rv_generic):
             raise ValueError(msg)
 
     def _log_norm_factor(self, dim, kappa):
+        # normalization factor is given by
+        # c = kappa**(dim/2-1)/((2*pi)**(dim/2)*I[dim/2-1](kappa))
+        #   = kappa**(dim/2-1)*exp(-kappa) /
+        #     ((2*pi)**(dim/2)*I[dim/2-1](kappa)*exp(-kappa)
+        #   = kappa**(dim/2-1)*exp(-kappa) /
+        #     ((2*pi)**(dim/2)*ive[dim/2-1](kappa)
+        # Then the log is given by
+        # log c = 1/2*(dim -1)*log(kappa) - kappa - -1/2*dim*ln(2*pi) -
+        #         ive[dim/2-1](kappa)
         halfdim = 0.5 * dim
         return (0.5 * (dim - 2)*np.log(kappa) - halfdim * _LOG_2PI -
                 np.log(ive(halfdim - 1, kappa)) - kappa)
