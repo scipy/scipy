@@ -195,7 +195,7 @@ Discrete-time linear systems
    dstep            -- Step response of a discrete-time LTI system.
    dfreqresp        -- Frequency response of a discrete-time LTI system.
    dbode            -- Bode magnitude and phase data (discrete-time LTI).
-   nearest_advocate -- Post-hoc synchronization of event-based time-series data.
+   nearest_advocate -- Post-hoc synchronization of event-based time-series.
 
 LTI representations
 ===================
