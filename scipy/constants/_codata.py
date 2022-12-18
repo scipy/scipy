@@ -58,7 +58,7 @@ import warnings
 from math import exp, pi, sqrt
 from scipy.special import lambertw
 
-from typing import Any, Callable, Dict
+from typing import Any, MutableMapping
 
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
@@ -1625,7 +1625,7 @@ def exact2018(exact):
 
 
 def parse_constants_2002to2014(
-    d: str, exact_func: Dict[str, float]
+    d: str, exact_func: MutableMapping[str, float]
 ) -> dict[str, tuple[float, str, float]]:
     constants: dict[str, tuple[float, str, float]] = {}
     exact: dict[str, float] = {}
@@ -1651,7 +1651,7 @@ def parse_constants_2002to2014(
 
 
 def parse_constants_2018toXXXX(
-    d: str, exact_func: Dict[str, float]
+    d: str, exact_func: MutableMapping[str, float]
 ) -> dict[str, tuple[float, str, float]]:
     constants: dict[str, tuple[float, str, float]] = {}
     exact: dict[str, float] = {}
@@ -1678,9 +1678,9 @@ def parse_constants_2018toXXXX(
 
 def replace_exact(d, to_replace, exact):
     for name in to_replace:
-        assert name in exact, 'Missing exact value: {}'.format(name)
+        assert name in exact, f'Missing exact value: {name}'
         assert abs(exact[name]/d[name][0] - 1) <= 1e-9, \
-            'Bad exact value: {}: {}, {}'.format(name, exact[name], d[name][0])
+            f'Bad exact value: {name}: {exact[name]}, {d[name][0]}'
         d[name] = (exact[name],) + d[name][1:]
     assert set(exact.keys()) == set(to_replace)
 
