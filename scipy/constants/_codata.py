@@ -58,7 +58,7 @@ import warnings
 from math import exp, pi, sqrt
 from scipy.special import lambertw
 
-from typing import Any, MutableMapping
+from typing import Any, Callable
 
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
@@ -1625,7 +1625,7 @@ def exact2018(exact):
 
 
 def parse_constants_2002to2014(
-    d: str, exact_func: MutableMapping[str, float]
+    d: str, exact_func: Callable[[Any], Any]
 ) -> dict[str, tuple[float, str, float]]:
     constants: dict[str, tuple[float, str, float]] = {}
     exact: dict[str, float] = {}
@@ -1651,7 +1651,7 @@ def parse_constants_2002to2014(
 
 
 def parse_constants_2018toXXXX(
-    d: str, exact_func: MutableMapping[str, float]
+    d: str, exact_func: Callable[[Any], Any]
 ) -> dict[str, tuple[float, str, float]]:
     constants: dict[str, tuple[float, str, float]] = {}
     exact: dict[str, float] = {}
