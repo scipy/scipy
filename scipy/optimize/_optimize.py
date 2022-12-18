@@ -55,8 +55,27 @@ _status_message = {'success': 'Optimization terminated successfully.',
 
 
 class MemoizeJac:
-    """ Decorator that caches the return values of a function returning `(fun, grad)`
-        each time it is called. """
+    """Decorator that caches the return values of a function which returns both
+    the function's and its gradient's results each time it is called with the
+    same arguments.
+
+    Parameters
+    ----------
+    fun : function
+        Array function of the form ``f(x)`` returning ``(f(x), df(x)/dx)``.
+
+    Examples
+    --------
+
+    >>> import numpy as np
+    >>> from scipy.optimize import MemoizeJac
+    >>> @MemoizeJac
+    ... def f(x):
+    ...     return 2*x**2, 4*x
+    >>> f(np.array([1., 2., 3.]))
+    array([ 2.,  8., 18.])
+
+    """
 
     def __init__(self, fun):
         self.fun = fun
