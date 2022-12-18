@@ -1142,7 +1142,7 @@ class LatinHypercube(QMCEngine):
        Journal of the American Statistical Association, 1993.
     .. [9] Susan K. Seaholm et al. "Latin hypercube sampling and the
        sensitivity analysis of a Monte Carlo epidemic model".
-       Int J Biomed Comput, 23(1-2), 97–112,
+       Int J Biomed Comput, 23(1-2), 97-112,
        :doi:`10.1016/0020-7101(88)90067-0`, 1988.
 
     Examples
