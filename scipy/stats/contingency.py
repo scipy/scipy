@@ -251,12 +251,12 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     focus on the ischemic stoke in women.
 
     The following table summarizes the results of the experiment in which
-    women were given aspirin or a placebo up to every day for a mean duration
-    of 6.4 years. Occurences of ischemic stroke were recorded::
+    took aspirin or a placebo on a regular basis for several
+    years. Occurences of ischemic stroke were recorded::
 
                           Aspirin   Control/Placebo
-        Ischemic stroke     179           230
-        No stroke         21032         21018
+        Ischemic stroke     176           230
+        No stroke         21035         21018
 
     Is there evidence that the aspirin reduces the risk of ischemic stroke?
     We can formulate a null hypothesis :math:`H_0`:
@@ -266,12 +266,12 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 
     >>> import numpy as np
     >>> from scipy.stats import chi2_contingency
-    >>> table = np.array([[179, 230], [21032, 21018]])
+    >>> table = np.array([[176, 230], [21035, 21018]])
     >>> res = chi2_contingency(table)
     >>> res.statistic
-    6.084250213339923
+    6.892569132546561
     >>> res.pvalue
-    0.013639223957976988
+    0.008655478161175739
 
     Using a significance level of 5%, we would reject the null hypothesis in
     favor of the alternative hypothesis: "aspirin has a positive effect in
