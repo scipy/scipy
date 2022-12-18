@@ -5766,7 +5766,7 @@ class vonmises_fisher_gen(multi_rv_generic):
     of the Normal distribution on the unit sphere.
 
     In dimensions 2 and 3, specialized algorithms are used for fast sampling
-    [2, 3]_. For dimenions of 4 or higher the rejection sampling algorithm
+    [2]_, [3]_. For dimenions of 4 or higher the rejection sampling algorithm
     described in [4]_ is utilized.
 
     .. versionadded:: 1.11
