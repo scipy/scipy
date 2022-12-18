@@ -59,7 +59,7 @@ def nearest_advocate(arr_ref, arr_sig,
     >>> time_shifts = nearest_advocate(arr_ref=arr_ref, arr_sig=arr_sig, td_min=-60, td_max=60, sps=20)
     >>> time_shift, min_mean_dist = time_shifts[np.argmin(time_shifts[:,1])]
     >>> print(time_shift, min_mean_dist)
-    3.15, 0.079508
+    3.15, 0.07883796
     
     Plot the resulting table
     
