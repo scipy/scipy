@@ -18,7 +18,8 @@ import numpy as np
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                         _minimize_bfgs, _minimize_newtoncg,
                         _minimize_scalar_brent, _minimize_scalar_bounded,
-                        _minimize_scalar_golden, MemoizeJac, OptimizeResult)
+                        _minimize_scalar_golden, MemoizeJac, OptimizeResult,
+                        _wrap_callback)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov
@@ -39,6 +40,9 @@ from ._differentiable_functions import FD_METHODS
 MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
                     'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
+
+# These methods support the new callback interface (passed an OptimizeResult)
+MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'trust-constr']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
@@ -190,16 +194,21 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         For method-specific options, see :func:`show_options()`.
     callback : callable, optional
-        Called after each iteration. For 'trust-constr' it is a callable with
+        A callable called after each iteration.
+
+        Methods nelder-mead and trust-constr support a callable with
         the signature:
 
-            ``callback(xk, OptimizeResult state) -> bool``
+            ``callback(OptimizeResult: intermediate_result)``
 
-        where ``xk`` is the current parameter vector. and ``state``
-        is an `OptimizeResult` object, with the same fields
-        as the ones from the return. If callback returns True
-        the algorithm execution is terminated.
-        For all the other methods, the signature is:
+        where ``intermediate_result`` is a keyword parameter containing an
+        `OptimizeResult` with attributes ``x`` and ``fun``, the present values
+        of the parameter vector and objective function. Note that the name
+        of the parameter must be ``intermediate_result`` for the callback
+        to be passed an `OptimizeResult`. These methods will also terminate if
+        the callback raises `StopIteration`.
+
+        All methods except trust-constr support a signature like:
 
             ``callback(xk)``
 
@@ -676,6 +685,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                                                        remove=1)
         bounds = standardize_bounds(bounds, x0, meth)
 
+    callback = _wrap_callback(callback, meth)
+
     if meth == 'nelder-mead':
         res = _minimize_neldermead(fun, x0, args, callback, bounds=bounds,
                                    **options)
@@ -724,6 +735,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         res.jac = _add_to_array(res.jac, i_fixed, np.nan)
         if "hess_inv" in res:
             res.hess_inv = None  # unknown
+
+    if getattr(callback, 'stop_iteration', False):
+        res.success = False
+        res.status = 99
+        res.message = "`callback` raised `StopIteration`."
 
     return res
 
