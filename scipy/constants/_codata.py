@@ -106,7 +106,7 @@ electron-deuteron magn. moment ratio                   -2143.923 493         0.0
 electron-muon magn. moment ratio                       206.766 9894          0.000 0054
 electron-neutron magn. moment ratio                    960.920 50            0.000 23
 electron-proton magn. moment ratio                     -658.210 6862         0.000 0066
-magn. constant                                         12.566 370 614...e-7  (exact)               N A^-2
+magn. constant                                         12.566 370 614...e-7  (exact)               N A^-2  # noqa: E501
 magn. flux quantum                                     2.067 833 72e-15      0.000 000 18e-15      Wb
 muon magn. moment                                      -4.490 447 99e-26     0.000 000 40e-26      J T^-1
 muon magn. moment to Bohr magneton ratio               -4.841 970 45e-3      0.000 000 13e-3
@@ -1604,14 +1604,14 @@ def exact2018(exact):
         'mag. flux quantum': h / (2*e),
         'molar gas constant': N_A * k,
         'molar Planck constant': h * N_A,
-        'molar volume of ideal gas (273.15 K, 100 kPa)': N_A * k * 273.15 / 100e3,
-        'molar volume of ideal gas (273.15 K, 101.325 kPa)': N_A * k * 273.15 / 101.325e3,
+        'molar volume of ideal gas (273.15 K, 100 kPa)': N_A * k * 273.15 / 100e3,  # noqa: E501
+        'molar volume of ideal gas (273.15 K, 101.325 kPa)': N_A * k * 273.15 / 101.325e3,  # noqa: E501
         'natural unit of action': (h / (2*pi)),
         'natural unit of action in eV s': (h / (2*pi))/e,
         'Planck constant in eV/Hz': h/e,
         'reduced Planck constant': h / (2*pi),
         'reduced Planck constant in eV s': (h / (2*pi)) / e,
-        'reduced Planck constant times c in MeV fm': (h / (2*pi)) * c / (e * 1e6 * 1e-15),
+        'reduced Planck constant times c in MeV fm': (h / (2*pi)) * c / (e * 1e6 * 1e-15),  # noqa: E501
         'second radiation constant': h * c / k,
         'Stefan-Boltzmann constant': 2 * pi**5 * k**4 / (15 * h**3 * c**2),
         'von Klitzing constant': R_K,
