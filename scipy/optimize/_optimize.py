@@ -74,6 +74,8 @@ class MemoizeJac:
     ...     return 2*x**2, 4*x
     >>> f(np.array([1., 2., 3.]))
     array([ 2.,  8., 18.])
+    >>> f.jac
+    array([ 4.,  8., 12.])
 
     """
 
