@@ -9249,8 +9249,8 @@ class vonmises_gen(rv_continuous):
 
     @_call_super_mom
     @extend_notes_in_docstring(rv_continuous, notes="""\
-        The `scale` parameter is ignored. Fit data must lie in the interval
-        [-pi, pi].\n\n""")
+        The `scale` parameter is ignored. Fit data is assumed to represent
+        angles and will be wrapped onto the unit circle.\n\n""")
     def fit(self, data, *args, **kwds):
         if kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
@@ -9261,11 +9261,11 @@ class vonmises_gen(rv_continuous):
             # vonmises line case, here the default fit method will be used
             return super().fit(data, *args, **kwds)
 
-        if np.amax(data) > np.pi or np.amin(data) < - np.pi:
-            raise ValueError("data must lie between -pi and pi.")
+        # wrap data to interval [0, 2*pi]
+        data = np.mod(data, 2 * np.pi)
 
         def find_mu(data):
-            return stats.circmean(data, low=-np.pi, high=np.pi)
+            return stats.circmean(data)
 
         def find_kappa(data):
             # kappa is the solution to
@@ -9273,7 +9273,7 @@ class vonmises_gen(rv_continuous):
             #   = I[1](kappa) * exp(-kappa)/(I[0](kappa) * exp(-kappa))
             #   = sc.i1e(kappa)/sc.i0e(kappa)
             # where r = mean resultant length
-            r = 1 - stats.circvar(data, low=-np.pi, high=np.pi)
+            r = 1 - stats.circvar(data)
 
             def solve_for_kappa(kappa):
                 return sc.i1e(kappa)/sc.i0e(kappa) - r

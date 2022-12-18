@@ -206,7 +206,7 @@ def test_vonmises_expect():
     assert np.issubdtype(res.dtype, np.complexfloating)
 
 
-@pytest.mark.parametrize('loc', [-np.pi, 0, np.pi])
+@pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
 @pytest.mark.parametrize('kappa', [1, 10, 100, 1000])
 def test_vonmises_fit_all(kappa, loc):
     rng = np.random.default_rng(6762668991392531563)
@@ -229,12 +229,15 @@ def test_vonmises_fit_shape():
     assert_allclose(kappa, kappa_fit, rtol=1e-2)
 
 
-@pytest.mark.parametrize('data', [np.array([-4., 0., 0.]),
-                                  np.array([4., 0., 0.])])
-def test_vonmises_wrong_fitdata(data):
-    msg = "data must lie between -pi and pi."
-    with pytest.raises(ValueError, match=msg):
-        stats.vonmises.fit(data)
+def test_vonmises_fit_unwrapped_data():
+    rng = np.random.default_rng(6762668991392531563)
+    data = stats.vonmises(loc=0.5*np.pi, kappa=10).rvs(100000,
+                                                       random_state=rng)
+    shifted_data = data + 4*np.pi
+    loc_fit, kappa_fit = stats.vonmises.fit(data)
+    loc_fit_shifted, kappa_fit_shifted = stats.vonmises.fit(shifted_data)
+    assert_allclose(loc_fit, loc_fit_shifted)
+    assert_allclose(kappa_fit, kappa_fit_shifted)
 
 
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
