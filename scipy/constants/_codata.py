@@ -1627,8 +1627,8 @@ def exact2018(exact):
 def parse_constants_2002to2014(
     d: str, exact_func: Dict[str, float]
 ) -> dict[str, tuple[float, str, float]]:
-    constants = {}
-    exact = {}
+    constants: dict[str, tuple[float, str, float]] = {}
+    exact: dict[str, float] = {}
     need_replace = set()
     for line in d.split('\n'):
         name = line[:55].rstrip()
@@ -1653,8 +1653,8 @@ def parse_constants_2002to2014(
 def parse_constants_2018toXXXX(
     d: str, exact_func: Dict[str, float]
 ) -> dict[str, tuple[float, str, float]]:
-    constants = {}
-    exact = {}
+    constants: dict[str, tuple[float, str, float]] = {}
+    exact: dict[str, float] = {}
     need_replace = set()
     for line in d.split('\n'):
         name = line[:60].rstrip()
