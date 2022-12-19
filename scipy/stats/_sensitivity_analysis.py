@@ -199,7 +199,7 @@ class SobolResult:
 
         self._bootstrap_result = bootstrap(
             [np.arange(n)], statistic=statistic, method="BCa",
-            batch=int(n*0.7), n_resamples=n_resamples,
+            n_resamples=n_resamples,
             confidence_level=confidence_level,
             bootstrap_result=self._bootstrap_result
         )
