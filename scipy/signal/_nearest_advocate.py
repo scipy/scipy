@@ -70,32 +70,28 @@ def nearest_advocate(arr_ref, arr_sig,
     `np.pi` and addional gaussian noise. The event-timestamps of both arrays
     must be sorted.
 
-    >>> arr_ref = np.sort(np.cumsum(np.random.normal(loc=1, scale=0.25,
-    size=N)))
-    >>> arr_sig = np.sort(arr_ref + np.pi + np.random.normal(loc=0,
-    scale=0.1, size=N))
+    >>> arr_ref = np.cumsum(np.random.normal(loc=1, scale=0.25, size=N))
+    >>> arr_ref = np.sort(arr_ref)
+    >>> arr_sig = arr_ref + np.pi + np.random.normal(loc=0, scale=0.1, size=N)
+    >>> arr_sig = np.sort(arr_sig)
 
     The function `nearest_advocate` returns a two-columned array with all
     investigated time-shifts and their mean distances, i.e., the measure of
     the synchronicity between both array (lower is better).
 
-    >>> time_shifts = nearest_advocate(arr_ref=arr_ref, arr_sig=arr_sig,
-    td_min=-60, td_max=60, sps=20)
-    >>> time_shift, min_mean_dist = time_shifts[np.argmin(time_shifts[:,1])]
+    >>> shifts = nearest_advocate(arr_ref, arr_sig, -60, 60, sps=20)
+    >>> time_shift, min_mean_dist = shifts[np.argmin(shifts[:,1])]
     >>> print(time_shift, min_mean_dist)
     3.15, 0.07883796
 
     Plot the resulting table
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.plot(time_shifts[:,0], time_shifts[:,1], color="steelblue",
-    label="Mean distance")
-    >>> plt.vlines(x=time_shift, ymin=0.05, ymax=0.25, color="firebrick",
-    label=f"Shift = {time_shift:.2f}s")
+    >>> plt.plot(time_shifts[:,0], time_shifts[:,1], color="steelblue")
+    >>> plt.vlines(x=time_shift, ymin=0.05, ymax=0.25, color="firebrick")
     >>> plt.xlim(0, 8)
     >>> plt.xlabel("Time shift (s)")
     >>> plt.ylabel("Mean distance (s)")
-    >>> plt.legend(loc="lower right")
     >>> plt.show()
     """
     assert isinstance(arr_ref, np.ndarray) and len(arr_ref.shape) == 1
