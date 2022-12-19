@@ -17,8 +17,8 @@ def test_nearest_advocate_base():
         loc=0, scale=0.1, size=N)).astype(np.float32)
 
     np_nearest = nearest_advocate(
-        arr_ref=arr_ref, arr_sig=arr_sig, 
-        td_min=-60, td_max=60, sps=20, sparse_factor=1, 
+        arr_ref=arr_ref, arr_sig=arr_sig,
+        td_min=-60, td_max=60, sps=20, sparse_factor=1,
         dist_max=DEF_DIST, regulate_paddings=True, dist_padding=DEF_DIST)
     time_shift, min_mean_dist = np_nearest[np.argmin(np_nearest[:, 1])]
 
@@ -37,8 +37,8 @@ def test_nearest_advocate_edge():
         loc=0, scale=0.4, size=N)).astype(np.float32)
 
     np_nearest = nearest_advocate(
-        arr_ref=arr_ref, arr_sig=arr_sig, 
-        td_min=-60, td_max=60, sps=20, sparse_factor=1, 
+        arr_ref=arr_ref, arr_sig=arr_sig,
+        td_min=-60, td_max=60, sps=20, sparse_factor=1,
         dist_max=DEF_DIST, regulate_paddings=True, dist_padding=DEF_DIST)
     time_shift, min_mean_dist = np_nearest[np.argmin(np_nearest[:, 1])]
 
@@ -57,8 +57,8 @@ def test_nearest_advocate_base_defmax():
         loc=0, scale=0.1, size=N)).astype(np.float32)
 
     np_nearest = nearest_advocate(
-        arr_ref=arr_ref, arr_sig=arr_sig, 
-        td_min=-60, td_max=60, sps=20, sparse_factor=1, 
+        arr_ref=arr_ref, arr_sig=arr_sig,
+        td_min=-60, td_max=60, sps=20, sparse_factor=1,
         dist_max=DEF_DIST, regulate_paddings=True, dist_padding=DEF_DIST)
     time_shift, min_mean_dist = np_nearest[np.argmin(np_nearest[:, 1])]
 
@@ -78,8 +78,8 @@ def test_nearest_advocate_base_fewoverlap():
         loc=0, scale=0.1, size=N)).astype(np.float32)
 
     np_nearest = nearest_advocate(
-        arr_ref=arr_ref, arr_sig=arr_sig, 
-        td_min=850, td_max=950, sps=20, sparse_factor=1, 
+        arr_ref=arr_ref, arr_sig=arr_sig,
+        td_min=850, td_max=950, sps=20, sparse_factor=1,
         dist_max=DEF_DIST, regulate_paddings=True, dist_padding=DEF_DIST)
     time_shift, min_mean_dist = np_nearest[np.argmin(np_nearest[:, 1])]
 
@@ -98,8 +98,8 @@ def test_nearest_advocate_base_nopadding():
         loc=0, scale=0.1, size=N)).astype(np.float32)
 
     np_nearest = nearest_advocate(
-        arr_ref=arr_ref, arr_sig=arr_sig, 
-        td_min=-60, td_max=60, sps=20, sparse_factor=1, 
+        arr_ref=arr_ref, arr_sig=arr_sig,
+        td_min=-60, td_max=60, sps=20, sparse_factor=1,
         dist_max=DEF_DIST, regulate_paddings=False)
     time_shift, min_mean_dist = np_nearest[np.argmin(np_nearest[:, 1])]
 
@@ -119,8 +119,8 @@ def test_nearest_advocate_base_noverlap():
         loc=0, scale=0.1, size=N)).astype(np.float32)
 
     np_nearest = nearest_advocate(
-        arr_ref=arr_ref, arr_sig=arr_sig, 
-        td_min=-60, td_max=60, sps=20, sparse_factor=1, 
+        arr_ref=arr_ref, arr_sig=arr_sig,
+        td_min=-60, td_max=60, sps=20, sparse_factor=1,
         dist_max=DEF_DIST, regulate_paddings=False)
     time_shift, min_mean_dist = np_nearest[np.argmin(np_nearest[:, 1])]
 
