@@ -23,7 +23,7 @@ def test_nearest_advocate_base():
     time_shift, min_mean_dist = np_nearest[np.argmin(np_nearest[:, 1])]
 
     assert_almost_equal(time_shift, np.pi, decimal=1)
-    assert_almost_equal(min_mean_dist, 0.07694374, decimal=2)  
+    assert_almost_equal(min_mean_dist, 0.07694374, decimal=2)
 
 
 def test_nearest_advocate_edge():
