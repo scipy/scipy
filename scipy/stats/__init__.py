@@ -446,6 +446,15 @@ Contingency table functions
    barnard_exact
    boschloo_exact
 
+Sensitivity Analysis
+--------------------
+
+.. autosummary::
+   :toctree: generated/
+
+    f_ishigami
+    sobol_indices
+
 Plot-tests
 ----------
 

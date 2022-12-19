@@ -410,16 +410,16 @@ def sobol_indices(
     >>> dx = bins[1] - bins[0]
     >>> fig, ax = plt.subplots(1, n_dim)
     >>> for i in range(n_dim):
-    >>>     xi = sample[:, i]
-    >>>     ax[i].scatter(xi, output, marker='+')
-    >>>     ax[i].set_xlabel(p_labels[i])
-    >>>     for bin_ in bins:
-    >>>         idx = np.where((bin_ <= xi) & (xi <= bin_ + dx))
-    >>>         xi_ = xi[idx]
-    >>>         y_ = output[idx]
-    >>>         ave_y_ = np.mean(y_)
-    >>>         ax[i].plot([bin_ + dx / 2] * 2, [mini, maxi], c='k')
-    >>>         ax[i].scatter(bin_ + dx / 2, ave_y_, c='r')
+    ...     xi = sample[:, i]
+    ...     ax[i].scatter(xi, output, marker='+')
+    ...     ax[i].set_xlabel(p_labels[i])
+    ...     for bin_ in bins:
+    ...         idx = np.where((bin_ <= xi) & (xi <= bin_ + dx))
+    ...         xi_ = xi[idx]
+    ...         y_ = output[idx]
+    ...         ave_y_ = np.mean(y_)
+    ...         ax[i].plot([bin_ + dx / 2] * 2, [mini, maxi], c='k')
+    ...         ax[i].scatter(bin_ + dx / 2, ave_y_, c='r')
     >>> ax[0].set_ylabel('Y')
     >>> plt.tight_layout()
     >>> plt.show()
