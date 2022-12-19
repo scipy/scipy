@@ -98,10 +98,10 @@ def sample_AB(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     Concatenate to get AB. Which means AB is (2*n, d).
     """
     n, d = A.shape
-    AB = np.empty((int(d*n), d))
-    for i in range(d):
-        AB[i*n:(i+1)*n, :] = np.column_stack((A[:, :i], B[:, i], A[:, i+1:]))
-
+    AB = np.tile(A, (d, 1, 1))
+    i = np.arange(d)
+    AB[i, :, i] = B[:, i].T
+    AB = AB.reshape(-1, d)
     return AB
 
 
