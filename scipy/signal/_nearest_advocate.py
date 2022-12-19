@@ -7,9 +7,9 @@ def nearest_advocate(arr_ref, arr_sig,
                      dist_max=0.0, regulate_paddings=True, dist_padding=0.0):
     """Post-hoc synchronization method for event-based time-series data.
 
-    Calculates the synchronicity of two arrays of timestamps for a search 
-    space between td_min and td_max with a precision of 1/sps. 
-    The synchronicity is given by the mean of all minimal distances between 
+    Calculates the synchronicity of two arrays of timestamps for a search
+    space between td_min and td_max with a precision of 1/sps.
+    The synchronicity is given by the mean of all minimal distances between
     each event in arr_sig and its nearest advocate in arr_ref.
 
     Parameters
@@ -17,35 +17,35 @@ def nearest_advocate(arr_ref, arr_sig,
     arr_ref : array_like
         Sorted reference array (1-D) with timestamps assumed to be correct.
     arr_sig : array_like
-        Sorted signal array (1-D) of timestamps, assumed to be shifted by an 
+        Sorted signal array (1-D) of timestamps, assumed to be shifted by an
         unknown constant time-delta.
     td_min : float
         Lower bound of the search space for the time-shift.
     td_max : float
         Upper bound of the search space for the time-shift.
     sps : int, optional
-        Number of investigated time-shifts per second, should be higher than 
+        Number of investigated time-shifts per second, should be higher than
         10 times the number of median gap of `arr_ref` (default 10).
     sparse_factor : int, optional
-        Factor for the sparseness of `arr_sig` for the calculation, higher is 
+        Factor for the sparseness of `arr_sig` for the calculation, higher is
         faster but may be less accurate (default 1).
     dist_max : float, optional
-        Maximal accepted distances between two advocate events. It should be 
+        Maximal accepted distances between two advocate events. It should be
         around 1/4 of the median gap of `arr_ref` (default).
     regulate_paddings : bool, optional
-        Regulate non-overlapping events in `arr_sig` with a maximum distance 
+        Regulate non-overlapping events in `arr_sig` with a maximum distance
         of dist_padding (default True).
     dist_padding : float, optional
-        Distance assigned to non-overlapping (padding) events. It should be 
-        around 1/4 of the median gap of `arr_ref` (default). Obsolete if 
+        Distance assigned to non-overlapping (padding) events. It should be
+        around 1/4 of the median gap of `arr_ref` (default). Obsolete if
         `regulate_paddings` is False
 
     Returns
     -------
     time_shifts : array_like
-        Two-columned 2-D array with evaluated time-shifts (between `td_min` 
-        and `td_max`) and the respective mean distances. The time-delta with 
-        the lowest mean distance is the estimation for the time-shift between 
+        Two-columned 2-D array with evaluated time-shifts (between `td_min`
+        and `td_max`) and the respective mean distances. The time-delta with
+        the lowest mean distance is the estimation for the time-shift between
         the two arrays.
 
     Notes
@@ -54,8 +54,8 @@ def nearest_advocate(arr_ref, arr_sig,
 
     References
     ----------
-    C. Schranz, S. Mayr, "Ein neuer Algorithmus zur Zeitsynchronisierung von 
-    Ereignis-basierten Zeitreihendaten als Alternative zur Kreuzkorrelation", 
+    C. Schranz, S. Mayr, "Ein neuer Algorithmus zur Zeitsynchronisierung von
+    Ereignis-basierten Zeitreihendaten als Alternative zur Kreuzkorrelation",
     Spinfortec (Chemnitz 2022). :doi:`10.5281/zenodo.7370958`
 
     Examples
@@ -65,16 +65,16 @@ def nearest_advocate(arr_ref, arr_sig,
     >>> from scipy.signal import nearest_advocate
     >>> N = 10_000
 
-    Create a reference array whose events differences are sampled from a 
-    normal distribution. The signal array is the reference but shifted by 
-    `np.pi` and addional gaussian noise. The event-timestamps of both arrays 
+    Create a reference array whose events differences are sampled from a
+    normal distribution. The signal array is the reference but shifted by
+    `np.pi` and addional gaussian noise. The event-timestamps of both arrays
     must be sorted.
 
     >>> arr_ref = np.sort(np.cumsum(np.random.normal(loc=1, scale=0.25, size=N)))
     >>> arr_sig = np.sort(arr_ref + np.pi + np.random.normal(loc=0, scale=0.1, size=N))
 
-    The function `nearest_advocate` returns a two-columned array with all 
-    investigated time-shifts and their mean distances, i.e., the measure of 
+    The function `nearest_advocate` returns a two-columned array with all
+    investigated time-shifts and their mean distances, i.e., the measure of
     the synchronicity between both array (lower is better).
 
     >>> time_shifts = nearest_advocate(arr_ref=arr_ref, arr_sig=arr_sig, td_min=-60, td_max=60, sps=20)
