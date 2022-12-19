@@ -59,7 +59,7 @@ def sample_A_B(
     n: IntNumber,
     dists: List[PINVDist],
     random_state: SeedType = None
-) -> Tuple[np.ndarray,  np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray]:
     """Sample two matrices A and B.
 
     Uses a Sobol' sequence with 2`d` columns to have 2 uncorrelated matrices.
@@ -107,7 +107,7 @@ def sample_AB(A: np.ndarray, B: np.ndarray) -> np.ndarray:
 
 def saltelli_2010(
     f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray
-) -> Tuple[np.ndarray,  np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray]:
     r"""Saltelli2010 formulation.
 
     .. math::
