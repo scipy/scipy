@@ -2577,7 +2577,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def comb(N, k, exact=False, repetition=False, legacy=True):
+def comb(N, k, exact=False, repetition=False, legacy=False):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2602,12 +2602,10 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
         arguments is unaffected by the value of `exact`.
 
         .. deprecated:: 1.9.0
-            Non-integer arguments are currently being cast to integers when
-            `exact=True`. This behaviour is deprecated and the default will
-            change to avoid the cast in SciPy 1.11.0. To opt into the future
-            behavior set `legacy=False`. If you want to keep the
-            argument-casting but silence this warning, cast your inputs
-            directly, e.g. ``comb(int(your_N), int(your_k), exact=True)``.
+            Using `legacy=True` is deprecated and will removed by
+            Scipy 1.13.0. If you want to keep the legacy behaviour, cast
+            your inputs directly, e.g.
+            ``comb(int(your_N), int(your_k), exact=True)``.
 
     Returns
     -------
@@ -2639,22 +2637,20 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
     220
 
     """
+    if legacy:
+        warnings.warn(
+            "Using 'legacy=True' is deprecated and will raise an error by "
+            "Scipy 1.13.0. If you want to keep the legacy behaviour, cast "
+            "your inputs directly, e.g. "
+            "'comb(int(your_N), int(your_k), exact=True)'.",
+            DeprecationWarning,
+            stacklevel=2
+        )
     if repetition:
         return comb(N + k - 1, k, exact, legacy=legacy)
     if exact:
         if int(N) != N or int(k) != k:
-            if legacy:
-                warnings.warn(
-                    "Non-integer arguments are currently being cast to "
-                    "integers when exact=True. This behaviour is "
-                    "deprecated and the default will change to avoid the cast "
-                    "in SciPy 1.11.0. To opt into the future behavior set "
-                    "legacy=False. If you want to keep the argument-casting "
-                    "but silence this warning, cast your inputs directly, "
-                    "e.g. comb(int(your_N), int(your_k), exact=True).",
-                    DeprecationWarning, stacklevel=2
-                )
-            else:
+            if not legacy:
                 return comb(N, k)
         # _comb_int casts inputs to integers
         return _comb_int(N, k)

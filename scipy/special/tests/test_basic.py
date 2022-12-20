@@ -1326,17 +1326,13 @@ class TestCombinatorics:
     @pytest.mark.parametrize("N", [4.5, 4])
     def test_comb_legacy(self, N, k, legacy, repetition):
         # test is only relevant for exact=True
-        if legacy and (N != int(N) or k != int(k)):
+        if legacy:
             with pytest.warns(
                 DeprecationWarning,
-                match=r"Non-integer arguments are currently being cast to",
+                match="Using 'legacy=True' is deprecated",
             ):
                 result = special.comb(N, k, exact=True, legacy=legacy,
                                       repetition=repetition)
-        else:
-            result = special.comb(N, k, exact=True, legacy=legacy,
-                                  repetition=repetition)
-        if legacy:
             # for exact=True and legacy=True, cast input arguments, else don't
             if repetition:
                 # the casting in legacy mode happens AFTER transforming N & k,
@@ -1346,8 +1342,12 @@ class TestCombinatorics:
                 repetition = False
             else:
                 N, k = int(N), int(k)
+        else:
+            result = special.comb(N, k, exact=True, legacy=legacy,
+                                  repetition=repetition)
+
         # expected result is the same as with exact=False
-        expected = special.comb(N, k, legacy=legacy, repetition=repetition)
+        expected = special.comb(N, k, repetition=repetition)
         assert_equal(result, expected)
 
     def test_comb_with_np_int64(self):
