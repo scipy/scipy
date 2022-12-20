@@ -222,11 +222,11 @@ def _check_unknown_options(unknown_options):
         warnings.warn("Unknown solver options: %s" % msg, OptimizeWarning, 4)
 
 
-def is_array_scalar(x):
-    """Test whether `x` is either a scalar or an array scalar.
+def is_finite_scalar(x):
+    """Test whether `x` is either a finite scalar or a finite array scalar.
 
     """
-    return np.size(x) == 1
+    return np.size(x) == 1 and np.isfinite(x)
 
 
 _epsilon = sqrt(np.finfo(float).eps)
@@ -2087,7 +2087,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     func : callable f(x,*args)
         Objective function to be minimized (must accept and return scalars).
     x1, x2 : float or array scalar
-        The optimization bounds.
+        Finite optimization bounds.
     args : tuple, optional
         Extra arguments passed to function.
     xtol : float, optional
@@ -2193,9 +2193,9 @@ def _minimize_scalar_bounded(func, bounds, args=(),
         raise ValueError('bounds must have two elements.')
     x1, x2 = bounds
 
-    if not (is_array_scalar(x1) and is_array_scalar(x2)):
-        raise ValueError("Optimization bounds must be scalars"
-                         " or array scalars.")
+    if not (is_finite_scalar(x1) and is_finite_scalar(x2)):
+        raise ValueError("Optimization bounds must be finite scalars.")
+
     if x1 > x2:
         raise ValueError("The lower bound exceeds the upper bound.")
 
