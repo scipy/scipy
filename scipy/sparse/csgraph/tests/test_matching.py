@@ -221,7 +221,7 @@ def test_min_weight_full_matching_large_infeasible():
         [0.29510278, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.09666032, 0.0,
          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         ])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='no full matching exists'):
         min_weight_full_bipartite_matching(csr_matrix(a))
 
 
