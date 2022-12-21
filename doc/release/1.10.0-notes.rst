@@ -372,6 +372,7 @@ Authors
 * Sebastian Berg (1)
 * Aaron Berk (1) +
 * boatwrong (1) +
+* boeleman (1) +
 * Jake Bowhay (50)
 * Matthew Brett (4)
 * Evgeni Burovski (93)
@@ -392,7 +393,7 @@ Authors
 * cmgodwin (1) +
 * Christopher Cowden (2) +
 * Henry Cuzco (2) +
-* Anirudh Dagar (10)
+* Anirudh Dagar (12)
 * Hans Dembinski (2) +
 * Jaiden di Lanzo (24) +
 * Felipe Dias (1) +
@@ -419,7 +420,7 @@ Authors
 * David Gilbertson (1) +
 * Ralf Gommers (251)
 * Marco Gorelli (2) +
-* Matt Haberland (381)
+* Matt Haberland (383)
 * Andrew Hawryluk (2) +
 * Christoph Hohnerlein (2) +
 * Loïc Houpert (2) +
@@ -471,7 +472,7 @@ Authors
 * Naoto Mizuno (2)
 * Shashaank N (1)
 * Pablo S Naharro (1) +
-* nboudrie (1) +
+* nboudrie (2) +
 * Andrew Nelson (52)
 * Nico Schlömer (1)
 * NiMlr (1) +
@@ -489,12 +490,12 @@ Authors
 * Ilhan Polat (6)
 * Akshita Prasanth (2) +
 * Sean Quinn (1)
-* Tyler Reddy (117)
+* Tyler Reddy (134)
 * Martin Reinecke (1)
 * Ned Richards (1)
 * Marie Roald (1) +
 * Sam Rosen (4) +
-* Pamphile Roy (103)
+* Pamphile Roy (105)
 * sabonerune (2) +
 * Atsushi Sakai (94)
 * Daniel Schmitz (27)
@@ -540,7 +541,7 @@ Authors
 * Egor Zemlyanoy (19)
 * Gavin Zhang (3) +
 
-A total of 180 people contributed to this release.
+A total of 181 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -570,6 +571,7 @@ Issues closed for 1.10.0
 * `#9440 <https://github.com/scipy/scipy/issues/9440>`__: Unexpected successful optimization with minimize when number...
 * `#9451 <https://github.com/scipy/scipy/issues/9451>`__: Add shgo to optimize benchmarks
 * `#10737 <https://github.com/scipy/scipy/issues/10737>`__: Goodness of fit tests for distributions with unknown parameters
+* `#10911 <https://github.com/scipy/scipy/issues/10911>`__: scipy.optimize.minimize_scalar does not automatically select...
 * `#11026 <https://github.com/scipy/scipy/issues/11026>`__: rv_discrete.interval returning wrong values for alpha = 1
 * `#11053 <https://github.com/scipy/scipy/issues/11053>`__: scipy.stats: Allow specifying inverse-variance matrix to multivariate_normal
 * `#11131 <https://github.com/scipy/scipy/issues/11131>`__: DOC: stats.fisher_exact does not match R functionality for \`oddsratio\`...
@@ -682,6 +684,7 @@ Issues closed for 1.10.0
 * `#17468 <https://github.com/scipy/scipy/issues/17468>`__: Weird errors with running the tests \`scipy.stats.tests.test_distributions\`...
 * `#17523 <https://github.com/scipy/scipy/issues/17523>`__: BUG: \`[source]\` button in the docs sending to the wrong place
 * `#17578 <https://github.com/scipy/scipy/issues/17578>`__: TST, BLD, CI: 1.10.0rc1 wheel build/test failures
+* `#17619 <https://github.com/scipy/scipy/issues/17619>`__: BUG: core dump when calling scipy.optimize.linprog
 
 ************************
 Pull requests for 1.10.0
@@ -1158,6 +1161,7 @@ Pull requests for 1.10.0
 * `#17439 <https://github.com/scipy/scipy/pull/17439>`__: DOC: Improve example for uniform_direction distribution
 * `#17446 <https://github.com/scipy/scipy/pull/17446>`__: MAINT: stats.gaussian_kde: error early if n_features > n_data
 * `#17447 <https://github.com/scipy/scipy/pull/17447>`__: MAINT: optimize.fminbound/minimize_scalar: add references, distinguish...
+* `#17448 <https://github.com/scipy/scipy/pull/17448>`__: MAINT: optimize.minimize_scalar: always acknowledge 'bounds'...
 * `#17449 <https://github.com/scipy/scipy/pull/17449>`__: MAINT: remove remaining occurrences of unicode
 * `#17457 <https://github.com/scipy/scipy/pull/17457>`__: DOC: Double Integral Example Typo
 * `#17466 <https://github.com/scipy/scipy/pull/17466>`__: BUG: stats: Fix for gh-17444.
@@ -1188,3 +1192,11 @@ Pull requests for 1.10.0
 * `#17569 <https://github.com/scipy/scipy/pull/17569>`__: MAINT: version bounds for 1.10.0rc1/relnotes fixes
 * `#17579 <https://github.com/scipy/scipy/pull/17579>`__: Revert "ENH: stats.ks_2samp: Pythranize remaining exact p-value...
 * `#17580 <https://github.com/scipy/scipy/pull/17580>`__: CI: native cp38-macosx_arm64 [wheel build][skip azp][skip circle][ski…
+* `#17583 <https://github.com/scipy/scipy/pull/17583>`__: MAINT: 1.10.0rc1 backports round 2
+* `#17591 <https://github.com/scipy/scipy/pull/17591>`__: MAINT: stats.pearsonr: raise error for complex input
+* `#17600 <https://github.com/scipy/scipy/pull/17600>`__: DOC: update version switcher for 1.10
+* `#17611 <https://github.com/scipy/scipy/pull/17611>`__: MAINT: Update ascent.dat file hash
+* `#17614 <https://github.com/scipy/scipy/pull/17614>`__: MAINT: optimize.milp: don't warn about \`mip_rel_gap\` option
+* `#17627 <https://github.com/scipy/scipy/pull/17627>`__: MAINT: Cast \`datasets.ascent\` image to float64
+* `#17634 <https://github.com/scipy/scipy/pull/17634>`__: MAINT: casting errstate for NumPy 1.24
+* `#17638 <https://github.com/scipy/scipy/pull/17638>`__: MAINT, TST: alpine/musl segfault shim
