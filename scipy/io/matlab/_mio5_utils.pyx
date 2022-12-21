@@ -680,7 +680,6 @@ cdef class VarReader5:
         '''
         cdef:
             object arr
-            cnp.dtype mat_dtype
         cdef int mc = header.mclass
         if (mc == mxDOUBLE_CLASS
             or mc == mxSINGLE_CLASS
@@ -692,13 +691,7 @@ cdef class VarReader5:
             or mc == mxUINT32_CLASS
             or mc == mxINT64_CLASS
             or mc == mxUINT64_CLASS): # numeric matrix
-            arr = self.read_real_complex(header)
-            if process and self.mat_dtype: # might need to recast
-                if header.is_logical:
-                    mat_dtype = BOOL_DTYPE
-                else:
-                    mat_dtype = <object>self.class_dtypes[mc]
-                arr = arr.astype(mat_dtype)
+            arr = self.read_real_complex(header, process)
         elif mc == mxSPARSE_CLASS:
             arr = self.read_sparse(header)
             # no current processing makes sense for sparse
@@ -750,23 +743,32 @@ cdef class VarReader5:
             shape = tuple([x for x in shape if x != 1])
         return shape
 
-    cpdef cnp.ndarray read_real_complex(self, VarHeader5 header):
+    cpdef cnp.ndarray read_real_complex(self, VarHeader5 header, int process):
         ''' Read real / complex matrices from stream '''
         cdef:
-            cnp.ndarray res, res_j
+            cnp.ndarray res
+            bint force_c16
         if header.is_complex:
             # avoid array copy to save memory
             res = self.read_numeric(False)
-            res_j = self.read_numeric(False)
             # Use c8 for f4s and c16 for f8 input. Just ``res = res + res_j *
             # 1j`` upcasts to c16 regardless of input type.
-            if res.itemsize == 4:
+            force_c16 = process and self.mat_dtype and header.mclass == mxDOUBLE_CLASS
+            if res.itemsize == 4 and not force_c16:
                 res = res.astype('c8')
             else:
                 res = res.astype('c16')
-            res.imag = res_j
+            res.imag = self.read_numeric(False)
         else:
-            res = self.read_numeric()
+            if process and self.mat_dtype:
+                if header.is_logical:
+                    mat_dtype = BOOL_DTYPE
+                else:
+                    mat_dtype = <object>self.class_dtypes[header.mclass]
+                res = self.read_numeric(False).astype(mat_dtype)
+            else:
+                res = self.read_numeric()
+
         return res.reshape(header.dims[::-1]).T
 
     cdef object read_sparse(self, VarHeader5 header):
