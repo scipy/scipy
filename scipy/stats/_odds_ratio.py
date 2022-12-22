@@ -379,7 +379,7 @@ def odds_ratio(table, *, kind='conditional'):
     .. [4] Berger, Jeffrey S. et al. "Aspirin for the Primary Prevention of
            Cardiovascular Events in Women and Men: A Sex-Specific
            Meta-analysis of Randomized Controlled Trials."
-           JAMA, 295(3):306–313, :doi:`10.1001/jama.295.3.306`, 2006.
+           JAMA, 295(3):306-313, :doi:`10.1001/jama.295.3.306`, 2006.
 
     Examples
     --------
@@ -417,7 +417,7 @@ def odds_ratio(table, *, kind='conditional'):
     focus on the ischemic stoke in women.
 
     The following table summarizes the results of the experiment in which
-    took aspirin or a placebo on a regular basis for several
+    participants took aspirin or a placebo on a regular basis for several
     years. Occurences of ischemic stroke were recorded::
 
                           Aspirin   Control/Placebo
@@ -436,15 +436,20 @@ def odds_ratio(table, *, kind='conditional'):
 
     For this sample, the odds of getting an ischemic stroke for those who have
     been taking aspiring to the chemical are 0.76 times that of those
-    who have received the placebo. Which means almost 25% less risk.
+    who have received the placebo.
 
-    We can compute the 95% confidence interval for the odds ratio:
+    To make statistical inferences about the population under study,
+    we can compute the 95% confidence interval for the odds ratio:
 
     >>> res.confidence_interval(confidence_level=0.95)
     ConfidenceInterval(low=0.6241234078749812, high=0.9354102892100372)
 
     The 95% confidence interval for the conditional odds ratio is
     approximately (0.62, 0.94).
+
+The fact that the entire 95% confidence interval falls below 1 supports
+the authors' conclusion that the aspirin was associated with a statistically
+significant reduction in ischemic stroke.```
     """
     if kind not in ['conditional', 'sample']:
         raise ValueError("`kind` must be 'conditional' or 'sample'.")
