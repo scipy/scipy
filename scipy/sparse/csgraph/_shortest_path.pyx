@@ -57,27 +57,27 @@ def shortest_path(csgraph, method='auto',
            'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J'
                      based on the input data.
 
-           'FW'   -- Floyd-Warshall algorithm.  Computational cost is
-                     approximately ``O[N^3]``.  The input csgraph will be
-                     converted to a dense representation.
+           'FW'   -- Floyd-Warshall algorithm.
+                     Computational cost is approximately ``O[N^3]``.
+                     The input csgraph will be converted to a dense representation.
 
-           'D'    -- Dijkstra's algorithm with Fibonacci heaps.  Computational
-                     cost is approximately ``O[N(N*k + N*log(N))]``, where
-                     ``k`` is the average number of connected edges per node.
-                     The input csgraph will be converted to a csr
-                     representation.
+           'D'    -- Dijkstra's algorithm with Fibonacci heaps.
+                     Computational cost is approximately ``O[N(N*k + N*log(N))]``,
+                     where ``k`` is the average number of connected edges per node.
+                     The input csgraph will be converted to a csr representation.
 
-           'BF'   -- Bellman-Ford algorithm.  This algorithm can be used when
-                     weights are negative.  If a negative cycle is encountered,
-                     an error will be raised.  Computational cost is
-                     approximately ``O[N(N^2 k)]``, where ``k`` is the average
-                     number of connected edges per node. The input csgraph will
-                     be converted to a csr representation.
+           'BF'   -- Bellman-Ford algorithm.
+                     This algorithm can be used when weights are negative.
+                     If a negative cycle is encountered, an error will be raised.
+                     Computational cost is approximately ``O[N(N^2 k)]``, where 
+                     ``k`` is the average number of connected edges per node. 
+                     The input csgraph will be converted to a csr representation.
 
-           'J'    -- Johnson's algorithm.  Like the Bellman-Ford algorithm,
-                     Johnson's algorithm is designed for use when the weights
-                     are negative.  It combines the Bellman-Ford algorithm
-                     with Dijkstra's algorithm for faster computation.
+           'J'    -- Johnson's algorithm.
+                     Like the Bellman-Ford algorithm, Johnson's algorithm is 
+                     designed for use when the weights are negative. It combines 
+                     the Bellman-Ford algorithm with Dijkstra's algorithm for 
+                     faster computation.
 
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
