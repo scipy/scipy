@@ -59,7 +59,7 @@ def shortest_path(csgraph, method='auto',
 
            'FW'   -- Floyd-Warshall algorithm.
                      Computational cost is approximately ``O[N^3]``.
-                     The input csgraph will beconverted to a dense representation.
+                     The input csgraph will be converted to a dense representation.
 
            'D'    -- Dijkstra's algorithm with Fibonacci heaps.
                      Computational cost is approximately ``O[N(N*k + N*log(N))]``,
