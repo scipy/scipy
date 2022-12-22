@@ -230,7 +230,7 @@ class TestRankData:
                 [4, 2, np.nan],
                 [1, 2, 2]]
         assert_array_equal(rankdata(data, axis=None, nan_policy='omit'),
-                           [ 1., np.nan,  6.,  7.,  4., np.nan,  2.,  4.,  4.])
+                           [1., np.nan, 6., 7., 4., np.nan, 2., 4., 4.])
 
     def test_nan_policy_raise(self):
         # 1 1d-array test
