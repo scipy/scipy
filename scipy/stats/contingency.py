@@ -260,8 +260,8 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 
     Is there evidence that the aspirin reduces the risk of ischemic stroke?
     We can formulate a null hypothesis :math:`H_0`:
-    "the placebo is equivalent to the aspirin and does not reduce the risk of
-    ischemic stroke". Let's assess the plausibility of this hypothesis with
+    "the effect of aspirin is equivalent to that of placebo".
+    Let's assess the plausibility of this hypothesis with
     a chi-square test.
 
     >>> import numpy as np
@@ -274,8 +274,12 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     0.008655478161175739
 
     Using a significance level of 5%, we would reject the null hypothesis in
-    favor of the alternative hypothesis: "aspirin has a positive effect in
-    reducing the risk of ischemic stoke in women".
+    favor of the alternative hypothesis: "the effect of aspirin
+    is not equivalent to the effect of placebo".
+    Because `stats.contingency.chi2_contingency` performs a two-sided test
+    (i.e. the alternative hypothesis does not indicate the direction of the
+    effect), we can use `stats.contingency.odds_ratio` to support the
+    conclusion that aspirin *reduces* the risk of ischemic stroke.
 
     Below are further examples showing how larger contingency tables can be
     tested.
