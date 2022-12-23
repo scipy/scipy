@@ -1679,8 +1679,7 @@ def parse_constants_2018toXXXX(
     return constants
 
 
-def replace_exact(d: dict[str, tuple[float, str, float]], to_replace: set(str),
-                  exact: dict[str, tuple[float, str, float]]):
+def replace_exact(d, to_replace, exact):
     for name in to_replace:
         try:
             if name not in exact:
