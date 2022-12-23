@@ -211,7 +211,7 @@ class SobolResult:
 def sobol_indices(
     *,
     func: Callable[[np.ndarray], npt.ArrayLike] |
-          Dict[Literal['f_A', 'f_B', 'f_AB'], np.ndarray],
+          Dict[Literal['f_A', 'f_B', 'f_AB'], np.ndarray],  # noqa
     n: IntNumber,
     dists: List[PINVDist] | None = None,
     method: Callable | Literal['saltelli_2010'] = 'saltelli_2010',
@@ -221,19 +221,34 @@ def sobol_indices(
 
     Parameters
     ----------
-    func : callable
+    func : callable or dict(str, array_like)
         Function to compute the Sobol' indices from. It's signature must be
-        ``func(x: ArrayLike) -> ArrayLike``, with ``x`` of shape ``(-1, d)``
-        and the output should have a shape ``(-1, s)`` with ``s`` the number
-        of output.
+        ``func(x: ArrayLike) -> ArrayLike``, with ``x`` of shape ``(n, d)``
+        and the output should have a shape ``(n, s)`` with ``s`` the number
+        of output and ``n`` the number of samples.
     n : int
         Must be a power of 2. The total number of function call will be
         ``n(d+2)``.
     dists : list(distributions), optional
-        List of distributions of the parameters. It must be compatible with
-        `scipy.stats.sampling.NumericalInversePolynomial`.
-    method : Callable or
+        Must be specified if `func` is a callable, and has no use otherwise.
 
+        List of each parameter's marginal distribution. Each parameter being
+        independently distributed.
+
+        Distributions must be an instance of a class with a ``pdf`` or
+        ``logpdf`` method, optionally a ``cdf`` method. For more details,
+        see the ``dists`` parameter of
+        `scipy.stats.sampling.NumericalInversePolynomial`.
+    method : Callable or str, default: 'saltelli_2010'
+        Method used to compute the first and total Sobol' indices.
+
+        If a callable, it's signature must be::
+
+            func(f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray)
+            -> Tuple[np.ndarray, np.ndarray]
+
+        with ``f_A, f_B, f_AB`` of shape (n, s) and the output being a tuple
+        of the first and total indices with shape (s, d).
     random_state : {None, int, `numpy.random.Generator`}, optional
         If `random_state` is an int or None, a new `numpy.random.Generator` is
         created using ``np.random.default_rng(random_state)``.
@@ -245,9 +260,9 @@ def sobol_indices(
     res : SobolResult
         An object with attributes:
 
-        first_order : ndarray
+        first_order : ndarray of shape (s, d)
             First order Sobol' indices.
-        total_order : ndarray
+        total_order : ndarray of shape (s, d)
             Total order Sobol' indices.
 
         And methods:
@@ -266,7 +281,12 @@ def sobol_indices(
     method [1]_, [2]_, gives not only a ranking but also quantifies the
     importance factor using the variance.
 
-    .. note:: Parameters are assumed to be independant.
+    .. note::
+
+        Parameters are assumed to be independantly distributed. Each
+        parameter can still follow any distribution. In fact, the distribution
+        is very important and should match the real distribution of the
+        parameters.
 
     It uses a functional decomposition of the variance of the function to
     explore
@@ -316,6 +336,9 @@ def sobol_indices(
         Negative Sobol' values are due to numerical errors. Increasing the
         number of sample should help.
 
+        If the parameters are not independent, the indices would not sum to 1.
+        Numerical noise can also contribute to this.
+
     References
     ----------
     .. [1] Sobol, I. M.. "Sensitivity analysis for nonlinear mathematical
@@ -350,6 +373,9 @@ def sobol_indices(
 
     with :math:`\mathbf{x} \in [-\pi, \pi]^3`. This function exhibits strong
     non-linearity and non-monotonicity.
+
+    Remember, Sobol' indices assumes that samples are independently
+    distributed. In this case we use a uniform distribution on each marginals.
 
     >>> import numpy as  np
     >>> from scipy.stats import f_ishigami, sobol_indices, uniform
