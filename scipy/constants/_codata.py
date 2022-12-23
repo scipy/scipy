@@ -54,9 +54,6 @@ https://physics.nist.gov/cuu/Constants/
 """
 
 
-
-
-
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
 
