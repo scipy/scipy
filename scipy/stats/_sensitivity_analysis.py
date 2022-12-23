@@ -476,7 +476,7 @@ def sobol_indices(
         except KeyError as exc:
             message = (
                 f"{method!r} is not a valid 'method'. It must be one of"
-                f" {set(indices_methods)!r} or a callable"
+                f" {set(indices_methods)!r} or a callable."
             )
             raise ValueError(message) from exc
     else:
@@ -503,9 +503,16 @@ def sobol_indices(
         f_B = np.asarray(func(B))
         f_AB = np.asarray(func(AB))
     else:
-        f_A = np.asarray(func['f_A'])
-        f_B = np.asarray(func['f_B'])
-        f_AB = np.asarray(func['f_AB'])
+        try:
+            f_A = np.asarray(func['f_A'])
+            f_B = np.asarray(func['f_B'])
+            f_AB = np.asarray(func['f_AB'])
+        except KeyError as exc:
+            message = (
+                "When 'func' is a dictionary, it must contain the following"
+                " keys: 'f_A', 'f_B' and 'f_AB'"
+            )
+            raise ValueError(message) from exc
 
     # Compute indices
     first_order, total_order = indices_method(f_A, f_B, f_AB)

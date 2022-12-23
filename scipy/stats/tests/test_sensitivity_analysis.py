@@ -95,9 +95,21 @@ class TestSobolIndices:
         with pytest.raises(ValueError, match=message):
             sobol_indices(n=7, func=f_ishigami, dists=[uniform()])
 
+        message = r"'toto' is not a valid 'method'"
+        with pytest.raises(ValueError, match=message):
+            sobol_indices(n=0, func=f_ishigami, method='toto')
+
+        message = r"'dists' must be defined when 'func' is a callable"
+        with pytest.raises(ValueError, match=message):
+            sobol_indices(n=0, func=f_ishigami)
+
         def func_wrong_shape_output(x):
             return x.reshape(1, -1)
 
         message = r"'func' output should have a shape"
         with pytest.raises(ValueError, match=message):
             sobol_indices(n=2, func=func_wrong_shape_output, dists=[uniform()])
+
+        message = r"When 'func' is a dictionary"
+        with pytest.raises(ValueError, match=message):
+            sobol_indices(n=2, func={'f_A': [], 'f_AB': []}, dists=[uniform()])
