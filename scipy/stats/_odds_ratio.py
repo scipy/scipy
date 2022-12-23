@@ -447,9 +447,9 @@ def odds_ratio(table, *, kind='conditional'):
     The 95% confidence interval for the conditional odds ratio is
     approximately (0.62, 0.94).
 
-The fact that the entire 95% confidence interval falls below 1 supports
-the authors' conclusion that the aspirin was associated with a statistically
-significant reduction in ischemic stroke.```
+    The fact that the entire 95% confidence interval falls below 1 supports
+    the authors' conclusion that the aspirin was associated with a
+    statistically significant reduction in ischemic stroke.
     """
     if kind not in ['conditional', 'sample']:
         raise ValueError("`kind` must be 'conditional' or 'sample'.")
