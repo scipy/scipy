@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, List, TYPE_CHECKING, Tuple
+from typing import Callable, Dict, List, Literal, TYPE_CHECKING, Tuple
 
 import numpy as np
 from scipy.stats._resampling import BootstrapResult
@@ -153,12 +153,13 @@ def saltelli_2010(
 class SobolResult:
     first_order: np.ndarray
     total_order: np.ndarray
-    _A: np.ndarray
-    _B: np.ndarray
-    _AB: np.ndarray
+    _indices_method: Callable
     _f_A: np.ndarray
     _f_B: np.ndarray
     _f_AB: np.ndarray
+    _A: np.ndarray | None = None
+    _B: np.ndarray | None = None
+    _AB: np.ndarray | None = None
     _bootstrap_result: BootstrapResult = None  # type: ignore[valid-type]
 
     def bootstrap(
@@ -193,7 +194,7 @@ class SobolResult:
                 f_AB_[i] = self._f_AB[np.array(idx)+i*n]
             f_AB_ = f_AB_.reshape(-1, f_A_.shape[1])
 
-            return saltelli_2010(f_A_, f_B_, f_AB_)
+            return self._indices_method(f_A_, f_B_, f_AB_)
 
         n = len(self._f_A)
 
@@ -209,9 +210,11 @@ class SobolResult:
 
 def sobol_indices(
     *,
-    func: Callable,
+    func: Callable[[np.ndarray], npt.ArrayLike] |
+          Dict[Literal['f_A', 'f_B', 'f_AB'], np.ndarray],
     n: IntNumber,
-    dists: List[PINVDist],
+    dists: List[PINVDist] | None = None,
+    method: Callable | Literal['saltelli_2010'] = 'saltelli_2010',
     random_state: SeedType = None
 ) -> SobolResult:
     r"""Global sensitivity indices of Sobol'.
@@ -229,6 +232,8 @@ def sobol_indices(
     dists : list(distributions), optional
         List of distributions of the parameters. It must be compatible with
         `scipy.stats.sampling.NumericalInversePolynomial`.
+    method : Callable or
+
     random_state : {None, int, `numpy.random.Generator`}, optional
         If `random_state` is an int or None, a new `numpy.random.Generator` is
         created using ``np.random.default_rng(random_state)``.
@@ -434,34 +439,67 @@ def sobol_indices(
             "to be a power of 2."
         )
 
-    A, B = sample_A_B(n=n, dists=dists, random_state=random_state)
-    AB = sample_AB(A=A, B=B)
+    indices_method: Callable
+    if not callable(method):
+        indices_methods: Dict[str, Callable] = {
+            "saltelli_2010": saltelli_2010,
+        }
+        try:
+            method = method.lower()  # type: ignore[assignment]
+            indices_method = indices_methods[method]
+        except KeyError as exc:
+            message = (
+                f"{method!r} is not a valid 'method'. It must be one of"
+                f" {set(indices_methods)!r} or a callable"
+            )
+            raise ValueError(message) from exc
+    else:
+        indices_method = method
 
-    # validate output shape of func. Makes 2 func evaluations
-    f_A_val = np.asarray(func(A[:2]))
-    if f_A_val.shape[0] != 2 or f_A_val.shape[1] < 1:
-        raise ValueError(
-            "'func' output should have a shape ``(-1, s)`` with ``s`` "
-            "the number of output."
-        )
+    if callable(func):
+        if dists is None:
+            raise ValueError(
+                "'dists' must be defined when 'func' is a callable."
+            )
 
-    f_A = np.asarray(func(A))
-    f_B = np.asarray(func(B))
-    f_AB = np.asarray(func(AB))
+        A, B = sample_A_B(n=n, dists=dists, random_state=random_state)
+        AB = sample_AB(A=A, B=B)
 
-    # Y = (Y - Y.mean()) / Y.std()
+        # validate output shape of func. Makes 2 func evaluations
+        f_A_val = np.asarray(func(A[:2]))
+        if f_A_val.shape[0] != 2 or f_A_val.shape[1] < 1:
+            raise ValueError(
+                "'func' output should have a shape ``(-1, s)`` with ``s`` "
+                "the number of output."
+            )
 
-    first_order, total_order = saltelli_2010(f_A, f_B, f_AB)
+        f_A = np.asarray(func(A))
+        f_B = np.asarray(func(B))
+        f_AB = np.asarray(func(AB))
+    else:
+        f_A = np.asarray(func['f_A'])
+        f_B = np.asarray(func['f_B'])
+        f_AB = np.asarray(func['f_AB'])
 
-    res = SobolResult(
+    # Compute indices
+    first_order, total_order = indices_method(f_A, f_B, f_AB)
+
+    res = dict(
         first_order=first_order,
         total_order=total_order,
-        _A=A,
-        _B=B,
-        _AB=AB,
+        _indices_method=indices_method,
         _f_A=f_A,
         _f_B=f_B,
         _f_AB=f_AB
     )
 
-    return res
+    if callable(func):
+        res.update(
+            dict(
+                _A=A,
+                _B=B,
+                _AB=AB,
+            )
+        )
+
+    return SobolResult(**res)
