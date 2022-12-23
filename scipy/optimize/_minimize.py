@@ -18,7 +18,8 @@ import numpy as np
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                         _minimize_bfgs, _minimize_newtoncg,
                         _minimize_scalar_brent, _minimize_scalar_bounded,
-                        _minimize_scalar_golden, MemoizeJac, OptimizeResult)
+                        _minimize_scalar_golden, MemoizeJac, OptimizeResult,
+                        _wrap_callback)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov
@@ -39,6 +40,9 @@ from ._differentiable_functions import FD_METHODS
 MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
                     'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
+
+# These methods support the new callback interface (passed an OptimizeResult)
+MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'trust-constr']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
@@ -190,16 +194,21 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         For method-specific options, see :func:`show_options()`.
     callback : callable, optional
-        Called after each iteration. For 'trust-constr' it is a callable with
+        A callable called after each iteration.
+
+        Methods nelder-mead and trust-constr support a callable with
         the signature:
 
-            ``callback(xk, OptimizeResult state) -> bool``
+            ``callback(OptimizeResult: intermediate_result)``
 
-        where ``xk`` is the current parameter vector. and ``state``
-        is an `OptimizeResult` object, with the same fields
-        as the ones from the return. If callback returns True
-        the algorithm execution is terminated.
-        For all the other methods, the signature is:
+        where ``intermediate_result`` is a keyword parameter containing an
+        `OptimizeResult` with attributes ``x`` and ``fun``, the present values
+        of the parameter vector and objective function. Note that the name
+        of the parameter must be ``intermediate_result`` for the callback
+        to be passed an `OptimizeResult`. These methods will also terminate if
+        the callback raises `StopIteration`.
+
+        All methods except trust-constr support a signature like:
 
             ``callback(xk)``
 
@@ -515,11 +524,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     x0 = np.atleast_1d(np.asarray(x0))
 
     if x0.ndim != 1:
-        message = ('Use of `minimize` with `x0.ndim != 1` is deprecated. '
-                   'Currently, singleton dimensions will be removed from '
-                   '`x0`, but an error will be raised in SciPy 1.11.0.')
-        warn(message, DeprecationWarning, stacklevel=2)
-        x0 = np.atleast_1d(np.squeeze(x0))
+        raise ValueError("'x0' must only have one dimension.")
 
     if x0.dtype.kind in np.typecodes["AllInteger"]:
         x0 = np.asarray(x0, dtype=float)
@@ -680,6 +685,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                                                        remove=1)
         bounds = standardize_bounds(bounds, x0, meth)
 
+    callback = _wrap_callback(callback, meth)
+
     if meth == 'nelder-mead':
         res = _minimize_neldermead(fun, x0, args, callback, bounds=bounds,
                                    **options)
@@ -729,11 +736,16 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         if "hess_inv" in res:
             res.hess_inv = None  # unknown
 
+    if getattr(callback, 'stop_iteration', False):
+        res.success = False
+        res.status = 99
+        res.message = "`callback` raised `StopIteration`."
+
     return res
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
-                    method='brent', tol=None, options=None):
+                    method=None, tol=None, options=None):
     """Minimization of scalar function of one variable.
 
     Parameters
@@ -749,8 +761,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         bracket search (see `bracket`); it doesn't always mean that the
         obtained solution will satisfy ``a <= x <= c``.
     bounds : sequence, optional
-        For method 'bounded', `bounds` is mandatory and must have two items
-        corresponding to the optimization bounds.
+        For method 'bounded', `bounds` is mandatory and must have two finite
+        items corresponding to the optimization bounds.
     args : tuple, optional
         Extra arguments passed to the objective function.
     method : str or callable, optional
@@ -761,6 +773,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
             - :ref:`Golden <optimize.minimize_scalar-golden>`
             - custom - a callable object (added in version 0.14.0), see below
 
+        Default is "Bounded" if bounds are provided and "Brent" otherwise.
         See the 'Notes' section for details of each solver.
 
     tol : float, optional
@@ -794,7 +807,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     Notes
     -----
     This section describes the available solvers that can be selected by the
-    'method' parameter. The default method is *Brent*.
+    'method' parameter. The default method is the ``"Bounded"`` Brent method if
+    `bounds` are passed and unbounded ``"Brent"`` otherwise.
 
     Method :ref:`Brent <optimize.minimize_scalar-brent>` uses Brent's
     algorithm [1]_ to find a local minimum.  The algorithm uses inverse
@@ -873,10 +887,16 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     if callable(method):
         meth = "_custom"
+    elif method is None:
+        meth = 'brent' if bounds is None else 'bounded'
     else:
         meth = method.lower()
     if options is None:
         options = {}
+
+    if bounds is not None and meth in {'brent', 'golden'}:
+        message = f"Use of `bounds` is incompatible with 'method={method}'."
+        raise ValueError(message)
 
     if tol is not None:
         options = dict(options)

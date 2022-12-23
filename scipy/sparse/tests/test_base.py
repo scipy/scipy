@@ -3241,11 +3241,13 @@ class _TestArithmetic:
 
         # check conversions
         for x in supported_dtypes:
-            A = self.__A.astype(x)
+            with np.errstate(invalid="ignore"):
+                A = self.__A.astype(x)
             Asp = self.spmatrix(A)
             for y in supported_dtypes:
                 if not np.issubdtype(y, np.complexfloating):
-                    B = self.__B.real.astype(y)
+                    with np.errstate(invalid="ignore"):
+                        B = self.__B.real.astype(y)
                 else:
                     B = self.__B.astype(y)
                 Bsp = self.spmatrix(B)
@@ -3280,13 +3282,15 @@ class _TestArithmetic:
                            self.__A @ self.__B.T)
 
         for x in supported_dtypes:
-            A = self.__A.astype(x)
+            with np.errstate(invalid="ignore"):
+                A = self.__A.astype(x)
             Asp = self.spmatrix(A)
             for y in supported_dtypes:
                 if np.issubdtype(y, np.complexfloating):
                     B = self.__B.astype(y)
                 else:
-                    B = self.__B.real.astype(y)
+                    with np.errstate(invalid="ignore"):
+                        B = self.__B.real.astype(y)
                 Bsp = self.spmatrix(B)
 
                 D1 = A @ B.T
