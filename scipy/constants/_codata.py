@@ -1,11 +1,10 @@
-# Compiled by Charles Harris, dated October 3, 2002
-# updated to 2002 values by BasSw, 2006
-# Updated to 2006 values by Vincent Davis June 2010
-# Updated to 2014 values by Joseph Booker, 2015
-# Updated to 2018 values by Jakob Jakobson, 2019
-
-
 from __future__ import annotations
+
+from math import exp, pi, sqrt
+from typing import Any, Callable
+import warnings
+
+from scipy.special import lambertw
 
 
 """
@@ -54,11 +53,9 @@ https://physics.nist.gov/cuu/Constants/
 
 """
 
-import warnings
-from math import exp, pi, sqrt
-from scipy.special import lambertw
 
-from typing import Any, Callable
+
+
 
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
@@ -1541,10 +1538,6 @@ def exact2018(exact):
     k = exact['Boltzmann constant']
     N_A = exact['Avogadro constant']
 
-    # Wien law numerical constants
-    alpha_W = (3 + lambertw(-3 * exp(-3))).real
-    x_W = (5 + lambertw(-5 * exp(-5))).real
-
     # Conventional electrical unit
     K_J90 = exact['conventional value of Josephson constant']
     K_J = 2 * e / h
@@ -1554,69 +1547,73 @@ def exact2018(exact):
     ohm_90 = R_K / R_K90
     A_90 = V_90 / ohm_90
 
+    # Wien law numerical constants
+    alpha_W = (3 + lambertw(-3 * exp(-3))).real
+    x_W = (5 + lambertw(-5 * exp(-5))).real
+
     replace = {
-        'atomic unit of action': h / (2*pi),
-        'Boltzmann constant in eV/K': k / e,
-        'Boltzmann constant in Hz/K': k / h,
-        'Boltzmann constant in inverse meter per kelvin': k / (h*c),
-        'conductance quantum': 2 * e**2 / h,
-        'conventional value of ampere-90': A_90,
-        'conventional value of coulomb-90': A_90,
-        'conventional value of farad-90': 1/ohm_90,
-        'conventional value of henry-90': ohm_90,
-        'conventional value of ohm-90': ohm_90,
-        'conventional value of volt-90': V_90,
-        'conventional value of watt-90': V_90**2 / ohm_90,
-        'electron volt-hertz relationship': e / h,
-        'electron volt-inverse meter relationship': e / (h * c),
-        'electron volt-kelvin relationship': e / k,
-        'electron volt-kilogram relationship': e / c**2,
-        'elementary charge over h-bar': e / (h / (2*pi)),
-        'Faraday constant': e * N_A,
-        'first radiation constant': 2 * pi * h * c**2,
-        'first radiation constant for spectral radiance': 2 * h * c**2,
-        'hertz-electron volt relationship': h / e,
-        'hertz-inverse meter relationship': 1 / c,
-        'hertz-kelvin relationship': h / k,
-        'hertz-kilogram relationship': h / c**2,
-        'inverse meter-electron volt relationship': (h * c) / e,
-        'inverse meter-joule relationship': h * c,
-        'inverse meter-kelvin relationship': h * c / k,
-        'inverse meter-kilogram relationship': h / c,
-        'inverse of conductance quantum': 1 / (2 * e**2 / h),
-        'Josephson constant': K_J,
-        'joule-electron volt relationship': 1 / e,
-        'joule-hertz relationship': 1 / h,
-        'joule-inverse meter relationship': 1 / (h * c),
-        'joule-kelvin relationship': 1 / k,
-        'joule-kilogram relationship': 1 / c**2,
-        'kelvin-electron volt relationship': k / e,
-        'kelvin-hertz relationship': k / h,
-        'kelvin-inverse meter relationship': k / (h * c),
-        'kelvin-kilogram relationship': k / c**2,
-        'kilogram-electron volt relationship': c**2 / e,
-        'kilogram-hertz relationship': c**2 / h,
-        'kilogram-inverse meter relationship': c / h,
-        'kilogram-joule relationship': c**2,
-        'kilogram-kelvin relationship': c**2 / k,
-        'Loschmidt constant (273.15 K, 100 kPa)': 100e3/273.15 / k,
-        'Loschmidt constant (273.15 K, 101.325 kPa)': 101.325e3/273.15 / k,
-        'mag. flux quantum': h / (2*e),
-        'molar gas constant': N_A * k,
-        'molar Planck constant': h * N_A,
+        "atomic unit of action": h / (2 * pi),
+        "Boltzmann constant in eV/K": k / e,
+        "Boltzmann constant in Hz/K": k / h,
+        "Boltzmann constant in inverse meter per kelvin": k / (h * c),
+        "conductance quantum": 2 * e**2 / h,
+        "conventional value of ampere-90": A_90,
+        "conventional value of coulomb-90": A_90,
+        "conventional value of farad-90": 1 / ohm_90,
+        "conventional value of henry-90": ohm_90,
+        "conventional value of ohm-90": ohm_90,
+        "conventional value of volt-90": V_90,
+        "conventional value of watt-90": V_90**2 / ohm_90,
+        "electron volt-hertz relationship": e / h,
+        "electron volt-inverse meter relationship": e / (h * c),
+        "electron volt-kelvin relationship": e / k,
+        "electron volt-kilogram relationship": e / c**2,
+        "elementary charge over h-bar": e / (h / (2 * pi)),
+        "Faraday constant": e * N_A,
+        "first radiation constant": 2 * pi * h * c**2,
+        "first radiation constant for spectral radiance": 2 * h * c**2,
+        "hertz-electron volt relationship": h / e,
+        "hertz-inverse meter relationship": 1 / c,
+        "hertz-kelvin relationship": h / k,
+        "hertz-kilogram relationship": h / c**2,
+        "inverse meter-electron volt relationship": (h * c) / e,
+        "inverse meter-joule relationship": h * c,
+        "inverse meter-kelvin relationship": h * c / k,
+        "inverse meter-kilogram relationship": h / c,
+        "inverse of conductance quantum": 1 / (2 * e**2 / h),
+        "Josephson constant": K_J,
+        "joule-electron volt relationship": 1 / e,
+        "joule-hertz relationship": 1 / h,
+        "joule-inverse meter relationship": 1 / (h * c),
+        "joule-kelvin relationship": 1 / k,
+        "joule-kilogram relationship": 1 / c**2,
+        "kelvin-electron volt relationship": k / e,
+        "kelvin-hertz relationship": k / h,
+        "kelvin-inverse meter relationship": k / (h * c),
+        "kelvin-kilogram relationship": k / c**2,
+        "kilogram-electron volt relationship": c**2 / e,
+        "kilogram-hertz relationship": c**2 / h,
+        "kilogram-inverse meter relationship": c / h,
+        "kilogram-joule relationship": c**2,
+        "kilogram-kelvin relationship": c**2 / k,
+        "Loschmidt constant (273.15 K, 100 kPa)": 100e3 / 273.15 / k,
+        "Loschmidt constant (273.15 K, 101.325 kPa)": 101.325e3 / 273.15 / k,
+        "mag. flux quantum": h / (2 * e),
+        "molar gas constant": N_A * k,
+        "molar Planck constant": h * N_A,
         'molar volume of ideal gas (273.15 K, 100 kPa)': N_A * k * 273.15 / 100e3,  # noqa: E501
         'molar volume of ideal gas (273.15 K, 101.325 kPa)': N_A * k * 273.15 / 101.325e3,  # noqa: E501
-        'natural unit of action': (h / (2*pi)),
-        'natural unit of action in eV s': (h / (2*pi))/e,
-        'Planck constant in eV/Hz': h/e,
-        'reduced Planck constant': h / (2*pi),
-        'reduced Planck constant in eV s': (h / (2*pi)) / e,
-        'reduced Planck constant times c in MeV fm': (h / (2*pi)) * c / (e * 1e6 * 1e-15),  # noqa: E501
-        'second radiation constant': h * c / k,
-        'Stefan-Boltzmann constant': 2 * pi**5 * k**4 / (15 * h**3 * c**2),
-        'von Klitzing constant': R_K,
-        'Wien frequency displacement law constant': alpha_W * k / h,
-        'Wien wavelength displacement law constant': h * c / (x_W * k),
+        "natural unit of action": (h / (2 * pi)),
+        "natural unit of action in eV s": (h / (2 * pi)) / e,
+        "Planck constant in eV/Hz": h / e,
+        "reduced Planck constant": h / (2 * pi),
+        "reduced Planck constant in eV s": (h / (2 * pi)) / e,
+        "reduced Planck constant times c in MeV fm": (h / (2*pi)) * c / (e * 1e6 * 1e-15),  # noqa: E501
+        "second radiation constant": h * c / k,
+        "Stefan-Boltzmann constant": 2 * pi**5 * k**4 / (15 * h**3 * c**2),
+        "von Klitzing constant": R_K,
+        "Wien frequency displacement law constant": alpha_W * k / h,
+        "Wien wavelength displacement law constant": h * c / (x_W * k),
     }
     return replace
 
@@ -1635,13 +1632,16 @@ def parse_constants_2002to2014(
         val = float(line[55:77].replace(' ', '').replace('...', ''))
         is_truncated = '...' in line[55:77]
         is_exact = '(exact)' in line[77:99]
-        if is_truncated and is_exact:
-            # missing decimals, use computed exact value
-            need_replace.add(name)
-        elif is_exact:
-            exact[name] = val
-        else:
-            assert not is_truncated
+        try:
+            if is_truncated and is_exact:
+                # missing decimals, use computed exact value
+                need_replace.add(name)
+            elif is_exact:
+                exact[name] = val
+            elif is_truncated:
+                raise Exception("Parsing error")
+        except Warning as w:
+            raise Warning(f"{name} is truncated but not exact.") from w
         uncert = float(line[77:99].replace(' ', '').replace('(exact)', '0'))
         units = line[99:].rstrip()
         constants[name] = (val, units, uncert)
@@ -1661,13 +1661,16 @@ def parse_constants_2018toXXXX(
         val = float(line[60:85].replace(' ', '').replace('...', ''))
         is_truncated = '...' in line[60:85]
         is_exact = '(exact)' in line[85:110]
-        if is_truncated and is_exact:
-            # missing decimals, use computed exact value
-            need_replace.add(name)
-        elif is_exact:
-            exact[name] = val
-        else:
-            assert not is_truncated
+        try:
+            if is_truncated and is_exact:
+                # missing decimals, use computed exact value
+                need_replace.add(name)
+            elif is_exact:
+                exact[name] = val
+            elif is_truncated:
+                raise Warning("Parsing error")
+        except Warning as w:
+            raise Warning(f"{name} is truncated but not exact.") from w
         uncert = float(line[85:110].replace(' ', '').replace('(exact)', '0'))
         units = line[110:].rstrip()
         constants[name] = (val, units, uncert)
@@ -1676,13 +1679,27 @@ def parse_constants_2018toXXXX(
     return constants
 
 
-def replace_exact(d, to_replace, exact):
+def replace_exact(d: dict[str, tuple[float, str, float]], to_replace: set(str),
+                  exact: dict[str, tuple[float, str, float]]):
     for name in to_replace:
-        assert name in exact, f'Missing exact value: {name}'
-        assert abs(exact[name]/d[name][0] - 1) <= 1e-9, \
-            f'Bad exact value: {name}: {exact[name]}, {d[name][0]}'
-        d[name] = (exact[name],) + d[name][1:]
-    assert set(exact.keys()) == set(to_replace)
+        try:
+            if name not in exact:
+                raise Warning("Lookup error")
+        except Warning as w:
+            raise Warning(f"The exact value is missing for {name}.") from w
+        try:
+            if abs(exact[name]/d[name][0] - 1) > 1e-9:
+                raise Warning("Calculation error")
+        except Warning as w:
+            raise Warning("The numerical values don't match for {name}: \
+                           {exact[name]}, {d[name][0]}.") from w
+        else:
+            d[name] = (exact[name],) + d[name][1:]
+    try:
+        if set(exact.keys()) != set(to_replace):
+            raise Warning("Mismatch error")
+    except Warning as w:
+        raise Warning("There are unmatched entries for the exact constants.") from w
 
 
 _physical_constants_2002 = parse_constants_2002to2014(txt2002, exact2002)
@@ -1756,8 +1773,8 @@ class ConstantWarning(DeprecationWarning):
 
 def _check_obsolete(key: str) -> None:
     if key in _obsolete_constants and key not in _aliases:
-        warnings.warn("Constant '%s' is not in current %s data set" % (
-            key, _current_codata), ConstantWarning)
+        warnings.warn(f"Constant {key} is not in current {_current_codata} data set",
+        ConstantWarning)
 
 
 def value(key: str) -> float:
