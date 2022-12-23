@@ -490,9 +490,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                            largest=largest)
-        # lobpcg does not guarantee exactly orthonormal eigenvectors
-        # until after gh-16320 is merged
-        eigvec, _ = np.linalg.qr(eigvec)
 
     elif solver == 'propack':
         if not HAS_PROPACK:
