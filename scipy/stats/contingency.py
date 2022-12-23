@@ -236,7 +236,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     .. [4] Berger, Jeffrey S. et al. "Aspirin for the Primary Prevention of
            Cardiovascular Events in Women and Men: A Sex-Specific
            Meta-analysis of Randomized Controlled Trials."
-           JAMA, 295(3):306–313, :doi:`10.1001/jama.295.3.306`, 2006.
+           JAMA, 295(3):306-313, :doi:`10.1001/jama.295.3.306`, 2006.
 
     Examples
     --------
