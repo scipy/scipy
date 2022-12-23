@@ -257,7 +257,7 @@ def sobol_indices(
     Notes
     -----
     Variance-based Sensitivity Analysis allows obtaining the contribution of
-    the parameters on the quantity of interest’s (QoI) variance. Sobol'
+    the parameters on the quantity of interest's (QoI) variance. Sobol'
     method [1]_, [2]_, gives not only a ranking but also quantifies the
     importance factor using the variance.
 
@@ -355,12 +355,13 @@ def sobol_indices(
     ...         uniform(loc=-np.pi, scale=2*np.pi),
     ...         uniform(loc=-np.pi, scale=2*np.pi),
     ...         uniform(loc=-np.pi, scale=2*np.pi)
-    ...     ]
+    ...     ],
+    ...     random_state=rng
     ... )
     >>> indices.first_order
-    array([[ 0.29563153,  0.44014138, -0.00489234]])
+    array([[0.31499073, 0.44011056, 0.00167054]])
     >>> indices.total_order
-    array([[0.56138789, 0.44500977, 0.24570556]])
+    array([[0.55508078, 0.43995732, 0.23803014]])
 
     .. note::
 
