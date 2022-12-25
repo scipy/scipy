@@ -361,6 +361,7 @@ Authors
 * Name (commits)
 * h-vetinari (10)
 * Jelle Aalbers (1)
+* Oriol Abril-Pla (1) +
 * Alan-Hung (1) +
 * Tania Allard (7)
 * Oren Amsalem (1) +
@@ -490,7 +491,7 @@ Authors
 * Ilhan Polat (6)
 * Akshita Prasanth (2) +
 * Sean Quinn (1)
-* Tyler Reddy (134)
+* Tyler Reddy (142)
 * Martin Reinecke (1)
 * Ned Richards (1)
 * Marie Roald (1) +
@@ -541,7 +542,7 @@ Authors
 * Egor Zemlyanoy (19)
 * Gavin Zhang (3) +
 
-A total of 181 people contributed to this release.
+A total of 182 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -685,6 +686,8 @@ Issues closed for 1.10.0
 * `#17523 <https://github.com/scipy/scipy/issues/17523>`__: BUG: \`[source]\` button in the docs sending to the wrong place
 * `#17578 <https://github.com/scipy/scipy/issues/17578>`__: TST, BLD, CI: 1.10.0rc1 wheel build/test failures
 * `#17619 <https://github.com/scipy/scipy/issues/17619>`__: BUG: core dump when calling scipy.optimize.linprog
+* `#17644 <https://github.com/scipy/scipy/issues/17644>`__: BUG: 1.10.0rc2 Windows wheel tests runs all segfault
+* `#17650 <https://github.com/scipy/scipy/issues/17650>`__: BUG: Assertion failed when using HiGHS
 
 ************************
 Pull requests for 1.10.0
@@ -1200,3 +1203,6 @@ Pull requests for 1.10.0
 * `#17627 <https://github.com/scipy/scipy/pull/17627>`__: MAINT: Cast \`datasets.ascent\` image to float64
 * `#17634 <https://github.com/scipy/scipy/pull/17634>`__: MAINT: casting errstate for NumPy 1.24
 * `#17638 <https://github.com/scipy/scipy/pull/17638>`__: MAINT, TST: alpine/musl segfault shim
+* `#17640 <https://github.com/scipy/scipy/pull/17640>`__: MAINT: prepare for SciPy 1.10.0rc2
+* `#17645 <https://github.com/scipy/scipy/pull/17645>`__: MAINT: stats.rankdata: ensure consistent shape handling
+* `#17653 <https://github.com/scipy/scipy/pull/17653>`__: MAINT: pybind11 win exclusion
