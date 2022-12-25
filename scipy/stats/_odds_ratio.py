@@ -409,16 +409,16 @@ def odds_ratio(table, *, kind='conditional'):
     In [4]_, the use of aspirin to prevent cardiovascular events in women
     and men was investigated. The study notably concluded:
 
-        For women and men, aspirin therapy reduced the risk of a composite of
+        ...aspirin therapy reduced the risk of a composite of
         cardiovascular events due to its effect on reducing the risk of
         ischemic stroke in women [...]
 
-    The article list multiple studies for various cardiovascular events. Let's
+    The article lists studies of various cardiovascular events. Let's
     focus on the ischemic stoke in women.
 
     The following table summarizes the results of the experiment in which
     participants took aspirin or a placebo on a regular basis for several
-    years. Occurences of ischemic stroke were recorded::
+    years. Cases of ischemic stroke were recorded::
 
                           Aspirin   Control/Placebo
         Ischemic stroke     176           230
@@ -435,7 +435,7 @@ def odds_ratio(table, *, kind='conditional'):
     0.7646037659999126
 
     For this sample, the odds of getting an ischemic stroke for those who have
-    been taking aspiring to the chemical are 0.76 times that of those
+    been taking aspirin are 0.76 times that of those
     who have received the placebo.
 
     To make statistical inferences about the population under study,
