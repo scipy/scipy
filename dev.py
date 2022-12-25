@@ -183,7 +183,7 @@ rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "static checkers",
-            "commands": ["lint", "mypy"],
+            "commands": ["lint", "mypy", "check-test-name"],
         },
         {
             "name": "environments",
@@ -893,6 +893,14 @@ def task_unicode_check():
     }
 
 
+def task_check_test_name():
+    return {
+        "basename": "check_test_name",
+        "actions": [str(Dirs().root / "tools" / "check_test_name.py")],
+        "doc": "Check tests are correctly named so that pytest runs them."
+    }
+
+
 @cli.cls_cmd('lint')
 class Lint():
     """:dash: Run flake8, check PEP 8 compliance on branch diff and check for
@@ -946,6 +954,14 @@ class Mypy(Task):
         print(report, end='')
         print(errors, end='', file=sys.stderr)
         return status == 0
+
+
+@cli.cls_cmd('check-test-name')
+class CheckTestName():
+    """:wrench: Check tests are correctly named so that pytest runs them."""
+
+    def run():
+        run_doit_task({'check_test_name': {}})
 
 
 ##########################################
