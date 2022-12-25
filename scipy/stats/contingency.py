@@ -243,24 +243,26 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     In [4]_, the use of aspirin to prevent cardiovascular events in women
     and men was investigated. The study notably concluded:
 
-        For women and men, aspirin therapy reduced the risk of a composite of
+        ...aspirin therapy reduced the risk of a composite of
         cardiovascular events due to its effect on reducing the risk of
         ischemic stroke in women [...]
 
-    The article list multiple studies for various cardiovascular events. Let's
+    The article lists studies of various cardiovascular events. Let's
     focus on the ischemic stoke in women.
 
     The following table summarizes the results of the experiment in which
-    took aspirin or a placebo on a regular basis for several
-    years. Occurences of ischemic stroke were recorded::
+    participants took aspirin or a placebo on a regular basis for several
+    years. Cases of ischemic stroke were recorded::
 
                           Aspirin   Control/Placebo
         Ischemic stroke     176           230
         No stroke         21035         21018
 
     Is there evidence that the aspirin reduces the risk of ischemic stroke?
-    We can formulate a null hypothesis :math:`H_0`:
-    "the effect of aspirin is equivalent to that of placebo".
+    We begin by formulating a null hypothesis :math:`H_0`:
+
+        The effect of aspirin is equivalent to that of placebo.
+
     Let's assess the plausibility of this hypothesis with
     a chi-square test.
 
@@ -276,9 +278,9 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     Using a significance level of 5%, we would reject the null hypothesis in
     favor of the alternative hypothesis: "the effect of aspirin
     is not equivalent to the effect of placebo".
-    Because `stats.contingency.chi2_contingency` performs a two-sided test
-    (i.e. the alternative hypothesis does not indicate the direction of the
-    effect), we can use `stats.contingency.odds_ratio` to support the
+    Because `scipy.stats.contingency.chi2_contingency` performs a two-sided
+    test, the alternative hypothesis does not indicate the direction of the
+    effect. We can use `stats.contingency.odds_ratio` to support the
     conclusion that aspirin *reduces* the risk of ischemic stroke.
 
     Below are further examples showing how larger contingency tables can be
