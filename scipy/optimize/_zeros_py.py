@@ -2,7 +2,7 @@ import warnings
 from collections import namedtuple
 import operator
 from . import _zeros
-from ._optimize import OptimizeResult
+from ._optimize import OptimizeResult, _call_callback_maybe_halt, _status_message
 import numpy as np
 
 
@@ -1392,3 +1392,293 @@ def toms748(f, a, b, args=(), k=1,
                           maxiter=maxiter, disp=disp)
     x, function_calls, iterations, flag = result
     return _results_select(full_output, (x, function_calls, iterations, flag))
+
+
+def _chandrupatla(f, x0, x1, *, args=(), xrtol=_xtol,
+                  xatol=_rtol, maxiter=_iter, ensure_scalar_x=False,
+                  callback=None, test_switch=False):
+    """Find the root of an elementwise function using Chandrupatla's algorithm.
+
+    This function allows for `x0`, `x1`, amd the output of `f` to be of any
+    broadcastable shapes. For each element of the output of `f`, `chandrupatla`
+    seeks the scalar root that makes the element 0.
+
+    Parameters
+    ----------
+
+    f : callable
+        The elementwise function whose root is wanted. The signature must be::
+
+            f(x: ndarray, *args) -> ndarray
+
+         where each element of ``x`` is a finite real and ``args`` is a tuple
+         with an arbitrary number of components of any type(s).
+         `chandrupatla` seeks an array ``x`` (or scalar) such that each
+         corresponding element in the output array (or scalar) are zero.
+    x0 : float, sequence, or ndarray
+        The lower bound of the root of the function. Follows normal
+        broadcasting rules and will be broadcast against `x1`and `f` before
+        being passed into `f`.
+    x1 : float, sequence, or ndarray
+        The upper bound of the root of the function. Follows normal
+        broadcasting rules and will be broadcast against `x0` and `f` before
+        being passed into `f`.
+    args : tuple, optional
+        Determines shape of output
+    xatol : float, optional
+        Tolerance (absolute) for termination. Termination occurs if
+        `2*xatol*np.abs(r) + xrtol / np.abs(b - c) > 0.5`.
+    xrtol : float, optional
+        Tolerance (relative) for termination. Termination occurs if
+        `2*xatol*np.abs(r) + xrtol / np.abs(b - c) > 0.5`.
+    maxiter : int, optional
+        If convergence is not achieved in `maxiter` iterations, the
+        corresponding elements of the `status` and `success` attributes will
+        indicate the iteration
+        limit was reached.
+    callback : callable, optional
+        An optional user-supplied function, called after each iteration.
+        Called as ``callback(xk)``, where ``xk`` is the current value of `x0`.
+
+    Returns
+    -------
+    res : OptimizeResult
+        An instance of :class:`scipy.optimize.OptimizeResult`. The object
+        is guaranteed to have the following attributes.
+        status : int
+            An integer representing the exit status of the algorithm.
+            ``0`` : Optimal solution found.
+            ``1`` : Iteration or time limit reached.
+            ``2`` : Problem is infeasible.
+            ``3`` : Problem is unbounded.
+            ``4`` : Other; see message for details.
+        success : bool
+            ``True`` when an optimal solution is found and ``False`` otherwise.
+        message : str
+            A string descriptor of the exit status of the algorithm.
+        The following attributes will also be present, but the values may be
+        ``None``, depending on the solution status.
+        x : ndarray
+            The values of the decision variables that minimize the
+            objective function while satisfying the constraints.
+        fun : float
+            The optimal value of the objective function ``c @ x``.
+        lower_bracket : float
+            The lower value of the bracket.
+        upper_bracket : float
+            The upper value of the bracket.
+        lower_fun_val : float
+            The lower function value.
+        upper_fun_val : float
+            The upper function value.
+
+    Notes
+    -----
+    As written in [Sachs2015]_ which in turn is based on Chandrupatla's
+    algorithm as described in [Scherer2018]_.
+
+    References
+    ----------
+
+    .. [Sachs2015]
+       Sachs, Jason
+       "Ten Little Algorithms, Part 5: Quadratic Extremum Interpolation and
+       Chandrupatla's Method",
+       https://www.embeddedrelated.com/showarticle/855.php
+
+    .. [Scherer2018]
+       Scherer, Philipp
+       *Computational physics: Simulation of classical and Quantum Systems*.
+       SPRINGER INTERNATIONAL PU, 2018. Ch. 6.1.7.3.
+
+    .. [Chandrupatla1997]
+        Chandrupatla, Tirupathi R.
+        "A new hybrid quadratic/bisection algorithm for finding the zero of a
+        nonlinear function without using derivatives".
+        Advances in Engineering Software, 28(3), 145-149.
+        https://doi.org/10.1016/s0965-9978(96)00051-8
+
+    See Also
+    --------
+    brentq, brenth, ridder, bisect, newton
+
+    Examples
+    --------
+    >>> from scipy import optimize
+    >>> def f(x,a):
+    ...     return a-x*x
+
+    >>> y = optimize._chandrupatla(f,0,3,args=(7.0,))
+    >>> y.x
+    2.6457513110645907
+
+    >>> x0 = np.zeros((2,1,1))
+    >>> x1 = np.full((1,2,1), 3)
+    >>> k = np.array([[[1, 2]]])
+    >>> res = optimize._chandrupatla(f,x0=x0,x1=x1,
+                              args=(k,),
+                              maxiter=50)
+    >>> res.x
+    [[[ 1.000e+00  1.414e+00]
+         [ 1.000e+00  1.414e+00]]
+
+        [[ 1.000e+00  1.414e+00]
+         [ 1.000e+00  1.414e+00]]]
+
+    permission from Jason Sachs (@jason-s):
+        https://github.com/scipy/scipy/issues/7242#issuecomment-1314178133
+    """
+
+    # adapted from an earlier implementation of Jason Sachs'
+    # as written in https://www.embeddedrelated.com/showarticle/855.php
+    # which in turn is based on Chandrupatla's algorithm as described in
+    # Scherer https://books.google.com/books?id=cC-8BAAAQBAJ&pg=PA95
+
+    # FOR TESTING ONLY
+    if ensure_scalar_x:
+        def f_wrapped(x, *args, **kwargs):
+            return np.asarray([f(x[0], *args, **kwargs)])
+    else:
+        f_wrapped = f
+
+    # FOR TESTING ONLY
+    def termination_function1():
+        """chandrupatla termination per paper"""
+        term = np.logical_or(terminate,
+                             np.logical_or(fm == 0, tlim > 0.5))
+        return term
+
+    def termination_function2():
+        """termination like brent / bisect for testing"""
+        delta = (xatol + xrtol * abs(r))
+        term = np.logical_or(terminate,
+                             np.logical_or(fm == 0,
+                                           abs(b - a) < delta))
+        return term
+
+    termination_function = (termination_function2
+                            if test_switch
+                            else termination_function1)
+
+    # Initialization
+    b = x0
+    a = c = x1
+    fb = f_wrapped(b, *args)
+    fa = fc = f_wrapped(a, *args)
+    t = 0.5
+    iterations = 0
+
+    a, b, fa, fb = np.broadcast_arrays(a, b, fa, fb)
+    intermediate_shape = a.shape
+    a, b, fa, fb = np.atleast_1d(a, b, fa, fb)
+    shape = a.shape
+
+    iterations = np.zeros_like(a)
+
+    # flag to check state of convergence
+    flag = np.full(shape, "in_progress")
+
+    funcalls = np.full(np.shape(flag), 0)
+    terminate = False
+
+    while iterations.any() < maxiter:
+        # use t to linearly interpolate between a and b,
+        # and evaluate this function as our newest estimate xt
+        xt = a + t * (b - a)
+        ft = f_wrapped(xt, *args)
+        funcalls += 1
+
+        # update our history of the last few points so that
+        # - a is the newest estimate (we're going to update it from xt)
+        # - c and b get the preceding two estimates
+        # - a and b maintain opposite signs for f(a) and f(b)
+        samesign = np.sign(ft) == np.sign(fa)
+        c = np.choose(samesign, [b, a])
+        b = np.choose(samesign, [a, b])
+        fc = np.choose(samesign, [fb, fa])
+        fb = np.choose(samesign, [fa, fb])
+        a = xt
+        fa = ft
+
+        # set r so that f(r) is the minimum magnitude of f(a) and f(b)
+        fa_is_smaller = np.abs(fa) < np.abs(fb)
+        r = np.choose(fa_is_smaller, [b, a])
+        fm = np.choose(fa_is_smaller, [fb, fa])
+
+        tol = 2 * xrtol * np.abs(r) + xatol
+        tlim = tol / np.abs(b - a)
+
+        terminate = termination_function()
+
+        # check convergence here, update flag if so
+        if np.all(terminate):
+            flag.fill(_status_message['success'])
+            break
+
+        iterations += 1 - terminate
+
+        # Figure out values xi and phi
+        # to determine which method we should use next
+        xi = (a - b) / (c - b)
+        phi = (fa - fb) / (fc - fb)
+        alpha = (c - a) / (b - a)
+        t = (fa / (fa - fb) * fc / (fc - fb) -
+             alpha * fa / (fc - fa) * fb / (fb - fc))
+        j = ((1-(np.sqrt(1-xi))) >= phi) | (phi >= np.sqrt(xi))
+        t[j] = 0.5
+
+        # limit to the range (tlim, 1-tlim)
+        t = np.minimum(1 - tlim, np.maximum(tlim, t))
+
+        intermediate_result = RootResults(root=r,
+                                          function_calls=funcalls,
+                                          iterations=iterations,
+                                          flag=None)
+        if _call_callback_maybe_halt(callback, intermediate_result):
+            break
+
+    # reshape outputs
+    r = np.reshape(r, intermediate_shape)[()]
+    ft = np.reshape(ft, intermediate_shape)[()]
+    funcalls = np.reshape(funcalls, intermediate_shape)[()]
+    a = np.reshape(a, intermediate_shape)[()]
+    b = np.reshape(b, intermediate_shape)[()]
+    fa = np.reshape(fa, intermediate_shape)[()]
+    fb = np.reshape(fb, intermediate_shape)[()]
+    iterations = np.reshape(iterations, intermediate_shape)[()]
+
+    # checks for convergence and conditions
+    if (iterations > maxiter).any():
+        mask = np.where(iterations > maxiter)
+        flag[mask] = 'maxiter'
+    elif not (np.sign(fa) * np.sign(fb) <= 0).all():
+        flag.fill('sign_error')
+    elif not ((np.isfinite(a).all() and np.isreal(a).all()) and
+              (np.isfinite(b).all() and np.isreal(b).all())):
+        flag.fill('value_error')
+    elif not (np.isreal(fa).all() and np.isreal(fb).all()):
+        flag.fill('value_error')
+    else:
+        flag.fill('success')
+
+    # iterate here to create the message since the scalar case has dimension ()
+    message_flag = flag.flatten()
+    message = {i: _status_message[i] for i in message_flag}
+    flag = np.reshape(flag, intermediate_shape)[()]
+
+    result = RootResults(root=r,
+                         function_calls=funcalls,
+                         iterations=iterations,
+                         flag=None)
+
+    # add output specific to _chandrupatla
+    result.flag = flag
+    result.converged = flag == 'success'
+    result.fun = ft
+    result.message = message
+    result.lower_bracket = a
+    result.upper_bracket = b
+    result.lower_fun_value = fa
+    result.upper_fun_value = fb
+
+    return result

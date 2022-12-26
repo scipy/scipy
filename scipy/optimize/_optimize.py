@@ -52,7 +52,11 @@ _status_message = {'success': 'Optimization terminated successfully.',
                               'to precision loss.',
                    'nan': 'NaN result encountered.',
                    'out_of_bounds': 'The result is outside of the provided '
-                                    'bounds.'}
+                                    'bounds.',
+                   'sign_error': 'Function values must have opposite signs.',
+                   'value_error': 'Function value and x values must be finite '
+                                  'and real.',
+                   'in_progress': 'Optimization in progress.'}
 
 
 class MemoizeJac:
