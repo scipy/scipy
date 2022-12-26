@@ -745,7 +745,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
-                    method='brent', tol=None, options=None):
+                    method=None, tol=None, options=None):
     """Minimization of scalar function of one variable.
 
     Parameters
@@ -761,8 +761,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         bracket search (see `bracket`); it doesn't always mean that the
         obtained solution will satisfy ``a <= x <= c``.
     bounds : sequence, optional
-        For method 'bounded', `bounds` is mandatory and must have two items
-        corresponding to the optimization bounds.
+        For method 'bounded', `bounds` is mandatory and must have two finite
+        items corresponding to the optimization bounds.
     args : tuple, optional
         Extra arguments passed to the objective function.
     method : str or callable, optional
@@ -773,6 +773,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
             - :ref:`Golden <optimize.minimize_scalar-golden>`
             - custom - a callable object (added in version 0.14.0), see below
 
+        Default is "Bounded" if bounds are provided and "Brent" otherwise.
         See the 'Notes' section for details of each solver.
 
     tol : float, optional
@@ -806,7 +807,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     Notes
     -----
     This section describes the available solvers that can be selected by the
-    'method' parameter. The default method is *Brent*.
+    'method' parameter. The default method is the ``"Bounded"`` Brent method if
+    `bounds` are passed and unbounded ``"Brent"`` otherwise.
 
     Method :ref:`Brent <optimize.minimize_scalar-brent>` uses Brent's
     algorithm [1]_ to find a local minimum.  The algorithm uses inverse
@@ -885,10 +887,16 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     if callable(method):
         meth = "_custom"
+    elif method is None:
+        meth = 'brent' if bounds is None else 'bounded'
     else:
         meth = method.lower()
     if options is None:
         options = {}
+
+    if bounds is not None and meth in {'brent', 'golden'}:
+        message = f"Use of `bounds` is incompatible with 'method={method}'."
+        raise ValueError(message)
 
     if tol is not None:
         options = dict(options)
