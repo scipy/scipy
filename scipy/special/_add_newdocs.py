@@ -12493,7 +12493,8 @@ add_newdoc("spence",
     >>> plt.show()
     """)
 
-add_newdoc("stdtr",
+add_newdoc(
+    "stdtr",
     r"""
     stdtr(df, t, out=None)
 
@@ -12503,7 +12504,6 @@ add_newdoc("stdtr",
     distribution with df > 0 degrees of freedom:
 
     .. math::
-
         \int_{-\infty}^t \frac{\Gamma((df+1)/2)}
                 {\sqrt{\pi df} \Gamma(df/2)}
             (1+x^2/df)^{-(df+1)/2}\, dx
