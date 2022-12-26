@@ -196,9 +196,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     Using the normal matrix, in Rayleigh-Ritz method, (2022, Nov. 19),
     Wikipedia, https://w.wiki/4zms.
 
-    Alternatively, the PROPACK solver can be called. ``form="array"``
+    Alternatively, the PROPACK solver can be called.
 
-    Choices of the input matrix ``A`` numeric dtype may be limited.
+    Choices of the input matrix `A` numeric dtype may be limited.
     Only ``solver="lobpcg"`` supports all floating point dtypes
     real: 'np.single', 'np.double', 'np.longdouble' and
     complex: 'np.csingle', 'np.cdouble', 'np.clongdouble'.
@@ -207,7 +207,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Examples
     --------
-    Construct a matrix ``A`` from singular values and vectors.
+    Construct a matrix `A` from singular values and vectors.
 
     >>> import numpy as np
     >>> from scipy.stats import ortho_group
@@ -215,7 +215,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> from scipy.sparse import csr_matrix
     >>> rng = np.random.default_rng()
 
-    Construct a dense matrix ``A`` from singular values and vectors.
+    Construct a dense matrix `A` from singular values and vectors.
 
     >>> orthogonal = ortho_group.rvs(10, random_state=rng)
     >>> s = [1e-3, 1, 2, 3, 4]  # non-zero singular values
@@ -358,7 +358,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     can be viewed as the incidence matrix; see
     Incidence matrix, (2022, Nov. 19), Wikipedia, https://w.wiki/5YXU,
     of a linear graph with 5 vertices and 4 edges. The 5x5 normal matrix
-    'M.T @ M' thus is
+    ``M.T @ M`` thus is
 
     >>> print(M.T @ M)
     [[ 1 -1  0  0  0]
@@ -368,7 +368,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
      [ 0  0  0 -1  1]]
 
     the graph Laplacian, while the actually used in 'svds' smaller size
-    4x4 normal matrix 'M @ M.T'
+    4x4 normal matrix ``M @ M.T``
 
     >>> print(M @ M.T)
     [[ 2 -1  0  0]
@@ -381,9 +381,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     (2022, Nov. 19), Wikipedia, https://w.wiki/5YXW.
 
     The 'LinearOperator' setup needs the options 'rmatvec' and 'rmatmat'
-    of multiplication by the matrix transpose 'M.T', but we want to be
-    matrix-free to save memory, so knowing how 'M.T' looks like, we
-    manually construct the following function to be used in 'rmatmat=diff0t'.
+    of multiplication by the matrix transpose ``M.T``, but we want to be
+    matrix-free to save memory, so knowing how ``M.T`` looks like, we
+    manually construct the following function to be
+    used in ``rmatmat=diff0t``.
 
     >>> def diff0t(a):
     ...     if a.ndim == 1:
@@ -433,7 +434,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     (2022, Nov. 19), Wikipedia, https://w.wiki/5YX6,
     since 'diff' corresponds to first
     derivative, and its smaller size n-1 x n-1 normal matrix
-    'M @ M.T' represent the discrete second derivative with the Dirichlet
+    ``M @ M.T`` represent the discrete second derivative with the Dirichlet
     boundary conditions. We use these analytic expressions for validation.
 
     >>> se = 2. * np.sin(np.pi * np.arange(1, 4) / (2. * n))
@@ -490,9 +491,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                            largest=largest)
-        # lobpcg does not guarantee exactly orthonormal eigenvectors
-        # until after gh-16320 is merged
-        eigvec, _ = np.linalg.qr(eigvec)
 
     elif solver == 'propack':
         if not HAS_PROPACK:

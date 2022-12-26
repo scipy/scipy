@@ -161,6 +161,7 @@ scipy/integrate/_lsoda-f2pywrappers.f
 scipy/integrate/_vode-f2pywrappers.f
 scipy/interpolate/_rbfinterp_pythran.cpp
 scipy/interpolate/_ppoly.c
+scipy/interpolate/_rgi_cython.c
 scipy/interpolate/_bspl.c
 scipy/interpolate/interpnd.c
 scipy/interpolate/src/dfitpack-f2pywrappers.f
