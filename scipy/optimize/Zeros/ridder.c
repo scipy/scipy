@@ -26,10 +26,6 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
     fa = (*f)(xa, func_data_param);
     fb = (*f)(xb, func_data_param);
     solver_stats->funcalls = 2;
-    if (signbit(fa)==signbit(fb)) {
-        solver_stats->error_num = SIGNERR;
-        return 0.;
-    }
     if (fa == 0) {
         solver_stats->error_num = CONVERGED;
         return xa;
@@ -37,6 +33,10 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
     if (fb == 0) {
         solver_stats->error_num = CONVERGED;
         return xb;
+    }
+    if (signbit(fa)==signbit(fb)) {
+        solver_stats->error_num = SIGNERR;
+        return 0.;
     }
 
     solver_stats->iterations=0;

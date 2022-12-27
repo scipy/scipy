@@ -48,10 +48,6 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol,
     fpre = (*f)(xpre, func_data_param);
     fcur = (*f)(xcur, func_data_param);
     solver_stats->funcalls = 2;
-    if (signbit(fpre)==signbit(fcur)) {
-        solver_stats->error_num = SIGNERR;
-        return 0.;
-    }
     if (fpre == 0) {
         solver_stats->error_num = CONVERGED;
         return xpre;
@@ -60,7 +56,10 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol,
         solver_stats->error_num = CONVERGED;
         return xcur;
     }
-
+    if (signbit(fpre)==signbit(fcur)) {
+        solver_stats->error_num = SIGNERR;
+        return 0.;
+    }
     solver_stats->iterations = 0;
     for (i = 0; i < iter; i++) {
         solver_stats->iterations++;
