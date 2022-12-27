@@ -770,6 +770,45 @@ def test_gh9551_raise_error_if_disp_true():
     assert_allclose(root, complex(0.0, 1.0))
 
 
+@pytest.mark.parametrize('solver_name',
+                         ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
+@pytest.mark.parametrize('rs_interface', [True, False])
+def test_gh3089_8394(solver_name, rs_interface):
+    # gh-3089 and gh-8394 reported that bracketing solvers returned incorrect
+    # results when they encountered NaNs. Check that this is resolved.
+    solver = ((lambda f, a, b: root_scalar(f, bracket=(a, b))) if rs_interface
+              else getattr(zeros, solver_name))
+
+    def f(x):
+        return np.nan
+
+    message = "The function value at x..."
+    with pytest.raises(ValueError, match=message):
+        solver(f, 0, 1)
+
+
+@pytest.mark.parametrize('solver_name',
+                         ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
+@pytest.mark.parametrize('rs_interface', [True, False])
+def test_function_calls(solver_name, rs_interface):
+    # There do not appear to be checks that the bracketing solvers report the
+    # correct number of function evaluations. Check that this is the case.
+    solver = ((lambda f, a, b, **kwargs: root_scalar(f, bracket=(a, b)))
+              if rs_interface else getattr(zeros, solver_name))
+
+    def f(x):
+        f.calls += 1
+        return x**2 - 1
+    f.calls = 0
+
+    res = solver(f, 0, 10, full_output=True)
+
+    if rs_interface:
+        assert res.function_calls == f.calls
+    else:
+        assert res[1].function_calls == f.calls
+
+
 def test_gh_14486_converged_false():
     """Test that zero slope with secant method results in a converged=False"""
     def lhs(x):

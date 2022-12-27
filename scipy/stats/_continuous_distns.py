@@ -9247,6 +9247,49 @@ class vonmises_gen(rv_continuous):
         return super().expect(func, args, loc,
                               scale, lb, ub, conditional, **kwds)
 
+    @_call_super_mom
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        The `scale` parameter is ignored. Fit data is assumed to represent
+        angles and will be wrapped onto the unit circle.\n\n""")
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, fshape, floc, fscale = _check_fit_input_parameters(self, data,
+                                                                 args, kwds)
+        if self.a == -np.pi:
+            # vonmises line case, here the default fit method will be used
+            return super().fit(data, *args, **kwds)
+
+        # wrap data to interval [0, 2*pi]
+        data = np.mod(data, 2 * np.pi)
+
+        def find_mu(data):
+            return stats.circmean(data)
+
+        def find_kappa(data):
+            # kappa is the solution to
+            # r = I[1](kappa)/I[0](kappa)
+            #   = I[1](kappa) * exp(-kappa)/(I[0](kappa) * exp(-kappa))
+            #   = sc.i1e(kappa)/sc.i0e(kappa)
+            # where r = mean resultant length
+            r = 1 - stats.circvar(data)
+
+            def solve_for_kappa(kappa):
+                return sc.i1e(kappa)/sc.i0e(kappa) - r
+
+            root_res = root_scalar(solve_for_kappa, method="brentq",
+                                   bracket=(1e-8, 1e12))
+            return root_res.root
+
+        if floc is None:
+            floc = find_mu(data)
+            fshape = find_kappa(data)
+            return floc, fshape
+        else:
+            fshape = find_kappa(data)
+            return floc, fshape
+
 
 vonmises = vonmises_gen(name='vonmises')
 vonmises_line = vonmises_gen(a=-np.pi, b=np.pi, name='vonmises_line')
