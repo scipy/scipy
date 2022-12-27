@@ -48,7 +48,7 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol,
     fpre = (*f)(xpre, func_data_param);
     fcur = (*f)(xcur, func_data_param);
     solver_stats->funcalls = 2;
-    if (fpre*fcur > 0) {
+    if (signbit(fpre)==signbit(fcur)) {
         solver_stats->error_num = SIGNERR;
         return 0.;
     }

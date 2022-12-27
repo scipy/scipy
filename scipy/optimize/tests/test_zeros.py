@@ -807,3 +807,25 @@ def test_function_calls(solver_name, rs_interface):
         assert res.function_calls == f.calls
     else:
         assert res[1].function_calls == f.calls
+
+
+@pytest.mark.parametrize('solver_name',
+                         ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
+@pytest.mark.parametrize('rs_interface', [True, False])
+def test_gh5584(solver_name, rs_interface):
+    # gh-5584 reported that an underflow can cause sign checks in the algorithm
+    # to fail. Check that this is resolved.
+    solver = ((lambda f, a, b, **kwargs: root_scalar(f, bracket=(a, b)))
+              if rs_interface else getattr(zeros, solver_name))
+
+    def f(x):
+        return 1e-200*x
+
+    with pytest.raises(ValueError, match='...must have different signs'):
+        solver(f, -0.5, -0.4, full_output=True)
+
+    res = solver(f, -0.5, 0.4, full_output=True)
+    res = res if rs_interface else res[1]
+
+    assert res.converged
+    assert_allclose(res.root, 0, atol=1e-8)

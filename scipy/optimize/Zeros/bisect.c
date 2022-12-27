@@ -14,7 +14,7 @@ bisect(callback_type f, double xa, double xb, double xtol, double rtol,
     fa = (*f)(xa, func_data_param);
     fb = (*f)(xb, func_data_param);
     solver_stats->funcalls = 2;
-    if (fa*fb > 0) {
+    if (signbit(fa)==signbit(fb)) {
         solver_stats->error_num = SIGNERR;
         return 0.;
     }
@@ -34,7 +34,7 @@ bisect(callback_type f, double xa, double xb, double xtol, double rtol,
         xm = xa + dm;
         fm = (*f)(xm, func_data_param);
         solver_stats->funcalls++;
-        if (fm*fa >= 0) {
+        if (signbit(fm)==signbit(fa)) {
             xa = xm;
         }
         if (fm == 0 || fabs(dm) < xtol + rtol*fabs(xm)) {
