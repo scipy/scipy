@@ -768,3 +768,27 @@ def test_gh9551_raise_error_if_disp_true():
         zeros.newton(f, 1.0, f_p)
     root = zeros.newton(f, complex(10.0, 10.0), f_p)
     assert_allclose(root, complex(0.0, 1.0))
+
+
+def test_gh_14486_converged_false():
+    """Test that zero slope with secant method results in a converged=False"""
+    def lhs(x):
+        return x * np.exp(-x*x) - 0.07
+
+    with pytest.warns(RuntimeWarning, match='Tolerance of'):
+        res = root_scalar(lhs, method='secant', x0=-0.15, x1=1.0)
+    assert not res.converged
+    assert res.flag == 'convergence error'
+
+    with pytest.warns(RuntimeWarning, match='Tolerance of'):
+        res = newton(lhs, x0=-0.15, x1=1.0, disp=False, full_output=True)[1]
+    assert not res.converged
+    assert res.flag == 'convergence error'
+
+    # This test case doesn't fail to converge for the vectorized version of
+    # newton, but this one from `def test_zero_der_nz_dp()` does.
+    dx = np.finfo(float).eps ** 0.33
+    p0 = (200.0 - dx) / (2.0 + dx)
+    with pytest.warns(RuntimeWarning, match='RMS of'):
+        res = newton(lambda y: (y - 100.0)**2, x0=[p0]*2, full_output=True)
+    assert_equal(res.converged, [False, False])

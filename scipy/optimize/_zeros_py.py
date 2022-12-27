@@ -349,7 +349,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     warnings.warn(msg, RuntimeWarning)
                 p = (p1 + p0) / 2.0
                 return _results_select(
-                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
+                    full_output, (p, funcalls, itr + 1, _ECONVERR))
             else:
                 if abs(q1) > abs(q0):
                     p = (-q0 / q1 * p1 + p0) / (1 - q0 / q1)
