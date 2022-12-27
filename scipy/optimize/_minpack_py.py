@@ -649,9 +649,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Optimal values for the parameters so that the sum of the squared
         residuals of ``f(xdata, *popt) - ydata`` is minimized.
     pcov : 2-D array
-        The estimated covariance of popt. The diagonals provide the variance
-        of the parameter estimate. To compute one standard deviation errors
-        on the parameters use ``perr = np.sqrt(np.diag(pcov))``.
+        The estimated approximate covariance of popt. The diagonals provide
+        the variance of the parameter estimate. To compute one standard
+        deviation errors on the parameters use
+        ``perr = np.sqrt(np.diag(pcov))``. Note that for highly nonlinear
+        models these results are often a very inaccurate measure of
+        uncertainty of the model parameters.
 
         How the `sigma` parameter affects the estimated covariance
         depends on `absolute_sigma` argument, as described above.
