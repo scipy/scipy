@@ -787,8 +787,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     >>> def func(x, a, b, c, d):
     ...     return a * d * np.exp(-b * x) + c  # a and d are redundant
     >>> popt, pcov = curve_fit(func, xdata, ydata)
-    >>> np.linalg.cond(pcov)  # may vary
-    1.13250718925596e+32
+    >>> np.linalg.cond(pcov)
+    1.13250718925596e+32  # may vary
 
     Such a large value is cause for concern. The diagonal elements of the
     covariance matrix, which is related to uncertainty of the fit, gives more
