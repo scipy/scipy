@@ -292,7 +292,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                              full_output)
 
     # Convert to float (don't use float(x0); this works also for complex x0)
-    p0 = 1.0 * x0
+    x0 = np.asarray(x0)[()]
+    p0 = x0
     funcalls = 0
     if fprime is not None:
         # Newton-Raphson method
