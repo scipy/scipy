@@ -139,6 +139,35 @@ class TestSobolIndices:
         )
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
 
+    def test_method(self, ishigami_ref_indices):
+        def jansen_sobol(f_A, f_B, f_AB):
+            """Jansen for S and Sobol' for St.
+
+            From Saltelli2010, table 2 formulations (c) and (e)."""
+            f_AB = f_AB.reshape(-1, *f_A.shape)
+
+            var = np.var(np.vstack([f_A, f_B]), axis=0)
+
+            s = (var - 0.5 * np.mean((f_B - f_AB) ** 2, axis=1)) / var
+            st = np.mean(f_A * (f_A - f_AB), axis=1) / var
+
+            return s.T, st.T
+
+        rng = np.random.default_rng(28631265345463262246170309650372465332)
+        res = sobol_indices(
+            func=f_ishigami, n=4096,
+            dists=[
+                uniform(loc=-np.pi, scale=2*np.pi),
+                uniform(loc=-np.pi, scale=2*np.pi),
+                uniform(loc=-np.pi, scale=2*np.pi)
+            ],
+            method=jansen_sobol,
+            random_state=rng
+        )
+
+        assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
+        assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-2)
+
     def test_raises(self):
 
         message = r"Either of the methods `pdf` or `logpdf` must be specified"
