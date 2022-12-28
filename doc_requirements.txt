@@ -1,8 +1,7 @@
 # Note: this should disappear at some point. For now, please keep it
 #       in sync with the doc dependencies in pyproject.toml
 Sphinx!=4.1.0
-#pydata-sphinx-theme==0.10.0
-git+https://github.com/choldgraf/pydata-sphinx-theme@fix-navbar-speed
+pydata-sphinx-theme==0.12.0
 sphinx-design>=0.2.0
 numpydoc
 matplotlib>2

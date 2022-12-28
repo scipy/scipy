@@ -5,10 +5,9 @@
 # automatically adds `axis` and `nan_policy` arguments to a function.
 
 import numpy as np
-import scipy.stats
-import scipy.stats._stats_py
 from functools import wraps
 from scipy._lib._docscrape import FunctionDoc, Parameter
+from scipy._lib._util import _contains_nan
 import inspect
 
 
@@ -451,7 +450,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     # all the dimensions are reduced.
                     n_dims = np.max([sample.ndim for sample in samples])
                     reduced_axes = tuple(range(n_dims))
-                samples = [sample.ravel() for sample in samples]
+                samples = [np.asarray(sample.ravel()) for sample in samples]
             else:
                 samples = _broadcast_arrays(samples, axis=axis)
                 axis = np.atleast_1d(axis)
@@ -475,8 +474,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 # Addresses nan_policy == "raise"
                 contains_nans = []
                 for sample in samples:
-                    contains_nan, _ = (
-                        scipy.stats._stats_py._contains_nan(sample, nan_policy))
+                    contains_nan, _ = _contains_nan(sample, nan_policy)
                     contains_nans.append(contains_nan)
 
                 # Addresses nan_policy == "propagate"
@@ -523,8 +521,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             x = _broadcast_concatenate(samples, axis)
 
             # Addresses nan_policy == "raise"
-            contains_nan, _ = (
-                scipy.stats._stats_py._contains_nan(x, nan_policy))
+            contains_nan, _ = _contains_nan(x, nan_policy)
 
             if vectorized and not contains_nan and not sentinel:
                 res = hypotest_fun_out(*samples, axis=axis, **kwds)

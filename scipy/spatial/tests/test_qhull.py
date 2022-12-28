@@ -543,13 +543,6 @@ class TestDelaunay:
         assert_unordered_tuple_list_equal(obj2.simplices, obj3.simplices,
                                           tpl=sorted_tuple)
 
-    def test_vertices_deprecation(self):
-        tri = qhull.Delaunay([(0, 0), (0, 1), (1, 0)])
-        msg = ("Delaunay attribute 'vertices' is deprecated in favour of "
-               "'simplices' and will be removed in Scipy 1.11.0.")
-        with pytest.warns(DeprecationWarning, match=msg):
-            tri.vertices
-
 
 def assert_hulls_equal(points, facets_1, facets_2):
     # Check that two convex hulls constructed from the same point set
@@ -795,6 +788,41 @@ class TestConvexHull:
         assert_equal(hull.good, expected)
 
 class TestVoronoi:
+
+    @pytest.mark.parametrize("qhull_opts, extra_pts", [
+        # option Qz (default for SciPy) will add
+        # an extra point at infinity
+        ("Qbb Qc Qz", 1),
+        ("Qbb Qc", 0),
+    ])
+    @pytest.mark.parametrize("n_pts", [50, 100])
+    @pytest.mark.parametrize("ndim", [2, 3])
+    def test_point_region_structure(self,
+                                    qhull_opts,
+                                    n_pts,
+                                    extra_pts,
+                                    ndim):
+        # see gh-16773
+        rng = np.random.default_rng(7790)
+        points = rng.random((n_pts, ndim))
+        vor = Voronoi(points, qhull_options=qhull_opts)
+        pt_region = vor.point_region
+        assert pt_region.max() == n_pts - 1 + extra_pts
+        assert pt_region.size == len(vor.regions) - extra_pts
+        assert len(vor.regions) == n_pts + extra_pts
+        assert vor.points.shape[0] == n_pts
+        # if there is an empty sublist in the Voronoi
+        # regions data structure, it should never be
+        # indexed because it corresponds to an internally
+        # added point at infinity and is not a member of the
+        # generators (input points)
+        if extra_pts:
+            sublens = [len(x) for x in vor.regions]
+            # only one point at infinity (empty region)
+            # is allowed
+            assert sublens.count(0) == 1
+            assert sublens.index(0) not in pt_region
+
     def test_masked_array_fails(self):
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.Voronoi, masked_array)

@@ -13,6 +13,7 @@ from typing import (
     ClassVar,
     Dict,
     List,
+    Literal,
     Optional,
     overload,
     Tuple,
@@ -23,7 +24,6 @@ import numpy as np
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from typing_extensions import Literal
     from scipy._lib._util import (
         DecimalNumber, GeneratorType, IntNumber, SeedType
     )
@@ -67,12 +67,11 @@ def check_random_state(seed=None):
 
     Parameters
     ----------
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional  # noqa
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance, then
+        the provided instance is used.
 
     Returns
     -------
@@ -560,11 +559,10 @@ def van_der_corput(
         If True, use Owen scrambling. Otherwise no scrambling is done.
         Default is True.
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
     workers : int, optional
         Number of workers to use for parallel processing. If -1 is
         given all CPU threads are used. Default is 1.
@@ -629,11 +627,10 @@ class QMCEngine(ABC):
 
         .. versionadded:: 1.10.0
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Notes
     -----
@@ -714,8 +711,8 @@ class QMCEngine(ABC):
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
-        if not np.issubdtype(type(d), np.integer):
-            raise ValueError('d must be an integer value')
+        if not np.issubdtype(type(d), np.integer) or d < 0:
+            raise ValueError('d must be a non-negative integer value')
 
         self.d = d
         self.rng = check_random_state(seed)
@@ -915,11 +912,10 @@ class Halton(QMCEngine):
 
         .. versionadded:: 1.10.0
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Notes
     -----
@@ -985,6 +981,9 @@ class Halton(QMCEngine):
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
+        # Used in `scipy.integrate.qmc_quad`
+        self._init_quad = {'d': d, 'scramble': True,
+                           'optimization': optimization}
         super().__init__(d=d, optimization=optimization, seed=seed)
         self.seed = seed
         self.base = n_primes(d)
@@ -1035,7 +1034,26 @@ class LatinHypercube(QMCEngine):
     d : int
         Dimension of the parameter space.
     centered : bool, optional
-        Center the point within the multi-dimensional grid. Default is False.
+        Center samples within cells of a multi-dimensional grid.
+        Default is False.
+
+        .. deprecated:: 1.10.0
+            `centered` is deprecated as of SciPy 1.10.0 and will be removed in
+            1.12.0. Use `scramble` instead. ``centered=True`` corresponds to
+            ``scramble=False``.
+
+    scramble : bool, optional
+        When False, center samples within cells of a multi-dimensional grid.
+        Otherwise, samples are randomly placed within cells of the grid.
+
+        .. note::
+            Setting ``scramble=False`` does not ensure deterministic output.
+            For that, use the `seed` parameter.
+
+        Default is True.
+
+        .. versionadded:: 1.10.0
+
     optimization : {None, "random-cd", "lloyd"}, optional
         Whether to use an optimization scheme to improve the quality after
         sampling. Note that this is a post-processing step that does not
@@ -1064,11 +1082,10 @@ class LatinHypercube(QMCEngine):
         .. versionadded:: 1.8.0
 
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Notes
     -----
@@ -1085,7 +1102,10 @@ class LatinHypercube(QMCEngine):
     distinct rows occur the same number of times. The elements of :math:`A`
     are in the set :math:`\{0, 1, ..., p-1\}`, also called symbols.
     The constraint that :math:`p` must be a prime number is to allow modular
-    arithmetic.
+    arithmetic. Increasing strength adds some symmetry to the sub-projections
+    of a sample. With strength 2, samples are symmetric along the diagonals of
+    2D sub-projections. This may be undesirable, but on the other hand, the
+    sample dispersion is improved.
 
     Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
     strength 2 is a useful increment over strength 1. Going to strength 3 is
@@ -1120,36 +1140,56 @@ class LatinHypercube(QMCEngine):
        integration and visualization." Statistica Sinica, 1992.
     .. [8] B. Tang, "Orthogonal Array-Based Latin Hypercubes."
        Journal of the American Statistical Association, 1993.
+    .. [9] Susan K. Seaholm et al. "Latin hypercube sampling and the
+       sensitivity analysis of a Monte Carlo epidemic model".
+       Int J Biomed Comput, 23(1-2), 97-112,
+       :doi:`10.1016/0020-7101(88)90067-0`, 1988.
 
     Examples
     --------
-    Generate samples from a Latin hypercube generator.
+    In [9]_, a Latin Hypercube sampling strategy was used to sample a
+    parameter space to study the importance of each parameter of an epidemic
+    model. Such analysis is also called a sensitivity analysis.
+
+    Since the dimensionality of the problem is high (6), it is computationally
+    expensive to cover the space. When numerical experiments are costly,
+    QMC enables analysis that may not be possible if using a grid.
+
+    The six parameters of the model represented the probability of illness,
+    the probability of withdrawal, and four contact probabilities,
+    The authors assumed uniform distributions for all parameters and generated
+    50 samples.
+
+    Using `scipy.stats.qmc.LatinHypercube` to replicate the protocol, the
+    first step is to create a sample in the unit hypercube:
 
     >>> from scipy.stats import qmc
+    >>> sampler = qmc.LatinHypercube(d=6)
+    >>> sample = sampler.random(n=50)
+
+    Then the sample can be scaled to the appropriate bounds:
+
+    >>> l_bounds = [0.000125, 0.01, 0.0025, 0.05, 0.47, 0.7]
+    >>> u_bounds = [0.000375, 0.03, 0.0075, 0.15, 0.87, 0.9]
+    >>> sample_scaled = qmc.scale(sample, l_bounds, u_bounds)
+
+    Such a sample was used to run the model 50 times, and a polynomial
+    response surface was constructed. This allowed the authors to study the
+    relative importance of each parameter across the range of
+    possibilities of every other parameter.
+    In this computer experiment, they showed a 14-fold reduction in the number
+    of samples required to maintain an error below 2% on their response surface
+    when compared to a grid sampling.
+
+    Below are other examples showing alternative ways to construct LHS
+    with even better coverage of the space.
+
+    Using a base LHS as a baseline.
+
     >>> sampler = qmc.LatinHypercube(d=2)
     >>> sample = sampler.random(n=5)
-    >>> sample
-    array([[0.1545328 , 0.53664833],  # random
-           [0.84052691, 0.06474907],
-           [0.52177809, 0.93343721],
-           [0.68033825, 0.36265316],
-           [0.26544879, 0.61163943]])
-
-    Compute the quality of the sample using the discrepancy criterion.
-
     >>> qmc.discrepancy(sample)
     0.0196...  # random
-
-    Samples can be scaled to bounds.
-
-    >>> l_bounds = [0, 2]
-    >>> u_bounds = [10, 5]
-    >>> qmc.scale(sample, l_bounds, u_bounds)
-    array([[1.54532796, 3.609945  ],  # random
-           [8.40526909, 2.1942472 ],
-           [5.2177809 , 4.80031164],
-           [6.80338249, 3.08795949],
-           [2.65448791, 3.83491828]])
 
     Use the `optimization` keyword argument to produce a LHS with
     lower discrepancy at higher computational cost.
@@ -1176,12 +1216,25 @@ class LatinHypercube(QMCEngine):
 
     def __init__(
         self, d: IntNumber, *, centered: bool = False,
+        scramble: bool = True,
         strength: int = 1,
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
+        if centered:
+            scramble = False
+            warnings.warn(
+                "'centered' is deprecated and will be removed in SciPy 1.12."
+                " Please use 'scramble' instead. 'centered=True' corresponds"
+                " to 'scramble=False'.",
+                stacklevel=2
+            )
+
+        # Used in `scipy.integrate.qmc_quad`
+        self._init_quad = {'d': d, 'scramble': True, 'strength': strength,
+                           'optimization': optimization}
         super().__init__(d=d, seed=seed, optimization=optimization)
-        self.centered = centered
+        self.scramble = scramble
 
         lhs_method_strength = {
             1: self._random_lhs,
@@ -1203,7 +1256,7 @@ class LatinHypercube(QMCEngine):
 
     def _random_lhs(self, n: IntNumber = 1) -> np.ndarray:
         """Base LHS algorithm."""
-        if self.centered:
+        if not self.scramble:
             samples: np.ndarray | float = 0.5
         else:
             samples = self.rng.uniform(size=(n, self.d))
@@ -1250,7 +1303,7 @@ class LatinHypercube(QMCEngine):
 
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
-        lhs_engine = LatinHypercube(d=1, centered=self.centered, strength=1,
+        lhs_engine = LatinHypercube(d=1, scramble=self.scramble, strength=1,
                                     seed=self.rng)  # type: QMCEngine
         for j in range(n_col):
             for k in range(p):
@@ -1307,11 +1360,10 @@ class Sobol(QMCEngine):
 
         .. versionadded:: 1.10.0
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Notes
     -----
@@ -1412,6 +1464,10 @@ class Sobol(QMCEngine):
         bits: Optional[IntNumber] = None, seed: SeedType = None,
         optimization: Optional[Literal["random-cd", "lloyd"]] = None
     ) -> None:
+        # Used in `scipy.integrate.qmc_quad`
+        self._init_quad = {'d': d, 'scramble': True, 'bits': bits,
+                           'optimization': optimization}
+
         super().__init__(d=d, optimization=optimization, seed=seed)
         if d > self.MAXDIM:
             raise ValueError(
@@ -1634,11 +1690,10 @@ class PoissonDisk(QMCEngine):
 
         .. versionadded:: 1.10.0
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Notes
     -----
@@ -1684,7 +1739,7 @@ class PoissonDisk(QMCEngine):
     >>>
     >>> rng = np.random.default_rng()
     >>> radius = 0.2
-    >>> engine = qmc.PoissonDisk(d=2, radius=0.2, seed=rng)
+    >>> engine = qmc.PoissonDisk(d=2, radius=radius, seed=rng)
     >>> sample = engine.random(20)
 
     Visualizing the 2D sample and showing that no points are closer than
@@ -1722,6 +1777,11 @@ class PoissonDisk(QMCEngine):
         optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
+        # Used in `scipy.integrate.qmc_quad`
+        self._init_quad = {'d': d, 'radius': radius,
+                           'hypersphere': hypersphere,
+                           'ncandidates': ncandidates,
+                           'optimization': optimization}
         super().__init__(d=d, optimization=optimization, seed=seed)
 
         hypersphere_sample = {
@@ -1937,11 +1997,11 @@ class MultivariateNormalQMC:
     engine : QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, `Sobol` is used.
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        Used only if `engine` is None.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Examples
     --------
@@ -2089,11 +2149,11 @@ class MultinomialQMC:
     engine : QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, `Sobol` is used.
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        Used only if `engine` is None.
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Examples
     --------

@@ -79,13 +79,11 @@ class TestCobyla:
         cons = ({'type': 'ineq', 'fun': c1},
                 {'type': 'ineq', 'fun': c2},
                 {'type': 'ineq', 'fun': c3})
-        w0 = np.zeros((10, 1))
-        message = 'Use of `minimize` with `x0.ndim != 1` is deprecated.'
-        with pytest.warns(DeprecationWarning, match=message):
-            sol = minimize(f, w0, method='cobyla', constraints=cons,
-                           options={'catol': 1e-6})
-            assert_(sol.maxcv > 1e-6)
-            assert_(not sol.success)
+        w0 = np.zeros((10,))
+        sol = minimize(f, w0, method='cobyla', constraints=cons,
+                       options={'catol': 1e-6})
+        assert_(sol.maxcv > 1e-6)
+        assert_(not sol.success)
 
 
 def test_vector_constraints():

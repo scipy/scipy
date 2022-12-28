@@ -78,7 +78,8 @@ The table shows the NumPy versions suitable for each major Python version.
  1.7.0/1            >=3.7, <3.10                >=1.16.5, <1.23.0
  1.7.2/3            >=3.7, <3.11                >=1.16.5, <1.23.0
  1.8                >=3.8, <3.11                >=1.17.3, <1.24.0
- 1.9                >=3.8, <3.12                >=1.18.5, <1.25.0
+ 1.9.0/1            >=3.8, <3.12                >=1.18.5, <1.25.0
+ 1.9.2              >=3.8, <3.12                >=1.18.5, <1.26.0
  1.10               >=3.8, <3.12                >=1.19.5, <1.26.0
 =================  ========================    =======================
 
@@ -122,7 +123,7 @@ Currently, SciPy wheels are being built as follows:
 ================  ========================  ===========================  ==============================
  Platform          Azure Base Image [5]_     Compilers                    Comment
 ================  ========================  ===========================  ==============================
-Linux (nightly)    ``ubuntu-18.04``          GCC 6.5                      See ``azure-pipelines.yml``
+Linux (nightly)    ``ubuntu-20.04``          GCC 6.5                      See ``azure-pipelines.yml``
 Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [6]_
 OSX                ``macOS-10.15``           LLVM 12.0.0                  Built in separate repo [6]_
 Windows            ``windows-2019``          Visual Studio 2019 (vc142)   Built in separate repo [6]_

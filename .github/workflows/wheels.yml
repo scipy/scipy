@@ -1,0 +1,173 @@
+# Workflow to build and test wheels.
+# To work on the wheel building infrastructure on a fork, comment out:
+#
+# if: github.repository == 'scipy/scipy'
+#
+# in the get_commit_message job include [wheel build] in your commit
+# message to trigger the build. All files related to wheel building are located
+# at tools/wheels/
+name: Wheel builder
+
+on:
+  schedule:
+  #        ┌───────────── minute (0 - 59)
+  #        │  ┌───────────── hour (0 - 23)
+  #        │  │ ┌───────────── day of the month (1 - 31)
+  #        │  │ │ ┌───────────── month (1 - 12 or JAN-DEC)
+  #        │  │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+  #        │  │ │ │ │
+  - cron: "9  9 * * 6"
+  push:
+    branches:
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+  workflow_dispatch:
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  get_commit_message:
+    name: Get commit message
+    runs-on: ubuntu-latest
+    if: github.repository == 'scipy/scipy'
+    outputs:
+      message: ${{ steps.commit_message.outputs.message }}
+    steps:
+      - name: Checkout scipy
+        uses: actions/checkout@v3
+        # Gets the correct commit message for pull request
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Get commit message
+        id: commit_message
+        run: |
+          set -xe
+          COMMIT_MSG=$(git log --no-merges -1)
+          RUN="0"
+          if [[ "$COMMIT_MSG" == *"[wheel build]"* ]]; then
+              RUN="1" 
+          fi
+          echo "message=$RUN" >> $GITHUB_OUTPUT
+          echo github.ref ${{ github.ref }}
+
+  build_wheels:
+    name: Build wheel for ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }} ${{ matrix.buildplat[2] }}
+    needs: get_commit_message
+    if: >-
+      contains(needs.get_commit_message.outputs.message, '1') ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ${{ matrix.buildplat[0] }}
+
+    strategy:
+      # Ensure that a wheel builder finishes even if another fails
+      fail-fast: false
+      matrix:
+        # Github Actions doesn't support pairing matrix values together, let's improvise
+        # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
+        buildplat:
+        # should also be able to do multi-archs on a single entry, e.g.
+        # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
+        # so easier to separate out here.
+        - [ubuntu-20.04, manylinux, x86_64]
+
+        # When the macos-10.15 image is retired the gfortran/openblas chain
+        # may have to be reworked because the gfortran-4.9.0 compiler currently
+        # used in CI doesn't work in the macos-11.0 image. This will require a more
+        # recent gfortran (gfortran-9 is present on the macOS-11.0 image), and
+        # will probably require that the prebuilt openBLAS is updated.
+        # xref https://github.com/andyfaff/scipy/pull/28#issuecomment-1203496836
+        - [macos-10.15, macosx, x86_64]
+        - [windows-2019, win, AMD64]
+
+        python: [["cp38", "3.8"], ["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11.0-alpha - 3.11.0"]]
+        # python[0] is used to specify the python versions made by cibuildwheel
+
+    env:
+      IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}
+      # upload to staging if it's a push to a maintenance branch and the last
+      # commit message contains '[wheel build]'
+      IS_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/maintenance') && contains(needs.get_commit_message.outputs.message, '1') }}
+      IS_SCHEDULE_DISPATCH: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Checkout scipy
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4.2.0
+        with:
+          python-version: 3.8
+
+      - name: win_amd64 - install rtools
+        run: |
+          # mingw-w64
+          choco install rtools --no-progress
+          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
+        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'false' }}
+
+#      - name: win32 - configure mingw for 32-bit builds
+#        run: |
+#          # taken from numpy wheels.yml script
+#          # Force 32-bit mingw. v 8.1.0 is the current version used to build
+#          # the 32 bit openBLAS library (not sure if that matters)
+#          choco uninstall mingw
+#          choco install -y mingw --forcex86 --force --version=8.1.0
+#          echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw32\bin;" >> $env:GITHUB_PATH
+#          echo $(gfortran --version)
+#          echo $(gcc --version)
+#        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'true' }}
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.11.3
+        # Build all wheels here, apart from macosx_arm64, linux_aarch64
+        # cibuildwheel is currently unable to pass configuration flags to
+        # CIBW_BUILD_FRONTEND https://github.com/pypa/cibuildwheel/issues/1227
+        # (pip/build). Cross compilation with meson requires an initial
+        # configuration step to create a build directory. The subsequent wheel
+        # build then needs to use that directory. This can be done with pip
+        # using a command like:
+        # python -m pip wheel --config-settings builddir=build .
+        if: >-
+          ( ! contains(matrix.buildplat[2], 'arm64' ) )
+        env:
+          CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
+          CIBW_ARCHS: ${{ matrix.buildplat[2] }}
+          CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
+          name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
+
+      - name: Upload wheels
+        if: success()
+        shell: bash
+        env:
+          SCIPY_STAGING_UPLOAD_TOKEN: ${{ secrets.SCIPY_STAGING_UPLOAD_TOKEN }}
+          SCIPY_NIGHTLY_UPLOAD_TOKEN: ${{ secrets.SCIPY_NIGHTLY_UPLOAD_TOKEN }}
+        run: |
+          source tools/wheels/upload_wheels.sh
+          set_upload_vars
+          # For cron jobs (restricted to main branch) or "Run workflow" trigger
+          # an upload to:
+          #
+          # https://anaconda.org/scipy-wheels-nightly/scipy
+          # 
+          # Pushes to a maintenance branch that contain '[wheel build]' will
+          # cause wheels to be built and uploaded to:
+          #
+          # https://anaconda.org/multibuild-wheels-staging/scipy
+          #
+          # The tokens were originally generated at anaconda.org
+          upload_wheels

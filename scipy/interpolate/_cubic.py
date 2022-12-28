@@ -133,6 +133,7 @@ class CubicHermiteSpline(PPoly):
             <https://en.wikipedia.org/wiki/Cubic_Hermite_spline>`_
             on Wikipedia.
     """
+
     def __init__(self, x, y, dydx, axis=0, extrapolate=None):
         if extrapolate is None:
             extrapolate = True
@@ -228,6 +229,7 @@ class PchipInterpolator(CubicHermiteSpline):
 
 
     """
+
     def __init__(self, x, y, axis=0, extrapolate=None):
         x, _, y, axis, _ = prepare_input(x, y, axis)
         xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
@@ -339,6 +341,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     --------
     We can interpolate 2D observed data using pchip interpolation:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import pchip_interpolate
     >>> x_observed = np.linspace(0.0, 10.0, 11)
@@ -414,6 +417,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
         # https://www.mathworks.com/matlabcentral/fileexchange/1814-akima-interpolation
         x, dx, y, axis, _ = prepare_input(x, y, axis)
+
         # determine slopes between breakpoints
         m = np.empty((x.size + 3, ) + y.shape[1:])
         dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
@@ -426,8 +430,8 @@ class Akima1DInterpolator(CubicHermiteSpline):
         m[-2] = 2. * m[-3] - m[-4]
         m[-1] = 2. * m[-2] - m[-3]
 
-        # if m1 == m2 != m3 == m4, the slope at the breakpoint is not defined.
-        # This is the fill value:
+        # if m1 == m2 != m3 == m4, the slope at the breakpoint is not
+        # defined. This is the fill value:
         t = .5 * (m[3:] + m[:-3])
         # get the denominator of the slope t
         dm = np.abs(np.diff(m, axis=0))
@@ -435,7 +439,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
         f2 = dm[:-2]
         f12 = f1 + f2
         # These are the mask of where the slope at breakpoint is defined:
-        ind = np.nonzero(f12 > 1e-9 * np.max(f12))
+        ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
         x_ind, y_ind = ind[0], ind[1:]
         # Set the slope at breakpoint
         t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
@@ -570,6 +574,7 @@ class CubicSpline(CubicHermiteSpline):
     You can see that the spline continuity property holds for the first and
     second derivatives and violates only for the third derivative.
 
+    >>> import numpy as np
     >>> from scipy.interpolate import CubicSpline
     >>> import matplotlib.pyplot as plt
     >>> x = np.arange(10)
@@ -625,6 +630,7 @@ class CubicSpline(CubicHermiteSpline):
             on Wikiversity.
     .. [2] Carl de Boor, "A Practical Guide to Splines", Springer-Verlag, 1978.
     """
+
     def __init__(self, x, y, axis=0, bc_type='not-a-knot', extrapolate=None):
         x, dx, y, axis, _ = prepare_input(x, y, axis)
         n = len(x)
@@ -637,149 +643,153 @@ class CubicSpline(CubicHermiteSpline):
             else:
                 extrapolate = True
 
-        dxr = dx.reshape([dx.shape[0]] + [1] * (y.ndim - 1))
-        slope = np.diff(y, axis=0) / dxr
-
-        # If bc is 'not-a-knot' this change is just a convention.
-        # If bc is 'periodic' then we already checked that y[0] == y[-1],
-        # and the spline is just a constant, we handle this case in the same
-        # way by setting the first derivatives to slope, which is 0.
-        if n == 2:
-            if bc[0] in ['not-a-knot', 'periodic']:
-                bc[0] = (1, slope[0])
-            if bc[1] in ['not-a-knot', 'periodic']:
-                bc[1] = (1, slope[0])
-
-        # This is a very special case, when both conditions are 'not-a-knot'
-        # and n == 3. In this case 'not-a-knot' can't be handled regularly
-        # as the both conditions are identical. We handle this case by
-        # constructing a parabola passing through given points.
-        if n == 3 and bc[0] == 'not-a-knot' and bc[1] == 'not-a-knot':
-            A = np.zeros((3, 3))  # This is a standard matrix.
-            b = np.empty((3,) + y.shape[1:], dtype=y.dtype)
-
-            A[0, 0] = 1
-            A[0, 1] = 1
-            A[1, 0] = dx[1]
-            A[1, 1] = 2 * (dx[0] + dx[1])
-            A[1, 2] = dx[0]
-            A[2, 1] = 1
-            A[2, 2] = 1
-
-            b[0] = 2 * slope[0]
-            b[1] = 3 * (dxr[0] * slope[1] + dxr[1] * slope[0])
-            b[2] = 2 * slope[1]
-
-            s = solve(A, b, overwrite_a=True, overwrite_b=True,
-                      check_finite=False)
-        elif n == 3 and bc[0] == 'periodic':
-            # In case when number of points is 3 we should count derivatives
-            # manually
-            s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
-            t = (slope / dxr).sum() / (1. / dxr).sum()
-            s.fill(t)
+        if y.size == 0:
+            # bail out early for zero-sized arrays
+            s = np.zeros_like(y)
         else:
-            # Find derivative values at each x[i] by solving a tridiagonal
-            # system.
-            A = np.zeros((3, n))  # This is a banded matrix representation.
-            b = np.empty((n,) + y.shape[1:], dtype=y.dtype)
+            dxr = dx.reshape([dx.shape[0]] + [1] * (y.ndim - 1))
+            slope = np.diff(y, axis=0) / dxr
 
-            # Filling the system for i=1..n-2
-            #                         (x[i-1] - x[i]) * s[i-1] +\
-            # 2 * ((x[i] - x[i-1]) + (x[i+1] - x[i])) * s[i]   +\
-            #                         (x[i] - x[i-1]) * s[i+1] =\
-            #       3 * ((x[i+1] - x[i])*(y[i] - y[i-1])/(x[i] - x[i-1]) +\
-            #           (x[i] - x[i-1])*(y[i+1] - y[i])/(x[i+1] - x[i]))
+            # If bc is 'not-a-knot' this change is just a convention.
+            # If bc is 'periodic' then we already checked that y[0] == y[-1],
+            # and the spline is just a constant, we handle this case in the
+            # same way by setting the first derivatives to slope, which is 0.
+            if n == 2:
+                if bc[0] in ['not-a-knot', 'periodic']:
+                    bc[0] = (1, slope[0])
+                if bc[1] in ['not-a-knot', 'periodic']:
+                    bc[1] = (1, slope[0])
 
-            A[1, 1:-1] = 2 * (dx[:-1] + dx[1:])  # The diagonal
-            A[0, 2:] = dx[:-1]                   # The upper diagonal
-            A[-1, :-2] = dx[1:]                  # The lower diagonal
+            # This is a special case, when both conditions are 'not-a-knot'
+            # and n == 3. In this case 'not-a-knot' can't be handled regularly
+            # as the both conditions are identical. We handle this case by
+            # constructing a parabola passing through given points.
+            if n == 3 and bc[0] == 'not-a-knot' and bc[1] == 'not-a-knot':
+                A = np.zeros((3, 3))  # This is a standard matrix.
+                b = np.empty((3,) + y.shape[1:], dtype=y.dtype)
 
-            b[1:-1] = 3 * (dxr[1:] * slope[:-1] + dxr[:-1] * slope[1:])
+                A[0, 0] = 1
+                A[0, 1] = 1
+                A[1, 0] = dx[1]
+                A[1, 1] = 2 * (dx[0] + dx[1])
+                A[1, 2] = dx[0]
+                A[2, 1] = 1
+                A[2, 2] = 1
 
-            bc_start, bc_end = bc
+                b[0] = 2 * slope[0]
+                b[1] = 3 * (dxr[0] * slope[1] + dxr[1] * slope[0])
+                b[2] = 2 * slope[1]
 
-            if bc_start == 'periodic':
-                # Due to the periodicity, and because y[-1] = y[0], the linear
-                # system has (n-1) unknowns/equations instead of n:
-                A = A[:, 0:-1]
-                A[1, 0] = 2 * (dx[-1] + dx[0])
-                A[0, 1] = dx[-1]
-
-                b = b[:-1]
-
-                # Also, due to the periodicity, the system is not tri-diagonal.
-                # We need to compute a "condensed" matrix of shape (n-2, n-2).
-                # See https://web.archive.org/web/20151220180652/http://www.cfm.brown.edu/people/gk/chap6/node14.html
-                # for more explanations.
-                # The condensed matrix is obtained by removing the last column
-                # and last row of the (n-1, n-1) system matrix. The removed
-                # values are saved in scalar variables with the (n-1, n-1)
-                # system matrix indices forming their names:
-                a_m1_0 = dx[-2]  # lower left corner value: A[-1, 0]
-                a_m1_m2 = dx[-1]
-                a_m1_m1 = 2 * (dx[-1] + dx[-2])
-                a_m2_m1 = dx[-3]
-                a_0_m1 = dx[0]
-
-                b[0] = 3 * (dxr[0] * slope[-1] + dxr[-1] * slope[0])
-                b[-1] = 3 * (dxr[-1] * slope[-2] + dxr[-2] * slope[-1])
-
-                Ac = A[:, :-1]
-                b1 = b[:-1]
-                b2 = np.zeros_like(b1)
-                b2[0] = -a_0_m1
-                b2[-1] = -a_m2_m1
-
-                # s1 and s2 are the solutions of (n-2, n-2) system
-                s1 = solve_banded((1, 1), Ac, b1, overwrite_ab=False,
-                                  overwrite_b=False, check_finite=False)
-
-                s2 = solve_banded((1, 1), Ac, b2, overwrite_ab=False,
-                                  overwrite_b=False, check_finite=False)
-
-                # computing the s[n-2] solution:
-                s_m1 = ((b[-1] - a_m1_0 * s1[0] - a_m1_m2 * s1[-1]) /
-                        (a_m1_m1 + a_m1_0 * s2[0] + a_m1_m2 * s2[-1]))
-
-                # s is the solution of the (n, n) system:
+                s = solve(A, b, overwrite_a=True, overwrite_b=True,
+                          check_finite=False)
+            elif n == 3 and bc[0] == 'periodic':
+                # In case when number of points is 3 we compute the derivatives
+                # manually
                 s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
-                s[:-2] = s1 + s_m1 * s2
-                s[-2] = s_m1
-                s[-1] = s[0]
+                t = (slope / dxr).sum() / (1. / dxr).sum()
+                s.fill(t)
             else:
-                if bc_start == 'not-a-knot':
-                    A[1, 0] = dx[1]
-                    A[0, 1] = x[2] - x[0]
-                    d = x[2] - x[0]
-                    b[0] = ((dxr[0] + 2*d) * dxr[1] * slope[0] +
-                            dxr[0]**2 * slope[1]) / d
-                elif bc_start[0] == 1:
-                    A[1, 0] = 1
-                    A[0, 1] = 0
-                    b[0] = bc_start[1]
-                elif bc_start[0] == 2:
-                    A[1, 0] = 2 * dx[0]
-                    A[0, 1] = dx[0]
-                    b[0] = -0.5 * bc_start[1] * dx[0]**2 + 3 * (y[1] - y[0])
+                # Find derivative values at each x[i] by solving a tridiagonal
+                # system.
+                A = np.zeros((3, n))  # This is a banded matrix representation.
+                b = np.empty((n,) + y.shape[1:], dtype=y.dtype)
 
-                if bc_end == 'not-a-knot':
-                    A[1, -1] = dx[-2]
-                    A[-1, -2] = x[-1] - x[-3]
-                    d = x[-1] - x[-3]
-                    b[-1] = ((dxr[-1]**2*slope[-2] +
-                             (2*d + dxr[-1])*dxr[-2]*slope[-1]) / d)
-                elif bc_end[0] == 1:
-                    A[1, -1] = 1
-                    A[-1, -2] = 0
-                    b[-1] = bc_end[1]
-                elif bc_end[0] == 2:
-                    A[1, -1] = 2 * dx[-1]
-                    A[-1, -2] = dx[-1]
-                    b[-1] = 0.5 * bc_end[1] * dx[-1]**2 + 3 * (y[-1] - y[-2])
+                # Filling the system for i=1..n-2
+                #                         (x[i-1] - x[i]) * s[i-1] +\
+                # 2 * ((x[i] - x[i-1]) + (x[i+1] - x[i])) * s[i]   +\
+                #                         (x[i] - x[i-1]) * s[i+1] =\
+                #       3 * ((x[i+1] - x[i])*(y[i] - y[i-1])/(x[i] - x[i-1]) +\
+                #           (x[i] - x[i-1])*(y[i+1] - y[i])/(x[i+1] - x[i]))
 
-                s = solve_banded((1, 1), A, b, overwrite_ab=True,
-                                 overwrite_b=True, check_finite=False)
+                A[1, 1:-1] = 2 * (dx[:-1] + dx[1:])  # The diagonal
+                A[0, 2:] = dx[:-1]                   # The upper diagonal
+                A[-1, :-2] = dx[1:]                  # The lower diagonal
+
+                b[1:-1] = 3 * (dxr[1:] * slope[:-1] + dxr[:-1] * slope[1:])
+
+                bc_start, bc_end = bc
+
+                if bc_start == 'periodic':
+                    # Due to the periodicity, and because y[-1] = y[0], the
+                    # linear system has (n-1) unknowns/equations instead of n:
+                    A = A[:, 0:-1]
+                    A[1, 0] = 2 * (dx[-1] + dx[0])
+                    A[0, 1] = dx[-1]
+
+                    b = b[:-1]
+
+                    # Also, due to the periodicity, the system is not tri-diagonal.
+                    # We need to compute a "condensed" matrix of shape (n-2, n-2).
+                    # See https://web.archive.org/web/20151220180652/http://www.cfm.brown.edu/people/gk/chap6/node14.html
+                    # for more explanations.
+                    # The condensed matrix is obtained by removing the last column
+                    # and last row of the (n-1, n-1) system matrix. The removed
+                    # values are saved in scalar variables with the (n-1, n-1)
+                    # system matrix indices forming their names:
+                    a_m1_0 = dx[-2]  # lower left corner value: A[-1, 0]
+                    a_m1_m2 = dx[-1]
+                    a_m1_m1 = 2 * (dx[-1] + dx[-2])
+                    a_m2_m1 = dx[-3]
+                    a_0_m1 = dx[0]
+
+                    b[0] = 3 * (dxr[0] * slope[-1] + dxr[-1] * slope[0])
+                    b[-1] = 3 * (dxr[-1] * slope[-2] + dxr[-2] * slope[-1])
+
+                    Ac = A[:, :-1]
+                    b1 = b[:-1]
+                    b2 = np.zeros_like(b1)
+                    b2[0] = -a_0_m1
+                    b2[-1] = -a_m2_m1
+
+                    # s1 and s2 are the solutions of (n-2, n-2) system
+                    s1 = solve_banded((1, 1), Ac, b1, overwrite_ab=False,
+                                      overwrite_b=False, check_finite=False)
+
+                    s2 = solve_banded((1, 1), Ac, b2, overwrite_ab=False,
+                                      overwrite_b=False, check_finite=False)
+
+                    # computing the s[n-2] solution:
+                    s_m1 = ((b[-1] - a_m1_0 * s1[0] - a_m1_m2 * s1[-1]) /
+                            (a_m1_m1 + a_m1_0 * s2[0] + a_m1_m2 * s2[-1]))
+
+                    # s is the solution of the (n, n) system:
+                    s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
+                    s[:-2] = s1 + s_m1 * s2
+                    s[-2] = s_m1
+                    s[-1] = s[0]
+                else:
+                    if bc_start == 'not-a-knot':
+                        A[1, 0] = dx[1]
+                        A[0, 1] = x[2] - x[0]
+                        d = x[2] - x[0]
+                        b[0] = ((dxr[0] + 2*d) * dxr[1] * slope[0] +
+                                dxr[0]**2 * slope[1]) / d
+                    elif bc_start[0] == 1:
+                        A[1, 0] = 1
+                        A[0, 1] = 0
+                        b[0] = bc_start[1]
+                    elif bc_start[0] == 2:
+                        A[1, 0] = 2 * dx[0]
+                        A[0, 1] = dx[0]
+                        b[0] = -0.5 * bc_start[1] * dx[0]**2 + 3 * (y[1] - y[0])
+
+                    if bc_end == 'not-a-knot':
+                        A[1, -1] = dx[-2]
+                        A[-1, -2] = x[-1] - x[-3]
+                        d = x[-1] - x[-3]
+                        b[-1] = ((dxr[-1]**2*slope[-2] +
+                                 (2*d + dxr[-1])*dxr[-2]*slope[-1]) / d)
+                    elif bc_end[0] == 1:
+                        A[1, -1] = 1
+                        A[-1, -2] = 0
+                        b[-1] = bc_end[1]
+                    elif bc_end[0] == 2:
+                        A[1, -1] = 2 * dx[-1]
+                        A[-1, -2] = dx[-1]
+                        b[-1] = 0.5 * bc_end[1] * dx[-1]**2 + 3 * (y[-1] - y[-2])
+
+                    s = solve_banded((1, 1), A, b, overwrite_ab=True,
+                                     overwrite_b=True, check_finite=False)
 
         super().__init__(x, y, s, axis=0, extrapolate=extrapolate)
         self.axis = axis

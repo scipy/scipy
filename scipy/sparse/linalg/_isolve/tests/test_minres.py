@@ -1,7 +1,6 @@
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_
 from scipy.sparse.linalg._isolve import minres
-from scipy.linalg import norm
 
 from pytest import raises as assert_raises
 from .test_iterative import assert_normclose

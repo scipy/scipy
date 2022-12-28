@@ -1,6 +1,6 @@
 import numpy as np
 from scipy._lib._util import IntNumber
-from typing_extensions import Literal
+from typing import Literal
 
 def _initialize_v(
     v : np.ndarray, 

@@ -12,9 +12,8 @@ import scipy.sparse
 cimport numpy as np
 from numpy.math cimport INFINITY
 
-from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libcpp.vector cimport vector
-from libcpp.algorithm cimport sort
 from libcpp cimport bool
 from libc.math cimport isinf
 
@@ -22,7 +21,6 @@ cimport cython
 import os
 import threading
 import operator
-import warnings
 
 np.import_array()
 
@@ -900,6 +898,7 @@ cdef class cKDTree:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy import spatial
         >>> x, y = np.mgrid[0:4, 0:4]
         >>> points = np.c_[x.ravel(), y.ravel()]

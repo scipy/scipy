@@ -88,7 +88,6 @@ __all__ = [
     'is_valid_y',
     'jaccard',
     'jensenshannon',
-    'kulsinski',
     'kulczynski1',
     'mahalanobis',
     'minkowski',
@@ -121,8 +120,6 @@ from ..linalg import norm
 from ..special import rel_entr
 
 from . import _distance_pybind
-
-from .._lib.deprecation import _deprecated
 
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
@@ -372,6 +369,7 @@ def directed_hausdorff(u, v, seed=0):
     coordinates:
 
     >>> from scipy.spatial.distance import directed_hausdorff
+    >>> import numpy as np
     >>> u = np.array([(1.0, 0.0),
     ...               (0.0, 1.0),
     ...               (-1.0, 0.0),
@@ -796,70 +794,6 @@ def jaccard(u, v, w=None):
     return (a / b) if b != 0 else 0
 
 
-@_deprecated("Kulsinski has been deprecated from scipy.spatial.distance"
-             " in SciPy 1.9.0 and it will be removed in SciPy 1.11.0."
-             " It is superseded by scipy.spatial.distance.kulczynski1.")
-def kulsinski(u, v, w=None):
-    """
-    Compute the Kulsinski dissimilarity between two boolean 1-D arrays.
-
-    The Kulsinski dissimilarity between two boolean 1-D arrays `u` and `v`,
-    is defined as
-
-    .. math::
-
-         \\frac{c_{TF} + c_{FT} - c_{TT} + n}
-              {c_{FT} + c_{TF} + n}
-
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n`.
-
-    .. deprecated:: 0.12.0
-        Kulsinski has been deprecated from `scipy.spatial.distance` in
-        SciPy 1.9.0 and it will be removed in SciPy 1.11.0. It is superseded
-        by scipy.spatial.distance.kulczynski1.
-
-    Parameters
-    ----------
-    u : (N,) array_like, bool
-        Input array.
-    v : (N,) array_like, bool
-        Input array.
-    w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
-
-    Returns
-    -------
-    kulsinski : double
-        The Kulsinski distance between vectors `u` and `v`.
-
-    Examples
-    --------
-    >>> from scipy.spatial import distance
-    >>> distance.kulsinski([1, 0, 0], [0, 1, 0])
-    1.0
-    >>> distance.kulsinski([1, 0, 0], [1, 1, 0])
-    0.75
-    >>> distance.kulsinski([1, 0, 0], [2, 1, 0])
-    0.33333333333333331
-    >>> distance.kulsinski([1, 0, 0], [3, 1, 0])
-    -0.5
-
-    """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    if w is None:
-        n = float(len(u))
-    else:
-        w = _validate_weights(w)
-        n = w.sum()
-    (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
-
-    return (ntf + nft - ntt + n) / (ntf + nft + n)
-
-
 def kulczynski1(u, v, *, w=None):
     """
     Compute the Kulczynski 1 dissimilarity between two boolean 1-D arrays.
@@ -1264,6 +1198,7 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
     Examples
     --------
     >>> from scipy.spatial import distance
+    >>> import numpy as np
     >>> distance.jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0)
     1.0
     >>> distance.jensenshannon([1.0, 0.0], [0.5, 0.5])
@@ -1376,6 +1311,12 @@ def dice(u, v, w=None):
     -------
     dice : double
         The Dice dissimilarity between 1-D arrays `u` and `v`.
+
+    Notes
+    -----
+    This function computes the Dice dissimilarity index. To compute the
+    Dice similarity index, convert one to the other with similarity =
+    1 - dissimilarity.
 
     Examples
     --------
@@ -1840,14 +1781,6 @@ _METRIC_INFOS = [
         dist_func=jensenshannon,
         cdist_func=CDistMetricWrapper('jensenshannon'),
         pdist_func=PDistMetricWrapper('jensenshannon'),
-    ),
-    MetricInfo(
-        canonical_name='kulsinski',
-        aka={'kulsinski'},
-        types=['bool'],
-        dist_func=kulsinski,
-        cdist_func=CDistMetricWrapper('kulsinski'),
-        pdist_func=PDistMetricWrapper('kulsinski'),
     ),
     MetricInfo(
         canonical_name='kulczynski1',
@@ -2856,6 +2789,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
     Find the Euclidean distances between four 2-D coordinates:
 
     >>> from scipy.spatial import distance
+    >>> import numpy as np
     >>> coords = [(35.0456, -85.2672),
     ...           (35.1174, -89.9711),
     ...           (35.9728, -83.9422),

@@ -3260,6 +3260,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.cluster import hierarchy
     >>> import matplotlib.pyplot as plt
 
@@ -3395,7 +3396,9 @@ def _get_leaves_color_list(R):
                                           R['dcoord'],
                                           R['color_list']):
         for (xi, yi) in zip(link_x, link_y):
-            if yi == 0.0:  # if yi is 0.0, the point is a leaf
+            if yi == 0.0 and (xi % 5 == 0 and xi % 2 == 1):
+                # if yi is 0.0 and xi is divisible by 5 and odd,
+                # the point is a leaf
                 # xi of leaves are      5, 15, 25, 35, ... (see `iv_ticks`)
                 # index of leaves are   0,  1,  2,  3, ... as below
                 leaf_index = (int(xi) - 5) // 10

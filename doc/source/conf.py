@@ -309,6 +309,12 @@ coverage_ignore_c_items = {}
 #------------------------------------------------------------------------------
 
 plot_pre_code = """
+import warnings
+for key in (
+        'scipy.misc'  # scipy.misc deprecated in v1.10.0; use scipy.datasets
+        ):
+    warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
+
 import numpy as np
 np.random.seed(123)
 """
@@ -378,7 +384,8 @@ def linkcode_resolve(domain, info):
             return None
 
     # Use the original function object if it is wrapped.
-    obj = getattr(obj, "__wrapped__", obj)
+    while hasattr(obj, "__wrapped__"):
+        obj = obj.__wrapped__
     # SciPy's distributions are instances of *_gen. Point to this
     # class since it contains the implementation of all the methods.
     if isinstance(obj, (rv_generic, multi_rv_generic)):

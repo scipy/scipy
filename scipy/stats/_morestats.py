@@ -12,19 +12,19 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 from scipy import optimize
 from scipy import special
 from scipy._lib._bunch import _make_tuple_bunch
-from scipy._lib._util import _rename_parameter
+from scipy._lib._util import _rename_parameter, _contains_nan
 
 from . import _statlib
 from . import _stats_py
 from ._fit import FitResult
-from ._stats_py import (find_repeats, _contains_nan, _normtest_finish,
-                        SignificanceResult)
+from ._stats_py import find_repeats, _normtest_finish, SignificanceResult
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
 from .._lib.deprecation import _deprecated
+from ._resampling import permutation_test
 
 
 __all__ = ['mvsdist',
@@ -34,7 +34,7 @@ __all__ = ['mvsdist',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot', 'directionalmean'
+           'yeojohnson_normplot', 'directional_stats'
            ]
 
 
@@ -311,7 +311,7 @@ def kstat(data, n=2):
     elif n == 4:
         return ((-6*S[1]**4 + 12*N*S[1]**2 * S[2] - 3*N*(N-1.0)*S[2]**2 -
                  4*N*(N+1)*S[1]*S[3] + N*N*(N+1)*S[4]) /
-                 (N*(N-1.0)*(N-2.0)*(N-3.0)))
+                (N*(N-1.0)*(N-2.0)*(N-3.0)))
     else:
         raise ValueError("Should not be here.")
 
@@ -1085,10 +1085,11 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     >>> plt.show()
 
     """
+    x = np.asarray(x)
+
     if lmbda is not None:  # single transformation
         return special.boxcox(x, lmbda)
 
-    x = np.asarray(x)
     if x.ndim != 1:
         raise ValueError("Data must be 1-dimensional.")
 
@@ -1535,7 +1536,7 @@ def yeojohnson_llf(lmb, data):
         llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
 
-    where :math:`\hat{\sigma}^2` is estimated variance of the the Yeo-Johnson
+    where :math:`\hat{\sigma}^2` is estimated variance of the Yeo-Johnson
     transformed input data ``x``.
 
     .. versionadded:: 1.2.0
@@ -1911,6 +1912,28 @@ def anderson(x, dist='norm'):
     .. [6] Stephens, M. A. (1979). Tests of Fit for the Logistic Distribution
            Based on the Empirical Distribution Function, Biometrika, Vol. 66,
            pp. 591-595.
+
+    Examples
+    --------
+    Test the null hypothesis that a random sample was drawn from a normal
+    distribution (with unspecified mean and standard deviation).
+
+    >>> import numpy as np
+    >>> from scipy.stats import anderson
+    >>> rng = np.random.default_rng()
+    >>> data = rng.random(size=35)
+    >>> res = anderson(data)
+    >>> res.statistic
+    0.8398018749744764
+    >>> res.critical_values
+    array([0.527, 0.6  , 0.719, 0.839, 0.998])
+    >>> res.significance_level
+    array([15. , 10. ,  5. ,  2.5,  1. ])
+
+    The value of the statistic (barely) exceeds the critical value associated
+    with a significance level of 2.5%, so the null hypothesis may be rejected
+    at a significance level of 2.5%, but not at a significance level of 1%.
+
     """  # noqa
     dist = dist.lower()
     if dist in {'extreme1', 'gumbel'}:
@@ -2068,7 +2091,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 )
 
 
-def anderson_ksamp(samples, midrank=True):
+def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2086,6 +2109,20 @@ def anderson_ksamp(samples, midrank=True):
         (True) is the midrank test applicable to continuous and
         discrete populations. If False, the right side empirical
         distribution is used.
+    n_resamples : int, default: 0
+        If positive, perform a permutation test to determine the p-value
+        rather than interpolating between tabulated values. Typically 9999 is
+        sufficient for at least two digits of accuracy.
+    random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+
+        Pseudorandom number generator state used to generate resamples.
+
+        If `random_state` is ``None`` (or `np.random`), the
+        `numpy.random.RandomState` singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance then that instance is used.
 
     Returns
     -------
@@ -2098,8 +2135,8 @@ def anderson_ksamp(samples, midrank=True):
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
         pvalue : float
-            The approximate p-value of the test. The value is floored / capped
-            at 0.1% / 25%.
+            The approximate p-value of the test. If `n_resamples` is not
+            provided, the value is floored / capped at 0.1% / 25%.
 
     Raises
     ------
@@ -2157,8 +2194,9 @@ def anderson_ksamp(samples, midrank=True):
     not at the 2.5% level. The interpolation gives an approximate
     p-value of 4.99%.
 
-    >>> res = stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(size=30), rng.normal(size=20)])
+    >>> samples = [rng.normal(size=50), rng.normal(size=30),
+    ...            rng.normal(size=20)]
+    >>> res = stats.anderson_ksamp(samples)
     >>> res.statistic, res.pvalue
     (-0.29103725200789504, 0.25)
     >>> res.critical_values
@@ -2170,7 +2208,14 @@ def anderson_ksamp(samples, midrank=True):
     may not be very accurate (since it corresponds to the value 0.449
     whereas the statistic is -0.291).
 
-    """
+    In such cases where the p-value is capped or when sample sizes are
+    small, a permutation test may be more accurate.
+
+    >>> res = stats.anderson_ksamp(samples, n_resamples=9999, random_state=rng)
+    >>> res.pvalue
+    0.5254
+
+    """  # noqa
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
@@ -2189,9 +2234,18 @@ def anderson_ksamp(samples, midrank=True):
                          "observations")
 
     if midrank:
-        A2kN = _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N)
+        A2kN_fun = _anderson_ksamp_midrank
     else:
-        A2kN = _anderson_ksamp_right(samples, Z, Zstar, k, n, N)
+        A2kN_fun = _anderson_ksamp_right
+    A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
+
+    def statistic(*samples):
+        return A2kN_fun(samples, Z, Zstar, k, n, N)
+
+    if n_resamples:
+        res = permutation_test(samples, statistic, n_resamples=n_resamples,
+                               random_state=random_state,
+                               alternative='greater')
 
     H = (1. / n).sum()
     hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
@@ -2214,18 +2268,22 @@ def anderson_ksamp(samples, midrank=True):
     critical = b0 + b1 / math.sqrt(m) + b2 / m
 
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
-    if A2 < critical.min():
+    if A2 < critical.min() and not n_resamples:
         p = sig.max()
-        warnings.warn("p-value capped: true value larger than {}".format(p),
-                      stacklevel=2)
-    elif A2 > critical.max():
+        message = (f"p-value capped: true value larger than {p}. Consider "
+                   "setting `n_resamples` to a positive integer (e.g. 9999).")
+        warnings.warn(message, stacklevel=2)
+    elif A2 > critical.max() and not n_resamples:
         p = sig.min()
-        warnings.warn("p-value floored: true value smaller than {}".format(p),
-                      stacklevel=2)
-    else:
+        message = (f"p-value floored: true value smaller than {p}. Consider "
+                   "setting `n_resamples` to a positive integer (e.g. 9999).")
+        warnings.warn(message, stacklevel=2)
+    elif not n_resamples:
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
+
+    p = res.pvalue if n_resamples else p
 
     # create result object with alias for backward compatibility
     res = Anderson_ksampResult(A2, critical, p)
@@ -2701,7 +2759,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     is `p`.
 
     .. deprecated:: 1.10.0
-        'binom_test' is deprecated in favour of 'binomtest' and will
+        `binom_test` is deprecated in favour of `binomtest` and will
         be removed in Scipy 1.12.0.
 
     Parameters
@@ -3317,7 +3375,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     >>> d = [6, 8, 14, 16, 23, 24, 28, 29, 41, -48, 49, 56, 60, -67, 75]
 
-    Cross-fertilized plants appear to be be higher. To test the null
+    Cross-fertilized plants appear to be higher. To test the null
     hypothesis that there is no height difference, we can apply the
     two-sided test:
 
@@ -3759,6 +3817,11 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     circmean : float
         Circular mean.
 
+    See Also
+    --------
+    circstd : Circular standard deviation.
+    circvar : Circular variance.
+
     Examples
     --------
     For simplicity, all angles are printed out in degrees.
@@ -3845,6 +3908,11 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     -------
     circvar : float
         Circular variance.
+
+    See Also
+    --------
+    circmean : Circular mean.
+    circstd : Circular standard deviation.
 
     Notes
     -----
@@ -3936,6 +4004,11 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     circstd : float
         Circular standard deviation.
 
+    See Also
+    --------
+    circmean : Circular mean.
+    circvar : Circular variance.
+
     Notes
     -----
     This uses a definition of circular standard deviation from [1]_.
@@ -4009,13 +4082,31 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     return res
 
 
-def directionalmean(samples, *, axis=0, normalize=True):
+class DirectionalStats:
+    def __init__(self, mean_direction, mean_resultant_length):
+        self.mean_direction = mean_direction
+        self.mean_resultant_length = mean_resultant_length
+
+    def __repr__(self):
+        return (f"DirectionalStats(mean_direction={self.mean_direction},"
+                f" mean_resultant_length={self.mean_resultant_length})")
+
+
+def directional_stats(samples, *, axis=0, normalize=True):
     """
-    Computes the directional mean of a sample of vectors.
+    Computes sample statistics for directional data.
+
+    Computes the directional mean (also called the mean direction vector) and
+    mean resultant length of a sample of vectors.
 
     The directional mean is a measure of "preferred direction" of vector data.
-    It is analogous to the sample mean, but it is for use when the magnitude of
+    It is analogous to the sample mean, but it is for use when the length of
     the data is irrelevant (e.g. unit vectors).
+
+    The mean resultant length is a value between 0 and 1 used to quantify the
+    dispersion of directional data: the smaller the mean resultant length, the
+    greater the dispersion. Several definitions of directional variance
+    involving the mean resultant length are given in [1]_ and [2]_.
 
     Parameters
     ----------
@@ -4033,12 +4124,18 @@ def directionalmean(samples, *, axis=0, normalize=True):
 
     Returns
     -------
-    directionalmean : ndarray
-        Directional mean.
+    res : DirectionalStats
+        An object containing attributes:
+
+        mean_direction : ndarray
+            Directional mean.
+        mean_resultant_length : ndarray
+            The mean resultant length [1]_.
 
     See also
     --------
     circmean: circular mean; i.e. directional mean for 2D *angles*
+    circvar: circular variance; i.e. directional variance for 2D *angles*
 
     Notes
     -----
@@ -4047,26 +4144,36 @@ def directionalmean(samples, *, axis=0, normalize=True):
 
     .. code-block:: python
 
-        mean=samples.mean(axis=0)
-        directionalmean = mean/np.linalg.norm(mean)
+        mean = samples.mean(axis=0)
+        mean_resultant_length = np.linalg.norm(mean)
+        mean_direction = mean / mean_resultant_length
 
     This definition is appropriate for *directional* data (i.e. vector data
     for which the magnitude of each observation is irrelevant) but not
     for *axial* data (i.e. vector data for which the magnitude and *sign* of
     each observation is irrelevant).
 
+    Several definitions of directional variance involving the mean resultant
+    length ``R`` have been proposed, including ``1 - R`` [1]_, ``1 - R**2``
+    [2]_, and ``2 * (1 - R)`` [2]_. Rather than choosing one, this function
+    returns ``R`` as attribute `mean_resultant_length` so the user can compute
+    their preferred measure of dispersion.
+
     References
     ----------
     .. [1] Mardia, Jupp. (2000). *Directional Statistics*
        (p. 163). Wiley.
 
+    .. [2] https://en.wikipedia.org/wiki/Directional_statistics
+
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.stats import directionalmean
+    >>> from scipy.stats import directional_stats
     >>> data = np.array([[3, 4],    # first observation, 2D vector space
     ...                  [6, -8]])  # second observation
-    >>> directionalmean(data)
+    >>> dirstats = directional_stats(data)
+    >>> dirstats.mean_direction
     array([1., 0.])
 
     In contrast, the regular sample mean of the vectors would be influenced
@@ -4076,12 +4183,13 @@ def directionalmean(samples, *, axis=0, normalize=True):
     >>> data.mean(axis=0)
     array([4.5, -2.])
 
-    An exemplary use case for `directionalmean` is to find a *meaningful*
+    An exemplary use case for `directional_stats` is to find a *meaningful*
     center for a set of observations on a sphere, e.g. geographical locations.
 
     >>> data = np.array([[0.8660254, 0.5, 0.],
     ...                  [0.8660254, -0.5, 0.]])
-    >>> directionalmean(data)
+    >>> dirstats = directional_stats(data)
+    >>> dirstats.mean_direction
     array([1., 0., 0.])
 
     The regular sample mean on the other hand yields a result which does not
@@ -4090,6 +4198,14 @@ def directionalmean(samples, *, axis=0, normalize=True):
     >>> data.mean(axis=0)
     array([0.8660254, 0., 0.])
 
+    The function also returns the mean resultant length, which
+    can be used to calculate a directional variance. For example, using the
+    definition ``Var(z) = 1 - R`` from [2]_ where ``R`` is the
+    mean resultant length, we can calculate the directional variance of the
+    vectors in the above example as:
+
+    >>> 1 - dirstats.mean_resultant_length
+    0.13397459716167093
     """
     samples = np.asarray(samples)
     if samples.ndim < 2:
@@ -4100,5 +4216,7 @@ def directionalmean(samples, *, axis=0, normalize=True):
         vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
         samples = samples/vectornorms
     mean = np.mean(samples, axis=0)
-    directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)
-    return directional_mean
+    mean_resultant_length = np.linalg.norm(mean, axis=-1, keepdims=True)
+    mean_direction = mean / mean_resultant_length
+    return DirectionalStats(mean_direction,
+                            mean_resultant_length.squeeze(-1)[()])
