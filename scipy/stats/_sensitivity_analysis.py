@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Literal, TYPE_CHECKING, Tuple
 
@@ -480,7 +481,21 @@ def sobol_indices(
             )
             raise ValueError(message) from exc
     else:
+        kind = inspect.Parameter.POSITIONAL_OR_KEYWORD
+        parameters = (
+            inspect.Parameter('f_A', kind=kind),
+            inspect.Parameter('f_B', kind=kind),
+            inspect.Parameter('f_AB', kind=kind)
+        )
+        sig = inspect.Signature(parameters=parameters)
         indices_method = method
+
+        if inspect.signature(indices_method) != sig:
+            message = (
+                "If 'method' is a callable, it must have the following"
+                f" signature: {inspect.signature(saltelli_2010)}"
+            )
+            raise ValueError(message)
 
     if callable(func):
         if dists is None:
@@ -515,7 +530,7 @@ def sobol_indices(
             raise ValueError(message) from exc
 
     # Compute indices
-    first_order, total_order = indices_method(f_A, f_B, f_AB)
+    first_order, total_order = indices_method(f_A=f_A, f_B=f_B, f_AB=f_AB)
 
     res = dict(
         first_order=first_order,

@@ -185,6 +185,10 @@ class TestSobolIndices:
         with pytest.raises(ValueError, match=message):
             sobol_indices(n=0, func=f_ishigami, method='toto')
 
+        message = r"must have the following signature"
+        with pytest.raises(ValueError, match=message):
+            sobol_indices(n=0, func=f_ishigami, method=lambda x: x)
+
         message = r"'dists' must be defined when 'func' is a callable"
         with pytest.raises(ValueError, match=message):
             sobol_indices(n=0, func=f_ishigami)
