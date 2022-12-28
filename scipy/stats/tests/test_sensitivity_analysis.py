@@ -4,7 +4,7 @@ import pytest
 from scipy.stats._resampling import BootstrapResult
 
 from scipy.stats import f_ishigami, sobol_indices, uniform
-
+from scipy.stats._sensitivity_analysis import sample_AB, sample_A_B
 
 @pytest.fixture(scope='session')
 def ishigami_ref_indices():
@@ -41,6 +41,32 @@ def f_ishigami_vec(x):
 
 
 class TestSobolIndices:
+
+    def test_sample_AB(self):
+        A = np.array(
+            [[1, 2, 3],
+             [4, 5, 6],
+             [7, 8, 9],
+             [10, 11, 12]]
+        )
+        B = A + 100
+        ref = np.array(
+            [[101, 2, 3],
+             [104, 5, 6],
+             [107, 8, 9],
+             [110, 11, 12],
+             [1, 102, 3],
+             [4, 105, 6],
+             [7, 108, 9],
+             [10, 111, 12],
+             [1, 2, 103],
+             [4, 5, 106],
+             [7, 8, 109],
+             [10, 11, 112]]
+        )
+
+        AB = sample_AB(A=A, B=B)
+        assert_allclose(AB, ref)
 
     @pytest.mark.parametrize(
         'func',
@@ -81,6 +107,37 @@ class TestSobolIndices:
         # call again to use previous results and change a param
         assert isinstance(res.bootstrap(confidence_level=0.9), BootstrapResult)
         assert isinstance(res._bootstrap_result, BootstrapResult)
+
+    def test_func(self, ishigami_ref_indices):
+        rng = np.random.default_rng(28631265345463262246170309650372465332)
+        n = 4096
+        dists = [
+            uniform(loc=-np.pi, scale=2*np.pi),
+            uniform(loc=-np.pi, scale=2*np.pi),
+            uniform(loc=-np.pi, scale=2*np.pi)
+        ]
+
+        A, B = sample_A_B(n=n, dists=dists, random_state=rng)
+        AB = sample_AB(A=A, B=B)
+
+        func = {
+            'f_A': f_ishigami(A),
+            'f_B': f_ishigami(B),
+            'f_AB': f_ishigami(AB)
+        }
+
+        res = sobol_indices(
+            func=func, n=n,
+            dists=dists,
+            random_state=rng
+        )
+        assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
+
+        res = sobol_indices(
+            func=func, n=n,
+            random_state=rng
+        )
+        assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
 
     def test_raises(self):
 
