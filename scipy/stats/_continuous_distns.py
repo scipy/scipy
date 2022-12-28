@@ -7844,23 +7844,25 @@ class reciprocal_gen(rv_continuous):
         return a, b
 
     def _pdf(self, x, a, b):
-        # reciprocal.pdf(x, a, b) = 1 / (x*log(b/a))
-        return 1.0 / (x * np.log(b * 1.0 / a))
+        # reciprocal.pdf(x, a, b) = 1 / (x*(log(b) - log(a)))
+        return np.exp(self._logpdf(x, a, b))
 
     def _logpdf(self, x, a, b):
-        return -np.log(x) - np.log(np.log(b * 1.0 / a))
+        return -np.log(x) - np.log(np.log(b) - np.log(a))
 
     def _cdf(self, x, a, b):
-        return (np.log(x)-np.log(a)) / np.log(b * 1.0 / a)
+        return (np.log(x)-np.log(a)) / (np.log(b) - np.log(a))
 
     def _ppf(self, q, a, b):
-        return a*pow(b*1.0/a, q)
+        return np.exp(np.log(a) + q*(np.log(b) - np.log(a)))
 
     def _munp(self, n, a, b):
-        return 1.0/np.log(b*1.0/a) / n * (pow(b*1.0, n) - pow(a*1.0, n))
+        t1 = 1 / (np.log(b) - np.log(a)) / n
+        t2 = np.real(np.exp(_log_diff(n * np.log(b), n*np.log(a))))
+        return t1 * t2
 
     def _entropy(self, a, b):
-        return 0.5*np.log(a*b)+np.log(np.log(b*1.0/a))
+        return 0.5*(np.log(a) + np.log(b)) + np.log(np.log(b) - np.log(a))
 
     fit_note = """\
         `loguniform`/`reciprocal` is over-parameterized. `fit` automatically
