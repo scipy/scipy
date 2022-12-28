@@ -779,7 +779,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     overparameterized, calculate the condition number of the covariance matrix:
 
     >>> np.linalg.cond(pcov)
-    34.571092161547405
+    34.571092161547405  # may vary
 
     The value is small, so it does not raise much concern. If, however, we were
     to add a fourth parameter ``d`` to `func` with the same effect as ``a``:
@@ -787,7 +787,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     >>> def func(x, a, b, c, d):
     ...     return a * d * np.exp(-b * x) + c  # a and d are redundant
     >>> popt, pcov = curve_fit(func, xdata, ydata)
-    >>> np.linalg.cond(pcov)
+    >>> np.linalg.cond(pcov)  # may vary
     1.13250718925596e+32
 
     Such a large value is cause for concern. The diagonal elements of the
