@@ -7862,6 +7862,9 @@ class reciprocal_gen(rv_continuous):
     def _entropy(self, a, b):
         return 0.5*np.log(a*b)+np.log(np.log(b*1.0/a))
 
+    def _rvs(self, a, b, size=None, random_state=None):
+        return np.exp(random_state.uniform(np.log(a), np.log(b), size=size))
+
     fit_note = """\
         `loguniform`/`reciprocal` is over-parameterized. `fit` automatically
          fixes `scale` to 1 unless `fscale` is provided by the user.\n\n"""
