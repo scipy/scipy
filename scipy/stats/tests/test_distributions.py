@@ -7359,19 +7359,27 @@ class TestLogUniform:
         a, b, loc, scale = stats.loguniform.fit(rvs, fscale=2, method=method)
         assert scale == 2
 
-    def test_rvs(self):
-        # default RVS has overflow issues
+    def test_overflow(self):
+        # original formulation had overflow issues; check that this is resolved
+        # Extensive accuracy tests elsewhere, no need to test all methods
         rng = np.random.default_rng(7136519550773909093)
         a, b = 1e-200, 1e200
         dist = stats.loguniform(a, b)
-        rvs = dist.rvs(size=1000, random_state=rng)
-        assert np.all(np.isfinite(rvs))
 
-        # "A positive random variable X is log-uniformly distributed if the
-        # logarithm of X is uniform distributed..."
-        dist2 = stats.uniform(np.log(a), np.log(b)-np.log(a))
-        res = stats.ks_1samp(np.log(rvs), dist2.cdf)
-        assert res.pvalue > 0.05
+        # test roundtrip error
+        cdf = rng.uniform(0, 1, size=1000)
+        assert_allclose(dist.cdf(dist.ppf(cdf)), cdf)
+        rvs = dist.rvs(size=1000)
+        assert_allclose(dist.ppf(dist.cdf(rvs)), rvs)
+
+        # test a property of the pdf (and that there is no overflow)
+        x = 10.**np.arange(-200, 200)
+        pdf = dist.pdf(x)  # no overflow
+        assert_allclose(pdf[:-1]/pdf[1:], 10)
+
+        # check munp against wikipedia reference
+        mean = (b - a)/(np.log(b) - np.log(a))
+        assert_allclose(dist.mean(), mean)
 
 
 class TestArgus:
