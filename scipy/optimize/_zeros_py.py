@@ -1136,8 +1136,8 @@ class TOMS748Solver:
             return _ECONVERGED, b
 
         if np.sign(fb) * np.sign(fa) > 0:
-            raise ValueError("a, b must bracket a root f(%e)=%e, f(%e)=%e " %
-                             (a, fa, b, fb))
+            raise ValueError("f(a) and f(b) must have different signs, but "
+                             "f(%e)=%e, f(%e)=%e " % (a, fa, b, fb))
         self.fab[:] = [fa, fb]
 
         return _EINPROGRESS, sum(self.ab) / 2.0
