@@ -7359,6 +7359,20 @@ class TestLogUniform:
         a, b, loc, scale = stats.loguniform.fit(rvs, fscale=2, method=method)
         assert scale == 2
 
+    def test_rvs(self):
+        # default RVS has overflow issues
+        rng = np.random.default_rng(7136519550773909093)
+        a, b = 1e-200, 1e200
+        dist = stats.loguniform(a, b)
+        rvs = dist.rvs(size=1000, random_state=rng)
+        assert np.all(np.isfinite(rvs))
+
+        # "A positive random variable X is log-uniformly distributed if the
+        # logarithm of X is uniform distributed..."
+        dist2 = stats.uniform(np.log(a), np.log(b)-np.log(a))
+        res = stats.ks_1samp(np.log(rvs), dist2.cdf)
+        assert res.pvalue > 0.05
+
 
 class TestArgus:
     def test_argus_rvs_large_chi(self):
