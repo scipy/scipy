@@ -9842,7 +9842,9 @@ add_newdoc("nbdtr",
 
     See also
     --------
-    nbdtrc
+    nbdtrc : Negative binomial survival function
+    nbdtri : Negative binomial quantile function
+    scipy.stats.nbinom : Negative binomial distribution
 
     Notes
     -----
@@ -9857,11 +9859,78 @@ add_newdoc("nbdtr",
 
     Wrapper for the Cephes [1]_ routine `nbdtr`.
 
+    The negative binomial distribution is also available as
+    `scipy.stats.nbinom`. Using `nbdtr` directly can compare performance
+    compared to the ``cdf`` method of `scipy.stats.nbinom` (see last example).
+
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Compute the function for ``k=10`` and ``n=5`` at ``p=0.5``.
+
+    >>> import numpy as np
+    >>> from scipy.special import nbdtr
+    >>> nbdtr(10, 5, 0.5)
+    0.940765380859375
+
+    Compute the function for ``k=10`` and ``n=5`` at several points by
+    providing a NumPy array or list for `p`.
+
+    >>> p = np.array([0.1, 0.4, 0.8])
+    >>> nbdtr(10, 5, p)
+    array([0.01272048, 0.78272229, 0.99998754])
+
+    Plot the function for three different parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> k_parameters = [1, 5, 30]
+    >>> n_parameters = [5, 5, 5]
+    >>> linestyles = ['solid', 'dashed', 'dotted']
+    >>> parameters_list = list(zip(k_parameters, n_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     k, n, style = parameter_set
+    ...     nbdtr_vals = nbdtr(k, n, x)
+    ...     ax.plot(x, nbdtr_vals, label=rf"$k={k},\, n={n}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$p$")
+    >>> ax.set_title("Negative binomial cumulative distribution function")
+    >>> plt.show()
+
+    The negative binomial distribution is also available as
+    `scipy.stats.nbinom`. Using `nbdtr` directly can be much faster than
+    calling the ``cdf`` method of `scipy.stats.nbinom`, especially for small
+    arrays or individual values. To get the same results one must use the
+    following parametrization: ``nbinom(n, p).cdf(k)=nbdtr(k, n, p)``.
+
+    >>> from scipy.stats import nbinom
+    >>> k, n, p = 5, 3, 0.5
+    >>> nbdtr_res = nbdtr(k, n, p)  # this will often be faster than below
+    >>> stats_res = nbinom(n, p).cdf(k)
+    >>> stats_res, nbdtr_res  # test that results are equal
+    (0.85546875, 0.85546875)
+
+    `nbdtr` can evaluate different parameter sets by providing arrays with
+    shapes compatible for broadcasting for `k`, `n` and `p`. Here we compute
+    the function for three different `k` at four locations `p`, resulting in
+    a 3x4 array.
+
+    >>> k = np.array([[5], [10], [15]])
+    >>> p = np.array([0.3, 0.5, 0.7, 0.9])
+    >>> k.shape, p.shape
+    ((3, 1), (4,))
+
+    >>> nbdtr(k, 5, p)
+    array([[0.15026833, 0.62304687, 0.95265101, 0.9998531 ],
+           [0.48450894, 0.94076538, 0.99932777, 0.99999999],
+           [0.76249222, 0.99409103, 0.99999445, 1.        ]])
     """)
 
 add_newdoc("nbdtrc",
