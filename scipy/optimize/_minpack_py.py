@@ -779,7 +779,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     overparameterized, calculate the condition number of the covariance matrix:
 
     >>> np.linalg.cond(pcov)
-    34.571092161547405
+    34.571092161547405  # may vary
 
     The value is small, so it does not raise much concern. If, however, we were
     to add a fourth parameter ``d`` to `func` with the same effect as ``a``:
@@ -788,20 +788,20 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     ...     return a * d * np.exp(-b * x) + c  # a and d are redundant
     >>> popt, pcov = curve_fit(func, xdata, ydata)
     >>> np.linalg.cond(pcov)
-    1.13250718925596e+32
+    1.13250718925596e+32  # may vary
 
     Such a large value is cause for concern. The diagonal elements of the
     covariance matrix, which is related to uncertainty of the fit, gives more
     information:
 
     >>> np.diag(pcov)
-    array([1.48814742e+29, 3.78596560e-02, 5.39253738e-03, 2.76417220e+28])
+    array([1.48814742e+29, 3.78596560e-02, 5.39253738e-03, 2.76417220e+28])  # may vary
 
     Note that the first and last terms are much larger than the other elements,
     suggesting that the optimal values of these parameters are ambiguous and
     that only one of these parameters is needed in the model.
 
-    """
+    """  # noqa
     if p0 is None:
         # determine number of parameters by inspecting the function
         sig = _getfullargspec(f)
