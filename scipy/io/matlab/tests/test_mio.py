@@ -1237,6 +1237,17 @@ def test_save_unicode_field(tmpdir):
     savemat(filename, test_dict)
 
 
+def test_save_custom_array_type(tmpdir):
+    class CustomArray:
+        def __array__(self):
+            return np.arange(6.0).reshape(2, 3)
+    a = CustomArray()
+    filename = os.path.join(str(tmpdir), 'test.mat')
+    savemat(filename, {'a': a})
+    out = loadmat(filename)
+    assert_array_equal(out['a'], np.array(a))
+
+
 def test_filenotfound():
     # Check the correct error is thrown
     assert_raises(OSError, loadmat, "NotExistentFile00.mat")

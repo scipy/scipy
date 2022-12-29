@@ -466,6 +466,8 @@ def to_writeable(source):
         return source
     if source is None:
         return None
+    if hasattr(source, "__array__"):
+        return np.asarray(source)
     # Objects that implement mappings
     is_mapping = (hasattr(source, 'keys') and hasattr(source, 'values') and
                   hasattr(source, 'items'))
