@@ -687,6 +687,8 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     lombscargle: Lomb-Scargle periodogram for unevenly sampled data
     welch: Power spectral density by Welch's method.
     csd: Cross spectral density by Welch's method.
+    ShortTimeFFT: Newer STFT/ISTFT implementation providing more features,
+                  which also includes a spectrogram method.
 
     Notes
     -----
@@ -1114,6 +1116,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     See Also
     --------
     istft: Inverse Short Time Fourier Transform
+    ShortTimeFFT: Newer STFT/ISTFT implementation providing more features.
     check_COLA: Check whether the Constant OverLap Add (COLA) constraint
                 is met
     check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met
@@ -1290,6 +1293,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     See Also
     --------
     stft: Short Time Fourier Transform
+    ShortTimeFFT: Newer STFT/ISTFT implementation providing more features.
     check_COLA: Check whether the Constant OverLap Add (COLA) constraint
                 is met
     check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met

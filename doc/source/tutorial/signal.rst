@@ -1078,11 +1078,11 @@ transform (STFT) is defined [4]_ as
 
     S(f, t) := \int_\IR x(\xi)\, \conj{w(\xi-t)}\,\e^{-\jj2\pi f \xi}\dd\xi
 
-for a given window function :math:`w: \IR \mapsto\IC` with its complex conjugate
-being :math:`\conj{w(t)}`. It can be interpreted as determining the scalar
-product of :math:`x` with the window :math:`w` which is translated by the
-time :math:`t` and then modulated (i.e., frequency-shifted) by the frequency
-:math:`f`.
+for a given window function :math:`w: \IR \mapsto\IC` with its complex
+conjugate being :math:`\conj{w(t)}`. It can be interpreted as determining the
+scalar product of :math:`x` with the window :math:`w` which is translated by
+the time :math:`t` and then modulated (i.e., frequency-shifted) by the
+frequency :math:`f`.
 For working with sampled signals :math:`x[k] := x(kT)`, :math:`k\in\IZ` with
 sampling interval :math:`T` (being the inverse of the sampling frequency `fs`),
 the discrete version, i.e., only evaluating the STFT at discrete grid points
@@ -1129,13 +1129,13 @@ reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
         :label: eq_STFT_DFT
 
         S[q, p] = \sum_{m=0}^{M-1} x_p[m] \exp\!\big\{%
-                                          -2\jj\pi (q + \phi_m)\, m / M\big\}\ .
+                                         -2\jj\pi (q + \phi_m)\, m / M\big\}\ .
 
-   Note that a linear phase :math:`\phi_m` (see `phase_shift`) can be specified,
-   which corresponds to shifting the input by :math:`\phi_m` samples. The
-   default is :math:`\phi_m = \lfloor M/2\rfloor` (corresponds per definition to
-   ``phase_shift = 0``), which suppresses linear phase components for un-shifted
-   signals.
+   Note that a linear phase :math:`\phi_m` (see `phase_shift`) can be
+   specified, which corresponds to shifting the input by :math:`\phi_m`
+   samples. The default is :math:`\phi_m = \lfloor M/2\rfloor` (corresponds per
+   definition to ``phase_shift = 0``), which suppresses linear phase components
+   for un-shifted signals.
    Furthermore, the FFT may be oversampled by padding :math:`w[m]` with zeros.
    This can be achieved by specifying `mfft` to be larger that than the window
    length `m_num`---this sets :math:`M` to `mfft` (implying that also
@@ -1149,14 +1149,14 @@ these two steps:
    .. math::
 
       x_p[m] = \frac{1}{M}\sum_{q=0}^M S[q, p]\, \exp\!\big\{
-                                           2\jj\pi (q + \phi_m)\, m / M\big\}\ .
+                                          2\jj\pi (q + \phi_m)\, m / M\big\}\ .
 
-#. Sum the shifted slices weighted by :math:`w_d[m]` to reconstruct the original
-   signal, i.e.,
+#. Sum the shifted slices weighted by :math:`w_d[m]` to reconstruct the
+   original signal, i.e.,
 
    .. math::
 
-        x[k] = \sum_p x_p\!\big[\mu_p(k)\big]\, w_d\!\big[\mu_p(k)\big]\ , \quad
+        x[k] = \sum_p x_p\!\big[\mu_p(k)\big]\, w_d\!\big[\mu_p(k)\big]\ ,\quad
                \mu_p(k) = k + \lfloor M/2\rfloor - h p
 
    for :math:`k \in [0, \ldots, n-1]`. :math:`w_d[m]` is the so-called
@@ -1190,9 +1190,9 @@ named time slices:
     :align: center
 
 The x-axis denotes the time :math:`t`, which corresponds to the sample index
-`k` indicated by the bottom row of blue boxes. The y-axis denotes the time slice
-index :math:`p`. The signal :math:`x[k]` starts at index :math:`k=0` and is
-marked by a light blue background. Per definition the zeroth slice
+`k` indicated by the bottom row of blue boxes. The y-axis denotes the time
+slice index :math:`p`. The signal :math:`x[k]` starts at index :math:`k=0` and
+is marked by a light blue background. Per definition the zeroth slice
 (:math:`p=0`) is centered at :math:`t=0`. The center of each slice
 (`m_num_mid`), here being the sample ``6//2=3``, is marked by the text "mid".
 By default the `stft` calculates all slices which have some overlap with the
@@ -1202,19 +1202,19 @@ out to the left of the signal is :math:`p_{lb} = 2` and the first sample index
 unaffected by border effects is :math:`k_{lb} = 5`. The property
 `lower_border_end` returns the tuple :math:`(k_{lb}, p_{lb})`.
 
-The behavior at the end of the signal is depicted for a signal with :math:`n=50`
-samples below, as indicated by the blue background:
+The behavior at the end of the signal is depicted for a signal with
+:math:`n=50` samples below, as indicated by the blue background:
 
 .. figure:: ../_static/tutorial_stft_sliding_win_stop.svg
     :width: 66%
     :align: center
 
-Here the last slice has index :math:`p=26` -- hence, following Python convention
-of the end index being outside the range, `p_max` = 27 indicates the first
-slice not touching the signal. The corresponding sample index is `k_max` = 55.
-The first slice, which sticks out to the left is :math:`p_{ub} = 24` with its
-first sample at :math:`k_{ub}=45`. The function `upper_border_begin` returns the
-tuple :math:`(k_{ub}, p_{ub})`.
+Here the last slice has index :math:`p=26` -- hence, following Python
+convention of the end index being outside the range, `p_max` = 27 indicates the
+first slice not touching the signal. The corresponding sample index is
+`k_max` = 55. The first slice, which sticks out to the right is
+:math:`p_{ub} = 24` with its first sample at :math:`k_{ub}=45`. The function
+`upper_border_begin` returns the tuple :math:`(k_{ub}, p_{ub})`.
 
 .. The unit test ``test_short_time_fft.test_tutorial_stft_sliding_win``verifies
    that the shown indexes are correct.
@@ -1357,13 +1357,13 @@ due to :math:`\vb{F}` being unitary. Furthermore
                                  \delta_{r,s}\, \delta_{r,m+ph}\ .
 
 shows that :math:`\vb{D}_p` is a diagonal matrix with non-negative entries.
-Hence, summing :math:`\vb{D}_p` preserves that property. This allows to simplify
-Eq. :math:numref:`eq_STFT_MoorePenrose` further, i.e,
+Hence, summing :math:`\vb{D}_p` preserves that property. This allows to
+simplify Eq. :math:numref:`eq_STFT_MoorePenrose` further, i.e,
 
 .. math::
     :label: eq_STFT_istftM
 
-    \vb{x} &= \vb{D}^{-1} \conjT{\vb{G}}
+    \vb{x} &= \vb{D}^{-1} \conjT{\vb{G}}\vb{s}_p
             = \sum_{p=0}^{P-1} \vb{D}^{-1}\conjT{\vb{W}_{\!p}}\,
                                \conjT{\vb{F}}\vb{s}_p
             =  \sum_{p=0}^{P-1} (\conj{\vb{W}_{\!p}\vb{D}^{-1}})^T\,
@@ -1381,7 +1381,7 @@ expressed as
                = \left(w[m] \delta_{m+ph,k}\right)
                  \inv{\sum_{\eta=0}^{P-1}  \vb{D}_\eta[k,k]} \delta_{m+ph,k}\\
                &= w[m] \inv{\sum_{\eta=0}^{P-1}\sum_{\mu=0}^{M-1}
-                                  \big|w[\mu]\big|^2\,\delta_{m+ph, \mu+\eta h}}
+                                 \big|w[\mu]\big|^2\,\delta_{m+ph, \mu+\eta h}}
                        \delta_{m+ph,k}\\
                 &= w[m] \inv{\sum_{\eta=0}^{P-1} \big|w[m+(p-\eta)h]\big|^2}
                        \delta_{m+ph,k} \ .
@@ -1400,23 +1400,23 @@ identical the dual window
 
     w_d[m] = w[m] \inv{\sum_{\eta\in\IZ} \big|w[m + \eta\, h]\big|^2}\ .
 
-Since :math:`w[m] = 0` holds for :math:`m \not\in\{0, \ldots, M-1\}`, it is only
-required to sum over the indexes :math:`\eta` fulfilling :math:`|\eta| < M/h`.
-The name dual window can be justified by inserting Eq.
+Since :math:`w[m] = 0` holds for :math:`m \not\in\{0, \ldots, M-1\}`, it is
+only required to sum over the indexes :math:`\eta` fulfilling
+:math:`|\eta| < M/h`. The name dual window can be justified by inserting Eq.
 :math:numref:`eq_STFT_Slice_p` into Eq. :math:numref:`eq_STFT_istftM`, i.e.,
 
 .. math::
 
     \vb{x} = \sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\conjT{\vb{F}}\,
                                                  \vb{F}\,\vb{W}_{\!p}\,\vb{x}
-         = \left(\sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\vb{W}_{\!p}\right)\vb{x}\ ,
+        = \left(\sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\vb{W}_{\!p}\right)\vb{x}\ ,
 
 showing that :math:`\vb{U}_p` and :math:`\vb{W}_{\!p}` are interchangeable.
-Hence, :math:`w_d[m]` is also a valid window with dual window :math:`w[m]`. Note
-that :math:`w_d[m]` is not a unique dual window, due :math:`\vb{s}` typically
-having more entries than :math:`\vb{x}`. It can be shown, that :math:`w_d[m]`
-has the minimal energy (or :math:`L_2` norm) [4_], which is the reason for being
-named the  "canonical dual window".
+Hence, :math:`w_d[m]` is also a valid window with dual window :math:`w[m]`.
+Note that :math:`w_d[m]` is not a unique dual window, due :math:`\vb{s}`
+typically having more entries than :math:`\vb{x}`. It can be shown, that
+:math:`w_d[m]` has the minimal energy (or :math:`L_2` norm) [4_], which is the
+reason for being named the  "canonical dual window".
 
 
 

@@ -1,3 +1,29 @@
+"""Unit tests for module `_short_time_fft`.
+
+This file's structure loosely groups the tests into the following sequential
+categories:
+
+1. Test function `_calc_dual_canonical_window`.
+2. Test for invalid parameters and exceptions in `ShortTimeFFT` (until the
+    `test_from_window` function).
+3. Test algorithmic properties of STFT/ISTFT. Some tests were ported from
+   ``test_spectral.py``.
+
+Notes
+-----
+* The coverage of `_short_time_fft` is only 99% because the exception block for
+  testing if `NDArray` exists in Numpy, i.e. the following block
+
+        try:  # Workaround needed for Numpy versions < 1.21
+            from numpy.typing import NDArray
+        except ModuleNotFoundError:
+            NDArray: Type = np.ndarray  # type: ignore
+
+  is not tested. The reason being that the author does not know hot to do it in
+  a reasonable manner within pytest. This problem will go away when Numpy
+  >= 1.21 becomes mandatory for SciPy.
+
+"""
 import math
 from itertools import product
 from typing import cast, get_args, Literal
@@ -5,6 +31,7 @@ from typing import cast, get_args, Literal
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_equal
+from scipy.stats import norm as normal_distribution
 
 from scipy.signal import get_window
 from scipy.signal import ShortTimeFFT
@@ -16,7 +43,11 @@ from scipy.signal.windows import gaussian
 def chk_VE(match):
     """Assert for a ValueError matching regexp `match`.
 
-    This little wrapper allows a more concise code layout.
+    This little wrapper allows a more concise code layout. Usage::
+
+        with chk_VE("Message RegExp"):
+            test_code
+            ...
     """
     return pytest.raises(ValueError, match=match)
 
@@ -142,28 +173,36 @@ def test_invalid_fft_typ_RuntimeError():
 def test_from_window(win_params, Nx: int):
     """Verify that `from_window()` handels parameters correctly.
 
-    The window parameterizations where take from the `get_window` docstring.
+    The window parameterizations are documented in the `get_window` docstring.
     """
-    w, fs = get_window(win_params, Nx, fftbins=False), 16.
-    SFT0 = ShortTimeFFT(w, hop=3, fs=fs, fft_typ='twosided', scale_to='psd',
-                        phase_shift=1)
-    nperseg = len(w)
+    w_sym, fs = get_window(win_params, Nx, fftbins=False), 16.
+    w_per = get_window(win_params, Nx, fftbins=True)
+    SFT0 = ShortTimeFFT(w_sym, hop=3, fs=fs, fft_typ='twosided',
+                        scale_to='psd', phase_shift=1)
+    nperseg = len(w_sym)
     noverlap = nperseg - SFT0.hop
-    SFT1 = ShortTimeFFT.from_window(win_params, fs, nperseg, noverlap,
+    SFT1 = ShortTimeFFT.from_window(win_params, fs, nperseg, noverlap, True,
+                                    fft_typ='twosided', scale_to='psd',
+                                    phase_shift=1)
+    # periodic window:
+    SFT2 = ShortTimeFFT.from_window(win_params, fs, nperseg, noverlap, False,
                                     fft_typ='twosided', scale_to='psd',
                                     phase_shift=1)
     # Be informative when comparing instances:
     assert_equal(SFT1.win, SFT0.win)
+    assert_allclose(SFT2.win, w_per / np.sqrt(sum(w_per**2) * fs))
     for n_ in ('hop', 'T', 'fft_typ', 'mfft', 'scaling', 'phase_shift'):
-        v0, v1 = getattr(SFT0, n_), getattr(SFT1, n_)
+        v0, v1, v2 = (getattr(SFT_, n_) for SFT_ in (SFT0, SFT1, SFT2))
         assert v1 == v0, f"SFT1.{n_}={v1} does not equal SFT0.{n_}={v0}"
+        assert v2 == v0, f"SFT2.{n_}={v2} does not equal SFT0.{n_}={v0}"
 
 
 def test_dual_win_roundtrip():
     """Verify the duality of `win` and `dual_win`.
 
-    Note that this test does not work for any window, since dual windows are
-    not unique. It always works if the windows do not overlap.
+    Note that this test does not work for arbitrary windows, since dual windows
+    are not unique. It always works for invertible STFTs if the windows do not
+    overlap.
     """
     SFT0 = ShortTimeFFT(np.ones(4), hop=4, fs=1)
     SFT1 = ShortTimeFFT.from_dual(SFT0.dual_win, hop=4, fs=1)
@@ -174,14 +213,33 @@ def test_dual_win_roundtrip():
                          [(None, 0.25, 0.125),
                           ('magnitude', 2.0, 1),
                           ('psd', 1, 0.5)])
-def test_scaling_init(scale_to: Literal['magnitude', 'psd'], fac_psd, fac_mag):
-    """Verify scaling calculations when passing `scale_to` to ``__init__(). """
+def test_scaling(scale_to: Literal['magnitude', 'psd'], fac_psd, fac_mag):
+    """Verify scaling calculations.
+
+    * Verify passing `scale_to`parameter  to ``__init__().
+    * Roundtrip while changing scaling factor.
+    """
     SFT = ShortTimeFFT(np.ones(4) * 2, hop=4, fs=1, scale_to=scale_to)
     assert SFT.fac_psd == fac_psd
     assert SFT.fac_magnitude == fac_mag
+    # increase coverage by accessing properties twice:
+    assert SFT.fac_psd == fac_psd
+    assert SFT.fac_magnitude == fac_mag
+
+    x = np.fft.irfft([0, 0, 7, 0, 0, 0, 0])  # periodic signal
+    Sx = SFT.stft(x)
+    Sx_mag, Sx_psd = Sx * SFT.fac_magnitude, Sx * SFT.fac_psd
+
+    SFT.scale_to('magnitude')
+    x_mag = SFT.istft(Sx_mag, k1=len(x))
+    assert_allclose(x_mag, x)
+
+    SFT.scale_to('psd')
+    x_psd = SFT.istft(Sx_psd, k1=len(x))
+    assert_allclose(x_psd, x)
 
 
-def test_scaling():
+def test_scale_to():
     """Verify `scale_to()` method."""
     SFT = ShortTimeFFT(np.ones(4) * 2, hop=4, fs=1, scale_to=None)
 
@@ -345,6 +403,7 @@ def test_fft_func_roundtrip(n: int):
 
 
 def test_impulse_roundtrip():
+    """Roundtrip for an impulse being at different positions."""
     n = 19
     w, h_n = np.ones(8), 3
     x_in = np.zeros(n)
@@ -401,8 +460,8 @@ def test_minimal_length_signal(m_num):
     x = np.ones(n)
     Sx = SFT.stft(x)
     x1 = SFT.istft(Sx, k1=n)
-    assert_allclose(x1, x1, err_msg="fRoundtrip minimal length signal ({n=})" +
-                                    f" for {m_num} sample window failed!")
+    assert_allclose(x1, x, err_msg=f"Roundtrip minimal length signal ({n=})" +
+                                   f" for {m_num} sample window failed!")
     with pytest.raises(ValueError, match=rf"len\(x\)={n-1} must be >= ceil.*"):
         SFT.stft(x[:-1])
     with pytest.raises(ValueError, match=rf"S.shape\[t_axis\]={Sx.shape[1]-1}"
@@ -452,8 +511,11 @@ def test_permute_axes():
         Sy = SFT.stft(y, axis=i)
         assert_allclose(Sy, np.moveaxis(Sx0, 0, i))
 
-        yb = SFT.istft(Sy, k1=n, f_axis=i)
-        assert_allclose(yb, y, atol=atol)
+        yb0 = SFT.istft(Sy, k1=n, f_axis=i)
+        assert_allclose(yb0, y, atol=atol)
+        # explicit t-axis parameter (for coverage):
+        yb1 = SFT.istft(Sy, k1=n, f_axis=i, t_axis=Sy.ndim-1)
+        assert_allclose(yb1, y, atol=atol)
 
         SyT = np.moveaxis(Sy, (i, -1), (-1, i))
         assert_allclose(SyT, np.moveaxis(SxT, 0, i))
@@ -505,6 +567,45 @@ def test_roundtrip_windows(window, n: int, nperseg: int, noverlap: int):
                     err_msg="Roundtrip for 32 Bit float values failed")
 
 
+@pytest.mark.parametrize('window, N, nperseg, noverlap, mfft',
+                         # from test_roundtrip_padded_FFT:
+                         [('hann', 1024, 256, 128, 512),
+                          ('hann', 1024, 256, 128, 501),
+                          ('boxcar', 100, 10, 0, 33),
+                          (('tukey', 0.5), 1152, 256, 64, 1024),
+                          # from test_roundtrip_padded_signal:
+                          ('boxcar', 101, 10, 0, None),
+                          ('hann', 1000, 256, 128, None),
+                          # from test_roundtrip_boundary_extension:
+                          ('boxcar', 100, 10, 0, None),
+                          ('boxcar', 100, 10, 9, None)])
+@pytest.mark.parametrize('padding', get_args(PAD_TYPE))
+def test_stft_padding_roundtrip(window, N: int, nperseg: int, noverlap: int,
+                                mfft: int, padding):
+    """Test the parameter 'padding' of `stft` with roundtrips.
+
+    The STFT parametrizations were taken from the methods
+    `test_roundtrip_padded_FFT`, `test_roundtrip_padded_signal` and
+    `test_roundtrip_boundary_extension` from class `TestSTFT` in  file
+    ``test_spectral.py``. Note that the ShortTimeFFT does not need the
+    concept of "boundary extension".
+    """
+    x = normal_distribution.rvs(size=N, random_state=2909)  # real signal
+    z = x * np.exp(1j * np.pi / 4)  # complex signal
+
+    SFT = ShortTimeFFT.from_window(window, 1, nperseg, noverlap,
+                                   fft_typ='twosided', mfft=mfft)
+    Sx = SFT.stft(x, padding=padding)
+    x1 = SFT.istft(Sx, k1=N)
+    assert_allclose(x1, x,
+                    err_msg=f"Failed real roundtrip with '{padding}' padding")
+
+    Sz = SFT.stft(z, padding=padding)
+    z1 = SFT.istft(Sz, k1=N)
+    assert_allclose(z1, z, err_msg="Failed complex roundtrip with " +
+                    f" '{padding}' padding")
+
+
 @pytest.mark.parametrize('N_x', (128, 129, 255, 256, 1337))  # signal length
 @pytest.mark.parametrize('w_size', (128, 256))  # window length
 @pytest.mark.parametrize('t_step', (4, 64))  # SFT time hop
@@ -543,7 +644,7 @@ def test_energy_conservation(N_x: int, w_size: int, t_step: int, f_c: float):
     assert np.abs(max_freq - f_c) < 1.
     assert_allclose(x, xp, atol=atol)
 
-    # check L2-norm squared (i.e. energy) conservation:
+    # check L2-norm squared (i.e., energy) conservation:
     E_x = np.sum(x**2, axis=-1) * SFT.T  # numerical integration
     aX2 = X.real**2 + X.imag.real**2
     E_X = np.sum(np.sum(aX2, axis=-1) * SFT.delta_t, axis=-1) * SFT.delta_f
@@ -560,7 +661,7 @@ def test_energy_conservation(N_x: int, w_size: int, t_step: int, f_c: float):
     assert np.abs(max_freq - f_c) < 1.
     assert_allclose(x, xp, atol=atol)
 
-    # check L2-norm squared (i.e. energy) conservation:
+    # check L2-norm squared (i.e., energy) conservation:
     E_x = np.sum(x**2, axis=-1) * SFT.T  # numeric integration
     aX2 = X.real ** 2 + X.imag.real ** 2
     E_X = np.sum(np.sum(aX2, axis=-1) * SFT.delta_t, axis=-1) * SFT.delta_f

@@ -17,6 +17,9 @@ Implementation Notes (as of 2022-12)
   methods and not the legacy functions. The side effect is that `ShortTimeFFT`
   does not work anymore. It is not known how to this file wide instead of
   method-wide.
+* The HTML documentation currently renders each method/property on a separate
+  page without reference to the parent class. Thus, a link to `ShortTimeFT` was
+  added to the "See Also" section of each method/property.
 """
 from functools import lru_cache, partial
 from typing import Callable, Generator, get_args, Literal, Optional, Union, \
@@ -139,10 +142,10 @@ class ShortTimeFFT:
         ('psd') spectrum. This parameter sets the property `scaling` to the
         same value. See method `scale_to` for details.
     phase_shift : int | None
-        If set, add a linear phase `phase_shift/mfft * f` to each frequency
-        `f`. The default value 0 ensures that there is no phase shift on the
-        zeroth slice (in which t=0 is centered). See property `phase_shift` for
-        more details.
+        If set, add a linear phase `phase_shift` / `mfft` * `f` to each
+        frequency `f`. The default value 0 ensures that there is no phase shift
+        on the zeroth slice (in which t=0 is centered). See property
+        `phase_shift` for more details.
 
     Examples
     --------
@@ -362,6 +365,7 @@ class ShortTimeFFT:
     @classmethod
     def from_window(cls, win_param: Union[str, Tuple, float],
                     fs: float, nperseg: int, noverlap: int,
+                    symmetric_win: bool = False,
                     fft_typ: FFT_TYP_TYPE = 'onesided',
                     mfft: Optional[int] = None,
                     scale_to: Optional[Literal['magnitude', 'psd']] = None,
@@ -388,6 +392,11 @@ class ShortTimeFFT:
         noverlap:
             Window overlap in samples. It relates to the `hop` increment by
             ``hop = npsereg - noverlap``.
+        symmetric_win:
+            If ``True`` then symetric window is generated, else a periodic
+            window is generated (default). Though symmetric window seem for
+            most applications to be more sensible, The default of periodic
+            windows was chosen to correspond to the classical implementations.
         fft_typ : 'twosided', 'centered', 'onesided', 'onesided2X'
             Type of FFT to be used (default 'onesided').
             See property `fft_typ` for details.
@@ -400,9 +409,9 @@ class ShortTimeFFT:
             density ('psd') spectrum. This parameter sets the property
             `scaling` to the same value. See method `scale_to` for details.
         phase_shift : int | None
-            If set, add a linear phase `phase_shift/mfft * f` to each frequency
-            `f`. The default value 0 ensures that there is no phase shift on
-            the zeroth slice (in which t=0 is centered). See property
+            If set, add a linear phase `phase_shift` / `mfft` * `f` to each
+            frequency `f`. The default value 0 ensures that there is no phase
+            shift on the zeroth slice (in which t=0 is centered). See property
             `phase_shift` for more details.
 
         Examples
@@ -420,11 +429,11 @@ class ShortTimeFFT:
 
         See Also
         --------
-        get_window: Return a window of a given length and type.
+        scipy.signal.get_window: Return a window of a given length and type.
         from_dual: Create instance using dual window.
         ShortTimeFFT: Create instance using standard initalizer.
         """
-        win = get_window(win_param, nperseg, fftbins=False)  # symmetric window
+        win = get_window(win_param, nperseg, fftbins=not symmetric_win)
         return cls(win, hop=nperseg-noverlap, fs=fs, fft_typ=fft_typ,
                    mfft=mfft, scale_to=scale_to, phase_shift=phase_shift)
 
@@ -755,9 +764,11 @@ class ShortTimeFFT:
             -> NDArray:
         """Perform the short-time Fourier transform.
 
+        .. currentmodule:: scipy.signal.ShortTimeFFT
+
         A two-dimensional matrix with ``p1-p0`` columns is calculated.
-        The `f_pts` rows represent value at the frequencies `f`.The q-th
-        column the windowed FFT with the window `win` centered at t[q].
+        The `f_pts` rows represent value at the frequencies `f`. The q-th
+        column of the windowed FFT with the window `win` is centered at t[q].
         The columns represent the values at the frequencies `f`.
 
         Parameters
@@ -814,7 +825,8 @@ class ShortTimeFFT:
                      k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                      axis: int = -1) \
             -> NDArray:
-        """Short-time Fourier transform a trend subtracted from each segment.
+        """Short-time Fourier transform with a trend subtracted being from each
+        segment beforehand.
 
         .. currentmodule:: scipy.signal.ShortTimeFFT
 
@@ -1002,6 +1014,8 @@ class ShortTimeFFT:
             -> NDArray:
         """Inverse short-time Fourier transform.
 
+        .. currentmodule:: scipy.signal.ShortTimeFFT
+
         It returns an array of dimension ``S.ndim - 1``  which is real
         if `onesided_fft` is set, else complex. If the STFT is not
         `invertible`, or the parameters are out of bounds  a ``ValueError`` is
@@ -1019,8 +1033,6 @@ class ShortTimeFFT:
             signal should be reconstructed.
         f_axis, t_axis
             The axes in `S` denoting the frequency and the time dimension.
-
-        .. currentmodule:: scipy.signal.ShortTimeFFT
 
         Notes
         -----
@@ -1040,7 +1052,7 @@ class ShortTimeFFT:
         --------
         invertible: Check if STFT is invertible.
         stft: Short-time Fourier transform.
-        ShortTimeFFT: Class this method belongs to.
+        :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
         if f_axis == t_axis:
             raise ValueError(f"{f_axis=} may not be equal to {t_axis=}!")
@@ -1645,7 +1657,7 @@ class ShortTimeFFT:
         """
         if axes_seq not in ('tf', 'ft'):
             raise ValueError(f"Parameter {axes_seq=} not in ['tf', 'ft']!")
-        p0, p1 = self.p_min, self.p_max(n)
+
         if self.onesided_fft:
             q0, q1 = 0, self.f_pts
         elif self.fft_typ == 'centered':
@@ -1655,6 +1667,7 @@ class ShortTimeFFT:
             raise ValueError(f"Attribute fft_typ={self.fft_typ} must be in " +
                              "['centered', 'onesided', 'onesided2X']")
 
+        p0, p1 = self.p_min, self.p_max(n)  # shorthand
         if center_bins:
             t0, t1 = self.delta_t * (p0 - 0.5), self.delta_t * (p1 - 0.5)
             f0, f1 = self.delta_f * (q0 - 0.5), self.delta_f * (q1 - 0.5)
