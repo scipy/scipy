@@ -22,7 +22,11 @@ Notes
   is not tested. The reason being that the author does not know hot to do it in
   a reasonable manner within pytest. This problem will go away when Numpy
   >= 1.21 becomes mandatory for SciPy.
+* Mypy 0.990 does interpret the line
 
+        from scipy.stats import norm as normal_distribution
+
+  incorrectly (but the code works), hence a ``type: ignore`` was appended.
 """
 import math
 from itertools import product
@@ -31,7 +35,7 @@ from typing import cast, get_args, Literal
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_equal
-from scipy.stats import norm as normal_distribution
+from scipy.stats import norm as normal_distribution  # type: ignore
 
 from scipy.signal import get_window
 from scipy.signal import ShortTimeFFT
