@@ -10035,7 +10035,7 @@ add_newdoc("nbdtrc",
     `scipy.stats.nbinom`. Using `nbdtr` directly can be much faster than
     calling the ``sf`` method of `scipy.stats.nbinom`, especially for small
     arrays or individual values. To get the same results one must use the
-    following parametrization: ``nbinom(n, p).ppf(k)=nbdtrc(k, n, p)``.
+    following parametrization: ``nbinom(n, p).sf(k)=nbdtrc(k, n, p)``.
 
     >>> from scipy.stats import nbinom
     >>> k, n, p = 3, 5, 0.5
@@ -10061,10 +10061,10 @@ add_newdoc("nbdtrc",
     """)
 
 add_newdoc("nbdtri",
-    """
+    r"""
     nbdtri(k, n, y, out=None)
 
-    Inverse of `nbdtr` vs `p`.
+    Negative binomial distribution quantile function.
 
     Returns the inverse with respect to the parameter `p` of
     `y = nbdtr(k, n, p)`, the negative binomial cumulative distribution
@@ -10090,6 +10090,8 @@ add_newdoc("nbdtri",
     See also
     --------
     nbdtr : Cumulative distribution function of the negative binomial.
+    nbdtrc : Negative binomial survival function.
+    scipy.stats.nbinom : negative binomail distribution.
     nbdtrik : Inverse with respect to `k` of `nbdtr(k, n, p)`.
     nbdtrin : Inverse with respect to `n` of `nbdtr(k, n, p)`.
 
@@ -10097,11 +10099,68 @@ add_newdoc("nbdtri",
     -----
     Wrapper for the Cephes [1]_ routine `nbdtri`.
 
+    The negative binomial distribution is also available as
+    `scipy.stats.nbinom`. Using `nbdtri` directly can compare performance
+    compared to the ``ppf`` method of `scipy.stats.nbinom`.
+
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    `nbdtri` is the inverse of `nbdtr`: up to floating point errors
+    the following holds: ``nbdtri(k, n, nbdtr(k, n, p))=p``.
+
+    >>> import numpy as np
+    >>> from scipy.special import nbdtri, nbdtr
+    >>> k, n, p = 5, 10, 0.2
+    >>> cdf_val = nbdtr(k, n, p)
+    >>> nbdtri(k, n, cdf_val)
+    0.20000000000000004
+
+    Compute the function for ``k=10`` and ``n=5`` at several points by
+    providing a NumPy array or list for `p`.
+
+    >>> p = np.array([0.1, 0.4, 0.8])
+    >>> nbdtri(3, 5, p)
+    array([0.34462319, 0.51653095, 0.69677416])
+
+    Plot the function for three different parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> k_parameters = [1, 5, 30]
+    >>> n_parameters = [5, 5, 5]
+    >>> linestyles = ['solid', 'dashed', 'dotted']
+    >>> parameters_list = list(zip(k_parameters, n_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 1, 500)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     k, n, style = parameter_set
+    ...     nbdtri_vals = nbdtri(k, n, x)
+    ...     ax.plot(x, nbdtri_vals, label=f"$k={k},\, n={n}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$p$")
+    >>> ax.set_title("Negative binomial quantile function")
+    >>> plt.show()
+
+    `nbdtri` can evaluate different parameter sets by providing arrays with
+    shapes compatible for broadcasting for `k`, `n` and `p`. Here we compute
+    the function for three different `k` at four locations `p`, resulting in
+    a 3x4 array.
+
+    >>> k = np.array([[5], [10], [15]])
+    >>> p = np.array([0.3, 0.5, 0.7, 0.9])
+    >>> k.shape, p.shape
+    ((3, 1), (4,))
+
+    >>> nbdtri(k, 5, p)
+    array([[0.37258157, 0.45169416, 0.53249956, 0.64578407],
+           [0.24588501, 0.30451981, 0.36778453, 0.46397088],
+           [0.18362101, 0.22966758, 0.28054743, 0.36066188]])
     """)
 
 add_newdoc("nbdtrik",
