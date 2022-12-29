@@ -9967,6 +9967,12 @@ add_newdoc("nbdtrc",
         The probability of `k + 1` or more failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
+    See also
+    --------
+    nbdtr : Negative binomial cumulative distribution function
+    nbdtri : Negative binomial quantile function
+    scipy.stats.nbinom : Negative binomial distribution
+
     Notes
     -----
     If floating point values are passed for `k` or `n`, they will be truncated
@@ -9980,10 +9986,78 @@ add_newdoc("nbdtrc",
 
     Wrapper for the Cephes [1]_ routine `nbdtrc`.
 
+    The negative binomial distribution is also available as
+    `scipy.stats.nbinom`. Using `nbdtr` directly can compare performance
+    compared to the ``sf`` method of `scipy.stats.nbinom` (see last example).
+
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Compute the function for ``k=10`` and ``n=5`` at ``p=0.5``.
+
+    >>> import numpy as np
+    >>> from scipy.special import nbdtrc
+    >>> nbdtrc(10, 5, 0.5)
+    0.059234619140624986
+
+    Compute the function for ``k=10`` and ``n=5`` at several points by
+    providing a NumPy array or list for `p`.
+
+    >>> p = np.array([0.1, 0.4, 0.8])
+    >>> nbdtrc(3, 5, p)
+    array([0.99956835, 0.8263296 , 0.0562816 ])
+
+    Plot the function for three different parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> k_parameters = [1, 5, 30]
+    >>> n_parameters = [5, 5, 5]
+    >>> linestyles = ['solid', 'dashed', 'dotted']
+    >>> parameters_list = list(zip(k_parameters, n_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     k, n, style = parameter_set
+    ...     nbdtrc_vals = nbdtrc(k, n, x)
+    ...     ax.plot(x, nbdtrc_vals, label=rf"$k={k},\, n={n}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$p$")
+    >>> ax.set_title("Negative binomial survival function")
+    >>> plt.show()
+
+    The negative binomial distribution is also available as
+    `scipy.stats.nbinom`. Using `nbdtr` directly can be much faster than
+    calling the ``sf`` method of `scipy.stats.nbinom`, especially for small
+    arrays or individual values. To get the same results one must use the
+    following parametrization: ``nbinom(n, p).ppf(k)=nbdtrc(k, n, p)``.
+
+    >>> from scipy.stats import nbinom
+    >>> k, n, p = 3, 5, 0.5
+    >>> nbdtr_res = nbdtrc(k, n, p)  # this will often be faster than below
+    >>> stats_res = nbinom(n, p).sf(k)
+    >>> stats_res, nbdtr_res  # test that results are equal
+    (0.6367187499999999, 0.6367187499999999)
+
+    `nbdtrc` can evaluate different parameter sets by providing arrays with
+    shapes compatible for broadcasting for `k`, `n` and `p`. Here we compute
+    the function for three different `k` at four locations `p`, resulting in
+    a 3x4 array.
+
+    >>> k = np.array([[5], [10], [15]])
+    >>> p = np.array([0.3, 0.5, 0.7, 0.9])
+    >>> k.shape, p.shape
+    ((3, 1), (4,))
+
+    >>> nbdtrc(k, 5, p)
+    array([[8.49731667e-01, 3.76953125e-01, 4.73489874e-02, 1.46902600e-04],
+           [5.15491059e-01, 5.92346191e-02, 6.72234070e-04, 9.29610100e-09],
+           [2.37507779e-01, 5.90896606e-03, 5.55025308e-06, 3.26346760e-13]])
     """)
 
 add_newdoc("nbdtri",
