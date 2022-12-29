@@ -10091,7 +10091,7 @@ add_newdoc("nbdtri",
     --------
     nbdtr : Cumulative distribution function of the negative binomial.
     nbdtrc : Negative binomial survival function.
-    scipy.stats.nbinom : negative binomail distribution.
+    scipy.stats.nbinom : negative binomial distribution.
     nbdtrik : Inverse with respect to `k` of `nbdtr(k, n, p)`.
     nbdtrin : Inverse with respect to `n` of `nbdtr(k, n, p)`.
 
