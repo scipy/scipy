@@ -145,8 +145,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         dimension (n,) and ``args`` is a tuple with the fixed
         parameters.
     bounds : sequence or `Bounds`, optional
-        Bounds on variables for Nelder-Mead, L-BFGS-B, TNC, SLSQP, Powell, and
-        trust-constr methods. There are two ways to specify the bounds:
+        Bounds on variables for Nelder-Mead, L-BFGS-B, TNC, SLSQP, Powell,
+        trust-constr, and COBYLA methods. There are two ways to specify the
+        bounds:
 
             1. Instance of `Bounds` class.
             2. Sequence of ``(min, max)`` pairs for each element in `x`. None
@@ -575,8 +576,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             np.any(constraints)):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
-    if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'tnc', 'slsqp',
-                    'trust-constr', '_custom') and bounds is not None:
+    if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'cobyla', 'slsqp',
+                    'tnc', 'trust-constr', '_custom') and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - return_all
@@ -713,7 +714,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                             **options)
     elif meth == 'cobyla':
         res = _minimize_cobyla(fun, x0, args, constraints, callback=callback,
-                                **options)
+                               bounds=bounds, **options)
     elif meth == 'slsqp':
         res = _minimize_slsqp(fun, x0, args, jac, bounds,
                               constraints, callback=callback, **options)
@@ -978,7 +979,7 @@ def _add_to_array(x_in, i_fixed, x_fixed):
 
 def standardize_bounds(bounds, x0, meth):
     """Converts bounds to the form required by the solver."""
-    if meth in {'trust-constr', 'powell', 'nelder-mead', 'new'}:
+    if meth in {'trust-constr', 'powell', 'nelder-mead', 'cobyla', 'new'}:
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)

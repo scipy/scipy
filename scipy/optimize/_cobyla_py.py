@@ -187,7 +187,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
 @synchronized
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
                      rhobeg=1.0, tol=1e-4, maxiter=1000,
-                     disp=False, catol=2e-4, callback=None,
+                     disp=False, catol=2e-4, callback=None, bounds=None,
                      **unknown_options):
     """
     Minimize a scalar function of one or more variables using the
@@ -217,6 +217,29 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     # check constraints
     if isinstance(constraints, dict):
         constraints = (constraints, )
+
+    if bounds:
+        msg = "An upper bound is less than the corresponding lower bound."
+        if np.any(bounds.ub < bounds.lb):
+            raise ValueError(msg)
+
+        msg = "The number of bounds is not compatible with the length of `x0`."
+        if len(x0) != len(bounds.lb):
+            raise ValueError(msg)
+
+        i_lb = np.isfinite(bounds.lb)
+        if np.any(i_lb):
+            def lb_constraint(x, *args, **kwargs):
+                return x[i_lb] - bounds.lb[i_lb]
+
+            constraints.append({'type': 'ineq', 'fun': lb_constraint})
+
+        i_ub = np.isfinite(bounds.ub)
+        if np.any(i_ub):
+            def ub_constraint(x):
+                return bounds.ub[i_ub] - x[i_ub]
+
+            constraints.append({'type': 'ineq', 'fun': ub_constraint})
 
     for ic, con in enumerate(constraints):
         # check type
