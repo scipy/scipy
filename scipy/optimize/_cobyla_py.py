@@ -219,14 +219,6 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         constraints = (constraints, )
 
     if bounds:
-        msg = "An upper bound is less than the corresponding lower bound."
-        if np.any(bounds.ub < bounds.lb):
-            raise ValueError(msg)
-
-        msg = "The number of bounds is not compatible with the length of `x0`."
-        if len(x0) != len(bounds.lb):
-            raise ValueError(msg)
-
         i_lb = np.isfinite(bounds.lb)
         if np.any(i_lb):
             def lb_constraint(x, *args, **kwargs):

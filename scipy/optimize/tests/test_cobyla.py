@@ -130,6 +130,8 @@ def test_vector_constraints():
 
 class TestBounds:
     # Test cobyla support for bounds (only when used via `minimize`)
+    # Invalid bounds is tested in
+    # test_optimize.TestOptimizeSimple.test_minimize_invalid_bounds
 
     def test_basic(self):
         def f(x):
@@ -144,20 +146,6 @@ class TestBounds:
         ref = [-0.5, -0.5, 1, 0, -0.5]
         assert res.success
         assert_allclose(res.x, ref, atol=1e-3)
-
-    def test_input_validation(self):
-        def f(x):
-            return np.sum(x**2)
-
-        bounds = Bounds([1, 2], [3, 4])
-        msg = 'The number of bounds is not compatible with the length of `x0`.'
-        with pytest.raises(ValueError, match=msg):
-            minimize(f, x0=[1, 2, 3], method='cobyla', bounds=bounds)
-
-        bounds = Bounds([1, 6, 1], [3, 4, 2])
-        msg = 'An upper bound is less than the corresponding lower bound.'
-        with pytest.raises(ValueError, match=msg):
-            minimize(f, x0=[1, 2, 3], method='cobyla', bounds=bounds)
 
     def test_unbounded(self):
         def f(x):
