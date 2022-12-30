@@ -7508,7 +7508,6 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
     Examples
     --------
-
     In [4]_ bird foraging behavior was investigated in a forest of Oregon.
     The foraging refers to the range of activities and behaviours exhibited by
     birds in their quest for food.
@@ -7546,12 +7545,12 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     are uniform and given by the mean of the observed frequencies.
 
     >>> chisquare([16, 18, 16, 14, 12, 12])
-    (2.0, 0.84914503608460956)
+    Power_divergenceResult(statistic=2.0, pvalue=0.84914503608460956)
 
     With `f_exp` the expected frequencies can be given.
 
     >>> chisquare([16, 18, 16, 14, 12, 12], f_exp=[16, 16, 16, 16, 16, 8])
-    (3.5, 0.62338762774958223)
+    Power_divergenceResult(statistic=3.5, pvalue=0.62338762774958223)
 
     When `f_obs` is 2-D, by default the test is applied to each column.
 
@@ -7559,26 +7558,27 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     >>> obs.shape
     (6, 2)
     >>> chisquare(obs)
-    (array([ 2.        ,  6.66666667]), array([ 0.84914504,  0.24663415]))
+    Power_divergenceResult(statistic=array([2.        , 6.66666667]), pvalue=array([0.84914504, 0.24663415]))
 
     By setting ``axis=None``, the test is applied to all data in the array,
     which is equivalent to applying the test to the flattened array.
 
     >>> chisquare(obs, axis=None)
+    Power_divergenceResult(statistic=2.0, pvalue=0.84914503608460956)
     (23.31034482758621, 0.015975692534127565)
     >>> chisquare(obs.ravel())
-    (23.31034482758621, 0.015975692534127565)
+    Power_divergenceResult(statistic=23.31034482758621, pvalue=0.015975692534127565)
 
     `ddof` is the change to make to the default degrees of freedom.
 
     >>> chisquare([16, 18, 16, 14, 12, 12], ddof=1)
-    (2.0, 0.73575888234288467)
+    Power_divergenceResult(statistic=2.0, pvalue=0.7357588823428847)
 
     The calculation of the p-values is done by broadcasting the
     chi-squared statistic with `ddof`.
 
     >>> chisquare([16, 18, 16, 14, 12, 12], ddof=[0,1,2])
-    (2.0, array([ 0.84914504,  0.73575888,  0.5724067 ]))
+    Power_divergenceResult(statistic=2.0, pvalue=array([0.84914504, 0.73575888, 0.5724067 ]))
 
     `f_obs` and `f_exp` are also broadcast.  In the following, `f_obs` has
     shape (6,) and `f_exp` has shape (2, 6), so the result of broadcasting
@@ -7588,7 +7588,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     >>> chisquare([16, 18, 16, 14, 12, 12],
     ...           f_exp=[[16, 16, 16, 16, 16, 8], [8, 20, 20, 16, 12, 12]],
     ...           axis=1)
-    (array([ 3.5 ,  9.25]), array([ 0.62338763,  0.09949846]))
+    Power_divergenceResult(statistic=array([3.5 , 9.25]), pvalue=array([0.62338763, 0.09949846]))
 
     """
     return power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
