@@ -19,7 +19,7 @@ from scipy._lib._util import _rng_spawn
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
            'trapezoid', 'trapz', 'simps', 'simpson',
            'cumulative_trapezoid', 'cumtrapz', 'newton_cotes',
-           'qmc_quad', 'AccuracyWarning']
+           'AccuracyWarning']
 
 
 # Make See Also linking for our local copy work properly
