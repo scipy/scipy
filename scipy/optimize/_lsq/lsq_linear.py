@@ -12,6 +12,8 @@ from .bvls import bvls
 
 
 def prepare_bounds(bounds, n):
+    if len(bounds) != 2:
+        raise ValueError("`bounds` must contain 2 elements.")
     lb, ub = [np.asarray(b, dtype=float) for b in bounds]
 
     if lb.ndim == 0:
@@ -287,8 +289,6 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         lb = bounds.lb
         ub = bounds.ub
     else:
-        if len(bounds) != 2:
-            raise ValueError("`bounds` must contain 2 elements.")
         lb, ub = prepare_bounds(bounds, n)
 
     if lb.shape != (n,) and ub.shape != (n,):

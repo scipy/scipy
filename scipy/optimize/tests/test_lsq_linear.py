@@ -87,6 +87,7 @@ class BaseMixin:
         bounds_new = Bounds(lb, ub)
         res_old = lsq_linear(A, b, bounds_old)
         res_new = lsq_linear(A, b, bounds_new)
+        assert not np.allclose(res_new.x, res_new.unbounded_sol[0])
         assert_allclose(res_old.x, res_new.x)
 
     def test_np_matrix(self):
