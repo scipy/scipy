@@ -10060,7 +10060,8 @@ add_newdoc("nbdtrc",
            [2.37507779e-01, 5.90896606e-03, 5.55025308e-06, 3.26346760e-13]])
     """)
 
-add_newdoc("nbdtri",
+add_newdoc(
+    "nbdtri",
     r"""
     nbdtri(k, n, y, out=None)
 
