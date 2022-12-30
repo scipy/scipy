@@ -81,11 +81,12 @@ def sample_A_B(
     A, B = A_B[:, :d], A_B[:, d:]
 
     for d_, dist in enumerate(dists):
-        dist_rng = NumericalInversePolynomial(
-            dist, random_state=random_state
-        )
-        A[:, d_] = dist_rng.ppf(A[:, d_])
-        B[:, d_] = dist_rng.ppf(B[:, d_])
+        if not hasattr(dist, 'ppf'):
+            dist = NumericalInversePolynomial(
+                dist, random_state=random_state
+            )
+        A[:, d_] = dist.ppf(A[:, d_])
+        B[:, d_] = dist.ppf(B[:, d_])
 
     return A, B
 
@@ -223,24 +224,29 @@ def sobol_indices(
     Parameters
     ----------
     func : callable or dict(str, array_like)
-        Function to compute the Sobol' indices from. It's signature must be
-        ``func(x: ArrayLike) -> ArrayLike``, with ``x`` of shape ``(n, d)``
-        and the output should have a shape ``(n, s)`` with ``s`` the number
-        of outputs and ``n`` the number of samples.
+        Function to compute the Sobol' indices from. It's signature must be::
+
+            func(x: ArrayLike) -> ArrayLike
+
+        with ``x`` of shape ``(n, d)`` and the output should have a shape
+        ``(n, s)`` with ``s`` the number of outputs and ``n`` the number of
+        samples.
     n : int
         Number of samples. 
         Must be a power of 2. The total number of function calls will be
         ``n(d+2)``.
     dists : list(distributions), optional
-        Must be specified if `func` is a callable, and ignored otherwise.
-
         List of each parameter's marginal distribution. Each parameter being
         independently distributed.
 
-        Distributions must be an instance of a class with a ``pdf`` or
+        Distributions must provide a numerical inverse. They are either
+        an instance of a class with a ``ppf`` method, or,
+        an instance of a class with a ``pdf`` or
         ``logpdf`` method, optionally a ``cdf`` method. For more details,
         see the ``dists`` parameter of
         `scipy.stats.sampling.NumericalInversePolynomial`.
+
+        Must be specified if `func` is a callable, and ignored otherwise.
     method : Callable or str, default: 'saltelli_2010'
         Method used to compute the first and total Sobol' indices.
 
@@ -462,12 +468,14 @@ def sobol_indices(
 
     """
     random_state = check_random_state(random_state)
-    log2n = np.log2(n)
-    if log2n == int(log2n):
+
+    n_ = int(n)
+    if not (n_ & (n_ - 1) == 0) or n != n_:
         raise ValueError(
             "The balance properties of Sobol' points require 'n' "
             "to be a power of 2."
         )
+    n = n_
 
     indices_method: Callable
     if not callable(method):
