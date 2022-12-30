@@ -5763,11 +5763,14 @@ class vonmises_fisher_gen(multi_rv_generic):
     where :math:`\mu` is the mean direction, :math:`\kappa` the
     concentration parameter, :math:`d` the dimension and :math:`I` the
     modified Bessel function of the first kind. It often serves as an analogue
-    of the Normal distribution on the unit sphere.
+    of the Normal distribution on the unit sphere. As :math:`\kappa` is a
+    concentration parameter, the distribution becomes more narrow with
+    increasing :math:`\kappa`.
 
     In dimensions 2 and 3, specialized algorithms are used for fast sampling
     [2]_, [3]_. For dimenions of 4 or higher the rejection sampling algorithm
-    described in [4]_ is utilized.
+    described in [4]_ is utilized. This implementation is partially based on
+    the geomstats package [5, 6]_.
 
     .. versionadded:: 1.11
 
@@ -5782,11 +5785,12 @@ class vonmises_fisher_gen(multi_rv_generic):
     .. [4] Wood, A. Simulation of the von mises fisher distribution.
            Communications in statistics-simulation and computation 23,
            1 (1994), 157-164. https://doi.org/10.1080/03610919408813161
+    .. [5] geomstats, Github.
+           https://github.com/geomstats/geomstats
+    .. [6] Miolane, N. et al. Geomstats:  A Python Package for Riemannian
+           Geometry in Machine Learning. Journal of Machine Learning Research
+           21 (2020). http://jmlr.org/papers/v21/19-027.html
 
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import matplotlib.pyplot as plt
     """
 
     def __init__(self, seed=None):
