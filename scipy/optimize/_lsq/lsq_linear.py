@@ -4,6 +4,7 @@ from numpy.linalg import norm
 from scipy.sparse import issparse, csr_matrix
 from scipy.sparse.linalg import LinearOperator, lsmr
 from scipy.optimize import OptimizeResult
+from scipy.optimize._minimize import Bounds
 
 from .common import in_bounds, compute_grad
 from .trf_linear import trf_linear
@@ -270,9 +271,6 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     if len(A.shape) != 2:  # No ndim for LinearOperator.
         raise ValueError("`A` must have at most 2 dimensions.")
 
-    if len(bounds) != 2:
-        raise ValueError("`bounds` must contain 2 elements.")
-
     if max_iter is not None and max_iter <= 0:
         raise ValueError("`max_iter` must be None or positive integer.")
 
@@ -285,7 +283,13 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     if b.size != m:
         raise ValueError("Inconsistent shapes between `A` and `b`.")
 
-    lb, ub = prepare_bounds(bounds, n)
+    if isinstance(bounds, Bounds):
+        lb = bounds.lb
+        ub = bounds.ub
+    else:
+        if len(bounds) != 2:
+            raise ValueError("`bounds` must contain 2 elements.")
+        lb, ub = prepare_bounds(bounds, n)
 
     if lb.shape != (n,) and ub.shape != (n,):
         raise ValueError("Bounds have wrong shape.")
