@@ -2908,19 +2908,19 @@ class TestVonMises_Fisher:
 
     def test_two_dimensional_mu(self):
         mu = np.ones((2, 2))
-        msg = "mu must have one-dimensional shape."
+        msg = "'mu must have one-dimensional shape."
         with pytest.raises(ValueError, match=msg):
             vonmises_fisher(mu, 1)
 
     def test_wrong_norm_mu(self):
         mu = np.ones((2, ))
-        msg = "mu must have length 1."
+        msg = "'mu' must be a unit vector of norm 1."
         with pytest.raises(ValueError, match=msg):
             vonmises_fisher(mu, 1)
 
     def test_one_entry_mu(self):
         mu = np.ones((1, ))
-        msg = "mu must have at least two entries."
+        msg = "'mu' must have at least two entries."
         with pytest.raises(ValueError, match=msg):
             vonmises_fisher(mu, 1)
 

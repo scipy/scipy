@@ -5838,7 +5838,6 @@ class vonmises_fisher_gen(multi_rv_generic):
     ...                        subplot_kw={"projection": "3d"})
     >>> ax.plot_surface(x, y, z, rstride=3, cstride=3, linewidth=0, alpha=0.5)
     >>> ax.scatter(samples[:, 0], samples[:, 1], samples[:, 2], c='r', s=20)
-    >>> ax.view_init(azim=-60, elev=60)
     >>> ax.axis('off')
     >>> ax.view_init(azim=-65, elev=0)
     >>> plt.show()
