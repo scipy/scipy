@@ -3584,8 +3584,8 @@ class TestBetaPrime:
          (0.375, 0.25, 7.0, 0.002036820346115211)],
     )
     def test_ppf(self, p, a, b, expected):
-        p = stats.betaprime.ppf(p, a, b)
-        assert_allclose(p, expected, rtol=1e-14)
+        x = stats.betaprime.ppf(p, a, b)
+        assert_allclose(x, expected, rtol=1e-14)
 
 
 class TestGamma:
