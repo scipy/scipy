@@ -226,12 +226,13 @@ def sobol_indices(
         Function to compute the Sobol' indices from. It's signature must be
         ``func(x: ArrayLike) -> ArrayLike``, with ``x`` of shape ``(n, d)``
         and the output should have a shape ``(n, s)`` with ``s`` the number
-        of output and ``n`` the number of samples.
+        of outputs and ``n`` the number of samples.
     n : int
-        Must be a power of 2. The total number of function call will be
+        Number of samples. 
+        Must be a power of 2. The total number of function calls will be
         ``n(d+2)``.
     dists : list(distributions), optional
-        Must be specified if `func` is a callable, and has no use otherwise.
+        Must be specified if `func` is a callable, and ignored otherwise.
 
         List of each parameter's marginal distribution. Each parameter being
         independently distributed.
@@ -278,13 +279,14 @@ def sobol_indices(
     Notes
     -----
     Variance-based Sensitivity Analysis allows obtaining the contribution of
-    the parameters on the quantity of interest's (QoI) variance. Sobol'
+    the parameters on the variance of the quantities of interest
+    (QoIs; i.e., the outputs of `func`). Sobol'
     method [1]_, [2]_, gives not only a ranking but also quantifies the
     importance factor using the variance.
 
     .. note::
 
-        Parameters are assumed to be independantly distributed. Each
+        Parameters are assumed to be independently distributed. Each
         parameter can still follow any distribution. In fact, the distribution
         is very important and should match the real distribution of the
         parameters.
@@ -318,12 +320,12 @@ def sobol_indices(
     contribution of the i-th parameter, while :math:`S_{ij}` corresponds to the
     second-order term which informs about the correlations between the
     i-th and the j-th parameters. These equations can be generalized to compute
-    higher order terms. However, the computational effort to converge them is
-    most often not at hand and their analysis and interpretations are not
-    simple. This is why only first order indices are provided.
+    higher order terms; however, they are expensive to compute and their 
+    interpretation is complex.
+    This is why only first order indices are provided.
 
     Total indices represent the global contribution of the parameters on the
-    variance of the QoI and express as:
+    variance of the QoI and are defined as:
 
     .. math::
 
@@ -337,7 +339,8 @@ def sobol_indices(
         Negative Sobol' values are due to numerical errors. Increasing the
         number of sample should help.
 
-        If the parameters are not independent, the indices would not sum to 1.
+        If the parameters are not independent, the first-order indices would
+        not sum to 1.
         Numerical noise can also contribute to this.
 
     References
@@ -401,9 +404,9 @@ def sobol_indices(
         Using the parameters ``loc`` and ``scale``, one obtains the uniform
         distribution on ``[loc, loc + scale]``.
 
-    It is particularly interesting because the first order indice of
+    It is particularly interesting because the first order index
     :math:`S_{x_3} = 0` whereas its total order is :math:`S_{T_{x_3}} = 0.244`.
-    It means that higher order interactions with :math:`x_3` are responsible
+    This means that higher order interactions with :math:`x_3` are responsible
     for the difference. Almost 25% of the observed variance
     on the QoI is due to the correlations between :math:`x_3` and :math:`x_1`,
     although :math:`x_3` by itself has no impact on the QoI.
@@ -459,8 +462,8 @@ def sobol_indices(
 
     """
     random_state = check_random_state(random_state)
-    n = int(n)
-    if not (n & (n - 1) == 0):
+    log2n = np.log2(n)
+    if log2n == int(log2n):
         raise ValueError(
             "The balance properties of Sobol' points require 'n' "
             "to be a power of 2."
