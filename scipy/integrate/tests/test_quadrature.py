@@ -7,7 +7,7 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
                              quad, simpson, simps, fixed_quad, AccuracyWarning)
-from scipy.integrate._quadrature import qmc_quad
+from scipy.integrate._quadrature import _qmc_quad as qmc_quad
 from scipy import stats, special as sc
 
 
