@@ -2908,7 +2908,7 @@ class TestVonMises_Fisher:
 
     def test_two_dimensional_mu(self):
         mu = np.ones((2, 2))
-        msg = "'mu must have one-dimensional shape."
+        msg = "'mu' must have one-dimensional shape."
         with pytest.raises(ValueError, match=msg):
             vonmises_fisher(mu, 1)
 
