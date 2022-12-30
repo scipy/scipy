@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Literal, TYPE_CHECKING, Tuple
+from typing import Callable, Dict, List, Literal, Protocol, TYPE_CHECKING, Tuple
 
 import numpy as np
 from scipy.stats._resampling import BootstrapResult
@@ -58,7 +58,7 @@ def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
 
 def sample_A_B(
     n: IntNumber,
-    dists: List[PINVDist],
+    dists: List[PINVDist | PPFDist],
     random_state: SeedType = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Sample two matrices A and B.
@@ -210,12 +210,17 @@ class SobolResult:
         return self._bootstrap_result
 
 
+class PPFDist(Protocol):
+    @property
+    def ppf(self) -> Callable[..., float]: ...
+
+
 def sobol_indices(
     *,
     func: Callable[[np.ndarray], npt.ArrayLike] |
           Dict[Literal['f_A', 'f_B', 'f_AB'], np.ndarray],  # noqa
     n: IntNumber,
-    dists: List[PINVDist] | None = None,
+    dists: List[PINVDist | PPFDist] | None = None,
     method: Callable | Literal['saltelli_2010'] = 'saltelli_2010',
     random_state: SeedType = None
 ) -> SobolResult:
@@ -477,7 +482,6 @@ def sobol_indices(
         )
     n = n_
 
-    indices_method: Callable
     if not callable(method):
         indices_methods: Dict[str, Callable] = {
             "saltelli_2010": saltelli_2010,
