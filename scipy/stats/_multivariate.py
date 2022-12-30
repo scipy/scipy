@@ -5698,23 +5698,23 @@ kappa : float
 
 _vonmises_fisher_doc_callparams_note = "bla"
 
-_vonmises_fisher_doc_frozen_callparams = ""
+_vonmises_fisher_doc_frozen_callparams = "test"
 
 _vonmises_fisher_doc_frozen_callparams_note = """\
 See class definition for a detailed description of parameters."""
 
 vonmises_fisher_docdict_params = {
-    '_vonmises_fisher_doc_default_callparams':
+    '_doc_vonmises_fisher_default_callparams':
         _vonmises_fisher_doc_default_callparams,
-    '_vonmises_fisher_doc_callparams_note':
+    '_doc_vonmises_fisher_callparams_note':
         _vonmises_fisher_doc_callparams_note,
     '_doc_random_state': _doc_random_state
 }
 
 vonmises_fisher_docdict_noparams = {
-    '_vonmises_fisher_doc_default_callparams':
+    '_doc_vonmises_fisher_default_callparams':
         _vonmises_fisher_doc_frozen_callparams,
-    '_vonmises_fisher_doc_callparams_note':
+    '_doc_vonmises_fisher_callparams_note':
         _vonmises_fisher_doc_frozen_callparams_note,
     '_doc_random_state': _doc_random_state
 }
@@ -5741,7 +5741,7 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     Parameters
     ----------
-    %(_vonmises_fisher_doc_default_callparams)s
+    %(_doc_vonmises_fisher_default_callparams)s
     %(_doc_random_state)s
 
     See Also
@@ -5750,7 +5750,7 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     Notes
     -----
-    %(_vonmises_fisher_doc_callparams_note)s
+    %(_doc_vonmises_fisher_callparams_note)s
 
     The von Mises-Fisher distribution is a directional distribution on the
     n-dimensional unit sphere. The probability density function is
@@ -5825,7 +5825,6 @@ class vonmises_fisher_gen(multi_rv_generic):
     >>> fig, axes = plt.subplots(nrows=1, ncols=3,
     ...                          subplot_kw={"projection": "3d"})
     >>> left, middle, right = axes
-    >>> bottom_left, bottom_middle, bottom_right = bottom
     >>> mu = np.array([0, 0, 1])
     >>> plot_vmf_density(left, x, y, z, vertices, mu, 5)
     >>> plot_vmf_density(middle, x, y, z, vertices, mu, 20)
@@ -5864,11 +5863,11 @@ class vonmises_fisher_gen(multi_rv_generic):
         """
         mu = np.asarray(mu)
         if mu.ndim > 1:
-            raise ValueError("mu must have one-dimensional shape.")
+            raise ValueError("'mu' must have one-dimensional shape.")
         if not np.allclose(np.linalg.norm(mu), 1.):
-            raise ValueError("mu must have length 1.")
+            raise ValueError("'mu' must be a unit vector of norm 1.")
         if not mu.size > 1:
-            raise ValueError("mu must have at least two entries.")
+            raise ValueError("'mu' must have at least two entries.")
         kappa_error_msg = "kappa must be a positive scalar."
         if not np.isscalar(kappa):
             raise ValueError(kappa_error_msg)
@@ -5910,7 +5909,7 @@ class vonmises_fisher_gen(multi_rv_generic):
             Points at which to evaluate the log of the probability
             density function. The last axis of `x` corresponds to unit
             vectors of the same dimension as the distribution.
-        %(_vonmises_fisher_doc_default_callparams)s
+        %(_doc_vonmises_fisher_default_callparams)s
 
         Notes
         -----
@@ -5918,6 +5917,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         called directly; use 'logpdf' instead.
 
         """
+        x = np.asarray(x)
         self._check_data_vs_dist(x, dim)
         dotproducts = np.einsum('i,...i->...', mu, x)
         return self._log_norm_factor(dim, kappa) + kappa * dotproducts
@@ -5931,7 +5931,7 @@ class vonmises_fisher_gen(multi_rv_generic):
             Points at which to evaluate the log of the probability
             density function. The last axis of `x` corresponds to unit
             vectors of the same dimension as the distribution.
-        %(_vonmises_fisher_doc_default_callparams)s
+        %(_doc_vonmises_fisher_default_callparams)s
 
         Returns
         -------
@@ -5952,7 +5952,7 @@ class vonmises_fisher_gen(multi_rv_generic):
             Points at which to evaluate the log of the probability
             density function. The last axis of `x` corresponds to unit
             vectors of the same dimension as the distribution.
-        %(_vonmises_fisher_doc_default_callparams)s
+        %(_doc_vonmises_fisher_default_callparams)s
 
         Returns
         -------
@@ -6100,7 +6100,7 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_vonmises_fisher_doc_default_callparams)s
+        %(_doc_vonmises_fisher_default_callparams)s
         size : integer, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
@@ -6128,7 +6128,7 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_vonmises_fisher_doc_default_callparams)s
+        %(_doc_vonmises_fisher_default_callparams)s
 
         Returns
         -------
@@ -6141,6 +6141,7 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     def fit(self, x):
         # validate input data
+        x = np.asarray(x)
         if x.ndim == 1:
             raise ValueError("x must be at least two dimensional.")
         if not np.allclose(np.linalg.norm(x, axis=-1), 1.):
@@ -6222,7 +6223,6 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         -------
         h : scalar
             Entropy of the multivariate normal distribution
-
         """
         return self._dist._entropy(self.dim, self.kappa)
 
