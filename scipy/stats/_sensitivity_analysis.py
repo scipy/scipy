@@ -415,41 +415,48 @@ def sobol_indices(
         Using the parameters ``loc`` and ``scale``, one obtains the uniform
         distribution on ``[loc, loc + scale]``.
 
-    It is particularly interesting because the first order index
+    This result is particularly interesting because the first order index
     :math:`S_{x_3} = 0` whereas its total order is :math:`S_{T_{x_3}} = 0.244`.
     This means that higher order interactions with :math:`x_3` are responsible
     for the difference. Almost 25% of the observed variance
     on the QoI is due to the correlations between :math:`x_3` and :math:`x_1`,
     although :math:`x_3` by itself has no impact on the QoI.
 
-    The following gives a visual explanation of Sobol' indices. It shows
-    scatter plots of the output with respect to each parameter. By conditioning
-    the output value by given values of the parameter
-    (black lines), the conditional output mean is computed. It corresponds to
-    the term :math:`\mathbb{E}(Y|x_i)`. Taking the variance of this term gives
-    the numerator of the Sobol' indices. Looking at :math:`x_3`, the variance
-    of the mean is zero leading to :math:`S_{x_3} = 0`. But we can further
-    observe that the variance of the output is not constant along the parameter
-    values of :math:`x_3`. This heteroscedasticity is explained by higher order
-    interactions. Moreover, an heteroscedasticity is also noticeable on
-    :math:`x_1` leading to an interaction between :math:`x_3` and :math:`x_1`.
-    On :math:`x_2`, the variance seems to be constant and thus null interaction
-    with this parameter can be supposed. This case is fairly simple to analyse
-    visually---although it is only a qualitative analysis. Nevertheless, when
-    the number of input parameters increases such analysis becomes unrealistic
-    as it would be difficult to conclude on high-order terms.
+    The following gives a visual explanation of Sobol' indices on this
+    function. Let's generate 1024 samples in :math:`[-\pi, \pi]^3` and
+    calculate the value of the output.
 
-    >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import qmc
     >>> n_dim = 3
     >>> p_labels = ['$x_1$', '$x_2$', '$x_3$']
-    >>> sample = qmc.Sobol(d=n_dim).random(1024)
+    >>> sample = qmc.Sobol(d=n_dim, seed=rng).random(1024)
     >>> sample = qmc.scale(
     ...     sample=sample,
     ...     l_bounds=[-np.pi, -np.pi, -np.pi],
     ...     u_bounds=[np.pi, np.pi, np.pi]
     ... )
     >>> output = f_ishigami(sample)
+
+    Now we can do scatter plots of the output with respect to each parameter.
+    This gives a visual way to understand how each parameter impact the
+    output of the function.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, n_dim)
+    >>> for i in range(n_dim):
+    ...     xi = sample[:, i]
+    ...     ax[i].scatter(xi, output, marker='+')
+    ...     ax[i].set_xlabel(p_labels[i])
+    >>> ax[0].set_ylabel('Y')
+    >>> plt.tight_layout()
+    >>> plt.show()
+
+    Now Sobol' goes a step further:
+    by conditioning the output value by given values of the parameter
+    (black lines), the conditional output mean is computed. It corresponds to
+    the term :math:`\mathbb{E}(Y|x_i)`. Taking the variance of this term gives
+    the numerator of the Sobol' indices.
+
     >>> mini = np.min(output)
     >>> maxi = np.max(output)
     >>> n_bins = 10
@@ -465,11 +472,25 @@ def sobol_indices(
     ...         xi_ = xi[idx]
     ...         y_ = output[idx]
     ...         ave_y_ = np.mean(y_)
-    ...         ax[i].plot([bin_ + dx / 2] * 2, [mini, maxi], c='k')
-    ...         ax[i].scatter(bin_ + dx / 2, ave_y_, c='r')
+    ...         ax[i].plot([bin_ + dx/2] * 2, [mini, maxi], c='k')
+    ...         ax[i].scatter(bin_ + dx/2, ave_y_, c='r')
     >>> ax[0].set_ylabel('Y')
     >>> plt.tight_layout()
     >>> plt.show()
+
+    Looking at :math:`x_3`, the variance
+    of the mean is zero leading to :math:`S_{x_3} = 0`. But we can further
+    observe that the variance of the output is not constant along the parameter
+    values of :math:`x_3`. This heteroscedasticity is explained by higher order
+    interactions. Moreover, an heteroscedasticity is also noticeable on
+    :math:`x_1` leading to an interaction between :math:`x_3` and :math:`x_1`.
+    On :math:`x_2`, the variance seems to be constant and thus null interaction
+    with this parameter can be supposed.
+
+    This case is fairly simple to analyse visually---although it is only a
+    qualitative analysis. Nevertheless, when the number of input parameters
+    increases such analysis becomes unrealistic as it would be difficult to
+    conclude on high-order terms. Hence the benefit of using Sobol' indices.
 
     """
     random_state = check_random_state(random_state)
