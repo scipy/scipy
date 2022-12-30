@@ -5791,6 +5791,58 @@ class vonmises_fisher_gen(multi_rv_generic):
            Geometry in Machine Learning. Journal of Machine Learning Research
            21 (2020). http://jmlr.org/papers/v21/19-027.html
 
+    Examples
+    --------
+    Plot the probability density in three dimensions for increasing
+    concentration parameter. The density is calculated by the ``pdf``
+    method.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import vonmises_fisher
+    >>> from matplotlib.colors import Normalize
+    >>> n_grid = 100
+    >>> u = np.linspace(0, np.pi, n_grid)
+    >>> v = np.linspace(0, 2 * np.pi, n_grid)
+    >>> u_grid, v_grid = np.meshgrid(u, v)
+    >>> vertices = np.stack([np.cos(v_grid) * np.sin(u_grid),
+    ...                      np.sin(v_grid) * np.sin(u_grid),
+    ...                      np.cos(u_grid)],
+    ...                     axis=2)
+    >>> x = np.outer(np.cos(v), np.sin(u))
+    >>> y = np.outer(np.sin(v), np.sin(u))
+    >>> z = np.outer(np.ones_like(u), np.cos(u))
+    >>> def plot_vmf_density(ax, x, y, z, vertices, mu, kappa):
+    ...     vmf = vonmises_fisher(mu, kappa)
+    ...     pdf_values = vmf.pdf(vertices)
+    ...     pdfnorm = Normalize(vmin=pdf_values.min(), vmax=pdf_values.max())
+    ...     ax.plot_surface(x, y, z, rstride=1, cstride=1,
+    ...                     facecolors=plt.cm.viridis(pdfnorm(pdf_values)),
+    ...                     linewidth=0)
+    ...     ax.view_init(azim=-60, elev=60)
+    ...     ax.axis('off')
+    ...     ax.set_title(rf"$\kappa={kappa}$")
+    >>> fig, axes = plt.subplots(nrows=1, ncols=3,
+    ...                          subplot_kw={"projection": "3d"})
+    >>> left, middle, right = axes
+    >>> bottom_left, bottom_middle, bottom_right = bottom
+    >>> mu = np.array([0, 0, 1])
+    >>> plot_vmf_density(left, x, y, z, vertices, mu, 5)
+    >>> plot_vmf_density(middle, x, y, z, vertices, mu, 20)
+    >>> plot_vmf_density(right, x, y, z, vertices, mu, 100)
+    >>> plt.show()
+
+    Draw 20 samples from the distribution using the ``rvs`` method.
+
+    >>> samples = vonmises_fisher(mu, 10).rvs(20)
+    >>> fig, ax = plt.subplots(nrows=1, ncols=1,
+    ...                        subplot_kw={"projection": "3d"})
+    >>> ax.plot_surface(x, y, z, rstride=3, cstride=3, linewidth=0, alpha=0.5)
+    >>> ax.scatter(samples[:, 0], samples[:, 1], samples[:, 2], c='r', s=20)
+    >>> ax.view_init(azim=-60, elev=60)
+    >>> ax.axis('off')
+    >>> ax.view_init(azim=-65, elev=0)
+    >>> plt.show()
     """
 
     def __init__(self, seed=None):
