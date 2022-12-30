@@ -9860,7 +9860,7 @@ add_newdoc("nbdtr",
     Wrapper for the Cephes [1]_ routine `nbdtr`.
 
     The negative binomial distribution is also available as
-    `scipy.stats.nbinom`. Using `nbdtr` directly can compare performance
+    `scipy.stats.nbinom`. Using `nbdtr` directly can improve performance
     compared to the ``cdf`` method of `scipy.stats.nbinom` (see last example).
 
     References
@@ -9987,7 +9987,7 @@ add_newdoc("nbdtrc",
     Wrapper for the Cephes [1]_ routine `nbdtrc`.
 
     The negative binomial distribution is also available as
-    `scipy.stats.nbinom`. Using `nbdtr` directly can compare performance
+    `scipy.stats.nbinom`. Using `nbdtrc` directly can improve performance
     compared to the ``sf`` method of `scipy.stats.nbinom` (see last example).
 
     References
@@ -10032,7 +10032,7 @@ add_newdoc("nbdtrc",
     >>> plt.show()
 
     The negative binomial distribution is also available as
-    `scipy.stats.nbinom`. Using `nbdtr` directly can be much faster than
+    `scipy.stats.nbinom`. Using `nbdtrc` directly can be much faster than
     calling the ``sf`` method of `scipy.stats.nbinom`, especially for small
     arrays or individual values. To get the same results one must use the
     following parametrization: ``nbinom(n, p).sf(k)=nbdtrc(k, n, p)``.
@@ -10101,7 +10101,7 @@ add_newdoc(
     Wrapper for the Cephes [1]_ routine `nbdtri`.
 
     The negative binomial distribution is also available as
-    `scipy.stats.nbinom`. Using `nbdtri` directly can compare performance
+    `scipy.stats.nbinom`. Using `nbdtri` directly can improve performance
     compared to the ``ppf`` method of `scipy.stats.nbinom`.
 
     References
