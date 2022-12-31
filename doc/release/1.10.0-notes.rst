@@ -71,8 +71,6 @@ New features
 
 `scipy.integrate` improvements
 ==============================
-- Added `scipy.integrate.qmc_quad`, which performs quadrature using Quasi-Monte
-  Carlo points.
 - Added parameter ``complex_func`` to `scipy.integrate.quad`, which can be set
   ``True`` to integrate a complex integrand.
 
