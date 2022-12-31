@@ -291,11 +291,10 @@ def sobol_indices(
 
     Notes
     -----
-    Variance-based Sensitivity Analysis allows obtaining the contribution of
-    the parameters on the variance of the quantities of interest
-    (QoIs; i.e., the outputs of `func`). Sobol'
-    method [1]_, [2]_, gives not only a ranking but also quantifies the
-    importance factor using the variance.
+    Sobol' method [1]_, [2]_ is a variance-based Sensitivity Analysis which
+    allows to obtain the contribution of the parameters on the variance of the
+    quantities of interest (QoIs; i.e., the outputs of `func`).
+    Respective contributions can then be used to rank the parameters.
 
     .. note::
 
@@ -345,7 +344,8 @@ def sobol_indices(
         S_{T_i} = S_i + \sum_j S_{ij} + \sum_{j,k} S_{ijk} + ...
         = 1 - \frac{\mathbb{V}[\mathbb{E}(Y|x_{\sim i})]}{\mathbb{V}[Y]}.
 
-    First oder indices sum to 1, while total order indices go above 1.
+    First oder indices sum to 1, while the sum of total order indices will be
+    greater than 1 if there are interactions.
 
     .. warning::
 
