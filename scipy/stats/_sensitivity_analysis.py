@@ -145,8 +145,12 @@ def saltelli_2010(
     """
     f_AB = f_AB.reshape(-1, *f_A.shape)
 
+    # Empirical variance calculated using output from A and B which are
+    # independent. Output of AB is not independent and cannot be used
     var = np.var(np.vstack([f_A, f_B]), axis=0)
 
+    # We divide by the variance to have a ratio of variance
+    # this leads to eq. 2
     s = np.mean(f_B * (f_AB - f_A), axis=1) / var  # Table 2 (b)
     st = 0.5 * np.mean((f_A - f_AB) ** 2, axis=1) / var  # Table 2 (f)
 
