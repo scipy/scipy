@@ -16,7 +16,8 @@ from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning, kronsum
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg._isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr
+from scipy.sparse.linalg._isolve import cg, cgs, bicg, bicgstab, gmres, qmr, \
+                                        minres, lgmres, gcrotmk, tfqmr, cr
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
@@ -45,15 +46,16 @@ class Case:
 
 class IterativeParams:
     def __init__(self):
-        # list of tuples (solver, symmetric, positive_definite )
-        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr]
-        sym_solvers = [minres, cg]
+        # list of tuples (solver, symmetric, positive_definite)
+        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres,
+                   gcrotmk, tfqmr, cr]
+        sym_solvers = [minres, cg, cr]
         posdef_solvers = [cg]
         real_solvers = [minres]
 
         self.solvers = solvers
 
-        # list of tuples (A, symmetric, positive_definite )
+        # list of tuples (A, symmetric, positive_definite)
         self.cases = []
 
         # Symmetric and Positive Definite
@@ -154,7 +156,7 @@ class IterativeParams:
         self.cases.append(Case("nonsymposdef", A.astype('F'),
                                skip=sym_solvers+[cgs, qmr, bicg, tfqmr]))
 
-        # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr/tfqmr breakdown
+        # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr/tfqmr/cr breakdown
         A = np.array([[0, 0, 0, 0, 0, 1, -1, -0, -0, -0, -0],
                       [0, 0, 0, 0, 0, 2, -0, -1, -0, -0, -0],
                       [0, 0, 0, 0, 0, 2, -0, -0, -1, -0, -0],
@@ -170,7 +172,8 @@ class IterativeParams:
         assert (A == A.T).all()
         self.cases.append(Case("sym-nonpd", A, b,
                                skip=posdef_solvers,
-                               nonconvergence=[cgs,bicg,bicgstab,qmr,tfqmr]))
+                               nonconvergence=[cgs, bicg, bicgstab, qmr, tfqmr,
+                                               cr]))
 
 
 params = IterativeParams()
@@ -348,7 +351,7 @@ def test_precond_inverse(case):
 
 def test_reentrancy():
     non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
-    reentrant = [lgmres, minres, gcrotmk, tfqmr]
+    reentrant = [lgmres, minres, gcrotmk, tfqmr, cr]
     for solver in reentrant + non_reentrant:
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
@@ -412,7 +415,8 @@ def test_atol(solver):
         assert_(err <= max(atol, atol2))
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk, tfqmr, cr])
 def test_zero_rhs(solver):
     np.random.seed(1234)
     A = np.random.rand(10, 10)
@@ -451,7 +455,7 @@ def test_zero_rhs(solver):
     pytest.param(gmres, marks=pytest.mark.xfail(platform.machine() == 'aarch64'
                                                 and sys.version_info[1] == 9,
                                                 reason="gh-13019")),
-    qmr,
+    qmr, cr,
     pytest.param(lgmres, marks=pytest.mark.xfail(platform.machine() == 'ppc64le',
                                                  reason="fails on ppc64le")),
     pytest.param(cgs, marks=pytest.mark.xfail),
@@ -487,7 +491,8 @@ def test_maxiter_worsening(solver):
         assert_(error <= tol*best_error)
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk, tfqmr, cr])
 def test_x0_working(solver):
     # Easy problem
     np.random.seed(1)
@@ -512,7 +517,7 @@ def test_x0_working(solver):
 
 
 @pytest.mark.parametrize('solver', [cg, cgs, bicg, bicgstab, gmres, qmr,
-                                    minres, lgmres, gcrotmk])
+                                    minres, lgmres, gcrotmk, cr])
 def test_x0_equals_Mb(solver):
     for case in params.cases:
         if solver in case.skip:
@@ -530,7 +535,42 @@ def test_x0_equals_Mb(solver):
             assert_normclose(A.dot(x), b, tol=tol)
 
 
-@pytest.mark.parametrize(('solver', 'solverstring'), [(tfqmr, 'TFQMR')])
+@pytest.mark.parametrize(('solver', 'solverstring'),
+                         [(cr, 'CR')])
+def test_zero_initial_rnorm(solver, solverstring, capsys):
+    A = array([[2, -1, 0, 0], [-1, 2, -1, 0], [0, -1, 2, -1], [0, 0, -1, 2]])
+    x0 = array([1, 1, 1, 1])
+    b = A @ x0
+
+    x, info = solver(A, b, x0=x0, show=True)
+    out, err = capsys.readouterr()
+    assert_array_equal(x, x0)
+    assert_equal(info, 0)
+    assert_equal(out, f"{solverstring}: Linear solve converged due to "
+                      "zero residual norm iterations 0\n")
+    assert_equal(err, '')
+
+
+@pytest.mark.parametrize(('solver', 'solverstring'),
+                         [(cr, 'CR')])
+def test_dtol(solver, solverstring, capsys):
+    # Taking the following example for the time being
+    # Need to find a more proper/meaningful example in future
+    np.random.seed(1234)
+    n = 10
+    A = np.random.rand(n, n)
+    A = A.dot(A.T)
+    b = np.random.rand(n)
+
+    x, info = solver(A, b, dtol=1e-1, show=True)
+    out, err = capsys.readouterr()
+    assert_equal(out, f"{solverstring}: Linear solve not converged due to "
+                      "reach DIVERGENCE TOL iterations 1\n")
+    assert_equal(err, '')
+
+
+@pytest.mark.parametrize(('solver', 'solverstring'),
+                         [(tfqmr, 'TFQMR'), (cr, 'CR')])
 def test_show(solver, solverstring, capsys):
     def cb(x):
         count[0] += 1

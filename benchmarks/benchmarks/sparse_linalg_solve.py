@@ -8,7 +8,7 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy import linalg, sparse
-    from scipy.sparse.linalg import cg, minres, gmres, tfqmr, spsolve
+    from scipy.sparse.linalg import cg, minres, gmres, tfqmr, cr, spsolve
 with safe_import():
     from scipy.sparse.linalg import lgmres
 with safe_import():
@@ -34,10 +34,10 @@ class Bench(Benchmark):
     params = [
         [4, 6, 10, 16, 25, 40, 64, 100],
         ['dense', 'spsolve', 'cg', 'minres', 'gmres', 'lgmres', 'gcrotmk',
-         'tfqmr']
+         'tfqmr', 'cr']
     ]
     mapping = {'spsolve': spsolve, 'cg': cg, 'minres': minres, 'gmres': gmres,
-               'lgmres': lgmres, 'gcrotmk': gcrotmk, 'tfqmr': tfqmr}
+               'lgmres': lgmres, 'gcrotmk': gcrotmk, 'tfqmr': tfqmr, 'cr': cr}
     param_names = ['(n,n)', 'solver']
 
     def setup(self, n, solver):

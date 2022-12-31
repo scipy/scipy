@@ -89,6 +89,7 @@ py3.install_sources([
     'lsqr.py',
     'minres.py',
     'tfqmr.py',
+    'cr.py',
     'utils.py',
   ],
   subdir: 'scipy/sparse/linalg/_isolve'
