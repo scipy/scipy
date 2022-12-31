@@ -5822,19 +5822,20 @@ class vonmises_fisher_gen(multi_rv_generic):
     ...     ax.view_init(azim=-60, elev=60)
     ...     ax.axis('off')
     ...     ax.set_title(rf"$\kappa={kappa}$")
-    >>> fig, axes = plt.subplots(nrows=1, ncols=3,
+    >>> fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(9, 4),
     ...                          subplot_kw={"projection": "3d"})
     >>> left, middle, right = axes
     >>> mu = np.array([0, 0, 1])
     >>> plot_vmf_density(left, x, y, z, vertices, mu, 5)
     >>> plot_vmf_density(middle, x, y, z, vertices, mu, 20)
     >>> plot_vmf_density(right, x, y, z, vertices, mu, 100)
+    >>> plt.subplots_adjust(top=1, bottom=0.0, left=0.0, right=1.0, wspace=0.)
     >>> plt.show()
 
     Draw 20 samples from the distribution using the ``rvs`` method.
 
     >>> samples = vonmises_fisher(mu, 10).rvs(20)
-    >>> fig, ax = plt.subplots(nrows=1, ncols=1,
+    >>> fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5),
     ...                        subplot_kw={"projection": "3d"})
     >>> ax.plot_surface(x, y, z, rstride=3, cstride=3, linewidth=0, alpha=0.5)
     >>> ax.scatter(samples[:, 0], samples[:, 1], samples[:, 2], c='r', s=20)
