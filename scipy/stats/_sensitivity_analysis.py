@@ -13,7 +13,6 @@ from scipy.stats.sampling import NumericalInversePolynomial
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from scipy.stats._unuran.unuran_wrapper import PINVDist
     from scipy._lib._util import DecimalNumber, IntNumber, SeedType
 
 
@@ -58,7 +57,7 @@ def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
 
 def sample_A_B(
     n: IntNumber,
-    dists: List[PINVDist | PPFDist],
+    dists: List[PPFDist],
     random_state: SeedType = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Sample two matrices A and B.
@@ -81,8 +80,15 @@ def sample_A_B(
     A, B = A_B[:, :d], A_B[:, d:]
 
     for d_, dist in enumerate(dists):
-        A[:, d_] = dist.ppf(A[:, d_])
-        B[:, d_] = dist.ppf(B[:, d_])
+        try:
+            A[:, d_] = dist.ppf(A[:, d_])
+            B[:, d_] = dist.ppf(B[:, d_])
+        except AttributeError as exc:
+            message = (
+                "The method `ppf` must be specified for all distributions of "
+                "'dists'."
+            )
+            raise ValueError(message) from exc
 
     return A, B
 
@@ -216,7 +222,7 @@ def sobol_indices(
     func: Callable[[np.ndarray], npt.ArrayLike] |
           Dict[Literal['f_A', 'f_B', 'f_AB'], np.ndarray],  # noqa
     n: IntNumber,
-    dists: List[PINVDist | PPFDist] | None = None,
+    dists: List[PPFDist] | None = None,
     method: Callable | Literal['saltelli_2010'] = 'saltelli_2010',
     random_state: SeedType = None
 ) -> SobolResult:

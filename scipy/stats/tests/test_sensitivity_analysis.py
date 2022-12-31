@@ -108,28 +108,6 @@ class TestSobolIndices:
         assert isinstance(res.bootstrap(confidence_level=0.9), BootstrapResult)
         assert isinstance(res._bootstrap_result, BootstrapResult)
 
-    def test_ppf(self, ishigami_ref_indices):
-        rng = np.random.default_rng(28631265345463262246170309650372465332)
-
-        class Uniform_no_ppf:
-            _dist = uniform(loc=-np.pi, scale=2*np.pi)
-            def pdf(self, x):
-                return self._dist.pdf(x)
-
-
-        res = sobol_indices(
-            func=f_ishigami, n=4096,
-            dists=[
-                uniform(loc=-np.pi, scale=2*np.pi),
-                Uniform_no_ppf(),
-                uniform(loc=-np.pi, scale=2*np.pi)
-            ],
-            random_state=rng
-        )
-
-        assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
-        assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-2)
-
     def test_func(self, ishigami_ref_indices):
         rng = np.random.default_rng(28631265345463262246170309650372465332)
         n = 4096
@@ -192,7 +170,7 @@ class TestSobolIndices:
 
     def test_raises(self):
 
-        message = r"Either of the methods `pdf` or `logpdf` must be specified"
+        message = r"The method `ppf` must be specified"
         with pytest.raises(ValueError, match=message):
             sobol_indices(n=0, func=f_ishigami, dists="uniform")
 
