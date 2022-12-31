@@ -495,6 +495,22 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         return retval[0], info
 
 
+def _lightweight_memoizer(f):
+
+    def _memoized_func(params):
+        if np.all(_memoized_func.last_params == params):
+            return _memoized_func.last_val
+        else:
+            val = f(params)
+            _memoized_func.last_params = np.copy(params)
+            _memoized_func.last_val = val
+            return val
+
+    _memoized_func.last_params = None
+    _memoized_func.last_val = None
+    return _memoized_func
+
+
 def _wrap_func(func, xdata, ydata, transform):
     if transform is None:
         def func_wrapped(params):
@@ -870,9 +886,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     else:
         transform = None
 
-    func = _wrap_func(f, xdata, ydata, transform)
+    func = _lightweight_memoizer(_wrap_func(f, xdata, ydata, transform))
+
     if callable(jac):
-        jac = _wrap_jac(jac, xdata, transform)
+        jac = _lightweight_memoizer(_wrap_jac(jac, xdata, transform))
     elif jac is None and method != 'lm':
         jac = '2-point'
 

@@ -897,6 +897,30 @@ class TestCurveFit:
         # Linux_Python_38_32bit_full fails with default tolerance
         assert_allclose(res, ref, 2e-7)
 
+    def test_gh13670(self):
+        # gh-13670 reported that `curve_fit` executes callables
+        # with the same values of the parameters at the beginning of
+        # optimization. Check that this has been resolved.
+
+        rng = np.random.default_rng(8250058582555444926)
+        x = np.linspace(0, 3, 101)
+        y = 2 * x + 1 + rng.normal(size=101) * 0.5
+
+        def line(x, *p):
+            assert not np.all(line.last_p == p)
+            line.last_p = p
+            return x * p[0] + p[1]
+
+        def jac(x, *p):
+            assert not np.all(jac.last_p == p)
+            jac.last_p = p
+            return np.array([x, np.ones_like(x)]).T
+
+        line.last_p = None
+        jac.last_p = None
+        p0 = np.array([1.0, 5.0])
+        curve_fit(line, x, y, p0, method='lm', jac=jac)
+
 
 class TestFixedPoint:
 
