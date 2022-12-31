@@ -81,10 +81,6 @@ def sample_A_B(
     A, B = A_B[:, :d], A_B[:, d:]
 
     for d_, dist in enumerate(dists):
-        if not hasattr(dist, 'ppf'):
-            dist = NumericalInversePolynomial(
-                dist, random_state=random_state
-            )
         A[:, d_] = dist.ppf(A[:, d_])
         B[:, d_] = dist.ppf(B[:, d_])
 
@@ -145,8 +141,8 @@ def saltelli_2010(
 
     var = np.var(np.vstack([f_A, f_B]), axis=0)
 
-    s = np.mean(f_B * (f_AB - f_A), axis=1) / var
-    st = 0.5 * np.mean((f_A - f_AB) ** 2, axis=1) / var
+    s = np.mean(f_B * (f_AB - f_A), axis=1) / var  # Table 2 (b)
+    st = 0.5 * np.mean((f_A - f_AB) ** 2, axis=1) / var  # Table 2 (f)
 
     return s.T, st.T
 
@@ -244,12 +240,8 @@ def sobol_indices(
         List of each parameter's marginal distribution. Each parameter being
         independently distributed.
 
-        Distributions must provide a numerical inverse. They are either
-        an instance of a class with a ``ppf`` method, or,
-        an instance of a class with a ``pdf`` or
-        ``logpdf`` method, optionally a ``cdf`` method. For more details,
-        see the ``dists`` parameter of
-        `scipy.stats.sampling.NumericalInversePolynomial`.
+        Distributions must be an instance of a class with a ``ppf``
+        method.
 
         Must be specified if `func` is a callable, and ignored otherwise.
     method : Callable or str, default: 'saltelli_2010'
