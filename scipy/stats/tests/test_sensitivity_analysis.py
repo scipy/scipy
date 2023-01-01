@@ -38,7 +38,7 @@ def ishigami_ref_indices():
 def f_ishigami_vec(x):
     """Output of shape (2, n)."""
     res = f_ishigami(x)
-    return np.concatenate([res, res])
+    return np.concatenate([res, res]).reshape(2, -1)
 
 
 class TestSobolIndices:
@@ -63,7 +63,8 @@ class TestSobolIndices:
 
     @pytest.mark.parametrize(
         'func',
-        [f_ishigami, pytest.param(f_ishigami_vec, marks=pytest.mark.slow)],
+        #[f_ishigami, pytest.param(f_ishigami_vec, marks=pytest.mark.slow)],
+        [f_ishigami, f_ishigami_vec],
         ids=['scalar', 'vector']
     )
     def test_ishigami(self, ishigami_ref_indices, func):
@@ -79,12 +80,14 @@ class TestSobolIndices:
         )
 
         if func.__name__ == 'f_ishigami_vec':
-            ishigami_ref_indices[0] = np.concatenate(
-                [ishigami_ref_indices[0], ishigami_ref_indices[0]]
-            )
-            ishigami_ref_indices[1] = np.concatenate(
-                [ishigami_ref_indices[1], ishigami_ref_indices[1]]
-            )
+            ishigami_ref_indices = [
+                np.concatenate(
+                    [ishigami_ref_indices[0], ishigami_ref_indices[0]]
+                ),
+                np.concatenate(
+                    [ishigami_ref_indices[1], ishigami_ref_indices[1]]
+                )
+            ]
 
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
         assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-2)
@@ -101,7 +104,7 @@ class TestSobolIndices:
         assert isinstance(res.bootstrap(confidence_level=0.9), BootstrapResult)
         assert isinstance(res._bootstrap_result, BootstrapResult)
 
-    def test_func(self, ishigami_ref_indices):
+    def test_func_dict(self, ishigami_ref_indices):
         rng = np.random.default_rng(28631265345463262246170309650372465332)
         n = 4096
         dists = [
@@ -137,14 +140,15 @@ class TestSobolIndices:
             """Jansen for S and Sobol' for St.
 
             From Saltelli2010, table 2 formulations (c) and (e)."""
-            f_AB = f_AB.reshape(-1, *f_A.shape)
+            s_, n = f_A.shape
+            f_AB = f_AB.reshape((-1, s_, n))
 
-            var = np.var(np.vstack([f_A, f_B]), axis=0)
+            var = np.var(np.concatenate([f_A, f_B], axis=1), axis=1)
 
-            s = (var - 0.5*np.mean((f_B - f_AB)**2, axis=1)) / var
-            st = np.mean(f_A*(f_A - f_AB), axis=1) / var
+            s = (var - 0.5*np.mean((f_B - f_AB)**2, axis=-1)) / var
+            st = np.mean(f_A*(f_A - f_AB), axis=-1) / var
 
-            return s.T, st.T
+            return s.reshape(s_, -1), st.reshape(s_, -1)
 
         rng = np.random.default_rng(28631265345463262246170309650372465332)
         res = sobol_indices(

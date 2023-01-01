@@ -128,13 +128,13 @@ def saltelli_2010(
 
     Parameters
     ----------
-    f_A, f_B, f_AB : array_like (n, x)
-        Function evaluations ``n`` being the number of evaluations and ``x``
+    f_A, f_B, f_AB : array_like (s, n)
+        Function evaluations ``n`` being the number of evaluations and ``s``
         a vector output.
 
     Returns
     -------
-    s, st : array_like (x, d)
+    s, st : array_like (s, d)
         First order and total order Sobol' indices.
 
     References
@@ -145,18 +145,19 @@ def saltelli_2010(
        Computer Physics Communications, 181(2):259-270,
        :doi:`10.1016/j.cpc.2009.09.018`, 2010.
     """
-    f_AB = f_AB.reshape(-1, *f_A.shape)
+    s_, n = f_A.shape
+    f_AB = f_AB.reshape((-1, s_, n))
 
     # Empirical variance calculated using output from A and B which are
     # independent. Output of AB is not independent and cannot be used
-    var = np.var(np.vstack([f_A, f_B]), axis=0)
+    var = np.var(np.concatenate([f_A, f_B], axis=1), axis=1)
 
     # We divide by the variance to have a ratio of variance
     # this leads to eq. 2
-    s = np.mean(f_B * (f_AB - f_A), axis=1) / var  # Table 2 (b)
-    st = 0.5 * np.mean((f_A - f_AB) ** 2, axis=1) / var  # Table 2 (f)
+    s = np.mean(f_B * (f_AB - f_A), axis=-1) / var  # Table 2 (b)
+    st = 0.5 * np.mean((f_A - f_AB) ** 2, axis=-1) / var  # Table 2 (f)
 
-    return s.T, st.T
+    return s.reshape(s_, -1), st.reshape(s_, -1)
 
 
 @dataclass
@@ -198,11 +199,11 @@ class SobolResult:
             f_A_ = self._f_A[idx]
             f_B_ = self._f_B[idx]
 
-            n, d = self._A.shape
+            d, n = self._A.shape
             f_AB_ = np.empty((d, *f_A_.shape))
             for i in range(d):
-                f_AB_[i] = self._f_AB[np.array(idx)+i*n]
-            f_AB_ = f_AB_.reshape(-1, f_A_.shape[1])
+                f_AB_[i] = self._f_AB[:, np.array(idx)+i*n]
+            f_AB_ = f_AB_.reshape(d, -1)
 
             return self._indices_method(f_A_, f_B_, f_AB_)
 
