@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_less
 import pytest
 from scipy.stats._resampling import BootstrapResult
 
@@ -63,8 +63,7 @@ class TestSobolIndices:
 
     @pytest.mark.parametrize(
         'func',
-        #[f_ishigami, pytest.param(f_ishigami_vec, marks=pytest.mark.slow)],
-        [f_ishigami, f_ishigami_vec],
+        [f_ishigami, pytest.param(f_ishigami_vec, marks=pytest.mark.slow)],
         ids=['scalar', 'vector']
     )
     def test_ishigami(self, ishigami_ref_indices, func):
@@ -105,6 +104,19 @@ class TestSobolIndices:
                == res.first_order.shape
         assert bootstrap_res.total_order.confidence_interval.low.shape \
                == res.total_order.shape
+
+        assert_array_less(
+            bootstrap_res.first_order.confidence_interval.low, res.first_order
+        )
+        assert_array_less(
+            res.first_order, bootstrap_res.first_order.confidence_interval.high
+        )
+        assert_array_less(
+            bootstrap_res.total_order.confidence_interval.low, res.total_order
+        )
+        assert_array_less(
+            res.total_order, bootstrap_res.total_order.confidence_interval.high
+        )
 
         # call again to use previous results and change a param
         assert isinstance(
