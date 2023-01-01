@@ -839,8 +839,8 @@ def test_gh5584(solver_name, rs_interface):
 
 
 def test_newton_complex_gh10103():
-    # gh-10103 report a problem with `newton` and complex x0. Check that this
-    # is resolved.
+    # gh-10103 reported a problem with `newton` and complex x0.
+    # Check that this is resolved.
     def f(z):
         return z - 1
     res = newton(f, 1+1j)
