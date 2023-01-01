@@ -36,33 +36,26 @@ def ishigami_ref_indices():
 
 
 def f_ishigami_vec(x):
+    """Output of shape (2, n)."""
     res = f_ishigami(x)
-    return np.column_stack([res, res])
+    return np.concatenate([res, res])
 
 
 class TestSobolIndices:
 
     def test_sample_AB(self):
+        # (d, n)
         A = np.array(
-            [[1, 2, 3],
-             [4, 5, 6],
-             [7, 8, 9],
-             [10, 11, 12]]
+            [[1, 4, 7, 10],
+             [2, 5, 8, 11],
+             [3, 6, 9, 12]]
         )
         B = A + 100
+        # (d, n*d)
         ref = np.array(
-            [[101, 2, 3],
-             [104, 5, 6],
-             [107, 8, 9],
-             [110, 11, 12],
-             [1, 102, 3],
-             [4, 105, 6],
-             [7, 108, 9],
-             [10, 111, 12],
-             [1, 2, 103],
-             [4, 5, 106],
-             [7, 8, 109],
-             [10, 11, 112]]
+            [[101, 104, 107, 110, 1, 4, 7, 10, 1, 4, 7, 10],
+             [2, 5, 8, 11, 102, 105, 108, 111, 2, 5, 8, 11],
+             [3, 6, 9, 12, 3, 6, 9, 12, 103, 106, 109, 112]]
         )
 
         AB = sample_AB(A=A, B=B)
@@ -198,7 +191,7 @@ class TestSobolIndices:
             sobol_indices(n=0, func=f_ishigami)
 
         def func_wrong_shape_output(x):
-            return x.reshape(1, -1)
+            return x.reshape(-1, 1)
 
         message = r"'func' output should have a shape"
         with pytest.raises(ValueError, match=message):

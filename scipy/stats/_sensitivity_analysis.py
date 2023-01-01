@@ -33,11 +33,11 @@ def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
 
     Parameters
     ----------
-    x : array_like (n, [x1, x2, x3])
+    x : array_like ([x1, x2, x3], n)
 
     Returns
     -------
-    f : array_like (n, 1)
+    f : array_like (n,)
         Function evaluation.
 
     References
@@ -48,11 +48,11 @@ def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
     """
     x = np.atleast_2d(x)
     f_eval = (
-        np.sin(x[:, 0])
-        + 7 * np.sin(x[:, 1])**2
-        + 0.1 * (x[:, 2]**4) * np.sin(x[:, 0])
+        np.sin(x[0])
+        + 7 * np.sin(x[1])**2
+        + 0.1 * (x[2]**4) * np.sin(x[0])
     )
-    return f_eval.reshape(-1, 1)
+    return f_eval
 
 
 def sample_A_B(
@@ -65,6 +65,8 @@ def sample_A_B(
     Uses a Sobol' sequence with 2`d` columns to have 2 uncorrelated matrices.
     This is more efficient than using 2 random draw of Sobol'.
     See sec. 5 from [1]_.
+
+    Output shape is (d, n).
 
     References
     ----------
@@ -90,22 +92,22 @@ def sample_A_B(
             )
             raise ValueError(message) from exc
 
-    return A, B
+    return A.T, B.T
 
 
 def sample_AB(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     """AB matrix.
 
-    AB: columns of B into A. Shape (n*d, d). e.g in 2d
-    Take A and replace 1st column with 1st column of B. You have (n, d)
-    Then A and replace 2nd column with 2nd column of B. You have (n, d)
-    Concatenate to get AB. Which means AB is (2*n, d).
+    AB: columns of B into A. Shape (d, n*d). e.g in 2d
+    Take A and replace 1st column with 1st column of B. You have (d, n)
+    Then A and replace 2nd column with 2nd column of B. You have (d, n)
+    Concatenate to get AB. Which means AB is (d, 2*n).
     """
-    n, d = A.shape
+    d, n = A.shape
     AB = np.tile(A, (d, 1, 1))
     i = np.arange(d)
-    AB[i, :, i] = B[:, i].T
-    AB = AB.reshape(-1, d)
+    AB[i, i] = B[i]
+    AB = np.concatenate(AB, axis=1)
     return AB
 
 
@@ -552,9 +554,9 @@ def sobol_indices(
 
         f_A = np.atleast_2d(func(A))
 
-        if f_A.shape[0] != n or f_A.shape[1] < 1:
+        if f_A.shape[1] != n or f_A.shape[0] < 1:
             raise ValueError(
-                "'func' output should have a shape ``(-1, s)`` with ``s`` "
+                "'func' output should have a shape ``(s, -1)`` with ``s`` "
                 "the number of output."
             )
 
