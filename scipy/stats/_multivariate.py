@@ -5819,13 +5819,13 @@ class vonmises_fisher_gen(multi_rv_generic):
     ...     ax.plot_surface(x, y, z, rstride=1, cstride=1,
     ...                     facecolors=plt.cm.viridis(pdfnorm(pdf_values)),
     ...                     linewidth=0)
-    ...     ax.view_init(azim=-60, elev=60)
+    ...     ax.view_init(azim=-130, elev=0)
     ...     ax.axis('off')
     ...     ax.set_title(rf"$\kappa={kappa}$")
     >>> fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(9, 4),
     ...                          subplot_kw={"projection": "3d"})
     >>> left, middle, right = axes
-    >>> mu = np.array([0, 0, 1])
+    >>> mu = np.array([-np.sqrt(0.5), -np.sqrt(0.5), 0])
     >>> plot_vmf_density(left, x, y, z, vertices, mu, 5)
     >>> plot_vmf_density(middle, x, y, z, vertices, mu, 20)
     >>> plot_vmf_density(right, x, y, z, vertices, mu, 100)
