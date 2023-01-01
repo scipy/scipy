@@ -6608,6 +6608,58 @@ def test_ncx2_gh11777():
     assert_allclose(ncx2_pdf, gauss_approx, atol=1e-4)
 
 
+# Expected values for foldnorm.sf were computed with mpmath:
+#
+#    from mpmath import mp
+#    mp.dps = 60
+#    def foldcauchy_sf(x, c):
+#        x = mp.mpf(x)
+#        c = mp.mpf(c)
+#        return mp.one - (mp.atan(x - c) + mp.atan(x + c))/mp.pi
+#
+# E.g.
+#
+#    >>> float(foldcauchy_sf(2, 1))
+#    0.35241638234956674
+#
+@pytest.mark.parametrize('x, c, expected',
+                         [(2, 1, 0.35241638234956674),
+                          (2, 2, 0.5779791303773694),
+                          (1e13, 1, 6.366197723675813e-14),
+                          (2e16, 1, 3.183098861837907e-17),
+                          (1e13, 2e11, 6.368745221764519e-14),
+                          (0.125, 200, 0.999998010612169)])
+def test_foldcauchy_sf(x, c, expected):
+    sf = stats.foldcauchy.sf(x, c)
+    assert_allclose(sf, expected, 2e-15)
+
+
+# The same mpmath code shown in the comments above test_foldcauchy_sf()
+# is used to create these expected values.
+@pytest.mark.parametrize('x, expected',
+                         [(2, 0.2951672353008665),
+                          (1e13, 6.366197723675813e-14),
+                          (2e16, 3.183098861837907e-17),
+                          (5e80, 1.2732395447351629e-81)])
+def test_halfcauchy_sf(x, expected):
+    sf = stats.halfcauchy.sf(x)
+    assert_allclose(sf, expected, 2e-15)
+
+
+# Expected value computed with mpmath:
+#     expected = mp.cot(mp.pi*p/2)
+@pytest.mark.parametrize('p, expected',
+                         [(0.9999995, 7.853981633329977e-07),
+                          (0.975, 0.039290107007669675),
+                          (0.5, 1.0),
+                          (0.01, 63.65674116287158),
+                          (1e-14, 63661977236758.13),
+                          (5e-80, 1.2732395447351627e+79)])
+def test_halfcauchy_isf(p, expected):
+    x = stats.halfcauchy.isf(p)
+    assert_allclose(x, expected)
+
+
 def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
     rv = stats.foldnorm(0, scale=1)
