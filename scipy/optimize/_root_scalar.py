@@ -9,8 +9,7 @@ Functions
 import numpy as np
 
 from . import _zeros_py as optzeros
-from ._differentiable_functions import ScalarFunction
-from ._hessian_update_strategy import HessianUpdateStrategy
+from ._numdiff import approx_derivative
 
 __all__ = ['root_scalar']
 
@@ -290,20 +289,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
         if not fprime:
             # approximate fprime with finite differences
 
-            class NoUpdate(HessianUpdateStrategy):
-                # dummy implementation, since we don't need the Hessian
-                def initialize(self, *args, **kwargs):
-                    return None
-
-                def update(self, *args, **kwargsself):
-                    return None
-
-            func = ScalarFunction(f, x0, tuple(), grad='2-point',
-                                  hess=NoUpdate(), finite_diff_rel_step=None,
-                                  finite_diff_bounds=[-np.inf, np.inf])
-
             def fprime(x):
-                return func.grad(x).reshape(np.shape(x))
+                return approx_derivative(f, x, method='2-point')
 
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
