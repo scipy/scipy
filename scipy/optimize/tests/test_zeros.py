@@ -167,10 +167,11 @@ class TestBasic:
         cvgd = [elt for elt in results if elt[1].converged]
         approx = [elt[1].root for elt in cvgd]
         correct = [elt[0] for elt in cvgd]
+        # See if the root matches the reference value
         notclose = [[a] + elt for a, c, elt in zip(approx, correct, cvgd) if
                     not isclose(a, c, rtol=rtol, atol=atol)
                     and elt[-1]['ID'] not in known_fail]
-        # Evaluate the function and see if is 0 at the purported root
+        # If not, evaluate the function and see if is 0 at the purported root
         fvs = [tc['f'](aroot, *(tc['args'])) for aroot, c, fullout, tc in notclose]
         notclose = [[fv] + elt for fv, elt in zip(fvs, notclose) if fv != 0]
         assert_equal([notclose, len(notclose)], [[], 0])
