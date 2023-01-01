@@ -5,11 +5,12 @@ from dataclasses import dataclass
 from typing import Callable, Dict, List, Literal, Protocol, TYPE_CHECKING, Tuple
 
 import numpy as np
-from scipy.stats._resampling import BootstrapResult
 
+from scipy.stats._common import ConfidenceInterval
 from scipy.stats._qmc import check_random_state
+from scipy.stats._resampling import BootstrapResult
 from scipy.stats import qmc, bootstrap
-from scipy.stats.sampling import NumericalInversePolynomial
+
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -161,6 +162,12 @@ def saltelli_2010(
 
 
 @dataclass
+class BootstrapSobolResult:
+    first_order: BootstrapResult
+    total_order: BootstrapResult
+
+
+@dataclass
 class SobolResult:
     first_order: np.ndarray
     total_order: np.ndarray
@@ -190,9 +197,17 @@ class SobolResult:
 
         Returns
         -------
-        res : BootstrapResult
+        res : BootstrapSobolResult
             Bootstrap result containing the confidence intervals and the
             bootstrap distribution of the indices.
+
+            An object with attributes:
+
+            first_order : BootstrapResult
+                Bootstrap result of the first order indices.
+            total_order : BootstrapResult
+                Bootstrap result of the total order indices.
+            See `BootstrapResult` for more details.
 
         """
         def statistic(idx):
@@ -200,22 +215,39 @@ class SobolResult:
             f_B_ = self._f_B[:, idx]
 
             s, _ = self._f_A.shape
-            d = self._A.shape[0]
-            f_AB_ = self._f_AB.reshape((s, d, -1))
+            f_AB_ = self._f_AB.reshape((s, -1, n))
             f_AB_ = f_AB_[:, :, idx].reshape(s, -1)
 
             return self._indices_method(f_A_, f_B_, f_AB_)
 
         n = self._f_A.shape[1]
 
-        self._bootstrap_result = bootstrap(
+        res = bootstrap(
             [np.arange(n)], statistic=statistic, method="BCa",
             n_resamples=n_resamples,
             confidence_level=confidence_level,
             bootstrap_result=self._bootstrap_result
         )
+        self._bootstrap_result = res
 
-        return self._bootstrap_result
+        first_order = BootstrapResult(
+            confidence_interval=ConfidenceInterval(
+                res.confidence_interval.low[0], res.confidence_interval.high[0]
+            ),
+            bootstrap_distribution=res.bootstrap_distribution[0],
+            standard_error=res.standard_error[0],
+        )
+        total_order = BootstrapResult(
+            confidence_interval=ConfidenceInterval(
+                res.confidence_interval.low[1], res.confidence_interval.high[1]
+            ),
+            bootstrap_distribution=res.bootstrap_distribution[1],
+            standard_error=res.standard_error[1],
+        )
+
+        return BootstrapSobolResult(
+            first_order=first_order, total_order=total_order
+        )
 
 
 class PPFDist(Protocol):
@@ -290,12 +322,15 @@ def sobol_indices(
 
         And methods:
 
-        bootstrap(confidence_level: float, n_resamples: int) -> BootstrapResult
+        bootstrap(confidence_level: float, n_resamples: int)
+        -> BootstrapSobolResult
+
             A method providing confidence intervals on the indices.
             See `scipy.stats.bootstrap` for more details.
 
             The bootstrapping is done on both first and total order indices
-            at the same time meaning the result is a concatenated array.
+            and they are available in `BootstrapSobolResult` as attributes
+            ``first_order`` and ``total_order``.
 
     Notes
     -----

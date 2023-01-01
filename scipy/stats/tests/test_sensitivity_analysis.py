@@ -4,7 +4,7 @@ import pytest
 from scipy.stats._resampling import BootstrapResult
 
 from scipy.stats import f_ishigami, sobol_indices, uniform
-from scipy.stats._sensitivity_analysis import sample_AB, sample_A_B
+from scipy.stats._sensitivity_analysis import BootstrapSobolResult, sample_AB, sample_A_B
 
 @pytest.fixture(scope='session')
 def ishigami_ref_indices():
@@ -93,15 +93,23 @@ class TestSobolIndices:
         assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-2)
 
         assert res._bootstrap_result is None
-        assert isinstance(res.bootstrap(), BootstrapResult)
+        bootstrap_res = res.bootstrap()
+        assert isinstance(bootstrap_res, BootstrapSobolResult)
         assert isinstance(res._bootstrap_result, BootstrapResult)
 
         assert res._bootstrap_result.confidence_interval.low.shape[0] == 2
         assert res._bootstrap_result.confidence_interval.low[1].shape \
                == res.first_order.shape
 
+        assert bootstrap_res.first_order.confidence_interval.low.shape \
+               == res.first_order.shape
+        assert bootstrap_res.total_order.confidence_interval.low.shape \
+               == res.total_order.shape
+
         # call again to use previous results and change a param
-        assert isinstance(res.bootstrap(confidence_level=0.9), BootstrapResult)
+        assert isinstance(
+            res.bootstrap(confidence_level=0.9), BootstrapSobolResult
+        )
         assert isinstance(res._bootstrap_result, BootstrapResult)
 
     def test_func_dict(self, ishigami_ref_indices):
