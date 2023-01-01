@@ -5741,7 +5741,6 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     Parameters
     ----------
-    %(_doc_vonmises_fisher_default_callparams)s
     %(_doc_random_state)s
 
     See Also
@@ -5750,7 +5749,6 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     Notes
     -----
-    %(_doc_vonmises_fisher_callparams_note)s
 
     The von Mises-Fisher distribution is a directional distribution on the
     n-dimensional unit sphere. The probability density function is
@@ -5832,16 +5830,26 @@ class vonmises_fisher_gen(multi_rv_generic):
     >>> plt.subplots_adjust(top=1, bottom=0.0, left=0.0, right=1.0, wspace=0.)
     >>> plt.show()
 
-    Draw 20 samples from the distribution using the ``rvs`` method.
+    Draw 5 samples from the distribution using the ``rvs`` method resulting
+    in a 5x3 array.
 
-    >>> samples = vonmises_fisher(mu, 10).rvs(20)
-    >>> fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5),
-    ...                        subplot_kw={"projection": "3d"})
-    >>> ax.plot_surface(x, y, z, rstride=3, cstride=3, linewidth=0, alpha=0.5)
-    >>> ax.scatter(samples[:, 0], samples[:, 1], samples[:, 2], c='r', s=20)
-    >>> ax.axis('off')
-    >>> ax.view_init(azim=-65, elev=0)
-    >>> plt.show()
+    >>> rng = np.random.default_rng()
+    >>> vonmises_fisher(np.array([0, 0, 1]), 20).rvs(5, random_state=rng)
+    array([[ 0.3884594 , -0.32482588,  0.86231516],
+           [ 0.00611366, -0.09878289,  0.99509023],
+           [-0.04154772, -0.01637135,  0.99900239],
+           [-0.14613735,  0.12553507,  0.98126695],
+           [-0.04429884, -0.23474054,  0.97104814]])
+
+    The distribution can be fitted to data using the ``fit`` method returning
+    the estimated parameters. As a toy example let's fit the distribution to
+    samples drawn from a known von Mises-Fisher distribution.
+
+    >>> mu, kappa = np.array([0, 0, 1]), 20
+    >>> samples = vonmises_fisher(mu, kappa).rvs(1000, random_state=rng)
+    >>> mu_fit, kappa_fit = vonmises_fisher.fit(samples)
+    >>> mu_fit, kappa_fit
+    (array([0.01126519, 0.01044501, 0.99988199]), 19.306398751730995)
     """
 
     def __init__(self, seed=None):
@@ -5909,7 +5917,6 @@ class vonmises_fisher_gen(multi_rv_generic):
             Points at which to evaluate the log of the probability
             density function. The last axis of `x` corresponds to unit
             vectors of the same dimension as the distribution.
-        %(_doc_vonmises_fisher_default_callparams)s
 
         Notes
         -----
@@ -5929,9 +5936,8 @@ class vonmises_fisher_gen(multi_rv_generic):
         ----------
         x : ndarray
             Points at which to evaluate the log of the probability
-            density function. The last axis of `x` corresponds to unit
-            vectors of the same dimension as the distribution.
-        %(_doc_vonmises_fisher_default_callparams)s
+            density function. The last axis of `x` must correspond
+            to unit vectors of the same dimension as the distribution.
 
         Returns
         -------
@@ -5950,9 +5956,8 @@ class vonmises_fisher_gen(multi_rv_generic):
         ----------
         x : ndarray
             Points at which to evaluate the log of the probability
-            density function. The last axis of `x` corresponds to unit
-            vectors of the same dimension as the distribution.
-        %(_doc_vonmises_fisher_default_callparams)s
+            density function. The last axis of `x` must correspond
+            to unit vectors of the same dimension as the distribution.
 
         Returns
         -------
@@ -6100,7 +6105,6 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_doc_vonmises_fisher_default_callparams)s
         size : integer, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
@@ -6128,18 +6132,33 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_doc_vonmises_fisher_default_callparams)s
 
         Returns
         -------
         h : scalar
-            Entropy of the multivariate normal distribution
+            Entropy of the von Mises-Fisher distribution
 
         """
         dim, mu, kappa = self._process_parameters(mu, kappa)
         return self._entropy(dim, kappa)
 
     def fit(self, x):
+        """Fit the distribution to data
+
+        Parameters
+        ----------
+        x : ndarray
+            Data the distribution is fitted to. The last axis of `x` must
+            correspond to unit vectors of norm 1.
+
+        Returns
+        -------
+        mu : ndarray
+            Estimated mean direcion
+        kappa : float
+            Estimated concentration parameter.
+
+        """
         # validate input data
         x = np.asarray(x)
         if x.ndim == 1:
@@ -6164,7 +6183,8 @@ class vonmises_fisher_gen(multi_rv_generic):
         halfdim = 0.5 * dim
 
         def solve_for_kappa(kappa):
-            return ive(halfdim, kappa)/ive(halfdim - 1, kappa) - r
+            bessel_vals = ive([halfdim, halfdim - 1], kappa)
+            return bessel_vals[0]/bessel_vals[1] - r
 
         root_res = root_scalar(solve_for_kappa, method="brentq",
                                bracket=(1e-8, 1e9))
@@ -6222,7 +6242,7 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         Returns
         -------
         h : scalar
-            Entropy of the multivariate normal distribution
+            Entropy of the distribution
         """
         return self._dist._entropy(self.dim, self.kappa)
 
