@@ -9,6 +9,8 @@ Functions
 import numpy as np
 
 from . import _zeros_py as optzeros
+from ._differentiable_functions import ScalarFunction
+from ._hessian_update_strategy import HessianUpdateStrategy
 
 __all__ = ['root_scalar']
 
@@ -253,8 +255,10 @@ def root_scalar(f, args=(), method=None, bracket=None,
                     method = 'halley'
                 else:
                     method = 'newton'
-            else:
+            elif x1 is not None:
                 method = 'secant'
+            else:
+                method = 'newton'
     if not method:
         raise ValueError('Unable to select a solver as neither bracket '
                          'nor starting point provided.')
@@ -276,8 +280,6 @@ def root_scalar(f, args=(), method=None, bracket=None,
     elif meth in ['secant']:
         if x0 is None:
             raise ValueError('x0 must not be None for %s' % method)
-        if x1 is None:
-            raise ValueError('x1 must not be None for %s' % method)
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
         r, sol = methodc(f, x0, args=args, fprime=None, fprime2=None,
@@ -286,7 +288,23 @@ def root_scalar(f, args=(), method=None, bracket=None,
         if x0 is None:
             raise ValueError('x0 must not be None for %s' % method)
         if not fprime:
-            raise ValueError('fprime must be specified for %s' % method)
+            # approximate fprime with finite differences
+
+            class NoUpdate(HessianUpdateStrategy):
+                # dummy implementation, since we don't need the Hessian
+                def initialize(self, *args, **kwargs):
+                    return None
+
+                def update(self, *args, **kwargsself):
+                    return None
+
+            func = ScalarFunction(f, x0, tuple(), grad='2-point',
+                                  hess=NoUpdate(), finite_diff_rel_step=None,
+                                  finite_diff_bounds=[-np.inf, np.inf])
+
+            def fprime(x):
+                return func.grad(x).reshape(np.shape(x))
+
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
         r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=None,

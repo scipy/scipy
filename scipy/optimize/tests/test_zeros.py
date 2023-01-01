@@ -276,6 +276,9 @@ class TestBasic:
         for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
             r = root_scalar(f, method='newton', x0=3, fprime=f_1, xtol=1e-6)
             assert_allclose(f(r.root), 0, atol=1e-6)
+        for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
+            r = root_scalar(f, method='newton', x0=3, xtol=1e-6)  # without f'
+            assert_allclose(f(r.root), 0, atol=1e-6)
 
     def test_secant_by_name(self):
         r"""Invoke secant through root_scalar()"""
@@ -283,6 +286,9 @@ class TestBasic:
             r = root_scalar(f, method='secant', x0=3, x1=2, xtol=1e-6)
             assert_allclose(f(r.root), 0, atol=1e-6)
             r = root_scalar(f, method='secant', x0=3, x1=5, xtol=1e-6)
+            assert_allclose(f(r.root), 0, atol=1e-6)
+        for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
+            r = root_scalar(f, method='secant', x0=3, xtol=1e-6)  # without x1
             assert_allclose(f(r.root), 0, atol=1e-6)
 
     def test_halley_by_name(self):
@@ -293,13 +299,11 @@ class TestBasic:
             assert_allclose(f(r.root), 0, atol=1e-6)
 
     def test_root_scalar_fail(self):
-        with pytest.raises(ValueError):
-            root_scalar(f1, method='secant', x0=3, xtol=1e-6)  # no x1
-        with pytest.raises(ValueError):
-            root_scalar(f1, method='newton', x0=3, xtol=1e-6)  # no fprime
-        with pytest.raises(ValueError):
+        message = 'fprime2 must be specified for halley'
+        with pytest.raises(ValueError, match=message):
             root_scalar(f1, method='halley', fprime=f1_1, x0=3, xtol=1e-6)  # no fprime2
-        with pytest.raises(ValueError):
+        message = 'fprime must be specified for halley'
+        with pytest.raises(ValueError, match=message):
             root_scalar(f1, method='halley', fprime2=f1_2, x0=3, xtol=1e-6)  # no fprime
 
     def test_array_newton(self):
@@ -462,6 +466,32 @@ class TestBasic:
             with pytest.raises(TypeError,
                     match="'float' object cannot be interpreted as an integer"):
                 method(f1, 0.0, 1.0, maxiter=72.45)
+
+    def test_gh17570_defaults(self):
+        # Previously, when fprime was not specified, root_scalar would default
+        # to secant. When x1 was not specified, secant failed.
+        # Check that without fprime, the default is secant if x1 is specified
+        # and newton otherwise.
+        res_newton_default = root_scalar(f1, method='newton', x0=3, xtol=1e-6)
+        res_secant_default = root_scalar(f1, method='secant', x0=3, x1=2,
+                                         xtol=1e-6)
+        # `newton` uses the secant method when `x1` and `x2` are specified
+        res_secant = newton(f1, x0=3, x1=2, tol=1e-6, full_output=True)[1]
+
+        # all three foun a root
+        assert_allclose(f1(res_newton_default.root), 0, atol=1e-6)
+        assert_allclose(f1(res_secant_default.root), 0, atol=1e-6)
+        assert_allclose(f1(res_secant.root), 0, atol=1e-6)
+
+        # Defaults are correct
+        assert (res_secant_default.root
+                == res_secant.root
+                != res_newton_default.iterations)
+        assert (res_secant_default.iterations
+                == res_secant_default.function_calls - 1  # true for secant
+                == res_secant.iterations
+                != res_newton_default.iterations
+                == res_newton_default.function_calls/2)  # newton 2-point diff
 
 
 def test_gh_5555():
