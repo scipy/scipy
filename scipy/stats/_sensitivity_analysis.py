@@ -196,18 +196,17 @@ class SobolResult:
 
         """
         def statistic(idx):
-            f_A_ = self._f_A[idx]
-            f_B_ = self._f_B[idx]
+            f_A_ = self._f_A[:, idx]
+            f_B_ = self._f_B[:, idx]
 
-            d, n = self._A.shape
-            f_AB_ = np.empty((d, *f_A_.shape))
-            for i in range(d):
-                f_AB_[i] = self._f_AB[:, np.array(idx)+i*n]
-            f_AB_ = f_AB_.reshape(d, -1)
+            s, _ = self._f_A.shape
+            d = self._A.shape[0]
+            f_AB_ = self._f_AB.reshape((s, d, -1))
+            f_AB_ = f_AB_[:, :, idx].reshape(s, -1)
 
             return self._indices_method(f_A_, f_B_, f_AB_)
 
-        n = len(self._f_A)
+        n = self._f_A.shape[1]
 
         self._bootstrap_result = bootstrap(
             [np.arange(n)], statistic=statistic, method="BCa",
