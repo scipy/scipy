@@ -2556,6 +2556,9 @@ class invwishart_gen(wishart_gen):
     .. [2] M.C. Jones, "Generating Inverse Wishart Matrices", Communications
            in Statistics - Simulation and Computation, vol. 14.2, pp.511-514,
            1985.
+    .. [3] Gupta, M. and Srivastava, S. "Parametric Bayesian Estimation of
+           Differential Entropy and Relative Entropy". Entropy 12, 818 - 843.
+           2010.
 
     Examples
     --------
@@ -2892,9 +2895,15 @@ class invwishart_gen(wishart_gen):
 
         return _squeeze_output(out)
 
-    def entropy(self):
-        # Need to find reference for inverse Wishart entropy
-        raise AttributeError
+    def entropy(self, df, scale):
+        dim, df, scale = self._process_parameters(df, scale)
+        psi_eval_points = [0.5 * (df - dim + i) for i in range(1, dim + 1)]
+        psi_eval_points = np.asarray(psi_eval_points)
+        _, logdet = np.linalg.slogdet(scale)
+        return multigammaln(0.5 * df, dim) + 0.5 * dim * df + \
+            0.5 * (dim + 1) * (logdet - _LOG_2) - \
+            0.5 * (df + dim + 1) * \
+            psi(psi_eval_points, out=psi_eval_points).sum()
 
 
 invwishart = invwishart_gen()
@@ -2964,8 +2973,7 @@ class invwishart_frozen(multi_rv_frozen):
         return _squeeze_output(out)
 
     def entropy(self):
-        # Need to find reference for inverse Wishart entropy
-        raise AttributeError
+        self._dist.entropy(self.df, self.scale)
 
 
 # Set frozen generator docstrings from corresponding docstrings in
