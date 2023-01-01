@@ -235,13 +235,19 @@ def sobol_indices(
     Parameters
     ----------
     func : callable or dict(str, array_like)
-        Function to compute the Sobol' indices from. It's signature must be::
+        If `func` is a callable, function to compute the Sobol' indices from.
+        It's signature must be::
 
             func(x: ArrayLike) -> ArrayLike
 
-        with ``x`` of shape ``(n, d)`` and the output should have a shape
-        ``(n, s)`` with ``s`` the number of outputs and ``n`` the number of
+        with ``x`` of shape ``(d, n)`` and the output should have a shape
+        ``(s, n)`` with ``s`` the number of outputs and ``n`` the number of
         samples.
+
+        If `func` is a dictionnary, contains the function evaluations from 3
+        different arrays. Keys must be: ``f_A``, ``f_B`` and ``f_AB``.
+        ``f_A`` and ``f_B`` should have a shape ``(s, n)`` and ``f_AB``
+        should have a shape ``(s, d*n)``.
     n : int
         Number of samples. 
         Must be a power of 2. The total number of function calls will be
@@ -262,7 +268,7 @@ def sobol_indices(
             func(f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray)
             -> Tuple[np.ndarray, np.ndarray]
 
-        with ``f_A, f_B, f_AB`` of shape (n, s) and the output being a tuple
+        with ``f_A, f_B, f_AB`` of shape (s, n) and the output being a tuple
         of the first and total indices with shape (s, d).
     random_state : {None, int, `numpy.random.Generator`}, optional
         If `random_state` is an int or None, a new `numpy.random.Generator` is
@@ -544,7 +550,7 @@ def sobol_indices(
         A, B = sample_A_B(n=n, dists=dists, random_state=random_state)
         AB = sample_AB(A=A, B=B)
 
-        f_A = np.asarray(func(A))
+        f_A = np.atleast_2d(func(A))
 
         if f_A.shape[0] != n or f_A.shape[1] < 1:
             raise ValueError(
@@ -552,19 +558,25 @@ def sobol_indices(
                 "the number of output."
             )
 
-        f_B = np.asarray(func(B))
-        f_AB = np.asarray(func(AB))
+        f_B = np.atleast_2d(func(B))
+        f_AB = np.atleast_2d(func(AB))
     else:
+        message = (
+            "When 'func' is a dictionary, it must contain the following "
+            "keys: 'f_A', 'f_B' and 'f_AB'."
+            "'f_A' and 'f_B' should have a shape ``(s, n)`` and 'f_AB' "
+            "should have a shape ``(s, d*n)``."
+        )
         try:
-            f_A = np.asarray(func['f_A'])
-            f_B = np.asarray(func['f_B'])
-            f_AB = np.asarray(func['f_AB'])
+            f_A = np.atleast_2d(func['f_A'])
+            f_B = np.atleast_2d(func['f_B'])
+            f_AB = np.atleast_2d(func['f_AB'])
         except KeyError as exc:
-            message = (
-                "When 'func' is a dictionary, it must contain the following"
-                " keys: 'f_A', 'f_B' and 'f_AB'"
-            )
             raise ValueError(message) from exc
+
+        if f_A.shape[1] != n or f_A.shape != f_B.shape or \
+                f_AB.shape == f_A.shape or f_AB.shape[1] % n != 0:
+            raise ValueError(message)
 
     # Compute indices
     first_order, total_order = indices_method(f_A=f_A, f_B=f_B, f_AB=f_AB)

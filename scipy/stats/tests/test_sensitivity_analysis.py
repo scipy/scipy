@@ -207,3 +207,18 @@ class TestSobolIndices:
         message = r"When 'func' is a dictionary"
         with pytest.raises(ValueError, match=message):
             sobol_indices(n=2, func={'f_A': [], 'f_AB': []}, dists=[uniform()])
+
+        message = r"When 'func' is a dictionary"
+        with pytest.raises(ValueError, match=message):
+            # f_B malformed
+            sobol_indices(
+                n=2,
+                func={'f_A': [1, 2], 'f_B': [3], 'f_AB': [5, 6, 7, 8]},
+            )
+
+        with pytest.raises(ValueError, match=message):
+            # f_AB malformed
+            sobol_indices(
+                n=2,
+                func={'f_A': [1, 2], 'f_B': [3, 4], 'f_AB': [5, 6, 7]},
+            )
