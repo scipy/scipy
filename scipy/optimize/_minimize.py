@@ -921,18 +921,21 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         options['disp'] = 2 * int(disp)
 
     if meth == '_custom':
-        return method(fun, args=args, bracket=bracket, bounds=bounds, **options)
+        res = method(fun, args=args, bracket=bracket, bounds=bounds, **options)
     elif meth == 'brent':
-        return _minimize_scalar_brent(fun, bracket, args, **options)
+        res = _minimize_scalar_brent(fun, bracket, args, **options)
     elif meth == 'bounded':
         if bounds is None:
             raise ValueError('The `bounds` parameter is mandatory for '
                              'method `bounded`.')
-        return _minimize_scalar_bounded(fun, bounds, args, **options)
+        res = _minimize_scalar_bounded(fun, bounds, args, **options)
     elif meth == 'golden':
-        return _minimize_scalar_golden(fun, bracket, args, **options)
+        res = _minimize_scalar_golden(fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
+
+    res.x = np.asarray(res.x).squeeze()[()]
+    return res
 
 
 def _remove_from_bounds(bounds, i_fixed):

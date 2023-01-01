@@ -1878,6 +1878,25 @@ class TestOptimizeScalar:
         with pytest.raises(ValueError, match=msg):
             optimize.minimize_scalar(np.sin, method=method, bounds=(1, 2))
 
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.parametrize("method", MINIMIZE_SCALAR_METHODS)
+    @pytest.mark.parametrize("tol", [1, 1e-6])
+    def test_minimize_scalar_output_dimensionality_gh16196(self, method, tol):
+        # gh-16196 reported that the output shape of `minimize_scalar` was not
+        # consistent when an objective function returned an array.
+        # Check that the output is always a NumPy scalar.
+        def f(x):
+            return np.array(x**4).reshape(1)
+
+        a, b = -0.1, 0.2
+        kwargs = (dict(bracket=(a, b)) if method != "bounded"
+                  else dict(bounds=(a, b)))
+        kwargs.update(dict(method=method, tol=tol))
+
+        res = optimize.minimize_scalar(f, **kwargs)
+        assert res.x.shape == tuple()
+        assert res.fun.shape == f(res.x).shape
+
 
 def test_brent_negative_tolerance():
     assert_raises(ValueError, optimize.brent, np.cos, tol=-.01)
