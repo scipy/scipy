@@ -1,9 +1,10 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_less
 import pytest
-from scipy.stats._resampling import BootstrapResult
 
-from scipy.stats import f_ishigami, sobol_indices, uniform
+from scipy import stats
+from scipy.stats import f_ishigami, sobol_indices
+from scipy.stats._resampling import BootstrapResult
 from scipy.stats._sensitivity_analysis import (
     BootstrapSobolResult, sample_AB, sample_A_B
 )
@@ -74,9 +75,9 @@ class TestSobolIndices:
         res = sobol_indices(
             func=func, n=4096,
             dists=[
-                uniform(loc=-np.pi, scale=2*np.pi),
-                uniform(loc=-np.pi, scale=2*np.pi),
-                uniform(loc=-np.pi, scale=2*np.pi)
+                stats.uniform(loc=-np.pi, scale=2*np.pi),
+                stats.uniform(loc=-np.pi, scale=2*np.pi),
+                stats.uniform(loc=-np.pi, scale=2*np.pi)
             ],
             random_state=rng
         )
@@ -131,9 +132,9 @@ class TestSobolIndices:
         rng = np.random.default_rng(28631265345463262246170309650372465332)
         n = 4096
         dists = [
-            uniform(loc=-np.pi, scale=2*np.pi),
-            uniform(loc=-np.pi, scale=2*np.pi),
-            uniform(loc=-np.pi, scale=2*np.pi)
+            stats.uniform(loc=-np.pi, scale=2*np.pi),
+            stats.uniform(loc=-np.pi, scale=2*np.pi),
+            stats.uniform(loc=-np.pi, scale=2*np.pi)
         ]
 
         A, B = sample_A_B(n=n, dists=dists, random_state=rng)
@@ -177,9 +178,9 @@ class TestSobolIndices:
         res = sobol_indices(
             func=f_ishigami, n=4096,
             dists=[
-                uniform(loc=-np.pi, scale=2*np.pi),
-                uniform(loc=-np.pi, scale=2*np.pi),
-                uniform(loc=-np.pi, scale=2*np.pi)
+                stats.uniform(loc=-np.pi, scale=2*np.pi),
+                stats.uniform(loc=-np.pi, scale=2*np.pi),
+                stats.uniform(loc=-np.pi, scale=2*np.pi)
             ],
             method=jansen_sobol,
             random_state=rng
@@ -199,11 +200,11 @@ class TestSobolIndices:
 
         message = r"The balance properties of Sobol'"
         with pytest.raises(ValueError, match=message):
-            sobol_indices(n=7, func=f_ishigami, dists=[uniform()])
+            sobol_indices(n=7, func=f_ishigami, dists=[stats.uniform()])
 
         message = r"The balance properties of Sobol'"
         with pytest.raises(ValueError, match=message):
-            sobol_indices(n=4.1, func=f_ishigami, dists=[uniform()])
+            sobol_indices(n=4.1, func=f_ishigami, dists=[stats.uniform()])
 
         message = r"'toto' is not a valid 'method'"
         with pytest.raises(ValueError, match=message):
@@ -222,11 +223,15 @@ class TestSobolIndices:
 
         message = r"'func' output should have a shape"
         with pytest.raises(ValueError, match=message):
-            sobol_indices(n=2, func=func_wrong_shape_output, dists=[uniform()])
+            sobol_indices(
+                n=2, func=func_wrong_shape_output, dists=[stats.uniform()]
+            )
 
         message = r"When 'func' is a dictionary"
         with pytest.raises(ValueError, match=message):
-            sobol_indices(n=2, func={'f_A': [], 'f_AB': []}, dists=[uniform()])
+            sobol_indices(
+                n=2, func={'f_A': [], 'f_AB': []}, dists=[stats.uniform()]
+            )
 
         message = r"When 'func' is a dictionary"
         with pytest.raises(ValueError, match=message):

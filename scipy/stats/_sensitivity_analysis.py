@@ -165,8 +165,8 @@ def saltelli_2010(
 
 @dataclass
 class BootstrapSobolResult:
-    first_order: BootstrapResult
-    total_order: BootstrapResult
+    first_order: BootstrapResult  # type: ignore[valid-type]
+    total_order: BootstrapResult  # type: ignore[valid-type]
 
 
 @dataclass
