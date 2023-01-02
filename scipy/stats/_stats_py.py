@@ -7508,14 +7508,14 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
     Examples
     --------
-    In [4]_ bird foraging behavior was investigated in a forest of Oregon.
-    The foraging refers to the range of activities and behaviours exhibited by
-    birds in their quest for food.
-    In an old-growth forest, 44% of the canopy volume was Douglas fir,
+    In [4]_, bird foraging behavior was investigated in an old-growth forest
+    of Oregon.
+    In the forest, 44% of the canopy volume was Douglas fir,
     24% was ponderosa pine, 29% was grand fir, and 3% was western larch.
-    They observed the behavior of several species of birds, one of which
-    was the red-breasted nuthatches. They made 189 observations of foraging
-    of this specie with the respective frequencies of 23%, 27%, 29% and 21%.
+    The authors observed the behavior of several species of birds, one
+    which was the red-breasted nuthatch. They made 189 observations of
+    foraging
+    of this species with the respective frequencies of 23%, 27%, 29%, and 21%.
 
     Using a chi-square test, we can test the null hypothesis that the
     proportions of foraging events are equal to the proportions of canopy
@@ -7528,15 +7528,16 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     >>> f_exp = np.array([44, 24, 29, 3]) / 100 * 189
     >>> f_obs = np.array([23, 27, 29, 21]) / 100 * 189
 
-    We can now confront the observed frequencies with the expected frequencies
+    We can now compare the observed frequencies with the expected frequencies.
 
     >>> from scipy.stats import chisquare
     >>> chisquare(f_obs=f_obs, f_exp=f_exp)
     Power_divergenceResult(statistic=223.77170454545453, pvalue=3.071583663409687e-48)
 
-    Hence, the p-value is well bellow the chosen significance level. The
-    difference is significant, and we can say that the birds do not
-    forage randomly in regard to the species of tree they are in.
+    The p-value is well below the chosen significance level. Hence, the
+    authors considered the difference to be significant and concluded
+    that the relative proportions of foraging events were not the same
+    as the relative proportions of tree canopy volume.
 
     Following are other generic examples to demonstrate how the other
     parameters can be used.
