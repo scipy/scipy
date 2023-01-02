@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Literal, Protocol, TYPE_CHECKING, Tuple
+from typing import (
+    Callable, Dict, List, Literal, Protocol, TYPE_CHECKING, Tuple
+)
 
 import numpy as np
 
@@ -252,7 +254,8 @@ class SobolResult:
 
 class PPFDist(Protocol):
     @property
-    def ppf(self) -> Callable[..., float]: ...
+    def ppf(self) -> Callable[..., float]:
+        ...
 
 
 def sobol_indices(
@@ -283,7 +286,7 @@ def sobol_indices(
         ``f_A`` and ``f_B`` should have a shape ``(s, n)`` and ``f_AB``
         should have a shape ``(s, d*n)``.
     n : int
-        Number of samples. 
+        Number of samples.
         Must be a power of 2. The total number of function calls will be
         ``n(d+2)``.
     dists : list(distributions), optional
@@ -375,7 +378,7 @@ def sobol_indices(
     contribution of the i-th parameter, while :math:`S_{ij}` corresponds to the
     second-order term which informs about the correlations between the
     i-th and the j-th parameters. These equations can be generalized to compute
-    higher order terms; however, they are expensive to compute and their 
+    higher order terms; however, they are expensive to compute and their
     interpretation is complex.
     This is why only first order indices are provided.
 

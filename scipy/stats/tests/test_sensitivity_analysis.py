@@ -4,7 +4,10 @@ import pytest
 from scipy.stats._resampling import BootstrapResult
 
 from scipy.stats import f_ishigami, sobol_indices, uniform
-from scipy.stats._sensitivity_analysis import BootstrapSobolResult, sample_AB, sample_A_B
+from scipy.stats._sensitivity_analysis import (
+    BootstrapSobolResult, sample_AB, sample_A_B
+)
+
 
 @pytest.fixture(scope='session')
 def ishigami_ref_indices():
