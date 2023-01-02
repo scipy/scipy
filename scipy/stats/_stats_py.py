@@ -4170,6 +4170,7 @@ class PearsonRResult(PearsonRResultBase):
         coefficient `statistic` for the given confidence level.
 
     """
+
     def __init__(self, statistic, pvalue, alternative, n):
         super().__init__(statistic, pvalue)
         self._alternative = alternative
@@ -5013,11 +5014,11 @@ def pointbiserialr(x, y):
         r_{pb} = \frac{\overline{Y_{1}} -
                  \overline{Y_{0}}}{s_{y}}\sqrt{\frac{N_{1} N_{2}}{N (N - 1))}}
 
-    Where :math:`\overline{Y_{0}}` and :math:`\overline{Y_{1}}` are means of the
-    metric observations coded 0 and 1 respectively; :math:`N_{0}` and :math:`N_{1}`
-    are number of observations coded 0 and 1 respectively; :math:`N` is the
-    total number of observations and :math:`s_{y}` is the standard
-    deviation of all the metric observations.
+    Where :math:`\overline{Y_{0}}` and :math:`\overline{Y_{1}}` are means of
+    the metric observations coded 0 and 1 respectively; :math:`N_{0}` and
+    :math:`N_{1}` are number of observations coded 0 and 1 respectively; :math:`N`
+    is the total number of observations and :math:`s_{y}` is the standard deviation
+    of all the metric observations.
 
     A value of :math:`r_{pb}` that is significantly different from zero is
     completely equivalent to a significant difference in means between the two
