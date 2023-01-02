@@ -1879,6 +1879,26 @@ class TestOptimizeScalar:
             optimize.minimize_scalar(np.sin, method=method, bounds=(1, 2))
 
 
+class TestBracket:
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    def test_errors(self):
+        # Check that `bracket` raises the errors it is supposed to.
+        def f(x):  # gh-14858
+            return x**2 if ((-1 < x) & (x < 1)) else 100.0
+
+        message = "The algorithm terminated without finding a valid bracket."
+        with pytest.raises(RuntimeError, match=message):
+            optimize.bracket(f, -1, 1)
+
+        def f(x):  # gh-5899
+            return -5 * x**5 + 4 * x**4 - 12 * x**3 + 11 * x**2 - 2 * x + 1
+
+        message = "No valid bracket was found before the iteration limit..."
+        with pytest.raises(RuntimeError, match=message):
+            optimize.bracket(f, -0.5, 0.5, maxiter=10)
+
+
 def test_brent_negative_tolerance():
     assert_raises(ValueError, optimize.brent, np.cos, tol=-.01)
 
