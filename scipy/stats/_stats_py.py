@@ -245,6 +245,8 @@ def gmean(a, axis=0, dtype=None, weights=None):
     ----------
     .. [1] "Weighted Geometric Mean", *Wikipedia*,
            https://en.wikipedia.org/wiki/Weighted_geometric_mean.
+    .. [2] Grossman, J., Grossman, M., Katz, R., "Averages: A New Approach",
+           Archimedes Foundation, 1983
 
     Examples
     --------
@@ -383,6 +385,8 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     .. math::
 
         \left( \frac{ 1 }{ n } \sum_{i=1}^n a_i^p \right)^{ 1 / p }  \, .
+
+    When p=0, it returns the geometric mean.
 
     This mean is also called generalized mean or Hölder mean, and must not be
     confused with the Kolmogorov generalized mean, also called
@@ -2671,11 +2675,24 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
         The z-scores, standardized by mean and standard deviation of
         input array `a`.
 
+    See Also
+    --------
+    numpy.mean : Arithmetic average
+    numpy.std : Arithmetic standard deviation
+    gzscore : Geometric standard score
+
     Notes
     -----
     This function preserves ndarray subclasses, and works also with
     matrices and masked arrays (it uses `asanyarray` instead of
     `asarray` for parameters).
+
+    References
+    ----------
+    .. [1] "Standard score", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Standard_score.
+    .. [2] Huck, S. W., Cross, T. L., Clark, S. B, "Overcoming misconceptions
+           about Z-scores", Teaching Statistics, vol. 8, pp. 38-40, 1986
 
     Examples
     --------
@@ -2762,6 +2779,11 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     ``asarray`` for parameters).
 
     .. versionadded:: 1.8
+
+    References
+    ----------
+    .. [1] "Geometric standard score", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Geometric_standard_deviation#Geometric_standard_score.
 
     Examples
     --------
@@ -2921,6 +2943,7 @@ def gstd(a, axis=0, ddof=1):
     --------
     gmean : Geometric mean
     numpy.std : Standard deviation
+    gzscore : Geometric standard score
 
     Notes
     -----
@@ -2935,7 +2958,9 @@ def gstd(a, axis=0, ddof=1):
 
     References
     ----------
-    .. [1] Kirkwood, T. B., "Geometric means and measures of dispersion",
+    .. [1] "Geometric standard deviation", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Geometric_standard_deviation.
+    .. [2] Kirkwood, T. B., "Geometric means and measures of dispersion",
            Biometrics, vol. 35, pp. 908-909, 1979
 
     Examples
