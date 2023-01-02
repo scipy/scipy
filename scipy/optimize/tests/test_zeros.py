@@ -839,7 +839,8 @@ def test_gh5584(solver_name, rs_interface):
 
 
 def test_newton_complex_gh10103():
-    # gh-10103 reported a problem with `newton` and complex x0.
+    # gh-10103 reported a problem when `newton` is pass a Python complex x0,
+    # no `fprime` (secant method), and no `x1` (`x1` must be constructed).
     # Check that this is resolved.
     def f(z):
         return z - 1
