@@ -559,7 +559,6 @@ class TestRegularGridInterpolator:
                 interp = RegularGridInterpolator(points, values[..., i, j],
                                                  method=method,
                                                  bounds_error=False)
-
                 vs[i, j] = interp(sample).item()
         v2 = np.expand_dims(vs, axis=0)
         assert_allclose(v, v2, atol=1e-14, err_msg=method)
