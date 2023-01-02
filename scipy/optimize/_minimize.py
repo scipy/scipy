@@ -934,7 +934,11 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     else:
         raise ValueError('Unknown solver %s' % method)
 
-    res.x = np.asarray(res.x).squeeze()[()]
+    # gh-16196 reported inconsistencies in the output shape of `res.x`. While
+    # fixing this, future-proof it for when the function is vectorized:
+    # the shape of `res.x` should match that of `res.fun`.
+    res.fun = np.asarray(res.fun)[()]
+    res.x = np.reshape(res.x, res.fun.shape)[()]
     return res
 
 

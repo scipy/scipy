@@ -1881,12 +1881,13 @@ class TestOptimizeScalar:
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     @pytest.mark.parametrize("method", MINIMIZE_SCALAR_METHODS)
     @pytest.mark.parametrize("tol", [1, 1e-6])
-    def test_minimize_scalar_output_dimensionality_gh16196(self, method, tol):
+    @pytest.mark.parametrize("fshape", [(), (1,), (1, 1)])
+    def test_minimize_scalar_dimensionality_gh16196(self, method, tol, fshape):
         # gh-16196 reported that the output shape of `minimize_scalar` was not
-        # consistent when an objective function returned an array.
-        # Check that the output is always a NumPy scalar.
+        # consistent when an objective function returned an array. Check that
+        # `res.fun` and `res.x` are now consistent.
         def f(x):
-            return np.array(x**4).reshape(1)
+            return np.array(x**4).reshape(fshape)
 
         a, b = -0.1, 0.2
         kwargs = (dict(bracket=(a, b)) if method != "bounded"
@@ -1894,8 +1895,7 @@ class TestOptimizeScalar:
         kwargs.update(dict(method=method, tol=tol))
 
         res = optimize.minimize_scalar(f, **kwargs)
-        assert res.x.shape == tuple()
-        assert res.fun.shape == f(res.x).shape
+        assert res.x.shape == res.fun.shape == f(res.x).shape == fshape
 
 
 def test_brent_negative_tolerance():
