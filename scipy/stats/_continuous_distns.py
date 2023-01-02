@@ -2766,8 +2766,9 @@ class genexpon_gen(rv_continuous):
     H.K. Ryu, "An Extension of Marshall and Olkin's Bivariate Exponential
     Distribution", Journal of the American Statistical Association, 1993.
 
-    N. Balakrishnan, "The Exponential Distribution: Theory, Methods and
-    Applications", Asit P. Basu.
+    N. Balakrishnan, Asit P. Basu (editors), *The Exponential Distribution:
+    Theory, Methods and Applications*, Gordon and Breach, 1995.
+    ISBN 10: 2884491929
 
     %(example)s
 
