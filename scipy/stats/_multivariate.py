@@ -2896,6 +2896,7 @@ class invwishart_gen(wishart_gen):
         return _squeeze_output(out)
 
     def entropy(self, df, scale):
+        # reference: eq. (17) from ref. 3
         dim, df, scale = self._process_parameters(df, scale)
         psi_eval_points = [0.5 * (df - dim + i) for i in range(1, dim + 1)]
         psi_eval_points = np.asarray(psi_eval_points)
