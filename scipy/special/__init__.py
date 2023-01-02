@@ -422,7 +422,9 @@ Gamma and related functions
    beta         -- Beta function.
    betaln       -- Natural logarithm of absolute value of beta function.
    betainc      -- Incomplete beta integral.
+   betaincc     -- Complemented incomplete beta integral.
    betaincinv   -- Inverse function to beta integral.
+   betainccinv  -- Inverse of the complemented incomplete beta integral.
    psi          -- The digamma function.
    rgamma       -- Gamma function inverted.
    polygamma    -- Polygamma function n.
@@ -797,7 +799,13 @@ from ._spherical_bessel import (
 # Deprecated namespaces, to be removed in v2.0.0
 from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
 
+
+btdtr = _ufuncs.betainc
+btdtri = _ufuncs.betaincinv
+
 __all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
+    'btdtr',
+    'btdtri',
     'SpecialFunctionWarning',
     'SpecialFunctionError',
     'logsumexp',

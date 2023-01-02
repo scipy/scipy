@@ -162,35 +162,11 @@ class TestCephes:
     def test_besselpoly(self):
         assert_equal(cephes.besselpoly(0,0,0),1.0)
 
-    def test_beta(self):
-        assert_equal(cephes.beta(1,1),1.0)
-        assert_allclose(cephes.beta(-100.3, 1e-200), cephes.gamma(1e-200))
-        assert_allclose(cephes.beta(0.0342, 171), 24.070498359873497,
-                        rtol=1e-13, atol=0)
-
-    def test_betainc(self):
-        assert_equal(cephes.betainc(1,1,1),1.0)
-        assert_allclose(cephes.betainc(0.0342, 171, 1e-10), 0.55269916901806648)
-
-    def test_betaln(self):
-        assert_equal(cephes.betaln(1,1),0.0)
-        assert_allclose(cephes.betaln(-100.3, 1e-200), cephes.gammaln(1e-200))
-        assert_allclose(cephes.betaln(0.0342, 170), 3.1811881124242447,
-                        rtol=1e-14, atol=0)
-
-    def test_betaincinv(self):
-        assert_equal(cephes.betaincinv(1,1,1),1.0)
-        assert_allclose(cephes.betaincinv(0.0342, 171, 0.25),
-                        8.4231316935498957e-21, rtol=3e-12, atol=0)
-
-    def test_beta_inf(self):
-        assert_(np.isinf(special.beta(-1, 2)))
-
     def test_btdtr(self):
-        assert_equal(cephes.btdtr(1,1,1),1.0)
+        assert_equal(special.btdtr(1, 1, 1), 1.0)
 
     def test_btdtri(self):
-        assert_equal(cephes.btdtri(1,1,1),1.0)
+        assert_equal(special.btdtri(1, 1, 1), 1.0)
 
     def test_btdtria(self):
         assert_equal(cephes.btdtria(1,1,1),5.0)
@@ -1284,24 +1260,109 @@ class TestBernoulli:
 
 
 class TestBeta:
+    """
+    Test beta and betaln.
+    """
+
     def test_beta(self):
-        bet = special.beta(2,4)
+        assert_equal(special.beta(1, 1), 1.0)
+        assert_allclose(special.beta(-100.3, 1e-200), special.gamma(1e-200))
+        assert_allclose(special.beta(0.0342, 171), 24.070498359873497,
+                        rtol=1e-13, atol=0)
+
+        bet = special.beta(2, 4)
         betg = (special.gamma(2)*special.gamma(4))/special.gamma(6)
-        assert_almost_equal(bet,betg,8)
+        assert_allclose(bet, betg, rtol=1e-13)
+
+    def test_beta_inf(self):
+        assert_(np.isinf(special.beta(-1, 2)))
 
     def test_betaln(self):
-        betln = special.betaln(2,4)
-        bet = log(abs(special.beta(2,4)))
-        assert_almost_equal(betln,bet,8)
+        assert_equal(special.betaln(1, 1), 0.0)
+        assert_allclose(special.betaln(-100.3, 1e-200),
+                        special.gammaln(1e-200))
+        assert_allclose(special.betaln(0.0342, 170), 3.1811881124242447,
+                        rtol=1e-14, atol=0)
 
-    def test_betainc(self):
-        btinc = special.betainc(1,1,.2)
-        assert_almost_equal(btinc,0.2,8)
+        betln = special.betaln(2, 4)
+        bet = log(abs(special.beta(2, 4)))
+        assert_allclose(betln, bet, rtol=1e-13)
 
-    def test_betaincinv(self):
-        y = special.betaincinv(2,4,.5)
-        comp = special.betainc(2,4,y)
-        assert_almost_equal(comp,.5,5)
+
+class TestBetaInc:
+    """
+    Tests for betainc, betaincinv, betaincc, betainccinv.
+    """
+
+    def test_a1_b1(self):
+        # betainc(1, 1, x) is x.
+        x = np.array([0, 0.25, 1])
+        assert_equal(special.betainc(1, 1, x), x)
+        assert_equal(special.betaincinv(1, 1, x), x)
+        assert_equal(special.betaincc(1, 1, x), 1 - x)
+        assert_equal(special.betainccinv(1, 1, x), 1 - x)
+
+    # Nontrival expected values computed with mpmath:
+    #    from mpmath import mp
+    #    mp.dps = 100
+    #    p = mp.betainc(a, b, 0, x, regularized=True)
+    #
+    # or, e.g.,
+    #
+    #    p = 0.25
+    #    a, b = 0.0342, 171
+    #    x = mp.findroot(lambda t:
+    #                        mp.betainc(a, b, 0, t, regularized=True) - p,
+    #                    (8e-21, 9e-21), solver='anderson')
+    #
+    @pytest.mark.parametrize(
+        'a, b, x, p',
+        [(2, 4, 0.3138101704556974, 0.5),
+         (0.0342, 171.0, 1e-10, 0.552699169018070910641),
+         # gh-3761:
+         (0.0342, 171, 8.42313169354797e-21, 0.25),
+         # gh-4244:
+         (0.0002742794749792665, 289206.03125, 1.639984034231756e-56,
+          0.9688708782196045),
+         # gh-12796:
+         (4, 99997, 0.0001947841578892121, 0.999995)])
+    def test_betainc_betaincinv(self, a, b, x, p):
+        p1 = special.betainc(a, b, x)
+        assert_allclose(p1, p, rtol=1e-15)
+        x1 = special.betaincinv(a, b, p)
+        assert_allclose(x1, x, rtol=1e-13)
+
+    # Expected values computed with mpmath:
+    #     from mpmath import mp
+    #     mp.dps = 100
+    #     p = mp.betainc(a, b, x, 1, regularized=True)
+    @pytest.mark.parametrize('a, b, x, p',
+                             [(2.5, 3.0, 0.25, 0.833251953125),
+                              (7.5, 13.25, 0.375, 0.43298734645560368593),
+                              (0.125, 7.5, 0.425, 0.0006688257851314237),
+                              (0.125, 18.0, 1e-6, 0.72982359145096327654),
+                              (0.125, 18.0, 0.996, 7.2745875538380150586e-46),
+                              (0.125, 24.0, 0.75, 3.70853404816862016966e-17),
+                              (16.0, 0.75, 0.99999999975,
+                               5.4408759277418629909e-07),
+                              # gh-4677 (numbers from stackoverflow question):
+                              (0.4211959643503401, 16939.046996018118,
+                               0.000815296167195521, 1e-7)])
+    def test_betaincc_betainccinv(self, a, b, x, p):
+        p1 = special.betaincc(a, b, x)
+        assert_allclose(p1, p, rtol=2e-15)
+        x1 = special.betainccinv(a, b, p)
+        assert_allclose(x1, x, rtol=8e-15)
+
+    @pytest.mark.parametrize('func', [special.betainc, special.betaincinv,
+                                      special.betaincc, special.betainccinv])
+    @pytest.mark.parametrize('args', [(-1.0, 2, 0.5), (0, 2, 0.5),
+                                      (1.5, -2.0, 0.5), (1.5, 0, 0.5),
+                                      (1.5, 2.0, -0.3), (1.5, 2.0, 1.1)])
+    def test_betainc_domain_errors(self, func, args):
+        with special.errstate(domain='raise'):
+            with pytest.raises(special.SpecialFunctionError, match='domain'):
+                special.betainc(*args)
 
 
 class TestCombinatorics:
