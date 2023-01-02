@@ -2172,12 +2172,12 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         Parameters (over given interval) which minimize the
         objective function.
     fval : number
-        The function value evaluated at the minimizer.
+        (Optional output) The function value evaluated at the minimizer.
     ierr : int
-        An error flag (0 if converged, 1 if maximum number of
+        (Optional output) An error flag (0 if converged, 1 if maximum number of
         function calls reached).
     numfunc : int
-      The number of function calls made.
+        (Optional output) The number of function calls made.
 
     See also
     --------
@@ -2212,12 +2212,13 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     >>> minimum = f(minimizer)
     >>> minimum
     0.0
-    >>> minimizer = optimize.fminbound(f, 3, 4)
+    >>> res = optimize.fminbound(f, 3, 4, full_output=True)
+    >>> minimizer, fval, ierr, numfunc = res
     >>> minimizer
     3.000005960860986
     >>> minimum = f(minimizer)
-    >>> minimum
-    4.000023843479476
+    >>> minimum, fval
+    (4.000023843479476, 4.000023843479476)
     """
     options = {'xatol': xtol,
                'maxiter': maxfun,
@@ -2559,7 +2560,7 @@ class Brent:
 def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     """
     Given a function of one variable and a possible bracket, return
-    the local minimum of the function isolated to a fractional precision
+    a local minimizer of the function isolated to a fractional precision
     of tol.
 
     Parameters
@@ -2569,11 +2570,11 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     args : tuple, optional
         Additional arguments (if present).
     brack : tuple, optional
-        Either a triple (xa,xb,xc) where xa<xb<xc and func(xb) <
-        func(xa), func(xc) or a pair (xa,xb) which are used as a
-        starting interval for a downhill bracket search (see
-        `bracket`). Providing the pair (xa,xb) does not always mean
-        the obtained solution will satisfy xa<=x<=xb.
+        Either a triple ``(xa, xb, xc)`` satisfying ``xa < xb < xc`` and
+        ``func(xb) < func(xa) and  func(xb) < func(xc)``, or a pair
+        ``(xa, xb)`` to be used as initial points for a downhill bracket search
+        (see `scipy.optimize.bracket`).
+        The minimizer ``x`` will not necessarily satisfy ``xa <= x <= xb``.
     tol : float, optional
         Relative error in solution `xopt` acceptable for convergence.
     full_output : bool, optional
@@ -2587,11 +2588,11 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     xmin : ndarray
         Optimum point.
     fval : float
-        Optimum value.
+        (Optional output) Optimum function value.
     iter : int
-        Number of iterations.
+        (Optional output) Number of iterations.
     funcalls : int
-        Number of objective function evaluations made.
+        (Optional output) Number of objective function evaluations made.
 
     See also
     --------
@@ -2604,26 +2605,27 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     convergence of golden section method.
 
     Does not ensure that the minimum lies in the range specified by
-    `brack`. See `fminbound`.
+    `brack`. See `scipy.optimize.fminbound`.
 
     Examples
     --------
     We illustrate the behaviour of the function when `brack` is of
     size 2 and 3 respectively. In the case where `brack` is of the
-    form (xa,xb), we can see for the given values, the output need
-    not necessarily lie in the range (xa,xb).
+    form ``(xa, xb)``, we can see for the given values, the output does
+    not necessarily lie in the range ``(xa, xb)``.
 
     >>> def f(x):
-    ...     return x**2
+    ...     return (x-1)**2
 
     >>> from scipy import optimize
 
-    >>> minimum = optimize.brent(f,brack=(1,2))
-    >>> minimum
-    0.0
-    >>> minimum = optimize.brent(f,brack=(-1,0.5,2))
-    >>> minimum
-    -2.7755575615628914e-17
+    >>> minimizer = optimize.brent(f, brack=(1, 2))
+    >>> minimizer
+    1
+    >>> res = optimize.brent(f, brack=(-1, 0.5, 2), full_output=True)
+    >>> xmin, fval, iter, funcalls = res
+    >>> f(xmin), fval
+    (0.0, 0.0)
 
     """
     options = {'xtol': tol,
@@ -2690,11 +2692,11 @@ def _minimize_scalar_brent(func, brack=None, args=(), xtol=1.48e-8,
 def golden(func, args=(), brack=None, tol=_epsilon,
            full_output=0, maxiter=5000):
     """
-    Return the minimum of a function of one variable using golden section
+    Return the minimizer of a function of one variable using the golden section
     method.
 
     Given a function of one variable and a possible bracketing interval,
-    return the minimum of the function isolated to a fractional precision of
+    return a minimizer of the function isolated to a fractional precision of
     tol.
 
     Parameters
@@ -2704,17 +2706,26 @@ def golden(func, args=(), brack=None, tol=_epsilon,
     args : tuple, optional
         Additional arguments (if present), passed to func.
     brack : tuple, optional
-        Triple (a,b,c), where (a<b<c) and func(b) <
-        func(a),func(c). If bracket consists of two numbers (a,
-        c), then they are assumed to be a starting interval for a
-        downhill bracket search (see `bracket`); it doesn't always
-        mean that obtained solution will satisfy a<=x<=c.
+        Either a triple ``(xa, xb, xc)`` where ``xa < xb < xc`` and
+        ``func(xb) < func(xa) and  func(xb) < func(xc)``, or a pair (xa, xb)
+        to be used as initial points for a downhill bracket search (see
+        `scipy.optimize.bracket`).
+        The minimizer ``x`` will not necessarily satisfy ``xa <= x <= xb``.
     tol : float, optional
         x tolerance stop criterion
     full_output : bool, optional
         If True, return optional outputs.
     maxiter : int
         Maximum number of iterations to perform.
+
+    Returns
+    -------
+    xmin : ndarray
+        Optimum point.
+    fval : float
+        (Optional output) Optimum function value.
+    funcalls : int
+        (Optional output) Number of objective function evaluations made.
 
     See also
     --------
@@ -2734,16 +2745,17 @@ def golden(func, args=(), brack=None, tol=_epsilon,
     not necessarily lie in the range ``(xa, xb)``.
 
     >>> def f(x):
-    ...     return x**2
+    ...     return (x-1)**2
 
     >>> from scipy import optimize
 
-    >>> minimum = optimize.golden(f, brack=(1, 2))
-    >>> minimum
-    1.5717277788484873e-162
-    >>> minimum = optimize.golden(f, brack=(-1, 0.5, 2))
-    >>> minimum
-    -1.5717277788484873e-162
+    >>> minimizer = optimize.golden(f, brack=(1, 2))
+    >>> minimizer
+    1
+    >>> res = optimize.golden(f, brack=(-1, 0.5, 2), full_output=True)
+    >>> xmin, fval, funcalls = res
+    >>> f(xmin), fval
+    (9.925165290385052e-18, 9.925165290385052e-18)
 
     """
     options = {'xtol': tol, 'maxiter': maxiter}

@@ -761,11 +761,13 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         Scalar function, must return a scalar.
     bracket : sequence, optional
         For methods 'brent' and 'golden', `bracket` defines the bracketing
-        interval and can either have three items ``(a, b, c)`` so that
-        ``a < b < c`` and ``fun(b) < fun(a), fun(c)`` or two items ``a`` and
-        ``c`` which are assumed to be a starting interval for a downhill
-        bracket search (see `bracket`); it doesn't always mean that the
-        obtained solution will satisfy ``a <= x <= c``.
+        interval and is required.
+        Either a triple ``(xa, xb, xc)`` satisfying ``xa < xb < xc`` and
+        ``func(xb) < func(xa) and  func(xb) < func(xc)``, or a pair
+        ``(xa, xb)`` to be used as initial points for a downhill bracket search
+        (see `scipy.optimize.bracket`).
+        The minimizer ``res.x`` will not necessarily satisfy
+        ``xa <= res.x <= xb``.
     bounds : sequence, optional
         For method 'bounded', `bounds` is mandatory and must have two finite
         items corresponding to the optimization bounds.
