@@ -2791,8 +2791,18 @@ class genexpon_gen(rv_continuous):
     def _cdf(self, x, a, b, c):
         return -sc.expm1((-a-b)*x + b*(-sc.expm1(-c*x))/c)
 
+    def _ppf(self, p, a, b, c):
+        s = a + b
+        t = (b - c*np.log1p(-p))/s
+        return (t + sc.lambertw(-b/s * np.exp(-t)).real)/c
+
     def _sf(self, x, a, b, c):
         return np.exp((-a-b)*x + b*(-sc.expm1(-c*x))/c)
+
+    def _isf(self, p, a, b, c):
+        s = a + b
+        t = (b - c*np.log(p))/s
+        return (t + sc.lambertw(-b/s * np.exp(-t)).real)/c
 
 
 genexpon = genexpon_gen(a=0.0, name='genexpon')
