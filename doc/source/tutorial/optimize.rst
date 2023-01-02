@@ -83,7 +83,7 @@ and an offset `b`:
     f\left(\mathbf{x}, a, b\right)=\sum_{i=1}^{N-1}a\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2} + b.
 
 Again using the :func:`minimize` routine this can be solved by the following
-code block for the example parameters `a=0.5` and `b=1`.
+code block for the example parameters ``a=0.5`` and ``b=1``.
 
     >>> def rosen_with_args(x, a, b):
     ...     """The Rosenbrock function with additional arguments"""
@@ -91,7 +91,7 @@ code block for the example parameters `a=0.5` and `b=1`.
 
     >>> x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
     >>> res = minimize(rosen_with_args, x0, method='nelder-mead',
-    ...		       args=(0.5, 1.), options={'xatol': 1e-8, 'disp': True})
+    ...	               args=(0.5, 1.), options={'xatol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 1.000000
              Iterations: 319
@@ -99,6 +99,22 @@ code block for the example parameters `a=0.5` and `b=1`.
 
     >>> print(res.x)
     [1.         1.         1.         1.         0.99999999]
+
+As an alternative to using the ``args`` parameter of :func:`minimize`, simply
+wrap the objective function in a new function that accepts only ``x``. This
+approach is also useful when it is necessary to pass additional parameters to
+the objective function as keyword arguments.
+
+    >>> def rosen_with_args(x, a, *, b):  # b is a keyword-only argument
+    ...     return sum(a*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0) + b
+    >>> def wrapped_rosen_without_args(x):
+    ...     return rosen_with_args(x, 0.5, b=1.)  # pass in `a` and `b`
+    >>> x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+    >>> res = minimize(wrapped_rosen_without_args, x0, method='nelder-mead',
+    ...                options={'xatol': 1e-8,})
+    >>> print(res.x)
+    [1.         1.         1.         1.         0.99999999]
+
 
 Broyden-Fletcher-Goldfarb-Shanno algorithm (``method='BFGS'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

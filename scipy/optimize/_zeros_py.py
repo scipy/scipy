@@ -1373,7 +1373,7 @@ def toms748(f, a, b, args=(), k=1,
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol / 4:
-        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol/4))
     maxiter = operator.index(maxiter)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")

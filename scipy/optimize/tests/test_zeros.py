@@ -838,6 +838,29 @@ def test_gh5584(solver_name, rs_interface):
     assert_allclose(res.root, 0, atol=1e-8)
 
 
+def test_gh13407():
+    # gh-13407 reported that the message produced by `scipy.optimize.toms748`
+    # when `rtol < eps` is incorrect, and also that toms748 is unusual in
+    # accepting `rtol` as low as eps while other solvers raise at 4*eps. Check
+    # that the error message has been corrected and that `rtol=eps` can produce
+    # a lower function value than `rtol=4*eps`.
+    def f(x):
+        return x**3 - 2*x - 5
+
+    xtol = 1e-300
+    eps = np.finfo(float).eps
+    x1 = zeros.toms748(f, 1e-10, 1e10, xtol=xtol, rtol=1*eps)
+    f1 = f(x1)
+    x4 = zeros.toms748(f, 1e-10, 1e10, xtol=xtol, rtol=4*eps)
+    f4 = f(x4)
+    assert f1 < f4
+
+    # using old-style syntax to get exactly the same message
+    message = r"rtol too small \(%g < %g\)" % (eps/2, eps)
+    with pytest.raises(ValueError, match=message):
+        zeros.toms748(f, 1e-10, 1e10, xtol=xtol, rtol=eps/2)
+
+
 def test_newton_complex_gh10103():
     # gh-10103 reported a problem when `newton` is pass a Python complex x0,
     # no `fprime` (secant method), and no `x1` (`x1` must be constructed).
