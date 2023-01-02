@@ -483,7 +483,7 @@ def sobol_indices(
     ...     l_bounds=[-np.pi, -np.pi, -np.pi],
     ...     u_bounds=[np.pi, np.pi, np.pi]
     ... )
-    >>> output = f_ishigami(sample)
+    >>> output = f_ishigami(sample.T)
 
     Now we can do scatter plots of the output with respect to each parameter.
     This gives a visual way to understand how each parameter impact the
