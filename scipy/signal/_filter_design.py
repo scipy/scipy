@@ -290,15 +290,15 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     Parameters
     ----------
     b : array_like
-        Numerator of a linear filter. If `b` has dimension greater than 1,
-        it is assumed that the coefficients are stored in the first dimension,
-        and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
-        array must be compatible for broadcasting.
+        Numerator of a linear filter. Multidimentional inputs are not supported,
+        and the shape of the frequencies array must be compatible for broadcasting.
+        If `b` has dimension greater than 1, use `scipy.signal.freqz(np.zeros((128, 10, 1)))` or
+        b[..., np.newaxis] to adjust the dimension.
     a : array_like
-        Denominator of a linear filter. If `b` has dimension greater than 1,
-        it is assumed that the coefficients are stored in the first dimension,
-        and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
-        array must be compatible for broadcasting.
+        Denominator of a linear filter. Multidimentional inputs are not supported,
+        and the shape of the frequencies array must be compatible for broadcasting.
+        If `a` has dimension greater than 1, use `scipy.signal.freqz(np.zeros((128, 10, 1)))` or
+        a[..., np.newaxis] to adjust the dimension.
     worN : {None, int, array_like}, optional
         If a single integer, then compute at that many frequencies (default is
         N=512). This is a convenient alternative to::
