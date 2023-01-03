@@ -169,33 +169,71 @@ through the ``jac`` parameter as illustrated below.
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-Another way to supply gradient information is to write a single
-function which returns both the objective and the gradient: this is
-indicated by setting ``jac=True``. In this case, the Python function
-to be optimized must return a tuple whose first value is the objective
-and whose second value represents the gradient. For this example, the
-objective can be specified in the following way:
+Avoiding Redundant Calculation
+""""""""""""""""""""""""""""""
 
-    >>> def rosen_and_der(x):
-    ...	    objective = sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
-    ...     xm = x[1:-1]
-    ...     xm_m1 = x[:-2]
-    ...     xm_p1 = x[2:]
-    ...     der = np.zeros_like(x)
-    ...     der[1:-1] = 200*(xm-xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1-xm)
-    ...     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
-    ...     der[-1] = 200*(x[-1]-x[-2]**2)
-    ...     return objective, der
+It is common for the objective function and its gradient to share parts of the
+calculation. For instance, consider the following problem.
 
-    >>> res = minimize(rosen_and_der, x0, method='BFGS', jac=True,
-    ...                options={'disp': True})
-             Current function value: 0.000000
-             Iterations: 25                     # may vary
-             Function evaluations: 30
-             Gradient evaluations: 30
+    >>> def f(x):
+    ...    return -expensive(x[0])**2
+    >>>
+    >>> def df(x):
+    ...     return -2 * expensive(x[0]) * dexpensive(x[0])
+    >>>
+    >>> def expensive(x):
+    ...     # this function is computationally expensive!
+    ...     expensive.count += 1  # let's keep track of how many times it runs
+    ...     return np.sin(x)
+    >>> expensive.count = 0
+    >>>
+    >>> def dexpensive(x):
+    ...     return np.cos(x)
+    >>>
+    >>> res = minimize(f, 0.5, jac=df)
+    >>> res.fun
+    -0.9999999999999174
+    >>> res.nfev, res.njev
+    6, 6
+    >>> expensive.count
+    12
 
-Supplying objective and gradient in a single function can help to avoid
-redundant computations and therefore speed up the optimization significantly.
+Here, ``expensive`` is called 12 times: six times in the objective function and
+six times from the gradient. One way of reducing redundant calculations is to
+create a single function that returns both the objective function and the
+gradient.
+
+    >>> def f_and_df(x):
+    ...     expensive_value = expensive(x[0])
+    ...     return (-expensive_value**2,  # objective function
+    ...             -2*expensive_value*dexpensive(x[0]))  # gradient
+    >>>
+    >>> expensive.count = 0  # reset the counter
+    >>> res = minimize(f_and_df, 0.5, jac=True)
+    >>> res.fun
+    -0.9999999999999174
+    >>> expensive.count
+    6
+
+When we call minimize, we specify ``jac==True`` to indicate that the provided
+function returns both the objective function and its gradient. While
+convenient, not all :mod:`scipy.optimize` functions support this feature,
+and moreover, it is only for sharing calculations between the function and its
+gradient, whereas in some problems we will want to share calculations with the
+Hessian (second derivative of the objective function) and constraints. A more
+general approach is to memoize the expensive parts of the calculation. In
+simple situations, this can be accomplished with the
+:func:`functools.lru_cache` wrapper.
+
+    >>> from functools import lru_cache
+    >>> expensive.count = 0  # reset the counter
+    >>> expensive = lru_cache(expensive)
+    >>> res = minimize(f, 0.5, jac=df)
+    >>> res.fun
+    -0.9999999999999174
+    >>> expensive.count
+    6
+
 
 Newton-Conjugate-Gradient algorithm (``method='Newton-CG'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -685,7 +723,6 @@ or a Hessian-vector product through the parameter ``hessp``.
     Number of iterations: 12, function evaluations: 8, CG iterations: 7, optimality: 2.99e-09, constraint violation: 1.11e-16, execution time: 0.018 s.
     >>> print(res.x)
     [0.41494531 0.17010937]
-
 
 Alternatively, the first and second derivatives of the objective function can be approximated.
 For instance,  the Hessian can be approximated with :func:`SR1` quasi-Newton approximation
