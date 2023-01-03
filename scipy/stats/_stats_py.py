@@ -386,7 +386,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
 
         \left( \frac{ 1 }{ n } \sum_{i=1}^n a_i^p \right)^{ 1 / p }  \, .
 
-    When p=0, it returns the geometric mean.
+    When ``p=0``, it returns the geometric mean.
 
     This mean is also called generalized mean or Hölder mean, and must not be
     confused with the Kolmogorov generalized mean, also called
