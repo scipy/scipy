@@ -2390,6 +2390,8 @@ class Brent:
         self.iter = 0
         self.funcalls = 0
         self.disp = disp
+        self.bracket_status = 0
+        self.bracket_message = None
 
     # need to rethink design of set_bracket (new options, etc.)
     def set_bracket(self, brack=None):
@@ -2402,11 +2404,14 @@ class Brent:
         brack = self.brack
         ### BEGIN core bracket_info code ###
         ### carefully DOCUMENT any CHANGES in core ##
+        status = 0
+        message = None
         if brack is None:
-            xa, xb, xc, fa, fb, fc, funcalls = bracket(func, args=args)
+            res = _bracket(func, args=args)
+            xa, xb, xc, fa, fb, fc, funcalls, status, message = res
         elif len(brack) == 2:
-            xa, xb, xc, fa, fb, fc, funcalls = bracket(func, xa=brack[0],
-                                                       xb=brack[1], args=args)
+            res = _bracket(func, xa=brack[0], xb=brack[1], args=args)
+            xa, xb, xc, fa, fb, fc, funcalls, status, message = res
         elif len(brack) == 3:
             xa, xb, xc = brack
             if (xa > xc):  # swap so xa < xc can be assumed
@@ -2431,12 +2436,25 @@ class Brent:
                              "length 2 or 3 sequence.")
         ### END core bracket_info code ###
 
-        return xa, xb, xc, fa, fb, fc, funcalls
+        return xa, xb, xc, fa, fb, fc, funcalls, status, message
 
     def optimize(self):
         # set up for optimization
         func = self.func
-        xa, xb, xc, fa, fb, fc, funcalls = self.get_bracket_info()
+        res = self.get_bracket_info()
+        xa, xb, xc, fa, fb, fc, funcalls, status, message = res
+        if status:
+            xs = [xa, xb, xc]
+            fs = [fa, fb, fc]
+            imin = np.argmin(fs)
+            self.xmin = xs[imin]
+            self.fval = fs[imin]
+            self.iter = 0
+            self.funcalls = funcalls
+            self.bracket_status = status
+            self.bracket_message = message
+            return
+
         _mintol = self._mintol
         _cg = self._cg
         #################################
@@ -2556,6 +2574,10 @@ class Brent:
             return self.xmin
 
 
+class BracketError(RuntimeError):
+    pass
+
+
 def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     """
     Given a function of one variable and a possible bracket, return
@@ -2629,6 +2651,10 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     options = {'xtol': tol,
                'maxiter': maxiter}
     res = _minimize_scalar_brent(func, brack, args, **options)
+
+    if not res.success and "bracket" in res.message:
+        raise BracketError(res.message)
+
     if full_output:
         return res['x'], res['fun'], res['nit'], res['nfev']
     else:
@@ -2668,7 +2694,8 @@ def _minimize_scalar_brent(func, brack=None, args=(), xtol=1.48e-8,
     brent.optimize()
     x, fval, nit, nfev = brent.get_result(full_output=True)
 
-    success = nit < maxiter and not (np.isnan(x) or np.isnan(fval))
+    success = (nit < maxiter and not (np.isnan(x) or np.isnan(fval))
+               and not brent.bracket_status)
 
     if success:
         message = ("\nOptimization terminated successfully;\n"
@@ -2679,6 +2706,8 @@ def _minimize_scalar_brent(func, brack=None, args=(), xtol=1.48e-8,
             message = "\nMaximum number of iterations exceeded"
         if np.isnan(x) or np.isnan(fval):
             message = f"{_status_message['nan']}"
+        if brent.bracket_status:
+            message = brent.bracket_message
 
     if disp:
         print(message)
@@ -2748,6 +2777,10 @@ def golden(func, args=(), brack=None, tol=_epsilon,
     """
     options = {'xtol': tol, 'maxiter': maxiter}
     res = _minimize_scalar_golden(func, brack, args, **options)
+
+    if not res.success and "bracket" in res.message:
+        raise BracketError(res.message)
+
     if full_output:
         return res['x'], res['fun'], res['nfev']
     else:
@@ -2773,11 +2806,14 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     """
     _check_unknown_options(unknown_options)
     tol = xtol
+    bracket_status = 0
+    bracket_message = None
     if brack is None:
-        xa, xb, xc, fa, fb, fc, funcalls = bracket(func, args=args)
+        res = _bracket(func, args=args)
+        xa, xb, xc, fa, fb, fc, funcalls, bracket_status, bracket_message = res
     elif len(brack) == 2:
-        xa, xb, xc, fa, fb, fc, funcalls = bracket(func, xa=brack[0],
-                                                   xb=brack[1], args=args)
+        res = _bracket(func, xa=brack[0], xb=brack[1], args=args)
+        xa, xb, xc, fa, fb, fc, funcalls, bracket_status, bracket_message = res
     elif len(brack) == 3:
         xa, xb, xc = brack
         if (xa > xc):  # swap so xa < xc can be assumed
@@ -2798,6 +2834,14 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         funcalls = 3
     else:
         raise ValueError("Bracketing interval must be length 2 or 3 sequence.")
+
+    if bracket_status:
+        xs, fs = [xa, xb, xc], [fa, fb, fc]
+        imin = np.argmin(xs)
+        if disp:
+            print(bracket_message)
+        return OptimizeResult(fun=fs[imin], nfev=funcalls, x=xs[imin],
+                              nit=0, success=False, message=bracket_message)
 
     _gR = 0.61803399  # golden ratio conjugate: 2.0/(1.0+sqrt(5.0))
     _gC = 1.0 - _gR
@@ -2940,6 +2984,16 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     it follows that a minimum must lie within the bracket.
 
     """
+    res = _bracket(func, xa, xb, args, grow_limit, maxiter)
+    xa, xb, xc, fa, fb, fc, funcalls, status, message = res
+    if status:
+        raise BracketError(message)
+    return xa, xb, xc, fa, fb, fc, funcalls
+
+
+def _bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
+    # performs the underlying calculation of _bracket but returns status
+    # information rather than raising error
     _gold = 1.618034  # golden ratio: (1.0+sqrt(5.0))/2.0
     _verysmall_num = 1e-21
     xa, xb = np.asarray([xa, xb])
@@ -2952,6 +3006,8 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     fc = func(*((xc,) + args))
     funcalls = 3
     iter = 0
+    status = 0  # 0 is nominal, 1 is maxiter, 2 is invalid bracket
+    msg = None
     while (fc < fb):
         tmp1 = (xb - xa) * (fb - fc)
         tmp2 = (xb - xc) * (fb - fa)
@@ -2962,11 +3018,12 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
             denom = 2.0 * val
         w = xb - ((xb - xc) * tmp2 - (xb - xa) * tmp1) / denom
         wlim = xb + grow_limit * (xc - xb)
-        msg = ("No valid bracket was found before the iteration limit was "
-               "reached. Consider trying different initial points or "
-               "increasing `maxiter`.")
         if iter > maxiter:
-            raise RuntimeError(msg)
+            status = 1
+            msg = ("No valid bracket was found before the iteration limit was "
+                   "reached. Consider trying different initial points or "
+                   "increasing `maxiter`.")
+            break
         iter += 1
         if (w - xc) * (xb - w) > 0.0:
             fw = func(*((w,) + args))
@@ -3010,14 +3067,16 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         fb = fc
         fc = fw
 
-    msg = ("The algorithm terminated without finding a valid bracket. "
-           "Consider trying different initial points.")
-    if not ((fb < fc and fb <= fa) or (fb < fa and fb <= fc)
-            and (xa < xb < xc or xc < xb < xa) and
-            np.all(np.isfinite([xa, xb, xc]))):
-        raise RuntimeError(msg)
+    if not status:
+        # three conditions for a valid bracket
+        cond1 = (fb < fc and fb <= fa) or (fb < fa and fb <= fc)
+        cond2 = (xa < xb < xc or xc < xb < xa)
+        cond3 = np.all(np.isfinite([xa, xb, xc]))
+        status = 2 if not (cond1 and cond2 and cond3) else status
+        msg = ("The algorithm terminated without finding a valid bracket. "
+               "Consider trying different initial points.")
 
-    return xa, xb, xc, fa, fb, fc, funcalls
+    return xa, xb, xc, fa, fb, fc, funcalls, status, msg
 
 
 def _line_for_search(x0, alpha, lower_bound, upper_bound):
@@ -3112,7 +3171,10 @@ def _linesearch_powell(func, p, xi, tol=1e-3,
         return ((fval, p, xi) if fval is not None else (func(p), p, xi))
     elif lower_bound is None and upper_bound is None:
         # non-bounded minimization
-        alpha_min, fret, _, _ = brent(myfunc, full_output=1, tol=tol)
+        try:
+            alpha_min, fret, _, _ = brent(myfunc, full_output=1, tol=tol)
+        except BracketError:
+            alpha_min, fret = np.nan, np.nan
         xi = alpha_min * xi
         return squeeze(fret), p + xi, xi
     else:
