@@ -4684,11 +4684,11 @@ def fisher_exact(table, alternative='two-sided'):
     Fisher's test.
 
     >>> from scipy.stats import fisher_exact
-    >>> res = fisher_exact([[7, 17], [15, 5]])
+    >>> res = fisher_exact([[7, 17], [15, 5]], alternative='less')
     >>> res.statistic
     0.13725490196078433
     >>> res.pvalue
-    0.005768386750469949
+    0.0028841933752349743
 
     Using a significance level of 5%, we would reject the null hypothesis in
     favor of the alternative hypothesis: "the effect of acetazolamide
@@ -4712,11 +4712,11 @@ def fisher_exact(table, alternative='two-sided'):
         any conditioning on the marginals.
 
         >>> from scipy.stats import boschloo_exact
-        >>> res = boschloo_exact([[7, 17], [15, 5]])
+        >>> res = boschloo_exact([[7, 17], [15, 5]], alternative='less')
         >>> res.statistic
         0.0028841933752349743
         >>> res.pvalue
-        0.0030282813335134203
+        0.0015141406667567101
 
         We verify that the p-value is less than with `fisher_exact`.
 
