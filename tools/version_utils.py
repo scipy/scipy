@@ -6,9 +6,9 @@ import argparse
 MAJOR = 1
 MINOR = 10
 MICRO = 0
-ISRELEASED = False
+ISRELEASED = True
 IS_RELEASE_BRANCH = True
-VERSION = '%d.%d.%drc3' % (MAJOR, MINOR, MICRO)
+VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 
 def get_version_info(source_root):
