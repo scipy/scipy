@@ -7513,27 +7513,31 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     In the forest, 44% of the canopy volume was Douglas fir,
     24% was ponderosa pine, 29% was grand fir, and 3% was western larch.
     The authors observed the behavior of several species of birds, one of
-    which was the red-breasted nuthatch. They made 189 observations of
-    foraging of this species noting that 23% of birds favoured Douglas
-    fir, 27% ponderosa pine, 29% grand fir, and 21% western larch.
+    which was the red-breasted nuthatch. They made 189 observations of this
+    species foraging, recording 43 ("23%") of observations in Douglas fir, 
+    52 ("28%") in ponderosa pine, 54 ("29%") in grand fir, and 40 ("21%") in
+    western larch.
 
     Using a chi-square test, we can test the null hypothesis that the
     proportions of foraging events are equal to the proportions of canopy
-    volume. As the authors of the paper, let's consider a significance level
-    of 1%.
+    volume. The authors of the paper considered a p-value less than 1% to be
+    significant.
 
     Using the above proportions of canopy volume and observed events, we can
     infer expected frequencies.
 
     >>> import numpy as np
     >>> f_exp = np.array([44, 24, 29, 3]) / 100 * 189
-    >>> f_obs = np.array([23, 27, 29, 21]) / 100 * 189
+
+    The observed frequencies of foraging were:
+
+    >>> f_obs = np.array([43, 52, 54, 40])
 
     We can now compare the observed frequencies with the expected frequencies.
 
     >>> from scipy.stats import chisquare
     >>> chisquare(f_obs=f_obs, f_exp=f_exp)
-    Power_divergenceResult(statistic=223.77170454545453, pvalue=3.071583663409687e-48)
+    Power_divergenceResult(statistic=228.23515947653874, pvalue=3.3295585338846486e-49)
 
     The p-value is well below the chosen significance level. Hence, the
     authors considered the difference to be significant and concluded
