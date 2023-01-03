@@ -2,8 +2,6 @@
 SciPy 1.10.0 Release Notes
 ==========================
 
-.. note:: Scipy 1.10.0 is not released yet!
-
 .. contents::
 
 SciPy 1.10.0 is the culmination of 6 months of hard work. It contains
@@ -419,7 +417,7 @@ Authors
 * David Gilbertson (1) +
 * Ralf Gommers (251)
 * Marco Gorelli (2) +
-* Matt Haberland (383)
+* Matt Haberland (387)
 * Andrew Hawryluk (2) +
 * Christoph Hohnerlein (2) +
 * Loïc Houpert (2) +
@@ -489,7 +487,7 @@ Authors
 * Ilhan Polat (6)
 * Akshita Prasanth (2) +
 * Sean Quinn (1)
-* Tyler Reddy (142)
+* Tyler Reddy (155)
 * Martin Reinecke (1)
 * Ned Richards (1)
 * Marie Roald (1) +
@@ -509,6 +507,7 @@ Authors
 * Alexander Soare (1) +
 * Bjørge Solli (2) +
 * Scott Staniewicz (1)
+* Ethan Steinberg (3) +
 * Albert Steppi (3)
 * Thomas Stoeger (1) +
 * Kai Striega (4)
@@ -518,6 +517,7 @@ Authors
 * TianyiQ (1) +
 * Tiger (1) +
 * Will Tirone (1)
+* Ajay Shanker Tripathi (1) +
 * Edgar Andrés Margffoy Tuay (1) +
 * Dmitry Ulyumdzhiev (1) +
 * Hari Vamsi (1) +
@@ -540,7 +540,7 @@ Authors
 * Egor Zemlyanoy (19)
 * Gavin Zhang (3) +
 
-A total of 182 people contributed to this release.
+A total of 184 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -681,6 +681,7 @@ Issues closed for 1.10.0
 * `#17412 <https://github.com/scipy/scipy/issues/17412>`__: BUG: Meson error:compiler for language "cpp", not specified for...
 * `#17444 <https://github.com/scipy/scipy/issues/17444>`__: BUG: beta.ppf causes segfault
 * `#17468 <https://github.com/scipy/scipy/issues/17468>`__: Weird errors with running the tests \`scipy.stats.tests.test_distributions\`...
+* `#17518 <https://github.com/scipy/scipy/issues/17518>`__: ENH: stats.pearsonr: support complex data
 * `#17523 <https://github.com/scipy/scipy/issues/17523>`__: BUG: \`[source]\` button in the docs sending to the wrong place
 * `#17578 <https://github.com/scipy/scipy/issues/17578>`__: TST, BLD, CI: 1.10.0rc1 wheel build/test failures
 * `#17619 <https://github.com/scipy/scipy/issues/17619>`__: BUG: core dump when calling scipy.optimize.linprog
@@ -1204,3 +1205,7 @@ Pull requests for 1.10.0
 * `#17640 <https://github.com/scipy/scipy/pull/17640>`__: MAINT: prepare for SciPy 1.10.0rc2
 * `#17645 <https://github.com/scipy/scipy/pull/17645>`__: MAINT: stats.rankdata: ensure consistent shape handling
 * `#17653 <https://github.com/scipy/scipy/pull/17653>`__: MAINT: pybind11 win exclusion
+* `#17656 <https://github.com/scipy/scipy/pull/17656>`__: MAINT: 1.10.0rc2 backports, round two
+* `#17662 <https://github.com/scipy/scipy/pull/17662>`__: Fix undefined behavior within scipy.fft
+* `#17686 <https://github.com/scipy/scipy/pull/17686>`__: REV: integrate.qmc_quad: delay release to SciPy 1.11.0
+* `#17689 <https://github.com/scipy/scipy/pull/17689>`__: REL: integrate.qmc_quad: remove from release notes
