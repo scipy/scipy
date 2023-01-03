@@ -4642,28 +4642,60 @@ def fisher_exact(table, alternative='two-sided'):
     conditional maximum likelihood estimate of the odds ratio, use
     `scipy.stats.contingency.odds_ratio`.
 
+    References
+    ----------
+    .. [1] Fisher, Sir Ronald A, "The Design of Experiments:
+           Mathematics of a Lady Tasting Tea." ISBN 978-0-486-41151-4, 1935.
+    .. [2] "Fisher's exact test",
+           https://en.wikipedia.org/wiki/Fisher's_exact_test
+    .. [3] Emma V. Low et al. "Identifying the lowest effective dose of
+           acetazolamide for the prophylaxis of acute mountain sickness:
+           systematic review and meta-analysis."
+           BMJ, 345, :doi:`10.1136/bmj.e6779`, 2012.
+           doi:
+
     Examples
     --------
-    Say we spend a few days counting whales and sharks in the Atlantic and
-    Indian oceans. In the Atlantic ocean we find 8 whales and 1 shark, in the
-    Indian ocean 2 whales and 5 sharks. Then our contingency table is::
+    In [3]_, the effective dose of acetazolamide for the prophylaxis of acute
+    mountain sickness was investigated. The study notably concluded:
 
-                Atlantic  Indian
-        whales     8        2
-        sharks     1        5
+        Acetazolamide 250 mg, 500 mg, and 750 mg daily were all efficacious for
+        preventing acute mountain sickness. Acetazolamide 250 mg was the lowest
+        effective dose with available evidence for this indication.
 
-    We use this table to find the p-value:
+    Identifying the correct effective dose is particularly important as
+    side effects to acetazolamide are frequent.
+
+    The following table summarizes the results of the experiment in which
+    some participants took a daily dose of acetazolamide 250 mg while others
+    took a placebo.
+    Cases of acute montain sickness were recorded::
+
+                                    Acetazolamide   Control/Placebo
+        Acute montain sickness             7           17
+        No                                15            5
+
+    Is there evidence that the acetazolamide 250 mg reduces the risk of
+    acute montain sickness?
+    We begin by formulating a null hypothesis :math:`H_0`:
+
+        The effect of acetazolamide is equivalent to that of placebo.
+
+    Let's assess the plausibility of this hypothesis with
+    Fisher's test.
 
     >>> from scipy.stats import fisher_exact
-    >>> res = fisher_exact([[8, 2], [1, 5]])
+    >>> res = fisher_exact([[7, 17], [15, 5]])
+    >>> res.statistic
+    0.13725490196078433
     >>> res.pvalue
-    0.0349...
+    0.005768386750469949
 
-    The probability that we would observe this or an even more imbalanced ratio
-    by chance is about 3.5%.  A commonly used significance level is 5%--if we
-    adopt that, we can therefore conclude that our observed imbalance is
-    statistically significant; whales prefer the Atlantic while sharks prefer
-    the Indian ocean.
+    Using a significance level of 5%, we would reject the null hypothesis in
+    favor of the alternative hypothesis: "the effect of acetazolamide
+    is not equivalent to the effect of placebo and reduces the risk of
+    acute montain sickness."
+
 
     """
     hypergeom = distributions.hypergeom
