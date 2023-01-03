@@ -51,3 +51,56 @@ def test_exact_values():
     for key, val in replace.items():
         assert_equal(val, _codata.value(key))
         assert_(_codata.precision(key) == 0)
+
+
+def test_trunc_not_marked_exact_value_2002to2014():
+    exact = dict(
+        (k, v[0]) for k, v in _codata._physical_constants_2002.items()
+    )
+
+    with assert_raises(Warning):
+        assert parse_constants_2002to2014(
+            txt2002.replace("(exact)", "0000000"), exact
+        )
+
+
+def test_trunc_not_marked_exact_value_2018to2022():
+    exact = dict(
+        (k, v[0]) for k, v in _codata._physical_constants_2018.items()
+    )
+
+    with assert_raises(Warning):
+        assert parse_constants_2018toXXXX(
+            txt2018.replace("(exact)", "0000000"), exact
+        )
+
+
+def test_not_listed_as_exact():
+    exact = dict(
+        (k, v[0]) for k, v in _codata._physical_constants_2018.items()
+    )
+
+    with assert_raises(Warning):
+        assert replace_exact(txt2018, {"fictitious constant"}, exact)
+
+
+def test_not_correctly_calculated_constant():
+    with assert_raises(Warning):
+        assert replace_exact(
+            _codata._physical_constants_2002,
+            {"magn. constant"},
+            {"magn. constant": 0},
+        )
+
+
+def test_unmatched_exact_constants():
+    exact = dict(
+        (k, v[0]) for k, v in _codata._physical_constants_2018.items()
+    )
+
+    with assert_raises(Warning):
+        assert replace_exact(
+            _codata._physical_constants_2018,
+            {"empty set"},
+            exact,
+        )
