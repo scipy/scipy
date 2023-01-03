@@ -7512,14 +7512,15 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     of Oregon.
     In the forest, 44% of the canopy volume was Douglas fir,
     24% was ponderosa pine, 29% was grand fir, and 3% was western larch.
-    The authors observed the behavior of several species of birds, one
+    The authors observed the behavior of several species of birds, one of
     which was the red-breasted nuthatch. They made 189 observations of
-    foraging
-    of this species with the respective frequencies of 23%, 27%, 29%, and 21%.
+    foraging of this species noting that 23% of birds favoured Douglas
+    fir, 27% ponderosa pine, 29% grand fir, and 21% western larch.
 
     Using a chi-square test, we can test the null hypothesis that the
     proportions of foraging events are equal to the proportions of canopy
-    volume. Let's consider a significance level of 5%.
+    volume. As the authors of the paper, let's consider a significance level
+    of 1%.
 
     Using the above proportions of canopy volume and observed events, we can
     infer expected frequencies.
