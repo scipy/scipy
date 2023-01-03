@@ -2935,7 +2935,7 @@ def gstd(a, axis=0, ddof=1):
 
     Returns
     -------
-    ndarray or float
+    gstd : ndarray or float
         An array of the geometric standard deviation. If `axis` is None or `a`
         is a 1d array a float is returned.
 
