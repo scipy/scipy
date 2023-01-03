@@ -4671,11 +4671,13 @@ def fisher_exact(table, alternative='two-sided'):
         Acute montain sickness             7           17
         No                                15            5
 
+
     Is there evidence that the acetazolamide 250 mg reduces the risk of
     acute montain sickness?
     We begin by formulating a null hypothesis :math:`H_0`:
 
-        The effect of acetazolamide is equivalent to that of placebo.
+        The effect of acetazolamide is equivalent to that of placebo and
+        does not reduce the risk of acute montain sickness.
 
     Let's assess the plausibility of this hypothesis with
     Fisher's test.
