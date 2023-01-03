@@ -4538,8 +4538,8 @@ def fisher_exact(table, alternative='two-sided'):
         MLE) for a 2x2 contingency table.
     barnard_exact : Barnard's exact test, which is a more powerful alternative
         than Fisher's exact test for 2x2 contingency tables.
-    boschloo_exact : Boschloo's exact test, which is a more powerful alternative
-        than Fisher's exact test for 2x2 contingency tables.
+    boschloo_exact : Boschloo's exact test, which is a more powerful
+        alternative than Fisher's exact test for 2x2 contingency tables.
 
     Notes
     -----
@@ -4652,7 +4652,6 @@ def fisher_exact(table, alternative='two-sided'):
            acetazolamide for the prophylaxis of acute mountain sickness:
            systematic review and meta-analysis."
            BMJ, 345, :doi:`10.1136/bmj.e6779`, 2012.
-           doi:
 
     Examples
     --------
@@ -4696,6 +4695,30 @@ def fisher_exact(table, alternative='two-sided'):
     is not equivalent to the effect of placebo and reduces the risk of
     acute montain sickness."
 
+    .. note::
+
+        Fisher's test assumes a double conditioning on the marginals.
+        It means that the sums of the columns and rows should be fixed
+        as parameters of the design of the experiment.
+
+        In this case, the sum of columns is fixed. 22 persons are in both
+        groups. But the number of person getting sick in both groups is not
+        (and cannot be) fixed before conducing the experiment. It is a
+        consequence.
+
+        As one marginal is not fixed, the row sum, Fisher's test will be less
+        powerful, more conservative. We can compare the result with
+        `boschloo_exact` which is a more powerful test and does not assume
+        any conditioning on the marginals.
+
+        >>> from scipy.stats import boschloo_exact
+        >>> res = boschloo_exact([[7, 17], [15, 5]])
+        >>> res.statistic
+        0.0028841933752349743
+        >>> res.pvalue
+        0.0030282813335134203
+
+        We verify that the p-value is less than with `fisher_exact`.
 
     """
     hypergeom = distributions.hypergeom
