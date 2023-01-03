@@ -4665,19 +4665,19 @@ def fisher_exact(table, alternative='two-sided'):
     The following table summarizes the results of the experiment in which
     some participants took a daily dose of acetazolamide 250 mg while others
     took a placebo.
-    Cases of acute montain sickness were recorded::
+    Cases of acute mountain sickness were recorded::
 
                                     Acetazolamide   Control/Placebo
-        Acute montain sickness             7           17
+        Acute mountain sickness            7           17
         No                                15            5
 
 
     Is there evidence that the acetazolamide 250 mg reduces the risk of
-    acute montain sickness?
+    acute mountain sickness?
     We begin by formulating a null hypothesis :math:`H_0`:
 
         The effect of acetazolamide is equivalent to that of placebo and
-        does not reduce the risk of acute montain sickness.
+        does not reduce the risk of acute mountain sickness.
 
     Let's assess the plausibility of this hypothesis with
     Fisher's test.
@@ -4692,7 +4692,7 @@ def fisher_exact(table, alternative='two-sided'):
     Using a significance level of 5%, we would reject the null hypothesis in
     favor of the alternative hypothesis: "the effect of acetazolamide
     is not equivalent to the effect of placebo and reduces the risk of
-    acute montain sickness."
+    acute mountain sickness."
 
     .. note::
 
@@ -4701,9 +4701,9 @@ def fisher_exact(table, alternative='two-sided'):
         the test are conservative when applied to an experiment in which the
         row sums are not fixed.
 
-        In this case, the sum of columns is fixed. 22 persons are in both
-        groups. But the number of person getting sick in both groups is not
-        (and cannot be) fixed before conducing the experiment. It is a
+        In this case, the column sums are fixed; there are 22 subjects in each
+        group. But the number of cases of acute mountain sickness is not
+        (and cannot be) fixed before conducting the experiment. It is a
         consequence.
 
         Boschloo's test does not depend on the assumption that the row sums
