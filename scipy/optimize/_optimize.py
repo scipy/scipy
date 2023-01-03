@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #__docformat__ = "restructuredtext en"
 # ******NOTICE***************
 # optimize.py module by Travis E. Oliphant
