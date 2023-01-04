@@ -4538,8 +4538,8 @@ def fisher_exact(table, alternative='two-sided'):
         MLE) for a 2x2 contingency table.
     barnard_exact : Barnard's exact test, which is a more powerful alternative
         than Fisher's exact test for 2x2 contingency tables.
-    boschloo_exact : Boschloo's exact test, which is a more powerful alternative
-        than Fisher's exact test for 2x2 contingency tables.
+    boschloo_exact : Boschloo's exact test, which is a more powerful
+        alternative than Fisher's exact test for 2x2 contingency tables.
 
     Notes
     -----
@@ -4642,28 +4642,82 @@ def fisher_exact(table, alternative='two-sided'):
     conditional maximum likelihood estimate of the odds ratio, use
     `scipy.stats.contingency.odds_ratio`.
 
+    References
+    ----------
+    .. [1] Fisher, Sir Ronald A, "The Design of Experiments:
+           Mathematics of a Lady Tasting Tea." ISBN 978-0-486-41151-4, 1935.
+    .. [2] "Fisher's exact test",
+           https://en.wikipedia.org/wiki/Fisher's_exact_test
+    .. [3] Emma V. Low et al. "Identifying the lowest effective dose of
+           acetazolamide for the prophylaxis of acute mountain sickness:
+           systematic review and meta-analysis."
+           BMJ, 345, :doi:`10.1136/bmj.e6779`, 2012.
+
     Examples
     --------
-    Say we spend a few days counting whales and sharks in the Atlantic and
-    Indian oceans. In the Atlantic ocean we find 8 whales and 1 shark, in the
-    Indian ocean 2 whales and 5 sharks. Then our contingency table is::
+    In [3]_, the effective dose of acetazolamide for the prophylaxis of acute
+    mountain sickness was investigated. The study notably concluded:
 
-                Atlantic  Indian
-        whales     8        2
-        sharks     1        5
+        Acetazolamide 250 mg, 500 mg, and 750 mg daily were all efficacious for
+        preventing acute mountain sickness. Acetazolamide 250 mg was the lowest
+        effective dose with available evidence for this indication.
 
-    We use this table to find the p-value:
+    The following table summarizes the results of the experiment in which
+    some participants took a daily dose of acetazolamide 250 mg while others
+    took a placebo.
+    Cases of acute mountain sickness were recorded::
+
+                                    Acetazolamide   Control/Placebo
+        Acute mountain sickness            7           17
+        No                                15            5
+
+
+    Is there evidence that the acetazolamide 250 mg reduces the risk of
+    acute mountain sickness?
+    We begin by formulating a null hypothesis :math:`H_0`:
+
+        The odds of experiencing acute mountain sickness are the same with
+        the acetazolamide treatment as they are with placebo.
+
+    Let's assess the plausibility of this hypothesis with
+    Fisher's test.
 
     >>> from scipy.stats import fisher_exact
-    >>> res = fisher_exact([[8, 2], [1, 5]])
+    >>> res = fisher_exact([[7, 17], [15, 5]], alternative='less')
+    >>> res.statistic
+    0.13725490196078433
     >>> res.pvalue
-    0.0349...
+    0.0028841933752349743
 
-    The probability that we would observe this or an even more imbalanced ratio
-    by chance is about 3.5%.  A commonly used significance level is 5%--if we
-    adopt that, we can therefore conclude that our observed imbalance is
-    statistically significant; whales prefer the Atlantic while sharks prefer
-    the Indian ocean.
+    Using a significance level of 5%, we would reject the null hypothesis in
+    favor of the alternative hypothesis: "The odds of experiencing acute
+    mountain sickness with acetazolamide treatment are less than the odds of
+    experiencing acute mountain sickness with placebo."
+
+    .. note::
+
+        Because the null distribution of Fisher's exact test is formed under
+        the assumption that both row and column sums are fixed, the result of
+        the test are conservative when applied to an experiment in which the
+        row sums are not fixed.
+
+        In this case, the column sums are fixed; there are 22 subjects in each
+        group. But the number of cases of acute mountain sickness is not
+        (and cannot be) fixed before conducting the experiment. It is a
+        consequence.
+
+        Boschloo's test does not depend on the assumption that the row sums
+        are fixed, and consequently, it provides a more powerful test in this
+        situation.
+
+        >>> from scipy.stats import boschloo_exact
+        >>> res = boschloo_exact([[7, 17], [15, 5]], alternative='less')
+        >>> res.statistic
+        0.0028841933752349743
+        >>> res.pvalue
+        0.0015141406667567101
+
+        We verify that the p-value is less than with `fisher_exact`.
 
     """
     hypergeom = distributions.hypergeom
