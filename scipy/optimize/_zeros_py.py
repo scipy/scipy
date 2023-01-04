@@ -1135,8 +1135,8 @@ class TOMS748Solver:
             return _ECONVERGED, b
 
         if np.sign(fb) * np.sign(fa) > 0:
-            raise ValueError("a, b must bracket a root f(%e)=%e, f(%e)=%e " %
-                             (a, fa, b, fb))
+            raise ValueError("f(a) and f(b) must have different signs, but "
+                             "f(%e)=%e, f(%e)=%e " % (a, fa, b, fb))
         self.fab[:] = [fa, fb]
 
         return _EINPROGRESS, sum(self.ab) / 2.0
@@ -1372,7 +1372,7 @@ def toms748(f, a, b, args=(), k=1,
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol / 4:
-        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol/4))
     maxiter = operator.index(maxiter)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")

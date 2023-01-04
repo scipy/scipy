@@ -2199,6 +2199,9 @@ class foldnorm_gen(rv_continuous):
     def _cdf(self, x, c):
         return _norm_cdf(x-c) + _norm_cdf(x+c) - 1.0
 
+    def _sf(self, x, c):
+        return _norm_sf(x - c) + _norm_sf(x + c)
+
     def _stats(self, c):
         # Regina C. Elandt, Technometrics 3, 551 (1961)
         # https://www.jstor.org/stable/1266561
@@ -2763,8 +2766,9 @@ class genexpon_gen(rv_continuous):
     H.K. Ryu, "An Extension of Marshall and Olkin's Bivariate Exponential
     Distribution", Journal of the American Statistical Association, 1993.
 
-    N. Balakrishnan, "The Exponential Distribution: Theory, Methods and
-    Applications", Asit P. Basu.
+    N. Balakrishnan, Asit P. Basu (editors), *The Exponential Distribution:
+    Theory, Methods and Applications*, Gordon and Breach, 1995.
+    ISBN 10: 2884491929
 
     %(example)s
 
@@ -7844,23 +7848,25 @@ class reciprocal_gen(rv_continuous):
         return a, b
 
     def _pdf(self, x, a, b):
-        # reciprocal.pdf(x, a, b) = 1 / (x*log(b/a))
-        return 1.0 / (x * np.log(b * 1.0 / a))
+        # reciprocal.pdf(x, a, b) = 1 / (x*(log(b) - log(a)))
+        return np.exp(self._logpdf(x, a, b))
 
     def _logpdf(self, x, a, b):
-        return -np.log(x) - np.log(np.log(b * 1.0 / a))
+        return -np.log(x) - np.log(np.log(b) - np.log(a))
 
     def _cdf(self, x, a, b):
-        return (np.log(x)-np.log(a)) / np.log(b * 1.0 / a)
+        return (np.log(x)-np.log(a)) / (np.log(b) - np.log(a))
 
     def _ppf(self, q, a, b):
-        return a*pow(b*1.0/a, q)
+        return np.exp(np.log(a) + q*(np.log(b) - np.log(a)))
 
     def _munp(self, n, a, b):
-        return 1.0/np.log(b*1.0/a) / n * (pow(b*1.0, n) - pow(a*1.0, n))
+        t1 = 1 / (np.log(b) - np.log(a)) / n
+        t2 = np.real(np.exp(_log_diff(n * np.log(b), n*np.log(a))))
+        return t1 * t2
 
     def _entropy(self, a, b):
-        return 0.5*np.log(a*b)+np.log(np.log(b*1.0/a))
+        return 0.5*(np.log(a) + np.log(b)) + np.log(np.log(b) - np.log(a))
 
     fit_note = """\
         `loguniform`/`reciprocal` is over-parameterized. `fit` automatically
@@ -9246,6 +9252,49 @@ class vonmises_gen(rv_continuous):
 
         return super().expect(func, args, loc,
                               scale, lb, ub, conditional, **kwds)
+
+    @_call_super_mom
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        The `scale` parameter is ignored. Fit data is assumed to represent
+        angles and will be wrapped onto the unit circle.\n\n""")
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, fshape, floc, fscale = _check_fit_input_parameters(self, data,
+                                                                 args, kwds)
+        if self.a == -np.pi:
+            # vonmises line case, here the default fit method will be used
+            return super().fit(data, *args, **kwds)
+
+        # wrap data to interval [0, 2*pi]
+        data = np.mod(data, 2 * np.pi)
+
+        def find_mu(data):
+            return stats.circmean(data)
+
+        def find_kappa(data):
+            # kappa is the solution to
+            # r = I[1](kappa)/I[0](kappa)
+            #   = I[1](kappa) * exp(-kappa)/(I[0](kappa) * exp(-kappa))
+            #   = sc.i1e(kappa)/sc.i0e(kappa)
+            # where r = mean resultant length
+            r = 1 - stats.circvar(data)
+
+            def solve_for_kappa(kappa):
+                return sc.i1e(kappa)/sc.i0e(kappa) - r
+
+            root_res = root_scalar(solve_for_kappa, method="brentq",
+                                   bracket=(1e-8, 1e12))
+            return root_res.root
+
+        if floc is None:
+            floc = find_mu(data)
+            fshape = find_kappa(data)
+            return floc, fshape
+        else:
+            fshape = find_kappa(data)
+            return floc, fshape
 
 
 vonmises = vonmises_gen(name='vonmises')

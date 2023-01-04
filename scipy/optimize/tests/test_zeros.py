@@ -167,10 +167,11 @@ class TestBasic:
         cvgd = [elt for elt in results if elt[1].converged]
         approx = [elt[1].root for elt in cvgd]
         correct = [elt[0] for elt in cvgd]
+        # See if the root matches the reference value
         notclose = [[a] + elt for a, c, elt in zip(approx, correct, cvgd) if
                     not isclose(a, c, rtol=rtol, atol=atol)
                     and elt[-1]['ID'] not in known_fail]
-        # Evaluate the function and see if is 0 at the purported root
+        # If not, evaluate the function and see if is 0 at the purported root
         fvs = [tc['f'](aroot, *(tc['args'])) for aroot, c, fullout, tc in notclose]
         notclose = [[fv] + elt for fv, elt in zip(fvs, notclose) if fv != 0]
         assert_equal([notclose, len(notclose)], [[], 0])
@@ -807,3 +808,55 @@ def test_function_calls(solver_name, rs_interface):
         assert res.function_calls == f.calls
     else:
         assert res[1].function_calls == f.calls
+
+
+@pytest.mark.parametrize('solver_name',
+                         ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
+@pytest.mark.parametrize('rs_interface', [True, False])
+def test_gh5584(solver_name, rs_interface):
+    # gh-5584 reported that an underflow can cause sign checks in the algorithm
+    # to fail. Check that this is resolved.
+    solver = ((lambda f, a, b, **kwargs: root_scalar(f, bracket=(a, b)))
+              if rs_interface else getattr(zeros, solver_name))
+
+    def f(x):
+        return 1e-200*x
+
+    # Report failure when signs are the same
+    with pytest.raises(ValueError, match='...must have different signs'):
+        solver(f, -0.5, -0.4, full_output=True)
+
+    # Solve successfully when signs are different
+    res = solver(f, -0.5, 0.4, full_output=True)
+    res = res if rs_interface else res[1]
+    assert res.converged
+    assert_allclose(res.root, 0, atol=1e-8)
+
+    # Solve successfully when one side is negative zero
+    res = solver(f, -0.5, -1e-200*1e-200, full_output=True)
+    res = res if rs_interface else res[1]
+    assert res.converged
+    assert_allclose(res.root, 0, atol=1e-8)
+
+
+def test_gh13407():
+    # gh-13407 reported that the message produced by `scipy.optimize.toms748`
+    # when `rtol < eps` is incorrect, and also that toms748 is unusual in
+    # accepting `rtol` as low as eps while other solvers raise at 4*eps. Check
+    # that the error message has been corrected and that `rtol=eps` can produce
+    # a lower function value than `rtol=4*eps`.
+    def f(x):
+        return x**3 - 2*x - 5
+
+    xtol = 1e-300
+    eps = np.finfo(float).eps
+    x1 = zeros.toms748(f, 1e-10, 1e10, xtol=xtol, rtol=1*eps)
+    f1 = f(x1)
+    x4 = zeros.toms748(f, 1e-10, 1e10, xtol=xtol, rtol=4*eps)
+    f4 = f(x4)
+    assert f1 < f4
+
+    # using old-style syntax to get exactly the same message
+    message = r"rtol too small \(%g < %g\)" % (eps/2, eps)
+    with pytest.raises(ValueError, match=message):
+        zeros.toms748(f, 1e-10, 1e10, xtol=xtol, rtol=eps/2)

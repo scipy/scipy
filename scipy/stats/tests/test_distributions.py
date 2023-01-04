@@ -206,6 +206,40 @@ def test_vonmises_expect():
     assert np.issubdtype(res.dtype, np.complexfloating)
 
 
+@pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
+@pytest.mark.parametrize('kappa', [1, 10, 100, 1000])
+def test_vonmises_fit_all(kappa, loc):
+    rng = np.random.default_rng(6762668991392531563)
+    data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
+    loc_fit, kappa_fit = stats.vonmises.fit(data)
+    loc_vec = np.array([np.cos(loc), np.sin(loc)])
+    loc_fit_vec = np.array([np.cos(loc_fit), np.sin(loc_fit)])
+    angle = np.arccos(loc_vec.dot(loc_fit_vec))
+    assert_allclose(angle, 0, atol=1e-2, rtol=0)
+    assert_allclose(kappa, kappa_fit, rtol=1e-2)
+
+
+def test_vonmises_fit_shape():
+    rng = np.random.default_rng(6762668991392531563)
+    loc = 0.25*np.pi
+    kappa = 10
+    data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
+    loc_fit, kappa_fit = stats.vonmises.fit(data, floc=loc)
+    assert loc_fit == loc
+    assert_allclose(kappa, kappa_fit, rtol=1e-2)
+
+
+def test_vonmises_fit_unwrapped_data():
+    rng = np.random.default_rng(6762668991392531563)
+    data = stats.vonmises(loc=0.5*np.pi, kappa=10).rvs(100000,
+                                                       random_state=rng)
+    shifted_data = data + 4*np.pi
+    loc_fit, kappa_fit = stats.vonmises.fit(data)
+    loc_fit_shifted, kappa_fit_shifted = stats.vonmises.fit(shifted_data)
+    assert_allclose(loc_fit, loc_fit_shifted)
+    assert_allclose(kappa_fit, kappa_fit_shifted)
+
+
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
     """
     This utility function checks that the log-likelihood (computed by
@@ -3550,8 +3584,8 @@ class TestBetaPrime:
          (0.375, 0.25, 7.0, 0.002036820346115211)],
     )
     def test_ppf(self, p, a, b, expected):
-        p = stats.betaprime.ppf(p, a, b)
-        assert_allclose(p, expected, rtol=1e-14)
+        x = stats.betaprime.ppf(p, a, b)
+        assert_allclose(x, expected, rtol=1e-14)
 
 
 class TestGamma:
@@ -6580,6 +6614,30 @@ def test_foldnorm_zero():
     assert_equal(rv.cdf(0), 0)  # rv.cdf(0) previously resulted in: nan
 
 
+# Expected values for foldnorm.sf were computed with mpmath:
+#
+#    from mpmath import mp
+#    mp.dps = 60
+#    def foldnorm_sf(x, c):
+#        x = mp.mpf(x)
+#        c = mp.mpf(c)
+#        return mp.ncdf(-x+c) + mp.ncdf(-x-c)
+#
+# E.g.
+#
+#    >>> float(foldnorm_sf(2, 1))
+#    0.16000515196308715
+#
+@pytest.mark.parametrize('x, c, expected',
+                         [(2, 1, 0.16000515196308715),
+                          (20, 1, 8.527223952630977e-81),
+                          (10, 15, 0.9999997133484281),
+                          (25, 15, 7.619853024160525e-24)])
+def test_foldnorm_sf(x, c, expected):
+    sf = stats.foldnorm.sf(x, c)
+    assert_allclose(sf, expected, 1e-14)
+
+
 def test_stats_shapes_argcheck():
     # stats method was failing for vector shapes if some of the values
     # were outside of the allowed range, see gh-2678
@@ -7324,6 +7382,28 @@ class TestLogUniform:
 
         a, b, loc, scale = stats.loguniform.fit(rvs, fscale=2, method=method)
         assert scale == 2
+
+    def test_overflow(self):
+        # original formulation had overflow issues; check that this is resolved
+        # Extensive accuracy tests elsewhere, no need to test all methods
+        rng = np.random.default_rng(7136519550773909093)
+        a, b = 1e-200, 1e200
+        dist = stats.loguniform(a, b)
+
+        # test roundtrip error
+        cdf = rng.uniform(0, 1, size=1000)
+        assert_allclose(dist.cdf(dist.ppf(cdf)), cdf)
+        rvs = dist.rvs(size=1000)
+        assert_allclose(dist.ppf(dist.cdf(rvs)), rvs)
+
+        # test a property of the pdf (and that there is no overflow)
+        x = 10.**np.arange(-200, 200)
+        pdf = dist.pdf(x)  # no overflow
+        assert_allclose(pdf[:-1]/pdf[1:], 10)
+
+        # check munp against wikipedia reference
+        mean = (b - a)/(np.log(b) - np.log(a))
+        assert_allclose(dist.mean(), mean)
 
 
 class TestArgus:
