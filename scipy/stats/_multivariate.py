@@ -2895,16 +2895,19 @@ class invwishart_gen(wishart_gen):
 
         return _squeeze_output(out)
 
-    def entropy(self, df, scale):
+    def _entropy(self, dim, df, scale):
         # reference: eq. (17) from ref. 3
-        dim, df, scale = self._process_parameters(df, scale)
         psi_eval_points = [0.5 * (df - dim + i) for i in range(1, dim + 1)]
         psi_eval_points = np.asarray(psi_eval_points)
-        _, logdet = np.linalg.slogdet(scale)
+        _, log_det_scale = self._cholesky_logdet(scale)
         return multigammaln(0.5 * df, dim) + 0.5 * dim * df + \
-            0.5 * (dim + 1) * (logdet - _LOG_2) - \
+            0.5 * (dim + 1) * (log_det_scale - _LOG_2) - \
             0.5 * (df + dim + 1) * \
             psi(psi_eval_points, out=psi_eval_points).sum()
+
+    def entropy(self, df, scale):
+        dim, df, scale = self._process_parameters(df, scale)
+        return self._entropy(dim, df, scale)
 
 
 invwishart = invwishart_gen()
@@ -2974,7 +2977,7 @@ class invwishart_frozen(multi_rv_frozen):
         return _squeeze_output(out)
 
     def entropy(self):
-        self._dist.entropy(self.df, self.scale)
+        return self._dist._entropy(self.dim, self.df, self.scale)
 
 
 # Set frozen generator docstrings from corresponding docstrings in
