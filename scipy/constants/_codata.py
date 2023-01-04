@@ -1636,7 +1636,7 @@ def parse_constants_2002to2014(
             elif is_exact:
                 exact[name] = val
             elif is_truncated:
-                raise Exception("Parsing error")
+                raise Warning("Parsing error")
         except Warning as w:
             raise Warning(f"{name} is truncated but not exact.") from w
         uncert = float(line[77:99].replace(' ', '').replace('(exact)', '0'))
