@@ -12615,6 +12615,24 @@ add_newdoc("stdtridf",
     --------
     stdtr : Student t CDF
     stdtrit : inverse of stdtr with respect to `t`
+    scipy.stats.t : Student t distribution
+
+    Examples
+    --------
+    Compute the student t cumulative distribution function for one
+    parameter set.
+
+    >>> from scipy.special import stdtr, stdtridf
+    >>> df, x = 5, 2
+    >>> cdf_value = stdtr(df, x)
+    >>> cdf_value
+    0.9490302605850709
+
+    Verify that `stdtridf` recovers the original value for `df` given
+    the CDF value and `x`.
+
+    >>> stdtridf(cdf_value, x)
+    5.0
     """)
 
 add_newdoc("stdtrit",
@@ -12646,7 +12664,7 @@ add_newdoc("stdtrit",
     --------
     stdtr : Student t CDF
     stdtridf : inverse of stdtr with respect to `df`
-    scipy.stats.t
+    scipy.stats.t : Student t distribution
 
     Notes
     -----
