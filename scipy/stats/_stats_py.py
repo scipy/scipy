@@ -4676,8 +4676,8 @@ def fisher_exact(table, alternative='two-sided'):
     acute mountain sickness?
     We begin by formulating a null hypothesis :math:`H_0`:
 
-        The effect of acetazolamide is equivalent to that of placebo and
-        does not reduce the risk of acute mountain sickness.
+        The odds of experiencing acute mountain sickness are the same with
+        the acetazolamide treatment as they are with placebo.
 
     Let's assess the plausibility of this hypothesis with
     Fisher's test.
@@ -4690,9 +4690,9 @@ def fisher_exact(table, alternative='two-sided'):
     0.0028841933752349743
 
     Using a significance level of 5%, we would reject the null hypothesis in
-    favor of the alternative hypothesis: "the effect of acetazolamide
-    is not equivalent to the effect of placebo and reduces the risk of
-    acute mountain sickness."
+    favor of the alternative hypothesis: "The odds of experiencing acute
+    mountain sickness with acetazolamide treatment are less than the odds of
+    experiencing acute mountain sickness with placebo."
 
     .. note::
 
