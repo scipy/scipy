@@ -49,7 +49,7 @@ def isotonic_regression(
         w = np.ones_like(y)
     else:
         w = np.asarray(w)
-    
+
         if not (y.ndim == w.ndim and y.shape[0] == w.shape[0]):
             raise ValueError(
                 "Input arrays y and w must have one dimension of equal length."
@@ -67,8 +67,7 @@ def isotonic_regression(
     n = r.shape[0] - 1
     wx = wx[:n]
     if not increasing:
-       x = x[::-1]
-       wx = wx[::-1]
-       r = n - r[::-1]
+        x = x[::-1]
+        wx = wx[::-1]
+        r = n - r[::-1]
     return x, wx, r
-    

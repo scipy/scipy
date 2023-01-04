@@ -40,16 +40,16 @@ class TestIsotonicRegression:
         assert_almost_equal(r, np.arange(n + 1))
 
     def test_weights(self):
-        w = np.array([1, 2, 5, 0.5, 0.5, 0.5,  1, 3])
-        y = np.array([3, 2, 1,  10,   9,   8, 20, 10])
+        w = np.array([1, 2, 5, 0.5, 0.5, 0.5, 1, 3])
+        y = np.array([3, 2, 1, 10, 9, 8, 20, 10])
         x, wx, r = isotonic_regression(y, w)
         assert_almost_equal(x, [12/8, 12/8, 12/8, 9, 9, 9, 50/4, 50/4])
         assert_almost_equal(wx, [8, 1.5, 4])
         assert_almost_equal(r, [0, 3, 6, 8])
 
         # weights are like repeated observations, we repeat the 3rd element 5 times.
-        w2 = np.array([1, 2, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5,  1, 3])
-        y2 = np.array([3, 2, 1, 1, 1, 1, 1,  10,   9,   8, 20, 10])
+        w2 = np.array([1, 2, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5, 1, 3])
+        y2 = np.array([3, 2, 1, 1, 1, 1, 1, 10, 9, 8, 20, 10])
         x2, wx2, r2 = isotonic_regression(y, w)
         assert_almost_equal(x2, x)
         assert_almost_equal(wx2, wx)
