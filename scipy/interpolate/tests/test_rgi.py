@@ -939,3 +939,58 @@ class TestInterpN:
                "RegularGridInterpolator has dimension 1")
         with assert_raises(ValueError, match=msg):
             interpn(points, values, xi)
+
+    def test_readonly_grid(self):
+        # https://github.com/scipy/scipy/issues/17716
+        x = np.linspace(0, 4, 5)
+        y = np.linspace(0, 5, 6)
+        z = np.linspace(0, 6, 7)
+        points = (x, y, z)
+        values = np.ones((5, 6, 7))
+        point = np.array([2.21, 3.12, 1.15])
+        for d in points:
+            d.flags.writeable = False
+        values.flags.writeable = False
+        point.flags.writeable = False
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
+
+    def test_2d_readonly_grid(self):
+        # https://github.com/scipy/scipy/issues/17716
+        # test special 2d case
+        x = np.linspace(0, 4, 5)
+        y = np.linspace(0, 5, 6)
+        points = (x, y)
+        values = np.ones((5, 6))
+        point = np.array([2.21, 3.12])
+        for d in points:
+            d.flags.writeable = False
+        values.flags.writeable = False
+        point.flags.writeable = False
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
+
+    def test_non_c_contiguous_grid(self):
+        # https://github.com/scipy/scipy/issues/17716
+        x = np.linspace(0, 4, 5)
+        x = np.vstack((x, np.empty_like(x))).T.copy()[:, 0]
+        assert not x.flags.c_contiguous
+        y = np.linspace(0, 5, 6)
+        z = np.linspace(0, 6, 7)
+        points = (x, y, z)
+        values = np.ones((5, 6, 7))
+        point = np.array([2.21, 3.12, 1.15])
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
+
+    @pytest.mark.parametrize("dtype", ['>f8', '<f8'])
+    def test_endianness(self, dtype):
+        # https://github.com/scipy/scipy/issues/17716
+        # test special 2d case
+        x = np.linspace(0, 4, 5, dtype=dtype)
+        y = np.linspace(0, 5, 6, dtype=dtype)
+        points = (x, y)
+        values = np.ones((5, 6), dtype=dtype)
+        point = np.array([2.21, 3.12], dtype=dtype)
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
