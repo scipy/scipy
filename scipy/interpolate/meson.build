@@ -182,6 +182,15 @@ else
   )
 endif
 
+_pava_pybind = py3.extension_module('_pava_pybind',
+  ['src/pava_pybind.cpp'],
+  cpp_args: [numpy_nodepr_api],
+  include_directories: [incdir_pybind11, incdir_numpy, 'src/'],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/interpolate'
+)
+
 py3.install_sources([
     '__init__.py',
     '_bsplines.py',
@@ -191,6 +200,7 @@ py3.install_sources([
     '_fitpack2.py',
     '_interpnd_info.py',
     '_interpolate.py',
+    '_isotonic.py',
     '_ndgriddata.py',
     '_pade.py',
     '_polyint.py',

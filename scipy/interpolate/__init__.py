@@ -25,6 +25,7 @@ Univariate interpolation
    barycentric_interpolate
    krogh_interpolate
    pchip_interpolate
+   isotonic_regression
    CubicHermiteSpline
    PchipInterpolator
    Akima1DInterpolator
@@ -185,6 +186,8 @@ from ._bsplines import *
 from ._pade import *
 
 from ._rgi import *
+
+from ._isotonic import *
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import fitpack, fitpack2, interpolate, ndgriddata, polyint, rbf
