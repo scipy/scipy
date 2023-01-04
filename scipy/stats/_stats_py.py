@@ -7514,7 +7514,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     24% was ponderosa pine, 29% was grand fir, and 3% was western larch.
     The authors observed the behavior of several species of birds, one of
     which was the red-breasted nuthatch. They made 189 observations of this
-    species foraging, recording 43 ("23%") of observations in Douglas fir, 
+    species foraging, recording 43 ("23%") of observations in Douglas fir,
     52 ("28%") in ponderosa pine, 54 ("29%") in grand fir, and 40 ("21%") in
     western larch.
 
@@ -7570,10 +7570,9 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     which is equivalent to applying the test to the flattened array.
 
     >>> chisquare(obs, axis=None)
-    Power_divergenceResult(statistic=2.0, pvalue=0.84914503608460956)
-    (23.31034482758621, 0.015975692534127565)
-    >>> chisquare(obs.ravel())
     Power_divergenceResult(statistic=23.31034482758621, pvalue=0.015975692534127565)
+    >>> chisquare(obs.ravel())
+    Power_divergenceResult(statistic=23.310344827586206, pvalue=0.01597569253412758)
 
     `ddof` is the change to make to the default degrees of freedom.
 
