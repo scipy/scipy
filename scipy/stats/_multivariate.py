@@ -5814,7 +5814,8 @@ class vonmises_fisher_gen(multi_rv_generic):
     ...     vmf = vonmises_fisher(mu, kappa)
     ...     pdf_values = vmf.pdf(vertices)
     ...     pdfnorm = Normalize(vmin=pdf_values.min(), vmax=pdf_values.max())
-    ...     ax.plot_surface(x, y, z, rstride=1, cstride=1,
+    ...     ax.set_aspect('equal')
+    ...     ax.plot_surface(x, y, z,
     ...                     facecolors=plt.cm.viridis(pdfnorm(pdf_values)),
     ...                     linewidth=0)
     ...     ax.view_init(azim=-130, elev=0)
