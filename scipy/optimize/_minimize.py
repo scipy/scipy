@@ -145,8 +145,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         dimension (n,) and ``args`` is a tuple with the fixed
         parameters.
     bounds : sequence or `Bounds`, optional
-        Bounds on variables for Nelder-Mead, L-BFGS-B, TNC, SLSQP, Powell, and
-        trust-constr methods. There are two ways to specify the bounds:
+        Bounds on variables for Nelder-Mead, L-BFGS-B, TNC, SLSQP, Powell,
+        trust-constr, and COBYLA methods. There are two ways to specify the
+        bounds:
 
             1. Instance of `Bounds` class.
             2. Sequence of ``(min, max)`` pairs for each element in `x`. None
@@ -575,8 +576,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             np.any(constraints)):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
-    if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'tnc', 'slsqp',
-                    'trust-constr', '_custom') and bounds is not None:
+    if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'cobyla', 'slsqp',
+                    'tnc', 'trust-constr', '_custom') and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - return_all
@@ -638,6 +639,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     remove_vars = False
     if bounds is not None:
+        # convert to new-style bounds so we only have to consider one case
+        bounds = standardize_bounds(bounds, x0, 'new')
+        bounds = _validate_bounds(bounds, x0, meth)
+
         if meth in {"tnc", "slsqp", "l-bfgs-b"}:
             # These methods can't take the finite-difference derivatives they
             # need when a variable is fixed by the bounds. To avoid this issue,
@@ -645,9 +650,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             # NOTE: if this list is expanded, then be sure to update the
             # accompanying tests and test_optimize.eb_data. Consider also if
             # default OptimizeResult will need updating.
-
-            # convert to new-style bounds so we only have to consider one case
-            bounds = standardize_bounds(bounds, x0, 'new')
 
             # determine whether any variables are fixed
             i_fixed = (bounds.lb == bounds.ub)
@@ -713,7 +715,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                             **options)
     elif meth == 'cobyla':
         res = _minimize_cobyla(fun, x0, args, constraints, callback=callback,
-                                **options)
+                               bounds=bounds, **options)
     elif meth == 'slsqp':
         res = _minimize_slsqp(fun, x0, args, jac, bounds,
                               constraints, callback=callback, **options)
@@ -976,9 +978,25 @@ def _add_to_array(x_in, i_fixed, x_fixed):
     return x_out
 
 
+def _validate_bounds(bounds, x0, meth):
+    """Check that bounds are valid."""
+
+    msg = "An upper bound is less than the corresponding lower bound."
+    if np.any(bounds.ub < bounds.lb):
+        raise ValueError(msg)
+
+    msg = "The number of bounds is not compatible with the length of `x0`."
+    try:
+        bounds.lb = np.broadcast_to(bounds.lb, x0.shape)
+        bounds.ub = np.broadcast_to(bounds.ub, x0.shape)
+    except Exception as e:
+        raise ValueError(msg) from e
+
+    return bounds
+
 def standardize_bounds(bounds, x0, meth):
     """Converts bounds to the form required by the solver."""
-    if meth in {'trust-constr', 'powell', 'nelder-mead', 'new'}:
+    if meth in {'trust-constr', 'powell', 'nelder-mead', 'cobyla', 'new'}:
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)
