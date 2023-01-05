@@ -7555,9 +7555,9 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
            in the case of a correlated system of variables is such that it can be reasonably
            supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
            (1900), pp. 157-175.
-    .. [4] Mannan, R. William and E. Charles. Meslow. “Bird populations and
+    .. [4] Mannan, R. William and E. Charles. Meslow. "Bird populations and
            vegetation characteristics in managed and old-growth forests,
-           northeastern Oregon.” Journal of Wildlife Management
+           northeastern Oregon." Journal of Wildlife Management
            48, 1219-1238, :doi:`10.2307/3801783`, 1984.
 
     Examples
