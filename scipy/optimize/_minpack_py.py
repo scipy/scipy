@@ -496,15 +496,19 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
 
 
 def _lightweight_memoizer(f):
-
+    # very shallow memoization - only remember the first set of parameters
+    # and corresponding function value to address gh-13670
     def _memoized_func(params):
         if np.all(_memoized_func.last_params == params):
             return _memoized_func.last_val
-        else:
-            val = f(params)
+
+        val = f(params)
+
+        if _memoized_func.last_params is None:
             _memoized_func.last_params = np.copy(params)
             _memoized_func.last_val = val
-            return val
+
+        return val
 
     _memoized_func.last_params = None
     _memoized_func.last_val = None
