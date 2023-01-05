@@ -1,0 +1,24 @@
+==========================
+SciPy 1.10.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.10.1 is a bug-fix release with no new features
+compared to 1.10.0.
+
+
+
+Authors
+=======
+* Name (commits)
+
+
+
+Issues closed for 1.10.1
+------------------------
+
+
+
+Pull requests for 1.10.1
+------------------------
