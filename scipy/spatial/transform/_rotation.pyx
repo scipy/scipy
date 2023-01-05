@@ -1285,12 +1285,12 @@ cdef class Rotation:
 
         For Euler angles, we have the following conditions:
 
-        dot(axis1, axis2) = 0
-        dot(axis2, axis3) = 0
-        dot(axis1, axis3) = 0 or 1
+            - ``dot(axis1, axis2) = 0``
+            - ``dot(axis2, axis3) = 0``
+            - ``dot(axis1, axis3) = -1``, ``0`` or ``1``
 
-        For Davenport angles, the third relation is relaxed [2]_: dot(axis1, axis3)
-        can be any value between -1 and 1.
+        For Davenport angles, the third relation is relaxed [1]_:
+            - ``dot(axis1, axis3)`` can be any value between -1 and 1.
 
         The three rotations can either be in a global frame of reference
         (extrinsic) or in a body centred frame of reference (intrinsic), which
@@ -1307,7 +1307,7 @@ cdef class Rotation:
             - array_like with shape (3,), corresponding to single rotation
             - array_like with shape (N, 3), where each `angle[i, 0]`
               corresponds to a single rotation
-        extrinsic : bool, optional
+        extrinsic : boolean, optional
             If True, sequence will be extrinsic. If False, sequence will be
             treated as intrinsic.
             Default is True.
@@ -1980,12 +1980,12 @@ cdef class Rotation:
 
         For Euler angles, we have the following conditions:
 
-        dot(axis1, axis2) = 0
-        dot(axis2, axis3) = 0
-        dot(axis1, axis3) = -1, 0 or 1
+            - ``dot(axis1, axis2) = 0``
+            - ``dot(axis2, axis3) = 0``
+            - ``dot(axis1, axis3) = -1``, ``0`` or ``1``
 
-        For Davenport angles, the third relation is relaxed [1]_: dot(axis1, axis3)
-        can be any value between -1 and 1.
+        For Davenport angles, the third relation is relaxed [1]_:
+            - ``dot(axis1, axis3)`` can be any value between -1 and 1.
 
         A slightly modified version of the algorithm from [2]_ has been used to
         calculate Davenport angles for the rotation about a given sequence of
@@ -2004,7 +2004,7 @@ cdef class Rotation:
             3 characters belonging to the set {'X', 'Y', 'Z'} for intrinsic
             rotations, or {'x', 'y', 'z'} for extrinsic rotations [1]_.
             Adjacent axes cannot be the same.
-        extrinsic : bool, optional
+        extrinsic : boolean, optional
             If True, sequence will be extrinsic. If False, sequence will be
             treated as intrinsic.
             Default is True.
