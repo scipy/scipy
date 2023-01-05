@@ -37,7 +37,6 @@ using clong = std::complex<ldbl_t>;
 using f32 = float;
 using f64 = double;
 using flong = ldbl_t;
-auto None = py::none();
 
 shape_t copy_shape(const py::array &arr)
   {
@@ -716,6 +715,8 @@ out : int
 PYBIND11_MODULE(pypocketfft, m)
   {
   using namespace pybind11::literals;
+
+  auto None = py::none();
 
   m.doc() = pypocketfft_DS;
   m.def("c2c", c2c, c2c_DS, "a"_a, "axes"_a=None, "forward"_a=true,

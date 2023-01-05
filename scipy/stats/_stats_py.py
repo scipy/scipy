@@ -51,10 +51,7 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
 from ._hypotests import _all_partitions
-
-from ._stats_pythran import (_compute_outer_prob_inside_method,
-                             _compute_prob_outside_square,
-                             _count_paths_outside_method)
+from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import _batch_generator
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
@@ -4356,6 +4353,10 @@ def pearsonr(x, y, *, alternative='two-sided'):
     x = np.asarray(x)
     y = np.asarray(y)
 
+    if (np.issubdtype(x.dtype, np.complexfloating)
+            or np.issubdtype(y.dtype, np.complexfloating)):
+        raise ValueError('This function does not support complex data')
+
     # If an input is constant, the correlation coefficient is not defined.
     if (x == x[0]).all() or (y == y[0]).all():
         msg = ("An input array is constant; the correlation coefficient "
@@ -4477,8 +4478,8 @@ def fisher_exact(table, alternative='two-sided'):
         MLE) for a 2x2 contingency table.
     barnard_exact : Barnard's exact test, which is a more powerful alternative
         than Fisher's exact test for 2x2 contingency tables.
-    boschloo_exact : Boschloo's exact test, which is a more powerful alternative
-        than Fisher's exact test for 2x2 contingency tables.
+    boschloo_exact : Boschloo's exact test, which is a more powerful
+        alternative than Fisher's exact test for 2x2 contingency tables.
 
     Notes
     -----
@@ -4581,28 +4582,82 @@ def fisher_exact(table, alternative='two-sided'):
     conditional maximum likelihood estimate of the odds ratio, use
     `scipy.stats.contingency.odds_ratio`.
 
+    References
+    ----------
+    .. [1] Fisher, Sir Ronald A, "The Design of Experiments:
+           Mathematics of a Lady Tasting Tea." ISBN 978-0-486-41151-4, 1935.
+    .. [2] "Fisher's exact test",
+           https://en.wikipedia.org/wiki/Fisher's_exact_test
+    .. [3] Emma V. Low et al. "Identifying the lowest effective dose of
+           acetazolamide for the prophylaxis of acute mountain sickness:
+           systematic review and meta-analysis."
+           BMJ, 345, :doi:`10.1136/bmj.e6779`, 2012.
+
     Examples
     --------
-    Say we spend a few days counting whales and sharks in the Atlantic and
-    Indian oceans. In the Atlantic ocean we find 8 whales and 1 shark, in the
-    Indian ocean 2 whales and 5 sharks. Then our contingency table is::
+    In [3]_, the effective dose of acetazolamide for the prophylaxis of acute
+    mountain sickness was investigated. The study notably concluded:
 
-                Atlantic  Indian
-        whales     8        2
-        sharks     1        5
+        Acetazolamide 250 mg, 500 mg, and 750 mg daily were all efficacious for
+        preventing acute mountain sickness. Acetazolamide 250 mg was the lowest
+        effective dose with available evidence for this indication.
 
-    We use this table to find the p-value:
+    The following table summarizes the results of the experiment in which
+    some participants took a daily dose of acetazolamide 250 mg while others
+    took a placebo.
+    Cases of acute mountain sickness were recorded::
+
+                                    Acetazolamide   Control/Placebo
+        Acute mountain sickness            7           17
+        No                                15            5
+
+
+    Is there evidence that the acetazolamide 250 mg reduces the risk of
+    acute mountain sickness?
+    We begin by formulating a null hypothesis :math:`H_0`:
+
+        The odds of experiencing acute mountain sickness are the same with
+        the acetazolamide treatment as they are with placebo.
+
+    Let's assess the plausibility of this hypothesis with
+    Fisher's test.
 
     >>> from scipy.stats import fisher_exact
-    >>> res = fisher_exact([[8, 2], [1, 5]])
+    >>> res = fisher_exact([[7, 17], [15, 5]], alternative='less')
+    >>> res.statistic
+    0.13725490196078433
     >>> res.pvalue
-    0.0349...
+    0.0028841933752349743
 
-    The probability that we would observe this or an even more imbalanced ratio
-    by chance is about 3.5%.  A commonly used significance level is 5%--if we
-    adopt that, we can therefore conclude that our observed imbalance is
-    statistically significant; whales prefer the Atlantic while sharks prefer
-    the Indian ocean.
+    Using a significance level of 5%, we would reject the null hypothesis in
+    favor of the alternative hypothesis: "The odds of experiencing acute
+    mountain sickness with acetazolamide treatment are less than the odds of
+    experiencing acute mountain sickness with placebo."
+
+    .. note::
+
+        Because the null distribution of Fisher's exact test is formed under
+        the assumption that both row and column sums are fixed, the result of
+        the test are conservative when applied to an experiment in which the
+        row sums are not fixed.
+
+        In this case, the column sums are fixed; there are 22 subjects in each
+        group. But the number of cases of acute mountain sickness is not
+        (and cannot be) fixed before conducting the experiment. It is a
+        consequence.
+
+        Boschloo's test does not depend on the assumption that the row sums
+        are fixed, and consequently, it provides a more powerful test in this
+        situation.
+
+        >>> from scipy.stats import boschloo_exact
+        >>> res = boschloo_exact([[7, 17], [15, 5]], alternative='less')
+        >>> res.statistic
+        0.0028841933752349743
+        >>> res.pvalue
+        0.0015141406667567101
+
+        We verify that the p-value is less than with `fisher_exact`.
 
     """
     hypergeom = distributions.hypergeom
@@ -7440,21 +7495,62 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
            in the case of a correlated system of variables is such that it can be reasonably
            supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
            (1900), pp. 157-175.
+    .. [4] Mannan, R. William and E. Charles. Meslow. “Bird populations and
+           vegetation characteristics in managed and old-growth forests,
+           northeastern Oregon.” Journal of Wildlife Management
+           48, 1219-1238, :doi:`10.2307/3801783`, 1984.
 
     Examples
     --------
+    In [4]_, bird foraging behavior was investigated in an old-growth forest
+    of Oregon.
+    In the forest, 44% of the canopy volume was Douglas fir,
+    24% was ponderosa pine, 29% was grand fir, and 3% was western larch.
+    The authors observed the behavior of several species of birds, one of
+    which was the red-breasted nuthatch. They made 189 observations of this
+    species foraging, recording 43 ("23%") of observations in Douglas fir,
+    52 ("28%") in ponderosa pine, 54 ("29%") in grand fir, and 40 ("21%") in
+    western larch.
+
+    Using a chi-square test, we can test the null hypothesis that the
+    proportions of foraging events are equal to the proportions of canopy
+    volume. The authors of the paper considered a p-value less than 1% to be
+    significant.
+
+    Using the above proportions of canopy volume and observed events, we can
+    infer expected frequencies.
+
+    >>> import numpy as np
+    >>> f_exp = np.array([44, 24, 29, 3]) / 100 * 189
+
+    The observed frequencies of foraging were:
+
+    >>> f_obs = np.array([43, 52, 54, 40])
+
+    We can now compare the observed frequencies with the expected frequencies.
+
+    >>> from scipy.stats import chisquare
+    >>> chisquare(f_obs=f_obs, f_exp=f_exp)
+    Power_divergenceResult(statistic=228.23515947653874, pvalue=3.3295585338846486e-49)
+
+    The p-value is well below the chosen significance level. Hence, the
+    authors considered the difference to be significant and concluded
+    that the relative proportions of foraging events were not the same
+    as the relative proportions of tree canopy volume.
+
+    Following are other generic examples to demonstrate how the other
+    parameters can be used.
+
     When just `f_obs` is given, it is assumed that the expected frequencies
     are uniform and given by the mean of the observed frequencies.
 
-    >>> import numpy as np
-    >>> from scipy.stats import chisquare
     >>> chisquare([16, 18, 16, 14, 12, 12])
-    (2.0, 0.84914503608460956)
+    Power_divergenceResult(statistic=2.0, pvalue=0.84914503608460956)
 
     With `f_exp` the expected frequencies can be given.
 
     >>> chisquare([16, 18, 16, 14, 12, 12], f_exp=[16, 16, 16, 16, 16, 8])
-    (3.5, 0.62338762774958223)
+    Power_divergenceResult(statistic=3.5, pvalue=0.62338762774958223)
 
     When `f_obs` is 2-D, by default the test is applied to each column.
 
@@ -7462,26 +7558,26 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     >>> obs.shape
     (6, 2)
     >>> chisquare(obs)
-    (array([ 2.        ,  6.66666667]), array([ 0.84914504,  0.24663415]))
+    Power_divergenceResult(statistic=array([2.        , 6.66666667]), pvalue=array([0.84914504, 0.24663415]))
 
     By setting ``axis=None``, the test is applied to all data in the array,
     which is equivalent to applying the test to the flattened array.
 
     >>> chisquare(obs, axis=None)
-    (23.31034482758621, 0.015975692534127565)
+    Power_divergenceResult(statistic=23.31034482758621, pvalue=0.015975692534127565)
     >>> chisquare(obs.ravel())
-    (23.31034482758621, 0.015975692534127565)
+    Power_divergenceResult(statistic=23.310344827586206, pvalue=0.01597569253412758)
 
     `ddof` is the change to make to the default degrees of freedom.
 
     >>> chisquare([16, 18, 16, 14, 12, 12], ddof=1)
-    (2.0, 0.73575888234288467)
+    Power_divergenceResult(statistic=2.0, pvalue=0.7357588823428847)
 
     The calculation of the p-values is done by broadcasting the
     chi-squared statistic with `ddof`.
 
     >>> chisquare([16, 18, 16, 14, 12, 12], ddof=[0,1,2])
-    (2.0, array([ 0.84914504,  0.73575888,  0.5724067 ]))
+    Power_divergenceResult(statistic=2.0, pvalue=array([0.84914504, 0.73575888, 0.5724067 ]))
 
     `f_obs` and `f_exp` are also broadcast.  In the following, `f_obs` has
     shape (6,) and `f_exp` has shape (2, 6), so the result of broadcasting
@@ -7491,9 +7587,9 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     >>> chisquare([16, 18, 16, 14, 12, 12],
     ...           f_exp=[[16, 16, 16, 16, 16, 8], [8, 20, 20, 16, 12, 12]],
     ...           axis=1)
-    (array([ 3.5 ,  9.25]), array([ 0.62338763,  0.09949846]))
+    Power_divergenceResult(statistic=array([3.5 , 9.25]), pvalue=array([0.62338763, 0.09949846]))
 
-    """
+    """  # noqa
     return power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
                             lambda_="pearson")
 
@@ -7724,6 +7820,118 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
 Ks_2sampResult = KstestResult
 
 
+def _compute_prob_outside_square(n, h):
+    """
+    Compute the proportion of paths that pass outside the two diagonal lines.
+
+    Parameters
+    ----------
+    n : integer
+        n > 0
+    h : integer
+        0 <= h <= n
+
+    Returns
+    -------
+    p : float
+        The proportion of paths that pass outside the lines x-y = +/-h.
+
+    """
+    # Compute Pr(D_{n,n} >= h/n)
+    # Prob = 2 * ( binom(2n, n-h) - binom(2n, n-2a) + binom(2n, n-3a) - ... )
+    # / binom(2n, n)
+    # This formulation exhibits subtractive cancellation.
+    # Instead divide each term by binom(2n, n), then factor common terms
+    # and use a Horner-like algorithm
+    # P = 2 * A0 * (1 - A1*(1 - A2*(1 - A3*(1 - A4*(...)))))
+
+    P = 0.0
+    k = int(np.floor(n / h))
+    while k >= 0:
+        p1 = 1.0
+        # Each of the Ai terms has numerator and denominator with
+        # h simple terms.
+        for j in range(h):
+            p1 = (n - k * h - j) * p1 / (n + k * h + j + 1)
+        P = p1 * (1.0 - P)
+        k -= 1
+    return 2 * P
+
+
+def _count_paths_outside_method(m, n, g, h):
+    """Count the number of paths that pass outside the specified diagonal.
+
+    Parameters
+    ----------
+    m : integer
+        m > 0
+    n : integer
+        n > 0
+    g : integer
+        g is greatest common divisor of m and n
+    h : integer
+        0 <= h <= lcm(m,n)
+
+    Returns
+    -------
+    p : float
+        The number of paths that go low.
+        The calculation may overflow - check for a finite answer.
+
+    Notes
+    -----
+    Count the integer lattice paths from (0, 0) to (m, n), which at some
+    point (x, y) along the path, satisfy:
+      m*y <= n*x - h*g
+    The paths make steps of size +1 in either positive x or positive y
+    directions.
+
+    We generally follow Hodges' treatment of Drion/Gnedenko/Korolyuk.
+    Hodges, J.L. Jr.,
+    "The Significance Probability of the Smirnov Two-Sample Test,"
+    Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
+
+    """
+    # Compute #paths which stay lower than x/m-y/n = h/lcm(m,n)
+    # B(x, y) = #{paths from (0,0) to (x,y) without
+    #             previously crossing the boundary}
+    #         = binom(x, y) - #{paths which already reached the boundary}
+    # Multiply by the number of path extensions going from (x, y) to (m, n)
+    # Sum.
+
+    # Probability is symmetrical in m, n.  Computation below assumes m >= n.
+    if m < n:
+        m, n = n, m
+    mg = m // g
+    ng = n // g
+
+    # Not every x needs to be considered.
+    # xj holds the list of x values to be checked.
+    # Wherever n*x/m + ng*h crosses an integer
+    lxj = n + (mg-h)//mg
+    xj = [(h + mg * j + ng-1)//ng for j in range(lxj)]
+    # B is an array just holding a few values of B(x,y), the ones needed.
+    # B[j] == B(x_j, j)
+    if lxj == 0:
+        return special.binom(m + n, n)
+    B = np.zeros(lxj)
+    B[0] = 1
+    # Compute the B(x, y) terms
+    for j in range(1, lxj):
+        Bj = special.binom(xj[j] + j, j)
+        for i in range(j):
+            bin = special.binom(xj[j] - xj[i] + j - i, j-i)
+            Bj -= bin * B[i]
+        B[j] = Bj
+    # Compute the number of path extensions...
+    num_paths = 0
+    for j in range(lxj):
+        bin = special.binom((m-xj[j]) + (n - j), n-j)
+        term = B[j] * bin
+        num_paths += term
+    return num_paths
+
+
 def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     """Attempts to compute the exact 2sample probability.
 
@@ -7762,7 +7970,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
                     else:
                         prob = num_paths / bin
 
-    except (FloatingPointError, OverflowError, RuntimeError):
+    except (FloatingPointError, OverflowError):
         saw_fp_error = True
 
     if saw_fp_error:
@@ -9268,9 +9476,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
             nans because ranks relative to nans in the input are undefined.
             When `nan_policy` is 'omit', nans in `a` are ignored when ranking
             the other values, and the corresponding locations of the output
-            are nan. This behavior is the default because it is intuitive and
-            compatible with the behavior before the `nan_policy` parameter
-            was introduced.
+            are nan.
 
         .. versionadded:: 1.10
 
@@ -9326,15 +9532,15 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         return np.apply_along_axis(rankdata, axis, a, method,
                                    nan_policy=nan_policy)
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    arr = np.ravel(a)
+    contains_nan, nan_policy = _contains_nan(arr, nan_policy)
     nan_indexes = None
     if contains_nan:
         if nan_policy == 'omit':
-            nan_indexes = np.isnan(a)
+            nan_indexes = np.isnan(arr)
         if nan_policy == 'propagate':
-            return np.full_like(a, np.nan)
+            return np.full_like(arr, np.nan)
 
-    arr = np.ravel(a)
     algo = 'mergesort' if method == 'ordinal' else 'quicksort'
     sorter = np.argsort(arr, kind=algo)
 

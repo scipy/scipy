@@ -91,6 +91,19 @@ def _results_select(full_output, r):
     return x
 
 
+def _wrap_nan_raise(f):
+
+    def f_raise(x, *args):
+        fx = f(x, *args)
+        if np.isnan(fx):
+            msg = (f'The function value at x={x} is NaN; '
+                   'solver cannot continue.')
+            raise ValueError(msg)
+        return fx
+
+    return f_raise
+
+
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
            fprime2=None, x1=None, rtol=0.0,
            full_output=False, disp=True):
@@ -554,6 +567,7 @@ def bisect(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+    f = _wrap_nan_raise(f)
     r = _zeros._bisect(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
@@ -651,6 +665,7 @@ def ridder(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+    f = _wrap_nan_raise(f)
     r = _zeros._ridder(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
@@ -781,6 +796,7 @@ def brentq(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+    f = _wrap_nan_raise(f)
     r = _zeros._brentq(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
@@ -891,6 +907,7 @@ def brenth(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+    f = _wrap_nan_raise(f)
     r = _zeros._brenth(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
@@ -1118,8 +1135,8 @@ class TOMS748Solver:
             return _ECONVERGED, b
 
         if np.sign(fb) * np.sign(fa) > 0:
-            raise ValueError("a, b must bracket a root f(%e)=%e, f(%e)=%e " %
-                             (a, fa, b, fb))
+            raise ValueError("f(a) and f(b) must have different signs, but "
+                             "f(%e)=%e, f(%e)=%e " % (a, fa, b, fb))
         self.fab[:] = [fa, fb]
 
         return _EINPROGRESS, sum(self.ab) / 2.0
@@ -1355,7 +1372,7 @@ def toms748(f, a, b, args=(), k=1,
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol / 4:
-        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol/4))
     maxiter = operator.index(maxiter)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
@@ -1370,6 +1387,7 @@ def toms748(f, a, b, args=(), k=1,
 
     if not isinstance(args, tuple):
         args = (args,)
+    f = _wrap_nan_raise(f)
     solver = TOMS748Solver()
     result = solver.solve(f, a, b, args=args, k=k, xtol=xtol, rtol=rtol,
                           maxiter=maxiter, disp=disp)
