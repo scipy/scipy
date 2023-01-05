@@ -1301,19 +1301,16 @@ cdef class Rotation:
         axes : list of (3, 1) arrays
             Specifies sequence of axes for rotations. Must be a list of
             3 arrays of shape (3, 1).
-
         angles : float or array_like, shape (3,) or (N, 3)
             Euler angles specified in radians (`degrees` is False) or degrees
             (`degrees` is True).
             - array_like with shape (3,), corresponding to single rotation
             - array_like with shape (N, 3), where each `angle[i, 0]`
               corresponds to a single rotation
-
         extrinsic : bool, optional
             If True, sequence will be extrinsic. If False, sequence will be
             treated as intrinsic.
             Default is True.
-
         degrees : bool, optional
             If True, then the given angles are assumed to be in degrees.
             Default is False.
@@ -1367,6 +1364,8 @@ cdef class Rotation:
         >>> e3 = [1, 0, 1]
         >>> axes = [e1, e2, e3]
         >>> r = R.from_davenport(axes, [90, 45, 30], degrees=True)
+        >>> r.as_quat().shape
+        (4,)
 
         """
         num_axes = len(axes)
