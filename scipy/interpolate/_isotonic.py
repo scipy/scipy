@@ -18,21 +18,21 @@ def isotonic_regression(
     increasing: bool = True,
 ):
     """Nonparametric isotonic regression.
-    
+
     Parameters
     ----------
     y : array_like
         Response variable.
     w : array_like or None
     increasing : bool
-        If True, fit monotonic increasing, i.e. isotonic, regression. If False, fit
-        a monotonic decreasing, i.e. antitonic, regression.
+        If True, fit monotonic increasing, i.e. isotonic, regression.
+        If False, fit a monotonic decreasing, i.e. antitonic, regression.
 
     Returns
     -------
     x : array_like
-        Isotonic regression solution, i.e. an increasing (or decresing) array of the
-        same length than y.
+        Isotonic regression solution, i.e. an increasing (or decresing) array
+        of the same length than y.
 
     Notes
     -----

@@ -5,6 +5,7 @@ import pytest
 from scipy.interpolate._pava_pybind import pava
 from scipy.interpolate import isotonic_regression
 
+
 class TestIsotonicRegression:
     def test_simple_pava(self):
         # Test case of Busing 2020
@@ -30,7 +31,7 @@ class TestIsotonicRegression:
         assert_almost_equal(r, [0, 6, 7])
         # Assert that y was not overwritten
         assert_equal(y, np.array([8, 4, 8, 2, 2, 0, 8], dtype=np.float64))
-    
+
     @pytest.mark.parametrize("increasing", [True, False])
     def test_linspace(self, increasing):
         n = 10
@@ -47,7 +48,8 @@ class TestIsotonicRegression:
         assert_almost_equal(wx, [8, 1.5, 4])
         assert_almost_equal(r, [0, 3, 6, 8])
 
-        # weights are like repeated observations, we repeat the 3rd element 5 times.
+        # weights are like repeated observations, we repeat the 3rd element 5
+        # times.
         w2 = np.array([1, 2, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5, 1, 3])
         y2 = np.array([3, 2, 1, 1, 1, 1, 1, 10, 9, 8, 20, 10])
         x2, wx2, r2 = isotonic_regression(y, w)

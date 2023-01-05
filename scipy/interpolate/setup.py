@@ -83,7 +83,7 @@ def configuration(parent_package='',top_path=None):
             config=['compiler.blas=none']
             )
         config.ext_modules.append(ext)
-    
+
     pava_pybind_includes = [
         pybind11.get_include(True),
         pybind11.get_include(False),
