@@ -5749,26 +5749,39 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     Notes
     -----
-
     The von Mises-Fisher distribution is a directional distribution on the
-    n-dimensional unit sphere. The probability density function is
+    n-dimensional unit sphere. The probability density function of a
+    unit vector :math:`\mathbf{x}` is
 
     .. math::
 
         f(\mathbf{x}) = \frac{\kappa^{d/2-1}}{(2\pi)^{d/2}I_{d/2-1}(\kappa)}
                \exp\left(\kappa \mathbf{\mu}^T\mathbf{x}\right),
 
-    where :math:`\mu` is the mean direction, :math:`\kappa` the
+    where :math:`\mathbf{\mu}` is the mean direction, :math:`\kappa` the
     concentration parameter, :math:`d` the dimension and :math:`I` the
-    modified Bessel function of the first kind. It often serves as an analogue
-    of the Normal distribution on the unit sphere. As :math:`\kappa` is a
-    concentration parameter, the distribution becomes more narrow with
+    modified Bessel function of the first kind. As :math:`\mu` represents
+    a direction, it must be a unit vector or in other words, a point
+    on the hypersphere: :math:`\mathbf{\mu}\in S^{d-1}`. :math:`\kappa` is a
+    concentration parameter, which means that it must be positive
+    (:math:`\kappa>0`) and that the distribution becomes more narrow with
     increasing :math:`\kappa`.
+
+    The von Mises-Fisher distribution often serves as an analogue of the
+    normal distribution on the sphere. Intuitively, for unit vectors, a
+    useful distance measure is given by the angle :math:`alpha` between
+    them. This is exactly what the scalar product
+    :math:`\mathbf{\mu}^T\mathbf{x}=\cos(\alpha)` in the
+    von Mises-Fisher probability density function describes: the angle
+    between the mean direction :math:`\mathbf{\mu}` and the vector
+    :math:`\mathbf{x}`. The larger the angle between them, the smaller the
+    probability to observe :math:`\mathbf{x}` for this particular mean
+    direction :math:`\mathbf{\mu}`.
 
     In dimensions 2 and 3, specialized algorithms are used for fast sampling
     [2]_, [3]_. For dimenions of 4 or higher the rejection sampling algorithm
     described in [4]_ is utilized. This implementation is partially based on
-    the geomstats package [5, 6]_.
+    the geomstats package [5]_, [6]_.
 
     .. versionadded:: 1.11
 
@@ -5835,12 +5848,50 @@ class vonmises_fisher_gen(multi_rv_generic):
     in a 5x3 array.
 
     >>> rng = np.random.default_rng()
-    >>> vonmises_fisher(np.array([0, 0, 1]), 20).rvs(5, random_state=rng)
+    >>> mu = np.array([0, 0, 1])
+    >>> samples = vonmises_fisher(mu, 20).rvs(5, random_state=rng)
+    >>> samples
     array([[ 0.3884594 , -0.32482588,  0.86231516],
            [ 0.00611366, -0.09878289,  0.99509023],
            [-0.04154772, -0.01637135,  0.99900239],
            [-0.14613735,  0.12553507,  0.98126695],
            [-0.04429884, -0.23474054,  0.97104814]])
+
+    These samples are unit vectors on the sphere :math:`S^2`. To verify,
+    let us calculate their euclidean norms:
+
+    >>> np.linalg.norm(samples, axis=1)
+    array([1., 1., 1., 1., 1.])
+
+    Plot 20 observations drawn from the von Mises-Fisher distribution for
+    increasing concentration parameter :math:`\kappa`. The red dot highlights
+    the mean direction :math:`\mu`.
+
+    >>> def plot_vmf_samples(ax, x, y, z, mu, kappa):
+    ...     vmf = vonmises_fisher(mu, kappa)
+    ...     samples = vmf.rvs(20)
+    ...     ax.plot_surface(x, y, z, rstride=1, cstride=1, linewidth=0,
+    ...                     alpha=0.2)
+    ...     ax.scatter(samples[:, 0], samples[:, 1], samples[:, 2], c='k', s=5)
+    ...     ax.scatter(mu[0], mu[1], mu[2], c='r', s=30)
+    ...     ax.set_aspect('equal')
+    ...     ax.view_init(azim=-130, elev=0)
+    ...     ax.axis('off')
+    ...     ax.set_title(rf"$\kappa={kappa}$")
+    >>> mu = np.array([-np.sqrt(0.5), -np.sqrt(0.5), 0])
+    >>> fig, axes = plt.subplots(nrows=1, ncols=3,
+    ...                          subplot_kw={"projection": "3d"},
+    ...                          figsize=(9, 4))
+    >>> left, middle, right = axes
+    >>> plot_vmf_samples(left, x, y, z, mu, 5)
+    >>> plot_vmf_samples(middle, x, y, z, mu, 20)
+    >>> plot_vmf_samples(right, x, y, z, mu, 100)
+    >>> plt.subplots_adjust(top=1, bottom=0.0, left=0.0,
+    ...                     right=1.0, wspace=0.)
+    >>> plt.show()
+
+    The plots show that with increasing concentration :math:`\kappa` the
+    resulting samples are centered more closely around the mean direction.
 
     The distribution can be fitted to data using the ``fit`` method returning
     the estimated parameters. As a toy example let's fit the distribution to
@@ -5851,6 +5902,9 @@ class vonmises_fisher_gen(multi_rv_generic):
     >>> mu_fit, kappa_fit = vonmises_fisher.fit(samples)
     >>> mu_fit, kappa_fit
     (array([0.01126519, 0.01044501, 0.99988199]), 19.306398751730995)
+
+    We see that the estimated parameters `mu_fit` and `kappa_fit` are
+    very close to the ground truth parameters.
     """
 
     def __init__(self, seed=None):
