@@ -10,7 +10,7 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.11.0,<0.12.0",
+    "meson-python>=0.11.0,<0.13.0",
     "Cython>=0.29.32,<3.0",
     # conservatively avoid issues from
     # https://github.com/pybind/pybind11/issues/4420
