@@ -5010,8 +5010,10 @@ def pointbiserialr(x, y):
 
     .. math::
 
-        r_{pb} = \frac{\overline{Y_{1}} -
-                 \overline{Y_{0}}}{s_{y}}\sqrt{\frac{N_{1} N_{2}}{N (N - 1))}}
+        r_{pb} = \frac{\overline{Y_1} - \overline{Y_0}}
+                      {s_y}
+                 \sqrt{\frac{N_0 N_1}
+                            {N (N - 1)}}
 
     Where :math:`\overline{Y_{0}}` and :math:`\overline{Y_{1}}` are means
     of the metric observations coded 0 and 1 respectively; :math:`N_{0}` and
