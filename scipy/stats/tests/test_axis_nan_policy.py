@@ -77,9 +77,6 @@ inaccuracy_messages = {"Precision loss occurred in moment calculation",
 # For some functions, nan_policy='propagate' should not just return NaNs
 override_propagate_funcs = {stats.mode}
 
-# For some functions, empty input should not result in all-NaN output
-override_empty_funcs = {stats.mode}
-
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
                           paired=False):
     # generate random samples to check the response of hypothesis tests to
@@ -604,7 +601,7 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
 
     if hypotest in override_propagate_funcs:
         reason = "Doesn't follow the usual pattern. Tested separately."
-        pytest.xfail(reason=reason)
+        pytest.skip(reason=reason)
 
     if unpacker is None:
         unpacker = lambda res: (res[0], res[1])  # noqa: E731
