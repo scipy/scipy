@@ -10220,6 +10220,21 @@ add_newdoc("nbdtrik",
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    Compute the negative binomial cumulative distribution function for an
+    exemplary parameter set.
+
+    >>> from scipy.special import nbdtr, nbdtrik
+    >>> k, n, p = 5, 2, 0.5
+    >>> cdf_value = nbdtr(k, n, p)
+    >>> cdf_value
+    0.9375
+
+    Verify that `nbdtrik` recovers the original value for `k`.
+
+    >>> nbdtrik(cdf_value, n, p)
+    5.0
     """)
 
 add_newdoc("nbdtrin",
@@ -10278,6 +10293,22 @@ add_newdoc("nbdtrin",
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    Compute the negative binomial cumulative distribution function for an
+    exemplary parameter set.
+
+    >>> from scipy.special import nbdtr, nbdtrin
+    >>> k, n, p = 5, 2, 0.5
+    >>> cdf_value = nbdtr(k, n, p)
+    >>> cdf_value
+    0.9375
+
+    Verify that `nbdtrin` recovers the original value for `n` up to floating
+    point accuracy.
+
+    >>> nbdtrin(k, cdf_value, p)
+    1.999999999998137
     """)
 
 add_newdoc("ncfdtr",
