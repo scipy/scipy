@@ -2199,6 +2199,9 @@ class foldnorm_gen(rv_continuous):
     def _cdf(self, x, c):
         return _norm_cdf(x-c) + _norm_cdf(x+c) - 1.0
 
+    def _sf(self, x, c):
+        return _norm_sf(x - c) + _norm_sf(x + c)
+
     def _stats(self, c):
         # Regina C. Elandt, Technometrics 3, 551 (1961)
         # https://www.jstor.org/stable/1266561
@@ -2763,8 +2766,9 @@ class genexpon_gen(rv_continuous):
     H.K. Ryu, "An Extension of Marshall and Olkin's Bivariate Exponential
     Distribution", Journal of the American Statistical Association, 1993.
 
-    N. Balakrishnan, "The Exponential Distribution: Theory, Methods and
-    Applications", Asit P. Basu.
+    N. Balakrishnan, Asit P. Basu (editors), *The Exponential Distribution:
+    Theory, Methods and Applications*, Gordon and Breach, 1995.
+    ISBN 10: 2884491929
 
     %(example)s
 
