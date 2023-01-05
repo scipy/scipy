@@ -19,7 +19,8 @@ from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                         _minimize_bfgs, _minimize_newtoncg,
                         _minimize_scalar_brent, _minimize_scalar_bounded,
                         _minimize_scalar_golden, MemoizeJac, OptimizeResult,
-                        _wrap_callback, BracketError)
+                        _wrap_callback, BracketError,
+                        _recover_from_bracket_error)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov
@@ -935,36 +936,6 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
                                            fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
-
-
-def _recover_from_bracket_error(solver, fun, bracket, args, **options):
-    # `bracket` was originally written without checking whether the resulting
-    # bracket is valid. `brent` and `golden` built on top of it without
-    # checking the returned bracket for validity, and their output can be
-    # incorrect without warning/error if the original bracket is invalid.
-    # gh-14858 noticed the problem, and the following is the desired
-    # behavior:
-    # - `scipy.optimize.bracket`, `scipy.optimize.brent`, and
-    #   `scipy.optimize.golden` should raise an error if the bracket is
-    #   invalid, as opposed to silently returning garbage
-    # - `scipy.optimize.minimize_scalar` should return with `success=False`
-    #   and other information
-    # The changes that would be required to achieve this the traditional
-    # way (`return`ing all the required information from bracket all the way
-    # up to `minimizer_scalar`) are extensive and invasive. (See a6aa40d.)
-    # We can achieve the same thing by raising the error in `bracket`, but
-    # storing the information needed by `minimize_scalar` in the error object,
-    # and intercepting it here.
-    try:
-        res = solver(fun, bracket, args, **options)
-    except BracketError as e:
-        msg = str(e)
-        xa, xb, xc, fa, fb, fc, funcalls = e.data
-        xs, fs = [xa, xb, xc], [fa, fb, fc]
-        imin = np.argmin(xs)
-        return OptimizeResult(fun=fs[imin], nfev=funcalls, x=xs[imin],
-                              nit=0, success=False, message=msg)
-    return res
 
 
 def _remove_from_bounds(bounds, i_fixed):
