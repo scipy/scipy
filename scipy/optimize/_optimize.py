@@ -3010,14 +3010,22 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         fb = fc
         fc = fw
 
+    # three conditions for a valid bracket
+    cond1 = (fb < fc and fb <= fa) or (fb < fa and fb <= fc)
+    cond2 = (xa < xb < xc or xc < xb < xa)
+    cond3 = np.all(np.isfinite([xa, xb, xc]))
     msg = ("The algorithm terminated without finding a valid bracket. "
            "Consider trying different initial points.")
-    if not ((fb < fc and fb <= fa) or (fb < fa and fb <= fc)
-            and (xa < xb < xc or xc < xb < xa) and
-            np.all(np.isfinite([xa, xb, xc]))):
-        raise RuntimeError(msg)
+    if not cond1 and cond2 and cond3:
+        e = BracketError(msg)
+        e.data = (xa, xb, xc, fa, fb, fc, funcalls)
+        raise e
 
     return xa, xb, xc, fa, fb, fc, funcalls
+
+
+class BracketError(RuntimeError):
+    pass
 
 
 def _line_for_search(x0, alpha, lower_bound, upper_bound):
