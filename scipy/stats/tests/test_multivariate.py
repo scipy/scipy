@@ -1569,7 +1569,7 @@ class TestInvwishart:
     def test_1D_is_invgamma(self):
         # The 1-dimensional inverse Wishart with an identity scale matrix is
         # just an inverse gamma distribution.
-        # Test variance, mean, pdf
+        # Test variance, mean, pdf, entropy
         # Kolgomorov-Smirnov test for rvs
         np.random.seed(482974)
 
@@ -1595,6 +1595,9 @@ class TestInvwishart:
             args = (df/2, 0, 1./2)
             alpha = 0.01
             check_distribution_rvs('invgamma', args, alpha, rvs)
+
+            # entropy
+            assert_allclose(iw.entropy(), ig.entropy())
 
     def test_wishart_invwishart_2D_rvs(self):
         dim = 3
