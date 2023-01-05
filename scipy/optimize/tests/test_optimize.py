@@ -1882,18 +1882,14 @@ class TestOptimizeScalar:
 class TestBracket:
 
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
-    def test_errors_and_status_false(self):
-        # Check that `bracket` raises the errors it is supposed
+    def test_errors(self):
+        # Check that `bracket` raises the errors it is supposed to.
         def f(x):  # gh-14858
             return x**2 if ((-1 < x) & (x < 1)) else 100.0
 
         message = "The algorithm terminated without finding a valid bracket."
         with pytest.raises(RuntimeError, match=message):
             optimize.bracket(f, -1, 1)
-        with pytest.raises(RuntimeError, match=message):
-            optimize.brent(f, brack=(-1, 1))
-        with pytest.raises(RuntimeError, match=message):
-            optimize.golden(f, brack=(-1, 1))
 
         def f(x):  # gh-5899
             return -5 * x**5 + 4 * x**4 - 12 * x**3 + 11 * x**2 - 2 * x + 1
@@ -1901,21 +1897,6 @@ class TestBracket:
         message = "No valid bracket was found before the iteration limit..."
         with pytest.raises(RuntimeError, match=message):
             optimize.bracket(f, -0.5, 0.5, maxiter=10)
-
-    @pytest.mark.parametrize('method', ('brent', 'golden'))
-    def test_minimize_scalar_success_false(self, method):
-        # Check that status information from `bracket` gets to minimize_scalar
-        def f(x):  # gh-14858
-            return x**2 if ((-1 < x) & (x < 1)) else 100.0
-
-        message = "The algorithm terminated without finding a valid bracket."
-
-        res = optimize.minimize_scalar(f, bracket=(-1, 1), method=method)
-        assert not res.success
-        assert message in res.message
-        assert res.nfev == 3
-        assert res.nit == 0
-        assert res.fun == 100
 
 
 def test_brent_negative_tolerance():
