@@ -7555,21 +7555,62 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
            in the case of a correlated system of variables is such that it can be reasonably
            supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
            (1900), pp. 157-175.
+    .. [4] Mannan, R. William and E. Charles. Meslow. “Bird populations and
+           vegetation characteristics in managed and old-growth forests,
+           northeastern Oregon.” Journal of Wildlife Management
+           48, 1219-1238, :doi:`10.2307/3801783`, 1984.
 
     Examples
     --------
+    In [4]_, bird foraging behavior was investigated in an old-growth forest
+    of Oregon.
+    In the forest, 44% of the canopy volume was Douglas fir,
+    24% was ponderosa pine, 29% was grand fir, and 3% was western larch.
+    The authors observed the behavior of several species of birds, one of
+    which was the red-breasted nuthatch. They made 189 observations of this
+    species foraging, recording 43 ("23%") of observations in Douglas fir,
+    52 ("28%") in ponderosa pine, 54 ("29%") in grand fir, and 40 ("21%") in
+    western larch.
+
+    Using a chi-square test, we can test the null hypothesis that the
+    proportions of foraging events are equal to the proportions of canopy
+    volume. The authors of the paper considered a p-value less than 1% to be
+    significant.
+
+    Using the above proportions of canopy volume and observed events, we can
+    infer expected frequencies.
+
+    >>> import numpy as np
+    >>> f_exp = np.array([44, 24, 29, 3]) / 100 * 189
+
+    The observed frequencies of foraging were:
+
+    >>> f_obs = np.array([43, 52, 54, 40])
+
+    We can now compare the observed frequencies with the expected frequencies.
+
+    >>> from scipy.stats import chisquare
+    >>> chisquare(f_obs=f_obs, f_exp=f_exp)
+    Power_divergenceResult(statistic=228.23515947653874, pvalue=3.3295585338846486e-49)
+
+    The p-value is well below the chosen significance level. Hence, the
+    authors considered the difference to be significant and concluded
+    that the relative proportions of foraging events were not the same
+    as the relative proportions of tree canopy volume.
+
+    Following are other generic examples to demonstrate how the other
+    parameters can be used.
+
     When just `f_obs` is given, it is assumed that the expected frequencies
     are uniform and given by the mean of the observed frequencies.
 
-    >>> import numpy as np
-    >>> from scipy.stats import chisquare
     >>> chisquare([16, 18, 16, 14, 12, 12])
-    (2.0, 0.84914503608460956)
+    Power_divergenceResult(statistic=2.0, pvalue=0.84914503608460956)
 
     With `f_exp` the expected frequencies can be given.
 
     >>> chisquare([16, 18, 16, 14, 12, 12], f_exp=[16, 16, 16, 16, 16, 8])
-    (3.5, 0.62338762774958223)
+    Power_divergenceResult(statistic=3.5, pvalue=0.62338762774958223)
 
     When `f_obs` is 2-D, by default the test is applied to each column.
 
@@ -7577,26 +7618,26 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     >>> obs.shape
     (6, 2)
     >>> chisquare(obs)
-    (array([ 2.        ,  6.66666667]), array([ 0.84914504,  0.24663415]))
+    Power_divergenceResult(statistic=array([2.        , 6.66666667]), pvalue=array([0.84914504, 0.24663415]))
 
     By setting ``axis=None``, the test is applied to all data in the array,
     which is equivalent to applying the test to the flattened array.
 
     >>> chisquare(obs, axis=None)
-    (23.31034482758621, 0.015975692534127565)
+    Power_divergenceResult(statistic=23.31034482758621, pvalue=0.015975692534127565)
     >>> chisquare(obs.ravel())
-    (23.31034482758621, 0.015975692534127565)
+    Power_divergenceResult(statistic=23.310344827586206, pvalue=0.01597569253412758)
 
     `ddof` is the change to make to the default degrees of freedom.
 
     >>> chisquare([16, 18, 16, 14, 12, 12], ddof=1)
-    (2.0, 0.73575888234288467)
+    Power_divergenceResult(statistic=2.0, pvalue=0.7357588823428847)
 
     The calculation of the p-values is done by broadcasting the
     chi-squared statistic with `ddof`.
 
     >>> chisquare([16, 18, 16, 14, 12, 12], ddof=[0,1,2])
-    (2.0, array([ 0.84914504,  0.73575888,  0.5724067 ]))
+    Power_divergenceResult(statistic=2.0, pvalue=array([0.84914504, 0.73575888, 0.5724067 ]))
 
     `f_obs` and `f_exp` are also broadcast.  In the following, `f_obs` has
     shape (6,) and `f_exp` has shape (2, 6), so the result of broadcasting
@@ -7606,9 +7647,9 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     >>> chisquare([16, 18, 16, 14, 12, 12],
     ...           f_exp=[[16, 16, 16, 16, 16, 8], [8, 20, 20, 16, 12, 12]],
     ...           axis=1)
-    (array([ 3.5 ,  9.25]), array([ 0.62338763,  0.09949846]))
+    Power_divergenceResult(statistic=array([3.5 , 9.25]), pvalue=array([0.62338763, 0.09949846]))
 
-    """
+    """  # noqa
     return power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
                             lambda_="pearson")
 
