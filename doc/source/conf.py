@@ -433,7 +433,12 @@ class LegacyDirective(Directive):
     node_class = nodes.admonition
 
     def run(self):
-        text = ("This submodule is now considered legacy and will no longer "
+        try:
+            obj = self.arguments[0]
+        except IndexError:
+            # Argument is empty; use default text
+            obj = "submodule"
+        text = (f"This {obj} is now considered legacy and will no longer "
                 "receive updates.")
 
         try:
