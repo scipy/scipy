@@ -1199,7 +1199,7 @@ class ShortTimeFFT:
 
     @property
     def k_min(self) -> int:
-        """The smallest possible signal index.
+        """The smallest possible signal index of the STFT.
 
         `k_min` is the index of the left-most non-zero value of the lowest
         slice `p_min`. Since the zeroth slice is centered over the zeroth
@@ -1458,9 +1458,11 @@ class ShortTimeFFT:
 
     @lru_cache(maxsize=1)
     def t(self, n: int, p0: Optional[int] = None, p1: Optional[int] = None,
-          k_off: int = 0) -> NDArray:
+          k_offset: int = 0) -> NDArray:
         """Times of STFT for an input signal with `n` samples.
 
+        Besides the number of input signal samples `n`, the parameters have
+        identical meaning as in `stft`.
         The times are ``delta_t = hop * T`` time units apart.
 
         See Also
@@ -1473,7 +1475,7 @@ class ShortTimeFFT:
         ShortTimeFFT: Class this method belongs to.
         """
         p0, p1 = self.p_range(n, p0, p1)
-        return np.arange(p0, p1) * self.delta_t + k_off * self.T
+        return np.arange(p0, p1) * self.delta_t + k_offset * self.T
 
     def nearest_k_p(self, k: int, left: bool = True) -> int:
         """Return nearest sample index k_p for which t[k_p] == t[p] holds.

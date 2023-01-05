@@ -1065,14 +1065,19 @@ implementation.
     % Since the physics package is not loaded, we define the macros ourselves:
     \newcommand{\vb}[1]{\mathbf{#1}} % vectors and matrices are bold
 
+.. shorthands to make the source more legible:
+.. |ShortTimeFFT| replace:: :class:`ShortTimeFFT <scipy.signal.ShortTimeFFT>`
+.. |old_stft| replace:: `stft <scipy.signal.stft>`
+.. |old_istft| replace:: `istft <scipy.signal.istft>`
+.. |old_spectrogram| replace:: `spectrogram <scipy.signal.spectrogram>`
+
 .. _tutorial_stft:
 
 Short-Time Fourier Transform
 ----------------------------
-This section gives some background information on using the
-:class:`ShortTimeFFT <scipy.signal.ShortTimeFFT>` class:
-For a complex valued signal :math:`x: \IR \mapsto\IC` the Short-time Fourier
-transform (STFT) is defined [4]_ as
+This section gives some background information on using the |ShortTimeFFT|
+class: For a complex valued signal :math:`x: \IR \mapsto\IC` the Short-time
+Fourier transform (STFT) is defined [4]_ as
 
 .. math::
 
@@ -1101,8 +1106,7 @@ interval :math:`\Delta f := 1 / (N T)` (see `delta_f`), which makes it FFT
 compatible. :math:`w[m] := w(mT)` , :math:`m\in\IZ` is the sampled window
 function.
 
-To be more aligned to the implementation of
-:class:`ShortTimeFFT <scipy.signal.ShortTimeFFT>`, it makes sense to
+To be more aligned to the implementation of |ShortTimeFFT|, it makes sense to
 reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
 
 
@@ -1168,18 +1172,17 @@ window :math:`w[m]` the hop size :math:`h` must be small enough to ensure that
 every sample of :math:`x[k]` is touched by a non-zero value of at least one
 window slice. This is sometimes referred as the "non-zero overlap condition"
 (see :func:`check_NOLA <scipy.signal.check_NOLA>`). Some more details are
-given in the subsection :ref:`tutorial_stft_dual_win`:
+given in the subsection :ref:`tutorial_stft_dual_win`.
 
 .. _tutorial_stft_sliding_win:
 
 Sliding Windows
 ^^^^^^^^^^^^^^^
 This subsection discusses how the sliding window is indexed in the
-:class:`ShortTimeFFT <scipy.signal.ShortTimeFFT>` by means of an example:
-Consider a window of length 6 with a `hop` interval of two and a sampling
-interval `T` of one, e.g., ``ShortTimeFFT(np.ones(6), 2, fs=1)``.
-The following image schematically depicts the first four window positions also
-named time slices:
+|ShortTimeFFT| by means of an example: Consider a window of length 6 with a
+`hop` interval of two and a sampling interval `T` of one, e.g., ``ShortTimeFFT
+(np.ones(6), 2, fs=1)``. The following image schematically depicts the first
+four window positions also named time slices:
 
 .. When editing the SVGs with Inkscape, convert all arrows from "Stroke" to
    "Path" (See "Path" menu). This circumvents the problem of the arrow tips
@@ -1241,11 +1244,11 @@ An STFT evaluated only at discrete grid
 points :math:`S(q \Delta f, p\Delta t)` is called  a "Gabor frame" in
 literature [4]_ [5]_.
 Since the support of the window :math:`w[m]` is limited to a finite interval,
-the :class:`ShortTimeFFT <scipy.signal.ShortTimeFFT>` falls into the class of
-the so-called "painless non-orthogonal expansions" [4]_. In this case the dual
-windows always have the same support and can be calculated by means of a
-diagonal matrix. A rough derivation only requiring some understanding of
-manipulating matrices will be sketched out in the following:
+the |ShortTimeFFT| falls into the class of the so-called "painless
+non-orthogonal expansions" [4]_. In this case the dual windows always have the
+same support and can be calculated by means of a diagonal matrix. A rough
+derivation only requiring some understanding of manipulating matrices will be
+sketched out in the following:
 
 Since the STFT given in Eq. :math:numref:`eq_dSTFT` is a linear mapping in
 :math:`x[k]`, it can be expressed in vector-matrix notation. This allows us to
@@ -1417,6 +1420,214 @@ Note that :math:`w_d[m]` is not a unique dual window, due :math:`\vb{s}`
 typically having more entries than :math:`\vb{x}`. It can be shown, that
 :math:`w_d[m]` has the minimal energy (or :math:`L_2` norm) [4_], which is the
 reason for being named the  "canonical dual window".
+
+
+.. _tutorial_stft_classic_stft:
+
+Comparison wit Classic Implementation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The functions |old_stft|, |old_istft|, and the |old_spectrogram| predate the
+|ShortTimeFFT| implementation. This section discusses the key differences
+between the old "classic" and the "new" |ShortTimeFFT| implementations. The
+main motivation for a rewrite was the insight that integrating :ref:`dual
+windows <tutorial_stft_dual_win>` could not be done in a sane way without
+breaking compatability. This opened the opportunity for rethinking the code
+structure and the parametrization, thus making some implicit behavior more
+explicit.
+
+The following example compares the two STFTs of a complex valued chirp signal
+with a negative slope:
+
+.. plot::
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.fft import fftshift
+    >>> from scipy.signal import stft, istft, spectrogram, ShortTimeFFT
+    ...
+    >>> fs, N = 200, 1001  # 200 Hz sampling rate for 5 s signal
+    >>> t_z = np.arange(N) / fs  # time indexes for signal
+    >>> z = np.exp(2j*np.pi*70 * (t_z - 0.2*t_z**2))  # complex-valued chirp
+    ...
+    >>> nperseg, noverlap = 50, 40
+    >>> win = ('gaussian', 1e-2 * fs)  # Gaussian with 0.01 s standard dev.
+    ...
+    >>> # Classic STFT:
+    >>> f0_u, t0, Sz0_u = stft(z, fs, win, nperseg, noverlap,
+    ...                        return_onesided=False, scaling='spectrum')
+    >>> f0, Sz0 = fftshift(f0_u), fftshift(Sz0_u, axes=0)
+    ...
+    >>> # New STFT:
+    >>> SFT = ShortTimeFFT.from_window(win, fs, nperseg, noverlap,
+    ...                                fft_typ='centered',
+    ...                                scale_to='magnitude', phase_shift=None)
+    >>> Sz1 = SFT.stft(z)
+    ...
+    >>> # Plot results:
+    >>> fig1, axx = plt.subplots(2, 1, sharex='all', sharey='all',
+    ...                          figsize=(6., 5.))  # enlarge figure a bit
+    >>> t_lo, t_hi, f_lo, f_hi = SFT.extent(N, center_bins=True)
+    >>> t_str0 = r"Classic stft() produces $%d\times%d$ points" % Sz0.T.shape
+    >>> t_str1 = r"ShortTimeFFT produces $%d\times%d$ points" % Sz1.T.shape
+    >>> _ = axx[0].set(title=t_str0, xlim=(t_lo, t_hi), ylim=(f_lo, f_hi))
+    >>> _ = axx[1].set(title=t_str1, xlabel="Time $t$ in seconds " +
+    ...                rf"($\Delta t= %g\,$s)" % SFT.delta_t)
+    ...
+    >>> # Calculate extent of plot with centered bins since imshow
+    ... # does not interpolate by default:
+    ... dt2 = (nperseg-noverlap) / fs  / 2 # equals SFT.delta_t / 2
+    >>> df2 = fs / nperseg / 2 # equals SFT.delta_f / 2
+    >>> extent0 = (-dt2, t0[-1] + dt2, f0[0] - df2, f0[-1] - df2)
+    >>> extent1 = SFT.extent(N, center_bins=True)
+    ...
+    >>> kw = dict(origin='lower', aspect='auto', cmap='viridis')
+    >>> im1a = axx[0].imshow(abs(Sz0), extent=extent0, **kw)
+    >>> im1b = axx[1].imshow(abs(Sz1), extent=extent1, **kw)
+    >>> fig1.colorbar(im1b, ax=axx,label="Magnitude $|S_z(t, f)|$")
+    >>> _ = fig1.supylabel(f"Frequency $f$ in Hertz ({SFT.f_pts} bins, " +
+    ...                    r"$\Delta f = %g\,$Hz)" % SFT.delta_f)
+    >>> plt.show()
+
+
+That the |ShortTimeFFT| produces 3 more time slices than the classic version is
+main notable difference. As laid out in the :ref:`tutorial_stft_sliding_win`
+section, all slices which touch the signal are incorporated in the new version.
+This has the advantage that the STFT can be sliced and reassembled as shown in
+the |ShortTimeFFT| code example. Furthermore, using all touching slices makes
+the ISTFT more robust in the case the windows are not non-zero everywhere.
+
+Note that the slices with identical time stamps produce equal results
+(up to numerical accuracy), i. e.:
+
+    >>> np.allclose(Sz0, Sz1[:, 2:-1])
+    True
+
+Generally, those the additional slices contain non-zero values. Due to the
+large overlap in our example, they are quite small. E.g.:
+
+    >>> abs(Sz1[:, 1]).min(), abs(Sz1[:, 1]).max()
+    (6.925060911593139e-07, 8.00271269218721e-07)
+
+The ISTFT can be utilized to reconstruct the original signal:
+
+    >>> t0_r, z0_r = istft(Sz0_u, fs, win, nperseg, noverlap,
+    ...                    input_onesided=False, scaling='spectrum')
+    >>> z1_r = SFT.istft(Sz1, k1=N)
+    ...
+    >>> len(z0_r), len(z)
+    (1010, 1001)
+    >>> np.allclose(z0_r[:N], z)
+    True
+    >>> np.allclose(z1_r, z)
+    True
+
+Note that the classic implementation returns a signal, which is longer than the
+original. On the other hand, the new `istft` allows the length signal length or
+the slice to be specified. The deviation in length in the old implementation is
+caused by the fact the signal length is not a multiple of the slices.
+
+Further differences between the new and classic versions in this example are:
+
+* The parameter ``fft_typ='centered'`` ensures that the zero frequency is
+  vertically centered for two-sided FFTs in the plot. With the classic
+  implementation, `fftshift <scipy.fft.fftshift>` needs to be utilized.
+  ``fftyp='twosided'`` produces the same behavior as the old version.
+* The parameter ``phase_shift=None`` ensures identical phases of the two
+  versions. |ShortTimeFFT|'s default value of ``0`` produces an STFT slices
+  with an additional linear phase term.
+
+.. The unit test ``test_short_time_fft.test_tutorial_stft_classic_stft``
+   verifies that all calculated values in this subsection are correct.
+
+A spectrogram is defined as the absolute square of the STFT [4]_. The
+`spectrogram` provided by the |ShortTimeFFT| sticks to that definition, i.e.:
+
+    >>> np.allclose(SFT.spectrogram(z), abs(Sz1)**2)
+    True
+
+On the other hand, the classic |old_spectrogram| provides another STFT
+implementation with the key difference being the different handling of the
+signal borders. The following example shows how to use the |ShortTimeFFT| to
+obtain an identical SFT as produced with the classic |old_spectrogram|:
+
+    >>> # Classic spectrogram (detrending for complex signals not useful):
+    >>> f2_u, t2, Sz2_u = spectrogram(z, fs, win, nperseg, noverlap,
+    ...                               detrend=None, return_onesided=False,
+    ...                               scaling='spectrum', mode='complex')
+    >>> f2, Sz2 = fftshift(f2_u), fftshift(Sz2_u, axes=0)
+    ...
+    >>> # New STFT:
+    ... SFT = ShortTimeFFT.from_window(win, fs, nperseg, noverlap,
+    ...                                fft_typ='centered',
+    ...                                scale_to='magnitude', phase_shift=None)
+    >>> Sz3 = SFT.stft(z, p0=0, p1=(N-noverlap)//SFT.hop, k_offset=nperseg//2)
+    >>> t3 = SFT.t(N, p0=0, p1=(N-noverlap)//SFT.hop, k_offset=nperseg//2)
+    ...
+    >>> np.allclose(t2, t3)
+    True
+    >>> np.allclose(f2, SFT.f)
+    True
+    >>> np.allclose(Sz2, Sz3)
+    True
+
+The difference to the other STFTs is that the time slices do not start at 0 but
+at ``nperseg//2``, i.e.:
+
+    >>> t2
+    array([0.125, 0.175, 0.225, 0.275, 0.325, 0.375, 0.425, 0.475, 0.525,
+           ...
+           4.625, 4.675, 4.725, 4.775, 4.825, 4.875])
+
+Furthermore, only slices which do not stick out to the right are returned,
+making the last slice be centered at 4.875 s, being shorter as with the default
+`stft` parametrization.
+
+Using the ``mode`` parameter, the classic |old_spectrogram| can also return the
+'angle', 'phase', 'psd' or the 'magnitude'. The `scaling` behavior of the
+classic |old_spectrogram| is not straightforward, since it depends on the
+parameters ``mode``, ``scaling`` and ``return_onesided``. There is no direct
+correspondence for all combinations in the |ShortTimeFFT|, since it provides
+only 'magnitude', 'psd' or no `scaling` of window at all. The following table
+shows those correspondences:
+
+.. table::
+   :class: table-sm
+
+   +-----------+----------+-----------------++------------+-----------+
+   |  Classic |old_spectrogram|             || |ShortTimeFFT|         |
+   +-----------+----------+-----------------++------------+-----------+
+   | mode      | scaling  | return_onesided || `fft_typ`  | `scaling` |
+   +===========+==========+=================++============+===========+
+   | psd       | density  |       True      || onesided2X | psd       |
+   +-----------+----------+-----------------++------------+-----------+
+   | psd       | density  |       False     || twosided   | psd       |
+   +-----------+----------+-----------------++------------+-----------+
+   | magnitude | spectrum |       True      || onesided   | magnitude |
+   +-----------+----------+-----------------++------------+-----------+
+   | magnitude | spectrum |       False     || twosided   | magnitude |
+   +-----------+----------+-----------------++------------+-----------+
+   | complex   | spectrum |       True      || onesided   | magnitude |
+   +-----------+----------+-----------------++------------+-----------+
+   | complex   | spectrum |       False     || twosided   | magnitude |
+   +-----------+----------+-----------------++------------+-----------+
+   | psd       | spectrum |       True      || ---        | ---       |
+   +-----------+----------+-----------------++------------+-----------+
+   | psd       | spectrum |       False     || ---        | ---       |
+   +-----------+----------+-----------------++------------+-----------+
+   | complex   | density  |       True      || ---        | ---       |
+   +-----------+----------+-----------------++------------+-----------+
+   | complex   | density  |       False     || ---        | ---       |
+   +-----------+----------+-----------------++------------+-----------+
+   | magnitude | density  |       True      || ---        | ---       |
+   +-----------+----------+-----------------++------------+-----------+
+   | magnitude | density  |       False     || ---        | ---       |
+   +-----------+----------+-----------------++------------+-----------+
+   | ---       | ---      |       ---       || ``*``      | None      |
+   +-----------+----------+-----------------++------------+-----------+
+
+More information on that topic can be found in the Github issue
+`14903 <https://github.com/scipy/scipy/issues/14903>`__, especially in this
+`comment <https://github.com/scipy/scipy/issues/14903#issuecomment-1100249704>`__.
 
 
 

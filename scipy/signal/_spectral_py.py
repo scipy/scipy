@@ -700,6 +700,11 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     It is for this reason that the default window is a Tukey window with
     1/8th of a window's length overlap at each end.
 
+    The class `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
+    features also including a spectrorgam method. A :ref:`comparison
+    <tutorial_stft_classic_stft>` between the implementations can be found in
+    the :ref:`tutorial_stft` section of the :ref:`user_guide`.
+
     .. versionadded:: 0.16.0
 
     References
@@ -1149,6 +1154,11 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     choice of `window`, `nperseg`, and `noverlap` satisfy this constraint can
     be tested with `check_NOLA`.
 
+    The class `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
+    features. A :ref:`comparison <tutorial_stft_classic_stft>` between the
+    implementations can be found in the :ref:`tutorial_stft` section of the
+    :ref:`user_guide`.
+
     .. versionadded:: 0.19.0
 
     References
@@ -1320,6 +1330,11 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     algorithm detailed in [2]_, which produces a signal that minimizes
     the mean squared error between the STFT of the returned signal and
     the modified STFT.
+
+    The class `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
+    features. A :ref:`comparison <tutorial_stft_classic_stft>` between the
+    implementations can be found in the :ref:`tutorial_stft` section of the
+    :ref:`user_guide`.
 
     .. versionadded:: 0.19.0
 

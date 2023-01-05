@@ -137,7 +137,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
 
     detr = None if detrend is False else detrend
     Sxx = ST.stft_detrend(x, detr, p0, p1, k_off, axis=axis)
-    t = ST.t(nn, 0, p1-p0, k_off=0 if boundary is not None else k_off)
+    t = ST.t(nn, 0, p1 - p0, k_offset=0 if boundary is not None else k_off)
     if x.dtype in (np.float32, np.complex64):
         Sxx = Sxx.astype(np.complex64)
 

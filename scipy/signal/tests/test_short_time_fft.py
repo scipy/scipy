@@ -22,7 +22,7 @@ Notes
   is not tested. The reason being that the author does not know hot to do it in
   a reasonable manner within pytest. This problem will go away when Numpy
   >= 1.21 becomes mandatory for SciPy.
-* Mypy 0.990 does interpret the line
+* Mypy 0.990 does interpret the line::
 
         from scipy.stats import norm as normal_distribution
 
@@ -35,12 +35,12 @@ from typing import cast, get_args, Literal
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_equal
+from scipy.fft import fftshift
 from scipy.stats import norm as normal_distribution  # type: ignore
+from scipy.signal import get_window, welch, stft, istft, spectrogram
 
-from scipy.signal import get_window
-from scipy.signal import ShortTimeFFT
 from scipy.signal._short_time_fft import FFT_TYP_TYPE, \
-    _calc_dual_canonical_window, PAD_TYPE
+    _calc_dual_canonical_window, ShortTimeFFT, PAD_TYPE
 from scipy.signal.windows import gaussian
 
 
@@ -474,7 +474,7 @@ def test_minimal_length_signal(m_num):
 
 
 def test_tutorial_stft_sliding_win():
-    """Verify example in "Sliding Windows" subsection from "User Guide".
+    """Verify example in "Sliding Windows" subsection from the "User Guide".
 
     In :ref:`tutorial_stft_sliding_win` (file ``signal.rst``) of the
     :ref:`user_guide` the behavior the border behavior of
@@ -497,6 +497,80 @@ def test_tutorial_stft_sliding_win():
     k_ub, p_ub = SFT.upper_border_begin(n)
     assert p_ub == 24, f"First upper border slice {p_ub=} must be 24"
     assert k_ub == 45, f"First upper border slice {k_ub=} must be 45"
+
+
+def test_tutorial_stft_classic_stft():
+    """Verify STFT example in "Comparison with Classic Implementation" from the
+    "User Guide".
+
+    In :ref:`tutorial_stft_classic_stft` (file ``signal.rst``) of the
+    :ref:`user_guide` the classic and the new implementation are compared.
+    """
+    fs, N = 200, 1001  # # 200 Hz sampling rate for 5 s signal
+    t_z = np.arange(N) / fs  # time indexes for signal
+    z = np.exp(2j*np.pi * 70 * (t_z - 0.2 * t_z ** 2))  # complex-valued chirp
+
+    nperseg, noverlap = 50, 40
+    win = ('gaussian', 1e-2 * fs)  # Gaussian with 0.01 s standard deviation
+
+    # Classic STFT:
+    f0_u, t0, Sz0_u = stft(z, fs, win, nperseg, noverlap,
+                           return_onesided=False, scaling='spectrum')
+    Sz0 = fftshift(Sz0_u, axes=0)
+
+    # New STFT:
+    SFT = ShortTimeFFT.from_window(win, fs, nperseg, noverlap,
+                                   fft_typ='centered',
+                                   scale_to='magnitude', phase_shift=None)
+    Sz1 = SFT.stft(z)
+
+    assert np.allclose(Sz0, Sz1[:, 2:-1])
+
+    assert_allclose((abs(Sz1[:, 1]).min(), abs(Sz1[:, 1]).max()),
+                    (6.925060911593139e-07, 8.00271269218721e-07))
+
+    t0_r, z0_r = istft(Sz0_u, fs, win, nperseg, noverlap, input_onesided=False,
+                       scaling='spectrum')
+    z1_r = SFT.istft(Sz1, k1=N)
+    assert len(z0_r) == N + 9
+    assert np.allclose(z0_r[:N], z)
+    assert np.allclose(z1_r, z)
+
+    #  Spectrogram is just the absolute square of th STFT:
+    np.allclose(SFT.spectrogram(z), abs(Sz1) ** 2)
+
+
+def test_tutorial_stft_classic_spectrogram():
+    """Verify spectrogram example in "Comparison with Classic Implementation"
+    from the "User Guide".
+
+    In :ref:`tutorial_stft_classic_stft` (file ``signal.rst``) of the
+    :ref:`user_guide` the classic and the new implementation are compared.
+    """
+    fs, N = 200, 1001  # # 200 Hz sampling rate for almost 5 s signal
+    t_z = np.arange(N) / fs  # time indexes for signal
+    z = np.exp(2j*np.pi*70 * (t_z - 0.2*t_z**2))  # complex-valued sweep
+
+    nperseg, noverlap = 50, 40
+    win = ('gaussian', 1e-2 * fs)  # Gaussian with 0.01 s standard dev.
+
+    # Classic spectrogram:
+    f2_u, t2, Sz2_u = spectrogram(z, fs, win, nperseg, noverlap, detrend=None,
+                                  return_onesided=False, scaling='spectrum',
+                                  mode='complex')
+
+    f2, Sz2 = fftshift(f2_u), fftshift(Sz2_u, axes=0)
+
+    # New STFT:
+    SFT = ShortTimeFFT.from_window(win, fs, nperseg, noverlap,
+                                   fft_typ='centered', scale_to='magnitude',
+                                   phase_shift=None)
+    Sz3 = SFT.stft(z, p0=0, p1=(N-noverlap) // SFT.hop, k_offset=nperseg // 2)
+    t3 = SFT.t(N, p0=0, p1=(N-noverlap) // SFT.hop, k_offset=nperseg // 2)
+
+    assert np.allclose(t2, t3)
+    assert np.allclose(f2, SFT.f)
+    assert np.allclose(Sz2, Sz3)
 
 
 def test_permute_axes():
@@ -569,6 +643,29 @@ def test_roundtrip_windows(window, n: int, nperseg: int, noverlap: int):
     x32_1 = SFT.istft(Sx32, k1=len(x32))
     assert_allclose(x32, x32_1,
                     err_msg="Roundtrip for 32 Bit float values failed")
+
+
+def test_average_all_segments():
+    """Compare `welch` function with stft mean.
+
+    Ported from `TestSpectrogram.test_average_all_segments` from file
+    ``test__spectral.py``.
+    """
+    x = np.random.randn(1024)
+
+    fs = 1.0
+    window = ('tukey', 0.25)
+    nperseg, noverlap = 16, 2
+    fw, Pw = welch(x, fs, window, nperseg, noverlap)
+    SFT = ShortTimeFFT.from_window(window, fs, nperseg, noverlap,
+                                   fft_typ='onesided2X', scale_to='psd',
+                                   phase_shift=None)
+    # `welch` positions the window differently than the STFT:
+    P = SFT.spectrogram(x, detr='constant', p0=0,
+                        p1=(len(x)-noverlap)//SFT.hop, k_offset=nperseg//2)
+
+    assert_allclose(SFT.f, fw)
+    assert_allclose(np.mean(P, axis=-1), Pw)
 
 
 @pytest.mark.parametrize('window, N, nperseg, noverlap, mfft',
