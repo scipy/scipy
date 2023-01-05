@@ -52,10 +52,11 @@ class TestIsotonicRegression:
         # times.
         w2 = np.array([1, 2, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5, 1, 3])
         y2 = np.array([3, 2, 1, 1, 1, 1, 1, 10, 9, 8, 20, 10])
-        x2, wx2, r2 = isotonic_regression(y, w)
-        assert_almost_equal(x2, x)
+        x2, wx2, r2 = isotonic_regression(y2, w2)
+        assert_almost_equal(np.diff(x2[0:7]), 0)
+        assert_almost_equal(x2[4:], x)
         assert_almost_equal(wx2, wx)
-        assert_almost_equal(r2, r)
+        assert_almost_equal(r2[1:] - 4, r[1:])
 
     def test_against_R_monotone(self):
         n = 100
