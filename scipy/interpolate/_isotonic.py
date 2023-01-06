@@ -180,6 +180,7 @@ class IsotonicInterpolator():
                 weights = weights[order]
 
         z, wz, indices = isotonic_regression(y, weights, increasing=increasing)
+
         # Construct knots at boundaries of blocks for interpolation.
         n_knots = np.sum(np.clip(np.diff(indices), None, 2))
         n_blocks = indices.shape[0] - 1
@@ -190,12 +191,12 @@ class IsotonicInterpolator():
             self.x_[j] = x[indices[b]]
             self.y_[j] = z[indices[b]]
             if indices[b + 1] > indices[b] + 1:
-                # a block containing multiple values
+                # a block containing multiple elements
                 self.x_[j + 1] = x[indices[b + 1] - 1]
                 self.y_[j + 1] = z[indices[b + 1] - 1]
                 j += 2
             else:
-                # a single point block
+                # a single element block
                 j += 1
 
         # TODO: Maybe this is overkill.
