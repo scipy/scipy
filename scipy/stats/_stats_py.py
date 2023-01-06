@@ -2943,7 +2943,7 @@ def gstd(a, axis=0, ddof=1):
     --------
     gmean : Geometric mean
     numpy.std : Standard deviation
-    scipy.stats.gzscore : Geometric standard score
+    gzscore : Geometric standard score
 
     Notes
     -----
