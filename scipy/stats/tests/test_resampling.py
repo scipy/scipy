@@ -637,7 +637,7 @@ def test_vector_valued_statistic(method):
                            np.std(data, axis, ddof=1)])
 
     res = bootstrap((sample,), statistic, method=method, axis=-1,
-                    n_resamples=9999)
+                    n_resamples=9999, batch=200)
 
     counts = np.sum((res.confidence_interval.low.T < params)
                     & (res.confidence_interval.high.T > params),
