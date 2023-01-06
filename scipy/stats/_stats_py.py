@@ -2679,7 +2679,7 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     --------
     numpy.mean : Arithmetic average
     numpy.std : Arithmetic standard deviation
-    gzscore : Geometric standard score
+    scipy.stats.zscore : Geometric standard score
 
     Notes
     -----
@@ -2943,7 +2943,7 @@ def gstd(a, axis=0, ddof=1):
     --------
     gmean : Geometric mean
     numpy.std : Standard deviation
-    gzscore : Geometric standard score
+    scipy.stats.zscore : Geometric standard score
 
     Notes
     -----
