@@ -216,6 +216,7 @@ py3.install_sources([
     '_odds_ratio.py',
     '_page_trend_test.py',
     '_qmc.py',
+    '_qmvnt.py',
     '_relative_risk.py',
     '_resampling.py',
     '_result_classes.py',
