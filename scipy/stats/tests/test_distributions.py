@@ -3341,19 +3341,42 @@ class TestGenExpon:
         cdf = stats.genexpon.cdf(numpy.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
         assert_(numpy.all((0 <= cdf) & (cdf <= 1)))
 
-    def test_sf_tail(self):
-        # Expected value computed with mpmath. This script
-        #     import mpmath
-        #     mpmath.mp.dps = 80
-        #     x = mpmath.mpf('15.0')
-        #     a = mpmath.mpf('1.0')
-        #     b = mpmath.mpf('2.0')
-        #     c = mpmath.mpf('1.5')
-        #     print(float(mpmath.exp((-a-b)*x + (b/c)*-mpmath.expm1(-c*x))))
-        # prints
-        #     1.0859444834514553e-19
-        s = stats.genexpon.sf(15, 1, 2, 1.5)
-        assert_allclose(s, 1.0859444834514553e-19, rtol=1e-13)
+    # The values of p in the following data were computed with mpmath.
+    # E.g. the script
+    #     from mpmath import mp
+    #     mp.dps = 80
+    #     x = mp.mpf('15.0')
+    #     a = mp.mpf('1.0')
+    #     b = mp.mpf('2.0')
+    #     c = mp.mpf('1.5')
+    #     print(float(mp.exp((-a-b)*x + (b/c)*-mp.expm1(-c*x))))
+    # prints
+    #     1.0859444834514553e-19
+    @pytest.mark.parametrize('x, p, a, b, c',
+                             [(15, 1.0859444834514553e-19, 1, 2, 1.5),
+                              (0.25, 0.7609068232534623, 0.5, 2, 3),
+                              (0.25, 0.09026661397565876, 9.5, 2, 0.5),
+                              (0.01, 0.9753038265071597, 2.5, 0.25, 0.5),
+                              (3.25, 0.0001962824553094492, 2.5, 0.25, 0.5),
+                              (0.125, 0.9508674287164001, 0.25, 5, 0.5)])
+    def test_sf_isf(self, x, p, a, b, c):
+        sf = stats.genexpon.sf(x, a, b, c)
+        assert_allclose(sf, p, rtol=1e-14)
+        isf = stats.genexpon.isf(p, a, b, c)
+        assert_allclose(isf, x, rtol=1e-14)
+
+    # The values of p in the following data were computed with mpmath.
+    @pytest.mark.parametrize('x, p, a, b, c',
+                             [(0.25, 0.2390931767465377, 0.5, 2, 3),
+                              (0.25, 0.9097333860243412, 9.5, 2, 0.5),
+                              (0.01, 0.0246961734928403, 2.5, 0.25, 0.5),
+                              (3.25, 0.9998037175446906, 2.5, 0.25, 0.5),
+                              (0.125, 0.04913257128359998, 0.25, 5, 0.5)])
+    def test_cdf_ppf(self, x, p, a, b, c):
+        cdf = stats.genexpon.cdf(x, a, b, c)
+        assert_allclose(cdf, p, rtol=1e-14)
+        ppf = stats.genexpon.ppf(p, a, b, c)
+        assert_allclose(ppf, x, rtol=1e-14)
 
 
 class TestExponpow:
