@@ -88,13 +88,19 @@ lead to the spline function oscillating and ''overshooting'' in between the
 data points. In these situations, an alternative is to use the so-called
 *monotone* cubic interpolants: these are constructed to be only once
 continuously differentiable, and attempt to preserve the local shape implied
-by the data. `scipy.interpolate` provides two objects of this kind:
-`PchipInterpolator` and `Akima1DInterpolator` . To illustrate, let's consider
-data with an outlier:
+by the data. `scipy.interpolate` provides two objects of this kind,
+`PchipInterpolator` and `Akima1DInterpolator`.
+
+A further option for nonparametric interpolation is isotonic regression via
+`IsotonicInterpolator` which constructs a linear interpolant with constant
+regions.
+
+To illustrate, let's consider data with an outlier:
 
 .. plot::
 
-    >>> from scipy.interpolate import CubicSpline, PchipInterpolator, Akima1DInterpolator
+    >>> from scipy.interpolate import CubicSpline, PchipInterpolator
+    >>> from scipy.interpolate import Akima1DInterpolator, IsotonicInterpolator
     >>> x = np.array([1., 2., 3., 4., 4.5, 5., 6., 7., 8])
     >>> y = x**2
     >>> y[4] += 101
@@ -104,7 +110,8 @@ data with an outlier:
     >>> plt.plot(xx, CubicSpline(x, y)(xx), '--', label='spline')
     >>> plt.plot(xx, Akima1DInterpolator(x, y)(xx), '-', label='Akima1D')
     >>> plt.plot(xx, PchipInterpolator(x, y)(xx), '-', label='pchip')
-    >>> plt.plot(x, y, 'o')
+    >>> plt.plot(xx, IsotonicInterpolator(x, y)(xx), '-', label='isotonic')
+    >>> plt.plot(x, y, 'o', color='C0')
     >>> plt.legend()
     >>> plt.show()
 
