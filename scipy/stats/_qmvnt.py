@@ -121,7 +121,7 @@ def _get_lattice(lattice, n_dim, n_qmc_samples):
     return lattice(n_dim, n_qmc_samples)
 
 
-def _qauto(func, covar, low, high, error=1e-3, limit=10_000, **kwds):
+def _qauto(func, covar, low, high, rng, error=1e-3, limit=10_000, **kwds):
     """Automatically rerun the integration to get the required error bound.
 
     Parameters
@@ -130,6 +130,8 @@ def _qauto(func, covar, low, high, error=1e-3, limit=10_000, **kwds):
         Either :func:`_qmvn` or :func:`_qmvt`.
     covar, low, high : array
         As specified in :func:`_qmvn` and :func:`_qmvt`.
+    rng : Generator, optional
+        default_rng(), yada, yada
     error : float > 0
         The desired error bound.
     limit : int > 0:
@@ -148,7 +150,6 @@ def _qauto(func, covar, low, high, error=1e-3, limit=10_000, **kwds):
     n_samples : int
         The number of integration points actually used.
     """
-    rng = np.random.default_rng(kwds.pop('rng', None))
     n = len(covar)
     n_samples = 0
     if n == 1:
@@ -170,7 +171,7 @@ def _qauto(func, covar, low, high, error=1e-3, limit=10_000, **kwds):
     return prob, est_error, n_samples
 
 
-def _qmvn(m, covar, low, high, lattice='cbc', n_batches=10, rng=None):
+def _qmvn(m, covar, low, high, rng, lattice='cbc', n_batches=10):
     """Multivariate normal integration over box bounds.
 
     Parameters
@@ -183,12 +184,12 @@ def _qmvn(m, covar, low, high, lattice='cbc', n_batches=10, rng=None):
         Possibly singular, positive semidefinite symmetric covariance matrix.
     low, high : (n,) float array
         The low and high integration bounds.
+    rng : Generator, optional
+        default_rng(), yada, yada
     lattice : 'cbc' or 'richtmyer' or callable
         The type of lattice rule to use to construct the integration points.
     n_batches : int > 0, optional
         The number of QMC batches to apply.
-    rng : Generator, optional
-        default_rng(), yada, yada
 
     Returns
     -------
@@ -197,7 +198,6 @@ def _qmvn(m, covar, low, high, lattice='cbc', n_batches=10, rng=None):
     est_error : float
         3 times the standard error of the batch estimates.
     """
-    rng = np.random.default_rng(rng)
     cho, lo, hi = _permuted_cholesky(covar, low, high)
     n = cho.shape[0]
     ct = cho[0, 0]
@@ -302,7 +302,7 @@ def _mvn_qmc_integrand(covar, low, high, use_tent=False):
     return integrand, ndim_integrand
 
 
-def _qmvt(m, covar, low, high, nu, lattice='cbc', n_batches=10, rng=None):
+def _qmvt(m, nu, covar, low, high, rng, lattice='cbc', n_batches=10):
     """Multivariate t integration over box bounds.
 
     Parameters
@@ -311,18 +311,18 @@ def _qmvt(m, covar, low, high, nu, lattice='cbc', n_batches=10, rng=None):
         The number of points to sample. This number will be divided into
         `n_batches` batches that apply random offsets of the sampling lattice
         for each batch in order to estimate the error.
+    nu : float >= 0
+        The shape parameter of the multivariate t distribution.
     covar : (n, n) float array
         Possibly singular, positive semidefinite symmetric covariance matrix.
     low, high : (n,) float array
         The low and high integration bounds.
-    nu : float >= 0
-        The shape parameter of the multivariate t distribution.
+    rng : Generator, optional
+        default_rng(), yada, yada
     lattice : 'cbc' or 'richtmyer' or callable
         The type of lattice rule to use to construct the integration points.
     n_batches : int > 0, optional
         The number of QMC batches to apply.
-    rng : Generator, optional
-        default_rng(), yada, yada
 
     Returns
     -------
@@ -333,7 +333,6 @@ def _qmvt(m, covar, low, high, nu, lattice='cbc', n_batches=10, rng=None):
     n_samples : int
         The number of samples actually used.
     """
-    rng = np.random.default_rng(rng)
     sn = max(1.0, np.sqrt(nu))
     low = np.asarray(low, dtype=np.float64)
     high = np.asarray(high, dtype=np.float64)

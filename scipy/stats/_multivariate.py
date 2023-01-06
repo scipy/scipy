@@ -15,7 +15,7 @@ from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom
 from . import _mvn, _covariance, contingency
-from ._mvt import _qsimvtv
+from ._qmvnt import _qmvt
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -4439,7 +4439,7 @@ class multivariate_t_gen(multi_rv_generic):
 
         def func1d(limits):
             a, b = limits[:n], limits[n:]
-            return _qsimvtv(maxpts, df, shape, a, b, rng)[0]
+            return _qmvt(maxpts, df, shape, a, b, rng)[0]
 
         return np.apply_along_axis(func1d, -1, limits) * signs
 
