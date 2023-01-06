@@ -222,6 +222,8 @@ line_search = line_search_wolfe1
 # Pure-Python Wolfe line and scalar searches
 #------------------------------------------------------------------------------
 
+# Note: `line_search_wolfe2` is the public `scipy.optimize.line_search`
+
 def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
                        old_old_fval=None, args=(), c1=1e-4, c2=0.9,
                        amax=None, extra_condition=None, maxiter=10, dfo=False):
@@ -236,7 +238,8 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     xk : ndarray
         Starting point.
     pk : ndarray
-        Search direction.
+        Search direction. The search direction must be a descent direction
+        for the algorithm to converge.
     gfk : ndarray, optional
         Gradient value for x=xk (xk being the current parameter
         estimate). Will be recomputed if omitted.
@@ -292,6 +295,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     Uses the line search algorithm to enforce strong Wolfe
     conditions. See Wright and Nocedal, 'Numerical Optimization',
     1999, pp. 59-61.
+
+    The search direction `pk` must be a descent direction (e.g.
+    ``-myfprime(xk)``) to find a step length that satisfies the strong Wolfe
+    conditions. If the search direction is not a descent direction (e.g.
+    ``myfprime(xk)``), then `alpha`, `new_fval`, and `new_slope` will be None.
 
     Examples
     --------

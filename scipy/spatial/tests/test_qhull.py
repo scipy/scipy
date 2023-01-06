@@ -543,13 +543,6 @@ class TestDelaunay:
         assert_unordered_tuple_list_equal(obj2.simplices, obj3.simplices,
                                           tpl=sorted_tuple)
 
-    def test_vertices_deprecation(self):
-        tri = qhull.Delaunay([(0, 0), (0, 1), (1, 0)])
-        msg = ("Delaunay attribute 'vertices' is deprecated in favour of "
-               "'simplices' and will be removed in Scipy 1.11.0.")
-        with pytest.warns(DeprecationWarning, match=msg):
-            tri.vertices
-
 
 def assert_hulls_equal(points, facets_1, facets_2):
     # Check that two convex hulls constructed from the same point set

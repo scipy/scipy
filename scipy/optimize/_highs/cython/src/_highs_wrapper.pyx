@@ -555,7 +555,7 @@ def _highs_wrapper(
 
     References
     ----------
-    .. [1] https://www.maths.ed.ac.uk/hall/HiGHS
+    .. [1] https://highs.dev/
     .. [2] https://www.maths.ed.ac.uk/hall/HiGHS/HighsOptions.html
     '''
 

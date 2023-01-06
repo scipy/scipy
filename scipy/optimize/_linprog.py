@@ -535,7 +535,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             Mathematical Programming Study 4 (1975): 146-166.
     .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
             "HiGHS - high performance software for linear optimization."
-            Accessed 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+            https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
             simplex method." Mathematical Programming Computation, 10 (1),
             119-142, 2018. DOI: 10.1007/s12532-017-0130-5
@@ -620,7 +620,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                            "constraints. Ignoring `integrality`.")
         warn(warning_message, OptimizeWarning)
     elif np.any(integrality):
-        integrality = np.broadcast_to(integrality, c.shape)
+        integrality = np.broadcast_to(integrality, np.shape(c))
 
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality)
     lp, solver_options = _parse_linprog(lp, options, meth)

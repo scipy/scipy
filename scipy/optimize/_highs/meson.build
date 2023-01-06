@@ -11,7 +11,8 @@ highs_define_macros = [
   '-UEXT_PRESOLVE',
   '-USCIP_DEV',
   '-UHiGHSDEV',
-  '-UOSI_FOUND'
+  '-UOSI_FOUND',
+  '-DNDEBUG'
 ]
 
 basiclu_lib = static_library('basiclu',
