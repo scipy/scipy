@@ -94,16 +94,17 @@ def sample_A_B(
 def sample_AB(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     """AB matrix.
 
-    AB: columns of B into A. Shape (d, n*d). e.g in 2d
-    Take A and replace 1st column with 1st column of B. You have (d, n)
-    Then A and replace 2nd column with 2nd column of B. You have (d, n)
-    Concatenate to get AB. Which means AB is (d, 2*n).
+    AB: rows of B into A. Shape (d, d, n).
+    - Copy A into d "pages"
+    - In the first page, replace 1st rows of A with 1st row of B.
+    ...
+    - In the dth page, replace dth row of A with dth row of B.
+    - return the stack of pages
     """
     d, n = A.shape
     AB = np.tile(A, (d, 1, 1))
     i = np.arange(d)
     AB[i, i] = B[i]
-    AB = np.concatenate(AB, axis=1)
     return AB
 
 
@@ -124,9 +125,10 @@ def saltelli_2010(
 
     Parameters
     ----------
-    f_A, f_B, f_AB : array_like (s, n)
-        Function evaluations ``n`` being the number of evaluations and ``s``
-        a vector output.
+    f_A, f_B : array_like (s, n)
+        Function values at A and B, respectively
+    f_AB : array_like (d, s, n)
+        Function values at each of the AB pages
 
     Returns
     -------
@@ -142,18 +144,17 @@ def saltelli_2010(
        :doi:`10.1016/j.cpc.2009.09.018`, 2010.
     """
     s_, n = f_A.shape
-    f_AB = f_AB.reshape((-1, s_, n))
 
     # Empirical variance calculated using output from A and B which are
     # independent. Output of AB is not independent and cannot be used
-    var = np.var(np.concatenate([f_A, f_B], axis=1), axis=1)
+    var = np.var([f_A, f_B], axis=(0, -1))
 
     # We divide by the variance to have a ratio of variance
     # this leads to eq. 2
     s = np.mean(f_B * (f_AB - f_A), axis=-1) / var  # Table 2 (b)
     st = 0.5 * np.mean((f_A - f_AB) ** 2, axis=-1) / var  # Table 2 (f)
 
-    return s.reshape(s_, -1), st.reshape(s_, -1)
+    return s.T, st.T
 
 
 @dataclass
@@ -208,11 +209,7 @@ class SobolResult:
         def statistic(idx):
             f_A_ = self._f_A[:, idx]
             f_B_ = self._f_B[:, idx]
-
-            s, _ = self._f_A.shape
-            f_AB_ = self._f_AB.reshape((s, -1, n))
-            f_AB_ = f_AB_[:, :, idx].reshape(s, -1)
-
+            f_AB_ = self._f_AB[..., idx]
             return self._indices_method(f_A_, f_B_, f_AB_)
 
         n = self._f_A.shape[1]
@@ -591,7 +588,13 @@ def sobol_indices(
                 "the number of output."
             )
 
-        f_B, f_AB = np.atleast_2d(func(B), func(AB))
+        def funcAB(AB):
+            m, m, n = AB.shape
+            AB = np.moveaxis(AB, 0, -1).reshape(m, n*m)
+            f_AB = func(AB)
+            return np.moveaxis(f_AB.reshape(-1, n, m), -1, 0)
+
+        f_B, f_AB = np.atleast_2d(func(B), funcAB(AB))
     else:
         message = (
             "When 'func' is a dictionary, it must contain the following "
