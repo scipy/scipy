@@ -62,23 +62,6 @@ class TestUtils:
             space = [0, 1, 0.5]
             qmc.scale(space, l_bounds=-2, u_bounds=6)
 
-        with pytest.raises(ValueError, match=r"Bounds are not consistent"):
-            space = [[0, 0], [1, 1], [0.5, 0.5]]
-            bounds = np.array([[-2, 6], [6, 5]])
-            qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
-
-        with pytest.raises(ValueError, match=r"'l_bounds' and 'u_bounds'"
-                                             r" must be broadcastable"):
-            space = [[0, 0], [1, 1], [0.5, 0.5]]
-            l_bounds, u_bounds = [-2, 0, 2], [6, 5]
-            qmc.scale(space, l_bounds=l_bounds, u_bounds=u_bounds)
-
-        with pytest.raises(ValueError, match=r"'l_bounds' and 'u_bounds'"
-                                             r" must be broadcastable"):
-            space = [[0, 0], [1, 1], [0.5, 0.5]]
-            bounds = np.array([[-2, 0, 2], [6, 5, 5]])
-            qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
-
         with pytest.raises(ValueError, match=r"Sample is not in unit "
                                              r"hypercube"):
             space = [[0, 0], [1, 1.5], [0.5, 0.5]]

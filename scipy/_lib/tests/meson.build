@@ -5,6 +5,7 @@ python_sources = [
   'test__testutils.py',
   'test__threadsafety.py',
   'test__util.py',
+  'test_bounds.py',
   'test_bunch.py',
   'test_ccallback.py',
   'test_deprecation.py',

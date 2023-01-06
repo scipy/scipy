@@ -36,6 +36,7 @@ from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            NonlinearConstraint, LinearConstraint, Bounds,
                            PreparedConstraint)
 from ._differentiable_functions import FD_METHODS
+from .._lib._bounds import _validate_bounds
 
 MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
@@ -641,7 +642,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if bounds is not None:
         # convert to new-style bounds so we only have to consider one case
         bounds = standardize_bounds(bounds, x0, 'new')
-        bounds = _validate_bounds(bounds, x0, meth)
+        bounds.lb, bounds.ub = _validate_bounds(
+            l_bounds=bounds.lb, u_bounds=bounds.ub, x0=x0
+        )
 
         if meth in {"tnc", "slsqp", "l-bfgs-b"}:
             # These methods can't take the finite-difference derivatives they
@@ -977,22 +980,6 @@ def _add_to_array(x_in, i_fixed, x_fixed):
     x_out[i_free] = x_in.ravel()
     return x_out
 
-
-def _validate_bounds(bounds, x0, meth):
-    """Check that bounds are valid."""
-
-    msg = "An upper bound is less than the corresponding lower bound."
-    if np.any(bounds.ub < bounds.lb):
-        raise ValueError(msg)
-
-    msg = "The number of bounds is not compatible with the length of `x0`."
-    try:
-        bounds.lb = np.broadcast_to(bounds.lb, x0.shape)
-        bounds.ub = np.broadcast_to(bounds.ub, x0.shape)
-    except Exception as e:
-        raise ValueError(msg) from e
-
-    return bounds
 
 def standardize_bounds(bounds, x0, meth):
     """Converts bounds to the form required by the solver."""

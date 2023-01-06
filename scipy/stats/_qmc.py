@@ -29,9 +29,10 @@ if TYPE_CHECKING:
     )
 
 import scipy.stats as stats
+from scipy._lib._bounds import _validate_bounds
 from scipy._lib._util import rng_integers
 from scipy.spatial import distance, Voronoi
-from scipy.special import gammainc
+from scipy.special import gammainc  # noqa
 from ._sobol import (
     _initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
     _categorize, _MAXDIM
@@ -154,7 +155,7 @@ def scale(
         raise ValueError('Sample is not a 2D array')
 
     lower, upper = _validate_bounds(
-        l_bounds=l_bounds, u_bounds=u_bounds, d=sample.shape[1]
+        l_bounds=l_bounds, u_bounds=u_bounds, x0=sample
     )
 
     if not reverse:
@@ -2556,35 +2557,3 @@ def _validate_workers(workers: IntNumber = 1) -> IntNumber:
                          "or > 0")
 
     return workers
-
-
-def _validate_bounds(
-    l_bounds: npt.ArrayLike, u_bounds: npt.ArrayLike, d: int
-) -> Tuple[np.ndarray, ...]:
-    """Bounds input validation.
-
-    Parameters
-    ----------
-    l_bounds, u_bounds : array_like (d,)
-        Lower and upper bounds.
-    d : int
-        Dimension to use for broadcasting.
-
-    Returns
-    -------
-    l_bounds, u_bounds : array_like (d,)
-        Lower and upper bounds.
-
-    """
-    try:
-        lower = np.broadcast_to(l_bounds, d)
-        upper = np.broadcast_to(u_bounds, d)
-    except ValueError as exc:
-        msg = ("'l_bounds' and 'u_bounds' must be broadcastable and respect"
-               " the sample dimension")
-        raise ValueError(msg) from exc
-
-    if not np.all(lower < upper):
-        raise ValueError("Bounds are not consistent 'l_bounds' < 'u_bounds'")
-
-    return lower, upper

@@ -1550,7 +1550,7 @@ class TestOptimizeSimple(CheckOptimize):
             return np.sum(x**2)
 
         bounds = Bounds([1, 2], [3, 4])
-        msg = 'The number of bounds is not compatible with the length of `x0`.'
+        msg = 'The number of bounds is not compatible with the length of ``x0='
         with pytest.raises(ValueError, match=msg):
             optimize.minimize(f, x0=[1, 2, 3], method=method, bounds=bounds)
 
