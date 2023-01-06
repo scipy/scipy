@@ -22,6 +22,7 @@ modified_clone: &MODIFIED_CLONE
 
       # alpine git package needs default user.name and user.email to be set before a merge
       git -c user.email="you@example.com" merge --no-commit pull/$CIRRUS_PR
+      git submodule update --init --recursive
     fi
 
 
