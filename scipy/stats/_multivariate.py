@@ -4453,7 +4453,10 @@ class multivariate_t_gen(multi_rv_generic):
             a, b = limits[:n], limits[n:]
             return _qmvt(maxpts, df, shape, a, b, rng)[0]
 
-        return np.apply_along_axis(func1d, -1, limits) * signs
+        res = np.apply_along_axis(func1d, -1, limits) * signs
+        # Fixing the output shape for existing distributions is a separate
+        # issue. For now, let's keep this consistent with pdf.
+        return _squeeze_output(res)
 
     def cdf(self, x, loc=None, shape=1, df=1, allow_singular=False, *,
             maxpts=None, lower_limit=None, random_state=None):

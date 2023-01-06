@@ -2388,19 +2388,25 @@ class TestMultivariateT:
         assert_allclose(res, ref, atol=5e-4)  # close to t
         assert np.all(np.abs(res - incorrect) > 1e-3)  # not close to normal
 
-    @pytest.mark.parametrize("n", [2, 3, 5, 10])
-    def test_cdf_against_qsimvtv(self, n):
+    @pytest.mark.parametrize("dim", [2, 3, 5, 10])
+    def test_cdf_against_qsimvtv(self, dim):
         rng = np.random.default_rng(413722918996573)
-        A = rng.random(size=(n, n))
+        A = rng.random(size=(dim, dim))
         cov = A @ A.T
-        mean = rng.random(n)
-        a = -rng.random(n)
-        b = rng.random(n)
+        mean = rng.random(dim)
+        a = -rng.random(dim)
+        b = rng.random(dim)
         df = rng.random() * 5
 
+        # no lower limit
+        res = stats.multivariate_t.cdf(b, mean, cov, df, random_state=rng)
+        ref = _qsimvtv(20000, df, cov, np.inf*a, b - mean, rng)[0]
+        assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
+
+        # with lower limit
         res = stats.multivariate_t.cdf(b, mean, cov, df, lower_limit=a,
                                        random_state=rng)
-        ref = _qsimvtv(10000, df, cov, a - mean, b - mean, rng)[0]
+        ref = _qsimvtv(20000, df, cov, a - mean, b - mean, rng)[0]
         assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
 
     def test_frozen(self):
@@ -2414,6 +2420,24 @@ class TestMultivariateT:
         dist = stats.multivariate_t(*args, seed=seed)
         assert_equal(dist.cdf(x), multivariate_t.cdf(x, *args,
                                                      random_state=seed))
+
+    def test_vectorized(self):
+        dim = 4
+        n = (2, 3)
+        rng = np.random.default_rng(413722918996573)
+        A = rng.random(size=(dim, dim))
+        cov = A @ A.T
+        mean = rng.random(dim)
+        x = rng.random(n + (dim,))
+        df = rng.random() * 5
+
+        res = stats.multivariate_t.cdf(x, mean, cov, df, random_state=rng)
+
+        def _cdf_1d(x):
+            return _qsimvtv(10000, df, cov, -np.inf*x, x-mean, rng)[0]
+
+        ref = np.apply_along_axis(_cdf_1d, -1, x)
+        assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
 
 
 class TestMultivariateHypergeom:
