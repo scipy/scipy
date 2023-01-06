@@ -2052,6 +2052,13 @@ class foldcauchy_gen(rv_continuous):
     def _cdf(self, x, c):
         return 1.0/np.pi*(np.arctan(x-c) + np.arctan(x+c))
 
+    def _sf(self, x, c):
+        # 1 - CDF(x, c) = 1 - (atan(x - c) + atan(x + c))/pi
+        #               = ((pi/2 - atan(x - c)) + (pi/2 - atan(x + c)))/pi
+        #               = (acot(x - c) + acot(x + c))/pi
+        #               = (atan2(1, x - c) + atan2(1, x + c))/pi
+        return (np.arctan2(1, x - c) + np.arctan2(1, x + c))/np.pi
+
     def _stats(self, c):
         return np.inf, np.inf, np.nan, np.nan
 
@@ -3880,6 +3887,12 @@ class halfcauchy_gen(rv_continuous):
 
     def _ppf(self, q):
         return np.tan(np.pi/2*q)
+
+    def _sf(self, x):
+        return 2.0/np.pi * np.arctan2(1, x)
+
+    def _isf(self, p):
+        return 1.0/np.tan(np.pi*p/2)
 
     def _stats(self):
         return np.inf, np.inf, np.nan, np.nan
