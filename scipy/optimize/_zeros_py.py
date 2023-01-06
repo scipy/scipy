@@ -1044,15 +1044,15 @@ def _newton_quadratic(ab, fab, d, fd, k):
         r = a - fa / B
     else:
         r = (a if np.sign(A) * np.sign(fa) > 0 else b)
-    # Apply k Newton-Raphson steps to _P(x), starting from x=r
-    for i in range(k):
-        r1 = r - _P(r) / (B + A * (2 * r - a - b))
-        if not (ab[0] < r1 < ab[1]):
-            if (ab[0] < r < ab[1]):
-                return r
-            r = sum(ab) / 2.0
-            break
-        r = r1
+        # Apply k Newton-Raphson steps to _P(x), starting from x=r
+        for i in range(k):
+            r1 = r - _P(r) / (B + A * (2 * r - a - b))
+            if not (ab[0] < r1 < ab[1]):
+                if (ab[0] < r < ab[1]):
+                    return r
+                r = sum(ab) / 2.0
+                break
+            r = r1
 
     return r
 
