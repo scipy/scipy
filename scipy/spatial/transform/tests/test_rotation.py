@@ -1497,11 +1497,15 @@ def test_as_davenport():
                 ax = ax[::-1]
             angles[:, 1] = angles_middle - lamb
             rot = Rotation.from_davenport(ax, angles, extrinsic=extrinsic)
-            angles_dav = rot.as_davenport(ax, extrinsic=extrinsic, correct_set=False)
+            angles_dav = rot.as_davenport(ax, extrinsic=extrinsic,
+                                          correct_set=False)
             assert_allclose(angles_dav, angles)
 
-            angles_dav_alt = rot.as_davenport(ax, extrinsic=extrinsic, correct_set=True)
-            rot_alt = Rotation.from_davenport(ax, angles_dav_alt, extrinsic=extrinsic)
+            # asserting that both sets are equivalent
+            angles_alt = rot.as_davenport(ax, extrinsic=extrinsic,
+                                          correct_set=True)
+            rot_alt = Rotation.from_davenport(ax, angles_alt,
+                                              extrinsic=extrinsic)
             assert_allclose(rot.as_quat(), rot_alt.as_quat())
 
 
