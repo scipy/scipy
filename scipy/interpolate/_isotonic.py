@@ -17,7 +17,11 @@ def isotonic_regression(
     weights: Optional[npt.ArrayLike] = None,
     increasing: bool = True,
 ):
-    """Nonparametric isotonic regression.
+    r"""Nonparametric isotonic regression.
+
+    A monotonically increasing interpolant is calculated by the pool adjacent
+    violators algorithm (PAVA), see [1]_. See the Notes section for more
+    details.
 
     Parameters
     ----------
@@ -37,18 +41,41 @@ def isotonic_regression(
     wx : (B,) array_like
         Sum of case weights for all blocks / pools B.
     r : (B+1,) array_like
-        Array of indices with the start positions of each block / pool B.
+        Array of indices with the start position of each block / pool B.
         For the j-th block, all values of ``x[r[j]:r[j+1]]`` are the same.
 
     Notes
     -----
+    Given data :math:`y` and case weights :math:`w`, the isotonic regression
+    solves the following optimazation problem:
+
+    .. math::
+
+        \operatorname{argmin}_{x_i} \sum_i w_i (y_i - x_i)^2 \quad
+        \text{subject to } x_i \leq x_j \text{ whenever } i \leq j \,.
+    
+    For every input value :math:`y_i`, it generates an interpolated value
+    :math:`x_i` which are increasing. This is accomplished by the PAVA.
+    The solution consists of pools or blocks, i.e. neighboring elements of
+    :math:`x`, e.g. :math:`x_i` and :math:`x_{i+1}`, that all have the same
+    value.
+
+    Most interestingly, the solution stays the same if the squared loss is
+    replaced by the wide class of Bregman functions which are the unique
+    class of strictly consistent scoring functions for the mean, see [2]_
+    and references therein.
 
     References
     ----------
     .. [1] Busing, F. M. T. A. (2022).
            Monotone Regression: A Simple and Fast O(n) PAVA Implementation.
            Journal of Statistical Software, Code Snippets, 102(1), 1-25.
-           https://doi.org/10.18637/jss.v102.c01
+           :doi:`10.18637/jss.v102.c01`
+    .. [2] Jordan, A.I., Mühlemann, A. & Ziegel, J.F.
+           Characterizing the optimal solutions to the isotonic regression
+           problem for identifiable functionals.
+           Ann Inst Stat Math 74, 489-514 (2022).
+           :doi:`10.1007/s10463-021-00808-0`
     """
     y = np.asarray(y)
     if weights is None:
@@ -71,7 +98,7 @@ def isotonic_regression(
     pava(x, wx, r)
     r = r[r >= 0]
     # Due to the pava implementation, after the last block index, there might
-    # be smaller numbers appended to r, e.g. r = [0, 10, 8,7] which should be
+    # be smaller numbers appended to r, e.g. r = [0, 10, 8, 7] which should be
     # r = [0, 10].
     imax = np.argmax(r)
     if imax < r.shape[0]:
@@ -89,8 +116,13 @@ def isotonic_regression(
 class IsotonicInterpolator():
     """Nonparametric isotonic interpolation via PAVA.
     
-    This class provides nonparametric monotone increasing interpolation via
-    the pool adjacent violators algorithm (PAVA).
+    This class provides nonparametric monotonically increasing interpolation
+    via the pool adjacent violators algorithm (PAVA).
+    
+    This interpolator first sorts the values of ``y`` according to the order
+    given by ``x``. It then fits the isotonic regression, see
+    ``isotonic_regression`` for details. Afterwards it constructs a linear
+    interpolation of the solution of the isotonic regression.
 
     Parameters
     ----------
@@ -110,6 +142,15 @@ class IsotonicInterpolator():
         Estimated isotonic regression values for all blocks.
     x_is_numeric : bool
         True if x_ is numeric.
+
+    Methods
+    -------
+    __call__
+
+    See Also
+    --------
+    isotonic_regression : Solvevs the isotonic regression via PAVA.
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
     """
     def __init__(self, x, y, weights=None, increasing=True):
         # TODO: Should we check np.isfinite(x, y, w)?
