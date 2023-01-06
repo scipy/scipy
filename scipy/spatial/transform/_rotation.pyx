@@ -346,7 +346,7 @@ cdef double[:, :] _compute_euler_from_quat(
 cdef double[:, :] _compute_davenport_from_quat(
     np.ndarray[double, ndim=2] quat, np.ndarray[double, ndim=1] n1,
         np.ndarray[double, ndim=1] n2, np.ndarray[double, ndim=1] n3,
-        bint extrinsic=False
+        bint extrinsic=False, bint correct_set=False
 ):
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
@@ -364,8 +364,19 @@ cdef double[:, :] _compute_davenport_from_quat(
         angle_first = 2
         angle_third = 0
 
-    cdef const double[:] n_cross = _cross3(n1, n2)
+    cdef double[:] n_cross = _cross3(n1, n2)
     cdef double lamb = atan2(_dot3(n3, n_cross), _dot3(n3, n1))
+
+    if correct_set and lamb < 0:
+        # alternative set of angles compatible with as_euler implementation
+        n2 = -n2
+        lamb = -lamb
+        n_cross[0] = -n_cross[0]
+        n_cross[1] = -n_cross[1]
+        n_cross[2] = -n_cross[2]
+    else:
+        correct_set = False
+
     cdef double[:] quat_lamb = np.array([
             sin(lamb / 2) * n2[0],
             sin(lamb / 2) * n2[1],
@@ -423,8 +434,10 @@ cdef double[:, :] _compute_davenport_from_quat(
             else:
                 _angles[0] = 2 * half_diff * (-1 if extrinsic else 1)
 
-        # correct for angle difference
         _angles[1] -= lamb
+
+        if correct_set:
+            _angles[1] = -_angles[1]
 
         for idx in range(3):
             if _angles[idx] < -pi:
@@ -1972,7 +1985,7 @@ cdef class Rotation:
         return self._compute_euler(seq, degrees, 'from_quat')
 
     @cython.embedsignature(True)
-    def as_davenport(self, axes, extrinsic=True, degrees=False):
+    def as_davenport(self, axes, extrinsic=True, degrees=False, correct_set=False):
         """Represent as Davenport angles.
 
         Any orientation can be expressed as a composition of 3 elementary
@@ -2011,6 +2024,9 @@ cdef class Rotation:
         degrees : boolean, optional
             Returned angles are in degrees if this flag is True, else they are
             in radians. Default is False.
+        correct_set : boolean, optional
+            If True, the angles are set so they match the Euler angles implementation.
+            Default is False.
 
         Returns
         -------
@@ -2020,9 +2036,10 @@ cdef class Rotation:
 
             - First angle belongs to [-180, 180] degrees (both inclusive)
             - Third angle belongs to [-180, 180] degrees (both inclusive)
-            - Second angle belongs to [-lambda, 180 - lambda] degrees,
-            where lambda is calculated as:
-                - ``atan2(dot3(axis3, cross(axis1, axis2)), dot(axis3, axis1))``
+            - Second angle belongs to a set of size 180 degrees.
+            If ``correct_set=False``, the set is [-lambda, 180 - lambda]
+            degrees, where:
+                - ``lambda = atan2(axis3 · (axis1 x axis2), axis3 · axis1)``
 
         References
         ----------
@@ -2092,6 +2109,17 @@ cdef class Rotation:
         >>> r.as_euler('zyx', degrees=True)
         array([-1.27222187e-14,  1.27222187e-14,  9.00000000e+01])
 
+        In order to get the same set of angles, the option ``correct_set`` must
+        be set to ``True``:
+
+        >>> r = R.from_euler('zyx', [0, 0, 90], degrees=True)
+        >>> euler = r.as_euler('zyx', degrees=True)
+        >>> daven = r.as_davenport([ez, ey, ex], degrees=True, correct_set=True)
+        >>> euler
+        array([ 0.,  0., 90.])
+        >>> daven
+        array([-1.27222187e-14, -0.00000000e+00,  9.00000000e+01])
+
         """
         if len(axes) != 3:
             raise ValueError("Expected 3 axes, got {}.".format(len(axes)))
@@ -2116,7 +2144,7 @@ cdef class Rotation:
         if quat.ndim == 1:
             quat = quat[None, :]
         angles = np.asarray(_compute_davenport_from_quat(
-                quat, n1, n2, n3, extrinsic))
+                quat, n1, n2, n3, extrinsic, correct_set))
 
         if degrees:
             angles = np.rad2deg(angles)

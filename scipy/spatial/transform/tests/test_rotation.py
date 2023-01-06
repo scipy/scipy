@@ -1491,19 +1491,18 @@ def test_as_davenport():
     e2 = np.array([0, 1, 0])
 
     for lamb in lambdas:
-        # Intrinsic
-        ax = [e1, e2, Rotation.from_rotvec(lamb*e2).apply(e1)]
-        angles[:, 1] = angles_middle - lamb
-        rot = Rotation.from_davenport(ax, angles, extrinsic=False)
-        angles_dav = rot.as_davenport(ax, extrinsic=False)
-        assert_allclose(angles_dav, angles)
+        for extrinsic in [True, False]:
+            ax = [e1, e2, Rotation.from_rotvec(lamb*e2).apply(e1)]
+            if extrinsic:
+                ax = ax[::-1]
+            angles[:, 1] = angles_middle - lamb
+            rot = Rotation.from_davenport(ax, angles, extrinsic=extrinsic)
+            angles_dav = rot.as_davenport(ax, extrinsic=extrinsic, correct_set=False)
+            assert_allclose(angles_dav, angles)
 
-        # Extrinsic
-        ax = [Rotation.from_rotvec(lamb*e2).apply(e1), e2, e1]
-        angles[:, 1] = angles_middle - lamb
-        rot = Rotation.from_davenport(ax, angles, extrinsic=True)
-        angles_dav = rot.as_davenport(ax, extrinsic=True)
-        assert_allclose(angles_dav, angles)
+            angles_dav_alt = rot.as_davenport(ax, extrinsic=extrinsic, correct_set=True)
+            rot_alt = Rotation.from_davenport(ax, angles_dav_alt, extrinsic=extrinsic)
+            assert_allclose(rot.as_quat(), rot_alt.as_quat())
 
 
 def test_as_davenport_degenerate():
@@ -1618,14 +1617,13 @@ def test_compare_as_davenport_as_euler():
 
     # asymmetric sequences
     angles[:, 1] -= np.pi / 2
-    for seq_tuple in permutations('xyz'):
-        seq = ''.join(seq_tuple)
-        ax = [basis_vec(i) for i in seq]
-        # account for possible set differences in implementations
-        extrinsic = np.dot(ax[2], np.cross(ax[0], ax[1])) == 1
-        if not extrinsic:
-            seq = seq.upper()
-        rot = Rotation.from_euler(seq, angles)
-        eul = rot.as_euler(seq)
-        dav = rot.as_davenport(ax, extrinsic=extrinsic)
-        assert_allclose(eul, dav, atol=0, rtol=1e-9)
+    for extrinsic in [True, False]:
+        for seq_tuple in permutations('xyz'):
+            seq = ''.join(seq_tuple)
+            ax = [basis_vec(i) for i in seq]
+            if not extrinsic:
+                seq = seq.upper()
+            rot = Rotation.from_euler(seq, angles)
+            eul = rot.as_euler(seq)
+            dav = rot.as_davenport(ax, extrinsic=extrinsic, correct_set=True)
+            assert_allclose(eul, dav, atol=0, rtol=1e-9)
