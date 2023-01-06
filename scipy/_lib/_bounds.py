@@ -39,7 +39,7 @@ def _validate_bounds(
         )
         raise ValueError(msg) from exc
 
-    if not np.all(lower < upper):
+    if np.any(lower > upper):
         msg = "An upper bound is less than the corresponding lower bound."
         raise ValueError(msg)
 
