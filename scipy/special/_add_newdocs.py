@@ -5190,8 +5190,26 @@ add_newdoc("fdtridfd",
 
     See Also
     --------
-    fdtr, fdtrc, fdtri
+    fdtr : F distribution cumulative distribution function
+    fdtrc : F distribution survival function
+    fdtri : F distribution quantile function
+    scipy.stats.f : F distribution
 
+    Examples
+    --------
+    Compute the F distribution cumulative distribution function for one
+    parameter set.
+
+    >>> from scipy.special import fdtridfd, fdtr
+    >>> dfn, dfd, x = 10, 5, 2
+    >>> cdf_value = fdtr(dfn, dfd, x)
+    >>> cdf_value
+    0.7700248806501017
+
+    Verify that `fdtridfd` recovers the original value for `dfd`:
+
+    >>> fdtridfd(dfn, cdf_value, x)
+    5.0
     """)
 
 '''
@@ -8151,7 +8169,7 @@ add_newdoc("jve",
     r"""
     jve(v, z, out=None)
 
-    Exponentially scaled Bessel function of order `v`.
+    Exponentially scaled Bessel function of the first kind of order `v`.
 
     Defined as::
 
@@ -8170,6 +8188,10 @@ add_newdoc("jve",
     -------
     J : scalar or ndarray
         Value of the exponentially scaled Bessel function.
+
+    See also
+    --------
+    jv: Unscaled Bessel function of the first kind
 
     Notes
     -----
@@ -8191,11 +8213,63 @@ add_newdoc("jve",
     term is exactly zero for integer `v`; to improve accuracy the second
     term is explicitly omitted for `v` values such that `v = floor(v)`.
 
+    Exponentially scaled Bessel functions are useful for large arguments `z`:
+    for these, the unscaled Bessel functions can easily under-or overflow.
+
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Compare the output of `jv` and `jve` for large complex arguments for `z`
+    by computing their values for order ``v=1`` at ``z=1000j``. We see that
+    `jv` overflows but `jve` returns a finite number:
+
+    >>> import numpy as np
+    >>> from scipy.special import jv, jve
+    >>> v = 1
+    >>> z = 1000j
+    >>> jv(v, z), jve(v, z)
+    ((inf+infj), (7.721967686709077e-19+0.012610930256928629j))
+
+    For real arguments for `z`, `jve` returns the same as `jv`.
+
+    >>> v, z = 1, 1000
+    >>> jv(v, z), jve(v, z)
+    (0.004728311907089523, 0.004728311907089523)
+
+    The function can be evaluated for several orders at the same time by
+    providing a list or NumPy array for `v`:
+
+    >>> jve([1, 3, 5], 1j)
+    array([1.27304208e-17+2.07910415e-01j, -4.99352086e-19-8.15530777e-03j,
+           6.11480940e-21+9.98657141e-05j])
+
+    In the same way, the function can be evaluated at several points in one
+    call by providing a list or NumPy array for `z`:
+
+    >>> jve(1, np.array([1j, 2j, 3j]))
+    array([1.27308412e-17+0.20791042j, 1.31814423e-17+0.21526929j,
+           1.20521602e-17+0.19682671j])
+
+    It is also possible to evaluate several orders at several points
+    at the same time by providing arrays for `v` and `z` with
+    compatible shapes for broadcasting. Compute `jve` for two different orders
+    `v` and three points `z` resulting in a 2x3 array.
+
+    >>> v = np.array([[1], [3]])
+    >>> z = np.array([1j, 2j, 3j])
+    >>> v.shape, z.shape
+    ((2, 1), (3,))
+
+    >>> jve(v, z)
+    array([[1.27304208e-17+0.20791042j,  1.31810070e-17+0.21526929j,
+            1.20517622e-17+0.19682671j],
+           [-4.99352086e-19-0.00815531j, -1.76289571e-18-0.02879122j,
+            -2.92578784e-18-0.04778332j]])
     """)
 
 add_newdoc("k0",
@@ -13134,6 +13208,10 @@ add_newdoc("yve",
     Y : scalar or ndarray
         Value of the exponentially scaled Bessel function.
 
+    See Also
+    --------
+    yv: Unscaled Bessel function of the second kind of real order.
+
     Notes
     -----
     For positive `v` values, the computation is carried out using the
@@ -13151,11 +13229,64 @@ add_newdoc("yve",
     exactly zero for integer `v`; to improve accuracy the second term is
     explicitly omitted for `v` values such that `v = floor(v)`.
 
+    Exponentially scaled Bessel functions are useful for large `z`:
+    for these, the unscaled Bessel functions can easily under-or overflow.
+
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Compare the output of `yv` and `yve` for large complex arguments for `z`
+    by computing their values for order ``v=1`` at ``z=1000j``. We see that
+    `yv` returns nan but `yve` returns a finite number:
+
+    >>> import numpy as np
+    >>> from scipy.special import yv, yve
+    >>> v = 1
+    >>> z = 1000j
+    >>> yv(v, z), yve(v, z)
+    ((nan+nanj), (-0.012610930256928629+7.721967686709076e-19j))
+
+    For real arguments for `z`, `yve` returns the same as `yv` up to
+    floating point errors.
+
+    >>> v, z = 1, 1000
+    >>> yv(v, z), yve(v, z)
+    (-0.02478433129235178, -0.02478433129235179)
+
+    The function can be evaluated for several orders at the same time by
+    providing a list or NumPy array for `v`:
+
+    >>> yve([1, 2, 3], 1j)
+    array([-0.20791042+0.14096627j,  0.38053618-0.04993878j,
+           0.00815531-1.66311097j])
+
+    In the same way, the function can be evaluated at several points in one
+    call by providing a list or NumPy array for `z`:
+
+    >>> yve(1, np.array([1j, 2j, 3j]))
+    array([-0.20791042+0.14096627j, -0.21526929+0.01205044j,
+           -0.19682671+0.00127278j])
+
+    It is also possible to evaluate several orders at several points
+    at the same time by providing arrays for `v` and `z` with
+    broadcasting compatible shapes. Compute `yve` for two different orders
+    `v` and three points `z` resulting in a 2x3 array.
+
+    >>> v = np.array([[1], [2]])
+    >>> z = np.array([3j, 4j, 5j])
+    >>> v.shape, z.shape
+    ((2, 1), (3,))
+
+    >>> yve(v, z)
+    array([[-1.96826713e-01+1.27277544e-03j, -1.78750840e-01+1.45558819e-04j,
+            -1.63972267e-01+1.73494110e-05j],
+           [1.94960056e-03-1.11782545e-01j,  2.02902325e-04-1.17626501e-01j,
+            2.27727687e-05-1.17951906e-01j]])
     """)
 
 add_newdoc("_zeta",
@@ -13320,7 +13451,7 @@ add_newdoc("loggamma",
     Parameters
     ----------
     z : array_like
-        Values in the complex plain at which to compute ``loggamma``
+        Values in the complex plane at which to compute ``loggamma``
     out : ndarray, optional
         Output array for computed values of ``loggamma``
 

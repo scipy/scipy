@@ -266,7 +266,7 @@ def test_failure_to_run_iterations():
     Q = rnd.standard_normal((X.shape[0], 4))
     with pytest.warns(UserWarning, match="Failed at iteration"):
         eigenvalues, _ = lobpcg(A, Q, maxiter=40, tol=1e-12)
-    assert(np.max(eigenvalues) > 0)
+    assert np.max(eigenvalues) > 0
 
 
 def test_failure_to_run_iterations_nonsymmetric():
@@ -408,11 +408,19 @@ def test_maxit():
         assert_allclose(np.shape(l_h)[0], maxiter+3)
         assert_allclose(np.shape(r_h)[0], maxiter+3)
     with pytest.warns(UserWarning, match="Exited at iteration"):
-        _, _, l_h, r_h = lobpcg(A, X, tol=1e-8,
+        l, _, l_h, r_h = lobpcg(A, X, tol=1e-8,
                                 retLambdaHistory=True,
                                 retResidualNormsHistory=True)
     assert_allclose(np.shape(l_h)[0], 20+3)
     assert_allclose(np.shape(r_h)[0], 20+3)
+    # Check that eigenvalue output is the last one in history
+    assert_allclose(l, l_h[-1])
+    # Make sure that both history outputs are lists
+    assert isinstance(l_h, list)
+    assert isinstance(r_h, list)
+    # Make sure that both history lists are arrays-like
+    assert_allclose(np.shape(l_h), np.shape(np.asarray(l_h)))
+    assert_allclose(np.shape(r_h), np.shape(np.asarray(r_h)))
 
 
 @pytest.mark.slow

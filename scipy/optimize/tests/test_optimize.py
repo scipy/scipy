@@ -21,7 +21,9 @@ from pytest import raises as assert_raises
 
 from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
-from scipy.optimize._minimize import MINIMIZE_METHODS, MINIMIZE_SCALAR_METHODS
+from scipy.optimize._minimize import (MINIMIZE_METHODS,
+                                      MINIMIZE_METHODS_NEW_CB,
+                                      MINIMIZE_SCALAR_METHODS)
 from scipy.optimize._linprog import LINPROG_METHODS
 from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
@@ -1197,6 +1199,7 @@ class TestOptimizeSimple(CheckOptimize):
         results = []
 
         def callback(x, *args, **kwargs):
+            assert not isinstance(x, optimize.OptimizeResult)
             results.append((x, np.copy(x)))
 
         routine(func, x0, callback=callback, **kwargs)
@@ -1484,6 +1487,78 @@ class TestOptimizeSimple(CheckOptimize):
                 raise RuntimeError(
                     "Duplicate evaluations made by {}".format(method))
 
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.parametrize('method', MINIMIZE_METHODS_NEW_CB)
+    @pytest.mark.parametrize('new_cb_interface', [True, False])
+    def test_callback_stopiteration(self, method, new_cb_interface):
+        # Check that if callback raises StopIteration, optimization
+        # terminates with the same result as if iterations were limited
+
+        def f(x):
+            f.flag = False  # check that f isn't called after StopIteration
+            return optimize.rosen(x)
+        f.flag = False
+
+        def g(x):
+            f.flag = False
+            return optimize.rosen_der(x)
+
+        def h(x):
+            f.flag = False
+            return optimize.rosen_hess(x)
+
+        maxiter = 5
+
+        if new_cb_interface:
+            def callback_interface(*, intermediate_result):
+                assert intermediate_result.fun == f(intermediate_result.x)
+                callback()
+        else:
+            def callback_interface(xk, *args):  # type: ignore[misc]
+                callback()
+
+        def callback():
+            callback.i += 1
+            callback.flag = False
+            if callback.i == maxiter:
+                callback.flag = True
+                raise StopIteration()
+        callback.i = 0
+        callback.flag = False
+
+        kwargs = {'x0': [1.1]*5, 'method': method,
+                  'fun': f, 'jac': g, 'hess': h}
+
+        res = optimize.minimize(**kwargs, callback=callback_interface)
+        if method == 'nelder-mead':
+            maxiter = maxiter + 1  # nelder-mead counts differently
+        ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+        assert res.fun == ref.fun
+        assert_equal(res.x, ref.x)
+        assert res.nit == ref.nit == maxiter
+        assert res.status == (3 if method == 'trust-constr' else 99)
+
+    def test_ndim_error(self):
+        msg = "'x0' must only have one dimension."
+        with assert_raises(ValueError, match=msg):
+            optimize.minimize(lambda x: x, np.ones((2, 1)))
+
+    @pytest.mark.parametrize('method', ('nelder-mead', 'l-bfgs-b', 'tnc',
+                                        'powell', 'cobyla', 'trust-constr'))
+    def test_minimize_invalid_bounds(self, method):
+        def f(x):
+            return np.sum(x**2)
+
+        bounds = Bounds([1, 2], [3, 4])
+        msg = 'The number of bounds is not compatible with the length of `x0`.'
+        with pytest.raises(ValueError, match=msg):
+            optimize.minimize(f, x0=[1, 2, 3], method=method, bounds=bounds)
+
+        bounds = Bounds([1, 6, 1], [3, 4, 2])
+        msg = 'An upper bound is less than the corresponding lower bound.'
+        with pytest.raises(ValueError, match=msg):
+            optimize.minimize(f, x0=[1, 2, 3], method=method, bounds=bounds)
+
 
 @pytest.mark.parametrize(
     'method',
@@ -1540,7 +1615,7 @@ class TestLBFGSBBounds:
         ([(10, 1), (10, 1)])
     ])
     def test_minimize_l_bfgs_b_incorrect_bounds(self, bounds):
-        with pytest.raises(ValueError, match='.*bounds.*'):
+        with pytest.raises(ValueError, match='.*bound.*'):
             optimize.minimize(self.fun, [0, -1], method='L-BFGS-B',
                               jac=self.jac, bounds=bounds)
 
@@ -1632,7 +1707,7 @@ class TestOptimizeScalar:
         assert_raises(ValueError, optimize.fminbound, self.fun, 5, 1)
 
     def test_fminbound_scalar(self):
-        with pytest.raises(ValueError, match='.*must be scalar.*'):
+        with pytest.raises(ValueError, match='.*must be finite scalars.*'):
             optimize.fminbound(self.fun, np.zeros((1, 2)), 1)
 
         x = optimize.fminbound(self.fun, 1, np.array(5))
@@ -1750,8 +1825,8 @@ class TestOptimizeScalar:
 
     @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
     def test_result_attributes(self, method):
-        result = optimize.minimize_scalar(self.fun, method=method,
-                                          bounds=[-10, 10])
+        kwargs = {"bounds": [-10, 10]} if method == 'bounded' else {}
+        result = optimize.minimize_scalar(self.fun, method=method, **kwargs)
         assert hasattr(result, "x")
         assert hasattr(result, "success")
         assert hasattr(result, "message")
@@ -1782,10 +1857,61 @@ class TestOptimizeScalar:
             sup.filter(RuntimeWarning, ".*does not use gradient.*")
 
             count = [0]
+
+            kwargs = {"bounds": bounds} if method == 'bounded' else {}
             sol = optimize.minimize_scalar(func, bracket=bracket,
-                                           bounds=bounds, method=method,
+                                           **kwargs, method=method,
                                            options=dict(maxiter=20))
             assert_equal(sol.success, False)
+
+    def test_minimize_scalar_defaults_gh10911(self):
+        # Previously, bounds were silently ignored unless `method='bounds'`
+        # was chosen. See gh-10911. Check that this is no longer the case.
+        def f(x):
+            return x**2
+
+        res = optimize.minimize_scalar(f)
+        assert_allclose(res.x, 0, atol=1e-8)
+
+        res = optimize.minimize_scalar(f, bounds=(1, 100),
+                                       options={'xatol': 1e-10})
+        assert_allclose(res.x, 1)
+
+    def test_minimize_non_finite_bounds_gh10911(self):
+        # Previously, minimize_scalar misbehaved with infinite bounds.
+        # See gh-10911. Check that it now raises an error, instead.
+        msg = "Optimization bounds must be finite scalars."
+        with pytest.raises(ValueError, match=msg):
+            optimize.minimize_scalar(np.sin, bounds=(1, np.inf))
+        with pytest.raises(ValueError, match=msg):
+            optimize.minimize_scalar(np.sin, bounds=(np.nan, 1))
+
+    @pytest.mark.parametrize("method", ['brent', 'golden'])
+    def test_minimize_unbounded_method_with_bounds_gh10911(self, method):
+        # Previously, `bounds` were silently ignored when `method='brent'` or
+        # `method='golden'`. See gh-10911. Check that error is now raised.
+        msg = "Use of `bounds` is incompatible with..."
+        with pytest.raises(ValueError, match=msg):
+            optimize.minimize_scalar(np.sin, method=method, bounds=(1, 2))
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.parametrize("method", MINIMIZE_SCALAR_METHODS)
+    @pytest.mark.parametrize("tol", [1, 1e-6])
+    @pytest.mark.parametrize("fshape", [(), (1,), (1, 1)])
+    def test_minimize_scalar_dimensionality_gh16196(self, method, tol, fshape):
+        # gh-16196 reported that the output shape of `minimize_scalar` was not
+        # consistent when an objective function returned an array. Check that
+        # `res.fun` and `res.x` are now consistent.
+        def f(x):
+            return np.array(x**4).reshape(fshape)
+
+        a, b = -0.1, 0.2
+        kwargs = (dict(bracket=(a, b)) if method != "bounded"
+                  else dict(bounds=(a, b)))
+        kwargs.update(dict(method=method, tol=tol))
+
+        res = optimize.minimize_scalar(f, **kwargs)
+        assert res.x.shape == res.fun.shape == f(res.x).shape == fshape
 
 
 def test_brent_negative_tolerance():
