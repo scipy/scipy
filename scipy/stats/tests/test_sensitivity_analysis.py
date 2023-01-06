@@ -191,7 +191,7 @@ class TestSobolIndices:
 
     def test_raises(self):
 
-        message = r"The method `ppf` must be specified"
+        message = r"Each distribution in `dists` must have method `ppf`"
         with pytest.raises(ValueError, match=message):
             sobol_indices(n=0, func=f_ishigami, dists="uniform")
 
@@ -202,7 +202,6 @@ class TestSobolIndices:
         with pytest.raises(ValueError, match=message):
             sobol_indices(n=7, func=f_ishigami, dists=[stats.uniform()])
 
-        message = r"The balance properties of Sobol'"
         with pytest.raises(ValueError, match=message):
             sobol_indices(n=4.1, func=f_ishigami, dists=[stats.uniform()])
 
@@ -233,7 +232,6 @@ class TestSobolIndices:
                 n=2, func={'f_A': [], 'f_AB': []}, dists=[stats.uniform()]
             )
 
-        message = r"When 'func' is a dictionary"
         with pytest.raises(ValueError, match=message):
             # f_B malformed
             sobol_indices(

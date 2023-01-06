@@ -89,10 +89,7 @@ def sample_A_B(
             A[:, d_] = dist.ppf(A[:, d_])
             B[:, d_] = dist.ppf(B[:, d_])
         except AttributeError as exc:
-            message = (
-                "The method `ppf` must be specified for all distributions of "
-                "'dists'."
-            )
+            message = ("Each distribution in `dists` must have method `ppf`.")
             raise ValueError(message) from exc
 
     return A.T, B.T
@@ -390,7 +387,7 @@ def sobol_indices(
         S_{T_i} = S_i + \sum_j S_{ij} + \sum_{j,k} S_{ijk} + ...
         = 1 - \frac{\mathbb{V}[\mathbb{E}(Y|x_{\sim i})]}{\mathbb{V}[Y]}.
 
-    First oder indices sum to 1, while the sum of total order indices will be
+    First order indices sum to 1, while the sum of total order indices will be
     greater than 1 if there are interactions.
 
     .. warning::
