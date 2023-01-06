@@ -444,34 +444,40 @@ class TestRegularGridInterpolator:
         assert_equal(res[~i], interp(z[~i]))
 
     @parametrize_rgi_interp_methods
-    def test_descending_points(self, method):
-        def val_func_3d(x, y, z):
-            return 2 * x ** 3 + 3 * y ** 2 - z
+    @pytest.mark.parametrize(("ndims", "func"), [
+        (2, lambda x, y: 2 * x ** 3 + 3 * y ** 2),
+        (3, lambda x, y, z: 2 * x ** 3 + 3 * y ** 2 - z),
+        (4, lambda x, y, z, a: 2 * x ** 3 + 3 * y ** 2 - z + a),
+        (5, lambda x, y, z, a, b: 2 * x ** 3 + 3 * y ** 2 - z + a * b),
+    ])
+    def test_descending_points_nd(self, method, ndims, func):
+        rng = np.random.default_rng(42)
+        sample_low = 1
+        sample_high = 5
+        test_points = rng.uniform(sample_low, sample_high, size=(2, ndims))
 
-        x = np.linspace(1, 4, 11)
-        y = np.linspace(4, 7, 22)
-        z = np.linspace(7, 9, 33)
-        points = (x, y, z)
-        values = val_func_3d(
-            *np.meshgrid(*points, indexing='ij', sparse=True))
-        my_interpolating_function = RegularGridInterpolator(points,
-                                                            values,
-                                                            method=method)
-        pts = np.array([[2.1, 6.2, 8.3], [3.3, 5.2, 7.1]])
-        correct_result = my_interpolating_function(pts)
+        ascending_points = [np.linspace(sample_low, sample_high, 12)
+                            for _ in range(ndims)]
 
-        # descending data
-        x_descending = x[::-1]
-        y_descending = y[::-1]
-        z_descending = z[::-1]
-        points_shuffled = (x_descending, y_descending, z_descending)
-        values_shuffled = val_func_3d(
-            *np.meshgrid(*points_shuffled, indexing='ij', sparse=True))
-        my_interpolating_function = RegularGridInterpolator(
-            points_shuffled, values_shuffled, method=method)
-        test_result = my_interpolating_function(pts)
+        ascending_values = func(*np.meshgrid(*ascending_points,
+                                             indexing="ij",
+                                             sparse=True))
 
-        assert_array_equal(correct_result, test_result)
+        ascending_interp = RegularGridInterpolator(ascending_points,
+                                                   ascending_values,
+                                                   method=method)
+        ascending_result = ascending_interp(test_points)
+
+        descending_points = [xi[::-1] for xi in ascending_points]
+        descending_values = func(*np.meshgrid(*descending_points,
+                                              indexing="ij",
+                                              sparse=True))
+        descending_interp = RegularGridInterpolator(descending_points,
+                                                    descending_values,
+                                                    method=method)
+        descending_result = descending_interp(test_points)
+
+        assert_array_equal(ascending_result, descending_result)
 
     def test_invalid_points_order(self):
         def val_func_2d(x, y):

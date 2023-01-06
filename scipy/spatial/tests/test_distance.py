@@ -52,12 +52,12 @@ from scipy.spatial.distance import (
     squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y,
     _validate_vector, _METRICS_NAMES)
 
-# these were missing: chebyshev cityblock kulsinski
+# these were missing: chebyshev cityblock
 # jensenshannon  and seuclidean are referenced by string name.
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon,
-                                    kulsinski, kulczynski1, mahalanobis,
+                                    kulczynski1, mahalanobis,
                                     minkowski, rogerstanimoto,
                                     russellrao, seuclidean, sokalmichener,
                                     sokalsneath, sqeuclidean, yule)
@@ -368,7 +368,6 @@ wcityblock = _weight_checked(cityblock)
 wchebyshev = _weight_checked(chebyshev)
 wcosine = _weight_checked(cosine)
 wcorrelation = _weight_checked(correlation)
-wkulsinski = _weight_checked(kulsinski)
 wkulczynski1 = _weight_checked(kulczynski1)
 wjaccard = _weight_checked(jaccard)
 weuclidean = _weight_checked(euclidean, const_test=False)
@@ -401,22 +400,16 @@ class TestCdist:
         kwargs = {'N0tV4l1D_p4raM': 3.14, "w":np.arange(3)}
         args = [3.14] * 200
         for metric in _METRICS_NAMES:
-            with np.testing.suppress_warnings() as sup:
-                if metric == "kulsinski":
-                    sup.filter(DeprecationWarning,
-                               "Kulsinski has been deprecated from")
-                assert_raises(TypeError, cdist, X1, X2,
-                              metric=metric, **kwargs)
-                assert_raises(TypeError, cdist, X1, X2,
-                              metric=eval(metric), **kwargs)
-                assert_raises(TypeError, cdist, X1, X2,
-                              metric="test_" + metric, **kwargs)
-                assert_raises(TypeError, cdist, X1, X2,
-                              metric=metric, *args)
-                assert_raises(TypeError, cdist, X1, X2,
-                              metric=eval(metric), *args)
-                assert_raises(TypeError, cdist, X1, X2,
-                              metric="test_" + metric, *args)
+            assert_raises(TypeError, cdist, X1, X2, metric=metric, **kwargs)
+            assert_raises(TypeError, cdist, X1, X2, metric=eval(metric),
+                          **kwargs)
+            assert_raises(TypeError, cdist, X1, X2, metric="test_" + metric,
+                          **kwargs)
+            assert_raises(TypeError, cdist, X1, X2, metric=metric, *args)
+            assert_raises(TypeError, cdist, X1, X2, metric=eval(metric),
+                          *args)
+            assert_raises(TypeError, cdist, X1, X2, metric="test_" + metric,
+                          *args)
 
         assert_raises(TypeError, cdist, X1, X2, _my_metric)
         assert_raises(TypeError, cdist, X1, X2, _my_metric, *args)
@@ -528,18 +521,14 @@ class TestCdist:
             for metric in _METRICS_NAMES:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
-                if metric in {'dice', 'yule', 'kulsinski',
+                if metric in {'dice', 'yule',
                               'rogerstanimoto',
                               'russellrao', 'sokalmichener',
                               'sokalsneath',
                               'kulczynski1'} and 'bool' not in eo_name:
                     # python version permits non-bools e.g. for fuzzy logic
                     continue
-                with np.testing.suppress_warnings() as sup:
-                    if metric == "kulsinski":
-                        sup.filter(DeprecationWarning,
-                                   "Kulsinski has been deprecated from")
-                    self._check_calling_conventions(X1, X2, metric)
+                self._check_calling_conventions(X1, X2, metric)
 
                 # Testing built-in metrics with extra args
                 if metric == "seuclidean":
@@ -683,19 +672,14 @@ class TestPdist:
         kwargs = {'N0tV4l1D_p4raM': 3.14, "w":np.arange(2)}
         args = [3.14] * 200
         for metric in _METRICS_NAMES:
-            with np.testing.suppress_warnings() as sup:
-                if metric == "kulsinski":
-                    sup.filter(DeprecationWarning,
-                               "Kulsinski has been deprecated from")
-                assert_raises(TypeError, pdist, X1, metric=metric, **kwargs)
-                assert_raises(TypeError, pdist, X1,
-                              metric=eval(metric), **kwargs)
-                assert_raises(TypeError, pdist, X1,
-                              metric="test_" + metric, **kwargs)
-                assert_raises(TypeError, pdist, X1, metric=metric, *args)
-                assert_raises(TypeError, pdist, X1, metric=eval(metric), *args)
-                assert_raises(TypeError, pdist, X1,
-                              metric="test_" + metric, *args)
+            assert_raises(TypeError, pdist, X1, metric=metric, **kwargs)
+            assert_raises(TypeError, pdist, X1, metric=eval(metric), **kwargs)
+            assert_raises(TypeError, pdist, X1, metric="test_" + metric,
+                          **kwargs)
+            assert_raises(TypeError, pdist, X1, metric=metric, *args)
+            assert_raises(TypeError, pdist, X1, metric=eval(metric), *args)
+            assert_raises(TypeError, pdist, X1, metric="test_" + metric,
+                          *args)
 
         assert_raises(TypeError, pdist, X1, _my_metric)
         assert_raises(TypeError, pdist, X1, _my_metric, *args)
@@ -1442,17 +1426,13 @@ class TestPdist:
             for metric in _METRICS_NAMES:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
-                if metric in {'dice', 'yule', 'kulsinski', 'matching',
+                if metric in {'dice', 'yule', 'matching',
                               'rogerstanimoto', 'russellrao', 'sokalmichener',
                               'sokalsneath',
                               'kulczynski1'} and 'bool' not in eo_name:
                     # python version permits non-bools e.g. for fuzzy logic
                     continue
-                with np.testing.suppress_warnings() as sup:
-                    if metric == "kulsinski":
-                        sup.filter(DeprecationWarning,
-                                   "Kulsinski has been deprecated from")
-                    self._check_calling_conventions(X, metric)
+                self._check_calling_conventions(X, metric)
 
                 # Testing built-in metrics with extra args
                 if metric == "seuclidean":
@@ -2079,7 +2059,7 @@ def test_Xdist_deprecated_args():
         for arg in ["p", "V", "VI"]:
             kwargs = {arg:"foo"}
 
-            if((arg == "V" and metric == "seuclidean") or
+            if ((arg == "V" and metric == "seuclidean") or
             (arg == "VI" and metric == "mahalanobis") or
             (arg == "p" and metric == "minkowski")):
                 continue
@@ -2098,13 +2078,9 @@ def test_Xdist_non_negative_weights():
     for metric in _METRICS_NAMES:
         if metric in ['seuclidean', 'mahalanobis', 'jensenshannon']:
             continue
-        with np.testing.suppress_warnings() as sup:
-            if metric == "kulsinski":
-                sup.filter(DeprecationWarning,
-                           "Kulsinski has been deprecated from")
-            for m in [metric, eval(metric), "test_" + metric]:
-                assert_raises(ValueError, pdist, X, m, w=w)
-                assert_raises(ValueError, cdist, X, X, m, w=w)
+        for m in [metric, eval(metric), "test_" + metric]:
+            assert_raises(ValueError, pdist, X, m, w=w)
+            assert_raises(ValueError, cdist, X, X, m, w=w)
 
 
 def test__validate_vector():
@@ -2176,11 +2152,3 @@ def test_jensenshannon():
                         [0.1954288, 0.1447697, 0.1138377, 0.0927636])
     assert_almost_equal(jensenshannon(a, b, axis=1),
                         [0.1402339, 0.0399106, 0.0201815])
-
-
-def test_kulsinski_deprecation():
-    msg = ("Kulsinski has been deprecated from scipy.spatial.distance"
-           " in SciPy 1.9.0 and it will be removed in SciPy 1.11.0."
-           " It is superseded by scipy.spatial.distance.kulczynski1.")
-    with pytest.warns(DeprecationWarning, match=msg):
-        kulsinski([], [])

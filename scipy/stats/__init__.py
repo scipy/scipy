@@ -40,7 +40,6 @@ Each univariate distribution is an instance of a subclass of `rv_continuous`
 
    rv_continuous
    rv_discrete
-   rv_count
    rv_histogram
 
 Continuous distributions
@@ -87,7 +86,6 @@ Continuous distributions
    genhyperbolic     -- Generalized Hyperbolic
    geninvgauss       -- Generalized Inverse Gaussian
    gibrat            -- Gibrat
-   gilbrat           -- Gilbrat
    gompertz          -- Gompertz (Truncated Gumbel)
    gumbel_r          -- Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
    gumbel_l          -- Left Sided Gumbel, etc.
@@ -335,6 +333,7 @@ Statistical tests
    skewtest
    kurtosistest
    normaltest
+   goodness_of_fit
 
 
 Quasi-Monte Carlo
@@ -485,7 +484,6 @@ from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
 from ._stats_py import *
 from ._variation import variation
 from .distributions import *
-from ._distn_infrastructure import rv_count
 from ._morestats import *
 from ._binomtest import binomtest
 from ._binned_statistic import *
@@ -501,7 +499,7 @@ from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
-from ._fit import fit
+from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 
 # Deprecated namespaces, to be removed in v2.0.0

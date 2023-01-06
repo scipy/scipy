@@ -193,8 +193,8 @@ def test_shortest_path_min_only_random(n):
     for k in range(n):
         p = pred[k]
         s = sources[k]
-        while(p != -9999):
-            assert(sources[p] == s)
+        while p != -9999:
+            assert sources[p] == s
             p = pred[p]
 
 

@@ -477,6 +477,13 @@ class TestCorrPearsonr:
         y = [2]
         assert_raises(ValueError, stats.pearsonr, x, y)
 
+    def test_complex_data(self):
+        x = [-1j, -2j, -3.0j]
+        y = [-1j, -2j, -3.0j]
+        message = 'This function does not support complex data'
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr(x, y)
+
 
 class TestFisherExact:
     """Some tests to show that fisher_exact() works correctly.
@@ -4693,9 +4700,9 @@ class Test_ttest_ind_permutations():
         res1 = stats.ttest_ind(a, b, permutations=1000)
         res2 = stats.ttest_ind(a, b, permutations=0)
         res3 = stats.ttest_ind(a, b, permutations=np.inf)
-        assert(res1.pvalue != res0.pvalue)
-        assert(res2.pvalue == res0.pvalue)
-        assert(res3.pvalue == res1.pvalue)
+        assert res1.pvalue != res0.pvalue
+        assert res2.pvalue == res0.pvalue
+        assert res3.pvalue == res1.pvalue
 
     def test_ttest_ind_exact_distribution(self):
         # the exact distribution of the test statistic should have
@@ -4812,8 +4819,8 @@ class Test_ttest_ind_permutations():
 
             # Propagate 1d
             res = stats.ttest_ind(a.ravel(), b.ravel(), **options_p)
-            assert(np.isnan(res.pvalue))  # assert makes sure it's a scalar
-            assert(np.isnan(res.statistic))
+            assert np.isnan(res.pvalue)  # assert makes sure it's a scalar
+            assert np.isnan(res.statistic)
 
     def test_ttest_ind_permutation_check_inputs(self):
         with assert_raises(ValueError, match="Permutations must be"):

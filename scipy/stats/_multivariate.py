@@ -14,7 +14,7 @@ from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom
-from . import _mvn, _covariance, contingency
+from . import _mvn, _covariance, _rcont
 from ._qmvnt import _qmvt
 
 __all__ = ['multivariate_normal',
@@ -2557,6 +2557,9 @@ class invwishart_gen(wishart_gen):
     .. [2] M.C. Jones, "Generating Inverse Wishart Matrices", Communications
            in Statistics - Simulation and Computation, vol. 14.2, pp.511-514,
            1985.
+    .. [3] Gupta, M. and Srivastava, S. "Parametric Bayesian Estimation of
+           Differential Entropy and Relative Entropy". Entropy 12, 818 - 843.
+           2010.
 
     Examples
     --------
@@ -2893,9 +2896,19 @@ class invwishart_gen(wishart_gen):
 
         return _squeeze_output(out)
 
-    def entropy(self):
-        # Need to find reference for inverse Wishart entropy
-        raise AttributeError
+    def _entropy(self, dim, df, log_det_scale):
+        # reference: eq. (17) from ref. 3
+        psi_eval_points = [0.5 * (df - dim + i) for i in range(1, dim + 1)]
+        psi_eval_points = np.asarray(psi_eval_points)
+        return multigammaln(0.5 * df, dim) + 0.5 * dim * df + \
+            0.5 * (dim + 1) * (log_det_scale - _LOG_2) - \
+            0.5 * (df + dim + 1) * \
+            psi(psi_eval_points, out=psi_eval_points).sum()
+
+    def entropy(self, df, scale):
+        dim, df, scale = self._process_parameters(df, scale)
+        _, log_det_scale = self._cholesky_logdet(scale)
+        return self._entropy(dim, df, log_det_scale)
 
 
 invwishart = invwishart_gen()
@@ -2965,8 +2978,7 @@ class invwishart_frozen(multi_rv_frozen):
         return _squeeze_output(out)
 
     def entropy(self):
-        # Need to find reference for inverse Wishart entropy
-        raise AttributeError
+        return self._dist._entropy(self.dim, self.df, self.log_det_scale)
 
 
 # Set frozen generator docstrings from corresponding docstrings in
@@ -5440,8 +5452,8 @@ class random_table_gen(multi_rv_generic):
         not contain negative or non-integer entries, and that the sums over
         both vectors are equal.
         """
-        r = np.array(row, dtype=np.int_, copy=True)
-        c = np.array(col, dtype=np.int_, copy=True)
+        r = np.array(row, dtype=np.int64, copy=True)
+        c = np.array(col, dtype=np.int64, copy=True)
 
         if np.ndim(r) != 1:
             raise ValueError("`row` must be one-dimensional")
@@ -5495,34 +5507,20 @@ class random_table_gen(multi_rv_generic):
 
     @classmethod
     def _rvs_select(cls, r, c, n):
-        # TODO find optimal empirical threshold with benchmarks,
-        # for now we always return "boyett", because "patefield"
-        # is not yet implemented.
-
-        # Example:
-        # k = len(r) * len(c)  # number of cells
-        # if n > fac * np.log(n) * k:
-        #     return cls._rvs_patefield
-        # return cls._rvs_boyett
-        # 'fac' has to be estimated empirically
+        fac = 1.0  # benchmarks show that this value is about 1
+        k = len(r) * len(c)  # number of cells
+        # n + 1 guards against failure if n == 0
+        if n > fac * np.log(n + 1) * k:
+            return cls._rvs_patefield
         return cls._rvs_boyett
 
     @staticmethod
-    def _rvs_boyett(row, col, tot, size, random_state):
-        x = np.repeat(np.arange(len(row)), row)
-        y = np.repeat(np.arange(len(col)), col)
-
-        def crosstab(x, y):
-            return contingency.crosstab(x, y).count
-
-        tables = [crosstab(x, random_state.permutation(y))
-                  for i in range(size)]
-        return np.asarray(tables)
+    def _rvs_boyett(row, col, ntot, size, random_state):
+        return _rcont.rvs_rcont1(row, col, ntot, size, random_state)
 
     @staticmethod
-    def _rvs_patefield(row, col, tot, size, random_state):
-        # TODO call into C code
-        raise NotImplementedError
+    def _rvs_patefield(row, col, ntot, size, random_state):
+        return _rcont.rvs_rcont2(row, col, ntot, size, random_state)
 
 
 random_table = random_table_gen()
@@ -5611,9 +5609,8 @@ for name in ['logpmf', 'pmf', 'mean', 'rvs']:
 class uniform_direction_gen(multi_rv_generic):
     r"""A vector-valued uniform direction.
 
-    Return a random direction (unit vector).
-
-    The `dim` keyword specifies the dimension.
+    Return a random direction (unit vector). The `dim` keyword specifies
+    the dimensionality of the space.
 
     Methods
     -------
@@ -5659,11 +5656,20 @@ class uniform_direction_gen(multi_rv_generic):
     This generates one random direction, a vector on the surface of
     :math:`S^2`.
 
-    Alternatively, the object may be called (as a function) to fix the `dim`
-    parameter, return a "frozen" `random_direction` random variable:
+    Alternatively, the object may be called (as a function) to return a frozen
+    distribution with fixed `dim` parameter. Here,
+    we create a `uniform_direction` with ``dim=3`` and draw 5 observations.
+    The samples are then arranged in an array of shape 5x3.
 
-    >>> rv = uniform_direction(5)
-
+    >>> rng = np.random.default_rng()
+    >>> uniform_sphere_dist = uniform_direction(3)
+    >>> unit_vectors = uniform_sphere_dist.rvs(5, random_state=rng)
+    >>> unit_vectors
+    array([[ 0.56688642, -0.1332634 , -0.81294566],
+           [-0.427126  , -0.74779278,  0.50830044],
+           [ 0.3793989 ,  0.92346629,  0.05715323],
+           [ 0.36428383, -0.92449076, -0.11231259],
+           [-0.27733285,  0.94410968, -0.17816678]])
     """
 
     def __init__(self, seed=None):
