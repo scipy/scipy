@@ -34,6 +34,7 @@ from scipy.integrate import romb
 from scipy.special import multigammaln
 
 from .common_tests import check_random_state_property
+from .data._mvt import _qsimvtv
 
 from unittest.mock import patch
 
@@ -2383,6 +2384,21 @@ class TestMultivariateT:
 
         assert_allclose(res, ref, atol=5e-4)  # close to t
         assert np.all(np.abs(res - incorrect) > 1e-3)  # not close to normal
+
+    @pytest.mark.parametrize("n", [2, 3, 5, 10])
+    def test_cdf_against_qsimvtv(self, n):
+        rng = np.random.default_rng(413722918996573)
+        A = rng.random(size=(n, n))
+        cov = A @ A.T
+        mean = rng.random(n)
+        a = -rng.random(n)
+        b = rng.random(n)
+        df = rng.random() * 5
+
+        res = stats.multivariate_t.cdf(b, mean, cov, df, lower_limit=a,
+                                       random_state=rng)
+        ref = _qsimvtv(10000, df, cov, a - mean, b - mean, rng)[0]
+        assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
 
     def test_frozen(self):
         seed = 4137229573

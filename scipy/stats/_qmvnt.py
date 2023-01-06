@@ -5,7 +5,8 @@
 #     http://www.math.wsu.edu/faculty/genz/software/software.html
 
 # Copyright (C) 2013, Alan Genz,  All rights reserved.
-# Python implementation is copyright (C) 2022, Robert Kern,  All rights reserved.
+# Python implementation is copyright (C) 2022, Robert Kern,  All rights
+# reserved.
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided the following conditions are met:
