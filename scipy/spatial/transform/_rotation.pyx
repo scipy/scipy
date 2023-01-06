@@ -2020,17 +2020,17 @@ cdef class Rotation:
 
             - First angle belongs to [-180, 180] degrees (both inclusive)
             - Third angle belongs to [-180, 180] degrees (both inclusive)
-            - Second angle belongs to a set of size 180 degrees. The exact
-            set depends on the axes.
+            - Second angle belongs to [-lambda, 180 - lambda] degrees,
+            where lambda is calculated as:
+                - ``atan2(dot3(axis3, cross(axis1, axis2)), dot(axis3, axis1))``
 
         References
         ----------
         .. [1] Shuster, Malcolm & Markley, Landis. (2003). Generalization of
         the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132. 10.1007/BF03546304.
         .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles
-               conversion: A direct, general and computationally efficient
-               method. PLoS ONE 17(11): e0276302.
-               https://doi.org/10.1371/journal.pone.0276302
+        conversion: A direct, general and computationally efficient method.
+        PLoS ONE 17(11): e0276302. 10.1371/journal.pone.0276302
         .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
 
         Examples
