@@ -12669,7 +12669,7 @@ add_newdoc("stdtrit",
     Notes
     -----
     The student t distribution is also available as `scipy.stats.t`. Calling
-    `stdtrit` directly can improve performance compared to the ``ppdf``
+    `stdtrit` directly can improve performance compared to the ``ppf``
     method of `scipy.stats.t` (see last example below).
 
     Examples
@@ -12682,7 +12682,8 @@ add_newdoc("stdtrit",
     >>> import numpy as np
     >>> from scipy.special import stdtr, stdtrit
     >>> import matplotlib.pyplot as plt
-    >>> df, x = 3, 1
+    >>> df = 3
+    >>> x = 1
     >>> cdf_value = stdtr(df, x)
     >>> stdtrit(df, cdf_value)
     0.9999999994418539
