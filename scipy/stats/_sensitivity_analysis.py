@@ -598,8 +598,7 @@ def sobol_indices(
                 "the number of output."
             )
 
-        f_B = np.atleast_2d(func(B))
-        f_AB = np.atleast_2d(func(AB))
+        f_B, f_AB = np.atleast_2d(func(B), func(AB))
     else:
         message = (
             "When 'func' is a dictionary, it must contain the following "
@@ -608,9 +607,9 @@ def sobol_indices(
             "should have a shape ``(s, d*n)``."
         )
         try:
-            f_A = np.atleast_2d(func['f_A'])
-            f_B = np.atleast_2d(func['f_B'])
-            f_AB = np.atleast_2d(func['f_AB'])
+            f_A, f_B, f_AB = np.atleast_2d(
+                func['f_A'], func['f_B'], func['f_AB']
+            )
         except KeyError as exc:
             raise ValueError(message) from exc
 
