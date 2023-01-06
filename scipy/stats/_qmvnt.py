@@ -34,7 +34,7 @@
 
 import numpy as np
 
-from scipy.fftpack import fft, ifft
+from scipy.fft import fft, ifft
 from scipy.special import gammaincinv, ndtr, ndtri
 from scipy.stats._qmc import n_primes, primes_from_2_to
 
