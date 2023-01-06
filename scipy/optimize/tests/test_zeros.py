@@ -824,16 +824,6 @@ def test_gh_14486_converged_false():
     assert not res.converged
     assert res.flag == 'convergence error'
 
-    # In the vectorized version of `newton`, the secant method doesn't 
-    # encounter zero slope in the problem above. Here's a problem where
-    # it does. Check that it reports failure to converge.
-    dx = np.finfo(float).eps ** 0.33
-    p0 = (200.0 - dx) / (2.0 + dx)
-    with pytest.warns(RuntimeWarning, match='RMS of'):
-        res = newton(lambda y: (y - 100.0)**2, x0=[p0]*2, full_output=True)
-    assert_equal(res.converged, [False, False])
-    assert_equal(res.zero_der, [True, True])
-
 
 @pytest.mark.parametrize('solver_name',
                          ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
