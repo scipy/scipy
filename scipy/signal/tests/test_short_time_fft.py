@@ -303,6 +303,7 @@ def test_border_values():
     assert SFT.p_min == 0
     assert SFT.k_min == -4
     assert SFT.lower_border_end == (4, 1)
+    assert SFT.lower_border_end == (4, 1)  # needed to test caching
     assert SFT.p_max(10) == 4
     assert SFT.k_max(10) == 16
     assert SFT.upper_border_begin(10) == (4, 2)
@@ -406,38 +407,37 @@ def test_fft_func_roundtrip(n: int):
         SFT._ifft_func(x0)
 
 
-def test_impulse_roundtrip():
-    """Roundtrip for an impulse being at different positions."""
+@pytest.mark.parametrize('i', range(19))
+def test_impulse_roundtrip(i):
+    """Roundtrip for an impulse being at different positions `i`."""
     n = 19
     w, h_n = np.ones(8), 3
-    x_in = np.zeros(n)
-    x_in[0] = 1
+    x = np.zeros(n)
+    x[i] = 1
 
     SFT = ShortTimeFFT(w, hop=h_n, fs=1, scale_to=None, phase_shift=None)
-    for i in range(0, n):
-        x = np.roll(x_in, i)
-        Sx = SFT.stft(x)
-        # test slicing the input signal into two parts:
-        n_q = SFT.nearest_k_p(n // 2)
-        Sx0 = SFT.stft(x[:n_q], padding='zeros')
-        Sx1 = SFT.stft(x[n_q:], padding='zeros')
-        q0_ub = SFT.upper_border_begin(n_q)[1] - SFT.p_min
-        q1_le = SFT.lower_border_end[1] - SFT.p_min
-        assert_allclose(Sx0[:, :q0_ub], Sx[:, :q0_ub], err_msg=f"{i=}")
-        assert_allclose(Sx1[:, q1_le:], Sx[:, q1_le-Sx1.shape[1]:],
-                        err_msg=f"{i=}")
+    Sx = SFT.stft(x)
+    # test slicing the input signal into two parts:
+    n_q = SFT.nearest_k_p(n // 2)
+    Sx0 = SFT.stft(x[:n_q], padding='zeros')
+    Sx1 = SFT.stft(x[n_q:], padding='zeros')
+    q0_ub = SFT.upper_border_begin(n_q)[1] - SFT.p_min
+    q1_le = SFT.lower_border_end[1] - SFT.p_min
+    assert_allclose(Sx0[:, :q0_ub], Sx[:, :q0_ub], err_msg=f"{i=}")
+    assert_allclose(Sx1[:, q1_le:], Sx[:, q1_le-Sx1.shape[1]:],
+                    err_msg=f"{i=}")
 
-        Sx01 = np.hstack((Sx0[:, :q0_ub],
-                          Sx0[:, q0_ub:] + Sx1[:, :q1_le],
-                          Sx1[:, q1_le:]))
-        assert_allclose(Sx, Sx01, atol=1e-8, err_msg=f"{i=}")
+    Sx01 = np.hstack((Sx0[:, :q0_ub],
+                      Sx0[:, q0_ub:] + Sx1[:, :q1_le],
+                      Sx1[:, q1_le:]))
+    assert_allclose(Sx, Sx01, atol=1e-8, err_msg=f"{i=}")
 
-        y = SFT.istft(Sx, 0, n)
-        assert_allclose(y, x, atol=1e-8, err_msg=f"{i=}")
-        y0 = SFT.istft(Sx, 0, n//2)
-        assert_allclose(x[:n//2], y0, atol=1e-8, err_msg=f"{i=}")
-        y1 = SFT.istft(Sx, n // 2, n)
-        assert_allclose(x[n // 2:], y1, atol=1e-8, err_msg=f"{i=}")
+    y = SFT.istft(Sx, 0, n)
+    assert_allclose(y, x, atol=1e-8, err_msg=f"{i=}")
+    y0 = SFT.istft(Sx, 0, n//2)
+    assert_allclose(x[:n//2], y0, atol=1e-8, err_msg=f"{i=}")
+    y1 = SFT.istft(Sx, n // 2, n)
+    assert_allclose(x[n // 2:], y1, atol=1e-8, err_msg=f"{i=}")
 
 
 @pytest.mark.parametrize('hop', [1, 7, 8])

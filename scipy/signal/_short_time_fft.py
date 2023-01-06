@@ -22,8 +22,8 @@ Implementation Notes (as of 2022-12)
   added to the "See Also" section of each method/property.
 """
 from functools import lru_cache, partial
-from typing import Callable, Generator, get_args, Literal, Optional, Union, \
-    Tuple, Type
+from typing import Callable, Dict, Generator, get_args, Literal, Optional, \
+    Tuple, Type, Union
 
 import numpy as np
 
@@ -719,44 +719,24 @@ class ShortTimeFFT:
         """
         if padding not in (padding_types := get_args(PAD_TYPE)):
             raise ValueError(f"Parameter {padding=} not in {padding_types}!")
+        pad_kws: Dict[str, dict] = {  # possible keywords to pass to np.pad:
+            'zeros': dict(mode='constant', constant_values=(0, 0)),
+            'edge': dict(mode='edge'),
+            'even': dict(mode='reflect', reflect_type='even'),
+            'odd': dict(mode='reflect', reflect_type='odd'),
+           }  # typing of pad_kws is needed to make mypy happy
 
-        n = x.shape[-1]
+        n, n1 = x.shape[-1], (p1 - p0) * self.hop
         k0 = p0 * self.hop - self.m_num_mid + k_off  # start sample
-        k1 = k0 + (p1 - p0) * self.hop  # end sample (of left window edge)
+        k1 = k0 + n1 + self.m_num  # end sample
 
-        # xs is the placeholder for a padded slice:
-        xs_shape = list(x.shape)  # the last axis is where
-        xs_shape[-1] = self.m_num  # the slicing is performed
-        xs = np.zeros(xs_shape, dtype=x.dtype)
-        for k_ in range(k0, k1, self.hop):
-            if k_ < 0:  # pre-padding needed
-                if padding == 'zeros':
-                    xs[..., :-k_] = 0
-                elif padding == 'edge':
-                    xs[..., :-k_] = np.tile(x[..., :1], -k_)
-                elif padding == 'even':
-                    xs[..., :-k_] = x[..., -k_:0:-1]
-                else:  # padding == 'odd':
-                    xs[..., :-k_] = (np.tile(2*x[..., :1], -k_) -
-                                     x[..., -k_:0:-1])
-                xs[..., -k_:] = x[..., :self.m_num+k_]
-                yield xs
-            elif k_ <= n-self.m_num:  # no padding needed
-                yield x[..., k_:k_ + self.m_num]
-            else:  # post-padding needed
-                k1_ = n - k_
-                k2_ = self.m_num - k1_
-                xs[..., :k1_] = x[..., -k1_:] if k1_ > 0 else []
-                if padding == 'zeros':
-                    xs[..., k1_:] = 0
-                elif padding == 'edge':
-                    xs[..., k1_:] = np.tile(x[..., -1:], k2_)
-                elif padding == 'even':
-                    xs[..., k1_:] = x[..., -2:-k2_-2:-1]
-                else:  # padding == 'odd':
-                    xs[..., k1_:] = (np.tile(2*x[..., -1:], k2_) -
-                                     x[..., -2:-k2_ - 2:-1])
-                yield xs
+        i0, i1 = max(k0, 0), min(k1, n)  # indexes to shorten x
+        # dimensions for padding x:
+        pad_width = [(0, 0)] * (x.ndim-1) + [(-min(k0, 0), max(k1 - n, 0))]
+
+        x1 = np.pad(x[..., i0:i1], pad_width, **pad_kws[padding])
+        for k_ in range(0, n1, self.hop):
+            yield x1[..., k_:k_ + self.m_num]
 
     def stft(self, x: NDArray, p0: Optional[int] = None,
              p1: Optional[int] = None, k_offset: int = 0,
