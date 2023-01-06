@@ -1616,22 +1616,16 @@ def test_compare_as_davenport_as_euler():
             dav = rot.as_davenport(ax, extrinsic=extrinsic)
             assert_allclose(eul, dav, atol=0, rtol=1e-9)
 
-    # asymmetric sequences separating tests to account for possible set
-    # differences in implementations
+    # asymmetric sequences 
     angles[:, 1] -= np.pi / 2
-    for seq_tuple in ['xzy', 'yxz', 'zyx']:
+    for seq_tuple in permutations('xyz'):
         seq = ''.join(seq_tuple)
         ax = [basis_vec(i) for i in seq]
-        seq = seq.upper()
+        # account for possible set differences in implementations
+        extrinsic = np.dot(ax[2], np.cross(ax[0], ax[1])) == 1
+        if not extrinsic:
+            seq = seq.upper()
         rot = Rotation.from_euler(seq, angles)
         eul = rot.as_euler(seq)
-        dav = rot.as_davenport(ax, extrinsic=False)
-        assert_allclose(eul, dav, atol=0, rtol=1e-9)
-
-    for seq_tuple in ['xyz', 'yzx', 'zxy']:
-        seq = ''.join(seq_tuple)
-        ax = [basis_vec(i) for i in seq]
-        rot = Rotation.from_euler(seq, angles)
-        eul = rot.as_euler(seq)
-        dav = rot.as_davenport(ax, extrinsic=True)
+        dav = rot.as_davenport(ax, extrinsic=extrinsic)
         assert_allclose(eul, dav, atol=0, rtol=1e-9)
