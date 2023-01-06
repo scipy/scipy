@@ -93,7 +93,8 @@ by the data. `scipy.interpolate` provides two objects of this kind,
 
 A further option for nonparametric interpolation is isotonic regression via
 `IsotonicInterpolator` which constructs a linear interpolant with constant
-regions.
+regions. It is the only interpolator in scipy that enforces a truly
+monotonically increasing solution.
 
 To illustrate, let's consider data with an outlier:
 
