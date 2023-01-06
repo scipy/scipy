@@ -18,7 +18,6 @@ cdef extern from "cephes.h" nogil:
     int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
     double ellpk(double x)
     double exp10(double x)
-    double exp1m(double x)
     double exp2(double x)
     double expn(int n, double x)
     double fdtrc(double a, double b, double x)

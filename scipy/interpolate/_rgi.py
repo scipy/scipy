@@ -11,25 +11,39 @@ from ._bsplines import make_interp_spline
 from ._fitpack2 import RectBivariateSpline
 
 
-def _make_points_and_values_ascending(points, values):
-    # create ascending points
-    sorted_indexes = tuple(np.argsort(point) for point in points)
-    points_asc = tuple(
-        np.asarray(point)[sort_index] for (point, sort_index) in
-        zip(points, sorted_indexes))
+def _check_points(points):
+    descending_dimensions = []
+    grid = []
+    for i, p in enumerate(points):
+        # early make points float
+        # see https://github.com/scipy/scipy/pull/17230
+        p = np.asarray(p, dtype=float)
+        if not np.all(p[1:] > p[:-1]):
+            if np.all(p[1:] < p[:-1]):
+                # input is descending, so make it ascending
+                descending_dimensions.append(i)
+                p = np.flip(p)
+            else:
+                raise ValueError(
+                    "The points in dimension %d must be strictly "
+                    "ascending or descending" % i)
+        # see https://github.com/scipy/scipy/issues/17716
+        p = np.ascontiguousarray(p)
+        grid.append(p)
+    return tuple(grid), tuple(descending_dimensions)
 
-    # create ascending values
-    ordered_indexes = tuple([*range(len(x))] for x in sorted_indexes)
-    ordered_indexes_array = np.array(
-        [i.flatten() for i in np.meshgrid(*ordered_indexes)]).transpose()
-    sorted_indexes_array = np.array(
-        [i.flatten() for i in np.meshgrid(*sorted_indexes)]).transpose()
 
-    values_asc = np.zeros_like(np.asarray(values))
-    for o, s in zip(ordered_indexes_array, sorted_indexes_array):
-        values_asc[tuple(o)] = values[tuple(s)]
-
-    return points_asc, values_asc
+def _check_dimensionality(points, values):
+    if len(points) > values.ndim:
+        raise ValueError("There are %d point arrays, but values has %d "
+                         "dimensions" % (len(points), values.ndim))
+    for i, p in enumerate(points):
+        if not np.asarray(p).ndim == 1:
+            raise ValueError("The points in dimension %d must be "
+                             "1-dimensional" % i)
+        if not values.shape[i] == len(p):
+            raise ValueError("There are %d points and %d values in "
+                             "dimension %d" % (len(p), values.shape[i], i))
 
 
 class RegularGridInterpolator:
@@ -223,24 +237,18 @@ class RegularGridInterpolator:
             self._validate_grid_dimensions(points, method)
         self.method = method
         self.bounds_error = bounds_error
-        self.grid, self._descending_dimensions = self._check_points(points)
+        self.grid, self._descending_dimensions = _check_points(points)
         self.values = self._check_values(values)
         self._check_dimensionality(self.grid, self.values)
         self.fill_value = self._check_fill_value(self.values, fill_value)
         if self._descending_dimensions:
             self.values = np.flip(values, axis=self._descending_dimensions)
 
-    def _check_dimensionality(self, points, values):
-        if len(points) > values.ndim:
-            raise ValueError("There are %d point arrays, but values has %d "
-                             "dimensions" % (len(points), values.ndim))
-        for i, p in enumerate(points):
-            if not np.asarray(p).ndim == 1:
-                raise ValueError("The points in dimension %d must be "
-                                 "1-dimensional" % i)
-            if not values.shape[i] == len(p):
-                raise ValueError("There are %d points and %d values in "
-                                 "dimension %d" % (len(p), values.shape[i], i))
+    def _check_dimensionality(self, grid, values):
+        _check_dimensionality(grid, values)
+
+    def _check_points(self, points):
+        return _check_points(points)
 
     def _check_values(self, values):
         if not hasattr(values, 'ndim'):
@@ -262,26 +270,6 @@ class RegularGridInterpolator:
                 raise ValueError("fill_value must be either 'None' or "
                                  "of a type compatible with values")
         return fill_value
-
-    def _check_points(self, points):
-        descending_dimensions = []
-        grid = []
-        for i, p in enumerate(points):
-            # early make points float
-            # see https://github.com/scipy/scipy/pull/17230
-            p = np.asarray(p, dtype=float)
-            if not np.all(p[1:] > p[:-1]):
-                if np.all(p[1:] < p[:-1]):
-                    # input is descending, so make it ascending
-                    descending_dimensions.append(i)
-                    p = np.flip(p)
-                    p = np.ascontiguousarray(p)
-                else:
-                    raise ValueError(
-                        "The points in dimension %d must be strictly "
-                        "ascending or descending" % i)
-            grid.append(p)
-        return tuple(grid), tuple(descending_dimensions)
 
     def __call__(self, xi, method=None):
         """
@@ -343,7 +331,10 @@ class RegularGridInterpolator:
         if method == "linear":
             indices, norm_distances = self._find_indices(xi.T)
             if (ndim == 2 and hasattr(self.values, 'dtype') and
-                    self.values.ndim == 2):
+                    self.values.ndim == 2 and self.values.flags.writeable and
+                    self.values.dtype.byteorder == '='):
+                # until cython supports const fused types, the fast path
+                # cannot support non-writeable values
                 # a fast path
                 out = np.empty(indices.shape[1], dtype=self.values.dtype)
                 result = evaluate_linear_2d(self.values,
@@ -642,24 +633,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         raise ValueError("The method splinef2d can only be used for "
                          "scalar data with one point per coordinate")
 
-    # sanity check input grid
-    for i, p in enumerate(points):
-        diff_p = np.diff(p)
-        if not np.all(diff_p > 0.):
-            if np.all(diff_p < 0.):
-                # input is descending, so make it ascending
-                points, values = _make_points_and_values_ascending(points,
-                                                                   values)
-            else:
-                raise ValueError("The points in dimension %d must be strictly "
-                                 "ascending or descending" % i)
-        if not np.asarray(p).ndim == 1:
-            raise ValueError("The points in dimension %d must be "
-                             "1-dimensional" % i)
-        if not values.shape[i] == len(p):
-            raise ValueError("There are %d points and %d values in "
-                             "dimension %d" % (len(p), values.shape[i], i))
-    grid = tuple([np.asarray(p) for p in points])
+    grid, descending_dimensions = _check_points(points)
+    _check_dimensionality(grid, values)
 
     # sanity check requested xi
     xi = _ndim_coords_from_arrays(xi, ndim=len(grid))

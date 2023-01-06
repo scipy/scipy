@@ -413,11 +413,13 @@ py3.extension_module('_comb',
   subdir: 'scipy/special'
 )
 
-py3.extension_module('_test_round',
-  cython_gen.process('_test_round.pyx'),
+dd_dep = declare_dependency(sources: ['cephes/dd_real.c'])
+
+py3.extension_module('_test_internal',
+  cython_gen.process('_test_internal.pyx'),
   include_directories: [inc_np, 'cephes', '../_lib', '../_build_utils/src'],
+  dependencies: [py3_dep, dd_dep],
   link_args: version_link_args,
-  dependencies: [npymath_lib],
   install: true,
   subdir: 'scipy/special'
 )
@@ -472,7 +474,7 @@ python_sources = [
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',
-  '_test_round.pyi',
+  '_test_internal.pyi',
   '_testutils.py',
   'add_newdocs.py',
   'basic.py',

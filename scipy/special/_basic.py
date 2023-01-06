@@ -1778,7 +1778,7 @@ def clpmn(m, n, z, type=3):
         raise ValueError("n must be a non-negative integer.")
     if not isscalar(z):
         raise ValueError("z must be scalar.")
-    if not(type == 2 or type == 3):
+    if not (type == 2 or type == 3):
         raise ValueError("type must be either 2 or 3.")
     if (m < 0):
         mp = -m

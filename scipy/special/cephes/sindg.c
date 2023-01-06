@@ -116,7 +116,7 @@ double x;
 	return (0.0);
     }
 
-    y = floor(x / 45.0);	/* integer part of x/NPY_PI_4 */
+    y = floor(x / 45.0);	/* integer part of x/M_PI_4 */
 
     /* strip high bits of integer part to prevent integer overflow */
     z = ldexp(y, -4);

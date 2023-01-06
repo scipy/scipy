@@ -6,25 +6,24 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
-                             quad, simpson, simps, fixed_quad, AccuracyWarning,
-                             qmc_quad)
+                             quad, simpson, simps, fixed_quad, AccuracyWarning)
+from scipy.integrate._quadrature import _qmc_quad as qmc_quad
 from scipy import stats, special as sc
+
 
 class TestFixedQuad:
     def test_scalar(self):
         n = 4
-        func = lambda x: x**(2*n - 1)
         expected = 1/(2*n)
-        got, _ = fixed_quad(func, 0, 1, n=n)
+        got, _ = fixed_quad(lambda x: x**(2*n - 1), 0, 1, n=n)
         # quadrature exact for this input
         assert_allclose(got, expected, rtol=1e-12)
 
     def test_vector(self):
         n = 4
         p = np.arange(1, 2*n)
-        func = lambda x: x**p[:,None]
         expected = 1/(p + 1)
-        got, _ = fixed_quad(func, 0, 1, n=n)
+        got, _ = fixed_quad(lambda x: x**p[:, None], 0, 1, n=n)
         assert_allclose(got, expected, rtol=1e-12)
 
 
@@ -179,6 +178,18 @@ class TestQuadrature:
         default_axis = [175.75, 175.75, 11292.25]
         assert_equal(simpson(y, x=x, axis=0), zero_axis)
         assert_equal(simpson(y, x=x, axis=-1), default_axis)
+
+    @pytest.mark.parametrize('droplast', [False, True])
+    def test_simpson_2d_integer_no_x(self, droplast):
+        # The inputs are 2d integer arrays.  The results should be
+        # identical to the results when the inputs are floating point.
+        y = np.array([[2, 2, 4, 4, 8, 8, -4, 5],
+                      [4, 4, 2, -4, 10, 22, -2, 10]])
+        if droplast:
+            y = y[:, :-1]
+        result = simpson(y, axis=-1)
+        expected = simpson(np.array(y, dtype=np.float64), axis=-1)
+        assert_equal(result, expected)
 
     def test_simps(self):
         # Basic coverage test for the alias

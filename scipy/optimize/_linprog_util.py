@@ -302,7 +302,7 @@ def _clean_inputs(lp):
             raise ValueError(
                 "Invalid input for linprog: c must be a 1-D array and must "
                 "not have more than one non-singleton dimension")
-        if not(np.isfinite(c).all()):
+        if not np.isfinite(c).all():
             raise ValueError(
                 "Invalid input for linprog: c must not contain values "
                 "inf, nan, or None")
@@ -341,7 +341,7 @@ def _clean_inputs(lp):
                 "must not have more than one non-singleton dimension and "
                 "the number of rows in A_ub must equal the number of values "
                 "in b_ub")
-        if not(np.isfinite(b_ub).all()):
+        if not np.isfinite(b_ub).all():
             raise ValueError(
                 "Invalid input for linprog: b_ub must not contain values "
                 "inf, nan, or None")
@@ -380,7 +380,7 @@ def _clean_inputs(lp):
                 "must not have more than one non-singleton dimension and "
                 "the number of rows in A_eq must equal the number of values "
                 "in b_eq")
-        if not(np.isfinite(b_eq).all()):
+        if not np.isfinite(b_eq).all():
             raise ValueError(
                 "Invalid input for linprog: b_eq must not contain values "
                 "inf, nan, or None")

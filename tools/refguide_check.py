@@ -143,7 +143,6 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.stats\.contingency\.expected_freq',
     r'scipy\.stats\.contingency\.margins',
     r'scipy\.stats\.reciprocal',  # alias for lognormal
-    r'scipy\.stats\.gilbrat',  # alias for gibrat
     r'scipy\.stats\.trapz',   # alias for trapezoid
     r'scipy\.stats\.F_onewayBadInputSizesWarning',  # shouldn't
     r'scipy\.stats\.F_onewayConstantInputWarning',  # have

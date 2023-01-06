@@ -4871,6 +4871,12 @@ add_newdoc("fdtr",
     y : scalar or ndarray
         The CDF of the F-distribution with parameters `dfn` and `dfd` at `x`.
 
+    See Also
+    --------
+    fdtrc : F distribution survival function
+    fdtri : F distribution inverse cumulative distribution
+    scipy.stats.f : F distribution
+
     Notes
     -----
     The regularized incomplete beta function is used, according to the
@@ -4879,13 +4885,65 @@ add_newdoc("fdtr",
     .. math::
         F(d_n, d_d; x) = I_{xd_n/(d_d + xd_n)}(d_n/2, d_d/2).
 
-    Wrapper for the Cephes [1]_ routine `fdtr`.
+    Wrapper for the Cephes [1]_ routine `fdtr`. The F distribution is also
+    available as `scipy.stats.f`. Calling `fdtr` directly can improve
+    performance compared to the ``cdf`` method of `scipy.stats.f` (see last
+    example below).
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Calculate the function for ``dfn=1`` and ``dfd=2`` at ``x=1``.
+
+    >>> import numpy as np
+    >>> from scipy.special import fdtr
+    >>> fdtr(1, 2, 1)
+    0.5773502691896258
+
+    Calculate the function at several points by providing a NumPy array for
+    `x`.
+
+    >>> x = np.array([0.5, 2., 3.])
+    >>> fdtr(1, 2, x)
+    array([0.4472136 , 0.70710678, 0.77459667])
+
+    Plot the function for several parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dfn_parameters = [1, 5, 10, 50]
+    >>> dfd_parameters = [1, 1, 2, 3]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(dfn_parameters, dfd_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     dfn, dfd, style = parameter_set
+    ...     fdtr_vals = fdtr(dfn, dfd, x)
+    ...     ax.plot(x, fdtr_vals, label=rf"$d_n={dfn},\, d_d={dfd}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("F distribution cumulative distribution function")
+    >>> plt.show()
+
+    The F distribution is also available as `scipy.stats.f`. Using `fdtr`
+    directly can be much faster than calling the ``cdf`` method of
+    `scipy.stats.f`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.f(dfn, dfd).cdf(x)=fdtr(dfn, dfd, x)``.
+
+    >>> from scipy.stats import f
+    >>> dfn, dfd = 1, 2
+    >>> x = 1
+    >>> fdtr_res = fdtr(dfn, dfd, x)  # this will often be faster than below
+    >>> f_dist_res = f(dfn, dfd).cdf(x)
+    >>> fdtr_res == f_dist_res  # test that results are equal
+    True
     """)
 
 add_newdoc("fdtrc",
@@ -4914,9 +4972,11 @@ add_newdoc("fdtrc",
         The complemented F-distribution function with parameters `dfn` and
         `dfd` at `x`.
 
-    See also
+    See Also
     --------
-    fdtr
+    fdtr : F distribution cumulative distribution function
+    fdtri : F distribution inverse cumulative distribution function
+    scipy.stats.f : F distribution
 
     Notes
     -----
@@ -4926,12 +4986,65 @@ add_newdoc("fdtrc",
     .. math::
         F(d_n, d_d; x) = I_{d_d/(d_d + xd_n)}(d_d/2, d_n/2).
 
-    Wrapper for the Cephes [1]_ routine `fdtrc`.
+    Wrapper for the Cephes [1]_ routine `fdtrc`. The F distribution is also
+    available as `scipy.stats.f`. Calling `fdtrc` directly can improve
+    performance compared to the ``sf`` method of `scipy.stats.f` (see last
+    example below).
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Calculate the function for ``dfn=1`` and ``dfd=2`` at ``x=1``.
+
+    >>> import numpy as np
+    >>> from scipy.special import fdtrc
+    >>> fdtrc(1, 2, 1)
+    0.42264973081037427
+
+    Calculate the function at several points by providing a NumPy array for
+    `x`.
+
+    >>> x = np.array([0.5, 2., 3.])
+    >>> fdtrc(1, 2, x)
+    array([0.5527864 , 0.29289322, 0.22540333])
+
+    Plot the function for several parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dfn_parameters = [1, 5, 10, 50]
+    >>> dfd_parameters = [1, 1, 2, 3]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(dfn_parameters, dfd_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     dfn, dfd, style = parameter_set
+    ...     fdtrc_vals = fdtrc(dfn, dfd, x)
+    ...     ax.plot(x, fdtrc_vals, label=rf"$d_n={dfn},\, d_d={dfd}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_title("F distribution survival function")
+    >>> plt.show()
+
+    The F distribution is also available as `scipy.stats.f`. Using `fdtrc`
+    directly can be much faster than calling the ``sf`` method of
+    `scipy.stats.f`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.f(dfn, dfd).sf(x)=fdtrc(dfn, dfd, x)``.
+
+    >>> from scipy.stats import f
+    >>> dfn, dfd = 1, 2
+    >>> x = 1
+    >>> fdtrc_res = fdtrc(dfn, dfd, x)  # this will often be faster than below
+    >>> f_dist_res = f(dfn, dfd).sf(x)
+    >>> f_dist_res == fdtrc_res  # test that results are equal
+    True
     """)
 
 add_newdoc("fdtri",
@@ -4959,6 +5072,12 @@ add_newdoc("fdtri",
     x : scalar or ndarray
         The quantile corresponding to `p`.
 
+    See Also
+    --------
+    fdtr : F distribution cumulative distribution function
+    fdtrc : F distribution survival function
+    scipy.stats.f : F distribution
+
     Notes
     -----
     The computation is carried out using the relation to the inverse
@@ -4977,11 +5096,72 @@ add_newdoc("fdtri",
 
     Wrapper for the Cephes [1]_ routine `fdtri`.
 
+    The F distribution is also available as `scipy.stats.f`. Calling
+    `fdtri` directly can improve performance compared to the ``ppf``
+    method of `scipy.stats.f` (see last example below).
+
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    `fdtri` represents the inverse of the F distribution CDF which is
+    available as `fdtr`. Here, we calculate the CDF for ``df1=1``, ``df2=2``
+    at ``x=3``. `fdtri` then returns ``3`` given the same values for `df1`,
+    `df2` and the computed CDF value.
+
+    >>> import numpy as np
+    >>> from scipy.special import fdtri, fdtr
+    >>> df1, df2 = 1, 2
+    >>> x = 3
+    >>> cdf_value =  fdtr(df1, df2, x)
+    >>> fdtri(df1, df2, cdf_value)
+    3.000000000000006
+
+    Calculate the function at several points by providing a NumPy array for
+    `x`.
+
+    >>> x = np.array([0.1, 0.4, 0.7])
+    >>> fdtri(1, 2, x)
+    array([0.02020202, 0.38095238, 1.92156863])
+
+    Plot the function for several parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dfn_parameters = [50, 10, 1, 50]
+    >>> dfd_parameters = [0.5, 1, 1, 5]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(dfn_parameters, dfd_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 1, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     dfn, dfd, style = parameter_set
+    ...     fdtri_vals = fdtri(dfn, dfd, x)
+    ...     ax.plot(x, fdtri_vals, label=rf"$d_n={dfn},\, d_d={dfd}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$x$")
+    >>> title = "F distribution inverse cumulative distribution function"
+    >>> ax.set_title(title)
+    >>> ax.set_ylim(0, 30)
+    >>> plt.show()
+
+    The F distribution is also available as `scipy.stats.f`. Using `fdtri`
+    directly can be much faster than calling the ``ppf`` method of
+    `scipy.stats.f`, especially for small arrays or individual values.
+    To get the same results one must use the following parametrization:
+    ``stats.f(dfn, dfd).ppf(x)=fdtri(dfn, dfd, x)``.
+
+    >>> from scipy.stats import f
+    >>> dfn, dfd = 1, 2
+    >>> x = 0.7
+    >>> fdtri_res = fdtri(dfn, dfd, x)  # this will often be faster than below
+    >>> f_dist_res = f(dfn, dfd).ppf(x)
+    >>> f_dist_res == fdtri_res  # test that results are equal
+    True
     """)
 
 add_newdoc("fdtridfd",
@@ -5010,8 +5190,26 @@ add_newdoc("fdtridfd",
 
     See Also
     --------
-    fdtr, fdtrc, fdtri
+    fdtr : F distribution cumulative distribution function
+    fdtrc : F distribution survival function
+    fdtri : F distribution quantile function
+    scipy.stats.f : F distribution
 
+    Examples
+    --------
+    Compute the F distribution cumulative distribution function for one
+    parameter set.
+
+    >>> from scipy.special import fdtridfd, fdtr
+    >>> dfn, dfd, x = 10, 5, 2
+    >>> cdf_value = fdtr(dfn, dfd, x)
+    >>> cdf_value
+    0.7700248806501017
+
+    Verify that `fdtridfd` recovers the original value for `dfd`:
+
+    >>> fdtridfd(dfn, cdf_value, x)
+    5.0
     """)
 
 '''
@@ -7971,7 +8169,7 @@ add_newdoc("jve",
     r"""
     jve(v, z, out=None)
 
-    Exponentially scaled Bessel function of order `v`.
+    Exponentially scaled Bessel function of the first kind of order `v`.
 
     Defined as::
 
@@ -7990,6 +8188,10 @@ add_newdoc("jve",
     -------
     J : scalar or ndarray
         Value of the exponentially scaled Bessel function.
+
+    See also
+    --------
+    jv: Unscaled Bessel function of the first kind
 
     Notes
     -----
@@ -8011,11 +8213,63 @@ add_newdoc("jve",
     term is exactly zero for integer `v`; to improve accuracy the second
     term is explicitly omitted for `v` values such that `v = floor(v)`.
 
+    Exponentially scaled Bessel functions are useful for large arguments `z`:
+    for these, the unscaled Bessel functions can easily under-or overflow.
+
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Compare the output of `jv` and `jve` for large complex arguments for `z`
+    by computing their values for order ``v=1`` at ``z=1000j``. We see that
+    `jv` overflows but `jve` returns a finite number:
+
+    >>> import numpy as np
+    >>> from scipy.special import jv, jve
+    >>> v = 1
+    >>> z = 1000j
+    >>> jv(v, z), jve(v, z)
+    ((inf+infj), (7.721967686709077e-19+0.012610930256928629j))
+
+    For real arguments for `z`, `jve` returns the same as `jv`.
+
+    >>> v, z = 1, 1000
+    >>> jv(v, z), jve(v, z)
+    (0.004728311907089523, 0.004728311907089523)
+
+    The function can be evaluated for several orders at the same time by
+    providing a list or NumPy array for `v`:
+
+    >>> jve([1, 3, 5], 1j)
+    array([1.27304208e-17+2.07910415e-01j, -4.99352086e-19-8.15530777e-03j,
+           6.11480940e-21+9.98657141e-05j])
+
+    In the same way, the function can be evaluated at several points in one
+    call by providing a list or NumPy array for `z`:
+
+    >>> jve(1, np.array([1j, 2j, 3j]))
+    array([1.27308412e-17+0.20791042j, 1.31814423e-17+0.21526929j,
+           1.20521602e-17+0.19682671j])
+
+    It is also possible to evaluate several orders at several points
+    at the same time by providing arrays for `v` and `z` with
+    compatible shapes for broadcasting. Compute `jve` for two different orders
+    `v` and three points `z` resulting in a 2x3 array.
+
+    >>> v = np.array([[1], [3]])
+    >>> z = np.array([1j, 2j, 3j])
+    >>> v.shape, z.shape
+    ((2, 1), (3,))
+
+    >>> jve(v, z)
+    array([[1.27304208e-17+0.20791042j,  1.31810070e-17+0.21526929j,
+            1.20517622e-17+0.19682671j],
+           [-4.99352086e-19-0.00815531j, -1.76289571e-18-0.02879122j,
+            -2.92578784e-18-0.04778332j]])
     """)
 
 add_newdoc("k0",
@@ -12002,6 +12256,12 @@ add_newdoc("smirnov",
     scalar or ndarray
         The value(s) of smirnov(n, d), Prob(Dn+ >= d) (Also Prob(Dn- >= d))
 
+    See Also
+    --------
+    smirnovi : The Inverse Survival Function for the distribution
+    scipy.stats.ksone : Provides the functionality as a continuous distribution
+    kolmogorov, kolmogi : Functions for the two-sided distribution
+
     Notes
     -----
     `smirnov` is used by `stats.kstest` in the application of the
@@ -12010,69 +12270,75 @@ add_newdoc("smirnov",
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
 
-    See Also
-    --------
-    smirnovi : The Inverse Survival Function for the distribution
-    scipy.stats.ksone : Provides the functionality as a continuous distribution
-    kolmogorov, kolmogi : Functions for the two-sided distribution
-
     Examples
     --------
     >>> import numpy as np
     >>> from scipy.special import smirnov
+    >>> from scipy.stats import norm
 
-    Show the probability of a gap at least as big as 0, 0.5 and 1.0 for a sample of size 5
+    Show the probability of a gap at least as big as 0, 0.5 and 1.0 for a
+    sample of size 5.
 
     >>> smirnov(5, [0, 0.5, 1.0])
     array([ 1.   ,  0.056,  0.   ])
 
-    Compare a sample of size 5 drawn from a source N(0.5, 1) distribution against
-    a target N(0, 1) CDF.
+    Compare a sample of size 5 against N(0, 1), the standard normal
+    distribution with mean 0 and standard deviation 1.
 
-    >>> from scipy.stats import norm
-    >>> rng = np.random.default_rng()
-    >>> n = 5
-    >>> gendist = norm(0.5, 1)       # Normal distribution, mean 0.5, stddev 1
-    >>> x = np.sort(gendist.rvs(size=n, random_state=rng))
-    >>> x
-    array([-1.3922078 , -0.13526532,  0.1371477 ,  0.18981686,  1.81948167])
+    `x` is the sample.
+
+    >>> x = np.array([-1.392, -0.135, 0.114, 0.190, 1.82])
+
     >>> target = norm(0, 1)
     >>> cdfs = target.cdf(x)
     >>> cdfs
-    array([0.08192974, 0.44620105, 0.55454297, 0.57527368, 0.96558101])
-    # Construct the Empirical CDF and the K-S statistics (Dn+, Dn-, Dn)
+    array([0.0819612 , 0.44630594, 0.5453811 , 0.57534543, 0.9656205 ])
+
+    Construct the empirical CDF and the K-S statistics (Dn+, Dn-, Dn).
+
+    >>> n = len(x)
     >>> ecdfs = np.arange(n+1, dtype=float)/n
-    >>> cols = np.column_stack([x, ecdfs[1:], cdfs, cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
-    >>> np.set_printoptions(precision=3)
-    >>> cols
-    array([[-1.392,  0.2  ,  0.082,  0.082,  0.118],
-           [-0.135,  0.4  ,  0.446,  0.246, -0.046],
-           [ 0.137,  0.6  ,  0.555,  0.155,  0.045],
-           [ 0.19 ,  0.8  ,  0.575, -0.025,  0.225],
-           [ 1.819,  1.   ,  0.966,  0.166,  0.034]])
+    >>> cols = np.column_stack([x, ecdfs[1:], cdfs, cdfs - ecdfs[:n],
+    ...                        ecdfs[1:] - cdfs])
+    >>> with np.printoptions(precision=3):
+    ...    print(cols)
+    [[-1.392  0.2    0.082  0.082  0.118]
+     [-0.135  0.4    0.446  0.246 -0.046]
+     [ 0.114  0.6    0.545  0.145  0.055]
+     [ 0.19   0.8    0.575 -0.025  0.225]
+     [ 1.82   1.     0.966  0.166  0.034]]
     >>> gaps = cols[:, -2:]
     >>> Dnpm = np.max(gaps, axis=0)
-    >>> print('Dn-=%f, Dn+=%f' % (Dnpm[0], Dnpm[1]))
-    Dn-=0.246201, Dn+=0.224726
+    >>> print(f'Dn-={Dnpm[0]:f}, Dn+={Dnpm[1]:f}')
+    Dn-=0.246306, Dn+=0.224655
     >>> probs = smirnov(n, Dnpm)
-    >>> print(chr(10).join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
-    ...      ' Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]),
-    ...      ' Smirnov n=%d: Prob(Dn+ >= %f) = %.4f' % (n, Dnpm[1], probs[1])]))
-    For a sample of size 5 drawn from a N(0, 1) distribution:
-     Smirnov n=5: Prob(Dn- >= 0.246201) = 0.4713
-     Smirnov n=5: Prob(Dn+ >= 0.224726) = 0.5243
+    >>> print(f'For a sample of size {n} drawn from N(0, 1):',
+    ...       f' Smirnov n={n}: Prob(Dn- >= {Dnpm[0]:f}) = {probs[0]:.4f}',
+    ...       f' Smirnov n={n}: Prob(Dn+ >= {Dnpm[1]:f}) = {probs[1]:.4f}',
+    ...       sep='\n')
+    For a sample of size 5 drawn from N(0, 1):
+     Smirnov n=5: Prob(Dn- >= 0.246306) = 0.4711
+     Smirnov n=5: Prob(Dn+ >= 0.224655) = 0.5245
 
-    Plot the Empirical CDF against the target N(0, 1) CDF
+    Plot the empirical CDF and the standard normal CDF.
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.step(np.concatenate([[-3], x]), ecdfs, where='post', label='Empirical CDF')
-    >>> x3 = np.linspace(-3, 3, 100)
-    >>> plt.plot(x3, target.cdf(x3), label='CDF for N(0, 1)')
-    >>> plt.ylim([0, 1]); plt.grid(True); plt.legend();
-    # Add vertical lines marking Dn+ and Dn-
+    >>> plt.step(np.concatenate(([-2.5], x, [2.5])),
+    ...          np.concatenate((ecdfs, [1])),
+    ...          where='post', label='Empirical CDF')
+    >>> xx = np.linspace(-2.5, 2.5, 100)
+    >>> plt.plot(xx, target.cdf(xx), '--', label='CDF for N(0, 1)')
+
+    Add vertical lines marking Dn+ and Dn-.
+
     >>> iminus, iplus = np.argmax(gaps, axis=0)
-    >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r', linestyle='dashed', lw=4)
-    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='m', linestyle='dashed', lw=4)
+    >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r',
+    ...            alpha=0.5, lw=4)
+    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='m',
+    ...            alpha=0.5, lw=4)
+
+    >>> plt.grid(True)
+    >>> plt.legend(framealpha=1, shadow=True)
     >>> plt.show()
     """)
 
@@ -12099,6 +12365,13 @@ add_newdoc("smirnovi",
     scalar or ndarray
         The value(s) of smirnovi(n, p), the critical values.
 
+    See Also
+    --------
+    smirnov : The Survival Function (SF) for the distribution
+    scipy.stats.ksone : Provides the functionality as a continuous distribution
+    kolmogorov, kolmogi : Functions for the two-sided distribution
+    scipy.stats.kstwobign : Two-sided Kolmogorov-Smirnov distribution, large n
+
     Notes
     -----
     `smirnov` is used by `stats.kstest` in the application of the
@@ -12107,11 +12380,25 @@ add_newdoc("smirnovi",
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
 
-    See Also
+    Examples
     --------
-    smirnov  : The Survival Function (SF) for the distribution
-    scipy.stats.ksone : Provides the functionality as a continuous distribution
-    kolmogorov, kolmogi, scipy.stats.kstwobign : Functions for the two-sided distribution
+    >>> from scipy.special import smirnovi, smirnov
+
+    >>> n = 24
+    >>> deviations = [0.1, 0.2, 0.3]
+
+    Use `smirnov` to compute the complementary CDF of the Smirnov
+    distribution for the given number of samples and deviations.
+
+    >>> p = smirnov(n, deviations)
+    >>> p
+    array([0.58105083, 0.12826832, 0.01032231])
+
+    The inverse function ``smirnovi(n, p)`` returns ``deviations``.
+
+    >>> smirnovi(n, p)
+    array([0.1, 0.2, 0.3])
+
     """)
 
 add_newdoc("_smirnovc",
@@ -12921,6 +13208,10 @@ add_newdoc("yve",
     Y : scalar or ndarray
         Value of the exponentially scaled Bessel function.
 
+    See Also
+    --------
+    yv: Unscaled Bessel function of the second kind of real order.
+
     Notes
     -----
     For positive `v` values, the computation is carried out using the
@@ -12938,11 +13229,64 @@ add_newdoc("yve",
     exactly zero for integer `v`; to improve accuracy the second term is
     explicitly omitted for `v` values such that `v = floor(v)`.
 
+    Exponentially scaled Bessel functions are useful for large `z`:
+    for these, the unscaled Bessel functions can easily under-or overflow.
+
     References
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    Compare the output of `yv` and `yve` for large complex arguments for `z`
+    by computing their values for order ``v=1`` at ``z=1000j``. We see that
+    `yv` returns nan but `yve` returns a finite number:
+
+    >>> import numpy as np
+    >>> from scipy.special import yv, yve
+    >>> v = 1
+    >>> z = 1000j
+    >>> yv(v, z), yve(v, z)
+    ((nan+nanj), (-0.012610930256928629+7.721967686709076e-19j))
+
+    For real arguments for `z`, `yve` returns the same as `yv` up to
+    floating point errors.
+
+    >>> v, z = 1, 1000
+    >>> yv(v, z), yve(v, z)
+    (-0.02478433129235178, -0.02478433129235179)
+
+    The function can be evaluated for several orders at the same time by
+    providing a list or NumPy array for `v`:
+
+    >>> yve([1, 2, 3], 1j)
+    array([-0.20791042+0.14096627j,  0.38053618-0.04993878j,
+           0.00815531-1.66311097j])
+
+    In the same way, the function can be evaluated at several points in one
+    call by providing a list or NumPy array for `z`:
+
+    >>> yve(1, np.array([1j, 2j, 3j]))
+    array([-0.20791042+0.14096627j, -0.21526929+0.01205044j,
+           -0.19682671+0.00127278j])
+
+    It is also possible to evaluate several orders at several points
+    at the same time by providing arrays for `v` and `z` with
+    broadcasting compatible shapes. Compute `yve` for two different orders
+    `v` and three points `z` resulting in a 2x3 array.
+
+    >>> v = np.array([[1], [2]])
+    >>> z = np.array([3j, 4j, 5j])
+    >>> v.shape, z.shape
+    ((2, 1), (3,))
+
+    >>> yve(v, z)
+    array([[-1.96826713e-01+1.27277544e-03j, -1.78750840e-01+1.45558819e-04j,
+            -1.63972267e-01+1.73494110e-05j],
+           [1.94960056e-03-1.11782545e-01j,  2.02902325e-04-1.17626501e-01j,
+            2.27727687e-05-1.17951906e-01j]])
     """)
 
 add_newdoc("_zeta",
@@ -13107,7 +13451,7 @@ add_newdoc("loggamma",
     Parameters
     ----------
     z : array_like
-        Values in the complex plain at which to compute ``loggamma``
+        Values in the complex plane at which to compute ``loggamma``
     out : ndarray, optional
         Output array for computed values of ``loggamma``
 
