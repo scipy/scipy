@@ -1,8 +1,8 @@
 highs_define_macros = [
   '-DHIGHS_GITHASH="n/a"',
-  '-DHIGHS_COMPILATION_DATE="2022-12-05"',  # cannot generate dynamically
+  '-DHIGHS_COMPILATION_DATE="2023-01-06"',  # cannot generate dynamically
   '-DHIGHS_VERSION_MAJOR=1',  # for upstream coordination, ref CMakelists.txt
-  '-DHIGHS_VERSION_MINOR=4',
+  '-DHIGHS_VERSION_MINOR=5',
   '-DHIGHS_VERSION_PATCH=0',
   '-UOSI_FOUND',
   '-DNDEBUG'
