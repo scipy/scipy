@@ -62,7 +62,7 @@ def sample_A_B(
     n: IntNumber,
     dists: List[PPFDist],
     random_state: SeedType = None
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> np.ndarray:
     """Sample two matrices A and B.
 
     Uses a Sobol' sequence with 2`d` columns to have 2 uncorrelated matrices.
@@ -80,19 +80,15 @@ def sample_A_B(
        :doi:`10.1016/j.cpc.2009.09.018`, 2010.
     """
     d = len(dists)
-    A_B = qmc.Sobol(d=2*d, seed=random_state, bits=64).random(n)
-
-    A, B = A_B[:, :d], A_B[:, d:]
-
-    for d_, dist in enumerate(dists):
-        try:
-            A[:, d_] = dist.ppf(A[:, d_])
-            B[:, d_] = dist.ppf(B[:, d_])
-        except AttributeError as exc:
-            message = ("Each distribution in `dists` must have method `ppf`.")
-            raise ValueError(message) from exc
-
-    return A.T, B.T
+    A_B = qmc.Sobol(d=2*d, seed=random_state, bits=64).random(n).T
+    A_B = A_B.reshape(2, d, -1)
+    try:
+        for d_, dist in enumerate(dists):
+            A_B[:, d_] = dist.ppf(A_B[:, d_])
+    except AttributeError as exc:
+        message = "Each distribution in `dists` must have method `ppf`."
+        raise ValueError(message) from exc
+    return A_B
 
 
 def sample_AB(A: np.ndarray, B: np.ndarray) -> np.ndarray:
