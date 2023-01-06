@@ -1616,7 +1616,7 @@ def test_compare_as_davenport_as_euler():
             dav = rot.as_davenport(ax, extrinsic=extrinsic)
             assert_allclose(eul, dav, atol=0, rtol=1e-9)
 
-    # asymmetric sequences 
+    # asymmetric sequences
     angles[:, 1] -= np.pi / 2
     for seq_tuple in permutations('xyz'):
         seq = ''.join(seq_tuple)
