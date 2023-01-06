@@ -5750,8 +5750,8 @@ class vonmises_fisher_gen(multi_rv_generic):
     Notes
     -----
     The von Mises-Fisher distribution is a directional distribution on the
-    n-dimensional unit sphere. The probability density function of a
-    unit vector :math:`\mathbf{x}` is
+    surface of the unit hypersphere. The probability density
+    function of a unit vector :math:`\mathbf{x}` is
 
     .. math::
 
@@ -5796,7 +5796,7 @@ class vonmises_fisher_gen(multi_rv_generic):
     .. [4] Wood, A. Simulation of the von mises fisher distribution.
            Communications in statistics-simulation and computation 23,
            1 (1994), 157-164. https://doi.org/10.1080/03610919408813161
-    .. [5] geomstats, Github.
+    .. [5] geomstats, Github. MIT License. Accessed: 06.01.2023.
            https://github.com/geomstats/geomstats
     .. [6] Miolane, N. et al. Geomstats:  A Python Package for Riemannian
            Geometry in Machine Learning. Journal of Machine Learning Research
@@ -5804,6 +5804,8 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     Examples
     --------
+    **Visualization of the probability density**
+
     Plot the probability density in three dimensions for increasing
     concentration parameter. The density is calculated by the ``pdf``
     method.
@@ -5827,10 +5829,10 @@ class vonmises_fisher_gen(multi_rv_generic):
     ...     vmf = vonmises_fisher(mu, kappa)
     ...     pdf_values = vmf.pdf(vertices)
     ...     pdfnorm = Normalize(vmin=pdf_values.min(), vmax=pdf_values.max())
-    ...     ax.set_aspect('equal')
-    ...     ax.plot_surface(x, y, z,
+    ...     ax.plot_surface(x, y, z, rstride=1, cstride=1,
     ...                     facecolors=plt.cm.viridis(pdfnorm(pdf_values)),
     ...                     linewidth=0)
+    ...     ax.set_aspect('equal')
     ...     ax.view_init(azim=-130, elev=0)
     ...     ax.axis('off')
     ...     ax.set_title(rf"$\kappa={kappa}$")
@@ -5843,6 +5845,8 @@ class vonmises_fisher_gen(multi_rv_generic):
     >>> plot_vmf_density(right, x, y, z, vertices, mu, 100)
     >>> plt.subplots_adjust(top=1, bottom=0.0, left=0.0, right=1.0, wspace=0.)
     >>> plt.show()
+
+    **Sampling**
 
     Draw 5 samples from the distribution using the ``rvs`` method resulting
     in a 5x3 array.
@@ -5892,6 +5896,8 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     The plots show that with increasing concentration :math:`\kappa` the
     resulting samples are centered more closely around the mean direction.
+
+    **Fitting the distribution parameters**
 
     The distribution can be fitted to data using the ``fit`` method returning
     the estimated parameters. As a toy example let's fit the distribution to
