@@ -12500,13 +12500,11 @@ add_newdoc(
 
     Student t distribution cumulative distribution function
 
-    Returns the integral from minus infinity to t of the Student t
-    distribution with df > 0 degrees of freedom:
+    Returns the integral:
 
     .. math::
-        \int_{-\infty}^t \frac{\Gamma((df+1)/2)}
-                {\sqrt{\pi df} \Gamma(df/2)}
-            (1+x^2/df)^{-(df+1)/2}\, dx
+        \frac{\Gamma((df+1)/2)}{\sqrt{\pi df} \Gamma(df/2)}
+        \int_{-\infty}^t (1+x^2/df)^{-(df+1)/2}\, dx
 
     Parameters
     ----------
