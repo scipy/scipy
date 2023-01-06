@@ -33,9 +33,11 @@ void pava(
     //  - We translated it to 0-based indices.
     //  - xb, wb, sb instead of x, w and S to avoid name collisions
     //  - xb_prev and wb_prev instead of x_hat and w_hat
-    //  - for loop of line 7 replaced by a while loop due to interactions with loop
-    //    counter i
     //  - ERROR CORRECTED: Lines 9 and 10 have index i instead of b.
+    //  - MODIFICATIONS: Lines 11 and 22 both have >= instead of >
+    //    to get correct block indices in r. Otherwise, same values can get in
+    //    different blocks, e.g. x = [2, 2] would produce
+    //    r = [0, 1, 2] instead of r = [0, 2].
     //
     // procedure monotone(n, x, w)      // 1: x in expected order and w nonnegative
     r[0] = 0;  // 2: initialize index 0
@@ -48,7 +50,7 @@ void pava(
         double xb = x[i];  // 9: set current block value xb (i, not b)
         double wb = w[i];  // 10: set current block weight wb (i, not b)
         double sb = 0;
-        if (xb_prev > xb) {  // 11: check for down violation of x
+        if (xb_prev >= xb) {  // 11: check for down violation of x (>= instead of >)
             b--;  // 12: decrease number of blocks
             sb = wb_prev * xb_prev + wb * xb;  // 13: set current weighted block sum
             wb += wb_prev;  // 14: set new current block weight
@@ -59,7 +61,7 @@ void pava(
                 wb += w[i];
                 xb = sb / wb;
             }
-            while (b > 0 and x[b - 1] > xb) {  // 22: repair down violations
+            while (b > 0 and x[b - 1] >= xb) {  // 22: repair down violations (>= instead of >)
                 b--;
                 sb += w[b] * x[b];
                 wb += w[b];
