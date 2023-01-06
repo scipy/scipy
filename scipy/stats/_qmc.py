@@ -155,7 +155,7 @@ def scale(
         raise ValueError('Sample is not a 2D array')
 
     lower, upper = _validate_bounds(
-        l_bounds=l_bounds, u_bounds=u_bounds, x0=sample
+        l_bounds=l_bounds, u_bounds=u_bounds, x0=sample[0]
     )
 
     if not reverse:
