@@ -821,6 +821,10 @@ class beta_gen(rv_continuous):
 
         return a, b, floc, fscale
 
+    def _entropy(self, a, b):
+        return sc.betaln(a, b) - (a - 1) * sc.psi(a) - \
+           (b - 1) * sc.psi(b) + (a + b - 2) * sc.psi(a + b)
+
 
 beta = beta_gen(a=0.0, b=1.0, name='beta')
 
@@ -1364,6 +1368,10 @@ class chi_gen(rv_continuous):
         g2 = 2*df*(1.0-df)-6*mu**4 + 4*mu**2 * (2*df-1)
         g2 /= np.asarray(mu2**2.0)
         return mu, mu2, g1, g2
+
+    def _entropy(self, df):
+        return sc.gammaln(.5 * df) + \
+               .5 * (df - np.log(2) - (df - 1) * sc.polygamma(0, .5 * df))
 
 
 chi = chi_gen(a=0.0, name='chi')

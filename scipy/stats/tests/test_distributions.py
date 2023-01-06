@@ -3558,6 +3558,23 @@ class TestBeta:
             # this try-except wrapper and just call the function.
             pass
 
+    # entropy accuracy was confirmed using the following mpmath function
+    # import mpmath as mp
+    # mp.dps = 50
+    # def beta_entropy_mpmath(a, b):
+    #     a = mp.mpf(a)
+    #     b = mp.mpf(b)
+    #     entropy = mp.log(mp.beta(a, b)) - (a - 1) * mp.digamma(a) -\
+    #              (b - 1) * mp.digamma(b) + (a + b -2) * mp.digamma(a + b)
+    #     return float(entropy)
+
+    @pytest.mark.parametrize('a, b, ref',
+                             [(0.5, 0.5, -0.24156447527049052),
+                              (0.001, 1, -992.0922447210179),
+                              (1, 10000, -8.210440371985896),
+                              (100000, 100000, -5.3772474699653685)])
+    def test_entropy(self, a, b, ref):
+        assert_allclose(stats.beta(a, b).entropy(), ref)
 
 class TestBetaPrime:
     def test_logpdf(self):
