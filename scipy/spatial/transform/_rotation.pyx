@@ -2038,8 +2038,8 @@ cdef class Rotation:
             - Third angle belongs to [-180, 180] degrees (both inclusive)
             - Second angle belongs to a set of size 180 degrees.
             If ``correct_set=False``, the set is [-lambda, 180 - lambda]
-            degrees, where:
-                - ``lambda = atan2(axis3 · (axis1 x axis2), axis3 · axis1)``
+            degrees, where ``lambda`` is equal to:
+                - ``atan2(dot(axis3, cross(axis1, axis2)), dot(axis3, axis1))``
 
         References
         ----------
