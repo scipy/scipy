@@ -127,7 +127,7 @@ class IsotonicInterpolator():
     Parameters
     ----------
     x : (N,) array_like or None
-        A 1-D array of real values according to which y will be sorted.
+        A 1-D array of real values according to which ``y`` will be sorted.
     y : (N,) array_like
         Response variable.
     weights : (N,) array_like or None
@@ -137,11 +137,12 @@ class IsotonicInterpolator():
     Attributes
     ----------
     x_ : array_like
-        Increasing threshold values of x that define the blocks or pools or knot positions.
+        Increasing threshold values of ``x`` that define the blocks or pools
+        or knot positions.
     y_ : array_like
         Estimated isotonic regression values for all blocks.
     x_is_numeric : bool
-        True if x_ is numeric.
+        True if ``x_`` is numeric.
 
     Methods
     -------
@@ -164,7 +165,7 @@ class IsotonicInterpolator():
                 raise ValueError("The x array must have exactly one dimension.")
             if x.shape[0] != y.shape[0]:
                 raise ValueError("The x and y arrays must have same length.")
-            # Note that sorting is likely the performance bottleneck of
+            # Note that sorting is often the performance bottleneck of
             # __init__.
             order = np.lexsort((y, x))  # The last key is the primary key.
             x = x[order]
@@ -207,13 +208,9 @@ class IsotonicInterpolator():
             return np.interp(x, self.x_, self.y_)
         else:
             # TODO: Maybe this is overkill.
-            # We do not allow to interpolate between points
+            # We do not interpolate linearly between blocks as for non numeric
+            # data we have no notion of distance.
             x = np.asarray(x)
-            # if np.all(np.in1d(x, self.x_unique)):
             idx = np.searchsorted(self.x_, x, side="right") - 1
             idx = np.clip(idx, 0, self.x_.shape[0] - 1)
             return self.y_[idx]
-            #else:
-            #    raise ValueError(
-            #        "Non numeric x can't be interpolated on unseen data."
-            #    )
