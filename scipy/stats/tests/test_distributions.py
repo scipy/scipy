@@ -445,6 +445,22 @@ class TestChi:
         x = stats.chi.mean(df=1000)
         assert_allclose(x, self.CHI_MEAN_1000, rtol=1e-12)
 
+    # Entropy references values were computed with the following mpmath code
+    # import mpmath as mp
+    # mp.dps = 50
+    # def chi_entropy_mpmath(df):
+    #     df = mp.mpf(df)
+    #     half_df = 0.5 * df
+    #     entropy = mp.log(mp.gamma(half_df)) + 0.5 * \
+    #               (df - mp.log(2) - (df -1) * mp.digamma(half_df))
+    #     return float(entropy)
+
+    @pytest.mark.parametrize('df, ref',
+                             [(1, 0.7257913526447275),
+                              (500, 1.0720309422147238),
+                              (1e10, 1.0723724365234375)])
+    def test_entropy(self, df, ref):
+        assert_allclose(stats.chi(df).entropy(), ref)
 
 class TestNBinom:
     def setup_method(self):
