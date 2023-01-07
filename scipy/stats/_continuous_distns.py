@@ -1371,7 +1371,7 @@ class chi_gen(rv_continuous):
 
     def _entropy(self, df):
         return sc.gammaln(.5 * df) + \
-               .5 * (df - np.log(2) - (df - 1) * sc.polygamma(0, .5 * df))
+               .5 * (df - np.log(2) - (df - 1) * sc.digamma(.5 * df))
 
 
 chi = chi_gen(a=0.0, name='chi')
@@ -1442,6 +1442,11 @@ class chi2_gen(rv_continuous):
         g1 = 2*np.sqrt(2.0/df)
         g2 = 12.0/df
         return mu, mu2, g1, g2
+
+    def _entropy(self, df):
+        half_df = 0.5 * df
+        return half_df + np.log(2) + sc.gammaln(half_df) + \
+            (1 - half_df) * sc.psi(half_df)
 
 
 chi2 = chi2_gen(a=0.0, name='chi2')

@@ -3708,6 +3708,23 @@ class TestChi2:
         x = stats.chi2.ppf(0.1, df)
         assert_allclose(x, 7.041504580095461859307179763, rtol=1e-10)
 
+    # Entropy references values were computed with the following mpmath code
+    # import mpmath as mp
+    # mp.dps = 50
+    # def chisq_entropy_mpmath(df):
+    #     df = mp.mpf(df)
+    #     half_df = 0.5 * df
+    #     entropy = half_df + mp.log(2) + mp.log(mp.gamma(half_df)) + \
+    #              (1 - half_df) * mp.digamma(half_df)
+    # return float(entropy)
+
+    @pytest.mark.parametrize('df, ref',
+                             [(1, 0.7837571104739336),
+                              (100, 4.061397128938125),
+                              (10000, 6.370615639476455)])
+    def test_entropy(self, df, ref):
+        assert_allclose(stats.chi2(df).entropy(), ref)
+
 
 class TestGumbelL:
     # gh-6228
