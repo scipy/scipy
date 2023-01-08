@@ -446,7 +446,7 @@ class TestChi:
         assert_allclose(x, self.CHI_MEAN_1000, rtol=1e-12)
 
     # Entropy references values were computed with the following mpmath code
-    # import mpmath as mp
+    # from mpmath import mp
     # mp.dps = 50
     # def chi_entropy_mpmath(df):
     #     df = mp.mpf(df)
@@ -456,9 +456,9 @@ class TestChi:
     #     return float(entropy)
 
     @pytest.mark.parametrize('df, ref',
-                             [(1, 0.7257913526447275),
-                              (500, 1.0720309422147238),
-                              (1e10, 1.0723724365234375)])
+                             [(1, 0.7257913526447274),
+                              (500, 1.0720309422146606),
+                              (1e8, 1.0723649412580334)])
     def test_entropy(self, df, ref):
         assert_allclose(stats.chi(df).entropy(), ref)
 
@@ -3575,7 +3575,7 @@ class TestBeta:
             pass
 
     # entropy accuracy was confirmed using the following mpmath function
-    # import mpmath as mp
+    # from mpmath import mp
     # mp.dps = 50
     # def beta_entropy_mpmath(a, b):
     #     a = mp.mpf(a)
@@ -3585,10 +3585,10 @@ class TestBeta:
     #     return float(entropy)
 
     @pytest.mark.parametrize('a, b, ref',
-                             [(0.5, 0.5, -0.24156447527049052),
+                             [(0.5, 0.5, -0.24156447527049044),
                               (0.001, 1, -992.0922447210179),
-                              (1, 10000, -8.210440371985896),
-                              (100000, 100000, -5.3772474699653685)])
+                              (1, 10000, -8.210440371976183),
+                              (100000, 100000, -5.377247470132859)])
     def test_entropy(self, a, b, ref):
         assert_allclose(stats.beta(a, b).entropy(), ref)
 
@@ -3709,7 +3709,7 @@ class TestChi2:
         assert_allclose(x, 7.041504580095461859307179763, rtol=1e-10)
 
     # Entropy references values were computed with the following mpmath code
-    # import mpmath as mp
+    # from mpmath import mp
     # mp.dps = 50
     # def chisq_entropy_mpmath(df):
     #     df = mp.mpf(df)
@@ -3719,9 +3719,9 @@ class TestChi2:
     # return float(entropy)
 
     @pytest.mark.parametrize('df, ref',
-                             [(1, 0.7837571104739336),
-                              (100, 4.061397128938125),
-                              (10000, 6.370615639476455)])
+                             [(1, 0.7837571104739337),
+                              (100, 4.061397128938114),
+                              (10000, 6.370615639472648)])
     def test_entropy(self, df, ref):
         assert_allclose(stats.chi2(df).entropy(), ref)
 
