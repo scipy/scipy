@@ -5929,8 +5929,8 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     def __init__(self, seed=None):
         super().__init__(seed)
-        self.__doc__ = \
-            doccer.docformat(self.__doc__, vonmises_fisher_docdict_params)
+        # self.__doc__ = \
+        #     doccer.docformat(self.__doc__, vonmises_fisher_docdict_params)
 
     def __call__(self, mu=None, kappa=1, seed=None):
         """Create a frozen von Mises-Fisher distribution.
@@ -6320,7 +6320,7 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         """
         return self._dist._entropy(self.dim, self.kappa)
 
-"""
+
 for name in ['logpdf', 'pdf', 'rvs']:
     method = vonmises_fisher_gen.__dict__[name]
     method_frozen = vonmises_fisher_frozen.__dict__[name]
@@ -6328,4 +6328,3 @@ for name in ['logpdf', 'pdf', 'rvs']:
                                              vonmises_fisher_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__,
                                       vonmises_fisher_docdict_params)
-"""

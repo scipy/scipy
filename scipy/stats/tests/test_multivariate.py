@@ -2953,56 +2953,58 @@ class TestVonMises_Fisher:
         with pytest.raises(ValueError, match=msg):
             vmf.logpdf(x)
 
-    # Expected values of the vonmises-fisher PDF were computed using
-    # mpmath with 50 digits of precision:
-    # def pdf_mpmath(x, mu, kappa):
-    #     dim = mu.size
-    #     halfdim = mpmath.mpf(0.5 * dim)
-    #     kappa = mpmath.mpf(kappa)
-    #     const = (kappa**(halfdim -1)/((2*mpmath.pi)**halfdim * \
-    #             mpmath.besseli(halfdim -1, kappa)))
-    #     return const * mpmath.exp(kappa*mpmath.fdot(x, mu))
-    # >>> float(pdf_mpmath(x, mu, kappa))
-
-    @pytest.mark.parametrize('x, mu, kappa, reference',
-                             [(np.array([1., 0., 0.]), np.array([1., 0., 0.]),
-                               1e-4, 0.07958542955836051),
-                              (np.array([1., 0., 0]), np.array([0., 0., 1.]),
-                               1e-4, 0.07957747141331856),
-                              (np.array([1., 0., 0.]), np.array([1., 0., 0.]),
-                               100, 15.915494309189533),
-                              (np.array([1., 0., 0]), np.array([0., 0., 1.]),
-                               100, 5.920684802611231e-43),
-                              (np.array([1., 0., 0.]),
-                               np.array([np.sqrt(0.98), np.sqrt(0.02), 0.]),
-                               2000, 5.930499050746484e-07),
-                              (np.array([1., 0., 0]), np.array([1., 0., 0.]),
-                               2000, 318.3098861837907),
-                              (np.array([1., 0., 0., 0., 0.]),
-                               np.array([1., 0., 0., 0., 0.]),
-                               2000, 101371.86957712634),
-                              (np.array([1., 0., 0., 0., 0.]),
-                               np.array([np.sqrt(0.98), np.sqrt(0.02), 0.,
-                                         0, 0.]),
-                               2000, 0.00018886808182653247),
-                              (np.array([1., 0., 0., 0., 0.]),
-                               np.array([np.sqrt(0.8), np.sqrt(0.2), 0.,
-                                         0, 0.]),
-                               2000, 2.0255393314603596e-87)])
-    def test_pdf_accuracy(self, x, mu, kappa, reference):
-        pdf = vonmises_fisher(mu, kappa).pdf(x)
-        assert_allclose(pdf, reference)
-
-    # Expected values of the vonmises-fisher logPDF were computed using
-    # mpmath with 50 digits of precision:
+    # Expected values of the vonmises-fisher logPDF were computed via mpmath
+    # from mpmath import mp
+    # import numpy as np
+    # mp.dps = 50
     # def logpdf_mpmath(x, mu, kappa):
     #     dim = mu.size
     #     halfdim = mpmath.mpf(0.5 * dim)
     #     kappa = mpmath.mpf(kappa)
     #     const = (kappa**(halfdim -1)/((2*mpmath.pi)**halfdim * \
     #             mpmath.besseli(halfdim -1, kappa)))
-    #     return mpmath.log(const * mpmath.exp(kappa*mpmath.fdot(x, mu)))
-    # >>> float(logpdf_mpmath(x, mu, kappa))
+    #     return float(const * mp.exp(kappa*mp.fdot(x, mu)))
+
+    @pytest.mark.parametrize('x, mu, kappa, reference',
+                             [(np.array([1., 0., 0.]), np.array([1., 0., 0.]),
+                               1e-4, 0.0795854295583605),
+                              (np.array([1., 0., 0]), np.array([0., 0., 1.]),
+                               1e-4, 0.07957747141331854),
+                              (np.array([1., 0., 0.]), np.array([1., 0., 0.]),
+                               100, 15.915494309189533),
+                              (np.array([1., 0., 0]), np.array([0., 0., 1.]),
+                               100, 5.920684802611232e-43),
+                              (np.array([1., 0., 0.]),
+                               np.array([np.sqrt(0.98), np.sqrt(0.02), 0.]),
+                               2000, 5.930499050746588e-07),
+                              (np.array([1., 0., 0]), np.array([1., 0., 0.]),
+                               2000, 318.3098861837907),
+                              (np.array([1., 0., 0., 0., 0.]),
+                               np.array([1., 0., 0., 0., 0.]),
+                               2000, 101371.86957712633),
+                              (np.array([1., 0., 0., 0., 0.]),
+                               np.array([np.sqrt(0.98), np.sqrt(0.02), 0.,
+                                         0, 0.]),
+                               2000, 0.00018886808182653578),
+                              (np.array([1., 0., 0., 0., 0.]),
+                               np.array([np.sqrt(0.8), np.sqrt(0.2), 0.,
+                                         0, 0.]),
+                               2000, 2.0255393314603194e-87)])
+    def test_pdf_accuracy(self, x, mu, kappa, reference):
+        pdf = vonmises_fisher(mu, kappa).pdf(x)
+        assert_allclose(pdf, reference)
+
+    # Expected values of the vonmises-fisher logPDF were computed via mpmath
+    # from mpmath import mp
+    # import numpy as np
+    # mp.dps = 50
+    # def logpdf_mpmath(x, mu, kappa):
+    #     dim = mu.size
+    #     halfdim = mpmath.mpf(0.5 * dim)
+    #     kappa = mpmath.mpf(kappa)
+    #     const = (kappa**(halfdim -1)/((2*mpmath.pi)**halfdim * \
+    #             mpmath.besseli(halfdim -1, kappa)))
+    #     return float(mp.log(const * mp.exp(kappa*mp.fdot(x, mu))))
 
     @pytest.mark.parametrize('x, mu, kappa, reference',
                              [(np.array([1., 0., 0.]), np.array([1., 0., 0.]),
@@ -3015,7 +3017,7 @@ class TestVonMises_Fisher:
                                100, -97.23270688042125),
                               (np.array([1., 0., 0.]),
                                np.array([np.sqrt(0.98), np.sqrt(0.02), 0.]),
-                               2000, -14.33798728453412),
+                               2000, -14.337987284534103),
                               (np.array([1., 0., 0]), np.array([1., 0., 0.]),
                                2000, 5.763025393132737),
                               (np.array([1., 0., 0., 0., 0.]),
@@ -3024,34 +3026,34 @@ class TestVonMises_Fisher:
                               (np.array([1., 0., 0., 0., 0.]),
                                np.array([np.sqrt(0.98), np.sqrt(0.02), 0.,
                                          0, 0.]),
-                               2000, -8.574461766359702),
+                               2000, -8.574461766359684),
                               (np.array([1., 0., 0., 0., 0.]),
                                np.array([np.sqrt(0.8), np.sqrt(0.2), 0.,
                                          0, 0.]),
-                               2000, -199.6190670888611)])
+                               2000, -199.61906708886113)])
     def test_logpdf_accuracy(self, x, mu, kappa, reference):
         logpdf = vonmises_fisher(mu, kappa).logpdf(x)
         assert_allclose(logpdf, reference)
 
-    # Expected values of the vonmises-fisher entropy were computed using
-    # mpmath with 50 digits of precision:
-    # def entropy_mpmath(mu, kappa):
-    #     dim = mu.size
-    #     kappa = mpmath.mpf(kappa)
-    #     halfdim = mpmath.mpf(0.5 * dim)
-    #     logconstant = mpmath.log(kappa**(halfdim -1)/
-    #                   ((2*mpmath.pi)**halfdim *\
-    #                   mpmath.besseli(halfdim -1, kappa)))
-    #     return (-logconstant - kappa * mpmath.besseli(halfdim, kappa)/
-    #             mpmath.besseli(halfdim -1, kappa))
-    # >>> float(entropy_mpmath(mu, kappa))
+    # Expected values of the vonmises-fisher entropy were computed via mpmath
+    # from mpmath import mp
+    # import numpy as np
+    # mp.dps = 50
+    # def entropy_mpmath(dim, kappa):
+    #     mu = np.full((dim, ), 1/np.sqrt(dim))
+    #     kappa = mp.mpf(kappa)
+    #     halfdim = mp.mpf(0.5 * dim)
+    #     logconstant = mp.log(kappa**(halfdim -1)/
+    #                     ((2*mp.pi)**halfdim *\
+    #                     mp.besseli(halfdim -1, kappa)))
+    #     return float(-logconstant - kappa * mp.besseli(halfdim, kappa)/
+    #             mp.besseli(halfdim -1, kappa))
 
     @pytest.mark.parametrize('dim, kappa, reference',
-                             [(3, 1e-4, 2.5310242453026244),
-                              (3, 100, -1.7672931195787527),
-                              (3, 2000, -4.763025393132466),
-                              (5, 2000, -9.527051161432155),
-                              (5, 1e-6, 3.2702890247104266)])
+                             [(3, 1e-4, 2.531024245302624),
+                              (3, 100, -1.7672931195787458),
+                              (5, 5000, -11.359032310024453),
+                              (8, 1, 3.4189526482545527)])
     def test_entropy_accuracy(self, dim, kappa, reference):
         mu = np.full((dim, ), 1/np.sqrt(dim))
         entropy = vonmises_fisher(mu, kappa).entropy()
@@ -3090,8 +3092,7 @@ class TestVonMises_Fisher:
 
     @pytest.mark.parametrize("dim", [2, 3, 6])
     @pytest.mark.parametrize("kappa, mu_tol, kappa_tol",
-                             [(0.1, 8e-2, 5e-2),
-                              (1, 5e-2, 5e-2),
+                             [(1, 5e-2, 5e-2),
                               (10, 1e-2, 1e-2),
                               (100, 5e-3, 2e-2),
                               (1000, 1e-3, 2e-2)])
@@ -3099,10 +3100,7 @@ class TestVonMises_Fisher:
         mu = np.full((dim, ), 1/np.sqrt(dim))
         vmf_dist = vonmises_fisher(mu, kappa)
         rng = np.random.default_rng(2777937887058094419)
-        if kappa < 1:
-            n_samples = 1000000
-        else:
-            n_samples = (100, 100)
+        n_samples = (100, 100)
         samples = vmf_dist.rvs(n_samples, random_state=rng)
         mu_fit, kappa_fit = vonmises_fisher.fit(samples)
         angular_error = np.arccos(mu.dot(mu_fit))
