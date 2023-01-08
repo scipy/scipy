@@ -143,8 +143,6 @@ def saltelli_2010(
        Computer Physics Communications, 181(2):259-270,
        :doi:`10.1016/j.cpc.2009.09.018`, 2010.
     """
-    s_, n = f_A.shape
-
     # Empirical variance calculated using output from A and B which are
     # independent. Output of AB is not independent and cannot be used
     var = np.var([f_A, f_B], axis=(0, -1))
@@ -274,7 +272,7 @@ def sobol_indices(
         If `func` is a dictionnary, contains the function evaluations from 3
         different arrays. Keys must be: ``f_A``, ``f_B`` and ``f_AB``.
         ``f_A`` and ``f_B`` should have a shape ``(s, n)`` and ``f_AB``
-        should have a shape ``(s, d*n)``.
+        should have a shape ``(d, s, n)``.
     n : int
         Number of samples.
         Must be a power of 2. The total number of function calls will be
@@ -295,8 +293,9 @@ def sobol_indices(
             func(f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray)
             -> Tuple[np.ndarray, np.ndarray]
 
-        with ``f_A, f_B, f_AB`` of shape (s, n) and the output being a tuple
-        of the first and total indices with shape (s, d).
+        with ``f_A, f_B`` of shape (s, n), ``f_AB`` of shape (d, s, n)
+        and the output being a tuple of the first and total indices with
+        shape (s, d).
     random_state : {None, int, `numpy.random.Generator`}, optional
         If `random_state` is an int or None, a new `numpy.random.Generator` is
         created using ``np.random.default_rng(random_state)``.
@@ -589,10 +588,10 @@ def sobol_indices(
             )
 
         def funcAB(AB):
-            m, m, n = AB.shape
-            AB = np.moveaxis(AB, 0, -1).reshape(m, n*m)
-            f_AB = func(AB)
-            return np.moveaxis(f_AB.reshape(-1, n, m), -1, 0)
+             d, d, n = AB.shape
+             AB = np.moveaxis(AB, 0, -1).reshape(d, n*d)
+             f_AB = func(AB)
+             return np.moveaxis(f_AB.reshape((-1, n, d)), -1, 0)
 
         f_B, f_AB = np.atleast_2d(func(B), funcAB(AB))
     else:
@@ -600,7 +599,7 @@ def sobol_indices(
             "When 'func' is a dictionary, it must contain the following "
             "keys: 'f_A', 'f_B' and 'f_AB'."
             "'f_A' and 'f_B' should have a shape ``(s, n)`` and 'f_AB' "
-            "should have a shape ``(s, d*n)``."
+            "should have a shape ``(d, s, n)``."
         )
         try:
             f_A, f_B, f_AB = np.atleast_2d(
@@ -610,7 +609,7 @@ def sobol_indices(
             raise ValueError(message) from exc
 
         if f_A.shape[1] != n or f_A.shape != f_B.shape or \
-                f_AB.shape == f_A.shape or f_AB.shape[1] % n != 0:
+                f_AB.shape == f_A.shape or f_AB.shape[-1] % n != 0:
             raise ValueError(message)
 
     # Compute indices

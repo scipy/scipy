@@ -55,13 +55,21 @@ class TestSobolIndices:
              [3, 6, 9, 12]]
         )
         B = A + 100
-        # (d, n*d)
+        # (d, d, n)
         ref = np.array(
-            [[101, 104, 107, 110, 1, 4, 7, 10, 1, 4, 7, 10],
-             [2, 5, 8, 11, 102, 105, 108, 111, 2, 5, 8, 11],
-             [3, 6, 9, 12, 3, 6, 9, 12, 103, 106, 109, 112]]
+            [[[101, 104, 107, 110],
+              [2, 5, 8, 11],
+              [3, 6, 9, 12],
+             ],
+             [[1, 4, 7, 10],
+              [102, 105, 108, 111],
+              [3, 6, 9, 12],
+             ],
+             [[1, 4, 7, 10],
+              [2, 5, 8, 11],
+              [103, 106, 109, 112]
+             ]]
         )
-
         AB = sample_AB(A=A, B=B)
         assert_allclose(AB, ref)
 
@@ -141,9 +149,9 @@ class TestSobolIndices:
         AB = sample_AB(A=A, B=B)
 
         func = {
-            'f_A': f_ishigami(A),
-            'f_B': f_ishigami(B),
-            'f_AB': f_ishigami(AB)
+            'f_A': f_ishigami(A).reshape(1, -1),
+            'f_B': f_ishigami(B).reshape(1, -1),
+            'f_AB': f_ishigami(AB).reshape((3, 1, -1))
         }
 
         res = sobol_indices(
@@ -164,15 +172,12 @@ class TestSobolIndices:
             """Jansen for S and Sobol' for St.
 
             From Saltelli2010, table 2 formulations (c) and (e)."""
-            s_, n = f_A.shape
-            f_AB = f_AB.reshape((-1, s_, n))
-
-            var = np.var(np.concatenate([f_A, f_B], axis=1), axis=1)
+            var = np.var([f_A, f_B], axis=(0, -1))
 
             s = (var - 0.5*np.mean((f_B - f_AB)**2, axis=-1)) / var
             st = np.mean(f_A*(f_A - f_AB), axis=-1) / var
 
-            return s.reshape(s_, -1), st.reshape(s_, -1)
+            return s.T, st.T
 
         rng = np.random.default_rng(28631265345463262246170309650372465332)
         res = sobol_indices(
