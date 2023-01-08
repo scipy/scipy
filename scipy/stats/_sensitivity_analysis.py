@@ -343,7 +343,7 @@ def sobol_indices(
 
     .. math::
 
-        \mathbb{V}(Y) &= \sum_{i}^{d} \mathbb{V}_i (Y) + \sum_{i<j}^{d}
+        \mathbb{V}(Y) = \sum_{i}^{d} \mathbb{V}_i (Y) + \sum_{i<j}^{d}
         \mathbb{V}_{ij}(Y) + ... + \mathbb{V}_{1,2,...,d}(Y),
 
     introducing conditional variances:
@@ -479,7 +479,7 @@ def sobol_indices(
     output of the function.
 
     >>> import matplotlib.pyplot as plt
-    >>> fig, ax = plt.subplots(1, n_dim)
+    >>> fig, ax = plt.subplots(1, n_dim, figsize=(12, 4))
     >>> for i in range(n_dim):
     ...     xi = sample[:, i]
     ...     ax[i].scatter(xi, output, marker='+')
@@ -499,7 +499,7 @@ def sobol_indices(
     >>> n_bins = 10
     >>> bins = np.linspace(-np.pi, np.pi, num=n_bins, endpoint=False)
     >>> dx = bins[1] - bins[0]
-    >>> fig, ax = plt.subplots(1, n_dim)
+    >>> fig, ax = plt.subplots(1, n_dim, figsize=(12, 4))
     >>> for i in range(n_dim):
     ...     xi = sample[:, i]
     ...     ax[i].scatter(xi, output, marker='+')
