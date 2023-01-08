@@ -616,7 +616,7 @@ def sobol_indices(
     # Sobol’, I. and Levitan, Y. L. (1999). On the use of variance reducing
     # multipliers in monte carlo computations of a global sensitivity index.
     # Computer Physics Communications, 117(1) :52–61.
-    mean = np.mean([f_A, f_B], axis=(0, -1))
+    mean = np.mean([f_A, f_B], axis=(0, -1)).reshape(-1, 1)
     f_A -= mean
     f_B -= mean
     f_AB -= mean
