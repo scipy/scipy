@@ -261,7 +261,7 @@ def sobol_indices(
     ----------
     func : callable or dict(str, array_like)
         If `func` is a callable, function to compute the Sobol' indices from.
-        It's signature must be::
+        Its signature must be::
 
             func(x: ArrayLike) -> ArrayLike
 
@@ -269,7 +269,7 @@ def sobol_indices(
         ``(s, n)`` with ``s`` the number of outputs and ``n`` the number of
         samples.
 
-        If `func` is a dictionnary, contains the function evaluations from 3
+        If `func` is a dictionary, contains the function evaluations from 3
         different arrays. Keys must be: ``f_A``, ``f_B`` and ``f_AB``.
         ``f_A`` and ``f_B`` should have a shape ``(s, n)`` and ``f_AB``
         should have a shape ``(d, s, n)``.
@@ -288,7 +288,7 @@ def sobol_indices(
     method : Callable or str, default: 'saltelli_2010'
         Method used to compute the first and total Sobol' indices.
 
-        If a callable, it's signature must be::
+        If a callable, its signature must be::
 
             func(f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray)
             -> Tuple[np.ndarray, np.ndarray]
@@ -327,7 +327,7 @@ def sobol_indices(
     Notes
     -----
     Sobol' method [1]_, [2]_ is a variance-based Sensitivity Analysis which
-    allows to obtain the contribution of the parameters on the variance of the
+    obtains the contribution of each parameter to the variance of the
     quantities of interest (QoIs; i.e., the outputs of `func`).
     Respective contributions can then be used to rank the parameters.
 
