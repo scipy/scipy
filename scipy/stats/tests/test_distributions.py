@@ -206,6 +206,40 @@ def test_vonmises_expect():
     assert np.issubdtype(res.dtype, np.complexfloating)
 
 
+@pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
+@pytest.mark.parametrize('kappa', [1, 10, 100, 1000])
+def test_vonmises_fit_all(kappa, loc):
+    rng = np.random.default_rng(6762668991392531563)
+    data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
+    loc_fit, kappa_fit = stats.vonmises.fit(data)
+    loc_vec = np.array([np.cos(loc), np.sin(loc)])
+    loc_fit_vec = np.array([np.cos(loc_fit), np.sin(loc_fit)])
+    angle = np.arccos(loc_vec.dot(loc_fit_vec))
+    assert_allclose(angle, 0, atol=1e-2, rtol=0)
+    assert_allclose(kappa, kappa_fit, rtol=1e-2)
+
+
+def test_vonmises_fit_shape():
+    rng = np.random.default_rng(6762668991392531563)
+    loc = 0.25*np.pi
+    kappa = 10
+    data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
+    loc_fit, kappa_fit = stats.vonmises.fit(data, floc=loc)
+    assert loc_fit == loc
+    assert_allclose(kappa, kappa_fit, rtol=1e-2)
+
+
+def test_vonmises_fit_unwrapped_data():
+    rng = np.random.default_rng(6762668991392531563)
+    data = stats.vonmises(loc=0.5*np.pi, kappa=10).rvs(100000,
+                                                       random_state=rng)
+    shifted_data = data + 4*np.pi
+    loc_fit, kappa_fit = stats.vonmises.fit(data)
+    loc_fit_shifted, kappa_fit_shifted = stats.vonmises.fit(shifted_data)
+    assert_allclose(loc_fit, loc_fit_shifted)
+    assert_allclose(kappa_fit, kappa_fit_shifted)
+
+
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
     """
     This utility function checks that the log-likelihood (computed by
@@ -3307,19 +3341,42 @@ class TestGenExpon:
         cdf = stats.genexpon.cdf(numpy.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
         assert_(numpy.all((0 <= cdf) & (cdf <= 1)))
 
-    def test_sf_tail(self):
-        # Expected value computed with mpmath. This script
-        #     import mpmath
-        #     mpmath.mp.dps = 80
-        #     x = mpmath.mpf('15.0')
-        #     a = mpmath.mpf('1.0')
-        #     b = mpmath.mpf('2.0')
-        #     c = mpmath.mpf('1.5')
-        #     print(float(mpmath.exp((-a-b)*x + (b/c)*-mpmath.expm1(-c*x))))
-        # prints
-        #     1.0859444834514553e-19
-        s = stats.genexpon.sf(15, 1, 2, 1.5)
-        assert_allclose(s, 1.0859444834514553e-19, rtol=1e-13)
+    # The values of p in the following data were computed with mpmath.
+    # E.g. the script
+    #     from mpmath import mp
+    #     mp.dps = 80
+    #     x = mp.mpf('15.0')
+    #     a = mp.mpf('1.0')
+    #     b = mp.mpf('2.0')
+    #     c = mp.mpf('1.5')
+    #     print(float(mp.exp((-a-b)*x + (b/c)*-mp.expm1(-c*x))))
+    # prints
+    #     1.0859444834514553e-19
+    @pytest.mark.parametrize('x, p, a, b, c',
+                             [(15, 1.0859444834514553e-19, 1, 2, 1.5),
+                              (0.25, 0.7609068232534623, 0.5, 2, 3),
+                              (0.25, 0.09026661397565876, 9.5, 2, 0.5),
+                              (0.01, 0.9753038265071597, 2.5, 0.25, 0.5),
+                              (3.25, 0.0001962824553094492, 2.5, 0.25, 0.5),
+                              (0.125, 0.9508674287164001, 0.25, 5, 0.5)])
+    def test_sf_isf(self, x, p, a, b, c):
+        sf = stats.genexpon.sf(x, a, b, c)
+        assert_allclose(sf, p, rtol=1e-14)
+        isf = stats.genexpon.isf(p, a, b, c)
+        assert_allclose(isf, x, rtol=1e-14)
+
+    # The values of p in the following data were computed with mpmath.
+    @pytest.mark.parametrize('x, p, a, b, c',
+                             [(0.25, 0.2390931767465377, 0.5, 2, 3),
+                              (0.25, 0.9097333860243412, 9.5, 2, 0.5),
+                              (0.01, 0.0246961734928403, 2.5, 0.25, 0.5),
+                              (3.25, 0.9998037175446906, 2.5, 0.25, 0.5),
+                              (0.125, 0.04913257128359998, 0.25, 5, 0.5)])
+    def test_cdf_ppf(self, x, p, a, b, c):
+        cdf = stats.genexpon.cdf(x, a, b, c)
+        assert_allclose(cdf, p, rtol=1e-14)
+        ppf = stats.genexpon.ppf(p, a, b, c)
+        assert_allclose(ppf, x, rtol=1e-14)
 
 
 class TestExponpow:
@@ -3550,8 +3607,8 @@ class TestBetaPrime:
          (0.375, 0.25, 7.0, 0.002036820346115211)],
     )
     def test_ppf(self, p, a, b, expected):
-        p = stats.betaprime.ppf(p, a, b)
-        assert_allclose(p, expected, rtol=1e-14)
+        x = stats.betaprime.ppf(p, a, b)
+        assert_allclose(x, expected, rtol=1e-14)
 
 
 class TestGamma:
@@ -6574,10 +6631,86 @@ def test_ncx2_gh11777():
     assert_allclose(ncx2_pdf, gauss_approx, atol=1e-4)
 
 
+# Expected values for foldnorm.sf were computed with mpmath:
+#
+#    from mpmath import mp
+#    mp.dps = 60
+#    def foldcauchy_sf(x, c):
+#        x = mp.mpf(x)
+#        c = mp.mpf(c)
+#        return mp.one - (mp.atan(x - c) + mp.atan(x + c))/mp.pi
+#
+# E.g.
+#
+#    >>> float(foldcauchy_sf(2, 1))
+#    0.35241638234956674
+#
+@pytest.mark.parametrize('x, c, expected',
+                         [(2, 1, 0.35241638234956674),
+                          (2, 2, 0.5779791303773694),
+                          (1e13, 1, 6.366197723675813e-14),
+                          (2e16, 1, 3.183098861837907e-17),
+                          (1e13, 2e11, 6.368745221764519e-14),
+                          (0.125, 200, 0.999998010612169)])
+def test_foldcauchy_sf(x, c, expected):
+    sf = stats.foldcauchy.sf(x, c)
+    assert_allclose(sf, expected, 2e-15)
+
+
+# The same mpmath code shown in the comments above test_foldcauchy_sf()
+# is used to create these expected values.
+@pytest.mark.parametrize('x, expected',
+                         [(2, 0.2951672353008665),
+                          (1e13, 6.366197723675813e-14),
+                          (2e16, 3.183098861837907e-17),
+                          (5e80, 1.2732395447351629e-81)])
+def test_halfcauchy_sf(x, expected):
+    sf = stats.halfcauchy.sf(x)
+    assert_allclose(sf, expected, 2e-15)
+
+
+# Expected value computed with mpmath:
+#     expected = mp.cot(mp.pi*p/2)
+@pytest.mark.parametrize('p, expected',
+                         [(0.9999995, 7.853981633329977e-07),
+                          (0.975, 0.039290107007669675),
+                          (0.5, 1.0),
+                          (0.01, 63.65674116287158),
+                          (1e-14, 63661977236758.13),
+                          (5e-80, 1.2732395447351627e+79)])
+def test_halfcauchy_isf(p, expected):
+    x = stats.halfcauchy.isf(p)
+    assert_allclose(x, expected)
+
+
 def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
     rv = stats.foldnorm(0, scale=1)
     assert_equal(rv.cdf(0), 0)  # rv.cdf(0) previously resulted in: nan
+
+
+# Expected values for foldnorm.sf were computed with mpmath:
+#
+#    from mpmath import mp
+#    mp.dps = 60
+#    def foldnorm_sf(x, c):
+#        x = mp.mpf(x)
+#        c = mp.mpf(c)
+#        return mp.ncdf(-x+c) + mp.ncdf(-x-c)
+#
+# E.g.
+#
+#    >>> float(foldnorm_sf(2, 1))
+#    0.16000515196308715
+#
+@pytest.mark.parametrize('x, c, expected',
+                         [(2, 1, 0.16000515196308715),
+                          (20, 1, 8.527223952630977e-81),
+                          (10, 15, 0.9999997133484281),
+                          (25, 15, 7.619853024160525e-24)])
+def test_foldnorm_sf(x, c, expected):
+    sf = stats.foldnorm.sf(x, c)
+    assert_allclose(sf, expected, 1e-14)
 
 
 def test_stats_shapes_argcheck():
@@ -7324,6 +7457,28 @@ class TestLogUniform:
 
         a, b, loc, scale = stats.loguniform.fit(rvs, fscale=2, method=method)
         assert scale == 2
+
+    def test_overflow(self):
+        # original formulation had overflow issues; check that this is resolved
+        # Extensive accuracy tests elsewhere, no need to test all methods
+        rng = np.random.default_rng(7136519550773909093)
+        a, b = 1e-200, 1e200
+        dist = stats.loguniform(a, b)
+
+        # test roundtrip error
+        cdf = rng.uniform(0, 1, size=1000)
+        assert_allclose(dist.cdf(dist.ppf(cdf)), cdf)
+        rvs = dist.rvs(size=1000)
+        assert_allclose(dist.ppf(dist.cdf(rvs)), rvs)
+
+        # test a property of the pdf (and that there is no overflow)
+        x = 10.**np.arange(-200, 200)
+        pdf = dist.pdf(x)  # no overflow
+        assert_allclose(pdf[:-1]/pdf[1:], 10)
+
+        # check munp against wikipedia reference
+        mean = (b - a)/(np.log(b) - np.log(a))
+        assert_allclose(dist.mean(), mean)
 
 
 class TestArgus:

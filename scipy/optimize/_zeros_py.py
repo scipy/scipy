@@ -292,7 +292,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                              full_output)
 
     # Convert to float (don't use float(x0); this works also for complex x0)
-    p0 = 1.0 * x0
+    x0 = np.asarray(x0)[()]
+    p0 = x0
     funcalls = 0
     if fprime is not None:
         # Newton-Raphson method
@@ -1043,15 +1044,15 @@ def _newton_quadratic(ab, fab, d, fd, k):
         r = a - fa / B
     else:
         r = (a if np.sign(A) * np.sign(fa) > 0 else b)
-    # Apply k Newton-Raphson steps to _P(x), starting from x=r
-    for i in range(k):
-        r1 = r - _P(r) / (B + A * (2 * r - a - b))
-        if not (ab[0] < r1 < ab[1]):
-            if (ab[0] < r < ab[1]):
-                return r
-            r = sum(ab) / 2.0
-            break
-        r = r1
+        # Apply k Newton-Raphson steps to _P(x), starting from x=r
+        for i in range(k):
+            r1 = r - _P(r) / (B + A * (2 * r - a - b))
+            if not (ab[0] < r1 < ab[1]):
+                if (ab[0] < r < ab[1]):
+                    return r
+                r = sum(ab) / 2.0
+                break
+            r = r1
 
     return r
 
@@ -1135,8 +1136,8 @@ class TOMS748Solver:
             return _ECONVERGED, b
 
         if np.sign(fb) * np.sign(fa) > 0:
-            raise ValueError("a, b must bracket a root f(%e)=%e, f(%e)=%e " %
-                             (a, fa, b, fb))
+            raise ValueError("f(a) and f(b) must have different signs, but "
+                             "f(%e)=%e, f(%e)=%e " % (a, fa, b, fb))
         self.fab[:] = [fa, fb]
 
         return _EINPROGRESS, sum(self.ab) / 2.0
@@ -1372,7 +1373,7 @@ def toms748(f, a, b, args=(), k=1,
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol / 4:
-        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol/4))
     maxiter = operator.index(maxiter)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")

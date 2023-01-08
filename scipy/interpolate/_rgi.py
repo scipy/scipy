@@ -23,11 +23,12 @@ def _check_points(points):
                 # input is descending, so make it ascending
                 descending_dimensions.append(i)
                 p = np.flip(p)
-                p = np.ascontiguousarray(p)
             else:
                 raise ValueError(
                     "The points in dimension %d must be strictly "
                     "ascending or descending" % i)
+        # see https://github.com/scipy/scipy/issues/17716
+        p = np.ascontiguousarray(p)
         grid.append(p)
     return tuple(grid), tuple(descending_dimensions)
 
@@ -330,7 +331,10 @@ class RegularGridInterpolator:
         if method == "linear":
             indices, norm_distances = self._find_indices(xi.T)
             if (ndim == 2 and hasattr(self.values, 'dtype') and
-                    self.values.ndim == 2):
+                    self.values.ndim == 2 and self.values.flags.writeable and
+                    self.values.dtype.byteorder == '='):
+                # until cython supports const fused types, the fast path
+                # cannot support non-writeable values
                 # a fast path
                 out = np.empty(indices.shape[1], dtype=self.values.dtype)
                 result = evaluate_linear_2d(self.values,
