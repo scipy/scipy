@@ -194,6 +194,21 @@ class TestSobolIndices:
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
         assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-2)
 
+    def test_normalization(self, ishigami_ref_indices):
+        rng = np.random.default_rng(28631265345463262246170309650372465332)
+        res = sobol_indices(
+            func=lambda x: f_ishigami(x) + 1000, n=4096,
+            dists=[
+                stats.uniform(loc=-np.pi, scale=2*np.pi),
+                stats.uniform(loc=-np.pi, scale=2*np.pi),
+                stats.uniform(loc=-np.pi, scale=2*np.pi)
+            ],
+            random_state=rng
+        )
+
+        assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
+        assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-2)
+
     def test_raises(self):
 
         message = r"Each distribution in `dists` must have method `ppf`"
