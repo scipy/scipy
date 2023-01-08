@@ -1878,7 +1878,8 @@ def jarque_bera(x, *, axis=None):
     sampling data from a normally distributed population that produces such an
     extreme value of the statistic - this may be taken as evidence against
     the null hypothesis in favor of the alternative: the sample was not
-    drawn from a normal distribution.
+    drawn from a normal distribution. The inverse is not true; that is,
+    the test is not used to provide evidence for the null hypothesis.
 
     Note that the chi-squared distribution provides an asymptotic approximation
     of the null distribution; it is only accurate for samples with many
@@ -1896,7 +1897,7 @@ def jarque_bera(x, *, axis=None):
     ...         density=True)
     >>> ax.plot(jb_val, dist.pdf(jb_val))
     >>> ax.legend(['Monte Carlo approximation (11 observations)',
-                   'aymptotic approximation (many observations'])
+    ...            'aymptotic approximation (many observations'])
     >>> ax.set_title("Jarque-Bera Null Distribution")
     >>> ax.set_xlabel("statistic")
     >>> ax.set_ylabel("frequency density")
