@@ -581,7 +581,7 @@ def sobol_indices(
 
         f_A = np.atleast_2d(func(A))
 
-        if f_A.shape[1] != n or f_A.shape[0] < 1:
+        if f_A.shape[1] != n:
             raise ValueError(
                 "'func' output should have a shape ``(s, -1)`` with ``s`` "
                 "the number of output."
