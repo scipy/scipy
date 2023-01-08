@@ -3171,17 +3171,6 @@ class multinomial_gen(multi_rv_generic):
 
         return xx, cond
 
-    def _checkresult(self, result, cond, bad_value):
-        result = np.asarray(result)
-
-        if cond.ndim != 0:
-            result[cond] = bad_value
-        elif cond:
-            if result.ndim == 0:
-                return bad_value
-            result[...] = bad_value
-        return result
-
     def _logpmf(self, x, n, p):
         return gammaln(n+1) + np.sum(xlogy(x, p) - gammaln(x+1), axis=-1)
 
@@ -3205,17 +3194,9 @@ class multinomial_gen(multi_rv_generic):
         """
         n, p, npcond = self._process_parameters(n, p)
         x, xcond = self._process_quantiles(x, n, p)
-
         result = self._logpmf(x, n, p)
-
-        # replace values for which x was out of the domain; broadcast
-        # xcond to the right shape
-        xcond_ = xcond | np.zeros(npcond.shape, dtype=np.bool_)
-        result = self._checkresult(result, xcond_, np.NINF)
-
-        # replace values bad for n or p; broadcast npcond to the right shape
-        npcond_ = npcond | np.zeros(xcond.shape, dtype=np.bool_)
-        return self._checkresult(result, npcond_, np.NAN)
+        # replace values with bad n or p, or for which x was out of the domain
+        return np.select([npcond, xcond], [np.nan, -np.inf], result)
 
     def pmf(self, x, n, p):
         """Multinomial probability mass function.
@@ -3251,7 +3232,7 @@ class multinomial_gen(multi_rv_generic):
         """
         n, p, npcond = self._process_parameters(n, p)
         result = n[..., np.newaxis]*p
-        return self._checkresult(result, npcond, np.NAN)
+        return np.where(npcond, np.nan, result)
 
     def cov(self, n, p):
         """Covariance matrix of the multinomial distribution.
@@ -3274,7 +3255,7 @@ class multinomial_gen(multi_rv_generic):
         for i in range(p.shape[-1]):
             result[..., i, i] += n*p[..., i]
 
-        return self._checkresult(result, npcond, np.nan)
+        return np.where(npcond, np.nan, result)
 
     def entropy(self, n, p):
         r"""Compute the entropy of the multinomial distribution.
@@ -3313,7 +3294,7 @@ class multinomial_gen(multi_rv_generic):
         term2 = np.sum(binom.pmf(x, n, p)*gammaln(x+1),
                        axis=(-1, -1-new_axes_needed))
 
-        return self._checkresult(term1 + term2, npcond, np.nan)
+        return np.where(npcond, np.nan, term1 + term2)
 
     def rvs(self, n, p, size=None, random_state=None):
         """Draw random samples from a Multinomial distribution.
@@ -4808,16 +4789,6 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         return (x, M, m, n, xcond,
                 np.any(xcond, axis=-1) | (x.sum(axis=-1) != n))
 
-    def _checkresult(self, result, cond, bad_value):
-        result = np.asarray(result)
-        if cond.ndim != 0:
-            result[cond] = bad_value
-        elif cond:
-            return bad_value
-        if result.ndim == 0:
-            return result[()]
-        return result
-
     def _logpmf(self, x, M, m, n, mxcond, ncond):
         # This equation of the pmf comes from the relation,
         # n combine r = beta(n+1, 1) / beta(r+1, n-r+1)
@@ -4853,20 +4824,10 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         M, m, n, mcond, ncond, mncond = self._process_parameters(m, n)
         (x, M, m, n, xcond,
          xcond_reduced) = self._process_quantiles(x, M, m, n)
-        mxcond = mcond | xcond
-        ncond = ncond | np.zeros(n.shape, dtype=np.bool_)
-
-        result = self._logpmf(x, M, m, n, mxcond, ncond)
-
-        # replace values for which x was out of the domain; broadcast
-        # xcond to the right shape
-        xcond_ = xcond_reduced | np.zeros(mncond.shape, dtype=np.bool_)
-        result = self._checkresult(result, xcond_, np.NINF)
-
-        # replace values bad for n or m; broadcast
-        # mncond to the right shape
-        mncond_ = mncond | np.zeros(xcond_reduced.shape, dtype=np.bool_)
-        return self._checkresult(result, mncond_, np.nan)
+        result = self._logpmf(x, M, m, n,
+                              mcond | xcond, np.broadcast_to(ncond, n.shape))
+        # replace values with bad m or n, or for which x was out of the domain
+        return np.select([mncond, xcond_reduced], [np.nan, -np.inf], result)
 
     def pmf(self, x, m, n):
         """Multivariate hypergeometric probability mass function.
@@ -4909,9 +4870,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         M = np.ma.masked_array(M, mask=cond)
         mu = n*(m/M)
         if m.size != 0:
-            mncond = (mncond[..., np.newaxis] |
-                      np.zeros(mu.shape, dtype=np.bool_))
-        return self._checkresult(mu, mncond, np.nan)
+            mncond = mncond[..., np.newaxis]
+        return np.where(mncond, np.nan, mu)
 
     def var(self, m, n):
         """Variance of the multivariate hypergeometric distribution.
@@ -4934,9 +4894,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         M = np.ma.masked_array(M, mask=cond)
         output = n * m/M * (M-m)/M * (M-n)/(M-1)
         if m.size != 0:
-            mncond = (mncond[..., np.newaxis] |
-                      np.zeros(output.shape, dtype=np.bool_))
-        return self._checkresult(output, mncond, np.nan)
+            mncond = mncond[..., np.newaxis]
+        return np.where(mncond, np.nan, output)
 
     def cov(self, m, n):
         """Covariance matrix of the multivariate hypergeometric distribution.
@@ -4972,9 +4931,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
             output[..., i, i] = output[..., i, i] / (M-1)
             output[..., i, i] = output[..., i, i] / (M**2)
         if m.size != 0:
-            mncond = (mncond[..., np.newaxis, np.newaxis] |
-                      np.zeros(output.shape, dtype=np.bool_))
-        return self._checkresult(output, mncond, np.nan)
+            mncond = mncond[..., np.newaxis, np.newaxis]
+        return np.where(mncond, np.nan, output)
 
     def rvs(self, m, n, size=None, random_state=None):
         """Draw random samples from a multivariate hypergeometric distribution.
