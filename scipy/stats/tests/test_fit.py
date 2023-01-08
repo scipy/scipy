@@ -50,6 +50,7 @@ mle_use_floc0 = [
     'genhalflogistic',
     'rdist',
     'pareto',
+    'powerlaw',  # distfn.nnlf(est2, rvs) > distfn.nnlf(est1, rvs) otherwise
     'powerlognorm',
     'wrapcauchy',
 ]
