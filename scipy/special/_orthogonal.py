@@ -182,9 +182,13 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     dy = df(n, x)
     x -= y/dy
 
+    # fm and dy may contain very large/small values, so we
+    # log-normalize them to maintain precision in the product fm*dy
     fm = f(n-1, x)
-    fm /= np.abs(fm).max()
-    dy /= np.abs(dy).max()
+    log_fm = np.log(np.abs(fm))
+    log_dy = np.log(np.abs(dy))
+    fm /= np.exp((log_fm.max() + log_fm.min()) / 2.)
+    dy /= np.exp((log_dy.max() + log_dy.min()) / 2.)
     w = 1.0 / (fm * dy)
 
     if symmetrize:
@@ -255,7 +259,12 @@ def roots_jacobi(n, alpha, beta, mu=False):
     if alpha == beta:
         return roots_gegenbauer(m, alpha+0.5, mu)
 
-    mu0 = 2.0**(alpha+beta+1)*_ufuncs.beta(alpha+1, beta+1)
+    if (alpha + beta) <= 1000:
+        mu0 = 2.0**(alpha+beta+1) * _ufuncs.beta(alpha+1, beta+1)
+    else:
+        # Avoid overflows in pow and beta for very large parameters
+        mu0 = np.exp((alpha + beta + 1) * np.log(2.0)
+                     + _ufuncs.betaln(alpha+1, beta+1))
     a = alpha
     b = beta
     if a + b == 0.0:
@@ -338,8 +347,6 @@ def jacobi(n, alpha, beta, monic=False):
     different values of :math:`\alpha`:
 
     >>> import matplotlib.pyplot as plt
-    >>> import numpy as np
-    >>> from scipy.special import jacobi
     >>> x = np.arange(-1.0, 1.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-2.0, 2.0)
@@ -606,6 +613,7 @@ def genlaguerre(n, alpha, monic=False):
     This can be verified, for example,  for :math:`n = \alpha = 3` over the
     interval :math:`[-1, 1]`:
 
+    >>> import numpy as np
     >>> from scipy.special import binom
     >>> from scipy.special import genlaguerre
     >>> from scipy.special import hyp1f1
@@ -617,7 +625,6 @@ def genlaguerre(n, alpha, monic=False):
     :math:`L_3^{(\alpha)}` for some values of :math:`\alpha`:
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import genlaguerre
     >>> x = np.arange(-4.0, 12.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-5.0, 10.0)
@@ -737,6 +744,7 @@ def laguerre(n, monic=False):
     :math:`L_n^{(\alpha)}`.
     Let's verify it on the interval :math:`[-1, 1]`:
 
+    >>> import numpy as np
     >>> from scipy.special import genlaguerre
     >>> from scipy.special import laguerre
     >>> x = np.arange(-1.0, 1.0, 0.01)
@@ -750,7 +758,6 @@ def laguerre(n, monic=False):
 
     This can be easily checked on :math:`[0, 1]` for :math:`n = 3`:
 
-    >>> from scipy.special import laguerre
     >>> x = np.arange(0.0, 1.0, 0.01)
     >>> np.allclose(4 * laguerre(4)(x),
     ...             (7 - x) * laguerre(3)(x) - 3 * laguerre(2)(x))
@@ -759,7 +766,6 @@ def laguerre(n, monic=False):
     This is the plot of the first few Laguerre polynomials :math:`L_n`:
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import laguerre
     >>> x = np.arange(-1.0, 5.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-5.0, 5.0)
@@ -1484,8 +1490,20 @@ def roots_gegenbauer(n, alpha, mu=False):
         # keep doing so.
         return roots_chebyt(n, mu)
 
-    mu0 = (np.sqrt(np.pi) * _ufuncs.gamma(alpha + 0.5)
-           / _ufuncs.gamma(alpha + 1))
+    if alpha <= 170:
+        mu0 = (np.sqrt(np.pi) * _ufuncs.gamma(alpha + 0.5)) \
+              / _ufuncs.gamma(alpha + 1)
+    else:
+        # For large alpha we use a Taylor series expansion around inf,
+        # expressed as a 6th order polynomial of a^-1 and using Horner's
+        # method to minimize computation and maximize precision
+        inv_alpha = 1. / alpha
+        coeffs = np.array([0.000207186, -0.00152206, -0.000640869,
+                           0.00488281, 0.0078125, -0.125, 1.])
+        mu0 = coeffs[0]
+        for term in range(1, len(coeffs)):
+            mu0 = mu0 * inv_alpha + coeffs[term]
+        mu0 = mu0 * np.sqrt(np.pi / alpha)
     an_func = lambda k: 0.0 * k
     bn_func = lambda k: np.sqrt(k * (k + 2 * alpha - 1)
                         / (4 * (k + alpha) * (k + alpha - 1)))
@@ -1533,6 +1551,7 @@ def gegenbauer(n, alpha, monic=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
 
@@ -1674,6 +1693,7 @@ def chebyt(n, monic=False):
     the determinant of the following :math:`3 \times 3` matrix
     lay exacty on :math:`T_3`:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.linalg import det
     >>> from scipy.special import chebyt
@@ -1698,7 +1718,6 @@ def chebyt(n, monic=False):
     Let's verify it for :math:`n = 3`:
 
     >>> from scipy.special import binom
-    >>> from scipy.special import chebyt
     >>> from scipy.special import jacobi
     >>> x = np.arange(-1.0, 1.0, 0.01)
     >>> np.allclose(jacobi(3, -0.5, -0.5)(x),
@@ -1708,8 +1727,6 @@ def chebyt(n, monic=False):
     We can plot the Chebyshev polynomials :math:`T_n` for some values
     of :math:`n`:
 
-    >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import chebyt
     >>> x = np.arange(-1.5, 1.5, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-4.0, 4.0)
@@ -1837,6 +1854,7 @@ def chebyu(n, monic=False):
     the determinant of the following :math:`3 \times 3` matrix
     lay exacty on :math:`U_3`:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.linalg import det
     >>> from scipy.special import chebyu
@@ -1861,7 +1879,6 @@ def chebyu(n, monic=False):
     Let's verify it for :math:`n = 2`:
 
     >>> from scipy.special import chebyt
-    >>> from scipy.special import chebyu
     >>> x = np.arange(-1.0, 1.0, 0.01)
     >>> np.allclose(chebyu(3)(x), 2 * chebyt(2)(x) * chebyu(1)(x))
     True
@@ -1869,8 +1886,6 @@ def chebyu(n, monic=False):
     We can plot the Chebyshev polynomials :math:`U_n` for some values
     of :math:`n`:
 
-    >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import chebyu
     >>> x = np.arange(-1.0, 1.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-1.5, 1.5)
@@ -2310,6 +2325,7 @@ def roots_legendre(n, mu=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import roots_legendre, eval_legendre
     >>> roots, weights = roots_legendre(9)
 

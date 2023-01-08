@@ -3,7 +3,7 @@ from cpython.pycapsule cimport (
     PyCapsule_GetContext
 )
 from cpython.long cimport PyLong_AsVoidPtr
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport free
 from libc.string cimport strdup
 
 from .ccallback cimport (ccallback_t, ccallback_prepare, ccallback_release, CCALLBACK_DEFAULTS,

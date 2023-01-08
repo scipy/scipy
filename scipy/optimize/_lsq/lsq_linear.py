@@ -4,6 +4,7 @@ from numpy.linalg import norm
 from scipy.sparse import issparse, csr_matrix
 from scipy.sparse.linalg import LinearOperator, lsmr
 from scipy.optimize import OptimizeResult
+from scipy.optimize._minimize import Bounds
 
 from .common import in_bounds, compute_grad
 from .trf_linear import trf_linear
@@ -11,6 +12,8 @@ from .bvls import bvls
 
 
 def prepare_bounds(bounds, n):
+    if len(bounds) != 2:
+        raise ValueError("`bounds` must contain 2 elements.")
     lb, ub = [np.asarray(b, dtype=float) for b in bounds]
 
     if lb.ndim == 0:
@@ -32,7 +35,8 @@ TERMINATION_MESSAGES = {
 
 
 def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
-               lsq_solver=None, lsmr_tol=None, max_iter=None, verbose=0):
+               lsq_solver=None, lsmr_tol=None, max_iter=None,
+               verbose=0, *, lsmr_maxiter=None,):
     r"""Solve a linear least-squares problem with bounds on the variables.
 
     Given a m-by-n design matrix A and a target vector b with m elements,
@@ -50,11 +54,18 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Design matrix. Can be `scipy.sparse.linalg.LinearOperator`.
     b : array_like, shape (m,)
         Target vector.
-    bounds : 2-tuple of array_like, optional
-        Lower and upper bounds on independent variables. Defaults to no bounds.
-        Each array must have shape (n,) or be a scalar, in the latter
-        case a bound will be the same for all variables. Use ``np.inf`` with
-        an appropriate sign to disable bounds on all or some variables.
+    bounds : 2-tuple of array_like or `Bounds`, optional
+        Lower and upper bounds on parameters. Defaults to no bounds.
+        There are two ways to specify the bounds:
+
+            - Instance of `Bounds` class.
+
+            - 2-tuple of array_like: Each element of the tuple must be either
+              an array with the length equal to the number of parameters, or a
+              scalar (in which case the bound is taken to be the same for all
+              parameters). Use ``np.inf`` with an appropriate sign to disable
+              bounds on all or some parameters.
+
     method : 'trf' or 'bvls', optional
         Method to perform minimization.
 
@@ -106,6 +117,12 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
             * 0 : work silently (default).
             * 1 : display a termination report.
             * 2 : display progress during iterations.
+    lsmr_maxiter : None or int, optional
+        Maximum number of iterations for the lsmr least squares solver,
+        if it is used (by setting ``lsq_solver='lsmr'``). If None (default), it
+        uses lsmr's default of ``min(m, n)`` where ``m`` and ``n`` are the
+        number of rows and columns of `A`, respectively. Has no effect if
+        ``lsq_solver='exact'``.
 
     Returns
     -------
@@ -130,6 +147,21 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Might be somewhat arbitrary for the `trf` method as it generates a
         sequence of strictly feasible iterates and active_mask is determined
         within a tolerance threshold.
+    unbounded_sol : tuple
+        Unbounded least squares solution tuple returned by the least squares
+        solver (set with `lsq_solver` option). If `lsq_solver` is not set or is
+        set to ``'exact'``, the tuple contains an ndarray of shape (n,) with
+        the unbounded solution, an ndarray with the sum of squared residuals,
+        an int with the rank of `A`, and an ndarray with the singular values
+        of `A` (see NumPy's ``linalg.lstsq`` for more information). If
+        `lsq_solver` is set to ``'lsmr'``, the tuple contains an ndarray of
+        shape (n,) with the unbounded solution, an int with the exit code,
+        an int with the number of iterations, and five floats with
+        various norms and the condition number of `A` (see SciPy's
+        ``sparse.linalg.lsmr`` for more information). This output can be
+        useful for determining the convergence of the least squares solver,
+        particularly the iterative ``'lsmr'`` solver. The unbounded least
+        squares problem is to minimize ``0.5 * ||A x - b||**2``.
     nit : int
         Number of iterations. Zero if the unconstrained solution is optimal.
     status : int
@@ -193,6 +225,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     In this example, a problem with a large sparse matrix and bounds on the
     variables is solved.
 
+    >>> import numpy as np
     >>> from scipy.sparse import rand
     >>> from scipy.optimize import lsq_linear
     >>> rng = np.random.default_rng()
@@ -247,9 +280,6 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     if len(A.shape) != 2:  # No ndim for LinearOperator.
         raise ValueError("`A` must have at most 2 dimensions.")
 
-    if len(bounds) != 2:
-        raise ValueError("`bounds` must contain 2 elements.")
-
     if max_iter is not None and max_iter <= 0:
         raise ValueError("`max_iter` must be None or positive integer.")
 
@@ -262,7 +292,11 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     if b.size != m:
         raise ValueError("Inconsistent shapes between `A` and `b`.")
 
-    lb, ub = prepare_bounds(bounds, n)
+    if isinstance(bounds, Bounds):
+        lb = bounds.lb
+        ub = bounds.ub
+    else:
+        lb, ub = prepare_bounds(bounds, n)
 
     if lb.shape != (n,) and ub.shape != (n,):
         raise ValueError("Bounds have wrong shape.")
@@ -271,10 +305,22 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         raise ValueError("Each lower bound must be strictly less than each "
                          "upper bound.")
 
+    if lsmr_maxiter is not None and lsmr_maxiter < 1:
+        raise ValueError("`lsmr_maxiter` must be None or positive integer.")
+
+    if not ((isinstance(lsmr_tol, float) and lsmr_tol > 0) or
+            lsmr_tol in ('auto', None)):
+        raise ValueError("`lsmr_tol` must be None, 'auto', or positive float.")
+
     if lsq_solver == 'exact':
-        x_lsq = np.linalg.lstsq(A, b, rcond=-1)[0]
+        unbd_lsq = np.linalg.lstsq(A, b, rcond=-1)
     elif lsq_solver == 'lsmr':
-        x_lsq = lsmr(A, b, atol=tol, btol=tol)[0]
+        first_lsmr_tol = lsmr_tol  # tol of first call to lsmr
+        if lsmr_tol is None or lsmr_tol == 'auto':
+            first_lsmr_tol = 1e-2 * tol  # default if lsmr_tol not defined
+        unbd_lsq = lsmr(A, b, maxiter=lsmr_maxiter,
+                        atol=first_lsmr_tol, btol=first_lsmr_tol)
+    x_lsq = unbd_lsq[0]  # extract the solution from the least squares solver
 
     if in_bounds(x_lsq, lb, ub):
         r = A @ x_lsq - b
@@ -291,15 +337,17 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
         return OptimizeResult(
             x=x_lsq, fun=r, cost=cost, optimality=g_norm,
-            active_mask=np.zeros(n), nit=0, status=termination_status,
+            active_mask=np.zeros(n), unbounded_sol=unbd_lsq,
+            nit=0, status=termination_status,
             message=termination_message, success=True)
 
     if method == 'trf':
         res = trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol,
-                         max_iter, verbose)
+                         max_iter, verbose, lsmr_maxiter=lsmr_maxiter)
     elif method == 'bvls':
         res = bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose)
 
+    res.unbounded_sol = unbd_lsq
     res.message = TERMINATION_MESSAGES[res.status]
     res.success = res.status > 0
 

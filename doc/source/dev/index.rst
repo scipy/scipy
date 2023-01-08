@@ -15,6 +15,7 @@ the organization section.
    conduct/code_of_conduct
    hacking
    dev_quickstart
+   contributor/development_workflow
    contributor/contributor_toc
 
 .. toctree::
@@ -47,6 +48,7 @@ the organization section.
    contributor/adding_new
    contributor/continuous_integration
    contributor/using_act
+   triage
 
 .. These files are not intended to be in any toctree. because they have not
    been maintained.They should only be reached via the contributor guide if

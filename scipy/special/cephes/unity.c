@@ -51,7 +51,7 @@ double log1p(double x)
     double z;
 
     z = 1.0 + x;
-    if ((z < NPY_SQRT1_2) || (z > NPY_SQRT2))
+    if ((z < M_SQRT1_2) || (z > M_SQRT2))
 	return (log(z));
     z = x * x;
     z = -0.5 * z + x * (z * polevl(x, LP, 6) / p1evl(x, LQ, 6));
@@ -145,7 +145,7 @@ double cosm1(double x)
 {
     double xx;
 
-    if ((x < -NPY_PI_4) || (x > NPY_PI_4))
+    if ((x < -M_PI_4) || (x > M_PI_4))
 	return (cos(x) - 1.0);
     xx = x * x;
     xx = -0.5 * xx + xx * xx * polevl(xx, coscof, 6);
@@ -162,7 +162,7 @@ static double lgam1p_taylor(double x)
     if (x == 0) {
         return 0;
     }
-    res = -NPY_EULER * x;
+    res = -SCIPY_EULER * x;
     xfac = -x;
     for (n = 2; n < 42; n++) {
         xfac *= -x;

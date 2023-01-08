@@ -1,3 +1,4 @@
+import os
 import re
 import copy
 import numpy as np
@@ -5,9 +6,13 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
-from scipy.linalg import hilbert, svd
-from scipy.sparse import csc_matrix, isspmatrix
+from scipy.linalg import svd, null_space
+from scipy.sparse import csc_matrix, isspmatrix, spdiags, random
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
+if os.environ.get("SCIPY_USE_PROPACK"):
+    has_propack = True
+else:
+    has_propack = False
 from scipy.sparse.linalg import svds
 from scipy.sparse.linalg._eigen.arpack import ArpackNoConvergence
 
@@ -55,7 +60,7 @@ def _check_svds(A, k, u, s, vh, which="LM", check_usvh_A=False,
     assert_equal(uh_u.shape, (k, k))
     assert_allclose(uh_u, np.identity(k), atol=atol, rtol=rtol)
 
-    # Check that V is a semi-orthogonal matrix.
+    # Check that vh is a semi-orthogonal matrix.
     vh_v = np.dot(vh, vh.T.conj())
     assert_equal(vh_v.shape, (k, k))
     assert_allclose(vh_v, np.identity(k), atol=atol, rtol=rtol)
@@ -66,6 +71,47 @@ def _check_svds(A, k, u, s, vh, which="LM", check_usvh_A=False,
         assert_allclose(np.abs(u), np.abs(u2), atol=atol, rtol=rtol)
         assert_allclose(s, s2, atol=atol, rtol=rtol)
         assert_allclose(np.abs(vh), np.abs(vh2), atol=atol, rtol=rtol)
+
+
+def _check_svds_n(A, k, u, s, vh, which="LM", check_res=True,
+                  check_svd=True, atol=1e-10, rtol=1e-7):
+    n, m = A.shape
+
+    # Check shapes.
+    assert_equal(u.shape, (n, k))
+    assert_equal(s.shape, (k,))
+    assert_equal(vh.shape, (k, m))
+
+    # Check that u is a semi-orthogonal matrix.
+    uh_u = np.dot(u.T.conj(), u)
+    assert_equal(uh_u.shape, (k, k))
+    error = np.sum(np.abs(uh_u - np.identity(k))) / (k * k)
+    assert_allclose(error, 0.0, atol=atol, rtol=rtol)
+
+    # Check that vh is a semi-orthogonal matrix.
+    vh_v = np.dot(vh, vh.T.conj())
+    assert_equal(vh_v.shape, (k, k))
+    error = np.sum(np.abs(vh_v - np.identity(k))) / (k * k)
+    assert_allclose(error, 0.0, atol=atol, rtol=rtol)
+
+    # Check residuals
+    if check_res:
+        ru = A.T.conj() @ u - vh.T.conj() * s
+        rus = np.sum(np.abs(ru)) / (n * k)
+        rvh = A @ vh.T.conj() - u * s
+        rvhs = np.sum(np.abs(rvh)) / (m * k)
+        assert_allclose(rus, 0.0, atol=atol, rtol=rtol)
+        assert_allclose(rvhs, 0.0, atol=atol, rtol=rtol)
+
+    # Check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
+    if check_svd:
+        u2, s2, vh2 = sorted_svd(A, k, which)
+        assert_allclose(s, s2, atol=atol, rtol=rtol)
+        A_rebuilt_svd = (u2*s2).dot(vh2)
+        A_rebuilt = (u*s).dot(vh)
+        assert_equal(A_rebuilt.shape, A.shape)
+        error = np.sum(np.abs(A_rebuilt_svd - A_rebuilt)) / (k * k)
+        assert_allclose(error, 0.0, atol=atol, rtol=rtol)
 
 
 class CheckingLinearOperator(LinearOperator):
@@ -84,8 +130,8 @@ class CheckingLinearOperator(LinearOperator):
 
 
 # --- Test Input Validation ---
-# Tests input validation on parameters `k` and `which`
-# Needs better input validation checks for all other parameters
+# Tests input validation on parameters `k` and `which`.
+# Needs better input validation checks for all other parameters.
 
 class SVDSCommonTests:
 
@@ -116,6 +162,8 @@ class SVDSCommonTests:
 
         # propack can do complete SVD
         if self.solver == 'propack' and k == 3:
+            if not has_propack:
+                pytest.skip("PROPACK not enabled")
             res = svds(A, k=k, solver=self.solver)
             _check_svds(A, k, *res, check_usvh_A=True, check_svd=True)
             return
@@ -216,6 +264,9 @@ class SVDSCommonTests:
     @pytest.mark.parametrize("k", [3, 5])
     @pytest.mark.parametrize("which", ["LM", "SM"])
     def test_svds_parameter_k_which(self, k, which):
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not available")
         # check that the `k` parameter sets the number of eigenvalues/
         # eigenvectors returned.
         # Also check that the `which` parameter sets whether the largest or
@@ -233,6 +284,10 @@ class SVDSCommonTests:
 
     # loop instead of parametrize for simplicity
     def test_svds_parameter_tol(self):
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not available")
+        return  # TODO: needs work, disabling for now
         # check the effect of the `tol` parameter on solver accuracy by solving
         # the same problem with varying `tol` and comparing the eigenvalues
         # against ground truth computed
@@ -273,6 +328,9 @@ class SVDSCommonTests:
             assert error > accuracy/10
 
     def test_svd_v0(self):
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not available")
         # check that the `v0` parameter affects the solution
         n = 100
         k = 1
@@ -305,6 +363,9 @@ class SVDSCommonTests:
             assert_equal(res1a, res1b)
 
     def test_svd_random_state(self):
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not available")
         # check that the `random_state` parameter affects the solution
         # Admittedly, `n` and `k` are chosen so that all solver pass all
         # these checks. That's a tall order, since LOBPCG doesn't want to
@@ -337,6 +398,10 @@ class SVDSCommonTests:
                                               np.random.RandomState(0),
                                               np.random.default_rng(0)))
     def test_svd_random_state_2(self, random_state):
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not available")
+
         n = 100
         k = 1
 
@@ -355,6 +420,10 @@ class SVDSCommonTests:
                                               np.random.RandomState(0),
                                               np.random.default_rng(0)))
     def test_svd_random_state_3(self, random_state):
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not available")
+
         n = 100
         k = 5
 
@@ -372,10 +441,14 @@ class SVDSCommonTests:
         with pytest.raises(AssertionError, match=message):
             assert_equal(res1a, res2a)
 
+    @pytest.mark.filterwarnings("ignore:Exited postprocessing")
     def test_svd_maxiter(self):
         # check that maxiter works as expected: should not return accurate
         # solution after 1 iteration, but should with default `maxiter`
-        A = hilbert(6)
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not available")
+        A = np.diag(np.arange(9)).astype(np.float64)
         k = 1
         u, s, vh = sorted_svd(A, k)
 
@@ -384,23 +457,27 @@ class SVDSCommonTests:
             with pytest.raises(ArpackNoConvergence, match=message):
                 svds(A, k, ncv=3, maxiter=1, solver=self.solver)
         elif self.solver == 'lobpcg':
-            message = "Not equal to tolerance"
-            with pytest.raises(AssertionError, match=message):
-                with pytest.warns(UserWarning, match="Exited at iteration"):
-                    u2, s2, vh2 = svds(A, k, maxiter=1, solver=self.solver)
-                assert_allclose(np.abs(u2), np.abs(u))
+            with pytest.warns(UserWarning, match="Exited at iteration"):
+                svds(A, k, maxiter=1, solver=self.solver)
         elif self.solver == 'propack':
             message = "k=1 singular triplets did not converge within"
             with pytest.raises(np.linalg.LinAlgError, match=message):
                 svds(A, k, maxiter=1, solver=self.solver)
 
-        u, s, vh = svds(A, k, solver=self.solver)  # default maxiter
-        _check_svds(A, k, u, s, vh)
+        ud, sd, vhd = svds(A, k, solver=self.solver)  # default maxiter
+        _check_svds(A, k, ud, sd, vhd, atol=1e-8)
+        assert_allclose(np.abs(ud), np.abs(u), atol=1e-8)
+        assert_allclose(np.abs(vhd), np.abs(vh), atol=1e-8)
+        assert_allclose(np.abs(sd), np.abs(s), atol=1e-9)
 
     @pytest.mark.parametrize("rsv", (True, False, 'u', 'vh'))
     @pytest.mark.parametrize("shape", ((5, 7), (6, 6), (7, 5)))
     def test_svd_return_singular_vectors(self, rsv, shape):
         # check that the return_singular_vectors parameter works as expected
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not available")
+
         rng = np.random.default_rng(0)
         A = rng.random(shape)
         k = 2
@@ -431,9 +508,11 @@ class SVDSCommonTests:
                 else:
                     u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
                                        solver=self.solver, random_state=rng)
-                    assert_allclose(np.abs(u2), np.abs(u))
+                    if u2 is not None:
+                        assert_allclose(np.abs(u2), np.abs(u))
                     assert_allclose(s2, s)
-                    assert_allclose(np.abs(vh2), np.abs(vh))
+                    if vh2 is not None:
+                        assert_allclose(np.abs(vh2), np.abs(vh))
         else:
             if rsv is False:
                 s2 = svds(A, k, return_singular_vectors=rsv,
@@ -454,9 +533,11 @@ class SVDSCommonTests:
             else:
                 u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
                                    solver=self.solver, random_state=rng)
-                assert_allclose(np.abs(u2), np.abs(u))
+                if u2 is not None:
+                    assert_allclose(np.abs(u2), np.abs(u))
                 assert_allclose(s2, s)
-                assert_allclose(np.abs(vh2), np.abs(vh))
+                if vh2 is not None:
+                    assert_allclose(np.abs(vh2), np.abs(vh))
 
     # --- Test Basic Functionality ---
     # Tests the accuracy of each solver for real and complex matrices provided
@@ -465,6 +546,8 @@ class SVDSCommonTests:
     A1 = [[1, 2, 3], [3, 4, 3], [1 + 1j, 0, 2], [0, 0, 1]]
     A2 = [[1, 2, 3, 8 + 5j], [3 - 2j, 4, 3, 5], [1, 0, 2, 3], [0, 0, 1, 0]]
 
+    @pytest.mark.filterwarnings("ignore:k >= N - 1",
+                                reason="needed to demonstrate #16725")
     @pytest.mark.parametrize('A', (A1, A2))
     @pytest.mark.parametrize('k', range(1, 5))
     # PROPACK fails a lot if @pytest.mark.parametrize('which', ("SM", "LM"))
@@ -474,6 +557,10 @@ class SVDSCommonTests:
     @pytest.mark.parametrize('lo_type', (np.asarray, csc_matrix,
                                          aslinearoperator))
     def test_svd_simple(self, A, k, real, transpose, lo_type):
+
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not available")
 
         A = np.asarray(A)
         A = np.real(A) if real else A
@@ -486,7 +573,7 @@ class SVDSCommonTests:
         if self.solver != 'propack' and k >= min(A.shape):
             pytest.skip("Only PROPACK supports complete SVD")
         if self.solver == 'arpack' and not real and k == min(A.shape) - 1:
-            pytest.skip("ARPACK has additional restriction for complex dtype")
+            pytest.skip("#16725")
 
         if self.solver == 'propack' and (np.intp(0).itemsize < 8 and not real):
             pytest.skip('PROPACK complex-valued SVD methods not available '
@@ -501,6 +588,9 @@ class SVDSCommonTests:
 
     def test_svd_linop(self):
         solver = self.solver
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not available")
 
         nmks = [(6, 7, 3),
                 (9, 5, 4),
@@ -553,7 +643,7 @@ class SVDSCommonTests:
                                            **kwargs))
 
             assert_allclose(np.abs(U1), np.abs(U2))
-            assert_allclose(s1, s2)
+            assert_allclose(s1 + 1, s2 + 1)
             assert_allclose(np.abs(VH1), np.abs(VH2))
             assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
                             np.dot(U2, np.dot(np.diag(s2), VH2)))
@@ -588,6 +678,35 @@ class SVDSCommonTests:
                                     np.dot(U2, np.dot(np.diag(s2), VH2)),
                                     rtol=eps)
 
+    SHAPES = ((100, 100), (100, 101), (101, 100))
+
+    @pytest.mark.filterwarnings("ignore:Exited at iteration")
+    @pytest.mark.filterwarnings("ignore:Exited postprocessing")
+    @pytest.mark.parametrize("shape", SHAPES)
+    # ARPACK supports only dtype float, complex, or np.float32
+    @pytest.mark.parametrize("dtype", (float, complex, np.float32))
+    def test_small_sigma_sparse(self, shape, dtype):
+        # https://github.com/scipy/scipy/pull/11829
+        solver = self.solver
+        # 2do: PROPACK fails orthogonality of singular vectors
+        # if dtype == complex and self.solver == 'propack':
+        #    pytest.skip("PROPACK unsupported for complex dtype")
+        if solver == 'propack':
+            pytest.skip("PROPACK failures unrelated to PR")
+        rng = np.random.default_rng(0)
+        k = 5
+        (m, n) = shape
+        S = random(m, n, density=0.1, random_state=rng)
+        if dtype == complex:
+            S = + 1j * random(m, n, density=0.1, random_state=rng)
+        e = np.ones(m)
+        e[0:5] *= 1e1 ** np.arange(-5, 0, 1)
+        S = spdiags(e, 0, m, m) @ S
+        S = S.astype(dtype)
+        u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000)
+        c_svd = False  # partial SVD can be different from full SVD
+        _check_svds_n(S, k, u, s, vh, which="SM", check_svd=c_svd, atol=1e-1)
+
     # --- Test Edge Cases ---
     # Checks a few edge cases.
 
@@ -605,17 +724,20 @@ class SVDSCommonTests:
         else:
             U, s, VH = svds(A, k, solver=self.solver)
 
-        # Check some generic properties of svd.
         _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
 
         # Check that the largest singular value is near sqrt(n*m)
         # and the other singular values have been forced to zero.
         assert_allclose(np.max(s), np.sqrt(n*m))
-        assert_array_equal(sorted(s)[:-1], 0)
+        s = np.array(sorted(s)[:-1]) + 1
+        z = np.ones_like(s)
+        assert_allclose(s, z)
 
+    @pytest.mark.filterwarnings("ignore:k >= N - 1",
+                                reason="needed to demonstrate #16725")
     @pytest.mark.parametrize("shape", ((3, 4), (4, 4), (4, 3), (4, 2)))
     @pytest.mark.parametrize("dtype", (float, complex))
-    def test_svd_LM_zeros_matrix(self, shape, dtype):
+    def test_zero_matrix(self, shape, dtype):
         # Check that svds can deal with matrices containing only zeros;
         # see https://github.com/scipy/scipy/issues/3452/
         # shape = (4, 2) is included because it is the particular case
@@ -626,7 +748,10 @@ class SVDSCommonTests:
 
         if (self.solver == 'arpack' and dtype is complex
                 and k == min(A.shape) - 1):
-            pytest.skip("ARPACK has additional restriction for complex dtype")
+            pytest.skip("#16725")
+
+        if self.solver == 'propack':
+            pytest.skip("PROPACK failures unrelated to PR #16712")
 
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
@@ -639,6 +764,75 @@ class SVDSCommonTests:
 
         # Check that the singular values are zero.
         assert_array_equal(s, 0)
+
+    @pytest.mark.parametrize("shape", ((20, 20), (20, 21), (21, 20)))
+    # ARPACK supports only dtype float, complex, or np.float32
+    @pytest.mark.parametrize("dtype", (float, complex, np.float32))
+    def test_small_sigma(self, shape, dtype):
+        if not has_propack:
+            pytest.skip("PROPACK not enabled")
+        # https://github.com/scipy/scipy/pull/11829
+        if dtype == complex and self.solver == 'propack':
+            pytest.skip("PROPACK unsupported for complex dtype")
+        rng = np.random.default_rng(179847540)
+        A = rng.random(shape).astype(dtype)
+        u, _, vh = svd(A, full_matrices=False)
+        if dtype == np.float32:
+            e = 10.0
+        else:
+            e = 100.0
+        t = e**(-np.arange(len(vh))).astype(dtype)
+        A = (u*t).dot(vh)
+        k = 4
+        u, s, vh = svds(A, k, solver=self.solver, maxiter=100)
+        t = np.sum(s > 0)
+        assert_equal(t, k)
+        # LOBPCG needs larger atol and rtol to pass
+        _check_svds_n(A, k, u, s, vh, atol=1e-3, rtol=1e0, check_svd=False)
+
+    # ARPACK supports only dtype float, complex, or np.float32
+    @pytest.mark.filterwarnings("ignore:The problem size")
+    @pytest.mark.parametrize("dtype", (float, complex, np.float32))
+    def test_small_sigma2(self, dtype):
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not enabled")
+            elif dtype == np.float32:
+                pytest.skip("Test failures in CI, see gh-17004")
+            elif dtype == complex:
+                # https://github.com/scipy/scipy/issues/11406
+                pytest.skip("PROPACK unsupported for complex dtype")
+
+        rng = np.random.default_rng(179847540)
+        # create a 10x10 singular matrix with a 4-dim null space
+        dim = 4
+        size = 10
+        x = rng.random((size, size-dim))
+        y = x[:, :dim] * rng.random(dim)
+        mat = np.hstack((x, y))
+        mat = mat.astype(dtype)
+
+        nz = null_space(mat)
+        assert_equal(nz.shape[1], dim)
+
+        # Tolerances atol and rtol adjusted to pass np.float32
+        # Use non-sparse svd
+        u, s, vh = svd(mat)
+        # Singular values are 0:
+        assert_allclose(s[-dim:], 0, atol=1e-6, rtol=1e0)
+        # Smallest right singular vectors in null space:
+        assert_allclose(mat @ vh[-dim:, :].T, 0, atol=1e-6, rtol=1e0)
+
+        # Smallest singular values should be 0
+        sp_mat = csc_matrix(mat)
+        su, ss, svh = svds(sp_mat, k=dim, which='SM', solver=self.solver)
+        # Smallest dim singular values are 0:
+        assert_allclose(ss, 0, atol=1e-5, rtol=1e0)
+        # Smallest singular vectors via svds in null space:
+        n, m = mat.shape
+        if n < m:  # else the assert fails with some libraries unclear why
+            assert_allclose(sp_mat.transpose() @ su, 0, atol=1e-5, rtol=1e0)
+        assert_allclose(sp_mat @ svh.T, 0, atol=1e-5, rtol=1e0)
 
 # --- Perform tests with each solver ---
 

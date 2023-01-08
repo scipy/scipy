@@ -260,7 +260,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
         # 3. scipy.sparse.linalg.splu
         # 4. scipy.sparse.linalg.lsqr
         solved = False
-        while(not solved):
+        while not solved:
             try:
                 # [4] Equation 8.28
                 p, q = _sym_solve(Dinv, A, c, b, solve)

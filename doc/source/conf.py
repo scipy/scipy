@@ -44,11 +44,10 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.intersphinx',
     'numpydoc',
-    'sphinx_panels',
+    'sphinx_design',
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
-    'sphinx_tabs.tabs',
 ]
 
 # Determine if the matplotlib has a recent enough version of the
@@ -62,10 +61,6 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 plt.ioff()
-
-# sphinx-panels shouldn't add bootstrap css since the pydata-sphinx-theme
-# already loads it
-panels_add_bootstrap_css = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -152,9 +147,7 @@ warnings.filterwarnings('error')
 warnings.filterwarnings('default', module='sphinx')  # internal warnings
 # global weird ones that can be safely ignored
 for key in (
-        r"'U' mode is deprecated",  # sphinx io
         r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
-        r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
         r"distutils Version",  # distutils
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
@@ -187,9 +180,9 @@ html_logo = '_static/logo.svg'
 html_favicon = '_static/favicon.ico'
 
 html_theme_options = {
-  "logo_link": "index",
   "github_url": "https://github.com/scipy/scipy",
-  "navbar_end": ["version-switcher", "navbar-icon-links"],
+  "twitter_url": "https://twitter.com/SciPy_team",
+  "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
   "switcher": {
       "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
       "version_match": version,
@@ -263,6 +256,16 @@ np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
 
 autosummary_generate = True
 
+# maps functions with a name same as a class name that is indistinguishable
+# Ex: scipy.signal.czt and scipy.signal.CZT or scipy.odr.odr and scipy.odr.ODR
+# Otherwise, the stubs are overwritten when the name is same for
+# OS (like MacOS) which has a filesystem that ignores the case
+# See https://github.com/sphinx-doc/sphinx/pull/7927
+autosummary_filename_map = {
+    "scipy.odr.odr": "odr-function",
+    "scipy.signal.czt": "czt-function",
+}
+
 
 # -----------------------------------------------------------------------------
 # Autodoc
@@ -296,6 +299,12 @@ coverage_ignore_c_items = {}
 #------------------------------------------------------------------------------
 
 plot_pre_code = """
+import warnings
+for key in (
+        'scipy.misc'  # scipy.misc deprecated in v1.10.0; use scipy.datasets
+        ):
+    warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
+
 import numpy as np
 np.random.seed(123)
 """
@@ -365,7 +374,8 @@ def linkcode_resolve(domain, info):
             return None
 
     # Use the original function object if it is wrapped.
-    obj = getattr(obj, "__wrapped__", obj)
+    while hasattr(obj, "__wrapped__"):
+        obj = obj.__wrapped__
     # SciPy's distributions are instances of *_gen. Point to this
     # class since it contains the implementation of all the methods.
     if isinstance(obj, (rv_generic, multi_rv_generic)):

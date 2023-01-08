@@ -15,7 +15,8 @@ from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
-    'diagbroyden', 'excitingmixing', 'newton_krylov']
+    'diagbroyden', 'excitingmixing', 'newton_krylov',
+    'BroydenFirst', 'KrylovJacobian', 'InverseJacobian']
 
 #------------------------------------------------------------------------------
 # Utility functions
@@ -814,7 +815,7 @@ class BroydenFirst(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='broyden1'`` in particular.
+           functions. See ``method='broyden1'`` in particular.
 
     Notes
     -----
@@ -891,7 +892,8 @@ class BroydenFirst(GenericBroyden):
         if not np.isfinite(r).all():
             # singular; reset the Jacobian approximation
             self.setup(self.last_x, self.last_f, self.func)
-        return self.Gm.matvec(f)
+            return self.Gm.matvec(f)
+        return r
 
     def matvec(self, f):
         return self.Gm.solve(f)
@@ -927,7 +929,7 @@ class BroydenSecond(BroydenFirst):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='broyden2'`` in particular.
+           functions. See ``method='broyden2'`` in particular.
 
     Notes
     -----
@@ -999,7 +1001,7 @@ class Anderson(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='anderson'`` in particular.
+           functions. See ``method='anderson'`` in particular.
 
     References
     ----------
@@ -1154,7 +1156,7 @@ class DiagBroyden(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='diagbroyden'`` in particular.
+           functions. See ``method='diagbroyden'`` in particular.
 
     Examples
     --------
@@ -1219,7 +1221,7 @@ class LinearMixing(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='linearmixing'`` in particular.
+           functions. See ``method='linearmixing'`` in particular.
 
     """
 
@@ -1260,7 +1262,7 @@ class ExcitingMixing(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='excitingmixing'`` in particular.
+           functions. See ``method='excitingmixing'`` in particular.
 
     Parameters
     ----------
@@ -1320,10 +1322,12 @@ class KrylovJacobian(Jacobian):
     %(params_basic)s
     rdiff : float, optional
         Relative step size to use in numerical differentiation.
-    method : {'lgmres', 'gmres', 'bicgstab', 'cgs', 'minres'} or function
-        Krylov method to use to approximate the Jacobian.
-        Can be a string, or a function implementing the same interface as
-        the iterative solvers in `scipy.sparse.linalg`.
+    method : str or callable, optional
+        Krylov method to use to approximate the Jacobian.  Can be a string,
+        or a function implementing the same interface as the iterative
+        solvers in `scipy.sparse.linalg`. If a string, needs to be one of:
+        ``'lgmres'``, ``'gmres'``, ``'bicgstab'``, ``'cgs'``, ``'minres'``,
+        ``'tfqmr'``.
 
         The default is `scipy.sparse.linalg.lgmres`.
     inner_maxiter : int, optional
@@ -1335,8 +1339,8 @@ class KrylovJacobian(Jacobian):
         Note that you can use also inverse Jacobians as (adaptive)
         preconditioners. For example,
 
-        >>> from scipy.optimize.nonlin import BroydenFirst, KrylovJacobian
-        >>> from scipy.optimize.nonlin import InverseJacobian
+        >>> from scipy.optimize import BroydenFirst, KrylovJacobian
+        >>> from scipy.optimize import InverseJacobian
         >>> jac = BroydenFirst()
         >>> kjac = KrylovJacobian(inner_M=InverseJacobian(jac))
 
@@ -1356,7 +1360,7 @@ class KrylovJacobian(Jacobian):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='krylov'`` in particular.
+           functions. See ``method='krylov'`` in particular.
     scipy.sparse.linalg.gmres
     scipy.sparse.linalg.lgmres
 
@@ -1383,9 +1387,12 @@ class KrylovJacobian(Jacobian):
 
     References
     ----------
-    .. [1] D.A. Knoll and D.E. Keyes, J. Comp. Phys. 193, 357 (2004).
+    .. [1] C. T. Kelley, Solving Nonlinear Equations with Newton's Method,
+           SIAM, pp.57-83, 2003.
+           :doi:`10.1137/1.9780898718898.ch3`
+    .. [2] D.A. Knoll and D.E. Keyes, J. Comp. Phys. 193, 357 (2004).
            :doi:`10.1016/j.jcp.2003.08.010`
-    .. [2] A.H. Baker and E.R. Jessup and T. Manteuffel,
+    .. [3] A.H. Baker and E.R. Jessup and T. Manteuffel,
            SIAM J. Matrix Anal. Appl. 26, 962 (2005).
            :doi:`10.1137/S0895479803422014`
 
@@ -1410,22 +1417,27 @@ class KrylovJacobian(Jacobian):
                  inner_M=None, outer_k=10, **kw):
         self.preconditioner = inner_M
         self.rdiff = rdiff
+        # Note that this retrieves one of the named functions, or otherwise
+        # uses `method` as is (i.e., for a user-provided callable).
         self.method = dict(
             bicgstab=scipy.sparse.linalg.bicgstab,
             gmres=scipy.sparse.linalg.gmres,
             lgmres=scipy.sparse.linalg.lgmres,
             cgs=scipy.sparse.linalg.cgs,
             minres=scipy.sparse.linalg.minres,
+            tfqmr=scipy.sparse.linalg.tfqmr,
             ).get(method, method)
 
         self.method_kw = dict(maxiter=inner_maxiter, M=self.preconditioner)
 
         if self.method is scipy.sparse.linalg.gmres:
             # Replace GMRES's outer iteration with Newton steps
-            self.method_kw['restrt'] = inner_maxiter
+            self.method_kw['restart'] = inner_maxiter
             self.method_kw['maxiter'] = 1
             self.method_kw.setdefault('atol', 0)
-        elif self.method is scipy.sparse.linalg.gcrotmk:
+        elif self.method in (scipy.sparse.linalg.gcrotmk,
+                             scipy.sparse.linalg.bicgstab,
+                             scipy.sparse.linalg.cgs):
             self.method_kw.setdefault('atol', 0)
         elif self.method is scipy.sparse.linalg.lgmres:
             self.method_kw['outer_k'] = outer_k

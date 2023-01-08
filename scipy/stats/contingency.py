@@ -11,6 +11,7 @@ Functions for creating and analyzing contingency tables.
 
    chi2_contingency
    relative_risk
+   odds_ratio
    crosstab
    association
 
@@ -26,10 +27,12 @@ import numpy as np
 from ._stats_py import power_divergence
 from ._relative_risk import relative_risk
 from ._crosstab import crosstab
+from ._odds_ratio import odds_ratio
+from scipy._lib._bunch import _make_tuple_bunch
 
 
 __all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab',
-           'association', 'relative_risk']
+           'association', 'relative_risk', 'odds_ratio']
 
 
 def margins(a):
@@ -50,11 +53,13 @@ def margins(a):
 
     Examples
     --------
+    >>> import numpy as np
+    >>> from scipy.stats.contingency import margins
+
     >>> a = np.arange(12).reshape(2, 6)
     >>> a
     array([[ 0,  1,  2,  3,  4,  5],
            [ 6,  7,  8,  9, 10, 11]])
-    >>> from scipy.stats.contingency import margins
     >>> m0, m1 = margins(a)
     >>> m0
     array([[15],
@@ -106,6 +111,7 @@ def expected_freq(observed):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats.contingency import expected_freq
     >>> observed = np.array([[10, 10, 20],[20, 20, 20]])
     >>> expected_freq(observed)
@@ -127,6 +133,12 @@ def expected_freq(observed):
     d = observed.ndim
     expected = reduce(np.multiply, margsums) / observed.sum() ** (d - 1)
     return expected
+
+
+Chi2ContingencyResult = _make_tuple_bunch(
+    'Chi2ContingencyResult',
+    ['statistic', 'pvalue', 'dof', 'expected_freq'], []
+)
 
 
 def chi2_contingency(observed, correction=True, lambda_=None):
@@ -160,14 +172,17 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 
     Returns
     -------
-    chi2 : float
-        The test statistic.
-    p : float
-        The p-value of the test
-    dof : int
-        Degrees of freedom
-    expected : ndarray, same shape as `observed`
-        The expected frequencies, based on the marginal sums of the table.
+    res : Chi2ContingencyResult
+        An object containing attributes:
+
+        statistic : float
+            The test statistic.
+        pvalue : float
+            The p-value of the test.
+        dof : int
+            The degrees of freedom.
+        expected_freq : ndarray, same shape as `observed`
+            The expected frequencies, based on the marginal sums of the table.
 
     See Also
     --------
@@ -193,18 +208,19 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     This function does not handle masked arrays, because the calculation
     does not make sense with missing values.
 
-    Like stats.chisquare, this function computes a chi-square statistic;
-    the convenience this function provides is to figure out the expected
-    frequencies and degrees of freedom from the given contingency table.
-    If these were already known, and if the Yates' correction was not
-    required, one could use stats.chisquare.  That is, if one calls::
+    Like `scipy.stats.chisquare`, this function computes a chi-square
+    statistic; the convenience this function provides is to figure out the
+    expected frequencies and degrees of freedom from the given contingency
+    table. If these were already known, and if the Yates' correction was not
+    required, one could use `scipy.stats.chisquare`.  That is, if one calls::
 
-        chi2, p, dof, ex = chi2_contingency(obs, correction=False)
+        res = chi2_contingency(obs, correction=False)
 
     then the following is true::
 
-        (chi2, p) == stats.chisquare(obs.ravel(), f_exp=ex.ravel(),
-                                     ddof=obs.size - 1 - dof)
+        (res.statistic, res.pvalue) == stats.chisquare(obs.ravel(),
+                                                       f_exp=ex.ravel(),
+                                                       ddof=obs.size - 1 - dof)
 
     The `lambda_` argument was added in version 0.13.0 of scipy.
 
@@ -217,26 +233,81 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     .. [3] Cressie, N. and Read, T. R. C., "Multinomial Goodness-of-Fit
            Tests", J. Royal Stat. Soc. Series B, Vol. 46, No. 3 (1984),
            pp. 440-464.
+    .. [4] Berger, Jeffrey S. et al. "Aspirin for the Primary Prevention of
+           Cardiovascular Events in Women and Men: A Sex-Specific
+           Meta-analysis of Randomized Controlled Trials."
+           JAMA, 295(3):306-313, :doi:`10.1001/jama.295.3.306`, 2006.
 
     Examples
     --------
+    In [4]_, the use of aspirin to prevent cardiovascular events in women
+    and men was investigated. The study notably concluded:
+
+        ...aspirin therapy reduced the risk of a composite of
+        cardiovascular events due to its effect on reducing the risk of
+        ischemic stroke in women [...]
+
+    The article lists studies of various cardiovascular events. Let's
+    focus on the ischemic stoke in women.
+
+    The following table summarizes the results of the experiment in which
+    participants took aspirin or a placebo on a regular basis for several
+    years. Cases of ischemic stroke were recorded::
+
+                          Aspirin   Control/Placebo
+        Ischemic stroke     176           230
+        No stroke         21035         21018
+
+    Is there evidence that the aspirin reduces the risk of ischemic stroke?
+    We begin by formulating a null hypothesis :math:`H_0`:
+
+        The effect of aspirin is equivalent to that of placebo.
+
+    Let's assess the plausibility of this hypothesis with
+    a chi-square test.
+
+    >>> import numpy as np
+    >>> from scipy.stats import chi2_contingency
+    >>> table = np.array([[176, 230], [21035, 21018]])
+    >>> res = chi2_contingency(table)
+    >>> res.statistic
+    6.892569132546561
+    >>> res.pvalue
+    0.008655478161175739
+
+    Using a significance level of 5%, we would reject the null hypothesis in
+    favor of the alternative hypothesis: "the effect of aspirin
+    is not equivalent to the effect of placebo".
+    Because `scipy.stats.contingency.chi2_contingency` performs a two-sided
+    test, the alternative hypothesis does not indicate the direction of the
+    effect. We can use `stats.contingency.odds_ratio` to support the
+    conclusion that aspirin *reduces* the risk of ischemic stroke.
+
+    Below are further examples showing how larger contingency tables can be
+    tested.
+
     A two-way example (2 x 3):
 
-    >>> from scipy.stats import chi2_contingency
     >>> obs = np.array([[10, 10, 20], [20, 20, 20]])
-    >>> chi2_contingency(obs)
-    (2.7777777777777777,
-     0.24935220877729619,
-     2,
-     array([[ 12.,  12.,  16.],
-            [ 18.,  18.,  24.]]))
+    >>> res = chi2_contingency(obs)
+    >>> res.statistic
+    2.7777777777777777
+    >>> res.pvalue
+    0.24935220877729619
+    >>> res.dof
+    2
+    >>> res.expected_freq
+    array([[ 12.,  12.,  16.],
+           [ 18.,  18.,  24.]])
 
     Perform the test using the log-likelihood ratio (i.e. the "G-test")
     instead of Pearson's chi-squared statistic.
 
-    >>> g, p, dof, expctd = chi2_contingency(obs, lambda_="log-likelihood")
-    >>> g, p
-    (2.7688587616781319, 0.25046668010954165)
+    >>> res = chi2_contingency(obs, lambda_="log-likelihood")
+    >>> res.statistic
+    2.7688587616781319
+    >>> res.pvalue
+    0.25046668010954165
 
     A four-way example (2 x 2 x 2 x 2):
 
@@ -249,18 +320,11 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     ...        [30, 22]],
     ...       [[14, 17],
     ...        [15, 16]]]])
-    >>> chi2_contingency(obs)
-    (8.7584514426741897,
-     0.64417725029295503,
-     11,
-     array([[[[ 14.15462386,  14.15462386],
-              [ 16.49423111,  16.49423111]],
-             [[ 11.2461395 ,  11.2461395 ],
-              [ 13.10500554,  13.10500554]]],
-            [[[ 19.5591166 ,  19.5591166 ],
-              [ 22.79202844,  22.79202844]],
-             [[ 15.54012004,  15.54012004],
-              [ 18.10873492,  18.10873492]]]]))
+    >>> res = chi2_contingency(obs)
+    >>> res.statistic
+    8.7584514426741897
+    >>> res.pvalue
+    0.64417725029295503
     """
     observed = np.asarray(observed)
     if np.any(observed < 0):
@@ -298,7 +362,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
                                    ddof=observed.size - 1 - dof, axis=None,
                                    lambda_=lambda_)
 
-    return chi2, p, dof, expected
+    return Chi2ContingencyResult(chi2, p, dof, expected)
 
 
 def association(observed, method="cramer", correction=False, lambda_=None):
@@ -360,10 +424,12 @@ def association(observed, method="cramer", correction=False, lambda_=None):
     --------
     An example with a 4x2 contingency table:
 
+    >>> import numpy as np
     >>> from scipy.stats.contingency import association
     >>> obs4x2 = np.array([[100, 150], [203, 322], [420, 700], [320, 210]])
 
     Pearson's contingency coefficient
+
     >>> association(obs4x2, method="pearson")
     0.18303298140595667
 
@@ -387,7 +453,7 @@ def association(observed, method="cramer", correction=False, lambda_=None):
     chi2_stat = chi2_contingency(arr, correction=correction,
                                  lambda_=lambda_)
 
-    phi2 = chi2_stat[0] / arr.sum()
+    phi2 = chi2_stat.statistic / arr.sum()
     n_rows, n_cols = arr.shape
     if method == "cramer":
         value = phi2 / min(n_cols - 1, n_rows - 1)

@@ -7,7 +7,7 @@ from ._rotation_groups import create_group
 cimport numpy as np
 cimport cython
 from cython.view cimport array
-from libc.math cimport sqrt, sin, cos, atan2, acos
+from libc.math cimport sqrt, sin, cos, atan2, acos, hypot
 from numpy.math cimport PI as pi, NAN, isnan # avoid MSVC error
 
 np.import_array()
@@ -85,12 +85,21 @@ cdef inline const double[:] _elementary_basis_vector(uchar axis):
     if axis == b'x': return _ex
     elif axis == b'y': return _ey
     elif axis == b'z': return _ez
+    
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline int _elementary_basis_index(uchar axis):
+    if axis == b'x': return 0
+    elif axis == b'y': return 1
+    elif axis == b'z': return 2
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double[:, :] _compute_euler_from_matrix(
     np.ndarray[double, ndim=3] matrix, const uchar[:] seq, bint extrinsic=False
 ):
+    # This is being replaced by the newer: _compute_euler_from_quat
+    #
     # The algorithm assumes intrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation matrices which are transposition
     # rotation matrices used within Rotation.
@@ -98,6 +107,10 @@ cdef double[:, :] _compute_euler_from_matrix(
     # 1. Instead of transposing our representation, use the transpose of the
     #    O matrix as defined in the paper, and be careful to swap indices
     # 2. Reversing both axis sequence and angles for extrinsic rotations
+    #
+    # Based on Malcolm D. Shuster, F. Landis Markley, "General formula for
+    # extraction the Euler angles", Journal of guidance, control, and
+    # dynamics, vol. 29.1, pp. 215-221. 2006
 
     if extrinsic:
         seq = seq[::-1]
@@ -217,6 +230,111 @@ cdef double[:, :] _compute_euler_from_matrix(
 
         # Step 8
         if not safe:
+            warnings.warn("Gimbal lock detected. Setting third angle to zero "
+                          "since it is not possible to uniquely determine "
+                          "all angles.")
+
+    return angles
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef double[:, :] _compute_euler_from_quat(
+    np.ndarray[double, ndim=2] quat, const uchar[:] seq, bint extrinsic=False
+):
+    # The algorithm assumes extrinsic frame transformations. The algorithm
+    # in the paper is formulated for rotation quaternions, which are stored
+    # directly by Rotation.
+    # Adapt the algorithm for our case by reversing both axis sequence and 
+    # angles for intrinsic rotations when needed
+    
+    # intrinsic/extrinsic conversion helpers
+    cdef int angle_first, angle_third
+    if extrinsic:
+        angle_first = 0
+        angle_third = 2
+    else:
+        seq = seq[::-1]
+        angle_first = 2
+        angle_third = 0
+        
+    cdef int i = _elementary_basis_index(seq[0])
+    cdef int j = _elementary_basis_index(seq[1])
+    cdef int k = _elementary_basis_index(seq[2])
+
+    cdef bint symmetric = i == k
+    if symmetric:
+        k = 3 - i - j # get third axis
+        
+    # Step 0
+    # Check if permutation is even (+1) or odd (-1)     
+    cdef int sign = (i - j) * (j - k) * (k - i) // 2
+
+    cdef Py_ssize_t num_rotations = quat.shape[0]
+
+    # some forward definitions
+    cdef double[:, :] angles = _empty2(num_rotations, 3)
+    cdef double[:] _angles # accessor for each rotation
+    cdef double a, b, c, d
+    cdef double half_sum, half_diff
+    cdef double eps = 1e-7
+    cdef int case
+
+    for ind in range(num_rotations):
+        _angles = angles[ind, :]
+
+        # Step 1
+        # Permutate quaternion elements            
+        if symmetric:
+            a = quat[ind, 3]
+            b = quat[ind, i]
+            c = quat[ind, j]
+            d = quat[ind, k] * sign
+        else:
+            a = quat[ind, 3] - quat[ind, j]
+            b = quat[ind, i] + quat[ind, k] * sign
+            c = quat[ind, j] + quat[ind, 3]
+            d = quat[ind, k] * sign - quat[ind, i]
+        
+        # Step 2
+        # Compute second angle...
+        _angles[1] = 2 * atan2(hypot(c, d), hypot(a, b))
+
+        # ... and check if equal to is 0 or pi, causing a singularity
+        if abs(_angles[1]) <= eps:
+            case = 1
+        elif abs(_angles[1] - <double>pi) <= eps:
+            case = 2
+        else:
+            case = 0 # normal case
+
+        # Step 3
+        # compute first and third angles, according to case
+        half_sum = atan2(b, a)
+        half_diff = atan2(d, c)
+        
+        if case == 0:  # no singularities
+            _angles[angle_first] = half_sum - half_diff
+            _angles[angle_third] = half_sum + half_diff
+        
+        else:  # any degenerate case
+            _angles[2] = 0
+            if case == 1:
+                _angles[0] = 2 * half_sum
+            else:
+                _angles[0] = 2 * half_diff * (-1 if extrinsic else 1)
+                
+        # for Tait-Bryan angles
+        if not symmetric:
+            _angles[angle_third] *= sign
+            _angles[1] -= pi / 2
+            
+        for idx in range(3):
+            if _angles[idx] < -pi:
+                _angles[idx] += 2 * pi
+            elif _angles[idx] > pi:
+                _angles[idx] -= 2 * pi
+
+        if case != 0:
             warnings.warn("Gimbal lock detected. Setting third angle to zero "
                           "since it is not possible to uniquely determine "
                           "all angles.")
@@ -359,6 +477,7 @@ cdef class Rotation:
     Examples
     --------
     >>> from scipy.spatial.transform import Rotation as R
+    >>> import numpy as np
 
     A `Rotation` instance can be initialized in any of the above formats and
     converted to any of the others. The underlying object is independent of the
@@ -545,6 +664,14 @@ cdef class Rotation:
         """Whether this instance represents a single rotation."""
         return self._single
 
+    def __bool__(self):
+        """Comply with Python convention for objects to be True.
+
+        Required because `Rotation.__len__()` is defined and not always truthy.
+        """
+        return True
+
+    @cython.embedsignature(True)
     def __len__(self):
         """Number of rotations contained in this object.
 
@@ -564,6 +691,7 @@ cdef class Rotation:
 
         return self._quat.shape[0]
 
+    @cython.embedsignature(True)
     @classmethod
     def from_quat(cls, quat):
         """Initialize from quaternions.
@@ -626,6 +754,7 @@ cdef class Rotation:
         """
         return cls(quat, normalize=True)
 
+    @cython.embedsignature(True)
     @classmethod
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -658,6 +787,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Initialize a single rotation:
 
@@ -777,6 +907,7 @@ cdef class Rotation:
         else:
             return cls(quat, normalize=False, copy=False)
 
+    @cython.embedsignature(True)
     @classmethod
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -810,6 +941,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Initialize a single rotation:
 
@@ -885,6 +1017,7 @@ cdef class Rotation:
         else:
             return cls(quat, normalize=False, copy=False)
 
+    @cython.embedsignature(True)
     @classmethod
     def from_euler(cls, seq, angles, degrees=False):
         """Initialize from Euler angles.
@@ -1042,6 +1175,7 @@ cdef class Rotation:
         else:
             return cls(quat, normalize=False, copy=False)
 
+    @cython.embedsignature(True)
     @classmethod
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -1081,6 +1215,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Initialize a single rotation:
 
@@ -1142,6 +1277,7 @@ cdef class Rotation:
         else:
             return cls(quat, normalize=False, copy=False)
 
+    @cython.embedsignature(True)
     def as_quat(self):
         """Represent as quaternions.
 
@@ -1163,6 +1299,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Represent a single rotation:
 
@@ -1192,6 +1329,7 @@ cdef class Rotation:
         else:
             return np.array(self._quat, copy=True)
 
+    @cython.embedsignature(True)
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def as_matrix(self):
@@ -1212,6 +1350,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Represent a single rotation:
 
@@ -1295,6 +1434,7 @@ cdef class Rotation:
         else:
             return ret
 
+    @cython.embedsignature(True)
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def as_rotvec(self, degrees=False):
@@ -1323,6 +1463,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Represent a single rotation:
 
@@ -1393,7 +1534,49 @@ cdef class Rotation:
         else:
             return np.asarray(rotvec)
 
-    def as_euler(self, seq, degrees=False):
+    @cython.embedsignature(True)
+    def _compute_euler(self, seq, degrees, algorithm):
+        # Prepare axis sequence to call Euler angles conversion algorithm.
+        
+        if len(seq) != 3:
+            raise ValueError("Expected 3 axes, got {}.".format(seq))
+
+        intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
+        extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
+        if not (intrinsic or extrinsic):
+            raise ValueError("Expected axes from `seq` to be from "
+                             "['x', 'y', 'z'] or ['X', 'Y', 'Z'], "
+                             "got {}".format(seq))
+
+        if any(seq[i] == seq[i+1] for i in range(2)):
+            raise ValueError("Expected consecutive axes to be different, "
+                             "got {}".format(seq))
+
+        seq = seq.lower()
+            
+        if algorithm == 'from_matrix':
+            matrix = self.as_matrix()
+            if matrix.ndim == 2:
+                matrix = matrix[None, :, :]
+            angles = np.asarray(_compute_euler_from_matrix(
+                matrix, seq.encode(), extrinsic))
+        elif algorithm == 'from_quat':
+            quat = self.as_quat()
+            if quat.ndim == 1:
+                quat = quat[None, :]
+            angles = np.asarray(_compute_euler_from_quat(
+                    quat, seq.encode(), extrinsic))
+        else:
+            # algorithm can only be 'from_quat' or 'from_matrix'
+            assert False
+            
+        if degrees:
+            angles = np.rad2deg(angles)
+
+        return angles[0] if self._single else angles
+
+    @cython.embedsignature(True)
+    def _as_euler_from_matrix(self, seq, degrees=False):
         """Represent as Euler angles.
 
         Any orientation can be expressed as a composition of 3 elementary
@@ -1443,9 +1626,65 @@ cdef class Rotation:
                dynamics, vol. 29.1, pp. 215-221. 2006
         .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
 
+        """
+        return self._compute_euler(seq, degrees, 'from_matrix')
+
+    @cython.embedsignature(True)
+    def as_euler(self, seq, degrees=False):
+        """Represent as Euler angles.
+
+        Any orientation can be expressed as a composition of 3 elementary
+        rotations. Once the axis sequence has been chosen, Euler angles define
+        the angle of rotation around each respective axis [1]_.
+
+        The algorithm from [2]_ has been used to calculate Euler angles for the 
+        rotation about a given sequence of axes.
+
+        Euler angles suffer from the problem of gimbal lock [3]_, where the
+        representation loses a degree of freedom and it is not possible to
+        determine the first and third angles uniquely. In this case,
+        a warning is raised, and the third angle is set to zero. Note however
+        that the returned angles still represent the correct rotation.
+
+        Parameters
+        ----------
+        seq : string, length 3
+            3 characters belonging to the set {'X', 'Y', 'Z'} for intrinsic
+            rotations, or {'x', 'y', 'z'} for extrinsic rotations [1]_.
+            Adjacent axes cannot be the same.
+            Extrinsic and intrinsic rotations cannot be mixed in one function
+            call.
+        degrees : boolean, optional
+            Returned angles are in degrees if this flag is True, else they are
+            in radians. Default is False.
+
+        Returns
+        -------
+        angles : ndarray, shape (3,) or (N, 3)
+            Shape depends on shape of inputs used to initialize object.
+            The returned angles are in the range:
+
+            - First angle belongs to [-180, 180] degrees (both inclusive)
+            - Third angle belongs to [-180, 180] degrees (both inclusive)
+            - Second angle belongs to:
+
+                - [-90, 90] degrees if all axes are different (like xyz)
+                - [0, 180] degrees if first and third axes are the same
+                  (like zxz)
+
+        References
+        ----------
+        .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
+        .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles 
+               conversion: A direct, general and computationally efficient 
+               method. PLoS ONE 17(11): e0276302. 
+               https://doi.org/10.1371/journal.pone.0276302
+        .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
+
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Represent a single rotation:
 
@@ -1477,32 +1716,9 @@ cdef class Rotation:
         (3, 3)
 
         """
-        if len(seq) != 3:
-            raise ValueError("Expected 3 axes, got {}.".format(seq))
+        return self._compute_euler(seq, degrees, 'from_quat')
 
-        intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
-        extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
-        if not (intrinsic or extrinsic):
-            raise ValueError("Expected axes from `seq` to be from "
-                             "['x', 'y', 'z'] or ['X', 'Y', 'Z'], "
-                             "got {}".format(seq))
-
-        if any(seq[i] == seq[i+1] for i in range(2)):
-            raise ValueError("Expected consecutive axes to be different, "
-                             "got {}".format(seq))
-
-        seq = seq.lower()
-
-        matrix = self.as_matrix()
-        if matrix.ndim == 2:
-            matrix = matrix[None, :, :]
-        angles = np.asarray(_compute_euler_from_matrix(
-            matrix, seq.encode(), extrinsic))
-        if degrees:
-            angles = np.rad2deg(angles)
-
-        return angles[0] if self._single else angles
-
+    @cython.embedsignature(True)
     def as_mrp(self):
         """Represent as Modified Rodrigues Parameters (MRPs).
 
@@ -1529,6 +1745,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Represent a single rotation:
 
@@ -1580,6 +1797,7 @@ cdef class Rotation:
         else:
             return np.asarray(mrps)
 
+    @cython.embedsignature(True)
     @classmethod
     def concatenate(cls, rotations):
         """Concatenate a sequence of `Rotation` objects.
@@ -1604,6 +1822,7 @@ cdef class Rotation:
         quats = np.concatenate([np.atleast_2d(x.as_quat()) for x in rotations])
         return cls(quats, normalize=False)
 
+    @cython.embedsignature(True)
     def apply(self, vectors, inverse=False):
         """Apply this rotation to a set of vectors.
 
@@ -1646,6 +1865,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Single rotation applied on a single vector:
 
@@ -1754,6 +1974,7 @@ cdef class Rotation:
         else:
             return result
 
+    @cython.embedsignature(True)
     def __mul__(Rotation self, Rotation other):
         """Compose this rotation with the other.
 
@@ -1785,6 +2006,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Composition of two single rotations:
 
@@ -1833,6 +2055,7 @@ cdef class Rotation:
             result = result[0]
         return self.__class__(result, normalize=True, copy=False)
 
+    @cython.embedsignature(True)
     def inv(self):
         """Invert this rotation.
 
@@ -1847,6 +2070,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         Inverting a single rotation:
 
@@ -1870,6 +2094,7 @@ cdef class Rotation:
             quat = quat[0]
         return self.__class__(quat, copy=False)
 
+    @cython.embedsignature(True)
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def magnitude(self):
@@ -1884,6 +2109,7 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
         >>> r = R.from_quat(np.eye(4))
         >>> r.magnitude()
         array([3.14159265, 3.14159265, 3.14159265, 0.        ])
@@ -1905,6 +2131,7 @@ cdef class Rotation:
         else:
             return np.asarray(angles)
 
+    @cython.embedsignature(True)
     def mean(self, weights=None):
         """Get the mean of the rotations.
 
@@ -1958,6 +2185,7 @@ cdef class Rotation:
         l, v = np.linalg.eigh(K)
         return self.__class__(v[:, -1], normalize=False)
 
+    @cython.embedsignature(True)
     def reduce(self, left=None, right=None, return_indices=False):
         """Reduce this rotation with the provided rotation groups.
 
@@ -2054,6 +2282,7 @@ cdef class Rotation:
         else:
             return reduced
 
+    @cython.embedsignature(True)
     @classmethod
     def create_group(cls, group, axis='Z'):
         """Create a 3D rotation group.
@@ -2092,6 +2321,7 @@ cdef class Rotation:
         """
         return create_group(cls, group, axis=axis)
 
+    @cython.embedsignature(True)
     def __getitem__(self, indexer):
         """Extract rotation(s) at given index(es) from object.
 
@@ -2178,6 +2408,7 @@ cdef class Rotation:
         quat[indexer] = value.as_quat()
         self._quat = quat
 
+    @cython.embedsignature(True)
     @classmethod
     def identity(cls, num=None):
         """Get identity rotation(s).
@@ -2202,6 +2433,7 @@ cdef class Rotation:
             q[:, 3] = 1
         return cls(q, normalize=False)
 
+    @cython.embedsignature(True)
     @classmethod
     def random(cls, num=None, random_state=None):
         """Generate uniformly distributed rotations.
@@ -2265,6 +2497,7 @@ cdef class Rotation:
 
         return cls(sample)
 
+    @cython.embedsignature(True)
     @classmethod
     def align_vectors(cls, a, b, weights=None, return_sensitivity=False):
         """Estimate a rotation to optimally align two sets of vectors.
@@ -2303,11 +2536,11 @@ cdef class Rotation:
         -------
         estimated_rotation : `Rotation` instance
             Best estimate of the rotation that transforms `b` to `a`.
-        rmsd : float
-            Root mean square distance (weighted) between the given set of
-            vectors after alignment. It is equal to ``sqrt(2 * minimum_loss)``,
-            where ``minimum_loss`` is the loss function evaluated for the
-            found optimal rotation.
+        rssd : float
+            Square root of the weighted sum of the squared distances between
+            the given sets of vectors after alignment. It is equal to
+            ``sqrt(2 * minimum_loss)``, where ``minimum_loss`` is the loss
+            function evaluated for the found optimal rotation.
         sensitivity_matrix : ndarray, shape (3, 3)
             Sensitivity matrix of the estimated rotation estimate as explained
             in Notes. Returned only when `return_sensitivity` is True.
@@ -2383,7 +2616,7 @@ cdef class Rotation:
             warnings.warn("Optimal rotation is not uniquely or poorly defined "
                           "for the given sets of vectors.")
 
-        rmsd = np.sqrt(max(
+        rssd = np.sqrt(max(
             np.sum(weights * np.sum(b ** 2 + a ** 2, axis=1)) - 2 * np.sum(s),
             0))
 
@@ -2393,9 +2626,9 @@ cdef class Rotation:
             with np.errstate(divide='ignore', invalid='ignore'):
                 sensitivity = np.mean(weights) / zeta * (
                         kappa * np.eye(3) + np.dot(B, B.T))
-            return cls.from_matrix(C), rmsd, sensitivity
+            return cls.from_matrix(C), rssd, sensitivity
         else:
-            return cls.from_matrix(C), rmsd
+            return cls.from_matrix(C), rssd
 
 
 class Slerp:

@@ -178,6 +178,8 @@ line_search = line_search_wolfe1
 # Pure-Python Wolfe line and scalar searches
 #------------------------------------------------------------------------------
 
+# Note: `line_search_wolfe2` is the public `scipy.optimize.line_search`
+
 def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
                        old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=None,
                        extra_condition=None, maxiter=10):
@@ -192,7 +194,8 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     xk : ndarray
         Starting point.
     pk : ndarray
-        Search direction.
+        Search direction. The search direction must be a descent direction
+        for the algorithm to converge.
     gfk : ndarray, optional
         Gradient value for x=xk (xk being the current parameter
         estimate). Will be recomputed if omitted.
@@ -246,8 +249,14 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     conditions. See Wright and Nocedal, 'Numerical Optimization',
     1999, pp. 59-61.
 
+    The search direction `pk` must be a descent direction (e.g.
+    ``-myfprime(xk)``) to find a step length that satisfies the strong Wolfe
+    conditions. If the search direction is not a descent direction (e.g.
+    ``myfprime(xk)``), then `alpha`, `new_fval`, and `new_slope` will be None.
+
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import line_search
 
     A objective function and its gradient are defined.
@@ -516,9 +525,9 @@ def _quadmin(a, fa, fpa, b, fb):
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
           phi, derphi, phi0, derphi0, c1, c2, extra_condition):
     """Zoom stage of approximate linesearch satisfying strong Wolfe conditions.
-    
+
     Part of the optimization algorithm in `scalar_search_wolfe2`.
-    
+
     Notes
     -----
     Implements Algorithm 3.6 (zoom) in Wright and Nocedal,

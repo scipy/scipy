@@ -13,14 +13,7 @@ cimport libc.math
 
 from scipy.linalg.cython_lapack cimport dgeev
 
-ctypedef double complex double_complex
-
-ctypedef fused double_or_complex:
-    double
-    double complex
-
-cdef extern from "numpy/npy_math.h":
-    double nan "NPY_NAN"
+include "_poly_common.pxi"
 
 DEF MAX_DIMS = 64
 
@@ -94,7 +87,7 @@ def evaluate(double_or_complex[:,:,::1] c,
         if i < 0:
             # xval was nan etc
             for jp in range(c.shape[2]):
-                out[ip, jp] = nan
+                out[ip, jp] = libc.math.NAN
             continue
         else:
             interval = i
@@ -232,7 +225,7 @@ def evaluate_nd(double_or_complex[:,:,::1] c,
         if out_of_range:
             # xval was nan etc
             for jp in range(c.shape[2]):
-                out[ip, jp] = nan
+                out[ip, jp] = libc.math.NAN
             continue
 
         pos = 0
@@ -382,7 +375,7 @@ def integrate(double_or_complex[:,:,::1] c,
 
 
     if start_interval < 0 or end_interval < 0:
-        out[:] = nan
+        out[:] = libc.math.NAN
         return
 
     # evaluate
@@ -465,7 +458,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
 
     workspace = NULL
 
-    last_root = nan
+    last_root = libc.math.NAN
 
     cdef bint ascending = x[x.shape[0] - 1] >= x[0]
 
@@ -500,7 +493,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
                         # A real interval
                         cur_roots.append(x[interval])
                         cur_roots.append(np.nan)
-                        last_root = nan
+                        last_root = libc.math.NAN
                     continue
                 elif k < -1:
                     # An error occurred
@@ -562,91 +555,6 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
         libc.stdlib.free(wi)
 
     return roots
-
-
-@cython.wraparound(False)
-@cython.boundscheck(False)
-@cython.cdivision(True)
-cdef int find_interval_ascending(const double *x,
-                                 size_t nx,
-                                 double xval,
-                                 int prev_interval=0,
-                                 bint extrapolate=1) nogil:
-    """
-    Find an interval such that x[interval] <= xval < x[interval+1]. Assuming
-    that x is sorted in the ascending order.
-    If xval < x[0], then interval = 0, if xval > x[-1] then interval = n - 2.
-
-    Parameters
-    ----------
-    x : array of double, shape (m,)
-        Piecewise polynomial breakpoints sorted in ascending order.
-    xval : double
-        Point to find.
-    prev_interval : int, optional
-        Interval where a previous point was found.
-    extrapolate : bint, optional
-        Whether to return the last of the first interval if the
-        point is out-of-bounds.
-
-    Returns
-    -------
-    interval : int
-        Suitable interval or -1 if nan.
-
-    """
-    cdef int interval, high, low, mid
-    cdef double a, b
-
-    a = x[0]
-    b = x[nx-1]
-
-    interval = prev_interval
-    if interval < 0 or interval >= nx:
-        interval = 0
-
-    if not (a <= xval <= b):
-        # Out-of-bounds (or nan)
-        if xval < a and extrapolate:
-            # below
-            interval = 0
-        elif xval > b and extrapolate:
-            # above
-            interval = nx - 2
-        else:
-            # nan or no extrapolation
-            interval = -1
-    elif xval == b:
-        # Make the interval closed from the right
-        interval = nx - 2
-    else:
-        # Find the interval the coordinate is in
-        # (binary search with locality)
-        if xval >= x[interval]:
-            low = interval
-            high = nx - 2
-        else:
-            low = 0
-            high = interval
-
-        if xval < x[low+1]:
-            high = low
-
-        while low < high:
-            mid = (high + low)//2
-            if xval < x[mid]:
-                # mid < high
-                high = mid
-            elif xval >= x[mid + 1]:
-                low = mid + 1
-            else:
-                # x[mid] <= xval < x[mid+1]
-                low = mid
-                break
-
-        interval = low
-
-    return interval
 
 
 @cython.wraparound(False)
@@ -997,7 +905,7 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w, double y=0):
         for i in range(c.shape[1]):
             for j in range(c.shape[2]):
                 for k in range(c.shape[0]):
-                    w[k,i,j] = nan
+                    w[k,i,j] = libc.math.NAN
 
                 nroots = croots_poly1(c, y, i, j, wr, wi, &workspace)
 
@@ -1208,7 +1116,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
         if i < 0:
             # xval was nan etc
             for jp in range(c.shape[2]):
-                out[ip, jp] = nan
+                out[ip, jp] = libc.math.NAN
             continue
         else:
             interval = i

@@ -204,13 +204,13 @@ double ndtr(double a)
 
     if (cephes_isnan(a)) {
         sf_error("ndtr", SF_ERROR_DOMAIN, NULL);
-        return NPY_NAN;
+        return NAN;
     }
 
-    x = a * NPY_SQRT1_2;
+    x = a * M_SQRT1_2;
     z = fabs(x);
 
-    if (z < NPY_SQRT1_2) {
+    if (z < M_SQRT1_2) {
         y = 0.5 + 0.5 * erf(x);
     }
     else {
@@ -230,7 +230,7 @@ double erfc(double a)
 
     if (cephes_isnan(a)) {
         sf_error("erfc", SF_ERROR_DOMAIN, NULL);
-        return NPY_NAN;
+        return NAN;
     }
 
     if (a < 0.0) {
@@ -288,7 +288,7 @@ double erf(double x)
 
     if (cephes_isnan(x)) {
         sf_error("erf", SF_ERROR_DOMAIN, NULL);
-        return NPY_NAN;
+        return NAN;
     }
 
     if (x < 0.0) {

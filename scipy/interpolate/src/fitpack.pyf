@@ -140,44 +140,43 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
        integer intent(hide) :: ier
      end subroutine splder
 
-     function splint(t,n,c,k,a,b,wrk)
-       ! iy = splint(t,c,k,a,b)
+     function splint(t,n,c,nc,k,a,b,wrk)
+       ! iy, wrk = splint(t,c,k,a,b)
        threadsafe
        real*8 dimension(n),intent(in) :: t
        integer intent(hide),depend(t) :: n=len(t)
-       real*8 dimension(n),depend(n),check(len(c)==n) :: c
+       real*8 dimension(nc), intent(in), depend(n,k,t),check(len(c)>=n-k-1) :: c
+       integer intent(hide), depend(c) :: nc=len(c)
        integer intent(in) :: k
        real*8 intent(in) :: a
        real*8 intent(in) :: b
-       real*8 dimension(n),depend(n),intent(cache,hide) :: wrk
+       real*8 dimension(n),depend(n),intent(cache,hide,out) :: wrk
        real*8 :: splint
      end function splint
 
-     subroutine sproot(t,n,c,zero,mest,m,ier)
+     subroutine sproot(t,n,c,nc,zero,mest,m,ier)
        ! zero,m,ier = sproot(t,c[,mest])
        threadsafe
        real*8 dimension(n),intent(in) :: t
        integer intent(hide),depend(t),check(n>=8) :: n=len(t)
-       real*8 dimension(n),depend(n),check(len(c)==n) :: c
+       ! Since sproot is only implemented for cubic splines, so k=3.
+       real*8 dimension(nc), intent(in), depend(n,k,t),check(len(c)>=n-3-1) :: c
+       integer intent(hide), depend(c) :: nc=len(c)
        real*8 dimension(mest),intent(out),depend(mest) :: zero
        integer optional,intent(in),depend(n) :: mest=3*(n-7)
        integer intent(out) :: m
        integer intent(out) :: ier
      end subroutine sproot
 
-     subroutine spalde(t,n,c,k,x,d,ier)
-       ! d,ier = spalde(t,c,k,x)
-
+     subroutine spalde(t,n,c,k1,x,d,ier)
+       ! d,ier = spalde(t,c,k1,x)
        threadsafe
-       callprotoargument double*,F_INT*,double*,F_INT*,double*,double*,F_INT*
-       callstatement {int k1=k+1; (*f2py_func)(t,&n,c,&k1,&x,d,&ier); }
-
        real*8 dimension(n) :: t
        integer intent(hide),depend(t) :: n=len(t)
        real*8 dimension(n),depend(n),check(len(c)==n) :: c
-       integer intent(in) :: k
+       integer intent(in) :: k1
        real*8 intent(in) :: x
-       real*8 dimension(k+1),intent(out),depend(k) :: d
+       real*8 dimension(k1),intent(out),depend(k1) :: d
        integer intent(out) :: ier
      end subroutine spalde
 
@@ -402,6 +401,24 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
        integer intent(hide),depend(mx,my) :: kwrk=mx+my
        integer intent(out) :: ier
      end subroutine parder
+
+     subroutine pardtc(tx,nx,ty,ny,c,kx,ky,nux,nuy,newc,ier)
+       ! newc,ier = pardtc(tx,ty,c,kx,ky,nux,nuy)
+       threadsafe
+       real*8 dimension(nx),intent(in) :: tx
+       integer intent(hide),depend(tx) :: nx=len(tx)
+       real*8 dimension(ny),intent(in) :: ty
+       integer intent(hide),depend(ty) :: ny=len(ty)
+       real*8 intent(in),dimension((nx-kx-1)*(ny-ky-1)),&
+            depend(nx,ny,kx,ky),check(len(c)==(nx-kx-1)*(ny-ky-1)) :: c
+       integer intent(in),check((1 <= kx) && (kx <= 5)) :: kx
+       integer intent(in),check((1 <= ky) && (ky <= 5)) :: ky
+       integer intent(in),depend(kx),check((0 <= nux) && (nux < kx)) :: nux
+       integer intent(in),depend(ky),check((0 <= nuy) && (nux < ky)) :: nuy
+       real*8 dimension((nx-kx-1)*(ny-ky-1)),&
+            depend(nx,ny,nux,nuy,kx,ky),intent(out) :: newc
+       integer intent(out) :: ier
+     end subroutine pardtc
 
      subroutine bispeu(tx,nx,ty,ny,c,kx,ky,x,y,z,m,wrk,lwrk,ier)
        ! z,ier = bispeu(tx,ty,c,kx,ky,x,y)
@@ -667,7 +684,7 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
        real*8 optional :: r1
        real*8 optional,check(0.0<=s) :: s = 0.0
        integer intent(hide),depend(mu),check(nuest>=8) &
-            :: nuest = mu+6
+            :: nuest = mu+6+2
        integer intent(hide),depend(mv),check(nvest>=8) &
             :: nvest = mv+7
        integer intent(out) :: nu

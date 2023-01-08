@@ -1,28 +1,45 @@
 # cython: language_level=3
 cimport cython
-cimport numpy as cnp
 import numpy as np
-
-ctypedef fused np_numeric_t:
-    cnp.int8_t
-    cnp.int16_t
-    cnp.int32_t
-    cnp.int64_t
-    cnp.uint8_t
-    cnp.uint16_t
-    cnp.uint32_t
-    cnp.uint64_t
-    cnp.float32_t
-    cnp.float64_t
-    cnp.longdouble_t
-    cnp.complex64_t
-    cnp.complex128_t
-
-ctypedef fused np_complex_numeric_t:
-    cnp.complex64_t
-    cnp.complex128_t
+from scipy.linalg._cythonized_array_utils cimport (
+    lapack_t,
+	np_complex_numeric_t,
+	np_numeric_t
+    )
 
 __all__ = ['bandwidth', 'issymmetric', 'ishermitian']
+
+
+# ====================== swap_c_and_f_layout : s, d, c, z ====================
+@cython.cdivision(True)
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.initializedcheck(False)
+cdef void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c, int n) nogil:
+    """Recursive matrix transposition for square arrays"""
+    cdef int i, j, ith_row, r2, c2
+    cdef lapack_t *bb=b
+    cdef lapack_t *aa=a
+    if r < 16:
+        for j in range(c):
+            ith_row = 0
+            for i in range(r):
+            # Basically b[i*n+j] = a[j*n+i] without index math
+                bb[ith_row] = aa[i]
+                ith_row += n
+            aa += n
+            bb += 1
+    else:
+        # If tall
+        if (r > c):
+            r2 = r//2
+            swap_c_and_f_layout(a, b, r2, c, n)
+            swap_c_and_f_layout(a + r2, b+(r2)*n, r-r2, c, n)
+        else:  # Nope
+            c2 = c//2
+            swap_c_and_f_layout(a, b, r, c2, n);
+            swap_c_and_f_layout(a+(c2)*n, b+c2, r, c-c2, n)
+# ============================================================================
 
 
 @cython.embedsignature(True)
@@ -42,6 +59,12 @@ def bandwidth(a):
         say for N rows (N-1) means that side is full. Same example applies
         to the upper triangular part with (M-1).
 
+    Raises
+    ------
+    TypeError
+        If the dtype of the array is not supported, in particular, NumPy
+        float16, float128 and complex256 dtypes.
+
     Notes
     -----
     This helper function simply runs over the array looking for the nonzero
@@ -58,14 +81,9 @@ def bandwidth(a):
     that band is occupied. Therefore, a completely dense matrix scan cost is
     in the the order of n.
 
-    Raises
-    ------
-    TypeError
-        If the dtype of the array is not supported, in particular, NumPy
-        float16, float128 and complex256 dtypes.
-
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import bandwidth
     >>> A = np.array([[3., 0., 0., 0., 0.],
     ...               [0., 4., 0., 0., 0.],
@@ -190,6 +208,16 @@ def issymmetric(a, atol=None, rtol=None):
     sym : bool
         Returns True if the array symmetric.
 
+    Raises
+    ------
+    TypeError
+        If the dtype of the array is not supported, in particular, NumPy
+        float16, float128 and complex256 dtypes for exact comparisons.
+
+    See Also
+    --------
+    ishermitian : Check if a square 2D array is Hermitian
+
     Notes
     -----
     For square empty arrays the result is returned True by convention. Complex
@@ -209,18 +237,9 @@ def issymmetric(a, atol=None, rtol=None):
     array. If one of ``atol`` or ``rtol`` given the other one is automatically
     set to zero.
 
-    See Also
-    --------
-    ishermitian : Check if a square 2D array is Hermitian
-
-    Raises
-    ------
-    TypeError
-        If the dtype of the array is not supported, in particular, NumPy
-        float16, float128 and complex256 dtypes for exact comparisons.
-
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import issymmetric
     >>> A = np.arange(9).reshape(3, 3)
     >>> A = A + A.T
@@ -319,6 +338,16 @@ def ishermitian(a, atol=None, rtol=None):
     her : bool
         Returns True if the array Hermitian.
 
+    Raises
+    ------
+    TypeError
+        If the dtype of the array is not supported, in particular, NumPy
+        float16, float128 and complex256 dtypes.
+
+    See Also
+    --------
+    issymmetric : Check if a square 2D array is symmetric
+
     Notes
     -----
     For square empty arrays the result is returned True by convention.
@@ -334,18 +363,9 @@ def ishermitian(a, atol=None, rtol=None):
     array. If one of ``atol`` or ``rtol`` given the other one is automatically
     set to zero.
 
-    Raises
-    ------
-    TypeError
-        If the dtype of the array is not supported, in particular, NumPy
-        float16, float128 and complex256 dtypes.
-
-    See Also
-    --------
-    issymmetric : Check if a square 2D array is symmetric
-
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import ishermitian
     >>> A = np.arange(9).reshape(3, 3)
     >>> A = A + A.T

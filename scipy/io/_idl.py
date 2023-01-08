@@ -795,8 +795,9 @@ def readsav(file_name, idict=None, python_dict=False,
 
             # Check if the end of the file has been reached
             if RECTYPE_DICT[rectype] == 'END_MARKER':
-                fout.write(struct.pack('>I', int(nextrec) % 2**32))
-                fout.write(struct.pack('>I', int((nextrec - (nextrec % 2**32)) / 2**32)))
+                modval = np.int64(2**32)
+                fout.write(struct.pack('>I', int(nextrec) % modval))
+                fout.write(struct.pack('>I', int((nextrec - (nextrec % modval)) / modval)))
                 fout.write(unknown)
                 break
 
