@@ -8994,6 +8994,8 @@ class truncpareto_gen(rv_continuous):
             return b / (b-n) * (c**b - c**n) / (c**b - 1)
 
     def _fitstart(self, data):
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
         b, loc, scale = pareto.fit(data)
         c = (max(data) - loc)/scale
         return b, c, loc, scale

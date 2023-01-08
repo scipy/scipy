@@ -3,11 +3,11 @@ import numpy as np
 
 def _validate_1d(a, name):
     if np.ndim(a) != 1:
-        raise ValueError(f'{name} must be a one-dimensional sequence')
+        raise ValueError(f'`{name}` must be a one-dimensional sequence.')
     if np.isnan(a).any():
-        raise ValueError(f'{name} must not contain nan.')
+        raise ValueError(f'`{name}` must not contain nan.')
     if np.isinf(a).any():
-        raise ValueError(f'{name} must contain only finite values')
+        raise ValueError(f'`{name}` must contain only finite values.')
 
 
 def _validate_intervals(intervals):
@@ -16,17 +16,17 @@ def _validate_intervals(intervals):
         # The input was a sequence with length 0.
         intervals = intervals.reshape((0, 2))
     if intervals.ndim != 2 or intervals.shape[-1] != 2:
-        raise ValueError('intervals must be a two-dimensional array'
-                         ' with shape (m, 2)')
+        raise ValueError('`intervals` must be a two-dimensional array'
+                         ' with shape (m, 2).')
 
     if np.isnan(intervals).any():
-        raise ValueError('intervals must not contain nan.')
+        raise ValueError('`intervals` must not contain nan.')
     if np.isinf(intervals).all(axis=1).any():
-        raise ValueError('In each row in intervals, both values must not'
+        raise ValueError('In each row in `intervals`, both values must not'
                          ' be infinite.')
     if (intervals[:, 0] > intervals[:, 1]).any():
-        raise ValueError('In each row of intervals, the left value must not'
-                         ' exceed the right value')
+        raise ValueError('In each row of `intervals`, the left value must not'
+                         ' exceed the right value.')
 
     uncensored = intervals[:, 0] == intervals[:, 1]
     left_censored = np.isinf(intervals[:, 0])
@@ -44,14 +44,14 @@ def _validate_intervals(intervals):
 def _validate_x_censored(x, censored):
     x = np.asarray(x)
     if x.ndim != 1:
-        raise ValueError('x must be one-dimensional.')
+        raise ValueError('`x` must be one-dimensional.')
     censored = np.asarray(censored)
     if censored.ndim != 1:
-        raise ValueError('censored must be one-dimensional')
+        raise ValueError('`censored` must be one-dimensional.')
     if (~np.isfinite(x)).any():
-        raise ValueError('x must not contain nan or inf.')
+        raise ValueError('`x` must not contain nan or inf.')
     if censored.size != x.size:
-        raise ValueError('x and censored must have the same length.')
+        raise ValueError('`x` and `censored` must have the same length.')
     return x, censored.astype(bool)
 
 
@@ -66,14 +66,15 @@ class CensoredData:
     `CensoredData` can not be passed to methods such as ``pdf`` and
     ``cdf``.
 
-    Data is *censored* when the true value is unknown, but it has
-    a known upper or lower bound.  The conventional terminology is:
+    An observation is said to be *censored* when the precise value is unknown,
+    but it has a known upper and/or lower bound.  The conventional terminology
+    is:
 
-    * left-censored: a data point is below a certain value but it is
+    * left-censored: an observation is below a certain value but it is
       unknown by how much.
-    * right-censored: a data point is above a certain value but it is
+    * right-censored: an observation is above a certain value but it is
       unknown by how much.
-    * interval-censored: a data point is somewhere on an interval between
+    * interval-censored: an observation lies somewhere on an interval between
       two values.
 
     Left-, right-, and interval-censored data can be represented by
@@ -105,20 +106,20 @@ class CensoredData:
     Notes
     -----
     In the input array `intervals`, the lower bound of the interval may
-    be ``-inf``, and the upper bound may be ``inf`` (but both can't be
-    infinite). When the lower bound is ``-inf``, the row represents a left
+    be ``-inf``, and the upper bound may be ``inf``, but at least one must be
+    finite). When the lower bound is ``-inf``, the row represents a left
     censored observation, and when the upper bound is ``inf``, the row
     represents a right-censored observation.  If the length of an interval
     is 0 (i.e. ``intervals[k, 0] == intervals[k, 1]``, the observation is
-    treated as uncensored.  This means one can represent all the types
+    treated as uncensored.  Consequently, one can represent all the types
     of censored and uncensored data in ``intervals``, but it is generally
     more convenient to use `x`, `left` and `right` for uncensored,
-    left-censored and right-censord observations, respectively.
+    left-censored and right-censored observations, respectively.
 
     Examples
     --------
     In the most general case, a censored data set may contain values that
-    are left-censored, right-censored, interval-censored and not censored.
+    are left-censored, right-censored, interval-censored, and uncensored.
     For example, here we create a data set with five observations.  Two
     are uncensored (values 1 and 1.5), one is a left-censored observation
     of 0, one is a right-censored observation of 10 and one is
@@ -127,6 +128,16 @@ class CensoredData:
     >>> from scipy.stats import CensoredData
     >>> data = CensoredData(x=[1, 1.5], left=[0], right=[10],
     ...                     intervals=[[2, 3]])
+    >>> print(data)
+    CensoredData(5 values: 2 not censored, 1 left-censored,
+    1 right-censored, 1 interval-censored)
+
+    Equivalently,
+    >>> data = CensoredData(intervals=[[1, 1],
+    ...                                [1.5, 1.5],
+    ...                                [-np.inf, 0],
+    ...                                [10, np.inf],
+    ...                                [2, 3]])
     >>> print(data)
     CensoredData(5 values: 2 not censored, 1 left-censored,
     1 right-censored, 1 interval-censored)
@@ -218,7 +229,7 @@ class CensoredData:
         return f'CensoredData({n} values: ' + ', '.join(parts) + ')'
 
     # This is not a complete implementation of the arithmetic operators.
-    # All we need is substracting a scalar and dividing by a scalar.
+    # All we need is subtracting a scalar and dividing by a scalar.
 
     def __sub__(self, other):
         return CensoredData(x=self._x - other,

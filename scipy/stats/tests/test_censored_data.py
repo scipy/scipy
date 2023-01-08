@@ -9,8 +9,6 @@ from scipy.stats import CensoredData
 class TestCensoredData:
 
     def test_basic(self):
-        left = [-np.inf, 1, 2, 5]
-        right = [0, 1, 3, np.inf]
         x = [1]
         left = [0]
         right = [2, 5]
@@ -90,13 +88,13 @@ class TestCensoredData:
 
     @pytest.mark.parametrize('func', [CensoredData.left_censored,
                                       CensoredData.right_censored])
-    def test_invalid_left_censored_args(self, func):
-        with pytest.raises(ValueError, match='x must be one-dimensional'):
+    def test_invalid_lef_right_censored_args(self, func):
+        with pytest.raises(ValueError, match='`x` must be one-dimensional'):
             func([[1, 2, 3]], [0, 1, 1])
         with pytest.raises(ValueError,
-                           match='censored must be one-dimensional'):
+                           match='`censored` must be one-dimensional'):
             func([1, 2, 3], [[0, 1, 1]])
-        with pytest.raises(ValueError, match='x must not contain'):
+        with pytest.raises(ValueError, match='`x` must not contain'):
             func([1, 2, np.nan], [0, 1, 1])
         with pytest.raises(ValueError, match='must have the same length'):
             func([1, 2, 3], [0, 0, 1, 1])
