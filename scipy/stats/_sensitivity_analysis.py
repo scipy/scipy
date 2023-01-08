@@ -588,10 +588,10 @@ def sobol_indices(
             )
 
         def funcAB(AB):
-             d, d, n = AB.shape
-             AB = np.moveaxis(AB, 0, -1).reshape(d, n*d)
-             f_AB = func(AB)
-             return np.moveaxis(f_AB.reshape((-1, n, d)), -1, 0)
+            d, d, n = AB.shape
+            AB = np.moveaxis(AB, 0, -1).reshape(d, n*d)
+            f_AB = func(AB)
+            return np.moveaxis(f_AB.reshape((-1, n, d)), -1, 0)
 
         f_B, f_AB = np.atleast_2d(func(B), funcAB(AB))
     else:
