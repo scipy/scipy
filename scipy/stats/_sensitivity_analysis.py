@@ -442,7 +442,7 @@ def sobol_indices(
     ...     random_state=rng
     ... )
     >>> indices.first_order
-    array([[0.31499073, 0.44011056, 0.00167054]])
+    array([[3.14996175e-01, 4.40110556e-01, 2.17329918e-04]])
     >>> indices.total_order
     array([[0.55508078, 0.43995732, 0.23803014]])
 
