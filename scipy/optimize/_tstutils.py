@@ -393,7 +393,7 @@ def aps15_fpp(x, n):
 # - a function and its two derivatives,
 # - additional arguments,
 # - a bracket enclosing a root,
-# - the order of differentiability of the the function on this interval
+# - the order of differentiability of the function on this interval
 # - a starting value for methods which don't require a bracket
 # - the root (inside the bracket)
 # - an Identifier of the test case
@@ -487,7 +487,7 @@ _APS_TESTS = [
     [aps12_f, aps12_fp, aps12_fpp, (29,), [1, 100], np.inf, 1.1, 29, "aps.12.16"],
     [aps12_f, aps12_fp, aps12_fpp, (31,), [1, 100], np.inf, 1.1, 31, "aps.12.17"],
     [aps12_f, aps12_fp, aps12_fpp, (33,), [1, 100], np.inf, 1.1, 33, "aps.12.18"],
-    [aps13_f, aps13_fp, aps13_fpp, (), [-1, 4], np.inf, 1.5, 1.54720911915117165e-02, "aps.13.00"],
+    [aps13_f, aps13_fp, aps13_fpp, (), [-1, 4], np.inf, 1.5, 0, "aps.13.00"],
     [aps14_f, aps14_fp, aps14_fpp, (1,), [-1000, np.pi / 2], 0, 1, 6.23806518961612433e-01, "aps.14.00"],
     [aps14_f, aps14_fp, aps14_fpp, (2,), [-1000, np.pi / 2], 0, 1, 6.23806518961612433e-01, "aps.14.01"],
     [aps14_f, aps14_fp, aps14_fpp, (3,), [-1000, np.pi / 2], 0, 1, 6.23806518961612433e-01, "aps.14.02"],
@@ -598,7 +598,7 @@ def cplx02_fpp(z, a):
 # Each "complex" test case has
 # - a function and its two derivatives,
 # - additional arguments,
-# - the order of differentiability of the the function on this interval
+# - the order of differentiability of the function on this interval
 # - two starting values x0 and x1
 # - the root
 # - an Identifier of the test case

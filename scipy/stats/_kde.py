@@ -22,17 +22,16 @@ import warnings
 
 # SciPy imports.
 from scipy import linalg, special
-from scipy.special import logsumexp
 from scipy._lib._util import check_random_state
 
-from numpy import (asarray, atleast_2d, reshape, zeros, newaxis, dot, exp, pi,
+from numpy import (asarray, atleast_2d, reshape, zeros, newaxis, exp, pi,
                    sqrt, ravel, power, atleast_1d, squeeze, sum, transpose,
                    ones, cov)
 import numpy as np
 
 # Local imports.
 from . import _mvn
-from ._stats import gaussian_kernel_estimate
+from ._stats import gaussian_kernel_estimate, gaussian_kernel_estimate_log
 
 
 __all__ = ['gaussian_kde']
@@ -210,6 +209,16 @@ class gaussian_kde:
                 raise ValueError("`weights` input should be of length n")
             self._neff = 1/sum(self._weights**2)
 
+        # This can be converted to a warning once gh-10205 is resolved
+        if self.d > self.n:
+            msg = ("Number of dimensions is greater than number of samples. "
+                   "This results in a singular data covariance matrix, which "
+                   "cannot be treated using the algorithms implemented in "
+                   "`gaussian_kde`. Note that `gaussian_kde` interprets each "
+                   "*column* of `dataset` to be a point; consider transposing "
+                   "the input to `dataset`.")
+            raise ValueError(msg)
+
         try:
             self.set_bandwidth(bw_method=bw_method)
         except linalg.LinAlgError as e:
@@ -255,18 +264,7 @@ class gaussian_kde:
                     self.d)
                 raise ValueError(msg)
 
-        output_dtype = np.common_type(self.covariance, points)
-        itemsize = np.dtype(output_dtype).itemsize
-        if itemsize == 4:
-            spec = 'float'
-        elif itemsize == 8:
-            spec = 'double'
-        elif itemsize in (12, 16):
-            spec = 'long double'
-        else:
-            raise TypeError('%s has unexpected item size %d' %
-                            (output_dtype, itemsize))
-
+        output_dtype, spec = _get_output_dtype(self.covariance, points)
         result = gaussian_kernel_estimate[spec](
             self.dataset.T, self.weights[:, None],
             points.T, self.cho_cov, output_dtype)
@@ -577,13 +575,13 @@ class gaussian_kde:
         covariance_factor().
         """
         self.factor = self.covariance_factor()
-        # Cache covariance and permuted cholesky decomp of permuted covariance
+        # Cache covariance and Cholesky decomp of covariance
         if not hasattr(self, '_data_cho_cov'):
             self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
                                                bias=False,
                                                aweights=self.weights))
-            self._data_cho_cov = linalg.cholesky(
-                self._data_covariance[::-1, ::-1]).T[::-1, ::-1]
+            self._data_cho_cov = linalg.cholesky(self._data_covariance,
+                                                 lower=True)
 
         self.covariance = self._data_covariance * self.factor**2
         self.cho_cov = (self._data_cho_cov * self.factor).astype(np.float64)
@@ -627,30 +625,16 @@ class gaussian_kde:
                 points = reshape(points, (self.d, 1))
                 m = 1
             else:
-                msg = "points have dimension %s, dataset has dimension %s" % (d,
-                    self.d)
+                msg = (f"points have dimension {d}, "
+                       f"dataset has dimension {self.d}")
                 raise ValueError(msg)
 
-        if m >= self.n:
-            # there are more points than data, so loop over data
-            energy = np.empty((self.n, m), dtype=float)
-            for i in range(self.n):
-                diff = self.dataset[:, i, newaxis] - points
-                tdiff = dot(self.inv_cov, diff)
-                energy[i] = sum(diff*tdiff, axis=0)
-            log_to_sum = 2.0 * np.log(self.weights) - self.log_det - energy.T
-            result = logsumexp(0.5 * log_to_sum, axis=1)
-        else:
-            # loop over points
-            result = np.empty((m,), dtype=float)
-            for i in range(m):
-                diff = self.dataset - points[:, i, newaxis]
-                tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff * tdiff, axis=0)
-                log_to_sum = 2.0 * np.log(self.weights) - self.log_det - energy
-                result[i] = logsumexp(0.5 * log_to_sum)
+        output_dtype, spec = _get_output_dtype(self.covariance, points)
+        result = gaussian_kernel_estimate_log[spec](
+            self.dataset.T, self.weights[:, None],
+            points.T, self.cho_cov, output_dtype)
 
-        return result
+        return result[:, 0]
 
     def marginal(self, dimensions):
         """Return a marginal KDE distribution
@@ -716,3 +700,26 @@ class gaussian_kde:
         except AttributeError:
             self._neff = 1/sum(self.weights**2)
             return self._neff
+
+
+def _get_output_dtype(covariance, points):
+    """
+    Calculates the output dtype and the "spec" (=C type name).
+
+    This was necessary in order to deal with the fused types in the Cython
+    routine `gaussian_kernel_estimate`. See gh-10824 for details.
+    """
+    output_dtype = np.common_type(covariance, points)
+    itemsize = np.dtype(output_dtype).itemsize
+    if itemsize == 4:
+        spec = 'float'
+    elif itemsize == 8:
+        spec = 'double'
+    elif itemsize in (12, 16):
+        spec = 'long double'
+    else:
+        raise ValueError(
+                f"{output_dtype} has unexpected item size: {itemsize}"
+            )
+
+    return output_dtype, spec

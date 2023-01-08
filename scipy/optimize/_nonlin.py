@@ -15,7 +15,8 @@ from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
-    'diagbroyden', 'excitingmixing', 'newton_krylov']
+    'diagbroyden', 'excitingmixing', 'newton_krylov',
+    'BroydenFirst', 'KrylovJacobian', 'InverseJacobian']
 
 #------------------------------------------------------------------------------
 # Utility functions
@@ -814,7 +815,7 @@ class BroydenFirst(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='broyden1'`` in particular.
+           functions. See ``method='broyden1'`` in particular.
 
     Notes
     -----
@@ -928,7 +929,7 @@ class BroydenSecond(BroydenFirst):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='broyden2'`` in particular.
+           functions. See ``method='broyden2'`` in particular.
 
     Notes
     -----
@@ -1000,7 +1001,7 @@ class Anderson(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='anderson'`` in particular.
+           functions. See ``method='anderson'`` in particular.
 
     References
     ----------
@@ -1155,7 +1156,7 @@ class DiagBroyden(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='diagbroyden'`` in particular.
+           functions. See ``method='diagbroyden'`` in particular.
 
     Examples
     --------
@@ -1220,7 +1221,7 @@ class LinearMixing(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='linearmixing'`` in particular.
+           functions. See ``method='linearmixing'`` in particular.
 
     """
 
@@ -1261,7 +1262,7 @@ class ExcitingMixing(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='excitingmixing'`` in particular.
+           functions. See ``method='excitingmixing'`` in particular.
 
     Parameters
     ----------
@@ -1338,8 +1339,8 @@ class KrylovJacobian(Jacobian):
         Note that you can use also inverse Jacobians as (adaptive)
         preconditioners. For example,
 
-        >>> from scipy.optimize.nonlin import BroydenFirst, KrylovJacobian
-        >>> from scipy.optimize.nonlin import InverseJacobian
+        >>> from scipy.optimize import BroydenFirst, KrylovJacobian
+        >>> from scipy.optimize import InverseJacobian
         >>> jac = BroydenFirst()
         >>> kjac = KrylovJacobian(inner_M=InverseJacobian(jac))
 
@@ -1359,7 +1360,7 @@ class KrylovJacobian(Jacobian):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='krylov'`` in particular.
+           functions. See ``method='krylov'`` in particular.
     scipy.sparse.linalg.gmres
     scipy.sparse.linalg.lgmres
 

@@ -5,10 +5,9 @@
 # automatically adds `axis` and `nan_policy` arguments to a function.
 
 import numpy as np
-import scipy.stats
-import scipy.stats._stats_py
 from functools import wraps
 from scipy._lib._docscrape import FunctionDoc, Parameter
+from scipy._lib._util import _contains_nan
 import inspect
 
 
@@ -310,7 +309,7 @@ masked array with ``mask=False``.""").split('\n')
 def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                              n_samples=1, paired=False,
                              result_to_tuple=None, too_small=0,
-                             n_outputs=2, kwd_samples=[]):
+                             n_outputs=2, kwd_samples=[], override=None):
     """Factory for a wrapper that adds axis/nan_policy params to a function.
 
     Parameters
@@ -357,7 +356,18 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         example, `gmean` accepts as its first argument a sample `a` but
         also `weights` as a fourth, optional keyword argument. In this case, we
         use `n_samples=1` and kwd_samples=['weights'].
+    override : dict, default: {'vectorization': False, 'nan_propagation': True}
+        Pass a dictionary with ``'vectorization': True`` to ensure that the
+        decorator overrides the function's behavior for multimensional input.
+        Use ``'nan_propagation': False`` to ensure that the decorator does not
+        override the function's behavior for ``nan_policy='propagate'``.
+        (See `scipy.stats.mode`, for example.)
     """
+    # Specify which existing behaviors the decorator must override
+    temp = override or {}
+    override = {'vectorization': False,
+                'nan_propagation': True}
+    override.update(temp)
 
     if result_to_tuple is None:
         def result_to_tuple(res):
@@ -435,6 +445,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             samples = [np.atleast_1d(kwds.pop(param))
                        for param in (params[:n_samp] + kwd_samp)]
             vectorized = True if 'axis' in params else False
+            vectorized = vectorized and not override['vectorization']
             axis = kwds.pop('axis', default_axis)
             nan_policy = kwds.pop('nan_policy', 'propagate')
             keepdims = kwds.pop("keepdims", False)
@@ -451,7 +462,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     # all the dimensions are reduced.
                     n_dims = np.max([sample.ndim for sample in samples])
                     reduced_axes = tuple(range(n_dims))
-                samples = [sample.ravel() for sample in samples]
+                samples = [np.asarray(sample.ravel()) for sample in samples]
             else:
                 samples = _broadcast_arrays(samples, axis=axis)
                 axis = np.atleast_1d(axis)
@@ -475,15 +486,12 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 # Addresses nan_policy == "raise"
                 contains_nans = []
                 for sample in samples:
-                    contains_nan, _ = (
-                        scipy.stats._stats_py._contains_nan(sample, nan_policy))
+                    contains_nan, _ = _contains_nan(sample, nan_policy)
                     contains_nans.append(contains_nan)
 
                 # Addresses nan_policy == "propagate"
-                # Consider adding option to let function propagate nans, but
-                # currently the hypothesis tests this is applied to do not
-                # propagate nans in a sensible way
-                if any(contains_nans) and nan_policy == 'propagate':
+                if any(contains_nans) and (nan_policy == 'propagate'
+                                           and override['nan_propagation']):
                     res = np.full(n_out, np.nan)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
@@ -523,8 +531,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             x = _broadcast_concatenate(samples, axis)
 
             # Addresses nan_policy == "raise"
-            contains_nan, _ = (
-                scipy.stats._stats_py._contains_nan(x, nan_policy))
+            contains_nan, _ = _contains_nan(x, nan_policy)
 
             if vectorized and not contains_nan and not sentinel:
                 res = hypotest_fun_out(*samples, axis=axis, **kwds)
@@ -544,7 +551,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             # Addresses nan_policy == "propagate"
-            elif contains_nan and nan_policy == 'propagate':
+            elif (contains_nan and nan_policy == 'propagate'
+                  and override['nan_propagation']):
                 def hypotest_fun(x):
                     if np.isnan(x).any():
                         return np.full(n_out, np.nan)

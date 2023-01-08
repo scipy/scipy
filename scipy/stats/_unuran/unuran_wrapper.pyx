@@ -1,17 +1,11 @@
 # cython: language_level=3
 
-
-# Expression below is replaced by ``DEF NPY_OLD = True`` for NumPy < 1.19
-# and ``DEF NPY_OLD = False`` for NumPy >= 1.19.
-DEF NPY_OLD = isNPY_OLD
-
-
 cimport cython
 from cpython.object cimport PyObject
 cimport numpy as np
-IF not NPY_OLD:
-    from cpython.pycapsule cimport PyCapsule_IsValid, PyCapsule_GetPointer
-    from numpy.random cimport bitgen_t
+from cpython.pycapsule cimport PyCapsule_IsValid, PyCapsule_GetPointer
+from numpy.random cimport bitgen_t
+
 from scipy._lib.ccallback cimport ccallback_t
 from scipy._lib.messagestream cimport MessageStream
 from .unuran cimport *
@@ -45,6 +39,7 @@ cdef extern from "unuran_callback.h":
 
     double pdf_thunk(double x, const unur_distr *distr) nogil
     double dpdf_thunk(double x, const unur_distr *distr) nogil
+    double logpdf_thunk(double x, const unur_distr *distr) nogil
     double cont_cdf_thunk(double x, const unur_distr *distr) nogil
     double pmf_thunk(int x, const unur_distr *distr) nogil
     double discr_cdf_thunk(int x, const unur_distr *distr) nogil
@@ -65,45 +60,25 @@ class UNURANError(RuntimeError):
 
 ctypedef double (*URNG_FUNCT)(void *) nogil
 
-IF not NPY_OLD:
-    cdef object get_numpy_rng(object seed = None):
-        """
-        Create a NumPy Generator object from a given seed.
+cdef object get_numpy_rng(object seed = None):
+    """
+    Create a NumPy Generator object from a given seed.
 
-        Parameters
-        ----------
-        seed : object, optional
-            Seed for the generator. If None, no seed is set. The seed can be
-            an integer, Generator, or RandomState.
+    Parameters
+    ----------
+    seed : object, optional
+        Seed for the generator. If None, no seed is set. The seed can be
+        an integer, Generator, or RandomState.
 
-        Returns
-        -------
-        numpy_rng : object
-            An instance of NumPy's Generator class.
-        """
-        seed = check_random_state(seed)
-        if isinstance(seed, np.random.RandomState):
-            return np.random.default_rng(seed._bit_generator)
-        return seed
-ELSE:
-    cdef object get_numpy_rng(object seed = None):
-        """
-        Create a NumPy RandomState object from a given seed. If the seed is
-        is an instance of `np.random.Generator`, it is returned as-is.
-
-        Parameters
-        ----------
-        seed : object, optional
-            Seed for the generator. If None, no seed is set. The seed can be
-            an integer, Generator, or RandomState.
-
-        Returns
-        -------
-        numpy_rng : object
-            An instance of NumPy's RandomState or Generator class.
-        """
-        return check_random_state(seed)
-
+    Returns
+    -------
+    numpy_rng : object
+        An instance of NumPy's Generator class.
+    """
+    seed = check_random_state(seed)
+    if isinstance(seed, np.random.RandomState):
+        return np.random.default_rng(seed._bit_generator)
+    return seed
 
 @cython.final
 cdef class _URNG:
@@ -124,11 +99,6 @@ cdef class _URNG:
     def __init__(self, numpy_rng):
         self.numpy_rng = numpy_rng
 
-    IF NPY_OLD:
-        cdef double _next_double(self) nogil:
-            with gil:
-                return self.numpy_rng.uniform()
-
     @cython.boundscheck(False)
     @cython.wraparound(False)
     cdef double _next_qdouble(self) nogil:
@@ -145,25 +115,20 @@ cdef class _URNG:
             A UNU.RAN uniform random number generator.
         """
         cdef unur_urng *unuran_urng
-        IF NPY_OLD:
-            unuran_urng = unur_urng_new(<URNG_FUNCT>self._next_double,
-                                        <void *>self)
-            return unuran_urng
-        ELSE:
-            cdef:
-                bitgen_t *numpy_urng
-                const char *capsule_name = "BitGenerator"
+        cdef:
+            bitgen_t *numpy_urng
+            const char *capsule_name = "BitGenerator"
 
-            capsule = self.numpy_rng.bit_generator.capsule
+        capsule = self.numpy_rng.bit_generator.capsule
 
-            if not PyCapsule_IsValid(capsule, capsule_name):
-                raise ValueError("Invalid pointer to anon_func_state.")
+        if not PyCapsule_IsValid(capsule, capsule_name):
+            raise ValueError("Invalid pointer to anon_func_state.")
 
-            numpy_urng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
-            unuran_urng = unur_urng_new(numpy_urng.next_double,
-                                        <void *>(numpy_urng.state))
+        numpy_urng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
+        unuran_urng = unur_urng_new(numpy_urng.next_double,
+                                    <void *>(numpy_urng.state))
 
-            return unuran_urng
+        return unuran_urng
 
     cdef unur_urng *get_qurng(self, size, qmc_engine) except *:
         cdef unur_urng *unuran_urng
@@ -223,7 +188,7 @@ cdef object _setup_unuran():
 _setup_unuran()
 
 
-cdef dict _unpack_dist(object dist, str dist_type, list meths,
+cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
                        list optional_meths = None):
     """
     Get the required methods/attributes from a Python class or object.
@@ -264,10 +229,16 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                     self.support = dist.support
                 def pdf(self, x):
                     # some distributions require array inputs.
-                    x = np.asarray((x-self.loc)/self.scale)
+                    x = np.atleast_1d((x-self.loc)/self.scale)
                     return max(0, self.dist.dist._pdf(x, *self.args)/self.scale)
-                def cdf(self, x):
+                def logpdf(self, x):
+                    # some distributions require array inputs.
                     x = np.asarray((x-self.loc)/self.scale)
+                    if self.pdf(x) > 0:
+                        return self.dist.dist._logpdf(x, *self.args) - np.log(self.scale)
+                    return -np.inf
+                def cdf(self, x):
+                    x = np.atleast_1d((x-self.loc)/self.scale)
                     res = self.dist.dist._cdf(x, *self.args)
                     if res < 0:
                         return 0
@@ -284,10 +255,10 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                     self.support = dist.support
                 def pmf(self, x):
                     # some distributions require array inputs.
-                    x = np.asarray(x-self.loc)
+                    x = np.atleast_1d(x-self.loc)
                     return max(0, self.dist.dist._pmf(x, *self.args))
                 def cdf(self, x):
-                    x = np.asarray(x-self.loc)
+                    x = np.atleast_1d(x-self.loc)
                     res = self.dist.dist._cdf(x, *self.args)
                     if res < 0:
                         return 0
@@ -295,12 +266,13 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                         return 1
                     return res
         dist = wrap_dist(dist)
-    for meth in meths:
-        if hasattr(dist, meth):
-            callbacks[meth] = getattr(dist, meth)
-        else:
-            msg = f"`{meth}` required but not found."
-            raise ValueError(msg)
+    if meths is not None:
+        for meth in meths:
+            if hasattr(dist, meth):
+                callbacks[meth] = getattr(dist, meth)
+            else:
+                msg = f"`{meth}` required but not found."
+                raise ValueError(msg)
     if optional_meths is not None:
         for meth in optional_meths:
             if hasattr(dist, meth):
@@ -327,6 +299,8 @@ cdef void _pack_distr(unur_distr *distr, dict callbacks) except *:
             unur_distr_cont_set_dpdf(distr, dpdf_thunk)
         if "cdf" in callbacks:
             unur_distr_cont_set_cdf(distr, cont_cdf_thunk)
+        if "logpdf" in callbacks:
+            unur_distr_cont_set_logpdf(distr, logpdf_thunk)
     else:
         if "pmf" in callbacks:
             unur_distr_discr_set_pmf(distr, pmf_thunk)
@@ -768,6 +742,7 @@ cdef class TransformedDensityRejection(Method):
     Examples
     --------
     >>> from scipy.stats.sampling import TransformedDensityRejection
+    >>> import numpy as np
 
     Suppose we have a density:
 
@@ -797,7 +772,7 @@ cdef class TransformedDensityRejection(Method):
     ...         return 1-x*x
     ...     def dpdf(self, x):
     ...         return -2*x
-    ... 
+    ...
     >>> dist = MyDist()
     >>> rng = TransformedDensityRejection(dist, domain=(-1, 1),
     ...                                   random_state=urng)
@@ -813,7 +788,7 @@ cdef class TransformedDensityRejection(Method):
     ...         return -2*x
     ...     def support(self):
     ...         return (-1, 1)
-    ... 
+    ...
     >>> dist = MyDist()
     >>> rng = TransformedDensityRejection(dist, random_state=urng)
 
@@ -882,14 +857,14 @@ cdef class TransformedDensityRejection(Method):
                 raise UNURANError(self._messages.get())
             _pack_distr(self.distr, self.callbacks)
 
+            if domain is not None:
+                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
+                                                                 domain[1]))
+
             if mode is not None:
                 self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
             if center is not None:
                 self._check_errorcode(unur_distr_cont_set_center(self.distr, center))
-
-            if domain is not None:
-                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
-                                                                 domain[1]))
 
             self.par = unur_tdr_new(self.distr)
             if self.par == NULL:
@@ -979,17 +954,18 @@ cdef class TransformedDensityRejection(Method):
         --------
         >>> from scipy.stats.sampling import TransformedDensityRejection
         >>> from scipy.stats import norm
+        >>> import numpy as np
         >>> from math import exp
-        >>> 
+        >>>
         >>> class MyDist:
         ...     def pdf(self, x):
         ...         return exp(-0.5 * x**2)
         ...     def dpdf(self, x):
         ...         return -x * exp(-0.5 * x**2)
-        ... 
+        ...
         >>> dist = MyDist()
         >>> rng = TransformedDensityRejection(dist)
-        >>> 
+        >>>
         >>> rng.ppf_hat(0.5)
         -0.00018050266342393984
         >>> norm.ppf(0.5)
@@ -1086,6 +1062,7 @@ cdef class SimpleRatioUniforms(Method):
     Examples
     --------
     >>> from scipy.stats.sampling import SimpleRatioUniforms
+    >>> import numpy as np
 
     Suppose we have the normal distribution:
 
@@ -1172,12 +1149,13 @@ cdef class SimpleRatioUniforms(Method):
                 raise UNURANError(self._messages.get())
             _pack_distr(self.distr, self.callbacks)
 
-            if mode is not None:
-                self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
-
             if domain is not None:
                 self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
                                                                  domain[1]))
+
+            if mode is not None:
+                self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
+
             self._check_errorcode(unur_distr_cont_set_pdfarea(self.distr, pdf_area))
 
             self.par = unur_srou_new(self.distr)
@@ -1249,18 +1227,25 @@ cdef class NumericalInversePolynomial(Method):
     * The algorithm has problems when the distribution has heavy tails (as then the
       inverse CDF becomes very steep at 0 or 1) and the requested u-resolution is
       very small. E.g., the Cauchy distribution is likely to show this problem when
-      the requested u-resolution is less then 1.e-12. 
+      the requested u-resolution is less then 1.e-12.
 
 
     Parameters
     ----------
     dist : object
-        An instance of a class with a ``pdf`` and optionally a ``cdf`` method.
+        An instance of a class with a ``pdf`` or ``logpdf`` method,
+        optionally a ``cdf`` method.
 
         * ``pdf``: PDF of the distribution. The signature of the PDF is expected to be:
           ``def pdf(self, x: float) -> float``, i.e., the PDF should accept a Python
           float and return a Python float. It doesn't need to integrate to 1,
-          i.e., the PDF doesn't need to be normalized.
+          i.e., the PDF doesn't need to be normalized. This method is optional,
+          but either ``pdf`` or ``logpdf`` need to be specified. If both are given,
+          ``logpdf`` is used.
+        * ``logpdf``: The log of the PDF of the distribution. The signature is
+          the same as for ``pdf``. Similarly, log of the normalization constant
+          of the PDF can be ignored. This method is optional, but either ``pdf`` or
+          ``logpdf`` need to be specified. If both are given, ``logpdf`` is used.
         * ``cdf``: CDF of the distribution. This method is optional. If provided, it
           enables the calculation of "u-error". See `u_error`. Must have the same
           signature as the PDF.
@@ -1307,20 +1292,21 @@ cdef class NumericalInversePolynomial(Method):
            generation by numerical inversion when only the density is known." ACM
            Transactions on Modeling and Computer Simulation (TOMACS) 20.4 (2010): 1-25.
     .. [2] UNU.RAN reference manual, Section 5.3.12,
-           "PINV – Polynomial interpolation based INVersion of CDF",
+           "PINV - Polynomial interpolation based INVersion of CDF",
            https://statmath.wu.ac.at/software/unuran/doc/unuran.html#PINV
 
     Examples
     --------
     >>> from scipy.stats.sampling import NumericalInversePolynomial
     >>> from scipy.stats import norm
+    >>> import numpy as np
 
     To create a generator to sample from the standard normal distribution, do:
 
     >>> class StandardNormal:
     ...    def pdf(self, x):
     ...        return np.exp(-0.5 * x*x)
-    ... 
+    ...
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInversePolynomial(dist, random_state=urng)
@@ -1356,7 +1342,7 @@ cdef class NumericalInversePolynomial(Method):
     ...        return np.exp(-0.5 * x*x)
     ...    def cdf(self, x):
     ...        return ndtr(x)
-    ... 
+    ...
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInversePolynomial(dist, random_state=urng)
@@ -1431,7 +1417,12 @@ cdef class NumericalInversePolynomial(Method):
             unur_par *par
             unur_gen *rng
 
-        self.callbacks = _unpack_dist(dist, "cont", meths=["pdf"], optional_meths=["cdf"])
+        # either logpdf or pdf are required: use meths = None and check separately
+        self.callbacks = _unpack_dist(dist, "cont", meths=None, optional_meths=["cdf", "pdf", "logpdf"])
+        if not ("pdf" in self.callbacks or "logpdf" in self.callbacks):
+            msg = ("Either of the methods `pdf` or `logpdf` must be specified "
+                   "for the distribution object `dist`.")
+            raise ValueError(msg)
         def _callback_wrapper(x, name):
             return self.callbacks[name](x)
         self._callback_wrapper = _callback_wrapper
@@ -1445,14 +1436,14 @@ cdef class NumericalInversePolynomial(Method):
                 raise UNURANError(self._messages.get())
             _pack_distr(self.distr, self.callbacks)
 
+            if domain is not None:
+                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
+                                                                 domain[1]))
+
             if mode is not None:
                 self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
             if center is not None:
                 self._check_errorcode(unur_distr_cont_set_center(self.distr, center))
-
-            if domain is not None:
-                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
-                                                                 domain[1]))
 
             self.par = unur_pinv_new(self.distr)
             if self.par == NULL:
@@ -1720,7 +1711,7 @@ cdef class NumericalInversePolynomial(Method):
             if d == 1:
                 return qrvs.reshape(tuple_size)
             else:
-                return qrvs.reshape(tuple_size + (d,))    
+                return qrvs.reshape(tuple_size + (d,))
 
 
 cdef class NumericalInverseHermite(Method):
@@ -1843,6 +1834,7 @@ cdef class NumericalInverseHermite(Method):
     >>> from scipy.stats.sampling import NumericalInverseHermite
     >>> from scipy.stats import norm, genexpon
     >>> from scipy.special import ndtr
+    >>> import numpy as np
 
     To create a generator to sample from the standard normal distribution, do:
 
@@ -1851,7 +1843,7 @@ cdef class NumericalInverseHermite(Method):
     ...        return 1/np.sqrt(2*np.pi) * np.exp(-x**2 / 2)
     ...     def cdf(self, x):
     ...        return ndtr(x)
-    ... 
+    ...
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInverseHermite(dist, random_state=urng)
@@ -1905,7 +1897,7 @@ cdef class NumericalInverseHermite(Method):
     ...        return -1/np.sqrt(2*np.pi) * x * np.exp(-x**2 / 2)
     ...     def cdf(self, x):
     ...        return ndtr(x)
-    ... 
+    ...
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInverseHermite(dist, order=5, random_state=urng)
@@ -2304,6 +2296,7 @@ cdef class DiscreteAliasUrn(Method):
     Examples
     --------
     >>> from scipy.stats.sampling import DiscreteAliasUrn
+    >>> import numpy as np
 
     To create a random number generator using a probability vector, use:
 
@@ -2346,7 +2339,7 @@ cdef class DiscreteAliasUrn(Method):
     ...         return self.p**x * (1-self.p)**(self.n-x)
     ...     def support(self):
     ...         return (0, self.n)
-    ... 
+    ...
     >>> n, p = 10, 0.2
     >>> dist = Binomial(n, p)
     >>> rng = DiscreteAliasUrn(dist, random_state=urng)
@@ -2567,6 +2560,7 @@ cdef class DiscreteGuideTable(Method):
     Examples
     --------
     >>> from scipy.stats.sampling import DiscreteGuideTable
+    >>> import numpy as np
 
     To create a random number generator using a probability vector, use:
 

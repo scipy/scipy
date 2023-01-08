@@ -359,6 +359,7 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0020, atol=0.00025)
 
+    @pytest.mark.slow
     def test_example2a(self):
         # Example data taken from an earlier technical report of
         # Scholz and Stephens
@@ -383,13 +384,19 @@ class TestAndersonKSamp:
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
 
-        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
-                                          t9, t10, t11, t12, t13, t14),
-                                         midrank=False)
+        samples = (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)
+        Tk, tm, p = stats.anderson_ksamp(samples, midrank=False)
         assert_almost_equal(Tk, 3.288, 3)
         assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
                                   tm[0:5], 4)
         assert_allclose(p, 0.0041, atol=0.00025)
+
+        rng = np.random.default_rng(6989860141921615054)
+        res = stats.anderson_ksamp(samples, midrank=False,
+                                   n_resamples=9999, random_state=rng)
+        assert_array_equal(res.statistic, Tk)
+        assert_array_equal(res.critical_values, tm)
+        assert_allclose(res.pvalue, p, atol=6e-4)
 
     def test_example2b(self):
         # Example data taken from an earlier technical report of
@@ -587,7 +594,7 @@ class TestAnsari:
         pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
         assert pval_l > 0.95
         assert pval_g < 0.05  # level of significance.
-        # also check if the p-values sum up to 1 plus the the probability
+        # also check if the p-values sum up to 1 plus the probability
         # mass under the calculated statistic.
         prob = _abw_state.pmf(statistic, len(x1), len(x2))
         assert_allclose(pval_g + pval_l, 1 + prob, atol=1e-12)
@@ -760,7 +767,7 @@ class TestBinomTestP:
     """
     @staticmethod
     def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
-        # This processing of x and n is copied from from binom_test.
+        # This processing of x and n is copied from binom_test.
         x = np.atleast_1d(x).astype(np.int_)
         if len(x) == 2:
             n = x[1] + x[0]
@@ -2573,15 +2580,11 @@ class TestMedianTest:
         assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
 
 
-class TestDirectionalFuncs:
+class TestDirectionalStats:
     # Reference implementations are not available
-    def test_directionalmean_correctness(self):
+    def test_directional_stats_correctness(self):
         # Data from Fisher: Dispersion on a sphere, 1953 and
         # Mardia and Jupp, Directional Statistics.
-        # For x coordinate, result for spherical mean does not agree with
-        # Mardia & Jupp, probably due to rounding errors in reference, that's
-        # why the first entry of the spherical mean reference is different
-        # than in the book.
 
         decl = -np.deg2rad(np.array([343.2, 62., 36.9, 27., 359.,
                                      5.7, 50.4, 357.6, 44.]))
@@ -2592,30 +2595,46 @@ class TestDirectionalFuncs:
                          np.sin(incl)),
                         axis=1)
 
-        directional_mean = stats.directionalmean(data)
-        mean_rounded = np.round(directional_mean, 3)
+        dirstats = stats.directional_stats(data)
+        directional_mean = dirstats.mean_direction
+        mean_rounded = np.round(directional_mean, 4)
 
-        reference_mean = np.array([0.298, -0.135, -0.945])
+        reference_mean = np.array([0.2984, -0.1346, -0.9449])
         assert_allclose(mean_rounded, reference_mean)
 
-    def test_directionalmean_2d(self):
-        # Test that for circular data directionalmean yields
-        # same result as circmean
+    @pytest.mark.parametrize('angles, ref', [
+        ([-np.pi/2, np.pi/2], 1.),
+        ([0, 2*np.pi], 0.)
+    ])
+    def test_directional_stats_2d_special_cases(self, angles, ref):
+        if callable(ref):
+            ref = ref(angles)
+        data = np.stack([np.cos(angles), np.sin(angles)], axis=1)
+        res = 1 - stats.directional_stats(data).mean_resultant_length
+        assert_allclose(res, ref)
+
+    def test_directional_stats_2d(self):
+        # Test that for circular data directional_stats
+        # yields the same result as circmean/circvar
         rng = np.random.default_rng(0xec9a6899d5a2830e0d1af479dbe1fd0c)
         testdata = 2 * np.pi * rng.random((1000, ))
         testdata_vector = np.stack((np.cos(testdata),
                                     np.sin(testdata)),
                                    axis=1)
-        directional_mean = stats.directionalmean(testdata_vector)
+        dirstats = stats.directional_stats(testdata_vector)
+        directional_mean = dirstats.mean_direction
         directional_mean_angle = np.arctan2(directional_mean[1],
                                             directional_mean[0])
         directional_mean_angle = directional_mean_angle % (2*np.pi)
-
         circmean = stats.circmean(testdata)
         assert_allclose(circmean, directional_mean_angle)
 
-    def test_directionalmean_higher_dim(self):
-        # test that directionalmean works for higher dimensions
+        directional_var = 1 - dirstats.mean_resultant_length
+        circular_var = stats.circvar(testdata)
+        assert_allclose(directional_var, circular_var)
+
+    def test_directional_mean_higher_dim(self):
+        # test that directional_stats works for higher dimensions
         # here a 4D array is reduced over axis = 2
         data = np.array([[0.8660254, 0.5, 0.],
                          [0.8660254, -0.5, 0.]])
@@ -2624,42 +2643,38 @@ class TestDirectionalFuncs:
                               [1., 0., 0.]],
                              [[1., 0., 0.],
                               [1., 0., 0.]]])
-        directionalmean = stats.directionalmean(full_array, axis=2)
-        assert_allclose(expected, directionalmean)
+        dirstats = stats.directional_stats(full_array, axis=2)
+        assert_allclose(expected, dirstats.mean_direction)
 
-    def test_directionalmean_list_ndarray_input(self):
+    def test_directional_stats_list_ndarray_input(self):
         # test that list and numpy array inputs yield same results
         data = [[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0]]
         data_array = np.asarray(data)
-        directional_mean = stats.directionalmean(data)
-        directional_mean_array = stats.directionalmean(data_array)
-        assert_allclose(directional_mean, directional_mean_array)
+        res = stats.directional_stats(data)
+        ref = stats.directional_stats(data_array)
+        assert_allclose(res.mean_direction, ref.mean_direction)
+        assert_allclose(res.mean_resultant_length,
+                        res.mean_resultant_length)
 
-    def test_directionalmean_1d_error(self):
+    def test_directional_stats_1d_error(self):
         # test that one-dimensional data raises ValueError
         data = np.ones((5, ))
         message = (r"samples must at least be two-dimensional. "
                    r"Instead samples has shape: (5,)")
         with pytest.raises(ValueError, match=re.escape(message)):
-            stats.directionalmean(data)
+            stats.directional_stats(data)
 
-    def test_directionalmean_normalize(self):
-        # test that unit vectors get properly normalized before
-        # directionalmean calculation
+    def test_directional_stats_normalize(self):
+        # test that directional stats calculations yield same results
+        # for unnormalized input with normalize=True and normalized
+        # input with normalize=False
         data = np.array([[0.8660254, 0.5, 0.],
                          [1.7320508, -1., 0.]])
-        expected = np.array([1., 0., 0.])
-        directional_mean = stats.directionalmean(data)
-        assert_allclose(expected, directional_mean)
-
-    def test_directionalmean_normalize_false(self):
-        # test that for already normalized unit vectors
-        # normalize=False returns same result as default
-        data = np.array([[0.8660254, 0.5, 0.],
-                         [0.8660254, -0.5, 0]])
-        expected = np.array([1., 0., 0.])
-        directional_mean_default = stats.directionalmean(data)
-        directional_mean = stats.directionalmean(data,
-                                                 normalize=False)
-        assert_allclose(expected, directional_mean)
-        assert_allclose(directional_mean_default, directional_mean)
+        res = stats.directional_stats(data, normalize=True)
+        normalized_data = data / np.linalg.norm(data, axis=-1,
+                                                keepdims=True)
+        ref = stats.directional_stats(normalized_data,
+                                      normalize=False)
+        assert_allclose(res.mean_direction, ref.mean_direction)
+        assert_allclose(res.mean_resultant_length,
+                        ref.mean_resultant_length)

@@ -37,7 +37,6 @@ using clong = std::complex<ldbl_t>;
 using f32 = float;
 using f64 = double;
 using flong = ldbl_t;
-auto None = py::none();
 
 shape_t copy_shape(const py::array &arr)
   {
@@ -647,7 +646,7 @@ nthreads : int
     Number of threads to use. If 0, use the system default (typically governed
     by the `OMP_NUM_THREADS` environment variable).
 ortho: bool
-    Orthogonalize transform (defaults to ``inorm==1``)
+    Orthogonalize transform (defaults to ``inorm=1``)
 
 Returns
 -------
@@ -687,7 +686,7 @@ nthreads : int
     Number of threads to use. If 0, use the system default (typically governed
     by the `OMP_NUM_THREADS` environment variable).
 ortho: bool
-    Orthogonalize transform (defaults to ``inorm==1``)
+    Orthogonalize transform (defaults to ``inorm=1``)
 
 Returns
 -------
@@ -716,6 +715,8 @@ out : int
 PYBIND11_MODULE(pypocketfft, m)
   {
   using namespace pybind11::literals;
+
+  auto None = py::none();
 
   m.doc() = pypocketfft_DS;
   m.def("c2c", c2c, c2c_DS, "a"_a, "axes"_a=None, "forward"_a=true,

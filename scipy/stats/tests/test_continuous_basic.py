@@ -6,16 +6,17 @@ from scipy.integrate import IntegrationWarning
 import itertools
 
 from scipy import stats
-from .common_tests import (check_normalization, check_moment, check_mean_expect,
+from .common_tests import (check_normalization, check_moment,
+                           check_mean_expect,
                            check_var_expect, check_skew_expect,
                            check_kurt_expect, check_entropy,
                            check_private_entropy, check_entropy_vect_scale,
                            check_edge_support, check_named_args,
                            check_random_state_property,
-                           check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
-                           check_pickling, check_rvs_broadcast, check_freezing,
-                           check_deprecation_warning_gh5982_moment,
-                           check_deprecation_warning_gh5982_interval)
+                           check_meth_dtype, check_ppf_dtype,
+                           check_cmplx_deriv,
+                           check_pickling, check_rvs_broadcast,
+                           check_freezing,)
 from scipy.stats._distr_params import distcont
 from scipy.stats._distn_infrastructure import rv_continuous_frozen
 
@@ -106,14 +107,15 @@ skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
 fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
-                   'dgamma', 'dweibull', 'erlang', 'f', 'gamma',
+                   'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
                    'gausshyper', 'gengamma', 'genhyperbolic',
                    'geninvgauss', 'gennorm', 'genpareto',
-                   'halfgennorm', 'invgamma',
+                   'halfcauchy', 'halfgennorm', 'invgamma',
                    'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
                    'logistic', 'loguniform', 'maxwell', 'nakagami',
-                   'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
-                   'reciprocal', 'rice', 'skewnorm', 't', 'truncweibull_min',
+                   'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
+                   'powerlaw', 'rdist', 'reciprocal', 'rice',
+                   'skewnorm', 't', 'truncweibull_min',
                    'tukeylambda', 'vonmises', 'vonmises_line',
                    'rv_histogram_instance', 'truncnorm', 'studentized_range'])
 
@@ -142,6 +144,7 @@ def cases_test_cont_basic():
             yield distname, arg
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
 @pytest.mark.parametrize('sn, n_fit_samples', [(500, 200)])
 def test_cont_basic(distname, arg, sn, n_fit_samples):
@@ -167,8 +170,6 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
     check_cdf_logcdf(distfn, arg, distname)
     check_sf_logsf(distfn, arg, distname)
     check_ppf_broadcast(distfn, arg, distname)
-    check_deprecation_warning_gh5982_moment(distfn, arg, distname)
-    check_deprecation_warning_gh5982_interval(distfn, arg, distname)
 
     alpha = 0.01
     if distname == 'rv_histogram_instance':
@@ -401,18 +402,18 @@ def test_nomodify_gh9900_regression():
     # Use the right-half truncated normal
     # Check that the cdf and _cdf return the same result.
     npt.assert_almost_equal(tn.cdf(1, 0, np.inf), 0.6826894921370859)
-    npt.assert_almost_equal(tn._cdf(1, 0, np.inf), 0.6826894921370859)
+    npt.assert_almost_equal(tn._cdf([1], [0], [np.inf]), 0.6826894921370859)
 
     # Now use the left-half truncated normal
     npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0), 0.31731050786291415)
-    npt.assert_almost_equal(tn._cdf(-1, -np.inf, 0), 0.31731050786291415)
+    npt.assert_almost_equal(tn._cdf([-1], [-np.inf], [0]), 0.31731050786291415)
 
     # Check that the right-half truncated normal _cdf hasn't changed
-    npt.assert_almost_equal(tn._cdf(1, 0, np.inf), 0.6826894921370859)  # NOT 1.6826894921370859
+    npt.assert_almost_equal(tn._cdf([1], [0], [np.inf]), 0.6826894921370859)  # noqa, NOT 1.6826894921370859
     npt.assert_almost_equal(tn.cdf(1, 0, np.inf), 0.6826894921370859)
 
     # Check that the left-half truncated normal _cdf hasn't changed
-    npt.assert_almost_equal(tn._cdf(-1, -np.inf, 0), 0.31731050786291415)  # Not -0.6826894921370859
+    npt.assert_almost_equal(tn._cdf([-1], [-np.inf], [0]), 0.31731050786291415)  # noqa, Not -0.6826894921370859
     npt.assert_almost_equal(tn.cdf(1, -np.inf, 0), 1)                     # Not 1.6826894921370859
     npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0), 0.31731050786291415)  # Not -0.6826894921370859
 
@@ -622,7 +623,7 @@ def check_distribution_rvs(dist, args, alpha, rvs):
     if (pval < alpha):
         # The rvs passed in failed the K-S test, which _could_ happen
         # but is unlikely if alpha is small enough.
-        # Repeat the the test with a new sample of rvs.
+        # Repeat the test with a new sample of rvs.
         # Generate 1000 rvs, perform a K-S test that the new sample of rvs
         # are distributed according to the distribution.
         D, pval = stats.kstest(dist, dist, args=args, N=1000)
@@ -695,6 +696,7 @@ def check_fit_args_fix(distfn, arg, rvs, method):
             npt.assert_(vals5[2] == arg[2])
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
                                     'sf', 'logsf', 'ppf', 'isf'])
 @pytest.mark.parametrize('distname, args', distcont)
@@ -715,30 +717,6 @@ def test_methods_with_lists(method, distname, args):
     npt.assert_allclose(result,
                         [f(*v) for v in zip(x, *shape2, loc, scale)],
                         rtol=1e-14, atol=5e-14)
-
-
-@pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
-                                    'sf', 'logsf', 'ppf', 'isf'])
-def test_gilbrat_deprecation(method):
-    expected = getattr(stats.gibrat, method)(1)
-    with pytest.warns(
-        DeprecationWarning,
-        match=rf"\s*`gilbrat\.{method}` is deprecated,.*",
-    ):
-        result = getattr(stats.gilbrat, method)(1)
-    assert result == expected
-
-
-@pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
-                                    'sf', 'logsf', 'ppf', 'isf'])
-def test_gilbrat_deprecation_frozen(method):
-    expected = getattr(stats.gibrat, method)(1)
-    with pytest.warns(DeprecationWarning, match=r"\s*`gilbrat` is deprecated"):
-        # warn on instantiation of frozen distribution...
-        g = stats.gilbrat()
-    # ... not on its methods
-    result = getattr(g, method)(1)
-    assert result == expected
 
 
 def test_burr_fisk_moment_gh13234_regression():

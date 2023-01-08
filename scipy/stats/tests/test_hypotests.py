@@ -169,7 +169,7 @@ class TestCvm:
 
 
 class TestMannWhitneyU:
-    def setup(self):
+    def setup_method(self):
         _mwu_state._recursive = True
 
     # All magic numbers are from R wilcox.test unless otherwise specied
@@ -469,19 +469,19 @@ class TestMannWhitneyU:
         res = mannwhitneyu(x, y, method=method, axis=axis)
 
         shape = (6, 3, 8)  # appropriate shape of outputs, given inputs
-        assert(res.pvalue.shape == shape)
-        assert(res.statistic.shape == shape)
+        assert res.pvalue.shape == shape
+        assert res.statistic.shape == shape
 
         # move axis of test to end for simplicity
         x, y = np.moveaxis(x, axis, -1), np.moveaxis(y, axis, -1)
 
         x = x[None, ...]  # give x a zeroth dimension
-        assert(x.ndim == y.ndim)
+        assert x.ndim == y.ndim
 
         x = np.broadcast_to(x, shape + (m,))
         y = np.broadcast_to(y, shape + (n,))
-        assert(x.shape[:-1] == shape)
-        assert(y.shape[:-1] == shape)
+        assert x.shape[:-1] == shape
+        assert y.shape[:-1] == shape
 
         # loop over pairs of samples
         statistics = np.zeros(shape)
@@ -616,15 +616,15 @@ class TestMannWhitneyU:
                            method="asymptotic")
         assert_allclose(res, expected, rtol=1e-12)
 
-    def teardown(self):
+    def teardown_method(self):
         _mwu_state._recursive = None
 
 
 class TestMannWhitneyU_iterative(TestMannWhitneyU):
-    def setup(self):
+    def setup_method(self):
         _mwu_state._recursive = False
 
-    def teardown(self):
+    def teardown_method(self):
         _mwu_state._recursive = None
 
 

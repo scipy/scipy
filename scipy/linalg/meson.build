@@ -1,16 +1,7 @@
 # TODO: 64-bit BLAS and LAPACK
 
-__init__py = custom_target('__init__py',
-  output: '__init__.py',
-  input: '__init__.py',
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
-
-_cy_array_utils_pxd = custom_target('_cy_array_utils_pxd',
-  output: '_cythonized_array_utils.pxd',
-  input: '_cythonized_array_utils.pxd',
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
+__init__py = fs.copyfile('__init__.py')
+_cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 
 cython_linalg = custom_target('cython_linalg',
   output: [
@@ -63,6 +54,7 @@ py3.extension_module('_fblas',
   [fblas_module, g77_abi_wrappers],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   dependencies: [blas, lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
@@ -77,16 +69,13 @@ flapack_module = custom_target('flapack_module',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
+# Note that -Wno-empty-body is Clang-specific and comes from `callstatement`s
+# in flapack_other.pyf.src
 py3.extension_module('_flapack',
-  [
-    flapack_module,
-    g77_abi_wrappers,
-  ],
-  c_args: [
-    numpy_nodepr_api,
-    '-Wno-empty-body',  # comes from `callstatement`s in flapack_other.pyf.src
-  ],
+  [flapack_module, g77_abi_wrappers],
+  c_args: [numpy_nodepr_api, Wno_empty_body],
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
@@ -106,6 +95,7 @@ py3.extension_module('_flinalg',
   ['src/det.f', 'src/lu.f', flinalg_module],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
@@ -118,6 +108,11 @@ interpolative_module = custom_target('interpolative_module',
   input: 'interpolative.pyf',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
+
+# id_dist contains a copy of FFTPACK, which has type mismatch warnings
+# that are hard to fix. This code is terrible and noisy during the build,
+# silence it completely.
+_suppress_all_warnings = ff.get_supported_arguments('-w')
 
 py3.extension_module('_interpolative',
   [
@@ -160,11 +155,9 @@ py3.extension_module('_interpolative',
     interpolative_module,
   ],
   c_args: numpy_nodepr_api,
-  fortran_args: [
-    '-Wno-tabs', '-Wno-conversion', '-Wno-argument-mismatch',
-    '-Wno-unused-dummy-argument', '-Wno-maybe-uninitialized'
-  ],
+  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
   include_directories: [inc_np, inc_f2py],
+  link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
@@ -176,6 +169,7 @@ py3.extension_module('_solve_toeplitz',
   linalg_init_cython_gen.process('_solve_toeplitz.pyx'),
   c_args: cython_c_args,
   include_directories: inc_np,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -185,6 +179,7 @@ py3.extension_module('_matfuncs_sqrtm_triu',
   linalg_init_cython_gen.process('_matfuncs_sqrtm_triu.pyx'),
   c_args: cython_c_args,
   include_directories: inc_np,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -208,6 +203,7 @@ cython_blas = py3.extension_module('cython_blas',
   c_args: cython_c_args,
   link_with: fwrappers,
   include_directories: inc_np,
+  link_args: version_link_args,
   dependencies: [blas, lapack],
   install: true,
   link_language: 'fortran',
@@ -223,6 +219,7 @@ cython_lapack = py3.extension_module('cython_lapack',
   c_args: cython_c_args,
   link_with: fwrappers,
   include_directories: inc_np,
+  link_args: version_link_args,
   dependencies: [blas, lapack],
   install: true,
   link_language: 'fortran',
@@ -239,6 +236,7 @@ py3.extension_module('_decomp_update',
   linalg_cython_gen.process(_decomp_update_pyx),
   c_args: cython_c_args,
   include_directories: inc_np,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -254,14 +252,16 @@ py3.extension_module('_matfuncs_expm',
   linalg_cython_gen.process(_matfuncs_expm_pyx),
   c_args: cython_c_args,
   include_directories: inc_np,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
 )
 
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   linalg_init_utils_cython_gen.process('_cythonized_array_utils.pyx'),
-  c_args: [cython_c_args, c_undefined_ok],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: [inc_np],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -313,7 +313,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/linalg'
 )
 
@@ -328,8 +327,8 @@ py3.install_sources(
 #       see https://github.com/mesonbuild/meson/issues/3206
 #
 #       For the below code to work, the script generating the files should use
-#       a different filename, and then cp (or better: `copier`) should move it
-#       to the final location. Either that, or split the codegen scripts and
+#       a different filename, and then it should be moved to the final location 
+#       (e.g. with `fs.copyfile`). Either that, or split the codegen scripts and
 #       call it twice: once for the installable files, and once for the
 #       non-installable files.
 #

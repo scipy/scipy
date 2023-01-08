@@ -30,7 +30,6 @@ py3.install_sources([
     'test_tukeylambda_stats.py',
     'test_variation.py'
   ],
-  pure: false,
   subdir: 'scipy/stats/tests'
 )
 

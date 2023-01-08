@@ -31,10 +31,13 @@ upload_wheels() {
             # sdists are located under dist folder
             if compgen -G "./dist/*.gz"; then
                 echo "Found sdist"
-                anaconda -q -t ${TOKEN} upload --skip -u ${ANACONDA_ORG} ./dist/*.gz
+                anaconda -t ${TOKEN} upload --force -u ${ANACONDA_ORG} ./dist/*.gz
             elif compgen -G "./wheelhouse/*.whl"; then
                 echo "Found wheel"
-                anaconda -q -t ${TOKEN} upload --skip -u ${ANACONDA_ORG} ./wheelhouse/*.whl
+                # Force a replacement if the remote file already exists -
+                # nightlies will not have the commit ID in the filename, so
+                # are named the same (1.X.Y.dev0-<platform/interpreter-tags>)
+                anaconda -t ${TOKEN} upload --force -u ${ANACONDA_ORG} ./wheelhouse/*.whl
             else
                 echo "Files do not exist"
                 return 1

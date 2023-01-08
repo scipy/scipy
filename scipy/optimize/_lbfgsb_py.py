@@ -36,8 +36,9 @@ Functions
 import numpy as np
 from numpy import array, asarray, float64, zeros
 from . import _lbfgsb
-from ._optimize import (MemoizeJac, OptimizeResult,
-                       _check_unknown_options, _prepare_scalar_function)
+from ._optimize import (MemoizeJac, OptimizeResult, _call_callback_maybe_halt,
+                        _wrap_callback, _check_unknown_options,
+                        _prepare_scalar_function)
 from ._constraints import old_bound_to_new
 
 from scipy.sparse.linalg import LinearOperator
@@ -183,8 +184,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         jac = fprime
 
     # build options
-    if disp is None:
-        disp = iprint
+    callback = _wrap_callback(callback)
     opts = {'disp': disp,
             'iprint': iprint,
             'maxcor': m,
@@ -240,7 +240,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         If `jac is None` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
     maxfun : int
-        Maximum number of function evaluations.
+        Maximum number of function evaluations. Note that this function
+        may violate the limit because of evaluating gradients by numerical
+        differentiation.
     maxiter : int
         Maximum number of iterations.
     iprint : int, optional
@@ -360,9 +362,10 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         elif task_str.startswith(b'NEW_X'):
             # new iteration
             n_iterations += 1
-            if callback is not None:
-                callback(np.copy(x))
 
+            intermediate_result = OptimizeResult(x=x, fun=f)
+            if _call_callback_maybe_halt(callback, intermediate_result):
+                task[:] = 'STOP: CALLBACK REQUESTED HALT'
             if n_iterations >= maxiter:
                 task[:] = 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'
             elif sf.nfev > maxfun:

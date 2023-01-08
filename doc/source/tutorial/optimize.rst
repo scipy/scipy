@@ -83,7 +83,7 @@ and an offset `b`:
     f\left(\mathbf{x}, a, b\right)=\sum_{i=1}^{N-1}a\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2} + b.
 
 Again using the :func:`minimize` routine this can be solved by the following
-code block for the example parameters `a=0.5` and `b=1`.
+code block for the example parameters ``a=0.5`` and ``b=1``.
 
     >>> def rosen_with_args(x, a, b):
     ...     """The Rosenbrock function with additional arguments"""
@@ -91,7 +91,7 @@ code block for the example parameters `a=0.5` and `b=1`.
 
     >>> x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
     >>> res = minimize(rosen_with_args, x0, method='nelder-mead',
-    ...		       args=(0.5, 1.), options={'xatol': 1e-8, 'disp': True})
+    ...	               args=(0.5, 1.), options={'xatol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 1.000000
              Iterations: 319
@@ -99,6 +99,22 @@ code block for the example parameters `a=0.5` and `b=1`.
 
     >>> print(res.x)
     [1.         1.         1.         1.         0.99999999]
+
+As an alternative to using the ``args`` parameter of :func:`minimize`, simply
+wrap the objective function in a new function that accepts only ``x``. This
+approach is also useful when it is necessary to pass additional parameters to
+the objective function as keyword arguments.
+
+    >>> def rosen_with_args(x, a, *, b):  # b is a keyword-only argument
+    ...     return sum(a*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0) + b
+    >>> def wrapped_rosen_without_args(x):
+    ...     return rosen_with_args(x, 0.5, b=1.)  # pass in `a` and `b`
+    >>> x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+    >>> res = minimize(wrapped_rosen_without_args, x0, method='nelder-mead',
+    ...                options={'xatol': 1e-8,})
+    >>> print(res.x)
+    [1.         1.         1.         1.         0.99999999]
+
 
 Broyden-Fletcher-Goldfarb-Shanno algorithm (``method='BFGS'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -153,33 +169,71 @@ through the ``jac`` parameter as illustrated below.
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-Another way to supply gradient information is to write a single
-function which returns both the objective and the gradient: this is
-indicated by setting ``jac=True``. In this case, the Python function
-to be optimized must return a tuple whose first value is the objective
-and whose second value represents the gradient. For this example, the
-objective can be specified in the following way:
+Avoiding Redundant Calculation
+""""""""""""""""""""""""""""""
 
-    >>> def rosen_and_der(x):
-    ...	    objective = sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
-    ...     xm = x[1:-1]
-    ...     xm_m1 = x[:-2]
-    ...     xm_p1 = x[2:]
-    ...     der = np.zeros_like(x)
-    ...     der[1:-1] = 200*(xm-xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1-xm)
-    ...     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
-    ...     der[-1] = 200*(x[-1]-x[-2]**2)
-    ...     return objective, der
+It is common for the objective function and its gradient to share parts of the
+calculation. For instance, consider the following problem.
 
-    >>> res = minimize(rosen_and_der, x0, method='BFGS', jac=True,
-    ...                options={'disp': True})
-             Current function value: 0.000000
-             Iterations: 25                     # may vary
-             Function evaluations: 30
-             Gradient evaluations: 30
+    >>> def f(x):
+    ...    return -expensive(x[0])**2
+    >>>
+    >>> def df(x):
+    ...     return -2 * expensive(x[0]) * dexpensive(x[0])
+    >>>
+    >>> def expensive(x):
+    ...     # this function is computationally expensive!
+    ...     expensive.count += 1  # let's keep track of how many times it runs
+    ...     return np.sin(x)
+    >>> expensive.count = 0
+    >>>
+    >>> def dexpensive(x):
+    ...     return np.cos(x)
+    >>>
+    >>> res = minimize(f, 0.5, jac=df)
+    >>> res.fun
+    -0.9999999999999174
+    >>> res.nfev, res.njev
+    6, 6
+    >>> expensive.count
+    12
 
-Supplying objective and gradient in a single function can help to avoid
-redundant computations and therefore speed up the optimization significantly.
+Here, ``expensive`` is called 12 times: six times in the objective function and
+six times from the gradient. One way of reducing redundant calculations is to
+create a single function that returns both the objective function and the
+gradient.
+
+    >>> def f_and_df(x):
+    ...     expensive_value = expensive(x[0])
+    ...     return (-expensive_value**2,  # objective function
+    ...             -2*expensive_value*dexpensive(x[0]))  # gradient
+    >>>
+    >>> expensive.count = 0  # reset the counter
+    >>> res = minimize(f_and_df, 0.5, jac=True)
+    >>> res.fun
+    -0.9999999999999174
+    >>> expensive.count
+    6
+
+When we call minimize, we specify ``jac==True`` to indicate that the provided
+function returns both the objective function and its gradient. While
+convenient, not all :mod:`scipy.optimize` functions support this feature,
+and moreover, it is only for sharing calculations between the function and its
+gradient, whereas in some problems we will want to share calculations with the
+Hessian (second derivative of the objective function) and constraints. A more
+general approach is to memoize the expensive parts of the calculation. In
+simple situations, this can be accomplished with the
+:func:`functools.lru_cache` wrapper.
+
+    >>> from functools import lru_cache
+    >>> expensive.count = 0  # reset the counter
+    >>> expensive = lru_cache(expensive)
+    >>> res = minimize(f, 0.5, jac=df)
+    >>> res.fun
+    -0.9999999999999174
+    >>> expensive.count
+    6
+
 
 Newton-Conjugate-Gradient algorithm (``method='Newton-CG'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -669,7 +723,6 @@ or a Hessian-vector product through the parameter ``hessp``.
     Number of iterations: 12, function evaluations: 8, CG iterations: 7, optimality: 2.99e-09, constraint violation: 1.11e-16, execution time: 0.018 s.
     >>> print(res.x)
     [0.41494531 0.17010937]
-
 
 Alternatively, the first and second derivatives of the objective function can be approximated.
 For instance,  the Hessian can be approximated with :func:`SR1` quasi-Newton approximation
@@ -1535,7 +1588,7 @@ Finally, we can solve the transformed problem using :func:`linprog`.
     >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
     >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
     >>> print(result.message)
-    The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is b'At lower/fixed bound')
+    The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is At lower/fixed bound)
 
 The result states that our problem is infeasible, meaning that there is no solution vector that satisfies all the
 constraints. That doesn't necessarily mean we did anything wrong; some problems truly are infeasible.
@@ -1684,3 +1737,123 @@ PETSc [PP]_, and PyAMG [AMG]_:
 
 .. [AMG] PyAMG (algebraic multigrid preconditioners/solvers)
          https://github.com/pyamg/pyamg/issues
+
+.. _tutorial-optimize_milp:
+
+Mixed integer linear programming
+---------------------------------
+
+Knapsack problem example
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The knapsack problem is a well known combinatorial optimization problem.
+Given a set of items, each with a size and a value, the problem is to choose
+the items that maximize the total value under the condition that the total size
+is below a certain threshold.
+
+Formally, let
+
+- :math:`x_i` be a boolean variable that indicates whether item :math:`i` is
+  included in the knapsack,
+
+- :math:`n` be the total number of items,
+
+- :math:`v_i` be the value of item :math:`i`,
+
+- :math:`s_i` be the size of item :math:`i`, and
+
+- :math:`C` be the capacity of the knapsack.
+
+Then the problem is:
+
+.. math::
+
+    \max \sum_i^n  v_{i} x_{i}
+
+.. math::
+
+    \text{subject to} \sum_i^n s_{i} x_{i} \leq C,  x_{i} \in {0, 1}
+
+Although the objective function and inequality constraints are linear in the
+*decision variables* :math:`x_i`, this differs from a typical linear
+programming problem in that the decision variables can only assume integer
+values.  Specifically, our decision variables can only be :math:`0` or
+:math:`1`, so this is known as a *binary integer linear program* (BILP). Such
+a problem falls within the larger class of *mixed integer linear programs*
+(MILPs), which we we can solve with :func:`milp`.
+
+In our example, there are 8 items to choose from, and the size and value of
+each is specified as follows.
+
+::
+
+    >>> import numpy as np
+    >>> from scipy import optimize
+    >>> sizes = np.array([21, 11, 15, 9, 34, 25, 41, 52])
+    >>> values = np.array([22, 12, 16, 10, 35, 26, 42, 53])
+
+We need to constrain our eight decision variables to be binary. We do so
+by adding a :class:`Bounds`: constraint to ensure that they lie between
+:math:`0` and :math:`1`, and we apply "integrality" constraints to ensure that
+they are *either* :math:`0` *or* :math:`1`.
+
+::
+
+    >>> bounds = optimize.Bounds(0, 1)  # 0 <= x_i <= 1
+    >>> integrality = np.full_like(values, True)  # x_i are integers
+
+The knapsack capacity constraint is specified using :class:`LinearConstraint`.
+
+::
+
+    >>> capacity = 100
+    >>> constraints = optimize.LinearConstraint(A=sizes, lb=0, ub=capacity)
+
+If we are following the usual rules of linear algebra, the input ``A`` should
+be a  two-dimensional matrix, and the lower and upper bounds ``lb`` and ``ub``
+should be one-dimensional vectors, but :class:`LinearConstraint` is forgiving
+as long as the inputs can be broadcast to consistent shapes.
+
+Using the variables defined above, we can solve the knapsack problem using
+:func:`milp`. Note that :func:`milp` minimizes the objective function, but we
+want to maximize the total value, so we set `c` to be negative of the values.
+
+::
+
+    >>> from scipy.optimize import milp
+    >>> res = milp(c=-values, constraints=constraints,
+    ...            integrality=integrality, bounds=bounds)
+
+Let's check the result:
+
+::
+
+    >>> res.success
+    True
+    >>> res.x
+    array([1., 1., 0., 1., 1., 1., 0., 0.])
+
+This means that we should select the items 1, 2, 4, 5, 6 to optimize the total
+value under the size constraint. Note that this is different from we would have
+obtained had we solved the *linear programming relaxation* (without integrality
+constraints) and attempted to round the decision variables.
+
+::
+
+    >>> from scipy.optimize import milp
+    >>> res = milp(c=-values, constraints=constraints,
+    ...            integrality=False, bounds=bounds)
+    >>> res.x
+    array([1.        , 1.        , 1.        , 1.        ,
+           0.55882353, 1.        , 0.        , 0.        ])
+
+If we were to round this solution up to
+``array([1., 1., 1., 1., 1., 1., 0., 0.])``, our knapsack would be over the
+capacity constraint, whereas if we were to round down to
+``array([1., 1., 1., 1., 0., 1., 0., 0.])``, we would have a sub-optimal
+solution.
+
+For more MILP tutorials, see the Jupyter notebooks on SciPy Cookbooks:
+
+- `Compressed Sensing l1 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_1.ipynb>`_
+- `Compressed Sensing l0 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_2.ipynb>`_

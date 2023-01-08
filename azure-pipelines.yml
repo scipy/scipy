@@ -104,24 +104,25 @@ stages:
         test_mode: fast
         numpy_spec: "numpy==1.19.5"
         use_sdist: true
-  - job: wheel_optimized_gcc6
+  - job: wheel_optimized_gcc8
     timeoutInMinutes: 90
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
     variables:
       # The following is needed for optimized "-OO" test run but since we use
       # pytest-xdist plugin for load scheduling its workers don't pick up the
       # flag. This environment variable starts all Py instances in -OO mode.
       PYTHONOPTIMIZE: 2
       # Use gcc version 6
-      CC: gcc-6
-      CXX: g++-6
+      CC: gcc-8
+      CXX: g++-8
+      FC: gfortran-8
     steps:
     - script: |
         set -euo pipefail
         sudo apt update -y
-        sudo apt install -y g++-6 gcc-6
-      displayName: 'Install GCC 6'
+        sudo apt install -y g++-8 gcc-8 gfortran-8
+      displayName: 'Install GCC 8'
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.8'
@@ -144,7 +145,7 @@ stages:
         architecture: 'x64'
     - script: >-
         python -m pip install
-        flake8==3.9.2
+        "flake8<6"
       displayName: 'Install tools'
       failOnStderr: false
     - script: |
@@ -295,7 +296,7 @@ stages:
         numpy==1.21.4
         Pillow
         pybind11
-        pythran==0.11.0
+        pythran==0.12.0
         pytest
         pytest-cov
         pytest-env
@@ -338,6 +339,7 @@ stages:
             refreshenv
         }
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
+        $env:SCIPY_USE_PYTHRAN=$(SCIPY_USE_PYTHRAN)
 
         # Still testing distutils here (`pip wheel --no-use-pep517` cannot be
         # used, so back to `setup.py` it is ...)
@@ -348,7 +350,6 @@ stages:
       displayName: 'Build SciPy'
     - powershell: |
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
-        $env:SCIPY_USE_PYTHRAN=$(SCIPY_USE_PYTHRAN)
         python runtests.py -n --mode=$(TEST_MODE) -- -n 2 --junitxml=junit/test-results.xml --durations=10 --timeout=60
       displayName: 'Run SciPy Test Suite'
     - task: PublishTestResults@2

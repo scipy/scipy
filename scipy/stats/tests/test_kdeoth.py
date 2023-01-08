@@ -331,6 +331,17 @@ def test_kde_output_dtype(dtype, bw_type):
                                           k.factor)
 
 
+def test_pdf_logpdf_validation():
+    rng = np.random.default_rng(64202298293133848336925499069837723291)
+    xn = rng.standard_normal((2, 10))
+    gkde = stats.gaussian_kde(xn)
+    xs = rng.standard_normal((3, 10))
+
+    msg = "points have dimension 3, dataset has dimension 2"
+    with pytest.raises(ValueError, match=msg):
+        gkde.logpdf(xs)
+
+
 def test_pdf_logpdf():
     np.random.seed(1)
     n_basesample = 50
@@ -578,3 +589,16 @@ def test_singular_data_covariance_gh10205():
         msg = "The data appears to lie in a lower-dimensional subspace..."
         with assert_raises(linalg.LinAlgError, match=msg):
             stats.gaussian_kde(data.T)
+
+
+def test_fewer_points_than_dimensions_gh17436():
+    # When the number of points is fewer than the number of dimensions, the
+    # the covariance matrix would be singular, and the exception tested in
+    # test_singular_data_covariance_gh10205 would occur. However, sometimes
+    # this occurs when the user passes in the transpose of what `gaussian_kde`
+    # expects. This can result in a huge covariance matrix, so bail early.
+    rng = np.random.default_rng(2046127537594925772)
+    rvs = rng.multivariate_normal(np.zeros(3), np.eye(3), size=5)
+    message = "Number of dimensions is greater than number of samples..."
+    with pytest.raises(ValueError, match=message):
+        stats.gaussian_kde(rvs)

@@ -36,6 +36,7 @@ GitHub Actions
 * ``Linux Tests``: test suite runs for Linux (``x86_64``)
 * ``macOS Tests``: test suite runs for macOS (``x86_64``)
 * ``wheels``: builds wheels for SciPy releases as well as *nightly* builds.
+* ``Check the rendered docs here!``: live preview of the documentation
 
 The test suite runs on GitHub Actions and other platforms cover a range of
 test/environment conditions: Python and NumPy versions
@@ -57,14 +58,21 @@ Azure
 CircleCI
 --------
 * ``build_docs``: build the documentation
-* ``build_docs artifact``: live preview of the documentation
 * ``build_scipy``
 * ``run_benchmarks``: verify how the changes impact performance
+
+CirrusCI
+--------
+* ``Tests``: test suite for specific architecture like
+  ``musllinux, arm, aarch``
+* ``Wheels``: build and upload some wheels
 
 Codecov
 -------
 * ``patch``: the impact on code coverage due to your changes
 * ``project``: the coverage of the whole project
+
+.. _skip-ci:
 
 Skipping
 ========
@@ -82,6 +90,7 @@ Skipping CI can be achieved by adding a special text in the commit message:
 * ``[skip azp]``: will skip Azure
 * ``[skip actions]``: will skip GitHub Actions
 * ``[skip circle]``: will skip CircleCI
+* ``[skip cirrus]``: will skip CirrusCI
 * ``[skip ci]``: will skip *all* CI
 
 Of course, you can combine these to skip multiple workflows.
@@ -92,7 +101,7 @@ GitHub Actions' workflows::
 
     DOC: improve QMCEngine examples.
 
-    [skip azp] [skip actions]
+    [skip azp] [skip actions] [skip cirrus]
 
 Wheel builds
 ============
