@@ -309,6 +309,8 @@ def _validate_weights(w, dtype=np.double):
 def directed_hausdorff(u, v, seed=0):
     """
     Compute the directed Hausdorff distance between two 2-D arrays.
+    Each array will be interpreted as a set of points with co-ordinates
+    in N-dimensional space.
 
     Distances between pairs are calculated using a Euclidean metric.
 
