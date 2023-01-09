@@ -613,16 +613,22 @@ def sobol_indices(
             raise ValueError(message)
 
     # Normalization by mean
-    # Sobol’, I. and Levitan, Y. L. (1999). On the use of variance reducing
+    # Sobol', I. and Levitan, Y. L. (1999). On the use of variance reducing
     # multipliers in monte carlo computations of a global sensitivity index.
-    # Computer Physics Communications, 117(1) :52–61.
+    # Computer Physics Communications, 117(1) :52-61.
     mean = np.mean([f_A, f_B], axis=(0, -1)).reshape(-1, 1)
     f_A -= mean
     f_B -= mean
     f_AB -= mean
 
     # Compute indices
-    first_order, total_order = indices_method(f_A=f_A, f_B=f_B, f_AB=f_AB)
+    # Filter warnings for constant output as var = 0
+    with np.errstate(divide='ignore', invalid='ignore'):
+        first_order, total_order = indices_method(f_A=f_A, f_B=f_B, f_AB=f_AB)
+
+    # null variance means null indices
+    first_order[~np.isfinite(first_order)] = 0
+    total_order[~np.isfinite(total_order)] = 0
 
     res = dict(
         first_order=first_order,
