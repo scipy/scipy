@@ -1875,8 +1875,8 @@ def jarque_bera(x, *, axis=None):
     >>> jb_plot(ax)
     >>> pvalue = dist.sf(res.statistic)
     >>> annotation = (f'p-value={pvalue:.6f}\n(shaded area)')
-    >>> arrowprops=dict(facecolor='black', width=1, headwidth=5, headlength=8)
-    >>> ax.annotate(annotation, (7.5, 0.01), (8, 0.05), arrowprops=arrowprops)
+    >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
+    >>> _ = ax.annotate(annotation, (7.5, 0.01), (8, 0.05), arrowprops=props)
     >>> i = jb_val >= res.statistic  # indices of more extreme statistic values
     >>> ax.fill_between(jb_val[i], y1=0, y2=pdf[i])
     >>> ax.set_xlim(0, 11)
@@ -1915,7 +1915,7 @@ def jarque_bera(x, *, axis=None):
     >>> ax.hist(res.null_distribution, np.linspace(0, 10, 50),
     ...         density=True)
     >>> ax.legend(['aymptotic approximation (many observations)',
-                   'Monte Carlo approximation (11 observations)'])
+    ...            'Monte Carlo approximation (11 observations)'])
     >>> ax.set_title("Jarque-Bera Null Distribution")
     >>> ax.set_xlabel("statistic")
     >>> ax.set_ylabel("probability density")
