@@ -1783,7 +1783,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
 
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
 def jarque_bera(x, *, axis=None):
-    """Perform the Jarque-Bera goodness of fit test on sample data.
+    r"""Perform the Jarque-Bera goodness of fit test on sample data.
 
     The Jarque-Bera test tests whether the sample data has the skewness and
     kurtosis matching a normal distribution.
@@ -1823,6 +1823,8 @@ def jarque_bera(x, *, axis=None):
            Zero: Calculating Exact P-values When Permutations Are Randomly
            Drawn." Statistical Applications in Genetics and Molecular Biology
            9.1 (2010).
+    .. [4] Panagiotakos, D. B. (2008). The value of p-value in biomedical
+           research. The open cardiovascular medicine journal, 2, 97.
 
     Examples
     --------
@@ -1840,10 +1842,6 @@ def jarque_bera(x, *, axis=None):
     >>> res = stats.jarque_bera(x)
     >>> res.statistic
     6.982848237344646
-    >>> s = stats.skew(x)  # calculate the sample skewness
-    >>> k = stats.kurtosis(x)  # calculate the sample kurtosis
-    >>> len(x)/6 * (s**2 + k**2/4)  # calculate the Jarque-Bera statistic
-    6.982848237344646
 
     Because the normal distribution has zero skewness and zero
     ("excess" or "Fisher") kurtosis, the value of this statistic tends to be
@@ -1851,34 +1849,54 @@ def jarque_bera(x, *, axis=None):
 
     The test is performed by comparing the observed value of the statistic
     against the null distribution: the distribution of statistic values derived
-    under the null hypothesis that the sample *is* normally distributed.
+    under the null hypothesis that the weights were drawn from a normal
+    distribution.
     For the Jarque-Bera test, the null distribution for very large samples is
     the chi-squared distribution with two degrees of freedom.
 
     >>> import matplotlib.pyplot as plt
-    >>> fig, ax = plt.subplots()
     >>> dist = stats.chi2(df=2)
-    >>> jb_val = np.linspace(0, 10, 100)
-    >>> ax.plot(jb_val, dist.pdf(jb_val))
-    >>> ax.set_title("PDF of Jarque-Bera Null Distribution")
-    >>> ax.set_xlabel("statistic")
-    >>> ax.set_ylabel("probability density")
+    >>> jb_val = np.linspace(0, 11, 100)
+    >>> pdf = dist.pdf(jb_val)
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> def jb_plot(ax):  # we'll re-use this
+    ...     ax.plot(jb_val, pdf)
+    ...     ax.set_title("Jarque-Bera Null Distribution")
+    ...     ax.set_xlabel("statistic")
+    ...     ax.set_ylabel("probability density")
+    >>> ax = jb_plot(ax)
     >>> plt.show()
 
     The comparison is quantified by the p-value: the proportion of values in
     the null distribution greater than or equal to the observed value of the
     statistic.
 
-    >>> dist.sf(res.statistic)
-    0.03045746622458189
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> jb_plot(ax)
+    >>> pvalue = dist.sf(res.statistic)
+    >>> annotation = (f'p-value={pvalue:.6f}\n(shaded area)')
+    >>> arrowprops=dict(facecolor='black', width=1, headwidth=5, headlength=8)
+    >>> ax.annotate(annotation, (7.5, 0.01), (8, 0.05), arrowprops=arrowprops)
+    >>> i = jb_val >= res.statistic  # indices of more extreme statistic values
+    >>> ax.fill_between(jb_val[i], y1=0, y2=pdf[i])
+    >>> ax.set_xlim(0, 11)
+    >>> ax.set_ylim(0, 0.3)
+    >>> plt.show()
     >>> res.pvalue
     0.03045746622458189
 
-    If the p-value is small - that is, if there is a low probability of
+    If the p-value is "small" - that is, if there is a low probability of
     sampling data from a normally distributed population that produces such an
     extreme value of the statistic - this may be taken as evidence against
-    the null hypothesis in favor of the alternative: the sample was not
-    drawn from a normal distribution.
+    the null hypothesis in favor of the alternative: the weights were not
+    drawn from a normal distribution. Note that:
+
+    - The inverse is not true; that is, the test is not used to provide
+      evidence for the null hypothesis.
+    - The threshold for values that will be considered "small" is a choice that
+      should be made before the data is analyzed [3]_ with consideration of the
+      risks of both false positives (incorrectly rejecting the null hypothesis)
+      and false negatives (failure to reject a false null hypothesis).
 
     Note that the chi-squared distribution provides an asymptotic approximation
     of the null distribution; it is only accurate for samples with many
@@ -1887,26 +1905,27 @@ def jarque_bera(x, *, axis=None):
     exact p-value.
 
     >>> def statistic(x, axis):
+    ...     # underlying calculation of the Jarque Bera statistic
     ...     s = stats.skew(x, axis=axis)
     ...     k = stats.kurtosis(x, axis=axis)
     ...     return x.shape[axis]/6 * (s**2 + k**2/4)
     >>> res = stats.monte_carlo_test(x, stats.norm.rvs, statistic)
-    >>> fig, ax = plt.subplots()
-    >>> ax.hist(res.null_distribution, bins=np.linspace(0, 10, 50),
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> ax.plot(jb_val, pdf)
+    >>> ax.hist(res.null_distribution, np.linspace(0, 10, 50),
     ...         density=True)
-    >>> ax.plot(jb_val, dist.pdf(jb_val))
-    >>> ax.legend(['Monte Carlo approximation (11 observations)',
-                   'aymptotic approximation (many observations'])
+    >>> ax.legend(['aymptotic approximation (many observations)',
+                   'Monte Carlo approximation (11 observations)'])
     >>> ax.set_title("Jarque-Bera Null Distribution")
     >>> ax.set_xlabel("statistic")
-    >>> ax.set_ylabel("frequency density")
+    >>> ax.set_ylabel("probability density")
     >>> plt.show()
     >>> res.pvalue
     0.0142  # may vary
 
     Furthermore, despite their stochastic nature, p-values computed in this way
     can be used to exactly control the rate of false rejections of the null
-    hypothesis [3]_.
+    hypothesis [4]_.
 
     """
     x = np.asarray(x)
