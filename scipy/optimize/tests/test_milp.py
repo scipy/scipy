@@ -274,7 +274,7 @@ def test_infeasible_prob_16609():
 
 
 _msg_time = "Time limit reached. (HiGHS Status 13:"
-_msg_iter = "Iteration limit reached. (HiGHS Status 14:"
+_msg_iter = "Iteration limit reached. (HiGHS Status 16:"
 
 
 @pytest.mark.skipif(np.intp(0).itemsize < 8,

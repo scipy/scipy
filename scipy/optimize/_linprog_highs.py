@@ -40,6 +40,7 @@ from ._highs._highs_constants import (
     MODEL_STATUS_REACHED_OBJECTIVE_TARGET,
     MODEL_STATUS_REACHED_TIME_LIMIT,
     MODEL_STATUS_REACHED_ITERATION_LIMIT,
+    MODEL_STATUS_REACHED_SOLUTION_LIMIT,
 
     HIGHS_SIMPLEX_STRATEGY_CHOOSE,
     HIGHS_SIMPLEX_STRATEGY_DUAL,
@@ -73,6 +74,7 @@ def _highs_to_scipy_status_message(highs_status, highs_message):
         MODEL_STATUS_OPTIMAL: (0, "Optimization terminated successfully. "),
         MODEL_STATUS_REACHED_TIME_LIMIT: (1, "Time limit reached. "),
         MODEL_STATUS_REACHED_ITERATION_LIMIT: (1, "Iteration limit reached. "),
+        MODEL_STATUS_REACHED_SOLUTION_LIMIT: (1, "Iteration limit reached. "),
         MODEL_STATUS_INFEASIBLE: (2, "The problem is infeasible. "),
         MODEL_STATUS_UNBOUNDED: (3, "The problem is unbounded. "),
         MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE: (4, "The problem is unbounded "

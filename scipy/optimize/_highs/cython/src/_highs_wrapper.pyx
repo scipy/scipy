@@ -20,6 +20,7 @@ from .HConst cimport (
     HighsModelStatusOPTIMAL,
     HighsModelStatusREACHED_TIME_LIMIT,
     HighsModelStatusREACHED_ITERATION_LIMIT,
+    HighsModelStatusREACHED_SOLUTION_LIMIT,
 
     HighsOptionTypeBOOL,
     HighsOptionTypeINT,
@@ -679,9 +680,11 @@ def _highs_wrapper(
         HighsModelStatusOPTIMAL,
         HighsModelStatusREACHED_TIME_LIMIT,
         HighsModelStatusREACHED_ITERATION_LIMIT,
+        HighsModelStatusREACHED_SOLUTION_LIMIT,
     } or (model_status in {
         HighsModelStatusREACHED_TIME_LIMIT,
         HighsModelStatusREACHED_ITERATION_LIMIT,
+        HighsModelStatusREACHED_SOLUTION_LIMIT,
     } and (info.objective_function_value == HIGHS_CONST_INF))
     lpFailCondition = model_status != HighsModelStatusOPTIMAL
     if (highs.getLp().isMip() and mipFailCondition) or (not highs.getLp().isMip() and lpFailCondition):

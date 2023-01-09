@@ -10,7 +10,6 @@ cdef extern from "HConst.h" nogil:
     const double HIGHS_CONST_INF "kHighsInf"
     const double kHighsTiny
     const double kHighsZero
-    const int kHighsThreadLimit
 
     cdef enum HighsDebugLevel:
       HighsDebugLevel_kHighsDebugLevelNone "kHighsDebugLevelNone" = 0
@@ -37,6 +36,7 @@ cdef extern from "HConst.h" nogil:
         HighsModelStatusREACHED_TIME_LIMIT "HighsModelStatus::kTimeLimit"
         HighsModelStatusREACHED_ITERATION_LIMIT "HighsModelStatus::kIterationLimit"
         HighsModelStatusUNKNOWN "HighsModelStatus::kUnknown"
+        HighsModelStatusREACHED_SOLUTION_LIMIT "HighsModelStatus::kSolutionLimit"
         HighsModelStatusHIGHS_MODEL_STATUS_MIN "HighsModelStatus::kMin" = HighsModelStatusNOTSET
         HighsModelStatusHIGHS_MODEL_STATUS_MAX "HighsModelStatus::kMax" = HighsModelStatusUNKNOWN
 
@@ -46,20 +46,6 @@ cdef extern from "HConst.h" nogil:
         HighsBasisStatusUPPER "HighsBasisStatus::kUpper" # (slack) variable is at its upper bound
         HighsBasisStatusZERO "HighsBasisStatus::kZero" # free variable is non-basic and set to zero
         HighsBasisStatusNONBASIC "HighsBasisStatus::kNonbasic" # nonbasic with no specific bound information - useful for users and postsolve
-
-    cdef enum SolverOption:
-        SOLVER_OPTION_SIMPLEX "SolverOption::SOLVER_OPTION_SIMPLEX" = -1
-        SOLVER_OPTION_CHOOSE "SolverOption::SOLVER_OPTION_CHOOSE"
-        SOLVER_OPTION_IPM "SolverOption::SOLVER_OPTION_IPM"
-
-    cdef enum PrimalDualStatus:
-        PrimalDualStatusSTATUS_NOT_SET "PrimalDualStatus::STATUS_NOT_SET" = -1
-        PrimalDualStatusSTATUS_MIN "PrimalDualStatus::STATUS_MIN" = PrimalDualStatusSTATUS_NOT_SET
-        PrimalDualStatusSTATUS_NO_SOLUTION "PrimalDualStatus::STATUS_NO_SOLUTION"
-        PrimalDualStatusSTATUS_UNKNOWN "PrimalDualStatus::STATUS_UNKNOWN"
-        PrimalDualStatusSTATUS_INFEASIBLE_POINT "PrimalDualStatus::STATUS_INFEASIBLE_POINT"
-        PrimalDualStatusSTATUS_FEASIBLE_POINT "PrimalDualStatus::STATUS_FEASIBLE_POINT"
-        PrimalDualStatusSTATUS_MAX "PrimalDualStatus::STATUS_MAX" = PrimalDualStatusSTATUS_FEASIBLE_POINT
 
     cdef enum HighsOptionType:
         HighsOptionTypeBOOL "HighsOptionType::kBool" = 0
