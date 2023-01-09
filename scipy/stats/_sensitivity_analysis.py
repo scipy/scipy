@@ -273,6 +273,9 @@ def sobol_indices(
         different arrays. Keys must be: ``f_A``, ``f_B`` and ``f_AB``.
         ``f_A`` and ``f_B`` should have a shape ``(s, n)`` and ``f_AB``
         should have a shape ``(d, s, n)``.
+        The sample used to compute ``f_AB`` being a combination
+        of the samples used to compute ``f_A, f_B``.
+        This is an advanced feature and misuse can lead to wrong analysis.
     n : int
         Number of samples.
         Must be a power of 2. The total number of function calls will be
