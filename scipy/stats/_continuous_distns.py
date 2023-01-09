@@ -2156,6 +2156,15 @@ class f_gen(rv_continuous):
 
         return mu, mu2, g1, g2
 
+    def _entropy(self, dfn, dfd):
+        half_dfn = 0.5 * dfn
+        half_dfd = 0.5 * dfd
+        half_sum = 0.5 * (dfn + dfd)
+
+        return (np.log(dfd) - np.log(dfn) + sc.betaln(half_dfn, half_dfd) +
+                (1 - half_dfn) * sc.psi(half_dfn) - (1 + half_dfd) *
+                sc.psi(half_dfd) + half_sum * sc.psi(half_sum))
+
 
 f = f_gen(a=0.0, name='f')
 
