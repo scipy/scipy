@@ -191,7 +191,7 @@ def test_dijkstra_min_only_random(n):
     np.random.shuffle(v)
     indices = v[:int(n*.1)]
     ds, pred, sources = dijkstra(data,
-                                 directed=False,
+                                 directed=True,
                                  indices=indices,
                                  min_only=True,
                                  return_predecessors=True)
@@ -204,6 +204,8 @@ def test_dijkstra_min_only_random(n):
 
 # n : number of vertices
 # t : number of test cases
+# Generate random graphs, run shortest_path for all methods, verify the results
+# and check consistency across different methods.
 @pytest.mark.parametrize('n, t',
                          ((3, 200),
                           (10, 200),
