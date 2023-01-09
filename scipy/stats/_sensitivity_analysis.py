@@ -293,9 +293,13 @@ def sobol_indices(
             func(f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray)
             -> Tuple[np.ndarray, np.ndarray]
 
-        with ``f_A, f_B`` of shape (s, n), ``f_AB`` of shape (d, s, n)
-        and the output being a tuple of the first and total indices with
+        with ``f_A, f_B`` of shape (s, n) and ``f_AB`` of shape (d, s, n).
+        These arrays contain the function evaluations from 3 different set
+        of samples. The sample used to compute ``f_AB`` being a combination
+        of the samples used to compute ``f_A, f_B``.
+        The output is a tuple of the first and total indices with
         shape (s, d).
+        This is an advanced feature and misuse can lead to wrong analysis.
     random_state : {None, int, `numpy.random.Generator`}, optional
         If `random_state` is an int or None, a new `numpy.random.Generator` is
         created using ``np.random.default_rng(random_state)``.
@@ -329,7 +333,9 @@ def sobol_indices(
     Sobol' method [1]_, [2]_ is a variance-based Sensitivity Analysis which
     obtains the contribution of each parameter to the variance of the
     quantities of interest (QoIs; i.e., the outputs of `func`).
-    Respective contributions can then be used to rank the parameters.
+    Respective contributions can be used to rank the parameters and
+    also gauge the complexity of the model by computing the
+    model's effective (or mean) dimension.
 
     .. note::
 
@@ -386,6 +392,11 @@ def sobol_indices(
 
         Negative Sobol' values are due to numerical errors. Increasing the
         number of sample should help.
+
+        The number of sample required to have a good analysis increases with
+        the dimensionality of the problem. e.g. for a 3 dimension problem,
+        consider at minima ``n >= 2**12``. The more complex the model is,
+        the more samples will be needed.
 
         If the parameters are not independent, the first-order indices would
         not sum to 1.
