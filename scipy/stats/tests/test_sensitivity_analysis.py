@@ -48,10 +48,8 @@ def f_ishigami_vec(x):
 class TestSobolIndices:
 
     dists = [
-        stats.uniform(loc=-np.pi, scale=2*np.pi),
-        stats.uniform(loc=-np.pi, scale=2*np.pi),
-        stats.uniform(loc=-np.pi, scale=2*np.pi)
-    ]
+        stats.uniform(loc=-np.pi, scale=2*np.pi)  # type: ignore[attr-defined]
+    ] * 3
 
     def test_sample_AB(self):
         # (d, n)
