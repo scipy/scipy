@@ -47,6 +47,12 @@ def f_ishigami_vec(x):
 
 class TestSobolIndices:
 
+    dists = [
+        stats.uniform(loc=-np.pi, scale=2*np.pi),
+        stats.uniform(loc=-np.pi, scale=2*np.pi),
+        stats.uniform(loc=-np.pi, scale=2*np.pi)
+    ]
+
     def test_sample_AB(self):
         # (d, n)
         A = np.array(
@@ -79,11 +85,7 @@ class TestSobolIndices:
         rng = np.random.default_rng(28631265345463262246170309650372465332)
         res = sobol_indices(
             func=func, n=4096,
-            dists=[
-                stats.uniform(loc=-np.pi, scale=2*np.pi),
-                stats.uniform(loc=-np.pi, scale=2*np.pi),
-                stats.uniform(loc=-np.pi, scale=2*np.pi)
-            ],
+            dists=self.dists,
             random_state=rng
         )
 
@@ -179,11 +181,7 @@ class TestSobolIndices:
         rng = np.random.default_rng(28631265345463262246170309650372465332)
         res = sobol_indices(
             func=f_ishigami, n=4096,
-            dists=[
-                stats.uniform(loc=-np.pi, scale=2*np.pi),
-                stats.uniform(loc=-np.pi, scale=2*np.pi),
-                stats.uniform(loc=-np.pi, scale=2*np.pi)
-            ],
+            dists=self.dists,
             method=jansen_sobol,
             random_state=rng
         )
@@ -195,11 +193,7 @@ class TestSobolIndices:
         rng = np.random.default_rng(28631265345463262246170309650372465332)
         res = sobol_indices(
             func=lambda x: f_ishigami(x) + 1000, n=4096,
-            dists=[
-                stats.uniform(loc=-np.pi, scale=2*np.pi),
-                stats.uniform(loc=-np.pi, scale=2*np.pi),
-                stats.uniform(loc=-np.pi, scale=2*np.pi)
-            ],
+            dists=self.dists,
             random_state=rng
         )
 
@@ -216,11 +210,7 @@ class TestSobolIndices:
         rng = np.random.default_rng(28631265345463262246170309650372465332)
         res = sobol_indices(
             func=f_ishigami_vec_const, n=4096,
-            dists=[
-                stats.uniform(loc=-np.pi, scale=2*np.pi),
-                stats.uniform(loc=-np.pi, scale=2*np.pi),
-                stats.uniform(loc=-np.pi, scale=2*np.pi)
-            ],
+            dists=self.dists,
             random_state=rng
         )
 
