@@ -2734,6 +2734,28 @@ class TestF:
         k2 = k2num / k2den
         assert_allclose(k, k2)
 
+    # entropy reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def entropy_f_mpmath(dfn, dfd):
+    #     dfn = mp.mpf(dfn)
+    #     dfd = mp.mpf(dfd)
+    #     dfn2 = dfn/2
+    #     dfd2 = dfd/2
+    #     dfmean = dfn2 + dfd2
+    #      return float(mp.log(dfd/dfn) +
+    #                   mp.log(mp.beta(dfn2, dfd2)) +
+    #                   (1 - dfn2)*mp.digamma(dfn2) -
+    #                   (1 + dfd2)*mp.digamma(dfd2) +
+    #                   dfmean*mp.digamma(dfmean))
+
+    @pytest.mark.parametrize("dfn, dfd, ref",
+                             [(5, 5, 1.4061170495306792),
+                              (1, 1000, 0.7852575269737423),
+                              (10000, 1, 3.3244327988967233),
+                              (100, 500, -0.4504998345102748)])
+    def test_entropy(self, dfn, dfd, ref):
+        assert_allclose(stats.f.entropy(dfn, dfd), ref)
 
 def test_rvgeneric_std():
     # Regression test for #1191
