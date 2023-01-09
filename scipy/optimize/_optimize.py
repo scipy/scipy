@@ -27,6 +27,7 @@ __docformat__ = "restructuredtext en"
 
 import warnings
 import sys
+import inspect
 from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
                    asarray, sqrt, Inf, asfarray)
 import numpy as np
@@ -131,6 +132,58 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
     return s
 
 
+def _wrap_callback(callback, method=None):
+    """Wrap a user-provided callback so that attributes can be attached."""
+    if callback is None or method in {'tnc', 'slsqp', 'cobyla'}:
+        return callback  # don't wrap
+
+    p1 = (inspect.Parameter('intermediate_result',
+                            kind=inspect.Parameter.POSITIONAL_OR_KEYWORD),)
+    p2 = (inspect.Parameter('intermediate_result',
+                            kind=inspect.Parameter.KEYWORD_ONLY),)
+    sig1 = inspect.Signature(parameters=p1)
+    sig2 = inspect.Signature(parameters=p2)
+
+    if inspect.signature(callback) in {sig1, sig2}:
+        def wrapped_callback(res):
+            return callback(intermediate_result=res)
+    elif method == 'trust-constr':
+        def wrapped_callback(res):
+            return callback(np.copy(res.x), res)
+    else:
+        def wrapped_callback(res):
+            return callback(np.copy(res.x))
+
+    wrapped_callback.stop_iteration = False
+    return wrapped_callback
+
+
+def _call_callback_maybe_halt(callback, res):
+    """Call wrapped callback; return True if minimization should stop.
+
+    Parameters
+    ----------
+    callback : callable or None
+        A user-provided callback wrapped with `_wrap_callback`
+    res : OptimizeResult
+        Information about the current iterate
+
+    Returns
+    -------
+    halt : bool
+        True if minimization should stop
+
+    """
+    if callback is None:
+        return False
+    try:
+        callback(res)
+        return False
+    except StopIteration:
+        callback.stop_iteration = True  # make `minimize` override status/msg
+        return True
+
+
 class OptimizeResult(dict):
     """ Represents the optimization result.
 
@@ -222,11 +275,11 @@ def _check_unknown_options(unknown_options):
         warnings.warn("Unknown solver options: %s" % msg, OptimizeWarning, 4)
 
 
-def is_array_scalar(x):
-    """Test whether `x` is either a scalar or an array scalar.
+def is_finite_scalar(x):
+    """Test whether `x` is either a finite scalar or a finite array scalar.
 
     """
-    return np.size(x) == 1
+    return np.size(x) == 1 and np.isfinite(x)
 
 
 _epsilon = sqrt(np.finfo(float).eps)
@@ -692,6 +745,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'return_all': retall,
             'initial_simplex': initial_simplex}
 
+    callback = _wrap_callback(callback)
     res = _minimize_neldermead(func, x0, args, callback=callback, **opts)
     if full_output:
         retlist = res['x'], res['fun'], res['nit'], res['nfev'], res['status']
@@ -926,10 +980,11 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             ind = np.argsort(fsim)
             sim = np.take(sim, ind, 0)
             fsim = np.take(fsim, ind, 0)
-            if callback is not None:
-                callback(sim[0])
             if retall:
                 allvecs.append(sim[0])
+            intermediate_result = OptimizeResult(x=sim[0], fun=fsim[0])
+            if _call_callback_maybe_halt(callback, intermediate_result):
+                break
 
     x = sim[0]
     fval = np.min(fsim)
@@ -1188,7 +1243,7 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0, callback=None):
+              retall=0, callback=None, xrtol=0):
     """
     Minimize a function using the BFGS algorithm.
 
@@ -1203,7 +1258,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     args : tuple, optional
         Extra arguments passed to f and fprime.
     gtol : float, optional
-        Gradient norm must be less than `gtol` before successful termination.
+        Terminate successfully if gradient norm is less than `gtol`
     norm : float, optional
         Order of norm (Inf is max, -Inf is min)
     epsilon : int or ndarray, optional
@@ -1221,6 +1276,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         Print convergence message if True.
     retall : bool, optional
         Return a list of results at each iteration if True.
+    xrtol : float, default: 0
+        Relative tolerance for `x`. Terminate successfully if step
+        size is less than ``xk * xrtol`` where ``xk`` is the current
+        parameter vector.
 
     Returns
     -------
@@ -1296,6 +1355,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             'maxiter': maxiter,
             'return_all': retall}
 
+    callback = _wrap_callback(callback)
     res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
@@ -1314,7 +1374,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
-                   **unknown_options):
+                   xrtol=0, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1326,8 +1386,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     maxiter : int
         Maximum number of iterations to perform.
     gtol : float
-        Gradient norm must be less than `gtol` before successful
-        termination.
+        Terminate successfully if gradient norm is less than `gtol`.
     norm : float
         Order of norm (Inf is max, -Inf is min).
     eps : float or ndarray
@@ -1343,7 +1402,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
-
+    xrtol : float, default: 0
+        Relative tolerance for `x`. Terminate successfully if step size is
+        less than ``xk * xrtol`` where ``xk`` is the current parameter vector.
     """
     _check_unknown_options(unknown_options)
     retall = return_all
@@ -1387,21 +1448,30 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             warnflag = 2
             break
 
-        xkp1 = xk + alpha_k * pk
+        sk = alpha_k * pk
+        xkp1 = xk + sk
+
         if retall:
             allvecs.append(xkp1)
-        sk = xkp1 - xk
         xk = xkp1
         if gfkp1 is None:
             gfkp1 = myfprime(xkp1)
 
         yk = gfkp1 - gfk
         gfk = gfkp1
-        if callback is not None:
-            callback(xk)
         k += 1
+        intermediate_result = OptimizeResult(x=xk, fun=old_fval)
+        if _call_callback_maybe_halt(callback, intermediate_result):
+            break
         gnorm = vecnorm(gfk, ord=norm)
         if (gnorm <= gtol):
+            break
+
+        #  See Chapter 5 in  P.E. Frandsen, K. Jonasson, H.B. Nielsen,
+        #  O. Tingleff: "Unconstrained Optimization", IMM, DTU.  1999.
+        #  These notes are available here:
+        #  http://www2.imm.dtu.dk/documents/ftp/publlec.html
+        if (alpha_k*vecnorm(pk) <= xrtol*(xrtol + vecnorm(xk))):
             break
 
         if not np.isfinite(old_fval):
@@ -1412,6 +1482,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
         rhok_inv = np.dot(yk, sk)
         # this was handled in numeric, let it remaines for more safety
+        # Cryptic comment above is preserved for posterity. Future reader:
+        # consider change to condition below proposed in gh-1261/gh-17345.
         if rhok_inv == 0.:
             rhok = 1000.0
             if disp:
@@ -1613,6 +1685,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             'maxiter': maxiter,
             'return_all': retall}
 
+    callback = _wrap_callback(callback)
     res = _minimize_cg(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
@@ -1740,9 +1813,10 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
         if retall:
             allvecs.append(xk)
-        if callback is not None:
-            callback(xk)
         k += 1
+        intermediate_result = OptimizeResult(x=xk, fun=old_fval)
+        if _call_callback_maybe_halt(callback, intermediate_result):
+            break
 
     fval = old_fval
     if warnflag == 2:
@@ -1869,6 +1943,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             'disp': disp,
             'return_all': retall}
 
+    callback = _wrap_callback(callback)
     res = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p,
                              callback=callback, **opts)
 
@@ -2050,11 +2125,13 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         update = alphak * pk
         xk = xk + update        # upcast if necessary
-        if callback is not None:
-            callback(xk)
         if retall:
             allvecs.append(xk)
         k += 1
+        intermediate_result = OptimizeResult(x=xk, fun=old_fval)
+        if _call_callback_maybe_halt(callback, intermediate_result):
+            return terminate(5, "")
+
     else:
         if np.isnan(old_fval) or np.isnan(update).any():
             return terminate(3, _status_message['nan'])
@@ -2072,7 +2149,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     func : callable f(x,*args)
         Objective function to be minimized (must accept and return scalars).
     x1, x2 : float or array scalar
-        The optimization bounds.
+        Finite optimization bounds.
     args : tuple, optional
         Extra arguments passed to function.
     xtol : float, optional
@@ -2095,7 +2172,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         Parameters (over given interval) which minimize the
         objective function.
     fval : number
-        The function value at the minimum point.
+        The function value evaluated at the minimizer.
     ierr : int
         An error flag (0 if converged, 1 if maximum number of
         function calls reached).
@@ -2113,22 +2190,34 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     interval x1 < xopt < x2 using Brent's method. (See `brent`
     for auto-bracketing.)
 
+    References
+    ----------
+    .. [1] Forsythe, G.E., M. A. Malcolm, and C. B. Moler. "Computer Methods
+           for Mathematical Computations." Prentice-Hall Series in Automatic
+           Computation 259 (1977).
+    .. [2] Brent, Richard P. Algorithms for Minimization Without Derivatives.
+           Courier Corporation, 2013.
+
     Examples
     --------
-    `fminbound` finds the minimum of the function in the given range.
-    The following examples illustrate the same
-
-    >>> def f(x):
-    ...     return x**2
+    `fminbound` finds the minimizer of the function in the given range.
+    The following examples illustrate this.
 
     >>> from scipy import optimize
-
-    >>> minimum = optimize.fminbound(f, -1, 2)
+    >>> def f(x):
+    ...     return (x-1)**2
+    >>> minimizer = optimize.fminbound(f, -4, 4)
+    >>> minimizer
+    1.0
+    >>> minimum = f(minimizer)
     >>> minimum
     0.0
-    >>> minimum = optimize.fminbound(f, 1, 2)
+    >>> minimizer = optimize.fminbound(f, 3, 4)
+    >>> minimizer
+    3.000005960860986
+    >>> minimum = f(minimizer)
     >>> minimum
-    1.0000059608609866
+    4.000023843479476
     """
     options = {'xatol': xtol,
                'maxiter': maxfun,
@@ -2166,9 +2255,9 @@ def _minimize_scalar_bounded(func, bounds, args=(),
         raise ValueError('bounds must have two elements.')
     x1, x2 = bounds
 
-    if not (is_array_scalar(x1) and is_array_scalar(x2)):
-        raise ValueError("Optimization bounds must be scalars"
-                         " or array scalars.")
+    if not (is_finite_scalar(x1) and is_finite_scalar(x2)):
+        raise ValueError("Optimization bounds must be finite scalars.")
+
     if x1 > x2:
         raise ValueError("The lower bound exceeds the upper bound.")
 
@@ -3147,6 +3236,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'direc': direc,
             'return_all': retall}
 
+    callback = _wrap_callback(callback)
     res = _minimize_powell(func, x0, args, callback=callback, **opts)
 
     if full_output:
@@ -3325,10 +3415,11 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
                     delta = fx2 - fval
                     bigind = i
             iter += 1
-            if callback is not None:
-                callback(x)
             if retall:
                 allvecs.append(x)
+            intermediate_result = OptimizeResult(x=x, fun=fval)
+            if _call_callback_maybe_halt(callback, intermediate_result):
+                break
             bnd = ftol * (np.abs(fx) + np.abs(fval)) + 1e-20
             if 2.0 * (fx - fval) <= bnd:
                 break

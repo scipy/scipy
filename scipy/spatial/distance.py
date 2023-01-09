@@ -60,7 +60,6 @@ computing the distances between all pairs.
    dice             -- the Dice dissimilarity.
    hamming          -- the Hamming distance.
    jaccard          -- the Jaccard distance.
-   kulsinski        -- the Kulsinski distance.
    kulczynski1      -- the Kulczynski 1 distance.
    rogerstanimoto   -- the Rogers-Tanimoto dissimilarity.
    russellrao       -- the Russell-Rao dissimilarity.
@@ -89,7 +88,6 @@ __all__ = [
     'is_valid_y',
     'jaccard',
     'jensenshannon',
-    'kulsinski',
     'kulczynski1',
     'mahalanobis',
     'minkowski',
@@ -123,7 +121,6 @@ from ..special import rel_entr
 
 from . import _distance_pybind
 
-from .._lib.deprecation import _deprecated
 
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
@@ -342,6 +339,10 @@ def directed_hausdorff(u, v, seed=0):
         An exception is thrown if `u` and `v` do not have
         the same number of columns.
 
+    See Also
+    --------
+    scipy.spatial.procrustes : Another similarity test for two data sets
+
     Notes
     -----
     Uses the early break technique and the random sampling approach
@@ -363,16 +364,13 @@ def directed_hausdorff(u, v, seed=0):
            Pattern Analysis And Machine Intelligence, vol. 37 pp. 2153-63,
            2015.
 
-    See Also
-    --------
-    scipy.spatial.procrustes : Another similarity test for two data sets
-
     Examples
     --------
     Find the directed Hausdorff distance between two 2-D arrays of
     coordinates:
 
     >>> from scipy.spatial.distance import directed_hausdorff
+    >>> import numpy as np
     >>> u = np.array([(1.0, 0.0),
     ...               (0.0, 1.0),
     ...               (-1.0, 0.0),
@@ -797,70 +795,6 @@ def jaccard(u, v, w=None):
     return (a / b) if b != 0 else 0
 
 
-@_deprecated("Kulsinski has been deprecated from scipy.spatial.distance"
-             " in SciPy 1.9.0 and it will be removed in SciPy 1.11.0."
-             " It is superseded by scipy.spatial.distance.kulczynski1.")
-def kulsinski(u, v, w=None):
-    """
-    Compute the Kulsinski dissimilarity between two boolean 1-D arrays.
-
-    The Kulsinski dissimilarity between two boolean 1-D arrays `u` and `v`,
-    is defined as
-
-    .. math::
-
-         \\frac{c_{TF} + c_{FT} - c_{TT} + n}
-              {c_{FT} + c_{TF} + n}
-
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n`.
-
-    .. deprecated:: 0.12.0
-        `kulsinski` has been deprecated from `scipy.spatial.distance` in
-        SciPy 1.9.0 and it will be removed in SciPy 1.11.0. It is superseded
-        by `scipy.spatial.distance.kulczynski1`.
-
-    Parameters
-    ----------
-    u : (N,) array_like, bool
-        Input array.
-    v : (N,) array_like, bool
-        Input array.
-    w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
-
-    Returns
-    -------
-    kulsinski : double
-        The Kulsinski distance between vectors `u` and `v`.
-
-    Examples
-    --------
-    >>> from scipy.spatial import distance
-    >>> distance.kulsinski([1, 0, 0], [0, 1, 0])
-    1.0
-    >>> distance.kulsinski([1, 0, 0], [1, 1, 0])
-    0.75
-    >>> distance.kulsinski([1, 0, 0], [2, 1, 0])
-    0.33333333333333331
-    >>> distance.kulsinski([1, 0, 0], [3, 1, 0])
-    -0.5
-
-    """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    if w is None:
-        n = float(len(u))
-    else:
-        w = _validate_weights(w)
-        n = w.sum()
-    (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
-
-    return (ntf + nft - ntt + n) / (ntf + nft + n)
-
-
 def kulczynski1(u, v, *, w=None):
     """
     Compute the Kulczynski 1 dissimilarity between two boolean 1-D arrays.
@@ -1265,6 +1199,7 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
     Examples
     --------
     >>> from scipy.spatial import distance
+    >>> import numpy as np
     >>> distance.jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0)
     1.0
     >>> distance.jensenshannon([1.0, 0.0], [0.5, 0.5])
@@ -1377,6 +1312,12 @@ def dice(u, v, w=None):
     -------
     dice : double
         The Dice dissimilarity between 1-D arrays `u` and `v`.
+
+    Notes
+    -----
+    This function computes the Dice dissimilarity index. To compute the
+    Dice similarity index, convert one to the other with similarity =
+    1 - dissimilarity.
 
     Examples
     --------
@@ -1843,14 +1784,6 @@ _METRIC_INFOS = [
         pdist_func=PDistMetricWrapper('jensenshannon'),
     ),
     MetricInfo(
-        canonical_name='kulsinski',
-        aka={'kulsinski'},
-        types=['bool'],
-        dist_func=kulsinski,
-        cdist_func=CDistMetricWrapper('kulsinski'),
-        pdist_func=PDistMetricWrapper('kulsinski'),
-    ),
-    MetricInfo(
         canonical_name='kulczynski1',
         aka={'kulczynski1'},
         types=['bool'],
@@ -2200,6 +2133,33 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
           dm = pdist(X, 'sokalsneath')
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.spatial.distance import pdist
+
+    ``x`` is an array of five points in three-dimensional space.
+
+    >>> x = np.array([[2, 0, 2], [2, 2, 3], [-2, 4, 5], [0, 1, 9], [2, 2, 4]])
+
+    ``pdist(x)`` with no additional arguments computes the 10 pairwise
+    Euclidean distances:
+
+    >>> pdist(x)
+    array([2.23606798, 6.40312424, 7.34846923, 2.82842712, 4.89897949,
+           6.40312424, 1.        , 5.38516481, 4.58257569, 5.47722558])
+
+    The following computes the pairwise Minkowski distances with ``p = 3.5``:
+
+    >>> pdist(x, metric='minkowski', p=3.5)
+    array([2.04898923, 5.1154929 , 7.02700737, 2.43802731, 4.19042714,
+           6.03956994, 1.        , 4.45128103, 4.10636143, 5.0619695 ])
+
+    The pairwise city block or Manhattan distances:
+
+    >>> pdist(x, metric='cityblock')
+    array([ 3., 11., 10.,  4.,  8.,  9.,  1.,  9.,  7.,  8.])
+
     """
     # You can also call this as:
     #     Y = pdist(X, 'test_abc')
@@ -2297,8 +2257,42 @@ def squareform(X, force="no", checks=True):
     In SciPy 0.19.0, ``squareform`` stopped casting all input types to
     float64, and started returning arrays of the same dtype as the input.
 
-    """
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.spatial.distance import pdist, squareform
 
+    ``x`` is an array of five points in three-dimensional space.
+
+    >>> x = np.array([[2, 0, 2], [2, 2, 3], [-2, 4, 5], [0, 1, 9], [2, 2, 4]])
+
+    ``pdist(x)`` computes the Euclidean distances between each pair of
+    points in ``x``.  The distances are returned in a one-dimensional
+    array with length ``5*(5 - 1)/2 = 10``.
+
+    >>> distvec = pdist(x)
+    >>> distvec
+    array([2.23606798, 6.40312424, 7.34846923, 2.82842712, 4.89897949,
+           6.40312424, 1.        , 5.38516481, 4.58257569, 5.47722558])
+
+    ``squareform(distvec)`` returns the 5x5 distance matrix.
+
+    >>> m = squareform(distvec)
+    >>> m
+    array([[0.        , 2.23606798, 6.40312424, 7.34846923, 2.82842712],
+           [2.23606798, 0.        , 4.89897949, 6.40312424, 1.        ],
+           [6.40312424, 4.89897949, 0.        , 5.38516481, 4.58257569],
+           [7.34846923, 6.40312424, 5.38516481, 0.        , 5.47722558],
+           [2.82842712, 1.        , 4.58257569, 5.47722558, 0.        ]])
+
+    When given a square distance matrix ``m``, ``squareform(m)`` returns
+    the one-dimensional condensed distance vector associated with the
+    matrix.  In this case, we recover ``distvec``.
+
+    >>> squareform(m)
+    array([2.23606798, 6.40312424, 7.34846923, 2.82842712, 4.89897949,
+           6.40312424, 1.        , 5.38516481, 4.58257569, 5.47722558])
+    """
     X = np.ascontiguousarray(X)
 
     s = X.shape
@@ -2403,6 +2397,37 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     the diagonal are ignored if they are within the tolerance specified
     by `tol`.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.spatial.distance import is_valid_dm
+
+    This matrix is a valid distance matrix.
+
+    >>> d = np.array([[0.0, 1.1, 1.2, 1.3],
+    ...               [1.1, 0.0, 1.0, 1.4],
+    ...               [1.2, 1.0, 0.0, 1.5],
+    ...               [1.3, 1.4, 1.5, 0.0]])
+    >>> is_valid_dm(d)
+    True
+
+    In the following examples, the input is not a valid distance matrix.
+
+    Not square:
+
+    >>> is_valid_dm([[0, 2, 2], [2, 0, 2]])
+    False
+
+    Nonzero diagonal element:
+
+    >>> is_valid_dm([[0, 1, 1], [1, 2, 3], [1, 3, 0]])
+    False
+
+    Not symmetric:
+
+    >>> is_valid_dm([[0, 1, 3], [2, 0, 1], [3, 1, 0]])
+    False
+
     """
     D = np.asarray(D, order='c')
     valid = True
@@ -2478,6 +2503,29 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     name : bool, optional
         Used when referencing the offending variable in the
         warning or exception message.
+
+    Returns
+    -------
+    bool
+        True if the input array is a valid condensed distance matrix,
+        False otherwise.
+
+    Examples
+    --------
+    >>> from scipy.spatial.distance import is_valid_y
+
+    This vector is a valid condensed distance matrix.  The length is 6,
+    which corresponds to ``n = 4``, since ``4*(4 - 1)/2`` is 6.
+
+    >>> v = [1.0, 1.2, 1.0, 0.5, 1.3, 0.9]
+    >>> is_valid_y(v)
+    True
+
+    An input vector with length, say, 7, is not a valid condensed distance
+    matrix.
+
+    >>> is_valid_y([1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7])
+    False
 
     """
     y = np.asarray(y, order='c')
@@ -2857,6 +2905,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
     Find the Euclidean distances between four 2-D coordinates:
 
     >>> from scipy.spatial import distance
+    >>> import numpy as np
     >>> coords = [(35.0456, -85.2672),
     ...           (35.1174, -89.9711),
     ...           (35.9728, -83.9422),

@@ -4,7 +4,7 @@ import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_less, assert_,
+                           assert_array_less, assert_, assert_allclose,
                            suppress_warnings)
 from pytest import raises
 from scipy.optimize import (NonlinearConstraint,
@@ -679,6 +679,9 @@ def test_bug_11886():
     minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors
 
 
+# Remove xfail when gh-11649 is resolved
+@pytest.mark.xfail(reason="Known bug in trust-constr; see gh-11649.",
+                   strict=True)
 def test_gh11649():
     bnds = Bounds(lb=[-1, -1], ub=[1, 1], keep_feasible=True)
 
@@ -705,6 +708,13 @@ def test_gh11649():
     res = minimize(fun=obj, x0=x0, method='trust-constr',
                    bounds=bnds, constraints=nlcs)
     assert res.success
+    assert_inbounds(res.x)
+    assert nlcs[0].lb < nlcs[0].fun(res.x) < nlcs[0].ub
+    assert_allclose(nce(res.x), nlcs[1].ub)
+
+    ref = minimize(fun=obj, x0=x0, method='slsqp',
+                   bounds=bnds, constraints=nlcs)
+    assert_allclose(res.fun, ref.fun)
 
 
 class TestBoundedNelderMead:
@@ -752,8 +762,8 @@ class TestBoundedNelderMead:
 
     def test_invalid_bounds(self):
         prob = Rosenbrock()
-        with raises(ValueError, match=r"one of the lower bounds is greater "
-                                      r"than an upper bound."):
+        message = 'An upper bound is less than the corresponding lower bound.'
+        with raises(ValueError, match=message):
             bounds = Bounds([-np.inf, 1.0], [4.0, -5.0])
             minimize(prob.fun, [-10, 3],
                      method='Nelder-Mead',

@@ -480,7 +480,7 @@ class TestDifferentialEvolutionSolver:
         _, fun_prev = next(solver)
         for i, soln in enumerate(solver):
             x_current, fun_current = soln
-            assert(fun_prev >= fun_current)
+            assert fun_prev >= fun_current
             _, fun_prev = x_current, fun_current
             # need to have this otherwise the solver would never stop.
             if i == 50:

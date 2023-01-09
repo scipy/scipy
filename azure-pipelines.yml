@@ -107,7 +107,7 @@ stages:
   - job: wheel_optimized_gcc8
     timeoutInMinutes: 90
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
     variables:
       # The following is needed for optimized "-OO" test run but since we use
       # pytest-xdist plugin for load scheduling its workers don't pick up the
@@ -145,7 +145,7 @@ stages:
         architecture: 'x64'
     - script: >-
         python -m pip install
-        flake8==3.9.2
+        "flake8<6"
       displayName: 'Install tools'
       failOnStderr: false
     - script: |

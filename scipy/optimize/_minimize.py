@@ -18,7 +18,8 @@ import numpy as np
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                         _minimize_bfgs, _minimize_newtoncg,
                         _minimize_scalar_brent, _minimize_scalar_bounded,
-                        _minimize_scalar_golden, MemoizeJac, OptimizeResult)
+                        _minimize_scalar_golden, MemoizeJac, OptimizeResult,
+                        _wrap_callback)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov
@@ -39,6 +40,11 @@ from ._differentiable_functions import FD_METHODS
 MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
                     'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
+
+# These methods support the new callback interface (passed an OptimizeResult)
+MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
+                           'l-bfgs-b', 'trust-constr', 'dogleg', 'trust-ncg',
+                           'trust-exact', 'trust-krylov']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
@@ -139,8 +145,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         dimension (n,) and ``args`` is a tuple with the fixed
         parameters.
     bounds : sequence or `Bounds`, optional
-        Bounds on variables for Nelder-Mead, L-BFGS-B, TNC, SLSQP, Powell, and
-        trust-constr methods. There are two ways to specify the bounds:
+        Bounds on variables for Nelder-Mead, L-BFGS-B, TNC, SLSQP, Powell,
+        trust-constr, and COBYLA methods. There are two ways to specify the
+        bounds:
 
             1. Instance of `Bounds` class.
             2. Sequence of ``(min, max)`` pairs for each element in `x`. None
@@ -177,31 +184,42 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         equal to `tol`. For detailed control, use solver-specific
         options.
     options : dict, optional
-        A dictionary of solver options. All methods accept the following
-        generic options:
+        A dictionary of solver options. All methods except `TNC` accept the
+        following generic options:
 
             maxiter : int
                 Maximum number of iterations to perform. Depending on the
                 method each iteration may use several function evaluations.
+
+                For `TNC` use `maxfun` instead of `maxiter`.
             disp : bool
                 Set to True to print convergence messages.
 
         For method-specific options, see :func:`show_options()`.
     callback : callable, optional
-        Called after each iteration. For 'trust-constr' it is a callable with
+        A callable called after each iteration.
+
+        All methods except TNC, SLSQP, and COBYLA support a callable with
         the signature:
 
-            ``callback(xk, OptimizeResult state) -> bool``
+            ``callback(OptimizeResult: intermediate_result)``
 
-        where ``xk`` is the current parameter vector. and ``state``
-        is an `OptimizeResult` object, with the same fields
-        as the ones from the return. If callback returns True
-        the algorithm execution is terminated.
-        For all the other methods, the signature is:
+        where ``intermediate_result`` is a keyword parameter containing an
+        `OptimizeResult` with attributes ``x`` and ``fun``, the present values
+        of the parameter vector and objective function. Note that the name
+        of the parameter must be ``intermediate_result`` for the callback
+        to be passed an `OptimizeResult`. These methods will also terminate if
+        the callback raises `StopIteration`.
+
+        All methods except trust-constr (also) support a signature like:
 
             ``callback(xk)``
 
         where ``xk`` is the current parameter vector.
+
+        All methods except TNC, SLSQP, and COBYLA will terminate if the
+        callback raises `StopIteration`. Introspection is used to determine
+        which of the signatures above to invoke.
 
     Returns
     -------
@@ -513,11 +531,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     x0 = np.atleast_1d(np.asarray(x0))
 
     if x0.ndim != 1:
-        message = ('Use of `minimize` with `x0.ndim != 1` is deprecated. '
-                   'Currently, singleton dimensions will be removed from '
-                   '`x0`, but an error will be raised in SciPy 1.11.0.')
-        warn(message, DeprecationWarning, stacklevel=2)
-        x0 = np.atleast_1d(np.squeeze(x0))
+        raise ValueError("'x0' must only have one dimension.")
 
     if x0.dtype.kind in np.typecodes["AllInteger"]:
         x0 = np.asarray(x0, dtype=float)
@@ -562,8 +576,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             np.any(constraints)):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
-    if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'tnc', 'slsqp',
-                    'trust-constr', '_custom') and bounds is not None:
+    if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'cobyla', 'slsqp',
+                    'tnc', 'trust-constr', '_custom') and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - return_all
@@ -625,6 +639,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     remove_vars = False
     if bounds is not None:
+        # convert to new-style bounds so we only have to consider one case
+        bounds = standardize_bounds(bounds, x0, 'new')
+        bounds = _validate_bounds(bounds, x0, meth)
+
         if meth in {"tnc", "slsqp", "l-bfgs-b"}:
             # These methods can't take the finite-difference derivatives they
             # need when a variable is fixed by the bounds. To avoid this issue,
@@ -632,9 +650,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             # NOTE: if this list is expanded, then be sure to update the
             # accompanying tests and test_optimize.eb_data. Consider also if
             # default OptimizeResult will need updating.
-
-            # convert to new-style bounds so we only have to consider one case
-            bounds = standardize_bounds(bounds, x0, 'new')
 
             # determine whether any variables are fixed
             i_fixed = (bounds.lb == bounds.ub)
@@ -678,6 +693,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                                                        remove=1)
         bounds = standardize_bounds(bounds, x0, meth)
 
+    callback = _wrap_callback(callback, meth)
+
     if meth == 'nelder-mead':
         res = _minimize_neldermead(fun, x0, args, callback, bounds=bounds,
                                    **options)
@@ -698,7 +715,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                             **options)
     elif meth == 'cobyla':
         res = _minimize_cobyla(fun, x0, args, constraints, callback=callback,
-                                **options)
+                               bounds=bounds, **options)
     elif meth == 'slsqp':
         res = _minimize_slsqp(fun, x0, args, jac, bounds,
                               constraints, callback=callback, **options)
@@ -727,11 +744,16 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         if "hess_inv" in res:
             res.hess_inv = None  # unknown
 
+    if getattr(callback, 'stop_iteration', False):
+        res.success = False
+        res.status = 99
+        res.message = "`callback` raised `StopIteration`."
+
     return res
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
-                    method='brent', tol=None, options=None):
+                    method=None, tol=None, options=None):
     """Minimization of scalar function of one variable.
 
     Parameters
@@ -747,8 +769,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         bracket search (see `bracket`); it doesn't always mean that the
         obtained solution will satisfy ``a <= x <= c``.
     bounds : sequence, optional
-        For method 'bounded', `bounds` is mandatory and must have two items
-        corresponding to the optimization bounds.
+        For method 'bounded', `bounds` is mandatory and must have two finite
+        items corresponding to the optimization bounds.
     args : tuple, optional
         Extra arguments passed to the objective function.
     method : str or callable, optional
@@ -759,6 +781,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
             - :ref:`Golden <optimize.minimize_scalar-golden>`
             - custom - a callable object (added in version 0.14.0), see below
 
+        Default is "Bounded" if bounds are provided and "Brent" otherwise.
         See the 'Notes' section for details of each solver.
 
     tol : float, optional
@@ -792,20 +815,21 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     Notes
     -----
     This section describes the available solvers that can be selected by the
-    'method' parameter. The default method is *Brent*.
+    'method' parameter. The default method is the ``"Bounded"`` Brent method if
+    `bounds` are passed and unbounded ``"Brent"`` otherwise.
 
     Method :ref:`Brent <optimize.minimize_scalar-brent>` uses Brent's
-    algorithm to find a local minimum.  The algorithm uses inverse
+    algorithm [1]_ to find a local minimum.  The algorithm uses inverse
     parabolic interpolation when possible to speed up convergence of
     the golden section method.
 
     Method :ref:`Golden <optimize.minimize_scalar-golden>` uses the
-    golden section search technique. It uses analog of the bisection
+    golden section search technique [1]_. It uses analog of the bisection
     method to decrease the bracketed interval. It is usually
     preferable to use the *Brent* method.
 
     Method :ref:`Bounded <optimize.minimize_scalar-bounded>` can
-    perform bounded minimization. It uses the Brent method to find a
+    perform bounded minimization [2]_ [3]_. It uses the Brent method to find a
     local minimum in the interval x1 < xopt < x2.
 
     **Custom minimizers**
@@ -827,6 +851,16 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     .. versionadded:: 0.11.0
 
+    References
+    ----------
+    .. [1] Press, W., S.A. Teukolsky, W.T. Vetterling, and B.P. Flannery.
+           Numerical Recipes in C. Cambridge University Press.
+    .. [2] Forsythe, G.E., M. A. Malcolm, and C. B. Moler. "Computer Methods
+           for Mathematical Computations." Prentice-Hall Series in Automatic
+           Computation 259 (1977).
+    .. [3] Brent, Richard P. Algorithms for Minimization Without Derivatives.
+           Courier Corporation, 2013.
+
     Examples
     --------
     Consider the problem of minimizing the following function.
@@ -838,6 +872,11 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     >>> from scipy.optimize import minimize_scalar
     >>> res = minimize_scalar(f)
+    >>> res.fun
+    -9.9149495908
+
+    The minimizer is:
+
     >>> res.x
     1.28077640403
 
@@ -845,7 +884,9 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     bounds as:
 
     >>> res = minimize_scalar(f, bounds=(-3, -1), method='bounded')
-    >>> res.x
+    >>> res.fun  # minimum
+    3.28365179850e-13
+    >>> res.x  # minimizer
     -2.0000002026
 
     """
@@ -854,10 +895,16 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     if callable(method):
         meth = "_custom"
+    elif method is None:
+        meth = 'brent' if bounds is None else 'bounded'
     else:
         meth = method.lower()
     if options is None:
         options = {}
+
+    if bounds is not None and meth in {'brent', 'golden'}:
+        message = f"Use of `bounds` is incompatible with 'method={method}'."
+        raise ValueError(message)
 
     if tol is not None:
         options = dict(options)
@@ -876,18 +923,25 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         options['disp'] = 2 * int(disp)
 
     if meth == '_custom':
-        return method(fun, args=args, bracket=bracket, bounds=bounds, **options)
+        res = method(fun, args=args, bracket=bracket, bounds=bounds, **options)
     elif meth == 'brent':
-        return _minimize_scalar_brent(fun, bracket, args, **options)
+        res = _minimize_scalar_brent(fun, bracket, args, **options)
     elif meth == 'bounded':
         if bounds is None:
             raise ValueError('The `bounds` parameter is mandatory for '
                              'method `bounded`.')
-        return _minimize_scalar_bounded(fun, bounds, args, **options)
+        res = _minimize_scalar_bounded(fun, bounds, args, **options)
     elif meth == 'golden':
-        return _minimize_scalar_golden(fun, bracket, args, **options)
+        res = _minimize_scalar_golden(fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
+
+    # gh-16196 reported inconsistencies in the output shape of `res.x`. While
+    # fixing this, future-proof it for when the function is vectorized:
+    # the shape of `res.x` should match that of `res.fun`.
+    res.fun = np.asarray(res.fun)[()]
+    res.x = np.reshape(res.x, res.fun.shape)[()]
+    return res
 
 
 def _remove_from_bounds(bounds, i_fixed):
@@ -931,9 +985,25 @@ def _add_to_array(x_in, i_fixed, x_fixed):
     return x_out
 
 
+def _validate_bounds(bounds, x0, meth):
+    """Check that bounds are valid."""
+
+    msg = "An upper bound is less than the corresponding lower bound."
+    if np.any(bounds.ub < bounds.lb):
+        raise ValueError(msg)
+
+    msg = "The number of bounds is not compatible with the length of `x0`."
+    try:
+        bounds.lb = np.broadcast_to(bounds.lb, x0.shape)
+        bounds.ub = np.broadcast_to(bounds.ub, x0.shape)
+    except Exception as e:
+        raise ValueError(msg) from e
+
+    return bounds
+
 def standardize_bounds(bounds, x0, meth):
     """Converts bounds to the form required by the solver."""
-    if meth in {'trust-constr', 'powell', 'nelder-mead', 'new'}:
+    if meth in {'trust-constr', 'powell', 'nelder-mead', 'cobyla', 'new'}:
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)

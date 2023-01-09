@@ -6,6 +6,7 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    transpose, zeros, prod, greater,
                    asarray, inf,
                    finfo, inexact, issubdtype, dtype)
+from scipy import linalg
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError, inv
 from scipy._lib._util import _asarray_validated, _lazywhere
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
@@ -128,7 +129,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See the ``method=='hybr'`` in particular.
+           functions. See the ``method='hybr'`` in particular.
 
     Notes
     -----
@@ -374,7 +375,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     See Also
     --------
     least_squares : Newer interface to solve nonlinear least-squares problems
-        with bounds on the variables. See ``method=='lm'`` in particular.
+        with bounds on the variables. See ``method='lm'`` in particular.
 
     Notes
     -----
@@ -465,11 +466,24 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     if full_output:
         cov_x = None
         if info in LEASTSQ_SUCCESS:
-            perm = take(eye(n), retval[1]['ipvt'] - 1, 0)
+            # This was
+            # perm = take(eye(n), retval[1]['ipvt'] - 1, 0)
+            # r = triu(transpose(retval[1]['fjac'])[:n, :])
+            # R = dot(r, perm)
+            # cov_x = inv(dot(transpose(R), R))
+            # but the explicit dot product was not necessary and sometimes
+            # the result was not symmetric positive definite. See gh-4555.
+            perm = retval[1]['ipvt'] - 1
+            n = len(perm)
             r = triu(transpose(retval[1]['fjac'])[:n, :])
-            R = dot(r, perm)
+            inv_triu = linalg.get_lapack_funcs('trtri', (r,))
             try:
-                cov_x = inv(dot(transpose(R), R))
+                # inverse of permuted matrix is a permuation of matrix inverse
+                invR, trtri_info = inv_triu(r)  # default: upper, non-unit diag
+                if trtri_info != 0:  # explicit comparison for readability
+                    raise LinAlgError(f'trtri returned info {trtri_info}')
+                invR[perm] = invR.copy()
+                cov_x = invR @ invR.T
             except (LinAlgError, ValueError):
                 pass
         return (retval[0], cov_x) + retval[1:-1] + (errors[info][0], info)
@@ -645,7 +659,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         If the Jacobian matrix at the solution doesn't have a full rank, then
         'lm' method returns a matrix filled with ``np.inf``, on the other hand
         'trf'  and 'dogbox' methods use Moore-Penrose pseudoinverse to compute
-        the covariance matrix.
+        the covariance matrix. Covariance matrices with large condition numbers
+        (e.g. computed with `numpy.linalg.cond`) may indicate that results are
+        unreliable.
     infodict : dict (returned only if `full_output` is True)
         a dictionary of optional outputs with the keys:
 
@@ -654,7 +670,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             count function calls for numerical Jacobian approximation,
             as opposed to 'lm' method.
         ``fvec``
-            The function values evaluated at the solution.
+            The residual values evaluated at the solution, for a 1-D `sigma`
+            this is ``(f(x, *popt) - ydata)/sigma``.
         ``fjac``
             A permutation of the R matrix of a QR
             factorization of the final approximate
@@ -708,7 +725,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     -----
     Users should ensure that inputs `xdata`, `ydata`, and the output of `f`
     are ``float64``, or else the optimization may return incorrect results.
-    
+
     With ``method='lm'``, the algorithm uses the Levenberg-Marquardt algorithm
     through `leastsq`. Note that this algorithm can only deal with
     unconstrained problems.
@@ -756,7 +773,35 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     >>> plt.legend()
     >>> plt.show()
 
-    """
+    For reliable results, the model `func` should not be overparametrized;
+    redundant parameters can cause unreliable covariance matrices and, in some
+    cases, poorer quality fits. As a quick check of whether the model may be
+    overparameterized, calculate the condition number of the covariance matrix:
+
+    >>> np.linalg.cond(pcov)
+    34.571092161547405  # may vary
+
+    The value is small, so it does not raise much concern. If, however, we were
+    to add a fourth parameter ``d`` to `func` with the same effect as ``a``:
+
+    >>> def func(x, a, b, c, d):
+    ...     return a * d * np.exp(-b * x) + c  # a and d are redundant
+    >>> popt, pcov = curve_fit(func, xdata, ydata)
+    >>> np.linalg.cond(pcov)
+    1.13250718925596e+32  # may vary
+
+    Such a large value is cause for concern. The diagonal elements of the
+    covariance matrix, which is related to uncertainty of the fit, gives more
+    information:
+
+    >>> np.diag(pcov)
+    array([1.48814742e+29, 3.78596560e-02, 5.39253738e-03, 2.76417220e+28])  # may vary
+
+    Note that the first and last terms are much larger than the other elements,
+    suggesting that the optimal values of these parameters are ambiguous and
+    that only one of these parameters is needed in the model.
+
+    """  # noqa
     if p0 is None:
         # determine number of parameters by inspecting the function
         sig = _getfullargspec(f)

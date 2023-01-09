@@ -78,7 +78,7 @@ jobs:
             pip install numpy==1.21.5
             pip install -r doc_requirements.txt
             # `asv` pin because of slowdowns reported in gh-15568
-            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja==1.10.2.4 meson click rich-click doit pydevtool pooch
+            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson click rich-click doit pydevtool pooch
             pip install pybind11
             # extra benchmark deps
             pip install pyfftw cffi pytest
@@ -171,7 +171,7 @@ jobs:
 
       - add_ssh_keys:
           fingerprints:
-            - "08:18:07:68:71:e3:f9:5f:bd:95:f0:6a:df:a9:47:a2"
+            - "1d:47:cf:2e:ea:7c:15:cf:ec:bb:1f:44:e2:56:16:d3"
 
       - run:
           name: upload

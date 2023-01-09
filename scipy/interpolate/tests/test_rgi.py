@@ -397,6 +397,15 @@ class TestRegularGridInterpolator:
         assert_equal(res[i], np.nan)
         assert_equal(res[~i], f(x[~i]))
 
+        # also test the length-one axis f(nan)
+        x = [1, 2, 3]
+        y = [1, ]
+        data = np.ones((3, 1))
+        f = RegularGridInterpolator((x, y), data, fill_value=1,
+                                    bounds_error=False, method=method)
+        assert np.isnan(f([np.nan, 1]))
+        assert np.isnan(f([1, np.nan]))
+
     @pytest.mark.parametrize("method", ['nearest', 'linear'])
     def test_nan_x_2d(self, method):
         x, y = np.array([0, 1, 2]), np.array([1, 3, 7])
@@ -435,34 +444,40 @@ class TestRegularGridInterpolator:
         assert_equal(res[~i], interp(z[~i]))
 
     @parametrize_rgi_interp_methods
-    def test_descending_points(self, method):
-        def val_func_3d(x, y, z):
-            return 2 * x ** 3 + 3 * y ** 2 - z
+    @pytest.mark.parametrize(("ndims", "func"), [
+        (2, lambda x, y: 2 * x ** 3 + 3 * y ** 2),
+        (3, lambda x, y, z: 2 * x ** 3 + 3 * y ** 2 - z),
+        (4, lambda x, y, z, a: 2 * x ** 3 + 3 * y ** 2 - z + a),
+        (5, lambda x, y, z, a, b: 2 * x ** 3 + 3 * y ** 2 - z + a * b),
+    ])
+    def test_descending_points_nd(self, method, ndims, func):
+        rng = np.random.default_rng(42)
+        sample_low = 1
+        sample_high = 5
+        test_points = rng.uniform(sample_low, sample_high, size=(2, ndims))
 
-        x = np.linspace(1, 4, 11)
-        y = np.linspace(4, 7, 22)
-        z = np.linspace(7, 9, 33)
-        points = (x, y, z)
-        values = val_func_3d(
-            *np.meshgrid(*points, indexing='ij', sparse=True))
-        my_interpolating_function = RegularGridInterpolator(points,
-                                                            values,
-                                                            method=method)
-        pts = np.array([[2.1, 6.2, 8.3], [3.3, 5.2, 7.1]])
-        correct_result = my_interpolating_function(pts)
+        ascending_points = [np.linspace(sample_low, sample_high, 12)
+                            for _ in range(ndims)]
 
-        # descending data
-        x_descending = x[::-1]
-        y_descending = y[::-1]
-        z_descending = z[::-1]
-        points_shuffled = (x_descending, y_descending, z_descending)
-        values_shuffled = val_func_3d(
-            *np.meshgrid(*points_shuffled, indexing='ij', sparse=True))
-        my_interpolating_function = RegularGridInterpolator(
-            points_shuffled, values_shuffled, method=method)
-        test_result = my_interpolating_function(pts)
+        ascending_values = func(*np.meshgrid(*ascending_points,
+                                             indexing="ij",
+                                             sparse=True))
 
-        assert_array_equal(correct_result, test_result)
+        ascending_interp = RegularGridInterpolator(ascending_points,
+                                                   ascending_values,
+                                                   method=method)
+        ascending_result = ascending_interp(test_points)
+
+        descending_points = [xi[::-1] for xi in ascending_points]
+        descending_values = func(*np.meshgrid(*descending_points,
+                                              indexing="ij",
+                                              sparse=True))
+        descending_interp = RegularGridInterpolator(descending_points,
+                                                    descending_values,
+                                                    method=method)
+        descending_result = descending_interp(test_points)
+
+        assert_array_equal(ascending_result, descending_result)
 
     def test_invalid_points_order(self):
         def val_func_2d(x, y):
@@ -548,6 +563,36 @@ class TestRegularGridInterpolator:
         v2 = np.expand_dims(vs, axis=0)
         assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
+    def test_nonscalar_values_linear_2D(self):
+        # Verify that non-scalar values work in the 2D fast path
+        method = 'linear'
+        points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
+                  (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0), ]
+
+        rng = np.random.default_rng(1234)
+
+        trailing_points = (3, 4)
+        # NB: values has a `num_trailing_dims` trailing dimension
+        values = rng.random((6, 7, *trailing_points))
+        sample = rng.random(2)   # a single sample point !
+
+        interp = RegularGridInterpolator(points, values, method=method,
+                                         bounds_error=False)
+        v = interp(sample)
+
+        # v has a single sample point *per entry in the trailing dimensions*
+        assert v.shape == (1, *trailing_points)
+
+        # check the values, too : manually loop over the trailing dimensions
+        vs = np.empty((values.shape[-2:]))
+        for i in range(values.shape[-2]):
+            for j in range(values.shape[-1]):
+                interp = RegularGridInterpolator(points, values[..., i, j],
+                                                 method=method,
+                                                 bounds_error=False)
+                vs[i, j] = interp(sample)
+        v2 = np.expand_dims(vs, axis=0)
+        assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
 class MyValue:
     """
@@ -894,3 +939,58 @@ class TestInterpN:
                "RegularGridInterpolator has dimension 1")
         with assert_raises(ValueError, match=msg):
             interpn(points, values, xi)
+
+    def test_readonly_grid(self):
+        # https://github.com/scipy/scipy/issues/17716
+        x = np.linspace(0, 4, 5)
+        y = np.linspace(0, 5, 6)
+        z = np.linspace(0, 6, 7)
+        points = (x, y, z)
+        values = np.ones((5, 6, 7))
+        point = np.array([2.21, 3.12, 1.15])
+        for d in points:
+            d.flags.writeable = False
+        values.flags.writeable = False
+        point.flags.writeable = False
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
+
+    def test_2d_readonly_grid(self):
+        # https://github.com/scipy/scipy/issues/17716
+        # test special 2d case
+        x = np.linspace(0, 4, 5)
+        y = np.linspace(0, 5, 6)
+        points = (x, y)
+        values = np.ones((5, 6))
+        point = np.array([2.21, 3.12])
+        for d in points:
+            d.flags.writeable = False
+        values.flags.writeable = False
+        point.flags.writeable = False
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
+
+    def test_non_c_contiguous_grid(self):
+        # https://github.com/scipy/scipy/issues/17716
+        x = np.linspace(0, 4, 5)
+        x = np.vstack((x, np.empty_like(x))).T.copy()[:, 0]
+        assert not x.flags.c_contiguous
+        y = np.linspace(0, 5, 6)
+        z = np.linspace(0, 6, 7)
+        points = (x, y, z)
+        values = np.ones((5, 6, 7))
+        point = np.array([2.21, 3.12, 1.15])
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
+
+    @pytest.mark.parametrize("dtype", ['>f8', '<f8'])
+    def test_endianness(self, dtype):
+        # https://github.com/scipy/scipy/issues/17716
+        # test special 2d case
+        x = np.linspace(0, 4, 5, dtype=dtype)
+        y = np.linspace(0, 5, 6, dtype=dtype)
+        points = (x, y)
+        values = np.ones((5, 6), dtype=dtype)
+        point = np.array([2.21, 3.12], dtype=dtype)
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)

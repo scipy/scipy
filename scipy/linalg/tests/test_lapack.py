@@ -1467,7 +1467,7 @@ class TestBlockedQR:
             geqrt, gemqrt = get_lapack_funcs(('geqrt', 'gemqrt'), dtype=dtype)
 
             a, t, info = geqrt(n, A)
-            assert(info == 0)
+            assert info == 0
 
             # Extract elementary reflectors from lower triangle, adding the
             # main diagonal of ones.
@@ -1491,7 +1491,7 @@ class TestBlockedQR:
             for side in ('L', 'R'):
                 for trans in ('N', transpose):
                     c, info = gemqrt(a, t, C, side=side, trans=trans)
-                    assert(info == 0)
+                    assert info == 0
 
                     if trans == transpose:
                         q = Q.T.conj()
@@ -1508,7 +1508,7 @@ class TestBlockedQR:
                     # Test default arguments
                     if (side, trans) == ('L', 'N'):
                         c_default, info = gemqrt(a, t, C)
-                        assert(info == 0)
+                        assert info == 0
                         assert_equal(c_default, c)
 
             # Test invalid side/trans
@@ -1534,7 +1534,7 @@ class TestBlockedQR:
             # triangular
             for l in (0, n // 2, n):
                 a, b, t, info = tpqrt(l, n, A, B)
-                assert(info == 0)
+                assert info == 0
 
                 # Check that lower triangular part of A has not been modified
                 assert_equal(np.tril(a, -1), np.tril(A, -1))
@@ -1570,7 +1570,7 @@ class TestBlockedQR:
                     for trans in ('N', transpose):
                         c, d, info = tpmqrt(l, b, t, C, D, side=side,
                                             trans=trans)
-                        assert(info == 0)
+                        assert info == 0
 
                         if trans == transpose:
                             q = Q.T.conj()
@@ -1590,7 +1590,7 @@ class TestBlockedQR:
 
                         if (side, trans) == ('L', 'N'):
                             c_default, d_default, info = tpmqrt(l, b, t, C, D)
-                            assert(info == 0)
+                            assert info == 0
                             assert_equal(c_default, c)
                             assert_equal(d_default, d)
 
