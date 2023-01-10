@@ -1495,7 +1495,7 @@ SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
 def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
-    """Test whether the skew is different from the normal distribution.
+    r"""Test whether the skew is different from the normal distribution.
 
     This function tests the null hypothesis that the skewness of
     the population that the sample was drawn from is the same
@@ -1545,22 +1545,112 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     .. [1] R. B. D'Agostino, A. J. Belanger and R. B. D'Agostino Jr.,
             "A suggestion for using powerful and informative tests of
             normality", American Statistician 44, pp. 316-321, 1990.
+    .. [2] Shapiro, S. S., & Wilk, M. B. (1965). An analysis of variance test
+           for normality (complete samples). Biometrika, 52(3/4), 591-611.
+    .. [3] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+           Zero: Calculating Exact P-values When Permutations Are Randomly
+           Drawn." Statistical Applications in Genetics and Molecular Biology
+           9.1 (2010).
 
     Examples
     --------
-    >>> from scipy.stats import skewtest
-    >>> skewtest([1, 2, 3, 4, 5, 6, 7, 8])
-    SkewtestResult(statistic=1.0108048609177787, pvalue=0.3121098361421897)
-    >>> skewtest([2, 8, 0, 4, 1, 9, 9, 0])
-    SkewtestResult(statistic=0.44626385374196975, pvalue=0.6554066631275459)
-    >>> skewtest([1, 2, 3, 4, 5, 6, 7, 8000])
-    SkewtestResult(statistic=3.571773510360407, pvalue=0.0003545719905823133)
-    >>> skewtest([100, 100, 100, 100, 100, 100, 100, 101])
-    SkewtestResult(statistic=3.5717766638478072, pvalue=0.000354567720281634)
-    >>> skewtest([1, 2, 3, 4, 5, 6, 7, 8], alternative='less')
-    SkewtestResult(statistic=1.0108048609177787, pvalue=0.8439450819289052)
-    >>> skewtest([1, 2, 3, 4, 5, 6, 7, 8], alternative='greater')
-    SkewtestResult(statistic=1.0108048609177787, pvalue=0.15605491807109484)
+    Suppose we wish to infer from measurements whether the weights of adult
+    human males in a medical study are not normally distributed [2]_.
+    The weights (lbs) are recorded in the array ``x`` below.
+
+    >>> import numpy as np
+    >>> x = np.array([148, 154, 158, 160, 161, 162, 166, 170, 182, 195, 236])
+
+    The skewness test from [1]_ begins by computing a statistic based on the
+    sample skewness.
+
+    >>> from scipy import stats
+    >>> res = stats.skewtest(x)
+    >>> res.statistic
+    2.7788579769903414
+
+    Because normal distributions have zero skewness, the magnitude of this
+    statistic tends to be low for samples drawn from a normal distribution.
+
+    The test is performed by comparing the observed value of the
+    statistic against the null distribution: the distribution of statistic
+    values derived under the null hypothesis that the weights were drawn from
+    a normal distribution.
+
+    For this test, the null distribution of the statistic for very large
+    samples is the standard normal distribution.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dist = stats.norm()
+    >>> st_val = np.linspace(-5, 5, 100)
+    >>> pdf = dist.pdf(st_val)
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> def st_plot(ax):  # we'll re-use this
+    ...     ax.plot(st_val, pdf)
+    ...     ax.set_title("Skew Test Null Distribution")
+    ...     ax.set_xlabel("statistic")
+    ...     ax.set_ylabel("probability density")
+    >>> ax = st_plot(ax)
+    >>> plt.show()
+
+    The comparison is quantified by the p-value: the proportion of values in
+    the null distribution as extreme or more extreme than the observed
+    value of the statistic. In a two-sided test, elements of the null
+    distribution greater than the observed statistic and elements of the null
+    distribution less than the negative of the observed statistic are both
+    considered "more extreme".
+
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> st_plot(ax)
+    >>> pvalue = dist.cdf(-res.statistic) + dist.sf(res.statistic)
+    >>> annotation = (f'p-value={pvalue:.3f}\n(shaded area)')
+    >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
+    >>> _ = ax.annotate(annotation, (3, 0.005), (3.25, 0.02), arrowprops=props)
+    >>> i = st_val >= res.statistic
+    >>> ax.fill_between(st_val[i], y1=0, y2=pdf[i], color='C0')
+    >>> i = st_val <= -res.statistic
+    >>> ax.fill_between(st_val[i], y1=0, y2=pdf[i], color='C0')
+    >>> ax.set_xlim(-5, 5)
+    >>> ax.set_ylim(0, 0.1)
+    >>> plt.show()
+    >>> res.pvalue
+    0.005455036974740185
+
+    If the p-value is "small" - that is, if there is a low probability of
+    sampling data from a normally distributed population that produces such an
+    extreme value of the statistic - this may be taken as evidence against
+    the null hypothesis in favor of the alternative: the weights were not
+    drawn from a normal distribution. Note that:
+
+    - The inverse is not true; that is, the test is not used to provide
+      evidence for the null hypothesis.
+    - The threshold for values that will be considered "small" is a choice that
+      should be made before the data is analyzed [3]_ with consideration of the
+      risks of both false positives (incorrectly rejecting the null hypothesis)
+      and false negatives (failure to reject a false null hypothesis).
+
+    Note that the standard normal distribution provides an asymptotic
+    approximation of the null distribution; it is only accurate for samples
+    with many observations. For small samples like ours,
+    `scipy.stats.monte_carlo_test` may provide a more accurate, albeit
+    stochastic, approximation of the exact p-value.
+
+    >>> def statistic(x, axis):
+    ...     # get just the skewtest statistic; ignore the p-value
+    ...     return stats.skewtest(x, axis=axis).statistic
+    >>> res = stats.monte_carlo_test(x, stats.norm.rvs, statistic)
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> st_plot(ax)
+    >>> ax.hist(res.null_distribution, np.linspace(-5, 5, 50),
+    ...         density=True)
+    >>> ax.legend(['aymptotic approximation\n(many observations)',
+    ...            'Monte Carlo approximation\n(11 observations)'])
+    >>> plt.show()
+    >>> res.pvalue
+    0.0062  # may vary
+
+    In this case, the asymptotic approximation and Monte Carlo approximation
+    agree fairly closely, even for our small sample.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2096,14 +2186,11 @@ def jarque_bera(x, *, axis=None):
     ...     return x.shape[axis]/6 * (s**2 + k**2/4)
     >>> res = stats.monte_carlo_test(x, stats.norm.rvs, statistic)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> ax.plot(jb_val, pdf)
+    >>> jb_plot(ax)
     >>> ax.hist(res.null_distribution, np.linspace(0, 10, 50),
     ...         density=True)
     >>> ax.legend(['aymptotic approximation (many observations)',
     ...            'Monte Carlo approximation (11 observations)'])
-    >>> ax.set_title("Jarque-Bera Null Distribution")
-    >>> ax.set_xlabel("statistic")
-    >>> ax.set_ylabel("probability density")
     >>> plt.show()
     >>> res.pvalue
     0.0142  # may vary

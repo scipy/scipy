@@ -810,6 +810,22 @@ def test_function_calls(solver_name, rs_interface):
         assert res[1].function_calls == f.calls
 
 
+def test_gh_14486_converged_false():
+    """Test that zero slope with secant method results in a converged=False"""
+    def lhs(x):
+        return x * np.exp(-x*x) - 0.07
+
+    with pytest.warns(RuntimeWarning, match='Tolerance of'):
+        res = root_scalar(lhs, method='secant', x0=-0.15, x1=1.0)
+    assert not res.converged
+    assert res.flag == 'convergence error'
+
+    with pytest.warns(RuntimeWarning, match='Tolerance of'):
+        res = newton(lhs, x0=-0.15, x1=1.0, disp=False, full_output=True)[1]
+    assert not res.converged
+    assert res.flag == 'convergence error'
+
+
 @pytest.mark.parametrize('solver_name',
                          ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
 @pytest.mark.parametrize('rs_interface', [True, False])
@@ -833,7 +849,7 @@ def test_gh5584(solver_name, rs_interface):
     assert_allclose(res.root, 0, atol=1e-8)
 
     # Solve successfully when one side is negative zero
-    res = solver(f, -0.5, -1e-200*1e-200, full_output=True)
+    res = solver(f, -0.5, float('-0.0'), full_output=True)
     res = res if rs_interface else res[1]
     assert res.converged
     assert_allclose(res.root, 0, atol=1e-8)
