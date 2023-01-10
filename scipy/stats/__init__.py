@@ -237,6 +237,7 @@ Summary statistics
    tsem              --
    variation         -- Coefficient of variation
    find_repeats
+   rankdata
    trim_mean
    gstd              -- Geometric Standard Deviation
    iqr
@@ -265,76 +266,159 @@ Frequency statistics
    binned_statistic_2d  -- Compute a 2-D binned statistic for a set of data.
    binned_statistic_dd  -- Compute a d-D binned statistic for a set of data.
 
-Correlation functions
-=====================
+Hypothesis Tests and related functions
+======================================
+SciPy has many functions for performing hypothesis tests that return a
+test statistic and a p-value, and several of them return confidence intervals
+and/or other related information.
+
+The headings below are based on common uses of the test. Due to the variety of
+tests, any attempt at coarse-grained categorization will be imperfect. Also,
+note that tests within the same heading are not interchangeable in general
+(e.g. many have different distributional assumptions).
+
+One Sample Tests / Paired Sample Tests
+--------------------------------------
+One sample tests are typically used to assess whether a single sample was
+drawn from a specified distribution or a distribution with specified properties
+(e.g. zero mean).
 
 .. autosummary::
    :toctree: generated/
 
-   f_oneway
-   alexandergovern
+   ttest_1samp
+   binomtest
+   skewtest
+   kurtosistest
+   normaltest
+   jarque_bera
+   shapiro
+   anderson
+   cramervonmises
+   ks_1samp
+   goodness_of_fit
+   chisquare
+   power_divergence
+
+Paired sample tests are often used to assess whether two samples were drawn
+from the same distribution; they differ from the independent sample tests below
+in that each observation in one sample is treated as paired with a
+closely-related observation in the other sample (e.g. environmental factors
+are controlled between observations within a pair but not between different
+pairs). They can also be interpreted as one-sample tests (e.g.
+a test of the mean of differences between paired observations).
+
+.. autosummary::
+   :toctree: generated/
+
+   ttest_rel
+   wilcoxon
+
+Association/Correlation Tests
+-----------------------------
+
+These tests are often used to assess whether there is a relationship (e.g.
+linear) between paired observations in multiple samples or among the
+coordinates of multivariate observations.
+
+.. autosummary::
+   :toctree: generated/
+
+   linregress
    pearsonr
    spearmanr
    pointbiserialr
    kendalltau
    weightedtau
    somersd
-   linregress
    siegelslopes
    theilslopes
+   page_trend_test
    multiscale_graphcorr
 
-Statistical tests
-=================
+These association tests and related functions are suited to working
+with data in the form of contingency tables.
 
 .. autosummary::
    :toctree: generated/
 
-   ttest_1samp
-   ttest_ind
+   chi2_contingency
+   fisher_exact
+   barnard_exact
+   boschloo_exact
+   contingency.crosstab
+   contingency.expected_freq
+   contingency.margins
+   contingency.association
+   contingency.relative_risk
+   contingency.odds_ratio
+
+Independent Sample Tests
+------------------------
+Independent sample tests are typically used to assess whether multiple samples
+were independently drawn from the same distribution or different distributions
+with a shared property (e.g. equal mean).
+
+Some tests are specifically for comparing two samples.
+
+.. autosummary::
+   :toctree: generated/
+
    ttest_ind_from_stats
-   ttest_rel
-   chisquare
-   cramervonmises
-   cramervonmises_2samp
-   power_divergence
-   kstest
-   ks_1samp
-   ks_2samp
-   epps_singleton_2samp
-   mannwhitneyu
-   tiecorrect
-   rankdata
-   ranksums
-   wilcoxon
-   kruskal
-   friedmanchisquare
-   brunnermunzel
-   combine_pvalues
-   jarque_bera
-   page_trend_test
-   tukey_hsd
    poisson_means_test
+   ttest_ind
+   mannwhitneyu
+   brunnermunzel
+   mood
+   ansari
+   cramervonmises_2samp
+   epps_singleton_2samp
+   ks_2samp
+
+Others are generalized to multiple samples.
 
 .. autosummary::
    :toctree: generated/
 
-   ansari
-   bartlett
-   levene
-   shapiro
-   anderson
-   anderson_ksamp
-   binom_test
-   binomtest
+   f_oneway
+   tukey_hsd
+   kruskal
+   alexandergovern
    fligner
+   levene
+   bartlett
    median_test
-   mood
-   skewtest
-   kurtosistest
-   normaltest
-   goodness_of_fit
+   friedmanchisquare
+   anderson_ksamp
 
+Resampling Methods
+------------------
+The following functions can reproduce the p-value and confidence interval
+results of most of the functions above, and often produce accurate results in a
+wider variety of conditions. They can also be used to perform hypothesis tests
+and generate confidence intervals for custom statistics. This flexibility comes
+at the cost of greater computational requirements and stochastic results.
+
+.. autosummary::
+   :toctree: generated/
+
+   monte_carlo_test
+   permutation_test
+   bootstrap
+
+Other Test Functions
+--------------------
+The following functions are related to the tests above but do not belong in the
+above categories.
+
+.. autosummary::
+   :toctree: generated/
+
+   kstest
+   combine_pvalues
+   binomtest
+   tiecorrect
+   ranksums
 
 Quasi-Monte Carlo
 =================
@@ -343,16 +427,6 @@ Quasi-Monte Carlo
    :maxdepth: 4
 
    stats.qmc
-
-Resampling Methods
-==================
-
-.. autosummary::
-   :toctree: generated/
-
-   bootstrap
-   permutation_test
-   monte_carlo_test
 
 Masked statistics functions
 ===========================
@@ -428,23 +502,6 @@ Directional statistical functions
    circmean
    circvar
    circstd
-
-Contingency table functions
----------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   chi2_contingency
-   contingency.crosstab
-   contingency.expected_freq
-   contingency.margins
-   contingency.relative_risk
-   contingency.association
-   contingency.odds_ratio
-   fisher_exact
-   barnard_exact
-   boschloo_exact
 
 Plot-tests
 ----------
