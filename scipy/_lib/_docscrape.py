@@ -329,7 +329,7 @@ class NumpyDocString(Mapping):
 
     def _parse_index(self, section, content):
         """
-        .. index: default
+        .. index:: default
            :refguide: something, else, and more
 
         """
