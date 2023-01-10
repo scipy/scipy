@@ -317,7 +317,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         then `maxiter` is ignored.
         Default is None.
 
-        .. deprecated :: 1.9.0
+        .. deprecated:: 1.9.0
             `maxiter` is deprecated in favor of `maxfun` and will removed in
             SciPy 1.11.0.
     eta : float
