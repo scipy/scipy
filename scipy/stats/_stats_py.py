@@ -1596,7 +1596,7 @@ KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
 def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
-    """Test whether a dataset has normal kurtosis.
+    r"""Test whether a dataset has normal kurtosis.
 
     This function tests the null hypothesis that the kurtosis
     of the population from which the sample was drawn is that
@@ -1645,22 +1645,119 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     ----------
     .. [1] see e.g. F. J. Anscombe, W. J. Glynn, "Distribution of the kurtosis
        statistic b2 for normal samples", Biometrika, vol. 70, pp. 227-234, 1983.
+    .. [2] Shapiro, S. S., & Wilk, M. B. (1965). An analysis of variance test
+           for normality (complete samples). Biometrika, 52(3/4), 591-611.
+    .. [3] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+           Zero: Calculating Exact P-values When Permutations Are Randomly
+           Drawn." Statistical Applications in Genetics and Molecular Biology
+           9.1 (2010).
+    .. [4] Panagiotakos, D. B. (2008). The value of p-value in biomedical
+           research. The open cardiovascular medicine journal, 2, 97.
 
     Examples
     --------
-    >>> import numpy as np
-    >>> from scipy.stats import kurtosistest
-    >>> kurtosistest(list(range(20)))
-    KurtosistestResult(statistic=-1.7058104152122062, pvalue=0.08804338332528348)
-    >>> kurtosistest(list(range(20)), alternative='less')
-    KurtosistestResult(statistic=-1.7058104152122062, pvalue=0.04402169166264174)
-    >>> kurtosistest(list(range(20)), alternative='greater')
-    KurtosistestResult(statistic=-1.7058104152122062, pvalue=0.9559783083373583)
+    Suppose we wish to infer from measurements whether the weights of adult
+    human males in a medical study are not normally distributed [2]_.
+    The weights (lbs) are recorded in the array ``x`` below.
 
-    >>> rng = np.random.default_rng()
-    >>> s = rng.normal(0, 1, 1000)
-    >>> kurtosistest(s)
-    KurtosistestResult(statistic=-1.475047944490622, pvalue=0.14019965402996987)
+    >>> import numpy as np
+    >>> x = np.array([148, 154, 158, 160, 161, 162, 166, 170, 182, 195, 236])
+
+    The kurtosis test from [1]_ begins by computing a statistic based on the
+    sample (excess/Fisher) kurtosis.
+
+    >>> from scipy import stats
+    >>> res = stats.kurtosistest(x)
+    >>> res.statistic
+    2.3048235214240873
+
+    (The test warns that our sample has too few observations to perform the
+    test. We'll return to this at the end of the example.)
+    Because normal distributions have zero excess kurtosis (by definition),
+    the magnitude of this statistic tends to be low for samples drawn from a
+    normal distribution.
+
+    The test is performed by comparing the observed value of the
+    statistic against the null distribution: the distribution of statistic
+    values derived under the null hypothesis that the weights were drawn from
+    a normal distribution.
+
+    For this test, the null distribution of the statistic for very large
+    samples is the standard normal distribution.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dist = stats.norm()
+    >>> kt_val = np.linspace(-5, 5, 100)
+    >>> pdf = dist.pdf(kt_val)
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> def kt_plot(ax):  # we'll re-use this
+    ...     ax.plot(kt_val, pdf)
+    ...     ax.set_title("Kurtosis Test Null Distribution")
+    ...     ax.set_xlabel("statistic")
+    ...     ax.set_ylabel("probability density")
+    >>> ax = kt_plot(ax)
+    >>> plt.show()
+
+    The comparison is quantified by the p-value: the proportion of values in
+    the null distribution as extreme or more extreme than the observed
+    value of the statistic. In a two-sided test in which the statistic is
+    positive, elements of the null distribution greater than the observed
+    statistic and elements of the null distribution less than the negative of
+    the observed statistic are both considered "more extreme".
+
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> kt_plot(ax)
+    >>> pvalue = dist.cdf(-res.statistic) + dist.sf(res.statistic)
+    >>> annotation = (f'p-value={pvalue:.3f}\n(shaded area)')
+    >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
+    >>> _ = ax.annotate(annotation, (3, 0.005), (3.25, 0.02), arrowprops=props)
+    >>> i = kt_val >= res.statistic
+    >>> ax.fill_between(kt_val[i], y1=0, y2=pdf[i], color='C0')
+    >>> i = kt_val <= -res.statistic
+    >>> ax.fill_between(kt_val[i], y1=0, y2=pdf[i], color='C0')
+    >>> ax.set_xlim(-5, 5)
+    >>> ax.set_ylim(0, 0.1)
+    >>> plt.show()
+    >>> res.pvalue
+    0.0211764592113868
+
+    If the p-value is "small" - that is, if there is a low probability of
+    sampling data from a normally distributed population that produces such an
+    extreme value of the statistic - this may be taken as evidence against
+    the null hypothesis in favor of the alternative: the weights were not
+    drawn from a normal distribution. Note that:
+
+    - The inverse is not true; that is, the test is not used to provide
+      evidence for the null hypothesis.
+    - The threshold for values that will be considered "small" is a choice that
+      should be made before the data is analyzed [3]_ with consideration of the
+      risks of both false positives (incorrectly rejecting the null hypothesis)
+      and false negatives (failure to reject a false null hypothesis).
+
+    Note that the standard normal distribution provides an asymptotic
+    approximation of the null distribution; it is only accurate for samples
+    with many observations. This is the reason we received a warning at the
+    beginning of the example; our sample is quite small. In this case,
+    `scipy.stats.monte_carlo_test` may provide a more accurate, albeit
+    stochastic, approximation of the exact p-value.
+
+    >>> def statistic(x, axis):
+    ...     # get just the skewtest statistic; ignore the p-value
+    ...     return stats.kurtosistest(x, axis=axis).statistic
+    >>> res = stats.monte_carlo_test(x, stats.norm.rvs, statistic)
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> kt_plot(ax)
+    >>> ax.hist(res.null_distribution, np.linspace(-5, 5, 50),
+    ...         density=True)
+    >>> ax.legend(['aymptotic approximation\n(many observations)',
+    ...            'Monte Carlo approximation\n(11 observations)'])
+    >>> plt.show()
+    >>> res.pvalue
+    0.0272  # may vary
+
+    Furthermore, despite their stochastic nature, p-values computed in this way
+    can be used to exactly control the rate of false rejections of the null
+    hypothesis [4]_.
 
     """
     a, axis = _chk_asarray(a, axis)
