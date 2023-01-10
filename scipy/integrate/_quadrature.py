@@ -19,7 +19,7 @@ from scipy._lib._util import _rng_spawn
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
            'trapezoid', 'trapz', 'simps', 'simpson',
            'cumulative_trapezoid', 'cumtrapz', 'newton_cotes',
-           'qmc_quad', 'AccuracyWarning']
+           'AccuracyWarning']
 
 
 # Make See Also linking for our local copy work properly
@@ -1049,11 +1049,11 @@ def newton_cotes(rn, equal=0):
 def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
 
     # lazy import to avoid issues with partially-initialized submodule
-    if not hasattr(qmc_quad, 'qmc'):
+    if not hasattr(_qmc_quad, 'qmc'):
         from scipy import stats
-        qmc_quad.stats = stats
+        _qmc_quad.stats = stats
     else:
-        stats = qmc_quad.stats
+        stats = _qmc_quad.stats
 
     if not callable(func):
         message = "`func` must be callable."
@@ -1123,8 +1123,8 @@ def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
 QMCQuadResult = namedtuple('QMCQuadResult', ['integral', 'standard_error'])
 
 
-def qmc_quad(func, a, b, *, n_points=1024, n_estimates=8, qrng=None,
-             log=False, args=None):
+def _qmc_quad(func, a, b, *, n_points=1024, n_estimates=8, qrng=None,
+              log=False, args=None):
     """
     Compute an integral in N-dimensions using Quasi-Monte Carlo quadrature.
 

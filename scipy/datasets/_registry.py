@@ -6,7 +6,7 @@
 # To generate the SHA256 hash, use the command
 # openssl sha256 <filename>
 registry = {
-    "ascent.dat": "e8a84939484463ab8051aedc5b40aa262ab33a91d6458a6cd13c6a1cad5a023d",
+    "ascent.dat": "03ce124c1afc880f87b55f6b061110e2e1e939679184f5614e38dacc6c1957e2",
     "ecg.dat": "f20ad3365fb9b7f845d0e5c48b6fe67081377ee466c3a220b7f69f35c8958baf",
     "face.dat": "9d8b0b4d081313e2b485748c770472e5a95ed1738146883d84c7030493e82886"
 }

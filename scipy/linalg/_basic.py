@@ -37,7 +37,7 @@ def _solve_check(n, info, lamch=None, rcond=None):
              LinAlgWarning, stacklevel=3)
 
 
-def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
+def solve(a, b, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a='gen',
           transposed=False):
     """
@@ -68,13 +68,6 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Square input data
     b : (N, NRHS) array_like
         Input data for the right hand side.
-    sym_pos : bool, default: False, deprecated
-        Assume `a` is symmetric and positive definite.
-
-        .. deprecated:: 0.19.0
-            This keyword is deprecated and should be replaced by using
-           ``assume_a = 'pos'``. `sym_pos` will be removed in SciPy 1.11.0.
-
     lower : bool, default: False
         Ignored if ``assume_a == 'gen'`` (the default). If True, the
         calculation uses only the data in the lower triangle of `a`;
@@ -167,14 +160,6 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         else:
             b1 = b1[:, None]
         b_is_1D = True
-
-    # Backwards compatibility - old keyword.
-    if sym_pos:
-        message = ("The 'sym_pos' keyword is deprecated and should be "
-                   "replaced by using 'assume_a = \"pos\"'. 'sym_pos' will be"
-                   " removed in SciPy 1.11.0.")
-        warn(message, DeprecationWarning, stacklevel=2)
-        assume_a = 'pos'
 
     if assume_a not in ('gen', 'sym', 'her', 'pos'):
         raise ValueError('{} is not a recognized matrix structure'
