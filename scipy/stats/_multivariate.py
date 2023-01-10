@@ -1248,6 +1248,35 @@ class matrix_normal_gen(multi_rv_generic):
             out = out.reshape(mean.shape)
         return out
 
+    def entropy(self, mean=None, rowcov=1, colcov=1):
+        """Log of the matrix normal probability density function.
+
+        Parameters
+        ----------
+        %(_matnorm_doc_default_callparams)s
+
+        Returns
+        -------
+        entropy : float
+            Entropy of the distribution
+
+        Notes
+        -----
+        %(_matnorm_doc_callparams_note)s
+
+        """
+        dims, mean, rowcov, colcov = self._process_parameters(mean, rowcov,
+                                                              colcov)
+        rowpsd = _PSD(rowcov, allow_singular=False)
+        colpsd = _PSD(colcov, allow_singular=False)
+
+        return self._entropy(dims, rowpsd.log_pdet, colpsd.log_pdet)
+
+    def _entropy(self, dims, row_cov_logdet, col_cov_logdet):
+        n, p = dims
+        return (0.5 * n * p * (1 + _LOG_2PI) + 0.5 * p * row_cov_logdet +
+                0.5 * n * col_cov_logdet)
+
 
 matrix_normal = matrix_normal_gen()
 
@@ -1304,10 +1333,14 @@ class matrix_normal_frozen(multi_rv_frozen):
         return self._dist.rvs(self.mean, self.rowcov, self.colcov, size,
                               random_state)
 
+    def entropy(self):
+        return self._dist._entropy(self.dims, self.rowpsd.log_pdet,
+                                   self.colpsd.log_pdet)
+
 
 # Set frozen generator docstrings from corresponding docstrings in
 # matrix_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'rvs']:
+for name in ['logpdf', 'pdf', 'rvs', 'entropy']:
     method = matrix_normal_gen.__dict__[name]
     method_frozen = matrix_normal_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(method.__doc__,
