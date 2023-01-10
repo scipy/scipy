@@ -1590,7 +1590,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     ...     ax.set_title("Skew Test Null Distribution")
     ...     ax.set_xlabel("statistic")
     ...     ax.set_ylabel("probability density")
-    >>> ax = st_plot(ax)
+    >>> st_plot(ax)
     >>> plt.show()
 
     The comparison is quantified by the p-value: the proportion of values in
@@ -1785,7 +1785,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     ...     ax.set_title("Kurtosis Test Null Distribution")
     ...     ax.set_xlabel("statistic")
     ...     ax.set_ylabel("probability density")
-    >>> ax = kt_plot(ax)
+    >>> kt_plot(ax)
     >>> plt.show()
 
     The comparison is quantified by the p-value: the proportion of values in
@@ -1949,8 +1949,8 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     >>> import numpy as np
     >>> x = np.array([148, 154, 158, 160, 161, 162, 166, 170, 182, 195, 236])
 
-    The normality test of [1]_ and [2] begins by computing a statistic based on
-    the sample skewness and kurtosis.
+    The normality test of [1]_ and [2]_ begins by computing a statistic based
+    on the sample skewness and kurtosis.
 
     >>> from scipy import stats
     >>> res = stats.normaltest(x)
@@ -1980,7 +1980,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     ...     ax.set_title("Normality Test Null Distribution")
     ...     ax.set_xlabel("statistic")
     ...     ax.set_ylabel("probability density")
-    >>> ax = plot(ax)
+    >>> plot(ax)
     >>> plt.show()
 
     The comparison is quantified by the p-value: the proportion of values in
@@ -2024,17 +2024,18 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     >>> def statistic(x, axis):
     ...     # Get only the `normaltest` statistic; ignore approximate p-value
     ...     return stats.normaltest(x, axis=axis).statistic
-    >>> res = stats.monte_carlo_test(x, stats.norm.rvs, statistic)
+    >>> res = stats.monte_carlo_test(x, stats.norm.rvs, statistic,
+    ...                              alternative='greater')
     >>> fig, ax = plt.subplots(figsize=(8, 5))
     >>> plot(ax)
-    >>> ax.hist(res.null_distribution, np.linspace(0, 10, 50),
+    >>> ax.hist(res.null_distribution, np.linspace(0, 25, 50),
     ...         density=True)
     >>> ax.legend(['aymptotic approximation (many observations)',
     ...            'Monte Carlo approximation (11 observations)'])
     >>> ax.set_xlim(0, 14)
     >>> plt.show()
     >>> res.pvalue
-    0.0186  # may vary
+    0.0082  # may vary
 
     Furthermore, despite their stochastic nature, p-values computed in this way
     can be used to exactly control the rate of false rejections of the null
@@ -2139,7 +2140,7 @@ def jarque_bera(x, *, axis=None):
     ...     ax.set_title("Jarque-Bera Null Distribution")
     ...     ax.set_xlabel("statistic")
     ...     ax.set_ylabel("probability density")
-    >>> ax = jb_plot(ax)
+    >>> jb_plot(ax)
     >>> plt.show()
 
     The comparison is quantified by the p-value: the proportion of values in
@@ -2184,7 +2185,8 @@ def jarque_bera(x, *, axis=None):
     ...     s = stats.skew(x, axis=axis)
     ...     k = stats.kurtosis(x, axis=axis)
     ...     return x.shape[axis]/6 * (s**2 + k**2/4)
-    >>> res = stats.monte_carlo_test(x, stats.norm.rvs, statistic)
+    >>> res = stats.monte_carlo_test(x, stats.norm.rvs, statistic,
+    ...                              alternative='greater')
     >>> fig, ax = plt.subplots(figsize=(8, 5))
     >>> jb_plot(ax)
     >>> ax.hist(res.null_distribution, np.linspace(0, 10, 50),
@@ -2193,7 +2195,7 @@ def jarque_bera(x, *, axis=None):
     ...            'Monte Carlo approximation (11 observations)'])
     >>> plt.show()
     >>> res.pvalue
-    0.0142  # may vary
+    0.0097  # may vary
 
     Furthermore, despite their stochastic nature, p-values computed in this way
     can be used to exactly control the rate of false rejections of the null

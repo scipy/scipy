@@ -1767,10 +1767,7 @@ def shapiro(x):
     -----
     The algorithm used is described in [4]_ but censoring parameters as
     described are not implemented. For N > 5000 the W test statistic is
-    accurate, but the p-value may not be. Nonetheless, the p-
-
-    The chance of rejecting the null hypothesis when it is true is close to 5%
-    regardless of sample size.
+    accurate, but the p-value may not be.
 
     References
     ----------
@@ -1826,7 +1823,7 @@ def shapiro(x):
     >>> def plot(ax):  # we'll re-use this
     ...     ax.hist(ref.null_distribution, density=True, bins=bins)
     ...     ax.set_title("Shapiro-Wilk Test Null Distribution \n"
-                         "(Monte Carlo Approximation, 11 Observations)")
+    ...                  "(Monte Carlo Approximation, 11 Observations)")
     ...     ax.set_xlabel("statistic")
     ...     ax.set_ylabel("probability density")
     >>> plot(ax)
