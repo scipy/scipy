@@ -266,14 +266,6 @@ exact_values = {
     'joule-kilogram relationship': (1 / (c * c), 'kg', 0.0),
     'kilogram-joule relationship': (c * c, 'J', 0.0),
     'hertz-inverse meter relationship': (1 / c, 'm^-1', 0.0),
-
-    # The following derived quantities are no longer exact (CODATA2018):
-    # specify separately
-    'characteristic impedance of vacuum': (
-        sqrt(mu0 / epsilon0), 'ohm',
-        sqrt(mu0 / epsilon0) * 0.5 * (
-            physical_constants['vacuum mag. permeability'][2] / mu0
-            + physical_constants['vacuum electric permittivity'][2] / epsilon0))
 }
 
 # sanity check

@@ -605,6 +605,7 @@ class rv_generic:
     and rv_continuous.
 
     """
+
     def __init__(self, seed=None):
         super().__init__()
 
@@ -791,18 +792,14 @@ class rv_generic:
         # correct for empty shapes
         self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')
 
-    def _construct_default_doc(self, longname=None, extradoc=None,
+    def _construct_default_doc(self, longname=None,
                                docdict=None, discrete='continuous'):
         """Construct instance docstring from the default template."""
         if longname is None:
             longname = 'A'
-        if extradoc is None:
-            extradoc = ''
-        if extradoc.startswith('\n\n'):
-            extradoc = extradoc[2:]
         self.__doc__ = ''.join(['%s %s random variable.' % (longname, discrete),
                                 '\n\n%(before_notes)s\n', docheaders['notes'],
-                                extradoc, '\n%(example)s'])
+                                '\n%(example)s'])
         self._construct_doc(docdict)
 
     def freeze(self, *args, **kwds):
@@ -1613,11 +1610,6 @@ class rv_continuous(rv_generic):
         its methods. If not provided, shape parameters will be inferred from
         the signature of the private methods, ``_pdf`` and ``_cdf`` of the
         instance.
-    extradoc :  str, optional, deprecated
-        This string is used as the last part of the docstring returned when a
-        subclass has no docstring of its own. Note: `extradoc` exists for
-        backwards compatibility and will be removed in SciPy 1.11.0, do not
-        use for new subclasses.
     seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -1771,21 +1763,18 @@ class rv_continuous(rv_generic):
     ``gaussian._pdf(y) / scale``.
 
     """
+
     def __init__(self, momtype=1, a=None, b=None, xtol=1e-14,
                  badvalue=None, name=None, longname=None,
-                 shapes=None, extradoc=None, seed=None):
+                 shapes=None, seed=None):
 
         super().__init__(seed)
-
-        if extradoc is not None:
-            warnings.warn("extradoc is deprecated and will be removed in "
-                          "SciPy 1.11.0", DeprecationWarning)
 
         # save the ctor parameters, cf generic freeze
         self._ctor_param = dict(
             momtype=momtype, a=a, b=b, xtol=xtol,
             badvalue=badvalue, name=name, longname=longname,
-            shapes=shapes, extradoc=extradoc, seed=seed)
+            shapes=shapes, seed=seed)
 
         if badvalue is None:
             badvalue = nan
@@ -1802,7 +1791,6 @@ class rv_continuous(rv_generic):
         self.xtol = xtol
         self.moment_type = momtype
         self.shapes = shapes
-        self.extradoc = extradoc
 
         self._construct_argparser(meths_to_inspect=[self._pdf, self._cdf],
                                   locscale_in='loc=0, scale=1',
@@ -1820,7 +1808,6 @@ class rv_continuous(rv_generic):
             # Skip adding docstrings if interpreter is run with -OO
             if self.__doc__ is None:
                 self._construct_default_doc(longname=longname,
-                                            extradoc=extradoc,
                                             docdict=docdict,
                                             discrete='continuous')
             else:
@@ -1872,7 +1859,6 @@ class rv_continuous(rv_generic):
         dct['badvalue'] = self.badvalue
         dct['name'] = self.name
         dct['shapes'] = self.shapes
-        dct['extradoc'] = self.extradoc
         return dct
 
     def _ppf_to_solve(self, x, q, *args):
@@ -2946,11 +2932,6 @@ class rv_discrete(rv_generic):
         If not provided, shape parameters will be inferred from
         the signatures of the private methods, ``_pmf`` and ``_cdf`` of
         the instance.
-    extradoc :  str, optional, deprecated
-        This string is used as the last part of the docstring returned when a
-        subclass has no docstring of its own. Note: `extradoc` exists for
-        backwards compatibility and will be removed in SciPy 1.11.0, do not
-        use for new subclasses.
     seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -3042,7 +3023,7 @@ class rv_discrete(rv_generic):
     """
     def __new__(cls, a=0, b=inf, name=None, badvalue=None,
                 moment_tol=1e-8, values=None, inc=1, longname=None,
-                shapes=None, extradoc=None, seed=None):
+                shapes=None, seed=None):
 
         if values is not None:
             # dispatch to a subclass
@@ -3053,19 +3034,15 @@ class rv_discrete(rv_generic):
 
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8, values=None, inc=1, longname=None,
-                 shapes=None, extradoc=None, seed=None):
+                 shapes=None, seed=None):
 
         super().__init__(seed)
-
-        if extradoc is not None:
-            warnings.warn("extradoc is deprecated and will be removed in "
-                          "SciPy 1.11.0", DeprecationWarning)
 
         # cf generic freeze
         self._ctor_param = dict(
             a=a, b=b, name=name, badvalue=badvalue,
             moment_tol=moment_tol, values=values, inc=inc,
-            longname=longname, shapes=shapes, extradoc=extradoc, seed=seed)
+            longname=longname, shapes=shapes, seed=seed)
 
         if badvalue is None:
             badvalue = nan
@@ -3084,7 +3061,7 @@ class rv_discrete(rv_generic):
                                   # scale=1 for discrete RVs
                                   locscale_out='loc, 1')
         self._attach_methods()
-        self._construct_docstrings(name, longname, extradoc)
+        self._construct_docstrings(name, longname)
 
     def __getstate__(self):
         dct = self.__dict__.copy()
@@ -3116,11 +3093,10 @@ class rv_discrete(rv_generic):
         # now that self.numargs is defined, we can adjust nin
         self._cdfvec.nin = self.numargs + 1
 
-    def _construct_docstrings(self, name, longname, extradoc):
+    def _construct_docstrings(self, name, longname):
         if name is None:
             name = 'Distribution'
         self.name = name
-        self.extradoc = extradoc
 
         # generate docstring for subclass instances
         if longname is None:
@@ -3134,7 +3110,6 @@ class rv_discrete(rv_generic):
             # Skip adding docstrings if interpreter is run with -OO
             if self.__doc__ is None:
                 self._construct_default_doc(longname=longname,
-                                            extradoc=extradoc,
                                             docdict=docdict_discrete,
                                             discrete='discrete')
             else:
@@ -3160,7 +3135,6 @@ class rv_discrete(rv_generic):
         dct['inc'] = self.inc
         dct['name'] = self.name
         dct['shapes'] = self.shapes
-        dct['extradoc'] = self.extradoc
         return dct
 
     def _nonzero(self, k, *args):
@@ -3742,15 +3716,12 @@ class rv_sample(rv_discrete):
 
     The ctor ignores most of the arguments, only needs the `values` argument.
     """
+
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8, values=None, inc=1, longname=None,
-                 shapes=None, extradoc=None, seed=None):
+                 shapes=None, seed=None):
 
         super(rv_discrete, self).__init__(seed)
-
-        if extradoc is not None:
-            warnings.warn("extradoc is deprecated and will be removed in "
-                          "SciPy 1.11.0", DeprecationWarning)
 
         if values is None:
             raise ValueError("rv_sample.__init__(..., values=None,...)")
@@ -3759,7 +3730,7 @@ class rv_sample(rv_discrete):
         self._ctor_param = dict(
             a=a, b=b, name=name, badvalue=badvalue,
             moment_tol=moment_tol, values=values, inc=inc,
-            longname=longname, shapes=shapes, extradoc=extradoc, seed=seed)
+            longname=longname, shapes=shapes, seed=seed)
 
         if badvalue is None:
             badvalue = nan
@@ -3795,7 +3766,7 @@ class rv_sample(rv_discrete):
 
         self._attach_methods()
 
-        self._construct_docstrings(name, longname, extradoc)
+        self._construct_docstrings(name, longname)
 
     def __getstate__(self):
         dct = self.__dict__.copy()
