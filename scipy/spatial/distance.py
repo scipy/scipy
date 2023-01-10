@@ -1792,7 +1792,7 @@ _METRIC_INFOS = [
         validator=_validate_hamming_kwargs,
         dist_func=hamming,
         cdist_func=_distance_pybind.cdist_hamming,
-        pdist_func=PDistMetricWrapper('hamming'),
+        pdist_func=_distance_pybind.pdist_hamming,
     ),
     MetricInfo(
         canonical_name='jaccard',
