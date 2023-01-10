@@ -1248,12 +1248,15 @@ class matrix_normal_gen(multi_rv_generic):
             out = out.reshape(mean.shape)
         return out
 
-    def entropy(self, mean=None, rowcov=1, colcov=1):
+    def entropy(self, rowcov=1, colcov=1):
         """Log of the matrix normal probability density function.
 
         Parameters
         ----------
-        %(_matnorm_doc_default_callparams)s
+        rowcov : array_like, optional
+            Among-row covariance matrix of the distribution (default: `1`)
+        colcov : array_like, optional
+            Among-column covariance matrix of the distribution (default: `1`)
 
         Returns
         -------
@@ -1265,8 +1268,10 @@ class matrix_normal_gen(multi_rv_generic):
         %(_matnorm_doc_callparams_note)s
 
         """
-        dims, mean, rowcov, colcov = self._process_parameters(mean, rowcov,
-                                                              colcov)
+        dummy_mean = np.zeros((rowcov.shape[0], colcov.shape[0]))
+        dims, _, rowcov, colcov = self._process_parameters(dummy_mean,
+                                                           rowcov,
+                                                           colcov)
         rowpsd = _PSD(rowcov, allow_singular=False)
         colpsd = _PSD(colcov, allow_singular=False)
 
