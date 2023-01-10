@@ -5,13 +5,11 @@ Constants (:mod:`scipy.constants`)
 
 .. currentmodule:: scipy.constants
 
-``scipy.constants.physical_constants[name] = (value, unit, uncertainty)``
-contains the 2018 self-consistent values of constants and conversion factors
-of physics and chemistry recommended by the Committee on Data of the
-International Science Council (CODATA) [JPCRD] [RMP].
+`scipy.constants.physical_constants` contains the 2018 self-consistent
+values of constants and conversion factors of physics and chemistry
+recommended by the Committee on Data of the International Science
+Council (CODATA) [JPCRD] [RMP].
 
-They can be searched by ``find`` and are also listed below.
-   
 .. data:: physical_constants
 
 ======================================================================  ====
@@ -27,7 +25,6 @@ References
          Phys. 93, 025010 (2021)
 
 """
-# Modules contributed by BasSw (wegwerp@gmail.com)
 from ._codata import *
 from ._codata import _obsolete_constants, physical_constants
 
