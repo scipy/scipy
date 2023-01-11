@@ -34,7 +34,7 @@ from pathlib import Path
 import sys
 from typing import Iterator, Sequence
 
-PRAGMA = "# not a test"
+PRAGMA = "# skip name check"
 
 
 def _find_names(node: ast.Module) -> Iterator[str]:
@@ -98,13 +98,15 @@ def main(content: str, file: str) -> int:
         if is_misnamed_test_func(node, names, lines[node.lineno - 1]):
             print(
                 f"{file}:{node.lineno}:{node.col_offset} "
-                "found test function which does not start with 'test'"
+                f"found test function '{node.name}' which does not start with"
+                " 'test'"
             )
             ret = 1
         elif is_misnamed_test_class(node, names, lines[node.lineno - 1]):
             print(
                 f"{file}:{node.lineno}:{node.col_offset} "
-                "found test class which does not start with 'Test'"
+                f"found test class '{node.name}' which does not start with"
+                " 'Test'"
             )
             ret = 1
         if (
@@ -142,7 +144,8 @@ def main(content: str, file: str) -> int:
 
                     print(
                         f"{file}:{_node.lineno}:{_node.col_offset} "
-                        "found test function which does not start with 'test'"
+                        f"found test function '{_node.name}' which does not "
+                        "start with 'test'"
                     )
                     ret = 1
     return ret
