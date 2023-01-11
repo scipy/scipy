@@ -53,19 +53,19 @@ def assert_fp_equal(x, y, err_msg="", nulp=50):
 
 class TestLineSearch:
     # -- scalar functions; must have dphi(0.) < 0
-    def _scalar_func_1(self, s):
+    def _scalar_func_1(self, s): # skip name check
         self.fcount += 1
         p = -s - s**3 + s**4
         dp = -1 - 3*s**2 + 4*s**3
         return p, dp
 
-    def _scalar_func_2(self, s):
+    def _scalar_func_2(self, s): # skip name check
         self.fcount += 1
         p = np.exp(-4*s) + s**2
         dp = -4*np.exp(-4*s) + 2*s
         return p, dp
 
-    def _scalar_func_3(self, s):
+    def _scalar_func_3(self, s): # skip name check
         self.fcount += 1
         p = -np.sin(10*s)
         dp = -10*np.cos(10*s)
@@ -73,13 +73,13 @@ class TestLineSearch:
 
     # -- n-d functions
 
-    def _line_func_1(self, x):
+    def _line_func_1(self, x): # skip name check
         self.fcount += 1
         f = np.dot(x, x)
         df = 2*x
         return f, df
 
-    def _line_func_2(self, x):
+    def _line_func_2(self, x): # skip name check
         self.fcount += 1
         f = np.dot(x, np.dot(self.A, x)) + 1
         df = np.dot(self.A + self.A.T, x)
