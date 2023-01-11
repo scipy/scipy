@@ -42,7 +42,7 @@ def ishigami_ref_indices():
 def f_ishigami_vec(x):
     """Output of shape (2, n)."""
     res = f_ishigami(x)
-    return np.concatenate([res, res]).reshape(2, -1)
+    return res, res
 
 
 class TestSobolIndices:
@@ -101,7 +101,7 @@ class TestSobolIndices:
         assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-2)
 
         assert res._bootstrap_result is None
-        bootstrap_res = res.bootstrap()
+        bootstrap_res = res.bootstrap(n_resamples=99)
         assert isinstance(bootstrap_res, BootstrapSobolResult)
         assert isinstance(res._bootstrap_result, BootstrapResult)
 
@@ -129,7 +129,8 @@ class TestSobolIndices:
 
         # call again to use previous results and change a param
         assert isinstance(
-            res.bootstrap(confidence_level=0.9), BootstrapSobolResult
+            res.bootstrap(confidence_level=0.9, n_resamples=99),
+            BootstrapSobolResult
         )
         assert isinstance(res._bootstrap_result, BootstrapResult)
 

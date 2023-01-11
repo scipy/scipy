@@ -176,7 +176,7 @@ class SobolResult:
     def bootstrap(
         self,
         confidence_level: DecimalNumber = 0.95,
-        n_resamples: IntNumber = 99
+        n_resamples: IntNumber = 999
     ) -> BootstrapResult:  # type: ignore[valid-type]
         """Bootstrap Sobol' indices to provide confidence intervals.
 
@@ -184,7 +184,7 @@ class SobolResult:
         ----------
         confidence_level : float, default: ``0.95``
             The confidence level of the confidence intervals.
-        n_resamples : int, default: ``99``
+        n_resamples : int, default: ``999``
             The number of resamples performed to form the bootstrap
             distribution of the indices.
 
