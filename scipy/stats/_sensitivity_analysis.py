@@ -270,24 +270,24 @@ def sobol_indices(
           (number of input variables),
         - ``s`` is the output dimensionality of `func`
           (number of output variables), and
-        - ``n`` is the number of points at which `func` is evaluated
-          (see `n` below).
-
+        - ``n`` is the number of samples (see `n` below).
 
         Function evaluations values must be finite.
 
-        If `func` is a dictionary, contains the function evaluations from 3
+        If `func` is a dictionary, contains the function evaluations from three
         different arrays. Keys must be: ``f_A``, ``f_B`` and ``f_AB``.
         ``f_A`` and ``f_B`` should have a shape ``(s, n)`` and ``f_AB``
         should have a shape ``(d, s, n)``.
         This is an advanced feature and misuse can lead to wrong analysis.
     n : int
-        Number of points.
-        Must be a power of 2. The total number of function calls will be
-        ``n*(d+2)``.
+        Number of samples use to generate the matrices ``A`` and ``B``.
+        Must be a power of 2. The total number of points at which `func` is
+        evaluated will be ``n*(d+2)``.
     dists : list(distributions), optional
-        List of each parameter's marginal distribution. Each parameter being
-        independently distributed.
+        List of each parameter's distribution. The distribution of parameters
+        depends on the application and should be carefully chosen.
+        Parameter should be independently distributed meaning there should
+        be no constraint nor relationship between input parameters values.
 
         Distributions must be an instance of a class with a ``ppf``
         method.
@@ -302,7 +302,7 @@ def sobol_indices(
             -> Tuple[np.ndarray, np.ndarray]
 
         with ``f_A, f_B`` of shape (s, n) and ``f_AB`` of shape (d, s, n).
-        These arrays contain the function evaluations from 3 different sets
+        These arrays contain the function evaluations from three different sets
         of samples.
         The output is a tuple of the first and total indices with
         shape (s, d).
