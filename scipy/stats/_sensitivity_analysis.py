@@ -608,10 +608,13 @@ def sobol_indices(
                 "'dists' must be defined when 'func' is a callable."
             )
 
+        def wrapped_func(x):
+            return np.atleast_2d(func(x))
+
         A, B = sample_A_B(n=n, dists=dists, random_state=random_state)
         AB = sample_AB(A=A, B=B)
 
-        f_A = np.atleast_2d(func(A))
+        f_A = wrapped_func(A)
 
         if f_A.shape[1] != n:
             raise ValueError(
@@ -622,10 +625,11 @@ def sobol_indices(
         def funcAB(AB):
             d, d, n = AB.shape
             AB = np.moveaxis(AB, 0, -1).reshape(d, n*d)
-            f_AB = np.atleast_2d(func(AB))
+            f_AB = wrapped_func(AB)
             return np.moveaxis(f_AB.reshape((-1, n, d)), -1, 0)
 
-        f_B, f_AB = np.atleast_2d(func(B), funcAB(AB))
+        f_B = wrapped_func(B)
+        f_AB = funcAB(AB)
     else:
         message = (
             "When 'func' is a dictionary, it must contain the following "
