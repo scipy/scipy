@@ -36,7 +36,7 @@ def ishigami_ref_indices():
     ])/var
     s_total = s_first + s_second.sum(axis=1)
 
-    return [s_first.reshape(1, -1), s_total.reshape(1, -1)]
+    return s_first, s_total
 
 
 def f_ishigami_vec(x):
@@ -89,12 +89,8 @@ class TestSobolIndices:
 
         if func.__name__ == 'f_ishigami_vec':
             ishigami_ref_indices = [
-                np.concatenate(
-                    [ishigami_ref_indices[0], ishigami_ref_indices[0]]
-                ),
-                np.concatenate(
+                    [ishigami_ref_indices[0], ishigami_ref_indices[0]],
                     [ishigami_ref_indices[1], ishigami_ref_indices[1]]
-                )
             ]
 
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
@@ -213,17 +209,13 @@ class TestSobolIndices:
             random_state=rng
         )
 
-        ishigami_ref_indices = [
-            np.concatenate(
-                [ishigami_ref_indices[0], [[0, 0, 0]], ishigami_ref_indices[0]]
-            ),
-            np.concatenate(
-                [ishigami_ref_indices[1], [[0, 0, 0]], ishigami_ref_indices[1]]
-            )
+        ishigami_vec_indices = [
+                [ishigami_ref_indices[0], [0, 0, 0], ishigami_ref_indices[0]],
+                [ishigami_ref_indices[1], [0, 0, 0], ishigami_ref_indices[1]]
         ]
 
-        assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
-        assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-2)
+        assert_allclose(res.first_order, ishigami_vec_indices[0], atol=1e-2)
+        assert_allclose(res.total_order, ishigami_vec_indices[1], atol=1e-2)
 
     def test_more_converged(self, ishigami_ref_indices):
         rng = np.random.default_rng(28631265345463262246170309650372465332)

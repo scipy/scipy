@@ -467,9 +467,9 @@ def sobol_indices(
     ...     random_state=rng
     ... )
     >>> indices.first_order
-    array([[3.14996175e-01, 4.40110556e-01, 2.17329918e-04]])
+    array([3.14996175e-01, 4.40110556e-01, 2.17329918e-04])
     >>> indices.total_order
-    array([[0.55508078, 0.43995732, 0.23803014]])
+    array([0.55508078, 0.43995732, 0.23803014])
 
     .. note::
 
@@ -571,7 +571,7 @@ def sobol_indices(
         }
         try:
             method = method.lower()  # type: ignore[assignment]
-            indices_method = indices_methods[method]
+            indices_method_ = indices_methods[method]
         except KeyError as exc:
             message = (
                 f"{method!r} is not a valid 'method'. It must be one of"
@@ -586,14 +586,21 @@ def sobol_indices(
             inspect.Parameter('f_AB', kind=kind)
         )
         sig = inspect.Signature(parameters=parameters)
-        indices_method = method
+        indices_method_ = method
 
-        if inspect.signature(indices_method) != sig:
+        if inspect.signature(indices_method_) != sig:
             message = (
                 "If 'method' is a callable, it must have the following"
                 f" signature: {inspect.signature(saltelli_2010)}"
             )
             raise ValueError(message)
+
+    def indices_method(f_A, f_B, f_AB):
+        """Wrap indices method to ensure proper output dimension.
+
+        1D when single output, 2D otherwise.
+        """
+        return np.squeeze(indices_method_(f_A=f_A, f_B=f_B, f_AB=f_AB))
 
     if callable(func):
         if dists is None:
