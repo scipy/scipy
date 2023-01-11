@@ -1017,10 +1017,6 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
     return B
 
 
-def within_tol(a, b, tol):
-    return np.abs(a - b).max() < tol
-
-
 def test_unsupported_uncondensed_distance_matrix_linkage_warning():
     assert_warns(ClusterWarning, linkage, [[0, 1], [1, 0]])
 
