@@ -897,15 +897,18 @@ class TestMatrixNormal:
                 X = frozen.rvs(random_state=1234)
                 pdf1 = frozen.pdf(X)
                 logpdf1 = frozen.logpdf(X)
+                entropy1 = frozen.entropy()
 
                 vecX = X.T.flatten()
                 vecM = M.T.flatten()
                 cov = np.kron(V,U)
                 pdf2 = multivariate_normal.pdf(vecX, mean=vecM, cov=cov)
                 logpdf2 = multivariate_normal.logpdf(vecX, mean=vecM, cov=cov)
+                entropy2 = multivariate_normal.entropy(mean=vecM, cov=cov)
 
                 assert_allclose(pdf1, pdf2, rtol=1E-10)
                 assert_allclose(logpdf1, logpdf2, rtol=1E-10)
+                assert_allclose(entropy1, entropy2)
 
     def test_array_input(self):
         # Check array of inputs has the same output as the separate entries.
