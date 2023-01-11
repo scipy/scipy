@@ -74,6 +74,7 @@ class TestSobolIndices:
         AB = sample_AB(A=A, B=B)
         assert_allclose(AB, ref)
 
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
     @pytest.mark.parametrize(
         'func',
         [f_ishigami, pytest.param(f_ishigami_vec, marks=pytest.mark.slow)],
@@ -217,6 +218,7 @@ class TestSobolIndices:
         assert_allclose(res.first_order, ishigami_vec_indices[0], atol=1e-2)
         assert_allclose(res.total_order, ishigami_vec_indices[1], atol=1e-2)
 
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_more_converged(self, ishigami_ref_indices):
         rng = np.random.default_rng(28631265345463262246170309650372465332)
         res = sobol_indices(
