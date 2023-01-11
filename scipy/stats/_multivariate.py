@@ -945,6 +945,8 @@ class matrix_normal_gen(multi_rv_generic):
         Log of the probability density function.
     rvs(mean=None, rowcov=1, colcov=1, size=1, random_state=None)
         Draw random samples.
+    entropy(rowcol=1, colcov=1)
+        Differential entropy.
 
     Parameters
     ----------
@@ -2534,6 +2536,8 @@ class invwishart_gen(wishart_gen):
         Log of the probability density function.
     rvs(df, scale, size=1, random_state=None)
         Draw random samples from an inverse Wishart distribution.
+    entropy(df, scale)
+        Differential entropy of the distribution.
 
     Parameters
     ----------
