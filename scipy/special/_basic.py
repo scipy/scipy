@@ -2658,11 +2658,6 @@ def comb(N, k, exact=False, repetition=False, legacy=False):
         # otherwise, we disregard `exact=True`; it makes no sense for non-integral arguments
         return comb(N, k)
     else:
-            if not legacy:
-                return comb(N, k)
-        # _comb_int casts inputs to integers
-        return _comb_int(N, k)
-    else:
         k, N = asarray(k), asarray(N)
         cond = (k <= N) & (N >= 0) & (k >= 0)
         vals = binom(N, k)
