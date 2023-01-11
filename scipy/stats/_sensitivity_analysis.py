@@ -471,6 +471,37 @@ def sobol_indices(
     >>> indices.total_order
     array([0.55508078, 0.43995732, 0.23803014])
 
+    Confidence interval can be obtained using bootstrapping.
+
+    >>> boot = indices.bootstrap()
+
+    Then, this information can be easilly visualized.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, axs = plt.subplots(1, 2, figsize=(9, 4))
+    >>> axs[0].errorbar(
+    ...     [1, 2, 3], indices.first_order, fmt='o',
+    ...     yerr=[
+    ...         indices.first_order - boot.first_order.confidence_interval.low,
+    ...         boot.first_order.confidence_interval.high - indices.first_order
+    ...     ],
+    ... )
+    >>> axs[0].set_ylabel("First order Sobol' indices")
+    >>> axs[0].set_xlabel('Input parameters')
+    >>> axs[0].set_xticks([1, 2, 3])
+    >>> axs[1].errorbar(
+    ...     [1, 2, 3], indices.total_order, fmt='o',
+    ...     yerr=[
+    ...         indices.total_order - boot.total_order.confidence_interval.low,
+    ...         boot.total_order.confidence_interval.high - indices.total_order
+    ...     ],
+    ... )
+    >>> axs[1].set_ylabel("Total order Sobol' indices")
+    >>> axs[1].set_xlabel('Input parameters')
+    >>> axs[1].set_xticks([1, 2, 3])
+    >>> plt.tight_layout()
+    >>> plt.show()
+
     .. note::
 
         By default, `scipy.stats.uniform` has support ``[0, 1]``.
@@ -503,7 +534,6 @@ def sobol_indices(
     This gives a visual way to understand how each parameter impact the
     output of the function.
 
-    >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(1, n_dim, figsize=(12, 4))
     >>> for i in range(n_dim):
     ...     xi = sample[:, i]
