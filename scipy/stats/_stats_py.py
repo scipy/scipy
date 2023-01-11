@@ -9441,9 +9441,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
             nans because ranks relative to nans in the input are undefined.
             When `nan_policy` is 'omit', nans in `a` are ignored when ranking
             the other values, and the corresponding locations of the output
-            are nan. This behavior is the default because it is intuitive and
-            compatible with the behavior before the `nan_policy` parameter
-            was introduced.
+            are nan.
 
         .. versionadded:: 1.10
 
@@ -9499,15 +9497,15 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         return np.apply_along_axis(rankdata, axis, a, method,
                                    nan_policy=nan_policy)
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    arr = np.ravel(a)
+    contains_nan, nan_policy = _contains_nan(arr, nan_policy)
     nan_indexes = None
     if contains_nan:
         if nan_policy == 'omit':
-            nan_indexes = np.isnan(a)
+            nan_indexes = np.isnan(arr)
         if nan_policy == 'propagate':
-            return np.full_like(a, np.nan)
+            return np.full_like(arr, np.nan)
 
-    arr = np.ravel(a)
     algo = 'mergesort' if method == 'ordinal' else 'quicksort'
     sorter = np.argsort(arr, kind=algo)
 
