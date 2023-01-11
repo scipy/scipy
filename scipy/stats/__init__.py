@@ -272,10 +272,11 @@ SciPy has many functions for performing hypothesis tests that return a
 test statistic and a p-value, and several of them return confidence intervals
 and/or other related information.
 
-The headings below are based on common uses of the test. Due to the variety of
-tests, any attempt at coarse-grained categorization will be imperfect. Also,
-note that tests within the same heading are not interchangeable in general
-(e.g. many have different distributional assumptions).
+The headings below are based on common uses of the functions within, but due to
+the wide variety of statistical procedures, any attempt at coarse-grained
+categorization will be imperfect. Also, note that tests within the same heading
+are not interchangeable in general (e.g. many have different distributional
+assumptions).
 
 One Sample Tests / Paired Sample Tests
 --------------------------------------
@@ -303,10 +304,10 @@ drawn from a specified distribution or a distribution with specified properties
 Paired sample tests are often used to assess whether two samples were drawn
 from the same distribution; they differ from the independent sample tests below
 in that each observation in one sample is treated as paired with a
-closely-related observation in the other sample (e.g. environmental factors
-are controlled between observations within a pair but not between different
-pairs). They can also be interpreted as one-sample tests (e.g.
-a test of the mean of differences between paired observations).
+closely-related observation in the other sample (e.g. when environmental
+factors are controlled between observations within a pair but not among pairs).
+They can also be interpreted or used as one-sample tests (e.g. tests on the
+mean or median of *differences* between paired observations).
 
 .. autosummary::
    :toctree: generated/
@@ -336,8 +337,8 @@ coordinates of multivariate observations.
    page_trend_test
    multiscale_graphcorr
 
-These association tests and related functions are suited to working
-with data in the form of contingency tables.
+These association tests and are to work with samples in the form of contingency
+tables. Supporting functions are available in `scipy.stats.contingency`.
 
 .. autosummary::
    :toctree: generated/
@@ -346,18 +347,12 @@ with data in the form of contingency tables.
    fisher_exact
    barnard_exact
    boschloo_exact
-   contingency.crosstab
-   contingency.expected_freq
-   contingency.margins
-   contingency.association
-   contingency.relative_risk
-   contingency.odds_ratio
 
 Independent Sample Tests
 ------------------------
 Independent sample tests are typically used to assess whether multiple samples
 were independently drawn from the same distribution or different distributions
-with a shared property (e.g. equal mean).
+with a shared property (e.g. equal means).
 
 Some tests are specifically for comparing two samples.
 
@@ -374,6 +369,7 @@ Some tests are specifically for comparing two samples.
    cramervonmises_2samp
    epps_singleton_2samp
    ks_2samp
+   kstest
 
 Others are generalized to multiple samples.
 
@@ -391,8 +387,8 @@ Others are generalized to multiple samples.
    friedmanchisquare
    anderson_ksamp
 
-Resampling Methods
-------------------
+Resampling and Monte Carlo Methods
+----------------------------------
 The following functions can reproduce the p-value and confidence interval
 results of most of the functions above, and often produce accurate results in a
 wider variety of conditions. They can also be used to perform hypothesis tests
@@ -406,19 +402,29 @@ at the cost of greater computational requirements and stochastic results.
    permutation_test
    bootstrap
 
-Other Test Functions
---------------------
-The following functions are related to the tests above but do not belong in the
-above categories.
+Multiple Hypothesis Testing and Meta-Analysis
+---------------------------------------------
+These functions are for assessing the results of individual tests as a whole.
+Functions for performing specific multiple hypothesis tests (e.g. post hoc
+tests) are listed above.
 
 .. autosummary::
    :toctree: generated/
 
-   kstest
    combine_pvalues
-   binomtest
+
+Deprecated and Legacy Functions
+-------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   binom_test
    tiecorrect
    ranksums
+
+The following functions are related to the tests above but do not belong in the
+above categories.
 
 Quasi-Monte Carlo
 =================
@@ -427,6 +433,14 @@ Quasi-Monte Carlo
    :maxdepth: 4
 
    stats.qmc
+
+Contingency Tables
+==================
+
+.. toctree::
+   :maxdepth: 4
+
+   stats.contingency
 
 Masked statistics functions
 ===========================
