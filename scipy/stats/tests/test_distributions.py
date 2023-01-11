@@ -1197,14 +1197,6 @@ class TestTruncnorm:
         assert_allclose(stats.truncnorm(8, np.inf).cdf(8.3),
                         0.9163220907327540)
 
-    def _test_moments_one_range(self, a, b, expected, rtol=1e-7):
-        m0, v0, s0, k0 = expected[:4]
-        m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
-        assert_allclose(m, m0)
-        assert_allclose(v, v0)
-        assert_allclose(s, s0, rtol=rtol)
-        assert_allclose(k, k0, rtol=rtol)
-
     # Test data for the truncnorm stats() method.
     # The data in each row is:
     #   a, b, mean, variance, skewness, excess kurtosis. Generated using
@@ -4433,7 +4425,7 @@ class TestDocstring:
         stats.rv_discrete()
 
 
-def TestArgsreduce():
+def test_args_reduce():
     a = array([1, 3, 2, 1, 2, 3, 3])
     b, c = argsreduce(a > 1, a, 2)
 
@@ -6774,7 +6766,7 @@ class TestSubclassingExplicitShapes:
         dist = _distr_gen(shapes='extra_kwarg')
         assert_equal(dist.pdf(1, extra_kwarg=3), stats.norm.pdf(1))
 
-    def shapes_empty_string(self):
+    def test_shapes_empty_string(self):
         # shapes='' is equivalent to shapes=None
         class _dist_gen(stats.rv_continuous):
             def _pdf(self, x):
