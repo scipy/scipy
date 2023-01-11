@@ -20,8 +20,7 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    'sobol_indices',
-    'f_ishigami'
+    'sobol_indices'
 ]
 
 
@@ -449,8 +448,15 @@ def sobol_indices(
     distributed. In this case we use a uniform distribution on each marginals.
 
     >>> import numpy as  np
-    >>> from scipy.stats import f_ishigami, sobol_indices, uniform
+    >>> from scipy.stats import sobol_indices, uniform
     >>> rng = np.random.default_rng()
+    >>> def f_ishigami(x):
+    ...     f_eval = (
+    ...         np.sin(x[0])
+    ...         + 7 * np.sin(x[1])**2
+    ...         + 0.1 * (x[2]**4) * np.sin(x[0])
+    ...     )
+    ...     return f_eval
     >>> indices = sobol_indices(
     ...     func=f_ishigami, n=1024,
     ...     dists=[

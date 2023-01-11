@@ -3,10 +3,10 @@ from numpy.testing import assert_allclose, assert_array_less
 import pytest
 
 from scipy import stats
-from scipy.stats import f_ishigami, sobol_indices
+from scipy.stats import sobol_indices
 from scipy.stats._resampling import BootstrapResult
 from scipy.stats._sensitivity_analysis import (
-    BootstrapSobolResult, sample_AB, sample_A_B
+    BootstrapSobolResult, f_ishigami, sample_AB, sample_A_B
 )
 
 

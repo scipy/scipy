@@ -452,7 +452,6 @@ Sensitivity Analysis
 .. autosummary::
    :toctree: generated/
 
-   f_ishigami
    sobol_indices
 
 Plot-tests
