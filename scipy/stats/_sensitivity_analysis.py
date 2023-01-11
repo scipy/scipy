@@ -269,6 +269,8 @@ def sobol_indices(
         ``(s, n)`` with ``s`` the number of outputs and ``n`` the number of
         samples.
 
+        Function evaluations values must be finite.
+
         If `func` is a dictionary, contains the function evaluations from 3
         different arrays. Keys must be: ``f_A``, ``f_B`` and ``f_AB``.
         ``f_A`` and ``f_B`` should have a shape ``(s, n)`` and ``f_AB``
@@ -604,7 +606,7 @@ def sobol_indices(
         def funcAB(AB):
             d, d, n = AB.shape
             AB = np.moveaxis(AB, 0, -1).reshape(d, n*d)
-            f_AB = func(AB)
+            f_AB = np.atleast_2d(func(AB))
             return np.moveaxis(f_AB.reshape((-1, n, d)), -1, 0)
 
         f_B, f_AB = np.atleast_2d(func(B), funcAB(AB))

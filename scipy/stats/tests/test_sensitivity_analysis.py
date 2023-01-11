@@ -203,7 +203,7 @@ class TestSobolIndices:
         def f_ishigami_vec_const(x):
             """Output of shape (3, n)."""
             res = f_ishigami(x)
-            return np.concatenate([res, res * 0 + 10, res]).reshape(3, -1)
+            return res, res * 0 + 10, res
 
         rng = np.random.default_rng(28631265345463262246170309650372465332)
         res = sobol_indices(
@@ -223,6 +223,17 @@ class TestSobolIndices:
 
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
         assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-2)
+
+    def test_more_converged(self, ishigami_ref_indices):
+        rng = np.random.default_rng(28631265345463262246170309650372465332)
+        res = sobol_indices(
+            func=f_ishigami, n=2**19,  # 524288
+            dists=self.dists,
+            random_state=rng
+        )
+
+        assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-4)
+        assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-4)
 
     def test_raises(self):
 
