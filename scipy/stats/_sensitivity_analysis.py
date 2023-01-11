@@ -265,9 +265,15 @@ def sobol_indices(
 
             func(x: ArrayLike) -> ArrayLike
 
-        with ``x`` of shape ``(d, n)`` and the output should have a shape
-        ``(s, n)`` with ``s`` the number of outputs and ``n`` the number of
-        samples.
+        with ``x`` of shape ``(d, n)`` and output of shape ``(s, n)`` where:
+
+        - ``d`` is the input dimensionality of `func`
+          (number of input variables),
+        - ``s`` is the output dimensionality of `func`
+          (number of output variables), and
+        - ``n`` is the number of points at which `func` is evaluated
+          (see `n` below).
+
 
         Function evaluations values must be finite.
 
@@ -275,13 +281,11 @@ def sobol_indices(
         different arrays. Keys must be: ``f_A``, ``f_B`` and ``f_AB``.
         ``f_A`` and ``f_B`` should have a shape ``(s, n)`` and ``f_AB``
         should have a shape ``(d, s, n)``.
-        The sample used to compute ``f_AB`` being a combination
-        of the samples used to compute ``f_A, f_B``.
         This is an advanced feature and misuse can lead to wrong analysis.
     n : int
-        Number of samples.
+        Number of points.
         Must be a power of 2. The total number of function calls will be
-        ``n(d+2)``.
+        ``n*(d+2)``.
     dists : list(distributions), optional
         List of each parameter's marginal distribution. Each parameter being
         independently distributed.
@@ -299,9 +303,8 @@ def sobol_indices(
             -> Tuple[np.ndarray, np.ndarray]
 
         with ``f_A, f_B`` of shape (s, n) and ``f_AB`` of shape (d, s, n).
-        These arrays contain the function evaluations from 3 different set
-        of samples. The sample used to compute ``f_AB`` being a combination
-        of the samples used to compute ``f_A, f_B``.
+        These arrays contain the function evaluations from 3 different sets
+        of samples.
         The output is a tuple of the first and total indices with
         shape (s, d).
         This is an advanced feature and misuse can lead to wrong analysis.
@@ -321,7 +324,7 @@ def sobol_indices(
         total_order : ndarray of shape (s, d)
             Total order Sobol' indices.
 
-        And methods:
+        And method:
 
         bootstrap(confidence_level: float, n_resamples: int)
         -> BootstrapSobolResult
@@ -396,7 +399,7 @@ def sobol_indices(
     .. warning::
 
         Negative Sobol' values are due to numerical errors. Increasing the
-        number of sample should help.
+        number of points `n` should help.
 
         The number of sample required to have a good analysis increases with
         the dimensionality of the problem. e.g. for a 3 dimension problem,
