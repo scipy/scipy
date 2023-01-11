@@ -2649,7 +2649,15 @@ def comb(N, k, exact=False, repetition=False, legacy=False):
     if repetition:
         return comb(N + k - 1, k, exact, legacy=legacy)
     if exact:
-        if int(N) != N or int(k) != k:
+        if int(N) == N and int(k) == k:
+            # _comb_int casts inputs to integers, which is safe & intended here
+            return _comb_int(N, k)
+        elif legacy:
+            # here at least one number is not an integer; legacy behavior uses lossy casts to int
+            return _comb_int(N, k)
+        # otherwise, we disregard `exact=True`; it makes no sense for non-integral arguments
+        return comb(N, k)
+    else:
             if not legacy:
                 return comb(N, k)
         # _comb_int casts inputs to integers
