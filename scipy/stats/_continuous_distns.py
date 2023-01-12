@@ -1520,6 +1520,11 @@ class dgamma_gen(rv_continuous):
         fac = sc.gammainccinv(a, 1-abs(2*q-1))
         return np.where(q > 0.5, fac, -fac)
 
+    def _entropy(self, a):
+        A = 2 * sc.gamma(a) * np.exp(a + (1 - a) * sc.digamma(a))
+        h = np.log(A)
+        return h
+
     def _stats(self, a):
         mu2 = a*(a+1.0)
         return 0.0, mu2, 0.0, (a+2.0)*(a+3.0)/mu2-3.0
