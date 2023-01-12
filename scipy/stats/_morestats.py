@@ -241,8 +241,8 @@ def kstat(data, n=2):
 
     See Also
     --------
-    kstatvar: Returns an unbiased estimator of the variance of the k-statistic.
-    moment: Returns the n-th central moment about the mean for a sample.
+    kstatvar : Returns an unbiased estimator of the variance of the k-statistic
+    moment : Returns the n-th central moment about the mean for a sample.
 
     Notes
     -----
@@ -338,8 +338,8 @@ def kstatvar(data, n=2):
 
     See Also
     --------
-    kstat: Returns the n-th k-statistic.
-    moment: Returns the n-th central moment about the mean for a sample.
+    kstat : Returns the n-th k-statistic.
+    moment : Returns the n-th central moment about the mean for a sample.
 
     Notes
     -----
@@ -2683,7 +2683,7 @@ LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
 def levene(*samples, center='median', proportiontocut=0.05):
-    """Perform Levene test for equal variances.
+    r"""Perform Levene test for equal variances.
 
     The Levene test tests the null hypothesis that all input samples
     are from populations with equal variances.  Levene's test is an
@@ -2759,17 +2759,17 @@ def levene(*samples, center='median', proportiontocut=0.05):
     >>> import numpy as np
     >>> from scipy import stats
     >>> small_dose = np.array([
-    >>>     4.2, 11.5, 7.3, 5.8, 6.4, 10, 11.2, 11.2, 5.2, 7,
-    >>>     15.2, 21.5, 17.6, 9.7, 14.5, 10, 8.2, 9.4, 16.5, 9.7
-    >>> ])
+    ...     4.2, 11.5, 7.3, 5.8, 6.4, 10, 11.2, 11.2, 5.2, 7,
+    ...     15.2, 21.5, 17.6, 9.7, 14.5, 10, 8.2, 9.4, 16.5, 9.7
+    ... ])
     >>> medium_dose = np.array([
-    >>>     16.5, 16.5, 15.2, 17.3, 22.5, 17.3, 13.6, 14.5, 18.8, 15.5,
-    >>>     19.7, 23.3, 23.6, 26.4, 20, 25.2, 25.8, 21.2, 14.5, 27.3
-    >>> ])
+    ...     16.5, 16.5, 15.2, 17.3, 22.5, 17.3, 13.6, 14.5, 18.8, 15.5,
+    ...     19.7, 23.3, 23.6, 26.4, 20, 25.2, 25.8, 21.2, 14.5, 27.3
+    ... ])
     >>> large_dose = np.array([
-    >>>     23.6, 18.5, 33.9, 25.5, 26.4, 32.5, 26.7, 21.5, 23.3, 29.5,
-    >>>     25.5, 26.4, 22.4, 24.5, 24.8, 30.9, 26.4, 27.3, 29.4, 23
-    >>> ])
+    ...     23.6, 18.5, 33.9, 25.5, 26.4, 32.5, 26.7, 21.5, 23.3, 29.5,
+    ...     25.5, 26.4, 22.4, 24.5, 24.8, 30.9, 26.4, 27.3, 29.4, 23
+    ... ])
     >>> res = stats.levene(small_dose, medium_dose, large_dose)
     >>> res.statistic
     0.6457341109631506
