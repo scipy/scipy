@@ -321,6 +321,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
                 check_var_expect(distfn, arg, m, v, distname)
                 check_kurt_expect(distfn, arg, m, v, k, distname)
 
+        check_loc_scale(distfn, arg, m, v, distname)
         check_moment(distfn, arg, m, v, distname)
 
 

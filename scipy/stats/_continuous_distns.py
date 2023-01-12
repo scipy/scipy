@@ -8939,7 +8939,7 @@ class truncpareto_gen(rv_continuous):
                  + (b+1)*(np.log(c)/(c**b - 1) - 1/b))
 
     def _munp(self, n, b, c):
-        if n == b:
+        if (n == b).all():
             return b*np.log(c) / (1 - c**-b)
         else:
             return b / (b-n) * (c**b - c**n) / (c**b - 1)
