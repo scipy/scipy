@@ -149,7 +149,8 @@ def x0_2(n):
     x0.fill(1/n**2)
     return x0
 
-def F_4(x, n): # skip name check
+
+def F_4(x, n):  # skip name check
     assert_equal(n % 3, 0)
     g = np.zeros([n])
     # Note: the first line is typoed in some of the references;
@@ -159,7 +160,8 @@ def F_4(x, n): # skip name check
     g[2::3] = 1.25 * x[2::3] - 0.25*x[2::3]**3
     return g
 
-def x0_4(n): # skip name check
+
+def x0_4(n):  # skip name check
     assert_equal(n % 3, 0)
     x0 = np.array([-1, 1/2, -1] * (n//3))
     return x0
