@@ -293,6 +293,25 @@ else
   use_math_defines = []
 endif
 
+# Determine whether it is necessary to link libatomic. This could be the case
+# e.g. on 32-bit platforms when atomic operations are used on 64-bit types.
+# The check is copied from Mesa <https://www.mesa3d.org/>.
+atomic_dep = dependency('', required : false)
+if cc.get_id() != 'msvc'
+  if not cc.links('''
+      #include <stdint.h>
+      int main() {
+       struct {
+         uint64_t *v;
+       } x;
+       return (int)__atomic_load_n(x.v, __ATOMIC_ACQUIRE) &
+              (int)__atomic_add_fetch(x.v, (uint64_t)1, __ATOMIC_ACQ_REL);
+      }''',
+      name : 'GCC atomic builtins required -latomic')
+    atomic_dep = cc.find_library('atomic')
+  endif
+endif
+
 # Suppress warning for deprecated Numpy API.
 # (Suppress warning messages emitted by #warning directives).
 # Replace with numpy_nodepr_api after Cython 3.0 is out
