@@ -8745,6 +8745,15 @@ class truncnorm_gen(rv_continuous):
 
         return out
 
+    def _entropy(self, a, b):
+        A = self.cdf(a)
+        B = self.cdf(b)
+        Z = B - A
+        C = np.log(np.sqrt(2 * np.pi * np.e) * Z)
+        D = (a * A + b * B) / (2 * Z)
+        h = C + D
+        return h
+
     def _munp(self, n, a, b):
         def n_th_moment(n, a, b):
             """
