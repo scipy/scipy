@@ -2710,6 +2710,11 @@ def levene(*samples, center='median', proportiontocut=0.05):
     pvalue : float
         The p-value for the test.
 
+    See Also
+    --------
+    fligner : A non-parametric test for the equality of k variances
+    bartlett : A parametric test for equality of k variances in normal samples
+
     Notes
     -----
     Three variations of Levene's test are possible.  The possibilities
@@ -2732,18 +2737,103 @@ def levene(*samples, center='median', proportiontocut=0.05):
            Stanford University Press, pp. 278-292.
     .. [3] Brown, M. B. and Forsythe, A. B. (1974), Journal of the American
            Statistical Association, 69, 364-367
+    .. [4] C.I. BLISS (1952), The Statistics of Bioassay: With Special
+           Reference to the Vitamins, pp 499-503,
+           :doi:`10.1016/C2013-0-12584-6`.
+    .. [5] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+           Zero: Calculating Exact P-values When Permutations Are Randomly
+           Drawn." Statistical Applications in Genetics and Molecular Biology
+           9.1 (2010).
 
     Examples
     --------
-    Test whether or not the lists `a`, `b` and `c` come from populations
-    with equal variances.
+    In [4]_, the influence of vitamine C on the tooth growth of guinea pigs
+    was investigated. In a control study, 60 subjects were divided into
+    three groups each respectively recieving a daily doses of 0.5, 1.0 and 2.0
+    mg of vitamine C. After 42 days, the tooth
+    grow, in micron, was measured.
+
+    In the following, we are interested test the null hypothesis that all
+    groups are from populations with equal variances.
 
     >>> import numpy as np
-    >>> from scipy.stats import levene
+    >>> from scipy import stats
+    >>> small_dose = np.array([
+    >>>     4.2, 11.5, 7.3, 5.8, 6.4, 10, 11.2, 11.2, 5.2, 7,
+    >>>     15.2, 21.5, 17.6, 9.7, 14.5, 10, 8.2, 9.4, 16.5, 9.7
+    >>> ])
+    >>> medium_dose = np.array([
+    >>>     16.5, 16.5, 15.2, 17.3, 22.5, 17.3, 13.6, 14.5, 18.8, 15.5,
+    >>>     19.7, 23.3, 23.6, 26.4, 20, 25.2, 25.8, 21.2, 14.5, 27.3
+    >>> ])
+    >>> large_dose = np.array([
+    >>>     23.6, 18.5, 33.9, 25.5, 26.4, 32.5, 26.7, 21.5, 23.3, 29.5,
+    >>>     25.5, 26.4, 22.4, 24.5, 24.8, 30.9, 26.4, 27.3, 29.4, 23
+    >>> ])
+    >>> res = stats.levene(small_dose, medium_dose, large_dose)
+    >>> res.statistic
+    0.6457341109631506
+
+    The test is performed by comparing the observed value of the
+    statistic against the null distribution: the distribution of statistic
+    values derived under the null hypothesis that the groups' variances are
+    drawn from a F distribution.
+
+    >>> import matplotlib.pyplot as plt
+    >>> k, n = 3, 20   # number of samples, sample size
+    >>> dist = stats.f(dfn=k-1, dfd=n-k)
+    >>> kt_val = np.linspace(0, 5, 100)
+    >>> pdf = dist.pdf(kt_val)
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> def kt_plot(ax):  # we'll re-use this
+    ...     ax.plot(kt_val, pdf)
+    ...     ax.set_title("Levene Test Null Distribution")
+    ...     ax.set_xlabel("statistic")
+    ...     ax.set_ylabel("probability density")
+    >>> kt_plot(ax)
+    >>> plt.show()
+
+    The comparison is quantified by the p-value: the proportion of values in
+    the null distribution greater than or equal to the observed value of the
+    statistic.
+
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> kt_plot(ax)
+    >>> pvalue = dist.cdf(-res.statistic) + dist.sf(res.statistic)
+    >>> annotation = (f'p-value={pvalue:.3f}\n(shaded area)')
+    >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
+    >>> _ = ax.annotate(annotation, (1.5, 0.22), (2.25, 0.3), arrowprops=props)
+    >>> i = kt_val >= res.statistic
+    >>> ax.fill_between(kt_val[i], y1=0, y2=pdf[i], color='C0')
+    >>> ax.set_xlim(0, 5)
+    >>> ax.set_ylim(0, 1)
+    >>> plt.show()
+    >>> res.pvalue
+    0.5280694573759905
+
+    If the p-value is "small" - that is, if there is a low probability of
+    sampling data from a F distributed population that produces such an
+    extreme value of the statistic - this may be taken as evidence against
+    the null hypothesis in favor of the alternative: the variances were not
+    drawn from a F distribution. Note that:
+
+    - The inverse is not true; that is, the test is not used to provide
+      evidence for the null hypothesis.
+    - The threshold for values that will be considered "small" is a choice that
+      should be made before the data is analyzed [5]_ with consideration of the
+      risks of both false positives (incorrectly rejecting the null hypothesis)
+      and false negatives (failure to reject a false null hypothesis).
+
+    Following is another generic example where the null hypothesis would be
+    rejected.
+
+    Test whether the lists `a`, `b` and `c` come from populations
+    with equal variances.
+
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
     >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
-    >>> stat, p = levene(a, b, c)
+    >>> stat, p = stats.levene(a, b, c)
     >>> p
     0.002431505967249681
 
