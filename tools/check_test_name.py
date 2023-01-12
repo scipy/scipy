@@ -69,7 +69,8 @@ def is_misnamed_test_func(
         and PRAGMA not in line
         and node.name
         not in ("teardown_method", "setup_method",
-                "teardown_class", "setup_class")
+                "teardown_class", "setup_class",
+                "setup_module", "teardown_module")
     )
 
 
