@@ -17,10 +17,6 @@ def sorted_tuple(x):
     return tuple(sorted(x))
 
 
-def sorted_unique_tuple(x):
-    return tuple(np.unique(x))
-
-
 def assert_unordered_tuple_list_equal(a, b, tpl=tuple):
     if isinstance(a, np.ndarray):
         a = a.tolist()

@@ -42,12 +42,6 @@ def random(size):
     return rand(*size)
 
 
-def get_mat(n):
-    data = arange(n)
-    data = add.outer(data, data)
-    return data
-
-
 def direct_dft(x):
     x = asarray(x)
     n = len(x)
