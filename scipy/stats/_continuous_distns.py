@@ -6403,6 +6403,13 @@ class nakagami_gen(rv_continuous):
     def _isf(self, p, nu):
         return np.sqrt(1/nu * sc.gammainccinv(nu, p))
 
+    def _entropy(self, nu):
+        A = sc.gamma(nu) / 2
+        B = np.sqrt(1 / nu)
+        C = np.exp((2 * nu - (2 * nu - 1) * sc.digamma(nu)) / 2)
+        h = np.log(A * B * C)
+        return h
+
     def _stats(self, nu):
         mu = sc.gamma(nu+0.5)/sc.gamma(nu)/np.sqrt(nu)
         mu2 = 1.0-mu*mu
