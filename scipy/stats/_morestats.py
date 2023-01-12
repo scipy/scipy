@@ -2747,13 +2747,13 @@ def levene(*samples, center='median', proportiontocut=0.05):
 
     Examples
     --------
-    In [4]_, the influence of vitamine C on the tooth growth of guinea pigs
+    In [4]_, the influence of vitamin C on the tooth growth of guinea pigs
     was investigated. In a control study, 60 subjects were divided into
-    three groups each respectively recieving a daily doses of 0.5, 1.0 and 2.0
-    mg of vitamine C. After 42 days, the tooth
+    three groups each respectively receiving daily doses of 0.5, 1.0 and 2.0
+    mg of vitamin C. After 42 days, the tooth
     grow, in micron, was measured.
 
-    In the following, we are interested test the null hypothesis that all
+    In the following, we are interested in testing the null hypothesis that all
     groups are from populations with equal variances.
 
     >>> import numpy as np
