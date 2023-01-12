@@ -479,7 +479,7 @@ def sobol_indices(
 
     >>> import matplotlib.pyplot as plt
     >>> fig, axs = plt.subplots(1, 2, figsize=(9, 4))
-    >>> axs[0].errorbar(
+    >>> _ = axs[0].errorbar(
     ...     [1, 2, 3], indices.first_order, fmt='o',
     ...     yerr=[
     ...         indices.first_order - boot.first_order.confidence_interval.low,
@@ -489,7 +489,7 @@ def sobol_indices(
     >>> axs[0].set_ylabel("First order Sobol' indices")
     >>> axs[0].set_xlabel('Input parameters')
     >>> axs[0].set_xticks([1, 2, 3])
-    >>> axs[1].errorbar(
+    >>> _ = axs[1].errorbar(
     ...     [1, 2, 3], indices.total_order, fmt='o',
     ...     yerr=[
     ...         indices.total_order - boot.total_order.confidence_interval.low,
