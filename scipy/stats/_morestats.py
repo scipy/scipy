@@ -1810,7 +1810,9 @@ def shapiro(x):
     against the null distribution: the distribution of statistic values formed
     under the null hypothesis that the weights were drawn from a normal
     distribution. For this normality test, the null distribution is not easy to
-    calculate exactly, so it is usually approximated by Monte Carlo methods.
+    calculate exactly, so it is usually approximated by Monte Carlo methods,
+    that is, drawing many samples of the same size as ``x`` from a normal
+    distribution and computing the values of the statistic for each.
 
     >>> def statistic(x):
     ...     # Get only the `shapiro` statistic; ignore its p-value
