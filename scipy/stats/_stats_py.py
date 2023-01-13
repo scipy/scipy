@@ -5546,7 +5546,7 @@ def pointbiserialr(x, y):
 
 def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
                method='auto', variant='b', alternative='two-sided'):
-    """Calculate Kendall's tau, a correlation measure for ordinal data.
+    r"""Calculate Kendall's tau, a correlation measure for ordinal data.
 
     Kendall's tau is a measure of the correspondence between two rankings.
     Values close to 1 indicate strong agreement, and values close to -1
