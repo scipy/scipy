@@ -1227,7 +1227,7 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', LineSearchWarning)
             kwargs2 = {}
-            for key in ('c1', 'c2', 'amax'):
+            for key in ('c1', 'c2', 'amax', 'dfo'):
                 if key in kwargs:
                     kwargs2[key] = kwargs[key]
             ret = line_search_wolfe2(f, fprime, xk, pk, gfk,
@@ -1442,7 +1442,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk,
-                                          old_fval, old_old_fval, amin=1e-100, amax=1e100)
+                                          old_fval, old_old_fval,
+                                          dfo=(not callable(jac)),
+                                          amin=1e-100, amax=1e100)
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
@@ -1798,7 +1800,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk, old_fval,
-                                          old_old_fval, c2=0.4, amin=1e-100, amax=1e100,
+                                          old_old_fval,
+                                          dfo=(not callable(jac)), c2=0.4,
+                                          amin=1e-100, amax=1e100,
                                           extra_condition=descent_condition)
         except _LineSearchError:
             # Line search failed to find a better solution.
@@ -2117,7 +2121,8 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         try:
             alphak, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, fprime, xk, pk, gfk,
-                                          old_fval, old_old_fval)
+                                          old_fval, old_old_fval,
+                                          dfo=(not callable(jac)))
         except _LineSearchError:
             # Line search failed to find a better solution.
             msg = "Warning: " + _status_message['pr_loss']
