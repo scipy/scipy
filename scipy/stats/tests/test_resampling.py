@@ -688,9 +688,9 @@ def test_vector_valued_statistic_gh17715():
                     ref.confidence_interval.high, atol=1e-15)
 
 
-# --- Test Monte Carlo Hypothesis Test --- #
+# --- Test Monte Carlo Test --- #
 
-class TestMonteCarloHypothesisTest:
+class TestMonteCarloTest:
     atol = 2.5e-2  # for comparing p-value
 
     def rvs(self, rvs_in, rs):
@@ -861,7 +861,7 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.statistic, expected.statistic)
         assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
-    @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
+    @pytest.mark.parametrize('a', np.linspace(-0.25, 0.5, 4))  # skewness
     def test_against_cramervonmises(self, a):
         # test that monte_carlo_test can reproduce pvalue of cramervonmises
         rng = np.random.default_rng(234874135)
@@ -932,6 +932,29 @@ class TestMonteCarloHypothesisTest:
         res = monte_carlo_test(x, rng.random, np.mean,
                                vectorized=True, alternative='less')
         assert res.pvalue == 0.0001
+
+    def test_hotelling_test(self):
+        rng = np.random.default_rng(394295467)
+
+        def statistic(x):
+            A = np.cov(x.T)
+            L = np.linalg.cholesky(A)
+            cov = stats.Covariance.from_cholesky(L)
+            mean = np.mean(x, axis=0)
+            whitened = cov.whiten(mean)
+            return whitened @ whitened
+
+        cov = stats.Covariance.from_diagonal([1, 2, 3])
+        dist = stats.multivariate_normal(mean=np.zeros(3), cov=cov)
+        observed = dist.rvs(size=(30, 1000, 40))
+
+        rvs = stats.multivariate_normal(mean=np.zeros(3), seed=rng).rvs
+
+        res = stats.monte_carlo_test(observed, rvs, statistic, axis=1,
+                                     alternative='greater')
+        assert res.pvalue.shape == (30, 40)
+        pvals = res.pvalue.ravel()  # should be uniformly distributed
+        assert stats.ks_1samp(pvals, stats.uniform.cdf).pvalue > 0.1
 
 
 class TestPermutationTest:

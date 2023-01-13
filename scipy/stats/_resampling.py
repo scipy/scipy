@@ -614,6 +614,34 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
                            standard_error=np.std(theta_hat_b, ddof=1, axis=-1))
 
 
+def _vectorize_multivariate_statistic(statistic, obs_ndim):
+    """Vectorize a multivariate one-sample statistic"""
+    dim_axis = tuple(range(-obs_ndim, 0))
+
+    def stat_nd(sample, axis=0):
+        axis = tuple(axis) if np.iterable(axis) else (axis,)
+
+        old_axes = axis + dim_axis
+        shape_dim_axis = tuple((sample.shape[i] for i in dim_axis))
+
+        new_axes = tuple(range(-len(old_axes), 0))
+
+        sample = np.moveaxis(sample, old_axes, new_axes)
+        sample = sample.reshape(sample.shape[:-len(old_axes)] + (-1,))
+
+        # move working axis to position 0 so that any new dimensions in the
+        # output of `statistic` are _prepended_.
+        sample = np.moveaxis(sample, -1, 0)
+
+        def stat_1d(x):
+            x = x.reshape((-1,) + shape_dim_axis)
+            return statistic(x)
+
+        return np.apply_along_axis(stat_1d, 0, sample)[()]
+
+    return stat_nd
+
+
 def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
                          batch, alternative, axis):
     """Input validation for `monte_carlo_test`."""
@@ -628,6 +656,9 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
     if not callable(rvs):
         raise TypeError("`rvs` must be callable.")
 
+    rvs_test = rvs(size=(2, 2))
+    obs_ndim = rvs_test.ndim - 2
+
     if not callable(statistic):
         raise TypeError("`statistic` must be callable.")
 
@@ -635,12 +666,14 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
         vectorized = 'axis' in inspect.signature(statistic).parameters
 
     if not vectorized:
-        statistic_vectorized = _vectorize_statistic(statistic)
+        statistic_vectorized = _vectorize_multivariate_statistic(statistic,
+                                                                 obs_ndim)
     else:
         statistic_vectorized = statistic
 
     sample = np.atleast_1d(sample)
-    sample = np.moveaxis(sample, axis, -1)
+    axis_new = -1 - obs_ndim
+    sample = np.moveaxis(sample, axis, axis_new)
 
     n_resamples_int = int(n_resamples)
     if n_resamples != n_resamples_int or n_resamples_int <= 0:
@@ -659,7 +692,7 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
         raise ValueError(f"`alternative` must be in {alternatives}")
 
     return (sample, rvs, statistic_vectorized, vectorized, n_resamples_int,
-            batch_iv, alternative, axis_int)
+            batch_iv, alternative, axis_new)
 
 
 fields = ['statistic', 'pvalue', 'null_distribution']
@@ -814,15 +847,15 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
      n_resamples, batch, alternative, axis) = args
 
     # Some statistics return plain floats; ensure they're at least np.float64
-    observed = np.asarray(statistic(sample, axis=-1))[()]
+    observed = np.asarray(statistic(sample, axis=axis))[()]
 
-    n_observations = sample.shape[-1]
+    n_observations = sample.shape[axis]
     batch_nominal = batch or n_resamples
     null_distribution = []
     for k in range(0, n_resamples, batch_nominal):
         batch_actual = min(batch_nominal, n_resamples-k)
         resamples = rvs(size=(batch_actual, n_observations))
-        null_distribution.append(statistic(resamples, axis=-1))
+        null_distribution.append(statistic(resamples, axis=axis))
     null_distribution = np.concatenate(null_distribution)
     null_distribution = null_distribution.reshape([-1] + [1]*observed.ndim)
 
