@@ -10566,7 +10566,7 @@ add_newdoc("ndtr",
     r"""
     ndtr(x, out=None)
 
-    Gaussian cumulative distribution function.
+    Cumulative distribution of the standard normal distribution.
 
     Returns the area under the standard Gaussian probability
     density function, integrated from minus infinity to `x`
@@ -10589,8 +10589,34 @@ add_newdoc("ndtr",
 
     See Also
     --------
-    erf, erfc, scipy.stats.norm, log_ndtr
+    log_ndtr: Logarithm of ndtr
+    erf: Error function
+    erfc: 1 - erf
+    scipy.stats.norm: Normal distribution
 
+    Examples
+    --------
+    Evaluate `ndtr` at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import ndtr
+    >>> ndtr(0.5)
+    0.6914624612740131
+
+    Evaluate the function at several points by providing a NumPy array
+    or list for `x`.
+
+    >>> ndtr([0, 0.5, 2])
+    array([0.5       , 0.69146246, 0.97724987])
+
+    Plot the function.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-5, 5, 100)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, ndtr(x))
+    >>> ax.set_title("Standard normal cumulative distribution function $\Phi$")
+    >>> plt.show()
     """)
 
 
@@ -10709,7 +10735,7 @@ add_newdoc("ndtri",
 
     Inverse of `ndtr` vs x
 
-    Returns the argument x for which the area under the Gaussian
+    Returns the argument x for which the area under the standard normal
     probability density function (integrated from minus infinity to `x`)
     is equal to y.
 
@@ -10727,8 +10753,34 @@ add_newdoc("ndtri",
 
     See Also
     --------
-    ndtr
+    ndtr: Standard normal cumulative probability distribution
 
+    Examples
+    --------
+    `ndtri` is the percentile function of the standard normal distribution.
+    This means it returns the inverse of the cumulative density `ndtr`. First,
+    let us compute a cumulative density value.
+
+    >>> import numpy as np
+    >>> from scipy.special import ndtri, ndtr
+    >>> cdf_val = ndtr(2)
+    >>> cdf_val
+    0.9772498680518208
+
+    Verify that `ndtri` yields the original value for `x` up to floating point
+    errors.
+
+    >>> ndtri(cdf_val)
+    2.0000000000000004
+
+    Plot the function. For that purpose, we provide a NumPy array as argument.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-1, 1, 100)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, ndtri(x))
+    >>> ax.set_title("Standard normal percentile function")
+    >>> plt.show()
     """)
 
 add_newdoc("obl_ang1",
