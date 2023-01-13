@@ -137,14 +137,11 @@ def _wrap_callback(callback, method=None):
     if callback is None or method in {'tnc', 'slsqp', 'cobyla'}:
         return callback  # don't wrap
 
-    p1 = (inspect.Parameter('intermediate_result',
-                            kind=inspect.Parameter.POSITIONAL_OR_KEYWORD),)
-    p2 = (inspect.Parameter('intermediate_result',
-                            kind=inspect.Parameter.KEYWORD_ONLY),)
-    sig1 = inspect.Signature(parameters=p1)
-    sig2 = inspect.Signature(parameters=p2)
+    sig = inspect.signature(callback)
+    has_one_parameter = len(sig.parameters) == 1
+    named_intermediate_result = sig.parameters.get('intermediate_result', 0)
 
-    if inspect.signature(callback) in {sig1, sig2}:
+    if has_one_parameter and named_intermediate_result:
         def wrapped_callback(res):
             return callback(intermediate_result=res)
     elif method == 'trust-constr':
