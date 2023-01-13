@@ -183,7 +183,7 @@ rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "static checkers",
-            "commands": ["lint", "mypy", "check-test-name"],
+            "commands": ["lint", "mypy"],
         },
         {
             "name": "environments",
@@ -861,6 +861,14 @@ class Bench(Task):
 ###################
 # linters
 
+def emit_cmdstr(cmd):
+    """Print the command that's being run to stdout"""
+    console = Console(theme=console_theme)
+    # The [cmd] square brackets controls the font styling, typically in italics
+    # to differentiate it from other stdout content
+    console.print(f"{EMOJI.cmd} [cmd] {cmd}")
+
+
 @task_params([{'name': 'output_file', 'long': 'output-file', 'default': None,
                'help': 'Redirect report to a file'}])
 def task_flake8(output_file):
@@ -868,8 +876,11 @@ def task_flake8(output_file):
     opts = ''
     if output_file:
         opts += f'--output-file={output_file}'
+
+    cmd = f"flake8 {opts} scipy benchmarks/benchmarks"
+    emit_cmdstr(f"{cmd}")
     return {
-        'actions': [f"flake8 {opts} scipy benchmarks/benchmarks"],
+        'actions': [cmd],
         'doc': 'Lint scipy and benchmarks directory',
     }
 
@@ -877,6 +888,7 @@ def task_flake8(output_file):
 def task_pep8diff():
     # Lint just the diff since branching off of main using a
     # stricter configuration.
+    emit_cmdstr(os.path.join('tools', 'lint_diff.py'))
     return {
         'basename': 'pep8-diff',
         'actions': [str(Dirs().root / 'tools' / 'lint_diff.py')],
@@ -885,6 +897,7 @@ def task_pep8diff():
 
 
 def task_unicode_check():
+    emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
     return {
         'basename': 'unicode-check',
         'actions': [str(Dirs().root / 'tools' / 'unicode-check.py')],
@@ -894,8 +907,9 @@ def task_unicode_check():
 
 
 def task_check_test_name():
+    emit_cmdstr(os.path.join('tools', 'check_test_name.py'))
     return {
-        "basename": "check_test_name",
+        "basename": "check-testname",
         "actions": [str(Dirs().root / "tools" / "check_test_name.py")],
         "doc": "Check tests are correctly named so that pytest runs them."
     }
@@ -904,13 +918,18 @@ def task_check_test_name():
 @cli.cls_cmd('lint')
 class Lint():
     """:dash: Run flake8, check PEP 8 compliance on branch diff and check for
-    disallowed Unicode characters."""
+    disallowed Unicode characters and possibly-invalid test names."""
     output_file = Option(
         ['--output-file'], default=None, help='Redirect report to a file')
 
     def run(output_file):
         opts = {'output_file': output_file}
-        run_doit_task({'flake8': opts, 'pep8-diff': {}, 'unicode-check': {}})
+        run_doit_task({
+            'flake8': opts,
+            'pep8-diff': {},
+            'unicode-check': {},
+            'check-testname': {},
+        })
 
 
 @cli.cls_cmd('mypy')
@@ -946,6 +965,7 @@ class Mypy(Task):
             os.environ['MYPY_FORCE_COLOR'] = '1'
             # Change to the site directory to make sure mypy doesn't pick
             # up any type stubs in the source tree.
+            emit_cmdstr(f"mypy.api.run --config-file {config} {check_path}")
             report, errors, status = mypy.api.run([
                 "--config-file",
                 str(config),
@@ -954,14 +974,6 @@ class Mypy(Task):
         print(report, end='')
         print(errors, end='', file=sys.stderr)
         return status == 0
-
-
-@cli.cls_cmd('check-test-name')
-class CheckTestName():
-    """:wrench: Check tests are correctly named so that pytest runs them."""
-
-    def run():
-        run_doit_task({'check_test_name': {}})
 
 
 ##########################################

@@ -93,8 +93,7 @@ def main():
     rc, errors = run_flake8(diff)
     if errors:
         print(errors)
-    else:
-        print("No lint errors found.")
+
     sys.exit(rc)
 
 
