@@ -1521,8 +1521,7 @@ class dgamma_gen(rv_continuous):
         return np.where(q > 0.5, fac, -fac)
 
     def _entropy(self, a):
-        A = 2 * sc.gamma(a) * np.exp(a + (1 - a) * sc.digamma(a))
-        h = np.log(A)
+        h = np.log(2) + sc.loggamma(a) + a + (1 - a) * sc.digamma(a)
         return h
 
     def _stats(self, a):
@@ -6409,10 +6408,10 @@ class nakagami_gen(rv_continuous):
         return np.sqrt(1/nu * sc.gammainccinv(nu, p))
 
     def _entropy(self, nu):
-        A = sc.gamma(nu) / 2
-        B = np.sqrt(1 / nu)
-        C = np.exp((2 * nu - (2 * nu - 1) * sc.digamma(nu)) / 2)
-        h = np.log(A * B * C)
+        A = sc.loggamma(nu) - np.log(2)
+        B = np.log(np.sqrt(1 / nu))
+        C = (2 * nu - (2 * nu - 1) * sc.digamma(nu)) / 2
+        h = A + B + C
         return h
 
     def _stats(self, nu):
@@ -8758,11 +8757,11 @@ class truncnorm_gen(rv_continuous):
         return out
 
     def _entropy(self, a, b):
-        A = self.cdf(a)
-        B = self.cdf(b)
+        A = sc.ndtr(a)
+        B = sc.ndtrf(b)
         Z = B - A
         C = np.log(np.sqrt(2 * np.pi * np.e) * Z)
-        D = (a * A + b * B) / (2 * Z)
+        D = (a * _norm_pdf(a) + b * _norm_pdf(b)) / (2 * Z)
         h = C + D
         return h
 
