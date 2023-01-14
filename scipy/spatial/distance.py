@@ -2590,7 +2590,8 @@ def num_obs_dm(d):
         The number of observations in the redundant distance matrix.
     Examples
     --------
-    # To compute the number of observations that correspond to a square matrix:
+    To compute the number of observations that correspond to a square matrix:
+    
     >>> from scipy.spatial import distance
     >>> distance.num_obs_dm([[2, 4, 5], [4, 5, 6], [7, 8, 1]])  # Argument must be a square matrix
     3
