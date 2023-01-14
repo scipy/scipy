@@ -594,8 +594,10 @@ class TestRegularGridInterpolator:
         v2 = np.expand_dims(vs, axis=0)
         assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
-    @pytest.mark.parametrize("dtype",
-            [np.float32, np.float64, np.complex64, np.complex128])
+    @pytest.mark.parametrize(
+        "dtype",
+        [np.float32, np.float64, np.complex64, np.complex128]
+    )
     @pytest.mark.parametrize("xi_dtype", [np.float32, np.float64])
     def test_float32_values(self, dtype, xi_dtype):
         # regression test for gh-17718: values.dtype=float32 fails
