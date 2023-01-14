@@ -609,7 +609,7 @@ def correlation(u, v, w=None, centered=True):
     >>> from scipy.spatial import distance
     >>> distance.correlation([1, 0, 1], [2, 3, 1])#Number of elements of arrays u and v must be equal
     1.8660245037844386
-    >>> distance.correlation([1, 0, 1],[2, 2, 1],[2, 3, 1])#weights for arrays u and v provided in the third argument
+    >>> distance.correlation([1, 0, 1], [2, 2, 1], [2, 3, 1])#weights for arrays u and v provided in the third argument
     1.4472135954999579
 
     """
