@@ -215,9 +215,6 @@ class TestApproxDerivativesDense:
             [-x[1] * np.sin(x[0] * x[1]), -x[0] * np.sin(x[0] * x[1])]
         ])
 
-    def fun_non_numpy(self, x):
-        return math.exp(x)
-
     def jac_non_numpy(self, x):
         # x can be a scalar or an array [val].
         # Cast to true scalar before handing over to math.exp
