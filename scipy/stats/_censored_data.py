@@ -80,11 +80,6 @@ class CensoredData:
     Left-, right-, and interval-censored data can be represented by
     `CensoredData`.
 
-    For interval-censored data, pass the lower and upper limits of
-    the intervals as one-dimensional arrays to the `CensoredData`
-    constuctor.  By using the values `np.inf` and `-np.inf`, left-
-    and right-censored data may also be created with the constructor.
-
     For convenience, the class methods ``left_censored`` and
     ``right_censored`` are provided to create a `CensoredData`
     instance from a single one-dimensional array of measurements
