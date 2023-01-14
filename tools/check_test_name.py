@@ -33,6 +33,7 @@ import os
 from pathlib import Path
 import sys
 from typing import Iterator, Sequence
+import itertools
 
 PRAGMA = "# skip name check"
 
@@ -134,7 +135,10 @@ def main(content: str, file: str) -> int:
                     # but that's OK. This is good enough that has helped
                     # identify several examples of tests not being run.
                     should_continue = False
-                    for _file in Path("scipy").rglob("**/tests/**/test*.py"):
+                    for _file in itertools.chain(
+                        Path("scipy").rglob("**/tests/**/test*.py"),
+                        ["scipy/_lib/_testutils.py"],
+                    ):
                         with open(os.path.join(_file)) as fd:
                             _content = fd.read()
                         if f"self.{_node.name}" in _content:
