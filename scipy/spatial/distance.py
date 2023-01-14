@@ -2618,10 +2618,11 @@ def num_obs_y(Y):
     
     Examples
     --------
-    # To find the number of obersvations in a condensed distance matrix,here a one-dimensional array:
+    To find the number of observations in a condensed distance matrix,
+    here a one-dimensional array:
     
     >>> from scipy.spatial import distance
-    >>> distance.num_obs_y([1, 2, 3])  # Argument must be one-dimensional array
+    >>> distance.num_obs_y([1, 2, 3])
     3
     """
     Y = np.asarray(Y, order='c')
