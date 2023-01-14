@@ -158,6 +158,7 @@ stages:
         # in Checkout stage)
         python tools/lint_diff.py --branch origin/$(System.PullRequest.TargetBranch)
         tools/unicode-check.py
+        tools/check_test_name.py
       displayName: 'Run Lint Checks'
       failOnStderr: true
   - job: Linux_Python_38_32bit_full
