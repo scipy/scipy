@@ -605,7 +605,7 @@ def correlation(u, v, w=None, centered=True):
 
     Examples
     --------
-    To find the correlation distance between two arrays (length of each
+    To find the correlation distance between two arrays (length of each 
     array must be same) without weights:
     
     >>> from scipy.spatial import distance
