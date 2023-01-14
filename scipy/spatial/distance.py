@@ -605,10 +605,11 @@ def correlation(u, v, w=None, centered=True):
 
     Examples
     --------
+    To find the correlation distance between two arrays without weights and with weights respectively 
     >>> from scipy.spatial import distance
-    >>> distance.correlation([1,0,1],[2,3,1])#Number of elements of arrays u and v must be equal
+    >>> distance.correlation([1, 0, 1], [2, 3, 1])#Number of elements of arrays u and v must be equal
     1.8660245037844386
-    >>> distance.correlation([1,0,1],[2,2,1],[2,3,1])#weights for arrays u and v provided in the third argument
+    >>> distance.correlation([1, 0, 1],[2, 2, 1],[2, 3, 1])#weights for arrays u and v provided in the third argument
     1.4472135954999579
 
     """
@@ -2584,8 +2585,10 @@ def num_obs_dm(d):
         The number of observations in the redundant distance matrix.
     Examples
     --------
+    To compute the number of observations that correspond to a square matrix
+    
     >>> from scipy.spatial import distance
-    >>> distance.num_obs_dm([[2,4,5],[4,5,6],[7,8,1]])#Argument must be a square matrix
+    >>> distance.num_obs_dm([[2, 4, 5], [4, 5, 6], [7, 8, 1]])#Argument must be a square matrix
     3
     """
     d = np.asarray(d, order='c')
@@ -2610,8 +2613,10 @@ def num_obs_y(Y):
     
     Examples
     --------
+    To find the number of obersvations in a condensed distance matrix,here a one-dimensional array
+    
     >>> from scipy.spatial import distance
-    >>> distance.num_obs_y([1,2,3]) #Argument must be one-dimensional
+    >>> distance.num_obs_y([1, 2, 3]) #Argument must be one-dimensional array
     3
     """
     Y = np.asarray(Y, order='c')
