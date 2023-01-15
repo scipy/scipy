@@ -1,12 +1,12 @@
 import numpy as np
 
 
-def _validate_1d(a, name):
+def _validate_1d(a, name, allow_inf=False):
     if np.ndim(a) != 1:
         raise ValueError(f'`{name}` must be a one-dimensional sequence.')
     if np.isnan(a).any():
         raise ValueError(f'`{name}` must not contain nan.')
-    if np.isinf(a).any():
+    if not allow_inf and np.isinf(a).any():
         raise ValueError(f'`{name}` must contain only finite values.')
 
 
@@ -84,7 +84,9 @@ class CensoredData:
     ``right_censored`` are provided to create a `CensoredData`
     instance from a single one-dimensional array of measurements
     and a corresponding boolean array to indicate which measurements
-    are censored.
+    are censored.  The class method ``interval_censored`` accepts two
+    one-dimensional arrays that hold the lower and upper bounds of the
+    intervals.
 
     Parameters
     ----------
@@ -177,6 +179,20 @@ class CensoredData:
     >>> data = CensoredData.right_censored(ttf, censored)
     >>> print(data)
     CensoredData(6 values: 4 not censored, 2 right-censored)
+
+    If the input data is interval censored and already stored in two
+    arrays, one holding the low end of the intervals and another
+    holding the high ends, the class method ``interval_censored`` can
+    be used to create the `CensoredData` instance.
+
+    This example creates an instance with four interval-censored values.
+    The intervals are [10, 11], [0.5, 1], [2, 3], and [12.5, 13.5].
+
+    >>> a = [10, 0.5, 2, 12.5]  # Low ends of the intervals
+    >>> b = [11, 1.0, 3, 13.5]  # High ends of the intervals
+    >>> data = CensoredData.interval_censored(low=a, high=b)
+    >>> print(data)
+    CensoredData(4 values: 0 not censored, 4 interval-censored)
 
     Finally, we create and censor some data from the `weibull_min`
     distribution, and then fit `weibull_min` to that data. We'll assume
@@ -363,6 +379,53 @@ class CensoredData:
         """
         x, censored = _validate_x_censored(x, censored)
         return cls(uncensored=x[~censored], left=x[censored])
+
+    @classmethod
+    def interval_censored(cls, low, high):
+        """
+        Create a `CensoredData` instance of interval-censored data.
+
+        This method is useful when all the data is interval-censored, and
+        the low and high ends of the intervals are already stored in
+        separate one-dimensional arrays.
+
+        Parameters
+        ----------
+        low : array_like
+            The one-dimensional array containing the low ends of the
+            intervals.
+        high : array_like
+            The one-dimensional array containing the high ends of the
+            intervals.
+
+        Returns
+        -------
+        data : `CensoredData`
+            An instance of `CensoredData` that represents the
+            collection of censored values.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy.stats import CensoredData
+
+        ``a`` and ``b`` are the low and high ends of a collection of
+        interval-censored values.
+
+        >>> a = [0.5, 2.0, 3.0, 5.5]
+        >>> b = [1.0, 2.5, 3.5, 7.0]
+        >>> data = CensoredData.interval_censored(low=a, high=b)
+        >>> print(data)
+        CensoredData(4 values: 0 not censored, 4 interval-censored)
+        """
+        _validate_1d(low, 'low', allow_inf=True)
+        _validate_1d(high, 'high', allow_inf=True)
+        if len(low) != len(high):
+            raise ValueError('`low` and `high` must have the same length.')
+        interval = np.column_stack((low, high))
+        uncensored, left, right, interval = _validate_interval(interval)
+        return cls(uncensored=uncensored, left=left, right=right,
+                   interval=interval)
 
     def _uncensor(self):
         """

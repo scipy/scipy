@@ -2,7 +2,7 @@
 
 import pytest
 import numpy as np
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_array_equal
 from scipy.stats import CensoredData
 
 
@@ -41,6 +41,28 @@ class TestCensoredData:
         assert_equal(data._left, x[is_censored])
         assert_equal(data._right, [])
         assert_equal(data._interval, np.empty((0, 2)))
+
+    def test_interval_censored_basic(self):
+        a = [0.5, 2.0, 3.0, 5.5]
+        b = [1.0, 2.5, 3.5, 7.0]
+        data = CensoredData.interval_censored(low=a, high=b)
+        assert_array_equal(data._interval, np.array(list(zip(a, b))))
+        assert data._uncensored.shape == (0,)
+        assert data._left.shape == (0,)
+        assert data._right.shape == (0,)
+
+    def test_interval_censored_mixed(self):
+        # This is actually a mix of uncensored, left-censored, right-censored
+        # and interval-censored data.  Check that when the `interval_censored`
+        # class method is used, the data is correctly separated into the
+        # appropriate arrays.
+        a = [0.5, -np.inf, -13.0, 2.0, 1.0, 10.0, -1.0]
+        b = [0.5, 2500.0, np.inf, 3.0, 1.0, 11.0, np.inf]
+        data = CensoredData.interval_censored(low=a, high=b)
+        assert_array_equal(data._interval, [[2.0, 3.0], [10.0, 11.0]])
+        assert_array_equal(data._uncensored, [0.5, 1.0])
+        assert_array_equal(data._left, [2500.0])
+        assert_array_equal(data._right, [-13.0, -1.0])
 
     def test_interval_to_other_types(self):
         # The interval parameter can represent uncensored and
@@ -89,7 +111,7 @@ class TestCensoredData:
 
     @pytest.mark.parametrize('func', [CensoredData.left_censored,
                                       CensoredData.right_censored])
-    def test_invalid_lef_right_censored_args(self, func):
+    def test_invalid_left_right_censored_args(self, func):
         with pytest.raises(ValueError,
                            match='`x` must be one-dimensional'):
             func([[1, 2, 3]], [0, 1, 1])
@@ -100,6 +122,18 @@ class TestCensoredData:
             func([1, 2, np.nan], [0, 1, 1])
         with pytest.raises(ValueError, match='must have the same length'):
             func([1, 2, 3], [0, 0, 1, 1])
+
+    def test_invalid_censored_args(self):
+        with pytest.raises(ValueError,
+                           match='`low` must be a one-dimensional'):
+            CensoredData.interval_censored(low=[[3]], high=[4, 5])
+        with pytest.raises(ValueError,
+                           match='`high` must be a one-dimensional'):
+            CensoredData.interval_censored(low=[3], high=[[4, 5]])
+        with pytest.raises(ValueError, match='`low` must not contain'):
+            CensoredData.interval_censored([1, 2, np.nan], [0, 1, 1])
+        with pytest.raises(ValueError, match='must have the same length'):
+            CensoredData.interval_censored([1, 2, 3], [0, 0, 1, 1])
 
     def test_count_censored(self):
         x = [1, 2, 3]
