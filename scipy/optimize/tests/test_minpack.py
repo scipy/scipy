@@ -560,9 +560,7 @@ class TestCurveFit:
         error_msg = ("`nan_policy='propagate'` is not supported "
                     "by this function.")
         with assert_raises(ValueError, match=error_msg):
-            curve_fit(f, xdata_with_nan, ydata_with_nan, method=method,
-                      check_finite=False, nan_policy="propagate",
-                      maxfev=2000)
+            curve_fit(**kwargs, nan_policy="propagate", maxfev=2000)
 
         # raise test
         with assert_raises(ValueError, match="The input contains nan"):
