@@ -756,10 +756,10 @@ def lobpcg(
 
         # Shared memory assingments to simplify the code
         if B is None:
-            blockVectorBX = blockVectorX
-            activeBlockVectorBR = activeBlockVectorR
+            blockVectorBX = blockVectorX.view()
+            activeBlockVectorBR = activeBlockVectorR.view()
             if not restart:
-                activeBlockVectorBP = activeBlockVectorP
+                activeBlockVectorBP = activeBlockVectorP.view()
 
         # Common submatrices:
         gramXAR = np.dot(blockVectorX.T.conj(), activeBlockVectorAR)
@@ -903,10 +903,11 @@ def lobpcg(
 
             blockVectorP, blockVectorAP = pp, app
 
-    if B is not None:
-        aux = blockVectorBX * _lambda[np.newaxis, :]
-    else:
-        aux = blockVectorX * _lambda[np.newaxis, :]
+    aux = blockVectorBX * _lambda[np.newaxis, :]
+    # if B is not None:
+    #     aux = blockVectorBX * _lambda[np.newaxis, :]
+    # else:
+    #     aux = blockVectorX * _lambda[np.newaxis, :]
 
     blockVectorR = blockVectorAX - aux
 
