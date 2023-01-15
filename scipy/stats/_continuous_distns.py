@@ -71,7 +71,7 @@ def _call_super_mom(fun):
                 # data is an instance of CensoredData, but actually holds
                 # no censored values, so replace it with the array of
                 # uncensored values.
-                data = data._x
+                data = data._uncensored
             return fun(self, data, *args, **kwds)
 
     if hasattr(fun, '__doc__'):

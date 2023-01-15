@@ -2310,10 +2310,10 @@ class rv_continuous(rv_generic):
             # Filter out the data that is not in the support.
             xs = x._supported(*self._get_support(*args))
             n_bad = len(x) - len(xs)
-            i1, i2 = xs._intervals.T
+            i1, i2 = xs._interval.T
             terms = [
                 # logpdf of the noncensored data.
-                self._logpdf(xs._x, *args),
+                self._logpdf(xs._uncensored, *args),
                 # logcdf of the left-censored data.
                 self._logcdf(xs._left, *args),
                 # logsf of the right-censored data.
@@ -2591,7 +2591,7 @@ class rv_continuous(rv_generic):
             if data.num_censored() == 0:
                 # There are no censored values in data, so replace the
                 # CensoredData instance with a regular array.
-                data = data._x
+                data = data._uncensored
                 censored = False
 
         Narg = len(args)

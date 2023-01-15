@@ -139,11 +139,11 @@ def test_cont_fit(distname, arg, method):
                 # values. The interval is small, so est2 should be close to
                 # est.
                 nic = 15
-                intervals = np.column_stack((rvs, rvs))
-                intervals[:nic, 0] *= 0.99
-                intervals[:nic, 1] *= 1.01
-                intervals.sort(axis=1)
-                data2 = stats.CensoredData(intervals=intervals)
+                interval = np.column_stack((rvs, rvs))
+                interval[:nic, 0] *= 0.99
+                interval[:nic, 1] *= 1.01
+                interval.sort(axis=1)
+                data2 = stats.CensoredData(interval=interval)
                 est2 = distfn.fit(data2, **kwds)
                 msg = ('Different results fitting interval-censored'
                        f' data: {distfn.name}: est={est} est2={est2}')

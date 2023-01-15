@@ -36,10 +36,10 @@ def test_beta():
        shape1    shape2
     0.9914177 0.6866565
     """
-    data = CensoredData(intervals=[[0.10, 0.20],
-                                   [0.50, 0.55],
-                                   [0.75, 0.90],
-                                   [0.80, 0.95]])
+    data = CensoredData(interval=[[0.10, 0.20],
+                                  [0.50, 0.55],
+                                  [0.75, 0.90],
+                                  [0.80, 0.95]])
 
     # For this test, fit only the shape parameters; loc and scale are fixed.
     a, b, loc, scale = beta.fit(data, floc=0, fscale=1, optimizer=optimizer)
@@ -68,7 +68,7 @@ def test_cauchy_right_censored():
     location 7.100001
     scale    7.455866
     """
-    data = CensoredData(x=[1, 10], right=[30])
+    data = CensoredData(uncensored=[1, 10], right=[30])
     loc, scale = cauchy.fit(data, optimizer=optimizer)
     assert_allclose(loc, 7.10001, rtol=5e-6)
     assert_allclose(scale, 7.455866, rtol=5e-6)
@@ -95,7 +95,8 @@ def test_cauchy_mixed():
     location 4.605150
     scale    5.900852
     """
-    data = CensoredData(x=[1, 10], left=[1], right=[30], intervals=[[4, 8]])
+    data = CensoredData(uncensored=[1, 10], left=[1], right=[30],
+                        interval=[[4, 8]])
     loc, scale = cauchy.fit(data, optimizer=optimizer)
     assert_allclose(loc, 4.605150, rtol=5e-6)
     assert_allclose(scale, 5.900852, rtol=5e-6)
@@ -121,7 +122,8 @@ def test_chi2_mixed():
              estimate
     df 5.060329
     """
-    data = CensoredData(x=[1, 10], left=[1], right=[30], intervals=[[4, 8]])
+    data = CensoredData(uncensored=[1, 10], left=[1], right=[30],
+                        interval=[[4, 8]])
     df, loc, scale = chi2.fit(data, floc=0, fscale=1, optimizer=optimizer)
     assert_allclose(df, 5.060329, rtol=5e-6)
     assert loc == 0
@@ -185,7 +187,7 @@ def test_expon_right_censored():
     # is the sum of the observed values divided by the number of uncensored
     # values.
     n = len(data) - data.num_censored()
-    total = data._x.sum() + data._right.sum()
+    total = data._uncensored.sum() + data._right.sum()
     expected = total / n
     assert_allclose(scale, expected, 1e-8)
 
@@ -246,16 +248,17 @@ def test_gumbel():
     scale 4.843640
     """
     # First value is interval-censored. Last two are right-censored.
-    x = np.array([2, 3, 9])
+    uncensored = np.array([2, 3, 9])
     right = np.array([10, 10])
-    intervals = np.array([[0, 1]])
-    data = CensoredData(x, right=right, intervals=intervals)
+    interval = np.array([[0, 1]])
+    data = CensoredData(uncensored, right=right, interval=interval)
     loc, scale = gumbel_r.fit(data, optimizer=optimizer)
     assert_allclose(loc, 4.487853, rtol=5e-6)
     assert_allclose(scale, 4.843640, rtol=5e-6)
 
     # Negate the data and reverse the intervals, and test with gumbel_l.
-    data2 = CensoredData(-x, left=-right, intervals=-intervals[:, ::-1])
+    data2 = CensoredData(-uncensored, left=-right,
+                         interval=-interval[:, ::-1])
     # Fitting gumbel_l to data2 should give the same result as above, but
     # with loc negated.
     loc2, scale2 = gumbel_l.fit(data2, optimizer=optimizer)
@@ -324,10 +327,10 @@ def test_invgauss():
     Those last two values are the SciPy scale and shape parameters.
     """
     # One point is left-censored, and one is right-censored.
-    data = CensoredData(x=[0.4813096, 0.5571880, 0.5132463, 0.3801414,
-                           0.5904386, 0.4822340, 0.3478597, 0.7191797,
-                           1.5810902, 0.4442299],
-                        left=[0.15], right=[3])
+    x = [0.4813096, 0.5571880, 0.5132463, 0.3801414,
+         0.5904386, 0.4822340, 0.3478597, 0.7191797,
+         1.5810902, 0.4442299]
+    data = CensoredData(uncensored=x, left=[0.15], right=[3])
 
     # Fit only the shape parameter.
     mu, loc, scale = invgauss.fit(data, floc=0, fscale=1, optimizer=optimizer)
@@ -372,7 +375,8 @@ def test_invweibull():
     """
     # In the R data, the first value is interval-censored, and the last
     # two are right-censored.  The rest are not censored.
-    data = CensoredData(x=[2, 3, 9], right=[10, 10], intervals=[[0, 1]])
+    data = CensoredData(uncensored=[2, 3, 9], right=[10, 10],
+                        interval=[[0, 1]])
     c, loc, scale = invweibull.fit(data, floc=0, optimizer=optimizer)
     assert_allclose(c, 0.6379845, rtol=5e-6)
     assert loc == 0
@@ -425,7 +429,7 @@ def test_laplace():
     x = obs[(obs != -50.0) & (obs != 50)]
     left = obs[obs == -50.0]
     right = obs[obs == 50.0]
-    data = CensoredData(x=x, left=left, right=right)
+    data = CensoredData(uncensored=x, left=left, right=right)
     loc, scale = laplace.fit(data, loc=10, scale=10, optimizer=optimizer)
     assert_allclose(loc, 14.79870, rtol=5e-6)
     assert_allclose(scale, 30.93601, rtol=5e-6)
@@ -554,8 +558,8 @@ def test_ncx2():
     df  1.052871
     ncp 2.362934
     """
-    data = CensoredData(x=[2.7, 0.2, 6.5, 0.4, 0.1], right=[8, 8],
-                        intervals=[[0.6, 1.0]])
+    data = CensoredData(uncensored=[2.7, 0.2, 6.5, 0.4, 0.1], right=[8, 8],
+                        interval=[[0.6, 1.0]])
     df, ncp, loc, scale = ncx2.fit(data, floc=0, fscale=1,
                                    optimizer=optimizer)
     assert_allclose(df, 1.052871, rtol=5e-6)
@@ -585,10 +589,10 @@ def test_norm():
          mean        sd
     0.1444432 0.1029451
     """
-    data = CensoredData(intervals=[[0.10, 0.20],
-                                   [0.50, 0.55],
-                                   [0.75, 0.90],
-                                   [0.80, 0.95]])
+    data = CensoredData(interval=[[0.10, 0.20],
+                                  [0.50, 0.55],
+                                  [0.75, 0.90],
+                                  [0.80, 0.95]])
 
     loc, scale = norm.fit(data, optimizer=optimizer)
 
