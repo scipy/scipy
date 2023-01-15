@@ -10589,10 +10589,10 @@ add_newdoc("ndtr",
 
     See Also
     --------
-    log_ndtr: Logarithm of ndtr
-    erf: Error function
-    erfc: 1 - erf
-    scipy.stats.norm: Normal distribution
+    log_ndtr : Logarithm of ndtr
+    erf : Error function
+    erfc : 1 - erf
+    scipy.stats.norm : Normal distribution
 
     Examples
     --------
@@ -10753,7 +10753,7 @@ add_newdoc("ndtri",
 
     See Also
     --------
-    ndtr: Standard normal cumulative probability distribution
+    ndtr : Standard normal cumulative probability distribution
 
     Examples
     --------
