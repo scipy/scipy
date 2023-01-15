@@ -868,7 +868,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
                          "Use 'trf' or 'dogbox' instead.")
 
     if check_finite is None:
-        check_finite = False if nan_policy is not None else True
+        check_finite = True if nan_policy is None else False
 
     # optimization may produce garbage for float32 inputs, cast them to float64
     # NaNs cannot be handled
