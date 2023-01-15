@@ -1108,6 +1108,25 @@ class TestTruncnorm:
         assert_almost_equal(m, 0.79788456)
         assert_almost_equal(v, 0.36338023)
 
+    #Entropy reference calculated with mpmath
+    #from mpmath import mp
+    #mp.dps = 50
+
+    #def entropy_trun(a, b):
+    #   Z = mp.digamma(b) - mp.digamma(a)
+    #   A = mp.log(mp.sqrt(2 * mp.pi * mp.e) * Z)
+    #   B = (a * mp.digamma(a) - b * mp.digamma(b)) / (2 * Z)
+    #   h = A + B
+    #   return h
+
+    @pytest.mark.parametrize("a, b, ref",
+    [(3, 4, -3.0638502581111376587051473653933044182228540802750831),
+    (3.6, 3.7, -5.6922960954665466660510221678517294674305674032403609),
+    (1, 3, 0.70921408458052569749601757859156839712816078772689478)])
+
+    def test_entropy(self, a, b, ref):
+        assert_allclose(stats.truncnorm.entropy(a, b), ref)
+
     def test_gh_1489_trac_962_rvs(self):
         # Check the original example.
         low, high = 10, 15
@@ -3419,6 +3438,23 @@ class TestGamma:
         assert np.isclose(stats.gamma.isf(1e-50, 100),
                           330.6557590436547, atol=1e-13)
 
+class TestDgamma:
+    #Entropy ref calculated with mpmath
+    #from mpmath import mp
+    #mp.dps = 50
+    #def entropy_dgamma(a):
+    #   A = 2 * mp.gamma(a) * mp.exp(a + (1 - a) * mp.digamma(a))
+    #   h = mp.log(A)
+    #   return h
+
+    @pytest.mark.parametrize("a, ref",
+    [(1.5, 2.0541199559354118267922018421759071394202272087878735),
+    (1.3, 1.9357296377121247644586320317632592032856887302320247),
+    (1.1, 1.7856502333412133408733521579693880954302277243835128)])
+
+
+    def test_entropy(self, a, ref):
+        assert_allclose(stats.dgamma.entropy(a), ref)
 
 class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
@@ -6430,7 +6466,7 @@ class _distr3_gen(stats.rv_continuous):
 
     def _cdf(self, x, a):
         # Different # of shape params from _pdf, to be able to check that
-        # inspection catches the inconsistency."""
+        # inspection catches the inconsistency.
         return 42 * a + x
 
 
@@ -7283,6 +7319,25 @@ class TestNakagami:
         # Check round trip back to x0.
         x1 = stats.nakagami.isf(sf, nu)
         assert_allclose(x1, x0, rtol=1e-13)
+
+    #Entropy references calculated with mpmath
+    #from mpmath import mp
+    #mp.dps = 50
+    #def entropy_naka(m):
+    #   A = mp.gamma(m) / 2
+    #   B = mp.sqrt(1 / m)
+    #   C = mp.exp((2 * m - (2 * m - 1) * mp.digamma(m)) / 2)
+    #   h = mp.log(A * B * C)
+    #   return h
+
+    @pytest.mark.parametrize("m, ref",
+    [(5, -0.097341814372151976585790165774491299055778891485149),
+    (0.5, 0.72579135264472743236309761494744107178589733927753),
+    (10, -0.43426184310934903511376791552032937088827239690443)])
+
+
+    def test_entropy(self, m, ref):
+        assert_allclose(stats.nakagami.entropy(m), ref)
 
     @pytest.mark.xfail(reason="Fit of nakagami not reliable, see gh-10908.")
     @pytest.mark.parametrize('nu', [1.6, 2.5, 3.9])

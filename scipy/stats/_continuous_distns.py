@@ -8757,11 +8757,11 @@ class truncnorm_gen(rv_continuous):
         return out
 
     def _entropy(self, a, b):
-        A = sc.ndtr(a)
-        B = sc.ndtrf(b)
+        A = sc.digamma(a)
+        B = sc.digamma(b)
         Z = B - A
         C = np.log(np.sqrt(2 * np.pi * np.e) * Z)
-        D = (a * _norm_pdf(a) + b * _norm_pdf(b)) / (2 * Z)
+        D = (a * A - b * B) / (2 * Z)
         h = C + D
         return h
 
