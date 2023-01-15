@@ -558,7 +558,7 @@ class TestCurveFit:
                   'method': method, 'check_finite': False}
         # propagate test
         error_msg = ("`nan_policy='propagate'` is not supported "
-                    "by this function.")
+                     "by this function.")
         with assert_raises(ValueError, match=error_msg):
             curve_fit(**kwargs, nan_policy="propagate", maxfev=2000)
 
@@ -568,8 +568,7 @@ class TestCurveFit:
 
         # omit test
         result_with_nan, _ = curve_fit(**kwargs, nan_policy="omit")
-        result_without_nan, _ = curve_fit(f, xdata_without_nan,
-                                          ydata_without_nan, method=method)
+        result_without_nan, _ = curve_fit(**kwargs, nan_policy="omit")
         assert_allclose(result_with_nan, result_without_nan)
 
     @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
