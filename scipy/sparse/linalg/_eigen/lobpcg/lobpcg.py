@@ -109,7 +109,9 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
         VBV = inv(VBV, overwrite_a=True)
         blockVectorV = blockVectorV @ VBV
         # blockVectorV = (cho_solve((VBV.T, True), blockVectorV.T)).T
-        if B is not None:
+        if B is None:
+            blockVectorBV = blockVectorV.view()
+        else:
             blockVectorBV = blockVectorBV @ VBV
             # blockVectorBV = (cho_solve((VBV.T, True), blockVectorBV.T)).T
         return blockVectorV, blockVectorBV, VBV, normalization
