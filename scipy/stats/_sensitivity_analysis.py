@@ -475,7 +475,7 @@ def sobol_indices(
 
     >>> boot = indices.bootstrap()
 
-    Then, this information can be easilly visualized.
+    Then, this information can be easily visualized.
 
     >>> import matplotlib.pyplot as plt
     >>> fig, axs = plt.subplots(1, 2, figsize=(9, 4))
@@ -609,16 +609,10 @@ def sobol_indices(
             )
             raise ValueError(message) from exc
     else:
-        kind = inspect.Parameter.POSITIONAL_OR_KEYWORD
-        parameters = (
-            inspect.Parameter('f_A', kind=kind),
-            inspect.Parameter('f_B', kind=kind),
-            inspect.Parameter('f_AB', kind=kind)
-        )
-        sig = inspect.Signature(parameters=parameters)
         indices_method_ = method
+        sig = inspect.signature(indices_method_)
 
-        if inspect.signature(indices_method_) != sig:
+        if set(sig.parameters) != {'f_A', 'f_B', 'f_AB'}:
             message = (
                 "If 'method' is a callable, it must have the following"
                 f" signature: {inspect.signature(saltelli_2010)}"

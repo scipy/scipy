@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_less
 import pytest
@@ -184,6 +186,18 @@ class TestSobolIndices:
 
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
         assert_allclose(res.total_order, ishigami_ref_indices[1], atol=1e-2)
+
+        def jansen_sobol_typed(
+            f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray
+        ) -> Tuple[np.ndarray, np.ndarray]:
+            return jansen_sobol(f_A, f_B, f_AB)
+
+        _ = sobol_indices(
+            func=f_ishigami, n=8,
+            dists=self.dists,
+            method=jansen_sobol_typed,
+            random_state=rng
+        )
 
     def test_normalization(self, ishigami_ref_indices):
         rng = np.random.default_rng(28631265345463262246170309650372465332)
