@@ -567,9 +567,7 @@ class TestCurveFit:
             curve_fit(**kwargs, nan_policy="raise")
 
         # omit test
-        result_with_nan, _ = curve_fit(f, xdata_with_nan, ydata_with_nan,
-                                       method=method, check_finite=False,
-                                       nan_policy="omit")
+        result_with_nan, _ = curve_fit(**kwargs, nan_policy="omit")
         result_without_nan, _ = curve_fit(f, xdata_without_nan,
                                           ydata_without_nan, method=method)
         assert_allclose(result_with_nan, result_without_nan)
