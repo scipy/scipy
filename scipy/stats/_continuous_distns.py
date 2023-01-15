@@ -4330,13 +4330,6 @@ class invgauss_gen(rv_continuous):
             fshape_s = fshape_n / fscale
         return fshape_s, floc, fscale
 
-    def _entropy(self, mu):
-        """
-        Reference: https://moser-isi.ethz.ch/docs/papers/smos-2012-10.pdf
-        """
-        return (0.5 * np.log(2 * np.pi * np.e * mu**3) -
-                1.5 * np.exp(2 / mu) * sc.exp1(2 / mu))
-
 
 invgauss = invgauss_gen(a=0.0, name='invgauss')
 
