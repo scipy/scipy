@@ -610,7 +610,7 @@ def correlation(u, v, w=None, centered=True):
 
     >>> from scipy.spatial import distance
     >>> distance.correlation([1, 0, 1], [2, 3, 1])
-    1.8660245037844386  
+    1.8660245037844386
 
     To find the correlation distance between two arrays with weight provided:
 
