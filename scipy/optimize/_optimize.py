@@ -139,7 +139,7 @@ def _wrap_callback(callback, method=None):
 
     sig = inspect.signature(callback)
 
-    if set(sig.parameters) != {'intermediate_result'}:
+    if set(sig.parameters) == {'intermediate_result'}:
         def wrapped_callback(res):
             return callback(intermediate_result=res)
     elif method == 'trust-constr':
