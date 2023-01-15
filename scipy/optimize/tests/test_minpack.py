@@ -555,8 +555,8 @@ class TestCurveFit:
     def _check_nan_policy(f, xdata_with_nan, xdata_without_nan,
                           ydata_with_nan, ydata_without_nan, method):
         # propagate test
-        error_msg = "`propagate` is not supported for nan_policy " \
-                    "in this function."
+        error_msg = ("`nan_policy='propagate'` is not supported "
+                    "by this function.")
         with assert_raises(ValueError, match=error_msg):
             curve_fit(f, xdata_with_nan, ydata_with_nan, method=method,
                       check_finite=False, nan_policy="propagate",
