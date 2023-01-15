@@ -601,8 +601,9 @@ class TestCurveFit:
         self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
                                ydata_with_nan, ydata_without_nan, method)
 
+    @pytest.mark.parametrize('n', [2, 3])
     @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
-    def test_nan_policy_3d(self, method):
+    def test_nan_policy_2_3d(self, n, method):
         def f(x, a, b):
             x1 = x[0, 0, :]
             x2 = x[0, 1, :]
