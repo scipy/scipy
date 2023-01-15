@@ -177,6 +177,34 @@ class CensoredData:
     >>> data = CensoredData.right_censored(ttf, censored)
     >>> print(data)
     CensoredData(6 values: 4 not censored, 2 right-censored)
+
+    Finally, we create and censor some data from the `weibull_min`
+    distribution, and then fit `weibull_min` to that data. We'll assume
+    that the location parameter is known to be 0.
+
+    >>> from scipy.stats import weibull_min
+    >>> rng = np.random.default_rng()
+
+    Create the random data set.
+
+    >>> x = weibull_min.rvs(2.5, loc=0, scale=30, size=250, random_state=rng)
+    >>> x[x > 40] = 40  # Right-censor values greater or equal to 40.
+
+    Create the `CensoredData` instance with the `right_censored` method.
+    The censored values are those where the value is 40.
+
+    >>> data = CensoredData.right_censored(x, x == 40)
+    >>> print(data)
+    CensoredData(250 values: 215 not censored, 35 right-censored)
+
+    35 values have been right-censored.
+
+    Fit `weibull_min` to the censored data.  We expect to shape and scale
+    to be approximately 2.5 and 30, respectively.
+
+    >>> weibull_min.fit(data, floc=0)
+    (2.3575922823897315, 0, 30.40650074451254)
+
     """
 
     def __init__(self, uncensored=None, *, left=None, right=None,
