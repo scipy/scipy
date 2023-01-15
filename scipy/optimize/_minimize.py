@@ -209,7 +209,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         of the parameter vector and objective function. Note that the name
         of the parameter must be ``intermediate_result`` for the callback
         to be passed an `OptimizeResult`. These methods will also terminate if
-        the callback raises `StopIteration`.
+        the callback raises ``StopIteration``.
 
         All methods except trust-constr (also) support a signature like:
 
@@ -217,9 +217,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         where ``xk`` is the current parameter vector.
 
-        All methods except TNC, SLSQP, and COBYLA will terminate if the
-        callback raises `StopIteration`. Introspection is used to determine
-        which of the signatures above to invoke.
+        Introspection is used to determine which of the signatures above to
+        invoke.
 
     Returns
     -------
