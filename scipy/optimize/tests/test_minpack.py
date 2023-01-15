@@ -564,8 +564,7 @@ class TestCurveFit:
 
         # raise test
         with assert_raises(ValueError, match="The input contains nan"):
-            curve_fit(f, xdata_with_nan, ydata_with_nan, method=method,
-                      check_finite=False, nan_policy="raise")
+            curve_fit(**kwargs, nan_policy="raise")
 
         # omit test
         result_with_nan, _ = curve_fit(f, xdata_with_nan, ydata_with_nan,
