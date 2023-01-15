@@ -610,6 +610,7 @@ class TestCurveFit:
 
         xdata_with_nan = np.array([[[2, 3, np.nan, 4, 4, np.nan, 5],
                                    [2, 3, np.nan, np.nan, 4, np.nan, 7]]])
+        xdata_with_nan = xdata_with_nan.squeeze() if n==2 else xdata_with_nan
         ydata_with_nan = np.array([1, 2, 5, 3, np.nan, 7, 10])
         xdata_without_nan = np.array([[[2, 3, 5], [2, 3, 7]]])
         ydata_without_nan = np.array([1, 2, 10])
