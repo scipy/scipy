@@ -605,8 +605,8 @@ class TestCurveFit:
     @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
     def test_nan_policy_2_3d(self, n, method):
         def f(x, a, b):
-            x1 = x[0, 0, :]
-            x2 = x[0, 1, :]
+            x1 = x[..., 0, :].squeeze()
+            x2 = x[..., 1, :].squeeze()
             return a*x1 + b + x2
 
         xdata_with_nan = np.array([[[2, 3, np.nan, 4, 4, np.nan, 5],
