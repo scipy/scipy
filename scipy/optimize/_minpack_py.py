@@ -892,7 +892,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     # the x-y data are already checked, and they don't contain nans.
     if not check_finite and nan_policy is not None:
         if nan_policy == "propagate":
-            raise ValueError("`'nan_policy='propagate'` is not supported "
+            raise ValueError("`nan_policy='propagate'` is not supported "
                              "by this function.")
 
         x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy)
