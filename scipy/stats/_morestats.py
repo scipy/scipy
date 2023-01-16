@@ -2749,9 +2749,10 @@ def levene(*samples, center='median', proportiontocut=0.05):
     --------
     In [4]_, the influence of vitamin C on the tooth growth of guinea pigs
     was investigated. In a control study, 60 subjects were divided into
-    three groups each respectively receiving daily doses of 0.5, 1.0 and 2.0
-    mg of vitamin C. After 42 days, the tooth
-    grow, in micron, was measured.
+    small dose, medium dose, and large dose groups that received
+    daily doses of 0.5, 1.0 and 2.0 mg of vitamin C, respectively. 
+    After 42 days, the tooth
+    growth, in microns, was measured.
 
     In the following, we are interested in testing the null hypothesis that all
     groups are from populations with equal variances.
