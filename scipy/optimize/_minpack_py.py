@@ -871,7 +871,6 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         check_finite = True if nan_policy is None else False
 
     # optimization may produce garbage for float32 inputs, cast them to float64
-    # NaNs cannot be handled
     if check_finite:
         ydata = np.asarray_chkfinite(ydata, float)
     else:
