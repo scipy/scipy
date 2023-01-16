@@ -558,19 +558,39 @@ class Build(Task):
         default `_distributor_init.py` file with the one
         we use for wheels uploaded to PyPI so that DLL gets loaded.
 
-        Assumes pkg-config is installed and aware of OpenBLAS.
+        Assumes pkg-config is installed and aware of OpenBLAS. 
+
+        The "dirs" parameter is typically a "Dirs" object with the
+        structure as the following, say, if dev.py is run from the
+        folder "repo":
+
+        dirs = Dirs(
+            root=WindowsPath('C:/.../repo'),
+            build=WindowsPath('C:/.../repo/build'),
+            installed=WindowsPath('C:/.../repo/build-install'),
+            site=WindowsPath('C:/.../repo/build-install/Lib/site-packages'
+            )
+
         """
         # Get OpenBLAS lib path from pkg-config
         cmd = ['pkg-config', '--variable', 'libdir', 'openblas']
         result = subprocess.run(cmd, capture_output=True, text=True)
+        # pkg-config does not return any meaningful error message if fails
         if result.returncode != 0:
-            print(result.stderrr)
+            print('"pkg-config --variable libdir openblas" '
+                  'command did not manage to find OpenBLAS '
+                  'succesfully. Try running manually on the '
+                  'command prompt for more information.')
             return result.returncode
 
-        openblas_lib_path = Path(result.stdout.strip())
+        # Skip the drive letter of the path -> /c to get Windows drive
+        # to be appended correctly to avoid "C:\c\..." from stdout.
+        openblas_lib_path = Path(result.stdout.strip()[2:]).resolve()
         if not openblas_lib_path.stem == 'lib':
-            raise RuntimeError(
-                f'Expecting "lib" at end of "{openblas_lib_path}"')
+            raise RuntimeError('"pkg-config --variable libdir openblas" '
+                               'command did not return a path ending with'
+                               ' "lib" folder. Instead it returned '
+                               f'"{openblas_lib_path}"')
 
         # Look in bin subdirectory for OpenBLAS binaries.
         bin_path = openblas_lib_path.parent / 'bin'
@@ -580,8 +600,8 @@ class Build(Task):
         libs_path.mkdir(exist_ok=True)
         # Copy DLL files from OpenBLAS install to scipy install .libs subdir.
         for dll_fn in bin_path.glob('*.dll'):
-            out_fname = libs_path / dll_fn.parts[-1]
-            print(f'Copying {dll_fn} to {out_fname}')
+            out_fname = libs_path / dll_fn.name
+            print(f'Copying {dll_fn} ----> {out_fname}')
             out_fname.write_bytes(dll_fn.read_bytes())
 
         # Write _distributor_init.py to scipy install dir;
