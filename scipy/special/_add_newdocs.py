@@ -10590,6 +10590,7 @@ add_newdoc("ndtr",
     See Also
     --------
     log_ndtr : Logarithm of ndtr
+    ndtri : Inverse of ndtr, standard normal percentile function
     erf : Error function
     erfc : 1 - erf
     scipy.stats.norm : Normal distribution
@@ -10754,6 +10755,7 @@ add_newdoc("ndtri",
     See Also
     --------
     ndtr : Standard normal cumulative probability distribution
+    ndtri_exp : Inverse of log_ndtr
 
     Examples
     --------
