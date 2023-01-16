@@ -3506,7 +3506,8 @@ class genhyperbolic_gen(rv_continuous):
         return [ip, ia, ib]
 
     def _fitstart(self, data):
-        # Arbitrary, but the default a=b=1 is not valid
+        # Arbitrary, but the default p = a = b = 1 is not valid; the
+        # distribution requires |b| < a if p >= 0.
         return super()._fitstart(data, args=(1, 1, 0.5))
 
     def _logpdf(self, x, p, a, b):
@@ -4735,9 +4736,8 @@ class norminvgauss_gen(rv_continuous):
         return [ia, ib]
 
     def _fitstart(self, data):
-        # Arbitrary, but the default a=b=1 is not valid
-        if isinstance(data, CensoredData):
-            data = data._uncensor()
+        # Arbitrary, but the default a = b = 1 is not valid; the distribution
+        # requires |b| < a.
         return super()._fitstart(data, args=(1, 0.5))
 
     def _pdf(self, x, a, b):
