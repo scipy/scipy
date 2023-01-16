@@ -74,9 +74,6 @@ def _call_super_mom(fun):
                 data = data._uncensored
             return fun(self, data, *args, **kwds)
 
-    if hasattr(fun, '__doc__'):
-        wrapper.__doc__ = fun.__doc__
-
     return wrapper
 
 
