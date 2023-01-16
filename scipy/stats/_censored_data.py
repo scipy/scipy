@@ -16,8 +16,10 @@ def _validate_interval(interval):
         # The input was a sequence with length 0.
         interval = interval.reshape((0, 2))
     if interval.ndim != 2 or interval.shape[-1] != 2:
-        raise ValueError('`interval` must be a two-dimensional array'
-                         ' with shape (m, 2).')
+        raise ValueError('`interval` must be a two-dimensional array with '
+                         'shape (m, 2), where m is the number of '
+                         'interval-censored values, but got shape '
+                         f'{interval.shape}')
 
     if np.isnan(interval).any():
         raise ValueError('`interval` must not contain nan.')
