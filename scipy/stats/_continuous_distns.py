@@ -3112,9 +3112,8 @@ class gamma_gen(rv_continuous):
         # denominator to allow for degenerate data where the skewness
         # is close to 0.
         if isinstance(data, CensoredData):
-            sk = _skew(data._uncensor())
-        else:
-            sk = _skew(data)
+            data = data._uncensor()
+        sk = _skew(data)
         a = 4 / (1e-8 + sk**2)
         return super()._fitstart(data, args=(a,))
 
