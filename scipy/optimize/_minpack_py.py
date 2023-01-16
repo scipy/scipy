@@ -900,8 +900,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         if (x_contains_nan or y_contains_nan) and nan_policy == 'omit':
             # ignore NaNs for N dimensional arrays
             has_nan = np.isnan(xdata)
-            for _ in range(xdata.ndim-1):
-                has_nan = has_nan.any(axis=0)
+            has_nan = has_nan.any(axis=tuple(range(has_nan.ndim-1)))
             has_nan |= np.isnan(ydata)
 
             xdata = xdata[..., ~has_nan]
