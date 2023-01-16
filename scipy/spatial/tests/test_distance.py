@@ -1934,6 +1934,11 @@ def test_hamming_unequal_length():
     # Used to give an AttributeError from ndarray.mean called on bool
     assert_raises(ValueError, whamming, x, y)
 
+def test_hamming_weights_length_mismatch():
+    x = [1, 0, 1, 1]
+    y = [1, 1, 0, 1]
+    w = [1, 3, 1]
+    assert_raises(ValueError, x, y, w)
 
 def test_hamming_string_array():
     # https://github.com/scikit-learn/scikit-learn/issues/4014
