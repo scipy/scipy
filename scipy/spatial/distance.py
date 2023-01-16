@@ -717,10 +717,10 @@ def hamming(u, v, w=None):
         raise ValueError('The 1d arrays must have equal lengths.')
     u_ne_v = u != v
     if w is not None:
-         if (w.shape == u.shape)
-            w = _validate_weights(w)
-         else:
-            raise ValueError('w should have same dimensions as u and v')
+       if (w.shape == u.shape)
+         w = _validate_weights(w)
+       else:
+         raise ValueError('w should have same dimensions as u and v')
     return np.average(u_ne_v, weights=w)
 
 
