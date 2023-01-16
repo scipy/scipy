@@ -202,6 +202,7 @@ def test_dijkstra_min_only_random(n):
             assert sources[p] == s
             p = pred[p]
 
+
 # n : number of vertices
 # t : number of test cases
 # Generate random graphs, run shortest_path for all methods, verify the results
@@ -223,7 +224,8 @@ def test_shortest_path_random(n, t):
         results = []
         for method in methods:
             results.append((method, *shortest_path(data, directed=True,
-                indices=start_vertex, return_predecessors=True)))
+                                                   indices=start_vertex,
+                                                   return_predecessors=True)))
 
         for method, dist, pred in results:
             # check that dist and pred are consistent
