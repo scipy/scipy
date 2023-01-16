@@ -718,6 +718,8 @@ def hamming(u, v, w=None):
     u_ne_v = u != v
     if w is not None:
         w = _validate_weights(w)
+    if w.shape != u.shape:
+        raise ValueError('w should have same dimensions as u and v')
     return np.average(u_ne_v, weights=w)
 
 
