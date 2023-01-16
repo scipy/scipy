@@ -2751,8 +2751,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
     was investigated. In a control study, 60 subjects were divided into
     small dose, medium dose, and large dose groups that received
     daily doses of 0.5, 1.0 and 2.0 mg of vitamin C, respectively. 
-    After 42 days, the tooth
-    growth, in microns, was measured.
+    After 42 days, the tooth growth, in microns, was measured.
 
     In the following, we are interested in testing the null hypothesis that all
     groups are from populations with equal variances.
@@ -2783,15 +2782,15 @@ def levene(*samples, center='median', proportiontocut=0.05):
     >>> import matplotlib.pyplot as plt
     >>> k, n = 3, 20   # number of samples, sample size
     >>> dist = stats.f(dfn=k-1, dfd=n-k)
-    >>> kt_val = np.linspace(0, 5, 100)
-    >>> pdf = dist.pdf(kt_val)
+    >>> lev_val = np.linspace(0, 5, 100)
+    >>> pdf = dist.pdf(lev_val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def kt_plot(ax):  # we'll re-use this
-    ...     ax.plot(kt_val, pdf)
+    >>> def lev_plot(ax):  # we'll re-use this
+    ...     ax.plot(lev_val, pdf, color='C0')
     ...     ax.set_title("Levene Test Null Distribution")
     ...     ax.set_xlabel("statistic")
     ...     ax.set_ylabel("probability density")
-    >>> kt_plot(ax)
+    >>> lev_plot(ax)
     >>> plt.show()
 
     The comparison is quantified by the p-value: the proportion of values in
@@ -2799,13 +2798,13 @@ def levene(*samples, center='median', proportiontocut=0.05):
     statistic.
 
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> kt_plot(ax)
+    >>> lev_plot(ax)
     >>> pvalue = dist.cdf(-res.statistic) + dist.sf(res.statistic)
     >>> annotation = (f'p-value={pvalue:.3f}\n(shaded area)')
     >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
     >>> _ = ax.annotate(annotation, (1.5, 0.22), (2.25, 0.3), arrowprops=props)
-    >>> i = kt_val >= res.statistic
-    >>> ax.fill_between(kt_val[i], y1=0, y2=pdf[i], color='C0')
+    >>> i = lev_val >= res.statistic
+    >>> ax.fill_between(lev_val[i], y1=0, y2=pdf[i], color='C0')
     >>> ax.set_xlim(0, 5)
     >>> ax.set_ylim(0, 1)
     >>> plt.show()
@@ -2824,6 +2823,38 @@ def levene(*samples, center='median', proportiontocut=0.05):
       should be made before the data is analyzed [5]_ with consideration of the
       risks of both false positives (incorrectly rejecting the null hypothesis)
       and false negatives (failure to reject a false null hypothesis).
+
+    Note that the F distribution provides an asymptotic approximation of the
+    null distribution; it is only accurate for samples with many observations.
+    For small samples, it may be more appropriate to perform a permutation
+    test: Under the null hypothesis that all samples are drawn from populations
+    with the same variance. Therefore, we can form an *exact* null distribution
+    by calculating the statistic from the independent samples.
+
+    >>> def statistic(*samples):
+    ...     return stats.levene(*samples).statistic
+    >>> ref = stats.permutation_test(
+    ...     (small_dose, medium_dose, large_dose), statistic,
+    ...     permutation_type='independent', alternative='greater'
+    ... )
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> lev_plot(ax)
+    >>> bins = np.linspace(0, 5, 25)
+    >>> ax.hist(
+    ...     ref.null_distribution, bins=bins, density=True, facecolor="C1"
+    ... )
+    >>> ax.legend(['aymptotic approximation\n(many observations)',
+    ...            'exact null distribution'])
+    >>> lev_plot(ax)
+    >>> plt.show()
+
+     >>> ref.pvalue
+    0.4559  # exact p-value
+
+    Note that there is significant disagreement between the exact p-value
+    calculated here and the approximation returned by `levene` above. For small
+    samples with ties, consider performing a permutation test for more
+    accurate results.
 
     Following is another generic example where the null hypothesis would be
     rejected.
