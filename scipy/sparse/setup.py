@@ -3,6 +3,13 @@ import sys
 import subprocess
 
 
+def pre_build_hook(build_ext, ext):
+    from scipy._build_utils.compiler_helper import get_cxx_std_flag
+    std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
+    if std_flag is not None:
+        ext.extra_compile_args.append(std_flag)
+
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from scipy._build_utils.compiler_helper import set_cxx_flags_hook
@@ -53,7 +60,7 @@ def configuration(parent_package='',top_path=None):
                                   os.path.join('sparsetools', 'other.cxx'),
                                   get_sparsetools_sources]
                          )
-    sparsetools._pre_build_hook = set_cxx_flags_hook
+    sparsetools._pre_build_hook = pre_build_hook
 
     return config
 

@@ -1,4 +1,11 @@
 
+def pre_build_hook(build_ext, ext):
+    from scipy._build_utils.compiler_helper import get_cxx_std_flag
+    std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
+    if std_flag is not None:
+        ext.extra_compile_args.append(std_flag)
+
+
 def configuration(parent_package='', top_path=None):
     import numpy
     from numpy.distutils.misc_util import Configuration
@@ -7,9 +14,11 @@ def configuration(parent_package='', top_path=None):
 
     config.add_data_dir('tests')
 
-    config.add_extension('_shortest_path',
+    ext = config.add_extension('_shortest_path',
                          sources=['_shortest_path.cxx'],
-                         include_dirs=[numpy.get_include()])
+                         include_dirs=[numpy.get_include()],
+                         language='c++')
+    ext._pre_build_hook = pre_build_hook
 
     config.add_extension('_traversal',
                          sources=['_traversal.c'],
