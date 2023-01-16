@@ -10,7 +10,7 @@ from scipy.special import (
     jn, jv, jvp, yn, yv, yvp, iv, ivp, kn, kv, kvp,
     gamma, gammaln, gammainc, gammaincc, gammaincinv, gammainccinv, digamma,
     beta, betainc, betaincinv, poch,
-    ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc, ellipj,
+    ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc,
     elliprc, elliprd, elliprf, elliprg, elliprj,
     erf, erfc, erfinv, erfcinv, exp1, expi, expn,
     bdtrik, btdtr, btdtri, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
@@ -62,10 +62,6 @@ def ellipe_(k):
 
 def ellipeinc_(f, k):
     return ellipeinc(f, k*k)
-
-
-def ellipj_(k):
-    return ellipj(k*k)
 
 
 def zeta_(x):
