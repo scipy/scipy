@@ -82,6 +82,14 @@ class TestCensoredData:
         assert_equal(data._right, [9, 8])
         assert_equal(data._interval, [[0, 1], [1, 2]])
 
+    def test_empty_arrays(self):
+        data = CensoredData(uncensored=[], left=[], right=[], interval=[])
+        assert data._uncensored.shape == (0,)
+        assert data._left.shape == (0,)
+        assert data._right.shape == (0,)
+        assert data._interval.shape == (0, 2)
+        assert len(data) == 0
+
     def test_invalid_constructor_args(self):
         with pytest.raises(ValueError, match='must be a one-dimensional'):
             CensoredData(uncensored=[[1, 2, 3]])
