@@ -2019,8 +2019,7 @@ cdef class Rotation:
             Adjacent axes cannot be the same.
         extrinsic : boolean, optional
             If True, sequence will be extrinsic. If False, sequence will be
-            treated as intrinsic.
-            Default is True.
+            treated as intrinsic. Default is True.
         degrees : boolean, optional
             Returned angles are in degrees if this flag is True, else they are
             in radians. Default is False.
@@ -2037,6 +2036,7 @@ cdef class Rotation:
             - First angle belongs to [-180, 180] degrees (both inclusive)
             - Third angle belongs to [-180, 180] degrees (both inclusive)
             - Second angle belongs to a set of size 180 degrees.
+
             If ``correct_set=False``, the set is [-lambda, 180 - lambda]
             degrees, where ``lambda`` is equal to:
                 - ``atan2(dot(axis3, cross(axis1, axis2)), dot(axis3, axis1))``
