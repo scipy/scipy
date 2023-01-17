@@ -1316,17 +1316,17 @@ cdef class Rotation:
             3 arrays of shape (3, 1).
         angles : float or array_like, shape (3,) or (N, 3)
             Euler angles specified in radians (`degrees` is False) or degrees
-            (`degrees` is True).
+            (`degrees` is True):
+
             - array_like with shape (3,), corresponding to single rotation
             - array_like with shape (N, 3), where each `angle[i, 0]`
-              corresponds to a single rotation
+            corresponds to a single rotation
+
         extrinsic : boolean, optional
             If True, sequence will be extrinsic. If False, sequence will be
-            treated as intrinsic.
-            Default is True.
+            treated as intrinsic. Default is True.
         degrees : bool, optional
-            If True, then the given angles are assumed to be in degrees.
-            Default is False.
+            If True, then the given angles are assumed to be in degrees. Default is False.
 
         Returns
         -------
@@ -2037,9 +2037,9 @@ cdef class Rotation:
             - Third angle belongs to [-180, 180] degrees (both inclusive)
             - Second angle belongs to a set of size 180 degrees.
 
-            If ``correct_set=False``, the set is [-lambda, 180 - lambda]
-            degrees, where ``lambda`` is equal to:
-                - ``atan2(dot(axis3, cross(axis1, axis2)), dot(axis3, axis1))``
+            If ``correct_set=False``, the set is ``[-lambda, 180 - lambda]``
+            degrees, where ``lambda`` is equal to: 
+            ``atan2(dot(axis3, cross(axis1, axis2)), dot(axis3, axis1))``
 
         References
         ----------
