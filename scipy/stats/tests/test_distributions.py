@@ -3433,10 +3433,6 @@ class TestDgamma:
         f = stats.dgamma(1.1)
         assert_equal(f.pdf(1.3), stats.dgamma.pdf(1.3, 1.1))
 
-    def test_cdf(self):
-        vals = stats.dgamma.ppf([0.001, 0.5, 0.999], 1.3)
-        np.allclose([0.001, 0.5, 0.999], stats.dgamma.cdf(vals, 1.3))
-
     def test_sf(self):
         vals = stats.dgamma.ppf([0.001, 0.5, 0.999], 1.3)
         S = stats.dgamma.sf(vals, 1.3)
