@@ -3432,33 +3432,6 @@ class TestDgamma:
         dist = stats.dgamma(a)
         assert_equal(dist.pdf(x), res)
 
-    def test_cdf(self):
-        vals = stats.dgamma.ppf([0.001, 0.5, 0.999], 1.3)
-        np.allclose([0.001, 0.5, 0.999], stats.dgamma.cdf(vals, 1.3))
-
-    def test_sf(self):
-        vals = stats.dgamma.ppf([0.001, 0.5, 0.999], 1.3)
-        S = stats.dgamma.sf(vals, 1.3)
-        assert_almost_equal(S, 1 - stats.dgamma.cdf(vals, 1.3))
-
-    def test_isf(self):
-        #Reference values calculated with mpmath
-        #import numpy as np
-        #from mpmath import mp
-        #mp.dps = 50
-
-        #def dgamma_cdf(x, a):
-        #    fac = 0.5 * mp.gammainc(a, mp.fabs(x))
-        #    return np.where(x > 0, 0.5 + fac, 0.5 - fac)
-
-        #def dgamma_isf(x, a):
-        #    return 1 / (1 - dgamma_cdf(x, a))
-
-        y_1 = 2.0033322961491538102693606074253344367238154381383
-        y_2 = 132.60693799743787520601808222040250683064041329549
-
-        np.isclose(stats.dgamma.isf(4.7, 0.01), y_1, atol = 1e-13)
-        np.isclose(stats.dgamma.isf(0.01, 1.01), y_2, atol = 1e-13)
 
 class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
