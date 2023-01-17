@@ -2821,6 +2821,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
     >>> ax.set_xlim(0, 5)
     >>> ax.set_ylim(0, 1)
     >>> plt.show()
+
     >>> res.pvalue
     0.5280694573759905
 
@@ -2867,7 +2868,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
     >>> lev_plot(ax)
     >>> plt.show()
 
-     >>> ref.pvalue  # randomized test p-value
+    >>> ref.pvalue  # randomized test p-value
     0.4559  # may vary
 
     Note that there is significant disagreement between the p-value calculated
