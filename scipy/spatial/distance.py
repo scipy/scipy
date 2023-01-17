@@ -614,7 +614,7 @@ def correlation(u, v, w=None, centered=True):
 
     To find the correlation distance between two arrays with weight provided:
 
-    >>> distance.correlation([1, 0, 1], [2, 2, 1], [2, 3, 1])
+    >>> distance.correlation([1, 0, 1], [2, 2, 1], w=[2, 3, 1])
     1.4472135954999579
 
     """
@@ -2588,6 +2588,7 @@ def num_obs_dm(d):
     -------
     num_obs_dm : int
         The number of observations in the redundant distance matrix.
+
     Examples
     --------
     To compute the number of obersations(elements) in each data set.
