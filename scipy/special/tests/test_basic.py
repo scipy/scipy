@@ -835,7 +835,7 @@ class TestCephes:
         assert_array_almost_equal(cephes.pro_ang1_cv(1,1,1,1,0),
                                   array((1.0,0.0)))
 
-    def _check_pro_cv(self):
+    def test_pro_cv(self):
         assert_equal(cephes.pro_cv(1,1,0),2.0)
 
     def test_pro_rad1(self):
