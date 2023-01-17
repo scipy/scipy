@@ -10314,3 +10314,108 @@ def expectile(a, alpha=0.5, *, weights=None):
     # finding a wrong root.
     res = root_scalar(first_order, x0=x0, x1=x1)
     return res.root
+
+
+def ChebyMeanTest_1samp(a, popmean, confidence_level=0.95,
+                        axis=0, nan_policy='propagate'):
+    """Calculate non-parametric test for comparing sample mean with a
+    known population mean
+
+    This is a test for the null hypothesis that the expected value
+    (mean) of a sample of independent observations `a` is equal to the given
+    population mean, `popmean`.
+
+    Alternate hypothesis: Sample mean is not the same as population mean
+
+    Parameters
+    ----------
+    a : array_like
+        Sample observation.
+    popmean : float or array_like
+        Expected value in null hypothesis. If array_like, then its length along
+        `axis` must equal 1, and it must otherwise be broadcastable with `a`.
+    axis : int or None, optional
+        Axis along which to compute test; default is 0. If None, compute over
+        the whole array `a`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
+    confidence_level : float between 0 and 1 excluding 0 and 1
+        The confidence interval for which the confidence intervals are computed
+
+    Returns
+    -------
+    result : `Dictionary`
+        A dictionary with the following keys and values:
+        k-statistic : float or array
+            The k-statistic.
+        pvalue : float or array, only if K-statistic > 1
+            The p-value associated with the given alternative.
+        confidence_interval : [float, float], only if K-statistic > 1
+            The lower and upper bound for the set confidence level
+        alpha : float, only if K-statistic > 1
+            The two-sided significance level
+
+    Example
+    -------
+    >>> mu, sigma = 0, 10  # mean and standard deviation
+    >>> s = np.random.normal(mu, sigma, 1000)
+    >>> result = ChebyMeanTest_1samp(s, 1.5, confidence_level=0.95)
+    >>> result
+    {'k-statistics': 5.2292507435302245,
+     'pvalue': 0.03656967210547055,
+     'confidence_interval': [-1.6249563418403568, 1.2561224252324148],
+     'alpha': 0.05}
+
+    >>> if "pvalue" in result:
+    ...   if result["pvalue"] > result["alpha"]:
+    ...     print("\nNull hypothesis can't be rejected, Means are same")
+    ...   else:
+    ...     print("\nNull hypothesis can be rejected, Means are different")
+    ...
+
+    Null hypothesis can be rejected, Means are different
+    """
+
+    if confidence_level <= 0 or confidence_level >= 1:
+        message = "`confidence_level` must be a number between 0 and 1."
+        raise ValueError(message)
+
+    a, axis = _chk_asarray(a, axis)
+    n = a.shape[axis]
+    mean = np.mean(a, axis)
+
+    try:
+        popmean = np.squeeze(popmean, axis=axis)
+    except ValueError as e:
+        raise ValueError("`popmean.shape[axis]` must equal 1.") from e
+
+    std_dev = np.std(a, ddof=1)
+    std_err = std_dev / math.sqrt(n)
+
+    if mean < popmean:
+        k_stat = (popmean - mean) / std_err
+    else:
+        k_stat = (mean - popmean) / std_err
+
+    # chebyshev's inequality can be applied when k_stat > 1
+    # if k_stat <= 1, it shows that the popmean is within 1 std dev
+    if k_stat <= 1:
+        output = {"k-statistic": k_stat}
+    else:
+        pvalue = 1/(k_stat**2)
+
+        alpha = round(1 - confidence_level, 5)
+        k = 1/math.sqrt(alpha)
+        lower_bound = mean - k*std_err
+        upper_bound = mean + k*std_err
+
+        output = {"k-statistics": k_stat,
+                  "pvalue": pvalue,
+                  "confidence_interval": [lower_bound, upper_bound],
+                  "alpha": alpha}
+
+    return output
