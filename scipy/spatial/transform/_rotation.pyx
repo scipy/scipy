@@ -1320,7 +1320,7 @@ cdef class Rotation:
 
                 - array_like with shape (3,), corresponding to single rotation
                 - array_like with shape (N, 3), where each `angle[i, 0]`
-                corresponds to a single rotation
+                  corresponds to a single rotation
 
         extrinsic : boolean, optional
             If True, sequence will be extrinsic. If False, sequence will be
