@@ -2590,11 +2590,15 @@ def num_obs_dm(d):
         The number of observations in the redundant distance matrix.
     Examples
     --------
-    To compute the number of observations that correspond to a square matrix:
+    To compute the number of obersations(elements) in each data set.
 
     >>> from scipy.spatial import distance
     >>> distance.num_obs_dm([[2, 4, 5], [4, 5, 6], [7, 8, 1]])
     3
+
+    Note
+    -------
+    Argument must be a square matrix.
     """
     d = np.asarray(d, order='c')
     is_valid_dm(d, tol=np.inf, throw=True, name='d')
@@ -2618,12 +2622,21 @@ def num_obs_y(Y):
 
     Examples
     --------
-    To find the number of observations in a condensed distance matrix,
-    here a one-dimensional array:
+    To find the number of observations in the condensed distance matrix.
+    The distance matrix, here a one dimensional array, should have
+    length expressible in the form n*(n-1)/2 where n is number
+    of observations.
 
     >>> from scipy.spatial import distance
     >>> distance.num_obs_y([1, 2, 3])
     3
+    >>> distance.num_obs_y([1, 2, 3, 4, 5, 6])
+    4
+    
+    Note
+    ------
+    The distance matrix having length, not expressible in the form n*(n-1)/2,
+    for example, 7, would raise error.Here,n is a natural number.
     """
     Y = np.asarray(Y, order='c')
     is_valid_y(Y, throw=True, name='Y')
