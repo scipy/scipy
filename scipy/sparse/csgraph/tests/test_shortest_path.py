@@ -187,7 +187,7 @@ def test_dijkstra_min_only_random(n):
     np.random.shuffle(v)
     indices = v[:int(n*.1)]
     ds, pred, sources = dijkstra(data,
-                                 directed=False,
+                                 directed=True,
                                  indices=indices,
                                  min_only=True,
                                  return_predecessors=True)
