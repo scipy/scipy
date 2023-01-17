@@ -3421,14 +3421,13 @@ class TestGamma:
 
 class TestDgamma:
     def test_pdf(self):
-        #Reference values calculated by hand using
-        #the defintion from the Scipy documentation
-        y_1 = 0.03790773263085006
-        assert_almost_equal(y_1, stats.dgamma.pdf(-1.3, 0.3))
-        y_2 = 0.10061666529975229
-        assert_almost_equal(y_2, stats.dgamma.pdf(2.7, 4.3))
-        y_3 = 0.15705884416519492
-        assert_almost_equal(y_3, stats.dgamma.pdf(0.03, 0.01))
+        rng = np.random.default_rng(3791303244302340058)
+        size = 10  # number of points to check
+        x = rng.normal(scale=10, size=size)
+        a = rng.uniform(high=10, size=size)
+        res = stats.dgamma.pdf(x, a)
+        ref = stats.gamma.pdf(np.abs(x), a) / 2
+        assert_allclose(res, ref)
 
     def test_frozen(self):
         f = stats.dgamma(1.1)
