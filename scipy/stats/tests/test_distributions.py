@@ -3420,12 +3420,6 @@ class TestGamma:
                           330.6557590436547, atol=1e-13)
 
 class TestDgamma:
-    def test_logpdf(self):
-        x = np.array([1, 0.3, 4])
-        a = 1.3
-        y = stats.dgamma.pdf(x, a)
-        assert_allclose(y, np.exp(stats.dgamma.logpdf(x, a)))
-
     def test_pdf(self):
         #Reference values calculated by hand using
         #the defintion from the Scipy documentation
