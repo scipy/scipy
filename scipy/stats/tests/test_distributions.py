@@ -3429,9 +3429,8 @@ class TestDgamma:
         ref = stats.gamma.pdf(np.abs(x), a) / 2
         assert_allclose(res, ref)
 
-    def test_frozen(self):
-        f = stats.dgamma(1.1)
-        assert_equal(f.pdf(1.3), stats.dgamma.pdf(1.3, 1.1))
+        dist = stats.dgamma(a)
+        assert_equal(dist.pdf(x), res)
 
     def test_cdf(self):
         vals = stats.dgamma.ppf([0.001, 0.5, 0.999], 1.3)
