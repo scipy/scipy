@@ -7330,6 +7330,10 @@ class powerlaw_gen(rv_continuous):
     def _entropy(self, a):
         return 1 - 1.0/a - np.log(a)
 
+    def _support_mask(self, x, a):
+        return (super(powerlaw_gen, self)._support_mask(x, a)
+                & ((x != 0) | (a >= 1)))
+
     @_call_super_mom
     @extend_notes_in_docstring(rv_continuous, notes="""\
         Notes specifically for ``powerlaw.fit``: If the location is a free
@@ -7446,6 +7450,8 @@ class powerlaw_gen(rv_continuous):
 
         def fit_loc_scale_w_shape_lt_1():
             loc = np.nextafter(data.min(), -np.inf)
+            if np.abs(loc) < np.finfo(loc.dtype).tiny:
+                loc = np.sign(loc) * np.finfo(loc.dtype).tiny
             scale = np.nextafter(get_scale(data, loc), np.inf)
             shape = fshape or get_shape(data, loc, scale)
             return shape, loc, scale
