@@ -1296,18 +1296,18 @@ cdef class Rotation:
         Rotations in 3-D can be represented by a sequence of 3
         rotations around a sequence of axes.
 
+        The three rotations can either be in a global frame of reference
+        (extrinsic) or in a body centred frame of reference (intrinsic), which
+        is attached to, and moves with, the object under rotation [1]_.
+
         For Euler angles, we have the following conditions:
 
             - ``dot(axis1, axis2) = 0``
             - ``dot(axis2, axis3) = 0``
             - ``dot(axis1, axis3) = -1``, ``0`` or ``1``
 
-        For Davenport angles, the third relation is relaxed [1]_:
+        For Davenport angles, the third relation is relaxed [2]_:
             - ``dot(axis1, axis3)`` can be any value between -1 and 1.
-
-        The three rotations can either be in a global frame of reference
-        (extrinsic) or in a body centred frame of reference (intrinsic), which
-        is attached to, and moves with, the object under rotation [1]_.
 
         Parameters
         ----------
@@ -1338,7 +1338,7 @@ cdef class Rotation:
         ----------
         .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
         .. [2] Shuster, Malcolm & Markley, Landis. (2003). Generalization of
-        the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132. 10.1007/BF03546304.
+               the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132. 10.1007/BF03546304.
 
         Examples
         --------
@@ -2044,10 +2044,10 @@ cdef class Rotation:
         References
         ----------
         .. [1] Shuster, Malcolm & Markley, Landis. (2003). Generalization of
-        the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132. 10.1007/BF03546304.
+               the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132. 10.1007/BF03546304.
         .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles
-        conversion: A direct, general and computationally efficient method.
-        PLoS ONE 17(11): e0276302. 10.1371/journal.pone.0276302
+               conversion: A direct, general and computationally efficient method.
+               PLoS ONE 17(11): e0276302. 10.1371/journal.pone.0276302
         .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
 
         Examples
