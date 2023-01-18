@@ -1172,16 +1172,16 @@ class CILocal(Task):
 
     Examples (verbose logging enabled by default):
 
-    $ python dev.py run-gh-action list
-    $ python dev.py run-gh-action run-job test_meson
-    $ python dev.py run-gh-action reuse test_meson
+    $ python dev.py ci-local list
+    $ python dev.py ci-local run-job test_meson
+    $ python dev.py ci-local reuse test_meson
     """
     ctx = CONTEXT
     args = Argument(['args'], nargs=-1, required=True, metavar='TEXT')
 
     @classmethod
     def task_meta(cls, args):
-        cmd = ['ci-local']
+        cmd = ['act']
         if len(args)==1:
             if args[0] == 'list':
                 print(args)
