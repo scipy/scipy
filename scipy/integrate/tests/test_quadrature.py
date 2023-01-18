@@ -6,8 +6,8 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
-                             quad, simpson, simps, fixed_quad, AccuracyWarning)
-from scipy.integrate._quadrature import _qmc_quad as qmc_quad
+                             quad, simpson, simps, fixed_quad, AccuracyWarning,
+                             qmc_quad)
 from scipy import stats, special as sc
 
 
@@ -348,7 +348,7 @@ class TestQMCQuad():
         cov = np.eye(ndim)
 
         def func(x):
-            return stats.multivariate_normal.pdf(x, mean, cov)
+            return stats.multivariate_normal.pdf(x.T, mean, cov)
 
         rng = np.random.default_rng(2879434385674690281)
         qrng = stats.qmc.Sobol(ndim, seed=rng)
