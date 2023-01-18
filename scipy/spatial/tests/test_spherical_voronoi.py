@@ -8,11 +8,11 @@ import pytest
 from pytest import raises as assert_raises
 from scipy.spatial import SphericalVoronoi, distance
 from scipy.optimize import linear_sum_assignment
-from scipy.constants import golden as phi
 from scipy.special import gamma
 
 
 TOL = 1E-10
+phi = (1 + np.sqrt(5)) / 2
 
 
 def _generate_tetrahedron():
@@ -29,7 +29,6 @@ def _generate_octahedron():
 
 
 def _generate_dodecahedron():
-
     x1 = _generate_cube()
     x2 = np.array([[0, -phi, -1 / phi],
                    [0, -phi, +1 / phi],

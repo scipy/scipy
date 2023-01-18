@@ -1,11 +1,13 @@
 import numpy as np
-from scipy.constants import golden as phi
+
+
+phi = (1 + np.sqrt(5)) / 2
 
 
 def icosahedral(cls):
     g1 = tetrahedral(cls).as_quat()
     a = 0.5
-    b = 0.5 / phi
+    b = 0.5 / (phi / 2)
     c = phi / 2
     g2 = np.array([[+a, +b, +c, 0],
                    [+a, +b, -c, 0],

@@ -1,4 +1,4 @@
-from scipy.constants import find, value, ConstantWarning, c, speed_of_light
+from scipy.constants import find, value, ConstantWarning
 from numpy.testing import (assert_equal, assert_, assert_almost_equal,
                            suppress_warnings)
 import scipy.constants._codata as _cd
@@ -24,14 +24,9 @@ def test_find():
                                 'natural unit of time']))
 
 
-def test_basic_table_parse():
-    c_s = 'speed of light in vacuum'
-    assert_equal(value(c_s), c)
-    assert_equal(value(c_s), speed_of_light)
-
-
 def test_basic_lookup():
-    assert_equal('%d %s' % (_cd.c, _cd.unit('speed of light in vacuum')),
+    assert_equal('%d %s' % (_cd.value('speed of light in vacuum'),
+                            _cd.unit('speed of light in vacuum')),
                  '299792458 m s^-1')
 
 
