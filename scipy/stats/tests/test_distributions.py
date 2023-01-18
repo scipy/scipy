@@ -3419,6 +3419,7 @@ class TestGamma:
         assert np.isclose(stats.gamma.isf(1e-50, 100),
                           330.6557590436547, atol=1e-13)
 
+
 class TestDgamma:
     def test_pdf(self):
         rng = np.random.default_rng(3791303244302340058)
