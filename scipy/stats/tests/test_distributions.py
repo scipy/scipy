@@ -3686,6 +3686,20 @@ class TestGamma:
                           330.6557590436547, atol=1e-13)
 
 
+class TestDgamma:
+    def test_pdf(self):
+        rng = np.random.default_rng(3791303244302340058)
+        size = 10  # number of points to check
+        x = rng.normal(scale=10, size=size)
+        a = rng.uniform(high=10, size=size)
+        res = stats.dgamma.pdf(x, a)
+        ref = stats.gamma.pdf(np.abs(x), a) / 2
+        assert_allclose(res, ref)
+
+        dist = stats.dgamma(a)
+        assert_equal(dist.pdf(x), res)
+
+
 class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
     def test_precision(self):
@@ -6800,7 +6814,7 @@ class _distr3_gen(stats.rv_continuous):
 
     def _cdf(self, x, a):
         # Different # of shape params from _pdf, to be able to check that
-        # inspection catches the inconsistency."""
+        # inspection catches the inconsistency.
         return 42 * a + x
 
 
