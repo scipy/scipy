@@ -156,7 +156,7 @@ stages:
         # so does not appear to be needed to fetch maintenance
         # branches (which Azure logs show being checked out
         # in Checkout stage)
-        python tools/lint_diff.py --branch origin/$(System.PullRequest.TargetBranch)
+        python tools/lint.py --diff-against origin/$(System.PullRequest.TargetBranch)
         tools/unicode-check.py
         tools/check_test_name.py
       displayName: 'Run Lint Checks'
