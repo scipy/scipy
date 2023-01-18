@@ -1124,7 +1124,7 @@ QMCQuadResult = namedtuple('QMCQuadResult', ['integral', 'standard_error'])
 
 
 def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
-             log=False, args=None):
+             log=False):
     """
     Compute an integral in N-dimensions using Quasi-Monte Carlo quadrature.
 
