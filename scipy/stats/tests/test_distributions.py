@@ -462,6 +462,7 @@ class TestChi:
     def test_entropy(self, df, ref):
         assert_allclose(stats.chi(df).entropy(), ref)
 
+
 class TestNBinom:
     def setup_method(self):
         np.random.seed(1234)
@@ -3591,6 +3592,7 @@ class TestBeta:
                               (100000, 100000, -5.377247470132859)])
     def test_entropy(self, a, b, ref):
         assert_allclose(stats.beta(a, b).entropy(), ref)
+
 
 class TestBetaPrime:
     def test_logpdf(self):
