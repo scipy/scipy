@@ -1511,6 +1511,9 @@ cosine = cosine_gen(a=-np.pi, b=np.pi, name='cosine')
 class dgamma_gen(rv_continuous):
     r"""A double gamma continuous random variable.
 
+    The double gamma distribution is also known as the reflected gamma
+    distribution [1]_.
+
     %(before_notes)s
 
     Notes
@@ -1527,6 +1530,12 @@ class dgamma_gen(rv_continuous):
     `dgamma` takes ``a`` as a shape parameter for :math:`a`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson, Kotz, and Balakrishnan, "Continuous Univariate
+           Distributions, Volume 1", Second Edition, John Wiley and Sons
+           (1994).
 
     %(example)s
 
