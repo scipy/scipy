@@ -2658,6 +2658,14 @@ class TestPowerlaw:
         with assert_raises(ValueError, match=msg):
             stats.powerlaw.fit([1, 2, 4], fscale=3)
 
+    def test_minimum_data_zero_gh17801(self):
+        # gh-17801 reported an overflow error when the minimum value of the
+        # data is zero. Check that this problem is resolved.
+        data = [0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 5, 6]
+        dist = stats.powerlaw
+        with np.errstate(over='ignore'):
+            _assert_less_or_close_loglike(dist, data, dist.nnlf)
+
 
 class TestInvGamma:
     def test_invgamma_inf_gh_1866(self):
