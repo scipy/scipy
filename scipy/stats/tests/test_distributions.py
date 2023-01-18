@@ -3715,11 +3715,15 @@ class TestDgamma:
                               (-40, 1, 2.1241771276457944e-18),
                               (-50, 5, 2.7248509914602648e-17),
                               (-25, 0.125, 5.333071920958156e-14)])
-    def test_cdf_sf_tail(self, x, a, expected):
+    def test_cdf_ppf_sf_isf_tail(self, x, a, expected):
         cdf = stats.dgamma.cdf(x, a)
         assert_allclose(cdf, expected, rtol=5e-15)
+        ppf = stats.dgamma.ppf(expected, a)
+        assert_allclose(ppf, x, rtol=5e-15)
         sf = stats.dgamma.sf(-x, a)
         assert_allclose(sf, expected, rtol=5e-15)
+        isf = stats.dgamma.isf(expected, a)
+        assert_allclose(isf, -x, rtol=5e-15)
 
 
 class TestChi2:

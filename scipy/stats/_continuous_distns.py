@@ -1559,8 +1559,14 @@ class dgamma_gen(rv_continuous):
                         0.5 + 0.5*sc.gammainc(a, -x))
 
     def _ppf(self, q, a):
-        fac = sc.gammainccinv(a, 1-abs(2*q-1))
-        return np.where(q > 0.5, fac, -fac)
+        return np.where(q > 0.5,
+                        sc.gammaincinv(a, 2*q - 1),
+                        -sc.gammainccinv(a, 2*q))
+
+    def _isf(self, q, a):
+        return np.where(q > 0.5,
+                        -sc.gammaincinv(a, 2*q - 1),
+                        sc.gammainccinv(a, 2*q))
 
     def _stats(self, a):
         mu2 = a*(a+1.0)
