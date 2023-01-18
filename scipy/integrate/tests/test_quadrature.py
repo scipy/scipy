@@ -348,7 +348,7 @@ class TestQMCQuad():
         cov = np.eye(ndim)
 
         def func(x):
-            return stats.multivariate_normal.pdf(x, mean, cov)
+            return stats.multivariate_normal.pdf(x.T, mean, cov)
 
         rng = np.random.default_rng(2879434385674690281)
         qrng = stats.qmc.Sobol(ndim, seed=rng)
