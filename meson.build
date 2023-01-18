@@ -112,7 +112,8 @@ if not cc.links('', name: '-Wl,--version-script', args: ['-shared', version_link
   version_link_args = []
 endif
 
-cython = meson.get_compiler('cython')
+# generator() doesn't accept compilers, only found programs. Cast it.
+cython = find_program(meson.get_compiler('cython').cmd_array()[0])
 generate_f2pymod = files('tools/generate_f2pymod.py')
 tempita = files('scipy/_build_utils/tempita.py')
 
