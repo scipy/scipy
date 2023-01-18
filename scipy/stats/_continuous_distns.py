@@ -1549,12 +1549,14 @@ class dgamma_gen(rv_continuous):
         return sc.xlogy(a - 1.0, ax) - ax - np.log(2) - sc.gammaln(a)
 
     def _cdf(self, x, a):
-        fac = 0.5*sc.gammainc(a, abs(x))
-        return np.where(x > 0, 0.5 + fac, 0.5 - fac)
+        return np.where(x > 0,
+                        0.5 + 0.5*sc.gammainc(a, x),
+                        0.5*sc.gammaincc(a, -x))
 
     def _sf(self, x, a):
-        fac = 0.5*sc.gammainc(a, abs(x))
-        return np.where(x > 0, 0.5-fac, 0.5+fac)
+        return np.where(x > 0,
+                        0.5*sc.gammaincc(a, x),
+                        0.5 + 0.5*sc.gammainc(a, -x))
 
     def _ppf(self, q, a):
         fac = sc.gammainccinv(a, 1-abs(2*q-1))
