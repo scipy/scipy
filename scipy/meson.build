@@ -200,15 +200,16 @@ _cython_tree = [
   fs.copyfile('special.pxd'),
 ]
 
-cython_cli = find_program('_build_utils/cythoner.py')
+cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
+cython_cplus_args = ['--cplus'] + cython_args
 
-cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : _cython_tree)
 
-cython_gen_cpp = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@', '--cplus'],
+cython_gen_cpp = generator(cython,
+  arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
   depends : [_cython_tree])
 
