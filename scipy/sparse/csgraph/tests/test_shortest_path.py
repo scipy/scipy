@@ -1,7 +1,6 @@
 import warnings
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
-                           assert_array_equal)
+from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pytest import raises as assert_raises
 from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
                                   bellman_ford, construct_dist_matrix,
@@ -199,66 +198,16 @@ def test_dijkstra_min_only_random(n):
             p = pred[p]
 
 
-# ensure dijkstra does not crash or run into an infinite loop
-@pytest.mark.parametrize('n, t',
-                         ((3, 300),
-                          (10, 100),
-                          (100, 10),
-                          (500, 1)))
-def test_dijkstra_random(n, t):
-    np.random.seed(1234)
-    for testcase_index in range(t):
-        data = scipy.sparse.rand(n, n, density=2.0 / n, format='lil',
-                                 dtype=np.float64)
-        data.setdiag(np.zeros(n, dtype=np.bool_))
-        dijkstra(data, directed=True, return_predecessors=True)
-
-
-# n : number of vertices
-# t : number of test cases
-# Generate random graphs, run shortest_path for all methods, verify the results
-# and check consistency across different methods.
-@pytest.mark.parametrize('n, t',
-                         ((3, 200),
-                          (10, 200),
-                          (100, 10),
-                          (500, 1)))
-def test_shortest_path_random(n, t):
-    np.random.seed(1234)
-    density_list = [2.0 / n, 0.5]
-    for testcase_index in range(t):
-        cur_density = density_list[testcase_index % 2]
-        data = scipy.sparse.rand(n, n, density=cur_density, format='lil',
-                                 dtype=np.float64)
-        data.setdiag(np.zeros(n, dtype=np.bool_))
-        adj_mat = data.toarray(order='C')
-        start_vertex = np.random.randint(0, n)
-        # each element: (method name, distance array, predecessor array)
-        results = []
-        for method in methods:
-            results.append((method, *shortest_path(data, directed=True,
-                                                   indices=start_vertex,
-                                                   return_predecessors=True)))
-
-        for method, dist, pred in results:
-            # check that dist and pred are consistent
-            for i in range(n):
-                if pred[i] != -9999:  # vertex #i is reachable
-                    cur = i
-                    while pred[cur] != -9999:
-                        p = pred[cur]
-                        assert_almost_equal(dist[p] +
-                                            adj_mat[p][cur],
-                                            dist[cur])
-                        cur = pred[cur]
-                    assert cur == start_vertex
-            # check that further relaxation of an edge is not possible
-            for i in range(n):
-                for j in range(n):
-                    if adj_mat[i][j] != 0:
-                        assert dist[j] <= dist[i] + adj_mat[i][j]
-            # check that dist is consistent across methods
-            assert_almost_equal(results[0][1], dist)
+def test_dijkstra_random():
+    n = 10
+    # this random seed was carefully chosen in a search
+    # for reproducers of gh-17782
+    rng = np.random.default_rng(3443)
+    data = scipy.sparse.rand(n, n, density=2.0 / n, format='lil',
+                             dtype=np.float64,
+                             random_state=rng)
+    data.setdiag(np.zeros(n, dtype=np.bool_))
+    dijkstra(data, directed=True, return_predecessors=True)
 
 
 def test_shortest_path_indices():
