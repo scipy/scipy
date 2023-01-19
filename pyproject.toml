@@ -122,6 +122,7 @@ dev = [
     "typing_extensions",
     "pycodestyle",
     "flake8",
+    "flake8-force",
     "rich-click",
     "click",
     "doit>=0.36.0",

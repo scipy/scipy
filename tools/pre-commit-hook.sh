@@ -7,7 +7,7 @@
 #   ln -s tools/pre-commit-hook.sh .git/hooks/pre-commit
 
 # store names of files that were staged
-mapfile -d '' changed < <(git diff --cached --name-only -z --diff-filter=ACMR -- '*.py')
+mapfile -d '' changed < <(git diff --cached --name-only -z --diff-filter=ACMR -- '*.py' '*.pyx' '*.pxd' '*.pxi')
 
 # create a temporary copy of what would get committed, without unstaged modifications
 # (e.g., only certain changes in a file may have been committed)
