@@ -14,7 +14,7 @@ from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom
-from . import _mvn, _covariance, contingency
+from . import _mvn, _covariance, _rcont
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -945,6 +945,8 @@ class matrix_normal_gen(multi_rv_generic):
         Log of the probability density function.
     rvs(mean=None, rowcov=1, colcov=1, size=1, random_state=None)
         Draw random samples.
+    entropy(rowcol=1, colcov=1)
+        Differential entropy.
 
     Parameters
     ----------
@@ -1248,6 +1250,40 @@ class matrix_normal_gen(multi_rv_generic):
             out = out.reshape(mean.shape)
         return out
 
+    def entropy(self, rowcov=1, colcov=1):
+        """Log of the matrix normal probability density function.
+
+        Parameters
+        ----------
+        rowcov : array_like, optional
+            Among-row covariance matrix of the distribution (default: `1`)
+        colcov : array_like, optional
+            Among-column covariance matrix of the distribution (default: `1`)
+
+        Returns
+        -------
+        entropy : float
+            Entropy of the distribution
+
+        Notes
+        -----
+        %(_matnorm_doc_callparams_note)s
+
+        """
+        dummy_mean = np.zeros((rowcov.shape[0], colcov.shape[0]))
+        dims, _, rowcov, colcov = self._process_parameters(dummy_mean,
+                                                           rowcov,
+                                                           colcov)
+        rowpsd = _PSD(rowcov, allow_singular=False)
+        colpsd = _PSD(colcov, allow_singular=False)
+
+        return self._entropy(dims, rowpsd.log_pdet, colpsd.log_pdet)
+
+    def _entropy(self, dims, row_cov_logdet, col_cov_logdet):
+        n, p = dims
+        return (0.5 * n * p * (1 + _LOG_2PI) + 0.5 * p * row_cov_logdet +
+                0.5 * n * col_cov_logdet)
+
 
 matrix_normal = matrix_normal_gen()
 
@@ -1304,10 +1340,14 @@ class matrix_normal_frozen(multi_rv_frozen):
         return self._dist.rvs(self.mean, self.rowcov, self.colcov, size,
                               random_state)
 
+    def entropy(self):
+        return self._dist._entropy(self.dims, self.rowpsd.log_pdet,
+                                   self.colpsd.log_pdet)
+
 
 # Set frozen generator docstrings from corresponding docstrings in
 # matrix_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'rvs']:
+for name in ['logpdf', 'pdf', 'rvs', 'entropy']:
     method = matrix_normal_gen.__dict__[name]
     method_frozen = matrix_normal_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(method.__doc__,
@@ -2496,6 +2536,8 @@ class invwishart_gen(wishart_gen):
         Log of the probability density function.
     rvs(df, scale, size=1, random_state=None)
         Draw random samples from an inverse Wishart distribution.
+    entropy(df, scale)
+        Differential entropy of the distribution.
 
     Parameters
     ----------
@@ -2556,6 +2598,9 @@ class invwishart_gen(wishart_gen):
     .. [2] M.C. Jones, "Generating Inverse Wishart Matrices", Communications
            in Statistics - Simulation and Computation, vol. 14.2, pp.511-514,
            1985.
+    .. [3] Gupta, M. and Srivastava, S. "Parametric Bayesian Estimation of
+           Differential Entropy and Relative Entropy". Entropy 12, 818 - 843.
+           2010.
 
     Examples
     --------
@@ -2892,9 +2937,19 @@ class invwishart_gen(wishart_gen):
 
         return _squeeze_output(out)
 
-    def entropy(self):
-        # Need to find reference for inverse Wishart entropy
-        raise AttributeError
+    def _entropy(self, dim, df, log_det_scale):
+        # reference: eq. (17) from ref. 3
+        psi_eval_points = [0.5 * (df - dim + i) for i in range(1, dim + 1)]
+        psi_eval_points = np.asarray(psi_eval_points)
+        return multigammaln(0.5 * df, dim) + 0.5 * dim * df + \
+            0.5 * (dim + 1) * (log_det_scale - _LOG_2) - \
+            0.5 * (df + dim + 1) * \
+            psi(psi_eval_points, out=psi_eval_points).sum()
+
+    def entropy(self, df, scale):
+        dim, df, scale = self._process_parameters(df, scale)
+        _, log_det_scale = self._cholesky_logdet(scale)
+        return self._entropy(dim, df, log_det_scale)
 
 
 invwishart = invwishart_gen()
@@ -2964,8 +3019,7 @@ class invwishart_frozen(multi_rv_frozen):
         return _squeeze_output(out)
 
     def entropy(self):
-        # Need to find reference for inverse Wishart entropy
-        raise AttributeError
+        return self._dist._entropy(self.dim, self.df, self.log_det_scale)
 
 
 # Set frozen generator docstrings from corresponding docstrings in
@@ -5359,8 +5413,8 @@ class random_table_gen(multi_rv_generic):
         not contain negative or non-integer entries, and that the sums over
         both vectors are equal.
         """
-        r = np.array(row, dtype=np.int_, copy=True)
-        c = np.array(col, dtype=np.int_, copy=True)
+        r = np.array(row, dtype=np.int64, copy=True)
+        c = np.array(col, dtype=np.int64, copy=True)
 
         if np.ndim(r) != 1:
             raise ValueError("`row` must be one-dimensional")
@@ -5414,34 +5468,20 @@ class random_table_gen(multi_rv_generic):
 
     @classmethod
     def _rvs_select(cls, r, c, n):
-        # TODO find optimal empirical threshold with benchmarks,
-        # for now we always return "boyett", because "patefield"
-        # is not yet implemented.
-
-        # Example:
-        # k = len(r) * len(c)  # number of cells
-        # if n > fac * np.log(n) * k:
-        #     return cls._rvs_patefield
-        # return cls._rvs_boyett
-        # 'fac' has to be estimated empirically
+        fac = 1.0  # benchmarks show that this value is about 1
+        k = len(r) * len(c)  # number of cells
+        # n + 1 guards against failure if n == 0
+        if n > fac * np.log(n + 1) * k:
+            return cls._rvs_patefield
         return cls._rvs_boyett
 
     @staticmethod
-    def _rvs_boyett(row, col, tot, size, random_state):
-        x = np.repeat(np.arange(len(row)), row)
-        y = np.repeat(np.arange(len(col)), col)
-
-        def crosstab(x, y):
-            return contingency.crosstab(x, y).count
-
-        tables = [crosstab(x, random_state.permutation(y))
-                  for i in range(size)]
-        return np.asarray(tables)
+    def _rvs_boyett(row, col, ntot, size, random_state):
+        return _rcont.rvs_rcont1(row, col, ntot, size, random_state)
 
     @staticmethod
-    def _rvs_patefield(row, col, tot, size, random_state):
-        # TODO call into C code
-        raise NotImplementedError
+    def _rvs_patefield(row, col, ntot, size, random_state):
+        return _rcont.rvs_rcont2(row, col, ntot, size, random_state)
 
 
 random_table = random_table_gen()

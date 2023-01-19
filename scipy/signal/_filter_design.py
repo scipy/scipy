@@ -2340,7 +2340,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
                              " (fs={} -> fs/2={})".format(fs, fs/2))
 
     if wp.shape[0] == 2:
-        if not((ws[0] < wp[0] and wp[1] < ws[1]) or
+        if not ((ws[0] < wp[0] and wp[1] < ws[1]) or
                (wp[0] < ws[0] and ws[1] < wp[1])):
             raise ValueError("Passband must lie strictly inside stopband"
                              " or vice versa")

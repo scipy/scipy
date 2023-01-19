@@ -1,6 +1,6 @@
 build_and_store_wheels: &BUILD_AND_STORE_WHEELS
   install_cibuildwheel_script:
-    - python -m pip install cibuildwheel==2.10.1
+    - python -m pip install cibuildwheel==2.11.3
   cibuildwheel_script:
     - cibuildwheel
   wheels_artifacts:
@@ -45,6 +45,9 @@ cirrus_wheels_macos_arm64_task:
     image: ghcr.io/cirruslabs/macos-monterey-xcode:13.3.1
   matrix:
     - env:
+        CIBW_BUILD: cp38-*
+        CIBW_BEFORE_ALL: bash tools/wheels/cibw_before_all_cp38_macosx_arm64.sh
+    - env:
         CIBW_BUILD: cp39-*
     - env:
         CIBW_BUILD: cp310-* cp311-*
@@ -58,6 +61,7 @@ cirrus_wheels_macos_arm64_task:
     CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
       DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib delocate-listdeps {wheel} &&
       DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}
+
   install_pre_requirements_script:
     - brew install python@3.10
     - ln -s python3 /opt/homebrew/opt/python@3.10/bin/python

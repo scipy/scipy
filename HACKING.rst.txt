@@ -222,7 +222,8 @@ Triaging issues (investigating bug reports for validity and possible actions to
 take) is also a useful activity.  SciPy has many hundreds of open issues;
 closing invalid ones and correctly labelling valid ones (ideally with some first
 thoughts in a comment) allows prioritizing maintenance work and finding related
-issues easily when working on an existing function or subpackage.
+issues easily when working on an existing function or subpackage. To read more
+about issue triage, see :ref:`triaging`.
 
 Participating in discussions on the scipy-user and scipy-dev `mailing lists`_ is
 a contribution in itself.  Everyone who writes to those lists with a problem or

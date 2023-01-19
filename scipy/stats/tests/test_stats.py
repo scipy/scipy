@@ -477,6 +477,13 @@ class TestCorrPearsonr:
         y = [2]
         assert_raises(ValueError, stats.pearsonr, x, y)
 
+    def test_complex_data(self):
+        x = [-1j, -2j, -3.0j]
+        y = [-1j, -2j, -3.0j]
+        message = 'This function does not support complex data'
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr(x, y)
+
 
 class TestFisherExact:
     """Some tests to show that fisher_exact() works correctly.
@@ -2190,8 +2197,8 @@ class TestMode:
     def test_basic(self):
         data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
         vals = stats.mode(data1)
-        assert_equal(vals[0][0], 6)
-        assert_equal(vals[1][0], 3)
+        assert_equal(vals[0], 6)
+        assert_equal(vals[1], 3)
 
     def test_axes(self):
         data1 = [10, 10, 30, 40]
@@ -2201,15 +2208,15 @@ class TestMode:
         data5 = [40, 30, 30, 30]
         arr = np.array([data1, data2, data3, data4, data5])
 
-        vals = stats.mode(arr, axis=None)
-        assert_equal(vals[0], np.array([30]))
-        assert_equal(vals[1], np.array([8]))
+        vals = stats.mode(arr, axis=None, keepdims=True)
+        assert_equal(vals[0], np.array([[30]]))
+        assert_equal(vals[1], np.array([[8]]))
 
-        vals = stats.mode(arr, axis=0)
+        vals = stats.mode(arr, axis=0, keepdims=True)
         assert_equal(vals[0], np.array([[10, 10, 30, 30]]))
         assert_equal(vals[1], np.array([[2, 3, 3, 2]]))
 
-        vals = stats.mode(arr, axis=1)
+        vals = stats.mode(arr, axis=1, keepdims=True)
         assert_equal(vals[0], np.array([[10], [10], [20], [30], [30]]))
         assert_equal(vals[1], np.array([[2], [4], [3], [4], [3]]))
 
@@ -2220,52 +2227,6 @@ class TestMode:
         res0 = stats.mode(a, axis=a.ndim+axis)
         res1 = stats.mode(a, axis=axis)
         np.testing.assert_array_equal(res0, res1)
-
-    def test_strings(self):
-        data1 = ['rain', 'showers', 'showers']
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            vals = stats.mode(data1)
-        assert_equal(vals[0][0], 'showers')
-        assert_equal(vals[1][0], 2)
-
-    def test_mixed_objects(self):
-        objects = [10, True, np.nan, 'hello', 10]
-        arr = np.empty((5,), dtype=object)
-        arr[:] = objects
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            vals = stats.mode(arr)
-        assert_equal(vals[0][0], 10)
-        assert_equal(vals[1][0], 2)
-
-    def test_objects(self):
-        # Python objects must be sortable (le + eq) and have ne defined
-        # for np.unique to work. hash is for set.
-        class Point:
-            def __init__(self, x):
-                self.x = x
-
-            def __eq__(self, other):
-                return self.x == other.x
-
-            def __ne__(self, other):
-                return self.x != other.x
-
-            def __lt__(self, other):
-                return self.x < other.x
-
-            def __hash__(self):
-                return hash(self.x)
-
-        points = [Point(x) for x in [1, 2, 3, 4, 3, 2, 2, 2]]
-        arr = np.empty((8,), dtype=object)
-        arr[:] = points
-        assert_(len(set(points)) == 4)
-        assert_equal(np.unique(arr).shape, (4,))
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            vals = stats.mode(arr)
-
-        assert_equal(vals[0][0], Point(2))
-        assert_equal(vals[1][0], 4)
 
     def test_mode_result_attributes(self):
         data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
@@ -2292,29 +2253,16 @@ class TestMode:
         [3, 5, 1],
         [3, np.nan, 5, 1],
     ])
-    def test_smallest_equal(self, data):
-        result = stats.mode(data, nan_policy='omit')
-        assert_equal(result[0][0], 1)
-
-    def test_obj_arrays_ndim(self):
-        # regression test for gh-9645: `mode` fails for object arrays w/ndim > 1
-        data = [['Oxidation'], ['Oxidation'], ['Polymerization'], ['Reduction']]
-        ar = np.array(data, dtype=object)
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            m = stats.mode(ar, axis=0)
-        assert np.all(m.mode == 'Oxidation') and m.mode.shape == (1, 1)
-        assert np.all(m.count == 2) and m.count.shape == (1, 1)
-
-        data1 = data + [[np.nan]]
-        ar1 = np.array(data1, dtype=object)
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            m = stats.mode(ar1, axis=0)
-        assert np.all(m.mode == 'Oxidation') and m.mode.shape == (1, 1)
-        assert np.all(m.count == 2) and m.count.shape == (1, 1)
+    @pytest.mark.parametrize('keepdims', [False, True])
+    def test_smallest_equal(self, data, keepdims):
+        result = stats.mode(data, nan_policy='omit', keepdims=keepdims)
+        if keepdims:
+            assert_equal(result[0][0], 1)
+        else:
+            assert_equal(result[0], 1)
 
     @pytest.mark.parametrize('axis', np.arange(-3, 3))
-    @pytest.mark.parametrize('dtype', [np.float64, 'object'])
-    def test_mode_shape_gh_9955(self, axis, dtype):
+    def test_mode_shape_gh_9955(self, axis, dtype=np.float64):
         rng = np.random.default_rng(984213899)
         a = rng.uniform(size=(3, 4, 5)).astype(dtype)
         if dtype == 'object':
@@ -2333,19 +2281,7 @@ class TestMode:
         a = [2, np.nan, 1, np.nan]
         if NumpyVersion(np.__version__) >= '1.21.0':
             res = stats.mode(a)
-            assert np.isnan(res.mode[0]) and res.count[0] == 2
-
-        # mode should work on object arrays. There were issues when
-        # objects do not support comparison operations.
-        a = np.array(a, dtype='object')
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            res = stats.mode(a)
-        assert np.isnan(res.mode[0]) and res.count[0] == 2
-
-        a = np.array([10, True, 'hello', 10], dtype='object')
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            res = stats.mode(a)
-        assert_array_equal(res, [[10], [2]])
+            assert np.isnan(res.mode) and res.count == 2
 
     def test_keepdims(self):
         # test empty arrays (handled by `np.mean`)
@@ -2376,8 +2312,10 @@ class TestMode:
 
         res = stats.mode(a, axis=None, keepdims=True)
         ref = stats.mode(a.ravel(), keepdims=True)
-        assert_array_equal(res, ref)
-        assert res.mode.shape == ref.mode.shape == (1,)
+        assert_equal(res.mode.ravel(), ref.mode.ravel())
+        assert res.mode.shape == (1, 1)
+        assert_equal(res.count.ravel(), ref.count.ravel())
+        assert res.count.shape == (1, 1)
 
         # test nan_policy='omit'
         a = [[1, np.nan, np.nan, np.nan, 1],
@@ -2400,8 +2338,10 @@ class TestMode:
 
         res = stats.mode(a, axis=None, keepdims=True, nan_policy='omit')
         ref = stats.mode(a.ravel(), keepdims=True, nan_policy='omit')
-        assert_array_equal(res, ref)
-        assert res.mode.shape == ref.mode.shape == (1,)
+        assert_equal(res.mode.ravel(), ref.mode.ravel())
+        assert res.mode.shape == (1, 1)
+        assert_equal(res.count.ravel(), ref.count.ravel())
+        assert res.count.shape == (1, 1)
 
     def test_gh16952(self):
         # Check that bug reported in gh-16952 is resolved
@@ -2412,21 +2352,38 @@ class TestMode:
         assert_array_equal(res.mode, [1, 1, 1, 1])
         assert_array_equal(res.count, [2, 3, 3, 3])
 
+    def test_gh9955(self):
+        # The behavior of mode with empty slices (whether the input was empty
+        # or all elements were omitted) was inconsistent. Test that this is
+        # resolved: the mode of an empty slice is NaN and the count is zero.
+        res = stats.mode([])
+        ref = (np.nan, 0)
+        assert_equal(res, ref)
 
-def test_mode_futurewarning():
-    a = [1, 2, 5, 3, 5]
+        res = stats.mode([np.nan], nan_policy='omit')
+        assert_equal(res, ref)
 
-    future_msg = "Unlike other reduction functions..."
-    with pytest.warns(FutureWarning, match=future_msg):
-        res = stats.mode(a)
-    assert_array_equal(res, ([5], [2]))
+        a = [[10., 20., 20.], [np.nan, np.nan, np.nan]]
+        res = stats.mode(a, axis=1, nan_policy='omit')
+        ref = ([20, np.nan], [2, 0])
+        assert_equal(res, ref)
 
-    # no FutureWarning if `keepdims` is specified
-    res = stats.mode(a, keepdims=True)
-    assert_array_equal(res, ([5], [2]))
+        if NumpyVersion(np.__version__) >= '1.21.0':
+            res = stats.mode(a, axis=1, nan_policy='propagate')
+            ref = ([20, np.nan], [2, 3])
+            assert_equal(res, ref)
 
-    res = stats.mode(a, keepdims=False)
-    assert_array_equal(res, [5, 2])
+        z = np.array([[], []])
+        res = stats.mode(z, axis=1)
+        ref = ([np.nan, np.nan], [0, 0])
+        assert_equal(res, ref)
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # np.mean warns
+    @pytest.mark.parametrize('z', [np.empty((0, 1, 2)), np.empty((1, 1, 2))])
+    def test_gh17214(self, z):
+        res = stats.mode(z, axis=None, keepdims=True)
+        ref = np.mean(z, axis=None, keepdims=True)
+        assert res[0].shape == res[1].shape == ref.shape == (1, 1, 1)
 
 
 class TestSEM:
@@ -4693,9 +4650,9 @@ class Test_ttest_ind_permutations():
         res1 = stats.ttest_ind(a, b, permutations=1000)
         res2 = stats.ttest_ind(a, b, permutations=0)
         res3 = stats.ttest_ind(a, b, permutations=np.inf)
-        assert(res1.pvalue != res0.pvalue)
-        assert(res2.pvalue == res0.pvalue)
-        assert(res3.pvalue == res1.pvalue)
+        assert res1.pvalue != res0.pvalue
+        assert res2.pvalue == res0.pvalue
+        assert res3.pvalue == res1.pvalue
 
     def test_ttest_ind_exact_distribution(self):
         # the exact distribution of the test statistic should have
@@ -4812,8 +4769,8 @@ class Test_ttest_ind_permutations():
 
             # Propagate 1d
             res = stats.ttest_ind(a.ravel(), b.ravel(), **options_p)
-            assert(np.isnan(res.pvalue))  # assert makes sure it's a scalar
-            assert(np.isnan(res.statistic))
+            assert np.isnan(res.pvalue)  # assert makes sure it's a scalar
+            assert np.isnan(res.statistic)
 
     def test_ttest_ind_permutation_check_inputs(self):
         with assert_raises(ValueError, match="Permutations must be"):

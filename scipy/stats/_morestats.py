@@ -24,6 +24,7 @@ from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
 from .._lib.deprecation import _deprecated
+from ._resampling import permutation_test
 
 
 __all__ = ['mvsdist',
@@ -1084,10 +1085,11 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     >>> plt.show()
 
     """
+    x = np.asarray(x)
+
     if lmbda is not None:  # single transformation
         return special.boxcox(x, lmbda)
 
-    x = np.asarray(x)
     if x.ndim != 1:
         raise ValueError("Data must be 1-dimensional.")
 
@@ -1739,7 +1741,7 @@ ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 
 def shapiro(x):
-    """Perform the Shapiro-Wilk test for normality.
+    r"""Perform the Shapiro-Wilk test for normality.
 
     The Shapiro-Wilk test tests the null hypothesis that the
     data was drawn from a normal distribution.
@@ -1764,11 +1766,8 @@ def shapiro(x):
     Notes
     -----
     The algorithm used is described in [4]_ but censoring parameters as
-    described are not implemented. For N > 5000 the W test statistic is accurate
-    but the p-value may not be.
-
-    The chance of rejecting the null hypothesis when it is true is close to 5%
-    regardless of sample size.
+    described are not implemented. For N > 5000 the W test statistic is
+    accurate, but the p-value may not be.
 
     References
     ----------
@@ -1779,20 +1778,89 @@ def shapiro(x):
            Kolmogorov-Smirnov, Lilliefors and Anderson-Darling tests, Journal of
            Statistical Modeling and Analytics, Vol. 2, pp. 21-33.
     .. [4] ALGORITHM AS R94 APPL. STATIST. (1995) VOL. 44, NO. 4.
+    .. [5] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+           Zero: Calculating Exact P-values When Permutations Are Randomly
+           Drawn." Statistical Applications in Genetics and Molecular Biology
+           9.1 (2010).
+    .. [6] Panagiotakos, D. B. (2008). The value of p-value in biomedical
+           research. The open cardiovascular medicine journal, 2, 97.
 
     Examples
     --------
+    Suppose we wish to infer from measurements whether the weights of adult
+    human males in a medical study are not normally distributed [2]_.
+    The weights (lbs) are recorded in the array ``x`` below.
+
     >>> import numpy as np
+    >>> x = np.array([148, 154, 158, 160, 161, 162, 166, 170, 182, 195, 236])
+
+    The normality test of [1]_ and [2]_ begins by computing a statistic based
+    on the relationship between the observations and the expected order
+    statistics of a normal distribution.
+
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
-    >>> x = stats.norm.rvs(loc=5, scale=3, size=100, random_state=rng)
-    >>> shapiro_test = stats.shapiro(x)
-    >>> shapiro_test
-    ShapiroResult(statistic=0.9813305735588074, pvalue=0.16855233907699585)
-    >>> shapiro_test.statistic
-    0.9813305735588074
-    >>> shapiro_test.pvalue
-    0.16855233907699585
+    >>> res = stats.shapiro(x)
+    >>> res.statistic
+    0.7888147830963135
+
+    The value of this statistic tends to be high (close to 1) for samples drawn
+    from a normal distribution.
+
+    The test is performed by comparing the observed value of the statistic
+    against the null distribution: the distribution of statistic values formed
+    under the null hypothesis that the weights were drawn from a normal
+    distribution. For this normality test, the null distribution is not easy to
+    calculate exactly, so it is usually approximated by Monte Carlo methods,
+    that is, drawing many samples of the same size as ``x`` from a normal
+    distribution and computing the values of the statistic for each.
+
+    >>> def statistic(x):
+    ...     # Get only the `shapiro` statistic; ignore its p-value
+    ...     return stats.shapiro(x).statistic
+    >>> ref = stats.monte_carlo_test(x, stats.norm.rvs, statistic,
+    ...                              alternative='less')
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> bins = np.linspace(0.65, 1, 50)
+    >>> def plot(ax):  # we'll re-use this
+    ...     ax.hist(ref.null_distribution, density=True, bins=bins)
+    ...     ax.set_title("Shapiro-Wilk Test Null Distribution \n"
+    ...                  "(Monte Carlo Approximation, 11 Observations)")
+    ...     ax.set_xlabel("statistic")
+    ...     ax.set_ylabel("probability density")
+    >>> plot(ax)
+    >>> plt.show()
+
+    The comparison is quantified by the p-value: the proportion of values in
+    the null distribution less than or equal to the observed value of the
+    statistic.
+
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> plot(ax)
+    >>> annotation = (f'p-value={res.pvalue:.6f}\n(highlighted area)')
+    >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
+    >>> _ = ax.annotate(annotation, (0.75, 0.1), (0.68, 0.7), arrowprops=props)
+    >>> i_extreme = np.where(bins <= res.statistic)[0]
+    >>> for i in i_extreme:
+    ...     ax.patches[i].set_color('C1')
+    >>> plt.xlim(0.65, 0.9)
+    >>> plt.ylim(0, 4)
+    >>> plt.show
+    >>> res.pvalue
+    0.006703833118081093
+
+    If the p-value is "small" - that is, if there is a low probability of
+    sampling data from a normally distributed population that produces such an
+    extreme value of the statistic - this may be taken as evidence against
+    the null hypothesis in favor of the alternative: the weights were not
+    drawn from a normal distribution. Note that:
+
+    - The inverse is not true; that is, the test is not used to provide
+      evidence *for* the null hypothesis.
+    - The threshold for values that will be considered "small" is a choice that
+      should be made before the data is analyzed [5]_ with consideration of the
+      risks of both false positives (incorrectly rejecting the null hypothesis)
+      and false negatives (failure to reject a false null hypothesis).
 
     """
     x = np.ravel(x)
@@ -1910,7 +1978,7 @@ def anderson(x, dist='norm'):
     .. [6] Stephens, M. A. (1979). Tests of Fit for the Logistic Distribution
            Based on the Empirical Distribution Function, Biometrika, Vol. 66,
            pp. 591-595.
-           
+
     Examples
     --------
     Test the null hypothesis that a random sample was drawn from a normal
@@ -2089,7 +2157,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 )
 
 
-def anderson_ksamp(samples, midrank=True):
+def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2107,6 +2175,20 @@ def anderson_ksamp(samples, midrank=True):
         (True) is the midrank test applicable to continuous and
         discrete populations. If False, the right side empirical
         distribution is used.
+    n_resamples : int, default: 0
+        If positive, perform a permutation test to determine the p-value
+        rather than interpolating between tabulated values. Typically 9999 is
+        sufficient for at least two digits of accuracy.
+    random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+
+        Pseudorandom number generator state used to generate resamples.
+
+        If `random_state` is ``None`` (or `np.random`), the
+        `numpy.random.RandomState` singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance then that instance is used.
 
     Returns
     -------
@@ -2119,8 +2201,8 @@ def anderson_ksamp(samples, midrank=True):
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
         pvalue : float
-            The approximate p-value of the test. The value is floored / capped
-            at 0.1% / 25%.
+            The approximate p-value of the test. If `n_resamples` is not
+            provided, the value is floored / capped at 0.1% / 25%.
 
     Raises
     ------
@@ -2178,8 +2260,9 @@ def anderson_ksamp(samples, midrank=True):
     not at the 2.5% level. The interpolation gives an approximate
     p-value of 4.99%.
 
-    >>> res = stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(size=30), rng.normal(size=20)])
+    >>> samples = [rng.normal(size=50), rng.normal(size=30),
+    ...            rng.normal(size=20)]
+    >>> res = stats.anderson_ksamp(samples)
     >>> res.statistic, res.pvalue
     (-0.29103725200789504, 0.25)
     >>> res.critical_values
@@ -2191,7 +2274,14 @@ def anderson_ksamp(samples, midrank=True):
     may not be very accurate (since it corresponds to the value 0.449
     whereas the statistic is -0.291).
 
-    """
+    In such cases where the p-value is capped or when sample sizes are
+    small, a permutation test may be more accurate.
+
+    >>> res = stats.anderson_ksamp(samples, n_resamples=9999, random_state=rng)
+    >>> res.pvalue
+    0.5254
+
+    """  # noqa
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
@@ -2210,9 +2300,18 @@ def anderson_ksamp(samples, midrank=True):
                          "observations")
 
     if midrank:
-        A2kN = _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N)
+        A2kN_fun = _anderson_ksamp_midrank
     else:
-        A2kN = _anderson_ksamp_right(samples, Z, Zstar, k, n, N)
+        A2kN_fun = _anderson_ksamp_right
+    A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
+
+    def statistic(*samples):
+        return A2kN_fun(samples, Z, Zstar, k, n, N)
+
+    if n_resamples:
+        res = permutation_test(samples, statistic, n_resamples=n_resamples,
+                               random_state=random_state,
+                               alternative='greater')
 
     H = (1. / n).sum()
     hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
@@ -2235,18 +2334,22 @@ def anderson_ksamp(samples, midrank=True):
     critical = b0 + b1 / math.sqrt(m) + b2 / m
 
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
-    if A2 < critical.min():
+    if A2 < critical.min() and not n_resamples:
         p = sig.max()
-        warnings.warn("p-value capped: true value larger than {}".format(p),
-                      stacklevel=2)
-    elif A2 > critical.max():
+        message = (f"p-value capped: true value larger than {p}. Consider "
+                   "setting `n_resamples` to a positive integer (e.g. 9999).")
+        warnings.warn(message, stacklevel=2)
+    elif A2 > critical.max() and not n_resamples:
         p = sig.min()
-        warnings.warn("p-value floored: true value smaller than {}".format(p),
-                      stacklevel=2)
-    else:
+        message = (f"p-value floored: true value smaller than {p}. Consider "
+                   "setting `n_resamples` to a positive integer (e.g. 9999).")
+        warnings.warn(message, stacklevel=2)
+    elif not n_resamples:
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
+
+    p = res.pvalue if n_resamples else p
 
     # create result object with alias for backward compatibility
     res = Anderson_ksampResult(A2, critical, p)

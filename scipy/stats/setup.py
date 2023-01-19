@@ -57,18 +57,9 @@ def configuration(parent_package='', top_path=None):
 
     # add BiasedUrn module
     config.add_data_files('_biasedurn.pxd')
-    from _generate_pyx import isNPY_OLD  # type: ignore[import]
-    NPY_OLD = isNPY_OLD()
-
-    if NPY_OLD:
-        biasedurn_libs = []
-        biasedurn_libdirs = []
-    else:
-        biasedurn_libs = ['npyrandom', 'npymath']
-        biasedurn_libdirs = [join(np.get_include(),
-                                  '..', '..', 'random', 'lib')]
-        biasedurn_libdirs += get_info('npymath')['library_dirs']
-
+    biasedurn_libs = ['npyrandom', 'npymath']
+    biasedurn_libdirs = [join(np.get_include(), '..', '..', 'random', 'lib')]
+    biasedurn_libdirs += get_info('npymath')['library_dirs']
     ext = config.add_extension(
         '_biasedurn',
         sources=[
@@ -95,6 +86,9 @@ def configuration(parent_package='', top_path=None):
 
     # add levy stable submodule
     config.add_subpackage('_levy_stable')
+
+    # add rcont submodule
+    config.add_subpackage('_rcont')
 
     # Type stubs
     config.add_data_files('*.pyi')

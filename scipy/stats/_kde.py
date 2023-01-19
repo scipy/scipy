@@ -209,6 +209,16 @@ class gaussian_kde:
                 raise ValueError("`weights` input should be of length n")
             self._neff = 1/sum(self._weights**2)
 
+        # This can be converted to a warning once gh-10205 is resolved
+        if self.d > self.n:
+            msg = ("Number of dimensions is greater than number of samples. "
+                   "This results in a singular data covariance matrix, which "
+                   "cannot be treated using the algorithms implemented in "
+                   "`gaussian_kde`. Note that `gaussian_kde` interprets each "
+                   "*column* of `dataset` to be a point; consider transposing "
+                   "the input to `dataset`.")
+            raise ValueError(msg)
+
         try:
             self.set_bandwidth(bw_method=bw_method)
         except linalg.LinAlgError as e:

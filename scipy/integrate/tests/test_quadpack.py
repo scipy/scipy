@@ -670,6 +670,6 @@ class TestNQuad:
     def test_dict_as_opts(self):
         try:
             nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
-        except(TypeError):
+        except TypeError:
             assert False
 
