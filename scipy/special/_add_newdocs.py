@@ -10778,7 +10778,7 @@ add_newdoc("ndtri",
     Plot the function. For that purpose, we provide a NumPy array as argument.
 
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(-1, 1, 100)
+    >>> x = np.linspace(0.01, 1, 200)
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, ndtri(x))
     >>> ax.set_title("Standard normal percentile function")
