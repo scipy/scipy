@@ -4332,7 +4332,7 @@ class invgauss_gen(rv_continuous):
 
     def _entropy(self, mu):
         """
-        Reference: https://moser-isi.ethz.ch/docs/papers/smos-2012-10.pdf
+        Ref.: https://moser-isi.ethz.ch/docs/papers/smos-2012-10.pdf (eq. 9)
         """
         return (0.5 * np.log(2 * np.pi * np.e * mu**3) -
                 1.5 * np.exp(2 / mu) * sc.exp1(2 / mu))
@@ -9401,6 +9401,8 @@ class wald_gen(invgauss_gen):
     def _stats(self):
         return 1.0, 1.0, 3.0, 15.0
 
+    def _entropy(self):
+        return invgauss._entropy(1.0)
 
 wald = wald_gen(a=0.0, name="wald")
 
