@@ -3418,7 +3418,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     the p-value for small samples in the presence of zeros and/or ties. In any
     case, this is the behavior of `wilcoxon` when ``method='auto':
     ``method='exact'`` is used when ``len(d) <= 50`` *and there are no zeros*;
-    otherwise, ``method='approx'`` is used.
+    otherwise, ``method='approx'`` is used. In the case that 
+    ``method='exact'`` and ``zero_method='zsplit'`` and zeros are present, 
+    then the number of zeros must be event, and one is discarded from ``d``
+    if necessary following the procedure in [6]_.  
 
     References
     ----------
@@ -3433,6 +3436,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
        Sampling Distribution When Zero Differences are Present,
        Journal of the American Statistical Association, Vol. 62, 1967,
        pp. 1068-1069. :doi:`10.1080/01621459.1967.10500917`
+    .. [6] Demšar, J., Statistical Comparisons of Classifiers over 
+       Multiple Data Sets, Journal of Machine Learning Research, vol. 7, 
+       no. 1, pp. 1–30, 2006. Url: http://jmlr.org/papers/v7/demsar06a.html  
 
     Examples
     --------
@@ -3512,9 +3518,26 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     n_zero = np.sum(d == 0)
     if n_zero > 0 and mode == "exact":
-        mode = "approx"
-        warnings.warn("Exact p-value calculation does not work if there are "
-                      "zeros. Switching to normal approximation.")
+        
+        if zero_method == "zsplit":
+        
+            # ties are accepted but the number of zeros must be even
+            # if it is odd, one zero is discarded
+            if n_zero % 2 == 1:
+                # discard one zero difference
+                # first [0] is for the tuple returned by np.where, 
+                # second [0] is for the first element of the tuple
+                where_idx = np.where(d == 0)[0][0]
+                x = np.delete(x, where_idx)
+                if y is not None:
+                    y = np.delete(y, where_idx)
+                d = np.delete(d, where_idx)
+                n_zero -= 1
+                
+        else:
+            mode = "approx"
+            warnings.warn("Exact p-value calculation does not work if there are "
+                        "zeros. Switching to normal approximation.")
 
     if mode == "approx":
         if zero_method in ["wilcox", "pratt"]:
