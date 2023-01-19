@@ -677,7 +677,7 @@ def brentq(f, a, b, args=(),
     """
     Find a root of a function in a bracketing interval using Brent's method.
 
-    Uses the classic Brent's method to find a roo of the function `f` on
+    Uses the classic Brent's method to find a root of the function `f` on
     the sign changing interval [a , b]. Generally considered the best of the
     rootfinding routines here. It is a safe version of the secant method that
     uses inverse quadratic extrapolation. Brent's method combines root
