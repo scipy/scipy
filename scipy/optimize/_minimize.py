@@ -925,16 +925,16 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     if meth == '_custom':
         res = method(fun, args=args, bracket=bracket, bounds=bounds, **options)
     elif meth == 'brent':
-        return _recover_from_bracket_error(_minimize_scalar_brent,
-                                           fun, bracket, args, **options)
+        res = _recover_from_bracket_error(_minimize_scalar_brent,
+                                          fun, bracket, args, **options)
     elif meth == 'bounded':
         if bounds is None:
             raise ValueError('The `bounds` parameter is mandatory for '
                              'method `bounded`.')
         res = _minimize_scalar_bounded(fun, bounds, args, **options)
     elif meth == 'golden':
-        return _recover_from_bracket_error(_minimize_scalar_golden,
-                                           fun, bracket, args, **options)
+        res = _recover_from_bracket_error(_minimize_scalar_golden,
+                                          fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 

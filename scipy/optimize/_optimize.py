@@ -3008,7 +3008,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     # three conditions for a valid bracket
     cond1 = (fb < fc and fb <= fa) or (fb < fa and fb <= fc)
     cond2 = (xa < xb < xc or xc < xb < xa)
-    cond3 = np.all(np.isfinite([xa, xb, xc]))
+    cond3 = np.isfinite(xa) and np.isfinite(xb) and np.isfinite(xc)
     msg = ("The algorithm terminated without finding a valid bracket. "
            "Consider trying different initial points.")
     if not cond1 and cond2 and cond3:
@@ -3051,7 +3051,7 @@ def _recover_from_bracket_error(solver, fun, bracket, args, **options):
             x, fun = np.nan, np.nan
         else:
             imin = np.argmin(xs)
-            x, fun = fs[imin], xs[imin]
+            x, fun = xs[imin], fs[imin]
         return OptimizeResult(fun=fun, nfev=funcalls, x=x,
                               nit=0, success=False, message=msg)
     return res
