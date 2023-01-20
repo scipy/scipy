@@ -1052,6 +1052,7 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
         # _no_deco mean returns masked array, last element was masked
         np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])
 
+
 def test_raise_invalid_args_g17713():
     # other cases are handled in:
     # test_axis_nan_policy_decorated_positional_axis - multiple values for arg

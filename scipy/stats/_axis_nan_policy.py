@@ -404,9 +404,9 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 params = [f"arg{i}" for i in range(len(args))] + params[1:]
 
             # raise if there are too many positional args
-            maxargs = (np.inf if inspect.getfullargspec(hypotest_fun_in).varargs
-                       else len(inspect.getfullargspec(hypotest_fun_in).args))
-            if len(args) > maxargs:  # let the function raise the right error
+            maxarg = (np.inf if inspect.getfullargspec(hypotest_fun_in).varargs
+                      else len(inspect.getfullargspec(hypotest_fun_in).args))
+            if len(args) > maxarg:  # let the function raise the right error
                 hypotest_fun_in(*args, **kwds)
 
             # raise if multiple values passed for same parameter
@@ -451,7 +451,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 samples = [np.atleast_1d(kwds.pop(param))
                            for param in (params[:n_samp] + kwd_samp)]
             except KeyError:  # let the function raise the right error
-                # might need to revisit this if a required arg is not a "sample"
+                # might need to revisit this if required arg is not a "sample"
                 hypotest_fun_in(*args, **kwds)
             vectorized = True if 'axis' in params else False
             vectorized = vectorized and not override['vectorization']
