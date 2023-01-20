@@ -307,13 +307,13 @@ cython_special = custom_target('cython_special',
 )
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
-uf_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+uf_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
 
-uf_cython_gen_cpp = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@', '--cplus'],
+uf_cython_gen_cpp = generator(cython,
+  arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
   depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
 

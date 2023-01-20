@@ -121,6 +121,7 @@ from ..special import rel_entr
 
 from . import _distance_pybind
 
+
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
     if a.base is not None:
@@ -338,6 +339,10 @@ def directed_hausdorff(u, v, seed=0):
         An exception is thrown if `u` and `v` do not have
         the same number of columns.
 
+    See Also
+    --------
+    scipy.spatial.procrustes : Another similarity test for two data sets
+
     Notes
     -----
     Uses the early break technique and the random sampling approach
@@ -358,10 +363,6 @@ def directed_hausdorff(u, v, seed=0):
            calculating the exact Hausdorff distance." IEEE Transactions On
            Pattern Analysis And Machine Intelligence, vol. 37 pp. 2153-63,
            2015.
-
-    See Also
-    --------
-    scipy.spatial.procrustes : Another similarity test for two data sets
 
     Examples
     --------
@@ -2132,6 +2133,33 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
           dm = pdist(X, 'sokalsneath')
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.spatial.distance import pdist
+
+    ``x`` is an array of five points in three-dimensional space.
+
+    >>> x = np.array([[2, 0, 2], [2, 2, 3], [-2, 4, 5], [0, 1, 9], [2, 2, 4]])
+
+    ``pdist(x)`` with no additional arguments computes the 10 pairwise
+    Euclidean distances:
+
+    >>> pdist(x)
+    array([2.23606798, 6.40312424, 7.34846923, 2.82842712, 4.89897949,
+           6.40312424, 1.        , 5.38516481, 4.58257569, 5.47722558])
+
+    The following computes the pairwise Minkowski distances with ``p = 3.5``:
+
+    >>> pdist(x, metric='minkowski', p=3.5)
+    array([2.04898923, 5.1154929 , 7.02700737, 2.43802731, 4.19042714,
+           6.03956994, 1.        , 4.45128103, 4.10636143, 5.0619695 ])
+
+    The pairwise city block or Manhattan distances:
+
+    >>> pdist(x, metric='cityblock')
+    array([ 3., 11., 10.,  4.,  8.,  9.,  1.,  9.,  7.,  8.])
+
     """
     # You can also call this as:
     #     Y = pdist(X, 'test_abc')
@@ -2229,8 +2257,42 @@ def squareform(X, force="no", checks=True):
     In SciPy 0.19.0, ``squareform`` stopped casting all input types to
     float64, and started returning arrays of the same dtype as the input.
 
-    """
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.spatial.distance import pdist, squareform
 
+    ``x`` is an array of five points in three-dimensional space.
+
+    >>> x = np.array([[2, 0, 2], [2, 2, 3], [-2, 4, 5], [0, 1, 9], [2, 2, 4]])
+
+    ``pdist(x)`` computes the Euclidean distances between each pair of
+    points in ``x``.  The distances are returned in a one-dimensional
+    array with length ``5*(5 - 1)/2 = 10``.
+
+    >>> distvec = pdist(x)
+    >>> distvec
+    array([2.23606798, 6.40312424, 7.34846923, 2.82842712, 4.89897949,
+           6.40312424, 1.        , 5.38516481, 4.58257569, 5.47722558])
+
+    ``squareform(distvec)`` returns the 5x5 distance matrix.
+
+    >>> m = squareform(distvec)
+    >>> m
+    array([[0.        , 2.23606798, 6.40312424, 7.34846923, 2.82842712],
+           [2.23606798, 0.        , 4.89897949, 6.40312424, 1.        ],
+           [6.40312424, 4.89897949, 0.        , 5.38516481, 4.58257569],
+           [7.34846923, 6.40312424, 5.38516481, 0.        , 5.47722558],
+           [2.82842712, 1.        , 4.58257569, 5.47722558, 0.        ]])
+
+    When given a square distance matrix ``m``, ``squareform(m)`` returns
+    the one-dimensional condensed distance vector associated with the
+    matrix.  In this case, we recover ``distvec``.
+
+    >>> squareform(m)
+    array([2.23606798, 6.40312424, 7.34846923, 2.82842712, 4.89897949,
+           6.40312424, 1.        , 5.38516481, 4.58257569, 5.47722558])
+    """
     X = np.ascontiguousarray(X)
 
     s = X.shape
@@ -2335,6 +2397,37 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     the diagonal are ignored if they are within the tolerance specified
     by `tol`.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.spatial.distance import is_valid_dm
+
+    This matrix is a valid distance matrix.
+
+    >>> d = np.array([[0.0, 1.1, 1.2, 1.3],
+    ...               [1.1, 0.0, 1.0, 1.4],
+    ...               [1.2, 1.0, 0.0, 1.5],
+    ...               [1.3, 1.4, 1.5, 0.0]])
+    >>> is_valid_dm(d)
+    True
+
+    In the following examples, the input is not a valid distance matrix.
+
+    Not square:
+
+    >>> is_valid_dm([[0, 2, 2], [2, 0, 2]])
+    False
+
+    Nonzero diagonal element:
+
+    >>> is_valid_dm([[0, 1, 1], [1, 2, 3], [1, 3, 0]])
+    False
+
+    Not symmetric:
+
+    >>> is_valid_dm([[0, 1, 3], [2, 0, 1], [3, 1, 0]])
+    False
+
     """
     D = np.asarray(D, order='c')
     valid = True
@@ -2410,6 +2503,29 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     name : bool, optional
         Used when referencing the offending variable in the
         warning or exception message.
+
+    Returns
+    -------
+    bool
+        True if the input array is a valid condensed distance matrix,
+        False otherwise.
+
+    Examples
+    --------
+    >>> from scipy.spatial.distance import is_valid_y
+
+    This vector is a valid condensed distance matrix.  The length is 6,
+    which corresponds to ``n = 4``, since ``4*(4 - 1)/2`` is 6.
+
+    >>> v = [1.0, 1.2, 1.0, 0.5, 1.3, 0.9]
+    >>> is_valid_y(v)
+    True
+
+    An input vector with length, say, 7, is not a valid condensed distance
+    matrix.
+
+    >>> is_valid_y([1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7])
+    False
 
     """
     y = np.asarray(y, order='c')

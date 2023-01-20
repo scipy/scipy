@@ -130,14 +130,6 @@ def generate_matrix_symmetric(N, pos_definite=False, sparse=False):
     return M
 
 
-def _aslinearoperator_with_dtype(m):
-    m = aslinearoperator(m)
-    if not hasattr(m, 'dtype'):
-        x = np.zeros(m.shape[1])
-        m.dtype = (m * x).dtype
-    return m
-
-
 def assert_allclose_cc(actual, desired, **kw):
     """Almost equal or complex conjugates almost equal"""
     try:

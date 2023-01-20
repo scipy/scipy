@@ -134,9 +134,9 @@ def sqrtm(A, disp=True, blocksize=64):
     sqrtm : (N, N) ndarray
         Value of the sqrt function at `A`. The dtype is float or complex.
         The precision (data size) is determined based on the precision of
-        input `A`. When the dtype is float, the precision is same as `A`.
-        When the dtype is complex, the precition is double as `A`. The
-        precision might be cliped by each dtype precision range.
+        input `A`. When the dtype is float, the precision is the same as `A`.
+        When the dtype is complex, the precision is double that of `A`. The
+        precision might be clipped by each dtype precision range.
 
     errest : float
         (if disp == False)

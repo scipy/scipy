@@ -558,19 +558,39 @@ class Build(Task):
         default `_distributor_init.py` file with the one
         we use for wheels uploaded to PyPI so that DLL gets loaded.
 
-        Assumes pkg-config is installed and aware of OpenBLAS.
+        Assumes pkg-config is installed and aware of OpenBLAS. 
+
+        The "dirs" parameter is typically a "Dirs" object with the
+        structure as the following, say, if dev.py is run from the
+        folder "repo":
+
+        dirs = Dirs(
+            root=WindowsPath('C:/.../repo'),
+            build=WindowsPath('C:/.../repo/build'),
+            installed=WindowsPath('C:/.../repo/build-install'),
+            site=WindowsPath('C:/.../repo/build-install/Lib/site-packages'
+            )
+
         """
         # Get OpenBLAS lib path from pkg-config
         cmd = ['pkg-config', '--variable', 'libdir', 'openblas']
         result = subprocess.run(cmd, capture_output=True, text=True)
+        # pkg-config does not return any meaningful error message if fails
         if result.returncode != 0:
-            print(result.stderrr)
+            print('"pkg-config --variable libdir openblas" '
+                  'command did not manage to find OpenBLAS '
+                  'succesfully. Try running manually on the '
+                  'command prompt for more information.')
             return result.returncode
 
-        openblas_lib_path = Path(result.stdout.strip())
+        # Skip the drive letter of the path -> /c to get Windows drive
+        # to be appended correctly to avoid "C:\c\..." from stdout.
+        openblas_lib_path = Path(result.stdout.strip()[2:]).resolve()
         if not openblas_lib_path.stem == 'lib':
-            raise RuntimeError(
-                f'Expecting "lib" at end of "{openblas_lib_path}"')
+            raise RuntimeError('"pkg-config --variable libdir openblas" '
+                               'command did not return a path ending with'
+                               ' "lib" folder. Instead it returned '
+                               f'"{openblas_lib_path}"')
 
         # Look in bin subdirectory for OpenBLAS binaries.
         bin_path = openblas_lib_path.parent / 'bin'
@@ -580,8 +600,8 @@ class Build(Task):
         libs_path.mkdir(exist_ok=True)
         # Copy DLL files from OpenBLAS install to scipy install .libs subdir.
         for dll_fn in bin_path.glob('*.dll'):
-            out_fname = libs_path / dll_fn.parts[-1]
-            print(f'Copying {dll_fn} to {out_fname}')
+            out_fname = libs_path / dll_fn.name
+            print(f'Copying {dll_fn} ----> {out_fname}')
             out_fname.write_bytes(dll_fn.read_bytes())
 
         # Write _distributor_init.py to scipy install dir;
@@ -861,6 +881,14 @@ class Bench(Task):
 ###################
 # linters
 
+def emit_cmdstr(cmd):
+    """Print the command that's being run to stdout"""
+    console = Console(theme=console_theme)
+    # The [cmd] square brackets controls the font styling, typically in italics
+    # to differentiate it from other stdout content
+    console.print(f"{EMOJI.cmd} [cmd] {cmd}")
+
+
 @task_params([{'name': 'output_file', 'long': 'output-file', 'default': None,
                'help': 'Redirect report to a file'}])
 def task_flake8(output_file):
@@ -868,8 +896,11 @@ def task_flake8(output_file):
     opts = ''
     if output_file:
         opts += f'--output-file={output_file}'
+
+    cmd = f"flake8 {opts} scipy benchmarks/benchmarks"
+    emit_cmdstr(f"{cmd}")
     return {
-        'actions': [f"flake8 {opts} scipy benchmarks/benchmarks"],
+        'actions': [cmd],
         'doc': 'Lint scipy and benchmarks directory',
     }
 
@@ -877,6 +908,7 @@ def task_flake8(output_file):
 def task_pep8diff():
     # Lint just the diff since branching off of main using a
     # stricter configuration.
+    emit_cmdstr(os.path.join('tools', 'lint_diff.py'))
     return {
         'basename': 'pep8-diff',
         'actions': [str(Dirs().root / 'tools' / 'lint_diff.py')],
@@ -885,6 +917,7 @@ def task_pep8diff():
 
 
 def task_unicode_check():
+    emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
     return {
         'basename': 'unicode-check',
         'actions': [str(Dirs().root / 'tools' / 'unicode-check.py')],
@@ -893,16 +926,30 @@ def task_unicode_check():
     }
 
 
+def task_check_test_name():
+    emit_cmdstr(os.path.join('tools', 'check_test_name.py'))
+    return {
+        "basename": "check-testname",
+        "actions": [str(Dirs().root / "tools" / "check_test_name.py")],
+        "doc": "Check tests are correctly named so that pytest runs them."
+    }
+
+
 @cli.cls_cmd('lint')
 class Lint():
     """:dash: Run flake8, check PEP 8 compliance on branch diff and check for
-    disallowed Unicode characters."""
+    disallowed Unicode characters and possibly-invalid test names."""
     output_file = Option(
         ['--output-file'], default=None, help='Redirect report to a file')
 
     def run(output_file):
         opts = {'output_file': output_file}
-        run_doit_task({'flake8': opts, 'pep8-diff': {}, 'unicode-check': {}})
+        run_doit_task({
+            'flake8': opts,
+            'pep8-diff': {},
+            'unicode-check': {},
+            'check-testname': {},
+        })
 
 
 @cli.cls_cmd('mypy')
@@ -938,6 +985,7 @@ class Mypy(Task):
             os.environ['MYPY_FORCE_COLOR'] = '1'
             # Change to the site directory to make sure mypy doesn't pick
             # up any type stubs in the source tree.
+            emit_cmdstr(f"mypy.api.run --config-file {config} {check_path}")
             report, errors, status = mypy.api.run([
                 "--config-file",
                 str(config),
