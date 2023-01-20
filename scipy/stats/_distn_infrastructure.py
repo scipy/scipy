@@ -1740,6 +1740,14 @@ class rv_continuous(rv_generic):
     Alternatively, you can override ``_munp``, which takes ``n`` and shape
     parameters and returns the n-th non-central moment of the distribution.
 
+    **Deepcopying / Pickling**
+
+    If a distribution or frozen distribution is deepcopied (pickled/unpickled,
+    etc.), any underlying random number generator is deepcopied with it. An
+    implication is that if a distribution relies on the singleton RandomState
+    before copying, it will rely on a copy of that random state after copying,
+    and ``np.random.seed`` will no longer control the state.
+
     Examples
     --------
     To create a new Gaussian distribution, we would do the following:
@@ -2999,6 +3007,14 @@ class rv_discrete(rv_generic):
     Alternatively, you can construct an arbitrary discrete rv defined
     on a finite set of values ``xk`` with ``Prob{X=xk} = pk`` by using the
     ``values`` keyword argument to the `rv_discrete` constructor.
+
+    **Deepcopying / Pickling**
+
+    If a distribution or frozen distribution is deepcopied (pickled/unpickled,
+    etc.), any underlying random number generator is deepcopied with it. An
+    implication is that if a distribution relies on the singleton RandomState
+    before copying, it will rely on a copy of that random state after copying,
+    and ``np.random.seed`` will no longer control the state.
 
     Examples
     --------
