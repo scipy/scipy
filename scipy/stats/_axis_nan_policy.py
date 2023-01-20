@@ -403,12 +403,17 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 # Note that *args can't be provided as a keyword argument
                 params = [f"arg{i}" for i in range(len(args))] + params[1:]
 
+            # raise if there are too many positional args
+            maxargs = (np.inf if inspect.getfullargspec(hypotest_fun_in).varargs
+                       else len(inspect.getfullargspec(hypotest_fun_in).args))
+            if len(args) > maxargs:  # let the function raise the right error
+                hypotest_fun_in(*args, **kwds)
+
+            # raise if multiple values passed for same parameter
             d_args = dict(zip(params, args))
             intersection = set(d_args) & set(kwds)
-            if intersection:
-                message = (f"{hypotest_fun_in.__name__}() got multiple values "
-                           f"for argument '{list(intersection)[0]}'")
-                raise TypeError(message)
+            if intersection:  # let the function raise the right error
+                hypotest_fun_in(*args, **kwds)
 
             # Consolidate other positional and keyword args into `kwds`
             kwds.update(d_args)
@@ -442,8 +447,12 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     return hypotest_fun_in(*samples[:n_samp], **kwds)
 
             # Extract the things we need here
-            samples = [np.atleast_1d(kwds.pop(param))
-                       for param in (params[:n_samp] + kwd_samp)]
+            try:  # if something is missing
+                samples = [np.atleast_1d(kwds.pop(param))
+                           for param in (params[:n_samp] + kwd_samp)]
+            except KeyError:  # let the function raise the right error
+                # might need to revisit this if a required arg is not a "sample"
+                hypotest_fun_in(*args, **kwds)
             vectorized = True if 'axis' in params else False
             vectorized = vectorized and not override['vectorization']
             axis = kwds.pop('axis', default_axis)
