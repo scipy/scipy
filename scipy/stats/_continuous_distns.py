@@ -9404,6 +9404,7 @@ class wald_gen(invgauss_gen):
     def _entropy(self):
         return invgauss._entropy(1.0)
 
+
 wald = wald_gen(a=0.0, name="wald")
 
 
