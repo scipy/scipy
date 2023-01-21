@@ -1965,6 +1965,8 @@ class wishart_gen(multi_rv_generic):
         return x
 
     def _process_size(self, size):
+        if (size is None or size == ()):
+            size = 1
         size = np.asarray(size)
 
         if size.ndim == 0:
@@ -1972,7 +1974,7 @@ class wishart_gen(multi_rv_generic):
         elif size.ndim > 1:
             raise ValueError('Size must be an integer or tuple of integers;'
                              ' thus must have dimension <= 1.'
-                             ' Got size.ndim = %s' % str(tuple(size)))
+                             f' Got size.ndim = {str(tuple(size))}')
         n = size.prod()
         shape = tuple(size)
 
@@ -2237,7 +2239,12 @@ class wishart_gen(multi_rv_generic):
 
         return A
 
-    def _rvs(self, n, shape, dim, df, C, random_state):
+    def _squeeze_samples(self, samples, size, dim):
+        if (size == 1 or size is None or size == () or dim == 1):
+            samples = _squeeze_output(samples)
+        return samples
+
+    def _rvs(self, n, shape, size, dim, df, C, random_state):
         """Draw random samples from a Wishart distribution.
 
         Parameters
@@ -2280,6 +2287,8 @@ class wishart_gen(multi_rv_generic):
             CA = np.dot(C, A[index])
             A[index] = np.dot(CA, CA.T)
 
+        A = self._squeeze_samples(A, size, dim)
+
         return A
 
     def rvs(self, df, scale, size=1, random_state=None):
@@ -2309,9 +2318,9 @@ class wishart_gen(multi_rv_generic):
         # Cholesky decomposition of scale
         C = scipy.linalg.cholesky(scale, lower=True)
 
-        out = self._rvs(n, shape, dim, df, C, random_state)
+        out = self._rvs(n, shape, size, dim, df, C, random_state)
 
-        return _squeeze_output(out)
+        return out
 
     def _entropy(self, dim, df, log_det_scale):
         """Compute the differential entropy of the Wishart.
@@ -2439,9 +2448,9 @@ class wishart_frozen(multi_rv_frozen):
 
     def rvs(self, size=1, random_state=None):
         n, shape = self._dist._process_size(size)
-        out = self._dist._rvs(n, shape, self.dim, self.df,
+        out = self._dist._rvs(n, shape, size, self.dim, self.df,
                               self.C, random_state)
-        return _squeeze_output(out)
+        return out
 
     def entropy(self):
         return self._dist._entropy(self.dim, self.df, self.log_det_scale)
@@ -2853,7 +2862,7 @@ class invwishart_gen(wishart_gen):
         out = self._var(dim, df, scale)
         return _squeeze_output(out) if out is not None else out
 
-    def _rvs(self, n, shape, dim, df, C, random_state):
+    def _rvs(self, n, shape, size, dim, df, C, random_state):
         """Draw random samples from an inverse Wishart distribution.
 
         Parameters
@@ -2900,6 +2909,7 @@ class invwishart_gen(wishart_gen):
             # Get SA
             A[index] = np.dot(CA.T, CA)
 
+        A = super()._squeeze_samples(A, size, dim)
         return A
 
     def rvs(self, df, scale, size=1, random_state=None):
@@ -2933,9 +2943,9 @@ class invwishart_gen(wishart_gen):
         # Cholesky decomposition of inverted scale
         C = scipy.linalg.cholesky(inv_scale, lower=True)
 
-        out = self._rvs(n, shape, dim, df, C, random_state)
+        out = self._rvs(n, shape, size, dim, df, C, random_state)
 
-        return _squeeze_output(out)
+        return out
 
     def _entropy(self, dim, df, log_det_scale):
         # reference: eq. (17) from ref. 3
@@ -3013,10 +3023,10 @@ class invwishart_frozen(multi_rv_frozen):
     def rvs(self, size=1, random_state=None):
         n, shape = self._dist._process_size(size)
 
-        out = self._dist._rvs(n, shape, self.dim, self.df,
+        out = self._dist._rvs(n, shape, size, self.dim, self.df,
                               self.C, random_state)
 
-        return _squeeze_output(out)
+        return out
 
     def entropy(self):
         return self._dist._entropy(self.dim, self.df, self.log_det_scale)

@@ -35,7 +35,7 @@ from scipy.special import multigammaln
 from .common_tests import check_random_state_property
 
 from unittest.mock import patch
-
+import re
 
 def assert_close(res, ref, *args, **kwargs):
     res, ref = np.asarray(res), np.asarray(ref)
@@ -1166,7 +1166,6 @@ class TestDirichlet:
         assert_almost_equal(b.mean(), d.mean()[0])
         assert_almost_equal(b.var(), d.var()[0])
 
-
 def test_multivariate_normal_dimensions_mismatch():
     # Regression test for GH #3493. Check that setting up a PDF with a mean of
     # length M and a covariance matrix of size (N, N), where M != N, raises a
@@ -1376,6 +1375,27 @@ class TestWishart:
         args = (df,0,sigma_lamda)
         alpha = 0.01
         check_distribution_rvs('chi2', args, alpha, rvs)
+
+    @pytest.mark.parametrize("size", [None, 1, (), 5, (1, ), (3, 3)])
+    def test_rvs(self, size):
+        scale = np.eye(2)
+        df = 5
+        samples = wishart(df, scale).rvs(size)
+        if (size is None or size == () or size == 1):
+            ref_shape = scale.shape
+        else:
+            if isinstance(size, int):
+                size = (size, )
+            ref_shape = size + scale.shape
+        assert samples.shape == ref_shape
+
+    def test_wrong_size(self):
+        shape = [[3, 3], [2, 2]]
+        msg = ('Size must be an integer or tuple of integers;'
+               ' thus must have dimension <= 1.'
+               ' Got size.ndim = (array([3, 3]), array([2, 2]))')
+        with pytest.raises(ValueError, match=re.escape(msg)):
+            wishart(5, np.eye(2)).rvs(shape)
 
 class TestMultinomial:
     def test_logpmf(self):
@@ -1701,6 +1721,19 @@ class TestInvwishart:
                     - (nu + p + 1)/2*logdetX
                     - 0.5*M.trace())
         assert_allclose(prob, expected)
+
+    @pytest.mark.parametrize("size", [None, 1, (), 5, (1, ), (3, 3)])
+    def test_rvs(self, size):
+        scale = np.eye(2)
+        df = 5
+        samples = invwishart(df, scale).rvs(size)
+        if (size is None or size == () or size == 1):
+            ref_shape = scale.shape
+        else:
+            if isinstance(size, int):
+                size = (size, )
+            ref_shape = size + scale.shape
+        assert samples.shape == ref_shape
 
 
 class TestSpecialOrthoGroup:
