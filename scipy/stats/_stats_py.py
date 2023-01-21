@@ -4466,21 +4466,16 @@ def pearsonr(x, y, *, alternative='two-sided'):
     # floating point arithmetic.
     r = max(min(r, 1.0), -1.0)
 
-    # As explained in the docstring, the p-value can be computed as
-    #     p = 2*dist.cdf(-abs(r))
-    # where dist is the beta distribution on [-1, 1] with shape parameters
-    # a = b = n/2 - 1.  `special.btdtr` is the CDF for the beta distribution
-    # on [0, 1].  To use it, we make the transformation  x = (r + 1)/2; the
-    # shape parameters do not change.  Then -abs(r) used in `cdf(-abs(r))`
-    # becomes x = (-abs(r) + 1)/2 = 0.5*(1 - abs(r)).  (r is cast to float64
-    # to avoid a TypeError raised by btdtr when r is higher precision.)
+    # As explained in the docstring, the distribution of `r` under the null
+    # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
     ab = n/2 - 1
+    dist = stats.beta(ab, ab, loc=-1, scale=2)
     if alternative == 'two-sided':
-        prob = 2*special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+        prob = 2*dist.sf(abs(r))
     elif alternative == 'less':
-        prob = 1 - special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+        prob = dist.cdf(r)
     elif alternative == 'greater':
-        prob = special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+        prob = dist.sf(r)
     else:
         raise ValueError('alternative must be one of '
                          '["two-sided", "less", "greater"]')
