@@ -1294,16 +1294,78 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     LinAlgError
         If SVD computation does not converge.
 
+    See Also
+    --------
+    pinvh : Moore-Penrose pseudoinverse of a hermititan matrix.
+
+    References
+    ----------
+    .. [1] Penrose, R. (1956). On best approximate solutions of linear matrix
+           equations. Mathematical Proceedings of the Cambridge Philosophical
+           Society, 52(1), 17-19. doi:10.1017/S0305004100030929
+
     Examples
     --------
+
+    Given an ``m x n`` matrix ``A`` and an ``n x m`` matrix ``B`` the four
+    Moore-Penrose conditions are:
+
+    1. ``ABA = A`` (``B`` is a generalized inverse of ``A``),
+    2. ``BAB = B`` (``A`` is a generalized inverse of ``B``),
+    3. ``(AB)* = AB`` (``AB`` is hermitian),
+    4. ``(BA)* = BA`` (``BA`` is hermitian) [1]_.
+
+    Here, ``A*`` denotes the conjugate transpose. The Moore-Penrose
+    pseudoinverse is a unique ``B`` that satisfies all four of these
+    conditions and exists for any ``A``.
+
+    As an example, we can calculate the Moore-Penrose pseudoinverse of a
+    random matrix and verify it satisfies the four conditions.
+
     >>> import numpy as np
     >>> from scipy import linalg
     >>> rng = np.random.default_rng()
-    >>> a = rng.standard_normal((9, 6))
-    >>> B = linalg.pinv(a)
-    >>> np.allclose(a, a @ B @ a)
+    >>> A = rng.standard_normal((9, 6))
+    >>> B = linalg.pinv(A)
+
+    Condition 1:
+
+    >>> np.allclose(A @ B @ A, A)
     True
-    >>> np.allclose(B, B @ a @ B)
+
+    Condition 2:
+
+    >>> np.allclose(B @ A @ B, B)
+    True
+
+    Condition 3:
+
+    >>> np.allclose((A @ B).conj().T, A @ B)
+    True
+
+    Condition 4:
+
+    >>> np.allclose((B @ A).conj().T, B @ A)
+    True
+
+    If ``A`` is invertible then the Moore-Penrose pseudoinverse is exactly the
+    inverse of ``A`` [1]_.
+
+    >>> A = np.array([[1, 1], [0, 1]])
+    >>> np.allclose(linalg.pinv(A), linalg.inv(A))
+    True
+
+    If ``A`` is not invertible then the Moore-Penrose pseudoinverse gives the
+    least squares solution to ``Ax = b`` [1]_. In this example, we will try
+    to fit a straight line to the points ``(0,10), (1, 0), (2, 0)``.
+
+    >>> A = np.array([[1, 0], [1, 1], [1, 2]])
+    >>> b = np.array([10, 0, 0])
+    >>> x = linalg.pinv(A) @ b
+    >>> x_regression = scipy.stats.linregress(A[:, 1], b)
+    >>> np.allclose(x[0], x_regression.intercept)
+    True
+    >>> np.allclose(x[1], x_regression.slope)
     True
 
     """
@@ -1388,8 +1450,15 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     LinAlgError
         If eigenvalue algorithm does not converge.
 
+    See Also
+    --------
+    pinv : Moore-Penrose pseudoinverse of a matrix.
+
     Examples
     --------
+
+    For a more detailed example see `pinv`.
+
     >>> import numpy as np
     >>> from scipy.linalg import pinvh
     >>> rng = np.random.default_rng()
