@@ -222,6 +222,7 @@ ufuncs_sources = [
   'amos_wrappers.c',
   'cdf_wrappers.c',
   'specfun_wrappers.c',
+  'logexp1.c',
   'sf_error.c'
 ]
 
@@ -388,6 +389,7 @@ py3.extension_module('cython_special',
     'amos_wrappers.c',
     'cdf_wrappers.c',
     'specfun_wrappers.c',
+    'logexp1.c',
     'sf_error.c'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],

@@ -190,6 +190,7 @@ PARAMS: List[Tuple[Callable, Callable, Tuple[str, ...], Optional[str]]] = [
     (special.kv, cython_special.kv, ('dd', 'dD'), None),
     (special.kve, cython_special.kve, ('dd', 'dD'), None),
     (special.log1p, cython_special.log1p, ('d', 'D'), None),
+    (special.logexp1, cython_special.logexp1, ('d',), None),
     (special.log_expit, cython_special.log_expit, ('f', 'd', 'g'), None),
     (special.log_ndtr, cython_special.log_ndtr, ('d', 'D'), None),
     (special.ndtri_exp, cython_special.ndtri_exp, ('d',), None),

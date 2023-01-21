@@ -4451,6 +4451,66 @@ add_newdoc("exp1",
 
     """)
 
+
+add_newdoc(
+    "logexp1",
+    r"""
+    logexp1(x, out=None)
+
+    Logarithm of the exponential integral E1.
+
+    The function accepts real inputs only.  The result is always calculated
+    with double precision floating point.
+
+    Parameters
+    ----------
+    x: array_like
+        The input array.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the natural logarithm of the exponential integral E1
+
+    See Also
+    --------
+    exp1 : exponential integral :math:`E_1`
+    expi : exponential integral :math:`Ei`
+    expn : generalization of :math:`E_1`
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import logexp1, exp1
+
+    Mathematically, this function is equivalent to ``np.log(exp1(x))``.
+
+    >>> x = np.array([0.2, 10, 50])
+    >>> logexp1(x)
+    array([  0.20102108, -12.39072437, -53.93145509])
+    >>> np.log(exp1(x))
+    array([  0.20102108, -12.39072437, -53.93145509])
+
+    The function is useful when computing expressions in which the argument
+    ``x`` of the exponential integral function is large enough that
+    ``exp1(x)`` underflows to zero.
+
+    >>> x = np.array([500, 750, 1000])
+    >>> exp1(x)
+    array([1.42207678e-220, 0.00000000e+000, 0.00000000e+000])
+
+    The true values of the last two elements in that result are not 0, but
+    they are too small to be represented as double precision floating point
+    values.  With ``logexp1(x)``, we compute the logarithms of these values
+    accurately.
+
+    >>> logexp1(x)
+    array([ -506.21660213,  -756.62140388, -1006.90875378])
+    """)
+
+
 add_newdoc("exp10",
     """
     exp10(x, out=None)

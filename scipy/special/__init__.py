@@ -728,6 +728,7 @@ Other special functions
    euler       -- Euler numbers E0..En (inclusive).
    expn        -- Exponential integral E_n.
    exp1        -- Exponential integral E_1 of complex argument z.
+   logexp1     -- Logarithm of the exponential integral E_1(x) for real x.
    expi        -- Exponential integral Ei.
    factorial   -- The factorial of a number or array of numbers.
    factorial2  -- Double factorial.

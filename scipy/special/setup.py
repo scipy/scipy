@@ -69,7 +69,7 @@ def configuration(parent_package='',top_path=None):
     headers = ['*.h', join('cephes', '*.h')]
     ufuncs_src = ['_ufuncs.c', 'sf_error.c',
                   'amos_wrappers.c', 'cdf_wrappers.c', 'specfun_wrappers.c',
-                  '_cosine.c']
+                  'logexp1.c', '_cosine.c']
 
     ufuncs_dep = (
         headers
@@ -117,7 +117,8 @@ def configuration(parent_package='',top_path=None):
 
     cython_special_src = ['cython_special.c', 'sf_error.c',
                           'amos_wrappers.c', 'cdf_wrappers.c',
-                          'specfun_wrappers.c', '_cosine.c']
+                          'specfun_wrappers.c', '_cosine.c',
+                          'logexp1.c']
     cython_special_dep = (
         headers
         + ufuncs_src
