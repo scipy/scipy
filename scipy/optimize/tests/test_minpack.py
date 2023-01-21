@@ -568,7 +568,9 @@ class TestCurveFit:
 
         # omit test
         result_with_nan, _ = curve_fit(**kwargs, nan_policy="omit")
-        result_without_nan, _ = curve_fit(**kwargs, nan_policy="omit")
+        kwargs['xdata'] = xdata_without_nan
+        kwargs['ydata'] = ydata_without_nan
+        result_without_nan, _ = curve_fit(**kwargs)
         assert_allclose(result_with_nan, result_without_nan)
 
     @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
