@@ -845,9 +845,18 @@ class betaprime_gen(rv_continuous):
     for :math:`x >= 0`, :math:`a > 0`, :math:`b > 0`, where
     :math:`\beta(a, b)` is the beta function (see `scipy.special.beta`).
 
+    The distribution is related to the `beta` distribution as follows:
+    If :math:`X` follows a beta distribution with parameters :math:`a, b`,
+    then :math:`Y = X/(1-X)` has a beta prime distribution with
+    parameters :math:`a, b` ([1]_).
+
     `betaprime` takes ``a`` and ``b`` as shape parameters.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Beta_prime_distribution
 
     %(example)s
 
@@ -872,7 +881,17 @@ class betaprime_gen(rv_continuous):
         return sc.xlogy(a - 1.0, x) - sc.xlog1py(a + b, x) - sc.betaln(a, b)
 
     def _cdf(self, x, a, b):
-        return sc.betainc(a, b, x/(1.+x))
+        # note: f2 is the direct way to compute the cdf if the relationship
+        # to the beta distribution is used.
+        # however, for very large x, x/(1+x) == 1. since the distribution
+        # has very fat tails if b is small, this can cause inaccurate results
+        # use the following relationship of the incomplete beta function:
+        # betainc(x, a, b) = 1 - betainc(1-x, b, a)
+        # see gh-17631
+        return _lazywhere(
+            x > 1, [x, a, b],
+            lambda x_, a_, b_: beta._sf(1/(1+x_), b_, a_),
+            f2 = lambda x_, a_, b_: beta._cdf(x_/(1+x_), a_, b_))
 
     def _ppf(self, p, a, b):
         r = sc.betaincinv(a, b, p)

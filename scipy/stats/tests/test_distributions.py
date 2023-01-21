@@ -3643,6 +3643,44 @@ class TestBetaPrime:
         x = stats.betaprime.ppf(p, a, b)
         assert_allclose(x, expected, rtol=1e-14)
 
+    @pytest.mark.parametrize(
+        'x, a, b, expected',
+        [(1e22, 0.05, 0.1, 0.9978811466052919),
+         (1e22, 100.0, 0.05, 0.8973027435427167),
+         (1e10, 0.05, 0.1, 0.9664184367890859),
+         (1e10, 1.5, 1.5, 0.9999999999999983),
+         (1e10, 100.0, 0.05, 0.5911548582766262),
+         (1e-10, 0.05, 0.1, 0.21238845427095),
+         (1e-10, 1.5, 1.5, 1.6976527260079727e-15),
+         (1e-10, 0.05, 100.0, 0.4088451417233739),
+         (1e-22, 0.05, 0.1, 0.05334956764928733),
+         (1e-22, 1.5, 1.5, 1.6976527263135503e-33),
+         (1e-22, 0.05, 100.0, 0.10269725645728332),
+         (1e-100, 0.05, 0.1, 6.716312642191984e-06),
+         (1e-100, 1.5, 1.5, 1.6976527263135503e-150),
+         (1e-100, 0.05, 100.0, 1.292881858756166e-05)])
+    def test_cdf_tails(self, x, a, b, expected):
+        # test for gh-17631
+        # values computed with mpmath. Example:
+        # import mpmath as mp
+        # mp.dps = 25
+        # a, b = mp.mpf('0.05'), mp.mpf('0.1')
+        # x = mp.mpf('1e22')
+        # y = mp.fdiv(x, mp.fadd(mp.mpf('1.0'), x, dps=25), dps=25)
+        # float(mp.betainc(a, b, 0.0, y, regularized=True))
+        assert_allclose(stats.betaprime.cdf(x, a, b), expected, rtol=1e-14)
+
+    @pytest.mark.parametrize(
+        'x, a, b, expected',
+        [(1e50, 0.05, 0.1, 0.9999966641709545),
+         (1e50, 100.0, 0.05, 0.995925162631006)])
+    def test_cdf_extreme_tails(self, x, a, b, expected):
+        # for even more extreme values, we only get a few correct digits
+        # results are still < 1
+        y = stats.betaprime.cdf(x, a, b)
+        assert_(y < 1.0)
+        assert_allclose(y, expected, rtol=2e-5)
+
 
 class TestGamma:
     def test_pdf(self):
