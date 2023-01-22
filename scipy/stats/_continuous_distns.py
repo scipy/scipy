@@ -2157,6 +2157,9 @@ class f_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, dfn, dfd):
+        # the formula found in literature is incorrect. This one yields the
+        # same result as numerical integration using the generic entropy
+        # definition. This is also tested in tests/test_conntinous_basic
         half_dfn = 0.5 * dfn
         half_dfd = 0.5 * dfd
         half_sum = 0.5 * (dfn + dfd)

@@ -2734,27 +2734,6 @@ class TestF:
         k2 = k2num / k2den
         assert_allclose(k, k2)
 
-    # entropy reference values were computed via mpmath by
-    # numerically integrating the PDF
-    # from mpmath import mp
-    # def f_entropy_with_quad(dfn, dfd):
-    #
-    #    def pdf(x):
-    #        A direct translation of the PDF given in
-    #        https://en.wikipedia.org/wiki/F-distribution,
-    #        # with d1 -> dfn and d2 -> dfd
-    #        return (mp.sqrt((dfn*x)**dfn * dfd**dfd /
-    #                        (dfn*x + dfd)**(dfn + dfd)) /
-    #                (x*mp.beta(dfn/2, dfd/2)))
-    #    return -mp.quad(lambda t: pdf(t)*mp.log(pdf(t)), [0, mp.inf])
-
-    @pytest.mark.parametrize("dfn, dfd, ref",
-                             [(5, 5, 1.4061170495306792),
-                              (1, 1000, 0.7852575269737423),
-                              (10000, 1, 3.3244327988967233),
-                              (100, 500, -0.4504998345102748)])
-    def test_entropy(self, dfn, dfd, ref):
-        assert_allclose(stats.f.entropy(dfn, dfd), ref)
 
 def test_rvgeneric_std():
     # Regression test for #1191
