@@ -1419,7 +1419,7 @@ class TestMultinomial:
         for x in r_vals:
             assert_allclose(multinomial.pmf(x, n, p), r_vals[x], atol=1e-14)
 
-    @pytest.mark.parametrize("n", [0, 3]):
+    @pytest.mark.parametrize("n", [0, 3])
     def test_rvs_np(self, n):
         # test that .rvs agrees w/numpy
         sc_rvs = multinomial.rvs(n, [1/4.]*3, size=7, random_state=123)
@@ -1469,7 +1469,7 @@ class TestMultinomial:
         vals4 = multinomial.pmf([[1, 2], [1,1]], [[[[3]]]], [.1, .9])
         assert_allclose(vals4, [[[[.243, 0]]]], rtol=1e-8)
 
-    @pytest.mark.parametrize("n", [0, 5]):
+    @pytest.mark.parametrize("n", [0, 5])
     def test_cov(self, n):
         cov1 = multinomial.cov(n, (.2, .3, .5))
         cov2 = [[n*.2*.8, -n*.2*.3, -n*.2*.5],
@@ -1491,7 +1491,7 @@ class TestMultinomial:
                 [[5*.4*.6, -5*.4*.6], [-5*.4*.6, 5*.4*.6]]]
         assert_allclose(cov5, cov6, rtol=1e-8)
 
-    @pytest.mark.parametrize("n", [0, 2]):
+    @pytest.mark.parametrize("n", [0, 2])
     def test_entropy(self, n):
         # this is equivalent to a binomial distribution with n=2, so the
         # entropy .77899774929 is easily computed "by hand"
@@ -1513,7 +1513,7 @@ class TestMultinomial:
                  [binom.entropy(8, .3), binom.entropy(8, .4)]],
                 rtol=1e-8)
 
-    @pytest.mark.parametrize("n", [0, 5]):
+    @pytest.mark.parametrize("n", [0, 5])
     def test_mean(self, n):
         mean1 = multinomial.mean(n, [.2, .8])
         assert_allclose(mean1, [n*.2, n*.8], rtol=1e-8)
