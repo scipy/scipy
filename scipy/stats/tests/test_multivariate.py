@@ -1419,13 +1419,13 @@ class TestMultinomial:
         for x in r_vals:
             assert_allclose(multinomial.pmf(x, n, p), r_vals[x], atol=1e-14)
 
-    def test_rvs_np(self):
+    @pytest.mark.parametrize("n", [0, 3]):
+    def test_rvs_np(self, n):
         # test that .rvs agrees w/numpy
-        for n in [0, 3]:
-            sc_rvs = multinomial.rvs(n, [1/4.]*3, size=7, random_state=123)
-            rndm = np.random.RandomState(123)
-            np_rvs = rndm.multinomial(n, [1/4.]*3, size=7)
-            assert_equal(sc_rvs, np_rvs)
+        sc_rvs = multinomial.rvs(n, [1/4.]*3, size=7, random_state=123)
+        rndm = np.random.RandomState(123)
+        np_rvs = rndm.multinomial(n, [1/4.]*3, size=7)
+        assert_equal(sc_rvs, np_rvs)
 
     def test_pmf(self):
         vals0 = multinomial.pmf((5,), 5, (1,))
@@ -1451,6 +1451,8 @@ class TestMultinomial:
         vals5 = multinomial.pmf([0, 0, 0], 0, [2/3.0, 1/3.0, 0])
         assert vals5 == 1
 
+        vals6 = multinomial.pmf([2, 1, 0], 0, [2/3.0, 1/3.0, 0])
+        assert vals6 == 0
     def test_pmf_broadcasting(self):
         vals0 = multinomial.pmf([1, 2], 3, [[.1, .9], [.2, .8]])
         assert_allclose(vals0, [.243, .384], rtol=1e-8)
@@ -1467,13 +1469,13 @@ class TestMultinomial:
         vals4 = multinomial.pmf([[1, 2], [1,1]], [[[[3]]]], [.1, .9])
         assert_allclose(vals4, [[[[.243, 0]]]], rtol=1e-8)
 
-    def test_cov(self):
-        for n in [0, 5]:
-            cov1 = multinomial.cov(n, (.2, .3, .5))
-            cov2 = [[n*.2*.8, -n*.2*.3, -n*.2*.5],
-                    [-n*.3*.2, n*.3*.7, -n*.3*.5],
-                    [-n*.5*.2, -n*.5*.3, n*.5*.5]]
-            assert_allclose(cov1, cov2, rtol=1e-8)
+    @pytest.mark.parametrize("n", [0, 5]):
+    def test_cov(self, n):
+        cov1 = multinomial.cov(n, (.2, .3, .5))
+        cov2 = [[n*.2*.8, -n*.2*.3, -n*.2*.5],
+                [-n*.3*.2, n*.3*.7, -n*.3*.5],
+                [-n*.5*.2, -n*.5*.3, n*.5*.5]]
+        assert_allclose(cov1, cov2, rtol=1e-8)
 
     def test_cov_broadcasting(self):
         cov1 = multinomial.cov(5, [[.1, .9], [.2, .8]])
@@ -1489,12 +1491,12 @@ class TestMultinomial:
                 [[5*.4*.6, -5*.4*.6], [-5*.4*.6, 5*.4*.6]]]
         assert_allclose(cov5, cov6, rtol=1e-8)
 
-    def test_entropy(self):
+    @pytest.mark.parametrize("n", [0, 2]):
+    def test_entropy(self, n):
         # this is equivalent to a binomial distribution with n=2, so the
         # entropy .77899774929 is easily computed "by hand"
-        for n in [0, 2]:
-            ent0 = multinomial.entropy(n, [.2, .8])
-            assert_allclose(ent0, binom.entropy(n, .2), rtol=1e-8)
+        ent0 = multinomial.entropy(n, [.2, .8])
+        assert_allclose(ent0, binom.entropy(n, .2), rtol=1e-8)
 
     def test_entropy_broadcasting(self):
         ent0 = multinomial.entropy([2, 3], [.2, .3])
@@ -1511,10 +1513,10 @@ class TestMultinomial:
                  [binom.entropy(8, .3), binom.entropy(8, .4)]],
                 rtol=1e-8)
 
-    def test_mean(self):
-        for n in [0, 5]:
-            mean1 = multinomial.mean(n, [.2, .8])
-            assert_allclose(mean1, [n*.2, n*.8], rtol=1e-8)
+    @pytest.mark.parametrize("n", [0, 5]):
+    def test_mean(self, n):
+        mean1 = multinomial.mean(n, [.2, .8])
+        assert_allclose(mean1, [n*.2, n*.8], rtol=1e-8)
 
     def test_mean_broadcasting(self):
         mean1 = multinomial.mean([5, 6], [.2, .8])
