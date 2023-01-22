@@ -685,9 +685,14 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Optimal values for the parameters so that the sum of the squared
         residuals of ``f(xdata, *popt) - ydata`` is minimized.
     pcov : 2-D array
-        The estimated covariance of popt. The diagonals provide the variance
-        of the parameter estimate. To compute one standard deviation errors
-        on the parameters use ``perr = np.sqrt(np.diag(pcov))``.
+        The estimated approximate covariance of popt. The diagonals provide
+        the variance of the parameter estimate. To compute one standard
+        deviation errors on the parameters, use
+        ``perr = np.sqrt(np.diag(pcov))``. Note that the relationship between
+        `cov` and parameter error estimates is derived based on a linear
+        approximation to the model function around the optimum [1].
+        When this approximation becomes inaccurate, `cov` may not provide an
+        accurate measure of uncertainty.
 
         How the `sigma` parameter affects the estimated covariance
         depends on `absolute_sigma` argument, as described above.
@@ -768,6 +773,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     Box constraints can be handled by methods 'trf' and 'dogbox'. Refer to
     the docstring of `least_squares` for more information.
+
+    References
+    ----------
+    [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
+        regression in groundwater flow: Three case studies. Water Resources
+        Research, Vol. 43, W03423, :doi:`10.1029/2005WR004804`
 
     Examples
     --------
