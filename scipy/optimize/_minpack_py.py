@@ -651,10 +651,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     pcov : 2-D array
         The estimated approximate covariance of popt. The diagonals provide
         the variance of the parameter estimate. To compute one standard
-        deviation errors on the parameters use
+        deviation errors on the parameters, use
         ``perr = np.sqrt(np.diag(pcov))``. Note that the relationship between
-        cov and parameter error estimate is derived based on a linear
-        approximation the model function around the optimum [1].
+        `cov` and parameter error estimates is derived based on a linear
+        approximation to the model function around the optimum [1].
         When this approximation becomes inaccurate, `cov` may not provide an
         accurate measure of uncertainty.
 
@@ -742,7 +742,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     ----------
     [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
         regression in groundwater flow: Three case studies. Water Resources
-        Research, Vol. 43, W03423, doi:10.1029/2005WR004804
+        Research, Vol. 43, W03423, :doi:`10.1029/2005WR004804`
 
     Examples
     --------
