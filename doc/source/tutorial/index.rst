@@ -68,17 +68,6 @@ Below, you can find the complete user guide organized by subpackages.
    ndimage
    io
 
-.. note::
-
-   In this documentation, we will often assume that the main packages (NumPy,
-   SciPy, and Matplotlib) have been imported as::
-
-       >>> import numpy as np
-       >>> import matplotlib as mpl
-       >>> import matplotlib.pyplot as plt
-
-   While we obviously don't require you to follow these conventions in your own
-   code, they are highly recommended.
 
 .. _executable-tutorials:
 

@@ -7,7 +7,7 @@ name: scipy-dev
 channels:
   - conda-forge
 dependencies:
-  - python<=3.9
+  - python
   - setuptools<60.0
   - cython
   - compilers
@@ -39,7 +39,7 @@ dependencies:
   - pydata-sphinx-theme==0.9.0
   - sphinx-design
   - docutils<0.18.1
-  #- jupytext
+  - jupytext
   - myst-nb
   # For linting
   - flake8 < 6.0
