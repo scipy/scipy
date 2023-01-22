@@ -605,6 +605,10 @@ def correlation(u, v, w=None, centered=True):
 
     Examples
     --------
+    Correlation distance is the measure of dependence between two
+    arbitary vectors,each n-d vector here represented by a 1-d
+    array having n elements.
+    
     To find the correlation distance between two arrays, length of each
     array being same, without weight:
 
@@ -616,6 +620,10 @@ def correlation(u, v, w=None, centered=True):
 
     >>> distance.correlation([1, 0, 1], [2, 2, 1], w=[2, 3, 1])
     1.4472135954999579
+    
+    Note
+    ------
+    Here, each 1d array should have the same number of elements. 
 
     """
     u = _validate_vector(u)
