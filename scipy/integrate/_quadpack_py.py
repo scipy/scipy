@@ -4,6 +4,7 @@ import sys
 import warnings
 from functools import partial
 
+from scipy._lib._bunch import _make_tuple_bunch
 from . import _quadpack
 import numpy as np
 from numpy import Inf
@@ -920,7 +921,12 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
             opts={"epsabs": epsabs, "epsrel": epsrel})
 
 
-def nquad(func, ranges, args=None, opts=None, full_output=False):
+QuadratureResult = _make_tuple_bunch("QuadratureResult",
+                                     field_names=["integral", "abserr"],
+                                     extra_field_names=["neval"])
+
+
+def nquad(func, ranges, args=None, opts=None, full_output=None):
     r"""
     Integration over multiple variables.
 
@@ -985,15 +991,22 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         The number of integrand function evaluations ``neval`` can be obtained
         by setting ``full_output=True`` when calling nquad.
 
+        .. deprecated:: 1.11.0
+           Parameter `full_output` is deprecated and will be removed in version
+           1.13.0. When `full_output` is unspecified, ``neval`` is provided
+           as an attribute of the result object.
+
     Returns
     -------
-    result : float
-        The result of the integration.
-    abserr : float
-        The maximum of the estimates of the absolute error in the various
-        integration results.
-    out_dict : dict, optional
-        A dict containing additional information on the integration.
+    A result object with the following attributes:
+
+        integral : float
+            The result of the integration.
+        abserr : float
+            The maximum of the estimates of the absolute error in the various
+            integration results.
+        neval : dict, optional
+            The number of integrand evaluations.
 
     See Also
     --------
@@ -1168,7 +1181,19 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         opts = [_OptFunc(opts)] * depth
     else:
         opts = [opt if callable(opt) else _OptFunc(opt) for opt in opts]
-    return _NQuad(func, ranges, opts, full_output).integrate(*args)
+    res = _NQuad(func, ranges, opts, True).integrate(*args)
+
+    if full_output is not None:
+        msg = ("Use of parameter `full_output` is deprecated. Please leave "
+               "`full_output` unspecified; `neval` can now be accessed as an "
+               "attribute of the object returned by `scipy.integrate.nquad`.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+    if full_output:
+        return res
+    else:
+        return QuadratureResult(integral=res[0], abserr=res[1],
+                                neval=res[2]['neval'])
 
 
 class _RangeFunc:
