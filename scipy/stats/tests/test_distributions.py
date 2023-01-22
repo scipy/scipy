@@ -462,6 +462,7 @@ class TestChi:
     def test_entropy(self, df, ref):
         assert_allclose(stats.chi(df).entropy(), ref)
 
+
 class TestNBinom:
     def setup_method(self):
         np.random.seed(1234)
@@ -3592,6 +3593,7 @@ class TestBeta:
     def test_entropy(self, a, b, ref):
         assert_allclose(stats.beta(a, b).entropy(), ref)
 
+
 class TestBetaPrime:
     def test_logpdf(self):
         alpha, beta = 267, 1472
@@ -3698,6 +3700,31 @@ class TestDgamma:
 
         dist = stats.dgamma(a)
         assert_equal(dist.pdf(x), res)
+
+    # mpmath was used to compute the expected values.
+    # For x < 0, cdf(x, a) is mp.gammainc(a, -x, mp.inf, regularized=True)/2
+    # For x > 0, cdf(x, a) is (1 + mp.gammainc(a, 0, x, regularized=True))/2
+    # E.g.
+    #    from mpmath import mp
+    #    mp.dps = 50
+    #    print(float(mp.gammainc(1, 20, mp.inf, regularized=True)/2))
+    # prints
+    #    1.030576811219279e-09
+    @pytest.mark.parametrize('x, a, expected',
+                             [(-20, 1, 1.030576811219279e-09),
+                              (-40, 1, 2.1241771276457944e-18),
+                              (-50, 5, 2.7248509914602648e-17),
+                              (-25, 0.125, 5.333071920958156e-14),
+                              (5, 1, 0.9966310265004573)])
+    def test_cdf_ppf_sf_isf_tail(self, x, a, expected):
+        cdf = stats.dgamma.cdf(x, a)
+        assert_allclose(cdf, expected, rtol=5e-15)
+        ppf = stats.dgamma.ppf(expected, a)
+        assert_allclose(ppf, x, rtol=5e-15)
+        sf = stats.dgamma.sf(-x, a)
+        assert_allclose(sf, expected, rtol=5e-15)
+        isf = stats.dgamma.isf(expected, a)
+        assert_allclose(isf, -x, rtol=5e-15)
 
 
 class TestChi2:

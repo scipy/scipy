@@ -1511,6 +1511,9 @@ cosine = cosine_gen(a=-np.pi, b=np.pi, name='cosine')
 class dgamma_gen(rv_continuous):
     r"""A double gamma continuous random variable.
 
+    The double gamma distribution is also known as the reflected gamma
+    distribution [1]_.
+
     %(before_notes)s
 
     Notes
@@ -1527,6 +1530,12 @@ class dgamma_gen(rv_continuous):
     `dgamma` takes ``a`` as a shape parameter for :math:`a`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson, Kotz, and Balakrishnan, "Continuous Univariate
+           Distributions, Volume 1", Second Edition, John Wiley and Sons
+           (1994).
 
     %(example)s
 
@@ -1549,16 +1558,24 @@ class dgamma_gen(rv_continuous):
         return sc.xlogy(a - 1.0, ax) - ax - np.log(2) - sc.gammaln(a)
 
     def _cdf(self, x, a):
-        fac = 0.5*sc.gammainc(a, abs(x))
-        return np.where(x > 0, 0.5 + fac, 0.5 - fac)
+        return np.where(x > 0,
+                        0.5 + 0.5*sc.gammainc(a, x),
+                        0.5*sc.gammaincc(a, -x))
 
     def _sf(self, x, a):
-        fac = 0.5*sc.gammainc(a, abs(x))
-        return np.where(x > 0, 0.5-fac, 0.5+fac)
+        return np.where(x > 0,
+                        0.5*sc.gammaincc(a, x),
+                        0.5 + 0.5*sc.gammainc(a, -x))
 
     def _ppf(self, q, a):
-        fac = sc.gammainccinv(a, 1-abs(2*q-1))
-        return np.where(q > 0.5, fac, -fac)
+        return np.where(q > 0.5,
+                        sc.gammaincinv(a, 2*q - 1),
+                        -sc.gammainccinv(a, 2*q))
+
+    def _isf(self, q, a):
+        return np.where(q > 0.5,
+                        -sc.gammaincinv(a, 2*q - 1),
+                        sc.gammainccinv(a, 2*q))
 
     def _stats(self, a):
         mu2 = a*(a+1.0)
