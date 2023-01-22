@@ -3714,7 +3714,8 @@ class TestDgamma:
                              [(-20, 1, 1.030576811219279e-09),
                               (-40, 1, 2.1241771276457944e-18),
                               (-50, 5, 2.7248509914602648e-17),
-                              (-25, 0.125, 5.333071920958156e-14)])
+                              (-25, 0.125, 5.333071920958156e-14),
+                              (5, 1, 0.9966310265004573)])
     def test_cdf_ppf_sf_isf_tail(self, x, a, expected):
         cdf = stats.dgamma.cdf(x, a)
         assert_allclose(cdf, expected, rtol=5e-15)
