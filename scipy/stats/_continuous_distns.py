@@ -4334,8 +4334,14 @@ class invgauss_gen(rv_continuous):
         """
         Ref.: https://moser-isi.ethz.ch/docs/papers/smos-2012-10.pdf (eq. 9)
         """
-        return (0.5 * np.log(2 * np.pi * np.e * mu**3) -
-                1.5 * np.exp(2 / mu) * sc.exp1(2 / mu))
+        # a = log(2*pi*e*mu**3)
+        #   = 1 + log(2*pi) + 3 * log(mu)
+        a = 1. + np.log(2 * np.pi) + 3 * np.log(mu)
+        # b = exp(2 / mu) * exp1(2 / mu)
+        #   = exp(log(exp(2 / mu) * exp1(2 / mu)))
+        #   = exp(2 / mu + log(exp1(2 / mu)))
+        b = np.exp(2 / mu + np.log(sc.exp1(2 / mu)))
+        return 0.5 * a - 1.5 * b
 
 
 invgauss = invgauss_gen(a=0.0, name='invgauss')
