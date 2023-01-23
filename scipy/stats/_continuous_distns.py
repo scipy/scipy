@@ -856,7 +856,8 @@ class betaprime_gen(rv_continuous):
 
     References
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Beta_prime_distribution
+    .. [1] Beta prime distribution, Wikipedia,
+           https://en.wikipedia.org/wiki/Beta_prime_distribution
 
     %(example)s
 
@@ -891,7 +892,7 @@ class betaprime_gen(rv_continuous):
         return _lazywhere(
             x > 1, [x, a, b],
             lambda x_, a_, b_: beta._sf(1/(1+x_), b_, a_),
-            f2 = lambda x_, a_, b_: beta._cdf(x_/(1+x_), a_, b_))
+            f2=lambda x_, a_, b_: beta._cdf(x_/(1+x_), a_, b_))
 
     def _ppf(self, p, a, b):
         r = sc.betaincinv(a, b, p)

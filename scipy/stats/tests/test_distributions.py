@@ -3661,13 +3661,13 @@ class TestBetaPrime:
          (1e-100, 0.05, 100.0, 1.292881858756166e-05)])
     def test_cdf_tails(self, x, a, b, expected):
         # test for gh-17631
-        # values computed with mpmath. Example:
-        # import mpmath as mp
-        # mp.dps = 25
+        # values computed with mpmath.
+        # Example:
+        # from mpmath import mp
+        # mp.dps = 50
         # a, b = mp.mpf('0.05'), mp.mpf('0.1')
         # x = mp.mpf('1e22')
-        # y = mp.fdiv(x, mp.fadd(mp.mpf('1.0'), x, dps=25), dps=25)
-        # float(mp.betainc(a, b, 0.0, y, regularized=True))
+        # float(mp.betainc(a, b, 0.0, x/(1+x), regularized=True))
         assert_allclose(stats.betaprime.cdf(x, a, b), expected, rtol=1e-14)
 
     @pytest.mark.parametrize(
@@ -3678,7 +3678,7 @@ class TestBetaPrime:
         # for even more extreme values, we only get a few correct digits
         # results are still < 1
         y = stats.betaprime.cdf(x, a, b)
-        assert_(y < 1.0)
+        assert y < 1.0
         assert_allclose(y, expected, rtol=2e-5)
 
 
