@@ -1,6 +1,6 @@
 name: Documentation
 description: Report an issue related to the SciPy documentation.
-title: "DOC: "
+title: "DOC: <Please write a comprehensive title after the 'DOC: ' prefix>"
 labels: [Documentation]
 
 body:
@@ -8,17 +8,18 @@ body:
   attributes: 
     label: "Issue with current documentation:"
     description: >
-      Please make sure to leave a reference to the document/code you're
-      referring to. You can also check the development version of the
-      documentation and see if this issue has already been addressed at
-      https://https://scipy.github.io/devdocs/.
+      Please check the development version of the documentation at
+      https://scipy.github.io/devdocs/ to see if this issue has already been
+      addressed. If not, please link to the development version (either using
+      the link above or selecting the dev version in the documentation version
+      dropdown) of the document/code you're referring to.
 
 - type: textarea
   attributes:
     label: "Idea or request for content:"
     description: >
-      Please describe as clearly as possible what topics you think are missing
-      from the current documentation.
+      Please describe as clearly as possible a suggested fix, better phrasing or
+      topics you think are missing from the current documentation.
 
 - type: textarea
   attributes:
