@@ -238,6 +238,7 @@ Summary statistics
    variation         -- Coefficient of variation
    find_repeats
    rankdata
+   tiecorrect
    trim_mean
    gstd              -- Geometric Standard Deviation
    iqr
@@ -363,6 +364,7 @@ Some tests are specifically for comparing two samples.
    poisson_means_test
    ttest_ind
    mannwhitneyu
+   ranksums
    brunnermunzel
    mood
    ansari
@@ -420,8 +422,6 @@ Deprecated and Legacy Functions
    :toctree: generated/
 
    binom_test
-   tiecorrect
-   ranksums
 
 The following functions are related to the tests above but do not belong in the
 above categories.
