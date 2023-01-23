@@ -523,7 +523,7 @@ def _quadmin(a, fa, fpa, b, fb):
 
 
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
-          phi, derphi, phi0, derphi0, c1, c2, extra_condition):
+          phi, derphi, phi0, derphi0, c1, c2, extra_condition, maxiter):
     """Zoom stage of approximate linesearch satisfying strong Wolfe conditions.
 
     Part of the optimization algorithm in `scalar_search_wolfe2`.
@@ -535,7 +535,7 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
 
     """
 
-    maxiter = 10
+    maxiter = maxiter
     i = 0
     delta1 = 0.2  # cubic interpolant check
     delta2 = 0.1  # quadratic interpolant check
