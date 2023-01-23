@@ -517,6 +517,14 @@ Directional statistical functions
    circvar
    circstd
 
+Sensitivity Analysis
+--------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   sobol_indices
+
 Plot-tests
 ----------
 
@@ -572,6 +580,7 @@ from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
+from ._sensitivity_analysis import *
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

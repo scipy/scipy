@@ -332,6 +332,7 @@ class RegularGridInterpolator:
             indices, norm_distances = self._find_indices(xi.T)
             if (ndim == 2 and hasattr(self.values, 'dtype') and
                     self.values.ndim == 2 and self.values.flags.writeable and
+                    self.values.dtype in (np.float64, np.complex128) and
                     self.values.dtype.byteorder == '='):
                 # until cython supports const fused types, the fast path
                 # cannot support non-writeable values

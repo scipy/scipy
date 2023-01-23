@@ -821,6 +821,10 @@ class beta_gen(rv_continuous):
 
         return a, b, floc, fscale
 
+    def _entropy(self, a, b):
+        return (sc.betaln(a, b) - (a - 1) * sc.psi(a) -
+                (b - 1) * sc.psi(b) + (a + b - 2) * sc.psi(a + b))
+
 
 beta = beta_gen(a=0.0, b=1.0, name='beta')
 
@@ -1365,6 +1369,10 @@ class chi_gen(rv_continuous):
         g2 /= np.asarray(mu2**2.0)
         return mu, mu2, g1, g2
 
+    def _entropy(self, df):
+        return (sc.gammaln(.5 * df) +
+                .5 * (df - np.log(2) - (df - 1) * sc.digamma(.5 * df)))
+
 
 chi = chi_gen(a=0.0, name='chi')
 
@@ -1435,6 +1443,11 @@ class chi2_gen(rv_continuous):
         g2 = 12.0/df
         return mu, mu2, g1, g2
 
+    def _entropy(self, df):
+        half_df = 0.5 * df
+        return (half_df + np.log(2) + sc.gammaln(half_df) +
+                (1 - half_df) * sc.psi(half_df))
+
 
 chi2 = chi2_gen(a=0.0, name='chi2')
 
@@ -1498,6 +1511,9 @@ cosine = cosine_gen(a=-np.pi, b=np.pi, name='cosine')
 class dgamma_gen(rv_continuous):
     r"""A double gamma continuous random variable.
 
+    The double gamma distribution is also known as the reflected gamma
+    distribution [1]_.
+
     %(before_notes)s
 
     Notes
@@ -1514,6 +1530,12 @@ class dgamma_gen(rv_continuous):
     `dgamma` takes ``a`` as a shape parameter for :math:`a`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson, Kotz, and Balakrishnan, "Continuous Univariate
+           Distributions, Volume 1", Second Edition, John Wiley and Sons
+           (1994).
 
     %(example)s
 
@@ -1536,16 +1558,24 @@ class dgamma_gen(rv_continuous):
         return sc.xlogy(a - 1.0, ax) - ax - np.log(2) - sc.gammaln(a)
 
     def _cdf(self, x, a):
-        fac = 0.5*sc.gammainc(a, abs(x))
-        return np.where(x > 0, 0.5 + fac, 0.5 - fac)
+        return np.where(x > 0,
+                        0.5 + 0.5*sc.gammainc(a, x),
+                        0.5*sc.gammaincc(a, -x))
 
     def _sf(self, x, a):
-        fac = 0.5*sc.gammainc(a, abs(x))
-        return np.where(x > 0, 0.5-fac, 0.5+fac)
+        return np.where(x > 0,
+                        0.5*sc.gammaincc(a, x),
+                        0.5 + 0.5*sc.gammainc(a, -x))
 
     def _ppf(self, q, a):
-        fac = sc.gammainccinv(a, 1-abs(2*q-1))
-        return np.where(q > 0.5, fac, -fac)
+        return np.where(q > 0.5,
+                        sc.gammaincinv(a, 2*q - 1),
+                        -sc.gammainccinv(a, 2*q))
+
+    def _isf(self, q, a):
+        return np.where(q > 0.5,
+                        -sc.gammaincinv(a, 2*q - 1),
+                        sc.gammainccinv(a, 2*q))
 
     def _stats(self, a):
         mu2 = a*(a+1.0)
@@ -7318,46 +7348,49 @@ class powerlaw_gen(rv_continuous):
         return 1 - 1.0/a - np.log(a)
 
     def _support_mask(self, x, a):
-        if np.any(a < 1):
-            return (x != 0) & super(powerlaw_gen, self)._support_mask(x, a)
-        else:
-            return super(powerlaw_gen, self)._support_mask(x, a)
+        return (super(powerlaw_gen, self)._support_mask(x, a)
+                & ((x != 0) | (a >= 1)))
 
+    @_call_super_mom
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        Notes specifically for ``powerlaw.fit``: If the location is a free
+        parameter and the value returned for the shape parameter is less than
+        one, the true maximum likelihood approaches infinity. This causes
+        numerical difficulties, and the resulting estimates are approximate.
+        \n\n""")
     def fit(self, data, *args, **kwds):
-        '''
-        Summary of the strategy:
-
-        1) If the scale and location are fixed, return the shape according
-           to a formula.
-
-        2) If the scale is fixed, there are two possibilities for the other
-           parameters - one corresponding with shape less than one, and another
-           with shape greater than one. Calculate both, and return whichever
-           has the better log-likelihood.
-
-        At this point, the scale is known to be free.
-
-        3) If the location is fixed, return the scale and shape according to
-           formulas (or, if the shape is fixed, the fixed shape).
-
-        At this point, the location and scale are both free. There are separate
-        equations depending on whether the shape is less than one or greater
-        than one.
-
-        4a) If the shape is less than one, there are formulas for shape,
-            location, and scale.
-        4b) If the shape is greater than one, there are formulas for shape
-            and scale, but there is a condition for location to be solved
-            numerically.
-
-        If the shape is fixed and less than one, we use 4a.
-        If the shape is fixed and greater than one, we use 4b.
-        If the shape is also free, we calculate fits using both 4a and 4b
-        and choose the one that results a better log-likelihood.
-
-        In many cases, the use of `np.nextafter` is used to avoid numerical
-        issues.
-        '''
+        # Summary of the strategy:
+        #
+        # 1) If the scale and location are fixed, return the shape according
+        #    to a formula.
+        #
+        # 2) If the scale is fixed, there are two possibilities for the other
+        #    parameters - one corresponding with shape less than one, and
+        #    another with shape greater than one. Calculate both, and return
+        #    whichever has the better log-likelihood.
+        #
+        # At this point, the scale is known to be free.
+        #
+        # 3) If the location is fixed, return the scale and shape according to
+        #    formulas (or, if the shape is fixed, the fixed shape).
+        #
+        # At this point, the location and scale are both free. There are
+        # separate equations depending on whether the shape is less than one or
+        # greater than one.
+        #
+        # 4a) If the shape is less than one, there are formulas for shape,
+        #     location, and scale.
+        # 4b) If the shape is greater than one, there are formulas for shape
+        #     and scale, but there is a condition for location to be solved
+        #     numerically.
+        #
+        # If the shape is fixed and less than one, we use 4a.
+        # If the shape is fixed and greater than one, we use 4b.
+        # If the shape is also free, we calculate fits using both 4a and 4b
+        # and choose the one that results a better log-likelihood.
+        #
+        # In many cases, the use of `np.nextafter` is used to avoid numerical
+        # issues.
         if kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
 
@@ -7390,7 +7423,8 @@ class powerlaw_gen(rv_continuous):
             # The first-order necessary condition on `shape` can be solved in
             # closed form. It can be used no matter the assumption of the
             # value of the shape.
-            return -len(data) / np.sum(np.log((data - loc)/scale))
+            N = len(data)
+            return - N / (np.sum(np.log(data - loc)) - N*np.log(scale))
 
         def get_scale(data, loc):
             # analytical solution for `scale` based on the location.
@@ -7433,6 +7467,8 @@ class powerlaw_gen(rv_continuous):
 
         def fit_loc_scale_w_shape_lt_1():
             loc = np.nextafter(data.min(), -np.inf)
+            if np.abs(loc) < np.finfo(loc.dtype).tiny:
+                loc = np.sign(loc) * np.finfo(loc.dtype).tiny
             scale = np.nextafter(get_scale(data, loc), np.inf)
             shape = fshape or get_shape(data, loc, scale)
             return shape, loc, scale
@@ -7476,11 +7512,10 @@ class powerlaw_gen(rv_continuous):
 
             # if the sign of `dL_dLocation_star` is positive at rbrack,
             # we're not going to find the root we're looking for
-            i = 1
             delta = (data.min() - rbrack)
             while dL_dLocation_star(rbrack) > 0:
-                rbrack = data.min() - i * delta
-                i *= 2
+                rbrack = data.min() - delta
+                delta *= 2
 
             def interval_contains_root(lbrack, rbrack):
                 # Check if the interval (lbrack, rbrack) contains the root.
@@ -7513,10 +7548,10 @@ class powerlaw_gen(rv_continuous):
 
         # Shape is free
         fit_shape_lt1 = fit_loc_scale_w_shape_lt_1()
-        ll_lt1 = penalized_nllf(fit_shape_lt1, data)
+        ll_lt1 = self.nnlf(fit_shape_lt1, data)
 
         fit_shape_gt1 = fit_loc_scale_w_shape_gt_1()
-        ll_gt1 = penalized_nllf(fit_shape_gt1, data)
+        ll_gt1 = self.nnlf(fit_shape_gt1, data)
 
         if ll_lt1 <= ll_gt1 and fit_shape_lt1[0] <= 1:
             return fit_shape_lt1
@@ -8926,7 +8961,7 @@ class truncpareto_gen(rv_continuous):
                  + (b+1)*(np.log(c)/(c**b - 1) - 1/b))
 
     def _munp(self, n, b, c):
-        if n == b:
+        if (n == b).all():
             return b*np.log(c) / (1 - c**-b)
         else:
             return b / (b-n) * (c**b - c**n) / (c**b - 1)
