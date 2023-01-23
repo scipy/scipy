@@ -2471,6 +2471,17 @@ class TestInvgauss:
         logsf = stats.invgauss.logsf(110, 1.05)
         assert_allclose(logsf, -56.1467092416426)
 
+    # from mpmath import mp
+    # mp.dps = 100
+    # mu = mp.mpf(1e-2)
+    # ref = (1/2 * mp.log(2 * mp.pi * mp.e * mu**3)
+    #        - 3/2* mp.exp(2/mu) * mp.e1(2/mu))
+    @pytest.mark.parametrize("mu, ref", [(1e-2, -5.496279615262233),
+                                         (1e8, 3.3244822568873474),
+                                         (1e100, 3.3244828013968899)])
+    def test_entropy(self, mu, ref):
+        assert_allclose(stats.invgauss.entropy(mu), ref)
+
 
 class TestLaplace:
     @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])
