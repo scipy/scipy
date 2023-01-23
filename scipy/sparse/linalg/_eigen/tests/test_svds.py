@@ -36,10 +36,6 @@ def sorted_svd(m, k, which='LM'):
     return u[:, ii], s[ii], vh[ii]
 
 
-def svd_estimate(u, s, vh):
-    return np.dot(u, np.dot(np.diag(s), vh))
-
-
 def _check_svds(A, k, u, s, vh, which="LM", check_usvh_A=False,
                 check_svd=True, atol=1e-10, rtol=1e-7):
     n, m = A.shape

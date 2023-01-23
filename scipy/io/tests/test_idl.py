@@ -12,14 +12,6 @@ from scipy.io import _idl
 DATA_PATH = path.join(path.dirname(__file__), 'data')
 
 
-def object_array(*args):
-    """Constructs a numpy array of objects"""
-    array = np.empty(len(args), dtype=object)
-    for i in range(len(args)):
-        array[i] = args[i]
-    return array
-
-
 def assert_identical(a, b):
     """Assert whether value AND type are the same"""
     assert_equal(a, b)

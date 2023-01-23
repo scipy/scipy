@@ -8,7 +8,7 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    finfo, inexact, issubdtype, dtype)
 from scipy import linalg
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError, inv
-from scipy._lib._util import _asarray_validated, _lazywhere
+from scipy._lib._util import _asarray_validated, _lazywhere, _contains_nan
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from ._optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
@@ -495,6 +495,26 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         return retval[0], info
 
 
+def _lightweight_memoizer(f):
+    # very shallow memoization - only remember the first set of parameters
+    # and corresponding function value to address gh-13670
+    def _memoized_func(params):
+        if np.all(_memoized_func.last_params == params):
+            return _memoized_func.last_val
+
+        val = f(params)
+
+        if _memoized_func.last_params is None:
+            _memoized_func.last_params = np.copy(params)
+            _memoized_func.last_val = val
+
+        return val
+
+    _memoized_func.last_params = None
+    _memoized_func.last_val = None
+    return _memoized_func
+
+
 def _wrap_func(func, xdata, ydata, transform):
     if transform is None:
         def func_wrapped(params):
@@ -547,8 +567,9 @@ def _initialize_feasible(lb, ub):
 
 
 def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
-              check_finite=True, bounds=(-np.inf, np.inf), method=None,
-              jac=None, *, full_output=False, **kwargs):
+              check_finite=None, bounds=(-np.inf, np.inf), method=None,
+              jac=None, *, full_output=False, nan_policy=None,
+              **kwargs):
     """
     Use non-linear least squares to fit a function, f, to data.
 
@@ -604,7 +625,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         If True, check that the input arrays do not contain nans of infs,
         and raise a ValueError if they do. Setting this parameter to
         False may silently produce nonsensical results if the input arrays
-        do contain nans. Default is True.
+        do contain nans. Default is True. Note that if `nan_policy` is
+        specified explicitly (not None), this value will be ignored.
     bounds : 2-tuple of array_like or `Bounds`, optional
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
@@ -639,6 +661,20 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         `mesg`, and `ier`.
 
         .. versionadded:: 1.9
+    nan_policy : {'raise', 'omit', None}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is None):
+
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
+          * None: no special handling of NaNs is performed
+            (except what is done by check_finite); the behavior when NaNs
+            are present is implementation-dependent and may change.
+
+        Note that if this value is specified explicitly (not None),
+        `check_finite` will be set as False.
+
+        .. versionadded:: 1.11
     **kwargs
         Keyword arguments passed to `leastsq` for ``method='lm'`` or
         `least_squares` otherwise.
@@ -649,9 +685,14 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Optimal values for the parameters so that the sum of the squared
         residuals of ``f(xdata, *popt) - ydata`` is minimized.
     pcov : 2-D array
-        The estimated covariance of popt. The diagonals provide the variance
-        of the parameter estimate. To compute one standard deviation errors
-        on the parameters use ``perr = np.sqrt(np.diag(pcov))``.
+        The estimated approximate covariance of popt. The diagonals provide
+        the variance of the parameter estimate. To compute one standard
+        deviation errors on the parameters, use
+        ``perr = np.sqrt(np.diag(pcov))``. Note that the relationship between
+        `cov` and parameter error estimates is derived based on a linear
+        approximation to the model function around the optimum [1].
+        When this approximation becomes inaccurate, `cov` may not provide an
+        accurate measure of uncertainty.
 
         How the `sigma` parameter affects the estimated covariance
         depends on `absolute_sigma` argument, as described above.
@@ -732,6 +773,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     Box constraints can be handled by methods 'trf' and 'dogbox'. Refer to
     the docstring of `least_squares` for more information.
+
+    References
+    ----------
+    [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
+        regression in groundwater flow: Three case studies. Water Resources
+        Research, Vol. 43, W03423, :doi:`10.1029/2005WR004804`
 
     Examples
     --------
@@ -831,9 +878,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         raise ValueError("Method 'lm' only works for unconstrained problems. "
                          "Use 'trf' or 'dogbox' instead.")
 
-    # optimization may produce garbage for float32 inputs, cast them to float64
+    if check_finite is None:
+        check_finite = True if nan_policy is None else False
 
-    # NaNs cannot be handled
+    # optimization may produce garbage for float32 inputs, cast them to float64
     if check_finite:
         ydata = np.asarray_chkfinite(ydata, float)
     else:
@@ -849,6 +897,25 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     if ydata.size == 0:
         raise ValueError("`ydata` must not be empty!")
+
+    # nan handling is needed only if check_finite is False because if True,
+    # the x-y data are already checked, and they don't contain nans.
+    if not check_finite and nan_policy is not None:
+        if nan_policy == "propagate":
+            raise ValueError("`nan_policy='propagate'` is not supported "
+                             "by this function.")
+
+        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy)
+        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy)
+
+        if (x_contains_nan or y_contains_nan) and nan_policy == 'omit':
+            # ignore NaNs for N dimensional arrays
+            has_nan = np.isnan(xdata)
+            has_nan = has_nan.any(axis=tuple(range(has_nan.ndim-1)))
+            has_nan |= np.isnan(ydata)
+
+            xdata = xdata[..., ~has_nan]
+            ydata = ydata[~has_nan]
 
     # Determine type of sigma
     if sigma is not None:
@@ -870,9 +937,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     else:
         transform = None
 
-    func = _wrap_func(f, xdata, ydata, transform)
+    func = _lightweight_memoizer(_wrap_func(f, xdata, ydata, transform))
+
     if callable(jac):
-        jac = _wrap_jac(jac, xdata, transform)
+        jac = _lightweight_memoizer(_wrap_jac(jac, xdata, transform))
     elif jac is None and method != 'lm':
         jac = '2-point'
 
@@ -920,7 +988,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         pcov = np.dot(VT.T / s**2, VT)
 
     warn_cov = False
-    if pcov is None:
+    if pcov is None or np.isnan(pcov).any():
         # indeterminate covariance
         pcov = zeros((len(popt), len(popt)), dtype=float)
         pcov.fill(inf)
