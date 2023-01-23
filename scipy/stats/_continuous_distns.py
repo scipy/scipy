@@ -7650,6 +7650,12 @@ class powernorm_gen(rv_continuous):
     def _ppf(self, q, c):
         return -_norm_ppf(pow(1.0 - q, 1.0 / c))
 
+    def _sf(self, x, c):
+        return _norm_cdf(-x)**(c * 1.)
+
+    def _isf(self, q, c):
+        return _norm_ppf(1 - q**(1 / c))
+
 
 powernorm = powernorm_gen(name='powernorm')
 
