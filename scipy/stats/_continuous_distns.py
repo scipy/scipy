@@ -4374,10 +4374,10 @@ class invgauss_gen(rv_continuous):
         # a = log(2*pi*e*mu**3)
         #   = 1 + log(2*pi) + 3 * log(mu)
         a = 1. + np.log(2 * np.pi) + 3 * np.log(mu)
-        # b = exp(2 / mu) * exp1(2 / mu)
-        #   = exp(log(exp(2 / mu) * exp1(2 / mu)))
-        #   = exp(2 / mu + log(exp1(2 / mu)))
-        b = np.exp(2 / mu + np.log(sc.exp1(2 / mu)))
+        # b = exp(2/mu) * exp1(2/mu)
+        #   = _scaled_exp1(2/mu) / (2/mu)
+        r = 2/mu
+        b = sc._ufuncs._scaled_exp1(r)/r
         return 0.5 * a - 1.5 * b
 
 
