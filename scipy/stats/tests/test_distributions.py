@@ -2668,6 +2668,30 @@ class TestPowerlaw:
             _assert_less_or_close_loglike(dist, data, dist.nnlf)
 
 
+class TestPowerNorm:
+
+    # survival function references were computed with mpmath via
+    # from mpmath import mp
+    # float(mp.ncdf(-x)**c)
+
+    @pytest.mark.parametrize("x, c, ref",
+                             [(9, 1, 1.1285884059538405e-19),
+                              (20, 2, 7.582445786569958e-178)])
+    def test_sf(self, x, c, ref):
+        assert_allclose(stats.powernorm.sf(x, c), ref)
+
+    # inverse survival function references were computed with mpmath via
+    # from mpmath import mp
+    # def isf_mp(q, c):
+    #     arg = q**(1 / c)
+    #     return float(- mp.sqrt(2) * mp.erfinv(2 * arg -1))
+
+    @pytest.mark.parametrize("q, c, ref",
+                             [(1e-5, 20, -0.15690800666514135),
+                              (0.9999, 100, -4.753414305020617)])
+    def test_isf(self, q, c, ref):
+        assert_allclose(stats.powernorm.isf(q, c), ref)
+
 class TestInvGamma:
     def test_invgamma_inf_gh_1866(self):
         # invgamma's moments are only finite for a>n
