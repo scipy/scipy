@@ -2692,6 +2692,12 @@ class TestPowerNorm:
     def test_isf(self, q, c, ref):
         assert_allclose(stats.powernorm.isf(q, c), ref)
 
+    @pytest.mark.parametrize("x, c, ref",
+                             [(-12, 9, 1.598833900869911e-32),
+                              (2, 9, 0.9999999999999983)])
+    def test_cdf(self, x, c, ref):
+        assert_allclose(stats.powernorm.cdf(x, c), ref)
+
 class TestInvGamma:
     def test_invgamma_inf_gh_1866(self):
         # invgamma's moments are only finite for a>n
