@@ -906,8 +906,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             raise ValueError("`nan_policy='propagate'` is not supported "
                              "by this function.")
 
-        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy)
-        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy)
+        policies = [None, 'raise', 'omit']
+        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy,
+                                                   policies=policies)
+        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy,
+                                                   policies=policies)
 
         if (x_contains_nan or y_contains_nan) and nan_policy == 'omit':
             # ignore NaNs for N dimensional arrays
