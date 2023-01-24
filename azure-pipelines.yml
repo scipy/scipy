@@ -144,8 +144,7 @@ stages:
         addToPath: true
         architecture: 'x64'
     - script: >-
-        python -m pip install
-        "flake8<6"
+        python -m pip install ruff cython-lint
       displayName: 'Install tools'
       failOnStderr: false
     - script: |
