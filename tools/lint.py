@@ -57,7 +57,7 @@ def find_branch_point(branch):
 def diff_files(sha):
     """Find the diff since the given SHA."""
     res = subprocess.run(
-        ['git', 'diff', '--name-only', '-z', sha, '--',
+        ['git', 'diff', '--name-only', '--diff-filter=ACMR', '-z', sha, '--',
          '*.py', '*.pyx', '*.pxd', '*.pxi'],
         stdout=subprocess.PIPE,
         encoding='utf-8'
