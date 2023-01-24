@@ -153,6 +153,18 @@ Continuous distributions
    weibull_max       -- Maximum Weibull (see Frechet)
    wrapcauchy        -- Wrapped Cauchy
 
+The ``fit`` method of the univariate continuous distributions uses
+maximum likelihood estimation to fit the distribution to a data set.
+The ``fit`` method can accept regular data or *censored data*.
+Censored data is represented with instances of the `CensoredData`
+class.
+
+.. autosummary::
+   :toctree: generated/
+
+   CensoredData
+
+
 Multivariate distributions
 --------------------------
 
@@ -208,6 +220,7 @@ Discrete distributions
    yulesimon                -- Yule-Simon
    zipf                     -- Zipf (Zeta)
    zipfian                  -- Zipfian
+
 
 An overview of statistical functions is given below.  Many of these functions
 have a similar version in `scipy.stats.mstats` which work for masked arrays.
@@ -572,6 +585,7 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
+from ._censored_data import CensoredData  # noqa
 from ._resampling import bootstrap, monte_carlo_test, permutation_test
 from ._entropy import *
 from ._hypotests import *
@@ -586,6 +600,7 @@ from ._sensitivity_analysis import *
 from . import (
     biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, statlib, stats
 )
+
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
