@@ -7,10 +7,6 @@ import types
 import warnings
 from collections import namedtuple
 
-
-# trapezoid is a public function for scipy.integrate,
-# even though it's actually a NumPy function.
-from numpy import trapz as trapezoid
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
