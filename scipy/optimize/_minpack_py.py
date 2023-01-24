@@ -626,7 +626,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         and raise a ValueError if they do. Setting this parameter to
         False may silently produce nonsensical results if the input arrays
         do contain nans. Default is True. Note that if `nan_policy` is
-        specified explicitly (not None), this value will be ignored.
+        specified explicitly (not None) and this `check_finite` is not
+        specified specifically, this value will be ignored.
     bounds : 2-tuple of array_like or `Bounds`, optional
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
