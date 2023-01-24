@@ -66,11 +66,23 @@ def diff_files(sha):
     return [f for f in res.stdout.split('\0') if f]
 
 
-def run_flake8(files):
+def run_ruff(files, fix):
+    if not files:
+        return 0, ""
+    args = ['--fix'] if fix else []
+    res = subprocess.run(
+        ['ruff'] + args + files,
+        stdout=subprocess.PIPE,
+        encoding='utf-8'
+    )
+    return res.returncode, res.stdout
+
+
+def run_cython_lint(files):
     if not files:
         return 0, ""
     res = subprocess.run(
-        ['flake8', '--config', CONFIG] + files,
+        ['cython-lint'] + files,
         stdout=subprocess.PIPE,
         encoding='utf-8'
     )
@@ -78,8 +90,11 @@ def run_flake8(files):
 
 
 def main():
-    parser = ArgumentParser()
+    parser = ArgumentParser(description="Also see `pre-commit-hook.sh` which "
+                                        "lints all files staged in git.")
     # In Python 3.9, can use: argparse.BooleanOptionalAction
+    parser.add_argument("--fix", action='store_true',
+                        help='Attempt to fix linting violations')
     parser.add_argument("--diff-against", dest='branch',
                         type=str, default=None,
                         help="Diff against "
@@ -101,10 +116,19 @@ def main():
     else:
         files = args.files
 
-    rc, errors = run_flake8(files)
+    cython_files = [f for f in files if f.endswith('.pyx')]
+    other_files = [f for f in files if not f.endswith('.pyx')]
 
+    rc_cy, errors = run_cython_lint(cython_files)
     if errors:
         print(errors)
+
+    rc, errors = run_ruff(other_files, fix=args.fix)
+    if errors:
+        print(errors)
+
+    if rc == 0 and rc_cy != 0:
+        rc = rc_cy
 
     sys.exit(rc)
 
