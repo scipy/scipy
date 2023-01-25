@@ -132,6 +132,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     Notes
     -----
+    For valid results, the integral must converge; behavior for divergent
+    integrals is not guaranteed.
 
     **Extra information for quad() inputs and outputs**
 
@@ -696,6 +698,8 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
 
     Notes
     -----
+    For valid results, the integral must converge; behavior for divergent
+    integrals is not guaranteed.
 
     **Details of QUADPACK level routines**
 
@@ -829,6 +833,8 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
     Notes
     -----
+    For valid results, the integral must converge; behavior for divergent
+    integrals is not guaranteed.
 
     **Details of QUADPACK level routines**
 
@@ -1004,6 +1010,8 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
 
     Notes
     -----
+    For valid results, the integral must converge; behavior for divergent
+    integrals is not guaranteed.
 
     **Details of QUADPACK level routines**
 
