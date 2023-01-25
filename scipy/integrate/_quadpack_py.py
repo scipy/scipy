@@ -686,7 +686,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         abserr : float
             The maximum of the estimates of the absolute error in the
             two integration results.
-        neval : dict, optional
+        neval : int
             The number of integrand evaluations.
 
     See Also
@@ -828,7 +828,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         abserr : float
             The maximum of the estimates of the absolute error in the
             three integration results.
-        neval : dict, optional
+        neval : int
             The number of integrand evaluations.
 
     See Also
@@ -1024,7 +1024,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=None):
         abserr : float
             The maximum of the estimates of the absolute error in the various
             integration results.
-        neval : dict, optional
+        neval : int
             The number of integrand evaluations.
 
     See Also
