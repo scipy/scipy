@@ -292,6 +292,45 @@ else
   use_math_defines = []
 endif
 
+# Determine whether it is necessary to link libatomic. This could be the case
+# e.g. on 32-bit platforms when atomic operations are used on 64-bit types.
+# The check is copied from Mesa <https://www.mesa3d.org/>.
+# Note that this dependency is not desired, it came in with a HiGHS update.
+# We should try to get rid of it. For discussion, see gh-17777.
+null_dep = dependency('', required : false)
+atomic_dep = null_dep
+code_non_lockfree = '''
+  #include <stdint.h>
+  int main() {
+   struct {
+     uint64_t *v;
+   } x;
+   return (int)__atomic_load_n(x.v, __ATOMIC_ACQUIRE) &
+          (int)__atomic_add_fetch(x.v, (uint64_t)1, __ATOMIC_ACQ_REL);
+  }
+'''
+if cc.get_id() != 'msvc'
+  if not cc.links(
+      code_non_lockfree,
+      name : 'Check atomic builtins without -latomic'
+    )
+    atomic_dep = cc.find_library('atomic', required: false)
+    if atomic_dep.found()
+      # We're not sure that with `-latomic` things will work for all compilers,
+      # so verify and only keep libatomic as a dependency if this works. It is
+      # possible the build will fail later otherwise - unclear under what
+      # circumstances (compilers, runtimes, etc.) exactly.
+      if not cc.links(
+          code_non_lockfree,
+          dependencies: atomic_dep,
+          name : 'Check atomic builtins with -latomic'
+        )
+        atomic_dep = null_dep
+      endif
+    endif
+  endif
+endif
+
 # Suppress warning for deprecated Numpy API.
 # (Suppress warning messages emitted by #warning directives).
 # Replace with numpy_nodepr_api after Cython 3.0 is out
