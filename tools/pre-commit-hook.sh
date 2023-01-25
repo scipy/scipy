@@ -7,6 +7,7 @@
 #   ln -s tools/pre-commit-hook.sh .git/hooks/pre-commit
 
 # store names of files that were staged
+# add  '*.pxd', '*.pxi' once cython-lint supports it
 mapfile -d '' changed < <(git diff --cached --name-only -z --diff-filter=ACMR -- '*.py' '*.pyx')
 
 # create a temporary copy of what would get committed, without unstaged modifications

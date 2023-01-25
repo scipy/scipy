@@ -116,7 +116,8 @@ def main():
     else:
         files = args.files
 
-    cython_files = [f for f in files if f.endswith('.pyx')]
+    cython_exts = ['.pyx']  # Add '.pxd', '.pxi' once cython-lint supports it
+    cython_files = [f for f in files if any(f.endswith(ext) for ext in cython_exts)]
     other_files = [f for f in files if not f.endswith('.pyx')]
 
     rc_cy, errors = run_cython_lint(cython_files)
