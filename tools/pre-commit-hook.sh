@@ -4,7 +4,7 @@
 #
 # Install from root of repository with:
 #
-#   ln -s tools/pre-commit-hook.sh .git/hooks/pre-commit
+#   cp tools/pre-commit-hook.sh .git/hooks/pre-commit
 
 # store names of files that were staged
 # add  '*.pxd', '*.pxi' once cython-lint supports it
