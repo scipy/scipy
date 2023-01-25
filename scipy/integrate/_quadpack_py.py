@@ -678,10 +678,16 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
 
     Returns
     -------
-    y : float
-        The resultant integral.
-    abserr : float
-        An estimate of the error.
+    res : QuadResult
+        An object with the following attributes:
+
+        integral : float
+            The result of the integration.
+        abserr : float
+            The maximum of the estimates of the absolute error in the
+            two integration results.
+        neval : int
+            The number of integrand evaluations.
 
     See Also
     --------
@@ -814,10 +820,16 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
     Returns
     -------
-    y : float
-        The resultant integral.
-    abserr : float
-        An estimate of the error.
+    res : QuadResult
+        An object with the following attributes:
+
+        integral : float
+            The result of the integration.
+        abserr : float
+            The maximum of the estimates of the absolute error in the
+            three integration results.
+        neval : int
+            The number of integrand evaluations.
 
     See Also
     --------
@@ -1004,14 +1016,15 @@ def nquad(func, ranges, args=None, opts=None, full_output=None):
 
     Returns
     -------
-    A result object with the following attributes:
+    res : QuadResult
+        An object with the following attributes:
 
         integral : float
             The result of the integration.
         abserr : float
             The maximum of the estimates of the absolute error in the various
             integration results.
-        neval : dict, optional
+        neval : int
             The number of integrand evaluations.
 
     See Also
