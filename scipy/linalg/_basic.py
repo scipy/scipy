@@ -1298,6 +1298,13 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     --------
     pinvh : Moore-Penrose pseudoinverse of a hermititan matrix.
 
+    Notes
+    -----
+    If ``A`` is invertible then the Moore-Penrose pseudoinverse is exactly
+    the inverse of ``A`` [1]_. If ``A`` is not invertible then the
+    Moore-Penrose pseudoinverse computes the ``x`` solution to ``Ax = b`` such
+    that ``||Ax - b||`` is minimized [1]_.
+
     References
     ----------
     .. [1] Penrose, R. (1956). On best approximate solutions of linear matrix
@@ -1329,45 +1336,13 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     >>> rng = np.random.default_rng()
     >>> A = rng.standard_normal((9, 6))
     >>> B = linalg.pinv(A)
-
-    Condition 1:
-
-    >>> np.allclose(A @ B @ A, A)
+    >>> np.allclose(A @ B @ A, A)  # Condition 1
     True
-
-    Condition 2:
-
-    >>> np.allclose(B @ A @ B, B)
+    >>> np.allclose(B @ A @ B, B)  # Condition 2
     True
-
-    Condition 3:
-
-    >>> np.allclose((A @ B).conj().T, A @ B)
+    >>> np.allclose((A @ B).conj().T, A @ B)  # Condition 3
     True
-
-    Condition 4:
-
-    >>> np.allclose((B @ A).conj().T, B @ A)
-    True
-
-    If ``A`` is invertible then the Moore-Penrose pseudoinverse is exactly the
-    inverse of ``A`` [1]_.
-
-    >>> A = np.array([[1, 1], [0, 1]])
-    >>> np.allclose(linalg.pinv(A), linalg.inv(A))
-    True
-
-    If ``A`` is not invertible then the Moore-Penrose pseudoinverse gives the
-    least squares solution to ``Ax = b`` [1]_. In this example, we will try
-    to fit a straight line to the points ``(0,10), (1, 0), (2, 0)``.
-
-    >>> A = np.array([[1, 0], [1, 1], [1, 2]])
-    >>> b = np.array([10, 0, 0])
-    >>> x = linalg.pinv(A) @ b
-    >>> x_regression = scipy.stats.linregress(A[:, 1], b)
-    >>> np.allclose(x[0], x_regression.intercept)
-    True
-    >>> np.allclose(x[1], x_regression.slope)
+    >>> np.allclose((B @ A).conj().T, B @ A)  # Condition 4
     True
 
     """
