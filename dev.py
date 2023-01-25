@@ -888,12 +888,12 @@ def emit_cmdstr(cmd):
     console.print(f"{EMOJI.cmd} [cmd] {cmd}")
 
 
-def task_flake8_diff():
+def task_lint():
     # Lint just the diff since branching off of main using a
     # stricter configuration.
     emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
     return {
-        'basename': 'flake8-diff',
+        'basename': 'lint',
         'actions': [str(Dirs().root / 'tools' / 'lint.py') +
                     ' --diff-against=main'],
         'doc': 'Lint only files modified since last commit (stricter rules)',
@@ -921,11 +921,11 @@ def task_check_test_name():
 
 @cli.cls_cmd('lint')
 class Lint():
-    """:dash: Run flake8 on modified files and check for
+    """:dash: Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
     def run():
         run_doit_task({
-            'flake8-diff': {},
+            'lint': {},
             'unicode-check': {},
             'check-testname': {},
         })
