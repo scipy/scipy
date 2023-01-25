@@ -19,7 +19,7 @@ compliance before pushing your code:
    Editor |rarr| Advanced Settings. This can help you fix PEP8 issues as you
    write your code.
 
--  Note, however, that SciPy's |flake8|_ configuration may not match
+-  Note, however, that SciPy's linting configuration may not match
    that of your IDE exactly. See below on how to run the official
    checks.
 
@@ -34,13 +34,13 @@ compliance before pushing your code:
 
    The easiest way to do so is to install our pre-commit hook (once)::
 
-     ln -s tools/pre-commit-hook.sh .git/hooks/pre-commit
+     cp tools/pre-commit-hook.sh .git/hooks/pre-commit
 
    This will run linting checks before each commit is made.
 
    Alternatively, you can run the check manually from the SciPy root directory::
 
-      python tools/lint.py --diff-against main
+      python dev.py lint
 
    You can also run the linter on specific files, using the ``--files`` option::
 
@@ -52,9 +52,6 @@ compliance before pushing your code:
 
 .. _PEP8: https://www.python.org/dev/peps/pep-0008/
 .. _enable Real-time code style analysis: https://stackoverflow.com/questions/51463223/how-to-use-pep8-module-using-spyder
-
-.. |flake8| replace:: ``flake8``
-.. _flake8: http://flake8.pycqa.org/en/latest/
 
 .. |autopep8| replace:: ``autopep8``
 .. _autopep8: https://pypi.org/project/autopep8/0.8/

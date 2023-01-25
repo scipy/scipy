@@ -89,11 +89,11 @@ tests, benchmarks, and correct code style.
     for proper style. Install it (once) by running the following from
     the root of the SciPy repository::
 
-      ln -s tools/pre-commit-hook.sh .git/hooks/pre-commit
+      cp tools/pre-commit-hook.sh .git/hooks/pre-commit
 
     Alternatively, you may run the linter manually::
 
-      python tools/lint.py --diff-against main
+      python dev.py lint
 
     Most IDEs and text editors also have settings that can help you
     follow PEP8, for example by translating tabs by four spaces. More
@@ -267,8 +267,6 @@ improvements, and submit your first PR!
 .. _PEP8: https://www.python.org/dev/peps/pep-0008/
 
 .. _pep8 package: https://pypi.python.org/pypi/pep8
-
-.. _pyflakes: https://pypi.python.org/pypi/pyflakes
 
 .. _Github help pages: https://help.github.com/articles/set-up-git/
 
