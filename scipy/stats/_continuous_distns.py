@@ -2693,7 +2693,7 @@ class genlogistic_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, c):
-        return -np.log(c) + sc.psi(c) + 1/c + _EULER + 1
+        return -np.log(c) + sc.psi(c + 1) + _EULER + 1
 
 
 genlogistic = genlogistic_gen(name='genlogistic')
