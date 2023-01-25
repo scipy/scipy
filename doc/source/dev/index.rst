@@ -41,7 +41,7 @@ the organization section.
    contributor/development_workflow
    contributor/pep8
    contributor/rendering_documentation
-   contributor/runtests
+   contributor/devpy_test
    contributor/benchmarking
    contributor/cython
    contributor/public_cython_api
