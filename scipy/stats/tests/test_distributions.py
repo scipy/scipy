@@ -1313,6 +1313,15 @@ class TestGenLogistic:
         logp = stats.genlogistic.logpdf(x, c)
         assert_allclose(logp, expected, rtol=1e-13)
 
+    # Expected values computed with mpmath with 50 digits of precision
+    # from mpmath import mp
+    # float(mp.log(mp.beta(c, 1)) + 1 + mp.digamma(c) + 1/c - mp.digamma(1.))
+    @pytest.mark.parametrize('c, ref', [(1e-8, 19.420680762493962),
+                                        (1e-4, 10.21050485336386),
+                                        (1e8, 1.577215669901533)])
+    def test_entropy(self, c, ref):
+        assert_allclose(stats.genlogistic.entropy(c), ref)
+
 
 class TestHypergeom:
     def setup_method(self):
