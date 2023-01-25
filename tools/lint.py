@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 
 CONFIG = os.path.join(
     os.path.abspath(os.path.dirname(__file__)),
-    'lint.ini',
+    'ruff.toml',
 )
 
 
@@ -71,7 +71,7 @@ def run_ruff(files, fix):
         return 0, ""
     args = ['--fix'] if fix else []
     res = subprocess.run(
-        ['ruff'] + args + files,
+        ['ruff', f'--config={CONFIG}'] + args + files,
         stdout=subprocess.PIPE,
         encoding='utf-8'
     )
