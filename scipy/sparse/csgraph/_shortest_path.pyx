@@ -1337,6 +1337,7 @@ cdef int _johnson_directed(
             const int[:] csr_indices,
             const int[:] csr_indptr,
             double[:] dist_array):
+    # Note: The contents of dist_array must be initialized to zero on entry
     cdef:
         unsigned int N = dist_array.shape[0]
         unsigned int j, k, count
@@ -1344,10 +1345,6 @@ cdef int _johnson_directed(
 
     # relax all edges (N+1) - 1 times
     for count in range(N):
-        for k in range(N):
-            if dist_array[k] < 0:
-                dist_array[k] = 0
-
         for j in range(N):
             d1 = dist_array[j]
             for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1373,6 +1370,7 @@ cdef int _johnson_undirected(
             const int[:] csr_indices,
             const int[:] csr_indptr,
             double[:] dist_array):
+    # Note: The contents of dist_array must be initialized to zero on entry
     cdef:
         unsigned int N = dist_array.shape[0]
         unsigned int j, k, ind_k, count
@@ -1380,10 +1378,6 @@ cdef int _johnson_undirected(
 
     # relax all edges (N+1) - 1 times
     for count in range(N):
-        for k in range(N):
-            if dist_array[k] < 0:
-                dist_array[k] = 0
-
         for j in range(N):
             d1 = dist_array[j]
             for k in range(csr_indptr[j], csr_indptr[j + 1]):

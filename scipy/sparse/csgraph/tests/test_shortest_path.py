@@ -1,6 +1,6 @@
 import warnings
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+from numpy.testing import assert_array_almost_equal, assert_array_equal, assert_allclose
 from pytest import raises as assert_raises
 from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
                                   bellman_ford, construct_dist_matrix,
@@ -76,6 +76,14 @@ undirected_pred = np.array([[-9999, 0, 0, 0, 0],
                             [2, 0, -9999, 0, 0],
                             [3, 3, 0, -9999, 3],
                             [4, 4, 0, 4, -9999]], dtype=float)
+
+directed_negative_weighted_G = np.array([[0, 0, 0],
+                                         [-1, 0, 0],
+                                         [0, -1, 0]], dtype=float)
+
+directed_negative_weighted_SP = np.array([[0, np.inf, np.inf],
+                                          [-1, 0, np.inf],
+                                          [-2, -1, 0]], dtype=float)
 
 methods = ['auto', 'FW', 'D', 'BF', 'J']
 
@@ -277,6 +285,12 @@ def test_negative_cycles():
     for method in ['FW', 'J', 'BF']:
         for directed in (True, False):
             check(method, directed)
+
+
+@pytest.mark.parametrize("method", ['FW', 'J', 'BF'])
+def test_negative_weights(method):
+    SP = shortest_path(directed_negative_weighted_G, method, directed=True)
+    assert_allclose(SP, directed_negative_weighted_SP, atol=1e-10)
 
 
 def test_masked_input():
