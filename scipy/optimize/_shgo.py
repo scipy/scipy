@@ -81,8 +81,11 @@ def shgo(
 
     n : int, optional
         Number of sampling points used in the construction of the simplicial
-        complex. Note that this argument is only used for ``sobol`` and other
-        arbitrary `sampling_methods`.
+        complex. For the default ``simplicial`` sampling method 2**dim + 1
+        sampling points are generated instead of the default `n=100`. For all
+        other specified values `n` sampling points are generated. For ``sobol``,
+        ``halton`` and other arbitrary `sampling_methods` `n=100` or another
+        speciefied number of sampling points are generated
     iters : int, optional
         Number of iterations used in the construction of the simplicial
         complex. Default is 1.
@@ -490,7 +493,7 @@ class SHGO:
         # Split obj func if given with Jac
         try:
             if ((minimizer_kwargs['jac'] is True) and
-               (not callable(minimizer_kwargs['jac']))):
+                    (not callable(minimizer_kwargs['jac']))):
                 self.func = MemoizeJac(func)
                 jac = self.func.derivative
                 minimizer_kwargs['jac'] = jac
@@ -644,14 +647,17 @@ class SHGO:
         self.qhull_incremental = True
 
         # Default settings if no sampling criteria.
-        if (self.n is None) and (self.iters is None):
-            self.n = 128
+        if (self.n is None) and (self.iters is None) \
+                and (sampling_method == 'simplicial'):
+            self.n = 2 ** self.dim + 1
             self.nc = 0  # self.n
         if self.iters is None:
             self.iters = 1
         if (self.n is None) and not (sampling_method == 'simplicial'):
-            self.n = 128
+            self.n = self.n = 100
             self.nc = 0  # self.n
+        if (self.n == 100) and (sampling_method == 'simplicial'):
+            self.n = 2 ** self.dim + 1
 
         if not ((self.maxiter is None) and (self.maxfev is None) and (
                 self.maxev is None)
@@ -739,7 +745,7 @@ class SHGO:
         if 'hess' in self.minimizer_kwargs['options']:
             self.minimizer_kwargs['hess'] = self.minimizer_kwargs['options']['hess']
             del self.minimizer_kwargs['options']['hess']
-            
+
         # Default settings:
         self.minimize_every_iter = options.get('minimize_every_iter', True)
 
@@ -1470,6 +1476,7 @@ class SHGO:
                     raise
 
         return self.Tri
+
 
 class LMap:
     def __init__(self, v):
