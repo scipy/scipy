@@ -149,7 +149,6 @@ stages:
       failOnStderr: false
     - script: |
         set -euo pipefail
-        flake8 scipy benchmarks/benchmarks
         # for Travis CI we used to do: git fetch --unshallow
         # but apparently Azure clones are not as shallow
         # so does not appear to be needed to fetch maintenance
