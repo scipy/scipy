@@ -2729,9 +2729,10 @@ def bartlett(*samples):
       only provide evidence for a "significant" effect, meaning that they are
       unlikely to have occurred under the null hypothesis.
 
-    Note that the chi-square distribution provides an asymptotic approximation
-    of the null distribution.
-    For small samples, it may be more appropriate to perform a
+    Note that the chi-square distribution provides the null distribution
+    when the observations are normally distributed. For small samples
+    drawn from non-normal populations, it may be more appropriate to
+    perform a
     permutation test: Under the null hypothesis that all three samples were
     drawn from the same population, each of the measurements is equally likely
     to have been observed in any of the three samples. Therefore, we can form
