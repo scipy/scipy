@@ -2663,7 +2663,7 @@ class genlogistic_gen(rv_continuous):
         f(x, c) = c \frac{\exp(-x)}
                          {(1 + \exp(-x))^{c+1}}
 
-    for :math:`x >= 0`, :math:`c > 0`.
+    for real :math:`x` and :math:`c > 0`.
 
     `genlogistic` takes ``c`` as a shape parameter for :math:`c`.
 
@@ -7716,8 +7716,8 @@ class powernorm_gen(rv_continuous):
 
         f(x, c) = c \phi(x) (\Phi(-x))^{c-1}
 
-    where :math:`\phi` is the normal pdf, and :math:`\Phi` is the normal cdf,
-    and :math:`x >= 0`, :math:`c > 0`.
+    where :math:`\phi` is the normal pdf, :math:`\Phi` is the normal cdf,
+    :math:`x` is any real, and :math:`c > 0`.
 
     `powernorm` takes ``c`` as a shape parameter for :math:`c`.
 
