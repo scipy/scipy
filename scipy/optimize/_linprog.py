@@ -189,13 +189,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         - minimize ::
 
-          c @ x
+            c @ x
 
         - such that ::
 
-          A_ub @ x <= b_ub
-          A_eq @ x == b_eq
-          lb <= x <= ub
+            A_ub @ x <= b_ub
+            A_eq @ x == b_eq
+            lb <= x <= ub
 
     Note that by default ``lb = 0`` and ``ub = None`` unless specified with
     ``bounds``. There is, hoever, no need to manually formulate the linear
