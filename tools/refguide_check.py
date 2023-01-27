@@ -39,9 +39,7 @@ from doctest import NORMALIZE_WHITESPACE, ELLIPSIS, IGNORE_EXCEPTION_DETAIL
 
 import docutils.core
 import numpy as np
-import sphinx
 from docutils.parsers.rst import directives
-from pkg_resources import parse_version
 
 from numpydoc.docscrape_sphinx import get_doc_object
 from numpydoc.docscrape import NumpyDocString  # noqa
@@ -49,20 +47,10 @@ from scipy.stats._distr_params import distcont, distdiscrete  # noqa
 from scipy import stats  # noqa
 
 
-if parse_version(sphinx.__version__) >= parse_version('1.5'):
-    # Enable specific Sphinx directives
-    from sphinx.directives.other import SeeAlso, Only
-    directives.register_directive('seealso', SeeAlso)
-    directives.register_directive('only', Only)
-else:
-    # Remove sphinx directives that don't run without Sphinx environment.
-    # Sphinx < 1.5 installs all directives on import...
-    directives._directives.pop('versionadded', None)
-    directives._directives.pop('versionchanged', None)
-    directives._directives.pop('moduleauthor', None)
-    directives._directives.pop('sectionauthor', None)
-    directives._directives.pop('codeauthor', None)
-    directives._directives.pop('toctree', None)
+# Enable specific Sphinx directives
+from sphinx.directives.other import SeeAlso, Only
+directives.register_directive('seealso', SeeAlso)
+directives.register_directive('only', Only)
 
 
 BASE_MODULE = "scipy"
@@ -119,6 +107,15 @@ DOCTEST_SKIPLIST = set([
     'scipy.stats.kstwobign',  # inaccurate cdf or ppf
     'scipy.stats.levy_stable',
     'scipy.special.sinc',  # comes from numpy
+    'scipy.fft.fftfreq',
+    'scipy.fft.rfftfreq',
+    'scipy.fft.fftshift',
+    'scipy.fft.ifftshift',
+    'scipy.fftpack.fftfreq',
+    'scipy.fftpack.fftshift',
+    'scipy.fftpack.ifftshift',
+    'scipy.integrate.trapezoid',
+    'scipy.linalg.LinAlgError',
     'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
@@ -417,12 +414,7 @@ def check_rest(module, names, dots=True):
 
     Returns: [(name, success_flag, output), ...]
     """
-
-    try:
-        skip_types = (dict, str, unicode, float, int)
-    except NameError:
-        # python 3
-        skip_types = (dict, str, float, int)
+    skip_types = (dict, str, float, int)
 
     results = []
 
@@ -479,7 +471,7 @@ def check_rest(module, names, dots=True):
 ### Doctest helpers ####
 
 # the namespace to run examples in
-DEFAULT_NAMESPACE = {'np': np}
+DEFAULT_NAMESPACE = {}
 
 # the namespace to do checks in
 CHECK_NAMESPACE = {

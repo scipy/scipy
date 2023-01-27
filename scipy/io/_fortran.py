@@ -73,6 +73,7 @@ class FortranFile:
     To create an unformatted sequential Fortran file:
 
     >>> from scipy.io import FortranFile
+    >>> import numpy as np
     >>> f = FortranFile('test.unf', 'w')
     >>> f.write_record(np.array([1,2,3,4,5], dtype=np.int32))
     >>> f.write_record(np.linspace(0,1,20).reshape((5,4)).T)

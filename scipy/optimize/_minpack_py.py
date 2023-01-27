@@ -6,6 +6,7 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    transpose, zeros, prod, greater,
                    asarray, inf,
                    finfo, inexact, issubdtype, dtype)
+from scipy import linalg
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError, inv
 from scipy._lib._util import _asarray_validated, _lazywhere
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
@@ -128,7 +129,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See the ``method=='hybr'`` in particular.
+           functions. See the ``method='hybr'`` in particular.
 
     Notes
     -----
@@ -374,7 +375,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     See Also
     --------
     least_squares : Newer interface to solve nonlinear least-squares problems
-        with bounds on the variables. See ``method=='lm'`` in particular.
+        with bounds on the variables. See ``method='lm'`` in particular.
 
     Notes
     -----
@@ -465,11 +466,24 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     if full_output:
         cov_x = None
         if info in LEASTSQ_SUCCESS:
-            perm = take(eye(n), retval[1]['ipvt'] - 1, 0)
+            # This was
+            # perm = take(eye(n), retval[1]['ipvt'] - 1, 0)
+            # r = triu(transpose(retval[1]['fjac'])[:n, :])
+            # R = dot(r, perm)
+            # cov_x = inv(dot(transpose(R), R))
+            # but the explicit dot product was not necessary and sometimes
+            # the result was not symmetric positive definite. See gh-4555.
+            perm = retval[1]['ipvt'] - 1
+            n = len(perm)
             r = triu(transpose(retval[1]['fjac'])[:n, :])
-            R = dot(r, perm)
+            inv_triu = linalg.get_lapack_funcs('trtri', (r,))
             try:
-                cov_x = inv(dot(transpose(R), R))
+                # inverse of permuted matrix is a permuation of matrix inverse
+                invR, trtri_info = inv_triu(r)  # default: upper, non-unit diag
+                if trtri_info != 0:  # explicit comparison for readability
+                    raise LinAlgError(f'trtri returned info {trtri_info}')
+                invR[perm] = invR.copy()
+                cov_x = invR @ invR.T
             except (LinAlgError, ValueError):
                 pass
         return (retval[0], cov_x) + retval[1:-1] + (errors[info][0], info)
@@ -708,7 +722,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     -----
     Users should ensure that inputs `xdata`, `ydata`, and the output of `f`
     are ``float64``, or else the optimization may return incorrect results.
-    
+
     With ``method='lm'``, the algorithm uses the Levenberg-Marquardt algorithm
     through `leastsq`. Note that this algorithm can only deal with
     unconstrained problems.

@@ -101,6 +101,7 @@ is desired (and the fact that this integral can be computed as
 ``vec_expint`` based on the routine :obj:`quad`:
 
     >>> from scipy.integrate import quad
+    >>> import numpy as np
     >>> def integrand(t, n, x):
     ...     return np.exp(-x*t) / t**n
     ...

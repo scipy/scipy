@@ -647,7 +647,7 @@ nthreads : int
     Number of threads to use. If 0, use the system default (typically governed
     by the `OMP_NUM_THREADS` environment variable).
 ortho: bool
-    Orthogonalize transform (defaults to ``inorm==1``)
+    Orthogonalize transform (defaults to ``inorm=1``)
 
 Returns
 -------
@@ -687,7 +687,7 @@ nthreads : int
     Number of threads to use. If 0, use the system default (typically governed
     by the `OMP_NUM_THREADS` environment variable).
 ortho: bool
-    Orthogonalize transform (defaults to ``inorm==1``)
+    Orthogonalize transform (defaults to ``inorm=1``)
 
 Returns
 -------

@@ -175,6 +175,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     handling of the edge case of empty ``a``, where it returns an
     empty sequence:
 
+    >>> import numpy as np
     >>> a = np.empty((0, 2))
     >>> from scipy.linalg import svdvals
     >>> svdvals(a)

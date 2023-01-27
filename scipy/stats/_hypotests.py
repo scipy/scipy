@@ -1571,7 +1571,7 @@ def cramervonmises_2samp(x, y, method='auto'):
     - ``exact``: The exact p-value is computed by enumerating all
       possible combinations of the test statistic, see [2]_.
 
-    If ``method=='auto'``, the exact approach is used
+    If ``method='auto'``, the exact approach is used
     if both samples contain equal to or less than 20 observations,
     otherwise the asymptotic distribution is used.
 

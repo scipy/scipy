@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import numpy.testing as npt
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 import pytest
 from scipy import stats
 from scipy.optimize import differential_evolution
@@ -9,6 +9,7 @@ from scipy.optimize import differential_evolution
 from .test_continuous_basic import distcont
 from scipy.stats._distn_infrastructure import FitError
 from scipy.stats._distr_params import distdiscrete
+from scipy.stats import goodness_of_fit
 
 
 # this is not a proper statistical test for convergence, but only
@@ -654,6 +655,178 @@ class TestFit:
         b = (n*x[-1] - x[0])/(n - 1)
         ref = a, b-a  # (3.6081133632151503, 5.509328130317254)
         assert_allclose(res.params, ref, rtol=1e-4)
+
+
+# Data from Matlab: https://www.mathworks.com/help/stats/lillietest.html
+examgrades = [65, 61, 81, 88, 69, 89, 55, 84, 86, 84, 71, 81, 84, 81, 78, 67,
+              96, 66, 73, 75, 59, 71, 69, 63, 79, 76, 63, 85, 87, 88, 80, 71,
+              65, 84, 71, 75, 81, 79, 64, 65, 84, 77, 70, 75, 84, 75, 73, 92,
+              90, 79, 80, 71, 73, 71, 58, 79, 73, 64, 77, 82, 81, 59, 54, 82,
+              57, 79, 79, 73, 74, 82, 63, 64, 73, 69, 87, 68, 81, 73, 83, 73,
+              80, 73, 73, 71, 66, 78, 64, 74, 68, 67, 75, 75, 80, 85, 74, 76,
+              80, 77, 93, 70, 86, 80, 81, 83, 68, 60, 85, 64, 74, 82, 81, 77,
+              66, 85, 75, 81, 69, 60, 83, 72]
+
+
+class TestGoodnessOfFit:
+
+    def test_gof_iv(self):
+        dist = stats.norm
+        x = [1, 2, 3]
+
+        message = r"`dist` must be a \(non-frozen\) instance of..."
+        with pytest.raises(TypeError, match=message):
+            goodness_of_fit(stats.norm(), x)
+
+        message = "`data` must be a one-dimensional array of numbers."
+        with pytest.raises(ValueError, match=message):
+            goodness_of_fit(dist, [[1, 2, 3]])
+
+        message = "`statistic` must be one of..."
+        with pytest.raises(ValueError, match=message):
+            goodness_of_fit(dist, x, statistic='mm')
+
+        message = "`n_mc_samples` must be an integer."
+        with pytest.raises(TypeError, match=message):
+            goodness_of_fit(dist, x, n_mc_samples=1000.5)
+
+        message = "'herring' cannot be used to seed a"
+        with pytest.raises(ValueError, match=message):
+            goodness_of_fit(dist, x, random_state='herring')
+
+    def test_against_ks(self):
+        rng = np.random.default_rng(8517426291317196949)
+        x = examgrades
+        known_params = {'loc': np.mean(x), 'scale': np.std(x, ddof=1)}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='ks', random_state=rng)
+        ref = stats.kstest(x, stats.norm(**known_params).cdf, method='exact')
+        assert_allclose(res.statistic, ref.statistic)  # ~0.0848
+        assert_allclose(res.pvalue, ref.pvalue, atol=5e-3)  # ~0.335
+
+    def test_against_lilliefors(self):
+        rng = np.random.default_rng(2291803665717442724)
+        x = examgrades
+        res = goodness_of_fit(stats.norm, x, statistic='ks', random_state=rng)
+        known_params = {'loc': np.mean(x), 'scale': np.std(x, ddof=1)}
+        ref = stats.kstest(x, stats.norm(**known_params).cdf, method='exact')
+        assert_allclose(res.statistic, ref.statistic)  # ~0.0848
+        assert_allclose(res.pvalue, 0.0348, atol=5e-3)
+
+    def test_against_cvm(self):
+        rng = np.random.default_rng(8674330857509546614)
+        x = examgrades
+        known_params = {'loc': np.mean(x), 'scale': np.std(x, ddof=1)}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='cvm', random_state=rng)
+        ref = stats.cramervonmises(x, stats.norm(**known_params).cdf)
+        assert_allclose(res.statistic, ref.statistic)  # ~0.090
+        assert_allclose(res.pvalue, ref.pvalue, atol=5e-3)  # ~0.636
+
+    def test_against_anderson_case_0(self):
+        # "Case 0" is where loc and scale are known [1]
+        rng = np.random.default_rng(7384539336846690410)
+        x = np.arange(1, 101)
+        # loc that produced critical value of statistic found w/ root_scalar
+        known_params = {'loc': 45.01575354024957, 'scale': 30}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='ad', random_state=rng)
+        assert_allclose(res.statistic, 2.492)  # See [1] Table 1A 1.0
+        assert_allclose(res.pvalue, 0.05, atol=5e-3)
+
+    def test_against_anderson_case_1(self):
+        # "Case 1" is where scale is known and loc is fit [1]
+        rng = np.random.default_rng(5040212485680146248)
+        x = np.arange(1, 101)
+        # scale that produced critical value of statistic found w/ root_scalar
+        known_params = {'scale': 29.957112639101933}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='ad', random_state=rng)
+        assert_allclose(res.statistic, 0.908)  # See [1] Table 1B 1.1
+        assert_allclose(res.pvalue, 0.1, atol=5e-3)
+
+    def test_against_anderson_case_2(self):
+        # "Case 2" is where loc is known and scale is fit [1]
+        rng = np.random.default_rng(726693985720914083)
+        x = np.arange(1, 101)
+        # loc that produced critical value of statistic found w/ root_scalar
+        known_params = {'loc': 44.5680212261933}
+        res = goodness_of_fit(stats.norm, x, known_params=known_params,
+                              statistic='ad', random_state=rng)
+        assert_allclose(res.statistic, 2.904)  # See [1] Table 1B 1.2
+        assert_allclose(res.pvalue, 0.025, atol=5e-3)
+
+    def test_against_anderson_case_3(self):
+        # "Case 3" is where both loc and scale are fit [1]
+        rng = np.random.default_rng(6763691329830218206)
+        # c that produced critical value of statistic found w/ root_scalar
+        x = stats.skewnorm.rvs(1.4477847789132101, loc=1, scale=2, size=100,
+                               random_state=rng)
+        res = goodness_of_fit(stats.norm, x, statistic='ad', random_state=rng)
+        assert_allclose(res.statistic, 0.559)  # See [1] Table 1B 1.2
+        assert_allclose(res.pvalue, 0.15, atol=5e-3)
+
+    @pytest.mark.slow
+    def test_against_anderson_gumbel_r(self):
+        rng = np.random.default_rng(7302761058217743)
+        # c that produced critical value of statistic found w/ root_scalar
+        x = stats.genextreme(0.051896837188595134, loc=0.5,
+                             scale=1.5).rvs(size=1000, random_state=rng)
+        res = goodness_of_fit(stats.gumbel_r, x, statistic='ad',
+                              random_state=rng)
+        ref = stats.anderson(x, dist='gumbel_r')
+        assert_allclose(res.statistic, ref.critical_values[0])
+        assert_allclose(res.pvalue, ref.significance_level[0]/100, atol=5e-3)
+
+    def test_params_effects(self):
+        # Ensure that `guessed_params`, `fit_params`, and `known_params` have
+        # the intended effects.
+        rng = np.random.default_rng(9121950977643805391)
+        x = stats.skewnorm.rvs(-5.044559778383153, loc=1, scale=2, size=50,
+                               random_state=rng)
+
+        # Show that `guessed_params` don't fit to the guess,
+        # but `fit_params` and `known_params` respect the provided fit
+        guessed_params = {'c': 13.4}
+        fit_params = {'scale': 13.73}
+        known_params = {'loc': -13.85}
+        rng = np.random.default_rng(9121950977643805391)
+        res1 = goodness_of_fit(stats.weibull_min, x, n_mc_samples=2,
+                               guessed_params=guessed_params,
+                               fit_params=fit_params,
+                               known_params=known_params, random_state=rng)
+        assert not np.allclose(res1.fit_result.params.c, 13.4)
+        assert_equal(res1.fit_result.params.scale, 13.73)
+        assert_equal(res1.fit_result.params.loc, -13.85)
+
+        # Show that changing the guess changes the parameter that gets fit,
+        # and it changes the null distribution
+        guessed_params = {'c': 2}
+        rng = np.random.default_rng(9121950977643805391)
+        res2 = goodness_of_fit(stats.weibull_min, x, n_mc_samples=2,
+                               guessed_params=guessed_params,
+                               fit_params=fit_params,
+                               known_params=known_params, random_state=rng)
+        assert not np.allclose(res2.fit_result.params.c,
+                               res1.fit_result.params.c, rtol=1e-8)
+        assert not np.allclose(res2.null_distribution,
+                               res1.null_distribution, rtol=1e-8)
+        assert_equal(res2.fit_result.params.scale, 13.73)
+        assert_equal(res2.fit_result.params.loc, -13.85)
+
+        # If we set all parameters as fit_params and known_params,
+        # they're all fixed to those values, but the null distribution
+        # varies.
+        fit_params = {'c': 13.4, 'scale': 13.73}
+        rng = np.random.default_rng(9121950977643805391)
+        res3 = goodness_of_fit(stats.weibull_min, x, n_mc_samples=2,
+                               guessed_params=guessed_params,
+                               fit_params=fit_params,
+                               known_params=known_params, random_state=rng)
+        assert_equal(res3.fit_result.params.c, 13.4)
+        assert_equal(res3.fit_result.params.scale, 13.73)
+        assert_equal(res3.fit_result.params.loc, -13.85)
+        assert not np.allclose(res3.null_distribution, res1.null_distribution)
 
 
 class TestFitResult:

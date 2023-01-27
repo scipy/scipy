@@ -546,7 +546,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
         The filter coefficients of the FIR filter, as a 1-D array of length
         `numtaps`.
 
-    See also
+    See Also
     --------
     firls
     firwin
@@ -919,7 +919,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     coeffs : ndarray
         Coefficients of the optimal (in a least squares sense) FIR filter.
 
-    See also
+    See Also
     --------
     firwin
     firwin2
@@ -1179,6 +1179,25 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
 
         http://dspguru.com/dsp/howtos/how-to-design-minimum-phase-fir-filters
 
+    References
+    ----------
+    .. [1] N. Damera-Venkata and B. L. Evans, "Optimal design of real and
+           complex minimum phase digital FIR filters," Acoustics, Speech,
+           and Signal Processing, 1999. Proceedings., 1999 IEEE International
+           Conference on, Phoenix, AZ, 1999, pp. 1145-1148 vol.3.
+           :doi:`10.1109/ICASSP.1999.756179`
+    .. [2] X. Chen and T. W. Parks, "Design of optimal minimum phase FIR
+           filters by direct factorization," Signal Processing,
+           vol. 10, no. 4, pp. 369-383, Jun. 1986.
+    .. [3] T. Saramaki, "Finite Impulse Response Filter Design," in
+           Handbook for Digital Signal Processing, chapter 4,
+           New York: Wiley-Interscience, 1993.
+    .. [4] J. S. Lim, Advanced Topics in Signal Processing.
+           Englewood Cliffs, N.J.: Prentice Hall, 1988.
+    .. [5] A. V. Oppenheim, R. W. Schafer, and J. R. Buck,
+           "Discrete-Time Signal Processing," 2nd edition.
+           Upper Saddle River, N.J.: Prentice Hall, 1999.
+
     Examples
     --------
     Create an optimal linear-phase filter, then convert it to minimum phase:
@@ -1219,24 +1238,6 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     >>> axs[3].set(ylabel='Group delay')
     >>> plt.tight_layout()
 
-    References
-    ----------
-    .. [1] N. Damera-Venkata and B. L. Evans, "Optimal design of real and
-           complex minimum phase digital FIR filters," Acoustics, Speech,
-           and Signal Processing, 1999. Proceedings., 1999 IEEE International
-           Conference on, Phoenix, AZ, 1999, pp. 1145-1148 vol.3.
-           :doi:`10.1109/ICASSP.1999.756179`
-    .. [2] X. Chen and T. W. Parks, "Design of optimal minimum phase FIR
-           filters by direct factorization," Signal Processing,
-           vol. 10, no. 4, pp. 369-383, Jun. 1986.
-    .. [3] T. Saramaki, "Finite Impulse Response Filter Design," in
-           Handbook for Digital Signal Processing, chapter 4,
-           New York: Wiley-Interscience, 1993.
-    .. [4] J. S. Lim, Advanced Topics in Signal Processing.
-           Englewood Cliffs, N.J.: Prentice Hall, 1988.
-    .. [5] A. V. Oppenheim, R. W. Schafer, and J. R. Buck,
-           "Discrete-Time Signal Processing," 2nd edition.
-           Upper Saddle River, N.J.: Prentice Hall, 1999.
     """  # noqa
     h = np.asarray(h)
     if np.iscomplexobj(h):

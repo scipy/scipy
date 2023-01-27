@@ -934,6 +934,228 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
     }
 }
 
+/*
+   Implement the ndimage.value_indices() function.
+   Makes 3 passes through the array data. We use ndimage's NI_Iterator to
+   iterate through all elements of the input array.
+
+   To support all numpy datatypes, we define several macros which take a
+   parameter for the array datatype in question. By using these, all comparisons
+   are carried out using the same datatype as the input array.
+*/
+#define VALUEINDICES_MINVAL(valType) (*((valType *)PyArray_GETPTR1(minMaxArr, 0)))
+#define VALUEINDICES_MAXVAL(valType) (*((valType *)PyArray_GETPTR1(minMaxArr, 1)))
+#define VALUEINDICES_IGNOREVAL(valType) (*((valType *)PyArray_GETPTR1(ignorevalArr, 0)))
+#define CASE_VALUEINDICES_SET_MINMAX(valType) {\
+    valType val = *((valType*)arrData); \
+    if (ignoreValIsNone || (val != VALUEINDICES_IGNOREVAL(valType))) {\
+        if (minMaxUnset) { \
+            VALUEINDICES_MINVAL(valType) = val;  \
+            VALUEINDICES_MAXVAL(valType) = val; \
+            minMaxUnset = 0; \
+        } else { \
+            if (val < VALUEINDICES_MINVAL(valType)) VALUEINDICES_MINVAL(valType) = val; \
+            if (val > VALUEINDICES_MAXVAL(valType)) VALUEINDICES_MAXVAL(valType) = val; \
+        } \
+    }\
+}
+#define CASE_VALUEINDICES_MAKEHISTOGRAM(valType) {\
+    numPossibleVals = (VALUEINDICES_MAXVAL(valType) - VALUEINDICES_MINVAL(valType) + 1); \
+    hist = (npy_intp *)calloc(numPossibleVals, sizeof(npy_intp)); \
+    if (hist != NULL) { \
+        NI_InitPointIterator(arr, &ndiIter); \
+        arrData = (char *)PyArray_DATA(arr); \
+        for (iterIndex=0; iterIndex<arrSize; iterIndex++) { \
+            valType val = *((valType*)arrData); \
+            if (ignoreValIsNone || (val != VALUEINDICES_IGNOREVAL(valType))) { \
+                ii = val - VALUEINDICES_MINVAL(valType); \
+                hist[ii] += 1; \
+            } \
+            NI_ITERATOR_NEXT(ndiIter, arrData); \
+        } \
+    } else { \
+        PyErr_SetString(PyExc_MemoryError, "Couldn't allocate hist"); \
+    } \
+}
+#define CASE_VALUEINDICES_GET_VALUEOFFSET(valType) { \
+    valType val = *((valType*)arrData); \
+    ii = val - VALUEINDICES_MINVAL(valType); \
+    valueIsIgnore = (val == VALUEINDICES_IGNOREVAL(valType)); \
+}
+#define CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(valType, ii) { \
+    valType val = ii + VALUEINDICES_MINVAL(valType); \
+    valObj = PyArray_ToScalar(&val, minMaxArr); \
+}
+static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
+{
+    PyArrayObject *arr, *ndxArr, *minMaxArr, *ignorevalArr;
+    PyObject *t=NULL, *valObj=NULL, **ndxPtr=NULL, *ndxTuple, *valDict;
+    int ignoreValIsNone, valueIsIgnore=0, ndim, j, arrType, minMaxUnset=1;
+    NI_Iterator ndiIter;
+    char *arrData;
+    npy_intp *hist=NULL, *valCtr=NULL, ii, numPossibleVals=0;
+    npy_intp arrSize, iterIndex, dims[1];
+
+    /* Get arguments passed in */
+    if (!PyArg_ParseTuple(args, "O!iO!", &PyArray_Type, &arr, &ignoreValIsNone,
+            &PyArray_Type, &ignorevalArr))
+        return NULL;
+
+    arrSize = PyArray_SIZE(arr);
+    arrType = PyArray_TYPE(arr);
+    arrData = (char *)PyArray_DATA(arr);
+    ndim = PyArray_NDIM(arr);
+    if (!PyTypeNum_ISINTEGER(arrType)) {
+        PyErr_SetString(PyExc_ValueError, "Parameter 'arr' must be an integer array");
+        return NULL;
+    }
+
+    /* This dictionary is the final return value */
+    valDict = PyDict_New();
+    if (valDict == NULL) return PyErr_NoMemory();
+
+    /* We use a small numpy array for the min and max values, as this will
+       take the same datatype as the input array */
+    dims[0] = 2;
+    minMaxArr = (PyArrayObject *)PyArray_SimpleNew(1, dims, arrType);
+    if (minMaxArr == NULL) return PyErr_NoMemory();
+
+    /* First pass. Just set the min & max */
+    NI_InitPointIterator(arr, &ndiIter);
+    for (iterIndex=0; iterIndex<arrSize; iterIndex++) {
+        switch(arrType) {
+        case NPY_INT8:   CASE_VALUEINDICES_SET_MINMAX(npy_int8); break;
+        case NPY_UINT8:  CASE_VALUEINDICES_SET_MINMAX(npy_uint8); break;
+        case NPY_INT16:  CASE_VALUEINDICES_SET_MINMAX(npy_int16); break;
+        case NPY_UINT16: CASE_VALUEINDICES_SET_MINMAX(npy_uint16); break;
+        case NPY_INT32:  CASE_VALUEINDICES_SET_MINMAX(npy_int32); break;
+        case NPY_UINT32: CASE_VALUEINDICES_SET_MINMAX(npy_uint32); break;
+        case NPY_INT64:  CASE_VALUEINDICES_SET_MINMAX(npy_int64); break;
+        case NPY_UINT64: CASE_VALUEINDICES_SET_MINMAX(npy_uint64); break;
+        }
+        NI_ITERATOR_NEXT(ndiIter, arrData);
+    }
+
+    /* Second pass, creates a histogram of all the possible values between
+       min and max. If min/max were not set, then the array was all ignore
+       values. */
+    if (!minMaxUnset) {
+        switch(arrType) {
+        case NPY_INT8:   CASE_VALUEINDICES_MAKEHISTOGRAM(npy_int8); break;
+        case NPY_UINT8:  CASE_VALUEINDICES_MAKEHISTOGRAM(npy_uint8); break;
+        case NPY_INT16:  CASE_VALUEINDICES_MAKEHISTOGRAM(npy_int16); break;
+        case NPY_UINT16: CASE_VALUEINDICES_MAKEHISTOGRAM(npy_uint16); break;
+        case NPY_INT32:  CASE_VALUEINDICES_MAKEHISTOGRAM(npy_int32); break;
+        case NPY_UINT32: CASE_VALUEINDICES_MAKEHISTOGRAM(npy_uint32); break;
+        case NPY_INT64:  CASE_VALUEINDICES_MAKEHISTOGRAM(npy_int64); break;
+        case NPY_UINT64: CASE_VALUEINDICES_MAKEHISTOGRAM(npy_uint64); break;
+        }
+    }
+
+    if (hist != NULL) {
+        /* Allocate local data structures to track where we are up to while
+           assigning index values */
+        valCtr = (npy_intp *)calloc(numPossibleVals, sizeof(npy_intp));
+        ndxPtr = (PyObject **)calloc(numPossibleVals, sizeof(PyObject  *));
+        if (valCtr == NULL)
+            PyErr_SetString(PyExc_MemoryError, "Couldn't allocate valCtr");
+        else if (ndxPtr == NULL)
+            PyErr_SetString(PyExc_MemoryError, "Couldn't allocate ndxPtr");
+    }
+
+    if ((valCtr != NULL) && (ndxPtr != NULL)) {
+        /* For each value with non-zero histogram count, allocate an array index
+           tuple of arrays of shape (count,), in the corresponding entry of
+           the dictionary */
+        for (ii=0; ii<numPossibleVals; ii++) {
+            if (hist[ii] > 0) {
+                /* Create a numpy scalar <valObj> for the value corresponding to
+                   offset <ii> */
+                switch(arrType) {
+                case NPY_INT8:   CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_int8, ii); break;
+                case NPY_UINT8:  CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_uint8, ii); break;
+                case NPY_INT16:  CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_int16, ii); break;
+                case NPY_UINT16: CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_uint16, ii); break;
+                case NPY_INT32:  CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_int32, ii); break;
+                case NPY_UINT32: CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_uint32, ii); break;
+                case NPY_INT64:  CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_int64, ii); break;
+                case NPY_UINT64: CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_uint64, ii); break;
+                }
+                /* Create a tuple of <ndim> index arrays */
+                t = PyTuple_New(ndim);
+                if ((t != NULL) && (valObj != NULL)) {
+                    for (j=0; j<ndim; j++) {
+                        dims[0] = hist[ii];
+                        ndxArr = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_INTP);
+                        if (ndxArr == NULL) {
+                            PyErr_SetString(PyExc_MemoryError, "Couldn't allocate ndxArr");
+                        } else {
+                            PyTuple_SetItem(t, j, (PyObject *)ndxArr);
+                        }
+                    }
+                    /* Set the tuple as the dict entry for the value */
+                    PyDict_SetItem(valDict, valObj, t);
+                }
+                if (valObj != NULL) Py_DECREF(valObj);
+                if (t != NULL) Py_DECREF(t);
+                /* Save a pointer to the tuple, to avoid later dict lookups */
+                ndxPtr[ii] = t;
+
+                if ((t == NULL) || (valObj == NULL)) {
+                    PyErr_SetString(PyExc_MemoryError, "Couldn't allocate dict entry");
+                    break;
+                }
+            }
+        }
+
+        if (!PyErr_Occurred()) {
+            /* Third pass. Loop over all array elements, adding indices in the
+               right place. */
+            NI_InitPointIterator(arr, &ndiIter);
+            arrData = (char *)PyArray_DATA(arr);
+
+            for (iterIndex=0; iterIndex<arrSize; iterIndex++) {
+                /* Get the offset <ii> for the current array value. Also
+                   set valueIsIgnore flag. */
+                switch(arrType) {
+                case NPY_INT8:   CASE_VALUEINDICES_GET_VALUEOFFSET(npy_int8); break;
+                case NPY_UINT8:  CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint8); break;
+                case NPY_INT16:  CASE_VALUEINDICES_GET_VALUEOFFSET(npy_int16); break;
+                case NPY_UINT16: CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint16); break;
+                case NPY_INT32:  CASE_VALUEINDICES_GET_VALUEOFFSET(npy_int32); break;
+                case NPY_UINT32: CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint32); break;
+                case NPY_INT64:  CASE_VALUEINDICES_GET_VALUEOFFSET(npy_int64); break;
+                case NPY_UINT64: CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint64); break;
+                }
+
+                if (ignoreValIsNone || (!valueIsIgnore)) {
+                    ndxTuple = ndxPtr[ii];
+                    for (j=0; j<ndim; j++) {
+                        ndxArr = (PyArrayObject *)PyTuple_GetItem(ndxTuple, j);
+                        *(npy_intp *)PyArray_GETPTR1(ndxArr, (npy_intp)valCtr[ii]) =
+                            ndiIter.coordinates[j];
+                    }
+                    valCtr[ii] += 1;
+                }
+
+                NI_ITERATOR_NEXT(ndiIter, arrData);
+            }
+        }
+    }
+
+    /* Clean up everything */
+    if (hist != NULL) free(hist);
+    if (valCtr != NULL) free(valCtr);
+    if (ndxPtr != NULL) free(ndxPtr);
+    Py_DECREF(minMaxArr);
+
+    if (PyErr_Occurred()) {
+        Py_DECREF(valDict);
+        return NULL;
+    } else
+        return valDict;
+}
+
 static PyObject *Py_WatershedIFT(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *markers = NULL;
@@ -1147,6 +1369,8 @@ static PyMethodDef methods[] = {
     {"zoom_shift",            (PyCFunction)Py_ZoomShift,
      METH_VARARGS, NULL},
     {"find_objects",          (PyCFunction)Py_FindObjects,
+     METH_VARARGS, NULL},
+    {"value_indices",         (PyCFunction)NI_ValueIndices,
      METH_VARARGS, NULL},
     {"watershed_ift",         (PyCFunction)Py_WatershedIFT,
      METH_VARARGS, NULL},

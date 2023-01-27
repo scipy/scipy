@@ -289,7 +289,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     ----------
     .. [1] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
            "HiGHS - high performance software for linear optimization."
-           Accessed 12/25/2021 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+           https://highs.dev/
     .. [2] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
            119-142, 2018. DOI: 10.1007/s12532-017-0130-5

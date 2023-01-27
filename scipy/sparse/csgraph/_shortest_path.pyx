@@ -1447,14 +1447,6 @@ cdef void initialize_node(FibonacciNode* node,
     node.children = NULL
 
 
-cdef FibonacciNode* rightmost_sibling(FibonacciNode* node):
-    # Assumptions: - node is a valid pointer
-    cdef FibonacciNode* temp = node
-    while(temp.right_sibling):
-        temp = temp.right_sibling
-    return temp
-
-
 cdef FibonacciNode* leftmost_sibling(FibonacciNode* node):
     # Assumptions: - node is a valid pointer
     cdef FibonacciNode* temp = node
@@ -1483,10 +1475,14 @@ cdef void add_sibling(FibonacciNode* node, FibonacciNode* new_sibling):
     # Assumptions: - node is a valid pointer
     #              - new_sibling is a valid pointer
     #              - new_sibling is not the child or sibling of another node
-    cdef FibonacciNode* temp = rightmost_sibling(node)
-    temp.right_sibling = new_sibling
-    new_sibling.left_sibling = temp
-    new_sibling.right_sibling = NULL
+    
+    # Insert new_sibling between node and node.right_sibling
+    if node.right_sibling:
+        node.right_sibling.left_sibling = new_sibling
+    new_sibling.right_sibling = node.right_sibling
+    new_sibling.left_sibling = node
+    node.right_sibling = new_sibling
+
     new_sibling.parent = node.parent
     if new_sibling.parent:
         new_sibling.parent.rank += 1
@@ -1496,12 +1492,8 @@ cdef void remove(FibonacciNode* node):
     # Assumptions: - node is a valid pointer
     if node.parent:
         node.parent.rank -= 1
-        if node.left_sibling:
-            node.parent.children = node.left_sibling
-        elif node.right_sibling:
+        if node.parent.children == node:  # node is the leftmost sibling.
             node.parent.children = node.right_sibling
-        else:
-            node.parent.children = NULL
 
     if node.left_sibling:
         node.left_sibling.right_sibling = node.right_sibling
@@ -1522,6 +1514,8 @@ ctypedef FibonacciNode* pFibonacciNode
 
 
 cdef struct FibonacciHeap:
+    # In this representation, min_node is always at the leftmost end
+    # of the linked-list, hence min_node.left_sibling is always NULL.
     FibonacciNode* min_node
     pFibonacciNode[100] roots_by_rank  # maximum number of nodes is ~2^100.
 
@@ -1532,9 +1526,15 @@ cdef void insert_node(FibonacciHeap* heap,
     #              - node is a valid pointer
     #              - node is not the child or sibling of another node
     if heap.min_node:
-        add_sibling(heap.min_node, node)
         if node.val < heap.min_node.val:
+            # Replace heap.min_node with node, which is always 
+            # at the leftmost end of the roots' linked-list.
+            node.left_sibling = NULL
+            node.right_sibling = heap.min_node
+            heap.min_node.left_sibling = node
             heap.min_node = node
+        else:
+            add_sibling(heap.min_node, node)
     else:
         heap.min_node = node
 
@@ -1552,6 +1552,11 @@ cdef void decrease_val(FibonacciHeap* heap,
         remove(node)
         insert_node(heap, node)
     elif heap.min_node.val > node.val:
+        # Replace heap.min_node with node, which is always 
+        # at the leftmost end of the roots' linked-list.
+        remove(node)
+        node.right_sibling = heap.min_node
+        heap.min_node.left_sibling = node.right_sibling
         heap.min_node = node
 
 
@@ -1588,32 +1593,24 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap):
         unsigned int i
 
     # make all min_node children into root nodes
-    if heap.min_node.children:
-        temp = leftmost_sibling(heap.min_node.children)
-        temp_right = NULL
+    temp = heap.min_node.children
 
-        while temp:
-            temp_right = temp.right_sibling
-            remove(temp)
-            add_sibling(heap.min_node, temp)
-            temp = temp_right
+    while temp:
+        temp_right = temp.right_sibling
+        remove(temp)
+        add_sibling(heap.min_node, temp)
+        temp = temp_right
 
-        heap.min_node.children = NULL
-
-    # choose a root node other than min_node
-    temp = leftmost_sibling(heap.min_node)
-    if temp == heap.min_node:
-        if heap.min_node.right_sibling:
-            temp = heap.min_node.right_sibling
-        else:
-            out = heap.min_node
-            heap.min_node = NULL
-            return out
-
-    # remove min_node, and point heap to the new min
+    # remove min_root and choose another root as a preliminary min_root
     out = heap.min_node
+    temp = heap.min_node.right_sibling
     remove(heap.min_node)
     heap.min_node = temp
+    
+    if temp == NULL:
+        # There is a unique root in the tree, hence a unique node
+        # which is the minimum that we return here.
+        return out
 
     # re-link the heap
     for i in range(100):
@@ -1625,6 +1622,13 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap):
         temp_right = temp.right_sibling
         link(heap, temp)
         temp = temp_right
+    
+    # move heap.min_node to the leftmost end of the linked-list of roots
+    temp = leftmost_sibling(heap.min_node)
+    if heap.min_node != temp:
+        remove(heap.min_node)
+        heap.min_node.right_sibling = temp
+        temp.left_sibling = heap.min_node
 
     return out
 
@@ -1633,17 +1637,17 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap):
 # Debugging: Functions for printing the Fibonacci heap
 #
 #cdef void print_node(FibonacciNode* node, int level=0):
-#    print '%s(%i,%i) %i' % (level*'   ', node.index, node.val, node.rank)
+#    print('%s(%i,%i) %i' % (level*' ', node.index, node.val, node.rank))
 #    if node.children:
-#        print_node(leftmost_sibling(node.children), level+1)
+#        print_node(node.children, level+1)
 #    if node.right_sibling:
 #        print_node(node.right_sibling, level)
 #
 #
 #cdef void print_heap(FibonacciHeap* heap):
-#    print "---------------------------------"
-#    print "min node: (%i, %i)" % (heap.min_node.index, heap.min_node.val)
+#    print("---------------------------------")
 #    if heap.min_node:
-#        print_node(leftmost_sibling(heap.min_node))
+#        print("min node: (%i, %i)" % (heap.min_node.index, heap.min_node.val))
+#        print_node(heap.min_node)
 #    else:
-#        print "[empty heap]"
+#        print("[empty heap]")

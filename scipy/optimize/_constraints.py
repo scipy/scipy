@@ -99,6 +99,7 @@ class NonlinearConstraint:
     Constrain ``x[0] < sin(x[1]) + 1.9``
 
     >>> from scipy.optimize import NonlinearConstraint
+    >>> import numpy as np
     >>> con = lambda x: x[0] - np.sin(x[1])
     >>> nlc = NonlinearConstraint(con, -np.inf, 1.9)
 

@@ -1280,6 +1280,18 @@ class SmoothBivariateSpline(BivariateSpline):
     units and differ by many orders of magnitude, the interpolant may have
     numerical artifacts. Consider rescaling the data before interpolating.
 
+    This routine constructs spline knot vectors automatically via the FITPACK
+    algorithm. The spline knots may be placed away from the data points. For
+    some data sets, this routine may fail to construct an interpolating spline,
+    even if one is requested via ``s=0`` parameter. In such situations, it is
+    recommended to use `bisplrep` / `bisplev` directly instead of this routine
+    and, if needed, increase the values of ``nxest`` and ``nyest`` parameters
+    of `bisplrep`.
+
+    For linear interpolation, prefer `LinearNDInterpolator`.
+    See ``https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff``
+    for discussion.
+
     """
 
     def __init__(self, x, y, z, w=None, bbox=[None] * 4, kx=3, ky=3, s=None,
@@ -1668,6 +1680,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     Suppose we have global data on a coarse grid (the input data does not
     have to be on a grid):
 
+    >>> import numpy as np
     >>> theta = np.linspace(0., np.pi, 7)
     >>> phi = np.linspace(0., 2*np.pi, 9)
     >>> data = np.empty((theta.shape[0], phi.shape[0]))
@@ -1813,6 +1826,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     have to be on a grid):
 
     >>> from scipy.interpolate import LSQSphereBivariateSpline
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
 
     >>> theta = np.linspace(0, np.pi, num=7)
@@ -2018,6 +2032,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     --------
     Suppose we have global data on a coarse grid
 
+    >>> import numpy as np
     >>> lats = np.linspace(10, 170, 9) * np.pi / 180.
     >>> lons = np.linspace(0, 350, 18) * np.pi / 180.
     >>> data = np.dot(np.atleast_2d(90. - np.linspace(-80., 80., 18)).T,

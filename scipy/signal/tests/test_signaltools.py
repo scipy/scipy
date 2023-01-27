@@ -2600,6 +2600,17 @@ class TestDecimate:
         x_out = signal.decimate(x, 30, ftype='fir')
         assert_array_less(np.linalg.norm(x_out), 0.01)
 
+    def test_long_float32(self):
+        # regression: gh-15072.  With 32-bit float and either lfilter
+        # or filtfilt, this is numerically unstable
+        x = signal.decimate(np.ones(10_000, dtype=np.float32), 10)
+        assert not any(np.isnan(x))
+
+    def test_float16_upcast(self):
+        # float16 must be upcast to float64
+        x = signal.decimate(np.ones(100, dtype=np.float16), 10)
+        assert x.dtype.type == np.float64
+
 
 class TestHilbert:
 

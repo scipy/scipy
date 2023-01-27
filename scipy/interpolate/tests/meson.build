@@ -13,7 +13,6 @@ py3.install_sources([
     'test_rbfinterp.py', 
     'test_rgi.py'
   ],
-  pure: false,
   subdir: 'scipy/interpolate/tests'
 )
 
@@ -21,6 +20,5 @@ py3.install_sources([
     'data/bug-1310.npz',
     'data/estimate_gradients_hang.npy'
   ],
-  pure: false,
   subdir: 'scipy/interpolate/tests/data'
 )

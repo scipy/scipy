@@ -260,6 +260,7 @@ class RBFInterpolator:
     --------
     Demonstrate interpolating scattered data to a grid in 2-D.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import RBFInterpolator
     >>> from scipy.stats.qmc import Halton

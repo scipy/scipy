@@ -36,7 +36,7 @@ class TestBinnedStatistic:
         # comparison
         x = self.x
         v = self.v
-        statistics = [u'mean', u'median', u'count', u'sum']
+        statistics = ['mean', 'median', 'count', 'sum']
         for statistic in statistics:
             binned_statistic(x, v, statistic, bins=10)
 

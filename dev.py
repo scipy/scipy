@@ -449,7 +449,7 @@ class Build(Task):
                     break
             if installdir != str(dirs.installed):
                 run_dir = build_dir
-                cmd = ["meson", "--reconfigure",
+                cmd = ["meson", "setup", "--reconfigure",
                        "--prefix", str(dirs.installed)]
             else:
                 return
