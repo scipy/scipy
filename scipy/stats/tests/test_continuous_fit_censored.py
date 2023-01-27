@@ -529,7 +529,7 @@ def test_nct():
     data = CensoredData.right_censored([1, 2, 3, 5, 8, 10, 25, 25],
                                        [0, 0, 0, 0, 0, 0, 1, 1])
     # Fit just the shape parameter df and nc; loc and scale are fixed.
-    with np.errstate(over='ignore'):  # remove context once gh-14901 is resolved
+    with np.errstate(over='ignore'):  # remove context when gh-14901 is closed
         df, nc, loc, scale = nct.fit(data, floc=0, fscale=1,
                                      optimizer=optimizer)
     assert_allclose(df, 0.5432336, rtol=5e-6)
@@ -562,7 +562,7 @@ def test_ncx2():
     """
     data = CensoredData(uncensored=[2.7, 0.2, 6.5, 0.4, 0.1], right=[8, 8],
                         interval=[[0.6, 1.0]])
-    with np.errstate(over='ignore'):  # remove context once gh-14901 is resolved
+    with np.errstate(over='ignore'):  # remove context when gh-14901 is closed
         df, ncp, loc, scale = ncx2.fit(data, floc=0, fscale=1,
                                        optimizer=optimizer)
     assert_allclose(df, 1.052871, rtol=5e-6)
