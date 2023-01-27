@@ -187,18 +187,22 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Alternatively, that's:
 
-    minimize::
+        - minimize ::
 
-        c @ x
+          c @ x
 
-    such that::
+        - such that ::
 
-        A_ub @ x <= b_ub
-        A_eq @ x == b_eq
-        lb <= x <= ub
+          A_ub @ x <= b_ub
+          A_eq @ x == b_eq
+          lb <= x <= ub
 
     Note that by default ``lb = 0`` and ``ub = None`` unless specified with
-    ``bounds``.
+    ``bounds``. There is, hoever, no need to manually formulate the linear
+    programming problem in terms of positive variables, often termed slack
+    variables. By setting corresponding values in as ``min``in ``bounds``,
+    e.g. a negative value or ``None``, ``linprog`` is well able to handle
+    negative or real valued ``x``.
 
     Parameters
     ----------
