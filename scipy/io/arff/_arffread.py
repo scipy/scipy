@@ -186,7 +186,7 @@ class NumericAttribute(Attribute):
 
         attr_string = attr_string.lower().strip()
 
-        if(attr_string[:len('numeric')] == 'numeric' or
+        if (attr_string[:len('numeric')] == 'numeric' or
            attr_string[:len('int')] == 'int' or
            attr_string[:len('real')] == 'real'):
             return cls(name)

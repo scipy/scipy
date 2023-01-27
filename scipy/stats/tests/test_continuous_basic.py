@@ -6,16 +6,17 @@ from scipy.integrate import IntegrationWarning
 import itertools
 
 from scipy import stats
-from .common_tests import (check_normalization, check_moment, check_mean_expect,
+from .common_tests import (check_normalization, check_moment,
+                           check_mean_expect,
                            check_var_expect, check_skew_expect,
                            check_kurt_expect, check_entropy,
                            check_private_entropy, check_entropy_vect_scale,
                            check_edge_support, check_named_args,
                            check_random_state_property,
-                           check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
-                           check_pickling, check_rvs_broadcast, check_freezing,
-                           check_deprecation_warning_gh5982_moment,
-                           check_deprecation_warning_gh5982_interval)
+                           check_meth_dtype, check_ppf_dtype,
+                           check_cmplx_deriv,
+                           check_pickling, check_rvs_broadcast,
+                           check_freezing,)
 from scipy.stats._distr_params import distcont
 from scipy.stats._distn_infrastructure import rv_continuous_frozen
 
@@ -106,14 +107,15 @@ skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
 fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
-                   'dgamma', 'dweibull', 'erlang', 'f', 'gamma',
+                   'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
                    'gausshyper', 'gengamma', 'genhyperbolic',
                    'geninvgauss', 'gennorm', 'genpareto',
-                   'halfgennorm', 'invgamma',
+                   'halfcauchy', 'halfgennorm', 'invgamma',
                    'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
                    'logistic', 'loguniform', 'maxwell', 'nakagami',
-                   'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
-                   'reciprocal', 'rice', 'skewnorm', 't', 'truncweibull_min',
+                   'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
+                   'powerlaw', 'rdist', 'reciprocal', 'rice',
+                   'skewnorm', 't', 'truncweibull_min',
                    'tukeylambda', 'vonmises', 'vonmises_line',
                    'rv_histogram_instance', 'truncnorm', 'studentized_range'])
 
@@ -168,8 +170,6 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
     check_cdf_logcdf(distfn, arg, distname)
     check_sf_logsf(distfn, arg, distname)
     check_ppf_broadcast(distfn, arg, distname)
-    check_deprecation_warning_gh5982_moment(distfn, arg, distname)
-    check_deprecation_warning_gh5982_interval(distfn, arg, distname)
 
     alpha = 0.01
     if distname == 'rv_histogram_instance':
@@ -321,6 +321,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
                 check_var_expect(distfn, arg, m, v, distname)
                 check_kurt_expect(distfn, arg, m, v, k, distname)
 
+        check_loc_scale(distfn, arg, m, v, distname)
         check_moment(distfn, arg, m, v, distname)
 
 
@@ -360,6 +361,46 @@ def test_rvs_broadcast(dist, shape_args):
     # parameters are all broadcast together.
 
     check_rvs_broadcast(distfunc, dist, allargs, bshape, shape_only, 'd')
+
+
+# Expected values of the SF, CDF, PDF were computed using
+# mpmath with mpmath.mp.dps = 50 and output at 20:
+#
+# def ks(x, n):
+#     x = mpmath.mpf(x)
+#     logp = -mpmath.power(6.0*n*x+1.0, 2)/18.0/n
+#     sf, cdf = mpmath.exp(logp), -mpmath.expm1(logp)
+#     pdf = (6.0*n*x+1.0) * 2 * sf/3
+#     print(mpmath.nstr(sf, 20), mpmath.nstr(cdf, 20), mpmath.nstr(pdf, 20))
+#
+# Tests use 1/n < x < 1-1/n and n > 1e6 to use the asymptotic computation.
+# Larger x has a smaller sf.
+@pytest.mark.parametrize('x,n,sf,cdf,pdf,rtol',
+                         [(2.0e-5, 1000000000,
+                           0.44932297307934442379, 0.55067702692065557621,
+                           35946.137394996276407, 5e-15),
+                          (2.0e-9, 1000000000,
+                           0.99999999061111115519, 9.3888888448132728224e-9,
+                           8.6666665852962971765, 5e-14),
+                          (5.0e-4, 1000000000,
+                           7.1222019433090374624e-218, 1.0,
+                           1.4244408634752704094e-211, 5e-14)])
+def test_gh17775_regression(x, n, sf, cdf, pdf, rtol):
+    # Regression test for gh-17775. In scipy 1.9.3 and earlier,
+    # these test would fail.
+    #
+    # KS one asymptotic sf ~ e^(-(6nx+1)^2 / 18n)
+    # Given a large 32-bit integer n, 6n will overflow in the c implementation.
+    # Example of broken behaviour:
+    # ksone.sf(2.0e-5, 1000000000) == 0.9374359693473666
+    ks = stats.ksone
+    vals = np.array([ks.sf(x, n), ks.cdf(x, n), ks.pdf(x, n)])
+    expected = np.array([sf, cdf, pdf])
+    npt.assert_allclose(vals, expected, rtol=rtol)
+    # The sf+cdf must sum to 1.0.
+    npt.assert_equal(vals[0] + vals[1], 1.0)
+    # Check inverting the (potentially very small) sf (uses a lower tolerance)
+    npt.assert_allclose([ks.isf(sf, n)], [x], rtol=1e-8)
 
 
 def test_rvs_gh2069_regression():
@@ -717,30 +758,6 @@ def test_methods_with_lists(method, distname, args):
     npt.assert_allclose(result,
                         [f(*v) for v in zip(x, *shape2, loc, scale)],
                         rtol=1e-14, atol=5e-14)
-
-
-@pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
-                                    'sf', 'logsf', 'ppf', 'isf'])
-def test_gilbrat_deprecation(method):
-    expected = getattr(stats.gibrat, method)(1)
-    with pytest.warns(
-        DeprecationWarning,
-        match=rf"\s*`gilbrat\.{method}` is deprecated,.*",
-    ):
-        result = getattr(stats.gilbrat, method)(1)
-    assert result == expected
-
-
-@pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
-                                    'sf', 'logsf', 'ppf', 'isf'])
-def test_gilbrat_deprecation_frozen(method):
-    expected = getattr(stats.gibrat, method)(1)
-    with pytest.warns(DeprecationWarning, match=r"\s*`gilbrat` is deprecated"):
-        # warn on instantiation of frozen distribution...
-        g = stats.gilbrat()
-    # ... not on its methods
-    result = getattr(g, method)(1)
-    assert result == expected
 
 
 def test_burr_fisk_moment_gh13234_regression():

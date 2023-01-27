@@ -16,10 +16,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.sparse import coo_matrix, dok_matrix
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
+from typing import Literal
 
 # TODO: Replace `ndarray` with a 1D float64 array when possible
 _BoxType = TypeVar("_BoxType", None, npt.NDArray[np.float64])

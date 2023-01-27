@@ -1290,7 +1290,7 @@ class TestResample:
         x = np.arange(10, dtype=np.float32)
         h = np.array([1, 1, 1], dtype=np.float32)
         y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
-        assert(y.dtype == np.float32)
+        assert y.dtype == np.float32
 
     @pytest.mark.parametrize('padtype', padtype_options)
     @pytest.mark.parametrize('dtype', [np.float32, np.float64])
@@ -1298,7 +1298,7 @@ class TestResample:
         # Test that the dtype of x is preserved per issue #14733
         x = np.arange(10, dtype=dtype)
         y = signal.resample_poly(x, 1, 2, padtype=padtype)
-        assert(y.dtype == x.dtype)
+        assert y.dtype == x.dtype
 
     @pytest.mark.parametrize(
         "method, ext, padtype",
@@ -2599,6 +2599,17 @@ class TestDecimate:
         assert_allclose(np.linalg.norm(x), 1., rtol=1e-3)
         x_out = signal.decimate(x, 30, ftype='fir')
         assert_array_less(np.linalg.norm(x_out), 0.01)
+
+    def test_long_float32(self):
+        # regression: gh-15072.  With 32-bit float and either lfilter
+        # or filtfilt, this is numerically unstable
+        x = signal.decimate(np.ones(10_000, dtype=np.float32), 10)
+        assert not any(np.isnan(x))
+
+    def test_float16_upcast(self):
+        # float16 must be upcast to float64
+        x = signal.decimate(np.ones(100, dtype=np.float16), 10)
+        assert x.dtype.type == np.float64
 
 
 class TestHilbert:

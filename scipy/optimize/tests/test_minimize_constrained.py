@@ -762,8 +762,8 @@ class TestBoundedNelderMead:
 
     def test_invalid_bounds(self):
         prob = Rosenbrock()
-        with raises(ValueError, match=r"one of the lower bounds is greater "
-                                      r"than an upper bound."):
+        message = 'An upper bound is less than the corresponding lower bound.'
+        with raises(ValueError, match=message):
             bounds = Bounds([-np.inf, 1.0], [4.0, -5.0])
             minimize(prob.fun, [-10, 3],
                      method='Nelder-Mead',

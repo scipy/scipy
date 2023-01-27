@@ -1077,7 +1077,7 @@ class TestNormalitytests():
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, ma=True)
 
-    def regression_test_9033(self):
+    def test_regression_9033(self):
         # x cleary non-normal but power of negtative denom needs
         # to be handled correctly to reject normality
         counts = [128, 0, 58, 7, 0, 41, 16, 0, 0, 167]
@@ -1768,8 +1768,8 @@ class TestCompareWithStats:
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
 
-                assert_allclose(r[0][0], rm[0][0], rtol=2e-15)
-                assert_allclose(r[0][1], rm[0][1], rtol=1e-15)
+                assert_allclose(r[0][0], rm[0][0], rtol=1e-14)
+                assert_allclose(r[0][1], rm[0][1], rtol=1e-14)
 
     def test_normaltest(self):
         with np.errstate(over='raise'), suppress_warnings() as sup:

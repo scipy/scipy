@@ -264,7 +264,7 @@ done:
 
     *si = s;
 
-    *ci = NPY_EULER + log(x) + c;
+    *ci = SCIPY_EULER + log(x) + c;
     return (0);
 }
 

@@ -567,7 +567,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     Vdim, Vlen = values.shape
 
     # Make sure `values` match `sample`
-    if(statistic != 'count' and Vlen != Dlen):
+    if statistic != 'count' and Vlen != Dlen:
         raise AttributeError('The number of `values` elements must match the '
                              'length of each `sample` dimension.')
 
@@ -673,7 +673,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     result = result[core]
 
     # Unravel binnumbers into an ndarray, each row the bins for each dimension
-    if(expand_binnumbers and Ndim > 1):
+    if expand_binnumbers and Ndim > 1:
         binnumbers = np.asarray(np.unravel_index(binnumbers, nbin))
 
     if np.any(result.shape[1:] != nbin - 2):

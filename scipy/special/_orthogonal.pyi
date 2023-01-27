@@ -2,12 +2,12 @@ from typing import (
     Any,
     Callable,
     List,
+    Literal,
     Optional,
     overload,
     Tuple,
     Union,
 )
-from typing_extensions import Literal
 
 import numpy
 

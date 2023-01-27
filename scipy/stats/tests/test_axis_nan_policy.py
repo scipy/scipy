@@ -46,7 +46,8 @@ axis_nan_policy_cases = [
     (stats.jarque_bera, tuple(), dict(), 1, 2, False, None),
     (stats.ttest_1samp, (np.array([0]),), dict(), 1, 7, False,
      unpack_ttest_result),
-    (stats.ttest_rel, tuple(), dict(), 2, 7, True, unpack_ttest_result)
+    (stats.ttest_rel, tuple(), dict(), 2, 7, True, unpack_ttest_result),
+    (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count))
 ]
 
 # If the message is one of those expected, put nans in
@@ -73,6 +74,8 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
 inaccuracy_messages = {"Precision loss occurred in moment calculation",
                        "Sample size too small for normal approximation."}
 
+# For some functions, nan_policy='propagate' should not just return NaNs
+override_propagate_funcs = {stats.mode}
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
                           paired=False):
@@ -138,7 +141,8 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
             if np.any(np.isnan(sample)):
                 raise ValueError("The input contains nan values")
 
-    elif nan_policy == 'propagate':
+    elif (nan_policy == 'propagate'
+          and hypotest not in override_propagate_funcs):
         # For all hypothesis tests tested, returning nans is the right thing.
         # But many hypothesis tests don't propagate correctly (e.g. they treat
         # np.nan the same as np.inf, which doesn't make sense when ranks are
@@ -595,6 +599,10 @@ def _check_arrays_broadcastable(arrays, axis):
 def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
     # test for correct output shape when at least one input is empty
 
+    if hypotest in override_propagate_funcs:
+        reason = "Doesn't follow the usual pattern. Tested separately."
+        pytest.skip(reason=reason)
+
     if unpacker is None:
         unpacker = lambda res: (res[0], res[1])  # noqa: E731
 
@@ -915,9 +923,9 @@ def test_axis_None_vs_tuple_with_broadcasting():
     res2 = stats.mannwhitneyu(x, y, axis=(0, 1))
     res3 = stats.mannwhitneyu(x2.ravel(), y2.ravel())
 
-    assert(res1 == res0)
-    assert(res2 == res0)
-    assert(res3 != res0)
+    assert res1 == res0
+    assert res2 == res0
+    assert res3 != res0
 
 
 @pytest.mark.parametrize(("axis"),

@@ -2368,15 +2368,15 @@ class TestBessel:
                 for N in (0, 1, 2, 3, 10):
                     for fc in (100, 100.1, 432.12345):
                         for btype in ('lp', 'hp'):
-                            ba1 = bessel(N, fc, btype, fs=fs)
-                            ba2 = bessel(N, fc/(fs/2), btype)
+                            ba1 = bessel(N, fc, btype, norm=norm, fs=fs)
+                            ba2 = bessel(N, fc/(fs/2), btype, norm=norm)
                             assert_allclose(ba1, ba2)
                     for fc in ((100, 200), (100.1, 200.2), (321.123, 432.123)):
                         for btype in ('bp', 'bs'):
-                            ba1 = bessel(N, fc, btype, fs=fs)
+                            ba1 = bessel(N, fc, btype, norm=norm, fs=fs)
                             for seq in (list, tuple, array):
                                 fcnorm = seq([f/(fs/2) for f in fc])
-                                ba2 = bessel(N, fcnorm, btype)
+                                ba2 = bessel(N, fcnorm, btype, norm=norm)
                                 assert_allclose(ba1, ba2)
 
 

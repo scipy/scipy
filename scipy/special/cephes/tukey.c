@@ -9,8 +9,6 @@
  */
 
 #include <Python.h>
-#include <numpy/npy_math.h>
-
 #include <math.h>
 
 #define SMALLVAL 1e-4

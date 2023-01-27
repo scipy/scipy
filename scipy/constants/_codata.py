@@ -1194,6 +1194,7 @@ Boltzmann constant                                          1.380 649 e-23      
 Boltzmann constant in eV/K                                  8.617 333 262... e-5     (exact)                  eV K^-1
 Boltzmann constant in Hz/K                                  2.083 661 912... e10     (exact)                  Hz K^-1
 Boltzmann constant in inverse meter per kelvin              69.503 480 04...         (exact)                  m^-1 K^-1
+characteristic impedance of vacuum                          376.730 313 668          0.000 000 057            ohm
 classical electron radius                                   2.817 940 3262 e-15      0.000 000 0013 e-15      m
 Compton wavelength                                          2.426 310 238 67 e-12    0.000 000 000 73 e-12    m
 conductance quantum                                         7.748 091 729... e-5     (exact)                  S
@@ -1577,7 +1578,7 @@ def value(key: str) -> float:
 
     Parameters
     ----------
-    key : Python string or unicode
+    key : Python string
         Key in dictionary `physical_constants`
 
     Returns
@@ -1588,7 +1589,7 @@ def value(key: str) -> float:
     Examples
     --------
     >>> from scipy import constants
-    >>> constants.value(u'elementary charge')
+    >>> constants.value('elementary charge')
     1.602176634e-19
 
     """
@@ -1602,7 +1603,7 @@ def unit(key: str) -> str:
 
     Parameters
     ----------
-    key : Python string or unicode
+    key : Python string
         Key in dictionary `physical_constants`
 
     Returns
@@ -1613,7 +1614,7 @@ def unit(key: str) -> str:
     Examples
     --------
     >>> from scipy import constants
-    >>> constants.unit(u'proton mass')
+    >>> constants.unit('proton mass')
     'kg'
 
     """
@@ -1627,7 +1628,7 @@ def precision(key: str) -> float:
 
     Parameters
     ----------
-    key : Python string or unicode
+    key : Python string
         Key in dictionary `physical_constants`
 
     Returns
@@ -1638,7 +1639,7 @@ def precision(key: str) -> float:
     Examples
     --------
     >>> from scipy import constants
-    >>> constants.precision(u'proton mass')
+    >>> constants.precision('proton mass')
     5.1e-37
 
     """
@@ -1652,7 +1653,7 @@ def find(sub: str | None = None, disp: bool = False) -> Any:
 
     Parameters
     ----------
-    sub : str, unicode
+    sub : str
         Sub-string to search keys for. By default, return all keys.
     disp : bool
         If True, print the keys that are found and return None.
@@ -1717,14 +1718,6 @@ exact_values = {
     'joule-kilogram relationship': (1 / (c * c), 'kg', 0.0),
     'kilogram-joule relationship': (c * c, 'J', 0.0),
     'hertz-inverse meter relationship': (1 / c, 'm^-1', 0.0),
-
-    # The following derived quantities are no longer exact (CODATA2018):
-    # specify separately
-    'characteristic impedance of vacuum': (
-        sqrt(mu0 / epsilon0), 'ohm',
-        sqrt(mu0 / epsilon0) * 0.5 * (
-            physical_constants['vacuum mag. permeability'][2] / mu0
-            + physical_constants['vacuum electric permittivity'][2] / epsilon0))
 }
 
 # sanity check

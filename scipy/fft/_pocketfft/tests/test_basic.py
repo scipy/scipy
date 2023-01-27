@@ -49,12 +49,6 @@ def swap_byteorder(arr):
     dtype = arr.dtype.newbyteorder('S')
     return arr.astype(dtype)
 
-def get_mat(n):
-    data = arange(n)
-    data = add.outer(data, data)
-    return data
-
-
 def direct_dft(x):
     x = asarray(x)
     n = len(x)
