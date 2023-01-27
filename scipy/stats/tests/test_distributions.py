@@ -6430,7 +6430,7 @@ class _distr3_gen(stats.rv_continuous):
 
     def _cdf(self, x, a):
         # Different # of shape params from _pdf, to be able to check that
-        # inspection catches the inconsistency."""
+        # inspection catches the inconsistency.
         return 42 * a + x
 
 
@@ -7283,6 +7283,23 @@ class TestNakagami:
         # Check round trip back to x0.
         x1 = stats.nakagami.isf(sf, nu)
         assert_allclose(x1, x0, rtol=1e-13)
+
+    @pytest.mark.parametrize("m, ref",
+    [(5, -0.097341814372152004341365781403404039274592838861342746),
+    (0.5, 0.72579135264472741361871915897806499359677157053889381),
+    (10, -0.43426184310934906286934353114924211110708634428061666)])
+    def test_entropy(self, m, ref):
+        #The reference values were calculated with mpmath:
+        #def entropy_naka(m):
+        #   def pdf(x):
+        #       A = (2 * m ** m) / mp.gamma(m)
+        #       B = x ** (2 * m - 1)
+        #       C = mp.exp(-m * x ** 2)
+        #       h = A * B * C
+        #       return h
+        #
+        #   return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [0, mp.inf]
+        assert_allclose(stats.nakagami._entropy(m), ref)
 
     @pytest.mark.xfail(reason="Fit of nakagami not reliable, see gh-10908.")
     @pytest.mark.parametrize('nu', [1.6, 2.5, 3.9])
