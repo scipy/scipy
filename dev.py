@@ -525,7 +525,7 @@ class Build(Task):
                         log_size = os.stat(log_filename).st_size
                         if log_size > last_log_size:
                             elapsed = datetime.datetime.now() - start_time
-                            print("    ... installation in progress ({0} "
+                            print("    ... installation in progress ({} "
                                   "elapsed)".format(elapsed))
                             last_blip = time.time()
                             last_log_size = log_size
@@ -538,7 +538,7 @@ class Build(Task):
 
         if ret != 0:
             if not args.show_build_log:
-                with open(log_filename, 'r') as f:
+                with open(log_filename) as f:
                     print(f.read())
             print(f"Installation failed! ({elapsed} elapsed)")
             sys.exit(1)
@@ -1088,7 +1088,7 @@ class Python():
             # Don't use subprocess, since we don't want to include the
             # current path in PYTHONPATH.
             sys.argv = extra_argv
-            with open(extra_argv[0], 'r') as f:
+            with open(extra_argv[0]) as f:
                 script = f.read()
             sys.modules['__main__'] = new_module('__main__')
             ns = dict(__name__='__main__', __file__=extra_argv[0])
