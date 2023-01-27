@@ -4880,7 +4880,9 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     the more conservative Benjaminini-Yekutieli procedure.
 
     The adjusted p-values produced by this function are comparable to those
-    produced by the R function ``p.adjust``.
+    produced by the R function ``p.adjust`` and the statsmodels function
+    `statsmodels.stats.multitest.multipletests`. Please consider the latter
+    for more advanced methods of multiple comparison correction.
 
     References
     ----------
