@@ -53,10 +53,10 @@ Return Objects
 For new functions or methods that return two or more conceptually distinct
 elements, return the elements in an object type that is not iterable. In
 particular, do not return a ``tuple``, ``namedtuple``, or a "bunch" produced
-by `~scipy._lib._bunch.make_tuple_bunch`, the latter being reserved for adding
+by ``scipy._lib._bunch.make_tuple_bunch``, the latter being reserved for adding
 new attributes to iterables returned by existing functions. Instead, use an
 existing return class (e.g. `~scipy.optimize.OptimizeResult`), a new, custom
-return class, or use `~dataclasses.make_dataclass`.
+return class.
 
 This practice of returning non-iterable objects forces callers to be more
 explicit about the element of the returned object that they wish to access,
@@ -85,7 +85,7 @@ return classes should only be public if 1) they are intended to be imported by
 end-users and 2) if they have been approved by the mailing list. For complex,
 private return classes, please see  how `~scipy.stats.binomtest` summarizes
 `~scipy.stats._result_classes.BinomTestResult` and links to its documentation,
-but note that ``BinomTestResult`` cannot be imported from `~scipy.stats`.
+and note that ``BinomTestResult`` cannot be imported from `~scipy.stats`.
 
 
 Test functions from `numpy.testing`
