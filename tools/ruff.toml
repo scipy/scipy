@@ -1,6 +1,7 @@
 line-length = 88
 
-select = ["E", "F", "W"]
+select = ["F", "E", "W", "UP"]
+ignore = ["E501"]
 exclude = [
   "scipy/datasets/_registry.py"
 ]
