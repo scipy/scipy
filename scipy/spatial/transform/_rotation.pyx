@@ -472,7 +472,7 @@ cdef class Rotation:
 
     Notes
     -----
-    .. versionadded: 1.2.0
+    .. versionadded:: 1.2.0
 
     Examples
     --------

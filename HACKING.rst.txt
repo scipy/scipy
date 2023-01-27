@@ -58,7 +58,7 @@ tests, benchmarks, and correct code style.
     that you are adding.  This gives some degree of confidence that your code
     runs correctly, also on Python versions and hardware or OSes that you don't
     have available yourself.  An extensive description of how to write unit
-    tests is given in :doc:`numpy:reference/testing`, and :ref:`runtests`
+    tests is given in :doc:`numpy:reference/testing`, and :ref:`devpy-test`
     documents how to run them.
 
 2. Benchmarks

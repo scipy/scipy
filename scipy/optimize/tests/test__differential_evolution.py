@@ -220,6 +220,18 @@ class TestDifferentialEvolutionSolver:
         self.dummy_solver.limits = np.array([[100], [0.]])
         assert_equal(0.3, self.dummy_solver._unscale_parameters(trial))
 
+    def test_equal_bounds(self):
+        with np.errstate(invalid='raise'):
+            solver = DifferentialEvolutionSolver(
+                self.quadratic,
+                bounds=[(2.0, 2.0), (1.0, 3.0)]
+            )
+            v = solver._unscale_parameters([2.0, 2.0])
+            assert_allclose(v, 0.5)
+
+        res = differential_evolution(self.quadratic, [(2.0, 2.0), (3.0, 3.0)])
+        assert_equal(res.x, [2.0, 3.0])
+
     def test__ensure_constraint(self):
         trial = np.array([1.1, -100, 0.9, 2., 300., -0.00001])
         self.dummy_solver._ensure_constraint(trial)
