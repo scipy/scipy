@@ -4862,6 +4862,7 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     See Also
     --------
     combine_pvalues
+    statsmodels.stats.multitest.multipletests
 
     Notes
     -----
