@@ -90,11 +90,42 @@ Real powm1_wrap(Real x, Real y)
         z = NAN;
     } catch (const std::overflow_error& e) {
         sf_error("powm1", SF_ERROR_OVERFLOW, NULL);
+        
+        // See: https://en.cppreference.com/w/cpp/numeric/math/pow
         if (x > 0) {
+            if (y < 0) {
+                z = 0;
+            }
+            else if (y == 0) {
+                z = 1;
+            }
+            else {
+                z = INFINITY;
+            }
+        }
+        else if (x == 0) {
             z = INFINITY;
         }
         else {
-            z = -INFINITY;
+            if (y < 0) {
+                if (std::fmod(y, 2) == 0) {
+                    z = 0;
+                }
+                else {
+                    z = -0;
+                }
+            }
+            else if (y == 0) {
+                z = 1;
+            }
+            else {
+                if (std::fmod(y, 2) == 0) {
+                    z = INFINITY;
+                }
+                else {
+                    z = -INFINITY;
+                }
+            }
         }
     } catch (const std::underflow_error& e) {
         sf_error("powm1", SF_ERROR_UNDERFLOW, NULL);
