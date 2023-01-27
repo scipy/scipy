@@ -198,7 +198,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             lb <= x <= ub
 
     Note that by default ``lb = 0`` and ``ub = None`` unless specified with
-    ``bounds``. There is, hoever, no need to manually formulate the linear
+    ``bounds``. There is, however, no need to manually formulate the linear
     programming problem in terms of positive variables, often termed slack
     variables. By setting corresponding values in as ``min``in ``bounds``,
     e.g. a negative value or ``None``, ``linprog`` is well able to handle
