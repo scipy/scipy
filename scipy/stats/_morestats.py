@@ -2683,17 +2683,17 @@ def bartlett(*samples):
     >>> import matplotlib.pyplot as plt
     >>> k = 3  # number of samples
     >>> dist = stats.chi2(df=k-1)
-    >>> bart_val = np.linspace(0, 5, 100)
-    >>> pdf = dist.pdf(bart_val)
+    >>> val = np.linspace(0, 5, 100)
+    >>> pdf = dist.pdf(val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def bart_plot(ax):  # we'll re-use this
-    ...     ax.plot(bart_val, pdf, color='C0')
-    ...     ax.set_title("Levene Test Null Distribution")
+    >>> def plot(ax):  # we'll re-use this
+    ...     ax.plot(val, pdf, color='C0')
+    ...     ax.set_title("Bartlett Test Null Distribution")
     ...     ax.set_xlabel("statistic")
     ...     ax.set_ylabel("probability density")
     ...     ax.set_xlim(0, 5)
     ...     ax.set_ylim(0, 1)
-    >>> bart_plot(ax)
+    >>> plot(ax)
     >>> plt.show()
 
     The comparison is quantified by the p-value: the proportion of values in
@@ -2701,13 +2701,13 @@ def bartlett(*samples):
     statistic.
 
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> bart_plot(ax)
+    >>> plot(ax)
     >>> pvalue = dist.sf(res.statistic)
     >>> annotation = (f'p-value={pvalue:.3f}\n(shaded area)')
     >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
     >>> _ = ax.annotate(annotation, (1.5, 0.22), (2.25, 0.3), arrowprops=props)
-    >>> i = bart_val >= res.statistic
-    >>> ax.fill_between(bart_val[i], y1=0, y2=pdf[i], color='C0')
+    >>> i = val >= res.statistic
+    >>> ax.fill_between(val[i], y1=0, y2=pdf[i], color='C0')
     >>> plt.show()
 
     >>> res.pvalue
@@ -2730,8 +2730,8 @@ def bartlett(*samples):
       unlikely to have occurred under the null hypothesis.
 
     Note that the chi-square distribution provides an asymptotic approximation
-    of the null distribution; it is only accurate for samples with many
-    observations. For small samples, it may be more appropriate to perform a
+    of the null distribution.
+    For small samples, it may be more appropriate to perform a
     permutation test: Under the null hypothesis that all three samples were
     drawn from the same population, each of the measurements is equally likely
     to have been observed in any of the three samples. Therefore, we can form
@@ -2746,14 +2746,14 @@ def bartlett(*samples):
     ...     permutation_type='independent', alternative='greater'
     ... )
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> bart_plot(ax)
+    >>> plot(ax)
     >>> bins = np.linspace(0, 5, 25)
     >>> ax.hist(
     ...     ref.null_distribution, bins=bins, density=True, facecolor="C1"
     ... )
     >>> ax.legend(['aymptotic approximation\n(many observations)',
     ...            'randomized null distribution'])
-    >>> bart_plot(ax)
+    >>> plot(ax)
     >>> plt.show()
 
     >>> ref.pvalue  # randomized test p-value
@@ -2932,17 +2932,17 @@ def levene(*samples, center='median', proportiontocut=0.05):
     >>> import matplotlib.pyplot as plt
     >>> k, n = 3, 60   # number of samples, total number of observations
     >>> dist = stats.f(dfn=k-1, dfd=n-k)
-    >>> lev_val = np.linspace(0, 5, 100)
-    >>> pdf = dist.pdf(lev_val)
+    >>> val = np.linspace(0, 5, 100)
+    >>> pdf = dist.pdf(val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def lev_plot(ax):  # we'll re-use this
-    ...     ax.plot(lev_val, pdf, color='C0')
+    >>> def plot(ax):  # we'll re-use this
+    ...     ax.plot(val, pdf, color='C0')
     ...     ax.set_title("Levene Test Null Distribution")
     ...     ax.set_xlabel("statistic")
     ...     ax.set_ylabel("probability density")
     ...     ax.set_xlim(0, 5)
     ...     ax.set_ylim(0, 1)
-    >>> lev_plot(ax)
+    >>> plot(ax)
     >>> plt.show()
 
     The comparison is quantified by the p-value: the proportion of values in
@@ -2950,13 +2950,13 @@ def levene(*samples, center='median', proportiontocut=0.05):
     statistic.
 
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> lev_plot(ax)
+    >>> plot(ax)
     >>> pvalue = dist.sf(res.statistic)
     >>> annotation = (f'p-value={pvalue:.3f}\n(shaded area)')
     >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
     >>> _ = ax.annotate(annotation, (1.5, 0.22), (2.25, 0.3), arrowprops=props)
-    >>> i = lev_val >= res.statistic
-    >>> ax.fill_between(lev_val[i], y1=0, y2=pdf[i], color='C0')
+    >>> i = val >= res.statistic
+    >>> ax.fill_between(val[i], y1=0, y2=pdf[i], color='C0')
     >>> plt.show()
 
     >>> res.pvalue
@@ -2979,7 +2979,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
       unlikely to have occurred under the null hypothesis.
 
     Note that the F distribution provides an asymptotic approximation of the
-    null distribution; it is only accurate for samples with many observations.
+    null distribution.
     For small samples, it may be more appropriate to perform a permutation
     test: Under the null hypothesis that all three samples were drawn from
     the same population, each of the measurements is equally likely to have
@@ -2995,14 +2995,14 @@ def levene(*samples, center='median', proportiontocut=0.05):
     ...     permutation_type='independent', alternative='greater'
     ... )
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> lev_plot(ax)
+    >>> plot(ax)
     >>> bins = np.linspace(0, 5, 25)
     >>> ax.hist(
     ...     ref.null_distribution, bins=bins, density=True, facecolor="C1"
     ... )
     >>> ax.legend(['aymptotic approximation\n(many observations)',
     ...            'randomized null distribution'])
-    >>> lev_plot(ax)
+    >>> plot(ax)
     >>> plt.show()
 
     >>> ref.pvalue  # randomized test p-value
@@ -3324,17 +3324,17 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     >>> import matplotlib.pyplot as plt
     >>> k = 3  # number of samples
     >>> dist = stats.chi2(df=k-1)
-    >>> flig_val = np.linspace(0, 8, 100)
-    >>> pdf = dist.pdf(flig_val)
+    >>> val = np.linspace(0, 8, 100)
+    >>> pdf = dist.pdf(val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def lev_plot(ax):  # we'll re-use this
-    ...     ax.plot(flig_val, pdf, color='C0')
+    >>> def plot(ax):  # we'll re-use this
+    ...     ax.plot(val, pdf, color='C0')
     ...     ax.set_title("Fligner Test Null Distribution")
     ...     ax.set_xlabel("statistic")
     ...     ax.set_ylabel("probability density")
     ...     ax.set_xlim(0, 8)
     ...     ax.set_ylim(0, 0.5)
-    >>> lev_plot(ax)
+    >>> plot(ax)
     >>> plt.show()
 
     The comparison is quantified by the p-value: the proportion of values in
@@ -3342,13 +3342,13 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     statistic.
 
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> lev_plot(ax)
+    >>> plot(ax)
     >>> pvalue = dist.sf(res.statistic)
     >>> annotation = (f'p-value={pvalue:.4f}\n(shaded area)')
     >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
     >>> _ = ax.annotate(annotation, (1.5, 0.22), (2.25, 0.3), arrowprops=props)
-    >>> i = flig_val >= res.statistic
-    >>> ax.fill_between(flig_val[i], y1=0, y2=pdf[i], color='C0')
+    >>> i = val >= res.statistic
+    >>> ax.fill_between(val[i], y1=0, y2=pdf[i], color='C0')
     >>> plt.show()
 
     >>> res.pvalue
@@ -3371,8 +3371,8 @@ def fligner(*samples, center='median', proportiontocut=0.05):
       unlikely to have occurred under the null hypothesis.
 
     Note that the chi-square distribution provides an asymptotic approximation
-    of the null distribution; it is only accurate for samples with many
-    observations. For small samples, it may be more appropriate to perform a
+    of the null distribution.
+    For small samples, it may be more appropriate to perform a
     permutation test: Under the null hypothesis that all three samples were
     drawn from the same population, each of the measurements is equally likely
     to have been observed in any of the three samples. Therefore, we can form
@@ -3387,14 +3387,14 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     ...     permutation_type='independent', alternative='greater'
     ... )
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> lev_plot(ax)
+    >>> plot(ax)
     >>> bins = np.linspace(0, 8, 25)
     >>> ax.hist(
     ...     ref.null_distribution, bins=bins, density=True, facecolor="C1"
     ... )
     >>> ax.legend(['aymptotic approximation\n(many observations)',
     ...            'randomized null distribution'])
-    >>> lev_plot(ax)
+    >>> plot(ax)
     >>> plt.show()
 
     >>> ref.pvalue  # randomized test p-value
