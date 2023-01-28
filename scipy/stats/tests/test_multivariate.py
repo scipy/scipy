@@ -2992,7 +2992,7 @@ class TestVonMises_Fisher:
                                2000, 2.0255393314603194e-87)])
     def test_pdf_accuracy(self, x, mu, kappa, reference):
         pdf = vonmises_fisher(mu, kappa).pdf(x)
-        assert_allclose(pdf, reference)
+        assert_allclose(pdf, reference, rtol=1e-13)
 
     # Expected values of the vonmises-fisher logPDF were computed via mpmath
     # from mpmath import mp
@@ -3033,7 +3033,7 @@ class TestVonMises_Fisher:
                                2000, -199.61906708886113)])
     def test_logpdf_accuracy(self, x, mu, kappa, reference):
         logpdf = vonmises_fisher(mu, kappa).logpdf(x)
-        assert_allclose(logpdf, reference)
+        assert_allclose(logpdf, reference, rtol=1e-14)
 
     # Expected values of the vonmises-fisher entropy were computed via mpmath
     # from mpmath import mp
@@ -3057,7 +3057,7 @@ class TestVonMises_Fisher:
     def test_entropy_accuracy(self, dim, kappa, reference):
         mu = np.full((dim, ), 1/np.sqrt(dim))
         entropy = vonmises_fisher(mu, kappa).entropy()
-        assert_allclose(entropy, reference)
+        assert_allclose(entropy, reference, rtol=2e-14)
 
     def test_pdf_logpdf_consistency(self):
         # test that pdf and logpdf values are correctly broadcasted
