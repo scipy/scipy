@@ -1064,6 +1064,27 @@ class TestTruncnorm:
     def setup_method(self):
         np.random.seed(1234)
 
+    @pytest.mark.parametrize("a, b, ref",
+    [(1, 1.1, -51.193456682325868713692170606325466483149352790920127),
+    (0.6, 0.7, -31.187814362184521950512188790916784706311656529049338),
+    (1, 3, -1.3687642257303756289603942214408389493089905611272469)])
+    def test_entropy(self, a, b, ref):
+        #All reference values were calculated with mpmath:
+        #def entropy_trun(a, b):
+        #    def cdf(x):
+        #        return 0.5 * (1 + mp.erf(x / mp.sqrt(2)))
+        #
+        #    Z = cdf(b) - cdf(a)
+        #
+        #    def pdf_standard_norm(x):
+        #        return (mp.exp(-0.5 * x ** 2) / mp.sqrt(2 * mp.pi))
+        #
+        #    def pdf(x):
+        #        return pdf_standard_norm(x) / Z
+        #
+        #    return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [0, mp.inf])
+        assert_allclose(stats.truncnorm._entropy(a, b), ref)
+
     def test_ppf_ticket1131(self):
         vals = stats.truncnorm.ppf([-0.5, 0, 1e-4, 0.5, 1-1e-4, 1, 2], -1., 1.,
                                    loc=[3]*7, scale=2)

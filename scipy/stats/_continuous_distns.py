@@ -8703,6 +8703,25 @@ class truncnorm_gen(rv_continuous):
             logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
         return logsf
 
+    def _entropy(self, a, b):
+        '''
+        A = 0.5 * (1 + sc.erf(a / np.sqrt(2)))
+        B = 0.5 * (1 + sc.erf(b / np.sqrt(2)))
+        Z = B - A
+        C = np.exp(-0.5 * a ** 2) / np.sqrt(2 * np.pi)
+        D = np.exp(-0.5 * b ** 2) / np.sqrt(2 * np.pi)
+        E = np.log(np.sqrt(2 * np.pi * np.e) * Z)
+        F = (a * C - b * D) / (2 * Z)
+        h = E + F
+        '''
+        A = 0.5 * (1 + sc.erf(a / np.sqrt(2)))
+        B = 0.5 * (1 + sc.erf(b / np.sqrt(2)))
+        Z = B - A
+        C = (np.log(np.pi) + np.log(2) + 1) / 2
+        D = np.log(Z)
+        h = (C + D) / (2 * Z)
+        return h
+
     def _ppf(self, q, a, b):
         q, a, b = np.broadcast_arrays(q, a, b)
 
