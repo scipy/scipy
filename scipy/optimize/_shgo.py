@@ -1303,7 +1303,6 @@ class SHGO:
             logging.info(f'Found self.LMC[x_min].lres = {self.LMC[x_min].lres}')
             return self.LMC[x_min].lres
 
-
         if self.callback is not None:
             logging.info('Callback for '
                   'minimizer starting at {}:'.format(x_min))

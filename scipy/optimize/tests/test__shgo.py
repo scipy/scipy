@@ -692,6 +692,7 @@ class TestShgoArguments:
     def test_10_finite_time(self):
         """Test single function constraint passing"""
         options = {'maxtime': 1e-15}
+
         def f(x):
             time.sleep(1e-14)
             return 0.0
