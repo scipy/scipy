@@ -4108,11 +4108,11 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     argument.  The difference between `y1` and `y2` is small.  For long
     signals, using `irlen` gives a significant performance improvement.
 
-    >>> x = rng.standard_normal(5000)
+    >>> x = rng.standard_normal(4000)
     >>> y1 = signal.filtfilt(b, a, x, method='gust')
     >>> y2 = signal.filtfilt(b, a, x, method='gust', irlen=approx_impulse_len)
     >>> print(np.max(np.abs(y1 - y2)))
-    1.80056858312e-10
+    2.875334415008979e-10
 
     """
     b = np.atleast_1d(b)
