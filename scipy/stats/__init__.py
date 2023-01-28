@@ -572,7 +572,11 @@ Warnings / Errors used in :mod:`scipy.stats`
 Result classes used in :mod:`scipy.stats`
 -----------------------------------------
 
-.. warning:: These classes are private. Do not import them.
+.. warning::
+
+    These classes are private, but they are included here because instances
+    of them are returned by other statistical functions. User import and
+    instantiation is not supported.
 
 .. toctree::
    :maxdepth: 2
