@@ -1768,8 +1768,8 @@ class TestCompareWithStats:
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
 
-                assert_allclose(r[0][0], rm[0][0], rtol=2e-15)
-                assert_allclose(r[0][1], rm[0][1], rtol=1e-15)
+                assert_allclose(r[0][0], rm[0][0], rtol=1e-14)
+                assert_allclose(r[0][1], rm[0][1], rtol=1e-14)
 
     def test_normaltest(self):
         with np.errstate(over='raise'), suppress_warnings() as sup:

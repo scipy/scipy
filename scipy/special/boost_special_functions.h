@@ -90,7 +90,12 @@ Real powm1_wrap(Real x, Real y)
         z = NAN;
     } catch (const std::overflow_error& e) {
         sf_error("powm1", SF_ERROR_OVERFLOW, NULL);
-        z = INFINITY;
+        if (x > 0) {
+            z = INFINITY;
+        }
+        else {
+            z = -INFINITY;
+        }
     } catch (const std::underflow_error& e) {
         sf_error("powm1", SF_ERROR_UNDERFLOW, NULL);
         z = 0;

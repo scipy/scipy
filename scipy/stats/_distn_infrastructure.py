@@ -17,7 +17,8 @@ from scipy._lib._util import check_random_state
 
 from scipy.special import comb, entr
 
-# for root finding for continuous distribution ppf, and max likelihood
+
+# for root finding for continuous distribution ppf, and maximum likelihood
 # estimation
 from scipy import optimize
 
@@ -31,12 +32,13 @@ from scipy._lib._finite_differences import _derivative
 # have cause import problems
 from scipy import stats
 
-from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
+from numpy import (arange, putmask, ones, shape, ndarray, zeros, floor,
                    logical_and, log, sqrt, place, argmax, vectorize, asarray,
                    nan, inf, isinf, NINF, empty)
 
 import numpy as np
-from ._constants import _XMAX
+from ._constants import _XMAX, _LOGXMAX
+from ._censored_data import CensoredData
 from scipy.stats._warnings_errors import FitError
 
 # These are the docstring parts used for substitution in specific
@@ -427,6 +429,27 @@ def _fit_determine_optimizer(optimizer):
         except AttributeError as e:
             raise ValueError("%s is not a valid optimizer" % optimizer) from e
     return optimizer
+
+
+def _sum_finite(x):
+    """
+    For a 1D array x, return a tuple containing the sum of the
+    finite values of x and the number of nonfinite values.
+
+    This is a utility function used when evaluating the negative
+    loglikelihood for a distribution and an array of samples.
+
+    Examples
+    --------
+    >>> tot, nbad = _sum_finite(np.array([-2, -np.inf, 5, 1]))
+    >>> tot
+    4.0
+    >>> nbad
+    1
+    """
+    finite_x = np.isfinite(x)
+    bad_count = finite_x.size - np.count_nonzero(finite_x)
+    return np.sum(x[finite_x]), bad_count
 
 
 # Frozen RV class
@@ -2283,6 +2306,60 @@ class rv_continuous(rv_generic):
             raise ValueError("Not enough input arguments.") from e
         return loc, scale, args
 
+    def _nnlf_and_penalty(self, x, args):
+        """
+        Compute the penalized negative log-likelihood for the
+        "standardized" data (i.e. already shifted by loc and
+        scaled by scale) for the shape parameters in `args`.
+
+        `x` can be a 1D numpy array or a CensoredData instance.
+        """
+        if isinstance(x, CensoredData):
+            # Filter out the data that is not in the support.
+            xs = x._supported(*self._get_support(*args))
+            n_bad = len(x) - len(xs)
+            i1, i2 = xs._interval.T
+            terms = [
+                # logpdf of the noncensored data.
+                self._logpdf(xs._uncensored, *args),
+                # logcdf of the left-censored data.
+                self._logcdf(xs._left, *args),
+                # logsf of the right-censored data.
+                self._logsf(xs._right, *args),
+                # log of probability of the interval-censored data.
+                np.log(self._delta_cdf(i1, i2, *args)),
+            ]
+        else:
+            cond0 = ~self._support_mask(x, *args)
+            n_bad = np.count_nonzero(cond0)
+            if n_bad > 0:
+                x = argsreduce(~cond0, x)[0]
+            terms = [self._logpdf(x, *args)]
+
+        totals, bad_counts = zip(*[_sum_finite(term) for term in terms])
+        total = sum(totals)
+        n_bad += sum(bad_counts)
+
+        return -total + n_bad * _LOGXMAX * 100
+
+    def _penalized_nnlf(self, theta, x):
+        """Penalized negative loglikelihood function.
+
+        i.e., - sum (log pdf(x, theta), axis=0) + penalty
+        where theta are the parameters (including loc and scale)
+        """
+        loc, scale, args = self._unpack_loc_scale(theta)
+        if not self._argcheck(*args) or scale <= 0:
+            return inf
+        if isinstance(x, CensoredData):
+            x = (x - loc) / scale
+            n_log_scale = (len(x) - x.num_censored()) * log(scale)
+        else:
+            x = (x - loc) / scale
+            n_log_scale = len(x) * log(scale)
+
+        return self._nnlf_and_penalty(x, args) + n_log_scale
+
     def _fitstart(self, data, args=None):
         """Starting point for fit (shape arguments + loc + scale)."""
         if args is None:
@@ -2330,6 +2407,7 @@ class rv_continuous(rv_generic):
 
             def objective(theta, x):
                 return self._moment_error(theta, x, data_moments)
+
         elif method == "mle":
             objective = self._penalized_nnlf
         else:
@@ -2395,7 +2473,7 @@ class rv_continuous(rv_generic):
 
         Parameters
         ----------
-        data : array_like
+        data : array_like or `CensoredData` instance
             Data to use in estimating the distribution parameters.
         arg1, arg2, arg3,... : floats, optional
             Starting value(s) for any shape-characterizing arguments (those not
@@ -2418,9 +2496,8 @@ class rv_continuous(rv_generic):
 
             - fscale : hold scale parameter fixed to specified value.
 
-            - optimizer : The optimizer to use.
-              The optimizer must take ``func``,
-              and starting position as the first two arguments,
+            - optimizer : The optimizer to use.  The optimizer must take
+              ``func`` and starting position as the first two arguments,
               plus ``args`` (for extra arguments to pass to the
               function to be optimized) and ``disp=0`` to suppress
               output as keyword arguments.
@@ -2439,10 +2516,10 @@ class rv_continuous(rv_generic):
         Returns
         -------
         parameter_tuple : tuple of floats
-            Estimates for any shape parameters (if applicable),
-            followed by those for location and scale.
-            For most random variables, shape statistics
-            will be returned, but there are exceptions (e.g. ``norm``).
+            Estimates for any shape parameters (if applicable), followed by
+            those for location and scale. For most random variables, shape
+            statistics will be returned, but there are exceptions (e.g.
+            ``norm``).
 
         Notes
         -----
@@ -2483,8 +2560,8 @@ class rv_continuous(rv_generic):
         >>> a, b = 1., 2.
         >>> x = beta.rvs(a, b, size=1000)
 
-        Now we can fit all four parameters (``a``, ``b``, ``loc``
-        and ``scale``):
+        Now we can fit all four parameters (``a``, ``b``, ``loc`` and
+        ``scale``):
 
         >>> a1, b1, loc1, scale1 = beta.fit(x)
 
@@ -2512,16 +2589,31 @@ class rv_continuous(rv_generic):
         >>> loc1, scale1
         (0.92087172783841631, 2.0015750750324668)
         """
-        data = np.asarray(data)
         method = kwds.get('method', "mle").lower()
 
-        # memory for method of moments
+        censored = isinstance(data, CensoredData)
+        if censored:
+            if method != 'mle':
+                raise ValueError('For censored data, the method must'
+                                 ' be "MLE".')
+            if data.num_censored() == 0:
+                # There are no censored values in data, so replace the
+                # CensoredData instance with a regular array.
+                data = data._uncensored
+                censored = False
+
         Narg = len(args)
         if Narg > self.numargs:
             raise TypeError("Too many input arguments.")
 
-        if not np.isfinite(data).all():
-            raise ValueError("The data contains non-finite values.")
+        # Check the finiteness of data only if data is not an instance of
+        # CensoredData.  The arrays in a CensoredData instance have already
+        # been validated.
+        if not censored:
+            # Note: `ravel()` is called for backwards compatibility.
+            data = np.asarray(data).ravel()
+            if not np.isfinite(data).all():
+                raise ValueError("The data contains non-finite values.")
 
         start = [None]*2
         if (Narg < self.numargs) or not ('loc' in kwds and
@@ -2544,7 +2636,7 @@ class rv_continuous(rv_generic):
         # instead of an optimizer, but sometimes no solution exists,
         # especially when the user fixes parameters. Minimizing the sum
         # of squares of the error generalizes to these cases.
-        vals = optimizer(func, x0, args=(ravel(data),), disp=0)
+        vals = optimizer(func, x0, args=(data,), disp=0)
         obj = func(vals, data)
 
         if restore is not None:
@@ -2583,7 +2675,13 @@ class rv_continuous(rv_generic):
             Estimated scale parameter for the data.
 
         """
-        data = np.asarray(data)
+        if isinstance(data, CensoredData):
+            # For this estimate, "uncensor" the data by taking the
+            # given endpoints as the data for the left- or right-censored
+            # data, and the mean for the interval-censored data.
+            data = data._uncensor()
+        else:
+            data = np.asarray(data)
 
         # Estimate location and scale according to the method of moments.
         loc_hat, scale_hat = self.fit_loc_scale(data, *args)
@@ -2827,6 +2925,31 @@ class rv_continuous(rv_generic):
         scale_info = _ShapeInfo("scale", False, (0, np.inf), (False, False))
         param_info = shape_info + [loc_info, scale_info]
         return param_info
+
+    # For now, _delta_cdf is a private method.
+    def _delta_cdf(self, x1, x2, *args, loc=0, scale=1):
+        """
+        Compute CDF(x2) - CDF(x1).
+
+        Where x1 is greater than the median, compute SF(x1) - SF(x2),
+        otherwise compute CDF(x2) - CDF(x1).
+
+        This function is only useful if `dist.sf(x, ...)` has an implementation
+        that is numerically more accurate than `1 - dist.cdf(x, ...)`.
+        """
+        cdf1 = self.cdf(x1, *args, loc=loc, scale=scale)
+        # Possible optimizations (needs investigation-these might not be
+        # better):
+        # * Use _lazywhere instead of np.where
+        # * Instead of cdf1 > 0.5, compare x1 to the median.
+        result = np.where(cdf1 > 0.5,
+                          (self.sf(x1, *args, loc=loc, scale=scale)
+                           - self.sf(x2, *args, loc=loc, scale=scale)),
+                          self.cdf(x2, *args, loc=loc, scale=scale) - cdf1)
+        if result.ndim == 0:
+            result = result[()]
+        return result
+
 
 # Helpers for the discrete distributions
 def _drv2_moment(self, n, *args):
