@@ -192,8 +192,8 @@ def shgo(
 
         * minimize_every_iter : bool
             If True then promising global sampling points will be passed to a
-            local minimization routine every iteration. If False then only the
-            final minimizer pool will be run. Defaults to False.
+            local minimization routine every iteration. If True then only the
+            final minimizer pool will be run. Defaults to True.
         * local_iter : int
             Only evaluate a few of the best minimizer pool candidates every
             iteration. If False all potential points are passed to the local
