@@ -3420,6 +3420,26 @@ class TestGamma:
                           330.6557590436547, atol=1e-13)
 
 
+class TestDgamma:
+
+    @pytest.mark.parametrize("a, ref",
+        [(1.5, 1.0270599779677059133961009210879535697101136043939368),
+        (1.3, 0.96786481885606238222931601588162960164284436511601369),
+        (1.1, 0.89282511667060667043667607898469404771511386219175776)])
+    def test_entropy(self, a, ref):
+        #The reference values were calculated with mpmath:
+        #def entropy_dgamma(a):
+        #   def pdf(x):
+        #       A = 1 / (2 * mp.gamma(a))
+        #       B = mp.fabs(x) ** (a - 1)
+        #       C = mp.exp(-mp.fabs(x))
+        #       h = A * B * C
+        #       return h
+        #
+        #   return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [0, mp.inf])
+        assert_allclose(stats.dgamma._entropy(a), ref)
+
+
 class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
     def test_precision(self):
@@ -6430,7 +6450,7 @@ class _distr3_gen(stats.rv_continuous):
 
     def _cdf(self, x, a):
         # Different # of shape params from _pdf, to be able to check that
-        # inspection catches the inconsistency."""
+        # inspection catches the inconsistency.
         return 42 * a + x
 
 
