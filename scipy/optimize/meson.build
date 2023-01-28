@@ -231,8 +231,8 @@ endif
 
 _dummy_init_optimize = fs.copyfile('__init__.py')
 
-opt_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+opt_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [_cython_tree, cython_linalg, _dummy_init_optimize])
 

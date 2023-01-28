@@ -3039,7 +3039,7 @@ p : array_like
 """
 
 _multinomial_doc_callparams_note = """\
-`n` should be a positive integer. Each element of `p` should be in the
+`n` should be a nonnegative integer. Each element of `p` should be in the
 interval :math:`[0,1]` and the elements should sum to 1. If they do not sum to
 1, the last element of the `p` array is not used and is replaced with the
 remaining probability left over from the earlier elements.
@@ -3198,7 +3198,7 @@ class multinomial_gen(multi_rv_generic):
         n = np.array(n, dtype=np.int_, copy=True)
 
         # true for bad n
-        ncond = n <= 0
+        ncond = n < 0
 
         return n, p, ncond | pcond
 

@@ -439,21 +439,29 @@ class TestCorrPearsonr:
     # cor.test(x, y, method = "pearson", alternative = "g")
     # correlation coefficient and p-value for alternative='two-sided'
     # calculated with mpmath agree to 16 digits.
-    @pytest.mark.parametrize('alternative, pval, rlow, rhigh',
-                             [('two-sided',
-                               0.325800137536, -0.814938968841, 0.99230697523),
-                              ('less',
-                               0.8370999312316, -1, 0.985600937290653),
-                              ('greater',
-                               0.1629000687684, -0.6785654158217636, 1)])
-    def test_basic_example(self, alternative, pval, rlow, rhigh):
+    @pytest.mark.parametrize('alternative, pval, rlow, rhigh, sign',
+            [('two-sided', 0.325800137536, -0.814938968841, 0.99230697523, 1),  # noqa
+             ('less', 0.8370999312316, -1, 0.985600937290653, 1),
+             ('greater', 0.1629000687684, -0.6785654158217636, 1, 1),
+             ('two-sided', 0.325800137536, -0.992306975236, 0.81493896884, -1),
+             ('less', 0.1629000687684, -1.0, 0.6785654158217636, -1),
+             ('greater', 0.8370999312316, -0.985600937290653, 1.0, -1)])
+    def test_basic_example(self, alternative, pval, rlow, rhigh, sign):
         x = [1, 2, 3, 4]
-        y = [0, 1, 0.5, 1]
+        y = np.array([0, 1, 0.5, 1]) * sign
         result = stats.pearsonr(x, y, alternative=alternative)
-        assert_allclose(result.statistic, 0.6741998624632421, rtol=1e-12)
+        assert_allclose(result.statistic, 0.6741998624632421*sign, rtol=1e-12)
         assert_allclose(result.pvalue, pval, rtol=1e-6)
         ci = result.confidence_interval()
         assert_allclose(ci, (rlow, rhigh), rtol=1e-6)
+
+    def test_negative_correlation_pvalue_gh17795(self):
+        x = np.arange(10)
+        y = -x
+        test_greater = stats.pearsonr(x, y, alternative='greater')
+        test_less = stats.pearsonr(x, y, alternative='less')
+        assert_allclose(test_greater.pvalue, 1)
+        assert_allclose(test_less.pvalue, 0, atol=1e-20)
 
     def test_length3_r_exactly_negative_one(self):
         x = [1, 2, 3]

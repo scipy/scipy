@@ -6938,7 +6938,8 @@ add_newdoc("i0e",
     polynomial expansions used are the same as those in `i0`, but
     they are not multiplied by the dominant exponential factor.
 
-    This function is a wrapper for the Cephes [1]_ routine `i0e`.
+    This function is a wrapper for the Cephes [1]_ routine `i0e`. `i0e`
+    is useful for large arguments `x`: for these, `i0` quickly overflows.
 
     See also
     --------
@@ -6952,13 +6953,15 @@ add_newdoc("i0e",
 
     Examples
     --------
-    Calculate the function at one point:
+    In the following example `i0` returns infinity whereas `i0e` still returns
+    a finite number.
 
-    >>> from scipy.special import i0e
-    >>> i0e(1.)
-    0.46575960759364043
+    >>> from scipy.special import i0, i0e
+    >>> i0(1000.), i0e(1000.)
+    (inf, 0.012617240455891257)
 
-    Calculate the function at several points:
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
 
     >>> import numpy as np
     >>> i0e(np.array([-2., 0., 3.]))
@@ -6972,15 +6975,6 @@ add_newdoc("i0e",
     >>> y = i0e(x)
     >>> ax.plot(x, y)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions overflow or lose precision. In the
-    following example `i0` returns infinity whereas `i0e` still returns
-    a finite number.
-
-    >>> from scipy.special import i0
-    >>> i0(1000.), i0e(1000.)
-    (inf, 0.012617240455891257)
     """)
 
 add_newdoc("i1",
@@ -7081,7 +7075,8 @@ add_newdoc("i1e",
     polynomial expansions used are the same as those in `i1`, but
     they are not multiplied by the dominant exponential factor.
 
-    This function is a wrapper for the Cephes [1]_ routine `i1e`.
+    This function is a wrapper for the Cephes [1]_ routine `i1e`. `i1e`
+    is useful for large arguments `x`: for these, `i1` quickly overflows.
 
     See also
     --------
@@ -7095,13 +7090,15 @@ add_newdoc("i1e",
 
     Examples
     --------
-    Calculate the function at one point:
+    In the following example `i1` returns infinity whereas `i1e` still returns
+    a finite number.
 
-    >>> from scipy.special import i1e
-    >>> i1e(1.)
-    0.2079104153497085
+    >>> from scipy.special import i1, i1e
+    >>> i1(1000.), i1e(1000.)
+    (inf, 0.01261093025692863)
 
-    Calculate the function at several points:
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
 
     >>> import numpy as np
     >>> i1e(np.array([-2., 0., 6.]))
@@ -7115,15 +7112,6 @@ add_newdoc("i1e",
     >>> y = i1e(x)
     >>> ax.plot(x, y)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions overflow or lose precision. In the
-    following example `i1` returns infinity whereas `i1e` still returns a
-    finite number.
-
-    >>> from scipy.special import i1
-    >>> i1(1000.), i1e(1000.)
-    (inf, 0.01261093025692863)
     """)
 
 add_newdoc("_igam_fac",
@@ -7825,6 +7813,9 @@ add_newdoc("ive",
     is used, where :math:`K_v(z)` is the modified Bessel function of the
     second kind, evaluated using the AMOS routine `zbesk`.
 
+    `ive` is useful for large arguments `z`: for these, `iv` easily overflows,
+    while `ive` does not due to the exponential scaling.
+
     See also
     --------
     iv: Modified Bessel function of the first kind
@@ -7839,13 +7830,14 @@ add_newdoc("ive",
 
     Examples
     --------
-    Evaluate the function of order 0 at one point.
+    In the following example `iv` returns infinity whereas `ive` still returns
+    a finite number.
 
-    >>> import numpy as np
     >>> from scipy.special import iv, ive
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> ive(0, 1.)
-    0.4657596075936404
+    >>> iv(3, 1000.), ive(3, 1000.)
+    (inf, 0.01256056218254712)
 
     Evaluate the function at one point for different orders by
     providing a list or NumPy array as argument for the `v` parameter:
@@ -7879,14 +7871,6 @@ add_newdoc("ive",
     >>> ax.legend()
     >>> ax.set_xlabel(r"$z$")
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions over- or underflow. In the
-    following example `iv` returns infinity whereas `ive` still returns
-    a finite number.
-
-    >>> iv(3, 1000.), ive(3, 1000.)
-    (inf, 0.01256056218254712)
     """)
 
 add_newdoc("j0",
@@ -8363,7 +8347,8 @@ add_newdoc("k0e",
     The range is partitioned into the two intervals [0, 2] and (2, infinity).
     Chebyshev polynomial expansions are employed in each interval.
 
-    This function is a wrapper for the Cephes [1]_ routine `k0e`.
+    This function is a wrapper for the Cephes [1]_ routine `k0e`. `k0e` is
+    useful for large arguments: for these, `k0` easily underflows.
 
     See also
     --------
@@ -8377,13 +8362,15 @@ add_newdoc("k0e",
 
     Examples
     --------
-    Calculate the function at one point:
+    In the following example `k0` returns 0 whereas `k0e` still returns a
+    useful finite number:
 
-    >>> from scipy.special import k0e
-    >>> k0e(1.)
-    1.1444630798068947
+    >>> from scipy.special import k0, k0e
+    >>> k0(1000.), k0e(1000)
+    (0., 0.03962832160075422)
 
-    Calculate the function at several points:
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
 
     >>> import numpy as np
     >>> k0e(np.array([0.5, 2., 3.]))
@@ -8397,19 +8384,6 @@ add_newdoc("k0e",
     >>> y = k0e(x)
     >>> ax.plot(x, y)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions are not precise enough.
-
-    >>> from scipy.special import k0
-    >>> k0(1000.)
-    0.
-
-    While `k0` returns zero, `k0e` still returns a finite number:
-
-    >>> k0e(1000.)
-    0.03962832160075422
-
     """)
 
 add_newdoc("k1",
@@ -8514,13 +8488,15 @@ add_newdoc("k1e",
 
     Examples
     --------
-    Calculate the function at one point:
+    In the following example `k1` returns 0 whereas `k1e` still returns a
+    useful floating point number.
 
-    >>> from scipy.special import k1e
-    >>> k1e(1.)
-    1.636153486263258
+    >>> from scipy.special import k1, k1e
+    >>> k1(1000.), k1e(1000.)
+    (0., 0.03964813081296021)
 
-    Calculate the function at several points:
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
 
     >>> import numpy as np
     >>> k1e(np.array([0.5, 2., 3.]))
@@ -8534,15 +8510,6 @@ add_newdoc("k1e",
     >>> y = k1e(x)
     >>> ax.plot(x, y)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions are not precise enough. In the
-    following example `k1` returns zero whereas `k1e` still returns a
-    useful floating point number.
-
-    >>> from scipy.special import k1
-    >>> k1(1000.), k1e(1000.)
-    (0., 0.03964813081296021)
     """)
 
 add_newdoc("kei",
@@ -9125,13 +9092,14 @@ add_newdoc("kve",
 
     Examples
     --------
-    Evaluate the function of order 0 at one point.
+    In the following example `kv` returns 0 whereas `kve` still returns
+    a useful finite number.
 
     >>> import numpy as np
     >>> from scipy.special import kv, kve
     >>> import matplotlib.pyplot as plt
-    >>> kve(0, 1.)
-    1.1444630798068949
+    >>> kv(3, 1000.), kve(3, 1000.)
+    (0.0, 0.03980696128440973)
 
     Evaluate the function at one point for different orders by
     providing a list or NumPy array as argument for the `v` parameter:
@@ -9167,14 +9135,6 @@ add_newdoc("kve",
     >>> ax.set_ylim(0, 4)
     >>> ax.set_xlim(0, 5)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions over- or underflow. In the
-    following example `kv` returns 0 whereas `kve` still returns
-    a useful finite number.
-
-    >>> kv(3, 1000.), kve(3, 1000.)
-    (0.0, 0.03980696128440973)
     """)
 
 add_newdoc("_lanczos_sum_expg_scaled",
@@ -10566,7 +10526,7 @@ add_newdoc("ndtr",
     r"""
     ndtr(x, out=None)
 
-    Gaussian cumulative distribution function.
+    Cumulative distribution of the standard normal distribution.
 
     Returns the area under the standard Gaussian probability
     density function, integrated from minus infinity to `x`
@@ -10589,8 +10549,35 @@ add_newdoc("ndtr",
 
     See Also
     --------
-    erf, erfc, scipy.stats.norm, log_ndtr
+    log_ndtr : Logarithm of ndtr
+    ndtri : Inverse of ndtr, standard normal percentile function
+    erf : Error function
+    erfc : 1 - erf
+    scipy.stats.norm : Normal distribution
 
+    Examples
+    --------
+    Evaluate `ndtr` at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import ndtr
+    >>> ndtr(0.5)
+    0.6914624612740131
+
+    Evaluate the function at several points by providing a NumPy array
+    or list for `x`.
+
+    >>> ndtr([0, 0.5, 2])
+    array([0.5       , 0.69146246, 0.97724987])
+
+    Plot the function.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-5, 5, 100)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, ndtr(x))
+    >>> ax.set_title("Standard normal cumulative distribution function $\Phi$")
+    >>> plt.show()
     """)
 
 
@@ -10709,7 +10696,7 @@ add_newdoc("ndtri",
 
     Inverse of `ndtr` vs x
 
-    Returns the argument x for which the area under the Gaussian
+    Returns the argument x for which the area under the standard normal
     probability density function (integrated from minus infinity to `x`)
     is equal to y.
 
@@ -10727,8 +10714,35 @@ add_newdoc("ndtri",
 
     See Also
     --------
-    ndtr
+    ndtr : Standard normal cumulative probability distribution
+    ndtri_exp : Inverse of log_ndtr
 
+    Examples
+    --------
+    `ndtri` is the percentile function of the standard normal distribution.
+    This means it returns the inverse of the cumulative density `ndtr`. First,
+    let us compute a cumulative density value.
+
+    >>> import numpy as np
+    >>> from scipy.special import ndtri, ndtr
+    >>> cdf_val = ndtr(2)
+    >>> cdf_val
+    0.9772498680518208
+
+    Verify that `ndtri` yields the original value for `x` up to floating point
+    errors.
+
+    >>> ndtri(cdf_val)
+    2.0000000000000004
+
+    Plot the function. For that purpose, we provide a NumPy array as argument.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0.01, 1, 200)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, ndtri(x))
+    >>> ax.set_title("Standard normal percentile function")
+    >>> plt.show()
     """)
 
 add_newdoc("obl_ang1",

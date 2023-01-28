@@ -4800,21 +4800,16 @@ def pearsonr(x, y, *, alternative='two-sided'):
     # floating point arithmetic.
     r = max(min(r, 1.0), -1.0)
 
-    # As explained in the docstring, the p-value can be computed as
-    #     p = 2*dist.cdf(-abs(r))
-    # where dist is the beta distribution on [-1, 1] with shape parameters
-    # a = b = n/2 - 1.  `special.btdtr` is the CDF for the beta distribution
-    # on [0, 1].  To use it, we make the transformation  x = (r + 1)/2; the
-    # shape parameters do not change.  Then -abs(r) used in `cdf(-abs(r))`
-    # becomes x = (-abs(r) + 1)/2 = 0.5*(1 - abs(r)).  (r is cast to float64
-    # to avoid a TypeError raised by btdtr when r is higher precision.)
+    # As explained in the docstring, the distribution of `r` under the null
+    # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
     ab = n/2 - 1
+    dist = stats.beta(ab, ab, loc=-1, scale=2)
     if alternative == 'two-sided':
-        prob = 2*special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+        prob = 2*dist.sf(abs(r))
     elif alternative == 'less':
-        prob = 1 - special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+        prob = dist.cdf(r)
     elif alternative == 'greater':
-        prob = special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+        prob = dist.sf(r)
     else:
         raise ValueError('alternative must be one of '
                          '["two-sided", "less", "greater"]')
@@ -5121,7 +5116,7 @@ def fisher_exact(table, alternative='two-sided'):
 
 def spearmanr(a, b=None, axis=0, nan_policy='propagate',
               alternative='two-sided'):
-    """Calculate a Spearman correlation coefficient with associated p-value.
+    r"""Calculate a Spearman correlation coefficient with associated p-value.
 
     The Spearman rank-order correlation coefficient is a nonparametric measure
     of the monotonicity of the relationship between two datasets.
@@ -5182,7 +5177,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
             ``a`` and ``b`` combined.
         pvalue : float
             The p-value for a hypothesis test whose null hypothesis
-            is that two sets of data are linearly uncorrelated. See
+            is that two samples have no ordinal correlation. See
             `alternative` above for alternative hypotheses. `pvalue` has the
             same shape as `statistic`.
 
@@ -5202,72 +5197,161 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
        The Advanced Theory of Statistics, Volume 2: Inference and Relationship.
        Griffin. 1973.
        Section 31.18
+    .. [3] Kershenobich, D., Fierro, F. J., & Rojkind, M. (1970). The
+       relationship between the free pool of proline and collagen content in
+       human liver cirrhosis. The Journal of Clinical Investigation, 49(12),
+       2246-2249.
+    .. [4] Hollander, M., Wolfe, D. A., & Chicken, E. (2013). Nonparametric
+       statistical methods. John Wiley & Sons.
+    .. [5] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+       Zero: Calculating Exact P-values When Permutations Are Randomly Drawn."
+       Statistical Applications in Genetics and Molecular Biology 9.1 (2010).
+    .. [6] Ludbrook, J., & Dudley, H. (1998). Why permutation tests are
+       superior to t and F tests in biomedical research. The American
+       Statistician, 52(2), 127-132.
 
     Examples
     --------
+    Consider the following data from [3]_, which studied the relationship
+    between free proline (an amino acid) and total collagen (a protein often
+    found in connective tissue) in unhealthy human livers.
+
+    The ``x`` and ``y`` arrays below record measurements of the two compounds.
+    The observations are paired: each free proline measurement was taken from
+    the same liver as the total collagen measurement at the same index.
+
     >>> import numpy as np
+    >>> # total collagen (mg/g dry weight of liver)
+    >>> x = np.array([7.1, 7.1, 7.2, 8.3, 9.4, 10.5, 11.4])
+    >>> # free proline (μ mole/g dry weight of liver)
+    >>> y = np.array([2.8, 2.9, 2.8, 2.6, 3.5, 4.6, 5.0])
+
+    These data were analyzed in [4]_ using Spearman's correlation coefficient,
+    a statistic sensitive to monotonic correlation between the samples.
+
     >>> from scipy import stats
-    >>> res = stats.spearmanr([1, 2, 3, 4, 5], [5, 6, 7, 8, 7])
+    >>> res = stats.spearmanr(x, y)
     >>> res.statistic
-    0.8207826816681233
+    0.7000000000000001
+
+    The value of this statistic tends to be high (close to 1) for samples with
+    a strongly positive ordinal correlation, low (close to -1) for samples with
+    a strongly negative ordinal correlation, and small in magnitude (close to
+    zero) for samples with weak ordinal correlation.
+
+    The test is performed by comparing the observed value of the
+    statistic against the null distribution: the distribution of statistic
+    values derived under the null hypothesis that total collagen and free
+    proline measurements are independent.
+
+    For this test, the statistic can be transformed such that the null
+    distribution for large samples is Student's t distribution with
+    ``len(x) - 2`` degrees of freedom.
+
+    >>> import matplotlib.pyplot as plt
+    >>> dof = len(x)-2  # len(x) == len(y)
+    >>> dist = stats.t(df=dof)
+    >>> t_vals = np.linspace(-5, 5, 100)
+    >>> pdf = dist.pdf(t_vals)
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> def plot(ax):  # we'll re-use this
+    ...     ax.plot(t_vals, pdf)
+    ...     ax.set_title("Spearman's Rho Test Null Distribution")
+    ...     ax.set_xlabel("statistic")
+    ...     ax.set_ylabel("probability density")
+    >>> plot(ax)
+    >>> plt.show()
+
+    The comparison is quantified by the p-value: the proportion of values in
+    the null distribution as extreme or more extreme than the observed
+    value of the statistic. In a two-sided test in which the statistic is
+    positive, elements of the null distribution greater than the transformed
+    statistic and elements of the null distribution less than the negative of
+    the observed statistic are both considered "more extreme".
+
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> plot(ax)
+    >>> rs = res.statistic  # original statistic
+    >>> transformed = rs * np.sqrt(dof / ((rs+1.0)*(1.0-rs)))
+    >>> pvalue = dist.cdf(-transformed) + dist.sf(transformed)
+    >>> annotation = (f'p-value={pvalue:.4f}\n(shaded area)')
+    >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
+    >>> _ = ax.annotate(annotation, (2.7, 0.025), (3, 0.03), arrowprops=props)
+    >>> i = t_vals >= transformed
+    >>> ax.fill_between(t_vals[i], y1=0, y2=pdf[i], color='C0')
+    >>> i = t_vals <= -transformed
+    >>> ax.fill_between(t_vals[i], y1=0, y2=pdf[i], color='C0')
+    >>> ax.set_xlim(-5, 5)
+    >>> ax.set_ylim(0, 0.1)
+    >>> plt.show()
     >>> res.pvalue
-    0.08858700531354381
-    >>> rng = np.random.default_rng()
-    >>> x2n = rng.standard_normal((100, 2))
-    >>> y2n = rng.standard_normal((100, 2))
-    >>> res = stats.spearmanr(x2n)
-    >>> res.statistic, res.pvalue
-    (-0.07960396039603959, 0.4311168705769747)
-    >>> res = stats.spearmanr(x2n[:, 0], x2n[:, 1])
-    >>> res.statistic, res.pvalue
-    (-0.07960396039603959, 0.4311168705769747)
-    >>> res = stats.spearmanr(x2n, y2n)
+    0.07991669030889909  # two-sided p-value
+
+    If the p-value is "small" - that is, if there is a low probability of
+    sampling data from independent distributions that produces such an extreme
+    value of the statistic - this may be taken as evidence against the null
+    hypothesis in favor of the alternative: the distribution of total collagen
+    and free proline are *not* independent. Note that:
+
+    - The inverse is not true; that is, the test is not used to provide
+      evidence for the null hypothesis.
+    - The threshold for values that will be considered "small" is a choice that
+      should be made before the data is analyzed [5]_ with consideration of the
+      risks of both false positives (incorrectly rejecting the null hypothesis)
+      and false negatives (failure to reject a false null hypothesis).
+    - Small p-values are not evidence for a *large* effect; rather, they can
+      only provide evidence for a "significant" effect, meaning that they are
+      unlikely to have occurred under the null hypothesis.
+
+    Suppose that before performing the experiment, the authors had reason
+    to predict a positive correlation between the total collagen and free
+    proline measurements, and that they had chosen to assess the plausibility
+    of the null hypothesis against a one-sided alternative: free proline has a
+    positive ordinal correlation with total collagen. In this case, only those
+    values in the null distribution that are as great or greater than the
+    observed statistic are considered to be more extreme.
+
+    >>> res = stats.spearmanr(x, y, alternative='greater')
     >>> res.statistic
-    array([[ 1.        , -0.07960396, -0.08314431,  0.09662166],
-           [-0.07960396,  1.        , -0.14448245,  0.16738074],
-           [-0.08314431, -0.14448245,  1.        ,  0.03234323],
-           [ 0.09662166,  0.16738074,  0.03234323,  1.        ]])
+    0.7000000000000001  # same statistic
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> plot(ax)
+    >>> pvalue = dist.sf(transformed)
+    >>> annotation = (f'p-value={pvalue:.6f}\n(shaded area)')
+    >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
+    >>> _ = ax.annotate(annotation, (3, 0.018), (3.5, 0.03), arrowprops=props)
+    >>> i = t_vals >= transformed
+    >>> ax.fill_between(t_vals[i], y1=0, y2=pdf[i], color='C0')
+    >>> ax.set_xlim(1, 5)
+    >>> ax.set_ylim(0, 0.1)
+    >>> plt.show()
     >>> res.pvalue
-    array([[0.        , 0.43111687, 0.41084066, 0.33891628],
-           [0.43111687, 0.        , 0.15151618, 0.09600687],
-           [0.41084066, 0.15151618, 0.        , 0.74938561],
-           [0.33891628, 0.09600687, 0.74938561, 0.        ]])
-    >>> res = stats.spearmanr(x2n.T, y2n.T, axis=1)
-    >>> res.statistic
-    array([[ 1.        , -0.07960396, -0.08314431,  0.09662166],
-           [-0.07960396,  1.        , -0.14448245,  0.16738074],
-           [-0.08314431, -0.14448245,  1.        ,  0.03234323],
-           [ 0.09662166,  0.16738074,  0.03234323,  1.        ]])
-    >>> res = stats.spearmanr(x2n, y2n, axis=None)
-    >>> res.statistic, res.pvalue
-    (0.044981624540613524, 0.5270803651336189)
-    >>> res = stats.spearmanr(x2n.ravel(), y2n.ravel())
-    >>> res.statistic, res.pvalue
-    (0.044981624540613524, 0.5270803651336189)
+    0.03995834515444954  # one-sided p-value; half of the two-sided p-value
 
-    >>> rng = np.random.default_rng()
-    >>> xint = rng.integers(10, size=(100, 2))
-    >>> res = stats.spearmanr(xint)
-    >>> res.statistic, res.pvalue
-    (0.09800224850707953, 0.3320271757932076)
+    Note that the t-distribution provides an asymptotic approximation of the
+    null distribution; it is only accurate for samples with many observations.
+    For small samples, it may be more appropriate to perform a permutation
+    test: Under the null hypothesis that total collagen and free proline are
+    independent, each of the free proline measurements were equally likely to
+    have been observed with any of the total collagen measurements. Therefore,
+    we can form an *exact* null distribution by calculating the statistic under
+    each possible pairing of elements between ``x`` and ``y``.
 
-    For small samples, consider performing a permutation test instead of
-    relying on the asymptotic p-value. Note that to calculate the null
-    distribution of the statistic (for all possibly pairings between
-    observations in sample ``x`` and ``y``), only one of the two inputs needs
-    to be permuted.
-
-    >>> x = [1.76405235, 0.40015721, 0.97873798,
-    ...      2.2408932, 1.86755799, -0.97727788]
-    >>> y = [2.71414076, 0.2488, 0.87551913,
-    ...      2.6514917, 2.01160156, 0.47699563]
-    >>> def statistic(x):  # permute only `x`
-    ...     return stats.spearmanr(x, y).statistic
-    >>> res_exact = stats.permutation_test((x,), statistic,
-    ...                                    permutation_type='pairings')
-    >>> res_asymptotic = stats.spearmanr(x, y)
-    >>> res_exact.pvalue, res_asymptotic.pvalue  # asymptotic pvalue is too low
-    (0.10277777777777777, 0.07239650145772594)
+    >>> def statistic(x):  # explore all possible pairings by permuting `x`
+    ...     rs = stats.spearmanr(x, y).statistic  # ignore pvalue
+    ...     transformed = rs * np.sqrt(dof / ((rs+1.0)*(1.0-rs)))
+    ...     return transformed
+    >>> ref = stats.permutation_test((x,), statistic, alternative='greater',
+    ...                              permutation_type='pairings')
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> plot(ax)
+    >>> ax.hist(ref.null_distribution, np.linspace(-5, 5, 26),
+    ...         density=True)
+    >>> ax.legend(['aymptotic approximation\n(many observations)',
+    ...            f'exact \n({len(ref.null_distribution)} permutations)'])
+    >>> plt.show()
+    >>> ref.pvalue
+    0.04563492063492063  # exact one-sided p-value
 
     """
     if axis is not None and axis > 1:
@@ -5457,7 +5541,7 @@ def pointbiserialr(x, y):
 
 def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
                method='auto', variant='b', alternative='two-sided'):
-    """Calculate Kendall's tau, a correlation measure for ordinal data.
+    r"""Calculate Kendall's tau, a correlation measure for ordinal data.
 
     Kendall's tau is a measure of the correspondence between two rankings.
     Values close to 1 indicate strong agreement, and values close to -1
@@ -5551,17 +5635,146 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
            pp. 327-336, 1994.
     .. [5] Maurice G. Kendall, "Rank Correlation Methods" (4th Edition),
            Charles Griffin & Co., 1970.
+    .. [6] Kershenobich, D., Fierro, F. J., & Rojkind, M. (1970). The
+           relationship between the free pool of proline and collagen content
+           in human liver cirrhosis. The Journal of Clinical Investigation,
+           49(12), 2246-2249.
+    .. [7] Hollander, M., Wolfe, D. A., & Chicken, E. (2013). Nonparametric
+           statistical methods. John Wiley & Sons.
+    .. [8] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+           Zero: Calculating Exact P-values When Permutations Are Randomly
+           Drawn." Statistical Applications in Genetics and Molecular Biology
+           9.1 (2010).
 
     Examples
     --------
+    Consider the following data from [6]_, which studied the relationship
+    between free proline (an amino acid) and total collagen (a protein often
+    found in connective tissue) in unhealthy human livers.
+
+    The ``x`` and ``y`` arrays below record measurements of the two compounds.
+    The observations are paired: each free proline measurement was taken from
+    the same liver as the total collagen measurement at the same index.
+
+    >>> import numpy as np
+    >>> # total collagen (mg/g dry weight of liver)
+    >>> x = np.array([7.1, 7.1, 7.2, 8.3, 9.4, 10.5, 11.4])
+    >>> # free proline (μ mole/g dry weight of liver)
+    >>> y = np.array([2.8, 2.9, 2.8, 2.6, 3.5, 4.6, 5.0])
+
+    These data were analyzed in [7]_ using Spearman's correlation coefficient,
+    a statistic similar to to Kendall's tau in that it is also sensitive to
+    ordinal correlation between the samples. Let's perform an analagous study
+    using Kendall's tau.
+
     >>> from scipy import stats
-    >>> x1 = [12, 2, 1, 12, 2]
-    >>> x2 = [1, 4, 7, 1, 0]
-    >>> res = stats.kendalltau(x1, x2)
+    >>> res = stats.kendalltau(x, y)
     >>> res.statistic
-    -0.47140452079103173
+    0.5499999999999999
+
+    The value of this statistic tends to be high (close to 1) for samples with
+    a strongly positive ordinal correlation, low (close to -1) for samples with
+    a strongly negative ordinal correlation, and small in magnitude (close to
+    zero) for samples with weak ordinal correlation.
+
+    The test is performed by comparing the observed value of the
+    statistic against the null distribution: the distribution of statistic
+    values derived under the null hypothesis that total collagen and free
+    proline measurements are independent.
+
+    For this test, the null distribution for large samples without ties is
+    approximated as the normal distribution with variance
+    ``(2*(2*n + 5))/(9*n*(n - 1))``, where ``n = len(x)``.
+
+    >>> import matplotlib.pyplot as plt
+    >>> n = len(x)  # len(x) == len(y)
+    >>> var = (2*(2*n + 5))/(9*n*(n - 1))
+    >>> dist = stats.norm(scale=np.sqrt(var))
+    >>> z_vals = np.linspace(-1.25, 1.25, 100)
+    >>> pdf = dist.pdf(z_vals)
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> def plot(ax):  # we'll re-use this
+    ...     ax.plot(z_vals, pdf)
+    ...     ax.set_title("Kendall Tau Test Null Distribution")
+    ...     ax.set_xlabel("statistic")
+    ...     ax.set_ylabel("probability density")
+    >>> plot(ax)
+    >>> plt.show()
+
+    The comparison is quantified by the p-value: the proportion of values in
+    the null distribution as extreme or more extreme than the observed
+    value of the statistic. In a two-sided test in which the statistic is
+    positive, elements of the null distribution greater than the transformed
+    statistic and elements of the null distribution less than the negative of
+    the observed statistic are both considered "more extreme".
+
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> plot(ax)
+    >>> pvalue = dist.cdf(-res.statistic) + dist.sf(res.statistic)
+    >>> annotation = (f'p-value={pvalue:.4f}\n(shaded area)')
+    >>> props = dict(facecolor='black', width=1, headwidth=5, headlength=8)
+    >>> _ = ax.annotate(annotation, (0.65, 0.15), (0.8, 0.3), arrowprops=props)
+    >>> i = z_vals >= res.statistic
+    >>> ax.fill_between(z_vals[i], y1=0, y2=pdf[i], color='C0')
+    >>> i = z_vals <= -res.statistic
+    >>> ax.fill_between(z_vals[i], y1=0, y2=pdf[i], color='C0')
+    >>> ax.set_xlim(-1.25, 1.25)
+    >>> ax.set_ylim(0, 0.5)
+    >>> plt.show()
     >>> res.pvalue
-    0.2827454599327748
+    0.09108705741631495  # approximate p-value
+
+    Note that there is slight disagreement between the shaded area of the curve
+    and the p-value returned by `kendalltau`. This is because our data has
+    ties, and we have neglected a tie correction to the null distribution
+    variance that `kendalltau` performs. For samples without ties, the shaded
+    areas of our plot and p-value returned by `kendalltau` would match exactly.
+
+    If the p-value is "small" - that is, if there is a low probability of
+    sampling data from independent distributions that produces such an extreme
+    value of the statistic - this may be taken as evidence against the null
+    hypothesis in favor of the alternative: the distribution of total collagen
+    and free proline are *not* independent. Note that:
+
+    - The inverse is not true; that is, the test is not used to provide
+      evidence for the null hypothesis.
+    - The threshold for values that will be considered "small" is a choice that
+      should be made before the data is analyzed [8]_ with consideration of the
+      risks of both false positives (incorrectly rejecting the null hypothesis)
+      and false negatives (failure to reject a false null hypothesis).
+    - Small p-values are not evidence for a *large* effect; rather, they can
+      only provide evidence for a "significant" effect, meaning that they are
+      unlikely to have occurred under the null hypothesis.
+
+    For samples without ties of moderate size, `kendalltau` can compute the
+    p-value exactly. However, in the presence of ties, `kendalltau` resorts
+    to an asymptotic approximation. Nonetheles, we can use a permutation test
+    to compute the null distribution exactly: Under the null hypothesis that
+    total collagen and free proline are independent, each of the free proline
+    measurements were equally likely to have been observed with any of the
+    total collagen measurements. Therefore, we can form an *exact* null
+    distribution by calculating the statistic under each possible pairing of
+    elements between ``x`` and ``y``.
+
+    >>> def statistic(x):  # explore all possible pairings by permuting `x`
+    ...     return stats.kendalltau(x, y).statistic  # ignore pvalue
+    >>> ref = stats.permutation_test((x,), statistic,
+    ...                              permutation_type='pairings')
+    >>> fig, ax = plt.subplots(figsize=(8, 5))
+    >>> plot(ax)
+    >>> bins = np.linspace(-1.25, 1.25, 25)
+    >>> ax.hist(ref.null_distribution, bins=bins, density=True)
+    >>> ax.legend(['aymptotic approximation\n(many observations)',
+    ...            'exact null distribution'])
+    >>> plot(ax)
+    >>> plt.show()
+    >>> ref.pvalue
+    0.12222222222222222  # exact p-value
+
+    Note that there is significant disagreement between the exact p-value
+    calculated here and the approximation returned by `kendalltau` above. For
+    small samples with ties, consider performing a permutation test for more
+    accurate results.
 
     """
     if initial_lexsort is not None:
