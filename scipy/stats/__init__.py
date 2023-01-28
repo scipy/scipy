@@ -569,6 +569,16 @@ Warnings / Errors used in :mod:`scipy.stats`
    NearConstantInputWarning
    FitError
 
+Result classes used in :mod:`scipy.stats`
+-----------------------------------------
+
+.. warning:: These classes are private. Do not import them.
+
+.. toctree::
+   :maxdepth: 2
+
+   stats._result_classes
+
 """
 
 from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
