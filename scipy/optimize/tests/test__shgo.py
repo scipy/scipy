@@ -1,5 +1,6 @@
 import logging
 import numpy
+import time
 from numpy.testing import assert_allclose
 import pytest
 from pytest import raises as assert_raises, warns
@@ -691,8 +692,16 @@ class TestShgoArguments:
     def test_10_finite_time(self):
         """Test single function constraint passing"""
         options = {'maxtime': 1e-15}
-        res = shgo(test1_1.f, test1_1.bounds, n=1, iters=None,
+        def f(x):
+            time.sleep(1e-14)
+            return 0.0
+
+        res = shgo(f, test1_1.bounds, n=1, iters=5,
                    options=options, sampling_method='sobol')
+
+        # Assert that only 1 rather than 5 requested iterations ran:
+        assert res.nit == 1
+        assert res.tnev == 1
 
     def test_11_f_min_0(self):
         """Test to cover the case where f_lowest == 0"""
