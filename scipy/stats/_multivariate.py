@@ -947,6 +947,8 @@ class matrix_normal_gen(multi_rv_generic):
         Log of the probability density function.
     rvs(mean=None, rowcov=1, colcov=1, size=1, random_state=None)
         Draw random samples.
+    entropy(rowcol=1, colcov=1)
+        Differential entropy.
 
     Parameters
     ----------
@@ -1250,6 +1252,40 @@ class matrix_normal_gen(multi_rv_generic):
             out = out.reshape(mean.shape)
         return out
 
+    def entropy(self, rowcov=1, colcov=1):
+        """Log of the matrix normal probability density function.
+
+        Parameters
+        ----------
+        rowcov : array_like, optional
+            Among-row covariance matrix of the distribution (default: `1`)
+        colcov : array_like, optional
+            Among-column covariance matrix of the distribution (default: `1`)
+
+        Returns
+        -------
+        entropy : float
+            Entropy of the distribution
+
+        Notes
+        -----
+        %(_matnorm_doc_callparams_note)s
+
+        """
+        dummy_mean = np.zeros((rowcov.shape[0], colcov.shape[0]))
+        dims, _, rowcov, colcov = self._process_parameters(dummy_mean,
+                                                           rowcov,
+                                                           colcov)
+        rowpsd = _PSD(rowcov, allow_singular=False)
+        colpsd = _PSD(colcov, allow_singular=False)
+
+        return self._entropy(dims, rowpsd.log_pdet, colpsd.log_pdet)
+
+    def _entropy(self, dims, row_cov_logdet, col_cov_logdet):
+        n, p = dims
+        return (0.5 * n * p * (1 + _LOG_2PI) + 0.5 * p * row_cov_logdet +
+                0.5 * n * col_cov_logdet)
+
 
 matrix_normal = matrix_normal_gen()
 
@@ -1306,10 +1342,14 @@ class matrix_normal_frozen(multi_rv_frozen):
         return self._dist.rvs(self.mean, self.rowcov, self.colcov, size,
                               random_state)
 
+    def entropy(self):
+        return self._dist._entropy(self.dims, self.rowpsd.log_pdet,
+                                   self.colpsd.log_pdet)
+
 
 # Set frozen generator docstrings from corresponding docstrings in
 # matrix_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'rvs']:
+for name in ['logpdf', 'pdf', 'rvs', 'entropy']:
     method = matrix_normal_gen.__dict__[name]
     method_frozen = matrix_normal_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(method.__doc__,
@@ -2498,6 +2538,8 @@ class invwishart_gen(wishart_gen):
         Log of the probability density function.
     rvs(df, scale, size=1, random_state=None)
         Draw random samples from an inverse Wishart distribution.
+    entropy(df, scale)
+        Differential entropy of the distribution.
 
     Parameters
     ----------
@@ -2999,7 +3041,7 @@ p : array_like
 """
 
 _multinomial_doc_callparams_note = """\
-`n` should be a positive integer. Each element of `p` should be in the
+`n` should be a nonnegative integer. Each element of `p` should be in the
 interval :math:`[0,1]` and the elements should sum to 1. If they do not sum to
 1, the last element of the `p` array is not used and is replaced with the
 remaining probability left over from the earlier elements.
@@ -3158,7 +3200,7 @@ class multinomial_gen(multi_rv_generic):
         n = np.array(n, dtype=np.int_, copy=True)
 
         # true for bad n
-        ncond = n <= 0
+        ncond = n < 0
 
         return n, p, ncond | pcond
 

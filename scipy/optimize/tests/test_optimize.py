@@ -29,7 +29,7 @@ from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy.optimize._optimize import MemoizeJac, show_options
+from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeResult
 
 
 def test_check_grad():
@@ -1489,7 +1489,7 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     @pytest.mark.parametrize('method', MINIMIZE_METHODS_NEW_CB)
-    @pytest.mark.parametrize('new_cb_interface', [True, False])
+    @pytest.mark.parametrize('new_cb_interface', [0, 1, 2])
     def test_callback_stopiteration(self, method, new_cb_interface):
         # Check that if callback raises StopIteration, optimization
         # terminates with the same result as if iterations were limited
@@ -1509,10 +1509,16 @@ class TestOptimizeSimple(CheckOptimize):
 
         maxiter = 5
 
-        if new_cb_interface:
+        if new_cb_interface == 1:
             def callback_interface(*, intermediate_result):
                 assert intermediate_result.fun == f(intermediate_result.x)
                 callback()
+        elif new_cb_interface == 2:
+            class Callback:
+                def __call__(self, intermediate_result: OptimizeResult):
+                    assert intermediate_result.fun == f(intermediate_result.x)
+                    callback()
+            callback_interface = Callback()
         else:
             def callback_interface(xk, *args):  # type: ignore[misc]
                 callback()
