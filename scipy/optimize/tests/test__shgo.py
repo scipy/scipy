@@ -570,7 +570,7 @@ class TestShgoArguments:
             # unittests which run test4_1 normally
             minimizer_kwargs = {'method': solver,
                                 'constraints': test3_1.cons}
-            print("Solver = {}".format(solver))
+            print(f"Solver = {solver}")
             print("=" * 100)
             run_test(test3_1, n=128, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
@@ -596,7 +596,7 @@ class TestShgoArguments:
             minimizer_kwargs = {'method': solver,
                                 'jac': jac,
                                 'hess': hess}
-            logging.info("Solver = {}".format(solver))
+            logging.info(f"Solver = {solver}")
             logging.info("=" * 100)
             run_test(test1_1, n=128, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')

@@ -19,7 +19,6 @@ from ._optimize import _check_unknown_options, OptimizeWarning, OptimizeResult
 from warnings import warn
 from ._highs._highs_wrapper import _highs_wrapper
 from ._highs._highs_constants import (
-    CONST_I_INF,
     CONST_INF,
     MESSAGE_LEVEL_NONE,
     HIGHS_OBJECTIVE_SENSE_MINIMIZE,
@@ -41,7 +40,6 @@ from ._highs._highs_constants import (
     MODEL_STATUS_REACHED_TIME_LIMIT,
     MODEL_STATUS_REACHED_ITERATION_LIMIT,
 
-    HIGHS_SIMPLEX_STRATEGY_CHOOSE,
     HIGHS_SIMPLEX_STRATEGY_DUAL,
 
     HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
@@ -50,8 +48,6 @@ from ._highs._highs_constants import (
     HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DANTZIG,
     HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DEVEX,
     HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
-
-    HIGHS_VAR_TYPE_CONTINUOUS,
 )
 from scipy.sparse import csc_matrix, vstack, issparse
 
@@ -394,7 +390,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         marg_upper, marg_lower = None, None
 
     # this needs to be updated if we start choosing the solver intelligently
-    solvers = {"ipm": "highs-ipm", "simplex": "highs-ds", None: "highs-ds"}
 
     # Convert to scipy-style status and message
     highs_status = res.get('status', None)

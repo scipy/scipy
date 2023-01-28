@@ -61,7 +61,7 @@ def configuration(parent_package='',top_path=None):
                               'messagestream_config.h')
         with open(target, 'w') as f:
             for name, value in defines:
-                f.write('#define {0} {1}\n'.format(name, value))
+                f.write(f'#define {name} {value}\n')
 
     depends = [os.path.join(include_dir, 'messagestream.h')]
     config.add_extension("messagestream",

@@ -23,9 +23,7 @@ else:
 
 if _has_uarray:
     from uarray import *
-    from uarray import _Function
 else:
     from ._uarray import *
-    from ._uarray import _Function
 
 del _has_uarray

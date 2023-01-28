@@ -75,7 +75,7 @@ def test_assert_deallocated_nodel():
         # to function correctly.  It is assigned to c, but c itself is
         # not referenced in the body of the with, it is only there for
         # the refcount.
-        with assert_deallocated(C) as c:
+        with assert_deallocated(C):
             pass
 
 

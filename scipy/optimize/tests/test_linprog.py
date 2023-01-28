@@ -23,8 +23,7 @@ except ImportError:
 
 has_cholmod = True
 try:
-    import sksparse
-    from sksparse.cholmod import cholesky as cholmod
+    pass
 except ImportError:
     has_cholmod = False
 
@@ -63,7 +62,7 @@ def _assert_success(res, desired_fun=None, desired_x=None,
     # desired_fun: desired objective function value or None
     # desired_x: desired solution or None
     if not res.success:
-        msg = "linprog status {0}, message: {1}".format(res.status,
+        msg = "linprog status {}, message: {}".format(res.status,
                                                         res.message)
         raise AssertionError(msg)
 
@@ -513,10 +512,10 @@ class LinprogCommonTests:
         m = 100
         n = 150
         A_eq = scipy.sparse.rand(m, n, 0.5)
-        x_valid = np.random.randn((n))
-        c = np.random.randn((n))
-        ub = x_valid + np.random.rand((n))
-        lb = x_valid - np.random.rand((n))
+        x_valid = np.random.randn(n)
+        c = np.random.randn(n)
+        ub = x_valid + np.random.rand(n)
+        lb = x_valid - np.random.rand(n)
         bounds = np.column_stack((lb, ub))
         b_eq = A_eq * x_valid
 
@@ -1740,7 +1739,8 @@ class LinprogRSTests(LinprogCommonTests):
 class LinprogHiGHSTests(LinprogCommonTests):
     def test_callback(self):
         # this is the problem from test_callback
-        cb = lambda res: None
+        def cb(res):
+            return None
         c = np.array([-3, -2])
         A_ub = [[2, 1], [1, 1], [1, 0]]
         b_ub = [10, 8, 4]

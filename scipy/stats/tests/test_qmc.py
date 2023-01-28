@@ -690,7 +690,7 @@ class TestLHS(QMCEngineTests):
             for i, j in combinations(range(engine.d), 2):
                 samples_2d = sample[:, [i, j]]
                 res = (samples_2d * p).astype(int)
-                res_set = set((tuple(row) for row in res))
+                res_set = {tuple(row) for row in res}
                 assert_equal(res_set, desired)
 
     def test_raises(self):

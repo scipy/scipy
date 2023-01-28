@@ -96,7 +96,7 @@ class BaseMixin:
             sup.filter(PendingDeprecationWarning)
             A = np.matrix([[20, -4, 0, 2, 3], [10, -2, 1, 0, -1]])
         k = np.array([20, 15])
-        s_t = lsq_linear(A, k)
+        lsq_linear(A, k)
 
     def test_dense_rank_deficient(self):
         A = np.array([[-0.307, -0.184]])
