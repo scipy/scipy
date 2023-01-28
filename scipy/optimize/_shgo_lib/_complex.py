@@ -799,16 +799,16 @@ class Complex:
                         c_vc.connect(vu)  # Connect c + ac operations
                         c_vc.connect(a_vl)  # Connect c + ac operations
                         c_vc.connect(a_vu)  # Connect c + ac operations
-                        yield(c_vc.x)
+                        yield c_vc.x
                         c_vl = self.split_edge(vl.x, a_vl.x)
                         c_vl.connect(vco)
                         c_vc.connect(c_vl)  # Connect cN group vertices
-                        yield(c_vl.x)
+                        yield c_vl.x
                         c_vu = self.split_edge(vu.x, a_vu.x)  # yield at end of loop
                         c_vu.connect(vco)
                         # Connect remaining cN group vertices
                         c_vc.connect(c_vu)  # Connect cN group vertices
-                        yield (c_vu.x)
+                        yield c_vu.x
 
                         a_vc = self.split_edge(a_vl.x, a_vu.x)  # is (a + vc) ?
                         a_vc.connect(vco)
@@ -837,7 +837,7 @@ class Complex:
                         Cux[j].append(a_vu)
 
                         # Yield new points
-                        yield(a_vc.x)
+                        yield a_vc.x
 
             except IndexError:
                 for vectors in ab_Cc:

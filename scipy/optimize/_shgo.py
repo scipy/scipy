@@ -1303,7 +1303,6 @@ class SHGO:
             logging.info(f'Found self.LMC[x_min].lres = {self.LMC[x_min].lres}')
             return self.LMC[x_min].lres
 
-        # TODO: Check discarded bound rules
 
         if self.callback is not None:
             logging.info('Callback for '
