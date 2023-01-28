@@ -848,7 +848,7 @@ class TestShgoArguments:
     @pytest.mark.parametrize('derivative', ['jac', 'hess', 'hessp'])
     def test_21_2_derivative_options(self, derivative):
         """shgo used to raise an error when passing `options` with 'jac'
-        # see gh-12829. check that this is resolved
+        # see gh-12963. check that this is resolved
         """
 
         def objective(x):
