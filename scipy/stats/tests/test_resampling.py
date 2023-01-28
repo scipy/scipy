@@ -710,7 +710,7 @@ class TestMonteCarloTest:
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, dim_axis=1.5)
 
-        message = "...distinct from `axis_int`"
+        message = "...distinct from `axis`"
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
                              axis=0, dim_axis=0)

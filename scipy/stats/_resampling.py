@@ -656,7 +656,7 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
     dim_axis_int = dim_axis.astype(int)
     if np.any(dim_axis != dim_axis_int) or np.any(dim_axis_int == axis_int):
         raise ValueError("`dim_axis` must be an integer or tuple of integers, "
-                         "each distinct from `axis_int`.")
+                         "each distinct from `axis`.")
     dim_axis_int = dim_axis_int.tolist()
 
     obs_ndim = len(dim_axis_int)
@@ -672,7 +672,6 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
 
     if not callable(rvs):
         raise TypeError("`rvs` must be callable.")
-
 
     if not callable(statistic):
         raise TypeError("`statistic` must be callable.")
