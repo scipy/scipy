@@ -614,7 +614,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
                            standard_error=np.std(theta_hat_b, ddof=1, axis=-1))
 
 
-def _vectorize_multivariate_statistic(statistic, obs_ndim):
+def _vectorize_mv_statistic(statistic, obs_ndim):
     """Vectorize a multivariate one-sample statistic"""
     dim_axis = tuple(range(-obs_ndim, 0))
 
@@ -643,12 +643,29 @@ def _vectorize_multivariate_statistic(statistic, obs_ndim):
 
 
 def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
-                         batch, alternative, axis):
+                         batch, alternative, axis, dim_axis):
     """Input validation for `monte_carlo_test`."""
 
     axis_int = int(axis)
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
+
+    if dim_axis is None:
+        dim_axis = tuple()
+    dim_axis = np.atleast_1d(dim_axis)
+    dim_axis_int = dim_axis.astype(int)
+    if np.any(dim_axis != dim_axis_int) or np.any(dim_axis_int == axis_int):
+        raise ValueError("`dim_axis` must be an integer or tuple of integers, "
+                         "each distinct from `axis_int`.")
+    dim_axis_int = dim_axis_int.tolist()
+
+    obs_ndim = len(dim_axis_int)
+
+    sample = np.atleast_1d(sample)
+    old_axis = [axis_int] + dim_axis_int
+    new_axis = list(range(-obs_ndim - 1, 0))
+    sample = np.moveaxis(sample, old_axis, new_axis)
+    axis_int = new_axis[0]
 
     if vectorized not in {True, False, None}:
         raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
@@ -656,8 +673,6 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
     if not callable(rvs):
         raise TypeError("`rvs` must be callable.")
 
-    rvs_test = rvs(size=(2, 2))
-    obs_ndim = rvs_test.ndim - 2
 
     if not callable(statistic):
         raise TypeError("`statistic` must be callable.")
@@ -666,14 +681,9 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
         vectorized = 'axis' in inspect.signature(statistic).parameters
 
     if not vectorized:
-        statistic_vectorized = _vectorize_multivariate_statistic(statistic,
-                                                                 obs_ndim)
+        statistic_vectorized = _vectorize_mv_statistic(statistic, obs_ndim)
     else:
         statistic_vectorized = statistic
-
-    sample = np.atleast_1d(sample)
-    axis_new = -1 - obs_ndim
-    sample = np.moveaxis(sample, axis, axis_new)
 
     n_resamples_int = int(n_resamples)
     if n_resamples != n_resamples_int or n_resamples_int <= 0:
@@ -692,7 +702,7 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
         raise ValueError(f"`alternative` must be in {alternatives}")
 
     return (sample, rvs, statistic_vectorized, vectorized, n_resamples_int,
-            batch_iv, alternative, axis_new)
+            batch_iv, alternative, axis_int, dim_axis_int)
 
 
 fields = ['statistic', 'pvalue', 'null_distribution']
@@ -701,7 +711,7 @@ MonteCarloTestResult = make_dataclass("MonteCarloTestResult", fields)
 
 def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
                      n_resamples=9999, batch=None, alternative="two-sided",
-                     axis=0):
+                     axis=0, dim_axis=None):
     r"""
     Monte Carlo test that a sample is drawn from a given distribution.
 
@@ -755,7 +765,14 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
         - ``'two-sided'`` : twice the smaller of the p-values above.
 
     axis : int, default: 0
-        The axis of `sample` over which to calculate the statistic.
+        The axis of `sample` over which to calculate the statistic; each
+        index along `axis` corresponds with a different observation.
+    dim_axis : int or tuple of ints, optional
+        The axis of `sample` corresponding with the dimensionality of the
+        space of each observation. If `dim_axis` is None, each observation
+        is a scalar; if `dim_axis` is a single int, each observation is a
+        vector; if `dim_axis` is a tuple of length ``m``, each observation is
+        a tensor of order ``m``.
 
     Returns
     -------
@@ -842,9 +859,10 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
 
     """
     args = _monte_carlo_test_iv(sample, rvs, statistic, vectorized,
-                                n_resamples, batch, alternative, axis)
+                                n_resamples, batch, alternative, axis,
+                                dim_axis)
     (sample, rvs, statistic, vectorized,
-     n_resamples, batch, alternative, axis) = args
+     n_resamples, batch, alternative, axis, dim_axis) = args
 
     # Some statistics return plain floats; ensure they're at least np.float64
     observed = np.asarray(statistic(sample, axis=axis))[()]

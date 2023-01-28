@@ -706,6 +706,15 @@ class TestMonteCarloTest:
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, axis=1.5)
 
+        message = "`dim_axis` must be an integer."
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, dim_axis=1.5)
+
+        message = "...distinct from `axis_int`"
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
+                             axis=0, dim_axis=0)
+
         message = "`vectorized` must be `True`, `False`, or `None`."
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, vectorized=1.5)
@@ -861,7 +870,7 @@ class TestMonteCarloTest:
         assert_allclose(res.statistic, expected.statistic)
         assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
-    @pytest.mark.parametrize('a', np.linspace(-0.25, 0.5, 4))  # skewness
+    @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
     def test_against_cramervonmises(self, a):
         # test that monte_carlo_test can reproduce pvalue of cramervonmises
         rng = np.random.default_rng(234874135)
@@ -933,10 +942,20 @@ class TestMonteCarloTest:
                                vectorized=True, alternative='less')
         assert res.pvalue == 0.0001
 
+    @pytest.mark.slow
     def test_hotelling_test(self):
+        # The Hotelling test is a test of multivariate normality. Like any
+        # hypothesis test, the p-values produced by the test should be
+        # uniformly distributed between 0 and 1 when the null hypothesis is
+        # true. This implements the Hotelling test using `monte_carlo_test`
+        # and performs it on a 30 x 40 array of samples, each of length 1000,
+        # containing observations from a 3D multivariate normal. Check that the
+        # raveled 30 x 40 array of p-values is uniformly distributed (or, more
+        # accurately, not _not_ uniformly distributed).
         rng = np.random.default_rng(394295467)
 
         def statistic(x):
+            # the Hotelling statistic. `x` is a 1D array of 1D observations.
             A = np.cov(x.T)
             L = np.linalg.cholesky(A)
             cov = stats.Covariance.from_cholesky(L)
@@ -951,10 +970,33 @@ class TestMonteCarloTest:
         rvs = stats.multivariate_normal(mean=np.zeros(3), seed=rng).rvs
 
         res = stats.monte_carlo_test(observed, rvs, statistic, axis=1,
-                                     alternative='greater')
+                                     alternative='greater', dim_axis=-1)
         assert res.pvalue.shape == (30, 40)
         pvals = res.pvalue.ravel()  # should be uniformly distributed
         assert stats.ks_1samp(pvals, stats.uniform.cdf).pvalue > 0.1
+
+    @pytest.mark.parametrize("alt", ['less', 'greater'])
+    def test_against_fisher_exact(self, alt):
+        # Use `monte_carlo_test` to perform a randomized version of Fisher's
+        # exact test. The null distribution is formed by calculating the sample
+        # odds ratio for each of 9999 (default) randomly-sampled contingency
+        # tables with the same marginals as the observed table.
+        table = [[40, 15], [22, 10]]
+        ref = stats.fisher_exact(table, alternative=alt)
+
+        # Null hypothesis: table was drawn from the distribution of tables
+        # with the same marginals
+        row_sums = np.sum(table, axis=1)
+        col_sums = np.sum(table, axis=0)
+        dist = stats.random_table(row_sums, col_sums)
+
+        def statistic(table):  # statistic: sample odds ratio
+            return stats.contingency.odds_ratio(table[0], kind='sample').statistic
+
+        res = stats.monte_carlo_test([table], dist.rvs, statistic, axis=0,
+                                     dim_axis=(-2, -1), alternative=alt)
+
+        assert_allclose(ref.pvalue, res.pvalue, self.atol)
 
 
 class TestPermutationTest:
@@ -1672,3 +1714,52 @@ def test_parameter_vectorized(fun_name):
         return np.mean(x)
     fun(statistic=statistic, vectorized=None, **options)
     fun(statistic=statistic, vectorized=False, **options)
+
+@pytest.mark.parametrize('new_axis', [0, 1, 2])
+def test_vectorized_mv_statistic(new_axis):
+    # vectorize_mv_statistic vectorizes a statistic that accepts a 1D sample
+    # of MD observations, the last M axes correspond with the dimensionality
+    # of the observations. Check that it only passes the statistic function
+    # the expected shape and that the vectorized statistic produces the same
+    # results on an ND array of samples as the statistic when looping over
+    # axis-slices of that ND array.
+    rng = np.random.default_rng(75245098234592)
+
+    a, b, c, d, e = 3, 4, 5, 6, 7
+    # Generate an array of a x b samples, each of length c, composed of d x e
+    # observations. In this case M (as defined above) is 2 because each
+    # observation is two-dimensional.
+    sample = rng.random(size=(a, b, c, d, e))
+
+    def complicated_statistic(x):
+        # Define some statistic that works on a 1D array of 2-dimensional
+        # observations. It doesn't matter what it is, but for the sake of
+        # testing, the result should depend on the order of the elements
+        # in x; we wouldn't want some scrambled `x` with the right shape
+        # to return the same value of the statistic.
+        assert x.shape == (c, d, e)
+        sum = 0
+        for xi in x:
+            sum += stats.chi2_contingency(xi).statistic
+        return sum
+
+    # Loops through the slices of `x` and calculate the statistic for each
+    ref = []
+    for i in range(a):
+        refi = []
+        for j in range(b):
+            refi.append(complicated_statistic(sample[i, j]))
+        ref.append(refi)
+
+    # Now move the axis somewhere else so we can test the `axis` functionality
+    # of the vectorized statistic
+    old_axis = -3
+    sample = np.moveaxis(sample, old_axis, new_axis)
+
+    # Use `_vectorize_mv_statistic` to vectorize the statistic, use the
+    # vectorized statistic to compute the statistic for each axis-slice of the
+    # sample, and compare the results against the reference.
+    obs_ndim = 2
+    vstat = _resampling._vectorize_mv_statistic(complicated_statistic, 2)
+    res = vstat(sample, axis=new_axis)
+    assert_allclose(res, ref)
