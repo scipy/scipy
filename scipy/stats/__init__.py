@@ -174,6 +174,7 @@ Multivariate distributions
    multivariate_normal    -- Multivariate normal distribution
    matrix_normal          -- Matrix normal distribution
    dirichlet              -- Dirichlet
+   dirichlet_multinomial  -- Dirichlet multinomial distribution
    wishart                -- Wishart
    invwishart             -- Inverse Wishart
    multinomial            -- Multinomial distribution
