@@ -8704,16 +8704,6 @@ class truncnorm_gen(rv_continuous):
         return logsf
 
     def _entropy(self, a, b):
-        '''
-        A = 0.5 * (1 + sc.erf(a / np.sqrt(2)))
-        B = 0.5 * (1 + sc.erf(b / np.sqrt(2)))
-        Z = B - A
-        C = np.exp(-0.5 * a ** 2) / np.sqrt(2 * np.pi)
-        D = np.exp(-0.5 * b ** 2) / np.sqrt(2 * np.pi)
-        E = np.log(np.sqrt(2 * np.pi * np.e) * Z)
-        F = (a * C - b * D) / (2 * Z)
-        h = E + F
-        '''
         A = 0.5 * (1 + sc.erf(a / np.sqrt(2)))
         B = 0.5 * (1 + sc.erf(b / np.sqrt(2)))
         Z = B - A
