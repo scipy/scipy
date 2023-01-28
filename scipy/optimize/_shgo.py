@@ -739,7 +739,7 @@ class SHGO:
         # Update 'options' dict passed to optimize.minimize
         # Do this first so we don't mutate `options` below.
         self.minimizer_kwargs['options'].update(options)
-        
+
         # Ensure that 'jac', 'hess', and 'hessp' are passed directly to
         # `minimize` as keywords, not as part of its 'options' dictionary.
         for opt in ['jac', 'hess', 'hessp']:
@@ -817,7 +817,6 @@ class SHGO:
 
         self.res.nit = self.iters_done  # + 1
         self.fn = self.HC.V.nfev
-        print(f'self.HC.V.size() = {self.HC.V.size()}')
 
     def find_minima(self):
         """
