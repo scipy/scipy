@@ -7299,7 +7299,7 @@ class TestNakagami:
         #       return h
         #
         #   return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [0, mp.inf]
-        assert_allclose(stats.nakagami._entropy(m), ref)
+        assert_allclose(stats.nakagami.entropy(m), ref, rtol=1e-14)
 
     def test_entropy_overflow(self):
         assert np.isfinite(stats.nakagami._entropy(1e100))
