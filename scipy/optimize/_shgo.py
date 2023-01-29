@@ -83,9 +83,9 @@ def shgo(
         Number of sampling points used in the construction of the simplicial
         complex. For the default ``simplicial`` sampling method 2**dim + 1
         sampling points are generated instead of the default `n=100`. For all
-        other specified values `n` sampling points are generated. For ``sobol``,
-        ``halton`` and other arbitrary `sampling_methods` `n=100` or another
-        speciefied number of sampling points are generated
+        other specified values `n` sampling points are generated. For
+        ``sobol``, ``halton`` and other arbitrary `sampling_methods` `n=100` or
+         another speciefied number of sampling points are generated.
     iters : int, optional
         Number of iterations used in the construction of the simplicial
         complex. Default is 1.
@@ -97,9 +97,9 @@ def shgo(
         ``scipy.optimize.minimize`` Some important options could be:
 
             * method : str
-                The minimization method. If not given, chosen to be one of BFGS,
-                 L-BFGS-B, SLSQP, depending on whether or not the problem has 
-                 constraints or bounds.
+                The minimization method. If not given, chosen to be one of
+                BFGS, L-BFGS-B, SLSQP, depending on whether or not the
+                problem has constraints or bounds.
             * args : tuple
                 Extra arguments passed to the objective function (``func``) and
                 its derivatives (Jacobian, Hessian).
@@ -114,8 +114,8 @@ def shgo(
         "(L)".
 
         Stopping criteria, the algorithm will terminate if any of the specified
-        criteria are met. However, the default algorithm does not require any to
-        be specified:
+        criteria are met. However, the default algorithm does not require any
+        to be specified:
 
         * maxfev : int (L)
             Maximum number of function evaluations in the feasible domain.
@@ -151,14 +151,15 @@ def shgo(
         * symmetry : list or bool
             Specify if the objective function contains symmetric variables.
             The search space (and therefore performance) is decreased by up to
-            O(n!) times in the fully symmetric case. If `True` is specified then
-            all variables will be set symmetric to the first variable. Default
+            O(n!) times in the fully symmetric case. If `True` is specified
+            then all variables will be set symmetric to the first variable.
+            Default
             is set to False.
 
             E.g.  f(x) = (x_1 + x_2 + x_3) + (x_4)**2 + (x_5)**2 + (x_6)**2
 
-            In this equation x_2 and x_3 are symmetric to x_1, while x_5 and x_6
-            are symmetric to x_4, this can be specified to the solver as:
+            In this equation x_2 and x_3 are symmetric to x_1, while x_5 and
+            x_6 are symmetric to x_4, this can be specified to the solver as:
 
             symmetry = [0,  # Variable 1
                         0,  # symmetric to variable 1
@@ -171,11 +172,12 @@ def shgo(
         * jac : bool or callable, optional
             Jacobian (gradient) of objective function. Only for CG, BFGS,
             Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg. If ``jac`` is a
-            boolean and is True, ``fun`` is assumed to return the gradient along
-            with the objective function. If False, the gradient will be
+            boolean and is True, ``fun`` is assumed to return the gradient
+            along with the objective function. If False, the gradient will be
             estimated numerically. ``jac`` can also be a callable returning the
             gradient of the objective. In this case, it must accept the same
-            arguments as ``fun``. (Passed to `scipy.optimize.minmize` automatically)
+            arguments as ``fun``. (Passed to `scipy.optimize.minmize`
+            automatically)
 
         * hess, hessp : callable, optional
             Hessian (matrix of second-order derivatives) of objective function
@@ -215,9 +217,9 @@ def shgo(
     sampling_method : str or function, optional
         Current built in sampling method options are ``halton``, ``sobol`` and
         ``simplicial``. The default ``simplicial`` provides
-        the theoretical guarantee of convergence to the global minimum in finite
-        time. ``halton`` and ``sobol`` method are faster in terms of sampling
-        point generation at the cost of the loss of
+        the theoretical guarantee of convergence to the global minimum in
+        finite time. ``halton`` and ``sobol`` method are faster in terms of
+        sampling point generation at the cost of the loss of
         guaranteed convergence. It is more appropriate for most "easier"
         problems where the convergence is relatively fast.
         User defined sampling functions must accept two arguments of ``n``
@@ -284,7 +286,8 @@ def shgo(
     References
     ----------
     .. [1] Endres, SC, Sandrock, C, Focke, WW (2018) "A simplicial homology
-           algorithm for lipschitz optimisation", Journal of Global Optimization.
+           algorithm for lipschitz optimisation", Journal of Global
+           Optimization.
     .. [2] Joe, SW and Kuo, FY (2008) "Constructing Sobol' sequences with
            better  two-dimensional projections", SIAM J. Sci. Comput. 30,
            2635-2654.
@@ -370,7 +373,8 @@ def shgo(
     default of 1 to 3. Using ``simplicial`` this would have given us
     64 x 3 = 192 initial sampling points.
 
-    >>> result_2 = shgo(eggholder, bounds, n=64, iters=3, sampling_method='sobol')
+    >>> result_2 = shgo(eggholder,
+    ...                 bounds, n=64, iters=3, sampling_method='sobol')
     >>> len(result.xl), len(result_2.xl)
     (12, 20)
 
@@ -381,17 +385,18 @@ def shgo(
     sampling points for a total of 3 times.
 
     To demonstrate solving problems with non-linear constraints consider the
-    following example from Hock and Schittkowski problem 73 (cattle-feed) [3]_::
+    following example from Hock and Schittkowski problem 73 (cattle-feed)
+    [3]_::
 
         minimize: f = 24.55 * x_1 + 26.75 * x_2 + 39 * x_3 + 40.50 * x_4
 
-        subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5     >= 0,
+        subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5    >= 0,
 
                     12 * x_1 + 11.9 * x_2 + 41.8 * x_3 + 52.1 * x_4 - 21
                         -1.645 * sqrt(0.28 * x_1**2 + 0.19 * x_2**2 +
-                                      20.5 * x_3**2 + 0.62 * x_4**2)       >= 0,
+                                      20.5 * x_3**2 + 0.62 * x_4**2)      >= 0,
 
-                    x_1 + x_2 + x_3 + x_4 - 1                              == 0,
+                    x_1 + x_2 + x_3 + x_4 - 1                             == 0,
 
                     1 >= x_i >= 0 for all i
 
@@ -429,8 +434,10 @@ def shgo(
        nlhev: 0
        nljev: 5
      success: True
-           x: array([6.35521569e-01, 1.13700270e-13, 3.12701881e-01, 5.17765506e-02])
-          xl: array([[6.35521569e-01, 1.13700270e-13, 3.12701881e-01, 5.17765506e-02]])
+           x: array([6.35521569e-01, 1.13700270e-13, 3.12701881e-01,
+            5.17765506e-02])
+          xl: array([[6.35521569e-01, 1.13700270e-13, 3.12701881e-01,
+           5.17765506e-02]])
 
     >>> g1(res.x), g2(res.x), h1(res.x)
     (-5.062616992290714e-14, -2.9594104944408173e-12, 0.0)
@@ -686,7 +693,10 @@ class SHGO:
             # Sampling method used
             if sampling_method in ['halton', 'sobol']:
                 if sampling_method == 'sobol':
-                    self.n = int(2 ** np.ceil(np.log2(self.n)))  # self.n #TODO: Should always be self.n, this is unacceptable for shgo
+                    self.n = int(2 ** np.ceil(np.log2(self.n)))
+                    # self.n #TODO: Should always be self.n, this is
+                    # unacceptable for shgo, check that nfev behaves as
+                    # expected.
                     self.nc = 0
                     self.sampling_method = 'sobol'
                     self.qmc_engine = qmc.Sobol(d=self.dim, scramble=False,
@@ -810,7 +820,8 @@ class SHGO:
             self.stopping_criteria()
 
         # Build minimiser pool
-        # Final iteration only needed if pools weren't minimised every iteration
+        # Final iteration only needed if pools weren't minimised every
+        # iteration
         if not self.minimize_every_iter:
             if not self.break_routine:
                 self.find_minima()
@@ -994,7 +1005,7 @@ class SHGO:
         # Iterate the complex
         if self.disp:
             logging.info('Constructing and refining simplicial complex graph '
-                  'structure')
+                         'structure')
         if self.n is None:
             self.HC.refine_all()
             self.n_sampled = self.HC.V.size()  # nevs counted
@@ -1015,7 +1026,7 @@ class SHGO:
                     v_near = v_near.union(v.nn)
                 # Reconnect vertices to complex
                 if self.HC.connect_vertex_non_symm(tuple(self.LMC[xl].x_l),
-                                                near=v_near):
+                                                   near=v_near):
                     continue
                 else:
                     # If failure to find in v_near, then search all vertices
@@ -1046,7 +1057,7 @@ class SHGO:
             logging.info(f'self.n = {self.n}')
             logging.info(f'self.nc = {self.nc}')
             logging.info('Constructing and refining simplicial complex graph '
-                  'structure from sampling points.')
+                         'structure from sampling points.')
 
         if self.dim < 2:
             self.Ind_sorted = np.argsort(self.C, axis=0)
@@ -1066,8 +1077,8 @@ class SHGO:
             self.n_prc = self.C.shape[0]
 
         if self.disp:
-            logging.info('Triangulation completed, evaluating all contraints and o'
-                  'bjective function values.')
+            logging.info('Triangulation completed, evaluating all '
+                         'contraints and objective function values.')
 
         if hasattr(self, 'Tri'):
             self.HC.vf_to_vv(self.Tri.points, self.Tri.simplices)
@@ -1075,8 +1086,8 @@ class SHGO:
         # Process all pools
         # Evaluate all constraints and functions
         if self.disp:
-            logging.info('Triangulation completed, evaluating all contraints and o'
-                  'bjective function values.')
+            logging.info('Triangulation completed, evaluating all contraints '
+                         'and objective function values.')
 
         # Evaluate all constraints and functions
         self.HC.V.process_pools()
@@ -1109,7 +1120,8 @@ class SHGO:
                     logging.info('=' * 60)
                     logging.info(
                         'v.x = {} is minimizer'.format(self.HC.V[x].x_a))
-                    logging.info('v.f = {} is minimizer'.format(self.HC.V[x].f))
+                    logging.info('v.f = {} is '
+                                 'minimizer'.format(self.HC.V[x].f))
                     logging.info('=' * 30)
 
                 if self.HC.V[x] not in self.minimizer_pool:
@@ -1239,7 +1251,8 @@ class SHGO:
         Returns
         -------
         cbounds : list of lists
-            List of size dimension with length-2 list of bounds for each dimension
+            List of size dimension with length-2 list of bounds for each
+            dimension.
 
         """
         cbounds = [[x_b_i[0], x_b_i[1]] for x_b_i in self.bounds]
@@ -1272,7 +1285,8 @@ class SHGO:
         Returns
         -------
         cbounds : list of lists
-            List of size dimension with length-2 list of bounds for each dimension
+            List of size dimension with length-2 list of bounds for each
+            dimension.
         """
         cbounds = [[x_b_i[0], x_b_i[1]] for x_b_i in self.bounds]
 
@@ -1300,7 +1314,8 @@ class SHGO:
             logging.info('Vertex minimiser maps = {}'.format(self.LMC.v_maps))
 
         if self.LMC[x_min].lres is not None:
-            logging.info(f'Found self.LMC[x_min].lres = {self.LMC[x_min].lres}')
+            logging.info(f'Found self.LMC[x_min].lres = '
+                         f'{self.LMC[x_min].lres}')
             return self.LMC[x_min].lres
 
         if self.callback is not None:
@@ -1386,14 +1401,14 @@ class SHGO:
         There are 2 modes, if ``infty_cons_sampl`` is True then the sampled
         points that are generated outside the feasible domain will be
         assigned an ``inf`` value in accordance with SHGO rules.
-        This guarantees convergence and usually requires less objective function
-        evaluations at the computational costs of more Delaunay triangulation
-        points.
+        This guarantees convergence and usually requires less objective
+        function evaluations at the computational costs of more Delaunay
+        triangulation points.
 
-        If ``infty_cons_sampl`` is False, then the infeasible points are discarded
-        and only a subspace of the sampled points are used. This comes at the
-        cost of the loss of guaranteed convergence and usually requires more
-        objective function evaluations.
+        If ``infty_cons_sampl`` is False, then the infeasible points are
+        discarded and only a subspace of the sampled points are used. This
+        comes at the cost of the loss of guaranteed convergence and usually
+        requires more objective function evaluations.
         """
         # Generate sampling points
         if self.disp:
@@ -1462,14 +1477,16 @@ class SHGO:
             except spatial.QhullError:
                 if str(sys.exc_info()[1])[:6] == 'QH6239':
                     logging.warning('QH6239 Qhull precision error detected, '
-                        'this usually occurs when no bounds are specified, '
-                        'Qhull can only run with the "Qz" option on for '
-                        'handling cocircular/cospherical points and in this '
-                        'case incremental mode is switched off. The performance'
-                        ' of shgo will be reduced in this mode.')
+                                    'this usually occurs when no bounds are '
+                                    'specified, Qhull can only run with '
+                                    'handling cocircular/cospherical points'
+                                    ' and in this case incremental mode is '
+                                    'switched off. The performance of shgo '
+                                    'will be reduced in this mode.')
                     self.qhull_incremental = False
                     self.Tri = spatial.Delaunay(self.C,
-                                   incremental=self.qhull_incremental)
+                                                incremental=
+                                                self.qhull_incremental)
                 else:
                     raise
 

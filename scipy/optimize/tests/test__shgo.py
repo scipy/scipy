@@ -4,7 +4,7 @@ import time
 from numpy.testing import assert_allclose
 import pytest
 from pytest import raises as assert_raises, warns
-from scipy.optimize import (shgo, Bounds, minimize_scalar, minimize, rosen, 
+from scipy.optimize import (shgo, Bounds, minimize_scalar, minimize, rosen,
                             rosen_der, rosen_hess)
 from scipy.optimize._shgo import SHGO
 
@@ -70,7 +70,8 @@ class StructTest2(StructTestFunction):
 test2_1 = StructTest2(bounds=[(0, 60)],
                       expected_x=[1.53567906],
                       expected_fun=-28.44677132,
-                      # Important: test that funl return is in the correct order
+                      # Important: test that funl return is in the correct
+                      # order
                       expected_xl=numpy.array([[1.53567906],
                                                [55.01782167],
                                                [7.80894889],
@@ -193,7 +194,8 @@ test5_1 = StructTest5(bounds=[(-512, 512), (-512, 512)],
 
 class StructTestLJ(StructTestFunction):
     """
-    LennardJones objective function. Used to test symmetry constraints settings.
+    LennardJones objective function. Used to test symmetry constraints
+    settings.
     """
 
     def f(self, x, *args):
@@ -228,7 +230,7 @@ testLJ = StructTestLJ(bounds=boundsLJ,
                       expected_x=None,
                       # expected_x=[-2.71247337e-08,
                       #            -2.71247337e-08,
-                      ##            -2.50000222e+00,
+                      #            -2.50000222e+00,
                       #            -2.71247337e-08,
                       #            -2.71247337e-08,
                       #            -1.50000222e+00]
@@ -470,8 +472,8 @@ class TestShgoSimplicialTestFunctions:
 
     @pytest.mark.skip("Not a test")
     def test_f0_min_variance(self):
-        """Return a minimum on a perfectly symmetric problem, based on 
-           gh10429"""
+        """Return a minimum on a perfectly symmetric problem, based on
+            gh10429"""
         avg = 0.5  # Given average value of x
         cons = {'type': 'eq', 'fun': lambda x: numpy.mean(x) - avg}
 
@@ -483,8 +485,8 @@ class TestShgoSimplicialTestFunctions:
 
     @pytest.mark.skip("Not a test")
     def test_f0_min_variance_1D(self):
-        """Return a minimum on a perfectly symmetric 1D problem, based on 
-           gh10538"""
+        """Return a minimum on a perfectly symmetric 1D problem, based on
+            gh10538"""
 
         def fun(x):
             return x * (x - 1.0) * (x - 0.5)
@@ -522,17 +524,18 @@ class TestShgoArguments:
         numpy.testing.assert_allclose(res.fun, test2_1.expected_fun, atol=1e-5)
 
     def test_3_1_disp_simplicial(self):
-        """Iterative sampling on TestFunction 1 and 2  (multi and univariate)"""
+        """Iterative sampling on TestFunction 1 and 2  (multi and univariate)
+        """
 
         def callback_func(x):
             print("Local minimization callback test")
 
         for test in [test1_1, test2_1]:
-            res = shgo(test.f, test.bounds, iters=1,
-                       sampling_method='simplicial',
-                       callback=callback_func, options={'disp': True})
-            res = shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
-                       callback=callback_func, options={'disp': True})
+            shgo(test.f, test.bounds, iters=1,
+                 sampling_method='simplicial',
+                 callback=callback_func, options={'disp': True})
+            shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
+                 callback=callback_func, options={'disp': True})
 
     def test_3_2_disp_sobol(self):
         """Iterative sampling on TestFunction 1 and 2 (multi and univariate)"""
@@ -541,15 +544,17 @@ class TestShgoArguments:
             print("Local minimization callback test")
 
         for test in [test1_1, test2_1]:
-            res = shgo(test.f, test.bounds, iters=1, sampling_method='sobol',
-                       callback=callback_func, options={'disp': True})
+            shgo(test.f, test.bounds, iters=1, sampling_method='sobol',
+                 callback=callback_func, options={'disp': True})
 
-            res = shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
-                       callback=callback_func, options={'disp': True})
+            shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
+                 callback=callback_func, options={'disp': True})
 
     def test_args_gh14589(self):
-        # Using `args` used to cause `shgo` to fail; see #14589, #15986, #16506
-        res = shgo(func=lambda x, y, z: x * z + y, bounds=[(0, 3)], args=(1, 2))
+        """Using `args` used to cause `shgo` to fail; see #14589, #15986,
+        #16506"""
+        res = shgo(func=lambda x, y, z: x * z + y, bounds=[(0, 3)], args=(1, 2)
+                   )
         ref = shgo(func=lambda x: 2 * x + 1, bounds=[(0, 3)])
         assert_allclose(res.fun, ref.fun)
         assert_allclose(res.x, ref.x)
@@ -590,7 +595,7 @@ class TestShgoArguments:
             'local_iter': 1,
             'infty_constraints': False}
 
-        #run_test(test4_1, n=300000,
+        # run_test(test4_1, n=300000,
         #         test_atol=1e-5, options=options,
         #         sampling_method='sobol')
 
@@ -650,14 +655,15 @@ class TestShgoArguments:
             minimizer_kwargs = {'method': solver,
                                 'constraints': test3_1.cons}
             run_test(test3_1, n=100, test_atol=1e-3,
-                     minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
+                     minimizer_kwargs=minimizer_kwargs,
+                     sampling_method='sobol')
 
     def test_7_2_minkwargs(self):
         """Test the minimizer_kwargs default inits"""
         minimizer_kwargs = {'ftol': 1e-5}
         options = {'disp': True}  # For coverage purposes
-        SHGOc = SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0],
-                     minimizer_kwargs=minimizer_kwargs, options=options)
+        SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0],
+             minimizer_kwargs=minimizer_kwargs, options=options)
 
     def test_7_3_minkwargs(self):
         """Test minimizer_kwargs arguments for solvers without constraints"""
@@ -676,7 +682,8 @@ class TestShgoArguments:
             logging.info("Solver = {}".format(solver))
             logging.info("=" * 100)
             run_test(test1_1, n=100, test_atol=1e-3,
-                     minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
+                     minimizer_kwargs=minimizer_kwargs,
+                     sampling_method='sobol')
 
     def test_8_homology_group_diff(self):
         options = {'minhgrd': 1,
@@ -687,7 +694,7 @@ class TestShgoArguments:
 
     def test_9_cons_g(self):
         """Test single function constraint passing"""
-        SHGOc = SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0])
+        SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0])
 
     def test_10_finite_time(self):
         """Test single function constraint passing"""
@@ -710,7 +717,7 @@ class TestShgoArguments:
         numpy.testing.assert_equal(0, res.x[0])
         numpy.testing.assert_equal(0, res.x[1])
 
-    #@nottest
+    # @nottest
     @pytest.mark.skip(reason="no way of currently testing this")
     def test_12_sobol_inf_cons(self):
         """Test to cover the case where f_lowest == 0"""
@@ -818,10 +825,10 @@ class TestShgoArguments:
                 {'type': 'ineq', 'fun': g2},
                 {'type': 'eq', 'fun': h1})
 
-        res_modConstr = shgo(f, bounds, n=300, iters=1, constraints=cons)
+        shgo(f, bounds, n=300, iters=1, constraints=cons)
         # using constrain with arguments AND sampling method sobol
-        res_modConstr_sobol = shgo(f, bounds, n=300, iters=1, constraints=cons,
-                                   sampling_method='sobol')
+        shgo(f, bounds, n=300, iters=1, constraints=cons,
+             sampling_method='sobol')
 
     def test_21_1_jac_true(self):
         """Test that shgo can handle objective functions that return the
@@ -837,7 +844,7 @@ class TestShgoArguments:
             sampling_method="sobol",
             minimizer_kwargs={'method': 'SLSQP', 'jac': True}
         )
-        
+
         # new
         def func(x):
             return numpy.sum(x ** 2), 2 * x
@@ -847,7 +854,7 @@ class TestShgoArguments:
         res = shgo(func, bounds=bounds, sampling_method="sobol",
                    minimizer_kwargs={'method': 'SLSQP', 'jac': True})
         ref = minimize(func, x0=[1, 1, 1, 1, 1], bounds=bounds,
-                                jac=True)
+                       jac=True)
         assert res.success
         assert_allclose(res.fun, ref.fun)
         assert_allclose(res.x, ref.x, atol=1e-15)
@@ -885,8 +892,8 @@ class TestShgoArguments:
         numpy.testing.assert_allclose(res.x, ref.x)
 
     def test_21_3_hess_options_rosen(self):
-        """Ensure the Hessian gets passed correctly to the local minimizer routine.
-        Previous report gh-14533.
+        """Ensure the Hessian gets passed correctly to the local minimizer
+        routine. Previous report gh-14533.
         """
         bounds = [(0, 1.6), (0, 1.6), (0, 1.4), (0, 1.4), (0, 1.4)]
         options = {'jac': rosen_der, 'hess': rosen_hess}
@@ -912,7 +919,7 @@ class TestShgoArguments:
         res = shgo(fun, bounds, args=(1,), constraints=constraints,
                    sampling_method='sobol')
         ref = minimize(fun, numpy.zeros(1), bounds=bounds, args=(1,),
-                                constraints=constraints)
+                       constraints=constraints)
         assert res.success
         assert_allclose(res.fun, ref.fun)
         assert_allclose(res.x, ref.x)

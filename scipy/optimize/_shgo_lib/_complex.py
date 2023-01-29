@@ -57,8 +57,8 @@ class Complex:
 
             E.g.  f(x) = (x_1 + x_2 + x_3) + (x_4)**2 + (x_5)**2 + (x_6)**2
 
-            In this equation x_2 and x_3 are symmetric to x_1, while x_5 and x_6
-            are symmetric to x_4, this can be specified to the solver as:
+            In this equation x_2 and x_3 are symmetric to x_1, while x_5 and
+             x_6 are symmetric to x_4, this can be specified to the solver as:
 
             symmetry = [0,  # Variable 1
                         0,  # symmetric to variable 1
@@ -87,7 +87,8 @@ class Complex:
                 Extra arguments to be passed to the function and Jacobian.
 
         Equality constraint means that the constraint function result is to
-        be zero whereas inequality means that it is to be non-negative.constraints : dict or sequence of dict, optional
+        be zero whereas inequality means that it is to be
+        non-negative.constraints : dict or sequence of dict, optional
         Constraints definition.
         Function(s) ``R**n`` in the form::
 
@@ -205,16 +206,16 @@ class Complex:
         # It has the structure of `dim` times embedded lists each containing
         # these vertices as the entire complex grows. Bounds[0] has to be done
         # outside the loops before we have symmetric containers.
-        #NOTE: This means that bounds[0][1] must always exist
+        # NOTE: This means that bounds[0][1] must always exist
         C0x = [[self.V[vot]]]
         a_vo = copy.copy(list(origin))
         a_vo[0] = vut[0]  # Update aN Origin
         a_vo = self.V[tuple(a_vo)]
-        #self.V[vot].connect(self.V[tuple(a_vo)])
+        # self.V[vot].connect(self.V[tuple(a_vo)])
         self.V[vot].connect(a_vo)
         yield a_vo.x
         C1x = [[a_vo]]
-        #C1x = [[self.V[tuple(a_vo)]]]
+        # C1x = [[self.V[tuple(a_vo)]]]
         ab_C = []  # Container for a + b operations
 
         # Loop over remaining bounds
@@ -276,7 +277,6 @@ class Complex:
                 # operation with a aN vertex
                 ab_Cc = copy.copy(ab_C)
 
-                #TODO: SHOULD THIS BE MOVED OUTSIDE THE try ?
                 for vp in ab_Cc:
                     b_v = list(vp[0].x)
                     ab_v = list(vp[1].x)
@@ -356,14 +356,15 @@ class Complex:
             yield vut
             return vut
 
-    def triangulate(self, n=None, symmetry=None, centroid=True, printout=False):
+    def triangulate(self, n=None, symmetry=None, centroid=True,
+                    printout=False):
         """
         Triangulate the initial domain, if n is not None then a limited number
         of points will be generated
 
         Parameters
         ----------
-        n :
+        n : int, Number of points to be sampled.
         symmetry :
 
             Ex. Dictionary/hashtable
@@ -376,8 +377,8 @@ class Complex:
                        symmetry[4]: 3,  # symmetric to variable 4
                        symmetry[5]: 3,  # symmetric to variable 4
                         }
-
-        printout :
+        centroid : bool, if True add a central point to the hypercube
+        printout : bool, if True print out results
 
         NOTES:
         ------
@@ -415,13 +416,16 @@ class Complex:
                 if i is not j:
                     # pop second entry on second symmetry vars
                     cbounds[i] = [self.bounds[symmetry[i]][0]]
-                    # Sole (first) entry is the sup value and there is no origin
+                    # Sole (first) entry is the sup value and there is no
+                    # origin:
                     cbounds[i] = [self.bounds[symmetry[i]][1]]
-                    if self.bounds[symmetry[i]] is not self.bounds[symmetry[j]]:
+                    if (self.bounds[symmetry[i]] is not
+                            self.bounds[symmetry[j]]):
                         logging.warning(f"Variable {i} was specified as "
-                                        f"symmetetric to variable {j}, however,"
-                                        f"the bounds {i} ="
-                                        f" {self.bounds[symmetry[i]]} and {j} ="
+                                        f"symmetetric to variable {j}, however"
+                                        f", the bounds {i} ="
+                                        f" {self.bounds[symmetry[i]]} and {j}"
+                                        f" ="
                                         f" {self.bounds[symmetry[j]]} do not "
                                         f"match, the mismatch was ignored in "
                                         f"the initial triangulation.")
@@ -487,7 +491,8 @@ class Complex:
         while len(self.V.cache) < nt:  # while loop 1
             try:  # try 1
                 # Try to access triangulated_vectors, this should only be
-                # defined if an initial triangulation has already been performed
+                # defined if an initial triangulation has already been
+                # performed:
                 self.triangulated_vectors
                 # Try a usual iteration of the current generator, if it
                 # does not exist or is exhausted then produce a new generator
@@ -501,8 +506,8 @@ class Complex:
             except (AttributeError, KeyError):
                 # If an initial triangulation has not been completed, then
                 # we start/continue the initial triangulation targeting `nt`
-                # vertices, if nt is greater than the initial number of vertices
-                # then the refine routine will move back to try 1.
+                # vertices, if nt is greater than the initial number of
+                # vertices then the `refine` routine will move back to try 1.
                 self.triangulate(nt, self.symmetry)
         return
 
@@ -562,7 +567,7 @@ class Complex:
         # It has the structure of `dim` times embedded lists each containing
         # these vertices as the entire complex grows. Bounds[0] has to be done
         # outside the loops before we have symmetric containers.
-        #NOTE: This means that bounds[0][1] must always exist
+        # NOTE: This means that bounds[0][1] must always exist
 
         a_vl = copy.copy(list(vot))
         a_vl[0] = vut[0]  # Update aN Origin
@@ -613,16 +618,17 @@ class Complex:
                 # ab_Cc for-loop.
                 s_ab_Cc = copy.copy(s_ab_C)
 
-                #%%
                 # Early try so that we don't have to copy the cache before
                 # moving on to next C1/C2: Try to add the operation of a new
                 # C2 product by accessing the upper bound
                 if tuple(t_a_vl) not in self.V.cache:
-                    raise IndexError  # Raise error to continue symmetric refine
+                    # Raise error to continue symmetric refine
+                    raise IndexError
                 t_a_vu = list(vut)
                 t_a_vu[i + 1] = vut[i + 1]
                 if tuple(t_a_vu) not in self.V.cache:
-                    raise IndexError  # Raise error to continue symmetric refine
+                    # Raise error to continue symmetric refine:
+                    raise IndexError
 
                 for vectors in s_ab_Cc:
                     # s_ab_C.append([c_vc, vl, vu, a_vu])
@@ -672,7 +678,8 @@ class Complex:
                     yield os_v.x  # often equal to vco, but not always
                     yield ss_v.x  # often equal to bc_vu, but not always
                     yield ba_vu
-                    # Split remaining to centre, call this centre group "d = 0.5*a"
+                    # Split remaining to centre, call this centre group
+                    # "d = 0.5*a"
                     d_bc_vc = self.split_edge(vectors[0].x, bc_vc.x)
                     d_bc_vc.connect(vco)  # NOTE: Unneeded?
                     yield d_bc_vc.x
@@ -745,7 +752,8 @@ class Complex:
                     yield os_v.x  # often equal to vco, but not always
                     yield ss_v.x  # often equal to bc_vu, but not always
                     yield ba_vu
-                    # Split remaining to centre, call this centre group "d = 0.5*a"
+                    # Split remaining to centre, call this centre group
+                    # "d = 0.5*a"
                     d_bc_vc = self.split_edge(vectors[0].x, bc_vc.x)
                     d_bc_vc.connect(vco)  # NOTE: Unneeded?
                     yield d_bc_vc.x
@@ -804,7 +812,8 @@ class Complex:
                         c_vl.connect(vco)
                         c_vc.connect(c_vl)  # Connect cN group vertices
                         yield c_vl.x
-                        c_vu = self.split_edge(vu.x, a_vu.x)  # yield at end of loop
+                        # yield at end of loop:
+                        c_vu = self.split_edge(vu.x, a_vu.x)
                         c_vu.connect(vco)
                         # Connect remaining cN group vertices
                         c_vc.connect(c_vu)  # Connect cN group vertices
@@ -1109,12 +1118,12 @@ class Complex:
             valid_simplex = True
             for i in itertools.combinations(s_i, r=2):
                 # Every combination of vertices must be connected, we check of
-                # the current iteration of all combinations of s_i are connected
-                # we break the loop if it is not.
+                # the current iteration of all combinations of s_i are
+                # connected we break the loop if it is not.
                 if ((not self.V[tuple(S_rows[i[1]])] in
                         self.V[tuple(S_rows[i[0]])].nn)
                     and (not (self.V[tuple(S_rows[i[0]])] in
-                        self.V[tuple(S_rows[i[1]])].nn))):
+                         self.V[tuple(S_rows[i[1]])].nn))):
                     valid_simplex = False
                     break
 
@@ -1129,7 +1138,8 @@ class Complex:
                 A_j0 = A[tuple([s_i])]
                 if self.in_simplex(S, v_x, A_j0):
                     found_nn = True
-                    break  # breaks the main for loop, s_i is the target simplex
+                    # breaks the main for loop, s_i is the target simplex:
+                    break
 
         # Connect the simplex to point
         if found_nn:
@@ -1137,7 +1147,8 @@ class Complex:
                 self.V[v_x].connect(self.V[tuple(S_rows[i])])
         # Attached the simplex to storage for all non-symmetric vertices
         self.V_non_symm.append(self.V[v_x])
-        return found_nn  # this bool value indicates a successful connection if True
+        # this bool value indicates a successful connection if True:
+        return found_nn
 
     def in_simplex(self, S, v_x, A_j0=None):
         """Check if a vector v_x is in simplex `S`.
@@ -1176,7 +1187,8 @@ class Complex:
             det_A_jj = (-1)**d * sign_det_A_11
             # TODO: Note that scipy might be faster to add as an optional
             #       dependency
-            sign_det_A_j0 = numpy.sign(numpy.linalg.det(numpy.delete(A_j0, d, 0)))
+            sign_det_A_j0 = numpy.sign(numpy.linalg.det(numpy.delete(A_j0, d,
+                                                                     0)))
             # TODO: Note if sign_det_A_j0 == then the point is coplanar to the
             #       current simplex facet, so perhaps return True and attach?
             if det_A_jj == sign_det_A_j0:
@@ -1197,9 +1209,9 @@ class Complex:
             If the projection S[1:] - S[0] is already
             computed it can be added as an optional argument.
         """
-        # Strategy: we test all combination of faces, if any of the determinants
-        # are zero then the vectors lie on the same face and is therefore
-        # linearly dependent in the space of R^dim
+        # Strategy: we test all combination of faces, if any of the
+        # determinants are zero then the vectors lie on the same face and is
+        # therefore linearly dependent in the space of R^dim
         if proj is None:
             proj = S[1:] - S[0]
 
