@@ -23,7 +23,8 @@ except ImportError:
 
 has_cholmod = True
 try:
-    pass
+    import sksparse
+    from sksparse.cholmod import cholesky as cholmod
 except ImportError:
     has_cholmod = False
 

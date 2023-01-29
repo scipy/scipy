@@ -28,11 +28,13 @@ from ._linprog_util import _postsolve
 has_umfpack = True
 has_cholmod = True
 try:
+    import sksparse
+    from sksparse.cholmod import cholesky as cholmod
     from sksparse.cholmod import analyze as cholmod_analyze
 except ImportError:
     has_cholmod = False
 try:
-    pass  # test whether to use factorized
+    import scikits.umfpack  # test whether to use factorized
 except ImportError:
     has_umfpack = False
 

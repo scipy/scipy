@@ -815,7 +815,7 @@ class TestVariability:
         desired_unmaskedvals = ([-1.3416407864999, -0.44721359549996,
                                  0.44721359549996, 1.3416407864999])
         assert_array_almost_equal(desired_unmaskedvals,
-                                  y.data[y.mask is False], decimal=12)
+                                  y.data[y.mask == False], decimal=12)
 
     def test_zscore(self):
         # This is not in R, so tested by using:

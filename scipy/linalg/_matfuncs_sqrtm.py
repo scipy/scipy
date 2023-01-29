@@ -15,11 +15,13 @@ from ._misc import norm
 from .lapack import ztrsyl, dtrsyl
 from ._decomp_schur import schur, rsf2csf
 
-from ._matfuncs_sqrtm_triu import within_block_loop
 
 
 class SqrtmError(np.linalg.LinAlgError):
     pass
+
+
+from ._matfuncs_sqrtm_triu import within_block_loop
 
 
 def _sqrtm_triu(T, blocksize=64):
