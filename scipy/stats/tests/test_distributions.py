@@ -3439,6 +3439,9 @@ class TestDgamma:
         #   return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [0, mp.inf])
         assert_allclose(stats.dgamma._entropy(a), ref)
 
+    def test_entropy_overflow(self):
+        assert np.isfinite(stats.dgamma.entropy(1e100))
+        assert np.isfinite(stats.dgamma.entropy(1e-100))
 
 class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
