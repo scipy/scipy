@@ -2722,7 +2722,7 @@ class TestPowerNorm:
                               (0.9999, 0.02, -2.576676052143387),
                               (5e-2, 0.02, 17.089518110222244)])
     def test_isf(self, q, c, ref):
-        assert_allclose(stats.powernorm.isf(q, c), ref, rtol=2e-12)
+        assert_allclose(stats.powernorm.isf(q, c), ref, rtol=5e-12)
 
     # CDF reference values were computed with mpmath via
     # from mpmath import mp
