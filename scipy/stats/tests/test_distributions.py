@@ -1314,6 +1314,8 @@ class TestGenLogistic:
         assert_allclose(logp, expected, rtol=1e-13)
 
     # Expected values computed with mpmath with 50 digits of precision
+    # from mpmath import mp
+    # mp.dps = 50
     # def entropy_mp(c):
     #     c = mp.mpf(c)
     #     return float(-mp.log(c)+mp.one+mp.digamma(c + mp.one) + mp.euler)
@@ -4496,7 +4498,7 @@ class TestLevyStable:
         # Test seems to be unstable (see gh-17839 for a bug report on Debian
         # i386), so skip it.
         if is_linux_32 and case == 'pdf':
-            pytest.skip("%s fit known to fail or deprecated" % dist)
+            pytest.skip("Test unstable on some platforms; see gh-17839, 17859")
 
         data = nolan_loc_scale_sample_data
         # We only test against piecewise as location/scale transforms
