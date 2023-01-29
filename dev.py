@@ -123,7 +123,6 @@ from dataclasses import dataclass
 
 import click
 from click import Option, Argument
-from doit import task_params
 from doit.cmd_base import ModuleTaskLoader
 from doit.reporter import ZeroReporter
 from doit.exceptions import TaskError
@@ -269,7 +268,7 @@ def cli(ctx, **kwargs):
 
     \b**python dev.py --build-dir my-build test -s stats**
 
-    """
+    """  # noqa: E501
     CLI.update_context(ctx, kwargs)
 
 
@@ -526,7 +525,7 @@ class Build(Task):
                         log_size = os.stat(log_filename).st_size
                         if log_size > last_log_size:
                             elapsed = datetime.datetime.now() - start_time
-                            print("    ... installation in progress ({0} "
+                            print("    ... installation in progress ({} "
                                   "elapsed)".format(elapsed))
                             last_blip = time.time()
                             last_log_size = log_size
@@ -539,7 +538,7 @@ class Build(Task):
 
         if ret != 0:
             if not args.show_build_log:
-                with open(log_filename, 'r') as f:
+                with open(log_filename) as f:
                     print(f.read())
             print(f"Installation failed! ({elapsed} elapsed)")
             sys.exit(1)
@@ -558,7 +557,7 @@ class Build(Task):
         default `_distributor_init.py` file with the one
         we use for wheels uploaded to PyPI so that DLL gets loaded.
 
-        Assumes pkg-config is installed and aware of OpenBLAS. 
+        Assumes pkg-config is installed and aware of OpenBLAS.
 
         The "dirs" parameter is typically a "Dirs" object with the
         structure as the following, say, if dev.py is run from the
@@ -652,7 +651,7 @@ class Test(Task):
     $ python dev.py test -s cluster -m full --durations 20
     $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
     ```
-    """
+    """  # noqa: E501
     ctx = CONTEXT
 
     verbose = Option(
@@ -889,29 +888,14 @@ def emit_cmdstr(cmd):
     console.print(f"{EMOJI.cmd} [cmd] {cmd}")
 
 
-@task_params([{'name': 'output_file', 'long': 'output-file', 'default': None,
-               'help': 'Redirect report to a file'}])
-def task_flake8(output_file):
-    """Run flake8 over the code base and benchmarks."""
-    opts = ''
-    if output_file:
-        opts += f'--output-file={output_file}'
-
-    cmd = f"flake8 {opts} scipy benchmarks/benchmarks"
-    emit_cmdstr(f"{cmd}")
-    return {
-        'actions': [cmd],
-        'doc': 'Lint scipy and benchmarks directory',
-    }
-
-
-def task_pep8diff():
+def task_lint():
     # Lint just the diff since branching off of main using a
     # stricter configuration.
-    emit_cmdstr(os.path.join('tools', 'lint_diff.py'))
+    emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
     return {
-        'basename': 'pep8-diff',
-        'actions': [str(Dirs().root / 'tools' / 'lint_diff.py')],
+        'basename': 'lint',
+        'actions': [str(Dirs().root / 'tools' / 'lint.py') +
+                    ' --diff-against=main'],
         'doc': 'Lint only files modified since last commit (stricter rules)',
     }
 
@@ -937,16 +921,11 @@ def task_check_test_name():
 
 @cli.cls_cmd('lint')
 class Lint():
-    """:dash: Run flake8, check PEP 8 compliance on branch diff and check for
+    """:dash: Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
-    output_file = Option(
-        ['--output-file'], default=None, help='Redirect report to a file')
-
-    def run(output_file):
-        opts = {'output_file': output_file}
+    def run():
         run_doit_task({
-            'flake8': opts,
-            'pep8-diff': {},
+            'lint': {},
             'unicode-check': {},
             'check-testname': {},
         })
@@ -1109,7 +1088,7 @@ class Python():
             # Don't use subprocess, since we don't want to include the
             # current path in PYTHONPATH.
             sys.argv = extra_argv
-            with open(extra_argv[0], 'r') as f:
+            with open(extra_argv[0]) as f:
                 script = f.read()
             sys.modules['__main__'] = new_module('__main__')
             ns = dict(__name__='__main__', __file__=extra_argv[0])
