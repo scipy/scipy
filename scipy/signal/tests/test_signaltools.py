@@ -2611,6 +2611,74 @@ class TestDecimate:
         x = signal.decimate(np.ones(100, dtype=np.float16), 10)
         assert x.dtype.type == np.float64
 
+    def test_complex_iir_dlti(self):
+        # regression: gh-17845
+        # centre frequency for filter [Hz]
+        fcentre = 50
+        # filter passband width [Hz]
+        fwidth = 5
+        # sample rate [Hz]
+        fs = 1e3
+
+        z, p, k = signal.butter(2, 2*np.pi*fwidth/2, output='zpk', fs=fs)
+        z = z.astype(complex) * np.exp(2j * np.pi * fcentre/fs)
+        p = p.astype(complex) * np.exp(2j * np.pi * fcentre/fs)
+        system = signal.dlti(z, p, k)
+
+        t = np.arange(200) / fs
+
+        # input
+        u = (np.exp(2j * np.pi * fcentre * t)
+             + 0.5 * np.exp(-2j * np.pi * fcentre * t))
+
+        ynzp = signal.decimate(u, 2, ftype=system, zero_phase=False)
+        ynzpref = signal.lfilter(*signal.zpk2tf(z, p, k),
+                                 u)[::2]
+
+        assert_equal(ynzp, ynzpref)
+
+        yzp = signal.decimate(u, 2, ftype=system, zero_phase=True)
+        yzpref = signal.filtfilt(*signal.zpk2tf(z, p, k),
+                                 u)[::2]
+
+        assert_equal(yzp, yzpref)
+
+    def test_complex_fir_dlti(self):
+        # centre frequency for filter [Hz]
+        fcentre = 50
+        # filter passband width [Hz]
+        fwidth = 5
+        # sample rate [Hz]
+        fs = 1e3
+        numtaps = 20
+
+        # FIR filter about 0Hz
+        bbase = signal.firwin(numtaps, fwidth/2, fs=fs)
+
+        # rotate these to desired frequency
+        zbase = np.roots(bbase)
+        zrot = zbase * np.exp(2j * np.pi * fcentre/fs)
+        # FIR filter about 50Hz, maintaining passband gain of 0dB
+        bz = bbase[0] * np.poly(zrot)
+
+        system = signal.dlti(bz, 1)
+
+        t = np.arange(200) / fs
+
+        # input
+        u = (np.exp(2j * np.pi * fcentre * t)
+             + 0.5 * np.exp(-2j * np.pi * fcentre * t))
+
+        ynzp = signal.decimate(u, 2, ftype=system, zero_phase=False)
+        ynzpref = signal.upfirdn(bz, u, up=1, down=2)[:100]
+
+        assert_equal(ynzp, ynzpref)
+
+        yzp = signal.decimate(u, 2, ftype=system, zero_phase=True)
+        yzpref = signal.resample_poly(u, 1, 2, window=bz)
+
+        assert_equal(yzp, yzpref)
+
 
 class TestHilbert:
 
