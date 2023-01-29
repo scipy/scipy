@@ -6412,10 +6412,10 @@ class nakagami_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, nu):
-        A = sc.gamma(nu) / 2
-        B = np.sqrt(1 / nu)
-        C = np.exp((2 * nu - (2 * nu - 1) * sc.digamma(nu)) / 2)
-        h = np.log(A * B * C)
+        A = sc.gammaln(nu) - np.log(2)
+        B = -0.5 * np.log(nu)
+        C = (2 * nu - (2 * nu - 1) * sc.digamma(nu)) / 2
+        h = A + B + C
         return h
 
     def _rvs(self, nu, size=None, random_state=None):

@@ -7301,6 +7301,10 @@ class TestNakagami:
         #   return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [0, mp.inf]
         assert_allclose(stats.nakagami._entropy(m), ref)
 
+    def test_entropy_overflow(self):
+        assert np.isfinite(stats.nakagami._entropy(1e100))
+        assert np.isfinite(stats.nakagami._entropy(1e-100))
+
     @pytest.mark.xfail(reason="Fit of nakagami not reliable, see gh-10908.")
     @pytest.mark.parametrize('nu', [1.6, 2.5, 3.9])
     @pytest.mark.parametrize('loc', [25.0, 10, 35])
