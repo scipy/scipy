@@ -59,7 +59,7 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     hamming, jaccard, jensenshannon,
                                     kulczynski1, mahalanobis,
                                     minkowski, rogerstanimoto,
-                                    russellrao, seuclidean, sokalmichener,
+                                    russellrao, seuclidean, sokalmichener,  # noqa: F401
                                     sokalsneath, sqeuclidean, yule)
 
 _filenames = [

@@ -21,7 +21,7 @@ class SqrtmError(np.linalg.LinAlgError):
     pass
 
 
-from ._matfuncs_sqrtm_triu import within_block_loop
+from ._matfuncs_sqrtm_triu import within_block_loop  # noqa: E402
 
 
 def _sqrtm_triu(T, blocksize=64):

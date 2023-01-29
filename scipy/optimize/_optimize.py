@@ -3691,7 +3691,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
                          "than 40 variables.")
     lrange = list(ranges)
     for k in range(N):
-        if type(lrange[k]) is not type(slice(None)):
+        if not isinstance(lrange[k], slice):
             if len(lrange[k]) < 3:
                 lrange[k] = tuple(lrange[k]) + (complex(Ns),)
             lrange[k] = slice(*lrange[k])

@@ -6,7 +6,7 @@ import contextlib
 
 import numpy as np
 # good_size is exposed (and used) from this import
-from .pypocketfft import good_size
+from .pypocketfft import good_size  # noqa: F401
 
 _config = threading.local()
 _cpu_count = os.cpu_count()
