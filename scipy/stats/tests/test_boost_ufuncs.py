@@ -31,6 +31,7 @@ test_data = [
 ]
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('func, args, expected', test_data)
 def test_stats_boost_ufunc(func, args, expected):
     type_sigs = func.types
