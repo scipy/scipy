@@ -155,3 +155,18 @@ html[data-theme=dark] .sd-card .sd-card-header {
 html[data-theme=dark] .sd-card .sd-card-footer {
   background-color:var(--pst-color-background);
 }
+
+/* Dropdowns from sphinx-design */
+
+.sd-dropdown.sd-card {
+  padding: 15px 10px 10px 10px;
+  background-color: var(--sd-color-card-background);
+  border: 1px solid var(--sd-color-card-border);
+  border-radius: 0.25rem;
+  color: var(--sd-color-card-text);
+}
+
+.sd-dropdown .sd-card-header {
+  padding: 0px 0px 0px 0px;
+  text-align: left;
+}
