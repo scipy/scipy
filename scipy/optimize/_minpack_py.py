@@ -279,8 +279,8 @@ LEASTSQ_SUCCESS = [1, 2, 3, 4]
 LEASTSQ_FAILURE = [5, 6, 7, 8]
 
 
-def leastsq(func, x0, args=(), Dfun=None, full_output=0,
-            col_deriv=0, ftol=1.49012e-8, xtol=1.49012e-8,
+def leastsq(func, x0, args=(), Dfun=None, full_output=False,
+            col_deriv=False, ftol=1.49012e-8, xtol=1.49012e-8,
             gtol=0.0, maxfev=0, epsfcn=None, factor=100, diag=None):
     """
     Minimize the sum of squares of a set of equations.
@@ -306,7 +306,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     full_output : bool, optional
         If ``True``, return all optional outputs (not just `x` and `ier`).
     col_deriv : bool, optional
-        If truthy, specify that the Jacobian function computes derivatives
+        If ``True``, specify that the Jacobian function computes derivatives
         down the columns (faster, because there is no transpose operation).
     ftol : float, optional
         Relative error desired in the sum of squares.
