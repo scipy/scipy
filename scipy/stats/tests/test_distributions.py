@@ -373,6 +373,11 @@ class TestBinom:
             assert_equal(stats.binom(n=2, p=0).mean(), 0)
             assert_equal(stats.binom(n=2, p=0).std(), 0)
 
+    def test_ppf_p1(self):
+        # Check that gh-17388 is resolved: PPF == n when p = 1
+        n = 4
+        assert stats.binom.ppf(q=0.3, n=n, p=1.0) == n
+
 
 class TestArcsine:
 
