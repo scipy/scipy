@@ -1417,9 +1417,7 @@ class skellam_gen(rv_discrete):
                 random_state.poisson(mu2, n))
 
     def _pmf(self, x, mu1, mu2):
-        with warnings.catch_warnings():
-            message = "overflow encountered in _ncx2_pdf"
-            warnings.filterwarnings("ignore", message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             px = np.where(x < 0,
                           _boost._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
                           _boost._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
@@ -1428,9 +1426,10 @@ class skellam_gen(rv_discrete):
 
     def _cdf(self, x, mu1, mu2):
         x = floor(x)
-        px = np.where(x < 0,
-                      _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                      1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+        with np.errstate(over='ignore'):  # see gh-17432
+            px = np.where(x < 0,
+                          _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                          1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):

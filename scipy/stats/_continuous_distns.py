@@ -693,8 +693,7 @@ class beta_gen(rv_continuous):
             return _boost._beta_isf(x, a, b)
 
     def _ppf(self, q, a, b):
-        # Both contexts seem to be needed. See gh-17432.
-        with warnings.catch_warnings(), np.errstate(over='ignore'):
+        with np.errstate(over='ignore'):  # see gh-17432
             message = "overflow encountered in _beta_ppf"
             warnings.filterwarnings('ignore', message=message)
             return _boost._beta_ppf(q, a, b)
@@ -6650,18 +6649,13 @@ class ncx2_gen(rv_continuous):
 
     def _pdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        with warnings.catch_warnings():
-            message = "overflow encountered in _ncx2_pdf"
-            warnings.filterwarnings("ignore", message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_pdf,
                               f2=lambda x, df, _: chi2._pdf(x, df))
 
     def _cdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        # Both contexts seem to be needed. See gh-17432.
-        with warnings.catch_warnings(), np.errstate(over='ignore'):
-            message = "overflow encountered in _ncx2_cdf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_cdf,
                               f2=lambda x, df, _: chi2._cdf(x, df))
 
