@@ -38,6 +38,18 @@ compliance before pushing your code:
 
    This will run linting checks before each commit is made.
 
+   .. note::
+
+       On macOS, `mapfile` is not available with the default Bash version
+       you need to install another Bash with `brew install bash`.
+       Then, modify the first line of `tools/pre-commit-hook.sh` with
+       the newly installed Bash's path: `#!/opt/homebrew/bin/bash`.
+       You can now run the copy command.
+
+       Also note that this hook will only work if you run `git commit` from
+       your activated environment. Supporting GUI tools would require
+       additional modifications. See comments in the pre-commit script.
+
    Alternatively, you can run the check manually from the SciPy root directory::
 
       python dev.py lint

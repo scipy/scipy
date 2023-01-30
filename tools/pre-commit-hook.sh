@@ -1,10 +1,18 @@
 #!/bin/bash
 #
+# on macOS install a newer version of Bash with `brew install bash`
+# then change the first line to #!/opt/homebrew/bin/bash
+#
 # Pre-commit linting hook.
 #
 # Install from root of repository with:
 #
 #   cp tools/pre-commit-hook.sh .git/hooks/pre-commit
+
+# If you are using GUI git tools. You also need to change the following:
+# GIT_DIR=$PWD/.git
+# export PATH=...PATH_TO_CONDA_ENV.../bin/:$PATH
+# python ../../tools/lint.py --fix --files "${changed[@]}" || ret=1
 
 # store names of files that were staged
 # add  '*.pxd', '*.pxi' once cython-lint supports it

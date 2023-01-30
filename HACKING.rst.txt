@@ -91,6 +91,18 @@ tests, benchmarks, and correct code style.
 
       cp tools/pre-commit-hook.sh .git/hooks/pre-commit
 
+    .. note::
+
+        On macOS, `mapfile` is not available with the default Bash version
+        you need to install another Bash with `brew install bash`.
+        Then, modify the first line of `tools/pre-commit-hook.sh` with
+        the newly installed Bash's path: `#!/opt/homebrew/bin/bash`.
+        You can now run the copy command.
+
+        Also note that this hook will only work if you run `git commit` from
+        your activated environment. Supporting GUI tools would require
+        additional modifications. See comments in the pre-commit script.
+
     Alternatively, you may run the linter manually::
 
       python dev.py lint
