@@ -897,15 +897,18 @@ class TestMatrixNormal:
                 X = frozen.rvs(random_state=1234)
                 pdf1 = frozen.pdf(X)
                 logpdf1 = frozen.logpdf(X)
+                entropy1 = frozen.entropy()
 
                 vecX = X.T.flatten()
                 vecM = M.T.flatten()
                 cov = np.kron(V,U)
                 pdf2 = multivariate_normal.pdf(vecX, mean=vecM, cov=cov)
                 logpdf2 = multivariate_normal.logpdf(vecX, mean=vecM, cov=cov)
+                entropy2 = multivariate_normal.entropy(mean=vecM, cov=cov)
 
                 assert_allclose(pdf1, pdf2, rtol=1E-10)
                 assert_allclose(logpdf1, logpdf2, rtol=1E-10)
+                assert_allclose(entropy1, entropy2)
 
     def test_array_input(self):
         # Check array of inputs has the same output as the separate entries.
@@ -1380,10 +1383,13 @@ class TestMultinomial:
         assert_allclose(vals1, -1.483270127243324, rtol=1e-8)
 
         vals2 = multinomial.logpmf([3, 4], 0, [.3, .7])
-        assert_allclose(vals2, np.NAN, rtol=1e-8)
+        assert vals2 == -np.inf
 
-        vals3 = multinomial.logpmf([3, 4], 0, [-2, 3])
-        assert_allclose(vals3, np.NAN, rtol=1e-8)
+        vals3 = multinomial.logpmf([0, 0], 0, [.3, .7])
+        assert vals3 == 0
+
+        vals4 = multinomial.logpmf([3, 4], 0, [-2, 3])
+        assert_allclose(vals4, np.NAN, rtol=1e-8)
 
     def test_reduces_binomial(self):
         # test that the multinomial pmf reduces to the binomial pmf in the 2d
@@ -1413,11 +1419,12 @@ class TestMultinomial:
         for x in r_vals:
             assert_allclose(multinomial.pmf(x, n, p), r_vals[x], atol=1e-14)
 
-    def test_rvs_np(self):
+    @pytest.mark.parametrize("n", [0, 3])
+    def test_rvs_np(self, n):
         # test that .rvs agrees w/numpy
-        sc_rvs = multinomial.rvs(3, [1/4.]*3, size=7, random_state=123)
+        sc_rvs = multinomial.rvs(n, [1/4.]*3, size=7, random_state=123)
         rndm = np.random.RandomState(123)
-        np_rvs = rndm.multinomial(3, [1/4.]*3, size=7)
+        np_rvs = rndm.multinomial(n, [1/4.]*3, size=7)
         assert_equal(sc_rvs, np_rvs)
 
     def test_pmf(self):
@@ -1441,6 +1448,12 @@ class TestMultinomial:
         vals5 = multinomial.pmf([3, 3, 0], 6, [2/3.0, 1/3.0, 0])
         assert_allclose(vals5, 0.219478737997, rtol=1e-8)
 
+        vals5 = multinomial.pmf([0, 0, 0], 0, [2/3.0, 1/3.0, 0])
+        assert vals5 == 1
+
+        vals6 = multinomial.pmf([2, 1, 0], 0, [2/3.0, 1/3.0, 0])
+        assert vals6 == 0
+
     def test_pmf_broadcasting(self):
         vals0 = multinomial.pmf([1, 2], 3, [[.1, .9], [.2, .8]])
         assert_allclose(vals0, [.243, .384], rtol=1e-8)
@@ -1457,11 +1470,12 @@ class TestMultinomial:
         vals4 = multinomial.pmf([[1, 2], [1,1]], [[[[3]]]], [.1, .9])
         assert_allclose(vals4, [[[[.243, 0]]]], rtol=1e-8)
 
-    def test_cov(self):
-        cov1 = multinomial.cov(5, (.2, .3, .5))
-        cov2 = [[5*.2*.8, -5*.2*.3, -5*.2*.5],
-                [-5*.3*.2, 5*.3*.7, -5*.3*.5],
-                [-5*.5*.2, -5*.5*.3, 5*.5*.5]]
+    @pytest.mark.parametrize("n", [0, 5])
+    def test_cov(self, n):
+        cov1 = multinomial.cov(n, (.2, .3, .5))
+        cov2 = [[n*.2*.8, -n*.2*.3, -n*.2*.5],
+                [-n*.3*.2, n*.3*.7, -n*.3*.5],
+                [-n*.5*.2, -n*.5*.3, n*.5*.5]]
         assert_allclose(cov1, cov2, rtol=1e-8)
 
     def test_cov_broadcasting(self):
@@ -1478,11 +1492,12 @@ class TestMultinomial:
                 [[5*.4*.6, -5*.4*.6], [-5*.4*.6, 5*.4*.6]]]
         assert_allclose(cov5, cov6, rtol=1e-8)
 
-    def test_entropy(self):
+    @pytest.mark.parametrize("n", [0, 2])
+    def test_entropy(self, n):
         # this is equivalent to a binomial distribution with n=2, so the
         # entropy .77899774929 is easily computed "by hand"
-        ent0 = multinomial.entropy(2, [.2, .8])
-        assert_allclose(ent0, binom.entropy(2, .2), rtol=1e-8)
+        ent0 = multinomial.entropy(n, [.2, .8])
+        assert_allclose(ent0, binom.entropy(n, .2), rtol=1e-8)
 
     def test_entropy_broadcasting(self):
         ent0 = multinomial.entropy([2, 3], [.2, .3])
@@ -1499,9 +1514,10 @@ class TestMultinomial:
                  [binom.entropy(8, .3), binom.entropy(8, .4)]],
                 rtol=1e-8)
 
-    def test_mean(self):
-        mean1 = multinomial.mean(5, [.2, .8])
-        assert_allclose(mean1, [5*.2, 5*.8], rtol=1e-8)
+    @pytest.mark.parametrize("n", [0, 5])
+    def test_mean(self, n):
+        mean1 = multinomial.mean(n, [.2, .8])
+        assert_allclose(mean1, [n*.2, n*.8], rtol=1e-8)
 
     def test_mean_broadcasting(self):
         mean1 = multinomial.mean([5, 6], [.2, .8])
@@ -1569,7 +1585,7 @@ class TestInvwishart:
     def test_1D_is_invgamma(self):
         # The 1-dimensional inverse Wishart with an identity scale matrix is
         # just an inverse gamma distribution.
-        # Test variance, mean, pdf
+        # Test variance, mean, pdf, entropy
         # Kolgomorov-Smirnov test for rvs
         np.random.seed(482974)
 
@@ -1595,6 +1611,9 @@ class TestInvwishart:
             args = (df/2, 0, 1./2)
             alpha = 0.01
             check_distribution_rvs('invgamma', args, alpha, rvs)
+
+            # entropy
+            assert_allclose(iw.entropy(), ig.entropy())
 
     def test_wishart_invwishart_2D_rvs(self):
         dim = 3
@@ -2556,6 +2575,9 @@ class TestMultivariateHypergeom:
 
 
 class TestRandomTable:
+    def get_rng(self):
+        return np.random.default_rng(628174795866951638)
+
     def test_process_parameters(self):
         message = "`row` must be one-dimensional"
         with pytest.raises(ValueError, match=message):
@@ -2592,32 +2614,17 @@ class TestRandomTable:
         assert_equal(col, c)
         assert n == np.sum(row)
 
-    def test_process_rvs_method_on_None(self):
-        # TODO also test with a case where "patefield" is selected
-        row = [1, 3]
-        col = [2, 1, 1]
+    @pytest.mark.parametrize("scale,method",
+                             ((1, "boyett"), (100, "patefield")))
+    def test_process_rvs_method_on_None(self, scale, method):
+        row = np.array([1, 3]) * scale
+        col = np.array([2, 1, 1]) * scale
 
         ct = random_table
-        expected = ct.rvs(row, col, method="boyett", random_state=1)
+        expected = ct.rvs(row, col, method=method, random_state=1)
         got = ct.rvs(row, col, method=None, random_state=1)
 
         assert_equal(expected, got)
-
-    def test_rvs_method(self):
-        pytest.xfail("patefield will be implemented in follow-up PR")
-
-        row = [1, 3]
-        col = [2, 1, 1]
-
-        ct = random_table
-        rvs1 = ct.rvs(row, col, size=1000, method="boyett", random_state=1)
-        rvs2 = ct.rvs(row, col, size=1000, method="patefield", random_state=1)
-
-        tab1, count1 = np.unique(rvs1, axis=0, return_counts=True)
-        tab2, count2 = np.unique(rvs2, axis=0, return_counts=True)
-
-        assert_equal(tab1, tab2)
-        assert_allclose(count1, count2)
 
     def test_process_rvs_method_bad_argument(self):
         row = [1, 3]
@@ -2628,16 +2635,17 @@ class TestRandomTable:
         with pytest.raises(ValueError, match=message):
             random_table.rvs(row, col, method="foo")
 
-        with pytest.raises(NotImplementedError):
-            random_table.rvs(row, col, method="patefield")
-
     @pytest.mark.parametrize('frozen', (True, False))
     @pytest.mark.parametrize('log', (True, False))
     def test_pmf_logpmf(self, frozen, log):
-        rng = np.random.default_rng(628174795866951638)
+        # The pmf is tested through random sample generation
+        # with Boyett's algorithm, whose implementation is simple
+        # enough to verify manually for correctness.
+        rng = self.get_rng()
         row = [2, 6]
         col = [1, 3, 4]
-        rvs = random_table.rvs(row, col, size=1000, random_state=rng)
+        rvs = random_table.rvs(row, col, size=1000,
+                               method="boyett", random_state=rng)
 
         obj = random_table(row, col) if frozen else random_table
         method = getattr(obj, "logpmf" if log else "pmf")
@@ -2707,46 +2715,63 @@ class TestRandomTable:
             pmf([[1, 2],
                  [3, 4]])
 
-    def test_rvs_mean(self):
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_mean(self, method):
         # test if `rvs` is unbiased and large sample size converges
-        # to the true mean. `test_pmf` also implicitly tests `rvs`.
-        rng = np.random.default_rng(628174795866951638)
-
+        # to the true mean.
+        rng = self.get_rng()
         row = [2, 6]
         col = [1, 3, 4]
-        rvs = random_table.rvs(row, col, size=1000, random_state=rng)
+        rvs = random_table.rvs(row, col, size=1000, method=method,
+                               random_state=rng)
         mean = random_table.mean(row, col)
         assert_equal(np.sum(mean), np.sum(row))
         assert_allclose(rvs.mean(0), mean, atol=0.05)
         assert_equal(rvs.sum(axis=-1), np.broadcast_to(row, (1000, 2)))
         assert_equal(rvs.sum(axis=-2), np.broadcast_to(col, (1000, 3)))
 
-    def test_rvs_size(self):
+    def test_rvs_cov(self):
+        # test if `rvs` generated with patefield and boyett algorithms
+        # produce approximately the same covariance matrix
+        rng = self.get_rng()
+        row = [2, 6]
+        col = [1, 3, 4]
+        rvs1 = random_table.rvs(row, col, size=10000, method="boyett",
+                                random_state=rng)
+        rvs2 = random_table.rvs(row, col, size=10000, method="patefield",
+                                random_state=rng)
+        cov1 = np.var(rvs1, axis=0)
+        cov2 = np.var(rvs2, axis=0)
+        assert_allclose(cov1, cov2, atol=0.02)
+
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_size(self, method):
         row = [2, 6]
         col = [1, 3, 4]
 
         # test size `None`
-        rng = np.random.default_rng(628174795866951638)
-        rv = random_table.rvs(row, col, random_state=rng)
+        rv = random_table.rvs(row, col, method=method,
+                              random_state=self.get_rng())
         assert rv.shape == (2, 3)
 
         # test size 1
-        rng = np.random.default_rng(628174795866951638)
-        rv2 = random_table.rvs(row, col, size=1, random_state=rng)
+        rv2 = random_table.rvs(row, col, size=1, method=method,
+                               random_state=self.get_rng())
         assert rv2.shape == (1, 2, 3)
         assert_equal(rv, rv2[0])
 
         # test size 0
-        rv3 = random_table.rvs(row, col, size=0, random_state=rng)
+        rv3 = random_table.rvs(row, col, size=0, method=method,
+                               random_state=self.get_rng())
         assert rv3.shape == (0, 2, 3)
 
         # test other valid size
-        rng = np.random.default_rng(628174795866951638)
-        rv4 = random_table.rvs(row, col, size=20, random_state=rng)
+        rv4 = random_table.rvs(row, col, size=20, method=method,
+                               random_state=self.get_rng())
         assert rv4.shape == (20, 2, 3)
 
-        rng = np.random.default_rng(628174795866951638)
-        rv5 = random_table.rvs(row, col, size=(4, 5), random_state=rng)
+        rv5 = random_table.rvs(row, col, size=(4, 5), method=method,
+                               random_state=self.get_rng())
         assert rv5.shape == (4, 5, 2, 3)
 
         assert_allclose(rv5.reshape(20, 2, 3), rv4, rtol=1e-15)
@@ -2754,25 +2779,98 @@ class TestRandomTable:
         # test invalid size
         message = "`size` must be a non-negative integer or `None`"
         with pytest.raises(ValueError, match=message):
-            random_table.rvs(row, col, size=-1, random_state=rng)
+            random_table.rvs(row, col, size=-1, method=method,
+                             random_state=self.get_rng())
 
         with pytest.raises(ValueError, match=message):
-            random_table.rvs(row, col, size=np.nan, random_state=rng)
+            random_table.rvs(row, col, size=np.nan, method=method,
+                             random_state=self.get_rng())
 
-    def test_frozen(self):
-        rng1 = np.random.default_rng(628174795866951638)
-        rng2 = np.random.default_rng(628174795866951638)
-
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_method(self, method):
+        # This test assumes that pmf is correct and checks that random samples
+        # follow this probability distribution. This seems like a circular
+        # argument, since pmf is checked in test_pmf_logpmf with random samples
+        # generated with the rvs method. This test is not redundant, because
+        # test_pmf_logpmf intentionally uses rvs generation with Boyett only,
+        # but here we test both Boyett and Patefield.
         row = [2, 6]
         col = [1, 3, 4]
-        d = random_table(row, col, seed=rng1)
+
+        ct = random_table
+        rvs = ct.rvs(row, col, size=100000, method=method,
+                     random_state=self.get_rng())
+
+        unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
+
+        # generated frequencies should match expected frequencies
+        p = ct.pmf(unique_rvs, row, col)
+        assert_allclose(p * len(rvs), counts, rtol=0.02)
+
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_with_zeros_in_col_row(self, method):
+        row = [0, 1, 0]
+        col = [1, 0, 0, 0]
+        d = random_table(row, col)
+        rv = d.rvs(1000, method=method, random_state=self.get_rng())
+        expected = np.zeros((1000, len(row), len(col)))
+        expected[...] = [[0, 0, 0, 0],
+                         [1, 0, 0, 0],
+                         [0, 0, 0, 0]]
+        assert_equal(rv, expected)
+
+    @pytest.mark.parametrize("method", (None, "boyett", "patefield"))
+    @pytest.mark.parametrize("col", ([], [0]))
+    @pytest.mark.parametrize("row", ([], [0]))
+    def test_rvs_with_edge_cases(self, method, row, col):
+        d = random_table(row, col)
+        rv = d.rvs(10, method=method, random_state=self.get_rng())
+        expected = np.zeros((10, len(row), len(col)))
+        assert_equal(rv, expected)
+
+    @pytest.mark.parametrize('v', (1, 2))
+    def test_rvs_rcont(self, v):
+        # This test checks the internal low-level interface.
+        # It is implicitly also checked by the other test_rvs* calls.
+        import scipy.stats._rcont as _rcont
+
+        row = np.array([1, 3], dtype=np.int64)
+        col = np.array([2, 1, 1], dtype=np.int64)
+
+        rvs = getattr(_rcont, f"rvs_rcont{v}")
+
+        ntot = np.sum(row)
+        result = rvs(row, col, ntot, 1, self.get_rng())
+
+        assert result.shape == (1, len(row), len(col))
+        assert np.sum(result) == ntot
+
+    def test_frozen(self):
+        row = [2, 6]
+        col = [1, 3, 4]
+        d = random_table(row, col, seed=self.get_rng())
+
+        sample = d.rvs()
+
         expected = random_table.mean(row, col)
         assert_equal(expected, d.mean())
 
-        expected = random_table.rvs(row, col, size=10, random_state=rng2)
-        got = d.rvs(size=10)
-        assert_equal(expected, got)
+        expected = random_table.pmf(sample, row, col)
+        assert_equal(expected, d.pmf(sample))
 
+        expected = random_table.logpmf(sample, row, col)
+        assert_equal(expected, d.logpmf(sample))
+
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_frozen(self, method):
+        row = [2, 6]
+        col = [1, 3, 4]
+        d = random_table(row, col, seed=self.get_rng())
+
+        expected = random_table.rvs(row, col, size=10, method=method,
+                                    random_state=self.get_rng())
+        got = d.rvs(size=10, method=method)
+        assert_equal(expected, got)
 
 def check_pickling(distfn, args):
     # check that a distribution instance pickles and unpickles

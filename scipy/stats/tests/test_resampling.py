@@ -123,9 +123,6 @@ def test_bootstrap_vectorized(method, axis, paired):
     # CI and standard_error of each axis-slice is the same as those of the
     # original 1d sample
 
-    if not paired and method == 'BCa':
-        # should re-assess when BCa is extended
-        pytest.xfail(reason="BCa currently for 1-sample statistics only")
     np.random.seed(0)
 
     def my_statistic(x, y, z, axis=-1):
@@ -621,7 +618,6 @@ def test_vectorize_statistic(axis):
     assert_allclose(res1, res2)
 
 
-@pytest.mark.xslow()
 @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
 def test_vector_valued_statistic(method):
     # Generate 95% confidence interval around MLE of normal distribution
@@ -636,11 +632,12 @@ def test_vector_valued_statistic(method):
     params = 1, 0.5
     sample = stats.norm.rvs(*params, size=(100, 100), random_state=rng)
 
-    def statistic(data):
-        return stats.norm.fit(data)
+    def statistic(data, axis):
+        return np.asarray([np.mean(data, axis),
+                           np.std(data, axis, ddof=1)])
 
     res = bootstrap((sample,), statistic, method=method, axis=-1,
-                    vectorized=False, n_resamples=9999)
+                    n_resamples=9999, batch=200)
 
     counts = np.sum((res.confidence_interval.low.T < params)
                     & (res.confidence_interval.high.T > params),
@@ -651,6 +648,44 @@ def test_vector_valued_statistic(method):
     assert res.confidence_interval.high.shape == (2, 100)
     assert res.standard_error.shape == (2, 100)
     assert res.bootstrap_distribution.shape == (2, 100, 9999)
+
+
+@pytest.mark.slow
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+def test_vector_valued_statistic_gh17715():
+    # gh-17715 reported a mistake introduced in the extension of BCa to
+    # multi-sample statistics; a `len` should have been `.shape[-1]`. Check
+    # that this is resolved.
+
+    rng = np.random.default_rng(141921000979291141)
+
+    def concordance(x, y, axis):
+        xm = x.mean(axis)
+        ym = y.mean(axis)
+        cov = ((x - xm[..., None]) * (y - ym[..., None])).mean(axis)
+        return (2 * cov) / (x.var(axis) + y.var(axis) + (xm - ym) ** 2)
+
+    def statistic(tp, tn, fp, fn, axis):
+        actual = tp + fp
+        expected = tp + fn
+        return np.nan_to_num(concordance(actual, expected, axis))
+
+    def statistic_extradim(*args, axis):
+        return statistic(*args, axis)[np.newaxis, ...]
+
+    data = [[4, 0, 0, 2],  # (tp, tn, fp, fn)
+            [2, 1, 2, 1],
+            [0, 6, 0, 0],
+            [0, 6, 3, 0],
+            [0, 8, 1, 0]]
+    data = np.array(data).T
+
+    res = bootstrap(data, statistic_extradim, random_state=rng, paired=True)
+    ref = bootstrap(data, statistic, random_state=rng, paired=True)
+    assert_allclose(res.confidence_interval.low[0],
+                    ref.confidence_interval.low, atol=1e-15)
+    assert_allclose(res.confidence_interval.high[0],
+                    ref.confidence_interval.high, atol=1e-15)
 
 
 # --- Test Monte Carlo Hypothesis Test --- #

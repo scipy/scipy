@@ -15,7 +15,7 @@ from pytest import raises as assert_raises
 import re
 from scipy import optimize
 from scipy import stats
-from scipy.stats._morestats import _abw_state
+from scipy.stats._morestats import _abw_state, _get_As_weibull, _Avals_weibull
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
@@ -310,9 +310,47 @@ class TestAnderson:
         assert_array_less(A1, crit1[-2:])
         assert_(A2 > crit2[-1])
 
+    def test_weibull_min_case_A(self):
+        # data and reference values from `anderson` reference [7]
+        x = np.array([225, 171, 198, 189, 189, 135, 162, 135, 117, 162])
+        res = stats.anderson(x, 'weibull_min')
+        m, loc, scale = res.fit_result.params
+        assert_allclose((m, loc, scale), (2.38, 99.02, 78.23), rtol=2e-3)
+        assert_allclose(res.statistic, 0.260, rtol=1e-3)
+        assert res.statistic < res.critical_values[0]
+
+        c = 1 / m  # ~0.42
+        assert_allclose(c, 1/2.38, rtol=2e-3)
+        # interpolate between rows for c=0.4 and c=0.45, indices -3 and -2
+        As40 = _Avals_weibull[-3]
+        As45 = _Avals_weibull[-2]
+        As_ref = As40 + (c - 0.4)/(0.45 - 0.4) * (As45 - As40)
+        # atol=1e-3 because results are rounded up to the next third decimal
+        assert np.all(res.critical_values > As_ref)
+        assert_allclose(res.critical_values, As_ref, atol=1e-3)
+
+    def test_weibull_min_case_B(self):
+        # From `anderson` reference [7]
+        x = np.array([74, 57, 48, 29, 502, 12, 70, 21,
+                      29, 386, 59, 27, 153, 26, 326])
+        message = "Maximum likelihood estimation has converged to "
+        with pytest.raises(ValueError, match=message):
+            stats.anderson(x, 'weibull_min')
+
+    def test_weibull_warning_error(self):
+        # Check for warning message when there are too few observations
+        # This is also an example in which an error occurs during fitting
+        x = -np.array([225, 75, 57, 168, 107, 12, 61, 43, 29])
+        wmessage = "Critical values of the test statistic are given for the..."
+        emessage = "An error occured while fitting the Weibull distribution..."
+        wcontext = pytest.warns(UserWarning, match=wmessage)
+        econtext = pytest.raises(ValueError, match=emessage)
+        with wcontext, econtext:
+            stats.anderson(x, 'weibull_min')
+
     @pytest.mark.parametrize('distname',
                              ['norm', 'expon', 'gumbel_l', 'extreme1',
-                              'gumbel', 'gumbel_r', 'logistic'])
+                              'gumbel', 'gumbel_r', 'logistic', 'weibull_min'])
     def test_anderson_fit_params(self, distname):
         # check that anderson now returns a FitResult
         rng = np.random.default_rng(330691555377792039)
@@ -323,6 +361,12 @@ class TestAnderson:
         x = dist.rvs(*params, size=1000, random_state=rng)
         res = stats.anderson(x, distname)
         assert res.fit_result.success
+
+    def test_anderson_weibull_As(self):
+        m = 1  # "when mi < 2, so that c > 0.5, the last line...should be used"
+        assert_equal(_get_As_weibull(1/m), _Avals_weibull[-1])
+        m = np.inf
+        assert_equal(_get_As_weibull(1/m), _Avals_weibull[0])
 
 
 class TestAndersonKSamp:
@@ -359,6 +403,7 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0020, atol=0.00025)
 
+    @pytest.mark.slow
     def test_example2a(self):
         # Example data taken from an earlier technical report of
         # Scholz and Stephens
@@ -383,13 +428,19 @@ class TestAndersonKSamp:
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
 
-        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
-                                          t9, t10, t11, t12, t13, t14),
-                                         midrank=False)
+        samples = (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)
+        Tk, tm, p = stats.anderson_ksamp(samples, midrank=False)
         assert_almost_equal(Tk, 3.288, 3)
         assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
                                   tm[0:5], 4)
         assert_allclose(p, 0.0041, atol=0.00025)
+
+        rng = np.random.default_rng(6989860141921615054)
+        res = stats.anderson_ksamp(samples, midrank=False,
+                                   n_resamples=9999, random_state=rng)
+        assert_array_equal(res.statistic, Tk)
+        assert_array_equal(res.critical_values, tm)
+        assert_allclose(res.pvalue, p, atol=6e-4)
 
     def test_example2b(self):
         # Example data taken from an earlier technical report of
