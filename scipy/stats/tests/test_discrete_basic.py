@@ -118,7 +118,7 @@ def test_rvs_broadcast(dist, shape_args):
         distfunc = getattr(stats, dist)
     except TypeError:
         distfunc = dist
-        dist = 'rv_discrete(values=(%r, %r))' % (dist.xk, dist.pk)
+        dist = f'rv_discrete(values=({dist.xk!r}, {dist.pk!r}))'
     loc = np.zeros(2)
     nargs = distfunc.numargs
     allargs = []

@@ -106,7 +106,7 @@ skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
-fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
+fails_cmplx = {'argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                    'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
                    'gausshyper', 'gengamma', 'genhyperbolic',
                    'geninvgauss', 'gennorm', 'genpareto',
@@ -117,7 +117,7 @@ fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                    'powerlaw', 'rdist', 'reciprocal', 'rice',
                    'skewnorm', 't', 'truncweibull_min',
                    'tukeylambda', 'vonmises', 'vonmises_line',
-                   'rv_histogram_instance', 'truncnorm', 'studentized_range'])
+                   'rv_histogram_instance', 'truncnorm', 'studentized_range'}
 
 # rv_histogram instances, with uniform and non-uniform bins;
 # stored as (dist, arg) tuples for cases_test_cont_basic
@@ -256,7 +256,7 @@ def test_levy_stable_random_state_property():
 
 def cases_test_moments():
     fail_normalization = set()
-    fail_higher = set(['ncf'])
+    fail_higher = {'ncf'}
 
     for distname, arg in distcont[:] + histogram_test_instances:
         if distname == 'levy_stable':

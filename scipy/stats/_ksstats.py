@@ -494,7 +494,8 @@ def _kolmogni(n, p, q):
         return x
     x1 = scu._kolmogci(p)/np.sqrt(n)
     x1 = min(x1, 1.0 - 1.0/n)
-    _f = lambda x: _kolmogn(n, x) - p
+    def _f(x):
+        return _kolmogn(n, x) - p
     return scipy.optimize.brentq(_f, 1.0/n, x1, xtol=1e-14)
 
 

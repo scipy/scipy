@@ -1330,8 +1330,10 @@ class dlaplace_gen(rv_discrete):
 
     def _cdf(self, x, a):
         k = floor(x)
-        f = lambda k, a: 1.0 - exp(-a * k) / (exp(a) + 1)
-        f2 = lambda k, a: exp(a * (k+1)) / (exp(a) + 1)
+        def f(k, a):
+            return 1.0 - exp(-a * k) / (exp(a) + 1)
+        def f2(k, a):
+            return exp(a * (k + 1)) / (exp(a) + 1)
         return _lazywhere(k >= 0, (k, a), f=f, f2=f2)
 
     def _ppf(self, q, a):

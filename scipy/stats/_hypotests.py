@@ -94,9 +94,9 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     x, y, t = np.asarray(x), np.asarray(y), np.asarray(t)
     # check if x and y are valid inputs
     if x.ndim > 1:
-        raise ValueError('x must be 1d, but x.ndim equals {}.'.format(x.ndim))
+        raise ValueError(f'x must be 1d, but x.ndim equals {x.ndim}.')
     if y.ndim > 1:
-        raise ValueError('y must be 1d, but y.ndim equals {}.'.format(y.ndim))
+        raise ValueError(f'y must be 1d, but y.ndim equals {y.ndim}.')
     nx, ny = len(x), len(y)
     if (nx < 5) or (ny < 5):
         raise ValueError('x and y should have at least 5 elements, but len(x) '
@@ -109,7 +109,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
 
     # check if t is valid
     if t.ndim > 1:
-        raise ValueError('t must be 1d, but t.ndim equals {}.'.format(t.ndim))
+        raise ValueError(f't must be 1d, but t.ndim equals {t.ndim}.')
     if np.less_equal(t, 0).any():
         raise ValueError('t must contain positive elements only.')
 

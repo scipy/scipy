@@ -443,7 +443,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         N = operator.index(worN)
         del worN
         if N < 0:
-            raise ValueError('worN must be nonnegative, got %s' % (N,))
+            raise ValueError(f'worN must be nonnegative, got {N}')
         lastpoint = 2 * pi if whole else pi
         # if include_nyquist is true and whole is false, w should
         # include end point
@@ -697,16 +697,16 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     if np.any(singular):
         gd[singular] = 0
         warnings.warn(
-            "The group delay is singular at frequencies [{0}], setting to 0".
-            format(", ".join("{0:.3f}".format(ws) for ws in w[singular])),
+            "The group delay is singular at frequencies [{}], setting to 0".
+            format(", ".join(f"{ws:.3f}" for ws in w[singular])),
             stacklevel=2
         )
 
     elif np.any(near_singular):
         warnings.warn(
-            "The filter's denominator is extremely small at frequencies [{0}], \
+            "The filter's denominator is extremely small at frequencies [{}], \
             around which a singularity may be present".
-            format(", ".join("{0:.3f}".format(ws) for ws in w[near_singular])),
+            format(", ".join(f"{ws:.3f}" for ws in w[near_singular])),
             stacklevel=2
         )
 
@@ -2492,7 +2492,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> plt.show()
 
     """
-    ftype, btype, output = [x.lower() for x in (ftype, btype, output)]
+    ftype, btype, output = (x.lower() for x in (ftype, btype, output))
     Wn = asarray(Wn)
     if fs is not None:
         if analog:
@@ -4365,7 +4365,7 @@ def cheb1ap(N, rp):
 
     k = numpy.prod(-p, axis=0).real
     if N % 2 == 0:
-        k = k / sqrt((1 + eps * eps))
+        k = k / sqrt(1 + eps * eps)
 
     return z, p, k
 
@@ -4614,7 +4614,7 @@ def ellipap(N, rp, rs):
 
     k = (numpy.prod(-p, axis=0) / numpy.prod(-z, axis=0)).real
     if N % 2 == 0:
-        k = k / numpy.sqrt((1 + eps_sq))
+        k = k / numpy.sqrt(1 + eps_sq)
 
     return z, p, k
 

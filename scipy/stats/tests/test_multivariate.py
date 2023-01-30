@@ -1780,7 +1780,7 @@ class TestSpecialOrthoGroup:
         #   It is not feasible to consider all pairs, so pick a few.
         els = ((0,0), (0,2), (1,4), (2,3))
         #proj = {(er, ec): [x[er][ec] for x in xs] for er, ec in els}
-        proj = dict(((er, ec), sorted([x[er][ec] for x in xs])) for er, ec in els)
+        proj = {(er, ec): sorted([x[er][ec] for x in xs]) for er, ec in els}
         pairs = [(e0, e1) for e0 in els for e1 in els if e0 > e1]
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
@@ -1860,7 +1860,7 @@ class TestOrthoGroup:
         #   It is not feasible to consider all pairs, so pick a few.
         els = ((0,0), (0,2), (1,4), (2,3))
         #proj = {(er, ec): [x[er][ec] for x in xs] for er, ec in els}
-        proj = dict(((er, ec), sorted([x[er][ec] for x in xs])) for er, ec in els)
+        proj = {(er, ec): sorted([x[er][ec] for x in xs]) for er, ec in els}
         pairs = [(e0, e1) for e0 in els for e1 in els if e0 > e1]
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)

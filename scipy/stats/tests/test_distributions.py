@@ -51,7 +51,7 @@ skip_test_support_gh13294_regression = ['tukeylambda', 'pearson3']
 
 def _assert_hasattr(a, b, msg=None):
     if msg is None:
-        msg = '%s does not have attribute %s' % (a, b)
+        msg = f'{a} does not have attribute {b}'
     assert_(hasattr(a, b), msg=msg)
 
 
@@ -5786,7 +5786,7 @@ class TestWeibull:
         assert_allclose(res, ref)
 
 
-class TestTruncWeibull(object):
+class TestTruncWeibull:
 
     def test_pdf_bounds(self):
         # test bounds
@@ -6230,7 +6230,7 @@ class TestStudentizedRange:
 
     path_prefix = os.path.dirname(__file__)
     relative_path = "data/studentized_range_mpmath_ref.json"
-    with open(os.path.join(path_prefix, relative_path), "r") as file:
+    with open(os.path.join(path_prefix, relative_path)) as file:
         pregenerated_data = json.load(file)
 
     @pytest.mark.parametrize("case_result", pregenerated_data["cdf_data"])

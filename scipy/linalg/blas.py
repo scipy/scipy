@@ -358,7 +358,7 @@ def _get_funcs(names, arrays, dtype,
             module_name = module2[1]
         if func is None:
             raise ValueError(
-                '%s function %s could not be found' % (lib_name, func_name))
+                f'{lib_name} function {func_name} could not be found')
         func.module_name, func.typecode = module_name, prefix
         func.dtype = dtype
         if not ilp64:

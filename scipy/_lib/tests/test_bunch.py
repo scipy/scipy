@@ -1,4 +1,3 @@
-
 import pytest
 import pickle
 from numpy.testing import assert_equal

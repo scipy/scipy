@@ -686,7 +686,7 @@ def _get_axis_len(aname, a, axis):
         ax += a.ndim
     if 0 <= ax < a.ndim:
         return a.shape[ax]
-    raise ValueError("'%saxis' entry is out of bounds" % (aname,))
+    raise ValueError(f"'{aname}axis' entry is out of bounds")
 
 
 def solve_circulant(c, b, singular='raise', tol=None,
