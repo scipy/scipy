@@ -1489,7 +1489,10 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     # Divide out normalization where non-tiny
     if np.sum(norm > 1e-10) != len(norm):
-        warnings.warn("NOLA condition failed, STFT may not be invertible. " + ("Possibly due to missing boundary" if boundary else ""))
+        warnings.warn(
+            "NOLA condition failed, STFT may not be invertible."
+            + (" Possibly due to missing boundary" if boundary else "")
+        )
     x /= np.where(norm > 1e-10, norm, 1.0)
 
     if input_onesided:
