@@ -55,7 +55,7 @@ def f2_2(x):
 
 
 # lru cached function
-@lru_cache()
+@lru_cache
 def f_lrucached(x):
     return x
 
@@ -75,7 +75,7 @@ class TestBasic:
             zero = r.root
             assert_(r.converged)
             assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
-                            err_msg='method %s, function %s' % (name, fname))
+                            err_msg=f'method {name}, function {fname}')
 
     def run_check(self, method, name):
         a = .5
@@ -87,7 +87,7 @@ class TestBasic:
                              full_output=True)
             assert_(r.converged)
             assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
-                            err_msg='method %s, function %s' % (name, fname))
+                            err_msg=f'method {name}, function {fname}')
 
     def run_check_lru_cached(self, method, name):
         # check that https://github.com/scipy/scipy/issues/10846 is fixed
@@ -96,7 +96,7 @@ class TestBasic:
         zero, r = method(f_lrucached, a, b, full_output=True)
         assert_(r.converged)
         assert_allclose(zero, 0,
-                        err_msg='method %s, function %s' % (name, 'f_lrucached'))
+                        err_msg='method {}, function {}'.format(name, 'f_lrucached'))
 
     def _run_one_test(self, tc, method, sig_args_keys=None,
                       sig_kwargs_keys=None, **kwargs):
@@ -393,9 +393,12 @@ class TestBasic:
             assert not results.converged.any()
 
     def test_newton_combined(self):
-        f1 = lambda x: x**2 - 2*x - 1
-        f1_1 = lambda x: 2*x - 2
-        f1_2 = lambda x: 2.0 + 0*x
+        def f1(x):
+            return x ** 2 - 2 * x - 1
+        def f1_1(x):
+            return 2 * x - 2
+        def f1_2(x):
+            return 2.0 + 0 * x
 
         def f1_and_p_and_pp(x):
             return x**2 - 2*x-1, 2*x-2, 2.0
@@ -448,8 +451,10 @@ class TestBasic:
                     x, r = zeros.newton(self.f1, x0, maxiter=iters, disp=True, **kwargs)
 
     def test_deriv_zero_warning(self):
-        func = lambda x: x**2 - 2.0
-        dfunc = lambda x: 2*x
+        def func(x):
+            return x ** 2 - 2.0
+        def dfunc(x):
+            return 2 * x
         assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc, disp=False)
         with pytest.raises(RuntimeError, match='Derivative was zero'):
             zeros.newton(func, 0.0, dfunc)
@@ -903,7 +908,7 @@ def test_gh13407():
     assert f1 < f4
 
     # using old-style syntax to get exactly the same message
-    message = r"rtol too small \(%g < %g\)" % (eps/2, eps)
+    message = fr"rtol too small \({eps/2:g} < {eps:g}\)"
     with pytest.raises(ValueError, match=message):
         zeros.toms748(f, 1e-10, 1e10, xtol=xtol, rtol=eps/2)
 

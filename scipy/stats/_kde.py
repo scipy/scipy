@@ -260,7 +260,7 @@ class gaussian_kde:
                 points = reshape(points, (self.d, 1))
                 m = 1
             else:
-                msg = "points have dimension %s, dataset has dimension %s" % (d,
+                msg = "points have dimension {}, dataset has dimension {}".format(d,
                     self.d)
                 raise ValueError(msg)
 

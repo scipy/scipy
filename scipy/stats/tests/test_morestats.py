@@ -1093,7 +1093,8 @@ class TestFligner:
         # Perturb input to break ties in the transformed data
         # See https://github.com/scipy/scipy/pull/8042 for more details
         rs = np.random.RandomState(123)
-        _perturb = lambda g: (np.asarray(g) + 1e-10*rs.randn(len(g))).tolist()
+        def _perturb(g):
+            return (np.asarray(g) + 1e-10 * rs.randn(len(g))).tolist()
         g1_ = _perturb(g1)
         g2_ = _perturb(g2)
         g3_ = _perturb(g3)

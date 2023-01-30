@@ -31,7 +31,7 @@ def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
         tmp, copied = _fix_shape_1d(tmp, n, axis)
         overwrite_x = overwrite_x or copied
     elif tmp.shape[axis] < 1:
-        raise ValueError("invalid number of data points ({0}) specified"
+        raise ValueError("invalid number of data points ({}) specified"
                          .format(tmp.shape[axis]))
 
     out = (tmp if overwrite_x else None)

@@ -3178,13 +3178,16 @@ def levene(*samples, center='median', proportiontocut=0.05):
     Yci = np.empty(k, 'd')
 
     if center == 'median':
-        func = lambda x: np.median(x, axis=0)
+        def func(x):
+            return np.median(x, axis=0)
     elif center == 'mean':
-        func = lambda x: np.mean(x, axis=0)
+        def func(x):
+            return np.mean(x, axis=0)
     else:  # center == 'trimmed'
         samples = tuple(_stats_py.trimboth(np.sort(sample), proportiontocut)
                         for sample in samples)
-        func = lambda x: np.mean(x, axis=0)
+        def func(x):
+            return np.mean(x, axis=0)
 
     for j in range(k):
         Ni[j] = len(samples[j])
@@ -3568,13 +3571,16 @@ def fligner(*samples, center='median', proportiontocut=0.05):
         raise ValueError("Must enter at least two input sample vectors.")
 
     if center == 'median':
-        func = lambda x: np.median(x, axis=0)
+        def func(x):
+            return np.median(x, axis=0)
     elif center == 'mean':
-        func = lambda x: np.mean(x, axis=0)
+        def func(x):
+            return np.mean(x, axis=0)
     else:  # center == 'trimmed'
         samples = tuple(_stats_py.trimboth(sample, proportiontocut)
                         for sample in samples)
-        func = lambda x: np.mean(x, axis=0)
+        def func(x):
+            return np.mean(x, axis=0)
 
     Ni = asarray([len(samples[j]) for j in range(k)])
     Yci = asarray([func(samples[j]) for j in range(k)])
@@ -4305,8 +4311,8 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     ties_options = ['below', 'above', 'ignore']
     if ties not in ties_options:
-        raise ValueError("invalid 'ties' option '%s'; 'ties' must be one "
-                         "of: %s" % (ties, str(ties_options)[1:-1]))
+        raise ValueError("invalid 'ties' option '{}'; 'ties' must be one "
+                         "of: {}".format(ties, str(ties_options)[1:-1]))
 
     data = [np.asarray(sample) for sample in samples]
 
