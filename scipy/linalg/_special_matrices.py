@@ -547,7 +547,7 @@ def block_diag(*arrs, overlap = 0):
 
     shapes = np.array([a.shape for a in arrs])
     out_dtype = np.result_type(*[arr.dtype for arr in arrs])
-    total_overlap = (len(blocks) - 1) * overlap
+    total_overlap = (len(arrs) - 1) * overlap
     out_shape = tuple(np.sum(shapes, axis=0) - total_overlap)
     out = np.zeros(out_shape, dtype=out_dtype)
 
