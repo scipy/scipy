@@ -1,5 +1,3 @@
-:orphan:
-
 .. _using-git:
 .. _git-development:
 
