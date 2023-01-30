@@ -1,6 +1,7 @@
 import warnings
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
+                           assert_array_equal)
 from pytest import raises as assert_raises
 from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
                                   bellman_ford, construct_dist_matrix,
@@ -14,6 +15,7 @@ directed_G = np.array([[0, 3, 3, 0, 0],
                        [1, 0, 0, 0, 0],
                        [2, 0, 0, 2, 0]], dtype=float)
 
+# Undirected version of directed_G
 undirected_G = np.array([[0, 3, 3, 1, 2],
                          [3, 0, 0, 2, 4],
                          [3, 0, 0, 0, 0],
@@ -22,12 +24,42 @@ undirected_G = np.array([[0, 3, 3, 1, 2],
 
 unweighted_G = (directed_G > 0).astype(float)
 
+# Correct shortest path lengths for directed_G and undirected_G
 directed_SP = [[0, 3, 3, 5, 7],
                [3, 0, 6, 2, 4],
                [np.inf, np.inf, 0, np.inf, np.inf],
                [1, 4, 4, 0, 8],
                [2, 5, 5, 2, 0]]
 
+undirected_SP = np.array([[0, 3, 3, 1, 2],
+                          [3, 0, 6, 2, 4],
+                          [3, 6, 0, 4, 5],
+                          [1, 2, 4, 0, 2],
+                          [2, 4, 5, 2, 0]], dtype=float)
+
+undirected_SP_limit_2 = np.array([[0, np.inf, np.inf, 1, 2],
+                                  [np.inf, 0, np.inf, 2, np.inf],
+                                  [np.inf, np.inf, 0, np.inf, np.inf],
+                                  [1, 2, np.inf, 0, 2],
+                                  [2, np.inf, np.inf, 2, 0]], dtype=float)
+
+undirected_SP_limit_0 = np.ones((5, 5), dtype=float) - np.eye(5)
+undirected_SP_limit_0[undirected_SP_limit_0 > 0] = np.inf
+
+# Correct predecessors for directed_G and undirected_G
+directed_pred = np.array([[-9999, 0, 0, 1, 1],
+                          [3, -9999, 0, 1, 1],
+                          [-9999, -9999, -9999, -9999, -9999],
+                          [3, 0, 0, -9999, 1],
+                          [4, 0, 0, 4, -9999]], dtype=float)
+
+undirected_pred = np.array([[-9999, 0, 0, 0, 0],
+                            [1, -9999, 0, 1, 1],
+                            [2, 0, -9999, 0, 0],
+                            [3, 3, 0, -9999, 3],
+                            [4, 4, 0, 4, -9999]], dtype=float)
+
+# Other graphs
 directed_sparse_zero_G = scipy.sparse.csr_matrix(([0, 1, 2, 3, 1], 
                                             ([0, 1, 2, 3, 4], 
                                              [1, 2, 0, 4, 3])), 
@@ -49,33 +81,6 @@ undirected_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
                         [1, 1, 0, np.inf, np.inf],
                         [np.inf, np.inf, np.inf, 0, 1],
                         [np.inf, np.inf, np.inf, 1, 0]]
-
-directed_pred = np.array([[-9999, 0, 0, 1, 1],
-                          [3, -9999, 0, 1, 1],
-                          [-9999, -9999, -9999, -9999, -9999],
-                          [3, 0, 0, -9999, 1],
-                          [4, 0, 0, 4, -9999]], dtype=float)
-
-undirected_SP = np.array([[0, 3, 3, 1, 2],
-                          [3, 0, 6, 2, 4],
-                          [3, 6, 0, 4, 5],
-                          [1, 2, 4, 0, 2],
-                          [2, 4, 5, 2, 0]], dtype=float)
-
-undirected_SP_limit_2 = np.array([[0, np.inf, np.inf, 1, 2],
-                                  [np.inf, 0, np.inf, 2, np.inf],
-                                  [np.inf, np.inf, 0, np.inf, np.inf],
-                                  [1, 2, np.inf, 0, 2],
-                                  [2, np.inf, np.inf, 2, 0]], dtype=float)
-
-undirected_SP_limit_0 = np.ones((5, 5), dtype=float) - np.eye(5)
-undirected_SP_limit_0[undirected_SP_limit_0 > 0] = np.inf
-
-undirected_pred = np.array([[-9999, 0, 0, 0, 0],
-                            [1, -9999, 0, 1, 1],
-                            [2, 0, -9999, 0, 0],
-                            [3, 3, 0, -9999, 3],
-                            [4, 4, 0, 4, -9999]], dtype=float)
 
 methods = ['auto', 'FW', 'D', 'BF', 'J']
 
@@ -176,7 +181,7 @@ def test_dijkstra_indices_min_only(directed, SP_ans, indices):
 
 
 @pytest.mark.parametrize('n', (10, 100, 1000))
-def test_shortest_path_min_only_random(n):
+def test_dijkstra_min_only_random(n):
     np.random.seed(1234)
     data = scipy.sparse.rand(n, n, density=0.5, format='lil',
                              random_state=42, dtype=np.float64)
@@ -186,7 +191,7 @@ def test_shortest_path_min_only_random(n):
     np.random.shuffle(v)
     indices = v[:int(n*.1)]
     ds, pred, sources = dijkstra(data,
-                                 directed=False,
+                                 directed=True,
                                  indices=indices,
                                  min_only=True,
                                  return_predecessors=True)
@@ -197,6 +202,50 @@ def test_shortest_path_min_only_random(n):
             assert sources[p] == s
             p = pred[p]
 
+
+# n : number of vertices
+# t : number of test cases
+# Generate random graphs, run shortest_path for all methods, verify the results
+# and check consistency across different methods.
+@pytest.mark.parametrize('n, t',
+                         ((3, 200),
+                          (10, 200),
+                          (100, 10),
+                          (500, 1)))
+def test_shortest_path_random(n, t):
+    np.random.seed(1234)
+    for testcase_index in range(t):
+        data = scipy.sparse.rand(n, n, density=0.5, format='lil',
+                                 random_state=42, dtype=np.float64)
+        data.setdiag(np.zeros(n, dtype=np.bool_))
+        adj_mat = data.toarray(order='C')
+        start_vertex = np.random.randint(0, n)
+        # each element: (method name, distance array, predecessor array)
+        results = []
+        for method in methods:
+            results.append((method, *shortest_path(data, directed=True,
+                                                   indices=start_vertex,
+                                                   return_predecessors=True)))
+
+        for method, dist, pred in results:
+            # check that dist and pred are consistent
+            for i in range(n):
+                if pred[i] != -9999:  # vertex #i is reachable
+                    cur = i
+                    while pred[cur] != -9999:
+                        p = pred[cur]
+                        assert_almost_equal(dist[p] +
+                                            adj_mat[p][cur],
+                                            dist[cur])
+                        cur = pred[cur]
+                    assert cur == start_vertex
+            # check that further relaxation of an edge is not possible
+            for i in range(n):
+                for j in range(n):
+                    if adj_mat[i][j] != 0:
+                        assert dist[j] <= dist[i] + adj_mat[i][j]
+            # check that dist is consistent across methods
+            assert_almost_equal(results[0][1], dist)
 
 def test_shortest_path_indices():
     indices = np.arange(4)

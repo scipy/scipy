@@ -237,7 +237,7 @@ scipy/signal/_bspline_util.c
 scipy/sparse/_csparsetools.c
 scipy/sparse/_csparsetools.pyx
 scipy/sparse/csgraph/_min_spanning_tree.c
-scipy/sparse/csgraph/_shortest_path.c
+scipy/sparse/csgraph/_shortest_path.cxx
 scipy/sparse/csgraph/_tools.c
 scipy/sparse/csgraph/_traversal.c
 scipy/sparse/csgraph/_flow.c
