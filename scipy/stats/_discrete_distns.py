@@ -355,16 +355,11 @@ class nbinom_gen(rv_discrete):
         return _boost._nbinom_sf(k, n, p)
 
     def _isf(self, x, n, p):
-        with warnings.catch_warnings():
-            # See gh-14901
-            message = "overflow encountered in _nbinom_isf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _boost._nbinom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
-        with warnings.catch_warnings():
-            message = "overflow encountered in _nbinom_ppf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _boost._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
