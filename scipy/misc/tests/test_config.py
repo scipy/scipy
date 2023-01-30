@@ -3,7 +3,7 @@ Check the SciPy config is valid.
 """
 import scipy
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 pytestmark = pytest.mark.skipif(
     not hasattr(scipy.__config__, "_built_with_meson"),
