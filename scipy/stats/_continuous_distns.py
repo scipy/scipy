@@ -7702,6 +7702,9 @@ class powerlognorm_gen(rv_continuous):
     def _ppf(self, q, c, s):
         return np.exp(-s * _norm_ppf(pow(1.0 - q, 1.0 / c)))
 
+    def _sf(self, x, c, s):
+        return pow(_norm_cdf(-np.log(x)/s), c)
+
 
 powerlognorm = powerlognorm_gen(a=0.0, name="powerlognorm")
 
