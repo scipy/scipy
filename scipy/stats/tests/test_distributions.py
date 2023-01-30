@@ -3423,9 +3423,9 @@ class TestGamma:
 class TestDgamma:
 
     @pytest.mark.parametrize("a, ref",
-        [(1.5, 1.0270599779677059133961009210879535697101136043939368),
-        (1.3, 0.96786481885606238222931601588162960164284436511601369),
-        (1.1, 0.89282511667060667043667607898469404771511386219175776)])
+        [(1.5, 2.0541199559354118267922018421759071394202272087878735),
+        (1.3, 1.9357296377121247644586320317632592032856887302320274),
+        (1.1, 1.7856502333412133408733521579693880954302277243835155)])
     def test_entropy(self, a, ref):
         #The reference values were calculated with mpmath:
         #def entropy_dgamma(a):
@@ -3436,7 +3436,7 @@ class TestDgamma:
         #       h = A * B * C
         #       return h
         #
-        #   return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [0, mp.inf])
+        #   return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [-mp.inf, mp.inf])
         assert_allclose(stats.dgamma._entropy(a), ref)
 
     def test_entropy_overflow(self):
