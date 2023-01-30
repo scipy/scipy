@@ -427,6 +427,7 @@ tests) are listed above.
    :toctree: generated/
 
    combine_pvalues
+   false_discovery_control
 
 Deprecated and Legacy Functions
 -------------------------------
