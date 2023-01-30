@@ -3,7 +3,6 @@
 #          SciPy Developers 2004-2011
 #
 from functools import partial
-import warnings
 
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
