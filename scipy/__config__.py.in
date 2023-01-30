@@ -43,6 +43,16 @@ CONFIG = _cleanup(
                 "version": "@CPP_COMP_VERSION@",
                 "commands": "@CPP_COMP_CMD_ARRAY@",
             },
+            "fortran": {
+                "name": "@FORTRAN_COMP@",
+                "linker": "@FORTRAN_COMP_LINKER_ID@",
+                "version": "@FORTRAN_COMP_VERSION@",
+                "commands": "@FORTRAN_COMP_CMD_ARRAY@",
+            },
+            "pythran": {
+                "version": "@PYTHRAN_VERSION@",
+                "include directory": "@PYTHRAN_INCDIR@"
+            },
         },
         "Machine Information": {
             "host": {

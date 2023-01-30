@@ -134,6 +134,7 @@ endif
 blas = dependency(blas_name)
 lapack = dependency(lapack_name)
 
+# TODO: Add `pybind11` when available as a dependency
 dependency_map = {
   'BLAS': blas,
   'LAPACK': lapack,
@@ -299,6 +300,7 @@ compilers = {
   'C': cc,
   'CPP': cpp,
   'CYTHON': meson.get_compiler('cython'),
+  'FORTRAN': meson.get_compiler('fortran')
 }
 
 machines = {
@@ -317,6 +319,12 @@ foreach name, compiler : compilers
   conf_data.set(name + '_COMP_VERSION', compiler.version())
   conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
 endforeach
+# Add `pythran` information if present
+if use_pythran
+  pythran_version_command = run_command('pythran', '-V', check: true)
+  conf_data.set('PYTHRAN_VERSION', pythran_version_command.stdout().strip())
+  conf_data.set('PYTHRAN_INCDIR', incdir_pythran)
+endif
 
 # Machines CPU and system information
 foreach name, machine : machines
