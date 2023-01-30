@@ -304,7 +304,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         A function or method to compute the Jacobian of func with derivatives
         across the rows. If this is None, the Jacobian will be estimated.
     full_output : bool, optional
-        If truthy, return all optional outputs (not just `x` and `ier`).
+        If ``True``, return all optional outputs (not just `x` and `ier`).
     col_deriv : bool, optional
         If truthy, specify that the Jacobian function computes derivatives
         down the columns (faster, because there is no transpose operation).
