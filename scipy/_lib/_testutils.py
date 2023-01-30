@@ -162,14 +162,14 @@ def check_free_memory(free_mb):
 
     try:
         mem_free = _parse_size(os.environ['SCIPY_AVAILABLE_MEM'])
-        msg = '{0} MB memory required, but environment SCIPY_AVAILABLE_MEM={1}'.format(
+        msg = '{} MB memory required, but environment SCIPY_AVAILABLE_MEM={}'.format(
             free_mb, os.environ['SCIPY_AVAILABLE_MEM'])
     except KeyError:
         mem_free = _get_mem_available()
         if mem_free is None:
             pytest.skip("Could not determine available memory; set SCIPY_AVAILABLE_MEM "
                         "variable to free memory in MB to run the test.")
-        msg = '{0} MB memory required, but {1} MB available'.format(
+        msg = '{} MB memory required, but {} MB available'.format(
             free_mb, mem_free/1e6)
 
     if mem_free < free_mb * 1e6:
@@ -182,7 +182,7 @@ def _parse_size(size_str):
                 'k': 1e3, 'M': 1e6, 'G': 1e9, 'T': 1e12,
                 'kb': 1e3, 'Mb': 1e6, 'Gb': 1e9, 'Tb': 1e12,
                 'kib': 1024.0, 'Mib': 1024.0**2, 'Gib': 1024.0**3, 'Tib': 1024.0**4}
-    m = re.match(r'^\s*(\d+)\s*({0})\s*$'.format('|'.join(suffixes.keys())),
+    m = re.match(r'^\s*(\d+)\s*({})\s*$'.format('|'.join(suffixes.keys())),
                  size_str,
                  re.I)
     if not m or m.group(2) not in suffixes:
@@ -203,7 +203,7 @@ def _get_mem_available():
 
     if sys.platform.startswith('linux'):
         info = {}
-        with open('/proc/meminfo', 'r') as f:
+        with open('/proc/meminfo') as f:
             for line in f:
                 p = line.split()
                 info[p[0].strip(':').lower()] = float(p[1]) * 1e3

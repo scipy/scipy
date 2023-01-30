@@ -177,9 +177,6 @@ change is made.
    spatial
    special
    stats
-   stats.mstats
-   stats.qmc
-   stats.sampling
    ccallback
 
 SciPy structure

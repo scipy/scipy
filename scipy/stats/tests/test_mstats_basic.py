@@ -815,7 +815,7 @@ class TestVariability:
         desired_unmaskedvals = ([-1.3416407864999, -0.44721359549996,
                                  0.44721359549996, 1.3416407864999])
         assert_array_almost_equal(desired_unmaskedvals,
-                                  y.data[y.mask == False], decimal=12)
+                                  y.data[y.mask == False], decimal=12)  # noqa: E712
 
     def test_zscore(self):
         # This is not in R, so tested by using:
@@ -1077,7 +1077,7 @@ class TestNormalitytests():
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, ma=True)
 
-    def regression_test_9033(self):
+    def test_regression_9033(self):
         # x cleary non-normal but power of negtative denom needs
         # to be handled correctly to reject normality
         counts = [128, 0, 58, 7, 0, 41, 16, 0, 0, 167]
@@ -1768,8 +1768,8 @@ class TestCompareWithStats:
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
 
-                assert_allclose(r[0][0], rm[0][0], rtol=2e-15)
-                assert_allclose(r[0][1], rm[0][1], rtol=1e-15)
+                assert_allclose(r[0][0], rm[0][0], rtol=1e-14)
+                assert_allclose(r[0][1], rm[0][1], rtol=1e-14)
 
     def test_normaltest(self):
         with np.errstate(over='raise'), suppress_warnings() as sup:
@@ -1818,7 +1818,7 @@ class TestCompareWithStats:
     def test_ks_1samp(self):
         """Checks that mstats.ks_1samp and stats.ks_1samp agree on masked arrays."""
         for mode in ['auto', 'exact', 'asymp']:
-            with suppress_warnings() as sup:
+            with suppress_warnings():
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
@@ -1831,7 +1831,7 @@ class TestCompareWithStats:
     def test_kstest_1samp(self):
         """Checks that 1-sample mstats.kstest and stats.kstest agree on masked arrays."""
         for mode in ['auto', 'exact', 'asymp']:
-            with suppress_warnings() as sup:
+            with suppress_warnings():
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)

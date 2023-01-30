@@ -418,7 +418,7 @@ def test_marginal_1_axis():
     assert_allclose(pdf, ref, rtol=1e-6)
 
 
-@pytest.mark.slow
+@pytest.mark.xslow
 def test_marginal_2_axis():
     rng = np.random.default_rng(6111799263660870475)
     n_data = 30

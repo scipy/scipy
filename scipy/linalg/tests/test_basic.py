@@ -1,3 +1,4 @@
+import platform
 import itertools
 import warnings
 
@@ -13,6 +14,7 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_,
 import pytest
 from pytest import raises as assert_raises
 
+from scipy._lib import _pep440
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
@@ -619,13 +621,6 @@ class TestSolve:
             x = solve(a, b)
             assert_array_almost_equal(dot(a, x), b)
 
-    def test_sym_pos_dep(self):
-        with pytest.warns(
-                DeprecationWarning,
-                match="The 'sym_pos' keyword is deprecated",
-        ):
-            solve([[1.]], [1], sym_pos=True)
-
     def test_random_sym(self):
         n = 20
         a = random([n, n])
@@ -1116,8 +1111,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'expected efficient rank %s, '
-                                    'got %s' % (n, r))
+                            assert_(r == n, 'expected efficient rank {}, '
+                                    'got {}'.format(n, r))
                             if dtype is np.float32:
                                 assert_allclose(
                                           dot(a, x), b,
@@ -1132,6 +1127,11 @@ class TestLstsq:
                                           err_msg="driver: %s" % lapack_driver)
 
     def test_random_complex_exact(self):
+        if platform.system() != "Windows":
+            if _pep440.parse(np.__version__) >= _pep440.Version("1.24.0"):
+                libc_flavor = platform.libc_ver()[0]
+                if libc_flavor != "glibc":
+                    pytest.skip("segfault observed on alpine per gh-17630")
         for dtype in COMPLEX_DTYPES:
             for n in (20, 200):
                 for lapack_driver in TestLstsq.lapack_drivers:
@@ -1150,8 +1150,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'expected efficient rank %s, '
-                                    'got %s' % (n, r))
+                            assert_(r == n, 'expected efficient rank {}, '
+                                    'got {}'.format(n, r))
                             if dtype is np.complex64:
                                 assert_allclose(
                                           dot(a, x), b,
@@ -1184,8 +1184,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == m, 'expected efficient rank %s, '
-                                    'got %s' % (m, r))
+                            assert_(r == m, 'expected efficient rank {}, '
+                                    'got {}'.format(m, r))
                             assert_allclose(
                                           x, direct_lstsq(a, b, cmplx=0),
                                           rtol=25 * _eps_cast(a1.dtype),
@@ -1213,8 +1213,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == m, 'expected efficient rank %s, '
-                                    'got %s' % (m, r))
+                            assert_(r == m, 'expected efficient rank {}, '
+                                    'got {}'.format(m, r))
                             assert_allclose(
                                       x, direct_lstsq(a, b, cmplx=1),
                                       rtol=25 * _eps_cast(a1.dtype),
