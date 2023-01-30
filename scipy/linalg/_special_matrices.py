@@ -467,7 +467,7 @@ def kron(a, b):
     return np.concatenate(np.concatenate(o, axis=1), axis=1)
 
 
-def block_diag(*arrs):
+def block_diag(*arrs, overlap = 0):
     """
     Create a block diagonal matrix from provided arrays.
 
@@ -483,6 +483,9 @@ def block_diag(*arrs):
     A, B, C, ... : array_like, up to 2-D
         Input arrays.  A 1-D array or array_like sequence of length `n` is
         treated as a 2-D array with shape ``(1,n)``.
+    overlap : int
+        The number of elements that should overlap additively on the resulting
+        diagonal.
 
     Returns
     -------
@@ -527,6 +530,10 @@ def block_diag(*arrs):
            [ 0.,  2.,  3.,  0.,  0.],
            [ 0.,  0.,  0.,  4.,  5.],
            [ 0.,  0.,  0.,  6.,  7.]])
+    >>> block_diag(A, B, overlap=1)
+    array([[1, 0, 0, 0],
+           [0, 4, 4, 5],
+           [0, 6, 7, 8]])
 
     """
     if arrs == ():
@@ -540,13 +547,15 @@ def block_diag(*arrs):
 
     shapes = np.array([a.shape for a in arrs])
     out_dtype = np.result_type(*[arr.dtype for arr in arrs])
-    out = np.zeros(np.sum(shapes, axis=0), dtype=out_dtype)
+    total_overlap = (len(blocks) - 1) * overlap
+    out_shape = tuple(np.sum(shapes, axis=0) - total_overlap)
+    out = np.zeros(out_shape, dtype=out_dtype)
 
     r, c = 0, 0
     for i, (rr, cc) in enumerate(shapes):
         out[r:r + rr, c:c + cc] = arrs[i]
-        r += rr
-        c += cc
+        r += rr - overlap
+        c += cc - overlap
     return out
 
 
