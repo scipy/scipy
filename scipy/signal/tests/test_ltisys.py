@@ -13,7 +13,6 @@ from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           TransferFunction, StateSpace, ZerosPolesGain)
 from scipy.signal._filter_design import BadCoefficients
 import scipy.linalg as linalg
-from scipy.sparse._sputils import matrix
 
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):

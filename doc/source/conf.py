@@ -1,16 +1,14 @@
-# -*- coding: utf-8 -*-
-import sys, os, re
-import glob
+import sys
+import os
+import re
 from datetime import date
 import warnings
-
-import numpy as np
 
 # Currently required to build scipy.fft docs
 os.environ['_SCIPY_BUILDING_DOC'] = 'True'
 
 # Check Sphinx version
-import sphinx
+import sphinx  # noqa: E402
 if sphinx.__version__ < "2.0":
     raise RuntimeError("Sphinx 2.0 or newer required")
 
@@ -18,8 +16,8 @@ needs_sphinx = '2.0'
 
 # Workaround for sphinx-doc/sphinx#6573
 # ua._Function should not be treated as an attribute
-from sphinx.util import inspect
-import scipy._lib.uarray as ua
+from sphinx.util import inspect  # noqa: E402
+import scipy._lib.uarray as ua  # noqa: E402
 from scipy.stats._distn_infrastructure import rv_generic  # noqa: E402
 from scipy.stats._multivariate import multi_rv_generic  # noqa: E402
 old_isdesc = inspect.isdescriptor
@@ -52,14 +50,14 @@ extensions = [
 
 # Determine if the matplotlib has a recent enough version of the
 # plot_directive.
-from matplotlib.sphinxext import plot_directive
+from matplotlib.sphinxext import plot_directive  # noqa: E402
 if plot_directive.__version__ < 2:
     raise RuntimeError("You need a recent enough version of matplotlib")
 # Do some matplotlib config in case users have a matplotlibrc that will break
 # things
-import matplotlib
+import matplotlib  # noqa: E402
 matplotlib.use('agg')
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # noqa: E402
 plt.ioff()
 
 # Add any paths that contain templates here, relative to this directory.
@@ -77,7 +75,7 @@ copyright = '2008-%s, The SciPy community' % date.today().year
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
-import scipy
+import scipy  # noqa: E402
 version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
 release = scipy.__version__
 
@@ -86,7 +84,7 @@ if os.environ.get('CIRCLE_JOB', False) and \
     version = os.environ['CIRCLE_BRANCH']
     release = version
 
-print("%s (VERSION %s)" % (project, version))
+print(f"{project} (VERSION {version})")
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -192,7 +190,7 @@ html_theme_options = {
 if 'dev' in version:
     html_theme_options["switcher"]["version_match"] = "dev"
 
-if 'versionwarning' in tags:
+if 'versionwarning' in tags:  #F821
     # Specific to docs.scipy.org deployment.
     # See https://github.com/scipy/docs.scipy.org/blob/main/_static/versionwarning.js_t
     src = ('var script = document.createElement("script");\n'
@@ -204,7 +202,7 @@ if 'versionwarning' in tags:
     }
     html_js_files = ['versioncheck.js']
 
-html_title = "%s v%s Manual" % (project, version)
+html_title = f"{project} v{version} Manual"
 html_static_path = ['_static']
 html_last_updated_fmt = '%b %d, %Y'
 
@@ -317,7 +315,7 @@ plot_formats = [('png', 96)]
 plot_html_show_formats = False
 plot_html_show_source_link = False
 
-import math
+import math  # noqa: E402
 phi = (math.sqrt(5) + 1)/2
 
 font_size = 13*72/96.0  # 13 px
@@ -342,9 +340,9 @@ plot_rcparams = {
 # Source code links
 # -----------------------------------------------------------------------------
 
-import re
-import inspect
-from os.path import relpath, dirname
+import re  # noqa: E402
+import inspect  # noqa: E402
+from os.path import relpath, dirname  # noqa: E402
 
 for name in ['sphinx.ext.linkcode', 'linkcode', 'numpydoc.linkcode']:
     try:
@@ -411,14 +409,12 @@ def linkcode_resolve(domain, info):
 
     if fn.startswith('scipy/'):
         m = re.match(r'^.*dev0\+([a-f0-9]+)$', scipy.__version__)
+        prefix = "https://github.com/scipy/scipy/blob"
         if m:
-            return "https://github.com/scipy/scipy/blob/%s/%s%s" % (
-                m.group(1), fn, linespec)
+            return f"{prefix}/{m.group(1)}/{fn}{linespec}"
         elif 'dev' in scipy.__version__:
-            return "https://github.com/scipy/scipy/blob/main/%s%s" % (
-                fn, linespec)
+            return f"{prefix}/main/{fn}{linespec}"
         else:
-            return "https://github.com/scipy/scipy/blob/v%s/%s%s" % (
-                scipy.__version__, fn, linespec)
+            return f"{prefix}/v{scipy.__version__}/{fn}{linespec}"
     else:
         return None
