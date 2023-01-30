@@ -342,7 +342,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
         which means the curvature in parameters `x` is numerically flat. To
         obtain the covariance matrix of the parameters `x`, `cov_x` must be
         multiplied by the variance of the residuals -- see curve_fit. Only
-        returned if `full_output` is set.
+        returned if `full_output` is ``True``.
     infodict : dict
         a dictionary of optional outputs with the keys:
 
@@ -366,10 +366,10 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
         ``qtf``
             The vector (transpose(q) * fvec).
 
-        Only returned if `full_output` is set.
+        Only returned if `full_output` is ``True``.
     mesg : str
         A string message giving information about the cause of failure.
-        Only returned if `full_output` is set.
+        Only returned if `full_output` is ``True``.
     ier : int
         An integer flag. If it is equal to 1, 2, 3 or 4, the solution was
         found. Otherwise, the solution was not found. In either case, the
