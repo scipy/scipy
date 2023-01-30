@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
@@ -3297,7 +3296,7 @@ class erlang_gen(gamma_gen):
             # shape parameter, so warn the user.
             warnings.warn(
                 'The shape parameter of the erlang distribution '
-                'has been given a non-integer value %r.' % (a,),
+                f'has been given a non-integer value {a}.',
                 RuntimeWarning)
         return a > 0
 
@@ -3648,7 +3647,7 @@ class genhyperbolic_gen(rv_continuous):
         # make integers perpendicular to existing dimensions
         integers = integers.reshape(integers.shape + (1,) * p.ndim)
         b0, b1, b2, b3, b4 = sc.kv(p + integers, t1)
-        r1, r2, r3, r4 = [b / b0 for b in (b1, b2, b3, b4)]
+        r1, r2, r3, r4 = (b / b0 for b in (b1, b2, b3, b4))
 
         m = b * t2 * r1
         v = (
@@ -5809,7 +5808,7 @@ class lognorm_gen(rv_continuous):
         p = np.exp(s*s)
         mu = np.sqrt(p)
         mu2 = p*(p-1)
-        g1 = np.sqrt((p-1))*(2+p)
+        g1 = np.sqrt(p-1)*(2+p)
         g2 = np.polyval([1, 2, 3, 0, -6.0], p)
         return mu, mu2, g1, g2
 
@@ -5941,7 +5940,7 @@ class gibrat_gen(rv_continuous):
         p = np.e
         mu = np.sqrt(p)
         mu2 = p * (p - 1)
-        g1 = np.sqrt((p - 1)) * (2 + p)
+        g1 = np.sqrt(p - 1) * (2 + p)
         g2 = np.polyval([1, 2, 3, 0, -6.0], p)
         return mu, mu2, g1, g2
 

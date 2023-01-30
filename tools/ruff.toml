@@ -19,6 +19,7 @@ target-version = "py38"
 "scipy/linalg/blas.py" = ["F403", "E402"]
 "scipy/linalg/lapack.py" = ["F403", "E402", "F405"]
 "scipy/stats/distributions.py" = ["F403", "F405"]
+"scipy/stats/_continuous_distns.py" = ["E731", "UP008"]
 "scipy/stats/mstats.py" = ["F403"]
 "scipy/stats/qmc.py" = ["F403"]
 
