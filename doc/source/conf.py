@@ -190,7 +190,7 @@ html_theme_options = {
 if 'dev' in version:
     html_theme_options["switcher"]["version_match"] = "dev"
 
-if 'versionwarning' in tags:  #F821
+if 'versionwarning' in tags:  #noqa: F821
     # Specific to docs.scipy.org deployment.
     # See https://github.com/scipy/docs.scipy.org/blob/main/_static/versionwarning.js_t
     src = ('var script = document.createElement("script");\n'
