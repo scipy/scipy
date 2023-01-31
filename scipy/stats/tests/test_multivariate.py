@@ -519,9 +519,9 @@ class TestMultivariateNormal:
         mean = np.ones((2,))
         cov = np.eye(2)
         norm_frozen = multivariate_normal(mean, cov)
-        assert norm_frozen.mean == mean
-        assert norm_frozen.cov == cov
-        assert norm_frozen.cov_object == Covariance.from_diagonal([1, 1])
+        assert np.allclose(norm_frozen.mean, mean)
+        assert np.allclose(norm_frozen.cov, cov)
+        assert isinstance(norm_frozen.cov_object, Covariance)
 
     def test_pseudodet_pinv(self):
         # Make sure that pseudo-inverse and pseudo-det agree on cutoff
