@@ -33,7 +33,7 @@ Submodules
 `datasets`     Load SciPy datasets
 `fft`          Discrete Fourier and related transforms
 `fftpack`      Discrete Fourier transforms (legacy)
-`integrate`    Numerical integration
+`integrate`    Numerical integration and ODEs
 `interpolate`  Interpolation
 `io`           Scientific data format reading and writing
 `linalg`       Linear algebra functionality
