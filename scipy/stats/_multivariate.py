@@ -305,6 +305,15 @@ class multivariate_normal_gen(multi_rv_generic):
     entropy()
         Compute the differential entropy of the multivariate normal.
 
+    Attributes
+    ----------
+    mean : ndarray
+        Mean of the distribution.
+    cov : ndarray
+        Covariance matrix of the distribution.
+    cov_object : Covariance
+        Representation of the covariance matrix as a Covariance object.
+
     Parameters
     ----------
     %(_mvn_doc_default_callparams)s
@@ -819,6 +828,15 @@ class multivariate_normal_frozen(multi_rv_frozen):
         releps : float, optional
             Relative error tolerance for the cumulative distribution function
             (default 1e-5)
+
+        Attributes
+        ----------
+        mean : ndarray
+            Mean of the distribution.
+        cov : ndarray
+            Covariance matrix of the distribution.
+        cov_object : Covariance
+            Representation of the covariance matrix as a Covariance object.
 
         Examples
         --------
