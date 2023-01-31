@@ -513,6 +513,15 @@ class TestMultivariateNormal:
         assert_allclose(norm_frozen.cdf(x), multivariate_normal.cdf(x, mean, cov))
         assert_allclose(norm_frozen.logcdf(x),
                         multivariate_normal.logcdf(x, mean, cov))
+    
+    def test_frozen_multivariate_normal_exposes_attributes(self):
+        np.random.seed(1234)
+        mean = np.ones((2,))
+        cov = np.eye(2)
+        norm_frozen = multivariate_normal(mean, cov)
+        assert norm_frozen.mean == mean
+        assert norm_frozen.cov == cov
+        assert norm_frozen.cov_object == Covariance.from_diagonal([1, 1])
 
     def test_pseudodet_pinv(self):
         # Make sure that pseudo-inverse and pseudo-det agree on cutoff
@@ -898,10 +907,7 @@ class TestMatrixNormal:
                 pdf2 = matrix_normal.pdf(X, mean=M, rowcov=U, colcov=V)
                 assert_equal(pdf1, pdf2)
 
-                logpdf1 = frozen.logpdf(X)
-                logpdf2 = matrix_normal.logpdf(X, mean=M, rowcov=U, colcov=V)
-                assert_equal(logpdf1, logpdf2)
-
+                logpdf1 = frozen.logpdTestCovariance
     def test_matches_multivariate(self):
         # Check that the pdfs match those obtained by vectorising and
         # treating as a multivariate normal.
