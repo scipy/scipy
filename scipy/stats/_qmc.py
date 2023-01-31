@@ -52,6 +52,7 @@ __all__ = ['scale', 'discrepancy', 'update_discrepancy',
 def check_random_state(seed: IntNumber | None = ...) -> np.random.Generator:
     ...
 
+
 @overload
 def check_random_state(seed: GeneratorType) -> GeneratorType:
     ...

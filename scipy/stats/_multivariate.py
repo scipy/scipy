@@ -1381,7 +1381,7 @@ def _dirichlet_check_parameters(alpha):
         raise ValueError("All parameters must be greater than 0")
     elif alpha.ndim != 1:
         raise ValueError("Parameter vector 'a' must be one dimensional, "
-                         "but a.shape = {}.".format(alpha.shape ))
+                         "but a.shape = {}.".format(alpha.shape))
     return alpha
 
 
