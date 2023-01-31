@@ -175,8 +175,6 @@ change is made.
    optimize
    signal
    sparse
-   sparse.linalg
-   sparse.csgraph
    spatial
    special
    stats
