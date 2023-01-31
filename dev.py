@@ -881,7 +881,12 @@ class Bench(Task):
 # linters
 
 def emit_cmdstr(cmd):
-    """Print the command that's being run to stdout"""
+    """Print the command that's being run to stdout
+
+    Note: cannot use this in the below tasks (yet), because as is these command
+    strings are always echoed to the console, even if the command isn't run
+    (but for example the `build` command is run).
+    """
     console = Console(theme=console_theme)
     # The [cmd] square brackets controls the font styling, typically in italics
     # to differentiate it from other stdout content
@@ -891,7 +896,7 @@ def emit_cmdstr(cmd):
 def task_lint():
     # Lint just the diff since branching off of main using a
     # stricter configuration.
-    emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
+    # emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
     return {
         'basename': 'lint',
         'actions': [str(Dirs().root / 'tools' / 'lint.py') +
@@ -901,7 +906,7 @@ def task_lint():
 
 
 def task_unicode_check():
-    emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
+    # emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
     return {
         'basename': 'unicode-check',
         'actions': [str(Dirs().root / 'tools' / 'unicode-check.py')],
@@ -911,7 +916,7 @@ def task_unicode_check():
 
 
 def task_check_test_name():
-    emit_cmdstr(os.path.join('tools', 'check_test_name.py'))
+    # emit_cmdstr(os.path.join('tools', 'check_test_name.py'))
     return {
         "basename": "check-testname",
         "actions": [str(Dirs().root / "tools" / "check_test_name.py")],

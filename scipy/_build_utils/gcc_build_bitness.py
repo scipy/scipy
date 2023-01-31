@@ -3,11 +3,11 @@
 """
 
 import re
-from subprocess import run, PIPE
+from subprocess import run
 
 def main():
     res = run(['gcc', '-v'], check=True, text=True,
-              stdout=PIPE, stderr=PIPE)
+              capture_output=True)
     target = re.search(r'^Target: (.*)$', res.stderr, flags=re.M).groups()[0]
     if target.startswith('i686'):
         print('32')

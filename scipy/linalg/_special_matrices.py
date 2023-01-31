@@ -1039,7 +1039,7 @@ def dft(n, scale=None):
     """
     if scale not in [None, 'sqrtn', 'n']:
         raise ValueError("scale must be None, 'sqrtn', or 'n'; "
-                         "%r is not valid." % (scale,))
+                         "{!r} is not valid.".format(scale))
 
     omegas = np.exp(-2j * np.pi * np.arange(n) / n).reshape(-1, 1)
     m = omegas ** np.arange(n)

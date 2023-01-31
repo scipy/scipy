@@ -231,8 +231,8 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         print('LSMR            Least-squares solution of  Ax = b\n')
         print(f'The matrix A has {m} rows and {n} columns')
         print('damp = %20.14e\n' % (damp))
-        print('atol = %8.2e                 conlim = %8.2e\n' % (atol, conlim))
-        print('btol = %8.2e             maxiter = %8g\n' % (btol, maxiter))
+        print(f'atol = {atol:8.2e}                 conlim = {conlim:8.2e}\n')
+        print(f'btol = {btol:8.2e}             maxiter = {maxiter:8g}\n')
 
     u = b
     normb = norm(b)
@@ -311,9 +311,9 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         print(hdg1, hdg2)
         test1 = 1
         test2 = alpha / beta
-        str1 = '%6g %12.5e' % (itn, x[0])
-        str2 = ' %10.3e %10.3e' % (normr, normar)
-        str3 = '  %8.1e %8.1e' % (test1, test2)
+        str1 = f'{itn:6g} {x[0]:12.5e}'
+        str2 = f' {normr:10.3e} {normar:10.3e}'
+        str3 = f'  {test1:8.1e} {test2:8.1e}'
         print(''.join([str1, str2, str3]))
 
     # Main iteration loop.
@@ -461,10 +461,10 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
                     print(' ')
                     print(hdg1, hdg2)
                 pcount = pcount + 1
-                str1 = '%6g %12.5e' % (itn, x[0])
-                str2 = ' %10.3e %10.3e' % (normr, normar)
-                str3 = '  %8.1e %8.1e' % (test1, test2)
-                str4 = ' %8.1e %8.1e' % (normA, condA)
+                str1 = f'{itn:6g} {x[0]:12.5e}'
+                str2 = f' {normr:10.3e} {normar:10.3e}'
+                str3 = f'  {test1:8.1e} {test2:8.1e}'
+                str4 = f' {normA:8.1e} {condA:8.1e}'
                 print(''.join([str1, str2, str3, str4]))
 
         if istop > 0:
@@ -476,9 +476,9 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         print(' ')
         print('LSMR finished')
         print(msg[istop])
-        print('istop =%8g    normr =%8.1e' % (istop, normr))
-        print('    normA =%8.1e    normAr =%8.1e' % (normA, normar))
-        print('itn   =%8g    condA =%8.1e' % (itn, condA))
+        print(f'istop ={istop:8g}    normr ={normr:8.1e}')
+        print(f'    normA ={normA:8.1e}    normAr ={normar:8.1e}')
+        print(f'itn   ={itn:8g}    condA ={condA:8.1e}')
         print('    normx =%8.1e' % (normx))
         print(str1, str2)
         print(str3, str4)

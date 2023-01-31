@@ -1881,7 +1881,8 @@ class TestRegression:
         # formualtion got confusing since LinregressResult became
         # _lib._bunch._make_tuple_bunch instead of namedtuple
         # (for backwards compatibility, see PR #12983)
-        assert_ae = lambda x, y: assert_almost_equal(x, y, decimal=14)
+        def assert_ae(x, y):
+            return assert_almost_equal(x, y, decimal=14)
         assert_ae(result.slope, 1.0)
         assert_ae(result.intercept, 5.0)
         assert_ae(result.rvalue, 0.98229948625750)
@@ -6799,7 +6800,7 @@ class TestFOneWay:
             rtol = 1e-7
             fname = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                  'data/nist_anova', test_case))
-            with open(fname, 'r') as f:
+            with open(fname) as f:
                 content = f.read().split('\n')
             certified = [line.split() for line in content[40:48]
                          if line.strip()]

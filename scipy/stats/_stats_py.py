@@ -29,7 +29,7 @@ References
 import warnings
 import math
 from math import gcd
-from collections import namedtuple, Counter
+from collections import namedtuple
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -3487,7 +3487,7 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     if isinstance(scale, str):
         scale_key = scale.lower()
         if scale_key not in _scale_conversions:
-            raise ValueError("{0} not a valid scale for `iqr`".format(scale))
+            raise ValueError(f"{scale} not a valid scale for `iqr`")
         if scale_key == 'raw':
             msg = ("The use of 'scale=\"raw\"' is deprecated infavor of "
                    "'scale=1' and will raise an error in SciPy 1.12.0.")
@@ -6035,7 +6035,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     if x.size != y.size:
         raise ValueError("All inputs to `weightedtau` must be "
                          "of the same size, "
-                         "found x-size %s and y-size %s" % (x.size, y.size))
+                         "found x-size {} and y-size {}".format(x.size, y.size))
     if not x.size:
         # Return NaN if arrays are empty
         res = SignificanceResult(np.nan, np.nan)
@@ -6075,7 +6075,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         if rank.size != x.size:
             raise ValueError(
                 "All inputs to `weightedtau` must be of the same size, "
-                "found x-size %s and rank-size %s" % (x.size, rank.size)
+                "found x-size {} and rank-size {}".format(x.size, rank.size)
             )
 
     tau = _weightedrankedtau(x, y, rank, weigher, additive)
@@ -7972,8 +7972,8 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     if isinstance(lambda_, str):
         if lambda_ not in _power_div_lambda_names:
             names = repr(list(_power_div_lambda_names.keys()))[1:-1]
-            raise ValueError("invalid string for lambda_: {0!r}. "
-                             "Valid strings are {1}".format(lambda_, names))
+            raise ValueError("invalid string for lambda_: {!r}. "
+                             "Valid strings are {}".format(lambda_, names))
         lambda_ = _power_div_lambda_names[lambda_]
     elif lambda_ is None:
         lambda_ = 1
@@ -10126,7 +10126,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
 
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
-        raise ValueError('unknown method "{0}"'.format(method))
+        raise ValueError(f'unknown method "{method}"')
 
     a = np.asarray(a)
 

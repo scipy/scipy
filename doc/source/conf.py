@@ -234,6 +234,7 @@ intersphinx_mapping = {
     'neps': ('https://numpy.org/neps', None),
     'matplotlib': ('https://matplotlib.org/stable', None),
     'asv': ('https://asv.readthedocs.io/en/stable/', None),
+    'statsmodels': ('https://www.statsmodels.org/stable', None),
 }
 
 

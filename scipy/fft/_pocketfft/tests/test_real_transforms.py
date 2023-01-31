@@ -411,7 +411,7 @@ def test_overwrite(routine, dtype, shape, axis, type, norm, overwrite_x):
     x2 = x.copy()
     routine(x2, type, None, axis, norm, overwrite_x=overwrite_x)
 
-    sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
+    sig = "{}({}{!r}, {!r}, axis={!r}, overwrite_x={!r})".format(
         routine.__name__, x.dtype, x.shape, None, axis, overwrite_x)
     if not overwrite_x:
         assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)

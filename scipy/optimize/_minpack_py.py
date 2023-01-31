@@ -2,12 +2,11 @@ import warnings
 from . import _minpack
 
 import numpy as np
-from numpy import (atleast_1d, dot, take, triu, shape, eye,
-                   transpose, zeros, prod, greater,
+from numpy import (atleast_1d, triu, shape, transpose, zeros, prod, greater,
                    asarray, inf,
                    finfo, inexact, issubdtype, dtype)
 from scipy import linalg
-from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError, inv
+from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
 from scipy._lib._util import _asarray_validated, _lazywhere, _contains_nan
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from ._optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
@@ -29,14 +28,14 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
             if len(output_shape) > 1:
                 if output_shape[1] == 1:
                     return shape(res)
-            msg = "%s: there is a mismatch between the input and output " \
-                  "shape of the '%s' argument" % (checker, argname)
+            msg = "{}: there is a mismatch between the input and output " \
+                  "shape of the '{}' argument".format(checker, argname)
             func_name = getattr(thefunc, '__name__', None)
             if func_name:
                 msg += " '%s'." % func_name
             else:
                 msg += "."
-            msg += 'Shape should be %s but it is %s.' % (output_shape, shape(res))
+            msg += f'Shape should be {output_shape} but it is {shape(res)}.'
             raise TypeError(msg)
     if issubdtype(res.dtype, inexact):
         dt = res.dtype
@@ -163,8 +162,8 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     res = _root_hybr(func, x0, args, jac=fprime, **options)
     if full_output:
         x = res['x']
-        info = dict((k, res.get(k))
-                    for k in ('nfev', 'njev', 'fjac', 'r', 'qtf') if k in res)
+        info = {k: res.get(k)
+                    for k in ('nfev', 'njev', 'fjac', 'r', 'qtf') if k in res}
         info['fvec'] = res['fun']
         return x, info, res['status'], res['message']
     else:
@@ -442,9 +441,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
               2: ["The relative error between two consecutive "
                   "iterates is at most %f" % xtol, None],
               3: ["Both actual and predicted relative reductions in "
-                  "the sum of squares\n  are at most %f and the "
+                  "the sum of squares\n  are at most {:f} and the "
                   "relative error between two consecutive "
-                  "iterates is at \n  most %f" % (ftol, xtol), None],
+                  "iterates is at \n  most {:f}".format(ftol, xtol), None],
               4: ["The cosine of the angle between func(x) and any "
                   "column of the\n  Jacobian is at most %f in "
                   "absolute value" % gtol, None],
