@@ -77,6 +77,7 @@ inaccuracy_messages = {"Precision loss occurred in moment calculation",
 # For some functions, nan_policy='propagate' should not just return NaNs
 override_propagate_funcs = {stats.mode}
 
+
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
                           paired=False):
     # generate random samples to check the response of hypothesis tests to

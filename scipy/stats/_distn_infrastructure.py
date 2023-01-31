@@ -927,8 +927,7 @@ class rv_generic:
                   for (bcdim, szdim) in zip(bcast_shape, size_)])
         if not ok:
             raise ValueError("size does not match the broadcast shape of "
-                             "the parameters. {}, {}, {}".format(size, size_,
-                                                             bcast_shape))
+                             f"the parameters. {size}, {size_}, {bcast_shape}")
 
         param_bcast = all_bcast[:-2]
         loc_bcast = all_bcast[-2]

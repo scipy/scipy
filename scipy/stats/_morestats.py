@@ -3179,14 +3179,19 @@ def levene(*samples, center='median', proportiontocut=0.05):
     Yci = np.empty(k, 'd')
 
     if center == 'median':
+
         def func(x):
             return np.median(x, axis=0)
+
     elif center == 'mean':
+
         def func(x):
             return np.mean(x, axis=0)
+
     else:  # center == 'trimmed'
         samples = tuple(_stats_py.trimboth(np.sort(sample), proportiontocut)
                         for sample in samples)
+
         def func(x):
             return np.mean(x, axis=0)
 
@@ -3572,14 +3577,19 @@ def fligner(*samples, center='median', proportiontocut=0.05):
         raise ValueError("Must enter at least two input sample vectors.")
 
     if center == 'median':
+
         def func(x):
             return np.median(x, axis=0)
+
     elif center == 'mean':
+
         def func(x):
             return np.mean(x, axis=0)
+
     else:  # center == 'trimmed'
         samples = tuple(_stats_py.trimboth(sample, proportiontocut)
                         for sample in samples)
+
         def func(x):
             return np.mean(x, axis=0)
 

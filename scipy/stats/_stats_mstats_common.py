@@ -319,7 +319,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     """
     if method not in ['joint', 'separate']:
         raise ValueError("method must be either 'joint' or 'separate'."
-                          "'{}' is invalid.".format(method))
+                         "'{}' is invalid.".format(method))
     # We copy both x and y so we can use _find_repeats.
     y = np.array(y).flatten()
     if x is None:
