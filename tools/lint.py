@@ -90,7 +90,7 @@ def run_cython_lint(files):
 
 
 def main():
-    parser = ArgumentParser(description="Also see `pre-commit-hook.sh` which "
+    parser = ArgumentParser(description="Also see `pre-commit-hook.py` which "
                                         "lints all files staged in git.")
     # In Python 3.9, can use: argparse.BooleanOptionalAction
     parser.add_argument("--fix", action='store_true',
