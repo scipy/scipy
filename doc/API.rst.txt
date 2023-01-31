@@ -158,26 +158,27 @@ change is made.
 .. toctree::
    :maxdepth: 1
    :hidden:
+   :titlesonly:
 
    main_namespace
-   cluster
-   constants
-   datasets
-   fft
-   fftpack
-   integrate
-   interpolate
-   io
-   linalg
-   misc
-   ndimage
-   odr
-   optimize
-   signal
-   sparse
-   spatial
-   special
-   stats
+   scipy.cluster <cluster>
+   scipy.constants <constants>
+   scipy.datasets <datasets>
+   scipy.fft <fft>
+   scipy.fftpack <fftpack>
+   scipy.integrate <integrate>
+   scipy.interpolate <interpolate>
+   scipy.io <io>
+   scipy.linalg <linalg>
+   scipy.misc <misc>
+   scipy.ndimage <ndimage>
+   scipy.odr <odr>
+   scipy.optimize <optimize>
+   scipy.signal <signal>
+   scipy.sparse <sparse>
+   scipy.spatial <spatial>
+   scipy.special <special>
+   scipy.stats <stats>
    ccallback
 
 SciPy structure
