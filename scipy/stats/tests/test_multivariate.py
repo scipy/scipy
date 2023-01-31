@@ -907,7 +907,10 @@ class TestMatrixNormal:
                 pdf2 = matrix_normal.pdf(X, mean=M, rowcov=U, colcov=V)
                 assert_equal(pdf1, pdf2)
 
-                logpdf1 = frozen.logpdTestCovariance
+                logpdf1 = frozen.logpdf(X)
+                logpdf2 = matrix_normal.logpdf(X, mean=M, rowcov=U, colcov=V)
+                assert_equal(logpdf1, logpdf2)
+
     def test_matches_multivariate(self):
         # Check that the pdfs match those obtained by vectorising and
         # treating as a multivariate normal.
