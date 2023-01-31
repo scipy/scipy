@@ -779,23 +779,24 @@ class TestMultivariateNormal:
         ref = multivariate_normal.pdf(x, [1, 1, 1], cov_object)
         assert_equal(multivariate_normal.pdf(x, 1, cov=cov_object), ref)
 
-    def test_multivariate_normal_mean_is_exposed():
+    def test_multivariate_normal_mean_is_exposed(self):
         mean = np.zeros(2)
         covariance = np.eye(2)
         model = multivariate_normal(mean, covariance)
-        assert model.mean == mean
+        assert np.allclose(model.mean, mean)
 
-    def test_multivariate_normal_covariance_is_exposed():
+    def test_multivariate_normal_covariance_is_exposed(self):
         mean = np.zeros(2)
         covariance = np.eye(2)
         model = multivariate_normal(mean, covariance)
-        assert model.cov == covariance
+        assert np.allclose(model.cov, covariance)
 
-    def test_multivariate_normal_covariance_object_is_exposed():
+    def test_multivariate_normal_covariance_object_is_exposed(self):
         mean = np.zeros(2)
         covariance_obj = Covariance.from_diagonal([1, 1])
         model = multivariate_normal(mean, covariance_obj)
-        assert model.cov_object == covariance_obj
+        assert isinstance(model.cov_object, Covariance)
+        assert np.allclose(model.cov_object.covariance, covariance_obj.covariance)
 
 
 class TestMatrixNormal:
