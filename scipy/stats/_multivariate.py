@@ -309,10 +309,19 @@ class multivariate_normal_gen(multi_rv_generic):
     ----------
     mean : ndarray
         Mean of the distribution.
+        
+        .. versionadded:: 1.10.1
+        
     cov : ndarray
         Covariance matrix of the distribution.
-    cov_object : Covariance
-        Representation of the covariance matrix as a Covariance object.
+
+        .. versionadded:: 1.10.1
+
+    cov_object : `Covariance`
+        Representation of the covariance matrix as a `Covariance` object.
+
+        .. versionadded:: 1.10.1
+
 
     Parameters
     ----------
@@ -829,14 +838,23 @@ class multivariate_normal_frozen(multi_rv_frozen):
             Relative error tolerance for the cumulative distribution function
             (default 1e-5)
 
-        Attributes
-        ----------
-        mean : ndarray
-            Mean of the distribution.
-        cov : ndarray
-            Covariance matrix of the distribution.
-        cov_object : Covariance
-            Representation of the covariance matrix as a Covariance object.
+    Attributes
+    ----------
+    mean : ndarray
+        Mean of the distribution.
+        
+        .. versionadded:: 1.10.1
+        
+    cov : ndarray
+        Covariance matrix of the distribution.
+
+        .. versionadded:: 1.10.1
+
+    cov_object : `Covariance`
+        Representation of the covariance matrix as a `Covariance` object.
+
+        .. versionadded:: 1.10.1
+
 
         Examples
         --------
