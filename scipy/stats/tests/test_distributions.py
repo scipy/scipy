@@ -2692,6 +2692,61 @@ class TestPowerlaw:
             _assert_less_or_close_loglike(dist, data, dist.nnlf)
 
 
+class TestPowerLogNorm:
+
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 80
+    # def powerlognorm_sf_mp(x, c, s):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     s = mp.mpf(s)
+    #     return float(mp.ncdf(-mp.log(x) / s)**c)
+
+    @pytest.mark.parametrize("x, c, s, ref",
+                             [(100, 20, 1, 1.9057100820561928e-114),
+                              (1e-3, 20, 1, 0.9999999999507617),
+                              (1e-3, 0.02, 1, 0.9999999999999508),
+                              (1e22, 0.02, 1, 6.50744044621611e-12)])
+    def test_sf(self, x, c, s, ref):
+        assert_allclose(stats.powerlognorm.sf(x, c, s), ref)
+
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # def powerlognormal_cdf_mp(x, c, s):
+    #     mp.dps = 200
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     s = mp.mpf(s)
+    #     return float(mp.one - mp.ncdf(-mp.log(x) / s)**c)
+
+    @pytest.mark.parametrize("x, c, s, ref",
+                             [(1e25, 0.02, 1, 0.9999999999999963),
+                              (1e-6, 0.02, 1, 2.054921078040843e-45),
+                              (1e-6, 200, 1, 2.0549210780408428e-41),
+                              (0.3, 200, 1, 0.9999999999713368)])
+    def test_cdf(self, x, c, s, ref):
+        assert_allclose(stats.powerlognorm.cdf(x, c, s), ref)
+
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # def powerlognormal_pdf_mp(x, c, s):
+    #     mp.dps = 200
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     s = mp.mpf(s)
+    #     pdf = (c/(x * s) * mp.npdf(mp.log(x) / s) * 
+    #            mp.ncdf(-mp.log(x)/s)**(c -1))
+    #     return float(pdf)
+
+    @pytest.mark.parametrize("x, c, s, ref",
+                             [(1e15, 0.01, 1, 8.489544993666912e-19),
+                              (1, 200, 1, 9.930495623691516e-59),
+                              (5e-3, 200, 1, 0.012798863673904579)])
+    def test_pdf(self, x, c, s, ref):
+        assert_allclose(stats.powerlognorm.pdf(x, c, s), ref)
+
+
 class TestInvGamma:
     def test_invgamma_inf_gh_1866(self):
         # invgamma's moments are only finite for a>n
