@@ -236,6 +236,8 @@ class LinearNDInterpolator(NDInterpolatorBase):
     with Qhull [1]_, and on each triangle performing linear
     barycentric interpolation.
 
+    .. note:: For data on a regular grid use `interpn` instead.
+
     Examples
     --------
     We can interpolate values on a 2D plane:
@@ -835,6 +837,8 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     of the interpolating surface is approximatively minimized. The
     gradients necessary for this are estimated using the global
     algorithm described in [Nielson83]_ and [Renka84]_.
+
+    .. note:: For data on a regular grid use `interpn` instead.
 
     Examples
     --------

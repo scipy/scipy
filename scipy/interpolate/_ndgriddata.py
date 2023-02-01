@@ -50,6 +50,8 @@ class NearestNDInterpolator(NDInterpolatorBase):
     -----
     Uses ``scipy.spatial.cKDTree``
 
+    .. note:: For data on a regular grid use `interpn` instead.
+
     Examples
     --------
     We can interpolate values on a 2D plane:
@@ -173,7 +175,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
 
     .. versionadded:: 0.9
 
-    For data on a regular grid use `interpn` instead.
+    .. note:: For data on a regular grid use `interpn` instead.
 
     Examples
     --------
