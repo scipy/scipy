@@ -2709,7 +2709,7 @@ class TestPowerLogNorm:
                               (1e-3, 0.02, 1, 0.9999999999999508),
                               (1e22, 0.02, 1, 6.50744044621611e-12)])
     def test_sf(self, x, c, s, ref):
-        assert_allclose(stats.powerlognorm.sf(x, c, s), ref)
+        assert_allclose(stats.powerlognorm.sf(x, c, s), ref, rtol=1e-13)
 
     # reference values were computed via mpmath
     # from mpmath import mp
@@ -2726,7 +2726,7 @@ class TestPowerLogNorm:
                               (1e-6, 200, 1, 2.0549210780408428e-41),
                               (0.3, 200, 1, 0.9999999999713368)])
     def test_cdf(self, x, c, s, ref):
-        assert_allclose(stats.powerlognorm.cdf(x, c, s), ref)
+        assert_allclose(stats.powerlognorm.cdf(x, c, s), ref, rtol=3e-14)
 
     # reference values were computed via mpmath
     # from mpmath import mp
@@ -2744,7 +2744,7 @@ class TestPowerLogNorm:
                               (1, 200, 1, 9.930495623691516e-59),
                               (5e-3, 200, 1, 0.012798863673904579)])
     def test_pdf(self, x, c, s, ref):
-        assert_allclose(stats.powerlognorm.pdf(x, c, s), ref)
+        assert_allclose(stats.powerlognorm.pdf(x, c, s), ref, rtol=1e-13)
 
 
 class TestInvGamma:
