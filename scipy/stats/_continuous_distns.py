@@ -906,8 +906,40 @@ class betaprime_gen(rv_continuous):
             f2=lambda x_, a_, b_: beta._cdf(x_/(1+x_), a_, b_))
 
     def _ppf(self, p, a, b):
-        r = sc.betaincinv(a, b, p)
-        return r / (1 - r)
+        # _ppf_direct is the direct way to compute the ppf (except for the
+        # additional safety mechanism described in the comment below)
+        # f2 is based on the inversion of the expression using beta._sf in
+        # self.cdf, see comments there.
+        # note that p=1 has to be handled separately to avoid division by 0
+
+        def _ppf_direct(p_, a_, b_):
+            r = stats.beta.ppf(p_, a_, b_)
+            # note: even if we use _ppf_direct only for q < 0.5,
+            # there is no guarantee that r will not be close to 1. if r is
+            # too close to 1, r/(1-r) can cause numerical issues
+            # for fixed p and a, by making b very small, one can get r
+            # arbitrarily close to 1. Example:
+            # stats.beta.ppf(0.1, 0.5, 0.001) == 1.0
+            # so first compute r and then fall back to the "indirect approach"
+            # (f2) if r is too close to 1
+            out = _lazywhere(
+                r < 0.9999,
+                [r, p_, a_, b_],
+                lambda r1, p1, a1, b1: r1 / (1 - r1),
+                f2=lambda r1, p1, a1, b1: 1/stats.beta.isf(p1, b1, a1) - 1
+            )
+            return out
+
+        out = _lazywhere(
+            p < 0.5, [p, a, b],
+            _ppf_direct,
+            f2=lambda p_, a_, b_: _lazywhere(
+                p_ < 1,
+                [p_, a_, b_],
+                lambda p1, a1, b1: 1/stats.beta.isf(p1, b1, a1) - 1,
+            fillvalue=np.inf)
+        )
+        return out
 
     def _munp(self, n, a, b):
         if n == 1.0:

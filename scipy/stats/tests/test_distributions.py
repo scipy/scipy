@@ -3682,6 +3682,37 @@ class TestBetaPrime:
         x = stats.betaprime.ppf(p, a, b)
         assert_allclose(x, expected, rtol=1e-14)
 
+    def test_ppf_boundary(self):
+        # p == 0 and p == 1.0 need to map to 0.0 and inf
+        # for p == 1.0, division by zero must not occur
+        assert_equal(stats.betaprime.ppf(0.0, 1.3, 0.1), 0.0)
+        assert_equal(stats.betaprime.ppf(1.0, 1.3, 0.1), np.inf)
+
+    @pytest.mark.parametrize(
+        'p, a, b, expected, tol',
+        [(0.9978811466052919, 0.05, 0.1, 1e22, 1e-12),
+         (0.8973027435427167, 100.0, 0.05, 1e22, 1e-14),
+         (0.38019826239901977, 10, 0.01, 1e22, 1e-13),
+         (0.9467768090820048, 0.05, 0.1, 1e8, 1e-14),
+         (0.9999999999983024, 1.5, 1.5, 1e8, 1e-5),
+         (0.4852944858726726, 100.0, 0.05, 1e8, 1e-14),
+         (0.9999966641709545, 0.05, 0.1, 1e50, 1e-1),
+         (0.995925162631006, 100.0, 0.05, 1e50, 1e-1),
+         (0.21238845427095, 0.05, 0.1, 1e-10, 1e-14),
+         (1.697652726007973e-15, 1.5, 1.5, 1e-10, 1e-14),
+         (0.40884514172337383, 0.05, 100.0, 1e-10, 1e-14),
+         (0.053349567649287326, 0.05, 0.1, 1e-22, 1e-14),
+         (1.6976527263135503e-33, 1.5, 1.5, 1e-22, 1e-14),
+         (0.10269725645728331, 0.05, 100.0, 1e-22, 1e-14),
+         (6.7163126421919795e-06, 0.05, 0.1, 1e-100, 1e-14),
+         (1.6976527263135503e-150, 1.5, 1.5, 1e-100, 1e-14),
+         (1.2928818587561651e-05, 0.05, 100.0, 1e-100, 1e-14)])
+    def test_ppf_tails(self, p, a, b, expected, tol):
+        # additional test cases for ppf for gh-17631
+        # the value p is computed as cdf(x, a, p) with the cdf
+        # defined as in self.test_cdf_tails below
+        assert_allclose(stats.betaprime.ppf(p, a, b), expected, rtol=tol)
+
     @pytest.mark.parametrize(
         'x, a, b, expected',
         [(1e22, 0.05, 0.1, 0.9978811466052919),
