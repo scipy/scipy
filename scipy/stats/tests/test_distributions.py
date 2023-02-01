@@ -378,6 +378,15 @@ class TestBinom:
         n = 4
         assert stats.binom.ppf(q=0.3, n=n, p=1.0) == n
 
+    def test_pmf_poisson(self):
+        # Check that gh-17146 is resolved: binom -> poisson
+        n = 1541096362225563.0
+        p = 1.0477878413173978e-18
+        x = np.arange(3)
+        res = stats.binom.pmf(x, n=n, p=p)
+        ref = stats.poisson.pmf(x, n * p)
+        assert_allclose(res, ref, atol=1e-16)
+
 
 class TestArcsine:
 
