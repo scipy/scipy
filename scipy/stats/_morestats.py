@@ -4038,7 +4038,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     >>> import numpy as np
     >>> x = np.array([0.5, 0.825, 0.375, 0.5])
     >>> y = np.array([0.525, 0.775, 0.325, 0.55])
-    >>> res = stats.wilcoxon(x, y, alternative='greater')
+    >>> res = wilcoxon(x, y, alternative='greater')
     >>> res
     WilcoxonResult(statistic=5.0, pvalue=0.5625)
 
@@ -4046,7 +4046,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     produced different results:
 
     >>> d = [-0.025, 0.05, 0.05, -0.05]
-    >>> ref = stats.wilcoxon(d, alternative='greater')
+    >>> ref = wilcoxon(d, alternative='greater')
     >>> ref
     WilcoxonResult(statistic=6.0, pvalue=0.4375)
 
@@ -4064,7 +4064,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     For example:
 
     >>> d2 = np.around(x - y, decimals=3)
-    >>> stats.wilcoxon(d2, alternative='greater')
+    >>> wilcoxon(d2, alternative='greater')
     WilcoxonResult(statistic=6.0, pvalue=0.4375)
 
     """
