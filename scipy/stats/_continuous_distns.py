@@ -930,6 +930,9 @@ class betaprime_gen(rv_continuous):
             )
             return out
 
+        # needed to avoid TypeError when casting float64 to float32
+        # (check_ppf_dtype in tests/test_continuous_basic.py)
+        p = np.asarray(p, dtype=float)
         out = _lazywhere(
             p < 0.5, [p, a, b],
             _ppf_direct,
@@ -937,7 +940,7 @@ class betaprime_gen(rv_continuous):
                 p_ < 1,
                 [p_, a_, b_],
                 lambda p1, a1, b1: 1/stats.beta.isf(p1, b1, a1) - 1,
-            fillvalue=np.inf)
+                fillvalue=np.inf)
         )
         return out
 
