@@ -88,6 +88,8 @@ unlikely to be renamed or changed in an incompatible way, and if that is
 necessary, a deprecation warning will be raised for one SciPy release before the
 change is made.
 
+* `scipy`
+
 * `scipy.cluster`
 
   - `scipy.cluster.vq`
@@ -157,6 +159,7 @@ change is made.
    :maxdepth: 1
    :hidden:
 
+   main_namespace
    cluster
    constants
    datasets

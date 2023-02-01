@@ -20,9 +20,34 @@ class FPUModeChangeWarning(RuntimeWarning):
 
 class PytestTester:
     """
-    Pytest test runner entry point.
-    """
+    Run tests for this namespace
 
+    ``scipy.test()`` runs tests for all of SciPy, with the default settings.
+    When used from a submodule (e.g., ``scipy.cluster.test()``, only the tests
+    for that namespace are run.
+
+    Parameters
+    ----------
+    label : {'fast', 'full'}, optional
+        Whether to run only the fast tests, or also those marked as slow.
+        Default is 'fast'.
+    verbose : int, optional
+        Test output verbosity. Default is 1.
+    extra_argv : list, optional
+        Arguments to pass through to Pytest.
+    doctests : bool, optional
+        Whether to run doctests or not. Default is False.
+    coverage : bool, optional
+        Whether to run tests with code coverage measurements enabled.
+        Default is False.
+    tests : list of str, optional
+        List of module names to run tests for. By default, uses the module
+        from which the ``test`` function is called.
+    parallel : int, optional
+        Run tests in parallel with pytest-xdist, if number given is larger than
+        1. Default is 1.
+
+    """
     def __init__(self, module_name):
         self.module_name = module_name
 

@@ -1048,10 +1048,11 @@ class burr_gen(rv_continuous):
 
     def _pdf(self, x, c, d):
         # burr.pdf(x, c, d) = c * d * x**(-c-1) * (1+x**(-c))**(-d-1)
-        output = _lazywhere(x == 0, [x, c, d],
-                   lambda x_, c_, d_: c_ * d_ * (x_**(c_*d_-1)) / (1 + x_**c_),
-                   f2 = lambda x_, c_, d_: (c_ * d_ * (x_ ** (-c_ - 1.0)) /
-                                            ((1 + x_ ** (-c_)) ** (d_ + 1.0))))
+        output = _lazywhere(
+            x == 0, [x, c, d],
+            lambda x_, c_, d_: c_ * d_ * (x_**(c_*d_-1)) / (1 + x_**c_),
+            f2=lambda x_, c_, d_: (c_ * d_ * (x_ ** (-c_ - 1.0)) /
+                                   ((1 + x_ ** (-c_)) ** (d_ + 1.0))))
         if output.ndim == 0:
             return output[()]
         return output
@@ -1061,9 +1062,9 @@ class burr_gen(rv_continuous):
             x == 0, [x, c, d],
             lambda x_, c_, d_: (np.log(c_) + np.log(d_) + sc.xlogy(c_*d_ - 1, x_)
                                 - (d_+1) * sc.log1p(x_**(c_))),
-            f2 = lambda x_, c_, d_: (np.log(c_) + np.log(d_)
-                                     + sc.xlogy(-c_ - 1, x_)
-                                     - sc.xlog1py(d_+1, x_**(-c_))))
+            f2=lambda x_, c_, d_: (np.log(c_) + np.log(d_)
+                                   + sc.xlogy(-c_ - 1, x_)
+                                   - sc.xlog1py(d_+1, x_**(-c_))))
         if output.ndim == 0:
             return output[()]
         return output
@@ -2803,15 +2804,15 @@ class genpareto_gen(rv_continuous):
             s = None
         else:
             s = _lazywhere(c < 1/3, (c,),
-                           lambda xi: 2 * (1 + xi) * np.sqrt(1 - 2*xi) /
-                                      (1 - 3*xi),
+                           lambda xi: (2 * (1 + xi) * np.sqrt(1 - 2*xi) /
+                                       (1 - 3*xi)),
                            np.nan)
         if 'k' not in moments:
             k = None
         else:
             k = _lazywhere(c < 1/4, (c,),
-                           lambda xi: 3 * (1 - 2*xi) * (2*xi**2 + xi + 3) /
-                                      (1 - 3*xi) / (1 - 4*xi) - 3,
+                           lambda xi: (3 * (1 - 2*xi) * (2*xi**2 + xi + 3) /
+                                       (1 - 3*xi) / (1 - 4*xi) - 3),
                            np.nan)
         return m, v, s, k
 
@@ -3071,8 +3072,10 @@ def _digammainv(y):
 
     """
     _em = 0.5772156649015328606065120
+
     def func(x):
         return sc.digamma(x) - y
+
     if y > -0.125:
         x0 = np.exp(y) + 0.5
         if y < 10:
@@ -4633,6 +4636,7 @@ class geninvgauss_gen(rv_continuous):
 
                 def logqpdf(x):
                     return self._logquasipdf(x, p, b) - lm
+
                 c = m
             else:
                 # ratio of uniforms without mode shift
@@ -4643,6 +4647,7 @@ class geninvgauss_gen(rv_continuous):
                 # compute xplus * np.sqrt(quasipdf(xplus))
                 vmax = xplus * np.exp(0.5 * self._logquasipdf(xplus, p, b))
                 c = 0
+
                 def logqpdf(x):
                     return self._logquasipdf(x, p, b)
 
@@ -6203,9 +6208,9 @@ class kappa4_gen(rv_continuous):
             return 1.0/k
 
         _a = _lazyselect(condlist,
-                             [f0, f1, f0, f3, f3, f5],
-                             [h, k],
-                             default=np.nan)
+                         [f0, f1, f0, f3, f3, f5],
+                         [h, k],
+                         default=np.nan)
 
         def f0(h, k):
             return 1.0/k
@@ -6216,9 +6221,9 @@ class kappa4_gen(rv_continuous):
             return a
 
         _b = _lazyselect(condlist,
-                             [f0, f1, f1, f0, f1, f1],
-                             [h, k],
-                             default=np.nan)
+                         [f0, f1, f1, f0, f1, f1],
+                         [h, k],
+                         default=np.nan)
         return _a, _b
 
     def _pdf(self, x, h, k):
@@ -8561,7 +8566,7 @@ class trapezoid_gen(rv_continuous):
                            [lambda x, c, d, u: u * x / c,
                             lambda x, c, d, u: u,
                             lambda x, c, d, u: u * (1-x) / (1-d)],
-                            (x, c, d, u))
+                           (x, c, d, u))
 
     def _cdf(self, x, c, d):
         return _lazyselect([x < c,
@@ -8571,7 +8576,7 @@ class trapezoid_gen(rv_continuous):
                             lambda x, c, d: (c + 2 * (x-c)) / (d-c+1),
                             lambda x, c, d: 1-((1-x) ** 2
                                                / (d-c+1) / (1-d))],
-                            (x, c, d))
+                           (x, c, d))
 
     def _ppf(self, q, c, d):
         qc, qd = self._cdf(c, c, d), self._cdf(d, c, d)
