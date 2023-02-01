@@ -6692,7 +6692,7 @@ class TtestResult(TtestResultBase):
 
 
 def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
-                      estimate):
+                     estimate):
     # this could be any number of dimensions (including 0d), but there is
     # at most one unique value
     alternative = np.atleast_1d(alternative).ravel()

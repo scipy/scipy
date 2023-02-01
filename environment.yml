@@ -38,7 +38,6 @@ dependencies:
   - matplotlib
   - pydata-sphinx-theme==0.9.0
   - sphinx-design
-  # For linting
   # Some optional test dependencies
   - mpmath
   - gmpy2
@@ -48,7 +47,6 @@ dependencies:
   - click
   - doit>=0.36.0
   - pydevtool
-  - pip
-  - pip:
-    - ruff
-    - cython-lint
+  # For linting
+  - ruff
+  - cython-lint

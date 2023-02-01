@@ -121,10 +121,13 @@ class TestRankData:
         assert_array_equal(r, expected)
 
     def test_rankdata_object_string(self):
+
         def min_rank(a):
             return [1 + sum(i < j for i in a) for j in a]
+
         def max_rank(a):
             return [sum(i <= j for i in a) for j in a]
+
         def ordinal_rank(a):
             return min_rank([(x, i) for i, x in enumerate(a)])
 

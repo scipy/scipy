@@ -18,8 +18,8 @@ from ._distn_infrastructure import (rv_discrete, get_distribution_names,
                                     _check_shape, _ShapeInfo)
 import scipy.stats._boost as _boost
 from ._biasedurn import (_PyFishersNCHypergeometric,
-                        _PyWalleniusNCHypergeometric,
-                        _PyStochasticLib3)
+                         _PyWalleniusNCHypergeometric,
+                         _PyStochasticLib3)
 
 
 def _isintegral(x):
@@ -1335,10 +1335,13 @@ class dlaplace_gen(rv_discrete):
 
     def _cdf(self, x, a):
         k = floor(x)
+
         def f(k, a):
             return 1.0 - exp(-a * k) / (exp(a) + 1)
+
         def f2(k, a):
             return exp(a * (k + 1)) / (exp(a) + 1)
+
         return _lazywhere(k >= 0, (k, a), f=f, f2=f2)
 
     def _ppf(self, q, a):
@@ -1515,16 +1518,17 @@ class yulesimon_gen(rv_discrete):
     def _stats(self, alpha):
         mu = np.where(alpha <= 1, np.inf, alpha / (alpha - 1))
         mu2 = np.where(alpha > 2,
-                alpha**2 / ((alpha - 2.0) * (alpha - 1)**2),
-                np.inf)
+                       alpha**2 / ((alpha - 2.0) * (alpha - 1)**2),
+                       np.inf)
         mu2 = np.where(alpha <= 1, np.nan, mu2)
         g1 = np.where(alpha > 3,
-                sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)),
-                np.inf)
+                      sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)),
+                      np.inf)
         g1 = np.where(alpha <= 2, np.nan, g1)
         g2 = np.where(alpha > 4,
-                (alpha + 3) + (alpha**3 - 49 * alpha - 22) / (alpha *
-                        (alpha - 4) * (alpha - 3)), np.inf)
+                      alpha + 3 + ((alpha**3 - 49 * alpha - 22) /
+                                   (alpha * (alpha - 4) * (alpha - 3))),
+                      np.inf)
         g2 = np.where(alpha <= 2, np.nan, g2)
         return mu, mu2, g1, g2
 

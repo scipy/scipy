@@ -1,11 +1,13 @@
 import numpy as np
 
+
 #pythran export _Aij(float[:,:], int, int)
 #pythran export _Aij(int[:,:], int, int)
 def _Aij(A, i, j):
     """Sum of upper-left and lower right blocks of contingency table."""
     # See `somersd` References [2] bottom of page 309
     return A[:i, :j].sum() + A[i+1:, j+1:].sum()
+
 
 #pythran export _Dij(float[:,:], int, int)
 #pythran export _Dij(int[:,:], int, int)

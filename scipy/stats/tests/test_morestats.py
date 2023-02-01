@@ -7,9 +7,10 @@ import sys
 
 import numpy as np
 from numpy.random import RandomState
-from numpy.testing import (assert_array_equal,
-    assert_almost_equal, assert_array_less, assert_array_almost_equal,
-    assert_, assert_allclose, assert_equal, suppress_warnings)
+from numpy.testing import (assert_array_equal, assert_almost_equal,
+                           assert_array_less, assert_array_almost_equal,
+                           assert_, assert_allclose, assert_equal,
+                           suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 import re
@@ -1093,8 +1094,10 @@ class TestFligner:
         # Perturb input to break ties in the transformed data
         # See https://github.com/scipy/scipy/pull/8042 for more details
         rs = np.random.RandomState(123)
+
         def _perturb(g):
             return (np.asarray(g) + 1e-10 * rs.randn(len(g))).tolist()
+
         g1_ = _perturb(g1)
         g2_ = _perturb(g2)
         g3_ = _perturb(g3)
@@ -1172,6 +1175,7 @@ def mood_cases_with_ties():
         x, y = np.split(xy, 2)
         yield x, y, 'less', *expected_results[si]
 
+
 class TestMood:
     @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
                              mood_cases_with_ties())
@@ -1236,22 +1240,22 @@ class TestMood:
     def test_mood_with_axis_none(self):
         # Test with axis = None, compare with results from R
         x1 = [-0.626453810742332, 0.183643324222082, -0.835628612410047,
-               1.59528080213779, 0.329507771815361, -0.820468384118015,
-               0.487429052428485, 0.738324705129217, 0.575781351653492,
+              1.59528080213779, 0.329507771815361, -0.820468384118015,
+              0.487429052428485, 0.738324705129217, 0.575781351653492,
               -0.305388387156356, 1.51178116845085, 0.389843236411431,
               -0.621240580541804, -2.2146998871775, 1.12493091814311,
               -0.0449336090152309, -0.0161902630989461, 0.943836210685299,
-               0.821221195098089, 0.593901321217509]
+              0.821221195098089, 0.593901321217509]
 
         x2 = [-0.896914546624981, 0.184849184646742, 1.58784533120882,
               -1.13037567424629, -0.0802517565509893, 0.132420284381094,
-               0.707954729271733, -0.23969802417184, 1.98447393665293,
+              0.707954729271733, -0.23969802417184, 1.98447393665293,
               -0.138787012119665, 0.417650750792556, 0.981752777463662,
               -0.392695355503813, -1.03966897694891, 1.78222896030858,
               -2.31106908460517, 0.878604580921265, 0.035806718015226,
-               1.01282869212708, 0.432265154539617, 2.09081920524915,
+              1.01282869212708, 0.432265154539617, 2.09081920524915,
               -1.19992581964387, 1.58963820029007, 1.95465164222325,
-               0.00493777682814261, -2.45170638784613, 0.477237302613617,
+              0.00493777682814261, -2.45170638784613, 0.477237302613617,
               -0.596558168631403, 0.792203270299649, 0.289636710177348]
 
         x1 = np.array(x1)
@@ -1879,6 +1883,7 @@ _boxcox_data = [
     724126, 3166209, 175913, 159211, 1182095, 86734, 1921472, 513546, 326016,
     1891609
 ]
+
 
 class TestBoxcox:
 
