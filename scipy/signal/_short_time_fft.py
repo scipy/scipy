@@ -218,7 +218,7 @@ class ShortTimeFFT:
     >>> Sx0 = SFT.stft(x[:p_q])
     >>> Sx1 = SFT.stft(x[p_q:])
 
-    When assembling sequential signal parts together, the overlap needs to be
+    When assembling sequential STFT parts together, the overlap needs to be
     considered:
 
     >>> p0_ub = SFT.upper_border_begin(p_q)[1] - SFT.p_min
@@ -384,7 +384,7 @@ class ShortTimeFFT:
             tuple, (e.g., ``('gaussian', 2.)``) or a single float specifying
             the shape parameter of a kaiser window (i.e. ``4.``  and
             ``('kaiser', 4.)`` are equal. See `get_window` for more details.
-        fs : flaot
+        fs : float
             Sampling frequency of input signal. Its relation to the
             sampling interval `T` is ``T = 1 / fs``.
         nperseg: int
@@ -394,8 +394,8 @@ class ShortTimeFFT:
             ``hop = npsereg - noverlap``.
         symmetric_win:
             If ``True`` then symetric window is generated, else a periodic
-            window is generated (default). Though symmetric window seem for
-            most applications to be more sensible, The default of periodic
+            window is generated (default). Though symmetric windows seem for
+            most applications to be more sensible, the default of periodic
             windows was chosen to correspond to the classical implementations.
         fft_typ : 'twosided', 'centered', 'onesided', 'onesided2X'
             Type of FFT to be used (default 'onesided').
@@ -467,6 +467,7 @@ class ShortTimeFFT:
         m_num: Number of samples in window `win`.
         m_num_mid: Center index of window `win`.
         mfft: Length of input for the FFT used - may be larger than `m_num`.
+        T: Sampling interval of input signal and of the window.
         win: Window function as real- or complex-valued 1d array.
         ShortTimeFFT: Class this property belongs to.
         """
@@ -555,6 +556,7 @@ class ShortTimeFFT:
 
         See Also
         --------
+        delta_f: Width of the frequency bins of the STFT.
         f: Frequencies values of the STFT.
         f_pts: Width of the frequency bins of the STFT.
         onesided_fft: True if a one-sided FFT is used.
@@ -754,7 +756,7 @@ class ShortTimeFFT:
         Parameters
         ----------
         x
-            The input signal.
+            The input signal as real or complex valued array.
         p0
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
@@ -771,7 +773,7 @@ class ShortTimeFFT:
             signal on the first or last sample and 'odd' additionally
             multiplies it with -1.
         axis
-            The axis over which to compute the inverse STFT.
+            The axis of `x` over which to compute the STFT.
             If not given, the last axis is used.
 
         Returns
@@ -867,9 +869,9 @@ class ShortTimeFFT:
         non-negative.
         For two STFTs ``Sx[q,p], Sy[q,p]``, the cross-spectrogram is defined
         as ``Sx[q,p] * np.conj(Sx[q,p])`` and is complex-valued.
-        This a convenience function for calling `stft` / `stft_detrend`, hence
-        all parameters are discussed there. If `y` is not ``None`` it needs to
-        have the same shape as `x`.
+        This is a convenience function for calling `stft` / `stft_detrend`,
+        hence all parameters are discussed there. If `y` is not ``None`` it
+        needs to have the same shape as `x`.
 
         Examples
         --------
@@ -897,9 +899,10 @@ class ShortTimeFFT:
         >>> SFT = ShortTimeFFT(win, hop=2, fs=1/T_x, mfft=800, scale_to='psd')
         >>> Sx2 = SFT.spectrogram(x)  # calculate absolute square of STFT
 
-        The plot is logarithmically scaled as the power spectral density in dB.
-        The time extent of the signal `x` is marked by vertical dashed lines
-        and the shaded areas mark the presence of border effects:
+        The plot's colormap is logarithmically scaled as the power spectral
+        density is in dB. The time extent of the signal `x` is marked by
+        vertical dashed lines and the shaded areas mark the presence of border
+        effects:
 
         >>> fig1, ax1 = plt.subplots(figsize=(6., 4.))  # enlarge plot a bit
         >>> t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
@@ -952,7 +955,7 @@ class ShortTimeFFT:
         A STFT can be interpreted as the input signal being expressed as a
         weighted sum of modulated and time-shifted dual windows. Note that for
         a given window there exist many dual windows. The canonical window is
-        the one with the minimal energy (i.e., L_2 norm).
+        the one with the minimal energy (i.e., :math:`L_2` norm).
 
         `dual_win` has same length as `win`, namely `m_num` samples.
 
@@ -1004,7 +1007,7 @@ class ShortTimeFFT:
         Parameters
         ----------
         S
-            A complex valued arrays where `f_axis` denote the frequency
+            A complex valued array where `f_axis` denotes the frequency
             values and the `t-axis` dimension the temporal values of the
             STFT values.
         k0, k1
@@ -1087,11 +1090,11 @@ class ShortTimeFFT:
 
         It is 1 if attribute ``scaling == 'magnitude'``.
         The window can be scaled to a magnitude spectrum by using the method
-        `scale_to()`.
+        `scale_to`.
 
         See Also
         --------
-        fac_psd: Scaling factor for to  a power spectral density spectrum.
+        fac_psd: Scaling factor for to a power spectral density spectrum.
         scale_to: Scale window to obtain 'magnitude' or 'psd' scaling.
         scaling: Normalization applied to the window function.
         ShortTimeFFT: Class this property belongs to.
@@ -1109,7 +1112,7 @@ class ShortTimeFFT:
 
         It is 1 if attribute ``scaling == 'psd'``.
         The window can be scaled to a psd spectrum by using the method
-        `scale_to()`.
+        `scale_to`.
 
         See Also
         --------
@@ -1136,7 +1139,7 @@ class ShortTimeFFT:
         --------
         m_num_mid: Center index of window `win`.
         mfft: Length of input for the FFT used - may be larger than `m_num`.
-        hop: ime increment in signal samples for sliding window.
+        hop: Time increment in signal samples for sliding window.
         win: Window function as real- or complex-valued 1d array.
         ShortTimeFFT: Class this property belongs to.
         """
@@ -1189,7 +1192,7 @@ class ShortTimeFFT:
 
         See Also
         --------
-        k_max: First sample index right of input not affected by a time slice.
+        k_max: First sample index after signal end not touched by a time slice.
         lower_border_end: Where pre-padding effects end.
         p_min: The smallest possible slice index.
         p_max: Index of first non-overlapping upper time slice.
@@ -1217,7 +1220,7 @@ class ShortTimeFFT:
         See Also
         --------
         k_min: The smallest possible signal index.
-        k_max: First sample index right of input not affected by a time slice.
+        k_max: First sample index after signal end not touched by a time slice.
         p_max: Index of first non-overlapping upper time slice.
         p_num: Number of time slices, i.e., `p_max` - `p_min`.
         p_range: Determine and validate slice index range.
@@ -1241,7 +1244,7 @@ class ShortTimeFFT:
         # returned, i.e.: return k1 + self.m_num - self.m_num_mid, q1 + 1
 
     def k_max(self, n: int) -> int:
-        """First sample index right of input not affected by a time slice.
+        """First sample index after signal end not touched by a time slice.
 
         `k_max` - 1 is the largest sample index of the slice `p_max` for a
         given input signal of `n` samples.
@@ -1274,7 +1277,7 @@ class ShortTimeFFT:
         See Also
         --------
         k_min: The smallest possible signal index.
-        k_max: First sample index right of input not affected by a time slice.
+        k_max: First sample index after signal end not touched by a time slice.
         p_min: The smallest possible slice index.
         p_num: Number of time slices, i.e., `p_max` - `p_min`.
         p_range: Determine and validate slice index range.
@@ -1285,7 +1288,7 @@ class ShortTimeFFT:
     def p_num(self, n: int) -> int:
         """Number of time slices for an input signal with `n` samples.
 
-        It is given by `p_num` = `p_max`(n) - `p_min` with `p_min` typically
+        It is given by `p_num` = `p_max` - `p_min` with `p_min` typically
         being negative.
         A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
         section of the :ref:`user_guide`.
@@ -1293,7 +1296,7 @@ class ShortTimeFFT:
         See Also
         --------
         k_min: The smallest possible signal index.
-        k_max: First sample index right of input not affected by a time slice.
+        k_max: First sample index after signal end not touched by a time slice.
         lower_border_end: Where pre-padding effects end.
         p_min: The smallest possible slice index.
         p_max: Index of first non-overlapping upper time slice.
@@ -1315,7 +1318,7 @@ class ShortTimeFFT:
         See Also
         --------
         k_min: The smallest possible signal index.
-        k_max: First sample index right of input not affected by a time slice.
+        k_max: First sample index after signal end not touched by a time slice.
         lower_border_end: Where pre-padding effects end.
         p_min: The smallest possible slice index.
         p_max: Index of first non-overlapping upper time slice.
@@ -1352,7 +1355,7 @@ class ShortTimeFFT:
         See Also
         --------
         k_min: The smallest possible signal index.
-        k_max: First sample index right of input not affected by a time slice.
+        k_max: First sample index after signal end not touched by a time slice.
         lower_border_end: Where pre-padding effects end.
         p_min: The smallest possible slice index.
         p_max: Index of first non-overlapping upper time slice.
@@ -1419,7 +1422,7 @@ class ShortTimeFFT:
         See Also
         --------
         k_min: The smallest possible signal index.
-        k_max: First sample index right of input not affected by a time slice.
+        k_max: First sample index after signal end not touched by a time slice.
         lower_border_end: Where pre-padding effects end.
         p_min: The smallest possible slice index.
         p_max: Index of first non-overlapping upper time slice.
@@ -1472,7 +1475,6 @@ class ShortTimeFFT:
         --------
         delta_t: Time increment of STFT (``hop*T``)
         hop: Time increment in signal samples for sliding window.
-        nearest_k_p: Nearest sample index k_p for which t[k_p] == t[p] holds.
         T: Sampling interval of input signal and of the window (``1/fs``).
         fs: Sampling frequency (being ``1/T``)
         t: Times of STFT for an input signal with `n` samples.
@@ -1531,6 +1533,8 @@ class ShortTimeFFT:
     @property
     def f(self) -> NDArray:
         """Frequencies values of the STFT.
+
+        A 1d array of length `f_pts` with `delta_f` spaced entries is returned.
 
         See Also
         --------

@@ -1424,8 +1424,8 @@ reason for being named the  "canonical dual window".
 
 .. _tutorial_stft_classic_stft:
 
-Comparison wit Classic Implementation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Comparison with Classic Implementation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The functions |old_stft|, |old_istft|, and the |old_spectrogram| predate the
 |ShortTimeFFT| implementation. This section discusses the key differences
 between the old "classic" and the "new" |ShortTimeFFT| implementations. The
@@ -1484,8 +1484,8 @@ with a negative slope:
     >>> im1a = axx[0].imshow(abs(Sz0), extent=extent0, **kw)
     >>> im1b = axx[1].imshow(abs(Sz1), extent=extent1, **kw)
     >>> fig1.colorbar(im1b, ax=axx,label="Magnitude $|S_z(t, f)|$")
-    >>> _ = fig1.supylabel(f"Frequency $f$ in Hertz ({SFT.f_pts} bins, " +
-    ...                    r"$\Delta f = %g\,$Hz)" % SFT.delta_f)
+    >>> _ = fig1.supylabel(rf"Frequency $f$ in Hertz ($\Delta f = %g\,$Hz)" %
+    ...                    SFT.delta_f)
     >>> plt.show()
 
 
@@ -1587,8 +1587,8 @@ Using the ``mode`` parameter, the classic |old_spectrogram| can also return the
 classic |old_spectrogram| is not straightforward, since it depends on the
 parameters ``mode``, ``scaling`` and ``return_onesided``. There is no direct
 correspondence for all combinations in the |ShortTimeFFT|, since it provides
-only 'magnitude', 'psd' or no `scaling` of window at all. The following table
-shows those correspondences:
+only 'magnitude', 'psd' or no `scaling` of the window at all. The following
+table shows those correspondences:
 
 .. table::
    :class: table-sm
@@ -1622,11 +1622,11 @@ shows those correspondences:
    +-----------+----------+-----------------++------------+-----------+
    | magnitude | density  |       False     || ---        | ---       |
    +-----------+----------+-----------------++------------+-----------+
-   | ---       | ---      |       ---       || ``*``      | None      |
+   | ---       | ---      |       ---       || ``*``      | ``None``  |
    +-----------+----------+-----------------++------------+-----------+
 
 More information on that topic can be found in the Github issue
-`14903 <https://github.com/scipy/scipy/issues/14903>`__, especially in this
+`14903 <https://github.com/scipy/scipy/issues/14903>`__, notably in this
 `comment <https://github.com/scipy/scipy/issues/14903#issuecomment-1100249704>`__.
 
 
