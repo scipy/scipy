@@ -906,39 +906,16 @@ class betaprime_gen(rv_continuous):
             f2=lambda x_, a_, b_: beta._cdf(x_/(1+x_), a_, b_))
 
     def _ppf(self, p, a, b):
-        # _ppf_direct is the direct way to compute the ppf (except for the
-        # additional safety mechanism described in the comment below)
-        # f2 is based on the inversion of the expression using beta._sf in
-        # self.cdf, see comments there.
-        # note that p=1 has to be handled separately to avoid division by 0
-
-        def _ppf_direct(p_, a_, b_):
-            r = stats.beta.ppf(p_, a_, b_)
-            # note: even if we use _ppf_direct only for q < 0.5,
-            # there is no guarantee that r will not be close to 1. if r is
-            # too close to 1, r/(1-r) can cause numerical issues
-            # for fixed p and a, by making b very small, one can get r
-            # arbitrarily close to 1. Example:
-            # stats.beta.ppf(0.1, 0.5, 0.001) == 1.0
-            # so first compute r and then fall back to the "indirect approach"
-            # (f2) if r is too close to 1
-            out = _lazywhere(
-                r < 0.9999,
-                [r, p_, a_, b_],
-                lambda r1, p1, a1, b1: r1 / (1 - r1),
-                f2=lambda r1, p1, a1, b1: 1/stats.beta.isf(p1, b1, a1) - 1
-            )
-            return out
-
-        # needed to avoid TypeError when casting float64 to float32
-        # (check_ppf_dtype in tests/test_continuous_basic.py)
-        p = np.asarray(p, dtype=float)
-        out = _lazywhere(
-            p < 0.5, [p, a, b],
-            _ppf_direct,
-            f2=lambda p_, a_, b_: 1/stats.beta.isf(p_, b_, a_) - 1
-        )
-        return out
+        # by default, compute compute the ppf by solving the following:
+        # p = beta._cdf(x/(1+x), a, b). This implies x = r/(1-r) with
+        # r = beta._ppf(p, a, b). This can cause numerical issues if r is
+        # very close to 1. in that case, invert the alternative expression of
+        # the cdf: p = beta._sf(1/(1+x), b, a).
+        r = stats.beta._ppf(p, a, b)
+        with np.errstate(divide='ignore'):
+            out =  r / (1 - r)
+        i = (r > 0.9999)
+        out[i] = 1/stats.beta._isf(p[i], b[i], a[i]) - 1
 
     def _munp(self, n, a, b):
         if n == 1.0:
