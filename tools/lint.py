@@ -82,7 +82,7 @@ def run_cython_lint(files):
     if not files:
         return 0, ""
     res = subprocess.run(
-        ['cython-lint'] + files,
+        ['cython-lint', '--no-pycodestyle'] + files,
         stdout=subprocess.PIPE,
         encoding='utf-8'
     )

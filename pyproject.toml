@@ -122,7 +122,7 @@ dev = [
     "typing_extensions",
     "pycodestyle",
     "ruff",
-    "cython-lint",
+    "cython-lint>=0.12",
     "rich-click",
     "click",
     "doit>=0.36.0",

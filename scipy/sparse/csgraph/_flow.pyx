@@ -1,7 +1,6 @@
 # cython: wraparound=False, boundscheck=False
 
 import numpy as np
-import warnings
 
 from scipy.sparse import csr_matrix, isspmatrix_csr
 
