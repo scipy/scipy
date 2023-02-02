@@ -2711,6 +2711,15 @@ class TestPowerLogNorm:
     def test_sf(self, x, c, s, ref):
         assert_allclose(stats.powerlognorm.sf(x, c, s), ref, rtol=1e-13)
 
+    # reference values were computed via mpmath using the survival
+    # function above. For inverse sf, we just have to reverse q / ref
+
+    @pytest.mark.parametrize("q, c, s, ref",
+                             [(0.9999999587870905, 0.02, 1, 0.01),
+                              (6.690376686108851e-233, 20, 1, 1000)])
+    def test_isf(self, q, c, s, ref):
+        assert_allclose(stats.powerlognorm.isf(q, c, s), ref, rtol=5e-11)
+
     # reference values were computed via mpmath
     # from mpmath import mp
     # def powerlognormal_cdf_mp(x, c, s):
@@ -2728,6 +2737,15 @@ class TestPowerLogNorm:
     def test_cdf(self, x, c, s, ref):
         assert_allclose(stats.powerlognorm.cdf(x, c, s), ref, rtol=3e-14)
 
+    # reference values were computed via mpmath using the CDF above
+    # For ppf, the inverse CDF, we just have to reverse q / ref
+
+    @pytest.mark.parametrize("q, c, s, ref",
+                             [(0.9999988811461683, 20, 1, 0.99),
+                              (4.121206114168031e-05, 20, 1, 0.01)])
+    def test_ppf(self, q, c, s, ref):
+        assert_allclose(stats.powerlognorm.ppf(q, c, s), ref, rtol=1e-11)
+
     # reference values were computed via mpmath
     # from mpmath import mp
     # def powerlognormal_pdf_mp(x, c, s):
@@ -2736,7 +2754,7 @@ class TestPowerLogNorm:
     #     c = mp.mpf(c)
     #     s = mp.mpf(s)
     #     pdf = (c/(x * s) * mp.npdf(mp.log(x) / s) * 
-    #            mp.ncdf(-mp.log(x)/s)**(c -1))
+    #            mp.ncdf(-mp.log(x) / s)**(c - 1))
     #     return float(pdf)
 
     @pytest.mark.parametrize("x, c, s, ref",

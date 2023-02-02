@@ -7713,7 +7713,7 @@ class powerlognorm_gen(rv_continuous):
         return np.exp(_norm_logcdf(-np.log(x) / s) * c)
 
     def _isf(self, q, c, s):
-        return np.exp(_norm_ppf(-sc.expm1(np.log(q) / c)) * s)
+        return np.exp(-_norm_ppf(np.exp(np.log(q) / c)) * s)
 
 
 powerlognorm = powerlognorm_gen(a=0.0, name="powerlognorm")
