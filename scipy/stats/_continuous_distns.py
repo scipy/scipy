@@ -936,11 +936,7 @@ class betaprime_gen(rv_continuous):
         out = _lazywhere(
             p < 0.5, [p, a, b],
             _ppf_direct,
-            f2=lambda p_, a_, b_: _lazywhere(
-                p_ < 1,
-                [p_, a_, b_],
-                lambda p1, a1, b1: 1/stats.beta.isf(p1, b1, a1) - 1,
-                fillvalue=np.inf)
+            f2=lambda p_, a_, b_: 1/stats.beta.isf(p_, b_, a_) - 1
         )
         return out
 

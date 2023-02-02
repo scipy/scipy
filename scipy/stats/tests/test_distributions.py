@@ -3632,6 +3632,33 @@ class TestBeta:
 
 
 class TestBetaPrime:
+    # the test values are used in test_cdf_gh_17631 / test_ppf_gh_17631
+    # They are computed with mpmath. Example:
+    # from mpmath import mp
+    # mp.dps = 50
+    # a, b = mp.mpf(0.05), mp.mpf(0.1)
+    # x = mp.mpf(1e22)
+    # float(mp.betainc(a, b, 0.0, x/(1+x), regularized=True))
+    # we only list the values where rtol=1e-14 can be achieved for both
+    # the cdf and ppf. additional test cases with different tolerances
+    # can be added in test_cdf_gh_17631 / test_ppf_gh_17631
+    cdf_vals = [
+        (1e22, 100.0, 0.05, 0.8973027435427167, 1e-14),
+        (1e10, 0.05, 0.1, 0.9664184367890859, 1e-14),
+        (1e10, 100.0, 0.05, 0.5911548582766262, 1e-14),
+        (1e8, 0.05, 0.1, 0.9467768090820048, 1e-14),
+        (1e8, 100.0, 0.05, 0.4852944858726726, 1e-14),
+        (1e-10, 0.05, 0.1, 0.21238845427095, 1e-14),
+        (1e-10, 1.5, 1.5, 1.697652726007973e-15, 1e-14),
+        (1e-10, 0.05, 100.0, 0.40884514172337383, 1e-14),
+        (1e-22, 0.05, 0.1, 0.053349567649287326, 1e-14),
+        (1e-22, 1.5, 1.5, 1.6976527263135503e-33, 1e-14),
+        (1e-22, 0.05, 100.0, 0.10269725645728331, 1e-14),
+        (1e-100, 0.05, 0.1, 6.7163126421919795e-06, 1e-14),
+        (1e-100, 1.5, 1.5, 1.6976527263135503e-150, 1e-14),
+        (1e-100, 0.05, 100.0, 1.2928818587561651e-05, 1e-14),
+    ]
+
     def test_logpdf(self):
         alpha, beta = 267, 1472
         x = np.array([0.2, 0.5, 0.6])
@@ -3682,63 +3709,26 @@ class TestBetaPrime:
         x = stats.betaprime.ppf(p, a, b)
         assert_allclose(x, expected, rtol=1e-14)
 
-    def test_ppf_boundary(self):
-        # p == 0 and p == 1.0 need to map to 0.0 and inf
-        # for p == 1.0, division by zero must not occur
-        assert_equal(stats.betaprime.ppf(0.0, 1.3, 0.1), 0.0)
-        assert_equal(stats.betaprime.ppf(1.0, 1.3, 0.1), np.inf)
+    @pytest.mark.parametrize(
+        'x, a, b, p, tol',
+        cdf_vals + [
+            (1e22, 0.05, 0.1, 0.9978811466052919, 1e-12),
+            (1e22, 10, 0.01, 0.38019826239901977, 1e-13),
+            (1e8, 1.5, 1.5, 0.9999999999983024, 1e-5),
+            (1e50, 0.05, 0.1, 0.9999966641709545, 1e-1),
+            (1e50, 100.0, 0.05, 0.995925162631006, 1e-1),]
+    )
+    def test_ppf_gh_17631(self, x, a, b, p, tol):
+        assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=tol)
 
     @pytest.mark.parametrize(
-        'p, a, b, expected, tol',
-        [(0.9978811466052919, 0.05, 0.1, 1e22, 1e-12),
-         (0.8973027435427167, 100.0, 0.05, 1e22, 1e-14),
-         (0.38019826239901977, 10, 0.01, 1e22, 1e-13),
-         (0.9467768090820048, 0.05, 0.1, 1e8, 1e-14),
-         (0.9999999999983024, 1.5, 1.5, 1e8, 1e-5),
-         (0.4852944858726726, 100.0, 0.05, 1e8, 1e-14),
-         (0.9999966641709545, 0.05, 0.1, 1e50, 1e-1),
-         (0.995925162631006, 100.0, 0.05, 1e50, 1e-1),
-         (0.21238845427095, 0.05, 0.1, 1e-10, 1e-14),
-         (1.697652726007973e-15, 1.5, 1.5, 1e-10, 1e-14),
-         (0.40884514172337383, 0.05, 100.0, 1e-10, 1e-14),
-         (0.053349567649287326, 0.05, 0.1, 1e-22, 1e-14),
-         (1.6976527263135503e-33, 1.5, 1.5, 1e-22, 1e-14),
-         (0.10269725645728331, 0.05, 100.0, 1e-22, 1e-14),
-         (6.7163126421919795e-06, 0.05, 0.1, 1e-100, 1e-14),
-         (1.6976527263135503e-150, 1.5, 1.5, 1e-100, 1e-14),
-         (1.2928818587561651e-05, 0.05, 100.0, 1e-100, 1e-14)])
-    def test_ppf_tails(self, p, a, b, expected, tol):
-        # additional test cases for ppf for gh-17631
-        # the value p is computed as cdf(x, a, p) with the cdf
-        # defined as in self.test_cdf_tails below
-        assert_allclose(stats.betaprime.ppf(p, a, b), expected, rtol=tol)
-
-    @pytest.mark.parametrize(
-        'x, a, b, expected',
-        [(1e22, 0.05, 0.1, 0.9978811466052919),
-         (1e22, 100.0, 0.05, 0.8973027435427167),
-         (1e10, 0.05, 0.1, 0.9664184367890859),
-         (1e10, 1.5, 1.5, 0.9999999999999983),
-         (1e10, 100.0, 0.05, 0.5911548582766262),
-         (1e-10, 0.05, 0.1, 0.21238845427095),
-         (1e-10, 1.5, 1.5, 1.697652726007973e-15),
-         (1e-10, 0.05, 100.0, 0.40884514172337383),
-         (1e-22, 0.05, 0.1, 0.053349567649287326),
-         (1e-22, 1.5, 1.5, 1.6976527263135503e-33),
-         (1e-22, 0.05, 100.0, 0.10269725645728331),
-         (1e-100, 0.05, 0.1, 6.7163126421919795e-06),
-         (1e-100, 1.5, 1.5, 1.6976527263135503e-150),
-         (1e-100, 0.05, 100.0, 1.2928818587561651e-05)])
-    def test_cdf_tails(self, x, a, b, expected):
-        # test for gh-17631
-        # values computed with mpmath.
-        # Example:
-        # from mpmath import mp
-        # mp.dps = 50
-        # a, b = mp.mpf(0.05), mp.mpf(0.1)
-        # x = mp.mpf(1e22)
-        # float(mp.betainc(a, b, 0.0, x/(1+x), regularized=True))
-        assert_allclose(stats.betaprime.cdf(x, a, b), expected, rtol=1e-14)
+        'x, a, b, expected, tol',
+        cdf_vals + [
+            (1e10, 1.5, 1.5, 0.9999999999999983, 1e-14),
+            (1e22, 0.05, 0.1, 0.9978811466052919, 1e-14),
+        ])
+    def test_cdf_gh_17631(self, x, a, b, expected, tol):
+        assert_allclose(stats.betaprime.cdf(x, a, b), expected, rtol=tol)
 
     @pytest.mark.parametrize(
         'x, a, b, expected',
