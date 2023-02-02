@@ -419,3 +419,25 @@ def linkcode_resolve(domain, info):
                 scipy.__version__, fn, linespec)
     else:
         return None
+
+
+from numpydoc.docscrape_sphinx import SphinxDocString
+
+def side_effect(func):
+
+    def _wrapped(*args, **kwargs):
+
+        res = func(*args, **kwargs)
+
+        lines = []
+        for line in res:
+            if "np.random.default_rng" in line:
+                prefix = line.split(">>>")[0]
+                line = f"{prefix}>>> rng = np.random.default_rng(1)"
+            lines.append(line)
+
+        return lines
+
+    return _wrapped
+
+SphinxDocString._str_examples = side_effect(SphinxDocString._str_examples)
