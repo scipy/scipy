@@ -6072,7 +6072,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         Parameters
         ----------
         x : ndarray
-            Points at which to evaluate the log of the probability
+            Points at which to evaluate the probability
             density function. The last axis of `x` must correspond
             to unit vectors of the same dimension as the distribution.
 
