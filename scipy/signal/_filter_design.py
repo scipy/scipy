@@ -3050,8 +3050,9 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
 
     .. warning::
         Designing high-order and narrowband IIR filters in TF form can
-        result in unstable or incorrect filtering due to floating point numerical precision issues.
-        Consider inspecting output filter characteristics `freqz` or designing the filters with second-order
+        result in unstable or incorrect filtering due to floating point
+        numerical precision issues. Consider inspecting output filter
+        characteristics `freqz` or designing the filters with second-order
         sections via ``output='sos'``.
 
     Examples
