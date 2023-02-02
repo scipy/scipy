@@ -916,6 +916,7 @@ class betaprime_gen(rv_continuous):
             out =  r / (1 - r)
         i = (r > 0.9999)
         out[i] = 1/stats.beta._isf(p[i], b[i], a[i]) - 1
+        return out
 
     def _munp(self, n, a, b):
         if n == 1.0:
