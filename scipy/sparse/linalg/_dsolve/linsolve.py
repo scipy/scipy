@@ -634,35 +634,49 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     if is_pydata_spmatrix(A):
         A = A.to_scipy_sparse().tocsc()
+
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
         warn('CSC matrix format is required. Converting to CSC matrix.',
              SparseEfficiencyWarning)
+    elif not overwrite_A:
+        A = A.copy()
+
+
+    M, N = A.shape
+    if M != N:
+        raise ValueError(
+            f'A must be a square matrix but its shape is {A.shape}.')
 
     if unit_diagonal:
-        if not overwrite_A:
-            A = A.copy()
         A.setdiag(1)
     else:
         diag = A.diagonal()
-        A = A.multiply(1/diag).tocsc()  # makes a copy as well
+        A = A.multiply(1/diag).tocsc()
+
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
+    
+    b = np.asanyarray(b)
+
+    if b.ndim not in [1, 2]:
+        raise ValueError(
+            f'b must have 1 or 2 dims but its shape is {b.shape}.')
+    if M != b.shape[0]:
+        raise ValueError(
+            'The size of the dimensions of A must be equal to '
+            'the size of the first dimension of b but the shape of A is '
+            '{} and the shape of b is {}.'.format(A.shape, b.shape))
+
     A = A.asfptype()  # upcast to a floating point format
     result_dtype = np.promote_types(A.dtype, b.dtype)
     if A.dtype != result_dtype:
         A = A.astype(result_dtype)
     if b.dtype != result_dtype:
         b = b.astype(result_dtype)
-
-    # validate input shapes
-    M, N = A.shape
-    if (M != N):
-        raise ValueError("matrix must be square (has shape %s)" % ((M, N),))
-    if M != b.shape[0]:
-        raise ValueError("matrix - rhs dimension mismatch (%s - %s)"
-                         % (A.shape, b.shape[0]))
+    if not overwrite_b:
+        b = b.copy()
 
     if lower:
         L = A
@@ -671,9 +685,6 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         L = eye(N, format='csc')
         U = A
         U.setdiag(0)
-
-    if not overwrite_b:
-        b = b.copy()
 
     x, info = _superlu.gstrs(N, L.nnz, L.data, L.indices, L.indptr,
                              N, U.nnz, U.data, U.indices, U.indptr,
