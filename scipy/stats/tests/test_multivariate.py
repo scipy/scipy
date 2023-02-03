@@ -514,12 +514,19 @@ class TestMultivariateNormal:
         assert_allclose(norm_frozen.logcdf(x),
                         multivariate_normal.logcdf(x, mean, cov))
     
-    def test_frozen_multivariate_normal_exposes_attributes(self):
+    @pytest.mark.parametrize(
+        'covariance',
+        [
+            np.eye(2),
+            Covariance.from_diagonal([1, 1]),
+        ]
+    )
+    def test_frozen_multivariate_normal_exposes_attributes(self, covariance):
         mean = np.ones((2,))
-        cov = np.eye(2)
-        norm_frozen = multivariate_normal(mean, cov)
+        cov_should_be = np.eye(2)
+        norm_frozen = multivariate_normal(mean, covariance)
         assert np.allclose(norm_frozen.mean, mean)
-        assert np.allclose(norm_frozen.cov, cov)
+        assert np.allclose(norm_frozen.cov, cov_should_be)
         assert isinstance(norm_frozen.cov_object, Covariance)
 
     def test_pseudodet_pinv(self):
