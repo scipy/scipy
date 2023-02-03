@@ -137,14 +137,9 @@ def _wrap_callback(callback, method=None):
     if callback is None or method in {'tnc', 'slsqp', 'cobyla'}:
         return callback  # don't wrap
 
-    p1 = (inspect.Parameter('intermediate_result',
-                            kind=inspect.Parameter.POSITIONAL_OR_KEYWORD),)
-    p2 = (inspect.Parameter('intermediate_result',
-                            kind=inspect.Parameter.KEYWORD_ONLY),)
-    sig1 = inspect.Signature(parameters=p1)
-    sig2 = inspect.Signature(parameters=p2)
+    sig = inspect.signature(callback)
 
-    if inspect.signature(callback) in {sig1, sig2}:
+    if set(sig.parameters) == {'intermediate_result'}:
         def wrapped_callback(res):
             return callback(intermediate_result=res)
     elif method == 'trust-constr':
@@ -1510,7 +1505,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         msg = _status_message['success']
 
     if disp:
-        print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
+        print("{}{}".format("Warning: " if warnflag != 0 else "", msg))
         print("         Current function value: %f" % fval)
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
@@ -1831,7 +1826,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         msg = _status_message['success']
 
     if disp:
-        print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
+        print("{}{}".format("Warning: " if warnflag != 0 else "", msg))
         print("         Current function value: %f" % fval)
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
@@ -3696,7 +3691,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
                          "than 40 variables.")
     lrange = list(ranges)
     for k in range(N):
-        if type(lrange[k]) is not type(slice(None)):
+        if not isinstance(lrange[k], slice):
             if len(lrange[k]) < 3:
                 lrange[k] = tuple(lrange[k]) + (complex(Ns),)
             lrange[k] = slice(*lrange[k])
@@ -3980,7 +3975,7 @@ def show_options(solver=None, method=None, disp=True):
     else:
         solver = solver.lower()
         if solver not in doc_routines:
-            raise ValueError('Unknown solver %r' % (solver,))
+            raise ValueError(f'Unknown solver {solver!r}')
 
         if method is None:
             text = []
@@ -3992,7 +3987,7 @@ def show_options(solver=None, method=None, disp=True):
             method = method.lower()
             methods = dict(doc_routines[solver])
             if method not in methods:
-                raise ValueError("Unknown method %r" % (method,))
+                raise ValueError(f"Unknown method {method!r}")
             name = methods[method]
 
             # Import function object

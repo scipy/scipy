@@ -209,7 +209,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         of the parameter vector and objective function. Note that the name
         of the parameter must be ``intermediate_result`` for the callback
         to be passed an `OptimizeResult`. These methods will also terminate if
-        the callback raises `StopIteration`.
+        the callback raises ``StopIteration``.
 
         All methods except trust-constr (also) support a signature like:
 
@@ -217,9 +217,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         where ``xk`` is the current parameter vector.
 
-        All methods except TNC, SLSQP, and COBYLA will terminate if the
-        callback raises `StopIteration`. Introspection is used to determine
-        which of the signatures above to invoke.
+        Introspection is used to determine which of the signatures above to
+        invoke.
 
     Returns
     -------
@@ -923,18 +922,25 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         options['disp'] = 2 * int(disp)
 
     if meth == '_custom':
-        return method(fun, args=args, bracket=bracket, bounds=bounds, **options)
+        res = method(fun, args=args, bracket=bracket, bounds=bounds, **options)
     elif meth == 'brent':
-        return _minimize_scalar_brent(fun, bracket, args, **options)
+        res = _minimize_scalar_brent(fun, bracket, args, **options)
     elif meth == 'bounded':
         if bounds is None:
             raise ValueError('The `bounds` parameter is mandatory for '
                              'method `bounded`.')
-        return _minimize_scalar_bounded(fun, bounds, args, **options)
+        res = _minimize_scalar_bounded(fun, bounds, args, **options)
     elif meth == 'golden':
-        return _minimize_scalar_golden(fun, bracket, args, **options)
+        res = _minimize_scalar_golden(fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
+
+    # gh-16196 reported inconsistencies in the output shape of `res.x`. While
+    # fixing this, future-proof it for when the function is vectorized:
+    # the shape of `res.x` should match that of `res.fun`.
+    res.fun = np.asarray(res.fun)[()]
+    res.x = np.reshape(res.x, res.fun.shape)[()]
+    return res
 
 
 def _remove_from_bounds(bounds, i_fixed):

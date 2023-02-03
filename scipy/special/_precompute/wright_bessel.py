@@ -311,7 +311,7 @@ def optimal_epsilon_integral():
     s += "optimal_eps = (A0 * b * exp(-a/2) + exp(A1 + 1 / (1 + a) * log(x)\n"
     s += "              - A2 * exp(-A3 * a) + A4 / (1 + exp(A5 * a)))\n\n"
     s += "Fitted parameters A0 to A5 are:\n"
-    s += ', '.join(['{:.5g}'.format(x) for x in func_params])
+    s += ', '.join([f'{x:.5g}' for x in func_params])
     return s
 
 
@@ -335,7 +335,7 @@ def main():
               4: lambda: print(optimal_epsilon_integral())
               }
     switch.get(args.action, lambda: print("Invalid input."))()
-    print("\n{:.1f} minutes elapsed.\n".format((time() - t0)/60))
+    print(f"\n{(time() - t0)/60:.1f} minutes elapsed.\n")
 
 
 if __name__ == '__main__':

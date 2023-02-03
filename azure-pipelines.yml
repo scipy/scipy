@@ -144,20 +144,19 @@ stages:
         addToPath: true
         architecture: 'x64'
     - script: >-
-        python -m pip install
-        "flake8<6"
+        python -m pip install ruff cython-lint
       displayName: 'Install tools'
       failOnStderr: false
     - script: |
         set -euo pipefail
-        flake8 scipy benchmarks/benchmarks
         # for Travis CI we used to do: git fetch --unshallow
         # but apparently Azure clones are not as shallow
         # so does not appear to be needed to fetch maintenance
         # branches (which Azure logs show being checked out
         # in Checkout stage)
-        python tools/lint_diff.py --branch origin/$(System.PullRequest.TargetBranch)
+        python tools/lint.py --diff-against origin/$(System.PullRequest.TargetBranch)
         tools/unicode-check.py
+        tools/check_test_name.py
       displayName: 'Run Lint Checks'
       failOnStderr: true
   - job: Linux_Python_38_32bit_full

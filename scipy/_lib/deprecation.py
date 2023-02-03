@@ -9,7 +9,7 @@ def _deprecated(msg, stacklevel=2):
     def wrap(fun):
         if isinstance(fun, type):
             warnings.warn(
-                "Trying to deprecate class {!r}".format(fun),
+                f"Trying to deprecate class {fun!r}",
                 category=RuntimeWarning, stacklevel=2)
             return fun
 
@@ -76,7 +76,7 @@ def deprecate_cython_api(module, routine_name, new_name=None, message=None):
     deprecation warning when they are imported.
 
     """
-    old_name = "{}.{}".format(module.__name__, routine_name)
+    old_name = f"{module.__name__}.{routine_name}"
 
     if new_name is None:
         depdoc = "`%s` is deprecated!" % old_name
@@ -93,7 +93,7 @@ def deprecate_cython_api(module, routine_name, new_name=None, message=None):
     j = 0
     has_fused = False
     while True:
-        fused_name = "__pyx_fuse_{}{}".format(j, routine_name)
+        fused_name = f"__pyx_fuse_{j}{routine_name}"
         if fused_name in d:
             has_fused = True
             d[_DeprecationHelperStr(fused_name, depdoc)] = d.pop(fused_name)

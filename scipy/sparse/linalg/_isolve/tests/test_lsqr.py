@@ -139,15 +139,15 @@ if __name__ == "__main__":
 
     print('LSQR')
     print("Is linear operator symmetric? " + sym)
-    print("n: %3g  iterations:   %3g" % (n, k))
+    print(f"n: {n:3g}  iterations:   {k:3g}")
     print("Norms computed in %.2fs by LSQR" % (time() - tic))
-    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e " % (chio, phio, psio))
+    print(f" ||x||  {chio:9.4e}  ||r|| {phio:9.4e}  ||Ar||  {psio:9.4e} ")
     print("Residual norms computed directly:")
-    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e" % (norm(xo),
+    print(" ||x||  {:9.4e}  ||r|| {:9.4e}  ||Ar||  {:9.4e}".format(norm(xo),
                                                          norm(G*xo - b),
                                                          norm(G.T*(G*xo-b))))
     print("Direct solution norms:")
-    print(" ||x||  %9.4e  ||r|| %9.4e " % (norm(svx), norm(G*svx - b)))
+    print(f" ||x||  {norm(svx):9.4e}  ||r|| {norm(G*svx - b):9.4e} ")
     print("")
     print(" || x_{direct} - x_{LSQR}|| %9.4e " % norm(svx-xo))
     print("")

@@ -17,8 +17,8 @@ _lib_pxd = [
 ]
 
 # Cython pyx -> c generator with _lib_pxd dependency
-lib_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+lib_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [_cython_tree, _lib_pxd])
 

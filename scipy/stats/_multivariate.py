@@ -582,7 +582,7 @@ class multivariate_normal_gen(multi_rv_generic):
         dim, mean, cov_object = params
         x = self._process_quantiles(x, dim)
         out = np.exp(self._logpdf(x, mean, cov_object))
-        if np.any((cov_object.rank < dim)):
+        if np.any(cov_object.rank < dim):
             out_of_bounds = ~cov_object._support_mask(x-mean)
             out[out_of_bounds] = 0.0
         return _squeeze_output(out)
@@ -946,6 +946,8 @@ class matrix_normal_gen(multi_rv_generic):
         Log of the probability density function.
     rvs(mean=None, rowcov=1, colcov=1, size=1, random_state=None)
         Draw random samples.
+    entropy(rowcol=1, colcov=1)
+        Differential entropy.
 
     Parameters
     ----------
@@ -1249,6 +1251,40 @@ class matrix_normal_gen(multi_rv_generic):
             out = out.reshape(mean.shape)
         return out
 
+    def entropy(self, rowcov=1, colcov=1):
+        """Log of the matrix normal probability density function.
+
+        Parameters
+        ----------
+        rowcov : array_like, optional
+            Among-row covariance matrix of the distribution (default: `1`)
+        colcov : array_like, optional
+            Among-column covariance matrix of the distribution (default: `1`)
+
+        Returns
+        -------
+        entropy : float
+            Entropy of the distribution
+
+        Notes
+        -----
+        %(_matnorm_doc_callparams_note)s
+
+        """
+        dummy_mean = np.zeros((rowcov.shape[0], colcov.shape[0]))
+        dims, _, rowcov, colcov = self._process_parameters(dummy_mean,
+                                                           rowcov,
+                                                           colcov)
+        rowpsd = _PSD(rowcov, allow_singular=False)
+        colpsd = _PSD(colcov, allow_singular=False)
+
+        return self._entropy(dims, rowpsd.log_pdet, colpsd.log_pdet)
+
+    def _entropy(self, dims, row_cov_logdet, col_cov_logdet):
+        n, p = dims
+        return (0.5 * n * p * (1 + _LOG_2PI) + 0.5 * p * row_cov_logdet +
+                0.5 * n * col_cov_logdet)
+
 
 matrix_normal = matrix_normal_gen()
 
@@ -1305,10 +1341,14 @@ class matrix_normal_frozen(multi_rv_frozen):
         return self._dist.rvs(self.mean, self.rowcov, self.colcov, size,
                               random_state)
 
+    def entropy(self):
+        return self._dist._entropy(self.dims, self.rowpsd.log_pdet,
+                                   self.colpsd.log_pdet)
+
 
 # Set frozen generator docstrings from corresponding docstrings in
 # matrix_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'rvs']:
+for name in ['logpdf', 'pdf', 'rvs', 'entropy']:
     method = matrix_normal_gen.__dict__[name]
     method_frozen = matrix_normal_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(method.__doc__,
@@ -1342,7 +1382,7 @@ def _dirichlet_check_parameters(alpha):
         raise ValueError("All parameters must be greater than 0")
     elif alpha.ndim != 1:
         raise ValueError("Parameter vector 'a' must be one dimensional, "
-                         "but a.shape = %s." % (alpha.shape, ))
+                         "but a.shape = {}.".format(alpha.shape))
     return alpha
 
 
@@ -1352,8 +1392,8 @@ def _dirichlet_check_input(alpha, x):
     if x.shape[0] + 1 != alpha.shape[0] and x.shape[0] != alpha.shape[0]:
         raise ValueError("Vector 'x' must have either the same number "
                          "of entries as, or one entry fewer than, "
-                         "parameter vector 'a', but alpha.shape = %s "
-                         "and x.shape = %s." % (alpha.shape, x.shape))
+                         "parameter vector 'a', but alpha.shape = {} "
+                         "and x.shape = {}.".format(alpha.shape, x.shape))
 
     if x.shape[0] != alpha.shape[0]:
         xk = np.array([1 - np.sum(x, 0)])
@@ -1921,7 +1961,7 @@ class wishart_gen(multi_rv_generic):
         # Now we have 3-dim array; should have shape [dim, dim, *]
         if not x.shape[0:2] == (dim, dim):
             raise ValueError('Quantiles have incompatible dimensions: should'
-                             ' be %s, got %s.' % ((dim, dim), x.shape[0:2]))
+                             ' be {}, got {}.'.format((dim, dim), x.shape[0:2]))
 
         return x
 
@@ -2497,6 +2537,8 @@ class invwishart_gen(wishart_gen):
         Log of the probability density function.
     rvs(df, scale, size=1, random_state=None)
         Draw random samples from an inverse Wishart distribution.
+    entropy(df, scale)
+        Differential entropy of the distribution.
 
     Parameters
     ----------
@@ -2998,7 +3040,7 @@ p : array_like
 """
 
 _multinomial_doc_callparams_note = """\
-`n` should be a positive integer. Each element of `p` should be in the
+`n` should be a nonnegative integer. Each element of `p` should be in the
 interval :math:`[0,1]` and the elements should sum to 1. If they do not sum to
 1, the last element of the `p` array is not used and is replaced with the
 remaining probability left over from the earlier elements.
@@ -3157,7 +3199,7 @@ class multinomial_gen(multi_rv_generic):
         n = np.array(n, dtype=np.int_, copy=True)
 
         # true for bad n
-        ncond = n <= 0
+        ncond = n < 0
 
         return n, p, ncond | pcond
 

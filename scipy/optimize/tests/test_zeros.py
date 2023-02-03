@@ -55,7 +55,7 @@ def f2_2(x):
 
 
 # lru cached function
-@lru_cache()
+@lru_cache
 def f_lrucached(x):
     return x
 
@@ -75,7 +75,7 @@ class TestBasic:
             zero = r.root
             assert_(r.converged)
             assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
-                            err_msg='method %s, function %s' % (name, fname))
+                            err_msg=f'method {name}, function {fname}')
 
     def run_check(self, method, name):
         a = .5
@@ -87,7 +87,7 @@ class TestBasic:
                              full_output=True)
             assert_(r.converged)
             assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
-                            err_msg='method %s, function %s' % (name, fname))
+                            err_msg=f'method {name}, function {fname}')
 
     def run_check_lru_cached(self, method, name):
         # check that https://github.com/scipy/scipy/issues/10846 is fixed
@@ -96,7 +96,7 @@ class TestBasic:
         zero, r = method(f_lrucached, a, b, full_output=True)
         assert_(r.converged)
         assert_allclose(zero, 0,
-                        err_msg='method %s, function %s' % (name, 'f_lrucached'))
+                        err_msg='method {}, function {}'.format(name, 'f_lrucached'))
 
     def _run_one_test(self, tc, method, sig_args_keys=None,
                       sig_kwargs_keys=None, **kwargs):
@@ -277,6 +277,9 @@ class TestBasic:
         for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
             r = root_scalar(f, method='newton', x0=3, fprime=f_1, xtol=1e-6)
             assert_allclose(f(r.root), 0, atol=1e-6)
+        for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
+            r = root_scalar(f, method='newton', x0=3, xtol=1e-6)  # without f'
+            assert_allclose(f(r.root), 0, atol=1e-6)
 
     def test_secant_by_name(self):
         r"""Invoke secant through root_scalar()"""
@@ -284,6 +287,9 @@ class TestBasic:
             r = root_scalar(f, method='secant', x0=3, x1=2, xtol=1e-6)
             assert_allclose(f(r.root), 0, atol=1e-6)
             r = root_scalar(f, method='secant', x0=3, x1=5, xtol=1e-6)
+            assert_allclose(f(r.root), 0, atol=1e-6)
+        for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
+            r = root_scalar(f, method='secant', x0=3, xtol=1e-6)  # without x1
             assert_allclose(f(r.root), 0, atol=1e-6)
 
     def test_halley_by_name(self):
@@ -294,13 +300,11 @@ class TestBasic:
             assert_allclose(f(r.root), 0, atol=1e-6)
 
     def test_root_scalar_fail(self):
-        with pytest.raises(ValueError):
-            root_scalar(f1, method='secant', x0=3, xtol=1e-6)  # no x1
-        with pytest.raises(ValueError):
-            root_scalar(f1, method='newton', x0=3, xtol=1e-6)  # no fprime
-        with pytest.raises(ValueError):
+        message = 'fprime2 must be specified for halley'
+        with pytest.raises(ValueError, match=message):
             root_scalar(f1, method='halley', fprime=f1_1, x0=3, xtol=1e-6)  # no fprime2
-        with pytest.raises(ValueError):
+        message = 'fprime must be specified for halley'
+        with pytest.raises(ValueError, match=message):
             root_scalar(f1, method='halley', fprime2=f1_2, x0=3, xtol=1e-6)  # no fprime
 
     def test_array_newton(self):
@@ -389,9 +393,12 @@ class TestBasic:
             assert not results.converged.any()
 
     def test_newton_combined(self):
-        f1 = lambda x: x**2 - 2*x - 1
-        f1_1 = lambda x: 2*x - 2
-        f1_2 = lambda x: 2.0 + 0*x
+        def f1(x):
+            return x ** 2 - 2 * x - 1
+        def f1_1(x):
+            return 2 * x - 2
+        def f1_2(x):
+            return 2.0 + 0 * x
 
         def f1_and_p_and_pp(x):
             return x**2 - 2*x-1, 2*x-2, 2.0
@@ -444,8 +451,10 @@ class TestBasic:
                     x, r = zeros.newton(self.f1, x0, maxiter=iters, disp=True, **kwargs)
 
     def test_deriv_zero_warning(self):
-        func = lambda x: x**2 - 2.0
-        dfunc = lambda x: 2*x
+        def func(x):
+            return x ** 2 - 2.0
+        def dfunc(x):
+            return 2 * x
         assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc, disp=False)
         with pytest.raises(RuntimeError, match='Derivative was zero'):
             zeros.newton(func, 0.0, dfunc)
@@ -463,6 +472,32 @@ class TestBasic:
             with pytest.raises(TypeError,
                     match="'float' object cannot be interpreted as an integer"):
                 method(f1, 0.0, 1.0, maxiter=72.45)
+
+    def test_gh17570_defaults(self):
+        # Previously, when fprime was not specified, root_scalar would default
+        # to secant. When x1 was not specified, secant failed.
+        # Check that without fprime, the default is secant if x1 is specified
+        # and newton otherwise.
+        res_newton_default = root_scalar(f1, method='newton', x0=3, xtol=1e-6)
+        res_secant_default = root_scalar(f1, method='secant', x0=3, x1=2,
+                                         xtol=1e-6)
+        # `newton` uses the secant method when `x1` and `x2` are specified
+        res_secant = newton(f1, x0=3, x1=2, tol=1e-6, full_output=True)[1]
+
+        # all three foun a root
+        assert_allclose(f1(res_newton_default.root), 0, atol=1e-6)
+        assert_allclose(f1(res_secant_default.root), 0, atol=1e-6)
+        assert_allclose(f1(res_secant.root), 0, atol=1e-6)
+
+        # Defaults are correct
+        assert (res_secant_default.root
+                == res_secant.root
+                != res_newton_default.iterations)
+        assert (res_secant_default.iterations
+                == res_secant_default.function_calls - 1  # true for secant
+                == res_secant.iterations
+                != res_newton_default.iterations
+                == res_newton_default.function_calls/2)  # newton 2-point diff
 
 
 def test_gh_5555():
@@ -810,6 +845,22 @@ def test_function_calls(solver_name, rs_interface):
         assert res[1].function_calls == f.calls
 
 
+def test_gh_14486_converged_false():
+    """Test that zero slope with secant method results in a converged=False"""
+    def lhs(x):
+        return x * np.exp(-x*x) - 0.07
+
+    with pytest.warns(RuntimeWarning, match='Tolerance of'):
+        res = root_scalar(lhs, method='secant', x0=-0.15, x1=1.0)
+    assert not res.converged
+    assert res.flag == 'convergence error'
+
+    with pytest.warns(RuntimeWarning, match='Tolerance of'):
+        res = newton(lhs, x0=-0.15, x1=1.0, disp=False, full_output=True)[1]
+    assert not res.converged
+    assert res.flag == 'convergence error'
+
+
 @pytest.mark.parametrize('solver_name',
                          ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
 @pytest.mark.parametrize('rs_interface', [True, False])
@@ -833,7 +884,7 @@ def test_gh5584(solver_name, rs_interface):
     assert_allclose(res.root, 0, atol=1e-8)
 
     # Solve successfully when one side is negative zero
-    res = solver(f, -0.5, -1e-200*1e-200, full_output=True)
+    res = solver(f, -0.5, float('-0.0'), full_output=True)
     res = res if rs_interface else res[1]
     assert res.converged
     assert_allclose(res.root, 0, atol=1e-8)
@@ -857,7 +908,7 @@ def test_gh13407():
     assert f1 < f4
 
     # using old-style syntax to get exactly the same message
-    message = r"rtol too small \(%g < %g\)" % (eps/2, eps)
+    message = fr"rtol too small \({eps/2:g} < {eps:g}\)"
     with pytest.raises(ValueError, match=message):
         zeros.toms748(f, 1e-10, 1e10, xtol=xtol, rtol=eps/2)
 
