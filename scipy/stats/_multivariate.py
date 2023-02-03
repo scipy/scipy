@@ -503,10 +503,6 @@ class multivariate_normal_gen(multi_rv_generic):
 
         return x
 
-    @property
-    def cov(self):
-        return self.cov_object.covariance
-
     def _logpdf(self, x, mean, cov_object):
         """Log of the multivariate normal probability density function.
 
