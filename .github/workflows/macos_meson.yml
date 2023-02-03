@@ -74,7 +74,7 @@ jobs:
         channels: conda-forge
         channel-priority: true
         activate-environment: scipy-dev
-        use-only-tar-bz2: true
+        use-only-tar-bz2: false
         miniforge-variant: Mambaforge
         miniforge-version: latest
         use-mamba: true
