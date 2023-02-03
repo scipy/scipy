@@ -3,7 +3,7 @@ from warnings import warn
 import numpy as np
 from numpy import asarray
 from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
-                          SparseEfficiencyWarning, csc_matrix, csr_matrix)
+                          SparseEfficiencyWarning, csc_matrix, csr_matrix, eye)
 from scipy.sparse._sputils import is_pydata_spmatrix
 from scipy.linalg import LinAlgError
 import copy
@@ -589,8 +589,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         Whether `A` is a lower or upper triangular matrix.
         Default is lower triangular matrix.
     overwrite_A : bool, optional
-        Allow changing `A`. The indices of `A` are going to be sorted and zero
-        entries are going to be removed.
+        Allow changing `A`.
         Enabling gives a performance gain. Default is False.
     overwrite_b : bool, optional
         Allow overwriting data in `b`.
@@ -598,8 +597,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         If `overwrite_b` is True, it should be ensured that
         `b` has an appropriate dtype to be able to store the result.
     unit_diagonal : bool, optional
-        If True, diagonal elements of `a` are assumed to be 1 and will not be
-        referenced.
+        If True, diagonal elements of `a` are assumed to be 1.
 
         .. versionadded:: 1.4.0
 
@@ -633,83 +631,58 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
     """
 
     if is_pydata_spmatrix(A):
-        A = A.to_scipy_sparse().tocsr()
-
-    # Check the input for correct type and format.
-    if not isspmatrix_csr(A):
-        warn('CSR matrix format is required. Converting to CSR matrix.',
+        A = A.to_scipy_sparse().tocsc()
+    if not isspmatrix_csc(A):
+        A = csc_matrix(A)
+        warn('CSC matrix format is required. Converting to CSC matrix.',
              SparseEfficiencyWarning)
-        A = csr_matrix(A)
-    elif not overwrite_A:
-        A = A.copy()
 
-    if A.shape[0] != A.shape[1]:
-        raise ValueError(
-            'A must be a square matrix but its shape is {}.'.format(A.shape))
+    if unit_diagonal:
+        if not overwrite_A:
+            A = A.copy()
+        A.setdiag(1)
+    else:
+        diag = A.diagonal()
+        A = A.multiply(1/diag).tocsc()  # makes a copy as well
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
+    A = A.asfptype()  # upcast to a floating point format
+    result_dtype = np.promote_types(A.dtype, b.dtype)
+    if A.dtype != result_dtype:
+        A = A.astype(result_dtype)
+    if b.dtype != result_dtype:
+        b = b.astype(result_dtype)
 
-    b = np.asanyarray(b)
+    # validate input shapes
+    M, N = A.shape
+    if (M != N):
+        raise ValueError("matrix must be square (has shape %s)" % ((M, N),))
+    if M != b.shape[0]:
+        raise ValueError("matrix - rhs dimension mismatch (%s - %s)"
+                         % (A.shape, b.shape[0]))
 
-    if b.ndim not in [1, 2]:
-        raise ValueError(
-            'b must have 1 or 2 dims but its shape is {}.'.format(b.shape))
-    if A.shape[0] != b.shape[0]:
-        raise ValueError(
-            'The size of the dimensions of A must be equal to '
-            'the size of the first dimension of b but the shape of A is '
-            '{} and the shape of b is {}.'.format(A.shape, b.shape))
-
-    # Init x as (a copy of) b.
-    x_dtype = np.result_type(A.data, b, np.float64)
-    if overwrite_b:
-        if np.can_cast(b.dtype, x_dtype, casting='same_kind'):
-            x = b
-        else:
-            raise ValueError(
-                'Cannot overwrite b (dtype {}) with result '
-                'of type {}.'.format(b.dtype, x_dtype))
-    else:
-        x = b.astype(x_dtype, copy=True)
-
-    # Choose forward or backward order.
     if lower:
-        row_indices = range(len(b))
+        L = A
+        U = csc_matrix((N, N))
     else:
-        row_indices = range(len(b) - 1, -1, -1)
+        L = eye(N, format='csc')
+        U = A
+        U.setdiag(0)
 
-    # Fill x iteratively.
-    for i in row_indices:
+    if not overwrite_b:
+        b = b.copy()
 
-        # Get indices for i-th row.
-        indptr_start = A.indptr[i]
-        indptr_stop = A.indptr[i + 1]
+    x, info = _superlu.gstrs(N, L.nnz, L.data, L.indices, L.indptr,
+                             N, U.nnz, U.data, U.indices, U.indptr,
+                             b)
+    if info:
+        warn("Matrix is singular", MatrixRankWarning)
+        x.fill(np.nan)
 
-        if lower:
-            A_diagonal_index_row_i = indptr_stop - 1
-            A_off_diagonal_indices_row_i = slice(indptr_start, indptr_stop - 1)
-        else:
-            A_diagonal_index_row_i = indptr_start
-            A_off_diagonal_indices_row_i = slice(indptr_start + 1, indptr_stop)
-
-        # Check regularity and triangularity of A.
-        if not unit_diagonal and (indptr_stop <= indptr_start
-                                  or A.indices[A_diagonal_index_row_i] < i):
-            raise LinAlgError(
-                'A is singular: diagonal {} is zero.'.format(i))
-        if not unit_diagonal and A.indices[A_diagonal_index_row_i] > i:
-            raise LinAlgError(
-                'A is not triangular: A[{}, {}] is nonzero.'
-                ''.format(i, A.indices[A_diagonal_index_row_i]))
-
-        # Incorporate off-diagonal entries.
-        A_column_indices_in_row_i = A.indices[A_off_diagonal_indices_row_i]
-        A_values_in_row_i = A.data[A_off_diagonal_indices_row_i]
-        x[i] -= np.dot(x[A_column_indices_in_row_i].T, A_values_in_row_i)
-
-        # Compute i-th entry of x.
-        if not unit_diagonal:
-            x[i] /= A.data[A_diagonal_index_row_i]
+    if not unit_diagonal:
+        diag = diag.reshape(-1, *([1]*(len(x.shape)-1)))
+        x = x / diag
 
     return x
+
