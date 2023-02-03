@@ -4538,7 +4538,6 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         sos = np.asarray(sos, dtype=result_type)
     elif isinstance(ftype, dlti):
         system = ftype._as_zpk()
-        print(system.poles.shape)
         if system.poles.shape[0] == 0:
             # FIR
             system = ftype._as_tf()
