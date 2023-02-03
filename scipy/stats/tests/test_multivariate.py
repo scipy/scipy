@@ -515,7 +515,6 @@ class TestMultivariateNormal:
                         multivariate_normal.logcdf(x, mean, cov))
     
     def test_frozen_multivariate_normal_exposes_attributes(self):
-        np.random.seed(1234)
         mean = np.ones((2,))
         cov = np.eye(2)
         norm_frozen = multivariate_normal(mean, cov)
