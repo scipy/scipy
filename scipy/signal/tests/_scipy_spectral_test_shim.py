@@ -59,8 +59,8 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
                       None: None}
 
     if boundary not in boundary_funcs:
-        raise ValueError("Unknown boundary option '{0}', must be one of: {1}"
-                         .format(boundary, list(boundary_funcs.keys())))
+        raise ValueError(f"Unknown boundary option '{boundary}', must be one" +
+                         f" of: {list(boundary_funcs.keys())}")
     if x.size == 0:
         return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape)
 
@@ -211,7 +211,7 @@ def _istft_wrapper(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
         if len(win.shape) != 1:
             raise ValueError('window must be 1-D')
         if win.shape[0] != nperseg:
-            raise ValueError('window must have length of {0}'.format(nperseg))
+            raise ValueError(f'window must have length of {nperseg}')
 
     outputlength = nperseg + (nseg-1)*nstep
     # *** End block of: Taken from _spectral_py.istft() ***
