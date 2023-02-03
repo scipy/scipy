@@ -98,7 +98,8 @@ jobs:
     - name: Update Conda Environment
       run: |
         conda clean --index-cache --yes
-        mamba env update -n scipy-dev -f environment.yml
+        mamba env remove -n scipy-dev --yes
+        mamba env create -f environment.yml
       if: steps.envcache.outputs.cache-hit != 'true'
 
     - name: Build and Install SciPy
