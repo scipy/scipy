@@ -305,24 +305,6 @@ class multivariate_normal_gen(multi_rv_generic):
     entropy()
         Compute the differential entropy of the multivariate normal.
 
-    Attributes
-    ----------
-    mean : ndarray
-        Mean of the distribution.
-        
-        .. versionadded:: 1.10.1
-        
-    cov : ndarray
-        Covariance matrix of the distribution.
-
-        .. versionadded:: 1.10.1
-
-    cov_object : `Covariance`
-        Representation of the covariance matrix as a `Covariance` object.
-
-        .. versionadded:: 1.10.1
-
-
     Parameters
     ----------
     %(_mvn_doc_default_callparams)s
