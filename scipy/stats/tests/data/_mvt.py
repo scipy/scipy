@@ -6,10 +6,14 @@ from scipy.stats._qmc import primes_from_2_to
 
 
 def _primes(n):
+    # Defined to facilitate comparison between translation and source
+    # In Matlab, primes(10.5) -> first four primes, primes(11.5) -> first five
     return primes_from_2_to(math.ceil(n))
 
 
 def _gaminv(a, b):
+    # Defined to facilitate comparison between translation and source
+    # Matlab's `gaminv` is like `special.gammaincinv` but args are reversed
     return special.gammaincinv(b, a)
 
 

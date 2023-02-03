@@ -383,21 +383,6 @@ def _qmvt(m, nu, covar, low, high, rng, lattice='cbc', n_batches=10):
     return prob, est_error, n_samples
 
 
-def _bounds(m, t, alternative):
-    if alternative == 'greater':
-        low = np.full(m, -np.inf)
-        high = np.full(m, t)
-    elif alternative == 'less':
-        low = np.full(m, t)
-        high = np.full(m, np.inf)
-    elif alternative == 'two-sided':
-        low = np.full(m, -abs(t))
-        high = np.full(m, abs(t))
-    else:
-        raise ValueError("expected one of {'less', 'greater', 'two-sided'}")
-    return low, high
-
-
 def _permuted_cholesky(covar, low, high, tol=1e-10):
     """Compute a scaled, permuted Cholesky factor, with integration bounds.
 

@@ -242,6 +242,20 @@ class TestCovariance:
         assert_equal(res, ref)
 
 
+def _random_covariance(dim, evals, rng, singular=False):
+    # Generates random covariance matrix with dimensionality `dim` and
+    # eigenvalues `evals` using provided Generator `rng`. Randomly sets
+    # some evals to zero if `singular` is True.
+    A = rng.random((dim, dim))
+    A = A @ A.T
+    _, v = np.linalg.eigh(A)
+    if singular:
+        zero_eigs = rng.normal(size=dim) > 0
+        evals[zero_eigs] = 0
+    cov = v @ np.diag(evals) @ v.T
+    return cov
+
+
 def _sample_orthonormal_matrix(n):
     M = np.random.randn(n, n)
     u, s, v = scipy.linalg.svd(M)
@@ -2345,23 +2359,21 @@ class TestMultivariateT:
 
     @pytest.mark.parametrize('dim', [1, 2, 5, 10])
     def test_cdf_against_multivariate_normal(self, dim):
+        # Check accuracy against MVN randomly-generated cases
         self.cdf_against_mvn_test(dim)
 
-    def test_cdf_against_multivariate_normal_singular(self):
+    @pytest.mark.parametrize('dim', [3, 6, 9])
+    def test_cdf_against_multivariate_normal_singular(self, dim):
+        # Check accuracy against MVN for randomly-generated singular cases
         self.cdf_against_mvn_test(3, True)
 
     def cdf_against_mvn_test(self, dim, singular=False):
+        # Check for accuracy in the limit that df -> oo and MVT -> MVN
         rng = np.random.default_rng(413722918996573)
         n = 3
 
-        A = rng.random((dim, dim))
-        A = A @ A.T
-        w, v = np.linalg.eigh(A)
         w = 10**rng.uniform(-2, 1, size=dim)
-        if singular:
-            zero_eigs = rng.normal(size=dim) > 0
-            w[zero_eigs] = 0
-        cov = v @ np.diag(w) @ v.T
+        cov = _random_covariance(dim, w, rng, singular)
 
         mean = 10**rng.uniform(-1, 2, size=dim) * np.sign(rng.normal(size=dim))
         a = -10**rng.uniform(-1, 2, size=(n, dim)) + mean
@@ -2389,10 +2401,12 @@ class TestMultivariateT:
         assert np.all(np.abs(res - incorrect) > 1e-3)  # not close to normal
 
     @pytest.mark.parametrize("dim", [2, 3, 5, 10])
-    def test_cdf_against_qsimvtv(self, dim):
-        rng = np.random.default_rng(413722918996573)
-        A = rng.random(size=(dim, dim))
-        cov = A @ A.T
+    @pytest.mark.parametrize("seed", [3363958638, 7891119608, 3887698049,
+                                      5013150848, 1495033423, 6170824608])
+    def test_cdf_against_qsimvtv(self, dim, seed):
+        rng = np.random.default_rng(seed)
+        w = 10**rng.uniform(-2, 2, size=dim)
+        cov = _random_covariance(dim, w, rng)
         mean = rng.random(dim)
         a = -rng.random(dim)
         b = rng.random(dim)
@@ -2400,13 +2414,15 @@ class TestMultivariateT:
 
         # no lower limit
         res = stats.multivariate_t.cdf(b, mean, cov, df, random_state=rng)
-        ref = _qsimvtv(20000, df, cov, np.inf*a, b - mean, rng)[0]
+        with np.errstate(invalid='ignore'):
+            ref = _qsimvtv(20000, df, cov, np.inf*a, b - mean, rng)[0]
         assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
 
         # with lower limit
         res = stats.multivariate_t.cdf(b, mean, cov, df, lower_limit=a,
                                        random_state=rng)
-        ref = _qsimvtv(20000, df, cov, a - mean, b - mean, rng)[0]
+        with np.errstate(invalid='ignore'):
+            ref = _qsimvtv(20000, df, cov, a - mean, b - mean, rng)[0]
         assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
 
     def test_frozen(self):
@@ -2417,9 +2433,12 @@ class TestMultivariateT:
         shape = np.eye(3)
         df = rng.random()
         args = (loc, shape, df)
-        dist = stats.multivariate_t(*args, seed=seed)
-        assert_equal(dist.cdf(x), multivariate_t.cdf(x, *args,
-                                                     random_state=seed))
+
+        rng_frozen = np.random.default_rng(seed)
+        rng_unfrozen = np.random.default_rng(seed)
+        dist = stats.multivariate_t(*args, seed=rng_frozen)
+        assert_equal(dist.cdf(x),
+                     multivariate_t.cdf(x, *args, random_state=rng_unfrozen))
 
     def test_vectorized(self):
         dim = 4
