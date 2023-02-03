@@ -38,7 +38,8 @@ def test_performance():
                                                          ['cruz', 'cheng']):
         for problem in table_1:
             n = problem['n']
-            func = lambda x, n: yscale*problem['F'](x/xscale, n)
+            def func(x, n):
+                return yscale * problem['F'](x / xscale, n)
             args = (n,)
             x0 = problem['x0'](n) * xscale
 
@@ -85,7 +86,8 @@ def test_linear_definite():
     # negative definite, the solution is strongly isolated.
 
     def check_solvability(A, b, line_search='cruz'):
-        func = lambda x: A.dot(x) - b
+        def func(x):
+            return A.dot(x) - b
         xp = np.linalg.solve(A, b)
         eps = np.linalg.norm(func(xp)) * 1e3
         sol = root(func, b, options=dict(fatol=eps, ftol=0, maxfev=17523, line_search=line_search),

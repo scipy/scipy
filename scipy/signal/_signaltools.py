@@ -445,7 +445,7 @@ def _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=False):
     if not all(s1[a] == s2[a] or s1[a] == 1 or s2[a] == 1
                for a in range(in1.ndim) if a not in axes):
         raise ValueError("incompatible shapes for in1 and in2:"
-                         " {0} and {1}".format(s1, s2))
+                         " {} and {}".format(s1, s2))
 
     # Check that input sizes are compatible with 'valid' mode.
     if _inputs_swap_needed(mode, s1, s2, axes=axes):
@@ -4108,11 +4108,11 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     argument.  The difference between `y1` and `y2` is small.  For long
     signals, using `irlen` gives a significant performance improvement.
 
-    >>> x = rng.standard_normal(5000)
+    >>> x = rng.standard_normal(4000)
     >>> y1 = signal.filtfilt(b, a, x, method='gust')
     >>> y2 = signal.filtfilt(b, a, x, method='gust', irlen=approx_impulse_len)
     >>> print(np.max(np.abs(y1 - y2)))
-    1.80056858312e-10
+    2.875334415008979e-10
 
     """
     b = np.atleast_1d(b)

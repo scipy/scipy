@@ -232,7 +232,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     # validate input shapes
     M, N = A.shape
     if (M != N):
-        raise ValueError("matrix must be square (has shape %s)" % ((M, N),))
+        raise ValueError(f"matrix must be square (has shape {(M, N)})")
 
     if M != b.shape[0]:
         raise ValueError("matrix - rhs dimension mismatch (%s - %s)"
@@ -384,7 +384,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     """
 
     if is_pydata_spmatrix(A):
-        csc_construct_func = lambda *a, cls=type(A): cls(csc_matrix(*a))
+        def csc_construct_func(*a, cls=type(A)):
+            return cls(csc_matrix(*a))
         A = A.to_scipy_sparse().tocsc()
     else:
         csc_construct_func = csc_matrix
@@ -475,7 +476,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     """
 
     if is_pydata_spmatrix(A):
-        csc_construct_func = lambda *a, cls=type(A): cls(csc_matrix(*a))
+        def csc_construct_func(*a, cls=type(A)):
+            return cls(csc_matrix(*a))
         A = A.to_scipy_sparse().tocsc()
     else:
         csc_construct_func = csc_matrix

@@ -377,7 +377,7 @@ class TestNCH():
                 return t1 * t2 * w**x
 
             def P(k):
-                return sum((f(y)*y**k for y in range(xl, xu + 1)))
+                return sum(f(y)*y**k for y in range(xl, xu + 1))
 
             P0 = P(0)
             P1 = P(1)

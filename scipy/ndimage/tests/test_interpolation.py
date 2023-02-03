@@ -855,7 +855,6 @@ class TestNdimageInterpolation:
         # don't require output_shape when out of a different size is given
         data = numpy.arange(8, dtype=numpy.float64)
         out = numpy.ones((16,))
-        oshape = out.shape
 
         ndimage.affine_transform(data, [[1]], output=out)
         assert_array_almost_equal(out[:8], data)

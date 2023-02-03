@@ -164,7 +164,8 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                                      iter=iter, norm=tol_norm)
 
     x0 = _as_inexact(x0)
-    func = lambda z: _as_inexact(F(_array_like(z, x0))).flatten()
+    def func(z):
+        return _as_inexact(F(_array_like(z, x0))).flatten()
     x = x0.flatten()
 
     dx = np.full_like(x, np.inf)
@@ -1525,10 +1526,10 @@ def _nonlin_wrapper(name, jac):
     signature = _getfullargspec(jac.__init__)
     args, varargs, varkw, defaults, kwonlyargs, kwdefaults, _ = signature
     kwargs = list(zip(args[-len(defaults):], defaults))
-    kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
+    kw_str = ", ".join([f"{k}={v!r}" for k, v in kwargs])
     if kw_str:
         kw_str = ", " + kw_str
-    kwkw_str = ", ".join(["%s=%s" % (k, k) for k, v in kwargs])
+    kwkw_str = ", ".join([f"{k}={k}" for k, v in kwargs])
     if kwkw_str:
         kwkw_str = kwkw_str + ", "
     if kwonlyargs:

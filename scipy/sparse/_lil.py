@@ -175,7 +175,7 @@ class lil_matrix(spmatrix, IndexMixin):
         val = ''
         for i, row in enumerate(self.rows):
             for pos, j in enumerate(row):
-                val += "  %s\t%s\n" % (str((i, j)), str(self.data[i][pos]))
+                val += f"  {str((i, j))}\t{str(self.data[i][pos])}\n"
         return val[:-1]
 
     def getrowview(self, i):

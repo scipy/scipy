@@ -23,9 +23,9 @@ class MissingModule:
 
 def check_version(module, min_ver):
     if type(module) == MissingModule:
-        return pytest.mark.skip(reason="{} is not installed".format(module.name))
+        return pytest.mark.skip(reason=f"{module.name} is not installed")
     return pytest.mark.skipif(_pep440.parse(module.__version__) < _pep440.Version(min_ver),
-                              reason="{} version >= {} required".format(module.__name__, min_ver))
+                              reason=f"{module.__name__} version >= {min_ver} required")
 
 
 #------------------------------------------------------------------------------
@@ -295,12 +295,13 @@ class FuncData:
                            % (np.sum(bad_j), point_count, output_num,))
                 for j in np.nonzero(bad_j)[0]:
                     j = int(j)
-                    fmt = lambda x: "%30s" % np.array2string(x[j], precision=18)
+                    def fmt(x):
+                        return '%30s' % np.array2string(x[j], precision=18)
                     a = "  ".join(map(fmt, params))
                     b = "  ".join(map(fmt, got))
                     c = "  ".join(map(fmt, wanted))
                     d = fmt(rdiff)
-                    msg.append("%s => %s != %s  (rdiff %s)" % (a, b, c, d))
+                    msg.append(f"{a} => {b} != {c}  (rdiff {d})")
                 assert_(False, "\n".join(msg))
 
     def __repr__(self):
@@ -310,7 +311,7 @@ class FuncData:
         else:
             is_complex = ""
         if self.dataname:
-            return "<Data for %s%s: %s>" % (self.func.__name__, is_complex,
+            return "<Data for {}{}: {}>".format(self.func.__name__, is_complex,
                                             os.path.basename(self.dataname))
         else:
-            return "<Data for %s%s>" % (self.func.__name__, is_complex)
+            return f"<Data for {self.func.__name__}{is_complex}>"
