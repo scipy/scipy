@@ -17,6 +17,7 @@
 #include <numpy/ndarrayobject.h>
 
 #include "_superluobject.h"
+#include "SuperLU/SRC/superlu_enum_consts.h"
 
 
 /*
@@ -263,6 +264,152 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
     return NULL;
 }
 
+static PyObject *Py_gstrs(PyObject * self, PyObject * args,
+                          PyObject * keywds)
+{
+  /* compressed sparse row matrix L */
+  int L_N=0, L_nnz=0;
+  PyArrayObject *L_nzvals=NULL, *L_colind=NULL, *L_rowptr=NULL;
+  /* compressed sparse column matrix U */
+  int U_N=0, U_nnz=0;
+  PyArrayObject *U_nzvals=NULL, *U_rowind=NULL, *U_colptr=NULL;
+  /* right hand side / solution */
+  PyObject *X_py=NULL;
+
+
+  static char* kwlist[] = {"L_N", "L_nnz", "L_nzvals", "L_colind", "L_rowptr",
+                           "U_N", "U_nnz", "U_nzvals", "U_rowind", "U_colptr",
+                           "B"};
+
+  /* Parse and check input arguments. */
+
+  int res =
+      PyArg_ParseTupleAndKeywords(args, keywds, "iiO!O!O!iiO!O!O!O", kwlist,
+        &L_N, &L_nnz, &PyArray_Type, &L_nzvals, &PyArray_Type, &L_colind, &PyArray_Type, &L_rowptr,
+        &U_N, &U_nnz, &PyArray_Type, &U_nzvals, &PyArray_Type, &U_rowind, &PyArray_Type, &U_colptr,
+        &X_py );
+  if(!res)
+    return NULL;
+
+  if(L_N!=U_N){
+      PyErr_SetString(PyExc_TypeError, "L and U must have the same dimension");
+      return NULL;
+  }
+
+  if(!_CHECK_INTEGER(L_colind) || !_CHECK_INTEGER(L_rowptr) ||
+     !_CHECK_INTEGER(U_rowind) || !_CHECK_INTEGER(U_colptr) ){
+      PyErr_SetString(PyExc_TypeError, "row/column indices/pointers must be of type cint");
+      return NULL;
+  }
+
+  int L_type = PyArray_TYPE((PyArrayObject*)L_nzvals);
+  int U_type = PyArray_TYPE((PyArrayObject*)U_nzvals);
+  if (L_type != U_type) {
+      PyErr_SetString(PyExc_TypeError,
+                      "nzvals types of L and U differ");
+      return NULL;
+  }
+  if (!CHECK_SLU_TYPE(L_type)) {
+      PyErr_SetString(PyExc_TypeError,
+                      "nzvals is not of a type supported by SuperLU");
+      return NULL;
+  }
+
+  /* Create SuperLU matrices out of L and U. */
+  int* L_col_to_sup = intMalloc(L_N+1), *L_sup_to_col = intMalloc(L_N+1);
+  for(int i=0; i<=L_N; i++){
+    L_col_to_sup[i] = i;
+    L_sup_to_col[i] = i;
+  }
+  L_col_to_sup[L_N] = L_N-1;
+  SuperMatrix L_super = {0}, U_super={0};
+  int L_conv_err = SparseFormat_from_spMatrix(&L_super, L_N, L_N, L_nnz, -1,
+    (PyArrayObject*)L_nzvals, (PyArrayObject*)L_colind, (PyArrayObject*)L_rowptr, L_type, SLU_SC, SLU_TRLU, L_col_to_sup,L_sup_to_col);
+  if(L_conv_err){
+    return NULL;
+  }
+  int U_conv_err = SparseFormat_from_spMatrix(&U_super, U_N, U_N, U_nnz, 0,
+    (PyArrayObject*)U_nzvals, (PyArrayObject*)U_rowind, (PyArrayObject*)U_colptr, U_type, SLU_NC, SLU_TRU, NULL,NULL);
+  if(U_conv_err){
+    Destroy_SuperMatrix_Store((SuperMatrix*)&L_super);
+    return NULL;
+  }
+
+  /* Read right-hand-side/solution vector. */
+  PyArrayObject* X_arr = (PyArrayObject*)PyArray_FROMANY(
+      (PyObject*)X_py, L_type, 1, 2,
+      NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ENSURECOPY);
+  if (X_arr == NULL){
+      SUPERLU_FREE((void*)L_col_to_sup); SUPERLU_FREE((void*)L_sup_to_col);
+      Destroy_SuperMatrix_Store((SuperMatrix*)&L_super);
+      Destroy_SuperMatrix_Store((SuperMatrix*)&U_super);
+      return NULL;
+  }
+  if (PyArray_DIM((PyArrayObject*)X_arr, 0) != L_N) {
+      PyErr_SetString(PyExc_ValueError,
+                      "right hand side array has invalid shape");
+      SUPERLU_FREE((void*)L_col_to_sup); SUPERLU_FREE((void*)L_sup_to_col);
+      Destroy_SuperMatrix_Store((SuperMatrix*)&L_super);
+      Destroy_SuperMatrix_Store((SuperMatrix*)&U_super);
+      Py_DECREF(X_arr);
+      return NULL;
+  }
+
+  SuperMatrix X;
+  if (DenseSuper_from_Numeric((SuperMatrix*)&X, (PyObject*)X_arr)) {
+      SUPERLU_FREE((void*)L_col_to_sup); SUPERLU_FREE((void*)L_sup_to_col);
+      Destroy_SuperMatrix_Store((SuperMatrix*)&L_super);
+      Destroy_SuperMatrix_Store((SuperMatrix*)&U_super);
+      Py_DECREF(X_arr);
+      return NULL;
+  } /* X and X_arr share the same data but X_arr "owns" it. */
+
+  /* Call SuperLU functions. */
+  volatile jmp_buf* jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
+  int info=0;
+  SuperLUStat_t stat = { 0 };
+  StatInit((SuperLUStat_t *)&stat);
+  int* perm_c = intMalloc(L_N);
+  for(int i=0; i<L_N; i++){
+    perm_c[i] = i;
+  }
+  int* perm_r = perm_c;
+  SLU_BEGIN_THREADS_DEF;
+  SLU_BEGIN_THREADS;
+  if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
+      SLU_END_THREADS;
+      goto fail;
+  }
+  gstrs(L_type,
+        NOTRANS, &L_super, &U_super, perm_c, perm_r,
+        (SuperMatrix *)&X, (SuperLUStat_t *)&stat, (int *)&info);
+  SLU_END_THREADS;
+
+  if (info) {
+      PyErr_SetString(PyExc_SystemError,
+                      "gstrs was called with invalid arguments");
+      goto fail;
+  }
+
+  /* Deallocations and return. */
+  SUPERLU_FREE((void*)L_col_to_sup); SUPERLU_FREE((void*)L_sup_to_col);
+  SUPERLU_FREE((void*)perm_c);
+  Destroy_SuperMatrix_Store(&L_super);
+  Destroy_SuperMatrix_Store(&U_super);
+  XStatFree((SuperLUStat_t *)&stat);
+
+  return Py_BuildValue("Ni", X_arr, info);
+
+  fail:
+  SUPERLU_FREE((void*)L_col_to_sup); SUPERLU_FREE((void*)L_sup_to_col);
+  SUPERLU_FREE((void*)perm_c);
+  Destroy_SuperMatrix_Store(&L_super);
+  Destroy_SuperMatrix_Store(&U_super);
+  XStatFree((SuperLUStat_t *)&stat);
+  Py_DECREF(X_arr);
+  return NULL;
+}
+
 static char gssv_doc[] =
     "Direct inversion of sparse matrix.\n\nX = gssv(A,B) solves A*X = B for X.";
 
@@ -301,6 +448,13 @@ ilu : bool\n\
     (default: false)\n\
 ";
 
+static char gstrs_doc[] =
+  "gstrs(L..., U..., b)\n"
+  "\n"
+  "solves the linear system L*U*x = b via backward and forward substitution.\n"
+  "L is specified first, in the compressed sparse column format via parameters N,nnz,nzvals,colind,rowptr.\n"
+  "U is specified second, in the compressed sparse column format via parameters N,nnz,nzvals,rowind,colptr.\n"
+  "b is specified third.\n";
 
 /*
  * Main SuperLU module
@@ -311,6 +465,8 @@ static PyMethodDef SuperLU_Methods[] = {
      gssv_doc},
     {"gstrf", (PyCFunction) Py_gstrf, METH_VARARGS | METH_KEYWORDS,
      gstrf_doc},
+    {"gstrs", (PyCFunction) Py_gstrs, METH_VARARGS | METH_KEYWORDS,
+     gstrs_doc},
     {NULL, NULL}
 };
 
