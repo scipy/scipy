@@ -821,17 +821,11 @@ class multivariate_normal_frozen(multi_rv_frozen):
     mean : ndarray
         Mean of the distribution.
         
-        .. versionadded:: 1.10.1
-        
     cov : ndarray
         Covariance matrix of the distribution.
 
-        .. versionadded:: 1.10.1
-
     cov_object : `Covariance`
         Representation of the covariance matrix as a `Covariance` object.
-
-        .. versionadded:: 1.10.1
 
 
         Examples
