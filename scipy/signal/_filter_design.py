@@ -2095,7 +2095,7 @@ def bilinear(b, a, fs=1.0):
     Return a digital IIR filter from an analog one using a bilinear transform.
 
     Transform a set of poles and zeros from the analog s-plane to the digital
-    z-plane using Tustin's method, which substitutes ``(z-1) / (z+1)`` for
+    z-plane using Tustin's method, which substitutes ``2*fs*(z-1) / (z+1)`` for
     ``s``, maintaining the shape of the frequency response.
 
     Parameters
