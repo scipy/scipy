@@ -138,6 +138,19 @@ cdef class VarHeader5:
 
 
 cdef class VarReader5:
+    """Initialize from file reader object
+
+    preader needs the following fields defined:
+
+    * mat_stream (file-like)
+    * byte_order (str)
+    * uint16_codec (str)
+    * struct_as_record (bool)
+    * chars_as_strings (bool)
+    * mat_dtype (bool)
+    * squeeze_me (bool)
+    """
+
     cdef public int is_swapped, little_endian
     cdef int struct_as_record
     cdef object codecs, uint16_codec
@@ -152,18 +165,6 @@ cdef class VarReader5:
         int mat_dtype
         int squeeze_me
         int chars_as_strings
-
-    # Initialize from file reader object
-    #
-    # preader needs the following fields defined:
-    #
-    # * mat_stream (file-like)
-    # * byte_order (str)
-    # * uint16_codec (str)
-    # * struct_as_record (bool)
-    # * chars_as_strings (bool)
-    # * mat_dtype (bool)
-    # * squeeze_me (bool)
 
     def __cinit__(self, preader):
         byte_order = preader.byte_order

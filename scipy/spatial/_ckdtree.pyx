@@ -1546,7 +1546,7 @@ cdef class cKDTree:
     def __getstate__(cKDTree self):
         cdef object state
         cdef ckdtree * cself = self.cself
-        cdef np.intp_t size = cself.tree_buffer.size() * sizeof(ckdtreenode)  # no-cython-lint
+        cdef np.intp_t size = cself.tree_buffer.size() * sizeof(ckdtreenode)
 
         cdef np.ndarray tree = np.asarray(<char[:size]> <char*> cself.tree_buffer.data())
 
