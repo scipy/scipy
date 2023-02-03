@@ -1,9 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable, Dict, Tuple, Any, cast
-import functools
+from typing import TYPE_CHECKING, Callable, Any, cast
 import numpy as np
 import math
-import types
 import warnings
 from collections import namedtuple
 
@@ -149,7 +147,7 @@ if TYPE_CHECKING:
     from typing import Protocol
 
     class CacheAttributes(Protocol):
-        cache: Dict[int, Tuple[Any, Any]]
+        cache: dict[int, tuple[Any, Any]]
 else:
     CacheAttributes = Callable
 

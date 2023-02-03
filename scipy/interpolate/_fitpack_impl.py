@@ -44,7 +44,7 @@ def _int_overflow(x, msg=None):
     """
     if x > iinfo(dfitpack_int).max:
         if msg is None:
-            msg = '%r cannot fit into an %r' % (x, dfitpack_int)
+            msg = f'{x!r} cannot fit into an {dfitpack_int!r}'
         raise OverflowError(msg)
     return dfitpack_int.type(x)
 
@@ -1202,8 +1202,8 @@ def splder(tck, n=1):
     t, c, k = tck
 
     if n > k:
-        raise ValueError(("Order of derivative (n = %r) must be <= "
-                          "order of spline (k = %r)") % (n, tck[2]))
+        raise ValueError(("Order of derivative (n = {!r}) must be <= "
+                          "order of spline (k = {!r})").format(n, tck[2]))
 
     # Extra axes for the trailing dims of the `c` array:
     sh = (slice(None),) + ((None,)*len(c.shape[1:]))

@@ -390,7 +390,7 @@ def test_bootstrap_against_itself_2samp(method, expected):
 def test_bootstrap_vectorized_3samp(method, axis):
     def statistic(*data, axis=0):
         # an arbitrary, vectorized statistic
-        return sum((sample.mean(axis) for sample in data))
+        return sum(sample.mean(axis) for sample in data)
 
     def statistic_1d(*data):
         # the same statistic, not vectorized
@@ -597,7 +597,7 @@ def test_vectorize_statistic(axis):
 
     def statistic(*data, axis):
         # an arbitrary, vectorized statistic
-        return sum((sample.mean(axis) for sample in data))
+        return sum(sample.mean(axis) for sample in data)
 
     def statistic_1d(*data):
         # the same statistic, not vectorized

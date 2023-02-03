@@ -52,7 +52,7 @@ def test_nan_inputs(func):
     if func in POSTPROCESSING:
         res = POSTPROCESSING[func](*res)
 
-    msg = "got {} instead of nan".format(res)
+    msg = f"got {res} instead of nan"
     assert_array_equal(np.isnan(res), True, err_msg=msg)
 
 

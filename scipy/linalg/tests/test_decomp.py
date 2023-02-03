@@ -204,7 +204,7 @@ class TestEig:
             A = asarray(A)
             B0 = B
             B = np.eye(*A.shape)
-        msg = "\n%r\n%r" % (A, B)
+        msg = f"\n{A!r}\n{B!r}"
 
         # Eigenvalues in homogeneous coordinates
         w, vr = eig(A, B0, homogeneous_eigvals=True)
@@ -282,7 +282,7 @@ class TestEig:
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
-        M = diag(array(([1, 0, 3])))
+        M = diag(array([1, 0, 3]))
         K = array(([2, -1, -1], [-1, 2, -1], [-1, -1, 2]))
         D = array(([1, -1, 0], [-1, 1, 0], [0, 0, 0]))
         Z = zeros((3, 3))

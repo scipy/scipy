@@ -149,8 +149,10 @@ class TestFSolve:
         assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
 
     def test_wrong_shape_fprime_function(self):
-        func = lambda x: dummy_func(x, (2,))
-        deriv_func = lambda x: dummy_func(x, (3,3))
+        def func(x):
+            return dummy_func(x, (2,))
+        def deriv_func(x):
+            return dummy_func(x, (3, 3))
         assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
 
     def test_func_can_raise(self):
@@ -161,7 +163,8 @@ class TestFSolve:
             optimize.fsolve(func, x0=[0])
 
     def test_Dfun_can_raise(self):
-        func = lambda x: x - np.array([10])
+        def func(x):
+            return x - np.array([10])
 
         def deriv_func(*args):
             raise ValueError('I raised')
@@ -170,7 +173,8 @@ class TestFSolve:
             optimize.fsolve(func, x0=[0], fprime=deriv_func)
 
     def test_float32(self):
-        func = lambda x: np.array([x[0] - 100, x[1] - 1000], dtype=np.float32)**2
+        def func(x):
+            return np.array([x[0] - 100, x[1] - 1000], dtype=np.float32) ** 2
         p = optimize.fsolve(func, np.array([1, 1], np.float32))
         assert_allclose(func(p), [0, 0], atol=1e-3)
 
@@ -327,8 +331,10 @@ class TestLeastSq:
         assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)
 
     def test_wrong_shape_Dfun_function(self):
-        func = lambda x: dummy_func(x, (2,))
-        deriv_func = lambda x: dummy_func(x, (3,3))
+        def func(x):
+            return dummy_func(x, (2,))
+        def deriv_func(x):
+            return dummy_func(x, (3, 3))
         assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)
 
     def test_float32(self):
@@ -355,7 +361,8 @@ class TestLeastSq:
             optimize.leastsq(func, x0=[0])
 
     def test_Dfun_can_raise(self):
-        func = lambda x: x - np.array([10])
+        def func(x):
+            return x - np.array([10])
 
         def deriv_func(*args):
             raise ValueError('I raised')
@@ -892,7 +899,8 @@ class TestCurveFit:
     def test_broadcast_y(self):
         xdata = np.arange(10)
         target = 4.7 * xdata ** 2 + 3.5 * xdata + np.random.rand(len(xdata))
-        fit_func = lambda x, a, b: a*x**2 + b*x - target
+        def fit_func(x, a, b):
+            return a * x ** 2 + b * x - target
         for method in ['lm', 'trf', 'dogbox']:
             popt0, pcov0 = curve_fit(fit_func,
                                      xdata=xdata,
@@ -1060,7 +1068,7 @@ class TestFixedPoint:
         i0 = ((m-1)/m)*(kl/ks/m)**(1/(m-1))
 
         def func(n):
-            return np.log(kl/ks/n) / np.log((i0*n/(n - 1))) + 1
+            return np.log(kl/ks/n) / np.log(i0*n/(n - 1)) + 1
 
         n = fixed_point(func, n0, method='iteration')
         assert_allclose(n, m)
