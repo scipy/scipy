@@ -2422,24 +2422,28 @@ class TestMultivariateT:
     @pytest.mark.parametrize("dim", [2, 3, 5, 10])
     @pytest.mark.parametrize("seed", [3363958638, 7891119608, 3887698049,
                                       5013150848, 1495033423, 6170824608])
-    def test_cdf_against_qsimvtv(self, dim, seed):
+    @pytest.mark.parametrize("singular", [False, True])
+    def test_cdf_against_qsimvtv(self, dim, seed, singular):
+        if singular and seed != 3363958638:
+            pytest.skip('Agreement with qsimvtv is not great in singular case')
         rng = np.random.default_rng(seed)
         w = 10**rng.uniform(-2, 2, size=dim)
-        cov = _random_covariance(dim, w, rng)
+        cov = _random_covariance(dim, w, rng, singular)
         mean = rng.random(dim)
         a = -rng.random(dim)
         b = rng.random(dim)
         df = rng.random() * 5
 
         # no lower limit
-        res = stats.multivariate_t.cdf(b, mean, cov, df, random_state=rng)
+        res = stats.multivariate_t.cdf(b, mean, cov, df, random_state=rng,
+                                       allow_singular=True)
         with np.errstate(invalid='ignore'):
             ref = _qsimvtv(20000, df, cov, np.inf*a, b - mean, rng)[0]
         assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
 
         # with lower limit
         res = stats.multivariate_t.cdf(b, mean, cov, df, lower_limit=a,
-                                       random_state=rng)
+                                       random_state=rng, allow_singular=True)
         with np.errstate(invalid='ignore'):
             ref = _qsimvtv(20000, df, cov, a - mean, b - mean, rng)[0]
         assert_allclose(res, ref, atol=1e-4, rtol=1e-3)

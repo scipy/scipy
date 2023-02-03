@@ -364,11 +364,21 @@ def _qmvt(m, nu, covar, low, high, rng, lattice='cbc', n_batches=10):
                     r = np.ones_like(x)
             else:
                 y = phinv(c + x * dc)  # noqa: F821
-                s[i:, :] += cho[i:, i - 1][:, np.newaxis] * y
+                with np.errstate(invalid='ignore'):
+                    s[i:, :] += cho[i:, i - 1][:, np.newaxis] * y
             si = s[i, :]
 
-            c = phi(lo[i] * r - si)
-            d = phi(hi[i] * r - si)
+            c = np.ones(n_qmc_samples)
+            d = np.ones(n_qmc_samples)
+            with np.errstate(invalid='ignore'):
+                lois = lo[i] * r - si
+                hiis = hi[i] * r - si
+            c[lois < -9] = 0.0
+            d[hiis < -9] = 0.0
+            lo_mask = abs(lois) < 9
+            hi_mask = abs(hiis) < 9
+            c[lo_mask] = phi(lois[lo_mask])
+            d[hi_mask] = phi(hiis[hi_mask])
 
             dc = d - c
             pv *= dc
