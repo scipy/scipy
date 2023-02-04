@@ -689,14 +689,11 @@ class beta_gen(rv_continuous):
         return _boost._beta_sf(x, a, b)
 
     def _isf(self, x, a, b):
-        with warnings.catch_warnings():
-            # See gh-14901
-            message = "overflow encountered in _beta_isf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _boost._beta_isf(x, a, b)
 
     def _ppf(self, q, a, b):
-        with warnings.catch_warnings():
+        with np.errstate(over='ignore'):  # see gh-17432
             message = "overflow encountered in _beta_ppf"
             warnings.filterwarnings('ignore', message=message)
             return _boost._beta_ppf(q, a, b)
@@ -2995,7 +2992,8 @@ class genextreme_gen(rv_continuous):
                           lambda x, c: -sc.expm1(-c * x) / c, x)
 
     def _stats(self, c):
-        g = lambda n: sc.gamma(n*c + 1)
+        def g(n):
+            return sc.gamma(n * c + 1)
         g1 = g(1)
         g2 = g(2)
         g3 = g(3)
@@ -3070,7 +3068,8 @@ def _digammainv(y):
 
     """
     _em = 0.5772156649015328606065120
-    func = lambda x: sc.digamma(x) - y
+    def func(x):
+        return sc.digamma(x) - y
     if y > -0.125:
         x0 = np.exp(y) + 0.5
         if y < 10:
@@ -3296,7 +3295,7 @@ class erlang_gen(gamma_gen):
             # shape parameter, so warn the user.
             warnings.warn(
                 'The shape parameter of the erlang distribution '
-                f'has been given a non-integer value {a}.',
+                'has been given a non-integer value {!r}.'.format(a),
                 RuntimeWarning)
         return a > 0
 
@@ -4629,7 +4628,8 @@ class geninvgauss_gen(rv_continuous):
                 vmax = (root2 - m) * np.exp(0.5 * d2)
                 umax = 1  # umax = sqrt(h(m)) = 1
 
-                logqpdf = lambda x: self._logquasipdf(x, p, b) - lm
+                def logqpdf(x):
+                    return self._logquasipdf(x, p, b) - lm
                 c = m
             else:
                 # ratio of uniforms without mode shift
@@ -4640,7 +4640,8 @@ class geninvgauss_gen(rv_continuous):
                 # compute xplus * np.sqrt(quasipdf(xplus))
                 vmax = xplus * np.exp(0.5 * self._logquasipdf(xplus, p, b))
                 c = 0
-                logqpdf = lambda x: self._logquasipdf(x, p, b)
+                def logqpdf(x):
+                    return self._logquasipdf(x, p, b)
 
             if vmin >= vmax:
                 raise ValueError("vmin must be smaller than vmax.")
@@ -4961,7 +4962,7 @@ class invweibull_gen(rv_continuous):
     def _fitstart(self, data, args=None):
         # invweibull requires c > 1 for the first moment to exist, so use 2.0
         args = (2.0,) if args is None else args
-        return super(invweibull_gen, self)._fitstart(data, args=args)
+        return super()._fitstart(data, args=args)
 
 
 invweibull = invweibull_gen(a=0, name='invweibull')
@@ -6652,35 +6653,31 @@ class ncx2_gen(rv_continuous):
 
     def _pdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        with warnings.catch_warnings():
-            message = "overflow encountered in _ncx2_pdf"
-            warnings.filterwarnings("ignore", message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_pdf,
                               f2=lambda x, df, _: chi2._pdf(x, df))
 
     def _cdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_cdf,
-                          f2=lambda x, df, _: chi2._cdf(x, df))
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_cdf,
+                              f2=lambda x, df, _: chi2._cdf(x, df))
 
     def _ppf(self, q, df, nc):
         cond = np.ones_like(q, dtype=bool) & (nc != 0)
-        with warnings.catch_warnings():
-            message = "overflow encountered in _ncx2_ppf"
-            warnings.filterwarnings("ignore", message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _lazywhere(cond, (q, df, nc), f=_boost._ncx2_ppf,
                               f2=lambda x, df, _: chi2._ppf(x, df))
 
     def _sf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_sf,
-                          f2=lambda x, df, _: chi2._sf(x, df))
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_sf,
+                              f2=lambda x, df, _: chi2._sf(x, df))
 
     def _isf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        with warnings.catch_warnings():
-            message = "overflow encountered in _ncx2_isf"
-            warnings.filterwarnings("ignore", message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_isf,
                               f2=lambda x, df, _: chi2._isf(x, df))
 
@@ -6762,13 +6759,15 @@ class ncf_gen(rv_continuous):
         return _boost._ncf_cdf(x, dfn, dfd, nc)
 
     def _ppf(self, q, dfn, dfd, nc):
-        return _boost._ncf_ppf(q, dfn, dfd, nc)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._ncf_ppf(q, dfn, dfd, nc)
 
     def _sf(self, x, dfn, dfd, nc):
         return _boost._ncf_sf(x, dfn, dfd, nc)
 
     def _isf(self, x, dfn, dfd, nc):
-        return _boost._ncf_isf(x, dfn, dfd, nc)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._ncf_isf(x, dfn, dfd, nc)
 
     def _munp(self, n, dfn, dfd, nc):
         val = (dfn * 1.0/dfd)**n
@@ -6955,16 +6954,20 @@ class nct_gen(rv_continuous):
         return np.clip(Px, 0, None)
 
     def _cdf(self, x, df, nc):
-        return np.clip(_boost._nct_cdf(x, df, nc), 0, 1)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return np.clip(_boost._nct_cdf(x, df, nc), 0, 1)
 
     def _ppf(self, q, df, nc):
-        return _boost._nct_ppf(q, df, nc)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._nct_ppf(q, df, nc)
 
     def _sf(self, x, df, nc):
-        return np.clip(_boost._nct_sf(x, df, nc), 0, 1)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return np.clip(_boost._nct_sf(x, df, nc), 0, 1)
 
     def _isf(self, x, df, nc):
-        return _boost._nct_isf(x, df, nc)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._nct_isf(x, df, nc)
 
     def _stats(self, df, nc, moments='mv'):
         mu = _boost._nct_mean(df, nc)
@@ -7439,7 +7442,7 @@ class powerlaw_gen(rv_continuous):
         return 1 - 1.0/a - np.log(a)
 
     def _support_mask(self, x, a):
-        return (super(powerlaw_gen, self)._support_mask(x, a)
+        return (super()._support_mask(x, a)
                 & ((x != 0) | (a >= 1)))
 
     @_call_super_mom
@@ -10426,7 +10429,7 @@ class studentized_range_gen(rv_continuous):
 
     def _fitstart(self, data):
         # Default is k=1, but that is not a valid value of the parameter.
-        return super(studentized_range_gen, self)._fitstart(data, args=(2, 1))
+        return super()._fitstart(data, args=(2, 1))
 
     def _munp(self, K, k, df):
         cython_symbol = '_studentized_range_moment'

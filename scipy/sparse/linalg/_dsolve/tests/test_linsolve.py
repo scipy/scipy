@@ -381,7 +381,7 @@ class TestLinsolve:
             badops = [not_c_contig, not_1dim, bad_type, too_short]
 
             for badop in badops:
-                msg = "%r %r" % (spmatrix, badop)
+                msg = f"{spmatrix!r} {badop!r}"
                 # Not C-contiguous
                 assert_raises((ValueError, TypeError), _superlu.gssv,
                               N, A.nnz, badop(A.data), A.indices, A.indptr,
@@ -458,7 +458,7 @@ class TestSplu:
 
         # Input shapes
         for k in [None, 1, 2, self.n, self.n+2]:
-            msg = "k=%r" % (k,)
+            msg = f"k={k!r}"
 
             if k is None:
                 b = rng.rand(self.n)

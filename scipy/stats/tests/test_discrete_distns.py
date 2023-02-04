@@ -232,7 +232,6 @@ def test_boost_divide_by_zero_issue_15101():
     assert_allclose(binom.pmf(k, n, p), 0.0)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_skellam_gh11474():
     # test issue reported in gh-11474 caused by `cdfchn`
     mu = [1, 10, 100, 1000, 5000, 5050, 5100, 5250, 6000]
@@ -377,7 +376,7 @@ class TestNCH():
                 return t1 * t2 * w**x
 
             def P(k):
-                return sum((f(y)*y**k for y in range(xl, xu + 1)))
+                return sum(f(y)*y**k for y in range(xl, xu + 1))
 
             P0 = P(0)
             P1 = P(1)

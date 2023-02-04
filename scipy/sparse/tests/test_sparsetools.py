@@ -292,7 +292,7 @@ def test_upcast():
 
     for a_dtype in supported_dtypes:
         for b_dtype in supported_dtypes:
-            msg = "(%r, %r)" % (a_dtype, b_dtype)
+            msg = f"({a_dtype!r}, {b_dtype!r})"
 
             if np.issubdtype(a_dtype, np.complexfloating):
                 a = a0.copy().astype(a_dtype)

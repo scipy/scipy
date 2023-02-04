@@ -1,4 +1,3 @@
-
 import pytest
 import numpy as np
 from numpy import arange, add, array, eye, copy, sqrt

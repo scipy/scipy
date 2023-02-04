@@ -24,9 +24,9 @@ def test_gh12922():
     x0 = np.linspace(-5, 5, n)
 
     opts = {'maxiter': 1000, 'verbose': 2}
-    result = minimize(objective, x0=x0, method='trust-constr',
+    minimize(objective, x0=x0, method='trust-constr',
                       constraints=cons, options=opts)
 
     opts = {'maxiter': 1000, 'verbose': 3}
-    result = minimize(objective, x0=x0, method='trust-constr',
+    minimize(objective, x0=x0, method='trust-constr',
                       constraints=cons, options=opts)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import (
-    Any, Callable, Iterable, Optional, Tuple, TYPE_CHECKING, Union
+    Any, Callable, Iterable, TYPE_CHECKING
 )
 
 import numpy as np
@@ -39,19 +39,19 @@ SUCCESS_MESSAGES = (
 
 
 def direct(
-    func: Callable[[npt.ArrayLike, Tuple[Any]], float],
-    bounds: Union[Iterable, Bounds],
+    func: Callable[[npt.ArrayLike, tuple[Any]], float],
+    bounds: Iterable | Bounds,
     *,
     args: tuple = (),
     eps: float = 1e-4,
-    maxfun: Union[int, None] = None,
+    maxfun: int | None = None,
     maxiter: int = 1000,
     locally_biased: bool = True,
     f_min: float = -np.inf,
     f_min_rtol: float = 1e-4,
     vol_tol: float = 1e-16,
     len_tol: float = 1e-6,
-    callback: Optional[Callable[[npt.ArrayLike], NoneType]] = None
+    callback: Callable[[npt.ArrayLike], NoneType] | None = None
 ) -> OptimizeResult:
     """
     Finds the global minimum of a function using the

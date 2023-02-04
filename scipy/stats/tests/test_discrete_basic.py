@@ -33,7 +33,6 @@ def cases_test_discrete_basic():
         seen.add(distname)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg,first_case', cases_test_discrete_basic())
 def test_discrete_basic(distname, arg, first_case):
     try:
@@ -77,7 +76,6 @@ def test_discrete_basic(distname, arg, first_case):
             check_private_entropy(distfn, arg, stats.rv_discrete)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg', distdiscrete)
 def test_moments(distname, arg):
     try:
@@ -120,7 +118,7 @@ def test_rvs_broadcast(dist, shape_args):
         distfunc = getattr(stats, dist)
     except TypeError:
         distfunc = dist
-        dist = 'rv_discrete(values=(%r, %r))' % (dist.xk, dist.pk)
+        dist = f'rv_discrete(values=({dist.xk!r}, {dist.pk!r}))'
     loc = np.zeros(2)
     nargs = distfunc.numargs
     allargs = []
