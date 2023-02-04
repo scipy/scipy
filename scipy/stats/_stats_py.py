@@ -1046,14 +1046,14 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     Notes
     -----
-    The k-th central moment of a data sample is:
+    The k-th moment of a data sample is:
 
     .. math::
 
-        m_k = \frac{1}{n} \sum_{i = 1}^n (x_i - \bar{x})^k
+        m_k = \frac{1}{n} \sum_{i = 1}^n (x_i)^k
 
-    Where n is the number of samples and x-bar is the mean. This function uses
-    exponentiation by squares [1]_ for efficiency.
+    Where n is the number of samples. This function uses exponentiation by
+    squares [1]_ for efficiency.
 
     Note that, if `a` is an empty array (``a.size == 0``), array `moment` with
     one element (`moment.size == 1`) is treated the same as scalar `moment`

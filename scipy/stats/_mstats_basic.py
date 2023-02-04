@@ -2551,7 +2551,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
                                    upinc, contains_nan, nan_policy)
 
 
-def moment(a, moment=1, axis=0):
+def moment(a, moment=1, axis=0, *, central=None):
     """
     Calculates the nth moment about the mean for a sample.
 
@@ -2564,10 +2564,13 @@ def moment(a, moment=1, axis=0):
     axis : int or None, optional
        Axis along which the central moment is computed. Default is 0.
        If None, compute over the whole array `a`.
+    center : float or None, optional
+       The point about which moments are taken. This can be the sample mean, the
+       origin, or any other be point. If None, compute from the sample.
 
     Returns
     -------
-    n-th central moment : ndarray or float
+    n-th moment about the `center` : ndarray or float
        The appropriate moment along the given axis or over all values if axis
        is None. The denominator for the moment calculation is the number of
        observations, no degrees of freedom correction is done.
@@ -2590,13 +2593,16 @@ def moment(a, moment=1, axis=0):
         else:
             return ma.array(np.full(out_shape, np.nan, dtype=dtype))
 
+    if central is None:
+        mean = a.mean(axis, keepdims=True)
+    else:
+        mean = central
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
-        mean = a.mean(axis, keepdims=True)
-        mmnt = [_moment(a, i, axis, mean=mean) for i in moment]
+        mmnt = [_moment(a, i, axis, mean) for i in moment]
         return ma.array(mmnt)
     else:
-        return _moment(a, moment, axis)
+        return _moment(a, moment, axis, mean)
 
 
 # Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
