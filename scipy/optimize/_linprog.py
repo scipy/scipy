@@ -224,7 +224,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         Use ``None`` to indicate that there is no bound. For instance, the
         default bound ``(0, None)`` means that all decision variables are
         non-negative, and the pair ``(None, None)`` means no bounds at all,
-        i.e. all variables are allowed to take values form the real numbers.
+        i.e. all variables are allowed to be any real.
     method : str, optional
         The algorithm used to solve the standard form problem.
         :ref:`'highs' <optimize.linprog-highs>` (default),
