@@ -4114,6 +4114,22 @@ class TestPolygamma:
         assert_allclose(special.polygamma(0, x), special.psi(x),
                         atol=1.5e-7, rtol=0)
 
+        # Test complex trigamma(z) and tetragamma(z)
+        z = [-1+2j, 0.5+0.1j, 100+1000j, -10+1000j, -10-1000j]
+        # values from mpmath.psi(1, z), mpmath.psi(2, z)
+        cexpected1 = [-0.245068837859055 - 0.31782555014723j,
+            4.47809863329661 - 1.56159416419215j,
+            9.85246060778847e-5 - 9.901968825938283e-4j,
+            -1.04988451266512e-5 - 9.998898454319752e-4j,
+            -1.04988451266512e-5 + 9.998898454319752e-4j]
+        cexpected2 = [0.0390243540536495 - 0.157432524041303j,
+            -13.328673738077 + 8.55964691468135j,
+            9.70782843658137e-7 + 1.95117547163695e-7j,
+            9.9966956049056e-7 - 2.09953807598792e-8j,
+            9.9966956049056e-7 + 2.09953807598792e-8j]
+        assert_almost_equal(special.polygamma(1, z), cexpected1)
+        assert_almost_equal(special.polygamma(2, z), cexpected2)
+
         # Test broadcasting
         n = [0, 1, 2]
         x = [0.5, 1.5, 2.5]

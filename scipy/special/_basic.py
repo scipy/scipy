@@ -7,8 +7,12 @@ import math
 import warnings
 from collections import defaultdict
 from heapq import heapify, heappop
-from numpy import (pi, asarray, floor, isscalar, sqrt, where,
-                   sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
+from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
+                   imag, sqrt, where, mgrid, sin, place, issubdtype,
+                   extract, inexact, nan, zeros, sinc,
+                   broadcast_shapes, broadcast_to, cos,
+                   finfo, inf, log, logical_and, logical_not,
+                   ones, vectorize)
 
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
@@ -72,6 +76,8 @@ __all__ = [
     'sinc',
     'softplus',
     'stirling2',
+    'tetragamma',
+    'trigamma',
     'y0_zeros',
     'y1_zeros',
     'y1p_zeros',
@@ -1548,7 +1554,7 @@ def polygamma(n, x):
         The order of the derivative of the digamma function; must be
         integral
     x : array_like
-        Real valued input
+        Float or complex input
 
     Returns
     -------
@@ -1557,7 +1563,7 @@ def polygamma(n, x):
 
     See Also
     --------
-    digamma
+    digamma, trigamma, tetragamma
 
     References
     ----------
@@ -1575,8 +1581,306 @@ def polygamma(n, x):
 
     """
     n, x = asarray(n), asarray(x)
-    fac2 = (-1.0)**(n+1) * gamma(n+1.0) * zeta(n+1, x)
-    return where(n == 0, psi(x), fac2)
+    ytype = x.dtype if issubdtype(x.dtype, inexact) else float
+    y = zeros(broadcast_shapes(n.shape, x.shape), dtype=ytype)
+    n, x = broadcast_to(n, y.shape), broadcast_to(x, y.shape)
+    default_mask = ones(y.shape, dtype=bool)
+    # digamma
+    polygamma_mask = n == 0
+    if polygamma_mask.any():
+        y[polygamma_mask] = digamma(x[polygamma_mask])
+        default_mask = logical_and(default_mask, logical_not(polygamma_mask))
+    # trigamma
+    polygamma_mask = n == 1
+    if polygamma_mask.any():
+        y[polygamma_mask] = trigamma(x[polygamma_mask])
+        default_mask = logical_and(default_mask, logical_not(polygamma_mask))
+    # tetragamma
+    polygamma_mask = n == 2
+    if polygamma_mask.any():
+        y[polygamma_mask] = tetragamma(x[polygamma_mask])
+        default_mask = logical_and(default_mask, logical_not(polygamma_mask))
+    # default
+    if default_mask.any():
+        y[default_mask] = polygamma_real(n[default_mask], x[default_mask])
+    return y
+
+
+polygamma_real = lambda n, x: (-1.0)**(n+1) * gamma(n+1.0) * zeta(n+1, x)
+
+
+def trigamma(z):
+    r"""Trigamma function.
+
+    Defined as :math:`\psi^{(1)}(z)` where :math:`\psi^{(1)}` is the
+    `trigamma` function. See [1]_ for details.
+
+    Parameters
+    ----------
+    z : array_like
+        Float or complex input
+
+    Returns
+    -------
+    ndarray
+        Function results
+
+    See Also
+    --------
+    polygamma, digamma, tetragamma
+
+    References
+    ----------
+    .. [1] Cuyt et al., "Handbook of Continued Fractions for Special Functions",
+           Springer, 2008.
+    .. [2] Catherine M. Bonan-Hamada and William B. Jones.
+           "Stieltjes continued fractions for polygamma functions; speed of
+           convergence", J. Computational and Appl. Math. 179(1--2):47--55 (2005)
+           https://www.sciencedirect.com/science/article/pii/S037704270400442X
+
+    """
+    z = asarray(z)
+    ytype = z.dtype if issubdtype(z.dtype, inexact) else float
+    y = zeros(z.shape, dtype=ytype)
+    complex_mask = iscomplex(z)
+    real_mask = logical_not(complex_mask)
+    if real_mask.any():
+        y[real_mask] = polygamma_real(1, z[real_mask].real)
+    if complex_mask.any():
+        y[complex_mask] = trigamma_complex(z[complex_mask])
+    return y
+
+
+def trigamma_complex_scalar(z):
+    r"""Trigamma function of scalar real or complex argument.
+
+    Trigamma function of a complex argument for arg(z) < pi/2, with
+    analytic continuation to the entire complex plane. The trigamma and tetragamma
+    functions are the only two polygamma functions for which closed-form continued
+    fraction numerator coefficients are known [2]_.
+
+    Defined as :math:`\psi^{(1)}(x)` where :math:`\psi^{(1)}` is the
+    `trigamma` function. See [1]_ for details.
+
+    Parameters
+    ----------
+    z : float or complex
+     Real or complex valued input
+
+    Returns
+    -------
+    scalar
+     Function results
+
+    See Also
+    --------
+    polygamma, trigamma, tetragamma_complex_scalar
+
+    References
+    ----------
+    .. [1] Cuyt et al., "Handbook of Continued Fractions for Special Functions",
+           Springer, 2008.
+    .. [2] Catherine M. Bonan-Hamada and William B. Jones.
+           "Stieltjes continued fractions for polygamma functions; speed of
+           convergence", J. Computational and Appl. Math. 179(1--2):47--55 (2005)
+           https://www.sciencedirect.com/science/article/pii/S037704270400442X
+
+    """
+    ytype = type(z) if issubdtype(type(z), inexact) else float
+    # Use trigamma reflection on the left-half plane
+    z_iscomplex = iscomplex(z)
+    if (z_iscomplex and z.real < 0) or (not z_iscomplex and z < 0):
+        return -trigamma_complex_scalar(1 - z) + (pi / sin(pi * z)) ** 2 \
+            if (z_iscomplex and abs(z.imag) < log(finfo(ytype).max)) \
+               or not z_iscomplex \
+            else -trigamma_complex_scalar(1 - z)
+    if z == 0:
+        return inf
+    # Use basic trigamma recurrence for small arguments
+    if abs(z) < 10.5:
+        return trigamma_complex_scalar(z + 1) + 1/(z * z)
+    zinv = 1/z
+    return zinv*(1 + 0.5*zinv + 2*pi*trigamma_g1(z))
+
+
+def trigamma_g1(z, maxits=40):
+    ytype = type(z) if issubdtype(type(z), inexact) else float
+    eps = finfo(ytype).eps
+    realmin = finfo(ytype).tiny
+
+    z2 = z*z
+    a1 = 1/(12*pi)
+    def an(n):
+        """ Defined for n > 1."""
+        n2 = (finfo(ytype).dtype.type)(n) * n
+        return n2/(4*n2-1)*(n2-1)/4
+    # adaptation of NR's Lentz's continued fraction algorithm
+    # hardcode n = 1 initialization
+    a = a1
+    b = z2
+    d = 1/b
+    if abs(d) < realmin:
+        d = realmin
+    c = a/realmin
+    cf = a/b
+    for n in range(2, maxits+1):
+        a = an(n)
+        b = 1 if n % 2 == 0 else z2
+        d = a*d + b
+        if abs(d) < realmin:
+            d = realmin
+        c = b + a/c
+        if abs(c) < realmin:
+            c = realmin
+        d = 1/d
+        dlt = d*c
+        cf *= dlt
+        if abs(dlt-1) < eps:
+            break
+    else:
+        raise Exception('trigamma_g1 failed to converge.')
+    return cf
+
+
+trigamma_complex = vectorize(trigamma_complex_scalar)
+
+
+def tetragamma(z):
+    r"""Tetragamma function.
+
+    Defined as :math:`\psi^{(2)}(z)` where :math:`\psi^{(2)}` is the
+    `tetragamma` function. See [1]_ for details.
+
+    Parameters
+    ----------
+    z : array_like
+        Float or complex input
+
+    Returns
+    -------
+    ndarray
+        Function results
+
+    See Also
+    --------
+    polygamma, digamma, trigamma
+
+    References
+    ----------
+    .. [1] Cuyt et al., "Handbook of Continued Fractions for Special Functions",
+           Springer, 2008.
+    .. [2] Catherine M. Bonan-Hamada and William B. Jones.
+           "Stieltjes continued fractions for polygamma functions; speed of
+           convergence", J. Computational and Appl. Math. 179(1--2):47--55 (2005)
+           https://www.sciencedirect.com/science/article/pii/S037704270400442X
+
+    """
+    z = asarray(z)
+    ytype = z.dtype if issubdtype(z.dtype, inexact) else float
+    y = zeros(z.shape, dtype=ytype)
+    complex_mask = iscomplex(z)
+    real_mask = logical_not(complex_mask)
+    if real_mask.any():
+        y[real_mask] = polygamma_real(2, z[real_mask].real)
+    if complex_mask.any():
+        y[complex_mask] = tetragamma_complex(z[complex_mask])
+    return y
+
+
+def tetragamma_complex_scalar(z):
+    r"""Trigamma function of scalar real or complex argument.
+
+    Tetragamma function of a complex argument for arg(z) < pi/2, with
+    analytic continuation to the entire complex plane. The trigamma and tetragamma
+    functions are the only two polygamma functions for which closed-form continued
+    fraction numerator coefficients are known [2]_.
+
+    Defined as :math:`\psi^{(2)}(x)` where :math:`\psi^{(2)}` is the
+    `tetragamma` function. See [1]_ for details.
+
+    Parameters
+    ----------
+    z : float or complex
+     Real or complex valued input
+
+    Returns
+    -------
+    scalar
+     Function results
+
+    See Also
+    --------
+    polygamma
+
+    References
+    ----------
+    .. [1] Cuyt et al., "Handbook of Continued Fractions for Special Functions",
+           Springer, 2008.
+    .. [2] Catherine M. Bonan-Hamada and William B. Jones.
+           "Stieltjes continued fractions for polygamma functions; speed of
+           convergence", J. Computational and Appl. Math. 179(1--2):47--55 (2005)
+           https://www.sciencedirect.com/science/article/pii/S037704270400442X
+
+    """
+    ytype = type(z) if issubdtype(type(z), inexact) else float
+    # Use tetragamma reflection on the left-half plane
+    z_iscomplex: bool = iscomplex(z)
+    if (z_iscomplex and z.real < 0) or (not z_iscomplex and z < 0):
+        return tetragamma_complex_scalar(1 - z) - 2 * cos(pi * z) * (pi / sin(pi * z)) ** 3 \
+            if (z_iscomplex and abs(z.imag) < log(finfo(ytype).max)) \
+               or not z_iscomplex \
+            else tetragamma_complex_scalar(1 - z)
+    if z == 0:
+        return -inf
+    # Use basic trigamma recurrence for small arguments
+    if abs(z) < 10.5:
+        return tetragamma_complex_scalar(z + 1) - 2/z**3
+    zinv = 1/z
+    return -zinv**2*(1 + zinv + 4*pi**2*tetragamma_g1(z))
+
+
+def tetragamma_g1(z, maxits=40):
+    ytype = type(z) if issubdtype(type(z), inexact) else float
+    eps = finfo(ytype).eps
+    realmin = finfo(ytype).tiny
+
+    z2 = z*z
+    a1 = 1/(8*pi**2)
+    aje = lambda j: j*j/(2*j+1)*(j+1)/2  # """ n = 2*j even; defined for n > 1. """
+    ajo = lambda j: j/(2*j+1)*(j+1)**2/2  # """ n = 2*j+1 odd; defined for n > 1. """
+    # adaptation of NR's Lentz's continued fraction algorithm
+    # hardcode n = 1 initialization
+    a = a1
+    b = z2
+    d = 1/b
+    if abs(d) < realmin:
+        d = realmin
+    c = a/realmin
+    cf = a/b
+    for n in range(2, maxits+1):
+        if n % 2 == 0:
+            a = aje(n/2)
+            b = 1
+        else:
+            a = ajo((n-1)/2)
+            b = z2
+        d = a*d + b
+        if abs(d) < realmin:
+            d = realmin
+        c = b + a/c
+        if abs(c) < realmin:
+            c = realmin
+        d = 1/d
+        dlt = d*c
+        cf *= dlt
+        if abs(dlt-1) < eps:
+            break
+    else:
+        raise Exception('tetragamma_g1 failed to converge.')
+    return cf
+
+
+tetragamma_complex = vectorize(tetragamma_complex_scalar)
 
 
 def mathieu_even_coef(m, q):
