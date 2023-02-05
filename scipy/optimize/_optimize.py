@@ -1415,7 +1415,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         if rhok_inv == 0.:
             rhok = 1000.0
             if disp:
-                print("Divide-by-zero encountered: rhok assumed large")
+                msg = "Divide-by-zero encountered: rhok assumed large"
+                _print_success_message_or_warn(True, msg)
         else:
             rhok = 1. / rhok_inv
 
@@ -1438,7 +1439,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         msg = _status_message['success']
 
     if disp:
-        _print_success_message_or_warning(warnflag, msg)
+        _print_success_message_or_warn(warnflag, msg)
         print("         Current function value: %f" % fval)
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
@@ -1453,11 +1454,11 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     return result
 
 
-def _print_success_message_or_warning(warnflag, message):
-    if warnflag == 0:
+def _print_success_message_or_warn(warnflag, message, warntype=None):
+    if not warnflag:
         print(message)
     else:
-        warnings.warn(message, OptimizeWarning, stacklevel=2)
+        warnings.warn(message, warntype or OptimizeWarning, stacklevel=3)
 
 
 def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
@@ -1764,7 +1765,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         msg = _status_message['success']
 
     if disp:
-        print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
+        _print_success_message_or_warn(warnflag, msg)
         print("         Current function value: %f" % fval)
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
@@ -1952,7 +1953,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     def terminate(warnflag, msg):
         if disp:
-            print(msg)
+            _print_success_message_or_warn(warnflag, msg)
             print("         Current function value: %f" % old_fval)
             print("         Iterations: %d" % k)
             print("         Function evaluations: %d" % sf.nfev)
@@ -2600,7 +2601,7 @@ def _minimize_scalar_brent(func, brack=None, args=(), xtol=1.48e-8,
             message = f"{_status_message['nan']}"
 
     if disp:
-        print(message)
+        _print_success_message_or_warn(not success, message)
 
     return OptimizeResult(fun=fval, x=x, nit=nit, nfev=nfev,
                           success=success, message=message)
@@ -2782,8 +2783,7 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         if np.isnan(xmin) or np.isnan(fval):
             message = f"{_status_message['nan']}"
 
-    if disp:
-        print(message)
+    _print_success_message_or_warn(not success, message)
 
     return OptimizeResult(fun=fval, nfev=funcalls, x=xmin, nit=nit,
                           success=success, message=message)
@@ -3326,6 +3326,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             break
 
     warnflag = 0
+    msg = _status_message['success']
     # out of bounds is more urgent than exceeding function evals or iters,
     # but I don't want to cause inconsistencies by changing the
     # established warning flags for maxfev and maxiter, so the out of bounds
@@ -3343,16 +3344,11 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         warnflag = 3
         msg = _status_message['nan']
 
-
-    if disp and (1 <= warnflag <= 3):
-        warnings.warn(msg, OptimizeWarning)
-    else:
-        msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % iter)
-            print("         Function evaluations: %d" % fcalls[0])
+    if disp:
+        _print_success_message_or_warn(warnflag, msg, RuntimeWarning)
+        print("         Current function value: %f" % fval)
+        print("         Iterations: %d" % iter)
+        print("         Function evaluations: %d" % fcalls[0])
 
     result = OptimizeResult(fun=fval, direc=direc, nit=iter, nfev=fcalls[0],
                             status=warnflag, success=(warnflag == 0),
@@ -3364,17 +3360,15 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
 
 def _endprint(x, flag, fval, maxfun, xtol, disp):
     if flag == 0:
-        if disp > 1:
-            print("\nOptimization terminated successfully;\n"
-                  "The returned value satisfies the termination criteria\n"
-                  "(using xtol = ", xtol, ")")
-    if flag == 1:
-        if disp:
-            print("\nMaximum number of function evaluations exceeded --- "
-                  "increase maxfun argument.\n")
-    if flag == 2:
-        if disp:
-            print("\n{}".format(_status_message['nan']))
+        msg = ("\nOptimization terminated successfully;\n"
+               "The returned value satisfies the termination criteria\n"
+               "(using xtol = ", xtol, ")")
+    elif flag == 1:
+        msg = ("\nMaximum number of function evaluations exceeded --- "
+               "increase maxfun argument.\n")
+    elif flag == 2:
+        msg = print("\n{}".format(_status_message['nan']))
+    _print_success_message_or_warn(flag, msg)
     return
 
 
