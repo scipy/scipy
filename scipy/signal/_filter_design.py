@@ -443,7 +443,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         N = operator.index(worN)
         del worN
         if N < 0:
-            raise ValueError('worN must be nonnegative, got %s' % (N,))
+            raise ValueError(f'worN must be nonnegative, got {N}')
         lastpoint = 2 * pi if whole else pi
         # if include_nyquist is true and whole is false, w should
         # include end point
@@ -635,6 +635,10 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     gd : ndarray
         The group delay.
 
+    See Also
+    --------
+    freqz : Frequency response of a digital filter
+
     Notes
     -----
     The similar function in MATLAB is called `grpdelay`.
@@ -647,10 +651,6 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     For the details of numerical computation of the group delay refer to [1]_.
 
     .. versionadded:: 0.16.0
-
-    See Also
-    --------
-    freqz : Frequency response of a digital filter
 
     References
     ----------
@@ -697,16 +697,16 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     if np.any(singular):
         gd[singular] = 0
         warnings.warn(
-            "The group delay is singular at frequencies [{0}], setting to 0".
-            format(", ".join("{0:.3f}".format(ws) for ws in w[singular])),
+            "The group delay is singular at frequencies [{}], setting to 0".
+            format(", ".join(f"{ws:.3f}" for ws in w[singular])),
             stacklevel=2
         )
 
     elif np.any(near_singular):
         warnings.warn(
-            "The filter's denominator is extremely small at frequencies [{0}], \
+            "The filter's denominator is extremely small at frequencies [{}], \
             around which a singularity may be present".
-            format(", ".join("{0:.3f}".format(ws) for ws in w[near_singular])),
+            format(", ".join(f"{ws:.3f}" for ws in w[near_singular])),
             stacklevel=2
         )
 
@@ -2095,7 +2095,7 @@ def bilinear(b, a, fs=1.0):
     Return a digital IIR filter from an analog one using a bilinear transform.
 
     Transform a set of poles and zeros from the analog s-plane to the digital
-    z-plane using Tustin's method, which substitutes ``(z-1) / (z+1)`` for
+    z-plane using Tustin's method, which substitutes ``2*fs*(z-1) / (z+1)`` for
     ``s``, maintaining the shape of the frequency response.
 
     Parameters
@@ -2226,7 +2226,6 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             - Chebyshev I   : 'cheby1'
             - Chebyshev II  : 'cheby2'
             - Cauer/elliptic: 'ellip'
-            - Bessel/Thomson: 'bessel'
 
     output : {'ba', 'zpk', 'sos'}, optional
         Filter form of the output:
@@ -2263,7 +2262,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -2341,7 +2340,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
                              " (fs={} -> fs/2={})".format(fs, fs/2))
 
     if wp.shape[0] == 2:
-        if not((ws[0] < wp[0] and wp[1] < ws[1]) or
+        if not ((ws[0] < wp[0] and wp[1] < ws[1]) or
                (wp[0] < ws[0] and ws[1] < wp[1])):
             raise ValueError("Passband must lie strictly inside stopband"
                              " or vice versa")
@@ -2437,7 +2436,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -2493,7 +2492,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> plt.show()
 
     """
-    ftype, btype, output = [x.lower() for x in (ftype, btype, output)]
+    ftype, btype, output = (x.lower() for x in (ftype, btype, output))
     Wn = asarray(Wn)
     if fs is not None:
         if analog:
@@ -2616,7 +2615,7 @@ def bilinear_zpk(z, p, k, fs):
     Return a digital IIR filter from an analog one using a bilinear transform.
 
     Transform a set of poles and zeros from the analog s-plane to the digital
-    z-plane using Tustin's method, which substitutes ``(z-1) / (z+1)`` for
+    z-plane using Tustin's method, which substitutes ``2*fs*(z-1) / (z+1)`` for
     ``s``, maintaining the shape of the frequency response.
 
     Parameters
@@ -3030,7 +3029,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3048,6 +3047,13 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     the polynomial coefficients is a numerically sensitive operation,
     even for N >= 4. It is recommended to work with the SOS
     representation.
+
+    .. warning::
+        Designing high-order and narrowband IIR filters in TF form can
+        result in unstable or incorrect filtering due to floating point
+        numerical precision issues. Consider inspecting output filter
+        characteristics `freqz` or designing the filters with second-order
+        sections via ``output='sos'``.
 
     Examples
     --------
@@ -3145,7 +3151,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3263,7 +3269,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3378,7 +3384,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     See Also
     --------
@@ -3519,7 +3525,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
         function.  Only returned if ``output='zpk'``.
     sos : ndarray
         Second-order sections representation of the IIR filter.
-        Only returned if ``output=='sos'``.
+        Only returned if ``output='sos'``.
 
     Notes
     -----
@@ -3537,6 +3543,12 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
     See `besselap` for implementation details and references.
 
     The ``'sos'`` output parameter was added in 0.16.0.
+
+    References
+    ----------
+    .. [1] Thomson, W.E., "Delay Networks having Maximally Flat Frequency
+           Characteristics", Proceedings of the Institution of Electrical
+           Engineers, Part III, November 1949, Vol. 96, No. 44, pp. 487-490.
 
     Examples
     --------
@@ -3602,12 +3614,6 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
     >>> plt.show()
-
-    References
-    ----------
-    .. [1] Thomson, W.E., "Delay Networks having Maximally Flat Frequency
-           Characteristics", Proceedings of the Institution of Electrical
-           Engineers, Part III, November 1949, Vol. 96, No. 44, pp. 487-490.
 
     """
     return iirfilter(N, Wn, btype=btype, analog=analog,
@@ -4366,7 +4372,7 @@ def cheb1ap(N, rp):
 
     k = numpy.prod(-p, axis=0).real
     if N % 2 == 0:
-        k = k / sqrt((1 + eps * eps))
+        k = k / sqrt(1 + eps * eps)
 
     return z, p, k
 
@@ -4615,7 +4621,7 @@ def ellipap(N, rp, rs):
 
     k = (numpy.prod(-p, axis=0) / numpy.prod(-z, axis=0)).real
     if N % 2 == 0:
-        k = k / numpy.sqrt((1 + eps_sq))
+        k = k / numpy.sqrt(1 + eps_sq)
 
     return z, p, k
 

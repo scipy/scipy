@@ -362,7 +362,7 @@ which is often used for blurring.
    >>> from scipy import signal, datasets
    >>> import matplotlib.pyplot as plt
 
-   >>> image = datasets.ascent()
+   >>> image = np.asarray(datasets.ascent(), np.float64)
    >>> w = signal.windows.gaussian(51, 10.0)
    >>> image_new = signal.sepfir2d(image, w, w)
 

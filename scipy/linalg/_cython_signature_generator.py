@@ -45,7 +45,7 @@ def make_signature(filename):
     args = ', '.join(arglist)
     # Eliminate strange variable naming that replaces rank with rank_bn.
     args = args.replace('rank_bn', 'rank')
-    return '{0} {1}({2})\n'.format(return_type, name, args)
+    return f'{return_type} {name}({args})\n'
 
 
 def get_sig_name(line):

@@ -201,7 +201,7 @@ class EnergyState:
             val = self.callback(x, e, context)
             if val is not None:
                 if val:
-                    return('Callback function requested to stop early by '
+                    return ('Callback function requested to stop early by '
                            'returning True')
 
     def update_current(self, e, x):
@@ -669,7 +669,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
 
     t1 = np.exp((visit - 1) * np.log(2.0)) - 1.0
     # Run the search loop
-    while(not need_to_stop):
+    while not need_to_stop:
         for i in range(maxiter):
             # Compute temperature for this step
             s = float(i) + 2.0

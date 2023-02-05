@@ -71,7 +71,7 @@ z_src = [
   'PROPACK/complex16/zsafescal.F'
 ]
 
-if meson.get_compiler('cpp', native: true).sizeof('void*') > 4
+if meson.get_compiler('cpp').sizeof('void*') > 4
   s_src += ['PROPACK/single/smgs.risc.F']
   d_src += ['PROPACK/double/dmgs.risc.F']
   c_src += ['PROPACK/complex8/cmgs.risc.F']

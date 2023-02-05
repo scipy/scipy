@@ -4,8 +4,10 @@ py3.install_sources([
     'test_axis_nan_policy.py',
     'test_binned_statistic.py',
     'test_boost_ufuncs.py',
+    'test_censored_data.py',
     'test_contingency.py',
     'test_continuous_basic.py',
+    'test_continuous_fit_censored.py',
     'test_crosstab.py',
     'test_discrete_basic.py',
     'test_discrete_distns.py',
@@ -24,11 +26,11 @@ py3.install_sources([
     'test_relative_risk.py',
     'test_resampling.py',
     'test_sampling.py',
+    'test_sensitivity_analysis.py',
     'test_stats.py',
     'test_tukeylambda_stats.py',
     'test_variation.py'
   ],
-  pure: false,
   subdir: 'scipy/stats/tests'
 )
 

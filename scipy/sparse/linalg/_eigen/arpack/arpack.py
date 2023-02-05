@@ -35,13 +35,6 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 # ARPACK and handle shifted and shift-inverse computations
 # for eigenvalues by providing a shift (sigma) and a solver.
 
-__docformat__ = "restructuredtext en"
-
-__all__ = ['eigs', 'eigsh', 'ArpackError', 'ArpackNoConvergence']
-
-from . import _arpack
-arpack_int = _arpack.timing.nbx.dtype
-
 import numpy as np
 import warnings
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
@@ -51,6 +44,13 @@ from scipy.sparse._sputils import isdense, is_pydata_spmatrix
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
+
+from . import _arpack
+arpack_int = _arpack.timing.nbx.dtype
+
+__docformat__ = "restructuredtext en"
+
+__all__ = ['eigs', 'eigsh', 'ArpackError', 'ArpackNoConvergence']
 
 
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
@@ -274,6 +274,7 @@ class ArpackError(RuntimeError):
     """
     ARPACK error
     """
+
     def __init__(self, info, infodict=_NAUPD_ERRORS):
         msg = infodict.get(info, "Unknown error")
         RuntimeError.__init__(self, "ARPACK error %d: %s" % (info, msg))
@@ -291,6 +292,7 @@ class ArpackNoConvergence(ArpackError):
         Partial result. Converged eigenvectors.
 
     """
+
     def __init__(self, msg, eigenvalues, eigenvectors):
         ArpackError.__init__(self, -1, {-1: msg})
         self.eigenvalues = eigenvalues
@@ -368,7 +370,7 @@ class _ArpackParams:
         try:
             ev, vec = self.extract(True)
         except ArpackError as err:
-            msg = "%s [%s]" % (msg, err)
+            msg = f"{msg} [{err}]"
             ev = np.zeros((0,))
             vec = np.zeros((self.n, 0))
             k_ok = 0
@@ -908,6 +910,7 @@ class SpLuInv(LinearOperator):
        helper class to repeatedly solve M*x=b
        using a sparse LU-decomposition of M
     """
+
     def __init__(self, M):
         self.M_lu = splu(M)
         self.shape = M.shape
@@ -931,6 +934,7 @@ class LuInv(LinearOperator):
        helper class to repeatedly solve M*x=b
        using an LU-decomposition of M
     """
+
     def __init__(self, M):
         self.M_lu = lu_factor(M)
         self.shape = M.shape
@@ -955,6 +959,7 @@ class IterInv(LinearOperator):
        helper class to repeatedly solve M*x=b
        using an iterative method.
     """
+
     def __init__(self, M, ifunc=gmres_loose, tol=0):
         self.M = M
         if hasattr(M, 'dtype'):
@@ -986,6 +991,7 @@ class IterOpInv(LinearOperator):
        helper class to repeatedly solve [A-sigma*M]*x = b
        using an iterative method
     """
+
     def __init__(self, A, M, sigma, ifunc=gmres_loose, tol=0):
         self.A = A
         self.M = M
@@ -1237,6 +1243,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     --------
     Find 6 eigenvectors of the identity matrix:
 
+    >>> import numpy as np
     >>> from scipy.sparse.linalg import eigs
     >>> id = np.eye(13)
     >>> vals, vecs = eigs(id, k=6)
@@ -1247,7 +1254,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     """
     if A.shape[0] != A.shape[1]:
-        raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
+        raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
         if M.shape != A.shape:
             raise ValueError('wrong M dimensions %s, should be %s'
@@ -1543,6 +1550,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse.linalg import eigsh
     >>> identity = np.eye(13)
     >>> eigenvalues, eigenvectors = eigsh(identity, k=6)
@@ -1574,7 +1582,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             return ret.real
 
     if A.shape[0] != A.shape[1]:
-        raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
+        raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
         if M.shape != A.shape:
             raise ValueError('wrong M dimensions %s, should be %s'

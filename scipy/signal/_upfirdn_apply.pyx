@@ -59,10 +59,10 @@ cdef struct ArrayInfo:
     np.intp_t ndim
 
 
-def _output_len(np.intp_t len_h,
-                np.intp_t in_len,
-                np.intp_t up,
-                np.intp_t down):
+def _output_len(np.int64_t len_h,
+                np.int64_t in_len,
+                np.int64_t up,
+                np.int64_t down):
     """The output length that results from a given input"""
     # ceil(((in_len - 1) * up + len_h) / down), but using integer arithmetic
     return (((in_len - 1) * up + len_h) - 1) // down + 1

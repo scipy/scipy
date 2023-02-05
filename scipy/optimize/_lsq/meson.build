@@ -17,6 +17,5 @@ py3.install_sources([
     'trf.py',
     'trf_linear.py'
   ],
-  pure: false,
   subdir: 'scipy/optimize/_lsq'
 )

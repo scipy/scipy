@@ -260,6 +260,7 @@ class RBFInterpolator:
     --------
     Demonstrate interpolating scattered data to a grid in 2-D.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import RBFInterpolator
     >>> from scipy.stats.qmc import Halton
@@ -431,7 +432,7 @@ class RBFInterpolator:
         else:
             nnei = self.neighbors
         # in each chunk we consume the same space we already occupy
-        chunksize = memory_budget // ((self.powers.shape[0] + nnei)) + 1
+        chunksize = memory_budget // (self.powers.shape[0] + nnei) + 1
         if chunksize <= nx:
             out = np.empty((nx, self.d.shape[1]), dtype=float)
             for i in range(0, nx, chunksize):

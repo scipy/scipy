@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import (
-    Any, Callable, Iterable, Optional, Tuple, TYPE_CHECKING, Union
+    Any, Callable, Iterable, TYPE_CHECKING
 )
 
 import numpy as np
@@ -39,19 +39,19 @@ SUCCESS_MESSAGES = (
 
 
 def direct(
-    func: Callable[[npt.ArrayLike, Tuple[Any]], float],
-    bounds: Union[Iterable, Bounds],
+    func: Callable[[npt.ArrayLike, tuple[Any]], float],
+    bounds: Iterable | Bounds,
     *,
     args: tuple = (),
     eps: float = 1e-4,
-    maxfun: Union[int, None] = None,
+    maxfun: int | None = None,
     maxiter: int = 1000,
     locally_biased: bool = True,
     f_min: float = -np.inf,
     f_min_rtol: float = 1e-4,
     vol_tol: float = 1e-16,
     len_tol: float = 1e-6,
-    callback: Optional[Callable[[npt.ArrayLike], NoneType]] = None
+    callback: Callable[[npt.ArrayLike], NoneType] | None = None
 ) -> OptimizeResult:
     """
     Finds the global minimum of a function using the
@@ -100,7 +100,7 @@ def direct(
         Terminate the optimization once the relative error between the
         current best minimum `f` and the supplied global minimum `f_min`
         is smaller than `f_min_rtol`. This parameter is only used if
-        `f_min` is also set. Default is 1e-4.
+        `f_min` is also set. Must lie between 0 and 1. Default is 1e-4.
     vol_tol : float, optional
         Terminate the optimization once the volume of the hyperrectangle
         containing the lowest function value is smaller than `vol_tol`
@@ -212,16 +212,12 @@ def direct(
     ub = np.ascontiguousarray(bounds.ub, dtype=np.float64)
 
     # validate bounds
+    # check that lower bounds are smaller than upper bounds
     if not np.all(lb < ub):
         raise ValueError('Bounds are not consistent min < max')
-    if not len(lb) == len(ub):
-        raise ValueError('Bounds do not have the same dimensions')
-
-    # check for infs and nans
+    # check for infs
     if (np.any(np.isinf(lb)) or np.any(np.isinf(ub))):
         raise ValueError("Bounds must not be inf.")
-    if (np.any(np.isnan(lb)) or np.any(np.isnan(ub))):
-        raise ValueError("Bounds must not be NaN.")
 
     # validate tolerances
     if (vol_tol < 0 or vol_tol > 1):

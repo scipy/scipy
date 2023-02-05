@@ -77,7 +77,7 @@ double sin_pi(double x)
          */
         return 0;
     }
-    return sin(NPY_PI * x);
+    return sin(M_PI * x);
 }
 
 static double cos_pi(double x)
@@ -89,7 +89,7 @@ static double cos_pi(double x)
          */
         return 0;
     }
-    return cos(NPY_PI * x);
+    return cos(M_PI * x);
 }
 
 static npy_cdouble
@@ -144,7 +144,7 @@ static npy_cdouble
 rotate_i(npy_cdouble i, npy_cdouble k, double v)
 {
     npy_cdouble w;
-    double s = sin(v * NPY_PI)*(2.0/NPY_PI);
+    double s = sin(v * M_PI)*(2.0/M_PI);
     w.real = i.real + s*k.real;
     w.imag = i.imag + s*k.imag;
     return w;
@@ -352,7 +352,7 @@ npy_cdouble cbesi_wrap_e( double v, npy_cdouble z) {
       F_FUNC(zbesk,ZBESK)(CADDR(z), &v,  &kode, &n, CADDR(cy_k), &nz, &ierr);
       DO_SFERR("ive(kv):", &cy_k);
       /* adjust scaling to match zbesi */
-      cy_k = rotate(cy_k, -z.imag/NPY_PI);
+      cy_k = rotate(cy_k, -z.imag/M_PI);
       if (z.real > 0) {
           cy_k.real *= exp(-2*z.real);
           cy_k.imag *= exp(-2*z.real);

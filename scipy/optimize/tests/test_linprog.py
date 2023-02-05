@@ -23,8 +23,8 @@ except ImportError:
 
 has_cholmod = True
 try:
-    import sksparse
-    from sksparse.cholmod import cholesky as cholmod
+    import sksparse  # noqa: F401
+    from sksparse.cholmod import cholesky as cholmod  # noqa: F401
 except ImportError:
     has_cholmod = False
 
@@ -63,7 +63,7 @@ def _assert_success(res, desired_fun=None, desired_x=None,
     # desired_fun: desired objective function value or None
     # desired_x: desired solution or None
     if not res.success:
-        msg = "linprog status {0}, message: {1}".format(res.status,
+        msg = "linprog status {}, message: {}".format(res.status,
                                                         res.message)
         raise AssertionError(msg)
 
@@ -345,6 +345,10 @@ def test_highs_status_message():
     assert message.startswith(msg)
 
 
+def test_bug_17380():
+    linprog([1, 1], A_ub=[[-1, 0]], b_ub=[-2.5], integrality=[1, 1])
+
+
 A_ub = None
 b_ub = None
 A_eq = None
@@ -509,10 +513,10 @@ class LinprogCommonTests:
         m = 100
         n = 150
         A_eq = scipy.sparse.rand(m, n, 0.5)
-        x_valid = np.random.randn((n))
-        c = np.random.randn((n))
-        ub = x_valid + np.random.rand((n))
-        lb = x_valid - np.random.rand((n))
+        x_valid = np.random.randn(n)
+        c = np.random.randn(n)
+        ub = x_valid + np.random.rand(n)
+        lb = x_valid - np.random.rand(n)
         bounds = np.column_stack((lb, ub))
         b_eq = A_eq * x_valid
 
@@ -1736,7 +1740,8 @@ class LinprogRSTests(LinprogCommonTests):
 class LinprogHiGHSTests(LinprogCommonTests):
     def test_callback(self):
         # this is the problem from test_callback
-        cb = lambda res: None
+        def cb(res):
+            return None
         c = np.array([-3, -2])
         A_ub = [[2, 1], [1, 1], [1, 0]]
         b_ub = [10, 8, 4]
@@ -2296,6 +2301,11 @@ class TestLinprogHiGHSMIP():
         np.testing.assert_allclose(res.x, [0, 6, 0])
         np.testing.assert_allclose(res.fun, -12)
 
+        # gh-16897: these fields were not present, ensure that they are now
+        assert res.get("mip_node_count", None) is not None
+        assert res.get("mip_dual_bound", None) is not None
+        assert res.get("mip_gap", None) is not None
+
     @pytest.mark.slow
     @pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
     def test_mip6(self):
@@ -2315,6 +2325,45 @@ class TestLinprogHiGHSMIP():
                       method=self.method, integrality=integrality)
 
         np.testing.assert_allclose(res.fun, 1854)
+
+    @pytest.mark.xslow
+    def test_mip_rel_gap_passdown(self):
+        # MIP taken from test_mip6, solved with different values of mip_rel_gap
+        # solve a larger MIP with only equality constraints
+        # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
+        A_eq = np.array([[22, 13, 26, 33, 21, 3, 14, 26],
+                         [39, 16, 22, 28, 26, 30, 23, 24],
+                         [18, 14, 29, 27, 30, 38, 26, 26],
+                         [41, 26, 28, 36, 18, 38, 16, 26]])
+        b_eq = np.array([7872, 10466, 11322, 12058])
+        c = np.array([2, 10, 13, 17, 7, 5, 7, 3])
+
+        bounds = [(0, np.inf)]*8
+        integrality = [1]*8
+
+        mip_rel_gaps = [0.5, 0.25, 0.01, 0.001]
+        sol_mip_gaps = []
+        for mip_rel_gap in mip_rel_gaps:
+            res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                          bounds=bounds, method=self.method,
+                          integrality=integrality,
+                          options={"mip_rel_gap": mip_rel_gap})
+            final_mip_gap = res["mip_gap"]
+            # assert that the solution actually has mip_gap lower than the
+            # required mip_rel_gap supplied
+            assert final_mip_gap <= mip_rel_gap
+            sol_mip_gaps.append(final_mip_gap)
+
+        # make sure that the mip_rel_gap parameter is actually doing something
+        # check that differences between solution gaps are declining
+        # monotonically with the mip_rel_gap parameter. np.diff does
+        # x[i+1] - x[i], so flip the array before differencing to get
+        # what should be a positive, monotone decreasing series of solution
+        # gaps
+        gap_diffs = np.diff(np.flip(sol_mip_gaps))
+        assert np.all(gap_diffs >= 0)
+        assert not np.all(gap_diffs == 0)
+
 
 ###########################
 # Autoscale-Specific Tests#
