@@ -1517,7 +1517,7 @@ class dgamma_gen(rv_continuous):
         return np.where(x > 0, 0.5-fac, 0.5+fac)
 
     def _entropy(self, a):
-        h = a + np.log(2) + sc.loggamma(a) + (1 - a) * sc.digamma(a)
+        h = a + np.log(2) + sc.gammaln(a) + (1 - a) * sc.digamma(a)
         return h
 
     def _ppf(self, q, a):
