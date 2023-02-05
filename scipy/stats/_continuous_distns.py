@@ -6601,7 +6601,7 @@ class nakagami_gen(rv_continuous):
         C = -0.5 * np.log(nu) - np.log(2)
         h = A + B + C
         # This is the asymptotic sum of A and B (see gh-17868)
-        norm_entropy = stats.norm.entropy()
+        norm_entropy = stats.norm._entropy()
         # Above, this is lost to rounding error for large nu, so use the
         # asymptotic sum when the approximation becomes accurate
         i = nu > 1e7  # roundoff error ~ approximation error
