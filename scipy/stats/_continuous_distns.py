@@ -1489,8 +1489,20 @@ class chi2_gen(rv_continuous):
 
     def _entropy(self, df):
         half_df = 0.5 * df
-        return (half_df + np.log(2) + sc.gammaln(half_df) +
-                (1 - half_df) * sc.psi(half_df))
+        return _lazywhere(half_df < 1e12, (half_df, ),
+                          lambda half_df: (half_df + np.log(2) +
+                                           sc.gammaln(half_df) +
+                                           (1 - half_df) *
+                                           sc.psi(half_df)),
+                          # plug in the above formula the following asymptotic
+                          # expansions:
+                          # ln(gamma(a)) ~ (a - 0.5) * ln(a) - a +
+                          #                 0.5 * ln(2 * pi)
+                          # psi(a) ~ ln(a) - 1/(2 * a)
+                          f2=lambda half_df: (np.log(2) + 0.5 *
+                                              (1. + np.log(half_df) +
+                                               np.log(2*np.pi)))
+                          )
 
 
 chi2 = chi2_gen(a=0.0, name='chi2')
@@ -2715,8 +2727,14 @@ class genlogistic_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, c):
-        return -np.log(c) + sc.psi(c + 1) + _EULER + 1
-
+        return _lazywhere(c < 1e12, (c, ),
+                          lambda c: -np.log(c) + sc.psi(c + 1) + _EULER + 1,
+                          # asymptotic expansion: psi(c) ~ log(c) - 1/(2 * c)
+                          # a = -log(c) + psi(c + 1)
+                          # = -log(c) + psi(c) + 1/c
+                          # ~ -log(c) + log(c) - 1/(2 * c) + 1/c
+                          # = 1/(2 * c)
+                          f2=lambda c: 1/(2 * c) + _EULER + 1)
 
 genlogistic = genlogistic_gen(name='genlogistic')
 
