@@ -4398,7 +4398,7 @@ class geninvgauss_gen(rv_continuous):
         # following [2], the quasi-pdf is used instead of the pdf for the
         # generation of rvs
         invert_res = False
-        if not (numsamples):
+        if not numsamples:
             numsamples = 1
         if p < 0:
             # note: if X is geninvgauss(p, b), then 1/X is geninvgauss(-p, b)
