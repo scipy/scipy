@@ -6589,6 +6589,14 @@ class nakagami_gen(rv_continuous):
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
 
+    def _entropy(self, nu):
+        A = sc.gammaln(nu) - np.log(2)
+        B = -0.5 * np.log(nu)
+        C = (2 * nu - (2 * nu - 1) * sc.digamma(nu)) / 2
+        h = A + B + C
+
+        return h
+
     def _rvs(self, nu, size=None, random_state=None):
         # this relationship can be found in [1] or by a direct calculation
         return np.sqrt(random_state.standard_gamma(nu, size=size) / nu)
