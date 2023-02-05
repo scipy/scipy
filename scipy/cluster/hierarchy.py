@@ -178,8 +178,7 @@ def _copy_arrays_if_base_present(T):
     This is useful if the arrays are being passed to a C function that
     does not do proper striding.
     """
-    l = [_copy_array_if_base_present(a) for a in T]
-    return l
+    return [_copy_array_if_base_present(a) for a in T]
 
 
 def _randdm(pnts):
@@ -1041,7 +1040,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     >>> plt.show()
     """
     if method not in _LINKAGE_METHODS:
-        raise ValueError("Invalid method: {0}".format(method))
+        raise ValueError(f"Invalid method: {method}")
 
     y = _convert_to_double(np.asarray(y, order='c'))
 
@@ -1050,7 +1049,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
         [y] = _copy_arrays_if_base_present([y])
     elif y.ndim == 2:
         if method in _EUCLIDEAN_METHODS and metric != 'euclidean':
-            raise ValueError("Method '{0}' requires the distance metric "
+            raise ValueError("Method '{}' requires the distance metric "
                              "to be Euclidean".format(method))
         if y.shape[0] == y.shape[1] and np.allclose(np.diag(y), 0):
             if np.all(y >= 0) and np.allclose(y, y.T):
@@ -1708,7 +1707,7 @@ def cophenet(Z, Y=None):
     numerator = (Yy * Zz)
     denomA = Yy**2
     denomB = Zz**2
-    c = numerator.sum() / np.sqrt((denomA.sum() * denomB.sum()))
+    c = numerator.sum() / np.sqrt(denomA.sum() * denomB.sum())
     return (c, zz)
 
 
@@ -2312,7 +2311,7 @@ def _check_hierarchy_uses_cluster_before_formed(Z):
 
 def _check_hierarchy_uses_cluster_more_than_once(Z):
     n = Z.shape[0] + 1
-    chosen = set([])
+    chosen = set()
     for i in range(0, n - 1):
         if (Z[i, 0] in chosen) or (Z[i, 1] in chosen) or Z[i, 0] == Z[i, 1]:
             return True
@@ -2323,7 +2322,7 @@ def _check_hierarchy_uses_cluster_more_than_once(Z):
 
 def _check_hierarchy_not_all_clusters_used(Z):
     n = Z.shape[0] + 1
-    chosen = set([])
+    chosen = set()
     for i in range(0, n - 1):
         chosen.add(int(Z[i, 0]))
         chosen.add(int(Z[i, 1]))
@@ -2789,7 +2788,7 @@ def _remove_dups(L):
 
     The set class is not guaranteed to do this.
     """
-    seen_before = set([])
+    seen_before = set()
     L2 = []
     for i in L:
         if i not in seen_before:
@@ -3576,7 +3575,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         nb = 1
         db = 0.0
 
-    if count_sort == 'ascending' or count_sort == True:
+    if count_sort == 'ascending' or count_sort is True:
         # If a has a count greater than b, it and its descendents should
         # be drawn to the right. Otherwise, to the left.
         if na > nb:
@@ -3597,7 +3596,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         else:
             ua = ab
             ub = aa
-    elif distance_sort == 'ascending' or distance_sort == True:
+    elif distance_sort == 'ascending' or distance_sort is True:
         # If a has a distance greater than b, it and its descendents should
         # be drawn to the right. Otherwise, to the left.
         if da > db:
@@ -3775,7 +3774,7 @@ def is_isomorphic(T1, T2):
     d2 = {}
     for i in range(0, n):
         if T1[i] in d1:
-            if not T2[i] in d2:
+            if T2[i] not in d2:
                 return False
             if d1[T1[i]] != T2[i] or d2[T2[i]] != T1[i]:
                 return False

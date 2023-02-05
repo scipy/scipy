@@ -73,9 +73,9 @@ fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                      'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
                      'tukeylambda', 'invweibull']
-                     + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
-                        'nct', 'pareto', 'powernorm', 'powerlognorm']
-                     + ['pearson3'])
+                    + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
+                       'nct', 'pareto', 'powernorm', 'powerlognorm']
+                    + ['pearson3'])
 skip_fit_test = {"MLE": skip_fit_test_mle,
                  "MM": slow_fit_test_mm + fail_fit_test_mm}
 
@@ -96,9 +96,9 @@ fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                          'mielke', 'nakagami', 'ncf', 'nct', 'skewcauchy', 't',
                          'truncpareto', 'invweibull']
-                         + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
-                            'pareto', 'powernorm', 'powerlognorm']
-                         + ['pearson3'])
+                        + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
+                           'pareto', 'powernorm', 'powerlognorm']
+                        + ['pearson3'])
 skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
                      "MM": slow_fit_test_mm + fail_fit_fix_test_mm}
 
@@ -106,18 +106,18 @@ skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
-fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
-                   'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
-                   'gausshyper', 'gengamma', 'genhyperbolic',
-                   'geninvgauss', 'gennorm', 'genpareto',
-                   'halfcauchy', 'halfgennorm', 'invgamma',
-                   'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
-                   'logistic', 'loguniform', 'maxwell', 'nakagami',
-                   'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
-                   'powerlaw', 'rdist', 'reciprocal', 'rice',
-                   'skewnorm', 't', 'truncweibull_min',
-                   'tukeylambda', 'vonmises', 'vonmises_line',
-                   'rv_histogram_instance', 'truncnorm', 'studentized_range'])
+fails_cmplx = {'argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
+               'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
+               'gausshyper', 'gengamma', 'genhyperbolic',
+               'geninvgauss', 'gennorm', 'genpareto',
+               'halfcauchy', 'halfgennorm', 'invgamma',
+               'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
+               'logistic', 'loguniform', 'maxwell', 'nakagami',
+               'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
+               'powerlaw', 'rdist', 'reciprocal', 'rice',
+               'skewnorm', 't', 'truncweibull_min',
+               'tukeylambda', 'vonmises', 'vonmises_line',
+               'rv_histogram_instance', 'truncnorm', 'studentized_range'}
 
 # rv_histogram instances, with uniform and non-uniform bins;
 # stored as (dist, arg) tuples for cases_test_cont_basic
@@ -257,7 +257,7 @@ def test_levy_stable_random_state_property():
 
 def cases_test_moments():
     fail_normalization = set()
-    fail_higher = set(['ncf'])
+    fail_higher = {'ncf'}
 
     for distname, arg in distcont[:] + histogram_test_instances:
         if distname == 'levy_stable':
@@ -429,7 +429,7 @@ def test_rvs_gh2069_regression():
                   [[1, 1], [1, 1]], 1)
     assert_raises(ValueError, stats.gamma.rvs, [2, 3, 4, 5], 0, 1, (2, 2))
     assert_raises(ValueError, stats.gamma.rvs, [1, 1, 1, 1], [0, 0, 0, 0],
-                     [[1], [2]], (4,))
+                  [[1], [2]], (4,))
 
 
 def test_nomodify_gh9900_regression():

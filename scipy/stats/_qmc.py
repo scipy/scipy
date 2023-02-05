@@ -11,12 +11,8 @@ from functools import partial
 from typing import (
     Callable,
     ClassVar,
-    Dict,
-    List,
     Literal,
-    Optional,
     overload,
-    Tuple,
     TYPE_CHECKING,
 )
 
@@ -53,8 +49,9 @@ __all__ = ['scale', 'discrepancy', 'update_discrepancy',
 
 
 @overload
-def check_random_state(seed: Optional[IntNumber] = ...) -> np.random.Generator:
+def check_random_state(seed: IntNumber | None = ...) -> np.random.Generator:
     ...
+
 
 @overload
 def check_random_state(seed: GeneratorType) -> GeneratorType:
@@ -492,7 +489,7 @@ def primes_from_2_to(n: int) -> np.ndarray:
     return np.r_[2, 3, ((3 * np.nonzero(sieve)[0][1:] + 1) | 1)]
 
 
-def n_primes(n: IntNumber) -> List[int]:
+def n_primes(n: IntNumber) -> list[int]:
     """List of the n-first prime numbers.
 
     Parameters
@@ -708,7 +705,7 @@ class QMCEngine(ABC):
         self,
         d: IntNumber,
         *,
-        optimization: Optional[Literal["random-cd", "lloyd"]] = None,
+        optimization: Literal["random-cd", "lloyd"] | None = None,
         seed: SeedType = None
     ) -> None:
         if not np.issubdtype(type(d), np.integer) or d < 0:
@@ -771,7 +768,7 @@ class QMCEngine(ABC):
         self,
         l_bounds: npt.ArrayLike,
         *,
-        u_bounds: Optional[npt.ArrayLike] = None,
+        u_bounds: npt.ArrayLike | None = None,
         n: IntNumber = 1,
         endpoint: bool = False,
         workers: IntNumber = 1
@@ -978,7 +975,7 @@ class Halton(QMCEngine):
 
     def __init__(
         self, d: IntNumber, *, scramble: bool = True,
-        optimization: Optional[Literal["random-cd", "lloyd"]] = None,
+        optimization: Literal["random-cd", "lloyd"] | None = None,
         seed: SeedType = None
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
@@ -1218,7 +1215,7 @@ class LatinHypercube(QMCEngine):
         self, d: IntNumber, *, centered: bool = False,
         scramble: bool = True,
         strength: int = 1,
-        optimization: Optional[Literal["random-cd", "lloyd"]] = None,
+        optimization: Literal["random-cd", "lloyd"] | None = None,
         seed: SeedType = None
     ) -> None:
         if centered:
@@ -1461,8 +1458,8 @@ class Sobol(QMCEngine):
 
     def __init__(
         self, d: IntNumber, *, scramble: bool = True,
-        bits: Optional[IntNumber] = None, seed: SeedType = None,
-        optimization: Optional[Literal["random-cd", "lloyd"]] = None
+        bits: IntNumber | None = None, seed: SeedType = None,
+        optimization: Literal["random-cd", "lloyd"] | None = None
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'scramble': True, 'bits': bits,
@@ -1774,7 +1771,7 @@ class PoissonDisk(QMCEngine):
         radius: DecimalNumber = 0.05,
         hypersphere: Literal["volume", "surface"] = "volume",
         ncandidates: IntNumber = 30,
-        optimization: Optional[Literal["random-cd", "lloyd"]] = None,
+        optimization: Literal["random-cd", "lloyd"] | None = None,
         seed: SeedType = None
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
@@ -1887,7 +1884,7 @@ class PoissonDisk(QMCEngine):
             self.sample_grid[tuple(indices)] = candidate
             curr_sample.append(candidate)
 
-        curr_sample: List[np.ndarray] = []
+        curr_sample: list[np.ndarray] = []
 
         if len(self.sample_pool) == 0:
             # the pool is being initialized with a single random sample
@@ -2015,10 +2012,10 @@ class MultivariateNormalQMC:
     """
 
     def __init__(
-            self, mean: npt.ArrayLike, cov: Optional[npt.ArrayLike] = None, *,
-            cov_root: Optional[npt.ArrayLike] = None,
+            self, mean: npt.ArrayLike, cov: npt.ArrayLike | None = None, *,
+            cov_root: npt.ArrayLike | None = None,
             inv_transform: bool = True,
-            engine: Optional[QMCEngine] = None,
+            engine: QMCEngine | None = None,
             seed: SeedType = None
     ) -> None:
         mean = np.array(mean, copy=False, ndmin=1)
@@ -2183,7 +2180,7 @@ class MultinomialQMC:
 
     def __init__(
         self, pvals: npt.ArrayLike, n_trials: IntNumber,
-        *, engine: Optional[QMCEngine] = None,
+        *, engine: QMCEngine | None = None,
         seed: SeedType = None
     ) -> None:
         self.pvals = np.array(pvals, copy=False, ndmin=1)
@@ -2230,15 +2227,15 @@ class MultinomialQMC:
 
 
 def _select_optimizer(
-    optimization: Optional[Literal["random-cd", "lloyd"]], config: Dict
-) -> Optional[Callable]:
+    optimization: Literal["random-cd", "lloyd"] | None, config: dict
+) -> Callable | None:
     """A factory for optimization methods."""
-    optimization_method: Dict[str, Callable] = {
+    optimization_method: dict[str, Callable] = {
         "random-cd": _random_cd,
         "lloyd": _lloyd_centroidal_voronoi_tessellation
     }
 
-    optimizer: Optional[partial]
+    optimizer: partial | None
     if optimization is not None:
         try:
             optimization = optimization.lower()  # type: ignore[assignment]
@@ -2259,7 +2256,7 @@ def _select_optimizer(
 
 def _random_cd(
     best_sample: np.ndarray, n_iters: int, n_nochange: int, rng: GeneratorType,
-    **kwargs: Dict
+    **kwargs: dict
 ) -> np.ndarray:
     """Optimal LHS on CD.
 
@@ -2384,8 +2381,8 @@ def _lloyd_centroidal_voronoi_tessellation(
     *,
     tol: DecimalNumber = 1e-5,
     maxiter: IntNumber = 10,
-    qhull_options: Optional[str] = None,
-    **kwargs: Dict
+    qhull_options: str | None = None,
+    **kwargs: dict
 ) -> np.ndarray:
     """Approximate Centroidal Voronoi Tessellation.
 
@@ -2560,7 +2557,7 @@ def _validate_workers(workers: IntNumber = 1) -> IntNumber:
 
 def _validate_bounds(
     l_bounds: npt.ArrayLike, u_bounds: npt.ArrayLike, d: int
-) -> Tuple[np.ndarray, ...]:
+) -> tuple[np.ndarray, ...]:
     """Bounds input validation.
 
     Parameters

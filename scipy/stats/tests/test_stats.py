@@ -932,7 +932,7 @@ class TestCorrSpearmanr2:
     def test_normal_draws(self):
         np.random.seed(7546)
         x = np.array([np.random.normal(loc=1, scale=1, size=500),
-                    np.random.normal(loc=1, scale=1, size=500)])
+                      np.random.normal(loc=1, scale=1, size=500)])
         corr = [[1.0, 0.3],
                 [0.3, 1.0]]
         x = np.dot(np.linalg.cholesky(corr), x)
@@ -1038,8 +1038,8 @@ class TestCorrSpearmanr2:
     def test_gh_11111(self):
         x = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
         y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
-            0.0007535430349118562, 0.0002661781514710257, 0, 0,
-            0.0007835762419683435])
+                      0.0007535430349118562, 0.0002661781514710257, 0, 0,
+                      0.0007835762419683435])
         warn_msg = "An input array is constant"
         with assert_warns(stats.ConstantInputWarning, match=warn_msg):
             r, p = stats.spearmanr(x, y)
@@ -1049,8 +1049,8 @@ class TestCorrSpearmanr2:
     def test_index_error(self):
         x = np.array([1.0, 7.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
         y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
-            0.0007535430349118562, 0.0002661781514710257, 0, 0,
-            0.0007835762419683435])
+                      0.0007535430349118562, 0.0002661781514710257, 0, 0,
+                      0.0007835762419683435])
         assert_raises(ValueError, stats.spearmanr, x, y, axis=2)
 
     def test_alternative(self):
@@ -1287,7 +1287,7 @@ def test_kendalltau():
     # check with larger arrays
     np.random.seed(7546)
     x = np.array([np.random.normal(loc=1, scale=1, size=500),
-                np.random.normal(loc=1, scale=1, size=500)])
+                  np.random.normal(loc=1, scale=1, size=500)])
     corr = [[1.0, 0.3],
             [0.3, 1.0]]
     x = np.dot(np.linalg.cholesky(corr), x)
@@ -1881,7 +1881,8 @@ class TestRegression:
         # formualtion got confusing since LinregressResult became
         # _lib._bunch._make_tuple_bunch instead of namedtuple
         # (for backwards compatibility, see PR #12983)
-        assert_ae = lambda x, y: assert_almost_equal(x, y, decimal=14)
+        def assert_ae(x, y):
+            return assert_almost_equal(x, y, decimal=14)
         assert_ae(result.slope, 1.0)
         assert_ae(result.intercept, 5.0)
         assert_ae(result.rvalue, 0.98229948625750)
@@ -2043,8 +2044,8 @@ def test_cumfreq():
     x = [1, 4, 2, 1, 3, 1]
     cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4)
     assert_array_almost_equal(cumfreqs, np.array([3., 4., 5., 6.]))
-    cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4,
-                                                      defaultreallimits=(1.5, 5))
+    cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(
+        x, numbins=4, defaultreallimits=(1.5, 5))
     assert_(extrapoints == 3)
 
     # test for namedtuple attribute results
@@ -2177,7 +2178,7 @@ class TestScoreatpercentile:
 
     def test_exception(self):
         assert_raises(ValueError, stats.scoreatpercentile, [1, 2], 56,
-            interpolation_method='foobar')
+                      interpolation_method='foobar')
         assert_raises(ValueError, stats.scoreatpercentile, [1], 101)
         assert_raises(ValueError, stats.scoreatpercentile, [1], -1)
 
@@ -3165,7 +3166,7 @@ class TestMoments:
         tc_no_mean = self.testcase_moment_accuracy - \
                      np.mean(self.testcase_moment_accuracy)
         assert_allclose(np.power(tc_no_mean, 42).mean(),
-                            stats.moment(self.testcase_moment_accuracy, 42))
+                        stats.moment(self.testcase_moment_accuracy, 42))
 
     def test_precision_loss_gh15554(self):
         # gh-15554 was one of several issues that have reported problems with
@@ -4210,6 +4211,7 @@ class TestKSTwoSamples:
         assert res.statistic_location == ref_location
         assert res.statistic_sign == ref_sign
 
+
 def test_ttest_rel():
     # regression test
     tr,pr = 0.81248591389165692, 0.41846234511362157
@@ -4542,12 +4544,12 @@ def test_ttest_ind():
     tr, pr = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit')
 
     t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
-                        alternative='less')
+                           alternative='less')
     assert_allclose(t, tr, rtol=1e-14)
     assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
 
     t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
-                        alternative='greater')
+                           alternative='greater')
     assert_allclose(t, tr, rtol=1e-14)
     assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
 
@@ -5455,11 +5457,11 @@ def test_normalitytests():
 
     # Test axis=None (equal to axis=0 for 1-D input)
     assert_array_almost_equal(stats.normaltest(x, axis=None),
-           (st_normal, pv_normal))
+                              (st_normal, pv_normal))
     assert_array_almost_equal(stats.skewtest(x, axis=None),
-           (st_skew, pv_skew))
+                              (st_skew, pv_skew))
     assert_array_almost_equal(stats.kurtosistest(x, axis=None),
-           (st_kurt, pv_kurt))
+                              (st_kurt, pv_kurt))
 
     x = np.arange(10.)
     x[9] = np.nan
@@ -6799,7 +6801,7 @@ class TestFOneWay:
             rtol = 1e-7
             fname = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                  'data/nist_anova', test_case))
-            with open(fname, 'r') as f:
+            with open(fname) as f:
                 content = f.read().split('\n')
             certified = [line.split() for line in content[40:48]
                          if line.strip()]
@@ -7620,8 +7622,8 @@ class TestMGCStat:
         elif sim_type == "nonlinear":
             unif = np.array(np.random.uniform(0, 5, size=(samps, 1)))
             x = unif * np.cos(np.pi * unif)
-            y = unif * np.sin(np.pi * unif) + (0.4
-                * np.random.random_sample(size=(x.size, 1)))
+            y = (unif * np.sin(np.pi * unif) +
+                 0.4*np.random.random_sample(size=(x.size, 1)))
 
         # independence (tests type I simulation)
         elif sim_type == "independence":

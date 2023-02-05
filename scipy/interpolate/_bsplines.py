@@ -1366,7 +1366,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     if nt - n != nleft + nright:
         raise ValueError("The number of derivatives at boundaries does not "
-                         "match: expected %s, got %s+%s" % (nt-n, nleft, nright))
+                         "match: expected {}, got {}+{}".format(nt-n, nleft, nright))
 
     # bail out if the `y` array is zero-sized
     if y.size == 0:

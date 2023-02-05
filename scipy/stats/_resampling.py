@@ -920,6 +920,7 @@ def _pairings_permutations_gen(n_permutations, n_samples, n_obs_sample, batch,
 
     return batched_perm_generator()
 
+
 def _calculate_null_both(data, statistic, n_permutations, batch,
                          random_state=None):
     """

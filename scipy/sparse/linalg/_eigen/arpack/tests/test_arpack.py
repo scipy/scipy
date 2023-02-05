@@ -194,14 +194,14 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
         eigs_func = eigs
 
     if general:
-        err = ("error for %s:general, typ=%s, which=%s, sigma=%s, "
-               "mattype=%s, OPpart=%s, mode=%s" % (eigs_func.__name__,
+        err = ("error for {}:general, typ={}, which={}, sigma={}, "
+               "mattype={}, OPpart={}, mode={}".format(eigs_func.__name__,
                                                    typ, which, sigma,
                                                    mattype.__name__,
                                                    OPpart, mode))
     else:
-        err = ("error for %s:standard, typ=%s, which=%s, sigma=%s, "
-               "mattype=%s, OPpart=%s, mode=%s" % (eigs_func.__name__,
+        err = ("error for {}:standard, typ={}, which={}, sigma={}, "
+               "mattype={}, OPpart={}, mode={}".format(eigs_func.__name__,
                                                    typ, which, sigma,
                                                    mattype.__name__,
                                                    OPpart, mode))

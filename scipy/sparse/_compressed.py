@@ -1187,8 +1187,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             new_M, rm = divmod(shape[0], bm)
             new_N, rn = divmod(shape[1], bn)
             if rm or rn:
-                raise ValueError("shape must be divisible into %s blocks. "
-                                 "Got %s" % (self.blocksize, shape))
+                raise ValueError("shape must be divisible into {} blocks. "
+                                 "Got {}".format(self.blocksize, shape))
             M, N = self.shape[0] // bm, self.shape[1] // bn
         else:
             new_M, new_N = self._swap(shape)

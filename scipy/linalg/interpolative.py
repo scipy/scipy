@@ -794,8 +794,10 @@ def estimate_spectral_norm(A, its=20):
     from scipy.sparse.linalg import aslinearoperator
     A = aslinearoperator(A)
     m, n = A.shape
-    matvec = lambda x: A. matvec(x)
-    matveca = lambda x: A.rmatvec(x)
+    def matvec(x):
+        return A.matvec(x)
+    def matveca(x):
+        return A.rmatvec(x)
     if _is_real(A):
         return _backend.idd_snorm(m, n, matveca, matvec, its=its)
     else:
@@ -831,10 +833,14 @@ def estimate_spectral_norm_diff(A, B, its=20):
     A = aslinearoperator(A)
     B = aslinearoperator(B)
     m, n = A.shape
-    matvec1 = lambda x: A. matvec(x)
-    matveca1 = lambda x: A.rmatvec(x)
-    matvec2 = lambda x: B. matvec(x)
-    matveca2 = lambda x: B.rmatvec(x)
+    def matvec1(x):
+        return A.matvec(x)
+    def matveca1(x):
+        return A.rmatvec(x)
+    def matvec2(x):
+        return B.matvec(x)
+    def matveca2(x):
+        return B.rmatvec(x)
     if _is_real(A):
         return _backend.idd_diffsnorm(
             m, n, matveca1, matveca2, matvec1, matvec2, its=its)
@@ -912,8 +918,8 @@ def svd(A, eps_or_k, rand=True):
         else:
             k = int(eps_or_k)
             if k > min(A.shape):
-                raise ValueError("Approximation rank %s exceeds min(A.shape) = "
-                                 " %s " % (k, min(A.shape)))
+                raise ValueError("Approximation rank {} exceeds min(A.shape) = "
+                                 " {} ".format(k, min(A.shape)))
             if rand:
                 if real:
                     U, V, S = _backend.iddr_asvd(A, k)
@@ -928,8 +934,10 @@ def svd(A, eps_or_k, rand=True):
                     U, V, S = _backend.idzr_svd(A, k)
     elif isinstance(A, LinearOperator):
         m, n = A.shape
-        matvec = lambda x: A.matvec(x)
-        matveca = lambda x: A.rmatvec(x)
+        def matvec(x):
+            return A.matvec(x)
+        def matveca(x):
+            return A.rmatvec(x)
         if eps_or_k < 1:
             eps = eps_or_k
             if real:

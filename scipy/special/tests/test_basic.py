@@ -1617,7 +1617,7 @@ class TestEllip:
         assert_array_almost_equal_nulp(f1, np.full_like(f1, 3.3471442287390509), 4)
 
 
-class TestEllipCarlson(object):
+class TestEllipCarlson:
     """Test for Carlson elliptic integrals ellipr[cdfgj].
     The special values used in these tests can be found in Sec. 3 of Carlson
     (1994), https://arxiv.org/abs/math/9409227
@@ -1755,7 +1755,7 @@ class TestEllipCarlson(object):
                         rtol=5e-15, atol=1e-20)
 
 
-class TestEllipLegendreCarlsonIdentities(object):
+class TestEllipLegendreCarlsonIdentities:
     """Test identities expressing the Legendre elliptic integrals in terms
     of Carlson's symmetric integrals.  These identities can be found
     in the DLMF https://dlmf.nist.gov/19.25#i .
@@ -2779,7 +2779,8 @@ class TestBessel:
         self.check_cephes_vs_amos(special.yv, special.yn, rtol=1e-11, atol=1e-305)
 
     def test_yv_cephes_vs_amos_only_small_orders(self):
-        skipper = lambda v, z: (abs(v) > 50)
+        def skipper(v, z):
+            return abs(v) > 50
         self.check_cephes_vs_amos(special.yv, special.yn, rtol=1e-11, atol=1e-305, skip=skipper)
 
     def test_iv_cephes_vs_amos(self):

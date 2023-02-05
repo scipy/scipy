@@ -786,7 +786,7 @@ class TestLSQSphereBivariateSpline:
         # define knots and extract data values at the knots
         knotst = theta[::5]
         knotsp = phi[::5]
-        w = ones((lats.ravel().shape[0]))
+        w = ones(lats.ravel().shape[0])
 
         # np.array input
         spl1 = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
@@ -1294,7 +1294,7 @@ def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
         raise ValueError("invalid derivative order")
 
 
-class Test_DerivedBivariateSpline(object):
+class Test_DerivedBivariateSpline:
     """Test the creation, usage, and attribute access of the (private)
     _DerivedBivariateSpline class.
     """
