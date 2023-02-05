@@ -6416,6 +6416,7 @@ class nakagami_gen(rv_continuous):
         B = -0.5 * np.log(nu)
         C = (2 * nu - (2 * nu - 1) * sc.digamma(nu)) / 2
         h = A + B + C
+
         return h
 
     def _rvs(self, nu, size=None, random_state=None):
