@@ -3439,6 +3439,27 @@ class TestDgamma:
         #   return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [-mp.inf, mp.inf])
         assert_allclose(stats.dgamma.entropy(a), ref)
 
+    @pytest.mark.parametrize("a, ref",
+    [(1e-100, -1.0e+100),
+    (1e-90, -1.0e+90),
+    (1e-80, -1.0e+80),
+    (1e-70, -1.0e+70),
+    (1e-60, -1.0e+60),
+    (1e-50, -1.0e+50),
+    (1e-40, -1.0e+40),
+    (1e-30, -1.0e+30),
+    (1e-20, -1.0e+20),
+    (1e-10, -9999999975.85822),
+    (10000000000.0, 13.625)])
+    def test_entropy_entreme_values(self, a, ref):
+        #The reference values were calculated with mpmath:
+        #import mpmath as mp
+        #mp.dps = 50
+        #def second_dgamma(a):
+        #    h = a + mp.log(2) + mp.loggamma(a) + (1 - a) * mp.digamma(a)
+        #    return h
+        assert_allclose(stats.dgamma.entropy(a), ref)
+
     def test_entropy_overflow(self):
         assert np.isfinite(stats.dgamma.entropy(1e100))
         assert np.isfinite(stats.dgamma.entropy(1e-100))
