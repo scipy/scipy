@@ -627,8 +627,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         If True, check that the input arrays do not contain nans of infs,
         and raise a ValueError if they do. Setting this parameter to
         False may silently produce nonsensical results if the input arrays
-        do contain nans. Default is True. Note that if `nan_policy` is
-        specified explicitly (not None), this value will be ignored.
+        do contain nans. Default is True if `nan_policy` is not specified
+        explicitly and False otherwise.
     bounds : 2-tuple of array_like or `Bounds`, optional
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
@@ -907,8 +907,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             raise ValueError("`nan_policy='propagate'` is not supported "
                              "by this function.")
 
-        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy)
-        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy)
+        policies = [None, 'raise', 'omit']
+        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy,
+                                                   policies=policies)
+        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy,
+                                                   policies=policies)
 
         if (x_contains_nan or y_contains_nan) and nan_policy == 'omit':
             # ignore NaNs for N dimensional arrays
