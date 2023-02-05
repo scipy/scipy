@@ -3437,7 +3437,7 @@ class TestDgamma:
         #       return h
         #
         #   return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [-mp.inf, mp.inf])
-        assert_allclose(stats.dgamma._entropy(a), ref)
+        assert_allclose(stats.dgamma.entropy(a), ref)
 
     def test_entropy_overflow(self):
         assert np.isfinite(stats.dgamma.entropy(1e100))
