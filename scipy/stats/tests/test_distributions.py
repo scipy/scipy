@@ -7892,53 +7892,28 @@ class TestNakagami:
         assert_allclose(x1, x0, rtol=1e-13)
 
     @pytest.mark.parametrize("m, ref",
-    [(5, -0.097341814372152004341365781403404039274592838861342746),
-    (0.5, 0.72579135264472741361871915897806499359677157053889381),
-    (10, -0.43426184310934906286934353114924211110708634428061666)])
+        [(5, -0.097341814372152),
+        (0.5, 0.7257913526447274),
+        (10, -0.43426184310934907)])
     def test_entropy(self, m, ref):
-        #The reference values were calculated with mpmath:
-        #def entropy_naka(m):
-        #   def pdf(x):
-        #       A = (2 * m ** m) / mp.gamma(m)
-        #       B = x ** (2 * m - 1)
-        #       C = mp.exp(-m * x ** 2)
-        #       h = A * B * C
-        #       return h
-        #
-        #   return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [0, mp.inf])
-        assert_allclose(stats.nakagami.entropy(m), ref, rtol=1e-14)
+        # from sympy import *
+        # from mpmath import mp
+        # import numpy as np
+        # v, x = symbols('v, x', real=True, positive=True)
+        # pdf = 2 * v ** v / gamma(v) * x ** (2 * v - 1) * exp(-v * x ** 2)
+        # h = simplify(simplify(integrate(-pdf * log(pdf), (x, 0, oo))))
+        # entropy = lambdify(v, h, 'mpmath')
+        # mp.dps = 200
+        # nu = 5
+        # ref = np.float64(entropy(mp.mpf(nu)))
+        # print(ref)
+        assert_allclose(stats.nakagami.entropy(m), ref, rtol=1.1e-14)
 
     @pytest.mark.parametrize("m, ref",
-    [(1e-10, -4999999965.44298),
-    (1e-20, -5.0e+19),
-    (1e-30, -5.0e+29),
-    (1e-40, -5.0e+39),
-    (1e-50, -5.0e+49),
-    (1e-60, -5.0e+59),
-    (1e-70, -5.0e+69),
-    (1e-80, -5.0e+79),
-    (1e-90, -5.0e+89),
-    (1e-100, -5.0e+99),
-    (100.0, -1.57763125141827),
-    (1000.0, -2.72816966185837),
-    (10000.0, -3.87938716709323),
-    (100000.0, -5.03067221329547),
-    (1000000.0, -6.18196401000023),
-    (10000000.0, -7.333256483078),
-    (100000000.0, -8.48454904556274),
-    (1000000000.0, -9.63584136962891),
-    (10000000000.0, -10.7871398925781),
-    (100000000000.0, -11.9384765625),
-    (1000000000000.0, -13.08984375)])
-    def test_extreme_m(self, m, ref):
-        #The normal implementation used for reference values
-        #fails at extreme values, so we just use the formula.
-        #def second_naka(m):
-        #    A = mp.loggamma(m) - mp.log(2)
-        #    B = -0.5 * mp.log(m)
-        #    C = (2 * m - (2 * m - 1) * mp.digamma(m)) / 2
-        #    h = A + B + C
-        #    return h
+        [(1e-100, -5.0e+99), (1e-10, -4999999965.442979),
+         (9.999e6, -7.333206478668433), (1.001e7, -7.3337562313259825),
+         (1e10, -10.787134112333835), (1e100, -114.40346329705756)])
+    def test_extreme_nu(self, m, ref):
         assert_allclose(stats.nakagami.entropy(m), ref)
 
     def test_entropy_overflow(self):

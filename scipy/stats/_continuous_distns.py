@@ -6557,6 +6557,9 @@ class nakagami_gen(rv_continuous):
     %(example)s
 
     """
+    def _argcheck(self, nu):
+        return nu > 0
+
     def _shape_info(self):
         return [_ShapeInfo("nu", False, (0, np.inf), (False, False))]
 
@@ -6590,12 +6593,20 @@ class nakagami_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, nu):
-        A = sc.gammaln(nu) - np.log(2)
-        B = -0.5 * np.log(nu)
-        C = (2 * nu - (2 * nu - 1) * sc.digamma(nu)) / 2
+        shape = np.shape(nu)
+        # because somehow this isn't taken care of by the infrastructure...
+        nu = np.atleast_1d(nu)
+        A = sc.gammaln(nu)
+        B = nu - (nu - 0.5) * sc.digamma(nu)
+        C = -0.5 * np.log(nu) - np.log(2)
         h = A + B + C
-
-        return h
+        # This is the asymptotic sum of A and B (see gh-17868)
+        norm_entropy = stats.norm.entropy()
+        # Above, this is lost to rounding error for large nu, so use the
+        # asymptotic sum when the approximation becomes accurate
+        i = nu > 1e7  # roundoff error ~ approximation error
+        h[i] = C[i] + norm_entropy
+        return h.reshape(shape)[()]
 
     def _rvs(self, nu, size=None, random_state=None):
         # this relationship can be found in [1] or by a direct calculation
