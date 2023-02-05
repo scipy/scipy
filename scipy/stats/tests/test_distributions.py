@@ -4532,7 +4532,7 @@ class TestLevyStable:
         """
 
         uname = platform.uname()
-        is_linux_32 = uname.system == 'Linux' and uname.machine == 'i686'
+        is_linux_32 = uname.system == 'Linux' and "32bit" in platform.architecture()[0]
         # Test seems to be unstable (see gh-17839 for a bug report on Debian
         # i386), so skip it.
         if is_linux_32 and case == 'pdf':
