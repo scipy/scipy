@@ -13,13 +13,14 @@ from tempfile import mkstemp, gettempdir
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
-OPENBLAS_V = '0.3.18'
-OPENBLAS_LONG = 'v0.3.18'
+OPENBLAS_V = '0.3.21'
+OPENBLAS_LONG = 'v0.3.21'
 BASE_LOC = 'https://anaconda.org/multibuild-wheels-staging/openblas-libs'
 BASEURL = f'{BASE_LOC}/{OPENBLAS_LONG}/download'
 SUPPORTED_PLATFORMS = [
     'linux-aarch64',
     'linux-x86_64',
+    'musllinux-x86_64',
     'linux-i686',
     'linux-ppc64le',
     'linux-s390x',
@@ -54,14 +55,43 @@ def get_ilp64():
 
 
 def get_manylinux(arch):
-    if arch in ('x86_64', 'i686'):
+    if arch in ('i686'):
         default = '2010'
     else:
         default = '2014'
-    ret = os.environ.get("MB_ML_VER", default)
+    ml_ver = os.environ.get("MB_ML_VER", default)
     # XXX For PEP 600 this can be a glibc version
-    assert ret in ('1', '2010', '2014', '_2_24'), f'invalid MB_ML_VER {ret}'
-    return ret
+    assert ml_ver in ('2010', '2014', '_2_24'), f'invalid MB_ML_VER {ml_ver}'
+    suffix = f'manylinux{ml_ver}_{arch}.tar.gz'
+    return suffix
+
+
+def get_musllinux(arch):
+    musl_ver = "1_1"
+    suffix = f'musllinux_{musl_ver}_{arch}.tar.gz'
+    return suffix
+
+
+def get_linux(arch):
+    # best way of figuring out whether manylinux or musllinux is to look
+    # at the packaging tags. If packaging isn't installed (it's not by default)
+    # fallback to sysconfig (which may be flakier)
+    try:
+        from packaging.tags import sys_tags
+        tags = list(sys_tags())
+        plat = tags[0].platform
+    except ImportError:
+        # fallback to sysconfig for figuring out if you're using musl
+        plat = 'manylinux'
+        # value could be None
+        v = sysconfig.get_config_var('HOST_GNU_TYPE') or ''
+        if 'musl' in v:
+            plat = 'musllinux'
+
+    if 'manylinux' in plat:
+        return get_manylinux(arch)
+    elif 'musllinux' in plat:
+        return get_musllinux(arch)
 
 
 def download_openblas(target, plat, ilp64):
@@ -69,24 +99,23 @@ def download_openblas(target, plat, ilp64):
     fnsuffix = {None: "", "64_": "64_"}[ilp64]
     filename = ''
     headers = {'User-Agent':
-               ('Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 ; '
-                '(KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.3')}
+                   ('Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 ; '
+                    '(KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.3')}
     suffix = None
     if osname == "linux":
-        ml_ver = get_manylinux(arch)
-        suffix = f'manylinux{ml_ver}_{arch}.tar.gz'
+        suffix = get_linux(arch)
         typ = 'tar.gz'
     elif plat == 'macosx-x86_64':
-        suffix = 'macosx_10_9_x86_64-gf_1becaaa.tar.gz'
+        suffix = 'macosx_10_9_x86_64-gf_c469a42.tar.gz'
         typ = 'tar.gz'
     elif plat == 'macosx-arm64':
-        suffix = 'macosx_11_0_arm64-gf_f26990f.tar.gz'
+        suffix = 'macosx_11_0_arm64-gf_5272328.tar.gz'
         typ = 'tar.gz'
     elif osname == 'win':
         if plat == "win-32":
-            suffix = 'win32-gcc_8_1_0.zip'
+            suffix = 'win32-gcc_8_3_0.zip'
         else:
-            suffix = 'win_amd64-gcc_8_1_0.zip'
+            suffix = 'win_amd64-gcc_10_3_0.zip'
         typ = 'zip'
 
     if not suffix:
@@ -200,7 +229,7 @@ def make_init(dirname):
     '''
     Create a _distributor_init.py file for OpenBlas
     '''
-    with open(os.path.join(dirname, '_distributor_init.py'), 'wt') as fid:
+    with open(os.path.join(dirname, '_distributor_init.py'), 'w') as fid:
         fid.write(textwrap.dedent("""
             '''
             Helper to preload windows dlls to prevent dll not found errors.
