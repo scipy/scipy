@@ -652,6 +652,9 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         A.setdiag(1)
     else:
         diag = A.diagonal()
+        if np.any(diag==0):
+            raise LinAlgError(
+                f'A is singular: zero entry on diagonal.')
         A = A.multiply(1/diag).tocsc()
 
 
