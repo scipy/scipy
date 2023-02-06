@@ -933,7 +933,7 @@ def nn_chain(double[:] dists, int n, int method):
     cdef int[:] cluster_chain = np.ndarray(n, dtype=np.intc)
     cdef int chain_length = 0
 
-    cdef int i, j, k, x, y = 0, nx, ny, ni
+    cdef int i, k, x, y = 0, nx, ny, ni
     cdef double dist, current_min
 
     for k in range(n - 1):
