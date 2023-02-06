@@ -49,6 +49,8 @@ def _richtmyer_lattice(n_dim, n_qmc_samples):
 
 
 def _factorize_int(n):
+    """Return a sorted list of the unique prime factors of a positive integer.
+    """
     # NOTE: There are lots faster ways to do this, but this isn't terrible.
     factors = set()
     for p in primes_from_2_to(int(np.sqrt(n)) + 1):
@@ -63,6 +65,14 @@ def _factorize_int(n):
 
 
 def _primitive_root(p):
+    """Compute a primitive root of the prime number `p`.
+
+    Used in the CBC lattice construction.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Primitive_root_modulo_n
+    """
     # p is prime
     pm = p - 1
     factors = _factorize_int(pm)
@@ -82,6 +92,31 @@ def _primitive_root(p):
 
 
 def _cbc_lattice(n_dim, n_qmc_samples):
+    """Compute a QMC lattice generator using a Fast CBC construction.
+
+    Parameters
+    ----------
+    n_dim : int > 0
+        The number of dimensions for the lattice.
+    n_qmc_samples : int > 0
+        The desired number of QMC samples. This will be rounded down to the nearest
+        prime to enable the CBC construction.
+
+    Returns
+    -------
+    q : float array : shape=(n_dim,)
+        The lattice generator vector. All values are in the open interval `(0, 1)`.
+    actual_n_qmc_samples : int
+        The prime number of QMC samples that must be used with this lattice, no more,
+        no less.
+
+    References
+    ----------
+    .. [1] Nuyens, D. and Cools, R. "Fast Component-by-Component Construction, a
+           Reprise for Different Kernels", In H. Niederreiter and D. Talay,
+           editors, Monte-Carlo and Quasi-Monte Carlo Methods 2004,
+           Springer-Verlag, 2006, 371-385.
+    """
     # Round down to the nearest prime number.
     primes = primes_from_2_to(n_qmc_samples + 1)
     n_qmc_samples = primes[-1]
