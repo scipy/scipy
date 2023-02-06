@@ -75,7 +75,7 @@ Next, set up your development environment.
         .. code:: bash
 
             # Create the virtual environment
-            python -m venv scipy-dev
+            python -m venv $HOME/.venvs/scipy-dev
             # Activate the environment
             source $HOME/.venvs/scipy-dev/bin/activate
             # Install python-level dependencies
