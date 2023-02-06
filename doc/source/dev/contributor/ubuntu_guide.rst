@@ -112,7 +112,7 @@ Building SciPy
 
 Inside the ``scipy-dev`` environment, install the python-level dependencies::
 
-    python -m pip install numpy pytest cython pythran pybind11 meson ninja
+    python -m pip install numpy pytest cython pythran pybind11 meson ninja pydevtool rich-click
 
 Note that when the virtual environment is active, the system-wide names ``pip3``
 and ``python3`` are aliased to ``pip`` and ``python``, respectively.
