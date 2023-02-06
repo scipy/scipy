@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import pytest
 
 from numpy.testing import assert_allclose, assert_, assert_array_equal
 

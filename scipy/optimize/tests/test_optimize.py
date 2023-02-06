@@ -213,8 +213,10 @@ class CheckOptimizeParameterized(CheckOptimize):
 
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
-        func = lambda x: -np.e**-x
-        fprime = lambda x: -func(x)
+        def func(x):
+            return -np.e ** (-x)
+        def fprime(x):
+            return -func(x)
         x0 = [0]
         with np.errstate(over='ignore'):
             if self.use_wrapper:
@@ -313,9 +315,7 @@ class CheckOptimizeParameterized(CheckOptimize):
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     bounds=bounds,
                                     method='Powell', options=opts)
-            params, fopt, direc, numiter, func_calls, warnflag = (
-                    res['x'], res['fun'], res['direc'], res['nit'],
-                    res['nfev'], res['status'])
+            params, func_calls = (res['x'], res['nfev'])
 
             assert func_calls == self.funccalls
             assert_allclose(self.func(params), self.func(self.solution),
@@ -601,14 +601,16 @@ def test_neldermead_iteration_num():
 def test_neldermead_xatol_fatol():
     # gh4484
     # test we can call with fatol, xatol specified
-    func = lambda x: x[0]**2 + x[1]**2
+    def func(x):
+        return x[0] ** 2 + x[1] ** 2
 
     optimize._minimize._minimize_neldermead(func, [1, 1], maxiter=2,
                                             xatol=1e-3, fatol=1e-3)
 
 
 def test_neldermead_adaptive():
-    func = lambda x: np.sum(x**2)
+    def func(x):
+        return np.sum(x ** 2)
     p0 = [0.15746215, 0.48087031, 0.44519198, 0.4223638, 0.61505159,
           0.32308456, 0.9692297, 0.4471682, 0.77411992, 0.80441652,
           0.35994957, 0.75487856, 0.99973421, 0.65063887, 0.09626474]
@@ -625,7 +627,8 @@ def test_bounded_powell_outsidebounds():
     # With the bounded Powell method if you start outside the bounds the final
     # should still be within the bounds (provided that the user doesn't make a
     # bad choice for the `direc` argument).
-    func = lambda x: np.sum(x**2)
+    def func(x):
+        return np.sum(x ** 2)
     bounds = (-1, 1), (-1, 1), (-1, 1)
     x0 = [-4, .5, -.8]
 
@@ -659,7 +662,8 @@ def test_bounded_powell_vs_powell():
     # first we test a simple example where the minimum is at
     # the origin and the minimum that is within the bounds is
     # larger than the minimum at the origin.
-    func = lambda x: np.sum(x**2)
+    def func(x):
+        return np.sum(x ** 2)
     bounds = (-5, -1), (-10, -0.1), (1, 9.2), (-4, 7.6), (-15.9, -2)
     x0 = [-2.1, -5.2, 1.9, 0, -2]
 
@@ -738,7 +742,8 @@ def test_onesided_bounded_powell_stability():
     x0 = [1, 1, 1]
 
     # df/dx is constant.
-    f = lambda x: -np.sum(x)
+    def f(x):
+        return -np.sum(x)
     res = optimize.minimize(f, x0, **kwargs)
     assert_allclose(res.fun, -3e6, atol=1e-4)
 
@@ -791,8 +796,10 @@ class TestOptimizeSimple(CheckOptimize):
 
     def test_bfgs_nan(self):
         # Test corner case where nan is fed to optimizer.  See gh-2067.
-        func = lambda x: x
-        fprime = lambda x: np.ones_like(x)
+        def func(x):
+            return x
+        def fprime(x):
+            return np.ones_like(x)
         x0 = [np.nan]
         with np.errstate(over='ignore', invalid='ignore'):
             x = optimize.fmin_bfgs(func, x0, fprime, disp=False)
@@ -802,7 +809,8 @@ class TestOptimizeSimple(CheckOptimize):
         # Test corner cases where fun returns NaN. See gh-4793.
 
         # First case: NaN from first call.
-        func = lambda x: np.nan
+        def func(x):
+            return np.nan
         with np.errstate(invalid='ignore'):
             result = optimize.minimize(func, 0)
 
@@ -810,8 +818,10 @@ class TestOptimizeSimple(CheckOptimize):
         assert result['success'] is False
 
         # Second case: NaN from second call.
-        func = lambda x: 0 if x == 0 else np.nan
-        fprime = lambda x: np.ones_like(x)  # Steer away from zero.
+        def func(x):
+            return 0 if x == 0 else np.nan
+        def fprime(x):
+            return np.ones_like(x)  # Steer away from zero.
         with np.errstate(invalid='ignore'):
             result = optimize.minimize(func, 0, jac=fprime)
 
@@ -1145,7 +1155,7 @@ class TestOptimizeSimple(CheckOptimize):
                                      method=method)
             sol2 = optimize.minimize(func, [1, 1], jac=jac, tol=1.0,
                                      method=method)
-            assert func(sol1.x) < func(sol2.x), "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x))
+            assert func(sol1.x) < func(sol2.x), f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
 
     @pytest.mark.parametrize('method',
                              ['fmin', 'fmin_powell', 'fmin_cg', 'fmin_bfgs',
@@ -1156,7 +1166,8 @@ class TestOptimizeSimple(CheckOptimize):
         # inplace by the optimizer afterward
 
         if method in ('fmin_tnc', 'fmin_l_bfgs_b'):
-            func = lambda x: (optimize.rosen(x), optimize.rosen_der(x))
+            def func(x):
+                return optimize.rosen(x), optimize.rosen_der(x)
         else:
             func = optimize.rosen
             jac = optimize.rosen_der
@@ -1311,7 +1322,8 @@ class TestOptimizeSimple(CheckOptimize):
         jac = optimize.rosen_der
         hess = optimize.rosen_hess
 
-        fun = lambda x: np.array([0.2 * x[0] - 0.4 * x[1] - 0.33 * x[2]])
+        def fun(x):
+            return np.array([0.2 * x[0] - 0.4 * x[1] - 0.33 * x[2]])
         cons = ({'type': 'ineq',
                  'fun': fun},)
 
@@ -1391,7 +1403,7 @@ class TestOptimizeSimple(CheckOptimize):
             res = optimize.minimize(f, x0, jac=g, method=method,
                                     options=options)
 
-            err_msg = "{0} {1}: {2}: {3}".format(method, scale,
+            err_msg = "{} {}: {}: {}".format(method, scale,
                                                  first_step_size,
                                                  res)
 
@@ -1485,7 +1497,7 @@ class TestOptimizeSimple(CheckOptimize):
         for i in range(1, len(self.trace)):
             if np.array_equal(self.trace[i - 1], self.trace[i]):
                 raise RuntimeError(
-                    "Duplicate evaluations made by {}".format(method))
+                    f"Duplicate evaluations made by {method}")
 
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     @pytest.mark.parametrize('method', MINIMIZE_METHODS_NEW_CB)
@@ -2036,7 +2048,8 @@ def test_linesearch_powell():
     linesearch_powell = optimize._optimize._linesearch_powell
     # args are func, p, xi, fval, lower_bound=None, upper_bound=None, tol=1e-3
     # returns new_fval, p + direction, direction
-    func = lambda x: np.sum((x - np.array([-1., 2., 1.5, -.4]))**2)
+    def func(x):
+        return np.sum((x - np.array([-1.0, 2.0, 1.5, -0.4])) ** 2)
     p0 = np.array([0., 0, 0, 0])
     fval = func(p0)
     lower_bound = np.array([-np.inf] * 4)
@@ -2073,7 +2086,8 @@ def test_linesearch_powell_bounded():
     linesearch_powell = optimize._optimize._linesearch_powell
     # args are func, p, xi, fval, lower_bound=None, upper_bound=None, tol=1e-3
     # returns new_fval, p+direction, direction
-    func = lambda x: np.sum((x-np.array([-1., 2., 1.5, -.4]))**2)
+    def func(x):
+        return np.sum((x - np.array([-1.0, 2.0, 1.5, -0.4])) ** 2)
     p0 = np.array([0., 0, 0, 0])
     fval = func(p0)
 
@@ -2267,7 +2281,8 @@ def test_minimize_multiple_constraints():
             {'type': 'ineq', 'fun': func1},
             {'type': 'ineq', 'fun': func2})
 
-    f = lambda x: -1 * (x[0] + x[1] + x[2])
+    def f(x):
+        return -1 * (x[0] + x[1] + x[2])
 
     res = optimize.minimize(f, [0, 0, 0], method='SLSQP', constraints=cons)
     assert_allclose(res.x, [125, 0, 0], atol=1e-10)
@@ -2435,7 +2450,7 @@ def test_cobyla_threadsafe():
         tasks.append(pool.submit(minimizer1))
         tasks.append(pool.submit(minimizer2))
         for t in tasks:
-            res = t.result()
+            t.result()
 
 
 class TestIterationLimits:
@@ -2881,7 +2896,8 @@ def test_x_overwritten_user_function():
         x -= 2 * a
         return x
 
-    fquad_hess = lambda x: np.eye(np.size(x)) * 2.0
+    def fquad_hess(x):
+        return np.eye(np.size(x)) * 2.0
 
     meth_jac = [
         'newton-cg', 'dogleg', 'trust-ncg', 'trust-exact',

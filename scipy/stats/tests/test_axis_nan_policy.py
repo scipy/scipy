@@ -77,6 +77,7 @@ inaccuracy_messages = {"Precision loss occurred in moment calculation",
 # For some functions, nan_policy='propagate' should not just return NaNs
 override_propagate_funcs = {stats.mode}
 
+
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
                           paired=False):
     # generate random samples to check the response of hypothesis tests to
@@ -617,17 +618,16 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
 
         # yield all possible combinations of small samples
         gens = [small_sample_generator(n_dims) for i in range(n_samples)]
-        for i in product(*gens):
-            yield i
+        yield from product(*gens)
 
     n_dims = [2, 3]
     for samples in small_data_generator(n_samples, n_dims):
 
         # this test is only for arrays of zero size
-        if not any((sample.size == 0 for sample in samples)):
+        if not any(sample.size == 0 for sample in samples):
             continue
 
-        max_axis = max((sample.ndim for sample in samples))
+        max_axis = max(sample.ndim for sample in samples)
 
         # need to test for all valid values of `axis` parameter, too
         for axis in range(-max_axis, max_axis):

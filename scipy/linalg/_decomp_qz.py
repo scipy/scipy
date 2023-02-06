@@ -116,13 +116,14 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         result = gges(lambda x: None, a1, b1, lwork=-1)
         lwork = result[-2][0].real.astype(np.int_)
 
-    sfunction = lambda x: None
+    def sfunction(x):
+        return None
     result = gges(sfunction, a1, b1, lwork=lwork, overwrite_a=overwrite_a,
                   overwrite_b=overwrite_b, sort_t=0)
 
     info = result[-1]
     if info < 0:
-        raise ValueError("Illegal value in argument {} of gges".format(-info))
+        raise ValueError(f"Illegal value in argument {-info} of gges")
     elif info > 0 and info <= a_n:
         warnings.warn("The QZ iteration failed. (a,b) are not in Schur "
                       "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be "

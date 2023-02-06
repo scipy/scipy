@@ -1,5 +1,4 @@
 import pathlib
-import sys
 
 
 def pre_build_hook(build_ext, ext):

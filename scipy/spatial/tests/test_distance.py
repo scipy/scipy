@@ -59,7 +59,7 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     hamming, jaccard, jensenshannon,
                                     kulczynski1, mahalanobis,
                                     minkowski, rogerstanimoto,
-                                    russellrao, seuclidean, sokalmichener,
+                                    russellrao, seuclidean, sokalmichener,  # noqa: F401
                                     sokalsneath, sqeuclidean, yule)
 
 _filenames = [
@@ -351,7 +351,7 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
             # when some combination of arguments makes weighting impossible,
             #  this is the desired response
             if not silent:
-                warnings.warn("%s NotImplemented weights: %s" % (fn.__name__, e))
+                warnings.warn(f"{fn.__name__} NotImplemented weights: {e}")
         return result
     return wrapped
 
@@ -1682,7 +1682,7 @@ class TestNumObsY:
     def test_num_obs_y_2_100(self):
         # Tests num_obs_y(y) on 100 improper condensed distance matrices.
         # Expecting exception.
-        a = set([])
+        a = set()
         for n in range(2, 16):
             a.add(n * (n - 1) / 2)
         for i in range(5, 105):
@@ -1853,7 +1853,7 @@ class TestIsValidY:
         assert_equal(is_valid_y(y), True)
 
     def test_is_valid_y_2_100(self):
-        a = set([])
+        a = set()
         for n in range(2, 16):
             a.add(n * (n - 1) / 2)
         for i in range(5, 105):
@@ -2048,7 +2048,7 @@ def test_Xdist_deprecated_args():
                      [1.2, 2.3, 3.4],
                      [2.2, 2.3, 4.4],
                      [22.2, 23.3, 44.4]])
-    weights = np.arange(3)
+    np.arange(3)
     for metric in _METRICS_NAMES:
         with pytest.raises(TypeError):
             cdist(X1, X1, metric, 2.)

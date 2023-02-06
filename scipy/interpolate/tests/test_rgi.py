@@ -553,7 +553,7 @@ class TestRegularGridInterpolator:
         assert v.shape == (1, *trailing_points)
 
         # check the values, too : manually loop over the trailing dimensions
-        vs = np.empty((values.shape[-2:]))
+        vs = np.empty(values.shape[-2:])
         for i in range(values.shape[-2]):
             for j in range(values.shape[-1]):
                 interp = RegularGridInterpolator(points, values[..., i, j],
@@ -584,7 +584,7 @@ class TestRegularGridInterpolator:
         assert v.shape == (1, *trailing_points)
 
         # check the values, too : manually loop over the trailing dimensions
-        vs = np.empty((values.shape[-2:]))
+        vs = np.empty(values.shape[-2:])
         for i in range(values.shape[-2]):
             for j in range(values.shape[-1]):
                 interp = RegularGridInterpolator(points, values[..., i, j],

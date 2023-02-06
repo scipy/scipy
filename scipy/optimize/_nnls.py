@@ -60,17 +60,17 @@ def nnls(A, b, maxiter=None):
 
     if len(A.shape) != 2:
         raise ValueError("Expected a two-dimensional array (matrix)" +
-                         ", but the shape of A is %s" % (A.shape, ))
+                         f", but the shape of A is {A.shape}")
     if len(b.shape) != 1:
         raise ValueError("Expected a one-dimensional array (vector)" +
-                         ", but the shape of b is %s" % (b.shape, ))
+                         f", but the shape of b is {b.shape}")
 
     m, n = A.shape
 
     if m != b.shape[0]:
         raise ValueError(
                 "Incompatible dimensions. The first dimension of " +
-                "A is %s, while the shape of b is %s" % (m, (b.shape[0], )))
+                f"A is {m}, while the shape of b is {(b.shape[0], )}")
 
     maxiter = -1 if maxiter is None else int(maxiter)
 
