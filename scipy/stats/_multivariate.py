@@ -4373,7 +4373,7 @@ class multivariate_t_gen(multi_rv_generic):
         >>> shape = [[1, 0.1], [0.1, 1]]
         >>> df = 7
         >>> multivariate_t.pdf(x, loc, shape, df)
-        array([0.00075713])
+        0.00075713
 
         """
         dim, loc, shape, df = self._process_parameters(loc, shape, df)
@@ -4405,7 +4405,7 @@ class multivariate_t_gen(multi_rv_generic):
         >>> shape = [[1, 0.1], [0.1, 1]]
         >>> df = 7
         >>> multivariate_t.logpdf(x, loc, shape, df)
-        array([-7.1859802])
+        -7.1859802
 
         See Also
         --------
@@ -4530,7 +4530,7 @@ class multivariate_t_gen(multi_rv_generic):
         >>> shape = [[1, 0.1], [0.1, 1]]
         >>> df = 7
         >>> multivariate_t.cdf(x, loc, shape, df)
-        array([0.64798491])
+        0.64798491
 
         """
         dim, loc, shape, df = self._process_parameters(loc, shape, df)

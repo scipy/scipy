@@ -30,7 +30,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
 from scipy.stats import _covariance, Covariance
 from scipy import stats
 
-from scipy.integrate import romb
+from scipy.integrate import romb, qmc_quad, tplquad
 from scipy.special import multigammaln
 
 from .common_tests import check_random_state_property
@@ -2448,6 +2448,49 @@ class TestMultivariateT:
             ref = _qsimvtv(20000, df, cov, a - mean, b - mean, rng)[0]
         assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
 
+    def test_cdf_against_generic_integrators(self):
+        # Compare result against generic numerical integrators
+        dim = 3
+        rng = np.random.default_rng(413722918996573)
+        w = 10 ** rng.uniform(-1, 1, size=dim)
+        cov = _random_covariance(dim, w, rng, singular=True)
+        mean = rng.random(dim)
+        a = -rng.random(dim)
+        b = rng.random(dim)
+        df = rng.random() * 5
+
+        res = stats.multivariate_t.cdf(b, mean, cov, df, random_state=rng,
+                                       lower_limit=a)
+
+        def integrand(x):
+            return stats.multivariate_t.pdf(x.T, mean, cov, df)
+
+        ref = qmc_quad(integrand, a, b, qrng=stats.qmc.Halton(d=dim, seed=rng))
+        assert_allclose(res, ref.integral, rtol=1e-3)
+
+        def integrand(*zyx):
+            return stats.multivariate_t.pdf(zyx[::-1], mean, cov, df)
+
+        ref = tplquad(integrand, a[0], b[0], a[1], b[1], a[2], b[2])
+        assert_allclose(res, ref[0], rtol=1e-3)
+
+    def test_against_matlab(self):
+        # Test against matlab mvtcdf:
+        # C = [6.21786909  0.2333667 7.95506077;
+        #      0.2333667 29.67390923 16.53946426;
+        #      7.95506077 16.53946426 19.17725252]
+        # df = 1.9559939787727658
+        # mvtcdf([0, 0, 0], C, df)  % 0.2523
+        rng = np.random.default_rng(2967390923)
+        cov = np.array([[ 6.21786909,  0.2333667 ,  7.95506077],
+                        [ 0.2333667 , 29.67390923, 16.53946426],
+                        [ 7.95506077, 16.53946426, 19.17725252]])
+        df = 1.9559939787727658
+        dist = stats.multivariate_t(shape=cov, df=df)
+        res = dist.cdf([0, 0, 0], random_state=rng)
+        ref = 0.2523
+        assert_allclose(res, ref, rtol=1e-3)
+
     def test_frozen(self):
         seed = 4137229573
         rng = np.random.default_rng(seed)
@@ -2480,6 +2523,14 @@ class TestMultivariateT:
 
         ref = np.apply_along_axis(_cdf_1d, -1, x)
         assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
+
+    @pytest.mark.parametrize("dim", (3, 7))
+    def test_against_analytical(self, dim):
+        rng = np.random.default_rng(413722918996573)
+        A = scipy.linalg.toeplitz(c=[1] + [0.5] * (dim - 1))
+        res = stats.multivariate_t(shape=A).cdf([0] * dim, random_state=rng)
+        ref = 1 / (dim + 1)
+        assert_allclose(res, ref, rtol=5e-5)
 
 
 class TestMultivariateHypergeom:
