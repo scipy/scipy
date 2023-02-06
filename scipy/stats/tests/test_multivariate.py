@@ -28,11 +28,13 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          hypergeom, multivariate_t, cauchy, normaltest,
                          random_table, uniform_direction)
 from scipy.stats import _covariance, Covariance
+from scipy import stats
 
-from scipy.integrate import romb
+from scipy.integrate import romb, qmc_quad, tplquad
 from scipy.special import multigammaln
 
 from .common_tests import check_random_state_property
+from .data._mvt import _qsimvtv
 
 from unittest.mock import patch
 
@@ -238,6 +240,20 @@ class TestCovariance:
         res = rv.rvs(random_state=rng1)
         ref = multivariate_normal.rvs(mean, cov, random_state=rng2)
         assert_equal(res, ref)
+
+
+def _random_covariance(dim, evals, rng, singular=False):
+    # Generates random covariance matrix with dimensionality `dim` and
+    # eigenvalues `evals` using provided Generator `rng`. Randomly sets
+    # some evals to zero if `singular` is True.
+    A = rng.random((dim, dim))
+    A = A @ A.T
+    _, v = np.linalg.eigh(A)
+    if singular:
+        zero_eigs = rng.normal(size=dim) > 0
+        evals[zero_eigs] = 0
+    cov = v @ np.diag(evals) @ v.T
+    return cov
 
 
 def _sample_orthonormal_matrix(n):
@@ -2347,6 +2363,174 @@ class TestMultivariateT:
         dist = multivariate_t(np.zeros(dim), np.eye(dim), df)
         rvs = dist.rvs(size=size)
         assert rvs.shape == size + (dim, )
+
+    def test_cdf_signs(self):
+        # check that sign of output is correct when np.any(lower > x)
+        mean = np.zeros(3)
+        cov = np.eye(3)
+        df = 10
+        b = [[1, 1, 1], [0, 0, 0], [1, 0, 1], [0, 1, 0]]
+        a = [[0, 0, 0], [1, 1, 1], [0, 1, 0], [1, 0, 1]]
+        # when odd number of elements of b < a, output is negative
+        expected_signs = np.array([1, -1, -1, 1])
+        cdf = multivariate_normal.cdf(b, mean, cov, df, lower_limit=a)
+        assert_allclose(cdf, cdf[0]*expected_signs)
+
+    @pytest.mark.parametrize('dim', [1, 2, 5, 10])
+    def test_cdf_against_multivariate_normal(self, dim):
+        # Check accuracy against MVN randomly-generated cases
+        self.cdf_against_mvn_test(dim)
+
+    @pytest.mark.parametrize('dim', [3, 6, 9])
+    def test_cdf_against_multivariate_normal_singular(self, dim):
+        # Check accuracy against MVN for randomly-generated singular cases
+        self.cdf_against_mvn_test(3, True)
+
+    def cdf_against_mvn_test(self, dim, singular=False):
+        # Check for accuracy in the limit that df -> oo and MVT -> MVN
+        rng = np.random.default_rng(413722918996573)
+        n = 3
+
+        w = 10**rng.uniform(-2, 1, size=dim)
+        cov = _random_covariance(dim, w, rng, singular)
+
+        mean = 10**rng.uniform(-1, 2, size=dim) * np.sign(rng.normal(size=dim))
+        a = -10**rng.uniform(-1, 2, size=(n, dim)) + mean
+        b = 10**rng.uniform(-1, 2, size=(n, dim)) + mean
+
+        res = stats.multivariate_t.cdf(b, mean, cov, df=10000, lower_limit=a,
+                                       allow_singular=True, random_state=rng)
+        ref = stats.multivariate_normal.cdf(b, mean, cov, allow_singular=True,
+                                            lower_limit=a)
+        assert_allclose(res, ref, atol=5e-4)
+
+    def test_cdf_against_univariate_t(self):
+        rng = np.random.default_rng(413722918996573)
+        cov = 2
+        mean = 0
+        x = rng.normal(size=10, scale=np.sqrt(cov))
+        df = 3
+
+        res = stats.multivariate_t.cdf(x, mean, cov, df, lower_limit=-np.inf,
+                                       random_state=rng)
+        ref = stats.t.cdf(x, df, mean, np.sqrt(cov))
+        incorrect = stats.norm.cdf(x, mean, np.sqrt(cov))
+
+        assert_allclose(res, ref, atol=5e-4)  # close to t
+        assert np.all(np.abs(res - incorrect) > 1e-3)  # not close to normal
+
+    @pytest.mark.parametrize("dim", [2, 3, 5, 10])
+    @pytest.mark.parametrize("seed", [3363958638, 7891119608, 3887698049,
+                                      5013150848, 1495033423, 6170824608])
+    @pytest.mark.parametrize("singular", [False, True])
+    def test_cdf_against_qsimvtv(self, dim, seed, singular):
+        if singular and seed != 3363958638:
+            pytest.skip('Agreement with qsimvtv is not great in singular case')
+        rng = np.random.default_rng(seed)
+        w = 10**rng.uniform(-2, 2, size=dim)
+        cov = _random_covariance(dim, w, rng, singular)
+        mean = rng.random(dim)
+        a = -rng.random(dim)
+        b = rng.random(dim)
+        df = rng.random() * 5
+
+        # no lower limit
+        res = stats.multivariate_t.cdf(b, mean, cov, df, random_state=rng,
+                                       allow_singular=True)
+        with np.errstate(invalid='ignore'):
+            ref = _qsimvtv(20000, df, cov, np.inf*a, b - mean, rng)[0]
+        assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
+
+        # with lower limit
+        res = stats.multivariate_t.cdf(b, mean, cov, df, lower_limit=a,
+                                       random_state=rng, allow_singular=True)
+        with np.errstate(invalid='ignore'):
+            ref = _qsimvtv(20000, df, cov, a - mean, b - mean, rng)[0]
+        assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
+
+    def test_cdf_against_generic_integrators(self):
+        # Compare result against generic numerical integrators
+        dim = 3
+        rng = np.random.default_rng(413722918996573)
+        w = 10 ** rng.uniform(-1, 1, size=dim)
+        cov = _random_covariance(dim, w, rng, singular=True)
+        mean = rng.random(dim)
+        a = -rng.random(dim)
+        b = rng.random(dim)
+        df = rng.random() * 5
+
+        res = stats.multivariate_t.cdf(b, mean, cov, df, random_state=rng,
+                                       lower_limit=a)
+
+        def integrand(x):
+            return stats.multivariate_t.pdf(x.T, mean, cov, df)
+
+        ref = qmc_quad(integrand, a, b, qrng=stats.qmc.Halton(d=dim, seed=rng))
+        assert_allclose(res, ref.integral, rtol=1e-3)
+
+        def integrand(*zyx):
+            return stats.multivariate_t.pdf(zyx[::-1], mean, cov, df)
+
+        ref = tplquad(integrand, a[0], b[0], a[1], b[1], a[2], b[2])
+        assert_allclose(res, ref[0], rtol=1e-3)
+
+    def test_against_matlab(self):
+        # Test against matlab mvtcdf:
+        # C = [6.21786909  0.2333667 7.95506077;
+        #      0.2333667 29.67390923 16.53946426;
+        #      7.95506077 16.53946426 19.17725252]
+        # df = 1.9559939787727658
+        # mvtcdf([0, 0, 0], C, df)  % 0.2523
+        rng = np.random.default_rng(2967390923)
+        cov = np.array([[ 6.21786909,  0.2333667 ,  7.95506077],
+                        [ 0.2333667 , 29.67390923, 16.53946426],
+                        [ 7.95506077, 16.53946426, 19.17725252]])
+        df = 1.9559939787727658
+        dist = stats.multivariate_t(shape=cov, df=df)
+        res = dist.cdf([0, 0, 0], random_state=rng)
+        ref = 0.2523
+        assert_allclose(res, ref, rtol=1e-3)
+
+    def test_frozen(self):
+        seed = 4137229573
+        rng = np.random.default_rng(seed)
+        loc = rng.uniform(size=3)
+        x = rng.uniform(size=3) + loc
+        shape = np.eye(3)
+        df = rng.random()
+        args = (loc, shape, df)
+
+        rng_frozen = np.random.default_rng(seed)
+        rng_unfrozen = np.random.default_rng(seed)
+        dist = stats.multivariate_t(*args, seed=rng_frozen)
+        assert_equal(dist.cdf(x),
+                     multivariate_t.cdf(x, *args, random_state=rng_unfrozen))
+
+    def test_vectorized(self):
+        dim = 4
+        n = (2, 3)
+        rng = np.random.default_rng(413722918996573)
+        A = rng.random(size=(dim, dim))
+        cov = A @ A.T
+        mean = rng.random(dim)
+        x = rng.random(n + (dim,))
+        df = rng.random() * 5
+
+        res = stats.multivariate_t.cdf(x, mean, cov, df, random_state=rng)
+
+        def _cdf_1d(x):
+            return _qsimvtv(10000, df, cov, -np.inf*x, x-mean, rng)[0]
+
+        ref = np.apply_along_axis(_cdf_1d, -1, x)
+        assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
+
+    @pytest.mark.parametrize("dim", (3, 7))
+    def test_against_analytical(self, dim):
+        rng = np.random.default_rng(413722918996573)
+        A = scipy.linalg.toeplitz(c=[1] + [0.5] * (dim - 1))
+        res = stats.multivariate_t(shape=A).cdf([0] * dim, random_state=rng)
+        ref = 1 / (dim + 1)
+        assert_allclose(res, ref, rtol=5e-5)
 
 
 class TestMultivariateHypergeom:
