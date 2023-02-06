@@ -36,16 +36,11 @@ import numpy as np
 
 from scipy.fft import fft, ifft
 from scipy.special import gammaincinv, ndtr, ndtri
-from scipy.stats._qmc import n_primes, primes_from_2_to
+from scipy.stats._qmc import primes_from_2_to
 
 
 phi = ndtr
 phinv = ndtri
-
-
-def _richtmyer_lattice(n_dim, n_qmc_samples):
-    q = np.sqrt(n_primes(n_dim))
-    return q, n_qmc_samples
 
 
 def _factorize_int(n):
@@ -99,21 +94,22 @@ def _cbc_lattice(n_dim, n_qmc_samples):
     n_dim : int > 0
         The number of dimensions for the lattice.
     n_qmc_samples : int > 0
-        The desired number of QMC samples. This will be rounded down to the nearest
-        prime to enable the CBC construction.
+        The desired number of QMC samples. This will be rounded down to the
+        nearest prime to enable the CBC construction.
 
     Returns
     -------
     q : float array : shape=(n_dim,)
-        The lattice generator vector. All values are in the open interval `(0, 1)`.
+        The lattice generator vector. All values are in the open interval
+        `(0, 1)`.
     actual_n_qmc_samples : int
-        The prime number of QMC samples that must be used with this lattice, no more,
-        no less.
+        The prime number of QMC samples that must be used with this lattice,
+        no more, no less.
 
     References
     ----------
-    .. [1] Nuyens, D. and Cools, R. "Fast Component-by-Component Construction, a
-           Reprise for Different Kernels", In H. Niederreiter and D. Talay,
+    .. [1] Nuyens, D. and Cools, R. "Fast Component-by-Component Construction,
+           a Reprise for Different Kernels", In H. Niederreiter and D. Talay,
            editors, Monte-Carlo and Quasi-Monte Carlo Methods 2004,
            Springer-Verlag, 2006, 371-385.
     """
@@ -149,14 +145,9 @@ def _cbc_lattice(n_dim, n_qmc_samples):
     return q, n_qmc_samples
 
 
-def _get_lattice(lattice, n_dim, n_qmc_samples):
-    if lattice == 'richtmyer':
-        lattice = _richtmyer_lattice
-    elif lattice == 'cbc':
-        lattice = _cbc_lattice
-    return lattice(n_dim, n_qmc_samples)
-
-
+# Note: this function is not currently used or tested by any SciPy code. It is
+# included in this file to facilitate the development of a parameter for users
+# to set the desired CDF accuracy, but must be reviewed and tested before use.
 def _qauto(func, covar, low, high, rng, error=1e-3, limit=10_000, **kwds):
     """Automatically rerun the integration to get the required error bound.
 
@@ -207,6 +198,9 @@ def _qauto(func, covar, low, high, rng, error=1e-3, limit=10_000, **kwds):
     return prob, est_error, n_samples
 
 
+# Note: this function is not currently used or tested by any SciPy code. It is
+# included in this file to facilitate the resolution of gh-8367, gh-16142, and
+# possibly gh-14286, but must be reviewed and tested before use.
 def _qmvn(m, covar, low, high, rng, lattice='cbc', n_batches=10):
     """Multivariate normal integration over box bounds.
 
@@ -222,7 +216,7 @@ def _qmvn(m, covar, low, high, rng, lattice='cbc', n_batches=10):
         The low and high integration bounds.
     rng : Generator, optional
         default_rng(), yada, yada
-    lattice : 'cbc' or 'richtmyer' or callable
+    lattice : 'cbc' or callable
         The type of lattice rule to use to construct the integration points.
     n_batches : int > 0, optional
         The number of QMC batches to apply.
@@ -243,7 +237,7 @@ def _qmvn(m, covar, low, high, rng, lattice='cbc', n_batches=10):
     dci = d - ci
     prob = 0.0
     error_var = 0.0
-    q, n_qmc_samples = _get_lattice(lattice, n - 1, max(m // n_batches, 1))
+    q, n_qmc_samples = _cbc_lattice(n - 1, max(m // n_batches, 1))
     y = np.zeros((n - 1, n_qmc_samples))
     i_samples = np.arange(n_qmc_samples) + 1
     for j in range(n_batches):
@@ -274,6 +268,9 @@ def _qmvn(m, covar, low, high, rng, lattice='cbc', n_batches=10):
     return prob, est_error, n_samples
 
 
+# Note: this function is not currently used or tested by any SciPy code. It is
+# included in this file to facilitate the resolution of gh-8367, gh-16142, and
+# possibly gh-14286, but must be reviewed and tested before use.
 def _mvn_qmc_integrand(covar, low, high, use_tent=False):
     """Transform the multivariate normal integration into a QMC integrand over
     a unit hypercube.
@@ -355,7 +352,7 @@ def _qmvt(m, nu, covar, low, high, rng, lattice='cbc', n_batches=10):
         The low and high integration bounds.
     rng : Generator, optional
         default_rng(), yada, yada
-    lattice : 'cbc' or 'richtmyer' or callable
+    lattice : 'cbc' or callable
         The type of lattice rule to use to construct the integration points.
     n_batches : int > 0, optional
         The number of QMC batches to apply.
@@ -376,7 +373,7 @@ def _qmvt(m, nu, covar, low, high, rng, lattice='cbc', n_batches=10):
     n = cho.shape[0]
     prob = 0.0
     error_var = 0.0
-    q, n_qmc_samples = _get_lattice(lattice, n, max(m // n_batches, 1))
+    q, n_qmc_samples = _cbc_lattice(n, max(m // n_batches, 1))
     i_samples = np.arange(n_qmc_samples) + 1
     for j in range(n_batches):
         pv = np.ones(n_qmc_samples)
