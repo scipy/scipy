@@ -649,7 +649,9 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
             f'A must be a square matrix but its shape is {A.shape}.')
 
     if unit_diagonal:
+        A = A.tolil()
         A.setdiag(1)
+        A = A.tocsc()
     else:
         diag = A.diagonal()
         if np.any(diag==0):
