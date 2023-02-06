@@ -6604,8 +6604,9 @@ class nakagami_gen(rv_continuous):
         norm_entropy = stats.norm._entropy()
         # Above, this is lost to rounding error for large nu, so use the
         # asymptotic sum when the approximation becomes accurate
-        i = nu > 1e7  # roundoff error ~ approximation error
-        h[i] = C[i] + norm_entropy
+        i = nu > 5e4  # roundoff error ~ approximation error
+        # -1 / (12 * nu) is the O(1/nu) term; see gh-17929
+        h[i] = C[i] + norm_entropy - 1/(12*nu[i])
         return h.reshape(shape)[()]
 
     def _rvs(self, nu, size=None, random_state=None):
