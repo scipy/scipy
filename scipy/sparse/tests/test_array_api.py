@@ -235,7 +235,7 @@ def test_spsolve(B):
 
 
 def test_spsolve_triangular():
-    X = scipy.sparse.csr_array([
+    X = scipy.sparse.csc_array([
         [1, 0, 0, 0],
         [2, 1, 0, 0],
         [3, 2, 1, 0],

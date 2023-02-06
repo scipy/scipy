@@ -727,7 +727,7 @@ class TestSpsolveTriangular:
         rng = np.random.default_rng(43876432987)
         A = rng.standard_normal((n, n))
         b = np.arange(n)
-        A = scipy.sparse.tril(A, k=0, format='csr')
+        A = scipy.sparse.tril(A, k=0, format='csc')
 
         x = spsolve_triangular(A, b, unit_diagonal=True, lower=True)
 
@@ -738,12 +738,12 @@ class TestSpsolveTriangular:
         A = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0]], dtype=np.float64)
         b = np.array([1., 2., 3.])
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "CSR matrix format is")
+            sup.filter(SparseEfficiencyWarning, "CSC matrix format is")
             spsolve_triangular(A, b, unit_diagonal=True)
 
     def test_singular(self):
         n = 5
-        A = csr_matrix((n, n))
+        A = csc_matrix((n, n))
         b = np.arange(n)
         for lower in (True, False):
             assert_raises(scipy.linalg.LinAlgError, spsolve_triangular, A, b, lower=lower)
