@@ -93,10 +93,9 @@ Install the ``venv`` package::
 
     sudo apt install -y python3-venv
 
-Change the directory to your home folder and create a directory ``.venvs`` there.
-Create the virtualenvironment::
+Create a virtual environment within ``$HOME/.venvs``::
 
-    python3 -m venv scipy-dev
+    python3 -m venv $HOME/.venvs/scipy-dev
 
 To activate the environment, use ::
 
