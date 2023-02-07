@@ -279,7 +279,7 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
 
   static char* kwlist[] = {"L_N", "L_nnz", "L_nzvals", "L_colind", "L_rowptr",
                            "U_N", "U_nnz", "U_nzvals", "U_rowind", "U_colptr",
-                           "B"};
+                           "B", NULL};
 
   /* Parse and check input arguments. */
 
