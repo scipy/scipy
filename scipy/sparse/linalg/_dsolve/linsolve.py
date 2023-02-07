@@ -685,9 +685,9 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     if lower:
         L = A
-        U = csc_matrix((N, N))
+        U = csc_matrix((N, N), dtype=result_dtype)
     else:
-        L = eye(N, format='csc')
+        L = eye(N, dtype=result_dtype, format='csc')
         U = A
         U.setdiag(0)
 
