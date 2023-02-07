@@ -2276,6 +2276,10 @@ def _random_cd(
     if d == 0 or n == 0:
         return np.empty((n, d))
 
+    if d == 1:
+        # discrepancy measures are invariant under permuting factors and runs
+        return best_sample
+
     best_disc = discrepancy(best_sample)
 
     if n == 1:
