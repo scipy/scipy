@@ -623,9 +623,9 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import spsolve_triangular
-    >>> A = csr_matrix([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
+    >>> A = csc_matrix([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
     >>> B = np.array([[2, 0], [-1, 0], [2, 0]], dtype=float)
     >>> x = spsolve_triangular(A, B)
     >>> np.allclose(A.dot(x), B)
