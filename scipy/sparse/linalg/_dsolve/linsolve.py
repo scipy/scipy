@@ -3,7 +3,7 @@ from warnings import warn
 import numpy as np
 from numpy import asarray
 from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
-                          SparseEfficiencyWarning, csc_matrix, csr_matrix, eye)
+                          SparseEfficiencyWarning, csc_matrix, eye)
 from scipy.sparse._sputils import is_pydata_spmatrix
 from scipy.linalg import LinAlgError
 import copy
@@ -656,7 +656,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         diag = A.diagonal()
         if np.any(diag==0):
             raise LinAlgError(
-                f'A is singular: zero entry on diagonal.')
+                'A is singular: zero entry on diagonal.')
         A = A.multiply(1/diag).tocsc()
 
 
