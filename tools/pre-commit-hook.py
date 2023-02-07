@@ -48,7 +48,15 @@ linters = [
 
 linter = [f for f in linters if os.path.exists(f)][0]
 
-p = subprocess.run([linter, '--fix', '--files'] + files)
+p = subprocess.run([linter, '--fix', '--files'] + files,
+                   capture_output=True, text=True)
+print(p.stdout.strip(), end='')
+print(p.stderr.strip(), end='')
+
+if 'fixed, 0 remaining' in p.stdout:
+    print("\n\nAll errors have been fixed; please `git add` and re-commit.")
+    sys.exit(1)
+
 if p.returncode != 0:
-    print("!! Linting failed; please make fixes, `git add` files, and re-commit.")
+    print("\n\n!! Linting failed; please make fixes, `git add` files, and re-commit.")
     sys.exit(p.returncode)
