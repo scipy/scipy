@@ -14,7 +14,7 @@ import scipy
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
-                              _contains_nan)
+                              _contains_nan, _rng_html_rewrite)
 
 
 def test__aligned_zeros():
@@ -378,3 +378,21 @@ class TestContainsNaNTest:
 
         data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
         assert _contains_nan(data4)[0]
+
+
+def test__rng_html_rewrite():
+    def mock_str():
+        lines = [
+            'np.random.default_rng(8989843)',
+            ' bob ',
+            "     >>> np.random.default_rng('900789743fadfs')"
+        ]
+        return lines
+
+    res = _rng_html_rewrite(mock_str)()
+    ref = [
+        'np.random.default_rng()',
+        ' bob ',
+        '     >>> np.random.default_rng()']
+
+    assert res == ref
