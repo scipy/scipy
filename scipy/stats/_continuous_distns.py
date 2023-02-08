@@ -1489,7 +1489,7 @@ class chi2_gen(rv_continuous):
 
     def _entropy(self, df):
         half_df = 0.5 * df
-        return _lazywhere(half_df < 1, (half_df, ),
+        return _lazywhere(half_df < 1e4, (half_df, ),
                           lambda half_df: (half_df + np.log(2) +
                                            sc.gammaln(half_df) +
                                            (1 - half_df) *
