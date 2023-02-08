@@ -5,6 +5,9 @@ from datetime import date
 import warnings
 
 import numpy as np
+from numpydoc.docscrape_sphinx import SphinxDocString
+
+from scipy._lib._util import _rng_html_rewrite
 
 # Currently required to build scipy.fft docs
 os.environ['_SCIPY_BUILDING_DOC'] = 'True'
@@ -421,22 +424,7 @@ def linkcode_resolve(domain, info):
         return None
 
 
-from numpydoc.docscrape_sphinx import SphinxDocString
-
-
-def rng_html_rewrite(func):
-    """Rewrite the HTML rendering of ``np.random.default_rng``."""
-    pattern = re.compile(r'np.random.default_rng(.*)')
-
-    def _wrapped(*args, **kwargs):
-        res = func(*args, **kwargs)
-        lines = [
-            re.sub(pattern, 'np.random.default_rng()', line)
-            for line in res
-        ]
-        return lines
-
-    return _wrapped
-
-
-SphinxDocString._str_examples = rng_html_rewrite(SphinxDocString._str_examples)
+# Tell overwrite numpydoc's logic to render examples containing rng.
+SphinxDocString._str_examples = _rng_html_rewrite(
+    SphinxDocString._str_examples
+)
