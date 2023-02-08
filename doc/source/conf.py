@@ -423,21 +423,20 @@ def linkcode_resolve(domain, info):
 
 from numpydoc.docscrape_sphinx import SphinxDocString
 
-def side_effect(func):
+
+def rng_html_rewrite(func):
+    """Rewrite the HTML rendering of ``np.random.default_rng``."""
+    pattern = re.compile(r'np.random.default_rng(.*)')
 
     def _wrapped(*args, **kwargs):
-
         res = func(*args, **kwargs)
-
-        lines = []
-        for line in res:
-            if "np.random.default_rng" in line:
-                prefix = line.split(">>>")[0]
-                line = f"{prefix}>>> rng = np.random.default_rng(1)"
-            lines.append(line)
-
+        lines = [
+            re.sub(pattern, 'np.random.default_rng()', line)
+            for line in res
+        ]
         return lines
 
     return _wrapped
 
-SphinxDocString._str_examples = side_effect(SphinxDocString._str_examples)
+
+SphinxDocString._str_examples = rng_html_rewrite(SphinxDocString._str_examples)
