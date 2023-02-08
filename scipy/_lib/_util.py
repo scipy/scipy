@@ -531,7 +531,8 @@ def _rng_html_rewrite(func):
     Examples are only run by Sphinx when there are plot involved. Even so,
     it does not change the result values getting printed.
     """
-    pattern = re.compile(r'np.random.default_rng(.*)')
+    # hexadecimal or number seed, case-insensitive
+    pattern = re.compile(r'np.random.default_rng\((0x[0-9A-F]+|\d+)\)', re.I)
 
     def _wrapped(*args, **kwargs):
         res = func(*args, **kwargs)
