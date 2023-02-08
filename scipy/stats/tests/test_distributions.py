@@ -3886,7 +3886,8 @@ class TestChi2:
     # return float(entropy)
 
     @pytest.mark.parametrize('df, ref',
-                             [(1, 0.7837571104739337),
+                             [(1e-4, -19988.980448690163),
+                              (1, 0.7837571104739337),
                               (100, 4.061397128938114),
                               (10000, 6.370615639472648)])
     def test_entropy(self, df, ref):
