@@ -1612,8 +1612,6 @@ class dgamma_gen(rv_continuous):
                         0.5 + 0.5*sc.gammainc(a, -x))
 
     def _entropy(self, a):
-        #shape = np.shape(a)
-        #a = np.atleast_1d(a)
         if a < 1e15:
             h = a + np.log(2) + sc.gammaln(a) + (1 - a) * sc.digamma(a)
 
