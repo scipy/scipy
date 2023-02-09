@@ -3852,9 +3852,6 @@ class TestDgamma:
         isf = stats.dgamma.isf(expected, a)
         assert_allclose(isf, -x, rtol=5e-15)
 
-
-class TestDgamma:
-
     @pytest.mark.parametrize("a, ref",
         [(1.5, 2.0541199559354118267922018421759071394202272087878735),
         (1.3, 1.9357296377121247644586320317632592032856887302320274),
