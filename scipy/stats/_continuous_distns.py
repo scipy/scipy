@@ -1620,9 +1620,6 @@ class dgamma_gen(rv_continuous):
         else:
             h = np.log(2) + 0.5 * (1 + np.log(a) + np.log(2 * np.pi))
 
-        #norm_entropy = stats.norm.entropy()
-        #i = a > 5e4
-        #h[i] = norm_entropy - 1 / (12 * a[i])
         return h
 
     def _ppf(self, q, a):
