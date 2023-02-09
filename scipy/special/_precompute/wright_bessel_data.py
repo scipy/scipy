@@ -145,7 +145,7 @@ def main():
                             'wright_bessel.txt')
     np.savetxt(filename, dataset)
 
-    print("{:.1f} minutes elapsed".format((time() - t0)/60))
+    print(f"{(time() - t0)/60:.1f} minutes elapsed")
 
 
 if __name__ == "__main__":

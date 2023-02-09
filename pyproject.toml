@@ -87,6 +87,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -121,7 +122,8 @@ dev = [
     "mypy",
     "typing_extensions",
     "pycodestyle",
-    "flake8",
+    "ruff",
+    "cython-lint>=0.12.2",
     "rich-click",
     "click",
     "doit>=0.36.0",
@@ -154,7 +156,7 @@ before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}
 
 [tool.cibuildwheel.macos]
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
-test-skip = "*_arm64 *_universal2:arm64"
+test-skip = "cp38-macosx_arm64"
 
 [tool.cibuildwheel.windows]
 before-build = "bash {project}/tools/wheels/cibw_before_build_win.sh {project}"

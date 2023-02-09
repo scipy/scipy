@@ -164,7 +164,8 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                                      iter=iter, norm=tol_norm)
 
     x0 = _as_inexact(x0)
-    func = lambda z: _as_inexact(F(_array_like(z, x0))).flatten()
+    def func(z):
+        return _as_inexact(F(_array_like(z, x0))).flatten()
     x = x0.flatten()
 
     dx = np.full_like(x, np.inf)
@@ -815,7 +816,7 @@ class BroydenFirst(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='broyden1'`` in particular.
+           functions. See ``method='broyden1'`` in particular.
 
     Notes
     -----
@@ -929,7 +930,7 @@ class BroydenSecond(BroydenFirst):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='broyden2'`` in particular.
+           functions. See ``method='broyden2'`` in particular.
 
     Notes
     -----
@@ -1001,7 +1002,7 @@ class Anderson(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='anderson'`` in particular.
+           functions. See ``method='anderson'`` in particular.
 
     References
     ----------
@@ -1156,7 +1157,7 @@ class DiagBroyden(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='diagbroyden'`` in particular.
+           functions. See ``method='diagbroyden'`` in particular.
 
     Examples
     --------
@@ -1221,7 +1222,7 @@ class LinearMixing(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='linearmixing'`` in particular.
+           functions. See ``method='linearmixing'`` in particular.
 
     """
 
@@ -1262,7 +1263,7 @@ class ExcitingMixing(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='excitingmixing'`` in particular.
+           functions. See ``method='excitingmixing'`` in particular.
 
     Parameters
     ----------
@@ -1360,7 +1361,7 @@ class KrylovJacobian(Jacobian):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='krylov'`` in particular.
+           functions. See ``method='krylov'`` in particular.
     scipy.sparse.linalg.gmres
     scipy.sparse.linalg.lgmres
 
@@ -1525,10 +1526,10 @@ def _nonlin_wrapper(name, jac):
     signature = _getfullargspec(jac.__init__)
     args, varargs, varkw, defaults, kwonlyargs, kwdefaults, _ = signature
     kwargs = list(zip(args[-len(defaults):], defaults))
-    kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
+    kw_str = ", ".join([f"{k}={v!r}" for k, v in kwargs])
     if kw_str:
         kw_str = ", " + kw_str
-    kwkw_str = ", ".join(["%s=%s" % (k, k) for k, v in kwargs])
+    kwkw_str = ", ".join([f"{k}={k}" for k, v in kwargs])
     if kwkw_str:
         kwkw_str = kwkw_str + ", "
     if kwonlyargs:

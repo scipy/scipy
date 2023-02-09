@@ -90,6 +90,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     Examples
     --------
     >>> from scipy.sparse import bsr_matrix
+    >>> import numpy as np
     >>> bsr_matrix((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],
@@ -177,13 +178,13 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                 self.data = getdata(data, copy=copy, dtype=dtype)
                 if self.data.ndim != 3:
                     raise ValueError(
-                        'BSR data must be 3-dimensional, got shape=%s' % (
+                        'BSR data must be 3-dimensional, got shape={}'.format(
                             self.data.shape,))
                 if blocksize is not None:
                     if not isshape(blocksize):
-                        raise ValueError('invalid blocksize=%s' % (blocksize,))
+                        raise ValueError(f'invalid blocksize={blocksize}')
                     if tuple(blocksize) != self.data.shape[1:]:
-                        raise ValueError('mismatching blocksize=%s vs %s' % (
+                        raise ValueError('mismatching blocksize={} vs {}'.format(
                             blocksize, self.data.shape[1:]))
             else:
                 raise ValueError('unrecognized bsr_matrix constructor usage')
@@ -508,9 +509,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
-            raise ValueError(("Sparse matrices do not support "
+            raise ValueError("Sparse matrices do not support "
                               "an 'axes' parameter because swapping "
-                              "dimensions is the only logical permutation."))
+                              "dimensions is the only logical permutation.")
 
         R, C = self.blocksize
         M, N = self.shape

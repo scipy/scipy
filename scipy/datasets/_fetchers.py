@@ -1,13 +1,8 @@
 from numpy import array, frombuffer, load
 from ._registry import registry, registry_urls
-import warnings
 
 try:
-    # https://github.com/scipy/scipy/pull/15607#issuecomment-1176457275
-    # TODO: Remove warning filter after next certifi release
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', category=DeprecationWarning)
-        import pooch
+    import pooch
 except ImportError:
     pooch = None
     data_fetcher = None
@@ -127,6 +122,7 @@ def electrocardiogram():
     E.g., the first few seconds show the electrical activity of a heart in
     normal sinus rhythm as seen below.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> fs = 360
     >>> time = np.arange(ecg.size) / fs

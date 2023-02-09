@@ -44,7 +44,7 @@ def _int_overflow(x, msg=None):
     """
     if x > iinfo(dfitpack_int).max:
         if msg is None:
-            msg = '%r cannot fit into an %r' % (x, dfitpack_int)
+            msg = f'{x!r} cannot fit into an {dfitpack_int!r}'
         raise OverflowError(msg)
     return dfitpack_int.type(x)
 
@@ -776,7 +776,7 @@ def spalde(x, tck):
         x = atleast_1d(x)
         if len(x) > 1:
             return list(map(lambda x, tck=tck: spalde(x, tck), x))
-        d, ier = _fitpack._spalde(t, c, k, x[0])
+        d, ier = dfitpack.spalde(t, c, k+1, x[0])
         if ier == 0:
             return d
         if ier == 10:
@@ -867,6 +867,10 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     -----
     See `bisplev` to evaluate the value of the B-spline given its tck
     representation.
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolation.
 
     References
     ----------
@@ -1198,8 +1202,8 @@ def splder(tck, n=1):
     t, c, k = tck
 
     if n > k:
-        raise ValueError(("Order of derivative (n = %r) must be <= "
-                          "order of spline (k = %r)") % (n, tck[2]))
+        raise ValueError(("Order of derivative (n = {!r}) must be <= "
+                          "order of spline (k = {!r})").format(n, tck[2]))
 
     # Extra axes for the trailing dims of the `c` array:
     sh = (slice(None),) + ((None,)*len(c.shape[1:]))

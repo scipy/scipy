@@ -139,7 +139,7 @@ double t;
 	    }
 	    p += f * xsqk / z;
 	}
-	p *= 2.0 / NPY_PI;
+	p *= 2.0 / M_PI;
     }
 
 

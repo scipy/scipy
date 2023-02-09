@@ -107,13 +107,13 @@ static double find_inverse_gamma(double a, double p, double q)
                 u = pow(p * g * a, 1 / a);
             }
             else {
-                u = exp((-q / a) - NPY_EULER);
+                u = exp((-q / a) - SCIPY_EULER);
             }
             result = u / (1 - (u / (a + 1)));
         }
         else if ((a < 0.3) && (b >= 0.35)) {
             /* DiDonato & Morris Eq 22: */
-            double t = exp(-NPY_EULER - b);
+            double t = exp(-SCIPY_EULER - b);
             double u = t * exp(t);
             result = t * exp(u);
         }

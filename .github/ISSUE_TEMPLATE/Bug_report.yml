@@ -32,6 +32,6 @@ body:
   - type: input
     attributes:
       label: SciPy/NumPy/Python version information
-      description: 'Please run the following and paste the result in a code block - `import sys, scipy, numpy; print(scipy.__version__, numpy.__version__, sys.version_info)`'
+      description: 'Please run the following and paste the result in a code block - `import scipy;scipy.show_config()` or on older versions `import sys, scipy, numpy; print(scipy.__version__, numpy.__version__, sys.version_info)`'
     validations:
       required: true

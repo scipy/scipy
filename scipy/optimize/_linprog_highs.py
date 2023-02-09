@@ -1,7 +1,7 @@
 """HiGHS Linear Optimization Methods
 
 Interface to HiGHS linear optimization software.
-https://www.maths.ed.ac.uk/hall/HiGHS/
+https://highs.dev/
 
 .. versionadded:: 1.5.0
 
@@ -19,7 +19,6 @@ from ._optimize import _check_unknown_options, OptimizeWarning, OptimizeResult
 from warnings import warn
 from ._highs._highs_wrapper import _highs_wrapper
 from ._highs._highs_constants import (
-    CONST_I_INF,
     CONST_INF,
     MESSAGE_LEVEL_NONE,
     HIGHS_OBJECTIVE_SENSE_MINIMIZE,
@@ -41,7 +40,6 @@ from ._highs._highs_constants import (
     MODEL_STATUS_REACHED_TIME_LIMIT,
     MODEL_STATUS_REACHED_ITERATION_LIMIT,
 
-    HIGHS_SIMPLEX_STRATEGY_CHOOSE,
     HIGHS_SIMPLEX_STRATEGY_DUAL,
 
     HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
@@ -50,8 +48,6 @@ from ._highs._highs_constants import (
     HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DANTZIG,
     HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DEVEX,
     HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
-
-    HIGHS_VAR_TYPE_CONTINUOUS,
 )
 from scipy.sparse import csc_matrix, vstack, issparse
 
@@ -115,6 +111,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    primal_feasibility_tolerance=None,
                    ipm_optimality_tolerance=None,
                    simplex_dual_edge_weight_strategy=None,
+                   mip_rel_gap=None,
                    mip_max_nodes=None,
                    **unknown_options):
     r"""
@@ -285,8 +282,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
             mip_gap : float
                 The difference between the final objective function value
-                and the final dual bound. Only present when `integrality`
-                is not `None`.
+                and the final dual bound, scaled by the final objective
+                function value. Only present when `integrality` is not
+                `None`.
 
     Notes
     -----
@@ -353,6 +351,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'simplex_crash_strategy': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
         'ipm_iteration_limit': maxiter,
         'simplex_iteration_limit': maxiter,
+        'mip_rel_gap': mip_rel_gap,
     }
 
     # np.inf doesn't work; use very large constant
@@ -391,7 +390,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         marg_upper, marg_lower = None, None
 
     # this needs to be updated if we start choosing the solver intelligently
-    solvers = {"ipm": "highs-ipm", "simplex": "highs-ds", None: "highs-ds"}
 
     # Convert to scipy-style status and message
     highs_status = res.get('status', None)
@@ -428,7 +426,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            }
 
     if np.any(x) and integrality is not None:
-        res.update({
+        sol.update({
             'mip_node_count': res.get('mip_node_count', 0),
             'mip_dual_bound': res.get('mip_dual_bound', 0.0),
             'mip_gap': res.get('mip_gap', 0.0),

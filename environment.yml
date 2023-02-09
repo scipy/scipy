@@ -11,7 +11,7 @@ dependencies:
   - setuptools<60.0
   - cython
   - compilers
-  - meson>=0.63.0
+  - meson>=0.64.0
   - meson-python
   - ninja
   - numpy
@@ -38,8 +38,6 @@ dependencies:
   - matplotlib
   - pydata-sphinx-theme==0.9.0
   - sphinx-design
-  # For linting
-  - flake8
   # Some optional test dependencies
   - mpmath
   - gmpy2
@@ -49,3 +47,6 @@ dependencies:
   - click
   - doit>=0.36.0
   - pydevtool
+  # For linting
+  - ruff
+  - cython-lint

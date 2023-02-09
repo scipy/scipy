@@ -4,8 +4,9 @@ import sys
 import warnings
 from functools import partial
 
+from scipy._lib._bunch import _make_tuple_bunch
 from . import _quadpack
-import numpy
+import numpy as np
 from numpy import Inf
 
 __all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]
@@ -22,7 +23,7 @@ class IntegrationWarning(UserWarning):
 
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,
-         limlst=50):
+         limlst=50, complex_func=False):
     """
     Compute a definite integral.
 
@@ -61,6 +62,13 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Non-zero to return a dictionary of integration information.
         If non-zero, warning messages are also suppressed and the
         message is appended to the output tuple.
+    complex_func : bool, optional
+        Indicate if the function's (`func`) return type is real
+        (``complex_func=False``: default) or complex (``complex_func=True``).
+        In both cases, the function's argument is real.
+        If full_output is also non-zero, the `infodict`, `message`, and
+        `explain` for the real and complex components are returned in
+        a dictionary with keys "real output" and "imag output".
 
     Returns
     -------
@@ -125,6 +133,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     Notes
     -----
+    For valid results, the integral must converge; behavior for divergent
+    integrals is not guaranteed.
 
     **Extra information for quad() inputs and outputs**
 
@@ -330,6 +340,21 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Clenshaw-Curtis integration is used on those intervals containing the
         point :math:`x = c`.
 
+    **Integration of Complex Function of a Real Variable**
+
+    A complex valued function, :math:`f`, of a real variable can be written as
+    :math:`f = g + ih`.  Similarly, the integral of :math:`f` can be
+    written as
+
+    .. math::
+        \\int_a^b f(x) dx = \\int_a^b g(x) dx + i\\int_a^b h(x) dx
+
+    assuming that the integrals of :math:`g` and :math:`h` exist
+    over the inteval :math:`[a,b]` [2]_. Therefore, ``quad`` integrates
+    complex-valued functions by integrating the real and imaginary components
+    separately.
+
+
     References
     ----------
 
@@ -338,6 +363,11 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
            QUADPACK: A subroutine package for automatic integration.
            Springer-Verlag.
            ISBN 978-3-540-12553-2.
+
+    .. [2] McCullough, Thomas; Phillips, Keith (1973).
+           Foundations of Analysis in the Complex Plane.
+           Holt Rinehart Winston.
+           ISBN 0-03-086370-8
 
     Examples
     --------
@@ -407,6 +437,30 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     # check the limits of integration: \int_a^b, expect a < b
     flip, a, b = b < a, min(a, b), max(a, b)
+
+    if complex_func:
+        def imfunc(x, *args):
+            return np.imag(func(x, *args))
+
+        def refunc(x, *args):
+            return np.real(func(x, *args))
+
+        re_retval = quad(refunc, a, b, args, full_output, epsabs,
+                         epsrel, limit, points, weight, wvar, wopts,
+                         maxp1, limlst, complex_func=False)
+        im_retval = quad(imfunc, a, b, args, full_output, epsabs,
+                         epsrel, limit, points, weight, wvar, wopts,
+                         maxp1, limlst, complex_func=False)
+        integral = re_retval[0] + 1j*im_retval[0]
+        error_estimate = re_retval[1] + 1j*im_retval[1]
+        retval = integral, error_estimate
+        if full_output:
+            msgexp = {}
+            msgexp["real"] = re_retval[2:]
+            msgexp["imag"] = im_retval[2:]
+            retval = retval + (msgexp,)
+
+        return retval
 
     if weight is None:
         retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
@@ -529,10 +583,10 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
             raise ValueError("Infinity inputs cannot be used with break points.")
         else:
             #Duplicates force function evaluation at singular points
-            the_points = numpy.unique(points)
+            the_points = np.unique(points)
             the_points = the_points[a < the_points]
             the_points = the_points[the_points < b]
-            the_points = numpy.concatenate((the_points, (0., 0.)))
+            the_points = np.concatenate((the_points, (0., 0.)))
             return _quadpack._qagpe(func,a,b,the_points,args,full_output,epsabs,epsrel,limit)
 
 
@@ -624,10 +678,16 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
 
     Returns
     -------
-    y : float
-        The resultant integral.
-    abserr : float
-        An estimate of the error.
+    res : QuadResult
+        An object with the following attributes:
+
+        integral : float
+            The result of the integration.
+        abserr : float
+            The maximum of the estimates of the absolute error in the
+            two integration results.
+        neval : int
+            The number of integrand evaluations.
 
     See Also
     --------
@@ -645,6 +705,8 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
 
     Notes
     -----
+    For valid results, the integral must converge; behavior for divergent
+    integrals is not guaranteed.
 
     **Details of QUADPACK level routines**
 
@@ -693,7 +755,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     >>> integrate.dblquad(f, 0, np.pi/4, np.sin, np.cos)
         (0.41421356237309503, 1.1083280054755938e-14)
 
-    Calculate :math:`\\int^{x=1}_{x=0} \\int^{y=x}_{y=2-x} a x y \\,dy \\,dx`
+    Calculate :math:`\\int^{x=1}_{x=0} \\int^{y=2-x}_{y=x} a x y \\,dy \\,dx`
     for :math:`a=1, 3`.
 
     >>> f = lambda y, x, a: a*x*y
@@ -758,10 +820,16 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
     Returns
     -------
-    y : float
-        The resultant integral.
-    abserr : float
-        An estimate of the error.
+    res : QuadResult
+        An object with the following attributes:
+
+        integral : float
+            The result of the integration.
+        abserr : float
+            The maximum of the estimates of the absolute error in the
+            three integration results.
+        neval : int
+            The number of integrand evaluations.
 
     See Also
     --------
@@ -778,6 +846,8 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
     Notes
     -----
+    For valid results, the integral must converge; behavior for divergent
+    integrals is not guaranteed.
 
     **Details of QUADPACK level routines**
 
@@ -869,7 +939,12 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
             opts={"epsabs": epsabs, "epsrel": epsrel})
 
 
-def nquad(func, ranges, args=None, opts=None, full_output=False):
+QuadratureResult = _make_tuple_bunch("QuadratureResult",
+                                     field_names=["integral", "abserr"],
+                                     extra_field_names=["neval"])
+
+
+def nquad(func, ranges, args=None, opts=None, full_output=None):
     r"""
     Integration over multiple variables.
 
@@ -934,15 +1009,23 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         The number of integrand function evaluations ``neval`` can be obtained
         by setting ``full_output=True`` when calling nquad.
 
+        .. deprecated:: 1.11.0
+           Parameter `full_output` is deprecated and will be removed in version
+           1.13.0. When `full_output` is unspecified, ``neval`` is provided
+           as an attribute of the result object.
+
     Returns
     -------
-    result : float
-        The result of the integration.
-    abserr : float
-        The maximum of the estimates of the absolute error in the various
-        integration results.
-    out_dict : dict, optional
-        A dict containing additional information on the integration.
+    res : QuadResult
+        An object with the following attributes:
+
+        integral : float
+            The result of the integration.
+        abserr : float
+            The maximum of the estimates of the absolute error in the various
+            integration results.
+        neval : int
+            The number of integrand evaluations.
 
     See Also
     --------
@@ -953,6 +1036,8 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
 
     Notes
     -----
+    For valid results, the integral must converge; behavior for divergent
+    integrals is not guaranteed.
 
     **Details of QUADPACK level routines**
 
@@ -1056,6 +1141,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
           x_0^2+x_1 x_2-x_3^3+ \sin{x_0}+0 & (x_0-0.2 x_3-0.5-0.25 x_1 \leq 0)
         \end{cases} .
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + (
     ...                                 1 if (x0-.2*x3-.5-.25*x1>0) else 0)
@@ -1116,7 +1202,19 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         opts = [_OptFunc(opts)] * depth
     else:
         opts = [opt if callable(opt) else _OptFunc(opt) for opt in opts]
-    return _NQuad(func, ranges, opts, full_output).integrate(*args)
+    res = _NQuad(func, ranges, opts, True).integrate(*args)
+
+    if full_output is not None:
+        msg = ("Use of parameter `full_output` is deprecated. Please leave "
+               "`full_output` unspecified; `neval` can now be accessed as an "
+               "attribute of the object returned by `scipy.integrate.nquad`.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+    if full_output:
+        return res
+    else:
+        return QuadratureResult(integral=res[0], abserr=res[1],
+                                neval=res[2]['neval'])
 
 
 class _RangeFunc:

@@ -29,6 +29,7 @@ import scipy.stats._mstats_basic as mstats_basic
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
+from scipy import optimize
 from .common_tests import check_named_results
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
@@ -438,21 +439,29 @@ class TestCorrPearsonr:
     # cor.test(x, y, method = "pearson", alternative = "g")
     # correlation coefficient and p-value for alternative='two-sided'
     # calculated with mpmath agree to 16 digits.
-    @pytest.mark.parametrize('alternative, pval, rlow, rhigh',
-                             [('two-sided',
-                               0.325800137536, -0.814938968841, 0.99230697523),
-                              ('less',
-                               0.8370999312316, -1, 0.985600937290653),
-                              ('greater',
-                               0.1629000687684, -0.6785654158217636, 1)])
-    def test_basic_example(self, alternative, pval, rlow, rhigh):
+    @pytest.mark.parametrize('alternative, pval, rlow, rhigh, sign',
+            [('two-sided', 0.325800137536, -0.814938968841, 0.99230697523, 1),  # noqa
+             ('less', 0.8370999312316, -1, 0.985600937290653, 1),
+             ('greater', 0.1629000687684, -0.6785654158217636, 1, 1),
+             ('two-sided', 0.325800137536, -0.992306975236, 0.81493896884, -1),
+             ('less', 0.1629000687684, -1.0, 0.6785654158217636, -1),
+             ('greater', 0.8370999312316, -0.985600937290653, 1.0, -1)])
+    def test_basic_example(self, alternative, pval, rlow, rhigh, sign):
         x = [1, 2, 3, 4]
-        y = [0, 1, 0.5, 1]
+        y = np.array([0, 1, 0.5, 1]) * sign
         result = stats.pearsonr(x, y, alternative=alternative)
-        assert_allclose(result.statistic, 0.6741998624632421, rtol=1e-12)
+        assert_allclose(result.statistic, 0.6741998624632421*sign, rtol=1e-12)
         assert_allclose(result.pvalue, pval, rtol=1e-6)
         ci = result.confidence_interval()
         assert_allclose(ci, (rlow, rhigh), rtol=1e-6)
+
+    def test_negative_correlation_pvalue_gh17795(self):
+        x = np.arange(10)
+        y = -x
+        test_greater = stats.pearsonr(x, y, alternative='greater')
+        test_less = stats.pearsonr(x, y, alternative='less')
+        assert_allclose(test_greater.pvalue, 1)
+        assert_allclose(test_less.pvalue, 0, atol=1e-20)
 
     def test_length3_r_exactly_negative_one(self):
         x = [1, 2, 3]
@@ -475,6 +484,13 @@ class TestCorrPearsonr:
         x = [1]
         y = [2]
         assert_raises(ValueError, stats.pearsonr, x, y)
+
+    def test_complex_data(self):
+        x = [-1j, -2j, -3.0j]
+        y = [-1j, -2j, -3.0j]
+        message = 'This function does not support complex data'
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr(x, y)
 
 
 class TestFisherExact:
@@ -916,7 +932,7 @@ class TestCorrSpearmanr2:
     def test_normal_draws(self):
         np.random.seed(7546)
         x = np.array([np.random.normal(loc=1, scale=1, size=500),
-                    np.random.normal(loc=1, scale=1, size=500)])
+                      np.random.normal(loc=1, scale=1, size=500)])
         corr = [[1.0, 0.3],
                 [0.3, 1.0]]
         x = np.dot(np.linalg.cholesky(corr), x)
@@ -1022,8 +1038,8 @@ class TestCorrSpearmanr2:
     def test_gh_11111(self):
         x = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
         y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
-            0.0007535430349118562, 0.0002661781514710257, 0, 0,
-            0.0007835762419683435])
+                      0.0007535430349118562, 0.0002661781514710257, 0, 0,
+                      0.0007835762419683435])
         warn_msg = "An input array is constant"
         with assert_warns(stats.ConstantInputWarning, match=warn_msg):
             r, p = stats.spearmanr(x, y)
@@ -1033,8 +1049,8 @@ class TestCorrSpearmanr2:
     def test_index_error(self):
         x = np.array([1.0, 7.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
         y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
-            0.0007535430349118562, 0.0002661781514710257, 0, 0,
-            0.0007835762419683435])
+                      0.0007535430349118562, 0.0002661781514710257, 0, 0,
+                      0.0007835762419683435])
         assert_raises(ValueError, stats.spearmanr, x, y, axis=2)
 
     def test_alternative(self):
@@ -1271,7 +1287,7 @@ def test_kendalltau():
     # check with larger arrays
     np.random.seed(7546)
     x = np.array([np.random.normal(loc=1, scale=1, size=500),
-                np.random.normal(loc=1, scale=1, size=500)])
+                  np.random.normal(loc=1, scale=1, size=500)])
     corr = [[1.0, 0.3],
             [0.3, 1.0]]
     x = np.dot(np.linalg.cholesky(corr), x)
@@ -1865,7 +1881,8 @@ class TestRegression:
         # formualtion got confusing since LinregressResult became
         # _lib._bunch._make_tuple_bunch instead of namedtuple
         # (for backwards compatibility, see PR #12983)
-        assert_ae = lambda x, y: assert_almost_equal(x, y, decimal=14)
+        def assert_ae(x, y):
+            return assert_almost_equal(x, y, decimal=14)
         assert_ae(result.slope, 1.0)
         assert_ae(result.intercept, 5.0)
         assert_ae(result.rvalue, 0.98229948625750)
@@ -2027,8 +2044,8 @@ def test_cumfreq():
     x = [1, 4, 2, 1, 3, 1]
     cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4)
     assert_array_almost_equal(cumfreqs, np.array([3., 4., 5., 6.]))
-    cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4,
-                                                      defaultreallimits=(1.5, 5))
+    cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(
+        x, numbins=4, defaultreallimits=(1.5, 5))
     assert_(extrapoints == 3)
 
     # test for namedtuple attribute results
@@ -2161,7 +2178,7 @@ class TestScoreatpercentile:
 
     def test_exception(self):
         assert_raises(ValueError, stats.scoreatpercentile, [1, 2], 56,
-            interpolation_method='foobar')
+                      interpolation_method='foobar')
         assert_raises(ValueError, stats.scoreatpercentile, [1], 101)
         assert_raises(ValueError, stats.scoreatpercentile, [1], -1)
 
@@ -2189,8 +2206,8 @@ class TestMode:
     def test_basic(self):
         data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
         vals = stats.mode(data1)
-        assert_equal(vals[0][0], 6)
-        assert_equal(vals[1][0], 3)
+        assert_equal(vals[0], 6)
+        assert_equal(vals[1], 3)
 
     def test_axes(self):
         data1 = [10, 10, 30, 40]
@@ -2200,15 +2217,15 @@ class TestMode:
         data5 = [40, 30, 30, 30]
         arr = np.array([data1, data2, data3, data4, data5])
 
-        vals = stats.mode(arr, axis=None)
-        assert_equal(vals[0], np.array([30]))
-        assert_equal(vals[1], np.array([8]))
+        vals = stats.mode(arr, axis=None, keepdims=True)
+        assert_equal(vals[0], np.array([[30]]))
+        assert_equal(vals[1], np.array([[8]]))
 
-        vals = stats.mode(arr, axis=0)
+        vals = stats.mode(arr, axis=0, keepdims=True)
         assert_equal(vals[0], np.array([[10, 10, 30, 30]]))
         assert_equal(vals[1], np.array([[2, 3, 3, 2]]))
 
-        vals = stats.mode(arr, axis=1)
+        vals = stats.mode(arr, axis=1, keepdims=True)
         assert_equal(vals[0], np.array([[10], [10], [20], [30], [30]]))
         assert_equal(vals[1], np.array([[2], [4], [3], [4], [3]]))
 
@@ -2219,52 +2236,6 @@ class TestMode:
         res0 = stats.mode(a, axis=a.ndim+axis)
         res1 = stats.mode(a, axis=axis)
         np.testing.assert_array_equal(res0, res1)
-
-    def test_strings(self):
-        data1 = ['rain', 'showers', 'showers']
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            vals = stats.mode(data1)
-        assert_equal(vals[0][0], 'showers')
-        assert_equal(vals[1][0], 2)
-
-    def test_mixed_objects(self):
-        objects = [10, True, np.nan, 'hello', 10]
-        arr = np.empty((5,), dtype=object)
-        arr[:] = objects
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            vals = stats.mode(arr)
-        assert_equal(vals[0][0], 10)
-        assert_equal(vals[1][0], 2)
-
-    def test_objects(self):
-        # Python objects must be sortable (le + eq) and have ne defined
-        # for np.unique to work. hash is for set.
-        class Point:
-            def __init__(self, x):
-                self.x = x
-
-            def __eq__(self, other):
-                return self.x == other.x
-
-            def __ne__(self, other):
-                return self.x != other.x
-
-            def __lt__(self, other):
-                return self.x < other.x
-
-            def __hash__(self):
-                return hash(self.x)
-
-        points = [Point(x) for x in [1, 2, 3, 4, 3, 2, 2, 2]]
-        arr = np.empty((8,), dtype=object)
-        arr[:] = points
-        assert_(len(set(points)) == 4)
-        assert_equal(np.unique(arr).shape, (4,))
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            vals = stats.mode(arr)
-
-        assert_equal(vals[0][0], Point(2))
-        assert_equal(vals[1][0], 4)
 
     def test_mode_result_attributes(self):
         data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
@@ -2291,29 +2262,16 @@ class TestMode:
         [3, 5, 1],
         [3, np.nan, 5, 1],
     ])
-    def test_smallest_equal(self, data):
-        result = stats.mode(data, nan_policy='omit')
-        assert_equal(result[0][0], 1)
-
-    def test_obj_arrays_ndim(self):
-        # regression test for gh-9645: `mode` fails for object arrays w/ndim > 1
-        data = [['Oxidation'], ['Oxidation'], ['Polymerization'], ['Reduction']]
-        ar = np.array(data, dtype=object)
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            m = stats.mode(ar, axis=0)
-        assert np.all(m.mode == 'Oxidation') and m.mode.shape == (1, 1)
-        assert np.all(m.count == 2) and m.count.shape == (1, 1)
-
-        data1 = data + [[np.nan]]
-        ar1 = np.array(data1, dtype=object)
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            m = stats.mode(ar1, axis=0)
-        assert np.all(m.mode == 'Oxidation') and m.mode.shape == (1, 1)
-        assert np.all(m.count == 2) and m.count.shape == (1, 1)
+    @pytest.mark.parametrize('keepdims', [False, True])
+    def test_smallest_equal(self, data, keepdims):
+        result = stats.mode(data, nan_policy='omit', keepdims=keepdims)
+        if keepdims:
+            assert_equal(result[0][0], 1)
+        else:
+            assert_equal(result[0], 1)
 
     @pytest.mark.parametrize('axis', np.arange(-3, 3))
-    @pytest.mark.parametrize('dtype', [np.float64, 'object'])
-    def test_mode_shape_gh_9955(self, axis, dtype):
+    def test_mode_shape_gh_9955(self, axis, dtype=np.float64):
         rng = np.random.default_rng(984213899)
         a = rng.uniform(size=(3, 4, 5)).astype(dtype)
         if dtype == 'object':
@@ -2332,19 +2290,7 @@ class TestMode:
         a = [2, np.nan, 1, np.nan]
         if NumpyVersion(np.__version__) >= '1.21.0':
             res = stats.mode(a)
-            assert np.isnan(res.mode[0]) and res.count[0] == 2
-
-        # mode should work on object arrays. There were issues when
-        # objects do not support comparison operations.
-        a = np.array(a, dtype='object')
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            res = stats.mode(a)
-        assert np.isnan(res.mode[0]) and res.count[0] == 2
-
-        a = np.array([10, True, 'hello', 10], dtype='object')
-        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-            res = stats.mode(a)
-        assert_array_equal(res, [[10], [2]])
+            assert np.isnan(res.mode) and res.count == 2
 
     def test_keepdims(self):
         # test empty arrays (handled by `np.mean`)
@@ -2375,8 +2321,10 @@ class TestMode:
 
         res = stats.mode(a, axis=None, keepdims=True)
         ref = stats.mode(a.ravel(), keepdims=True)
-        assert_array_equal(res, ref)
-        assert res.mode.shape == ref.mode.shape == (1,)
+        assert_equal(res.mode.ravel(), ref.mode.ravel())
+        assert res.mode.shape == (1, 1)
+        assert_equal(res.count.ravel(), ref.count.ravel())
+        assert res.count.shape == (1, 1)
 
         # test nan_policy='omit'
         a = [[1, np.nan, np.nan, np.nan, 1],
@@ -2399,8 +2347,10 @@ class TestMode:
 
         res = stats.mode(a, axis=None, keepdims=True, nan_policy='omit')
         ref = stats.mode(a.ravel(), keepdims=True, nan_policy='omit')
-        assert_array_equal(res, ref)
-        assert res.mode.shape == ref.mode.shape == (1,)
+        assert_equal(res.mode.ravel(), ref.mode.ravel())
+        assert res.mode.shape == (1, 1)
+        assert_equal(res.count.ravel(), ref.count.ravel())
+        assert res.count.shape == (1, 1)
 
     def test_gh16952(self):
         # Check that bug reported in gh-16952 is resolved
@@ -2411,21 +2361,38 @@ class TestMode:
         assert_array_equal(res.mode, [1, 1, 1, 1])
         assert_array_equal(res.count, [2, 3, 3, 3])
 
+    def test_gh9955(self):
+        # The behavior of mode with empty slices (whether the input was empty
+        # or all elements were omitted) was inconsistent. Test that this is
+        # resolved: the mode of an empty slice is NaN and the count is zero.
+        res = stats.mode([])
+        ref = (np.nan, 0)
+        assert_equal(res, ref)
 
-def test_mode_futurewarning():
-    a = [1, 2, 5, 3, 5]
+        res = stats.mode([np.nan], nan_policy='omit')
+        assert_equal(res, ref)
 
-    future_msg = "Unlike other reduction functions..."
-    with pytest.warns(FutureWarning, match=future_msg):
-        res = stats.mode(a)
-    assert_array_equal(res, ([5], [2]))
+        a = [[10., 20., 20.], [np.nan, np.nan, np.nan]]
+        res = stats.mode(a, axis=1, nan_policy='omit')
+        ref = ([20, np.nan], [2, 0])
+        assert_equal(res, ref)
 
-    # no FutureWarning if `keepdims` is specified
-    res = stats.mode(a, keepdims=True)
-    assert_array_equal(res, ([5], [2]))
+        if NumpyVersion(np.__version__) >= '1.21.0':
+            res = stats.mode(a, axis=1, nan_policy='propagate')
+            ref = ([20, np.nan], [2, 3])
+            assert_equal(res, ref)
 
-    res = stats.mode(a, keepdims=False)
-    assert_array_equal(res, [5, 2])
+        z = np.array([[], []])
+        res = stats.mode(z, axis=1)
+        ref = ([np.nan, np.nan], [0, 0])
+        assert_equal(res, ref)
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # np.mean warns
+    @pytest.mark.parametrize('z', [np.empty((0, 1, 2)), np.empty((1, 1, 2))])
+    def test_gh17214(self, z):
+        res = stats.mode(z, axis=None, keepdims=True)
+        ref = np.mean(z, axis=None, keepdims=True)
+        assert res[0].shape == res[1].shape == ref.shape == (1, 1, 1)
 
 
 class TestSEM:
@@ -3199,7 +3166,7 @@ class TestMoments:
         tc_no_mean = self.testcase_moment_accuracy - \
                      np.mean(self.testcase_moment_accuracy)
         assert_allclose(np.power(tc_no_mean, 42).mean(),
-                            stats.moment(self.testcase_moment_accuracy, 42))
+                        stats.moment(self.testcase_moment_accuracy, 42))
 
     def test_precision_loss_gh15554(self):
         # gh-15554 was one of several issues that have reported problems with
@@ -3958,6 +3925,24 @@ class TestKSOneSample:
         ])
         FuncData(kolmogn, dataset, (0, 1, 2), 3).check(dtypes=[int, float, bool])
 
+    @pytest.mark.parametrize("ksfunc", [stats.kstest, stats.ks_1samp])
+    @pytest.mark.parametrize("alternative, x6val, ref_location, ref_sign",
+                             [('greater', 6, 6, +1),
+                              ('less', 7, 7, -1),
+                              ('two-sided', 6, 6, +1),
+                              ('two-sided', 7, 7, -1)])
+    def test_location_sign(self, ksfunc, alternative,
+                           x6val, ref_location, ref_sign):
+        # Test that location and sign corresponding with statistic are as
+        # expected. (Test is designed to be easy to predict.)
+        x = np.arange(10) + 0.5
+        x[6] = x6val
+        cdf = stats.uniform(scale=10).cdf
+        res = ksfunc(x, cdf, alternative=alternative)
+        assert_allclose(res.statistic, 0.1, rtol=1e-15)
+        assert res.statistic_location == ref_location
+        assert res.statistic_sign == ref_sign
+
     # missing: no test that uses *args
 
 
@@ -4207,6 +4192,24 @@ class TestKSTwoSamples:
         with pytest.warns(RuntimeWarning, match=message):
             res = stats.ks_2samp(data1, data2, alternative='less')
             assert_allclose(res.pvalue, 0, atol=1e-14)
+
+    @pytest.mark.parametrize("ksfunc", [stats.kstest, stats.ks_2samp])
+    @pytest.mark.parametrize("alternative, x6val, ref_location, ref_sign",
+                             [('greater', 5.9, 5.9, +1),
+                              ('less', 6.1, 6.0, -1),
+                              ('two-sided', 5.9, 5.9, +1),
+                              ('two-sided', 6.1, 6.0, -1)])
+    def test_location_sign(self, ksfunc, alternative,
+                           x6val, ref_location, ref_sign):
+        # Test that location and sign corresponding with statistic are as
+        # expected. (Test is designed to be easy to predict.)
+        x = np.arange(10, dtype=np.float64)
+        y = x.copy()
+        x[6] = x6val
+        res = stats.ks_2samp(x, y, alternative=alternative)
+        assert res.statistic == 0.1
+        assert res.statistic_location == ref_location
+        assert res.statistic_sign == ref_sign
 
 
 def test_ttest_rel():
@@ -4541,12 +4544,12 @@ def test_ttest_ind():
     tr, pr = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit')
 
     t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
-                        alternative='less')
+                           alternative='less')
     assert_allclose(t, tr, rtol=1e-14)
     assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
 
     t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
-                        alternative='greater')
+                           alternative='greater')
     assert_allclose(t, tr, rtol=1e-14)
     assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
 
@@ -4588,14 +4591,9 @@ class Test_ttest_ind_permutations():
         (a, b, {'random_state': np.random.RandomState(0), "axis": 1}, p_d),
         (a2, b2, {'equal_var': True}, 1/1001),  # equal variances
         (rvs1, rvs2, {'axis': -1, 'random_state': 0}, p_d_big),  # bigger test
-        (a3, b3, {}, 1/3)  # exact test
+        (a3, b3, {}, 1/3),  # exact test
+        (a, b, {'random_state': np.random.default_rng(0), "axis": 1}, p_d_gen),
         ]
-
-    if NumpyVersion(np.__version__) >= '1.18.0':
-        params.append(
-            (a, b, {'random_state': np.random.default_rng(0), "axis": 1},
-             p_d_gen),
-            )
 
     @pytest.mark.parametrize("a,b,update,p_d", params)
     def test_ttest_ind_permutations(self, a, b, update, p_d):
@@ -4662,9 +4660,9 @@ class Test_ttest_ind_permutations():
         res1 = stats.ttest_ind(a, b, permutations=1000)
         res2 = stats.ttest_ind(a, b, permutations=0)
         res3 = stats.ttest_ind(a, b, permutations=np.inf)
-        assert(res1.pvalue != res0.pvalue)
-        assert(res2.pvalue == res0.pvalue)
-        assert(res3.pvalue == res1.pvalue)
+        assert res1.pvalue != res0.pvalue
+        assert res2.pvalue == res0.pvalue
+        assert res3.pvalue == res1.pvalue
 
     def test_ttest_ind_exact_distribution(self):
         # the exact distribution of the test statistic should have
@@ -4781,8 +4779,8 @@ class Test_ttest_ind_permutations():
 
             # Propagate 1d
             res = stats.ttest_ind(a.ravel(), b.ravel(), **options_p)
-            assert(np.isnan(res.pvalue))  # assert makes sure it's a scalar
-            assert(np.isnan(res.statistic))
+            assert np.isnan(res.pvalue)  # assert makes sure it's a scalar
+            assert np.isnan(res.statistic)
 
     def test_ttest_ind_permutation_check_inputs(self):
         with assert_raises(ValueError, match="Permutations must be"):
@@ -5459,11 +5457,11 @@ def test_normalitytests():
 
     # Test axis=None (equal to axis=0 for 1-D input)
     assert_array_almost_equal(stats.normaltest(x, axis=None),
-           (st_normal, pv_normal))
+                              (st_normal, pv_normal))
     assert_array_almost_equal(stats.skewtest(x, axis=None),
-           (st_skew, pv_skew))
+                              (st_skew, pv_skew))
     assert_array_almost_equal(stats.kurtosistest(x, axis=None),
-           (st_kurt, pv_kurt))
+                              (st_kurt, pv_kurt))
 
     x = np.arange(10.)
     x[9] = np.nan
@@ -6803,7 +6801,7 @@ class TestFOneWay:
             rtol = 1e-7
             fname = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                  'data/nist_anova', test_case))
-            with open(fname, 'r') as f:
+            with open(fname) as f:
                 content = f.read().split('\n')
             certified = [line.split() for line in content[40:48]
                          if line.strip()]
@@ -7624,8 +7622,8 @@ class TestMGCStat:
         elif sim_type == "nonlinear":
             unif = np.array(np.random.uniform(0, 5, size=(samps, 1)))
             x = unif * np.cos(np.pi * unif)
-            y = unif * np.sin(np.pi * unif) + (0.4
-                * np.random.random_sample(size=(x.size, 1)))
+            y = (unif * np.sin(np.pi * unif) +
+                 0.4*np.random.random_sample(size=(x.size, 1)))
 
         # independence (tests type I simulation)
         elif sim_type == "independence":
@@ -7971,3 +7969,157 @@ def test_rename_mode_method(fun, args):
     with pytest.raises(TypeError, match=re.escape(err)):
         fun(*args, method='exact', mode='exact')
 
+
+class TestExpectile:
+    def test_same_as_mean(self):
+        rng = np.random.default_rng(42)
+        x = rng.random(size=20)
+        assert_allclose(stats.expectile(x, alpha=0.5), np.mean(x))
+
+    def test_minimum(self):
+        rng = np.random.default_rng(42)
+        x = rng.random(size=20)
+        assert_allclose(stats.expectile(x, alpha=0), np.amin(x))
+
+    def test_maximum(self):
+        rng = np.random.default_rng(42)
+        x = rng.random(size=20)
+        assert_allclose(stats.expectile(x, alpha=1), np.amax(x))
+
+    def test_weights(self):
+        # expectile should minimize `fun` defined below; see
+        # F. Sobotka and T. Kneib, "Geoadditive expectile regression",
+        # Computational Statistics and Data Analysis 56 (2012) 755-767
+        # :doi:`10.1016/j.csda.2010.11.015`
+        rng = np.random.default_rng(1856392524598679138)
+
+        def fun(u, a, alpha, weights):
+            w = np.full_like(a, fill_value=alpha)
+            w[a <= u] = 1 - alpha
+            return np.sum(w * weights * (a - u)**2)
+
+        def expectile2(a, alpha, weights):
+            bracket = np.min(a), np.max(a)
+            return optimize.minimize_scalar(fun, bracket=bracket,
+                                            args=(a, alpha, weights)).x
+
+        n = 10
+        a = rng.random(n)
+        alpha = rng.random()
+        weights = rng.random(n)
+
+        res = stats.expectile(a, alpha, weights=weights)
+        ref = expectile2(a, alpha, weights)
+        assert_allclose(res, ref)
+
+    @pytest.mark.parametrize(
+        "alpha", [0.2, 0.5 - 1e-12, 0.5, 0.5 + 1e-12, 0.8]
+    )
+    @pytest.mark.parametrize("n", [20, 2000])
+    def test_expectile_properties(self, alpha, n):
+        """
+        See Section 6 of
+        I. Steinwart, C. Pasin, R.C. Williamson & S. Zhang (2014).
+        "Elicitation and Identification of Properties". COLT.
+        http://proceedings.mlr.press/v35/steinwart14.html
+
+        and
+
+        Propositions 5, 6, 7 of
+        F. Bellini, B. Klar, and A. Müller and E. Rosazza Gianin (2013).
+        "Generalized Quantiles as Risk Measures"
+        http://doi.org/10.2139/ssrn.2225751
+        """
+        rng = np.random.default_rng(42)
+        x = rng.normal(size=n)
+
+        # 0. definite / constancy
+        # Let T(X) denote the expectile of rv X ~ F.
+        # T(c) = c for constant c
+        for c in [-5, 0, 0.5]:
+            assert_allclose(
+                stats.expectile(np.full(shape=n, fill_value=c), alpha=alpha),
+                c
+            )
+
+        # 1. translation equivariance
+        # T(X + c) = T(X) + c
+        c = rng.exponential()
+        assert_allclose(
+            stats.expectile(x + c, alpha=alpha),
+            stats.expectile(x, alpha=alpha) + c,
+        )
+        assert_allclose(
+            stats.expectile(x - c, alpha=alpha),
+            stats.expectile(x, alpha=alpha) - c,
+        )
+
+        # 2. positively homogeneity
+        # T(cX) = c * T(X) for c > 0
+        assert_allclose(
+            stats.expectile(c * x, alpha=alpha),
+            c * stats.expectile(x, alpha=alpha),
+        )
+
+        # 3. subadditivity
+        # Note that subadditivity holds for alpha >= 0.5.
+        # T(X + Y) <= T(X) + T(Y)
+        # For alpha = 0.5, i.e. the mean, strict equality holds.
+        # For alpha < 0.5, one can use property 6. to show
+        # T(X + Y) >= T(X) + T(Y)
+        y = rng.logistic(size=n, loc=10)  # different distibution than x
+        if alpha == 0.5:
+            def assert_op(a, b):
+                assert_allclose(a, b)
+
+        elif alpha > 0.5:
+            def assert_op(a, b):
+                assert a < b
+
+        else:
+            def assert_op(a, b):
+                assert a > b
+
+        assert_op(
+            stats.expectile(np.r_[x + y], alpha=alpha),
+            stats.expectile(x, alpha=alpha)
+            + stats.expectile(y, alpha=alpha)
+        )
+
+        # 4. monotonicity
+        # This holds for first order stochastic dominance X:
+        # X >= Y whenever P(X <= x) < P(Y <= x)
+        # T(X) <= T(Y) whenever X <= Y
+        y = rng.normal(size=n, loc=5)
+        assert (
+            stats.expectile(x, alpha=alpha) <= stats.expectile(y, alpha=alpha)
+        )
+
+        # 5. convexity for alpha > 0.5, concavity for alpha < 0.5
+        # convexity is
+        # T((1 - c) X + c Y) <= (1 - c) T(X) + c T(Y) for 0 <= c <= 1
+        y = rng.logistic(size=n, loc=10)
+        for c in [0.1, 0.5, 0.8]:
+            assert_op(
+                stats.expectile((1-c)*x + c*y, alpha=alpha),
+                (1-c) * stats.expectile(x, alpha=alpha) +
+                c * stats.expectile(y, alpha=alpha)
+            )
+
+        # 6. negative argument
+        # T_{alpha}(-X) = -T_{1-alpha}(X)
+        assert_allclose(
+            stats.expectile(-x, alpha=alpha),
+            -stats.expectile(x, alpha=1-alpha),
+        )
+
+    @pytest.mark.parametrize("n", [20, 2000])
+    def test_monotonicity_in_alpha(self, n):
+        rng = np.random.default_rng(42)
+        x = rng.pareto(a=2, size=n)
+        e_list = []
+        alpha_seq = np.logspace(-15, np.log10(0.5), 100)
+        # sorted list of unique alpha values in interval (0, 1)
+        for alpha in np.r_[0, alpha_seq, 1 - alpha_seq[:-1:-1], 1]:
+            e_list.append(stats.expectile(x, alpha=alpha))
+        assert np.all(np.diff(e_list) > 0)
