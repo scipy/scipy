@@ -3450,13 +3450,27 @@ class TestDgamma:
     (1e-30, -1.0e+30),
     (1e-20, -1.0e+20),
     (1e-10, -9999999975.85822),
-    (10000000000.0, 13.625)])
+    (10000000000.0, 13.625),
+    (1e+20, 25.1379366437051),
+    (1e+30, 36.6508621086753),
+    (1e+40, 48.1637875736455),
+    (1e+50, 59.6767130386158),
+    (1e+60, 71.189638503586),
+    (1e+70, 82.7025639685562),
+    (1e+80, 94.2154894335264),
+    (1e+90, 105.728414898497),
+    (1e+100, 117.241340363467)])
     def test_entropy_entreme_values(self, a, ref):
         #The reference values were calculated with mpmath:
         #import mpmath as mp
         #mp.dps = 50
         #def second_dgamma(a):
-        #    h = a + mp.log(2) + mp.loggamma(a) + (1 - a) * mp.digamma(a)
+        #    if a < 1e15:
+        #        h = a + mp.log(2) + mp.loggamma(a) + (1 - a) * mp.digamma(a)
+        #
+        #    else:
+        #        h = mp.log(2) + 0.5 * (1 + mp.log(a) + mp.log(2 * mp.pi))
+        #
         #    return h
         assert_allclose(stats.dgamma.entropy(a), ref)
 
