@@ -3106,11 +3106,8 @@ class TestDirichletMultinomial:
     def get_params(self, m):
         rng = np.random.default_rng(28469824356873456)
         alpha = rng.uniform(0, 100, size=2)
-        # For now, `n` must be scalar, so ensure `x` sums to `n`. When `n` can
-        # be an array, generate `x` as random integers and calculate
-        # `n = x.sum(axis=-1)`.
-        n = 10000
-        x = rng.multinomial(n, [0.5, 0.5], size=m)
+        x = rng.integers(1, 20, size=(m, 2))
+        n = x.sum(axis=-1)
         return rng, m, alpha, n, x
 
     def test_frozen(self):
@@ -3140,6 +3137,7 @@ class TestDirichletMultinomial:
         ref = 0.08484162895927638
         assert_allclose(res, ref)
         assert_allclose(logres, np.log(ref))
+        assert res.shape == logres.shape == ()
 
         # library(extraDistr)
         # options(digits=16)
@@ -3201,12 +3199,12 @@ class TestDirichletMultinomial:
 
     @pytest.mark.parametrize('method_name', ['mean', 'var'])
     def test_against_betabinom_moments(self, method_name):
-        rng, m, alpha, n, x = self.get_params(1)
+        rng, m, alpha, n, x = self.get_params(100)
 
         method = getattr(dirichlet_multinomial(alpha, n), method_name)
         ref_method = getattr(stats.betabinom(n, *alpha.T), method_name)
 
-        res = method()[0]
+        res = method()[:, 0]
         ref = ref_method()
         assert_allclose(res, ref)
 
@@ -3215,10 +3213,10 @@ class TestDirichletMultinomial:
         if Version(np.__version__) < Version("1.22.0"):
             pytest.skip(reason=message)
 
-        rng, m, alpha, n, x = self.get_params(100)
         rng = np.random.default_rng(28469824356873456)
+        dim = 5
         n = rng.integers(1, 100)
-        alpha = rng.random(size=5) * 10
+        alpha = rng.random(size=dim) * 10
         dist = dirichlet_multinomial(alpha, n)
 
         # Generate a random sample from the distribution using NumPy
@@ -3228,8 +3226,10 @@ class TestDirichletMultinomial:
 
         assert_allclose(dist.mean(), np.mean(x, axis=0), rtol=5e-3)
         assert_allclose(dist.var(), np.var(x, axis=0), rtol=1e-2)
+        assert dist.mean().shape == dist.var().shape == (dim,)
 
         cov = dist.cov()
+        assert cov.shape == (dim, dim)
         assert_allclose(cov, np.cov(x.T), rtol=2e-2)
         assert_equal(np.diag(cov), dist.var())
         assert np.all(scipy.linalg.eigh(cov)[0] > 0)  # positive definite
@@ -3252,22 +3252,42 @@ class TestDirichletMultinomial:
         with assert_raises(ValueError, match=text):
             dirichlet_multinomial.logpmf(x0, [3, -1, 4], n0)
 
-        text = "`alpha` must be an array with exactly one dimension"
-        with assert_raises(ValueError, match=text):
-            dirichlet_multinomial.logpmf(x0, 1, n0)
-
         text = "`n` must be a positive integer."
         with assert_raises(ValueError, match=text):
             dirichlet_multinomial.logpmf(x0, alpha0, 49.1)
         with assert_raises(ValueError, match=text):
             dirichlet_multinomial.logpmf(x0, alpha0, 0)
 
-        text = r"`n` must be an integer \(scalar\)."
-        with assert_raises(ValueError, match=text):
-            dirichlet_multinomial.logpmf(x0, alpha0, [10, 11])
-
         x = np.array([1, 2, 3, 4])
         alpha = np.array([3, 4, 5])
         text = "`x` and `alpha` must be broadcastable."
         with assert_raises(ValueError, match=text):
             dirichlet_multinomial.logpmf(x, alpha, x.sum())
+
+    @pytest.mark.parametrize('method', ['pmf', 'logpmf'])
+    def test_broadcasting_pmf(self, method):
+        alpha = np.array([[3, 4, 5], [4, 5, 6], [5, 5, 7], [8, 9, 10]])
+        n = np.array([[6], [7], [8]])
+        x = np.array([[1, 2, 3], [2, 2, 3]]).reshape((2, 1, 1, 3))
+        method = getattr(dirichlet_multinomial, method)
+        res = method(x, alpha, n)
+        assert res.shape == (2, 3, 4)
+        for i in range(len(x)):
+            for j in range(len(n)):
+                for k in range(len(alpha)):
+                    res_ijk = res[i, j, k]
+                    ref = method(x[i].squeeze(), alpha[k].squeeze(), n[j].squeeze())
+                    assert_allclose(res_ijk, ref)
+
+    @pytest.mark.parametrize('method_name', ['mean', 'var', 'cov'])
+    def test_broadcasting_moments(self, method_name):
+        alpha = np.array([[3, 4, 5], [4, 5, 6], [5, 5, 7], [8, 9, 10]])
+        n = np.array([[6], [7], [8]])
+        method = getattr(dirichlet_multinomial, method_name)
+        res = method(alpha, n)
+        assert res.shape == (3, 4, 3) if method_name != 'cov' else (3, 4, 3, 3)
+        for j in range(len(n)):
+            for k in range(len(alpha)):
+                res_ijk = res[j, k]
+                ref = method(alpha[k].squeeze(), n[j].squeeze())
+                assert_allclose(res_ijk, ref)
