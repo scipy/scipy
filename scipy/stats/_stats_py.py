@@ -3215,6 +3215,9 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     return z
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, too_small=1
+)
 def gstd(a, axis=0, ddof=1):
     """
     Calculate the geometric standard deviation of an array.

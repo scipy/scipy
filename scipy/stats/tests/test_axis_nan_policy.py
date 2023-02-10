@@ -35,6 +35,7 @@ axis_nan_policy_cases = [
     (stats.wilcoxon, tuple(), {'mode': 'approx'}, 1, 3, True,
      lambda res: (res.statistic, res.pvalue, res.zstatistic)),
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.pmean, (1.42,), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
