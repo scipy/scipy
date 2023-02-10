@@ -37,7 +37,7 @@ def warn_extraneous(extraneous):
     """
     if extraneous:
         warn("The following arguments have no effect for a chosen solver: {}."
-             .format(", ".join("`{}`".format(x) for x in extraneous)))
+             .format(", ".join(f"`{x}`" for x in extraneous)))
 
 
 def validate_tol(rtol, atol, n):

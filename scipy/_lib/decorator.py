@@ -99,7 +99,7 @@ class FunctionMaker:
                     allargs.append('*')  # single star syntax
                 for a in self.kwonlyargs:
                     allargs.append('%s=None' % a)
-                    allshortargs.append('%s=%s' % (a, a))
+                    allshortargs.append(f'{a}={a}')
                 if self.varkw:
                     allargs.append('**' + self.varkw)
                     allshortargs.append('**' + self.varkw)
@@ -153,7 +153,7 @@ class FunctionMaker:
                               self.shortsignature.split(',')])
         for n in names:
             if n in ('_func_', '_call_'):
-                raise NameError('%s is overridden in\n%s' % (n, src))
+                raise NameError(f'{n} is overridden in\n{src}')
         if not src.endswith('\n'):  # add a newline just for safety
             src += '\n'  # this is needed in old versions of Python
 
@@ -221,8 +221,8 @@ def decorator(caller, _func=None):
     if inspect.isclass(caller):
         name = caller.__name__.lower()
         callerfunc = get_init(caller)
-        doc = 'decorator(%s) converts functions/generators into ' \
-            'factories of %s objects' % (caller.__name__, caller.__name__)
+        doc = 'decorator({}) converts functions/generators into ' \
+            'factories of {} objects'.format(caller.__name__, caller.__name__)
     elif inspect.isfunction(caller):
         if caller.__name__ == '<lambda>':
             name = '_lambda_'
@@ -341,7 +341,7 @@ def dispatch_on(*dispatch_args):
                 n_vas = len(vas)
                 if n_vas > 1:
                     raise RuntimeError(
-                        'Ambiguous dispatch for %s: %s' % (t, vas))
+                        f'Ambiguous dispatch for {t}: {vas}')
                 elif n_vas == 1:
                     va, = vas
                     mro = type('t', (t, va), {}).__mro__[1:]

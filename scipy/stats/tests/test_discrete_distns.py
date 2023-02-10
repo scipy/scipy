@@ -377,7 +377,7 @@ class TestNCH():
                 return t1 * t2 * w**x
 
             def P(k):
-                return sum((f(y)*y**k for y in range(xl, xu + 1)))
+                return sum(f(y)*y**k for y in range(xl, xu + 1))
 
             P0 = P(0)
             P1 = P(1)
@@ -472,7 +472,7 @@ class TestNCH():
 
         atol, rtol = 1e-6, 1e-6
         i = np.abs(pmf1 - pmf0) < atol + rtol*np.abs(pmf0)
-        assert(i.sum() > np.prod(shape) / 2)  # works at least half the time
+        assert i.sum() > np.prod(shape) / 2  # works at least half the time
 
         # for those that fail, discredit the naive implementation
         for N, m1, n, w in zip(N[~i], m1[~i], n[~i], w[~i]):

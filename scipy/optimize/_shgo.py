@@ -704,8 +704,14 @@ class SHGO:
                 else:
                     self.sampling_method = 'halton'
                     self.qmc_engine = qmc.Halton(d=self.dim, scramble=True,
+<<<<<<< HEAD
                                                  seed=0)
                 sampling_method = lambda n, d: self.qmc_engine.random(n)
+=======
+                                                 seed=np.random.RandomState())
+                def sampling_method(n, d):
+                    return self.qmc_engine.random(n)
+>>>>>>> upstream/main
             else:
                 # A user defined sampling method:
                 self.sampling_method = 'custom'
@@ -937,9 +943,9 @@ class SHGO:
                 # 2if (pe - self.f_tol) <= abs(1.0 / abs(self.f_min_true)):
                 if abs(pe) >= 2 * self.f_tol:
                     warnings.warn("A much lower value than expected f* =" +
-                                  " {} than".format(self.f_min_true) +
+                                  f" {self.f_min_true} than" +
                                   " the was found f_lowest =" +
-                                  "{} ".format(self.f_lowest))
+                                  f"{self.f_lowest} ")
             if pe <= self.f_tol:
                 self.stop_global = True
 
@@ -1119,9 +1125,14 @@ class SHGO:
                 if self.disp:
                     logging.info('=' * 60)
                     logging.info(
+<<<<<<< HEAD
                         'v.x = {} is minimizer'.format(self.HC.V[x].x_a))
                     logging.info('v.f = {} is '
                                  'minimizer'.format(self.HC.V[x].f))
+=======
+                        f'v.x = {self.HC.V[x].x_a} is minimizer')
+                    logging.info(f'v.f = {self.HC.V[x].f} is minimizer')
+>>>>>>> upstream/main
                     logging.info('=' * 30)
 
                 if self.HC.V[x] not in self.minimizer_pool:
@@ -1131,7 +1142,7 @@ class SHGO:
                     logging.info('Neighbors:')
                     logging.info('=' * 30)
                     for vn in self.HC.V[x].nn:
-                        logging.info('x = {} || f = {}'.format(vn.x, vn.f))
+                        logging.info(f'x = {vn.x} || f = {vn.f}')
 
                     logging.info('=' * 60)
         self.minimizer_pool_F = []
@@ -1268,8 +1279,8 @@ class SHGO:
                     cbounds[i][1] = x_i
 
         if self.disp:
-            logging.info('cbounds found for v_min.x_a = {}'.format(v_min.x_a))
-            logging.info('cbounds = {}'.format(cbounds))
+            logging.info(f'cbounds found for v_min.x_a = {v_min.x_a}')
+            logging.info(f'cbounds = {cbounds}')
 
         return cbounds
 
@@ -1311,7 +1322,7 @@ class SHGO:
         """
         # Use minima maps if vertex was already run
         if self.disp:
-            logging.info('Vertex minimiser maps = {}'.format(self.LMC.v_maps))
+            logging.info(f'Vertex minimiser maps = {self.LMC.v_maps}')
 
         if self.LMC[x_min].lres is not None:
             logging.info(f'Found self.LMC[x_min].lres = '
@@ -1350,7 +1361,11 @@ class SHGO:
         lres = minimize(self.func, x_min, **self.minimizer_kwargs)
 
         if self.disp:
+<<<<<<< HEAD
             logging.info('lres = {}'.format(lres))
+=======
+            print(f'lres = {lres}')
+>>>>>>> upstream/main
 
         # Local function evals for all minimizers
         self.res.nlfev += lres.nfev
@@ -1427,6 +1442,51 @@ class SHGO:
         # Find objective function references
         self.n_sampled = self.nc
 
+<<<<<<< HEAD
+=======
+    def delaunay_complex_minimisers(self):
+        # Construct complex minimizers on the current sampling set.
+        # if self.fn >= (self.dim + 1):
+        if self.fn >= (self.dim + 2):
+            # TODO: Check on strange Qhull error where the number of vertices
+            # required for an initial simplex is higher than n + 1?
+            if self.dim < 2:  # Scalar objective functions
+                if self.disp:
+                    print('Constructing 1-D minimizer pool')
+
+                self.ax_subspace()
+                self.surface_topo_ref()
+                self.minimizers_1D()
+
+            else:  # Multivariate functions.
+                if self.disp:
+                    print('Constructing Gabrial graph and minimizer pool')
+
+                if self.iters == 1:
+                    self.delaunay_triangulation(grow=False)
+                else:
+                    self.delaunay_triangulation(grow=True, n_prc=self.n_prc)
+                    self.n_prc = self.C.shape[0]
+
+                if self.disp:
+                    print('Triangulation completed, building minimizer pool')
+
+                self.delaunay_minimizers()
+
+            if self.disp:
+                logging.info(
+                    f"Minimizer pool = SHGO.X_min = {self.X_min}")
+        else:
+            if self.disp:
+                print(
+                    'Not enough sampling points found in the feasible domain.')
+            self.minimizer_pool = [None]
+            try:
+                self.X_min
+            except AttributeError:
+                self.X_min = []
+
+>>>>>>> upstream/main
     def sampling_custom(self, n, dim):
         """
         Generates uniform sampling points in a hypercube and scales the points
@@ -1492,6 +1552,63 @@ class SHGO:
 
         return self.Tri
 
+<<<<<<< HEAD
+=======
+    @staticmethod
+    def find_neighbors_delaunay(pindex, triang):
+        """
+        Returns the indices of points connected to ``pindex`` on the Gabriel
+        chain subgraph of the Delaunay triangulation.
+        """
+        return triang.vertex_neighbor_vertices[1][
+               triang.vertex_neighbor_vertices[0][pindex]:
+               triang.vertex_neighbor_vertices[0][pindex + 1]]
+
+    def sample_delaunay_topo(self, ind):
+        self.Xi_ind_topo_i = []
+
+        # Find the position of the sample in the component Gabrial chain
+        G_ind = self.find_neighbors_delaunay(ind, self.Tri)
+
+        # Find finite deference between each point
+        for g_i in G_ind:
+            rel_topo_bool = self.F[ind] < self.F[g_i]
+            self.Xi_ind_topo_i.append(rel_topo_bool)
+
+        # Check if minimizer
+        self.Xi_ind_topo = np.array(self.Xi_ind_topo_i).all()
+
+        return self.Xi_ind_topo
+
+    def delaunay_minimizers(self):
+        """
+        Returns the indices of all minimizers
+        """
+        self.minimizer_pool = []
+        # Note: Can easily be parralized
+        if self.disp:
+            logging.info(f'self.fn = {self.fn}')
+            logging.info(f'self.nc = {self.nc}')
+            logging.info('np.shape(self.C)'
+                         ' = {}'.format(np.shape(self.C)))
+        for ind in range(self.fn):
+            min_bool = self.sample_delaunay_topo(ind)
+            if min_bool:
+                self.minimizer_pool.append(ind)
+
+        self.minimizer_pool_F = self.F[self.minimizer_pool]
+
+        # Sort to find minimum func value in min_pool
+        self.sort_min_pool()
+        if self.disp:
+            logging.info(f'self.minimizer_pool = {self.minimizer_pool}')
+        if not len(self.minimizer_pool) == 0:
+            self.X_min = self.C[self.minimizer_pool]
+        else:
+            self.X_min = []  # Empty pool breaks main routine
+        return self.X_min
+
+>>>>>>> upstream/main
 
 class LMap:
     def __init__(self, v):
