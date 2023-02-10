@@ -1070,6 +1070,8 @@ class TestTruncnorm:
     (1e-6, 2e-6, -13.815510557964274149359836996664372028297528210772236)])
     def test_entropy(self, a, b, ref):
         #All reference values were calculated with mpmath:
+        #import mpmath as mp
+        #mp.dps = 50
         #def entropy_trun(a, b):
         #    def cdf(x):
         #        return 0.5 * (1 + mp.erf(x / mp.sqrt(2)))
