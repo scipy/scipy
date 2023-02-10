@@ -1120,9 +1120,9 @@ class Complex:
                 # Every combination of vertices must be connected, we check of
                 # the current iteration of all combinations of s_i are
                 # connected we break the loop if it is not.
-                if ((not self.V[tuple(S_rows[i[1]])] in
+                if ((self.V[tuple(S_rows[i[1]])] not in
                         self.V[tuple(S_rows[i[0]])].nn)
-                    and (not (self.V[tuple(S_rows[i[0]])] in
+                    and ((self.V[tuple(S_rows[i[0]])] not in
                          self.V[tuple(S_rows[i[1]])].nn))):
                     valid_simplex = False
                     break

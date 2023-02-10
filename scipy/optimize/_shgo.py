@@ -857,9 +857,7 @@ class SHGO:
             self.find_lowest_vertex()
 
         if self.disp:
-            logging.info(
-                "Minimiser pool = SHGO.X_min = {}".format(self.X_min))
-            logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
+            logging.info(f"Minimiser pool = SHGO.X_min = {self.X_min}")
 
     def find_lowest_vertex(self):
         # Find the lowest objective function value on one of

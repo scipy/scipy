@@ -54,14 +54,6 @@ class VertexBase(ABC):
         raise NotImplementedError("This method is only implemented with an "
                                   "associated child of the base class.")
 
-    def print_out(self):
-        print("Vertex: {}".format(self.x))
-        constr = 'Connections: '
-        for vc in self.nn:
-            constr += '{} '.format(vc.x)
-
-        print(constr)
-
     def star(self):
         """Returns the star domain ``st(v)`` of the vertex.
 
@@ -179,7 +171,7 @@ class VertexVectorField(VertexBase):
     def __init__(self, x, sfield=None, vfield=None, field_args=(),
                  vfield_args=(), g_cons=None,
                  g_cons_args=(), nn=None, index=None):
-        super(VertexVectorField, self).__init__(x, nn=nn, index=index)
+        super().__init__(x, nn=nn, index=index)
 
         raise NotImplementedError("This class is still a work in progress")
 
