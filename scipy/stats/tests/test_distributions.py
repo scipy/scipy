@@ -1083,7 +1083,7 @@ class TestTruncnorm:
         #        return pdf_standard_norm(x) / Z
         #
         #    return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [a, b])
-        assert_allclose(stats.truncnorm.entropy(a, b), ref)
+        assert_allclose(stats.truncnorm.entropy(a, b), ref, rtol=1e-10)
 
     def test_ppf_ticket1131(self):
         vals = stats.truncnorm.ppf([-0.5, 0, 1e-4, 0.5, 1-1e-4, 1, 2], -1., 1.,
