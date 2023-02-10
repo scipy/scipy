@@ -583,22 +583,6 @@ class TestShgoArguments:
         run_test(test4_1, n=None, test_atol=1e-5, options=options,
                  sampling_method='simplicial')
 
-    # @pytest.mark.slow
-    @pytest.mark.skip(reason="no way of currently testing this")
-    def test_4_3_known_f_min(self):
-        """Test Global mode limiting local evaluations"""
-        options = {  # Specify known function value
-            'f_min': test4_1.expected_fun,
-            'f_tol': 1e-6,
-            # Specify number of local iterations to perform+
-            'minimize_every_iter': True,
-            'local_iter': 1,
-            'infty_constraints': False}
-
-        # run_test(test4_1, n=300000,
-        #         test_atol=1e-5, options=options,
-        #         sampling_method='sobol')
-
     def test_4_4_known_f_min(self):
         """Test Global mode limiting local evaluations for 1D funcs"""
         options = {  # Specify known function value
