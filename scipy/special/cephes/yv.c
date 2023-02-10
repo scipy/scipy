@@ -27,7 +27,7 @@ double yv(double v, double x)
         return NAN;
     }
 
-    t = NPY_PI * v;
+    t = M_PI * v;
     y = (cos(t) * jv(v, x) - jv(-v, x)) / sin(t);
 
     if (cephes_isinf(y)) {

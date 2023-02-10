@@ -690,8 +690,18 @@ class TestLHS(QMCEngineTests):
             for i, j in combinations(range(engine.d), 2):
                 samples_2d = sample[:, [i, j]]
                 res = (samples_2d * p).astype(int)
-                res_set = set((tuple(row) for row in res))
+                res_set = {tuple(row) for row in res}
                 assert_equal(res_set, desired)
+
+    def test_optimizer_1d(self):
+        # discrepancy measures are invariant under permuting factors and runs
+        engine = self.engine(d=1, scramble=False)
+        sample_ref = engine.random(n=64)
+
+        optimal_ = self.engine(d=1, scramble=False, optimization="random-CD")
+        sample_ = optimal_.random(n=64)
+
+        assert_array_equal(sample_ref, sample_)
 
     def test_raises(self):
         message = r"not a valid strength"

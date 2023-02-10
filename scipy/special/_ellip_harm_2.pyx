@@ -136,7 +136,6 @@ def _ellipsoid_norm(double h2, double k2, int n, int p):
 
     cdef _ellip_data_t data
 
-    cdef double *eigv
     cdef void *bufferp
     eval = lame_coefficients(h2, k2, n, p, &bufferp, 1, 1)
     if not eval:

@@ -22,23 +22,34 @@ cython_linalg = custom_target('cython_linalg',
   install_dir: py3.get_install_dir() / 'scipy/linalg'
 )
 
+# This dummy custom target is only needed to establish a dependency on
+# cython_linalg in a generator below. Adding that dependency directly yields
+# warnings about multiple outputs. And using `depends: cython_linalg[2]` does
+# not work, because that generator depends does not accept CustomTargetIndex,
+# only CustomTarget. See https://github.com/mesonbuild/meson/issues/9837
+cython_blas_pxd = custom_target(
+  output: '_dummy_cython_blas.pxd',
+  input: cython_linalg[2],
+  command: [py3, '-c', '"@INPUT@"'],
+)
+
 # pyx -> c, pyx -> cpp generators, depending on __init__.py here.
-linalg_init_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+linalg_init_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [_cython_tree, __init__py])
 
 # pyx -> c, pyx -> cpp generators, depending on _cythonized_array_utils.pxd
-linalg_init_utils_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+linalg_init_utils_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [_cython_tree, __init__py, _cy_array_utils_pxd])
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxd files and init
-linalg_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+linalg_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, __init__py, cython_linalg])
+  depends : [_cython_tree, __init__py, cython_blas_pxd])#, cython_linalg])
 
 # fblas
 fblas_module = custom_target('fblas_module',
@@ -327,7 +338,7 @@ py3.install_sources(
 #       see https://github.com/mesonbuild/meson/issues/3206
 #
 #       For the below code to work, the script generating the files should use
-#       a different filename, and then it should be moved to the final location 
+#       a different filename, and then it should be moved to the final location
 #       (e.g. with `fs.copyfile`). Either that, or split the codegen scripts and
 #       call it twice: once for the installable files, and once for the
 #       non-installable files.

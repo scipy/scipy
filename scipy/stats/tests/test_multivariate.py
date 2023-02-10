@@ -26,13 +26,18 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest,
-                         random_table, uniform_direction)
-from scipy.stats import _covariance, Covariance
+                         random_table, uniform_direction,
+                         dirichlet_multinomial)
 
-from scipy.integrate import romb
+from scipy.stats import _covariance, Covariance
+from scipy import stats
+
+from scipy.integrate import romb, qmc_quad, tplquad
 from scipy.special import multigammaln
+from scipy._lib._pep440 import Version
 
 from .common_tests import check_random_state_property
+from .data._mvt import _qsimvtv
 
 from unittest.mock import patch
 
@@ -238,6 +243,20 @@ class TestCovariance:
         res = rv.rvs(random_state=rng1)
         ref = multivariate_normal.rvs(mean, cov, random_state=rng2)
         assert_equal(res, ref)
+
+
+def _random_covariance(dim, evals, rng, singular=False):
+    # Generates random covariance matrix with dimensionality `dim` and
+    # eigenvalues `evals` using provided Generator `rng`. Randomly sets
+    # some evals to zero if `singular` is True.
+    A = rng.random((dim, dim))
+    A = A @ A.T
+    _, v = np.linalg.eigh(A)
+    if singular:
+        zero_eigs = rng.normal(size=dim) > 0
+        evals[zero_eigs] = 0
+    cov = v @ np.diag(evals) @ v.T
+    return cov
 
 
 def _sample_orthonormal_matrix(n):
@@ -897,15 +916,18 @@ class TestMatrixNormal:
                 X = frozen.rvs(random_state=1234)
                 pdf1 = frozen.pdf(X)
                 logpdf1 = frozen.logpdf(X)
+                entropy1 = frozen.entropy()
 
                 vecX = X.T.flatten()
                 vecM = M.T.flatten()
                 cov = np.kron(V,U)
                 pdf2 = multivariate_normal.pdf(vecX, mean=vecM, cov=cov)
                 logpdf2 = multivariate_normal.logpdf(vecX, mean=vecM, cov=cov)
+                entropy2 = multivariate_normal.entropy(mean=vecM, cov=cov)
 
                 assert_allclose(pdf1, pdf2, rtol=1E-10)
                 assert_allclose(logpdf1, logpdf2, rtol=1E-10)
+                assert_allclose(entropy1, entropy2)
 
     def test_array_input(self):
         # Check array of inputs has the same output as the separate entries.
@@ -1380,10 +1402,13 @@ class TestMultinomial:
         assert_allclose(vals1, -1.483270127243324, rtol=1e-8)
 
         vals2 = multinomial.logpmf([3, 4], 0, [.3, .7])
-        assert_allclose(vals2, np.NAN, rtol=1e-8)
+        assert vals2 == -np.inf
 
-        vals3 = multinomial.logpmf([3, 4], 0, [-2, 3])
-        assert_allclose(vals3, np.NAN, rtol=1e-8)
+        vals3 = multinomial.logpmf([0, 0], 0, [.3, .7])
+        assert vals3 == 0
+
+        vals4 = multinomial.logpmf([3, 4], 0, [-2, 3])
+        assert_allclose(vals4, np.NAN, rtol=1e-8)
 
     def test_reduces_binomial(self):
         # test that the multinomial pmf reduces to the binomial pmf in the 2d
@@ -1413,11 +1438,12 @@ class TestMultinomial:
         for x in r_vals:
             assert_allclose(multinomial.pmf(x, n, p), r_vals[x], atol=1e-14)
 
-    def test_rvs_np(self):
+    @pytest.mark.parametrize("n", [0, 3])
+    def test_rvs_np(self, n):
         # test that .rvs agrees w/numpy
-        sc_rvs = multinomial.rvs(3, [1/4.]*3, size=7, random_state=123)
+        sc_rvs = multinomial.rvs(n, [1/4.]*3, size=7, random_state=123)
         rndm = np.random.RandomState(123)
-        np_rvs = rndm.multinomial(3, [1/4.]*3, size=7)
+        np_rvs = rndm.multinomial(n, [1/4.]*3, size=7)
         assert_equal(sc_rvs, np_rvs)
 
     def test_pmf(self):
@@ -1428,7 +1454,7 @@ class TestMultinomial:
         assert_allclose(vals1, .22689449999999994, rtol=1e-8)
 
         vals2 = multinomial.pmf([[[3,5],[0,8]], [[-1, 9], [1, 1]]], 8,
-                (.1, .9))
+                                (.1, .9))
         assert_allclose(vals2, [[.03306744, .43046721], [0, 0]], rtol=1e-8)
 
         x = np.empty((0,2), dtype=np.float64)
@@ -1440,6 +1466,12 @@ class TestMultinomial:
 
         vals5 = multinomial.pmf([3, 3, 0], 6, [2/3.0, 1/3.0, 0])
         assert_allclose(vals5, 0.219478737997, rtol=1e-8)
+
+        vals5 = multinomial.pmf([0, 0, 0], 0, [2/3.0, 1/3.0, 0])
+        assert vals5 == 1
+
+        vals6 = multinomial.pmf([2, 1, 0], 0, [2/3.0, 1/3.0, 0])
+        assert vals6 == 0
 
     def test_pmf_broadcasting(self):
         vals0 = multinomial.pmf([1, 2], 3, [[.1, .9], [.2, .8]])
@@ -1457,11 +1489,12 @@ class TestMultinomial:
         vals4 = multinomial.pmf([[1, 2], [1,1]], [[[[3]]]], [.1, .9])
         assert_allclose(vals4, [[[[.243, 0]]]], rtol=1e-8)
 
-    def test_cov(self):
-        cov1 = multinomial.cov(5, (.2, .3, .5))
-        cov2 = [[5*.2*.8, -5*.2*.3, -5*.2*.5],
-                [-5*.3*.2, 5*.3*.7, -5*.3*.5],
-                [-5*.5*.2, -5*.5*.3, 5*.5*.5]]
+    @pytest.mark.parametrize("n", [0, 5])
+    def test_cov(self, n):
+        cov1 = multinomial.cov(n, (.2, .3, .5))
+        cov2 = [[n*.2*.8, -n*.2*.3, -n*.2*.5],
+                [-n*.3*.2, n*.3*.7, -n*.3*.5],
+                [-n*.5*.2, -n*.5*.3, n*.5*.5]]
         assert_allclose(cov1, cov2, rtol=1e-8)
 
     def test_cov_broadcasting(self):
@@ -1478,30 +1511,32 @@ class TestMultinomial:
                 [[5*.4*.6, -5*.4*.6], [-5*.4*.6, 5*.4*.6]]]
         assert_allclose(cov5, cov6, rtol=1e-8)
 
-    def test_entropy(self):
+    @pytest.mark.parametrize("n", [0, 2])
+    def test_entropy(self, n):
         # this is equivalent to a binomial distribution with n=2, so the
         # entropy .77899774929 is easily computed "by hand"
-        ent0 = multinomial.entropy(2, [.2, .8])
-        assert_allclose(ent0, binom.entropy(2, .2), rtol=1e-8)
+        ent0 = multinomial.entropy(n, [.2, .8])
+        assert_allclose(ent0, binom.entropy(n, .2), rtol=1e-8)
 
     def test_entropy_broadcasting(self):
         ent0 = multinomial.entropy([2, 3], [.2, .3])
         assert_allclose(ent0, [binom.entropy(2, .2), binom.entropy(3, .2)],
-                rtol=1e-8)
+                        rtol=1e-8)
 
         ent1 = multinomial.entropy([7, 8], [[.3, .7], [.4, .6]])
         assert_allclose(ent1, [binom.entropy(7, .3), binom.entropy(8, .4)],
-                rtol=1e-8)
+                        rtol=1e-8)
 
         ent2 = multinomial.entropy([[7], [8]], [[.3, .7], [.4, .6]])
         assert_allclose(ent2,
-                [[binom.entropy(7, .3), binom.entropy(7, .4)],
-                 [binom.entropy(8, .3), binom.entropy(8, .4)]],
-                rtol=1e-8)
+                        [[binom.entropy(7, .3), binom.entropy(7, .4)],
+                         [binom.entropy(8, .3), binom.entropy(8, .4)]],
+                        rtol=1e-8)
 
-    def test_mean(self):
-        mean1 = multinomial.mean(5, [.2, .8])
-        assert_allclose(mean1, [5*.2, 5*.8], rtol=1e-8)
+    @pytest.mark.parametrize("n", [0, 5])
+    def test_mean(self, n):
+        mean1 = multinomial.mean(n, [.2, .8])
+        assert_allclose(mean1, [n*.2, n*.8], rtol=1e-8)
 
     def test_mean_broadcasting(self):
         mean1 = multinomial.mean([5, 6], [.2, .8])
@@ -1569,7 +1604,7 @@ class TestInvwishart:
     def test_1D_is_invgamma(self):
         # The 1-dimensional inverse Wishart with an identity scale matrix is
         # just an inverse gamma distribution.
-        # Test variance, mean, pdf
+        # Test variance, mean, pdf, entropy
         # Kolgomorov-Smirnov test for rvs
         np.random.seed(482974)
 
@@ -1595,6 +1630,9 @@ class TestInvwishart:
             args = (df/2, 0, 1./2)
             alpha = 0.01
             check_distribution_rvs('invgamma', args, alpha, rvs)
+
+            # entropy
+            assert_allclose(iw.entropy(), ig.entropy())
 
     def test_wishart_invwishart_2D_rvs(self):
         dim = 3
@@ -1761,10 +1799,11 @@ class TestSpecialOrthoGroup:
         #   It is not feasible to consider all pairs, so pick a few.
         els = ((0,0), (0,2), (1,4), (2,3))
         #proj = {(er, ec): [x[er][ec] for x in xs] for er, ec in els}
-        proj = dict(((er, ec), sorted([x[er][ec] for x in xs])) for er, ec in els)
+        proj = {(er, ec): sorted([x[er][ec] for x in xs]) for er, ec in els}
         pairs = [(e0, e1) for e0 in els for e1 in els if e0 > e1]
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
+
 
 class TestOrthoGroup:
     def test_reproducibility(self):
@@ -1841,7 +1880,7 @@ class TestOrthoGroup:
         #   It is not feasible to consider all pairs, so pick a few.
         els = ((0,0), (0,2), (1,4), (2,3))
         #proj = {(er, ec): [x[er][ec] for x in xs] for er, ec in els}
-        proj = dict(((er, ec), sorted([x[er][ec] for x in xs])) for er, ec in els)
+        proj = {(er, ec): sorted([x[er][ec] for x in xs]) for er, ec in els}
         pairs = [(e0, e1) for e0 in els for e1 in els if e0 > e1]
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
@@ -1871,6 +1910,7 @@ class TestOrthoGroup:
             _D, p = scipy.stats.ks_2samp(expected, actual)
 
             assert_array_less(.05, p)
+
 
 class TestRandomCorrelation:
     def test_reproducibility(self):
@@ -2030,6 +2070,7 @@ class TestUniformDirection:
         uniform_dist = uniform()
         kstest_result = kstest(angles, uniform_dist.cdf)
         assert kstest_result.pvalue > 0.05
+
 
 class TestUnitaryGroup:
     def test_reproducibility(self):
@@ -2326,6 +2367,174 @@ class TestMultivariateT:
         rvs = dist.rvs(size=size)
         assert rvs.shape == size + (dim, )
 
+    def test_cdf_signs(self):
+        # check that sign of output is correct when np.any(lower > x)
+        mean = np.zeros(3)
+        cov = np.eye(3)
+        df = 10
+        b = [[1, 1, 1], [0, 0, 0], [1, 0, 1], [0, 1, 0]]
+        a = [[0, 0, 0], [1, 1, 1], [0, 1, 0], [1, 0, 1]]
+        # when odd number of elements of b < a, output is negative
+        expected_signs = np.array([1, -1, -1, 1])
+        cdf = multivariate_normal.cdf(b, mean, cov, df, lower_limit=a)
+        assert_allclose(cdf, cdf[0]*expected_signs)
+
+    @pytest.mark.parametrize('dim', [1, 2, 5, 10])
+    def test_cdf_against_multivariate_normal(self, dim):
+        # Check accuracy against MVN randomly-generated cases
+        self.cdf_against_mvn_test(dim)
+
+    @pytest.mark.parametrize('dim', [3, 6, 9])
+    def test_cdf_against_multivariate_normal_singular(self, dim):
+        # Check accuracy against MVN for randomly-generated singular cases
+        self.cdf_against_mvn_test(3, True)
+
+    def cdf_against_mvn_test(self, dim, singular=False):
+        # Check for accuracy in the limit that df -> oo and MVT -> MVN
+        rng = np.random.default_rng(413722918996573)
+        n = 3
+
+        w = 10**rng.uniform(-2, 1, size=dim)
+        cov = _random_covariance(dim, w, rng, singular)
+
+        mean = 10**rng.uniform(-1, 2, size=dim) * np.sign(rng.normal(size=dim))
+        a = -10**rng.uniform(-1, 2, size=(n, dim)) + mean
+        b = 10**rng.uniform(-1, 2, size=(n, dim)) + mean
+
+        res = stats.multivariate_t.cdf(b, mean, cov, df=10000, lower_limit=a,
+                                       allow_singular=True, random_state=rng)
+        ref = stats.multivariate_normal.cdf(b, mean, cov, allow_singular=True,
+                                            lower_limit=a)
+        assert_allclose(res, ref, atol=5e-4)
+
+    def test_cdf_against_univariate_t(self):
+        rng = np.random.default_rng(413722918996573)
+        cov = 2
+        mean = 0
+        x = rng.normal(size=10, scale=np.sqrt(cov))
+        df = 3
+
+        res = stats.multivariate_t.cdf(x, mean, cov, df, lower_limit=-np.inf,
+                                       random_state=rng)
+        ref = stats.t.cdf(x, df, mean, np.sqrt(cov))
+        incorrect = stats.norm.cdf(x, mean, np.sqrt(cov))
+
+        assert_allclose(res, ref, atol=5e-4)  # close to t
+        assert np.all(np.abs(res - incorrect) > 1e-3)  # not close to normal
+
+    @pytest.mark.parametrize("dim", [2, 3, 5, 10])
+    @pytest.mark.parametrize("seed", [3363958638, 7891119608, 3887698049,
+                                      5013150848, 1495033423, 6170824608])
+    @pytest.mark.parametrize("singular", [False, True])
+    def test_cdf_against_qsimvtv(self, dim, seed, singular):
+        if singular and seed != 3363958638:
+            pytest.skip('Agreement with qsimvtv is not great in singular case')
+        rng = np.random.default_rng(seed)
+        w = 10**rng.uniform(-2, 2, size=dim)
+        cov = _random_covariance(dim, w, rng, singular)
+        mean = rng.random(dim)
+        a = -rng.random(dim)
+        b = rng.random(dim)
+        df = rng.random() * 5
+
+        # no lower limit
+        res = stats.multivariate_t.cdf(b, mean, cov, df, random_state=rng,
+                                       allow_singular=True)
+        with np.errstate(invalid='ignore'):
+            ref = _qsimvtv(20000, df, cov, np.inf*a, b - mean, rng)[0]
+        assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
+
+        # with lower limit
+        res = stats.multivariate_t.cdf(b, mean, cov, df, lower_limit=a,
+                                       random_state=rng, allow_singular=True)
+        with np.errstate(invalid='ignore'):
+            ref = _qsimvtv(20000, df, cov, a - mean, b - mean, rng)[0]
+        assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
+
+    def test_cdf_against_generic_integrators(self):
+        # Compare result against generic numerical integrators
+        dim = 3
+        rng = np.random.default_rng(413722918996573)
+        w = 10 ** rng.uniform(-1, 1, size=dim)
+        cov = _random_covariance(dim, w, rng, singular=True)
+        mean = rng.random(dim)
+        a = -rng.random(dim)
+        b = rng.random(dim)
+        df = rng.random() * 5
+
+        res = stats.multivariate_t.cdf(b, mean, cov, df, random_state=rng,
+                                       lower_limit=a)
+
+        def integrand(x):
+            return stats.multivariate_t.pdf(x.T, mean, cov, df)
+
+        ref = qmc_quad(integrand, a, b, qrng=stats.qmc.Halton(d=dim, seed=rng))
+        assert_allclose(res, ref.integral, rtol=1e-3)
+
+        def integrand(*zyx):
+            return stats.multivariate_t.pdf(zyx[::-1], mean, cov, df)
+
+        ref = tplquad(integrand, a[0], b[0], a[1], b[1], a[2], b[2])
+        assert_allclose(res, ref[0], rtol=1e-3)
+
+    def test_against_matlab(self):
+        # Test against matlab mvtcdf:
+        # C = [6.21786909  0.2333667 7.95506077;
+        #      0.2333667 29.67390923 16.53946426;
+        #      7.95506077 16.53946426 19.17725252]
+        # df = 1.9559939787727658
+        # mvtcdf([0, 0, 0], C, df)  % 0.2523
+        rng = np.random.default_rng(2967390923)
+        cov = np.array([[ 6.21786909,  0.2333667 ,  7.95506077],
+                        [ 0.2333667 , 29.67390923, 16.53946426],
+                        [ 7.95506077, 16.53946426, 19.17725252]])
+        df = 1.9559939787727658
+        dist = stats.multivariate_t(shape=cov, df=df)
+        res = dist.cdf([0, 0, 0], random_state=rng)
+        ref = 0.2523
+        assert_allclose(res, ref, rtol=1e-3)
+
+    def test_frozen(self):
+        seed = 4137229573
+        rng = np.random.default_rng(seed)
+        loc = rng.uniform(size=3)
+        x = rng.uniform(size=3) + loc
+        shape = np.eye(3)
+        df = rng.random()
+        args = (loc, shape, df)
+
+        rng_frozen = np.random.default_rng(seed)
+        rng_unfrozen = np.random.default_rng(seed)
+        dist = stats.multivariate_t(*args, seed=rng_frozen)
+        assert_equal(dist.cdf(x),
+                     multivariate_t.cdf(x, *args, random_state=rng_unfrozen))
+
+    def test_vectorized(self):
+        dim = 4
+        n = (2, 3)
+        rng = np.random.default_rng(413722918996573)
+        A = rng.random(size=(dim, dim))
+        cov = A @ A.T
+        mean = rng.random(dim)
+        x = rng.random(n + (dim,))
+        df = rng.random() * 5
+
+        res = stats.multivariate_t.cdf(x, mean, cov, df, random_state=rng)
+
+        def _cdf_1d(x):
+            return _qsimvtv(10000, df, cov, -np.inf*x, x-mean, rng)[0]
+
+        ref = np.apply_along_axis(_cdf_1d, -1, x)
+        assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
+
+    @pytest.mark.parametrize("dim", (3, 7))
+    def test_against_analytical(self, dim):
+        rng = np.random.default_rng(413722918996573)
+        A = scipy.linalg.toeplitz(c=[1] + [0.5] * (dim - 1))
+        res = stats.multivariate_t(shape=A).cdf([0] * dim, random_state=rng)
+        ref = 1 / (dim + 1)
+        assert_allclose(res, ref, rtol=5e-5)
+
 
 class TestMultivariateHypergeom:
     @pytest.mark.parametrize(
@@ -2556,6 +2765,9 @@ class TestMultivariateHypergeom:
 
 
 class TestRandomTable:
+    def get_rng(self):
+        return np.random.default_rng(628174795866951638)
+
     def test_process_parameters(self):
         message = "`row` must be one-dimensional"
         with pytest.raises(ValueError, match=message):
@@ -2592,32 +2804,17 @@ class TestRandomTable:
         assert_equal(col, c)
         assert n == np.sum(row)
 
-    def test_process_rvs_method_on_None(self):
-        # TODO also test with a case where "patefield" is selected
-        row = [1, 3]
-        col = [2, 1, 1]
+    @pytest.mark.parametrize("scale,method",
+                             ((1, "boyett"), (100, "patefield")))
+    def test_process_rvs_method_on_None(self, scale, method):
+        row = np.array([1, 3]) * scale
+        col = np.array([2, 1, 1]) * scale
 
         ct = random_table
-        expected = ct.rvs(row, col, method="boyett", random_state=1)
+        expected = ct.rvs(row, col, method=method, random_state=1)
         got = ct.rvs(row, col, method=None, random_state=1)
 
         assert_equal(expected, got)
-
-    def test_rvs_method(self):
-        pytest.xfail("patefield will be implemented in follow-up PR")
-
-        row = [1, 3]
-        col = [2, 1, 1]
-
-        ct = random_table
-        rvs1 = ct.rvs(row, col, size=1000, method="boyett", random_state=1)
-        rvs2 = ct.rvs(row, col, size=1000, method="patefield", random_state=1)
-
-        tab1, count1 = np.unique(rvs1, axis=0, return_counts=True)
-        tab2, count2 = np.unique(rvs2, axis=0, return_counts=True)
-
-        assert_equal(tab1, tab2)
-        assert_allclose(count1, count2)
 
     def test_process_rvs_method_bad_argument(self):
         row = [1, 3]
@@ -2628,16 +2825,17 @@ class TestRandomTable:
         with pytest.raises(ValueError, match=message):
             random_table.rvs(row, col, method="foo")
 
-        with pytest.raises(NotImplementedError):
-            random_table.rvs(row, col, method="patefield")
-
     @pytest.mark.parametrize('frozen', (True, False))
     @pytest.mark.parametrize('log', (True, False))
     def test_pmf_logpmf(self, frozen, log):
-        rng = np.random.default_rng(628174795866951638)
+        # The pmf is tested through random sample generation
+        # with Boyett's algorithm, whose implementation is simple
+        # enough to verify manually for correctness.
+        rng = self.get_rng()
         row = [2, 6]
         col = [1, 3, 4]
-        rvs = random_table.rvs(row, col, size=1000, random_state=rng)
+        rvs = random_table.rvs(row, col, size=1000,
+                               method="boyett", random_state=rng)
 
         obj = random_table(row, col) if frozen else random_table
         method = getattr(obj, "logpmf" if log else "pmf")
@@ -2707,46 +2905,63 @@ class TestRandomTable:
             pmf([[1, 2],
                  [3, 4]])
 
-    def test_rvs_mean(self):
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_mean(self, method):
         # test if `rvs` is unbiased and large sample size converges
-        # to the true mean. `test_pmf` also implicitly tests `rvs`.
-        rng = np.random.default_rng(628174795866951638)
-
+        # to the true mean.
+        rng = self.get_rng()
         row = [2, 6]
         col = [1, 3, 4]
-        rvs = random_table.rvs(row, col, size=1000, random_state=rng)
+        rvs = random_table.rvs(row, col, size=1000, method=method,
+                               random_state=rng)
         mean = random_table.mean(row, col)
         assert_equal(np.sum(mean), np.sum(row))
         assert_allclose(rvs.mean(0), mean, atol=0.05)
         assert_equal(rvs.sum(axis=-1), np.broadcast_to(row, (1000, 2)))
         assert_equal(rvs.sum(axis=-2), np.broadcast_to(col, (1000, 3)))
 
-    def test_rvs_size(self):
+    def test_rvs_cov(self):
+        # test if `rvs` generated with patefield and boyett algorithms
+        # produce approximately the same covariance matrix
+        rng = self.get_rng()
+        row = [2, 6]
+        col = [1, 3, 4]
+        rvs1 = random_table.rvs(row, col, size=10000, method="boyett",
+                                random_state=rng)
+        rvs2 = random_table.rvs(row, col, size=10000, method="patefield",
+                                random_state=rng)
+        cov1 = np.var(rvs1, axis=0)
+        cov2 = np.var(rvs2, axis=0)
+        assert_allclose(cov1, cov2, atol=0.02)
+
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_size(self, method):
         row = [2, 6]
         col = [1, 3, 4]
 
         # test size `None`
-        rng = np.random.default_rng(628174795866951638)
-        rv = random_table.rvs(row, col, random_state=rng)
+        rv = random_table.rvs(row, col, method=method,
+                              random_state=self.get_rng())
         assert rv.shape == (2, 3)
 
         # test size 1
-        rng = np.random.default_rng(628174795866951638)
-        rv2 = random_table.rvs(row, col, size=1, random_state=rng)
+        rv2 = random_table.rvs(row, col, size=1, method=method,
+                               random_state=self.get_rng())
         assert rv2.shape == (1, 2, 3)
         assert_equal(rv, rv2[0])
 
         # test size 0
-        rv3 = random_table.rvs(row, col, size=0, random_state=rng)
+        rv3 = random_table.rvs(row, col, size=0, method=method,
+                               random_state=self.get_rng())
         assert rv3.shape == (0, 2, 3)
 
         # test other valid size
-        rng = np.random.default_rng(628174795866951638)
-        rv4 = random_table.rvs(row, col, size=20, random_state=rng)
+        rv4 = random_table.rvs(row, col, size=20, method=method,
+                               random_state=self.get_rng())
         assert rv4.shape == (20, 2, 3)
 
-        rng = np.random.default_rng(628174795866951638)
-        rv5 = random_table.rvs(row, col, size=(4, 5), random_state=rng)
+        rv5 = random_table.rvs(row, col, size=(4, 5), method=method,
+                               random_state=self.get_rng())
         assert rv5.shape == (4, 5, 2, 3)
 
         assert_allclose(rv5.reshape(20, 2, 3), rv4, rtol=1e-15)
@@ -2754,23 +2969,97 @@ class TestRandomTable:
         # test invalid size
         message = "`size` must be a non-negative integer or `None`"
         with pytest.raises(ValueError, match=message):
-            random_table.rvs(row, col, size=-1, random_state=rng)
+            random_table.rvs(row, col, size=-1, method=method,
+                             random_state=self.get_rng())
 
         with pytest.raises(ValueError, match=message):
-            random_table.rvs(row, col, size=np.nan, random_state=rng)
+            random_table.rvs(row, col, size=np.nan, method=method,
+                             random_state=self.get_rng())
 
-    def test_frozen(self):
-        rng1 = np.random.default_rng(628174795866951638)
-        rng2 = np.random.default_rng(628174795866951638)
-
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_method(self, method):
+        # This test assumes that pmf is correct and checks that random samples
+        # follow this probability distribution. This seems like a circular
+        # argument, since pmf is checked in test_pmf_logpmf with random samples
+        # generated with the rvs method. This test is not redundant, because
+        # test_pmf_logpmf intentionally uses rvs generation with Boyett only,
+        # but here we test both Boyett and Patefield.
         row = [2, 6]
         col = [1, 3, 4]
-        d = random_table(row, col, seed=rng1)
+
+        ct = random_table
+        rvs = ct.rvs(row, col, size=100000, method=method,
+                     random_state=self.get_rng())
+
+        unique_rvs, counts = np.unique(rvs, axis=0, return_counts=True)
+
+        # generated frequencies should match expected frequencies
+        p = ct.pmf(unique_rvs, row, col)
+        assert_allclose(p * len(rvs), counts, rtol=0.02)
+
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_with_zeros_in_col_row(self, method):
+        row = [0, 1, 0]
+        col = [1, 0, 0, 0]
+        d = random_table(row, col)
+        rv = d.rvs(1000, method=method, random_state=self.get_rng())
+        expected = np.zeros((1000, len(row), len(col)))
+        expected[...] = [[0, 0, 0, 0],
+                         [1, 0, 0, 0],
+                         [0, 0, 0, 0]]
+        assert_equal(rv, expected)
+
+    @pytest.mark.parametrize("method", (None, "boyett", "patefield"))
+    @pytest.mark.parametrize("col", ([], [0]))
+    @pytest.mark.parametrize("row", ([], [0]))
+    def test_rvs_with_edge_cases(self, method, row, col):
+        d = random_table(row, col)
+        rv = d.rvs(10, method=method, random_state=self.get_rng())
+        expected = np.zeros((10, len(row), len(col)))
+        assert_equal(rv, expected)
+
+    @pytest.mark.parametrize('v', (1, 2))
+    def test_rvs_rcont(self, v):
+        # This test checks the internal low-level interface.
+        # It is implicitly also checked by the other test_rvs* calls.
+        import scipy.stats._rcont as _rcont
+
+        row = np.array([1, 3], dtype=np.int64)
+        col = np.array([2, 1, 1], dtype=np.int64)
+
+        rvs = getattr(_rcont, f"rvs_rcont{v}")
+
+        ntot = np.sum(row)
+        result = rvs(row, col, ntot, 1, self.get_rng())
+
+        assert result.shape == (1, len(row), len(col))
+        assert np.sum(result) == ntot
+
+    def test_frozen(self):
+        row = [2, 6]
+        col = [1, 3, 4]
+        d = random_table(row, col, seed=self.get_rng())
+
+        sample = d.rvs()
+
         expected = random_table.mean(row, col)
         assert_equal(expected, d.mean())
 
-        expected = random_table.rvs(row, col, size=10, random_state=rng2)
-        got = d.rvs(size=10)
+        expected = random_table.pmf(sample, row, col)
+        assert_equal(expected, d.pmf(sample))
+
+        expected = random_table.logpmf(sample, row, col)
+        assert_equal(expected, d.logpmf(sample))
+
+    @pytest.mark.parametrize("method", ("boyett", "patefield"))
+    def test_rvs_frozen(self, method):
+        row = [2, 6]
+        col = [1, 3, 4]
+        d = random_table(row, col, seed=self.get_rng())
+
+        expected = random_table.rvs(row, col, size=10, method=method,
+                                    random_state=self.get_rng())
+        got = d.rvs(size=10, method=method)
         assert_equal(expected, got)
 
 
@@ -2810,3 +3099,175 @@ def test_random_state_property():
     for distfn, args in dists:
         check_random_state_property(distfn, args)
         check_pickling(distfn, args)
+
+
+class TestDirichletMultinomial:
+    @classmethod
+    def get_params(self, m):
+        rng = np.random.default_rng(28469824356873456)
+        alpha = rng.uniform(0, 100, size=2)
+        # For now, `n` must be scalar, so ensure `x` sums to `n`. When `n` can
+        # be an array, generate `x` as random integers and calculate
+        # `n = x.sum(axis=-1)`.
+        n = 10000
+        x = rng.multinomial(n, [0.5, 0.5], size=m)
+        return rng, m, alpha, n, x
+
+    def test_frozen(self):
+        rng = np.random.default_rng(28469824356873456)
+
+        alpha = rng.uniform(0, 100, 10)
+        x = rng.integers(0, 10, 10)
+        n = np.sum(x, axis=-1)
+
+        d = dirichlet_multinomial(alpha, n)
+        assert_equal(d.logpmf(x), dirichlet_multinomial.logpmf(x, alpha, n))
+        assert_equal(d.pmf(x), dirichlet_multinomial.pmf(x, alpha, n))
+        assert_equal(d.mean(), dirichlet_multinomial.mean(alpha, n))
+        assert_equal(d.var(), dirichlet_multinomial.var(alpha, n))
+        assert_equal(d.cov(), dirichlet_multinomial.cov(alpha, n))
+
+    def test_pmf_logpmf_against_R(self):
+        # # Compare PMF against R's extraDistr ddirmnon
+        # # library(extraDistr)
+        # # options(digits=16)
+        # ddirmnom(c(1, 2, 3), 6, c(3, 4, 5))
+        x = np.array([1, 2, 3])
+        n = np.sum(x)
+        alpha = np.array([3, 4, 5])
+        res = dirichlet_multinomial.pmf(x, alpha, n)
+        logres = dirichlet_multinomial.logpmf(x, alpha, n)
+        ref = 0.08484162895927638
+        assert_allclose(res, ref)
+        assert_allclose(logres, np.log(ref))
+
+        # library(extraDistr)
+        # options(digits=16)
+        # ddirmnom(c(4, 3, 2, 0, 2, 3, 5, 7, 4, 7), 37,
+        #          c(45.01025314, 21.98739582, 15.14851365, 80.21588671,
+        #            52.84935481, 25.20905262, 53.85373737, 4.88568118,
+        #            89.06440654, 20.11359466))
+        rng = np.random.default_rng(28469824356873456)
+        alpha = rng.uniform(0, 100, 10)
+        x = rng.integers(0, 10, 10)
+        n = np.sum(x, axis=-1)
+        res = dirichlet_multinomial(alpha, n).pmf(x)
+        logres = dirichlet_multinomial.logpmf(x, alpha, n)
+        ref = 3.65409306285992e-16
+        assert_allclose(res, ref)
+        assert_allclose(logres, np.log(ref))
+
+    def test_pmf_logpmf_support(self):
+        # when the sum of the category counts does not equal the number of
+        # trials, the PMF is zero
+        rng, m, alpha, n, x = self.get_params(1)
+        n += 1
+        assert_equal(dirichlet_multinomial(alpha, n).pmf(x), 0)
+        assert_equal(dirichlet_multinomial(alpha, n).logpmf(x), -np.inf)
+
+        rng, m, alpha, n, x = self.get_params(10)
+        i = rng.random(size=10) > 0.5
+        x[i] = np.round(x[i] * 2)  # sum of these x does not equal n
+        assert_equal(dirichlet_multinomial(alpha, n).pmf(x)[i], 0)
+        assert_equal(dirichlet_multinomial(alpha, n).logpmf(x)[i], -np.inf)
+        assert np.all(dirichlet_multinomial(alpha, n).pmf(x)[~i] > 0)
+        assert np.all(dirichlet_multinomial(alpha, n).logpmf(x)[~i] > -np.inf)
+
+    def test_dimensionality_one(self):
+        # if the dimensionality is one, there is only one possible outcome
+        n = 6  # number of trials
+        alpha = [10]  # concentration parameters
+        x = np.asarray([n])  # counts
+        dist = dirichlet_multinomial(alpha, n)
+
+        assert_equal(dist.pmf(x), 1)
+        assert_equal(dist.pmf(x+1), 0)
+        assert_equal(dist.logpmf(x), 0)
+        assert_equal(dist.logpmf(x+1), -np.inf)
+        assert_equal(dist.mean(), n)
+        assert_equal(dist.var(), 0)
+        assert_equal(dist.cov(), 0)
+
+    @pytest.mark.parametrize('method_name', ['pmf', 'logpmf'])
+    def test_against_betabinom_pmf(self, method_name):
+        rng, m, alpha, n, x = self.get_params(100)
+
+        method = getattr(dirichlet_multinomial(alpha, n), method_name)
+        ref_method = getattr(stats.betabinom(n, *alpha.T), method_name)
+
+        res = method(x)
+        ref = ref_method(x.T[0])
+        assert_allclose(res, ref)
+
+    @pytest.mark.parametrize('method_name', ['mean', 'var'])
+    def test_against_betabinom_moments(self, method_name):
+        rng, m, alpha, n, x = self.get_params(1)
+
+        method = getattr(dirichlet_multinomial(alpha, n), method_name)
+        ref_method = getattr(stats.betabinom(n, *alpha.T), method_name)
+
+        res = method()[0]
+        ref = ref_method()
+        assert_allclose(res, ref)
+
+    def test_moments(self):
+        message = 'Needs NumPy 1.22.0 for multinomial broadcasting'
+        if Version(np.__version__) < Version("1.22.0"):
+            pytest.skip(reason=message)
+
+        rng, m, alpha, n, x = self.get_params(100)
+        rng = np.random.default_rng(28469824356873456)
+        n = rng.integers(1, 100)
+        alpha = rng.random(size=5) * 10
+        dist = dirichlet_multinomial(alpha, n)
+
+        # Generate a random sample from the distribution using NumPy
+        m = 100000
+        p = rng.dirichlet(alpha, size=m)
+        x = rng.multinomial(n, p, size=m)
+
+        assert_allclose(dist.mean(), np.mean(x, axis=0), rtol=5e-3)
+        assert_allclose(dist.var(), np.var(x, axis=0), rtol=1e-2)
+
+        cov = dist.cov()
+        assert_allclose(cov, np.cov(x.T), rtol=2e-2)
+        assert_equal(np.diag(cov), dist.var())
+        assert np.all(scipy.linalg.eigh(cov)[0] > 0)  # positive definite
+
+    def test_input_validation(self):
+        # valid inputs
+        x0 = np.array([1, 2, 3])
+        n0 = np.sum(x0)
+        alpha0 = np.array([3, 4, 5])
+
+        text = "`x` must contain only non-negative integers."
+        with assert_raises(ValueError, match=text):
+            dirichlet_multinomial.logpmf([1, -1, 3], alpha0, n0)
+        with assert_raises(ValueError, match=text):
+            dirichlet_multinomial.logpmf([1, 2.1, 3], alpha0, n0)
+
+        text = "`alpha` must contain only positive values."
+        with assert_raises(ValueError, match=text):
+            dirichlet_multinomial.logpmf(x0, [3, 0, 4], n0)
+        with assert_raises(ValueError, match=text):
+            dirichlet_multinomial.logpmf(x0, [3, -1, 4], n0)
+
+        text = "`alpha` must be an array with exactly one dimension"
+        with assert_raises(ValueError, match=text):
+            dirichlet_multinomial.logpmf(x0, 1, n0)
+
+        text = "`n` must be a positive integer."
+        with assert_raises(ValueError, match=text):
+            dirichlet_multinomial.logpmf(x0, alpha0, 49.1)
+        with assert_raises(ValueError, match=text):
+            dirichlet_multinomial.logpmf(x0, alpha0, 0)
+
+        text = r"`n` must be an integer \(scalar\)."
+        with assert_raises(ValueError, match=text):
+            dirichlet_multinomial.logpmf(x0, alpha0, [10, 11])
+
+        x = np.array([1, 2, 3, 4])
+        alpha = np.array([3, 4, 5])
+        text = "`x` and `alpha` must be broadcastable."
+        with assert_raises(ValueError, match=text):
+            dirichlet_multinomial.logpmf(x, alpha, x.sum())

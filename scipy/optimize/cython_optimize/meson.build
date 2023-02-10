@@ -13,8 +13,8 @@ _zeros_pyx = custom_target('_zeros_pyx',
   ]
 )
 
-cy_opt_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+cy_opt_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [_cython_tree,
     _dummy_init_optimize,

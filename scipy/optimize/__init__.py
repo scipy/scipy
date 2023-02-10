@@ -200,7 +200,7 @@ functions defined on (a subset of) the complex plane.
 
 .. seealso::
 
-   `scipy.optimize.cython_optimize` -- Typed Cython versions of zeros functions
+   `scipy.optimize.cython_optimize` -- Typed Cython versions of root finding functions
 
 Fixed point finding:
 
@@ -399,7 +399,7 @@ Simple iteration solvers:
    linearmixing
    diagbroyden
 
-"""
+"""  # noqa: E501
 
 from ._optimize import *
 from ._minimize import *

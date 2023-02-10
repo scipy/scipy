@@ -705,7 +705,10 @@ class SHGO:
                     self.sampling_method = 'halton'
                     self.qmc_engine = qmc.Halton(d=self.dim, scramble=True,
                                                  seed=0)
-                sampling_method = lambda n, d: self.qmc_engine.random(n)
+
+                def sampling_method(n, d):
+                    return self.qmc_engine.random(n)
+
             else:
                 # A user defined sampling method:
                 self.sampling_method = 'custom'
@@ -937,9 +940,9 @@ class SHGO:
                 # 2if (pe - self.f_tol) <= abs(1.0 / abs(self.f_min_true)):
                 if abs(pe) >= 2 * self.f_tol:
                     warnings.warn("A much lower value than expected f* =" +
-                                  " {} than".format(self.f_min_true) +
+                                  f" {self.f_min_true} than" +
                                   " the was found f_lowest =" +
-                                  "{} ".format(self.f_lowest))
+                                  f"{self.f_lowest} ")
             if pe <= self.f_tol:
                 self.stop_global = True
 
@@ -1118,10 +1121,8 @@ class SHGO:
             if self.HC.V[x].minimiser():
                 if self.disp:
                     logging.info('=' * 60)
-                    logging.info(
-                        'v.x = {} is minimizer'.format(self.HC.V[x].x_a))
-                    logging.info('v.f = {} is '
-                                 'minimizer'.format(self.HC.V[x].f))
+                    logging.info(f'v.x = {self.HC.V[x].x_a} is minimizer')
+                    logging.info(f'v.f = {self.HC.V[x].f} is minimizer')
                     logging.info('=' * 30)
 
                 if self.HC.V[x] not in self.minimizer_pool:
@@ -1131,7 +1132,7 @@ class SHGO:
                     logging.info('Neighbors:')
                     logging.info('=' * 30)
                     for vn in self.HC.V[x].nn:
-                        logging.info('x = {} || f = {}'.format(vn.x, vn.f))
+                        logging.info(f'x = {vn.x} || f = {vn.f}')
 
                     logging.info('=' * 60)
         self.minimizer_pool_F = []
@@ -1268,8 +1269,8 @@ class SHGO:
                     cbounds[i][1] = x_i
 
         if self.disp:
-            logging.info('cbounds found for v_min.x_a = {}'.format(v_min.x_a))
-            logging.info('cbounds = {}'.format(cbounds))
+            logging.info(f'cbounds found for v_min.x_a = {v_min.x_a}')
+            logging.info(f'cbounds = {cbounds}')
 
         return cbounds
 
@@ -1311,7 +1312,7 @@ class SHGO:
         """
         # Use minima maps if vertex was already run
         if self.disp:
-            logging.info('Vertex minimiser maps = {}'.format(self.LMC.v_maps))
+            logging.info(f'Vertex minimiser maps = {self.LMC.v_maps}')
 
         if self.LMC[x_min].lres is not None:
             logging.info(f'Found self.LMC[x_min].lres = '
@@ -1350,7 +1351,7 @@ class SHGO:
         lres = minimize(self.func, x_min, **self.minimizer_kwargs)
 
         if self.disp:
-            logging.info('lres = {}'.format(lres))
+            logging.info(f'lres = {lres}')
 
         # Local function evals for all minimizers
         self.res.nlfev += lres.nfev

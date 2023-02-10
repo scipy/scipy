@@ -51,7 +51,7 @@ class LinearTimeInvariant:
             raise NotImplementedError('The LinearTimeInvariant class is not '
                                       'meant to be used directly, use `lti` '
                                       'or `dlti` instead.')
-        return super(LinearTimeInvariant, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self):
         """
@@ -219,7 +219,7 @@ class lti(LinearTimeInvariant):
                 raise ValueError("`system` needs to be an instance of `lti` "
                                  "or have 2, 3 or 4 arguments.")
         # __new__ was called from a subclass, let it call its own functions
-        return super(lti, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system):
         """
@@ -403,7 +403,7 @@ class dlti(LinearTimeInvariant):
                 raise ValueError("`system` needs to be an instance of `dlti` "
                                  "or have 2, 3 or 4 arguments.")
         # __new__ was called from a subclass, let it call its own functions
-        return super(dlti, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """
@@ -583,7 +583,7 @@ class TransferFunction(LinearTimeInvariant):
                     **kwargs)
 
         # No special conversion needed
-        return super(TransferFunction, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """Initialize the state space LTI system."""
@@ -601,7 +601,7 @@ class TransferFunction(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the system's transfer function"""
-        return '{0}(\n{1},\n{2},\ndt: {3}\n)'.format(
+        return '{}(\n{},\n{},\ndt: {}\n)'.format(
             self.__class__.__name__,
             repr(self.num),
             repr(self.den),
@@ -966,7 +966,7 @@ class ZerosPolesGain(LinearTimeInvariant):
                     )
 
         # No special conversion needed
-        return super(ZerosPolesGain, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """Initialize the zeros, poles, gain system."""
@@ -984,7 +984,7 @@ class ZerosPolesGain(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the `ZerosPolesGain` system."""
-        return '{0}(\n{1},\n{2},\n{3},\ndt: {4}\n)'.format(
+        return '{}(\n{},\n{},\n{},\ndt: {}\n)'.format(
             self.__class__.__name__,
             repr(self.zeros),
             repr(self.poles),
@@ -1330,7 +1330,7 @@ class StateSpace(LinearTimeInvariant):
                                                   *system, **kwargs)
 
         # No special conversion needed
-        return super(StateSpace, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """Initialize the state space lti/dlti system."""
@@ -1350,7 +1350,7 @@ class StateSpace(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the `StateSpace` system."""
-        return '{0}(\n{1},\n{2},\n{3},\n{4},\ndt: {5}\n)'.format(
+        return '{}(\n{},\n{},\n{},\n{},\ndt: {}\n)'.format(
             self.__class__.__name__,
             repr(self.A),
             repr(self.B),

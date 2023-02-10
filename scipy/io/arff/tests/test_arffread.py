@@ -9,7 +9,6 @@ import numpy as np
 
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_equal, assert_)
-import pytest
 from pytest import raises as assert_raises
 
 from scipy.io.arff import loadarff

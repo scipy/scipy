@@ -149,8 +149,10 @@ class TestFSolve:
         assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
 
     def test_wrong_shape_fprime_function(self):
-        func = lambda x: dummy_func(x, (2,))
-        deriv_func = lambda x: dummy_func(x, (3,3))
+        def func(x):
+            return dummy_func(x, (2,))
+        def deriv_func(x):
+            return dummy_func(x, (3, 3))
         assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
 
     def test_func_can_raise(self):
@@ -161,7 +163,8 @@ class TestFSolve:
             optimize.fsolve(func, x0=[0])
 
     def test_Dfun_can_raise(self):
-        func = lambda x: x - np.array([10])
+        def func(x):
+            return x - np.array([10])
 
         def deriv_func(*args):
             raise ValueError('I raised')
@@ -170,7 +173,8 @@ class TestFSolve:
             optimize.fsolve(func, x0=[0], fprime=deriv_func)
 
     def test_float32(self):
-        func = lambda x: np.array([x[0] - 100, x[1] - 1000], dtype=np.float32)**2
+        def func(x):
+            return np.array([x[0] - 100, x[1] - 1000], dtype=np.float32) ** 2
         p = optimize.fsolve(func, np.array([1, 1], np.float32))
         assert_allclose(func(p), [0, 0], atol=1e-3)
 
@@ -327,8 +331,10 @@ class TestLeastSq:
         assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)
 
     def test_wrong_shape_Dfun_function(self):
-        func = lambda x: dummy_func(x, (2,))
-        deriv_func = lambda x: dummy_func(x, (3,3))
+        def func(x):
+            return dummy_func(x, (2,))
+        def deriv_func(x):
+            return dummy_func(x, (3, 3))
         assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)
 
     def test_float32(self):
@@ -355,7 +361,8 @@ class TestLeastSq:
             optimize.leastsq(func, x0=[0])
 
     def test_Dfun_can_raise(self):
-        func = lambda x: x - np.array([10])
+        def func(x):
+            return x - np.array([10])
 
         def deriv_func(*args):
             raise ValueError('I raised')
@@ -550,6 +557,81 @@ class TestCurveFit:
 
         assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b,
                       xdata, ydata, **{"check_finite": True})
+
+    @staticmethod
+    def _check_nan_policy(f, xdata_with_nan, xdata_without_nan,
+                          ydata_with_nan, ydata_without_nan, method):
+        kwargs = {'f': f, 'xdata': xdata_with_nan, 'ydata': ydata_with_nan,
+                  'method': method, 'check_finite': False}
+        # propagate test
+        error_msg = ("`nan_policy='propagate'` is not supported "
+                     "by this function.")
+        with assert_raises(ValueError, match=error_msg):
+            curve_fit(**kwargs, nan_policy="propagate", maxfev=2000)
+
+        # raise test
+        with assert_raises(ValueError, match="The input contains nan"):
+            curve_fit(**kwargs, nan_policy="raise")
+
+        # omit test
+        result_with_nan, _ = curve_fit(**kwargs, nan_policy="omit")
+        kwargs['xdata'] = xdata_without_nan
+        kwargs['ydata'] = ydata_without_nan
+        result_without_nan, _ = curve_fit(**kwargs)
+        assert_allclose(result_with_nan, result_without_nan)
+
+        # not valid policy test
+        error_msg = ("nan_policy must be one of "
+                     "{'None', 'raise', 'omit'}")
+        with assert_raises(ValueError, match=error_msg):
+            curve_fit(**kwargs, nan_policy="hi")
+
+    @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
+    def test_nan_policy_1d(self, method):
+        def f(x, a, b):
+            return a*x + b
+
+        xdata_with_nan = np.array([2, 3, np.nan, 4, 4, np.nan])
+        ydata_with_nan = np.array([1, 2, 5, 3, np.nan, 7])
+        xdata_without_nan = np.array([2, 3, 4])
+        ydata_without_nan = np.array([1, 2, 3])
+
+        self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
+                               ydata_with_nan, ydata_without_nan, method)
+
+    @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
+    def test_nan_policy_2d(self, method):
+        def f(x, a, b):
+            x1 = x[0, :]
+            x2 = x[1, :]
+            return a*x1 + b + x2
+
+        xdata_with_nan = np.array([[2, 3, np.nan, 4, 4, np.nan, 5],
+                                   [2, 3, np.nan, np.nan, 4, np.nan, 7]])
+        ydata_with_nan = np.array([1, 2, 5, 3, np.nan, 7, 10])
+        xdata_without_nan = np.array([[2, 3, 5], [2, 3, 7]])
+        ydata_without_nan = np.array([1, 2, 10])
+
+        self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
+                               ydata_with_nan, ydata_without_nan, method)
+
+    @pytest.mark.parametrize('n', [2, 3])
+    @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
+    def test_nan_policy_2_3d(self, n, method):
+        def f(x, a, b):
+            x1 = x[..., 0, :].squeeze()
+            x2 = x[..., 1, :].squeeze()
+            return a*x1 + b + x2
+
+        xdata_with_nan = np.array([[[2, 3, np.nan, 4, 4, np.nan, 5],
+                                   [2, 3, np.nan, np.nan, 4, np.nan, 7]]])
+        xdata_with_nan = xdata_with_nan.squeeze() if n == 2 else xdata_with_nan
+        ydata_with_nan = np.array([1, 2, 5, 3, np.nan, 7, 10])
+        xdata_without_nan = np.array([[[2, 3, 5], [2, 3, 7]]])
+        ydata_without_nan = np.array([1, 2, 10])
+
+        self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
+                               ydata_with_nan, ydata_without_nan, method)
 
     def test_empty_inputs(self):
         # Test both with and without bounds (regression test for gh-9864)
@@ -823,7 +905,8 @@ class TestCurveFit:
     def test_broadcast_y(self):
         xdata = np.arange(10)
         target = 4.7 * xdata ** 2 + 3.5 * xdata + np.random.rand(len(xdata))
-        fit_func = lambda x, a, b: a*x**2 + b*x - target
+        def fit_func(x, a, b):
+            return a * x ** 2 + b * x - target
         for method in ['lm', 'trf', 'dogbox']:
             popt0, pcov0 = curve_fit(fit_func,
                                      xdata=xdata,
@@ -897,6 +980,30 @@ class TestCurveFit:
         # Linux_Python_38_32bit_full fails with default tolerance
         assert_allclose(res, ref, 2e-7)
 
+    def test_gh13670(self):
+        # gh-13670 reported that `curve_fit` executes callables
+        # with the same values of the parameters at the beginning of
+        # optimization. Check that this has been resolved.
+
+        rng = np.random.default_rng(8250058582555444926)
+        x = np.linspace(0, 3, 101)
+        y = 2 * x + 1 + rng.normal(size=101) * 0.5
+
+        def line(x, *p):
+            assert not np.all(line.last_p == p)
+            line.last_p = p
+            return x * p[0] + p[1]
+
+        def jac(x, *p):
+            assert not np.all(jac.last_p == p)
+            jac.last_p = p
+            return np.array([x, np.ones_like(x)]).T
+
+        line.last_p = None
+        jac.last_p = None
+        p0 = np.array([1.0, 5.0])
+        curve_fit(line, x, y, p0, method='lm', jac=jac)
+
 
 class TestFixedPoint:
 
@@ -967,7 +1074,7 @@ class TestFixedPoint:
         i0 = ((m-1)/m)*(kl/ks/m)**(1/(m-1))
 
         def func(n):
-            return np.log(kl/ks/n) / np.log((i0*n/(n - 1))) + 1
+            return np.log(kl/ks/n) / np.log(i0*n/(n - 1)) + 1
 
         n = fixed_point(func, n0, method='iteration')
         assert_allclose(n, m)

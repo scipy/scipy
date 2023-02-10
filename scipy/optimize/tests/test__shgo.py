@@ -679,7 +679,7 @@ class TestShgoArguments:
             minimizer_kwargs = {'method': solver,
                                 'jac': jac,
                                 'hess': hess}
-            logging.info("Solver = {}".format(solver))
+            logging.info(f"Solver = {solver}")
             logging.info("=" * 100)
             run_test(test1_1, n=100, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs,

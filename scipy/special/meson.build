@@ -306,14 +306,22 @@ cython_special = custom_target('cython_special',
   install_dir: py3.get_install_dir() / 'scipy/special'
 )
 
+# Only needed to establish a dependency; see comments in linalg/meson.build
+# for cython_blas_pxd
+cython_special_pxd = custom_target('_dummy_cython_special.pxd',
+  output: '_dummy_cython_special.pxd',
+  input: cython_special[7],
+  command: [py3, '-c', '"@INPUT@"'],
+)
+
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
-uf_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+uf_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
 
-uf_cython_gen_cpp = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@', '--cplus'],
+uf_cython_gen_cpp = generator(cython,
+  arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
   depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
 
@@ -413,11 +421,13 @@ py3.extension_module('_comb',
   subdir: 'scipy/special'
 )
 
-py3.extension_module('_test_round',
-  cython_gen.process('_test_round.pyx'),
+dd_dep = declare_dependency(sources: ['cephes/dd_real.c'])
+
+py3.extension_module('_test_internal',
+  cython_gen.process('_test_internal.pyx'),
   include_directories: [inc_np, 'cephes', '../_lib', '../_build_utils/src'],
+  dependencies: [py3_dep, dd_dep],
   link_args: version_link_args,
-  dependencies: [npymath_lib],
   install: true,
   subdir: 'scipy/special'
 )
@@ -472,7 +482,7 @@ python_sources = [
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',
-  '_test_round.pyi',
+  '_test_internal.pyi',
   '_testutils.py',
   'add_newdocs.py',
   'basic.py',

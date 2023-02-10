@@ -73,7 +73,6 @@ class TestSmokeTests:
             tck = splrep(x, v, s=s, per=per, k=k, xe=xe)
             tt = tck[0][k:-k] if at_nodes else x1
 
-            nd = []
             for d in range(k+1):
                 tol = err_est(k, d)
                 err = norm2(f1(tt, d) - splev(tt, tck, d)) / norm2(f1(tt, d))
@@ -427,7 +426,7 @@ def test_splprep_segfault():
     x = np.sin(2*np.pi*t)
     y = np.cos(2*np.pi*t)
     tck, u = splprep([x, y], s=0)
-    unew = np.arange(0, 1.01, 0.01)
+    np.arange(0, 1.01, 0.01)
 
     uknots = tck[0]  # using the knots from the previous fitting
     tck, u = splprep([x, y], task=-1, t=uknots)  # here is the crash

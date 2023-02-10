@@ -5,8 +5,8 @@ _spatial_pxd = [
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxd files.
 # _qhull.pyx depends also on _lib/messagestream
-spt_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+spt_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [_cython_tree, _spatial_pxd, _lib_pxd])
 

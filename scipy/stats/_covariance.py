@@ -608,6 +608,7 @@ class CovViaEigendecomposition(Covariance):
         in_support = residual < self._eps
         return in_support
 
+
 class CovViaPSD(Covariance):
     """
     Representation of a covariance provided via an instance of _PSD

@@ -256,7 +256,8 @@ def find_objects(input, max_label=0):
         A list of tuples, with each tuple containing N slices (with N the
         dimension of the input array). Slices correspond to the minimal
         parallelepiped that contains the object. If a number is missing,
-        None is returned instead of a slice.
+        None is returned instead of a slice. The label ``l`` corresponds to
+        the index ``l-1`` in the returned list.
 
     See Also
     --------
