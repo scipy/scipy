@@ -8088,6 +8088,16 @@ class reciprocal_gen(rv_continuous):
     def _ppf(self, q, a, b):
         return np.exp(np.log(a) + q*(np.log(b) - np.log(a)))
 
+    def _sf(self, x, a, b):
+        # SF = 1 - CDF
+        #    = 1 - log(x/a)/log(b/a)
+        #    = log(b/a)/log(b/a) - log(x/a)/log(b/a)
+        #    = (log(b) - log(x))/(log(b) - log(a))
+        return (np.log(b)-np.log(x)) / (np.log(b) - np.log(a))
+
+    def _isf(self, q, a, b):
+        return np.exp(np.log(b) - q*(np.log(b) - np.log(a)))
+
     def _munp(self, n, a, b):
         t1 = 1 / (np.log(b) - np.log(a)) / n
         t2 = np.real(np.exp(_log_diff(n * np.log(b), n*np.log(a))))
