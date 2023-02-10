@@ -2866,7 +2866,8 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         if np.isnan(xmin) or np.isnan(fval):
             message = f"{_status_message['nan']}"
 
-    _print_success_message_or_warn(not success, message)
+    if disp:
+        _print_success_message_or_warn(not success, message)
 
     return OptimizeResult(fun=fval, nfev=funcalls, x=xmin, nit=nit,
                           success=success, message=message)
