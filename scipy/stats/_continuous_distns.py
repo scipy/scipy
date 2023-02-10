@@ -5849,6 +5849,9 @@ class lognorm_gen(rv_continuous):
     def _sf(self, x, s):
         return _norm_sf(np.log(x) / s)
 
+    def _isf(self, q, s):
+        return np.exp(-s * _norm_ppf(q))
+
     def _logsf(self, x, s):
         return _norm_logsf(np.log(x) / s)
 
@@ -7083,6 +7086,9 @@ class pareto_gen(rv_continuous):
     def _sf(self, x, b):
         return x**(-b)
 
+    def _isf(self, q, b):
+        return pow(q, -1/b)
+
     def _stats(self, b, moments='mv'):
         mu, mu2, g1, g2 = None, None, None, None
         if 'm' in moments:
@@ -7494,8 +7500,11 @@ class powerlaw_gen(rv_continuous):
     def _ppf(self, q, a):
         return pow(q, 1.0/a)
 
-    def _sf(self, p, a):
-        return -sc.powm1(p, a)
+    def _sf(self, x, a):
+        return -sc.powm1(x, a)
+
+    def _isf(self, q, a):
+        return pow(1 - q, 1/a)
 
     def _stats(self, a):
         return (a / (a + 1.0),
