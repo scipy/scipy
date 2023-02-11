@@ -85,7 +85,7 @@ def shgo(
         sampling points are generated instead of the default `n=100`. For all
         other specified values `n` sampling points are generated. For
         ``sobol``, ``halton`` and other arbitrary `sampling_methods` `n=100` or
-         another speciefied number of sampling points are generated.
+        another speciefied number of sampling points are generated.
     iters : int, optional
         Number of iterations used in the construction of the simplicial
         complex. Default is 1.

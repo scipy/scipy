@@ -1122,8 +1122,8 @@ class Complex:
                 # connected we break the loop if it is not.
                 if ((self.V[tuple(S_rows[i[1]])] not in
                         self.V[tuple(S_rows[i[0]])].nn)
-                    and ((self.V[tuple(S_rows[i[0]])] not in
-                         self.V[tuple(S_rows[i[1]])].nn))):
+                    and (self.V[tuple(S_rows[i[0]])] not in
+                         self.V[tuple(S_rows[i[1]])].nn)):
                     valid_simplex = False
                     break
 
