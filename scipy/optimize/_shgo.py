@@ -879,8 +879,8 @@ class SHGO:
     # Stopping criteria functions:
     def finite_iterations(self):
         mi = min(x for x in [self.iters, self.maxiter] if x is not None)
-        logging.info(f'Iterations done = {self.iters_done} / {mi}')
-        logging.info(f'Iterations done = {self.iters_done} / {mi}')
+        if self.disp:
+            logging.info(f'Iterations done = {self.iters_done} / {mi}')
         if self.iters is not None:
             if self.iters_done >= (self.iters):
                 self.stop_global = True
@@ -892,21 +892,24 @@ class SHGO:
 
     def finite_fev(self):
         # Finite function evals in the feasible domain
-        logging.info(f'Function evaluations done = {self.fn} / {self.maxfev}')
+        if self.disp:
+            logging.info(f'Function evaluations done = {self.fn} / {self.maxfev}')
         if self.fn >= self.maxfev:
             self.stop_global = True
         return self.stop_global
 
     def finite_ev(self):
         # Finite evaluations including infeasible sampling points
-        logging.info(f'Sampling evaluations done = {self.n_sampled} '
-                     f'/ {self.maxev}')
+        if self.disp:
+            logging.info(f'Sampling evaluations done = {self.n_sampled} '
+                         f'/ {self.maxev}')
         if self.n_sampled >= self.maxev:
             self.stop_global = True
 
     def finite_time(self):
-        logging.info(f'Time elapsed = {time.time() - self.init} '
-                     f'/ {self.maxtime}')
+        if self.disp:
+            logging.info(f'Time elapsed = {time.time() - self.init} '
+                         f'/ {self.maxtime}')
         if (time.time() - self.init) >= self.maxtime:
             self.stop_global = True
 
@@ -919,8 +922,9 @@ class SHGO:
         """
         # If no minimizer has been found use the lowest sampling value
         self.find_lowest_vertex()
-        logging.info(f'Lowest function evaluation = {self.f_lowest}')
-        logging.info(f'Specified minimum = {self.f_min_true}')
+        if self.disp:
+            logging.info(f'Lowest function evaluation = {self.f_lowest}')
+            logging.info(f'Specified minimum = {self.f_min_true}')
         # If no feasible point was return from test
         if self.f_lowest is None:
             return self.stop_global
@@ -955,9 +959,9 @@ class SHGO:
         self.hgr = self.LMC.size
         if self.hgrd <= self.minhgrd:
             self.stop_global = True
-
-        logging.info(f'Current homology growth = {self.hgrd} '
-                     f' (minimum growth = {self.minhgrd})')
+        if self.disp:
+            logging.info(f'Current homology growth = {self.hgrd} '
+                         f' (minimum growth = {self.minhgrd})')
         return self.stop_global
 
     def stopping_criteria(self):
