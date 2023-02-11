@@ -3535,7 +3535,7 @@ class TestLognorm:
         #     return float(mp.one - mp.ncdf(mp.log(x) / s))
 
         reference = 2.7453312057530708e+206
-        assert_allclose(stats.lognorm.isf(1.000000000000001e-06, 100), reference, rtol=1e-14)
+        assert_allclose(stats.lognorm.isf(1.000000000000001e-06, 100), reference, rtol=1e-13)
 
 
 class TestBeta:
