@@ -387,6 +387,15 @@ class TestBinom:
         ref = stats.poisson.pmf(x, n * p)
         assert_allclose(res, ref, atol=1e-16)
 
+    def test_pmf_cdf(self):
+        # Check that gh-17809 is resolved: binom.pmf(0) ~ binom.cdf(0)
+        n = 25.0 * 10 ** 21
+        p = 1.0 * 10 ** -21
+        r = 0
+        res = stats.binom.pmf(r, n, p)
+        ref = stats.binom.cdf(r, n, p)
+        assert_allclose(res, ref, atol=1e-16)
+
 
 class TestArcsine:
 
@@ -3517,6 +3526,12 @@ class TestSkellam:
                     9.9131672394792536e-001])
 
         assert_almost_equal(stats.skellam.cdf(k, mu1, mu2), skcdfR, decimal=5)
+
+    def test_extreme_mu2(self):
+        # check that crash reported by gh-17916 large mu2 is resolved
+        x, mu1, mu2 = 0, 1, 4820232647677555.0
+        assert_allclose(stats.skellam.pmf(x, mu1, mu2), 0, atol=1e-16)
+        assert_allclose(stats.skellam.cdf(x, mu1, mu2), 0, atol=1e-16)
 
 
 class TestLognorm:
