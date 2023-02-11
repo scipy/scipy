@@ -3521,7 +3521,21 @@ class TestLognorm:
         assert_allclose(stats.lognorm.sf(x2-mu, s=sigma),
                         stats.norm.sf(np.log(x2-mu)/sigma))
         assert_allclose(stats.lognorm.logsf(x2-mu, s=sigma),
-                        stats.norm.logsf(np.log(x2-mu)/sigma))
+                        stats.norm.logsf(np.log(x2-mu)/sigma)) #
+
+    def test_isf(self):
+
+        # reference value for the survival function was computed via mpmath
+        # then we use the output as reference value for the inverse
+        # from mpmath import mp
+        # mp.dps = 500
+        # def sf_mpmath(x, s):
+        #     x = mp.mpf(x)
+        #     s = mp.mpf(s)
+        #     return float(mp.one - mp.ncdf(mp.log(x) / s))
+
+        reference = 2.7453312057530708e+206
+        assert_allclose(stats.lognorm.isf(1.000000000000001e-06, 100), reference, rtol=1e-14)
 
 
 class TestBeta:
