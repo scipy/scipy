@@ -1026,14 +1026,14 @@ class SHGO:
                 for v in v.nn:
                     v_near = v_near.union(v.nn)
                 # Reconnect vertices to complex
-                if self.HC.connect_vertex_non_symm(tuple(self.LMC[xl].x_l),
-                                                   near=v_near):
-                    continue
-                else:
+                # if self.HC.connect_vertex_non_symm(tuple(self.LMC[xl].x_l),
+                #                                   near=v_near):
+                #    continue
+                # else:
                     # If failure to find in v_near, then search all vertices
                     # (very expensive operation:
-                    self.HC.connect_vertex_non_symm(tuple(self.LMC[xl].x_l)
-                                                    )
+                #    self.HC.connect_vertex_non_symm(tuple(self.LMC[xl].x_l)
+                #                                    )
 
         # Evaluate all constraints and functions
         self.HC.V.process_pools()
