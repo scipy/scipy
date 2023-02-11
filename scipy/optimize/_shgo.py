@@ -15,7 +15,7 @@ from scipy._lib._util import _FunctionWrapper
 
 from scipy.optimize._shgo_lib._complex import Complex
 
-__all__ = ['shgo', 'SHGO']
+__all__ = ['shgo']
 
 
 def shgo(
