@@ -10652,11 +10652,14 @@ class rel_breitwigner_gen(rv_continuous):
             return C / (((x - rho)*(x + rho)/rho)**2 + 1)
 
     def _cdf(self, x, rho):
-        # C = k / (2 * rho**2)
+        # C = k / (2 * rho**2) / np.sqrt(1 + 1/rho**2)
         C = np.sqrt(
-                2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
+                2 / (1 + np.sqrt(1 + 1/rho**2))
             ) / np.pi
-        result = np.arctan(x/np.sqrt(-rho*(rho + 1j))) / np.sqrt(-1 - 1j/rho)
+        result = (
+            np.sqrt(-1 + 1j/rho)
+            * np.arctan(x/np.sqrt(-rho*(rho + 1j)))
+        )
         result = C * 2 * np.imag(result)
         # Sometimes above formula produces values greater than 1.
         return np.clip(result, None, 1)
