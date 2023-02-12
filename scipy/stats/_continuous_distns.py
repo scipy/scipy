@@ -7255,6 +7255,9 @@ class lomax_gen(rv_continuous):
     def _ppf(self, q, c):
         return sc.expm1(-sc.log1p(-q)/c)
 
+    def _isf(self, q, c):
+        return sc.expm1(-np.log(q)/c)
+
     def _stats(self, c):
         mu, mu2, g1, g2 = pareto.stats(c, loc=-1.0, moments='mvsk')
         return mu, mu2, g1, g2
@@ -8815,6 +8818,12 @@ class truncexpon_gen(rv_continuous):
 
     def _ppf(self, q, b):
         return -sc.log1p(q*sc.expm1(-b))
+
+    def _sf(self, x, b):
+        return (np.exp(-b) - np.exp(-x))/sc.expm1(-b)
+
+    def _isf(self, q, b):
+        return -np.log(np.exp(-b) - q * sc.expm1(-b))
 
     def _munp(self, n, b):
         # wrong answer with formula, same as in continuous.pdf
