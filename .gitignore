@@ -79,8 +79,13 @@ setup.cfg
 .libs
 .eggs
 pip-wheel-metadata
-# install directory for Meson
+
+# Meson #
+#########
+.mesonpy-native-file.ini
 installdir/
+build-install/*
+.mesonpy/*
 
 # doit
 ######
@@ -107,6 +112,11 @@ installdir/
 # mypy cache #
 ##############
 .mypy_cache/*
+
+# linter #
+##########
+.ruff_cache/*
+.pre-commit-workdir/*
 
 # Patches #
 ###########
@@ -137,7 +147,6 @@ benchmarks/results
 benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
-.mesonpy-native-file.ini
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
 scipy/_lib/messagestream.c
@@ -161,6 +170,7 @@ scipy/integrate/_lsoda-f2pywrappers.f
 scipy/integrate/_vode-f2pywrappers.f
 scipy/interpolate/_rbfinterp_pythran.cpp
 scipy/interpolate/_ppoly.c
+scipy/interpolate/_rgi_cython.c
 scipy/interpolate/_bspl.c
 scipy/interpolate/interpnd.c
 scipy/interpolate/src/dfitpack-f2pywrappers.f

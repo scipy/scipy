@@ -35,9 +35,9 @@ from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
 from scipy.stats import ortho_group
 
-from numpy import (array, diag, ones, full, linalg, argsort, zeros, arange,
+from numpy import (array, diag, full, linalg, argsort, zeros, arange,
                    float32, complex64, ravel, sqrt, iscomplex, shape, sort,
-                   sign, asarray, isfinite, ndarray, eye, dtype, triu, tril)
+                   sign, asarray, isfinite, ndarray, eye,)
 
 from numpy.random import seed, random
 
@@ -84,22 +84,6 @@ def clear_fuss(ar, fuss_binary_bits=7):
     return np.ldexp(x_mant, x_exp)
 
 
-# XXX: This function should be available through numpy.testing
-def assert_dtype_equal(act, des):
-    if isinstance(act, ndarray):
-        act = act.dtype
-    else:
-        act = dtype(act)
-
-    if isinstance(des, ndarray):
-        des = des.dtype
-    else:
-        des = dtype(des)
-
-    assert_(act == des,
-            'dtype mismatch: "{}" (should be "{}")'.format(act, des))
-
-
 # XXX: This function should not be defined here, but somewhere in
 #      scipy.linalg namespace
 def symrand(dim_or_eigv):
@@ -126,13 +110,6 @@ def symrand(dim_or_eigv):
     # to avoid roundoff errors, symmetrize the matrix (again)
     h = 0.5*(h.T+h)
     return h
-
-
-def _complex_symrand(dim, dtype):
-    a1, a2 = symrand(dim), symrand(dim)
-    # add antisymmetric matrix as imag part
-    a = a1 + 1j*(triu(a2)-tril(a2))
-    return a.astype(dtype)
 
 
 class TestEigVals:
@@ -227,7 +204,7 @@ class TestEig:
             A = asarray(A)
             B0 = B
             B = np.eye(*A.shape)
-        msg = "\n%r\n%r" % (A, B)
+        msg = f"\n{A!r}\n{B!r}"
 
         # Eigenvalues in homogeneous coordinates
         w, vr = eig(A, B0, homogeneous_eigvals=True)
@@ -305,7 +282,7 @@ class TestEig:
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
-        M = diag(array(([1, 0, 3])))
+        M = diag(array([1, 0, 3]))
         K = array(([2, -1, -1], [-1, 2, -1], [-1, -1, 2]))
         D = array(([1, -1, 0], [-1, 1, 0], [0, 0, 0]))
         Z = zeros((3, 3))
@@ -2242,11 +2219,6 @@ class TestQZ:
         assert_array_almost_equal(Q @ Q.T, eye(n))
         assert_array_almost_equal(Z @ Z.T, eye(n))
         assert_(np.all(diag(BB) >= 0))
-
-
-def _make_pos(X):
-    # the decompositions can have different signs than verified results
-    return np.sign(X)*X
 
 
 class TestOrdQZ:

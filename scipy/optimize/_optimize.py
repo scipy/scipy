@@ -27,6 +27,7 @@ __docformat__ = "restructuredtext en"
 
 import warnings
 import sys
+import inspect
 from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
                    asarray, sqrt, Inf, asfarray)
 import numpy as np
@@ -131,6 +132,53 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
     return s
 
 
+def _wrap_callback(callback, method=None):
+    """Wrap a user-provided callback so that attributes can be attached."""
+    if callback is None or method in {'tnc', 'slsqp', 'cobyla'}:
+        return callback  # don't wrap
+
+    sig = inspect.signature(callback)
+
+    if set(sig.parameters) == {'intermediate_result'}:
+        def wrapped_callback(res):
+            return callback(intermediate_result=res)
+    elif method == 'trust-constr':
+        def wrapped_callback(res):
+            return callback(np.copy(res.x), res)
+    else:
+        def wrapped_callback(res):
+            return callback(np.copy(res.x))
+
+    wrapped_callback.stop_iteration = False
+    return wrapped_callback
+
+
+def _call_callback_maybe_halt(callback, res):
+    """Call wrapped callback; return True if minimization should stop.
+
+    Parameters
+    ----------
+    callback : callable or None
+        A user-provided callback wrapped with `_wrap_callback`
+    res : OptimizeResult
+        Information about the current iterate
+
+    Returns
+    -------
+    halt : bool
+        True if minimization should stop
+
+    """
+    if callback is None:
+        return False
+    try:
+        callback(res)
+        return False
+    except StopIteration:
+        callback.stop_iteration = True  # make `minimize` override status/msg
+        return True
+
+
 class OptimizeResult(dict):
     """ Represents the optimization result.
 
@@ -222,11 +270,11 @@ def _check_unknown_options(unknown_options):
         warnings.warn("Unknown solver options: %s" % msg, OptimizeWarning, 4)
 
 
-def is_array_scalar(x):
-    """Test whether `x` is either a scalar or an array scalar.
+def is_finite_scalar(x):
+    """Test whether `x` is either a finite scalar or a finite array scalar.
 
     """
-    return np.size(x) == 1
+    return np.size(x) == 1 and np.isfinite(x)
 
 
 _epsilon = sqrt(np.finfo(float).eps)
@@ -692,6 +740,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'return_all': retall,
             'initial_simplex': initial_simplex}
 
+    callback = _wrap_callback(callback)
     res = _minimize_neldermead(func, x0, args, callback=callback, **opts)
     if full_output:
         retlist = res['x'], res['fun'], res['nit'], res['nfev'], res['status']
@@ -926,10 +975,11 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             ind = np.argsort(fsim)
             sim = np.take(sim, ind, 0)
             fsim = np.take(fsim, ind, 0)
-            if callback is not None:
-                callback(sim[0])
             if retall:
                 allvecs.append(sim[0])
+            intermediate_result = OptimizeResult(x=sim[0], fun=fsim[0])
+            if _call_callback_maybe_halt(callback, intermediate_result):
+                break
 
     x = sim[0]
     fval = np.min(fsim)
@@ -1300,6 +1350,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             'maxiter': maxiter,
             'return_all': retall}
 
+    callback = _wrap_callback(callback)
     res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
@@ -1403,9 +1454,10 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
         yk = gfkp1 - gfk
         gfk = gfkp1
-        if callback is not None:
-            callback(xk)
         k += 1
+        intermediate_result = OptimizeResult(x=xk, fun=old_fval)
+        if _call_callback_maybe_halt(callback, intermediate_result):
+            break
         gnorm = vecnorm(gfk, ord=norm)
         if (gnorm <= gtol):
             break
@@ -1430,7 +1482,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         if rhok_inv == 0.:
             rhok = 1000.0
             if disp:
-                print("Divide-by-zero encountered: rhok assumed large")
+                msg = "Divide-by-zero encountered: rhok assumed large"
+                _print_success_message_or_warn(True, msg)
         else:
             rhok = 1. / rhok_inv
 
@@ -1453,7 +1506,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         msg = _status_message['success']
 
     if disp:
-        print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
+        _print_success_message_or_warn(warnflag, msg)
         print("         Current function value: %f" % fval)
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
@@ -1466,6 +1519,13 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     if retall:
         result['allvecs'] = allvecs
     return result
+
+
+def _print_success_message_or_warn(warnflag, message, warntype=None):
+    if not warnflag:
+        print(message)
+    else:
+        warnings.warn(message, warntype or OptimizeWarning, stacklevel=3)
 
 
 def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
@@ -1628,6 +1688,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             'maxiter': maxiter,
             'return_all': retall}
 
+    callback = _wrap_callback(callback)
     res = _minimize_cg(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
@@ -1755,9 +1816,10 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
         if retall:
             allvecs.append(xk)
-        if callback is not None:
-            callback(xk)
         k += 1
+        intermediate_result = OptimizeResult(x=xk, fun=old_fval)
+        if _call_callback_maybe_halt(callback, intermediate_result):
+            break
 
     fval = old_fval
     if warnflag == 2:
@@ -1772,7 +1834,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         msg = _status_message['success']
 
     if disp:
-        print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
+        _print_success_message_or_warn(warnflag, msg)
         print("         Current function value: %f" % fval)
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
@@ -1884,6 +1946,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             'disp': disp,
             'return_all': retall}
 
+    callback = _wrap_callback(callback)
     res = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p,
                              callback=callback, **opts)
 
@@ -1960,7 +2023,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     def terminate(warnflag, msg):
         if disp:
-            print(msg)
+            _print_success_message_or_warn(warnflag, msg)
             print("         Current function value: %f" % old_fval)
             print("         Iterations: %d" % k)
             print("         Function evaluations: %d" % sf.nfev)
@@ -2065,11 +2128,13 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         update = alphak * pk
         xk = xk + update        # upcast if necessary
-        if callback is not None:
-            callback(xk)
         if retall:
             allvecs.append(xk)
         k += 1
+        intermediate_result = OptimizeResult(x=xk, fun=old_fval)
+        if _call_callback_maybe_halt(callback, intermediate_result):
+            return terminate(5, "")
+
     else:
         if np.isnan(old_fval) or np.isnan(update).any():
             return terminate(3, _status_message['nan'])
@@ -2087,7 +2152,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     func : callable f(x,*args)
         Objective function to be minimized (must accept and return scalars).
     x1, x2 : float or array scalar
-        The optimization bounds.
+        Finite optimization bounds.
     args : tuple, optional
         Extra arguments passed to function.
     xtol : float, optional
@@ -2193,9 +2258,9 @@ def _minimize_scalar_bounded(func, bounds, args=(),
         raise ValueError('bounds must have two elements.')
     x1, x2 = bounds
 
-    if not (is_array_scalar(x1) and is_array_scalar(x2)):
-        raise ValueError("Optimization bounds must be scalars"
-                         " or array scalars.")
+    if not (is_finite_scalar(x1) and is_finite_scalar(x2)):
+        raise ValueError("Optimization bounds must be finite scalars.")
+
     if x1 > x2:
         raise ValueError("The lower bound exceeds the upper bound.")
 
@@ -2619,7 +2684,7 @@ def _minimize_scalar_brent(func, brack=None, args=(), xtol=1.48e-8,
             message = f"{_status_message['nan']}"
 
     if disp:
-        print(message)
+        _print_success_message_or_warn(not success, message)
 
     return OptimizeResult(fun=fval, x=x, nit=nit, nfev=nfev,
                           success=success, message=message)
@@ -2802,7 +2867,7 @@ def _minimize_scalar_golden(func, brack=None, args=(),
             message = f"{_status_message['nan']}"
 
     if disp:
-        print(message)
+        _print_success_message_or_warn(not success, message)
 
     return OptimizeResult(fun=fval, nfev=funcalls, x=xmin, nit=nit,
                           success=success, message=message)
@@ -3174,6 +3239,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'direc': direc,
             'return_all': retall}
 
+    callback = _wrap_callback(callback)
     res = _minimize_powell(func, x0, args, callback=callback, **opts)
 
     if full_output:
@@ -3352,10 +3418,11 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
                     delta = fx2 - fval
                     bigind = i
             iter += 1
-            if callback is not None:
-                callback(x)
             if retall:
                 allvecs.append(x)
+            intermediate_result = OptimizeResult(x=x, fun=fval)
+            if _call_callback_maybe_halt(callback, intermediate_result):
+                break
             bnd = ftol * (np.abs(fx) + np.abs(fval)) + 1e-20
             if 2.0 * (fx - fval) <= bnd:
                 break
@@ -3399,6 +3466,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             break
 
     warnflag = 0
+    msg = _status_message['success']
     # out of bounds is more urgent than exceeding function evals or iters,
     # but I don't want to cause inconsistencies by changing the
     # established warning flags for maxfev and maxiter, so the out of bounds
@@ -3409,25 +3477,18 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     elif fcalls[0] >= maxfun:
         warnflag = 1
         msg = _status_message['maxfev']
-        if disp:
-            warnings.warn(msg, RuntimeWarning, 3)
     elif iter >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
-        if disp:
-            warnings.warn(msg, RuntimeWarning, 3)
     elif np.isnan(fval) or np.isnan(x).any():
         warnflag = 3
         msg = _status_message['nan']
-        if disp:
-            warnings.warn(msg, RuntimeWarning, 3)
-    else:
-        msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % iter)
-            print("         Function evaluations: %d" % fcalls[0])
+
+    if disp:
+        _print_success_message_or_warn(warnflag, msg, RuntimeWarning)
+        print("         Current function value: %f" % fval)
+        print("         Iterations: %d" % iter)
+        print("         Function evaluations: %d" % fcalls[0])
 
     result = OptimizeResult(fun=fval, direc=direc, nit=iter, nfev=fcalls[0],
                             status=warnflag, success=(warnflag == 0),
@@ -3443,13 +3504,15 @@ def _endprint(x, flag, fval, maxfun, xtol, disp):
             print("\nOptimization terminated successfully;\n"
                   "The returned value satisfies the termination criteria\n"
                   "(using xtol = ", xtol, ")")
+        return
+
     if flag == 1:
-        if disp:
-            print("\nMaximum number of function evaluations exceeded --- "
-                  "increase maxfun argument.\n")
-    if flag == 2:
-        if disp:
-            print("\n{}".format(_status_message['nan']))
+        msg = ("\nMaximum number of function evaluations exceeded --- "
+               "increase maxfun argument.\n")
+    elif flag == 2:
+        msg = "\n{}".format(_status_message['nan'])
+
+    _print_success_message_or_warn(flag, msg)
     return
 
 
@@ -3632,7 +3695,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
                          "than 40 variables.")
     lrange = list(ranges)
     for k in range(N):
-        if type(lrange[k]) is not type(slice(None)):
+        if not isinstance(lrange[k], slice):
             if len(lrange[k]) < 3:
                 lrange[k] = tuple(lrange[k]) + (complex(Ns),)
             lrange[k] = slice(*lrange[k])
@@ -3916,7 +3979,7 @@ def show_options(solver=None, method=None, disp=True):
     else:
         solver = solver.lower()
         if solver not in doc_routines:
-            raise ValueError('Unknown solver %r' % (solver,))
+            raise ValueError(f'Unknown solver {solver!r}')
 
         if method is None:
             text = []
@@ -3928,7 +3991,7 @@ def show_options(solver=None, method=None, disp=True):
             method = method.lower()
             methods = dict(doc_routines[solver])
             if method not in methods:
-                raise ValueError("Unknown method %r" % (method,))
+                raise ValueError(f"Unknown method {method!r}")
             name = methods[method]
 
             # Import function object

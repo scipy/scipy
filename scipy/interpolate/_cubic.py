@@ -45,7 +45,7 @@ def prepare_input(x, y, axis, dydx=None):
     if x.shape[0] < 2:
         raise ValueError("`x` must contain at least 2 elements.")
     if x.shape[0] != y.shape[axis]:
-        raise ValueError("The length of `y` along `axis`={0} doesn't "
+        raise ValueError("The length of `y` along `axis`={} doesn't "
                          "match the length of `x`".format(axis))
 
     if not np.all(np.isfinite(x)):
@@ -836,7 +836,7 @@ class CubicSpline(CubicHermiteSpline):
                 elif bc in ['not-a-knot', 'periodic']:
                     validated_bc.append(bc)
                 else:
-                    raise ValueError("bc_type={} is not allowed.".format(bc))
+                    raise ValueError(f"bc_type={bc} is not allowed.")
             else:
                 try:
                     deriv_order, deriv_value = bc

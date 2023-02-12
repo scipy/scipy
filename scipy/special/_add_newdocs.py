@@ -5190,8 +5190,26 @@ add_newdoc("fdtridfd",
 
     See Also
     --------
-    fdtr, fdtrc, fdtri
+    fdtr : F distribution cumulative distribution function
+    fdtrc : F distribution survival function
+    fdtri : F distribution quantile function
+    scipy.stats.f : F distribution
 
+    Examples
+    --------
+    Compute the F distribution cumulative distribution function for one
+    parameter set.
+
+    >>> from scipy.special import fdtridfd, fdtr
+    >>> dfn, dfd, x = 10, 5, 2
+    >>> cdf_value = fdtr(dfn, dfd, x)
+    >>> cdf_value
+    0.7700248806501017
+
+    Verify that `fdtridfd` recovers the original value for `dfd`:
+
+    >>> fdtridfd(dfn, cdf_value, x)
+    5.0
     """)
 
 '''
@@ -6920,7 +6938,8 @@ add_newdoc("i0e",
     polynomial expansions used are the same as those in `i0`, but
     they are not multiplied by the dominant exponential factor.
 
-    This function is a wrapper for the Cephes [1]_ routine `i0e`.
+    This function is a wrapper for the Cephes [1]_ routine `i0e`. `i0e`
+    is useful for large arguments `x`: for these, `i0` quickly overflows.
 
     See also
     --------
@@ -6934,13 +6953,15 @@ add_newdoc("i0e",
 
     Examples
     --------
-    Calculate the function at one point:
+    In the following example `i0` returns infinity whereas `i0e` still returns
+    a finite number.
 
-    >>> from scipy.special import i0e
-    >>> i0e(1.)
-    0.46575960759364043
+    >>> from scipy.special import i0, i0e
+    >>> i0(1000.), i0e(1000.)
+    (inf, 0.012617240455891257)
 
-    Calculate the function at several points:
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
 
     >>> import numpy as np
     >>> i0e(np.array([-2., 0., 3.]))
@@ -6954,15 +6975,6 @@ add_newdoc("i0e",
     >>> y = i0e(x)
     >>> ax.plot(x, y)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions overflow or lose precision. In the
-    following example `i0` returns infinity whereas `i0e` still returns
-    a finite number.
-
-    >>> from scipy.special import i0
-    >>> i0(1000.), i0e(1000.)
-    (inf, 0.012617240455891257)
     """)
 
 add_newdoc("i1",
@@ -7063,7 +7075,8 @@ add_newdoc("i1e",
     polynomial expansions used are the same as those in `i1`, but
     they are not multiplied by the dominant exponential factor.
 
-    This function is a wrapper for the Cephes [1]_ routine `i1e`.
+    This function is a wrapper for the Cephes [1]_ routine `i1e`. `i1e`
+    is useful for large arguments `x`: for these, `i1` quickly overflows.
 
     See also
     --------
@@ -7077,13 +7090,15 @@ add_newdoc("i1e",
 
     Examples
     --------
-    Calculate the function at one point:
+    In the following example `i1` returns infinity whereas `i1e` still returns
+    a finite number.
 
-    >>> from scipy.special import i1e
-    >>> i1e(1.)
-    0.2079104153497085
+    >>> from scipy.special import i1, i1e
+    >>> i1(1000.), i1e(1000.)
+    (inf, 0.01261093025692863)
 
-    Calculate the function at several points:
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
 
     >>> import numpy as np
     >>> i1e(np.array([-2., 0., 6.]))
@@ -7097,15 +7112,6 @@ add_newdoc("i1e",
     >>> y = i1e(x)
     >>> ax.plot(x, y)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions overflow or lose precision. In the
-    following example `i1` returns infinity whereas `i1e` still returns a
-    finite number.
-
-    >>> from scipy.special import i1
-    >>> i1(1000.), i1e(1000.)
-    (inf, 0.01261093025692863)
     """)
 
 add_newdoc("_igam_fac",
@@ -7807,6 +7813,9 @@ add_newdoc("ive",
     is used, where :math:`K_v(z)` is the modified Bessel function of the
     second kind, evaluated using the AMOS routine `zbesk`.
 
+    `ive` is useful for large arguments `z`: for these, `iv` easily overflows,
+    while `ive` does not due to the exponential scaling.
+
     See also
     --------
     iv: Modified Bessel function of the first kind
@@ -7821,13 +7830,14 @@ add_newdoc("ive",
 
     Examples
     --------
-    Evaluate the function of order 0 at one point.
+    In the following example `iv` returns infinity whereas `ive` still returns
+    a finite number.
 
-    >>> import numpy as np
     >>> from scipy.special import iv, ive
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> ive(0, 1.)
-    0.4657596075936404
+    >>> iv(3, 1000.), ive(3, 1000.)
+    (inf, 0.01256056218254712)
 
     Evaluate the function at one point for different orders by
     providing a list or NumPy array as argument for the `v` parameter:
@@ -7861,14 +7871,6 @@ add_newdoc("ive",
     >>> ax.legend()
     >>> ax.set_xlabel(r"$z$")
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions over- or underflow. In the
-    following example `iv` returns infinity whereas `ive` still returns
-    a finite number.
-
-    >>> iv(3, 1000.), ive(3, 1000.)
-    (inf, 0.01256056218254712)
     """)
 
 add_newdoc("j0",
@@ -8345,7 +8347,8 @@ add_newdoc("k0e",
     The range is partitioned into the two intervals [0, 2] and (2, infinity).
     Chebyshev polynomial expansions are employed in each interval.
 
-    This function is a wrapper for the Cephes [1]_ routine `k0e`.
+    This function is a wrapper for the Cephes [1]_ routine `k0e`. `k0e` is
+    useful for large arguments: for these, `k0` easily underflows.
 
     See also
     --------
@@ -8359,13 +8362,15 @@ add_newdoc("k0e",
 
     Examples
     --------
-    Calculate the function at one point:
+    In the following example `k0` returns 0 whereas `k0e` still returns a
+    useful finite number:
 
-    >>> from scipy.special import k0e
-    >>> k0e(1.)
-    1.1444630798068947
+    >>> from scipy.special import k0, k0e
+    >>> k0(1000.), k0e(1000)
+    (0., 0.03962832160075422)
 
-    Calculate the function at several points:
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
 
     >>> import numpy as np
     >>> k0e(np.array([0.5, 2., 3.]))
@@ -8379,19 +8384,6 @@ add_newdoc("k0e",
     >>> y = k0e(x)
     >>> ax.plot(x, y)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions are not precise enough.
-
-    >>> from scipy.special import k0
-    >>> k0(1000.)
-    0.
-
-    While `k0` returns zero, `k0e` still returns a finite number:
-
-    >>> k0e(1000.)
-    0.03962832160075422
-
     """)
 
 add_newdoc("k1",
@@ -8496,13 +8488,15 @@ add_newdoc("k1e",
 
     Examples
     --------
-    Calculate the function at one point:
+    In the following example `k1` returns 0 whereas `k1e` still returns a
+    useful floating point number.
 
-    >>> from scipy.special import k1e
-    >>> k1e(1.)
-    1.636153486263258
+    >>> from scipy.special import k1, k1e
+    >>> k1(1000.), k1e(1000.)
+    (0., 0.03964813081296021)
 
-    Calculate the function at several points:
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
 
     >>> import numpy as np
     >>> k1e(np.array([0.5, 2., 3.]))
@@ -8516,15 +8510,6 @@ add_newdoc("k1e",
     >>> y = k1e(x)
     >>> ax.plot(x, y)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions are not precise enough. In the
-    following example `k1` returns zero whereas `k1e` still returns a
-    useful floating point number.
-
-    >>> from scipy.special import k1
-    >>> k1(1000.), k1e(1000.)
-    (0., 0.03964813081296021)
     """)
 
 add_newdoc("kei",
@@ -9107,13 +9092,14 @@ add_newdoc("kve",
 
     Examples
     --------
-    Evaluate the function of order 0 at one point.
+    In the following example `kv` returns 0 whereas `kve` still returns
+    a useful finite number.
 
     >>> import numpy as np
     >>> from scipy.special import kv, kve
     >>> import matplotlib.pyplot as plt
-    >>> kve(0, 1.)
-    1.1444630798068949
+    >>> kv(3, 1000.), kve(3, 1000.)
+    (0.0, 0.03980696128440973)
 
     Evaluate the function at one point for different orders by
     providing a list or NumPy array as argument for the `v` parameter:
@@ -9149,14 +9135,6 @@ add_newdoc("kve",
     >>> ax.set_ylim(0, 4)
     >>> ax.set_xlim(0, 5)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions over- or underflow. In the
-    following example `kv` returns 0 whereas `kve` still returns
-    a useful finite number.
-
-    >>> kv(3, 1000.), kve(3, 1000.)
-    (0.0, 0.03980696128440973)
     """)
 
 add_newdoc("_lanczos_sum_expg_scaled",
@@ -10548,7 +10526,7 @@ add_newdoc("ndtr",
     r"""
     ndtr(x, out=None)
 
-    Gaussian cumulative distribution function.
+    Cumulative distribution of the standard normal distribution.
 
     Returns the area under the standard Gaussian probability
     density function, integrated from minus infinity to `x`
@@ -10571,8 +10549,35 @@ add_newdoc("ndtr",
 
     See Also
     --------
-    erf, erfc, scipy.stats.norm, log_ndtr
+    log_ndtr : Logarithm of ndtr
+    ndtri : Inverse of ndtr, standard normal percentile function
+    erf : Error function
+    erfc : 1 - erf
+    scipy.stats.norm : Normal distribution
 
+    Examples
+    --------
+    Evaluate `ndtr` at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import ndtr
+    >>> ndtr(0.5)
+    0.6914624612740131
+
+    Evaluate the function at several points by providing a NumPy array
+    or list for `x`.
+
+    >>> ndtr([0, 0.5, 2])
+    array([0.5       , 0.69146246, 0.97724987])
+
+    Plot the function.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-5, 5, 100)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, ndtr(x))
+    >>> ax.set_title("Standard normal cumulative distribution function $\Phi$")
+    >>> plt.show()
     """)
 
 
@@ -10691,7 +10696,7 @@ add_newdoc("ndtri",
 
     Inverse of `ndtr` vs x
 
-    Returns the argument x for which the area under the Gaussian
+    Returns the argument x for which the area under the standard normal
     probability density function (integrated from minus infinity to `x`)
     is equal to y.
 
@@ -10709,8 +10714,35 @@ add_newdoc("ndtri",
 
     See Also
     --------
-    ndtr
+    ndtr : Standard normal cumulative probability distribution
+    ndtri_exp : Inverse of log_ndtr
 
+    Examples
+    --------
+    `ndtri` is the percentile function of the standard normal distribution.
+    This means it returns the inverse of the cumulative density `ndtr`. First,
+    let us compute a cumulative density value.
+
+    >>> import numpy as np
+    >>> from scipy.special import ndtri, ndtr
+    >>> cdf_val = ndtr(2)
+    >>> cdf_val
+    0.9772498680518208
+
+    Verify that `ndtri` yields the original value for `x` up to floating point
+    errors.
+
+    >>> ndtri(cdf_val)
+    2.0000000000000004
+
+    Plot the function. For that purpose, we provide a NumPy array as argument.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0.01, 1, 200)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, ndtri(x))
+    >>> ax.set_title("Standard normal percentile function")
+    >>> plt.show()
     """)
 
 add_newdoc("obl_ang1",
@@ -12493,17 +12525,18 @@ add_newdoc("spence",
     >>> plt.show()
     """)
 
-add_newdoc("stdtr",
-    """
+add_newdoc(
+    "stdtr",
+    r"""
     stdtr(df, t, out=None)
 
     Student t distribution cumulative distribution function
 
-    Returns the integral from minus infinity to t of the Student t
-    distribution with df > 0 degrees of freedom::
+    Returns the integral:
 
-       gamma((df+1)/2)/(sqrt(df*pi)*gamma(df/2)) *
-       integral((1+x**2/df)**(-df/2-1/2), x=-inf..t)
+    .. math::
+        \frac{\Gamma((df+1)/2)}{\sqrt{\pi df} \Gamma(df/2)}
+        \int_{-\infty}^t (1+x^2/df)^{-(df+1)/2}\, dx
 
     Parameters
     ----------
@@ -12523,6 +12556,67 @@ add_newdoc("stdtr",
     --------
     stdtridf : inverse of stdtr with respect to `df`
     stdtrit : inverse of stdtr with respect to `t`
+    scipy.stats.t : student t distribution
+
+    Notes
+    -----
+    The student t distribution is also available as `scipy.stats.t`.
+    Calling `stdtr` directly can improve performance compared to the
+    ``cdf`` method of `scipy.stats.t` (see last example below).
+
+    Examples
+    --------
+    Calculate the function for ``df=3`` at ``t=1``.
+
+    >>> import numpy as np
+    >>> from scipy.special import stdtr
+    >>> import matplotlib.pyplot as plt
+    >>> stdtr(3, 1)
+    0.8044988905221148
+
+    Plot the function for three different degrees of freedom.
+
+    >>> x = np.linspace(-10, 10, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> parameters = [(1, "solid"), (3, "dashed"), (10, "dotted")]
+    >>> for (df, linestyle) in parameters:
+    ...     ax.plot(x, stdtr(df, x), ls=linestyle, label=f"$df={df}$")
+    >>> ax.legend()
+    >>> ax.set_title("Student t distribution cumulative distribution function")
+    >>> plt.show()
+
+    The function can be computed for several degrees of freedom at the same
+    time by providing a NumPy array or list for `df`:
+
+    >>> stdtr([1, 2, 3], 1)
+    array([0.75      , 0.78867513, 0.80449889])
+
+    It is possible to calculate the function at several points for several
+    different degrees of freedom simultaneously by providing arrays for `df`
+    and `t` with shapes compatible for broadcasting. Compute `stdtr` at
+    4 points for 3 degrees of freedom resulting in an array of shape 3x4.
+
+    >>> dfs = np.array([[1], [2], [3]])
+    >>> t = np.array([2, 4, 6, 8])
+    >>> dfs.shape, t.shape
+    ((3, 1), (4,))
+
+    >>> stdtr(dfs, t)
+    array([[0.85241638, 0.92202087, 0.94743154, 0.96041658],
+           [0.90824829, 0.97140452, 0.98666426, 0.99236596],
+           [0.93033702, 0.98599577, 0.99536364, 0.99796171]])
+
+    The t distribution is also available as `scipy.stats.t`. Calling `stdtr`
+    directly can be much faster than calling the ``cdf`` method of
+    `scipy.stats.t`. To get the same results, one must use the following
+    parametrization: ``scipy.stats.t(df).cdf(x) = stdtr(df, x)``.
+
+    >>> from scipy.stats import t
+    >>> df, x = 3, 1
+    >>> stdtr_result = stdtr(df, x)  # this can be faster than below
+    >>> stats_result = t(df).cdf(x)
+    >>> stats_result == stdtr_result  # test that results are equal
+    True
     """)
 
 add_newdoc("stdtridf",
@@ -12551,13 +12645,34 @@ add_newdoc("stdtridf",
     --------
     stdtr : Student t CDF
     stdtrit : inverse of stdtr with respect to `t`
+    scipy.stats.t : Student t distribution
+
+    Examples
+    --------
+    Compute the student t cumulative distribution function for one
+    parameter set.
+
+    >>> from scipy.special import stdtr, stdtridf
+    >>> df, x = 5, 2
+    >>> cdf_value = stdtr(df, x)
+    >>> cdf_value
+    0.9490302605850709
+
+    Verify that `stdtridf` recovers the original value for `df` given
+    the CDF value and `x`.
+
+    >>> stdtridf(cdf_value, x)
+    5.0
     """)
 
 add_newdoc("stdtrit",
     """
     stdtrit(df, p, out=None)
 
-    Inverse of `stdtr` vs `t`
+    The `p`-th quantile of the student t distribution.
+
+    This function is the inverse of the student t distribution cumulative
+    distribution function (CDF), returning `t` such that `stdtr(df, t) = p`.
 
     Returns the argument `t` such that stdtr(df, t) is equal to `p`.
 
@@ -12579,7 +12694,74 @@ add_newdoc("stdtrit",
     --------
     stdtr : Student t CDF
     stdtridf : inverse of stdtr with respect to `df`
+    scipy.stats.t : Student t distribution
 
+    Notes
+    -----
+    The student t distribution is also available as `scipy.stats.t`. Calling
+    `stdtrit` directly can improve performance compared to the ``ppf``
+    method of `scipy.stats.t` (see last example below).
+
+    Examples
+    --------
+    `stdtrit` represents the inverse of the student t distribution CDF which
+    is available as `stdtr`. Here, we calculate the CDF for ``df`` at
+    ``x=1``. `stdtrit` then returns ``1`` up to floating point errors
+    given the same value for `df` and the computed CDF value.
+
+    >>> import numpy as np
+    >>> from scipy.special import stdtr, stdtrit
+    >>> import matplotlib.pyplot as plt
+    >>> df = 3
+    >>> x = 1
+    >>> cdf_value = stdtr(df, x)
+    >>> stdtrit(df, cdf_value)
+    0.9999999994418539
+
+    Plot the function for three different degrees of freedom.
+
+    >>> x = np.linspace(0, 1, 1000)
+    >>> parameters = [(1, "solid"), (2, "dashed"), (5, "dotted")]
+    >>> fig, ax = plt.subplots()
+    >>> for (df, linestyle) in parameters:
+    ...     ax.plot(x, stdtrit(df, x), ls=linestyle, label=f"$df={df}$")
+    >>> ax.legend()
+    >>> ax.set_ylim(-10, 10)
+    >>> ax.set_title("Student t distribution quantile function")
+    >>> plt.show()
+
+    The function can be computed for several degrees of freedom at the same
+    time by providing a NumPy array or list for `df`:
+
+    >>> stdtrit([1, 2, 3], 0.7)
+    array([0.72654253, 0.6172134 , 0.58438973])
+
+    It is possible to calculate the function at several points for several
+    different degrees of freedom simultaneously by providing arrays for `df`
+    and `p` with shapes compatible for broadcasting. Compute `stdtrit` at
+    4 points for 3 degrees of freedom resulting in an array of shape 3x4.
+
+    >>> dfs = np.array([[1], [2], [3]])
+    >>> p = np.array([0.2, 0.4, 0.7, 0.8])
+    >>> dfs.shape, p.shape
+    ((3, 1), (4,))
+
+    >>> stdtrit(dfs, p)
+    array([[-1.37638192, -0.3249197 ,  0.72654253,  1.37638192],
+           [-1.06066017, -0.28867513,  0.6172134 ,  1.06066017],
+           [-0.97847231, -0.27667066,  0.58438973,  0.97847231]])
+
+    The t distribution is also available as `scipy.stats.t`. Calling `stdtrit`
+    directly can be much faster than calling the ``ppf`` method of
+    `scipy.stats.t`. To get the same results, one must use the following
+    parametrization: ``scipy.stats.t(df).ppf(x) = stdtrit(df, x)``.
+
+    >>> from scipy.stats import t
+    >>> df, x = 3, 0.5
+    >>> stdtrit_result = stdtrit(df, x)  # this can be faster than below
+    >>> stats_result = t(df).ppf(x)
+    >>> stats_result == stdtrit_result  # test that results are equal
+    True
     """)
 
 add_newdoc("struve",

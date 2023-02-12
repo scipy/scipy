@@ -602,19 +602,19 @@ class TestDPSS:
             win = windows.dpss(M, M / 2.1)
             expected = M % 2  # one for odd, none for even
             assert_equal(np.isclose(win, 1.).sum(), expected,
-                         err_msg='%s' % (win,))
+                         err_msg=f'{win}')
             # corrected w/subsample delay (slower)
             win_sub = windows.dpss(M, M / 2.1, norm='subsample')
             if M > 2:
                 # @M=2 the subsample doesn't do anything
                 assert_equal(np.isclose(win_sub, 1.).sum(), expected,
-                             err_msg='%s' % (win_sub,))
+                             err_msg=f'{win_sub}')
                 assert_allclose(win, win_sub, rtol=0.03)  # within 3%
             # not the same, l2-norm
             win_2 = windows.dpss(M, M / 2.1, norm=2)
             expected = 1 if M == 1 else 0
             assert_equal(np.isclose(win_2, 1.).sum(), expected,
-                         err_msg='%s' % (win_2,))
+                         err_msg=f'{win_2}')
 
     def test_extremes(self):
         # Test extremes of alpha

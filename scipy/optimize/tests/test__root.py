@@ -1,8 +1,8 @@
 """
 Unit tests for optimization routines from _root.py.
 """
-from numpy.testing import assert_
-from pytest import raises as assert_raises
+from numpy.testing import assert_, assert_equal
+from pytest import raises as assert_raises, warns as assert_warns
 import numpy as np
 
 from scipy.optimize import root
@@ -32,7 +32,7 @@ class TestRoot:
 
             sol1 = root(func, [1.1,1.1], jac=jac, tol=1e-4, method=method)
             sol2 = root(func, [1.1,1.1], jac=jac, tol=0.5, method=method)
-            msg = "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x))
+            msg = f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
             assert_(sol1.success, msg)
             assert_(sol2.success, msg)
             assert_(abs(func(sol1.x)).max() < abs(func(sol2.x)).max(),
@@ -83,3 +83,29 @@ class TestRoot:
         F = fun()
         with assert_raises(ValueError):
             root(F, [0.1, 0.0], method='lm')
+
+    def test_gh_10370(self):
+        # gh-10370 reported that passing both `args` and `jac` to `root` with
+        # `method='krylov'` caused a failure. Ensure that this is fixed whether
+        # the gradient is passed via `jac` or as a second output of `fun`.
+        def fun(x, ignored):
+            return [3*x[0] - 0.25*x[1]**2 + 10, 0.1*x[0]**2 + 5*x[1] - 2]
+
+        def grad(x, ignored):
+            return [[3, 0.5 * x[1]], [0.2 * x[0], 5]]
+
+        def fun_grad(x, ignored):
+            return fun(x, ignored), grad(x, ignored)
+
+        x0 = np.zeros(2)
+
+        ref = root(fun, x0, args=(1,), method='krylov')
+        message = 'Method krylov does not use the jacobian'
+        with assert_warns(RuntimeWarning, match=message):
+            res1 = root(fun, x0, args=(1,), method='krylov', jac=grad)
+        with assert_warns(RuntimeWarning, match=message):
+            res2 = root(fun_grad, x0, args=(1,), method='krylov', jac=True)
+
+        assert_equal(res1.x, ref.x)
+        assert_equal(res2.x, ref.x)
+        assert res1.success is res2.success is ref.success is True

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 from scipy._lib._util import check_random_state
 
