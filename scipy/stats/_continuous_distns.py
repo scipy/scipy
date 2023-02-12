@@ -5510,22 +5510,21 @@ class lognorm_gen(rv_continuous):
         `optimizer`, `loc` and `scale` keyword arguments are ignored.
         If the location is free, a likelihood maximum is found by
         setting its partial derivative wrt to location to 0, and
-        solving by substituting the analytical expressions of shape and
-        scale (or provided parameters). See, e.g., equation 3.1 in [1]_.
-
-        References
-        ----------
-        .. [1] Cohen, A.C., & Whitten, B.J. (1980). Estimation in the
-               three-parameter lognormal distribution, Journal of the
-               American Statistical Association, 75(370), 399-404.
-               https://doi.org/10.2307/2287466
+        solving by substituting the analytical expressions of shape
+        and scale (or provided parameters).
+        See, e.g., equation 3.1 in
+        A. Clifford Cohen & Betty Jones Whitten (1980)
+        Estimation in the Three-Parameter Lognormal Distribution,
+        Journal of the American Statistical Association, 75:370, 399-404
+        https://doi.org/10.2307/2287466
         \n\n""")
     def fit(self, data, *args, **kwds):
-        alpha_std = kwds.pop('alpha_std', 400)
-        n_steps = kwds.pop('n_steps', 16)
-        xtol = kwds.pop('xtol', None)
+
         if kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
+
+        parameters = _check_fit_input_parameters(self, data, args, kwds)
+        data, fshape, floc, fscale = parameters
 
         def get_shape_scale(loc):
             if fshape is None or fscale is None:
@@ -5539,83 +5538,35 @@ class lognorm_gen(rv_continuous):
             shifted = data - loc
             return np.sum((1 + np.log(shifted/scale)/shape**2)/shifted)
 
-        def get_estimate(loc):
-            shape, scale = get_shape_scale(loc)
-            return shape, loc, scale
-
-        parameters = _check_fit_input_parameters(self, data, args, kwds)
-        data, fshape, floc, fscale = parameters
-        mn = data.min()
-
         if floc is None:
-            mn_inf = np.nextafter(mn, -np.inf)
-            with np.errstate(over='raise'):
-                try:
-                    std = data.std()
-                except FloatingPointError:
-                    # Handle possible overflows when squaring.
-                    absmx = np.max(np.abs(data))
-                    std = np.std(data/absmx) * absmx
-            # Range of acceptable locations based on sample statistics.
-            lbrack, rbrack = data.mean() - alpha_std*std, mn_inf
+            rbrack = np.nextafter(min(data), -np.inf)
 
-            i = 1.
-            delta = mn - mn_inf
-            while dL_dLoc(rbrack) >= 0:
+            i = 1
+            delta = np.min(data) - rbrack
+            while dL_dLoc(rbrack) >= -1e-6:
                 i *= 2
-                rbrack = mn - delta*i
+                rbrack = np.min(data) - delta*i
 
-            if not (rbrack > lbrack):
-                loc = mn_inf
-            else:
-                # If the derivative is positive at `mn_inf`, and negative a few
-                # `delta` away from it, even though root finding will work, due
-                # to numerical inaccuracy the derivative evaluated at the root
-                # will be much too far away from zero, so that solution is
-                # discarded.
-                has_right_divergence = i > 1
-                b_steps = mn - np.logspace(np.log10(mn-lbrack),
-                                           np.log10(mn-rbrack),
-                                           n_steps)
+            lbrack = rbrack - 1
+            i = 0
 
-                derivatives = np.array([dL_dLoc(x) for x in b_steps])
-                sign_changes = np.nonzero(derivatives[1:]*derivatives[:-1] < 0)
-
-                results = [root_scalar(dL_dLoc,
-                                       bracket=(b_steps[idx], b_steps[idx+1]),
-                                       xtol=xtol)
-                           for idx in sign_changes[0]]
-                roots = [res.root
-                         for res in results
-                         if res.converged and np.isfinite(res.root)]
-                if len(roots) == 0:
-                    if len(results) > 0:
-                        return super().fit(data, *args, **kwds)
-                    else:
-                        # It is likely that the likelihood has no maximum and
-                        # the derivative asymptotically goes to 0 when the
-                        # location goes to negative infinity. Numerical noise
-                        # may lead to finding artificial solutions before that.
-                        # In that case, `lbrack` is usually a good
-                        # estimate, without being too far from `min(data)`.
-                        loc = lbrack
-                elif len(roots) == 1:
-                    loc = roots[0]
-                else:
-                    nllfs = [self.nnlf(get_estimate(root), data)
-                             for root in roots]
-                    loc = roots[np.argmin(nllfs)]
-
-                if has_right_divergence:
-                    # If the derivative is positive at `mn_inf`, it might be
-                    # the maximizer of the likelihood.
-                    if (self.nnlf(get_estimate(mn_inf), data)
-                            < self.nnlf(get_estimate(loc), data)):
-                        loc = mn_inf
+            while ((lbrack > -np.inf)
+                   and (dL_dLoc(lbrack)*dL_dLoc(rbrack) >= 0)):
+                i += 1
+                lbrack = rbrack - np.power(2., i)
+            if not lbrack > -np.inf:
+                return super().fit(data, *args, **kwds)
+            res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
+            if not res.converged:
+                return super().fit(data, *args, **kwds)
+            loc = res.root
         else:
-            if floc >= mn:
+            if floc >= np.min(data):
                 raise FitDataError("lognorm", lower=0., upper=np.inf)
             loc = floc
+
+        if rbrack < -1e6:
+            loc = np.nextafter(min(data), -np.inf)
 
         shape, scale = get_shape_scale(loc)
         if not (self._argcheck(shape) and scale > 0):
