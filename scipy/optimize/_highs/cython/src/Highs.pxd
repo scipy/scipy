@@ -53,3 +53,5 @@ cdef extern from "Highs.h":
         HighsStatus setHighsOptionValueDbl "setOptionValue" (const string & option, const double value)
 
         string primalDualStatusToString(const int primal_dual_status)
+
+        void resetGlobalScheduler(bool blocking)
