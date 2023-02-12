@@ -360,3 +360,20 @@ class TestDualAnnealing:
         assert_allclose(ret_bounds_class.x, np.arange(-2, 3), atol=1e-7)
         assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-9)
         assert ret_bounds_list.nfev == ret_bounds_class.nfev
+
+    def test_callable_jac_with_args_gh11052(self):
+        # dual_annealing used to fail when `jac` was callable and `args` were
+        # used; check that this is resolved. Example is from gh-11052.
+        rng = np.random.default_rng(94253637693657847462)
+        def f(x, power):
+            return np.sum(np.exp(x ** power))
+
+        def jac(x, power):
+            return np.exp(x ** power) * power * x ** (power - 1)
+
+        res1 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
+                              minimizer_kwargs=dict(method='L-BFGS-B'))
+        res2 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
+                              minimizer_kwargs=dict(method='L-BFGS-B',
+                                                    jac=jac))
+        assert_allclose(res1.fun, res2.fun, rtol=1e-6)

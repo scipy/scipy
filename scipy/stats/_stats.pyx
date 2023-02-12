@@ -762,9 +762,7 @@ def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
     """
     cdef:
         real[:, :] points_, xi_, values_, estimate, cho_cov_
-        int i, j, k
         int n, d, m, p
-        real arg, residual, norm
 
     n = points.shape[0]
     d = points.shape[1]
@@ -829,7 +827,7 @@ def gaussian_kernel_estimate_log(points, values, xi, cho_cov, dtype, real _=0):
         input coordinates.
     """
     cdef:
-        real[:, :] points_, xi_, values_, log_values_, estimate, cho_cov_
+        real[:, :] points_, xi_, values_, log_values_, estimate
         int i, j, k
         int n, d, m, p
         real arg, residual, log_norm
@@ -845,7 +843,6 @@ def gaussian_kernel_estimate_log(points, values, xi, cho_cov, dtype, real _=0):
         raise ValueError("Covariance matrix must match data dims")
 
     # Rescale the data
-    cho_cov_ = cho_cov.astype(dtype, copy=False)
     points_ = np.asarray(solve_triangular(cho_cov, points.T, lower=True).T,
                          dtype=dtype)
     xi_ = np.asarray(solve_triangular(cho_cov, xi.T, lower=True).T,

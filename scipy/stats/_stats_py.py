@@ -6692,7 +6692,7 @@ class TtestResult(TtestResultBase):
 
 
 def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
-                      estimate):
+                     estimate):
     # this could be any number of dimensions (including 0d), but there is
     # at most one unique value
     alternative = np.atleast_1d(alternative).ravel()
@@ -7028,6 +7028,12 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     The statistic is calculated as ``(mean1 - mean2)/se``, where ``se`` is the
     standard error. Therefore, the statistic will be positive when `mean1` is
     greater than `mean2` and negative when `mean1` is less than `mean2`.
+
+    This method does not check whether any of the elements of `std1` or `std2`
+    are negative. If any elements of the `std1` or `std2` parameters are
+    negative in a call to this method, this method will return the same result
+    as if it were passed ``numpy.abs(std1)`` and ``numpy.abs(std2)``,
+    respectively, instead; no exceptions or warnings will be emitted.
 
     References
     ----------

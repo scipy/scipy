@@ -52,7 +52,7 @@ def test_discrete_basic(distname, arg, first_case):
 
     alpha = 0.01
     check_discrete_chisquare(distfn, arg, rvs, alpha,
-           distname + ' chisquare')
+                             distname + ' chisquare')
 
     if first_case:
         locscale_defaults = (0,)

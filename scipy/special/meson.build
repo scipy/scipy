@@ -306,6 +306,14 @@ cython_special = custom_target('cython_special',
   install_dir: py3.get_install_dir() / 'scipy/special'
 )
 
+# Only needed to establish a dependency; see comments in linalg/meson.build
+# for cython_blas_pxd
+cython_special_pxd = custom_target('_dummy_cython_special.pxd',
+  output: '_dummy_cython_special.pxd',
+  input: cython_special[7],
+  command: [py3, '-c', '"@INPUT@"'],
+)
+
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
 uf_cython_gen = generator(cython,
   arguments : cython_args,
