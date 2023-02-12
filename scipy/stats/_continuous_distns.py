@@ -5901,33 +5901,40 @@ class lognorm_gen(rv_continuous):
 
         if floc is None:
             rbrack = np.nextafter(min(data), -np.inf)
+            dL_dLoc_rbrack = dL_dLoc(rbrack)
+            delta = 2 * (np.min(data) - rbrack)
+            while dL_dLoc_rbrack >= -1e-6:
+                rbrack = np.min(data) - delta
+                dL_dLoc_rbrack = dL_dLoc(rbrack)
+                delta *= 2
 
-            i = 1
-            delta = np.min(data) - rbrack
-            while dL_dLoc(rbrack) >= -1e-6:
-                i *= 2
-                rbrack = np.min(data) - delta*i
-
-            lbrack = rbrack - 1
-            i = 0
-
-            while ((lbrack > -np.inf)
-                   and (dL_dLoc(lbrack)*dL_dLoc(rbrack) >= 0)):
-                i += 1
-                lbrack = rbrack - np.power(2., i)
-            if not lbrack > -np.inf:
+            if (not np.isfinite(rbrack) or not np.isfinite(dL_dLoc_rbrack)
+                    or rbrack < (min(data) - 1e3)):
+                # loc = np.nextafter(min(data), -np.inf)  # usually. always?
                 return super().fit(data, *args, **kwds)
+
+            lbrack = np.minimum(np.nextafter(rbrack, -np.inf), rbrack-1)
+            dL_dLoc_lbrack = dL_dLoc(lbrack)
+            delta = 2 * (rbrack - lbrack)
+            while (np.isfinite(lbrack) and np.isfinite(dL_dLoc_lbrack)
+                   and np.sign(dL_dLoc_lbrack) == np.sign(dL_dLoc_rbrack)):
+                lbrack = rbrack - delta
+                dL_dLoc_lbrack = dL_dLoc(lbrack)
+                delta *= 2
+
+            if not np.isfinite(lbrack) or not np.isfinite(dL_dLoc_lbrack):
+                return super().fit(data, *args, **kwds)
+
             res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
             if not res.converged:
                 return super().fit(data, *args, **kwds)
+
             loc = res.root
+
         else:
             if floc >= np.min(data):
                 raise FitDataError("lognorm", lower=0., upper=np.inf)
             loc = floc
-
-        if rbrack < -1e6:
-            loc = np.nextafter(min(data), -np.inf)
 
         shape, scale = get_shape_scale(loc)
         if not (self._argcheck(shape) and scale > 0):
