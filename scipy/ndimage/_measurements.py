@@ -256,7 +256,8 @@ def find_objects(input, max_label=0):
         A list of tuples, with each tuple containing N slices (with N the
         dimension of the input array). Slices correspond to the minimal
         parallelepiped that contains the object. If a number is missing,
-        None is returned instead of a slice.
+        None is returned instead of a slice. The label ``l`` corresponds to
+        the index ``l-1`` in the returned list.
 
     See Also
     --------
@@ -1652,8 +1653,7 @@ def watershed_ift(input, markers, structure=None, output=None):
     if input.shape != markers.shape:
         raise RuntimeError('input and markers must have equal shape')
 
-    integral_types = [numpy.int0,
-                      numpy.int8,
+    integral_types = [numpy.int8,
                       numpy.int16,
                       numpy.int32,
                       numpy.int_,

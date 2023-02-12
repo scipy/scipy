@@ -15,7 +15,8 @@ quadrature_params = pytest.mark.parametrize(
 @quadrature_params
 def test_quad_vec_simple(quadrature):
     n = np.arange(10)
-    f = lambda x: x**n
+    def f(x):
+        return x ** n
     for epsabs in [0.1, 1e-3, 1e-6]:
         if quadrature == 'trapezoid' and epsabs < 1e-4:
             # slow: skip
@@ -44,7 +45,8 @@ def test_quad_vec_simple(quadrature):
 
 @quadrature_params
 def test_quad_vec_simple_inf(quadrature):
-    f = lambda x: 1 / (1 + np.float64(x)**2)
+    def f(x):
+        return 1 / (1 + np.float64(x) ** 2)
 
     for epsabs in [0.1, 1e-3, 1e-6]:
         if quadrature == 'trapezoid' and epsabs < 1e-4:
@@ -80,7 +82,8 @@ def test_quad_vec_simple_inf(quadrature):
         res, err = quad_vec(f, 0, np.inf, points=(1.0, 2.0), **kwargs)
         assert_allclose(res, np.pi/2, rtol=0, atol=max(epsabs, err))
 
-    f = lambda x: np.sin(x + 2) / (1 + x**2)
+    def f(x):
+        return np.sin(x + 2) / (1 + x ** 2)
     exact = np.pi / np.e * np.sin(2)
     epsabs = 1e-5
 
@@ -91,7 +94,8 @@ def test_quad_vec_simple_inf(quadrature):
 
 
 def test_quad_vec_args():
-    f = lambda x, a: x * (x + a) * np.arange(3)
+    def f(x, a):
+        return x * (x + a) * np.arange(3)
     a = 2
     exact = np.array([0, 4/3, 8/3])
 
@@ -109,7 +113,8 @@ def test_quad_vec_pool():
     assert_allclose(res, np.pi, rtol=0, atol=1e-4)
 
     with Pool(10) as pool:
-        f = lambda x: 1 / (1 + x**2)
+        def f(x):
+            return 1 / (1 + x ** 2)
         res, err = quad_vec(f, -np.inf, np.inf, norm='max', epsabs=1e-4, workers=pool.map)
         assert_allclose(res, np.pi, rtol=0, atol=1e-4)
 
@@ -149,7 +154,7 @@ def test_info():
 
     res, err, info = quad_vec(f, 0, 1, norm='max', full_output=True)
 
-    assert info.success == True
+    assert info.success is True
     assert info.status == 0
     assert info.message == 'Target precision reached.'
     assert info.neval > 0

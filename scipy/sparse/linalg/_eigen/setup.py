@@ -1,11 +1,10 @@
-
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
 
     config = Configuration('_eigen',parent_package,top_path)
 
-    config.add_subpackage(('arpack'))
-    config.add_subpackage(('lobpcg'))
+    config.add_subpackage('arpack')
+    config.add_subpackage('lobpcg')
 
     config.add_data_dir('tests')
 

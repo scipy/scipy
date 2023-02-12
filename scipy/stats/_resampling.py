@@ -130,7 +130,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     theta_hat_ji = [np.concatenate(theta_hat_i, axis=-1)
                     for theta_hat_i in theta_hat_ji]
 
-    n_j = [len(theta_hat_i) for theta_hat_i in theta_hat_ji]
+    n_j = [theta_hat_i.shape[-1] for theta_hat_i in theta_hat_ji]
 
     theta_hat_j_dot = [theta_hat_i.mean(axis=-1, keepdims=True)
                        for theta_hat_i in theta_hat_ji]
@@ -919,6 +919,7 @@ def _pairings_permutations_gen(n_permutations, n_samples, n_obs_sample, batch,
                 yield np.argsort(x, axis=-1)[:batch_actual]
 
     return batched_perm_generator()
+
 
 def _calculate_null_both(data, statistic, n_permutations, batch,
                          random_state=None):

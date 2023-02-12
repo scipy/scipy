@@ -21,7 +21,6 @@
 #define ellpj cephes_ellpj
 #define ellpk cephes_ellpk
 #define exp10 cephes_exp10
-#define exp1m cephes_exp1m
 #define exp2 cephes_exp2
 #define expn cephes_expn
 #define fdtrc cephes_fdtrc

@@ -79,7 +79,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d**2, np.sum((x-self.data[near_i])**2))
-            assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d, d))
+            assert_(near_d < d+eps, f"near_d={near_d:g} should be less than {d:g}")
         assert_equal(np.sum(self.distance(self.data, x, 2) < d**2+eps), hits)
 
     def test_points_near_l1(self):
@@ -93,7 +93,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d, self.distance(x, self.data[near_i], 1))
-            assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d, d))
+            assert_(near_d < d+eps, f"near_d={near_d:g} should be less than {d:g}")
         assert_equal(np.sum(self.distance(self.data, x, 1) < d+eps), hits)
 
     def test_points_near_linf(self):
@@ -107,7 +107,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d, self.distance(x, self.data[near_i], np.inf))
-            assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d, d))
+            assert_(near_d < d+eps, f"near_d={near_d:g} should be less than {d:g}")
         assert_equal(np.sum(self.distance(self.data, x, np.inf) < d+eps), hits)
 
     def test_approx(self):

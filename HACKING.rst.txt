@@ -58,7 +58,7 @@ tests, benchmarks, and correct code style.
     that you are adding.  This gives some degree of confidence that your code
     runs correctly, also on Python versions and hardware or OSes that you don't
     have available yourself.  An extensive description of how to write unit
-    tests is given in :doc:`numpy:reference/testing`, and :ref:`runtests`
+    tests is given in :doc:`numpy:reference/testing`, and :ref:`devpy-test`
     documents how to run them.
 
 2. Benchmarks
@@ -82,13 +82,22 @@ tests, benchmarks, and correct code style.
     as it will appear online.
 
 4. Code style
-    Uniformity of style in which code is written is important to others trying
-    to understand the code.  SciPy follows the standard Python guidelines for
-    code style, `PEP8`_.  In order to check that your code conforms to PEP8,
-    you can use the `pep8 package`_ style checker.  Most IDEs and text editors
-    have settings that can help you follow PEP8, for example by translating
-    tabs by four spaces.  Using `pyflakes`_ to check your code is also a good
-    idea. More information is available in :ref:`pep8-scipy`.
+    Uniform code style makes it easier for others to read your code.
+    SciPy follows the standard Python style guideline, `PEP8`_.
+
+    We provide a git pre-commit hook that can check each of your commits
+    for proper style. Install it (once) by running the following from
+    the root of the SciPy repository::
+
+      cp tools/pre-commit-hook.py .git/hooks/pre-commit
+
+    Alternatively, you may run the linter manually::
+
+      python dev.py lint
+
+    Most IDEs and text editors also have settings that can help you
+    follow PEP8, for example by translating tabs by four spaces. More
+    information is available in :ref:`pep8-scipy`.
 
 A :ref:`checklist<pr-checklist>`, including these and other requirements, is
 available at the end of the example :ref:`development-workflow`.
@@ -222,7 +231,8 @@ Triaging issues (investigating bug reports for validity and possible actions to
 take) is also a useful activity.  SciPy has many hundreds of open issues;
 closing invalid ones and correctly labelling valid ones (ideally with some first
 thoughts in a comment) allows prioritizing maintenance work and finding related
-issues easily when working on an existing function or subpackage.
+issues easily when working on an existing function or subpackage. To read more
+about issue triage, see :ref:`triaging`.
 
 Participating in discussions on the scipy-user and scipy-dev `mailing lists`_ is
 a contribution in itself.  Everyone who writes to those lists with a problem or
@@ -257,8 +267,6 @@ improvements, and submit your first PR!
 .. _PEP8: https://www.python.org/dev/peps/pep-0008/
 
 .. _pep8 package: https://pypi.python.org/pypi/pep8
-
-.. _pyflakes: https://pypi.python.org/pypi/pyflakes
 
 .. _Github help pages: https://help.github.com/articles/set-up-git/
 

@@ -61,7 +61,7 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
   hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
   sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
   # required so that gfortran knows where to find the linking libraries.
-  # export SDKROOT=/Applications/Xcode_13.2.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk
+  # export SDKROOT=/Applications/Xcode_13.3.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk
   # export SDKROOT=$(xcrun --show-sdk-path)
   type -p gfortran
 fi

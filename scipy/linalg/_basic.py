@@ -37,7 +37,7 @@ def _solve_check(n, info, lamch=None, rcond=None):
              LinAlgWarning, stacklevel=3)
 
 
-def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
+def solve(a, b, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a='gen',
           transposed=False):
     """
@@ -68,13 +68,6 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Square input data
     b : (N, NRHS) array_like
         Input data for the right hand side.
-    sym_pos : bool, default: False, deprecated
-        Assume `a` is symmetric and positive definite.
-
-        .. deprecated:: 0.19.0
-            This keyword is deprecated and should be replaced by using
-           ``assume_a = 'pos'``. `sym_pos` will be removed in SciPy 1.11.0.
-
     lower : bool, default: False
         Ignored if ``assume_a == 'gen'`` (the default). If True, the
         calculation uses only the data in the lower triangle of `a`;
@@ -167,14 +160,6 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         else:
             b1 = b1[:, None]
         b_is_1D = True
-
-    # Backwards compatibility - old keyword.
-    if sym_pos:
-        message = ("The 'sym_pos' keyword is deprecated and should be "
-                   "replaced by using 'assume_a = \"pos\"'. 'sym_pos' will be"
-                   " removed in SciPy 1.11.0.")
-        warn(message, DeprecationWarning, stacklevel=2)
-        assume_a = 'pos'
 
     if assume_a not in ('gen', 'sym', 'her', 'pos'):
         raise ValueError('{} is not a recognized matrix structure'
@@ -701,7 +686,7 @@ def _get_axis_len(aname, a, axis):
         ax += a.ndim
     if 0 <= ax < a.ndim:
         return a.shape[ax]
-    raise ValueError("'%saxis' entry is out of bounds" % (aname,))
+    raise ValueError(f"'{aname}axis' entry is out of bounds")
 
 
 def solve_circulant(c, b, singular='raise', tol=None,
@@ -1309,16 +1294,55 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     LinAlgError
         If SVD computation does not converge.
 
+    See Also
+    --------
+    pinvh : Moore-Penrose pseudoinverse of a hermititan matrix.
+
+    Notes
+    -----
+    If ``A`` is invertible then the Moore-Penrose pseudoinverse is exactly
+    the inverse of ``A`` [1]_. If ``A`` is not invertible then the
+    Moore-Penrose pseudoinverse computes the ``x`` solution to ``Ax = b`` such
+    that ``||Ax - b||`` is minimized [1]_.
+
+    References
+    ----------
+    .. [1] Penrose, R. (1956). On best approximate solutions of linear matrix
+           equations. Mathematical Proceedings of the Cambridge Philosophical
+           Society, 52(1), 17-19. doi:10.1017/S0305004100030929
+
     Examples
     --------
+
+    Given an ``m x n`` matrix ``A`` and an ``n x m`` matrix ``B`` the four
+    Moore-Penrose conditions are:
+
+    1. ``ABA = A`` (``B`` is a generalized inverse of ``A``),
+    2. ``BAB = B`` (``A`` is a generalized inverse of ``B``),
+    3. ``(AB)* = AB`` (``AB`` is hermitian),
+    4. ``(BA)* = BA`` (``BA`` is hermitian) [1]_.
+
+    Here, ``A*`` denotes the conjugate transpose. The Moore-Penrose
+    pseudoinverse is a unique ``B`` that satisfies all four of these
+    conditions and exists for any ``A``. Note that, unlike the standard
+    matrix inverse, ``A`` does not have to be square or have
+    independant columns/rows.
+
+    As an example, we can calculate the Moore-Penrose pseudoinverse of a
+    random non-square matrix and verify it satisfies the four conditions.
+
     >>> import numpy as np
     >>> from scipy import linalg
     >>> rng = np.random.default_rng()
-    >>> a = rng.standard_normal((9, 6))
-    >>> B = linalg.pinv(a)
-    >>> np.allclose(a, a @ B @ a)
+    >>> A = rng.standard_normal((9, 6))
+    >>> B = linalg.pinv(A)
+    >>> np.allclose(A @ B @ A, A)  # Condition 1
     True
-    >>> np.allclose(B, B @ a @ B)
+    >>> np.allclose(B @ A @ B, B)  # Condition 2
+    True
+    >>> np.allclose((A @ B).conj().T, A @ B)  # Condition 3
+    True
+    >>> np.allclose((B @ A).conj().T, B @ A)  # Condition 4
     True
 
     """
@@ -1403,8 +1427,15 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     LinAlgError
         If eigenvalue algorithm does not converge.
 
+    See Also
+    --------
+    pinv : Moore-Penrose pseudoinverse of a matrix.
+
     Examples
     --------
+
+    For a more detailed example see `pinv`.
+
     >>> import numpy as np
     >>> from scipy.linalg import pinvh
     >>> rng = np.random.default_rng()

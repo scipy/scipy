@@ -5,14 +5,14 @@ _stats_pxd = [
   fs.copyfile('_unuran/unuran.pxd'),
 ]
 
-stats_special_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+stats_special_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [
     _cython_tree,
     _ufuncs_pxi_pxd_sources,
     _stats_pxd,
-    cython_special])
+    cython_special_pxd])
 
 statlib_lib = static_library('statlib_lib',
   [
@@ -98,48 +98,54 @@ _qmc_cy = py3.extension_module('_qmc_cy',
 
 _stats_gen_pyx = custom_target('_stats_gen_pyx',
   output: [
-    '_biasedurn.pyx',  # 0 (used in this directory)
-    'beta_ufunc.pyx',  # 1 (used in stats/_boost - S_B)
-    'binom_ufunc.pyx',  # 2 (S_B)
-    'func_defs.pxd',  # 3 (S_B)
-    'hypergeom_ufunc.pyx',  # 4 (S_B)
-    'nbinom_ufunc.pyx',  # 5 (S_B)
-    'templated_pyufunc.pxd',  # 6 (S_B)
-    'unuran_wrapper.pyx',  # 7 (used in stats/_unuran)
-    'ncf_ufunc.pyx',  # 8 (S_B)
-    'ncx2_ufunc.pyx',  # 9 (S_B)
-    'nct_ufunc.pyx',  # 10 (S_B)
-    'skewnorm_ufunc.pyx',  # 11 (S_B)
-    'invgauss_ufunc.pyx',  # 12 (S_B)
+    'beta_ufunc.pyx',  # 0 (used in stats/_boost - S_B)
+    'binom_ufunc.pyx',  # 1 (S_B)
+    'func_defs.pxd',  # 2 (S_B)
+    'hypergeom_ufunc.pyx',  # 3 (S_B)
+    'nbinom_ufunc.pyx',  # 4 (S_B)
+    'templated_pyufunc.pxd',  # 5 (S_B)
+    'ncf_ufunc.pyx',  # 6 (S_B)
+    'ncx2_ufunc.pyx',  # 7 (S_B)
+    'nct_ufunc.pyx',  # 8 (S_B)
+    'skewnorm_ufunc.pyx',  # 9 (S_B)
+    'invgauss_ufunc.pyx',  # 10 (S_B)
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
   depends: _stats_pxd
 )
 
-cython_stats_gen_cpp = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@', '--cplus'],
+# Only needed to establish a dependency; see comments in linalg/meson.build
+# for cython_blas_pxd
+_stats_gen_pyx_dummy = custom_target('_dummy_stats_gen_pyx',
+  output: '_dummy_stats_gen.pxd',
+  input: _stats_gen_pyx[2],
+  command: [py3, '-c', '"@INPUT@"'],
+)
+
+cython_stats_gen_cpp = generator(cython,
+  arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree, _stats_gen_pyx])
+  depends : [_cython_tree, _stats_gen_pyx_dummy])
 
 # Build recipes defined here to get correct output path when used from
 # other subdirs.
-beta_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[1])
-binom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[2])
-hypergeom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[4])
-nbinom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[5])
-ncf_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[8])
-ncx2_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[9])
-nct_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[10])
-skewnorm_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[11])
-invgauss_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[12])
+beta_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[0])
+binom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[1])
+hypergeom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[3])
+nbinom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[4])
+ncf_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[6])
+ncx2_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[7])
+nct_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[8])
+skewnorm_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[9])
+invgauss_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[10])
 
 # Extra dependency from _lib
-unuran_wrap_pyx = lib_cython_gen.process(_stats_gen_pyx[7])
+unuran_wrap_pyx = lib_cython_gen.process('_unuran/unuran_wrapper.pyx')
 
 biasedurn = py3.extension_module('_biasedurn',
   [
-    cython_gen_cpp.process(_stats_gen_pyx[0]),  # _biasedurn.pyx
+    cython_gen_cpp.process('_biasedurn.pyx'),
     'biasedurn/fnchyppr.cpp',
     'biasedurn/impls.cpp',
     'biasedurn/stoc1.cpp',
@@ -184,6 +190,7 @@ py3.install_sources([
     '_axis_nan_policy.py',
     '_binned_statistic.py',
     '_binomtest.py',
+    '_censored_data.py',
     '_common.py',
     '_constants.py',
     '_continuous_distns.py',
@@ -206,10 +213,12 @@ py3.install_sources([
     '_odds_ratio.py',
     '_page_trend_test.py',
     '_qmc.py',
+    '_qmvnt.py',
     '_relative_risk.py',
     '_resampling.py',
     '_result_classes.py',
     '_rvs_sampling.py',
+    '_sensitivity_analysis.py',
     '_stats_mstats_common.py',
     '_stats_py.py',
     '_tukeylambda_stats.py',
@@ -249,5 +258,6 @@ py3.install_sources([
 subdir('_boost')
 subdir('_levy_stable')
 subdir('_unuran')
+subdir('_rcont')
 
 subdir('tests')

@@ -7,7 +7,6 @@ import sys
 import math
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
-from numpy.lib import NumpyVersion
 from scipy.stats.sampling import (
     TransformedDensityRejection,
     DiscreteAliasUrn,
@@ -401,7 +400,7 @@ class TestQRVS:
         qrng2 = deepcopy(qrng)
         qrvs = gen.qrvs(size=size_in, d=d_in, qmc_engine=qrng)
         if size_in is not None:
-            assert(qrvs.shape == shape_expected)
+            assert qrvs.shape == shape_expected
 
         if qrng2 is not None:
             uniform = qrng2.random(np.prod(size_in) or 1)
@@ -699,7 +698,7 @@ class TestDiscreteAliasUrn:
     def test_sampling_with_pv(self, pv):
         pv = np.asarray(pv, dtype=np.float64)
         rng = DiscreteAliasUrn(pv, random_state=123)
-        rvs = rng.rvs(100_000)
+        rng.rvs(100_000)
         pv = pv / pv.sum()
         variates = np.arange(0, len(pv))
         # test if the first few moments match
@@ -1122,7 +1121,7 @@ class TestNumericalInverseHermite:
         rng2 = deepcopy(rng)
         rvs = fni.rvs(size=size_in, random_state=rng)
         if size_in is not None:
-            assert(rvs.shape == size_out)
+            assert rvs.shape == size_out
 
         if rng2 is not None:
             rng2 = check_random_state(rng2)

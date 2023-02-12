@@ -11,19 +11,6 @@ import warnings
 import scipy
 
 
-def check_dir(module, module_name=None):
-    """Returns a mapping of all objects with the wrong __module__ attribute."""
-    if module_name is None:
-        module_name = module.__name__
-    results = {}
-    for name in dir(module):
-        item = getattr(module, name)
-        if (hasattr(item, '__module__') and hasattr(item, '__name__')
-                and item.__module__ != module_name):
-            results[name] = item.__module__ + '.' + item.__name__
-    return results
-
-
 def test_dir_testing():
     """Assert that output of dir has only one "testing/tester"
     attribute without duplicate"""
@@ -313,7 +300,7 @@ def test_api_importable():
         raise AssertionError("Modules in the public API that cannot be "
                              "imported: {}".format(module_names))
 
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True):
         warnings.filterwarnings('always', category=DeprecationWarning)
         warnings.filterwarnings('always', category=ImportWarning)
         for module_name in PRIVATE_BUT_PRESENT_MODULES:

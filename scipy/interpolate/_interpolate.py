@@ -11,10 +11,8 @@ from scipy._lib._util import prod
 
 from . import _fitpack_py
 from . import dfitpack
-from . import _fitpack
 from ._polyint import _Interpolator1D
 from . import _ppoly
-from ._fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
@@ -291,7 +289,7 @@ class interp2d:
 
         self.bounds_error = bounds_error
         self.fill_value = fill_value
-        self.x, self.y, self.z = [array(a, copy=copy) for a in (x, y, z)]
+        self.x, self.y, self.z = (array(a, copy=copy) for a in (x, y, z))
 
         self.x_min, self.x_max = np.amin(x), np.amax(x)
         self.y_min, self.y_max = np.amin(y), np.amax(y)

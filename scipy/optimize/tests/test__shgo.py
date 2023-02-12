@@ -3,7 +3,7 @@ import numpy
 from numpy.testing import assert_allclose
 import pytest
 from pytest import raises as assert_raises, warns
-from scipy.optimize import shgo, Bounds
+from scipy.optimize import shgo, Bounds, minimize
 from scipy.optimize._shgo import SHGO
 
 
@@ -570,7 +570,7 @@ class TestShgoArguments:
             # unittests which run test4_1 normally
             minimizer_kwargs = {'method': solver,
                                 'constraints': test3_1.cons}
-            print("Solver = {}".format(solver))
+            print(f"Solver = {solver}")
             print("=" * 100)
             run_test(test3_1, n=128, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
@@ -596,7 +596,7 @@ class TestShgoArguments:
             minimizer_kwargs = {'method': solver,
                                 'jac': jac,
                                 'hess': hess}
-            logging.info("Solver = {}".format(solver))
+            logging.info(f"Solver = {solver}")
             logging.info("=" * 100)
             run_test(test1_1, n=128, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
@@ -779,3 +779,34 @@ class TestShgoFailures:
                   'sampling_method': 'sobol'
                   }
         warns(UserWarning, shgo, *args, **kwargs)
+
+    @pytest.mark.parametrize('derivative', ['jac', 'hess', 'hessp'])
+    def test_21_2_derivative_options(self, derivative):
+        """shgo used to raise an error when passing `options` with 'jac'
+        # see gh-12829. check that this is resolved
+        """
+        def objective(x):
+            return 3 * x[0] * x[0] + 2 * x[0] + 5
+
+        def gradient(x):
+            return 6 * x[0] + 2
+
+        def hess(x):
+            return 6
+
+        def hessp(x, p):
+            return 6 * p
+
+        derivative_funcs = {'jac': gradient, 'hess': hess, 'hessp': hessp}
+        options = {derivative: derivative_funcs[derivative]}
+        minimizer_kwargs = {'method': 'trust-constr'}
+
+        bounds = [(-100, 100)]
+        res = shgo(objective, bounds, minimizer_kwargs=minimizer_kwargs,
+                   options=options)
+        ref = minimize(objective, x0=[0], bounds=bounds, **minimizer_kwargs,
+                       **options)
+
+        assert res.success
+        numpy.testing.assert_allclose(res.fun, ref.fun)
+        numpy.testing.assert_allclose(res.x, ref.x)

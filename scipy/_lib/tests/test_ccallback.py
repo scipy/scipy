@@ -99,7 +99,8 @@ def test_callbacks():
         user_data = USER_DATAS[user_data]()
 
         if func is callback_python:
-            func2 = lambda x: func(x, 2.0)
+            def func2(x):
+                return func(x, 2.0)
         else:
             func2 = LowLevelCallable(func, user_data)
             func = LowLevelCallable(func)
@@ -126,7 +127,8 @@ def test_bad_callbacks():
         func = BAD_FUNCS[func]()
 
         if func is callback_python:
-            func2 = lambda x: func(x, 2.0)
+            def func2(x):
+                return func(x, 2.0)
         else:
             func2 = LowLevelCallable(func, user_data)
             func = LowLevelCallable(func)

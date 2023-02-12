@@ -15,7 +15,7 @@ import numpy as np
 from scipy.special import lambertw
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
-from ._filter_design import cheby1, _validate_sos
+from ._filter_design import cheby1, _validate_sos, zpk2sos
 from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 import warnings
@@ -445,7 +445,7 @@ def _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=False):
     if not all(s1[a] == s2[a] or s1[a] == 1 or s2[a] == 1
                for a in range(in1.ndim) if a not in axes):
         raise ValueError("incompatible shapes for in1 and in2:"
-                         " {0} and {1}".format(s1, s2))
+                         " {} and {}".format(s1, s2))
 
     # Check that input sizes are compatible with 'valid' mode.
     if _inputs_swap_needed(mode, s1, s2, axes=axes):
@@ -4108,11 +4108,11 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     argument.  The difference between `y1` and `y2` is small.  For long
     signals, using `irlen` gives a significant performance improvement.
 
-    >>> x = rng.standard_normal(5000)
+    >>> x = rng.standard_normal(4000)
     >>> y1 = signal.filtfilt(b, a, x, method='gust')
     >>> y2 = signal.filtfilt(b, a, x, method='gust', irlen=approx_impulse_len)
     >>> print(np.max(np.abs(y1 - y2)))
-    1.80056858312e-10
+    2.875334415008979e-10
 
     """
     b = np.atleast_1d(b)
@@ -4517,32 +4517,34 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     if n is not None:
         n = operator.index(n)
 
+    result_type = x.dtype
+    if not np.issubdtype(result_type, np.inexact) \
+       or result_type.type == np.float16:
+        # upcast integers and float16 to float64
+        result_type = np.float64
+
     if ftype == 'fir':
         if n is None:
             half_len = 10 * q  # reasonable cutoff for our sinc-like function
             n = 2 * half_len
         b, a = firwin(n+1, 1. / q, window='hamming'), 1.
+        b = np.asarray(b, dtype=result_type)
+        a = np.asarray(a, dtype=result_type)
     elif ftype == 'iir':
         if n is None:
             n = 8
-        system = dlti(*cheby1(n, 0.05, 0.8 / q))
-        b, a = system.num, system.den
+        sos = cheby1(n, 0.05, 0.8 / q, output='sos')
+        sos = np.asarray(sos, dtype=result_type)
     elif isinstance(ftype, dlti):
-        system = ftype._as_tf()  # Avoids copying if already in TF form
-        b, a = system.num, system.den
+        system = ftype._as_zpk()
+        sos = zpk2sos(system.zeros, system.poles, system.gain)
+        sos = np.asarray(sos, dtype=result_type)
     else:
         raise ValueError('invalid ftype')
 
-    result_type = x.dtype
-    if result_type.kind in 'bui':
-        result_type = np.float64
-    b = np.asarray(b, dtype=result_type)
-    a = np.asarray(a, dtype=result_type)
-
     sl = [slice(None)] * x.ndim
-    a = np.asarray(a)
 
-    if a.size == 1:  # FIR case
+    if ftype == 'fir':
         b = b / a
         if zero_phase:
             y = resample_poly(x, 1, q, axis=axis, window=b)
@@ -4555,9 +4557,9 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
     else:  # IIR case
         if zero_phase:
-            y = filtfilt(b, a, x, axis=axis)
+            y = sosfiltfilt(sos, x, axis=axis)
         else:
-            y = lfilter(b, a, x, axis=axis)
+            y = sosfilt(sos, x, axis=axis)
         sl[axis] = slice(None, None, q)
 
     return y[tuple(sl)]

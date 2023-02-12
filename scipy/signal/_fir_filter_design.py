@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for FIR filter design."""
 
 from math import ceil, log
@@ -441,7 +440,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         else:
             raise ValueError('pass_zero must be True, False, "bandpass", '
                              '"lowpass", "highpass", or "bandstop", got '
-                             '%s' % (pass_zero,))
+                             '{}'.format(pass_zero))
     pass_zero = bool(operator.index(pass_zero))  # ensure bool-like
 
     pass_nyquist = bool(cutoff.size & 1) ^ pass_zero
@@ -895,7 +894,11 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     bands : array_like
         A monotonic nondecreasing sequence containing the band edges in
         Hz. All elements must be non-negative and less than or equal to
-        the Nyquist frequency given by `nyq`.
+        the Nyquist frequency given by `nyq`. The bands are specified as
+        frequency pairs, thus, if using a 1D array, its length must be
+        even, e.g., `np.array([0, 1, 2, 3, 4, 5])`. Alternatively, the
+        bands can be specified as an nx2 sized 2D array, where n is the
+        number of bands, e.g, `np.array([[0, 1], [2, 3], [4, 5]])`.
     desired : array_like
         A sequence the same size as `bands` containing the desired gain
         at the start and end point of each band.
@@ -1027,7 +1030,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     weight = np.asarray(weight).flatten()
     if len(weight) != len(desired):
         raise ValueError("weight must be the same size as the number of "
-                         "band pairs (%s)." % (len(bands),))
+                         "band pairs ({}).".format(len(bands)))
     if (weight < 0).any():
         raise ValueError("weight must be non-negative.")
 
