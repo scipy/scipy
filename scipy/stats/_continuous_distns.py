@@ -2747,6 +2747,9 @@ class genlogistic_gen(rv_continuous):
         vals = -np.log(pow(q, -1.0/c)-1)
         return vals
 
+    def _sf(self, x, c):
+        return -sc.expm1(-c * sc.log1p(np.exp(-x)))
+
     def _stats(self, c):
         mu = _EULER + sc.psi(c)
         mu2 = np.pi*np.pi/6.0 + sc.zeta(2, c)

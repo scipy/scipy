@@ -1442,6 +1442,19 @@ class TestGenLogistic:
     def test_entropy(self, c, ref):
         assert_allclose(stats.genlogistic.entropy(c), ref, rtol=5e-15)
 
+    # Expected values computed with mpmath with 50 digits of precision
+    # from mpmath import mp
+    # mp.dps = 50
+    # def sf_genlogistic_mpmath(x, c):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     return float(mp.one - (mp.one + mp.exp(-x))**(-c))
+
+    @pytest.mark.parametrize('x, c, ref', [(200, 10, 1.3838965267367375e-86),
+                                           (500, 20, 1.424915281348257e-216)])
+    def test_sf(self, x, c, ref):
+        assert_allclose(stats.genlogistic.sf(x, c), ref, rtol=1e-14)
+
 
 class TestHypergeom:
     def setup_method(self):
