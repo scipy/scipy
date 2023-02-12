@@ -276,7 +276,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         if points is not None:
             kwargs['points'] = tuple(f2.get_t(xp) for xp in points)
         res = quad_vec(f2, 0, 1, **kwargs)
-        return QuadratureResult(integral=-res.integral, err=res.integral, **res.__dict__)
+        return QuadratureResult(integral=-res.integral, abserr=res.integral, **res.__dict__)
     elif np.isinf(a) and np.isinf(b):
         sgn = -1 if b < a else 1
 

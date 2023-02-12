@@ -39,7 +39,7 @@ def test_quad_vec_simple(quadrature):
                                    epsrel=1e-8,
                                    limit=10000,
                                    **kwargs)
-        assert_allclose(res.res, exact, rtol=0, atol=epsabs)
+        assert_allclose(res.integral, exact, rtol=0, atol=epsabs)
 
 
 @quadrature_params
@@ -89,7 +89,7 @@ def test_quad_vec_simple_inf(quadrature):
     res = quad_vec(f, -np.inf, np.inf, limit=1000, norm='max', epsabs=epsabs,
                    quadrature=quadrature)
     assert res.status == 1
-    assert_allclose(res.res, exact, rtol=0, atol=max(epsabs, 1.5 * res.err))
+    assert_allclose(res.integral, exact, rtol=0, atol=max(epsabs, 1.5 * res.abserr))
 
 
 def test_quad_vec_args():
