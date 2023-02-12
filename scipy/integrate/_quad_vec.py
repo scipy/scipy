@@ -159,7 +159,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         .. deprecated:: 1.11.0
            Parameter `full_output` is deprecated and will be removed in version
            1.13.0. When `full_output` is unspecified, the contents of ``info``
-           are provided as an attribute of the result object.
+           are provided as attributes of the result object.
     args : tuple, optional
         Extra arguments to pass to function, if any.
 
@@ -241,8 +241,8 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         msg = ("Use of parameter 'full_output' is deprecated as of SciPy "
                "1.11.0 and will be removed in 1.13.0 . Please leave "
                "'full_output' unspecified; the contents of 'info' can now be"
-               "accessed as an attribute of the object returned by "
-               "'scipy.integrate.nquad'.")
+               "accessed as attributes of the object returned by "
+               "'scipy.integrate.quad_vec'.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
     
     a = float(a)
