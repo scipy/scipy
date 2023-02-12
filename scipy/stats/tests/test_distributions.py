@@ -1077,6 +1077,31 @@ class TestLaplaceasymmetric:
                         np.concatenate((pdf2, cdf2, sf2, ppf2, isf2)))
 
 
+class TestTruncexpon:
+
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def truncexpon_sf_mpmath(x, b):
+    #     x = mp.mpf(x)
+    #     b = mp.mpf(b)
+    # return float((mp.exp(-b) - mp.exp(-x))/(mp.exp(-b) -mp.one))
+
+    @pytest.mark.parametrize("x, b, ref",
+                             [(19.999999, 20, 2.0611546593828472e-15),
+                              (99.999999, 100, 3.7200778266200137e-50)])
+    def test_sf(self, x, b, ref):
+        assert_allclose(stats.truncexpon.sf(x, b), ref, rtol=1e-10)
+
+    # from test above use ref as q and x as desired output ref
+
+    @pytest.mark.parametrize("q, b, ref",
+                             [(2.0611546593828472e-15, 20, 19.999999),
+                              (3.7200778266200137e-50, 100, 99.999999)])
+    def test_isf(self, q, b, ref):
+        assert_allclose(stats.truncexpon.isf(q, b), ref, rtol=1e-12)
+
+
 class TestTruncnorm:
     def setup_method(self):
         np.random.seed(1234)
@@ -1625,6 +1650,23 @@ class TestLogistic:
         expected = [-10000.0, -800.0, -4.139937633089748e-08,
                     -1.9287498479639178e-22, -7.124576406741286e-218]
         assert_allclose(y, expected, rtol=2e-15)
+
+
+class TestLomax:
+
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # def lomax_isf_mpmath(q, c):
+    #     mp.dps = 50
+    #     q = mp.mpf(q)
+    #     c = mp.mpf(c)
+    # return float(mp.exp(-mp.log(q)/c) - mp.one)
+
+    @pytest.mark.parametrize("q, c, ref",
+                             [(1e-20, 10, 99.),
+                              (1e-12, 100, 0.3182567385564071)])
+    def test_isf(self, q, c, ref):
+        assert_allclose(stats.lomax.isf(q, c), ref, rtol=1e-14)
 
 
 class TestLogser:
