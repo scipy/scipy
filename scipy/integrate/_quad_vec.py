@@ -104,7 +104,7 @@ class _Bunch:
 
 
 QuadratureResult = _make_tuple_bunch("QuadratureResult",
-                                     field_names=["res", "err"],
+                                     field_names=["integral", "abserr"],
                                      extra_field_names=["success", "status",
                                                         "neval", "intervals",
                                                         "integrals",
@@ -169,9 +169,9 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     -------
     A result object with the following attributes:
 
-        res : {float, array-like}
-            Estimate for the result
-        err : float
+        integral : {float, array-like}
+            Estimate for integration
+        abserr : float
             Error estimate for the result in the given norm
         success : bool
             Whether integration reached target precision.
@@ -276,7 +276,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         if points is not None:
             kwargs['points'] = tuple(f2.get_t(xp) for xp in points)
         res = quad_vec(f2, 0, 1, **kwargs)
-        return QuadratureResult(res=-res.res, err=res.err, **res.__dict__)
+        return QuadratureResult(integral=-res.integral, err=res.integral, **res.__dict__)
     elif np.isinf(a) and np.isinf(b):
         sgn = -1 if b < a else 1
 
@@ -292,7 +292,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
             res = quad_vec(f2, -1, 1, **kwargs)
         else:
             res = quad_vec(f2, 1, 1, **kwargs)
-        return QuadratureResult(res=res.res*sgn, err=res.err, **res.__dict__)
+        return QuadratureResult(integral=res.integral*sgn, abserr=res.abserr, **res.__dict__)
     elif not (np.isfinite(a) and np.isfinite(b)):
         raise ValueError(f"invalid integration bounds a={a}, b={b}")
 
@@ -450,9 +450,9 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
                       errors=errors)
         return (res, err, info)
     else:
-        return QuadratureResult(res=res, err=err, success=success, status=ier,
-                         neval=neval, intervals=intervals,
-                         integrals=integrals, errors=errors, message=message)
+        return QuadratureResult(integral=res, abserr=err, success=success, status=ier,
+                                neval=neval, intervals=intervals,
+                                integrals=integrals, errors=errors, message=message)
 
 
 def _subdivide_interval(args):
