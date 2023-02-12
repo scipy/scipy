@@ -14,14 +14,14 @@ Authors
 * Name (commits)
 * Brett (1) +
 * Evgeni Burovski (2)
-* Ralf Gommers (8)
-* Matt Haberland (3)
+* Ralf Gommers (9)
+* Matt Haberland (4)
 * Ganesh Kathiresan (1) +
 * Rishi Kulkarni (1) +
 * Loïc Estève (1)
 * Michał Górny (1) +
 * Jarrod Millman (1)
-* Tyler Reddy (26)
+* Tyler Reddy (32)
 * Pamphile Roy (1)
 * Eli Schwartz (2)
 
@@ -60,7 +60,9 @@ Pull requests for 1.10.1
 * `#17803 <https://github.com/scipy/scipy/pull/17803>`__: MAINT: add missing \`__init__.py\` in test folder
 * `#17806 <https://github.com/scipy/scipy/pull/17806>`__: MAINT: stats.powerlaw.fit: fix overflow when np.min(data)==0
 * `#17810 <https://github.com/scipy/scipy/pull/17810>`__: BLD: use Meson's found cython instead of a wrapper script
+* `#17831 <https://github.com/scipy/scipy/pull/17831>`__: MAINT, CI: GHA MacOS setup.py update
 * `#17850 <https://github.com/scipy/scipy/pull/17850>`__: MAINT: remove use of \`__code__\` in \`scipy.integrate\`
+* `#17854 <https://github.com/scipy/scipy/pull/17854>`__: TST: mark test for \`stats.kde.marginal\` as xslow
 * `#17859 <https://github.com/scipy/scipy/pull/17859>`__: TST: fix test failures on i386, s390x, ppc64, riscv64 (Debian)
 * `#17862 <https://github.com/scipy/scipy/pull/17862>`__: BLD: Meson \`__config__\` generation
 * `#17931 <https://github.com/scipy/scipy/pull/17931>`__: TST: test_location_scale proper 32bit Linux skip
