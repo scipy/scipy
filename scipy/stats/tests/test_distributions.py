@@ -4168,7 +4168,7 @@ class TestLevyStable:
         # Test seems to be unstable (see gh-17839 for a bug report on Debian
         # i386), so skip it.
         if is_linux_32 and case == 'pdf':
-            pytest.skip("%s fit known to fail or deprecated" % dist)
+            pytest.skip("Test unstable on some platforms; see gh-17839, 17859")
 
         data = nolan_loc_scale_sample_data
         # We only test against piecewise as location/scale transforms
