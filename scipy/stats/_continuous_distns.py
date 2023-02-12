@@ -10657,7 +10657,9 @@ class rel_breitwigner_gen(rv_continuous):
                 2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
             ) / np.pi
         result = np.arctan(x/np.sqrt(-rho*(rho + 1j))) / np.sqrt(-1 - 1j/rho)
-        return C * 2 * np.imag(result)
+        result = C * 2 * np.imag(result)
+        # Sometimes above formula produces values greater than 1.
+        return np.clip(result, None, 1)
 
     def _munp(self, n, rho):
         if n == 1:
