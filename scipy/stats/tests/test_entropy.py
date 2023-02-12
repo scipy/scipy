@@ -1,4 +1,3 @@
-
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 # avoid new uses of the following; prefer assert/np.testing.assert_allclose

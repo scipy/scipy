@@ -6,8 +6,7 @@ cimport numpy as np
 from numpy.math cimport INFINITY
 
 
-from scipy.sparse import (csr_matrix,
-                          isspmatrix_coo, isspmatrix_csc, isspmatrix_csr)
+from scipy.sparse import isspmatrix_coo, isspmatrix_csc, isspmatrix_csr
 
 np.import_array()
 

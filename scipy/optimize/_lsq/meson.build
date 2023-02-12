@@ -2,6 +2,7 @@ _lsq = py3.extension_module('givens_elimination',
   linalg_cython_gen.process('givens_elimination.pyx'),
   c_args: cython_c_args,
   include_directories: [inc_np],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize/_lsq'
 )
@@ -16,6 +17,5 @@ py3.install_sources([
     'trf.py',
     'trf_linear.py'
   ],
-  pure: false,
   subdir: 'scipy/optimize/_lsq'
 )

@@ -143,7 +143,7 @@ New features
   such as when axis-slices have no unmasked elements or entire inputs are of
   size zero, are handled consistently.
 
-- Add a ``weight`` parameter to `scipy.stats.hmean`.
+- Add a ``weights`` parameter to `scipy.stats.hmean`.
 
 - Several improvements have been made to `scipy.stats.levy_stable`. Substantial
   improvement has been made for numerical evaluation of the pdf and cdf,

@@ -3,7 +3,7 @@ from cpython.pycapsule cimport (
     PyCapsule_GetContext
 )
 from cpython.long cimport PyLong_AsVoidPtr
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport free
 from libc.string cimport strdup
 
 from .ccallback cimport (ccallback_t, ccallback_prepare, ccallback_release, CCALLBACK_DEFAULTS,
@@ -169,7 +169,6 @@ def test_call_cython(callback_obj, double value):
     cdef:
         ccallback_t callback
         int error_flag = 0
-        int ret
         double result
 
     ccallback_prepare(&callback, signatures, callback_obj, CCALLBACK_DEFAULTS)

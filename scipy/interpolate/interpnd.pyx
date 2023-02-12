@@ -241,6 +241,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     We can interpolate values on a 2D plane:
 
     >>> from scipy.interpolate import LinearNDInterpolator
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
     >>> x = rng.random(10) - 0.5
@@ -290,11 +291,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
     def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
-        cdef const double[:,::1] points = self.points
         cdef const int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex fill_value
-        cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
+        cdef int i, j, k, m, ndim, isimplex, start, nvalues
         cdef qhull.DelaunayInfo_t info
         cdef double eps, eps_broad
 
@@ -623,9 +623,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     cdef double_or_complex \
          f1, f2, f3, df12, df13, df21, df23, df31, df32
     cdef double g[3]
-    cdef double \
-         e12x, e12y, e23x, e23y, e31x, e31y, \
-         e14x, e14y, e24x, e24y, e34x, e34y
+    cdef double e12x, e12y, e23x, e23y, e31x, e31y
     cdef double_or_complex w
     cdef double minval
     cdef double b1, b2, b3, b4
@@ -649,15 +647,6 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
             - d.points[0 + 2*d.simplices[3*isimplex + 2]])
     e31y = (+ d.points[1 + 2*d.simplices[3*isimplex + 0]]
             - d.points[1 + 2*d.simplices[3*isimplex + 2]])
-
-    e14x = (e12x - e31x)/3
-    e14y = (e12y - e31y)/3
-
-    e24x = (-e12x + e23x)/3
-    e24y = (-e12y + e23y)/3
-
-    e34x = (e31x - e23x)/3
-    e34y = (e31y - e23y)/3
 
     f1 = f[0]
     f2 = f[1]
@@ -851,6 +840,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     We can interpolate values on a 2D plane:
 
     >>> from scipy.interpolate import CloughTocher2DInterpolator
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
     >>> x = rng.random(10) - 0.5
@@ -921,14 +911,13 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef const double_or_complex[:,::1] values = self.values
         cdef const double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
-        cdef const double[:,::1] points = self.points
         cdef const int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex f[NPY_MAXDIMS+1]
         cdef double_or_complex df[2*NPY_MAXDIMS+2]
         cdef double_or_complex w
         cdef double_or_complex fill_value
-        cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
+        cdef int i, j, k, ndim, isimplex, start, nvalues
         cdef qhull.DelaunayInfo_t info
         cdef double eps, eps_broad
 

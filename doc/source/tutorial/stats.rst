@@ -25,6 +25,7 @@ Note: This documentation is work in progress.
    stats/discrete
    stats/continuous
    stats/sampling
+   stats/resampling
 
 
 Random variables
@@ -100,7 +101,7 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats, d), stats.rv_discrete)]
     >>> print('number of continuous distributions: %d' % len(dist_continu))
-    number of continuous distributions: 107
+    number of continuous distributions: 106
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
     number of discrete distributions:   19
 

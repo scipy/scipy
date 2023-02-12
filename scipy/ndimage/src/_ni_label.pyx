@@ -3,8 +3,6 @@
 # Requires Cython version 0.17 or greater due to type templating.
 ######################################################################
 
-cimport cython
-from cython cimport sizeof
 import numpy as np
 cimport numpy as np
 
@@ -249,8 +247,8 @@ cpdef _label(np.ndarray input,
         np.intp_t L, delta, i
         np.intp_t si, so, ss
         np.intp_t total_offset
-        np.intp_t output_ndim, structure_ndim, strides
-        bint needs_self_labeling, valid, center, use_previous, overflowed
+        np.intp_t output_ndim, structure_ndim
+        bint needs_self_labeling, valid, use_previous, overflowed
         np.ndarray _line_buffer, _neighbor_buffer
         np.uintp_t *line_buffer
         np.uintp_t *neighbor_buffer

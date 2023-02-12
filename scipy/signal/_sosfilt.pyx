@@ -36,6 +36,7 @@ cdef void _sosfilt_float(DTYPE_floating_t [:, ::1] sos,
     cdef Py_ssize_t i, n, s
     cdef DTYPE_floating_t x_new, x_cur
     cdef DTYPE_floating_t[:, ::1] zi_slice
+    cdef DTYPE_floating_t const_1 = 1.0
 
     # jumping through a few memoryview hoops to reduce array lookups,
     # the original version is still in the gil version below.
@@ -43,7 +44,7 @@ cdef void _sosfilt_float(DTYPE_floating_t [:, ::1] sos,
         zi_slice = zi[i, :, :]
         for n in xrange(n_samples):
 
-            x_cur = x[i, n]
+            x_cur = const_1 * x[i, n]  # make sure x_cur is a copy
 
             for s in xrange(n_sections):
                 x_new = sos[s, 0] * x_cur + zi_slice[s, 0]

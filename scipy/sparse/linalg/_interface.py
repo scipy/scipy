@@ -142,9 +142,9 @@ class LinearOperator:
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
             # Operate as _CustomLinearOperator factory.
-            return super(LinearOperator, cls).__new__(_CustomLinearOperator)
+            return super().__new__(_CustomLinearOperator)
         else:
-            obj = super(LinearOperator, cls).__new__(cls)
+            obj = super().__new__(cls)
 
             if (type(obj)._matvec == LinearOperator._matvec
                     and type(obj)._matmat == LinearOperator._matmat):
@@ -165,7 +165,7 @@ class LinearOperator:
 
         shape = tuple(shape)
         if not isshape(shape):
-            raise ValueError("invalid shape %r (must be 2-d)" % (shape,))
+            raise ValueError(f"invalid shape {shape!r} (must be 2-d)")
 
         self.dtype = dtype
         self.shape = shape
@@ -552,6 +552,7 @@ class _CustomLinearOperator(LinearOperator):
 
 class _AdjointLinearOperator(LinearOperator):
     """Adjoint of arbitrary Linear Operator"""
+
     def __init__(self, A):
         shape = (A.shape[1], A.shape[0])
         super().__init__(dtype=A.dtype, shape=shape)
@@ -572,6 +573,7 @@ class _AdjointLinearOperator(LinearOperator):
 
 class _TransposedLinearOperator(LinearOperator):
     """Transposition of arbitrary Linear Operator"""
+
     def __init__(self, A):
         shape = (A.shape[1], A.shape[0])
         super().__init__(dtype=A.dtype, shape=shape)
@@ -790,6 +792,7 @@ def aslinearoperator(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse.linalg import aslinearoperator
     >>> M = np.array([[1,2,3],[4,5,6]], dtype=np.int32)
     >>> aslinearoperator(M)

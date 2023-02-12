@@ -46,6 +46,7 @@ Programming Language :: Python :: 3
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
 Programming Language :: Python :: 3.10
+Programming Language :: Python :: 3.11
 Topic :: Software Development :: Libraries
 Topic :: Scientific/Engineering
 Operating System :: Microsoft :: Windows
@@ -410,7 +411,7 @@ def check_setuppy_command():
     return run_build
 
 def configuration(parent_package='', top_path=None):
-    from scipy._build_utils.system_info import get_info, NotFoundError
+    from numpy.distutils.system_info import get_info, NotFoundError
     from numpy.distutils.misc_util import Configuration
 
     lapack_opt = get_info('lapack_opt')

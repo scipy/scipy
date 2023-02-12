@@ -94,7 +94,7 @@ RUN apt-get update && \
     vim \
     wget && \
     # this needs to be done after installing dirmngr
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0 && \ 
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-key 23F3D4EA75716059 && \ 
     apt-add-repository https://cli.github.com/packages && \ 
     apt-get install -yq --no-install-recommends \
     gh && \ 

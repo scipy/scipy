@@ -39,7 +39,7 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         See :func:`~scipy.fft.fft` for more details.
     orthogonalize : bool, optional
         Whether to use the orthogonalized DCT variant (see Notes).
-        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+        Defaults to ``True`` when ``norm="ortho"`` and ``False`` otherwise.
 
         .. versionadded:: 1.8.0
 
@@ -104,7 +104,7 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         See :func:`~scipy.fft.fft` for more details.
     orthogonalize : bool, optional
         Whether to use the orthogonalized IDCT variant (see Notes).
-        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+        Defaults to ``True`` when ``norm="ortho"`` and ``False`` otherwise.
 
         .. versionadded:: 1.8.0
 
@@ -169,7 +169,7 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         See :func:`~scipy.fft.fft` for more details.
     orthogonalize : bool, optional
         Whether to use the orthogonalized DST variant (see Notes).
-        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+        Defaults to ``True`` when ``norm="ortho"`` and ``False`` otherwise.
 
         .. versionadded:: 1.8.0
 
@@ -234,7 +234,7 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         See :func:`~scipy.fft.fft` for more details.
     orthogonalize : bool, optional
         Whether to use the orthogonalized IDST variant (see Notes).
-        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+        Defaults to ``True`` when ``norm="ortho"`` and ``False`` otherwise.
 
         .. versionadded:: 1.8.0
 
@@ -293,7 +293,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
         See :func:`~scipy.fft.fft` for more details.
     orthogonalize : bool, optional
         Whether to use the orthogonalized DCT variant (see Notes).
-        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+        Defaults to ``True`` when ``norm="ortho"`` and ``False`` otherwise.
 
         .. versionadded:: 1.8.0
 
@@ -444,7 +444,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
         See :func:`~scipy.fft.fft` for more details.
     orthogonalize : bool, optional
         Whether to use the orthogonalized IDCT variant (see Notes).
-        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+        Defaults to ``True`` when ``norm="ortho"`` and ``False`` otherwise.
 
         .. versionadded:: 1.8.0
 
@@ -524,7 +524,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
         See :func:`~scipy.fft.fft` for more details.
     orthogonalize : bool, optional
         Whether to use the orthogonalized DST variant (see Notes).
-        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+        Defaults to ``True`` when ``norm="ortho"`` and ``False`` otherwise.
 
         .. versionadded:: 1.8.0
 
@@ -659,7 +659,7 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
         See :func:`~scipy.fft.fft` for more details.
     orthogonalize : bool, optional
         Whether to use the orthogonalized IDST variant (see Notes).
-        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+        Defaults to ``True`` when ``norm="ortho"`` and ``False`` otherwise.
 
         .. versionadded:: 1.8.0
 

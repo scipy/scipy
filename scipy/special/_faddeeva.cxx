@@ -76,7 +76,7 @@ npy_cdouble faddeeva_dawsn_complex(npy_cdouble zp)
 npy_cdouble faddeeva_ndtr(npy_cdouble zp)
 {
     complex<double> z(zp.real, zp.imag);
-    z *= NPY_SQRT1_2;
+    z *= M_SQRT1_2;
     complex<double> w = 0.5 * Faddeeva::erfc(-z);
     return npy_cpack(real(w), imag(w));
 }
@@ -105,7 +105,7 @@ npy_cdouble faddeeva_ndtr(npy_cdouble zp)
  */
 double faddeeva_log_ndtr(double x)
 {
-    double t = x*NPY_SQRT1_2;
+    double t = x*M_SQRT1_2;
     if (x < -1.0) {
         return log(faddeeva_erfcx(-t)/2) - t*t;
     }
@@ -127,13 +127,13 @@ npy_cdouble faddeeva_log_ndtr_complex(npy_cdouble zp)
     complex<double> z(zp.real, zp.imag);
     if (zp.real > 6) {
         // Underflow. Close to the real axis, expand the log in log(1 - ndtr(-z)).
-        complex<double> w = -0.5 * Faddeeva::erfc(z*NPY_SQRT1_2);
+        complex<double> w = -0.5 * Faddeeva::erfc(z*M_SQRT1_2);
         if (abs(w) < 1e-8) {
             return npy_cpack(real(w), imag(w));
         }
     }
 
-    z *= -NPY_SQRT1_2;
+    z *= -M_SQRT1_2;
     double x = real(z), y = imag(z);
 
     /* Compute the principal branch of $log(exp(-z^2))$, using the fact that
@@ -143,8 +143,8 @@ npy_cdouble faddeeva_log_ndtr_complex(npy_cdouble zp)
     double mRe_z2 = (y - x) * (x + y); // Re(-z^2), being careful of overflow
     double mIm_z2 = -2*x*y; // Im(-z^2)
 
-    double im = fmod(mIm_z2, 2.0*NPY_PI);
-    if (im > NPY_PI) {im -= 2.0*NPY_PI;}
+    double im = fmod(mIm_z2, 2.0*M_PI);
+    if (im > M_PI) {im -= 2.0*M_PI;}
 
     complex<double> val1 = complex<double>(mRe_z2, im);
 
@@ -155,8 +155,8 @@ npy_cdouble faddeeva_log_ndtr_complex(npy_cdouble zp)
      * the imaginary part of the result should belong to [-pi, pi].
      */
     im = imag(result);
-    if (im >= NPY_PI){ im -= 2*NPY_PI; }
-    if (im < -NPY_PI){ im += 2*NPY_PI; }
+    if (im >= M_PI){ im -= 2*M_PI; }
+    if (im < -M_PI){ im += 2*M_PI; }
 
     return npy_cpack(real(result), im);
 }
@@ -174,7 +174,7 @@ double faddeeva_voigt_profile(double x, double sigma, double gamma)
                 return INFINITY;
             return 0;
         }
-        return gamma / NPY_PI / (x*x + gamma*gamma);
+        return gamma / M_PI / (x*x + gamma*gamma);
     }
     if (gamma == 0){
         return 1 / SQRT_2PI / sigma * exp(-(x/sigma)*(x/sigma) / 2);

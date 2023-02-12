@@ -4,6 +4,5 @@ py3.install_sources([
     'test_rotation_groups.py',
     'test_rotation_spline.py'
   ],
-  pure: false,
   subdir: 'scipy/spatial/transform/tests'
 )

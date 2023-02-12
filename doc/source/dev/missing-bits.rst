@@ -48,6 +48,46 @@ additional parameters can be added to the function anywhere after the
 ``*``; new parameters do not have to be added after the existing parameters.
 
 
+Return Objects
+~~~~~~~~~~~~~~
+For new functions or methods that return two or more conceptually distinct
+elements, return the elements in an object type that is not iterable. In
+particular, do not return a ``tuple``, ``namedtuple``, or a "bunch" produced
+by ``scipy._lib._bunch.make_tuple_bunch``, the latter being reserved for adding
+new attributes to iterables returned by existing functions. Instead, use an
+existing return class (e.g. `~scipy.optimize.OptimizeResult`), a new, custom
+return class.
+
+This practice of returning non-iterable objects forces callers to be more
+explicit about the element of the returned object that they wish to access,
+and it makes it easier to extend the function or method in a backward
+compatible way.
+
+If the return class is simple and not public (i.e. importable from a public
+module), it may be documented like::
+
+    Returns
+    -------
+    res : MyResultObject
+        An object with attributes:
+
+        attribute1 : ndarray
+            Customized description of attribute 1.
+        attribute2 : ndarray
+            Customized description of attribute 2.
+
+Here "MyResultObject" above does not link to external documentation because it
+is simple enough to fully document all attributes immediately below its name.
+
+Some return classes are sufficiently complex to deserve their own rendered
+documentation. This is fairly standard if the return class is public, but
+return classes should only be public if 1) they are intended to be imported by
+end-users and 2) if they have been approved by the mailing list. For complex,
+private return classes, please see  how `~scipy.stats.binomtest` summarizes
+`~scipy.stats._result_classes.BinomTestResult` and links to its documentation,
+and note that ``BinomTestResult`` cannot be imported from `~scipy.stats`.
+
+
 Test functions from `numpy.testing`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In new code, don't use `assert_almost_equal`, `assert_approx_equal` or
@@ -83,109 +123,3 @@ A test for this is::
 
 The ``match`` argument ensures that the test doesn't pass by raising
 a ``ValueError`` that is not related to the input containing ``nan``.
-
-
-Documentation Guidelines
-------------------------
-
-Use "must", not "should"
-~~~~~~~~~~~~~~~~~~~~~~~~
-When specifying a required condition on the input parameters, the
-word "must" is preferable to "should".  For many English speakers,
-"must" implies a stronger constraint than "should",  e.g. "I must
-have oxygen to live" versus "I should exercise more".
-
-    Yes::
-
-            Parameters
-            ----------
-            x : float
-                `x` must be nonnegative.
-
-    No::
-
-            Parameters
-            ----------
-            x : float
-                `x` should be nonnegative.
-
-
-Use of the 'versionadded' markup
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* For a new function, the 'versionadded' markup goes in the "Notes" section,
-  *not* in the description at the beginning of the docstring.
-* For a new argument added to an existing function,  the 'versionadded' markup
-  is placed at the end of the description of the argument in the "Parameters"
-  section.
-
-
-Citing wikipedia articles in the "References" section
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-It is acceptable to use wikipedia articles as references.
-When creating the citation for the reference, include the article title,
-the name "Wikipedia" (similar to how one gives a journal title), and the
-URL.
-
-    Yes::
-
-        .. [1] "Zeta Distribution", Wikipedia,
-               https://en.wikipedia.org/wiki/Zeta_distribution
-
-    No::
-
-        .. [1] https://en.wikipedia.org/wiki/Zeta_distribution
-
-
-DOIs in references
-~~~~~~~~~~~~~~~~~~
-The use of DOIs in references is strongly recommended.
-There is special Sphinx syntax for DOIs: `:doi:`. For example::
-
-    .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
-           C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
-           203-215, :doi:`10.1016/j.patcog.2018.09.014`
-
-(arXiv articles also have special markup available: `:arxiv:`.)
-
-
-Bulleted lists
-~~~~~~~~~~~~~~
-This is not so much a guideline as it is a reminder of the Sphinx markup
-for bulleted lists.  The incorrect use of indentation is common enough
-that it is worthwhile mentioning it here.
-
-When creating a bulleted list:
-
-* Don't end the preceding line with `::`.
-* Don't indent the bullets.
-* Include a blank line before and after the list.
-
-Some examples:
-
-    Yes::
-
-        Some text that precedes this interesting list:
-
-        * The first item in the list.
-        * The second item in the list.
-        * You get the idea.
-
-        Some text that follows the list.
-
-    No::
-
-        Some text that precedes this interesting list:
-
-          * The first item in the list.
-          * The second item in the list.
-          * You get the idea.
-
-        Some text that follows the list.
-
-    No::
-
-        Some text that precedes this interesting list:
-        * The first item in the list.
-        * The second item in the list.
-        * You get the idea.
-        Some text that follows the list.

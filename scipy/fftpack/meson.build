@@ -2,6 +2,7 @@ py3.extension_module('convolve',
   cython_gen.process('convolve.pyx'),
   c_args: cython_c_args,
   include_directories: inc_np,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/fftpack'
 )
@@ -22,8 +23,7 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,             # Will be installed next to binaries
-  subdir: 'scipy/fftpack'  # Folder relative to site-packages to install to
+  subdir: 'scipy/fftpack'
 )
 
 subdir('tests')

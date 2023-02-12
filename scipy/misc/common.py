@@ -1,5 +1,5 @@
 # This file is not meant for public use and will be removed in SciPy v2.0.0.
-# Use the `scipy.misc` namespace for importing the functions
+# Use the `scipy.datasets` namespace for importing the dataset functions
 # included below.
 
 import warnings
@@ -20,7 +20,7 @@ def __getattr__(name):
     if name not in __all__:
         raise AttributeError(
             "scipy.misc.common is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.misc instead.")
+            f"{name}. Try looking in scipy.datasets instead.")
 
     warnings.warn(f"Please use `{name}` from the `scipy.misc` namespace, "
                   "the `scipy.misc.common` namespace is deprecated.",

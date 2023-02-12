@@ -3,8 +3,6 @@
 #
 
 import sys
-import subprocess
-import time
 from functools import reduce
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
@@ -53,10 +51,10 @@ def test_lapack_documented():
     if lapack.__doc__ is None:  # just in case there is a python -OO
         pytest.skip('lapack.__doc__ is None')
     names = set(lapack.__doc__.split())
-    ignore_list = set([
+    ignore_list = {
         'absolute_import', 'clapack', 'division', 'find_best_lapack_type',
         'flapack', 'print_function', 'HAS_ILP64',
-    ])
+    }
     missing = list()
     for name in dir(lapack):
         if (not name.startswith('_') and name not in ignore_list and
@@ -746,39 +744,32 @@ def test_larfg_larf():
         assert_allclose(a[0, :], expected, atol=1e-5)
 
 
-@pytest.mark.xslow
 def test_sgesdd_lwork_bug_workaround():
     # Test that SGESDD lwork is sufficiently large for LAPACK.
     #
-    # This checks that workaround around an apparent LAPACK bug
-    # actually works. cf. gh-5401
-    #
-    # xslow: requires 1GB+ of memory
+    # This checks that _compute_lwork() correctly works around a bug in
+    # LAPACK versions older than 3.10.1.
 
-    p = subprocess.Popen([sys.executable, '-c',
-                          'import numpy as np; '
-                          'from scipy.linalg import svd; '
-                          'a = np.zeros([9537, 9537], dtype=np.float32); '
-                          'svd(a)'],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-
-    # Check if it an error occurred within 5 sec; the computation can
-    # take substantially longer, and we will not wait for it to finish
-    for j in range(50):
-        time.sleep(0.1)
-        if p.poll() is not None:
-            returncode = p.returncode
-            break
-    else:
-        # Didn't exit in time -- probably entered computation.  The
-        # error is raised before entering computation, so things are
-        # probably OK.
-        returncode = 0
-        p.terminate()
-
-    assert_equal(returncode, 0,
-                 "Code apparently failed: " + p.stdout.read().decode())
+    sgesdd_lwork = get_lapack_funcs('gesdd_lwork', dtype=np.float32,
+                                    ilp64='preferred')
+    n = 9537
+    lwork = _compute_lwork(sgesdd_lwork, n, n,
+                           compute_uv=True, full_matrices=True)
+    # If we called the Fortran function SGESDD directly with IWORK=-1, the
+    # LAPACK bug would result in lwork being 272929856, which was too small.
+    # (The result was returned in a single precision float, which does not
+    # have sufficient precision to represent the exact integer value that it
+    # computed internally.)  The work-around implemented in _compute_lwork()
+    # will convert that to 272929888.  If we are using LAPACK 3.10.1 or later
+    # (such as in OpenBLAS 0.3.21 or later), the work-around will return
+    # 272929920, because it does not know which version of LAPACK is being
+    # used, so it always applies the correction to whatever it is given.  We
+    # will accept either 272929888 or 272929920.
+    # Note that the acceptable values are a LAPACK implementation detail.
+    # If a future version of LAPACK changes how SGESDD works, and therefore
+    # changes the required LWORK size, the acceptable values might have to
+    # be updated.
+    assert lwork == 272929888 or lwork == 272929920
 
 
 class TestSytrd:
@@ -1476,7 +1467,7 @@ class TestBlockedQR:
             geqrt, gemqrt = get_lapack_funcs(('geqrt', 'gemqrt'), dtype=dtype)
 
             a, t, info = geqrt(n, A)
-            assert(info == 0)
+            assert info == 0
 
             # Extract elementary reflectors from lower triangle, adding the
             # main diagonal of ones.
@@ -1500,7 +1491,7 @@ class TestBlockedQR:
             for side in ('L', 'R'):
                 for trans in ('N', transpose):
                     c, info = gemqrt(a, t, C, side=side, trans=trans)
-                    assert(info == 0)
+                    assert info == 0
 
                     if trans == transpose:
                         q = Q.T.conj()
@@ -1517,7 +1508,7 @@ class TestBlockedQR:
                     # Test default arguments
                     if (side, trans) == ('L', 'N'):
                         c_default, info = gemqrt(a, t, C)
-                        assert(info == 0)
+                        assert info == 0
                         assert_equal(c_default, c)
 
             # Test invalid side/trans
@@ -1543,7 +1534,7 @@ class TestBlockedQR:
             # triangular
             for l in (0, n // 2, n):
                 a, b, t, info = tpqrt(l, n, A, B)
-                assert(info == 0)
+                assert info == 0
 
                 # Check that lower triangular part of A has not been modified
                 assert_equal(np.tril(a, -1), np.tril(A, -1))
@@ -1579,7 +1570,7 @@ class TestBlockedQR:
                     for trans in ('N', transpose):
                         c, d, info = tpmqrt(l, b, t, C, D, side=side,
                                             trans=trans)
-                        assert(info == 0)
+                        assert info == 0
 
                         if trans == transpose:
                             q = Q.T.conj()
@@ -1599,7 +1590,7 @@ class TestBlockedQR:
 
                         if (side, trans) == ('L', 'N'):
                             c_default, d_default, info = tpmqrt(l, b, t, C, D)
-                            assert(info == 0)
+                            assert info == 0
                             assert_equal(c_default, c)
                             assert_equal(d_default, d)
 
@@ -2184,7 +2175,7 @@ def test_pttrf_pttrs(ddtype, dtype):
     # test to assure that the inputs of ?pttrf are unmodified
     assert_array_equal(d, diag_cpy[0])
     assert_array_equal(e, diag_cpy[1])
-    assert_equal(info, 0, err_msg="pttrf: info = {}, should be 0".format(info))
+    assert_equal(info, 0, err_msg=f"pttrf: info = {info}, should be 0")
 
     # test that the factors from pttrf can be recombined to make A
     L = np.diag(_e, -1) + np.diag(np.ones(n))
@@ -2200,7 +2191,7 @@ def test_pttrf_pttrs(ddtype, dtype):
     # determine _x from pttrs
     pttrs = get_lapack_funcs('pttrs', dtype=dtype)
     _x, info = pttrs(_d, _e.conj(), b)
-    assert_equal(info, 0, err_msg="pttrs: info = {}, should be 0".format(info))
+    assert_equal(info, 0, err_msg=f"pttrs: info = {info}, should be 0")
 
     # test that _x from pttrs matches the expected x
     assert_allclose(x, _x, atol=atol)
@@ -2331,7 +2322,7 @@ def test_pteqr(dtype, realtype, compute_z):
     d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
 
     d_pteqr, e_pteqr, z_pteqr, info = pteqr(d=d, e=e, z=z, compute_z=compute_z)
-    assert_equal(info, 0, "info = {}, should be 0.".format(info))
+    assert_equal(info, 0, f"info = {info}, should be 0.")
 
     # compare the routine's eigenvalues with scipy.linalg.eig's.
     assert_allclose(np.sort(eigh(A)[0]), np.sort(d_pteqr), atol=atol)
@@ -2618,7 +2609,7 @@ def test_gtsvx(dtype, trans_bool, fact):
     gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
                       duf=duf_, du2=du2f_, ipiv=ipiv_)
     dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
-    assert_(info == 0, "?gtsvx info = {}, should be zero".format(info))
+    assert_(info == 0, f"?gtsvx info = {info}, should be zero")
 
     # assure that inputs are unmodified
     assert_array_equal(dl, inputs_cpy[0])
@@ -2632,7 +2623,7 @@ def test_gtsvx(dtype, trans_bool, fact):
     # assert that the outputs are of correct type or shape
     # rcond should be a scalar
     assert_(hasattr(rcond, "__len__") is not True,
-            "rcond should be scalar but is {}".format(rcond))
+            f"rcond should be scalar but is {rcond}")
     # ferr should be length of # of cols in x
     assert_(ferr.shape[0] == b.shape[1], "ferr.shape is {} but shoud be {},"
             .format(ferr.shape[0], b.shape[1]))
@@ -2813,7 +2804,7 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     assert_array_equal(d, diag_cpy[0])
     assert_array_equal(e, diag_cpy[1])
     assert_array_equal(b, diag_cpy[2])
-    assert_(info == 0, "info should be 0 but is {}.".format(info))
+    assert_(info == 0, f"info should be 0 but is {info}.")
     assert_array_almost_equal(x_soln, x)
 
     # test that the factors from ptsvx can be recombined to make A
@@ -2824,13 +2815,14 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     # assert that the outputs are of correct type or shape
     # rcond should be a scalar
     assert not hasattr(rcond, "__len__"), \
-        "rcond should be scalar but is {}".format(rcond)
+        f"rcond should be scalar but is {rcond}"
     # ferr should be length of # of cols in x
     assert_(ferr.shape == (2,), "ferr.shape is {} but shoud be ({},)"
             .format(ferr.shape, x_soln.shape[1]))
     # berr should be length of # of cols in x
     assert_(berr.shape == (2,), "berr.shape is {} but shoud be ({},)"
             .format(berr.shape, x_soln.shape[1]))
+
 
 @pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
                                                + REAL_DTYPES))
@@ -3060,6 +3052,9 @@ def test_trexc_NAG(t, ifst, ilst, expect):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgexc(dtype):
+    if dtype == np.float32 and sys.platform == 'darwin':
+        pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
+
     seed(1234)
     atol = np.finfo(dtype).eps*100
 
@@ -3229,6 +3224,9 @@ def test_trsen_NAG(t, q, select, expect, expect_s, expect_sep):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgsen(dtype):
+    if dtype == np.float32 and sys.platform == 'darwin':
+        pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
+
     seed(1234)
     atol = np.finfo(dtype).eps*100
 

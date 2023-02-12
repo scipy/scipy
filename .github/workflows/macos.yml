@@ -10,6 +10,9 @@ on:
       - main
       - maintenance/**
 
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -87,4 +90,7 @@ jobs:
     - name: Test SciPy
       run: |
         export LIBRARY_PATH="$LIBRARY_PATH:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
-        SCIPY_USE_PYTHRAN=`test ${{ matrix.python-version }} != 3.9; echo $?` python -u runtests.py -- --durations=10 --timeout=60
+        export SCIPY_USE_PYTHRAN=1
+        python setup.py install
+        cd /tmp
+        python -m pytest --pyargs scipy --durations=10 --timeout=80 -n 3

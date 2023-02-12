@@ -1,4 +1,3 @@
-from os.path import join
 import pathlib
 
 import numpy as np

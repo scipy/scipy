@@ -8,6 +8,7 @@ py3.extension_module('_csparsetools',
   cython_gen.process(_csparsetools_pyx),
   c_args: cython_c_args,
   include_directories: inc_np,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/sparse'
 )
@@ -51,7 +52,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/sparse'
 )
 

@@ -1,37 +1,129 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable, Dict, Tuple, Any, cast
-import functools
+from typing import TYPE_CHECKING, Callable, Any, cast
 import numpy as np
 import math
-import types
 import warnings
+from collections import namedtuple
 
-# trapezoid is a public function for scipy.integrate,
-# even though it's actually a NumPy function.
-from numpy import trapz as trapezoid
 from scipy.special import roots_legendre
-from scipy.special import gammaln
+from scipy.special import gammaln, logsumexp
+from scipy._lib._util import _rng_spawn
+
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
            'trapezoid', 'trapz', 'simps', 'simpson',
            'cumulative_trapezoid', 'cumtrapz', 'newton_cotes',
-           'AccuracyWarning']
+           'qmc_quad', 'AccuracyWarning']
 
 
-# Make See Also linking for our local copy work properly
-def _copy_func(f):
-    """Based on http://stackoverflow.com/a/6528148/190597 (Glenn Maynard)"""
-    g = types.FunctionType(f.__code__, f.__globals__, name=f.__name__,
-                           argdefs=f.__defaults__, closure=f.__closure__)
-    g = functools.update_wrapper(g, f)
-    g.__kwdefaults__ = f.__kwdefaults__
-    return g
+def trapezoid(y, x=None, dx=1.0, axis=-1):
+    r"""
+    Integrate along the given axis using the composite trapezoidal rule.
 
+    If `x` is provided, the integration happens in sequence along its
+    elements - they are not sorted.
 
-trapezoid = _copy_func(trapezoid)
-if trapezoid.__doc__:
-    trapezoid.__doc__ = trapezoid.__doc__.replace(
-        'sum, cumsum', 'numpy.cumsum')
+    Integrate `y` (`x`) along each 1d slice on the given axis, compute
+    :math:`\int y(x) dx`.
+    When `x` is specified, this integrates along the parametric curve,
+    computing :math:`\int_t y(t) dt =
+    \int_t y(t) \left.\frac{dx}{dt}\right|_{x=x(t)} dt`.
+
+    Parameters
+    ----------
+    y : array_like
+        Input array to integrate.
+    x : array_like, optional
+        The sample points corresponding to the `y` values. If `x` is None,
+        the sample points are assumed to be evenly spaced `dx` apart. The
+        default is None.
+    dx : scalar, optional
+        The spacing between sample points when `x` is None. The default is 1.
+    axis : int, optional
+        The axis along which to integrate.
+
+    Returns
+    -------
+    trapezoid : float or ndarray
+        Definite integral of `y` = n-dimensional array as approximated along
+        a single axis by the trapezoidal rule. If `y` is a 1-dimensional array,
+        then the result is a float. If `n` is greater than 1, then the result
+        is an `n`-1 dimensional array.
+
+    See Also
+    --------
+    cumulative_trapezoid, simpson, romb
+
+    Notes
+    -----
+    Image [2]_ illustrates trapezoidal rule -- y-axis locations of points
+    will be taken from `y` array, by default x-axis distances between
+    points will be 1.0, alternatively they can be provided with `x` array
+    or with `dx` scalar.  Return value will be equal to combined area under
+    the red lines.
+
+    References
+    ----------
+    .. [1] Wikipedia page: https://en.wikipedia.org/wiki/Trapezoidal_rule
+
+    .. [2] Illustration image:
+           https://en.wikipedia.org/wiki/File:Composite_trapezoidal_rule_illustration.png
+
+    Examples
+    --------
+    Use the trapezoidal rule on evenly spaced points:
+
+    >>> import numpy as np
+    >>> from scipy import integrate
+    >>> integrate.trapezoid([1, 2, 3])
+    4.0
+
+    The spacing between sample points can be selected by either the
+    ``x`` or ``dx`` arguments:
+
+    >>> integrate.trapezoid([1, 2, 3], x=[4, 6, 8])
+    8.0
+    >>> integrate.trapezoid([1, 2, 3], dx=2)
+    8.0
+
+    Using a decreasing ``x`` corresponds to integrating in reverse:
+
+    >>> integrate.trapezoid([1, 2, 3], x=[8, 6, 4])
+    -8.0
+
+    More generally ``x`` is used to integrate along a parametric curve. We can
+    estimate the integral :math:`\int_0^1 x^2 = 1/3` using:
+
+    >>> x = np.linspace(0, 1, num=50)
+    >>> y = x**2
+    >>> integrate.trapezoid(y, x)
+    0.33340274885464394
+
+    Or estimate the area of a circle, noting we repeat the sample which closes
+    the curve:
+
+    >>> theta = np.linspace(0, 2 * np.pi, num=1000, endpoint=True)
+    >>> integrate.trapezoid(np.cos(theta), x=np.sin(theta))
+    3.141571941375841
+
+    ``trapezoid`` can be applied along a specified axis to do multiple
+    computations in one call:
+
+    >>> a = np.arange(6).reshape(2, 3)
+    >>> a
+    array([[0, 1, 2],
+           [3, 4, 5]])
+    >>> integrate.trapezoid(a, axis=0)
+    array([1.5, 2.5, 3.5])
+    >>> integrate.trapezoid(a, axis=1)
+    array([2.,  8.])
+    """
+    # Future-proofing, in case NumPy moves from trapz to trapezoid for the same
+    # reasons as SciPy
+    if hasattr(np, 'trapezoid'):
+        return np.trapezoid(y, x=x, dx=dx, axis=axis)
+    else:
+        return np.trapz(y, x=x, dx=dx, axis=axis)
 
 
 # Note: alias kept for backwards compatibility. Rename was done
@@ -52,10 +144,10 @@ class AccuracyWarning(Warning):
 if TYPE_CHECKING:
     # workaround for mypy function attributes see:
     # https://github.com/python/mypy/issues/2087#issuecomment-462726600
-    from typing_extensions import Protocol
+    from typing import Protocol
 
     class CacheAttributes(Protocol):
-        cache: Dict[int, Tuple[Any, Any]]
+        cache: dict[int, tuple[Any, Any]]
 else:
     CacheAttributes = Callable
 
@@ -402,7 +494,7 @@ def _basic_simpson(y, start, stop, x, dx, axis):
     slice2 = tupleset(slice_all, axis, slice(start+2, stop+2, step))
 
     if x is None:  # Even-spaced Simpson's rule.
-        result = np.sum(y[slice0] + 4*y[slice1] + y[slice2], axis=axis)
+        result = np.sum(y[slice0] + 4.0*y[slice1] + y[slice2], axis=axis)
         result *= dx / 3.0
     else:
         # Account for possibly different spacings.
@@ -469,6 +561,11 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
 
         'last' : Use Simpson's rule for the last N-2 intervals with a
                trapezoidal rule on the first interval.
+
+    Returns
+    -------
+    float
+        The estimated integral computed with the composite Simpson's rule.
 
     See Also
     --------
@@ -616,14 +713,15 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
     >>> integrate.romb(y, show=True)
     Richardson Extrapolation Table for Romberg Integration
-    ====================================================================
+    ======================================================
     -0.81576
-    4.63862  6.45674
+     4.63862  6.45674
     -1.10581 -3.02062 -3.65245
     -2.57379 -3.06311 -3.06595 -3.05664
     -1.34093 -0.92997 -0.78776 -0.75160 -0.74256
-    ====================================================================
-    -0.742561336672229
+    ======================================================
+    -0.742561336672229  # may vary
+
     """
     y = np.asarray(y)
     nd = len(y.shape)
@@ -672,13 +770,12 @@ def romb(y, dx=1.0, axis=-1, show=False):
             formstr = "%%%d.%df" % (width, precis)
 
             title = "Richardson Extrapolation Table for Romberg Integration"
-            print("", title.center(68), "=" * 68, sep="\n", end="\n")
+            print(title, "=" * len(title), sep="\n", end="\n")
             for i in range(k+1):
                 for j in range(i+1):
                     print(formstr % R[(i, j)], end=" ")
                 print()
-            print("=" * 68)
-            print()
+            print("=" * len(title))
 
     return R[(k, k)]
 
@@ -962,6 +1059,11 @@ def newton_cotes(rn, equal=0):
     B : float
         Error coefficient.
 
+    Notes
+    -----
+    Normally, the Newton-Cotes rules are used on smaller integration
+    regions and a composite rule is used to return the total integral.
+
     Examples
     --------
     Compute the integral of sin(x) in [0, :math:`\pi`]:
@@ -986,11 +1088,6 @@ def newton_cotes(rn, equal=0):
      6   2.000017814   1.78136e-05
      8   1.999999835   1.64725e-07
     10   2.000000001   1.14677e-09
-
-    Notes
-    -----
-    Normally, the Newton-Cotes rules are used on smaller integration
-    regions and a composite rule is used to return the total integral.
 
     """
     try:
@@ -1035,3 +1132,234 @@ def newton_cotes(rn, equal=0):
     fac = power*math.log(N) - gammaln(p1)
     fac = math.exp(fac)
     return ai, BN*fac
+
+
+def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
+
+    # lazy import to avoid issues with partially-initialized submodule
+    if not hasattr(qmc_quad, 'qmc'):
+        from scipy import stats
+        qmc_quad.stats = stats
+    else:
+        stats = qmc_quad.stats
+
+    if not callable(func):
+        message = "`func` must be callable."
+        raise TypeError(message)
+
+    # a, b will be modified, so copy. Oh well if it's copied twice.
+    a = np.atleast_1d(a).copy()
+    b = np.atleast_1d(b).copy()
+    a, b = np.broadcast_arrays(a, b)
+    dim = a.shape[0]
+
+    try:
+        func((a + b) / 2)
+    except Exception as e:
+        message = ("`func` must evaluate the integrand at points within "
+                   "the integration range; e.g. `func( (a + b) / 2)` "
+                   "must return the integrand at the centroid of the "
+                   "integration volume.")
+        raise ValueError(message) from e
+
+    try:
+        func(np.array([a, b]).T)
+        vfunc = func
+    except Exception as e:
+        message = ("Exception encountered when attempting vectorized call to "
+                   f"`func`: {e}. For better performance, `func` should "
+                   "accept two-dimensional array `x` with shape `(len(a), "
+                   "n_points)` and return an array of the integrand value at "
+                   "each of the `n_points.")
+        warnings.warn(message, stacklevel=3)
+
+        def vfunc(x):
+            return np.apply_along_axis(func, axis=-1, arr=x)
+
+    n_points_int = np.int64(n_points)
+    if n_points != n_points_int:
+        message = "`n_points` must be an integer."
+        raise TypeError(message)
+
+    n_estimates_int = np.int64(n_estimates)
+    if n_estimates != n_estimates_int:
+        message = "`n_estimates` must be an integer."
+        raise TypeError(message)
+
+    if qrng is None:
+        qrng = stats.qmc.Halton(dim)
+    elif not isinstance(qrng, stats.qmc.QMCEngine):
+        message = "`qrng` must be an instance of scipy.stats.qmc.QMCEngine."
+        raise TypeError(message)
+
+    if qrng.d != a.shape[0]:
+        message = ("`qrng` must be initialized with dimensionality equal to "
+                   "the number of variables in `a`, i.e., "
+                   "`qrng.random().shape[-1]` must equal `a.shape[0]`.")
+        raise ValueError(message)
+
+    rng_seed = getattr(qrng, 'rng_seed', None)
+    rng = stats._qmc.check_random_state(rng_seed)
+
+    if log not in {True, False}:
+        message = "`log` must be boolean (`True` or `False`)."
+        raise TypeError(message)
+
+    return (vfunc, a, b, n_points_int, n_estimates_int, qrng, rng, log, stats)
+
+
+QMCQuadResult = namedtuple('QMCQuadResult', ['integral', 'standard_error'])
+
+
+def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
+             log=False):
+    """
+    Compute an integral in N-dimensions using Quasi-Monte Carlo quadrature.
+
+    Parameters
+    ----------
+    func : callable
+        The integrand. Must accept a single argument ``x``, an array which
+        specifies the point(s) at which to evaluate the scalar-valued
+        integrand, and return the value(s) of the integrand.
+        For efficiency, the function should be vectorized to accept an array of
+        shape ``(d, n_points)``, where ``d`` is the number of variables (i.e.
+        the dimensionality of the function domain) and `n_points` is the number
+        of quadrature points, and return an array of shape ``(n_points,)``,
+        the integrand at each quadrature point.
+    a, b : array-like
+        One-dimensional arrays specifying the lower and upper integration
+        limits, respectively, of each of the ``d`` variables.
+    n_estimates, n_points : int, optional
+        `n_estimates` (default: 8) statistically independent QMC samples, each
+        of `n_points` (default: 1024) points, will be generated by `qrng`.
+        The total number of points at which the integrand `func` will be
+        evaluated is ``n_points * n_estimates``. See Notes for details.
+    qrng : `~scipy.stats.qmc.QMCEngine`, optional
+        An instance of the QMCEngine from which to sample QMC points.
+        The QMCEngine must be initialized to a number of dimensions ``d``
+        corresponding with the number of variables ``x1, ..., xd`` passed to
+        `func`.
+        The provided QMCEngine is used to produce the first integral estimate.
+        If `n_estimates` is greater than one, additional QMCEngines are
+        spawned from the first (with scrambling enabled, if it is an option.)
+        If a QMCEngine is not provided, the default `scipy.stats.qmc.Halton`
+        will be initialized with the number of dimensions determine from
+        the length of `a`.
+    log : boolean, default: False
+        When set to True, `func` returns the log of the integrand, and
+        the result object contains the log of the integral.
+
+    Returns
+    -------
+    result : object
+        A result object with attributes:
+
+        integral : float
+            The estimate of the integral.
+        standard_error :
+            The error estimate. See Notes for interpretation.
+
+    Notes
+    -----
+    Values of the integrand at each of the `n_points` points of a QMC sample
+    are used to produce an estimate of the integral. This estimate is drawn
+    from a population of possible estimates of the integral, the value of
+    which we obtain depends on the particular points at which the integral
+    was evaluated. We perform this process `n_estimates` times, each time
+    evaluating the integrand at different scrambled QMC points, effectively
+    drawing i.i.d. random samples from the population of integral estimates.
+    The sample mean :math:`m` of these integral estimates is an
+    unbiased estimator of the true value of the integral, and the standard
+    error of the mean :math:`s` of these estimates may be used to generate
+    confidence intervals using the t distribution with ``n_estimates - 1``
+    degrees of freedom. Perhaps counter-intuitively, increasing `n_points`
+    while keeping the total number of function evaluation points
+    ``n_points * n_estimates`` fixed tends to reduce the actual error, whereas
+    increasing `n_estimates` tends to decrease the error estimate.
+
+    Examples
+    --------
+    QMC quadrature is particularly useful for computing integrals in higher
+    dimensions. An example integrand is the probability density function
+    of a multivariate normal distribution.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> dim = 8
+    >>> mean = np.zeros(dim)
+    >>> cov = np.eye(dim)
+    >>> def func(x):
+    ...     # `multivariate_normal` expects the _last_ axis to correspond with
+    ...     # the dimensionality of the space, so `x` must be transposed
+    ...     return stats.multivariate_normal.pdf(x.T, mean, cov)
+
+    To compute the integral over the unit hypercube:
+
+    >>> from scipy.integrate import qmc_quad
+    >>> a = np.zeros(dim)
+    >>> b = np.ones(dim)
+    >>> rng = np.random.default_rng()
+    >>> qrng = stats.qmc.Halton(d=dim, seed=rng)
+    >>> n_estimates = 8
+    >>> res = qmc_quad(func, a, b, n_estimates=n_estimates, qrng=qrng)
+    >>> res.integral, res.standard_error
+    (0.00018441088533413305, 1.1255608140911588e-07)
+
+    A two-sided, 99% confidence interval for the integral may be estimated
+    as:
+
+    >>> t = stats.t(df=n_estimates-1, loc=res.integral,
+    ...             scale=res.standard_error)
+    >>> t.interval(0.99)
+    (0.00018401699720722663, 0.00018480477346103947)
+
+    Indeed, the value reported by `scipy.stats.multivariate_normal` is
+    within this range.
+
+    >>> stats.multivariate_normal.cdf(b, mean, cov, lower_limit=a)
+    0.00018430867675187443
+
+    """
+    args = _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log)
+    func, a, b, n_points, n_estimates, qrng, rng, log, stats = args
+
+    # The sign of the integral depends on the order of the limits. Fix this by
+    # ensuring that lower bounds are indeed lower and setting sign of resulting
+    # integral manually
+    if np.any(a == b):
+        message = ("A lower limit was equal to an upper limit, so the value "
+                   "of the integral is zero by definition.")
+        warnings.warn(message, stacklevel=2)
+        return QMCQuadResult(-np.inf if log else 0, 0)
+
+    i_swap = b < a
+    sign = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
+    a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
+
+    A = np.prod(b - a)
+    dA = A / n_points
+
+    estimates = np.zeros(n_estimates)
+    rngs = _rng_spawn(qrng.rng, n_estimates)
+    for i in range(n_estimates):
+        # Generate integral estimate
+        sample = qrng.random(n_points)
+        # The rationale for transposing is that this allows users to easily
+        # unpack `x` into separate variables, if desired. This is consistent
+        # with the `xx` array passed into the `scipy.integrate.nquad` `func`.
+        x = stats.qmc.scale(sample, a, b).T  # (n_dim, n_points)
+        integrands = func(x)
+        if log:
+            estimate = logsumexp(integrands) + np.log(dA)
+        else:
+            estimate = np.sum(integrands * dA)
+        estimates[i] = estimate
+
+        # Get a new, independently-scrambled QRNG for next time
+        qrng = type(qrng)(seed=rngs[i], **qrng._init_quad)
+
+    integral = np.mean(estimates)
+    integral = integral + np.pi*1j if (log and sign < 0) else integral*sign
+    standard_error = stats.sem(estimates)
+    return QMCQuadResult(integral, standard_error)

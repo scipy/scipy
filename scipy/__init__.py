@@ -18,6 +18,7 @@ Using any of these subpackages requires an explicit import. For example,
 ::
 
  cluster                      --- Vector Quantization / Kmeans
+ constants                    --- Physical and mathematical constants and units
  datasets                     --- Dataset methods
  fft                          --- Discrete Fourier transforms
  fftpack                      --- Legacy discrete Fourier transforms
@@ -25,36 +26,24 @@ Using any of these subpackages requires an explicit import. For example,
  interpolate                  --- Interpolation Tools
  io                           --- Data input and output
  linalg                       --- Linear algebra routines
- linalg.blas                  --- Wrappers to BLAS library
- linalg.lapack                --- Wrappers to LAPACK library
- misc                         --- Various utilities that don't have
-                                  another home.
+ misc                         --- Utilities that don't have another home.
  ndimage                      --- N-D image package
  odr                          --- Orthogonal Distance Regression
  optimize                     --- Optimization Tools
  signal                       --- Signal Processing Tools
- signal.windows               --- Window functions
  sparse                       --- Sparse Matrices
- sparse.linalg                --- Sparse Linear Algebra
- sparse.linalg.dsolve         --- Linear Solvers
- sparse.linalg.dsolve.umfpack --- :Interface to the UMFPACK library:
-                                  Conjugate Gradient Method (LOBPCG)
- sparse.linalg.eigen          --- Sparse Eigenvalue Solvers
- sparse.linalg.eigen.lobpcg   --- Locally Optimal Block Preconditioned
-                                  Conjugate Gradient Method (LOBPCG)
  spatial                      --- Spatial data structures and algorithms
  special                      --- Special functions
  stats                        --- Statistical Functions
 
-Utility tools
--------------
+Public API in the main SciPy namespace
+--------------------------------------
 ::
 
- test              --- Run scipy unittests
- show_config       --- Show scipy build configuration
- show_numpy_config --- Show numpy build configuration
  __version__       --- SciPy version string
- __numpy_version__ --- Numpy version string
+ LowLevelCallable  --- Low-level callback function
+ show_config       --- Show scipy build configuration
+ test              --- Run scipy unittests
 
 """
 
@@ -142,7 +131,7 @@ else:
         import warnings
         warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion}"
                       f" is required for this version of SciPy (detected "
-                      f"version {__numpy_version__}",
+                      f"version {__numpy_version__})",
                       UserWarning)
     del _pep440
 
@@ -164,6 +153,7 @@ else:
 
     submodules = [
         'cluster',
+        'constants',
         'datasets',
         'fft',
         'fftpack',
@@ -187,7 +177,6 @@ else:
         'test',
         'show_config',
         '__version__',
-        '__numpy_version__'
     ]
 
     def __dir__():
