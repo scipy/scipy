@@ -10361,7 +10361,8 @@ class rel_breitwigner_gen(rv_continuous):
         C = np.sqrt(
             2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
         ) * 2 / np.pi
-        return C / (((x**2 - rho**2)/rho)**2 + 1)
+        with np.errstate(over='ignore'):
+            return C / (((x - rho)*(x + rho)/rho)**2 + 1)
 
     def _cdf(self, x, rho):
         # C = k / (2 * rho**2)
