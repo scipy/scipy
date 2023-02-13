@@ -1,3 +1,5 @@
+.. _ccallback:
+
 ============================
 Low-level callback functions
 ============================

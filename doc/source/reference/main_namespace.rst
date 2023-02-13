@@ -6,8 +6,8 @@ The main SciPy namespace
 
 The main ``scipy`` namespace has very few objects in it by design. Only show
 generical functionality related to testing, build info and versioning, and one
-class (`LowLevelCallable`) that didn't fit in one of the submodules, are
-present:
+class (:ref:`LowLevelCallable <ccallback>`) that didn't fit in one of the
+submodules, are present:
 
 .. autosummary::
    :toctree: generated/
@@ -15,6 +15,11 @@ present:
    LowLevelCallable
    show_config
    test
+
+.. toctree::
+   :hidden:
+
+   ccallback
 
 
 The one public attribute is:

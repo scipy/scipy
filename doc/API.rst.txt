@@ -160,7 +160,7 @@ change is made.
    :hidden:
    :titlesonly:
 
-   main_namespace
+   scipy <main_namespace>
    scipy.cluster <cluster>
    scipy.constants <constants>
    scipy.datasets <datasets>
@@ -179,7 +179,6 @@ change is made.
    scipy.spatial <spatial>
    scipy.special <special>
    scipy.stats <stats>
-   ccallback
 
 SciPy structure
 ---------------
