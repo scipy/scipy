@@ -1091,7 +1091,8 @@ class TestTruncnorm:
     [(1e-11, 10000000000.0, 0.725791352640738),
     (1e-100, 1e+100, 0.7257913526447274),
     (-1e-100, 1e+100, 0.7257913526447274),
-    (-1e+100, 1e+100, 1.4189385332046727)])
+    (-1e+100, 1e+100, 1.4189385332046727),
+    (1e-11, 1.0001e-11, -34.8181418495907)])
     def test_extreme_entropy(self, a, b, ref):
         #The reference values were calculated with mpmath
         #import mpmath as mp
