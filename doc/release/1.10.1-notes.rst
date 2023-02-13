@@ -15,17 +15,19 @@ Authors
 * Brett (1) +
 * Evgeni Burovski (2)
 * Ralf Gommers (9)
-* Matt Haberland (4)
+* Matt Haberland (5)
+* Jacopo (1) +
 * Ganesh Kathiresan (1) +
 * Rishi Kulkarni (1) +
 * Loïc Estève (1)
 * Michał Górny (1) +
 * Jarrod Millman (1)
-* Tyler Reddy (32)
+* Andrew Nelson (1)
+* Tyler Reddy (36)
 * Pamphile Roy (1)
 * Eli Schwartz (2)
 
-A total of 12 people contributed to this release.
+A total of 14 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -43,6 +45,7 @@ Issues closed for 1.10.1
 * `#17801 <https://github.com/scipy/scipy/issues/17801>`__: BUG: stats.powerlaw.fit: raises OverflowError
 * `#17808 <https://github.com/scipy/scipy/issues/17808>`__: BUG: name of cython executable is hardcoded in _build_utils/cythoner.py
 * `#17811 <https://github.com/scipy/scipy/issues/17811>`__: CI job with numpy nightly build failing on missing \`_ArrayFunctionDispatcher.__code__\`
+* `#17896 <https://github.com/scipy/scipy/issues/17896>`__: DOC: publicly expose \`multivariate_normal\` attributes \`mean\`...
 * `#17938 <https://github.com/scipy/scipy/issues/17938>`__: BUG: \`scipy.stats.qmc.LatinHypercube\` with \`optimization="random-cd"\`...
 
 
@@ -65,6 +68,8 @@ Pull requests for 1.10.1
 * `#17854 <https://github.com/scipy/scipy/pull/17854>`__: TST: mark test for \`stats.kde.marginal\` as xslow
 * `#17859 <https://github.com/scipy/scipy/pull/17859>`__: TST: fix test failures on i386, s390x, ppc64, riscv64 (Debian)
 * `#17862 <https://github.com/scipy/scipy/pull/17862>`__: BLD: Meson \`__config__\` generation
+* `#17904 <https://github.com/scipy/scipy/pull/17904>`__: ENH: \`multivariate_normal_frozen\`: restore \`cov\` attribute
+* `#17910 <https://github.com/scipy/scipy/pull/17910>`__: CI: use nightly numpy musllinux_x86_64 wheel
 * `#17931 <https://github.com/scipy/scipy/pull/17931>`__: TST: test_location_scale proper 32bit Linux skip
 * `#17932 <https://github.com/scipy/scipy/pull/17932>`__: TST: 32-bit tol for test_pdist_jensenshannon_iris
 * `#17940 <https://github.com/scipy/scipy/pull/17940>`__: BUG: \`rng_integers\` in \`_random_cd\` now samples on a closed...
