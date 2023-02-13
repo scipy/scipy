@@ -10687,14 +10687,32 @@ class rel_breitwigner_gen(rv_continuous):
         # kurtosis are actually infinite.
         return None, None, np.nan, np.nan
 
-    @inherit_docstring_from(rv_continuous)
+
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        Note that method of moments (`method='MM'`) is not
+        available for this distribution.\n\n""")
     def fit(self, data, *args, **kwds):
         # Override rv_continuous.fit to better handle case where floc is set.
+        if kwds.get("method", None) == 'MM':
+            raise NotImplementedError("Fit `method='MM'` is not available for "
+                                      "the rel_breitwigner distribution. "
+                                      "Please try the default `method='MLE'`.")
+
         data, _, floc, fscale = _check_fit_input_parameters(
             self, data, args, kwds
         )
-        if floc is None:
+
+        censored = isinstance(data, CensoredData)
+        if censored:
+            if data.num_censored() == 0:
+                # There are no censored values in data, so replace the
+                # CensoredData instance with a regular array.
+                data = data._uncensored
+                censored = False
+
+        if floc is None or censored:
             return super().fit(data, *args, **kwds)
+
         if fscale is None:
             # The interquartile range approximates the scale parameter gamma.
             # The median approximates rho * gamma.
