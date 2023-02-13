@@ -10688,9 +10688,7 @@ class rel_breitwigner_gen(rv_continuous):
         return None, None, np.nan, np.nan
 
 
-    @extend_notes_in_docstring(rv_continuous, notes="""\
-        Note that method of moments (`method='MM'`) is not
-        available for this distribution.\n\n""")
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         # Override rv_continuous.fit to better handle case where floc is set.
         data, _, floc, fscale = _check_fit_input_parameters(
