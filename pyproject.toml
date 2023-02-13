@@ -110,6 +110,7 @@ doc = [
 dev = [
     "mypy",
     "typing_extensions",
+    "types-psutil",
     "pycodestyle",
     "ruff",
     "cython-lint>=0.12.2",

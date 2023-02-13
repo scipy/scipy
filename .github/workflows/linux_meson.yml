@@ -116,7 +116,7 @@ jobs:
       run: |
         # Packages that are only needed for their annotations
         python -m pip install -r mypy_requirements.txt
-        python -m pip install types-psutil pybind11 sphinx
+        python -m pip install pybind11 sphinx
 
         python -u dev.py mypy
     - name: Test SciPy

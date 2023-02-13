@@ -10,7 +10,6 @@ from ._direct import direct as _direct  # type: ignore
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from _typeshed import NoneType
 
 __all__ = ['direct']
 
@@ -51,7 +50,7 @@ def direct(
     f_min_rtol: float = 1e-4,
     vol_tol: float = 1e-16,
     len_tol: float = 1e-6,
-    callback: Callable[[npt.ArrayLike], NoneType] | None = None
+    callback: Callable[[npt.ArrayLike], None] | None = None
 ) -> OptimizeResult:
     """
     Finds the global minimum of a function using the
