@@ -163,7 +163,7 @@ stages:
     timeoutInMinutes: 90
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
-      vmImage: 'ubuntu-20.04'  # 22.04 does not have python3.9-dev
+      vmImage: 'ubuntu-22.04'  # vm does not matter as we use docker
     steps:
     - script: |
         git submodule update --init
@@ -175,9 +175,8 @@ stages:
             # the unusual install method. For the bug report about missing .pc
             # files: https://github.com/MacPython/openblas-libs/issues/74
             set -euo pipefail
-            docker pull i386/ubuntu:bionic
-            docker run -v $(pwd):/scipy i386/ubuntu:bionic /usr/bin/linux32 /bin/bash -c "cd scipy && \
-            add-apt-repository ppa:deadsnakes/ppa && \
+            docker pull i386/ubuntu:focal
+            docker run -v $(pwd):/scipy i386/ubuntu:focal /usr/bin/linux32 /bin/bash -c "cd scipy && \
             apt-get -y update && \
             apt-get -y install curl python3.9-dev python3.9 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
