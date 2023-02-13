@@ -816,15 +816,6 @@ class multivariate_normal_frozen(multi_rv_frozen):
             Relative error tolerance for the cumulative distribution function
             (default 1e-5)
 
-        Attributes
-        ----------
-        mean : ndarray
-            Mean of the distribution.
-        cov : ndarray
-            Covariance matrix of the distribution.
-        cov_object : `Covariance`
-            Representation of the covariance matrix as a `Covariance` object.
-
         Examples
         --------
         When called with the default parameters, this will create a 1D random
