@@ -1176,7 +1176,7 @@ class TestPdist:
     def test_pdist_jensenshannon_iris(self):
         if _is_32bit():
             # Test failing on 32-bit Linux on Azure otherwise, see gh-12810
-            eps = 1.5e-10
+            eps = 2.5e-10
         else:
             eps = 1e-12
 

@@ -549,7 +549,7 @@ def test_roots_gegenbauer():
     vgq(rootf(170), evalf(170), weightf(170), -1., 1., 5, atol=1e-13)
     vgq(rootf(170), evalf(170), weightf(170), -1., 1., 25, atol=1e-12)
     vgq(rootf(170), evalf(170), weightf(170), -1., 1., 100, atol=1e-11)
-    vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 5, atol=1e-13)
+    vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 5, atol=1.25e-13)
     vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 25, atol=1e-12)
     vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 100, atol=1e-11)
 

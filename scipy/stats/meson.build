@@ -5,8 +5,8 @@ _stats_pxd = [
   fs.copyfile('_unuran/unuran.pxd'),
 ]
 
-stats_special_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+stats_special_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [
     _cython_tree,
@@ -117,8 +117,8 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
   depends: _stats_pxd
 )
 
-cython_stats_gen_cpp = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@', '--cplus'],
+cython_stats_gen_cpp = generator(cython,
+  arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
   depends : [_cython_tree, _stats_gen_pyx])
 

@@ -2273,9 +2273,9 @@ def _random_cd(
     while n_nochange_ < n_nochange and n_iters_ < n_iters:
         n_iters_ += 1
 
-        col = rng_integers(rng, *bounds[0])
-        row_1 = rng_integers(rng, *bounds[1])
-        row_2 = rng_integers(rng, *bounds[2])
+        col = rng_integers(rng, *bounds[0], endpoint=True)  # type: ignore[misc]
+        row_1 = rng_integers(rng, *bounds[1], endpoint=True)  # type: ignore[misc]
+        row_2 = rng_integers(rng, *bounds[2], endpoint=True)  # type: ignore[misc]
         disc = _perturb_discrepancy(best_sample,
                                     row_1, row_2, col,
                                     best_disc)

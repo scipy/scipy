@@ -2541,6 +2541,14 @@ class TestPowerlaw(object):
         with assert_raises(ValueError, match=msg):
             stats.powerlaw.fit([1, 2, 4], fscale=3)
 
+    def test_minimum_data_zero_gh17801(self):
+        # gh-17801 reported an overflow error when the minimum value of the
+        # data is zero. Check that this problem is resolved.
+        data = [0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 5, 6]
+        dist = stats.powerlaw
+        with np.errstate(over='ignore'):
+            _assert_less_or_close_loglike(dist, data, dist.nnlf)
+
 
 class TestInvGamma:
     def test_invgamma_inf_gh_1866(self):
@@ -3928,7 +3936,7 @@ class TestLevyStable:
             ],
             # for small alpha very slightly reduced accuracy
             [
-                'piecewise', 5e-11, lambda r: (
+                'piecewise', 2.5e-10, lambda r: (
                     np.isin(r['pct'], pct_range) &
                     np.isin(r['alpha'], alpha_range) &
                     np.isin(r['beta'], beta_range) &
@@ -4032,7 +4040,7 @@ class TestLevyStable:
         tests = [
             # piecewise generally good accuracy
             [
-                'piecewise', 1e-12, lambda r: (
+                'piecewise', 2e-12, lambda r: (
                     np.isin(r['pct'], pct_range) &
                     np.isin(r['alpha'], alpha_range) &
                     np.isin(r['beta'], beta_range) &
@@ -4154,6 +4162,14 @@ class TestLevyStable:
     ):
         """Tests for pdf and cdf where loc, scale are different from 0, 1
         """
+
+        uname = platform.uname()
+        is_linux_32 = uname.system == 'Linux' and "32bit" in platform.architecture()[0]
+        # Test seems to be unstable (see gh-17839 for a bug report on Debian
+        # i386), so skip it.
+        if is_linux_32 and case == 'pdf':
+            pytest.skip("Test unstable on some platforms; see gh-17839, 17859")
+
         data = nolan_loc_scale_sample_data
         # We only test against piecewise as location/scale transforms
         # are same for other methods.

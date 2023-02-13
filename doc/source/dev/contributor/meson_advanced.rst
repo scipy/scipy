@@ -21,11 +21,45 @@ implementations on conda-forge), use::
     $ python dev.py
 
     $ # to build and install a wheel
-    $ python -m build -C-Dblas=blas -C-Dlapack=lapack
+    $ python -m build -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack
     $ pip install dist/scipy*.whl
 
 Other options that should work (as long as they're installed with
-``pkg-config`` support) include ``mkl`` and ``blis``.
+``pkg-config`` or CMake support) include ``mkl`` and ``blis``. Note that using
+``pip install`` or ``pip wheel`` doesn't work (as of Jan'23) because we need
+two ``setup-args`` flags for specifying both ``blas`` and ``lapack`` here, and
+``pip`` does not yet support specifying ``--config-settings`` with the same key
+twice, while ``build`` does support that.
+
+.. note::
+
+    The way BLAS and LAPACK detection works under the hood is that Meson tries
+    to discover the specified libraries first with ``pkg-config``, and then
+    with CMake. If all you have is a standalone shared library file (e.g.,
+    ``armpl_lp64.so`` in ``/a/random/path/lib/`` and a corresponding header
+    file in ``/a/random/path/include/``), then what you have to do is craft
+    your own pkg-config file. It should have a matching name (so in this
+    example, ``armpl_lp64.pc``) and may be located anywhere. The
+    ``PKG_CONFIG_PATH`` environment variable should be set to point to the
+    location of the ``.pc`` file. The contents of that file should be::
+
+        libdir=/path/to/library-dir      # e.g., /a/random/path/lib
+        includedir=/path/to/include-dir  # e.g., /a/random/path/include
+        version=1.2.3                    # set to actual version
+        extralib=-lm -lpthread -lgfortran   # if needed, the flags to link in dependencies
+        Name: armpl_lp64
+        Description: ArmPL - Arm Performance Libraries
+        Version: ${version}
+        Libs: -L${libdir} -larmpl_lp64      # linker flags
+        Libs.private: ${extralib}
+        Cflags: -I${includedir}
+
+    To check that this works as expected, you should be able to run::
+    
+        $ pkg-config --libs armpl_lp64
+        -L/path/to/library-dir -larmpl_lp64
+        $ pkg-config --cflags armpl_lp64
+        -I/path/to/include-dir
 
 
 Use different build types with Meson

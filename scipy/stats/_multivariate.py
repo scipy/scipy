@@ -839,6 +839,10 @@ class multivariate_normal_frozen(multi_rv_frozen):
         self.abseps = abseps
         self.releps = releps
 
+    @property
+    def cov(self):
+        return self.cov_object.covariance
+
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
         out = self._dist._logpdf(x, self.mean, self.cov_object)

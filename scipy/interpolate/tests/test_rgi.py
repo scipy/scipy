@@ -588,6 +588,35 @@ class TestRegularGridInterpolator:
         v2 = np.expand_dims(vs, axis=0)
         assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
+    @pytest.mark.parametrize(
+        "dtype",
+        [np.float32, np.float64, np.complex64, np.complex128]
+    )
+    @pytest.mark.parametrize("xi_dtype", [np.float32, np.float64])
+    def test_float32_values(self, dtype, xi_dtype):
+        # regression test for gh-17718: values.dtype=float32 fails
+        def f(x, y):
+            return 2 * x**3 + 3 * y**2
+
+        x = np.linspace(1, 4, 11)
+        y = np.linspace(4, 7, 22)
+
+        xg, yg = np.meshgrid(x, y, indexing='ij', sparse=True)
+        data = f(xg, yg)
+
+        data = data.astype(dtype)
+
+        interp = RegularGridInterpolator((x, y), data)
+
+        pts = np.array([[2.1, 6.2],
+                        [3.3, 5.2]], dtype=xi_dtype)
+
+        # the values here are just what the call returns; the test checks that
+        # that the call succeeds at all, instead of failing with cython not
+        # having a float32 kernel
+        assert_allclose(interp(pts), [134.10469388, 153.40069388], atol=1e-7)
+
+
 class MyValue:
     """
     Minimal indexable object
@@ -933,3 +962,58 @@ class TestInterpN:
                "RegularGridInterpolator has dimension 1")
         with assert_raises(ValueError, match=msg):
             interpn(points, values, xi)
+
+    def test_readonly_grid(self):
+        # https://github.com/scipy/scipy/issues/17716
+        x = np.linspace(0, 4, 5)
+        y = np.linspace(0, 5, 6)
+        z = np.linspace(0, 6, 7)
+        points = (x, y, z)
+        values = np.ones((5, 6, 7))
+        point = np.array([2.21, 3.12, 1.15])
+        for d in points:
+            d.flags.writeable = False
+        values.flags.writeable = False
+        point.flags.writeable = False
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
+
+    def test_2d_readonly_grid(self):
+        # https://github.com/scipy/scipy/issues/17716
+        # test special 2d case
+        x = np.linspace(0, 4, 5)
+        y = np.linspace(0, 5, 6)
+        points = (x, y)
+        values = np.ones((5, 6))
+        point = np.array([2.21, 3.12])
+        for d in points:
+            d.flags.writeable = False
+        values.flags.writeable = False
+        point.flags.writeable = False
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
+
+    def test_non_c_contiguous_grid(self):
+        # https://github.com/scipy/scipy/issues/17716
+        x = np.linspace(0, 4, 5)
+        x = np.vstack((x, np.empty_like(x))).T.copy()[:, 0]
+        assert not x.flags.c_contiguous
+        y = np.linspace(0, 5, 6)
+        z = np.linspace(0, 6, 7)
+        points = (x, y, z)
+        values = np.ones((5, 6, 7))
+        point = np.array([2.21, 3.12, 1.15])
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
+
+    @pytest.mark.parametrize("dtype", ['>f8', '<f8'])
+    def test_endianness(self, dtype):
+        # https://github.com/scipy/scipy/issues/17716
+        # test special 2d case
+        x = np.linspace(0, 4, 5, dtype=dtype)
+        y = np.linspace(0, 5, 6, dtype=dtype)
+        points = (x, y)
+        values = np.ones((5, 6), dtype=dtype)
+        point = np.array([2.21, 3.12], dtype=dtype)
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
