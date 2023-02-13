@@ -10693,11 +10693,6 @@ class rel_breitwigner_gen(rv_continuous):
         available for this distribution.\n\n""")
     def fit(self, data, *args, **kwds):
         # Override rv_continuous.fit to better handle case where floc is set.
-        if kwds.get("method", None) == 'MM':
-            raise NotImplementedError("Fit `method='MM'` is not available for "
-                                      "the rel_breitwigner distribution. "
-                                      "Please try the default `method='MLE'`.")
-
         data, _, floc, fscale = _check_fit_input_parameters(
             self, data, args, kwds
         )
