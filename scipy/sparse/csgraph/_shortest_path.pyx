@@ -1556,7 +1556,7 @@ cdef void decrease_val(FibonacciHeap* heap,
         # at the leftmost end of the roots' linked-list.
         remove(node)
         node.right_sibling = heap.min_node
-        heap.min_node.left_sibling = node.right_sibling
+        heap.min_node.left_sibling = node
         heap.min_node = node
 
 
