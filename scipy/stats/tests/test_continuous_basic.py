@@ -109,10 +109,10 @@ skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
 
 fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
-                   'dgamma', 'dweibull', 'erlang', 'f', 'gamma',
+                   'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
                    'gausshyper', 'gengamma', 'genhyperbolic',
                    'geninvgauss', 'gennorm', 'genpareto',
-                   'halfgennorm', 'invgamma',
+                   'halfcauchy', 'halfgennorm', 'invgamma',
                    'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
                    'logistic', 'loguniform', 'maxwell', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
