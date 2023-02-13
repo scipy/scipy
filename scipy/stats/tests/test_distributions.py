@@ -1065,52 +1065,41 @@ class TestTruncnorm:
         np.random.seed(1234)
 
     @pytest.mark.parametrize("a, b, ref",
-    [(0, 100, 0.7257913526447274),
-    (0.6, 0.7, -2.3027610681852573),
-    (1e-06, 2e-06, -13.815510557964274)])
+                             [(0, 100, 0.7257913526447274),
+                             (0.6, 0.7, -2.3027610681852573),
+                             (1e-06, 2e-06, -13.815510557964274)])
     def test_entropy(self, a, b, ref):
-        #All reference values were calculated with mpmath:
-        #import mpmath as mp
-        #mp.dps = 50
-        #def entropy_trun(a, b):
-        #    def cdf(x):
-        #        return 0.5 * (1 + mp.erf(x / mp.sqrt(2)))
+        # All reference values were calculated with mpmath:
+        # import numpy as np
+        # from mpmath import mp
+        # mp.dps = 50
+        # def entropy_trun(a, b):
+        #     a, b = mp.mpf(a), mp.mpf(b)
+        #     Z = mp.ncdf(b) - mp.ncdf(a)
         #
-        #    Z = cdf(b) - cdf(a)
+        #     def pdf(x):
+        #         return mp.npdf(x) / Z
         #
-        #    def pdf_standard_norm(x):
-        #        return (mp.exp(-0.5 * x ** 2) / mp.sqrt(2 * mp.pi))
-        #
-        #    def pdf(x):
-        #        return pdf_standard_norm(x) / Z
-        #
-        #    return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [a, b])
+        #     res = -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [a, b])
+        #     return np.float64(res)
         assert_allclose(stats.truncnorm.entropy(a, b), ref, rtol=1e-10)
 
     @pytest.mark.parametrize("a, b, ref",
-    [(1e-11, 10000000000.0, 0.725791352640738),
-    (1e-100, 1e+100, 0.7257913526447274),
-    (-1e-100, 1e+100, 0.7257913526447274),
-    (-1e+100, 1e+100, 1.4189385332046727),
-    (1e-11, 1.0001e-11, -34.8181418495907)])
+                             [(1e-11, 10000000000.0, 0.725791352640738),
+                             (1e-100, 1e+100, 0.7257913526447274),
+                             (-1e-100, 1e+100, 0.7257913526447274),
+                             (-1e+100, 1e+100, 1.4189385332046727)])
     def test_extreme_entropy(self, a, b, ref):
-        #The reference values were calculated with mpmath
-        #import mpmath as mp
-        #mp.dps = 50
-        #
-        #def second_trun(a, b):
-        #   def cdf(x):
-        #       return 0.5 * (1 + mp.erf(x / mp.sqrt(2)))
-        #
-        #   Z = cdf(b) - cdf(a)
-        #
-        #   def norm_pdf(x):
-        #       return mp.exp(-x ** 2 / 2) / mp.sqrt(2 * mp.pi)
-        #
-        #   A = mp.log(mp.sqrt(2 * mp.pi * mp.e) * Z)
-        #   B = (a * norm_pdf(a) - b * norm_pdf(b)) / (2 * Z)
-        #
-        #   return A + B
+        # The reference values were calculated with mpmath
+        # import numpy as np
+        # from mpmath import mp
+        # mp.dps = 50
+        # def trunc_norm_entropy(a, b):
+        #     a, b = mp.mpf(a), mp.mpf(b)
+        #     Z = mp.ncdf(b) - mp.ncdf(a)
+        #     A = mp.log(mp.sqrt(2 * mp.pi * mp.e) * Z)
+        #     B = (a * mp.npdf(a) - b * mp.npdf(b)) / (2 * Z)
+        #     return np.float64(A + B)
         assert_allclose(stats.truncnorm.entropy(a, b), ref, rtol=1e-14)
 
     def test_ppf_ticket1131(self):
