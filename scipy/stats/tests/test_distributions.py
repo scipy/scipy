@@ -1087,6 +1087,31 @@ class TestTruncnorm:
         #    return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [a, b])
         assert_allclose(stats.truncnorm.entropy(a, b), ref, rtol=1e-10)
 
+    @pytest.mark.parametrize("a, b, ref",
+    [(1e-11, 10000000000.0, 0.725791352640738),
+    (1e-100, 1e+100, 0.7257913526447274),
+    (-1e-100, 1e+100, 0.7257913526447274),
+    (-1e+100, 1e+100, 1.4189385332046727)])
+    def test_extreme_entropy(self, a, b, ref):
+        #The reference values were calculated with mpmath
+        #import mpmath as mp
+        #mp.dps = 50
+        #
+        #def second_trun(a, b):
+        #   def cdf(x):
+        #       return 0.5 * (1 + mp.erf(x / mp.sqrt(2)))
+        #
+        #   Z = cdf(b) - cdf(a)
+        #
+        #   def norm_pdf(x):
+        #       return mp.exp(-x ** 2 / 2) / mp.sqrt(2 * mp.pi)
+        #
+        #   A = mp.log(mp.sqrt(2 * mp.pi * mp.e) * Z)
+        #   B = (a * norm_pdf(a) - b * norm_pdf(b)) / (2 * Z)
+        #
+        #   return A + B
+        assert_allclose(stats.truncnorm.entropy(a, b), ref, rtol=1e-14)
+
     def test_ppf_ticket1131(self):
         vals = stats.truncnorm.ppf([-0.5, 0, 1e-4, 0.5, 1-1e-4, 1, 2], -1., 1.,
                                    loc=[3]*7, scale=2)
