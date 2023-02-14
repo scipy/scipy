@@ -230,8 +230,8 @@ stages:
             TEST_MODE: full
             BITS: 64
             SCIPY_USE_PYTHRAN: 0
-          Python311-64bit-full-ilp64:
-            PYTHON_VERSION: '3.11'
+          Python310-64bit-full-ilp64:
+            PYTHON_VERSION: '3.10'
             PYTHON_ARCH: 'x64'
             TEST_MODE: full
             NPY_USE_BLAS_ILP64: 1
