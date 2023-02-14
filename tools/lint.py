@@ -69,7 +69,7 @@ def diff_files(sha):
 def run_ruff(files, fix):
     if not files:
         return 0, ""
-    args = ['--fix'] if fix else []
+    args = ['--fix', '--exit-non-zero-on-fix'] if fix else []
     res = subprocess.run(
         ['ruff', f'--config={CONFIG}'] + args + files,
         stdout=subprocess.PIPE,
