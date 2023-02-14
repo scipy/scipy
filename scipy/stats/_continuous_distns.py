@@ -8933,6 +8933,15 @@ class truncnorm_gen(rv_continuous):
             logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
         return logsf
 
+    def _entropy(self, a, b):
+        A = _norm_cdf(a)
+        B = _norm_cdf(b)
+        Z = B - A
+        C = np.log(np.sqrt(2 * np.pi * np.e) * Z)
+        D = (a * _norm_pdf(a) - b * _norm_pdf(b)) / (2 * Z)
+        h = C + D
+        return h
+
     def _ppf(self, q, a, b):
         q, a, b = np.broadcast_arrays(q, a, b)
 
