@@ -38,7 +38,6 @@ axis_nan_policy_cases = [
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.pmean, (1.42,), dict(), 1, 1, False, lambda x: (x,)),
     (stats.sem, tuple(), dict(), 1, 1, False, lambda x: (x,)),
-    (stats.mstats.sem, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.iqr, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.skew, tuple(), dict(), 1, 1, False, lambda x: (x,)),

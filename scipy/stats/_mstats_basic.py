@@ -45,7 +45,6 @@ from scipy._lib._util import _rename_parameter, _contains_nan
 from scipy._lib._bunch import _make_tuple_bunch
 import scipy.special as special
 import scipy.stats._stats_py
-from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
 
 from ._stats_mstats_common import (
         _find_repeats,
@@ -3296,9 +3295,6 @@ def obrientransform(*args):
     return data
 
 
-@_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, too_small=1
-)
 def sem(a, axis=0, ddof=1):
     """
     Calculates the standard error of the mean of the input array.
