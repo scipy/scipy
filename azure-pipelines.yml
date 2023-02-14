@@ -177,6 +177,7 @@ stages:
             set -euo pipefail
             docker pull i386/ubuntu:focal
             docker run -v $(pwd):/scipy i386/ubuntu:focal /usr/bin/linux32 /bin/bash -c "cd scipy && \
+            export DEBIAN_FRONTEND=nonintercative && \
             apt-get -y update && \
             apt-get -y install curl python3.9-dev python3.9 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
