@@ -3883,10 +3883,13 @@ class TestDgamma:
         # mp.dps = 50
         # def second_dgamma(a):
         #     if a < 1e15:
-        #         h = a + mp.log(2) + mp.loggamma(a) + (1 - a) * mp.digamma(a)
+        #         x_1 = a + mp.log(2) + mp.loggamma(a)
+        #         x_2 = (1 - a) * mp.digamma(a)
+        #         h = x_1 + x_2
         #
         #     else:
-        #         h = mp.log(2) + 0.5 * (1 + mp.log(a) + mp.log(2 * mp.pi))
+        #         x_1 = 0.5 * (1 + mp.log(a) + mp.log(2 * mp.pi))
+        #         h = mp.log(2) + x_1
         #
         #     return h
         assert_allclose(stats.dgamma.entropy(a), ref, rtol=1e-10)
