@@ -6096,8 +6096,7 @@ class dirichlet_multinomial_gen(multi_rv_generic):
         var = dirichlet_multinomial.var(a, n)
 
         n, Sa = n[..., np.newaxis, np.newaxis], Sa[..., np.newaxis, np.newaxis]
-        ai, aj = a[..., :, np.newaxis], a[..., np.newaxis, :]
-        aiaj = ai*aj
+        aiaj = a[..., :, np.newaxis] * a[..., np.newaxis, :]
         cov = -n * aiaj / Sa ** 2 * (n + Sa) / (1 + Sa)
 
         ii = np.arange(cov.shape[-1])
