@@ -5,6 +5,11 @@ Optimization and root finding (:mod:`scipy.optimize`)
 
 .. currentmodule:: scipy.optimize
 
+.. toctree::
+   :hidden:
+
+   optimize.cython_optimize
+
 SciPy ``optimize`` provides functions for minimizing (or maximizing)
 objective functions, possibly subject to constraints. It includes
 solvers for nonlinear problems (with support for both local and global
