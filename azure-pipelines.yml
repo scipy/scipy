@@ -102,7 +102,7 @@ stages:
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "numpy==1.22.4"
+        numpy_spec: "numpy==1.21.6"
         use_sdist: true
   - job: wheel_optimized_gcc8
     timeoutInMinutes: 90
@@ -131,7 +131,7 @@ stages:
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "numpy==1.22.4"
+        numpy_spec: "numpy==1.21.6"
         use_wheel: true
   - job: Lint
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
@@ -183,7 +183,7 @@ stages:
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
             python3.9 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools==59.6.0 wheel numpy==1.22.4 cython==0.29.21 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran pooch && \
+            pip3 install setuptools==59.6.0 wheel numpy==1.21.6 cython==0.29.21 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran pooch && \
             apt-get -y install gcc-8 g++-8 gfortran-8 wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
