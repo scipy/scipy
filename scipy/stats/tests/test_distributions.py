@@ -3853,41 +3853,42 @@ class TestDgamma:
         assert_allclose(isf, -x, rtol=5e-15)
 
     @pytest.mark.parametrize("a, ref",
-        [(1.5, 2.0541199559354118267922018421759071394202272087878735),
-        (1.3, 1.9357296377121247644586320317632592032856887302320274),
-        (1.1, 1.7856502333412133408733521579693880954302277243835155)])
+                             [(1.5, 2.0541199559354117),
+                             (1.3, 1.9357296377121247),
+                             (1.1, 1.7856502333412134)])
     def test_entropy(self, a, ref):
-        #The reference values were calculated with mpmath:
-        #def entropy_dgamma(a):
-        #   def pdf(x):
-        #       A = 1 / (2 * mp.gamma(a))
-        #       B = mp.fabs(x) ** (a - 1)
-        #       C = mp.exp(-mp.fabs(x))
-        #       h = A * B * C
-        #       return h
+        # The reference values were calculated with mpmath:
+        # def entropy_dgamma(a):
+        #    def pdf(x):
+        #        A = 1 / (2 * mp.gamma(a))
+        #        B = mp.fabs(x) ** (a - 1)
+        #        C = mp.exp(-mp.fabs(x))
+        #        h = A * B * C
+        #        return h
         #
-        #   return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [-mp.inf, mp.inf])
+        #    return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)),
+        #                    [-mp.inf, mp.inf])
         assert_allclose(stats.dgamma.entropy(a), ref, rtol=1e-14)
 
     @pytest.mark.parametrize("a, ref",
-    [(1e-100, -1.0e+100),
-    (1e-10, -9999999975.85822),
-    (1e-5, -99987.3711165702),
-    (1e4, 6.717222565586032),
-    (1000000000000000.0, 19.38147391122),
-    (1e+100, 117.241340363467)])
+                             [(1e-100, -1e+100),
+                             (1e-10, -9999999975.858217),
+                             (1e-5, -99987.37111657023),
+                             (1e4, 6.717222565586032),
+                             (1000000000000000.0, 19.38147391121996),
+                             (1e+100, 117.2413403634669)])
     def test_entropy_entreme_values(self, a, ref):
-        #The reference values were calculated with mpmath:
-        #import mpmath as mp
-        #mp.dps = 50
-        #def second_dgamma(a):
-        #    if a < 1e15:
-        #        h = a + mp.log(2) + mp.loggamma(a) + (1 - a) * mp.digamma(a)
+        # The reference values were calculated with mpmath:
+        # import mpmath as mp
+        # mp.dps = 50
+        # def second_dgamma(a):
+        #     if a < 1e15:
+        #         h = a + mp.log(2) + mp.loggamma(a) + (1 - a) * mp.digamma(a)
         #
-        #    else:
-        #        h = mp.log(2) + 0.5 * (1 + mp.log(a) + mp.log(2 * mp.pi))
+        #     else:
+        #         h = mp.log(2) + 0.5 * (1 + mp.log(a) + mp.log(2 * mp.pi))
         #
-        #    return h
+        #     return h
         assert_allclose(stats.dgamma.entropy(a), ref, rtol=1e-10)
 
     def test_entropy_array_input(self):
