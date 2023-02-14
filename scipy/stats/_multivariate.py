@@ -5832,12 +5832,12 @@ def _sample_uniform_direction(dim, size, random_state):
 
 
 _dirichlet_mn_doc_default_callparams = """\
-alpha : 1D array_like
-    The concentration parameters. The number of entries determines the
-    dimensionality of the distribution. Each entry must be strictly positive.
-n : int
-    The number of trials. Must be a strictly positive integer (scalar); this
-    distribution is not vectorized to support multiple shape parameters.
+alpha : array_like
+    The concentration parameters. The number of entries along the last axis
+    determines the dimensionality of the distribution. Each entry must be
+    strictly positive.
+n : int or array_like
+    The number of trials. Each element must be a strictly positive integer.
 """
 
 _dirichlet_mn_doc_frozen_callparams = ""
@@ -5859,13 +5859,7 @@ dirichlet_mn_docdict_noparams = {
 def _dirichlet_multinomial_check_parameters(alpha, n, x=None):
 
     alpha = np.asarray(alpha)
-    if alpha.ndim != 1:
-        raise ValueError("`alpha` must be an array with"
-                         " exactly one dimension.")
-
     n = np.asarray(n)
-    if n.ndim != 0:
-        raise ValueError("`n` must be an integer (scalar).")
 
     if x is not None:
         # Ensure that `x` and `alpha` are arrays. If the shapes are
@@ -5890,6 +5884,7 @@ def _dirichlet_multinomial_check_parameters(alpha, n, x=None):
     n = n_int
 
     sum_alpha = np.sum(alpha, axis=-1)
+    sum_alpha, n = np.broadcast_arrays(sum_alpha, n)
 
     return (alpha, sum_alpha, n) if x is None else (alpha, sum_alpha, n, x)
 
@@ -5904,9 +5899,9 @@ class dirichlet_multinomial_gen(multi_rv_generic):
 
     Methods
     -------
-    logpmf(alpha, x, n):
+    logpmf(x, alpha, n):
         Log of the probability mass function.
-    pmf(alpha, x, n):
+    pmf(x, alpha, n):
         Probability mass function.
     mean(alpha, n):
         Mean of the Dirichlet multinomial distribution.
@@ -5978,6 +5973,28 @@ class dirichlet_multinomial_gen(multi_rv_generic):
     >>> dm.pmf(x)
     0.08484162895927579
 
+    All methods are fully vectorized. Each element of `x` and `alpha` is
+    a vector (along the last axis), each element of `n` is an
+    integer (scalar), and the result is computed element-wise.
+
+    >>> x = [[1, 2, 3], [4, 5, 6]]
+    >>> alpha = [[1, 2, 3], [4, 5, 6]]
+    >>> n = [6, 15]
+    >>> dirichlet_multinomial.pmf(x, alpha, n)
+    array([0.06493506, 0.02626937])
+
+    >>> dirichlet_multinomial.cov(alpha, n).shape  # both covariance matrices
+    (2, 3, 3)
+
+    Broadcasting according to standard NumPy conventions is supported. Here,
+    we have four sets of concentration parameters (each a two element vector)
+    for each of three numbers of trials (each a scalar).
+
+    >>> alpha = [[3, 4], [4, 5], [5, 6], [6, 7]]
+    >>> n = [[6], [7], [8]]
+    >>> dirichlet_multinomial.mean(alpha, n).shape
+    (3, 4, 2)
+
     """
     def __init__(self, seed=None):
         super().__init__(seed)
@@ -6045,6 +6062,7 @@ class dirichlet_multinomial_gen(multi_rv_generic):
 
         """
         a, Sa, n = _dirichlet_multinomial_check_parameters(alpha, n)
+        n, Sa = n[..., np.newaxis], Sa[..., np.newaxis]
         return n * a / Sa
 
     def var(self, alpha, n):
@@ -6062,6 +6080,7 @@ class dirichlet_multinomial_gen(multi_rv_generic):
 
         """
         a, Sa, n = _dirichlet_multinomial_check_parameters(alpha, n)
+        n, Sa = n[..., np.newaxis], Sa[..., np.newaxis]
         return n * a / Sa * (1 - a/Sa) * (n + Sa) / (1 + Sa)
 
     def cov(self, alpha, n):
@@ -6078,10 +6097,14 @@ class dirichlet_multinomial_gen(multi_rv_generic):
 
         """
         a, Sa, n = _dirichlet_multinomial_check_parameters(alpha, n)
-        aiaj = np.outer(a, a)
-        cov = -n * aiaj / Sa ** 2 * (n + Sa) / (1 + Sa)
         var = dirichlet_multinomial.var(a, n)
-        np.fill_diagonal(cov, var)
+
+        n, Sa = n[..., np.newaxis, np.newaxis], Sa[..., np.newaxis, np.newaxis]
+        aiaj = a[..., :, np.newaxis] * a[..., np.newaxis, :]
+        cov = -n * aiaj / Sa ** 2 * (n + Sa) / (1 + Sa)
+
+        ii = np.arange(cov.shape[-1])
+        cov[..., ii, ii] = var
         return cov
 
 
