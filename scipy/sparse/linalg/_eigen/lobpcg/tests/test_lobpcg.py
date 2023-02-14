@@ -256,6 +256,7 @@ def test_fiedler_large_12():
 
 
 @pytest.mark.filterwarnings("ignore:Failed at iteration")
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
 def test_failure_to_run_iterations():
     """Check that the code exists gracefully without breaking. Issue #10974.
     The code may or not issue a warning, filtered out. Issue #15935, #17954.
