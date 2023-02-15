@@ -396,6 +396,11 @@ class TestBinom:
         ref = stats.binom.cdf(r, n, p)
         assert_allclose(res, ref, atol=1e-16)
 
+    def test_pmf_cdf(self):
+        # Check that gh-15101 is resolved (no divide warnings when p~1, n~oo)
+        res = stats.binom.pmf(3, 2000, 0.999)
+        assert_allclose(res, 0, atol=1e-16)
+
 
 class TestArcsine:
 
