@@ -2848,7 +2848,7 @@ def obrientransform(*samples):
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, too_small=1
 )
-def sem(a, axis=0, ddof=1, nan_policy='propagate'):
+def sem(a, axis=0, ddof=1):
     """Compute standard error of the mean.
 
     Calculate the standard error of the mean (or standard error of
@@ -2866,13 +2866,6 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
         Delta degrees-of-freedom. How many degrees of freedom to adjust
         for bias in limited samples relative to the population estimate
         of variance. Defaults to 1.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -2900,14 +2893,6 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     1.2893796958227628
 
     """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.sem(a, axis, ddof)
-
     n = a.shape[axis]
     s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
     return s
