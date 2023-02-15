@@ -6606,6 +6606,9 @@ class nakagami_gen(rv_continuous):
     %(example)s
 
     """
+    def _argcheck(self, nu):
+        return nu > 0
+
     def _shape_info(self):
         return [_ShapeInfo("nu", False, (0, np.inf), (False, False))]
 
@@ -6639,12 +6642,21 @@ class nakagami_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, nu):
-        A = sc.gammaln(nu) - np.log(2)
-        B = -0.5 * np.log(nu)
-        C = (2 * nu - (2 * nu - 1) * sc.digamma(nu)) / 2
+        shape = np.shape(nu)
+        # because somehow this isn't taken care of by the infrastructure...
+        nu = np.atleast_1d(nu)
+        A = sc.gammaln(nu)
+        B = nu - (nu - 0.5) * sc.digamma(nu)
+        C = -0.5 * np.log(nu) - np.log(2)
         h = A + B + C
-
-        return h
+        # This is the asymptotic sum of A and B (see gh-17868)
+        norm_entropy = stats.norm._entropy()
+        # Above, this is lost to rounding error for large nu, so use the
+        # asymptotic sum when the approximation becomes accurate
+        i = nu > 5e4  # roundoff error ~ approximation error
+        # -1 / (12 * nu) is the O(1/nu) term; see gh-17929
+        h[i] = C[i] + norm_entropy - 1/(12*nu[i])
+        return h.reshape(shape)[()]
 
     def _rvs(self, nu, size=None, random_state=None):
         # this relationship can be found in [1] or by a direct calculation
@@ -8940,6 +8952,15 @@ class truncnorm_gen(rv_continuous):
         if np.any(i):
             logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
         return logsf
+
+    def _entropy(self, a, b):
+        A = _norm_cdf(a)
+        B = _norm_cdf(b)
+        Z = B - A
+        C = np.log(np.sqrt(2 * np.pi * np.e) * Z)
+        D = (a * _norm_pdf(a) - b * _norm_pdf(b)) / (2 * Z)
+        h = C + D
+        return h
 
     def _ppf(self, q, a, b):
         q, a, b = np.broadcast_arrays(q, a, b)

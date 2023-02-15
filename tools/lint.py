@@ -69,7 +69,7 @@ def diff_files(sha):
 def run_ruff(files, fix):
     if not files:
         return 0, ""
-    args = ['--fix'] if fix else []
+    args = ['--fix', '--exit-non-zero-on-fix'] if fix else []
     res = subprocess.run(
         ['ruff', f'--config={CONFIG}'] + args + files,
         stdout=subprocess.PIPE,
@@ -82,7 +82,7 @@ def run_cython_lint(files):
     if not files:
         return 0, ""
     res = subprocess.run(
-        ['cython-lint'] + files,
+        ['cython-lint', '--no-pycodestyle'] + files,
         stdout=subprocess.PIPE,
         encoding='utf-8'
     )
@@ -90,7 +90,7 @@ def run_cython_lint(files):
 
 
 def main():
-    parser = ArgumentParser(description="Also see `pre-commit-hook.sh` which "
+    parser = ArgumentParser(description="Also see `pre-commit-hook.py` which "
                                         "lints all files staged in git.")
     # In Python 3.9, can use: argparse.BooleanOptionalAction
     parser.add_argument("--fix", action='store_true',

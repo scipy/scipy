@@ -838,11 +838,6 @@ cdef class TransformedDensityRejection(Method):
             'random_state': random_state
         }
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-
         self.callbacks = _unpack_dist(dist, "cont", meths=["pdf", "dpdf"])
         def _callback_wrapper(x, name):
             return self.callbacks[name](x)
@@ -1130,11 +1125,6 @@ cdef class SimpleRatioUniforms(Method):
             'random_state': random_state
         }
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-
         self.callbacks = _unpack_dist(dist, "cont", meths=["pdf"])
         def _callback_wrapper(x, name):
             return self.callbacks[name](x)
@@ -1411,11 +1401,6 @@ cdef class NumericalInversePolynomial(Method):
             'u_resolution': u_resolution,
             'random_state': random_state
         }
-
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
 
         # either logpdf or pdf are required: use meths = None and check separately
         self.callbacks = _unpack_dist(dist, "cont", meths=None, optional_meths=["cdf", "pdf", "logpdf"])
@@ -1979,10 +1964,6 @@ cdef class NumericalInverseHermite(Method):
             'random_state': random_state
         }
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-
         self.callbacks = _unpack_dist(dist, "cont", meths=["cdf"], optional_meths=["pdf", "dpdf"])
         def _callback_wrapper(x, name):
             return self.callbacks[name](x)
@@ -2399,11 +2380,6 @@ cdef class DiscreteAliasUrn(Method):
         # save all the arguments for pickling support
         self._kwargs = {'dist': dist, 'domain': domain, 'urn_factor': urn_factor, 'random_state': random_state}
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -2671,11 +2647,6 @@ cdef class DiscreteGuideTable(Method):
             'guide_factor': guide_factor,
             'random_state': random_state
         }
-
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
 
         self._messages = MessageStream()
         _lock.acquire()

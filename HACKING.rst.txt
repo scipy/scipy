@@ -89,7 +89,7 @@ tests, benchmarks, and correct code style.
     for proper style. Install it (once) by running the following from
     the root of the SciPy repository::
 
-      cp tools/pre-commit-hook.sh .git/hooks/pre-commit
+      cp tools/pre-commit-hook.py .git/hooks/pre-commit
 
     Alternatively, you may run the linter manually::
 

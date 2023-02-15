@@ -2276,10 +2276,11 @@ def _random_cd(
     if d == 0 or n == 0:
         return np.empty((n, d))
 
-    best_disc = discrepancy(best_sample)
-
-    if n == 1:
+    if d == 1 or n == 1:
+        # discrepancy measures are invariant under permuting factors and runs
         return best_sample
+
+    best_disc = discrepancy(best_sample)
 
     bounds = ([0, d - 1],
               [0, n - 1],
@@ -2290,9 +2291,9 @@ def _random_cd(
     while n_nochange_ < n_nochange and n_iters_ < n_iters:
         n_iters_ += 1
 
-        col = rng_integers(rng, *bounds[0])
-        row_1 = rng_integers(rng, *bounds[1])
-        row_2 = rng_integers(rng, *bounds[2])
+        col = rng_integers(rng, *bounds[0], endpoint=True)  # type: ignore[misc]
+        row_1 = rng_integers(rng, *bounds[1], endpoint=True)  # type: ignore[misc]
+        row_2 = rng_integers(rng, *bounds[2], endpoint=True)  # type: ignore[misc]
         disc = _perturb_discrepancy(best_sample,
                                     row_1, row_2, col,
                                     best_disc)

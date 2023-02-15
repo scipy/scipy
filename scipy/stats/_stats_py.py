@@ -7029,6 +7029,12 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     standard error. Therefore, the statistic will be positive when `mean1` is
     greater than `mean2` and negative when `mean1` is less than `mean2`.
 
+    This method does not check whether any of the elements of `std1` or `std2`
+    are negative. If any elements of the `std1` or `std2` parameters are
+    negative in a call to this method, this method will return the same result
+    as if it were passed ``numpy.abs(std1)`` and ``numpy.abs(std2)``,
+    respectively, instead; no exceptions or warnings will be emitted.
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
