@@ -3569,7 +3569,7 @@ class TestSkellam:
         # check that crash reported by gh-17916 large mu2 is resolved
         x, mu1, mu2 = 0, 1, 4820232647677555.0
         assert_allclose(stats.skellam.pmf(x, mu1, mu2), 0, atol=1e-16)
-        assert_allclose(stats.skellam.cdf(x, mu1, mu2), 0, atol=1e-16)
+        assert_allclose(stats.skellam.cdf(x, mu1, mu2), 1, atol=1e-16)
 
 
 class TestLognorm:
