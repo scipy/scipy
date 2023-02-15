@@ -532,6 +532,12 @@ class anglit_gen(rv_continuous):
     def _ppf(self, q):
         return np.arcsin(np.sqrt(q))-np.pi/4
 
+    def _sf(self, x):
+        return np.cos(x+np.pi/4)**2.0
+
+    def _isf(self, q):
+        return np.arccos(np.sqrt(q))-np.pi/4
+
     def _stats(self):
         return 0.0, np.pi*np.pi/16-0.5, 0.0, -2*(np.pi**4 - 96)/(np.pi*np.pi-8)**2
 
