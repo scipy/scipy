@@ -2869,6 +2869,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
+
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
