@@ -4,6 +4,7 @@
 import itertools
 import platform
 import sys
+import warnings
 import pytest
 import numpy as np
 from numpy import ones, r_, diag
