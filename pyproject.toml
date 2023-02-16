@@ -25,7 +25,6 @@ requires = [
 
     # now matches minimum supported version, keep here as separate requirement
     # to be able to sync more easily with oldest-supported-numpy
-    "numpy==1.21.6; python_version=='3.9' and platform_machine=='arm64' and platform_system=='Darwin'",
     # loongarch64 requires numpy>=1.22.0
     "numpy==1.22.0; platform_machine=='loongarch64'",
 
