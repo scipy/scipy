@@ -145,6 +145,15 @@ jobs:
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
 
+          # MACOS_DEPLOYMENT_TARGET is set because of
+          # https://github.com/pypa/cibuildwheel/issues/1419. Once that
+          # is closed and meson-python==0.13 is available, then
+          # that environment variable can be removed.
+          CIBW_ENVIRONMENT_MACOS: >
+            MACOSX_DEPLOYMENT_TARGET=10.9
+            MACOS_DEPLOYMENT_TARGET=10.9
+            _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64
+
       - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl
