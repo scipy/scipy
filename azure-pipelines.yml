@@ -281,6 +281,16 @@ stages:
       displayName: 'Install 64-bit mingw for 64-bit builds'
       condition: and(succeeded(), eq(variables['BITS'], 64))
 
+    - script: |
+        # provides clang-cl, which is required by Pythran
+        choco install -y llvm
+        set PATH=C:\Program Files\LLVM\bin;%PATH%
+        echo '##vso[task.setvariable variable=PATH]%PATH%'
+      displayName: 'Install clang-cl'
+    - script: |
+        clang-cl.exe --version
+      displayName: 'clang-cl version'
+
     - powershell: |
         # wheels must use same version
         choco install -y mingw --forcex86 --force --version=8.1.0

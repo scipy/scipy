@@ -61,7 +61,8 @@ jobs:
 
     - name: Test SciPy
       run: |
-        # Set SDKROOT env variable if not set
+        # Set SDKROOT env variable if not set. Refer to
+        # tools/wheels/cibw_before_build_macos.sh to see why it's necessary
         export SDKROOT=${SDKROOT:-$(xcrun --show-sdk-path)}
 
         export SCIPY_USE_PYTHRAN=1

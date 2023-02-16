@@ -114,8 +114,6 @@ jobs:
           # mingw-w64
           choco install rtools --no-progress
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
-          #          $env:PATH = "$env:RTOOLS40_HOME\\mingw64\\bin;$env:PATH"
-          #          echo $env:PATH >> $env:GITHUB_PATH
         if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'false' }}
 
 #      - name: win32 - configure mingw for 32-bit builds

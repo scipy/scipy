@@ -43,7 +43,9 @@ if [[ $PLATFORM == "macosx-x86_64" ]]; then
 
   # Set SDKROOT env variable if not set
   # This step is required whenever the gfortran compilers sourced from
-  # conda-forge (built by isuru fernando) are used
+  # conda-forge (built by isuru fernando) are used outside of a conda-forge
+  # environment (so it mirrors what is done in the conda-forge compiler
+  # activation scripts)
   export SDKROOT=${SDKROOT:-$(xcrun --show-sdk-path)}
   gfortran tools/wheels/test.f
 fi
@@ -74,8 +76,5 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
 
   hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
   sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
-  # required so that gfortran knows where to find the linking libraries.
-  # export SDKROOT=/Applications/Xcode_13.3.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk
-  # export SDKROOT=$(xcrun --show-sdk-path)
   type -p gfortran
 fi
