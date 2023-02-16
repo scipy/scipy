@@ -13,7 +13,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
-
+from scipy.stats import _stats_py
 
 def unpack_ttest_result(res):
     low, high = res.confidence_interval()
@@ -39,6 +39,7 @@ axis_nan_policy_cases = [
     (stats.pmean, (1.42,), dict(), 1, 1, False, lambda x: (x,)),
     (stats.sem, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.iqr, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (_stats_py._describe, tuple(), dict(), 1, 7, False, lambda x: x),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.skew, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kstat, tuple(), dict(), 1, 1, False, lambda x: (x,)),
@@ -66,7 +67,7 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "Not enough test observations",
                       "Not enough other observations",
                       "At least one observation is required",
-                      "zero-size array to reduction operation maximum",
+                      "zero-size array to reduction operation",
                       "`x` and `y` must be of nonzero size.",
                       "The exact distribution of the Wilcoxon test",
                       "Data input must not be empty"}
