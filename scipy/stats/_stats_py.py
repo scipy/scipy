@@ -10190,6 +10190,13 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     return result
 
 
+def _n_samples_expectile(kwargs):
+    return 2 if np.shape(kwargs.get('alpha', None)) else 1
+
+
+@_axis_nan_policy_factory(lambda x: x, result_to_tuple=lambda x: (x,),
+                          n_samples=_n_samples_expectile, n_outputs=1,
+                          kwd_samples=['weights'])
 def expectile(a, alpha=0.5, *, weights=None):
     r"""Compute the expectile at the specified level.
 
@@ -10201,8 +10208,10 @@ def expectile(a, alpha=0.5, *, weights=None):
     ----------
     a : array_like
         Array containing numbers whose expectile is desired.
-    alpha : float, default: 0.5
+    alpha : float or array_like, default: 0.5
         The level of the expectile; e.g., `alpha=0.5` gives the mean.
+        If array_like, then its length along `axis` must equal 1, and it must
+        otherwise be broadcastable with `a`.
     weights : array_like, optional
         An array of weights associated with the values in `a`.
         The `weights` must be broadcastable to the same shape as `a`.
@@ -10289,6 +10298,8 @@ def expectile(a, alpha=0.5, *, weights=None):
             "The expectile level alpha must be in the range [0, 1]."
         )
     a = np.asarray(a)
+    if a.size == 0:
+        return np.float64('nan')
 
     if weights is not None:
         weights = np.broadcast_to(weights, a.shape)

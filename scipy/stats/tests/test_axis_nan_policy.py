@@ -48,6 +48,7 @@ axis_nan_policy_cases = [
     (stats.jarque_bera, tuple(), dict(), 1, 2, False, None),
     (stats.ttest_1samp, (np.array([0]),), dict(), 1, 7, False,
      unpack_ttest_result),
+    (stats.expectile, (np.array([0.5]),), dict(), 1, 1, False, lambda x: (x,)),
     (stats.ttest_rel, tuple(), dict(), 2, 7, True, unpack_ttest_result),
     (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count))
 ]
