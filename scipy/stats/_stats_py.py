@@ -1384,6 +1384,17 @@ DescribeResult = namedtuple('DescribeResult',
                              'kurtosis'))
 
 
+def _unpack_describe(res):
+    return (res.minmax[0], res.minmax[1], res.mean, res.variance,
+            res.skewness, res.kurtosis, res.nobs)
+
+
+def _pack_describe(_min, _max, m, v, sk, kurt, n):
+    return DescribeResult(n.astype(np.int32), (_min, _max), m, v, sk, kurt)
+
+
+@_axis_nan_policy_factory(_pack_describe, result_to_tuple=_unpack_describe,
+                          n_outputs=7, override={'nan_propagation': False})
 def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     """Compute several descriptive statistics of the passed array.
 
@@ -1449,24 +1460,19 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
                    skewness=array([0., 0.]), kurtosis=array([-2., -2.]))
 
     """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.describe(a, axis, ddof, bias)
 
     if a.size == 0:
         raise ValueError("The input must not be empty.")
     n = a.shape[axis]
-    mm = (np.min(a, axis=axis), np.max(a, axis=axis))
+    _min = np.min(a, axis=axis)
+    _max = np.max(a, axis=axis)
     m = np.mean(a, axis=axis)
     v = _var(a, axis=axis, ddof=ddof)
     sk = skew(a, axis, bias=bias)
     kurt = kurtosis(a, axis, bias=bias)
+    n = np.broadcast_to(n, m.shape)
 
-    return DescribeResult(n, mm, m, v, sk, kurt)
+    return _pack_describe(_min, _max, m, v, sk, kurt, n)
 
 #####################################
 #         NORMALITY TESTS           #

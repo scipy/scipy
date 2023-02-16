@@ -45,6 +45,7 @@ axis_nan_policy_cases = [
     (stats.kstatvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.moment, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.moment, tuple(), dict(moment=[1, 2]), 1, 2, False, None),
+    (stats.describe, tuple(), dict(), 1, 7, False, stats._stats_py._unpack_describe),
     (stats.jarque_bera, tuple(), dict(), 1, 2, False, None),
     (stats.ttest_1samp, (np.array([0]),), dict(), 1, 7, False,
      unpack_ttest_result),
@@ -69,7 +70,8 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "zero-size array to reduction operation maximum",
                       "`x` and `y` must be of nonzero size.",
                       "The exact distribution of the Wilcoxon test",
-                      "Data input must not be empty"}
+                      "Data input must not be empty",
+                      "The input must not be empty"}
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
@@ -77,7 +79,7 @@ inaccuracy_messages = {"Precision loss occurred in moment calculation",
                        "Sample size too small for normal approximation."}
 
 # For some functions, nan_policy='propagate' should not just return NaNs
-override_propagate_funcs = {stats.mode}
+override_propagate_funcs = {stats.mode, stats.describe}
 
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
