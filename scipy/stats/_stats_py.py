@@ -1384,8 +1384,7 @@ DescribeResult = namedtuple('DescribeResult',
                              'kurtosis'))
 
 
-def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate', *,
-             keepdims=False):
+def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     """Compute several descriptive statistics of the passed array.
 
     Parameters
@@ -1407,10 +1406,6 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate', *,
         * 'propagate': returns nan
         * 'raise': throws an error
         * 'omit': performs the calculations ignoring nan values
-    keepdims : bool, default: False
-        If this is set to True, the axes which are reduced are left
-        in the result as dimensions with size one. With this option,
-        the result will broadcast correctly against the input array.
 
     Returns
     -------
@@ -1454,26 +1449,24 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate', *,
                    skewness=array([0., 0.]), kurtosis=array([-2., -2.]))
 
     """
-    if np.size(a) == 0:
+    a, axis = _chk_asarray(a, axis)
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    if contains_nan and nan_policy == 'omit':
+        a = ma.masked_invalid(a)
+        return mstats_basic.describe(a, axis, ddof, bias)
+
+    if a.size == 0:
         raise ValueError("The input must not be empty.")
-
-    n, _min, _max, m, v, sk, kurt = _describe(a, axis, ddof, bias,
-                                              nan_policy, keepdims=keepdims)
-    return DescribeResult(n, (_min, _max), m, v, sk, kurt)
-
-
-@_axis_nan_policy_factory(lambda *args: args, n_outputs=7)
-def _describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     n = a.shape[axis]
-    _min = np.min(a, axis=axis)
-    _max = np.max(a, axis=axis)
+    mm = (np.min(a, axis=axis), np.max(a, axis=axis))
     m = np.mean(a, axis=axis)
     v = _var(a, axis=axis, ddof=ddof)
     sk = skew(a, axis, bias=bias)
     kurt = kurtosis(a, axis, bias=bias)
-    n = np.broadcast_to(n, m.shape)
-    return n, _min, _max, m, v, sk, kurt
 
+    return DescribeResult(n, mm, m, v, sk, kurt)
 
 #####################################
 #         NORMALITY TESTS           #
