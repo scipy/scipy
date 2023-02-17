@@ -115,7 +115,7 @@ musllinux_amd64_test_task:
 
 macos_arm64_test_task:
   macos_instance:
-    image: ghcr.io/cirruslabs/macos-monterey-xcode:13.3.1
+    image: ghcr.io/cirruslabs/macos-monterey-xcode:14
 
   <<: *MODIFIED_CLONE
 
