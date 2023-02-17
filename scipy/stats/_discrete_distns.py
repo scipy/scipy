@@ -354,10 +354,12 @@ class nbinom_gen(rv_discrete):
         return _boost._nbinom_sf(k, n, p)
 
     def _isf(self, x, n, p):
-        return _boost._nbinom_isf(x, n, p)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._nbinom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
-        return _boost._nbinom_ppf(q, n, p)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
         return (
@@ -1419,17 +1421,19 @@ class skellam_gen(rv_discrete):
                 random_state.poisson(mu2, n))
 
     def _pmf(self, x, mu1, mu2):
-        px = np.where(x < 0,
-                      _boost._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                      _boost._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
-        # ncx2.pdf() returns nan's for extremely low probabilities
+        with np.errstate(over='ignore'):  # see gh-17432
+            px = np.where(x < 0,
+                          _boost._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                          _boost._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
+            # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
     def _cdf(self, x, mu1, mu2):
         x = floor(x)
-        px = np.where(x < 0,
-                      _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                      1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+        with np.errstate(over='ignore'):  # see gh-17432
+            px = np.where(x < 0,
+                          _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                          1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):
