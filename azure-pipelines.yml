@@ -183,7 +183,7 @@ stages:
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
             python3.9 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools==59.6.0 wheel numpy==1.21.6 cython==0.29.21 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran pooch && \
+            pip3 install setuptools==59.6.0 wheel numpy==1.21.6 cython==0.29.32 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran pooch && \
             apt-get -y install gcc-8 g++-8 gfortran-8 wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
@@ -230,8 +230,8 @@ stages:
             TEST_MODE: full
             BITS: 64
             SCIPY_USE_PYTHRAN: 0
-          Python310-64bit-full-ilp64:
-            PYTHON_VERSION: '3.10'
+          Python311-64bit-full-ilp64:
+            PYTHON_VERSION: '3.11'
             PYTHON_ARCH: 'x64'
             TEST_MODE: full
             NPY_USE_BLAS_ILP64: 1
@@ -300,7 +300,7 @@ stages:
 
     - script: >-
         python -m pip install
-        cython==0.29.24
+        cython==0.29.32
         matplotlib
         mpmath
         numpy==1.23.5
