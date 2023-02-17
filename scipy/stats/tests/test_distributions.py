@@ -3927,9 +3927,9 @@ class TestChi2:
                              [(1e-4, -19988.980448690163),
                               (1, 0.7837571104739337),
                               (100, 4.061397128938114),
-                              (10000, 6.370615639472648)])
+                              (1e15, 19.034900320939986)])
     def test_entropy(self, df, ref):
-        assert_allclose(stats.chi2(df).entropy(), ref)
+        assert_allclose(stats.chi2(df).entropy(), ref, 1e-12)
 
 
 class TestGumbelL:
