@@ -71,7 +71,7 @@ def run_ruff(files, fix):
         return 0, ""
     args = ['--fix', '--exit-non-zero-on-fix'] if fix else []
     res = subprocess.run(
-        ['ruff', f'--config={CONFIG}'] + args + files,
+        ['ruff', f'--config={CONFIG}'] + args + list(files),
         stdout=subprocess.PIPE,
         encoding='utf-8'
     )
@@ -82,7 +82,7 @@ def run_cython_lint(files):
     if not files:
         return 0, ""
     res = subprocess.run(
-        ['cython-lint', '--no-pycodestyle'] + files,
+        ['cython-lint', '--no-pycodestyle'] + list(files),
         stdout=subprocess.PIPE,
         encoding='utf-8'
     )
@@ -116,9 +116,9 @@ def main():
     else:
         files = args.files
 
-    cython_exts = ['.pyx']  # Add '.pxd', '.pxi' once cython-lint supports it
-    cython_files = [f for f in files if any(f.endswith(ext) for ext in cython_exts)]
-    other_files = [f for f in files if not f.endswith('.pyx')]
+    cython_exts = ('.pyx', '.pxd', '.pxi')
+    cython_files = {f for f in files if any(f.endswith(ext) for ext in cython_exts)}
+    other_files = set(files) - cython_files
 
     rc_cy, errors = run_cython_lint(cython_files)
     if errors:
