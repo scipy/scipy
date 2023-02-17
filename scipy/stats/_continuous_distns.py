@@ -27,7 +27,7 @@ from ._distn_infrastructure import (
     get_distribution_names, _kurtosis,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
-from ._constants import (_XMIN, _EULER, _ZETA3, _SQRT_PI,
+from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 from ._censored_data import CensoredData
 import scipy.stats._boost as _boost
@@ -906,8 +906,18 @@ class betaprime_gen(rv_continuous):
             f2=lambda x_, a_, b_: beta._cdf(x_/(1+x_), a_, b_))
 
     def _ppf(self, p, a, b):
-        r = sc.betaincinv(a, b, p)
-        return r / (1 - r)
+        p, a, b = np.broadcast_arrays(p, a, b)
+        # by default, compute compute the ppf by solving the following:
+        # p = beta._cdf(x/(1+x), a, b). This implies x = r/(1-r) with
+        # r = beta._ppf(p, a, b). This can cause numerical issues if r is
+        # very close to 1. in that case, invert the alternative expression of
+        # the cdf: p = beta._sf(1/(1+x), b, a).
+        r = stats.beta._ppf(p, a, b)
+        with np.errstate(divide='ignore'):
+            out =  r / (1 - r)
+        i = (r > 0.9999)
+        out[i] = 1/stats.beta._isf(p[i], b[i], a[i]) - 1
+        return out
 
     def _munp(self, n, a, b):
         if n == 1.0:
@@ -5671,16 +5681,45 @@ class loggamma_gen(rv_continuous):
         return c*x - np.exp(x) - sc.gammaln(c)
 
     def _cdf(self, x, c):
-        return sc.gammainc(c, np.exp(x))
+        # This function is gammainc(c, exp(x)), where gammainc(c, z) is
+        # the regularized incomplete gamma function.
+        # The first term in a series expansion of gamminc(c, z) is
+        # z**c/Gamma(c+1); see 6.5.29 of Abramowitz & Stegun (and refer
+        # back to 6.5.1, 6.5.2 and 6.5.4 for the relevant notation).
+        # This can also be found in the wikipedia article
+        # https://en.wikipedia.org/wiki/Incomplete_gamma_function.
+        # Here we use that formula when x is sufficiently negative that
+        # exp(x) will result in subnormal numbers and lose precision.
+        # We evaluate the log of the expression first to allow the possible
+        # cancellation of the terms in the division, and then exponentiate.
+        # That is,
+        #     exp(x)**c/Gamma(c+1) = exp(log(exp(x)**c/Gamma(c+1)))
+        #                          = exp(c*x - gammaln(c+1))
+        return _lazywhere(x < _LOGXMIN, (x, c),
+                          lambda x, c: np.exp(c*x - sc.gammaln(c+1)),
+                          f2=lambda x, c: sc.gammainc(c, np.exp(x)))
 
     def _ppf(self, q, c):
-        return np.log(sc.gammaincinv(c, q))
+        # The expression used when g < _XMIN inverts the one term expansion
+        # given in the comments of _cdf().
+        g = sc.gammaincinv(c, q)
+        return _lazywhere(g < _XMIN, (g, q, c),
+                          lambda g, q, c: (np.log(q) + sc.gammaln(c+1))/c,
+                          f2=lambda g, q, c: np.log(g))
 
     def _sf(self, x, c):
-        return sc.gammaincc(c, np.exp(x))
+        # See the comments for _cdf() for how x < _LOGXMIN is handled.
+        return _lazywhere(x < _LOGXMIN, (x, c),
+                          lambda x, c: -np.expm1(c*x - sc.gammaln(c+1)),
+                          f2=lambda x, c: sc.gammaincc(c, np.exp(x)))
 
     def _isf(self, q, c):
-        return np.log(sc.gammainccinv(c, q))
+        # The expression used when g < _XMIN inverts the complement of
+        # the one term expansion given in the comments of _cdf().
+        g = sc.gammainccinv(c, q)
+        return _lazywhere(g < _XMIN, (g, q, c),
+                          lambda g, q, c: (np.log1p(-q) + sc.gammaln(c+1))/c,
+                          f2=lambda g, q, c: np.log(g))
 
     def _stats(self, c):
         # See, for example, "A Statistical Study of Log-Gamma Distribution", by
@@ -6547,6 +6586,9 @@ class nakagami_gen(rv_continuous):
     %(example)s
 
     """
+    def _argcheck(self, nu):
+        return nu > 0
+
     def _shape_info(self):
         return [_ShapeInfo("nu", False, (0, np.inf), (False, False))]
 
@@ -6578,6 +6620,23 @@ class nakagami_gen(rv_continuous):
         g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
+
+    def _entropy(self, nu):
+        shape = np.shape(nu)
+        # because somehow this isn't taken care of by the infrastructure...
+        nu = np.atleast_1d(nu)
+        A = sc.gammaln(nu)
+        B = nu - (nu - 0.5) * sc.digamma(nu)
+        C = -0.5 * np.log(nu) - np.log(2)
+        h = A + B + C
+        # This is the asymptotic sum of A and B (see gh-17868)
+        norm_entropy = stats.norm._entropy()
+        # Above, this is lost to rounding error for large nu, so use the
+        # asymptotic sum when the approximation becomes accurate
+        i = nu > 5e4  # roundoff error ~ approximation error
+        # -1 / (12 * nu) is the O(1/nu) term; see gh-17929
+        h[i] = C[i] + norm_entropy - 1/(12*nu[i])
+        return h.reshape(shape)[()]
 
     def _rvs(self, nu, size=None, random_state=None):
         # this relationship can be found in [1] or by a direct calculation
@@ -8873,6 +8932,15 @@ class truncnorm_gen(rv_continuous):
         if np.any(i):
             logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
         return logsf
+
+    def _entropy(self, a, b):
+        A = _norm_cdf(a)
+        B = _norm_cdf(b)
+        Z = B - A
+        C = np.log(np.sqrt(2 * np.pi * np.e) * Z)
+        D = (a * _norm_pdf(a) - b * _norm_pdf(b)) / (2 * Z)
+        h = C + D
+        return h
 
     def _ppf(self, q, a, b):
         q, a, b = np.broadcast_arrays(q, a, b)

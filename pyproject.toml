@@ -87,6 +87,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -116,13 +117,14 @@ doc = [
     "sphinx-design>=0.2.0",
     "matplotlib>2",
     "numpydoc",
+    "pooch",
 ]
 dev = [
     "mypy",
     "typing_extensions",
     "pycodestyle",
     "ruff",
-    "cython-lint",
+    "cython-lint>=0.12.2",
     "rich-click",
     "click",
     "doit>=0.36.0",
@@ -171,4 +173,4 @@ select = "*-win_amd64"
 # An alternative is to set CMAKE_PREFIX_PATH="c:/opt/openblas/if_32/32"
 # Don't use double backslash for path separators, they don't get passed
 # to the build correctly
-environment = { PKG_CONFIG_PATH="c:/opt/openblas/if_32/64/lib/pkgconfig" }
+environment = { PKG_CONFIG_PATH="c:/opt/64/lib/pkgconfig" }
