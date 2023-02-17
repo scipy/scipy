@@ -73,6 +73,56 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'best2bin'
             - 'rand2bin'
             - 'rand1bin'
+            
+Here are some brief examples for each of the differential evolution strategies:
+
+-'best1bin': Generates a trial vector by adding the difference between the best 
+individual and another individual to a third individual. For example, if we have a 
+population of vectors [x1, x2, x3, x4], where x1 is the best individual, we can 
+generate a trial vector u by adding the difference between x1 and x2 to x3: 
+u = x1 + F * (x2 - x3), where F is a scaling factor.
+
+-'best1exp': Similar to 'best1bin', but uses exponential weighting instead of 
+binary weighting to control the search space. For example, we can generate a trial 
+vector u by adding the exponential-weighted difference between x1 and x2 to x3: 
+u = x1 + F * exp(k * t) * (x2 - x3), where k and t are constants.
+
+-'rand1exp': Generates a trial vector by adding the difference between two randomly 
+selected individuals to a third individual, with exponential weighting. For example, 
+we can generate a trial vector u by adding the exponential-weighted difference 
+between x2 and x3 to x4: u = x2 + F * exp(k * t) * (x3 - x4).
+
+-'randtobest1exp': Generates a trial vector by adding the difference between the best 
+individual and a randomly selected individual to a third individual, with exponential 
+weighting. For example, we can generate a trial vector u by adding the exponential-
+weighted difference between x1 and x3 to x4: u = x1 + F * exp(k * t) * (x3 - x4).
+
+-'currenttobest1exp': Generates a trial vector by adding the difference between the 
+best individual and the current individual to the current individual, with exponential 
+weighting. For example, if the current individual is x2 and the best individual is 
+x1, we can generate a trial vector u by adding the exponential-weighted difference 
+between x1 and x2 to x2: u = x2 + F * exp(k * t) * (x1 - x2).
+
+-'best2exp': Generates a trial vector by adding the weighted difference between the 
+two best individuals to a third individual, with exponential weighting. For example, 
+if x1 and x2 are the best individuals, we can generate a trial vector u by adding the 
+exp-weighted diff between x1 and x2 to x3: u = x1 + F * exp(k * t) * (x1 - x2 + x3 - x4).
+
+-'rand2exp': Generates a trial vector by adding the weighted difference between two 
+randomly selected individuals to a third individual, with exponential weighting. For 
+example, we can generate a trial vector u by adding the exponential-weighted difference 
+between x2 and x3 and the exponential-weighted difference between x4 and x5 to x6: 
+u = x2 + F * exp(k * t) * (x3 - x4 + x5 - x6).
+
+-'randtobest1bin': Similar to 'randtobest1exp', but uses binary weighting instead of 
+exponential weighting. For example, we can generate a trial vector u by adding the 
+binary-weighted difference between x1 and x3 to x4: 
+u = x4 + F * (x1 - x4) + F * (x3 - x4).
+
+-'currenttobest1bin': Similar to 'currenttobest1exp', but uses binary weighting instead 
+of exponential weighting. For example, if the current individual is x2 and the best 
+individual is x1, we can generate a trial vector u
+
 
         The default is 'best1bin'.
     maxiter : int, optional
