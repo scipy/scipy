@@ -15,6 +15,7 @@ from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 from ._discrete_distns import binom
 from . import _mvn, _covariance, _rcont
+from ._qmvnt import _qmvt
 from ._morestats import directional_stats
 from scipy.optimize import root_scalar
 
