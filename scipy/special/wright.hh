@@ -1,6 +1,7 @@
 #ifndef WRIGHT_HH
 #define WRIGHT_HH
 
+#include <pyconfig.h>
 #include <complex>
 
 namespace wright {

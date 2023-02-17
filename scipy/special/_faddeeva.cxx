@@ -1,3 +1,4 @@
+#include <pyconfig.h>
 #include <complex>
 #include <cmath>
 

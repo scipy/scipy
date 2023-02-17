@@ -109,7 +109,7 @@ foreach ele: elements
     link_with: propack_lib,
     c_args: ['-U_OPENMP', _cpp_Wno_cpp],
     fortran_args: _fflag_Wno_maybe_uninitialized,
-    dependencies: [lapack, fortranobject_dep],
+    dependencies: [lapack, blas, fortranobject_dep],
     include_directories: [inc_np, inc_f2py],
     link_args: version_link_args,
     install: true,
