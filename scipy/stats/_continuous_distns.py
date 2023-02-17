@@ -1489,22 +1489,23 @@ class chi2_gen(rv_continuous):
 
     def _entropy(self, df):
         half_df = 0.5 * df
-        return _lazywhere(half_df < 1, (half_df, ),
-                          lambda half_df: (half_df + np.log(2) +
-                                           sc.gammaln(half_df) +
-                                           (1 - half_df) *
-                                           sc.psi(half_df)),
-                          # plug in the above formula the following asymptotic
-                          # expansions:
-                          # ln(gamma(a)) ~ (a - 0.5) * ln(a) - a +
-                          #                 0.5 * ln(2 * pi) + 1/(12 * a)
-                          # psi(a) ~ ln(a) - 1/(2 * a) - 1/(3 * a**2)
-                          f2=lambda half_df: (np.log(2) + 0.5 *
-                                              (1. + np.log(half_df) +
-                                               np.log(2*np.pi)) -
-                                               2/(3 * df) -
-                                               1/(3 * df**2))
-                          )
+
+        def regular_formula(half_df):
+            return (half_df + np.log(2) + sc.gammaln(half_df) +
+                    (1 - half_df) * sc.psi(half_df))
+
+        def asymptotic_formula(half_df):
+            # plug in the above formula the following asymptotic
+            # expansions:
+            # ln(gamma(a)) ~ (a - 0.5) * ln(a) - a +
+            #                 0.5 * ln(2 * pi) + 1/(12 * a)
+            # psi(a) ~ ln(a) - 1/(2 * a) - 1/(3 * a**2)
+            return (np.log(2) + 0.5 * (1. + np.log(half_df) +
+                    np.log(2*np.pi)) - 2/(3 * df) - 1/(3 * df**2))
+
+        return _lazywhere(half_df < 1e8, (half_df, ),
+                          regular_formula,
+                          f2=asymptotic_formula)
 
 
 chi2 = chi2_gen(a=0.0, name='chi2')

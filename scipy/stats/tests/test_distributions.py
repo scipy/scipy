@@ -1362,7 +1362,7 @@ class TestGenLogistic:
                                         (1e8, 1.577215669901533),
                                         (1e100, 1.5772156649015328)])
     def test_entropy(self, c, ref):
-        assert_allclose(stats.genlogistic.entropy(c), ref)
+        assert_allclose(stats.genlogistic.entropy(c), ref, rtol=5e-15)
 
 
 class TestHypergeom:
