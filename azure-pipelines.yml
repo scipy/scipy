@@ -177,21 +177,21 @@ stages:
             set -euo pipefail
             docker pull i386/ubuntu:focal
             docker run -v $(pwd):/scipy i386/ubuntu:focal /usr/bin/linux32 /bin/bash -c "cd scipy && \
-            export DEBIAN_FRONTEND=nonintercative && \
+            export DEBIAN_FRONTEND=noninteractive && \
             apt-get -y update && \
             apt-get -y install curl python3.9-dev python3.9 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
             python3.9 get-pip.py && \
             pip3 --version && \
             pip3 install setuptools==59.6.0 wheel numpy==1.21.6 cython==0.29.32 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran pooch && \
-            apt-get -y install gcc-8 g++-8 gfortran-8 wget && \
+            apt-get -y install build-essential gfortran wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
             target=\$(python3.9 ../scipy/tools/openblas_support.py) && \
             cp -r \$target/lib/* /usr/lib && \
             cp \$target/include/* /usr/include && \
             cd ../scipy && \
-            CC=gcc-8 CXX=g++-8 F77=gfortran-8 F90=gfortran-8 python3.9 setup.py install && \
+            python3.9 setup.py install && \
             python3.9 tools/openblas_support.py --check_version $(openblas_version) && \
             python3.9 runtests.py -n --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html --durations=10 --timeout=60"
       displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
