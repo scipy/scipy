@@ -6107,9 +6107,10 @@ class TestMaxwell:
 
     @pytest.mark.parametrize("q, ref",
                              [(0.001, 4.033142223656157022),
-                              (0.99999, 0.0335049635129162318)])
+                              (0.9999847412109375, 0.0385743284050381),
+                              (2**-55, 8.95564974719481)])
     def test_isf(self, q, ref):
-        assert_allclose(stats.maxwell.isf(q), ref, rtol=5e-12)
+        assert_allclose(stats.maxwell.isf(q), ref, rtol=1e-15)
 
 
 class TestMielke:
