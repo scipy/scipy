@@ -5462,6 +5462,20 @@ class TestExpect:
                                     conditional=True), 12)
 
 
+class TestAnglit:
+    @pytest.mark.parametrize("x, ref",
+                             [(0.7853881633974483, 9.999999999636878e-11),
+                              (-0.7843981633974483, 0.9999990000003334)])
+    def test_sf(self, x, ref):
+        assert_allclose(stats.anglit.sf(x), ref, rtol=5e-11)
+
+    @pytest.mark.parametrize("q, ref",
+                             [(9.999999999636878e-11, 0.7853881633974483),
+                              (0.9999990000003334, -0.7843981633974483)])
+    def test_isf(self, q, ref):
+        assert_allclose(stats.anglit.isf(q), ref, rtol=5e-11)
+
+
 class TestNct:
     def test_nc_parameter(self):
         # Parameter values c<=0 were not enabled (gh-2402).

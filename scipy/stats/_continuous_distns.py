@@ -533,10 +533,10 @@ class anglit_gen(rv_continuous):
         return np.arcsin(np.sqrt(q))-np.pi/4
 
     def _sf(self, x):
-        return np.cos(x+np.pi/4)**2.0
+        return np.cos(x + np.pi/4)**2
 
     def _isf(self, q):
-        return np.arccos(np.sqrt(q))-np.pi/4
+        return np.arccos(np.sqrt(q)) - np.pi/4
 
     def _stats(self):
         return 0.0, np.pi*np.pi/16-0.5, 0.0, -2*(np.pi**4 - 96)/(np.pi*np.pi-8)**2
@@ -8105,10 +8105,10 @@ class reciprocal_gen(rv_continuous):
         #    = 1 - log(x/a)/log(b/a)
         #    = log(b/a)/log(b/a) - log(x/a)/log(b/a)
         #    = (log(b) - log(x))/(log(b) - log(a))
-        return (np.log(b)-np.log(x)) / (np.log(b) - np.log(a))
+        return (np.log(b) - np.log(x)) / (np.log(b) - np.log(a))
 
     def _isf(self, q, a, b):
-        return np.exp(np.log(b) - q*(np.log(b) - np.log(a)))
+        return np.exp(np.log(b) - q * (np.log(b) - np.log(a)))
 
     def _munp(self, n, a, b):
         t1 = 1 / (np.log(b) - np.log(a)) / n
