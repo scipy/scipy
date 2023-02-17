@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, assert_allclose
 import pytest
 from pytest import raises as assert_raises
 
@@ -629,9 +629,9 @@ def test_solve_generalized_discrete_are():
          None),
         ]
 
-    min_decimal = (11, 11, 16)
+    max_atol = (1.5e-11, 1.5e-11, 3.5e-16)
 
-    def _test_factory(case, dec):
+    def _test_factory(case, atol):
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
         a, b, q, r, e, s, knownfailure = case
         if knownfailure:
@@ -648,10 +648,13 @@ def test_solve_generalized_discrete_are():
                           (b.conj().T.dot(x.dot(a)) + s.conj().T)
                           )
                 )
-        assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
+        # changed from:
+        # assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
+        # in gh-17950 because of a Linux 32 bit fail.
+        assert_allclose(res, np.zeros_like(res), atol=atol)
 
     for ind, case in enumerate(cases):
-        _test_factory(case, min_decimal[ind])
+        _test_factory(case, max_atol[ind])
 
 
 def test_are_validate_args():
