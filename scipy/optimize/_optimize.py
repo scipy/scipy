@@ -228,7 +228,9 @@ class OptimizeResult(dict):
 
     def __repr__(self):
         order_keys = ['message', 'success', 'status', 'fun', 'funl', 'x', 'xl',
-                      'col_ind', 'nit', 'lower', 'upper', 'eqlin', 'ineqlin']
+                      'col_ind', 'nit', 'lower', 'upper', 'eqlin', 'ineqlin',
+                      'converged', 'flag', 'function_calls', 'iterations',
+                      'root']
         # 'slack', 'con' are redundant with residuals
         # 'crossover_nit' is probably not interesting to most users
         omit_keys = {'slack', 'con', 'crossover_nit'}

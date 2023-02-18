@@ -2,6 +2,7 @@ import warnings
 from collections import namedtuple
 import operator
 from . import _zeros
+from ._optimize import OptimizeResult
 import numpy as np
 
 
@@ -30,7 +31,7 @@ flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR,
             _EVALUEERR: VALUEERR, _EINPROGRESS: INPROGRESS}
 
 
-class RootResults:
+class RootResults(OptimizeResult):
     """Represents the root finding result.
 
     Attributes
@@ -58,13 +59,6 @@ class RootResults:
             self.flag = flag_map[flag]
         except KeyError:
             self.flag = 'unknown error %d' % (flag,)
-
-    def __repr__(self):
-        attrs = ['converged', 'flag', 'function_calls',
-                 'iterations', 'root']
-        m = max(map(len, attrs)) + 1
-        return '\n'.join([a.rjust(m) + ': ' + repr(getattr(self, a))
-                          for a in attrs])
 
 
 def results_c(full_output, r):
