@@ -1497,6 +1497,7 @@ class DifferentialEvolutionSolver:
             i = 0
             crossovers = rng.uniform(size=self.parameter_count)
             crossovers = crossovers < self.cross_over_probability
+            crossovers[0] = True
             while (i < self.parameter_count and crossovers[i]):
                 trial[fill_point] = bprime[fill_point]
                 fill_point = (fill_point + 1) % self.parameter_count
