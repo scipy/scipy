@@ -1359,7 +1359,7 @@ def toms748(f, a, b, args=(), k=1,
     1.0
     >>> results
           converged: True
-               flag: 'converged'
+               flag: converged
      function_calls: 11
          iterations: 5
                root: 1.0
