@@ -6047,6 +6047,12 @@ class maxwell_gen(rv_continuous):
     def _ppf(self, q):
         return np.sqrt(2*sc.gammaincinv(1.5, q))
 
+    def _sf(self, x):
+        return sc.gammaincc(1.5, x*x/2.0)
+
+    def _isf(self, q):
+        return np.sqrt(2*sc.gammainccinv(1.5, q))
+
     def _stats(self):
         val = 3*np.pi-8
         return (2*np.sqrt(2.0/np.pi),

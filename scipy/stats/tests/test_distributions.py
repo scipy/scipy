@@ -6129,6 +6129,28 @@ class TestTriang:
             assert_equal(stats.triang.cdf(1., 1.), 1)
 
 
+class TestMaxwell:
+
+    # reference values were computed with wolfram alpha
+    # erfc(x/sqrt(2)) + sqrt(2/pi) * x * e^(-x^2/2)
+
+    @pytest.mark.parametrize("x, ref",
+                             [(20, 2.2138865931011177e-86),
+                              (0.01, 0.999999734046458435)])
+    def test_sf(self, x, ref):
+        assert_allclose(stats.maxwell.sf(x), ref, rtol=1e-14)
+
+    # reference values were computed with wolfram alpha
+    # sqrt(2) * sqrt(Q^(-1)(3/2, q))
+
+    @pytest.mark.parametrize("q, ref",
+                             [(0.001, 4.033142223656157022),
+                              (0.9999847412109375, 0.0385743284050381),
+                              (2**-55, 8.95564974719481)])
+    def test_isf(self, q, ref):
+        assert_allclose(stats.maxwell.isf(q), ref, rtol=1e-15)
+
+
 class TestMielke:
     def test_moments(self):
         k, s = 4.642, 0.597
