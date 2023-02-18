@@ -67,6 +67,11 @@ def docformat(docstring, docdict=None):
         except IndexError:
             indented[name] = dstr
     return docstring % indented
+    #try:
+    #    result = 
+    #    return result
+    #except TypeError:
+    #    print(f"docstring: {docstring}")
 
 
 def inherit_docstring_from(cls):

@@ -6199,6 +6199,8 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     Parameters
     ----------
+    %(_dirichlet_mn_doc_default_callparams)s
+    %(_doc_random_state)s
 
     See Also
     --------
@@ -6206,7 +6208,6 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     Notes
     -----
-
     The von Mises-Fisher distribution is a directional distribution on the
     surface of the unit hypersphere. The probability density
     function of a unit vector :math:`\mathbf{x}` is
@@ -6371,12 +6372,10 @@ class vonmises_fisher_gen(multi_rv_generic):
     very close to the ground truth parameters.
 
     """
-
     def __init__(self, seed=None):
         super().__init__(seed)
-        self.__doc__ = (
-            doccer.docformat(self.__doc__, vonmises_fisher_docdict_params)
-            )
+        self.__doc__ = doccer.docformat(self.__doc__,
+                                        dirichlet_mn_docdict_params)
 
     def __call__(self, mu=None, kappa=1, seed=None):
         """Create a frozen von Mises-Fisher distribution.
@@ -6455,7 +6454,8 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_doc_vonmises_fisher_default_callparams)s
+        %(_dirichlet_mn_doc_default_callparams)s
+
         x : ndarray
             Points at which to evaluate the log of the probability
             density function. The last axis of `x` must correspond
@@ -6465,10 +6465,6 @@ class vonmises_fisher_gen(multi_rv_generic):
         -------
         logpdf : ndarray or scalar
             Log of the probability density function evaluated at `x`
-
-        Notes
-        -----
-        %(_doc_vonmises_fisher_callparams_note)s
 
         """
         params = self._process_parameters(mu, kappa)
@@ -6480,7 +6476,7 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_doc_vonmises_fisher_default_callparams)s
+        %(_dirichlet_mn_doc_default_callparams)s
         x : ndarray
             Points at which to evaluate the probability
             density function. The last axis of `x` must correspond
@@ -6490,10 +6486,6 @@ class vonmises_fisher_gen(multi_rv_generic):
         -------
         pdf : ndarray or scalar
             Probability density function evaluated at `x`
-
-        Notes
-        -----
-        %(_doc_vonmises_fisher_callparams_note)s
 
         """
         params = self._process_parameters(mu, kappa)
@@ -6636,10 +6628,9 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_doc_vonmises_fisher_default_callparams)s
+        %(_dirichlet_mn_doc_default_callparams)s
         size : integer, optional
             Number of samples to draw (default 1).
-        %(_doc_random_state)s
 
         Returns
         -------
@@ -6664,7 +6655,7 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_doc_vonmises_fisher_default_callparams)s
+        %(_dirichlet_mn_doc_default_callparams)s
 
         Returns
         -------
@@ -6772,10 +6763,10 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         return self._dist._entropy(self.dim, self.kappa)
 
 
-for name in ['logpdf', 'pdf', 'rvs']:
+for name in ['logpdf', 'pdf', 'rvs', 'entropy']:
     method = vonmises_fisher_gen.__dict__[name]
     method_frozen = vonmises_fisher_frozen.__dict__[name]
-    method_frozen.__doc__ = doccer.docformat(method.__doc__,
-                                             vonmises_fisher_docdict_noparams)
+    method_frozen.__doc__ = doccer.docformat(
+        method.__doc__, dirichlet_mn_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__,
-                                      vonmises_fisher_docdict_params)
+                                      dirichlet_mn_docdict_params)
