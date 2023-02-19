@@ -1019,6 +1019,28 @@ class TestHalfNorm:
         assert_allclose(stats.halfnorm.isf(sfx), x, rtol=1e-14)
 
 
+class TestHalfLogistic:
+    # survival function reference values were computed with mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def sf_mpmath(x):
+    #     mp.dps = 50
+    #     x = mp.mpf(x)
+    #     return float(mp.mpf(2.)/(mp.exp(x) + mp.one))
+    @pytest.mark.parametrize('x, ref', [(100, 7.440151952041672e-44),
+                                        (200, 2.767793053473475e-87)])
+    def test_sf(self, x, ref):
+        assert_allclose(stats.halflogistic.sf(x), ref, rtol=1e-15)
+
+    # for inverse survival function, switch ref and x
+
+    @pytest.mark.parametrize('q, ref', [(7.440151952041672e-44, 100),
+                                        (2.767793053473475e-87, 200)])
+    def test_isf(self, q, ref):
+        assert_allclose(stats.halflogistic.isf(q), ref, rtol=1e-15)
+
+
+
 class TestHalfgennorm:
     def test_expon(self):
         # test against exponential (special case for beta=1)

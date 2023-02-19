@@ -4053,6 +4053,12 @@ class halflogistic_gen(rv_continuous):
     def _ppf(self, q):
         return 2*np.arctanh(q)
 
+    def _sf(self, x):
+        return 2 * sc.expit(-x)
+
+    def _isf(self, q):
+        return -sc.logit(0.5 * q)
+
     def _munp(self, n):
         if n == 1:
             return 2*np.log(2)
