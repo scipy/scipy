@@ -3879,7 +3879,7 @@ class TestDgamma:
                              (1e+100, 117.2413403634669)])
     def test_entropy_entreme_values(self, a, ref):
         # The reference values were calculated with mpmath:
-        # import mpmath as mp
+        # from mpmath import mp
         # mp.dps = 50
         # def second_dgamma(a):
         #     if a < 1e15:
