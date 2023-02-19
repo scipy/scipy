@@ -283,7 +283,7 @@ class TestCumulative_trapezoid:
                         rtol=1e-14)
 
 
-class TestTrapezoid():
+class TestTrapezoid:
     """This function is tested in NumPy more extensive, just do some
     basic due diligence here."""
     def test_trapezoid(self):
@@ -304,7 +304,7 @@ class TestTrapezoid():
                      trapz(y, x=x, dx=0.5, axis=0))
 
 
-class TestQMCQuad():
+class TestQMCQuad:
     def test_input_validation(self):
         message = "`func` must be callable."
         with pytest.raises(TypeError, match=message):
@@ -348,14 +348,14 @@ class TestQMCQuad():
         cov = np.eye(ndim)
 
         def func(x):
-            return stats.multivariate_normal.pdf(x, mean, cov)
+            return stats.multivariate_normal.pdf(x.T, mean, cov)
 
         rng = np.random.default_rng(2879434385674690281)
         qrng = stats.qmc.Sobol(ndim, seed=rng)
         a = np.zeros(ndim)
         b = np.ones(ndim) * signs
         res = qmc_quad(func, a, b, n_points=n_points,
-                       n_estimates=n_estimates, args=(mean, cov), qrng=qrng)
+                       n_estimates=n_estimates, qrng=qrng)
         ref = stats.multivariate_normal.cdf(b, mean, cov, lower_limit=a)
         atol = sc.stdtrit(n_estimates-1, 0.995) * res.standard_error  # 99% CI
         assert_allclose(res.integral, ref, atol=atol)
@@ -365,7 +365,7 @@ class TestQMCQuad():
         qrng = stats.qmc.Sobol(ndim, seed=rng)
         logres = qmc_quad(lambda *args: np.log(func(*args)), a, b,
                           n_points=n_points, n_estimates=n_estimates,
-                          args=(mean, cov), log=True, qrng=qrng)
+                          log=True, qrng=qrng)
         assert_allclose(np.exp(logres.integral), res.integral)
         assert np.imag(logres.integral) == (np.pi if np.prod(signs) < 0 else 0)
 

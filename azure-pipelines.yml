@@ -18,10 +18,10 @@ pr:
     include:
     - '*'  # must quote since "*" is a YAML reserved character; we want a string
 
-# the version of OpenBLAS used is currently 0.3.18
+# the version of OpenBLAS used is currently 0.3.21
 # and should be updated to match scipy-wheels as appropriate
 variables:
-    openblas_version: 0.3.18
+    openblas_version: 0.3.21
     pre_wheels: https://pypi.anaconda.org/scipy-wheels-nightly/simple
     CCACHE_DIR: $(Pipeline.Workspace)/ccache
     SCIPY_AVAILABLE_MEM: 3G
@@ -107,7 +107,7 @@ stages:
   - job: wheel_optimized_gcc8
     timeoutInMinutes: 90
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
     variables:
       # The following is needed for optimized "-OO" test run but since we use
       # pytest-xdist plugin for load scheduling its workers don't pick up the
@@ -144,20 +144,19 @@ stages:
         addToPath: true
         architecture: 'x64'
     - script: >-
-        python -m pip install
-        flake8==3.9.2
+        python -m pip install ruff cython-lint
       displayName: 'Install tools'
       failOnStderr: false
     - script: |
         set -euo pipefail
-        flake8 scipy benchmarks/benchmarks
         # for Travis CI we used to do: git fetch --unshallow
         # but apparently Azure clones are not as shallow
         # so does not appear to be needed to fetch maintenance
         # branches (which Azure logs show being checked out
         # in Checkout stage)
-        python tools/lint_diff.py --branch origin/$(System.PullRequest.TargetBranch)
+        python tools/lint.py --diff-against origin/$(System.PullRequest.TargetBranch)
         tools/unicode-check.py
+        tools/check_test_name.py
       displayName: 'Run Lint Checks'
       failOnStderr: true
   - job: Linux_Python_38_32bit_full
@@ -275,7 +274,15 @@ stages:
             Download-OpenBLAS('1')
         }
       displayName: 'Download / Install OpenBLAS'
+
+    - powershell: |
+        # wheels must use same version
+        choco install -y mingw rtools
+      displayName: 'Install 64-bit mingw for 64-bit builds'
+      condition: and(succeeded(), eq(variables['BITS'], 64))
+
     - script: |
+        # provides clang-cl, which is required by Pythran
         choco install -y llvm
         set PATH=C:\Program Files\LLVM\bin;%PATH%
         echo '##vso[task.setvariable variable=PATH]%PATH%'
@@ -283,11 +290,13 @@ stages:
     - script: |
         clang-cl.exe --version
       displayName: 'clang-cl version'
+
     - powershell: |
         # wheels must use same version
-        choco install -y mingw --forcex86 --force --version=7.3.0
+        choco install -y mingw --forcex86 --force --version=8.1.0
       displayName: 'Install 32-bit mingw for 32-bit builds'
       condition: and(succeeded(), eq(variables['BITS'], 32))
+
     - script: >-
         python -m pip install
         cython==0.29.24
@@ -327,7 +336,6 @@ stages:
         Set-StrictMode -Version Latest
         $global:erroractionpreference = 1
 
-
         If ($(BITS) -eq 32) {
             # 32-bit build requires careful adjustments
             # until Microsoft has a switch we can use
@@ -336,9 +344,14 @@ stages:
             $env:CFLAGS = "-m32"
             $env:CXXFLAGS = "-m32"
             $env:LDFLAGS = "-m32"
+
+            $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
             refreshenv
         }
-        $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
+        Else
+        {
+            $env:PATH = "C:\\rtools40\\ucrt64\\bin;" + $env:PATH
+        }
         $env:SCIPY_USE_PYTHRAN=$(SCIPY_USE_PYTHRAN)
 
         # Still testing distutils here (`pip wheel --no-use-pep517` cannot be
@@ -349,7 +362,14 @@ stages:
         }
       displayName: 'Build SciPy'
     - powershell: |
-        $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
+        If ($(BITS) -eq 32) {
+            $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
+            refreshenv
+        }
+        Else
+        {
+            $env:PATH = "C:\\rtools40\\ucrt64\\bin;" + $env:PATH
+        }
         python runtests.py -n --mode=$(TEST_MODE) -- -n 2 --junitxml=junit/test-results.xml --durations=10 --timeout=60
       displayName: 'Run SciPy Test Suite'
     - task: PublishTestResults@2

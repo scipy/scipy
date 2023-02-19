@@ -20,8 +20,6 @@ from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
 from libc.stdio cimport FILE
 
-import warnings
-
 np.import_array()
 
 
@@ -332,7 +330,6 @@ cdef class _Qhull:
         self._messages.clear()
 
         cdef coordT* coord
-        cdef int i
         with nogil:
             self._qh = <qhT*>stdlib.malloc(sizeof(qhT))
             if self._qh == NULL:
@@ -543,7 +540,7 @@ cdef class _Qhull:
         cdef facetT* neighbor
         cdef vertexT *vertex
         cdef pointT *point
-        cdef int i, j, ipoint, ipoint2, ncoplanar
+        cdef int i, j, ipoint, ncoplanar
         cdef object tmp
         cdef np.ndarray[np.npy_int, ndim=2] facets
         cdef np.ndarray[np.npy_int, ndim=1] good
@@ -808,7 +805,6 @@ cdef class _Qhull:
         cdef np.ndarray[np.double_t, ndim=2] voronoi_vertices
         cdef np.ndarray[np.intp_t, ndim=1] point_region
         cdef int nvoronoi_vertices
-        cdef pointT infty_point[NPY_MAXDIMS+1]
         cdef pointT *point
         cdef pointT *center
         cdef double dist
@@ -1080,19 +1076,12 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef CBLAS_INT info = 0
     cdef CBLAS_INT ipiv[NPY_MAXDIMS+1]
     cdef int ndim, nsimplex
-    cdef double centroid[NPY_MAXDIMS]
-    cdef double c[NPY_MAXDIMS+1]
-    cdef double *transform
     cdef double anorm
     cdef double rcond = 0.0
     cdef double rcond_limit
 
     cdef double work[4*NPY_MAXDIMS]
     cdef CBLAS_INT iwork[NPY_MAXDIMS]
-
-    cdef double x1, x2, x3
-    cdef double y1, y2, y3
-    cdef double det
 
     ndim = points.shape[1]
     nsimplex = simplices.shape[0]
@@ -1713,12 +1702,6 @@ class Delaunay(_QhullUser):
         If option "Qc" is not specified, this list is not computed.
 
         .. versionadded:: 0.12.0
-    vertices
-        Same as `simplices`, but deprecated.
-
-        .. deprecated:: 0.12.0
-            Delaunay attribute `vertices` is deprecated in favour of `simplices`
-            and will be removed in Scipy 1.11.0.
     vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
         Neighboring vertices of vertices. The indices of neighboring
         vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.
@@ -1858,17 +1841,7 @@ class Delaunay(_QhullUser):
         self._vertex_to_simplex = None
         self._vertex_neighbor_vertices = None
 
-        # Backwards compatibility (Scipy < 0.12.0)
-        self._vertices = self.simplices
-
         _QhullUser._update(self, qhull)
-
-    @property
-    def vertices(self):
-        msg = ("Delaunay attribute 'vertices' is deprecated in favour of "
-               "'simplices' and will be removed in Scipy 1.11.0.")
-        warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
-        return self._vertices
 
     def add_points(self, points, restart=False):
         self._add_points(points, restart)
@@ -1924,9 +1897,6 @@ class Delaunay(_QhullUser):
             arr = self._vertex_to_simplex
             simplices = self.simplices
 
-            coplanar = self.coplanar
-            ncoplanar = coplanar.shape[0]
-
             nsimplex = self.nsimplex
             ndim = self.ndim
 
@@ -1950,7 +1920,7 @@ class Delaunay(_QhullUser):
         ``indices[indptr[k]:indptr[k+1]]``.
 
         """
-        cdef int i, j, k, m, is_neighbor, is_missing, ndata, idata
+        cdef int i, j, k
         cdef int nsimplex, npoints, ndim
         cdef np.ndarray[np.npy_int, ndim=2] simplices
         cdef setlist.setlist_t sets
@@ -2130,7 +2100,7 @@ class Delaunay(_QhullUser):
         cdef np.ndarray[np.double_t, ndim=2] out_
         cdef DelaunayInfo_t info
         cdef double z[NPY_MAXDIMS+1]
-        cdef int i, j, k
+        cdef int i, j
 
         if xi.shape[-1] != self.ndim:
             raise ValueError("xi has different dimensionality than "

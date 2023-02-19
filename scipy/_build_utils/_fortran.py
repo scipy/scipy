@@ -163,7 +163,7 @@ def get_f2py_int64_options():
         raise RuntimeError("No 64-bit integer type available in f2py!")
 
     f2cmap_fn = os.path.join(_get_build_src_dir(), 'int64.f2cmap')
-    text = "{'integer': {'': '%s'}, 'logical': {'': '%s'}}\n" % (
+    text = "{{'integer': {{'': '{}'}}, 'logical': {{'': '{}'}}}}\n".format(
         int64_name, int64_name)
 
     write_file_content(f2cmap_fn, text)
@@ -234,15 +234,15 @@ def _blas_ilp64_pre_build_hook(cmd, ext, blas_info):
 
         text = ""
         for symbol in get_blas_lapack_symbols():
-            text += '#define {} {}{}_{}\n'.format(symbol, prefix, symbol, suffix)
-            text += '#define {} {}{}_{}\n'.format(symbol.upper(), prefix, symbol, suffix)
+            text += f'#define {symbol} {prefix}{symbol}_{suffix}\n'
+            text += f'#define {symbol.upper()} {prefix}{symbol}_{suffix}\n'
 
             # Code generation may give source codes with mixed-case names
             for j in (1, 2):
                 s = symbol[:j].lower() + symbol[j:].upper()
-                text += '#define {} {}{}_{}\n'.format(s, prefix, symbol, suffix)
+                text += f'#define {s} {prefix}{symbol}_{suffix}\n'
                 s = symbol[:j].upper() + symbol[j:].lower()
-                text += '#define {} {}{}_{}\n'.format(s, prefix, symbol, suffix)
+                text += f'#define {s} {prefix}{symbol}_{suffix}\n'
 
         write_file_content(include_fn_f, text)
 
@@ -251,7 +251,7 @@ def _blas_ilp64_pre_build_hook(cmd, ext, blas_info):
 
         # Patch sources to include it
         def patch_source(filename, old_text):
-            text = '#include "{}"\n'.format(include_name_f)
+            text = f'#include "{include_name_f}"\n'
             text += old_text
             return text
     else:
@@ -373,7 +373,7 @@ def _generic_patch_sources(filenames, patch_source_func, source_fnpart, root_dir
             new_filenames.append(src)
             continue
 
-        with open(src, 'r') as fsrc:
+        with open(src) as fsrc:
             text = patch_source_func(src, fsrc.read())
 
         # Generate useful target directory name under src_dir
@@ -399,7 +399,7 @@ def write_file_content(filename, content):
     Write content to file, but only if it differs from the current one.
     """
     if os.path.isfile(filename):
-        with open(filename, 'r') as f:
+        with open(filename) as f:
             old_content = f.read()
 
         if old_content == content:
@@ -425,7 +425,7 @@ def get_blas_lapack_symbols():
 
     # Get symbols from the generated files
     for fn in ['cython_blas_signatures.txt', 'cython_lapack_signatures.txt']:
-        with open(os.path.join(srcdir, fn), 'r') as f:
+        with open(os.path.join(srcdir, fn)) as f:
             for line in f:
                 m = re.match(r"^\s*[a-z]+\s+([a-z0-9]+)\(", line)
                 if m:
@@ -434,7 +434,7 @@ def get_blas_lapack_symbols():
     # Get the rest from the generator script
     # (we cannot import it directly here, so use exec)
     sig_fn = os.path.join(srcdir, '_cython_signature_generator.py')
-    with open(sig_fn, 'r') as f:
+    with open(sig_fn) as f:
         code = f.read()
     ns = {'__name__': '<module>'}
     exec(code, ns)

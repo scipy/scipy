@@ -1,5 +1,4 @@
 import pickle
-import re
 
 import numpy as np
 import numpy.testing as npt
@@ -31,7 +30,7 @@ def check_normalization(distfn, args, distname):
 
     normalization_expect = distfn.expect(lambda x: 1, args=args)
     npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
-            err_msg=distname, verbose=True)
+                        err_msg=distname, verbose=True)
 
     _a, _b = distfn.support(*args)
     normalization_cdf = distfn.cdf(_b, *args)
@@ -42,25 +41,24 @@ def check_moment(distfn, arg, m, v, msg):
     m1 = distfn.moment(1, *arg)
     m2 = distfn.moment(2, *arg)
     if not np.isinf(m):
-        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
-                            ' - 1st moment')
+        npt.assert_almost_equal(m1, m, decimal=10,
+                                err_msg=msg + ' - 1st moment')
     else:                     # or np.isnan(m1),
         npt.assert_(np.isinf(m1),
-               msg + ' - 1st moment -infinite, m1=%s' % str(m1))
+                    msg + ' - 1st moment -infinite, m1=%s' % str(m1))
 
     if not np.isinf(v):
-        npt.assert_almost_equal(m2 - m1 * m1, v, decimal=10, err_msg=msg +
-                            ' - 2ndt moment')
+        npt.assert_almost_equal(m2 - m1 * m1, v, decimal=10,
+                                err_msg=msg + ' - 2ndt moment')
     else:                     # or np.isnan(m2),
-        npt.assert_(np.isinf(m2),
-               msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
+        npt.assert_(np.isinf(m2), msg + f' - 2nd moment -infinite, {m2=}')
 
 
 def check_mean_expect(distfn, arg, m, msg):
     if np.isfinite(m):
         m1 = distfn.expect(lambda x: x, arg)
-        npt.assert_almost_equal(m1, m, decimal=5, err_msg=msg +
-                            ' - 1st moment (expect)')
+        npt.assert_almost_equal(m1, m, decimal=5,
+                                err_msg=msg + ' - 1st moment (expect)')
 
 
 def check_var_expect(distfn, arg, m, v, msg):
@@ -74,7 +72,7 @@ def check_skew_expect(distfn, arg, m, v, s, msg):
     if np.isfinite(s):
         m3e = distfn.expect(lambda x: np.power(x-m, 3), arg)
         npt.assert_almost_equal(m3e, s * np.power(v, 1.5),
-                decimal=5, err_msg=msg + ' - skew')
+                                decimal=5, err_msg=msg + ' - skew')
     else:
         npt.assert_(np.isnan(s))
 
@@ -82,8 +80,9 @@ def check_skew_expect(distfn, arg, m, v, s, msg):
 def check_kurt_expect(distfn, arg, m, v, k, msg):
     if np.isfinite(k):
         m4e = distfn.expect(lambda x: np.power(x-m, 4), arg)
-        npt.assert_allclose(m4e, (k + 3.) * np.power(v, 2), atol=1e-5, rtol=1e-5,
-                err_msg=msg + ' - kurtosis')
+        npt.assert_allclose(m4e, (k + 3.) * np.power(v, 2),
+                            atol=1e-5, rtol=1e-5,
+                            err_msg=msg + ' - kurtosis')
     elif not np.isposinf(k):
         npt.assert_(np.isnan(k))
 
@@ -220,8 +219,8 @@ def check_random_state_property(distfn, args):
 def check_meth_dtype(distfn, arg, meths):
     q0 = [0.25, 0.5, 0.75]
     x0 = distfn.ppf(q0, *arg)
-    x_cast = [x0.astype(tp) for tp in
-                        (np.int_, np.float16, np.float32, np.float64)]
+    x_cast = [x0.astype(tp) for tp in (np.int_, np.float16, np.float32,
+                                       np.float64)]
 
     for x in x_cast:
         # casting may have clipped the values, exclude those
@@ -249,8 +248,8 @@ def check_cmplx_deriv(distfn, arg):
         return (f(x + h*1j, *arg)/h).imag
 
     x0 = distfn.ppf([0.25, 0.51, 0.75], *arg)
-    x_cast = [x0.astype(tp) for tp in
-                        (np.int_, np.float16, np.float32, np.float64)]
+    x_cast = [x0.astype(tp) for tp in (np.int_, np.float16, np.float32,
+                                       np.float64)]
 
     for x in x_cast:
         # casting may have clipped the values, exclude those
@@ -334,117 +333,3 @@ def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
         np.random.seed(123)
         expected = rvs(*allargs)
         assert_allclose(sample, expected, rtol=1e-13)
-
-
-def check_deprecation_warning_gh5982_moment(distfn, arg, distname):
-    # See description of cases that need to be tested in the definition of
-    # scipy.stats.rv_generic.moment
-    shapes = [] if distfn.shapes is None else distfn.shapes.split(", ")
-    kwd_shapes = dict(zip(shapes, arg or []))  # dictionary of shape kwds
-    n = kwd_shapes.pop('n', None)
-
-    message1 = "moment() missing 1 required positional argument"
-    message2 = "_parse_args() missing 1 required positional argument: 'n'"
-    message3 = "moment() got multiple values for first argument"
-
-    if 'n' in shapes:
-        expected = distfn.mean(n=n, **kwd_shapes)
-
-        # A1
-        res = distfn.moment(1, n=n, **kwd_shapes)
-        assert_allclose(res, expected)
-
-        # A2
-        with assert_raises(TypeError, match=re.escape(message1)):
-            distfn.moment(n=n, **kwd_shapes)
-
-        # A3
-        # if `n` is not provided at all
-        with assert_raises(TypeError, match=re.escape(message2)):
-            distfn.moment(1, **kwd_shapes)
-        # if `n` is provided as a positional argument
-        res = distfn.moment(1, *arg)
-        assert_allclose(res, expected)
-
-        # A4
-        with assert_raises(TypeError, match=re.escape(message1)):
-            distfn.moment(**kwd_shapes)
-
-    else:
-        expected = distfn.mean(**kwd_shapes)
-
-        # B1
-        with assert_raises(TypeError, match=re.escape(message3)):
-            res = distfn.moment(1, n=1, **kwd_shapes)
-
-        # B2
-        with np.testing.assert_warns(DeprecationWarning):
-            res = distfn.moment(n=1, **kwd_shapes)
-            assert_allclose(res, expected)
-
-        # B3
-        res = distfn.moment(1, *arg)
-        assert_allclose(res, expected)
-
-        # B4
-        with assert_raises(TypeError, match=re.escape(message1)):
-            distfn.moment(**kwd_shapes)
-
-
-def check_deprecation_warning_gh5982_interval(distfn, arg, distname):
-    # See description of cases that need to be tested in the definition of
-    # scipy.stats.rv_generic.moment
-    shapes = [] if distfn.shapes is None else distfn.shapes.split(", ")
-    kwd_shapes = dict(zip(shapes, arg or []))  # dictionary of shape kwds
-    alpha = kwd_shapes.pop('alpha', None)
-
-    def my_interval(*args, **kwds):
-        return (distfn.ppf(0.25, *args, **kwds),
-                distfn.ppf(0.75, *args, **kwds))
-
-    message1 = "interval() missing 1 required positional argument"
-    message2 = "_parse_args() missing 1 required positional argument: 'alpha'"
-    message3 = "interval() got multiple values for first argument"
-
-    if 'alpha' in shapes:
-        expected = my_interval(alpha=alpha, **kwd_shapes)
-
-        # A1
-        res = distfn.interval(0.5, alpha=alpha, **kwd_shapes)
-        assert_allclose(res, expected)
-
-        # A2
-        with assert_raises(TypeError, match=re.escape(message1)):
-            distfn.interval(alpha=alpha, **kwd_shapes)
-
-        # A3
-        # if `alpha` is not provided at all
-        with assert_raises(TypeError, match=re.escape(message2)):
-            distfn.interval(0.5, **kwd_shapes)
-        # if `alpha` is provided as a positional argument
-        res = distfn.interval(0.5, *arg)
-        assert_allclose(res, expected)
-
-        # A4
-        with assert_raises(TypeError, match=re.escape(message1)):
-            distfn.interval(**kwd_shapes)
-
-    else:
-        expected = my_interval(**kwd_shapes)
-
-        # B1
-        with assert_raises(TypeError, match=re.escape(message3)):
-            res = distfn.interval(0.5, alpha=1, **kwd_shapes)
-
-        # B2
-        with np.testing.assert_warns(DeprecationWarning):
-            res = distfn.interval(alpha=0.5, **kwd_shapes)
-            assert_allclose(res, expected)
-
-        # B3
-        res = distfn.interval(0.5, *arg)
-        assert_allclose(res, expected)
-
-        # B4
-        with assert_raises(TypeError, match=re.escape(message1)):
-            distfn.interval(**kwd_shapes)

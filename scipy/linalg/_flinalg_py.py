@@ -11,10 +11,6 @@ try:
     from . import _flinalg
 except ImportError:
     _flinalg = None
-#    from numpy.distutils.misc_util import PostponedException
-#    _flinalg = PostponedException()
-#    print _flinalg.__doc__
-    has_column_major_storage = lambda a:0
 
 
 def has_column_major_storage(arr):

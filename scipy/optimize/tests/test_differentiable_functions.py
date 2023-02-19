@@ -142,7 +142,7 @@ class TestScalarFunction(TestCase):
 
         fg = ex.fun(x0), ex.grad(x0)
         fg_allclose(analit.fun_and_grad(x0), fg)
-        assert(analit.ngev == 1)
+        assert analit.ngev == 1
 
         x0[1] = 1.
         fg = ex.fun(x0), ex.grad(x0)
@@ -152,10 +152,10 @@ class TestScalarFunction(TestCase):
         x0 = [2.0, 0.3]
         sf = ScalarFunction(ex.fun, x0, (), '3-point',
                                 ex.hess, None, (-np.inf, np.inf))
-        assert(sf.ngev == 1)
+        assert sf.ngev == 1
         fg = ex.fun(x0), ex.grad(x0)
         fg_allclose(sf.fun_and_grad(x0), fg)
-        assert(sf.ngev == 1)
+        assert sf.ngev == 1
 
         x0[1] = 1.
         fg = ex.fun(x0), ex.grad(x0)

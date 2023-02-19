@@ -88,6 +88,8 @@ unlikely to be renamed or changed in an incompatible way, and if that is
 necessary, a deprecation warning will be raised for one SciPy release before the
 change is made.
 
+* `scipy`
+
 * `scipy.cluster`
 
   - `scipy.cluster.vq`
@@ -156,31 +158,27 @@ change is made.
 .. toctree::
    :maxdepth: 1
    :hidden:
+   :titlesonly:
 
-   cluster
-   constants
-   datasets
-   fft
-   fftpack
-   integrate
-   interpolate
-   io
-   linalg
-   misc
-   ndimage
-   odr
-   optimize
-   signal
-   sparse
-   sparse.linalg
-   sparse.csgraph
-   spatial
-   special
-   stats
-   stats.mstats
-   stats.qmc
-   stats.sampling
-   ccallback
+   scipy <main_namespace>
+   scipy.cluster <cluster>
+   scipy.constants <constants>
+   scipy.datasets <datasets>
+   scipy.fft <fft>
+   scipy.fftpack <fftpack>
+   scipy.integrate <integrate>
+   scipy.interpolate <interpolate>
+   scipy.io <io>
+   scipy.linalg <linalg>
+   scipy.misc <misc>
+   scipy.ndimage <ndimage>
+   scipy.odr <odr>
+   scipy.optimize <optimize>
+   scipy.signal <signal>
+   scipy.sparse <sparse>
+   scipy.spatial <spatial>
+   scipy.special <special>
+   scipy.stats <stats>
 
 SciPy structure
 ---------------

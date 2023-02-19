@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import sys
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -1290,7 +1289,7 @@ class TestResample:
         x = np.arange(10, dtype=np.float32)
         h = np.array([1, 1, 1], dtype=np.float32)
         y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
-        assert(y.dtype == np.float32)
+        assert y.dtype == np.float32
 
     @pytest.mark.parametrize('padtype', padtype_options)
     @pytest.mark.parametrize('dtype', [np.float32, np.float64])
@@ -1298,7 +1297,7 @@ class TestResample:
         # Test that the dtype of x is preserved per issue #14733
         x = np.arange(10, dtype=dtype)
         y = signal.resample_poly(x, 1, 2, padtype=padtype)
-        assert(y.dtype == x.dtype)
+        assert y.dtype == x.dtype
 
     @pytest.mark.parametrize(
         "method, ext, padtype",
@@ -1579,8 +1578,10 @@ class _TestLinearFilter:
             zi = self.convert_dtype(np.ones(zi_shape))
             zi1 = self.convert_dtype([1])
             y, zf = lfilter(b, a, x, axis, zi)
-            lf0 = lambda w: lfilter(b, a, w, zi=zi1)[0]
-            lf1 = lambda w: lfilter(b, a, w, zi=zi1)[1]
+            def lf0(w):
+                return lfilter(b, a, w, zi=zi1)[0]
+            def lf1(w):
+                return lfilter(b, a, w, zi=zi1)[1]
             y_r = np.apply_along_axis(lf0, axis, x)
             zf_r = np.apply_along_axis(lf1, axis, x)
             assert_array_almost_equal(y, y_r)
@@ -1607,8 +1608,10 @@ class _TestLinearFilter:
             zi = self.convert_dtype(np.ones(zi_shape))
             zi1 = self.convert_dtype([1, 1])
             y, zf = lfilter(b, a, x, axis, zi)
-            lf0 = lambda w: lfilter(b, a, w, zi=zi1)[0]
-            lf1 = lambda w: lfilter(b, a, w, zi=zi1)[1]
+            def lf0(w):
+                return lfilter(b, a, w, zi=zi1)[0]
+            def lf1(w):
+                return lfilter(b, a, w, zi=zi1)[1]
             y_r = np.apply_along_axis(lf0, axis, x)
             zf_r = np.apply_along_axis(lf1, axis, x)
             assert_array_almost_equal(y, y_r)

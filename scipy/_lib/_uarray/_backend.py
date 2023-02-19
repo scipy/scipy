@@ -7,11 +7,6 @@ import copyreg
 import pickle
 import contextlib
 
-ArgumentExtractorType = typing.Callable[..., typing.Tuple["Dispatchable", ...]]
-ArgumentReplacerType = typing.Callable[
-    [typing.Tuple, typing.Dict, typing.Tuple], typing.Tuple[typing.Tuple, typing.Dict]
-]
-
 from ._uarray import (  # type: ignore
     BackendNotImplementedError,
     _Function,
@@ -45,6 +40,10 @@ __all__ = [
     "_SetBackendContext",
 ]
 
+ArgumentExtractorType = typing.Callable[..., typing.Tuple["Dispatchable", ...]]
+ArgumentReplacerType = typing.Callable[
+    [typing.Tuple, typing.Dict, typing.Tuple], typing.Tuple[typing.Tuple, typing.Dict]
+]
 
 def unpickle_function(mod_name, qname, self_):
     import importlib
@@ -78,7 +77,7 @@ def pickle_function(func):
 
     if test is not func:
         raise pickle.PicklingError(
-            "Can't pickle {}: it's not the same object as {}".format(func, test)
+            f"Can't pickle {func}: it's not the same object as {test}"
         )
 
     return unpickle_function, (mod_name, qname, self_)
@@ -441,7 +440,7 @@ class Dispatchable:
         return (self.type, self.value)[index]
 
     def __str__(self):
-        return "<{0}: type={1!r}, value={2!r}>".format(
+        return "<{}: type={!r}, value={!r}>".format(
             type(self).__name__, self.type, self.value
         )
 
@@ -696,7 +695,7 @@ def determine_backend_multi(
             raise TypeError("dispatchables must be instances of uarray.Dispatchable")
 
     if len(kwargs) != 0:
-        raise TypeError("Received unexpected keyword arguments: {}".format(kwargs))
+        raise TypeError(f"Received unexpected keyword arguments: {kwargs}")
 
     backend = _uarray.determine_backend(domain, dispatchables, coerce)
 

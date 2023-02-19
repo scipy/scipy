@@ -37,6 +37,8 @@ axis_nan_policy_cases = [
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.pmean, (1.42,), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.sem, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.iqr, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.skew, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kstat, tuple(), dict(), 1, 1, False, lambda x: (x,)),
@@ -46,7 +48,8 @@ axis_nan_policy_cases = [
     (stats.jarque_bera, tuple(), dict(), 1, 2, False, None),
     (stats.ttest_1samp, (np.array([0]),), dict(), 1, 7, False,
      unpack_ttest_result),
-    (stats.ttest_rel, tuple(), dict(), 2, 7, True, unpack_ttest_result)
+    (stats.ttest_rel, tuple(), dict(), 2, 7, True, unpack_ttest_result),
+    (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count))
 ]
 
 # If the message is one of those expected, put nans in
@@ -72,6 +75,9 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
 # but NaNs are not to be placed
 inaccuracy_messages = {"Precision loss occurred in moment calculation",
                        "Sample size too small for normal approximation."}
+
+# For some functions, nan_policy='propagate' should not just return NaNs
+override_propagate_funcs = {stats.mode}
 
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
@@ -138,7 +144,8 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
             if np.any(np.isnan(sample)):
                 raise ValueError("The input contains nan values")
 
-    elif nan_policy == 'propagate':
+    elif (nan_policy == 'propagate'
+          and hypotest not in override_propagate_funcs):
         # For all hypothesis tests tested, returning nans is the right thing.
         # But many hypothesis tests don't propagate correctly (e.g. they treat
         # np.nan the same as np.inf, which doesn't make sense when ranks are
@@ -595,6 +602,10 @@ def _check_arrays_broadcastable(arrays, axis):
 def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
     # test for correct output shape when at least one input is empty
 
+    if hypotest in override_propagate_funcs:
+        reason = "Doesn't follow the usual pattern. Tested separately."
+        pytest.skip(reason=reason)
+
     if unpacker is None:
         unpacker = lambda res: (res[0], res[1])  # noqa: E731
 
@@ -609,17 +620,16 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
 
         # yield all possible combinations of small samples
         gens = [small_sample_generator(n_dims) for i in range(n_samples)]
-        for i in product(*gens):
-            yield i
+        yield from product(*gens)
 
     n_dims = [2, 3]
     for samples in small_data_generator(n_samples, n_dims):
 
         # this test is only for arrays of zero size
-        if not any((sample.size == 0 for sample in samples)):
+        if not any(sample.size == 0 for sample in samples):
             continue
 
-        max_axis = max((sample.ndim for sample in samples))
+        max_axis = max(sample.ndim for sample in samples)
 
         # need to test for all valid values of `axis` parameter, too
         for axis in range(-max_axis, max_axis):
@@ -915,9 +925,9 @@ def test_axis_None_vs_tuple_with_broadcasting():
     res2 = stats.mannwhitneyu(x, y, axis=(0, 1))
     res3 = stats.mannwhitneyu(x2.ravel(), y2.ravel())
 
-    assert(res1 == res0)
-    assert(res2 == res0)
-    assert(res3 != res0)
+    assert res1 == res0
+    assert res2 == res0
+    assert res3 != res0
 
 
 @pytest.mark.parametrize(("axis"),
@@ -1042,3 +1052,24 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
     if weighted_fun_name not in {'pmean', 'gmean'}:
         # _no_deco mean returns masked array, last element was masked
         np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])
+
+
+def test_raise_invalid_args_g17713():
+    # other cases are handled in:
+    # test_axis_nan_policy_decorated_positional_axis - multiple values for arg
+    # test_axis_nan_policy_decorated_positional_args - unexpected kwd arg
+    message = "got an unexpected keyword argument"
+    with pytest.raises(TypeError, match=message):
+        stats.gmean([1, 2, 3], invalid_arg=True)
+
+    message = " got multiple values for argument"
+    with pytest.raises(TypeError, match=message):
+        stats.gmean([1, 2, 3], a=True)
+
+    message = "missing 1 required positional argument"
+    with pytest.raises(TypeError, match=message):
+        stats.gmean()
+
+    message = "takes from 1 to 4 positional arguments but 5 were given"
+    with pytest.raises(TypeError, match=message):
+        stats.gmean([1, 2, 3], 0, float, [1, 1, 1], 10)

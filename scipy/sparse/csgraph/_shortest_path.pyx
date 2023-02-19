@@ -57,27 +57,27 @@ def shortest_path(csgraph, method='auto',
            'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J'
                      based on the input data.
 
-           'FW'   -- Floyd-Warshall algorithm.  Computational cost is
-                     approximately ``O[N^3]``.  The input csgraph will be
-                     converted to a dense representation.
+           'FW'   -- Floyd-Warshall algorithm.
+                     Computational cost is approximately ``O[N^3]``.
+                     The input csgraph will be converted to a dense representation.
 
-           'D'    -- Dijkstra's algorithm with Fibonacci heaps.  Computational
-                     cost is approximately ``O[N(N*k + N*log(N))]``, where
-                     ``k`` is the average number of connected edges per node.
-                     The input csgraph will be converted to a csr
-                     representation.
+           'D'    -- Dijkstra's algorithm with Fibonacci heaps.
+                     Computational cost is approximately ``O[N(N*k + N*log(N))]``,
+                     where ``k`` is the average number of connected edges per node.
+                     The input csgraph will be converted to a csr representation.
 
-           'BF'   -- Bellman-Ford algorithm.  This algorithm can be used when
-                     weights are negative.  If a negative cycle is encountered,
-                     an error will be raised.  Computational cost is
-                     approximately ``O[N(N^2 k)]``, where ``k`` is the average
-                     number of connected edges per node. The input csgraph will
-                     be converted to a csr representation.
+           'BF'   -- Bellman-Ford algorithm.
+                     This algorithm can be used when weights are negative.
+                     If a negative cycle is encountered, an error will be raised.
+                     Computational cost is approximately ``O[N(N^2 k)]``, where 
+                     ``k`` is the average number of connected edges per node. 
+                     The input csgraph will be converted to a csr representation.
 
-           'J'    -- Johnson's algorithm.  Like the Bellman-Ford algorithm,
-                     Johnson's algorithm is designed for use when the weights
-                     are negative.  It combines the Bellman-Ford algorithm
-                     with Dijkstra's algorithm for faster computation.
+           'J'    -- Johnson's algorithm.
+                     Like the Bellman-Ford algorithm, Johnson's algorithm is 
+                     designed for use when the weights are negative. It combines 
+                     the Bellman-Ford algorithm with Dijkstra's algorithm for 
+                     faster computation.
 
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -1337,6 +1337,7 @@ cdef int _johnson_directed(
             const int[:] csr_indices,
             const int[:] csr_indptr,
             double[:] dist_array):
+    # Note: The contents of dist_array must be initialized to zero on entry
     cdef:
         unsigned int N = dist_array.shape[0]
         unsigned int j, k, count
@@ -1344,10 +1345,6 @@ cdef int _johnson_directed(
 
     # relax all edges (N+1) - 1 times
     for count in range(N):
-        for k in range(N):
-            if dist_array[k] < 0:
-                dist_array[k] = 0
-
         for j in range(N):
             d1 = dist_array[j]
             for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1373,6 +1370,7 @@ cdef int _johnson_undirected(
             const int[:] csr_indices,
             const int[:] csr_indptr,
             double[:] dist_array):
+    # Note: The contents of dist_array must be initialized to zero on entry
     cdef:
         unsigned int N = dist_array.shape[0]
         unsigned int j, k, ind_k, count
@@ -1380,10 +1378,6 @@ cdef int _johnson_undirected(
 
     # relax all edges (N+1) - 1 times
     for count in range(N):
-        for k in range(N):
-            if dist_array[k] < 0:
-                dist_array[k] = 0
-
         for j in range(N):
             d1 = dist_array[j]
             for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1556,7 +1550,7 @@ cdef void decrease_val(FibonacciHeap* heap,
         # at the leftmost end of the roots' linked-list.
         remove(node)
         node.right_sibling = heap.min_node
-        heap.min_node.left_sibling = node.right_sibling
+        heap.min_node.left_sibling = node
         heap.min_node = node
 
 
