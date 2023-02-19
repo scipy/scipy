@@ -1018,6 +1018,19 @@ class TestHalfNorm:
         assert_allclose(stats.halfnorm.sf(x), sfx, rtol=1e-14)
         assert_allclose(stats.halfnorm.isf(sfx), x, rtol=1e-14)
 
+    #   reference values were computed via mpmath
+    #   from mpmath import mp
+    #   mp.dps = 100
+    #   def halfnorm_cdf_mpmath(x):
+    #       x = mp.mpf(x)
+    #       return float(mp.erf(x/mp.sqrt(2.)))
+
+    @pytest.mark.parametrize('x, ref', [(1e-40, 7.978845608028653e-41),
+                                        (1e-18, 7.978845608028654e-19),
+                                        (8, 0.9999999999999988)])
+    def test_cdf(self, x, ref):
+        assert_allclose(stats.halfnorm.cdf(x), ref, rtol=1e-15)
+
 
 class TestHalfgennorm:
     def test_expon(self):
