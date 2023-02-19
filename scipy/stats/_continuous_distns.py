@@ -5886,8 +5886,11 @@ class lognorm_gen(rv_continuous):
 
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
+        data_min = np.min(data)
 
         def get_shape_scale(loc):
+            # Calculate maximum likelihood scale and shape with analytical
+            # formulas unless provided by the user
             if fshape is None or fscale is None:
                 lndata = np.log(data - loc)
             scale = fscale or np.exp(lndata.mean())
@@ -5895,24 +5898,46 @@ class lognorm_gen(rv_continuous):
             return shape, scale
 
         def dL_dLoc(loc):
+            # Derivative of (positive) LL w.r.t. loc
             shape, scale = get_shape_scale(loc)
             shifted = data - loc
             return np.sum((1 + np.log(shifted/scale)/shape**2)/shifted)
 
+        def ll(loc):
+            # (Positive) log-likelihood
+            shape, scale = get_shape_scale(loc)
+            return -self.nnlf((shape, loc, scale), data)
+
         if floc is None:
-            rbrack = np.nextafter(min(data), -np.inf)
+            # The location must be less than the minimum of the data.
+            # Back off a bit to avoid numerical issues.
+            spacing = np.spacing(data_min)
+            rbrack = data_min - spacing
+
+            # Find the right end of the bracket by successive doubling of the
+            # distance to data_min. We're interested in a maximum LL, so the
+            # slope dL_dLoc_rbrack should be negative at the right end.
+            # optimization for later: share shape, scale
             dL_dLoc_rbrack = dL_dLoc(rbrack)
-            delta = 2 * (np.min(data) - rbrack)
+            ll_rbrack = ll(rbrack)
+            delta = 2 * spacing  # 2 * (data_min - rbrack)
             while dL_dLoc_rbrack >= -1e-6:
-                rbrack = np.min(data) - delta
+                rbrack = data_min - delta
                 dL_dLoc_rbrack = dL_dLoc(rbrack)
                 delta *= 2
 
-            if (not np.isfinite(rbrack) or not np.isfinite(dL_dLoc_rbrack)
-                    or rbrack < (min(data) - 1e3)):
-                # loc = np.nextafter(min(data), -np.inf)  # usually. always?
+            if not np.isfinite(rbrack) or not np.isfinite(dL_dLoc_rbrack):
+                # If we never find a negative slope, either we missed it or the
+                # slope is always positive. It's usually the latter,
+                # which means
+                # loc = data_min - spacing
+                # But sometimes when shape and/or scale are fixed there are
+                # other issues, so be cautious.
                 return super().fit(data, *args, **kwds)
 
+            # Now find the left end of the bracket. Guess is `rbrack-1`
+            # unless that is too small of a difference to resolve. Double
+            # the size of the interval until the left end is found.
             lbrack = np.minimum(np.nextafter(rbrack, -np.inf), rbrack-1)
             dL_dLoc_lbrack = dL_dLoc(lbrack)
             delta = 2 * (rbrack - lbrack)
@@ -5922,17 +5947,23 @@ class lognorm_gen(rv_continuous):
                 dL_dLoc_lbrack = dL_dLoc(lbrack)
                 delta *= 2
 
+            # I don't recall observing this, but just in case...
             if not np.isfinite(lbrack) or not np.isfinite(dL_dLoc_lbrack):
                 return super().fit(data, *args, **kwds)
 
+            # If we have a valid bracket, find the root
             res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
             if not res.converged:
                 return super().fit(data, *args, **kwds)
 
-            loc = res.root
+            # If the slope was positive near the minimum of the data,
+            # the maximum LL could be there instead of at the root. Compare
+            # the LL of the two points to decide.
+            ll_root = ll(res.root)
+            loc = res.root if ll_root > ll_rbrack else data_min-spacing
 
         else:
-            if floc >= np.min(data):
+            if floc >= data_min:
                 raise FitDataError("lognorm", lower=0., upper=np.inf)
             loc = floc
 
