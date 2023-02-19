@@ -774,10 +774,16 @@ _smirnov(int n, double x)
     /* Special case:  n is so big, take too long to compute */
     if (n > SMIRNOV_MAX_COMPUTE_N) {
         /* p ~ e^(-(6nx+1)^2 / 18n) */
-        double logp = -pow(6*n*x+1.0, 2)/18.0/n;
-        sf = exp(logp);
-        cdf = 1 - sf;
-        pdf = (6 * nx + 1) * 2 * sf/3;
+        double logp = -pow(6.0*n*x+1, 2)/18.0/n;
+        /* Maximise precision for small p-value. */
+        if (logp < -M_LN2) {
+            sf = exp(logp);
+            cdf = 1 - sf;
+        } else {
+            cdf = -expm1(logp);
+            sf = 1 - cdf;
+        }
+        pdf = (6.0*n*x+1) * 2 * sf/3;
         RETURN_3PROBS(sf, cdf, pdf);
     }
     {

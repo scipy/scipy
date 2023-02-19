@@ -362,6 +362,46 @@ def test_rvs_broadcast(dist, shape_args):
     check_rvs_broadcast(distfunc, dist, allargs, bshape, shape_only, 'd')
 
 
+# Expected values of the SF, CDF, PDF were computed using
+# mpmath with mpmath.mp.dps = 50 and output at 20:
+#
+# def ks(x, n):
+#     x = mpmath.mpf(x)
+#     logp = -mpmath.power(6.0*n*x+1.0, 2)/18.0/n
+#     sf, cdf = mpmath.exp(logp), -mpmath.expm1(logp)
+#     pdf = (6.0*n*x+1.0) * 2 * sf/3
+#     print(mpmath.nstr(sf, 20), mpmath.nstr(cdf, 20), mpmath.nstr(pdf, 20))
+#
+# Tests use 1/n < x < 1-1/n and n > 1e6 to use the asymptotic computation.
+# Larger x has a smaller sf.
+@pytest.mark.parametrize('x,n,sf,cdf,pdf,rtol',
+                         [(2.0e-5, 1000000000,
+                           0.44932297307934442379, 0.55067702692065557621,
+                           35946.137394996276407, 5e-15),
+                          (2.0e-9, 1000000000,
+                           0.99999999061111115519, 9.3888888448132728224e-9,
+                           8.6666665852962971765, 5e-14),
+                          (5.0e-4, 1000000000,
+                           7.1222019433090374624e-218, 1.0,
+                           1.4244408634752704094e-211, 5e-14)])
+def test_gh17775_regression(x, n, sf, cdf, pdf, rtol):
+    # Regression test for gh-17775. In scipy 1.9.3 and earlier,
+    # these test would fail.
+    #
+    # KS one asymptotic sf ~ e^(-(6nx+1)^2 / 18n)
+    # Given a large 32-bit integer n, 6n will overflow in the c implementation.
+    # Example of broken behaviour:
+    # ksone.sf(2.0e-5, 1000000000) == 0.9374359693473666
+    ks = stats.ksone
+    vals = np.array([ks.sf(x, n), ks.cdf(x, n), ks.pdf(x, n)])
+    expected = np.array([sf, cdf, pdf])
+    npt.assert_allclose(vals, expected, rtol=rtol)
+    # The sf+cdf must sum to 1.0.
+    npt.assert_equal(vals[0] + vals[1], 1.0)
+    # Check inverting the (potentially very small) sf (uses a lower tolerance)
+    npt.assert_allclose([ks.isf(sf, n)], [x], rtol=1e-8)
+
+
 def test_rvs_gh2069_regression():
     # Regression tests for gh-2069.  In scipy 0.17 and earlier,
     # these tests would fail.
