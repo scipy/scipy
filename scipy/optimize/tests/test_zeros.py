@@ -18,9 +18,7 @@ from scipy.optimize import (_zeros_py as zeros, newton, root_scalar,
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
 # Import testing parameters
-from scipy.optimize._tstutils import (get_tests,
-                                      functions as tstutils_functions,
-                                      fstrings as tstutils_fstrings)
+from scipy.optimize._tstutils import get_tests, functions as tstutils_functions
 
 TOL = 4*np.finfo(float).eps  # tolerance
 
@@ -133,7 +131,7 @@ class TestScalarRootFinders:
         assert_equal([len(notcvged_IDS), notcvged_IDS], [0, []])
 
         # The usable xtol and rtol depend on the test
-        tols = {'xtol': 4 * _FLOAT_EPS, 'rtol': 4 * _FLOAT_EPS}
+        tols = {'xtol': self.xtol, 'rtol': self.rtol}
         tols.update(**kwargs)
         rtol = tols['rtol']
         atol = tols.get('tol', tols['xtol'])
@@ -146,7 +144,8 @@ class TestScalarRootFinders:
                     not isclose(a, c, rtol=rtol, atol=atol)
                     and elt[-1]['ID'] not in known_fail]
         # If not, evaluate the function and see if is 0 at the purported root
-        fvs = [tc['f'](aroot, *(tc['args'])) for aroot, c, fullout, tc in notclose]
+        fvs = [tc['f'](aroot, *tc.get('args', tuple()))
+               for aroot, c, fullout, tc in notclose]
         notclose = [[fv] + elt for fv, elt in zip(fvs, notclose) if fv != 0]
         assert_equal([notclose, len(notclose)], [[], 0])
 
@@ -189,6 +188,13 @@ class TestBracketMethods(TestScalarRootFinders):
     @pytest.mark.parametrize('method', bracket_methods)
     def test_aps_collection(self, method):
         self.run_collection('aps', method, method.__name__, smoothness=1)
+
+    @pytest.mark.parametrize('method', [zeros.bisect, zeros.ridder,
+                                        zeros.toms748])
+    def test_chandrupatla_collection(self, method):
+        known_fail = {'fun7.4'} if method == zeros.ridder else {}
+        self.run_collection('chandrupatla', method, method.__name__,
+                            known_fail=known_fail)
 
     @pytest.mark.parametrize('method', bracket_methods)
     def test_lru_cached_individual(self, method):
