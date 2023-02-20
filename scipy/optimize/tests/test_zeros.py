@@ -12,7 +12,8 @@ import numpy as np
 from numpy import finfo, power, nan, isclose
 
 
-from scipy.optimize import _zeros_py as zeros, newton, root_scalar
+from scipy.optimize import (_zeros_py as zeros, newton, root_scalar,
+                            OptimizeResult)
 
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
@@ -554,16 +555,16 @@ def test_brent_underflow_in_root_bracketing():
 
 
 class TestRootResults:
+    r = zeros.RootResults(root=1.0, iterations=44, function_calls=46, flag=0)
+
     def test_repr(self):
-        r = zeros.RootResults(root=1.0,
-                              iterations=44,
-                              function_calls=46,
-                              flag=0)
-        expected_repr = ("      converged: True\n           flag: 'converged'"
+        expected_repr = ("      converged: True\n           flag: converged"
                          "\n function_calls: 46\n     iterations: 44\n"
                          "           root: 1.0")
-        assert_equal(repr(r), expected_repr)
+        assert_equal(repr(self.r), expected_repr)
 
+    def test_type(self):
+        assert isinstance(self.r, OptimizeResult)
 
 def test_complex_halley():
     """Test Halley's works with complex roots"""
