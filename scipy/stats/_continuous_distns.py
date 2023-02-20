@@ -5870,68 +5870,107 @@ class lognorm_gen(rv_continuous):
         this function uses explicit formulas for the maximum likelihood
         estimation of the log-normal shape and scale parameters, so the
         `optimizer`, `loc` and `scale` keyword arguments are ignored.
+        If the location is free, a likelihood maximum is found by
+        setting its partial derivative wrt to location to 0, and
+        solving by substituting the analytical expressions of shape
+        and scale (or provided parameters).
+        See, e.g., equation 3.1 in
+        A. Clifford Cohen & Betty Jones Whitten (1980)
+        Estimation in the Three-Parameter Lognormal Distribution,
+        Journal of the American Statistical Association, 75:370, 399-404
+        https://doi.org/10.2307/2287466
         \n\n""")
     def fit(self, data, *args, **kwds):
-        floc = kwds.get('floc', None)
-
-        if floc is None:
-            # loc is not fixed. Use the default fit method.
+        if kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
 
-        f0 = (kwds.get('f0', None) or kwds.get('fs', None) or
-              kwds.get('fix_s', None))
-        fscale = kwds.get('fscale', None)
+        parameters = _check_fit_input_parameters(self, data, args, kwds)
+        data, fshape, floc, fscale = parameters
+        data_min = np.min(data)
 
-        if len(args) > 1:
-            raise TypeError("Too many input arguments.")
-        for name in ['f0', 'fs', 'fix_s', 'floc', 'fscale', 'loc', 'scale',
-                     'optimizer', 'method']:
-            kwds.pop(name, None)
-        if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+        def get_shape_scale(loc):
+            # Calculate maximum likelihood scale and shape with analytical
+            # formulas unless provided by the user
+            if fshape is None or fscale is None:
+                lndata = np.log(data - loc)
+            scale = fscale or np.exp(lndata.mean())
+            shape = fshape or np.sqrt(np.mean((lndata - np.log(scale))**2))
+            return shape, scale
 
-        # Special case: loc is fixed.  Use the maximum likelihood formulas
-        # instead of the numerical solver.
+        def dL_dLoc(loc):
+            # Derivative of (positive) LL w.r.t. loc
+            shape, scale = get_shape_scale(loc)
+            shifted = data - loc
+            return np.sum((1 + np.log(shifted/scale)/shape**2)/shifted)
 
-        if f0 is not None and fscale is not None:
-            # This check is for consistency with `rv_continuous.fit`.
-            raise ValueError("All parameters fixed. There is nothing to "
-                             "optimize.")
+        def ll(loc):
+            # (Positive) log-likelihood
+            shape, scale = get_shape_scale(loc)
+            return -self.nnlf((shape, loc, scale), data)
 
-        data = np.asarray(data)
+        if floc is None:
+            # The location must be less than the minimum of the data.
+            # Back off a bit to avoid numerical issues.
+            spacing = np.spacing(data_min)
+            rbrack = data_min - spacing
 
-        if not np.isfinite(data).all():
-            raise ValueError("The data contains non-finite values.")
+            # Find the right end of the bracket by successive doubling of the
+            # distance to data_min. We're interested in a maximum LL, so the
+            # slope dL_dLoc_rbrack should be negative at the right end.
+            # optimization for later: share shape, scale
+            dL_dLoc_rbrack = dL_dLoc(rbrack)
+            ll_rbrack = ll(rbrack)
+            delta = 2 * spacing  # 2 * (data_min - rbrack)
+            while dL_dLoc_rbrack >= -1e-6:
+                rbrack = data_min - delta
+                dL_dLoc_rbrack = dL_dLoc(rbrack)
+                delta *= 2
 
-        floc = float(floc)
-        if floc != 0:
-            # Shifting the data by floc. Don't do the subtraction in-place,
-            # because `data` might be a view of the input array.
-            data = data - floc
-        if np.any(data <= 0):
-            raise FitDataError("lognorm", lower=floc, upper=np.inf)
-        lndata = np.log(data)
+            if not np.isfinite(rbrack) or not np.isfinite(dL_dLoc_rbrack):
+                # If we never find a negative slope, either we missed it or the
+                # slope is always positive. It's usually the latter,
+                # which means
+                # loc = data_min - spacing
+                # But sometimes when shape and/or scale are fixed there are
+                # other issues, so be cautious.
+                return super().fit(data, *args, **kwds)
 
-        # Three cases to handle:
-        # * shape and scale both free
-        # * shape fixed, scale free
-        # * shape free, scale fixed
+            # Now find the left end of the bracket. Guess is `rbrack-1`
+            # unless that is too small of a difference to resolve. Double
+            # the size of the interval until the left end is found.
+            lbrack = np.minimum(np.nextafter(rbrack, -np.inf), rbrack-1)
+            dL_dLoc_lbrack = dL_dLoc(lbrack)
+            delta = 2 * (rbrack - lbrack)
+            while (np.isfinite(lbrack) and np.isfinite(dL_dLoc_lbrack)
+                   and np.sign(dL_dLoc_lbrack) == np.sign(dL_dLoc_rbrack)):
+                lbrack = rbrack - delta
+                dL_dLoc_lbrack = dL_dLoc(lbrack)
+                delta *= 2
 
-        if fscale is None:
-            # scale is free.
-            scale = np.exp(lndata.mean())
-            if f0 is None:
-                # shape is free.
-                shape = lndata.std()
-            else:
-                # shape is fixed.
-                shape = float(f0)
+            # I don't recall observing this, but just in case...
+            if not np.isfinite(lbrack) or not np.isfinite(dL_dLoc_lbrack):
+                return super().fit(data, *args, **kwds)
+
+            # If we have a valid bracket, find the root
+            res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
+            if not res.converged:
+                return super().fit(data, *args, **kwds)
+
+            # If the slope was positive near the minimum of the data,
+            # the maximum LL could be there instead of at the root. Compare
+            # the LL of the two points to decide.
+            ll_root = ll(res.root)
+            loc = res.root if ll_root > ll_rbrack else data_min-spacing
+
         else:
-            # scale is fixed, shape is free
-            scale = float(fscale)
-            shape = np.sqrt(((lndata - np.log(scale))**2).mean())
+            if floc >= data_min:
+                raise FitDataError("lognorm", lower=0., upper=np.inf)
+            loc = floc
 
-        return shape, floc, scale
+        shape, scale = get_shape_scale(loc)
+        if not (self._argcheck(shape) and scale > 0):
+            return super().fit(data, *args, **kwds)
+        return shape, loc, scale
 
 
 lognorm = lognorm_gen(a=0.0, name='lognorm')
@@ -6046,6 +6085,12 @@ class maxwell_gen(rv_continuous):
 
     def _ppf(self, q):
         return np.sqrt(2*sc.gammaincinv(1.5, q))
+
+    def _sf(self, x):
+        return sc.gammaincc(1.5, x*x/2.0)
+
+    def _isf(self, q):
+        return np.sqrt(2*sc.gammainccinv(1.5, q))
 
     def _stats(self):
         val = 3*np.pi-8
@@ -8932,6 +8977,15 @@ class truncnorm_gen(rv_continuous):
         if np.any(i):
             logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
         return logsf
+
+    def _entropy(self, a, b):
+        A = _norm_cdf(a)
+        B = _norm_cdf(b)
+        Z = B - A
+        C = np.log(np.sqrt(2 * np.pi * np.e) * Z)
+        D = (a * _norm_pdf(a) - b * _norm_pdf(b)) / (2 * Z)
+        h = C + D
+        return h
 
     def _ppf(self, q, a, b):
         q, a, b = np.broadcast_arrays(q, a, b)

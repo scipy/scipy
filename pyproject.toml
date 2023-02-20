@@ -117,6 +117,7 @@ doc = [
     "sphinx-design>=0.2.0",
     "matplotlib>2",
     "numpydoc",
+    "pooch",
 ]
 dev = [
     "mypy",
@@ -172,4 +173,4 @@ select = "*-win_amd64"
 # An alternative is to set CMAKE_PREFIX_PATH="c:/opt/openblas/if_32/32"
 # Don't use double backslash for path separators, they don't get passed
 # to the build correctly
-environment = { PKG_CONFIG_PATH="c:/opt/openblas/if_32/64/lib/pkgconfig" }
+environment = { PKG_CONFIG_PATH="c:/opt/64/lib/pkgconfig" }
