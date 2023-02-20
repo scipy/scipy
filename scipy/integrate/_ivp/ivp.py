@@ -179,8 +179,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     Parameters
     ----------
     fun : callable
-        Right-hand side of the system: the time derivative of the state ``y`` at
-        time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
+        Right-hand side of the system: the time derivative of the state ``y``
+        at time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
         scalar and ``y`` is an ndarray with ``len(y) = len(y0)``. ``fun`` must
         return an array of the same shape as ``y``. See `vectorized` for more
         information.
@@ -273,11 +273,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         If ``vectorized`` is True, `fun` may be called with ``y`` of shape
         ``(n, k)``, where ``k`` is an integer. In this case, `fun` must behave
         such that ``fun(t, y)[:, i] == fun(t, y[:, i])`` (i.e. each column of
-        the result is the time derivative of the state corresponding with a
-        column of ``y``).
+        the returned array is the time derivative of the state corresponding
+        with a column of ``y``).
 
         Setting ``vectorized=True`` allows for faster finite difference
-        approximation of the Jacobian by methods 'Radau` and 'BDF', but
+        approximation of the Jacobian by methods 'Radau' and 'BDF', but
         will result in slower execution for other methods and for 'Radau' and
         'BDF' in some circumstances (e.g. small ``len(y0)``).
     args : tuple, optional

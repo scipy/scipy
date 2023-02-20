@@ -83,13 +83,11 @@ class BDF(OdeSolver):
     Parameters
     ----------
     fun : callable
-        Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar, and there are two options for the ndarray ``y``:
-        It can either have shape (n,); then ``fun`` must return array_like with
-        shape (n,). Alternatively it can have shape (n, k); then ``fun``
-        must return an array_like with shape (n, k), i.e. each column
-        corresponds to a single column in ``y``. The choice between the two
-        options is determined by `vectorized` argument (see below).
+        Right-hand side of the system: the time derivative of the state ``y``
+        at time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
+        scalar and ``y`` is an ndarray with ``len(y) = len(y0)``. ``fun`` must
+        return an array of the same shape as ``y``. See `vectorized` for more
+        information.
     t0 : float
         Initial time.
     y0 : array_like, shape (n,)
@@ -151,8 +149,8 @@ class BDF(OdeSolver):
         If ``vectorized`` is True, `fun` may be called with ``y`` of shape
         ``(n, k)``, where ``k`` is an integer. In this case, `fun` must behave
         such that ``fun(t, y)[:, i] == fun(t, y[:, i])`` (i.e. each column of
-        the result is the time derivative of the state corresponding with a
-        column of ``y``).
+        the returned array is the time derivative of the state corresponding
+        with a column of ``y``).
 
         Setting ``vectorized=True`` allows for faster finite difference
         approximation of the Jacobian by this method, but may result in slower

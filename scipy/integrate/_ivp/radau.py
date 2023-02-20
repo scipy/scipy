@@ -186,8 +186,8 @@ class Radau(OdeSolver):
     Parameters
     ----------
     fun : callable
-        Right-hand side of the system: the time derivative of the state ``y`` at
-        time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
+        Right-hand side of the system: the time derivative of the state ``y``
+        at time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
         scalar and ``y`` is an ndarray with ``len(y) = len(y0)``. ``fun`` must
         return an array of the same shape as ``y``. See `vectorized` for more
         information.
@@ -252,8 +252,8 @@ class Radau(OdeSolver):
         If ``vectorized`` is True, `fun` may be called with ``y`` of shape
         ``(n, k)``, where ``k`` is an integer. In this case, `fun` must behave
         such that ``fun(t, y)[:, i] == fun(t, y[:, i])`` (i.e. each column of
-        the result is the time derivative of the state corresponding with a
-        column of ``y``).
+        the returned array is the time derivative of the state corresponding
+        with a column of ``y``).
 
         Setting ``vectorized=True`` allows for faster finite difference
         approximation of the Jacobian by this method, but may result in slower
