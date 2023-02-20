@@ -74,42 +74,6 @@ class TestScalarRootFinders:
     xtol = 4 * np.finfo(float).eps
     rtol = 4 * np.finfo(float).eps
 
-    def check_basic_root_scalar(self, name, smoothness=0, **kwargs):
-        # Tests bracketing root finders called via `root_scalar` on a small
-        # set of simple problems, each of which has a root at `x=1`. Checks for
-        # converged status and that the root was found.
-        a, b = .5, sqrt(3)
-
-        for function, fname in zip(tstutils_functions, tstutils_fstrings):
-            if smoothness > 0 and fname in ['f4', 'f5', 'f6']:
-                continue
-            r = root_scalar(function, method=name, bracket=[a, b], x0=a,
-                            xtol=self.xtol, rtol=self.rtol, **kwargs)
-            assert r.converged
-            assert_allclose(r.root, 1.0, atol=self.xtol, rtol=self.rtol,
-                            err_msg=f'method {name}, function {fname}')
-
-    def check_basic_individual(self, method, name):
-        # Tests individual bracketing root finders on a small set of simple
-        # problems, each of which has a root at `x=1`. Checks for converged
-        # status and that the root was found.
-        a, b = .5, sqrt(3)
-        for function, fname in zip(tstutils_functions, tstutils_fstrings):
-            root, r = method(function, a, b, xtol=self.xtol, rtol=self.rtol,
-                             full_output=True)
-            assert r.converged
-            assert_allclose(root, 1.0, atol=self.xtol, rtol=self.rtol,
-                            err_msg=f'method {name}, function {fname}')
-
-    def check_lru_cached_individual(self, method, name):
-        # check that https://github.com/scipy/scipy/issues/10846 is fixed
-        # (`root_scalar` failed when passed a function that was `@lru_cache`d)
-        a, b = -1, 1
-        root, r = method(f_lrucached, a, b, full_output=True)
-        assert r.converged
-        err_msg = f'method {name}, function {f_lrucached}'
-        assert_allclose(root, 0, err_msg=err_msg)
-
     def _run_one_test(self, tc, method, sig_args_keys=None,
                       sig_kwargs_keys=None, **kwargs):
         method_args = []
@@ -194,39 +158,49 @@ class TestScalarRootFinders:
         tests = get_tests(collection, smoothness=smoothness)
         self.run_tests(tests, method, name, known_fail=known_fail, **kwargs)
 
-    def test_bisect(self):
-        self.check_basic_individual(zeros.bisect, 'bisect')
-        self.check_lru_cached_individual(zeros.bisect, 'bisect')
-        self.check_basic_root_scalar('bisect')
-        self.run_collection('aps', zeros.bisect, 'bisect', smoothness=1)
 
-    def test_ridder(self):
-        self.check_basic_individual(zeros.ridder, 'ridder')
-        self.check_lru_cached_individual(zeros.ridder, 'ridder')
-        self.check_basic_root_scalar('ridder')
-        self.run_collection('aps', zeros.ridder, 'ridder', smoothness=1)
+class TestBracketMethods(TestScalarRootFinders):
+    @pytest.mark.parametrize('method', bracket_methods)
+    @pytest.mark.parametrize('function', tstutils_functions)
+    def test_basic_root_scalar(self, method, function):
+        # Tests bracketing root finders called via `root_scalar` on a small
+        # set of simple problems, each of which has a root at `x=1`. Checks for
+        # converged status and that the root was found.
+        a, b = .5, sqrt(3)
 
-    def test_brentq(self):
-        self.check_basic_individual(zeros.brentq, 'brentq')
-        self.check_lru_cached_individual(zeros.brentq, 'brentq')
-        self.check_basic_root_scalar('brentq')
-        # Brentq/h needs a lower tolerance to be specified
-        self.run_collection('aps', zeros.brentq, 'brentq', smoothness=1,
-                            xtol=1e-14, rtol=1e-14)
+        r = root_scalar(function, method=method.__name__, bracket=[a, b], x0=a,
+                        xtol=self.xtol, rtol=self.rtol)
+        assert r.converged
+        assert_allclose(r.root, 1.0, atol=self.xtol, rtol=self.rtol)
 
-    def test_brenth(self):
-        self.check_basic_individual(zeros.brenth, 'brenth')
-        self.check_lru_cached_individual(zeros.brenth, 'brenth')
-        self.check_basic_root_scalar('brenth')
-        self.run_collection('aps', zeros.brenth, 'brenth', smoothness=1,
-                            xtol=1e-14, rtol=1e-14)
+    @pytest.mark.parametrize('method', bracket_methods)
+    @pytest.mark.parametrize('function', tstutils_functions)
+    def test_basic_individual(self, method, function):
+        # Tests individual bracketing root finders on a small set of simple
+        # problems, each of which has a root at `x=1`. Checks for converged
+        # status and that the root was found.
+        a, b = .5, sqrt(3)
+        root, r = method(function, a, b, xtol=self.xtol, rtol=self.rtol,
+                         full_output=True)
 
-    def test_toms748(self):
-        self.check_basic_individual(zeros.toms748, 'toms748')
-        self.check_lru_cached_individual(zeros.toms748, 'toms748')
-        self.check_basic_root_scalar('toms748')
-        self.run_collection('aps', zeros.toms748, 'toms748', smoothness=1)
+        assert r.converged
+        assert_allclose(root, 1.0, atol=self.xtol, rtol=self.rtol)
 
+    @pytest.mark.parametrize('method', bracket_methods)
+    def test_aps_collection(self, method):
+        self.run_collection('aps', method, method.__name__, smoothness=1)
+
+    @pytest.mark.parametrize('method', bracket_methods)
+    def test_lru_cached_individual(self, method):
+        # check that https://github.com/scipy/scipy/issues/10846 is fixed
+        # (`root_scalar` failed when passed a function that was `@lru_cache`d)
+        a, b = -1, 1
+        root, r = method(f_lrucached, a, b, full_output=True)
+        assert r.converged
+        assert_allclose(root, 0)
+
+
+class TestNewton(TestScalarRootFinders):
     def test_newton_collections(self):
         known_fail = ['aps.13.00']
         known_fail += ['aps.12.05', 'aps.12.17']  # fails under Windows Py27
@@ -242,9 +216,6 @@ class TestScalarRootFinders:
         for collection in ['aps', 'complex']:
             self.run_collection(collection, zeros.newton, 'halley',
                                 smoothness=2, known_fail=known_fail)
-
-
-class TestNewton:
 
     def test_newton(self):
         for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
