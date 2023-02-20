@@ -211,7 +211,8 @@ def test_vonmises_expect():
 def test_vonmises_fit_all(kappa, loc):
     rng = np.random.default_rng(6762668991392531563)
     data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
-    loc_fit, kappa_fit = stats.vonmises.fit(data)
+    kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data)
+    assert scale_fit == 1
     loc_vec = np.array([np.cos(loc), np.sin(loc)])
     loc_fit_vec = np.array([np.cos(loc_fit), np.sin(loc_fit)])
     angle = np.arccos(loc_vec.dot(loc_fit_vec))
@@ -224,20 +225,24 @@ def test_vonmises_fit_shape():
     loc = 0.25*np.pi
     kappa = 10
     data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
-    loc_fit, kappa_fit = stats.vonmises.fit(data, floc=loc)
+    kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data, floc=loc)
     assert loc_fit == loc
+    assert scale_fit == 1
     assert_allclose(kappa, kappa_fit, rtol=1e-2)
 
 
-def test_vonmises_fit_unwrapped_data():
+@pytest.mark.parametrize('sign', [-1, 1])
+def test_vonmises_fit_unwrapped_data(sign):
     rng = np.random.default_rng(6762668991392531563)
-    data = stats.vonmises(loc=0.5*np.pi, kappa=10).rvs(100000,
-                                                       random_state=rng)
+    data = stats.vonmises(loc=sign*0.5*np.pi, kappa=10).rvs(100000,
+                                                            random_state=rng)
     shifted_data = data + 4*np.pi
-    loc_fit, kappa_fit = stats.vonmises.fit(data)
-    loc_fit_shifted, kappa_fit_shifted = stats.vonmises.fit(shifted_data)
+    kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data)
+    kappa_fit_shifted, loc_fit_shifted, _ = stats.vonmises.fit(shifted_data)
     assert_allclose(loc_fit, loc_fit_shifted)
     assert_allclose(kappa_fit, kappa_fit_shifted)
+    assert scale_fit == 1
+    assert -np.pi < loc_fit < np.pi
 
 
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
