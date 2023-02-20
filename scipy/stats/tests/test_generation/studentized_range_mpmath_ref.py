@@ -42,7 +42,7 @@ MomentCase = namedtuple("MomentCase",
 
 # Load previously generated JSON results, or init a new dict if none exist
 if os.path.isfile(results_filepath):
-    res_dict = json.load(open(results_filepath, mode="r"))
+    res_dict = json.load(open(results_filepath))
 else:
     res_dict = dict()
 

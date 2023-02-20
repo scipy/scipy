@@ -134,6 +134,12 @@ endif
 blas = dependency(blas_name)
 lapack = dependency(lapack_name)
 
+# TODO: Add `pybind11` when available as a dependency
+dependency_map = {
+  'BLAS': blas,
+  'LAPACK': lapack,
+}
+
 # FIXME: conda-forge sets MKL_INTERFACE_LAYER=LP64,GNU, see gh-11812.
 #        This needs work on gh-16200 to make MKL robust. We should be
 #        requesting `mkl-dynamic-lp64-seq` here. And then there's work needed
@@ -148,16 +154,7 @@ else
   g77_abi_wrappers = files('_build_utils/src/wrap_dummy_g77_abi.f')
 endif
 
-generate_config = custom_target(
-  'generate-config',
-  install: true,
-  build_always_stale: true,
-  build_by_default: true,
-  output: '__config__.py',
-  input: '../tools/config_utils.py',
-  command: [py3, '@INPUT@', '@OUTPUT@'],
-  install_dir: py3.get_install_dir() / 'scipy'
-)
+scipy_dir = py3.get_install_dir() / 'scipy'
 
 generate_version = custom_target(
   'generate-version',
@@ -167,7 +164,7 @@ generate_version = custom_target(
   output: 'version.py',
   input: '../tools/version_utils.py',
   command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
-  install_dir: py3.get_install_dir() / 'scipy'
+  install_dir: scipy_dir
 )
 
 python_sources = [
@@ -293,11 +290,115 @@ else
   use_math_defines = []
 endif
 
+# Determine whether it is necessary to link libatomic. This could be the case
+# e.g. on 32-bit platforms when atomic operations are used on 64-bit types.
+# The check is copied from Mesa <https://www.mesa3d.org/>.
+# Note that this dependency is not desired, it came in with a HiGHS update.
+# We should try to get rid of it. For discussion, see gh-17777.
+null_dep = dependency('', required : false)
+atomic_dep = null_dep
+code_non_lockfree = '''
+  #include <stdint.h>
+  int main() {
+   struct {
+     uint64_t *v;
+   } x;
+   return (int)__atomic_load_n(x.v, __ATOMIC_ACQUIRE) &
+          (int)__atomic_add_fetch(x.v, (uint64_t)1, __ATOMIC_ACQ_REL);
+  }
+'''
+if cc.get_id() != 'msvc'
+  if not cc.links(
+      code_non_lockfree,
+      name : 'Check atomic builtins without -latomic'
+    )
+    atomic_dep = cc.find_library('atomic', required: false)
+    if atomic_dep.found()
+      # We're not sure that with `-latomic` things will work for all compilers,
+      # so verify and only keep libatomic as a dependency if this works. It is
+      # possible the build will fail later otherwise - unclear under what
+      # circumstances (compilers, runtimes, etc.) exactly.
+      if not cc.links(
+          code_non_lockfree,
+          dependencies: atomic_dep,
+          name : 'Check atomic builtins with -latomic'
+        )
+        atomic_dep = null_dep
+      endif
+    endif
+  endif
+endif
+
 # Suppress warning for deprecated Numpy API.
 # (Suppress warning messages emitted by #warning directives).
 # Replace with numpy_nodepr_api after Cython 3.0 is out
 cython_c_args += [_cpp_Wno_cpp, use_math_defines]
 cython_cpp_args = cython_c_args
+
+compilers = {
+  'C': cc,
+  'CPP': cpp,
+  'CYTHON': meson.get_compiler('cython'),
+  'FORTRAN': meson.get_compiler('fortran')
+}
+
+machines = {
+  'HOST': host_machine,
+  'BUILD': build_machine,
+}
+
+conf_data = configuration_data()
+
+# Set compiler information
+foreach name, compiler : compilers
+  # conf_data.set(name + '_COMP_CMD_ARRAY', compiler.cmd_array())
+  conf_data.set(name + '_COMP_CMD_ARRAY', compiler.get_id())
+  conf_data.set(name + '_COMP', compiler.get_id())
+  conf_data.set(name + '_COMP_LINKER_ID', compiler.get_linker_id())
+  conf_data.set(name + '_COMP_VERSION', compiler.version())
+  conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
+endforeach
+# Add `pythran` information if present
+if use_pythran
+  pythran_version_command = run_command('pythran', '-V', check: true)
+  conf_data.set('PYTHRAN_VERSION', pythran_version_command.stdout().strip())
+  conf_data.set('PYTHRAN_INCDIR', incdir_pythran)
+endif
+
+# Machines CPU and system information
+foreach name, machine : machines
+  conf_data.set(name + '_CPU', machine.cpu())
+  conf_data.set(name + '_CPU_FAMILY', machine.cpu_family())
+  conf_data.set(name + '_CPU_ENDIAN', machine.endian())
+  conf_data.set(name + '_CPU_SYSTEM', machine.system())
+endforeach
+
+conf_data.set('CROSS_COMPILED', meson.is_cross_build())
+
+# Python information
+conf_data.set('PYTHON_PATH', py3.full_path())
+conf_data.set('PYTHON_VERSION', py3.language_version())
+
+# Dependencies information
+foreach name, dep : dependency_map
+  conf_data.set(name + '_NAME', dep.name())
+  conf_data.set(name + '_FOUND', dep.found())
+  if dep.found()
+    conf_data.set(name + '_VERSION', dep.version())
+    conf_data.set(name + '_TYPE_NAME', dep.type_name())
+    conf_data.set(name + '_INCLUDEDIR', dep.get_variable('includedir', default_value: 'unknown'))
+    conf_data.set(name + '_LIBDIR', dep.get_variable('libdir', default_value: 'unknown'))
+    conf_data.set(name + '_OPENBLAS_CONFIG', dep.get_variable('openblas_config', default_value: 'unknown'))
+    conf_data.set(name + '_PCFILEDIR', dep.get_variable('pcfiledir', default_value: 'unknown'))
+  endif
+endforeach
+
+configure_file(
+  input: '__config__.py.in',
+  output: '__config__.py',
+  configuration : conf_data,
+  install_dir: scipy_dir,
+)
 
 # Ordering of subdirs: special and linalg come first, because other submodules
 # have dependencies on cython_special.pxd and cython_linalg.pxd. After those,

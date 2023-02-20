@@ -12,7 +12,7 @@ stats_special_cython_gen = generator(cython,
     _cython_tree,
     _ufuncs_pxi_pxd_sources,
     _stats_pxd,
-    cython_special])
+    cython_special_pxd])
 
 statlib_lib = static_library('statlib_lib',
   [
@@ -115,10 +115,18 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
   depends: _stats_pxd
 )
 
+# Only needed to establish a dependency; see comments in linalg/meson.build
+# for cython_blas_pxd
+_stats_gen_pyx_dummy = custom_target('_dummy_stats_gen_pyx',
+  output: '_dummy_stats_gen.pxd',
+  input: _stats_gen_pyx[2],
+  command: [py3, '-c', '"@INPUT@"'],
+)
+
 cython_stats_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree, _stats_gen_pyx])
+  depends : [_cython_tree, _stats_gen_pyx_dummy])
 
 # Build recipes defined here to get correct output path when used from
 # other subdirs.
@@ -182,6 +190,7 @@ py3.install_sources([
     '_axis_nan_policy.py',
     '_binned_statistic.py',
     '_binomtest.py',
+    '_censored_data.py',
     '_common.py',
     '_constants.py',
     '_continuous_distns.py',
@@ -204,6 +213,7 @@ py3.install_sources([
     '_odds_ratio.py',
     '_page_trend_test.py',
     '_qmc.py',
+    '_qmvnt.py',
     '_relative_risk.py',
     '_resampling.py',
     '_result_classes.py',

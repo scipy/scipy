@@ -459,7 +459,7 @@ def _stack_along_minor_axis(blocks, axis):
 
     # check for incompatible dimensions
     other_axis = 1 if axis == 0 else 0
-    other_axis_dims = set(b.shape[other_axis] for b in blocks)
+    other_axis_dims = {b.shape[other_axis] for b in blocks}
     if len(other_axis_dims) > 1:
         raise ValueError(f'Mismatching dimensions along axis {other_axis}: '
                          f'{other_axis_dims}')

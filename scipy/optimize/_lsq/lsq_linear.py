@@ -14,7 +14,7 @@ from .bvls import bvls
 def prepare_bounds(bounds, n):
     if len(bounds) != 2:
         raise ValueError("`bounds` must contain 2 elements.")
-    lb, ub = [np.asarray(b, dtype=float) for b in bounds]
+    lb, ub = (np.asarray(b, dtype=float) for b in bounds)
 
     if lb.ndim == 0:
         lb = np.resize(lb, n)
@@ -332,7 +332,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
         if verbose > 0:
             print(termination_message)
-            print("Final cost {0:.4e}, first-order optimality {1:.2e}"
+            print("Final cost {:.4e}, first-order optimality {:.2e}"
                   .format(cost, g_norm))
 
         return OptimizeResult(
@@ -353,8 +353,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     if verbose > 0:
         print(res.message)
-        print("Number of iterations {0}, initial cost {1:.4e}, "
-              "final cost {2:.4e}, first-order optimality {3:.2e}."
+        print("Number of iterations {}, initial cost {:.4e}, "
+              "final cost {:.4e}, first-order optimality {:.2e}."
               .format(res.nit, res.initial_cost, res.cost, res.optimality))
 
     del res.initial_cost

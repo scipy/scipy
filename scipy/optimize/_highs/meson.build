@@ -237,7 +237,7 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/util/'
   ],
-  dependencies: thread_dep,
+  dependencies: [thread_dep, atomic_dep],
   link_args: version_link_args,
   link_with: [highs_lib, ipx_lib, basiclu_lib],
   cpp_args: [highs_flags, highs_define_macros, cython_c_args],

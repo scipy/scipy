@@ -87,7 +87,7 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
     return h_adjusted, use_one_sided
 
 
-@functools.lru_cache()
+@functools.lru_cache
 def _eps_for_method(x0_dtype, f0_dtype, method):
     """
     Calculates relative EPS step to use for a given data type
@@ -201,7 +201,7 @@ def _prepare_bounds(bounds, x0):
     >>> _prepare_bounds([(0, 1, 2), (1, 2, np.inf)], [0.5, 1.5, 2.5])
     (array([0., 1., 2.]), array([ 1.,  2., inf]))
     """
-    lb, ub = [np.asarray(b, dtype=float) for b in bounds]
+    lb, ub = (np.asarray(b, dtype=float) for b in bounds)
     if lb.ndim == 0:
         lb = np.resize(lb, x0.shape)
 
