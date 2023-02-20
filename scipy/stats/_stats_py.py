@@ -9755,7 +9755,8 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     solution :math:`y^*`), the Wasserstein distance :math:`l_1 (u, v)`can
     be computed as :math:`b^T x^*`.
 
-    For a more thorough explanation, see [4]_ .
+    The above solution is inspired by Vincent Herrmann's blog [5].For a 
+    more thorough explanation, see [4]_ .
 
     The input distributions can be empirical, therefore coming from samples
     whose values are effectively inputs of the function, or they can be seen as
@@ -9773,6 +9774,8 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     .. [4] Peyré, Gabriel, and Marco Cuturi. "Computational optimal
            transport." Center for Research in Economics and Statistics
            Working Papers 2017-86 (2017).
+    .. [5] Vincent Herrmann's blog
+           https://vincentherrmann.github.io/blog/wasserstein/
 
     Examples
     --------
