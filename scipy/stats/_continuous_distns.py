@@ -4107,7 +4107,7 @@ class halfnorm_gen(rv_continuous):
         return 0.5 * np.log(2.0/np.pi) - x*x/2.0
 
     def _cdf(self, x):
-        return _norm_cdf(x)*2-1.0
+        return sc.erf(x / np.sqrt(2))
 
     def _ppf(self, q):
         return sc.ndtri((1+q)/2.0)
