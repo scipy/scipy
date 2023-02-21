@@ -550,6 +550,13 @@ class TestTrimming:
         assert_almost_equal(mstats.trimmed_mean(data,(0.1,0.1)), 343, 0)
         assert_almost_equal(mstats.trimmed_mean(data,(0.2,0.2)), 283, 0)
 
+    def test_trimmedvar(self):
+        data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
+                         296,299,306,376,428,515,666,1310,2611])
+        assert_almost_equal(mstats.trimmed_var(data,0.1), 79989.9723, 4)
+        assert_almost_equal(mstats.trimmed_var(data,0.1,ddof=1), 84989.3456, 4)
+        assert_almost_equal(mstats.trimmed_var(data,(0.2,0.2)), 10966.9822, 4)
+
     def test_trimmed_stde(self):
         data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                          296,299,306,376,428,515,666,1310,2611])
