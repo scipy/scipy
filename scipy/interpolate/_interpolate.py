@@ -127,7 +127,8 @@ class interp2d:
         `CloughTocher2DInterpolator`.
 
         For more details see
-        `https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff`
+        `https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff
+        <https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff>`_
 
 
     Interpolate over a 2-D grid.
