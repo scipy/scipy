@@ -3882,13 +3882,14 @@ class TestDgamma:
         # from mpmath import mp
         # mp.dps = 50
         # def second_dgamma(a):
+        #     a = mp.mpf(a)
         #     if a < 1e15:
         #         x_1 = a + mp.log(2) + mp.loggamma(a)
-        #         x_2 = (1 - a) * mp.digamma(a)
+        #         x_2 = (mp.one - a) * mp.digamma(a)
         #         h = x_1 + x_2
         #
         #     else:
-        #         x_1 = 0.5 * (1 + mp.log(a) + mp.log(2 * mp.pi))
+        #         x_1 = mp.one / mp.mpf(2) * (mp.one + mp.log(a) + mp.log(2 * mp.pi))
         #         h = mp.log(2) + x_1
         #
         #     return h
