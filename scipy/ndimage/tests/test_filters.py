@@ -1,5 +1,6 @@
 ''' Some tests for filters '''
 import functools
+import itertools
 import math
 import numpy
 
@@ -690,6 +691,58 @@ class TestNdimageFilters:
         output1 = ndimage.gaussian_filter(input, 1.0)
         ndimage.gaussian_filter(input, 1.0, output=input)
         assert_array_almost_equal(output1, input)
+
+    @pytest.mark.parametrize(
+        'axes',
+        tuple(itertools.combinations(range(-3, 3), 1))
+        + tuple(itertools.combinations(range(-3, 3), 2))
+        + ((0, 1, 2),))
+    def test_gauss_axes(self, axes):
+        array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
+        sigma = 1.0
+        axes = tuple(ax % array.ndim for ax in axes)
+        if len(tuple(set(axes))) != len(axes):
+            # parametrized cases with duplicate axes raise an error
+            with pytest.raises(ValueError):
+                ndimage.gaussian_filter(array, sigma, axes=axes)
+            return
+        output = ndimage.gaussian_filter(array, sigma, axes=axes)
+
+        # result should be equivalent to sigma=0.0 on unfiltered axes
+        all_sigmas = (sigma if ax in axes else 0.0 for ax in range(array.ndim))
+        expected = ndimage.gaussian_filter(array, all_sigmas)
+        assert_allclose(output, expected)
+
+    @pytest.mark.parametrize(
+        'axes', tuple(itertools.combinations(range(-3, 3), 2))
+    )
+    def test_gauss_axes_kwargs(self, axes):
+        array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
+        sigma = (1.0, 0.5)
+        radius = (4, 2)
+        mode = ('reflect', 'nearest')
+        axes = tuple(ax % array.ndim for ax in axes)
+        kwargs = dict(sigma=sigma, radius=radius, mode=mode)
+        if len(tuple(set(axes))) != len(axes):
+            # parametrized cases with duplicate axes raise an error
+            with pytest.raises(ValueError):
+                ndimage.gaussian_filter(array, axes=axes, **kwargs)
+            return
+        output = ndimage.gaussian_filter(array, axes=axes, **kwargs)
+
+        # result should be equivalent to sigma=0.0 on unfiltered axes
+        sigma_3d = [0,] * array.ndim
+        sigma_3d[axes[0]] = sigma[0]
+        sigma_3d[axes[1]] = sigma[1]
+        radius_3d = [0,] * array.ndim
+        radius_3d[axes[0]] = radius[0]
+        radius_3d[axes[1]] = radius[1]
+        mode_3d = [0,] * array.ndim
+        mode_3d[axes[0]] = mode[0]
+        mode_3d[axes[1]] = mode[1]
+        kwargs = dict(sigma=sigma_3d, radius=radius_3d, mode=mode_3d)
+        expected = ndimage.gaussian_filter(array, **kwargs)
+        assert_allclose(output, expected)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt01(self, dtype):

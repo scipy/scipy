@@ -278,7 +278,8 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
 
 @_ni_docstrings.docfiller
 def gaussian_filter(input, sigma, order=0, output=None,
-                    mode="reflect", cval=0.0, truncate=4.0, *, radius=None):
+                    mode="reflect", cval=0.0, truncate=4.0, *, radius=None,
+                    axes=None):
     """Multidimensional Gaussian filter.
 
     Parameters
@@ -306,6 +307,12 @@ def gaussian_filter(input, sigma, order=0, output=None,
         for all axes. If specified, the size of the kernel along each axis
         will be ``2*radius + 1``, and `truncate` is ignored.
         Default is None.
+    axes : tuple of int or None, optional
+        If None, it is assumed all axes are to be filtered. Otherwise, only
+        the axes specified in the tuple will be considered. When `axes` is
+        specified, any tuples used for `sigma`, `order`, `mode` and/or `radius`
+        must match the length of `axes`. The ith entry in any of these tuples
+        corresponds to the ith entry in `axes.
 
     Returns
     -------
@@ -356,13 +363,15 @@ def gaussian_filter(input, sigma, order=0, output=None,
     """
     input = numpy.asarray(input)
     output = _ni_support._get_output(output, input)
-    orders = _ni_support._normalize_sequence(order, input.ndim)
-    sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
-    modes = _ni_support._normalize_sequence(mode, input.ndim)
-    radiuses = _ni_support._normalize_sequence(radius, input.ndim)
-    axes = list(range(input.ndim))
+
+    axes = _ni_support._check_axes(axes, input.ndim)
+    num_axes = len(axes)
+    orders = _ni_support._normalize_sequence(order, num_axes)
+    sigmas = _ni_support._normalize_sequence(sigma, num_axes)
+    modes = _ni_support._normalize_sequence(mode, num_axes)
+    radiuses = _ni_support._normalize_sequence(radius, num_axes)
     axes = [(axes[ii], sigmas[ii], orders[ii], modes[ii], radiuses[ii])
-            for ii in range(len(axes)) if sigmas[ii] > 1e-15]
+            for ii in range(num_axes) if sigmas[ii] > 1e-15]
     if len(axes) > 0:
         for axis, sigma, order, mode, radius in axes:
             gaussian_filter1d(input, sigma, axis, order, output,
