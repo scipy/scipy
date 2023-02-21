@@ -3860,8 +3860,8 @@ class TestDgamma:
         # The reference values were calculated with mpmath:
         # def entropy_dgamma(a):
         #    def pdf(x):
-        #        A = 1 / (2 * mp.gamma(a))
-        #        B = mp.fabs(x) ** (a - 1)
+        #        A = mp.one / (mp.mpf(2.) * mp.gamma(a))
+        #        B = mp.fabs(x) ** (a - mp.one)
         #        C = mp.exp(-mp.fabs(x))
         #        h = A * B * C
         #        return h
