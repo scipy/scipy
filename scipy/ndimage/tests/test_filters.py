@@ -720,9 +720,10 @@ class TestNdimageFilters:
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
         sigma = (1.0, 0.5)
         radius = (4, 2)
+        order = (0, 1)
         mode = ('reflect', 'nearest')
         axes = tuple(ax % array.ndim for ax in axes)
-        kwargs = dict(sigma=sigma, radius=radius, mode=mode)
+        kwargs = dict(sigma=sigma, radius=radius, mode=mode, order=order)
         if len(tuple(set(axes))) != len(axes):
             # parametrized cases with duplicate axes raise an error
             with pytest.raises(ValueError):
@@ -740,7 +741,11 @@ class TestNdimageFilters:
         mode_3d = [0,] * array.ndim
         mode_3d[axes[0]] = mode[0]
         mode_3d[axes[1]] = mode[1]
-        kwargs = dict(sigma=sigma_3d, radius=radius_3d, mode=mode_3d)
+        order_3d = [0,] * array.ndim
+        order_3d[axes[0]] = order[0]
+        order_3d[axes[1]] = order[1]
+        kwargs = dict(sigma=sigma_3d, radius=radius_3d, mode=mode_3d,
+                      order=order_3d)
         expected = ndimage.gaussian_filter(array, **kwargs)
         assert_allclose(output, expected)
 
@@ -775,6 +780,11 @@ class TestNdimageFilters:
         sigma = (1.0,) * tuple_ndim
         with pytest.raises(RuntimeError):
             ndimage.gaussian_filter(array, sigma=sigma, axes=axes)
+
+        # len(order) != len(axes)
+        order = (0,) * tuple_ndim
+        with pytest.raises(RuntimeError):
+            ndimage.gaussian_filter(array, sigma=1.0, order=order, axes=axes)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt01(self, dtype):
