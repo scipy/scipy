@@ -105,7 +105,7 @@ def _check_axes(axes, ndim):
         axes = (operator.index(axes),)
     elif isinstance(axes, Iterable):
         for ax in axes:
-            ax = tuple(operator.index(ax) for ax in axes)
+            axes = tuple(operator.index(ax) for ax in axes)
             if ax < -ndim or ax > ndim - 1:
                 raise ValueError(f"specified axis: {ax} is out of range")
         axes = tuple(ax % ndim if ax < 0 else ax for ax in axes)

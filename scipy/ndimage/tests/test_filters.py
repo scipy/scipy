@@ -744,6 +744,38 @@ class TestNdimageFilters:
         expected = ndimage.gaussian_filter(array, **kwargs)
         assert_allclose(output, expected)
 
+    @pytest.mark.parametrize(
+        'axes', [(1.5,), (0, 1, 2, 3), (3,), (-4,)]
+    )
+    def test_gauss_invalid_axes(self, axes):
+        array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
+        if any(isinstance(ax, float) for ax in axes):
+            error_class = TypeError
+        else:
+            error_class = ValueError
+        with pytest.raises(error_class):
+            ndimage.gaussian_filter(array, sigma=1.0, axes=axes)
+
+    @pytest.mark.parametrize('tuple_ndim', [1, 3])
+    def test_gauss_axes_tuple_length_mismatch(self, tuple_ndim):
+        array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
+        axes = (0, 1)
+
+        # len(radius) != len(axes)
+        radius = (3,) * tuple_ndim
+        with pytest.raises(RuntimeError):
+            ndimage.gaussian_filter(array, sigma=1.0, radius=radius, axes=axes)
+
+        # len(mode) != len(axes)
+        mode = ['constant'] * tuple_ndim
+        with pytest.raises(RuntimeError):
+            ndimage.gaussian_filter(array, sigma=1.0, mode=mode, axes=axes)
+
+        # len(sigma) != len(axes)
+        sigma = (1.0,) * tuple_ndim
+        with pytest.raises(RuntimeError):
+            ndimage.gaussian_filter(array, sigma=sigma, axes=axes)
+
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt01(self, dtype):
         array = numpy.array([[3, 2, 5, 1, 4],
