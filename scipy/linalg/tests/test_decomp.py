@@ -10,6 +10,7 @@ Run tests if scipy is installed:
 
 import itertools
 import platform
+import sys
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -45,6 +46,7 @@ from scipy.sparse._sputils import matrix
 
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
+from scipy.__config__ import CONFIG
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -2042,10 +2044,20 @@ class TestHessenberg:
         assert_array_almost_equal(h2, b)
 
 
+blas_provider = CONFIG['Build Dependencies']['blas']['name']
+blas_version = CONFIG['Build Dependencies']['blas']['version']
+
+
 class TestQZ:
     def setup_method(self):
         seed(12345)
 
+    @pytest.mark.xfail(
+        sys.platform == 'darwin' and
+        blas_provider == 'openblas' and
+        blas_version < "0.3.21.dev",
+        reason="gges[float32] broken for OpenBLAS on macOS, see gh-16949"
+    )
     def test_qz_single(self):
         n = 5
         A = random([n, n]).astype(float32)

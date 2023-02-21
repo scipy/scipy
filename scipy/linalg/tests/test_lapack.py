@@ -2,6 +2,7 @@
 # Created by: Pearu Peterson, September 2002
 #
 
+import sys
 from functools import reduce
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
@@ -35,6 +36,10 @@ from scipy.linalg.blas import get_blas_funcs
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+from scipy.__config__ import CONFIG
+blas_provider = CONFIG['Build Dependencies']['blas']['name']
+blas_version = CONFIG['Build Dependencies']['blas']['version']
 
 
 def generate_random_dtype_array(shape, dtype):
@@ -3051,6 +3056,14 @@ def test_trexc_NAG(t, ifst, ilst, expect):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgexc(dtype):
+    if (
+        dtype == np.float32 and
+        sys.platform == 'darwin' and
+        blas_provider == 'openblas' and
+        blas_version < '0.3.21.dev'
+    ):
+        pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
+
     seed(1234)
     atol = np.finfo(dtype).eps*100
 
@@ -3220,6 +3233,14 @@ def test_trsen_NAG(t, q, select, expect, expect_s, expect_sep):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgsen(dtype):
+    if (
+        dtype == np.float32 and
+        sys.platform == 'darwin' and
+        blas_provider == 'openblas' and
+        blas_version < '0.3.21.dev'
+    ):
+        pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
+
     seed(1234)
     atol = np.finfo(dtype).eps*100
 
