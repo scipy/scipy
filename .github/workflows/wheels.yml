@@ -77,7 +77,7 @@ jobs:
         # should also be able to do multi-archs on a single entry, e.g.
         # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
-        - [ubuntu-20.04, manylinux, x86_64]
+        - [ubuntu-22.04, manylinux, x86_64]
 
         # When the macos-10.15 image is retired the gfortran/openblas chain
         # may have to be reworked because the gfortran-4.9.0 compiler currently
@@ -88,7 +88,7 @@ jobs:
         - [macos-11, macosx, x86_64]
         - [windows-2019, win, AMD64]
 
-        python: [["cp38", "3.8"], ["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11.0-alpha - 3.11.0"]]
+        python: [["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11.0-alpha - 3.11.0"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
     env:
@@ -107,7 +107,7 @@ jobs:
 
       - uses: actions/setup-python@v4.2.0
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: win_amd64 - install rtools
         run: |

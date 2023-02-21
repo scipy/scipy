@@ -24,7 +24,7 @@ cirrus_wheels_linux_aarch64_task:
     # single task takes longer than 60 mins (the default time limit for a
     # cirrus-ci task).
     - env:
-        CIBW_BUILD: cp38-* cp39-*
+        CIBW_BUILD: cp39-*
     - env:
         CIBW_BUILD: cp310-* cp311-*
   build_script: |
@@ -44,9 +44,6 @@ cirrus_wheels_macos_arm64_task:
   macos_instance:
     image: ghcr.io/cirruslabs/macos-monterey-xcode:13.3.1
   matrix:
-    - env:
-        CIBW_BUILD: cp38-*
-        CIBW_BEFORE_ALL: bash tools/wheels/cibw_before_all_cp38_macosx_arm64.sh
     - env:
         CIBW_BUILD: cp39-*
     - env:
