@@ -1621,7 +1621,7 @@ class dgamma_gen(rv_continuous):
             h2 = np.log(2) + 0.5 * (1 + np.log(a) + np.log(2 * np.pi))
             return h2
 
-        h = _lazywhere(a > 1e13, (a), f=h2, f2=h1)
+        h = _lazywhere(a > 1e10, (a), f=h2, f2=h1)
         return h
 
     def _ppf(self, q, a):
