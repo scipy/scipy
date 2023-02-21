@@ -23,8 +23,8 @@ from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
-
 import scipy.sparse as sps
+from scipy.__config__ import CONFIG
 
 try:
     from scipy.linalg import _clapack as clapack
@@ -37,7 +37,6 @@ REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
-from scipy.__config__ import CONFIG
 blas_provider = CONFIG['Build Dependencies']['blas']['name']
 blas_version = CONFIG['Build Dependencies']['blas']['version']
 
