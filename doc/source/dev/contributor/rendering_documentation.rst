@@ -217,6 +217,70 @@ Some examples:
         Some text that follows the list.
 
 
+Self-contained examples
+~~~~~~~~~~~~~~~~~~~~~~~
+All examples must be self-contained. It means all imports must be explicit,
+the data used must be defined in the examples, etc.
+
+    Yes::
+
+        >>> import numpy as np
+        >>> rng = np.random.default_rng()
+
+    No::
+
+        >>> rng = np.random.default_rng()
+
+The scope is defined
+per docstrings. i.e. for a given function's docstrings, it's possible,
+and a good thing, to separate code with explanations. Note that blank lines
+surrounding all block codes are required.
+
+    Yes::
+
+        Some initial text
+
+        >>> import numpy as np
+        >>> rng = np.random.default_rng()
+
+        This is some explanation
+
+        >>> rng.random(10)
+
+
+Examples and randomness
+~~~~~~~~~~~~~~~~~~~~~~~
+Examples are verified in the CI and output is compared. The main goal
+is to ensure that the API and usage are consistent. Doctests are not unittests.
+
+In case a random number generator is needed, `np.random.Generator` must be
+used.
+
+    Yes::
+
+        >>> import numpy as np
+        >>> rng = np.random.default_rng()
+        >>> sample = rng.random(10)
+
+    Yes::
+
+        >>> import numpy as np
+        >>> rng = np.random.default_rng(102524723947864966825913730119128190984)
+        >>> sample = rng.random(10)
+
+    No::
+
+        >>> import numpy as np
+        >>> sample = np.random.random(10)
+
+Seeding the generator object is optional. Although they must not be common
+numbers but instead be generated with: `np.random.SeedSequence().entropy`.
+If no seed is provided, a default
+value is used when doctests are executed. In any case, the rendered
+documentation does not show seed on purpose. The hope is that people do not
+copy/paste seeds in their code and are making an informed decision about
+the use of a seed in their program.
+
 .. _GitHub: https://github.com/
 .. _CircleCI: https://circleci.com/vcs-authorize/
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
