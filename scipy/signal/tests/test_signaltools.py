@@ -1088,12 +1088,21 @@ class TestMedFilt:
 
     @pytest.mark.parametrize('dtype', [np.ubyte, np.byte, np.ushort, np.short,
                                        np.uint, int, np.ulonglong, np.ulonglong,
-                                       np.float32, np.float64, np.longdouble])
+                                       np.float32, np.float64])
     def test_types(self, dtype):
         # volume input and output types match
         in_typed = np.array(self.IN, dtype=dtype)
         assert_equal(signal.medfilt(in_typed).dtype, dtype)
         assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
+
+    def test_types_deprecated(self):
+        dtype = np.longdouble
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            in_typed = np.array(self.IN, dtype=dtype)
+            assert_equal(signal.medfilt(in_typed).dtype, dtype)
+            assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
+
 
     @pytest.mark.parametrize('dtype', [np.bool_, np.cfloat, np.cdouble,
                                        np.clongdouble, np.float16,])
@@ -1134,10 +1143,12 @@ class TestMedFilt:
         assert_equal(x, [a, a])
 
     def test_object(self,):
-        in_object = np.array(self.IN, dtype=object)
-        out_object = np.array(self.OUT, dtype=object)
-        assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
-                           out_object)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            in_object = np.array(self.IN, dtype=object)
+            out_object = np.array(self.OUT, dtype=object)
+            assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
+                               out_object)
 
     @pytest.mark.parametrize("dtype", [np.ubyte, np.float32, np.float64])
     def test_medfilt2d_parallel(self, dtype):
