@@ -6,6 +6,12 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_allclose)
 
 
+def test_median_cihs():
+    x = np.arange(20)
+    assert_almost_equal(ms.median_cihs(x), (5.2352342, 13.7647658))
+    assert_almost_equal(ms.median_cihs(x, alpha=0.01), (3.9423073, 15.0576927))
+
+
 def test_compare_medians_ms():
     x = np.arange(7)
     y = x + 10
