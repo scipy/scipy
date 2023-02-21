@@ -1,4 +1,6 @@
 import math
+import warnings
+
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 
@@ -19,6 +21,10 @@ __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
 
 def tri(N, M=None, k=0, dtype=None):
     """
+    .. deprecated:: 1.11.0
+        `tri` is deprecated in favour of `numpy.tri` and will be removed in
+        SciPy 1.13.0.    
+    
     Construct (N, M) matrix filled with ones at and below the kth diagonal.
 
     The matrix has A[i,j] == 1 for j <= i + k
@@ -55,6 +61,10 @@ def tri(N, M=None, k=0, dtype=None):
            [1, 1, 0, 0, 0]])
 
     """
+    warnings.warn("'tri'/'tril/'triu' is deprecated as of SciPy 1.11.0 in favour of"
+                  "'numpy.tri' and will be removed in SciPy 1.13.0",
+                  DeprecationWarning, stacklevel=2)
+    
     if M is None:
         M = N
     if isinstance(M, str):
@@ -71,6 +81,10 @@ def tri(N, M=None, k=0, dtype=None):
 
 def tril(m, k=0):
     """
+    .. deprecated:: 1.11.0
+        `tril` is deprecated in favour of `numpy.tril` and will be removed in
+        SciPy 1.13.0.
+
     Make a copy of a matrix with elements above the kth diagonal zeroed.
 
     Parameters
@@ -104,6 +118,10 @@ def tril(m, k=0):
 
 def triu(m, k=0):
     """
+    .. deprecated:: 1.11.0
+        `tril` is deprecated in favour of `numpy.triu` and will be removed in
+        SciPy 1.13.0.
+
     Make a copy of a matrix with elements below the kth diagonal zeroed.
 
     Parameters
