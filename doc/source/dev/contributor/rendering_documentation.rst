@@ -250,8 +250,8 @@ surrounding all block codes are required.
 
 Examples and randomness
 ~~~~~~~~~~~~~~~~~~~~~~~
-Examples are verified in the CI and output is compared. The main goal
-is to ensure that the API and usage are consistent. Doctests are not unittests.
+Examples are executed in the CI and the output is compared against the provided reference. The main goal
+is to ensure that the API and usage are consistent. Doctests are not meant to be used as unittests.
 
 In case a random number generator is needed, `np.random.Generator` must be
 used.
@@ -273,12 +273,12 @@ used.
         >>> import numpy as np
         >>> sample = np.random.random(10)
 
-Seeding the generator object is optional. Although they must not be common
-numbers but instead be generated with: `np.random.SeedSequence().entropy`.
+Seeding the generator object is optional. If a seed is used, avoid common numbers and
+instead generate a seed with: `np.random.SeedSequence().entropy`.
 If no seed is provided, a default
 value is used when doctests are executed. In any case, the rendered
-documentation does not show seed on purpose. The hope is that people do not
-copy/paste seeds in their code and are making an informed decision about
+documentation does not show the seed on purpose. The intent is to discourage users from
+copy/pasting seeds in their code and instead make an explicit decision about
 the use of a seed in their program.
 
 .. _GitHub: https://github.com/
