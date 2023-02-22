@@ -17,3 +17,6 @@
 	path = scipy/_lib/highs
 	url = https://github.com/scipy/highs
 	shallow = true
+[submodule "subprojects/npy-staticlibs"]
+	path = subprojects/npy-staticlibs
+	url = https://github.com/rgommers/npy-staticlibs.git

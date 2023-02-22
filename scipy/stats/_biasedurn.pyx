@@ -17,7 +17,7 @@ from cpython.pycapsule cimport PyCapsule_GetPointer, PyCapsule_IsValid
 cdef extern from *:
     """
     extern "C" {
-      #include "numpy/random/distributions.h"
+      #include "distributions.h"
     }
     """
     double random_normal(bitgen_t*, double, double) nogil

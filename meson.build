@@ -17,6 +17,10 @@ project(
   ],
 )
 
+npy_staticlibs = subproject('npy-staticlibs')
+npymath_lib = npy_staticlibs.get_variable('libnpymath_dep')
+npyrandom_lib = npy_staticlibs.get_variable('libnpyrandom_dep')
+
 cc = meson.get_compiler('c')
 cpp = meson.get_compiler('cpp')
 
