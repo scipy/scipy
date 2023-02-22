@@ -248,14 +248,14 @@ class betabinom_gen(rv_discrete):
             g1 /= (a + b + 2) * (a + b)
         if 'k' in moments:
             g2 = a + b
-            g2 *= (a + b - 1 + 6 * n)
-            g2 += 3 * a * b * (n - 2)
-            g2 += 6 * n ** 2
-            g2 -= 3 * e_p * b * n * (6 - n)
-            g2 -= 18 * e_p * e_q * n ** 2
-            g2 *= (a + b) ** 2 * (1 + a + b)
-            g2 /= (n * a * b * (a + b + 2) * (a + b + 3) * (a + b + n))
-            g2 -= 3
+            g2 = g2 * (a + b - 1 + 6 * n)
+            g2 = g2 + 3 * a * b * (n - 2)
+            g2 = g2 + 6 * n ** 2
+            g2 = g2 - 3 * e_p * b * n * (6 - n)
+            g2 = g2 - 18 * e_p * e_q * n ** 2
+            g2 = g2 * (a + b) ** 2 * (1 + a + b)
+            g2 = g2 / (n * a * b * (a + b + 2) * (a + b + 3) * (a + b + n))
+            g2 = g2 - 3
         return mu, var, g1, g2
 
 
