@@ -219,8 +219,9 @@ Some examples:
 
 Self-contained examples
 ~~~~~~~~~~~~~~~~~~~~~~~
-All examples must be self-contained. It means all imports must be explicit,
-the data used must be defined in the examples, etc.
+Each "Example" section must be self-contained. This means that all imports
+must be explicit, the data used must be defined, and the code should "just
+work" when copy-pasted into a fresh Python interpreter.
 
     Yes::
 
@@ -231,11 +232,9 @@ the data used must be defined in the examples, etc.
 
         >>> rng = np.random.default_rng()
 
-The variable scope is defined
-per docstrings. i.e. for a given function's docstrings. It means variables
-cannot be shared between functions from the same file. What is possible,
-and recommended, is to separate code within a single example block with
-explanations. Note that blank lines surrounding all block codes are required.
+What is possible (and recommended) is to intersperse blocks of code with
+explanations. Blank lines must separate each code block from the explanatory
+text.
 
     Yes::
 
@@ -251,14 +250,15 @@ explanations. Note that blank lines surrounding all block codes are required.
 
 Examples and randomness
 ~~~~~~~~~~~~~~~~~~~~~~~
-Examples are executed in the CI and the output is compared against the provided
-reference. The main goal is to ensure that the API is correctly documented and
-that we are not using outdated syntax. Doctests are not meant to be used as
-unittests.
+In the continuous integration (CI) suite, examples are executed and the output
+is compared against the provided reference. The main goal is to ensure that
+the *example* is correct; a failure warns us that the example may need to be
+adjusted (e.g. because the API has changed since it was written).
+Doctests are not meant to be used as unit tests of underlying implementation.
 
 In case a random number generator is needed, `np.random.Generator` must be
-used. The canonical way to create a NumPy generator is to use
-`np.random.default_rng()`.
+used. The canonical way to create a NumPy ``Generator`` is to use
+`np.random.default_rng`.
 
     Yes::
 
@@ -278,11 +278,11 @@ used. The canonical way to create a NumPy generator is to use
         >>> sample = np.random.random(10)
 
 Seeding the generator object is optional. If a seed is used, avoid common numbers and
-instead generate a seed with: `np.random.SeedSequence().entropy`.
+instead generate a seed with ``np.random.SeedSequence().entropy``.
 If no seed is provided, the default value
-`1638083107694713882823079058616272161`
-is used when doctests are executed. In any case, the rendered
-documentation does not show the seed on purpose. The intent is to discourage users from
+``1638083107694713882823079058616272161``
+is used when doctests are executed. In either case, the rendered
+documentation will not show the seed. The intent is to discourage users from
 copy/pasting seeds in their code and instead make an explicit decision about
 the use of a seed in their program.
 
