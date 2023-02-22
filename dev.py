@@ -1166,9 +1166,9 @@ class CILocal(Task):
         * Using bashscript: curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
 
     Options available:
-        * list (lists all the workflows present)
-        * run-job (runs a particular workflow)
-        * reuse (reuse the containers in act to maintain state)
+    - list (lists all the workflows present)
+    - run-job (runs a particular workflow)
+    - reuse (reuse the containers in act to maintain state)
 
     Examples (verbose logging enabled by default):
 
