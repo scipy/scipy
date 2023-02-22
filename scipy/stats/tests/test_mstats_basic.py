@@ -551,15 +551,15 @@ class TestTrimming:
         assert_almost_equal(mstats.trimmed_mean(data,(0.2,0.2)), 283, 0)
 
     def test_trimmedvar(self):
-        data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
-                         296,299,306,376,428,515,666,1310,2611])
+        data = ma.array([77, 87, 88, 114, 151, 210, 219, 246, 253, 262,
+                         296, 299, 306, 376, 428, 515, 666, 1310, 2611])
         assert_allclose(mstats.trimmed_var(data, 0.1), 79989.9723)
         assert_allclose(mstats.trimmed_var(data, 0.1, ddof=1), 84989.3456)
         assert_allclose(mstats.trimmed_var(data, (0.2, 0.2)), 10966.9822)
 
     def test_trimmedstd(self):
-        data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
-                         296,299,306,376,428,515,666,1310,2611])
+        data = ma.array([77, 87, 88, 114, 151, 210, 219, 246, 253, 262,
+                         296, 299, 306, 376, 428, 515, 666, 1310, 2611])
         assert_allclose(mstats.trimmed_std(data, 0.1), 282.8250)
         assert_allclose(mstats.trimmed_std(data, 0.1, ddof=1), 291.5293)
         assert_allclose(mstats.trimmed_std(data, (0.2, 0.2)), 104.72336)
