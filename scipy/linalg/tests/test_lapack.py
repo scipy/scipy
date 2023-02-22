@@ -28,7 +28,6 @@ try:
     from scipy.__config__ import CONFIG
 except ImportError:
     CONFIG = None
-    pass
 
 try:
     from scipy.linalg import _clapack as clapack
