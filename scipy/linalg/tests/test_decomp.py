@@ -46,8 +46,10 @@ from scipy.sparse._sputils import matrix
 
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
-from scipy.__config__ import CONFIG
-
+try:
+    from scipy.__config__ import CONFIG
+except ImportError:
+    CONFIG = None
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
     "Generate random sym/hermitian array of the given size n"
@@ -2044,8 +2046,10 @@ class TestHessenberg:
         assert_array_almost_equal(h2, b)
 
 
-blas_provider = CONFIG['Build Dependencies']['blas']['name']
-blas_version = CONFIG['Build Dependencies']['blas']['version']
+blas_provider = blas_version = None
+if CONFIG is not None:
+    blas_provider = CONFIG['Build Dependencies']['blas']['name']
+    blas_version = CONFIG['Build Dependencies']['blas']['version']
 
 
 class TestQZ:
