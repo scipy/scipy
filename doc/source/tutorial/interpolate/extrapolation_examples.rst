@@ -397,7 +397,7 @@ However the basic idea is the same.
 
 .. _tutorial-extrapolation-CT_NN:
 
-Exrapolation in ``D > 1``
+Extrapolation in ``D > 1``
 =========================
 
 The basic idea of implementing extrapolation manually in a wrapper class
