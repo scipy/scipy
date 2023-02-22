@@ -231,10 +231,11 @@ the data used must be defined in the examples, etc.
 
         >>> rng = np.random.default_rng()
 
-The scope is defined
-per docstrings. i.e. for a given function's docstrings, it's possible,
-and a good thing, to separate code with explanations. Note that blank lines
-surrounding all block codes are required.
+The variable scope is defined
+per docstrings. i.e. for a given function's docstrings. It means variables
+cannot be shared between functions from the same file. What is possible,
+and recommended, is to separate code within a single example block with
+explanations. Note that blank lines surrounding all block codes are required.
 
     Yes::
 
@@ -250,11 +251,14 @@ surrounding all block codes are required.
 
 Examples and randomness
 ~~~~~~~~~~~~~~~~~~~~~~~
-Examples are executed in the CI and the output is compared against the provided reference. The main goal
-is to ensure that the API and usage are consistent. Doctests are not meant to be used as unittests.
+Examples are executed in the CI and the output is compared against the provided
+reference. The main goal is to ensure that the API is correctly documented and
+that we are not using outdated syntax. Doctests are not meant to be used as
+unittests.
 
 In case a random number generator is needed, `np.random.Generator` must be
-used.
+used. The canonical way to create a NumPy generator is to use
+`np.random.default_rng()`.
 
     Yes::
 
@@ -275,8 +279,9 @@ used.
 
 Seeding the generator object is optional. If a seed is used, avoid common numbers and
 instead generate a seed with: `np.random.SeedSequence().entropy`.
-If no seed is provided, a default
-value is used when doctests are executed. In any case, the rendered
+If no seed is provided, the default value
+`1638083107694713882823079058616272161`
+is used when doctests are executed. In any case, the rendered
 documentation does not show the seed on purpose. The intent is to discourage users from
 copy/pasting seeds in their code and instead make an explicit decision about
 the use of a seed in their program.
