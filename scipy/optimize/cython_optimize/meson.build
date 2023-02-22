@@ -23,7 +23,7 @@ cy_opt_gen = generator(cython,
 _zeros = py3.extension_module('_zeros',
   cy_opt_gen.process(_zeros_pyx),
   c_args: cython_c_args,
-  include_directories: inc_np,
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize/cython_optimize'

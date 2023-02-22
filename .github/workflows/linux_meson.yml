@@ -158,3 +158,19 @@ jobs:
         python -c "import scipy.linalg"
         python -m pip install pytest
         python -c "from scipy import cluster; cluster.test()"
+
+    - name: Create venv inside source tree
+      # This is a regression test for gh-16312
+      run: |
+        python -m venv .venv
+        source .venv/bin/activate
+        # Install build dependencies
+        python -m pip install numpy pybind11 pythran cython meson-python wheel pytest ninja
+        # Non-isolated build, so we use dependencies installed inside the source tree
+        python -m pip install . --no-build-isolation
+        
+        # Basic tests
+        cd ..
+        python -c "import scipy"
+        python -c "import scipy.linalg"
+        python -c "from scipy import cluster; cluster.test()"
