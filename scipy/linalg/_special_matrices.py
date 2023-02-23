@@ -61,7 +61,8 @@ def tri(N, M=None, k=0, dtype=None):
            [1, 1, 0, 0, 0]])
 
     """
-    warnings.warn("'tri'/'tril/'triu' is deprecated as of SciPy 1.11.0 in favour of"
+    warnings.warn("'tri'/'tril/'triu' are deprecated as of SciPy 1.11.0 and will "
+                   "be removed in v1.13.0. Please use numpy.(tri/tril/triu) instead."
                   "'numpy.tri' and will be removed in SciPy 1.13.0",
                   DeprecationWarning, stacklevel=2)
     
