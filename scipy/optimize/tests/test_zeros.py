@@ -27,7 +27,7 @@ _FLOAT_EPS = finfo(float).eps
 bracket_methods = [zeros.bisect, zeros.ridder, zeros.brentq, zeros.brenth,
                    zeros.toms748]
 gradient_methods = [zeros.newton]
-all_methods = bracket_methods + gradient_methods
+all_methods = bracket_methods + gradient_methods  # noqa
 
 # A few test functions used frequently:
 # # A simple quadratic, (x-1)^2 - 1
