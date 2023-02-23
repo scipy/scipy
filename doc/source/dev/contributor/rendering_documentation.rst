@@ -284,7 +284,10 @@ If no seed is provided, the default value
 is used when doctests are executed. In either case, the rendered
 documentation will not show the seed. The intent is to discourage users from
 copy/pasting seeds in their code and instead make an explicit decision about
-the use of a seed in their program.
+the use of a seed in their program. The consequence is that users cannot
+reproduce the results of the example exactly, so examples using random data
+should not refer to precise numerical values based on random data or rely on
+them to make their point.
 
 .. _GitHub: https://github.com/
 .. _CircleCI: https://circleci.com/vcs-authorize/
