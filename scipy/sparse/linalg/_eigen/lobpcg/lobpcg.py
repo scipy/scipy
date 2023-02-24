@@ -110,7 +110,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
         blockVectorV = blockVectorV @ VBV
         # blockVectorV = (cho_solve((VBV.T, True), blockVectorV.T)).T
         if B is None:
-            blockVectorBV = blockVectorV.view()
+            blockVectorBV = blockVectorV
         else:
             blockVectorBV = blockVectorBV @ VBV
             # blockVectorBV = (cho_solve((VBV.T, True), blockVectorBV.T)).T
@@ -756,10 +756,10 @@ def lobpcg(
 
         # Shared memory assingments to simplify the code
         if B is None:
-            blockVectorBX = blockVectorX.view()
-            activeBlockVectorBR = activeBlockVectorR.view()
+            blockVectorBX = blockVectorX
+            activeBlockVectorBR = activeBlockVectorR
             if not restart:
-                activeBlockVectorBP = activeBlockVectorP.view()
+                activeBlockVectorBP = activeBlockVectorP
 
         # Common submatrices:
         gramXAR = np.dot(blockVectorX.T.conj(), activeBlockVectorAR)
