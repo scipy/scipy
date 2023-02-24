@@ -9,9 +9,8 @@
 #define EXTERN_C_END
 #endif
 
-#include <pyconfig.h>
-#include <complex>
 #include <Python.h>
+#include <complex>
 
 #include "Faddeeva.hh"
 

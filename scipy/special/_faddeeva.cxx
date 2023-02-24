@@ -1,8 +1,7 @@
-#include <pyconfig.h>
+#include "_faddeeva.h"
+
 #include <complex>
 #include <cmath>
-
-#include "_faddeeva.h"
 
 using namespace std;
 
