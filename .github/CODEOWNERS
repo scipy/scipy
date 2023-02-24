@@ -31,9 +31,13 @@ scipy/special/*  @person142
 scipy/stats/_distn_infrastructure  @andyfaff @ev-br
 scipy/stats/*distr*.py  @ev-br
 scipy/stats/_continuous_distns  @andyfaff
+scipy/stats/_covariance.py  @mdhaber
 scipy/stats/_hypothesis.py  @tupui
 scipy/stats/*qmc.*  @tupui
+scipy/stats/_resampling.py  @mdhaber
 scipy/stats/*sobol*  @tupui
+scipy/stats/_sensitivity_analysis.py  @tupui
+scipy/stats/.unuran/*  @tirthasheshpatel
 
 # Testing infrastructure
 ci/*  @larsoner @andyfaff
@@ -52,3 +56,7 @@ benchmarks/asv.conf.json  @larsoner
 azure-pipelines.yml  @larsoner
 .travis.yml  @larsoner
 
+# Doc
+doc_requirements.txt  @tupui
+doc/source/conf.py  @tupui
+doc/source/_static/*  @tupui
