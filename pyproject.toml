@@ -136,7 +136,7 @@ dodoFile = "dev.py"
 
 
 [tool.cibuildwheel]
-skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x *-musllinux*"
+skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
 build-verbosity = "3"
 # gmpy2 and scikit-umfpack are usually added for testing. However, there are
 # currently wheels missing that make the test script fail.
