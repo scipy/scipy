@@ -109,7 +109,7 @@ _lbfgsb = py3.extension_module('_lbfgsb',
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   link_args: version_link_args,
-  dependencies: [lapack, fortranobject_dep],
+  dependencies: [lapack, blas, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'

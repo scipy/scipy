@@ -12,7 +12,7 @@ _trlib = py3.extension_module('_trlib',
     '../../_lib',
     '../../_build_utils/src'
   ],
-  dependencies: [lapack, np_dep],
+  dependencies: [lapack, blas, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize/_trlib'
