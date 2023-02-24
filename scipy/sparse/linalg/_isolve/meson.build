@@ -74,7 +74,7 @@ _iterative = py3.extension_module('_iterative',
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
   link_args: version_link_args,
-  dependencies: [lapack, fortranobject_dep],
+  dependencies: [lapack, blas, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/sparse/linalg/_isolve'
