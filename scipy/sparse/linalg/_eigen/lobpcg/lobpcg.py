@@ -108,7 +108,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
         VBV = cholesky(VBV, overwrite_a=True)
         VBV = inv(VBV, overwrite_a=True)
         np.matmul(blockVectorV, VBV, out=blockVectorV)
-        blockVectorV = blockVectorV @ VBV
+        # blockVectorV = blockVectorV @ VBV
         # blockVectorV = (cho_solve((VBV.T, True), blockVectorV.T)).T
         if B is not None:
             np.matmul(blockVectorBV, VBV, out=blockVectorBV)
