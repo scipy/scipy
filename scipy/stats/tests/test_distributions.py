@@ -1593,6 +1593,58 @@ class TestLoggamma:
         assert ci.low < 0.5 < ci.high
 
 
+class TestJohnsonsu:
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def johnsonsu_sf(x, a, b):
+    #     x = mp.mpf(x)
+    #     a = mp.mpf(a)
+    #     b = mp.mpf(b)
+    #     return float(mp.ncdf(-(a + b * mp.log(x + mp.sqrt(x*x + 1)))))
+
+    @pytest.mark.parametrize("x, a, b, ref",
+                             [(-500, 1, 1, 0.9999999982660072),
+                              (2000, 1, 1, 7.426351000595343e-21),
+                              (100000, 1, 1, 4.046923979269977e-40)])
+    def test_sf(self, x, a, b, ref):
+        assert_allclose(stats.johnsonsu.sf(x, a, b), ref, rtol=5e-14)
+
+    # for inverse survival function, just switch x and ref
+
+    @pytest.mark.parametrize("q, a, b, ref",
+                             [(7.426351000595343e-21, 1, 1, 2000),
+                              (4.046923979269977e-40, 1, 1, 100000)])
+    def test_isf(self, q, a, b, ref):
+        assert_allclose(stats.johnsonsu.isf(q, a, b), ref, rtol=5e-14)
+
+
+class TestJohnsonb:
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def johnsonb_sf(x, a, b):
+    #     x = mp.mpf(x)
+    #     a = mp.mpf(a)
+    #     b = mp.mpf(b)
+    #     return float(mp.ncdf(-(a + b * mp.log(x/(mp.one - x)))))
+
+    @pytest.mark.parametrize("x, a, b, ref",
+                             [(0.9999, 1, 1, 8.921114313932308e-25),
+                              (1e-4, 1, 1, 0.9999999999999999),
+                              (0.999999, 1, 1, 5.815197487181902e-50)])
+    def test_sf(self, x, a, b, ref):
+        assert_allclose(stats.johnsonsb.sf(x, a, b), ref, rtol=5e-14)
+
+    # for inverse survival function, just switch x and ref
+
+    @pytest.mark.parametrize("q, a, b, ref",
+                             [(8.921114313932308e-25, 1, 1, 0.9999),
+                              (0.9999999982554374, 1, 1, 1e-3)])
+    def test_isf(self, q, a, b, ref):
+        assert_allclose(stats.johnsonsb.isf(q, a, b), ref, rtol=1e-8)
+
+
 class TestLogistic:
     # gh-6226
     def test_cdf_ppf(self):

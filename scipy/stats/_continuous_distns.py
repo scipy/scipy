@@ -5035,6 +5035,12 @@ class johnsonsb_gen(rv_continuous):
     def _ppf(self, q, a, b):
         return 1.0 / (1 + np.exp(-1.0 / b * (_norm_ppf(q) - a)))
 
+    def _sf(self, x, a, b):
+        return _norm_sf(a + b*np.log(x/(1.0-x)))
+
+    def _isf(self, q, a, b):
+        return 1.0 / (1 + np.exp(-1.0 / b * (_norm_isf(q) - a)))
+
 
 johnsonsb = johnsonsb_gen(a=0.0, b=1.0, name='johnsonsb')
 
@@ -5087,6 +5093,12 @@ class johnsonsu_gen(rv_continuous):
 
     def _ppf(self, q, a, b):
         return np.sinh((_norm_ppf(q) - a) / b)
+
+    def _sf(self, x, a, b):
+        return _norm_sf(a + b * np.log(x + np.sqrt(x*x + 1)))
+
+    def _isf(self, x, a, b):
+        return np.sinh((_norm_isf(x) - a) / b)
 
 
 johnsonsu = johnsonsu_gen(name='johnsonsu')
