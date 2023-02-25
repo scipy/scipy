@@ -60,6 +60,18 @@ jobs:
         run: |
           echo "SCIPY_USE_PROPACK=1" >> $env:GITHUB_ENV
           python dev.py build -j 2 --win-cp-openblas
+
+          # following steps are required because the build step does not put
+          # the *.pyd files in build-install! Furthermore the --win-cp-openblas
+          # option does not seem to copy libopenblas*.dll, so manually copy it.
+          cd build
+          meson install
+          cd ..
+          cp C:\opt\64\bin\*.dll $pwd\build-install\Lib\site-packages\scipy\.libs\
+          echo "PYTHONPATH=$PWD\build-install\Lib\site-packages" >> $env:GITHUB_ENV
+          python tools\openblas_support.py --write-init $PWD\build-install\Lib\site-packages\scipy\
       - name: test
         run: |
-          python dev.py test -j 2
+          Get-ChildItem env:
+          cd $env:PYTHONPATH
+          python -c "import sys; import scipy; sys.exit(not scipy.test())"
