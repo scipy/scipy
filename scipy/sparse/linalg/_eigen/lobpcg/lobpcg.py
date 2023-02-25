@@ -107,10 +107,12 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
         # VBV is a Cholesky factor from now on...
         VBV = cholesky(VBV, overwrite_a=True)
         VBV = inv(VBV, overwrite_a=True)
+        np.matmul(blockVectorV, VBV, out=blockVectorV)
         blockVectorV = blockVectorV @ VBV
         # blockVectorV = (cho_solve((VBV.T, True), blockVectorV.T)).T
         if B is not None:
-            blockVectorBV = blockVectorBV @ VBV
+            np.matmul(blockVectorBV, VBV, out=blockVectorBV)
+            # blockVectorBV = blockVectorBV @ VBV
             # blockVectorBV = (cho_solve((VBV.T, True), blockVectorBV.T)).T
         return blockVectorV, blockVectorBV, VBV, normalization
     except LinAlgError:
