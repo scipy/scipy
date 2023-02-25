@@ -623,7 +623,12 @@ def lobpcg(
     while iterationNumber < maxiter:
         iterationNumber += 1
 
-        aux = blockVectorBX * _lambda[np.newaxis, :]
+        # aux = blockVectorBX * _lambda[np.newaxis, :]
+        if B is not None:
+            aux = blockVectorBX * _lambda[np.newaxis, :]
+        else:
+            aux = blockVectorX * _lambda[np.newaxis, :]
+
         blockVectorR = blockVectorAX - aux
 
         aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
@@ -901,11 +906,11 @@ def lobpcg(
 
             blockVectorP, blockVectorAP = pp, app
 
-    aux = blockVectorBX * _lambda[np.newaxis, :]
-    # if B is not None:
-    #     aux = blockVectorBX * _lambda[np.newaxis, :]
-    # else:
-    #     aux = blockVectorX * _lambda[np.newaxis, :]
+    # aux = blockVectorBX * _lambda[np.newaxis, :]
+    if B is not None:
+        aux = blockVectorBX * _lambda[np.newaxis, :]
+    else:
+        aux = blockVectorX * _lambda[np.newaxis, :]
 
     blockVectorR = blockVectorAX - aux
 
