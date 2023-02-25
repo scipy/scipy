@@ -77,8 +77,10 @@ def _applyConstraints(blockVectorV, factYBY, blockVectorBY, blockVectorY):
 def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                       verbosityLevel=0):
     """in-place B-orthonormalize the given block vector using Cholesky."""
-    normalization = blockVectorV.max(axis=0) + np.finfo(blockVectorV.dtype).eps
-    blockVectorV = blockVectorV / normalization
+    type = blockVectorV.dtype
+    normalization = blockVectorV.max(axis=0) + np.finfo(type).eps
+    np.divide(type.type(1), normalization, out=normalization)
+    blockVectorV = blockVectorV * normalization
     if blockVectorBV is None:
         if B is not None:
             try:
@@ -101,7 +103,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
         else:
             blockVectorBV = blockVectorV  # Shared data!!!
     else:
-        blockVectorBV = blockVectorBV / normalization
+        blockVectorBV = blockVectorBV * normalization
     VBV = blockVectorV.T.conj() @ blockVectorBV
     try:
         # VBV is a Cholesky factor from now on...
@@ -738,7 +740,7 @@ def lobpcg(
                 activeBlockVectorP, _, invR, normal = aux
             # Function _b_orthonormalize returns None if Cholesky fails
             if activeBlockVectorP is not None:
-                activeBlockVectorAP = activeBlockVectorAP / normal
+                activeBlockVectorAP = activeBlockVectorAP * normal
                 activeBlockVectorAP = np.dot(activeBlockVectorAP, invR)
                 restart = forcedRestart
             else:
