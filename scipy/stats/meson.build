@@ -12,7 +12,7 @@ stats_special_cython_gen = generator(cython,
     _cython_tree,
     _ufuncs_pxi_pxd_sources,
     _stats_pxd,
-    cython_special])
+    cython_special_pxd])
 
 statlib_lib = static_library('statlib_lib',
   [
@@ -35,7 +35,6 @@ statlib = py3.extension_module('_statlib',
   fortran_args: fortran_ignore_warnings,
   link_with: statlib_lib,
   dependencies: [fortranobject_dep],
-  include_directories: [inc_np, inc_f2py],
   link_args: version_link_args,
   install: true,
   link_language: 'fortran',
@@ -45,7 +44,7 @@ statlib = py3.extension_module('_statlib',
 _stats = py3.extension_module('_stats',
   stats_special_cython_gen.process('_stats.pyx'),
   c_args: cython_c_args,
-  include_directories: [inc_np],
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats'
@@ -64,7 +63,6 @@ mvn = py3.extension_module('_mvn',
   # (see GCC bug 98411: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98411)
   fortran_args: [fortran_ignore_warnings, _fflag_Wno_surprising],
   dependencies: [fortranobject_dep],
-  include_directories: [inc_np, inc_f2py],
   link_args: version_link_args,
   install: true,
   link_language: 'fortran',
@@ -74,7 +72,7 @@ mvn = py3.extension_module('_mvn',
 _sobol = py3.extension_module('_sobol',
   cython_gen.process('_sobol.pyx'),
   c_args: cython_c_args,
-  include_directories: [inc_np],
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats'
@@ -89,8 +87,7 @@ py3.install_sources([
 _qmc_cy = py3.extension_module('_qmc_cy',
   cython_gen_cpp.process('_qmc_cy.pyx'),
   cpp_args: cython_cpp_args,
-  dependencies: thread_dep,
-  include_directories: [inc_np],
+  dependencies: [np_dep, thread_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats'
@@ -115,10 +112,18 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
   depends: _stats_pxd
 )
 
+# Only needed to establish a dependency; see comments in linalg/meson.build
+# for cython_blas_pxd
+_stats_gen_pyx_dummy = custom_target('_dummy_stats_gen_pyx',
+  output: '_dummy_stats_gen.pxd',
+  input: _stats_gen_pyx[2],
+  command: [py3, '-c', '"@INPUT@"'],
+)
+
 cython_stats_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree, _stats_gen_pyx])
+  depends : [_cython_tree, _stats_gen_pyx_dummy])
 
 # Build recipes defined here to get correct output path when used from
 # other subdirs.
@@ -146,10 +151,9 @@ biasedurn = py3.extension_module('_biasedurn',
     'biasedurn/wnchyppr.cpp',
   ],
   cpp_args: ['-DR_BUILD', cython_cpp_args],
-  include_directories: [inc_np],
   link_args: version_link_args,
   # Note that we're not using npymath directly, it is needed to use npyrandom
-  dependencies: [npyrandom_lib, npymath_lib],
+  dependencies: [np_dep, npyrandom_lib, npymath_lib],
   install: true,
   subdir: 'scipy/stats'
 )
@@ -164,7 +168,7 @@ if use_pythran
   _stats_pythran = py3.extension_module('_stats_pythran',
     _stats_pythran_cpp,
     cpp_args: cpp_args_pythran,
-    include_directories: [incdir_pythran, incdir_numpy],
+    dependencies: [pythran_dep, np_dep],
     link_args: version_link_args,
     install: true,
     subdir: 'scipy/stats'
@@ -205,6 +209,7 @@ py3.install_sources([
     '_odds_ratio.py',
     '_page_trend_test.py',
     '_qmc.py',
+    '_qmvnt.py',
     '_relative_risk.py',
     '_resampling.py',
     '_result_classes.py',

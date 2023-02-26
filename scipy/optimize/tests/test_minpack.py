@@ -580,6 +580,12 @@ class TestCurveFit:
         result_without_nan, _ = curve_fit(**kwargs)
         assert_allclose(result_with_nan, result_without_nan)
 
+        # not valid policy test
+        error_msg = ("nan_policy must be one of "
+                     "{'None', 'raise', 'omit'}")
+        with assert_raises(ValueError, match=error_msg):
+            curve_fit(**kwargs, nan_policy="hi")
+
     @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
     def test_nan_policy_1d(self, method):
         def f(x, a, b):

@@ -2,6 +2,7 @@ import warnings
 from collections import namedtuple
 import operator
 from . import _zeros
+from ._optimize import OptimizeResult
 import numpy as np
 
 
@@ -30,7 +31,7 @@ flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR,
             _EVALUEERR: VALUEERR, _EINPROGRESS: INPROGRESS}
 
 
-class RootResults:
+class RootResults(OptimizeResult):
     """Represents the root finding result.
 
     Attributes
@@ -58,13 +59,6 @@ class RootResults:
             self.flag = flag_map[flag]
         except KeyError:
             self.flag = 'unknown error %d' % (flag,)
-
-    def __repr__(self):
-        attrs = ['converged', 'flag', 'function_calls',
-                 'iterations', 'root']
-        m = max(map(len, attrs)) + 1
-        return '\n'.join([a.rjust(m) + ': ' + repr(getattr(self, a))
-                          for a in attrs])
 
 
 def results_c(full_output, r):
@@ -509,7 +503,7 @@ def bisect(f, a, b, args=(),
     xtol : number, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
-        parameter must be nonnegative.
+        parameter must be positive.
     rtol : number, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
@@ -591,7 +585,7 @@ def ridder(f, a, b, args=(),
     xtol : number, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
-        parameter must be nonnegative.
+        parameter must be positive.
     rtol : number, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
@@ -706,7 +700,7 @@ def brentq(f, a, b, args=(),
     xtol : number, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
-        parameter must be nonnegative. For nice functions, Brent's
+        parameter must be positive. For nice functions, Brent's
         method will often satisfy the above condition with ``xtol/2``
         and ``rtol/2``. [Brent1973]_
     rtol : number, optional
@@ -832,7 +826,7 @@ def brenth(f, a, b, args=(),
     xtol : number, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
-        parameter must be nonnegative. As with `brentq`, for nice
+        parameter must be positive. As with `brentq`, for nice
         functions the method will often satisfy the above condition
         with ``xtol/2`` and ``rtol/2``.
     rtol : number, optional
@@ -1296,7 +1290,7 @@ def toms748(f, a, b, args=(), k=1,
     xtol : scalar, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
-        parameter must be nonnegative.
+        parameter must be positive.
     rtol : scalar, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root.
@@ -1365,7 +1359,7 @@ def toms748(f, a, b, args=(), k=1,
     1.0
     >>> results
           converged: True
-               flag: 'converged'
+               flag: converged
      function_calls: 11
          iterations: 5
                root: 1.0

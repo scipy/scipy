@@ -27,7 +27,7 @@ from ._distn_infrastructure import (
     get_distribution_names, _kurtosis,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
-from ._constants import (_XMIN, _EULER, _ZETA3, _SQRT_PI,
+from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 from ._censored_data import CensoredData
 import scipy.stats._boost as _boost
@@ -906,8 +906,18 @@ class betaprime_gen(rv_continuous):
             f2=lambda x_, a_, b_: beta._cdf(x_/(1+x_), a_, b_))
 
     def _ppf(self, p, a, b):
-        r = sc.betaincinv(a, b, p)
-        return r / (1 - r)
+        p, a, b = np.broadcast_arrays(p, a, b)
+        # by default, compute compute the ppf by solving the following:
+        # p = beta._cdf(x/(1+x), a, b). This implies x = r/(1-r) with
+        # r = beta._ppf(p, a, b). This can cause numerical issues if r is
+        # very close to 1. in that case, invert the alternative expression of
+        # the cdf: p = beta._sf(1/(1+x), b, a).
+        r = stats.beta._ppf(p, a, b)
+        with np.errstate(divide='ignore'):
+            out =  r / (1 - r)
+        i = (r > 0.9999)
+        out[i] = 1/stats.beta._isf(p[i], b[i], a[i]) - 1
+        return out
 
     def _munp(self, n, a, b):
         if n == 1.0:
@@ -4097,7 +4107,7 @@ class halfnorm_gen(rv_continuous):
         return 0.5 * np.log(2.0/np.pi) - x*x/2.0
 
     def _cdf(self, x):
-        return _norm_cdf(x)*2-1.0
+        return sc.erf(x / np.sqrt(2))
 
     def _ppf(self, q):
         return sc.ndtri((1+q)/2.0)
@@ -5671,16 +5681,45 @@ class loggamma_gen(rv_continuous):
         return c*x - np.exp(x) - sc.gammaln(c)
 
     def _cdf(self, x, c):
-        return sc.gammainc(c, np.exp(x))
+        # This function is gammainc(c, exp(x)), where gammainc(c, z) is
+        # the regularized incomplete gamma function.
+        # The first term in a series expansion of gamminc(c, z) is
+        # z**c/Gamma(c+1); see 6.5.29 of Abramowitz & Stegun (and refer
+        # back to 6.5.1, 6.5.2 and 6.5.4 for the relevant notation).
+        # This can also be found in the wikipedia article
+        # https://en.wikipedia.org/wiki/Incomplete_gamma_function.
+        # Here we use that formula when x is sufficiently negative that
+        # exp(x) will result in subnormal numbers and lose precision.
+        # We evaluate the log of the expression first to allow the possible
+        # cancellation of the terms in the division, and then exponentiate.
+        # That is,
+        #     exp(x)**c/Gamma(c+1) = exp(log(exp(x)**c/Gamma(c+1)))
+        #                          = exp(c*x - gammaln(c+1))
+        return _lazywhere(x < _LOGXMIN, (x, c),
+                          lambda x, c: np.exp(c*x - sc.gammaln(c+1)),
+                          f2=lambda x, c: sc.gammainc(c, np.exp(x)))
 
     def _ppf(self, q, c):
-        return np.log(sc.gammaincinv(c, q))
+        # The expression used when g < _XMIN inverts the one term expansion
+        # given in the comments of _cdf().
+        g = sc.gammaincinv(c, q)
+        return _lazywhere(g < _XMIN, (g, q, c),
+                          lambda g, q, c: (np.log(q) + sc.gammaln(c+1))/c,
+                          f2=lambda g, q, c: np.log(g))
 
     def _sf(self, x, c):
-        return sc.gammaincc(c, np.exp(x))
+        # See the comments for _cdf() for how x < _LOGXMIN is handled.
+        return _lazywhere(x < _LOGXMIN, (x, c),
+                          lambda x, c: -np.expm1(c*x - sc.gammaln(c+1)),
+                          f2=lambda x, c: sc.gammaincc(c, np.exp(x)))
 
     def _isf(self, q, c):
-        return np.log(sc.gammainccinv(c, q))
+        # The expression used when g < _XMIN inverts the complement of
+        # the one term expansion given in the comments of _cdf().
+        g = sc.gammainccinv(c, q)
+        return _lazywhere(g < _XMIN, (g, q, c),
+                          lambda g, q, c: (np.log1p(-q) + sc.gammaln(c+1))/c,
+                          f2=lambda g, q, c: np.log(g))
 
     def _stats(self, c):
         # See, for example, "A Statistical Study of Log-Gamma Distribution", by
@@ -5831,68 +5870,107 @@ class lognorm_gen(rv_continuous):
         this function uses explicit formulas for the maximum likelihood
         estimation of the log-normal shape and scale parameters, so the
         `optimizer`, `loc` and `scale` keyword arguments are ignored.
+        If the location is free, a likelihood maximum is found by
+        setting its partial derivative wrt to location to 0, and
+        solving by substituting the analytical expressions of shape
+        and scale (or provided parameters).
+        See, e.g., equation 3.1 in
+        A. Clifford Cohen & Betty Jones Whitten (1980)
+        Estimation in the Three-Parameter Lognormal Distribution,
+        Journal of the American Statistical Association, 75:370, 399-404
+        https://doi.org/10.2307/2287466
         \n\n""")
     def fit(self, data, *args, **kwds):
-        floc = kwds.get('floc', None)
-
-        if floc is None:
-            # loc is not fixed. Use the default fit method.
+        if kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
 
-        f0 = (kwds.get('f0', None) or kwds.get('fs', None) or
-              kwds.get('fix_s', None))
-        fscale = kwds.get('fscale', None)
+        parameters = _check_fit_input_parameters(self, data, args, kwds)
+        data, fshape, floc, fscale = parameters
+        data_min = np.min(data)
 
-        if len(args) > 1:
-            raise TypeError("Too many input arguments.")
-        for name in ['f0', 'fs', 'fix_s', 'floc', 'fscale', 'loc', 'scale',
-                     'optimizer', 'method']:
-            kwds.pop(name, None)
-        if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+        def get_shape_scale(loc):
+            # Calculate maximum likelihood scale and shape with analytical
+            # formulas unless provided by the user
+            if fshape is None or fscale is None:
+                lndata = np.log(data - loc)
+            scale = fscale or np.exp(lndata.mean())
+            shape = fshape or np.sqrt(np.mean((lndata - np.log(scale))**2))
+            return shape, scale
 
-        # Special case: loc is fixed.  Use the maximum likelihood formulas
-        # instead of the numerical solver.
+        def dL_dLoc(loc):
+            # Derivative of (positive) LL w.r.t. loc
+            shape, scale = get_shape_scale(loc)
+            shifted = data - loc
+            return np.sum((1 + np.log(shifted/scale)/shape**2)/shifted)
 
-        if f0 is not None and fscale is not None:
-            # This check is for consistency with `rv_continuous.fit`.
-            raise ValueError("All parameters fixed. There is nothing to "
-                             "optimize.")
+        def ll(loc):
+            # (Positive) log-likelihood
+            shape, scale = get_shape_scale(loc)
+            return -self.nnlf((shape, loc, scale), data)
 
-        data = np.asarray(data)
+        if floc is None:
+            # The location must be less than the minimum of the data.
+            # Back off a bit to avoid numerical issues.
+            spacing = np.spacing(data_min)
+            rbrack = data_min - spacing
 
-        if not np.isfinite(data).all():
-            raise ValueError("The data contains non-finite values.")
+            # Find the right end of the bracket by successive doubling of the
+            # distance to data_min. We're interested in a maximum LL, so the
+            # slope dL_dLoc_rbrack should be negative at the right end.
+            # optimization for later: share shape, scale
+            dL_dLoc_rbrack = dL_dLoc(rbrack)
+            ll_rbrack = ll(rbrack)
+            delta = 2 * spacing  # 2 * (data_min - rbrack)
+            while dL_dLoc_rbrack >= -1e-6:
+                rbrack = data_min - delta
+                dL_dLoc_rbrack = dL_dLoc(rbrack)
+                delta *= 2
 
-        floc = float(floc)
-        if floc != 0:
-            # Shifting the data by floc. Don't do the subtraction in-place,
-            # because `data` might be a view of the input array.
-            data = data - floc
-        if np.any(data <= 0):
-            raise FitDataError("lognorm", lower=floc, upper=np.inf)
-        lndata = np.log(data)
+            if not np.isfinite(rbrack) or not np.isfinite(dL_dLoc_rbrack):
+                # If we never find a negative slope, either we missed it or the
+                # slope is always positive. It's usually the latter,
+                # which means
+                # loc = data_min - spacing
+                # But sometimes when shape and/or scale are fixed there are
+                # other issues, so be cautious.
+                return super().fit(data, *args, **kwds)
 
-        # Three cases to handle:
-        # * shape and scale both free
-        # * shape fixed, scale free
-        # * shape free, scale fixed
+            # Now find the left end of the bracket. Guess is `rbrack-1`
+            # unless that is too small of a difference to resolve. Double
+            # the size of the interval until the left end is found.
+            lbrack = np.minimum(np.nextafter(rbrack, -np.inf), rbrack-1)
+            dL_dLoc_lbrack = dL_dLoc(lbrack)
+            delta = 2 * (rbrack - lbrack)
+            while (np.isfinite(lbrack) and np.isfinite(dL_dLoc_lbrack)
+                   and np.sign(dL_dLoc_lbrack) == np.sign(dL_dLoc_rbrack)):
+                lbrack = rbrack - delta
+                dL_dLoc_lbrack = dL_dLoc(lbrack)
+                delta *= 2
 
-        if fscale is None:
-            # scale is free.
-            scale = np.exp(lndata.mean())
-            if f0 is None:
-                # shape is free.
-                shape = lndata.std()
-            else:
-                # shape is fixed.
-                shape = float(f0)
+            # I don't recall observing this, but just in case...
+            if not np.isfinite(lbrack) or not np.isfinite(dL_dLoc_lbrack):
+                return super().fit(data, *args, **kwds)
+
+            # If we have a valid bracket, find the root
+            res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
+            if not res.converged:
+                return super().fit(data, *args, **kwds)
+
+            # If the slope was positive near the minimum of the data,
+            # the maximum LL could be there instead of at the root. Compare
+            # the LL of the two points to decide.
+            ll_root = ll(res.root)
+            loc = res.root if ll_root > ll_rbrack else data_min-spacing
+
         else:
-            # scale is fixed, shape is free
-            scale = float(fscale)
-            shape = np.sqrt(((lndata - np.log(scale))**2).mean())
+            if floc >= data_min:
+                raise FitDataError("lognorm", lower=0., upper=np.inf)
+            loc = floc
 
-        return shape, floc, scale
+        shape, scale = get_shape_scale(loc)
+        if not (self._argcheck(shape) and scale > 0):
+            return super().fit(data, *args, **kwds)
+        return shape, loc, scale
 
 
 lognorm = lognorm_gen(a=0.0, name='lognorm')
@@ -6007,6 +6085,12 @@ class maxwell_gen(rv_continuous):
 
     def _ppf(self, q):
         return np.sqrt(2*sc.gammaincinv(1.5, q))
+
+    def _sf(self, x):
+        return sc.gammaincc(1.5, x*x/2.0)
+
+    def _isf(self, q):
+        return np.sqrt(2*sc.gammainccinv(1.5, q))
 
     def _stats(self):
         val = 3*np.pi-8
@@ -6547,6 +6631,9 @@ class nakagami_gen(rv_continuous):
     %(example)s
 
     """
+    def _argcheck(self, nu):
+        return nu > 0
+
     def _shape_info(self):
         return [_ShapeInfo("nu", False, (0, np.inf), (False, False))]
 
@@ -6578,6 +6665,23 @@ class nakagami_gen(rv_continuous):
         g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
+
+    def _entropy(self, nu):
+        shape = np.shape(nu)
+        # because somehow this isn't taken care of by the infrastructure...
+        nu = np.atleast_1d(nu)
+        A = sc.gammaln(nu)
+        B = nu - (nu - 0.5) * sc.digamma(nu)
+        C = -0.5 * np.log(nu) - np.log(2)
+        h = A + B + C
+        # This is the asymptotic sum of A and B (see gh-17868)
+        norm_entropy = stats.norm._entropy()
+        # Above, this is lost to rounding error for large nu, so use the
+        # asymptotic sum when the approximation becomes accurate
+        i = nu > 5e4  # roundoff error ~ approximation error
+        # -1 / (12 * nu) is the O(1/nu) term; see gh-17929
+        h[i] = C[i] + norm_entropy - 1/(12*nu[i])
+        return h.reshape(shape)[()]
 
     def _rvs(self, nu, size=None, random_state=None):
         # this relationship can be found in [1] or by a direct calculation
@@ -8881,6 +8985,15 @@ class truncnorm_gen(rv_continuous):
         if np.any(i):
             logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
         return logsf
+
+    def _entropy(self, a, b):
+        A = _norm_cdf(a)
+        B = _norm_cdf(b)
+        Z = B - A
+        C = np.log(np.sqrt(2 * np.pi * np.e) * Z)
+        D = (a * _norm_pdf(a) - b * _norm_pdf(b)) / (2 * Z)
+        h = C + D
+        return h
 
     def _ppf(self, q, a, b):
         q, a, b = np.broadcast_arrays(q, a, b)

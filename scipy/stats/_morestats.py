@@ -2898,12 +2898,10 @@ def bartlett(*samples):
     Test whether the lists `a`, `b` and `c` come from populations
     with equal variances.
 
-    >>> import numpy as np
-    >>> from scipy.stats import bartlett
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
     >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
-    >>> stat, p = bartlett(a, b, c)
+    >>> stat, p = stats.bartlett(a, b, c)
     >>> p
     1.1254782518834628e-05
 
@@ -3890,6 +3888,17 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         Either the second set of measurements (if ``x`` is the first set of
         measurements), or not specified (if ``x`` is the differences between
         two sets of measurements.)  Must be one-dimensional.
+
+        .. warning::
+            When `y` is provided, `wilcoxon` calculates the test statistic
+            based on the ranks of the absolute values of ``d = x - y``.
+            Roundoff error in the subtraction can result in elements of ``d``
+            being assigned different ranks even when they would be tied with
+            exact arithmetic. Rather than passing `x` and `y` separately,
+            consider computing the difference ``x - y``, rounding as needed to
+            ensure that only truly unique elements are numerically distinct,
+            and passing the result as `x`, leaving `y` at the default (None).
+
     zero_method : {"wilcox", "pratt", "zsplit"}, optional
         There are different conventions for handling pairs of observations
         with equal values ("zero-differences", or "zeros").
@@ -4029,6 +4038,43 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     of ranks of positive differences) whereas it is 24 in the two-sided
     case (the minimum of sum of ranks above and below zero).
 
+    In the example above, the differences in height between paired plants are
+    provided to `wilcoxon` directly. Alternatively, `wilcoxon` accepts two
+    samples of equal length, calculates the differences between paired
+    elements, then performs the test. Consider the samples ``x`` and ``y``:
+
+    >>> import numpy as np
+    >>> x = np.array([0.5, 0.825, 0.375, 0.5])
+    >>> y = np.array([0.525, 0.775, 0.325, 0.55])
+    >>> res = wilcoxon(x, y, alternative='greater')
+    >>> res
+    WilcoxonResult(statistic=5.0, pvalue=0.5625)
+
+    Note that had we calculated the differences by hand, the test would have
+    produced different results:
+
+    >>> d = [-0.025, 0.05, 0.05, -0.05]
+    >>> ref = wilcoxon(d, alternative='greater')
+    >>> ref
+    WilcoxonResult(statistic=6.0, pvalue=0.4375)
+
+    The substantial difference is due to roundoff error in the results of
+    ``x-y``:
+
+    >>> d - (x-y)
+    array([2.08166817e-17, 6.93889390e-17, 1.38777878e-17, 4.16333634e-17])
+
+    Even though we expected all the elements of ``(x-y)[1:]`` to have the same
+    magnitude ``0.05``, they have slightly different magnitudes in practice,
+    and therefore are assigned different ranks in the test. Before performing
+    the test, consider calculating ``d`` and adjusting it as necessary to
+    ensure that theoretically identically values are not numerically distinct.
+    For example:
+
+    >>> d2 = np.around(x - y, decimals=3)
+    >>> wilcoxon(d2, alternative='greater')
+    WilcoxonResult(statistic=6.0, pvalue=0.4375)
+
     """
     mode = method
 
@@ -4053,6 +4099,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             raise ValueError('Samples x and y must be one-dimensional.')
         if len(x) != len(y):
             raise ValueError('The samples x and y must have the same length.')
+        # Future enhancement: consider warning when elements of `d` appear to
+        # be tied but are numerically distinct.
         d = x - y
 
     if len(d) == 0:
@@ -4755,7 +4803,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
         mean_resultant_length : ndarray
             The mean resultant length [1]_.
 
-    See also
+    See Also
     --------
     circmean: circular mean; i.e. directional mean for 2D *angles*
     circvar: circular variance; i.e. directional variance for 2D *angles*

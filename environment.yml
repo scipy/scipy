@@ -31,6 +31,7 @@ dependencies:
   # For type annotations
   - mypy
   - typing_extensions
+  - types-psutil
   # For building docs
   - sphinx
   - numpydoc
