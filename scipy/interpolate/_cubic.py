@@ -227,7 +227,6 @@ class PchipInterpolator(CubicHermiteSpline):
     .. [2] see, e.g., C. Moler, Numerical Computing with Matlab, 2004.
            :doi:`10.1137/1.9780898717952`
 
-
     """
 
     def __init__(self, x, y, axis=0, extrapolate=None):
@@ -328,14 +327,14 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     axis : int, optional
         Axis in the yi array corresponding to the x-coordinate values.
 
-    See Also
-    --------
-    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
-
     Returns
     -------
     y : scalar or array_like
-        The result, of length R or length M or M by R,
+        The result, of length R or length M or M by R.
+
+    See Also
+    --------
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
 
     Examples
     --------

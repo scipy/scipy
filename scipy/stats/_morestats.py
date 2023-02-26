@@ -2898,12 +2898,10 @@ def bartlett(*samples):
     Test whether the lists `a`, `b` and `c` come from populations
     with equal variances.
 
-    >>> import numpy as np
-    >>> from scipy.stats import bartlett
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
     >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
-    >>> stat, p = bartlett(a, b, c)
+    >>> stat, p = stats.bartlett(a, b, c)
     >>> p
     1.1254782518834628e-05
 
@@ -4805,7 +4803,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
         mean_resultant_length : ndarray
             The mean resultant length [1]_.
 
-    See also
+    See Also
     --------
     circmean: circular mean; i.e. directional mean for 2D *angles*
     circvar: circular variance; i.e. directional variance for 2D *angles*
