@@ -46,45 +46,32 @@ jobs:
           gfortran --version
       - name: pip-packages
         run: |
-          pip install numpy==1.22.2 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch
+          pip install numpy==1.22.2 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
       - name: openblas-libs
         run: |
           # Download and install pre-built OpenBLAS library
           # Built with mingw-w64, -ucrt -static.
           # https://github.com/matthew-brett/openblas-libs/blob/ucrt-build/build_openblas.ps1
-          choco install unzip -y
-          choco install wget -y
-          wget https://github.com/scipy/scipy-ci-artifacts/raw/main/openblas_32_if.zip
-          unzip -d c:\ openblas_32_if.zip
-          echo "PKG_CONFIG_PATH=c:\opt\openblas\if_32\64\lib\pkgconfig;" >> $env:GITHUB_ENV
-      - name: meson-configure
+          choco install wget unzip -y --no-progress
+          wget -q https://anaconda.org/multibuild-wheels-staging/openblas-libs/v0.3.20-571-g3dec11c6/download/openblas-v0.3.20-571-g3dec11c6-win_amd64-gcc_10_3_0.zip
+          unzip -d c:\opt openblas-v0.3.20-571-g3dec11c6-win_amd64-gcc_10_3_0.zip
+          echo "PKG_CONFIG_PATH=c:\opt\64\lib\pkgconfig;" >> $env:GITHUB_ENV
+      - name: build
         run: |
-          meson setup build --prefix=$PWD\build
-      - name: meson-build
-        run: |
-          ninja -j 2 -C build
-      - name: meson-install
-        run: |
+          echo "SCIPY_USE_PROPACK=1" >> $env:GITHUB_ENV
+          python dev.py build -j 2 --win-cp-openblas
+
+          # following steps are required because the build step does not put
+          # the *.pyd files in build-install! Furthermore the --win-cp-openblas
+          # option does not seem to copy libopenblas*.dll, so manually copy it.
           cd build
           meson install
-      - name: build-path
-        run: |
-          echo "installed_path=$PWD\build\Lib\site-packages" >> $env:GITHUB_ENV
-      - name: post-install
-        run: |
-          $scipy_path = "${env:installed_path}\scipy"
-          $libs_path = "${scipy_path}\.libs"
-          mkdir ${libs_path}
-          $ob_path = (pkg-config --variable libdir openblas) -replace "lib", "bin"
-          cp $ob_path/*.dll $libs_path
-          # Write _distributor_init.py to scipy dir to load .libs DLLs.
-          & python tools\openblas_support.py --write-init $scipy_path
-      - name: prep-test
-        run: |
-          echo "PYTHONPATH=${env:installed_path}" >> $env:GITHUB_ENV
-          echo "SCIPY_USE_PROPACK=1" >> $env:GITHUB_ENV
+          cd ..
+          cp C:\opt\64\bin\*.dll $pwd\build-install\Lib\site-packages\scipy\.libs\
+          echo "PYTHONPATH=$PWD\build-install\Lib\site-packages" >> $env:GITHUB_ENV
+          python tools\openblas_support.py --write-init $PWD\build-install\Lib\site-packages\scipy\
       - name: test
         run: |
-          mkdir tmp
-          cd tmp
-          python -c 'import scipy; scipy.test()'
+          Get-ChildItem env:
+          cd $env:PYTHONPATH
+          python -c "import sys; import scipy; sys.exit(not scipy.test())"
