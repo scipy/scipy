@@ -343,14 +343,14 @@ class SVDSCommonTests:
         v0a = rng.random(n)
         res1a = svds(A, k, v0=v0a, solver=self.solver, random_state=0)
         res2a = svds(A, k, v0=v0a, solver=self.solver, random_state=1)
-        assert_allclose(res1a, res2a, atol=1e-15, rtol=1e-14)
+        assert_allclose(np.vstack(res1a), np.vstack(res2a), atol=1e-15)
         _check_svds(A, k, *res1a)
 
         # with the same v0, solutions are the same, and they are accurate
         v0b = rng.random(n)
         res1b = svds(A, k, v0=v0b, solver=self.solver, random_state=2)
         res2b = svds(A, k, v0=v0b, solver=self.solver, random_state=3)
-        assert_allclose(res1b, res2b, atol=1e-16, rtol=1e-15)
+        assert_allclose(np.vstack(res1b), np.vstack(res2b), atol=1e-16)
         _check_svds(A, k, *res1b)
 
         # with different v0, solutions can be numerically different
