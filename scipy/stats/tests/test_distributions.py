@@ -1018,6 +1018,19 @@ class TestHalfNorm:
         assert_allclose(stats.halfnorm.sf(x), sfx, rtol=1e-14)
         assert_allclose(stats.halfnorm.isf(sfx), x, rtol=1e-14)
 
+    #   reference values were computed via mpmath
+    #   from mpmath import mp
+    #   mp.dps = 100
+    #   def halfnorm_cdf_mpmath(x):
+    #       x = mp.mpf(x)
+    #       return float(mp.erf(x/mp.sqrt(2.)))
+
+    @pytest.mark.parametrize('x, ref', [(1e-40, 7.978845608028653e-41),
+                                        (1e-18, 7.978845608028654e-19),
+                                        (8, 0.9999999999999988)])
+    def test_cdf(self, x, ref):
+        assert_allclose(stats.halfnorm.cdf(x), ref, rtol=1e-15)
+
 
 class TestHalfgennorm:
     def test_expon(self):
@@ -3560,6 +3573,34 @@ class TestLognorm:
                         stats.norm.sf(np.log(x2-mu)/sigma))
         assert_allclose(stats.lognorm.logsf(x2-mu, s=sigma),
                         stats.norm.logsf(np.log(x2-mu)/sigma))
+
+    @pytest.fixture(scope='function')
+    def rng(self):
+        return np.random.default_rng(1234)
+
+    @pytest.mark.parametrize("rvs_shape", [.1, 2])
+    @pytest.mark.parametrize("rvs_loc", [-2, 0, 2])
+    @pytest.mark.parametrize("rvs_scale", [.2, 1, 5])
+    @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
+                             [e for e in product((False, True), repeat=3)
+                              if False in e])
+    @np.errstate(invalid="ignore")
+    def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
+                                   fix_shape, fix_loc, fix_scale, rng):
+        data = stats.lognorm.rvs(size=100, s=rvs_shape, scale=rvs_scale,
+                                 loc=rvs_loc, random_state=rng)
+        args = [data, (stats.lognorm._fitstart(data), )]
+        func = stats.lognorm._reduce_func(args, {})[1]
+
+        kwds = {}
+        if fix_shape:
+            kwds['f0'] = rvs_shape
+        if fix_loc:
+            kwds['floc'] = rvs_loc
+        if fix_scale:
+            kwds['fscale'] = rvs_scale
+
+        _assert_less_or_close_loglike(stats.lognorm, data, func, **kwds)
 
 
 class TestBeta:
@@ -6128,6 +6169,28 @@ class TestTriang:
             assert_equal(stats.triang.cdf(0., 1.), 0.)
             assert_equal(stats.triang.cdf(0.5, 1.), 0.25)
             assert_equal(stats.triang.cdf(1., 1.), 1)
+
+
+class TestMaxwell:
+
+    # reference values were computed with wolfram alpha
+    # erfc(x/sqrt(2)) + sqrt(2/pi) * x * e^(-x^2/2)
+
+    @pytest.mark.parametrize("x, ref",
+                             [(20, 2.2138865931011177e-86),
+                              (0.01, 0.999999734046458435)])
+    def test_sf(self, x, ref):
+        assert_allclose(stats.maxwell.sf(x), ref, rtol=1e-14)
+
+    # reference values were computed with wolfram alpha
+    # sqrt(2) * sqrt(Q^(-1)(3/2, q))
+
+    @pytest.mark.parametrize("q, ref",
+                             [(0.001, 4.033142223656157022),
+                              (0.9999847412109375, 0.0385743284050381),
+                              (2**-55, 8.95564974719481)])
+    def test_isf(self, q, ref):
+        assert_allclose(stats.maxwell.isf(q), ref, rtol=1e-15)
 
 
 class TestMielke:

@@ -447,7 +447,7 @@ def sobol_indices(
     Remember, Sobol' indices assumes that samples are independently
     distributed. In this case we use a uniform distribution on each marginals.
 
-    >>> import numpy as  np
+    >>> import numpy as np
     >>> from scipy.stats import sobol_indices, uniform
     >>> rng = np.random.default_rng()
     >>> def f_ishigami(x):
