@@ -49,7 +49,7 @@ WORKDIR ${WORKSPACE}
 # Build scipy to populate the cache used by ccache
 # Must re-activate conda to ensure the ccache flags are picked up
 RUN git config --global --add safe.directory /workspace/scipy
-RUN git submodule update --init --depth=1 -- scipy/_lib/boost && \
+RUN git submodule update --init --depth=1 -- scipy/_lib/boost_math && \
     git submodule update --init --depth=1 -- scipy/sparse/linalg/_propack/PROPACK && \ 
     git submodule update --init --depth=1 -- scipy/_lib/unuran && \ 
     git submodule update --init --depth=1 -- scipy/_lib/highs
