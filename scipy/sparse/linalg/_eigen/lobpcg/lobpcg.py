@@ -78,7 +78,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                       verbosityLevel=0):
     """in-place B-orthonormalize the given block vector using Cholesky."""
     type = blockVectorV.dtype
-    normalization = blockVectorV.max(axis=0) + np.finfo(type).eps
+    normalization = blockVectorV.abs.amax(axis=0) + np.finfo(type).eps
     np.reciprocal(normalization, out=normalization)
     blockVectorV = blockVectorV * normalization
     if blockVectorBV is None:
@@ -627,11 +627,10 @@ def lobpcg(
     while iterationNumber < maxiter:
         iterationNumber += 1
 
-        aux = blockVectorBX * _lambda[np.newaxis, :]
-        # if B is not None:
-        #     aux = blockVectorBX * _lambda[np.newaxis, :]
-        # else:
-        #     aux = blockVectorX * _lambda[np.newaxis, :]
+        if B is not None:
+            aux = blockVectorBX * _lambda[np.newaxis, :]
+        else:
+            aux = blockVectorX * _lambda[np.newaxis, :]
 
         blockVectorR = blockVectorAX - aux
 
@@ -910,7 +909,6 @@ def lobpcg(
 
             blockVectorP, blockVectorAP = pp, app
 
-    # aux = blockVectorBX * _lambda[np.newaxis, :]
     if B is not None:
         aux = blockVectorBX * _lambda[np.newaxis, :]
     else:
