@@ -3919,8 +3919,8 @@ class TestChi2:
     # def chisq_entropy_mpmath(df):
     #     df = mp.mpf(df)
     #     half_df = 0.5 * df
-    #     entropy = half_df + mp.log(2) + mp.log(mp.gamma(half_df)) + \
-    #              (1 - half_df) * mp.digamma(half_df)
+    #     entropy = (half_df + mp.log(2) + mp.log(mp.gamma(half_df)) +
+    #                (mp.one - half_df) * mp.digamma(half_df))
     # return float(entropy)
 
     @pytest.mark.parametrize('df, ref',
@@ -3929,7 +3929,7 @@ class TestChi2:
                               (100, 4.061397128938114),
                               (1e15, 19.034900320939986)])
     def test_entropy(self, df, ref):
-        assert_allclose(stats.chi2(df).entropy(), ref, 1e-12)
+        assert_allclose(stats.chi2(df).entropy(), ref, rtol=1e-13)
 
 
 class TestGumbelL:
