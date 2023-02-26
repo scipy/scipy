@@ -78,7 +78,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                       verbosityLevel=0):
     """in-place B-orthonormalize the given block vector using Cholesky."""
     type = blockVectorV.dtype
-    normalization = blockVectorV.abs.amax(axis=0) + np.finfo(type).eps
+    normalization = np.abs(blockVectorV).amax(axis=0) + np.finfo(type).eps
     np.reciprocal(normalization, out=normalization)
     blockVectorV = blockVectorV * normalization
     if blockVectorBV is None:
