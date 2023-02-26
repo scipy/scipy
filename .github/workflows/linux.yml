@@ -18,10 +18,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  Python-38-dbg:
-    name: Python 3.8-dbg
+  Python-39-dbg:
+    name: Python 3.9-dbg
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.04  # 22.04 does not have  python3.9-dbg
     steps:
       - uses: actions/checkout@v3
         with:
@@ -29,9 +29,9 @@ jobs:
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
-          sudo apt install python3.8-dbg python3.8-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev ccache swig libmpc-dev
+          sudo apt install python3.9-dbg python3.9-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev ccache swig libmpc-dev
           free -m
-          python3.8-dbg --version # just to check
+          python3.9-dbg --version # just to check
           export NPY_NUM_BUILD_JOBS=2
           uname -a
           df -h
@@ -41,19 +41,19 @@ jobs:
           cd builds
       - name: Installing packages
         run: |
-          python3.8-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-          python3.8-dbg -m pip install --upgrade pip "setuptools<60.0" wheel
-          python3.8-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pytest-timeout pybind11
-          python3.8-dbg -m pip install --upgrade mpmath gmpy2 pythran threadpoolctl pooch
-          python3.8-dbg -m pip uninstall -y nose
+          python3.9-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
+          python3.9-dbg -m pip install --upgrade pip "setuptools<60.0" wheel
+          python3.9-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pytest-timeout pybind11
+          python3.9-dbg -m pip install --upgrade mpmath gmpy2 pythran threadpoolctl pooch
+          python3.9-dbg -m pip uninstall -y nose
           cd ..
       - name: Building SciPy
-        run: python3.8-dbg -u runtests.py -g -j2 --build-only
+        run: python3.9-dbg -u runtests.py -g -j2 --build-only
       - name: Testing SciPy
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          python3.8-dbg -u runtests.py -n -g -j2 -m fast -- -rfEX --durations=10 --timeout=60 2>&1 | tee runtests.log
-          python3.8-dbg tools/validate_runtests_log.py fast < runtests.log
+          python3.9-dbg -u runtests.py -n -g -j2 -m fast -- -rfEX --durations=10 --timeout=60 2>&1 | tee runtests.log
+          python3.9-dbg tools/validate_runtests_log.py fast < runtests.log
       - name: Dynamic symbol hiding check on Linux
         if: ${{ github.event_name == 'pull_request' }}
         run: ./tools/check_pyext_symbol_hiding.sh build

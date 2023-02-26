@@ -75,11 +75,11 @@ Next, set up your development environment.
         .. code:: bash
 
             # Create the virtual environment
-            python -m venv scipy-dev
+            python -m venv $HOME/.venvs/scipy-dev
             # Activate the environment
             source $HOME/.venvs/scipy-dev/bin/activate
             # Install python-level dependencies
-            python -m pip install numpy pytest cython pythran pybind11 meson ninja
+            python -m pip install numpy pytest cython pythran pybind11 meson ninja pydevtool rich-click
 
         Your command prompt now lists the name of your new environment, like so
         ``(scipy-dev)$``.

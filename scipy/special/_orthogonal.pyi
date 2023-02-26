@@ -1,7 +1,6 @@
 from typing import (
     Any,
     Callable,
-    List,
     Literal,
     Optional,
     overload,
@@ -284,7 +283,7 @@ class orthopoly1d(numpy.poly1d):
     def __init__(
             self,
             roots: numpy.typing.ArrayLike,
-            weights: Optional[numpy.typing.ArrayLike],
+            weights: numpy.typing.ArrayLike | None,
             hn: float = ...,
             kn: float = ...,
             wfunc = Optional[Callable[[float], float]],
@@ -293,7 +292,7 @@ class orthopoly1d(numpy.poly1d):
             eval_func: numpy.ufunc = ...,
     ) -> None: ...
     @property
-    def limits(self) -> Tuple[float, float]: ...
+    def limits(self) -> tuple[float, float]: ...
     def weight_func(self, x: float) -> float: ...
     @overload
     def __call__(self, x: _ArrayLike0D) -> Any: ...
