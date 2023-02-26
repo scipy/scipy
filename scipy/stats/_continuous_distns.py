@@ -9553,8 +9553,10 @@ class vonmises_gen(rv_continuous):
 
     @_call_super_mom
     @extend_notes_in_docstring(rv_continuous, notes="""\
-        The `scale` parameter is ignored. Fit data is assumed to represent
-        angles and will be wrapped onto the unit circle.\n\n""")
+        Fit data is assumed to represent angles and will be wrapped onto the
+        unit circle. `f0` and `fscale` are ignored; the returned shape is
+        always the maximum likelihood estimate and the scale is always 
+        1. Initial guesses are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
         if kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
@@ -9589,10 +9591,11 @@ class vonmises_gen(rv_continuous):
         if floc is None:
             floc = find_mu(data)
             fshape = find_kappa(data)
-            return floc, fshape
         else:
             fshape = find_kappa(data)
-            return floc, fshape
+
+        floc = np.mod(floc + np.pi, 2 * np.pi) - np.pi  # ensure in [-pi, pi]
+        return fshape, floc, 1  # scale is not handled
 
 
 vonmises = vonmises_gen(name='vonmises')

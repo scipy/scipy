@@ -143,9 +143,12 @@ console_theme = Theme({
     "cmd": "italic gray50",
 })
 
-
-class EMOJI:
-    cmd = ":computer:"
+if sys.platform == 'win32':
+    class EMOJI:
+        cmd = ">"
+else:
+    class EMOJI:
+        cmd = ":computer:"
 
 
 rich_click.STYLE_ERRORS_SUGGESTION = "yellow italic"
