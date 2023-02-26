@@ -1639,10 +1639,10 @@ class TestJohnsonb:
     # for inverse survival function, just switch x and ref
 
     @pytest.mark.parametrize("q, a, b, ref",
-                             [(8.921114313932308e-25, 1, 1, 0.9999),
-                              (0.9999999982554374, 1, 1, 1e-3)])
+                             [(1.216168795631177e-56, 2, 1, 0.999999),
+                              (0.9999995370215822, 2, 1, 1e-3)])
     def test_isf(self, q, a, b, ref):
-        assert_allclose(stats.johnsonsb.isf(q, a, b), ref, rtol=1e-8)
+        assert_allclose(stats.johnsonsb.isf(q, a, b), ref, rtol=1e-10)
 
 
 class TestLogistic:
