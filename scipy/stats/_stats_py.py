@@ -3120,6 +3120,8 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     >>> fig, ax = plt.subplots()
     >>> ax.hist(gzscore(x), 50)
     >>> plt.show()
+    
+    Also for the zscore nomalize value you need to use zmap to get the correct zscore values
 
     """
     a = np.asanyarray(a)
