@@ -2818,24 +2818,6 @@ class TestPowerLogNorm:
     def test_ppf(self, q, c, s, ref):
         assert_allclose(stats.powerlognorm.ppf(q, c, s), ref, rtol=1e-11)
 
-    # reference values were computed via mpmath
-    # from mpmath import mp
-    # def powerlognormal_pdf_mp(x, c, s):
-    #     mp.dps = 200
-    #     x = mp.mpf(x)
-    #     c = mp.mpf(c)
-    #     s = mp.mpf(s)
-    #     pdf = (c/(x * s) * mp.npdf(mp.log(x) / s) * 
-    #            mp.ncdf(-mp.log(x) / s)**(c - 1))
-    #     return float(pdf)
-
-    @pytest.mark.parametrize("x, c, s, ref",
-                             [(1e15, 0.01, 1, 8.489544993666912e-19),
-                              (1, 200, 1, 9.930495623691516e-59),
-                              (5e-3, 200, 1, 0.012798863673904579)])
-    def test_pdf(self, x, c, s, ref):
-        assert_allclose(stats.powerlognorm.pdf(x, c, s), ref, rtol=1e-13)
-
 
 class TestInvGamma:
     def test_invgamma_inf_gh_1866(self):

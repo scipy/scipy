@@ -7800,7 +7800,10 @@ class powerlognorm_gen(rv_continuous):
         return [ic, i_s]
 
     def _pdf(self, x, c, s):
-        return np.exp(self._logpdf(x, c, s))
+        # powerlognorm.pdf(x, c, s) = c / (x*s) * phi(log(x)/s) *
+        #                                         (Phi(-log(x)/s))**(c-1),
+        return (c/(x*s) * _norm_pdf(np.log(x)/s) *
+                pow(_norm_cdf(-np.log(x)/s), c*1.0-1.0))
 
     def _logpdf(self, x, c, s):
         return (np.log(c) - np.log(x) - np.log(s) +
@@ -7817,7 +7820,7 @@ class powerlognorm_gen(rv_continuous):
         return np.exp(_norm_logcdf(-np.log(x) / s) * c)
 
     def _isf(self, q, c, s):
-        return np.exp(-_norm_ppf(np.exp(np.log(q) / c)) * s)
+        return np.exp(-_norm_ppf(q**(1/c)) * s)
 
 
 powerlognorm = powerlognorm_gen(a=0.0, name="powerlognorm")
