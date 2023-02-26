@@ -5026,20 +5026,20 @@ class johnsonsb_gen(rv_continuous):
 
     def _pdf(self, x, a, b):
         # johnsonsb.pdf(x, a, b) = b / (x*(1-x)) * phi(a + b * log(x/(1-x)))
-        trm = _norm_pdf(a + b*np.log(x/(1.0-x)))
+        trm = _norm_pdf(a + b*sc.logit(x))
         return b*1.0/(x*(1-x))*trm
 
     def _cdf(self, x, a, b):
-        return _norm_cdf(a + b*np.log(x/(1.0-x)))
+        return _norm_cdf(a + b*sc.logit(x))
 
     def _ppf(self, q, a, b):
-        return 1.0 / (1 + np.exp(-1.0 / b * (_norm_ppf(q) - a)))
+        return sc.expit(1.0 / b * (_norm_ppf(q) - a))
 
     def _sf(self, x, a, b):
-        return _norm_sf(a + b*np.log(x/(1.0-x)))
+        return _norm_sf(a + b*sc.logit(x))
 
     def _isf(self, q, a, b):
-        return 1.0 / (1 + np.exp(-1.0 / b * (_norm_isf(q) - a)))
+        return sc.expit(1.0 / b * (_norm_isf(q) - a))
 
 
 johnsonsb = johnsonsb_gen(a=0.0, b=1.0, name='johnsonsb')

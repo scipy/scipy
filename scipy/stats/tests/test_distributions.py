@@ -1640,9 +1640,9 @@ class TestJohnsonb:
 
     @pytest.mark.parametrize("q, a, b, ref",
                              [(1.216168795631177e-56, 2, 1, 0.999999),
-                              (0.9999995370215822, 2, 1, 1e-3)])
+                              (0.9999789024973879, 0.5, 1, 1e-2)])
     def test_isf(self, q, a, b, ref):
-        assert_allclose(stats.johnsonsb.isf(q, a, b), ref, rtol=1e-10)
+        assert_allclose(stats.johnsonsb.isf(q, a, b), ref, rtol=1e-12)
 
 
 class TestLogistic:
