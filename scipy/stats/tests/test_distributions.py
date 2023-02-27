@@ -3896,11 +3896,10 @@ class TestDgamma:
         assert_allclose(stats.dgamma.entropy(a), ref, rtol=1e-10)
 
     def test_entropy_array_input(self):
-        y = stats.dgamma.entropy([1, 5, 1e20, 1e-5])
-        assert y[0] == stats.dgamma.entropy(1)
-        assert y[1] == stats.dgamma.entropy(5)
-        assert y[2] == stats.dgamma.entropy(1e20)
-        assert y[3] == stats.dgamma.entropy(1e-5)
+        x = np.array([1, 5, 1e20, 1e-5])
+        y = stats.dgamma.entropy(x)
+        for i in range(len(y)):
+            assert y[i] == stats.dgamma.entropy(x[i])
 
 class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
