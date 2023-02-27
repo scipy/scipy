@@ -12996,22 +12996,30 @@ add_newdoc("xlogy",
     Examples
     --------
     
-    Compute the function with x and y as arrays:
+    Lets see how we can use the function to calculate the following sum: 
+    
+    .. math:: Z = \sum_{j=0}^n x_j * log(y_j),
+    
+    using x and y as input arrays.
     
     >>> from scipy.special import xlogy
     >>> import numpy as np
-    >>> z = xlogy(np.array([1, 3, 5]), np.array([10, 30, 50]))
-    >>> z
+    >>> Z = xlogy(np.array([1, 3, 5]), np.array([10, 30, 50]))
+    >>> Z
     array([ 2.30258509, 10.20359214, 19.56011503])
-    >>> z.sum()
+    >>> Z.sum()
     32.06629226512124
     
-    Compute the function with x and y as scalars:
+    If the function is called with x and y as scalar inputs it will simply
+    produce a scalar output as defined by the following equation:
+    
+    .. math:: x * log(y)
     
     >>> xlogy(10, 10)
     23.02585092994046
     
-    Compute the function with x as 0 and y as an array:
+    If the input x to the function is 0 and y is well defined the result
+    will always be 0 as shown by the following example:
     
     >>> xlogy(0, np.array([20, 40]))
     array([0., 0.])
