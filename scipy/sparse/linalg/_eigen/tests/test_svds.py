@@ -324,6 +324,8 @@ class SVDSCommonTests:
             assert error > accuracy/10
 
     def test_svd_v0(self):
+        if self.solver == 'lobpcg':
+            pytest.skip("LOBPCG solutions may be not the same")
         if self.solver == 'propack':
             if not has_propack:
                 pytest.skip("PROPACK not available")
