@@ -5,7 +5,7 @@ import numpy as np
 from scipy import stats
 from scipy import special as sc
 from ._continuous_distns import _distn_names
-from ._qmc import check_random_state
+from ._qmc import check_random_state, Halton, QMCEngine
 from ._unuran.unuran_wrapper import NumericalInversePolynomial
 
 
@@ -394,14 +394,14 @@ def _validate_qmc_input(qmc_engine, d, seed):
     # Input validation for `qmc_engine` and `d`
     # Error messages for invalid `d` are raised by QMCEngine
     # we could probably use a stats.qmc.check_qrandom_state
-    if isinstance(qmc_engine, stats.qmc.QMCEngine):
+    if isinstance(qmc_engine, QMCEngine):
         if d is not None and qmc_engine.d != d:
             message = "`d` must be consistent with dimension of `qmc_engine`."
             raise ValueError(message)
         d = qmc_engine.d if d is None else d
     elif qmc_engine is None:
         d = 1 if d is None else d
-        qmc_engine = stats.qmc.Halton(d, seed=seed)
+        qmc_engine = Halton(d, seed=seed)
     else:
         message = (
             "`qmc_engine` must be an instance of "
