@@ -689,14 +689,11 @@ class beta_gen(rv_continuous):
         return _boost._beta_sf(x, a, b)
 
     def _isf(self, x, a, b):
-        with warnings.catch_warnings():
-            # See gh-14901
-            message = "overflow encountered in _beta_isf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _boost._beta_isf(x, a, b)
 
     def _ppf(self, q, a, b):
-        with warnings.catch_warnings():
+        with np.errstate(over='ignore'):  # see gh-17432
             message = "overflow encountered in _beta_ppf"
             warnings.filterwarnings('ignore', message=message)
             return _boost._beta_ppf(q, a, b)
@@ -6765,35 +6762,31 @@ class ncx2_gen(rv_continuous):
 
     def _pdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        with warnings.catch_warnings():
-            message = "overflow encountered in _ncx2_pdf"
-            warnings.filterwarnings("ignore", message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_pdf,
                               f2=lambda x, df, _: chi2._pdf(x, df))
 
     def _cdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_cdf,
-                          f2=lambda x, df, _: chi2._cdf(x, df))
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_cdf,
+                              f2=lambda x, df, _: chi2._cdf(x, df))
 
     def _ppf(self, q, df, nc):
         cond = np.ones_like(q, dtype=bool) & (nc != 0)
-        with warnings.catch_warnings():
-            message = "overflow encountered in _ncx2_ppf"
-            warnings.filterwarnings("ignore", message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _lazywhere(cond, (q, df, nc), f=_boost._ncx2_ppf,
                               f2=lambda x, df, _: chi2._ppf(x, df))
 
     def _sf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_sf,
-                          f2=lambda x, df, _: chi2._sf(x, df))
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_sf,
+                              f2=lambda x, df, _: chi2._sf(x, df))
 
     def _isf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        with warnings.catch_warnings():
-            message = "overflow encountered in _ncx2_isf"
-            warnings.filterwarnings("ignore", message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_isf,
                               f2=lambda x, df, _: chi2._isf(x, df))
 
@@ -6875,13 +6868,15 @@ class ncf_gen(rv_continuous):
         return _boost._ncf_cdf(x, dfn, dfd, nc)
 
     def _ppf(self, q, dfn, dfd, nc):
-        return _boost._ncf_ppf(q, dfn, dfd, nc)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._ncf_ppf(q, dfn, dfd, nc)
 
     def _sf(self, x, dfn, dfd, nc):
         return _boost._ncf_sf(x, dfn, dfd, nc)
 
     def _isf(self, x, dfn, dfd, nc):
-        return _boost._ncf_isf(x, dfn, dfd, nc)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._ncf_isf(x, dfn, dfd, nc)
 
     def _munp(self, n, dfn, dfd, nc):
         val = (dfn * 1.0/dfd)**n
@@ -7068,22 +7063,26 @@ class nct_gen(rv_continuous):
         return np.clip(Px, 0, None)
 
     def _cdf(self, x, df, nc):
-        return np.clip(_boost._nct_cdf(x, df, nc), 0, 1)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return np.clip(_boost._nct_cdf(x, df, nc), 0, 1)
 
     def _ppf(self, q, df, nc):
-        return _boost._nct_ppf(q, df, nc)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._nct_ppf(q, df, nc)
 
     def _sf(self, x, df, nc):
-        return np.clip(_boost._nct_sf(x, df, nc), 0, 1)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return np.clip(_boost._nct_sf(x, df, nc), 0, 1)
 
     def _isf(self, x, df, nc):
-        return _boost._nct_isf(x, df, nc)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._nct_isf(x, df, nc)
 
     def _stats(self, df, nc, moments='mv'):
         mu = _boost._nct_mean(df, nc)
         mu2 = _boost._nct_variance(df, nc)
         g1 = _boost._nct_skewness(df, nc) if 's' in moments else None
-        g2 = _boost._nct_kurtosis_excess(df, nc)-3 if 'k' in moments else None
+        g2 = _boost._nct_kurtosis_excess(df, nc) if 'k' in moments else None
         return mu, mu2, g1, g2
 
 
