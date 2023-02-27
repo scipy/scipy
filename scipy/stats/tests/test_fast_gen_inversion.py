@@ -181,7 +181,8 @@ def test_support(distname, args, expected):
     # (i.e., the support of beta is (0,1), while betaprime is (0, inf))
     rng = FastGeneratorInversion(distname, args)
     assert_array_equal(rng.support(), expected)
-    rng.set_loc_scale(loc=1, scale=2)
+    rng.loc = 1
+    rng.scale = 2
     assert_array_equal(rng.support(), 1 + 2*np.array(expected))
 
 
@@ -191,7 +192,8 @@ def test_support_truncation(distname, args):
     # similar test for truncation
     rng = FastGeneratorInversion(distname, args, domain=(0.5, 0.7))
     assert_array_equal(rng.support(), (0.5, 0.7))
-    rng.set_loc_scale(loc=1, scale=2)
+    rng.loc = 1
+    rng.scale = 2
     assert_array_equal(rng.support(), (1 + 2 * 0.5, 1 + 2 * 0.7))
 
 
@@ -220,7 +222,8 @@ def test_non_rvs_methods_with_domain():
     assert_allclose(rng.isf(p), trunc_norm.isf(p))
     assert_allclose(rng.ppf(p), trunc_norm.ppf(p))
     loc, scale = 2, 3
-    rng.set_loc_scale(loc=loc, scale=scale)
+    rng.loc = 2
+    rng.scale = 3
     trunc_norm = stats.truncnorm(2.3, 3.2, loc=loc, scale=scale)
     x = np.array(x) * scale + loc
     assert_allclose(rng.pdf(x), trunc_norm.pdf(x))
@@ -234,7 +237,8 @@ def test_non_rvs_methods_with_domain():
     # in that case, it is important to use the correct domain since beta
     # is a transformation of betaprime which has a different support
     rng = FastGeneratorInversion('beta', (2.5, 3.5), domain=(0.3, 0.7))
-    rng.set_loc_scale(loc=2, scale=2.5)
+    rng.loc = 2
+    rng.scale = 2.5
     # the support is 2.75, , 3.75 (2 + 2.5 * 0.3, 2 + 2.5 * 0.7)
     assert_array_equal(rng.support(), (2.75, 3.75))
     x = np.array([2.74, 2.76, 3.74, 3.76])
@@ -266,7 +270,8 @@ def test_non_rvs_methods_without_domain():
     assert_allclose(rng.isf(p), norm_dist.isf(p))
     assert_allclose(rng.ppf(p), norm_dist.ppf(p))
     loc, scale = 0.5, 1.3
-    rng.set_loc_scale(loc=loc, scale=scale)
+    rng.loc = loc
+    rng.scale = scale
     norm_dist = stats.norm(loc=loc, scale=scale)
     assert_allclose(rng.pdf(x), norm_dist.pdf(x))
     assert_allclose(rng.cdf(x), norm_dist.cdf(x))
@@ -305,15 +310,17 @@ def test_domain_argus_large_chi():
     assert stats.cramervonmises(r, lambda x: cdf(x) / prob).pvalue > 0.05
 
 
-def test_set_loc_scale():
+def test_setting_loc_scale():
     rng = FastGeneratorInversion("norm", random_state=765765864)
     r1 = rng.rvs(size=1000)
-    rng.set_loc_scale(loc=3.0, scale=2.5)
+    rng.loc = 3.0
+    rng.scale = 2.5
     r2 = rng.rvs(1000)
     # rescaled r2 should be again standard normal
     assert stats.cramervonmises_2samp(r1, (r2 - 3) / 2.5).pvalue > 0.05
     # reset values to default loc=0, scale=1
-    rng.set_loc_scale()
+    rng.loc = 0
+    rng.scale = 1
     r2 = rng.rvs(1000)
     assert stats.cramervonmises_2samp(r1, r2).pvalue > 0.05
 

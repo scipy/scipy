@@ -6,6 +6,7 @@ from scipy import stats
 from scipy import special as sc
 from ._continuous_distns import _distn_names
 from ._qmc import check_random_state
+from ._unuran.unuran_wrapper import NumericalInversePolynomial
 
 
 __all__ = ['FastGeneratorInversion']
@@ -442,7 +443,7 @@ class FastGeneratorInversion:
         truncated, and the domain is inferred from the support of the
         distribution.
     loc : float, optional
-        The location parameters. Note that only floats and no arrays are
+        The location parameter. Note that only floats and no arrays are
         allowed. The default is 0.
     scale : float, optional
         The scale parameter. Note that an array of floatsis not allowed.
@@ -469,9 +470,13 @@ class FastGeneratorInversion:
 
     Attributes
     ----------
+    loc : float
+        The location parameter.
     random_state : {`numpy.random.Generator`, `numpy.random.RandomState`}
         The random state used in relevant methods like `rvs` (unless
         another `random_state` is passed as an argument to these methods).
+    scale : float
+        The scale parameter.
 
     Methods
     -------
@@ -484,7 +489,6 @@ class FastGeneratorInversion:
     ppf_fast
     qrvs
     rvs
-    set_loc_scale
     support
     sf
 
@@ -529,6 +533,12 @@ class FastGeneratorInversion:
     one aims to sample standard normal random variates from
     the interval (2, 4), this can be easily achieved by using the parameter
     `domain`.
+
+    The location and scale can be reset without having to rerun the setup
+    step to create the generator that is used for sampling. The relation
+    of the distribution `Y` with `loc` and `scale` to the standard
+    distribution `X` (i.e., ``loc=0`` and ``scale=1``) is given by
+    ``Y = loc + scale * X``.
 
     References
     ----------
@@ -578,7 +588,8 @@ class FastGeneratorInversion:
     Note that the location and scale can be changed without instantiating a
     new generator:
 
-    >>> gamma_dist.set_loc_scale(loc=2, scale=3)
+    >>> gamma_dist.loc = 2
+    >>> gamma_dist.scale = 3
     >>> r = gamma_dist.rvs(size=1000)
 
     The mean should be approximately 2 + 3*1.5 = 6.5.
@@ -724,10 +735,34 @@ class FastGeneratorInversion:
         else:
             raise ValueError(f"Unknown distname: {distname}")
 
+    @property
+    def loc(self):
+        return self._frozendist.kwds.get("loc", 0)
+
+    @loc.setter
+    def loc(self, loc):
+        if not np.isscalar(loc):
+            raise ValueError("loc must be scalar.")
+        self._frozendist.kwds["loc"] = loc
+        # update the adjusted domain that depends on loc and scale
+        self._set_domain_adj()
+
+    @property
+    def scale(self):
+        return self._frozendist.kwds.get("scale", 0)
+
+    @scale.setter
+    def scale(self, scale):
+        if not np.isscalar(scale):
+            raise ValueError("scale must be scalar.")
+        self._frozendist.kwds["scale"] = scale
+        # update the adjusted domain that depends on loc and scale
+        self._set_domain_adj()
+
     def _set_domain_adj(self):
         """ Adjust the domain based on loc and scale. """
-        loc = self._frozendist.kwds.get("loc", 0)
-        scale = self._frozendist.kwds.get("scale", 1)
+        loc = self.loc
+        scale = self.scale
         lb = self._domain[0] * scale + loc
         ub = self._domain[1] * scale + loc
         self._domain_adj = (lb, ub)
@@ -792,8 +827,6 @@ class FastGeneratorInversion:
         overwritten. Hence, a different stream of random numbers is generated
         even if the same seed is used.
         """
-        loc = self._frozendist.kwds.get("loc", 0)
-        scale = self._frozendist.kwds.get("scale", 1)
         if random_state is None:
             # use the random_state that has been set when self.rng was created
             u = self.random_state.uniform(size=size)
@@ -805,7 +838,7 @@ class FastGeneratorInversion:
         r = self.rng.ppf(u)
         if self._rvs_transform is not None:
             r = self._rvs_transform(r, *self._frozendist.args)
-        return loc + scale * r
+        return self.loc + self.scale * r
 
     def ppf_fast(self, q):
         """
@@ -833,8 +866,6 @@ class FastGeneratorInversion:
 
         Note that this PPF is designed to generate random samples.
         """
-        loc = self._frozendist.kwds.get("loc", 0)
-        scale = self._frozendist.kwds.get("scale", 1)
         q = np.asarray(q)
         if self._mirror_uniform:
             x = self.rng.ppf(1 - q)
@@ -842,7 +873,7 @@ class FastGeneratorInversion:
             x = self.rng.ppf(q)
         if self._rvs_transform is not None:
             x = self._rvs_transform(x, *self._frozendist.args)
-        return scale * x + loc
+        return self.scale * x + self.loc
 
     def qrvs(self, size=None, d=None, qmc_engine=None):
         """
@@ -910,8 +941,6 @@ class FastGeneratorInversion:
                 tuple_size = tuple(size)
         except TypeError:
             tuple_size = (size,)
-        loc = self._frozendist.kwds.get("loc", 0)
-        scale = self._frozendist.kwds.get("scale", 1)
         # we do not use rng.qrvs directly since we need to be
         # able to apply the ppf to 1 - u
         N = 1 if size is None else np.prod(size)
@@ -928,66 +957,7 @@ class FastGeneratorInversion:
                 qrvs = qrvs.reshape(tuple_size)
             else:
                 qrvs = qrvs.reshape(tuple_size + (d,))
-        return loc + scale * qrvs
-
-    def set_loc_scale(self, loc=0, scale=1):
-        """ Reset the location or scale.
-
-        Parameters
-        ----------
-        loc : float, optional
-            The location. The default is 0.
-
-        scale : float, optional
-            The scale. The default is 1.
-
-        Returns
-        -------
-        None
-
-        Notes
-        -----
-        The location and scale can be reset without having to rerun the setup
-        step to create the generator that is used for sampling. The relation
-        of the distribution `Y` with `loc` and `scale` to the standard
-        distribution `X` (i.e., ``loc=0`` and ``scale=1``) is given by
-        ``Y = loc + scale * X``.
-
-        Examples
-        --------
-        >>> from scipy.stats.sampling import FastGeneratorInversion
-
-        Let's sample from the usual Gamma distribution:
-
-        >>> gamma_dist = FastGeneratorInversion('gamma', (1.5, ))
-        >>> r = gamma_dist.rvs(size=1000)
-
-        The mean should be approximately equal to the shape parameter 1.5:
-
-        >>> r.mean()
-        1.52423591130436  # may vary
-
-        Note that the location and scale can be changed without instantiating a
-        new generator:
-
-        >>> gamma_dist.set_loc_scale(loc=2, scale=3)
-        >>> r = gamma_dist.rvs(size=1000)
-
-        The mean should be approximately 2 + 3*1.5 = 6.5.
-
-        >>> r.mean()
-        6.399549295242894  # may vary
-
-        """
-        if not np.isscalar(loc):
-            raise ValueError("loc must be scalar.")
-        if not np.isscalar(scale):
-            raise ValueError("scale must be scalar.")
-
-        self._frozendist.kwds["loc"] = loc
-        self._frozendist.kwds["scale"] = scale
-        # update the adjusted domain that depends on loc and scale
-        self._set_domain_adj()
+        return self.loc + self.scale * qrvs
 
     def evaluate_error(self, size=100000, random_state=None, x_error=False):
         """
@@ -1134,7 +1104,7 @@ class FastGeneratorInversion:
 
         Shift the distribution:
 
-        >>> d_norm.set_loc_scale(loc=2.5)
+        >>> d_norm.loc = 2.5
         >>> d_norm.support()
         (2.5, 3.5)
 
