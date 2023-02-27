@@ -467,10 +467,12 @@ class LinearOperator:
         else:
             x = np.asarray(x)
 
+            # We use transpose instead of rmatvec/rmatmat to avoid
+            # unnecessary complex conjugation if possible.
             if x.ndim == 1 or x.ndim == 2 and x.shape[0] == 1:
-                return self.rmatvec(x.T.conj()).T.conj()
+                return self.T.matvec(x.T).T
             elif x.ndim == 2:
-                return self.rmatmat(x.T.conj()).T.conj()
+                return self.T.matmat(x.T).T
             else:
                 raise ValueError('expected 1-d or 2-d array or matrix, got %r'
                                  % x)
