@@ -12988,8 +12988,33 @@ add_newdoc("xlogy",
 
     Notes
     -----
-
+    
+    The log function used in the computation is the natural log.
+    
     .. versionadded:: 0.13.0
+    
+    Examples
+    --------
+    
+    Compute the function with x and y as arrays:
+    
+    >>> from scipy.special import xlogy
+    >>> import numpy as np
+    >>> z = xlogy(np.array([1, 3, 5]), np.array([10, 30, 50]))
+    >>> z
+    array([ 2.30258509, 10.20359214, 19.56011503])
+    >>> z.sum()
+    32.06629226512124
+    
+    Compute the function with x and y as scalars:
+    
+    >>> xlogy(10, 10)
+    23.02585092994046
+    
+    Compute the function with x as 0 and y as an array:
+    
+    >>> xlogy(0, np.array([20, 40]))
+    array([0., 0.])
 
     """)
 
