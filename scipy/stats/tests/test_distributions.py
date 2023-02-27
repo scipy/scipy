@@ -5521,6 +5521,10 @@ class TestNct:
         assert_allclose(nct_mean, expected_stats[0], rtol=1e-10)
         assert_allclose(nct_stats, expected_stats, rtol=1e-9)
 
+    def test_cdf_large_nc(self):
+        # gh-17916 reported a crash with large `nc` values
+        assert_allclose(stats.nct.cdf(2, 2, float(2**16)), 0)
+
 
 class TestRecipInvGauss:
 
