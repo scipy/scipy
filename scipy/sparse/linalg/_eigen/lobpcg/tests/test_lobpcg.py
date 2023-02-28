@@ -109,7 +109,7 @@ def test_b_orthonormalize(n, m, dtype):
     X = np.copy(Xcopy)
     Xo1, BXo1, _, _ = _b_orthonormalize(B, X)
     assert_equal(Xo, Xo1)
-    assert_equal(BXo, BXo1))
+    assert_equal(BXo, BXo1)
     # Check in-place.
     assert_equal(X, Xo1)
     assert_equal(id(X), id(Xo1))
