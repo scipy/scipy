@@ -368,6 +368,34 @@ class TestBinom:
             assert_equal(stats.binom(n=2, p=0).mean(), 0)
             assert_equal(stats.binom(n=2, p=0).std(), 0)
 
+    def test_ppf_p1(self):
+        # Check that gh-17388 is resolved: PPF == n when p = 1
+        n = 4
+        assert stats.binom.ppf(q=0.3, n=n, p=1.0) == n
+
+    def test_pmf_poisson(self):
+        # Check that gh-17146 is resolved: binom -> poisson
+        n = 1541096362225563.0
+        p = 1.0477878413173978e-18
+        x = np.arange(3)
+        res = stats.binom.pmf(x, n=n, p=p)
+        ref = stats.poisson.pmf(x, n * p)
+        assert_allclose(res, ref, atol=1e-16)
+
+    def test_pmf_cdf(self):
+        # Check that gh-17809 is resolved: binom.pmf(0) ~ binom.cdf(0)
+        n = 25.0 * 10 ** 21
+        p = 1.0 * 10 ** -21
+        r = 0
+        res = stats.binom.pmf(r, n, p)
+        ref = stats.binom.cdf(r, n, p)
+        assert_allclose(res, ref, atol=1e-16)
+
+    def test_pmf_gh15101(self):
+        # Check that gh-15101 is resolved (no divide warnings when p~1, n~oo)
+        res = stats.binom.pmf(3, 2000, 0.999)
+        assert_allclose(res, 0, atol=1e-16)
+
 
 class TestArcsine:
 
@@ -2556,11 +2584,13 @@ class TestInvgauss:
     # mu = mp.mpf(1e-2)
     # ref = (1/2 * mp.log(2 * mp.pi * mp.e * mu**3)
     #        - 3/2* mp.exp(2/mu) * mp.e1(2/mu))
-    @pytest.mark.parametrize("mu, ref", [(1e-2, -5.496279615262233),
-                                         (1e8, 3.3244822568873474),
-                                         (1e100, 3.3244828013968899)])
+    @pytest.mark.parametrize("mu, ref", [(2e-8, -25.172361826883957),
+                                         (1e-3, -8.943444010642972),
+                                         (1e-2, -5.4962796152622335),
+                                         (1e8, 3.3244822568873476),
+                                         (1e100, 3.32448280139689)])
     def test_entropy(self, mu, ref):
-        assert_allclose(stats.invgauss.entropy(mu), ref)
+        assert_allclose(stats.invgauss.entropy(mu), ref, rtol=5e-14)
 
 
 class TestLaplace:
@@ -3529,7 +3559,6 @@ class TestSkellam:
 
         assert_almost_equal(stats.skellam.pmf(k, mu1, mu2), skpmfR, decimal=15)
 
-    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_cdf(self):
         # comparison to R, only 5 decimals
         k = numpy.arange(-10, 15)
@@ -3550,6 +3579,12 @@ class TestSkellam:
                     9.9131672394792536e-001])
 
         assert_almost_equal(stats.skellam.cdf(k, mu1, mu2), skcdfR, decimal=5)
+
+    def test_extreme_mu2(self):
+        # check that crash reported by gh-17916 large mu2 is resolved
+        x, mu1, mu2 = 0, 1, 4820232647677555.0
+        assert_allclose(stats.skellam.pmf(x, mu1, mu2), 0, atol=1e-16)
+        assert_allclose(stats.skellam.cdf(x, mu1, mu2), 1, atol=1e-16)
 
 
 class TestLognorm:
@@ -5358,7 +5393,6 @@ class TestExpect:
         res_l = stats.logser.expect(lambda k: k, args=(p,), loc=loc)
         assert_allclose(res_l, res_0 + loc, atol=1e-15)
 
-    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_skellam(self):
         # Use a discrete distribution w/ bi-infinite support. Compute two first
         # moments and compare to known values (cf skellam.stats)
@@ -6895,7 +6929,6 @@ def test_distribution_too_many_args():
     stats.ncf.pdf(x, 3, 4, 5, 6, 1.0)  # 3 args, plus loc/scale
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_tails_ticket_955():
     # Trac #955 -- check that the cdf computed by special functions
     # matches the integrated pdf
@@ -6949,14 +6982,12 @@ def test_ncx2_zero_nc_rvs():
     assert_allclose(result, expected, atol=1e-15)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_gh12731():
     # test that gh-12731 is resolved; previously these were all 0.5
     nc = 10**np.arange(5, 10)
     assert_equal(stats.ncx2.cdf(1e4, df=1, nc=nc), 0)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_gh8665():
     # test that gh-8665 is resolved; previously this tended to nonzero value
     x = np.array([4.99515382e+00, 1.07617327e+01, 2.31854502e+01,
