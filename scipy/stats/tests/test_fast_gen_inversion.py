@@ -34,20 +34,35 @@ def test_random_state():
     # fixed seed
     gen = FastGeneratorInversion("norm", random_state=68734509)
     x1 = gen.rvs(size=10)
-    x2 = gen.rvs(size=10, random_state=68734509)
+    gen.random_state = 68734509
+    x2 = gen.rvs(size=10)
     assert_array_equal(x1, x2)
 
     # Generator
-    gen = FastGeneratorInversion("norm", random_state=np.random.default_rng(20375857))
+    urng = np.random.default_rng(20375857)
+    gen = FastGeneratorInversion("norm", random_state=urng)
     x1 = gen.rvs(size=10)
-    x2 = gen.rvs(size=10, random_state=np.random.default_rng(20375857))
+    gen.random_state = np.random.default_rng(20375857)
+    x2 = gen.rvs(size=10)
     assert_array_equal(x1, x2)
 
     # RandomState
-    gen = FastGeneratorInversion("norm", random_state=np.random.RandomState(2364))
+    urng = np.random.RandomState(2364)
+    gen = FastGeneratorInversion("norm", random_state=urng)
     x1 = gen.rvs(size=10)
-    x2 = gen.rvs(size=10, random_state=np.random.RandomState(2364))
+    gen.random_state = np.random.RandomState(2364)
+    x2 = gen.rvs(size=10)
     assert_array_equal(x1, x2)
+
+    # if evaluate_error is called, it must not interfere with the random_state
+    # used by rvs
+    gen = FastGeneratorInversion("norm", random_state=68734509)
+    x1 = gen.rvs(size=10)
+    err = gen.evaluate_error(size=5)
+    x2 = gen.rvs(size=10)
+    gen.random_state = 68734509
+    x3 = gen.rvs(size=20)
+    assert_array_equal(x2, x3[10:])
 
 
 dists_with_params = [
@@ -95,8 +110,8 @@ def test_rvs_and_ppf(distname, args):
     urng = np.random.default_rng(9807324628097097)
     rng1 = getattr(stats, distname)(*args)
     rvs1 = rng1.rvs(size=500, random_state=urng)
-    rng2 = FastGeneratorInversion(distname, args)
-    rvs2 = rng2.rvs(size=500, random_state=urng)
+    rng2 = FastGeneratorInversion(distname, args, random_state=urng)
+    rvs2 = rng2.rvs(size=500)
     assert stats.cramervonmises_2samp(rvs1, rvs2).pvalue > 0.01
 
     # check ppf
@@ -149,8 +164,9 @@ def test_evaluate_error_inputs():
 
 def test_rvs_ppf_loc_scale():
     loc, scale = 3.5, 2.3
-    rng = FastGeneratorInversion("norm", loc=loc, scale=scale)
-    r = rng.rvs(size=1000, random_state=1234)
+    rng = FastGeneratorInversion("norm", loc=loc, scale=scale,
+                                 random_state=1234)
+    r = rng.rvs(size=1000)
     r_rescaled = (r - loc) / scale
     assert stats.cramervonmises(r_rescaled, "norm").pvalue > 0.01
     q = [0.001, 0.1, 0.5, 0.9, 0.999]
@@ -302,7 +318,8 @@ def test_domain_argus_large_chi():
     # transformed. this is a test to ensure that the transformation works
     chi, lb, ub = 5.5, 0.25, 0.75
     rng = FastGeneratorInversion("argus", (chi,), domain=(lb, ub))
-    r = rng.rvs(size=500, random_state=4574)
+    rng.random_state = 4574
+    r = rng.rvs(size=500)
     assert lb <= r.min() < r.max() <= ub
     # perform goodness of fit test with conditional cdf
     cdf = stats.argus(chi).cdf

@@ -736,6 +736,14 @@ class FastGeneratorInversion:
             raise ValueError(f"Unknown distname: {distname}")
 
     @property
+    def random_state(self):
+        return self._random_state
+
+    @random_state.setter
+    def random_state(self, random_state):
+        self._random_state = check_random_state(random_state)
+
+    @property
     def loc(self):
         return self._frozendist.kwds.get("loc", 0)
 
@@ -794,7 +802,7 @@ class FastGeneratorInversion:
 
         return CustomDistPINV(cfg["pdf"], args)
 
-    def rvs(self, size=None, random_state=None):
+    def rvs(self, size=None):
         """
         Sample from the distribution using a method from
         `scipy.stats.sampling`.
@@ -804,17 +812,6 @@ class FastGeneratorInversion:
         size : int or tuple, optional
             The shape of samples. Default is ``None`` in which case a scalar
             sample is returned.
-        random_state : {None, int, `numpy.random.Generator`,
-                        `numpy.random.RandomState`}, optional
-
-            A NumPy random number generator or seed for the underlying NumPy
-            random number generator used to generate the stream of uniform
-            random numbers.
-            If `random_state` is None, it uses ``self.random_state``.
-            If `random_state` is an int,
-            ``np.random.default_rng(random_state)`` is used.
-            If `random_state` is already a ``Generator`` or ``RandomState``
-            instance then that instance is used.
 
         Returns
         -------
@@ -827,12 +824,7 @@ class FastGeneratorInversion:
         overwritten. Hence, a different stream of random numbers is generated
         even if the same seed is used.
         """
-        if random_state is None:
-            # use the random_state that has been set when self.rng was created
-            u = self.random_state.uniform(size=size)
-        else:
-            urng = check_random_state(random_state)
-            u = urng.uniform(size=size)
+        u = self.random_state.uniform(size=size)
         if self._mirror_uniform:
             u = 1 - u
         r = self.rng.ppf(u)
@@ -1051,23 +1043,15 @@ class FastGeneratorInversion:
         """
         if not isinstance(size, (numbers.Integral, np.integer)):
             raise ValueError("size must be an integer.")
-        if random_state is None:
-            urng = self.random_state
-        else:
-            urng = check_random_state(random_state)
-        if isinstance(urng, np.random.RandomState):
-            state = urng.get_state()
-        elif isinstance(urng, np.random.Generator):
-            state = urng.bit_generator.state
-        else:
-            raise ValueError("Invalid random_state object")
-        x = self.rvs(size=size, random_state=urng)
-        # reset urng to get the same pseudo-uniform numbers used to create x
-        if isinstance(urng, np.random.RandomState):
-            urng.set_state(state)
-        elif isinstance(urng, np.random.Generator):
-            urng.bit_generator.state = state
+        # urng will be used to draw the samples for testing the error
+        # it must not interfere with self.random_state. therefore, do not
+        # call self.rvs, but draw uniform random numbers and apply
+        # self.ppf_fast (note: like in rvs, consider self._mirror_uniform)
+        urng = check_random_state(random_state)
         u = urng.uniform(size=size)
+        if self._mirror_uniform:
+            u = 1 - u
+        x = self.ppf_fast(u)
         uerr = np.max(np.abs(self.cdf(x) - u))
         if not x_error:
             return uerr, np.nan
