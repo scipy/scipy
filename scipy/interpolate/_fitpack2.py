@@ -1145,6 +1145,9 @@ class BivariateSpline(_BivariateSplineBase):
         ----------
         xi, yi : array_like
             Input coordinates. Standard Numpy broadcasting is obeyed.
+            
+            Note that the axis ordering is inverted relative to
+            the output of meshgrid.
         dx : int, optional
             Order of x-derivative
 
@@ -1164,8 +1167,14 @@ class BivariateSpline(_BivariateSplineBase):
         ----------
         xa, xb : float
             The end-points of the x integration interval.
+            
+            Note that the axis ordering is inverted relative to
+            the output of meshgrid.
         ya, yb : float
             The end-points of the y integration interval.
+            
+            Note that the axis ordering is inverted relative to
+            the output of meshgrid.
 
         Returns
         -------
@@ -1576,6 +1585,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
             If `grid` is True: evaluate spline at the grid points
             defined by the coordinate arrays theta, phi. The arrays
             must be sorted to increasing order.
+            
+            Note that the axis ordering is inverted relative to
+            the output of meshgrid.
         dtheta : int, optional
             Order of theta-derivative
 
@@ -1611,6 +1623,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
         ----------
         theta, phi : array_like
             Input coordinates. Standard Numpy broadcasting is obeyed.
+            
+            Note that the axis ordering is inverted relative to
+            the output of meshgrid.
         dtheta : int, optional
             Order of theta-derivative
 
