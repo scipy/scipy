@@ -85,7 +85,7 @@ def test_MikotaPair():
 @pytest.mark.parametrize("n", [32, 128])
 @pytest.mark.parametrize("m", [1, 2, 4, 32])
 @pytest.mark.parametrize("dtype", (float, complex, np.float32))
-def test_b_orthonormalize(n, dtype):
+def test_b_orthonormalize(n, m, dtype):
     """Test orthogonalization by Cholesky.
     """
     rnd = np.random.RandomState(0)
