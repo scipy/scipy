@@ -14,6 +14,7 @@ from scipy.linalg import eig, eigh, toeplitz, orth
 from scipy.sparse import spdiags, diags, eye, csr_matrix
 from scipy.sparse.linalg import eigs, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
+from scipy.sparse.linalg._eigen.lobpcg import _b_orthonormalize
 
 _IS_32BIT = (sys.maxsize < 2**32)
 
@@ -79,6 +80,22 @@ def test_ElasticRod():
 def test_MikotaPair():
     A, B = MikotaPair(20)
     compare_solutions(A, B, 2)
+
+
+@pytest.mark.parametrize("n", [32, 128])
+@pytest.mark.parametrize("m", [1, 2, 4, 32])
+@pytest.mark.parametrize("dtype", (float, complex, np.float32))
+def test_b_orthonormalize(n, dtype):
+    """Test orthogonalization by Cholesky.
+    """
+    rnd = np.random.RandomState(0)
+    X = rnd.standard_normal((n, m)).astype(dtype)
+    vals = np.arange(1, n+1, dtype=float)
+    B = diags([vals], [0], (n, n))
+    BX = B @ X
+    aux = _b_orthonormalize(B, X, BX)
+    Xo, BXo, invR, normal = aux
+    assert_allclose([1], [1])
 
 
 @pytest.mark.filterwarnings("ignore:Exited at iteration 0")
