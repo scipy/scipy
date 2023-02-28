@@ -70,7 +70,7 @@ def configuration(parent_package='',top_path=None):
     headers = ['*.h', join('cephes', '*.h')]
     ufuncs_src = ['_ufuncs.c', 'sf_error.c',
                   'amos_wrappers.c', 'cdf_wrappers.c', 'specfun_wrappers.c',
-                  '_cosine.c']
+                  '_cosine.c', 'scaled_exp1.c']
 
     ufuncs_dep = (
         headers

@@ -219,6 +219,7 @@ mach_sources = [
 
 ufuncs_sources = [
   '_cosine.c',
+  'scaled_exp1.c',
   'amos_wrappers.c',
   'cdf_wrappers.c',
   'specfun_wrappers.c',
@@ -393,6 +394,7 @@ py3.extension_module('cython_special',
   [
     uf_cython_gen.process(cython_special[6]),  # cython_special.pyx
     '_cosine.c',
+    'scaled_exp1.c',
     'amos_wrappers.c',
     'cdf_wrappers.c',
     'specfun_wrappers.c',
