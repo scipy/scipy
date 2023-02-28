@@ -12998,7 +12998,7 @@ add_newdoc("xlogy",
     
     Lets see how we can use the function to calculate the following sum: 
     
-    .. math:: Z = \sum_{j=0}^n x_j * log(y_j),
+    .. math:: Z = \\sum_{j=0}^n x_j * log(y_j)
     
     using x and y as input arrays.
     
