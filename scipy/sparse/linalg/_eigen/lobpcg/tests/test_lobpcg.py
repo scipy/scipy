@@ -86,16 +86,16 @@ def test_MikotaPair():
 @pytest.mark.parametrize("m", [1, 2, 4, 32])
 @pytest.mark.parametrize("dtype", (float, complex, np.float32))
 def test_b_orthonormalize(n, m, dtype):
-    """Test orthogonalization by Cholesky.
+    """Test B-orthogonalization by Cholesky.
     """
     rnd = np.random.RandomState(0)
     X = rnd.standard_normal((n, m)).astype(dtype)
     vals = np.arange(1, n+1, dtype=float)
     B = diags([vals], [0], (n, n))
     BX = B @ X
-    aux = _b_orthonormalize(B, X, BX)
-    Xo, BXo, invR, normal = aux
-    assert_allclose([1], [1])
+    Xo, BXo, _, _ = _b_orthonormalize(B, X, BX)
+    assert_allclose(B @ Xo, BXo)
+    assert_allclose(Xo.T.conj() @ B @ Xo, np.identity(m))
 
 
 @pytest.mark.filterwarnings("ignore:Exited at iteration 0")
