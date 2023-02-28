@@ -237,9 +237,9 @@ License: MIT
   For details, see scipy/optimize/_highs/LICENCE
 
 Name: Boost
-Files: scipy/_lib/boost/*
+Files: scipy/_lib/boost_math/*
 License: Boost Software License - Version 1.0
-  For details, see scipy/_lib/boost/LICENSE_1_0.txt
+  For details, see scipy/_lib/boost_math/LICENSE.txt
 
 Name: Biasedurn
 Files: scipy/stats/biasedurn/*

@@ -15,7 +15,6 @@
 # Build related files
 pyproject.toml  @rgommers
 setup.py  @rgommers @larsoner
-pavement.py  @tylerjereddy
 environment.yml  @rgommers
 
 # SciPy submodules (please keep in alphabetical order)
