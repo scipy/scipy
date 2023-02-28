@@ -2574,7 +2574,7 @@ class TestMultivariateHypergeom:
             # test for `n < 0`
             ([3, 4], [5, 10], -7, np.nan),
             # test for `x.sum() != n`
-            ([3, 3], [5, 10], 7, inp.inf)
+            ([3, 3], [5, 10], 7, -np.inf)
         ]
     )
     def test_logpmf(self, x, m, n, expected):
