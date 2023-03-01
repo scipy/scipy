@@ -82,7 +82,7 @@ def test_MikotaPair():
     compare_solutions(A, B, 2)
 
 
-def sign_align(A, B)
+def sign_align(A, B):
     """Align signs of columns of A match those of B.
     """
     return np.array([col_A * np.sign(col_A[0]) * np.sign(col_B[0])
