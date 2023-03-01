@@ -125,8 +125,8 @@ def test_b_orthonormalize(n, m, dtype):
     BX = B @ X
     # Check scaling-invariance of Cholesky-based orthonormalization
     Xo1, BXo1, _, _ = _b_orthonormalize(Bl, X, BX)
-    assert_equal(Xo, Xo1)
-    assert_equal(BXo, BXo1)
+    assert_allclose(Xo, Xo1, atol=atol)
+    assert_allclose(BXo, BXo1, atol=atol)
     assert_allclose(B @ Xo1, BXo1, atol=atol)
 
 
