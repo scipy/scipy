@@ -246,7 +246,7 @@ class betabinom_gen(rv_discrete):
             g1 *= (a + b + 2 * n) * (b - a)
             g1 /= (a + b + 2) * (a + b)
         if 'k' in moments:
-            g2 = a + b
+            g2 = (a + b).astype(e_p.dtype)
             g2 *= (a + b - 1 + 6 * n)
             g2 += 3 * a * b * (n - 2)
             g2 += 6 * n ** 2
