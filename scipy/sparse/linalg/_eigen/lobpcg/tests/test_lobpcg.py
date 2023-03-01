@@ -121,7 +121,7 @@ def test_b_orthonormalize(n, m, dtype):
     # Introduce column-scaling in X.
     X = np.copy(Xcopy)
     scaling = np.array(np.power(10, np.arange(m))).astype(dtype)
-    numpy.multiply(X, scaling, out=X)
+    np.multiply(X, scaling, out=X)
     BX = B @ X
     # Check scaling-invariance of Cholesky-based orthonormalization
     Xo1, BXo1, _, _ = _b_orthonormalize(Bl, X, BX)
