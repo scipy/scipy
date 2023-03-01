@@ -79,26 +79,27 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
     """in-place B-orthonormalize the given block vector using Cholesky."""
     type = blockVectorV.dtype
     normalization = np.ones(blockVectorV.shape[1], dtype = type)
-    if blockVectorBV is None and B is not None:
-        try:
-            blockVectorBV = B(blockVectorV)
-        except Exception as e:
-            if verbosityLevel:
-                warnings.warn(
-                    f"Secondary MatMul call failed with error\n"
-                    f"{e}\n",
-                    UserWarning, stacklevel=3
-                )
-                return None, None, None, normalization
-        if blockVectorBV.shape != blockVectorV.shape:
-            raise ValueError(
-                f"The shape {blockVectorV.shape} "
-                f"of the orthogonalized matrix not preserved\n"
-                f"and changed to {blockVectorBV.shape} "
-                f"after multiplying by the secondary matrix.\n"
-            )
-    else:
-        blockVectorBV = blockVectorV  # Shared data!!!
+    if blockVectorBV is None:
+       if B is not None:
+               try:
+                   blockVectorBV = B(blockVectorV)
+               except Exception as e:
+                   if verbosityLevel:
+                       warnings.warn(
+                           f"Secondary MatMul call failed with error\n"
+                           f"{e}\n",
+                           UserWarning, stacklevel=3
+                       )
+                       return None, None, None, normalization
+               if blockVectorBV.shape != blockVectorV.shape:
+                   raise ValueError(
+                       f"The shape {blockVectorV.shape} "
+                       f"of the orthogonalized matrix not preserved\n"
+                       f"and changed to {blockVectorBV.shape} "
+                       f"after multiplying by the secondary matrix.\n"
+                   )
+           else:
+               blockVectorBV = blockVectorV  # Shared data!!!
     VBV = blockVectorV.T.conj() @ blockVectorBV
     try:
         # VBV is a Cholesky factor from now on...
