@@ -63,8 +63,9 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
         standard-deviation of y, then a good `s` value should be found in
         the range ``(m-sqrt(2*m),m+sqrt(2*m))``, where m is the number of
         data points in x, y, and w.
-    t : int, optional
-        The knots needed for task=-1.
+    t : array, optional
+        The knots needed for ``task=-1``.
+        There must be at least ``2*k+2`` knots.
     full_output : int, optional
         If non-zero, then return optional outputs.
     nest : int, optional
