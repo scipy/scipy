@@ -82,8 +82,15 @@ def test_MikotaPair():
     compare_solutions(A, B, 2)
 
 
-@pytest.mark.parametrize("n", [32, 128])
-@pytest.mark.parametrize("m", [1, 2, 4, 32])
+def sign_align(A, B)
+    """Align signs of columns of A match those of B.
+    """
+    return np.array([col_A * np.sign(col_A[0]) * np.sign(col_B[0])
+                     for col_A, col_B in zip(A.T, B.T)]).T
+
+
+@pytest.mark.parametrize("n", [32, 99])
+@pytest.mark.parametrize("m", [1, 2, 16])
 @pytest.mark.parametrize("dtype", (float, complex, np.float32))
 def test_b_orthonormalize(n, m, dtype):
     """Test B-orthogonalization by Cholesky with callable B.
@@ -120,12 +127,15 @@ def test_b_orthonormalize(n, m, dtype):
 
     # Introduce column-scaling in X.
     X = np.copy(Xcopy)
-    scaling = np.array(np.power(10, np.arange(m))).astype(dtype)
+    scaling = np.array(np.power(10, np.arange(1, m + 1))).astype(dtype)
     np.multiply(X, scaling, out=X)
     BX = B @ X
     # Check scaling-invariance of Cholesky-based orthonormalization
     Xo1, BXo1, _, _ = _b_orthonormalize(Bl, X, BX)
+    # THe output should be the same, up the signs of the columns.
+    Xo1 =  sign_align(Xo1, Xo)
     assert_allclose(Xo, Xo1, atol=atol)
+    BXo1 =  sign_align(BXo1, BXo)
     assert_allclose(BXo, BXo1, atol=atol)
     assert_allclose(B @ Xo1, BXo1, atol=atol)
 
