@@ -86,7 +86,7 @@ def test_MikotaPair():
 @pytest.mark.parametrize("m", [1, 2, 4, 32])
 @pytest.mark.parametrize("dtype", (float, complex, np.float32))
 def test_b_orthonormalize(n, m, dtype):
-    """Test B-orthogonalization by Cholesky.
+    """Test B-orthogonalization by Cholesky with callable B.
     """
     atol = m * n * np.finfo(dtype).eps
     rnd = np.random.RandomState(0)
@@ -94,9 +94,10 @@ def test_b_orthonormalize(n, m, dtype):
     Xcopy = np.copy(X)
     vals = np.arange(1, n+1, dtype=float)
     B = diags([vals], [0], (n, n))
+    Bl = lambda v: B @ v
     BX = B @ X
 
-    Xo, BXo, _, _ = _b_orthonormalize(B, X, BX)
+    Xo, BXo, _, _ = _b_orthonormalize(Bl, X, BX)
     # Check in-place.
     assert_equal(X, Xo)
     assert_equal(id(X), id(Xo))
@@ -108,7 +109,7 @@ def test_b_orthonormalize(n, m, dtype):
     assert_allclose(Xo.T.conj() @ B @ Xo, np.identity(m), atol=atol)
     # Repear without BX in outputs
     X = np.copy(Xcopy)
-    Xo1, BXo1, _, _ = _b_orthonormalize(B, X)
+    Xo1, BXo1, _, _ = _b_orthonormalize(Bl, X)
     assert_equal(Xo, Xo1)
     assert_equal(BXo, BXo1)
     # Check in-place.
@@ -123,7 +124,7 @@ def test_b_orthonormalize(n, m, dtype):
     numpy.multiply(X, scaling, out=X)
     BX = B @ X
     # Check scaling-invariance of Cholesky-based orthonormalization
-    Xo1, BXo1, _, _ = _b_orthonormalize(B, X, BX)
+    Xo1, BXo1, _, _ = _b_orthonormalize(Bl, X, BX)
     assert_equal(Xo, Xo1)
     assert_equal(BXo, BXo1)
     assert_allclose(B @ Xo1, BXo1, atol=atol)
