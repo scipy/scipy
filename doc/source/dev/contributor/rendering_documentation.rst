@@ -219,7 +219,8 @@ Some examples:
 
 Self-contained examples
 ~~~~~~~~~~~~~~~~~~~~~~~
-Each "Example" section must be self-contained. This means that all imports
+Each "Example" section (both in docstrings and general documentation)
+must be self-contained. This means that all imports
 must be explicit, the data used must be defined, and the code should "just
 work" when copy-pasted into a fresh Python interpreter.
 
