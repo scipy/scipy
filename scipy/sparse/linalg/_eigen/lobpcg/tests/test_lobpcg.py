@@ -101,10 +101,9 @@ def test_b_orthonormalize(n, m, dtype):
     Xcopy = np.copy(X)
     vals = np.arange(1, n+1, dtype=float)
     B = diags([vals], [0], (n, n))
-    Bl = lambda v: B @ v
     BX = B @ X
 
-    Xo, BXo, _, _ = _b_orthonormalize(Bl, X, BX)
+    Xo, BXo, _, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
     # Check in-place.
     assert_equal(X, Xo)
     assert_equal(id(X), id(Xo))
@@ -116,7 +115,7 @@ def test_b_orthonormalize(n, m, dtype):
     assert_allclose(Xo.T.conj() @ B @ Xo, np.identity(m), atol=atol)
     # Repear without BX in outputs
     X = np.copy(Xcopy)
-    Xo1, BXo1, _, _ = _b_orthonormalize(Bl, X)
+    Xo1, BXo1, _, _ = _b_orthonormalize(lambda v: B @ v, X)
     assert_equal(Xo, Xo1)
     assert_equal(BXo, BXo1)
     # Check in-place.
@@ -126,12 +125,12 @@ def test_b_orthonormalize(n, m, dtype):
     assert_allclose(B @ Xo1, BXo1, atol=atol)
 
     # Introduce column-scaling in X.
-    X = np.copy(Xcopy)
-    scaling = np.array(np.power(10, np.arange(1, m + 1))).astype(dtype)
-    np.multiply(X, scaling, out=X)
+    scaling = np.geomspace(1, 1e10, num=m)
+    X = Xcopy * scaling
+    X = X.astype(dtype)
     BX = B @ X
     # Check scaling-invariance of Cholesky-based orthonormalization
-    Xo1, BXo1, _, _ = _b_orthonormalize(Bl, X, BX)
+    Xo1, BXo1, _, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
     # THe output should be the same, up the signs of the columns.
     Xo1 =  sign_align(Xo1, Xo)
     assert_allclose(Xo, Xo1, atol=atol)
