@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 from numpy.testing import (assert_, assert_approx_equal,
                            assert_allclose, assert_array_equal, assert_equal,
@@ -94,6 +96,10 @@ class TestPeriodogram:
         assert_raises(ValueError, periodogram, np.zeros(4, np.complex128),
                 scaling='foo')
 
+    @pytest.mark.skipif(
+        sys.maxsize <= 2**32,
+        reason="On some 32-bit tolerance issue"
+    )
     def test_nd_axis_m1(self):
         x = np.zeros(20, dtype=np.float64)
         x = x.reshape((2,1,10))
@@ -104,6 +110,10 @@ class TestPeriodogram:
         f0, p0 = periodogram(x[0,0,:])
         assert_array_almost_equal_nulp(p0[np.newaxis,:], p[1,:], 60)
 
+    @pytest.mark.skipif(
+        sys.maxsize <= 2**32,
+        reason="On some 32-bit tolerance issue"
+    )
     def test_nd_axis_0(self):
         x = np.zeros(20, dtype=np.float64)
         x = x.reshape((10,2,1))

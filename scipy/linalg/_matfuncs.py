@@ -5,14 +5,13 @@ from itertools import product
 
 import numpy as np
 from numpy import (Inf, dot, diag, prod, logical_not, ravel, transpose,
-                   conjugate, absolute, amax, sign, isfinite)
+                   conjugate, absolute, amax, sign, isfinite, triu)
 from numpy.lib.scimath import sqrt as csqrt
 
 # Local imports
 from scipy.linalg import LinAlgError, bandwidth
 from ._misc import norm
 from ._basic import solve, inv
-from ._special_matrices import triu
 from ._decomp_svd import svd
 from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond

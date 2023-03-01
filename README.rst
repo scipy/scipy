@@ -1,4 +1,4 @@
-.. image:: https://github.com/scipy/scipy/blob/main/doc/source/_static/logo.svg
+.. image:: https://raw.githubusercontent.com/scipy/scipy/main/doc/source/_static/logo.svg
   :target: https://scipy.org
   :width: 110
   :height: 110

@@ -1300,7 +1300,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     case, if ``n`` is an array of the number of observations within each
     sample, the number of distinct partitions is::
 
-        np.product([binom(sum(n[i:]), sum(n[i+1:])) for i in range(len(n)-1)])
+        np.prod([binom(sum(n[i:]), sum(n[i+1:])) for i in range(len(n)-1)])
 
     **Paired statistics, permute pairings** (``permutation_type='pairings'``):
 
