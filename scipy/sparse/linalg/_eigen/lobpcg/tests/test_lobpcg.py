@@ -95,7 +95,7 @@ def test_b_orthonormalize(n, m, dtype):
     vals = np.arange(1, n+1, dtype=float)
     B = diags([vals], [0], (n, n))
     BX = B @ X
-    BXcopy = np.copy(BX)
+
     Xo, BXo, _, _ = _b_orthonormalize(B, X, BX)
     # Check in-place.
     assert_equal(X, Xo)
@@ -115,6 +115,17 @@ def test_b_orthonormalize(n, m, dtype):
     assert_equal(X, Xo1)
     assert_equal(id(X), id(Xo1))
     # Check BXo1.
+    assert_allclose(B @ Xo1, BXo1, atol=atol)
+
+    # Introduce column-scaling in X.
+    X = np.copy(Xcopy)
+    scaling = np.array(np.power(10, np.arange(m))).astype(dtype)
+    numpy.multiply(X, scaling, out=X)
+    BX = B @ X
+    # Check scaling-invariance of Cholesky-based orthonormalization
+    Xo1, BXo1, _, _ = _b_orthonormalize(B, X, BX)
+    assert_equal(Xo, Xo1)
+    assert_equal(BXo, BXo1)
     assert_allclose(B @ Xo1, BXo1, atol=atol)
 
 
