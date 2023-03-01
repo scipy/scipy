@@ -64,7 +64,8 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
         the range ``(m-sqrt(2*m),m+sqrt(2*m))``, where m is the number of
         data points in x, y, and w.
     t : array, optional
-        An array of knots needed for task=-1. There must be at least 2*k+2 knots if task=-1.
+        The knots needed for ``task=-1``.
+        There must be at least ``2*k+2`` knots.
     full_output : int, optional
         If non-zero, then return optional outputs.
     nest : int, optional
