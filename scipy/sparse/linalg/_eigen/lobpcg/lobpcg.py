@@ -79,43 +79,35 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
     """in-place B-orthonormalize the given block vector using Cholesky."""
     type = blockVectorV.dtype
     normalization = np.ones(blockVectorV.shape[1], dtype = type)
-    # normalization = np.abs(blockVectorV).max(axis=0) + np.finfo(type).eps
-    # np.reciprocal(normalization, out=normalization)
-    # blockVectorV = blockVectorV * normalization
-    if blockVectorBV is None:
-        if B is not None:
-            try:
-                blockVectorBV = B(blockVectorV)
-            except Exception as e:
-                if verbosityLevel:
-                    warnings.warn(
-                        f"Secondary MatMul call failed with error\n"
-                        f"{e}\n",
-                        UserWarning, stacklevel=3
-                    )
-                    return None, None, None, normalization
-            if blockVectorBV.shape != blockVectorV.shape:
-                raise ValueError(
-                    f"The shape {blockVectorV.shape} "
-                    f"of the orthogonalized matrix not preserved\n"
-                    f"and changed to {blockVectorBV.shape} "
-                    f"after multiplying by the secondary matrix.\n"
+    if B is not None:
+        try:
+            blockVectorBV = B(blockVectorV)
+        except Exception as e:
+            if verbosityLevel:
+                warnings.warn(
+                    f"Secondary MatMul call failed with error\n"
+                    f"{e}\n",
+                    UserWarning, stacklevel=3
                 )
-        else:
-            blockVectorBV = blockVectorV  # Shared data!!!
+                return None, None, None, normalization
+        if blockVectorBV.shape != blockVectorV.shape:
+            raise ValueError(
+                f"The shape {blockVectorV.shape} "
+                f"of the orthogonalized matrix not preserved\n"
+                f"and changed to {blockVectorBV.shape} "
+                f"after multiplying by the secondary matrix.\n"
+            )
     else:
-        blockVectorBV = blockVectorBV * normalization
+        blockVectorBV = blockVectorV  # Shared data!!!
     VBV = blockVectorV.T.conj() @ blockVectorBV
     try:
         # VBV is a Cholesky factor from now on...
         VBV = cholesky(VBV, overwrite_a=True)
         VBV = inv(VBV, overwrite_a=True)
         np.matmul(blockVectorV, VBV, out=blockVectorV)
-        # blockVectorV = blockVectorV @ VBV
         # blockVectorV = (cho_solve((VBV.T, True), blockVectorV.T)).T
         if B is not None:
             np.matmul(blockVectorBV, VBV, out=blockVectorBV)
-            # blockVectorBV = blockVectorBV @ VBV
             # blockVectorBV = (cho_solve((VBV.T, True), blockVectorBV.T)).T
         return blockVectorV, blockVectorBV, VBV, normalization
     except LinAlgError:
