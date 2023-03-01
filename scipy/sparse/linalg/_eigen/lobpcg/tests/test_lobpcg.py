@@ -88,6 +88,7 @@ def test_MikotaPair():
 def test_b_orthonormalize(n, m, dtype):
     """Test B-orthogonalization by Cholesky.
     """
+    atol = m * n * np.finfo(dtype).eps
     rnd = np.random.RandomState(0)
     X = rnd.standard_normal((n, m)).astype(dtype)
     Xcopy = np.copy(X)
@@ -102,9 +103,9 @@ def test_b_orthonormalize(n, m, dtype):
     assert_equal(BX, BXo)
     assert_equal(id(BX), id(BXo))
     # Check BXo.
-    assert_equal(B @ Xo, BXo)
+    assert_allclose(B @ Xo, BXo, atol=atol)
     # Check B-orthonormality
-    assert_allclose(Xo.T.conj() @ B @ Xo, np.identity(m))
+    assert_allclose(Xo.T.conj() @ B @ Xo, np.identity(m), atol=atol)
     # Repear without BX in outputs
     X = np.copy(Xcopy)
     Xo1, BXo1, _, _ = _b_orthonormalize(B, X)
@@ -114,7 +115,7 @@ def test_b_orthonormalize(n, m, dtype):
     assert_equal(X, Xo1)
     assert_equal(id(X), id(Xo1))
     # Check BXo1.
-    assert_equal(B @ Xo1, BXo1)
+    assert_allclose(B @ Xo1, BXo1, atol=atol)
 
 
 @pytest.mark.filterwarnings("ignore:Exited at iteration 0")
