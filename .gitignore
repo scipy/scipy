@@ -94,10 +94,6 @@ build-install/*
 .doit.db.db
 .doit.db
 
-# Paver generated files #
-#########################
-/release
-
 # Logs and databases #
 ######################
 *.log

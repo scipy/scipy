@@ -21,7 +21,7 @@ pr:
 # the version of OpenBLAS used is currently 0.3.21
 # and should be updated to match scipy-wheels as appropriate
 variables:
-    openblas_version: 0.3.21
+    openblas_version: 0.3.21.dev
     pre_wheels: https://pypi.anaconda.org/scipy-wheels-nightly/simple
     CCACHE_DIR: $(Pipeline.Workspace)/ccache
     SCIPY_AVAILABLE_MEM: 3G

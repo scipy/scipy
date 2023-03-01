@@ -31,10 +31,11 @@ requires = [
     # On Windows we need to avoid 1.21.6, 1.22.0 and 1.22.1 because they were
     # built with vc142. 1.22.3 is the first version that has 32-bit Windows
     # wheels *and* was built with vc141. So use that:
+    "numpy==1.22.3; python_version=='3.9' and platform_system=='Windows' and platform_python_implementation != 'PyPy'",
     "numpy==1.22.3; python_version=='3.10' and platform_system=='Windows' and platform_python_implementation != 'PyPy'",
 
     # default numpy requirements
-    "numpy==1.21.6; python_version=='3.9' and platform_machine!='loongarch64' and platform_python_implementation != 'PyPy'",
+    "numpy==1.21.6; python_version=='3.9' and (platform_system!='Windows' and platform_machine!='loongarch64') and platform_python_implementation != 'PyPy'",
     # Note that 1.21.3 was the first version with a complete set of 3.10 wheels,
     # however macOS was broken and it's safe C API/ABI-wise to build against 1.21.6
     # (see oldest-supported-numpy issues gh-28 and gh-45)
@@ -135,7 +136,7 @@ dodoFile = "dev.py"
 
 
 [tool.cibuildwheel]
-skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x *-musllinux*"
+skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
 build-verbosity = "3"
 # gmpy2 and scikit-umfpack are usually added for testing. However, there are
 # currently wheels missing that make the test script fail.
@@ -164,4 +165,5 @@ select = "*-win_amd64"
 # An alternative is to set CMAKE_PREFIX_PATH="c:/opt/openblas/if_32/32"
 # Don't use double backslash for path separators, they don't get passed
 # to the build correctly
+# environment = { CMAKE_PREFIX_PATH="c:/opt/64" }
 environment = { PKG_CONFIG_PATH="c:/opt/64/lib/pkgconfig" }
