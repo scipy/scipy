@@ -404,7 +404,8 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     derphi_a0 = derphi0
 
     if extra_condition is None:
-        extra_condition = lambda alpha, phi: True
+        def extra_condition(alpha, phi):
+            return True
 
     for i in range(maxiter):
         if alpha1 == 0 or (amax is not None and alpha0 == amax):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Fri Apr  2 09:06:05 2021
 
@@ -9,16 +8,15 @@ from __future__ import annotations
 import math
 import numpy as np
 from scipy import special
-from typing import Optional, Union
 
 __all__ = ['entropy', 'differential_entropy']
 
 
 def entropy(pk: np.typing.ArrayLike,
-            qk: Optional[np.typing.ArrayLike] = None,
-            base: Optional[float] = None,
+            qk: np.typing.ArrayLike | None = None,
+            base: float | None = None,
             axis: int = 0
-            ) -> Union[np.number, np.ndarray]:
+            ) -> np.number | np.ndarray:
     """
     Calculate the Shannon entropy/relative entropy of given distribution(s).
 
@@ -149,11 +147,11 @@ def entropy(pk: np.typing.ArrayLike,
 def differential_entropy(
     values: np.typing.ArrayLike,
     *,
-    window_length: Optional[int] = None,
-    base: Optional[float] = None,
+    window_length: int | None = None,
+    base: float | None = None,
     axis: int = 0,
     method: str = "auto",
-) -> Union[np.number, np.ndarray]:
+) -> np.number | np.ndarray:
     r"""Given a sample of a distribution, estimate the differential entropy.
 
     Several estimation methods are available using the `method` parameter. By

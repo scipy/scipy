@@ -212,7 +212,7 @@ is defined by :math:`k+2` knots and is zero outside of these knots.
 To illustrate, plot a collection of non-zero basis elements on a certain
 interval:
 
-.. plot ::
+.. plot::
 
     >>> k = 3      # cubic splines
     >>> t = [0., 1.4, 2., 3.1, 5.]   # internal knots

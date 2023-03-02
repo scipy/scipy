@@ -145,8 +145,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         dimension (n,) and ``args`` is a tuple with the fixed
         parameters.
     bounds : sequence or `Bounds`, optional
-        Bounds on variables for Nelder-Mead, L-BFGS-B, TNC, SLSQP, Powell, and
-        trust-constr methods. There are two ways to specify the bounds:
+        Bounds on variables for Nelder-Mead, L-BFGS-B, TNC, SLSQP, Powell,
+        trust-constr, and COBYLA methods. There are two ways to specify the
+        bounds:
 
             1. Instance of `Bounds` class.
             2. Sequence of ``(min, max)`` pairs for each element in `x`. None
@@ -208,7 +209,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         of the parameter vector and objective function. Note that the name
         of the parameter must be ``intermediate_result`` for the callback
         to be passed an `OptimizeResult`. These methods will also terminate if
-        the callback raises `StopIteration`.
+        the callback raises ``StopIteration``.
 
         All methods except trust-constr (also) support a signature like:
 
@@ -216,9 +217,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         where ``xk`` is the current parameter vector.
 
-        All methods except TNC, SLSQP, and COBYLA will terminate if the
-        callback raises `StopIteration`. Introspection is used to determine
-        which of the signatures above to invoke.
+        Introspection is used to determine which of the signatures above to
+        invoke.
 
     Returns
     -------
@@ -575,8 +575,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             np.any(constraints)):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
-    if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'tnc', 'slsqp',
-                    'trust-constr', '_custom') and bounds is not None:
+    if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'cobyla', 'slsqp',
+                    'tnc', 'trust-constr', '_custom') and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - return_all
@@ -638,6 +638,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     remove_vars = False
     if bounds is not None:
+        # convert to new-style bounds so we only have to consider one case
+        bounds = standardize_bounds(bounds, x0, 'new')
+        bounds = _validate_bounds(bounds, x0, meth)
+
         if meth in {"tnc", "slsqp", "l-bfgs-b"}:
             # These methods can't take the finite-difference derivatives they
             # need when a variable is fixed by the bounds. To avoid this issue,
@@ -645,9 +649,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             # NOTE: if this list is expanded, then be sure to update the
             # accompanying tests and test_optimize.eb_data. Consider also if
             # default OptimizeResult will need updating.
-
-            # convert to new-style bounds so we only have to consider one case
-            bounds = standardize_bounds(bounds, x0, 'new')
 
             # determine whether any variables are fixed
             i_fixed = (bounds.lb == bounds.ub)
@@ -713,7 +714,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                             **options)
     elif meth == 'cobyla':
         res = _minimize_cobyla(fun, x0, args, constraints, callback=callback,
-                                **options)
+                               bounds=bounds, **options)
     elif meth == 'slsqp':
         res = _minimize_slsqp(fun, x0, args, jac, bounds,
                               constraints, callback=callback, **options)
@@ -921,18 +922,25 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         options['disp'] = 2 * int(disp)
 
     if meth == '_custom':
-        return method(fun, args=args, bracket=bracket, bounds=bounds, **options)
+        res = method(fun, args=args, bracket=bracket, bounds=bounds, **options)
     elif meth == 'brent':
-        return _minimize_scalar_brent(fun, bracket, args, **options)
+        res = _minimize_scalar_brent(fun, bracket, args, **options)
     elif meth == 'bounded':
         if bounds is None:
             raise ValueError('The `bounds` parameter is mandatory for '
                              'method `bounded`.')
-        return _minimize_scalar_bounded(fun, bounds, args, **options)
+        res = _minimize_scalar_bounded(fun, bounds, args, **options)
     elif meth == 'golden':
-        return _minimize_scalar_golden(fun, bracket, args, **options)
+        res = _minimize_scalar_golden(fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
+
+    # gh-16196 reported inconsistencies in the output shape of `res.x`. While
+    # fixing this, future-proof it for when the function is vectorized:
+    # the shape of `res.x` should match that of `res.fun`.
+    res.fun = np.asarray(res.fun)[()]
+    res.x = np.reshape(res.x, res.fun.shape)[()]
+    return res
 
 
 def _remove_from_bounds(bounds, i_fixed):
@@ -976,9 +984,25 @@ def _add_to_array(x_in, i_fixed, x_fixed):
     return x_out
 
 
+def _validate_bounds(bounds, x0, meth):
+    """Check that bounds are valid."""
+
+    msg = "An upper bound is less than the corresponding lower bound."
+    if np.any(bounds.ub < bounds.lb):
+        raise ValueError(msg)
+
+    msg = "The number of bounds is not compatible with the length of `x0`."
+    try:
+        bounds.lb = np.broadcast_to(bounds.lb, x0.shape)
+        bounds.ub = np.broadcast_to(bounds.ub, x0.shape)
+    except Exception as e:
+        raise ValueError(msg) from e
+
+    return bounds
+
 def standardize_bounds(bounds, x0, meth):
     """Converts bounds to the form required by the solver."""
-    if meth in {'trust-constr', 'powell', 'nelder-mead', 'new'}:
+    if meth in {'trust-constr', 'powell', 'nelder-mead', 'cobyla', 'new'}:
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)
