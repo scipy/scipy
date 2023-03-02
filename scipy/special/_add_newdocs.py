@@ -13058,8 +13058,8 @@ add_newdoc("xlogy",
 
     We can define the parameters `x` and `y` as y and y_pred respectively.
     y is the array of the actual labels which over here can be either 0 or 1.
-    y_pred is the array of the predicted probabilities of the positive class,
-    which in this example is simply 1.
+    y_pred is the array of the predicted probabilities with respect to
+    the positive class (1).
 
     >>> import numpy as np
     >>> from scipy.special import xlogy
