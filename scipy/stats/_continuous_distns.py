@@ -5082,17 +5082,17 @@ class johnsonsu_gen(rv_continuous):
         # johnsonsu.pdf(x, a, b) = b / sqrt(x**2 + 1) *
         #                          phi(a + b * log(x + sqrt(x**2 + 1)))
         x2 = x*x
-        trm = _norm_pdf(a + b * np.log(x + np.sqrt(x2+1)))
+        trm = _norm_pdf(a + b * np.arcsinh(x))
         return b*1.0/np.sqrt(x2+1.0)*trm
 
     def _cdf(self, x, a, b):
-        return _norm_cdf(a + b * np.log(x + np.sqrt(x*x + 1)))
+        return _norm_cdf(a + b * np.arcsinh(x))
 
     def _ppf(self, q, a, b):
         return np.sinh((_norm_ppf(q) - a) / b)
 
     def _sf(self, x, a, b):
-        return _norm_sf(a + b * np.log(x + np.sqrt(x*x + 1)))
+        return _norm_sf(a + b * np.arcsinh(x))
 
     def _isf(self, x, a, b):
         return np.sinh((_norm_isf(x) - a) / b)
