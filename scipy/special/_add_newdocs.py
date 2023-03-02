@@ -13073,7 +13073,7 @@ add_newdoc("xlogy",
 
     A lower loss is usually better as it indicates that the predictions are
     similar to the actual labels. In this example since our predicted
-    probabilties corresponded with the actual labels, we get an overall loss
+    probabilties correspond with the actual labels, we get an overall loss
     that is reasonably low and appropriate.
 
     """)
