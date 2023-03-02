@@ -594,7 +594,7 @@ def lobpcg(
     eigBlockVector = np.asarray(eigBlockVector[:, ii])
     try:
         np.dot(blockVectorX, eigBlockVector, out=blockVectorX)
-    except:
+    except Exception:
         if verbosityLevel:
             warnings.warn(
                 f"The blockVectorX dtype {blockVectorX.dtype} "
@@ -605,7 +605,7 @@ def lobpcg(
         blockVectorX = blockVectorX @ eigBlockVector
     try:
         np.dot(blockVectorAX, eigBlockVector, out=blockVectorAX)
-    except:
+    except Exception:
         if verbosityLevel:
             warnings.warn(
                 f"The blockVectorX dtype {blockVectorAX.dtype} "
@@ -617,7 +617,7 @@ def lobpcg(
     if B is not None:
         try:
             np.dot(blockVectorBX, eigBlockVector, out=blockVectorBX)
-        except:
+        except Exception:
             if verbosityLevel:
                 warnings.warn(
                     f"The blockVectorX dtype {blockVectorBX.dtype} "
@@ -625,7 +625,7 @@ def lobpcg(
                     f"and needs to be changed preventing in-place.",
                     UserWarning, stacklevel=2
                 )
-            blockVectorBX = blockVectorBX @ eigBlockVecto
+            blockVectorBX = blockVectorBX @ eigBlockVector
 
     ##
     # Active index set.
