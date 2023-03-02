@@ -13,7 +13,7 @@ from scipy._lib._util import _rng_spawn
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
            'trapezoid', 'trapz', 'simps', 'simpson',
            'cumulative_trapezoid', 'cumtrapz', 'newton_cotes',
-           'qmc_quad', 'AccuracyWarning']
+           'qmc_quad', 'AccuracyWarning', 'cumulative_simpson']
 
 
 def trapezoid(y, x=None, dx=1.0, axis=-1):
@@ -662,6 +662,210 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
     return result
 
 
+def _cumulative_simpson_equal_intervals(
+    y: np.ndarray, dx: np.ndarray, axis: int
+) -> np.ndarray:
+
+    y = y.swapaxes(0, axis)
+    dx = dx.swapaxes(0, axis)
+
+    sub_integrals_fwd = dx[:-1] / 3 * \
+        (5 * y[:-2] / 4 + 2 * y[1:-1] - y[2:] / 4)
+    sub_integrals_bwd = dx[:-1] / 3 * \
+        (-y[:-2] / 4 + 2 * y[1:-1] + 5 * y[2:] / 4)
+
+    if sub_integrals_fwd.shape[0] == 3:
+        sub_integrals = np.concatenate(
+            [
+                sub_integrals_fwd[0:1],
+                sub_integrals_bwd[-1:],
+            ],
+            axis=0,
+        )
+    else:
+        sub_integrals = np.concatenate(
+            [
+                sub_integrals_fwd[0:1],
+                (sub_integrals_fwd[1:] + sub_integrals_bwd[:-1]) / 2,
+                sub_integrals_bwd[-1:],
+            ],
+            axis=0,
+        )
+
+    res = np.cumsum(sub_integrals, axis=0).swapaxes(0, axis)
+
+    return res
+
+
+def _cumulative_simpson_unequal_intervals(
+    y: np.ndarray, x: np.ndarray, axis: int
+) -> np.ndarray:
+    y = y.swapaxes(0, axis)
+    x = x.swapaxes(0, axis)
+
+    d = np.diff(x, axis=0)
+    if np.any(d <= 0):
+        raise ValueError("Input x must be monotonically increasing.")
+    h1 = d[:-1]
+    h2 = d[1:]
+    y1 = y[:-2]
+    y2 = y[1:-1]
+    y3 = y[2:]
+
+    sub_integrals_fwd = (
+        y1 * (2 * h1 + 3 * h2) / (h1 + h2) * h1 / 6
+        + y2 * (h1 + 3 * h2) * h1 / (6 * h2)
+        - y3 * (h1**3 / (6 * h2)) / (h1 + h2)
+    )
+    sub_integrals_bwd = (
+        -y1 * (h2**3 / (6 * h1)) / (h1 + h2)
+        + y2 * (3 * h1 + h2) * h2 / (6 * h1)
+        + y3 * (3 * h1 + 2 * h2) / (h1 + h2) * h2 / 6
+    )
+
+    if sub_integrals_fwd.shape[0] == 3:
+        sub_integrals = np.concatenate(
+            [
+                sub_integrals_fwd[0:1],
+                sub_integrals_bwd[-1:],
+            ],
+            axis=0,
+        )
+    else:
+        sub_integrals = np.concatenate(
+            [
+                sub_integrals_fwd[0:1],
+                (sub_integrals_fwd[1:] + sub_integrals_bwd[:-1]) / 2,
+                sub_integrals_bwd[-1:],
+            ],
+            axis=0,
+        )
+
+    res = np.cumsum(sub_integrals, axis=0).swapaxes(0, axis)
+
+    return res
+
+
+def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
+    """
+    Cumulatively integrate y(x) using the Composite Simpson's rule. The integral of the samples
+    at every point is calculated by assuming a quadratic relationship between each point and two
+    other adjacent points.
+
+    Parameters
+    ----------
+    y : array_like
+        Values to integrate.
+    x : array_like, optional
+        The coordinate to integrate along. Must be monotonically increasing.
+        If None (default), use spacing `dx` between consecutive elements in `y`.
+    dx : scalar | array_like, optional
+        Spacing between elements of `y`. Only used if `x` is None. Can either be
+        a float, or an array with the same shape as `y`, but size 1 along `axis`. 
+    axis : int, optional
+        Specifies the axis to integrate along. Default is -1 (last axis).
+    initial : scalar | array_like, optional
+        If given, insert this value at the beginning of the returned result,
+        and add it to the rest of the result. Typically this value should be 0. 
+        Default is None, which means no value at ``x[0]`` is returned and `res` 
+        has one element less than `y` along the axis of integration.
+        Can either be a float, or an array with the same shape as `y`, 
+        but size 1 along `axis`. 
+
+    Returns
+    -------
+    res : ndarray
+        The result of cumulative integration of `y` along `axis`.
+        If `initial` is None, the shape is such that the axis of integration
+        has one less value than `y`. If `initial` is given, the shape is equal
+        to that of `y`.
+
+    See Also
+    --------
+    numpy.cumsum, numpy.cumprod
+    quad : adaptive quadrature using QUADPACK
+    romberg : adaptive Romberg quadrature
+    quadrature : adaptive Gaussian quadrature
+    fixed_quad : fixed-order Gaussian quadrature
+    dblquad : double integrals
+    tplquad : triple integrals
+    romb : integrators for sampled data
+    ode : ODE integrators
+    odeint : ODE integrators
+
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+
+    >>> x = np.linspace(-2, 2, num=20)
+    >>> y = x
+    >>> y_int = integrate.cumulative_simpson(y, x, initial=0)
+    >>> plt.plot(x, y_int, 'ro', x, y[0] + 0.5 * x**2, 'b-')
+    >>> plt.show()
+
+    """
+
+    y = np.asarray(y).astype(np.float64)
+
+    # validate y and axis
+    if axis < -1 or axis >= y.ndim:
+        raise ValueError("If given, axis must exist in the shape of y.")
+
+    if y.shape[axis] < 3:
+        raise ValueError(
+            "Minimum of 3 points are required along the axis of integration "
+            "to use the compsite Simpson's method."
+        )
+
+    if x is not None:
+        x = np.asarray(x).astype(np.float64)
+        if x.ndim == 1:
+            x_shape = [1] * y.ndim
+            x_shape[axis] = -1
+            x = x.reshape(tuple(x_shape))
+        elif x.shape != y.shape:
+            raise ValueError(
+                "If given, shape of x must be 1-D or the same as y.")
+        res = _cumulative_simpson_unequal_intervals(y, x, axis=axis)
+
+    else:
+        dx = np.asarray(dx).astype(np.float64)
+        final_dx_shape = tupleset(y.shape, axis, y.shape[axis] - 1)
+        alt_input_dx_shape = tupleset(y.shape, axis, 1)
+
+        if dx.ndim == 0:
+            dx = np.ones(final_dx_shape) * dx
+        elif dx.shape == alt_input_dx_shape:
+            dx = np.repeat(dx, y.shape[axis] - 1, axis=axis)
+        else:
+            raise ValueError(
+                "dx must either be numeric or have the same shape as y but with "
+                "only 1 point along `axis`."
+            )
+        res = _cumulative_simpson_equal_intervals(y, dx, axis=axis)
+
+    if initial is not None:
+        initial = np.asarray(initial).astype(np.float64)
+        alt_initial_input_shape = tupleset(y.shape, axis, 1)
+        if initial.ndim == 0:
+            initial = np.ones(y.shape) * initial
+        elif initial.shape == alt_initial_input_shape:
+            initial = np.repeat(initial, y.shape[axis], axis=axis)
+        else:
+            raise ValueError(
+                "`initial` must either be numeric or have the same shape as `y` but with "
+                "only 1 point along `axis`."
+            )
+
+        slice1 = tupleset((slice(None),) * y.ndim, axis, slice(1, None))
+        initial[slice1] += res
+        res = initial
+
+    return res
+
+
 def romb(y, dx=1.0, axis=-1, show=False):
     """
     Romberg integration using samples of a function.
@@ -991,38 +1195,38 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 #    where k = N // 2
 #
 _builtincoeffs = {
-    1: (1,2,[1,1],-1,12),
-    2: (1,3,[1,4,1],-1,90),
-    3: (3,8,[1,3,3,1],-3,80),
-    4: (2,45,[7,32,12,32,7],-8,945),
-    5: (5,288,[19,75,50,50,75,19],-275,12096),
-    6: (1,140,[41,216,27,272,27,216,41],-9,1400),
-    7: (7,17280,[751,3577,1323,2989,2989,1323,3577,751],-8183,518400),
-    8: (4,14175,[989,5888,-928,10496,-4540,10496,-928,5888,989],
-        -2368,467775),
-    9: (9,89600,[2857,15741,1080,19344,5778,5778,19344,1080,
-                 15741,2857], -4671, 394240),
-    10: (5,299376,[16067,106300,-48525,272400,-260550,427368,
-                   -260550,272400,-48525,106300,16067],
+    1: (1, 2, [1, 1], -1, 12),
+    2: (1, 3, [1, 4, 1], -1, 90),
+    3: (3, 8, [1, 3, 3, 1], -3, 80),
+    4: (2, 45, [7, 32, 12, 32, 7], -8, 945),
+    5: (5, 288, [19, 75, 50, 50, 75, 19], -275, 12096),
+    6: (1, 140, [41, 216, 27, 272, 27, 216, 41], -9, 1400),
+    7: (7, 17280, [751, 3577, 1323, 2989, 2989, 1323, 3577, 751], -8183, 518400),
+    8: (4, 14175, [989, 5888, -928, 10496, -4540, 10496, -928, 5888, 989],
+        -2368, 467775),
+    9: (9, 89600, [2857, 15741, 1080, 19344, 5778, 5778, 19344, 1080,
+                   15741, 2857], -4671, 394240),
+    10: (5, 299376, [16067, 106300, -48525, 272400, -260550, 427368,
+                     -260550, 272400, -48525, 106300, 16067],
          -673175, 163459296),
-    11: (11,87091200,[2171465,13486539,-3237113, 25226685,-9595542,
-                      15493566,15493566,-9595542,25226685,-3237113,
-                      13486539,2171465], -2224234463, 237758976000),
-    12: (1, 5255250, [1364651,9903168,-7587864,35725120,-51491295,
-                      87516288,-87797136,87516288,-51491295,35725120,
-                      -7587864,9903168,1364651], -3012, 875875),
-    13: (13, 402361344000,[8181904909, 56280729661, -31268252574,
-                           156074417954,-151659573325,206683437987,
-                           -43111992612,-43111992612,206683437987,
-                           -151659573325,156074417954,-31268252574,
-                           56280729661,8181904909], -2639651053,
+    11: (11, 87091200, [2171465, 13486539, -3237113, 25226685, -9595542,
+                        15493566, 15493566, -9595542, 25226685, -3237113,
+                        13486539, 2171465], -2224234463, 237758976000),
+    12: (1, 5255250, [1364651, 9903168, -7587864, 35725120, -51491295,
+                      87516288, -87797136, 87516288, -51491295, 35725120,
+                      -7587864, 9903168, 1364651], -3012, 875875),
+    13: (13, 402361344000, [8181904909, 56280729661, -31268252574,
+                            156074417954, -151659573325, 206683437987,
+                            -43111992612, -43111992612, 206683437987,
+                            -151659573325, 156074417954, -31268252574,
+                            56280729661, 8181904909], -2639651053,
          344881152000),
-    14: (7, 2501928000, [90241897,710986864,-770720657,3501442784,
-                         -6625093363,12630121616,-16802270373,19534438464,
-                         -16802270373,12630121616,-6625093363,3501442784,
-                         -770720657,710986864,90241897], -3740727473,
+    14: (7, 2501928000, [90241897, 710986864, -770720657, 3501442784,
+                         -6625093363, 12630121616, -16802270373, 19534438464,
+                         -16802270373, 12630121616, -6625093363, 3501442784,
+                         -770720657, 710986864, 90241897], -3740727473,
          1275983280000)
-    }
+}
 
 
 def newton_cotes(rn, equal=0):
