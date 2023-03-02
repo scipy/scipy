@@ -19,6 +19,12 @@ from scipy.sparse.linalg._eigen.lobpcg import _b_orthonormalize
 _IS_32BIT = (sys.maxsize < 2**32)
 
 
+def sign_align(A, B):
+    """Align signs of columns of A match those of B.
+    """
+    return np.array([col_A * np.sign(col_A[0]) * np.sign(col_B[0])
+                     for col_A, col_B in zip(A.T, B.T)]).T
+
 def ElasticRod(n):
     """Build the matrices for the generalized eigenvalue problem of the
     fixed-free elastic rod vibration model.
@@ -80,13 +86,6 @@ def test_ElasticRod():
 def test_MikotaPair():
     A, B = MikotaPair(20)
     compare_solutions(A, B, 2)
-
-
-def sign_align(A, B):
-    """Align signs of columns of A match those of B.
-    """
-    return np.array([col_A * np.sign(col_A[0]) * np.sign(col_B[0])
-                     for col_A, col_B in zip(A.T, B.T)]).T
 
 
 @pytest.mark.parametrize("n", [32, 99])
