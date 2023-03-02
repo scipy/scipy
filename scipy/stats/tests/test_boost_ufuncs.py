@@ -30,7 +30,6 @@ test_data = [
 ]
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('func, args, expected', test_data)
 def test_stats_boost_ufunc(func, args, expected):
     type_sigs = func.types
@@ -38,6 +37,10 @@ def test_stats_boost_ufunc(func, args, expected):
     for type_char in type_chars:
         typ, rtol = type_char_to_type_tol[type_char]
         args = [typ(arg) for arg in args]
-        value = func(*args)
+        # Harmless overflow warnings are a "feature" of some wrappers on some
+        # plaforms. This test is about dtype and accuracy, so let's avoid false
+        # test failures cause by these warnings. See gh-17432.
+        with np.errstate(over='ignore'):
+            value = func(*args)
         assert isinstance(value, typ)
         assert_allclose(value, expected, rtol=rtol)

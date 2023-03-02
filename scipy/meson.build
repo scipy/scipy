@@ -80,22 +80,27 @@ npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
 
 # pybind11 include directory - needed in several submodules
-incdir_pybind11 = run_command(py3,
-  [
-    '-c',
-    '''from os.path import relpath
+#
+# in meson 1.1.0, this will find the pyproject.toml build-requires version
+pybind11_dep = dependency('pybind11', version: '>=2.10.0', required: false, allow_fallback: true)
+if not pybind11_dep.found()
+  incdir_pybind11 = run_command(py3,
+    [
+      '-c',
+      '''from os.path import relpath
 import pybind11
 try:
   incdir = relpath(pybind11.get_include())
 except Exception:
   incdir = pybind11.get_include()
 print(incdir)
-'''
-  ],
-  check: true
-).stdout().strip()
+  '''
+    ],
+    check: true
+  ).stdout().strip()
 
-pybind11_dep = declare_dependency(include_directories: incdir_pybind11)
+  pybind11_dep = declare_dependency(include_directories: incdir_pybind11)
+endif
 
 # Pythran include directory and build flags
 if use_pythran

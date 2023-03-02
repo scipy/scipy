@@ -4505,7 +4505,7 @@ def _arc_jac_sn(w, m):
         if niter > _ARC_JAC_SN_MAXITER:
             raise ValueError('Landen transformation not converging')
 
-    K = np.product(1 + np.array(ks[1:])) * np.pi/2
+    K = np.prod(1 + np.array(ks[1:])) * np.pi/2
 
     wns = [w]
 

@@ -242,7 +242,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.dimension = len(self.hess)
         self.hess_gershgorin_lb,\
             self.hess_gershgorin_ub = gershgorin_bounds(self.hess)
-        self.hess_inf = norm(self.hess, np.Inf)
+        self.hess_inf = norm(self.hess, np.inf)
         self.hess_fro = norm(self.hess, 'fro')
 
         # A constant such that for vectors smaler than that

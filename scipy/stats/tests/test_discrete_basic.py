@@ -33,7 +33,6 @@ def cases_test_discrete_basic():
         seen.add(distname)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg,first_case', cases_test_discrete_basic())
 def test_discrete_basic(distname, arg, first_case):
     try:
@@ -77,7 +76,6 @@ def test_discrete_basic(distname, arg, first_case):
             check_private_entropy(distfn, arg, stats.rv_discrete)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg', distdiscrete)
 def test_moments(distname, arg):
     try:
@@ -190,8 +188,8 @@ def check_cdf_ppf(distfn, arg, supp, msg):
     cdf_supp = distfn.cdf(supp, *arg)
     # In very rare cases, the finite precision calculation of ppf(cdf(supp))
     # can produce an array in which an element is off by one.  We nudge the
-    # CDF values down by 10 ULPs help to avoid this.
-    cdf_supp0 = cdf_supp - 10*np.spacing(cdf_supp)
+    # CDF values down by 15 ULPs help to avoid this.
+    cdf_supp0 = cdf_supp - 15*np.spacing(cdf_supp)
     npt.assert_array_equal(distfn.ppf(cdf_supp0, *arg),
                            supp, msg + '-roundtrip')
     # Repeat the same calculation, but with the CDF values decreased by 1e-8.

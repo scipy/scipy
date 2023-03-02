@@ -1609,8 +1609,8 @@ def test_all_partitions_concatenated():
         partitioning = np.split(partition_concatenated, nc[:-1])
         all_partitions.add(tuple([frozenset(i) for i in partitioning]))
 
-    expected = np.product([special.binom(sum(n[i:]), sum(n[i+1:]))
-                           for i in range(len(n)-1)])
+    expected = np.prod([special.binom(sum(n[i:]), sum(n[i+1:]))
+                        for i in range(len(n)-1)])
 
     assert_equal(counter, expected)
     assert_equal(len(all_partitions), expected)
