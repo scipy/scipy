@@ -13054,15 +13054,15 @@ add_newdoc("xlogy",
     We can use this function to calculate the binary logistic loss also
     known as the binary cross entropy. This loss function is used for
     binary classification problems and is defined as:
-    
+
     .. math::
         L = 1/n * \\sum_{i=0}^n -(y_i*log(pred_i) + (1-y_i)*log(1-pred_i))
-    
+
     We can define the parameters `x` and `y` as y_true and y_pred respectively.
     y_true is the array of the actual labels that can be either 0 or 1.
     y_pred is the array of the predictions and for each row it contains the
     probabilties of both labels.
-    
+
     >>> import numpy as np
     >>> from scipy.special import xlogy
     >>> y_true = np.array([[0.0], [1.0], [0.0], [1.0], [1.0], [0.0]])
