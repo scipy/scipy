@@ -301,8 +301,8 @@ class TestIsIsomorphic:
         # Tests is_isomorphic on test case #4B (3 flat clusters, different labelings, nonisomorphic)
         a = [1, 2, 3, 3]
         b = [1, 3, 2, 3]
-        assert_(is_isomorphic(a, b) == False)
-        assert_(is_isomorphic(b, a) == False)
+        assert_(is_isomorphic(a, b) is False)
+        assert_(is_isomorphic(b, a) is False)
 
     def test_is_isomorphic_4C(self):
         # Tests is_isomorphic on test case #4C (3 flat clusters, different labelings, isomorphic)
@@ -362,13 +362,13 @@ class TestIsValidLinkage:
         # Tests is_valid_linkage(Z) with integer type.
         Z = np.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=int)
-        assert_(is_valid_linkage(Z) == False)
+        assert_(is_valid_linkage(Z) is False)
         assert_raises(TypeError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_empty(self):
         # Tests is_valid_linkage(Z) with empty linkage.
         Z = np.zeros((0, 4), dtype=np.double)
-        assert_(is_valid_linkage(Z) == False)
+        assert_(is_valid_linkage(Z) is False)
         assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up(self):
@@ -377,7 +377,7 @@ class TestIsValidLinkage:
         for i in range(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
-            assert_(is_valid_linkage(Z) == True)
+            assert_(is_valid_linkage(Z) is True)
 
     def test_is_valid_linkage_4_and_up_neg_index_left(self):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
@@ -386,7 +386,7 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             Z[i//2,0] = -2
-            assert_(is_valid_linkage(Z) == False)
+            assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up_neg_index_right(self):
@@ -396,7 +396,7 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             Z[i//2,1] = -2
-            assert_(is_valid_linkage(Z) == False)
+            assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up_neg_dist(self):
@@ -406,7 +406,7 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             Z[i//2,2] = -0.5
-            assert_(is_valid_linkage(Z) == False)
+            assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up_neg_counts(self):
@@ -416,7 +416,7 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             Z[i//2,3] = -2
-            assert_(is_valid_linkage(Z) == False)
+            assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
 
@@ -425,7 +425,7 @@ class TestIsValidInconsistent:
         # Tests is_valid_im(R) with integer type.
         R = np.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=int)
-        assert_(is_valid_im(R) == False)
+        assert_(is_valid_im(R) is False)
         assert_raises(TypeError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_various_size(self):
@@ -445,7 +445,7 @@ class TestIsValidInconsistent:
     def test_is_valid_im_empty(self):
         # Tests is_valid_im(R) with empty inconsistency matrix.
         R = np.zeros((0, 4), dtype=np.double)
-        assert_(is_valid_im(R) == False)
+        assert_(is_valid_im(R) is False)
         assert_raises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_4_and_up(self):
@@ -455,7 +455,7 @@ class TestIsValidInconsistent:
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             R = inconsistent(Z)
-            assert_(is_valid_im(R) == True)
+            assert_(is_valid_im(R) is True)
 
     def test_is_valid_im_4_and_up_neg_index_left(self):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
@@ -465,7 +465,7 @@ class TestIsValidInconsistent:
             Z = linkage(y)
             R = inconsistent(Z)
             R[i//2,0] = -2.0
-            assert_(is_valid_im(R) == False)
+            assert_(is_valid_im(R) is False)
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_4_and_up_neg_index_right(self):
@@ -476,7 +476,7 @@ class TestIsValidInconsistent:
             Z = linkage(y)
             R = inconsistent(Z)
             R[i//2,1] = -2.0
-            assert_(is_valid_im(R) == False)
+            assert_(is_valid_im(R) is False)
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_4_and_up_neg_dist(self):
@@ -487,7 +487,7 @@ class TestIsValidInconsistent:
             Z = linkage(y)
             R = inconsistent(Z)
             R[i//2,2] = -0.5
-            assert_(is_valid_im(R) == False)
+            assert_(is_valid_im(R) is False)
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
 
@@ -1015,10 +1015,6 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
         q[2] = R[i, k]
         B[i] = q.max()
     return B
-
-
-def within_tol(a, b, tol):
-    return np.abs(a - b).max() < tol
 
 
 def test_unsupported_uncondensed_distance_matrix_linkage_warning():

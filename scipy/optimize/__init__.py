@@ -5,6 +5,11 @@ Optimization and root finding (:mod:`scipy.optimize`)
 
 .. currentmodule:: scipy.optimize
 
+.. toctree::
+   :hidden:
+
+   optimize.cython_optimize
+
 SciPy ``optimize`` provides functions for minimizing (or maximizing)
 objective functions, possibly subject to constraints. It includes
 solvers for nonlinear problems (with support for both local and global
@@ -200,7 +205,7 @@ functions defined on (a subset of) the complex plane.
 
 .. seealso::
 
-   `scipy.optimize.cython_optimize` -- Typed Cython versions of zeros functions
+   `scipy.optimize.cython_optimize` -- Typed Cython versions of root finding functions
 
 Fixed point finding:
 
@@ -399,7 +404,7 @@ Simple iteration solvers:
    linearmixing
    diagbroyden
 
-"""
+"""  # noqa: E501
 
 from ._optimize import *
 from ._minimize import *

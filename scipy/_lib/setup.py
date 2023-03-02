@@ -4,7 +4,7 @@ import os
 def check_boost_submodule():
     from scipy._lib._boost_utils import _boost_dir
 
-    if not os.path.exists(_boost_dir(ret_path=True) / 'README.rst'):
+    if not os.path.exists(_boost_dir(ret_path=True).parent / 'README.md'):
         raise RuntimeError("Missing the `boost` submodule! Run `git submodule "
                            "update --init` to fix this.")
 
@@ -61,7 +61,7 @@ def configuration(parent_package='',top_path=None):
                               'messagestream_config.h')
         with open(target, 'w') as f:
             for name, value in defines:
-                f.write('#define {0} {1}\n'.format(name, value))
+                f.write(f'#define {name} {value}\n')
 
     depends = [os.path.join(include_dir, 'messagestream.h')]
     config.add_extension("messagestream",

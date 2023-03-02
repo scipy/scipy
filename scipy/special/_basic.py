@@ -90,7 +90,7 @@ def _nonneg_int_or_fail(n, var_name, strict=True):
         if n < 0:
             raise ValueError()
     except (ValueError, TypeError) as err:
-        raise err.__class__("{} must be a non-negative integer".format(var_name)) from err
+        raise err.__class__(f"{var_name} must be a non-negative integer") from err
     return n
 
 
@@ -2577,7 +2577,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def comb(N, k, exact=False, repetition=False, legacy=True):
+def comb(N, k, exact=False, repetition=False, legacy=None):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2591,8 +2591,7 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
     exact : bool, optional
         For integers, if `exact` is False, then floating point precision is
         used, otherwise the result is computed exactly. For non-integers, if
-        `exact` is True, the inputs are currently cast to integers, though
-        this behavior is deprecated (see below).
+        `exact` is True, is disregarded.
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
@@ -2602,12 +2601,10 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
         arguments is unaffected by the value of `exact`.
 
         .. deprecated:: 1.9.0
-            Non-integer arguments are currently being cast to integers when
-            `exact=True`. This behaviour is deprecated and the default will
-            change to avoid the cast in SciPy 1.11.0. To opt into the future
-            behavior set `legacy=False`. If you want to keep the
-            argument-casting but silence this warning, cast your inputs
-            directly, e.g. ``comb(int(your_N), int(your_k), exact=True)``.
+            Using `legacy` is deprecated and will removed by
+            Scipy 1.13.0. If you want to keep the legacy behaviour, cast
+            your inputs directly, e.g.
+            ``comb(int(your_N), int(your_k), exact=True)``.
 
     Returns
     -------
@@ -2639,25 +2636,28 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
     220
 
     """
+    if legacy is not None:
+        warnings.warn(
+            "Using 'legacy' keyword is deprecated and will be removed by "
+            "Scipy 1.13.0. If you want to keep the legacy behaviour, cast "
+            "your inputs directly, e.g. "
+            "'comb(int(your_N), int(your_k), exact=True)'.",
+            DeprecationWarning,
+            stacklevel=2
+        )
     if repetition:
         return comb(N + k - 1, k, exact, legacy=legacy)
     if exact:
-        if int(N) != N or int(k) != k:
-            if legacy:
-                warnings.warn(
-                    "Non-integer arguments are currently being cast to "
-                    "integers when exact=True. This behaviour is "
-                    "deprecated and the default will change to avoid the cast "
-                    "in SciPy 1.11.0. To opt into the future behavior set "
-                    "legacy=False. If you want to keep the argument-casting "
-                    "but silence this warning, cast your inputs directly, "
-                    "e.g. comb(int(your_N), int(your_k), exact=True).",
-                    DeprecationWarning, stacklevel=2
-                )
-            else:
-                return comb(N, k)
-        # _comb_int casts inputs to integers
-        return _comb_int(N, k)
+        if int(N) == N and int(k) == k:
+            # _comb_int casts inputs to integers, which is safe & intended here
+            return _comb_int(N, k)
+        elif legacy:
+            # here at least one number is not an integer; legacy behavior uses
+            # lossy casts to int
+            return _comb_int(N, k)
+        # otherwise, we disregard `exact=True`; it makes no sense for
+        # non-integral arguments
+        return comb(N, k)
     else:
         k, N = asarray(k), asarray(N)
         cond = (k <= N) & (N >= 0) & (k >= 0)

@@ -1,6 +1,6 @@
 project(
   'SciPy',
-  'c', 'cpp',
+  'c', 'cpp', 'cython',
   # Note that the git commit hash cannot be added dynamically here (it is added
   # in the dynamically generated and installed `scipy/version.py` though - see
   # tools/version_utils.py
@@ -9,6 +9,7 @@ project(
   meson_version: '>= 0.64.0',
   default_options: [
     'buildtype=debugoptimized',
+    'b_ndebug=if-release',
     'c_std=c99',
     'cpp_std=c++14',
     'fortran_std=legacy',
@@ -112,7 +113,8 @@ if not cc.links('', name: '-Wl,--version-script', args: ['-shared', version_link
   version_link_args = []
 endif
 
-cython = find_program('cython')
+# generator() doesn't accept compilers, only found programs. Cast it.
+cython = find_program(meson.get_compiler('cython').cmd_array()[0])
 generate_f2pymod = files('tools/generate_f2pymod.py')
 tempita = files('scipy/_build_utils/tempita.py')
 

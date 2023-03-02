@@ -31,13 +31,9 @@ def sorted_svd(m, k, which='LM'):
     elif which == 'SM':
         ii = np.argsort(s)[:k]
     else:
-        raise ValueError("unknown which=%r" % (which,))
+        raise ValueError(f"unknown which={which!r}")
 
     return u[:, ii], s[ii], vh[ii]
-
-
-def svd_estimate(u, s, vh):
-    return np.dot(u, np.dot(np.diag(s), vh))
 
 
 def _check_svds(A, k, u, s, vh, which="LM", check_usvh_A=False,

@@ -255,17 +255,18 @@ def test_fiedler_large_12():
     _check_fiedler(12, 2)
 
 
-@pytest.mark.skipif(platform.machine() == 'aarch64',
-                    reason="issue #15935")
+@pytest.mark.filterwarnings("ignore:Failed at iteration")
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_failure_to_run_iterations():
     """Check that the code exists gracefully without breaking. Issue #10974.
+    The code may or not issue a warning, filtered out. Issue #15935, #17954.
     """
     rnd = np.random.RandomState(0)
     X = rnd.standard_normal((100, 10))
     A = X @ X.T
     Q = rnd.standard_normal((X.shape[0], 4))
-    with pytest.warns(UserWarning, match="Failed at iteration"):
-        eigenvalues, _ = lobpcg(A, Q, maxiter=40, tol=1e-12)
+    eigenvalues, _ = lobpcg(A, Q, maxiter=40, tol=1e-12)
     assert np.max(eigenvalues) > 0
 
 

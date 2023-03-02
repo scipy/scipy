@@ -32,7 +32,7 @@ class TestRoot:
 
             sol1 = root(func, [1.1,1.1], jac=jac, tol=1e-4, method=method)
             sol2 = root(func, [1.1,1.1], jac=jac, tol=0.5, method=method)
-            msg = "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x))
+            msg = f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
             assert_(sol1.success, msg)
             assert_(sol2.success, msg)
             assert_(abs(func(sol1.x)).max() < abs(func(sol2.x)).max(),

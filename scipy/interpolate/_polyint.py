@@ -106,7 +106,7 @@ class _Interpolator1D:
     def _reshape_yi(self, yi, check=False):
         yi = np.moveaxis(np.asarray(yi), self._y_axis, 0)
         if check and yi.shape[1:] != self._y_extra_shape:
-            ok_shape = "%r + (N,) + %r" % (self._y_extra_shape[-self._y_axis:],
+            ok_shape = "{!r} + (N,) + {!r}".format(self._y_extra_shape[-self._y_axis:],
                                            self._y_extra_shape[:-self._y_axis])
             raise ValueError("Data must be of shape %s" % ok_shape)
         return yi.reshape((yi.shape[0], -1))

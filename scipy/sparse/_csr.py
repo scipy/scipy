@@ -134,9 +134,9 @@ class csr_matrix(_cs_matrix):
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
-            raise ValueError(("Sparse matrices do not support "
+            raise ValueError("Sparse matrices do not support "
                               "an 'axes' parameter because swapping "
-                              "dimensions is the only logical permutation."))
+                              "dimensions is the only logical permutation.")
 
         M, N = self.shape
         return self._csc_container((self.data, self.indices,

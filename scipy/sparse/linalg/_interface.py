@@ -142,9 +142,9 @@ class LinearOperator:
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
             # Operate as _CustomLinearOperator factory.
-            return super(LinearOperator, cls).__new__(_CustomLinearOperator)
+            return super().__new__(_CustomLinearOperator)
         else:
-            obj = super(LinearOperator, cls).__new__(cls)
+            obj = super().__new__(cls)
 
             if (type(obj)._matvec == LinearOperator._matvec
                     and type(obj)._matmat == LinearOperator._matmat):
@@ -165,7 +165,7 @@ class LinearOperator:
 
         shape = tuple(shape)
         if not isshape(shape):
-            raise ValueError("invalid shape %r (must be 2-d)" % (shape,))
+            raise ValueError(f"invalid shape {shape!r} (must be 2-d)")
 
         self.dtype = dtype
         self.shape = shape
