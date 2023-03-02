@@ -69,16 +69,15 @@ def _makeMatMat(m):
 
 def _applyConstraints(blockVectorV, factYBY, blockVectorBY, blockVectorY):
     """Changes blockVectorV in place."""
-    YBV = np.dot(blockVectorBY.T.conj(), blockVectorV)
+    YBV = blockVectorBY.T.conj() @ blockVectorV
     tmp = cho_solve(factYBY, YBV)
-    blockVectorV -= np.dot(blockVectorY, tmp)
+    blockVectorV -= blockVectorY @ tmp
 
 
 def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                       verbosityLevel=0):
     """in-place B-orthonormalize the given block vector using Cholesky."""
     type = blockVectorV.dtype
-    normalization = np.ones(blockVectorV.shape[1], dtype = type)
     if blockVectorBV is None:
         if B is not None:
             try:
@@ -90,7 +89,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                         f"{e}\n",
                         UserWarning, stacklevel=3
                     )
-                    return None, None, None, normalization
+                    return None, None, None
             if blockVectorBV.shape != blockVectorV.shape:
                 raise ValueError(
                     f"The shape {blockVectorV.shape} "
@@ -106,18 +105,16 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
         VBV = cholesky(VBV, overwrite_a=True)
         VBV = inv(VBV, overwrite_a=True)
         np.matmul(blockVectorV, VBV, out=blockVectorV)
-        # blockVectorV = (cho_solve((VBV.T, True), blockVectorV.T)).T
         if B is not None:
             np.matmul(blockVectorBV, VBV, out=blockVectorBV)
-            # blockVectorBV = (cho_solve((VBV.T, True), blockVectorBV.T)).T
-        return blockVectorV, blockVectorBV, VBV, normalization
+        return blockVectorV, blockVectorBV, VBV
     except LinAlgError:
         if verbosityLevel:
             warnings.warn(
                 "Cholesky has failed.",
                 UserWarning, stacklevel=3
             )
-        return None, None, None, normalization
+        return None, None, None
 
 
 def _get_indx(_lambda, num, largest):
@@ -563,7 +560,7 @@ def lobpcg(
         gramYBY = np.dot(blockVectorY.T.conj(), blockVectorBY)
         try:
             # gramYBY is a Cholesky factor from now on...
-            gramYBY = cho_factor(gramYBY)
+            gramYBY = cho_factor(gramYBY, overwrite_a=True)
         except LinAlgError as e:
             raise ValueError("Linearly dependent constraints") from e
 
@@ -571,7 +568,7 @@ def lobpcg(
 
     ##
     # B-orthonormalize X.
-    blockVectorX, blockVectorBX, _, _ = _b_orthonormalize(
+    blockVectorX, blockVectorBX, _ = _b_orthonormalize(
         B, blockVectorX, verbosityLevel=verbosityLevel)
     if blockVectorX is None:
         raise ValueError("Linearly dependent initial approximations")
@@ -587,7 +584,7 @@ def lobpcg(
             f"after multiplying by the primary matrix.\n"
         )
 
-    gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
+    gramXAX = blockVectorX.T.conj() @ blockVectorAX
 
     _lambda, eigBlockVector = eigh(gramXAX, check_finite=False)
     ii = _get_indx(_lambda, sizeX, largest)
@@ -708,7 +705,7 @@ def lobpcg(
         # B-orthonormalize the preconditioned residuals.
         aux = _b_orthonormalize(
             B, activeBlockVectorR, verbosityLevel=verbosityLevel)
-        activeBlockVectorR, activeBlockVectorBR, _, _ = aux
+        activeBlockVectorR, activeBlockVectorBR, _ = aux
 
         if activeBlockVectorR is None:
             warnings.warn(
@@ -726,14 +723,13 @@ def lobpcg(
                     B, activeBlockVectorP, activeBlockVectorBP,
                     verbosityLevel=verbosityLevel
                 )
-                activeBlockVectorP, activeBlockVectorBP, invR, normal = aux
+                activeBlockVectorP, activeBlockVectorBP, invR = aux
             else:
                 aux = _b_orthonormalize(B, activeBlockVectorP,
                                         verbosityLevel=verbosityLevel)
-                activeBlockVectorP, _, invR, normal = aux
+                activeBlockVectorP, _, invR = aux
             # Function _b_orthonormalize returns None if Cholesky fails
             if activeBlockVectorP is not None:
-                activeBlockVectorAP = activeBlockVectorAP * normal
                 activeBlockVectorAP = np.dot(activeBlockVectorAP, invR)
                 restart = forcedRestart
             else:
