@@ -13103,6 +13103,25 @@ add_newdoc("xlog1py",
 
     .. versionadded:: 0.13.0
 
+    Examples
+    --------
+    This function can be used to calculate the log of the probability density
+    function for the beta prime continuous random variable. The probability 
+    density function for beta prime is defined as follows:
+
+    .. math:: f(x, a, b) = \\frac{x^{a-1} (1+x)^{-a-b}}{\\beta(a, b)}
+
+    >>> from scipy.special import xlogy, xlog1py, betaln
+    >>> a, b = 5, 6
+    >>> x = 1
+    >>> log_pdf = xlogy(a - 1.0, x) - xlog1py(a + b, x) - betaln(a, b)
+    >>> log_pdf
+    -0.4857519862138746
+    >>> x = 10
+    >>> log_pdf = xlogy(a - 1.0, x) - xlog1py(a + b, x) - betaln(a, b)
+    >>> log_pdf
+    -10.027640628860368
+
     """)
 
 add_newdoc("y0",
