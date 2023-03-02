@@ -5,7 +5,7 @@ from ._registry import method_files_map
 try:
     import platformdirs
 except ImportError:
-    platformdirs = None
+    platformdirs = None  # type: ignore[assignment]
 
 
 def _clear_cache(datasets, cache_dir=None, method_map=None):
