@@ -592,10 +592,40 @@ def lobpcg(
         lambdaHistory[0, :] = _lambda
 
     eigBlockVector = np.asarray(eigBlockVector[:, ii])
-    np.dot(blockVectorX, eigBlockVector, out=blockVectorX)
-    np.dot(blockVectorAX, eigBlockVector, out=blockVectorAX)
+    try:
+        np.dot(blockVectorX, eigBlockVector, out=blockVectorX)
+    except:
+        if verbosityLevel:
+            warnings.warn(
+                f"The blockVectorX dtype {blockVectorX.dtype} "
+                f"does not match {eigBlockVector.dtype} "
+                f"and needs to be changed preventing in-place.",
+                UserWarning, stacklevel=2
+            )
+        blockVectorX = blockVectorX @ eigBlockVector
+    try:
+        np.dot(blockVectorAX, eigBlockVector, out=blockVectorAX)
+    except:
+        if verbosityLevel:
+            warnings.warn(
+                f"The blockVectorX dtype {blockVectorAX.dtype} "
+                f"does not match {eigBlockVector.dtype} "
+                f"and needs to be changed preventing in-place.",
+                UserWarning, stacklevel=2
+            )
+        blockVectorAX = blockVectorAX @ eigBlockVector
     if B is not None:
-        np.dot(blockVectorBX, eigBlockVector, out=blockVectorBX)
+        try:
+            np.dot(blockVectorBX, eigBlockVector, out=blockVectorBX)
+        except:
+            if verbosityLevel:
+                warnings.warn(
+                    f"The blockVectorX dtype {blockVectorBX.dtype} "
+                    f"does not match {eigBlockVector.dtype} "
+                    f"and needs to be changed preventing in-place.",
+                    UserWarning, stacklevel=2
+                )
+            blockVectorBX = blockVectorBX @ eigBlockVecto
 
     ##
     # Active index set.
