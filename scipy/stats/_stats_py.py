@@ -6969,7 +6969,7 @@ def _equal_var_ttest_denom(v1, n1, v2, n2):
     v2 = 0 if n2 == 1 else v2
 
     df = n1 + n2 - 2.0
-    svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / df
+    svar = np.divide((n1 - 1) * v1 + (n2 - 1) * v2, df)
     denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
     return df, denom
 
@@ -7427,6 +7427,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         n1 = a.shape[axis]
         n2 = b.shape[axis]
 
+        if equal_var:
+            old_errstate = np.geterr()
+            np.seterr(divide='ignore', invalid='ignore')
+
         if trim == 0:
             v1 = _var(a, axis, ddof=1)
             v2 = _var(b, axis, ddof=1)
@@ -7441,6 +7445,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         else:
             df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
         res = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
+
+        if equal_var:
+            np.seterr(**old_errstate)
+
     return Ttest_indResult(*res)
 
 
