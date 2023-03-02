@@ -1156,8 +1156,7 @@ def _var(x, axis=0, ddof=0, mean=None):
     var = _moment(x, 2, axis, mean=mean)
     if ddof != 0:
         n = x.shape[axis] if axis is not None else x.size
-        with np.errstate(divide='ignore', invalid='ignore'):
-            var *= np.divide(n, n-ddof)  # to avoid error on division by zero
+        var *= np.divide(n, n-ddof)  # to avoid error on division by zero
     return var
 
 
