@@ -92,7 +92,11 @@ def test_MikotaPair():
 @pytest.mark.parametrize("m", [1, 2, 10])
 @pytest.mark.parametrize("dtype", (float, complex, np.float32))
 def test_b_orthonormalize(n, m, dtype):
-    """Test B-orthogonalization by Cholesky with callable B.
+    """Test B-orthonormalization by Cholesky with callable B.
+    The function _b_orthonormalize is key in LOBPCG but may lead
+    to numerical instabilities. The input vectors are often
+    badly scaled, so the function needs scale-invariant Cholesky;
+    see https://netlib.org/lapack/lawnspdf/lawn14.pdf.
     """
     atol = m * n * np.finfo(dtype).eps
     rnd = np.random.RandomState(0)
@@ -130,7 +134,7 @@ def test_b_orthonormalize(n, m, dtype):
     BX = B @ X
     # Check scaling-invariance of Cholesky-based orthonormalization
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
-    # Te output should be the same, up the signs of the columns.
+    # The output should be the same, up the signs of the columns.
     Xo1 =  sign_align(Xo1, Xo)
     assert_allclose(Xo, Xo1, atol=atol)
     BXo1 =  sign_align(BXo1, BXo)
