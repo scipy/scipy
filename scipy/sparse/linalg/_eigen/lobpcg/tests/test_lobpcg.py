@@ -90,7 +90,9 @@ def test_MikotaPair():
 
 @pytest.mark.parametrize("n", [50])
 @pytest.mark.parametrize("m", [1, 2, 10])
-@pytest.mark.parametrize("dtype", (float, complex, np.float32))
+@pytest.mark.parametrize("Vdtype", (float, complex, np.float32))
+@pytest.mark.parametrize("Bdtype", (float, complex, np.float32))
+@pytest.mark.parametrize("BVdtype", (float, complex, np.float32))
 def test_b_orthonormalize(n, m, dtype):
     """Test B-orthonormalization by Cholesky with callable B.
     The function _b_orthonormalize is key in LOBPCG but may lead
@@ -100,11 +102,11 @@ def test_b_orthonormalize(n, m, dtype):
     """
     atol = m * n * np.finfo(dtype).eps
     rnd = np.random.RandomState(0)
-    X = rnd.standard_normal((n, m)).astype(dtype)
+    X = rnd.standard_normal((n, m)).astype(Vdtype)
     Xcopy = np.copy(X)
     vals = np.arange(1, n+1, dtype=float)
-    B = diags([vals], [0], (n, n))
-    BX = B @ X
+    B = diags([vals], [0], (n, n)).astype(Bdtype)
+    BX = (B @ X).astype(BVdtype)
 
     Xo, BXo, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
     # Check in-place.
@@ -130,8 +132,8 @@ def test_b_orthonormalize(n, m, dtype):
     # Introduce column-scaling in X.
     scaling = 1.0 / np.geomspace(10, 1e10, num=m)
     X = Xcopy * scaling
-    X = X.astype(dtype)
-    BX = B @ X
+    X = X.astype(Vdtype)
+    BX = (B @ X).astype(BVdtype)
     # Check scaling-invariance of Cholesky-based orthonormalization
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
     # The output should be the same, up the signs of the columns.
