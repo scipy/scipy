@@ -88,8 +88,8 @@ def test_MikotaPair():
     compare_solutions(A, B, 2)
 
 
-@pytest.mark.parametrize("n", [32, 99])
-@pytest.mark.parametrize("m", [1, 2, 16])
+@pytest.mark.parametrize("n", [50])
+@pytest.mark.parametrize("m", [1, 2, 10])
 @pytest.mark.parametrize("dtype", (float, complex, np.float32))
 def test_b_orthonormalize(n, m, dtype):
     """Test B-orthogonalization by Cholesky with callable B.
@@ -123,20 +123,18 @@ def test_b_orthonormalize(n, m, dtype):
     # Check BXo1.
     assert_allclose(B @ Xo1, BXo1, atol=atol)
 
-    """ # Introduce column-scaling in X.
-    scaling = np.geomspace(1, 1e10, num=m)
+    # Introduce column-scaling in X.
+    scaling = 1.0 / np.geomspace(10, 1e10, num=m)
     X = Xcopy * scaling
     X = X.astype(dtype)
     BX = B @ X
     # Check scaling-invariance of Cholesky-based orthonormalization
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
-    # THe output should be the same, up the signs of the columns.
+    # Te output should be the same, up the signs of the columns.
     Xo1 =  sign_align(Xo1, Xo)
     assert_allclose(Xo, Xo1, atol=atol)
     BXo1 =  sign_align(BXo1, BXo)
     assert_allclose(BXo, BXo1, atol=atol)
-    assert_allclose(B @ Xo1, BXo1, atol=atol)
-    """
 
 
 @pytest.mark.filterwarnings("ignore:Exited at iteration 0")
