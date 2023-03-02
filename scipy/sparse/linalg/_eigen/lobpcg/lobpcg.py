@@ -77,7 +77,6 @@ def _applyConstraints(blockVectorV, factYBY, blockVectorBY, blockVectorY):
 def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                       verbosityLevel=0):
     """in-place B-orthonormalize the given block vector using Cholesky."""
-    type = blockVectorV.dtype
     if blockVectorBV is None:
         if B is not None:
             try:
@@ -557,7 +556,7 @@ def lobpcg(
             blockVectorBY = blockVectorY
 
         # gramYBY is a dense array.
-        gramYBY = np.dot(blockVectorY.T.conj(), blockVectorBY)
+        gramYBY = blockVectorY.T.conj() @ blockVectorBY
         try:
             # gramYBY is a Cholesky factor from now on...
             gramYBY = cho_factor(gramYBY, overwrite_a=True)
@@ -593,10 +592,10 @@ def lobpcg(
         lambdaHistory[0, :] = _lambda
 
     eigBlockVector = np.asarray(eigBlockVector[:, ii])
-    blockVectorX = np.dot(blockVectorX, eigBlockVector)
-    blockVectorAX = np.dot(blockVectorAX, eigBlockVector)
+    np.dot(blockVectorX, eigBlockVector, out=blockVectorX)
+    np.dot(blockVectorAX, eigBlockVector, out=blockVectorAX)
     if B is not None:
-        blockVectorBX = np.dot(blockVectorBX, eigBlockVector)
+        np.dot(blockVectorBX, eigBlockVector, out=blockVectorBX)
 
     ##
     # Active index set.
