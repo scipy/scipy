@@ -219,6 +219,7 @@ mach_sources = [
 
 ufuncs_sources = [
   '_cosine.c',
+  'scaled_exp1.c',
   'amos_wrappers.c',
   'cdf_wrappers.c',
   'specfun_wrappers.c',
@@ -370,8 +371,8 @@ py3.extension_module('_ufuncs_cxx',
   [ufuncs_cxx_sources,
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
-  cpp_args: cython_cpp_args,
-  include_directories: ['../_lib/boost', '../_lib',
+  cpp_args: [cython_cpp_args, '-DBOOST_MATH_STANDALONE=1'],
+  include_directories: ['../_lib/boost_math/include', '../_lib',
                         '../_build_utils/src'],
   link_args: version_link_args,
   dependencies: [np_dep, ellint_dep],
@@ -393,6 +394,7 @@ py3.extension_module('cython_special',
   [
     uf_cython_gen.process(cython_special[6]),  # cython_special.pyx
     '_cosine.c',
+    'scaled_exp1.c',
     'amos_wrappers.c',
     'cdf_wrappers.c',
     'specfun_wrappers.c',
