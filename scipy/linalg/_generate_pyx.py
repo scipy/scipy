@@ -63,7 +63,7 @@ def arg_casts(arg):
     if arg in ['npy_complex64', 'npy_complex128', '_cselect1', '_cselect2',
                '_dselect2', '_dselect3', '_sselect2', '_sselect3',
                '_zselect1', '_zselect2']:
-        return '<{0}*>'.format(arg)
+        return f'<{arg}*>'
     return ''
 
 
@@ -578,7 +578,7 @@ def fort_subroutine_wrapper(name, ret_type, args):
     argnames = ',\n     +    '.join(names)
 
     names = [process_fortran_name(n, name) for n in names]
-    argdecls = '\n        '.join('{0} {1}'.format(fortran_types[t], n)
+    argdecls = '\n        '.join(f'{fortran_types[t]} {n}'
                                  for n, t in zip(names, types))
     return fortran_template.format(name=name, wrapper=wrapper,
                                    argnames=argnames, argdecls=argdecls,
@@ -592,7 +592,7 @@ def generate_fortran(func_sigs):
 def make_c_args(args):
     types, names = arg_names_and_types(args)
     types = [c_types[arg] for arg in types]
-    return ', '.join('{0} *{1}'.format(t, n) for t, n in zip(types, names))
+    return ', '.join(f'{t} *{n}' for t, n in zip(types, names))
 
 
 c_func_template = ("void F_FUNC({name}wrp, {upname}WRP)"
@@ -730,7 +730,7 @@ def make_all(outdir,
                         for line in comments]) + '\n'
     pyxcomment = ''.join(['# ' + line for line in comments]) + '\n'
     fcomment = ''.join(['c     ' + line for line in comments]) + '\n'
-    with open(blas_signature_file, 'r') as f:
+    with open(blas_signature_file) as f:
         blas_sigs = f.readlines()
     blas_sigs = filter_lines(blas_sigs)
     blas_pyx = generate_blas_pyx(*(blas_sigs + (blas_header_name,)))
@@ -749,7 +749,7 @@ def make_all(outdir,
     with open(os.path.join(outdir, blas_header_name), 'w') as f:
         f.write(ccomment)
         f.write(blas_c_header)
-    with open(lapack_signature_file, 'r') as f:
+    with open(lapack_signature_file) as f:
         lapack_sigs = f.readlines()
     lapack_sigs = filter_lines(lapack_sigs)
     lapack_pyx = generate_lapack_pyx(*(lapack_sigs + (lapack_header_name,)))

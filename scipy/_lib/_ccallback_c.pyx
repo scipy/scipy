@@ -169,7 +169,6 @@ def test_call_cython(callback_obj, double value):
     cdef:
         ccallback_t callback
         int error_flag = 0
-        int ret
         double result
 
     ccallback_prepare(&callback, signatures, callback_obj, CCALLBACK_DEFAULTS)

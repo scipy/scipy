@@ -155,7 +155,7 @@ class NominalAttribute(Attribute):
         elif data_str == '?':
             return data_str
         else:
-            raise ValueError("%s value not in %s" % (str(data_str),
+            raise ValueError("{} value not in {}".format(str(data_str),
                                                      str(self.values)))
 
     def __str__(self):
@@ -687,7 +687,7 @@ class MetaData:
         msg = ""
         msg += "Dataset: %s\n" % self.name
         for i in self._attributes:
-            msg += "\t%s's type is %s" % (i, self._attributes[i].type_name)
+            msg += f"\t{i}'s type is {self._attributes[i].type_name}"
             if self._attributes[i].range:
                 msg += ", range is %s" % str(self._attributes[i].range)
             msg += '\n'
@@ -797,7 +797,7 @@ def loadarff(f):
     if hasattr(f, 'read'):
         ofile = f
     else:
-        ofile = open(f, 'rt')
+        ofile = open(f)
     try:
         return _loadarff(ofile)
     finally:
@@ -882,7 +882,7 @@ def print_attribute(name, tp, data):
     type = tp.type_name
     if type == 'numeric' or type == 'real' or type == 'integer':
         min, max, mean, std = basic_stats(data)
-        print("%s,%s,%f,%f,%f,%f" % (name, type, min, max, mean, std))
+        print(f"{name},{type},{min:f},{max:f},{mean:f},{std:f}")
     else:
         print(str(tp))
 

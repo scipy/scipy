@@ -35,7 +35,8 @@ def configuration(parent_package='',top_path=None):
     if python_inc_dirs != plat_specific_python_inc_dirs:
         inc_dirs.append(plat_specific_python_inc_dirs)
     inc_dirs.append(join(dirname(dirname(__file__)), '_lib'))
-    inc_dirs.append(join(dirname(dirname(__file__)), '_lib', 'boost'))
+    inc_dirs.append(join(dirname(dirname(__file__)), '_lib', 'boost_math',
+                         'include'))
     inc_dirs.append(join(dirname(dirname(__file__)), '_build_utils', 'src'))
 
     # C libraries
@@ -69,7 +70,7 @@ def configuration(parent_package='',top_path=None):
     headers = ['*.h', join('cephes', '*.h')]
     ufuncs_src = ['_ufuncs.c', 'sf_error.c',
                   'amos_wrappers.c', 'cdf_wrappers.c', 'specfun_wrappers.c',
-                  '_cosine.c']
+                  '_cosine.c', 'scaled_exp1.c']
 
     ufuncs_dep = (
         headers

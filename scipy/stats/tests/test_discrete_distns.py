@@ -1,4 +1,6 @@
 import pytest
+import itertools
+
 from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
                          boltzmann, skellam, zipf, zipfian, binom, nbinom,
                          nchypergeom_fisher, nchypergeom_wallenius, randint)
@@ -142,6 +144,15 @@ def test_betabinom_a_and_b_unity():
     assert_almost_equal(p, expected)
 
 
+@pytest.mark.parametrize('dtypes', itertools.product(*[(int, float)]*3))
+def test_betabinom_stats_a_and_b_integers_gh18026(dtypes):
+    # gh-18026 reported that `betabinom` kurtosis calculation fails when some
+    # parameters are integers. Check that this is resolved.
+    n_type, a_type, b_type = dtypes
+    n, a, b = n_type(10), a_type(2), b_type(3)
+    assert_allclose(betabinom.stats(n, a, b, moments='k'), -0.6904761904761907)
+
+
 def test_betabinom_bernoulli():
     # test limiting case that betabinom(1, a, b) = bernoulli(a / (a + b))
     a = 2.3
@@ -232,7 +243,6 @@ def test_boost_divide_by_zero_issue_15101():
     assert_allclose(binom.pmf(k, n, p), 0.0)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_skellam_gh11474():
     # test issue reported in gh-11474 caused by `cdfchn`
     mu = [1, 10, 100, 1000, 5000, 5050, 5100, 5250, 6000]
@@ -377,7 +387,7 @@ class TestNCH():
                 return t1 * t2 * w**x
 
             def P(k):
-                return sum((f(y)*y**k for y in range(xl, xu + 1)))
+                return sum(f(y)*y**k for y in range(xl, xu + 1))
 
             P0 = P(0)
             P1 = P(1)

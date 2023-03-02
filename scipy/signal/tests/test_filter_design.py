@@ -700,7 +700,7 @@ class TestFreqz:
             a = as_[ii]
             expected_w = np.linspace(0, 2 * np.pi, len(b), endpoint=False)
             w, h = freqz(b, a, worN=expected_w, whole=True)  # polyval
-            err_msg = 'b = %s, a=%s' % (b, a)
+            err_msg = f'b = {b}, a={a}'
             assert_array_almost_equal(w, expected_w, err_msg=err_msg)
             assert_array_almost_equal(h, hs_whole[ii], err_msg=err_msg)
             w, h = freqz(b, a, worN=len(b), whole=True)  # FFT

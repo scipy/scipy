@@ -159,7 +159,8 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
     ltr = _type_conv[x.dtype.char]
     revcom = getattr(_iterative, ltr + 'bicgrevcom')
 
-    get_residual = lambda: np.linalg.norm(matvec(x) - b)
+    def get_residual():
+        return np.linalg.norm(matvec(x) - b)
     atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'bicg')
     if atol == 'exit':
         return postprocess(x), 0
@@ -249,7 +250,8 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
     ltr = _type_conv[x.dtype.char]
     revcom = getattr(_iterative, ltr + 'bicgstabrevcom')
 
-    get_residual = lambda: np.linalg.norm(matvec(x) - b)
+    def get_residual():
+        return np.linalg.norm(matvec(x) - b)
     atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'bicgstab')
     if atol == 'exit':
         return postprocess(x), 0
@@ -335,7 +337,8 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     ltr = _type_conv[x.dtype.char]
     revcom = getattr(_iterative, ltr + 'cgrevcom')
 
-    get_residual = lambda: np.linalg.norm(matvec(x) - b)
+    def get_residual():
+        return np.linalg.norm(matvec(x) - b)
     atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'cg')
     if atol == 'exit':
         return postprocess(x), 0
@@ -425,7 +428,8 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
     ltr = _type_conv[x.dtype.char]
     revcom = getattr(_iterative, ltr + 'cgsrevcom')
 
-    get_residual = lambda: np.linalg.norm(matvec(x) - b)
+    def get_residual():
+        return np.linalg.norm(matvec(x) - b)
     atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'cgs')
     if atol == 'exit':
         return postprocess(x), 0
@@ -609,7 +613,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         callback_type = 'legacy'
 
     if callback_type not in ('x', 'pr_norm', 'legacy'):
-        raise ValueError("Unknown callback_type: {!r}".format(callback_type))
+        raise ValueError(f"Unknown callback_type: {callback_type!r}")
 
     if callback is None:
         callback_type = 'none'
@@ -631,7 +635,8 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
 
     bnrm2 = np.linalg.norm(b)
     Mb_nrm2 = np.linalg.norm(psolve(b))
-    get_residual = lambda: np.linalg.norm(matvec(x) - b)
+    def get_residual():
+        return np.linalg.norm(matvec(x) - b)
     atol = _get_atol(tol, atol, bnrm2, get_residual, 'gmres')
     if atol == 'exit':
         return postprocess(x), 0
@@ -824,7 +829,8 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     ltr = _type_conv[x.dtype.char]
     revcom = getattr(_iterative, ltr + 'qmrrevcom')
 
-    get_residual = lambda: np.linalg.norm(A.matvec(x) - b)
+    def get_residual():
+        return np.linalg.norm(A.matvec(x) - b)
     atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'qmr')
     if atol == 'exit':
         return postprocess(x), 0

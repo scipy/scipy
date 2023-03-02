@@ -1,4 +1,3 @@
-
 def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                      maxiter=None, return_singular_vectors=True,
                      solver='arpack', random_state=None):

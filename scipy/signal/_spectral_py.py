@@ -1455,7 +1455,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         if len(win.shape) != 1:
             raise ValueError('window must be 1-D')
         if win.shape[0] != nperseg:
-            raise ValueError('window must have length of {0}'.format(nperseg))
+            raise ValueError(f'window must have length of {nperseg}')
 
     ifunc = sp_fft.irfft if input_onesided else sp_fft.ifft
     xsubs = ifunc(Zxx, axis=-2, n=nfft)[..., :nperseg, :]
@@ -1489,7 +1489,10 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     # Divide out normalization where non-tiny
     if np.sum(norm > 1e-10) != len(norm):
-        warnings.warn("NOLA condition failed, STFT may not be invertible")
+        warnings.warn(
+            "NOLA condition failed, STFT may not be invertible."
+            + (" Possibly due to missing boundary" if not boundary else "")
+        )
     x /= np.where(norm > 1e-10, norm, 1.0)
 
     if input_onesided:
@@ -1729,7 +1732,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
                       None: None}
 
     if boundary not in boundary_funcs:
-        raise ValueError("Unknown boundary option '{0}', must be one of: {1}"
+        raise ValueError("Unknown boundary option '{}', must be one of: {}"
                          .format(boundary, list(boundary_funcs.keys())))
 
     # If x and y are the same object we can save ourselves some computation.

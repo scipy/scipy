@@ -2,7 +2,7 @@ import sys
 import math
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from numpy.testing import (assert_,
+from numpy.testing import (assert_equal,
         assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
 
@@ -251,8 +251,10 @@ class TestQuad:
     def test_double_integral2(self):
         def func(x0, x1, t0, t1):
             return x0 + x1 + t0 + t1
-        g = lambda x: x
-        h = lambda x: 2 * x
+        def g(x):
+            return x
+        def h(x):
+            return 2 * x
         args = 1, 2
         assert_quad(dblquad(func, 1, 2, g, h, args=args),35./6 + 9*.5)
 
@@ -548,9 +550,9 @@ class TestNQuad:
             return {'points': [0.2*args[2] + 0.5 + 0.25*args[0]]}
 
         res = nquad(func1, [[0, 1], [-1, 1], [.13, .8], [-.15, 1]],
-                    opts=[opts_basic, {}, {}, {}], full_output=True)
-        assert_quad(res[:-1], 1.5267454070738635)
-        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5)
+                    opts=[opts_basic, {}, {}, {}])
+        assert_quad(res, 1.5267454070738635)
+        assert res.neval > 0 and res.neval < 4e5
 
     def test_variable_limits(self):
         scale = .1
@@ -673,3 +675,23 @@ class TestNQuad:
         except TypeError:
             assert False
 
+    def test_result_object(self):
+        # Check that result object contains attributes `integral`, `abserr`,
+        # and `neval`. During the `full_output` deprecation period, also check
+        # that specifying `full_output` produces a warning and that values
+        # are the same whether `full_output` is True, False, or unspecified.
+        def func(x):
+            return x**2 + 1
+
+        res = nquad(func, ranges=[[0, 4]])
+        with np.testing.assert_warns(DeprecationWarning):
+            res2 = nquad(func, ranges=[[0, 4]], full_output=False)
+        with np.testing.assert_warns(DeprecationWarning):
+            res3 = nquad(func, ranges=[[0, 4]], full_output=True)
+
+        assert_equal(res, res2)
+        assert res.integral == res2.integral
+        assert res.abserr == res2.abserr
+
+        assert_equal(res, res3[:2])
+        assert_equal(res.neval, res3[2]['neval'])

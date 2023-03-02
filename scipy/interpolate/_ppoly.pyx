@@ -435,7 +435,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
     """
     cdef list roots
     cdef list cur_roots
-    cdef int interval, jp, k, i, p
+    cdef int interval, jp, k, i
 
     cdef double *wr
     cdef double *wi
