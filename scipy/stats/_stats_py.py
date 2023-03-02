@@ -1131,7 +1131,8 @@ def _moment(a, moment, axis, *, mean=None):
                               keepdims=True) / np.abs(mean)
         with np.errstate(invalid='ignore'):
             precision_loss = np.any(rel_diff < eps)
-        if precision_loss:
+        n = a.shape[axis] if axis is not None else a.size
+        if precision_loss and n > 1:
             message = ("Precision loss occurred in moment calculation due to "
                        "catastrophic cancellation. This occurs when the data "
                        "are nearly identical. Results may be unreliable.")
