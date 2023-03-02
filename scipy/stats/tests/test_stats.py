@@ -5221,6 +5221,23 @@ def test_ttest_ind_from_stats_inputs_zero():
     assert_equal(result, [np.nan, np.nan])
 
 
+def test_ttest_single_observation():
+    rng = np.random.default_rng(246834602926842)
+    x = rng.normal(size=(10000, 2))
+    y = rng.normal(size=(10000, 1))
+    res = stats.ttest_ind(x, y, equal_var=True, axis=-1)
+
+    assert_allclose(np.percentile(res.pvalue, 25), 0.25, atol=1e-2)
+    assert_allclose(np.percentile(res.pvalue, 50), 0.5, atol=1e-2)
+    assert_allclose(np.percentile(res.pvalue, 75), 0.75, atol=1e-2)
+
+    res = stats.ttest_ind(y, x, equal_var=True, axis=-1)
+
+    assert_allclose(np.percentile(res.pvalue, 25), 0.25, atol=1e-2)
+    assert_allclose(np.percentile(res.pvalue, 50), 0.5, atol=1e-2)
+    assert_allclose(np.percentile(res.pvalue, 75), 0.75, atol=1e-2)
+
+
 def test_ttest_1samp_new():
     n1, n2, n3 = (10,15,20)
     rvn1 = stats.norm.rvs(loc=5,scale=10,size=(n1,n2,n3))
