@@ -13043,38 +13043,38 @@ add_newdoc("xlogy",
 
     Notes
     -----
-
     The log function used in the computation is the natural log.
 
     .. versionadded:: 0.13.0
 
     Examples
     --------
-
     We can use this function to calculate the binary logistic loss also
     known as the binary cross entropy. This loss function is used for
     binary classification problems and is defined as:
 
     .. math::
-        L = 1/n * \\sum_{i=0}^n -(y_i*log(pred_i) + (1-y_i)*log(1-pred_i))
+        L = 1/n * \\sum_{i=0}^n -(y_i*log(y\\_pred_i) + (1-y_i)*log(1-y\\_pred_i))
 
-    We can define the parameters `x` and `y` as y_true and y_pred respectively.
-    y_true is the array of the actual labels that can be either 0 or 1.
-    y_pred is the array of the predictions and for each row it contains the
-    probabilties of both labels.
+    We can define the parameters `x` and `y` as y and y_pred respectively.
+    y is the array of the actual labels which over here can be either 0 or 1.
+    y_pred is the array of the predicted probabilities of the positive class,
+    which in this example is simply 1.
 
     >>> import numpy as np
     >>> from scipy.special import xlogy
-    >>> y_true = np.array([[0.0], [1.0], [0.0], [1.0], [1.0], [0.0]])
-    >>> y_pred = np.array([
-    ...     [0.7, 0.3], [0.2, 0.8], [0.6, 0.4],
-    ...     [0.3, 0.7], [0.1, 0.9], [0.8, 0.2],
-    ... ])
-    >>> n = len(y_true)
-    >>> loss = -(xlogy(y_true, y_pred) + xlogy(1 - y_true, 1 - y_pred)).sum()
+    >>> y = np.array([0, 1, 0, 1, 1, 0])
+    >>> y_pred = np.array([0.3, 0.8, 0.4, 0.7, 0.9, 0.2])
+    >>> n = len(y)
+    >>> loss = -(xlogy(y, y_pred) + xlogy(1 - y, 1 - y_pred)).sum()
     >>> loss /= n
     >>> loss
-    1.770253398052996
+    0.29597052165495025
+
+    A lower loss is usually better as it indicates that the predictions are
+    similar to the actual labels. In this example since our predicted
+    probabilties corresponded with the actual labels, we get an overall loss
+    that is reasonably low and appropriate.
 
     """)
 
