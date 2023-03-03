@@ -13133,7 +13133,7 @@ add_newdoc("xlog1py",
     -69.31471805599453
 
     We can confirm that we get a value close to the original pmf value by
-    taking the exponetial of the log pmf.
+    taking the exponential of the log pmf.
 
     >>> _orig_pmf = np.exp(_log_pmf)
     >>> np.isclose(_pmf, _orig_pmf)
