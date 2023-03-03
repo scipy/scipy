@@ -4054,7 +4054,9 @@ class halflogistic_gen(rv_continuous):
         return 2 * sc.expit(-x)
 
     def _isf(self, q):
-        return -sc.logit(0.5 * q)
+        return _lazywhere(q < 0.5, (q, ),
+                          lambda q: -sc.logit(0.5 * q),
+                          f2=lambda q: 2*np.arctanh(1 - q))
 
     def _munp(self, n):
         if n == 1:
