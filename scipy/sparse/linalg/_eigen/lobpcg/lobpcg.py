@@ -113,7 +113,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                     f"and needs to be changed preventing in-place.",
                     UserWarning, stacklevel=3
                 )
-                blockVectorV = blockVectorV @ VBV
+            blockVectorV = blockVectorV @ VBV
         if B is not None:
             try:
                 np.matmul(blockVectorBV, VBV, out=blockVectorBV)
