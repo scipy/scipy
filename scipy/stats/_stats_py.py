@@ -29,7 +29,7 @@ References
 import warnings
 import math
 from math import gcd
-from collections import namedtuple, Counter
+from collections import namedtuple
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -1311,7 +1311,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
 
     Examples
     --------
-    In Fisher's definiton, the kurtosis of the normal distribution is zero.
+    In Fisher's definition, the kurtosis of the normal distribution is zero.
     In the following example, the kurtosis is close to zero, because it was
     calculated from the dataset, not from the continuous distribution.
 
@@ -2845,6 +2845,9 @@ def obrientransform(*samples):
     return np.array(arrays)
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, too_small=1
+)
 def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     """Compute standard error of the mean.
 
@@ -2897,14 +2900,6 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     1.2893796958227628
 
     """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.sem(a, axis, ddof)
-
     n = a.shape[axis]
     s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
     return s
@@ -3365,6 +3360,10 @@ _scale_conversions = {'raw': 1.0,
                       'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1,
+    default_axis=None, override={'nan_propagation': False}
+)
 def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         interpolation='linear', keepdims=False):
     r"""
@@ -3487,7 +3486,7 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     if isinstance(scale, str):
         scale_key = scale.lower()
         if scale_key not in _scale_conversions:
-            raise ValueError("{0} not a valid scale for `iqr`".format(scale))
+            raise ValueError(f"{scale} not a valid scale for `iqr`")
         if scale_key == 'raw':
             msg = ("The use of 'scale=\"raw\"' is deprecated infavor of "
                    "'scale=1' and will raise an error in SciPy 1.12.0.")
@@ -6035,7 +6034,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     if x.size != y.size:
         raise ValueError("All inputs to `weightedtau` must be "
                          "of the same size, "
-                         "found x-size %s and y-size %s" % (x.size, y.size))
+                         "found x-size {} and y-size {}".format(x.size, y.size))
     if not x.size:
         # Return NaN if arrays are empty
         res = SignificanceResult(np.nan, np.nan)
@@ -6075,7 +6074,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         if rank.size != x.size:
             raise ValueError(
                 "All inputs to `weightedtau` must be of the same size, "
-                "found x-size %s and rank-size %s" % (x.size, rank.size)
+                "found x-size {} and rank-size {}".format(x.size, rank.size)
             )
 
     tau = _weightedrankedtau(x, y, rank, weigher, additive)
@@ -6692,7 +6691,7 @@ class TtestResult(TtestResultBase):
 
 
 def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
-                      estimate):
+                     estimate):
     # this could be any number of dimensions (including 0d), but there is
     # at most one unique value
     alternative = np.atleast_1d(alternative).ravel()
@@ -7028,6 +7027,12 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     The statistic is calculated as ``(mean1 - mean2)/se``, where ``se`` is the
     standard error. Therefore, the statistic will be positive when `mean1` is
     greater than `mean2` and negative when `mean1` is less than `mean2`.
+
+    This method does not check whether any of the elements of `std1` or `std2`
+    are negative. If any elements of the `std1` or `std2` parameters are
+    negative in a call to this method, this method will return the same result
+    as if it were passed ``numpy.abs(std1)`` and ``numpy.abs(std2)``,
+    respectively, instead; no exceptions or warnings will be emitted.
 
     References
     ----------
@@ -7972,8 +7977,8 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     if isinstance(lambda_, str):
         if lambda_ not in _power_div_lambda_names:
             names = repr(list(_power_div_lambda_names.keys()))[1:-1]
-            raise ValueError("invalid string for lambda_: {0!r}. "
-                             "Valid strings are {1}".format(lambda_, names))
+            raise ValueError("invalid string for lambda_: {!r}. "
+                             "Valid strings are {}".format(lambda_, names))
         lambda_ = _power_div_lambda_names[lambda_]
     elif lambda_ is None:
         lambda_ = 1
@@ -10126,7 +10131,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
 
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
-        raise ValueError('unknown method "{0}"'.format(method))
+        raise ValueError(f'unknown method "{method}"')
 
     a = np.asarray(a)
 
@@ -10236,7 +10241,7 @@ def expectile(a, alpha=0.5, *, weights=None):
     The empirical expectile at level :math:`\alpha` (`alpha`) of a sample
     :math:`a_i` (the array `a`) is defined by plugging in the empirical CDF of
     `a`. Given sample or case weights :math:`w` (the array `weights`), it
-    reads :math:`F_a(x) = \frac{1}{\sum_i a_i} \sum_i w_i 1_{a_i \leq x}`
+    reads :math:`F_a(x) = \frac{1}{\sum_i w_i} \sum_i w_i 1_{a_i \leq x}`
     with indicator function :math:`1_{A}`. This leads to the definition of the
     empirical expectile at level `alpha` as the unique solution :math:`t` of:
 

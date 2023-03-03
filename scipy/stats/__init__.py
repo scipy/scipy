@@ -174,6 +174,7 @@ Multivariate distributions
    multivariate_normal    -- Multivariate normal distribution
    matrix_normal          -- Matrix normal distribution
    dirichlet              -- Dirichlet
+   dirichlet_multinomial  -- Dirichlet multinomial distribution
    wishart                -- Wishart
    invwishart             -- Inverse Wishart
    multinomial            -- Multinomial distribution
@@ -427,6 +428,7 @@ tests) are listed above.
    :toctree: generated/
 
    combine_pvalues
+   false_discovery_control
 
 Deprecated and Legacy Functions
 -------------------------------
@@ -568,6 +570,20 @@ Warnings / Errors used in :mod:`scipy.stats`
    ConstantInputWarning
    NearConstantInputWarning
    FitError
+
+Result classes used in :mod:`scipy.stats`
+-----------------------------------------
+
+.. warning::
+
+    These classes are private, but they are included here because instances
+    of them are returned by other statistical functions. User import and
+    instantiation is not supported.
+
+.. toctree::
+   :maxdepth: 2
+
+   stats._result_classes
 
 """
 

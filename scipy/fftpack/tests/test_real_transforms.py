@@ -695,7 +695,7 @@ class TestOverwrite:
         x2 = x.copy()
         routine(x2, type, fftsize, axis, norm, overwrite_x=overwrite_x)
 
-        sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
+        sig = "{}({}{!r}, {!r}, axis={!r}, overwrite_x={!r})".format(
             routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
         if not overwrite_x:
             assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)

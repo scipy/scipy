@@ -54,6 +54,7 @@ from ._stats_mstats_common import (
         siegelslopes as stats_siegelslopes
         )
 
+
 def _chk_asarray(a, axis):
     # Always returns a masked array, raveled for axis=None
     a = ma.asanyarray(a)
@@ -83,7 +84,7 @@ def _chk_size(a, b):
     (na, nb) = (a.size, b.size)
     if na != nb:
         raise ValueError("The size of the input array should match!"
-                         " (%s <> %s)" % (na, nb))
+                         " ({} <> {})".format(na, nb))
     return (a, b, na)
 
 
@@ -545,8 +546,9 @@ def pearsonr(x, y):
     if df < 0:
         return (masked, masked)
 
-    return scipy.stats._stats_py.pearsonr(ma.masked_array(x, mask=m).compressed(),
-                                      ma.masked_array(y, mask=m).compressed())
+    return scipy.stats._stats_py.pearsonr(
+                ma.masked_array(x, mask=m).compressed(),
+                ma.masked_array(y, mask=m).compressed())
 
 
 def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
@@ -871,8 +873,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
         if use_ties:
             var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in xties.items()])
             var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in yties.items()])
-            v1 = np.sum([v*k*(k-1) for (k, v) in xties.items()], dtype=float) *\
-                 np.sum([v*k*(k-1) for (k, v) in yties.items()], dtype=float)
+            v1 = (np.sum([v*k*(k-1) for (k, v) in xties.items()], dtype=float) *
+                  np.sum([v*k*(k-1) for (k, v) in yties.items()], dtype=float))
             v1 /= 2.*n*(n-1)
             if n > 2:
                 v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in xties.items()],
@@ -930,7 +932,7 @@ def kendalltau_seasonal(x):
         cmb = n_p[j]*(n_p[j]-1)
         for k in range(j,m,1):
             K[j,k] = sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
-                               for i in range(n))
+                         for i in range(n))
             covmat[j,k] = (K[j,k] + 4*(R[:,j]*R[:,k]).sum() -
                            n*(n_p[j]+1)*(n_p[k]+1))/3.
             K[k,j] = K[j,k]
@@ -1123,7 +1125,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     else:
         x = ma.asarray(x).flatten()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y),len(x)))
+            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
     y._mask = x._mask = m
@@ -1180,7 +1182,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     else:
         x = ma.asarray(x).ravel()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
     y._mask = x._mask = m
@@ -2582,7 +2584,7 @@ def moment(a, moment=1, axis=0):
         dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
         # empty array, return nan(s) with shape matching `moment`
         out_shape = (moment_shape if np.isscalar(moment)
-                    else [len(moment)] + moment_shape)
+                     else [len(moment)] + moment_shape)
         if len(out_shape) == 0:
             return dtype(np.nan)
         else:
@@ -2595,6 +2597,7 @@ def moment(a, moment=1, axis=0):
         return ma.array(mmnt)
     else:
         return _moment(a, moment, axis)
+
 
 # Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
 def _moment(a, moment, axis, *, mean=None):

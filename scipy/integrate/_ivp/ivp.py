@@ -179,15 +179,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     Parameters
     ----------
     fun : callable
-        Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here `t` is a scalar, and there are two options for the ndarray `y`:
-        It can either have shape (n,); then `fun` must return array_like with
-        shape (n,). Alternatively, it can have shape (n, k); then `fun`
-        must return an array_like with shape (n, k), i.e., each column
-        corresponds to a single column in `y`. The choice between the two
-        options is determined by `vectorized` argument (see below). The
-        vectorized implementation allows a faster approximation of the Jacobian
-        by finite differences (required for stiff solvers).
+        Right-hand side of the system: the time derivative of the state ``y``
+        at time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
+        scalar and ``y`` is an ndarray with ``len(y) = len(y0)``. ``fun`` must
+        return an array of the same shape as ``y``. See `vectorized` for more
+        information.
     t_span : 2-member sequence
         Interval of integration (t0, tf). The solver starts with t=t0 and
         integrates until it reaches t=tf. Both t0 and tf must be floats
@@ -269,7 +265,21 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         You can assign attributes like ``event.terminal = True`` to any
         function in Python.
     vectorized : bool, optional
-        Whether `fun` is implemented in a vectorized fashion. Default is False.
+        Whether `fun` can be called in a vectorized fashion. Default is False.
+
+        If ``vectorized`` is False, `fun` will always be called with ``y`` of
+        shape ``(n,)``, where ``n = len(y0)``.
+
+        If ``vectorized`` is True, `fun` may be called with ``y`` of shape
+        ``(n, k)``, where ``k`` is an integer. In this case, `fun` must behave
+        such that ``fun(t, y)[:, i] == fun(t, y[:, i])`` (i.e. each column of
+        the returned array is the time derivative of the state corresponding
+        with a column of ``y``).
+
+        Setting ``vectorized=True`` allows for faster finite difference
+        approximation of the Jacobian by methods 'Radau' and 'BDF', but
+        will result in slower execution for other methods and for 'Radau' and
+        'BDF' in some circumstances (e.g. small ``len(y0)``).
     args : tuple, optional
         Additional arguments to pass to the user-defined functions.  If given,
         the additional arguments are passed to all user-defined functions.
@@ -526,7 +536,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             )
             raise TypeError(suggestion_tuple) from exp
 
-        fun = lambda t, x, fun=fun: fun(t, x, *args)
+        def fun(t, x, fun=fun):
+            return fun(t, x, *args)
         jac = options.get('jac')
         if callable(jac):
             options['jac'] = lambda t, x: jac(t, x, *args)

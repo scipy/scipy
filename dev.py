@@ -123,7 +123,6 @@ from dataclasses import dataclass
 
 import click
 from click import Option, Argument
-from doit import task_params
 from doit.cmd_base import ModuleTaskLoader
 from doit.reporter import ZeroReporter
 from doit.exceptions import TaskError
@@ -144,9 +143,12 @@ console_theme = Theme({
     "cmd": "italic gray50",
 })
 
-
-class EMOJI:
-    cmd = ":computer:"
+if sys.platform == 'win32':
+    class EMOJI:
+        cmd = ">"
+else:
+    class EMOJI:
+        cmd = ":computer:"
 
 
 rich_click.STYLE_ERRORS_SUGGESTION = "yellow italic"
@@ -269,7 +271,7 @@ def cli(ctx, **kwargs):
 
     \b**python dev.py --build-dir my-build test -s stats**
 
-    """
+    """  # noqa: E501
     CLI.update_context(ctx, kwargs)
 
 
@@ -437,6 +439,13 @@ class Build(Task):
                 raise RuntimeError("Can't build into non-empty directory "
                                    f"'{build_dir.absolute()}'")
 
+        if sys.platform == "cygwin":
+            # Cygwin only has netlib lapack, but can link against
+            # OpenBLAS rather than netlib blas at runtime.  There is
+            # no libopenblas-devel to enable linking against
+            # openblas-specific functions or OpenBLAS Lapack
+            cmd.extend(["-Dlapack=lapack", "-Dblas=blas"])
+
         build_options_file = (
             build_dir / "meson-info" / "intro-buildoptions.json")
         if build_options_file.exists():
@@ -526,7 +535,7 @@ class Build(Task):
                         log_size = os.stat(log_filename).st_size
                         if log_size > last_log_size:
                             elapsed = datetime.datetime.now() - start_time
-                            print("    ... installation in progress ({0} "
+                            print("    ... installation in progress ({} "
                                   "elapsed)".format(elapsed))
                             last_blip = time.time()
                             last_log_size = log_size
@@ -539,7 +548,7 @@ class Build(Task):
 
         if ret != 0:
             if not args.show_build_log:
-                with open(log_filename, 'r') as f:
+                with open(log_filename) as f:
                     print(f.read())
             print(f"Installation failed! ({elapsed} elapsed)")
             sys.exit(1)
@@ -547,6 +556,11 @@ class Build(Task):
         # ignore everything in the install directory.
         with open(dirs.installed / ".gitignore", "w") as f:
             f.write("*")
+
+        if sys.platform == "cygwin":
+            rebase_cmd = ["/usr/bin/rebase", "--database", "--oblivious"]
+            rebase_cmd.extend(Path(dirs.installed).glob("**/*.dll"))
+            subprocess.check_call(rebase_cmd)
 
         print("Installation OK")
         return
@@ -558,7 +572,7 @@ class Build(Task):
         default `_distributor_init.py` file with the one
         we use for wheels uploaded to PyPI so that DLL gets loaded.
 
-        Assumes pkg-config is installed and aware of OpenBLAS. 
+        Assumes pkg-config is installed and aware of OpenBLAS.
 
         The "dirs" parameter is typically a "Dirs" object with the
         structure as the following, say, if dev.py is run from the
@@ -652,7 +666,7 @@ class Test(Task):
     $ python dev.py test -s cluster -m full --durations 20
     $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
     ```
-    """
+    """  # noqa: E501
     ctx = CONTEXT
 
     verbose = Option(
@@ -882,42 +896,32 @@ class Bench(Task):
 # linters
 
 def emit_cmdstr(cmd):
-    """Print the command that's being run to stdout"""
+    """Print the command that's being run to stdout
+
+    Note: cannot use this in the below tasks (yet), because as is these command
+    strings are always echoed to the console, even if the command isn't run
+    (but for example the `build` command is run).
+    """
     console = Console(theme=console_theme)
     # The [cmd] square brackets controls the font styling, typically in italics
     # to differentiate it from other stdout content
     console.print(f"{EMOJI.cmd} [cmd] {cmd}")
 
 
-@task_params([{'name': 'output_file', 'long': 'output-file', 'default': None,
-               'help': 'Redirect report to a file'}])
-def task_flake8(output_file):
-    """Run flake8 over the code base and benchmarks."""
-    opts = ''
-    if output_file:
-        opts += f'--output-file={output_file}'
-
-    cmd = f"flake8 {opts} scipy benchmarks/benchmarks"
-    emit_cmdstr(f"{cmd}")
-    return {
-        'actions': [cmd],
-        'doc': 'Lint scipy and benchmarks directory',
-    }
-
-
-def task_pep8diff():
+def task_lint():
     # Lint just the diff since branching off of main using a
     # stricter configuration.
-    emit_cmdstr(os.path.join('tools', 'lint_diff.py'))
+    # emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
     return {
-        'basename': 'pep8-diff',
-        'actions': [str(Dirs().root / 'tools' / 'lint_diff.py')],
+        'basename': 'lint',
+        'actions': [str(Dirs().root / 'tools' / 'lint.py') +
+                    ' --diff-against=main'],
         'doc': 'Lint only files modified since last commit (stricter rules)',
     }
 
 
 def task_unicode_check():
-    emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
+    # emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
     return {
         'basename': 'unicode-check',
         'actions': [str(Dirs().root / 'tools' / 'unicode-check.py')],
@@ -927,7 +931,7 @@ def task_unicode_check():
 
 
 def task_check_test_name():
-    emit_cmdstr(os.path.join('tools', 'check_test_name.py'))
+    # emit_cmdstr(os.path.join('tools', 'check_test_name.py'))
     return {
         "basename": "check-testname",
         "actions": [str(Dirs().root / "tools" / "check_test_name.py")],
@@ -937,16 +941,11 @@ def task_check_test_name():
 
 @cli.cls_cmd('lint')
 class Lint():
-    """:dash: Run flake8, check PEP 8 compliance on branch diff and check for
+    """:dash: Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
-    output_file = Option(
-        ['--output-file'], default=None, help='Redirect report to a file')
-
-    def run(output_file):
-        opts = {'output_file': output_file}
+    def run():
         run_doit_task({
-            'flake8': opts,
-            'pep8-diff': {},
+            'lint': {},
             'unicode-check': {},
             'check-testname': {},
         })
@@ -1109,7 +1108,7 @@ class Python():
             # Don't use subprocess, since we don't want to include the
             # current path in PYTHONPATH.
             sys.argv = extra_argv
-            with open(extra_argv[0], 'r') as f:
+            with open(extra_argv[0]) as f:
                 script = f.read()
             sys.modules['__main__'] = new_module('__main__')
             ns = dict(__name__='__main__', __file__=extra_argv[0])

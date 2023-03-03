@@ -625,7 +625,8 @@ class TestGMRES:
         maxiter = 1
         rvec = zeros(maxiter+1)
         rvec[0] = 1.0
-        callback = lambda r:store_residual(r, rvec)
+        def callback(r):
+            return store_residual(r, rvec)
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)

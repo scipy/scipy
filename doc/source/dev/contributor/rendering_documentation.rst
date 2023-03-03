@@ -217,6 +217,79 @@ Some examples:
         Some text that follows the list.
 
 
+Self-contained examples
+~~~~~~~~~~~~~~~~~~~~~~~
+Each "Example" section (both in docstrings and general documentation)
+must be self-contained. This means that all imports
+must be explicit, the data used must be defined, and the code should "just
+work" when copy-pasted into a fresh Python interpreter.
+
+    Yes::
+
+        >>> import numpy as np
+        >>> rng = np.random.default_rng()
+
+    No::
+
+        >>> rng = np.random.default_rng()
+
+What is possible (and recommended) is to intersperse blocks of code with
+explanations. Blank lines must separate each code block from the explanatory
+text.
+
+    Yes::
+
+        Some initial text
+
+        >>> import numpy as np
+        >>> rng = np.random.default_rng()
+
+        This is some explanation
+
+        >>> rng.random(10)
+
+
+Examples and randomness
+~~~~~~~~~~~~~~~~~~~~~~~
+In the continuous integration (CI) suite, examples are executed and the output
+is compared against the provided reference. The main goal is to ensure that
+the *example* is correct; a failure warns us that the example may need to be
+adjusted (e.g. because the API has changed since it was written).
+Doctests are not meant to be used as unit tests of underlying implementation.
+
+In case a random number generator is needed, `np.random.Generator` must be
+used. The canonical way to create a NumPy ``Generator`` is to use
+`np.random.default_rng`.
+
+    Yes::
+
+        >>> import numpy as np
+        >>> rng = np.random.default_rng()
+        >>> sample = rng.random(10)
+
+    Yes::
+
+        >>> import numpy as np
+        >>> rng = np.random.default_rng(102524723947864966825913730119128190984)
+        >>> sample = rng.random(10)
+
+    No::
+
+        >>> import numpy as np
+        >>> sample = np.random.random(10)
+
+Seeding the generator object is optional. If a seed is used, avoid common numbers and
+instead generate a seed with ``np.random.SeedSequence().entropy``.
+If no seed is provided, the default value
+``1638083107694713882823079058616272161``
+is used when doctests are executed. In either case, the rendered
+documentation will not show the seed. The intent is to discourage users from
+copy/pasting seeds in their code and instead make an explicit decision about
+the use of a seed in their program. The consequence is that users cannot
+reproduce the results of the example exactly, so examples using random data
+should not refer to precise numerical values based on random data or rely on
+them to make their point.
+
 .. _GitHub: https://github.com/
 .. _CircleCI: https://circleci.com/vcs-authorize/
 .. _Sphinx: https://www.sphinx-doc.org/en/master/

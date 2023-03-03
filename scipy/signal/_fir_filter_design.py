@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for FIR filter design."""
 
 from math import ceil, log
@@ -441,7 +440,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         else:
             raise ValueError('pass_zero must be True, False, "bandpass", '
                              '"lowpass", "highpass", or "bandstop", got '
-                             '%s' % (pass_zero,))
+                             '{}'.format(pass_zero))
     pass_zero = bool(operator.index(pass_zero))  # ensure bool-like
 
     pass_nyquist = bool(cutoff.size & 1) ^ pass_zero
@@ -1031,7 +1030,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     weight = np.asarray(weight).flatten()
     if len(weight) != len(desired):
         raise ValueError("weight must be the same size as the number of "
-                         "band pairs (%s)." % (len(bands),))
+                         "band pairs ({}).".format(len(bands)))
     if (weight < 0).any():
         raise ValueError("weight must be non-negative.")
 

@@ -25,8 +25,8 @@
 #
 # To run the tests use: python dev.py --no-build test
 # 
-# This image is based on: Ubuntu 20.04 (focal)
-# https://hub.docker.com/_/ubuntu/?tab=tags&name=focal
+# This image is based on: Ubuntu 22.04 (jammy)
+# https://hub.docker.com/_/ubuntu/?tab=tags&name=jammy
 # OS/ARCH: linux/amd64
 ARG ROOT_CONTAINER=gitpod/workspace-base:latest
 ARG BASE_CONTAINER=${ROOT_CONTAINER}
@@ -58,7 +58,7 @@ ARG miniforge_checksum="49dddb3998550e40adc904dae55b0a2aeeb0bd9fc4306869cc4a600e
 
 # -----------------------------------------------------------------------------
 # ---- Python version to install ----
-# Currently Python 3.8
+# Currently Python 3.10
 ARG PYTHON_VERSION=default
 
 # ---- Configure environment ----

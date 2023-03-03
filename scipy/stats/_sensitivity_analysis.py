@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 from dataclasses import dataclass
 from typing import (
-    Callable, Dict, List, Literal, Protocol, TYPE_CHECKING, Tuple
+    Callable, Literal, Protocol, TYPE_CHECKING
 )
 
 import numpy as np
@@ -59,7 +59,7 @@ def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
 
 def sample_A_B(
     n: IntNumber,
-    dists: List[PPFDist],
+    dists: list[PPFDist],
     random_state: SeedType = None
 ) -> np.ndarray:
     """Sample two matrices A and B.
@@ -109,7 +109,7 @@ def sample_AB(A: np.ndarray, B: np.ndarray) -> np.ndarray:
 
 def saltelli_2010(
     f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     r"""Saltelli2010 formulation.
 
     .. math::
@@ -248,9 +248,9 @@ class PPFDist(Protocol):
 def sobol_indices(
     *,
     func: Callable[[np.ndarray], npt.ArrayLike] |
-          Dict[Literal['f_A', 'f_B', 'f_AB'], np.ndarray],  # noqa
+          dict[Literal['f_A', 'f_B', 'f_AB'], np.ndarray],  # noqa
     n: IntNumber,
-    dists: List[PPFDist] | None = None,
+    dists: list[PPFDist] | None = None,
     method: Callable | Literal['saltelli_2010'] = 'saltelli_2010',
     random_state: SeedType = None
 ) -> SobolResult:
@@ -447,7 +447,7 @@ def sobol_indices(
     Remember, Sobol' indices assumes that samples are independently
     distributed. In this case we use a uniform distribution on each marginals.
 
-    >>> import numpy as  np
+    >>> import numpy as np
     >>> from scipy.stats import sobol_indices, uniform
     >>> rng = np.random.default_rng()
     >>> def f_ishigami(x):
@@ -596,7 +596,7 @@ def sobol_indices(
     n = n_
 
     if not callable(method):
-        indices_methods: Dict[str, Callable] = {
+        indices_methods: dict[str, Callable] = {
             "saltelli_2010": saltelli_2010,
         }
         try:

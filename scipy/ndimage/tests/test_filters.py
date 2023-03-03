@@ -1515,7 +1515,8 @@ class TestNdimageFilters:
 def test_ticket_701():
     # Test generic filter sizes
     arr = numpy.arange(4).reshape((2, 2))
-    func = lambda x: numpy.min(x)
+    def func(x):
+        return numpy.min(x)
     res = ndimage.generic_filter(arr, func, size=(1, 1))
     # The following raises an error unless ticket 701 is fixed
     res2 = ndimage.generic_filter(arr, func, size=1)
@@ -1579,7 +1580,8 @@ def test_orders_gauss():
 
 def test_valid_origins():
     """Regression test for #1311."""
-    func = lambda x: numpy.mean(x)
+    def func(x):
+        return numpy.mean(x)
     data = numpy.array([1, 2, 3, 4, 5], dtype=numpy.float64)
     assert_raises(ValueError, ndimage.generic_filter, data, func, size=3,
                   origin=2)
