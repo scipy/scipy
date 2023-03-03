@@ -228,7 +228,9 @@ class OptimizeResult(dict):
 
     def __repr__(self):
         order_keys = ['message', 'success', 'status', 'fun', 'funl', 'x', 'xl',
-                      'col_ind', 'nit', 'lower', 'upper', 'eqlin', 'ineqlin']
+                      'col_ind', 'nit', 'lower', 'upper', 'eqlin', 'ineqlin',
+                      'converged', 'flag', 'function_calls', 'iterations',
+                      'root']
         # 'slack', 'con' are redundant with residuals
         # 'crossover_nit' is probably not interesting to most users
         omit_keys = {'slack', 'con', 'crossover_nit'}
@@ -1555,7 +1557,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         Stop when the norm of the gradient is less than `gtol`.
     norm : float, optional
         Order to use for the norm of the gradient
-        (``-np.Inf`` is min, ``np.Inf`` is max).
+        (``-np.inf`` is min, ``np.inf`` is max).
     epsilon : float or ndarray, optional
         Step size(s) to use when `fprime` is approximated numerically. Can be a
         scalar or a 1-D array. Defaults to ``sqrt(eps)``, with eps the

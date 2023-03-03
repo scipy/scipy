@@ -1893,6 +1893,9 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
         'sqeuclidean', 'yule'.
+    out : ndarray
+        The output array.
+        If not None, condensed distance matrix Y is stored in this array.
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
@@ -1913,10 +1916,6 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         VI : ndarray
         The inverse of the covariance matrix for Mahalanobis.
         Default: inv(cov(X.T)).T
-
-        out : ndarray.
-        The output array
-        If not None, condensed distance matrix Y is stored in this array.
 
     Returns
     -------
