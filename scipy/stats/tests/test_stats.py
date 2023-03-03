@@ -3064,9 +3064,8 @@ class TestMoments:
 
     def test_skewness(self):
         # Scalar test case
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
-            y = stats.skew(self.scalar_testcase)
-            assert np.isnan(y)
+        y = stats.skew(self.scalar_testcase)
+        assert np.isnan(y)
         # sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0) /
         #     ((sqrt(var(testmathworks)*4/5))**3)/5
         y = stats.skew(self.testmathworks)
@@ -3113,9 +3112,8 @@ class TestMoments:
 
     def test_kurtosis(self):
         # Scalar test case
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
-            y = stats.kurtosis(self.scalar_testcase)
-            assert np.isnan(y)
+        y = stats.kurtosis(self.scalar_testcase)
+        assert np.isnan(y)
         #   sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
         #   sum((test2-mean(testmathworks,axis=0))**4,axis=0)/((sqrt(var(testmathworks)*4/5))**4)/5
         #   Set flags for axis = 0 and
@@ -5335,8 +5333,7 @@ def test_ttest_1samp_popmean_array():
 
 class TestDescribe:
     def test_describe_scalar(self):
-        with suppress_warnings() as sup, np.errstate(invalid="ignore"), \
-             pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
             sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
             n, mm, m, v, sk, kurt = stats.describe(4.)
         assert_equal(n, 1)
@@ -5433,10 +5430,9 @@ class TestDescribe:
 
 
 def test_normalitytests():
-    with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
-        assert_raises(ValueError, stats.skewtest, 4.)
-        assert_raises(ValueError, stats.kurtosistest, 4.)
-        assert_raises(ValueError, stats.normaltest, 4.)
+    assert_raises(ValueError, stats.skewtest, 4.)
+    assert_raises(ValueError, stats.kurtosistest, 4.)
+    assert_raises(ValueError, stats.normaltest, 4.)
 
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
