@@ -37,50 +37,91 @@ endif
 thread_dep = dependency('threads', required: false)
 
 # NumPy include directory - needed in all submodules
+# The chdir is needed because within numpy there's an `import signal`
+# statement, and we don't want that to pick up scipy's signal module rather
+# than the stdlib module. The try-except is needed because when things are
+# split across drives on Windows, there is no relative path and an exception
+# gets raised. There may be other such cases, so add a catch-all and switch to
+# an absolute path. Relative paths are needed when for example a virtualenv is
+# placed inside the source tree; Meson rejects absolute paths to places inside
+# the source tree.
 incdir_numpy = run_command(py3,
   [
     '-c',
-    'import os; os.chdir(".."); import numpy; print(numpy.get_include())'
+    '''import os
+os.chdir(os.path.join("..", "tools"))
+import numpy as np
+try:
+  incdir = os.path.relpath(np.get_include())
+except Exception:
+  incdir = np.get_include()
+print(incdir)
+'''
   ],
   check: true
 ).stdout().strip()
-
 inc_np = include_directories(incdir_numpy)
+np_dep = declare_dependency(include_directories: inc_np)
 
 incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
 fortranobject_c = incdir_f2py / 'fortranobject.c'
 
-cc = meson.get_compiler('c')
-npymath_path = incdir_numpy / '..' / 'lib'
-npymath_lib = cc.find_library('npymath', dirs: npymath_path)
-npyrandom_path = incdir_numpy / '..' / '..' / 'random' / 'lib'
-# Note: `required: false` can be removed once numpy 1.19 is the minimum version
-npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path, required: false)
-
-# pybind11 include directory - needed in several submodules
-incdir_pybind11 = run_command(py3,
-  [
-    '-c',
-    'import pybind11; print(pybind11.get_include())'
-  ],
+# We do need an absolute path to feed to `cc.find_library` below
+_incdir_numpy_abs = run_command(py3,
+  ['-c', 'import os; os.chdir(".."); import numpy; print(numpy.get_include())'],
   check: true
 ).stdout().strip()
 
-inc_pybind11 = include_directories(incdir_pybind11)
+cc = meson.get_compiler('c')
+npymath_path = _incdir_numpy_abs / '..' / 'lib'
+npyrandom_path = _incdir_numpy_abs / '..' / '..' / 'random' / 'lib'
+npymath_lib = cc.find_library('npymath', dirs: npymath_path)
+npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
+
+# pybind11 include directory - needed in several submodules
+#
+# in meson 1.1.0, this will find the pyproject.toml build-requires version
+pybind11_dep = dependency('pybind11', version: '>=2.10.0', required: false, allow_fallback: true)
+if not pybind11_dep.found()
+  incdir_pybind11 = run_command(py3,
+    [
+      '-c',
+      '''from os.path import relpath
+import pybind11
+try:
+  incdir = relpath(pybind11.get_include())
+except Exception:
+  incdir = pybind11.get_include()
+print(incdir)
+  '''
+    ],
+    check: true
+  ).stdout().strip()
+
+  pybind11_dep = declare_dependency(include_directories: incdir_pybind11)
+endif
 
 # Pythran include directory and build flags
 if use_pythran
   incdir_pythran = run_command(py3,
     [
       '-c',
-      'import os; os.chdir(".."); import pythran; print(os.path.dirname(pythran.__file__));'
+    '''import os
+os.chdir(os.path.join("..", "tools"))
+import pythran
+try:
+  incdir = os.path.relpath(pythran.get_include())
+except Exception:
+  incdir = pythran.get_include()
+print(incdir)
+'''
     ],
     check: true
   ).stdout().strip()
-  inc_pythran = include_directories(incdir_pythran)
+  pythran_dep = declare_dependency(include_directories: incdir_pythran)
 else
-  inc_pythran = []
+  pythran_dep = []
 endif
 
 # Note: warning flags are added to this further down

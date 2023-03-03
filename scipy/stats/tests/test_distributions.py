@@ -60,16 +60,6 @@ def test_api_regression():
     _assert_hasattr(scipy.stats.distributions, 'f_gen')
 
 
-def check_vonmises_pdf_periodic(k, L, s, x):
-    vm = stats.vonmises(k, loc=L, scale=s)
-    assert_almost_equal(vm.pdf(x), vm.pdf(x % (2*numpy.pi*s)))
-
-
-def check_vonmises_cdf_periodic(k, L, s, x):
-    vm = stats.vonmises(k, loc=L, scale=s)
-    assert_almost_equal(vm.cdf(x) % 1, vm.cdf(x % (2*numpy.pi*s)) % 1)
-
-
 def test_distributions_submodule():
     actual = set(scipy.stats.distributions.__all__)
     continuous = [dist[0] for dist in distcont]    # continuous dist names
@@ -85,159 +75,164 @@ def test_distributions_submodule():
     assert actual == expected
 
 
-def test_vonmises_pdf_periodic():
-    for k in [0.1, 1, 101]:
-        for x in [0, 1, numpy.pi, 10, 100]:
-            check_vonmises_pdf_periodic(k, 0, 1, x)
-            check_vonmises_pdf_periodic(k, 1, 1, x)
-            check_vonmises_pdf_periodic(k, 0, 10, x)
+class TestVonMises:
+    @pytest.mark.parametrize('k', [0.1, 1, 101])
+    @pytest.mark.parametrize('x', [0, 1, np.pi, 10, 100])
+    def test_vonmises_periodic(self, k, x):
+        def check_vonmises_pdf_periodic(k, L, s, x):
+            vm = stats.vonmises(k, loc=L, scale=s)
+            assert_almost_equal(vm.pdf(x), vm.pdf(x % (2 * np.pi * s)))
 
-            check_vonmises_cdf_periodic(k, 0, 1, x)
-            check_vonmises_cdf_periodic(k, 1, 1, x)
-            check_vonmises_cdf_periodic(k, 0, 10, x)
+        def check_vonmises_cdf_periodic(k, L, s, x):
+            vm = stats.vonmises(k, loc=L, scale=s)
+            assert_almost_equal(vm.cdf(x) % 1,
+                                vm.cdf(x % (2 * np.pi * s)) % 1)
 
+        check_vonmises_pdf_periodic(k, 0, 1, x)
+        check_vonmises_pdf_periodic(k, 1, 1, x)
+        check_vonmises_pdf_periodic(k, 0, 10, x)
 
-def test_vonmises_line_support():
-    assert_equal(stats.vonmises_line.a, -np.pi)
-    assert_equal(stats.vonmises_line.b, np.pi)
+        check_vonmises_cdf_periodic(k, 0, 1, x)
+        check_vonmises_cdf_periodic(k, 1, 1, x)
+        check_vonmises_cdf_periodic(k, 0, 10, x)
 
+    def test_vonmises_line_support(self):
+        assert_equal(stats.vonmises_line.a, -np.pi)
+        assert_equal(stats.vonmises_line.b, np.pi)
 
-def test_vonmises_numerical():
-    vm = stats.vonmises(800)
-    assert_almost_equal(vm.cdf(0), 0.5)
+    def test_vonmises_numerical(self):
+        vm = stats.vonmises(800)
+        assert_almost_equal(vm.cdf(0), 0.5)
 
+    # Expected values of the vonmises PDF were computed using
+    # mpmath with 50 digits of precision:
+    #
+    # def vmpdf_mp(x, kappa):
+    #     x = mpmath.mpf(x)
+    #     kappa = mpmath.mpf(kappa)
+    #     num = mpmath.exp(kappa*mpmath.cos(x))
+    #     den = 2 * mpmath.pi * mpmath.besseli(0, kappa)
+    #     return num/den
 
-# Expected values of the vonmises PDF were computed using
-# mpmath with 50 digits of precision:
-#
-# def vmpdf_mp(x, kappa):
-#     x = mpmath.mpf(x)
-#     kappa = mpmath.mpf(kappa)
-#     num = mpmath.exp(kappa*mpmath.cos(x))
-#     den = 2 * mpmath.pi * mpmath.besseli(0, kappa)
-#     return num/den
+    @pytest.mark.parametrize('x, kappa, expected_pdf',
+                             [(0.1, 0.01, 0.16074242744907072),
+                              (0.1, 25.0, 1.7515464099118245),
+                              (0.1, 800, 0.2073272544458798),
+                              (2.0, 0.01, 0.15849003875385817),
+                              (2.0, 25.0, 8.356882934278192e-16),
+                              (2.0, 800, 0.0)])
+    def test_vonmises_pdf(self, x, kappa, expected_pdf):
+        pdf = stats.vonmises.pdf(x, kappa)
+        assert_allclose(pdf, expected_pdf, rtol=1e-15)
 
-@pytest.mark.parametrize('x, kappa, expected_pdf',
-                         [(0.1, 0.01, 0.16074242744907072),
-                          (0.1, 25.0, 1.7515464099118245),
-                          (0.1, 800, 0.2073272544458798),
-                          (2.0, 0.01, 0.15849003875385817),
-                          (2.0, 25.0, 8.356882934278192e-16),
-                          (2.0, 800, 0.0)])
-def test_vonmises_pdf(x, kappa, expected_pdf):
-    pdf = stats.vonmises.pdf(x, kappa)
-    assert_allclose(pdf, expected_pdf, rtol=1e-15)
+    # Expected values of the vonmises entropy were computed using
+    # mpmath with 50 digits of precision:
+    #
+    # def vonmises_entropy(kappa):
+    #     kappa = mpmath.mpf(kappa)
+    #     return (-kappa * mpmath.besseli(1, kappa) /
+    #             mpmath.besseli(0, kappa) + mpmath.log(2 * mpmath.pi *
+    #             mpmath.besseli(0, kappa)))
+    # >>> float(vonmises_entropy(kappa))
 
+    @pytest.mark.parametrize('kappa, expected_entropy',
+                             [(1, 1.6274014590199897),
+                              (5, 0.6756431570114528),
+                              (100, -0.8811275441649473),
+                              (1000, -2.03468891852547),
+                              (2000, -2.3813876496587847)])
+    def test_vonmises_entropy(self, kappa, expected_entropy):
+        entropy = stats.vonmises.entropy(kappa)
+        assert_allclose(entropy, expected_entropy, rtol=1e-13)
 
-# Expected values of the vonmises entropy were computed using
-# mpmath with 50 digits of precision:
-#
-# def vonmises_entropy(kappa):
-#     kappa = mpmath.mpf(kappa)
-#     return (-kappa * mpmath.besseli(1, kappa) /
-#             mpmath.besseli(0, kappa) + mpmath.log(2 * mpmath.pi *
-#             mpmath.besseli(0, kappa)))
-# >>> float(vonmises_entropy(kappa))
+    def test_vonmises_rvs_gh4598(self):
+        # check that random variates wrap around as discussed in gh-4598
+        seed = abs(hash('von_mises_rvs'))
+        rng1 = np.random.default_rng(seed)
+        rng2 = np.random.default_rng(seed)
+        rng3 = np.random.default_rng(seed)
+        rvs1 = stats.vonmises(1, loc=0, scale=1).rvs(random_state=rng1)
+        rvs2 = stats.vonmises(1, loc=2*np.pi, scale=1).rvs(random_state=rng2)
+        rvs3 = stats.vonmises(1, loc=0,
+                              scale=(2*np.pi/abs(rvs1)+1)).rvs(random_state=rng3)
+        assert_allclose(rvs1, rvs2, atol=1e-15)
+        assert_allclose(rvs1, rvs3, atol=1e-15)
 
-@pytest.mark.parametrize('kappa, expected_entropy',
-                         [(1, 1.6274014590199897),
-                          (5, 0.6756431570114528),
-                          (100, -0.8811275441649473),
-                          (1000, -2.03468891852547),
-                          (2000, -2.3813876496587847)])
-def test_vonmises_entropy(kappa, expected_entropy):
-    entropy = stats.vonmises.entropy(kappa)
-    assert_allclose(entropy, expected_entropy, rtol=1e-13)
+    # Expected values of the vonmises LOGPDF were computed
+    # using wolfram alpha:
+    # kappa * cos(x) - log(2*pi*I0(kappa))
+    @pytest.mark.parametrize('x, kappa, expected_logpdf',
+                             [(0.1, 0.01, -1.8279520246003170),
+                              (0.1, 25.0, 0.5604990605420549),
+                              (0.1, 800, -1.5734567947337514),
+                              (2.0, 0.01, -1.8420635346185686),
+                              (2.0, 25.0, -34.7182759850871489),
+                              (2.0, 800, -1130.4942582548682739)])
+    def test_vonmises_logpdf(self, x, kappa, expected_logpdf):
+        logpdf = stats.vonmises.logpdf(x, kappa)
+        assert_allclose(logpdf, expected_logpdf, rtol=1e-15)
 
+    def test_vonmises_expect(self):
+        """
+        Test that the vonmises expectation values are
+        computed correctly.  This test checks that the
+        numeric integration estimates the correct normalization
+        (1) and mean angle (loc).  These expectations are
+        independent of the chosen 2pi interval.
+        """
+        rng = np.random.default_rng(6762668991392531563)
 
-def test_vonmises_rvs_gh4598():
-    # check that random variates wrap around as discussed in gh-4598
-    seed = abs(hash('von_mises_rvs'))
-    rng1 = np.random.default_rng(seed)
-    rng2 = np.random.default_rng(seed)
-    rng3 = np.random.default_rng(seed)
-    rvs1 = stats.vonmises(1, loc=0, scale=1).rvs(random_state=rng1)
-    rvs2 = stats.vonmises(1, loc=2*np.pi, scale=1).rvs(random_state=rng2)
-    rvs3 = stats.vonmises(1, loc=0,
-                          scale=(2*np.pi/abs(rvs1)+1)).rvs(random_state=rng3)
-    assert_allclose(rvs1, rvs2, atol=1e-15)
-    assert_allclose(rvs1, rvs3, atol=1e-15)
+        loc, kappa, lb = rng.random(3) * 10
+        res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1)
+        assert_allclose(res, 1)
+        assert np.issubdtype(res.dtype, np.floating)
 
+        bounds = lb, lb + 2 * np.pi
+        res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1, *bounds)
+        assert_allclose(res, 1)
+        assert np.issubdtype(res.dtype, np.floating)
 
-# Expected values of the vonmises LOGPDF were computed
-# using wolfram alpha:
-# kappa * cos(x) - log(2*pi*I0(kappa))
-@pytest.mark.parametrize('x, kappa, expected_logpdf',
-                         [(0.1, 0.01, -1.8279520246003170),
-                          (0.1, 25.0, 0.5604990605420549),
-                          (0.1, 800, -1.5734567947337514),
-                          (2.0, 0.01, -1.8420635346185686),
-                          (2.0, 25.0, -34.7182759850871489),
-                          (2.0, 800, -1130.4942582548682739)])
-def test_vonmises_logpdf(x, kappa, expected_logpdf):
-    logpdf = stats.vonmises.logpdf(x, kappa)
-    assert_allclose(logpdf, expected_logpdf, rtol=1e-15)
+        bounds = lb, lb + 2 * np.pi
+        res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: np.exp(1j*x),
+                                                          *bounds, complex_func=1)
+        assert_allclose(np.angle(res), loc % (2*np.pi))
+        assert np.issubdtype(res.dtype, np.complexfloating)
 
+    @pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
+    @pytest.mark.parametrize('kappa', [1, 10, 100, 1000])
+    def test_vonmises_fit_all(self, kappa, loc):
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
+        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data)
+        assert scale_fit == 1
+        loc_vec = np.array([np.cos(loc), np.sin(loc)])
+        loc_fit_vec = np.array([np.cos(loc_fit), np.sin(loc_fit)])
+        angle = np.arccos(loc_vec.dot(loc_fit_vec))
+        assert_allclose(angle, 0, atol=1e-2, rtol=0)
+        assert_allclose(kappa, kappa_fit, rtol=1e-2)
 
-def test_vonmises_expect():
-    """
-    Test that the vonmises expectation values are
-    computed correctly.  This test checks that the
-    numeric integration estimates the correct normalization
-    (1) and mean angle (loc).  These expectations are
-    independent of the chosen 2pi interval.
-    """
-    rng = np.random.default_rng(6762668991392531563)
+    def test_vonmises_fit_shape(self):
+        rng = np.random.default_rng(6762668991392531563)
+        loc = 0.25*np.pi
+        kappa = 10
+        data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
+        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data, floc=loc)
+        assert loc_fit == loc
+        assert scale_fit == 1
+        assert_allclose(kappa, kappa_fit, rtol=1e-2)
 
-    loc, kappa, lb = rng.random(3) * 10
-    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1)
-    assert_allclose(res, 1)
-    assert np.issubdtype(res.dtype, np.floating)
-
-    bounds = lb, lb + 2 * np.pi
-    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1, *bounds)
-    assert_allclose(res, 1)
-    assert np.issubdtype(res.dtype, np.floating)
-
-    bounds = lb, lb + 2 * np.pi
-    res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: np.exp(1j*x),
-                                                      *bounds, complex_func=1)
-    assert_allclose(np.angle(res), loc % (2*np.pi))
-    assert np.issubdtype(res.dtype, np.complexfloating)
-
-
-@pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
-@pytest.mark.parametrize('kappa', [1, 10, 100, 1000])
-def test_vonmises_fit_all(kappa, loc):
-    rng = np.random.default_rng(6762668991392531563)
-    data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
-    loc_fit, kappa_fit = stats.vonmises.fit(data)
-    loc_vec = np.array([np.cos(loc), np.sin(loc)])
-    loc_fit_vec = np.array([np.cos(loc_fit), np.sin(loc_fit)])
-    angle = np.arccos(loc_vec.dot(loc_fit_vec))
-    assert_allclose(angle, 0, atol=1e-2, rtol=0)
-    assert_allclose(kappa, kappa_fit, rtol=1e-2)
-
-
-def test_vonmises_fit_shape():
-    rng = np.random.default_rng(6762668991392531563)
-    loc = 0.25*np.pi
-    kappa = 10
-    data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
-    loc_fit, kappa_fit = stats.vonmises.fit(data, floc=loc)
-    assert loc_fit == loc
-    assert_allclose(kappa, kappa_fit, rtol=1e-2)
-
-
-def test_vonmises_fit_unwrapped_data():
-    rng = np.random.default_rng(6762668991392531563)
-    data = stats.vonmises(loc=0.5*np.pi, kappa=10).rvs(100000,
-                                                       random_state=rng)
-    shifted_data = data + 4*np.pi
-    loc_fit, kappa_fit = stats.vonmises.fit(data)
-    loc_fit_shifted, kappa_fit_shifted = stats.vonmises.fit(shifted_data)
-    assert_allclose(loc_fit, loc_fit_shifted)
-    assert_allclose(kappa_fit, kappa_fit_shifted)
+    @pytest.mark.parametrize('sign', [-1, 1])
+    def test_vonmises_fit_unwrapped_data(self, sign):
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.vonmises(loc=sign*0.5*np.pi, kappa=10).rvs(100000,
+                                                                random_state=rng)
+        shifted_data = data + 4*np.pi
+        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data)
+        kappa_fit_shifted, loc_fit_shifted, _ = stats.vonmises.fit(shifted_data)
+        assert_allclose(loc_fit, loc_fit_shifted)
+        assert_allclose(kappa_fit, kappa_fit_shifted)
+        assert scale_fit == 1
+        assert -np.pi < loc_fit < np.pi
 
 
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
@@ -372,6 +367,34 @@ class TestBinom:
             warnings.simplefilter("error", RuntimeWarning)
             assert_equal(stats.binom(n=2, p=0).mean(), 0)
             assert_equal(stats.binom(n=2, p=0).std(), 0)
+
+    def test_ppf_p1(self):
+        # Check that gh-17388 is resolved: PPF == n when p = 1
+        n = 4
+        assert stats.binom.ppf(q=0.3, n=n, p=1.0) == n
+
+    def test_pmf_poisson(self):
+        # Check that gh-17146 is resolved: binom -> poisson
+        n = 1541096362225563.0
+        p = 1.0477878413173978e-18
+        x = np.arange(3)
+        res = stats.binom.pmf(x, n=n, p=p)
+        ref = stats.poisson.pmf(x, n * p)
+        assert_allclose(res, ref, atol=1e-16)
+
+    def test_pmf_cdf(self):
+        # Check that gh-17809 is resolved: binom.pmf(0) ~ binom.cdf(0)
+        n = 25.0 * 10 ** 21
+        p = 1.0 * 10 ** -21
+        r = 0
+        res = stats.binom.pmf(r, n, p)
+        ref = stats.binom.cdf(r, n, p)
+        assert_allclose(res, ref, atol=1e-16)
+
+    def test_pmf_gh15101(self):
+        # Check that gh-15101 is resolved (no divide warnings when p~1, n~oo)
+        res = stats.binom.pmf(3, 2000, 0.999)
+        assert_allclose(res, 0, atol=1e-16)
 
 
 class TestArcsine:
@@ -1017,6 +1040,19 @@ class TestHalfNorm:
     def test_sf_isf(self, x, sfx):
         assert_allclose(stats.halfnorm.sf(x), sfx, rtol=1e-14)
         assert_allclose(stats.halfnorm.isf(sfx), x, rtol=1e-14)
+
+    #   reference values were computed via mpmath
+    #   from mpmath import mp
+    #   mp.dps = 100
+    #   def halfnorm_cdf_mpmath(x):
+    #       x = mp.mpf(x)
+    #       return float(mp.erf(x/mp.sqrt(2.)))
+
+    @pytest.mark.parametrize('x, ref', [(1e-40, 7.978845608028653e-41),
+                                        (1e-18, 7.978845608028654e-19),
+                                        (8, 0.9999999999999988)])
+    def test_cdf(self, x, ref):
+        assert_allclose(stats.halfnorm.cdf(x), ref, rtol=1e-15)
 
 
 class TestHalfLogistic:
@@ -2570,11 +2606,13 @@ class TestInvgauss:
     # mu = mp.mpf(1e-2)
     # ref = (1/2 * mp.log(2 * mp.pi * mp.e * mu**3)
     #        - 3/2* mp.exp(2/mu) * mp.e1(2/mu))
-    @pytest.mark.parametrize("mu, ref", [(1e-2, -5.496279615262233),
-                                         (1e8, 3.3244822568873474),
-                                         (1e100, 3.3244828013968899)])
+    @pytest.mark.parametrize("mu, ref", [(2e-8, -25.172361826883957),
+                                         (1e-3, -8.943444010642972),
+                                         (1e-2, -5.4962796152622335),
+                                         (1e8, 3.3244822568873476),
+                                         (1e100, 3.32448280139689)])
     def test_entropy(self, mu, ref):
-        assert_allclose(stats.invgauss.entropy(mu), ref)
+        assert_allclose(stats.invgauss.entropy(mu), ref, rtol=5e-14)
 
 
 class TestLaplace:
@@ -3543,7 +3581,6 @@ class TestSkellam:
 
         assert_almost_equal(stats.skellam.pmf(k, mu1, mu2), skpmfR, decimal=15)
 
-    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_cdf(self):
         # comparison to R, only 5 decimals
         k = numpy.arange(-10, 15)
@@ -3565,6 +3602,12 @@ class TestSkellam:
 
         assert_almost_equal(stats.skellam.cdf(k, mu1, mu2), skcdfR, decimal=5)
 
+    def test_extreme_mu2(self):
+        # check that crash reported by gh-17916 large mu2 is resolved
+        x, mu1, mu2 = 0, 1, 4820232647677555.0
+        assert_allclose(stats.skellam.pmf(x, mu1, mu2), 0, atol=1e-16)
+        assert_allclose(stats.skellam.cdf(x, mu1, mu2), 1, atol=1e-16)
+
 
 class TestLognorm:
     def test_pdf(self):
@@ -3582,6 +3625,34 @@ class TestLognorm:
                         stats.norm.sf(np.log(x2-mu)/sigma))
         assert_allclose(stats.lognorm.logsf(x2-mu, s=sigma),
                         stats.norm.logsf(np.log(x2-mu)/sigma))
+
+    @pytest.fixture(scope='function')
+    def rng(self):
+        return np.random.default_rng(1234)
+
+    @pytest.mark.parametrize("rvs_shape", [.1, 2])
+    @pytest.mark.parametrize("rvs_loc", [-2, 0, 2])
+    @pytest.mark.parametrize("rvs_scale", [.2, 1, 5])
+    @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
+                             [e for e in product((False, True), repeat=3)
+                              if False in e])
+    @np.errstate(invalid="ignore")
+    def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
+                                   fix_shape, fix_loc, fix_scale, rng):
+        data = stats.lognorm.rvs(size=100, s=rvs_shape, scale=rvs_scale,
+                                 loc=rvs_loc, random_state=rng)
+        args = [data, (stats.lognorm._fitstart(data), )]
+        func = stats.lognorm._reduce_func(args, {})[1]
+
+        kwds = {}
+        if fix_shape:
+            kwds['f0'] = rvs_shape
+        if fix_loc:
+            kwds['floc'] = rvs_loc
+        if fix_scale:
+            kwds['fscale'] = rvs_scale
+
+        _assert_less_or_close_loglike(stats.lognorm, data, func, **kwds)
 
 
 class TestBeta:
@@ -4659,7 +4730,7 @@ class TestLevyStable:
     @pytest.mark.parametrize(
         "params,expected",
         [
-            [(1.48, -.22, 0, 1), (0, np.inf, np.NaN, np.NaN)],
+            [(1.48, -.22, 0, 1), (0, np.inf, np.nan, np.nan)],
             [(2, .9, 10, 1.5), (10, 4.5, 0, 0)]
         ]
     )
@@ -5344,7 +5415,6 @@ class TestExpect:
         res_l = stats.logser.expect(lambda k: k, args=(p,), loc=loc)
         assert_allclose(res_l, res_0 + loc, atol=1e-15)
 
-    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_skellam(self):
         # Use a discrete distribution w/ bi-infinite support. Compute two first
         # moments and compare to known values (cf skellam.stats)
@@ -5474,6 +5544,10 @@ class TestNct:
         expected_stats = [2.0000150001562518, 1.0000400011500288]
         assert_allclose(nct_mean, expected_stats[0], rtol=1e-10)
         assert_allclose(nct_stats, expected_stats, rtol=1e-9)
+
+    def test_cdf_large_nc(self):
+        # gh-17916 reported a crash with large `nc` values
+        assert_allclose(stats.nct.cdf(2, 2, float(2**16)), 0)
 
 
 class TestRecipInvGauss:
@@ -6881,7 +6955,6 @@ def test_distribution_too_many_args():
     stats.ncf.pdf(x, 3, 4, 5, 6, 1.0)  # 3 args, plus loc/scale
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_tails_ticket_955():
     # Trac #955 -- check that the cdf computed by special functions
     # matches the integrated pdf
@@ -6935,14 +7008,12 @@ def test_ncx2_zero_nc_rvs():
     assert_allclose(result, expected, atol=1e-15)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_gh12731():
     # test that gh-12731 is resolved; previously these were all 0.5
     nc = 10**np.arange(5, 10)
     assert_equal(stats.ncx2.cdf(1e4, df=1, nc=nc), 0)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_gh8665():
     # test that gh-8665 is resolved; previously this tended to nonzero value
     x = np.array([4.99515382e+00, 1.07617327e+01, 2.31854502e+01,
