@@ -13105,22 +13105,40 @@ add_newdoc("xlog1py",
 
     Examples
     --------
-    This function can be used to calculate the log of the probability density
-    function for the beta prime continuous random variable. The probability 
-    density function for beta prime is defined as follows:
+    This example shows how the function can be used to calculate the log of
+    the probability mass function for a geometric discrete random variable.
+    The probability mass function of the geometric distribution is defined
+    as follows:
 
-    .. math:: f(x, a, b) = \\frac{x^{a-1} (1+x)^{-a-b}}{\\beta(a, b)}
+    .. math:: f(k) = (1-p)^{k-1} p
 
-    >>> from scipy.special import xlogy, xlog1py, betaln
-    >>> a, b = 5, 6
-    >>> x = 1
-    >>> log_pdf = xlogy(a - 1.0, x) - xlog1py(a + b, x) - betaln(a, b)
-    >>> log_pdf
-    -0.4857519862138746
-    >>> x = 10
-    >>> log_pdf = xlogy(a - 1.0, x) - xlog1py(a + b, x) - betaln(a, b)
-    >>> log_pdf
-    -10.027640628860368
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure
+    and :math::`k` is the number of trials to get the first success.
+
+    >>> import numpy as np
+    >>> from scipy.special import xlog1py
+    >>> p = 0.5
+    >>> k = 100
+    >>> _pmf = np.power(1 - p, k - 1) * p
+    >>> _pmf
+    7.888609052210118e-31
+
+    If we take k as a relatively large number the value of the probability
+    mass function can become very low. In such cases taking the log of the
+    pmf would be more suitable as the log function can change the values
+    to a scale that is more appropriate to work with.
+
+    >>> _log_pmf = xlog1py(k - 1, -p) + np.log(p)
+    >>> _log_pmf
+    -69.31471805599453
+
+    We can confirm that we get a value close to the original pmf value by
+    taking the exponetial of the log pmf.
+
+    >>> _orig_pmf = np.exp(_log_pmf)
+    >>> np.isclose(_pmf, _orig_pmf)
+    True
 
     """)
 
