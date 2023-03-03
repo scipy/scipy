@@ -118,10 +118,10 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     assert_equal(BX, BXo)
     assert_equal(id(BX), id(BXo))
     # Check BXo.
-    # assert_allclose(B @ Xo, BXo, atol=atol)
+    assert_allclose(B @ Xo, BXo, atol=atol)
     # Check B-orthonormality
     assert_allclose(Xo.T.conj() @ B @ Xo, np.identity(m), atol=atol)
-    # Repear without BX in outputs
+    # Repeat without BX in outputs
     X = np.copy(Xcopy)
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X)
     assert_allclose(Xo, Xo1, atol=atol)

@@ -113,7 +113,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                     f"and needs to be changed preventing in-place.",
                     UserWarning, stacklevel=3
                 )
-                blockVectorV = VBV @ blockVectorV
+                blockVectorV = blockVectorV @ VBV
         if B is not None:
             try:
                 np.matmul(blockVectorBV, VBV, out=blockVectorBV)
@@ -125,7 +125,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                         f"and needs to be changed preventing in-place.",
                         UserWarning, stacklevel=3
                     )
-                blockVectorBV = VBV @ blockVectorBV
+                blockVectorBV = blockVectorBV @ VBV
         return blockVectorV, blockVectorBV, VBV
     except LinAlgError:
         if verbosityLevel:
