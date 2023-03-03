@@ -63,7 +63,7 @@ def norm(x):
     return np.linalg.norm(x) / x.size ** 0.5
 
 
-def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol, t_bound=None):
+def select_initial_step(fun, t0, y0, t_bound, f0, direction, order, rtol, atol):
     """Empirically select a good initial step.
 
     The algorithm is described in [1]_.
@@ -111,12 +111,10 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol, t_bound=N
         h0 = 1e-6
     else:
         h0 = 0.01 * d0 / d1
-    if t_bound is not None:
-        # Check t0+h0*direction doesn't take us beyond t_bound
-        if h0 > (t_bound-t0)/direction: 
-            h0 = (t_bound-t0)/direction
-        # Case where t0 = t_bound
-        if h0 == 0: return 0.
+    # Check t0+h0*direction doesn't take us beyond t_bound
+    h0 = min(h0, (t_bound-t0)/direction)
+    # Case where t0 = t_bound
+    if h0 == 0: return 0.
     y1 = y0 + h0 * direction * f0
     f1 = fun(t0 + h0 * direction, y1)
     d2 = norm((f1 - f0) / scale) / h0
@@ -127,8 +125,7 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol, t_bound=N
         h1 = (0.01 / max(d1, d2)) ** (1 / (order + 1))
 
     h = min(100 * h0, h1)
-    if t_bound is not None:
-        h = min(h, (t_bound-t0)/direction)
+    h = min(h, (t_bound-t0)/direction)
     return h
 
 

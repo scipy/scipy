@@ -305,8 +305,8 @@ class Radau(OdeSolver):
         # the error.
         if first_step is None:
             self.h_abs = select_initial_step(
-                self.fun, self.t, self.y, self.f, self.direction,
-                3, self.rtol, self.atol, t_bound=t_bound)
+                self.fun, self.t, self.y, t_bound, self.f, self.direction,
+                3, self.rtol, self.atol)
         else:
             self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.h_abs_old = None
