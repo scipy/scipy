@@ -93,7 +93,7 @@ def test_MikotaPair():
 @pytest.mark.parametrize("Vdtype", (float, complex, np.float32))
 @pytest.mark.parametrize("Bdtype", (float, complex, np.float32))
 @pytest.mark.parametrize("BVdtype", (float, complex, np.float32))
-def test_b_orthonormalize(n, m, dtype):
+def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     """Test B-orthonormalization by Cholesky with callable B.
     The function _b_orthonormalize is key in LOBPCG but may lead
     to numerical instabilities. The input vectors are often
