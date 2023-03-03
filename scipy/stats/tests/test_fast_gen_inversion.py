@@ -58,7 +58,7 @@ def test_random_state():
     # used by rvs
     gen = FastGeneratorInversion("norm", random_state=68734509)
     x1 = gen.rvs(size=10)
-    err = gen.evaluate_error(size=5)
+    _ = gen.evaluate_error(size=5)  # this will generate 5 uniform rvs
     x2 = gen.rvs(size=10)
     gen.random_state = 68734509
     x3 = gen.rvs(size=20)
