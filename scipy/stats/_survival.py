@@ -17,8 +17,8 @@ def ecdf(sample):
 
     Parameters
     ----------
-    sample : 1D array_like or `stats.CensoredData`
-        Besides array_like, instances of `stats.CensoredData` containing
+    sample : 1D array_like or `scipy.stats.CensoredData`
+        Besides array_like, instances of `scipy.stats.CensoredData` containing
         uncensored and right-censored observations are supported. Currently,
         other instances of `stats.CensoredData` will result in a
         ``NotImplementedError``.
@@ -41,7 +41,7 @@ def ecdf(sample):
 
     When observations are lower bounds, upper bounds, or both upper and lower
     bounds, the data is said to be "censored", and `sample` may be provided as
-    an instance of `stats.CensoredData`.
+    an instance of `scipy.stats.CensoredData`.
 
     For right-censored data, the ECDF is given by the Kaplan-Meier estimator
     [2]_; other forms of censoring are not supported at this time.
@@ -93,15 +93,24 @@ def ecdf(sample):
     **Right-censored Data**
 
     As in the example from [1]_ page 91, the lives of ten car fanbelts were
-    tested. At the end of the test, five fanbelts had broken, but five were
-    still unbroken. Their survival times were recorded as follows.
+    tested. Five tests concluded because the fanbelt being tested broke, but
+    the remaining tests concluded for other reasons (e.g. the study ran out of
+    funding, but the fanbelt was still functional). The mileage driven
+    with the fanbelts were recorded as follows.
 
-    >>> broken = [77, 47, 81, 56, 80]  # in thousands of miles
+    >>> broken = [77, 47, 81, 56, 80]  # in thousands of miles driven
     >>> unbroken = [62, 60, 43, 71, 37]
+
+    Precise survival times of the fanbelts that were still functional at the
+    end of the tests are unknown, but they are known to exceed the values
+    recorded in ``unbroken``. Therefore, these observations are said to be
+    "right-censored", and the data is represented using
+    `scipy.stats.CensoredData`.
+
+    >>> sample = stats.CensoredData(uncensored=broken, right=unbroken)
 
     The empirical survival function is calculated as follows.
 
-    >>> sample = stats.CensoredData(uncensored=broken, right=unbroken)
     >>> res = stats.ecdf(sample)
     >>> res.x
     array([37., 43., 47., 56., 60., 62., 71., 77., 80., 81.])
