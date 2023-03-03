@@ -14,7 +14,7 @@ from scipy.linalg import eig, eigh, toeplitz, orth
 from scipy.sparse import spdiags, diags, eye, csr_matrix
 from scipy.sparse.linalg import eigs, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
-from scipy.sparse.linalg._eigen.lobpcg import _b_orthonormalize
+from scipy.sparse.linalg._eigen.lobpcg.lobpcg import _b_orthonormalize
 
 _IS_32BIT = (sys.maxsize < 2**32)
 
@@ -100,6 +100,7 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     badly scaled, so the function needs scale-invariant Cholesky;
     see https://netlib.org/lapack/lawnspdf/lawn14.pdf.
     """
+    dtype = max(Vdtype, Bdtype, BVdtype)
     atol = m * n * np.finfo(dtype).eps
     rnd = np.random.RandomState(0)
     X = rnd.standard_normal((n, m)).astype(Vdtype)

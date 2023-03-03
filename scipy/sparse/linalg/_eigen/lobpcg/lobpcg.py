@@ -25,7 +25,7 @@ from scipy.sparse.linalg import LinearOperator
 from scipy.sparse import isspmatrix
 from numpy import block as bmat
 
-__all__ = ["lobpcg", "_b_orthonormalize"]
+__all__ = ["lobpcg"]
 
 
 def _report_nonhermitian(M, name):
