@@ -13114,7 +13114,7 @@ add_newdoc("xlog1py",
 
     where :math:`p` is the probability of a single success
     and :math:`1-p` is the probability of a single failure
-    and :math::`k` is the number of trials to get the first success.
+    and :math:`k` is the number of trials to get the first success.
 
     >>> import numpy as np
     >>> from scipy.special import xlog1py
