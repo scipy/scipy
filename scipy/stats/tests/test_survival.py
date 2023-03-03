@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from scipy import stats
+from scipy.stats import _survival
 
 
 def _kaplan_meier_reference(times, censored):
@@ -108,7 +109,7 @@ class TestSurvival:
 
     @pytest.mark.parametrize("case", [(t1, d1, r1), (t2, d2, r2), (t3, d3, r3),
                                       (t4, d4, r4), (t5, d5, r5)])
-    def test_right_censored(self, case):
+    def test_right_censored_against_examples(self, case):
         times, died, ref = case
         sample = stats.CensoredData.right_censored(times, np.logical_not(died))
         res = stats.ecdf(sample)
@@ -117,11 +118,12 @@ class TestSurvival:
 
     @pytest.mark.parametrize('seed', [182746786639392128, 737379171436494115,
                                       576033618403180168, 308115465002673650])
-    def test_right_censored_property(self, seed):
+    def test_right_censored_against_reference_implementation(self, seed):
         rng = np.random.default_rng(seed)
         n_unique = rng.integers(10, 100)
         unique_times = rng.random(n_unique)
-        repeats = rng.integers(1, 4, n_unique)
+        # convert to `np.int32` to resolve `np.repeat` failure in 32-bit CI
+        repeats = rng.integers(1, 4, n_unique).astype(np.int32)
         times = rng.permuted(np.repeat(unique_times, repeats))
         censored = rng.random(size=times.size) > rng.random()
 
@@ -130,3 +132,21 @@ class TestSurvival:
         ref = _kaplan_meier_reference(times, censored)
         assert_allclose(res.x, ref[0])
         assert_allclose(res.sf, ref[1])
+
+        # If all observations are uncensored, the KM estimate should match
+        # the usual estimate for uncensored data
+        sample = stats.CensoredData(uncensored=times)
+        res = _survival._ecdf_right_censored(sample)  # force Kaplan-Meier
+        ref = stats.ecdf(times)
+        assert_equal(res.x, ref.x)
+        assert_allclose(res.cdf, ref.cdf, rtol=1e-14)
+        assert_allclose(res.sf, ref.sf, rtol=1e-14)
+
+
+# This is for debugging a CI issue; remove before merge
+def test_repeat():
+    unique = np.asarray([1, 2, 3, 4]).astype(np.float64)
+    repeats = np.asarray([1, 2, 3, 4]).astype(np.int64)
+    repeated = np.repeat(unique, repeats)
+    reference = np.concatenate([[i]*j for i, j in zip(unique, repeats)])
+    assert_allclose(repeated, reference)
