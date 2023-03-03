@@ -10,7 +10,7 @@ ECDFResult = make_dataclass('ECDFResult', ['x', 'cdf', 'sf'])
 
 
 def ecdf(sample):
-    """Empirical cumulative distribution function of a sample
+    """Empirical cumulative distribution function of a sample.
 
     The empirical cumulative distribution function (ECDF) is a step function
     estimate of the CDF of the distribution underlying a sample.
@@ -58,7 +58,7 @@ def ecdf(sample):
 
     Examples
     --------
-    As in the example from [1] page 79, five boys were selected at random from
+    As in the example from [1]_ page 79, five boys were selected at random from
     those in a single high school. Their one-mile run times were recorded as
     follows.
 
@@ -86,7 +86,6 @@ def ecdf(sample):
     >>> plt.show()
 
     """
-
     if not isinstance(sample, CensoredData):
         try:  # takes care of input standardization/validation
             sample = CensoredData(uncensored=sample)
