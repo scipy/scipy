@@ -100,14 +100,14 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     badly scaled, so the function needs scale-invariant Cholesky;
     see https://netlib.org/lapack/lawnspdf/lawn14.pdf.
     """
-    dtype = max(Vdtype, Bdtype, BVdtype)
-    atol = m * n * np.finfo(dtype).eps
     rnd = np.random.RandomState(0)
     X = rnd.standard_normal((n, m)).astype(Vdtype)
     Xcopy = np.copy(X)
     vals = np.arange(1, n+1, dtype=float)
     B = diags([vals], [0], (n, n)).astype(Bdtype)
     BX = (B @ X).astype(BVdtype)
+    dtype = max(X.dtype, B.dtype, BX.dtype)
+    atol = m * n * np.finfo(dtype).eps
 
     Xo, BXo, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
     # Check in-place.
