@@ -1021,7 +1021,7 @@ class Halton(QMCEngine):
         self.seed = seed
 
         # important to have ``type(bdim) == int`` for performance reason
-        self.base = n_primes(d)
+        self.base = [int(bdim) for bdim in n_primes(d)]
         self.scramble = scramble
 
         self._initialize_permutations()
@@ -1062,27 +1062,13 @@ class Halton(QMCEngine):
         """
         workers = _validate_workers(workers)
         # Generate a sample using a Van der Corput sequence per dimension.
-        # important to have ``type(bdim) == int`` for performance reason
-        sample = [van_der_corput(n, int(bdim), start_index=self.num_generated,
+        sample = [van_der_corput(n, bdim, start_index=self.num_generated,
                                  scramble=self.scramble,
                                  permutations=self._permutations[i],
                                  workers=workers)
                   for i, bdim in enumerate(self.base)]
 
         return np.array(sample).T.reshape(n, self.d)
-
-    def reset(self) -> Halton:
-        """Reset the engine to base state.
-
-        Returns
-        -------
-        engine : Halton
-            Engine reset to its base state.
-
-        """
-        super().reset()
-        self._initialize_permutations()
-        return self
 
 
 class LatinHypercube(QMCEngine):
