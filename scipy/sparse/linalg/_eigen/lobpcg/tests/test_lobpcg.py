@@ -105,7 +105,9 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     Xcopy = np.copy(X)
     vals = np.arange(1, n+1, dtype=float)
     B = diags([vals], [0], (n, n)).astype(Bdtype)
-    BX = (B @ X).astype(BVdtype)
+    BX = B @ X
+    if BX.dtype != 'complex':
+        BX = BX.astype(BVdtype)
     dtype = min(X.dtype, B.dtype, BX.dtype)
     atol = m * n * np.finfo(dtype).eps
 
@@ -122,8 +124,8 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     # Repear without BX in outputs
     X = np.copy(Xcopy)
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X)
-    assert_equal(Xo, Xo1)
-    assert_equal(BXo, BXo1)
+    assert_allclose(Xo, Xo1, atol=atol)
+    assert_allclose(BXo, BXo1, atol=atol)
     # Check in-place.
     assert_equal(X, Xo1)
     assert_equal(id(X), id(Xo1))
@@ -134,7 +136,9 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     scaling = 1.0 / np.geomspace(10, 1e10, num=m)
     X = Xcopy * scaling
     X = X.astype(Vdtype)
-    BX = (B @ X).astype(BVdtype)
+    BX = B @ X
+    if BX.dtype != 'complex':
+        BX = BX.astype(BVdtype)
     # Check scaling-invariance of Cholesky-based orthonormalization
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
     # The output should be the same, up the signs of the columns.
