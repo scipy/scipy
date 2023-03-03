@@ -45,7 +45,7 @@ def ecdf(sample):
     an instance of `stats.CensoredData`.
 
     For right-censored data, the ECDF is given by the Kaplan-Meier estimator
-    [1]; other forms of censoring are not supported at this time.
+    [1]_; other forms of censoring are not supported at this time.
 
     References
     ----------
@@ -80,7 +80,7 @@ def ecdf(sample):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> ax = plt.subplot()
-    >>> ax.step(np.insert(res.x, 4, 0), np.insert(res.cdf, 0, 0), where='post')
+    >>> ax.step(np.insert(res.x, 0, 4), np.insert(res.cdf, 0, 0), where='post')
     >>> ax.set_xlabel('One-Mile Run Time (minutes)')
     >>> ax.set_ylabel('Empirical CDF')
     >>> plt.show()
