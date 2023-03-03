@@ -115,10 +115,12 @@ double a, b, c, x;
 
     if (a <= 0 && fabs(a - ia) < EPS) {	/* a is a negative integer */
 	neg_int_a = 1;
+	a = ia;
     }
 
     if (b <= 0 && fabs(b - ib) < EPS) {	/* b is a negative integer */
 	neg_int_b = 1;
+	b = ib;
     }
 
     if (d <= -1 && !(fabs(d - id) > EPS && s < 0)
@@ -149,6 +151,7 @@ double a, b, c, x;
     if (c <= 0.0) {
 	ic = round(c);		/* nearest integer to c */
 	if (fabs(c - ic) < EPS) {	/* c is a negative integer */
+	    c = ic;
 	    /* check if termination before explosion */
 	    if (neg_int_a && (ia > ic))
 		goto hypok;
@@ -189,13 +192,17 @@ double a, b, c, x;
 
     p = c - a;
     ia = round(p);		/* nearest integer to c-a */
-    if ((ia <= 0.0) && (fabs(p - ia) < EPS))	/* negative int c - a */
+    if ((ia <= 0.0) && (fabs(p - ia) < EPS)) {	/* negative int c - a */
+	p = ia;
 	neg_int_ca_or_cb = 1;
+    }
 
     r = c - b;
     ib = round(r);		/* nearest integer to c-b */
-    if ((ib <= 0.0) && (fabs(r - ib) < EPS))	/* negative int c - b */
+    if ((ib <= 0.0) && (fabs(r - ib) < EPS)) {	/* negative int c - b */
+	r = ib;
 	neg_int_ca_or_cb = 1;
+    }
 
     id = round(d);		/* nearest integer to d */
     q = fabs(d - id);
@@ -264,7 +271,7 @@ double a, b, c, x;
      * AMS55 #15.3.3
      */
   hypf:
-    y = pow(s, d) * hys2f1(c - a, c - b, c, x, &err);
+    y = pow(s, d) * hys2f1(p, r, c, x, &err);
     goto hypdon;
 
     /* The alarm exit */
