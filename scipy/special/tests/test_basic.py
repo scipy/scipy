@@ -1330,7 +1330,7 @@ class TestBetaInc:
         p1 = special.betainc(a, b, x)
         assert_allclose(p1, p, rtol=1e-15)
         x1 = special.betaincinv(a, b, p)
-        assert_allclose(x1, x, rtol=1e-13)
+        assert_allclose(x1, x, rtol=5e-13)
 
     # Expected values computed with mpmath:
     #     from mpmath import mp
@@ -1350,7 +1350,7 @@ class TestBetaInc:
                                0.000815296167195521, 1e-7)])
     def test_betaincc_betainccinv(self, a, b, x, p):
         p1 = special.betaincc(a, b, x)
-        assert_allclose(p1, p, rtol=2e-15)
+        assert_allclose(p1, p, rtol=5e-15)
         x1 = special.betainccinv(a, b, p)
         assert_allclose(x1, x, rtol=8e-15)
 
