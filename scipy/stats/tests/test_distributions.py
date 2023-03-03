@@ -4708,7 +4708,7 @@ class TestLevyStable:
     @pytest.mark.parametrize(
         "params,expected",
         [
-            [(1.48, -.22, 0, 1), (0, np.inf, np.NaN, np.NaN)],
+            [(1.48, -.22, 0, 1), (0, np.inf, np.nan, np.nan)],
             [(2, .9, 10, 1.5), (10, 4.5, 0, 0)]
         ]
     )
@@ -5522,6 +5522,10 @@ class TestNct:
         expected_stats = [2.0000150001562518, 1.0000400011500288]
         assert_allclose(nct_mean, expected_stats[0], rtol=1e-10)
         assert_allclose(nct_stats, expected_stats, rtol=1e-9)
+
+    def test_cdf_large_nc(self):
+        # gh-17916 reported a crash with large `nc` values
+        assert_allclose(stats.nct.cdf(2, 2, float(2**16)), 0)
 
 
 class TestRecipInvGauss:

@@ -911,7 +911,7 @@ class betaprime_gen(rv_continuous):
         # the cdf: p = beta._sf(1/(1+x), b, a).
         r = stats.beta._ppf(p, a, b)
         with np.errstate(divide='ignore'):
-            out =  r / (1 - r)
+            out = r / (1 - r)
         i = (r > 0.9999)
         out[i] = 1/stats.beta._isf(p[i], b[i], a[i]) - 1
         return out
@@ -1093,7 +1093,7 @@ class burr_gen(rv_continuous):
 
     def _stats(self, c, d):
         nc = np.arange(1, 5).reshape(4,1) / c
-        #ek is the kth raw moment, e1 is the mean e2-e1**2 variance etc.
+        # ek is the kth raw moment, e1 is the mean e2-e1**2 variance etc.
         e1, e2, e3, e4 = sc.beta(d + nc, 1. - nc) * d
         mu = np.where(c > 1.0, e1, np.nan)
         mu2_if_c = e2 - mu**2
@@ -9542,7 +9542,7 @@ class vonmises_gen(rv_continuous):
     @extend_notes_in_docstring(rv_continuous, notes="""\
         Fit data is assumed to represent angles and will be wrapped onto the
         unit circle. `f0` and `fscale` are ignored; the returned shape is
-        always the maximum likelihood estimate and the scale is always 
+        always the maximum likelihood estimate and the scale is always
         1. Initial guesses are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
         if kwds.pop('superfit', False):
