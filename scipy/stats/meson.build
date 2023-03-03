@@ -217,6 +217,7 @@ py3.install_sources([
     '_sensitivity_analysis.py',
     '_stats_mstats_common.py',
     '_stats_py.py',
+    '_survival.py',
     '_tukeylambda_stats.py',
     '_variation.py',
     '_warnings_errors.py',
