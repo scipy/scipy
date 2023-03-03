@@ -18,6 +18,7 @@ from . import _mvn, _covariance, _rcont
 from ._qmvnt import _qmvt
 from ._morestats import directional_stats
 from scipy.optimize import root_scalar
+import pdb
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -6374,6 +6375,7 @@ class vonmises_fisher_gen(multi_rv_generic):
     """
     def __init__(self, seed=None):
         super().__init__(seed)
+        # pdb.set_trace()
         self.__doc__ = doccer.docformat(self.__doc__,
                                         dirichlet_mn_docdict_params)
 
@@ -6533,6 +6535,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         Generate samples from a n-dimensional von Mises-Fisher distribution
         with mu = [1, 0, ..., 0] and kappa via rejection sampling.
         Samples then have to be rotated towards the desired mean direction mu.
+
         """
         dim_minus_one = dim - 1
         # calculate number of requested samples
@@ -6597,6 +6600,7 @@ class vonmises_fisher_gen(multi_rv_generic):
             to mu
         sign : 1 or -1
             Sign the vectors have to be multiplied with after rotation
+
         """
         base_point = np.zeros((dim, ))
         base_point[0] = 1.
