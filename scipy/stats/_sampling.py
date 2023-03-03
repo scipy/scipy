@@ -428,7 +428,8 @@ class FastGeneratorInversion:
     Parameters
     ----------
     distname : str
-        Name of the distribution in `scipy.stats`.
+        Name of the distribution in `scipy.stats`. The list of supported
+        distributions can be found in the Notes section.
     args : tuple of floats or empty tuple, optional
         The shape parameters (without `loc` and `scale`) of the distribution.
         Important note: Only a single set of shape parameters is allowed, e.g.,
@@ -503,6 +504,15 @@ class FastGeneratorInversion:
     `scipy.stats.qmc`. `ppf_fast` is the PPF based on the
     numerical inversion method in [1]_ (`NumericalInversePolynomial`) that is
     used to generate random variates.
+
+    Supported distributions (`distname`) are:
+    alpha, anglit, argus, beta, betaprime, bradford,
+    burr, burr12, cauchy, chi, chi2, cosine,
+    crystalball, expon, gamma, gennorm, geninvgauss,
+    gumbel_l, gumbel_r, hypsecant, invgamma, invgauss,
+    invweibull, laplace, logistic, maxwell, moyal,
+    norm, pareto, powerlaw, t, rayleigh, semicircular,
+    wald, weibull_max, weibull_min.
 
     `rvs` relies on the accuracy of the numerical inversion. If very extreme
     shape parameters are used, the numerical inversion might not work. However,
@@ -1014,7 +1024,7 @@ class FastGeneratorInversion:
         The u-error should be below 1e-10:
 
         >>> u_error
-        8.785783212061915e-11
+        8.785783212061915e-11  # may vary
 
         Compare the PPF against approximation ppf_fast:
 
@@ -1038,7 +1048,7 @@ class FastGeneratorInversion:
         following value:
 
         >>> x_error
-        4.507068014335139e-07
+        4.507068014335139e-07  # may vary
 
         """
         if not isinstance(size, (numbers.Integral, np.integer)):
