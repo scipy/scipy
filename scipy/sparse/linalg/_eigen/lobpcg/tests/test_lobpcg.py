@@ -58,8 +58,8 @@ def compare_solutions(A, B, m):
     """Check eig vs. lobpcg consistency.
     """
     n = A.shape[0]
-    rnd = np.random.RandomState(0)
-    V = rnd.random((n, m))
+    rng = np.random.default_rng(0)
+    V = rng.random((n, m))
     X = orth(V)
     eigvals, _ = lobpcg(A, X, B=B, tol=1e-2, maxiter=50, largest=False)
     eigvals.sort()
@@ -100,13 +100,13 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     badly scaled, so the function needs scale-invariant Cholesky;
     see https://netlib.org/lapack/lawnspdf/lawn14.pdf.
     """
-    rnd = np.random.RandomState(0)
-    X = rnd.standard_normal((n, m)).astype(Vdtype)
+    rng = np.random.default_rng(0)
+    X = rng.random((n, m)).astype(Vdtype)
     Xcopy = np.copy(X)
     vals = np.arange(1, n+1, dtype=float)
     B = diags([vals], [0], (n, n)).astype(Bdtype)
     BX = (B @ X).astype(BVdtype)
-    dtype = max(X.dtype, B.dtype, BX.dtype)
+    dtype = min(X.dtype, B.dtype, BX.dtype)
     atol = m * n * np.finfo(dtype).eps
 
     Xo, BXo, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
@@ -187,7 +187,7 @@ def test_diagonal(n, m, m_excluded):
     matrixes in the generalized eigenvalue problem ``Av = cBv``
     and for the preconditioner.
     """
-    rnd = np.random.RandomState(0)
+    rng = np.random.default_rng(0)
 
     # Define the generalized eigenvalue problem Av = cBv
     # where (c, v) is a generalized eigenpair,
@@ -226,7 +226,7 @@ def test_diagonal(n, m, m_excluded):
                           shape=(n, n), dtype=float)
 
     # Pick random initial vectors.
-    X = rnd.normal(size=(n, m))
+    X = rng.random(size=(n, m))
 
     # Require that the returned eigenvectors be in the orthogonal complement
     # of the first few standard basis vectors.
@@ -325,10 +325,10 @@ def test_failure_to_run_iterations():
     """Check that the code exists gracefully without breaking. Issue #10974.
     The code may or not issue a warning, filtered out. Issue #15935, #17954.
     """
-    rnd = np.random.RandomState(0)
-    X = rnd.standard_normal((100, 10))
+    rng = np.random.default_rng(0)
+    X = rng.random((100, 10))
     A = X @ X.T
-    Q = rnd.standard_normal((X.shape[0], 4))
+    Q = rng.random((X.shape[0], 4))
     eigenvalues, _ = lobpcg(A, Q, maxiter=40, tol=1e-12)
     assert np.max(eigenvalues) > 0
 
@@ -349,7 +349,7 @@ def test_failure_to_run_iterations_nonsymmetric():
 def test_hermitian():
     """Check complex-value Hermitian cases.
     """
-    rnd = np.random.RandomState(0)
+    rng = np.random.default_rng(0)
 
     sizes = [3, 10, 50]
     ks = [1, 3, 10, 50]
@@ -359,18 +359,18 @@ def test_hermitian():
         if k > s:
             continue
 
-        H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
+        H = rng.random((s, s)) + 1.j * rng.random((s, s))
         H = 10 * np.eye(s) + H + H.T.conj()
 
-        X = rnd.standard_normal((s, k))
-        X = X + 1.j * rnd.standard_normal((s, k))
+        X = rng.random((s, k))
+        X = X + 1.j * rng.random((s, k))
 
         if not gen:
             B = np.eye(s)
             w, v = lobpcg(H, X, maxiter=5000)
             w0, _ = eigh(H)
         else:
-            B = rnd.random((s, s)) + 1.j * rnd.random((s, s))
+            B = rng.random((s, s)) + 1.j * rng.random((s, s))
             B = 10 * np.eye(s) + B.dot(B.T.conj())
             w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
             w0, _ = eigh(H, B)
@@ -394,8 +394,8 @@ def test_eigs_consistency(n, atol):
     """
     vals = np.arange(1, n+1, dtype=np.float64)
     A = spdiags(vals, 0, n, n)
-    rnd = np.random.RandomState(0)
-    X = rnd.random((n, 2))
+    rng = np.random.default_rng(0)
+    X = rng.random((n, 2))
     lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
     vals, _ = eigs(A, k=2)
 
@@ -406,10 +406,10 @@ def test_eigs_consistency(n, atol):
 def test_verbosity():
     """Check that nonzero verbosity level code runs.
     """
-    rnd = np.random.RandomState(0)
-    X = rnd.standard_normal((10, 10))
+    rng = np.random.default_rng(0)
+    X = rng.random((10, 10))
     A = X @ X.T
-    Q = rnd.standard_normal((X.shape[0], 1))
+    Q = rng.random((X.shape[0], 1))
     with pytest.warns(UserWarning, match="Exited at iteration"):
         _, _ = lobpcg(A, Q, maxiter=3, verbosityLevel=9)
 
@@ -422,13 +422,13 @@ def test_verbosity():
 def test_tolerance_float32():
     """Check lobpcg for attainable tolerance in float32.
     """
-    rnd = np.random.RandomState(0)
+    rng = np.random.default_rng(0)
     n = 50
     m = 3
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
-    X = rnd.standard_normal((n, m))
+    X = rng.random((n, m))
     X = X.astype(np.float32)
     eigvals, _ = lobpcg(A, X, tol=1.25e-5, maxiter=50, verbosityLevel=0)
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=2e-5, rtol=1e-5)
@@ -437,13 +437,13 @@ def test_tolerance_float32():
 def test_random_initial_float32():
     """Check lobpcg in float32 for specific initial.
     """
-    rnd = np.random.RandomState(0)
+    rng = np.random.default_rng(0)
     n = 50
     m = 4
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
-    X = rnd.random((n, m))
+    X = rng.random((n, m))
     X = X.astype(np.float32)
     eigvals, _ = lobpcg(A, X, tol=1e-3, maxiter=50, verbosityLevel=1)
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
@@ -456,13 +456,13 @@ def test_maxit():
     be the number of iterations plus 3 (initial, final, and postprocessing)
     typically when maxiter is small and the choice of the best is passive.
     """
-    rnd = np.random.RandomState(0)
+    rng = np.random.default_rng(0)
     n = 50
     m = 4
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
-    X = rnd.standard_normal((n, m))
+    X = rng.random((n, m))
     X = X.astype(np.float64)
     for maxiter in range(1, 4):
         with pytest.warns(UserWarning, match="Exited at iteration"):
@@ -495,7 +495,7 @@ def test_maxit():
 def test_diagonal_data_types(n, m):
     """Check lobpcg for diagonal matrices for all matrix types.
     """
-    rnd = np.random.RandomState(0)
+    rng = np.random.default_rng(0)
     # Define the generalized eigenvalue problem Av = cBv
     # where (c, v) is a generalized eigenpair,
     # and where we choose A  and B to be diagonal.
@@ -570,7 +570,7 @@ def test_diagonal_data_types(n, m):
 
         # Setup matrix of the initial approximation to the eigenvectors
         # (cannot be sparse array).
-        Xf64 = rnd.random((n, m))
+        Xf64 = rng.random((n, m))
         Xf32 = Xf64.astype(np.float32)
         listX = [Xf64, Xf32]
 
