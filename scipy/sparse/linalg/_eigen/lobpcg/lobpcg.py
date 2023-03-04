@@ -73,11 +73,11 @@ def _dot_inplace(x, y, verbosityLevel=0):
     except Exception:
         if verbosityLevel:
             warnings.warn(
-                f"Trying in-place {x} = {x} @ {y}, possibly their shapes "
-                f"{x.shape} and {y.shape} mismatch, or {x}.dtype {x.dtype} "
-                f"does not match {y}.dtype {y.dtype}, "
-                f"or {x} is a slice rather than a C-Array, "
-                f"so {x} needs to be overwritten preventing in-place.",
+                f"Trying in-place x = x @ y, possibly their shapes "
+                f"{x.shape} and {y.shape} mismatch, or x.dtype {x.dtype} "
+                f"does not match y.dtype {y.dtype}, "
+                f"or x is a slice rather than a C-Array, "
+                f"so x needs to be overwritten preventing in-place.",
                 UserWarning, stacklevel=3
             )
         x = x @ y

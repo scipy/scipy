@@ -449,7 +449,8 @@ def test_random_initial_float32():
     A = A.astype(np.float32)
     X = rng.random((n, m))
     X = X.astype(np.float32)
-    eigvals, _ = lobpcg(A, X, tol=1e-3, maxiter=50, verbosityLevel=1)
+    with pytest.warns(UserWarning, match="Trying in-place"):
+        eigvals, _ = lobpcg(A, X, tol=1e-3, maxiter=50, verbosityLevel=1)
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
 
 
