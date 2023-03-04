@@ -141,12 +141,3 @@ class TestSurvival:
         assert_equal(res.x, ref.x)
         assert_allclose(res.cdf, ref.cdf, rtol=1e-14)
         assert_allclose(res.sf, ref.sf, rtol=1e-14)
-
-
-# This is for debugging a CI issue; remove before merge
-def test_repeat():
-    unique = np.asarray([1, 2, 3, 4]).astype(np.float64)
-    repeats = np.asarray([1, 2, 3, 4]).astype(np.int64)
-    repeated = np.repeat(unique, repeats)
-    reference = np.concatenate([[i]*j for i, j in zip(unique, repeats)])
-    assert_allclose(repeated, reference)
