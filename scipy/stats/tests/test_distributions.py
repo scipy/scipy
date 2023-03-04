@@ -2811,10 +2811,14 @@ class TestPowerNorm:
     #     q = mp.mpf(q)
     #     c = mp.mpf(c)
     #     arg = q**(mp.one / c)
-    #     return float(-mp.sqrt(2) * mp.erfinv(2*arg - 1))
+    #     return float(-mp.sqrt(2) * mp.erfinv(mp.mpf(2.) * arg - mp.one))
 
     @pytest.mark.parametrize("q, c, ref",
-                             [(1e-18, 2, 5.9978070150076865),
+                             [(1e-5, 20, -0.15690800666514138),
+                              (0.99999, 100, -5.19933666203545),
+                              (0.9999, 0.02, -2.576676052143387),
+                              (5e-2, 0.02, 17.089518110222244),
+                              (1e-18, 2, 5.9978070150076865),
                               (1e-50, 5, 6.361340902404057)])
     def test_isf(self, q, c, ref):
         assert_allclose(stats.powernorm.isf(q, c), ref, rtol=5e-12)
