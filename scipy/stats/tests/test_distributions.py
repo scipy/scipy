@@ -3973,6 +3973,22 @@ class TestGamma:
         delta = stats.gamma._delta_cdf(scale*245, scale*250, 3, scale=scale)
         assert_allclose(delta, 1.1902609356171962e-102, rtol=1e-13)
 
+    @pytest.mark.parametrize('a, ref, rtol',
+                             [(1e-4, -9990.366610819761, 1e-15),
+                              (2, 1.5772156649015328, 1e-15),
+                              (100, 3.7181819485047463, 1e-13),
+                              (1000, 4.8724827560179715, 1e-15),
+                              (1e18, 22.142204370151084, 1e-15)])
+    def test_entropy(self, a, ref, rtol):
+        # expected value computed with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        # def gamma_entropy_reference(x):
+        #     x = mp.mpf(x)
+        #     return float(mp.digamma(x) * (mp.one - x) + x + mp.loggamma(x))
+
+        assert_allclose(stats.gamma.entropy(a), ref, rtol=rtol)
+
 
 class TestDgamma:
     def test_pdf(self):
