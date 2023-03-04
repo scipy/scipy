@@ -7848,10 +7848,19 @@ class powernorm_gen(rv_continuous):
         return np.log(c) + _norm_logpdf(x) + (c-1)*_norm_logcdf(-x)
 
     def _cdf(self, x, c):
-        return 1.0-_norm_cdf(-x)**(c*1.0)
+        return -sc.expm1(self._logsf(x, c))
 
     def _ppf(self, q, c):
         return -_norm_ppf(pow(1.0 - q, 1.0 / c))
+
+    def _sf(self, x, c):
+        return np.exp(self._logsf(x, c))
+
+    def _logsf(self, x, c):
+        return c * _norm_logcdf(-x)
+
+    def _isf(self, q, c):
+        return -_norm_ppf(np.exp(np.log(q) / c))
 
 
 powernorm = powernorm_gen(name='powernorm')
