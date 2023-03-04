@@ -5219,20 +5219,25 @@ def test_ttest_ind_from_stats_inputs_zero():
 
 
 def test_ttest_single_observation():
+    # test that p-values are uniformly distributed under the null hypothesis
     rng = np.random.default_rng(246834602926842)
     x = rng.normal(size=(10000, 2))
     y = rng.normal(size=(10000, 1))
-    res = stats.ttest_ind(x, y, equal_var=True, axis=-1)
+    q = rng.uniform(size=100)
 
-    assert_allclose(np.percentile(res.pvalue, 25), 0.25, atol=1e-2)
-    assert_allclose(np.percentile(res.pvalue, 50), 0.5, atol=1e-2)
-    assert_allclose(np.percentile(res.pvalue, 75), 0.75, atol=1e-2)
+    res = stats.ttest_ind(x, y, equal_var=True, axis=-1)
+    assert stats.ks_1samp(res.pvalue, stats.uniform().cdf).pvalue > 0.1
+    assert_allclose(np.percentile(res.pvalue, q*100), q, atol=1e-2)
 
     res = stats.ttest_ind(y, x, equal_var=True, axis=-1)
+    assert stats.ks_1samp(res.pvalue, stats.uniform().cdf).pvalue > 0.1
+    assert_allclose(np.percentile(res.pvalue, q*100), q, atol=1e-2)
 
-    assert_allclose(np.percentile(res.pvalue, 25), 0.25, atol=1e-2)
-    assert_allclose(np.percentile(res.pvalue, 50), 0.5, atol=1e-2)
-    assert_allclose(np.percentile(res.pvalue, 75), 0.75, atol=1e-2)
+    # reference values from R:
+    # options(digits=16)
+    # t.test(c(2, 3, 5), c(1.5), var.equal=TRUE)
+    res = stats.ttest_ind([2, 3, 5], [1.5], equal_var=True)
+    assert_allclose(res, (1.0394023007754, 0.407779907736), rtol=1e-10)
 
 
 def test_ttest_1samp_new():
