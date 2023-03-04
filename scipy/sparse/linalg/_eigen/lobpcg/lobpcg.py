@@ -66,8 +66,23 @@ def _makeMatMat(m):
         return lambda v: m @ v
 
 
+def _dot_inplace(x, y, verbosityLevel=0):
+    """Perform 'np.dot' in-place if dtypes match."""
+    try:
+        np.dot(x, y, out=x)
+    except Exception:
+        if verbosityLevel:
+            warnings.warn(
+                f"Trying in-place x = x @ y, x.dtype {x.dtype} "
+                f"does not match y.dtype {y.dtype}, "
+                f"so x needs to be overwritten preventing in-place.",
+                UserWarning, stacklevel=3
+            )
+        x = x @ y
+
+
 def _applyConstraints(blockVectorV, factYBY, blockVectorBY, blockVectorY):
-    """Changes blockVectorV in place."""
+    """Changes blockVectorV in-place."""
     YBV = blockVectorBY.T.conj() @ blockVectorV
     tmp = cho_solve(factYBY, YBV)
     blockVectorV -= blockVectorY @ tmp
@@ -778,7 +793,8 @@ def lobpcg(
                 activeBlockVectorP, _, invR = aux
             # Function _b_orthonormalize returns None if Cholesky fails
             if activeBlockVectorP is not None:
-                activeBlockVectorAP = np.dot(activeBlockVectorAP, invR)
+                _dot_inplace(activeBlockVectorAP, invR,
+                             verbosityLevel=verbosityLevel)
                 restart = forcedRestart
             else:
                 restart = True
