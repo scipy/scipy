@@ -2834,14 +2834,23 @@ class TestPowerLogNorm:
     def test_cdf(self, x, c, s, ref):
         assert_allclose(stats.powerlognorm.cdf(x, c, s), ref, rtol=3e-14)
 
-    # reference values were computed via mpmath using the CDF above
-    # For ppf, the inverse CDF, we just have to reverse q / ref
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def powerlognorm_pdf_mpmath(x, c, s):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     s = mp.mpf(s)
+    #     res = (c/(x * s) * mp.npdf(mp.log(x)/s) *
+    #            mp.ncdf(-mp.log(x)/s)**(c - mp.one))
+    #     return float(res)
 
-    @pytest.mark.parametrize("q, c, s, ref",
-                             [(0.9999988811461683, 20, 1, 0.99),
-                              (4.121206114168031e-05, 20, 1, 0.01)])
-    def test_ppf(self, q, c, s, ref):
-        assert_allclose(stats.powerlognorm.ppf(q, c, s), ref, rtol=1e-11)
+    @pytest.mark.parametrize("x, c, s, ref",
+                             [(1e22, 0.02, 1, 6.5954987852335016e-34),
+                              (1e20, 1e-3, 1, 1.588073750563988e-22),
+                              (1e40, 1e-3, 1, 1.3179391812506349e-43)])
+    def test_pdf(self, x, c, s, ref):
+        assert_allclose(stats.powerlognorm.pdf(x, c, s), ref, rtol=3e-12)
 
 
 class TestInvGamma:

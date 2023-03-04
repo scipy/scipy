@@ -7799,7 +7799,17 @@ class powerlognorm_gen(rv_continuous):
         return [ic, i_s]
 
     def _pdf(self, x, c, s):
-        return np.exp(self._logpdf(x, c, s))
+
+        def direct_formula(x, c, s):
+            return (c/(x*s) * _norm_pdf(np.log(x)/s) *
+                    pow(_norm_cdf(-np.log(x)/s), c*1.0-1.0))
+
+        def logpdf_formula(x, c, s):
+            return np.exp(self._logpdf(x, c, s))
+
+        return _lazywhere(c <= 1 & s <= 1, (x, c, s, ),
+                          logpdf_formula,
+                          f2=direct_formula)
 
     def _logpdf(self, x, c, s):
         return (np.log(c) - np.log(x) - np.log(s) +
@@ -7810,7 +7820,7 @@ class powerlognorm_gen(rv_continuous):
         return -sc.expm1(self._logsf(x, c, s))
 
     def _ppf(self, q, c, s):
-        return np.exp(-s * _norm_ppf(np.exp(np.log(1 - q) / c)))
+        return np.exp(-s * _norm_ppf(pow(1.0 - q, 1.0 / c)))
 
     def _sf(self, x, c, s):
         return np.exp(self._logsf(x, c, s))
