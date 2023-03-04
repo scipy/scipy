@@ -629,40 +629,19 @@ def lobpcg(
         lambdaHistory[0, :] = _lambda
 
     eigBlockVector = np.asarray(eigBlockVector[:, ii])
-    try:
-        np.dot(blockVectorX, eigBlockVector, out=blockVectorX)
-    except Exception:
-        if verbosityLevel:
-            warnings.warn(
-                f"The blockVectorX dtype {blockVectorX.dtype} "
-                f"does not match {eigBlockVector.dtype} "
-                f"and needs to be changed preventing in-place.",
-                UserWarning, stacklevel=2
-            )
-        blockVectorX = blockVectorX @ eigBlockVector
-    try:
-        np.dot(blockVectorAX, eigBlockVector, out=blockVectorAX)
-    except Exception:
-        if verbosityLevel:
-            warnings.warn(
-                f"The blockVectorX dtype {blockVectorAX.dtype} "
-                f"does not match {eigBlockVector.dtype} "
-                f"and needs to be changed preventing in-place.",
-                UserWarning, stacklevel=2
-            )
-        blockVectorAX = blockVectorAX @ eigBlockVector
+    blockVectorX = _dot_inplace(
+        blockVectorX, eigBlockVector,
+        verbosityLevel=verbosityLevel
+    )
+    blockVectorAX = _dot_inplace(
+        blockVectorAX, eigBlockVector,
+        verbosityLevel=verbosityLevel
+    )
     if B is not None:
-        try:
-            np.dot(blockVectorBX, eigBlockVector, out=blockVectorBX)
-        except Exception:
-            if verbosityLevel:
-                warnings.warn(
-                    f"The blockVectorX dtype {blockVectorBX.dtype} "
-                    f"does not match {eigBlockVector.dtype} "
-                    f"and needs to be changed preventing in-place.",
-                    UserWarning, stacklevel=2
-                )
-            blockVectorBX = blockVectorBX @ eigBlockVector
+        blockVectorBX = _dot_inplace(
+            blockVectorBX, eigBlockVector,
+            verbosityLevel=verbosityLevel
+        )
 
     ##
     # Active index set.
