@@ -79,6 +79,7 @@ def _dot_inplace(x, y, verbosityLevel=0):
                 UserWarning, stacklevel=3
             )
         x = x @ y
+    return x
 
 
 def _applyConstraints(blockVectorV, factYBY, blockVectorBY, blockVectorY):
@@ -793,8 +794,10 @@ def lobpcg(
                 activeBlockVectorP, _, invR = aux
             # Function _b_orthonormalize returns None if Cholesky fails
             if activeBlockVectorP is not None:
-                _dot_inplace(activeBlockVectorAP, invR,
-                             verbosityLevel=verbosityLevel)
+                activeBlockVectorAP = _dot_inplace(
+                    activeBlockVectorAP, invR,
+                    verbosityLevel=verbosityLevel
+                )
                 restart = forcedRestart
             else:
                 restart = True
