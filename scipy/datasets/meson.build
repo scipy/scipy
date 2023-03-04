@@ -11,4 +11,6 @@ py3.install_sources(
   subdir: 'scipy/datasets'
 )
 
-subdir('tests')
+if not get_option('disable-network-tests')
+  subdir('tests')
+endif

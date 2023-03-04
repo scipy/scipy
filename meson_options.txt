@@ -6,3 +6,6 @@ option('use-g77-abi', type: 'boolean', value: false,
         description: 'If set to true, forces using g77 compatibility wrappers ' +
                      'for LAPACK functions. The default is to use gfortran ' +
                      'ABI for all LAPACK libraries except MKL.')
+option('disable-network-tests', type: 'boolean', value: 'false',
+        description: 'If set to true, disables tests that require internet ' +
+                     'connection, such as those downloading datasets.')
