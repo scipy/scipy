@@ -260,8 +260,8 @@ class gaussian_kde:
                 points = reshape(points, (self.d, 1))
                 m = 1
             else:
-                msg = "points have dimension %s, dataset has dimension %s" % (d,
-                    self.d)
+                msg = (f"points have dimension {d}, "
+                       f"dataset has dimension {self.d}")
                 raise ValueError(msg)
 
         output_dtype, spec = _get_output_dtype(self.covariance, points)
@@ -385,8 +385,8 @@ class gaussian_kde:
             extra_kwds = {}
 
         value, inform = _mvn.mvnun_weighted(low_bounds, high_bounds,
-                                           self.dataset, self.weights,
-                                           self.covariance, **extra_kwds)
+                                            self.dataset, self.weights,
+                                            self.covariance, **extra_kwds)
         if inform:
             msg = ('An integral in _mvn.mvnun requires more points than %s' %
                    (self.d * 1000))

@@ -90,7 +90,7 @@ def _nonneg_int_or_fail(n, var_name, strict=True):
         if n < 0:
             raise ValueError()
     except (ValueError, TypeError) as err:
-        raise err.__class__("{} must be a non-negative integer".format(var_name)) from err
+        raise err.__class__(f"{var_name} must be a non-negative integer") from err
     return n
 
 

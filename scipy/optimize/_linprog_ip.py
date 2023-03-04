@@ -28,7 +28,7 @@ from ._linprog_util import _postsolve
 has_umfpack = True
 has_cholmod = True
 try:
-    import sksparse
+    import sksparse  # noqa: F401
     from sksparse.cholmod import cholesky as cholmod
     from sksparse.cholmod import analyze as cholmod_analyze
 except ImportError:

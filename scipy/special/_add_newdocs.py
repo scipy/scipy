@@ -6,9 +6,8 @@
 # _generate_pyx.py to generate the docstrings for the ufuncs in
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
-from typing import Dict
 
-docdict: Dict[str, str] = {}
+docdict: dict[str, str] = {}
 
 
 def get(name):
@@ -4451,6 +4450,61 @@ add_newdoc("exp1",
 
     """)
 
+
+add_newdoc(
+    "_scaled_exp1",
+    """
+    _scaled_exp1(x, out=None):
+
+    Compute the scaled exponential integral.
+
+    This is a private function, subject to change or removal with no
+    deprecation.
+
+    This function computes F(x), where F is the factor remaining in E_1(x)
+    when exp(-x)/x is factored out.  That is,::
+
+        E_1(x) = exp(-x)/x * F(x)
+
+    or
+
+        F(x) = x * exp(x) * E_1(x)
+
+    The function is defined for real x >= 0.  For x < 0, nan is returned.
+
+    F has the properties:
+
+    * F(0) = 0
+    * F(x) is increasing on [0, inf).
+    * The limit as x goes to infinity of F(x) is 1.
+
+    Parameters
+    ----------
+    x: array_like
+        The input values. Must be real.  The implementation is limited to
+        double precision floating point, so other types will be cast to
+        to double precision.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the scaled exponential integral.
+
+    See Also
+    --------
+    exp1 : exponential integral E_1
+
+    Examples
+    --------
+    >>> from scipy.special import _scaled_exp1
+    >>> _scaled_exp1([0, 0.1, 1, 10, 100])
+
+    """
+)
+
+
 add_newdoc("exp10",
     """
     exp10(x, out=None)
@@ -6938,7 +6992,8 @@ add_newdoc("i0e",
     polynomial expansions used are the same as those in `i0`, but
     they are not multiplied by the dominant exponential factor.
 
-    This function is a wrapper for the Cephes [1]_ routine `i0e`.
+    This function is a wrapper for the Cephes [1]_ routine `i0e`. `i0e`
+    is useful for large arguments `x`: for these, `i0` quickly overflows.
 
     See also
     --------
@@ -6952,13 +7007,15 @@ add_newdoc("i0e",
 
     Examples
     --------
-    Calculate the function at one point:
+    In the following example `i0` returns infinity whereas `i0e` still returns
+    a finite number.
 
-    >>> from scipy.special import i0e
-    >>> i0e(1.)
-    0.46575960759364043
+    >>> from scipy.special import i0, i0e
+    >>> i0(1000.), i0e(1000.)
+    (inf, 0.012617240455891257)
 
-    Calculate the function at several points:
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
 
     >>> import numpy as np
     >>> i0e(np.array([-2., 0., 3.]))
@@ -6972,15 +7029,6 @@ add_newdoc("i0e",
     >>> y = i0e(x)
     >>> ax.plot(x, y)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions overflow or lose precision. In the
-    following example `i0` returns infinity whereas `i0e` still returns
-    a finite number.
-
-    >>> from scipy.special import i0
-    >>> i0(1000.), i0e(1000.)
-    (inf, 0.012617240455891257)
     """)
 
 add_newdoc("i1",
@@ -7081,7 +7129,8 @@ add_newdoc("i1e",
     polynomial expansions used are the same as those in `i1`, but
     they are not multiplied by the dominant exponential factor.
 
-    This function is a wrapper for the Cephes [1]_ routine `i1e`.
+    This function is a wrapper for the Cephes [1]_ routine `i1e`. `i1e`
+    is useful for large arguments `x`: for these, `i1` quickly overflows.
 
     See also
     --------
@@ -7095,13 +7144,15 @@ add_newdoc("i1e",
 
     Examples
     --------
-    Calculate the function at one point:
+    In the following example `i1` returns infinity whereas `i1e` still returns
+    a finite number.
 
-    >>> from scipy.special import i1e
-    >>> i1e(1.)
-    0.2079104153497085
+    >>> from scipy.special import i1, i1e
+    >>> i1(1000.), i1e(1000.)
+    (inf, 0.01261093025692863)
 
-    Calculate the function at several points:
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
 
     >>> import numpy as np
     >>> i1e(np.array([-2., 0., 6.]))
@@ -7115,15 +7166,6 @@ add_newdoc("i1e",
     >>> y = i1e(x)
     >>> ax.plot(x, y)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions overflow or lose precision. In the
-    following example `i1` returns infinity whereas `i1e` still returns a
-    finite number.
-
-    >>> from scipy.special import i1
-    >>> i1(1000.), i1e(1000.)
-    (inf, 0.01261093025692863)
     """)
 
 add_newdoc("_igam_fac",
@@ -7825,6 +7867,9 @@ add_newdoc("ive",
     is used, where :math:`K_v(z)` is the modified Bessel function of the
     second kind, evaluated using the AMOS routine `zbesk`.
 
+    `ive` is useful for large arguments `z`: for these, `iv` easily overflows,
+    while `ive` does not due to the exponential scaling.
+
     See also
     --------
     iv: Modified Bessel function of the first kind
@@ -7839,13 +7884,14 @@ add_newdoc("ive",
 
     Examples
     --------
-    Evaluate the function of order 0 at one point.
+    In the following example `iv` returns infinity whereas `ive` still returns
+    a finite number.
 
-    >>> import numpy as np
     >>> from scipy.special import iv, ive
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> ive(0, 1.)
-    0.4657596075936404
+    >>> iv(3, 1000.), ive(3, 1000.)
+    (inf, 0.01256056218254712)
 
     Evaluate the function at one point for different orders by
     providing a list or NumPy array as argument for the `v` parameter:
@@ -7879,14 +7925,6 @@ add_newdoc("ive",
     >>> ax.legend()
     >>> ax.set_xlabel(r"$z$")
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions over- or underflow. In the
-    following example `iv` returns infinity whereas `ive` still returns
-    a finite number.
-
-    >>> iv(3, 1000.), ive(3, 1000.)
-    (inf, 0.01256056218254712)
     """)
 
 add_newdoc("j0",
@@ -8363,7 +8401,8 @@ add_newdoc("k0e",
     The range is partitioned into the two intervals [0, 2] and (2, infinity).
     Chebyshev polynomial expansions are employed in each interval.
 
-    This function is a wrapper for the Cephes [1]_ routine `k0e`.
+    This function is a wrapper for the Cephes [1]_ routine `k0e`. `k0e` is
+    useful for large arguments: for these, `k0` easily underflows.
 
     See also
     --------
@@ -8377,13 +8416,15 @@ add_newdoc("k0e",
 
     Examples
     --------
-    Calculate the function at one point:
+    In the following example `k0` returns 0 whereas `k0e` still returns a
+    useful finite number:
 
-    >>> from scipy.special import k0e
-    >>> k0e(1.)
-    1.1444630798068947
+    >>> from scipy.special import k0, k0e
+    >>> k0(1000.), k0e(1000)
+    (0., 0.03962832160075422)
 
-    Calculate the function at several points:
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
 
     >>> import numpy as np
     >>> k0e(np.array([0.5, 2., 3.]))
@@ -8397,19 +8438,6 @@ add_newdoc("k0e",
     >>> y = k0e(x)
     >>> ax.plot(x, y)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions are not precise enough.
-
-    >>> from scipy.special import k0
-    >>> k0(1000.)
-    0.
-
-    While `k0` returns zero, `k0e` still returns a finite number:
-
-    >>> k0e(1000.)
-    0.03962832160075422
-
     """)
 
 add_newdoc("k1",
@@ -8514,13 +8542,15 @@ add_newdoc("k1e",
 
     Examples
     --------
-    Calculate the function at one point:
+    In the following example `k1` returns 0 whereas `k1e` still returns a
+    useful floating point number.
 
-    >>> from scipy.special import k1e
-    >>> k1e(1.)
-    1.636153486263258
+    >>> from scipy.special import k1, k1e
+    >>> k1(1000.), k1e(1000.)
+    (0., 0.03964813081296021)
 
-    Calculate the function at several points:
+    Calculate the function at several points by providing a NumPy array or
+    list for `x`:
 
     >>> import numpy as np
     >>> k1e(np.array([0.5, 2., 3.]))
@@ -8534,15 +8564,6 @@ add_newdoc("k1e",
     >>> y = k1e(x)
     >>> ax.plot(x, y)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions are not precise enough. In the
-    following example `k1` returns zero whereas `k1e` still returns a
-    useful floating point number.
-
-    >>> from scipy.special import k1
-    >>> k1(1000.), k1e(1000.)
-    (0., 0.03964813081296021)
     """)
 
 add_newdoc("kei",
@@ -9125,13 +9146,14 @@ add_newdoc("kve",
 
     Examples
     --------
-    Evaluate the function of order 0 at one point.
+    In the following example `kv` returns 0 whereas `kve` still returns
+    a useful finite number.
 
     >>> import numpy as np
     >>> from scipy.special import kv, kve
     >>> import matplotlib.pyplot as plt
-    >>> kve(0, 1.)
-    1.1444630798068949
+    >>> kv(3, 1000.), kve(3, 1000.)
+    (0.0, 0.03980696128440973)
 
     Evaluate the function at one point for different orders by
     providing a list or NumPy array as argument for the `v` parameter:
@@ -9167,14 +9189,6 @@ add_newdoc("kve",
     >>> ax.set_ylim(0, 4)
     >>> ax.set_xlim(0, 5)
     >>> plt.show()
-
-    Exponentially scaled Bessel functions are useful for large arguments for
-    which the unscaled Bessel functions over- or underflow. In the
-    following example `kv` returns 0 whereas `kve` still returns
-    a useful finite number.
-
-    >>> kv(3, 1000.), kve(3, 1000.)
-    (0.0, 0.03980696128440973)
     """)
 
 add_newdoc("_lanczos_sum_expg_scaled",
@@ -13028,8 +13042,38 @@ add_newdoc("xlogy",
 
     Notes
     -----
+    The log function used in the computation is the natural log.
 
     .. versionadded:: 0.13.0
+
+    Examples
+    --------
+    We can use this function to calculate the binary logistic loss also
+    known as the binary cross entropy. This loss function is used for
+    binary classification problems and is defined as:
+
+    .. math::
+        L = 1/n * \\sum_{i=0}^n -(y_i*log(y\\_pred_i) + (1-y_i)*log(1-y\\_pred_i))
+
+    We can define the parameters `x` and `y` as y and y_pred respectively.
+    y is the array of the actual labels which over here can be either 0 or 1.
+    y_pred is the array of the predicted probabilities with respect to
+    the positive class (1).
+
+    >>> import numpy as np
+    >>> from scipy.special import xlogy
+    >>> y = np.array([0, 1, 0, 1, 1, 0])
+    >>> y_pred = np.array([0.3, 0.8, 0.4, 0.7, 0.9, 0.2])
+    >>> n = len(y)
+    >>> loss = -(xlogy(y, y_pred) + xlogy(1 - y, 1 - y_pred)).sum()
+    >>> loss /= n
+    >>> loss
+    0.29597052165495025
+
+    A lower loss is usually better as it indicates that the predictions are
+    similar to the actual labels. In this example since our predicted
+    probabilties are close to the actual labels, we get an overall loss
+    that is reasonably low and appropriate.
 
     """)
 
@@ -13057,6 +13101,43 @@ add_newdoc("xlog1py",
     -----
 
     .. versionadded:: 0.13.0
+
+    Examples
+    --------
+    This example shows how the function can be used to calculate the log of
+    the probability mass function for a geometric discrete random variable.
+    The probability mass function of the geometric distribution is defined
+    as follows:
+
+    .. math:: f(k) = (1-p)^{k-1} p
+
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure
+    and :math:`k` is the number of trials to get the first success.
+
+    >>> import numpy as np
+    >>> from scipy.special import xlog1py
+    >>> p = 0.5
+    >>> k = 100
+    >>> _pmf = np.power(1 - p, k - 1) * p
+    >>> _pmf
+    7.888609052210118e-31
+
+    If we take k as a relatively large number the value of the probability
+    mass function can become very low. In such cases taking the log of the
+    pmf would be more suitable as the log function can change the values
+    to a scale that is more appropriate to work with.
+
+    >>> _log_pmf = xlog1py(k - 1, -p) + np.log(p)
+    >>> _log_pmf
+    -69.31471805599453
+
+    We can confirm that we get a value close to the original pmf value by
+    taking the exponential of the log pmf.
+
+    >>> _orig_pmf = np.exp(_log_pmf)
+    >>> np.isclose(_pmf, _orig_pmf)
+    True
 
     """)
 

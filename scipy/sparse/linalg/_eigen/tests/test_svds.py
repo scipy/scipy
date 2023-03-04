@@ -31,7 +31,7 @@ def sorted_svd(m, k, which='LM'):
     elif which == 'SM':
         ii = np.argsort(s)[:k]
     else:
-        raise ValueError("unknown which=%r" % (which,))
+        raise ValueError(f"unknown which={which!r}")
 
     return u[:, ii], s[ii], vh[ii]
 

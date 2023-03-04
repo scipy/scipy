@@ -1,4 +1,5 @@
 # Note: this should disappear at some point. For now, please keep it
 #       in sync with the dev dependencies in pyproject.toml
-mypy==0.931
+mypy==1.0.0
+types-psutil
 typing_extensions

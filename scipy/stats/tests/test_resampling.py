@@ -390,7 +390,7 @@ def test_bootstrap_against_itself_2samp(method, expected):
 def test_bootstrap_vectorized_3samp(method, axis):
     def statistic(*data, axis=0):
         # an arbitrary, vectorized statistic
-        return sum((sample.mean(axis) for sample in data))
+        return sum(sample.mean(axis) for sample in data)
 
     def statistic_1d(*data):
         # the same statistic, not vectorized
@@ -597,7 +597,7 @@ def test_vectorize_statistic(axis):
 
     def statistic(*data, axis):
         # an arbitrary, vectorized statistic
-        return sum((sample.mean(axis) for sample in data))
+        return sum(sample.mean(axis) for sample in data)
 
     def statistic_1d(*data):
         # the same statistic, not vectorized
@@ -1609,8 +1609,8 @@ def test_all_partitions_concatenated():
         partitioning = np.split(partition_concatenated, nc[:-1])
         all_partitions.add(tuple([frozenset(i) for i in partitioning]))
 
-    expected = np.product([special.binom(sum(n[i:]), sum(n[i+1:]))
-                           for i in range(len(n)-1)])
+    expected = np.prod([special.binom(sum(n[i:]), sum(n[i+1:]))
+                        for i in range(len(n)-1)])
 
     assert_equal(counter, expected)
     assert_equal(len(all_partitions), expected)

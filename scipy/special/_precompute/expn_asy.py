@@ -39,14 +39,14 @@ def main():
     A = generate_A(K)
     with open(fn + '.new', 'w') as f:
         f.write(WARNING)
-        f.write("#define nA {}\n".format(len(A)))
+        f.write(f"#define nA {len(A)}\n")
         for k, Ak in enumerate(A):
-            tmp = ', '.join([str(x.evalf(18)) for x in Ak.coeffs()])
-            f.write("static const double A{}[] = {{{}}};\n".format(k, tmp))
-        tmp = ", ".join(["A{}".format(k) for k in range(K + 1)])
-        f.write("static const double *A[] = {{{}}};\n".format(tmp))
-        tmp = ", ".join([str(Ak.degree()) for Ak in A])
-        f.write("static const int Adegs[] = {{{}}};\n".format(tmp))
+            ', '.join([str(x.evalf(18)) for x in Ak.coeffs()])
+            f.write(f"static const double A{k}[] = {{tmp}};\n")
+        ", ".join([f"A{k}" for k in range(K + 1)])
+        f.write("static const double *A[] = {{tmp}};\n")
+        ", ".join([str(Ak.degree()) for Ak in A])
+        f.write("static const int Adegs[] = {{tmp}};\n")
     os.rename(fn + '.new', fn)
 
 

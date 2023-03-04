@@ -558,6 +558,19 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         Interpolated values at `xi`. See notes for behaviour when
         ``xi.ndim == 1``.
 
+    See Also
+    --------
+    NearestNDInterpolator : Nearest neighbor interpolation on unstructured
+                            data in N dimensions
+    LinearNDInterpolator : Piecewise linear interpolant on unstructured data
+                           in N dimensions
+    RegularGridInterpolator : interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
+    RectBivariateSpline : Bivariate spline approximation over a rectangular mesh
+    scipy.ndimage.map_coordinates : interpolation on grids with equal spacing
+                                    (suitable for e.g., N-D image resampling)
+
     Notes
     -----
 
@@ -590,23 +603,6 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     >>> point = np.array([2.21, 3.12, 1.15])
     >>> print(interpn(points, values, point))
     [12.63]
-
-    See Also
-    --------
-    NearestNDInterpolator : Nearest neighbor interpolation on unstructured
-                            data in N dimensions
-
-    LinearNDInterpolator : Piecewise linear interpolant on unstructured data
-                           in N dimensions
-
-    RegularGridInterpolator : interpolation on a regular or rectilinear grid
-                              in arbitrary dimensions (`interpn` wraps this
-                              class).
-
-    RectBivariateSpline : Bivariate spline approximation over a rectangular mesh
-
-    scipy.ndimage.map_coordinates : interpolation on grids with equal spacing
-                                    (suitable for e.g., N-D image resampling)
 
     """
     # sanity check 'method' kwarg
@@ -647,9 +643,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     if bounds_error:
         for i, p in enumerate(xi.T):
             if not np.logical_and(np.all(grid[i][0] <= p),
-                                                np.all(p <= grid[i][-1])):
+                                  np.all(p <= grid[i][-1])):
                 raise ValueError("One of the requested xi is out of bounds "
-                                "in dimension %d" % i)
+                                 "in dimension %d" % i)
 
     # perform interpolation
     if method in ["linear", "nearest", "slinear", "cubic", "quintic", "pchip"]:
