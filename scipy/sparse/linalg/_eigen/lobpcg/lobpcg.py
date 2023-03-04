@@ -23,7 +23,6 @@ from scipy.linalg import (inv, eigh, cho_factor, cho_solve,
                           cholesky, LinAlgError)
 from scipy.sparse.linalg import LinearOperator
 from scipy.sparse import isspmatrix
-from numpy import block as bmat
 
 __all__ = ["lobpcg"]
 
@@ -837,14 +836,14 @@ def lobpcg(
             else:
                 gramPBP = np.eye(currentBlockSize, dtype=gramDtype)
 
-            gramA = bmat(
+            gramA = np.block(
                 [
                     [gramXAX, gramXAR, gramXAP],
                     [gramXAR.T.conj(), gramRAR, gramRAP],
                     [gramXAP.T.conj(), gramRAP.T.conj(), gramPAP],
                 ]
             )
-            gramB = bmat(
+            gramB = np.block(
                 [
                     [gramXBX, gramXBR, gramXBP],
                     [gramXBR.T.conj(), gramRBR, gramRBP],
@@ -870,8 +869,8 @@ def lobpcg(
                 restart = True
 
         if restart:
-            gramA = bmat([[gramXAX, gramXAR], [gramXAR.T.conj(), gramRAR]])
-            gramB = bmat([[gramXBX, gramXBR], [gramXBR.T.conj(), gramRBR]])
+            gramA = np.block([[gramXAX, gramXAR], [gramXAR.T.conj(), gramRAR]])
+            gramB = np.block([[gramXBX, gramXBR], [gramXBR.T.conj(), gramRBR]])
 
             _handle_gramA_gramB_verbosity(gramA, gramB, verbosityLevel)
 
