@@ -5085,6 +5085,35 @@ class johnsonsu_gen(rv_continuous):
     def _ppf(self, q, a, b):
         return np.sinh((_norm_ppf(q) - a) / b)
 
+    def _stats(self, a, b, moments='mv'):
+        # Naive implementation of first and second moment to address gh-18071.
+        # https://variation.com/wp-content/distribution_analyzer_help/hs126.htm
+        # Numerical improvements left to future enhancements.
+        mu, mu2, g1, g2 = None, None, None, None
+
+        bn2 = b**-2
+        expbn2 = np.exp(bn2)
+        a_b = a / b
+
+        if 'm' in moments:
+            mu = -expbn2**0.5 * np.sinh(a_b)
+        if 'v' in moments:
+            mu2 = 0.5*sc.expm1(bn2)*(expbn2*np.cosh(2*a_b) + 1)
+        if 's' in moments:
+            t1 = expbn2**.5 * sc.expm1(bn2)**0.5
+            t2 = 3*np.sinh(a_b)
+            t3 = expbn2 * (expbn2 + 2) * np.sinh(3*a_b)
+            denom = np.sqrt(2) * (1 + expbn2 * np.cosh(2*a_b))**(3/2)
+            g1 = -t1 * (t2 + t3) / denom
+        if 'k' in moments:
+            t1 = 3 + 6*expbn2
+            t2 = 4*expbn2**2 * (expbn2 + 2) * np.cosh(2*a_b)
+            t3 = expbn2**2 * np.cosh(4*a_b)
+            t4 = -3 + 3*expbn2**2 + 2*expbn2**3 + expbn2**4
+            denom = 2*(1 + expbn2*np.cosh(2*a_b))**2
+            g2 = (t1 + t2 + t3*t4) / denom - 3
+        return mu, mu2, g1, g2
+
 
 johnsonsu = johnsonsu_gen(name='johnsonsu')
 

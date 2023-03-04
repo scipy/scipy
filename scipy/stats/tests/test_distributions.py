@@ -8284,3 +8284,18 @@ def test_moment_order_4():
     # has since been made more accurate and efficient, so now this test
     # is expected to pass.
     assert stats.skewnorm._munp(4, 0) == 3.0
+
+
+class TestJohnsonSU:
+    def test_moment_gh18071(self):
+        # gh-18071 reported an IntegrationWarning emitted by johnsonsu.stats
+        # Check that the warning is no longer emitted and that the values
+        # are approximately unchanged from those produced by the generic
+        # implementation.
+        l, s, a, b = 0.02, 0.0001, -0.01, 1.1
+        res = stats.johnsonsu.stats(a, b, loc=l, scale=s, moments='mvsk')
+        # Reference comes from calling generic implementation
+        # (without overriding johnsonsu._stats)
+        ref = (0.020001374275567283, 2.1112742930730227e-08,
+               0.059897813624949114, 17.363273963631265)
+        assert_allclose(res, ref, rtol=2e-6)
