@@ -1311,7 +1311,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
 
     Examples
     --------
-    In Fisher's definiton, the kurtosis of the normal distribution is zero.
+    In Fisher's definition, the kurtosis of the normal distribution is zero.
     In the following example, the kurtosis is close to zero, because it was
     calculated from the dataset, not from the continuous distribution.
 
@@ -10241,7 +10241,7 @@ def expectile(a, alpha=0.5, *, weights=None):
     The empirical expectile at level :math:`\alpha` (`alpha`) of a sample
     :math:`a_i` (the array `a`) is defined by plugging in the empirical CDF of
     `a`. Given sample or case weights :math:`w` (the array `weights`), it
-    reads :math:`F_a(x) = \frac{1}{\sum_i a_i} \sum_i w_i 1_{a_i \leq x}`
+    reads :math:`F_a(x) = \frac{1}{\sum_i w_i} \sum_i w_i 1_{a_i \leq x}`
     with indicator function :math:`1_{A}`. This leads to the definition of the
     empirical expectile at level `alpha` as the unique solution :math:`t` of:
 
