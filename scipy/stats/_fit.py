@@ -1251,7 +1251,7 @@ def _filliben(dist, data):
 
     # [7] Section 8 # 4
     return _corr(X, M)
-_filliben.alternative = 'less'
+_filliben.alternative = 'less'  # type: ignore[<code>]
 
 
 def _cramer_von_mises(dist, data):
