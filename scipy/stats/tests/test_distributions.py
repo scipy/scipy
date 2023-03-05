@@ -8295,20 +8295,8 @@ class TestJohnsonSU:
     def test_moment_gh18071(self, case):
         # gh-18071 reported an IntegrationWarning emitted by johnsonsu.stats
         # Check that the warning is no longer emitted and that the values
-        # are accurate (compared against results from Mathematica).
+        # are accurate compared against results from Mathematica.
         # Reference values from Mathematica, e.g.
-        # Mean[JohnsonDistribution["SU",-0.01, 1.1, 0.02, 0.0001 ]]
+        # Mean[JohnsonDistribution["SU",-0.01, 1.1, 0.02, 0.0001]]
         res = stats.johnsonsu.stats(*case[:4], moments='mvsk')
         assert_allclose(res, case[4:], rtol=1e-14)
-        # a, b, l, s = -0.01, 1.1, 0.02, 0.0001
-        # res = stats.johnsonsu.stats(a, b, loc=l, scale=s, moments='mvsk')
-        #
-        # ref = (0.02000137427557091, 2.1112742956578063e-08,
-        #        0.05989781342460999, 20.36324408592951-3)
-        # assert_allclose(res, ref, rtol=1e-14)
-        #
-        # a, b, l, s = 2.554395574161155, 2.2482281679651965, 0, 1
-        # res = stats.johnsonsu.stats(a, b, loc=l, scale=s, moments='mvsk')
-        # ref = (-1.54215386737391, 0.7629882028469993,
-        #        -1.256656139406788, 6.303058419339775-3)
-        # assert_allclose(res, ref, rtol=1e-14)
