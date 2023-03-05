@@ -1107,6 +1107,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     # Define statistic
     fit_fun = _get_fit_fun(dist, data, guessed_rfd_params, fixed_rfd_params)
     compare_fun = _compare_dict[statistic]
+    alternative = getattr(compare_fun, 'alternative', 'greater')
 
     def statistic_fun(data, axis=-1):
         # Make things simple by always working along the last axis.
@@ -1117,7 +1118,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
 
     res = stats.monte_carlo_test(data, rvs, statistic_fun, vectorized=True,
                                  n_resamples=n_mc_samples, axis=-1,
-                                 alternative='greater')
+                                 alternative=alternative)
     opt_res = optimize.OptimizeResult()
     opt_res.success = True
     opt_res.message = "The fit was performed successfully."
@@ -1141,19 +1142,17 @@ def _get_fit_fun(dist, data, guessed_params, fixed_params):
     guessed_shapes = [guessed_params.pop(x, None)
                       for x in shape_names if x in guessed_params]
 
+    if all_fixed:
+        def fit_fun(data):
+            return [fixed_params[name] for name in fparam_names]
     # Define statistic, including fitting distribution to data
-    if dist in _fit_funs:
+    elif dist in _fit_funs:
         def fit_fun(data):
             params = _fit_funs[dist](data, **fixed_params)
             params = np.asarray(np.broadcast_arrays(*params))
             if params.ndim > 1:
                 params = params[..., np.newaxis]
             return params
-
-    elif all_fixed:
-        def fit_fun(data):
-            return [fixed_params[name] for name in fparam_names]
-
     else:
         def fit_fun_1d(data):
             return dist.fit(data, *guessed_shapes, **guessed_params,
@@ -1220,12 +1219,14 @@ def _kolmogorov_smirnov(dist, data):
 
 
 def _corr(X, M):
-    # Correlation coefficient r. Simplified and vectorized as we need it.
-    # See [7] Section 3 Lemma 1
-    num = np.sum(X*M, axis=-1)
-    c_n2 = np.sum(M**2, axis=-1)
-    S2 = np.sum((X - X.mean())**2, axis=-1)
-    return num/np.sqrt(c_n2*S2)
+    # Correlation coefficient r, simplified and vectorized as we need it.
+    # See [7] Equation (2). Lemma 1/2 are only for distributions symmetric
+    # about 0.
+    Xm = X.mean(axis=-1, keepdims=True)
+    Mm = M.mean(axis=-1, keepdims=True)
+    num = np.sum((X - Xm) * (M - Mm), axis=-1)
+    den = np.sqrt(np.sum((X - Xm)**2, axis=-1) * np.sum((M - Mm)**2, axis=-1))
+    return num/den
 
 
 def _filliben(dist, data):
@@ -1236,7 +1237,11 @@ def _filliben(dist, data):
     n = data.shape[-1]
     k = np.arange(1, n+1)
     # Filliben used an approximation for the uniform distribution order
-    # statistic medians. We use the (theoretically) exact values. See e.g.
+    # statistic medians.
+    # m = (k - .3175)/(n + 0.365)
+    # m[-1] = 0.5**(1/n)
+    # m[0] = 1 - m[-1]
+    # We can just as easily use the (theoretically) exact values. See e.g.
     # https://en.wikipedia.org/wiki/Order_statistic
     # "Order statistics sampled from a uniform distribution"
     m = stats.beta(k, n + 1 - k).median()
@@ -1246,6 +1251,7 @@ def _filliben(dist, data):
 
     # [7] Section 8 # 4
     return _corr(X, M)
+_filliben.alternative = 'less'
 
 
 def _cramer_von_mises(dist, data):
