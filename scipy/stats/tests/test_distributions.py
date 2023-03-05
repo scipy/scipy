@@ -1030,7 +1030,7 @@ class TestGompertz:
     @pytest.mark.parametrize('c, ref', [(1e-4, 1.5762523017634573),
                                         (1, 0.4036526376768059),
                                         (1000, -5.908754280976161),
-                                        (1e6, -12.815511557963275)])
+                                        (1e10, -22.025850930040455)])
     def test_entropy(self, c, ref):
         assert_allclose(stats.gompertz.entropy(c), ref, rtol=1e-14)
 
