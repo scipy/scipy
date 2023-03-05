@@ -8287,15 +8287,28 @@ def test_moment_order_4():
 
 
 class TestJohnsonSU:
-    def test_moment_gh18071(self):
+    @pytest.mark.parametrize("case", [  # a, b, loc, scale, m1, m2, g1, g2
+            (-0.01, 1.1, 0.02, 0.0001, 0.02000137427557091,
+             2.1112742956578063e-08, 0.05989781342460999, 20.36324408592951-3),
+            (2.554395574161155, 2.2482281679651965, 0, 1, -1.54215386737391,
+             0.7629882028469993, -1.256656139406788, 6.303058419339775-3)])
+    def test_moment_gh18071(self, case):
         # gh-18071 reported an IntegrationWarning emitted by johnsonsu.stats
         # Check that the warning is no longer emitted and that the values
-        # are approximately unchanged from those produced by the generic
-        # implementation.
-        l, s, a, b = 0.02, 0.0001, -0.01, 1.1
-        res = stats.johnsonsu.stats(a, b, loc=l, scale=s, moments='mvsk')
-        # Reference comes from calling generic implementation
-        # (without overriding johnsonsu._stats)
-        ref = (0.020001374275567283, 2.1112742930730227e-08,
-               0.059897813624949114, 17.363273963631265)
-        assert_allclose(res, ref, rtol=2e-6)
+        # are accurate (compared against results from Mathematica).
+        # Reference values from Mathematica, e.g.
+        # Mean[JohnsonDistribution["SU",-0.01, 1.1, 0.02, 0.0001 ]]
+        res = stats.johnsonsu.stats(*case[:4], moments='mvsk')
+        assert_allclose(res, case[4:], rtol=1e-14)
+        # a, b, l, s = -0.01, 1.1, 0.02, 0.0001
+        # res = stats.johnsonsu.stats(a, b, loc=l, scale=s, moments='mvsk')
+        #
+        # ref = (0.02000137427557091, 2.1112742956578063e-08,
+        #        0.05989781342460999, 20.36324408592951-3)
+        # assert_allclose(res, ref, rtol=1e-14)
+        #
+        # a, b, l, s = 2.554395574161155, 2.2482281679651965, 0, 1
+        # res = stats.johnsonsu.stats(a, b, loc=l, scale=s, moments='mvsk')
+        # ref = (-1.54215386737391, 0.7629882028469993,
+        #        -1.256656139406788, 6.303058419339775-3)
+        # assert_allclose(res, ref, rtol=1e-14)
