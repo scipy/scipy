@@ -517,6 +517,16 @@ class TestHyp2f1:
                     rtol=1e-10,
                 ),
             ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=0.25,
+                    b=2.25-1e-13,
+                    c=1.25,
+                    z=-10.,
+                    expected=0.4492640346351087,
+                    rtol=1e-10,
+                ),
+            ),
         ],
     )
     def test_a_b_neg_int_after_euler_hypergeometric_transformation(
@@ -524,8 +534,8 @@ class TestHyp2f1:
     ):
         a, b, c, z, expected, rtol = hyp2f1_test_case
         assert (  # Tests the test
-            (abs(c - a - int(c - a)) < 1e-15 and c - a < 0) or
-            (abs(c - b - int(c - b)) < 1e-15 and c - b < 0)
+            (abs(c - a - round(c - a)) < 1e-12 and c - a < 0) or
+            (abs(c - b - round(c - b)) < 1e-12 and c - b < 0)
         )
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
