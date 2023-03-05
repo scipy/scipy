@@ -76,7 +76,7 @@ def qr_solve(A,y,silent=True):
     R_2 = R[:,:-(rank-m)]
     
     #z_1 is a column vector with r elements
-    z_1 = np.linalg.inv(R_1)@Q_1.T@y
+    z_1 = scipy.linalg.solve(R_1,Q_1.T@y)
     
     #We pad z_1 with r-m zeros at the bottom for a solution vector
     padding = np.zeros(n-r) #zero padding
