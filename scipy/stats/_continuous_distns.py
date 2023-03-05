@@ -5059,7 +5059,15 @@ class johnsonsu_gen(rv_continuous):
 
     `johnsonsu` takes :math:`a` and :math:`b` as shape parameters.
 
+    The first four central moments are calculated according to the formulas
+    in [1]_.
+
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Taylor Enterprises. "Johnson Family of Distributions".
+       https://variation.com/wp-content/distribution_analyzer_help/hs126.htm
 
     %(example)s
 
