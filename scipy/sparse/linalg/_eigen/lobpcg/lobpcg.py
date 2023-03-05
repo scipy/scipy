@@ -126,7 +126,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
             if verbosityLevel:
                 warnings.warn(
                     f"The blockVectorX dtype {blockVectorV.dtype} "
-                    f"does not match {VBV.dtype} "
+                    f"does not match {VBV.dtype} or is a slice "
                     f"and needs to be changed preventing in-place.",
                     UserWarning, stacklevel=3
                 )
