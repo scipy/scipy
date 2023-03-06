@@ -47,7 +47,7 @@ class TestSurvival:
         with pytest.raises(ValueError, match=message):
             stats.ecdf([np.nan])
 
-        message = 'Currently, only uncensored data is supported.'
+        message = 'Currently, only uncensored and right-censored data...'
         with pytest.raises(NotImplementedError, match=message):
             stats.ecdf(stats.CensoredData.left_censored([1], censored=[True]))
 
