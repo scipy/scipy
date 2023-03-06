@@ -138,8 +138,9 @@ def ecdf(sample):
     elif sample.num_censored() == sample._right.size:
         res = _ecdf_right_censored(sample)
     else:
-        # Support censoring in follow-up PRs
-        message = ("Currently, only uncensored data is supported.")
+        # Support additional censoring options in follow-up PRs
+        message = ("Currently, only uncensored and right-censored data is "
+                   "supported.")
         raise NotImplementedError(message)
     return res
 

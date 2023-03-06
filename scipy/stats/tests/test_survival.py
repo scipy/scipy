@@ -84,7 +84,7 @@ class TestSurvival:
 
     # ref. [1] page 91
     t1 = [37, 43, 47, 56, 60, 62, 71, 77, 80, 81]  # times
-    d1 = [0, 0, 1, 1, 0, 0, 0, 1, 1, 1]  # deaths (not censored)
+    d1 = [0, 0, 1, 1, 0, 0, 0, 1, 1, 1]  # 1 means deaths (not censored)
     r1 = [1, 1, 0.875, 0.75, 0.75, 0.75, 0.75, 0.5, 0.25, 0]  # reference SF
 
     # https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_survival/BS704_Survival5.html  # noqa
@@ -115,6 +115,11 @@ class TestSurvival:
         res = stats.ecdf(sample)
         assert_allclose(res.sf, ref, atol=1e-3)
         assert_equal(res.x, np.sort(np.unique(times)))
+
+        # test reference implementation
+        res = _kaplan_meier_reference(times, np.logical_not(died))
+        assert_equal(res[0], np.sort(np.unique(times)))
+        assert_allclose(res[1], ref, atol=1e-3)
 
     @pytest.mark.parametrize('seed', [182746786639392128, 737379171436494115,
                                       576033618403180168, 308115465002673650])
