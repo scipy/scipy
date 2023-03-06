@@ -11,7 +11,7 @@ from scipy.stats._qmc import check_random_state
 if TYPE_CHECKING:
     import numpy.typing as npt
     from scipy._lib._util import SeedType
-    from typing import Literal
+    from typing import Literal, Sequence
 
 
 __all__ = [
@@ -26,7 +26,8 @@ class DunnettResult:
 
 
 def dunnett(
-    *samples: npt.ArrayLike, control: npt.ArrayLike,
+    *samples: npt.ArrayLike,
+    control: npt.ArrayLike,
     alternative: Literal['two-sided', 'less', 'greater'] = "two-sided",
     random_state: SeedType = None
 ) -> DunnettResult:
@@ -93,7 +94,7 @@ def dunnett(
        Journal of the American Statistical Association, 50:272, 1096-1121,
        :doi:`10.1080/01621459.1955.10501294`, 1955.
     .. [2] K.S. Kwong, W. Liu. "Calculation of critical values for Dunnett
-       and Tamhane’s step-up multiple test procedure."
+       and Tamhane's step-up multiple test procedure."
        Statistics and Probability Letters, 49, 411-416,
        :doi:`10.1016/S0167-7152(00)00076-6`, 2000.
 
@@ -151,19 +152,17 @@ def dunnett(
     is not a significant difference between their means.
 
     """
-    samples, control, rng = iv_dunnett(
+    samples_, control, rng = iv_dunnett(
         samples=samples, control=control, random_state=random_state
     )
 
-    rho, df, n_group = params_dunnett(
-        samples=samples, control=control
-    )
+    rho, df, n_group = params_dunnett(samples=samples_, control=control)
 
     statistic = np.array([
         stats.ttest_ind(
             obs_, control, alternative=alternative, random_state=rng
         ).statistic
-        for obs_ in samples
+        for obs_ in samples_
     ])
 
     pvalue = pvalue_dunnett(
@@ -178,8 +177,10 @@ def dunnett(
 
 
 def iv_dunnett(
-    samples: npt.ArrayLike, control: npt.ArrayLike, random_state: SeedType
-) -> tuple[npt.ArrayLike, np.ndarray, SeedType]:
+    samples: Sequence[npt.ArrayLike],
+    control: npt.ArrayLike,
+    random_state: SeedType
+) -> tuple[list[np.ndarray], np.ndarray, SeedType]:
     """Input validation for Dunnett's test."""
     rng = check_random_state(random_state)
 
@@ -187,22 +188,22 @@ def iv_dunnett(
     n_obs_msg = "Control and samples groups must have at least 1 observation"
 
     control = np.asarray(control)
-    samples = [np.asarray(sample) for sample in samples]
+    samples_ = [np.asarray(sample) for sample in samples]
 
     # samples checks
-    for sample in (samples + [control]):
-        sample = np.asarray(sample)
+    samples_control: list[np.ndarray] = samples_ + [control]
+    for sample in samples_control:
         if sample.ndim > 1:
             raise ValueError(ndim_msg)
 
         if len(sample) < 1:
             raise ValueError(n_obs_msg)
 
-    return samples, control, rng
+    return samples_, control, rng
 
 
 def params_dunnett(
-    samples: npt.ArrayLike, control: npt.ArrayLike
+    samples: list[np.ndarray], control: np.ndarray
 ) -> tuple[np.ndarray, int, int]:
     """Specific parameters for Dunnett's test.
 
