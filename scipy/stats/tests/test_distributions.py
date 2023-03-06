@@ -1020,6 +1020,20 @@ class TestGompertz:
         assert_allclose(stats.gompertz.sf(x, c), sfx, rtol=1e-14)
         assert_allclose(stats.gompertz.isf(sfx, c), x, rtol=1e-14)
 
+    # reference values were computed with mpmath
+    # from mpmath import mp
+    # mp.dps = 100
+    # def gompertz_entropy(c):
+    #     c = mp.mpf(c)
+    #     return float(mp.one - mp.log(c) - mp.exp(c)*mp.e1(c))
+
+    @pytest.mark.parametrize('c, ref', [(1e-4, 1.5762523017634573),
+                                        (1, 0.4036526376768059),
+                                        (1000, -5.908754280976161),
+                                        (1e10, -22.025850930040455)])
+    def test_entropy(self, c, ref):
+        assert_allclose(stats.gompertz.entropy(c), ref, rtol=1e-14)
+
 
 class TestHalfNorm:
 

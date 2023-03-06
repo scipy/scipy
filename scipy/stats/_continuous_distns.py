@@ -3773,7 +3773,7 @@ class gompertz_gen(rv_continuous):
         return sc.log1p(-np.log(p)/c)
 
     def _entropy(self, c):
-        return 1.0 - np.log(c) - np.exp(c)*sc.expn(1, c)
+        return 1.0 - np.log(c) - sc._ufuncs._scaled_exp1(c)/c
 
 
 gompertz = gompertz_gen(a=0.0, name='gompertz')
