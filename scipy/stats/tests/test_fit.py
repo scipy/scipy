@@ -896,22 +896,22 @@ class TestGoodnessOfFit:
         assert_allclose(res[1], -0.297, atol=1e-3)
 
         # Reference values from Blom approximation as described in
-        # Royston, Patrick. "A pocket‐calculator algorithm for the
-        # Shapiro‐Francia test for non‐normality: An application to medicine."
+        # Royston, Patrick. "A pocket-calculator algorithm for the
+        # Shapiro-Francia test for non-normality: An application to medicine."
         # Statistics in medicine 12.2 (1993): 181-184.
         res = _fit._order_statistic_evs(stats.norm(), n=12)
         ref = [-1.6292, -1.1157, -0.7929, -0.5368, -0.3122, -0.1025]
         ref = ref + [-m for m in ref[::-1]]
-        assert_allclose(res, ref, atol=5e-3)
+        assert_allclose(res, ref, atol=1e-4)
 
     @pytest.mark.parametrize('case', [(5, [.6016, .6407, .6779, .7709]),
                                       (10, [.6794, .7390, .7698, .8425]),
                                       (20, [.7930, .8346, .8551, .9027])])
     def test_against_royston_table(self, case):
         # Reference values from Table 1 of
-        # Royston, J. P. "A Simple method for evaluating the shapiro–francia W'
-        # test of non-normality." Journal of the Royal Statistical Society:
-        # Seies D (The Statistician) 32.3 (1983) 297-300
+        # Royston, J. P. "A simple method for evaluating the Shapiro-Francia
+        # W' test of non-normality." Journal of the Royal Statistical Society:
+        # Series D (The Statistician) 32.3 (1983) 297-300
         rng = np.random.default_rng(2937432036923201836)
         n, ref = case
         x = rng.random(n)
@@ -937,7 +937,7 @@ class TestGoodnessOfFit:
         known_params = {'loc': 0, 'scale': 1}
         res = stats.goodness_of_fit(stats.norm, x, known_params=known_params,
                                     statistic="sf", random_state=rng)
-        assert_allclose(res.statistic, ref_statistic, atol=3e-3)
+        assert_allclose(res.statistic, ref_statistic, atol=2e-3)
         assert_allclose(res.pvalue, ref_pvalue, atol=1e-2)
 
     def test_params_effects(self):

@@ -1,7 +1,8 @@
 import warnings
 from collections import namedtuple
 import numpy as np
-from scipy import optimize, stats
+from scipy import optimize, stats, integrate
+from scipy.special import gammaln
 from scipy._lib._util import check_random_state
 
 
@@ -768,7 +769,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         unknown parameters of the distribution family to the data. The
         Anderson-Darling ("ad") [1]_, Kolmogorov-Smirnov ("ks") [1]_,
         Cramer-von Mises ("cvm") [1]_, Filliben ("filliben") [7]_, and
-        Shapiro-Francia ("sf") [1]_ statistics are available.
+        Shapiro-Francia ("sf") [8]_ statistics are available.
     n_mc_samples : int, default: 9999
         The number of Monte Carlo samples drawn from the null hypothesized
         distribution to form the null distribution of the statistic. The
@@ -880,7 +881,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                  {m + 1}
 
     where :math:`b` is the number of statistic values in the Monte Carlo null
-    distribution that are greater than or equal to the the statistic value
+    distribution that are greater than or equal to the statistic value
     calculated for `data`, and :math:`m` is the number of elements in the
     Monte Carlo null distribution (`n_mc_samples`). The addition of :math:`1`
     to the numerator and denominator can be thought of as including the
@@ -914,41 +915,16 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     inflating the p-value.
 
     *Implementation Notes*
+
     The Filliben statistic is calculated using the theoretical medians of the
     order statistics of the uniform distribution. Results will be slightly
     different from those computed using the approximation suggested by
     Filliben [7]_.
 
-    Computation of the Shapiro-Francia statistic for arbitrary distributions
-    is expensive. Consequently, `goodness_of_fit` will raise a
-    ``NotImplementedError`` unless *all* parameters of the null-hypothesized
-    distribution are provided as `known_params`. When all parameters are
-    known, the Shapiro-Francia statistic is calculated using approximate
-    expected values of the order statistics of the null hypothesized
-    distribution, which are computed as follows.
-
-    Let ``n`` be the number of observations in the sample being tested.
-
-    - Use inverse transform sampling to obtain ``2**13`` quasi-Monte Carlo
-      samples, each with ``n`` observations, from the null-hypothesized
-      distribution.
-
-      - Generate ``2**13`` unscrambled Sobol' points in ``n`` dimensions.
-        Note that Sobol' points must be drawn in powers of two to maintain
-        balance properties of the sequence, and with ``2**13`` points, we can
-        expect the sample mean to be representative of the distribution mean
-        for most distributions.
-      - Scale the points by a factor of 0.9998 and re-center them within the
-        unit hypercube. This ensures that no points are on the boundary of the
-        hypercube, avoiding infinities in the next step.
-      - Compute the percentile point function of the null hypothesized
-        distribution at each of the Sobol' points.
-
-    - Sort each of the samples. Element ``i`` of each sample is the ``i``th
-      order statistic of the sample.
-    - For every ``i``, compute the sample mean of the ``i``th order statistics
-      of the samples to approximate the expected value of the order statistics
-      of the null-hypothesized distribution.
+    Computation of the Shapiro-Francia statistic [8]_ for arbitrary
+    distributions is numerically challenging. The expected values of the order
+    statistics are calculated using numerical integration; if the integrator
+    emits a warning or fails, consider using the related Filliben statistic.
 
     References
     ----------
@@ -972,6 +948,9 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
            statistical Association 62.318: 399-402.
     .. [7] Filliben, James J. "The probability plot correlation coefficient
            test for normality." Technometrics 17.1 (1975): 111-117.
+    .. [8] Shapiro, Samuel S., and R. S. Francia. "An approximate analysis of
+           variance test for normality." Journal of the American statistical
+           Association 67.337 (1972): 215-216.
 
     Examples
     --------
@@ -1292,11 +1271,16 @@ _filliben.alternative = 'less'  # type: ignore[attr-defined]
 
 
 def _order_statistic_evs(dist, n):
-    # Approximate the expected values of the order statistics of a distribution
-    qrng = stats.qmc.Sobol(d=n, scramble=False)
-    p = qrng.random(8192)  # 2^13 (power of 2 closest to 10k)
-    p = 0.9998*p + 0.0001  # avoid infinities
-    return np.sort(dist.ppf(p), axis=-1).mean(axis=0)
+    # Calculate the expected values of the order statistics of a distribution
+    # PDF from https://en.wikipedia.org/wiki/Order_statistic
+    r = np.arange(1, n + 1)
+    constant = gammaln(n + 1) - gammaln(r) - gammaln(n - r + 1)
+    def integrand(x):
+        variable = dist.logpdf(x) + (r-1)*dist.logcdf(x) + (n-r)*dist.logsf(x)
+        return x * np.exp(constant + variable)
+
+    res = integrate.quad_vec(integrand, -np.inf, np.inf)
+    return res[0]
 
 
 def _shapiro_francia(dist, data):
