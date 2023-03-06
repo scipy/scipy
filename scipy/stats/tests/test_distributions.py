@@ -1034,6 +1034,7 @@ class TestGompertz:
     def test_entropy(self, c, ref):
         assert_allclose(stats.gompertz.entropy(c), ref, rtol=1e-14)
 
+
 class TestHalfNorm:
 
     # sfx is sf(x).  The values were computed with mpmath:
