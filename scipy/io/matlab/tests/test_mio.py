@@ -1307,10 +1307,13 @@ def test_gh_17992(tmp_path):
     array_one = rng.random((5,3))
     array_two = rng.random((6,3))
     list_of_arrays = [array_one, array_two]
-    savemat(outfile,
-            {'data': list_of_arrays},
-            long_field_names=True,
-            do_compression=True)
+    # warning suppression only needed for NumPy < 1.24.0
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(np.VisibleDeprecationWarning)
+        savemat(outfile,
+                {'data': list_of_arrays},
+                long_field_names=True,
+                do_compression=True)
     # round trip check
     new_dict = {}
     loadmat(outfile,
