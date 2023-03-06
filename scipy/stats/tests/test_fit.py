@@ -10,6 +10,7 @@ from .test_continuous_basic import distcont
 from scipy.stats._distn_infrastructure import FitError
 from scipy.stats._distr_params import distdiscrete
 from scipy.stats import goodness_of_fit
+from scipy.stats import _fit
 
 
 # this is not a proper statistical test for convergence, but only
@@ -732,6 +733,10 @@ class TestGoodnessOfFit:
         with pytest.raises(ValueError, match=message):
             goodness_of_fit(dist, x, random_state='herring')
 
+        message = "All parameters of the null hypothesized distribution..."
+        with pytest.raises(NotImplementedError, match=message):
+            goodness_of_fit(dist, x, statistic="sf")
+
     def test_against_ks(self):
         rng = np.random.default_rng(8517426291317196949)
         x = examgrades
@@ -883,6 +888,57 @@ class TestGoodnessOfFit:
                                     random_state=rng)
         assert_allclose(res.statistic, ref_statistic, rtol=1e-4)
         assert_allclose(res.pvalue, ref_pvalue, atol=1.5e-2)
+
+    def test_order_statistics(self):
+        # Reference value from:
+        # https://en.wikipedia.org/wiki/Shapiro%E2%80%93Francia_test
+        res = _fit._order_statistic_evs(stats.norm(), n=4)
+        assert_allclose(res[1], -0.297, atol=1e-3)
+
+        # Reference values from Blom approximation as described in
+        # Royston, Patrick. "A pocket‐calculator algorithm for the
+        # Shapiro‐Francia test for non‐normality: An application to medicine."
+        # Statistics in medicine 12.2 (1993): 181-184.
+        res = _fit._order_statistic_evs(stats.norm(), n=12)
+        ref = [-1.6292, -1.1157, -0.7929, -0.5368, -0.3122, -0.1025]
+        ref = ref + [-m for m in ref[::-1]]
+        assert_allclose(res, ref, atol=5e-3)
+
+    @pytest.mark.parametrize('case', [(5, [.6016, .6407, .6779, .7709]),
+                                      (10, [.6794, .7390, .7698, .8425]),
+                                      (20, [.7930, .8346, .8551, .9027])])
+    def test_against_royston_table(self, case):
+        # Reference values from Table 1 of
+        # Royston, J. P. "A Simple method for evaluating the shapiro–francia W'
+        # test of non-normality." Journal of the Royal Statistical Society:
+        # Seies D (The Statistician) 32.3 (1983) 297-300
+        rng = np.random.default_rng(2937432036923201836)
+        n, ref = case
+        x = rng.random(n)
+        known_params = {'loc': 0, 'scale': 1}
+        res = stats.goodness_of_fit(stats.norm, x, known_params=known_params,
+                                    statistic="sf", random_state=rng)
+        percentiles = np.array([0.001, 0.005, 0.01, 0.05])
+        res = stats.scoreatpercentile(res.null_distribution, percentiles*100)
+        assert_allclose(res, ref, atol=1.1e-2)
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize('case', [(6, 0.91096, 0.4139),
+                                      (8, 0.9196, 0.3847),
+                                      (10, 0.86771, 0.08352)])
+    def test_against_R_DescTools(self, case):
+        # Test against R ppcc, e.g.
+        # library(DescTools)
+        # x < - c(0.52325412, 1.06907699, -0.36084066, 0.15305959, 0.99093194)
+        # ShapiroFranciaTest(x)
+        n, ref_statistic, ref_pvalue = case
+        rng = np.random.default_rng(7777775561439803116)
+        x = stats.skewnorm(a=10).rvs(random_state=rng, size=n)
+        known_params = {'loc': 0, 'scale': 1}
+        res = stats.goodness_of_fit(stats.norm, x, known_params=known_params,
+                                    statistic="sf", random_state=rng)
+        assert_allclose(res.statistic, ref_statistic, atol=3e-3)
+        assert_allclose(res.pvalue, ref_pvalue, atol=1e-2)
 
     def test_params_effects(self):
         # Ensure that `guessed_params`, `fit_params`, and `known_params` have

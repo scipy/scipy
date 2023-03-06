@@ -763,12 +763,12 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         to the Monte Carlo samples drawn from the null-hypothesized
         distribution. The purpose of these `guessed_params` is to be used as
         initial values for the numerical fitting procedure.
-    statistic : {"ad", "ks", "cvm", "filliben"}, optional
+    statistic : {"ad", "ks", "cvm", "filliben", "sf"}, optional
         The statistic used to compare data to a distribution after fitting
         unknown parameters of the distribution family to the data. The
         Anderson-Darling ("ad") [1]_, Kolmogorov-Smirnov ("ks") [1]_,
-        Cramer-von Mises ("cvm") [1]_, and Filliben ("filliben") [7]_
-        statistics are available.
+        Cramer-von Mises ("cvm") [1]_, Filliben ("filliben") [7]_, and
+        Shapiro-Francia ("sf") [1]_ statistics are available.
     n_mc_samples : int, default: 9999
         The number of Monte Carlo samples drawn from the null hypothesized
         distribution to form the null distribution of the statistic. The
@@ -912,6 +912,43 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     the values of the statistic recorded in the null distribution, so that a
     larger number of them exceed the value of statistic for `data`, thereby
     inflating the p-value.
+
+    *Implementation Notes*
+    The Filliben statistic is calculated using the theoretical medians of the
+    order statistics of the uniform distribution. Results will be slightly
+    different from those computed using the approximation suggested by
+    Filliben [7]_.
+
+    Computation of the Shapiro-Francia statistic for arbitrary distributions
+    is expensive. Consequently, `goodness_of_fit` will raise a
+    ``NotImplementedError`` unless *all* parameters of the null-hypothesized
+    distribution are provided as `known_params`. When all parameters are
+    known, the Shapiro-Francia statistic is calculated using approximate
+    expected values of the order statistics of the null hypothesized
+    distribution, which are computed as follows.
+
+    Let ``n`` be the number of observations in the sample being tested.
+
+    - Use inverse transform sampling to obtain ``2**13`` quasi-Monte Carlo
+      samples, each with ``n`` observations, from the null-hypothesized
+      distribution.
+
+      - Generate ``2**13`` unscrambled Sobol' points in ``n`` dimensions.
+        Note that Sobol' points must be drawn in powers of two to maintain
+        balance properties of the sequence, and with ``2**13`` points, we can
+        expect the sample mean to be representative of the distribution mean
+        for most distributions.
+      - Scale the points by a factor of 0.9998 and re-center them within the
+        unit hypercube. This ensures that no points are on the boundary of the
+        hypercube, avoiding infinities in the next step.
+      - Compute the percentile point function of the null hypothesized
+        distribution at each of the Sobol' points.
+
+    - Sort each of the samples. Element ``i`` of each sample is the ``i``th
+      order statistic of the sample.
+    - For every ``i``, compute the sample mean of the ``i``th order statistics
+      of the samples to approximate the expected value of the order statistics
+      of the null-hypothesized distribution.
 
     References
     ----------
@@ -1254,6 +1291,22 @@ def _filliben(dist, data):
 _filliben.alternative = 'less'  # type: ignore[attr-defined]
 
 
+def _order_statistic_evs(dist, n):
+    # Approximate the expected values of the order statistics of a distribution
+    qrng = stats.qmc.Sobol(d=n, scramble=False)
+    p = qrng.random(8192)  # 2^13 (power of 2 closest to 10k)
+    p = 0.9998*p + 0.0001  # avoid infinities
+    return np.sort(dist.ppf(p), axis=-1).mean(axis=0)
+
+
+def _shapiro_francia(dist, data):
+    n = data.shape[-1]
+    M = _order_statistic_evs(dist, n)
+    X = np.sort(data, axis=-1)
+    return _corr(X, M)**2
+_shapiro_francia.alternative = 'less'  # type: ignore[attr-defined]
+
+
 def _cramer_von_mises(dist, data):
     x = np.sort(data, axis=-1)
     n = data.shape[-1]
@@ -1264,7 +1317,8 @@ def _cramer_von_mises(dist, data):
 
 
 _compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov,
-                 "cvm": _cramer_von_mises, "filliben": _filliben}
+                 "cvm": _cramer_von_mises, "filliben": _filliben,
+                 "sf": _shapiro_francia}
 
 
 def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
@@ -1289,7 +1343,7 @@ def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
     known_params_f = {("f"+key): val for key, val in known_params.items()}
     fit_params_f = {("f"+key): val for key, val in fit_params.items()}
 
-    # These the the values of parameters of the null distribution family
+    # These are the values of parameters of the null distribution family
     # with which resamples are drawn
     fixed_nhd_params = known_params_f.copy()
     fixed_nhd_params.update(fit_params_f)
@@ -1307,7 +1361,7 @@ def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
     guessed_rfd_params.update(guessed_params)
 
     statistic = statistic.lower()
-    statistics = {'ad', 'ks', 'cvm', 'filliben'}
+    statistics = {'ad', 'ks', 'cvm', 'filliben', 'sf'}
     if statistic not in statistics:
         message = f"`statistic` must be one of {statistics}."
         raise ValueError(message)
@@ -1316,6 +1370,13 @@ def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
     if n_mc_samples_int != n_mc_samples:
         message = "`n_mc_samples` must be an integer."
         raise TypeError(message)
+
+    if statistic == 'sf':
+        message = ("All parameters of the null hypothesized distribution must "
+                   "be specified in `known_params` to use the Shapiro-Francia "
+                   "statistic.")
+        if set(known_params) != {'loc', 'scale'}.union(dist._shape_info()):
+            raise NotImplementedError(message)
 
     random_state = check_random_state(random_state)
 
