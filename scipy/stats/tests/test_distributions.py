@@ -1398,7 +1398,7 @@ class TestGenLogistic:
                                         (1e8, 1.577215669901533),
                                         (1e100, 1.5772156649015328)])
     def test_entropy(self, c, ref):
-        assert_allclose(stats.genlogistic.entropy(c), ref)
+        assert_allclose(stats.genlogistic.entropy(c), ref, rtol=5e-15)
 
 
 class TestHypergeom:
@@ -4083,16 +4083,18 @@ class TestChi2:
     # def chisq_entropy_mpmath(df):
     #     df = mp.mpf(df)
     #     half_df = 0.5 * df
-    #     entropy = half_df + mp.log(2) + mp.log(mp.gamma(half_df)) + \
-    #              (1 - half_df) * mp.digamma(half_df)
-    # return float(entropy)
+    #     entropy = (half_df + mp.log(2) + mp.log(mp.gamma(half_df)) +
+    #                (mp.one - half_df) * mp.digamma(half_df))
+    #     return float(entropy)
 
     @pytest.mark.parametrize('df, ref',
-                             [(1, 0.7837571104739337),
+                             [(1e-4, -19988.980448690163),
+                              (1, 0.7837571104739337),
                               (100, 4.061397128938114),
-                              (10000, 6.370615639472648)])
+                              (251, 4.525577254045129),
+                              (1e15, 19.034900320939986)])
     def test_entropy(self, df, ref):
-        assert_allclose(stats.chi2(df).entropy(), ref)
+        assert_allclose(stats.chi2(df).entropy(), ref, rtol=1e-13)
 
 
 class TestGumbelL:
