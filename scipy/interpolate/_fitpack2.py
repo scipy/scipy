@@ -190,6 +190,7 @@ class UnivariateSpline:
     References
     ----------
     Based on algorithms described in [1]_, [2]_, [3]_, and [4]_:
+
     .. [1] P. Dierckx, "An algorithm for smoothing, differentiation and
        integration of experimental data using spline functions",
        J.Comp.Appl.Maths 1 (1975) 165-184.
