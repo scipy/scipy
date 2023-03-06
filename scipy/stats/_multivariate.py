@@ -7,7 +7,10 @@ from numpy import asarray_chkfinite, asarray
 from numpy.lib import NumpyVersion
 import scipy.linalg
 from scipy._lib import doccer
-from scipy.special import gammaln, psi, multigammaln, xlogy, entr, betaln
+from scipy.special import (gamma, gammaln, psi, multigammaln,
+                           xlogy, entr, betaln, erf)
+
+from scipy.stats import invgamma, norm
 from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
 from scipy.linalg._misc import LinAlgError
@@ -30,12 +33,12 @@ __all__ = ['multivariate_normal',
            'multivariate_t',
            'multivariate_hypergeom',
            'random_table',
+           'norm_invgamma',
            'uniform_direction']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
 _LOG_PI = np.log(np.pi)
-
 
 _doc_random_state = """\
 seed : {None, int, np.random.RandomState, np.random.Generator}, optional
@@ -5215,6 +5218,301 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
     method.__doc__ = doccer.docformat(method.__doc__,
                                       mhg_docdict_params)
 
+_nig_doc_default_callparams = """\
+a: positive number
+    The shape parameter for the inverse gamma distribution.
+sig2: positive number
+    The variance of the normal distribution.
+"""
+_nig_doc_frozen_callparams = ""
+
+_nig_doc_frozen_callparams_note = """\
+See class definition for a detailed description of parameters."""
+
+nig_docdict_params = {
+    '_nig_doc_default_callparams': _nig_doc_default_callparams,
+    '_doc_random_state': _doc_random_state
+}
+
+nig_docdict_noparams = {
+    '_nig_doc_default_callparams': _nig_doc_frozen_callparams,
+    '_doc_random_state': _doc_random_state
+}
+
+
+def _nig_check_parameters(a, sig2, loc, scale):
+    a = np.asarray(a)
+    if np.min(a) <= 0:
+        raise ValueError("All elements of a must be above 0.")
+
+    if np.min(sig2) <= 0:
+        raise ValueError("All elements of sig2 must be above 0.")
+
+    if loc < 0:
+        raise ValueError("loc cannot be a negative number.")
+
+    if scale <= 0:
+        raise ValueError("scale cannot be a non-positive number.")
+
+    return a, sig2, loc, scale
+
+class norm_invgamma_gen(multi_rv_generic):
+    r"""A normal inverse gamma random variable.
+
+    Methods
+    -------
+    logpdf(x, sig2, a, loc=0, scale=1)
+        Log of the probability density function.
+    pdf(x, sig2, a, loc=0, scale=1)
+        Probability density function.
+    cdf(x, sig2, a, loc=0, scale=1)
+        Cumulative distribution function.
+    sf(sig2, a, t, loc=0, scale=1)
+        Survival function (Also defined as 1 - `cdf`,
+        but sf is sometimes more accurate.)
+    entropy(x, sig2, a, loc=0, scale=1)
+        Differential entropy of the distribution
+    rvs(a, loc=0, scale=1, size=1, random_state=None)
+        Random variates.
+    Parameters
+    ----------
+    %(_nig_doc_default_callparams)s
+    %(_doc_random_state)s
+
+    Notes
+    -----
+    Every element of ``a`` and ``sig2`` should be greater than 0.
+
+    Examples
+    --------
+    >>> from scipy.stats import norm_invgamma
+
+    Get the PDF
+    >>> x = 1
+    >>> a = 2
+    >>> sig2 = 3
+    >>> norm_invgamma.pdf(x, a, sig2)
+    0.00517414
+
+    The functions support broadcasting under the convention that the
+    vector parameters are interpreted as if each row along the last
+    axis is a single object. For instance:
+    >>> x = [1, 2, 3]
+    >>> a = 2
+    >>> sig2 = 3
+    >>> norm_invgamma.pdf(x, a, sig2)
+    array([0.00517414, 0.00313828, 0.00136389])
+
+    Alternatively, the object may be called (as a function) to fix the
+    `a` and `sig2` parameters, returning a "frozen" normal-inverse-gamma
+    random variable.
+
+    >>> nig = norm_invgamma(2, 3)
+    >>> nig.pdf(1)
+    0.00517414
+
+    See Also
+    --------
+    scipy.stats.norm: The normal distribution
+    scipy.stats.invgamma: The inverse gamma distribution
+
+    References
+    ----------
+    .. [1] Normal-inverse-gamma distribution
+    https://www.wikipedia.org/wiki/Normal-inverse-gamma_distribution
+
+    """
+    def __init__(self, seed=None):
+        super().__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__, nig_docdict_params)
+
+    def __call__(self, a, sig2, loc=0, scale=1, seed=None):
+        """Create a normal-inverse-gamma distribution.
+
+        See `normal_inverse_gamma_frozen` for more information.
+        """
+        return norm_invgamma_frozen(a, sig2, loc, scale, seed=seed)
+
+    def logpdf(self, x, a, sig2, loc=0, scale=1):
+        """The log of the probability density function.
+
+        Parameters
+        ----------
+        %(_nig_doc_default_callparams)s
+        x: array-like
+            A random vector of category counts distributed according to
+            a normal distribution.
+
+        Returns
+        -------
+        out: scalar
+            Log of a probability density function for thw
+            normal-inverse-gamma distribution.
+
+        """
+        a, sig2, loc, scale = _nig_check_parameters(a, sig2, loc, scale)
+        x = np.asarray(x)
+        A = 0.5 * (np.log(scale) - np.log(2 * np.pi * sig2))
+        B = -gammaln(a) - (a + 1) * np.log(sig2)
+        C = -(2 + scale * (x - loc) ** 2) / (2 * sig2)
+        y = A + B + C
+        return y
+
+    def pdf(self, x, a, sig2, loc=0, scale=1):
+        """The probability density function.
+
+        Parameters
+        ----------
+        %(_nig_doc_default_callparams)s
+        x: array-like
+            A random vector of category counts distributed according to
+            a normal distribution.
+
+        Returns
+        -------
+        out: scalar
+            Probability density function for the normal-inverse-gamma
+            distribution.
+
+        """
+        return np.exp(self.logpdf(x, a, sig2, loc=loc, scale=scale))
+
+    def cdf(self, a, sig2, t, loc=0, scale=1):
+        """The cumulative distribution function.
+        Parameters
+        ----------
+        %(_nig_doc_default_callparams)s
+        t : array_like
+            Points at which to evaluate the cumulative distribution
+            function.
+
+        Returns
+        -------
+        out: scalar
+            A cumulative distribution function for the
+            normal-inverse-gamma distribution.
+
+        """
+        a, sig2, loc, scale = _nig_check_parameters(a, sig2, loc, scale)
+        A = np.exp(-1 / sig2) * (1 / sig2) ** a
+        B = erf(np.sqrt(scale) * (t - loc) / (np.sqrt(2 * sig2)))
+        C = 2 * sig2 * gamma(a)
+        y = A * (B + 1) / C
+        return y
+
+    def sf(self, a, sig2, t, loc=0, scale=1):
+        """Survival function for the normal-inverse-gamma distribution.
+
+         Parameters
+        ----------
+        %(_nig_doc_default_callparams)s
+        t : array_like
+            Points at which to evaluate the cumulative distribution
+            function.
+
+        Returns
+        -------
+        out: scalar
+            A survival function for the normal-inverse-gamma
+            distribution.
+
+        """
+        a, sig2, loc, scale = _nig_check_parameters(a, sig2, loc, scale)
+        A = np.exp(-1 / sig2) * (1 / sig2) ** a
+        B = erf(np.sqrt(scale) * (t - loc) / (np.sqrt(2 * sig2)))
+        C = 2 * sig2 * gamma(a)
+        S = A * (1 - B) / C
+        return S
+
+    def entropy(self, a, sig2, loc=0, scale=1):
+        """The entropy for the normal-inverse-gamma distribution.
+
+        Parameters
+        ----------
+        %(_nig_doc_default_callparams)s
+
+        Returns
+        -------
+        out: scalar
+            Entropy for the normal-inverse-gamma distribution.
+        """
+        a, sig2, loc, scale = _nig_check_parameters(a, sig2, loc, scale)
+        c = (1 / sig2) ** (a + 1) / gamma(a)
+        E = np.exp(-1 / sig2)
+        L = np.log(c * np.sqrt(scale / (2 * np.pi * sig2)))
+        h = -c * E * (L - 1 / sig2 - 0.5)
+        return h
+
+    def rvs(self, a, loc=0, scale=1, size=1, random_state=None):
+        """Draw random variables from the normal-inverse-gamma
+           distribution
+
+        Parameters
+        ----------
+        a: positive number
+            The shape parameter for the inverse gamma distribution.
+        size : integer or iterable of integers, optional
+            Number of samples to draw.
+        %(_doc_random_state)s
+
+        Returns
+        -------
+        rvs : array_like
+            Random variates of shape ``size``,
+        """
+        a = np.asarray(a)
+        if np.min(a) <= 0:
+            raise ValueError("All elements of a must be above 0.")
+
+        rvs_sig2 = invgamma.rvs(a, size=size, random_state=random_state)
+        R = rvs_sig2 / scale
+        x = norm.rvs(loc=loc, scale=R, size=size, random_state=random_state)
+        return x
+
+
+norm_invgamma = norm_invgamma_gen()
+
+
+class norm_invgamma_frozen(multi_rv_frozen):
+    def __init__(self, a, sig2, loc=0, scale=1, seed=None):
+        (self.a, self.sig2,
+        self.loc, self.scale) = _nig_check_parameters(a, sig2, loc, scale)
+        self._dist = norm_invgamma_gen(seed)
+
+    def logpdf(self, x):
+        return self._dist.logpdf(x, self.a, self.sig2, loc=self.loc,
+                                 scale=self.scale)
+
+    def pdf(self, x):
+        return self._dist.pdf(x, self.a, self.sig2, loc=self.loc,
+                              scale=self.scale)
+
+    def cdf(self, t):
+        return self._dist.cdf(self.a, self.sig2, t, loc=self.loc,
+                              scale=self.scale)
+
+    def sf(self, t):
+        return self._dist.sf(self.a, self.sig2, t, loc=self.loc,
+                             scale=self.scale)
+
+    def entropy(self):
+        return self._dist.entropy(self.a, self.sig2, loc=self.loc,
+                                  scale=self.scale)
+
+    def rvs(self, size=1, random_state=None):
+        return self._dist.rvs(self.a, loc=self.loc, scale=self.scale,
+                              size=size, random_state=random_state)
+
+
+# Set frozen generator docstrings from corresponding docstrings in
+# norm_invgamma and fill in default strings in class docstrings
+for name in ['logpdf', 'pdf', 'cdf', 'entropy', 'sf', 'rvs']:
+    method = norm_invgamma_gen.__dict__[name]
+    method_frozen = norm_invgamma_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(
+        method.__doc__, nig_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__,
+                                      nig_docdict_params)
 
 class random_table_gen(multi_rv_generic):
     r"""Contingency tables from independent samples with fixed marginal sums.

@@ -20,13 +20,15 @@ from scipy.stats._multivariate import (_PSD,
                                        _lnB,
                                        _cho_inv_batch,
                                        multivariate_normal_frozen)
+
 from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          matrix_normal, special_ortho_group, ortho_group,
                          random_correlation, unitary_group, dirichlet,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest,
-                         random_table, uniform_direction)
+                         random_table, uniform_direction, norm_invgamma)
+
 from scipy.stats import _covariance, Covariance
 from scipy import stats
 
@@ -1564,6 +1566,181 @@ class TestMultinomial:
         x = np.ones(n)
         logpmf = multinomial.logpmf(x, n, p)
         assert np.isfinite(logpmf)
+
+
+class TestNormInvGamma:
+    def test_frozen(self):
+        a = 3
+        sig2 = 1
+        loc = 0.4
+        scale = 5.3
+        x = 4
+        t = 6
+        size = 30
+        rand = 123
+        F = norm_invgamma(a, sig2, loc, scale)
+        assert_allclose(F.pdf(x), norm_invgamma.pdf(x, a, sig2, loc=loc, scale=scale))
+        assert_allclose(F.sf(t), norm_invgamma.sf(a, sig2, t, loc, scale))
+        assert_allclose(F.cdf(t), norm_invgamma.cdf(a, sig2, t, loc, scale))
+        assert_allclose(F.entropy(), norm_invgamma.entropy(a, sig2, loc, scale))
+        assert_allclose(F.rvs(size=size, random_state=rand),
+                        norm_invgamma.rvs(a, loc, scale, size, rand))
+
+    @pytest.mark.parametrize("sig2, a, t, loc, scale, ref",
+    [(0.90255795, 1.22286409, 0.11189582, 0.14273851, 1.13197425, 0.23354505911733872),
+    (0.71641194, 0.48700082, 0.49769526, 0.73087906, 0.51240128, 0.12923346865329874),
+    (4.8614206, 0.57408496, 3.22497422, 1.4235038, 1.9442177, 0.0055416192477065265),
+    (2.232645, 0.29931719, 4.7017168, 1.26400404, 2.77985402, 4.6935900248388376e-06),
+    (1.65459692, 1.32302701, 0.02937424, 0.70720941, 1.15506777, 0.13551605122663166)])
+    def test_sf(self, sig2, a, t, loc, scale, ref):
+        # The reference values were calculated with mpmath
+        # mp.dps = 50
+        #
+        # def NIG_SF(sig2, a, t, loc, scale):
+        #   def pdf(x):
+        #        A = mp.sqrt(scale / (2 * mp.pi * sig2))
+        #        B = 1 / mp.gamma(a)
+        #        C = (1 / sig2) ** (a + 1)
+        #        D = mp.exp(-(2 + scale * (x - loc) ** 2) / (2 * sig2))
+        #        return A * B * C * D
+        #
+        #   return float(mp.quad(lambda t: pdf(t), [t, mp.inf]))
+        assert_allclose(norm_invgamma.sf(a, sig2, t, loc=loc, scale=scale), ref)
+
+    @pytest.mark.parametrize("sig2, a, loc, scale, ref",
+    [(0.86725779, 0.3657452, 0.4214701, 0.56833103, 0.5482135474642877),
+    (0.38518033, 3.92552835, 7.40161712, 5.79601046, -0.510205267933633),
+    (5.79115551, 2.7648994, 2.3346228, 3.62737936, 0.006197231856331625),
+    (0.22485051, 1.23290258, 1.02427007, 2.14022229, 0.473105937188879),
+    (4.02195257, 1.95634939, 2.29924442, 0.70688032, 0.08601780627879621)])
+    def test_entropy(self, sig2, a, loc, scale, ref):
+        # The reference values were calculated with mpmath
+        # def entropy_NIG(sig2, a, loc, scale):
+        #     def pdf(x):
+        #         A = mp.sqrt(scale) / mp.sqrt(2 * mp.pi * sig2)
+        #         B = 1 / mp.gamma(a)
+        #         C = (1 / sig2) ** (a + 1)
+        #         D = mp.exp(-(2 + scale * (x - loc) ** 2) / (2 * sig2))
+        #         return A * B * C * D
+        #
+        # return float(-mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [-mp.inf, mp.inf]))
+
+        assert_allclose(norm_invgamma.entropy(a, sig2, loc=loc, scale=scale), ref)
+
+    @pytest.mark.parametrize("sig2, a, t, loc, scale, ref",
+    [(0.2571023, 0.14020375, 0.16119636, 0.15013916, 0.1390856, 0.007252909898600098),
+    (7.34537149, 4.99937008, 5.6061623, 4.8767634, 7.8556722, 1.7974410556792017e-07),
+    (5.1652494, 1.47278525, 1.85233532, 0.84853403, 3.44915586, 0.01273905051561098),
+    (6.37880167, 3.25273597, 1.91793474, 3.10580785, 5.60275758, 1.6793244308748115e-05),
+    (4.69897676e-01, 1.68175997, 4.83122675, 9.21322296e-04, 2.67861287, 0.9967347569597106)])
+    def test_cdf(self, sig2, a, t, loc, scale, ref):
+        # The references were calculated with mpmath
+        # def NIG_CDF(sig2, a, t, loc, scale):
+        #     def pdf(x):
+        #         A = mp.sqrt(scale / (2 * mp.pi * sig2))
+        #         B = 1 / mp.gamma(a)
+        #         C = (1 / sig2) ** (a + 1)
+        #         D = mp.exp(-(2 + scale * (x - loc) ** 2) / (2 * sig2))
+        #         return A * B * C * D
+        #
+        #     return float(mp.quad(lambda t: pdf(t), [-mp.inf, t]))
+        assert_allclose(norm_invgamma.cdf(a, sig2, t, loc, scale), ref)
+
+    @pytest.mark.parametrize("x, sig2, a, loc, scale, ref",
+    [(0.16250572, 4.64614843, 0.51443301, 2.90759104, 0.68771904, 0.004014530402504347),
+    (0.36021056, 0.21616467, 0.14273539, 0.05890484, 0.01956672, 0.0010281678306853497),
+    (0.05917262, 0.48569724, 0.14262184, 1.14473506, 1.61275465, 0.004561859323629908),
+    (5.66835346, 1.16812, 4.60461566, 1.26724137, 3.44809985, 3.474431746887951e-15),
+    (2.65939958, 3.73229378, 0.65547417, 1.73752917, 0.49517142, 0.008638048211861139)])
+    def test_pdf(self, x, sig2, a, loc, scale, ref):
+        # The references were calculated with mpmath
+        # def pdf(x, sig2, a, loc, scale):
+        #     A = mp.sqrt(scale / (2 * mp.pi * sig2))
+        #     B = 1 / mp.gamma(a)
+        #     C = (1 / sig2) ** (a + 1)
+        #     D = mp.exp(-(2 + scale * (x - loc) ** 2) / (2 * sig2))
+        #     return float(A * B * C * D)
+        assert_allclose(norm_invgamma.pdf(x, a, sig2, loc=loc, scale=scale), ref)
+
+    def test_rvs(self):
+        a = 5
+        loc = 0.3
+        scale = 5
+        size = 5000
+        rand = 123
+        R = norm_invgamma.rvs(a, loc=loc, scale=scale, size=size,
+                              random_state=rand)
+
+        assert_allclose(np.sum(R) / size, loc, rtol=1e-2)
+
+    def test_pdf_broadcasting(self):
+        a = 5
+        sig2 = 2
+        loc = 0.3
+        scale = 5
+        x = np.array([0.1, 3, -5, 6, 7.8])
+        y = []
+        for element in x:
+            y.append(norm_invgamma.pdf(element, a, sig2, loc, scale))
+
+        assert_allclose(y, norm_invgamma.pdf(x, a, sig2, loc, scale))
+
+    def test_cdf_broadcasting(self):
+        a = 5
+        sig2 = 2
+        loc = 0.3
+        scale = 5
+        t = np.array([0.1, 3, -5, 6, 7.8])
+        y = []
+        for element in t:
+            y.append(norm_invgamma.cdf(a, sig2, element, loc, scale))
+
+        assert_allclose(y, norm_invgamma.cdf(a, sig2, t, loc, scale))
+
+    def test_sf_broadcasting(self):
+        a = 5
+        sig2 = 2
+        loc = 0.3
+        scale = 5
+        t = np.array([0.1, 3, -5, 6, 7.8])
+        y = []
+        for element in t:
+            y.append(norm_invgamma.sf(a, sig2, element, loc, scale))
+
+        assert_allclose(y, norm_invgamma.sf(a, sig2, t, loc, scale))
+
+    def test_entropy_broadcasting(self):
+        a = np.array([0.1, 3, 5, 6, 7.8])
+        sig2 = 2
+        loc = 0.3
+        scale = 5
+        y = []
+        for element in a:
+            y.append(norm_invgamma.entropy(element, sig2, loc, scale))
+
+        assert_allclose(y, norm_invgamma.entropy(a, sig2, loc, scale))
+
+    def test_bad_input(self):
+        a = [1, -1, 3]
+        text = "All elements of a must be above 0."
+        with assert_raises(ValueError, match=text):
+            norm_invgamma.entropy(a, 1)
+
+        sig2 = -1
+        text = "All elements of sig2 must be above 0."
+        with assert_raises(ValueError, match=text):
+            norm_invgamma.entropy(1, sig2)
+
+        loc = -1
+        text = "loc cannot be a negative number."
+        with assert_raises(ValueError, match=text):
+            norm_invgamma.entropy(1, 1, loc=loc)
+
+        scale = 0
+        text = "scale cannot be a non-positive number."
+        with assert_raises(ValueError, match=text):
+            norm_invgamma.entropy(1, 1, scale=scale)
+
 
 class TestInvwishart:
     def test_frozen(self):
