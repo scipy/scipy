@@ -4012,6 +4012,48 @@ class TestDgamma:
         isf = stats.dgamma.isf(expected, a)
         assert_allclose(isf, -x, rtol=5e-15)
 
+    @pytest.mark.parametrize("a, ref",
+                             [(1.5, 2.0541199559354117),
+                             (1.3, 1.9357296377121247),
+                             (1.1, 1.7856502333412134)])
+    def test_entropy(self, a, ref):
+        # The reference values were calculated with mpmath:
+        # def entropy_dgamma(a):
+        #    def pdf(x):
+        #        A = mp.one / (mp.mpf(2.) * mp.gamma(a))
+        #        B = mp.fabs(x) ** (a - mp.one)
+        #        C = mp.exp(-mp.fabs(x))
+        #        h = A * B * C
+        #        return h
+        #
+        #    return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)),
+        #                    [-mp.inf, mp.inf])
+        assert_allclose(stats.dgamma.entropy(a), ref, rtol=1e-14)
+
+    @pytest.mark.parametrize("a, ref",
+                             [(1e-100, -1e+100),
+                             (1e-10, -9999999975.858217),
+                             (1e-5, -99987.37111657023),
+                             (1e4, 6.717222565586032),
+                             (1000000000000000.0, 19.38147391121996),
+                             (1e+100, 117.2413403634669)])
+    def test_entropy_entreme_values(self, a, ref):
+        # The reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        # def second_dgamma(a):
+        #     a = mp.mpf(a)
+        #     x_1 = a + mp.log(2) + mp.loggamma(a)
+        #     x_2 = (mp.one - a) * mp.digamma(a)
+        #     h = x_1 + x_2
+        #     return h
+        assert_allclose(stats.dgamma.entropy(a), ref, rtol=1e-10)
+
+    def test_entropy_array_input(self):
+        x = np.array([1, 5, 1e20, 1e-5])
+        y = stats.dgamma.entropy(x)
+        for i in range(len(y)):
+            assert y[i] == stats.dgamma.entropy(x[i])
 
 class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
