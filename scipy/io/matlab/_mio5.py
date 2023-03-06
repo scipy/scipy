@@ -491,7 +491,10 @@ def to_writeable(source):
             return EmptyStructMarker
     # Next try and convert to an array
     try:
-        narr = np.asanyarray(source)
+        # warning suppression only needed for NumPy < 1.24.0
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+            narr = np.asanyarray(source)
     except ValueError:
         narr = np.asanyarray(source, dtype=object)
     if narr.dtype.type in (object, np.object_) and \
