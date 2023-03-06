@@ -1498,7 +1498,7 @@ class chi2_gen(rv_continuous):
             #                 1/(12 * a) - 1/(360 * a**3)
             # psi(a) ~ ln(a) - 1/(2 * a) - 1/(3 * a**2) + 1/120 * a**4)
             c = np.log(2) + 0.5*(1 + np.log(2*np.pi))
-            h = 2/half_df
+            h = 0.5/half_df
             return (h*(-2/3 + h*(-1/3 + h*(-4/45 + h/7.5))) +
                     0.5*np.log(half_df) + c)
 

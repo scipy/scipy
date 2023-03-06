@@ -3992,12 +3992,13 @@ class TestChi2:
     #     half_df = 0.5 * df
     #     entropy = (half_df + mp.log(2) + mp.log(mp.gamma(half_df)) +
     #                (mp.one - half_df) * mp.digamma(half_df))
-    # return float(entropy)
+    #     return float(entropy)
 
     @pytest.mark.parametrize('df, ref',
                              [(1e-4, -19988.980448690163),
                               (1, 0.7837571104739337),
                               (100, 4.061397128938114),
+                              (251, 4.525577254045129),
                               (1e15, 19.034900320939986)])
     def test_entropy(self, df, ref):
         assert_allclose(stats.chi2(df).entropy(), ref, rtol=1e-13)
