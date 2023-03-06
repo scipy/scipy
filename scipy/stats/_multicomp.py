@@ -168,7 +168,7 @@ def dunnett(
 
     pvalue = pvalue_dunnett(
         rho=rho, df=df,
-        statistic=abs(statistic), alternative=alternative,
+        statistic=statistic, alternative=alternative,
         rng=rng
     )
 
@@ -246,8 +246,11 @@ def pvalue_dunnett(
 
     mvt = stats.multivariate_t(shape=rho, df=df, seed=rng)
     if alternative == "two-sided":
+        statistic = abs(statistic)
         pvalue = 1 - mvt.cdf(statistic, lower_limit=-statistic)
+    elif alternative == "greater":
+        pvalue = 1 - mvt.cdf(statistic, lower_limit=-np.inf)
     else:
-        pvalue = 1 - mvt.cdf(statistic)
+        pvalue = 1 - mvt.cdf(np.inf, lower_limit=statistic)
 
     return pvalue

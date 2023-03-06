@@ -15,15 +15,15 @@ class TestDunnett:
         [
             # From Dunnett1995
             # Tables 1a and 1b pages 1117-1118
-            (0.5, 1, 10, 1.81, 0.05, "one-sided"),  # different than two-sided
-            (0.5, 3, 10, 2.34, 0.05, "one-sided"),
-            (0.5, 2, 30, 1.99, 0.05, "one-sided"),
-            (0.5, 5, 30, 2.33, 0.05, "one-sided"),
-            (0.5, 4, 12, 3.32, 0.01, "one-sided"),
-            (0.5, 7, 12, 3.56, 0.01, "one-sided"),
-            (0.5, 2, 60, 2.64, 0.01, "one-sided"),
-            (0.5, 4, 60, 2.87, 0.01, "one-sided"),
-            (0.5, 4, 60, [2.87, 2.21], [0.01, 0.05], "one-sided"),
+            (0.5, 1, 10, 1.81, 0.05, "greater"),  # different than two-sided
+            (0.5, 3, 10, 2.34, 0.05, "greater"),
+            (0.5, 2, 30, 1.99, 0.05, "greater"),
+            (0.5, 5, 30, 2.33, 0.05, "greater"),
+            (0.5, 4, 12, 3.32, 0.01, "greater"),
+            (0.5, 7, 12, 3.56, 0.01, "greater"),
+            (0.5, 2, 60, 2.64, 0.01, "greater"),
+            (0.5, 4, 60, 2.87, 0.01, "greater"),
+            (0.5, 4, 60, [2.87, 2.21], [0.01, 0.05], "greater"),
             # Tables 2a and 2b pages 1119-1120
             (0.5, 1, 10, 2.23, 0.05, "two-sided"),  # two-sided
             (0.5, 3, 10, 2.81, 0.05, "two-sided"),
@@ -88,15 +88,25 @@ class TestDunnett:
         # last value is problematic
         assert_allclose(res.pvalue, ref, atol=0.025)
 
-    def test_ttest_ind(self):
+    @pytest.mark.parametrize(
+        'alternative',
+        ['two-sided', 'less', 'greater']
+    )
+    def test_ttest_ind(self, alternative):
         rng = np.random.default_rng(114184017807316971636137493526995620351)
 
         for _ in range(10):
             sample = rng.integers(-100, 100, size=(10,))
             control = rng.integers(-100, 100, size=(10,))
 
-            res = stats.dunnett(sample, control=control,random_state=rng)
-            ref = stats.ttest_ind(sample, control, random_state=rng)
+            res = stats.dunnett(
+                sample, control=control,
+                alternative=alternative, random_state=rng
+            )
+            ref = stats.ttest_ind(
+                sample, control,
+                alternative=alternative, random_state=rng
+            )
 
             assert_allclose(res.statistic, ref.statistic, atol=1e-3)
             assert_allclose(res.pvalue, ref.pvalue, atol=1e-3)
