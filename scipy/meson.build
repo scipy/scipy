@@ -45,10 +45,19 @@ thread_dep = dependency('threads', required: false)
 # an absolute path. Relative paths are needed when for example a virtualenv is
 # placed inside the source tree; Meson rejects absolute paths to places inside
 # the source tree.
-incdir_numpy = run_command(py3,
-  [
-    '-c',
-    '''import os
+# For cross-compilation it is often not possible to run the Python interpreter
+# in order to retrieve numpy's include directory. It can be specified in the
+# cross file instead:
+#   [properties]
+#   numpy-include-dir = /abspath/to/host-pythons/site-packages/numpy/core/include
+#
+# This uses the path as is, and avoids running the interpreter.
+incdir_numpy = meson.get_external_property('numpy-include-dir', 'not-given')
+if incdir_numpy == 'not-given'
+  incdir_numpy = run_command(py3,
+    [
+      '-c',
+      '''import os
 os.chdir(os.path.join("..", "tools"))
 import numpy as np
 try:
@@ -56,10 +65,19 @@ try:
 except Exception:
   incdir = np.get_include()
 print(incdir)
-'''
-  ],
-  check: true
-).stdout().strip()
+  '''
+    ],
+    check: true
+  ).stdout().strip()
+
+  # We do need an absolute path to feed to `cc.find_library` below
+  _incdir_numpy_abs = run_command(py3,
+    ['-c', 'import os; os.chdir(".."); import numpy; print(numpy.get_include())'],
+    check: true
+  ).stdout().strip()
+else
+  _incdir_numpy_abs = incdir_numpy
+endif
 inc_np = include_directories(incdir_numpy)
 np_dep = declare_dependency(include_directories: inc_np)
 
@@ -67,13 +85,6 @@ incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
 fortranobject_c = incdir_f2py / 'fortranobject.c'
 
-# We do need an absolute path to feed to `cc.find_library` below
-_incdir_numpy_abs = run_command(py3,
-  ['-c', 'import os; os.chdir(".."); import numpy; print(numpy.get_include())'],
-  check: true
-).stdout().strip()
-
-cc = meson.get_compiler('c')
 npymath_path = _incdir_numpy_abs / '..' / 'lib'
 npyrandom_path = _incdir_numpy_abs / '..' / '..' / 'random' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
@@ -81,33 +92,42 @@ npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
 
 # pybind11 include directory - needed in several submodules
 #
-# in meson 1.1.0, this will find the pyproject.toml build-requires version
-pybind11_dep = dependency('pybind11', version: '>=2.10.0', required: false, allow_fallback: true)
-if not pybind11_dep.found()
-  incdir_pybind11 = run_command(py3,
-    [
-      '-c',
-      '''from os.path import relpath
+# first check if the user specified a path in a cross file
+incdir_pybind11 = meson.get_external_property('pybind11-include-dir', 'not-given')
+if incdir_pybind11 == 'not-given'
+  # in meson 1.1.0, this will find the pyproject.toml build-requires version
+  pybind11_dep = dependency('pybind11', version: '>=2.10.0', required: false, allow_fallback: true)
+  if not pybind11_dep.found()
+    incdir_pybind11 = run_command(py3,
+      [
+        '-c',
+        '''from os.path import relpath
 import pybind11
 try:
   incdir = relpath(pybind11.get_include())
 except Exception:
   incdir = pybind11.get_include()
 print(incdir)
-  '''
-    ],
-    check: true
-  ).stdout().strip()
-
+'''
+      ],
+      check: true
+    ).stdout().strip()
+    pybind11_dep = declare_dependency(include_directories: incdir_pybind11)
+  endif
+else
   pybind11_dep = declare_dependency(include_directories: incdir_pybind11)
 endif
 
 # Pythran include directory and build flags
 if use_pythran
-  incdir_pythran = run_command(py3,
-    [
-      '-c',
-    '''import os
+  # This external-property may not be needed if we can use the native include
+  # dir, see https://github.com/serge-sans-paille/pythran/issues/1394
+  incdir_pythran = meson.get_external_property('pythran-include-dir', 'not-given')
+  if incdir_pythran == 'not-given'
+    incdir_pythran = run_command(py3,
+      [
+        '-c',
+      '''import os
 os.chdir(os.path.join("..", "tools"))
 import pythran
 try:
@@ -116,9 +136,10 @@ except Exception:
   incdir = pythran.get_include()
 print(incdir)
 '''
-    ],
-    check: true
-  ).stdout().strip()
+      ],
+      check: true
+    ).stdout().strip()
+  endif
   pythran_dep = declare_dependency(include_directories: incdir_pythran)
 else
   pythran_dep = []
@@ -401,8 +422,7 @@ foreach name, compiler : compilers
 endforeach
 # Add `pythran` information if present
 if use_pythran
-  pythran_version_command = run_command('pythran', '-V', check: true)
-  conf_data.set('PYTHRAN_VERSION', pythran_version_command.stdout().strip())
+  conf_data.set('PYTHRAN_VERSION', pythran.version())
   conf_data.set('PYTHRAN_INCDIR', incdir_pythran)
 endif
 
