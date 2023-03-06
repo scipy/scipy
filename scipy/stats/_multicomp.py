@@ -11,7 +11,7 @@ from scipy.stats._qmc import check_random_state
 if TYPE_CHECKING:
     import numpy.typing as npt
     from scipy._lib._util import SeedType
-    from typing import Literal, Sequence
+    from typing import Literal, Sequence  # noqa: UP035
 
 
 __all__ = [
@@ -56,16 +56,22 @@ def dunnett(
         If `random_state` is already a ``Generator`` instance, then the
         provided instance is used.
 
+        The random number generator is used to control the randomized
+        Quasi-Monte Carlo integration of the multivariate-t distribution.
+
     Returns
     -------
     res : DunnettResult
         An object containing attributes:
 
-        statistic : scalar or ndarray
-            The t-statistic for the test.  For 1-D inputs a scalar is
-            returned.
-        pvalue : scalar ndarray
-            The p-value for the test.
+        statistic : float ndarray
+            The computed statistic of the test for each comparison. The element
+            at index ``(i,)`` is the statistic for the comparison between
+            groups ``i`` and the control.
+        pvalue : float ndarray
+            The computed p-value of the test for each comparison. The element
+            at index ``(i,)`` is the p-value for the comparison between
+            groups ``i`` and the control.
 
     See Also
     --------
