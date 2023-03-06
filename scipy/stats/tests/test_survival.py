@@ -54,11 +54,11 @@ class TestSurvival:
     def test_edge_cases(self):
         res = stats.ecdf([])
         assert_equal(res.x, [])
-        assert_equal(res.cdf, [])
+        assert_equal(res.cdf.value, [])
 
         res = stats.ecdf([1])
         assert_equal(res.x, [1])
-        assert_equal(res.cdf, [1])
+        assert_equal(res.cdf.value, [1])
 
     def test_unique(self):
         # Example with unique observations; `stats.ecdf` ref. [1] page 80
@@ -68,8 +68,8 @@ class TestSurvival:
         ref_cdf = np.arange(1, 6) / 5
         ref_sf = 1 - ref_cdf
         assert_equal(res.x, ref_x)
-        assert_equal(res.cdf, ref_cdf)
-        assert_equal(res.sf, ref_sf)
+        assert_equal(res.cdf.value, ref_cdf)
+        assert_equal(res.sf.value, ref_sf)
 
     def test_nonunique(self):
         # Example with non-unique observations; `stats.ecdf` ref. [1] page 82
@@ -79,8 +79,8 @@ class TestSurvival:
         ref_cdf = np.array([1/6, 2/6, 4/6, 5/6, 1])
         ref_sf = 1 - ref_cdf
         assert_equal(res.x, ref_x)
-        assert_equal(res.cdf, ref_cdf)
-        assert_equal(res.sf, ref_sf)
+        assert_equal(res.cdf.value, ref_cdf)
+        assert_equal(res.sf.value, ref_sf)
 
     # ref. [1] page 91
     t1 = [37, 43, 47, 56, 60, 62, 71, 77, 80, 81]  # times
@@ -113,7 +113,7 @@ class TestSurvival:
         times, died, ref = case
         sample = stats.CensoredData.right_censored(times, np.logical_not(died))
         res = stats.ecdf(sample)
-        assert_allclose(res.sf, ref, atol=1e-3)
+        assert_allclose(res.sf.value, ref, atol=1e-3)
         assert_equal(res.x, np.sort(np.unique(times)))
 
         # test reference implementation
@@ -136,13 +136,13 @@ class TestSurvival:
         res = stats.ecdf(sample)
         ref = _kaplan_meier_reference(times, censored)
         assert_allclose(res.x, ref[0])
-        assert_allclose(res.sf, ref[1])
+        assert_allclose(res.sf.value, ref[1])
 
         # If all observations are uncensored, the KM estimate should match
         # the usual estimate for uncensored data
         sample = stats.CensoredData(uncensored=times)
         res = _survival._ecdf_right_censored(sample)  # force Kaplan-Meier
         ref = stats.ecdf(times)
-        assert_equal(res.x, ref.x)
-        assert_allclose(res.cdf, ref.cdf, rtol=1e-14)
-        assert_allclose(res.sf, ref.sf, rtol=1e-14)
+        assert_equal(res[0], ref.x)
+        assert_allclose(res[1], ref.cdf.value, rtol=1e-14)
+        assert_allclose(res[2], ref.sf.value, rtol=1e-14)

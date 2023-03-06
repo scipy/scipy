@@ -1,4 +1,4 @@
-from dataclasses import make_dataclass
+from dataclasses import dataclass, field
 import numpy as np
 from ._censored_data import CensoredData
 
@@ -6,7 +6,19 @@ from ._censored_data import CensoredData
 __all__ = ['ecdf']
 
 
-ECDFResult = make_dataclass('ECDFResult', ['x', 'cdf', 'sf'])
+@dataclass
+class ECDFNestedResult:
+    value: np.ndarray
+
+
+@dataclass
+class ECDFResult:
+    x: np.ndarray
+    cdf: ECDFNestedResult
+    sf: ECDFNestedResult
+    # Exclude these from __str__
+    _n: np.ndarray = field(repr=False)  # number "at risk"
+    _d: np.ndarray = field(repr=False)  # number of "deaths"
 
 
 def ecdf(sample):
@@ -77,7 +89,7 @@ def ecdf(sample):
     >>> res = stats.ecdf(sample)
     >>> res.x
     array([5.2 , 5.58, 6.23, 6.42, 7.06])
-    >>> res.cdf
+    >>> res.cdf.value
     array([0.2, 0.4, 0.6, 0.8, 1. ])
 
     To plot the result as a step function:
@@ -85,7 +97,8 @@ def ecdf(sample):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> ax = plt.subplot()
-    >>> ax.step(np.insert(res.x, 0, 4), np.insert(res.cdf, 0, 0), where='post')
+    >>> ax.step(np.insert(res.x, 0, 4), np.insert(res.cdf.value, 0, 0),
+    ...         where='post')
     >>> ax.set_xlabel('One-Mile Run Time (minutes)')
     >>> ax.set_ylabel('Empirical CDF')
     >>> plt.show()
@@ -114,13 +127,14 @@ def ecdf(sample):
     >>> res = stats.ecdf(sample)
     >>> res.x
     array([37., 43., 47., 56., 60., 62., 71., 77., 80., 81.])
-    >>> res.sf
+    >>> res.sf.value
     array([1.   , 1.   , 0.875, 0.75 , 0.75 , 0.75 , 0.75 , 0.5  , 0.25 , 0.   ])
 
     To plot the result as a step function:
 
     >>> ax = plt.subplot()
-    >>> ax.step(np.insert(res.x, 0, 30), np.insert(res.sf, 0, 1), where='post')
+    >>> ax.step(np.insert(res.x, 0, 30), np.insert(res.sf.value, 0, 1),
+    ...                   where='post')
     >>> ax.set_xlabel('Fanbelt Survival Time (thousands of miles)')
     >>> ax.set_ylabel('Empirical SF')
     >>> plt.show()
@@ -142,7 +156,9 @@ def ecdf(sample):
         message = ("Currently, only uncensored and right-censored data is "
                    "supported.")
         raise NotImplementedError(message)
-    return res
+
+    t, cdf, sf, n, d = res
+    return ECDFResult(t, ECDFNestedResult(cdf), ECDFNestedResult(sf), n, d)
 
 
 def _ecdf_uncensored(sample):
@@ -155,7 +171,10 @@ def _ecdf_uncensored(sample):
     # [1].89 "the relative frequency of the sample that exceeds x in value"
     sf = 1 - cdf
 
-    return ECDFResult(x, cdf, sf)
+    _n = sf*sample.size
+    _d = counts
+
+    return x, cdf, sf, _n, _d
 
 
 def _ecdf_right_censored(sample):
@@ -195,4 +214,4 @@ def _ecdf_right_censored(sample):
     # compute survival function
     sf = np.cumprod((n - d) / n)
     cdf = 1 - sf
-    return ECDFResult(t, cdf, sf)
+    return t, cdf, sf, n, d
