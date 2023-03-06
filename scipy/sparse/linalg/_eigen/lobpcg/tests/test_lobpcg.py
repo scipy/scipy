@@ -94,9 +94,9 @@ def test_MikotaPair():
 @pytest.mark.parametrize("Bdtype", (float, np.float32))
 @pytest.mark.parametrize("BVdtype", (float, np.float32))
 def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
-    """Test B-orthonormalization by Cholesky with callable B.
-    The function _b_orthonormalize is key in LOBPCG but may lead
-    to numerical instabilities. The input vectors are often
+    """Test B-orthonormalization by Cholesky with callable 'B'.
+    The function '_b_orthonormalize' is key in LOBPCG but may
+    lead to numerical instabilities. The input vectors are often
     badly scaled, so the function needs scale-invariant Cholesky;
     see https://netlib.org/lapack/lawnspdf/lawn14.pdf.
     """
@@ -106,8 +106,7 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     vals = np.arange(1, n+1, dtype=float)
     B = diags([vals], [0], (n, n)).astype(Bdtype)
     BX = B @ X
-    if BX.dtype != 'complex':
-        BX = BX.astype(BVdtype)
+    BX = BX.astype(BVdtype)
     dtype = min(X.dtype, B.dtype, BX.dtype)
     atol = m * n * np.finfo(dtype).eps
 
@@ -137,8 +136,7 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     X = Xcopy * scaling
     X = X.astype(Vdtype)
     BX = B @ X
-    if BX.dtype != 'complex':
-        BX = BX.astype(BVdtype)
+    BX = BX.astype(BVdtype)
     # Check scaling-invariance of Cholesky-based orthonormalization
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
     # The output should be the same, up the signs of the columns.
@@ -439,7 +437,8 @@ def test_tolerance_float32():
 
 
 def test_random_initial_float32():
-    """Check lobpcg in float32 for specific initial.
+    """Check lobpcg in float32 gives a warning in '_b_orthonormalize'
+    that in-place orthogonalization is impossible (unlear why).
     """
     rng = np.random.default_rng(0)
     n = 50
