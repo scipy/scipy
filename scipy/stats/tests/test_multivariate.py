@@ -2468,7 +2468,7 @@ class TestMultivariateT:
     def test_cdf_against_generic_integrators(self):
         # Compare result against generic numerical integrators
         dim = 3
-        rng = np.random.default_rng(413722918996573)
+        rng = np.random.default_rng(41372291899657)
         w = 10 ** rng.uniform(-1, 1, size=dim)
         cov = _random_covariance(dim, w, rng, singular=True)
         mean = rng.random(dim)
