@@ -1656,7 +1656,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
             defined by the coordinate arrays theta, phi. The arrays
             must be sorted to increasing order.
             Note that the axis ordering is inverted relative to
-            the output of meshgrid.
+            the default output of meshgrid.
         dtheta : int, optional
             Order of theta-derivative
 
@@ -1670,7 +1670,42 @@ class SphereBivariateSpline(_BivariateSplineBase):
             input arrays, or at points specified by the input arrays.
 
             .. versionadded:: 0.14.0
+        
+        Suppose that we want to use splines to interpolate a bivariate function on a sphere.
+        The value of the function is known on a grid of longitudes and colatitudes.
 
+        >>> import numpy as np
+        >>> from scipy.interpolate import RectSphereBivariateSpline
+        >>> def f(theta, phi):
+        ...     return np.sin(theta) * np.cos(phi)
+
+        We evaluate the function on the grid. Note that the default indexing="xy"
+        of meshgrid would result in an unexpected (transposed) result after
+        interpolation.
+
+        >>> thetaarr = np.linspace(0, np.pi, 22)[1:-1]
+        >>> phiarr = np.linspace(0, 2 * np.pi, 21)[:-1]
+        >>> thetagrid, phigrid = np.meshgrid(thetaarr, phiarr, indexing="ij")
+        >>> zdata = f(thetagrid, phigrid)
+
+        We next set up the interpolator and use it to evaluate the function
+        on a finer grid.
+
+        >>> rsbs = RectSphereBivariateSpline(thetaarr, phiarr, zdata)
+        >>> thetaarr_fine = np.linspace(0, np.pi, 200)
+        >>> phiarr_fine = np.linspace(0, 2 * np.pi, 200)
+        >>> zdata_fine = rsbs(thetaarr_fine, phiarr_fine)
+
+        Finally we plot the coarsly-sampled input data alongside the
+        finely-sampled interpolated data to check that they agree.
+
+        >>> import matplotlib.pyplot as plt
+        >>> fig = plt.figure()
+        >>> ax1 = fig.add_subplot(1, 2, 1)
+        >>> ax2 = fig.add_subplot(1, 2, 2)
+        >>> ax1.imshow(zdata)
+        >>> ax2.imshow(zdata_fine)
+        >>> plt.show()
         """
         theta = np.asarray(theta)
         phi = np.asarray(phi)
@@ -1702,6 +1737,43 @@ class SphereBivariateSpline(_BivariateSplineBase):
             Order of phi-derivative
 
             .. versionadded:: 0.14.0
+            
+        Examples
+        --------
+        Suppose that we want to use splines to interpolate a bivariate function on a sphere.
+        The value of the function is known on a grid of longitudes and colatitudes.
+
+        >>> import numpy as np
+        >>> from scipy.interpolate import RectSphereBivariateSpline
+        >>> def f(theta, phi):
+        ...     return np.sin(theta) * np.cos(phi)
+
+        We evaluate the function on the grid. Note that the default indexing="xy"
+        of meshgrid would result in an unexpected (transposed) result after
+        interpolation.
+
+        >>> thetaarr = np.linspace(0, np.pi, 22)[1:-1]
+        >>> phiarr = np.linspace(0, 2 * np.pi, 21)[:-1]
+        >>> thetagrid, phigrid = np.meshgrid(thetaarr, phiarr, indexing="ij")
+        >>> zdata = f(thetagrid, phigrid)
+        
+        We next set up the interpolator and use it to evaluate the function
+        at points not on the original grid.
+        
+        >>> rsbs = RectSphereBivariateSpline(thetaarr, phiarr, zdata)
+        >>> thetainterp = np.linspace(0, np.pi, 200)
+        >>> phiinterp = np.linspace(0, 2 * np.pi, 200)
+        >>> zinterp = rsbs.ev(thetainterp, phiinterp)
+
+        Finally we plot the original data for a diagonal slice through the
+        initial grid, and the spline approximation along the same slice.
+
+        >>> import matplotlib.pyplot as plt
+        >>> fig = plt.figure()
+        >>> ax1 = fig.add_subplot(1, 1, 1)
+        >>> ax1.plot(np.sin(thetaarr) * np.sin(phiarr), np.diag(zdata), "or")
+        >>> ax1.plot(np.sin(thetainterp) * np.sin(phiinterp), zinterp, "-b")
+        >>> plt.show()
         """
         return self.__call__(theta, phi, dtheta=dtheta, dphi=dphi, grid=False)
 
