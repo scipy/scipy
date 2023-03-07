@@ -1020,6 +1020,20 @@ class TestGompertz:
         assert_allclose(stats.gompertz.sf(x, c), sfx, rtol=1e-14)
         assert_allclose(stats.gompertz.isf(sfx, c), x, rtol=1e-14)
 
+    # reference values were computed with mpmath
+    # from mpmath import mp
+    # mp.dps = 100
+    # def gompertz_entropy(c):
+    #     c = mp.mpf(c)
+    #     return float(mp.one - mp.log(c) - mp.exp(c)*mp.e1(c))
+
+    @pytest.mark.parametrize('c, ref', [(1e-4, 1.5762523017634573),
+                                        (1, 0.4036526376768059),
+                                        (1000, -5.908754280976161),
+                                        (1e10, -22.025850930040455)])
+    def test_entropy(self, c, ref):
+        assert_allclose(stats.gompertz.entropy(c), ref, rtol=1e-14)
+
 
 class TestHalfNorm:
 
@@ -1053,6 +1067,34 @@ class TestHalfNorm:
                                         (8, 0.9999999999999988)])
     def test_cdf(self, x, ref):
         assert_allclose(stats.halfnorm.cdf(x), ref, rtol=1e-15)
+
+
+class TestHalfLogistic:
+    # survival function reference values were computed with mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def sf_mpmath(x):
+    #     x = mp.mpf(x)
+    #     return float(mp.mpf(2.)/(mp.exp(x) + mp.one))
+
+    @pytest.mark.parametrize('x, ref', [(100, 7.440151952041672e-44),
+                                        (200, 2.767793053473475e-87)])
+    def test_sf(self, x, ref):
+        assert_allclose(stats.halflogistic.sf(x), ref, rtol=1e-15)
+
+    # inverse survival function reference values were computed with mpmath
+    # from mpmath import mp
+    # mp.dps = 200
+    # def isf_mpmath(x):
+    #     halfx = mp.mpf(x)/2
+    #     return float(-mp.log(halfx/(mp.one - halfx)))
+
+    @pytest.mark.parametrize('q, ref', [(7.440151952041672e-44, 100),
+                                        (2.767793053473475e-87, 200),
+                                        (1-1e-9, 1.999999943436137e-09),
+                                        (1-1e-15, 1.9984014443252818e-15)])
+    def test_isf(self, q, ref):
+        assert_allclose(stats.halflogistic.isf(q), ref, rtol=1e-15)
 
 
 class TestHalfgennorm:
@@ -1398,7 +1440,7 @@ class TestGenLogistic:
                                         (1e8, 1.577215669901533),
                                         (1e100, 1.5772156649015328)])
     def test_entropy(self, c, ref):
-        assert_allclose(stats.genlogistic.entropy(c), ref)
+        assert_allclose(stats.genlogistic.entropy(c), ref, rtol=5e-15)
 
 
 class TestHypergeom:
@@ -2789,6 +2831,57 @@ class TestPowerlaw:
             _assert_less_or_close_loglike(dist, data, dist.nnlf)
 
 
+class TestPowerNorm:
+
+    # survival function references were computed with mpmath via
+    # from mpmath import mp
+    # x = mp.mpf(x)
+    # c = mp.mpf(x)
+    # float(mp.ncdf(-x)**c)
+
+    @pytest.mark.parametrize("x, c, ref",
+                             [(9, 1, 1.1285884059538405e-19),
+                              (20, 2, 7.582445786569958e-178),
+                              (100, 0.02, 3.330957891903866e-44),
+                              (200, 0.01, 1.3004759092324774e-87)])
+    def test_sf(self, x, c, ref):
+        assert_allclose(stats.powernorm.sf(x, c), ref, rtol=1e-13)
+
+    # inverse survival function references were computed with mpmath via
+    # from mpmath import mp
+    # def isf_mp(q, c):
+    #     q = mp.mpf(q)
+    #     c = mp.mpf(c)
+    #     arg = q**(mp.one / c)
+    #     return float(-mp.sqrt(2) * mp.erfinv(mp.mpf(2.) * arg - mp.one))
+
+    @pytest.mark.parametrize("q, c, ref",
+                             [(1e-5, 20, -0.15690800666514138),
+                              (0.99999, 100, -5.19933666203545),
+                              (0.9999, 0.02, -2.576676052143387),
+                              (5e-2, 0.02, 17.089518110222244),
+                              (1e-18, 2, 5.9978070150076865),
+                              (1e-50, 5, 6.361340902404057)])
+    def test_isf(self, q, c, ref):
+        assert_allclose(stats.powernorm.isf(q, c), ref, rtol=5e-12)
+
+    # CDF reference values were computed with mpmath via
+    # from mpmath import mp
+    # def cdf_mp(x, c):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     return float(mp.one - mp.ncdf(-x)**c)
+
+    @pytest.mark.parametrize("x, c, ref",
+                             [(-12, 9, 1.598833900869911e-32),
+                              (2, 9, 0.9999999999999983),
+                              (-20, 9, 2.4782617067456103e-88),
+                              (-5, 0.02, 5.733032242841443e-09),
+                              (-20, 0.02, 5.507248237212467e-91)])
+    def test_cdf(self, x, c, ref):
+        assert_allclose(stats.powernorm.cdf(x, c), ref, rtol=5e-14)
+
+
 class TestInvGamma:
     def test_invgamma_inf_gh_1866(self):
         # invgamma's moments are only finite for a>n
@@ -3961,6 +4054,48 @@ class TestDgamma:
         isf = stats.dgamma.isf(expected, a)
         assert_allclose(isf, -x, rtol=5e-15)
 
+    @pytest.mark.parametrize("a, ref",
+                             [(1.5, 2.0541199559354117),
+                             (1.3, 1.9357296377121247),
+                             (1.1, 1.7856502333412134)])
+    def test_entropy(self, a, ref):
+        # The reference values were calculated with mpmath:
+        # def entropy_dgamma(a):
+        #    def pdf(x):
+        #        A = mp.one / (mp.mpf(2.) * mp.gamma(a))
+        #        B = mp.fabs(x) ** (a - mp.one)
+        #        C = mp.exp(-mp.fabs(x))
+        #        h = A * B * C
+        #        return h
+        #
+        #    return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)),
+        #                    [-mp.inf, mp.inf])
+        assert_allclose(stats.dgamma.entropy(a), ref, rtol=1e-14)
+
+    @pytest.mark.parametrize("a, ref",
+                             [(1e-100, -1e+100),
+                             (1e-10, -9999999975.858217),
+                             (1e-5, -99987.37111657023),
+                             (1e4, 6.717222565586032),
+                             (1000000000000000.0, 19.38147391121996),
+                             (1e+100, 117.2413403634669)])
+    def test_entropy_entreme_values(self, a, ref):
+        # The reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        # def second_dgamma(a):
+        #     a = mp.mpf(a)
+        #     x_1 = a + mp.log(2) + mp.loggamma(a)
+        #     x_2 = (mp.one - a) * mp.digamma(a)
+        #     h = x_1 + x_2
+        #     return h
+        assert_allclose(stats.dgamma.entropy(a), ref, rtol=1e-10)
+
+    def test_entropy_array_input(self):
+        x = np.array([1, 5, 1e20, 1e-5])
+        y = stats.dgamma.entropy(x)
+        for i in range(len(y)):
+            assert y[i] == stats.dgamma.entropy(x[i])
 
 class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
@@ -3990,16 +4125,18 @@ class TestChi2:
     # def chisq_entropy_mpmath(df):
     #     df = mp.mpf(df)
     #     half_df = 0.5 * df
-    #     entropy = half_df + mp.log(2) + mp.log(mp.gamma(half_df)) + \
-    #              (1 - half_df) * mp.digamma(half_df)
-    # return float(entropy)
+    #     entropy = (half_df + mp.log(2) + mp.log(mp.gamma(half_df)) +
+    #                (mp.one - half_df) * mp.digamma(half_df))
+    #     return float(entropy)
 
     @pytest.mark.parametrize('df, ref',
-                             [(1, 0.7837571104739337),
+                             [(1e-4, -19988.980448690163),
+                              (1, 0.7837571104739337),
                               (100, 4.061397128938114),
-                              (10000, 6.370615639472648)])
+                              (251, 4.525577254045129),
+                              (1e15, 19.034900320939986)])
     def test_entropy(self, df, ref):
-        assert_allclose(stats.chi2(df).entropy(), ref)
+        assert_allclose(stats.chi2(df).entropy(), ref, rtol=1e-13)
 
 
 class TestGumbelL:
