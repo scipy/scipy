@@ -63,27 +63,15 @@ To render the documentation on your own machine:
 
 0. Ensure that you have a working SciPy :ref:`dev-env` active.
    You need to be able to ``import scipy`` regardless of Python's working
-   directory; the ``python setup.py develop`` and ``conda develop`` commands
-   from the :ref:`quickstart <dev-env>` guides make this possible.
-#. Install `Sphinx`_, `PyData Sphinx theme`_, `Sphinx-Design`_
+   directory; see :ref:`quickstart <dev-env>` and our other guides.
+#. Install `Sphinx`_, `PyData Sphinx theme`_, `Sphinx-Design`_, `numpydoc`_
    and `matplotlib`_. For example, if you're using the Anaconda distribution of
    Python, enter in a terminal window::
-      
-      conda install sphinx pydata-sphinx-theme sphinx-design matplotlib --channel conda-forge
+
+      conda install sphinx pydata-sphinx-theme sphinx-design matplotlib numpydoc --channel conda-forge
       
    The list of requirements is in ``scipy/doc_requirements.txt``.
-#. In a terminal window, browse to the ``scipy/doc`` directory. Note the
-   presence of the file ``Makefile``.
-#. Execute ``git submodule update --init``.
-   Some of the documentation theme files are not distributed
-   with the main ``scipy`` repository; this keeps them up to date using
-   `git submodules`_.
-#. Enter ``make html``. If you have multiple version of Python on
-   your path, you can choose which version to use by appending
-   ``PYTHON=python3.9`` to this command, where ``python3.9`` is to be
-   replaced with the name of the Python you use for SciPy development.
-   This uses the `Make build automation tool`_
-   to execute the documentation build instructions from the ``Makefile``.
+#. Enter ``python dev.py doc`` to build the documentation.
    This can take a while the first time, but subsequent documentation builds
    are typically much faster.
 #. View the documentation in ``scipy/doc/build/html``. You can start
@@ -92,9 +80,18 @@ To render the documentation on your own machine:
 
 .. note::
 
-   Changes to certain documents do not take effect when Sphinx documentation
-   is rebuilt. In this case, you can build from scratch by deleting the
-   ``scipy/doc/build`` directory, then building again.
+   - Changes to certain documents do not take effect when Sphinx documentation
+     is rebuilt. In this case, you can build from scratch by deleting the
+     directories ``scipy/doc/build`` and ``source/reference/generated``,
+     then building again.
+
+   - In case the SciPy version found by the above command is different from
+     that of the latest commit in the repo, you will see a message like::
+
+         installed scipy 5fd20ec1aa != current repo git version '35fd20ec1a'
+
+     This indicates that you're likely picking up the wrong SciPy install,
+     check with ``python -c "import scipy; print(scipy.__file__)"``.
 
 .. _rendering-documentation-cloud:
 
@@ -295,6 +292,7 @@ them to make their point.
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
 .. _PyData Sphinx theme: https://pydata-sphinx-theme.readthedocs.io/en/latest/
 .. _Sphinx-Design: https://sphinx-design.readthedocs.io
+.. _numpydoc: https://numpydoc.readthedocs.io
 .. _matplotlib: https://www.matplotlib.org/
 .. _Rendering SciPy Documentation with Sphinx: https://youtu.be/kGSYU39EhJQ
 .. _git submodules: https://git-scm.com/book/en/v2/Git-Tools-Submodules

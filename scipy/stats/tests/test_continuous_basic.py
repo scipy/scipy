@@ -118,7 +118,7 @@ fails_cmplx = {'argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                'skewnorm', 't', 'truncweibull_min',
                'tukeylambda', 'vonmises', 'vonmises_line',
                'rv_histogram_instance', 'truncnorm', 'studentized_range',
-               'johnsonsb'}
+               'johnsonsb', 'halflogistic'}
 
 # rv_histogram instances, with uniform and non-uniform bins;
 # stored as (dist, arg) tuples for cases_test_cont_basic

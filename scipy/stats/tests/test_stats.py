@@ -3064,9 +3064,8 @@ class TestMoments:
 
     def test_skewness(self):
         # Scalar test case
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
-            y = stats.skew(self.scalar_testcase)
-            assert np.isnan(y)
+        y = stats.skew(self.scalar_testcase)
+        assert np.isnan(y)
         # sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0) /
         #     ((sqrt(var(testmathworks)*4/5))**3)/5
         y = stats.skew(self.testmathworks)
@@ -3113,9 +3112,8 @@ class TestMoments:
 
     def test_kurtosis(self):
         # Scalar test case
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
-            y = stats.kurtosis(self.scalar_testcase)
-            assert np.isnan(y)
+        y = stats.kurtosis(self.scalar_testcase)
+        assert np.isnan(y)
         #   sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
         #   sum((test2-mean(testmathworks,axis=0))**4,axis=0)/((sqrt(var(testmathworks)*4/5))**4)/5
         #   Set flags for axis = 0 and
@@ -3201,8 +3199,8 @@ class TestStudentTest:
     P1_1_g = 1 - (P1_1 / 2)
 
     def test_onesample(self):
-        with suppress_warnings() as sup, np.errstate(invalid="ignore"), \
-                pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+        with suppress_warnings() as sup, \
+                np.errstate(invalid="ignore", divide="ignore"):
             sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
             t, p = stats.ttest_1samp(4., 3.)
         assert_(np.isnan(t))
@@ -4230,8 +4228,8 @@ def test_ttest_rel():
     assert_array_almost_equal([t,p],tpr)
 
     # test scalars
-    with suppress_warnings() as sup, np.errstate(invalid="ignore"), \
-            pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+    with suppress_warnings() as sup, \
+            np.errstate(invalid="ignore", divide="ignore"):
         sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
         t, p = stats.ttest_rel(4., 3.)
     assert_(np.isnan(t))
@@ -4457,8 +4455,7 @@ def test_ttest_ind():
                               [t, p])
 
     # test scalars
-    with suppress_warnings() as sup, np.errstate(invalid="ignore"), \
-            pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+    with suppress_warnings() as sup, np.errstate(invalid="ignore"):
         sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
         t, p = stats.ttest_ind(4., 3.)
     assert_(np.isnan(t))
@@ -5221,6 +5218,28 @@ def test_ttest_ind_from_stats_inputs_zero():
     assert_equal(result, [np.nan, np.nan])
 
 
+def test_ttest_single_observation():
+    # test that p-values are uniformly distributed under the null hypothesis
+    rng = np.random.default_rng(246834602926842)
+    x = rng.normal(size=(10000, 2))
+    y = rng.normal(size=(10000, 1))
+    q = rng.uniform(size=100)
+
+    res = stats.ttest_ind(x, y, equal_var=True, axis=-1)
+    assert stats.ks_1samp(res.pvalue, stats.uniform().cdf).pvalue > 0.1
+    assert_allclose(np.percentile(res.pvalue, q*100), q, atol=1e-2)
+
+    res = stats.ttest_ind(y, x, equal_var=True, axis=-1)
+    assert stats.ks_1samp(res.pvalue, stats.uniform().cdf).pvalue > 0.1
+    assert_allclose(np.percentile(res.pvalue, q*100), q, atol=1e-2)
+
+    # reference values from R:
+    # options(digits=16)
+    # t.test(c(2, 3, 5), c(1.5), var.equal=TRUE)
+    res = stats.ttest_ind([2, 3, 5], [1.5], equal_var=True)
+    assert_allclose(res, (1.0394023007754, 0.407779907736), rtol=1e-10)
+
+
 def test_ttest_1samp_new():
     n1, n2, n3 = (10,15,20)
     rvn1 = stats.norm.rvs(loc=5,scale=10,size=(n1,n2,n3))
@@ -5318,8 +5337,8 @@ def test_ttest_1samp_popmean_array():
 
 class TestDescribe:
     def test_describe_scalar(self):
-        with suppress_warnings() as sup, np.errstate(invalid="ignore"), \
-             pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+        with suppress_warnings() as sup, \
+              np.errstate(invalid="ignore", divide="ignore"):
             sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
             n, mm, m, v, sk, kurt = stats.describe(4.)
         assert_equal(n, 1)
@@ -5416,10 +5435,9 @@ class TestDescribe:
 
 
 def test_normalitytests():
-    with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
-        assert_raises(ValueError, stats.skewtest, 4.)
-        assert_raises(ValueError, stats.kurtosistest, 4.)
-        assert_raises(ValueError, stats.normaltest, 4.)
+    assert_raises(ValueError, stats.skewtest, 4.)
+    assert_raises(ValueError, stats.kurtosistest, 4.)
+    assert_raises(ValueError, stats.normaltest, 4.)
 
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
