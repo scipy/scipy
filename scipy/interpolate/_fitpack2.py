@@ -1184,7 +1184,7 @@ class BivariateSpline(_BivariateSplineBase):
         xi, yi : array_like
             Input coordinates. Standard Numpy broadcasting is obeyed.
             Note that the axis ordering is inverted relative to
-            the output of meshgrid.
+            the default output of meshgrid.
         dx : int, optional
             Order of x-derivative
 
@@ -1193,6 +1193,45 @@ class BivariateSpline(_BivariateSplineBase):
             Order of y-derivative
 
             .. versionadded:: 0.14.0
+            
+        Examples
+        --------
+        Suppose that we want to bilinearly interpolate an exponentially decaying
+        function in 2 dimensions.
+        
+        >>> import numpy as np
+        >>> from scipy.interpolate import RectBivariateSpline
+        >>> def f(x, y):
+        ...     return np.exp(-np.sqrt((x / 2) ** 2 + y**2))
+        ... 
+        
+        We sample the function on a coarse grid and set up the interpolator. Note that 
+        the default indexing="xy" of meshgrid would result in an unexpected (transposed)
+        result after interpolation.
+        
+        >>> xarr = np.linspace(-3, 3, 21)
+        >>> yarr = np.linspace(-3, 3, 21)
+        >>> xgrid, ygrid = np.meshgrid(xarr, yarr, indexing="ij")
+        >>> zdata = f(xgrid, ygrid)
+        >>> rbs = RectBivariateSpline(xarr, yarr, zdata, kx=1, ky=1)
+        
+        Next we sample the function along a diagonal slice through the coordinate space
+        on a finer grid using interpolation.
+        
+        >>> xinterp = np.linspace(0, 0, 201)
+        >>> yinterp = np.linspace(3, -3, 201)
+        >>> zinterp = rbs.ev(xinterp, yinterp)
+        
+        And check that the interpolation passes through the function evaluations as a
+        function of the distance from the origin along the slice.
+        
+        >>> import matplotlib.pyplot as plt
+        >>> fig = plt.figure()
+        >>> ax1 = fig.add_subplot(1, 1, 1)
+        >>> ax1.plot(np.sqrt(xarr**2 + yarr**2), np.diag(zdata), "or")
+        >>> ax1.plot(np.sqrt(xinterp**2 + yinterp**2), zinterp, "-b")
+        >>> plt.show()
+
         """
         return self.__call__(xi, yi, dx=dx, dy=dy, grid=False)
 
@@ -1205,11 +1244,11 @@ class BivariateSpline(_BivariateSplineBase):
         xa, xb : float
             The end-points of the x integration interval.
             Note that the axis ordering is inverted relative to
-            the output of meshgrid.
+            the default output of meshgrid.
         ya, yb : float
             The end-points of the y integration interval.
             Note that the axis ordering is inverted relative to
-            the output of meshgrid.
+            the default output of meshgrid.
 
         Returns
         -------
