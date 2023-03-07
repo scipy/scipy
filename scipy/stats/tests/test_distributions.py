@@ -1072,9 +1072,8 @@ class TestHalfLogistic:
     # from mpmath import mp
     # mp.dps = 200
     # def isf_mpmath(x):
-    #     x = mp.mpf(x)
-    #     x = x/mp.mpf(2.)
-    #     return float(-mp.log(x/(mp.one - x)))
+    #     halfx = mp.mpf(x)/2
+    #     return float(-mp.log(halfx/(mp.one - halfx)))
 
     @pytest.mark.parametrize('q, ref', [(7.440151952041672e-44, 100),
                                         (2.767793053473475e-87, 200),
