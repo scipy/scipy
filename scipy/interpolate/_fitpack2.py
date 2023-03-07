@@ -980,9 +980,9 @@ class _BivariateSplineBase:
         
         >>> zdata = np.exp(-np.sqrt((xgrid / 2) ** 2 + ygrid**2))
         
-        Next we sample on a finer grid using interpolation.
+        Next we sample on a finer grid using interpolation (kx=ky=1 for bilinear).
         
-        >>> rbs = RectBivariateSpline(xarr, yarr, zdata)
+        >>> rbs = RectBivariateSpline(xarr, yarr, zdata, kx=1, ky=1)
         >>> xarr_fine = np.linspace(-3, 3, 200)
         >>> yarr_fine = np.linspace(-3, 3, 200)
         >>> xgrid_fine, ygrid_fine = np.meshgrid(xarr_fine, yarr_fine, indexing="ij")
