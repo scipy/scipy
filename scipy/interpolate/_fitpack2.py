@@ -1192,7 +1192,7 @@ class BivariateSpline(_BivariateSplineBase):
             Order of y-derivative
 
             .. versionadded:: 0.14.0
-            
+
         Examples
         --------
         Suppose that we want to bilinearly interpolate an exponentially decaying
@@ -1203,7 +1203,7 @@ class BivariateSpline(_BivariateSplineBase):
         >>> def f(x, y):
         ...     return np.exp(-np.sqrt((x / 2) ** 2 + y**2))
 
-        We sample the function on a coarse grid and set up the interpolator. Note that 
+        We sample the function on a coarse grid and set up the interpolator. Note that
         the default indexing="xy" of meshgrid would result in an unexpected (transposed)
         result after interpolation.
 
@@ -1667,7 +1667,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
             input arrays, or at points specified by the input arrays.
 
             .. versionadded:: 0.14.0
-        
+
         Suppose that we want to use splines to interpolate a bivariate function on a sphere.
         The value of the function is known on a grid of longitudes and colatitudes.
 
@@ -1734,7 +1734,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
             Order of phi-derivative
 
             .. versionadded:: 0.14.0
-            
+
         Examples
         --------
         Suppose that we want to use splines to interpolate a bivariate function on a sphere.
