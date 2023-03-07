@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     )
 
 import scipy.stats as stats
-from scipy._lib._util import rng_integers
+from scipy._lib._util import rng_integers, _rng_spawn
 from scipy.spatial import distance, Voronoi
 from scipy.special import gammainc
 from ._sobol import (
@@ -748,8 +748,16 @@ class QMCEngine(ABC):
             raise ValueError('d must be a non-negative integer value')
 
         self.d = d
-        self.rng = check_random_state(seed)
+
+        if isinstance(seed, np.random.Generator):
+            # Spawn a Generator that we can own and reset.
+            self.rng = _rng_spawn(seed, 1)[0]
+        else:
+            # Create our instance of Generator, does not need spawning
+            # Also catch RandomState which cannot be spawned
+            self.rng = check_random_state(seed)
         self.rng_seed = copy.deepcopy(self.rng)
+
         self.num_generated = 0
 
         config = {
