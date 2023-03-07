@@ -975,19 +975,19 @@ class _BivariateSplineBase:
         >>> xarr = np.linspace(-3, 3, 100)
         >>> yarr = np.linspace(-3, 3, 100)
         >>> xgrid, ygrid = np.meshgrid(xarr, yarr, indexing="ij")
-        
+
         The function to interpolate decays faster along one axis than the other.
-        
+
         >>> zdata = np.exp(-np.sqrt((xgrid / 2) ** 2 + ygrid**2))
-        
+
         Next we sample on a finer grid using interpolation (kx=ky=1 for bilinear).
-        
+
         >>> rbs = RectBivariateSpline(xarr, yarr, zdata, kx=1, ky=1)
         >>> xarr_fine = np.linspace(-3, 3, 200)
         >>> yarr_fine = np.linspace(-3, 3, 200)
         >>> xgrid_fine, ygrid_fine = np.meshgrid(xarr_fine, yarr_fine, indexing="ij")
         >>> zdata_interp = rbs(xgrid_fine, ygrid_fine, grid=False)
-        
+
         And check that the result agrees with the input by plotting both.
 
         >>> import matplotlib.pyplot as plt
@@ -997,7 +997,6 @@ class _BivariateSplineBase:
         >>> ax1.imshow(zdata)
         >>> ax2.imshow(zdata_interp)
         >>> plt.show()
-
         """
         x = np.asarray(x)
         y = np.asarray(y)
@@ -1198,40 +1197,38 @@ class BivariateSpline(_BivariateSplineBase):
         --------
         Suppose that we want to bilinearly interpolate an exponentially decaying
         function in 2 dimensions.
-        
+
         >>> import numpy as np
         >>> from scipy.interpolate import RectBivariateSpline
         >>> def f(x, y):
         ...     return np.exp(-np.sqrt((x / 2) ** 2 + y**2))
-        ... 
-        
+
         We sample the function on a coarse grid and set up the interpolator. Note that 
         the default indexing="xy" of meshgrid would result in an unexpected (transposed)
         result after interpolation.
-        
+
         >>> xarr = np.linspace(-3, 3, 21)
         >>> yarr = np.linspace(-3, 3, 21)
         >>> xgrid, ygrid = np.meshgrid(xarr, yarr, indexing="ij")
         >>> zdata = f(xgrid, ygrid)
         >>> rbs = RectBivariateSpline(xarr, yarr, zdata, kx=1, ky=1)
-        
+
         Next we sample the function along a diagonal slice through the coordinate space
         on a finer grid using interpolation.
-        
+
         >>> xinterp = np.linspace(0, 0, 201)
         >>> yinterp = np.linspace(3, -3, 201)
         >>> zinterp = rbs.ev(xinterp, yinterp)
-        
+
         And check that the interpolation passes through the function evaluations as a
         function of the distance from the origin along the slice.
-        
+
         >>> import matplotlib.pyplot as plt
         >>> fig = plt.figure()
         >>> ax1 = fig.add_subplot(1, 1, 1)
         >>> ax1.plot(np.sqrt(xarr**2 + yarr**2), np.diag(zdata), "or")
         >>> ax1.plot(np.sqrt(xinterp**2 + yinterp**2), zinterp, "-b")
         >>> plt.show()
-
         """
         return self.__call__(xi, yi, dx=dx, dy=dy, grid=False)
 
@@ -1756,10 +1753,10 @@ class SphereBivariateSpline(_BivariateSplineBase):
         >>> phiarr = np.linspace(0, 2 * np.pi, 21)[:-1]
         >>> thetagrid, phigrid = np.meshgrid(thetaarr, phiarr, indexing="ij")
         >>> zdata = f(thetagrid, phigrid)
-        
+
         We next set up the interpolator and use it to evaluate the function
         at points not on the original grid.
-        
+
         >>> rsbs = RectSphereBivariateSpline(thetaarr, phiarr, zdata)
         >>> thetainterp = np.linspace(0, np.pi, 200)
         >>> phiinterp = np.linspace(0, 2 * np.pi, 200)
