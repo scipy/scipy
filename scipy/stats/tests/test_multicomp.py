@@ -111,6 +111,37 @@ class TestDunnett:
             assert_allclose(res.statistic, ref.statistic, atol=1e-3)
             assert_allclose(res.pvalue, ref.pvalue, atol=1e-3)
 
+    @pytest.mark.parametrize(
+        'alternative, statistic, pvalue',
+        [
+            ('less', 'low', 0),
+            ('less', 'high', 1),
+            ('greater', 'low', 1),
+            ('greater', 'high', 0),
+            ('two-sided', 'low', 0),
+            ('two-sided', 'high', 0)
+        ]
+    )
+    def test_alternatives(self, alternative, statistic, pvalue):
+        rng = np.random.default_rng(114184017807316971636137493526995620351)
+
+        for _ in range(10):
+            sample_1 = rng.integers(0, 20, size=(10,))
+            sample_2 = rng.integers(80, 100, size=(10,))
+
+            if statistic == 'high':
+                sample = sample_2
+                control = sample_1
+            else:
+                sample = sample_1
+                control = sample_2
+
+            res = stats.dunnett(
+                sample, control=control,
+                alternative=alternative, random_state=rng
+            )
+            assert_allclose(res.pvalue, pvalue, atol=1e-7)
+
     def test_raises(self):
         samples = [
             [55, 64, 64],

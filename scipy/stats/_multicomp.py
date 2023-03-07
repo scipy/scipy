@@ -45,10 +45,10 @@ def dunnett(
 
         * 'two-sided': the means of the distributions underlying the samples
           and control are unequal.
-        * 'less': the means of the distribution underlying the samples
-          is less than the mean of the distribution underlying the control.
-        * 'greater': the means of the distribution underlying the
-          samples is greater than the mean of the distribution underlying
+        * 'less': the means of the distributions underlying the samples
+          are less than the mean of the distribution underlying the control.
+        * 'greater': the means of the distributions underlying the
+          samples are greater than the mean of the distribution underlying
           the control.
     random_state : {None, int, `numpy.random.Generator`}, optional
         If `random_state` is an int or None, a new `numpy.random.Generator` is
