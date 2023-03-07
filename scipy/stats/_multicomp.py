@@ -31,7 +31,7 @@ def dunnett(
     alternative: Literal['two-sided', 'less', 'greater'] = "two-sided",
     random_state: SeedType = None
 ) -> DunnettResult:
-    """Dunnett's test.
+    """Dunnett's test: multiple comparisons of means against a control group.
 
     Parameters
     ----------
@@ -71,7 +71,7 @@ def dunnett(
         pvalue : float ndarray
             The computed p-value of the test for each comparison. The element
             at index ``(i,)`` is the p-value for the comparison between
-            groups ``i`` and the control.
+            group ``i`` and the control.
 
     See Also
     --------
@@ -84,7 +84,7 @@ def dunnett(
     `tukey_hsd` instead, performs pairwise comparison of means.
     It means Dunnett's test performs fewer tests, hence there is less p-value
     adjustment which makes the test more powerful.
-    It should be preferred when there is control group.
+    It should be preferred when there is a control group.
 
     The use of this test relies on several assumptions.
 
@@ -110,7 +110,7 @@ def dunnett(
     of animal is investigated.
 
     The following table summarizes the results of the experiment in which
-    two groups received different drug, and one group acted as a control.
+    two groups received different drugs, and one group acted as a control.
     Blood counts (in millions of cells per cubic millimeter) were recorded::
 
          Control      Drug A      Drug B
