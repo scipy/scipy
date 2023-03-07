@@ -7851,7 +7851,7 @@ class powerlognorm_gen(rv_continuous):
         def logpdf_formula(x, c, s):
             return np.exp(self._logpdf(x, c, s))
 
-        return _lazywhere(c <= 1 & s <= 1, (x, c, s, ),
+        return _lazywhere((c <= 1) & (s <= 1), (x, c, s, ),
                           logpdf_formula,
                           f2=direct_formula)
 
