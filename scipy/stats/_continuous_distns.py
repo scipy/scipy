@@ -1486,8 +1486,25 @@ class chi2_gen(rv_continuous):
 
     def _entropy(self, df):
         half_df = 0.5 * df
-        return (half_df + np.log(2) + sc.gammaln(half_df) +
-                (1 - half_df) * sc.psi(half_df))
+
+        def regular_formula(half_df):
+            return (half_df + np.log(2) + sc.gammaln(half_df) +
+                    (1 - half_df) * sc.psi(half_df))
+
+        def asymptotic_formula(half_df):
+            # plug in the above formula the following asymptotic
+            # expansions:
+            # ln(gamma(a)) ~ (a - 0.5) * ln(a) - a + 0.5 * ln(2 * pi) +
+            #                 1/(12 * a) - 1/(360 * a**3)
+            # psi(a) ~ ln(a) - 1/(2 * a) - 1/(3 * a**2) + 1/120 * a**4)
+            c = np.log(2) + 0.5*(1 + np.log(2*np.pi))
+            h = 0.5/half_df
+            return (h*(-2/3 + h*(-1/3 + h*(-4/45 + h/7.5))) +
+                    0.5*np.log(half_df) + c)
+
+        return _lazywhere(half_df < 125, (half_df, ),
+                          regular_formula,
+                          f2=asymptotic_formula)
 
 
 chi2 = chi2_gen(a=0.0, name='chi2')
@@ -1607,6 +1624,19 @@ class dgamma_gen(rv_continuous):
         return np.where(x > 0,
                         0.5*sc.gammaincc(a, x),
                         0.5 + 0.5*sc.gammainc(a, -x))
+
+    def _entropy(self, a):
+        a = np.asarray([a])
+        def h1(a):
+            h1 = a + np.log(2) + sc.gammaln(a) + (1 - a) * sc.digamma(a)
+            return h1
+
+        def h2(a):
+            h2 = np.log(2) + 0.5 * (1 + np.log(a) + np.log(2 * np.pi))
+            return h2
+
+        h = _lazywhere(a > 1e8, (a), f=h2, f2=h1)
+        return h
 
     def _ppf(self, q, a):
         return np.where(q > 0.5,
@@ -2712,8 +2742,14 @@ class genlogistic_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, c):
-        return -np.log(c) + sc.psi(c + 1) + _EULER + 1
-
+        return _lazywhere(c < 8e6, (c, ),
+                          lambda c: -np.log(c) + sc.psi(c + 1) + _EULER + 1,
+                          # asymptotic expansion: psi(c) ~ log(c) - 1/(2 * c)
+                          # a = -log(c) + psi(c + 1)
+                          #   = -log(c) + psi(c) + 1/c
+                          #   ~ -log(c) + log(c) - 1/(2 * c) + 1/c
+                          #   = 1/(2 * c)
+                          f2=lambda c: 1/(2 * c) + _EULER + 1)
 
 genlogistic = genlogistic_gen(name='genlogistic')
 
@@ -3737,7 +3773,7 @@ class gompertz_gen(rv_continuous):
         return sc.log1p(-np.log(p)/c)
 
     def _entropy(self, c):
-        return 1.0 - np.log(c) - np.exp(c)*sc.expn(1, c)
+        return 1.0 - np.log(c) - sc._ufuncs._scaled_exp1(c)/c
 
 
 gompertz = gompertz_gen(a=0.0, name='gompertz')
@@ -4049,6 +4085,14 @@ class halflogistic_gen(rv_continuous):
 
     def _ppf(self, q):
         return 2*np.arctanh(q)
+
+    def _sf(self, x):
+        return 2 * sc.expit(-x)
+
+    def _isf(self, q):
+        return _lazywhere(q < 0.5, (q, ),
+                          lambda q: -sc.logit(0.5 * q),
+                          f2=lambda q: 2*np.arctanh(1 - q))
 
     def _munp(self, n):
         if n == 1:
@@ -7869,10 +7913,19 @@ class powernorm_gen(rv_continuous):
         return np.log(c) + _norm_logpdf(x) + (c-1)*_norm_logcdf(-x)
 
     def _cdf(self, x, c):
-        return 1.0-_norm_cdf(-x)**(c*1.0)
+        return -sc.expm1(self._logsf(x, c))
 
     def _ppf(self, q, c):
         return -_norm_ppf(pow(1.0 - q, 1.0 / c))
+
+    def _sf(self, x, c):
+        return np.exp(self._logsf(x, c))
+
+    def _logsf(self, x, c):
+        return c * _norm_logcdf(-x)
+
+    def _isf(self, q, c):
+        return -_norm_ppf(np.exp(np.log(q) / c))
 
 
 powernorm = powernorm_gen(name='powernorm')
