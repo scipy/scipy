@@ -1243,12 +1243,8 @@ class BivariateSpline(_BivariateSplineBase):
         ----------
         xa, xb : float
             The end-points of the x integration interval.
-            Note that the axis ordering is inverted relative to
-            the default output of meshgrid.
         ya, yb : float
             The end-points of the y integration interval.
-            Note that the axis ordering is inverted relative to
-            the default output of meshgrid.
 
         Returns
         -------
