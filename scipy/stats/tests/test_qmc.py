@@ -534,10 +534,10 @@ class QMCEngineTests:
         sample = engine.random(n=n_half)
         assert_allclose(sample, ref_sample[n_half:], atol=1e-1)
 
+    @pytest.mark.parametrize("scramble", scramble, ids=ids)
     @pytest.mark.parametrize(
-        "scramble, seed",
-        list(zip(scramble, (170382760648021597650530316304495310428, None))),
-        ids=ids
+        "seed",
+        (170382760648021597650530316304495310428, None),
     )
     def test_reset(self, scramble, seed):
         engine = self.engine(d=2, scramble=scramble, seed=seed)
