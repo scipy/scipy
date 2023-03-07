@@ -945,7 +945,7 @@ class _BivariateSplineBase:
             sorted to increasing order.
 
             Note that the axis ordering is inverted relative to
-            the output of meshgrid.
+            the default output of meshgrid.
         dx : int
             Order of x-derivative
 
@@ -959,6 +959,44 @@ class _BivariateSplineBase:
             input arrays, or at points specified by the input arrays.
 
             .. versionadded:: 0.14.0
+
+        Examples
+        --------
+        Suppose that we want to bilinearly interpolate an exponentially decaying
+        function in 2 dimensions.
+
+        >>> import numpy as np
+        >>> from scipy.interpolate import RectBivariateSpline
+
+        We sample the function on a coarse grid. Note that the default indexing="xy"
+        of meshgrid would result in an unexpected (transposed) result after
+        interpolation.
+
+        >>> xarr = np.linspace(-3, 3, 100)
+        >>> yarr = np.linspace(-3, 3, 100)
+        >>> xgrid, ygrid = np.meshgrid(xarr, yarr, indexing="ij")
+        
+        The function to interpolate decays faster along one axis than the other.
+        
+        >>> zdata = np.exp(-np.sqrt((xgrid / 2) ** 2 + ygrid**2))
+        
+        Next we sample on a finer grid using interpolation.
+        
+        >>> rbs = RectBivariateSpline(xarr, yarr, zdata)
+        >>> xarr_fine = np.linspace(-3, 3, 200)
+        >>> yarr_fine = np.linspace(-3, 3, 200)
+        >>> xgrid_fine, ygrid_fine = np.meshgrid(xarr_fine, yarr_fine, indexing="ij")
+        >>> zdata_interp = rbs(xgrid_fine, ygrid_fine, grid=False)
+        
+        And check that the result agrees with the input by plotting both.
+
+        >>> import matplotlib.pyplot as plt
+        >>> fig = plt.figure()
+        >>> ax1 = fig.add_subplot(1, 2, 1, aspect="equal")
+        >>> ax2 = fig.add_subplot(1, 2, 2, aspect="equal")
+        >>> ax1.imshow(zdata)
+        >>> ax2.imshow(zdata_interp)
+        >>> plt.show()
 
         """
         x = np.asarray(x)
