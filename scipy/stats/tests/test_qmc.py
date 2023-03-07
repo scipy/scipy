@@ -471,9 +471,11 @@ class QMCEngineTests:
     scramble = [True, False]
     ids = ["Scrambled", "Unscrambled"]
 
-    def engine(self, scramble: bool, seed=None, **kwargs) -> QMCEngine:
-        if seed is None:
-            seed = np.random.default_rng(170382760648021597650530316304495310428)
+    def engine(
+        self, scramble: bool,
+        seed=170382760648021597650530316304495310428,
+        **kwargs
+    ) -> QMCEngine:
         if self.can_scramble:
             return self.qmce(scramble=scramble, seed=seed, **kwargs)
         else:
@@ -532,9 +534,13 @@ class QMCEngineTests:
         sample = engine.random(n=n_half)
         assert_allclose(sample, ref_sample[n_half:], atol=1e-1)
 
-    @pytest.mark.parametrize("scramble", scramble, ids=ids)
-    def test_reset(self, scramble):
-        engine = self.engine(d=2, scramble=scramble)
+    @pytest.mark.parametrize(
+        "scramble, seed",
+        list(zip(scramble, (170382760648021597650530316304495310428, None))),
+        ids=ids
+    )
+    def test_reset(self, scramble, seed):
+        engine = self.engine(d=2, scramble=scramble, seed=seed)
         ref_sample = engine.random(n=8)
 
         engine.reset()

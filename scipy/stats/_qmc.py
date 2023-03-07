@@ -749,7 +749,7 @@ class QMCEngine(ABC):
 
         self.d = d
         self.rng = check_random_state(seed)
-        self.rng_seed = copy.deepcopy(seed)
+        self.rng_seed = copy.deepcopy(self.rng)
         self.num_generated = 0
 
         config = {
