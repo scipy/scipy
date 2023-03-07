@@ -63,7 +63,7 @@ def qr_solve(A,y,silent=True):
     P = np.eye(len(P))[:,P]
     
     #Let r be the number of linearly independent columns & rows in A (the rank)
-    rank = r = np.linalg.matrix_rank(A)
+    rank = r = sum(np.around(np.diag(R),12)!=0)
     
     #Q is a m by m square orthogonal matrix
     #Q_1 has m rows and r columns
