@@ -636,6 +636,45 @@ class TestGenHyperbolic:
 
         assert_allclose(gh.cdf(x), vals_R, atol=0, rtol=1e-6)
 
+    # The reference values were computed by implementing the PDF with mpmath
+    # and integrating it with mp.quad.  The values were computed with
+    # mp.dps=250, and then again with mp.dps=400 to ensure the full 64 bit
+    # precision was computed.
+    @pytest.mark.parametrize(
+        'x, p, a, b, loc, scale, ref',
+        [(-15, 2, 3, 1.5, 0.5, 1.5, 4.770036428808252e-20),
+         (-15, 10, 1.5, 0.25, 1, 5, 0.03282964575089294),
+         (-15, 10, 1.5, 1.375, 0, 1, 3.3711159600215594e-23),
+         (-15, 0.125, 1.5, 1.49995, 0, 1, 4.729401428898605e-23),
+         (-1, 0.125, 1.5, 1.49995, 0, 1, 0.0003565725914786859),
+         (5, -0.125, 1.5, 1.49995, 0, 1, 0.2600651974023352),
+         (5, -0.125, 1000, 999, 0, 1, 5.923270556517253e-28),
+         (20, -0.125, 1000, 999, 0, 1, 0.23452293711665634),
+         (40, -0.125, 1000, 999, 0, 1, 0.9999648749561968),
+         (60, -0.125, 1000, 999, 0, 1, 0.9999999999975475)]
+    )
+    def test_cdf_mpmath(self, x, p, a, b, loc, scale, ref):
+        cdf = stats.genhyperbolic.cdf(x, p, a, b, loc=loc, scale=scale)
+        assert_allclose(cdf, ref, rtol=5e-12)
+
+    # The reference values were computed by implementing the PDF with mpmath
+    # and integrating it with mp.quad.  The values were computed with
+    # mp.dps=250, and then again with mp.dps=400 to ensure the full 64 bit
+    # precision was computed.
+    @pytest.mark.parametrize(
+        'x, p, a, b, loc, scale, ref',
+        [(0, 1e-6, 12, -1, 0, 1, 0.38520358671350524),
+         (-1, 3, 2.5, 2.375, 1, 3, 0.9999901774267577),
+         (-20, 3, 2.5, 2.375, 1, 3, 1.0),
+         (25, 2, 3, 1.5, 0.5, 1.5, 8.593419916523976e-10),
+         (300, 10, 1.5, 0.25, 1, 5, 6.137415609872158e-24),
+         (60, -0.125, 1000, 999, 0, 1, 2.4524915075944173e-12),
+         (75, -0.125, 1000, 999, 0, 1, 2.9435194886214633e-18)]
+    )
+    def test_sf_mpmath(self, x, p, a, b, loc, scale, ref):
+        sf = stats.genhyperbolic.sf(x, p, a, b, loc=loc, scale=scale)
+        assert_allclose(sf, ref, rtol=5e-12)
+
     def test_moments_r(self):
         # test against R package GeneralizedHyperbolic
         # sapply(1:4,
@@ -4140,6 +4179,7 @@ class TestDgamma:
         y = stats.dgamma.entropy(x)
         for i in range(len(y)):
             assert y[i] == stats.dgamma.entropy(x[i])
+
 
 class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
