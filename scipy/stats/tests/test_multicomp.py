@@ -86,7 +86,7 @@ class TestDunnett:
 
         assert isinstance(res, DunnettResult)
         # last value is problematic
-        assert_allclose(res.pvalue, ref, atol=0.025)
+        assert_allclose(res.pvalue, ref, atol=1e-3)
 
     @pytest.mark.parametrize(
         'alternative',

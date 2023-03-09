@@ -7,6 +7,7 @@ import numpy as np
 
 from scipy import stats
 from scipy.stats._qmc import check_random_state
+from scipy.stats._stats_py import _var
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -164,12 +165,7 @@ def dunnett(
 
     rho, df, n_group = params_dunnett(samples=samples_, control=control)
 
-    statistic = np.array([
-        stats.ttest_ind(
-            obs_, control, alternative=alternative, random_state=rng
-        ).statistic
-        for obs_ in samples_
-    ])
+    statistic = _statistic_dunnett(samples_, control, df)
 
     pvalue = pvalue_dunnett(
         rho=rho, df=df,
@@ -238,6 +234,26 @@ def params_dunnett(
     np.fill_diagonal(rho, 1)
 
     return rho, df, n_groups
+
+
+def _statistic_dunnett(samples, control, df):
+    N_control = control.size
+    N_samples = [sample.size for sample in samples]
+    mean_control = np.mean(control)
+    mean_samples = [np.mean(sample) for sample in samples]
+    all_samples = [control] + samples
+    all_means = [mean_control] + mean_samples
+
+    # Variance estimate s^2 from [1] Eq. 1
+    s2 = np.sum([_var(sample, mean=mean)*sample.size
+                 for sample, mean in zip(all_samples, all_means)]) / df
+
+    # z score inferred from [1] unlabeled equation after Eq. 1
+    mean_samples = np.asarray(mean_samples)
+    N_samples = np.asarray(N_samples)
+    z = (mean_samples - mean_control) / np.sqrt(1/N_samples + 1/N_control)
+
+    return z / np.sqrt(s2)
 
 
 def pvalue_dunnett(
