@@ -370,23 +370,3 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         info = 0
 
     return (postprocess(x),info)
-
-
-if __name__ == '__main__':
-    from numpy import arange
-    from scipy.sparse import spdiags
-
-    n = 10
-
-    residuals = []
-
-    def cb(x):
-        residuals.append(norm(b - A@x))
-
-    # A = poisson((10,),format='csr')
-    A = spdiags([arange(1,n+1,dtype=float)], [0], n, n, format='csr')
-    M = spdiags([1.0/arange(1,n+1,dtype=float)], [0], n, n, format='csr')
-    A.psolve = M.matvec
-    b = zeros(A.shape[0])
-    x = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
-    # x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]

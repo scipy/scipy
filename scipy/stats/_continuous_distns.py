@@ -689,14 +689,11 @@ class beta_gen(rv_continuous):
         return _boost._beta_sf(x, a, b)
 
     def _isf(self, x, a, b):
-        with warnings.catch_warnings():
-            # See gh-14901
-            message = "overflow encountered in _beta_isf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _boost._beta_isf(x, a, b)
 
     def _ppf(self, q, a, b):
-        with warnings.catch_warnings():
+        with np.errstate(over='ignore'):  # see gh-17432
             message = "overflow encountered in _beta_ppf"
             warnings.filterwarnings('ignore', message=message)
             return _boost._beta_ppf(q, a, b)
@@ -914,7 +911,7 @@ class betaprime_gen(rv_continuous):
         # the cdf: p = beta._sf(1/(1+x), b, a).
         r = stats.beta._ppf(p, a, b)
         with np.errstate(divide='ignore'):
-            out =  r / (1 - r)
+            out = r / (1 - r)
         i = (r > 0.9999)
         out[i] = 1/stats.beta._isf(p[i], b[i], a[i]) - 1
         return out
@@ -1096,7 +1093,7 @@ class burr_gen(rv_continuous):
 
     def _stats(self, c, d):
         nc = np.arange(1, 5).reshape(4,1) / c
-        #ek is the kth raw moment, e1 is the mean e2-e1**2 variance etc.
+        # ek is the kth raw moment, e1 is the mean e2-e1**2 variance etc.
         e1, e2, e3, e4 = sc.beta(d + nc, 1. - nc) * d
         mu = np.where(c > 1.0, e1, np.nan)
         mu2_if_c = e2 - mu**2
@@ -1489,8 +1486,25 @@ class chi2_gen(rv_continuous):
 
     def _entropy(self, df):
         half_df = 0.5 * df
-        return (half_df + np.log(2) + sc.gammaln(half_df) +
-                (1 - half_df) * sc.psi(half_df))
+
+        def regular_formula(half_df):
+            return (half_df + np.log(2) + sc.gammaln(half_df) +
+                    (1 - half_df) * sc.psi(half_df))
+
+        def asymptotic_formula(half_df):
+            # plug in the above formula the following asymptotic
+            # expansions:
+            # ln(gamma(a)) ~ (a - 0.5) * ln(a) - a + 0.5 * ln(2 * pi) +
+            #                 1/(12 * a) - 1/(360 * a**3)
+            # psi(a) ~ ln(a) - 1/(2 * a) - 1/(3 * a**2) + 1/120 * a**4)
+            c = np.log(2) + 0.5*(1 + np.log(2*np.pi))
+            h = 0.5/half_df
+            return (h*(-2/3 + h*(-1/3 + h*(-4/45 + h/7.5))) +
+                    0.5*np.log(half_df) + c)
+
+        return _lazywhere(half_df < 125, (half_df, ),
+                          regular_formula,
+                          f2=asymptotic_formula)
 
 
 chi2 = chi2_gen(a=0.0, name='chi2')
@@ -1610,6 +1624,19 @@ class dgamma_gen(rv_continuous):
         return np.where(x > 0,
                         0.5*sc.gammaincc(a, x),
                         0.5 + 0.5*sc.gammainc(a, -x))
+
+    def _entropy(self, a):
+        a = np.asarray([a])
+        def h1(a):
+            h1 = a + np.log(2) + sc.gammaln(a) + (1 - a) * sc.digamma(a)
+            return h1
+
+        def h2(a):
+            h2 = np.log(2) + 0.5 * (1 + np.log(a) + np.log(2 * np.pi))
+            return h2
+
+        h = _lazywhere(a > 1e8, (a), f=h2, f2=h1)
+        return h
 
     def _ppf(self, q, a):
         return np.where(q > 0.5,
@@ -2715,8 +2742,14 @@ class genlogistic_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, c):
-        return -np.log(c) + sc.psi(c + 1) + _EULER + 1
-
+        return _lazywhere(c < 8e6, (c, ),
+                          lambda c: -np.log(c) + sc.psi(c + 1) + _EULER + 1,
+                          # asymptotic expansion: psi(c) ~ log(c) - 1/(2 * c)
+                          # a = -log(c) + psi(c + 1)
+                          #   = -log(c) + psi(c) + 1/c
+                          #   ~ -log(c) + log(c) - 1/(2 * c) + 1/c
+                          #   = 1/(2 * c)
+                          f2=lambda c: 1/(2 * c) + _EULER + 1)
 
 genlogistic = genlogistic_gen(name='genlogistic')
 
@@ -3740,7 +3773,7 @@ class gompertz_gen(rv_continuous):
         return sc.log1p(-np.log(p)/c)
 
     def _entropy(self, c):
-        return 1.0 - np.log(c) - np.exp(c)*sc.expn(1, c)
+        return 1.0 - np.log(c) - sc._ufuncs._scaled_exp1(c)/c
 
 
 gompertz = gompertz_gen(a=0.0, name='gompertz')
@@ -4053,6 +4086,14 @@ class halflogistic_gen(rv_continuous):
     def _ppf(self, q):
         return 2*np.arctanh(q)
 
+    def _sf(self, x):
+        return 2 * sc.expit(-x)
+
+    def _isf(self, q):
+        return _lazywhere(q < 0.5, (q, ),
+                          lambda q: -sc.logit(0.5 * q),
+                          f2=lambda q: 2*np.arctanh(1 - q))
+
     def _munp(self, n):
         if n == 1:
             return 2*np.log(2)
@@ -4107,7 +4148,7 @@ class halfnorm_gen(rv_continuous):
         return 0.5 * np.log(2.0/np.pi) - x*x/2.0
 
     def _cdf(self, x):
-        return _norm_cdf(x)*2-1.0
+        return sc.erf(x / np.sqrt(2))
 
     def _ppf(self, q):
         return sc.ndtri((1+q)/2.0)
@@ -4436,10 +4477,10 @@ class invgauss_gen(rv_continuous):
         # a = log(2*pi*e*mu**3)
         #   = 1 + log(2*pi) + 3 * log(mu)
         a = 1. + np.log(2 * np.pi) + 3 * np.log(mu)
-        # b = exp(2 / mu) * exp1(2 / mu)
-        #   = exp(log(exp(2 / mu) * exp1(2 / mu)))
-        #   = exp(2 / mu + log(exp1(2 / mu)))
-        b = np.exp(2 / mu + np.log(sc.exp1(2 / mu)))
+        # b = exp(2/mu) * exp1(2/mu)
+        #   = _scaled_exp1(2/mu) / (2/mu)
+        r = 2/mu
+        b = sc._ufuncs._scaled_exp1(r)/r
         return 0.5 * a - 1.5 * b
 
 
@@ -5870,68 +5911,107 @@ class lognorm_gen(rv_continuous):
         this function uses explicit formulas for the maximum likelihood
         estimation of the log-normal shape and scale parameters, so the
         `optimizer`, `loc` and `scale` keyword arguments are ignored.
+        If the location is free, a likelihood maximum is found by
+        setting its partial derivative wrt to location to 0, and
+        solving by substituting the analytical expressions of shape
+        and scale (or provided parameters).
+        See, e.g., equation 3.1 in
+        A. Clifford Cohen & Betty Jones Whitten (1980)
+        Estimation in the Three-Parameter Lognormal Distribution,
+        Journal of the American Statistical Association, 75:370, 399-404
+        https://doi.org/10.2307/2287466
         \n\n""")
     def fit(self, data, *args, **kwds):
-        floc = kwds.get('floc', None)
-
-        if floc is None:
-            # loc is not fixed. Use the default fit method.
+        if kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
 
-        f0 = (kwds.get('f0', None) or kwds.get('fs', None) or
-              kwds.get('fix_s', None))
-        fscale = kwds.get('fscale', None)
+        parameters = _check_fit_input_parameters(self, data, args, kwds)
+        data, fshape, floc, fscale = parameters
+        data_min = np.min(data)
 
-        if len(args) > 1:
-            raise TypeError("Too many input arguments.")
-        for name in ['f0', 'fs', 'fix_s', 'floc', 'fscale', 'loc', 'scale',
-                     'optimizer', 'method']:
-            kwds.pop(name, None)
-        if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+        def get_shape_scale(loc):
+            # Calculate maximum likelihood scale and shape with analytical
+            # formulas unless provided by the user
+            if fshape is None or fscale is None:
+                lndata = np.log(data - loc)
+            scale = fscale or np.exp(lndata.mean())
+            shape = fshape or np.sqrt(np.mean((lndata - np.log(scale))**2))
+            return shape, scale
 
-        # Special case: loc is fixed.  Use the maximum likelihood formulas
-        # instead of the numerical solver.
+        def dL_dLoc(loc):
+            # Derivative of (positive) LL w.r.t. loc
+            shape, scale = get_shape_scale(loc)
+            shifted = data - loc
+            return np.sum((1 + np.log(shifted/scale)/shape**2)/shifted)
 
-        if f0 is not None and fscale is not None:
-            # This check is for consistency with `rv_continuous.fit`.
-            raise ValueError("All parameters fixed. There is nothing to "
-                             "optimize.")
+        def ll(loc):
+            # (Positive) log-likelihood
+            shape, scale = get_shape_scale(loc)
+            return -self.nnlf((shape, loc, scale), data)
 
-        data = np.asarray(data)
+        if floc is None:
+            # The location must be less than the minimum of the data.
+            # Back off a bit to avoid numerical issues.
+            spacing = np.spacing(data_min)
+            rbrack = data_min - spacing
 
-        if not np.isfinite(data).all():
-            raise ValueError("The data contains non-finite values.")
+            # Find the right end of the bracket by successive doubling of the
+            # distance to data_min. We're interested in a maximum LL, so the
+            # slope dL_dLoc_rbrack should be negative at the right end.
+            # optimization for later: share shape, scale
+            dL_dLoc_rbrack = dL_dLoc(rbrack)
+            ll_rbrack = ll(rbrack)
+            delta = 2 * spacing  # 2 * (data_min - rbrack)
+            while dL_dLoc_rbrack >= -1e-6:
+                rbrack = data_min - delta
+                dL_dLoc_rbrack = dL_dLoc(rbrack)
+                delta *= 2
 
-        floc = float(floc)
-        if floc != 0:
-            # Shifting the data by floc. Don't do the subtraction in-place,
-            # because `data` might be a view of the input array.
-            data = data - floc
-        if np.any(data <= 0):
-            raise FitDataError("lognorm", lower=floc, upper=np.inf)
-        lndata = np.log(data)
+            if not np.isfinite(rbrack) or not np.isfinite(dL_dLoc_rbrack):
+                # If we never find a negative slope, either we missed it or the
+                # slope is always positive. It's usually the latter,
+                # which means
+                # loc = data_min - spacing
+                # But sometimes when shape and/or scale are fixed there are
+                # other issues, so be cautious.
+                return super().fit(data, *args, **kwds)
 
-        # Three cases to handle:
-        # * shape and scale both free
-        # * shape fixed, scale free
-        # * shape free, scale fixed
+            # Now find the left end of the bracket. Guess is `rbrack-1`
+            # unless that is too small of a difference to resolve. Double
+            # the size of the interval until the left end is found.
+            lbrack = np.minimum(np.nextafter(rbrack, -np.inf), rbrack-1)
+            dL_dLoc_lbrack = dL_dLoc(lbrack)
+            delta = 2 * (rbrack - lbrack)
+            while (np.isfinite(lbrack) and np.isfinite(dL_dLoc_lbrack)
+                   and np.sign(dL_dLoc_lbrack) == np.sign(dL_dLoc_rbrack)):
+                lbrack = rbrack - delta
+                dL_dLoc_lbrack = dL_dLoc(lbrack)
+                delta *= 2
 
-        if fscale is None:
-            # scale is free.
-            scale = np.exp(lndata.mean())
-            if f0 is None:
-                # shape is free.
-                shape = lndata.std()
-            else:
-                # shape is fixed.
-                shape = float(f0)
+            # I don't recall observing this, but just in case...
+            if not np.isfinite(lbrack) or not np.isfinite(dL_dLoc_lbrack):
+                return super().fit(data, *args, **kwds)
+
+            # If we have a valid bracket, find the root
+            res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
+            if not res.converged:
+                return super().fit(data, *args, **kwds)
+
+            # If the slope was positive near the minimum of the data,
+            # the maximum LL could be there instead of at the root. Compare
+            # the LL of the two points to decide.
+            ll_root = ll(res.root)
+            loc = res.root if ll_root > ll_rbrack else data_min-spacing
+
         else:
-            # scale is fixed, shape is free
-            scale = float(fscale)
-            shape = np.sqrt(((lndata - np.log(scale))**2).mean())
+            if floc >= data_min:
+                raise FitDataError("lognorm", lower=0., upper=np.inf)
+            loc = floc
 
-        return shape, floc, scale
+        shape, scale = get_shape_scale(loc)
+        if not (self._argcheck(shape) and scale > 0):
+            return super().fit(data, *args, **kwds)
+        return shape, loc, scale
 
 
 lognorm = lognorm_gen(a=0.0, name='lognorm')
@@ -6046,6 +6126,12 @@ class maxwell_gen(rv_continuous):
 
     def _ppf(self, q):
         return np.sqrt(2*sc.gammaincinv(1.5, q))
+
+    def _sf(self, x):
+        return sc.gammaincc(1.5, x*x/2.0)
+
+    def _isf(self, q):
+        return np.sqrt(2*sc.gammainccinv(1.5, q))
 
     def _stats(self):
         val = 3*np.pi-8
@@ -6720,35 +6806,31 @@ class ncx2_gen(rv_continuous):
 
     def _pdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        with warnings.catch_warnings():
-            message = "overflow encountered in _ncx2_pdf"
-            warnings.filterwarnings("ignore", message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_pdf,
                               f2=lambda x, df, _: chi2._pdf(x, df))
 
     def _cdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_cdf,
-                          f2=lambda x, df, _: chi2._cdf(x, df))
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_cdf,
+                              f2=lambda x, df, _: chi2._cdf(x, df))
 
     def _ppf(self, q, df, nc):
         cond = np.ones_like(q, dtype=bool) & (nc != 0)
-        with warnings.catch_warnings():
-            message = "overflow encountered in _ncx2_ppf"
-            warnings.filterwarnings("ignore", message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _lazywhere(cond, (q, df, nc), f=_boost._ncx2_ppf,
                               f2=lambda x, df, _: chi2._ppf(x, df))
 
     def _sf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_sf,
-                          f2=lambda x, df, _: chi2._sf(x, df))
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_sf,
+                              f2=lambda x, df, _: chi2._sf(x, df))
 
     def _isf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        with warnings.catch_warnings():
-            message = "overflow encountered in _ncx2_isf"
-            warnings.filterwarnings("ignore", message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_isf,
                               f2=lambda x, df, _: chi2._isf(x, df))
 
@@ -6830,13 +6912,15 @@ class ncf_gen(rv_continuous):
         return _boost._ncf_cdf(x, dfn, dfd, nc)
 
     def _ppf(self, q, dfn, dfd, nc):
-        return _boost._ncf_ppf(q, dfn, dfd, nc)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._ncf_ppf(q, dfn, dfd, nc)
 
     def _sf(self, x, dfn, dfd, nc):
         return _boost._ncf_sf(x, dfn, dfd, nc)
 
     def _isf(self, x, dfn, dfd, nc):
-        return _boost._ncf_isf(x, dfn, dfd, nc)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._ncf_isf(x, dfn, dfd, nc)
 
     def _munp(self, n, dfn, dfd, nc):
         val = (dfn * 1.0/dfd)**n
@@ -7023,22 +7107,26 @@ class nct_gen(rv_continuous):
         return np.clip(Px, 0, None)
 
     def _cdf(self, x, df, nc):
-        return np.clip(_boost._nct_cdf(x, df, nc), 0, 1)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return np.clip(_boost._nct_cdf(x, df, nc), 0, 1)
 
     def _ppf(self, q, df, nc):
-        return _boost._nct_ppf(q, df, nc)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._nct_ppf(q, df, nc)
 
     def _sf(self, x, df, nc):
-        return np.clip(_boost._nct_sf(x, df, nc), 0, 1)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return np.clip(_boost._nct_sf(x, df, nc), 0, 1)
 
     def _isf(self, x, df, nc):
-        return _boost._nct_isf(x, df, nc)
+        with np.errstate(over='ignore'):  # see gh-17432
+            return _boost._nct_isf(x, df, nc)
 
     def _stats(self, df, nc, moments='mv'):
         mu = _boost._nct_mean(df, nc)
         mu2 = _boost._nct_variance(df, nc)
         g1 = _boost._nct_skewness(df, nc) if 's' in moments else None
-        g2 = _boost._nct_kurtosis_excess(df, nc)-3 if 'k' in moments else None
+        g2 = _boost._nct_kurtosis_excess(df, nc) if 'k' in moments else None
         return mu, mu2, g1, g2
 
 
@@ -7804,10 +7892,19 @@ class powernorm_gen(rv_continuous):
         return np.log(c) + _norm_logpdf(x) + (c-1)*_norm_logcdf(-x)
 
     def _cdf(self, x, c):
-        return 1.0-_norm_cdf(-x)**(c*1.0)
+        return -sc.expm1(self._logsf(x, c))
 
     def _ppf(self, q, c):
         return -_norm_ppf(pow(1.0 - q, 1.0 / c))
+
+    def _sf(self, x, c):
+        return np.exp(self._logsf(x, c))
+
+    def _logsf(self, x, c):
+        return c * _norm_logcdf(-x)
+
+    def _isf(self, q, c):
+        return -_norm_ppf(np.exp(np.log(q) / c))
 
 
 powernorm = powernorm_gen(name='powernorm')
@@ -8933,6 +9030,15 @@ class truncnorm_gen(rv_continuous):
             logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
         return logsf
 
+    def _entropy(self, a, b):
+        A = _norm_cdf(a)
+        B = _norm_cdf(b)
+        Z = B - A
+        C = np.log(np.sqrt(2 * np.pi * np.e) * Z)
+        D = (a * _norm_pdf(a) - b * _norm_pdf(b)) / (2 * Z)
+        h = C + D
+        return h
+
     def _ppf(self, q, a, b):
         q, a, b = np.broadcast_arrays(q, a, b)
 
@@ -9487,8 +9593,10 @@ class vonmises_gen(rv_continuous):
 
     @_call_super_mom
     @extend_notes_in_docstring(rv_continuous, notes="""\
-        The `scale` parameter is ignored. Fit data is assumed to represent
-        angles and will be wrapped onto the unit circle.\n\n""")
+        Fit data is assumed to represent angles and will be wrapped onto the
+        unit circle. `f0` and `fscale` are ignored; the returned shape is
+        always the maximum likelihood estimate and the scale is always
+        1. Initial guesses are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
         if kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
@@ -9523,10 +9631,11 @@ class vonmises_gen(rv_continuous):
         if floc is None:
             floc = find_mu(data)
             fshape = find_kappa(data)
-            return floc, fshape
         else:
             fshape = find_kappa(data)
-            return floc, fshape
+
+        floc = np.mod(floc + np.pi, 2 * np.pi) - np.pi  # ensure in [-pi, pi]
+        return fshape, floc, 1  # scale is not handled
 
 
 vonmises = vonmises_gen(name='vonmises')

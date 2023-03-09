@@ -107,20 +107,20 @@ skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
+fails_cmplx = {'argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
+               'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
+               'gausshyper', 'gengamma', 'genhyperbolic',
+               'geninvgauss', 'gennorm', 'genpareto',
+               'halfcauchy', 'halfgennorm', 'invgamma',
+               'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
+               'logistic', 'loguniform', 'maxwell', 'nakagami',
+               'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
+               'powerlaw', 'rdist', 'reciprocal', 'rice',
+               'skewnorm', 't', 'truncweibull_min',
+               'tukeylambda', 'vonmises', 'vonmises_line',
+               'rv_histogram_instance', 'truncnorm', 'studentized_range',
+               'halflogistic', 'rel_breitwigner'}
 
-fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
-                   'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
-                   'gausshyper', 'gengamma', 'genhyperbolic',
-                   'geninvgauss', 'gennorm', 'genpareto',
-                   'halfcauchy', 'halfgennorm', 'invgamma',
-                   'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
-                   'logistic', 'loguniform', 'maxwell', 'nakagami',
-                   'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
-                   'powerlaw', 'rdist', 'reciprocal', 'rice',
-                   'skewnorm', 't', 'truncweibull_min',
-                   'tukeylambda', 'vonmises', 'vonmises_line',
-                   'rv_histogram_instance', 'truncnorm', 'studentized_range',
-                   'rel_breitwigner'])
 
 # rv_histogram instances, with uniform and non-uniform bins;
 # stored as (dist, arg) tuples for cases_test_cont_basic
@@ -147,7 +147,6 @@ def cases_test_cont_basic():
             yield distname, arg
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
 @pytest.mark.parametrize('sn, n_fit_samples', [(500, 200)])
 def test_cont_basic(distname, arg, sn, n_fit_samples):
@@ -740,7 +739,6 @@ def check_fit_args_fix(distfn, arg, rvs, method):
             npt.assert_(vals5[2] == arg[2])
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
                                     'sf', 'logsf', 'ppf', 'isf'])
 @pytest.mark.parametrize('distname, args', distcont)

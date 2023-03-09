@@ -1,7 +1,7 @@
+#include <Python.h>
+
 #include "small_dynamic_array.h"
 #include "vectorcall.h"
-
-#include <Python.h>
 
 #include <algorithm>
 #include <cstddef>

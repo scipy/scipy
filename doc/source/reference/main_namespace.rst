@@ -6,8 +6,8 @@ The main SciPy namespace
 
 The main ``scipy`` namespace has very few objects in it by design. Only show
 generical functionality related to testing, build info and versioning, and one
-class (`LowLevelCallable`) that didn't fit in one of the submodules, are
-present:
+class (`LowLevelCallable`) that didn't fit in one of the
+submodules, are present:
 
 .. autosummary::
    :toctree: generated/
@@ -15,7 +15,6 @@ present:
    LowLevelCallable
    show_config
    test
-
 
 The one public attribute is:
 
@@ -33,7 +32,7 @@ Submodules
 `datasets`     Load SciPy datasets
 `fft`          Discrete Fourier and related transforms
 `fftpack`      Discrete Fourier transforms (legacy)
-`integrate`    Numerical integration
+`integrate`    Numerical integration and ODEs
 `interpolate`  Interpolation
 `io`           Scientific data format reading and writing
 `linalg`       Linear algebra functionality

@@ -1131,7 +1131,8 @@ def _moment(a, moment, axis, *, mean=None):
                               keepdims=True) / np.abs(mean)
         with np.errstate(invalid='ignore'):
             precision_loss = np.any(rel_diff < eps)
-        if precision_loss:
+        n = a.shape[axis] if axis is not None else a.size
+        if precision_loss and n > 1:
             message = ("Precision loss occurred in moment calculation due to "
                        "catastrophic cancellation. This occurs when the data "
                        "are nearly identical. Results may be unreliable.")
@@ -1311,7 +1312,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
 
     Examples
     --------
-    In Fisher's definiton, the kurtosis of the normal distribution is zero.
+    In Fisher's definition, the kurtosis of the normal distribution is zero.
     In the following example, the kurtosis is close to zero, because it was
     calculated from the dataset, not from the continuous distribution.
 
@@ -2845,6 +2846,9 @@ def obrientransform(*samples):
     return np.array(arrays)
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, too_small=1
+)
 def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     """Compute standard error of the mean.
 
@@ -2897,14 +2901,6 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     1.2893796958227628
 
     """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.sem(a, axis, ddof)
-
     n = a.shape[axis]
     s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
     return s
@@ -3365,6 +3361,10 @@ _scale_conversions = {'raw': 1.0,
                       'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1,
+    default_axis=None, override={'nan_propagation': False}
+)
 def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         interpolation='linear', keepdims=False):
     r"""
@@ -6964,6 +6964,14 @@ def _unequal_var_ttest_denom(v1, n1, v2, n2):
 
 
 def _equal_var_ttest_denom(v1, n1, v2, n2):
+    # If there is a single observation in one sample, this formula for pooled
+    # variance breaks down because the variance of that sample is undefined.
+    # The pooled variance is still defined, though, because the (n-1) in the
+    # numerator should cancel with the (n-1) in the denominator, leaving only
+    # the sum of squared differences from the mean: zero.
+    v1 = np.where(n1 == 1, 0, v1)[()]
+    v2 = np.where(n2 == 1, 0, v2)[()]
+
     df = n1 + n2 - 2.0
     svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / df
     denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
@@ -7424,8 +7432,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         n2 = b.shape[axis]
 
         if trim == 0:
+            if equal_var:
+                old_errstate = np.geterr()
+                np.seterr(divide='ignore', invalid='ignore')
             v1 = _var(a, axis, ddof=1)
             v2 = _var(b, axis, ddof=1)
+            if equal_var:
+                np.seterr(**old_errstate)
             m1 = np.mean(a, axis)
             m2 = np.mean(b, axis)
         else:
@@ -7437,6 +7450,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         else:
             df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
         res = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
+
     return Ttest_indResult(*res)
 
 
@@ -10242,7 +10256,7 @@ def expectile(a, alpha=0.5, *, weights=None):
     The empirical expectile at level :math:`\alpha` (`alpha`) of a sample
     :math:`a_i` (the array `a`) is defined by plugging in the empirical CDF of
     `a`. Given sample or case weights :math:`w` (the array `weights`), it
-    reads :math:`F_a(x) = \frac{1}{\sum_i a_i} \sum_i w_i 1_{a_i \leq x}`
+    reads :math:`F_a(x) = \frac{1}{\sum_i w_i} \sum_i w_i 1_{a_i \leq x}`
     with indicator function :math:`1_{A}`. This leads to the definition of the
     empirical expectile at level `alpha` as the unique solution :math:`t` of:
 
