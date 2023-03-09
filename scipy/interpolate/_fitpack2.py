@@ -1216,7 +1216,7 @@ class BivariateSpline(_BivariateSplineBase):
         Next we sample the function along a diagonal slice through the coordinate space
         on a finer grid using interpolation.
 
-        >>> xinterp = np.linspace(0, 0, 201)
+        >>> xinterp = np.linspace(-3, 3, 201)
         >>> yinterp = np.linspace(3, -3, 201)
         >>> zinterp = rbs.ev(xinterp, yinterp)
 
@@ -1668,6 +1668,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
             .. versionadded:: 0.14.0
 
+        Examples
+        --------
+
         Suppose that we want to use splines to interpolate a bivariate function on a sphere.
         The value of the function is known on a grid of longitudes and colatitudes.
 
@@ -1758,8 +1761,8 @@ class SphereBivariateSpline(_BivariateSplineBase):
         at points not on the original grid.
 
         >>> rsbs = RectSphereBivariateSpline(thetaarr, phiarr, zdata)
-        >>> thetainterp = np.linspace(0, np.pi, 200)
-        >>> phiinterp = np.linspace(0, 2 * np.pi, 200)
+        >>> thetainterp = np.linspace(thetaarr[0], thetaarr[-1], 200)
+        >>> phiinterp = np.linspace(phiarr[0], phiarr[-1], 200)
         >>> zinterp = rsbs.ev(thetainterp, phiinterp)
 
         Finally we plot the original data for a diagonal slice through the
