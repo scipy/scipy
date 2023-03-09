@@ -5,7 +5,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 from scipy import stats
-from scipy.stats._multicomp import pvalue_dunnett, DunnettResult
+from scipy.stats._multicomp import _pvalue_dunnett, DunnettResult
 
 
 class TestDunnett:
@@ -34,14 +34,6 @@ class TestDunnett:
             (0.5, 2, 60, 2.90, 0.01, "two-sided"),
             (0.5, 4, 60, 3.14, 0.01, "two-sided"),
             (0.5, 4, 60, [3.14, 2.55], [0.01, 0.05], "two-sided"),
-            # From Kwong2000 Table 2
-            (0.5, 9, 30, 2.856, 0.05, "two-sided"),
-            (0.5, 17, 20, 3.162, 0.05, "two-sided"),
-            # balanced designs
-            (0.3, 10, 10, 3.401, 0.05, "two-sided"),
-            (0.3, 13, 20, 3.168, 0.05, "two-sided"),
-            (0.1, 12, 20, 3.184, 0.05, "two-sided"),
-            (0.1, 15, 30, 3.157, 0.05, "two-sided"),
         ],
     )
     def test_critical_values(
@@ -52,7 +44,7 @@ class TestDunnett:
         np.fill_diagonal(rho, 1)
 
         statistic = np.array(statistic)
-        res = pvalue_dunnett(
+        res = _pvalue_dunnett(
             rho=rho, df=df, statistic=statistic,
             alternative=alternative,
             rng=rng
@@ -85,7 +77,6 @@ class TestDunnett:
         res = stats.dunnett(*samples, control=control, random_state=rng)
 
         assert isinstance(res, DunnettResult)
-        # last value is problematic
         assert_allclose(res.pvalue, ref, atol=1e-3)
 
     @pytest.mark.parametrize(

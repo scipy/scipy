@@ -41,7 +41,10 @@ def dunnett(
     control : 1D array_like
         The sample measurements for the control group.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
+        Defines the alternative hypothesis. The null hypothesis being that
+        the means of the distributions underlying the samples and control are
+        equal.
+
         The following options are available (default is 'two-sided'):
 
         * 'two-sided': the means of the distributions underlying the samples
@@ -128,7 +131,7 @@ def dunnett(
     >>> drug_b = np.array([12.80, 9.68, 12.16, 9.20, 10.55])
 
     The `dunnett` statistic is sensitive to the difference in means between
-    the samples.
+    the samples and the control.
 
     We would like to see if the means between any of the groups are
     significantly different. First, visually examine a box and whisker plot.
@@ -155,19 +158,19 @@ def dunnett(
     comparisons between ``control`` and ``drug_b`` do not exceed .05,
     so we reject the null hypothesis that they
     have the same means. The p-value of the comparison between ``control``
-    and ``drug_a`` exceeds .05, so we accept the null hypothesis that there
-    is not a significant difference between their means.
+    and ``drug_a`` exceeds .05, so we do not reject the null hypothesis that
+    there is not a significant difference between their means.
 
     """
-    samples_, control, rng = iv_dunnett(
+    samples_, control, rng = _iv_dunnett(
         samples=samples, control=control, random_state=random_state
     )
 
-    rho, df, n_group = params_dunnett(samples=samples_, control=control)
+    rho, df, n_group = _params_dunnett(samples=samples_, control=control)
 
     statistic = _statistic_dunnett(samples_, control, df)
 
-    pvalue = pvalue_dunnett(
+    pvalue = _pvalue_dunnett(
         rho=rho, df=df,
         statistic=statistic, alternative=alternative,
         rng=rng
@@ -178,7 +181,7 @@ def dunnett(
     )
 
 
-def iv_dunnett(
+def _iv_dunnett(
     samples: Sequence[npt.ArrayLike],
     control: npt.ArrayLike,
     random_state: SeedType
@@ -198,13 +201,13 @@ def iv_dunnett(
         if sample.ndim > 1:
             raise ValueError(ndim_msg)
 
-        if len(sample) < 1:
+        if sample.size < 1:
             raise ValueError(n_obs_msg)
 
     return samples_, control, rng
 
 
-def params_dunnett(
+def _params_dunnett(
     samples: list[np.ndarray], control: np.ndarray
 ) -> tuple[np.ndarray, int, int]:
     """Specific parameters for Dunnett's test.
@@ -219,49 +222,53 @@ def params_dunnett(
     Degree of freedom is the number of observations minus the number of groups
     including the control.
     """
-    n_n_obs = np.array([len(obs_) for obs_ in samples])
+    n_samples = np.array([sample.size for sample in samples])
 
     # From Dunnett1955 p. 1100 d.f. = (sum N)-(p+1)
-    n_obs = n_n_obs.sum()
-    n_control = len(control)
-    n = n_obs + n_control
+    n_sample = n_samples.sum()
+    n_control = control.size
+    n = n_sample + n_control
     n_groups = len(samples)
     df = n - n_groups - 1
 
     # rho_ij = 1/sqrt((N0/Ni+1)(N0/Nj+1))
-    rho = n_control/n_n_obs + 1
+    rho = n_control/n_samples + 1
     rho = 1/np.sqrt(rho[:, None] * rho[None, :])
     np.fill_diagonal(rho, 1)
 
     return rho, df, n_groups
 
 
-def _statistic_dunnett(samples, control, df):
-    N_control = control.size
-    N_samples = [sample.size for sample in samples]
+def _statistic_dunnett(
+    samples: list[np.ndarray], control: np.ndarray, df: int
+) -> np.ndarray:
+    """Statistic of Dunnett's test.
+
+    Computation based on the original single-step test from Dunnett1955.
+    """
+    n_control = control.size
+    n_samples = np.array([sample.size for sample in samples])
     mean_control = np.mean(control)
-    mean_samples = [np.mean(sample) for sample in samples]
+    mean_samples = np.array([np.mean(sample) for sample in samples])
     all_samples = [control] + samples
-    all_means = [mean_control] + mean_samples
+    all_means = np.concatenate([[mean_control], mean_samples])
 
     # Variance estimate s^2 from [1] Eq. 1
     s2 = np.sum([_var(sample, mean=mean)*sample.size
                  for sample, mean in zip(all_samples, all_means)]) / df
 
     # z score inferred from [1] unlabeled equation after Eq. 1
-    mean_samples = np.asarray(mean_samples)
-    N_samples = np.asarray(N_samples)
-    z = (mean_samples - mean_control) / np.sqrt(1/N_samples + 1/N_control)
+    z = (mean_samples - mean_control) / np.sqrt(1/n_samples + 1/n_control)
 
     return z / np.sqrt(s2)
 
 
-def pvalue_dunnett(
+def _pvalue_dunnett(
     rho: np.ndarray, df: int, statistic: np.ndarray,
     alternative: Literal['two-sided', 'less', 'greater'],
     rng: SeedType = None
 ) -> np.ndarray:
-    """pvalue from Dunnett critical value.
+    """pvalue from the multivariate t-distribution.
 
     Critical values come from the multivariate student-t distribution.
     """
