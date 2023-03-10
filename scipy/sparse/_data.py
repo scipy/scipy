@@ -250,7 +250,7 @@ class _minmax_mixin:
         if axis == 1:
             ret = ret.reshape(-1, 1)
 
-        return matrix(ret)
+        return self._ascontainer(ret)
 
     def _arg_min_or_max(self, axis, out, op, compare):
         if out is not None:
