@@ -9,7 +9,7 @@
 import numpy as np
 
 from ._base import spmatrix, _ufuncs_with_fixed_point_at_zero
-from ._sputils import isscalarlike, validateaxis, matrix
+from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
 
