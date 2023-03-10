@@ -1304,7 +1304,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     >>> n_estimates = 8
     >>> res = qmc_quad(func, a, b, n_estimates=n_estimates, qrng=qrng)
     >>> res.integral, res.standard_error
-    (0.00018441088533413305, 1.1255608140911588e-07)
+    (0.00018443143881633162, 4.709434153066518e-08)
 
     A two-sided, 99% confidence interval for the integral may be estimated
     as:
@@ -1312,7 +1312,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     >>> t = stats.t(df=n_estimates-1, loc=res.integral,
     ...             scale=res.standard_error)
     >>> t.interval(0.99)
-    (0.00018401699720722663, 0.00018480477346103947)
+    (0.00018426663295474533, 0.0001845962446779179)
 
     Indeed, the value reported by `scipy.stats.multivariate_normal` is
     within this range.
