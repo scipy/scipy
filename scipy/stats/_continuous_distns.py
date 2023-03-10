@@ -490,7 +490,7 @@ class alpha_gen(rv_continuous):
         return _norm_cdf(a-1.0/x) / _norm_cdf(a)
 
     def _ppf(self, q, a):
-        return 1.0/np.asarray(a-sc.ndtri(q*_norm_cdf(a)))
+        return 1.0/np.asarray(a - _norm_ppf(q*_norm_cdf(a)))
 
     def _stats(self, a):
         return [np.inf]*2 + [np.nan]*2
@@ -2088,14 +2088,14 @@ class fatiguelife_gen(rv_continuous):
         return _norm_cdf(1.0 / c * (np.sqrt(x) - 1.0/np.sqrt(x)))
 
     def _ppf(self, q, c):
-        tmp = c*sc.ndtri(q)
+        tmp = c * _norm_ppf(q)
         return 0.25 * (tmp + np.sqrt(tmp**2 + 4))**2
 
     def _sf(self, x, c):
         return _norm_sf(1.0 / c * (np.sqrt(x) - 1.0/np.sqrt(x)))
 
     def _isf(self, q, c):
-        tmp = -c*sc.ndtri(q)
+        tmp = -c * _norm_ppf(q)
         return 0.25 * (tmp + np.sqrt(tmp**2 + 4))**2
 
     def _stats(self, c):
@@ -4151,13 +4151,13 @@ class halfnorm_gen(rv_continuous):
         return sc.erf(x / np.sqrt(2))
 
     def _ppf(self, q):
-        return sc.ndtri((1+q)/2.0)
+        return _norm_ppf((1+q)/2.0)
 
     def _sf(self, x):
         return 2 * _norm_sf(x)
 
     def _isf(self, p):
-        return -sc.ndtri(p/2)
+        return  _norm_isf(p/2)
 
     def _stats(self):
         return (np.sqrt(2.0/np.pi),
@@ -5442,7 +5442,7 @@ class levy_gen(rv_continuous):
 
     def _ppf(self, q):
         # Equivalent to 1.0/(norm.isf(q/2)**2) or 0.5/(erfcinv(q)**2)
-        val = -sc.ndtri(q/2)
+        val = _norm_isf(q/2)
         return 1.0 / (val * val)
 
     def _isf(self, p):
@@ -8952,7 +8952,7 @@ def _log_gauss_mass(a, b):
         # underflows, it was insignificant; if both terms underflow,
         # the result can't accurately be represented in logspace anyway
         # because sc.log1p(x) ~ x for small x.
-        return sc.log1p(-sc.ndtr(a) - sc.ndtr(-b))
+        return sc.log1p(-_norm_cdf(a) - _norm_cdf(-b))
 
     # _lazyselect not working; don't care to debug it
     out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
