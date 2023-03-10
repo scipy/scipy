@@ -198,6 +198,28 @@ class TestVonMises:
         assert_allclose(np.angle(res), loc % (2*np.pi))
         assert np.issubdtype(res.dtype, np.complexfloating)
 
+    @pytest.mark.parametrize("rvs_loc", [0, 2])
+    @pytest.mark.parametrize("rvs_scale", [1, 100])
+    @pytest.mark.parametrize('fix_loc', [True, False])
+    def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale,
+                                   fix_loc):
+
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.vonmises.rvs(rvs_scale, size=1000, loc=rvs_loc,
+                                  random_state=rng)
+
+        def negative_loglikelihood(fit_result, data):
+            kappa, loc, scale = fit_result
+            logpdf = stats.vonmises(kappa, loc=loc).logpdf(data).sum()
+            return -logpdf
+
+        kwds = {}
+        if fix_loc:
+            kwds['floc'] = rvs_loc
+
+        _assert_less_or_close_loglike(stats.vonmises, data,
+                                      negative_loglikelihood, **kwds)
+
     @pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
     @pytest.mark.parametrize('kappa', [1, 10, 100, 1000])
     def test_vonmises_fit_all(self, kappa, loc):
