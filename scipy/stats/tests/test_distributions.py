@@ -2922,6 +2922,22 @@ class TestInvGamma:
         xx = stats.invgamma.isf(y, 1)
         assert_allclose(x, xx, rtol=1.0)
 
+    @pytest.mark.parametrize("a, ref",
+                            [(100000000.0, -26.21208257605721),
+                            (10000000000.0, -33.11983786163935),
+                            (1e+20, -67.6586142566167),
+                            (1e+75, -257.6218844286255),
+                            (1e+100, -343.9688254159022)])
+    def test_large_entropy(self, a, ref):
+        # The reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+
+        # def invgamma_entropy(a):
+        #     h = a + mp.loggamma(a) - (mp.one + a) * mp.digamma(a)
+        #     return float(h)
+        assert_allclose(stats.invgamma.entropy(a), ref)
+
 
 class TestF:
     def test_endpoints(self):

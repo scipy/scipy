@@ -4346,8 +4346,15 @@ class invgamma_gen(rv_continuous):
         return m1, m2, g1, g2
 
     def _entropy(self, a):
-        return a - (a+1.0) * sc.psi(a) + sc.gammaln(a)
+        a = np.asarray([a])
+        def h1(a):
+            return a - (a+1.0) * sc.psi(a) + sc.gammaln(a)
 
+        def h2(a):
+            return -1.5 * np.log(a) + 0.5 * np.log(2 * np.pi) + 0.5
+
+        h = _lazywhere(a >= 1e8, (a), f=h2, f2=h1)
+        return h
 
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
