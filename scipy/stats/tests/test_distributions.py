@@ -1667,21 +1667,17 @@ class TestJohnsonsu:
     #     a = mp.mpf(a)
     #     b = mp.mpf(b)
     #     return float(mp.ncdf(-(a + b * mp.log(x + mp.sqrt(x*x + 1)))))
+    # Order is x, a, b, sf, isf tol
+    # (Can't expect full precision when the ISF input is very nearly 1)
+    cases = [(-500, 1, 1, 0.9999999982660072, 1e-8),
+             (2000, 1, 1, 7.426351000595343e-21, 5e-14),
+             (100000, 1, 1, 4.046923979269977e-40, 5e-14)]
 
-    @pytest.mark.parametrize("x, a, b, ref",
-                             [(-500, 1, 1, 0.9999999982660072),
-                              (2000, 1, 1, 7.426351000595343e-21),
-                              (100000, 1, 1, 4.046923979269977e-40)])
-    def test_sf(self, x, a, b, ref):
-        assert_allclose(stats.johnsonsu.sf(x, a, b), ref, rtol=5e-14)
-
-    # for inverse survival function, just switch x and ref
-
-    @pytest.mark.parametrize("q, a, b, ref",
-                             [(7.426351000595343e-21, 1, 1, 2000),
-                              (4.046923979269977e-40, 1, 1, 100000)])
-    def test_isf(self, q, a, b, ref):
-        assert_allclose(stats.johnsonsu.isf(q, a, b), ref, rtol=5e-14)
+    @pytest.mark.parametrize("case", cases)
+    def test_sf_isf(self, case):
+        x, a, b, sf, tol = case
+        assert_allclose(stats.johnsonsu.sf(x, a, b), sf, rtol=5e-14)
+        assert_allclose(stats.johnsonsu.isf(sf, a, b), x, rtol=tol)
 
 
 class TestJohnsonb:
@@ -1693,21 +1689,17 @@ class TestJohnsonb:
     #     a = mp.mpf(a)
     #     b = mp.mpf(b)
     #     return float(mp.ncdf(-(a + b * mp.log(x/(mp.one - x)))))
+    # Order is x, a, b, sf, isf atol
+    # (Can't expect full precision when the ISF input is very nearly 1)
+    cases = [(1e-4, 1, 1, 0.9999999999999999, 1e-7),
+             (0.9999, 1, 1, 8.921114313932308e-25, 5e-14),
+             (0.999999, 1, 1, 5.815197487181902e-50, 5e-14)]
 
-    @pytest.mark.parametrize("x, a, b, ref",
-                             [(0.9999, 1, 1, 8.921114313932308e-25),
-                              (1e-4, 1, 1, 0.9999999999999999),
-                              (0.999999, 1, 1, 5.815197487181902e-50)])
-    def test_sf(self, x, a, b, ref):
-        assert_allclose(stats.johnsonsb.sf(x, a, b), ref, rtol=5e-14)
-
-    # for inverse survival function, just switch x and ref
-
-    @pytest.mark.parametrize("q, a, b, ref",
-                             [(1.216168795631177e-56, 2, 1, 0.999999),
-                              (0.9999789024973879, 0.5, 1, 1e-2)])
-    def test_isf(self, q, a, b, ref):
-        assert_allclose(stats.johnsonsb.isf(q, a, b), ref, rtol=1e-12)
+    @pytest.mark.parametrize("case", cases)
+    def test_sf_isf(self, case):
+        x, a, b, sf, tol = case
+        assert_allclose(stats.johnsonsb.sf(x, a, b), sf, rtol=5e-14)
+        assert_allclose(stats.johnsonsb.isf(sf, a, b), x, atol=tol)
 
 
 class TestLogistic:
