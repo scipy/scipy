@@ -9,6 +9,7 @@ project(
   meson_version: '>= 0.64.0',
   default_options: [
     'buildtype=debugoptimized',
+    'b_ndebug=if-release',
     'c_std=c99',
     'cpp_std=c++14',
     'fortran_std=legacy',
@@ -122,17 +123,9 @@ py_mod = import('python')
 py3 = py_mod.find_installation(pure: false)
 py3_dep = py3.dependency()
 
-# For now, keep supporting this environment variable (same as in setup.py)
-# Once setup.py-based builds are gone, we can convert this to a command-line flag, or make Pythran non-optional.
-use_pythran = run_command(py3,
-  [
-    '-c',
-    'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 1))'
-  ],
-  check: true
-).stdout().strip() == '1'
+use_pythran = get_option('use-pythran')
 if use_pythran
-  pythran = find_program('pythran')
+  pythran = find_program('pythran', native: true)
 endif
 
 subdir('scipy')

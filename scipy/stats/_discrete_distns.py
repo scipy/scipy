@@ -3,7 +3,6 @@
 #          SciPy Developers 2004-2011
 #
 from functools import partial
-import warnings
 
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
@@ -247,7 +246,7 @@ class betabinom_gen(rv_discrete):
             g1 *= (a + b + 2 * n) * (b - a)
             g1 /= (a + b + 2) * (a + b)
         if 'k' in moments:
-            g2 = a + b
+            g2 = (a + b).astype(e_p.dtype)
             g2 *= (a + b - 1 + 6 * n)
             g2 += 3 * a * b * (n - 2)
             g2 += 6 * n ** 2
@@ -355,16 +354,11 @@ class nbinom_gen(rv_discrete):
         return _boost._nbinom_sf(k, n, p)
 
     def _isf(self, x, n, p):
-        with warnings.catch_warnings():
-            # See gh-14901
-            message = "overflow encountered in _nbinom_isf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _boost._nbinom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
-        with warnings.catch_warnings():
-            message = "overflow encountered in _nbinom_ppf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _boost._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
@@ -1427,9 +1421,7 @@ class skellam_gen(rv_discrete):
                 random_state.poisson(mu2, n))
 
     def _pmf(self, x, mu1, mu2):
-        with warnings.catch_warnings():
-            message = "overflow encountered in _ncx2_pdf"
-            warnings.filterwarnings("ignore", message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             px = np.where(x < 0,
                           _boost._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
                           _boost._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
@@ -1438,9 +1430,10 @@ class skellam_gen(rv_discrete):
 
     def _cdf(self, x, mu1, mu2):
         x = floor(x)
-        px = np.where(x < 0,
-                      _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                      1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+        with np.errstate(over='ignore'):  # see gh-17432
+            px = np.where(x < 0,
+                          _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                          1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):
