@@ -325,7 +325,7 @@ class _minmax_mixin:
 
     def min(self, axis=None, out=None):
         """
-        Return the minimum of the matrix or maximum along an axis.
+        Return the minimum of the matrix or minimum along an axis.
         This takes all elements into account, not just the non-zero ones.
 
         Parameters
