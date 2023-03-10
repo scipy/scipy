@@ -198,27 +198,28 @@ class TestVonMises:
         assert_allclose(np.angle(res), loc % (2*np.pi))
         assert np.issubdtype(res.dtype, np.complexfloating)
 
+    @pytest.mark.xslow
     @pytest.mark.parametrize("rvs_loc", [0, 2])
-    @pytest.mark.parametrize("rvs_scale", [1, 100])
+    @pytest.mark.parametrize("rvs_shape", [1, 100])
     @pytest.mark.parametrize('fix_loc', [True, False])
-    def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale,
-                                   fix_loc):
+    @pytest.mark.parametrize('fix_shape', [True, False])
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_shape,
+                                    fix_loc, fix_shape):
+        if fix_shape and fix_loc:
+            pytest.skip("Nothing to fit.")
 
         rng = np.random.default_rng(6762668991392531563)
-        data = stats.vonmises.rvs(rvs_scale, size=1000, loc=rvs_loc,
+        data = stats.vonmises.rvs(rvs_shape, size=1000, loc=rvs_loc,
                                   random_state=rng)
 
-        def negative_loglikelihood(fit_result, data):
-            kappa, loc, scale = fit_result
-            logpdf = stats.vonmises(kappa, loc=loc).logpdf(data).sum()
-            return -logpdf
-
-        kwds = {}
+        kwds = {'fscale': 1}
         if fix_loc:
             kwds['floc'] = rvs_loc
+        if fix_shape:
+            kwds['f0'] = rvs_shape
 
         _assert_less_or_close_loglike(stats.vonmises, data,
-                                      negative_loglikelihood, **kwds)
+                                      stats.vonmises.nnlf, **kwds)
 
     @pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
     @pytest.mark.parametrize('kappa', [1, 10, 100, 1000])
@@ -257,7 +258,7 @@ class TestVonMises:
         assert -np.pi < loc_fit < np.pi
 
 
-def _assert_less_or_close_loglike(dist, data, func, **kwds):
+def _assert_less_or_close_loglike(dist, data, func=None, **kwds):
     """
     This utility function checks that the log-likelihood (computed by
     func) of the result computed using dist.fit() is less than or equal
@@ -2706,7 +2707,7 @@ class TestLaplace:
     @pytest.mark.parametrize("rvs_loc,rvs_scale", [(-5, 10),
                                                    (10, 5),
                                                    (0.5, 0.2)])
-    def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale):
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale):
         data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
 
         # the log-likelihood function for laplace is given by
@@ -3730,8 +3731,8 @@ class TestLognorm:
                              [e for e in product((False, True), repeat=3)
                               if False in e])
     @np.errstate(invalid="ignore")
-    def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
-                                   fix_shape, fix_loc, fix_scale, rng):
+    def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
+                                    fix_shape, fix_loc, fix_scale, rng):
         data = stats.lognorm.rvs(size=100, s=rvs_shape, scale=rvs_scale,
                                  loc=rvs_loc, random_state=rng)
         args = [data, (stats.lognorm._fitstart(data), )]
