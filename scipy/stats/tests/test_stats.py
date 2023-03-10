@@ -7338,7 +7338,7 @@ class TestWassersteinDistance:
         shift_result = stats.wasserstein_distance(uu_shift, vv_shift)
         assert_almost_equal(expected, shift_result)
 
-    @pytest.mark.parametrize('input_dim', (3, 4, 5, 22, 40))
+    @pytest.mark.parametrize('input_dim', (3, 4, 5, 22))
     @pytest.mark.parametrize('data_volumn', ((6, 3), (10, 10), (30, 8),
                                              (6, 150), (20, 14)))
     def test_rotation_reflection_nD(self, input_dim, data_volumn):

@@ -9846,7 +9846,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     # get cost matrix
     D = distance_matrix(u_values, v_values, p=2)
-    cost = D.reshape((n * m))
+    cost = D.reshape(n * m)
 
     # create the minimization target
     p_u = np.ones(m)/m if u_weights is None else u_weights/np.sum(u_weights)
