@@ -59,6 +59,18 @@ def test_mean(A):
 
 
 @parametrize_sparrays
+def test_min_max(A):
+    assert not isinstance(A.min(axis=1), np.matrix), \
+        "Expected array, got matrix"
+    assert not isinstance(A.max(axis=1), np.matrix), \
+        "Expected array, got matrix"
+    assert not isinstance(A.argmin(axis=1), np.matrix), \
+        "Expected array, got matrix"
+    assert not isinstance(A.argmax(axis=1), np.matrix), \
+        "Expected array, got matrix"
+
+
+@parametrize_sparrays
 def test_todense(A):
     assert not isinstance(A.todense(), np.matrix), \
         "Expected array, got matrix"
