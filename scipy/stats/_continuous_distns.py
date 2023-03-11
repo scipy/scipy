@@ -3458,7 +3458,9 @@ class gengamma_gen(rv_continuous):
     def _entropy(self, a, c):
         def regular(a, c):
             val = sc.psi(a)
-            h = a*(1-val) + 1.0/c*val + sc.gammaln(a) - np.log(abs(c))
+            A = a * (1 - val) + 1.0 / (c * val)
+            B = sc.gammaln(a) - np.log(abs(c))
+            h = A + B
             return h
 
         def asymptotic(a, c):
@@ -3467,7 +3469,7 @@ class gengamma_gen(rv_continuous):
             # psi(a) ~ ln(a) - 1 / (2 * a) - 1 / (12 * a ^ 2)
             # 1 / psi(a) ~ 1 / ln(a)
             A = 0.5 + 1 / (6 * a) + 1 / (c * np.log(a)) - 0.5 * np.log(a)
-            B =  0.5 * np.log(2 * np.pi) - np.log(abs(c))
+            B = 0.5 * np.log(2 * np.pi) - np.log(abs(c))
             h = A + B
             return h
 
