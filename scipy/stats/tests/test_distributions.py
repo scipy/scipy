@@ -660,7 +660,7 @@ class TestGenHyperbolic:
         assert_allclose(vals_us, vals_R, atol=0, rtol=1e-13)
 
     def test_rvs(self):
-        # Kolmogorov-Smirnov test to ensure alignemnt
+        # Kolmogorov-Smirnov test to ensure alignment
         # of analytical and empirical cdfs
 
         lmbda, alpha, beta = 2, 2, 1

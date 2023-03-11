@@ -3533,7 +3533,7 @@ class genhyperbolic_gen(rv_continuous):
 
         f(x, p, a, b) =
             \frac{(a^2 - b^2)^{p/2}}
-            {\sqrt{2\pi}a^{p-0.5}
+            {\sqrt{2\pi}a^{p-1/2}
             K_p\Big(\sqrt{a^2 - b^2}\Big)}
             e^{bx} \times \frac{K_{p - 1/2}
             (a \sqrt{1 + x^2})}
@@ -7884,11 +7884,16 @@ class powernorm_gen(rv_continuous):
         f(x, c) = c \phi(x) (\Phi(-x))^{c-1}
 
     where :math:`\phi` is the normal pdf, :math:`\Phi` is the normal cdf,
-    :math:`x` is any real, and :math:`c > 0`.
+    :math:`x` is any real, and :math:`c > 0` [1]_.
 
     `powernorm` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] NIST Engineering Statistics Handbook, Section 1.3.6.6.13,
+           https://www.itl.nist.gov/div898/handbook//eda/section3/eda366d.htm
 
     %(example)s
 
