@@ -6161,7 +6161,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         Log of the probability density function.
     rvs(mu=None, kappa=1, size=1, random_state=None)
         Draw random samples from a von Mises-Fisher distribution.
-    entropy()
+    entropy(mu=None, kappa=1)
         Compute the differential entropy of the von Mises-Fisher distribution.
     fit(data)
         Fit a von Mises-Fisher distribution to data.
@@ -6375,7 +6375,7 @@ class vonmises_fisher_gen(multi_rv_generic):
             raise ValueError("'mu' must be a unit vector of norm 1.")
         if not mu.size > 1:
             raise ValueError("'mu' must have at least two entries.")
-        kappa_error_msg = "kappa must be a positive scalar."
+        kappa_error_msg = "'kappa' must be a positive scalar."
         if not np.isscalar(kappa):
             raise ValueError(kappa_error_msg)
         if kappa < 0:
@@ -6386,11 +6386,11 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     def _check_data_vs_dist(self, x, dim):
         if not x.shape[-1] == dim:
-            raise ValueError("Dimension of last axis of x must match "
+            raise ValueError("Dimension of last axis of 'x' must match "
                              "the dimension of the von Mises Fisher "
                              "distribution.")
         if not np.allclose(np.linalg.norm(x, axis=-1), 1.):
-            msg = "x must be unit vectors of norm 1 along last dimension."
+            msg = "'x' must be unit vectors of norm 1 along last dimension."
             raise ValueError(msg)
 
     def _log_norm_factor(self, dim, kappa):
@@ -6704,8 +6704,6 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         root_res = root_scalar(solve_for_kappa, method="brentq",
                                bracket=(1e-8, 1e9))
-        if not root_res.converged:
-            raise RuntimeError("Fit did not converge.")
         kappa = root_res.root
         return mu, kappa
 
@@ -6719,9 +6717,10 @@ class vonmises_fisher_frozen(multi_rv_frozen):
 
         Parameters
         ----------
-        mu : array_like, default: ``[0, 0]``
+        mu : array_like, default: None
             Mean direction of the distribution.
-        kappa : concentration parameter. Must be positive.
+        kappa : float, default: 1
+            Concentration parameter. Must be positive.
         seed : {None, int, `numpy.random.Generator`,
                 `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`

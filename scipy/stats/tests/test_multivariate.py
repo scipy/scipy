@@ -3150,28 +3150,26 @@ class TestVonMises_Fisher:
 
     @pytest.mark.parametrize("kappa", [-1, (5, 3)])
     def test_kappa_validation(self, kappa):
-        msg = "kappa must be a positive scalar."
+        msg = "'kappa' must be a positive scalar."
         with pytest.raises(ValueError, match=msg):
             vonmises_fisher([1, 0], kappa)
 
-    def test_invalid_shapes_pdf_logpdf(self):
-        vmf = vonmises_fisher([1, 0], 1)
+    @pytest.mark.parametrize("method", [vonmises_fisher.pdf,
+                                        vonmises_fisher.logpdf])
+    def test_invalid_shapes_pdf_logpdf(self, method):
         x = np.array([1., 0., 0])
-        msg = ("Dimension of last axis of x must match "
+        msg = ("Dimension of last axis of 'x' must match "
                "the dimension of the von Mises Fisher distribution.")
         with pytest.raises(ValueError, match=msg):
-            vmf.pdf(x)
-        with pytest.raises(ValueError, match=msg):
-            vmf.logpdf(x)
+            method(x, [1, 0], 1)
 
-    def test_unnormalized_input(self):
-        vmf = vonmises_fisher([1, 0], 1)
+    @pytest.mark.parametrize("method", [vonmises_fisher.pdf,
+                                        vonmises_fisher.logpdf])
+    def test_unnormalized_input(self, method):
         x = np.array([0.5, 0.])
-        msg = "x must be unit vectors of norm 1 along last dimension."
+        msg = "'x' must be unit vectors of norm 1 along last dimension."
         with pytest.raises(ValueError, match=msg):
-            vmf.pdf(x)
-        with pytest.raises(ValueError, match=msg):
-            vmf.logpdf(x)
+            method(x, [1, 0], 1)
 
     # Expected values of the vonmises-fisher logPDF were computed via mpmath
     # from mpmath import mp
