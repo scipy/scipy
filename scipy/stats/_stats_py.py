@@ -9874,7 +9874,6 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
 
 
     """
-    # TODO: Correct one-sided CIs
     # TODO: Add examples
     # TODO: Add input validation unit tests
     # TODO: Fix existing unit tests
