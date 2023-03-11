@@ -9894,7 +9894,7 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
         pvalue = bd.sf(k2)
     elif alternative == 'greater':
         # pvalue = P(Y<=T1)
-        pvalue = bd.cdf(k1-1) # -1 because of the step-like definition of the CDF
+        pvalue = bd.cdf(k1-1)  # -1 because of the step-like CDF
     elif alternative == 'two-sided':
         # pvalue = 2*min(P(Y<=T1),P(Y>=T2))
         pvalue = min(bd.cdf(k1-1), bd.sf(k2))
