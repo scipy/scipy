@@ -60,14 +60,19 @@ def test_mean(A):
 
 @parametrize_sparrays
 def test_min_max(A):
-    assert not isinstance(A.min(axis=1), np.matrix), \
-        "Expected array, got matrix"
-    assert not isinstance(A.max(axis=1), np.matrix), \
-        "Expected array, got matrix"
-    assert not isinstance(A.argmin(axis=1), np.matrix), \
-        "Expected array, got matrix"
-    assert not isinstance(A.argmax(axis=1), np.matrix), \
-        "Expected array, got matrix"
+    # Some formats don't support min/max operations, so we skip those here.
+    if hasattr(A, 'min'):
+        assert not isinstance(A.min(axis=1), np.matrix), \
+            "Expected array, got matrix"
+    if hasattr(A, 'max'):
+        assert not isinstance(A.max(axis=1), np.matrix), \
+            "Expected array, got matrix"
+    if hasattr(A, 'argmin'):
+        assert not isinstance(A.argmin(axis=1), np.matrix), \
+            "Expected array, got matrix"
+    if hasattr(A, 'argmax'):
+        assert not isinstance(A.argmax(axis=1), np.matrix), \
+            "Expected array, got matrix"
 
 
 @parametrize_sparrays
