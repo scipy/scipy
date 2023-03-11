@@ -1773,10 +1773,6 @@ class TestLogistic:
 
     def test_fit_comp_optimizer(self):
         data = stats.logistic.rvs(size=100, loc=0.5, scale=2)
-
-        # obtain objective function to compare results of the fit methods
-        args = [data, (stats.logistic._fitstart(data),)]
-
         _assert_less_or_close_loglike(stats.logistic, data)
         _assert_less_or_close_loglike(stats.logistic, data, floc=1)
         _assert_less_or_close_loglike(stats.logistic, data, fscale=1)
@@ -1851,8 +1847,6 @@ class TestGumbel_r_l:
         data = dist.rvs(size=100, loc=loc_rvs, scale=scale_rvs,
                         random_state=rng)
 
-        # obtain objective function to compare results of the fit methods
-        args = [data, (dist._fitstart(data),)]
 
         kwds = dict()
         # the fixed location and scales are arbitrarily modified to not be
@@ -1988,7 +1982,6 @@ class TestPareto:
                                     fix_shape, fix_loc, fix_scale, rng):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
                                 loc=rvs_loc, random_state=rng)
-        args = [data, (stats.pareto._fitstart(data), )]
 
         kwds = {}
         if fix_shape:
@@ -2008,7 +2001,6 @@ class TestPareto:
         shape, location, scale = 1, 0, 1
         data = stats.pareto.rvs(shape, location, scale, size=100,
                                 random_state=np.random.default_rng(2535619))
-        args = [data, (stats.pareto._fitstart(data), )]
         _assert_less_or_close_loglike(stats.pareto, data)
 
     def test_fit_warnings(self):
@@ -2589,9 +2581,6 @@ class TestInvgauss:
         invgauss_fit = stats.invgauss.fit(data, floc=0, fmu=2)
         assert_equal(super_fitted, invgauss_fit)
 
-        # obtain log-likelihood objective function to compare results
-        args = [data, (stats.invgauss._fitstart(data), )]
-
         # fixed `floc` uses analytical formula and provides better fit than
         # super method
         _assert_less_or_close_loglike(stats.invgauss, data, floc=rvs_loc)
@@ -2815,8 +2804,6 @@ class TestPowerlaw:
         data = stats.powerlaw.rvs(size=250, a=rvs_shape, loc=rvs_loc,
                                   scale=rvs_scale, random_state=rng)
 
-        args = [data, (stats.powerlaw._fitstart(data), )]
-
         kwds = dict()
         if fix_shape:
             kwds['f0'] = rvs_shape
@@ -2837,7 +2824,6 @@ class TestPowerlaw:
                                   random_state=np.random.default_rng(5))
 
         kwds = {'fscale': data.ptp() * 2}
-        args = [data, (stats.powerlaw._fitstart(data), )]
 
         _assert_less_or_close_loglike(stats.powerlaw, data, **kwds)
 
@@ -3758,7 +3744,6 @@ class TestLognorm:
                                    fix_shape, fix_loc, fix_scale, rng):
         data = stats.lognorm.rvs(size=100, s=rvs_shape, scale=rvs_scale,
                                  loc=rvs_loc, random_state=rng)
-        args = [data, (stats.lognorm._fitstart(data), )]
 
         kwds = {}
         if fix_shape:
@@ -5888,10 +5873,6 @@ class TestRayleigh:
         # test that the objective function result of the analytical MLEs is
         # less than or equal to that of the numerically optimized estimate
         data = stats.rayleigh.rvs(size=250, loc=rvs_loc, scale=rvs_scale)
-
-        # obtain objective function with same method as `rv_continuous.fit`
-        args = [data, (stats.rayleigh._fitstart(data), )]
-
         _assert_less_or_close_loglike(stats.rayleigh, data)
 
     def test_fit_warnings(self):
