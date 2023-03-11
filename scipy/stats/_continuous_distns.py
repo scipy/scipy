@@ -4348,7 +4348,7 @@ class invgamma_gen(rv_continuous):
     def _entropy(self, a):
         a = np.asarray([a])
         def regular(a):
-            h= a - (a+1.0) * sc.psi(a) + sc.gammaln(a)
+            h = a - (a+1.0) * sc.psi(a) + sc.gammaln(a)
             return h
 
         def asymptotic(a):
