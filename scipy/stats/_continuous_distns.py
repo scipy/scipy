@@ -3456,8 +3456,19 @@ class gengamma_gen(rv_continuous):
         return sc.poch(a, n*1.0/c)
 
     def _entropy(self, a, c):
-        val = sc.psi(a)
-        return a*(1-val) + 1.0/c*val + sc.gammaln(a) - np.log(abs(c))
+        def regular(a, c):
+            val = sc.psi(a)
+            h = a*(1-val) + 1.0/c*val + sc.gammaln(a) - np.log(abs(c))
+            return h
+
+        def asymptotic(a, c):
+            A = 0.5 + 1 / (6 * a) + 1 / (c * np.log(a)) - 0.5 * np.log(a)
+            B =  0.5 * np.log(2 * np.pi) - np.log(abs(c))
+            h = A + B
+            return h
+
+        h = _lazywhere(a >= 1.5e6, (a, c), f=asymptotic, f2=regular)
+        return h
 
 
 gengamma = gengamma_gen(a=0.0, name='gengamma')

@@ -6870,6 +6870,22 @@ def test_gengamma_edge():
     p = stats.gengamma.pdf(0, 1, 1)
     assert_equal(p, 1.0)
 
+@pytest.mark.parametrize("a, ref",
+                         [(1500000.0, -5.621230523748292),
+                         (10000000000.0, -10.05055748355847),
+                         (1e+30, -33.10536137897591),
+                         (1e+60, -67.65137601525164),
+                         (1e+100, -113.70597317167858)])
+def test_gengamma_extreme_entropy(a, ref):
+    # The reference values were calculated with mpmath:
+    # c was assumed to be 1 for convenience
+    # from mpmath import mp
+    # mp.dps = 500
+
+    # def gen_entropy(a):
+    #     h = a * (1 - mp.digamma(a)) + 1 / mp.digamma(a) + mp.loggamma(a)
+    #     return float(h)
+    assert_allclose(stats.gengamma.entropy(a, 1), ref)
 
 def test_gengamma_endpoint_with_neg_c():
     p = stats.gengamma.pdf(0, 1, -1)
