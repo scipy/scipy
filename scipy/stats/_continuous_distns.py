@@ -10796,7 +10796,6 @@ class rel_breitwigner_gen(rv_continuous):
         # kurtosis are actually infinite.
         return None, None, np.nan, np.nan
 
-
     @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         # Override rv_continuous.fit to better handle case where floc is set.
