@@ -4236,6 +4236,16 @@ class TestGumbelR:
 
 
 class TestLevyStable:
+    @pytest.fixture(autouse=True)
+    def reset_levy_stable_params(self):
+        """Setup default parameters for levy_stable generator"""
+        stats.levy_stable.parameterization = "S1"
+        stats.levy_stable.cdf_default_method = "piecewise"
+        stats.levy_stable.pdf_default_method = "piecewise"
+        stats.levy_stable.quad_eps = stats._levy_stable._QUAD_EPS
+
+        yield # this is where the testing happens
+
     @pytest.fixture
     def nolan_pdf_sample_data(self):
         """Sample data points for pdf computed with Nolan's stablec
@@ -4944,6 +4954,36 @@ class TestLevyStable:
         assert_almost_equal(
             function(points, alpha=alpha, beta=beta),
             np.full(len(points), expected)
+        )
+
+    @pytest.mark.parametrize(
+        'alpha,beta,expected',
+        [
+            (1.77207328046188083981, 0.50593731369029959488, 0.27893263679826763024),
+            (1.92170015224102352924, -0.87794427466859259468, 0.28105475720231620773),
+            (1.56548060516336340342, -0.40162203419113917668, 0.27128213319420380056),
+            (1.74208034477843876076, -0.38180029468259246705, 0.28020219924424716318),
+            (1.57480025276899127107, -0.25200194914153684067, 0.28013657621866516756),
+        ]
+    )
+    def test_x_near_zeta(
+            self, alpha, beta, expected
+    ):
+        """Ensure the pdf/cdf routines do not return bad values when x near zeta.
+
+        With S1 parametrization: x0 = x + zeta if alpha != 1
+        So, for x = 0, x0 will be close to zeta.
+
+        When case "x close to zeta" is not handled properly and quad_eps is not low enough:
+            - pdf may be less than 0
+            - logpdf is nan
+
+        The points from the parametrize block are found randomly so that PDF is less than 0.
+        """
+        stats.levy_stable.quad_eps = 1.2e-11
+        assert_almost_equal(
+            stats.levy_stable.pdf(0, alpha=alpha, beta=beta),
+            expected
         )
 
 
