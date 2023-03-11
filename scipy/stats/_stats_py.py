@@ -9780,7 +9780,7 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
         A one-dimensional sample.
     q : float, default: 0
         The hypothesized value of the quantile.
-    p : float, defualt: 0.5
+    p : float, default: 0.5
         The probability associate with the quantile; i.e. the proportion of
         the population less than `q` is `p`. Must be strictly between 0 and 1.
     alternative : {'two-sided', 'less', 'greater'}, optional
