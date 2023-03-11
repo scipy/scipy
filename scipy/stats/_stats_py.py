@@ -9884,7 +9884,7 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
     x, q, p, qalternative, palternative = args
 
     k1 = (x <= q).sum() 
-    k2 = (x <  q).sum() 
+    k2 = (x < q).sum() 
 
     n = len(x)
     bd = stats.binom(n, p)
