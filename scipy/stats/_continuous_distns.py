@@ -853,12 +853,27 @@ class betaprime_gen(rv_continuous):
     for :math:`x >= 0`, :math:`a > 0`, :math:`b > 0`, where
     :math:`\beta(a, b)` is the beta function (see `scipy.special.beta`).
 
+    `betaprime` takes ``a`` and ``b`` as shape parameters.
+
     The distribution is related to the `beta` distribution as follows:
     If :math:`X` follows a beta distribution with parameters :math:`a, b`,
     then :math:`Y = X/(1-X)` has a beta prime distribution with
     parameters :math:`a, b` ([1]_).
 
-    `betaprime` takes ``a`` and ``b`` as shape parameters.
+    The beta prime distribution is a reparametrized version of the
+    F distribution.  The beta prime distribution with shape parameters
+    ``a`` and ``b`` and ``scale = s`` is equivalent to the F distribution
+    with parameters ``d1 = 2*a``, ``d2 = 2*b`` and ``scale = (a/b)*s``.
+    For example,
+
+    >>> from scipy.stats import betaprime, f
+    >>> x = [1, 2, 5, 10]
+    >>> a = 12
+    >>> b = 5
+    >>> betaprime.pdf(x, a, b, scale=2)
+    array([0.00541179, 0.08331299, 0.14669185, 0.03150079])
+    >>> f.pdf(x, 2*a, 2*b, scale=(a/b)*2)
+    array([0.00541179, 0.08331299, 0.14669185, 0.03150079])
 
     %(after_notes)s
 
@@ -3533,7 +3548,7 @@ class genhyperbolic_gen(rv_continuous):
 
         f(x, p, a, b) =
             \frac{(a^2 - b^2)^{p/2}}
-            {\sqrt{2\pi}a^{p-0.5}
+            {\sqrt{2\pi}a^{p-1/2}
             K_p\Big(\sqrt{a^2 - b^2}\Big)}
             e^{bx} \times \frac{K_{p - 1/2}
             (a \sqrt{1 + x^2})}
@@ -7884,11 +7899,16 @@ class powernorm_gen(rv_continuous):
         f(x, c) = c \phi(x) (\Phi(-x))^{c-1}
 
     where :math:`\phi` is the normal pdf, :math:`\Phi` is the normal cdf,
-    :math:`x` is any real, and :math:`c > 0`.
+    :math:`x` is any real, and :math:`c > 0` [1]_.
 
     `powernorm` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] NIST Engineering Statistics Handbook, Section 1.3.6.6.13,
+           https://www.itl.nist.gov/div898/handbook//eda/section3/eda366d.htm
 
     %(example)s
 
