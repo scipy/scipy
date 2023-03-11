@@ -4352,6 +4352,8 @@ class invgamma_gen(rv_continuous):
             return h
 
         def asymptotic(a):
+            # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) + 0.5 * ln(2 * pi)
+            # psi(a) ~ ln(a) - 1 / (2 * a)
             h = -1.5 * np.log(a) + 0.5 * np.log(2 * np.pi) + 0.5 + 1 / (2 * a)
             return h
 
