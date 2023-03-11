@@ -6721,7 +6721,7 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         ----------
         mu : array_like, default: ``[0, 0]``
             Mean direction of the distribution.
-        kappa : concentration parameter.
+        kappa : concentration parameter. Must be positive.
         seed : {None, int, `numpy.random.Generator`,
                 `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
