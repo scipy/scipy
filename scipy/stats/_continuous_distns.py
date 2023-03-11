@@ -2743,12 +2743,15 @@ class genlogistic_gen(rv_continuous):
         Cx = (1+np.exp(-x))**(-c)
         return Cx
 
+    def _logcdf(self, x, c):
+        return -c * np.log1p(np.exp(-x))
+
     def _ppf(self, q, c):
         vals = -np.log(pow(q, -1.0/c)-1)
         return vals
 
     def _sf(self, x, c):
-        return -sc.expm1(-c * sc.log1p(np.exp(-x)))
+        return -sc.expm1(self._logcdf(x, c))
 
     def _stats(self, c):
         mu = _EULER + sc.psi(c)
