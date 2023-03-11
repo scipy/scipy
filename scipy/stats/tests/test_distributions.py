@@ -6883,7 +6883,8 @@ def test_gengamma_extreme_entropy(a, ref):
     # mp.dps = 500
 
     # def gen_entropy(a):
-    #     h = a * (1 - mp.digamma(a)) + 1 / mp.digamma(a) + mp.loggamma(a)
+    #     a = mp.mpf(a)
+    #     h = a * (mp.one - mp.digamma(a)) + mp.one / mp.digamma(a) + mp.loggamma(a)
     #     return float(h)
     assert_allclose(stats.gengamma.entropy(a, 1), ref)
 
