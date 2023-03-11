@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
 import numpy as np
 from ._censored_data import CensoredData
+from scipy import special
+from ._common import ConfidenceInterval
+import warnings
 
 
 __all__ = ['ecdf']
@@ -8,7 +11,32 @@ __all__ = ['ecdf']
 
 @dataclass
 class ECDFNestedResult:
-    value: np.ndarray
+    points: np.ndarray
+    # Exclude these from __str__
+    _n: np.ndarray = field(repr=False)  # number "at risk"
+    _d: np.ndarray = field(repr=False)  # number of "deaths"
+    _sf: np.ndarray = field(repr=False)  # survival function for var estimate
+
+    def confidence_interval(self, confidence_level=0.95):
+        sf, d, n = self._sf, self._d, self._n
+
+        # When n == d, Greenwood's formula divides by zero.
+        # When s != 0, this can be ignored: var == inf, and CI is [0, 1]
+        # When s == 0, this results in NaNs. Produce an informative warning.
+        with np.errstate(divide='ignore', invalid='ignore'):
+            var = sf ** 2 * np.cumsum(d / (n * (n - d)))
+
+        message = ("The variance estimate is undefined at some observations. "
+                   "This is feature of the mathematical formula.")
+        if np.any(np.isnan(var)):
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
+
+        se = np.sqrt(var)
+        z = special.ndtri(1 / 2 + confidence_level / 2)
+
+        low = np.clip(self.points - z * se, 0, 1)
+        high = np.clip(self.points + z * se, 0, 1)
+        return ConfidenceInterval(low, high)
 
 
 @dataclass
@@ -16,9 +44,11 @@ class ECDFResult:
     x: np.ndarray
     cdf: ECDFNestedResult
     sf: ECDFNestedResult
-    # Exclude these from __str__
-    _n: np.ndarray = field(repr=False)  # number "at risk"
-    _d: np.ndarray = field(repr=False)  # number of "deaths"
+
+    def __init__(self, x, cdf, sf, n, d):
+        self.x = x
+        self.cdf = ECDFNestedResult(cdf, n, d, sf)  # Both CDF and SF results
+        self.sf = ECDFNestedResult(sf, n, d, sf)    # need SF for variance est.
 
 
 def ecdf(sample):
@@ -41,10 +71,21 @@ def ecdf(sample):
 
     x : ndarray
         The unique values at which the ECDF changes.
-    cdf : ndarray
-        The values of the ECDF corresponding with `x`.
-    sf : ndarray
-        The empirical survival function, the complement of the ECDF.
+    cdf : ECDFNestedResult
+        An object representing the empirical cumulative distribution function
+    sf : ECDFNestedResult
+        An object representing the complement of the empirical cumulative
+        distribution function.
+
+    The `cdf` and `sf` attributes themselves have the following attributes.
+
+    points : ndarray
+        The point estimate of the CDF/SF at the values in `x`.
+
+    And the following methods:
+
+    proportion_ci(confidence_level=0.95) :
+        Compute the confidence interval around the CDF/SF at the values in `x`.
 
     Notes
     -----
@@ -89,7 +130,7 @@ def ecdf(sample):
     >>> res = stats.ecdf(sample)
     >>> res.x
     array([5.2 , 5.58, 6.23, 6.42, 7.06])
-    >>> res.cdf.value
+    >>> res.cdf.points
     array([0.2, 0.4, 0.6, 0.8, 1. ])
 
     To plot the result as a step function:
@@ -97,7 +138,7 @@ def ecdf(sample):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> ax = plt.subplot()
-    >>> ax.step(np.insert(res.x, 0, 4), np.insert(res.cdf.value, 0, 0),
+    >>> ax.step(np.insert(res.x, 0, 4), np.insert(res.cdf.points, 0, 0),
     ...         where='post')
     >>> ax.set_xlabel('One-Mile Run Time (minutes)')
     >>> ax.set_ylabel('Empirical CDF')
@@ -127,13 +168,13 @@ def ecdf(sample):
     >>> res = stats.ecdf(sample)
     >>> res.x
     array([37., 43., 47., 56., 60., 62., 71., 77., 80., 81.])
-    >>> res.sf.value
+    >>> res.sf.points
     array([1.   , 1.   , 0.875, 0.75 , 0.75 , 0.75 , 0.75 , 0.5  , 0.25 , 0.   ])
 
     To plot the result as a step function:
 
     >>> ax = plt.subplot()
-    >>> ax.step(np.insert(res.x, 0, 30), np.insert(res.sf.value, 0, 1),
+    >>> ax.step(np.insert(res.x, 0, 30), np.insert(res.sf.points, 0, 1),
     ...                   where='post')
     >>> ax.set_xlabel('Fanbelt Survival Time (thousands of miles)')
     >>> ax.set_ylabel('Empirical SF')
@@ -158,7 +199,7 @@ def ecdf(sample):
         raise NotImplementedError(message)
 
     t, cdf, sf, n, d = res
-    return ECDFResult(t, ECDFNestedResult(cdf), ECDFNestedResult(sf), n, d)
+    return ECDFResult(t, cdf, sf, n, d)
 
 
 def _ecdf_uncensored(sample):
