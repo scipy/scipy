@@ -9790,7 +9790,7 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
 
         * 'two-sided': the `p`th-quantile is not `q`
         * 'less': the `p`th-quantile is less than `q`
-        * 'greater': the `p`th-quantile is greater than than `q`
+        * 'greater': the `p`th-quantile is greater than `q`
 
     Returns
     -------
