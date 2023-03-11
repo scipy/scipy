@@ -99,6 +99,8 @@ def ecdf(sample):
     For right-censored data, the ECDF is given by the Kaplan-Meier estimator
     [2]_; other forms of censoring are not supported at this time.
 
+    Confidence intervals are computed according to the Greenwood formula [4]_.
+
     References
     ----------
     .. [1] Conover, William Jay. Practical nonparametric statistics. Vol. 350.
@@ -111,6 +113,10 @@ def ecdf(sample):
     .. [3] Goel, Manish Kumar, Pardeep Khanna, and Jugal Kishore.
            "Understanding survival analysis: Kaplan-Meier estimate."
            International journal of Ayurveda research 1.4 (2010): 274.
+
+    .. [4] Sawyer, Stanley. "The Greenwood and Exponential Greenwood Confidence
+           Intervals in Survival Analysis."
+           https://www.math.wustl.edu/~sawyer/handouts/greenwood.pdf
 
     Examples
     --------
