@@ -6885,7 +6885,7 @@ def test_gengamma_extreme_entropy(a, ref):
     # def gen_entropy(a):
     #     h = a * (1 - mp.digamma(a)) + 1 / mp.digamma(a) + mp.loggamma(a)
     #     return float(h)
-    assert_allclose(stats.gengamma.entropy(a, 1), ref)
+    assert_allclose(stats.gengamma.entropy(a, 1), ref, rtol=1e-10)
 
 def test_gengamma_endpoint_with_neg_c():
     p = stats.gengamma.pdf(0, 1, -1)
